@@ -1284,7 +1284,7 @@ unsafe fn parse_model(
         };
         if parse_config_item(ctx, doc, model, &raw mut config) {
             for &m in &(*ctx).models {
-                if streq((*m).name, config.name) {
+                if streq(cstr_as_bytes((*m).name), cstr_as_bytes(config.name)) {
                     config_item_free(&raw mut config);
                     return;
                 }
@@ -1363,8 +1363,8 @@ unsafe fn parse_variant(
         if parse_config_item(ctx, doc, variant, &raw mut config) {
             let mut exists: bool = false;
             for &v in &(*ctx).layouts {
-                if streq_null((*v).variant, config.name) as i32 != 0
-                    && streq((*v).name, (*l).name) as i32 != 0
+                if streq_null((*v).variant, config.name)
+                    && streq(cstr_as_bytes((*v).name), cstr_as_bytes((*l).name))
                 {
                     exists = true;
                     break;
@@ -1443,7 +1443,9 @@ unsafe fn parse_layout(
             return;
         }
         for &el in &(*ctx).layouts {
-            if streq((*el).name, config.name) as i32 != 0 && (*el).variant.is_null() {
+            if streq(cstr_as_bytes((*el).name), cstr_as_bytes(config.name))
+                && (*el).variant.is_null()
+            {
                 exists = true;
                 l = el;
                 break;
@@ -1503,7 +1505,7 @@ unsafe fn parse_option(
         };
         if parse_config_item(ctx, doc, option, &raw mut config) {
             for &o in &(*group).options {
-                if streq((*o).name, config.name) {
+                if streq(cstr_as_bytes((*o).name), cstr_as_bytes(config.name)) {
                     config_item_free(&raw mut config);
                     return;
                 }
@@ -1541,7 +1543,7 @@ unsafe fn parse_group(
             return;
         }
         for &el in &(*ctx).option_groups {
-            if streq((*el).name, config.name) {
+            if streq(cstr_as_bytes((*el).name), cstr_as_bytes(config.name)) {
                 exists = true;
                 g = el;
                 break;

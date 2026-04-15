@@ -450,26 +450,28 @@ pub unsafe fn isempty(s: *const i8) -> bool {
     s.is_null() || *s == 0
 }
 
+/// Case-sensitive byte slice equality.
 #[inline]
-pub unsafe fn streq(s1: *const i8, s2: *const i8) -> bool {
-    assert!(!s1.is_null() && !s2.is_null(), "s1 && s2");
-    std::ffi::CStr::from_ptr(s1) == std::ffi::CStr::from_ptr(s2)
+pub fn streq(s1: &[u8], s2: &[u8]) -> bool {
+    s1 == s2
 }
 
+/// Null-safe case-sensitive equality of two C strings.
 #[inline]
 pub unsafe fn streq_null(s1: *const i8, s2: *const i8) -> bool {
     if s1.is_null() || s2.is_null() {
         return s1 == s2;
     }
-    streq(s1, s2)
+    unsafe { cstr_as_bytes(s1) == cstr_as_bytes(s2) }
 }
 
+/// Both-non-null case-sensitive equality of two C strings.
 #[inline]
 pub unsafe fn streq_not_null(s1: *const i8, s2: *const i8) -> bool {
     if s1.is_null() || s2.is_null() {
         return false;
     }
-    streq(s1, s2)
+    unsafe { cstr_as_bytes(s1) == cstr_as_bytes(s2) }
 }
 
 #[inline]
