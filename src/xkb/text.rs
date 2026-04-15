@@ -23,20 +23,20 @@ use crate::xkb::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
 pub const XKB_KEYSYM_NAME_MAX_SIZE: i32 = 31;
 
 pub use crate::xkb::shared_types::{
-    format_boolean_controls, mod_type, xkb_action_controls, xkb_action_type, xkb_match_operation,
-    xkb_mod, xkb_mod_set, _ACTION_TYPE_NUM_ENTRIES, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
-    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
-    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
-    ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK,
-    ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE,
-    ACTION_TYPE_UNKNOWN, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, CONTROL_ALL,
-    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
-    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
-    CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
-    CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
-    CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
-    MATCH_ALL, MATCH_ANY, MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL,
-    MOD_REAL_MASK_ALL, MOD_VIRT, XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MOD_NONE,
+    format_boolean_controls, xkb_action_controls, xkb_action_type, xkb_mod, xkb_mod_set,
+    _ACTION_TYPE_NUM_ENTRIES, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
+    ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
+    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
+    ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
+    ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
+    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, CONTROL_ALL, CONTROL_ALL_BOOLEAN,
+    CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT,
+    CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP, CONTROL_IGNORE_GROUP_LOCK,
+    CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1, CONTROL_OVERLAY2,
+    CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6, CONTROL_OVERLAY7,
+    CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS, MATCH_ALL, MATCH_ANY,
+    MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_REAL_MASK_ALL, MOD_VIRT,
+    XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MOD_NONE,
 };
 use crate::xkb::utils::{cstr_as_bytes, istreq};
 pub unsafe fn LookupString(
@@ -496,13 +496,13 @@ pub static mut symInterpretMatchMaskNames: [LookupEntry; 6] = [
 pub unsafe fn ModIndexText(
     mut ctx: *mut xkb_context,
     mut mods: *const xkb_mod_set,
-    mut ndx: xkb_mod_index_t,
+    mut ndx: u32,
 ) -> &'static [u8] {
     unsafe {
-        if ndx == XKB_MOD_INVALID as xkb_mod_index_t {
+        if ndx == XKB_MOD_INVALID as u32 {
             return b"none";
         }
-        if ndx == XKB_MOD_NONE as xkb_mod_index_t {
+        if ndx == XKB_MOD_NONE as u32 {
             return b"None";
         }
         if ndx >= (*mods).num_mods {
@@ -520,14 +520,14 @@ pub unsafe fn ActionTypeText(mut type_0: xkb_action_type) -> &'static [u8] {
         return if !name.is_empty() { name } else { b"Private" };
     }
 }
-pub unsafe fn KeysymText(mut ctx: *mut xkb_context, mut sym: xkb_keysym_t) -> &'static [u8] {
+pub unsafe fn KeysymText(mut ctx: *mut xkb_context, mut sym: u32) -> &'static [u8] {
     unsafe {
         let mut buffer: *mut i8 = xkb_context_get_buffer(ctx, XKB_KEYSYM_NAME_MAX_SIZE as usize);
         xkb_keysym_get_name(sym, buffer, XKB_KEYSYM_NAME_MAX_SIZE as usize);
         return cstr_as_bytes(buffer);
     }
 }
-pub unsafe fn KeyNameText(mut ctx: *mut xkb_context, mut name: xkb_atom_t) -> &'static [u8] {
+pub unsafe fn KeyNameText(mut ctx: *mut xkb_context, mut name: u32) -> &'static [u8] {
     unsafe {
         let sname: &[u8] = xkb_atom_text_bytes(ctx, name);
         let sname_str = std::str::from_utf8(sname).unwrap_or("");
@@ -538,7 +538,7 @@ pub unsafe fn KeyNameText(mut ctx: *mut xkb_context, mut name: xkb_atom_t) -> &'
         return std::slice::from_raw_parts(buf as *const u8, written);
     }
 }
-pub unsafe fn SIMatchText(mut type_0: xkb_match_operation) -> &'static [u8] {
+pub unsafe fn SIMatchText(mut type_0: u32) -> &'static [u8] {
     unsafe {
         return LookupValue(
             &raw const symInterpretMatchMaskNames as *const LookupEntry,
@@ -548,15 +548,15 @@ pub unsafe fn SIMatchText(mut type_0: xkb_match_operation) -> &'static [u8] {
 }
 pub unsafe fn ModMaskText(
     mut ctx: *mut xkb_context,
-    mut type_0: mod_type,
+    mut type_0: u32,
     mut mods: *const xkb_mod_set,
-    mut mask: xkb_mod_mask_t,
+    mut mask: u32,
 ) -> &'static [u8] {
     unsafe {
         let mut buf: [i8; 1024] = [0; 1024];
         let mut pos: usize = 0 as usize;
         let mut mod_0: *const xkb_mod = std::ptr::null();
-        if mask == 0 as xkb_mod_mask_t {
+        if mask == 0 as u32 {
             return b"none";
         }
         if mask == MOD_REAL_MASK_ALL {
@@ -579,7 +579,7 @@ pub unsafe fn ModMaskText(
                 && mod_0
                     < (&raw const (*mods).mods as *const xkb_mod).offset((*mods).num_mods as isize)
             {
-                if mask & 0x1 as xkb_mod_mask_t != 0 {
+                if mask & 0x1 as u32 != 0 {
                     let (written, trunc) = crate::xkb::utils::snprintf_args(
                         (&raw mut buf as *mut i8).offset(pos as isize),
                         (std::mem::size_of::<[i8; 1024]>()).wrapping_sub(pos),

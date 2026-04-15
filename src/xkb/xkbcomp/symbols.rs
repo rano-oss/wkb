@@ -20,12 +20,12 @@ pub struct SymbolsInfo {
     pub name: Option<String>,
     pub errorCount: i32,
     pub include_depth: u32,
-    pub explicit_group: xkb_layout_index_t,
-    pub max_groups: xkb_layout_index_t,
+    pub explicit_group: u32,
+    pub max_groups: u32,
     pub keys: Vec<KeyInfo>,
     pub default_key: KeyInfo,
     pub default_actions: ActionsInfo,
-    pub group_names: Vec<xkb_atom_t>,
+    pub group_names: Vec<u32>,
     pub modmaps: Vec<ModMapEntry>,
     pub mods: xkb_mod_set,
     pub ctx: *mut xkb_context,
@@ -36,23 +36,23 @@ pub struct SymbolsInfo {
 pub struct ModMapEntry {
     pub merge: merge_mode,
     pub haveSymbol: bool,
-    pub modifier: xkb_mod_index_t,
+    pub modifier: u32,
     pub u: C2Rust_Unnamed_19,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub union C2Rust_Unnamed_19 {
-    pub keyName: xkb_atom_t,
-    pub keySym: xkb_keysym_t,
+    pub keyName: u32,
+    pub keySym: u32,
 }
 #[derive(Clone)]
 pub struct KeyInfo {
-    pub name: xkb_atom_t,
-    pub vmodmap: xkb_mod_mask_t,
-    pub default_type: xkb_atom_t,
-    pub out_of_range_group_number: xkb_layout_index_t,
+    pub name: u32,
+    pub vmodmap: u32,
+    pub default_type: u32,
+    pub out_of_range_group_number: u32,
     pub groups: Vec<GroupInfo>,
-    pub out_of_range_group_policy: xkb_layout_out_of_range_policy,
+    pub out_of_range_group_policy: u32,
     pub defined: key_field,
     pub merge: merge_mode,
     pub repeat: key_repeat,
@@ -84,7 +84,7 @@ pub const KEY_FIELD_REPEAT: key_field = 1;
 pub struct GroupInfo {
     pub levels: Vec<xkb_level>,
     pub defined: group_field,
-    pub type_0: xkb_atom_t,
+    pub type_0: u32,
 }
 pub type group_field = u32;
 pub const GROUP_FIELD_TYPE: group_field = 4;
@@ -134,7 +134,7 @@ impl SymbolsInfo {
             mods: xkb_mod_set {
                 mods: [xkb_mod {
                     name: 0,
-                    type_0: 0 as mod_type,
+                    type_0: 0 as u32,
                     mapping: 0,
                 }; 32],
                 num_mods: 0,
@@ -209,15 +209,15 @@ unsafe fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const GroupInfo) {
         if !(*from).levels.is_empty() {
             (*to).levels.extend_from_slice(&(*from).levels);
         }
-        let mut j: xkb_level_index_t = 0 as xkb_level_index_t;
-        while j < (&(*to).levels).len() as xkb_level_index_t {
+        let mut j: u32 = 0 as u32;
+        while j < (&(*to).levels).len() as u32 {
             if (&(*from).levels)[j as usize].num_syms as i32 > 1 as i32 {
                 let ref mut c2rust_fresh0 = (&mut (*to).levels)[j as usize].s.syms;
                 *c2rust_fresh0 = memdup(
                     (&(*from).levels)[j as usize].s.syms as *const ::core::ffi::c_void,
                     (&(*from).levels)[j as usize].num_syms as usize,
-                    std::mem::size_of::<xkb_keysym_t>(),
-                ) as *mut xkb_keysym_t;
+                    std::mem::size_of::<u32>(),
+                ) as *mut u32;
             }
             if (&(*from).levels)[j as usize].num_actions as i32 > 1 as i32 {
                 let ref mut c2rust_fresh1 = (&mut (*to).levels)[j as usize].a.actions;
@@ -239,8 +239,7 @@ unsafe fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyInfo) {
             b"*\0".as_ptr() as *const i8,
             (std::mem::size_of::<[i8; 2]>()).wrapping_sub(1 as usize),
         );
-        (*keyi).out_of_range_group_policy =
-            XKB_LAYOUT_OUT_OF_RANGE_WRAP as xkb_layout_out_of_range_policy;
+        (*keyi).out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP as u32;
         std::ptr::write(&raw mut (*keyi).groups, Vec::new());
         (*keyi).c2rust_unnamed.overlay_key = std::ptr::null();
     }
@@ -267,17 +266,20 @@ unsafe fn InitSymbolsInfo(
         std::ptr::write(&raw mut (*info).keys, Vec::new());
         std::ptr::write(&raw mut (*info).group_names, Vec::new());
         std::ptr::write(&raw mut (*info).modmaps, Vec::new());
-        (*info).ctx = (*keymap_info).keymap.ctx;
+        (*info).ctx = &raw mut (*(*keymap_info).keymap).ctx;
         (*info).include_depth = include_depth;
         (*info).keymap_info = keymap_info;
         (*info).max_groups = (*keymap_info).features.max_groups;
-        InitKeyInfo((*keymap_info).keymap.ctx, &raw mut (*info).default_key);
+        InitKeyInfo(
+            &raw mut (*(*keymap_info).keymap).ctx,
+            &raw mut (*info).default_key,
+        );
         InitActionsInfo(
-            &raw const (*keymap_info).keymap,
+            (*keymap_info).keymap,
             &raw mut (*info).default_actions,
         );
         InitVMods(&raw mut (*info).mods, mods, include_depth > 0 as u32);
-        (*info).explicit_group = XKB_LAYOUT_INVALID as xkb_layout_index_t;
+        (*info).explicit_group = XKB_LAYOUT_INVALID as u32;
     }
 }
 unsafe fn ClearSymbolsInfo(mut info: *mut SymbolsInfo) {
@@ -303,21 +305,21 @@ unsafe fn MergeGroups(
     mut from: *mut GroupInfo,
     mut clobber: bool,
     mut report: bool,
-    mut group: xkb_layout_index_t,
-    mut key_name: xkb_atom_t,
+    mut group: u32,
+    mut key_name: u32,
 ) -> bool {
     unsafe {
         if (*into).type_0 != (*from).type_0 {
-            if !((*from).type_0 == XKB_ATOM_NONE as xkb_atom_t) {
-                if (*into).type_0 == XKB_ATOM_NONE as xkb_atom_t {
+            if !((*from).type_0 == XKB_ATOM_NONE as u32) {
+                if (*into).type_0 == XKB_ATOM_NONE as u32 {
                     (*into).type_0 = (*from).type_0;
                 } else {
-                    let mut use_0: xkb_atom_t = if clobber as i32 != 0 {
+                    let mut use_0: u32 = if clobber as i32 != 0 {
                         (*from).type_0
                     } else {
                         (*into).type_0
                     };
-                    let mut ignore: xkb_atom_t = if clobber as i32 != 0 {
+                    let mut ignore: u32 = if clobber as i32 != 0 {
                         (*into).type_0
                     } else {
                         (*from).type_0
@@ -330,7 +332,7 @@ unsafe fn MergeGroups(
                             "[XKB-{:03}] Multiple definitions for group {} type of key {}; Using {}, ignoring {}\n",
                             XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS
                                 as i32,
-                            group.wrapping_add(1 as xkb_layout_index_t),
+                            group.wrapping_add(1 as u32),
                             crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, key_name)),
                             crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, use_0)),
                             crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, ignore)),
@@ -377,8 +379,7 @@ unsafe fn MergeGroups(
                     if (*fromLevel).num_syms as i32 > 1 as i32 {
                         (*intoLevel).s.syms =
                             _steal(&raw mut (*fromLevel).s.syms as *mut ::core::ffi::c_void)
-                                as *mut xkb_keysym_t
-                                as *mut xkb_keysym_t;
+                                as *mut u32 as *mut u32;
                     } else {
                         (*intoLevel).s.sym = (*fromLevel).s.sym;
                     }
@@ -392,7 +393,7 @@ unsafe fn MergeGroups(
                         (*intoLevel).a.action = (*fromLevel).a.action;
                     }
                     (*intoLevel).num_actions = (*fromLevel).num_actions;
-                    (*fromLevel).num_actions = 0 as xkb_action_count_t;
+                    (*fromLevel).num_actions = 0 as u16;
                     fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
                     fromActionsCount = fromActionsCount.wrapping_add(1);
                 } else {
@@ -407,7 +408,7 @@ unsafe fn MergeGroups(
                                 "[XKB-{:03}] Multiple symbols for level {}/group {} on key {}; Using {}, ignoring {}\n",
                                 XKB_WARNING_CONFLICTING_KEY_SYMBOL as i32,
                                 i.wrapping_add(1 as u32),
-                                group.wrapping_add(1 as xkb_layout_index_t),
+                                group.wrapping_add(1 as u32),
                                 crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, key_name)),
                                 crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
                                     b"from\0".as_ptr() as *const i8
@@ -432,7 +433,7 @@ unsafe fn MergeGroups(
                                     (*intoLevel).num_syms = (*fromLevel).num_syms;
                                     (*fromLevel).num_syms = 0 as xkb_keysym_count_t;
                                     fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
-                                } else if (*fromLevel).s.sym != XKB_KEY_NoSymbol as xkb_keysym_t {
+                                } else if (*fromLevel).s.sym != XKB_KEY_NoSymbol as u32 {
                                     if ((*intoLevel).num_syms as i32 > 1 as i32) as i32 as i64 != 0
                                     {
                                         free((*intoLevel).s.syms as *mut ::core::ffi::c_void);
@@ -444,7 +445,7 @@ unsafe fn MergeGroups(
                             } else if !(((*intoLevel).num_syms as i32 > 1 as i32) as i32 as i64
                                 != 0)
                             {
-                                if (*intoLevel).s.sym == XKB_KEY_NoSymbol as xkb_keysym_t {
+                                if (*intoLevel).s.sym == XKB_KEY_NoSymbol as u32 {
                                     if ((*fromLevel).num_syms as i32 > 1 as i32) as i32 as i64 != 0
                                     {
                                         (*intoLevel).s.syms = (*fromLevel).s.syms;
@@ -471,7 +472,7 @@ unsafe fn MergeGroups(
                                     "[XKB-{:03}] Multiple actions for level {}/group {} on key {}; {}\n",
                                     XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
                                     i.wrapping_add(1 as u32),
-                                    group.wrapping_add(1 as xkb_layout_index_t),
+                                    group.wrapping_add(1 as u32),
                                     crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, key_name)),
                                     crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
                                         b"Using from, ignoring to\0".as_ptr()
@@ -501,7 +502,7 @@ unsafe fn MergeGroups(
                                     "[XKB-{:03}] Multiple actions for level {}/group {} on key {}; Using {}, ignoring {}\n",
                                     XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
                                     i.wrapping_add(1 as u32),
-                                    group.wrapping_add(1 as xkb_layout_index_t),
+                                    group.wrapping_add(1 as u32),
                                     crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, key_name)),
                                     crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*use_1).type_0)),
                                     crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*ignore_0).type_0)),
@@ -518,7 +519,7 @@ unsafe fn MergeGroups(
                                     }
                                     (*intoLevel).a.actions = (*fromLevel).a.actions;
                                     (*intoLevel).num_actions = (*fromLevel).num_actions;
-                                    (*fromLevel).num_actions = 0 as xkb_action_count_t;
+                                    (*fromLevel).num_actions = 0 as u16;
                                     fromActionsCount = fromActionsCount.wrapping_add(1);
                                 } else if (*fromLevel).a.action.type_0 as u32
                                     != ACTION_TYPE_NONE as u32
@@ -529,7 +530,7 @@ unsafe fn MergeGroups(
                                         free((*intoLevel).a.actions as *mut ::core::ffi::c_void);
                                     }
                                     (*intoLevel).a.action = (*fromLevel).a.action;
-                                    (*intoLevel).num_actions = 1 as xkb_action_count_t;
+                                    (*intoLevel).num_actions = 1 as u16;
                                     fromActionsCount = fromActionsCount.wrapping_add(1);
                                 }
                             } else if !(((*intoLevel).num_actions as i32 > 1 as i32) as i32 as i64
@@ -541,10 +542,10 @@ unsafe fn MergeGroups(
                                     {
                                         (*intoLevel).a.actions = (*fromLevel).a.actions;
                                         (*intoLevel).num_actions = (*fromLevel).num_actions;
-                                        (*fromLevel).num_actions = 0 as xkb_action_count_t;
+                                        (*fromLevel).num_actions = 0 as u16;
                                     } else {
                                         (*intoLevel).a.action = (*fromLevel).a.action;
-                                        (*intoLevel).num_actions = 1 as xkb_action_count_t;
+                                        (*intoLevel).num_actions = 1 as u16;
                                     }
                                     fromActionsCount = fromActionsCount.wrapping_add(1);
                                 }
@@ -560,7 +561,7 @@ unsafe fn MergeGroups(
             let level_val = (&(*from).levels)[level_idx as usize];
             (&mut (*into).levels).push(level_val);
             (&mut (*from).levels)[level_idx as usize].num_syms = 0 as xkb_keysym_count_t;
-            (&mut (*from).levels)[level_idx as usize].num_actions = 0 as xkb_action_count_t;
+            (&mut (*from).levels)[level_idx as usize].num_actions = 0 as u16;
             fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
             fromActionsCount = fromActionsCount.wrapping_add(1);
             level_idx = level_idx.wrapping_add(1);
@@ -928,8 +929,8 @@ unsafe fn MergeKeys(
     mut same_file: bool,
 ) -> bool {
     unsafe {
-        let mut i: xkb_layout_index_t = 0;
-        let mut groups_in_both: xkb_layout_index_t = 0;
+        let mut i: u32 = 0;
+        let mut groups_in_both: u32 = 0;
         let mut collide: key_field = 0 as key_field;
         let verbosity: i32 = xkb_context_get_log_verbosity((*info).ctx) as i32;
         let clobber: bool = (*from).merge as i32 != MERGE_AUGMENT as i32;
@@ -944,8 +945,8 @@ unsafe fn MergeKeys(
             (*into).groups.len()
         } else {
             (*from).groups.len()
-        }) as xkb_layout_index_t;
-        i = 0 as xkb_layout_index_t;
+        }) as u32;
+        i = 0 as u32;
         while i < groups_in_both {
             MergeGroups(
                 info,
@@ -959,7 +960,7 @@ unsafe fn MergeKeys(
             i = i.wrapping_add(1);
         }
         i = groups_in_both;
-        while i < (&(*from).groups).len() as xkb_layout_index_t {
+        while i < (&(*from).groups).len() as u32 {
             let group_val = std::ptr::read(&(&(*from).groups)[i as usize]);
             (&mut (*into).groups).push(group_val);
             InitGroupInfo(&mut (&mut (*from).groups)[i as usize] as *mut GroupInfo);
@@ -1042,7 +1043,7 @@ unsafe fn AddKeySymbols(
     unsafe {
         // XkbResolveKeyAlias inlined
         {
-            let keymap = &raw const (*(*info).keymap_info).keymap;
+            let keymap = (*(*info).keymap_info).keymap;
             let name = (*keyi).name;
             if name < (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names {
                 let match_0: KeycodeMatch = *(*keymap)
@@ -1080,12 +1081,12 @@ unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) 
             if (*new).modifier == old.modifier {
                 return true;
             }
-            let use_0: xkb_mod_index_t = if clobber as i32 != 0 {
+            let use_0: u32 = if clobber as i32 != 0 {
                 (*new).modifier
             } else {
                 old.modifier
             };
-            let ignore: xkb_mod_index_t = if clobber as i32 != 0 {
+            let ignore: u32 = if clobber as i32 != 0 {
                 old.modifier
             } else {
                 (*new).modifier
@@ -1126,7 +1127,7 @@ unsafe fn MergeIncludedSymbols(
     mut merge: merge_mode,
 ) {
     unsafe {
-        let mut group_names_in_both: xkb_layout_index_t = 0;
+        let mut group_names_in_both: u32 = 0;
         if (*from).errorCount > 0 as i32 {
             (*into).errorCount += (*from).errorCount;
             return;
@@ -1144,8 +1145,8 @@ unsafe fn MergeIncludedSymbols(
             (&(*into).group_names).len()
         } else {
             (&(*from).group_names).len()
-        }) as xkb_layout_index_t;
-        let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
+        }) as u32;
+        let mut i: u32 = 0 as u32;
         while i < group_names_in_both {
             if !((&(*from).group_names)[i as usize] == 0) {
                 if !(merge as u32 == MERGE_AUGMENT as u32
@@ -1156,7 +1157,7 @@ unsafe fn MergeIncludedSymbols(
             }
             i = i.wrapping_add(1);
         }
-        if group_names_in_both < (&(*from).group_names).len() as xkb_layout_index_t {
+        if group_names_in_both < (&(*from).group_names).len() as u32 {
             for gn_idx in group_names_in_both as usize..(&(*from).group_names).len() {
                 (&mut (*into).group_names).push((&(*from).group_names)[gn_idx]);
             }
@@ -1232,8 +1233,8 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
                 &raw mut included.mods,
             );
             if !(*stmt).modifier.is_null() {
-                next_incl.explicit_group = (crate::xkb::utils::cstr_atoi((*stmt).modifier)
-                    - 1 as i32) as xkb_layout_index_t;
+                next_incl.explicit_group =
+                    (crate::xkb::utils::cstr_atoi((*stmt).modifier) - 1 as i32) as u32;
                 if next_incl.explicit_group >= (*info).max_groups {
                     xkb_logf!(
                         (*info).ctx,
@@ -1241,15 +1242,15 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Cannot set explicit group to {} - must be between 1..{}; Ignoring group number\n",
                         XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
-                        next_incl.explicit_group.wrapping_add(1 as xkb_layout_index_t),
+                        next_incl.explicit_group.wrapping_add(1 as u32),
                         (*info).max_groups,
                     );
                     next_incl.explicit_group = (*info).explicit_group;
                 }
-            } else if (*(*info).keymap_info).keymap.num_groups != 0 as xkb_layout_index_t
+            } else if (*(*(*info).keymap_info).keymap).num_groups != 0 as u32
                 && next_incl.include_depth == 1 as u32
             {
-                next_incl.explicit_group = 0 as xkb_layout_index_t;
+                next_incl.explicit_group = 0 as u32;
             } else {
                 next_incl.explicit_group = (*info).explicit_group;
             }
@@ -1269,7 +1270,7 @@ unsafe fn GetGroupIndex(
     mut keyi: *mut KeyInfo,
     mut arrayNdx: *mut ExprDef,
     mut field: group_field,
-    mut ndx_rtrn: *mut xkb_layout_index_t,
+    mut ndx_rtrn: *mut u32,
 ) -> bool {
     unsafe {
         let mut name: *const i8 = if field as u32 == GROUP_FIELD_SYMS as u32 {
@@ -1278,12 +1279,12 @@ unsafe fn GetGroupIndex(
             b"actions\0".as_ptr() as *const i8
         };
         if arrayNdx.is_null() {
-            let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
+            let mut i: u32 = 0 as u32;
             let mut groupi: *mut GroupInfo = std::ptr::null_mut();
             if !(*keyi).groups.is_empty() {
-                i = 0 as xkb_layout_index_t;
+                i = 0 as u32;
                 groupi = (*keyi).groups.as_mut_ptr();
-                while i < (*keyi).groups.len() as xkb_layout_index_t {
+                while i < (*keyi).groups.len() as u32 {
                     if (*groupi).defined as u32 & field as u32 == 0 {
                         *ndx_rtrn = i;
                         return true;
@@ -1307,7 +1308,7 @@ unsafe fn GetGroupIndex(
                 return false;
             }
             resize_groups_zero(&mut (*keyi).groups, (*keyi).groups.len().wrapping_add(1));
-            *ndx_rtrn = (*keyi).groups.len().wrapping_sub(1) as xkb_layout_index_t;
+            *ndx_rtrn = (*keyi).groups.len().wrapping_sub(1) as u32;
             return true;
         }
         if ExprResolveGroup(
@@ -1331,7 +1332,7 @@ unsafe fn GetGroupIndex(
             return false;
         }
         *ndx_rtrn = (*ndx_rtrn).wrapping_sub(1);
-        if *ndx_rtrn >= (*keyi).groups.len() as xkb_layout_index_t {
+        if *ndx_rtrn >= (*keyi).groups.len() as u32 {
             resize_groups_zero(&mut (*keyi).groups, (*ndx_rtrn).wrapping_add(1) as usize);
         }
         return true;
@@ -1344,7 +1345,7 @@ unsafe fn AddSymbolsToKey(
     mut value: *mut ExprDef,
 ) -> bool {
     unsafe {
-        let mut ndx: xkb_layout_index_t = 0 as xkb_layout_index_t;
+        let mut ndx: u32 = 0 as u32;
         if !GetGroupIndex(info, keyi, arrayNdx, GROUP_FIELD_SYMS, &raw mut ndx) {
             return false;
         }
@@ -1361,7 +1362,7 @@ unsafe fn AddSymbolsToKey(
                 "[XKB-{:03}] Expected a list of symbols, found {}; Ignoring symbols for group {} of {}\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
                 stmt_type_to_string((*value).common.type_0),
-                ndx.wrapping_add(1 as xkb_layout_index_t),
+                ndx.wrapping_add(1 as u32),
                 crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
             );
             return false;
@@ -1374,12 +1375,12 @@ unsafe fn AddSymbolsToKey(
                 "[XKB-{:03}] Symbols for key {}, group {} already defined; Ignoring duplicate definition\n",
                 XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY as i32,
                 crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
-                ndx.wrapping_add(1 as xkb_layout_index_t),
+                ndx.wrapping_add(1 as u32),
             );
             return false;
         }
-        let mut nLevels: xkb_level_index_t = 0 as xkb_level_index_t;
-        let mut nonEmptyLevels: xkb_level_index_t = 0 as xkb_level_index_t;
+        let mut nLevels: u32 = 0 as u32;
+        let mut nonEmptyLevels: u32 = 0 as u32;
         let mut keysymList: *mut ExprKeysymList = value as *mut ExprKeysymList;
         while !keysymList.is_null() {
             nLevels = nLevels.wrapping_add(1);
@@ -1391,11 +1392,11 @@ unsafe fn AddSymbolsToKey(
         if nonEmptyLevels < nLevels {
             nLevels = nonEmptyLevels;
         }
-        if ((*groupi).levels.len() as xkb_level_index_t) < nLevels {
+        if ((*groupi).levels.len() as u32) < nLevels {
             vec_resize_zero(&mut (*groupi).levels, nLevels as usize);
         }
         (*groupi).defined = ((*groupi).defined as u32 | GROUP_FIELD_SYMS as u32) as group_field;
-        let mut level: xkb_level_index_t = 0 as xkb_level_index_t;
+        let mut level: u32 = 0 as u32;
         let mut keysymList_0: *mut ExprKeysymList = value as *mut ExprKeysymList;
         while !keysymList_0.is_null() && level < nLevels {
             let mut leveli: *mut xkb_level =
@@ -1408,8 +1409,8 @@ unsafe fn AddSymbolsToKey(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Key {} has too many keysyms for group {}, level {}; expected max {}, got: {}\n",
                     crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
-                    ndx.wrapping_add(1 as xkb_layout_index_t),
-                    level.wrapping_add(1 as xkb_level_index_t),
+                    ndx.wrapping_add(1 as u32),
+                    level.wrapping_add(1 as u32),
                     65535 as i32,
                     syms_len,
                 );
@@ -1418,7 +1419,7 @@ unsafe fn AddSymbolsToKey(
             (*leveli).num_syms = syms_len as xkb_keysym_count_t;
             match (*leveli).num_syms as i32 {
                 0 => {
-                    (*leveli).s.sym = XKB_KEY_NoSymbol as xkb_keysym_t;
+                    (*leveli).s.sym = XKB_KEY_NoSymbol as u32;
                 }
                 1 => {
                     (*leveli).s.sym = (&(*keysymList_0).syms)[0];
@@ -1452,7 +1453,7 @@ unsafe fn AddActionsToKey(
     mut value: *mut ExprDef,
 ) -> bool {
     unsafe {
-        let mut ndx: xkb_layout_index_t = 0 as xkb_layout_index_t;
+        let mut ndx: u32 = 0 as u32;
         if !GetGroupIndex(info, keyi, arrayNdx, GROUP_FIELD_ACTS, &raw mut ndx) {
             return false;
         }
@@ -1486,18 +1487,18 @@ unsafe fn AddActionsToKey(
             );
             return false;
         }
-        let mut nLevels: xkb_level_index_t = 0 as xkb_level_index_t;
+        let mut nLevels: u32 = 0 as u32;
         let mut p: *mut ParseCommon = &raw mut (*value).common;
         while !p.is_null() {
             nLevels = nLevels.wrapping_add(1);
             p = (*p).next as *mut ParseCommon;
         }
-        if ((*groupi).levels.len() as xkb_level_index_t) < nLevels {
+        if ((*groupi).levels.len() as u32) < nLevels {
             vec_resize_zero(&mut (*groupi).levels, nLevels as usize);
         }
         (*groupi).defined = ((*groupi).defined as u32 | GROUP_FIELD_ACTS as u32) as group_field;
-        let mut level: xkb_level_index_t = 0 as xkb_level_index_t;
-        let mut nonEmptyLevels: xkb_level_index_t = 0 as xkb_level_index_t;
+        let mut level: u32 = 0 as u32;
+        let mut nonEmptyLevels: u32 = 0 as u32;
         let mut actionList: *mut ExprActionList = value as *mut ExprActionList;
         while !actionList.is_null() {
             let mut c2rust_current_block_102: u64;
@@ -1516,8 +1517,8 @@ unsafe fn AddActionsToKey(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Key {} has too many actions for group {}, level {}; expected max {}, got: {}\n",
                     crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
-                    ndx.wrapping_add(1 as xkb_layout_index_t),
-                    level.wrapping_add(1 as xkb_level_index_t),
+                    ndx.wrapping_add(1 as u32),
+                    level.wrapping_add(1 as u32),
                     65535 as i32,
                     num_actions,
                 );
@@ -1548,8 +1549,8 @@ unsafe fn AddActionsToKey(
                         "[XKB-{:03}] Illegal action definition for {}; Action for group {}/level {} ignored\n",
                         XKB_ERROR_INVALID_VALUE as i32,
                         crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
-                        ndx.wrapping_add(1 as xkb_layout_index_t),
-                        level.wrapping_add(1 as xkb_level_index_t),
+                        ndx.wrapping_add(1 as u32),
+                        level.wrapping_add(1 as u32),
                     );
                     if r as u32 == PARSER_FATAL_ERROR as u32 {
                         drop(actions);
@@ -1560,7 +1561,7 @@ unsafe fn AddActionsToKey(
                 }
                 if !(toAct.type_0 as u32 == ACTION_TYPE_NONE as u32) {
                     if (num_actions == 1 as u32) as i64 != 0 {
-                        (*leveli).num_actions = 1 as xkb_action_count_t;
+                        (*leveli).num_actions = 1 as u16;
                         (*leveli).a.action = toAct;
                         c2rust_current_block_102 = 1829140360157350833;
                         break;
@@ -1573,9 +1574,9 @@ unsafe fn AddActionsToKey(
             match c2rust_current_block_102 {
                 1134115459065347084 => {
                     if actions.is_empty() {
-                        (*leveli).num_actions = 0 as xkb_action_count_t;
+                        (*leveli).num_actions = 0 as u16;
                     } else if (actions.len() > 1) as i64 != 0 {
-                        (*leveli).num_actions = actions.len() as xkb_action_count_t;
+                        (*leveli).num_actions = actions.len() as u16;
                         // Shrink to fit and steal the buffer
                         actions.shrink_to_fit();
                         let ptr = actions.as_mut_ptr();
@@ -1584,7 +1585,7 @@ unsafe fn AddActionsToKey(
                         (*leveli).a.actions = ptr;
                         actions = Vec::new();
                     } else {
-                        (*leveli).num_actions = 1 as xkb_action_count_t;
+                        (*leveli).num_actions = 1 as u16;
                         (*leveli).a.action = actions[0];
                         drop(actions);
                         actions = Vec::new();
@@ -1593,13 +1594,13 @@ unsafe fn AddActionsToKey(
                 _ => {}
             }
             if (*leveli).num_actions as i32 > 0 as i32 || (*leveli).num_syms as i32 > 0 as i32 {
-                nonEmptyLevels = level.wrapping_add(1 as xkb_level_index_t);
+                nonEmptyLevels = level.wrapping_add(1 as u32);
             }
             actionList = (*actionList).common.next as *mut ExprActionList;
             level = level.wrapping_add(1);
         }
         if nonEmptyLevels < nLevels {
-            if nonEmptyLevels > 0 as xkb_level_index_t {
+            if nonEmptyLevels > 0 as u32 {
                 (*groupi).levels.truncate(nonEmptyLevels as usize);
             } else {
                 (*groupi).levels.clear();
@@ -1654,14 +1655,14 @@ unsafe fn ExprResolveOverlayEntry(
     unsafe {
         if !arrayNdx.is_null() {
             xkb_logf!(
-                (*keymap_info).keymap.ctx,
+                (*(*keymap_info).keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Overlay field \"{}\" in {} does not support array index; ignored\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
                 crate::xkb::utils::ByteSliceDisplay(field),
                 crate::xkb::utils::ByteSliceDisplay(KeyNameText(
-                    (*keymap_info).keymap.ctx,
+                    &raw mut (*(*keymap_info).keymap).ctx,
                     (*keyi).name
                 )),
             );
@@ -1678,13 +1679,13 @@ unsafe fn ExprResolveOverlayEntry(
             || raw_overlay > (*keymap_info).features.max_overlays as i64
         {
             xkb_logf!(
-                (*keymap_info).keymap.ctx,
+                (*(*keymap_info).keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Unsupported overlay index \"{}\" field for {}: expected 1..{}, got: {}; ignored\n",
                 XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX as i32,
                 crate::xkb::utils::ByteSliceDisplay(field),
-                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap_info).keymap.ctx, (*keyi).name)),
+                crate::xkb::utils::ByteSliceDisplay(KeyNameText(&raw mut (*(*keymap_info).keymap).ctx, (*keyi).name)),
                 (*keymap_info).features.max_overlays as i32,
                 raw_overlay,
             );
@@ -1695,24 +1696,24 @@ unsafe fn ExprResolveOverlayEntry(
         match (*expr).common.type_0 as u32 {
             8 => {
                 *key_rtrn = XkbKeyByName(
-                    &raw const (*keymap_info).keymap,
+                    (*keymap_info).keymap,
                     (*expr).key_name.key_name,
                     false,
                 );
                 if (*key_rtrn).is_null() {
                     xkb_logf!(
-                        (*keymap_info).keymap.ctx,
+                        (*(*keymap_info).keymap).ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Unknown key \"{}\" for field {} in {}\n",
                         XKB_WARNING_UNDEFINED_KEYCODE as i32,
                         crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                            (*keymap_info).keymap.ctx,
+                            &raw mut (*(*keymap_info).keymap).ctx,
                             (*expr).key_name.key_name
                         )),
                         crate::xkb::utils::ByteSliceDisplay(field),
                         crate::xkb::utils::ByteSliceDisplay(KeyNameText(
-                            (*keymap_info).keymap.ctx,
+                            &raw mut (*(*keymap_info).keymap).ctx,
                             (*keyi).name
                         )),
                     );
@@ -1721,7 +1722,8 @@ unsafe fn ExprResolveOverlayEntry(
                 return true;
             }
             10 => {
-                let id: &[u8] = xkb_atom_text_bytes((*keymap_info).keymap.ctx, (*expr).ident.ident);
+                let id: &[u8] =
+                    xkb_atom_text_bytes(&raw mut (*(*keymap_info).keymap).ctx, (*expr).ident.ident);
                 if !id.is_empty() && istreq(id, b"none") {
                     *key_rtrn = std::ptr::null();
                     return true;
@@ -1731,7 +1733,7 @@ unsafe fn ExprResolveOverlayEntry(
                     return true;
                 }
                 xkb_logf!(
-                    (*keymap_info).keymap.ctx,
+                    (*(*keymap_info).keymap).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Unsupported overlay value \"{}\" for field {} in {}\n",
@@ -1739,7 +1741,7 @@ unsafe fn ExprResolveOverlayEntry(
                     crate::xkb::utils::ByteSliceDisplay(id),
                     crate::xkb::utils::ByteSliceDisplay(field),
                     crate::xkb::utils::ByteSliceDisplay(KeyNameText(
-                        (*keymap_info).keymap.ctx,
+                        &raw mut (*(*keymap_info).keymap).ctx,
                         (*keyi).name
                     )),
                 );
@@ -1747,7 +1749,7 @@ unsafe fn ExprResolveOverlayEntry(
             }
             _ => {
                 xkb_logf!(
-                    (*keymap_info).keymap.ctx,
+                    (*(*keymap_info).keymap).ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Expected {} for field \"{}\" in {}, got: {}\n",
@@ -1755,7 +1757,7 @@ unsafe fn ExprResolveOverlayEntry(
                     stmt_type_to_string(STMT_EXPR_KEYNAME_LITERAL),
                     crate::xkb::utils::ByteSliceDisplay(field),
                     crate::xkb::utils::ByteSliceDisplay(KeyNameText(
-                        (*keymap_info).keymap.ctx,
+                        &raw mut (*(*keymap_info).keymap).ctx,
                         (*keyi).name
                     )),
                     stmt_type_to_string((*expr).common.type_0),
@@ -1775,8 +1777,8 @@ unsafe fn SetSymbolsField(
     unsafe {
         let value: *mut ExprDef = *value_ptr;
         if istreq(field, b"type") {
-            let mut ndx: xkb_layout_index_t = 0 as xkb_layout_index_t;
-            let mut val: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
+            let mut ndx: u32 = 0 as u32;
+            let mut val: u32 = XKB_ATOM_NONE as u32;
             if !ExprResolveString((*info).ctx, value, &raw mut val) {
                 xkb_logf!(
                     (*info).ctx,
@@ -1810,7 +1812,7 @@ unsafe fn SetSymbolsField(
                 return false;
             } else {
                 ndx = ndx.wrapping_sub(1);
-                if ndx >= (*keyi).groups.len() as xkb_layout_index_t {
+                if ndx >= (*keyi).groups.len() as u32 {
                     resize_groups_zero(&mut (*keyi).groups, (ndx as usize).wrapping_add(1));
                 }
                 (&mut (*keyi).groups)[ndx as usize].type_0 = val;
@@ -1825,7 +1827,7 @@ unsafe fn SetSymbolsField(
             || istreq(field, b"virtualmods")
             || istreq(field, b"virtualmodifiers")
         {
-            let mut mask: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
+            let mut mask: u32 = 0 as u32;
             if !ExprResolveModMask(
                 (*info).ctx,
                 value,
@@ -2039,7 +2041,7 @@ unsafe fn SetSymbolsField(
             };
             (*keyi).defined = (*keyi).defined | KEY_FIELD_GROUPINFO as i32 as key_field;
         } else if istreq(field, b"groupsredirect") || istreq(field, b"redirectgroups") {
-            let mut grp: xkb_layout_index_t = 0 as xkb_layout_index_t;
+            let mut grp: u32 = 0 as u32;
             let mut pending: bool = false;
             if ExprResolveGroup(
                 (*info).keymap_info,
@@ -2071,10 +2073,10 @@ unsafe fn SetSymbolsField(
                     value: 0 as u32,
                 });
                 *value_ptr = std::ptr::null_mut();
-                (*keyi).out_of_range_group_number = pending_index as xkb_layout_index_t;
+                (*keyi).out_of_range_group_number = pending_index as u32;
             } else {
                 (*keyi).out_of_range_pending_group = (false) as bool;
-                (*keyi).out_of_range_group_number = grp.wrapping_sub(1 as xkb_layout_index_t);
+                (*keyi).out_of_range_group_number = grp.wrapping_sub(1 as u32);
             }
             (*keyi).out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_REDIRECT;
             (*keyi).defined = (*keyi).defined | KEY_FIELD_GROUPINFO as i32 as key_field;
@@ -2109,7 +2111,7 @@ unsafe fn SetGroupName(
             );
             return false;
         }
-        let mut group: xkb_layout_index_t = 0 as xkb_layout_index_t;
+        let mut group: u32 = 0 as u32;
         if ExprResolveGroup(
             (*info).keymap_info,
             arrayNdx,
@@ -2128,7 +2130,7 @@ unsafe fn SetGroupName(
             );
             return false;
         }
-        let mut name: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
+        let mut name: u32 = XKB_ATOM_NONE as u32;
         if !ExprResolveString((*info).ctx, value, &raw mut name) {
             xkb_logf!(
                 (*info).ctx,
@@ -2140,10 +2142,10 @@ unsafe fn SetGroupName(
             );
             return false;
         }
-        let mut group_to_use: xkb_layout_index_t = 0;
-        if (*info).explicit_group == XKB_LAYOUT_INVALID as xkb_layout_index_t {
-            group_to_use = group.wrapping_sub(1 as xkb_layout_index_t);
-        } else if group.wrapping_sub(1 as xkb_layout_index_t) == 0 as xkb_layout_index_t {
+        let mut group_to_use: u32 = 0;
+        if (*info).explicit_group == XKB_LAYOUT_INVALID as u32 {
+            group_to_use = group.wrapping_sub(1 as u32);
+        } else if group.wrapping_sub(1 as u32) == 0 as u32 {
             group_to_use = (*info).explicit_group;
         } else {
             xkb_logf!(
@@ -2158,16 +2160,16 @@ unsafe fn SetGroupName(
             );
             return false;
         }
-        if group_to_use >= (*info).group_names.len() as xkb_layout_index_t {
+        if group_to_use >= (*info).group_names.len() as u32 {
             (*info)
                 .group_names
-                .resize((group_to_use as usize).wrapping_add(1), 0 as xkb_atom_t);
+                .resize((group_to_use as usize).wrapping_add(1), 0 as u32);
         } else {
-            let old_name: xkb_atom_t = (&(*info).group_names)[group_to_use as usize];
-            if old_name != XKB_ATOM_NONE as xkb_atom_t && old_name != name {
+            let old_name: u32 = (&(*info).group_names)[group_to_use as usize];
+            if old_name != XKB_ATOM_NONE as u32 && old_name != name {
                 let replace: bool = merge as u32 != MERGE_AUGMENT as u32;
-                let use_0: xkb_atom_t = if replace as i32 != 0 { name } else { old_name };
-                let ignore: xkb_atom_t = if replace as i32 != 0 { old_name } else { name };
+                let use_0: u32 = if replace as i32 != 0 { name } else { old_name };
+                let ignore: u32 = if replace as i32 != 0 { old_name } else { name };
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
@@ -2354,15 +2356,15 @@ unsafe fn HandleSymbolsBody(
 }
 unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -> bool {
     unsafe {
-        let mut i: xkb_layout_index_t = 0;
+        let mut i: u32 = 0;
         let mut groupi: *mut GroupInfo = std::ptr::null_mut();
         let mut warn: bool = false;
-        if (*info).explicit_group == XKB_LAYOUT_INVALID as xkb_layout_index_t {
+        if (*info).explicit_group == XKB_LAYOUT_INVALID as u32 {
             return true;
         }
         if !(&(*keyi).groups).is_empty() {
-            i = 1 as xkb_layout_index_t;
-            while i < (&(*keyi).groups).len() as xkb_layout_index_t {
+            i = 1 as u32;
+            while i < (&(*keyi).groups).len() as u32 {
                 if (&(*keyi).groups)[i as usize].defined as u64 != 0 {
                     warn = true;
                     ClearGroupInfo(&mut (&mut (*keyi).groups)[i as usize] as *mut GroupInfo);
@@ -2379,7 +2381,7 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
                 "[XKB-{:03}] For the map {} the explicit group {} is specified, but key {} has more than one group defined; All groups except first one will be ignored\n",
                 XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE as i32,
                 (*info).name.as_deref().unwrap_or(""),
-                (*info).explicit_group.wrapping_add(1 as xkb_layout_index_t),
+                (*info).explicit_group.wrapping_add(1 as u32),
                 crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
             );
         }
@@ -2387,7 +2389,7 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
             &mut (*keyi).groups,
             ((*info).explicit_group as usize).wrapping_add(1),
         );
-        if (*info).explicit_group > 0 as xkb_layout_index_t {
+        if (*info).explicit_group > 0 as u32 {
             let swapped = std::ptr::read(&(&(*keyi).groups)[0]);
             std::ptr::write(
                 &mut (&mut (*keyi).groups)[(*info).explicit_group as usize],
@@ -2408,8 +2410,8 @@ unsafe fn HandleSymbolsDef(mut info: *mut SymbolsInfo, mut stmt: *mut SymbolsDef
             keyi.groups
                 .extend_from_slice(&(&(*info).default_key.groups));
         }
-        let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
-        while i < keyi.groups.len() as xkb_layout_index_t {
+        let mut i: u32 = 0 as u32;
+        while i < keyi.groups.len() as u32 {
             CopyGroupInfo(
                 &mut keyi.groups[i as usize] as *mut GroupInfo,
                 &(&(*info).default_key.groups)[i as usize] as *const GroupInfo,
@@ -2437,15 +2439,15 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
             modifier: 0,
             u: C2Rust_Unnamed_19 { keyName: 0 },
         };
-        let mut ndx: xkb_mod_index_t = 0;
+        let mut ndx: u32 = 0;
         let mut ok: bool = false;
         let mut ctx: *mut xkb_context = (*info).ctx;
         let modifier_name: &[u8] = xkb_atom_text_bytes(ctx, (*def).modifier);
         if istreq(modifier_name, b"none") {
-            ndx = XKB_MOD_NONE as xkb_mod_index_t;
+            ndx = XKB_MOD_NONE as u32;
         } else {
             ndx = XkbModNameToIndex(&raw mut (*info).mods, (*def).modifier, MOD_REAL);
-            if ndx == XKB_MOD_INVALID as xkb_mod_index_t {
+            if ndx == XKB_MOD_INVALID as u32 {
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -2468,7 +2470,7 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
                 tmp.u.keyName = (*key).key_name.key_name;
                 c2rust_current_block_19 = 5601891728916014340;
             } else if (*key).common.type_0 as u32 == STMT_EXPR_KEYSYM_LITERAL as u32 {
-                if (*key).keysym.keysym == XKB_KEY_NoSymbol as xkb_keysym_t {
+                if (*key).keysym.keysym == XKB_KEY_NoSymbol as u32 {
                     c2rust_current_block_19 = 13536709405535804910;
                 } else {
                     tmp.haveSymbol = true;
@@ -2577,20 +2579,20 @@ unsafe fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mut XkbFile) 
         }
     }
 }
-unsafe fn FindKeyForSymbol(mut keymap: *mut xkb_keymap, mut sym: xkb_keysym_t) -> *mut xkb_key {
+unsafe fn FindKeyForSymbol(mut keymap: *mut xkb_keymap, mut sym: u32) -> *mut xkb_key {
     unsafe {
         let mut got_one_group: bool = false;
-        let mut group: xkb_layout_index_t = 0 as xkb_layout_index_t;
+        let mut group: u32 = 0 as u32;
         loop {
-            let mut level: xkb_level_index_t = 0 as xkb_level_index_t;
+            let mut level: u32 = 0 as u32;
             got_one_group = false;
             let mut got_one_level: bool = false;
             loop {
                 got_one_level = false;
                 let mut key: *mut xkb_key = std::ptr::null_mut();
                 key = (*keymap).keys.offset(
-                    (if (*keymap).num_keys_low == 0 as xkb_keycode_t {
-                        0 as xkb_keycode_t
+                    (if (*keymap).num_keys_low == 0 as u32 {
+                        0 as u32
                     } else {
                         (*keymap).min_key_code
                     }) as isize,
@@ -2644,12 +2646,12 @@ unsafe fn FindKeyForSymbol(mut keymap: *mut xkb_keymap, mut sym: xkb_keysym_t) -
         return std::ptr::null_mut();
     }
 }
-unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInfo) -> xkb_atom_t {
+unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInfo) -> u32 {
     unsafe {
-        let mut sym0: xkb_keysym_t = 0;
-        let mut sym1: xkb_keysym_t = 0;
-        let width: xkb_level_index_t = (*groupi).levels.len() as xkb_level_index_t;
-        if width == 1 as xkb_level_index_t || width <= 0 as xkb_level_index_t {
+        let mut sym0: u32 = 0;
+        let mut sym1: u32 = 0;
+        let width: u32 = (*groupi).levels.len() as u32;
+        if width == 1 as u32 || width <= 0 as u32 {
             return xkb_atom_intern(
                 ctx,
                 b"ONE_LEVEL\0".as_ptr() as *const i8,
@@ -2658,7 +2660,7 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
         }
         sym0 = if (*(*groupi).levels.as_ptr().offset(0 as i32 as isize)).num_syms as i32 == 0 as i32
         {
-            XKB_KEY_NoSymbol as xkb_keysym_t
+            XKB_KEY_NoSymbol as u32
         } else if (*(*groupi).levels.as_ptr().offset(0 as i32 as isize)).num_syms as i32 == 1 as i32
         {
             (*(*groupi).levels.as_ptr().offset(0 as i32 as isize)).s.sym
@@ -2670,7 +2672,7 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
         };
         sym1 = if (*(*groupi).levels.as_ptr().offset(1 as i32 as isize)).num_syms as i32 == 0 as i32
         {
-            XKB_KEY_NoSymbol as xkb_keysym_t
+            XKB_KEY_NoSymbol as u32
         } else if (*(*groupi).levels.as_ptr().offset(1 as i32 as isize)).num_syms as i32 == 1 as i32
         {
             (*(*groupi).levels.as_ptr().offset(1 as i32 as isize)).s.sym
@@ -2680,7 +2682,7 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
                 .syms
                 .offset(0 as i32 as isize)
         };
-        if width == 2 as xkb_level_index_t {
+        if width == 2 as u32 {
             if xkb_keysym_is_lower(sym0) as i32 != 0
                 && xkb_keysym_is_upper_or_title(sym1) as i32 != 0
             {
@@ -2703,16 +2705,16 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
                 (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
             );
         }
-        if width <= 4 as xkb_level_index_t {
+        if width <= 4 as u32 {
             if xkb_keysym_is_lower(sym0) as i32 != 0
                 && xkb_keysym_is_upper_or_title(sym1) as i32 != 0
             {
-                let mut sym2: xkb_keysym_t = 0;
-                let mut sym3: xkb_keysym_t = 0;
+                let mut sym2: u32 = 0;
+                let mut sym3: u32 = 0;
                 sym2 = if (*(*groupi).levels.as_ptr().offset(2 as i32 as isize)).num_syms as i32
                     == 0 as i32
                 {
-                    XKB_KEY_NoSymbol as xkb_keysym_t
+                    XKB_KEY_NoSymbol as u32
                 } else if (*(*groupi).levels.as_ptr().offset(2 as i32 as isize)).num_syms as i32
                     == 1 as i32
                 {
@@ -2723,11 +2725,11 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
                         .syms
                         .offset(0 as i32 as isize)
                 };
-                sym3 = if width == 4 as xkb_level_index_t {
+                sym3 = if width == 4 as u32 {
                     if (*(*groupi).levels.as_ptr().offset(3 as i32 as isize)).num_syms as i32
                         == 0 as i32
                     {
-                        XKB_KEY_NoSymbol as xkb_keysym_t
+                        XKB_KEY_NoSymbol as u32
                     } else if (*(*groupi).levels.as_ptr().offset(3 as i32 as isize)).num_syms as i32
                         == 1 as i32
                     {
@@ -2739,7 +2741,7 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
                             .offset(0 as i32 as isize)
                     }
                 } else {
-                    XKB_KEY_NoSymbol as xkb_keysym_t
+                    XKB_KEY_NoSymbol as u32
                 };
                 if xkb_keysym_is_lower(sym2) as i32 != 0
                     && xkb_keysym_is_upper_or_title(sym3) as i32 != 0
@@ -2769,40 +2771,40 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
                 (std::mem::size_of::<[i8; 11]>()).wrapping_sub(1 as usize),
             );
         }
-        return XKB_ATOM_NONE as xkb_atom_t;
+        return XKB_ATOM_NONE as u32;
     }
 }
 unsafe fn FindTypeForGroup(
     mut keymap: *mut xkb_keymap,
     mut keyi: *mut KeyInfo,
-    mut group: xkb_layout_index_t,
+    mut group: u32,
     mut explicit_type: *mut bool,
 ) -> *const xkb_key_type {
     unsafe {
         let mut i: u32 = 0;
         let mut groupi: *mut GroupInfo =
             &mut (&mut (*keyi).groups)[group as usize] as *mut GroupInfo;
-        let mut type_name: xkb_atom_t = (*groupi).type_0;
+        let mut type_name: u32 = (*groupi).type_0;
         *explicit_type = true;
-        if type_name == XKB_ATOM_NONE as xkb_atom_t {
-            if (*keyi).default_type != XKB_ATOM_NONE as xkb_atom_t {
+        if type_name == XKB_ATOM_NONE as u32 {
+            if (*keyi).default_type != XKB_ATOM_NONE as u32 {
                 type_name = (*keyi).default_type;
             } else {
-                type_name = FindAutomaticType((*keymap).ctx, groupi);
-                if type_name != XKB_ATOM_NONE as xkb_atom_t {
+                type_name = FindAutomaticType(&raw mut (*keymap).ctx, groupi);
+                if type_name != XKB_ATOM_NONE as u32 {
                     *explicit_type = false;
                 }
             }
         }
-        if type_name == XKB_ATOM_NONE as xkb_atom_t {
+        if type_name == XKB_ATOM_NONE as u32 {
             xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Couldn't find an automatic type for key '{}' group {} with {} levels; Using the default type\n",
                 XKB_WARNING_CANNOT_INFER_KEY_TYPE as i32,
-                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx, (*keyi).name)),
-                group.wrapping_add(1 as xkb_layout_index_t),
+                crate::xkb::utils::ByteSliceDisplay(KeyNameText(&raw mut (*keymap).ctx, (*keyi).name)),
+                group.wrapping_add(1 as u32),
                 (*groupi).levels.len(),
             );
         } else {
@@ -2821,9 +2823,9 @@ unsafe fn FindTypeForGroup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] The type \"{}\" for key '{}' group {} was not previously defined; Using the default type\n",
                     XKB_WARNING_UNDEFINED_KEY_TYPE as i32,
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*keymap).ctx, type_name)),
-                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx, (*keyi).name)),
-                    group.wrapping_add(1 as xkb_layout_index_t),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&raw mut (*keymap).ctx, type_name)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyNameText(&raw mut (*keymap).ctx, (*keyi).name)),
+                    group.wrapping_add(1 as u32),
                 );
             } else {
                 (*(*keymap).types.offset(i as isize)).required = true;
@@ -2842,7 +2844,7 @@ unsafe fn CopySymbolsDefToKeymap(
     unsafe {
         let mut key: *mut xkb_key = std::ptr::null_mut();
         let mut groupi: *mut GroupInfo = std::ptr::null_mut();
-        let mut i: xkb_layout_index_t = 0;
+        let mut i: u32 = 0;
 
         // The name is guaranteed to be real and not an alias, so 'false' is safe here
         key = XkbKeyByName(keymap, (*keyi).name, false);
@@ -2863,7 +2865,7 @@ unsafe fn CopySymbolsDefToKeymap(
         if !(*keyi).groups.is_empty() {
             i = 0;
             groupi = (*keyi).groups.as_mut_ptr();
-            while i < (*keyi).groups.len() as xkb_layout_index_t {
+            while i < (*keyi).groups.len() as u32 {
                 // Skip groups that have no levels and no explicit type
                 let has_explicit_type = ((*keyi).defined as i32 & KEY_FIELD_DEFAULT_TYPE as i32
                     != 0)
@@ -2898,7 +2900,7 @@ unsafe fn CopySymbolsDefToKeymap(
                 let groups_ptr = (*keyi).groups.as_mut_ptr();
                 let groups_len = (*keyi).groups.len();
                 i = 1;
-                while i < groups_len as xkb_layout_index_t {
+                while i < groups_len as u32 {
                     if (*groups_ptr.add(i as usize)).defined == 0 {
                         CopyGroupInfo(groups_ptr.add(i as usize), groups_ptr as *const GroupInfo);
                     }
@@ -2913,7 +2915,7 @@ unsafe fn CopySymbolsDefToKeymap(
             if !(*keyi).groups.is_empty() {
                 i = 0;
                 groupi = (*keyi).groups.as_mut_ptr();
-                while i < (*keyi).groups.len() as xkb_layout_index_t {
+                while i < (*keyi).groups.len() as u32 {
                     let mut explicit_type = false;
                     let type_0: *const xkb_key_type =
                         FindTypeForGroup(keymap, keyi, i, &raw mut explicit_type);
@@ -2926,7 +2928,7 @@ unsafe fn CopySymbolsDefToKeymap(
                             XKB_LOG_VERBOSITY_BRIEF as i32,
                             "[XKB-{:03}] Type \"{}\" has {} levels, but {} has {} levels; Ignoring extra symbols\n",
                             XKB_WARNING_EXTRA_SYMBOLS_IGNORED as i32,
-                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*keymap).ctx, (*type_0).name)),
+                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&raw mut (*keymap).ctx, (*type_0).name)),
                             (*type_0).num_levels,
                             crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                             (*groupi).levels.len(),
@@ -2953,7 +2955,7 @@ unsafe fn CopySymbolsDefToKeymap(
             if !(*keyi).groups.is_empty() {
                 i = 0;
                 groupi = (*keyi).groups.as_mut_ptr();
-                while i < (*keyi).groups.len() as xkb_layout_index_t {
+                while i < (*keyi).groups.len() as u32 {
                     // Compute the capitalization transformation of the keysyms
                     let mut leveli: *mut xkb_level = std::ptr::null_mut();
                     if !(*groupi).levels.is_empty() {
@@ -2961,8 +2963,7 @@ unsafe fn CopySymbolsDefToKeymap(
                         while leveli < (*groupi).levels.as_mut_ptr().add((*groupi).levels.len()) {
                             match (*leveli).num_syms {
                                 0 => {
-                                    (*leveli).c2rust_unnamed.upper =
-                                        XKB_KEY_NoSymbol as xkb_keysym_t;
+                                    (*leveli).c2rust_unnamed.upper = XKB_KEY_NoSymbol as u32;
                                 }
                                 1 => {
                                     (*leveli).c2rust_unnamed.upper =
@@ -2973,7 +2974,7 @@ unsafe fn CopySymbolsDefToKeymap(
                                     (*leveli).c2rust_unnamed.has_upper = false;
                                     let mut k: xkb_keysym_count_t = 0;
                                     while k < (*leveli).num_syms {
-                                        let upper: xkb_keysym_t = xkb_keysym_to_upper(
+                                        let upper: u32 = xkb_keysym_to_upper(
                                             *(*leveli).s.syms.offset(k as isize),
                                         );
                                         if upper != *(*leveli).s.syms.offset(k as isize) {
@@ -2987,9 +2988,9 @@ unsafe fn CopySymbolsDefToKeymap(
                                         (*leveli).s.syms = realloc(
                                             (*leveli).s.syms as *mut ::core::ffi::c_void,
                                             (2 * (*leveli).num_syms as usize)
-                                                .wrapping_mul(std::mem::size_of::<xkb_keysym_t>()),
+                                                .wrapping_mul(std::mem::size_of::<u32>()),
                                         )
-                                            as *mut xkb_keysym_t;
+                                            as *mut u32;
                                         if (*leveli).s.syms.is_null() {
                                             return false;
                                         }
@@ -3141,9 +3142,8 @@ unsafe fn CopyModMapDefToKeymap(
                 return false;
             }
         }
-        if (*entry).modifier != XKB_MOD_NONE as xkb_mod_index_t {
-            (*key).modmap =
-                ((*key).modmap as u32 | (1 as u32) << (*entry).modifier) as xkb_mod_mask_t;
+        if (*entry).modifier != XKB_MOD_NONE as u32 {
+            (*key).modmap = ((*key).modmap as u32 | (1 as u32) << (*entry).modifier) as u32;
         }
         return true;
     }
@@ -3159,7 +3159,7 @@ unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Symbol
         };
         XkbEscapeMapName((*keymap).symbols_section_name);
         (*keymap).mods = (*info).mods;
-        (*keymap).num_group_names = (*info).group_names.len() as xkb_layout_index_t;
+        (*keymap).num_group_names = (*info).group_names.len() as u32;
         // Steal the group_names Vec's buffer
         let mut gn = std::mem::take(&mut (*info).group_names);
         if gn.is_empty() {
@@ -3174,17 +3174,17 @@ unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Symbol
                 (*info).errorCount += 1;
             }
         }
-        if xkb_context_get_log_verbosity((*keymap).ctx) > 3 as i32 {
+        if xkb_context_get_log_verbosity(&raw mut (*keymap).ctx) > 3 as i32 {
             let mut key: *mut xkb_key = std::ptr::null_mut();
             key = (*keymap).keys.offset(
-                (if (*keymap).num_keys_low == 0 as xkb_keycode_t {
-                    0 as xkb_keycode_t
+                (if (*keymap).num_keys_low == 0 as u32 {
+                    0 as u32
                 } else {
                     (*keymap).min_key_code
                 }) as isize,
             );
             while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
-                if !((*key).name == XKB_ATOM_NONE as xkb_atom_t) {
+                if !((*key).name == XKB_ATOM_NONE as u32) {
                     if ((*key).num_groups as i32) < 1 as i32 {
                         xkb_logf!(
                             (*info).ctx,
@@ -3219,13 +3219,13 @@ pub unsafe fn CompileSymbols(
             &raw mut info,
             keymap_info,
             0 as u32,
-            &raw mut (*keymap_info).keymap.mods,
+            &raw mut (*(*keymap_info).keymap).mods,
         );
         if !file.is_null() {
             HandleSymbolsFile(&raw mut info, file);
         }
         if !(info.errorCount != 0 as i32) {
-            if CopySymbolsToKeymap(&raw mut (*keymap_info).keymap, &raw mut info) {
+            if CopySymbolsToKeymap((*keymap_info).keymap, &raw mut info) {
                 ClearSymbolsInfo(&raw mut info);
                 return true;
             }

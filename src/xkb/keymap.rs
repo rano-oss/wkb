@@ -56,27 +56,27 @@ pub use crate::xkb::rmlvo::{
     xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_option,
 };
 pub use crate::xkb::shared_types::{
-    entry_is_active, mod_type, xkb_action, xkb_action_controls, xkb_action_count_t,
-    xkb_action_flags, xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group,
-    xkb_group_action, xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias,
-    xkb_key_type, xkb_key_type_entry, xkb_keymap, xkb_keymap_format_ops, xkb_keysym_count_t,
-    xkb_led, xkb_level, xkb_match_operation, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods,
-    xkb_overlay_mask_t, xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action,
-    xkb_private_action, xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret,
-    C2Rust_Unnamed_1, C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2,
-    C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7,
-    C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbKey, XkbKeyNumLevels,
-    _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y,
-    ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR,
-    ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
-    ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
-    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
-    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
-    ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK,
-    ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE,
-    ACTION_TYPE_UNKNOWN, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS,
-    CONTROL_ALL, CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX,
-    CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    entry_is_active, xkb_action, xkb_action_controls, xkb_action_flags, xkb_action_type,
+    xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
+    xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type, xkb_key_type_entry,
+    xkb_keymap, xkb_keymap_format_ops, xkb_keysym_count_t, xkb_led, xkb_level, xkb_mod,
+    xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_mask_t, xkb_pointer_action,
+    xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
+    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_10,
+    C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4,
+    C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9,
+    KeycodeMatch, XkbKey, XkbKeyNumLevels, _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH,
+    ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS,
+    ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK,
+    ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION,
+    ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
+    ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
+    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
+    ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
+    ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
+    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
+    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
+    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
     CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
     CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
     CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
@@ -137,18 +137,18 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
         if !(*keymap).keys.is_null() {
             let mut key: *mut xkb_key = std::ptr::null_mut();
             key = (*keymap).keys.offset(
-                (if (*keymap).num_keys_low == 0 as xkb_keycode_t {
-                    0 as xkb_keycode_t
+                (if (*keymap).num_keys_low == 0 as u32 {
+                    0 as u32
                 } else {
                     (*keymap).min_key_code
                 }) as isize,
             );
             while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
                 if !(*key).groups.is_null() {
-                    let mut i: xkb_layout_index_t = 0 as xkb_layout_index_t;
+                    let mut i: u32 = 0 as u32;
                     while i < (*key).num_groups {
                         if !(*(*key).groups.offset(i as isize)).levels.is_null() {
-                            let mut j: xkb_level_index_t = 0 as xkb_level_index_t;
+                            let mut j: u32 = 0 as u32;
                             while j < XkbKeyNumLevels(key, i) {
                                 clear_level(
                                     (*(*key).groups.offset(i as isize))
@@ -189,9 +189,7 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
         while k < (*keymap).num_sym_interprets {
             // clear_interpret inlined
             let interp = (*keymap).sym_interprets.offset(k as isize) as *mut xkb_sym_interpret;
-            if (*interp).num_actions as i32 > 1 as i32 {
-                free((*interp).a.actions as *mut ::core::ffi::c_void);
-            }
+            (*interp).actions.clear();
             k = k.wrapping_add(1);
         }
         free((*keymap).sym_interprets as *mut ::core::ffi::c_void);
@@ -201,12 +199,15 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
         cstr_free((*keymap).symbols_section_name);
         cstr_free((*keymap).types_section_name);
         cstr_free((*keymap).compat_section_name);
-        xkb_context_unref((*keymap).ctx);
-        drop(Box::from_raw(keymap));
+        // Drop the owned ctx field (contains Vecs, HashMap — needs proper cleanup)
+        std::ptr::drop_in_place(&raw mut (*keymap).ctx);
+        // Free the keymap allocation (was allocated with alloc_zeroed)
+        let layout = std::alloc::Layout::new::<xkb_keymap>();
+        std::alloc::dealloc(keymap as *mut u8, layout);
     }
 }
 #[c2rust::src_loc = "99:1"]
-unsafe fn get_keymap_format_ops(mut format: xkb_keymap_format) -> *const xkb_keymap_format_ops {
+unsafe fn get_keymap_format_ops(mut format: u32) -> *const xkb_keymap_format_ops {
     unsafe {
         static mut keymap_format_ops: [*const xkb_keymap_format_ops; 3] =
             [std::ptr::null(), std::ptr::null(), std::ptr::null()];
@@ -231,8 +232,8 @@ unsafe fn get_keymap_format_ops(mut format: xkb_keymap_format) -> *const xkb_key
 #[c2rust::src_loc = "113:1"]
 pub unsafe fn xkb_keymap_new_from_rmlvo(
     mut rmlvo: *const xkb_rmlvo_builder,
-    mut format: xkb_keymap_format,
-    mut flags: xkb_keymap_compile_flags,
+    mut format: u32,
+    mut flags: u32,
 ) -> *mut xkb_keymap {
     unsafe {
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
@@ -270,8 +271,8 @@ pub unsafe fn xkb_keymap_new_from_rmlvo(
 pub unsafe fn xkb_keymap_new_from_names2(
     mut ctx: *mut xkb_context,
     mut rmlvo_in: *const xkb_rule_names,
-    mut format: xkb_keymap_format,
-    mut flags: xkb_keymap_compile_flags,
+    mut format: u32,
+    mut flags: u32,
 ) -> *mut xkb_keymap {
     unsafe {
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
@@ -322,7 +323,7 @@ pub unsafe fn xkb_keymap_new_from_names2(
 pub unsafe fn xkb_keymap_new_from_names(
     mut ctx: *mut xkb_context,
     mut rmlvo_in: *const xkb_rule_names,
-    mut flags: xkb_keymap_compile_flags,
+    mut flags: u32,
 ) -> *mut xkb_keymap {
     unsafe {
         return xkb_keymap_new_from_names2(ctx, rmlvo_in, XKB_KEYMAP_FORMAT_TEXT_V2, flags);
@@ -332,8 +333,8 @@ pub unsafe fn xkb_keymap_new_from_names(
 pub unsafe fn xkb_keymap_new_from_string(
     mut ctx: *mut xkb_context,
     mut string: *const i8,
-    mut format: xkb_keymap_format,
-    mut flags: xkb_keymap_compile_flags,
+    mut format: u32,
+    mut flags: u32,
 ) -> *mut xkb_keymap {
     unsafe {
         return xkb_keymap_new_from_buffer(ctx, string, cstr_len(string), format, flags);
@@ -344,8 +345,8 @@ pub unsafe fn xkb_keymap_new_from_buffer(
     mut ctx: *mut xkb_context,
     mut buffer: *const i8,
     mut length: usize,
-    mut format: xkb_keymap_format,
-    mut flags: xkb_keymap_compile_flags,
+    mut format: u32,
+    mut flags: u32,
 ) -> *mut xkb_keymap {
     unsafe {
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
@@ -402,8 +403,8 @@ pub unsafe fn xkb_keymap_new_from_buffer(
 pub unsafe fn xkb_keymap_new_from_file(
     mut ctx: *mut xkb_context,
     mut file: *mut FILE,
-    mut format: xkb_keymap_format,
-    mut flags: xkb_keymap_compile_flags,
+    mut format: u32,
+    mut flags: u32,
 ) -> *mut xkb_keymap {
     unsafe {
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
@@ -450,7 +451,7 @@ pub unsafe fn xkb_keymap_new_from_file(
 #[c2rust::src_loc = "254:1"]
 pub unsafe fn xkb_keymap_get_as_string2(
     mut keymap: *mut xkb_keymap,
-    mut format: xkb_keymap_format,
+    mut format: u32,
     mut flags: xkb_keymap_serialize_flags,
 ) -> *mut i8 {
     unsafe {
@@ -489,108 +490,93 @@ pub unsafe fn xkb_keymap_get_as_string2(
     }
 }
 #[c2rust::src_loc = "283:1"]
-pub unsafe fn xkb_keymap_get_as_string(
-    mut keymap: *mut xkb_keymap,
-    mut format: xkb_keymap_format,
-) -> *mut i8 {
+pub unsafe fn xkb_keymap_get_as_string(mut keymap: *mut xkb_keymap, mut format: u32) -> *mut i8 {
     unsafe {
         return xkb_keymap_get_as_string2(keymap, format, XKB_KEYMAP_SERIALIZE_NO_FLAGS);
     }
 }
 #[c2rust::src_loc = "294:1"]
-pub unsafe fn xkb_keymap_num_mods(mut keymap: *mut xkb_keymap) -> xkb_mod_index_t {
+pub unsafe fn xkb_keymap_num_mods(mut keymap: *mut xkb_keymap) -> u32 {
     unsafe {
         return (*keymap).mods.num_mods;
     }
 }
 #[c2rust::src_loc = "303:1"]
-pub unsafe fn xkb_keymap_mod_get_name(
-    mut keymap: *mut xkb_keymap,
-    mut idx: xkb_mod_index_t,
-) -> *const i8 {
+pub unsafe fn xkb_keymap_mod_get_name(mut keymap: *mut xkb_keymap, mut idx: u32) -> *const i8 {
     unsafe {
         if idx >= (*keymap).mods.num_mods {
             return std::ptr::null();
         }
-        return xkb_atom_text((*keymap).ctx, (*keymap).mods.mods[idx as usize].name);
+        return xkb_atom_text(
+            &raw mut (*keymap).ctx,
+            (*keymap).mods.mods[idx as usize].name,
+        );
     }
 }
 #[c2rust::src_loc = "315:1"]
-pub unsafe fn xkb_keymap_mod_get_index(
-    mut keymap: *mut xkb_keymap,
-    mut name: *const i8,
-) -> xkb_mod_index_t {
+pub unsafe fn xkb_keymap_mod_get_index(mut keymap: *mut xkb_keymap, mut name: *const i8) -> u32 {
     unsafe {
-        let atom: xkb_atom_t = xkb_atom_lookup((*keymap).ctx, name) as xkb_atom_t;
-        return if atom == XKB_ATOM_NONE as xkb_atom_t {
-            XKB_MOD_INVALID as xkb_mod_index_t
+        let atom: u32 = xkb_atom_lookup(&raw mut (*keymap).ctx, name) as u32;
+        return if atom == XKB_ATOM_NONE as u32 {
+            XKB_MOD_INVALID as u32
         } else {
             XkbModNameToIndex(&raw mut (*keymap).mods, atom, MOD_BOTH)
         };
     }
 }
 #[c2rust::src_loc = "327:1"]
-pub unsafe fn xkb_keymap_mod_get_mask(
-    mut keymap: *mut xkb_keymap,
-    mut name: *const i8,
-) -> xkb_mod_mask_t {
+pub unsafe fn xkb_keymap_mod_get_mask(mut keymap: *mut xkb_keymap, mut name: *const i8) -> u32 {
     unsafe {
-        let idx: xkb_mod_index_t = xkb_keymap_mod_get_index(keymap, name) as xkb_mod_index_t;
+        let idx: u32 = xkb_keymap_mod_get_index(keymap, name) as u32;
         return if idx >= (*keymap).mods.num_mods {
-            0 as xkb_mod_mask_t
+            0 as u32
         } else {
             (*keymap).mods.mods[idx as usize].mapping
         };
     }
 }
 #[c2rust::src_loc = "350:1"]
-pub unsafe fn xkb_keymap_num_layouts(mut keymap: *mut xkb_keymap) -> xkb_layout_index_t {
+pub unsafe fn xkb_keymap_num_layouts(mut keymap: *mut xkb_keymap) -> u32 {
     unsafe {
         return (*keymap).num_groups;
     }
 }
 #[c2rust::src_loc = "359:1"]
-pub unsafe fn xkb_keymap_layout_get_name(
-    mut keymap: *mut xkb_keymap,
-    mut idx: xkb_layout_index_t,
-) -> *const i8 {
+pub unsafe fn xkb_keymap_layout_get_name(mut keymap: *mut xkb_keymap, mut idx: u32) -> *const i8 {
     unsafe {
         if idx >= (*keymap).num_group_names {
             return std::ptr::null();
         }
-        return xkb_atom_text((*keymap).ctx, *(*keymap).group_names.offset(idx as isize));
+        return xkb_atom_text(
+            &raw mut (*keymap).ctx,
+            *(*keymap).group_names.offset(idx as isize),
+        );
     }
 }
 #[c2rust::src_loc = "371:1"]
-pub unsafe fn xkb_keymap_layout_get_index(
-    mut keymap: *mut xkb_keymap,
-    mut name: *const i8,
-) -> xkb_layout_index_t {
+pub unsafe fn xkb_keymap_layout_get_index(mut keymap: *mut xkb_keymap, mut name: *const i8) -> u32 {
     unsafe {
-        let mut atom: xkb_atom_t = xkb_atom_lookup((*keymap).ctx, name);
-        let mut i: xkb_layout_index_t = 0;
-        if atom == XKB_ATOM_NONE as xkb_atom_t {
-            return XKB_LAYOUT_INVALID as xkb_layout_index_t;
+        let mut atom: u32 = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
+        let mut i: u32 = 0;
+        if atom == XKB_ATOM_NONE as u32 {
+            return XKB_LAYOUT_INVALID as u32;
         }
-        i = 0 as xkb_layout_index_t;
+        i = 0 as u32;
         while i < (*keymap).num_group_names {
             if *(*keymap).group_names.offset(i as isize) == atom {
                 return i;
             }
             i = i.wrapping_add(1);
         }
-        return XKB_LAYOUT_INVALID as xkb_layout_index_t;
+        return XKB_LAYOUT_INVALID as u32;
     }
 }
 #[c2rust::src_loc = "390:1"]
-pub unsafe fn xkb_keymap_num_layouts_for_key(
-    mut keymap: *mut xkb_keymap,
-    mut kc: xkb_keycode_t,
-) -> xkb_layout_index_t {
+pub unsafe fn xkb_keymap_num_layouts_for_key(mut keymap: *mut xkb_keymap, mut kc: u32) -> u32 {
     unsafe {
         let mut key: *const xkb_key = XkbKey(keymap, kc);
         if key.is_null() {
-            return 0 as xkb_layout_index_t;
+            return 0 as u32;
         }
         return (*key).num_groups;
     }
@@ -598,13 +584,13 @@ pub unsafe fn xkb_keymap_num_layouts_for_key(
 #[c2rust::src_loc = "404:1"]
 pub unsafe fn xkb_keymap_num_levels_for_key(
     mut keymap: *mut xkb_keymap,
-    mut kc: xkb_keycode_t,
-    mut layout: xkb_layout_index_t,
-) -> xkb_level_index_t {
+    mut kc: u32,
+    mut layout: u32,
+) -> u32 {
     unsafe {
         let mut key: *const xkb_key = XkbKey(keymap, kc);
         if key.is_null() {
-            return 0 as xkb_level_index_t;
+            return 0 as u32;
         }
         layout = XkbWrapGroupIntoRange(
             layout as i32,
@@ -612,43 +598,37 @@ pub unsafe fn xkb_keymap_num_levels_for_key(
             (*key).out_of_range_group_policy,
             (*key).out_of_range_group_number,
         );
-        if layout == XKB_LAYOUT_INVALID as xkb_layout_index_t {
-            return 0 as xkb_level_index_t;
+        if layout == XKB_LAYOUT_INVALID as u32 {
+            return 0 as u32;
         }
         return XkbKeyNumLevels(key, layout);
     }
 }
 #[c2rust::src_loc = "426:1"]
-pub unsafe fn xkb_keymap_num_leds(mut keymap: *mut xkb_keymap) -> xkb_led_index_t {
+pub unsafe fn xkb_keymap_num_leds(mut keymap: *mut xkb_keymap) -> u32 {
     unsafe {
         return (*keymap).num_leds;
     }
 }
 #[c2rust::src_loc = "435:1"]
-pub unsafe fn xkb_keymap_led_get_name(
-    mut keymap: *mut xkb_keymap,
-    mut idx: xkb_led_index_t,
-) -> *const i8 {
+pub unsafe fn xkb_keymap_led_get_name(mut keymap: *mut xkb_keymap, mut idx: u32) -> *const i8 {
     unsafe {
         if idx >= (*keymap).num_leds {
             return std::ptr::null();
         }
-        return xkb_atom_text((*keymap).ctx, (*keymap).leds[idx as usize].name);
+        return xkb_atom_text(&raw mut (*keymap).ctx, (*keymap).leds[idx as usize].name);
     }
 }
 #[c2rust::src_loc = "447:1"]
-pub unsafe fn xkb_keymap_led_get_index(
-    mut keymap: *mut xkb_keymap,
-    mut name: *const i8,
-) -> xkb_led_index_t {
+pub unsafe fn xkb_keymap_led_get_index(mut keymap: *mut xkb_keymap, mut name: *const i8) -> u32 {
     unsafe {
-        let mut atom: xkb_atom_t = xkb_atom_lookup((*keymap).ctx, name);
-        let mut i: xkb_led_index_t = 0;
+        let mut atom: u32 = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
+        let mut i: u32 = 0;
         let mut led: *const xkb_led = std::ptr::null();
-        if atom == XKB_ATOM_NONE as xkb_atom_t {
-            return XKB_LED_INVALID as xkb_led_index_t;
+        if atom == XKB_ATOM_NONE as u32 {
+            return XKB_LED_INVALID as u32;
         }
-        i = 0 as xkb_led_index_t;
+        i = 0 as u32;
         led = &raw mut (*keymap).leds as *mut xkb_led;
         while i < (*keymap).num_leds {
             if (*led).name == atom {
@@ -657,15 +637,15 @@ pub unsafe fn xkb_keymap_led_get_index(
             i = i.wrapping_add(1);
             led = led.offset(1);
         }
-        return XKB_LED_INVALID as xkb_led_index_t;
+        return XKB_LED_INVALID as u32;
     }
 }
 #[c2rust::src_loc = "525:1"]
 pub unsafe fn xkb_keymap_key_get_level(
     mut keymap: *mut xkb_keymap,
     mut key: *const xkb_key,
-    mut layout: xkb_layout_index_t,
-    mut level: xkb_level_index_t,
+    mut layout: u32,
+    mut level: u32,
 ) -> *mut xkb_level {
     unsafe {
         layout = XkbWrapGroupIntoRange(
@@ -674,7 +654,7 @@ pub unsafe fn xkb_keymap_key_get_level(
             (*key).out_of_range_group_policy,
             (*key).out_of_range_group_number,
         );
-        if layout == XKB_LAYOUT_INVALID as xkb_layout_index_t {
+        if layout == XKB_LAYOUT_INVALID as u32 {
             return std::ptr::null_mut();
         }
         if level >= XkbKeyNumLevels(key, layout) {
@@ -688,10 +668,10 @@ pub unsafe fn xkb_keymap_key_get_level(
 #[c2rust::src_loc = "545:1"]
 pub unsafe fn xkb_keymap_key_get_syms_by_level(
     mut keymap: *mut xkb_keymap,
-    mut kc: xkb_keycode_t,
-    mut layout: xkb_layout_index_t,
-    mut level: xkb_level_index_t,
-    mut syms_out: *mut *const xkb_keysym_t,
+    mut kc: u32,
+    mut layout: u32,
+    mut level: u32,
+    mut syms_out: *mut *const u32,
 ) -> i32 {
     unsafe {
         let mut leveli: *const xkb_level = std::ptr::null();
@@ -716,39 +696,33 @@ pub unsafe fn xkb_keymap_key_get_syms_by_level(
     }
 }
 #[c2rust::src_loc = "579:1"]
-pub unsafe fn xkb_keymap_min_keycode(mut keymap: *mut xkb_keymap) -> xkb_keycode_t {
+pub unsafe fn xkb_keymap_min_keycode(mut keymap: *mut xkb_keymap) -> u32 {
     unsafe {
         return (*keymap).min_key_code;
     }
 }
 #[c2rust::src_loc = "585:1"]
-pub unsafe fn xkb_keymap_max_keycode(mut keymap: *mut xkb_keymap) -> xkb_keycode_t {
+pub unsafe fn xkb_keymap_max_keycode(mut keymap: *mut xkb_keymap) -> u32 {
     unsafe {
         return (*keymap).max_key_code;
     }
 }
 #[c2rust::src_loc = "696:1"]
-pub unsafe fn xkb_keymap_key_get_name(
-    mut keymap: *mut xkb_keymap,
-    mut kc: xkb_keycode_t,
-) -> *const i8 {
+pub unsafe fn xkb_keymap_key_get_name(mut keymap: *mut xkb_keymap, mut kc: u32) -> *const i8 {
     unsafe {
         let mut key: *const xkb_key = XkbKey(keymap, kc);
         if key.is_null() {
             return std::ptr::null();
         }
-        return xkb_atom_text((*keymap).ctx, (*key).name);
+        return xkb_atom_text(&raw mut (*keymap).ctx, (*key).name);
     }
 }
 #[c2rust::src_loc = "707:1"]
-pub unsafe fn xkb_keymap_key_by_name(
-    mut keymap: *mut xkb_keymap,
-    mut name: *const i8,
-) -> xkb_keycode_t {
+pub unsafe fn xkb_keymap_key_by_name(mut keymap: *mut xkb_keymap, mut name: *const i8) -> u32 {
     unsafe {
         let mut key: *mut xkb_key = std::ptr::null_mut();
-        let mut atom: xkb_atom_t = 0;
-        atom = xkb_atom_lookup((*keymap).ctx, name);
+        let mut atom: u32 = 0;
+        atom = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
         if atom != 0 {
             let mut i: u32 = 0 as u32;
             while i < (*keymap).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases {
@@ -771,11 +745,11 @@ pub unsafe fn xkb_keymap_key_by_name(
             }
         }
         if atom == 0 {
-            return XKB_KEYCODE_INVALID as xkb_keycode_t;
+            return XKB_KEYCODE_INVALID as u32;
         }
         key = (*keymap).keys.offset(
-            (if (*keymap).num_keys_low == 0 as xkb_keycode_t {
-                0 as xkb_keycode_t
+            (if (*keymap).num_keys_low == 0 as u32 {
+                0 as u32
             } else {
                 (*keymap).min_key_code
             }) as isize,
@@ -786,11 +760,11 @@ pub unsafe fn xkb_keymap_key_by_name(
             }
             key = key.offset(1);
         }
-        return XKB_KEYCODE_INVALID as xkb_keycode_t;
+        return XKB_KEYCODE_INVALID as u32;
     }
 }
 #[c2rust::src_loc = "733:1"]
-pub unsafe fn xkb_keymap_key_repeats(mut keymap: *mut xkb_keymap, mut kc: xkb_keycode_t) -> i32 {
+pub unsafe fn xkb_keymap_key_repeats(mut keymap: *mut xkb_keymap, mut kc: u32) -> i32 {
     unsafe {
         let mut key: *const xkb_key = XkbKey(keymap, kc);
         if key.is_null() {
@@ -833,34 +807,33 @@ unsafe fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
             XKB_MOD_NAME_MOD4.as_ptr(),
             XKB_MOD_NAME_MOD5.as_ptr(),
         ];
-        let mut i: xkb_mod_index_t = 0 as xkb_mod_index_t;
+        let mut i: u32 = 0 as u32;
         while (i as usize)
             < (std::mem::size_of::<[*const i8; 8]>()).wrapping_div(std::mem::size_of::<*const i8>())
         {
             (*keymap).mods.mods[i as usize].name = xkb_atom_intern(
-                (*keymap).ctx,
+                &raw mut (*keymap).ctx,
                 builtin_mods[i as usize],
                 cstr_len(builtin_mods[i as usize]),
             );
             (*keymap).mods.mods[i as usize].type_0 = MOD_REAL;
-            (*keymap).mods.mods[i as usize].mapping = ((1 as u32) << i) as xkb_mod_mask_t;
+            (*keymap).mods.mods[i as usize].mapping = ((1 as u32) << i) as u32;
             i = i.wrapping_add(1);
         }
         (*keymap).mods.num_mods = (std::mem::size_of::<[*const i8; 8]>())
             .wrapping_div(std::mem::size_of::<*const i8>())
-            as xkb_mod_index_t;
+            as u32;
         (*keymap).canonical_state_mask = MOD_REAL_MASK_ALL;
     }
 }
 pub unsafe fn xkb_keymap_new(
     mut ctx: *mut xkb_context,
     mut func: *const i8,
-    mut format: xkb_keymap_format,
-    mut flags: xkb_keymap_compile_flags,
+    mut format: u32,
+    mut flags: u32,
 ) -> *mut xkb_keymap {
     unsafe {
-        static mut XKB_KEYMAP_COMPILE_FLAGS: xkb_keymap_compile_flags =
-            XKB_KEYMAP_COMPILE_FLAGS_VALUES as i32 as xkb_keymap_compile_flags;
+        static mut XKB_KEYMAP_COMPILE_FLAGS: u32 = XKB_KEYMAP_COMPILE_FLAGS_VALUES as i32 as u32;
         if flags as u32 & !(XKB_KEYMAP_COMPILE_FLAGS as u32) != 0 {
             xkb_logf!(
                 ctx,
@@ -872,9 +845,14 @@ pub unsafe fn xkb_keymap_new(
             );
             return std::ptr::null_mut();
         }
-        let keymap: *mut xkb_keymap = Box::into_raw(Box::new(std::mem::zeroed::<xkb_keymap>()));
+        let layout = std::alloc::Layout::new::<xkb_keymap>();
+        let keymap: *mut xkb_keymap = std::alloc::alloc_zeroed(layout) as *mut xkb_keymap;
+        if keymap.is_null() {
+            return std::ptr::null_mut();
+        }
+        // ctx field must be properly initialized (contains Vec/HashMap, not zero-safe)
+        std::ptr::write(&raw mut (*keymap).ctx, (*ctx).clone());
         (*keymap).refcnt = 1 as i32;
-        (*keymap).ctx = xkb_context_ref(ctx);
         (*keymap).format = format;
         (*keymap).flags = flags;
         update_builtin_keymap_fields(keymap);
@@ -902,13 +880,13 @@ pub unsafe fn XkbEscapeMapName(mut name: *mut i8) {
 }
 pub unsafe fn XkbModNameToIndex(
     mut mods: *const xkb_mod_set,
-    mut name: xkb_atom_t,
-    mut type_0: mod_type,
-) -> xkb_mod_index_t {
+    mut name: u32,
+    mut type_0: u32,
+) -> u32 {
     unsafe {
-        let mut i: xkb_mod_index_t = 0;
+        let mut i: u32 = 0;
         let mut mod_0: *const xkb_mod = std::ptr::null();
-        i = 0 as xkb_mod_index_t;
+        i = 0 as u32;
         mod_0 = &raw const (*mods).mods as *const xkb_mod;
         while i < (*mods).num_mods {
             if (*mod_0).type_0 as u32 & type_0 as u32 != 0 && name == (*mod_0).name {
@@ -917,7 +895,7 @@ pub unsafe fn XkbModNameToIndex(
             i = i.wrapping_add(1);
             mod_0 = mod_0.offset(1);
         }
-        return XKB_MOD_INVALID as xkb_mod_index_t;
+        return XKB_MOD_INVALID as u32;
     }
 }
 pub unsafe fn XkbLevelsSameSyms(mut a: *const xkb_level, mut b: *const xkb_level) -> bool {
@@ -929,7 +907,7 @@ pub unsafe fn XkbLevelsSameSyms(mut a: *const xkb_level, mut b: *const xkb_level
             return (*a).s.sym == (*b).s.sym;
         }
         {
-            let n = (std::mem::size_of::<xkb_keysym_t>()).wrapping_mul((*a).num_syms as usize);
+            let n = (std::mem::size_of::<u32>()).wrapping_mul((*a).num_syms as usize);
             return std::slice::from_raw_parts((*a).s.syms as *const u8, n)
                 == std::slice::from_raw_parts((*b).s.syms as *const u8, n);
         }
@@ -1005,7 +983,7 @@ pub unsafe fn XkbLevelsSameActions(mut a: *const xkb_level, mut b: *const xkb_le
         if (*a).num_actions as i32 <= 1 as i32 {
             return action_equal(&raw const (*a).a.action, &raw const (*b).a.action);
         }
-        let mut k: xkb_action_count_t = 0 as xkb_action_count_t;
+        let mut k: u16 = 0 as u16;
         while (k as i32) < (*a).num_actions as i32 {
             if !action_equal(
                 (*a).a.actions.offset(k as isize) as *mut xkb_action,
@@ -1020,28 +998,28 @@ pub unsafe fn XkbLevelsSameActions(mut a: *const xkb_level, mut b: *const xkb_le
 }
 pub unsafe fn XkbWrapGroupIntoRange(
     mut group: i32,
-    mut num_groups: xkb_layout_index_t,
-    mut out_of_range_group_policy: xkb_layout_out_of_range_policy,
-    mut out_of_range_group_number: xkb_layout_index_t,
-) -> xkb_layout_index_t {
-    if num_groups == 0 as xkb_layout_index_t {
-        return XKB_LAYOUT_INVALID as xkb_layout_index_t;
+    mut num_groups: u32,
+    mut out_of_range_group_policy: u32,
+    mut out_of_range_group_number: u32,
+) -> u32 {
+    if num_groups == 0 as u32 {
+        return XKB_LAYOUT_INVALID as u32;
     }
-    if group >= 0 as i32 && (group as xkb_layout_index_t) < num_groups {
-        return group as xkb_layout_index_t;
+    if group >= 0 as i32 && (group as u32) < num_groups {
+        return group as u32;
     }
     match out_of_range_group_policy as u32 {
         2 => {
             if out_of_range_group_number >= num_groups {
-                return 0 as xkb_layout_index_t;
+                return 0 as u32;
             }
             return out_of_range_group_number;
         }
         1 => {
             if group < 0 as i32 {
-                return 0 as xkb_layout_index_t;
+                return 0 as u32;
             } else {
-                return num_groups.wrapping_sub(1 as xkb_layout_index_t);
+                return num_groups.wrapping_sub(1 as u32);
             }
         }
         0 | _ => {
@@ -1050,19 +1028,19 @@ pub unsafe fn XkbWrapGroupIntoRange(
                 rem
             } else {
                 rem + num_groups as i32
-            }) as xkb_layout_index_t;
+            }) as u32;
         }
     };
 }
 pub unsafe fn xkb_keymap_key_get_actions_by_level(
     mut keymap: *mut xkb_keymap,
     mut key: *const xkb_key,
-    mut layout: xkb_layout_index_t,
-    mut level: xkb_level_index_t,
+    mut layout: u32,
+    mut level: u32,
     mut actions: *mut *const xkb_action,
-) -> xkb_action_count_t {
+) -> u16 {
     unsafe {
-        let mut count: xkb_action_count_t = 0;
+        let mut count: u16 = 0;
         let mut c2rust_current_block: u64;
         if !key.is_null() {
             layout = XkbWrapGroupIntoRange(
@@ -1071,7 +1049,7 @@ pub unsafe fn xkb_keymap_key_get_actions_by_level(
                 (*key).out_of_range_group_policy,
                 (*key).out_of_range_group_number,
             );
-            if !(layout == XKB_LAYOUT_INVALID as xkb_layout_index_t) {
+            if !(layout == XKB_LAYOUT_INVALID as u32) {
                 if !(level >= XkbKeyNumLevels(key, layout)) {
                     count = (*(*(*key).groups.offset(layout as isize))
                         .levels
@@ -1124,6 +1102,6 @@ pub unsafe fn xkb_keymap_key_get_actions_by_level(
             }
         }
         *actions = std::ptr::null();
-        return 0 as xkb_action_count_t;
+        return 0 as u16;
     }
 }

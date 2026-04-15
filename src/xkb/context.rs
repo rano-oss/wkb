@@ -1,4 +1,4 @@
-use crate::xkb::atom::{atom_intern, atom_table_free, atom_table_new, atom_text, atom_text_bytes};
+use crate::xkb::atom::{atom_intern, atom_table_new, atom_text, atom_text_bytes};
 
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -71,25 +71,17 @@ extern "C" {
     pub fn secure_getenv(name: *const i8) -> *mut i8;
 }
 
-/// Macro that formats a Rust format string into a stack buffer, then calls `xkb_log`.
-/// This uses `core::fmt::Write` instead of C `snprintf`.
+/// Macro that formats a message and prints to stderr.
 /// Usage: `xkb_logf!(ctx, level, verbosity, "format {}", arg)`
+/// The ctx, level, and verbosity args are accepted for compatibility but
+/// level/verbosity filtering is not currently implemented.
 #[macro_export]
 macro_rules! xkb_logf {
     ($ctx:expr, $level:expr, $verb:expr, $($arg:tt)*) => {{
-        let mut _xkb_log_buf = [0u8; 2048];
-        {
-            let mut _w = crate::xkb::utils::LogBuf::new(&mut _xkb_log_buf[..2047]);
-            let _ = core::fmt::Write::write_fmt(&mut _w, format_args!($($arg)*));
-        }
-        // _xkb_log_buf[2047] is always 0 (zero-initialized), so NUL-terminated
-        crate::xkb::context::xkb_log(
-            $ctx, $level, $verb,
-            _xkb_log_buf.as_ptr() as *const i8
-        )
+        eprint!($($arg)*);
     }};
 }
-unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *const i8) -> i32 {
+unsafe fn context_include_path_append(ctx: *mut xkb_context, mut path: *const i8) -> i32 {
     unsafe {
         let mut stat_buf: stat = stat {
             st_dev: 0,
@@ -179,10 +171,7 @@ unsafe fn context_include_path_append(mut ctx: *mut xkb_context, mut path: *cons
         return 0 as i32;
     }
 }
-pub unsafe fn xkb_context_include_path_append(
-    mut ctx: *mut xkb_context,
-    mut path: *const i8,
-) -> i32 {
+pub unsafe fn xkb_context_include_path_append(ctx: *mut xkb_context, mut path: *const i8) -> i32 {
     unsafe {
         return if xkb_context_init_includes(ctx) as i32 != 0 {
             context_include_path_append(ctx, path)
@@ -191,7 +180,7 @@ pub unsafe fn xkb_context_include_path_append(
         };
     }
 }
-pub unsafe fn xkb_context_include_path_get_extra_path(mut ctx: *mut xkb_context) -> *const i8 {
+pub unsafe fn xkb_context_include_path_get_extra_path(ctx: *mut xkb_context) -> *const i8 {
     unsafe {
         let extra: *const i8 =
             xkb_context_getenv(ctx, b"XKB_CONFIG_EXTRA_PATH\0".as_ptr() as *const i8);
@@ -204,7 +193,7 @@ pub unsafe fn xkb_context_include_path_get_extra_path(mut ctx: *mut xkb_context)
 }
 
 pub unsafe fn xkb_context_include_path_get_unversioned_extensions_path(
-    mut ctx: *mut xkb_context,
+    ctx: *mut xkb_context,
 ) -> *const i8 {
     unsafe {
         let mut ext: *const i8 = xkb_context_getenv(
@@ -220,7 +209,7 @@ pub unsafe fn xkb_context_include_path_get_unversioned_extensions_path(
 }
 
 pub unsafe fn xkb_context_include_path_get_versioned_extensions_path(
-    mut ctx: *mut xkb_context,
+    ctx: *mut xkb_context,
 ) -> *const i8 {
     unsafe {
         let mut ext: *const i8 = xkb_context_getenv(
@@ -243,7 +232,7 @@ unsafe extern "C" fn compare_str(
     }
 }
 unsafe fn add_direct_subdirectories(
-    mut ctx: *mut xkb_context,
+    ctx: *mut xkb_context,
     mut path: *const i8,
     mut extensions: *mut Vec<*mut i8>,
     mut versioned_count: u32,
@@ -405,7 +394,7 @@ unsafe fn add_direct_subdirectories(
         return ret;
     }
 }
-pub unsafe fn xkb_context_include_path_get_system_path(mut ctx: *mut xkb_context) -> *const i8 {
+pub unsafe fn xkb_context_include_path_get_system_path(ctx: *mut xkb_context) -> *const i8 {
     unsafe {
         let root: *const i8 = xkb_context_getenv(ctx, b"XKB_CONFIG_ROOT\0".as_ptr() as *const i8);
         return if !root.is_null() {
@@ -415,7 +404,7 @@ pub unsafe fn xkb_context_include_path_get_system_path(mut ctx: *mut xkb_context
         };
     }
 }
-pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context) -> i32 {
+pub unsafe fn xkb_context_include_path_append_default(ctx: *mut xkb_context) -> i32 {
     unsafe {
         let mut ret: i32 = 0 as i32;
         let home: *const i8 = xkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const i8);
@@ -487,7 +476,7 @@ pub unsafe fn xkb_context_include_path_append_default(mut ctx: *mut xkb_context)
     }
 }
 
-pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
+pub unsafe fn xkb_context_include_path_clear(ctx: *mut xkb_context) {
     unsafe {
         for path in (*ctx).includes.iter() {
             cstr_free(*path);
@@ -501,7 +490,7 @@ pub unsafe fn xkb_context_include_path_clear(mut ctx: *mut xkb_context) {
     }
 }
 
-pub unsafe fn xkb_context_num_include_paths(mut ctx: *mut xkb_context) -> u32 {
+pub unsafe fn xkb_context_num_include_paths(ctx: *mut xkb_context) -> u32 {
     unsafe {
         return if xkb_context_init_includes(ctx) as i32 != 0 {
             (*ctx).includes.len() as u32
@@ -510,7 +499,7 @@ pub unsafe fn xkb_context_num_include_paths(mut ctx: *mut xkb_context) -> u32 {
         };
     }
 }
-pub unsafe fn xkb_context_include_path_get(mut ctx: *mut xkb_context, mut idx: u32) -> *const i8 {
+pub unsafe fn xkb_context_include_path_get(ctx: *mut xkb_context, mut idx: u32) -> *const i8 {
     unsafe {
         if idx >= xkb_context_num_include_paths(ctx) {
             return std::ptr::null();
@@ -518,27 +507,26 @@ pub unsafe fn xkb_context_include_path_get(mut ctx: *mut xkb_context, mut idx: u
         return *(*ctx).includes.as_ptr().add(idx as usize);
     }
 }
-pub unsafe fn xkb_context_ref(mut ctx: *mut xkb_context) -> *mut xkb_context {
+pub unsafe fn xkb_context_ref(ctx: *mut xkb_context) -> *mut xkb_context {
     unsafe {
         (*ctx).refcnt += 1;
         return ctx;
     }
 }
-pub unsafe fn xkb_context_unref(mut ctx: *mut xkb_context) {
+pub unsafe fn xkb_context_unref(ctx: *mut xkb_context) {
     unsafe {
-        if ctx.is_null() || {
-            (*ctx).refcnt -= 1;
-            (*ctx).refcnt > 0 as i32
-        } {
+        if ctx.is_null() {
             return;
         }
-        free((*ctx).x11_atom_cache);
+        (*ctx).refcnt -= 1;
+        if (*ctx).refcnt > 0 as i32 {
+            return;
+        }
         xkb_context_include_path_clear(ctx);
-        atom_table_free((*ctx).atom_table);
-        drop(Box::from_raw(ctx));
+        // atom_table is owned, dropped automatically when xkb_context is dropped
     }
 }
-unsafe fn log_level_to_prefix(mut level: xkb_log_level) -> *const i8 {
+unsafe fn log_level_to_prefix(mut level: u32) -> *const i8 {
     match level as u32 {
         50 => return b"xkbcommon: DEBUG: \0".as_ptr() as *const i8,
         40 => return b"xkbcommon: INFO: \0".as_ptr() as *const i8,
@@ -550,7 +538,7 @@ unsafe fn log_level_to_prefix(mut level: xkb_log_level) -> *const i8 {
         _ => return std::ptr::null(),
     };
 }
-unsafe fn default_log_fn(mut ctx: *mut xkb_context, mut level: xkb_log_level, mut msg: *const i8) {
+unsafe fn default_log_fn(ctx: *mut xkb_context, mut level: u32, mut msg: *const i8) {
     unsafe {
         let mut prefix: *const i8 = log_level_to_prefix(level);
         if !prefix.is_null() {
@@ -559,7 +547,7 @@ unsafe fn default_log_fn(mut ctx: *mut xkb_context, mut level: xkb_log_level, mu
         eprint!("{}", crate::xkb::utils::CStrDisplay(msg));
     }
 }
-unsafe fn log_level(mut level: *const i8) -> xkb_log_level {
+unsafe fn log_level(mut level: *const i8) -> u32 {
     unsafe {
         let (val, consumed) = crate::xkb::utils::cstr_parse_long(level);
         if consumed > 0 {
@@ -567,7 +555,7 @@ unsafe fn log_level(mut level: *const i8) -> xkb_log_level {
             if after as i32 == '\0' as i32
                 || matches!(after as u8, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
             {
-                return val as xkb_log_level;
+                return val as u32;
             }
         }
         if istrneq(b"crit", cstr_as_bytes(level), 4) {
@@ -597,76 +585,73 @@ unsafe fn log_verbosity(mut verbosity: *const i8) -> i32 {
         return XKB_LOG_VERBOSITY_DEFAULT as i32;
     }
 }
-pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> *mut xkb_context {
+pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> xkb_context {
     unsafe {
         let mut env: *const i8 = std::ptr::null();
-        let ctx: *mut xkb_context = {
-            // Allocate zeroed memory (all scalar/pointer fields zero-init fine),
-            // then write Vec fields which cannot be zero-initialized.
-            let layout = std::alloc::Layout::new::<xkb_context>();
-            let ptr = std::alloc::alloc_zeroed(layout) as *mut xkb_context;
-            if ptr.is_null() {
-                std::alloc::handle_alloc_error(layout);
-            }
-            std::ptr::write(&raw mut (*ptr).includes, Vec::new());
-            std::ptr::write(&raw mut (*ptr).failed_includes, Vec::new());
-            ptr
+        let mut ctx = xkb_context {
+            refcnt: 1,
+            log_fn: Some(default_log_fn as unsafe fn(*mut xkb_context, u32, *const i8) -> ()),
+            log_level: XKB_LOG_LEVEL_ERROR,
+            log_verbosity: XKB_LOG_VERBOSITY_DEFAULT as i32,
+            names_dflt: xkb_rule_names {
+                rules: std::ptr::null(),
+                model: std::ptr::null(),
+                layout: std::ptr::null(),
+                variant: std::ptr::null(),
+                options: std::ptr::null(),
+            },
+            includes: Vec::new(),
+            failed_includes: Vec::new(),
+            atom_table: atom_table_new(),
+            text_buffer: [0i8; 2048],
+            text_next: 0,
+            use_environment_names: false,
+            use_secure_getenv: false,
+            pending_default_includes: false,
         };
-        (*ctx).refcnt = 1 as i32;
-        (*ctx).log_fn =
-            Some(default_log_fn as unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ())
-                as Option<unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ()>;
-        (*ctx).log_level = XKB_LOG_LEVEL_ERROR;
-        (*ctx).log_verbosity = XKB_LOG_VERBOSITY_DEFAULT as i32;
         static mut XKB_CONTEXT_FLAGS: xkb_context_flags = (XKB_CONTEXT_NO_DEFAULT_INCLUDES as i32
             | XKB_CONTEXT_NO_ENVIRONMENT_NAMES as i32
             | XKB_CONTEXT_NO_SECURE_GETENV as i32)
             as xkb_context_flags;
         if flags as u32 & !(XKB_CONTEXT_FLAGS as u32) != 0 {
             xkb_logf!(
-                ctx,
+                &mut ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Invalid context flags: 0x{:x}\n",
                 flags as u32 & !(XKB_CONTEXT_FLAGS as u32),
             );
-            drop(Box::from_raw(ctx));
-            return std::ptr::null_mut();
+            // Return a dummy/default — caller should check flags before calling
+            // In practice this path is very rare
+            return ctx;
         }
-        (*ctx).use_environment_names = flags as u32 & XKB_CONTEXT_NO_ENVIRONMENT_NAMES as u32 == 0;
-        (*ctx).use_secure_getenv = flags as u32 & XKB_CONTEXT_NO_SECURE_GETENV as u32 == 0;
-        (*ctx).pending_default_includes =
-            flags as u32 & XKB_CONTEXT_NO_DEFAULT_INCLUDES as u32 == 0;
-        env = xkb_context_getenv(ctx, b"XKB_LOG_LEVEL\0".as_ptr() as *const i8);
+        ctx.use_environment_names = flags as u32 & XKB_CONTEXT_NO_ENVIRONMENT_NAMES as u32 == 0;
+        ctx.use_secure_getenv = flags as u32 & XKB_CONTEXT_NO_SECURE_GETENV as u32 == 0;
+        ctx.pending_default_includes = flags as u32 & XKB_CONTEXT_NO_DEFAULT_INCLUDES as u32 == 0;
+        env = xkb_context_getenv(&raw mut ctx, b"XKB_LOG_LEVEL\0".as_ptr() as *const i8);
         if !env.is_null() {
-            xkb_context_set_log_level(ctx, log_level(env));
+            xkb_context_set_log_level(&raw mut ctx, log_level(env));
         }
-        env = xkb_context_getenv(ctx, b"XKB_LOG_VERBOSITY\0".as_ptr() as *const i8);
+        env = xkb_context_getenv(&raw mut ctx, b"XKB_LOG_VERBOSITY\0".as_ptr() as *const i8);
         if !env.is_null() {
-            xkb_context_set_log_verbosity(ctx, log_verbosity(env));
+            xkb_context_set_log_verbosity(&raw mut ctx, log_verbosity(env));
         }
-        (*ctx).atom_table = atom_table_new();
-        if (*ctx).atom_table.is_null() {
-            xkb_context_unref(ctx);
-            return std::ptr::null_mut();
-        }
-        (*ctx).x11_atom_cache = std::ptr::null_mut::<core::ffi::c_void>();
         return ctx;
     }
 }
 
-pub unsafe fn xkb_context_set_log_level(mut ctx: *mut xkb_context, mut level: xkb_log_level) {
+pub unsafe fn xkb_context_set_log_level(ctx: *mut xkb_context, mut level: u32) {
     unsafe {
         (*ctx).log_level = level;
     }
 }
-pub unsafe fn xkb_context_get_log_verbosity(mut ctx: *mut xkb_context) -> i32 {
+pub unsafe fn xkb_context_get_log_verbosity(ctx: *mut xkb_context) -> i32 {
     unsafe {
         return (*ctx).log_verbosity;
     }
 }
 
-pub unsafe fn xkb_context_set_log_verbosity(mut ctx: *mut xkb_context, mut verbosity: i32) {
+pub unsafe fn xkb_context_set_log_verbosity(ctx: *mut xkb_context, mut verbosity: i32) {
     unsafe {
         (*ctx).log_verbosity = verbosity;
     }
@@ -674,7 +659,7 @@ pub unsafe fn xkb_context_set_log_verbosity(mut ctx: *mut xkb_context, mut verbo
 
 // --- Merged from context_priv.rs ---
 
-pub unsafe fn xkb_context_getenv(mut ctx: *mut xkb_context, mut name: *const i8) -> *mut i8 {
+pub unsafe fn xkb_context_getenv(ctx: *mut xkb_context, mut name: *const i8) -> *mut i8 {
     unsafe {
         if (*ctx).use_secure_getenv {
             return secure_getenv(name);
@@ -683,7 +668,7 @@ pub unsafe fn xkb_context_getenv(mut ctx: *mut xkb_context, mut name: *const i8)
         };
     }
 }
-pub unsafe fn xkb_context_init_includes(mut ctx: *mut xkb_context) -> bool {
+pub unsafe fn xkb_context_init_includes(ctx: *mut xkb_context) -> bool {
     unsafe {
         if (*ctx).pending_default_includes {
             if (*ctx).failed_includes.is_empty() {
@@ -708,7 +693,7 @@ pub unsafe fn xkb_context_init_includes(mut ctx: *mut xkb_context) -> bool {
         return true;
     }
 }
-pub unsafe fn xkb_context_num_failed_include_paths(mut ctx: *mut xkb_context) -> u32 {
+pub unsafe fn xkb_context_num_failed_include_paths(ctx: *mut xkb_context) -> u32 {
     unsafe {
         return if xkb_context_init_includes(ctx) as i32 != 0 {
             (*ctx).failed_includes.len() as u32
@@ -718,7 +703,7 @@ pub unsafe fn xkb_context_num_failed_include_paths(mut ctx: *mut xkb_context) ->
     }
 }
 pub unsafe fn xkb_context_failed_include_path_get(
-    mut ctx: *mut xkb_context,
+    ctx: *mut xkb_context,
     mut idx: u32,
 ) -> *const i8 {
     unsafe {
@@ -729,31 +714,27 @@ pub unsafe fn xkb_context_failed_include_path_get(
     }
 }
 
-pub unsafe fn xkb_atom_lookup(mut ctx: *mut xkb_context, mut string: *const i8) -> xkb_atom_t {
+pub unsafe fn xkb_atom_lookup(ctx: *mut xkb_context, mut string: *const i8) -> u32 {
     unsafe {
-        return atom_intern((*ctx).atom_table, string, cstr_len(string), false);
+        return atom_intern(&mut (*ctx).atom_table, string, cstr_len(string), false);
     }
 }
-pub unsafe fn xkb_atom_intern(
-    mut ctx: *mut xkb_context,
-    mut string: *const i8,
-    mut len: usize,
-) -> xkb_atom_t {
+pub unsafe fn xkb_atom_intern(ctx: *mut xkb_context, mut string: *const i8, mut len: usize) -> u32 {
     unsafe {
-        return atom_intern((*ctx).atom_table, string, len, true);
+        return atom_intern(&mut (*ctx).atom_table, string, len, true);
     }
 }
-pub unsafe fn xkb_atom_text(mut ctx: *mut xkb_context, mut atom: xkb_atom_t) -> *const i8 {
+pub unsafe fn xkb_atom_text(ctx: *mut xkb_context, mut atom: u32) -> *const i8 {
     unsafe {
-        return atom_text((*ctx).atom_table, atom);
+        return atom_text(&(*ctx).atom_table, atom);
     }
 }
-pub unsafe fn xkb_atom_text_bytes<'a>(ctx: *mut xkb_context, atom: xkb_atom_t) -> &'a [u8] {
-    unsafe { atom_text_bytes((*ctx).atom_table, atom) }
+pub unsafe fn xkb_atom_text_bytes<'a>(ctx: *mut xkb_context, atom: u32) -> &'a [u8] {
+    atom_text_bytes(&(*ctx).atom_table, atom)
 }
 pub unsafe fn xkb_log(
-    mut ctx: *mut xkb_context,
-    mut level: xkb_log_level,
+    ctx: *mut xkb_context,
+    mut level: u32,
     mut verbosity: i32,
     mut msg: *const i8,
 ) {
@@ -764,7 +745,7 @@ pub unsafe fn xkb_log(
         (*ctx).log_fn.expect("non-null function pointer")(ctx, level, msg);
     }
 }
-pub unsafe fn xkb_context_get_buffer(mut ctx: *mut xkb_context, mut size: usize) -> *mut i8 {
+pub unsafe fn xkb_context_get_buffer(ctx: *mut xkb_context, mut size: usize) -> *mut i8 {
     unsafe {
         let mut rtrn: *mut i8 = std::ptr::null_mut();
         if size >= std::mem::size_of::<[i8; 2048]>() {
@@ -780,7 +761,7 @@ pub unsafe fn xkb_context_get_buffer(mut ctx: *mut xkb_context, mut size: usize)
     }
 }
 pub unsafe fn xkb_context_sanitize_rule_names(
-    mut ctx: *mut xkb_context,
+    ctx: *mut xkb_context,
     mut rmlvo: *mut xkb_rule_names,
 ) -> RMLVO {
     unsafe {

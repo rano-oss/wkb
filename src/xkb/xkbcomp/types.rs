@@ -23,7 +23,7 @@ impl KeyTypesInfo {
             mods: xkb_mod_set {
                 mods: [xkb_mod {
                     name: 0,
-                    type_0: 0 as mod_type,
+                    type_0: 0 as u32,
                     mapping: 0,
                 }; 32],
                 num_mods: 0,
@@ -38,11 +38,11 @@ impl KeyTypesInfo {
 pub struct KeyTypeInfo {
     pub defined: type_field,
     pub merge: merge_mode,
-    pub name: xkb_atom_t,
-    pub mods: xkb_mod_mask_t,
-    pub num_levels: xkb_level_index_t,
+    pub name: u32,
+    pub mods: u32,
+    pub num_levels: u32,
     pub entries: Vec<xkb_key_type_entry>,
-    pub level_names: Vec<xkb_atom_t>,
+    pub level_names: Vec<u32>,
 }
 unsafe fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
     if new_len > v.len() {
@@ -121,7 +121,7 @@ unsafe fn InitKeyTypesInfo(
         (*info).include_depth = 0;
         (*info).types = Vec::new();
         (*info).mods = std::mem::zeroed();
-        (*info).ctx = (*keymap_info).keymap.ctx;
+        (*info).ctx = &raw mut (*(*keymap_info).keymap).ctx;
         (*info).keymap_info = keymap_info;
         (*info).include_depth = include_depth;
         InitVMods(&raw mut (*info).mods, mods, include_depth > 0 as u32);
@@ -297,7 +297,7 @@ unsafe fn SetModifiers(
     mut value: *mut ExprDef,
 ) -> bool {
     unsafe {
-        let mut mods: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
+        let mut mods: u32 = 0 as u32;
         if !arrayNdx.is_null() {
             xkb_logf!(
                 (*info).ctx,
@@ -383,13 +383,13 @@ unsafe fn AddMapEntry(
                     } else {
                         (*old).level
                     })
-                    .wrapping_add(1 as xkb_level_index_t),
+                    .wrapping_add(1 as u32),
                     (if clobber as i32 != 0 {
                         (*old).level
                     } else {
                         (*new).level
                     })
-                    .wrapping_add(1 as xkb_level_index_t),
+                    .wrapping_add(1 as u32),
                 );
             } else {
                 xkb_logf!(
@@ -399,21 +399,21 @@ unsafe fn AddMapEntry(
                     "[XKB-{:03}] Multiple occurrences of map[{}]= {} in {}; Ignored\n",
                     XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY as i32,
                     crate::xkb::utils::ByteSliceDisplay(MapEntryTxt(info, new)),
-                    (*new).level.wrapping_add(1 as xkb_level_index_t),
+                    (*new).level.wrapping_add(1 as u32),
                     crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
                 );
                 return true;
             }
             if clobber {
                 if (*new).level >= (*type_0).num_levels {
-                    (*type_0).num_levels = (*new).level.wrapping_add(1 as xkb_level_index_t);
+                    (*type_0).num_levels = (*new).level.wrapping_add(1 as u32);
                 }
                 (*old).level = (*new).level;
             }
             return true;
         }
         if (*new).level >= (*type_0).num_levels {
-            (*type_0).num_levels = (*new).level.wrapping_add(1 as xkb_level_index_t);
+            (*type_0).num_levels = (*new).level.wrapping_add(1 as u32);
         }
         (*type_0).entries.push(*new);
         return true;
@@ -477,15 +477,15 @@ unsafe fn SetMapEntry(
             );
             return false;
         }
-        entry.preserve.mods = 0 as xkb_mod_mask_t;
+        entry.preserve.mods = 0 as u32;
         return AddMapEntry(info, type_0, &raw mut entry, true, true);
     }
 }
 unsafe fn AddPreserve(
     mut info: *mut KeyTypesInfo,
     mut type_0: *mut KeyTypeInfo,
-    mut mods: xkb_mod_mask_t,
-    mut preserve_mods: xkb_mod_mask_t,
+    mut mods: u32,
+    mut preserve_mods: u32,
 ) -> bool {
     unsafe {
         let mut entry: *mut xkb_key_type_entry = std::ptr::null_mut();
@@ -498,7 +498,7 @@ unsafe fn AddPreserve(
             if e.mods.mods != mods {
                 continue;
             } else {
-                if e.preserve.mods == 0 as xkb_mod_mask_t {
+                if e.preserve.mods == 0 as u32 {
                     e.preserve.mods = preserve_mods;
                     return true;
                 }
@@ -545,7 +545,7 @@ unsafe fn AddPreserve(
                 return true;
             }
         }
-        new.level = 0 as xkb_level_index_t;
+        new.level = 0 as u32;
         new.mods.mods = mods;
         new.preserve.mods = preserve_mods;
         (*type_0).entries.push(new);
@@ -562,7 +562,7 @@ unsafe fn SetPreserve(
         if arrayNdx.is_null() {
             return ReportTypeShouldBeArray(info, type_0, b"preserve entry");
         }
-        let mut mods: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
+        let mut mods: u32 = 0 as u32;
         if !ExprResolveModMask(
             (*info).ctx,
             arrayNdx,
@@ -595,7 +595,7 @@ unsafe fn SetPreserve(
                 crate::xkb::utils::ByteSliceDisplay(after),
             );
         }
-        let mut preserve_mods: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
+        let mut preserve_mods: u32 = 0 as u32;
         if !ExprResolveModMask(
             (*info).ctx,
             value,
@@ -643,12 +643,12 @@ unsafe fn SetPreserve(
 unsafe fn AddLevelName(
     mut info: *mut KeyTypesInfo,
     mut type_0: *mut KeyTypeInfo,
-    mut level: xkb_level_index_t,
-    mut name: xkb_atom_t,
+    mut level: u32,
+    mut name: u32,
     mut clobber: bool,
 ) -> bool {
     unsafe {
-        if level >= (*type_0).level_names.len() as xkb_level_index_t {
+        if level >= (*type_0).level_names.len() as u32 {
             vec_resize_zero(&mut (*type_0).level_names, (level as usize).wrapping_add(1));
         } else {
             if *(*type_0).level_names.as_ptr().add(level as usize) == name {
@@ -658,12 +658,12 @@ unsafe fn AddLevelName(
                     XKB_LOG_VERBOSITY_VERBOSE as i32,
                     "[XKB-{:03}] Duplicate names for level {} of key type {}; Ignored\n",
                     XKB_WARNING_DUPLICATE_ENTRY as i32,
-                    level.wrapping_add(1 as xkb_level_index_t),
+                    level.wrapping_add(1 as u32),
                     crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
                 );
                 return true;
             }
-            if *(*type_0).level_names.as_ptr().add(level as usize) != XKB_ATOM_NONE as xkb_atom_t {
+            if *(*type_0).level_names.as_ptr().add(level as usize) != XKB_ATOM_NONE as u32 {
                 let old: &[u8] = xkb_atom_text_bytes(
                     (*info).ctx,
                     *(*type_0).level_names.as_ptr().add(level as usize),
@@ -675,7 +675,7 @@ unsafe fn AddLevelName(
                     XKB_LOG_VERBOSITY_BRIEF as i32,
                     "[XKB-{:03}] Multiple names for level {} of key type {}; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES as i32,
-                    level.wrapping_add(1 as xkb_level_index_t),
+                    level.wrapping_add(1 as u32),
                     crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
                     crate::xkb::utils::ByteSliceDisplay(if clobber { new } else { old }),
                     crate::xkb::utils::ByteSliceDisplay(if clobber { old } else { new }),
@@ -699,7 +699,7 @@ unsafe fn SetLevelName(
         if arrayNdx.is_null() {
             return ReportTypeShouldBeArray(info, type_0, b"level name");
         }
-        let mut level: xkb_level_index_t = 0 as xkb_level_index_t;
+        let mut level: u32 = 0 as u32;
         if !ExprResolveLevel((*info).ctx, arrayNdx, &raw mut level) {
             return ReportTypeBadType(
                 info,
@@ -709,7 +709,7 @@ unsafe fn SetLevelName(
                 b"integer",
             );
         }
-        let mut level_name: xkb_atom_t = XKB_ATOM_NONE as xkb_atom_t;
+        let mut level_name: u32 = XKB_ATOM_NONE as u32;
         if !ExprResolveString((*info).ctx, value, &raw mut level_name) {
             xkb_logf!(
                 (*info).ctx,
@@ -717,7 +717,7 @@ unsafe fn SetLevelName(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Non-string name for level {} in key type {}; Ignoring illegal level name definition\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                level.wrapping_add(1 as xkb_level_index_t),
+                level.wrapping_add(1 as u32),
                 crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, (*type_0).name)),
             );
             return false;
@@ -894,8 +894,8 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
                         defined: 0 as type_field,
                         merge: (*def).merge,
                         name: (*def).name,
-                        mods: 0 as xkb_mod_mask_t,
-                        num_levels: 1 as xkb_level_index_t,
+                        mods: 0 as u32,
+                        num_levels: 1 as u32,
                         entries: Vec::new(),
                         level_names: Vec::new(),
                     };
@@ -981,37 +981,37 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
         if (*info).types.len() == 0 {
             let mut type_0: *mut xkb_key_type =
                 types.offset(0 as i32 as isize) as *mut xkb_key_type;
-            (*type_0).mods.mods = 0 as xkb_mod_mask_t;
-            (*type_0).num_levels = 1 as xkb_level_index_t;
+            (*type_0).mods.mods = 0 as u32;
+            (*type_0).num_levels = 1 as u32;
             (*type_0).entries = std::ptr::null_mut();
             (*type_0).num_entries = 0 as u32;
             (*type_0).name = xkb_atom_intern(
-                (*keymap).ctx,
+                &raw mut (*keymap).ctx,
                 b"ONE_LEVEL\0".as_ptr() as *const i8,
                 (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
             );
             (*type_0).level_names = std::ptr::null_mut();
-            (*type_0).num_level_names = 0 as xkb_level_index_t;
+            (*type_0).num_level_names = 0 as u32;
             (*type_0).required = true;
         } else {
-            let canonical_types: [xkb_atom_t; 4] = [
+            let canonical_types: [u32; 4] = [
                 xkb_atom_intern(
-                    (*keymap).ctx,
+                    &raw mut (*keymap).ctx,
                     b"ONE_LEVEL\0".as_ptr() as *const i8,
                     (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
                 ),
                 xkb_atom_intern(
-                    (*keymap).ctx,
+                    &raw mut (*keymap).ctx,
                     b"TWO_LEVEL\0".as_ptr() as *const i8,
                     (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
                 ),
                 xkb_atom_intern(
-                    (*keymap).ctx,
+                    &raw mut (*keymap).ctx,
                     b"ALPHABETIC\0".as_ptr() as *const i8,
                     (std::mem::size_of::<[i8; 11]>()).wrapping_sub(1 as usize),
                 ),
                 xkb_atom_intern(
-                    (*keymap).ctx,
+                    &raw mut (*keymap).ctx,
                     b"KEYPAD\0".as_ptr() as *const i8,
                     (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1 as usize),
                 ),
@@ -1025,7 +1025,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
                 (*type_1).num_levels = (*def).num_levels;
                 // Steal level_names Vec buffer
                 let mut ln_vec = std::mem::take(&mut (*def).level_names);
-                (*type_1).num_level_names = ln_vec.len() as xkb_level_index_t;
+                (*type_1).num_level_names = ln_vec.len() as u32;
                 if ln_vec.is_empty() {
                     (*type_1).level_names = std::ptr::null_mut();
                 } else {
@@ -1044,11 +1044,10 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
                     std::mem::forget(ent_vec);
                 }
                 (*type_1).required = false;
-                if (*type_1).num_levels <= 2 as xkb_level_index_t {
+                if (*type_1).num_levels <= 2 as u32 {
                     let mut t: u8 = 0 as u8;
                     while (t as i32)
-                        < (std::mem::size_of::<[xkb_atom_t; 4]>())
-                            .wrapping_div(std::mem::size_of::<xkb_atom_t>())
+                        < (std::mem::size_of::<[u32; 4]>()).wrapping_div(std::mem::size_of::<u32>())
                             as u8 as i32
                     {
                         if (*type_1).name == canonical_types[t as usize] {
@@ -1086,13 +1085,13 @@ pub unsafe fn CompileKeyTypes(
             &raw mut info,
             keymap_info,
             0 as u32,
-            &raw mut (*keymap_info).keymap.mods,
+            &raw mut (*(*keymap_info).keymap).mods,
         );
         if !file.is_null() {
             HandleKeyTypesFile(&raw mut info, file);
         }
         if !(info.errorCount != 0 as i32) {
-            if CopyKeyTypesToKeymap(&raw mut (*keymap_info).keymap, &raw mut info) {
+            if CopyKeyTypesToKeymap((*keymap_info).keymap, &raw mut info) {
                 ClearKeyTypesInfo(&raw mut info);
                 return true;
             }

@@ -12,13 +12,13 @@ pub mod keysym_names_h {
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct name_keysym {
-        pub keysym: xkb_keysym_t,
+        pub keysym: u32,
         pub offset: u16,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
     pub struct deprecated_keysym {
-        pub keysym: xkb_keysym_t,
+        pub keysym: u32,
         pub offset: u16,
         pub explicit_index: u8,
         pub explicit_count: u8,
@@ -21788,8 +21788,6 @@ pub mod keysym_names_h {
         },
     ];
     pub static mut explicit_deprecated_aliases: [u32; 1] = [24103 as u32];
-
-    use crate::xkb::shared_types::xkb_keysym_t;
 }
 pub use crate::xkb::utf8_decoding::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
 
@@ -21834,16 +21832,12 @@ unsafe fn get_name(mut entry: *const name_keysym) -> *const i8 {
     }
 }
 #[inline]
-unsafe fn get_unicode_name(mut ks: xkb_keysym_t, mut buffer: *mut i8, mut size: usize) -> i32 {
+unsafe fn get_unicode_name(mut ks: u32, mut buffer: *mut i8, mut size: usize) -> i32 {
     unsafe {
         return crate::xkb::utils::snprintf_c(buffer, size, format_args!("U{:04X}", ks & 0xffffff));
     }
 }
-pub unsafe fn xkb_keysym_get_name(
-    mut ks: xkb_keysym_t,
-    mut buffer: *mut i8,
-    mut size: usize,
-) -> i32 {
+pub unsafe fn xkb_keysym_get_name(mut ks: u32, mut buffer: *mut i8, mut size: usize) -> i32 {
     unsafe {
         if ks > XKB_KEYSYM_MAX as u32 {
             crate::xkb::utils::snprintf_args(buffer, size, format_args!("Invalid"));
@@ -21974,7 +21968,7 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
         if cstr_as_bytes(name).starts_with(b"XF86_")
             || icase as i32 != 0 && istrncmp(cstr_as_bytes(name), b"XF86_", 5 as usize) == 0 as i32
         {
-            let mut ret: xkb_keysym_t = 0;
+            let mut ret: u32 = 0;
             tmp = cstr_dup(name);
             if tmp.is_null() {
                 return XKB_KEY_NoSymbol as u32;
@@ -21999,7 +21993,7 @@ pub fn xkb_keysym_is_keypad(mut keysym: u32) -> bool {
 }
 
 pub unsafe fn xkb_keysym_is_deprecated(
-    mut _keysym: xkb_keysym_t,
+    mut _keysym: u32,
     mut _name: *const i8,
     mut reference_name: *mut *const i8,
 ) -> bool {

@@ -5,60 +5,41 @@
 //! can share the same Rust types, enabling direct `pub use` imports instead of
 //! `extern "C"` FFI imports.
 
-// ── Leaf type aliases ────────────────────────────────────────────────
-
-pub type xkb_atom_t = u32;
-
 // ── xkbcommon public types ───────────────────────────────────────────
 
-pub type xkb_log_level = u32;
-pub const XKB_LOG_LEVEL_DEBUG: xkb_log_level = 50;
-pub const XKB_LOG_LEVEL_INFO: xkb_log_level = 40;
-pub const XKB_LOG_LEVEL_WARNING: xkb_log_level = 30;
-pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
-pub const XKB_LOG_LEVEL_CRITICAL: xkb_log_level = 10;
+pub const XKB_LOG_LEVEL_DEBUG: u32 = 50;
+pub const XKB_LOG_LEVEL_INFO: u32 = 40;
+pub const XKB_LOG_LEVEL_WARNING: u32 = 30;
+pub const XKB_LOG_LEVEL_ERROR: u32 = 20;
+pub const XKB_LOG_LEVEL_CRITICAL: u32 = 10;
 
-pub type xkb_keycode_t = u32;
-pub type xkb_mod_mask_t = u32;
-pub type xkb_mod_index_t = u32;
-pub type xkb_keysym_t = u32;
-pub type xkb_layout_index_t = u32;
-pub type xkb_level_index_t = u32;
-pub type xkb_layout_mask_t = u32;
-pub type xkb_led_index_t = u32;
+pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: u32 = 2;
+pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: u32 = 1;
+pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: u32 = 0;
 
-pub type xkb_layout_out_of_range_policy = u32;
-pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: xkb_layout_out_of_range_policy = 2;
-pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: xkb_layout_out_of_range_policy = 1;
-pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: xkb_layout_out_of_range_policy = 0;
+pub const XKB_STATE_CONTROLS: u32 = 512;
+pub const XKB_STATE_LEDS: u32 = 256;
+pub const XKB_STATE_LAYOUT_EFFECTIVE: u32 = 128;
+pub const XKB_STATE_LAYOUT_LOCKED: u32 = 64;
+pub const XKB_STATE_LAYOUT_LATCHED: u32 = 32;
+pub const XKB_STATE_LAYOUT_DEPRESSED: u32 = 16;
+pub const XKB_STATE_MODS_EFFECTIVE: u32 = 8;
+pub const XKB_STATE_MODS_LOCKED: u32 = 4;
+pub const XKB_STATE_MODS_LATCHED: u32 = 2;
+pub const XKB_STATE_MODS_DEPRESSED: u32 = 1;
 
-pub type xkb_state_component = u32;
-pub const XKB_STATE_CONTROLS: xkb_state_component = 512;
-pub const XKB_STATE_LEDS: xkb_state_component = 256;
-pub const XKB_STATE_LAYOUT_EFFECTIVE: xkb_state_component = 128;
-pub const XKB_STATE_LAYOUT_LOCKED: xkb_state_component = 64;
-pub const XKB_STATE_LAYOUT_LATCHED: xkb_state_component = 32;
-pub const XKB_STATE_LAYOUT_DEPRESSED: xkb_state_component = 16;
-pub const XKB_STATE_MODS_EFFECTIVE: xkb_state_component = 8;
-pub const XKB_STATE_MODS_LOCKED: xkb_state_component = 4;
-pub const XKB_STATE_MODS_LATCHED: xkb_state_component = 2;
-pub const XKB_STATE_MODS_DEPRESSED: xkb_state_component = 1;
+pub const XKB_KEYMAP_FORMAT_TEXT_V2: u32 = 2;
+pub const XKB_KEYMAP_FORMAT_TEXT_V1: u32 = 1;
 
-pub type xkb_keymap_format = u32;
-pub const XKB_KEYMAP_FORMAT_TEXT_V2: xkb_keymap_format = 2;
-pub const XKB_KEYMAP_FORMAT_TEXT_V1: xkb_keymap_format = 1;
-
-pub type xkb_keymap_compile_flags = u32;
-pub const XKB_KEYMAP_COMPILE_STRICT_MODE: xkb_keymap_compile_flags = 1;
-pub const XKB_KEYMAP_COMPILE_NO_FLAGS: xkb_keymap_compile_flags = 0;
+pub const XKB_KEYMAP_COMPILE_STRICT_MODE: u32 = 1;
+pub const XKB_KEYMAP_COMPILE_NO_FLAGS: u32 = 0;
 
 pub const XKB_LAYOUT_INVALID: u32 = 0xffffffff;
 pub const XKB_MOD_INVALID: u32 = 0xffffffff;
 
 // ── xkb_rule_names ──────────────────────────────────────────────────
 
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Copy, Clone, Debug)]
 pub struct xkb_rule_names {
     pub rules: *const i8,
     pub model: *const i8,
@@ -74,18 +55,18 @@ pub use crate::xkb::atom::atom_table;
 
 // ── xkb_context ─────────────────────────────────────────────────────
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct xkb_context {
     pub refcnt: i32,
-    pub log_fn: Option<unsafe fn(*mut xkb_context, xkb_log_level, *const i8) -> ()>,
-    pub log_level: xkb_log_level,
+    pub log_fn: Option<unsafe fn(*mut xkb_context, u32, *const i8) -> ()>,
+    pub log_level: u32,
     pub log_verbosity: i32,
-    pub user_data: *mut ::core::ffi::c_void,
+    // pub user_data: *mut ::core::ffi::c_void,
     pub names_dflt: xkb_rule_names,
     pub includes: Vec<*mut i8>,
     pub failed_includes: Vec<*mut i8>,
-    pub atom_table: *mut atom_table,
-    pub x11_atom_cache: *mut ::core::ffi::c_void,
+    pub atom_table: atom_table,
+    // pub x11_atom_cache: *mut ::core::ffi::c_void,
     pub text_buffer: [i8; 2048],
     pub text_next: usize,
     pub use_environment_names: bool,
@@ -93,32 +74,20 @@ pub struct xkb_context {
     pub pending_default_includes: bool,
 }
 
-// ── __va_list_tag ───────────────────────────────────────────────────
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct __va_list_tag {
-    pub gp_offset: u32,
-    pub fp_offset: u32,
-    pub overflow_arg_area: *mut ::core::ffi::c_void,
-    pub reg_save_area: *mut ::core::ffi::c_void,
-}
-
 // ── keymap_h types (from keymap_priv.rs) ────────────────────────────
 
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 pub struct xkb_keymap {
-    pub ctx: *mut xkb_context,
+    pub ctx: xkb_context,
     pub refcnt: i32,
-    pub flags: xkb_keymap_compile_flags,
-    pub format: xkb_keymap_format,
-    pub num_leds: xkb_led_index_t,
+    pub flags: u32,
+    pub format: u32,
+    pub num_leds: u32,
     pub leds: [xkb_led; 32],
-    pub min_key_code: xkb_keycode_t,
-    pub max_key_code: xkb_keycode_t,
-    pub num_keys: xkb_keycode_t,
-    pub num_keys_low: xkb_keycode_t,
+    pub min_key_code: u32,
+    pub max_key_code: u32,
+    pub num_keys: u32,
+    pub num_keys_low: u32,
     pub keys: *mut xkb_key,
     pub c2rust_unnamed: C2Rust_Unnamed_3,
     pub types: *mut xkb_key_type,
@@ -126,11 +95,11 @@ pub struct xkb_keymap {
     pub num_sym_interprets: u32,
     pub sym_interprets: *mut xkb_sym_interpret,
     pub mods: xkb_mod_set,
-    pub canonical_state_mask: xkb_mod_mask_t,
-    pub redirect_key_auto: xkb_keycode_t,
-    pub num_groups: xkb_layout_index_t,
-    pub num_group_names: xkb_layout_index_t,
-    pub group_names: *mut xkb_atom_t,
+    pub canonical_state_mask: u32,
+    pub redirect_key_auto: u32,
+    pub num_groups: u32,
+    pub num_group_names: u32,
+    pub group_names: *mut u32,
     pub keycodes_section_name: *mut i8,
     pub symbols_section_name: *mut i8,
     pub types_section_name: *mut i8,
@@ -141,42 +110,35 @@ pub struct xkb_keymap {
 #[repr(C)]
 pub struct xkb_mod_set {
     pub mods: [xkb_mod; 32],
-    pub num_mods: xkb_mod_index_t,
-    pub explicit_vmods: xkb_mod_mask_t,
+    pub num_mods: u32,
+    pub explicit_vmods: u32,
 }
 
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_mod {
-    pub name: xkb_atom_t,
-    pub type_0: mod_type,
-    pub mapping: xkb_mod_mask_t,
+    pub name: u32,
+    pub type_0: u32,
+    pub mapping: u32,
 }
 
-pub type mod_type = u32;
-pub const MOD_BOTH: mod_type = 3;
-pub const MOD_VIRT: mod_type = 2;
-pub const MOD_REAL: mod_type = 1;
+pub const MOD_BOTH: u32 = 3;
+pub const MOD_VIRT: u32 = 2;
+pub const MOD_REAL: u32 = 1;
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct xkb_sym_interpret {
-    pub sym: xkb_keysym_t,
-    pub match_0: xkb_match_operation,
-    pub mods: xkb_mod_mask_t,
-    pub virtual_mod: xkb_mod_index_t,
+    pub sym: u32,
+    pub match_0: u32,
+    pub mods: u32,
+    pub virtual_mod: u32,
     pub level_one_only: bool,
     pub repeat: bool,
     pub required: bool,
-    pub num_actions: xkb_action_count_t,
-    pub a: C2Rust_Unnamed_1,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub union C2Rust_Unnamed_1 {
+    pub num_actions: u16,
     pub action: xkb_action,
-    pub actions: *mut xkb_action,
+    pub actions: Vec<xkb_action>,
 }
 
 #[derive(Copy, Clone)]
@@ -206,7 +168,7 @@ pub struct xkb_internal_action {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub union C2Rust_Unnamed_2 {
-    pub clear_latched_mods: xkb_mod_mask_t,
+    pub clear_latched_mods: u32,
 }
 
 pub type xkb_internal_action_flags = u32;
@@ -248,9 +210,9 @@ pub struct xkb_private_action {
 #[repr(C)]
 pub struct xkb_redirect_key_action {
     pub type_0: xkb_action_type,
-    pub keycode: xkb_keycode_t,
-    pub affect: xkb_mod_mask_t,
-    pub mods: xkb_mod_mask_t,
+    pub keycode: u32,
+    pub affect: u32,
+    pub mods: u32,
 }
 
 #[derive(Copy, Clone)]
@@ -356,28 +318,25 @@ pub struct xkb_mod_action {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_mods {
-    pub mods: xkb_mod_mask_t,
-    pub mask: xkb_mod_mask_t,
+    pub mods: u32,
+    pub mask: u32,
 }
 
-pub type xkb_action_count_t = u16;
-
-pub type xkb_match_operation = u32;
-pub const MATCH_EXACTLY: xkb_match_operation = 4;
-pub const MATCH_ALL: xkb_match_operation = 3;
-pub const MATCH_ANY: xkb_match_operation = 2;
-pub const MATCH_ANY_OR_NONE: xkb_match_operation = 1;
-pub const MATCH_NONE: xkb_match_operation = 0;
+pub const MATCH_EXACTLY: u32 = 4;
+pub const MATCH_ALL: u32 = 3;
+pub const MATCH_ANY: u32 = 2;
+pub const MATCH_ANY_OR_NONE: u32 = 1;
+pub const MATCH_NONE: u32 = 0;
 
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_key_type {
-    pub name: xkb_atom_t,
+    pub name: u32,
     pub mods: xkb_mods,
     pub required: bool,
-    pub num_levels: xkb_level_index_t,
-    pub num_level_names: xkb_level_index_t,
-    pub level_names: *mut xkb_atom_t,
+    pub num_levels: u32,
+    pub num_level_names: u32,
+    pub level_names: *mut u32,
     pub num_entries: u32,
     pub entries: *mut xkb_key_type_entry,
 }
@@ -385,7 +344,7 @@ pub struct xkb_key_type {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_key_type_entry {
-    pub level: xkb_level_index_t,
+    pub level: u32,
     pub mods: xkb_mods,
     pub preserve: xkb_mods,
 }
@@ -407,8 +366,8 @@ pub struct C2Rust_Unnamed_4 {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_key_alias {
-    pub real: xkb_atom_t,
-    pub alias: xkb_atom_t,
+    pub real: u32,
+    pub alias: u32,
 }
 
 #[derive(Copy, Clone)]
@@ -432,7 +391,7 @@ pub struct C2Rust_Unnamed_6 {
     pub found: bool,
     pub c2rust_unnamed: bool,
     pub is_alias: bool,
-    pub real: xkb_atom_t,
+    pub real: u32,
 }
 
 #[derive(Copy, Clone)]
@@ -456,19 +415,19 @@ pub struct C2Rust_Unnamed_8 {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_key {
-    pub keycode: xkb_keycode_t,
-    pub name: xkb_atom_t,
+    pub keycode: u32,
+    pub name: u32,
     pub explicit: xkb_explicit_components,
-    pub modmap: xkb_mod_mask_t,
-    pub vmodmap: xkb_mod_mask_t,
+    pub modmap: u32,
+    pub vmodmap: u32,
     pub overlays: xkb_overlay_mask_t,
     pub overlays_inline: bool,
     pub repeats: bool,
     pub implicit_actions: bool,
     pub out_of_range_pending_group: bool,
-    pub out_of_range_group_policy: xkb_layout_out_of_range_policy,
-    pub out_of_range_group_number: xkb_layout_index_t,
-    pub num_groups: xkb_layout_index_t,
+    pub out_of_range_group_policy: u32,
+    pub out_of_range_group_number: u32,
+    pub num_groups: u32,
     pub groups: *mut xkb_group,
     pub c2rust_unnamed: C2Rust_Unnamed_9,
 }
@@ -495,7 +454,7 @@ pub struct xkb_group {
 #[repr(C)]
 pub struct xkb_level {
     pub num_syms: xkb_keysym_count_t,
-    pub num_actions: xkb_action_count_t,
+    pub num_actions: u16,
     pub c2rust_unnamed: C2Rust_Unnamed_12,
     pub s: C2Rust_Unnamed_11,
     pub a: C2Rust_Unnamed_10,
@@ -511,14 +470,14 @@ pub union C2Rust_Unnamed_10 {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub union C2Rust_Unnamed_11 {
-    pub sym: xkb_keysym_t,
-    pub syms: *mut xkb_keysym_t,
+    pub sym: u32,
+    pub syms: *mut u32,
 }
 
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub union C2Rust_Unnamed_12 {
-    pub upper: xkb_keysym_t,
+    pub upper: u32,
     pub has_upper: bool,
 }
 
@@ -537,17 +496,17 @@ pub const EXPLICIT_SYMBOLS: xkb_explicit_components = 1;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_led {
-    pub name: xkb_atom_t,
-    pub which_groups: xkb_state_component,
+    pub name: u32,
+    pub which_groups: u32,
     pub pending_groups: bool,
-    pub groups: xkb_layout_mask_t,
-    pub which_mods: xkb_state_component,
+    pub groups: u32,
+    pub which_mods: u32,
     pub mods: xkb_mods,
     pub ctrls: xkb_action_controls,
 }
 
 pub const XKB_MAX_GROUPS: i32 = 32 as i32;
-pub const MOD_REAL_MASK_ALL: xkb_mod_mask_t = 0xff as i32 as xkb_mod_mask_t;
+pub const MOD_REAL_MASK_ALL: u32 = 0xff as i32 as u32;
 
 // ── Additional xkbcommon types ──────────────────────────────────────
 
@@ -564,8 +523,8 @@ pub type xkb_led_mask_t = u32;
 pub const CHAR_BIT: i32 = 8;
 pub const UINT16_MAX: i32 = 65535;
 
-pub const XKB_MAX_LEDS: xkb_led_index_t =
-    (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(CHAR_BIT as usize) as xkb_led_index_t;
+pub const XKB_MAX_LEDS: u32 =
+    (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(CHAR_BIT as usize) as u32;
 pub const MAX_ACTIONS_PER_LEVEL: i32 = UINT16_MAX;
 
 // ── config_h constants ──────────────────────────────────────────────
@@ -653,13 +612,13 @@ pub const XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER: xkb_keymap_key_iterator_flag
 pub const XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND: xkb_keymap_key_iterator_flags = 2;
 
 pub type xkb_keymap_key_iter_t =
-    Option<unsafe fn(*mut xkb_keymap, xkb_keycode_t, *mut ::core::ffi::c_void) -> ()>;
+    Option<unsafe fn(*mut xkb_keymap, u32, *mut ::core::ffi::c_void) -> ()>;
 
 pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff;
 pub const XKB_KEYCODE_MAX: u32 = 0xffffffff_u32.wrapping_sub(1);
 pub const XKB_LED_INVALID: u32 = 0xffffffff;
 pub const XKB_LEVEL_INVALID: u32 = 0xffffffff;
-pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: xkb_keymap_format = 0xffffffff;
+pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: u32 = 0xffffffff;
 
 pub const XKB_KEYSYM_MAX: i32 = 0x1fffffff;
 
@@ -677,11 +636,11 @@ pub struct xkb_component_names {
 #[repr(C)]
 pub struct xkb_state_components_update {
     pub size: usize,
-    pub components: xkb_state_component,
-    pub affect_latched_mods: xkb_mod_mask_t,
-    pub latched_mods: xkb_mod_mask_t,
-    pub affect_locked_mods: xkb_mod_mask_t,
-    pub locked_mods: xkb_mod_mask_t,
+    pub components: u32,
+    pub affect_latched_mods: u32,
+    pub latched_mods: u32,
+    pub affect_locked_mods: u32,
+    pub locked_mods: u32,
     pub latched_layout: i32,
     pub locked_layout: i32,
     pub affect_controls: xkb_keyboard_control_flags,
@@ -692,8 +651,8 @@ pub struct xkb_state_components_update {
 #[repr(C)]
 pub struct xkb_layout_policy_update {
     pub size: usize,
-    pub policy: xkb_layout_out_of_range_policy,
-    pub redirect: xkb_layout_index_t,
+    pub policy: u32,
+    pub redirect: u32,
 }
 
 #[derive(Copy, Clone)]
@@ -704,7 +663,7 @@ pub struct xkb_state_update {
     pub layout_policy: *const xkb_layout_policy_update,
 }
 
-pub const XKB_ATOM_NONE: i32 = 0;
+pub const XKB_ATOM_NONE: u32 = 0;
 
 // ── keymap_h types & constants (moved from duplicated pub mod keymap_h blocks) ─
 
@@ -748,8 +707,7 @@ pub const XKB_OVERLAY_INVALID: i32 = 255;
 
 pub const XKB_KEYCODE_MAX_CONTIGUOUS: i32 = 0xfff;
 pub const XKB_LEVEL_MAX_IMPL: i32 = 2048;
-pub const XKB_MAX_MODS: xkb_mod_index_t =
-    (std::mem::size_of::<xkb_mod_mask_t>()).wrapping_mul(CHAR_BIT as usize) as xkb_mod_index_t;
+pub const XKB_MAX_MODS: u32 = (std::mem::size_of::<u32>()).wrapping_mul(CHAR_BIT as usize) as u32;
 
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -759,43 +717,39 @@ pub struct xkb_keymap_format_ops {
     pub keymap_new_from_names: Option<unsafe fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
     pub keymap_new_from_string: Option<unsafe fn(*mut xkb_keymap, *const i8, usize) -> bool>,
     pub keymap_new_from_file: Option<unsafe fn(*mut xkb_keymap, *mut libc::FILE) -> bool>,
-    pub keymap_get_as_string: Option<
-        unsafe fn(*mut xkb_keymap, xkb_keymap_format, xkb_keymap_serialize_flags) -> *mut i8,
-    >,
+    pub keymap_get_as_string:
+        Option<unsafe fn(*mut xkb_keymap, u32, xkb_keymap_serialize_flags) -> *mut i8>,
 }
 
 // ── Inline helpers ──────────────────────────────────────────────────
 
 #[inline]
-pub unsafe fn XkbKeyNumLevels(
-    mut key: *const xkb_key,
-    mut layout: xkb_layout_index_t,
-) -> xkb_level_index_t {
+pub unsafe fn XkbKeyNumLevels(mut key: *const xkb_key, mut layout: u32) -> u32 {
     unsafe {
         return (*(*(*key).groups.offset(layout as isize)).type_0).num_levels;
     }
 }
 
 #[inline]
-pub unsafe fn XkbKey(mut keymap: *mut xkb_keymap, mut kc: xkb_keycode_t) -> *const xkb_key {
+pub unsafe fn XkbKey(mut keymap: *mut xkb_keymap, mut kc: u32) -> *const xkb_key {
     unsafe {
         if kc < (*keymap).min_key_code || kc > (*keymap).max_key_code {
             return std::ptr::null();
         } else if kc < (*keymap).num_keys_low {
             return (*keymap).keys.offset(kc as isize) as *mut xkb_key;
         } else {
-            let mut lower: xkb_keycode_t = (*keymap).num_keys_low;
-            let mut upper: xkb_keycode_t = (*keymap).num_keys;
+            let mut lower: u32 = (*keymap).num_keys_low;
+            let mut upper: u32 = (*keymap).num_keys;
             while lower < upper {
-                let mid: xkb_keycode_t = lower.wrapping_add(
+                let mid: u32 = lower.wrapping_add(
                     upper
-                        .wrapping_sub(1 as xkb_keycode_t)
+                        .wrapping_sub(1 as u32)
                         .wrapping_sub(lower)
-                        .wrapping_div(2 as xkb_keycode_t),
+                        .wrapping_div(2 as u32),
                 );
                 let key: *const xkb_key = (*keymap).keys.offset(mid as isize) as *mut xkb_key;
                 if (*key).keycode < kc {
-                    lower = mid.wrapping_add(1 as xkb_keycode_t);
+                    lower = mid.wrapping_add(1 as u32);
                 } else if (*key).keycode > kc {
                     upper = mid;
                 } else {
@@ -810,7 +764,7 @@ pub unsafe fn XkbKey(mut keymap: *mut xkb_keymap, mut kc: xkb_keycode_t) -> *con
 #[inline]
 pub unsafe fn XkbKeyByName(
     mut keymap: *const xkb_keymap,
-    mut name: xkb_atom_t,
+    mut name: u32,
     mut use_aliases: bool,
 ) -> *mut xkb_key {
     unsafe {
@@ -843,13 +797,12 @@ pub unsafe fn XkbKeyByName(
 #[inline]
 pub unsafe fn entry_is_active(mut entry: *const xkb_key_type_entry) -> bool {
     unsafe {
-        return (*entry).mods.mods == 0 as xkb_mod_mask_t
-            || (*entry).mods.mask != 0 as xkb_mod_mask_t;
+        return (*entry).mods.mods == 0 as u32 || (*entry).mods.mask != 0 as u32;
     }
 }
 
 #[inline]
-pub unsafe fn format_max_overlays(mut format: xkb_keymap_format) -> xkb_overlay_index_t {
+pub unsafe fn format_max_overlays(mut format: u32) -> xkb_overlay_index_t {
     return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
         XKB_OVERLAY_MAX_X11 as usize
     } else {
@@ -858,12 +811,12 @@ pub unsafe fn format_max_overlays(mut format: xkb_keymap_format) -> xkb_overlay_
 }
 
 #[inline]
-pub unsafe fn format_max_groups(mut format: xkb_keymap_format) -> xkb_layout_index_t {
+pub unsafe fn format_max_groups(mut format: u32) -> u32 {
     return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
         XKB_MAX_GROUPS_X11
     } else {
         XKB_MAX_GROUPS
-    }) as xkb_layout_index_t;
+    }) as u32;
 }
 
 #[inline]
@@ -876,22 +829,22 @@ pub unsafe fn format_boolean_controls(mut format: u32) -> xkb_action_controls {
 }
 
 #[inline]
-pub unsafe fn isModsUnLockOnPressSupported(mut format: xkb_keymap_format) -> bool {
+pub unsafe fn isModsUnLockOnPressSupported(mut format: u32) -> bool {
     return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
 }
 
 #[inline]
-pub unsafe fn isGroupLockOnReleaseSupported(mut format: xkb_keymap_format) -> bool {
+pub unsafe fn isGroupLockOnReleaseSupported(mut format: u32) -> bool {
     return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
 }
 
 #[inline]
-pub unsafe fn isModsLatchOnPressSupported(mut format: xkb_keymap_format) -> bool {
+pub unsafe fn isModsLatchOnPressSupported(mut format: u32) -> bool {
     return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
 }
 
 #[inline]
-pub unsafe fn areOverlappingOverlaysSupported(mut format: xkb_keymap_format) -> bool {
+pub unsafe fn areOverlappingOverlaysSupported(mut format: u32) -> bool {
     return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
 }
 

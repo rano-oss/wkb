@@ -2,11 +2,11 @@ use crate::xkb::context::xkb_context_get_buffer;
 use crate::xkb_logf;
 
 use crate::xkb::shared_types::xkb_context;
-use crate::xkb::shared_types::{xkb_component_names, xkb_layout_index_t, xkb_rule_names};
+use crate::xkb::shared_types::{xkb_component_names, xkb_rule_names};
 pub unsafe fn xkb_components_from_rmlvo_builder(
     rmlvo: *const xkb_rmlvo_builder,
     out: *mut xkb_component_names,
-    explicit_layouts: *mut xkb_layout_index_t,
+    explicit_layouts: *mut u32,
 ) -> bool {
     unsafe {
         crate::xkb::xkbcomp::rules::xkb_components_from_rmlvo_builder(
@@ -20,7 +20,7 @@ pub unsafe fn xkb_components_from_rules_names(
     ctx: *mut xkb_context,
     rmlvo: *const xkb_rule_names,
     out: *mut xkb_component_names,
-    explicit_layouts: *mut xkb_layout_index_t,
+    explicit_layouts: *mut u32,
 ) -> bool {
     unsafe {
         crate::xkb::xkbcomp::rules::xkb_components_from_rules_names(
@@ -82,8 +82,8 @@ pub use crate::xkb::rmlvo::{
 };
 use crate::xkb::shared_ast_types::FreeXkbFile;
 pub use crate::xkb::shared_ast_types::{
-    _ParseCommon, stmt_type, xkb_file_type, xkb_file_type_to_string, xkb_map_flags, ParseCommon,
-    XkbFile, _FILE_TYPE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
+    _ParseCommon, stmt_type, xkb_file_type_to_string, xkb_map_flags, ParseCommon, XkbFile,
+    _FILE_TYPE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
     FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
     FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
     MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
@@ -107,31 +107,30 @@ use crate::xkb::xkbcomp::scanner::{XkbParseFile, XkbParseString};
 // Stub implementation for text_v1_keymap_get_as_string (serialization not yet implemented)
 unsafe fn text_v1_keymap_get_as_string(
     _keymap: *mut xkb_keymap,
-    _format: xkb_keymap_format,
+    _format: u32,
     _flags: xkb_keymap_serialize_flags,
 ) -> *mut i8 {
     ::core::ptr::null_mut()
 }
 pub use crate::xkb::shared_types::{
-    format_max_groups, mod_type, xkb_action, xkb_action_controls, xkb_action_count_t,
-    xkb_action_flags, xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group,
-    xkb_group_action, xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias,
-    xkb_key_type, xkb_key_type_entry, xkb_keymap, xkb_keymap_format, xkb_keymap_format_ops,
-    xkb_keymap_serialize_flags, xkb_keysym_count_t, xkb_led, xkb_level, xkb_match_operation,
-    xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_mask_t, xkb_pointer_action,
-    xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
-    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_1,
-    C2Rust_Unnamed_10, C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2, C2Rust_Unnamed_3,
-    C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7, C2Rust_Unnamed_8,
-    C2Rust_Unnamed_9, KeycodeMatch, _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH,
-    ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS,
-    ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK,
-    ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION,
-    ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
-    ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
-    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
-    ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
-    ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
+    format_max_groups, xkb_action, xkb_action_controls, xkb_action_flags, xkb_action_type,
+    xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
+    xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type, xkb_key_type_entry,
+    xkb_keymap, xkb_keymap_format_ops, xkb_keymap_serialize_flags, xkb_keysym_count_t, xkb_led,
+    xkb_level, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_mask_t,
+    xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
+    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_10,
+    C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4,
+    C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9,
+    KeycodeMatch, _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X,
+    ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK,
+    ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE,
+    ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN,
+    ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
+    ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK,
+    ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON,
+    ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY,
+    ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
     ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
     CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
     CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
@@ -185,7 +184,7 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
             types: std::ptr::null_mut(),
         };
         let mut file: *mut XkbFile = std::ptr::null_mut();
-        if (*(*keymap).ctx).log_level as u32 >= XKB_LOG_LEVEL_DEBUG as u32 {
+        if (*keymap).ctx.log_level as u32 >= XKB_LOG_LEVEL_DEBUG as u32 {
             let mut names: xkb_rule_names = xkb_rule_names {
                 rules: std::ptr::null(),
                 model: std::ptr::null(),
@@ -250,8 +249,7 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
             );
             return false;
         }
-        let max_groups: xkb_layout_index_t =
-            format_max_groups((*keymap).format) as xkb_layout_index_t;
+        let max_groups: u32 = format_max_groups((*keymap).format) as u32;
         if (*keymap).num_groups > max_groups {
             (*keymap).num_groups = max_groups;
         }
@@ -265,7 +263,7 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
             crate::xkb::utils::CStrDisplay(kccgst.compatibility),
             crate::xkb::utils::CStrDisplay(kccgst.symbols),
         );
-        file = XkbFileFromComponents((*keymap).ctx, &raw mut kccgst);
+        file = XkbFileFromComponents(&raw mut (*keymap).ctx, &raw mut kccgst);
         free(kccgst.keycodes as *mut ::core::ffi::c_void);
         free(kccgst.types as *mut ::core::ffi::c_void);
         free(kccgst.compatibility as *mut ::core::ffi::c_void);
@@ -312,7 +310,7 @@ unsafe fn text_v1_keymap_new_from_names(
             crate::xkb::utils::CStrDisplay((*rmlvo).options),
         );
         ok = xkb_components_from_rules_names(
-            (*keymap).ctx,
+            &raw mut (*keymap).ctx,
             rmlvo,
             &raw mut kccgst,
             &raw mut (*keymap).num_groups,
@@ -332,8 +330,7 @@ unsafe fn text_v1_keymap_new_from_names(
             );
             return false;
         }
-        let max_groups: xkb_layout_index_t =
-            format_max_groups((*keymap).format) as xkb_layout_index_t;
+        let max_groups: u32 = format_max_groups((*keymap).format) as u32;
         if (*keymap).num_groups > max_groups {
             (*keymap).num_groups = max_groups;
         }
@@ -347,7 +344,7 @@ unsafe fn text_v1_keymap_new_from_names(
             crate::xkb::utils::CStrDisplay(kccgst.compatibility),
             crate::xkb::utils::CStrDisplay(kccgst.symbols),
         );
-        file = XkbFileFromComponents((*keymap).ctx, &raw mut kccgst);
+        file = XkbFileFromComponents(&raw mut (*keymap).ctx, &raw mut kccgst);
         free(kccgst.keycodes as *mut ::core::ffi::c_void);
         free(kccgst.types as *mut ::core::ffi::c_void);
         free(kccgst.compatibility as *mut ::core::ffi::c_void);
@@ -377,7 +374,7 @@ unsafe fn text_v1_keymap_new_from_string(
         let mut ok: bool = false;
         let mut xkb_file: *mut XkbFile = std::ptr::null_mut();
         xkb_file = XkbParseString(
-            (*keymap).ctx,
+            &raw mut (*keymap).ctx,
             string,
             len,
             b"(input string)\0".as_ptr() as *const i8,
@@ -403,7 +400,7 @@ unsafe fn text_v1_keymap_new_from_file(mut keymap: *mut xkb_keymap, mut file: *m
         let mut ok: bool = false;
         let mut xkb_file: *mut XkbFile = std::ptr::null_mut();
         xkb_file = XkbParseFile(
-            (*keymap).ctx,
+            &raw mut (*keymap).ctx,
             file,
             b"(unknown file)\0".as_ptr() as *const i8,
             std::ptr::null(),
@@ -442,11 +439,7 @@ pub static mut text_v1_keymap_format_ops: xkb_keymap_format_ops = {
         ),
         keymap_get_as_string: Some(
             text_v1_keymap_get_as_string
-                as unsafe fn(
-                    *mut xkb_keymap,
-                    xkb_keymap_format,
-                    xkb_keymap_serialize_flags,
-                ) -> *mut i8,
+                as unsafe fn(*mut xkb_keymap, u32, xkb_keymap_serialize_flags) -> *mut i8,
         ),
     }
 };

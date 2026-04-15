@@ -99,12 +99,9 @@ impl Context {
     pub fn new() -> Option<Self> {
         unsafe {
             use crate::xkb::shared_types::XKB_CONTEXT_NO_FLAGS;
-            let ptr = super::context::xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-            if ptr.is_null() {
-                None
-            } else {
-                Some(Context { ptr })
-            }
+            let ctx = super::context::xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+            let ptr = Box::into_raw(Box::new(ctx));
+            Some(Context { ptr })
         }
     }
 
@@ -161,6 +158,8 @@ impl Drop for Context {
     fn drop(&mut self) {
         unsafe {
             super::context::xkb_context_unref(self.ptr);
+            // Context was Box::into_raw'd in Context::new(), so free it
+            drop(Box::from_raw(self.ptr));
         }
     }
 }

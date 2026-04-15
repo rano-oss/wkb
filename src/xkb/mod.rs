@@ -44,7 +44,6 @@ pub mod text;
 // Utilities
 pub mod utf8_decoding;
 pub mod utils;
-pub mod utils_paths;
 
 // Compilation modules
 pub mod xkbcomp; // XKB compiler with all submodules

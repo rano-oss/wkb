@@ -7,9 +7,10 @@ use std::ffi::CString;
 /// Atom table - string interning system
 ///
 /// Fully safe Rust internals. No C allocations.
+#[derive(Debug, Clone)]
 pub struct atom_table {
     /// Hash index for O(1) lookups (open addressing, linear probing)
-    index: Vec<xkb_atom_t>,
+    index: Vec<u32>,
     /// Interned strings. Index 0 is None (XKB_ATOM_NONE).
     /// Stored as CString so `.as_ptr()` returns a valid `*const i8`.
     strings: Vec<Option<CString>>,
@@ -30,42 +31,27 @@ fn hash_buf(bytes: &[u8]) -> u32 {
 }
 
 /// Create new atom table
-pub fn atom_table_new() -> *mut atom_table {
-    let table = atom_table {
+pub fn atom_table_new() -> atom_table {
+    atom_table {
         index: vec![0; 4],
         strings: vec![None], // index 0 = XKB_ATOM_NONE
-    };
-    Box::into_raw(Box::new(table))
-}
-
-/// Free atom table and all interned strings
-pub unsafe fn atom_table_free(table: *mut atom_table) {
-    if table.is_null() {
-        return;
-    }
-    // Safety: pointer came from Box::into_raw in atom_table_new
-    unsafe {
-        drop(Box::from_raw(table));
     }
 }
 
 /// Get number of atoms in table
-pub unsafe fn atom_table_size(table: *mut atom_table) -> u32 {
-    unsafe { (*table).strings.len() as u32 }
+pub fn atom_table_size(table: &atom_table) -> u32 {
+    table.strings.len() as u32
 }
 
 /// Get text for an atom (returns pointer to interned string)
-pub unsafe fn atom_text(table: *mut atom_table, atom: xkb_atom_t) -> *const i8 {
-    unsafe {
-        let t = &*table;
-        assert!(
-            (atom as usize) < t.strings.len(),
-            "atom index out of bounds"
-        );
-        match &t.strings[atom as usize] {
-            Some(cstr) => cstr.as_ptr(),
-            None => std::ptr::null(),
-        }
+pub fn atom_text(table: &atom_table, atom: u32) -> *const i8 {
+    assert!(
+        (atom as usize) < table.strings.len(),
+        "atom index out of bounds"
+    );
+    match &table.strings[atom as usize] {
+        Some(cstr) => cstr.as_ptr(),
+        None => std::ptr::null(),
     }
 }
 
@@ -73,20 +59,13 @@ pub unsafe fn atom_text(table: *mut atom_table, atom: xkb_atom_t) -> *const i8 {
 ///
 /// Returns `b""` for `XKB_ATOM_NONE` or invalid atoms.
 /// The returned slice is valid as long as the atom table is alive.
-///
-/// # Safety
-/// `table` must point to a valid atom_table. The returned slice must not
-/// outlive the table.
-pub unsafe fn atom_text_bytes<'a>(table: *mut atom_table, atom: xkb_atom_t) -> &'a [u8] {
-    unsafe {
-        let t = &*table;
-        if (atom as usize) >= t.strings.len() {
-            return b"";
-        }
-        match &t.strings[atom as usize] {
-            Some(cstr) => cstr.as_bytes(),
-            None => b"",
-        }
+pub fn atom_text_bytes(table: &atom_table, atom: u32) -> &[u8] {
+    if (atom as usize) >= table.strings.len() {
+        return b"";
+    }
+    match &table.strings[atom as usize] {
+        Some(cstr) => cstr.as_bytes(),
+        None => b"",
     }
 }
 
@@ -94,17 +73,12 @@ pub unsafe fn atom_text_bytes<'a>(table: *mut atom_table, atom: xkb_atom_t) -> &
 ///
 /// If `add` is true, adds string to table if not found.
 /// Returns atom ID or XKB_ATOM_NONE if not found and add=false.
-pub unsafe fn atom_intern(
-    table: *mut atom_table,
-    string: *const i8,
-    len: usize,
-    add: bool,
-) -> xkb_atom_t {
+pub unsafe fn atom_intern(table: &mut atom_table, string: *const i8, len: usize, add: bool) -> u32 {
     unsafe {
         // Convert input C string to a byte slice (not including null terminator)
         let input_bytes = std::slice::from_raw_parts(string as *const u8, len);
 
-        let t = &mut *table;
+        let t = table;
 
         // Resize hash table if load factor > 0.8
         if t.strings.len() > t.index.len() * 4 / 5 {
@@ -122,8 +96,8 @@ pub unsafe fn atom_intern(
                         if index_pos == 0 {
                             continue;
                         }
-                        if t.index[index_pos] == XKB_ATOM_NONE as xkb_atom_t {
-                            t.index[index_pos] = j as xkb_atom_t;
+                        if t.index[index_pos] == XKB_ATOM_NONE as u32 {
+                            t.index[index_pos] = j as u32;
                             break;
                         }
                     }
@@ -143,9 +117,9 @@ pub unsafe fn atom_intern(
             let existing_atom = t.index[index_pos];
 
             // Empty slot - not found
-            if existing_atom == XKB_ATOM_NONE as xkb_atom_t {
+            if existing_atom == XKB_ATOM_NONE {
                 if add {
-                    let new_atom = t.strings.len() as xkb_atom_t;
+                    let new_atom = t.strings.len() as u32;
 
                     // Create CString from bytes
                     let new_string =
@@ -157,7 +131,7 @@ pub unsafe fn atom_intern(
 
                     return new_atom;
                 } else {
-                    return XKB_ATOM_NONE as xkb_atom_t;
+                    return XKB_ATOM_NONE;
                 }
             }
 
@@ -182,47 +156,42 @@ mod tests {
     #[test]
     fn test_atom_table_basic() {
         unsafe {
-            let table = atom_table_new();
-            assert!(!table.is_null());
+            let mut table = atom_table_new();
 
             // Initially should have 1 atom (NONE at index 0)
-            assert_eq!(atom_table_size(table), 1);
+            assert_eq!(atom_table_size(&table), 1);
 
             // Intern a string
             let s1 = b"hello\0".as_ptr() as *const i8;
-            let atom1 = atom_intern(table, s1, 5, true);
+            let atom1 = atom_intern(&mut table, s1, 5, true);
             assert_ne!(atom1, XKB_ATOM_NONE as u32);
-            assert_eq!(atom_table_size(table), 2);
+            assert_eq!(atom_table_size(&table), 2);
 
             // Look up same string again
-            let atom2 = atom_intern(table, s1, 5, false);
+            let atom2 = atom_intern(&mut table, s1, 5, false);
             assert_eq!(atom1, atom2);
-            assert_eq!(atom_table_size(table), 2); // No new atom
+            assert_eq!(atom_table_size(&table), 2); // No new atom
 
             // Intern different string
             let s2 = b"world\0".as_ptr() as *const i8;
-            let atom3 = atom_intern(table, s2, 5, true);
+            let atom3 = atom_intern(&mut table, s2, 5, true);
             assert_ne!(atom3, atom1);
-            assert_eq!(atom_table_size(table), 3);
+            assert_eq!(atom_table_size(&table), 3);
 
             // Get text back
-            let text1 = atom_text(table, atom1);
+            let text1 = atom_text(&table, atom1);
             assert_eq!(std::ffi::CStr::from_ptr(text1).to_str().unwrap(), "hello");
-
-            atom_table_free(table);
         }
     }
 
     #[test]
     fn test_atom_not_found() {
         unsafe {
-            let table = atom_table_new();
+            let mut table = atom_table_new();
 
             let s = b"test\0".as_ptr() as *const i8;
-            let atom = atom_intern(table, s, 4, false);
+            let atom = atom_intern(&mut table, s, 4, false);
             assert_eq!(atom, XKB_ATOM_NONE as u32);
-
-            atom_table_free(table);
         }
     }
 }

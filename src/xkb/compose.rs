@@ -2,14 +2,12 @@
 
 // --- Compose table types and iteration (from compose_iter.rs) ---
 
-use crate::xkb::shared_types::xkb_keysym_t;
-
 #[derive(Clone)]
 pub struct xkb_compose_table {
     pub refcnt: i32,
     pub format: xkb_compose_format,
     pub flags: xkb_compose_compile_flags,
-    pub ctx: *mut xkb_context,
+    pub ctx: xkb_context,
     pub locale: *mut i8,
     pub utf8: Vec<i8>,
     pub nodes: Vec<compose_node>,
@@ -17,7 +15,7 @@ pub struct xkb_compose_table {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct compose_node {
-    pub keysym: xkb_keysym_t,
+    pub keysym: u32,
     pub lokid: u32,
     pub hikid: u32,
     pub c2rust_unnamed: C2Rust_Unnamed_2,
@@ -34,7 +32,7 @@ pub union C2Rust_Unnamed_2 {
 #[repr(C)]
 pub struct C2Rust_Unnamed_3 {
     pub utf8_is_leaf: u32,
-    pub keysym: xkb_keysym_t,
+    pub keysym: u32,
 }
 impl C2Rust_Unnamed_3 {
     #[inline]
@@ -65,8 +63,8 @@ impl C2Rust_Unnamed_5 {
 #[repr(C)]
 pub struct xkb_compose_table_entry {
     pub sequence_length: usize,
-    pub sequence: *mut xkb_keysym_t,
-    pub keysym: xkb_keysym_t,
+    pub sequence: *mut u32,
+    pub keysym: u32,
     pub utf8: *const i8,
 }
 
@@ -81,7 +79,7 @@ unsafe fn for_each_helper(
     mut table: *mut xkb_compose_table,
     mut iter: xkb_compose_table_iter_t,
     mut data: *mut ::core::ffi::c_void,
-    mut syms: *mut xkb_keysym_t,
+    mut syms: *mut u32,
     mut nsyms: usize,
     mut p: u32,
 ) {
@@ -130,12 +128,12 @@ pub unsafe fn xkb_compose_table_for_each(
         if (&(*table).nodes).len() <= 1 {
             return;
         }
-        let mut syms: [xkb_keysym_t; 10] = [0; 10];
+        let mut syms: [u32; 10] = [0; 10];
         for_each_helper(
             table,
             iter,
             data,
-            &raw mut syms as *mut xkb_keysym_t,
+            &raw mut syms as *mut u32,
             0 as usize,
             1 as u32,
         );

@@ -21,7 +21,7 @@ pub use crate::xkb::shared_ast_types::{
     STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
 pub use crate::xkb::shared_types::{
-    mod_type, xkb_mod, xkb_mod_set, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_MODS,
+    xkb_mod, xkb_mod_set, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_MODS,
 };
 use crate::xkb::text::ModMaskText;
 use crate::xkb::xkbcomp::expr::ExprResolveModMask;
@@ -32,15 +32,15 @@ pub unsafe fn InitVMods(mut info: *mut xkb_mod_set, mut mods: *const xkb_mod_set
             return;
         }
         let mut mod_0: *mut xkb_mod = std::ptr::null_mut();
-        let mut vmod: xkb_mod_index_t = 0 as xkb_mod_index_t;
-        vmod = 0 as xkb_mod_index_t;
+        let mut vmod: u32 = 0 as u32;
+        vmod = 0 as u32;
         mod_0 = &raw mut (*info).mods as *mut xkb_mod;
         while vmod < (*info).num_mods {
-            (*mod_0).mapping = 0 as xkb_mod_mask_t;
+            (*mod_0).mapping = 0 as u32;
             vmod = vmod.wrapping_add(1);
             mod_0 = mod_0.offset(1);
         }
-        (*info).explicit_vmods = 0 as xkb_mod_mask_t;
+        (*info).explicit_vmods = 0 as u32;
     }
 }
 pub unsafe fn MergeModSets(
@@ -51,12 +51,12 @@ pub unsafe fn MergeModSets(
 ) {
     unsafe {
         let clobber: bool = merge as u32 != MERGE_AUGMENT as u32;
-        let mut vmod: xkb_mod_index_t = 0;
+        let mut vmod: u32 = 0;
         let mut mod_0: *const xkb_mod = std::ptr::null();
-        vmod = 0 as xkb_mod_index_t;
+        vmod = 0 as u32;
         mod_0 = &raw const (*from).mods as *const xkb_mod;
         while vmod < (*from).num_mods {
-            let mask: xkb_mod_mask_t = (1 as xkb_mod_mask_t) << vmod;
+            let mask: u32 = (1 as u32) << vmod;
             if (*mod_0).type_0 as u32 != MOD_VIRT as u32 {
             } else if (*into).mods[vmod as usize].type_0 as u32 == 0 as u32 {
                 (*into).mods[vmod as usize] = *mod_0;
@@ -69,12 +69,12 @@ pub unsafe fn MergeModSets(
                     (*into).mods[vmod as usize].mapping = (*mod_0).mapping;
                     (*into).explicit_vmods |= mask;
                 } else if (*mod_0).mapping != (*into).mods[vmod as usize].mapping {
-                    let use_0: xkb_mod_mask_t = if clobber as i32 != 0 {
+                    let use_0: u32 = if clobber as i32 != 0 {
                         (*mod_0).mapping
                     } else {
                         (*into).mods[vmod as usize].mapping
                     };
-                    let ignore: xkb_mod_mask_t = if clobber as i32 != 0 {
+                    let ignore: u32 = if clobber as i32 != 0 {
                         (*into).mods[vmod as usize].mapping
                     } else {
                         (*mod_0).mapping
@@ -103,7 +103,7 @@ pub unsafe fn HandleVModDef(
     mut stmt: *mut VModDef,
 ) -> bool {
     unsafe {
-        let mut mapping: xkb_mod_mask_t = 0 as xkb_mod_mask_t;
+        let mut mapping: u32 = 0 as u32;
         if !(*stmt).value.is_null() {
             if !ExprResolveModMask(ctx, (*stmt).value, MOD_REAL, mods, &raw mut mapping) {
                 xkb_logf!(
@@ -116,9 +116,9 @@ pub unsafe fn HandleVModDef(
                 return false;
             }
         }
-        let mut vmod: xkb_mod_index_t = 0;
+        let mut vmod: u32 = 0;
         let mut mod_0: *mut xkb_mod = std::ptr::null_mut();
-        vmod = 0 as xkb_mod_index_t;
+        vmod = 0 as u32;
         mod_0 = &raw mut (*mods).mods as *mut xkb_mod;
         while vmod < (*mods).num_mods {
             if (*mod_0).name == (*stmt).name {
@@ -132,19 +132,19 @@ pub unsafe fn HandleVModDef(
                     );
                     return false;
                 }
-                let mask: xkb_mod_mask_t = (1 as xkb_mod_mask_t) << vmod;
+                let mask: u32 = (1 as u32) << vmod;
                 if (*stmt).value.is_null() {
                     return true;
                 } else if (*mods).explicit_vmods & mask == 0 {
                     (*mod_0).mapping = mapping;
                 } else if (*mod_0).mapping != mapping {
                     let clobber: bool = (*stmt).merge as u32 != MERGE_AUGMENT as u32;
-                    let use_0: xkb_mod_mask_t = if clobber as i32 != 0 {
+                    let use_0: u32 = if clobber as i32 != 0 {
                         mapping
                     } else {
                         (*mod_0).mapping
                     };
-                    let ignore: xkb_mod_mask_t = if clobber as i32 != 0 {
+                    let ignore: u32 = if clobber as i32 != 0 {
                         (*mod_0).mapping
                     } else {
                         mapping
@@ -173,7 +173,7 @@ pub unsafe fn HandleVModDef(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Cannot define virtual modifier {}: too many modifiers defined (maximum {})\n",
                 crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*stmt).name)),
-                (std::mem::size_of::<xkb_mod_mask_t>()).wrapping_mul(8 as usize) as xkb_mod_index_t,
+                (std::mem::size_of::<u32>()).wrapping_mul(8 as usize) as u32,
             );
             return false;
         }
@@ -181,7 +181,7 @@ pub unsafe fn HandleVModDef(
         (*mods).mods[(*mods).num_mods as usize].type_0 = MOD_VIRT;
         (*mods).mods[(*mods).num_mods as usize].mapping = mapping;
         if !(*stmt).value.is_null() {
-            let mask_0: xkb_mod_mask_t = (1 as xkb_mod_mask_t) << (*mods).num_mods;
+            let mask_0: u32 = (1 as u32) << (*mods).num_mods;
             (*mods).explicit_vmods |= mask_0;
         }
         (*mods).num_mods = (*mods).num_mods.wrapping_add(1);

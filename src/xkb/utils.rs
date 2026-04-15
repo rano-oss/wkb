@@ -490,6 +490,10 @@ pub unsafe fn check_eaccess(path: *const i8, mode: i32) -> bool {
     unsafe { eaccess(path, mode) == 0 }
 }
 
+pub unsafe fn is_absolute_path(path: *const i8) -> bool {
+    !path.is_null() && *path == b'/' as i8
+}
+
 pub unsafe fn xkb_check_versioned_struct_size_(
     mut v1_size: usize,
     mut min_size: usize,
@@ -632,7 +636,7 @@ pub fn parse_hex_u64(s: &[u8]) -> (u64, i32) {
     (result, i as i32)
 }
 
-/// Parse leading decimal integer from a C string.  
+/// Parse leading decimal integer from a C string.
 /// Returns `(value, bytes_consumed)`. On empty/non-digit input returns `(0, 0)`.
 pub unsafe fn cstr_parse_long(s: *const i8) -> (i64, usize) {
     unsafe {

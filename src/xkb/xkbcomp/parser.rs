@@ -7,7 +7,6 @@ use crate::xkb_logf;
 
 pub const XKB_KEYSYM_MIN: i32 = 0;
 
-use crate::xkb::shared_types::xkb_keysym_t;
 pub use crate::xkb::xkbcomp::ast_build::{
     BoolVarCreate, ExprAppendKeySymList, ExprCreateAction, ExprCreateActionList,
     ExprCreateArrayRef, ExprCreateBinary, ExprCreateFieldRef, ExprCreateFloat, ExprCreateIdent,
@@ -31,7 +30,7 @@ pub unsafe fn ExprKeySymListAppendString(
     }
 }
 
-pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> xkb_keysym_t {
+pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32 {
     unsafe { crate::xkb::xkbcomp::ast_build::KeysymParseString(scanner as *mut _, string) }
 }
 
@@ -107,11 +106,11 @@ pub use crate::xkb::messages::{
 };
 pub use crate::xkb::scanner_utils::{isvaleq, scanner, scanner_loc, sval};
 pub use crate::xkb::shared_ast_types::{
-    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, ExprAction,
-    ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent,
-    ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary, GroupCompatDef,
-    IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef,
-    ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, _FILE_TYPE_NUM_ENTRIES,
+    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_map_flags, ExprAction, ExprActionList,
+    ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger,
+    ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary, GroupCompatDef, IncludeStmt,
+    InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon,
+    SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, _FILE_TYPE_NUM_ENTRIES,
     _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
     FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
     FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
@@ -130,7 +129,7 @@ pub use crate::xkb::shared_ast_types::{safe_map_name, FreeXkbFile};
 use crate::xkb::utils::cstr_len;
 use crate::xkb::utils::streq_not_null;
 use libc::{free, malloc};
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct parser_param {
     pub ctx: *mut xkb_context,
@@ -341,10 +340,10 @@ unsafe fn _xkbcommon_error(mut param: *mut parser_param, mut msg: *const i8) {
 unsafe fn resolve_keysym(
     mut param: *mut parser_param,
     mut name: sval,
-    mut sym_rtrn: *mut xkb_keysym_t,
+    mut sym_rtrn: *mut u32,
 ) -> bool {
     unsafe {
-        let mut sym: xkb_keysym_t = 0;
+        let mut sym: u32 = 0;
         if isvaleq(
             name,
             sval {
@@ -362,7 +361,7 @@ unsafe fn resolve_keysym(
             ) as i32
                 != 0
         {
-            *sym_rtrn = XKB_KEY_NoSymbol as xkb_keysym_t;
+            *sym_rtrn = XKB_KEY_NoSymbol as u32;
             return true;
         }
         if isvaleq(
@@ -382,7 +381,7 @@ unsafe fn resolve_keysym(
             ) as i32
                 != 0
         {
-            *sym_rtrn = XKB_KEY_VoidSymbol as xkb_keysym_t;
+            *sym_rtrn = XKB_KEY_VoidSymbol as u32;
             return true;
         }
         let mut buf: [i8; 31] = [0; 31];
@@ -392,7 +391,7 @@ unsafe fn resolve_keysym(
         std::ptr::copy_nonoverlapping(name.start as *const u8, &raw mut buf as *mut u8, name.len);
         buf[name.len as usize] = '\0' as i32 as i8;
         sym = xkb_keysym_from_name(&raw mut buf as *mut i8, XKB_KEYSYM_NO_FLAGS);
-        if sym != XKB_KEY_NoSymbol as xkb_keysym_t {
+        if sym != XKB_KEY_NoSymbol as u32 {
             *sym_rtrn = sym;
             if ((*(*param).ctx).log_verbosity >= 2 as i32) as i32 as i64 != 0 {
                 let mut ref_name: *const i8 = std::ptr::null();
@@ -5145,8 +5144,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             let mut k: u32 = 0 as u32;
                             while k < (*yyvsp.offset(-3 as i32 as isize)).noSymbolOrActionList {
                                 let syms: *mut ExprDef =
-                                    ExprCreateKeySymList(XKB_KEY_NoSymbol as xkb_keysym_t)
-                                        as *mut ExprDef;
+                                    ExprCreateKeySymList(XKB_KEY_NoSymbol as u32) as *mut ExprDef;
                                 if syms.is_null() {
                                     c2rust_current_block = 7267896227379959561;
                                     break 's_60;
@@ -5764,7 +5762,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                         }
                         178 => {
                             yyval.expr = ExprCreateArrayRef(
-                                XKB_ATOM_NONE as xkb_atom_t,
+                                XKB_ATOM_NONE as u32,
                                 (*yyvsp.offset(-3 as i32 as isize)).atom,
                                 (*yyvsp.offset(-1 as i32 as isize)).expr,
                             );
@@ -5862,7 +5860,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             }
                         }
                         193 => {
-                            yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as xkb_keysym_t);
+                            yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
                             if yyval.expr.is_null() {
                                 c2rust_current_block = 9017681648503218951;
                             } else {
@@ -5887,7 +5885,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         195 => {
-                            yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as xkb_keysym_t);
+                            yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
                             if yyval.expr.is_null() {
                                 c2rust_current_block = 9017681648503218951;
                             } else {
@@ -5912,7 +5910,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         197 => {
-                            yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as xkb_keysym_t);
+                            yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
                             c2rust_current_block = 9699707990742192723;
                         }
                         198 => {
@@ -5927,7 +5925,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             free(
                                 (*yyvsp.offset(0 as i32 as isize)).str as *mut ::core::ffi::c_void,
                             );
-                            if yyval.keysym == XKB_KEY_NoSymbol as xkb_keysym_t {
+                            if yyval.keysym == XKB_KEY_NoSymbol as u32 {
                                 c2rust_current_block = 9017681648503218951;
                             } else {
                                 c2rust_current_block = 9699707990742192723;
@@ -5954,18 +5952,17 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                                         (*yyvsp.offset(0 as isize)).sval.start
                                     ),
                                 );
-                                yyval.keysym = XKB_KEY_NoSymbol as xkb_keysym_t;
+                                yyval.keysym = XKB_KEY_NoSymbol as u32;
                             }
                             c2rust_current_block = 9699707990742192723;
                         }
                         201 => {
-                            yyval.keysym = XKB_KEY_section as xkb_keysym_t;
+                            yyval.keysym = XKB_KEY_section as u32;
                             c2rust_current_block = 9699707990742192723;
                         }
                         202 => {
-                            yyval.keysym = (XKB_KEY_0 as xkb_keysym_t).wrapping_add(
-                                (*yyvsp.offset(0 as i32 as isize)).num as xkb_keysym_t,
-                            );
+                            yyval.keysym = (XKB_KEY_0 as u32)
+                                .wrapping_add((*yyvsp.offset(0 as i32 as isize)).num as u32);
                             c2rust_current_block = 9699707990742192723;
                         }
                         203 => {
@@ -5983,11 +5980,10 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                                     -(*yyvsp.offset(0 as i32 as isize)).num,
                                     (*yyvsp.offset(0 as i32 as isize)).num,
                                 );
-                                yyval.keysym = XKB_KEY_NoSymbol as xkb_keysym_t;
+                                yyval.keysym = XKB_KEY_NoSymbol as u32;
                             } else {
                                 if (*yyvsp.offset(0 as i32 as isize)).num <= XKB_KEYSYM_MAX as i64 {
-                                    yyval.keysym =
-                                        (*yyvsp.offset(0 as i32 as isize)).num as xkb_keysym_t;
+                                    yyval.keysym = (*yyvsp.offset(0 as i32 as isize)).num as u32;
                                     if ((*(*param).ctx).log_verbosity >= 2 as i32) as i32 as i64
                                         != 0
                                     {
@@ -6044,7 +6040,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                                         (*yyvsp.offset(0 as i32 as isize)).num,
                                         (*yyvsp.offset(0 as i32 as isize)).num,
                                     );
-                                    yyval.keysym = XKB_KEY_NoSymbol as xkb_keysym_t;
+                                    yyval.keysym = XKB_KEY_NoSymbol as u32;
                                 }
                                 let mut loc_5: scanner_loc = (*(*param).scanner).token_location();
                                 xkb_logf!(

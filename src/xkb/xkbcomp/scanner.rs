@@ -74,13 +74,13 @@ pub mod parser_h {
     #[repr(C)]
     pub union YYSTYPE {
         pub num: i64,
-        pub file_type: xkb_file_type,
+        pub file_type: u32,
         pub str: *mut i8,
         pub sval: sval,
-        pub atom: xkb_atom_t,
+        pub atom: u32,
         pub merge: merge_mode,
         pub mapFlags: xkb_map_flags,
-        pub keysym: xkb_keysym_t,
+        pub keysym: u32,
         pub any: *mut ParseCommon,
         pub anyList: C2Rust_Unnamed_6,
         pub noSymbolOrActionList: u32,
@@ -136,12 +136,10 @@ pub mod parser_h {
     }
     use crate::xkb::scanner_utils::sval;
     use crate::xkb::shared_ast_types::{
-        merge_mode, xkb_file_type, xkb_map_flags, ExprDef, GroupCompatDef, InterpDef, KeyAliasDef,
-        KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef,
-        UnknownStatement, VModDef, VarDef, XkbFile,
+        merge_mode, xkb_map_flags, ExprDef, GroupCompatDef, InterpDef, KeyAliasDef, KeyTypeDef,
+        KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement,
+        VModDef, VarDef, XkbFile,
     };
-    use crate::xkb::shared_types::xkb_atom_t;
-    use crate::xkb::shared_types::xkb_keysym_t;
 }
 pub mod utf8_h {
 
@@ -236,10 +234,10 @@ pub use crate::xkb::messages::{
 };
 pub use crate::xkb::scanner_utils::{scanner, scanner_loc, sval};
 pub use crate::xkb::shared_ast_types::{
-    _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_map_flags, ExprAction, ExprActionList,
-    ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger,
-    ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary, GroupCompatDef, InterpDef,
-    KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef,
+    _ParseCommon, merge_mode, stmt_type, xkb_map_flags, ExprAction, ExprActionList, ExprArrayRef,
+    ExprBinary, ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName,
+    ExprKeySym, ExprKeysymList, ExprString, ExprUnary, GroupCompatDef, InterpDef, KeyAliasDef,
+    KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef,
     UnknownStatement, VModDef, VarDef, XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
     _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES,
     FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,

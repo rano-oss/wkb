@@ -1,4 +1,4 @@
-use crate::xkb::shared_types::{xkb_context, xkb_layout_index_t};
+use crate::xkb::shared_types::xkb_context;
 use crate::xkb_logf;
 
 pub struct xkb_rmlvo_builder {
@@ -13,7 +13,7 @@ pub struct xkb_rmlvo_builder {
 #[repr(C)]
 pub struct xkb_rmlvo_builder_option {
     pub option: *mut i8,
-    pub layout: xkb_layout_index_t,
+    pub layout: u32,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -136,8 +136,8 @@ pub unsafe fn xkb_rmlvo_builder_append_layout(
     mut options_len: usize,
 ) -> bool {
     unsafe {
-        let idx: xkb_layout_index_t = (*rmlvo).layouts.len() as xkb_layout_index_t;
-        if idx >= XKB_MAX_GROUPS as xkb_layout_index_t {
+        let idx: u32 = (*rmlvo).layouts.len() as u32;
+        if idx >= XKB_MAX_GROUPS as u32 {
             xkb_logf!(
                 (*rmlvo).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -218,7 +218,7 @@ pub unsafe fn xkb_rmlvo_builder_append_option(
             return false;
         }
         for prev in (*rmlvo).options.iter() {
-            if prev.layout == XKB_LAYOUT_INVALID as xkb_layout_index_t
+            if prev.layout == XKB_LAYOUT_INVALID as u32
                 && cstr_as_bytes(prev.option) == cstr_as_bytes(option)
             {
                 return true;
@@ -226,7 +226,7 @@ pub unsafe fn xkb_rmlvo_builder_append_option(
         }
         let new: xkb_rmlvo_builder_option = xkb_rmlvo_builder_option {
             option: strdup_safe(option),
-            layout: XKB_LAYOUT_INVALID as xkb_layout_index_t,
+            layout: XKB_LAYOUT_INVALID as u32,
         };
         if new.option.is_null() {
             xkb_logf!(
@@ -349,7 +349,7 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
             }
             buf_size = buf_size.wrapping_sub(count_1 as usize);
             start = start.offset(count_1 as isize);
-            if option.layout != XKB_LAYOUT_INVALID as xkb_layout_index_t {
+            if option.layout != XKB_LAYOUT_INVALID as u32 {
                 let (written, trunc) = crate::xkb::utils::snprintf_args(
                     start,
                     buf_size,

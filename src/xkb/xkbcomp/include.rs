@@ -65,25 +65,25 @@ pub use crate::xkb::messages::{
 pub use crate::xkb::scanner_utils::{scanner, scanner_loc};
 use crate::xkb::shared_ast_types::FreeXkbFile;
 pub use crate::xkb::shared_ast_types::{
-    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type, xkb_file_type_to_string,
-    xkb_map_flags, IncludeStmt, ParseCommon, XkbFile, _FILE_TYPE_NUM_ENTRIES,
-    _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
-    FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
-    FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
-    MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
-    MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS,
-    STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF,
-    STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST,
-    STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL,
-    STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL,
-    STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL,
-    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP,
-    STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
-    STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
+    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type_to_string, xkb_map_flags,
+    IncludeStmt, ParseCommon, XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
+    _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES,
+    FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
+    LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER,
+    MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT,
+    MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST,
+    STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL,
+    STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL,
+    STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL,
+    STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE,
+    STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
+    STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME,
+    STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
+    STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
 use crate::xkb::utils::cstr_dup;
+use crate::xkb::utils::is_absolute_path;
 use crate::xkb::utils::{cstr_free, cstr_len};
-use crate::xkb::utils_paths::is_absolute_path;
 use crate::xkb::xkbcomp::scanner::XkbParseFile;
 use libc::{fclose, fopen, FILE};
 pub unsafe fn ParseIncludeMap(
@@ -163,7 +163,7 @@ static mut xkb_file_type_include_dirs: [*const i8; 7] = [
     b"keymap\0".as_ptr() as *const i8,
     b"rules\0".as_ptr() as *const i8,
 ];
-unsafe fn DirectoryForInclude(mut type_0: xkb_file_type) -> *const i8 {
+unsafe fn DirectoryForInclude(mut type_0: u32) -> *const i8 {
     unsafe {
         if type_0 as u32 >= _FILE_TYPE_NUM_ENTRIES as u32 {
             return b"\0".as_ptr() as *const i8;
@@ -370,7 +370,7 @@ pub unsafe fn expand_path(
     mut parent_file_name: *const i8,
     mut name: *const i8,
     mut name_len: usize,
-    mut type_0: xkb_file_type,
+    mut type_0: u32,
     mut buf: *mut i8,
     mut buf_size: usize,
 ) -> isize {
@@ -430,7 +430,7 @@ pub unsafe fn FindFileInXkbPath(
     mut parent_file_name: *const i8,
     mut name: *const i8,
     mut name_len: usize,
-    mut type_0: xkb_file_type,
+    mut type_0: u32,
     mut buf: *mut i8,
     mut buf_size: usize,
     mut offset: *mut u32,
@@ -520,14 +520,14 @@ pub unsafe fn ExceedsIncludeMaxDepth(mut ctx: *mut xkb_context, mut include_dept
 pub unsafe fn ProcessIncludeFile(
     mut ctx: *mut xkb_context,
     mut stmt: *const IncludeStmt,
-    mut file_type: xkb_file_type,
+    mut file_type: u32,
     mut path: *mut i8,
     mut path_size: usize,
 ) -> *mut XkbFile {
     unsafe {
         let mut xkb_file: *mut XkbFile = std::ptr::null_mut();
         let mut candidate: *mut XkbFile = std::ptr::null_mut();
-        let mut stmt_file: *const i8 = (*stmt).file;
+        let mut stmt_file = (*stmt).file;
         let mut stmt_file_len: usize = cstr_len(stmt_file);
         let expanded: isize = expand_path(
             ctx,

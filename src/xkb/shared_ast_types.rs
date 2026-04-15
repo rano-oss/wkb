@@ -4,10 +4,7 @@
 //! (a c2rust artifact). This module provides canonical definitions so that all modules
 //! can share the same Rust types.
 
-use crate::xkb::shared_types::{
-    xkb_atom_t, xkb_context, xkb_keymap, xkb_keysym_t, xkb_layout_index_t, xkb_log_level,
-    xkb_overlay_index_t,
-};
+use crate::xkb::shared_types::{xkb_context, xkb_keymap, xkb_overlay_index_t};
 use crate::xkb::text::LookupEntry;
 use crate::xkb_logf;
 
@@ -17,22 +14,21 @@ pub const XKB_ERROR_WRONG_FIELD_TYPE: xkb_message_code = 578;
 pub const XKB_ERROR_EXPECTED_ARRAY_ENTRY: xkb_message_code = 77;
 pub type xkb_log_verbosity = i32;
 pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
-pub const XKB_LOG_LEVEL_ERROR: xkb_log_level = 20;
+pub const XKB_LOG_LEVEL_ERROR: u32 = 20;
 
 // ── File type enum ──────────────────────────────────────────────────
 
-pub type xkb_file_type = u32;
-pub const FILE_TYPE_INVALID: xkb_file_type = 7;
-pub const _FILE_TYPE_NUM_ENTRIES: xkb_file_type = 7;
-pub const FILE_TYPE_RULES: xkb_file_type = 6;
-pub const FILE_TYPE_KEYMAP: xkb_file_type = 5;
-pub const FILE_TYPE_GEOMETRY: xkb_file_type = 4;
-pub const LAST_KEYMAP_FILE_TYPE: xkb_file_type = 3;
-pub const FIRST_KEYMAP_FILE_TYPE: xkb_file_type = 0;
-pub const FILE_TYPE_SYMBOLS: xkb_file_type = 3;
-pub const FILE_TYPE_COMPAT: xkb_file_type = 2;
-pub const FILE_TYPE_TYPES: xkb_file_type = 1;
-pub const FILE_TYPE_KEYCODES: xkb_file_type = 0;
+pub const FILE_TYPE_INVALID: u32 = 7;
+pub const _FILE_TYPE_NUM_ENTRIES: u32 = 7;
+pub const FILE_TYPE_RULES: u32 = 6;
+pub const FILE_TYPE_KEYMAP: u32 = 5;
+pub const FILE_TYPE_GEOMETRY: u32 = 4;
+pub const LAST_KEYMAP_FILE_TYPE: u32 = 3;
+pub const FIRST_KEYMAP_FILE_TYPE: u32 = 0;
+pub const FILE_TYPE_SYMBOLS: u32 = 3;
+pub const FILE_TYPE_COMPAT: u32 = 2;
+pub const FILE_TYPE_TYPES: u32 = 1;
+pub const FILE_TYPE_KEYCODES: u32 = 0;
 
 // ── Statement type enum ─────────────────────────────────────────────
 
@@ -95,7 +91,7 @@ pub struct _ParseCommon {
 }
 pub type ParseCommon = _ParseCommon;
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct _IncludeStmt {
     pub common: ParseCommon,
@@ -144,7 +140,7 @@ pub struct ExprKeysymListPadding {
 #[repr(C)]
 pub struct ExprKeysymList {
     pub common: ParseCommon,
-    pub syms: Vec<xkb_keysym_t>,
+    pub syms: Vec<u32>,
 }
 
 // Re-export ast_build functions used by consumers via ast_h
@@ -163,7 +159,7 @@ pub struct ExprActionList {
 #[repr(C)]
 pub struct ExprAction {
     pub common: ParseCommon,
-    pub name: xkb_atom_t,
+    pub name: u32,
     pub args: *mut ExprDef,
 }
 
@@ -171,8 +167,8 @@ pub struct ExprAction {
 #[repr(C)]
 pub struct ExprArrayRef {
     pub common: ParseCommon,
-    pub element: xkb_atom_t,
-    pub field: xkb_atom_t,
+    pub element: u32,
+    pub field: u32,
     pub entry: *mut ExprDef,
 }
 
@@ -180,8 +176,8 @@ pub struct ExprArrayRef {
 #[repr(C)]
 pub struct ExprFieldRef {
     pub common: ParseCommon,
-    pub element: xkb_atom_t,
-    pub field: xkb_atom_t,
+    pub element: u32,
+    pub field: u32,
 }
 
 #[derive(Copy, Clone)]
@@ -203,14 +199,14 @@ pub struct ExprBinary {
 #[repr(C)]
 pub struct ExprKeySym {
     pub common: ParseCommon,
-    pub keysym: xkb_keysym_t,
+    pub keysym: u32,
 }
 
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct ExprKeyName {
     pub common: ParseCommon,
-    pub key_name: xkb_atom_t,
+    pub key_name: u32,
 }
 
 #[derive(Copy, Clone)]
@@ -231,14 +227,14 @@ pub struct ExprBoolean {
 #[repr(C)]
 pub struct ExprString {
     pub common: ParseCommon,
-    pub str: xkb_atom_t,
+    pub str: u32,
 }
 
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct ExprIdent {
     pub common: ParseCommon,
-    pub ident: xkb_atom_t,
+    pub ident: u32,
 }
 
 // ── Statement definition types ──────────────────────────────────────
@@ -257,7 +253,7 @@ pub struct VarDef {
 pub struct VModDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
-    pub name: xkb_atom_t,
+    pub name: u32,
     pub value: *mut ExprDef,
 }
 
@@ -266,7 +262,7 @@ pub struct VModDef {
 pub struct KeycodeDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
-    pub name: xkb_atom_t,
+    pub name: u32,
     pub value: i64,
 }
 
@@ -275,8 +271,8 @@ pub struct KeycodeDef {
 pub struct KeyAliasDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
-    pub alias: xkb_atom_t,
-    pub real: xkb_atom_t,
+    pub alias: u32,
+    pub real: u32,
 }
 
 #[derive(Copy, Clone)]
@@ -284,7 +280,7 @@ pub struct KeyAliasDef {
 pub struct KeyTypeDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
-    pub name: xkb_atom_t,
+    pub name: u32,
     pub body: *mut VarDef,
 }
 
@@ -293,7 +289,7 @@ pub struct KeyTypeDef {
 pub struct SymbolsDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
-    pub keyName: xkb_atom_t,
+    pub keyName: u32,
     pub symbols: *mut VarDef,
 }
 
@@ -302,7 +298,7 @@ pub struct SymbolsDef {
 pub struct ModMapDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
-    pub modifier: xkb_atom_t,
+    pub modifier: u32,
     pub keys: *mut ExprDef,
 }
 
@@ -320,7 +316,7 @@ pub struct GroupCompatDef {
 pub struct InterpDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
-    pub sym: xkb_keysym_t,
+    pub sym: u32,
     pub match_0: *mut ExprDef,
     pub def: *mut VarDef,
 }
@@ -340,7 +336,7 @@ pub struct LedNameDef {
 pub struct LedMapDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
-    pub name: xkb_atom_t,
+    pub name: u32,
     pub body: *mut VarDef,
 }
 
@@ -369,7 +365,7 @@ pub struct XkbFile {
     pub common: ParseCommon,
     pub name: *mut i8,
     pub defs: *mut ParseCommon,
-    pub file_type: xkb_file_type,
+    pub file_type: u32,
     pub flags: xkb_map_flags,
 }
 
@@ -412,7 +408,7 @@ pub struct pending_computation {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_keymap_info {
-    pub keymap: xkb_keymap,
+    pub keymap: *mut xkb_keymap,
     pub strict: xkb_parser_strict_flags,
     pub features: XkbcompFeatures,
     pub lookup: XkbcompLookup,
@@ -431,7 +427,7 @@ pub struct XkbcompLookup {
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct XkbcompFeatures {
-    pub max_groups: xkb_layout_index_t,
+    pub max_groups: u32,
     pub max_overlays: xkb_overlay_index_t,
     pub controls_name_offset: u8,
     pub group_lock_on_release: bool,

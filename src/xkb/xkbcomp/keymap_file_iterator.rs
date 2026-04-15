@@ -21,7 +21,7 @@ pub struct xkb_file_include_group {
 #[derive(Clone)]
 pub struct xkb_file_section {
     pub name: u32,
-    pub file_type: xkb_file_type,
+    pub file_type: u32,
     pub flags: xkb_map_flags,
     pub include_groups: Vec<xkb_file_include_group>,
     pub includes: Vec<xkb_file_include>,
@@ -37,7 +37,7 @@ pub struct xkb_file_iterator {
     pub finished: bool,
     pub path: *const i8,
     pub map: *const i8,
-    pub type_0: xkb_file_type,
+    pub type_0: u32,
     pub scanner: scanner,
     pub section: xkb_file_section,
     pub pending_xkb_file: *mut XkbFile,
@@ -45,7 +45,7 @@ pub struct xkb_file_iterator {
     pub ctx: *mut xkb_context,
 }
 use crate::xkb::scanner_utils::scanner;
-use crate::xkb::shared_ast_types::{merge_mode, xkb_file_type, xkb_map_flags, XkbFile};
+use crate::xkb::shared_ast_types::{merge_mode, xkb_map_flags, XkbFile};
 use crate::xkb::shared_types::xkb_context;
 
 pub use crate::xkb::messages::{
@@ -120,7 +120,7 @@ pub struct C2Rust_Unnamed_1 {
     pub name: *const i8,
 }
 
-pub unsafe fn xkb_file_type_name(mut type_0: xkb_file_type) -> *const i8 {
+pub unsafe fn xkb_file_type_name(mut type_0: u32) -> *const i8 {
     unsafe {
         if type_0 as u32 > FILE_TYPE_KEYMAP as u32 {
             return b"unknown\0".as_ptr() as *const i8;
@@ -188,7 +188,7 @@ unsafe fn xkb_file_section_append_includes(
     mut flags: xkb_file_iterator_flags,
     mut section_path: *const i8,
     mut section: *mut xkb_file_section,
-    mut file_type: xkb_file_type,
+    mut file_type: u32,
     mut include: *mut IncludeStmt,
 ) -> bool {
     unsafe {
