@@ -327,7 +327,6 @@ pub const MATCH_ANY_OR_NONE: u32 = 1;
 pub const MATCH_NONE: u32 = 0;
 
 #[derive(Clone)]
-#[repr(C)]
 pub struct xkb_key_type {
     pub name: u32,
     pub mods: xkb_mods,
@@ -362,7 +361,6 @@ pub struct KeycodeMatch {
 }
 
 #[derive(Clone)]
-#[repr(C)]
 pub struct xkb_key {
     pub keycode: u32,
     pub name: u32,
@@ -402,7 +400,6 @@ impl Default for xkb_key {
 }
 
 #[derive(Clone)]
-#[repr(C)]
 pub struct xkb_group {
     pub explicit_symbols: bool,
     pub explicit_actions: bool,
