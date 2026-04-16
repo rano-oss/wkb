@@ -125,7 +125,7 @@ use libc::FILE;
 
 unsafe fn compile_keymap_file(keymap: *mut xkb_keymap, file: *mut XkbFile) -> bool {
     unsafe {
-        if (*file).file_type as u32 != FILE_TYPE_KEYMAP as u32 {
+        if (*file).file_type != FILE_TYPE_KEYMAP {
             xkb_logf!(
                 (*keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -146,7 +146,7 @@ unsafe fn compile_keymap_file(keymap: *mut xkb_keymap, file: *mut XkbFile) -> bo
             );
             return false;
         }
-        return true;
+        true
     }
 }
 unsafe fn text_v1_keymap_new_from_names(
@@ -154,9 +154,9 @@ unsafe fn text_v1_keymap_new_from_names(
     rmlvo: *const xkb_rule_names,
 ) -> bool {
     unsafe {
-        let mut ok: bool ;
+        let mut ok: bool;
         let mut kccgst: xkb_component_names = xkb_component_names::default();
-        let file: *mut XkbFile ;
+
         xkb_logf!(
             (*keymap).ctx,
             XKB_LOG_LEVEL_DEBUG,
@@ -189,7 +189,7 @@ unsafe fn text_v1_keymap_new_from_names(
         );
             return false;
         }
-        let max_groups: u32 = format_max_groups((*keymap).format) as u32;
+        let max_groups: u32 = format_max_groups((*keymap).format);
         if (*keymap).num_groups > max_groups {
             (*keymap).num_groups = max_groups;
         }
@@ -203,7 +203,7 @@ unsafe fn text_v1_keymap_new_from_names(
             crate::xkb::utils::CStrDisplay(kccgst.compatibility.as_ptr()),
             crate::xkb::utils::CStrDisplay(kccgst.symbols.as_ptr()),
         );
-        file = XkbFileFromComponents(&raw mut (*keymap).ctx, &raw mut kccgst);
+        let file: *mut XkbFile = XkbFileFromComponents(&raw mut (*keymap).ctx, &raw mut kccgst);
         drop(kccgst);
         if file.is_null() {
             xkb_logf!(
@@ -217,7 +217,7 @@ unsafe fn text_v1_keymap_new_from_names(
         }
         ok = compile_keymap_file(keymap, file);
         FreeXkbFile(file);
-        return ok;
+        ok
     }
 }
 unsafe fn text_v1_keymap_new_from_string(
@@ -226,9 +226,7 @@ unsafe fn text_v1_keymap_new_from_string(
     len: usize,
 ) -> bool {
     unsafe {
-        let ok: bool ;
-        let xkb_file: *mut XkbFile ;
-        xkb_file = XkbParseString(
+        let xkb_file: *mut XkbFile = XkbParseString(
             &raw mut (*keymap).ctx,
             string,
             len,
@@ -245,16 +243,14 @@ unsafe fn text_v1_keymap_new_from_string(
             );
             return false;
         }
-        ok = compile_keymap_file(keymap, xkb_file);
+        let ok: bool = compile_keymap_file(keymap, xkb_file);
         FreeXkbFile(xkb_file);
-        return ok;
+        ok
     }
 }
 unsafe fn text_v1_keymap_new_from_file(keymap: *mut xkb_keymap, file: *mut FILE) -> bool {
     unsafe {
-        let ok: bool ;
-        let xkb_file: *mut XkbFile ;
-        xkb_file = XkbParseFile(
+        let xkb_file: *mut XkbFile = XkbParseFile(
             &raw mut (*keymap).ctx,
             file,
             b"(unknown file)\0".as_ptr() as *const i8,
@@ -270,9 +266,9 @@ unsafe fn text_v1_keymap_new_from_file(keymap: *mut xkb_keymap, file: *mut FILE)
             );
             return false;
         }
-        ok = compile_keymap_file(keymap, xkb_file);
+        let ok: bool = compile_keymap_file(keymap, xkb_file);
         FreeXkbFile(xkb_file);
-        return ok;
+        ok
     }
 }
 pub static mut text_v1_keymap_format_ops: xkb_keymap_format_ops = {

@@ -1,12 +1,12 @@
 use crate::xkb::keysym_utf::xkb_utf32_to_keysym;
-pub const XKB_KEY_Mode_switch: i32 = 0xff7e as i32;
-pub const XKB_KEY_Num_Lock: i32 = 0xff7f as i32;
-pub const XKB_KEY_KP_Space: i32 = 0xff80 as i32;
-pub const XKB_KEY_KP_Equal: i32 = 0xffbd as i32;
-pub const XKB_KEY_Shift_L: i32 = 0xffe1 as i32;
-pub const XKB_KEY_Hyper_R: i32 = 0xffee as i32;
-pub const XKB_KEY_ISO_Lock: i32 = 0xfe01 as i32;
-pub const XKB_KEY_ISO_Level5_Lock: i32 = 0xfe13 as i32;
+pub const XKB_KEY_Mode_switch: i32 = 0xff7e_i32;
+pub const XKB_KEY_Num_Lock: i32 = 0xff7f_i32;
+pub const XKB_KEY_KP_Space: i32 = 0xff80_i32;
+pub const XKB_KEY_KP_Equal: i32 = 0xffbd_i32;
+pub const XKB_KEY_Shift_L: i32 = 0xffe1_i32;
+pub const XKB_KEY_Hyper_R: i32 = 0xffee_i32;
+pub const XKB_KEY_ISO_Lock: i32 = 0xfe01_i32;
+pub const XKB_KEY_ISO_Level5_Lock: i32 = 0xfe13_i32;
 use crate::xkb::shared_types::*;
 pub mod keysym_names_h {
     #[derive(Copy, Clone)]
@@ -270,23 +270,21 @@ pub mod keysym_names_h {
         unsafe {
             let T1: *const i8 = b"gQEXVgBVbDK59TnjkSMO7UnyrqsrcaA4\0".as_ptr() as *const i8;
             let T2: *const i8 = b"AB6xkcvEK5OHbYOD14cPYBxnVAoDGTPL\0".as_ptr() as *const i8;
-            let mut h1: usize = 0 as usize;
-            let mut h2: usize = 0 as usize;
-            let mut i: usize = 0 as usize;
-            while *key.offset(i as isize) as i32 != '\0' as i32 {
+            let mut h1: usize = 0_usize;
+            let mut h2: usize = 0_usize;
+            let mut i: usize = 0_usize;
+            while *key.add(i) as i32 != '\0' as i32 {
                 h1 = h1.wrapping_add(
-                    (*T1.offset(i.wrapping_rem(32 as usize) as isize) as i32
-                        * *key.offset(i as isize) as i32) as usize,
+                    (*T1.add(i.wrapping_rem(32_usize)) as i32 * *key.add(i) as i32) as usize,
                 );
                 h2 = h2.wrapping_add(
-                    (*T2.offset(i.wrapping_rem(32 as usize) as isize) as i32
-                        * *key.offset(i as isize) as i32) as usize,
+                    (*T2.add(i.wrapping_rem(32_usize)) as i32 * *key.add(i) as i32) as usize,
                 );
                 i = i.wrapping_add(1);
             }
-            return ((keysym_name_G[h1.wrapping_rem(4728 as usize) as usize] as i32
-                + keysym_name_G[h2.wrapping_rem(4728 as usize) as usize] as i32)
-                % 4728 as i32) as usize;
+            ((keysym_name_G[h1.wrapping_rem(4728_usize)] as i32
+                + keysym_name_G[h2.wrapping_rem(4728_usize)] as i32)
+                % 4728_i32) as usize
         }
     }
     pub static mut name_to_keysym: [name_keysym; 2635] = [
@@ -20847,944 +20845,944 @@ pub mod keysym_names_h {
         deprecated_keysym {
             keysym: 0x27,
             offset: 934,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x60,
             offset: 13397,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xab,
             offset: 14480,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xba,
             offset: 21049,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xbb,
             offset: 14494,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xd0,
             offset: 12195,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xd8,
             offset: 21494,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xde,
             offset: 25730,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xf8,
             offset: 21501,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x3a2,
             offset: 19268,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x4a5,
             offset: 18364,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x4af,
             offset: 18802,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x4c1,
             offset: 18324,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x4c2,
             offset: 18793,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x4cc,
             offset: 18395,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x5e7,
             offset: 1282,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x6a4,
             offset: 26443,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x6a6,
             offset: 26418,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x6a7,
             offset: 26469,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x6a8,
             offset: 9574,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x6a9,
             offset: 9713,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x6aa,
             offset: 9739,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x6af,
             offset: 9068,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x6b4,
             offset: 26430,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x6b6,
             offset: 26406,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x6b7,
             offset: 26456,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x6b8,
             offset: 9562,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x6b9,
             offset: 9700,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x6ba,
             offset: 9726,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x6bf,
             offset: 9054,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x7a5,
             offset: 13857,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x8a2,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x8a3,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x8a6,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xaac,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xabc,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xabd,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xabe,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xaca,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xacc,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xacd,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xace,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xacf,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xadb,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xadc,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xadd,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xade,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xadf,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xae0,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xae1,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xae2,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xae3,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xae4,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xae5,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xae6,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xae7,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xae8,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xae9,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xaea,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xaeb,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xba3,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xba6,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xba8,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xba9,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xbc0,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xbc3,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xbc6,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xbd6,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xbd8,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xbda,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xce1,
             offset: 16271,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xce2,
             offset: 16452,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xce3,
             offset: 16306,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xce6,
             offset: 16737,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xce7,
             offset: 16294,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xce8,
             offset: 16668,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xcf1,
             offset: 16592,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xcf5,
             offset: 16418,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xcf6,
             offset: 16713,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xcf7,
             offset: 16568,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xcfa,
             offset: 16657,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xdde,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xeff,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xfe8a,
             offset: 11166,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xfe8b,
             offset: 11155,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xff20,
             offset: 19996,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xff37,
             offset: 8654,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xff3c,
             offset: 23236,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xff3d,
             offset: 20006,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xff3e,
             offset: 22298,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xff55,
             offset: 22322,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xff56,
             offset: 20208,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xff61,
             offset: 22316,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xff65,
             offset: 26588,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xff66,
             offset: 22524,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xff68,
             offset: 12662,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xff69,
             offset: 8489,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xff7e,
             offset: 17760,
-            explicit_index: 0 as u8,
-            explicit_count: 1 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 1_u8,
         },
         deprecated_keysym {
             keysym: 0xff9a,
             offset: 19203,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xff9b,
             offset: 19171,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffc8,
             offset: 12297,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffc9,
             offset: 12301,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffca,
             offset: 12305,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffcb,
             offset: 12309,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffcc,
             offset: 12313,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffcd,
             offset: 12317,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffce,
             offset: 12321,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffcf,
             offset: 12325,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffd0,
             offset: 12329,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffd1,
             offset: 12336,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffd2,
             offset: 12340,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffd3,
             offset: 12344,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffd4,
             offset: 12348,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffd5,
             offset: 12352,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffd6,
             offset: 12356,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffd7,
             offset: 12360,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffd8,
             offset: 12364,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffd9,
             offset: 12368,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffda,
             offset: 12372,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffdb,
             offset: 12379,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffdc,
             offset: 12383,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffdd,
             offset: 12387,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffde,
             offset: 12391,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffdf,
             offset: 12395,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0xffe0,
             offset: 12399,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100055b,
             offset: 2048,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100055c,
             offset: 2287,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100055d,
             offset: 2869,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100055e,
             offset: 2779,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1000589,
             offset: 2327,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100058a,
             offset: 2448,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x10006cc,
             offset: 12521,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1002247,
             offset: UNICODE_KEYSYM,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1002248,
             offset: UNICODE_KEYSYM,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100000a8,
             offset: 17070,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100000a9,
             offset: 17137,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100000aa,
             offset: 17083,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100000ab,
             offset: 17120,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100000ac,
             offset: 17102,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100000af,
             offset: 17027,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100000be,
             offset: 16973,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100000ee,
             offset: 17174,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100000f6,
             offset: 17034,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100000fc,
             offset: 16927,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1000ff6c,
             offset: 17150,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1000ff6d,
             offset: 17158,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1000ff6e,
             offset: 17167,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1000ff6f,
             offset: 16935,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1000ff70,
             offset: 16996,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1000ff71,
             offset: 16960,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1000ff72,
             offset: 16983,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1000ff73,
             offset: 16947,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1000ff74,
             offset: 16917,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1000ff75,
             offset: 17014,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1000ff76,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x1000ff77,
-            offset: DEPRECATED_KEYSYM as u16,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            offset: DEPRECATED_KEYSYM,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
         deprecated_keysym {
             keysym: 0x100810f4,
             offset: 30518,
-            explicit_index: 0 as u8,
-            explicit_count: 0 as u8,
+            explicit_index: 0_u8,
+            explicit_count: 0_u8,
         },
     ];
     pub static mut explicit_deprecated_aliases: [u32; 1] = [24103];
@@ -21805,53 +21803,49 @@ use crate::xkb::utils::{cstr_as_bytes, istrcmp, istrncmp};
 use crate::xkb::utils::{cstr_free, cstr_len};
 fn find_keysym_index(ks: u32) -> isize {
     if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
-        return -1 as i32 as isize;
+        return -1_i32 as isize;
     }
-    let mut lo: isize = 0 as isize;
+    let mut lo: isize = 0_isize;
     let mut hi: isize = (std::mem::size_of::<[name_keysym; 2502]>())
         .wrapping_div(std::mem::size_of::<name_keysym>())
-        .wrapping_sub(1 as usize) as isize;
+        .wrapping_sub(1_usize) as isize;
     while hi >= lo {
-        let mid: isize = (lo + hi) / 2 as isize;
+        let mid: isize = (lo + hi) / 2_isize;
         unsafe {
             if ks > keysym_to_name[mid as usize].keysym {
-                lo = mid + 1 as isize;
+                lo = mid + 1_isize;
             } else if ks < keysym_to_name[mid as usize].keysym {
-                hi = mid - 1 as isize;
+                hi = mid - 1_isize;
             } else {
                 return mid;
             }
         }
     }
-    return -1 as i32 as isize;
+    -1_i32 as isize
 }
 #[inline]
 unsafe fn get_name(entry: *const name_keysym) -> *const i8 {
-    unsafe {
-        return keysym_names.offset((*entry).offset as i32 as isize);
-    }
+    unsafe { keysym_names.offset((*entry).offset as i32 as isize) }
 }
 #[inline]
 unsafe fn get_unicode_name(ks: u32, buffer: *mut i8, size: usize) -> i32 {
-    unsafe {
-        return crate::xkb::utils::snprintf_c(buffer, size, format_args!("U{:04X}", ks & 0xffffff));
-    }
+    unsafe { crate::xkb::utils::snprintf_c(buffer, size, format_args!("U{:04X}", ks & 0xffffff)) }
 }
 pub unsafe fn xkb_keysym_get_name(ks: u32, buffer: *mut i8, size: usize) -> i32 {
     unsafe {
         if ks > XKB_KEYSYM_MAX as u32 {
             crate::xkb::utils::snprintf_args(buffer, size, format_args!("Invalid"));
-            return -1 as i32;
+            return -1_i32;
         }
         let index: isize = find_keysym_index(ks);
-        if index != -1 as i32 as isize {
+        if index != -1_i32 as isize {
             return crate::xkb::utils::snprintf_c(
                 buffer,
                 size,
                 format_args!(
                     "{}",
                     crate::xkb::utils::CStrDisplay(get_name(
-                        (&raw const keysym_to_name as *const name_keysym).offset(index as isize)
+                        (&raw const keysym_to_name as *const name_keysym).offset(index)
                             as *const name_keysym,
                     ))
                 ),
@@ -21860,7 +21854,7 @@ pub unsafe fn xkb_keysym_get_name(ks: u32, buffer: *mut i8, size: usize) -> i32 
         if ks >= XKB_KEYSYM_UNICODE_MIN as u32 && ks <= XKB_KEYSYM_UNICODE_MAX as u32 {
             return get_unicode_name(ks, buffer, size);
         }
-        return crate::xkb::utils::snprintf_c(buffer, size, format_args!("0x{:08x}", ks));
+        crate::xkb::utils::snprintf_c(buffer, size, format_args!("0x{:08x}", ks))
     }
 }
 
@@ -21874,40 +21868,39 @@ unsafe fn parse_keysym_hex(s: *const i8, out: *mut u32) -> bool {
         };
         let (val, count) = crate::xkb::utils::parse_hex_u32(slice);
         *out = val;
-        return count > 0 && *s.offset(count as isize) as i32 == '\0' as i32;
+        count > 0 && *s.offset(count as isize) as i32 == '\0' as i32
     }
 }
 pub unsafe fn xkb_keysym_from_name(name: *const i8, flags: xkb_keysym_flags) -> u32 {
     unsafe {
         static mut XKB_KEYSYM_FLAGS: xkb_keysym_flags = XKB_KEYSYM_CASE_INSENSITIVE;
-        if flags as u32 & !(XKB_KEYSYM_FLAGS as u32) != 0 {
+        if flags & !XKB_KEYSYM_FLAGS != 0 {
             return XKB_KEY_NoSymbol as u32;
         }
         let mut entry: *const name_keysym = std::ptr::null();
         let tmp: *mut i8;
         let mut val: u32 = 0;
-        let icase: bool = flags as u32 & XKB_KEYSYM_CASE_INSENSITIVE as u32 != 0;
+        let icase: bool = flags & XKB_KEYSYM_CASE_INSENSITIVE != 0;
         if !icase {
             let pos: usize = keysym_name_perfect_hash(name);
             if pos
                 < (std::mem::size_of::<[name_keysym; 2635]>())
                     .wrapping_div(std::mem::size_of::<name_keysym>())
             {
-                let s: *const i8 = get_name(
-                    (&raw const name_to_keysym as *const name_keysym).offset(pos as isize)
-                        as *const name_keysym,
-                );
+                let s: *const i8 =
+                    get_name((&raw const name_to_keysym as *const name_keysym).add(pos)
+                        as *const name_keysym);
                 if cstr_as_bytes(name) == cstr_as_bytes(s) {
-                    return name_to_keysym[pos as usize].keysym;
+                    return name_to_keysym[pos].keysym;
                 }
             }
         } else {
-            let mut lo: i32 = 0 as i32;
+            let mut lo: i32 = 0_i32;
             let mut hi: i32 = (std::mem::size_of::<[name_keysym; 2635]>())
                 .wrapping_div(std::mem::size_of::<name_keysym>())
-                .wrapping_sub(1 as usize) as i32;
+                .wrapping_sub(1_usize) as i32;
             while hi >= lo {
-                let mid: i32 = (lo + hi) / 2 as i32;
+                let mid: i32 = (lo + hi) / 2_i32;
                 let cmp: i32 = istrcmp(
                     cstr_as_bytes(name),
                     cstr_as_bytes(get_name(
@@ -21915,10 +21908,10 @@ pub unsafe fn xkb_keysym_from_name(name: *const i8, flags: xkb_keysym_flags) -> 
                             as *const name_keysym,
                     )),
                 );
-                if cmp > 0 as i32 {
-                    lo = mid + 1 as i32;
-                } else if cmp < 0 as i32 {
-                    hi = mid - 1 as i32;
+                if cmp > 0_i32 {
+                    lo = mid + 1_i32;
+                } else if cmp < 0_i32 {
+                    hi = mid - 1_i32;
                 } else {
                     entry = (&raw const name_to_keysym as *const name_keysym).offset(mid as isize)
                         as *const name_keysym;
@@ -21926,19 +21919,17 @@ pub unsafe fn xkb_keysym_from_name(name: *const i8, flags: xkb_keysym_flags) -> 
                 }
             }
             if !entry.is_null() {
-                let last: *const name_keysym;
-                last = (&raw const name_to_keysym as *const name_keysym)
-                    .offset(
+                let last: *const name_keysym = (&raw const name_to_keysym as *const name_keysym)
+                    .add(
                         (std::mem::size_of::<[name_keysym; 2635]>())
-                            .wrapping_div(std::mem::size_of::<name_keysym>())
-                            as isize,
+                            .wrapping_div(std::mem::size_of::<name_keysym>()),
                     )
-                    .offset(-(1 as i32 as isize));
+                    .offset(-(1_i32 as isize));
                 while entry < last
                     && istrcmp(
-                        cstr_as_bytes(get_name(entry.offset(1 as i32 as isize))),
+                        cstr_as_bytes(get_name(entry.offset(1_i32 as isize))),
                         cstr_as_bytes(get_name(entry)),
-                    ) == 0 as i32
+                    ) == 0_i32
                 {
                     entry = entry.offset(1);
                 }
@@ -21946,19 +21937,19 @@ pub unsafe fn xkb_keysym_from_name(name: *const i8, flags: xkb_keysym_flags) -> 
             }
         }
         if *name as i32 == 'U' as i32 || icase as i32 != 0 && *name as i32 == 'u' as i32 {
-            if !parse_keysym_hex(name.offset(1 as i32 as isize) as *const i8, &raw mut val) {
+            if !parse_keysym_hex(name.offset(1_i32 as isize) as *const i8, &raw mut val) {
                 return XKB_KEY_NoSymbol as u32;
             }
-            return if val > 0xff as u32 && val <= 0x10ffff as u32 {
+            return if val > 0xff_u32 && val <= 0x10ffff_u32 {
                 (XKB_KEYSYM_UNICODE_OFFSET as u32).wrapping_add(val)
             } else {
                 xkb_utf32_to_keysym(val)
             };
-        } else if *name.offset(0 as i32 as isize) as i32 == '0' as i32
-            && (*name.offset(1 as i32 as isize) as i32 == 'x' as i32
-                || icase as i32 != 0 && *name.offset(1 as i32 as isize) as i32 == 'X' as i32)
+        } else if *name.offset(0_i32 as isize) as i32 == '0' as i32
+            && (*name.offset(1_i32 as isize) as i32 == 'x' as i32
+                || icase as i32 != 0 && *name.offset(1_i32 as isize) as i32 == 'X' as i32)
         {
-            if !parse_keysym_hex(name.offset(2 as i32 as isize) as *const i8, &raw mut val)
+            if !parse_keysym_hex(name.offset(2_i32 as isize) as *const i8, &raw mut val)
                 || val > XKB_KEYSYM_MAX as u32
             {
                 return XKB_KEY_NoSymbol as u32;
@@ -21966,29 +21957,27 @@ pub unsafe fn xkb_keysym_from_name(name: *const i8, flags: xkb_keysym_flags) -> 
             return val;
         }
         if cstr_as_bytes(name).starts_with(b"XF86_")
-            || icase as i32 != 0 && istrncmp(cstr_as_bytes(name), b"XF86_", 5 as usize) == 0 as i32
+            || icase as i32 != 0 && istrncmp(cstr_as_bytes(name), b"XF86_", 5_usize) == 0_i32
         {
             tmp = cstr_dup(name);
             if tmp.is_null() {
                 return XKB_KEY_NoSymbol as u32;
             }
             std::ptr::copy(
-                tmp.offset(5 as i32 as isize),
-                tmp.offset(4 as i32 as isize),
-                cstr_len(name)
-                    .wrapping_sub(5 as usize)
-                    .wrapping_add(1 as usize),
+                tmp.offset(5_i32 as isize),
+                tmp.offset(4_i32 as isize),
+                cstr_len(name).wrapping_sub(5_usize).wrapping_add(1_usize),
             );
             let ret = xkb_keysym_from_name(tmp, flags);
             cstr_free(tmp);
             return ret;
         }
-        return XKB_KEY_NoSymbol as u32;
+        XKB_KEY_NoSymbol as u32
     }
 }
 
 pub fn xkb_keysym_is_keypad(keysym: u32) -> bool {
-    return keysym >= XKB_KEY_KP_Space as u32 && keysym <= XKB_KEY_KP_Equal as u32;
+    keysym >= XKB_KEY_KP_Space as u32 && keysym <= XKB_KEY_KP_Equal as u32
 }
 
 pub unsafe fn xkb_keysym_is_deprecated(
@@ -22000,6 +21989,6 @@ pub unsafe fn xkb_keysym_is_deprecated(
         // Stub implementation: For Wayland-only usage, we don't need to track deprecated keysym names
         // This function is used by the parser to warn about deprecated keysym names
         *reference_name = std::ptr::null();
-        return false;
+        false
     }
 }

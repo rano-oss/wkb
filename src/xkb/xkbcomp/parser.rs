@@ -1,7 +1,7 @@
 use crate::xkb::context::xkb_atom_intern;
-pub const XKB_KEY_VoidSymbol: i32 = 0xffffff as i32;
-pub const XKB_KEY_0: i32 = 0x30 as i32;
-pub const XKB_KEY_section: i32 = 0xa7 as i32;
+pub const XKB_KEY_VoidSymbol: i32 = 0xffffff_i32;
+pub const XKB_KEY_0: i32 = 0x30_i32;
+pub const XKB_KEY_section: i32 = 0xa7_i32;
 use crate::xkb::keysym::{xkb_keysym_from_name, xkb_keysym_is_deprecated};
 use crate::xkb_logf;
 
@@ -337,11 +337,10 @@ unsafe fn _xkbcommon_error(param: *mut parser_param, msg: *const i8) {
 }
 unsafe fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u32) -> bool {
     unsafe {
-        let sym: u32;
         if isvaleq(
             name,
             sval {
-                len: (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1 as usize),
+                len: (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1_usize),
                 start: b"any\0".as_ptr() as *const i8,
             },
         ) as i32
@@ -349,7 +348,7 @@ unsafe fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u3
             || isvaleq(
                 name,
                 sval {
-                    len: (std::mem::size_of::<[i8; 9]>()).wrapping_sub(1 as usize),
+                    len: (std::mem::size_of::<[i8; 9]>()).wrapping_sub(1_usize),
                     start: b"nosymbol\0".as_ptr() as *const i8,
                 },
             ) as i32
@@ -361,7 +360,7 @@ unsafe fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u3
         if isvaleq(
             name,
             sval {
-                len: (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1 as usize),
+                len: (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1_usize),
                 start: b"none\0".as_ptr() as *const i8,
             },
         ) as i32
@@ -369,7 +368,7 @@ unsafe fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u3
             || isvaleq(
                 name,
                 sval {
-                    len: (std::mem::size_of::<[i8; 11]>()).wrapping_sub(1 as usize),
+                    len: (std::mem::size_of::<[i8; 11]>()).wrapping_sub(1_usize),
                     start: b"voidsymbol\0".as_ptr() as *const i8,
                 },
             ) as i32
@@ -383,11 +382,11 @@ unsafe fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u3
             return false;
         }
         std::ptr::copy_nonoverlapping(name.start as *const u8, &raw mut buf as *mut u8, name.len);
-        buf[name.len as usize] = '\0' as i32 as i8;
-        sym = xkb_keysym_from_name(&raw mut buf as *mut i8, XKB_KEYSYM_NO_FLAGS);
+        buf[name.len] = '\0' as i32 as i8;
+        let sym: u32 = xkb_keysym_from_name(&raw mut buf as *mut i8, XKB_KEYSYM_NO_FLAGS);
         if sym != XKB_KEY_NoSymbol as u32 {
             *sym_rtrn = sym;
-            if ((*(*param).ctx).log_verbosity >= 2 as i32) as i32 as i64 != 0 {
+            if ((*(*param).ctx).log_verbosity >= 2_i32) as i32 as i64 != 0 {
                 let mut ref_name: *const i8 = std::ptr::null();
                 if xkb_keysym_is_deprecated(sym, &raw mut buf as *mut i8, &raw mut ref_name) {
                     if ref_name.is_null() {
@@ -422,7 +421,7 @@ unsafe fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u3
             }
             return true;
         }
-        return false;
+        false
     }
 }
 pub const YY_NULLPTR: *mut ::core::ffi::c_void = std::ptr::null_mut();
@@ -431,7 +430,7 @@ pub const YYFINAL: i32 = 16;
 pub const YYLAST: i32 = 928;
 pub const YYNTOKENS: i32 = 66;
 pub const YYMAXUTOK: i32 = 257;
-static mut yytranslate: [i8; 258] = [
+static mut YYTRANSLATE: [i8; 258] = [
     0, 4, 5, 6, 7, 8, 9, 10, 11, 2, 12, 13, 14, 15, 16, 2, 2, 2, 2, 2, 17, 18, 19, 20, 21, 22, 23,
     24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 2, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
     47, 48, 49, 50, 51, 2, 2, 2, 2, 52, 53, 54, 55, 56, 57, 2, 2, 2, 2, 58, 59, 60, 61, 62, 63, 64,
@@ -444,7 +443,7 @@ static mut yytranslate: [i8; 258] = [
 ];
 unsafe fn yysymbol_name(yysymbol: yysymbol_kind_t) -> *const i8 {
     unsafe {
-        static mut yy_sname: [*const i8; 150] = [
+        static mut YY_SNAME: [*const i8; 150] = [
             b"end of file\0".as_ptr() as *const i8,
             b"error\0".as_ptr() as *const i8,
             b"invalid token\0".as_ptr() as *const i8,
@@ -596,11 +595,11 @@ unsafe fn yysymbol_name(yysymbol: yysymbol_kind_t) -> *const i8 {
             b"MapName\0".as_ptr() as *const i8,
             std::ptr::null(),
         ];
-        return yy_sname[yysymbol as usize];
+        YY_SNAME[yysymbol as usize]
     }
 }
-pub const YYPACT_NINF: i32 = -280 as i32;
-static mut yypact: [i16; 384] = [
+pub const YYPACT_NINF: i32 = -280_i32;
+static mut YYPACT: [i16; 384] = [
     7, -280, -280, -280, -280, -280, -280, -280, -280, -280, 32, -280, -280, 578, 847, -280, -280,
     -280, -280, -280, -280, -280, -280, -280, -280, -12, -12, -280, -280, 22, -280, 36, -280, -280,
     463, 10, 53, -280, 458, -280, -280, -280, -280, -280, 57, -280, 25, 34, -280, -280, 64, 59,
@@ -625,7 +624,7 @@ static mut yypact: [i16; 384] = [
     -280, 332, -280, 113, -280, -280, 403, 425, 384, 117, 427, -24, -280, -280, -280, -280, -280,
     -280,
 ];
-static mut yydefact: [u8; 384] = [
+static mut YYDEFACT: [u8; 384] = [
     18, 4, 21, 22, 23, 24, 25, 26, 27, 28, 0, 2, 3, 0, 17, 20, 1, 6, 12, 13, 15, 14, 16, 7, 8, 218,
     218, 19, 219, 0, 217, 0, 10, 31, 18, 142, 0, 9, 0, 143, 145, 144, 146, 147, 0, 29, 0, 141, 5,
     11, 0, 132, 131, 130, 133, 0, 134, 135, 136, 137, 138, 139, 140, 125, 126, 127, 0, 0, 214, 0,
@@ -644,21 +643,21 @@ static mut yydefact: [u8; 384] = [
     190, 79, 77, 75, 197, 122, 118, 150, 109, 0, 108, 98, 0, 0, 0, 0, 0, 0, 114, 111, 112, 110,
     105, 107,
 ];
-static mut yypgoto: [yytype_int16; 83] = [
+static mut YYPGOTO: [yytype_int16; 83] = [
     -280, -280, -280, -280, -280, 434, -280, 443, -280, 469, -280, -280, -45, -280, -280, -280,
     -280, 356, -280, -280, 51, -280, -280, -280, -280, 244, 251, -280, -280, -280, -280, 249, 466,
     -280, -280, -280, -280, -280, -280, 302, -280, 187, -280, 138, -280, -280, 144, -280, 257,
     -196, 259, 470, -280, -46, -280, -280, -280, -279, 63, 5, 232, -280, -176, 231, -181, -35,
     -280, 474, 247, -280, 240, -280, 500, -182, 236, 291, -280, -44, -280, -37, -23, 528, -280,
 ];
-static mut yydefgoto: [yytype_int16; 83] = [
+static mut YYDEFGOTO: [yytype_int16; 83] = [
     0, 10, 11, 25, 34, 12, 26, 13, 14, 15, 35, 45, 241, 72, 73, 74, 94, 95, 75, 104, 181, 76, 77,
     186, 187, 188, 189, 247, 78, 79, 195, 196, 211, 81, 82, 83, 84, 85, 212, 213, 326, 327, 369,
     370, 214, 355, 356, 202, 203, 204, 205, 215, 87, 169, 89, 46, 47, 288, 289, 171, 248, 226, 172,
     173, 227, 174, 121, 175, 251, 300, 252, 347, 197, 106, 269, 270, 123, 124, 152, 176, 125, 29,
     30,
 ];
-static mut yytable: [yytype_int16; 929] = [
+static mut YYTABLE: [yytype_int16; 929] = [
     88, 71, 253, 250, 264, 333, 335, 1, 249, 91, 336, 90, 111, 96, 113, -71, 200, 367, 132, 133,
     112, -71, 39, 40, 41, 42, 43, 128, 98, 129, 118, 93, 16, 368, 70, 114, 115, 231, 116, 128, 28,
     129, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 44, 60, 61, 260, 62, 63, 64, 65, 66, 261, 301, 32,
@@ -704,7 +703,7 @@ static mut yytable: [yytype_int16; 929] = [
     53, 156, 0, 157, 158, 159, 160, 0, 60, 161, 0, 162, 93, 0, 0, 70, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 93, 0, 0, 70,
 ];
-static mut yycheck: [yytype_int16; 929] = [
+static mut YYCHECK: [yytype_int16; 929] = [
     46, 46, 184, 184, 200, 284, 44, 0, 184, 46, 48, 46, 56, 50, 58, 42, 41, 41, 48, 49, 57, 48, 12,
     13, 14, 15, 16, 45, 51, 47, 67, 56, 0, 57, 59, 58, 59, 43, 61, 45, 52, 47, 17, 18, 19, 20, 21,
     22, 23, 24, 25, 26, 42, 28, 29, 42, 31, 32, 33, 34, 35, 48, 244, 41, 87, 58, 59, 60, 61, 62,
@@ -753,14 +752,14 @@ pub unsafe fn parse(ctx: *mut xkb_context, scanner: *mut scanner, map: *const i8
         let mut ret: i32;
         let mut first: *mut XkbFile = std::ptr::null_mut();
         let mut param: parser_param = parser_param {
-            ctx: ctx,
-            scanner: scanner,
+            ctx,
+            scanner,
             rtrn: std::ptr::null_mut(),
             more_maps: false,
         };
         loop {
             ret = _xkbcommon_parse(&raw mut param);
-            if !(ret == 0 as i32 && param.more_maps as i32 != 0) {
+            if !(ret == 0_i32 && param.more_maps as i32 != 0) {
                 break;
             }
             if !map.is_null() {
@@ -769,7 +768,7 @@ pub unsafe fn parse(ctx: *mut xkb_context, scanner: *mut scanner, map: *const i8
                 } else {
                     FreeXkbFile(param.rtrn);
                 }
-            } else if (*param.rtrn).flags as u32 & MAP_IS_DEFAULT as u32 != 0 {
+            } else if (*param.rtrn).flags as u32 & MAP_IS_DEFAULT != 0 {
                 FreeXkbFile(first);
                 return param.rtrn;
             } else if first.is_null() {
@@ -779,7 +778,7 @@ pub unsafe fn parse(ctx: *mut xkb_context, scanner: *mut scanner, map: *const i8
             }
             param.rtrn = std::ptr::null_mut();
         }
-        if ret != 0 as i32 {
+        if ret != 0_i32 {
             FreeXkbFile(first);
             FreeXkbFile(param.rtrn);
             return std::ptr::null_mut();
@@ -795,10 +794,10 @@ pub unsafe fn parse(ctx: *mut xkb_context, scanner: *mut scanner, map: *const i8
                 crate::xkb::utils::CStrDisplay(safe_map_name(first)),
             );
         }
-        return first;
+        first
     }
 }
-static mut yystos: [yytype_uint8; 384] = [
+static mut YYSTOS: [yytype_uint8; 384] = [
     0, 0, 58, 59, 60, 61, 62, 63, 64, 65, 67, 68, 71, 73, 74, 75, 0, 4, 5, 6, 7, 8, 9, 10, 11, 69,
     72, 75, 52, 147, 148, 147, 41, 41, 70, 76, 42, 71, 73, 12, 13, 14, 15, 16, 42, 77, 121, 122,
     49, 49, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 31, 32, 33, 34, 35, 50, 56, 57, 59, 78,
@@ -825,25 +824,24 @@ pub unsafe fn parse_next(
     xkb_file: *mut *mut XkbFile,
 ) -> bool {
     unsafe {
-        let ret: i32;
         let mut param: parser_param = parser_param {
-            ctx: ctx,
-            scanner: scanner,
+            ctx,
+            scanner,
             rtrn: std::ptr::null_mut(),
             more_maps: false,
         };
-        ret = _xkbcommon_parse(&raw mut param);
-        if ret == 0 as i32 && param.more_maps as i32 != 0 {
+        let ret: i32 = _xkbcommon_parse(&raw mut param);
+        if ret == 0_i32 && param.more_maps as i32 != 0 {
             *xkb_file = param.rtrn;
-            return true;
+            true
         } else {
             FreeXkbFile(param.rtrn);
             *xkb_file = std::ptr::null_mut();
-            return ret == 0 as i32;
-        };
+            ret == 0_i32
+        }
     }
 }
-static mut yyr1: [yytype_uint8; 220] = [
+static mut YYR1: [yytype_uint8; 220] = [
     0, 66, 67, 67, 67, 68, 69, 69, 69, 70, 70, 71, 72, 72, 72, 72, 72, 73, 73, 74, 74, 75, 75, 75,
     75, 75, 75, 75, 75, 76, 76, 76, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77,
     78, 78, 78, 79, 80, 81, 82, 82, 83, 83, 84, 85, 85, 86, 86, 87, 88, 89, 89, 90, 90, 91, 91, 91,
@@ -856,7 +854,7 @@ static mut yyr1: [yytype_uint8; 220] = [
     135, 135, 135, 135, 136, 136, 137, 137, 138, 138, 139, 139, 139, 139, 140, 140, 141, 141, 141,
     142, 143, 143, 144, 144, 145, 145, 146, 147, 147, 148,
 ];
-static mut yyr2: [yytype_int8; 220] = [
+static mut YYR2: [yytype_int8; 220] = [
     0, 2, 1, 1, 1, 7, 1, 1, 1, 2, 0, 7, 1, 1, 1, 1, 1, 1, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 0,
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 2, 3, 4, 5, 3, 3, 1, 1, 3, 6, 3, 1, 2, 0, 6,
     6, 1, 0, 3, 1, 3, 3, 1, 2, 1, 3, 5, 3, 5, 3, 4, 2, 0, 5, 6, 3, 1, 1, 1, 6, 5, 6, 5, 6, 6, 6, 6,
@@ -865,19 +863,19 @@ static mut yyr2: [yytype_int8; 220] = [
     2, 1, 4, 1, 1, 3, 3, 3, 1, 1, 3, 1, 3, 1, 2, 4, 1, 3, 4, 6, 1, 0, 1, 1, 1, 1, 3, 3, 1, 1, 3, 3,
     1, 1, 3, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
 ];
-pub const YYINITDEPTH: i32 = 200 as i32;
-pub const YYMAXDEPTH: i32 = 10000 as i32;
+pub const YYINITDEPTH: i32 = 200_i32;
+pub const YYMAXDEPTH: i32 = 10000_i32;
 unsafe fn yypcontext_expected_tokens(
     yyctx: *const yypcontext_t,
     yyarg: *mut yysymbol_kind_t,
     yyargn: i32,
 ) -> i32 {
     unsafe {
-        let mut yycount: i32 = 0 as i32;
-        let yyn: i32 = yypact[*(*yyctx).yyssp as usize] as i32;
-        if !(yyn == YYPACT_NINF) {
-            let yyxbegin: i32 = if yyn < 0 as i32 { -yyn } else { 0 as i32 };
-            let yychecklim: i32 = YYLAST - yyn + 1 as i32;
+        let mut yycount: i32 = 0_i32;
+        let yyn: i32 = YYPACT[*(*yyctx).yyssp as usize] as i32;
+        if yyn != YYPACT_NINF {
+            let yyxbegin: i32 = if yyn < 0_i32 { -yyn } else { 0_i32 };
+            let yychecklim: i32 = YYLAST - yyn + 1_i32;
             let yyxend: i32 = if yychecklim < YYNTOKENS {
                 yychecklim
             } else {
@@ -886,27 +884,24 @@ unsafe fn yypcontext_expected_tokens(
             let mut yyx: i32;
             yyx = yyxbegin;
             while yyx < yyxend {
-                if yycheck[(yyx + yyn) as usize] as i32 == yyx
-                    && yyx != YYSYMBOL_YYerror as i32
-                    && true
-                {
+                if YYCHECK[(yyx + yyn) as usize] as i32 == yyx && yyx != YYSYMBOL_YYerror && true {
                     if yyarg.is_null() {
                         yycount += 1;
                     } else if yycount == yyargn {
-                        return 0 as i32;
+                        return 0_i32;
                     } else {
                         let c2rust_fresh4 = yycount;
-                        yycount = yycount + 1;
+                        yycount += 1;
                         *yyarg.offset(c2rust_fresh4 as isize) = yyx as yysymbol_kind_t;
                     }
                 }
                 yyx += 1;
             }
         }
-        if !yyarg.is_null() && yycount == 0 as i32 && (0 as i32) < yyargn {
-            *yyarg.offset(0 as i32 as isize) = YYSYMBOL_YYEMPTY;
+        if !yyarg.is_null() && yycount == 0_i32 && 0_i32 < yyargn {
+            *yyarg.offset(0_i32 as isize) = YYSYMBOL_YYEMPTY;
         }
-        return yycount;
+        yycount
     }
 }
 unsafe fn yy_syntax_error_arguments(
@@ -915,29 +910,28 @@ unsafe fn yy_syntax_error_arguments(
     yyargn: i32,
 ) -> i32 {
     unsafe {
-        let mut yycount: i32 = 0 as i32;
-        if (*yyctx).yytoken as i32 != YYSYMBOL_YYEMPTY as i32 {
-            let yyn: i32;
+        let mut yycount: i32 = 0_i32;
+        if (*yyctx).yytoken != YYSYMBOL_YYEMPTY {
             if !yyarg.is_null() {
                 *yyarg.offset(yycount as isize) = (*yyctx).yytoken;
             }
             yycount += 1;
-            yyn = yypcontext_expected_tokens(
+            let yyn: i32 = yypcontext_expected_tokens(
                 yyctx,
                 if !yyarg.is_null() {
-                    yyarg.offset(1 as i32 as isize)
+                    yyarg.offset(1_i32 as isize)
                 } else {
                     yyarg
                 },
-                yyargn - 1 as i32,
+                yyargn - 1_i32,
             );
-            if yyn == YYENOMEM as i32 {
-                return YYENOMEM as i32;
+            if yyn == YYENOMEM {
+                return YYENOMEM;
             } else {
                 yycount += yyn;
             }
         }
-        return yycount;
+        yycount
     }
 }
 unsafe fn yysyntax_error(
@@ -954,8 +948,8 @@ unsafe fn yysyntax_error(
             &raw mut yyarg as *mut yysymbol_kind_t,
             YYARGS_MAX as i32,
         );
-        if yycount == YYENOMEM as i32 {
-            return YYENOMEM as i32;
+        if yycount == YYENOMEM {
+            return YYENOMEM;
         }
         match yycount {
             1 => {
@@ -980,65 +974,65 @@ unsafe fn yysyntax_error(
                 yyformat = b"syntax error\0".as_ptr() as *const i8;
             }
         }
-        yysize = cstr_len(yyformat) as i64 - (2 as i32 * yycount) as i64 + 1 as i64;
+        yysize = cstr_len(yyformat) as i64 - (2_i32 * yycount) as i64 + 1_i64;
         let mut yyi: i32;
-        yyi = 0 as i32;
+        yyi = 0_i32;
         while yyi < yycount {
             let yysize1: i64 = yysize + cstr_len(yysymbol_name(yyarg[yyi as usize])) as i64;
             if yysize <= yysize1
                 && yysize1
-                    <= (if (9223372036854775807 as i64 as u64) < -1 as i32 as u64 {
-                        9223372036854775807 as i64 as u64
+                    <= (if (9223372036854775807_i64 as u64) < -1_i32 as u64 {
+                        9223372036854775807_i64 as u64
                     } else {
-                        -1 as i32 as u64
+                        -1_i32 as u64
                     }) as i64
             {
                 yysize = yysize1;
             } else {
-                return YYENOMEM as i32;
+                return YYENOMEM;
             }
             yyi += 1;
         }
         if *yymsg_alloc < yysize {
-            *yymsg_alloc = 2 as i64 * yysize;
+            *yymsg_alloc = 2_i64 * yysize;
             if !(yysize <= *yymsg_alloc
                 && *yymsg_alloc
-                    <= (if (9223372036854775807 as i64 as u64) < -1 as i32 as u64 {
-                        9223372036854775807 as i64 as u64
+                    <= (if (9223372036854775807_i64 as u64) < -1_i32 as u64 {
+                        9223372036854775807_i64 as u64
                     } else {
-                        -1 as i32 as u64
+                        -1_i32 as u64
                     }) as i64)
             {
-                *yymsg_alloc = (if (9223372036854775807 as i64 as u64) < -1 as i32 as u64 {
-                    9223372036854775807 as i64 as u64
+                *yymsg_alloc = (if (9223372036854775807_i64 as u64) < -1_i32 as u64 {
+                    9223372036854775807_i64 as u64
                 } else {
-                    -1 as i32 as u64
+                    -1_i32 as u64
                 }) as i64;
             }
-            return -1 as i32;
+            return -1_i32;
         }
         let mut yyp: *mut i8 = *yymsg;
-        let mut yyi_0: i32 = 0 as i32;
+        let mut yyi_0: i32 = 0_i32;
         loop {
             *yyp = *yyformat;
-            if !(*yyp as i32 != '\0' as i32) {
+            if *yyp as i32 == '\0' as i32 {
                 break;
             }
             if *yyp as i32 == '%' as i32
-                && *yyformat.offset(1 as i32 as isize) as i32 == 's' as i32
+                && *yyformat.offset(1_i32 as isize) as i32 == 's' as i32
                 && yyi_0 < yycount
             {
                 let c2rust_fresh3 = yyi_0;
-                yyi_0 = yyi_0 + 1;
+                yyi_0 += 1;
                 yyp =
                     crate::xkb::utils::cstr_pcpy(yyp, yysymbol_name(yyarg[c2rust_fresh3 as usize]));
-                yyformat = yyformat.offset(2 as isize);
+                yyformat = yyformat.offset(2_isize);
             } else {
                 yyp = yyp.offset(1);
                 yyformat = yyformat.offset(1);
             }
         }
-        return 0 as i32;
+        0_i32
     }
 }
 unsafe fn yydestruct(
@@ -1051,27 +1045,21 @@ unsafe fn yydestruct(
         if yymsg.is_null() {
             // dead store removed: yymsg = b"Deleting\0".as_ptr() as *const i8;
         }
-        match yykind as i32 {
+        match yykind {
             52 => {
                 free((*yyvaluep).str as *mut ::core::ffi::c_void);
             }
-            67 => {
-                if (*param).rtrn.is_null() {
-                    FreeXkbFile((*yyvaluep).file);
-                }
+            67 if (*param).rtrn.is_null() => {
+                FreeXkbFile((*yyvaluep).file);
             }
-            68 => {
-                if (*param).rtrn.is_null() {
-                    FreeXkbFile((*yyvaluep).file);
-                }
+            68 if (*param).rtrn.is_null() => {
+                FreeXkbFile((*yyvaluep).file);
             }
             70 => {
                 FreeXkbFile((*yyvaluep).fileList.head);
             }
-            71 => {
-                if (*param).rtrn.is_null() {
-                    FreeXkbFile((*yyvaluep).file);
-                }
+            71 if (*param).rtrn.is_null() => {
+                FreeXkbFile((*yyvaluep).file);
             }
             76 => {
                 FreeStmt((*yyvaluep).anyList.head);
@@ -1208,11 +1196,11 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
     unsafe {
         let mut c2rust_current_block: u64;
         let mut yychar: i32;
-        static mut yyval_default: YYSTYPE = YYSTYPE { num: 0 };
-        let mut yylval: YYSTYPE = yyval_default;
-        let mut _xkbcommon_nerrs: i32 = 0 as i32;
+        static mut YYVAL_DEFAULT: YYSTYPE = YYSTYPE { num: 0 };
+        let mut yylval: YYSTYPE = YYVAL_DEFAULT;
+        let mut _xkbcommon_nerrs: i32 = 0_i32;
         let mut yystate: yy_state_fast_t = 0 as yy_state_fast_t;
-        let mut yyerrstatus: i32 = 0 as i32;
+        let mut yyerrstatus: i32 = 0_i32;
         let mut yystacksize: i64 = YYINITDEPTH as i64;
         let mut yyssa: [yy_state_t; 200] = [0; 200];
         let mut yyss: *mut yy_state_t = &raw mut yyssa as *mut yy_state_t;
@@ -1228,22 +1216,20 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
         let mut yymsgbuf: [i8; 128] = [0; 128];
         let mut yymsg: *mut i8 = &raw mut yymsgbuf as *mut i8;
         let mut yymsg_alloc: i64 = std::mem::size_of::<[i8; 128]>() as i64;
-        let mut yylen: i32 = 0 as i32;
-        yychar = YYEMPTY as i32;
+        let mut yylen: i32 = 0_i32;
+        yychar = YYEMPTY;
         's_60: loop {
-            (false && (0 as i32 <= yystate && yystate < 384 as i32)) as i32;
+            if false {
+                (0_i32..384_i32).contains(&yystate);
+            }
             *yyssp = yystate as yy_state_t;
-            if yyss
-                .offset(yystacksize as isize)
-                .offset(-(1 as i32 as isize))
-                <= yyssp
-            {
-                let yysize: i64 = yyssp.offset_from(yyss) as i64 + 1 as i64;
+            if yyss.offset(yystacksize as isize).offset(-(1_i32 as isize)) <= yyssp {
+                let yysize: i64 = yyssp.offset_from(yyss) as i64 + 1_i64;
                 if YYMAXDEPTH as i64 <= yystacksize {
                     c2rust_current_block = 9310790481625056212;
                     break;
                 }
-                yystacksize *= 2 as i64;
+                yystacksize *= 2_i64;
                 if (YYMAXDEPTH as i64) < yystacksize {
                     yystacksize = YYMAXDEPTH as i64;
                 }
@@ -1252,21 +1238,21 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     (yystacksize
                         * (std::mem::size_of::<yy_state_t>() as i64
                             + std::mem::size_of::<YYSTYPE>() as i64)
-                        + (std::mem::size_of::<yyalloc>() as i64 - 1 as i64))
+                        + (std::mem::size_of::<yyalloc>() as i64 - 1_i64))
                         as usize,
                 ) as *mut yyalloc;
                 if yyptr.is_null() {
                     c2rust_current_block = 9310790481625056212;
                     break;
                 }
-                let yynewbytes: i64;
+
                 std::ptr::copy_nonoverlapping::<yy_state_t>(
                     yyss,
                     &raw mut (*yyptr).yyss_alloc,
                     yysize as usize,
                 );
                 yyss = &raw mut (*yyptr).yyss_alloc;
-                yynewbytes =
+                let yynewbytes: i64 =
                     yystacksize * std::mem::size_of::<yy_state_t>() as i64 + YYSTACK_GAP_MAXIMUM;
                 yyptr = yyptr.offset((yynewbytes / std::mem::size_of::<yyalloc>() as i64) as isize);
 
@@ -1279,13 +1265,9 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                 if yyss1 != &raw mut yyssa as *mut yy_state_t {
                     free(yyss1 as *mut ::core::ffi::c_void);
                 }
-                yyssp = yyss.offset(yysize as isize).offset(-(1 as i32 as isize));
-                yyvsp = yyvs.offset(yysize as isize).offset(-(1 as i32 as isize));
-                if yyss
-                    .offset(yystacksize as isize)
-                    .offset(-(1 as i32 as isize))
-                    <= yyssp
-                {
+                yyssp = yyss.offset(yysize as isize).offset(-(1_i32 as isize));
+                yyvsp = yyvs.offset(yysize as isize).offset(-(1_i32 as isize));
+                if yyss.offset(yystacksize as isize).offset(-(1_i32 as isize)) <= yyssp {
                     c2rust_current_block = 7267896227379959561;
                     break;
                 }
@@ -1294,26 +1276,26 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                 c2rust_current_block = 5508412643396263508;
                 break;
             }
-            yyn = yypact[yystate as usize] as i32;
+            yyn = YYPACT[yystate as usize] as i32;
             if yyn == YYPACT_NINF {
                 c2rust_current_block = 16146138031620631371;
             } else {
-                if yychar == YYEMPTY as i32 {
+                if yychar == YYEMPTY {
                     yychar = _xkbcommon_lex(&raw mut yylval, (*param).scanner);
                 }
-                if yychar <= END_OF_FILE as i32 {
-                    yychar = END_OF_FILE as i32;
+                if yychar <= END_OF_FILE {
+                    yychar = END_OF_FILE;
                     yytoken = YYSYMBOL_YYEOF;
                     c2rust_current_block = 3689906465960840878;
-                } else if yychar == YYerror as i32 {
-                    yychar = YYUNDEF as i32;
+                } else if yychar == YYerror {
+                    yychar = YYUNDEF;
                     yytoken = YYSYMBOL_YYerror;
                     c2rust_current_block = 12965144090463719536;
                 } else {
-                    yytoken = (if 0 as i32 <= yychar && yychar <= YYMAXUTOK {
-                        yytranslate[yychar as usize] as yysymbol_kind_t as i32
+                    yytoken = (if (0_i32..=YYMAXUTOK).contains(&yychar) {
+                        YYTRANSLATE[yychar as usize] as yysymbol_kind_t
                     } else {
-                        YYSYMBOL_YYUNDEF as i32
+                        YYSYMBOL_YYUNDEF
                     }) as yysymbol_kind_t;
                     c2rust_current_block = 3689906465960840878;
                 }
@@ -1321,14 +1303,13 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     12965144090463719536 => {}
                     _ => {
                         yyn += yytoken as i32;
-                        if yyn < 0 as i32
-                            || YYLAST < yyn
-                            || yycheck[yyn as usize] as i32 != yytoken as i32
+                        if !(0_i32..=YYLAST).contains(&yyn)
+                            || YYCHECK[yyn as usize] as i32 != yytoken as i32
                         {
                             c2rust_current_block = 16146138031620631371;
                         } else {
-                            yyn = yytable[yyn as usize] as i32;
-                            if yyn <= 0 as i32 {
+                            yyn = YYTABLE[yyn as usize] as i32;
+                            if yyn <= 0_i32 {
                                 yyn = -yyn;
                                 c2rust_current_block = 18373490478049949584;
                             } else {
@@ -1338,1650 +1319,1572 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                                 yystate = yyn as yy_state_fast_t;
                                 yyvsp = yyvsp.offset(1);
                                 *yyvsp = yylval;
-                                yychar = YYEMPTY as i32;
+                                yychar = YYEMPTY;
                                 c2rust_current_block = 10430565463943277256;
                             }
                         }
                     }
                 }
             }
-            match c2rust_current_block {
-                16146138031620631371 => {
-                    yyn = yydefact[yystate as usize] as i32;
-                    if yyn == 0 as i32 {
-                        yytoken = (if yychar == YYEMPTY as i32 {
-                            YYSYMBOL_YYEMPTY as i32
-                        } else if 0 as i32 <= yychar && yychar <= YYMAXUTOK {
-                            yytranslate[yychar as usize] as yysymbol_kind_t as i32
-                        } else {
-                            YYSYMBOL_YYUNDEF as i32
-                        }) as yysymbol_kind_t;
-                        if yyerrstatus == 0 {
-                            _xkbcommon_nerrs += 1;
-                            let mut yyctx: yypcontext_t = yypcontext_t {
-                                yyssp: yyssp,
-                                yytoken: yytoken,
-                            };
-                            let mut yymsgp: *const i8 = b"syntax error\0".as_ptr() as *const i8;
-                            let mut yysyntax_error_status: i32;
-                            yysyntax_error_status = yysyntax_error(
-                                &raw mut yymsg_alloc,
-                                &raw mut yymsg,
-                                &raw mut yyctx,
-                            );
-                            if yysyntax_error_status == 0 as i32 {
-                                yymsgp = yymsg;
-                            } else if yysyntax_error_status == -1 as i32 {
-                                if yymsg != &raw mut yymsgbuf as *mut i8 {
-                                    free(yymsg as *mut ::core::ffi::c_void);
-                                }
-                                yymsg = malloc(yymsg_alloc as usize) as *mut i8;
-                                if !yymsg.is_null() {
-                                    yysyntax_error_status = yysyntax_error(
-                                        &raw mut yymsg_alloc,
-                                        &raw mut yymsg,
-                                        &raw mut yyctx,
-                                    );
-                                    yymsgp = yymsg;
-                                } else {
-                                    yymsg = &raw mut yymsgbuf as *mut i8;
-                                    yymsg_alloc = std::mem::size_of::<[i8; 128]>() as i64;
-                                    yysyntax_error_status = YYENOMEM as i32;
-                                }
-                            }
-                            _xkbcommon_error(param, yymsgp);
-                            if yysyntax_error_status == YYENOMEM as i32 {
-                                c2rust_current_block = 9310790481625056212;
-                                break;
-                            }
-                        }
-                        if yyerrstatus == 3 as i32 {
-                            if yychar <= END_OF_FILE as i32 {
-                                if yychar == END_OF_FILE as i32 {
-                                    c2rust_current_block = 7267896227379959561;
-                                    break;
-                                }
-                            } else {
-                                yydestruct(
-                                    b"Error: discarding\0".as_ptr() as *const i8,
-                                    yytoken,
-                                    &raw mut yylval,
-                                    param,
-                                );
-                                yychar = YYEMPTY as i32;
-                            }
-                        }
-                        c2rust_current_block = 12965144090463719536;
+            if c2rust_current_block == 16146138031620631371 {
+                yyn = YYDEFACT[yystate as usize] as i32;
+                if yyn == 0_i32 {
+                    yytoken = (if yychar == YYEMPTY {
+                        YYSYMBOL_YYEMPTY
+                    } else if (0_i32..=YYMAXUTOK).contains(&yychar) {
+                        YYTRANSLATE[yychar as usize] as yysymbol_kind_t
                     } else {
-                        c2rust_current_block = 18373490478049949584;
-                    }
-                }
-                _ => {}
-            }
-            match c2rust_current_block {
-                18373490478049949584 => {
-                    yylen = yyr2[yyn as usize] as i32;
-                    yyval = *yyvsp.offset((1 as i32 - yylen) as isize);
-                    match yyn {
-                        2 => {
-                            (*param).rtrn = (*yyvsp.offset(0 as i32 as isize)).file;
-                            yyval.file = (*param).rtrn;
-                            (*param).more_maps = !(*param).rtrn.is_null();
-                            c2rust_current_block = 9699707990742192723;
+                        YYSYMBOL_YYUNDEF
+                    }) as yysymbol_kind_t;
+                    if yyerrstatus == 0 {
+                        _xkbcommon_nerrs += 1;
+                        let mut yyctx: yypcontext_t = yypcontext_t { yyssp, yytoken };
+                        let mut yymsgp: *const i8 = b"syntax error\0".as_ptr() as *const i8;
+                        let mut yysyntax_error_status: i32;
+                        yysyntax_error_status =
+                            yysyntax_error(&raw mut yymsg_alloc, &raw mut yymsg, &raw mut yyctx);
+                        if yysyntax_error_status == 0_i32 {
+                            yymsgp = yymsg;
+                        } else if yysyntax_error_status == -1_i32 {
+                            if yymsg != &raw mut yymsgbuf as *mut i8 {
+                                free(yymsg as *mut ::core::ffi::c_void);
+                            }
+                            yymsg = malloc(yymsg_alloc as usize) as *mut i8;
+                            if !yymsg.is_null() {
+                                yysyntax_error_status = yysyntax_error(
+                                    &raw mut yymsg_alloc,
+                                    &raw mut yymsg,
+                                    &raw mut yyctx,
+                                );
+                                yymsgp = yymsg;
+                            } else {
+                                yymsg = &raw mut yymsgbuf as *mut i8;
+                                yymsg_alloc = std::mem::size_of::<[i8; 128]>() as i64;
+                                yysyntax_error_status = YYENOMEM;
+                            }
                         }
-                        3 => {
-                            (*param).rtrn = (*yyvsp.offset(0 as i32 as isize)).file;
-                            // dead store removed: yyval.file = (*param).rtrn;
-                            (*param).more_maps = !(*param).rtrn.is_null();
-                            c2rust_current_block = 5508412643396263508;
+                        _xkbcommon_error(param, yymsgp);
+                        if yysyntax_error_status == YYENOMEM {
+                            c2rust_current_block = 9310790481625056212;
                             break;
                         }
-                        4 => {
-                            (*param).rtrn = std::ptr::null_mut();
-                            yyval.file = (*param).rtrn;
-                            (*param).more_maps = false;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        5 => {
-                            yyval.file = XkbFileCreate(
-                                (*yyvsp.offset(-5 as i32 as isize)).file_type,
-                                (*yyvsp.offset(-4 as i32 as isize)).str,
-                                (*yyvsp.offset(-2 as i32 as isize)).fileList.head
-                                    as *mut ParseCommon,
-                                (*yyvsp.offset(-6 as i32 as isize)).mapFlags,
+                    }
+                    if yyerrstatus == 3_i32 {
+                        if yychar <= END_OF_FILE {
+                            if yychar == END_OF_FILE {
+                                c2rust_current_block = 7267896227379959561;
+                                break;
+                            }
+                        } else {
+                            yydestruct(
+                                b"Error: discarding\0".as_ptr() as *const i8,
+                                yytoken,
+                                &raw mut yylval,
+                                param,
                             );
-                            c2rust_current_block = 9699707990742192723;
+                            yychar = YYEMPTY;
                         }
-                        6 => {
-                            yyval.file_type = FILE_TYPE_KEYMAP;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        7 => {
-                            yyval.file_type = FILE_TYPE_KEYMAP;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        8 => {
-                            yyval.file_type = FILE_TYPE_KEYMAP;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        9 => {
-                            if !(*yyvsp.offset(0 as i32 as isize)).file.is_null() {
-                                if !(*yyvsp.offset(-1 as i32 as isize)).fileList.head.is_null() {
-                                    yyval.fileList.head =
-                                        (*yyvsp.offset(-1 as i32 as isize)).fileList.head;
-                                    (*yyval.fileList.last).common.next =
-                                        &raw mut (*(*yyvsp.offset(0 as i32 as isize)).file).common
-                                            as *mut _ParseCommon;
-                                    yyval.fileList.last = (*yyvsp.offset(0 as i32 as isize)).file;
-                                } else {
-                                    yyval.fileList.last = (*yyvsp.offset(0 as i32 as isize)).file;
-                                    yyval.fileList.head = yyval.fileList.last;
-                                }
-                            }
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        10 => {
-                            yyval.fileList.last = std::ptr::null_mut();
-                            yyval.fileList.head = yyval.fileList.last;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        11 => {
-                            yyval.file = XkbFileCreate(
-                                (*yyvsp.offset(-5 as i32 as isize)).file_type,
-                                (*yyvsp.offset(-4 as i32 as isize)).str,
-                                (*yyvsp.offset(-2 as i32 as isize)).anyList.head,
-                                (*yyvsp.offset(-6 as i32 as isize)).mapFlags,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        12 => {
-                            yyval.file_type = FILE_TYPE_KEYCODES;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        13 => {
-                            yyval.file_type = FILE_TYPE_TYPES;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        14 => {
-                            yyval.file_type = FILE_TYPE_COMPAT;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        15 => {
-                            yyval.file_type = FILE_TYPE_SYMBOLS;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        16 => {
-                            yyval.file_type = FILE_TYPE_GEOMETRY;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        17 => {
-                            yyval.mapFlags = (*yyvsp.offset(0 as i32 as isize)).mapFlags;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        18 => {
-                            yyval.mapFlags = 0 as xkb_map_flags;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        19 => {
-                            yyval.mapFlags = ((*yyvsp.offset(-1 as i32 as isize)).mapFlags as u32
-                                | (*yyvsp.offset(0 as i32 as isize)).mapFlags as u32)
-                                as xkb_map_flags;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        20 => {
-                            yyval.mapFlags = (*yyvsp.offset(0 as i32 as isize)).mapFlags;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        21 => {
-                            yyval.mapFlags = MAP_IS_PARTIAL;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        22 => {
-                            yyval.mapFlags = MAP_IS_DEFAULT;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        23 => {
-                            yyval.mapFlags = MAP_IS_HIDDEN;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        24 => {
-                            yyval.mapFlags = MAP_HAS_ALPHANUMERIC;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        25 => {
-                            yyval.mapFlags = MAP_HAS_MODIFIER;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        26 => {
-                            yyval.mapFlags = MAP_HAS_KEYPAD;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        27 => {
-                            yyval.mapFlags = MAP_HAS_FN;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        28 => {
-                            yyval.mapFlags = MAP_IS_ALTGR;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        29 => {
-                            if !(*yyvsp.offset(0 as i32 as isize)).any.is_null() {
-                                if !(*yyvsp.offset(-1 as i32 as isize)).anyList.head.is_null() {
-                                    yyval.anyList.head =
-                                        (*yyvsp.offset(-1 as i32 as isize)).anyList.head;
-                                    let ref mut c2rust_fresh0 =
-                                        (*(*yyvsp.offset(-1 as i32 as isize)).anyList.last).next;
-                                    *c2rust_fresh0 =
-                                        (*yyvsp.offset(0 as i32 as isize)).any as *mut _ParseCommon;
-                                    yyval.anyList.last = (*yyvsp.offset(0 as i32 as isize)).any;
-                                } else {
-                                    yyval.anyList.last = (*yyvsp.offset(0 as i32 as isize)).any;
-                                    yyval.anyList.head = yyval.anyList.last;
-                                }
-                            }
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        30 => {
-                            let mut vmod: *mut VModDef =
-                                (*yyvsp.offset(0 as i32 as isize)).vmodList.head;
-                            while !vmod.is_null() {
-                                (*vmod).merge = (*yyvsp.offset(-1 as i32 as isize)).merge;
-                                vmod = (*vmod).common.next as *mut VModDef;
-                            }
-                            if !(*yyvsp.offset(-2 as i32 as isize)).anyList.head.is_null() {
-                                yyval.anyList.head =
-                                    (*yyvsp.offset(-2 as i32 as isize)).anyList.head;
-                                let ref mut c2rust_fresh1 =
-                                    (*(*yyvsp.offset(-2 as i32 as isize)).anyList.last).next;
-                                *c2rust_fresh1 =
-                                    &raw mut (*(*yyvsp.offset(0 as i32 as isize)).vmodList.head)
-                                        .common
+                    }
+                    c2rust_current_block = 12965144090463719536;
+                } else {
+                    c2rust_current_block = 18373490478049949584;
+                }
+            }
+            if c2rust_current_block == 18373490478049949584 {
+                yylen = YYR2[yyn as usize] as i32;
+                yyval = *yyvsp.offset((1_i32 - yylen) as isize);
+                match yyn {
+                    2 => {
+                        (*param).rtrn = (*yyvsp.offset(0_i32 as isize)).file;
+                        yyval.file = (*param).rtrn;
+                        (*param).more_maps = !(*param).rtrn.is_null();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    3 => {
+                        (*param).rtrn = (*yyvsp.offset(0_i32 as isize)).file;
+                        // dead store removed: yyval.file = (*param).rtrn;
+                        (*param).more_maps = !(*param).rtrn.is_null();
+                        c2rust_current_block = 5508412643396263508;
+                        break;
+                    }
+                    4 => {
+                        (*param).rtrn = std::ptr::null_mut();
+                        yyval.file = (*param).rtrn;
+                        (*param).more_maps = false;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    5 => {
+                        yyval.file = XkbFileCreate(
+                            (*yyvsp.offset(-5_i32 as isize)).file_type,
+                            (*yyvsp.offset(-4_i32 as isize)).str,
+                            (*yyvsp.offset(-2_i32 as isize)).fileList.head as *mut ParseCommon,
+                            (*yyvsp.offset(-6_i32 as isize)).mapFlags,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    6 => {
+                        yyval.file_type = FILE_TYPE_KEYMAP;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    7 => {
+                        yyval.file_type = FILE_TYPE_KEYMAP;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    8 => {
+                        yyval.file_type = FILE_TYPE_KEYMAP;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    9 => {
+                        if !(*yyvsp.offset(0_i32 as isize)).file.is_null() {
+                            if !(*yyvsp.offset(-1_i32 as isize)).fileList.head.is_null() {
+                                yyval.fileList.head =
+                                    (*yyvsp.offset(-1_i32 as isize)).fileList.head;
+                                (*yyval.fileList.last).common.next =
+                                    &raw mut (*(*yyvsp.offset(0_i32 as isize)).file).common
                                         as *mut _ParseCommon;
-                                yyval.anyList.last =
-                                    &raw mut (*(*yyvsp.offset(0 as i32 as isize)).vmodList.last)
-                                        .common;
+                                yyval.fileList.last = (*yyvsp.offset(0_i32 as isize)).file;
                             } else {
-                                yyval.anyList.head =
-                                    &raw mut (*(*yyvsp.offset(0 as i32 as isize)).vmodList.head)
-                                        .common;
-                                yyval.anyList.last =
-                                    &raw mut (*(*yyvsp.offset(0 as i32 as isize)).vmodList.last)
-                                        .common;
+                                yyval.fileList.last = (*yyvsp.offset(0_i32 as isize)).file;
+                                yyval.fileList.head = yyval.fileList.last;
                             }
-                            c2rust_current_block = 9699707990742192723;
                         }
-                        31 => {
-                            yyval.anyList.last = std::ptr::null_mut();
-                            yyval.anyList.head = yyval.anyList.last;
-                            c2rust_current_block = 9699707990742192723;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    10 => {
+                        yyval.fileList.last = std::ptr::null_mut();
+                        yyval.fileList.head = yyval.fileList.last;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    11 => {
+                        yyval.file = XkbFileCreate(
+                            (*yyvsp.offset(-5_i32 as isize)).file_type,
+                            (*yyvsp.offset(-4_i32 as isize)).str,
+                            (*yyvsp.offset(-2_i32 as isize)).anyList.head,
+                            (*yyvsp.offset(-6_i32 as isize)).mapFlags,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    12 => {
+                        yyval.file_type = FILE_TYPE_KEYCODES;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    13 => {
+                        yyval.file_type = FILE_TYPE_TYPES;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    14 => {
+                        yyval.file_type = FILE_TYPE_COMPAT;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    15 => {
+                        yyval.file_type = FILE_TYPE_SYMBOLS;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    16 => {
+                        yyval.file_type = FILE_TYPE_GEOMETRY;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    17 => {
+                        yyval.mapFlags = (*yyvsp.offset(0_i32 as isize)).mapFlags;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    18 => {
+                        yyval.mapFlags = 0 as xkb_map_flags;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    19 => {
+                        yyval.mapFlags = ((*yyvsp.offset(-1_i32 as isize)).mapFlags
+                            | (*yyvsp.offset(0_i32 as isize)).mapFlags)
+                            as xkb_map_flags;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    20 => {
+                        yyval.mapFlags = (*yyvsp.offset(0_i32 as isize)).mapFlags;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    21 => {
+                        yyval.mapFlags = MAP_IS_PARTIAL;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    22 => {
+                        yyval.mapFlags = MAP_IS_DEFAULT;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    23 => {
+                        yyval.mapFlags = MAP_IS_HIDDEN;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    24 => {
+                        yyval.mapFlags = MAP_HAS_ALPHANUMERIC;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    25 => {
+                        yyval.mapFlags = MAP_HAS_MODIFIER;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    26 => {
+                        yyval.mapFlags = MAP_HAS_KEYPAD;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    27 => {
+                        yyval.mapFlags = MAP_HAS_FN;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    28 => {
+                        yyval.mapFlags = MAP_IS_ALTGR;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    29 => {
+                        if !(*yyvsp.offset(0_i32 as isize)).any.is_null() {
+                            if !(*yyvsp.offset(-1_i32 as isize)).anyList.head.is_null() {
+                                yyval.anyList.head = (*yyvsp.offset(-1_i32 as isize)).anyList.head;
+                                let c2rust_fresh0 =
+                                    &mut (*(*yyvsp.offset(-1_i32 as isize)).anyList.last).next;
+                                *c2rust_fresh0 =
+                                    (*yyvsp.offset(0_i32 as isize)).any as *mut _ParseCommon;
+                                yyval.anyList.last = (*yyvsp.offset(0_i32 as isize)).any;
+                            } else {
+                                yyval.anyList.last = (*yyvsp.offset(0_i32 as isize)).any;
+                                yyval.anyList.head = yyval.anyList.last;
+                            }
                         }
-                        32 => {
-                            (*(*yyvsp.offset(0 as i32 as isize)).var).merge =
-                                (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).var as *mut ParseCommon;
-                            c2rust_current_block = 9699707990742192723;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    30 => {
+                        let mut vmod: *mut VModDef = (*yyvsp.offset(0_i32 as isize)).vmodList.head;
+                        while !vmod.is_null() {
+                            (*vmod).merge = (*yyvsp.offset(-1_i32 as isize)).merge;
+                            vmod = (*vmod).common.next as *mut VModDef;
                         }
-                        33 => {
-                            (*(*yyvsp.offset(0 as i32 as isize)).interp).merge =
-                                (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any =
-                                (*yyvsp.offset(0 as i32 as isize)).interp as *mut ParseCommon;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        34 => {
-                            (*(*yyvsp.offset(0 as i32 as isize)).keyCode).merge =
-                                (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any =
-                                (*yyvsp.offset(0 as i32 as isize)).keyCode as *mut ParseCommon;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        35 => {
-                            (*(*yyvsp.offset(0 as i32 as isize)).keyAlias).merge =
-                                (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any =
-                                (*yyvsp.offset(0 as i32 as isize)).keyAlias as *mut ParseCommon;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        36 => {
-                            (*(*yyvsp.offset(0 as i32 as isize)).keyType).merge =
-                                (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any =
-                                (*yyvsp.offset(0 as i32 as isize)).keyType as *mut ParseCommon;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        37 => {
-                            (*(*yyvsp.offset(0 as i32 as isize)).syms).merge =
-                                (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any = (*yyvsp.offset(0 as i32 as isize)).syms as *mut ParseCommon;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        38 => {
-                            (*(*yyvsp.offset(0 as i32 as isize)).modMask).merge =
-                                (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any =
-                                (*yyvsp.offset(0 as i32 as isize)).modMask as *mut ParseCommon;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        39 => {
-                            (*(*yyvsp.offset(0 as i32 as isize)).groupCompat).merge =
-                                (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any =
-                                (*yyvsp.offset(0 as i32 as isize)).groupCompat as *mut ParseCommon;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        40 => {
-                            (*(*yyvsp.offset(0 as i32 as isize)).ledMap).merge =
-                                (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any =
-                                (*yyvsp.offset(0 as i32 as isize)).ledMap as *mut ParseCommon;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        41 => {
-                            (*(*yyvsp.offset(0 as i32 as isize)).ledName).merge =
-                                (*yyvsp.offset(-1 as i32 as isize)).merge;
-                            yyval.any =
-                                (*yyvsp.offset(0 as i32 as isize)).ledName as *mut ParseCommon;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        42 => {
-                            yyval.any = std::ptr::null_mut();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        43 => {
-                            yyval.any = std::ptr::null_mut();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        44 => {
-                            yyval.any = std::ptr::null_mut();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        45 => {
-                            yyval.any =
-                                (*yyvsp.offset(0 as i32 as isize)).unknown as *mut ParseCommon;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        46 => {
-                            yyval.any =
-                                (*yyvsp.offset(0 as i32 as isize)).unknown as *mut ParseCommon;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        47 => {
-                            yyval.any = IncludeCreate(
-                                (*param).ctx,
-                                (*yyvsp.offset(0 as i32 as isize)).str,
-                                (*yyvsp.offset(-1 as i32 as isize)).merge,
-                            ) as *mut ParseCommon;
-                            free(
-                                (*yyvsp.offset(0 as i32 as isize)).str as *mut ::core::ffi::c_void,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        48 => {
-                            yyval.var = VarCreate(
-                                (*yyvsp.offset(-3 as i32 as isize)).expr,
-                                (*yyvsp.offset(-1 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        49 => {
-                            yyval.var =
-                                BoolVarCreate((*yyvsp.offset(-1 as i32 as isize)).atom, true);
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        50 => {
-                            yyval.var =
-                                BoolVarCreate((*yyvsp.offset(-1 as i32 as isize)).atom, false);
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        51 => {
-                            yyval.keyCode = KeycodeCreate(
-                                (*yyvsp.offset(-3 as i32 as isize)).atom,
-                                (*yyvsp.offset(-1 as i32 as isize)).num,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        52 => {
-                            yyval.keyAlias = KeyAliasCreate(
-                                (*yyvsp.offset(-3 as i32 as isize)).atom,
-                                (*yyvsp.offset(-1 as i32 as isize)).atom,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        53 => {
-                            yyval.vmodList = (*yyvsp.offset(-1 as i32 as isize)).vmodList;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        54 => {
-                            yyval.vmodList.head = (*yyvsp.offset(-2 as i32 as isize)).vmodList.head;
-                            (*yyval.vmodList.last).common.next =
-                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).vmod).common
+                        if !(*yyvsp.offset(-2_i32 as isize)).anyList.head.is_null() {
+                            yyval.anyList.head = (*yyvsp.offset(-2_i32 as isize)).anyList.head;
+                            let c2rust_fresh1 =
+                                &mut (*(*yyvsp.offset(-2_i32 as isize)).anyList.last).next;
+                            *c2rust_fresh1 =
+                                &raw mut (*(*yyvsp.offset(0_i32 as isize)).vmodList.head).common
                                     as *mut _ParseCommon;
-                            yyval.vmodList.last = (*yyvsp.offset(0 as i32 as isize)).vmod;
-                            c2rust_current_block = 9699707990742192723;
+                            yyval.anyList.last =
+                                &raw mut (*(*yyvsp.offset(0_i32 as isize)).vmodList.last).common;
+                        } else {
+                            yyval.anyList.head =
+                                &raw mut (*(*yyvsp.offset(0_i32 as isize)).vmodList.head).common;
+                            yyval.anyList.last =
+                                &raw mut (*(*yyvsp.offset(0_i32 as isize)).vmodList.last).common;
                         }
-                        55 => {
-                            yyval.vmodList.last = (*yyvsp.offset(0 as i32 as isize)).vmod;
-                            yyval.vmodList.head = yyval.vmodList.last;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        56 => {
-                            yyval.vmod = VModCreate(
-                                (*yyvsp.offset(0 as i32 as isize)).atom,
-                                std::ptr::null_mut(),
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        57 => {
-                            yyval.vmod = VModCreate(
-                                (*yyvsp.offset(-2 as i32 as isize)).atom,
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        58 => {
-                            let ref mut c2rust_fresh2 =
-                                (*(*yyvsp.offset(-4 as i32 as isize)).interp).def;
-                            *c2rust_fresh2 = (*yyvsp.offset(-2 as i32 as isize)).varList.head;
-                            yyval.interp = (*yyvsp.offset(-4 as i32 as isize)).interp;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        59 => {
-                            yyval.interp = InterpCreate(
-                                (*yyvsp.offset(-2 as i32 as isize)).keysym,
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        60 => {
-                            yyval.interp = InterpCreate(
-                                (*yyvsp.offset(0 as i32 as isize)).keysym,
-                                std::ptr::null_mut(),
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        61 => {
-                            if !(*yyvsp.offset(0 as i32 as isize)).var.is_null() {
-                                if !(*yyvsp.offset(-1 as i32 as isize)).varList.head.is_null() {
-                                    yyval.varList.head =
-                                        (*yyvsp.offset(-1 as i32 as isize)).varList.head;
-                                    (*yyval.varList.last).common.next =
-                                        &raw mut (*(*yyvsp.offset(0 as i32 as isize)).var).common
-                                            as *mut _ParseCommon;
-                                    yyval.varList.last = (*yyvsp.offset(0 as i32 as isize)).var;
-                                } else {
-                                    yyval.varList.last = (*yyvsp.offset(0 as i32 as isize)).var;
-                                    yyval.varList.head = yyval.varList.last;
-                                }
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    31 => {
+                        yyval.anyList.last = std::ptr::null_mut();
+                        yyval.anyList.head = yyval.anyList.last;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    32 => {
+                        (*(*yyvsp.offset(0_i32 as isize)).var).merge =
+                            (*yyvsp.offset(-1_i32 as isize)).merge;
+                        yyval.any = (*yyvsp.offset(0_i32 as isize)).var as *mut ParseCommon;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    33 => {
+                        (*(*yyvsp.offset(0_i32 as isize)).interp).merge =
+                            (*yyvsp.offset(-1_i32 as isize)).merge;
+                        yyval.any = (*yyvsp.offset(0_i32 as isize)).interp as *mut ParseCommon;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    34 => {
+                        (*(*yyvsp.offset(0_i32 as isize)).keyCode).merge =
+                            (*yyvsp.offset(-1_i32 as isize)).merge;
+                        yyval.any = (*yyvsp.offset(0_i32 as isize)).keyCode as *mut ParseCommon;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    35 => {
+                        (*(*yyvsp.offset(0_i32 as isize)).keyAlias).merge =
+                            (*yyvsp.offset(-1_i32 as isize)).merge;
+                        yyval.any = (*yyvsp.offset(0_i32 as isize)).keyAlias as *mut ParseCommon;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    36 => {
+                        (*(*yyvsp.offset(0_i32 as isize)).keyType).merge =
+                            (*yyvsp.offset(-1_i32 as isize)).merge;
+                        yyval.any = (*yyvsp.offset(0_i32 as isize)).keyType as *mut ParseCommon;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    37 => {
+                        (*(*yyvsp.offset(0_i32 as isize)).syms).merge =
+                            (*yyvsp.offset(-1_i32 as isize)).merge;
+                        yyval.any = (*yyvsp.offset(0_i32 as isize)).syms as *mut ParseCommon;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    38 => {
+                        (*(*yyvsp.offset(0_i32 as isize)).modMask).merge =
+                            (*yyvsp.offset(-1_i32 as isize)).merge;
+                        yyval.any = (*yyvsp.offset(0_i32 as isize)).modMask as *mut ParseCommon;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    39 => {
+                        (*(*yyvsp.offset(0_i32 as isize)).groupCompat).merge =
+                            (*yyvsp.offset(-1_i32 as isize)).merge;
+                        yyval.any = (*yyvsp.offset(0_i32 as isize)).groupCompat as *mut ParseCommon;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    40 => {
+                        (*(*yyvsp.offset(0_i32 as isize)).ledMap).merge =
+                            (*yyvsp.offset(-1_i32 as isize)).merge;
+                        yyval.any = (*yyvsp.offset(0_i32 as isize)).ledMap as *mut ParseCommon;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    41 => {
+                        (*(*yyvsp.offset(0_i32 as isize)).ledName).merge =
+                            (*yyvsp.offset(-1_i32 as isize)).merge;
+                        yyval.any = (*yyvsp.offset(0_i32 as isize)).ledName as *mut ParseCommon;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    42 => {
+                        yyval.any = std::ptr::null_mut();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    43 => {
+                        yyval.any = std::ptr::null_mut();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    44 => {
+                        yyval.any = std::ptr::null_mut();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    45 => {
+                        yyval.any = (*yyvsp.offset(0_i32 as isize)).unknown as *mut ParseCommon;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    46 => {
+                        yyval.any = (*yyvsp.offset(0_i32 as isize)).unknown as *mut ParseCommon;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    47 => {
+                        yyval.any = IncludeCreate(
+                            (*param).ctx,
+                            (*yyvsp.offset(0_i32 as isize)).str,
+                            (*yyvsp.offset(-1_i32 as isize)).merge,
+                        ) as *mut ParseCommon;
+                        free((*yyvsp.offset(0_i32 as isize)).str as *mut ::core::ffi::c_void);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    48 => {
+                        yyval.var = VarCreate(
+                            (*yyvsp.offset(-3_i32 as isize)).expr,
+                            (*yyvsp.offset(-1_i32 as isize)).expr,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    49 => {
+                        yyval.var = BoolVarCreate((*yyvsp.offset(-1_i32 as isize)).atom, true);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    50 => {
+                        yyval.var = BoolVarCreate((*yyvsp.offset(-1_i32 as isize)).atom, false);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    51 => {
+                        yyval.keyCode = KeycodeCreate(
+                            (*yyvsp.offset(-3_i32 as isize)).atom,
+                            (*yyvsp.offset(-1_i32 as isize)).num,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    52 => {
+                        yyval.keyAlias = KeyAliasCreate(
+                            (*yyvsp.offset(-3_i32 as isize)).atom,
+                            (*yyvsp.offset(-1_i32 as isize)).atom,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    53 => {
+                        yyval.vmodList = (*yyvsp.offset(-1_i32 as isize)).vmodList;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    54 => {
+                        yyval.vmodList.head = (*yyvsp.offset(-2_i32 as isize)).vmodList.head;
+                        (*yyval.vmodList.last).common.next =
+                            &raw mut (*(*yyvsp.offset(0_i32 as isize)).vmod).common
+                                as *mut _ParseCommon;
+                        yyval.vmodList.last = (*yyvsp.offset(0_i32 as isize)).vmod;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    55 => {
+                        yyval.vmodList.last = (*yyvsp.offset(0_i32 as isize)).vmod;
+                        yyval.vmodList.head = yyval.vmodList.last;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    56 => {
+                        yyval.vmod =
+                            VModCreate((*yyvsp.offset(0_i32 as isize)).atom, std::ptr::null_mut());
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    57 => {
+                        yyval.vmod = VModCreate(
+                            (*yyvsp.offset(-2_i32 as isize)).atom,
+                            (*yyvsp.offset(0_i32 as isize)).expr,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    58 => {
+                        let c2rust_fresh2 = &mut (*(*yyvsp.offset(-4_i32 as isize)).interp).def;
+                        *c2rust_fresh2 = (*yyvsp.offset(-2_i32 as isize)).varList.head;
+                        yyval.interp = (*yyvsp.offset(-4_i32 as isize)).interp;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    59 => {
+                        yyval.interp = InterpCreate(
+                            (*yyvsp.offset(-2_i32 as isize)).keysym,
+                            (*yyvsp.offset(0_i32 as isize)).expr,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    60 => {
+                        yyval.interp = InterpCreate(
+                            (*yyvsp.offset(0_i32 as isize)).keysym,
+                            std::ptr::null_mut(),
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    61 => {
+                        if !(*yyvsp.offset(0_i32 as isize)).var.is_null() {
+                            if !(*yyvsp.offset(-1_i32 as isize)).varList.head.is_null() {
+                                yyval.varList.head = (*yyvsp.offset(-1_i32 as isize)).varList.head;
+                                (*yyval.varList.last).common.next =
+                                    &raw mut (*(*yyvsp.offset(0_i32 as isize)).var).common
+                                        as *mut _ParseCommon;
+                                yyval.varList.last = (*yyvsp.offset(0_i32 as isize)).var;
+                            } else {
+                                yyval.varList.last = (*yyvsp.offset(0_i32 as isize)).var;
+                                yyval.varList.head = yyval.varList.last;
                             }
-                            c2rust_current_block = 9699707990742192723;
                         }
-                        62 => {
-                            yyval.varList.last = std::ptr::null_mut();
-                            yyval.varList.head = yyval.varList.last;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        63 => {
-                            yyval.keyType = KeyTypeCreate(
-                                (*yyvsp.offset(-4 as i32 as isize)).atom,
-                                (*yyvsp.offset(-2 as i32 as isize)).varList.head,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        64 => {
-                            yyval.syms = SymbolsCreate(
-                                (*yyvsp.offset(-4 as i32 as isize)).atom,
-                                (*yyvsp.offset(-2 as i32 as isize)).varList.head,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        65 => {
-                            yyval.varList = (*yyvsp.offset(0 as i32 as isize)).varList;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        66 => {
-                            yyval.varList.last = std::ptr::null_mut();
-                            yyval.varList.head = yyval.varList.last;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        67 => {
-                            yyval.varList.head = (*yyvsp.offset(-2 as i32 as isize)).varList.head;
-                            (*yyval.varList.last).common.next =
-                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).var).common
-                                    as *mut _ParseCommon;
-                            yyval.varList.last = (*yyvsp.offset(0 as i32 as isize)).var;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        68 => {
-                            yyval.varList.last = (*yyvsp.offset(0 as i32 as isize)).var;
-                            yyval.varList.head = yyval.varList.last;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        69 => {
-                            yyval.var = VarCreate(
-                                (*yyvsp.offset(-2 as i32 as isize)).expr,
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        70 => {
-                            yyval.var = VarCreate(
-                                (*yyvsp.offset(-2 as i32 as isize)).expr,
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        71 => {
-                            yyval.var =
-                                BoolVarCreate((*yyvsp.offset(0 as i32 as isize)).atom, true);
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        72 => {
-                            yyval.var =
-                                BoolVarCreate((*yyvsp.offset(0 as i32 as isize)).atom, false);
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        73 => {
-                            yyval.var = VarCreate(
-                                std::ptr::null_mut(),
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        74 => {
-                            yyval.expr = (*yyvsp.offset(-1 as i32 as isize)).exprList.head;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        75 => {
-                            let mut list: ExprList = ExprList {
-                                head: (*yyvsp.offset(-1 as i32 as isize)).exprList.head,
-                                last: (*yyvsp.offset(-1 as i32 as isize)).exprList.last,
-                            };
-                            let mut k: u32 = 0 as u32;
-                            while k < (*yyvsp.offset(-3 as i32 as isize)).noSymbolOrActionList {
-                                let syms: *mut ExprDef =
-                                    ExprCreateKeySymList(XKB_KEY_NoSymbol as u32) as *mut ExprDef;
-                                if syms.is_null() {
-                                    c2rust_current_block = 7267896227379959561;
-                                    break 's_60;
-                                }
-                                (*syms).common.next =
-                                    &raw mut (*list.head).common as *mut _ParseCommon;
-                                list.head = syms;
-                                k = k.wrapping_add(1);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    62 => {
+                        yyval.varList.last = std::ptr::null_mut();
+                        yyval.varList.head = yyval.varList.last;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    63 => {
+                        yyval.keyType = KeyTypeCreate(
+                            (*yyvsp.offset(-4_i32 as isize)).atom,
+                            (*yyvsp.offset(-2_i32 as isize)).varList.head,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    64 => {
+                        yyval.syms = SymbolsCreate(
+                            (*yyvsp.offset(-4_i32 as isize)).atom,
+                            (*yyvsp.offset(-2_i32 as isize)).varList.head,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    65 => {
+                        yyval.varList = (*yyvsp.offset(0_i32 as isize)).varList;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    66 => {
+                        yyval.varList.last = std::ptr::null_mut();
+                        yyval.varList.head = yyval.varList.last;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    67 => {
+                        yyval.varList.head = (*yyvsp.offset(-2_i32 as isize)).varList.head;
+                        (*yyval.varList.last).common.next =
+                            &raw mut (*(*yyvsp.offset(0_i32 as isize)).var).common
+                                as *mut _ParseCommon;
+                        yyval.varList.last = (*yyvsp.offset(0_i32 as isize)).var;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    68 => {
+                        yyval.varList.last = (*yyvsp.offset(0_i32 as isize)).var;
+                        yyval.varList.head = yyval.varList.last;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    69 => {
+                        yyval.var = VarCreate(
+                            (*yyvsp.offset(-2_i32 as isize)).expr,
+                            (*yyvsp.offset(0_i32 as isize)).expr,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    70 => {
+                        yyval.var = VarCreate(
+                            (*yyvsp.offset(-2_i32 as isize)).expr,
+                            (*yyvsp.offset(0_i32 as isize)).expr,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    71 => {
+                        yyval.var = BoolVarCreate((*yyvsp.offset(0_i32 as isize)).atom, true);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    72 => {
+                        yyval.var = BoolVarCreate((*yyvsp.offset(0_i32 as isize)).atom, false);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    73 => {
+                        yyval.var =
+                            VarCreate(std::ptr::null_mut(), (*yyvsp.offset(0_i32 as isize)).expr);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    74 => {
+                        yyval.expr = (*yyvsp.offset(-1_i32 as isize)).exprList.head;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    75 => {
+                        let mut list: ExprList = ExprList {
+                            head: (*yyvsp.offset(-1_i32 as isize)).exprList.head,
+                            last: (*yyvsp.offset(-1_i32 as isize)).exprList.last,
+                        };
+                        let mut k: u32 = 0_u32;
+                        while k < (*yyvsp.offset(-3_i32 as isize)).noSymbolOrActionList {
+                            let syms: *mut ExprDef =
+                                ExprCreateKeySymList(XKB_KEY_NoSymbol as u32) as *mut ExprDef;
+                            if syms.is_null() {
+                                c2rust_current_block = 7267896227379959561;
+                                break 's_60;
                             }
-                            yyval.expr = list.head;
-                            c2rust_current_block = 9699707990742192723;
+                            (*syms).common.next = &raw mut (*list.head).common as *mut _ParseCommon;
+                            list.head = syms;
+                            k = k.wrapping_add(1);
                         }
-                        76 => {
-                            yyval.expr = (*yyvsp.offset(-1 as i32 as isize)).exprList.head;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        77 => {
-                            let mut list_0: VModList = VModList {
-                                head: (*yyvsp.offset(-1 as i32 as isize)).exprList.head,
-                                last: (*yyvsp.offset(-1 as i32 as isize)).exprList.last,
-                            };
-                            let mut k_0: u32 = 0 as u32;
-                            while k_0 < (*yyvsp.offset(-3 as i32 as isize)).noSymbolOrActionList {
-                                let acts: *mut ExprDef =
-                                    ExprCreateActionList(std::ptr::null_mut()) as *mut ExprDef;
-                                if acts.is_null() {
-                                    c2rust_current_block = 7267896227379959561;
-                                    break 's_60;
-                                }
-                                (*acts).common.next =
-                                    &raw mut (*list_0.head).common as *mut _ParseCommon;
-                                list_0.head = acts;
-                                k_0 = k_0.wrapping_add(1);
+                        yyval.expr = list.head;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    76 => {
+                        yyval.expr = (*yyvsp.offset(-1_i32 as isize)).exprList.head;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    77 => {
+                        let mut list_0: VModList = VModList {
+                            head: (*yyvsp.offset(-1_i32 as isize)).exprList.head,
+                            last: (*yyvsp.offset(-1_i32 as isize)).exprList.last,
+                        };
+                        let mut k_0: u32 = 0_u32;
+                        while k_0 < (*yyvsp.offset(-3_i32 as isize)).noSymbolOrActionList {
+                            let acts: *mut ExprDef =
+                                ExprCreateActionList(std::ptr::null_mut()) as *mut ExprDef;
+                            if acts.is_null() {
+                                c2rust_current_block = 7267896227379959561;
+                                break 's_60;
                             }
-                            yyval.expr = list_0.head;
+                            (*acts).common.next =
+                                &raw mut (*list_0.head).common as *mut _ParseCommon;
+                            list_0.head = acts;
+                            k_0 = k_0.wrapping_add(1);
+                        }
+                        yyval.expr = list_0.head;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    78 => {
+                        yyval.expr = ExprEmptyList();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    79 => {
+                        yyval.noSymbolOrActionList = (*yyvsp.offset(-3_i32 as isize))
+                            .noSymbolOrActionList
+                            .wrapping_add(1_u32);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    80 => {
+                        yyval.noSymbolOrActionList = 1_u32;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    81 => {
+                        yyval.noSymbolOrActionList = 0_u32;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    82 => {
+                        yyval.groupCompat = GroupCompatCreate(
+                            (*yyvsp.offset(-3_i32 as isize)).num,
+                            (*yyvsp.offset(-1_i32 as isize)).expr,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    83 => {
+                        yyval.modMask = ModMapCreate(
+                            (*yyvsp.offset(-4_i32 as isize)).atom,
+                            (*yyvsp.offset(-2_i32 as isize)).exprList.head,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    84 => {
+                        yyval.exprList.head = (*yyvsp.offset(-2_i32 as isize)).exprList.head;
+                        (*yyval.exprList.last).common.next =
+                            &raw mut (*(*yyvsp.offset(0_i32 as isize)).expr).common
+                                as *mut _ParseCommon;
+                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    85 => {
+                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
+                        yyval.exprList.head = yyval.exprList.last;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    86 => {
+                        yyval.expr = ExprCreateKeyName((*yyvsp.offset(0_i32 as isize)).atom);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    87 => {
+                        yyval.expr = ExprCreateKeySym((*yyvsp.offset(0_i32 as isize)).keysym);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    88 => {
+                        yyval.ledMap = LedMapCreate(
+                            (*yyvsp.offset(-4_i32 as isize)).atom,
+                            (*yyvsp.offset(-2_i32 as isize)).varList.head,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    89 => {
+                        yyval.ledName = LedNameCreate(
+                            (*yyvsp.offset(-3_i32 as isize)).num,
+                            (*yyvsp.offset(-1_i32 as isize)).expr,
+                            false,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    90 => {
+                        yyval.ledName = LedNameCreate(
+                            (*yyvsp.offset(-3_i32 as isize)).num,
+                            (*yyvsp.offset(-1_i32 as isize)).expr,
+                            true,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    91 => {
+                        FreeStmt((*yyvsp.offset(-3_i32 as isize)).expr as *mut ParseCommon);
+                        FreeStmt((*yyvsp.offset(-1_i32 as isize)).expr as *mut ParseCommon);
+                        yyval.unknown = UnknownStatementCreate(
+                            STMT_UNKNOWN_DECLARATION,
+                            (*yyvsp.offset(-4_i32 as isize)).sval,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    92 => {
+                        FreeStmt((*yyvsp.offset(-4_i32 as isize)).expr as *mut ParseCommon);
+                        FreeStmt((*yyvsp.offset(-2_i32 as isize)).varList.head as *mut ParseCommon);
+                        yyval.unknown = UnknownStatementCreate(
+                            STMT_UNKNOWN_COMPOUND,
+                            (*yyvsp.offset(-5_i32 as isize)).sval,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    93 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    94 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    95 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    96 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    97 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    98 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    99 => {
+                        FreeStmt((*yyvsp.offset(0_i32 as isize)).var as *mut ParseCommon);
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    100 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    101 => {
+                        FreeStmt((*yyvsp.offset(0_i32 as isize)).ledMap as *mut ParseCommon);
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    102 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    103 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    104 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    105 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    106 => {
+                        FreeStmt((*yyvsp.offset(0_i32 as isize)).var as *mut ParseCommon);
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    107 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    108 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    109 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    110 => {
+                        FreeStmt(
+                            (*yyvsp.offset(-1_i32 as isize)).exprList.head as *mut ParseCommon,
+                        );
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    111 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    112 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    113 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    114 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    115 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    116 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    117 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    118 => {
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    119 => {
+                        FreeStmt((*yyvsp.offset(0_i32 as isize)).expr as *mut ParseCommon);
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    120 => {
+                        yyval.expr = std::ptr::null_mut();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    121 => {
+                        yyval.expr = std::ptr::null_mut();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    122 => {
+                        yyval.expr = std::ptr::null_mut();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    123 => {
+                        FreeStmt((*yyvsp.offset(-2_i32 as isize)).varList.head as *mut ParseCommon);
+                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    124 => {
+                        yyval.num = 0_i64;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    125 => {
+                        yyval.num = 0_i64;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    126 => {
+                        yyval.num = 0_i64;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    127 => {
+                        yyval.num = 0_i64;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    128 => {
+                        yyval.atom = (*yyvsp.offset(0_i32 as isize)).atom;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    129 => {
+                        yyval.atom = (*yyvsp.offset(0_i32 as isize)).atom;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    130 => {
+                        yyval.atom = xkb_atom_intern(
+                            (*param).ctx,
+                            b"action\0".as_ptr() as *const i8,
+                            (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1_usize),
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    131 => {
+                        yyval.atom = xkb_atom_intern(
+                            (*param).ctx,
+                            b"interpret\0".as_ptr() as *const i8,
+                            (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1_usize),
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    132 => {
+                        yyval.atom = xkb_atom_intern(
+                            (*param).ctx,
+                            b"type\0".as_ptr() as *const i8,
+                            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1_usize),
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    133 => {
+                        yyval.atom = xkb_atom_intern(
+                            (*param).ctx,
+                            b"key\0".as_ptr() as *const i8,
+                            (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1_usize),
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    134 => {
+                        yyval.atom = xkb_atom_intern(
+                            (*param).ctx,
+                            b"group\0".as_ptr() as *const i8,
+                            (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1_usize),
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    135 => {
+                        yyval.atom = xkb_atom_intern(
+                            (*param).ctx,
+                            b"modifier_map\0".as_ptr() as *const i8,
+                            (std::mem::size_of::<[i8; 13]>()).wrapping_sub(1_usize),
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    136 => {
+                        yyval.atom = xkb_atom_intern(
+                            (*param).ctx,
+                            b"indicator\0".as_ptr() as *const i8,
+                            (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1_usize),
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    137 => {
+                        yyval.atom = xkb_atom_intern(
+                            (*param).ctx,
+                            b"shape\0".as_ptr() as *const i8,
+                            (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1_usize),
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    138 => {
+                        yyval.atom = xkb_atom_intern(
+                            (*param).ctx,
+                            b"row\0".as_ptr() as *const i8,
+                            (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1_usize),
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    139 => {
+                        yyval.atom = xkb_atom_intern(
+                            (*param).ctx,
+                            b"section\0".as_ptr() as *const i8,
+                            (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1_usize),
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    140 => {
+                        yyval.atom = xkb_atom_intern(
+                            (*param).ctx,
+                            b"text\0".as_ptr() as *const i8,
+                            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1_usize),
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    141 => {
+                        yyval.merge = (*yyvsp.offset(0_i32 as isize)).merge;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    142 => {
+                        yyval.merge = MERGE_DEFAULT;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    143 => {
+                        yyval.merge = MERGE_DEFAULT;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    144 => {
+                        yyval.merge = MERGE_AUGMENT;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    145 => {
+                        yyval.merge = MERGE_OVERRIDE;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    146 => {
+                        yyval.merge = MERGE_REPLACE;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    147 => {
+                        let loc: scanner_loc = (*(*param).scanner).token_location();
+                        xkb_logf!(
+                            (*(*param).scanner).ctx,
+                            XKB_LOG_LEVEL_WARNING,
+                            XKB_LOG_VERBOSITY_MINIMAL as i32,
+                            "{}:{}:{}: ignored unsupported legacy merge mode \"alternate\"\n",
+                            crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+                            loc.line,
+                            loc.column,
+                        );
+                        yyval.merge = MERGE_DEFAULT;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    148 => {
+                        if !(*yyvsp.offset(0_i32 as isize)).expr.is_null() {
+                            if !(*yyvsp.offset(-2_i32 as isize)).exprList.head.is_null() {
+                                yyval.exprList.head =
+                                    (*yyvsp.offset(-2_i32 as isize)).exprList.head;
+                                (*yyval.exprList.last).common.next =
+                                    &raw mut (*(*yyvsp.offset(0_i32 as isize)).expr).common
+                                        as *mut _ParseCommon;
+                                yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
+                            } else {
+                                yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
+                                yyval.exprList.head = yyval.exprList.last;
+                            }
+                        }
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    149 => {
+                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
+                        yyval.exprList.head = yyval.exprList.last;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    150 => {
+                        yyval.exprList.last = std::ptr::null_mut();
+                        yyval.exprList.head = yyval.exprList.last;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    151 => {
+                        yyval.expr = ExprCreateBinary(
+                            STMT_EXPR_DIVIDE,
+                            (*yyvsp.offset(-2_i32 as isize)).expr,
+                            (*yyvsp.offset(0_i32 as isize)).expr,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    152 => {
+                        yyval.expr = ExprCreateBinary(
+                            STMT_EXPR_ADD,
+                            (*yyvsp.offset(-2_i32 as isize)).expr,
+                            (*yyvsp.offset(0_i32 as isize)).expr,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    153 => {
+                        yyval.expr = ExprCreateBinary(
+                            STMT_EXPR_SUBTRACT,
+                            (*yyvsp.offset(-2_i32 as isize)).expr,
+                            (*yyvsp.offset(0_i32 as isize)).expr,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    154 => {
+                        yyval.expr = ExprCreateBinary(
+                            STMT_EXPR_MULTIPLY,
+                            (*yyvsp.offset(-2_i32 as isize)).expr,
+                            (*yyvsp.offset(0_i32 as isize)).expr,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    155 => {
+                        yyval.expr = ExprCreateBinary(
+                            STMT_EXPR_ASSIGN,
+                            (*yyvsp.offset(-2_i32 as isize)).expr,
+                            (*yyvsp.offset(0_i32 as isize)).expr,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    156 => {
+                        yyval.expr = (*yyvsp.offset(0_i32 as isize)).expr;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    157 => {
+                        yyval.expr =
+                            ExprCreateUnary(STMT_EXPR_NEGATE, (*yyvsp.offset(0_i32 as isize)).expr);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    158 => {
+                        yyval.expr = ExprCreateUnary(
+                            STMT_EXPR_UNARY_PLUS,
+                            (*yyvsp.offset(0_i32 as isize)).expr,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    159 => {
+                        yyval.expr =
+                            ExprCreateUnary(STMT_EXPR_NOT, (*yyvsp.offset(0_i32 as isize)).expr);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    160 => {
+                        yyval.expr =
+                            ExprCreateUnary(STMT_EXPR_INVERT, (*yyvsp.offset(0_i32 as isize)).expr);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    161 => {
+                        yyval.expr = (*yyvsp.offset(0_i32 as isize)).expr;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    162 => {
+                        yyval.expr = ExprCreateAction(
+                            (*yyvsp.offset(-3_i32 as isize)).atom,
+                            (*yyvsp.offset(-1_i32 as isize)).exprList.head,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    163 => {
+                        yyval.expr = (*yyvsp.offset(0_i32 as isize)).expr;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    164 => {
+                        yyval.expr = (*yyvsp.offset(0_i32 as isize)).expr;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    165 => {
+                        yyval.expr = (*yyvsp.offset(-1_i32 as isize)).expr;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    166 => {
+                        let expr: *mut ExprDef =
+                            ExprCreateActionList((*yyvsp.offset(0_i32 as isize)).expr);
+                        yyval.exprList = (*yyvsp.offset(-2_i32 as isize)).exprList;
+                        (*yyval.exprList.last).common.next =
+                            &raw mut (*expr).common as *mut _ParseCommon;
+                        yyval.exprList.last = expr;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    167 => {
+                        yyval.exprList = (*yyvsp.offset(-2_i32 as isize)).exprList;
+                        (*yyval.exprList.last).common.next =
+                            &raw mut (*(*yyvsp.offset(0_i32 as isize)).expr).common
+                                as *mut _ParseCommon;
+                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    168 => {
+                        yyval.exprList.last =
+                            ExprCreateActionList((*yyvsp.offset(0_i32 as isize)).expr);
+                        yyval.exprList.head = yyval.exprList.last;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    169 => {
+                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
+                        yyval.exprList.head = yyval.exprList.last;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    170 => {
+                        yyval.exprList = (*yyvsp.offset(-2_i32 as isize)).exprList;
+                        (*yyval.exprList.last).common.next =
+                            &raw mut (*(*yyvsp.offset(0_i32 as isize)).expr).common
+                                as *mut _ParseCommon;
+                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    171 => {
+                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
+                        yyval.exprList.head = yyval.exprList.last;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    172 => {
+                        yyval.expr =
+                            ExprCreateActionList((*yyvsp.offset(-1_i32 as isize)).exprList.head);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    173 => {
+                        yyval.expr = (*yyvsp.offset(0_i32 as isize)).expr;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    174 => {
+                        yyval.expr = ExprCreateActionList(std::ptr::null_mut());
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    175 => {
+                        yyval.expr = ExprCreateAction(
+                            (*yyvsp.offset(-3_i32 as isize)).atom,
+                            (*yyvsp.offset(-1_i32 as isize)).exprList.head,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    176 => {
+                        yyval.expr = ExprCreateIdent((*yyvsp.offset(0_i32 as isize)).atom);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    177 => {
+                        yyval.expr = ExprCreateFieldRef(
+                            (*yyvsp.offset(-2_i32 as isize)).atom,
+                            (*yyvsp.offset(0_i32 as isize)).atom,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    178 => {
+                        yyval.expr = ExprCreateArrayRef(
+                            XKB_ATOM_NONE,
+                            (*yyvsp.offset(-3_i32 as isize)).atom,
+                            (*yyvsp.offset(-1_i32 as isize)).expr,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    179 => {
+                        yyval.expr = ExprCreateArrayRef(
+                            (*yyvsp.offset(-5_i32 as isize)).atom,
+                            (*yyvsp.offset(-3_i32 as isize)).atom,
+                            (*yyvsp.offset(-1_i32 as isize)).expr,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    180 => {
+                        yyval.expr = (*yyvsp.offset(0_i32 as isize)).expr;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    181 => {
+                        yyval.expr = std::ptr::null_mut();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    182 => {
+                        yyval.expr = ExprCreateString((*yyvsp.offset(0_i32 as isize)).atom);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    183 => {
+                        yyval.expr = ExprCreateInteger((*yyvsp.offset(0_i32 as isize)).num);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    184 => {
+                        yyval.expr = ExprCreateFloat();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    185 => {
+                        yyval.expr = ExprCreateKeyName((*yyvsp.offset(0_i32 as isize)).atom);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    186 => {
+                        let expr_0: *mut ExprDef =
+                            ExprCreateKeySymList((*yyvsp.offset(0_i32 as isize)).keysym);
+                        yyval.exprList = (*yyvsp.offset(-2_i32 as isize)).exprList;
+                        (*yyval.exprList.last).common.next =
+                            &raw mut (*expr_0).common as *mut _ParseCommon;
+                        yyval.exprList.last = expr_0;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    187 => {
+                        yyval.exprList = (*yyvsp.offset(-2_i32 as isize)).exprList;
+                        (*yyval.exprList.last).common.next =
+                            &raw mut (*(*yyvsp.offset(0_i32 as isize)).expr).common
+                                as *mut _ParseCommon;
+                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    188 => {
+                        yyval.exprList.last =
+                            ExprCreateKeySymList((*yyvsp.offset(0_i32 as isize)).keysym);
+                        yyval.exprList.head = yyval.exprList.last;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    189 => {
+                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
+                        yyval.exprList.head = yyval.exprList.last;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    190 => {
+                        yyval.expr = ExprAppendKeySymList(
+                            (*yyvsp.offset(-2_i32 as isize)).expr,
+                            (*yyvsp.offset(0_i32 as isize)).keysym,
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    191 => {
+                        yyval.expr = ExprKeySymListAppendString(
+                            (*param).scanner,
+                            (*yyvsp.offset(-2_i32 as isize)).expr,
+                            (*yyvsp.offset(0_i32 as isize)).str,
+                        );
+                        free((*yyvsp.offset(0_i32 as isize)).str as *mut ::core::ffi::c_void);
+                        if yyval.expr.is_null() {
+                            c2rust_current_block = 9017681648503218951;
+                        } else {
                             c2rust_current_block = 9699707990742192723;
                         }
-                        78 => {
-                            yyval.expr = ExprEmptyList();
+                    }
+                    192 => {
+                        yyval.expr = ExprCreateKeySymList((*yyvsp.offset(0_i32 as isize)).keysym);
+                        if yyval.expr.is_null() {
+                            c2rust_current_block = 9017681648503218951;
+                        } else {
                             c2rust_current_block = 9699707990742192723;
                         }
-                        79 => {
-                            yyval.noSymbolOrActionList = (*yyvsp.offset(-3 as i32 as isize))
-                                .noSymbolOrActionList
-                                .wrapping_add(1 as u32);
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        80 => {
-                            yyval.noSymbolOrActionList = 1 as u32;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        81 => {
-                            yyval.noSymbolOrActionList = 0 as u32;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        82 => {
-                            yyval.groupCompat = GroupCompatCreate(
-                                (*yyvsp.offset(-3 as i32 as isize)).num,
-                                (*yyvsp.offset(-1 as i32 as isize)).expr,
+                    }
+                    193 => {
+                        yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
+                        if yyval.expr.is_null() {
+                            c2rust_current_block = 9017681648503218951;
+                        } else {
+                            yyval.expr = ExprKeySymListAppendString(
+                                (*param).scanner,
+                                yyval.expr,
+                                (*yyvsp.offset(0_i32 as isize)).str,
                             );
-                            c2rust_current_block = 9699707990742192723;
+                            free((*yyvsp.offset(0_i32 as isize)).str as *mut ::core::ffi::c_void);
+                            if yyval.expr.is_null() {
+                                c2rust_current_block = 9017681648503218951;
+                            } else {
+                                c2rust_current_block = 9699707990742192723;
+                            }
                         }
-                        83 => {
-                            yyval.modMask = ModMapCreate(
-                                (*yyvsp.offset(-4 as i32 as isize)).atom,
-                                (*yyvsp.offset(-2 as i32 as isize)).exprList.head,
+                    }
+                    194 => {
+                        yyval.expr = (*yyvsp.offset(-1_i32 as isize)).expr;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    195 => {
+                        yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
+                        if yyval.expr.is_null() {
+                            c2rust_current_block = 9017681648503218951;
+                        } else {
+                            yyval.expr = ExprKeySymListAppendString(
+                                (*param).scanner,
+                                yyval.expr,
+                                (*yyvsp.offset(0_i32 as isize)).str,
                             );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        84 => {
-                            yyval.exprList.head = (*yyvsp.offset(-2 as i32 as isize)).exprList.head;
-                            (*yyval.exprList.last).common.next =
-                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).expr).common
-                                    as *mut _ParseCommon;
-                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        85 => {
-                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            yyval.exprList.head = yyval.exprList.last;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        86 => {
-                            yyval.expr = ExprCreateKeyName((*yyvsp.offset(0 as i32 as isize)).atom);
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        87 => {
-                            yyval.expr =
-                                ExprCreateKeySym((*yyvsp.offset(0 as i32 as isize)).keysym);
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        88 => {
-                            yyval.ledMap = LedMapCreate(
-                                (*yyvsp.offset(-4 as i32 as isize)).atom,
-                                (*yyvsp.offset(-2 as i32 as isize)).varList.head,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        89 => {
-                            yyval.ledName = LedNameCreate(
-                                (*yyvsp.offset(-3 as i32 as isize)).num,
-                                (*yyvsp.offset(-1 as i32 as isize)).expr,
-                                false,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        90 => {
-                            yyval.ledName = LedNameCreate(
-                                (*yyvsp.offset(-3 as i32 as isize)).num,
-                                (*yyvsp.offset(-1 as i32 as isize)).expr,
-                                true,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        91 => {
-                            FreeStmt((*yyvsp.offset(-3 as i32 as isize)).expr as *mut ParseCommon);
-                            FreeStmt((*yyvsp.offset(-1 as i32 as isize)).expr as *mut ParseCommon);
-                            yyval.unknown = UnknownStatementCreate(
-                                STMT_UNKNOWN_DECLARATION,
-                                (*yyvsp.offset(-4 as i32 as isize)).sval,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        92 => {
-                            FreeStmt((*yyvsp.offset(-4 as i32 as isize)).expr as *mut ParseCommon);
-                            FreeStmt(
-                                (*yyvsp.offset(-2 as i32 as isize)).varList.head
-                                    as *mut ParseCommon,
-                            );
-                            yyval.unknown = UnknownStatementCreate(
-                                STMT_UNKNOWN_COMPOUND,
-                                (*yyvsp.offset(-5 as i32 as isize)).sval,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        93 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        94 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        95 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        96 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        97 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        98 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        99 => {
-                            FreeStmt((*yyvsp.offset(0 as i32 as isize)).var as *mut ParseCommon);
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        100 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        101 => {
-                            FreeStmt((*yyvsp.offset(0 as i32 as isize)).ledMap as *mut ParseCommon);
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        102 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        103 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        104 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        105 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        106 => {
-                            FreeStmt((*yyvsp.offset(0 as i32 as isize)).var as *mut ParseCommon);
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        107 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        108 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        109 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        110 => {
-                            FreeStmt(
-                                (*yyvsp.offset(-1 as i32 as isize)).exprList.head
-                                    as *mut ParseCommon,
-                            );
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        111 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        112 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        113 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        114 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        115 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        116 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        117 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        118 => {
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        119 => {
-                            FreeStmt((*yyvsp.offset(0 as i32 as isize)).expr as *mut ParseCommon);
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        120 => {
-                            yyval.expr = std::ptr::null_mut();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        121 => {
-                            yyval.expr = std::ptr::null_mut();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        122 => {
-                            yyval.expr = std::ptr::null_mut();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        123 => {
-                            FreeStmt(
-                                (*yyvsp.offset(-2 as i32 as isize)).varList.head
-                                    as *mut ParseCommon,
-                            );
-                            yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        124 => {
-                            yyval.num = 0 as i64;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        125 => {
-                            yyval.num = 0 as i64;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        126 => {
-                            yyval.num = 0 as i64;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        127 => {
-                            yyval.num = 0 as i64;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        128 => {
-                            yyval.atom = (*yyvsp.offset(0 as i32 as isize)).atom;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        129 => {
-                            yyval.atom = (*yyvsp.offset(0 as i32 as isize)).atom;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        130 => {
-                            yyval.atom = xkb_atom_intern(
-                                (*param).ctx,
-                                b"action\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1 as usize),
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        131 => {
-                            yyval.atom = xkb_atom_intern(
-                                (*param).ctx,
-                                b"interpret\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        132 => {
-                            yyval.atom = xkb_atom_intern(
-                                (*param).ctx,
-                                b"type\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1 as usize),
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        133 => {
-                            yyval.atom = xkb_atom_intern(
-                                (*param).ctx,
-                                b"key\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1 as usize),
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        134 => {
-                            yyval.atom = xkb_atom_intern(
-                                (*param).ctx,
-                                b"group\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        135 => {
-                            yyval.atom = xkb_atom_intern(
-                                (*param).ctx,
-                                b"modifier_map\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 13]>()).wrapping_sub(1 as usize),
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        136 => {
-                            yyval.atom = xkb_atom_intern(
-                                (*param).ctx,
-                                b"indicator\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        137 => {
-                            yyval.atom = xkb_atom_intern(
-                                (*param).ctx,
-                                b"shape\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        138 => {
-                            yyval.atom = xkb_atom_intern(
-                                (*param).ctx,
-                                b"row\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1 as usize),
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        139 => {
-                            yyval.atom = xkb_atom_intern(
-                                (*param).ctx,
-                                b"section\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize),
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        140 => {
-                            yyval.atom = xkb_atom_intern(
-                                (*param).ctx,
-                                b"text\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1 as usize),
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        141 => {
-                            yyval.merge = (*yyvsp.offset(0 as i32 as isize)).merge;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        142 => {
-                            yyval.merge = MERGE_DEFAULT;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        143 => {
-                            yyval.merge = MERGE_DEFAULT;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        144 => {
-                            yyval.merge = MERGE_AUGMENT;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        145 => {
-                            yyval.merge = MERGE_OVERRIDE;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        146 => {
-                            yyval.merge = MERGE_REPLACE;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        147 => {
-                            let loc: scanner_loc = (*(*param).scanner).token_location();
+                            free((*yyvsp.offset(0_i32 as isize)).str as *mut ::core::ffi::c_void);
+                            if yyval.expr.is_null() {
+                                c2rust_current_block = 9017681648503218951;
+                            } else {
+                                c2rust_current_block = 9699707990742192723;
+                            }
+                        }
+                    }
+                    196 => {
+                        yyval.expr = (*yyvsp.offset(0_i32 as isize)).expr;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    197 => {
+                        yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    198 => {
+                        yyval.keysym = (*yyvsp.offset(0_i32 as isize)).keysym;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    199 => {
+                        yyval.keysym = KeysymParseString(
+                            (*param).scanner,
+                            (*yyvsp.offset(0_i32 as isize)).str,
+                        );
+                        free((*yyvsp.offset(0_i32 as isize)).str as *mut ::core::ffi::c_void);
+                        if yyval.keysym == XKB_KEY_NoSymbol as u32 {
+                            c2rust_current_block = 9017681648503218951;
+                        } else {
+                            c2rust_current_block = 9699707990742192723;
+                        }
+                    }
+                    200 => {
+                        if !resolve_keysym(
+                            param,
+                            (*yyvsp.offset(0_i32 as isize)).sval,
+                            &raw mut yyval.keysym,
+                        ) {
+                            let loc_0: scanner_loc = (*(*param).scanner).token_location();
                             xkb_logf!(
                                 (*(*param).scanner).ctx,
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                "{}:{}:{}: ignored unsupported legacy merge mode \"alternate\"\n",
+                                "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{}\"\n",
+                                XKB_WARNING_UNRECOGNIZED_KEYSYM as i32,
                                 crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
-                                loc.line,
-                                loc.column,
+                                loc_0.line,
+                                loc_0.column,
+                                crate::xkb::utils::CStrNDisplay(
+                                    (*yyvsp.offset(0_isize)).sval.len,
+                                    (*yyvsp.offset(0_isize)).sval.start
+                                ),
                             );
-                            yyval.merge = MERGE_DEFAULT;
-                            c2rust_current_block = 9699707990742192723;
+                            yyval.keysym = XKB_KEY_NoSymbol as u32;
                         }
-                        148 => {
-                            if !(*yyvsp.offset(0 as i32 as isize)).expr.is_null() {
-                                if !(*yyvsp.offset(-2 as i32 as isize)).exprList.head.is_null() {
-                                    yyval.exprList.head =
-                                        (*yyvsp.offset(-2 as i32 as isize)).exprList.head;
-                                    (*yyval.exprList.last).common.next =
-                                        &raw mut (*(*yyvsp.offset(0 as i32 as isize)).expr).common
-                                            as *mut _ParseCommon;
-                                    yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
-                                } else {
-                                    yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
-                                    yyval.exprList.head = yyval.exprList.last;
-                                }
-                            }
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        149 => {
-                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            yyval.exprList.head = yyval.exprList.last;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        150 => {
-                            yyval.exprList.last = std::ptr::null_mut();
-                            yyval.exprList.head = yyval.exprList.last;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        151 => {
-                            yyval.expr = ExprCreateBinary(
-                                STMT_EXPR_DIVIDE,
-                                (*yyvsp.offset(-2 as i32 as isize)).expr,
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    201 => {
+                        yyval.keysym = XKB_KEY_section as u32;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    202 => {
+                        yyval.keysym = (XKB_KEY_0 as u32)
+                            .wrapping_add((*yyvsp.offset(0_i32 as isize)).num as u32);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    203 => {
+                        if (*yyvsp.offset(0_i32 as isize)).num < XKB_KEYSYM_MIN as i64 {
+                            let loc_1: scanner_loc = (*(*param).scanner).token_location();
+                            xkb_logf!(
+                                (*(*param).scanner).ctx,
+                                XKB_LOG_LEVEL_WARNING,
+                                XKB_LOG_VERBOSITY_MINIMAL as i32,
+                                "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"-{:#06x}\" ({})\n",
+                                XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
+                                crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+                                loc_1.line,
+                                loc_1.column,
+                                -(*yyvsp.offset(0_i32 as isize)).num,
+                                (*yyvsp.offset(0_i32 as isize)).num,
                             );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        152 => {
-                            yyval.expr = ExprCreateBinary(
-                                STMT_EXPR_ADD,
-                                (*yyvsp.offset(-2 as i32 as isize)).expr,
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        153 => {
-                            yyval.expr = ExprCreateBinary(
-                                STMT_EXPR_SUBTRACT,
-                                (*yyvsp.offset(-2 as i32 as isize)).expr,
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        154 => {
-                            yyval.expr = ExprCreateBinary(
-                                STMT_EXPR_MULTIPLY,
-                                (*yyvsp.offset(-2 as i32 as isize)).expr,
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        155 => {
-                            yyval.expr = ExprCreateBinary(
-                                STMT_EXPR_ASSIGN,
-                                (*yyvsp.offset(-2 as i32 as isize)).expr,
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        156 => {
-                            yyval.expr = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        157 => {
-                            yyval.expr = ExprCreateUnary(
-                                STMT_EXPR_NEGATE,
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        158 => {
-                            yyval.expr = ExprCreateUnary(
-                                STMT_EXPR_UNARY_PLUS,
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        159 => {
-                            yyval.expr = ExprCreateUnary(
-                                STMT_EXPR_NOT,
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        160 => {
-                            yyval.expr = ExprCreateUnary(
-                                STMT_EXPR_INVERT,
-                                (*yyvsp.offset(0 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        161 => {
-                            yyval.expr = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        162 => {
-                            yyval.expr = ExprCreateAction(
-                                (*yyvsp.offset(-3 as i32 as isize)).atom,
-                                (*yyvsp.offset(-1 as i32 as isize)).exprList.head,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        163 => {
-                            yyval.expr = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        164 => {
-                            yyval.expr = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        165 => {
-                            yyval.expr = (*yyvsp.offset(-1 as i32 as isize)).expr;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        166 => {
-                            let expr: *mut ExprDef =
-                                ExprCreateActionList((*yyvsp.offset(0 as i32 as isize)).expr);
-                            yyval.exprList = (*yyvsp.offset(-2 as i32 as isize)).exprList;
-                            (*yyval.exprList.last).common.next =
-                                &raw mut (*expr).common as *mut _ParseCommon;
-                            yyval.exprList.last = expr;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        167 => {
-                            yyval.exprList = (*yyvsp.offset(-2 as i32 as isize)).exprList;
-                            (*yyval.exprList.last).common.next =
-                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).expr).common
-                                    as *mut _ParseCommon;
-                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        168 => {
-                            yyval.exprList.last =
-                                ExprCreateActionList((*yyvsp.offset(0 as i32 as isize)).expr);
-                            yyval.exprList.head = yyval.exprList.last;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        169 => {
-                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            yyval.exprList.head = yyval.exprList.last;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        170 => {
-                            yyval.exprList = (*yyvsp.offset(-2 as i32 as isize)).exprList;
-                            (*yyval.exprList.last).common.next =
-                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).expr).common
-                                    as *mut _ParseCommon;
-                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        171 => {
-                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            yyval.exprList.head = yyval.exprList.last;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        172 => {
-                            yyval.expr = ExprCreateActionList(
-                                (*yyvsp.offset(-1 as i32 as isize)).exprList.head,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        173 => {
-                            yyval.expr = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        174 => {
-                            yyval.expr = ExprCreateActionList(std::ptr::null_mut());
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        175 => {
-                            yyval.expr = ExprCreateAction(
-                                (*yyvsp.offset(-3 as i32 as isize)).atom,
-                                (*yyvsp.offset(-1 as i32 as isize)).exprList.head,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        176 => {
-                            yyval.expr = ExprCreateIdent((*yyvsp.offset(0 as i32 as isize)).atom);
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        177 => {
-                            yyval.expr = ExprCreateFieldRef(
-                                (*yyvsp.offset(-2 as i32 as isize)).atom,
-                                (*yyvsp.offset(0 as i32 as isize)).atom,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        178 => {
-                            yyval.expr = ExprCreateArrayRef(
-                                XKB_ATOM_NONE as u32,
-                                (*yyvsp.offset(-3 as i32 as isize)).atom,
-                                (*yyvsp.offset(-1 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        179 => {
-                            yyval.expr = ExprCreateArrayRef(
-                                (*yyvsp.offset(-5 as i32 as isize)).atom,
-                                (*yyvsp.offset(-3 as i32 as isize)).atom,
-                                (*yyvsp.offset(-1 as i32 as isize)).expr,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        180 => {
-                            yyval.expr = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        181 => {
-                            yyval.expr = std::ptr::null_mut();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        182 => {
-                            yyval.expr = ExprCreateString((*yyvsp.offset(0 as i32 as isize)).atom);
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        183 => {
-                            yyval.expr = ExprCreateInteger((*yyvsp.offset(0 as i32 as isize)).num);
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        184 => {
-                            yyval.expr = ExprCreateFloat();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        185 => {
-                            yyval.expr = ExprCreateKeyName((*yyvsp.offset(0 as i32 as isize)).atom);
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        186 => {
-                            let expr_0: *mut ExprDef =
-                                ExprCreateKeySymList((*yyvsp.offset(0 as i32 as isize)).keysym);
-                            yyval.exprList = (*yyvsp.offset(-2 as i32 as isize)).exprList;
-                            (*yyval.exprList.last).common.next =
-                                &raw mut (*expr_0).common as *mut _ParseCommon;
-                            yyval.exprList.last = expr_0;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        187 => {
-                            yyval.exprList = (*yyvsp.offset(-2 as i32 as isize)).exprList;
-                            (*yyval.exprList.last).common.next =
-                                &raw mut (*(*yyvsp.offset(0 as i32 as isize)).expr).common
-                                    as *mut _ParseCommon;
-                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        188 => {
-                            yyval.exprList.last =
-                                ExprCreateKeySymList((*yyvsp.offset(0 as i32 as isize)).keysym);
-                            yyval.exprList.head = yyval.exprList.last;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        189 => {
-                            yyval.exprList.last = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            yyval.exprList.head = yyval.exprList.last;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        190 => {
-                            yyval.expr = ExprAppendKeySymList(
-                                (*yyvsp.offset(-2 as i32 as isize)).expr,
-                                (*yyvsp.offset(0 as i32 as isize)).keysym,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        191 => {
-                            yyval.expr = ExprKeySymListAppendString(
-                                (*param).scanner,
-                                (*yyvsp.offset(-2 as i32 as isize)).expr,
-                                (*yyvsp.offset(0 as i32 as isize)).str,
-                            );
-                            free(
-                                (*yyvsp.offset(0 as i32 as isize)).str as *mut ::core::ffi::c_void,
-                            );
-                            if yyval.expr.is_null() {
-                                c2rust_current_block = 9017681648503218951;
-                            } else {
-                                c2rust_current_block = 9699707990742192723;
-                            }
-                        }
-                        192 => {
-                            yyval.expr =
-                                ExprCreateKeySymList((*yyvsp.offset(0 as i32 as isize)).keysym);
-                            if yyval.expr.is_null() {
-                                c2rust_current_block = 9017681648503218951;
-                            } else {
-                                c2rust_current_block = 9699707990742192723;
-                            }
-                        }
-                        193 => {
-                            yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
-                            if yyval.expr.is_null() {
-                                c2rust_current_block = 9017681648503218951;
-                            } else {
-                                yyval.expr = ExprKeySymListAppendString(
-                                    (*param).scanner,
-                                    yyval.expr,
-                                    (*yyvsp.offset(0 as i32 as isize)).str,
-                                );
-                                free(
-                                    (*yyvsp.offset(0 as i32 as isize)).str
-                                        as *mut ::core::ffi::c_void,
-                                );
-                                if yyval.expr.is_null() {
-                                    c2rust_current_block = 9017681648503218951;
-                                } else {
-                                    c2rust_current_block = 9699707990742192723;
-                                }
-                            }
-                        }
-                        194 => {
-                            yyval.expr = (*yyvsp.offset(-1 as i32 as isize)).expr;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        195 => {
-                            yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
-                            if yyval.expr.is_null() {
-                                c2rust_current_block = 9017681648503218951;
-                            } else {
-                                yyval.expr = ExprKeySymListAppendString(
-                                    (*param).scanner,
-                                    yyval.expr,
-                                    (*yyvsp.offset(0 as i32 as isize)).str,
-                                );
-                                free(
-                                    (*yyvsp.offset(0 as i32 as isize)).str
-                                        as *mut ::core::ffi::c_void,
-                                );
-                                if yyval.expr.is_null() {
-                                    c2rust_current_block = 9017681648503218951;
-                                } else {
-                                    c2rust_current_block = 9699707990742192723;
-                                }
-                            }
-                        }
-                        196 => {
-                            yyval.expr = (*yyvsp.offset(0 as i32 as isize)).expr;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        197 => {
-                            yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        198 => {
-                            yyval.keysym = (*yyvsp.offset(0 as i32 as isize)).keysym;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        199 => {
-                            yyval.keysym = KeysymParseString(
-                                (*param).scanner,
-                                (*yyvsp.offset(0 as i32 as isize)).str,
-                            );
-                            free(
-                                (*yyvsp.offset(0 as i32 as isize)).str as *mut ::core::ffi::c_void,
-                            );
-                            if yyval.keysym == XKB_KEY_NoSymbol as u32 {
-                                c2rust_current_block = 9017681648503218951;
-                            } else {
-                                c2rust_current_block = 9699707990742192723;
-                            }
-                        }
-                        200 => {
-                            if !resolve_keysym(
-                                param,
-                                (*yyvsp.offset(0 as i32 as isize)).sval,
-                                &raw mut yyval.keysym,
-                            ) {
-                                let loc_0: scanner_loc = (*(*param).scanner).token_location();
-                                xkb_logf!(
-                                    (*(*param).scanner).ctx,
-                                    XKB_LOG_LEVEL_WARNING,
-                                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                    "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{}\"\n",
-                                    XKB_WARNING_UNRECOGNIZED_KEYSYM as i32,
-                                    crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
-                                    loc_0.line,
-                                    loc_0.column,
-                                    crate::xkb::utils::CStrNDisplay(
-                                        (*yyvsp.offset(0 as isize)).sval.len as usize,
-                                        (*yyvsp.offset(0 as isize)).sval.start
-                                    ),
-                                );
-                                yyval.keysym = XKB_KEY_NoSymbol as u32;
-                            }
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        201 => {
-                            yyval.keysym = XKB_KEY_section as u32;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        202 => {
-                            yyval.keysym = (XKB_KEY_0 as u32)
-                                .wrapping_add((*yyvsp.offset(0 as i32 as isize)).num as u32);
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        203 => {
-                            if (*yyvsp.offset(0 as i32 as isize)).num < XKB_KEYSYM_MIN as i64 {
-                                let loc_1: scanner_loc = (*(*param).scanner).token_location();
-                                xkb_logf!(
-                                    (*(*param).scanner).ctx,
-                                    XKB_LOG_LEVEL_WARNING,
-                                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                    "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"-{:#06x}\" ({})\n",
-                                    XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
-                                    crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
-                                    loc_1.line,
-                                    loc_1.column,
-                                    -(*yyvsp.offset(0 as i32 as isize)).num,
-                                    (*yyvsp.offset(0 as i32 as isize)).num,
-                                );
-                                yyval.keysym = XKB_KEY_NoSymbol as u32;
-                            } else {
-                                if (*yyvsp.offset(0 as i32 as isize)).num <= XKB_KEYSYM_MAX as i64 {
-                                    yyval.keysym = (*yyvsp.offset(0 as i32 as isize)).num as u32;
-                                    if ((*(*param).ctx).log_verbosity >= 2 as i32) as i32 as i64
-                                        != 0
-                                    {
-                                        let mut ref_name: *const i8 = std::ptr::null();
-                                        if xkb_keysym_is_deprecated(
-                                            yyval.keysym,
-                                            std::ptr::null(),
-                                            &raw mut ref_name,
-                                        ) {
-                                            if ref_name.is_null() {
-                                                let loc_2: scanner_loc =
-                                                    (*(*param).scanner).token_location();
-                                                xkb_logf!(
-                                                    (*(*param).scanner).ctx,
-                                                    XKB_LOG_LEVEL_WARNING,
-                                                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                                    "[XKB-{:03}] {}:{}:{}: deprecated keysym \"{:#06x}\".\n",
-                                                    XKB_WARNING_DEPRECATED_KEYSYM as i32,
-                                                    crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
-                                                    loc_2.line,
-                                                    loc_2.column,
-                                                    yyval.keysym,
-                                                );
-                                            } else {
-                                                let loc_3: scanner_loc =
-                                                    (*(*param).scanner).token_location();
-                                                xkb_logf!(
-                                                    (*(*param).scanner).ctx,
-                                                    XKB_LOG_LEVEL_WARNING,
-                                                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                                    "[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{:#06x}\"; please use \"{}\" instead.\n",
-                                                    XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
-                                                    crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
-                                                    loc_3.line,
-                                                    loc_3.column,
-                                                    yyval.keysym,
-                                                    crate::xkb::utils::CStrDisplay(ref_name),
-                                                );
-                                            }
+                            yyval.keysym = XKB_KEY_NoSymbol as u32;
+                        } else {
+                            if (*yyvsp.offset(0_i32 as isize)).num <= XKB_KEYSYM_MAX as i64 {
+                                yyval.keysym = (*yyvsp.offset(0_i32 as isize)).num as u32;
+                                if ((*(*param).ctx).log_verbosity >= 2_i32) as i32 as i64 != 0 {
+                                    let mut ref_name: *const i8 = std::ptr::null();
+                                    if xkb_keysym_is_deprecated(
+                                        yyval.keysym,
+                                        std::ptr::null(),
+                                        &raw mut ref_name,
+                                    ) {
+                                        if ref_name.is_null() {
+                                            let loc_2: scanner_loc =
+                                                (*(*param).scanner).token_location();
+                                            xkb_logf!(
+                                                (*(*param).scanner).ctx,
+                                                XKB_LOG_LEVEL_WARNING,
+                                                XKB_LOG_VERBOSITY_MINIMAL as i32,
+                                                "[XKB-{:03}] {}:{}:{}: deprecated keysym \"{:#06x}\".\n",
+                                                XKB_WARNING_DEPRECATED_KEYSYM as i32,
+                                                crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+                                                loc_2.line,
+                                                loc_2.column,
+                                                yyval.keysym,
+                                            );
+                                        } else {
+                                            let loc_3: scanner_loc =
+                                                (*(*param).scanner).token_location();
+                                            xkb_logf!(
+                                                (*(*param).scanner).ctx,
+                                                XKB_LOG_LEVEL_WARNING,
+                                                XKB_LOG_VERBOSITY_MINIMAL as i32,
+                                                "[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{:#06x}\"; please use \"{}\" instead.\n",
+                                                XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
+                                                crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+                                                loc_3.line,
+                                                loc_3.column,
+                                                yyval.keysym,
+                                                crate::xkb::utils::CStrDisplay(ref_name),
+                                            );
                                         }
                                     }
-                                } else {
-                                    let loc_4: scanner_loc = (*(*param).scanner).token_location();
-                                    xkb_logf!(
-                                        (*(*param).scanner).ctx,
-                                        XKB_LOG_LEVEL_WARNING,
-                                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                        "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{:#06x}\" ({})\n",
-                                        XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
-                                        crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
-                                        loc_4.line,
-                                        loc_4.column,
-                                        (*yyvsp.offset(0 as i32 as isize)).num,
-                                        (*yyvsp.offset(0 as i32 as isize)).num,
-                                    );
-                                    yyval.keysym = XKB_KEY_NoSymbol as u32;
                                 }
-                                let loc_5: scanner_loc = (*(*param).scanner).token_location();
+                            } else {
+                                let loc_4: scanner_loc = (*(*param).scanner).token_location();
                                 xkb_logf!(
                                     (*(*param).scanner).ctx,
                                     XKB_LOG_LEVEL_WARNING,
-                                    XKB_LOG_VERBOSITY_COMPREHENSIVE as i32,
-                                    "[XKB-{:03}] {}:{}:{}: numeric keysym \"{:#06x}\" ({})\n",
-                                    XKB_WARNING_NUMERIC_KEYSYM as i32,
+                                    XKB_LOG_VERBOSITY_MINIMAL as i32,
+                                    "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{:#06x}\" ({})\n",
+                                    XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
                                     crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
-                                    loc_5.line,
-                                    loc_5.column,
-                                    (*yyvsp.offset(0 as i32 as isize)).num,
-                                    (*yyvsp.offset(0 as i32 as isize)).num,
+                                    loc_4.line,
+                                    loc_4.column,
+                                    (*yyvsp.offset(0_i32 as isize)).num,
+                                    (*yyvsp.offset(0_i32 as isize)).num,
                                 );
+                                yyval.keysym = XKB_KEY_NoSymbol as u32;
                             }
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        204 => {
-                            yyval.num = -(*yyvsp.offset(0 as i32 as isize)).num;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        205 => {
-                            yyval.num = (*yyvsp.offset(0 as i32 as isize)).num;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        206 => {
-                            yyval.num = (*yyvsp.offset(0 as i32 as isize)).num;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        207 => {
-                            yyval.num = (*yyvsp.offset(0 as i32 as isize)).num;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        208 => {
-                            yyval.num = (*yyvsp.offset(0 as i32 as isize)).num;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        209 => {
-                            yyval.num = 0 as i64;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        210 => {
-                            yyval.num = (*yyvsp.offset(0 as i32 as isize)).num;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        211 => {
-                            yyval.num = (*yyvsp.offset(0 as i32 as isize)).num;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        212 => {
-                            yyval.num = (*yyvsp.offset(0 as i32 as isize)).num;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        213 => {
-                            yyval.num = (*yyvsp.offset(0 as i32 as isize)).num;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        214 => {
-                            yyval.atom = xkb_atom_intern(
-                                (*param).ctx,
-                                (*yyvsp.offset(0 as i32 as isize)).sval.start,
-                                (*yyvsp.offset(0 as i32 as isize)).sval.len,
+                            let loc_5: scanner_loc = (*(*param).scanner).token_location();
+                            xkb_logf!(
+                                (*(*param).scanner).ctx,
+                                XKB_LOG_LEVEL_WARNING,
+                                XKB_LOG_VERBOSITY_COMPREHENSIVE as i32,
+                                "[XKB-{:03}] {}:{}:{}: numeric keysym \"{:#06x}\" ({})\n",
+                                XKB_WARNING_NUMERIC_KEYSYM as i32,
+                                crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+                                loc_5.line,
+                                loc_5.column,
+                                (*yyvsp.offset(0_i32 as isize)).num,
+                                (*yyvsp.offset(0_i32 as isize)).num,
                             );
-                            c2rust_current_block = 9699707990742192723;
                         }
-                        215 => {
-                            yyval.atom = xkb_atom_intern(
-                                (*param).ctx,
-                                b"default\0".as_ptr() as *const i8,
-                                (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize),
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        216 => {
-                            yyval.atom = xkb_atom_intern(
-                                (*param).ctx,
-                                (*yyvsp.offset(0 as i32 as isize)).str,
-                                cstr_len((*yyvsp.offset(0 as i32 as isize)).str),
-                            );
-                            free(
-                                (*yyvsp.offset(0 as i32 as isize)).str as *mut ::core::ffi::c_void,
-                            );
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        217 => {
-                            yyval.str = (*yyvsp.offset(0 as i32 as isize)).str;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        218 => {
-                            yyval.str = std::ptr::null_mut();
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        219 => {
-                            yyval.str = (*yyvsp.offset(0 as i32 as isize)).str;
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                        _ => {
-                            c2rust_current_block = 9699707990742192723;
-                        }
+                        c2rust_current_block = 9699707990742192723;
                     }
-                    match c2rust_current_block {
-                        9017681648503218951 => {
-                            _xkbcommon_nerrs += 1;
-                            yyvsp = yyvsp.offset(-(yylen as isize));
-                            yyssp = yyssp.offset(-(yylen as isize));
-                            yylen = 0 as i32;
-                            yystate = *yyssp as yy_state_fast_t;
-                            c2rust_current_block = 12965144090463719536;
-                        }
-                        _ => {
-                            yyvsp = yyvsp.offset(-(yylen as isize));
-                            yyssp = yyssp.offset(-(yylen as isize));
-                            yylen = 0 as i32;
-                            yyvsp = yyvsp.offset(1);
-                            *yyvsp = yyval;
-                            let yylhs: i32 = yyr1[yyn as usize] as i32 - YYNTOKENS;
-                            let yyi: i32 = yypgoto[yylhs as usize] as i32 + *yyssp as i32;
-                            yystate = (if 0 as i32 <= yyi
-                                && yyi <= YYLAST
-                                && yycheck[yyi as usize] as i32 == *yyssp as i32
-                            {
-                                yytable[yyi as usize] as i32
-                            } else {
-                                yydefgoto[yylhs as usize] as i32
-                            }) as yy_state_fast_t;
-                            c2rust_current_block = 10430565463943277256;
-                        }
+                    204 => {
+                        yyval.num = -(*yyvsp.offset(0_i32 as isize)).num;
+                        c2rust_current_block = 9699707990742192723;
                     }
-                }
-                _ => {}
-            }
-            match c2rust_current_block {
-                12965144090463719536 => {
-                    yyerrstatus = 3 as i32;
-                    loop {
-                        yyn = yypact[yystate as usize] as i32;
-                        if !(yyn == YYPACT_NINF) {
-                            yyn += YYSYMBOL_YYerror as i32;
-                            if 0 as i32 <= yyn
-                                && yyn <= YYLAST
-                                && yycheck[yyn as usize] as i32 == YYSYMBOL_YYerror as i32
-                            {
-                                yyn = yytable[yyn as usize] as i32;
-                                if (0 as i32) < yyn {
-                                    break;
-                                }
-                            }
-                        }
-                        if yyssp == yyss {
-                            c2rust_current_block = 7267896227379959561;
-                            break 's_60;
-                        }
-                        yydestruct(
-                            b"Error: popping\0".as_ptr() as *const i8,
-                            yystos[yystate as usize] as yysymbol_kind_t,
-                            yyvsp,
-                            param,
+                    205 => {
+                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    206 => {
+                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    207 => {
+                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    208 => {
+                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    209 => {
+                        yyval.num = 0_i64;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    210 => {
+                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    211 => {
+                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    212 => {
+                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    213 => {
+                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    214 => {
+                        yyval.atom = xkb_atom_intern(
+                            (*param).ctx,
+                            (*yyvsp.offset(0_i32 as isize)).sval.start,
+                            (*yyvsp.offset(0_i32 as isize)).sval.len,
                         );
-                        yyvsp = yyvsp.offset(-(1 as i32 as isize));
-                        yyssp = yyssp.offset(-(1 as i32 as isize));
-                        yystate = *yyssp as yy_state_fast_t;
+                        c2rust_current_block = 9699707990742192723;
                     }
-                    yyvsp = yyvsp.offset(1);
-                    *yyvsp = yylval;
-                    yystate = yyn as yy_state_fast_t;
+                    215 => {
+                        yyval.atom = xkb_atom_intern(
+                            (*param).ctx,
+                            b"default\0".as_ptr() as *const i8,
+                            (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1_usize),
+                        );
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    216 => {
+                        yyval.atom = xkb_atom_intern(
+                            (*param).ctx,
+                            (*yyvsp.offset(0_i32 as isize)).str,
+                            cstr_len((*yyvsp.offset(0_i32 as isize)).str),
+                        );
+                        free((*yyvsp.offset(0_i32 as isize)).str as *mut ::core::ffi::c_void);
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    217 => {
+                        yyval.str = (*yyvsp.offset(0_i32 as isize)).str;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    218 => {
+                        yyval.str = std::ptr::null_mut();
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    219 => {
+                        yyval.str = (*yyvsp.offset(0_i32 as isize)).str;
+                        c2rust_current_block = 9699707990742192723;
+                    }
+                    _ => {
+                        c2rust_current_block = 9699707990742192723;
+                    }
                 }
-                _ => {}
+                match c2rust_current_block {
+                    9017681648503218951 => {
+                        _xkbcommon_nerrs += 1;
+                        yyvsp = yyvsp.offset(-(yylen as isize));
+                        yyssp = yyssp.offset(-(yylen as isize));
+                        yylen = 0_i32;
+                        yystate = *yyssp as yy_state_fast_t;
+                        c2rust_current_block = 12965144090463719536;
+                    }
+                    _ => {
+                        yyvsp = yyvsp.offset(-(yylen as isize));
+                        yyssp = yyssp.offset(-(yylen as isize));
+                        yylen = 0_i32;
+                        yyvsp = yyvsp.offset(1);
+                        *yyvsp = yyval;
+                        let yylhs: i32 = YYR1[yyn as usize] as i32 - YYNTOKENS;
+                        let yyi: i32 = YYPGOTO[yylhs as usize] as i32 + *yyssp as i32;
+                        yystate = (if (0_i32..=YYLAST).contains(&yyi)
+                            && YYCHECK[yyi as usize] as i32 == *yyssp as i32
+                        {
+                            YYTABLE[yyi as usize] as i32
+                        } else {
+                            YYDEFGOTO[yylhs as usize] as i32
+                        }) as yy_state_fast_t;
+                        c2rust_current_block = 10430565463943277256;
+                    }
+                }
+            }
+            if c2rust_current_block == 12965144090463719536 {
+                yyerrstatus = 3_i32;
+                loop {
+                    yyn = YYPACT[yystate as usize] as i32;
+                    if yyn != YYPACT_NINF {
+                        yyn += YYSYMBOL_YYerror;
+                        if (0_i32..=YYLAST).contains(&yyn)
+                            && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYerror
+                        {
+                            yyn = YYTABLE[yyn as usize] as i32;
+                            if 0_i32 < yyn {
+                                break;
+                            }
+                        }
+                    }
+                    if yyssp == yyss {
+                        c2rust_current_block = 7267896227379959561;
+                        break 's_60;
+                    }
+                    yydestruct(
+                        b"Error: popping\0".as_ptr() as *const i8,
+                        YYSTOS[yystate as usize] as yysymbol_kind_t,
+                        yyvsp,
+                        param,
+                    );
+                    yyvsp = yyvsp.offset(-(1_i32 as isize));
+                    yyssp = yyssp.offset(-(1_i32 as isize));
+                    yystate = *yyssp as yy_state_fast_t;
+                }
+                yyvsp = yyvsp.offset(1);
+                *yyvsp = yylval;
+                yystate = yyn as yy_state_fast_t;
             }
             yyssp = yyssp.offset(1);
         }
         match c2rust_current_block {
             5508412643396263508 => {
-                yyresult = 0 as i32;
+                yyresult = 0_i32;
             }
             7267896227379959561 => {
-                yyresult = 1 as i32;
+                yyresult = 1_i32;
             }
             _ => {
                 _xkbcommon_error(param, b"memory exhausted\0".as_ptr() as *const i8);
-                yyresult = 2 as i32;
+                yyresult = 2_i32;
             }
         }
-        if yychar != YYEMPTY as i32 {
-            yytoken = (if 0 as i32 <= yychar && yychar <= YYMAXUTOK {
-                yytranslate[yychar as usize] as yysymbol_kind_t as i32
+        if yychar != YYEMPTY {
+            yytoken = (if (0_i32..=YYMAXUTOK).contains(&yychar) {
+                YYTRANSLATE[yychar as usize] as yysymbol_kind_t
             } else {
-                YYSYMBOL_YYUNDEF as i32
+                YYSYMBOL_YYUNDEF
             }) as yysymbol_kind_t;
             yydestruct(
                 b"Cleanup: discarding lookahead\0".as_ptr() as *const i8,
@@ -2995,12 +2898,12 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
         while yyssp != yyss {
             yydestruct(
                 b"Cleanup: popping\0".as_ptr() as *const i8,
-                yystos[*yyssp as usize] as yysymbol_kind_t,
+                YYSTOS[*yyssp as usize] as yysymbol_kind_t,
                 yyvsp,
                 param,
             );
-            yyvsp = yyvsp.offset(-(1 as i32 as isize));
-            yyssp = yyssp.offset(-(1 as i32 as isize));
+            yyvsp = yyvsp.offset(-(1_i32 as isize));
+            yyssp = yyssp.offset(-(1_i32 as isize));
         }
         if yyss != &raw mut yyssa as *mut yy_state_t {
             free(yyss as *mut ::core::ffi::c_void);
@@ -3008,7 +2911,7 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
         if yymsg != &raw mut yymsgbuf as *mut i8 {
             free(yymsg as *mut ::core::ffi::c_void);
         }
-        return yyresult;
+        yyresult
     }
 }
 use crate::xkb::shared_types::*;

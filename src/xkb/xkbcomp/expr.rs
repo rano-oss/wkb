@@ -28,7 +28,7 @@ pub struct named_integer_pattern {
     pub is_mask: bool,
     pub error_id: xkb_message_code,
 }
-static mut level_name_pattern: named_integer_pattern = named_integer_pattern {
+static mut LEVEL_NAME_PATTERN: named_integer_pattern = named_integer_pattern {
     prefix: std::ptr::null(),
     prefix_length: 0,
     min: 0,
@@ -46,7 +46,7 @@ pub unsafe fn ExprResolveLhs<'a>(
     index_rtrn: *mut *mut ExprDef,
 ) -> bool {
     unsafe {
-        match (*expr).common.type_0 as u32 {
+        match (*expr).common.type_0 {
             10 => {
                 *elem_rtrn = b"";
                 *field_rtrn = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).ident.ident);
@@ -63,7 +63,7 @@ pub unsafe fn ExprResolveLhs<'a>(
                 *elem_rtrn = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).array_ref.element);
                 *field_rtrn = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).array_ref.field);
                 *index_rtrn = (*expr).array_ref.entry as *mut ExprDef;
-                if (*expr).array_ref.element != XKB_ATOM_NONE as u32 && (*elem_rtrn).is_empty() {
+                if (*expr).array_ref.element != XKB_ATOM_NONE && (*elem_rtrn).is_empty() {
                     return false;
                 }
                 if (*field_rtrn).is_empty() {
@@ -79,9 +79,9 @@ pub unsafe fn ExprResolveLhs<'a>(
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] Unexpected operator {} in ResolveLhs\n",
             XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-            (*expr).common.type_0 as u32,
+            { (*expr).common.type_0 },
         );
-        return false;
+        false
     }
 }
 unsafe fn SimpleLookup(
@@ -92,7 +92,7 @@ unsafe fn SimpleLookup(
     _pending_rtrn: *mut bool,
 ) -> bool {
     unsafe {
-        if priv_0.is_null() || field == XKB_ATOM_NONE as u32 {
+        if priv_0.is_null() || field == XKB_ATOM_NONE {
             return false;
         }
         let str: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, field);
@@ -104,7 +104,7 @@ unsafe fn SimpleLookup(
             }
             entry = entry.offset(1);
         }
-        return false;
+        false
     }
 }
 unsafe fn NamedIntegerPatternLookup(
@@ -115,7 +115,7 @@ unsafe fn NamedIntegerPatternLookup(
     pending_rtrn: *mut bool,
 ) -> bool {
     unsafe {
-        if priv_0.is_null() || field == XKB_ATOM_NONE as u32 {
+        if priv_0.is_null() || field == XKB_ATOM_NONE {
             return false;
         }
         let str_bytes: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, field);
@@ -127,16 +127,16 @@ unsafe fn NamedIntegerPatternLookup(
             *(val_rtrn as *mut u32) = val_parsed;
             c
         } else {
-            0 as i32
+            0_i32
         };
-        if count > 0 as i32 && (*pattern).prefix_length + count as usize == str_bytes.len() {
+        if count > 0_i32 && (*pattern).prefix_length + count as usize == str_bytes.len() {
             if *val_rtrn < (*pattern).min || *val_rtrn > (*pattern).max {
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {} index {} is out of range ({}..{})\n",
-                    (*pattern).error_id as u32,
+                    { (*pattern).error_id },
                     crate::xkb::utils::CStrDisplay((*pattern).prefix),
                     *val_rtrn,
                     (*pattern).min,
@@ -145,9 +145,9 @@ unsafe fn NamedIntegerPatternLookup(
                 return false;
             }
             if (*pattern).is_mask {
-                *val_rtrn = ((1 as u32) << (*val_rtrn).wrapping_sub((*pattern).min)) as u32;
+                *val_rtrn = 1_u32 << (*val_rtrn).wrapping_sub((*pattern).min);
             }
-            return true;
+            true
         } else {
             if !(*pattern).entries.is_null()
                 && SimpleLookup(
@@ -175,8 +175,8 @@ unsafe fn NamedIntegerPatternLookup(
                 *pending_rtrn = true;
                 return true;
             }
-            return false;
-        };
+            false
+        }
     }
 }
 unsafe fn LookupModMask(
@@ -196,18 +196,18 @@ unsafe fn LookupModMask(
             return true;
         }
         if istreq(str, b"none") {
-            *val_rtrn = 0 as u32;
+            *val_rtrn = 0_u32;
             return true;
         }
         let arg: *const LookupModMaskPriv = priv_0 as *const LookupModMaskPriv;
         let mods: *const xkb_mod_set = (*arg).mods;
         let mod_type: u32 = (*arg).mod_type;
-        let ndx: u32 = XkbModNameToIndex(mods, field, mod_type) as u32;
-        if ndx == XKB_MOD_INVALID as u32 {
+        let ndx: u32 = XkbModNameToIndex(mods, field, mod_type);
+        if ndx == XKB_MOD_INVALID {
             return false;
         }
-        *val_rtrn = ((1 as u32) << ndx) as u32;
-        return true;
+        *val_rtrn = 1_u32 << ndx;
+        true
     }
 }
 pub unsafe fn ExprResolveBoolean(
@@ -216,10 +216,10 @@ pub unsafe fn ExprResolveBoolean(
     set_rtrn: *mut bool,
 ) -> bool {
     unsafe {
-        let ok: bool ;
+        let ok: bool;
         #[allow(unused_assignments)]
         let mut ident: &[u8] = b"";
-        match (*expr).common.type_0 as u32 {
+        match (*expr).common.type_0 {
             7 => {
                 *set_rtrn = (*expr).boolean.set;
                 return true;
@@ -301,11 +301,11 @@ pub unsafe fn ExprResolveBoolean(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Unknown operator {} in ResolveBoolean\n",
                     XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                    (*expr).common.type_0 as u32,
+                    { (*expr).common.type_0 },
                 );
             }
         }
-        return false;
+        false
     }
 }
 unsafe fn ExprResolveIntegerLookup(
@@ -318,12 +318,12 @@ unsafe fn ExprResolveIntegerLookup(
 ) -> bool {
     unsafe {
         let mut ok: bool = false;
-        let mut l: i64 = 0 as i64;
-        let mut r: i64 = 0 as i64;
-        let mut u: u32 = 0 as u32;
-        let left: *mut ExprDef ;
-        let right: *mut ExprDef ;
-        match (*expr).common.type_0 as u32 {
+        let mut l: i64 = 0_i64;
+        let mut r: i64 = 0_i64;
+        let mut u: u32 = 0_u32;
+        let left: *mut ExprDef;
+        let right: *mut ExprDef;
+        match (*expr).common.type_0 {
             5 => {
                 *val_rtrn = (*expr).integer.ival;
                 return true;
@@ -387,7 +387,7 @@ unsafe fn ExprResolveIntegerLookup(
                 );
                 return false;
             }
-            17 | 18 | 19 | 20 => {
+            17..=20 => {
                 left = (*expr).binary.left as *mut ExprDef;
                 right = (*expr).binary.right as *mut ExprDef;
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut l, pending, lookup, lookupPriv)
@@ -397,7 +397,7 @@ unsafe fn ExprResolveIntegerLookup(
                 {
                     return false;
                 }
-                match (*expr).common.type_0 as u32 {
+                match (*expr).common.type_0 {
                     17 => {
                         let (c2rust_fresh0, c2rust_fresh1) = l.overflowing_add(r);
                         *val_rtrn = c2rust_fresh0;
@@ -450,7 +450,7 @@ unsafe fn ExprResolveIntegerLookup(
                         }
                     }
                     20 => {
-                        if r == 0 as i64 {
+                        if r == 0_i64 {
                             xkb_logf!(
                                 ctx,
                                 XKB_LOG_LEVEL_ERROR,
@@ -502,7 +502,7 @@ unsafe fn ExprResolveIntegerLookup(
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut l, pending, lookup, lookupPriv) {
                     return false;
                 }
-                *val_rtrn = if (*expr).common.type_0 as u32 == STMT_EXPR_NEGATE as u32 {
+                *val_rtrn = if (*expr).common.type_0 == STMT_EXPR_NEGATE {
                     -l
                 } else {
                     !l
@@ -520,11 +520,11 @@ unsafe fn ExprResolveIntegerLookup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Unknown operator {} in ResolveInteger\n",
                     XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                    (*expr).common.type_0 as u32,
+                    { (*expr).common.type_0 },
                 );
             }
         }
-        return false;
+        false
     }
 }
 pub unsafe fn ExprResolveInteger(
@@ -533,14 +533,14 @@ pub unsafe fn ExprResolveInteger(
     val_rtrn: *mut i64,
 ) -> bool {
     unsafe {
-        return ExprResolveIntegerLookup(
+        ExprResolveIntegerLookup(
             ctx,
             expr,
             val_rtrn,
             std::ptr::null_mut(),
             None,
             std::ptr::null(),
-        );
+        )
     }
 }
 pub unsafe fn ExprResolveGroup(
@@ -551,27 +551,27 @@ pub unsafe fn ExprResolveGroup(
     pending: *mut bool,
 ) -> xkb_parser_error {
     unsafe {
-        static mut pendingGroupIndexNames: [LookupEntry; 2] = [
+        static mut PENDING_GROUP_INDEX_NAMES: [LookupEntry; 2] = [
             LookupEntry {
                 name: GROUP_LAST_INDEX_NAME,
-                value: 0 as u32,
+                value: 0_u32,
             },
             LookupEntry {
                 name: b"",
-                value: 0 as u32,
+                value: 0_u32,
             },
         ];
         let group_name_pattern: named_integer_pattern = named_integer_pattern {
             prefix: b"Group\0".as_ptr() as *const i8,
-            prefix_length: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
-            min: 1 as u32,
-            max: (*keymap_info).features.max_groups as u32,
+            prefix_length: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1_usize),
+            min: 1_u32,
+            max: (*keymap_info).features.max_groups,
             entries: &raw const (*keymap_info).lookup.groupIndexNames as *const LookupEntry,
-            pending_entries: &raw const pendingGroupIndexNames as *const LookupEntry,
+            pending_entries: &raw const PENDING_GROUP_INDEX_NAMES as *const LookupEntry,
             is_mask: false,
             error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
         };
-        let mut result: i64 = 0 as i64;
+        let mut result: i64 = 0_i64;
         if !ExprResolveIntegerLookup(
             &raw mut (*(*keymap_info).keymap).ctx,
             expr,
@@ -589,7 +589,7 @@ pub unsafe fn ExprResolveGroup(
             ),
             &raw const group_name_pattern as *const ::core::ffi::c_void,
         ) {
-            return (if (*keymap_info).strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as u32 != 0 {
+            return (if (*keymap_info).strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                 PARSER_FATAL_ERROR as i32
             } else {
                 PARSER_RECOVERABLE_ERROR as i32
@@ -601,19 +601,19 @@ pub unsafe fn ExprResolveGroup(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Group index {} is out of range ({}..{})\n",
-                XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
+                { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
                 result,
                 absolute as i32,
                 (*keymap_info).features.max_groups,
             );
-            return (if (*keymap_info).strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as u32 != 0 {
+            return (if (*keymap_info).strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                 PARSER_FATAL_ERROR as i32
             } else {
                 PARSER_RECOVERABLE_ERROR as i32
             }) as xkb_parser_error;
         }
         *group_rtrn = result as u32;
-        return PARSER_SUCCESS;
+        PARSER_SUCCESS
     }
 }
 pub unsafe fn ExprResolveLevel(
@@ -622,7 +622,7 @@ pub unsafe fn ExprResolveLevel(
     level_rtrn: *mut u32,
 ) -> bool {
     unsafe {
-        let mut result: i64 = 0 as i64;
+        let mut result: i64 = 0_i64;
         if !ExprResolveIntegerLookup(
             ctx,
             expr,
@@ -638,11 +638,11 @@ pub unsafe fn ExprResolveLevel(
                         *mut bool,
                     ) -> bool,
             ),
-            &raw const level_name_pattern as *const ::core::ffi::c_void,
+            &raw const LEVEL_NAME_PATTERN as *const ::core::ffi::c_void,
         ) {
             return false;
         }
-        if result < 1 as i64 || result > XKB_LEVEL_MAX_IMPL as i64 {
+        if result < 1_i64 || result > XKB_LEVEL_MAX_IMPL as i64 {
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -650,12 +650,12 @@ pub unsafe fn ExprResolveLevel(
                 "[XKB-{:03}] Shift level {} is out of range (1..{})\n",
                 XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL as i32,
                 result,
-                2048 as i32,
+                2048_i32,
             );
             return false;
         }
-        *level_rtrn = (result - 1 as i64) as u32;
-        return true;
+        *level_rtrn = (result - 1_i64) as u32;
+        true
     }
 }
 pub unsafe fn ExprResolveButton(
@@ -664,7 +664,7 @@ pub unsafe fn ExprResolveButton(
     btn_rtrn: *mut i64,
 ) -> bool {
     unsafe {
-        return ExprResolveIntegerLookup(
+        ExprResolveIntegerLookup(
             ctx,
             expr,
             btn_rtrn,
@@ -680,7 +680,7 @@ pub unsafe fn ExprResolveButton(
                     ) -> bool,
             ),
             &raw const buttonNames as *const LookupEntry as *const ::core::ffi::c_void,
-        );
+        )
     }
 }
 pub unsafe fn ExprResolveString(
@@ -689,12 +689,12 @@ pub unsafe fn ExprResolveString(
     val_rtrn: *mut u32,
 ) -> bool {
     unsafe {
-        match (*expr).common.type_0 as u32 {
+        match (*expr).common.type_0 {
             4 => {
                 *val_rtrn = (*expr).string.str;
                 return true;
             }
-            5 | 6 | 7 | 8 | 9 => {
+            5..=9 => {
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -755,11 +755,11 @@ pub unsafe fn ExprResolveString(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Unknown operator {} in ResolveString\n",
                     XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                    (*expr).common.type_0 as u32,
+                    { (*expr).common.type_0 },
                 );
             }
         }
-        return false;
+        false
     }
 }
 pub unsafe fn ExprResolveEnum(
@@ -769,7 +769,7 @@ pub unsafe fn ExprResolveEnum(
     mut values: *const LookupEntry,
 ) -> bool {
     unsafe {
-        if (*expr).common.type_0 as u32 != STMT_EXPR_IDENT as u32 {
+        if (*expr).common.type_0 != STMT_EXPR_IDENT {
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -811,7 +811,7 @@ pub unsafe fn ExprResolveEnum(
             }
             return false;
         }
-        return true;
+        true
     }
 }
 unsafe fn ExprResolveMaskLookup(
@@ -823,29 +823,29 @@ unsafe fn ExprResolveMaskLookup(
     lookupPriv: *const ::core::ffi::c_void,
 ) -> bool {
     unsafe {
-        let ok: bool ;
-        let mut l: u32 = 0 as u32;
-        let mut r: u32 = 0 as u32;
-        let mut v: i64 = 0 as i64;
-        let left: *mut ExprDef ;
-        let right: *mut ExprDef ;
+        let ok: bool;
+        let mut l: u32 = 0_u32;
+        let mut r: u32 = 0_u32;
+        let mut v: i64 = 0_i64;
+        let left: *mut ExprDef;
+        let right: *mut ExprDef;
         let mut bogus: *const i8 = std::ptr::null();
         let c2rust_current_block_47: u64;
-        match (*expr).common.type_0 as u32 {
+        match (*expr).common.type_0 {
             5 => {
-                if (*expr).integer.ival < 0 as i64 || (*expr).integer.ival > u32::MAX as i64 {
+                if (*expr).integer.ival < 0_i64 || (*expr).integer.ival > u32::MAX as i64 {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Mask {}{:#x} is out of range (0..{:#x})\n",
-                        crate::xkb::utils::CStrDisplay(if (*expr).integer.ival < 0 as i64 {
+                        crate::xkb::utils::CStrDisplay(if (*expr).integer.ival < 0_i64 {
                             b"-\0".as_ptr() as *const i8
                         } else {
                             b"\0".as_ptr() as *const i8
                         }),
-                        imaxabs((*expr).integer.ival as i64),
-                        4294967295 as u32,
+                        imaxabs((*expr).integer.ival),
+                        4294967295_u32,
                     );
                     return false;
                 }
@@ -914,7 +914,7 @@ unsafe fn ExprResolveMaskLookup(
             11 => {
                 c2rust_current_block_47 = 6716998617863641615;
             }
-            17 | 18 | 19 | 20 => {
+            17..=20 => {
                 left = (*expr).binary.left as *mut ExprDef;
                 right = (*expr).binary.right as *mut ExprDef;
                 if !ExprResolveMaskLookup(ctx, left, &raw mut l, pending, lookup, lookupPriv)
@@ -922,7 +922,7 @@ unsafe fn ExprResolveMaskLookup(
                 {
                     return false;
                 }
-                match (*expr).common.type_0 as u32 {
+                match (*expr).common.type_0 {
                     17 => {
                         *val_rtrn = l | r;
                     }
@@ -937,7 +937,7 @@ unsafe fn ExprResolveMaskLookup(
                             "[XKB-{:03}] Cannot {} masks; Illegal operation ignored\n",
                             XKB_ERROR_INVALID_OPERATION as i32,
                             crate::xkb::utils::CStrDisplay(
-                                if (*expr).common.type_0 as u32 == STMT_EXPR_DIVIDE as u32 {
+                                if (*expr).common.type_0 == STMT_EXPR_DIVIDE {
                                     b"divide\0".as_ptr() as *const i8
                                 } else {
                                     b"multiply\0".as_ptr() as *const i8
@@ -965,19 +965,19 @@ unsafe fn ExprResolveMaskLookup(
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut v, pending, lookup, lookupPriv) {
                     return false;
                 }
-                if v < 0 as i64 || v > u32::MAX as i64 {
+                if v < 0_i64 || v > u32::MAX as i64 {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Mask {}{:#x} is out of range (0..{:#x})\n",
-                        crate::xkb::utils::CStrDisplay(if v < 0 as i64 {
+                        crate::xkb::utils::CStrDisplay(if v < 0_i64 {
                             b"-\0".as_ptr() as *const i8
                         } else {
                             b"\0".as_ptr() as *const i8
                         }),
-                        imaxabs(v as i64),
-                        4294967295 as u32,
+                        imaxabs(v),
+                        4294967295_u32,
                     );
                     return false;
                 }
@@ -1006,7 +1006,7 @@ unsafe fn ExprResolveMaskLookup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Unknown operator type {} in ResolveMask\n",
                     XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                    (*expr).common.type_0 as u32,
+                    { (*expr).common.type_0 },
                 );
                 c2rust_current_block_47 = 11626999923138678822;
             }
@@ -1028,7 +1028,7 @@ unsafe fn ExprResolveMaskLookup(
                 return false;
             }
         }
-        return false;
+        false
     }
 }
 pub unsafe fn ExprResolveMask(
@@ -1038,7 +1038,7 @@ pub unsafe fn ExprResolveMask(
     values: *const LookupEntry,
 ) -> bool {
     unsafe {
-        return ExprResolveMaskLookup(
+        ExprResolveMaskLookup(
             ctx,
             expr,
             mask_rtrn,
@@ -1054,7 +1054,7 @@ pub unsafe fn ExprResolveMask(
                     ) -> bool,
             ),
             values as *const ::core::ffi::c_void,
-        );
+        )
     }
 }
 pub unsafe fn ExprResolveModMask(
@@ -1065,11 +1065,8 @@ pub unsafe fn ExprResolveModMask(
     mask_rtrn: *mut u32,
 ) -> bool {
     unsafe {
-        let mut priv_0: LookupModMaskPriv = LookupModMaskPriv {
-            mods: mods,
-            mod_type: mod_type,
-        };
-        return ExprResolveMaskLookup(
+        let mut priv_0: LookupModMaskPriv = LookupModMaskPriv { mods, mod_type };
+        ExprResolveMaskLookup(
             ctx,
             expr,
             mask_rtrn as *mut u32,
@@ -1085,7 +1082,7 @@ pub unsafe fn ExprResolveModMask(
                     ) -> bool,
             ),
             &raw mut priv_0 as *const ::core::ffi::c_void,
-        );
+        )
     }
 }
 pub unsafe fn ExprResolveMod(
@@ -1096,7 +1093,7 @@ pub unsafe fn ExprResolveMod(
     ndx_rtrn: *mut u32,
 ) -> bool {
     unsafe {
-        if (*def).common.type_0 as u32 != STMT_EXPR_IDENT as u32 {
+        if (*def).common.type_0 != STMT_EXPR_IDENT {
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -1109,7 +1106,7 @@ pub unsafe fn ExprResolveMod(
         }
         let name: u32 = (*def).ident.ident;
         let ndx: u32 = XkbModNameToIndex(mods, name, mod_type);
-        if ndx == XKB_MOD_INVALID as u32 {
+        if ndx == XKB_MOD_INVALID {
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -1121,7 +1118,7 @@ pub unsafe fn ExprResolveMod(
             return false;
         }
         *ndx_rtrn = ndx;
-        return true;
+        true
     }
 }
 pub unsafe fn ExprResolveGroupMask(
@@ -1131,27 +1128,27 @@ pub unsafe fn ExprResolveGroupMask(
     pending_rtrn: *mut bool,
 ) -> bool {
     unsafe {
-        static mut pendingGroupMaskNames: [LookupEntry; 2] = [
+        static mut PENDING_GROUP_MASK_NAMES: [LookupEntry; 2] = [
             LookupEntry {
                 name: GROUP_LAST_INDEX_NAME,
-                value: 0 as u32,
+                value: 0_u32,
             },
             LookupEntry {
                 name: b"",
-                value: 0 as u32,
+                value: 0_u32,
             },
         ];
         let group_name_pattern: named_integer_pattern = named_integer_pattern {
             prefix: b"Group\0".as_ptr() as *const i8,
-            prefix_length: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
-            min: 1 as u32,
-            max: (*keymap_info).features.max_groups as u32,
+            prefix_length: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1_usize),
+            min: 1_u32,
+            max: (*keymap_info).features.max_groups,
             entries: &raw const (*keymap_info).lookup.groupMaskNames as *const LookupEntry,
-            pending_entries: &raw const pendingGroupMaskNames as *const LookupEntry,
+            pending_entries: &raw const PENDING_GROUP_MASK_NAMES as *const LookupEntry,
             is_mask: true,
             error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
         };
-        return ExprResolveMaskLookup(
+        ExprResolveMaskLookup(
             &raw mut (*(*keymap_info).keymap).ctx,
             expr,
             group_rtrn as *mut u32,
@@ -1167,15 +1164,15 @@ pub unsafe fn ExprResolveGroupMask(
                     ) -> bool,
             ),
             &raw const group_name_pattern as *const ::core::ffi::c_void,
-        );
+        )
     }
 }
 unsafe fn c2rust_run_static_initializers() {
     unsafe {
-        level_name_pattern = named_integer_pattern {
+        LEVEL_NAME_PATTERN = named_integer_pattern {
             prefix: b"Level\0".as_ptr() as *const i8,
-            prefix_length: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
-            min: 1 as u32,
+            prefix_length: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1_usize),
+            min: 1_u32,
             max: XKB_LEVEL_MAX_IMPL as u32,
             entries: std::ptr::null(),
             pending_entries: std::ptr::null(),

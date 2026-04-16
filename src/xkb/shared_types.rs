@@ -360,7 +360,7 @@ pub struct KeycodeMatch {
     pub index: u32,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct xkb_key {
     pub keycode: u32,
     pub name: u32,
@@ -378,28 +378,7 @@ pub struct xkb_key {
     pub overlay_keys: Vec<u32>,
 }
 
-impl Default for xkb_key {
-    fn default() -> Self {
-        Self {
-            keycode: 0,
-            name: 0,
-            explicit: 0,
-            modmap: 0,
-            vmodmap: 0,
-            overlays: 0,
-            repeats: false,
-            implicit_actions: false,
-            out_of_range_pending_group: false,
-            out_of_range_group_policy: 0,
-            out_of_range_group_number: 0,
-            num_groups: 0,
-            groups: Vec::new(),
-            overlay_keys: Vec::new(),
-        }
-    }
-}
-
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct xkb_group {
     pub explicit_symbols: bool,
     pub explicit_actions: bool,
@@ -409,36 +388,12 @@ pub struct xkb_group {
     pub levels: Vec<xkb_level>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct xkb_level {
     pub upper: u32,
     pub has_upper: bool,
     pub syms: Vec<u32>,
     pub actions: Vec<xkb_action>,
-}
-
-impl Default for xkb_level {
-    fn default() -> Self {
-        Self {
-            upper: 0,
-            has_upper: false,
-            syms: Vec::new(),
-            actions: Vec::new(),
-        }
-    }
-}
-
-impl Default for xkb_group {
-    fn default() -> Self {
-        Self {
-            explicit_symbols: false,
-            explicit_actions: false,
-            implicit_actions: false,
-            explicit_type: false,
-            type_idx: 0,
-            levels: Vec::new(),
-        }
-    }
 }
 
 pub type xkb_keysym_count_t = u16;
@@ -465,8 +420,8 @@ pub struct xkb_led {
     pub ctrls: xkb_action_controls,
 }
 
-pub const XKB_MAX_GROUPS: i32 = 32 as i32;
-pub const MOD_REAL_MASK_ALL: u32 = 0xff as i32 as u32;
+pub const XKB_MAX_GROUPS: i32 = 32_i32;
+pub const MOD_REAL_MASK_ALL: u32 = 0xff_i32 as u32;
 
 // ── Additional xkbcommon types ──────────────────────────────────────
 
@@ -648,30 +603,30 @@ pub unsafe fn XkbKeyNumLevels(keymap: *const xkb_keymap, key: *const xkb_key, la
 pub unsafe fn XkbKey(keymap: *mut xkb_keymap, kc: u32) -> *const xkb_key {
     unsafe {
         if kc < (*keymap).min_key_code || kc > (*keymap).max_key_code {
-            return std::ptr::null();
+            std::ptr::null()
         } else if kc < (*keymap).num_keys_low {
-            return &(&(*keymap).keys)[kc as usize] as *const xkb_key;
+            &(&(*keymap).keys)[kc as usize] as *const xkb_key
         } else {
             let mut lower: u32 = (*keymap).num_keys_low;
             let mut upper: u32 = (*keymap).num_keys;
             while lower < upper {
                 let mid: u32 = lower.wrapping_add(
                     upper
-                        .wrapping_sub(1 as u32)
+                        .wrapping_sub(1_u32)
                         .wrapping_sub(lower)
-                        .wrapping_div(2 as u32),
+                        .wrapping_div(2_u32),
                 );
                 let key: *const xkb_key = &(&(*keymap).keys)[mid as usize] as *const xkb_key;
                 if (*key).keycode < kc {
-                    lower = mid.wrapping_add(1 as u32);
+                    lower = mid.wrapping_add(1_u32);
                 } else if (*key).keycode > kc {
                     upper = mid;
                 } else {
                     return key;
                 }
             }
-            return std::ptr::null();
-        };
+            std::ptr::null()
+        }
     }
 }
 
@@ -682,74 +637,71 @@ pub unsafe fn XkbKeyByName(
     use_aliases: bool,
 ) -> *mut xkb_key {
     unsafe {
-        if (name as usize) < (&(*keymap).key_names).len() {
+        if (name as usize) < (*keymap).key_names.len() {
             let match_0: KeycodeMatch = (&(*keymap).key_names)[name as usize];
             if match_0.found {
                 if !match_0.is_alias {
-                    return ((&(*keymap).keys).as_ptr() as *mut xkb_key)
-                        .add(match_0.index as usize);
+                    return ((*keymap).keys.as_ptr() as *mut xkb_key).add(match_0.index as usize);
                 } else if use_aliases {
-                    return ((&(*keymap).keys).as_ptr() as *mut xkb_key)
+                    return ((*keymap).keys.as_ptr() as *mut xkb_key)
                         .add((&(*keymap).key_names)[match_0.index as usize].index as usize);
                 }
             }
         }
-        return std::ptr::null_mut();
+        std::ptr::null_mut()
     }
 }
 
 #[inline]
 pub unsafe fn entry_is_active(entry: *const xkb_key_type_entry) -> bool {
-    unsafe {
-        return (*entry).mods.mods == 0 as u32 || (*entry).mods.mask != 0 as u32;
-    }
+    unsafe { (*entry).mods.mods == 0_u32 || (*entry).mods.mask != 0_u32 }
 }
 
 #[inline]
 pub unsafe fn format_max_overlays(format: u32) -> xkb_overlay_index_t {
-    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
+    (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
         XKB_OVERLAY_MAX_X11 as usize
     } else {
         XKB_OVERLAY_MAX as usize
-    }) as xkb_overlay_index_t;
+    }) as xkb_overlay_index_t
 }
 
 #[inline]
 pub unsafe fn format_max_groups(format: u32) -> u32 {
-    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
+    (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
         XKB_MAX_GROUPS_X11
     } else {
         XKB_MAX_GROUPS
-    }) as u32;
+    }) as u32
 }
 
 #[inline]
 pub unsafe fn format_boolean_controls(format: u32) -> xkb_action_controls {
-    return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
+    (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
         CONTROL_ALL_BOOLEAN_V1 as i32
     } else {
         CONTROL_ALL_BOOLEAN as i32
-    }) as xkb_action_controls;
+    }) as xkb_action_controls
 }
 
 #[inline]
 pub unsafe fn isModsUnLockOnPressSupported(format: u32) -> bool {
-    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
+    format >= XKB_KEYMAP_FORMAT_TEXT_V2
 }
 
 #[inline]
 pub unsafe fn isGroupLockOnReleaseSupported(format: u32) -> bool {
-    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
+    format >= XKB_KEYMAP_FORMAT_TEXT_V2
 }
 
 #[inline]
 pub unsafe fn isModsLatchOnPressSupported(format: u32) -> bool {
-    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
+    format >= XKB_KEYMAP_FORMAT_TEXT_V2
 }
 
 #[inline]
 pub unsafe fn areOverlappingOverlaysSupported(format: u32) -> bool {
-    return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
+    format >= XKB_KEYMAP_FORMAT_TEXT_V2
 }
 
 // Error codes (from xkbcommon_errors_h)

@@ -79,7 +79,7 @@ unsafe fn ExprCreate(op: stmt_type) -> *mut ExprDef {
         let expr: *mut ExprDef = Box::into_raw(Box::new(std::mem::zeroed::<ExprDef>()));
         (*expr).common.type_0 = op;
         (*expr).common.next = std::ptr::null_mut();
-        return expr;
+        expr
     }
 }
 
@@ -90,7 +90,7 @@ pub unsafe fn ExprCreateString(str: u32) -> *mut ExprDef {
             return std::ptr::null_mut();
         }
         (*expr).string.str = str;
-        return expr;
+        expr
     }
 }
 
@@ -101,7 +101,7 @@ pub unsafe fn ExprCreateInteger(ival: i64) -> *mut ExprDef {
             return std::ptr::null_mut();
         }
         (*expr).integer.ival = ival;
-        return expr;
+        expr
     }
 }
 
@@ -111,7 +111,7 @@ pub unsafe fn ExprCreateFloat() -> *mut ExprDef {
         if expr.is_null() {
             return std::ptr::null_mut();
         }
-        return expr;
+        expr
     }
 }
 
@@ -122,7 +122,7 @@ pub unsafe fn ExprCreateKeyName(key_name: u32) -> *mut ExprDef {
             return std::ptr::null_mut();
         }
         (*expr).key_name.key_name = key_name;
-        return expr;
+        expr
     }
 }
 
@@ -133,7 +133,7 @@ pub unsafe fn ExprCreateKeySym(keysym: u32) -> *mut ExprDef {
             return std::ptr::null_mut();
         }
         (*expr).keysym.keysym = keysym;
-        return expr;
+        expr
     }
 }
 
@@ -144,7 +144,7 @@ pub unsafe fn ExprCreateIdent(ident: u32) -> *mut ExprDef {
             return std::ptr::null_mut();
         }
         (*expr).ident.ident = ident;
-        return expr;
+        expr
     }
 }
 
@@ -155,7 +155,7 @@ pub unsafe fn ExprCreateUnary(op: stmt_type, child: *mut ExprDef) -> *mut ExprDe
             return std::ptr::null_mut();
         }
         (*expr).unary.child = child as *mut ExprDef;
-        return expr;
+        expr
     }
 }
 
@@ -171,7 +171,7 @@ pub unsafe fn ExprCreateBinary(
         }
         (*expr).binary.left = left as *mut ExprDef;
         (*expr).binary.right = right as *mut ExprDef;
-        return expr;
+        expr
     }
 }
 
@@ -183,7 +183,7 @@ pub unsafe fn ExprCreateFieldRef(element: u32, field: u32) -> *mut ExprDef {
         }
         (*expr).field_ref.element = element;
         (*expr).field_ref.field = field;
-        return expr;
+        expr
     }
 }
 
@@ -196,14 +196,12 @@ pub unsafe fn ExprCreateArrayRef(element: u32, field: u32, entry: *mut ExprDef) 
         (*expr).array_ref.element = element;
         (*expr).array_ref.field = field;
         (*expr).array_ref.entry = entry as *mut ExprDef;
-        return expr;
+        expr
     }
 }
 
 pub unsafe fn ExprEmptyList() -> *mut ExprDef {
-    unsafe {
-        return ExprCreate(STMT_EXPR_EMPTY_LIST);
-    }
+    unsafe { ExprCreate(STMT_EXPR_EMPTY_LIST) }
 }
 
 pub unsafe fn ExprCreateAction(name: u32, args: *mut ExprDef) -> *mut ExprDef {
@@ -214,7 +212,7 @@ pub unsafe fn ExprCreateAction(name: u32, args: *mut ExprDef) -> *mut ExprDef {
         }
         (*expr).action.name = name;
         (*expr).action.args = args as *mut ExprDef;
-        return expr;
+        expr
     }
 }
 
@@ -225,7 +223,7 @@ pub unsafe fn ExprCreateActionList(actions: *mut ExprDef) -> *mut ExprDef {
             return std::ptr::null_mut();
         }
         (*expr).actions.actions = actions as *mut ExprDef;
-        return expr;
+        expr
     }
 }
 
@@ -237,20 +235,20 @@ pub unsafe fn ExprCreateKeySymList(sym: u32) -> *mut ExprDef {
         }
         let ksl = expr as *mut ExprKeysymList;
         std::ptr::write(&raw mut (*ksl).syms, Vec::new());
-        if !(sym == XKB_KEY_NoSymbol as u32) {
-            (&mut (*ksl).syms).push(sym);
+        if sym != XKB_KEY_NoSymbol as u32 {
+            (*ksl).syms.push(sym);
         }
-        return expr;
+        expr
     }
 }
 
 pub unsafe fn ExprAppendKeySymList(expr: *mut ExprDef, sym: u32) -> *mut ExprDef {
     unsafe {
-        if !(sym == XKB_KEY_NoSymbol as u32) {
+        if sym != XKB_KEY_NoSymbol as u32 {
             let ksl = expr as *mut ExprKeysymList;
-            (&mut (*ksl).syms).push(sym);
+            (*ksl).syms.push(sym);
         }
-        return expr;
+        expr
     }
 }
 
@@ -261,21 +259,18 @@ pub unsafe fn ExprKeySymListAppendString(
 ) -> *mut ExprDef {
     unsafe {
         let c2rust_current_block: u64;
-        let len: usize = cstr_len(string) as usize;
-        let mut idx: usize = 0 as usize;
-        let mut idx_cp: usize = 1 as usize;
+        let len: usize = cstr_len(string);
+        let mut idx: usize = 0_usize;
+        let mut idx_cp: usize = 1_usize;
         loop {
-            if !(idx < len) {
+            if idx >= len {
                 c2rust_current_block = 18317007320854588510;
                 break;
             }
-            let mut count: usize = 0 as usize;
-            let cp: u32 = utf8_next_code_point(
-                string.offset(idx as isize),
-                len.wrapping_sub(idx),
-                &raw mut count,
-            );
-            if cp == INVALID_UTF8_CODE_POINT as u32 {
+            let mut count: usize = 0_usize;
+            let cp: u32 =
+                utf8_next_code_point(string.add(idx), len.wrapping_sub(idx), &raw mut count);
+            if cp == INVALID_UTF8_CODE_POINT {
                 let loc: scanner_loc = (*scanner).token_location();
                 xkb_logf!(
                     (*scanner).ctx,
@@ -286,13 +281,13 @@ pub unsafe fn ExprKeySymListAppendString(
                     crate::xkb::utils::CStrDisplay((*scanner).file_name),
                     loc.line,
                     loc.column,
-                    idx.wrapping_add(1 as usize),
+                    idx.wrapping_add(1_usize),
                     idx_cp,
                 );
                 c2rust_current_block = 5140853804782746302;
                 break;
             } else {
-                let sym: u32 = xkb_utf32_to_keysym(cp) as u32;
+                let sym: u32 = xkb_utf32_to_keysym(cp);
                 if sym == XKB_KEY_NoSymbol as u32 {
                     let loc_0: scanner_loc = (*scanner).token_location();
                     xkb_logf!(
@@ -304,14 +299,14 @@ pub unsafe fn ExprKeySymListAppendString(
                         loc_0.line,
                         loc_0.column,
                         cp,
-                        idx.wrapping_add(1 as usize),
+                        idx.wrapping_add(1_usize),
                         idx_cp,
                     );
                     c2rust_current_block = 5140853804782746302;
                     break;
                 } else {
                     let ksl = expr as *mut ExprKeysymList;
-                    (&mut (*ksl).syms).push(sym);
+                    (*ksl).syms.push(sym);
                     idx = idx.wrapping_add(count);
                     idx_cp = idx_cp.wrapping_add(1);
                 }
@@ -320,19 +315,17 @@ pub unsafe fn ExprKeySymListAppendString(
         match c2rust_current_block {
             5140853804782746302 => {
                 FreeStmt(expr as *mut ParseCommon);
-                return std::ptr::null_mut();
+                std::ptr::null_mut()
             }
-            _ => {
-                return expr;
-            }
-        };
+            _ => expr,
+        }
     }
 }
 
 pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32 {
     unsafe {
-        let len: usize = cstr_len(string) as usize;
-        if len == 0 as usize {
+        let len: usize = cstr_len(string);
+        if len == 0_usize {
             let loc: scanner_loc = (*scanner).token_location();
             xkb_logf!(
                 (*scanner).ctx,
@@ -345,9 +338,9 @@ pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32
             );
             return XKB_KEY_NoSymbol as u32;
         }
-        let mut count: usize = 0 as usize;
-        let cp: u32 = utf8_next_code_point(string, len, &raw mut count) as u32;
-        if cp == INVALID_UTF8_CODE_POINT as u32 {
+        let mut count: usize = 0_usize;
+        let cp: u32 = utf8_next_code_point(string, len, &raw mut count);
+        if cp == INVALID_UTF8_CODE_POINT {
             let loc_0: scanner_loc = (*scanner).token_location();
             xkb_logf!(
                 (*scanner).ctx,
@@ -375,7 +368,7 @@ pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32
             );
             return XKB_KEY_NoSymbol as u32;
         }
-        let sym: u32 = xkb_utf32_to_keysym(cp) as u32;
+        let sym: u32 = xkb_utf32_to_keysym(cp);
         if sym == XKB_KEY_NoSymbol as u32 {
             let loc_2: scanner_loc = (*scanner).token_location();
             xkb_logf!(
@@ -389,7 +382,7 @@ pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32
                 cp,
             );
         }
-        return sym;
+        sym
     }
 }
 
@@ -400,7 +393,7 @@ pub unsafe fn KeycodeCreate(name: u32, value: i64) -> *mut KeycodeDef {
         (*def).common.next = std::ptr::null_mut();
         (*def).name = name;
         (*def).value = value;
-        return def;
+        def
     }
 }
 
@@ -411,7 +404,7 @@ pub unsafe fn KeyAliasCreate(alias: u32, real: u32) -> *mut KeyAliasDef {
         (*def).common.next = std::ptr::null_mut();
         (*def).alias = alias;
         (*def).real = real;
-        return def;
+        def
     }
 }
 
@@ -422,7 +415,7 @@ pub unsafe fn VModCreate(name: u32, value: *mut ExprDef) -> *mut VModDef {
         (*def).common.next = std::ptr::null_mut();
         (*def).name = name;
         (*def).value = value as *mut ExprDef;
-        return def;
+        def
     }
 }
 
@@ -433,20 +426,17 @@ pub unsafe fn VarCreate(name: *mut ExprDef, value: *mut ExprDef) -> *mut VarDef 
         (*def).common.next = std::ptr::null_mut();
         (*def).name = name as *mut ExprDef;
         (*def).value = value as *mut ExprDef;
-        return def;
+        def
     }
 }
 
 pub unsafe fn BoolVarCreate(ident: u32, set: bool) -> *mut VarDef {
     unsafe {
-        let name: *mut ExprDef ;
-        let value: *mut ExprDef ;
-        let def: *mut VarDef ;
-        name = ExprCreateIdent(ident);
+        let name: *mut ExprDef = ExprCreateIdent(ident);
         if name.is_null() {
             return std::ptr::null_mut();
         }
-        value = ExprCreate(STMT_EXPR_BOOLEAN_LITERAL);
+        let value: *mut ExprDef = ExprCreate(STMT_EXPR_BOOLEAN_LITERAL);
         if !value.is_null() {
             (*value).boolean.set = set;
         }
@@ -454,13 +444,13 @@ pub unsafe fn BoolVarCreate(ident: u32, set: bool) -> *mut VarDef {
             FreeStmt(name as *mut ParseCommon);
             return std::ptr::null_mut();
         }
-        def = VarCreate(name, value);
+        let def: *mut VarDef = VarCreate(name, value);
         if def.is_null() {
             FreeStmt(name as *mut ParseCommon);
             FreeStmt(value as *mut ParseCommon);
             return std::ptr::null_mut();
         }
-        return def;
+        def
     }
 }
 
@@ -472,7 +462,7 @@ pub unsafe fn InterpCreate(sym: u32, match_0: *mut ExprDef) -> *mut InterpDef {
         (*def).sym = sym;
         (*def).match_0 = match_0 as *mut ExprDef;
         (*def).def = std::ptr::null_mut();
-        return def;
+        def
     }
 }
 
@@ -484,7 +474,7 @@ pub unsafe fn KeyTypeCreate(name: u32, body: *mut VarDef) -> *mut KeyTypeDef {
         (*def).merge = MERGE_DEFAULT;
         (*def).name = name;
         (*def).body = body;
-        return def;
+        def
     }
 }
 
@@ -496,7 +486,7 @@ pub unsafe fn SymbolsCreate(keyName: u32, symbols: *mut VarDef) -> *mut SymbolsD
         (*def).merge = MERGE_DEFAULT;
         (*def).keyName = keyName;
         (*def).symbols = symbols;
-        return def;
+        def
     }
 }
 
@@ -509,7 +499,7 @@ pub unsafe fn GroupCompatCreate(group: i64, val: *mut ExprDef) -> *mut GroupComp
         (*def).merge = MERGE_DEFAULT;
         (*def).group = group;
         (*def).def = val as *mut ExprDef;
-        return def;
+        def
     }
 }
 
@@ -521,7 +511,7 @@ pub unsafe fn ModMapCreate(modifier: u32, keys: *mut ExprDef) -> *mut ModMapDef 
         (*def).merge = MERGE_DEFAULT;
         (*def).modifier = modifier;
         (*def).keys = keys as *mut ExprDef;
-        return def;
+        def
     }
 }
 
@@ -533,7 +523,7 @@ pub unsafe fn LedMapCreate(name: u32, body: *mut VarDef) -> *mut LedMapDef {
         (*def).merge = MERGE_DEFAULT;
         (*def).name = name;
         (*def).body = body;
-        return def;
+        def
     }
 }
 
@@ -546,7 +536,7 @@ pub unsafe fn LedNameCreate(ndx: i64, name: *mut ExprDef, virtual_0: bool) -> *m
         (*def).ndx = ndx;
         (*def).name = name as *mut ExprDef;
         (*def).virtual_0 = virtual_0;
-        return def;
+        def
     }
 }
 
@@ -561,7 +551,7 @@ pub unsafe fn UnknownStatementCreate(type_0: stmt_type, name: sval) -> *mut Unkn
             drop(Box::from_raw(def));
             return std::ptr::null_mut();
         }
-        return def;
+        def
     }
 }
 
@@ -572,15 +562,15 @@ pub unsafe fn IncludeCreate(
 ) -> *mut IncludeStmt {
     unsafe {
         let c2rust_current_block: u64;
-        let mut incl: *mut IncludeStmt ;
-        let mut first: *mut IncludeStmt ;
-        let stmt: *mut i8 ;
-        let mut tmp: *mut i8 ;
+        let mut incl: *mut IncludeStmt;
+        let mut first: *mut IncludeStmt;
+
+        let mut tmp: *mut i8;
         let mut nextop: i8 = 0;
         first = std::ptr::null_mut();
         incl = first;
         tmp = str;
-        stmt = strdup_safe(str);
+        let stmt: *mut i8 = strdup_safe(str);
         loop {
             if !(!tmp.is_null() && *tmp as i32 != 0) {
                 c2rust_current_block = 15125582407903384992;
@@ -653,7 +643,7 @@ pub unsafe fn IncludeCreate(
                 );
                 FreeInclude(first);
                 cstr_free(stmt);
-                return std::ptr::null_mut();
+                std::ptr::null_mut()
             }
             _ => {
                 if !first.is_null() {
@@ -661,9 +651,9 @@ pub unsafe fn IncludeCreate(
                 } else {
                     cstr_free(stmt);
                 }
-                return first;
+                first
             }
-        };
+        }
     }
 }
 
@@ -674,14 +664,13 @@ pub unsafe fn XkbFileCreate(
     flags: xkb_map_flags,
 ) -> *mut XkbFile {
     unsafe {
-        let file: *mut XkbFile ;
-        file = Box::into_raw(Box::new(std::mem::zeroed::<XkbFile>()));
+        let file: *mut XkbFile = Box::into_raw(Box::new(std::mem::zeroed::<XkbFile>()));
         XkbEscapeMapName(name);
         (*file).file_type = type_0;
         (*file).name = name;
         (*file).defs = defs;
         (*file).flags = flags;
-        return file;
+        file
     }
 }
 
@@ -697,14 +686,14 @@ pub unsafe fn XkbFileFromComponents(
             (*kkctgs).compatibility.as_ptr() as *mut i8,
             (*kkctgs).symbols.as_ptr() as *mut i8,
         ];
-        let mut type_0: u32 ;
-        let mut include: *mut IncludeStmt ;
-        let mut file: *mut XkbFile ;
+        let mut type_0: u32;
+        let mut include: *mut IncludeStmt;
+        let mut file: *mut XkbFile;
         let mut defs: *mut ParseCommon = std::ptr::null_mut();
         let mut defsLast: *mut ParseCommon = std::ptr::null_mut();
         type_0 = FIRST_KEYMAP_FILE_TYPE;
         loop {
-            if !(type_0 as u32 <= LAST_KEYMAP_FILE_TYPE as u32) {
+            if type_0 > LAST_KEYMAP_FILE_TYPE {
                 c2rust_current_block = 13536709405535804910;
                 break;
             }
@@ -734,27 +723,24 @@ pub unsafe fn XkbFileFromComponents(
                 type_0 += 1;
             }
         }
-        match c2rust_current_block {
-            13536709405535804910 => {
-                file = XkbFileCreate(
-                    FILE_TYPE_KEYMAP,
-                    std::ptr::null_mut(),
-                    defs,
-                    0 as xkb_map_flags,
-                );
-                if !file.is_null() {
-                    return file;
-                }
+        if c2rust_current_block == 13536709405535804910 {
+            file = XkbFileCreate(
+                FILE_TYPE_KEYMAP,
+                std::ptr::null_mut(),
+                defs,
+                0 as xkb_map_flags,
+            );
+            if !file.is_null() {
+                return file;
             }
-            _ => {}
         }
         FreeXkbFile(defs as *mut XkbFile);
-        return std::ptr::null_mut();
+        std::ptr::null_mut()
     }
 }
 unsafe fn FreeInclude(mut incl: *mut IncludeStmt) {
     unsafe {
-        let mut next: *mut IncludeStmt ;
+        let mut next: *mut IncludeStmt;
         while !incl.is_null() {
             next = (*incl).next_incl as *mut IncludeStmt;
             cstr_free((*incl).file);
@@ -769,18 +755,18 @@ unsafe fn FreeInclude(mut incl: *mut IncludeStmt) {
 
 pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
     unsafe {
-        let mut next: *mut ParseCommon ;
+        let mut next: *mut ParseCommon;
         while !stmt.is_null() {
             next = (*stmt).next as *mut ParseCommon;
-            match (*stmt).type_0 as u32 {
+            match (*stmt).type_0 {
                 1 => {
                     FreeInclude(stmt as *mut IncludeStmt);
                     stmt = std::ptr::null_mut();
                 }
-                23 | 25 | 22 | 24 => {
+                22..=25 => {
                     FreeStmt((*(stmt as *mut ExprUnary)).child as *mut ParseCommon);
                 }
-                20 | 17 | 18 | 19 | 21 => {
+                17..=21 => {
                     FreeStmt((*(stmt as *mut ExprBinary)).left as *mut ParseCommon);
                     FreeStmt((*(stmt as *mut ExprBinary)).right as *mut ParseCommon);
                 }
@@ -834,7 +820,7 @@ pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
             }
             // Deallocate the stmt with the correct type (Box::from_raw must match Box::into_raw type)
             if !stmt.is_null() {
-                match (*stmt).type_0 as u32 {
+                match (*stmt).type_0 {
                     2 => drop(Box::from_raw(stmt as *mut KeycodeDef)),
                     3 => drop(Box::from_raw(stmt as *mut KeyAliasDef)),
                     26 => drop(Box::from_raw(stmt as *mut VarDef)),
@@ -857,14 +843,14 @@ pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
 
 pub unsafe fn FreeXkbFile(mut file: *mut XkbFile) {
     unsafe {
-        let mut next: *mut XkbFile ;
+        let mut next: *mut XkbFile;
         while !file.is_null() {
             next = (*file).common.next as *mut XkbFile;
-            match (*file).file_type as u32 {
+            match (*file).file_type {
                 5 => {
                     FreeXkbFile((*file).defs as *mut XkbFile);
                 }
-                1 | 2 | 3 | 0 | 4 => {
+                0..=4 => {
                     FreeStmt((*file).defs);
                 }
                 _ => {}
@@ -875,7 +861,7 @@ pub unsafe fn FreeXkbFile(mut file: *mut XkbFile) {
         }
     }
 }
-static mut xkb_file_type_strings: [*const i8; 7] = [
+static mut XKB_FILE_TYPE_STRINGS: [*const i8; 7] = [
     b"xkb_keycodes\0".as_ptr() as *const i8,
     b"xkb_types\0".as_ptr() as *const i8,
     b"xkb_compatibility\0".as_ptr() as *const i8,
@@ -887,13 +873,13 @@ static mut xkb_file_type_strings: [*const i8; 7] = [
 
 pub unsafe fn xkb_file_type_to_string(type_0: u32) -> *const i8 {
     unsafe {
-        if type_0 as u32 >= _FILE_TYPE_NUM_ENTRIES as u32 {
+        if type_0 >= _FILE_TYPE_NUM_ENTRIES {
             return b"unknown\0".as_ptr() as *const i8;
         }
-        return xkb_file_type_strings[type_0 as usize];
+        XKB_FILE_TYPE_STRINGS[type_0 as usize]
     }
 }
-static stmt_type_strings: [&'static str; 37] = [
+static STMT_TYPE_STRINGS: [&str; 37] = [
     "unknown statement",
     "include statement",
     "key name definition",
@@ -937,21 +923,21 @@ pub fn stmt_type_to_string(type_0: u32) -> &'static str {
     if type_0 >= _STMT_NUM_VALUES {
         return "unknown";
     }
-    stmt_type_strings[type_0 as usize]
+    STMT_TYPE_STRINGS[type_0 as usize]
 }
 
 pub fn stmt_type_to_operator_char(type_0: u32) -> char {
     match type_0 {
-        17 => return '+',
-        18 => return '-',
-        19 => return '*',
-        20 => return '/',
-        22 => return '!',
-        23 => return '-',
-        24 => return '~',
-        25 => return '+',
-        _ => return '\0',
-    };
+        17 => '+',
+        18 => '-',
+        19 => '*',
+        20 => '/',
+        22 => '!',
+        23 => '-',
+        24 => '~',
+        25 => '+',
+        _ => '\0',
+    }
 }
 use crate::xkb::keysym_utf::xkb_utf32_to_keysym;
 use crate::xkb::shared_types::*;

@@ -121,7 +121,7 @@ macro_rules! rxkb_logf {
 
 unsafe fn rxkb_log(ctx: *mut rxkb_context, level: rxkb_log_level, msg: *const i8) {
     unsafe {
-        if ((*ctx).log_level as u32) < level as u32 {
+        if (*ctx).log_level < level {
             return;
         }
         (*ctx).log_fn.expect("non-null function pointer")(ctx, level, msg);
@@ -129,7 +129,7 @@ unsafe fn rxkb_log(ctx: *mut rxkb_context, level: rxkb_log_level, msg: *const i8
 }
 unsafe fn rxkb_object_init(object: *mut rxkb_object, parent: *mut rxkb_object) {
     unsafe {
-        (*object).refcount = 1 as u32;
+        (*object).refcount = 1_u32;
         (*object).parent = parent;
     }
 }
@@ -160,11 +160,11 @@ pub unsafe fn rxkb_iso639_code_unref(object: *mut rxkb_iso639_code) -> *mut rxkb
             return std::ptr::null_mut();
         }
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
-        if (*object).base.refcount == 0 as u32 {
+        if (*object).base.refcount == 0_u32 {
             free((*object).code as *mut ::core::ffi::c_void);
             drop(Box::from_raw(object));
         }
-        return std::ptr::null_mut();
+        std::ptr::null_mut()
     }
 }
 #[inline]
@@ -173,13 +173,11 @@ unsafe fn rxkb_iso639_code_create(parent: *mut rxkb_object) -> *mut rxkb_iso639_
         let t: *mut rxkb_iso639_code =
             Box::into_raw(Box::new(std::mem::zeroed::<rxkb_iso639_code>()));
         rxkb_object_init(&raw mut (*t).base, parent);
-        return t;
+        t
     }
 }
 pub unsafe fn rxkb_iso639_code_get_code(object: *mut rxkb_iso639_code) -> *const i8 {
-    unsafe {
-        return (*object).code;
-    }
+    unsafe { (*object).code }
 }
 pub unsafe fn rxkb_layout_get_iso3166_first(layout: *mut rxkb_layout) -> *mut rxkb_iso3166_code {
     unsafe {
@@ -208,11 +206,11 @@ pub unsafe fn rxkb_iso3166_code_unref(object: *mut rxkb_iso3166_code) -> *mut rx
             return std::ptr::null_mut();
         }
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
-        if (*object).base.refcount == 0 as u32 {
+        if (*object).base.refcount == 0_u32 {
             free((*object).code as *mut ::core::ffi::c_void);
             drop(Box::from_raw(object));
         }
-        return std::ptr::null_mut();
+        std::ptr::null_mut()
     }
 }
 
@@ -222,13 +220,11 @@ unsafe fn rxkb_iso3166_code_create(parent: *mut rxkb_object) -> *mut rxkb_iso316
         let t: *mut rxkb_iso3166_code =
             Box::into_raw(Box::new(std::mem::zeroed::<rxkb_iso3166_code>()));
         rxkb_object_init(&raw mut (*t).base, parent);
-        return t;
+        t
     }
 }
 pub unsafe fn rxkb_iso3166_code_get_code(object: *mut rxkb_iso3166_code) -> *const i8 {
-    unsafe {
-        return (*object).code;
-    }
+    unsafe { (*object).code }
 }
 
 pub unsafe fn rxkb_option_unref(object: *mut rxkb_option) -> *mut rxkb_option {
@@ -237,37 +233,29 @@ pub unsafe fn rxkb_option_unref(object: *mut rxkb_option) -> *mut rxkb_option {
             return std::ptr::null_mut();
         }
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
-        if (*object).base.refcount == 0 as u32 {
+        if (*object).base.refcount == 0_u32 {
             // rxkb_option_destroy inlined
             free((*object).name as *mut ::core::ffi::c_void);
             free((*object).brief as *mut ::core::ffi::c_void);
             free((*object).description as *mut ::core::ffi::c_void);
             drop(Box::from_raw(object));
         }
-        return std::ptr::null_mut();
+        std::ptr::null_mut()
     }
 }
 
 pub unsafe fn rxkb_option_get_name(object: *mut rxkb_option) -> *const i8 {
-    unsafe {
-        return (*object).name;
-    }
+    unsafe { (*object).name }
 }
 pub unsafe fn rxkb_option_get_brief(object: *mut rxkb_option) -> *const i8 {
-    unsafe {
-        return (*object).brief;
-    }
+    unsafe { (*object).brief }
 }
 pub unsafe fn rxkb_option_get_description(object: *mut rxkb_option) -> *const i8 {
-    unsafe {
-        return (*object).description;
-    }
+    unsafe { (*object).description }
 }
 
 pub unsafe fn rxkb_option_is_layout_specific(object: *mut rxkb_option) -> bool {
-    unsafe {
-        return (*object).layout_specific;
-    }
+    unsafe { (*object).layout_specific }
 }
 pub unsafe fn rxkb_option_next(o: *mut rxkb_option) -> *mut rxkb_option {
     unsafe {
@@ -312,11 +300,11 @@ pub unsafe fn rxkb_layout_unref(object: *mut rxkb_layout) -> *mut rxkb_layout {
             return std::ptr::null_mut();
         }
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
-        if (*object).base.refcount == 0 as u32 {
+        if (*object).base.refcount == 0_u32 {
             rxkb_layout_destroy(object);
             drop(Box::from_raw(object));
         }
-        return std::ptr::null_mut();
+        std::ptr::null_mut()
     }
 }
 #[inline]
@@ -331,28 +319,20 @@ unsafe fn rxkb_layout_create(parent: *mut rxkb_object) -> *mut rxkb_layout {
         std::ptr::write(&raw mut (*ptr).iso3166s, Vec::new());
         let t: *mut rxkb_layout = Box::into_raw(Box::from_raw(ptr));
         rxkb_object_init(&raw mut (*t).base, parent);
-        return t;
+        t
     }
 }
 pub unsafe fn rxkb_layout_get_name(object: *mut rxkb_layout) -> *const i8 {
-    unsafe {
-        return (*object).name;
-    }
+    unsafe { (*object).name }
 }
 pub unsafe fn rxkb_layout_get_brief(object: *mut rxkb_layout) -> *const i8 {
-    unsafe {
-        return (*object).brief;
-    }
+    unsafe { (*object).brief }
 }
 pub unsafe fn rxkb_layout_get_description(object: *mut rxkb_layout) -> *const i8 {
-    unsafe {
-        return (*object).description;
-    }
+    unsafe { (*object).description }
 }
 pub unsafe fn rxkb_layout_get_variant(object: *mut rxkb_layout) -> *const i8 {
-    unsafe {
-        return (*object).variant;
-    }
+    unsafe { (*object).variant }
 }
 
 pub unsafe fn rxkb_layout_first(parent: *mut rxkb_context) -> *mut rxkb_layout {
@@ -382,30 +362,24 @@ pub unsafe fn rxkb_model_unref(object: *mut rxkb_model) -> *mut rxkb_model {
             return std::ptr::null_mut();
         }
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
-        if (*object).base.refcount == 0 as u32 {
+        if (*object).base.refcount == 0_u32 {
             // rxkb_model_destroy inlined
             free((*object).name as *mut ::core::ffi::c_void);
             free((*object).vendor as *mut ::core::ffi::c_void);
             free((*object).description as *mut ::core::ffi::c_void);
             drop(Box::from_raw(object));
         }
-        return std::ptr::null_mut();
+        std::ptr::null_mut()
     }
 }
 pub unsafe fn rxkb_model_get_name(object: *mut rxkb_model) -> *const i8 {
-    unsafe {
-        return (*object).name;
-    }
+    unsafe { (*object).name }
 }
 pub unsafe fn rxkb_model_get_vendor(object: *mut rxkb_model) -> *const i8 {
-    unsafe {
-        return (*object).vendor;
-    }
+    unsafe { (*object).vendor }
 }
 pub unsafe fn rxkb_model_get_description(object: *mut rxkb_model) -> *const i8 {
-    unsafe {
-        return (*object).description;
-    }
+    unsafe { (*object).description }
 }
 
 pub unsafe fn rxkb_model_next(o: *mut rxkb_model) -> *mut rxkb_model {
@@ -429,9 +403,7 @@ pub unsafe fn rxkb_model_first(parent: *mut rxkb_context) -> *mut rxkb_model {
     }
 }
 pub unsafe fn rxkb_option_group_allows_multiple(g: *mut rxkb_option_group) -> bool {
-    unsafe {
-        return (*g).allow_multiple;
-    }
+    unsafe { (*g).allow_multiple }
 }
 
 pub unsafe fn rxkb_option_group_unref(object: *mut rxkb_option_group) -> *mut rxkb_option_group {
@@ -440,7 +412,7 @@ pub unsafe fn rxkb_option_group_unref(object: *mut rxkb_option_group) -> *mut rx
             return std::ptr::null_mut();
         }
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
-        if (*object).base.refcount == 0 as u32 {
+        if (*object).base.refcount == 0_u32 {
             // rxkb_option_group_destroy inlined
             free((*object).name as *mut ::core::ffi::c_void);
             free((*object).description as *mut ::core::ffi::c_void);
@@ -450,18 +422,14 @@ pub unsafe fn rxkb_option_group_unref(object: *mut rxkb_option_group) -> *mut rx
             (*object).options.clear();
             drop(Box::from_raw(object));
         }
-        return std::ptr::null_mut();
+        std::ptr::null_mut()
     }
 }
 pub unsafe fn rxkb_option_group_get_name(object: *mut rxkb_option_group) -> *const i8 {
-    unsafe {
-        return (*object).name;
-    }
+    unsafe { (*object).name }
 }
 pub unsafe fn rxkb_option_group_get_description(object: *mut rxkb_option_group) -> *const i8 {
-    unsafe {
-        return (*object).description;
-    }
+    unsafe { (*object).description }
 }
 
 pub unsafe fn rxkb_option_group_first(parent: *mut rxkb_context) -> *mut rxkb_option_group {
@@ -511,21 +479,21 @@ pub unsafe fn rxkb_context_unref(object: *mut rxkb_context) -> *mut rxkb_context
             return std::ptr::null_mut();
         }
         (*object).base.refcount = (*object).base.refcount.wrapping_sub(1);
-        if (*object).base.refcount == 0 as u32 {
+        if (*object).base.refcount == 0_u32 {
             rxkb_context_destroy(object);
             drop(Box::from_raw(object));
         }
-        return std::ptr::null_mut();
+        std::ptr::null_mut()
     }
 }
 
 unsafe fn rxkb_context_getenv(ctx: *mut rxkb_context, name: *const i8) -> *mut i8 {
     unsafe {
         if (*ctx).use_secure_getenv {
-            return secure_getenv(name);
+            secure_getenv(name)
         } else {
-            return getenv(name);
-        };
+            getenv(name)
+        }
     }
 }
 pub unsafe fn rxkb_context_set_log_level(ctx: *mut rxkb_context, level: rxkb_log_level) {
@@ -534,18 +502,14 @@ pub unsafe fn rxkb_context_set_log_level(ctx: *mut rxkb_context, level: rxkb_log
     }
 }
 unsafe fn log_level_to_prefix(level: rxkb_log_level) -> *const i8 {
-    match level as u32 {
-        50 => return b"xkbregistry: DEBUG: \0".as_ptr() as *const i8,
-        40 => return b"xkbregistry: INFO: \0".as_ptr() as *const i8,
-        30 => {
-            return b"xkbregistry: WARNING: \0".as_ptr() as *const i8;
-        }
-        20 => return b"xkbregistry: ERROR: \0".as_ptr() as *const i8,
-        10 => {
-            return b"xkbregistry: CRITICAL: \0".as_ptr() as *const i8;
-        }
-        _ => return std::ptr::null(),
-    };
+    match level {
+        50 => b"xkbregistry: DEBUG: \0".as_ptr() as *const i8,
+        40 => b"xkbregistry: INFO: \0".as_ptr() as *const i8,
+        30 => b"xkbregistry: WARNING: \0".as_ptr() as *const i8,
+        20 => b"xkbregistry: ERROR: \0".as_ptr() as *const i8,
+        10 => b"xkbregistry: CRITICAL: \0".as_ptr() as *const i8,
+        _ => std::ptr::null(),
+    }
 }
 unsafe fn default_log_fn(_ctx: *mut rxkb_context, level: rxkb_log_level, msg: *const i8) {
     unsafe {
@@ -560,7 +524,7 @@ unsafe fn log_level(level: *const i8) -> rxkb_log_level {
     unsafe {
         let (val, consumed) = crate::xkb::utils::cstr_parse_long(level);
         if consumed > 0 {
-            let after = *level.offset(consumed as isize);
+            let after = *level.add(consumed);
             if after as i32 == '\0' as i32
                 || matches!(after as u8, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
             {
@@ -570,47 +534,47 @@ unsafe fn log_level(level: *const i8) -> rxkb_log_level {
         if istrneq(
             b"crit",
             cstr_as_bytes(level),
-            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1_usize),
         ) {
             return RXKB_LOG_LEVEL_CRITICAL;
         }
         if istrneq(
             b"err",
             cstr_as_bytes(level),
-            (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1_usize),
         ) {
             return RXKB_LOG_LEVEL_ERROR;
         }
         if istrneq(
             b"warn",
             cstr_as_bytes(level),
-            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1_usize),
         ) {
             return RXKB_LOG_LEVEL_WARNING;
         }
         if istrneq(
             b"info",
             cstr_as_bytes(level),
-            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1_usize),
         ) {
             return RXKB_LOG_LEVEL_INFO;
         }
         if istrneq(
             b"debug",
             cstr_as_bytes(level),
-            (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1 as usize),
+            (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1_usize),
         ) as i32
             != 0
             || istrneq(
                 b"dbg",
                 cstr_as_bytes(level),
-                (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1 as usize),
+                (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1_usize),
             ) as i32
                 != 0
         {
             return RXKB_LOG_LEVEL_DEBUG;
         }
-        return RXKB_LOG_LEVEL_ERROR;
+        RXKB_LOG_LEVEL_ERROR
     }
 }
 pub unsafe fn rxkb_context_new(flags: rxkb_context_flags) -> *mut rxkb_context {
@@ -627,18 +591,18 @@ pub unsafe fn rxkb_context_new(flags: rxkb_context_flags) -> *mut rxkb_context {
             rxkb_object_init(&raw mut (*t).base, std::ptr::null_mut());
             t
         };
-        let env: *const i8;
+
         if ctx.is_null() {
             return std::ptr::null_mut();
         }
         (*ctx).context_state = CONTEXT_NEW;
-        (*ctx).load_extra_rules_files = flags as u32 & RXKB_CONTEXT_LOAD_EXOTIC_RULES as u32 != 0;
-        (*ctx).use_secure_getenv = flags as u32 & RXKB_CONTEXT_NO_SECURE_GETENV as u32 == 0;
+        (*ctx).load_extra_rules_files = flags & RXKB_CONTEXT_LOAD_EXOTIC_RULES != 0;
+        (*ctx).use_secure_getenv = flags & RXKB_CONTEXT_NO_SECURE_GETENV == 0;
         (*ctx).log_fn =
             Some(default_log_fn as unsafe fn(*mut rxkb_context, rxkb_log_level, *const i8) -> ())
                 as Option<unsafe fn(*mut rxkb_context, rxkb_log_level, *const i8) -> ()>;
         (*ctx).log_level = RXKB_LOG_LEVEL_ERROR;
-        env = rxkb_context_getenv(ctx, b"RXKB_LOG_LEVEL\0".as_ptr() as *const i8);
+        let env: *const i8 = rxkb_context_getenv(ctx, b"RXKB_LOG_LEVEL\0".as_ptr() as *const i8);
         if !env.is_null() {
             rxkb_context_set_log_level(ctx, log_level(env));
         }
@@ -646,13 +610,13 @@ pub unsafe fn rxkb_context_new(flags: rxkb_context_flags) -> *mut rxkb_context {
             (RXKB_CONTEXT_NO_DEFAULT_INCLUDES as i32
                 | RXKB_CONTEXT_LOAD_EXOTIC_RULES as i32
                 | RXKB_CONTEXT_NO_SECURE_GETENV as i32) as rxkb_context_flags;
-        if flags as u32 & !(RXKB_CONTEXT_FLAGS as u32) != 0 {
+        if flags & !RXKB_CONTEXT_FLAGS != 0 {
             rxkb_logf!(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
                 "{}: Invalid context flags: 0x{:x}\n",
                 crate::xkb::utils::CStrDisplay(b"rxkb_context_new\0".as_ptr() as *const i8),
-                flags as u32 & !(RXKB_CONTEXT_FLAGS as u32),
+                flags & !RXKB_CONTEXT_FLAGS,
             );
             drop(Box::from_raw(ctx));
             return std::ptr::null_mut();
@@ -660,7 +624,7 @@ pub unsafe fn rxkb_context_new(flags: rxkb_context_flags) -> *mut rxkb_context {
         std::ptr::write(&raw mut (*ctx).models, Vec::new());
         std::ptr::write(&raw mut (*ctx).layouts, Vec::new());
         std::ptr::write(&raw mut (*ctx).option_groups, Vec::new());
-        if flags as u32 & RXKB_CONTEXT_NO_DEFAULT_INCLUDES as u32 == 0
+        if flags & RXKB_CONTEXT_NO_DEFAULT_INCLUDES == 0
             && !rxkb_context_include_path_append_default(ctx)
         {
             rxkb_logf!(
@@ -675,7 +639,7 @@ pub unsafe fn rxkb_context_new(flags: rxkb_context_flags) -> *mut rxkb_context {
             rxkb_context_unref(ctx);
             return std::ptr::null_mut();
         }
-        return ctx;
+        ctx
     }
 }
 
@@ -711,8 +675,8 @@ pub unsafe fn rxkb_context_include_path_append(ctx: *mut rxkb_context, path: *co
         #[allow(unused_assignments)]
         let mut rules: [i8; 4096] = { std::mem::zeroed() };
         let tmp: *mut i8;
-        let mut err: i32 = 0 as i32;
-        if (*ctx).context_state as u32 != CONTEXT_NEW as u32 {
+        let mut err: i32 = 0_i32;
+        if (*ctx).context_state != CONTEXT_NEW {
             rxkb_logf!(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
@@ -746,9 +710,9 @@ pub unsafe fn rxkb_context_include_path_append(ctx: *mut rxkb_context, path: *co
                 __glibc_reserved: [0; 3],
             };
             err = xkb_stat(path, &raw mut stat_buf);
-            if err != 0 as i32 {
+            if err != 0_i32 {
                 err = *__errno_location();
-            } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
+            } else if stat_buf.st_mode & __S_IFMT as u32 != 0o40000_u32 {
                 err = ENOTDIR;
             } else {
                 rules = [0; 4096];
@@ -776,7 +740,7 @@ pub unsafe fn rxkb_context_include_path_append(ctx: *mut rxkb_context, path: *co
                     if tmp.is_null() {
                         err = ENOMEM;
                     } else {
-                        (&mut (*ctx).includes).push(tmp);
+                        (*ctx).includes.push(tmp);
                         rxkb_logf!(
                             ctx,
                             RXKB_LOG_LEVEL_INFO,
@@ -795,16 +759,14 @@ pub unsafe fn rxkb_context_include_path_append(ctx: *mut rxkb_context, path: *co
             crate::xkb::utils::CStrDisplay(path),
             crate::xkb::utils::StrerrorDisplay(err),
         );
-        return false;
+        false
     }
 }
 unsafe extern "C" fn compare_str(
     a: *const ::core::ffi::c_void,
     b: *const ::core::ffi::c_void,
 ) -> i32 {
-    unsafe {
-        return cstr_cmp(*(a as *mut *mut i8), *(b as *mut *mut i8));
-    }
+    unsafe { cstr_cmp(*(a as *mut *mut i8), *(b as *mut *mut i8)) }
 }
 unsafe fn add_direct_subdirectories(
     ctx: *mut rxkb_context,
@@ -818,7 +780,7 @@ unsafe fn add_direct_subdirectories(
         #[allow(unused_assignments)]
         let mut path_buf: [i8; 4096] = { std::mem::zeroed() };
         let c2rust_current_block: u64;
-        let mut ret: i32 = 0 as i32;
+        let mut ret: i32 = 0_i32;
         let mut err: i32;
         let mut dir: *mut DIR = std::ptr::null_mut();
         let mut stat_buf: stat = stat {
@@ -848,9 +810,9 @@ unsafe fn add_direct_subdirectories(
             __glibc_reserved: [0; 3],
         };
         err = xkb_stat(path, &raw mut stat_buf);
-        if err != 0 as i32 {
+        if err != 0_i32 {
             err = *__errno_location();
-        } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
+        } else if stat_buf.st_mode & __S_IFMT as u32 != 0o40000_u32 {
             err = ENOTDIR;
         } else {
             dir = opendir(path);
@@ -889,15 +851,15 @@ unsafe fn add_direct_subdirectories(
                         c2rust_current_block = 17009998909239196508;
                         break;
                     } else {
-                        if xkb_stat(&raw mut path_buf as *mut i8, &raw mut stat_buf) != 0 as i32
-                            || !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32)
+                        if xkb_stat(&raw mut path_buf as *mut i8, &raw mut stat_buf) != 0_i32
+                            || (stat_buf.st_mode & __S_IFMT as u32 != 0o40000_u32)
                         {
                             continue;
                         }
-                        let mut i: u32 = 0 as u32;
+                        let mut i: u32 = 0_u32;
                         while i < versioned_count {
                             let prev_name: *const i8 =
-                                (extensions[i as usize]).offset(versioned_path_length as isize);
+                                (extensions[i as usize]).add(versioned_path_length);
                             if cstr_as_bytes(name) == cstr_as_bytes(prev_name) {
                                 continue 's_62;
                             }
@@ -951,14 +913,14 @@ unsafe fn add_direct_subdirectories(
         if !dir.is_null() {
             closedir(dir);
         }
-        return ret;
+        ret
     }
 }
 pub unsafe fn rxkb_context_include_path_append_default(ctx: *mut rxkb_context) -> bool {
     unsafe {
         let mut user_path: [i8; 4096] = [0; 4096];
         let mut ret: i32 = if false { 1 } else { 0 };
-        if (*ctx).context_state as u32 != CONTEXT_NEW as u32 {
+        if (*ctx).context_state != CONTEXT_NEW {
             rxkb_logf!(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
@@ -975,8 +937,7 @@ pub unsafe fn rxkb_context_include_path_append_default(ctx: *mut rxkb_context) -
                 format_args!("{}/xkb", crate::xkb::utils::CStrDisplay(xdg)),
             );
             if !_trunc {
-                ret = ret as i32
-                    | rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
+                ret |= rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
             }
         } else if !home.is_null() {
             let (_, _trunc) = crate::xkb::utils::snprintf_args(
@@ -985,8 +946,7 @@ pub unsafe fn rxkb_context_include_path_append_default(ctx: *mut rxkb_context) -
                 format_args!("{}/.config/xkb", crate::xkb::utils::CStrDisplay(home)),
             );
             if !_trunc {
-                ret = ret as i32
-                    | rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
+                ret |= rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
             }
         }
         if !home.is_null() {
@@ -996,21 +956,19 @@ pub unsafe fn rxkb_context_include_path_append_default(ctx: *mut rxkb_context) -
                 format_args!("{}/.xkb", crate::xkb::utils::CStrDisplay(home)),
             );
             if !_trunc {
-                ret = ret as i32
-                    | rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
+                ret |= rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
             }
         }
         let extra: *const i8 =
             rxkb_context_getenv(ctx, b"XKB_CONFIG_EXTRA_PATH\0".as_ptr() as *const i8);
-        ret = ret as i32
-            | rxkb_context_include_path_append(
-                ctx,
-                if !extra.is_null() {
-                    extra
-                } else {
-                    DFLT_XKB_CONFIG_EXTRA_PATH.as_ptr()
-                },
-            ) as i32;
+        ret |= rxkb_context_include_path_append(
+            ctx,
+            if !extra.is_null() {
+                extra
+            } else {
+                DFLT_XKB_CONFIG_EXTRA_PATH.as_ptr()
+            },
+        ) as i32;
         let mut extensions: Vec<*mut i8> = Vec::new();
         let mut extensions_path: *const i8 = rxkb_context_getenv(
             ctx,
@@ -1019,16 +977,9 @@ pub unsafe fn rxkb_context_include_path_append_default(ctx: *mut rxkb_context) -
         if extensions_path.is_null() {
             extensions_path = DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH.as_ptr();
         }
-        let mut versioned_path_length: usize = 0 as usize;
+        let mut versioned_path_length: usize = 0_usize;
         if !extensions_path.is_null() {
-            ret = ret as i32
-                | add_direct_subdirectories(
-                    ctx,
-                    extensions_path,
-                    &mut extensions,
-                    0 as u32,
-                    0 as usize,
-                );
+            ret |= add_direct_subdirectories(ctx, extensions_path, &mut extensions, 0_u32, 0_usize);
             versioned_path_length = cstr_len(extensions_path);
         }
         extensions_path = rxkb_context_getenv(
@@ -1040,14 +991,13 @@ pub unsafe fn rxkb_context_include_path_append_default(ctx: *mut rxkb_context) -
         }
         if !extensions_path.is_null() {
             let ext_count = extensions.len() as u32;
-            ret = ret as i32
-                | add_direct_subdirectories(
-                    ctx,
-                    extensions_path,
-                    &mut extensions,
-                    ext_count,
-                    versioned_path_length,
-                );
+            ret |= add_direct_subdirectories(
+                ctx,
+                extensions_path,
+                &mut extensions,
+                ext_count,
+                versioned_path_length,
+            );
         }
         for &p in &extensions {
             cstr_free(p);
@@ -1061,9 +1011,9 @@ pub unsafe fn rxkb_context_include_path_append_default(ctx: *mut rxkb_context) -
             } else {
                 DFLT_XKB_CONFIG_ROOT.as_ptr()
             },
-        ) as bool;
-        ret = ret as i32 | has_root as i32;
-        if !has_root && (root.is_null() || *root.offset(0 as i32 as isize) as i32 != '\0' as i32) {
+        );
+        ret |= has_root as i32;
+        if !has_root && (root.is_null() || *root.offset(0_i32 as isize) as i32 != '\0' as i32) {
             rxkb_logf!(
                 ctx,
                 RXKB_LOG_LEVEL_WARNING,
@@ -1076,10 +1026,9 @@ pub unsafe fn rxkb_context_include_path_append_default(ctx: *mut rxkb_context) -
                     root
                 }),
             );
-            ret = ret as i32
-                | rxkb_context_include_path_append(ctx, DFLT_XKB_LEGACY_ROOT.as_ptr()) as i32;
+            ret |= rxkb_context_include_path_append(ctx, DFLT_XKB_LEGACY_ROOT.as_ptr()) as i32;
         }
-        return ret != 0;
+        ret != 0
     }
 }
 
@@ -1087,7 +1036,7 @@ pub unsafe fn rxkb_context_parse(ctx: *mut rxkb_context, ruleset: *const i8) -> 
     unsafe {
         let mut path: *mut i8;
         let mut success: bool = false;
-        if (*ctx).context_state as u32 != CONTEXT_NEW as u32 {
+        if (*ctx).context_state != CONTEXT_NEW {
             rxkb_logf!(
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
@@ -1095,8 +1044,8 @@ pub unsafe fn rxkb_context_parse(ctx: *mut rxkb_context, ruleset: *const i8) -> 
             );
             return false;
         }
-        if !(&(*ctx).includes).is_empty() {
-            let mut idx = (&(*ctx).includes).len();
+        if !(*ctx).includes.is_empty() {
+            let mut idx = (*ctx).includes.len();
             while idx > 0 {
                 idx -= 1;
                 path = (&(*ctx).includes)[idx];
@@ -1150,7 +1099,7 @@ pub unsafe fn rxkb_context_parse(ctx: *mut rxkb_context, ruleset: *const i8) -> 
         } else {
             CONTEXT_FAILED as i32
         }) as context_state;
-        return success;
+        success
     }
 }
 
@@ -1242,7 +1191,7 @@ unsafe fn parse_config_item(
                 return true;
             }
         }
-        return false;
+        false
     }
 }
 unsafe fn parse_model(
@@ -1257,7 +1206,7 @@ unsafe fn parse_model(
             description: std::ptr::null_mut(),
             brief: std::ptr::null_mut(),
             vendor: std::ptr::null_mut(),
-            popularity: popularity,
+            popularity,
             layout_specific: false,
         };
         if parse_config_item(ctx, doc, model, &raw mut config) {
@@ -1289,7 +1238,7 @@ unsafe fn parse_language_list(
         for node in doc.children(language_list) {
             if is_node(doc, node, "iso639Id") {
                 let str: *mut i8 = extract_text(doc, node);
-                if str.is_null() || cstr_len(str) != 3 as usize {
+                if str.is_null() || cstr_len(str) != 3_usize {
                     free(str as *mut ::core::ffi::c_void);
                 } else {
                     let parent: *mut rxkb_object = &raw mut (*layout).base;
@@ -1310,7 +1259,7 @@ unsafe fn parse_country_list(
         for node in doc.children(country_list) {
             if is_node(doc, node, "iso3166Id") {
                 let str: *mut i8 = extract_text(doc, node);
-                if str.is_null() || cstr_len(str) != 2 as usize {
+                if str.is_null() || cstr_len(str) != 2_usize {
                     free(str as *mut ::core::ffi::c_void);
                 } else {
                     let parent: *mut rxkb_object = &raw mut (*layout).base;
@@ -1335,7 +1284,7 @@ unsafe fn parse_variant(
             description: std::ptr::null_mut(),
             brief: std::ptr::null_mut(),
             vendor: std::ptr::null_mut(),
-            popularity: popularity,
+            popularity,
             layout_specific: false,
         };
         if parse_config_item(ctx, doc, variant, &raw mut config) {
@@ -1412,7 +1361,7 @@ unsafe fn parse_layout(
             description: std::ptr::null_mut(),
             brief: std::ptr::null_mut(),
             vendor: std::ptr::null_mut(),
-            popularity: popularity,
+            popularity,
             layout_specific: false,
         };
         let mut l: *mut rxkb_layout = std::ptr::null_mut();
@@ -1478,7 +1427,7 @@ unsafe fn parse_option(
             description: std::ptr::null_mut(),
             brief: std::ptr::null_mut(),
             vendor: std::ptr::null_mut(),
-            popularity: popularity,
+            popularity,
             layout_specific: false,
         };
         if parse_config_item(ctx, doc, option, &raw mut config) {
@@ -1512,7 +1461,7 @@ unsafe fn parse_group(
             description: std::ptr::null_mut(),
             brief: std::ptr::null_mut(),
             vendor: std::ptr::null_mut(),
-            popularity: popularity,
+            popularity,
             layout_specific: false,
         };
         let mut g: *mut rxkb_option_group = std::ptr::null_mut();
@@ -1644,7 +1593,7 @@ unsafe fn parse(ctx: *mut rxkb_context, path: *const i8, popularity: rxkb_popula
                 }
             }
         }
-        return true;
+        true
     }
 }
 use crate::xkb::shared_types::*;

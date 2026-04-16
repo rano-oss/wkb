@@ -87,11 +87,11 @@ unsafe fn for_each_helper(
         if p == 0 {
             return;
         }
-        let node: *const compose_node = (&(*table).nodes).as_ptr().offset(p as isize);
+        let node: *const compose_node = (*table).nodes.as_ptr().offset(p as isize);
         for_each_helper(table, iter, data, syms, nsyms, (*node).lokid);
         let c2rust_fresh0 = nsyms;
         nsyms = nsyms.wrapping_add(1);
-        *syms.offset(c2rust_fresh0 as isize) = (*node).keysym;
+        *syms.add(c2rust_fresh0) = (*node).keysym;
         if (*node).data.tag.is_leaf() {
             let mut entry: xkb_compose_table_entry = xkb_compose_table_entry {
                 sequence_length: nsyms,
@@ -117,18 +117,11 @@ pub unsafe fn xkb_compose_table_for_each(
     data: *mut ::core::ffi::c_void,
 ) {
     unsafe {
-        if (&(*table).nodes).len() <= 1 {
+        if (*table).nodes.len() <= 1 {
             return;
         }
         let mut syms: [u32; 10] = [0; 10];
-        for_each_helper(
-            table,
-            iter,
-            data,
-            &raw mut syms as *mut u32,
-            0 as usize,
-            1 as u32,
-        );
+        for_each_helper(table, iter, data, &raw mut syms as *mut u32, 0_usize, 1_u32);
     }
 }
 

@@ -331,7 +331,7 @@ pub const XKB_STATE_MATCH_FLAGS: u32 = 65539;
 
 pub type xkb_filter_result = u32;
 
-static mut synthetic_key_break_group_latch: xkb_key = xkb_key {
+static mut SYNTHETIC_KEY_BREAK_GROUP_LATCH: xkb_key = xkb_key {
     keycode: 0,
     name: 0,
     explicit: 0 as xkb_explicit_components,
@@ -350,8 +350,8 @@ static mut synthetic_key_break_group_latch: xkb_key = xkb_key {
 
 unsafe fn get_entry_for_mods(type_0: *const xkb_key_type, mods: u32) -> *const xkb_key_type_entry {
     unsafe {
-        let mut i: u32 = 0 as u32;
-        while i < (&(*type_0).entries).len() as u32 {
+        let mut i: u32 = 0_u32;
+        while i < (*type_0).entries.len() as u32 {
             if entry_is_active(&(&(*type_0).entries)[i as usize] as *const xkb_key_type_entry)
                 as i32
                 != 0
@@ -361,7 +361,7 @@ unsafe fn get_entry_for_mods(type_0: *const xkb_key_type, mods: u32) -> *const x
             }
             i = i.wrapping_add(1);
         }
-        return std::ptr::null();
+        std::ptr::null()
     }
 }
 
@@ -374,7 +374,7 @@ unsafe fn get_entry_for_key_state(
         let type_0: *const xkb_key_type =
             &(&(*(*state).keymap).types)[(&(*key).groups)[group as usize].type_idx as usize];
         let active_mods: u32 = (*state).components.mods & (*type_0).mods.mask;
-        return get_entry_for_mods(type_0, active_mods);
+        get_entry_for_mods(type_0, active_mods)
     }
 }
 #[inline]
@@ -382,38 +382,38 @@ unsafe fn get_entry_for_key_state(
 unsafe fn state_key_get_level(state: *mut xkb_state, key: *const xkb_key, layout: u32) -> u32 {
     unsafe {
         if layout >= (*key).num_groups {
-            return XKB_LEVEL_INVALID as u32;
+            return XKB_LEVEL_INVALID;
         }
         let entry: *const xkb_key_type_entry =
             get_entry_for_key_state(state, key, layout) as *const xkb_key_type_entry;
-        return if !entry.is_null() {
+        if !entry.is_null() {
             (*entry).level
         } else {
-            0 as u32
-        };
+            0_u32
+        }
     }
 }
 
 pub unsafe fn xkb_state_key_get_level(state: *mut xkb_state, kc: u32, layout: u32) -> u32 {
     unsafe {
         let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
-        return if !key.is_null() {
+        if !key.is_null() {
             state_key_get_level(state, key, layout)
         } else {
-            XKB_LEVEL_INVALID as u32
-        };
+            XKB_LEVEL_INVALID
+        }
     }
 }
 #[inline]
 
 unsafe fn state_key_get_layout(state: *mut xkb_state, key: *const xkb_key) -> u32 {
     unsafe {
-        return XkbWrapGroupIntoRange(
+        XkbWrapGroupIntoRange(
             (*state).components.group as i32,
             (*key).num_groups,
             (*key).out_of_range_group_policy,
             (*key).out_of_range_group_number,
-        );
+        )
     }
 }
 
@@ -421,13 +421,13 @@ pub unsafe fn xkb_state_key_get_layout(state: *mut xkb_state, kc: u32) -> u32 {
     unsafe {
         let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
         if key.is_null() {
-            return XKB_LAYOUT_INVALID as u32;
+            return XKB_LAYOUT_INVALID;
         }
-        return state_key_get_layout(state, key);
+        state_key_get_layout(state, key)
     }
 }
 
-static mut dummy_action: xkb_action = xkb_action {
+static mut DUMMY_ACTION: xkb_action = xkb_action {
     type_0: ACTION_TYPE_NONE,
 };
 
@@ -438,18 +438,17 @@ unsafe fn xkb_key_get_actions(
 ) -> u16 {
     unsafe {
         let count: u16;
-        let layout: u32 = state_key_get_layout(state, key) as u32;
-        let level: u32 = state_key_get_level(state, key, layout) as u32;
-        if !(level == XKB_LEVEL_INVALID as u32) {
+        let layout: u32 = state_key_get_layout(state, key);
+        let level: u32 = state_key_get_level(state, key, layout);
+        if level != XKB_LEVEL_INVALID {
             count =
-                xkb_keymap_key_get_actions_by_level((*state).keymap, key, layout, level, actions)
-                    as u16;
-            if !(count == 0) {
+                xkb_keymap_key_get_actions_by_level((*state).keymap, key, layout, level, actions);
+            if count != 0 {
                 return count;
             }
         }
-        *actions = &raw const dummy_action;
-        return 1 as u16;
+        *actions = &raw const DUMMY_ACTION;
+        1_u16
     }
 }
 
@@ -464,13 +463,13 @@ unsafe fn xkb_filter_new(state: *mut xkb_state) -> *mut xkb_filter {
             }
         }
         if filter.is_null() {
-            let new_len = (&(*state).filters).len().wrapping_add(1);
+            let new_len = (*state).filters.len().wrapping_add(1);
             vec_resize_zero(&mut (*state).filters, new_len);
-            let last = (&(*state).filters).len() - 1;
-            filter = (&mut (*state).filters).as_mut_ptr().add(last);
+            let last = (*state).filters.len() - 1;
+            filter = (*state).filters.as_mut_ptr().add(last);
         }
-        (*filter).refcnt = 1 as i32;
-        return filter;
+        (*filter).refcnt = 1_i32;
+        filter
     }
 }
 
@@ -481,7 +480,7 @@ unsafe fn xkb_filter_group_set_new(
 ) {
     unsafe {
         (*filter).priv_0 = (*state).components.base_group as u32;
-        if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32 != 0 {
+        if (*filter).action.group.flags & ACTION_ABSOLUTE_SWITCH != 0 {
             (*state).components.base_group = (*filter).action.group.group;
         } else {
             (*state).components.base_group += (*filter).action.group.group;
@@ -498,20 +497,20 @@ unsafe fn xkb_filter_group_set_func(
 ) -> bool {
     unsafe {
         if key != (*filter).key {
-            (*filter).action.group.flags = ((*filter).action.group.flags as u32
+            (*filter).action.group.flags = ((*filter).action.group.flags
                 & !(ACTION_LOCK_CLEAR as i32) as u32)
                 as xkb_action_flags;
             return XKB_FILTER_CONTINUE as i32 != 0;
         }
         's_38: {
-            match direction as u32 {
+            match direction {
                 1 => {
                     (*filter).refcnt += 1;
                 }
                 2 => {}
                 _ => {
                     (*filter).refcnt -= 1;
-                    if (*filter).refcnt > 0 as i32 {
+                    if (*filter).refcnt > 0_i32 {
                         return XKB_FILTER_CONSUME as i32 != 0;
                     }
                     break 's_38;
@@ -520,11 +519,11 @@ unsafe fn xkb_filter_group_set_func(
             return XKB_FILTER_CONSUME as i32 != 0;
         }
         (*state).components.base_group = (*filter).priv_0 as i32;
-        if (*filter).action.group.flags as u32 & ACTION_LOCK_CLEAR as u32 != 0 {
-            (*state).components.locked_group = 0 as i32 as i32;
+        if (*filter).action.group.flags & ACTION_LOCK_CLEAR != 0 {
+            (*state).components.locked_group = 0_i32;
         }
         (*filter).func = None;
-        return XKB_FILTER_CONTINUE as i32 != 0;
+        XKB_FILTER_CONTINUE as i32 != 0
     }
 }
 
@@ -533,38 +532,38 @@ unsafe fn get_state_component_changes(
     b: *const state_components,
 ) -> u32 {
     unsafe {
-        let mut mask: u32 = 0 as u32;
+        let mut mask: u32 = 0_u32;
         if (*a).group != (*b).group {
-            mask = (mask as u32 | XKB_STATE_LAYOUT_EFFECTIVE as u32) as u32;
+            mask |= XKB_STATE_LAYOUT_EFFECTIVE;
         }
         if (*a).base_group != (*b).base_group {
-            mask = (mask as u32 | XKB_STATE_LAYOUT_DEPRESSED as u32) as u32;
+            mask |= XKB_STATE_LAYOUT_DEPRESSED;
         }
         if (*a).latched_group != (*b).latched_group {
-            mask = (mask as u32 | XKB_STATE_LAYOUT_LATCHED as u32) as u32;
+            mask |= XKB_STATE_LAYOUT_LATCHED;
         }
         if (*a).locked_group != (*b).locked_group {
-            mask = (mask as u32 | XKB_STATE_LAYOUT_LOCKED as u32) as u32;
+            mask |= XKB_STATE_LAYOUT_LOCKED;
         }
         if (*a).mods != (*b).mods {
-            mask = (mask as u32 | XKB_STATE_MODS_EFFECTIVE as u32) as u32;
+            mask |= XKB_STATE_MODS_EFFECTIVE;
         }
         if (*a).base_mods != (*b).base_mods {
-            mask = (mask as u32 | XKB_STATE_MODS_DEPRESSED as u32) as u32;
+            mask |= XKB_STATE_MODS_DEPRESSED;
         }
         if (*a).latched_mods != (*b).latched_mods {
-            mask = (mask as u32 | XKB_STATE_MODS_LATCHED as u32) as u32;
+            mask |= XKB_STATE_MODS_LATCHED;
         }
         if (*a).locked_mods != (*b).locked_mods {
-            mask = (mask as u32 | XKB_STATE_MODS_LOCKED as u32) as u32;
+            mask |= XKB_STATE_MODS_LOCKED;
         }
         if (*a).leds != (*b).leds {
-            mask = (mask as u32 | XKB_STATE_LEDS as u32) as u32;
+            mask |= XKB_STATE_LEDS;
         }
-        if (*a).controls as u32 != (*b).controls as u32 {
-            mask = (mask as u32 | XKB_STATE_CONTROLS as u32) as u32;
+        if (*a).controls != (*b).controls {
+            mask |= XKB_STATE_CONTROLS;
         }
-        return mask;
+        mask
     }
 }
 
@@ -574,13 +573,12 @@ unsafe fn xkb_filter_group_lock_new(
     filter: *mut xkb_filter,
 ) {
     unsafe {
-        if (*filter).action.group.flags as u32 & ACTION_LOCK_ON_RELEASE as u32 != 0 {
-            return;
-        } else if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32 != 0 {
+        if (*filter).action.group.flags & ACTION_LOCK_ON_RELEASE != 0 {
+        } else if (*filter).action.group.flags & ACTION_ABSOLUTE_SWITCH != 0 {
             (*state).components.locked_group = (*filter).action.group.group;
         } else {
             (*state).components.locked_group += (*filter).action.group.group;
-        };
+        }
     }
 }
 
@@ -593,24 +591,24 @@ unsafe fn xkb_filter_group_lock_func(
 ) -> bool {
     unsafe {
         if key != (*filter).key {
-            if (*filter).action.group.flags as u32 & ACTION_LOCK_ON_RELEASE as u32 != 0
-                && direction as u32 == XKB_KEY_DOWN as u32
+            if (*filter).action.group.flags & ACTION_LOCK_ON_RELEASE != 0
+                && direction == XKB_KEY_DOWN
             {
-                (*filter).action.group.flags = ((*filter).action.group.flags as u32
+                (*filter).action.group.flags = ((*filter).action.group.flags
                     & !(ACTION_LOCK_ON_RELEASE as i32) as u32)
                     as xkb_action_flags;
             }
             return XKB_FILTER_CONTINUE as i32 != 0;
         }
         's_47: {
-            match direction as u32 {
+            match direction {
                 1 => {
                     (*filter).refcnt += 1;
                 }
                 2 => {}
                 _ => {
                     (*filter).refcnt -= 1;
-                    if (*filter).refcnt > 0 as i32 {
+                    if (*filter).refcnt > 0_i32 {
                         return XKB_FILTER_CONSUME as i32 != 0;
                     }
                     break 's_47;
@@ -618,15 +616,15 @@ unsafe fn xkb_filter_group_lock_func(
             }
             return XKB_FILTER_CONSUME as i32 != 0;
         }
-        if (*filter).action.group.flags as u32 & ACTION_LOCK_ON_RELEASE as u32 != 0 {
-            if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32 != 0 {
+        if (*filter).action.group.flags & ACTION_LOCK_ON_RELEASE != 0 {
+            if (*filter).action.group.flags & ACTION_ABSOLUTE_SWITCH != 0 {
                 (*state).components.locked_group = (*filter).action.group.group;
             } else {
                 (*state).components.locked_group += (*filter).action.group.group;
             }
         }
         (*filter).func = None;
-        return XKB_FILTER_CONTINUE as i32 != 0;
+        XKB_FILTER_CONTINUE as i32 != 0
     }
 }
 
@@ -636,14 +634,14 @@ unsafe fn xkb_action_breaks_latch(
     mask: u32,
 ) -> bool {
     unsafe {
-        match (*action).type_0 as u32 {
-            0 | 1 | 9 | 10 | 14 | 15 | 13 | 12 | 16 => return true,
+        match (*action).type_0 {
+            0 | 1 | 9 | 10 | 14 | 15 | 13 | 12 | 16 => true,
             20 => {
-                return (*action).internal.flags as u32 & flag as u32 != 0
-                    && (*action).internal.clear_latched_mods & mask == mask;
+                (*action).internal.flags & flag != 0
+                    && (*action).internal.clear_latched_mods & mask == mask
             }
-            _ => return false,
-        };
+            _ => false,
+        }
     }
 }
 
@@ -655,10 +653,8 @@ unsafe fn xkb_filter_group_latch_new(
     unsafe {
         let priv_0: group_latch_priv = group_latch_priv {
             latch_state: GroupLatchState {
-                latch: LATCH_KEY_DOWN as u32,
-                group_delta: if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32
-                    != 0
-                {
+                latch: LATCH_KEY_DOWN,
+                group_delta: if (*filter).action.group.flags & ACTION_ABSOLUTE_SWITCH != 0 {
                     (*filter).action.group.group - (*state).components.base_group
                 } else {
                     (*filter).action.group.group
@@ -666,7 +662,7 @@ unsafe fn xkb_filter_group_latch_new(
             },
         };
         (*filter).priv_0 = priv_0.priv_0;
-        if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32 != 0 {
+        if (*filter).action.group.flags & ACTION_ABSOLUTE_SWITCH != 0 {
             (*state).components.base_group = (*filter).action.group.group;
         } else {
             (*state).components.base_group += (*filter).action.group.group;
@@ -686,17 +682,17 @@ unsafe fn xkb_filter_group_latch_func(
             priv_0: (*filter).priv_0,
         };
         let mut latch: xkb_key_latch_state = priv_0.latch_state.latch as xkb_key_latch_state;
-        if direction as u32 == XKB_KEY_DOWN as u32 {
+        if direction == XKB_KEY_DOWN {
             let mut actions: *const xkb_action = std::ptr::null();
             let count: u16 = xkb_key_get_actions(state, key, &raw mut actions) as u16;
-            if latch as u32 == LATCH_KEY_DOWN as u32 {
-                if (*state).flags as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32 != 0 {
-                    let mut k: u16 = 0 as u16;
+            if latch as u32 == LATCH_KEY_DOWN {
+                if (*state).flags & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS != 0 {
+                    let mut k: u16 = 0_u16;
                     while (k as i32) < count as i32 {
                         if xkb_action_breaks_latch(
                             actions.offset(k as isize) as *const xkb_action,
                             INTERNAL_BREAKS_GROUP_LATCH,
-                            0 as u32,
+                            0_u32,
                         ) {
                             latch = NO_LATCH;
                             break;
@@ -707,27 +703,24 @@ unsafe fn xkb_filter_group_latch_func(
                 } else {
                     latch = NO_LATCH;
                 }
-            } else if latch as u32 == LATCH_PENDING as u32 {
-                let sticky_keys: bool =
-                    (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 != 0;
-                let flags: xkb_action_flags = ((*filter).action.group.flags as u32
+            } else if latch as u32 == LATCH_PENDING {
+                let sticky_keys: bool = (*state).components.controls & CONTROL_STICKY_KEYS != 0;
+                let flags: xkb_action_flags = ((*filter).action.group.flags
                     & !(ACTION_LATCH_TO_LOCK as i32) as u32)
                     as xkb_action_flags;
-                let mut k_0: u16 = 0 as u16;
+                let mut k_0: u16 = 0_u16;
                 while (k_0 as i32) < count as i32 {
-                    if (*actions.offset(k_0 as isize)).type_0 as u32
-                        == ACTION_TYPE_GROUP_LATCH as u32
+                    if (*actions.offset(k_0 as isize)).type_0 as u32 == ACTION_TYPE_GROUP_LATCH
                         && (*actions.offset(k_0 as isize)).group.group
                             == (*filter).action.group.group
                         && (*actions.offset(k_0 as isize)).group.flags as u32
-                            == (*filter).action.group.flags as u32
-                        || (*actions.offset(k_0 as isize)).type_0 as u32
-                            == ACTION_TYPE_GROUP_SET as u32
+                            == (*filter).action.group.flags
+                        || (*actions.offset(k_0 as isize)).type_0 as u32 == ACTION_TYPE_GROUP_SET
                             && sticky_keys as i32 != 0
                             && (*actions.offset(k_0 as isize)).group.flags as u32 == flags as u32
                     {
-                        if (*filter).action.group.flags as u32 & ACTION_LATCH_TO_LOCK as u32 != 0
-                            && (*filter).action.group.group != 0 as i32
+                        if (*filter).action.group.flags & ACTION_LATCH_TO_LOCK != 0
+                            && (*filter).action.group.group != 0_i32
                         {
                             (*filter).action.type_0 = ACTION_TYPE_GROUP_LOCK;
                             (*filter).func = Some(
@@ -757,7 +750,7 @@ unsafe fn xkb_filter_group_latch_func(
                     } else if xkb_action_breaks_latch(
                         actions.offset(k_0 as isize) as *const xkb_action,
                         INTERNAL_BREAKS_GROUP_LATCH,
-                        0 as u32,
+                        0_u32,
                     ) {
                         (*state).components.latched_group -= priv_0.latch_state.group_delta;
                         (*filter).func = None;
@@ -765,25 +758,24 @@ unsafe fn xkb_filter_group_latch_func(
                     }
                     k_0 = k_0.wrapping_add(1);
                 }
-            } else {
             }
-        } else if !(key != (*filter).key) {
-            if direction as u32 == XKB_KEY_REPEATED as u32 {
+        } else if key == (*filter).key {
+            if direction == XKB_KEY_REPEATED {
                 return XKB_FILTER_CONSUME as i32 != 0;
-            } else if (*filter).action.group.flags as u32 & ACTION_LOCK_CLEAR as u32 != 0
+            } else if (*filter).action.group.flags & ACTION_LOCK_CLEAR != 0
                 && (*state).components.locked_group != 0
             {
-                if latch as u32 == LATCH_PENDING as u32 {
+                if latch as u32 == LATCH_PENDING {
                     (*state).components.latched_group -= priv_0.latch_state.group_delta;
                 } else {
                     (*state).components.base_group -= priv_0.latch_state.group_delta;
                 }
-                (*state).components.locked_group = 0 as i32 as i32;
+                (*state).components.locked_group = 0_i32;
                 (*filter).func = None;
-            } else if latch as u32 == NO_LATCH as u32 {
+            } else if latch as u32 == NO_LATCH {
                 (*state).components.base_group -= priv_0.latch_state.group_delta;
                 (*filter).func = None;
-            } else if latch as u32 == LATCH_KEY_DOWN as u32 {
+            } else if latch as u32 == LATCH_KEY_DOWN {
                 latch = LATCH_PENDING;
                 (*state).components.base_group -= priv_0.latch_state.group_delta;
                 (*state).components.latched_group += priv_0.latch_state.group_delta;
@@ -791,7 +783,7 @@ unsafe fn xkb_filter_group_latch_func(
         }
         priv_0.latch_state.latch = latch as u32;
         (*filter).priv_0 = priv_0.priv_0;
-        return XKB_FILTER_CONTINUE as i32 != 0;
+        XKB_FILTER_CONTINUE as i32 != 0
     }
 }
 
@@ -803,12 +795,11 @@ unsafe fn xkb_filter_mod_set_new(
     unsafe {
         let unlock: xkb_action_flags =
             (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as xkb_action_flags;
-        if (*filter).action.mods.flags as u32 & unlock as u32 == unlock as u32 {
-            (*filter).priv_0 =
-                ((*filter).action.mods.mods.mask & !(*state).components.locked_mods) as u32;
+        if (*filter).action.mods.flags & unlock as u32 == unlock as u32 {
+            (*filter).priv_0 = (*filter).action.mods.mods.mask & !(*state).components.locked_mods;
             (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
         } else {
-            (*filter).priv_0 = (*filter).action.mods.mods.mask as u32;
+            (*filter).priv_0 = (*filter).action.mods.mods.mask;
         }
         (*state).set_mods |= (*filter).priv_0;
     }
@@ -823,20 +814,20 @@ unsafe fn xkb_filter_mod_set_func(
 ) -> bool {
     unsafe {
         if key != (*filter).key {
-            (*filter).action.mods.flags = ((*filter).action.mods.flags as u32
+            (*filter).action.mods.flags = ((*filter).action.mods.flags
                 & !(ACTION_LOCK_CLEAR as i32) as u32)
                 as xkb_action_flags;
             return XKB_FILTER_CONTINUE as i32 != 0;
         }
         's_38: {
-            match direction as u32 {
+            match direction {
                 1 => {
                     (*filter).refcnt += 1;
                 }
                 2 => {}
                 _ => {
                     (*filter).refcnt -= 1;
-                    if (*filter).refcnt > 0 as i32 {
+                    if (*filter).refcnt > 0_i32 {
                         return XKB_FILTER_CONSUME as i32 != 0;
                     }
                     break 's_38;
@@ -847,11 +838,11 @@ unsafe fn xkb_filter_mod_set_func(
         (*state).clear_mods |= (*filter).priv_0;
         let unlock: xkb_action_flags =
             (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as xkb_action_flags;
-        if (*filter).action.mods.flags as u32 & unlock as u32 == ACTION_LOCK_CLEAR as u32 {
+        if (*filter).action.mods.flags & unlock as u32 == ACTION_LOCK_CLEAR {
             (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
         }
         (*filter).func = None;
-        return XKB_FILTER_CONTINUE as i32 != 0;
+        XKB_FILTER_CONTINUE as i32 != 0
     }
 }
 
@@ -861,18 +852,15 @@ unsafe fn xkb_filter_mod_lock_new(
     filter: *mut xkb_filter,
 ) {
     unsafe {
-        (*filter).priv_0 =
-            ((*state).components.locked_mods & (*filter).action.mods.mods.mask) as u32;
-        if (*filter).priv_0 != 0
-            && (*filter).action.mods.flags as u32 & ACTION_UNLOCK_ON_PRESS as u32 != 0
-        {
-            if (*filter).action.mods.flags as u32 & ACTION_LOCK_NO_UNLOCK as u32 == 0 {
+        (*filter).priv_0 = (*state).components.locked_mods & (*filter).action.mods.mods.mask;
+        if (*filter).priv_0 != 0 && (*filter).action.mods.flags & ACTION_UNLOCK_ON_PRESS != 0 {
+            if (*filter).action.mods.flags & ACTION_LOCK_NO_UNLOCK == 0 {
                 (*state).components.locked_mods &= !(*filter).priv_0;
             }
             (*filter).func = None;
         } else {
             (*state).set_mods |= (*filter).action.mods.mods.mask;
-            if (*filter).action.mods.flags as u32 & ACTION_LOCK_NO_LOCK as u32 == 0 {
+            if (*filter).action.mods.flags & ACTION_LOCK_NO_LOCK == 0 {
                 (*state).components.locked_mods |= (*filter).action.mods.mods.mask;
             }
         };
@@ -891,14 +879,14 @@ unsafe fn xkb_filter_mod_lock_func(
             return XKB_FILTER_CONTINUE as i32 != 0;
         }
         's_32: {
-            match direction as u32 {
+            match direction {
                 1 => {
                     (*filter).refcnt += 1;
                 }
                 2 => {}
                 _ => {
                     (*filter).refcnt -= 1;
-                    if (*filter).refcnt > 0 as i32 {
+                    if (*filter).refcnt > 0_i32 {
                         return XKB_FILTER_CONSUME as i32 != 0;
                     }
                     break 's_32;
@@ -907,11 +895,11 @@ unsafe fn xkb_filter_mod_lock_func(
             return XKB_FILTER_CONSUME as i32 != 0;
         }
         (*state).clear_mods |= (*filter).action.mods.mods.mask;
-        if (*filter).action.mods.flags as u32 & ACTION_LOCK_NO_UNLOCK as u32 == 0 {
+        if (*filter).action.mods.flags & ACTION_LOCK_NO_UNLOCK == 0 {
             (*state).components.locked_mods &= !(*filter).priv_0;
         }
         (*filter).func = None;
-        return XKB_FILTER_CONTINUE as i32 != 0;
+        XKB_FILTER_CONTINUE as i32 != 0
     }
 }
 
@@ -923,18 +911,18 @@ unsafe fn xkb_filter_mod_latch_new(
     unsafe {
         let unlockOnPress: xkb_action_flags =
             (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LATCH_ON_PRESS as i32) as xkb_action_flags;
-        if (*filter).action.mods.flags as u32 & ACTION_LOCK_CLEAR as u32 != 0
-            && (*filter).action.mods.flags as u32 & unlockOnPress as u32 != 0
+        if (*filter).action.mods.flags & ACTION_LOCK_CLEAR != 0
+            && (*filter).action.mods.flags & unlockOnPress as u32 != 0
             && (*state).components.locked_mods & (*filter).action.mods.mods.mask
                 == (*filter).action.mods.mods.mask
         {
             (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
             (*filter).func = None;
-        } else if (*filter).action.mods.flags as u32 & ACTION_LATCH_ON_PRESS as u32 != 0 {
-            (*filter).priv_0 = LATCH_PENDING as u32;
+        } else if (*filter).action.mods.flags & ACTION_LATCH_ON_PRESS != 0 {
+            (*filter).priv_0 = LATCH_PENDING;
             (*state).components.latched_mods |= (*filter).action.mods.mods.mask;
         } else {
-            (*filter).priv_0 = LATCH_KEY_DOWN as u32;
+            (*filter).priv_0 = LATCH_KEY_DOWN;
             (*state).set_mods |= (*filter).action.mods.mods.mask;
         };
     }
@@ -949,12 +937,12 @@ unsafe fn xkb_filter_mod_latch_func(
 ) -> bool {
     unsafe {
         let mut latch: xkb_key_latch_state = (*filter).priv_0 as xkb_key_latch_state;
-        if direction as u32 == XKB_KEY_DOWN as u32 {
+        if direction == XKB_KEY_DOWN {
             let mut actions: *const xkb_action = std::ptr::null();
             let count: u16 = xkb_key_get_actions(state, key, &raw mut actions) as u16;
-            if latch as u32 == LATCH_KEY_DOWN as u32 {
-                if (*state).flags as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32 != 0 {
-                    let mut k: u16 = 0 as u16;
+            if latch as u32 == LATCH_KEY_DOWN {
+                if (*state).flags & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS != 0 {
+                    let mut k: u16 = 0_u16;
                     while (k as i32) < count as i32 {
                         if xkb_action_breaks_latch(
                             actions.offset(k as isize) as *const xkb_action,
@@ -970,26 +958,23 @@ unsafe fn xkb_filter_mod_latch_func(
                 } else {
                     latch = NO_LATCH;
                 }
-            } else if latch as u32 == LATCH_PENDING as u32 {
-                let sticky_keys: bool =
-                    (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 != 0;
-                let flags: xkb_action_flags = ((*filter).action.mods.flags as u32
+            } else if latch as u32 == LATCH_PENDING {
+                let sticky_keys: bool = (*state).components.controls & CONTROL_STICKY_KEYS != 0;
+                let flags: xkb_action_flags = ((*filter).action.mods.flags
                     & !(ACTION_LATCH_TO_LOCK as i32) as u32)
                     as xkb_action_flags;
-                let mut k_0: u16 = 0 as u16;
+                let mut k_0: u16 = 0_u16;
                 while (k_0 as i32) < count as i32 {
-                    if ((*actions.offset(k_0 as isize)).type_0 as u32
-                        == ACTION_TYPE_MOD_LATCH as u32
+                    if ((*actions.offset(k_0 as isize)).type_0 as u32 == ACTION_TYPE_MOD_LATCH
                         && (*actions.offset(k_0 as isize)).mods.flags as u32
-                            == (*filter).action.mods.flags as u32
-                        || (*actions.offset(k_0 as isize)).type_0 as u32
-                            == ACTION_TYPE_MOD_SET as u32
+                            == (*filter).action.mods.flags
+                        || (*actions.offset(k_0 as isize)).type_0 as u32 == ACTION_TYPE_MOD_SET
                             && sticky_keys as i32 != 0
                             && (*actions.offset(k_0 as isize)).mods.flags as u32 == flags as u32)
                         && (*actions.offset(k_0 as isize)).mods.mods.mask
                             == (*filter).action.mods.mods.mask
                     {
-                        if (*filter).action.mods.flags as u32 & ACTION_LATCH_TO_LOCK as u32 != 0 {
+                        if (*filter).action.mods.flags & ACTION_LATCH_TO_LOCK != 0 {
                             (*filter).action.type_0 = ACTION_TYPE_MOD_LOCK;
                             (*filter).func = Some(
                                 xkb_filter_mod_lock_func
@@ -1048,31 +1033,30 @@ unsafe fn xkb_filter_mod_latch_func(
                     }
                     k_0 = k_0.wrapping_add(1);
                 }
-            } else {
             }
-        } else if !(key != (*filter).key) {
-            if direction as u32 == XKB_KEY_REPEATED as u32 {
+        } else if key == (*filter).key {
+            if direction == XKB_KEY_REPEATED {
                 return XKB_FILTER_CONSUME as i32 != 0;
             } else {
                 let unlockOnPress: xkb_action_flags = (ACTION_UNLOCK_ON_PRESS as i32
                     | ACTION_LATCH_ON_PRESS as i32)
                     as xkb_action_flags;
-                if (*filter).action.mods.flags as u32 & ACTION_LOCK_CLEAR as u32 != 0
-                    && (*filter).action.mods.flags as u32 & unlockOnPress as u32 == 0
+                if (*filter).action.mods.flags & ACTION_LOCK_CLEAR != 0
+                    && (*filter).action.mods.flags & unlockOnPress as u32 == 0
                     && (*state).components.locked_mods & (*filter).action.mods.mods.mask
                         == (*filter).action.mods.mods.mask
                 {
-                    if latch as u32 == LATCH_PENDING as u32 {
+                    if latch as u32 == LATCH_PENDING {
                         (*state).components.latched_mods &= !(*filter).action.mods.mods.mask;
                     } else {
                         (*state).clear_mods |= (*filter).action.mods.mods.mask;
                     }
                     (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
                     (*filter).func = None;
-                } else if latch as u32 == NO_LATCH as u32 {
+                } else if latch as u32 == NO_LATCH {
                     (*state).clear_mods |= (*filter).action.mods.mods.mask;
                     (*filter).func = None;
-                } else if (*filter).action.mods.flags as u32 & ACTION_LATCH_ON_PRESS as u32 == 0 {
+                } else if (*filter).action.mods.flags & ACTION_LATCH_ON_PRESS == 0 {
                     latch = LATCH_PENDING;
                     (*state).clear_mods |= (*filter).action.mods.mods.mask;
                     (*state).components.latched_mods |= (*filter).action.mods.mods.mask;
@@ -1080,7 +1064,7 @@ unsafe fn xkb_filter_mod_latch_func(
             }
         }
         (*filter).priv_0 = latch as u32;
-        return XKB_FILTER_CONTINUE as i32 != 0;
+        XKB_FILTER_CONTINUE as i32 != 0
     }
 }
 
@@ -1090,18 +1074,16 @@ unsafe fn xkb_filter_ctrls_new(
     filter: *mut xkb_filter,
 ) {
     unsafe {
-        if (*filter).action.type_0 as u32 == ACTION_TYPE_CTRL_SET as u32 {
-            (*filter).priv_0 = (!((*state).components.controls as u32)
-                & (*filter).action.ctrls.ctrls as u32) as u32;
+        if (*filter).action.type_0 == ACTION_TYPE_CTRL_SET {
+            (*filter).priv_0 = !(*state).components.controls & (*filter).action.ctrls.ctrls;
         } else {
-            (*filter).priv_0 =
-                ((*state).components.controls as u32 & (*filter).action.ctrls.ctrls as u32) as u32;
+            (*filter).priv_0 = (*state).components.controls & (*filter).action.ctrls.ctrls;
         }
-        if (*filter).action.type_0 as u32 == ACTION_TYPE_CTRL_SET as u32
-            || (*filter).action.ctrls.flags as u32 & ACTION_LOCK_NO_LOCK as u32 == 0
+        if (*filter).action.type_0 == ACTION_TYPE_CTRL_SET
+            || (*filter).action.ctrls.flags & ACTION_LOCK_NO_LOCK == 0
         {
-            (*state).components.controls = ((*state).components.controls as u32
-                | (*filter).action.ctrls.ctrls as u32)
+            (*state).components.controls = ((*state).components.controls
+                | (*filter).action.ctrls.ctrls)
                 as xkb_action_controls;
         }
     }
@@ -1119,14 +1101,14 @@ unsafe fn xkb_filter_ctrls_func(
             return XKB_FILTER_CONTINUE as i32 != 0;
         }
         's_32: {
-            match direction as u32 {
+            match direction {
                 1 => {
                     (*filter).refcnt += 1;
                 }
                 2 => {}
                 _ => {
                     (*filter).refcnt -= 1;
-                    if (*filter).refcnt > 0 as i32 {
+                    if (*filter).refcnt > 0_i32 {
                         return XKB_FILTER_CONSUME as i32 != 0;
                     }
                     break 's_32;
@@ -1134,21 +1116,21 @@ unsafe fn xkb_filter_ctrls_func(
             }
             return XKB_FILTER_CONSUME as i32 != 0;
         }
-        if (*filter).action.type_0 as u32 == ACTION_TYPE_CTRL_SET as u32
-            || (*filter).action.ctrls.flags as u32 & ACTION_LOCK_NO_UNLOCK as u32 == 0
+        if (*filter).action.type_0 == ACTION_TYPE_CTRL_SET
+            || (*filter).action.ctrls.flags & ACTION_LOCK_NO_UNLOCK == 0
         {
             let old: xkb_action_controls = (*state).components.controls;
-            (*state).components.controls = ((*state).components.controls as u32
-                & !((*filter).priv_0 as xkb_action_controls as u32))
+            (*state).components.controls = ((*state).components.controls
+                & !((*filter).priv_0 as xkb_action_controls))
                 as xkb_action_controls;
-            if old as u32 & CONTROL_STICKY_KEYS as u32 != 0
-                && (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 == 0
+            if old as u32 & CONTROL_STICKY_KEYS != 0
+                && (*state).components.controls & CONTROL_STICKY_KEYS == 0
             {
                 clear_all_latches_and_locks(state, events);
             }
         }
         (*filter).func = None;
-        return XKB_FILTER_CONTINUE as i32 != 0;
+        XKB_FILTER_CONTINUE as i32 != 0
     }
 }
 
@@ -1159,7 +1141,7 @@ unsafe fn append_redirect_key_events(
     direction: xkb_key_direction,
 ) -> bool {
     unsafe {
-        let mut changed: u32 = 0 as u32;
+        let mut changed: u32 = 0_u32;
         let mask: u32 = (*redirect).affect;
         let mut last_components: state_components = (*state).components;
         {
@@ -1167,7 +1149,7 @@ unsafe fn append_redirect_key_events(
             if !queue.is_empty() {
                 let mut idx = queue.len() - 1;
                 loop {
-                    if queue[idx].type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as u32 {
+                    if queue[idx].type_0 == XKB_EVENT_TYPE_COMPONENTS_CHANGE {
                         last_components = queue[idx].data.components.components;
                         break;
                     }
@@ -1186,21 +1168,21 @@ unsafe fn append_redirect_key_events(
             new.mods = new.mods & !mask | (*redirect).mods;
             changed = get_state_component_changes(&raw mut last_components, &raw mut new);
             if changed as u64 != 0 {
-                (&mut (*events).queue).push(xkb_event {
+                (*events).queue.push(xkb_event {
                     type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
                     data: xkb_event_data {
                         components: xkb_event_components {
                             components: new,
-                            changed: changed,
+                            changed,
                         },
                     },
                 });
             }
         }
-        (&mut (*events).queue).push(xkb_event {
-            type_0: (if direction as u32 == XKB_KEY_UP as u32 {
+        (*events).queue.push(xkb_event {
+            type_0: (if direction == XKB_KEY_UP {
                 XKB_EVENT_TYPE_KEY_UP as i32
-            } else if direction as u32 == XKB_KEY_REPEATED as u32 {
+            } else if direction == XKB_KEY_REPEATED {
                 XKB_EVENT_TYPE_KEY_REPEATED as i32
             } else {
                 XKB_EVENT_TYPE_KEY_DOWN as i32
@@ -1209,18 +1191,18 @@ unsafe fn append_redirect_key_events(
                 keycode: (*redirect).keycode,
             },
         });
-        if mask != 0 && changed as u32 != 0 {
-            (&mut (*events).queue).push(xkb_event {
+        if mask != 0 && changed != 0 {
+            (*events).queue.push(xkb_event {
                 type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
                 data: xkb_event_data {
                     components: xkb_event_components {
                         components: last_components,
-                        changed: changed,
+                        changed,
                     },
                 },
             });
         }
-        return true;
+        true
     }
 }
 
@@ -1230,7 +1212,7 @@ unsafe fn xkb_filter_redirect_key_new(
     filter: *mut xkb_filter,
 ) {
     unsafe {
-        if events.is_null() || (*filter).action.redirect.keycode == XKB_KEYCODE_INVALID as u32 {
+        if events.is_null() || (*filter).action.redirect.keycode == XKB_KEYCODE_INVALID {
             (*filter).func = None;
             return;
         }
@@ -1254,7 +1236,7 @@ unsafe fn xkb_filter_redirect_key_func(
         if key != (*filter).key {
             return XKB_FILTER_CONTINUE as i32 != 0;
         }
-        if direction as u32 == XKB_KEY_UP as u32 {
+        if direction == XKB_KEY_UP {
             append_redirect_key_events(
                 state,
                 events,
@@ -1263,12 +1245,12 @@ unsafe fn xkb_filter_redirect_key_func(
             );
             (*filter).func = None;
             return XKB_FILTER_CONSUME as i32 != 0;
-        } else if direction as u32 == XKB_KEY_DOWN as u32 {
+        } else if direction == XKB_KEY_DOWN {
             let mut actions: *const xkb_action = std::ptr::null();
             let count: u16 = xkb_key_get_actions(state, key, &raw mut actions) as u16;
-            let mut a: u16 = 0 as u16;
+            let mut a: u16 = 0_u16;
             while (a as i32) < count as i32 {
-                if (*actions.offset(a as isize)).type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as u32
+                if (*actions.offset(a as isize)).type_0 as u32 == ACTION_TYPE_REDIRECT_KEY
                     && (*actions.offset(a as isize)).redirect.keycode
                         != (*filter).action.redirect.keycode
                 {
@@ -1285,11 +1267,11 @@ unsafe fn xkb_filter_redirect_key_func(
             }
         }
         append_redirect_key_events(state, events, &raw mut (*filter).action.redirect, direction);
-        return XKB_FILTER_CONSUME as i32 != 0;
+        XKB_FILTER_CONSUME as i32 != 0
     }
 }
 
-static mut filter_action_funcs: [FilterActionFuncs; 21] = {
+static mut FILTER_ACTION_FUNCS: [FilterActionFuncs; 21] = {
     [
         FilterActionFuncs {
             new: None,
@@ -1495,70 +1477,64 @@ unsafe fn xkb_filter_apply_all(
     unsafe {
         let mut consumed: bool = false;
         let mut filter: *mut xkb_filter;
-        let filters_len = (&(*state).filters).len();
+        let filters_len = (*state).filters.len();
         if filters_len > 0 {
             filter = (*state).filters.as_mut_ptr();
             let end = filter.add(filters_len);
             while filter < end {
-                if !(*filter).func.is_none() {
-                    if (*filter).func.expect("non-null function pointer")(
+                if (*filter).func.is_some()
+                    && (*filter).func.expect("non-null function pointer")(
                         state, events, filter, key, direction,
                     ) as i32
                         == XKB_FILTER_CONSUME as i32
-                    {
-                        consumed = true;
-                    }
+                {
+                    consumed = true;
                 }
                 filter = filter.offset(1);
             }
         }
-        if consumed as i32 != 0 || direction as u32 == XKB_KEY_UP as u32 {
+        if consumed as i32 != 0 || direction == XKB_KEY_UP {
             return;
         }
         let mut actions: *const xkb_action = std::ptr::null();
         let count: u16 = xkb_key_get_actions(state, key, &raw mut actions) as u16;
-        let mut k: u16 = 0 as u16;
+        let mut k: u16 = 0_u16;
         while (k as i32) < count as i32 {
-            if !((*actions.offset(k as isize)).type_0 as u32 >= _ACTION_TYPE_NUM_ENTRIES as u32) {
-                if !filter_action_funcs[(*actions.offset(k as isize)).type_0 as usize]
+            if (((*actions.offset(k as isize)).type_0 as u32) < _ACTION_TYPE_NUM_ENTRIES)
+                && FILTER_ACTION_FUNCS[(*actions.offset(k as isize)).type_0 as usize]
                     .new
-                    .is_none()
-                {
-                    filter = xkb_filter_new(state);
-                    (*filter).key = key;
-                    (*filter).action = *actions.offset(k as isize);
-                    if (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 != 0 {
-                        if (*filter).action.type_0 as u32 == ACTION_TYPE_MOD_SET as u32 {
-                            (*filter).action.type_0 = ACTION_TYPE_MOD_LATCH;
-                            if (*state).flags as u32 & XKB_A11Y_LATCH_TO_LOCK as u32 != 0 {
-                                (*filter).action.mods.flags = ((*filter).action.mods.flags as u32
-                                    | ACTION_LATCH_TO_LOCK as u32)
-                                    as xkb_action_flags;
-                            }
-                        } else if (*filter).action.type_0 as u32 == ACTION_TYPE_GROUP_SET as u32 {
-                            (*filter).action.type_0 = ACTION_TYPE_GROUP_LATCH;
-                            if (*state).flags as u32 & XKB_A11Y_LATCH_TO_LOCK as u32 != 0 {
-                                (*filter).action.group.flags = ((*filter).action.group.flags as u32
-                                    | ACTION_LATCH_TO_LOCK as u32)
-                                    as xkb_action_flags;
-                            }
+                    .is_some()
+            {
+                filter = xkb_filter_new(state);
+                (*filter).key = key;
+                (*filter).action = *actions.offset(k as isize);
+                if (*state).components.controls & CONTROL_STICKY_KEYS != 0 {
+                    if (*filter).action.type_0 == ACTION_TYPE_MOD_SET {
+                        (*filter).action.type_0 = ACTION_TYPE_MOD_LATCH;
+                        if (*state).flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
+                            (*filter).action.mods.flags = ((*filter).action.mods.flags
+                                | ACTION_LATCH_TO_LOCK)
+                                as xkb_action_flags;
+                        }
+                    } else if (*filter).action.type_0 == ACTION_TYPE_GROUP_SET {
+                        (*filter).action.type_0 = ACTION_TYPE_GROUP_LATCH;
+                        if (*state).flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
+                            (*filter).action.group.flags = ((*filter).action.group.flags
+                                | ACTION_LATCH_TO_LOCK)
+                                as xkb_action_flags;
                         }
                     }
-                    if (*filter).action.type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as u32 {
-                        (*filter).action.redirect.affect = mod_mask_get_effective(
-                            (*state).keymap,
-                            (*filter).action.redirect.affect,
-                        );
-                        (*filter).action.redirect.mods =
-                            mod_mask_get_effective((*state).keymap, (*filter).action.redirect.mods);
-                    }
-                    (*filter).func = filter_action_funcs[(*filter).action.type_0 as usize].func;
-                    filter_action_funcs[(*filter).action.type_0 as usize]
-                        .new
-                        .expect("non-null function pointer")(
-                        state, events, filter
-                    );
                 }
+                if (*filter).action.type_0 == ACTION_TYPE_REDIRECT_KEY {
+                    (*filter).action.redirect.affect =
+                        mod_mask_get_effective((*state).keymap, (*filter).action.redirect.affect);
+                    (*filter).action.redirect.mods =
+                        mod_mask_get_effective((*state).keymap, (*filter).action.redirect.mods);
+                }
+                (*filter).func = FILTER_ACTION_FUNCS[(*filter).action.type_0 as usize].func;
+                FILTER_ACTION_FUNCS[(*filter).action.type_0 as usize]
+                    .new
+                    .expect("non-null function pointer")(state, events, filter);
             }
             k = k.wrapping_add(1);
         }
@@ -1579,17 +1555,17 @@ pub unsafe fn xkb_state_new(keymap: *mut xkb_keymap) -> *mut xkb_state {
         }));
         // xkb_state_init inlined
         (*state).flags = XKB_A11Y_NO_FLAGS;
-        if (*keymap).format as u32 != XKB_KEYMAP_FORMAT_TEXT_V1 as u32
-            && XKB_A11Y_NO_FLAGS as u32 & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32 == 0
+        if (*keymap).format != XKB_KEYMAP_FORMAT_TEXT_V1
+            && XKB_A11Y_NO_FLAGS & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS == 0
         {
             (*state).flags =
-                ((*state).flags as u32 | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32) as xkb_a11y_flags;
+                ((*state).flags as u32 | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS) as xkb_a11y_flags;
         }
         (*state).controls.out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
-        (*state).refcnt = 1 as i32;
+        (*state).refcnt = 1_i32;
         (*state).keymap = xkb_keymap_ref(keymap);
         xkb_state_update_derived(state);
-        return state;
+        state
     }
 }
 
@@ -1597,7 +1573,7 @@ pub unsafe fn xkb_state_unref(state: *mut xkb_state) {
     unsafe {
         if state.is_null() || {
             (*state).refcnt -= 1;
-            (*state).refcnt > 0 as i32
+            (*state).refcnt > 0_i32
         } {
             return;
         }
@@ -1608,9 +1584,7 @@ pub unsafe fn xkb_state_unref(state: *mut xkb_state) {
     }
 }
 pub unsafe fn xkb_state_get_keymap(state: *mut xkb_state) -> *mut xkb_keymap {
-    unsafe {
-        return (*state).keymap;
-    }
+    unsafe { (*state).keymap }
 }
 
 unsafe fn xkb_state_led_update_all(state: *mut xkb_state) {
@@ -1619,26 +1593,26 @@ unsafe fn xkb_state_led_update_all(state: *mut xkb_state) {
         let mut led: *const xkb_led;
         (*state).components.leds = 0 as xkb_led_mask_t;
         let mut c2rust_current_block_23: u64;
-        idx = 0 as u32;
+        idx = 0_u32;
         led = &raw mut (*(*state).keymap).leds as *mut xkb_led;
         while idx < (*(*state).keymap).num_leds {
-            if (*led).which_mods as u32 != 0 as u32 && (*led).mods.mask != 0 as u32 {
-                let mut mod_mask: u32 = 0 as u32;
-                if (*led).which_mods as u32 & XKB_STATE_MODS_EFFECTIVE as u32 != 0 {
+            if (*led).which_mods != 0_u32 && (*led).mods.mask != 0_u32 {
+                let mut mod_mask: u32 = 0_u32;
+                if (*led).which_mods & XKB_STATE_MODS_EFFECTIVE != 0 {
                     mod_mask |= (*state).components.mods;
                 }
-                if (*led).which_mods as u32 & XKB_STATE_MODS_DEPRESSED as u32 != 0 {
+                if (*led).which_mods & XKB_STATE_MODS_DEPRESSED != 0 {
                     mod_mask |= (*state).components.base_mods;
                 }
-                if (*led).which_mods as u32 & XKB_STATE_MODS_LATCHED as u32 != 0 {
+                if (*led).which_mods & XKB_STATE_MODS_LATCHED != 0 {
                     mod_mask |= (*state).components.latched_mods;
                 }
-                if (*led).which_mods as u32 & XKB_STATE_MODS_LOCKED as u32 != 0 {
+                if (*led).which_mods & XKB_STATE_MODS_LOCKED != 0 {
                     mod_mask |= (*state).components.locked_mods;
                 }
                 if (*led).mods.mask & mod_mask != 0 {
                     (*state).components.leds =
-                        ((*state).components.leds as u32 | (1 as u32) << idx) as xkb_led_mask_t;
+                        ((*state).components.leds | 1_u32 << idx) as xkb_led_mask_t;
                     c2rust_current_block_23 = 16559507199688588974;
                 } else {
                     c2rust_current_block_23 = 13586036798005543211;
@@ -1646,67 +1620,56 @@ unsafe fn xkb_state_led_update_all(state: *mut xkb_state) {
             } else {
                 c2rust_current_block_23 = 13586036798005543211;
             }
-            match c2rust_current_block_23 {
-                13586036798005543211 => {
-                    if (*led).which_groups as i32 != 0 as i32 {
-                        if ((*led).groups != 0) as i64 != 0 as i64 {
-                            let mut group_mask: u32 = 0 as u32;
-                            if (*led).which_groups as i32 & XKB_STATE_LAYOUT_EFFECTIVE as i32 != 0 {
-                                group_mask = (group_mask as u32
-                                    | (1 as u32) << (*state).components.group)
-                                    as u32;
-                            }
-                            if (*led).which_groups as i32 & XKB_STATE_LAYOUT_LOCKED as i32 != 0 {
-                                group_mask = (group_mask as u32
-                                    | (1 as u32) << (*state).components.locked_group)
-                                    as u32;
-                            }
-                            if (*led).which_groups as i32 & XKB_STATE_LAYOUT_DEPRESSED as i32 != 0
-                                && (*state).components.base_group != 0 as i32
-                            {
-                                group_mask |= (*led).groups;
-                            }
-                            if (*led).which_groups as i32 & XKB_STATE_LAYOUT_LATCHED as i32 != 0
-                                && (*state).components.latched_group != 0 as i32
-                            {
-                                group_mask |= (*led).groups;
-                            }
-                            if (*led).groups & group_mask != 0 {
-                                (*state).components.leds = ((*state).components.leds as u32
-                                    | (1 as u32) << idx)
-                                    as xkb_led_mask_t;
-                                c2rust_current_block_23 = 16559507199688588974;
-                            } else {
-                                c2rust_current_block_23 = 14359455889292382949;
-                            }
-                        } else if (*led).which_groups as i32 & XKB_STATE_LAYOUT_DEPRESSED as i32
-                            != 0
-                            && (*state).components.base_group == 0 as i32
-                            || (*led).which_groups as i32 & XKB_STATE_LAYOUT_LATCHED as i32 != 0
-                                && (*state).components.latched_group == 0 as i32
+            if c2rust_current_block_23 == 13586036798005543211 {
+                if (*led).which_groups as i32 != 0_i32 {
+                    if ((*led).groups != 0) as i64 != 0_i64 {
+                        let mut group_mask: u32 = 0_u32;
+                        if (*led).which_groups as i32 & XKB_STATE_LAYOUT_EFFECTIVE as i32 != 0 {
+                            group_mask |= 1_u32 << (*state).components.group;
+                        }
+                        if (*led).which_groups as i32 & XKB_STATE_LAYOUT_LOCKED as i32 != 0 {
+                            group_mask |= 1_u32 << (*state).components.locked_group;
+                        }
+                        if (*led).which_groups as i32 & XKB_STATE_LAYOUT_DEPRESSED as i32 != 0
+                            && (*state).components.base_group != 0_i32
                         {
-                            (*state).components.leds = ((*state).components.leds as u32
-                                | (1 as u32) << idx)
-                                as xkb_led_mask_t;
+                            group_mask |= (*led).groups;
+                        }
+                        if (*led).which_groups as i32 & XKB_STATE_LAYOUT_LATCHED as i32 != 0
+                            && (*state).components.latched_group != 0_i32
+                        {
+                            group_mask |= (*led).groups;
+                        }
+                        if (*led).groups & group_mask != 0 {
+                            (*state).components.leds =
+                                ((*state).components.leds | 1_u32 << idx) as xkb_led_mask_t;
                             c2rust_current_block_23 = 16559507199688588974;
                         } else {
                             c2rust_current_block_23 = 14359455889292382949;
                         }
+                    } else if (*led).which_groups as i32 & XKB_STATE_LAYOUT_DEPRESSED as i32 != 0
+                        && (*state).components.base_group == 0_i32
+                        || (*led).which_groups as i32 & XKB_STATE_LAYOUT_LATCHED as i32 != 0
+                            && (*state).components.latched_group == 0_i32
+                    {
+                        (*state).components.leds =
+                            ((*state).components.leds | 1_u32 << idx) as xkb_led_mask_t;
+                        c2rust_current_block_23 = 16559507199688588974;
                     } else {
                         c2rust_current_block_23 = 14359455889292382949;
                     }
-                    match c2rust_current_block_23 {
-                        16559507199688588974 => {}
-                        _ => {
-                            if (*led).ctrls as u32 & (*state).components.controls as u32 != 0 {
-                                (*state).components.leds = ((*state).components.leds as u32
-                                    | (1 as u32) << idx)
-                                    as xkb_led_mask_t;
-                            }
+                } else {
+                    c2rust_current_block_23 = 14359455889292382949;
+                }
+                match c2rust_current_block_23 {
+                    16559507199688588974 => {}
+                    _ => {
+                        if (*led).ctrls & (*state).components.controls != 0 {
+                            (*state).components.leds =
+                                ((*state).components.leds | 1_u32 << idx) as xkb_led_mask_t;
                         }
                     }
                 }
-                _ => {}
             }
             idx = idx.wrapping_add(1);
             led = led.offset(1);
@@ -1726,8 +1689,8 @@ unsafe fn xkb_state_update_derived(state: *mut xkb_state) {
             (*state).controls.out_of_range_group_policy,
             (*state).controls.out_of_range_redirect_group,
         );
-        (*state).components.locked_group = (if wrapped == XKB_LAYOUT_INVALID as u32 {
-            0 as u32
+        (*state).components.locked_group = (if wrapped == XKB_LAYOUT_INVALID {
+            0_u32
         } else {
             wrapped
         }) as i32;
@@ -1739,8 +1702,8 @@ unsafe fn xkb_state_update_derived(state: *mut xkb_state) {
             (*state).controls.out_of_range_group_policy,
             (*state).controls.out_of_range_redirect_group,
         );
-        (*state).components.group = if wrapped == XKB_LAYOUT_INVALID as u32 {
-            0 as u32
+        (*state).components.group = if wrapped == XKB_LAYOUT_INVALID {
+            0_u32
         } else {
             wrapped
         };
@@ -1754,17 +1717,17 @@ pub unsafe fn xkb_state_update_key(
 ) -> u32 {
     unsafe {
         let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
-        if key.is_null() || direction as u32 == XKB_KEY_REPEATED as u32 && !(*key).repeats {
-            return 0 as u32;
+        if key.is_null() || direction == XKB_KEY_REPEATED && !(*key).repeats {
+            return 0_u32;
         }
         let prev_components: state_components = (*state).components;
-        (*state).set_mods = 0 as u32;
-        (*state).clear_mods = 0 as u32;
+        (*state).set_mods = 0_u32;
+        (*state).clear_mods = 0_u32;
         xkb_filter_apply_all(state, std::ptr::null_mut(), key, direction);
         let mut i: u32;
         let mut bit: u32;
-        i = 0 as u32;
-        bit = 1 as u32;
+        i = 0_u32;
+        bit = 1_u32;
         while (*state).set_mods != 0 {
             if (*state).set_mods & bit != 0 {
                 (*state).mod_key_count[i as usize] += 1;
@@ -1772,48 +1735,45 @@ pub unsafe fn xkb_state_update_key(
                 (*state).set_mods &= !bit;
             }
             i = i.wrapping_add(1);
-            bit <<= 1 as i32;
+            bit <<= 1_i32;
         }
-        i = 0 as u32;
-        bit = 1 as u32;
+        i = 0_u32;
+        bit = 1_u32;
         while (*state).clear_mods != 0 {
             if (*state).clear_mods & bit != 0 {
                 (*state).mod_key_count[i as usize] -= 1;
-                if (*state).mod_key_count[i as usize] as i32 <= 0 as i32 {
+                if (*state).mod_key_count[i as usize] as i32 <= 0_i32 {
                     (*state).components.base_mods &= !bit;
-                    (*state).mod_key_count[i as usize] = 0 as i16;
+                    (*state).mod_key_count[i as usize] = 0_i16;
                 }
                 (*state).clear_mods &= !bit;
             }
             i = i.wrapping_add(1);
-            bit <<= 1 as i32;
+            bit <<= 1_i32;
         }
         xkb_state_update_derived(state);
-        return get_state_component_changes(
-            &raw const prev_components,
-            &raw mut (*state).components,
-        );
+        get_state_component_changes(&raw const prev_components, &raw mut (*state).components)
     }
 }
 
-static mut synthetic_key_level_entry: xkb_key_type_entry = xkb_key_type_entry {
-    level: 0 as u32,
+static mut SYNTHETIC_KEY_LEVEL_ENTRY: xkb_key_type_entry = xkb_key_type_entry {
+    level: 0_u32,
     mods: xkb_mods { mods: 0, mask: 0 },
     preserve: xkb_mods { mods: 0, mask: 0 },
 };
 
-static mut synthetic_key_type: xkb_key_type = {
+static mut SYNTHETIC_KEY_TYPE: xkb_key_type = {
     xkb_key_type {
         name: 0,
         mods: xkb_mods { mods: 0, mask: 0 },
         required: false,
-        num_levels: 1 as u32,
+        num_levels: 1_u32,
         level_names: Vec::new(),
         entries: Vec::new(), // populated in c2rust_run_static_initializers
     }
 };
 
-static mut synthetic_key: xkb_key = xkb_key {
+static mut SYNTHETIC_KEY: xkb_key = xkb_key {
     keycode: 0,
     name: 0,
     explicit: 0 as xkb_explicit_components,
@@ -1881,7 +1841,7 @@ unsafe fn update_latch_modifiers(
             &raw const synthetic_key_break_mod_latch,
             XKB_KEY_DOWN,
         );
-        let key: *const xkb_key = &raw const synthetic_key;
+        let key: *const xkb_key = &raw const SYNTHETIC_KEY;
         let latch_mods: xkb_action = xkb_action {
             mods: xkb_mod_action {
                 type_0: ACTION_TYPE_MOD_LATCH,
@@ -1924,15 +1884,15 @@ unsafe fn update_latch_group(state: *mut xkb_state, events: *mut xkb_events, gro
         xkb_filter_apply_all(
             state,
             events,
-            &raw const synthetic_key_break_group_latch,
+            &raw const SYNTHETIC_KEY_BREAK_GROUP_LATCH,
             XKB_KEY_DOWN,
         );
-        let key: *const xkb_key = &raw const synthetic_key;
+        let key: *const xkb_key = &raw const SYNTHETIC_KEY;
         let latch_group: xkb_action = xkb_action {
             group: xkb_group_action {
                 type_0: ACTION_TYPE_GROUP_LATCH,
                 flags: ACTION_ABSOLUTE_SWITCH,
-                group: group,
+                group,
             },
         };
         let filter: *mut xkb_filter = xkb_filter_new(state) as *mut xkb_filter;
@@ -1965,8 +1925,8 @@ unsafe fn update_latch_group(state: *mut xkb_state, events: *mut xkb_events, gro
 
 unsafe fn resolve_to_canonical_mods(keymap: *mut xkb_keymap, mods: u32) -> u32 {
     unsafe {
-        return mods & (*keymap).canonical_state_mask
-            | mod_mask_get_effective(keymap, mods & !(*keymap).canonical_state_mask);
+        mods & (*keymap).canonical_state_mask
+            | mod_mask_get_effective(keymap, mods & !(*keymap).canonical_state_mask)
     }
 }
 
@@ -1977,24 +1937,24 @@ unsafe fn state_update_latched_locked(
 ) {
     unsafe {
         let affect_locked_mods: u32 =
-            resolve_to_canonical_mods((*state).keymap, (*update).affect_locked_mods) as u32;
+            resolve_to_canonical_mods((*state).keymap, (*update).affect_locked_mods);
         if affect_locked_mods != 0 {
             let locked_mods: u32 =
-                resolve_to_canonical_mods((*state).keymap, (*update).locked_mods) as u32;
+                resolve_to_canonical_mods((*state).keymap, (*update).locked_mods);
             (*state).components.locked_mods &= !affect_locked_mods;
             (*state).components.locked_mods |= locked_mods & affect_locked_mods;
         }
-        if (*update).components as u32 & XKB_STATE_LAYOUT_LOCKED as u32 != 0 {
+        if (*update).components & XKB_STATE_LAYOUT_LOCKED != 0 {
             (*state).components.locked_group = (*update).locked_layout;
         }
         let affect_latched_mods: u32 =
-            resolve_to_canonical_mods((*state).keymap, (*update).affect_latched_mods) as u32;
+            resolve_to_canonical_mods((*state).keymap, (*update).affect_latched_mods);
         if affect_latched_mods != 0 {
             let latched_mods: u32 =
-                resolve_to_canonical_mods((*state).keymap, (*update).latched_mods) as u32;
+                resolve_to_canonical_mods((*state).keymap, (*update).latched_mods);
             update_latch_modifiers(state, events, affect_latched_mods, latched_mods);
         }
-        if (*update).components as u32 & XKB_STATE_LAYOUT_LATCHED as u32 != 0 {
+        if (*update).components & XKB_STATE_LAYOUT_LATCHED != 0 {
             update_latch_group(state, events, (*update).latched_layout);
         }
     }
@@ -2004,19 +1964,19 @@ unsafe fn state_update_latched_locked(
 
 unsafe fn clear_all_latches_and_locks(state: *mut xkb_state, events: *mut xkb_events) {
     unsafe {
-        static mut components: u32 = (XKB_STATE_MODS_LATCHED as i32
+        static mut COMPONENTS: u32 = (XKB_STATE_MODS_LATCHED as i32
             | XKB_STATE_MODS_LOCKED as i32
             | XKB_STATE_LAYOUT_LATCHED as i32
             | XKB_STATE_LAYOUT_LOCKED as i32) as u32;
         let update: xkb_state_components_update = xkb_state_components_update {
             size: std::mem::size_of::<xkb_state_components_update>(),
-            components: components,
-            affect_latched_mods: XKB_MOD_ALL as u32 as u32,
-            latched_mods: 0 as u32,
-            affect_locked_mods: XKB_MOD_ALL as u32 as u32,
-            locked_mods: 0 as u32,
-            latched_layout: 0 as i32,
-            locked_layout: 0 as i32,
+            components: COMPONENTS,
+            affect_latched_mods: XKB_MOD_ALL,
+            latched_mods: 0_u32,
+            affect_locked_mods: XKB_MOD_ALL,
+            locked_mods: 0_u32,
+            latched_layout: 0_i32,
+            locked_layout: 0_i32,
             affect_controls: XKB_KEYBOARD_CONTROL_NO_FLAGS,
             controls: XKB_KEYBOARD_CONTROL_NO_FLAGS,
         };
@@ -2031,9 +1991,9 @@ unsafe fn state_update_layout_policy(
     unsafe {
         if xkb_feature_supported(
             XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY,
-            (*update).policy as u32,
+            (*update).policy,
         ) {
-            if (*update).policy as u32 == XKB_LAYOUT_OUT_OF_RANGE_REDIRECT as u32 {
+            if (*update).policy == XKB_LAYOUT_OUT_OF_RANGE_REDIRECT {
                 if (*update).redirect < (*(*state).keymap).num_groups {
                     (*state).controls.out_of_range_redirect_group = (*update).redirect;
                 } else {
@@ -2042,38 +2002,38 @@ unsafe fn state_update_layout_policy(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Layout policy: unsupported layout index {} > {}\n",
-                        XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
-                        (*update).redirect.wrapping_add(1 as u32),
+                        { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
+                        (*update).redirect.wrapping_add(1_u32),
                         (*(*state).keymap).num_groups,
                     );
                     return XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX;
                 }
             }
             (*state).controls.out_of_range_group_policy = (*update).policy;
-            return XKB_SUCCESS;
+            XKB_SUCCESS
         } else {
             xkb_logf!(
                 (*(*state).keymap).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Unsupported layout policy: {}\n",
-                XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY as i32,
-                (*update).policy as u32,
+                { XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY },
+                { (*update).policy },
             );
-            return XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY;
-        };
+            XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY
+        }
     }
 }
 
 unsafe fn log_abi_error(_ctx: *mut xkb_context, func: *const i8, error: xkb_error_code) {
-    match error as i32 {
+    match error {
         450 => {
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}: ABI error: unsupported versioned struct\n",
-                XKB_ERROR_ABI_INVALID_STRUCT_SIZE as i32,
+                { XKB_ERROR_ABI_INVALID_STRUCT_SIZE },
                 crate::xkb::utils::CStrDisplay(func),
             );
         }
@@ -2083,7 +2043,7 @@ unsafe fn log_abi_error(_ctx: *mut xkb_context, func: *const i8, error: xkb_erro
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}: ABI version mismatch: missing newer required fields\n",
-                XKB_ERROR_ABI_BACKWARD_COMPAT as i32,
+                { XKB_ERROR_ABI_BACKWARD_COMPAT },
                 crate::xkb::utils::CStrDisplay(func),
             );
         }
@@ -2093,7 +2053,7 @@ unsafe fn log_abi_error(_ctx: *mut xkb_context, func: *const i8, error: xkb_erro
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}: ABI version mismatch: cannot use newer fields\n",
-                XKB_ERROR_ABI_FORWARD_COMPAT as i32,
+                { XKB_ERROR_ABI_FORWARD_COMPAT },
                 crate::xkb::utils::CStrDisplay(func),
             );
         }
@@ -2139,7 +2099,7 @@ unsafe fn check_state_update_abi_(
         {
             log_abi_error(ctx, func, error);
         }
-        return error;
+        error
     }
 }
 
@@ -2168,18 +2128,17 @@ pub unsafe fn xkb_state_update_synthetic(
             let components: *const xkb_state_components_update = (*update).components;
             // state_update_enabled_controls inlined
             {
-                let had_sticky_keys: bool =
-                    (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 != 0;
-                let affect = ((*components).affect_controls as xkb_action_controls as u32
-                    & CONTROL_ALL_BOOLEAN as u32)
+                let had_sticky_keys: bool = (*state).components.controls & CONTROL_STICKY_KEYS != 0;
+                let affect = ((*components).affect_controls as xkb_action_controls
+                    & CONTROL_ALL_BOOLEAN)
                     as xkb_keyboard_control_flags;
                 (*state).components.controls =
-                    ((*state).components.controls as u32 & !(affect as u32)) as xkb_action_controls;
-                (*state).components.controls = ((*state).components.controls as u32
-                    | (*components).controls as xkb_action_controls as u32 & affect as u32)
+                    ((*state).components.controls & !(affect as u32)) as xkb_action_controls;
+                (*state).components.controls = ((*state).components.controls
+                    | (*components).controls as xkb_action_controls & affect as u32)
                     as xkb_action_controls;
                 if had_sticky_keys as i32 != 0
-                    && (*state).components.controls as u32 & CONTROL_STICKY_KEYS as u32 == 0
+                    && (*state).components.controls & CONTROL_STICKY_KEYS == 0
                 {
                     clear_all_latches_and_locks(state, std::ptr::null_mut());
                 }
@@ -2194,7 +2153,7 @@ pub unsafe fn xkb_state_update_synthetic(
                 &raw mut (*state).components,
             );
         }
-        return XKB_SUCCESS;
+        XKB_SUCCESS
     }
 }
 
@@ -2216,34 +2175,29 @@ pub unsafe fn xkb_state_update_mask(
         (*state).components.latched_group = latched_group as i32;
         (*state).components.locked_group = locked_group as i32;
         xkb_state_update_derived(state);
-        return get_state_component_changes(
-            &raw const prev_components,
-            &raw mut (*state).components,
-        );
+        get_state_component_changes(&raw const prev_components, &raw mut (*state).components)
     }
 }
 
 unsafe fn should_do_caps_transformation(state: *mut xkb_state, kc: u32) -> bool {
     unsafe {
-        return xkb_state_mod_index_is_active(
+        xkb_state_mod_index_is_active(
             state,
             XKB_MOD_INDEX_CAPS as i32 as u32,
             XKB_STATE_MODS_EFFECTIVE,
-        ) > 0 as i32
-            && xkb_state_mod_index_is_consumed(state, kc, XKB_MOD_INDEX_CAPS as i32 as u32)
-                == 0 as i32;
+        ) > 0_i32
+            && xkb_state_mod_index_is_consumed(state, kc, XKB_MOD_INDEX_CAPS as i32 as u32) == 0_i32
     }
 }
 
 unsafe fn should_do_ctrl_transformation(state: *mut xkb_state, kc: u32) -> bool {
     unsafe {
-        return xkb_state_mod_index_is_active(
+        xkb_state_mod_index_is_active(
             state,
             XKB_MOD_INDEX_CTRL as i32 as u32,
             XKB_STATE_MODS_EFFECTIVE,
-        ) > 0 as i32
-            && xkb_state_mod_index_is_consumed(state, kc, XKB_MOD_INDEX_CTRL as i32 as u32)
-                == 0 as i32;
+        ) > 0_i32
+            && xkb_state_mod_index_is_consumed(state, kc, XKB_MOD_INDEX_CTRL as i32 as u32) == 0_i32
     }
 }
 pub unsafe fn xkb_state_key_get_syms(
@@ -2255,10 +2209,10 @@ pub unsafe fn xkb_state_key_get_syms(
         let level: u32;
         let key: *const xkb_key;
         let leveli: *const xkb_level;
-        let layout: u32 = xkb_state_key_get_layout(state, kc) as u32;
-        if !(layout == XKB_LAYOUT_INVALID as u32) {
-            level = xkb_state_key_get_level(state, kc, layout) as u32;
-            if !(level == XKB_LEVEL_INVALID as u32) {
+        let layout: u32 = xkb_state_key_get_layout(state, kc);
+        if layout != XKB_LAYOUT_INVALID {
+            level = xkb_state_key_get_level(state, kc, layout);
+            if level != XKB_LEVEL_INVALID {
                 key = XkbKey((*state).keymap, kc) as *const xkb_key;
                 if !key.is_null() {
                     leveli = xkb_keymap_key_get_level((*state).keymap, key, layout, level);
@@ -2268,7 +2222,7 @@ pub unsafe fn xkb_state_key_get_syms(
                             if should_do_caps_transformation(state, kc) {
                                 if num_syms > 1 {
                                     *syms_out = if (*leveli).has_upper as i32 != 0 {
-                                        (*leveli).syms.as_ptr().offset(num_syms as isize)
+                                        (*leveli).syms.as_ptr().add(num_syms)
                                     } else {
                                         (*leveli).syms.as_ptr()
                                     };
@@ -2285,7 +2239,7 @@ pub unsafe fn xkb_state_key_get_syms(
             }
         }
         *syms_out = std::ptr::null();
-        return 0 as i32;
+        0_i32
     }
 }
 
@@ -2293,37 +2247,34 @@ pub unsafe fn xkb_state_key_get_one_sym(state: *mut xkb_state, kc: u32) -> u32 {
     unsafe {
         let mut syms: *const u32 = std::ptr::null();
         let num_syms: i32 = xkb_state_key_get_syms(state, kc, &raw mut syms) as i32;
-        if num_syms != 1 as i32 {
-            return XKB_KEY_NoSymbol as u32;
+        if num_syms != 1_i32 {
+            XKB_KEY_NoSymbol as u32
         } else {
-            return *syms.offset(0 as i32 as isize);
-        };
+            *syms.offset(0_i32 as isize)
+        }
     }
 }
 
 unsafe fn get_one_sym_for_string(state: *mut xkb_state, kc: u32) -> u32 {
     unsafe {
-        let layout: u32 = xkb_state_key_get_layout(state, kc) as u32;
-        let num_layouts: u32 = xkb_keymap_num_layouts_for_key((*state).keymap, kc) as u32;
+        let layout: u32 = xkb_state_key_get_layout(state, kc);
+        let num_layouts: u32 = xkb_keymap_num_layouts_for_key((*state).keymap, kc);
         let mut level: u32 = xkb_state_key_get_level(state, kc, layout);
-        if layout == XKB_LAYOUT_INVALID as u32
-            || num_layouts == 0 as u32
-            || level == XKB_LEVEL_INVALID as u32
-        {
+        if layout == XKB_LAYOUT_INVALID || num_layouts == 0_u32 || level == XKB_LEVEL_INVALID {
             return XKB_KEY_NoSymbol as u32;
         }
         let mut syms: *const u32 = std::ptr::null();
         let mut nsyms: i32 =
             xkb_keymap_key_get_syms_by_level((*state).keymap, kc, layout, level, &raw mut syms);
-        if nsyms != 1 as i32 {
+        if nsyms != 1_i32 {
             return XKB_KEY_NoSymbol as u32;
         }
-        let mut sym: u32 = *syms.offset(0 as i32 as isize);
-        if should_do_ctrl_transformation(state, kc) as i32 != 0 && sym > 127 as u32 {
-            let mut i: u32 = 0 as u32;
+        let mut sym: u32 = *syms.offset(0_i32 as isize);
+        if should_do_ctrl_transformation(state, kc) as i32 != 0 && sym > 127_u32 {
+            let mut i: u32 = 0_u32;
             while i < num_layouts {
                 level = xkb_state_key_get_level(state, kc, i);
-                if !(level == XKB_LEVEL_INVALID as u32) {
+                if level != XKB_LEVEL_INVALID {
                     nsyms = xkb_keymap_key_get_syms_by_level(
                         (*state).keymap,
                         kc,
@@ -2331,8 +2282,8 @@ unsafe fn get_one_sym_for_string(state: *mut xkb_state, kc: u32) -> u32 {
                         level,
                         &raw mut syms,
                     );
-                    if nsyms == 1 as i32 && *syms.offset(0 as i32 as isize) <= 127 as u32 {
-                        sym = *syms.offset(0 as i32 as isize);
+                    if nsyms == 1_i32 && *syms.offset(0_i32 as isize) <= 127_u32 {
+                        sym = *syms.offset(0_i32 as isize);
                         break;
                     }
                 }
@@ -2342,7 +2293,7 @@ unsafe fn get_one_sym_for_string(state: *mut xkb_state, kc: u32) -> u32 {
         if should_do_caps_transformation(state, kc) {
             sym = xkb_keysym_to_upper(sym);
         }
-        return sym;
+        sym
     }
 }
 
@@ -2356,18 +2307,18 @@ pub unsafe fn xkb_state_key_get_utf8(
         let c2rust_current_block: u64;
         let nsyms: i32;
         let mut syms: *const u32 = std::ptr::null();
-        let sym: u32 = get_one_sym_for_string(state, kc) as u32;
+        let sym: u32 = get_one_sym_for_string(state, kc);
         if sym != XKB_KEY_NoSymbol as u32 {
-            nsyms = 1 as i32;
+            nsyms = 1_i32;
             syms = &raw const sym;
         } else {
             nsyms = xkb_state_key_get_syms(state, kc, &raw mut syms);
         }
-        let mut offset: i32 = 0 as i32;
+        let mut offset: i32 = 0_i32;
         let mut tmp: [i8; 5] = [0; 5];
-        let mut i: i32 = 0 as i32;
+        let mut i: i32 = 0_i32;
         loop {
-            if !(i < nsyms) {
+            if i >= nsyms {
                 c2rust_current_block = 11050875288958768710;
                 break;
             }
@@ -2376,7 +2327,7 @@ pub unsafe fn xkb_state_key_get_utf8(
                 &raw mut tmp as *mut i8,
                 std::mem::size_of::<[i8; 5]>(),
             );
-            if ret <= 0 as i32 {
+            if ret <= 0_i32 {
                 c2rust_current_block = 17545813786824981435;
                 break;
             }
@@ -2391,49 +2342,46 @@ pub unsafe fn xkb_state_key_get_utf8(
             offset += ret;
             i += 1;
         }
-        match c2rust_current_block {
-            11050875288958768710 => {
-                if offset as usize >= size {
-                    if size > 0 as usize {
-                        *buffer.offset(size.wrapping_sub(1 as usize) as isize) = '\0' as i32 as i8;
+        if c2rust_current_block == 11050875288958768710 {
+            if offset as usize >= size {
+                if size > 0_usize {
+                    *buffer.add(size.wrapping_sub(1_usize)) = '\0' as i32 as i8;
+                }
+                return offset;
+            } else {
+                *buffer.offset(offset as isize) = '\0' as i32 as i8;
+                if is_valid_utf8(buffer, offset as usize) {
+                    if offset == 1_i32
+                        && *buffer.offset(0_i32 as isize) as u32 <= 127_u32
+                        && should_do_ctrl_transformation(state, kc) as i32 != 0
+                    {
+                        // XkbToControl inlined
+                        *buffer.offset(0_i32 as isize) = {
+                            let mut c: i8 = *buffer.offset(0_i32 as isize);
+                            if c as i32 >= '@' as i32 && (c as i32) < '\u{7f}' as i32
+                                || c as i32 == ' ' as i32
+                            {
+                                c = (c as i32 & 0x1f_i32) as i8;
+                            } else if c as i32 == '2' as i32 {
+                                c = '\0' as i32 as i8;
+                            } else if c as i32 >= '3' as i32 && c as i32 <= '7' as i32 {
+                                c = (c as i32 - ('3' as i32 - '\u{1b}' as i32)) as i8;
+                            } else if c as i32 == '8' as i32 {
+                                c = '\u{7f}' as i32 as i8;
+                            } else if c as i32 == '/' as i32 {
+                                c = ('_' as i32 & 0x1f_i32) as i8;
+                            }
+                            c
+                        };
                     }
                     return offset;
-                } else {
-                    *buffer.offset(offset as isize) = '\0' as i32 as i8;
-                    if is_valid_utf8(buffer, offset as usize) {
-                        if offset == 1 as i32
-                            && *buffer.offset(0 as i32 as isize) as u32 <= 127 as u32
-                            && should_do_ctrl_transformation(state, kc) as i32 != 0
-                        {
-                            // XkbToControl inlined
-                            *buffer.offset(0 as i32 as isize) = {
-                                let mut c: i8 = *buffer.offset(0 as i32 as isize);
-                                if c as i32 >= '@' as i32 && (c as i32) < '\u{7f}' as i32
-                                    || c as i32 == ' ' as i32
-                                {
-                                    c = (c as i32 & 0x1f as i32) as i8;
-                                } else if c as i32 == '2' as i32 {
-                                    c = '\0' as i32 as i8;
-                                } else if c as i32 >= '3' as i32 && c as i32 <= '7' as i32 {
-                                    c = (c as i32 - ('3' as i32 - '\u{1b}' as i32)) as i8;
-                                } else if c as i32 == '8' as i32 {
-                                    c = '\u{7f}' as i32 as i8;
-                                } else if c as i32 == '/' as i32 {
-                                    c = ('_' as i32 & 0x1f as i32) as i8;
-                                }
-                                c
-                            };
-                        }
-                        return offset;
-                    }
                 }
             }
-            _ => {}
         }
-        if size > 0 as usize {
-            *buffer.offset(0 as i32 as isize) = '\0' as i32 as i8;
+        if size > 0_usize {
+            *buffer.offset(0_i32 as isize) = '\0' as i32 as i8;
         }
-        return 0 as i32;
+        0_i32
     }
 }
 
@@ -2441,51 +2389,47 @@ pub unsafe fn xkb_state_key_get_utf8(
 
 unsafe fn serialize_mods(components: *const state_components, type_0: u32) -> u32 {
     unsafe {
-        let mut ret: u32 = 0 as u32;
-        if type_0 as u32 & XKB_STATE_MODS_EFFECTIVE as u32 != 0 {
+        let mut ret: u32 = 0_u32;
+        if type_0 & XKB_STATE_MODS_EFFECTIVE != 0 {
             return (*components).mods;
         }
-        if type_0 as u32 & XKB_STATE_MODS_DEPRESSED as u32 != 0 {
+        if type_0 & XKB_STATE_MODS_DEPRESSED != 0 {
             ret |= (*components).base_mods;
         }
-        if type_0 as u32 & XKB_STATE_MODS_LATCHED as u32 != 0 {
+        if type_0 & XKB_STATE_MODS_LATCHED != 0 {
             ret |= (*components).latched_mods;
         }
-        if type_0 as u32 & XKB_STATE_MODS_LOCKED as u32 != 0 {
+        if type_0 & XKB_STATE_MODS_LOCKED != 0 {
             ret |= (*components).locked_mods;
         }
-        return ret;
+        ret
     }
 }
 pub unsafe fn xkb_state_serialize_mods(state: *mut xkb_state, type_0: u32) -> u32 {
-    unsafe {
-        return serialize_mods(&raw mut (*state).components, type_0);
-    }
+    unsafe { serialize_mods(&raw mut (*state).components, type_0) }
 }
 #[inline]
 
 unsafe fn serialize_layout(components: *const state_components, type_0: u32) -> u32 {
     unsafe {
-        let mut ret: u32 = 0 as u32;
-        if type_0 as u32 & XKB_STATE_LAYOUT_EFFECTIVE as u32 != 0 {
+        let mut ret: u32 = 0_u32;
+        if type_0 & XKB_STATE_LAYOUT_EFFECTIVE != 0 {
             return (*components).group;
         }
-        if type_0 as u32 & XKB_STATE_LAYOUT_DEPRESSED as u32 != 0 {
+        if type_0 & XKB_STATE_LAYOUT_DEPRESSED != 0 {
             ret = ret.wrapping_add((*components).base_group as u32);
         }
-        if type_0 as u32 & XKB_STATE_LAYOUT_LATCHED as u32 != 0 {
+        if type_0 & XKB_STATE_LAYOUT_LATCHED != 0 {
             ret = ret.wrapping_add((*components).latched_group as u32);
         }
-        if type_0 as u32 & XKB_STATE_LAYOUT_LOCKED as u32 != 0 {
+        if type_0 & XKB_STATE_LAYOUT_LOCKED != 0 {
             ret = ret.wrapping_add((*components).locked_group as u32);
         }
-        return ret;
+        ret
     }
 }
 pub unsafe fn xkb_state_serialize_layout(state: *mut xkb_state, type_0: u32) -> u32 {
-    unsafe {
-        return serialize_layout(&raw mut (*state).components, type_0);
-    }
+    unsafe { serialize_layout(&raw mut (*state).components, type_0) }
 }
 
 pub unsafe fn mod_mask_get_effective(keymap: *mut xkb_keymap, mods: u32) -> u32 {
@@ -2497,26 +2441,26 @@ pub unsafe fn mod_mask_get_effective(keymap: *mut xkb_keymap, mods: u32) -> u32 
         mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
             .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize) as *mut xkb_mod;
         while i < (*keymap).mods.num_mods {
-            if mods & (1 as u32) << i != 0 {
+            if mods & 1_u32 << i != 0 {
                 mask |= (*mod_0).mapping;
             }
             i = i.wrapping_add(1);
             mod_0 = mod_0.offset(1);
         }
-        return mask;
+        mask
     }
 }
 
 pub unsafe fn xkb_state_mod_index_is_active(state: *mut xkb_state, idx: u32, type_0: u32) -> i32 {
     unsafe {
         if (idx >= xkb_keymap_num_mods((*state).keymap)) as i64 != 0 {
-            return -1 as i32;
+            return -1_i32;
         }
         let mapping: u32 = (*(*state).keymap).mods.mods[idx as usize].mapping;
         if mapping == 0 {
-            return 0 as i32;
+            return 0_i32;
         }
-        return (xkb_state_serialize_mods(state, type_0) & mapping == mapping) as i32;
+        (xkb_state_serialize_mods(state, type_0) & mapping == mapping) as i32
     }
 }
 
@@ -2527,14 +2471,14 @@ unsafe fn match_mod_masks(
     wanted: u32,
 ) -> bool {
     unsafe {
-        let active: u32 = xkb_state_serialize_mods(state, type_0) as u32;
-        if match_0 as u32 & XKB_STATE_MATCH_NON_EXCLUSIVE as u32 == 0 && active & !wanted != 0 {
+        let active: u32 = xkb_state_serialize_mods(state, type_0);
+        if match_0 & XKB_STATE_MATCH_NON_EXCLUSIVE == 0 && active & !wanted != 0 {
             return false;
         }
-        if match_0 as u32 & XKB_STATE_MATCH_ANY as u32 != 0 {
+        if match_0 & XKB_STATE_MATCH_ANY != 0 {
             return active & wanted != 0;
         }
-        return active & wanted == wanted;
+        active & wanted == wanted
     }
 }
 
@@ -2545,33 +2489,33 @@ pub unsafe extern "C" fn xkb_state_mod_indices_are_active(
     c2rust_args: ...
 ) -> i32 {
     unsafe {
-        if match_0 as u32 & !(XKB_STATE_MATCH_FLAGS as i32 as xkb_state_match as u32) != 0 {
-            return -2 as i32;
+        if match_0 & !(XKB_STATE_MATCH_FLAGS as i32 as xkb_state_match) != 0 {
+            return -2_i32;
         }
         let mut ap: ::core::ffi::VaList;
-        let mut wanted: u32 = 0 as u32;
-        let mut ret: i32 = 0 as i32;
-        let num_mods: u32 = xkb_keymap_num_mods((*state).keymap) as u32;
+        let mut wanted: u32 = 0_u32;
+        let mut ret: i32 = 0_i32;
+        let num_mods: u32 = xkb_keymap_num_mods((*state).keymap);
         ap = c2rust_args.clone();
         loop {
             let idx: u32 = ap.arg::<u32>();
-            if idx == XKB_MOD_INVALID as u32 {
+            if idx == XKB_MOD_INVALID {
                 break;
             }
             if (idx >= num_mods) as i64 != 0 {
-                ret = -1 as i32;
+                ret = -1_i32;
                 break;
             } else {
                 wanted |= (*(*state).keymap).mods.mods[idx as usize].mapping;
             }
         }
-        if ret == -1 as i32 {
+        if ret == -1_i32 {
             return ret;
         }
         if wanted == 0 {
-            return 0 as i32;
+            return 0_i32;
         }
-        return match_mod_masks(state, type_0, match_0, wanted) as i32;
+        match_mod_masks(state, type_0, match_0, wanted) as i32
     }
 }
 
@@ -2581,11 +2525,11 @@ pub unsafe fn xkb_state_mod_name_is_active(
     type_0: u32,
 ) -> i32 {
     unsafe {
-        let idx: u32 = xkb_keymap_mod_get_index((*state).keymap, name) as u32;
-        if idx == XKB_MOD_INVALID as u32 {
-            return -1 as i32;
+        let idx: u32 = xkb_keymap_mod_get_index((*state).keymap, name);
+        if idx == XKB_MOD_INVALID {
+            return -1_i32;
         }
-        return xkb_state_mod_index_is_active(state, idx, type_0);
+        xkb_state_mod_index_is_active(state, idx, type_0)
     }
 }
 
@@ -2596,33 +2540,33 @@ pub unsafe extern "C" fn xkb_state_mod_names_are_active(
     c2rust_args: ...
 ) -> i32 {
     unsafe {
-        if match_0 as u32 & !(XKB_STATE_MATCH_FLAGS as i32 as xkb_state_match as u32) != 0 {
-            return -2 as i32;
+        if match_0 & !(XKB_STATE_MATCH_FLAGS as i32 as xkb_state_match) != 0 {
+            return -2_i32;
         }
         let mut ap: ::core::ffi::VaList;
-        let mut wanted: u32 = 0 as u32;
-        let mut ret: i32 = 0 as i32;
+        let mut wanted: u32 = 0_u32;
+        let mut ret: i32 = 0_i32;
         ap = c2rust_args.clone();
         loop {
             let str: *const i8 = ap.arg::<*const i8>();
             if str.is_null() {
                 break;
             }
-            let idx: u32 = xkb_keymap_mod_get_index((*state).keymap, str) as u32;
-            if idx == XKB_MOD_INVALID as u32 {
-                ret = -1 as i32;
+            let idx: u32 = xkb_keymap_mod_get_index((*state).keymap, str);
+            if idx == XKB_MOD_INVALID {
+                ret = -1_i32;
                 break;
             } else {
                 wanted |= (*(*state).keymap).mods.mods[idx as usize].mapping;
             }
         }
-        if ret == -1 as i32 {
+        if ret == -1_i32 {
             return ret;
         }
         if wanted == 0 {
-            return 0 as i32;
+            return 0_i32;
         }
-        return match_mod_masks(state, type_0, match_0, wanted) as i32;
+        match_mod_masks(state, type_0, match_0, wanted) as i32
     }
 }
 
@@ -2633,22 +2577,22 @@ pub unsafe fn xkb_state_layout_index_is_active(
 ) -> i32 {
     unsafe {
         if idx >= (*(*state).keymap).num_groups {
-            return -1 as i32;
+            return -1_i32;
         }
-        let mut ret: i32 = 0 as i32;
-        if type_0 as u32 & XKB_STATE_LAYOUT_EFFECTIVE as u32 != 0 {
+        let mut ret: i32 = 0_i32;
+        if type_0 & XKB_STATE_LAYOUT_EFFECTIVE != 0 {
             ret |= ((*state).components.group == idx) as i32;
         }
-        if type_0 as u32 & XKB_STATE_LAYOUT_DEPRESSED as u32 != 0 {
+        if type_0 & XKB_STATE_LAYOUT_DEPRESSED != 0 {
             ret |= ((*state).components.base_group == idx as i32) as i32;
         }
-        if type_0 as u32 & XKB_STATE_LAYOUT_LATCHED as u32 != 0 {
+        if type_0 & XKB_STATE_LAYOUT_LATCHED != 0 {
             ret |= ((*state).components.latched_group == idx as i32) as i32;
         }
-        if type_0 as u32 & XKB_STATE_LAYOUT_LOCKED as u32 != 0 {
+        if type_0 & XKB_STATE_LAYOUT_LOCKED != 0 {
             ret |= ((*state).components.locked_group == idx as i32) as i32;
         }
-        return ret;
+        ret
     }
 }
 
@@ -2658,31 +2602,31 @@ pub unsafe fn xkb_state_layout_name_is_active(
     type_0: u32,
 ) -> i32 {
     unsafe {
-        let idx: u32 = xkb_keymap_layout_get_index((*state).keymap, name) as u32;
-        if idx == XKB_LAYOUT_INVALID as u32 {
-            return -1 as i32;
+        let idx: u32 = xkb_keymap_layout_get_index((*state).keymap, name);
+        if idx == XKB_LAYOUT_INVALID {
+            return -1_i32;
         }
-        return xkb_state_layout_index_is_active(state, idx, type_0);
+        xkb_state_layout_index_is_active(state, idx, type_0)
     }
 }
 pub unsafe fn xkb_state_led_index_is_active(state: *mut xkb_state, idx: u32) -> i32 {
     unsafe {
         if idx >= (*(*state).keymap).num_leds
-            || (*(*state).keymap).leds[idx as usize].name == XKB_ATOM_NONE as u32
+            || (*(*state).keymap).leds[idx as usize].name == XKB_ATOM_NONE
         {
-            return -1 as i32;
+            return -1_i32;
         }
-        return ((*state).components.leds & (1 as xkb_led_mask_t) << idx != 0) as i32;
+        ((*state).components.leds & (1 as xkb_led_mask_t) << idx != 0) as i32
     }
 }
 
 pub unsafe fn xkb_state_led_name_is_active(state: *mut xkb_state, name: *const i8) -> i32 {
     unsafe {
-        let idx: u32 = xkb_keymap_led_get_index((*state).keymap, name) as u32;
-        if idx == XKB_LED_INVALID as u32 {
-            return -1 as i32;
+        let idx: u32 = xkb_keymap_led_get_index((*state).keymap, name);
+        if idx == XKB_LED_INVALID {
+            return -1_i32;
         }
-        return xkb_state_led_index_is_active(state, idx);
+        xkb_state_led_index_is_active(state, idx)
     }
 }
 
@@ -2692,12 +2636,12 @@ unsafe fn key_get_consumed(
     mode: xkb_consumed_mode,
 ) -> u32 {
     unsafe {
-        let group: u32 = xkb_state_key_get_layout(state, (*key).keycode) as u32;
-        if group == XKB_LAYOUT_INVALID as u32 {
-            return 0 as u32;
+        let group: u32 = xkb_state_key_get_layout(state, (*key).keycode);
+        if group == XKB_LAYOUT_INVALID {
+            return 0_u32;
         }
-        let mut preserve: u32 = 0 as u32;
-        let mut consumed: u32 = 0 as u32;
+        let mut preserve: u32 = 0_u32;
+        let mut consumed: u32 = 0_u32;
         let matching_entry: *const xkb_key_type_entry =
             get_entry_for_key_state(state, key, group) as *const xkb_key_type_entry;
         if !matching_entry.is_null() {
@@ -2705,36 +2649,35 @@ unsafe fn key_get_consumed(
         }
         let type_0: *const xkb_key_type =
             &(&(*(*state).keymap).types)[(&(*key).groups)[group as usize].type_idx as usize];
-        match mode as u32 {
+        match mode {
             0 => {
                 consumed = (*type_0).mods.mask;
             }
             1 => {
                 let no_mods_entry: *const xkb_key_type_entry =
-                    get_entry_for_mods(type_0, 0 as u32) as *const xkb_key_type_entry;
+                    get_entry_for_mods(type_0, 0_u32) as *const xkb_key_type_entry;
                 let no_mods_leveli: u32 = if !no_mods_entry.is_null() {
                     (*no_mods_entry).level
                 } else {
-                    0 as u32
+                    0_u32
                 };
                 let no_mods_level: *const xkb_level = &(&(*key).groups)[group as usize].levels
                     [no_mods_leveli as usize]
                     as *const xkb_level;
-                let mut i: u32 = 0 as u32;
-                while i < (&(*type_0).entries).len() as u32 {
+                let mut i: u32 = 0_u32;
+                while i < (*type_0).entries.len() as u32 {
                     let entry: *const xkb_key_type_entry =
                         &(&(*type_0).entries)[i as usize] as *const xkb_key_type_entry;
                     if entry_is_active(entry) {
                         let level: *const xkb_level = &(&(*key).groups)[group as usize].levels
                             [(*entry).level as usize]
                             as *const xkb_level;
-                        if !XkbLevelsSameSyms(level, no_mods_level) {
-                            if entry == matching_entry
-                                || ((*entry).mods.mask as u32 != 0
-                                    && ((*entry).mods.mask as u32).is_power_of_two())
-                            {
-                                consumed |= (*entry).mods.mask & !(*entry).preserve.mask;
-                            }
+                        if !XkbLevelsSameSyms(level, no_mods_level)
+                            && (entry == matching_entry
+                                || ((*entry).mods.mask != 0
+                                    && (*entry).mods.mask.is_power_of_two()))
+                        {
+                            consumed |= (*entry).mods.mask & !(*entry).preserve.mask;
                         }
                     }
                     i = i.wrapping_add(1);
@@ -2742,7 +2685,7 @@ unsafe fn key_get_consumed(
             }
             _ => {}
         }
-        return consumed & !preserve;
+        consumed & !preserve
     }
 }
 
@@ -2755,25 +2698,23 @@ pub unsafe fn xkb_state_mod_index_is_consumed2(
     unsafe {
         let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
         if (key.is_null() || idx >= xkb_keymap_num_mods((*state).keymap)) as i64 != 0 {
-            return -1 as i32;
+            return -1_i32;
         }
         let mapping: u32 = (*(*state).keymap).mods.mods[idx as usize].mapping;
         if mapping == 0 {
-            return 0 as i32;
+            return 0_i32;
         }
-        return (mapping & key_get_consumed(state, key, mode) == mapping) as i32;
+        (mapping & key_get_consumed(state, key, mode) == mapping) as i32
     }
 }
 
 pub unsafe fn xkb_state_mod_index_is_consumed(state: *mut xkb_state, kc: u32, idx: u32) -> i32 {
-    unsafe {
-        return xkb_state_mod_index_is_consumed2(state, kc, idx, XKB_CONSUMED_MODE_XKB);
-    }
+    unsafe { xkb_state_mod_index_is_consumed2(state, kc, idx, XKB_CONSUMED_MODE_XKB) }
 }
 
 unsafe fn c2rust_run_static_initializers() {
     unsafe {
-        synthetic_key_type.entries = vec![synthetic_key_level_entry];
+        SYNTHETIC_KEY_TYPE.entries = vec![SYNTHETIC_KEY_LEVEL_ENTRY];
         let synthetic_key_group_break_group_latch = xkb_group {
             explicit_symbols: false,
             explicit_actions: false,
@@ -2793,7 +2734,7 @@ unsafe fn c2rust_run_static_initializers() {
                 }],
             }],
         };
-        synthetic_key_break_group_latch = xkb_key {
+        SYNTHETIC_KEY_BREAK_GROUP_LATCH = xkb_key {
             keycode: 0,
             name: 0,
             explicit: 0 as xkb_explicit_components,
@@ -2809,8 +2750,8 @@ unsafe fn c2rust_run_static_initializers() {
             groups: vec![synthetic_key_group_break_group_latch],
             overlay_keys: Vec::new(),
         };
-        synthetic_key = xkb_key {
-            keycode: 0 as u32,
+        SYNTHETIC_KEY = xkb_key {
+            keycode: 0_u32,
             name: 0,
             explicit: 0 as xkb_explicit_components,
             modmap: 0,

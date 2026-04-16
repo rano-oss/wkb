@@ -26,11 +26,11 @@ pub const XKB_FEATURE_ENUM_ERROR_CODE: xkb_feature = 1000;
 pub const XKB_FEATURE_ENUM_FEATURE: xkb_feature = 1;
 
 pub static mut xkb_log_level_values: [u32; 5] = [
-    XKB_LOG_LEVEL_CRITICAL as u32,
-    XKB_LOG_LEVEL_ERROR as u32,
-    XKB_LOG_LEVEL_WARNING as u32,
-    XKB_LOG_LEVEL_INFO as u32,
-    XKB_LOG_LEVEL_DEBUG as u32,
+    XKB_LOG_LEVEL_CRITICAL,
+    XKB_LOG_LEVEL_ERROR,
+    XKB_LOG_LEVEL_WARNING,
+    XKB_LOG_LEVEL_INFO,
+    XKB_LOG_LEVEL_DEBUG,
 ];
 pub static mut xkb_error_code_values: [u32; 9] = [
     XKB_ERROR_INVALID as u32,
@@ -44,130 +44,90 @@ pub static mut xkb_error_code_values: [u32; 9] = [
     XKB_ERROR_ABI_BACKWARD_COMPAT as u32,
 ];
 pub static mut xkb_feature_values: [u32; 24] = [
-    XKB_FEATURE_ENUM_FEATURE as u32,
-    XKB_FEATURE_ENUM_ERROR_CODE as u32,
-    XKB_FEATURE_ENUM_CONTEXT_FLAGS as u32,
-    XKB_FEATURE_ENUM_LOG_LEVEL as u32,
-    XKB_FEATURE_ENUM_KEYSYM_FLAGS as u32,
-    XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS as u32,
-    XKB_FEATURE_ENUM_KEYMAP_FORMAT as u32,
-    XKB_FEATURE_ENUM_KEYMAP_COMPILE_FLAGS as u32,
-    XKB_FEATURE_ENUM_KEYMAP_SERIALIZE_FLAGS as u32,
-    XKB_FEATURE_ENUM_KEYMAP_KEY_ITERATOR_FLAGS as u32,
-    XKB_FEATURE_ENUM_STATE_COMPONENT as u32,
-    XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY as u32,
-    XKB_FEATURE_ENUM_A11Y_FLAGS as u32,
-    XKB_FEATURE_ENUM_KEYBOARD_CONTROL_FLAGS as u32,
-    XKB_FEATURE_ENUM_STATE_MATCH as u32,
-    XKB_FEATURE_ENUM_CONSUMED_MODE as u32,
-    XKB_FEATURE_ENUM_EVENT_TYPE as u32,
-    XKB_FEATURE_ENUM_KEY_DIRECTION as u32,
-    XKB_FEATURE_ENUM_EVENTS_FLAGS as u32,
-    XKB_FEATURE_ENUM_COMPOSE_FORMAT as u32,
-    XKB_FEATURE_ENUM_COMPOSE_COMPILE_FLAGS as u32,
-    XKB_FEATURE_ENUM_COMPOSE_STATUS as u32,
-    XKB_FEATURE_ENUM_COMPOSE_STATE_FLAGS as u32,
-    XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT as u32,
+    XKB_FEATURE_ENUM_FEATURE,
+    XKB_FEATURE_ENUM_ERROR_CODE,
+    XKB_FEATURE_ENUM_CONTEXT_FLAGS,
+    XKB_FEATURE_ENUM_LOG_LEVEL,
+    XKB_FEATURE_ENUM_KEYSYM_FLAGS,
+    XKB_FEATURE_ENUM_RMLVO_BUILDER_FLAGS,
+    XKB_FEATURE_ENUM_KEYMAP_FORMAT,
+    XKB_FEATURE_ENUM_KEYMAP_COMPILE_FLAGS,
+    XKB_FEATURE_ENUM_KEYMAP_SERIALIZE_FLAGS,
+    XKB_FEATURE_ENUM_KEYMAP_KEY_ITERATOR_FLAGS,
+    XKB_FEATURE_ENUM_STATE_COMPONENT,
+    XKB_FEATURE_ENUM_LAYOUT_OUT_OF_RANGE_POLICY,
+    XKB_FEATURE_ENUM_A11Y_FLAGS,
+    XKB_FEATURE_ENUM_KEYBOARD_CONTROL_FLAGS,
+    XKB_FEATURE_ENUM_STATE_MATCH,
+    XKB_FEATURE_ENUM_CONSUMED_MODE,
+    XKB_FEATURE_ENUM_EVENT_TYPE,
+    XKB_FEATURE_ENUM_KEY_DIRECTION,
+    XKB_FEATURE_ENUM_EVENTS_FLAGS,
+    XKB_FEATURE_ENUM_COMPOSE_FORMAT,
+    XKB_FEATURE_ENUM_COMPOSE_COMPILE_FLAGS,
+    XKB_FEATURE_ENUM_COMPOSE_STATUS,
+    XKB_FEATURE_ENUM_COMPOSE_STATE_FLAGS,
+    XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT,
 ];
 
 fn is_supported_enum_value_mask(values: u32, value: u32) -> bool {
-    return value < 32 as u32 && values as u32 & (1 as u32) << value != 0;
+    value < 32_u32 && values & 1_u32 << value != 0
 }
 unsafe fn is_supported_enum_value_array(values: *const u32, size: usize, value: u32) -> bool {
     unsafe {
-        let mut v: usize = 0 as usize;
+        let mut v: usize = 0_usize;
         while v < size {
-            if *values.offset(v as isize) == value {
+            if *values.add(v) == value {
                 return true;
             }
             v = v.wrapping_add(1);
         }
-        return false;
+        false
     }
 }
 fn is_supported_flag_value(values: u32, accept_zero: bool, value: u32) -> bool {
-    return (accept_zero as i32 != 0 || value != 0) && values as u32 & value == value;
+    (accept_zero as i32 != 0 || value != 0) && values & value == value
 }
 pub unsafe fn xkb_feature_supported(feature: xkb_feature, value: u32) -> bool {
     unsafe {
-        match feature as u32 {
-            1 => {
-                return is_supported_enum_value_array(
-                    &raw const xkb_feature_values as *const u32,
-                    (std::mem::size_of::<[u32; 24]>()).wrapping_div(std::mem::size_of::<u32>()),
-                    value,
-                );
-            }
-            1000 => {
-                return is_supported_enum_value_array(
-                    &raw const xkb_error_code_values as *const u32,
-                    (std::mem::size_of::<[u32; 9]>()).wrapping_div(std::mem::size_of::<u32>()),
-                    value,
-                );
-            }
-            3200 => {
-                return is_supported_flag_value(XKB_CONTEXT_FLAGS_VALUES, true, value);
-            }
-            5100 => {
-                return is_supported_enum_value_array(
-                    &raw const xkb_log_level_values as *const u32,
-                    (std::mem::size_of::<[u32; 5]>()).wrapping_div(std::mem::size_of::<u32>()),
-                    value,
-                );
-            }
-            9200 => {
-                return is_supported_flag_value(XKB_KEYSYM_FLAGS_VALUES, true, value);
-            }
-            18200 => {
-                return is_supported_flag_value(XKB_RMLVO_BUILDER_FLAGS_VALUES, true, value);
-            }
-            21000 => return is_supported_enum_value_mask(XKB_KEYMAP_FORMAT_VALUES, value),
-            21200 => {
-                return is_supported_flag_value(XKB_KEYMAP_COMPILE_FLAGS_VALUES, true, value);
-            }
-            21400 => {
-                return is_supported_flag_value(XKB_KEYMAP_SERIALIZE_FLAGS_VALUES, true, value);
-            }
-            21600 => {
-                return is_supported_flag_value(XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES, true, value);
-            }
-            24000 => {
-                return is_supported_flag_value(XKB_STATE_COMPONENT_VALUES, false, value);
-            }
-            24020 => {
-                return is_supported_enum_value_mask(XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, value);
-            }
-            24040 => {
-                return is_supported_flag_value(XKB_A11Y_FLAGS_VALUES, true, value);
-            }
-            24060 => {
-                return is_supported_flag_value(XKB_KEYBOARD_CONTROL_FLAGS_VALUES, true, value);
-            }
-            24820 => {
-                return is_supported_flag_value(XKB_STATE_MATCH_VALUES, false, value);
-            }
-            24840 => return is_supported_enum_value_mask(XKB_CONSUMED_MODE_VALUES, value),
-            27000 => return is_supported_enum_value_mask(XKB_EVENT_TYPE_VALUES, value),
-            27020 => return is_supported_enum_value_mask(XKB_KEY_DIRECTION_VALUES, value),
-            27600 => {
-                return is_supported_flag_value(XKB_EVENTS_FLAGS_VALUES, true, value);
-            }
-            30000 => {
-                return is_supported_enum_value_mask(XKB_COMPOSE_FORMAT_VALUES, value);
-            }
-            30200 => {
-                return is_supported_flag_value(XKB_COMPOSE_COMPILE_FLAGS_VALUES, true, value);
-            }
-            31000 => {
-                return is_supported_enum_value_mask(XKB_COMPOSE_STATUS_VALUES, value);
-            }
-            31200 => {
-                return is_supported_flag_value(XKB_COMPOSE_STATE_FLAGS_VALUES, true, value);
-            }
-            31300 => {
-                return is_supported_enum_value_mask(XKB_COMPOSE_FEED_RESULT_VALUES, value);
-            }
-            _ => return false,
-        };
+        match feature {
+            1 => is_supported_enum_value_array(
+                &raw const xkb_feature_values as *const u32,
+                (std::mem::size_of::<[u32; 24]>()).wrapping_div(std::mem::size_of::<u32>()),
+                value,
+            ),
+            1000 => is_supported_enum_value_array(
+                &raw const xkb_error_code_values as *const u32,
+                (std::mem::size_of::<[u32; 9]>()).wrapping_div(std::mem::size_of::<u32>()),
+                value,
+            ),
+            3200 => is_supported_flag_value(XKB_CONTEXT_FLAGS_VALUES, true, value),
+            5100 => is_supported_enum_value_array(
+                &raw const xkb_log_level_values as *const u32,
+                (std::mem::size_of::<[u32; 5]>()).wrapping_div(std::mem::size_of::<u32>()),
+                value,
+            ),
+            9200 => is_supported_flag_value(XKB_KEYSYM_FLAGS_VALUES, true, value),
+            18200 => is_supported_flag_value(XKB_RMLVO_BUILDER_FLAGS_VALUES, true, value),
+            21000 => is_supported_enum_value_mask(XKB_KEYMAP_FORMAT_VALUES, value),
+            21200 => is_supported_flag_value(XKB_KEYMAP_COMPILE_FLAGS_VALUES, true, value),
+            21400 => is_supported_flag_value(XKB_KEYMAP_SERIALIZE_FLAGS_VALUES, true, value),
+            21600 => is_supported_flag_value(XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES, true, value),
+            24000 => is_supported_flag_value(XKB_STATE_COMPONENT_VALUES, false, value),
+            24020 => is_supported_enum_value_mask(XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, value),
+            24040 => is_supported_flag_value(XKB_A11Y_FLAGS_VALUES, true, value),
+            24060 => is_supported_flag_value(XKB_KEYBOARD_CONTROL_FLAGS_VALUES, true, value),
+            24820 => is_supported_flag_value(XKB_STATE_MATCH_VALUES, false, value),
+            24840 => is_supported_enum_value_mask(XKB_CONSUMED_MODE_VALUES, value),
+            27000 => is_supported_enum_value_mask(XKB_EVENT_TYPE_VALUES, value),
+            27020 => is_supported_enum_value_mask(XKB_KEY_DIRECTION_VALUES, value),
+            27600 => is_supported_flag_value(XKB_EVENTS_FLAGS_VALUES, true, value),
+            30000 => is_supported_enum_value_mask(XKB_COMPOSE_FORMAT_VALUES, value),
+            30200 => is_supported_flag_value(XKB_COMPOSE_COMPILE_FLAGS_VALUES, true, value),
+            31000 => is_supported_enum_value_mask(XKB_COMPOSE_STATUS_VALUES, value),
+            31200 => is_supported_flag_value(XKB_COMPOSE_STATE_FLAGS_VALUES, true, value),
+            31300 => is_supported_enum_value_mask(XKB_COMPOSE_FEED_RESULT_VALUES, value),
+            _ => false,
+        }
     }
 }

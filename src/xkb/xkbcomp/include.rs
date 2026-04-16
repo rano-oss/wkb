@@ -7,7 +7,7 @@ use crate::xkb::context::{
 };
 use crate::xkb_logf;
 
-pub const INCLUDE_MAX_DEPTH: i32 = 15 as i32;
+pub const INCLUDE_MAX_DEPTH: i32 = 15_i32;
 pub const MERGE_OVERRIDE_PREFIX: i32 = '+' as i32;
 pub const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
 pub const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
@@ -15,7 +15,7 @@ pub static mut MERGE_MODE_PREFIXES: [i8; 4] = [
     MERGE_OVERRIDE_PREFIX as i8,
     MERGE_AUGMENT_PREFIX as i8,
     MERGE_REPLACE_PREFIX as i8,
-    0 as i32 as i8,
+    0_i32 as i8,
 ];
 
 pub use crate::xkb::messages::{
@@ -94,9 +94,9 @@ pub unsafe fn ParseIncludeMap(
     extra_data: *mut *mut i8,
 ) -> bool {
     unsafe {
-        let mut tmp: *mut i8 ;
-        let mut str: *mut i8 ;
-        let mut next: *mut i8 ;
+        let mut tmp: *mut i8;
+        let mut str: *mut i8;
+        let mut next: *mut i8;
         str = *str_inout;
         next = crate::xkb::utils::cstr_pbrk(str, &raw const MERGE_MODE_PREFIXES as *const i8);
         if !next.is_null() {
@@ -121,7 +121,7 @@ pub unsafe fn ParseIncludeMap(
         if tmp.is_null() {
             *file_rtrn = cstr_dup(str);
             *map_rtrn = std::ptr::null_mut();
-        } else if *str.offset(0 as i32 as isize) as i32 == '(' as i32 {
+        } else if *str.offset(0_i32 as isize) as i32 == '(' as i32 {
             cstr_free(*extra_data);
             return false;
         } else {
@@ -131,7 +131,7 @@ pub unsafe fn ParseIncludeMap(
             *file_rtrn = cstr_dup(str);
             str = tmp;
             tmp = crate::xkb::utils::cstr_chr(str, ')' as i32);
-            if tmp.is_null() || *tmp.offset(1 as i32 as isize) as i32 != '\0' as i32 {
+            if tmp.is_null() || *tmp.offset(1_i32 as isize) as i32 != '\0' as i32 {
                 cstr_free(*file_rtrn);
                 cstr_free(*extra_data);
                 return false;
@@ -151,10 +151,10 @@ pub unsafe fn ParseIncludeMap(
         } else {
             return false;
         }
-        return true;
+        true
     }
 }
-static mut xkb_file_type_include_dirs: [*const i8; 7] = [
+static mut XKB_FILE_TYPE_INCLUDE_DIRS: [*const i8; 7] = [
     b"keycodes\0".as_ptr() as *const i8,
     b"types\0".as_ptr() as *const i8,
     b"compat\0".as_ptr() as *const i8,
@@ -165,15 +165,15 @@ static mut xkb_file_type_include_dirs: [*const i8; 7] = [
 ];
 unsafe fn DirectoryForInclude(type_0: u32) -> *const i8 {
     unsafe {
-        if type_0 as u32 >= _FILE_TYPE_NUM_ENTRIES as u32 {
+        if type_0 >= _FILE_TYPE_NUM_ENTRIES {
             return b"\0".as_ptr() as *const i8;
         }
-        return xkb_file_type_include_dirs[type_0 as usize];
+        XKB_FILE_TYPE_INCLUDE_DIRS[type_0 as usize]
     }
 }
 unsafe fn LogIncludePaths(ctx: *mut xkb_context) {
     unsafe {
-        if xkb_context_num_include_paths(ctx) > 0 as u32 {
+        if xkb_context_num_include_paths(ctx) > 0_u32 {
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -182,7 +182,7 @@ unsafe fn LogIncludePaths(ctx: *mut xkb_context) {
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
                 xkb_context_num_include_paths(ctx),
             );
-            let mut i: u32 = 0 as u32;
+            let mut i: u32 = 0_u32;
             while i < xkb_context_num_include_paths(ctx) {
                 xkb_logf!(
                     ctx,
@@ -203,7 +203,7 @@ unsafe fn LogIncludePaths(ctx: *mut xkb_context) {
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
             );
         }
-        if xkb_context_num_failed_include_paths(ctx) > 0 as u32 {
+        if xkb_context_num_failed_include_paths(ctx) > 0_u32 {
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -212,7 +212,7 @@ unsafe fn LogIncludePaths(ctx: *mut xkb_context) {
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
                 xkb_context_num_failed_include_paths(ctx),
             );
-            let mut i_0: u32 = 0 as u32;
+            let mut i_0: u32 = 0_u32;
             while i_0 < xkb_context_num_failed_include_paths(ctx) {
                 xkb_logf!(
                     ctx,
@@ -367,7 +367,7 @@ unsafe fn expand_percent(
             return 0;
         }
         std::ptr::copy_nonoverlapping(&raw mut s.buf as *const u8, buf as *mut u8, s.buf_pos);
-        return s.buf_pos;
+        s.buf_pos
     }
 }
 pub unsafe fn expand_path(
@@ -381,21 +381,21 @@ pub unsafe fn expand_path(
 ) -> isize {
     unsafe {
         let c2rust_current_block: u64;
-        let mut k: usize ;
-        k = 0 as usize;
+        let mut k: usize;
+        k = 0_usize;
         loop {
-            if !(k < name_len) {
+            if k >= name_len {
                 c2rust_current_block = 17179679302217393232;
                 break;
             }
-            if *name.offset(k as isize) as i32 == '%' as i32 {
+            if *name.add(k) as i32 == '%' as i32 {
                 c2rust_current_block = 15593259132448327734;
                 break;
             }
             k = k.wrapping_add(1);
         }
         match c2rust_current_block {
-            17179679302217393232 => return 0 as isize,
+            17179679302217393232 => 0_isize,
             _ => {
                 if (k >= buf_size) as i64 != 0 {
                     xkb_logf!(
@@ -406,9 +406,9 @@ pub unsafe fn expand_path(
                         XKB_ERROR_INVALID_PATH as i32,
                         k,
                         buf_size,
-                        crate::xkb::utils::CStrNDisplay(name_len as usize, name),
+                        crate::xkb::utils::CStrNDisplay(name_len, name),
                     );
-                    return -1 as i32 as isize;
+                    return -1_i32 as isize;
                 }
                 std::ptr::copy_nonoverlapping(name as *const u8, buf as *mut u8, k);
                 let typeDir: *const i8 = DirectoryForInclude(type_0);
@@ -416,18 +416,18 @@ pub unsafe fn expand_path(
                     ctx,
                     parent_file_name,
                     typeDir,
-                    buf.offset(k as isize),
+                    buf.add(k),
                     buf_size.wrapping_sub(k),
-                    name.offset(k as isize),
+                    name.add(k),
                     name_len.wrapping_sub(k),
                 );
                 if count == 0 {
-                    return -1 as i32 as isize;
+                    return -1_i32 as isize;
                 }
                 count = count.wrapping_add(k);
-                return count as isize - 1 as isize;
+                count as isize - 1_isize
             }
-        };
+        }
     }
 }
 pub unsafe fn FindFileInXkbPath(
@@ -448,7 +448,7 @@ pub unsafe fn FindFileInXkbPath(
         let typeDir: *const i8 = DirectoryForInclude(type_0);
         let mut i: u32 = *offset;
         loop {
-            if !(i < xkb_context_num_include_paths(ctx)) {
+            if i >= xkb_context_num_include_paths(ctx) {
                 c2rust_current_block = 8515828400728868193;
                 break;
             }
@@ -459,7 +459,7 @@ pub unsafe fn FindFileInXkbPath(
                     "{}/{}/{}",
                     xkb_context_include_path_get(ctx, i),
                     crate::xkb::utils::CStrDisplay(typeDir),
-                    crate::xkb::utils::CStrNDisplay(name_len as usize, name)
+                    crate::xkb::utils::CStrNDisplay(name_len, name)
                 ),
             );
             if _trunc {
@@ -472,7 +472,7 @@ pub unsafe fn FindFileInXkbPath(
                     buf_size,
                     xkb_context_include_path_get(ctx, i),
                     crate::xkb::utils::CStrDisplay(typeDir),
-                    crate::xkb::utils::CStrNDisplay(name_len as usize, name),
+                    crate::xkb::utils::CStrNDisplay(name_len, name),
                 );
             } else {
                 file = fopen(buf, b"rb\0".as_ptr() as *const i8) as *mut FILE;
@@ -485,24 +485,22 @@ pub unsafe fn FindFileInXkbPath(
             i = i.wrapping_add(1);
         }
         match c2rust_current_block {
-            8515828400728868193 => {
-                if required as i32 != 0 && *offset == 0 as u32 {
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
-                        XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                        crate::xkb::utils::CStrDisplay(typeDir),
-                        crate::xkb::utils::CStrNDisplay(name_len as usize, name),
-                    );
-                    LogIncludePaths(ctx);
-                }
+            8515828400728868193 if required as i32 != 0 && *offset == 0_u32 => {
+                xkb_logf!(
+                    ctx,
+                    XKB_LOG_LEVEL_ERROR,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
+                    "[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
+                    XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
+                    crate::xkb::utils::CStrDisplay(typeDir),
+                    crate::xkb::utils::CStrNDisplay(name_len, name),
+                );
+                LogIncludePaths(ctx);
             }
             _ => {}
         }
         cstr_free(name_buffer);
-        return file;
+        file
     }
 }
 pub unsafe fn ExceedsIncludeMaxDepth(_ctx: *mut xkb_context, include_depth: u32) -> bool {
@@ -513,12 +511,12 @@ pub unsafe fn ExceedsIncludeMaxDepth(_ctx: *mut xkb_context, include_depth: u32)
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] Exceeded include depth threshold ({})",
             XKB_ERROR_RECURSIVE_INCLUDE as i32,
-            15 as i32,
+            15_i32,
         );
-        return true;
+        true
     } else {
-        return false;
-    };
+        false
+    }
 }
 pub unsafe fn ProcessIncludeFile(
     ctx: *mut xkb_context,
@@ -540,16 +538,16 @@ pub unsafe fn ProcessIncludeFile(
             file_type,
             path,
             path_size,
-        ) as isize;
-        if expanded < 0 as isize {
+        );
+        if expanded < 0_isize {
             return std::ptr::null_mut();
-        } else if expanded > 0 as isize {
+        } else if expanded > 0_isize {
             stmt_file = path;
             stmt_file_len = expanded as usize;
         }
-        let mut file: *mut FILE ;
-        let mut offset: u32 = 0 as u32;
-        let absolute_path: bool = is_absolute_path(stmt_file) as bool;
+        let mut file: *mut FILE;
+        let mut offset: u32 = 0_u32;
+        let absolute_path: bool = is_absolute_path(stmt_file);
         if absolute_path {
             file = fopen(stmt_file, b"rb\0".as_ptr() as *const i8) as *mut FILE;
         } else if (expanded != 0) as i64 != 0 {
@@ -571,7 +569,7 @@ pub unsafe fn ProcessIncludeFile(
             xkb_file = XkbParseFile(ctx, file, (*stmt).file, (*stmt).map);
             fclose(file);
             if !xkb_file.is_null() {
-                if (*xkb_file).file_type as u32 != file_type as u32 {
+                if (*xkb_file).file_type as u32 != file_type {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
@@ -639,7 +637,7 @@ pub unsafe fn ProcessIncludeFile(
                 );
             }
         }
-        return xkb_file;
+        xkb_file
     }
 }
 use crate::xkb::shared_types::*;

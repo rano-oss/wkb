@@ -269,20 +269,20 @@ unsafe fn number(s: *mut scanner, out: *mut i64, out_tok: *mut i32) -> bool {
         ) {
             match (*s).hex_int64(out) {
                 -1 => {
-                    *out_tok = ERROR_TOK as i32;
-                    return true;
+                    *out_tok = ERROR_TOK;
+                    true
                 }
-                0 => return false,
+                0 => false,
                 _ => {
-                    *out_tok = INTEGER as i32;
-                    return true;
+                    *out_tok = INTEGER;
+                    true
                 }
             }
         } else {
             let mut is_digit_0: bool = false;
             match (*s).dec_int64(out) {
                 -1 => {
-                    *out_tok = ERROR_TOK as i32;
+                    *out_tok = ERROR_TOK;
                     return true;
                 }
                 0 => return false,
@@ -294,17 +294,17 @@ unsafe fn number(s: *mut scanner, out: *mut i64, out_tok: *mut i32) -> bool {
             if (*s).chr(DECIMAL_SEPARATOR) {
                 let mut dec: i64 = 0;
                 if (*s).dec_int64(&raw mut dec) < 0 {
-                    *out_tok = ERROR_TOK as i32;
+                    *out_tok = ERROR_TOK;
                     return true;
                 }
-                *out_tok = FLOAT as i32;
+                *out_tok = FLOAT;
             } else if is_digit_0 {
-                *out_tok = DECIMAL_DIGIT as i32;
+                *out_tok = DECIMAL_DIGIT;
             } else {
-                *out_tok = INTEGER as i32;
+                *out_tok = INTEGER;
             }
-            return true;
-        };
+            true
+        }
     }
 }
 pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
@@ -332,7 +332,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
             (*s).skip_to_eol();
         }
         if (*s).eof() {
-            return END_OF_FILE as i32;
+            return END_OF_FILE;
         }
         (*s).token_pos = (*s).pos;
         (*s).buf_pos = 0;
@@ -375,7 +375,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                                 crate::xkb::utils::CStrDisplay((*s).file_name),
                                 loc.line,
                                 loc.column,
-                                crate::xkb::utils::CStrNDisplay((*s).pos.wrapping_sub(start_pos).wrapping_add(1), (*s).s.offset(start_pos.wrapping_sub(1) as isize)
+                                crate::xkb::utils::CStrNDisplay((*s).pos.wrapping_sub(start_pos).wrapping_add(1), (*s).s.add(start_pos.wrapping_sub(1))
                                     as *const i8),
                             );
                         }
@@ -392,7 +392,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                             crate::xkb::utils::CStrDisplay((*s).file_name),
                             loc_0.line,
                             loc_0.column,
-                            crate::xkb::utils::CStrNDisplay((*s).pos.wrapping_sub(start_pos).wrapping_add(1), (*s).s.offset(start_pos.wrapping_sub(1) as isize)
+                            crate::xkb::utils::CStrNDisplay((*s).pos.wrapping_sub(start_pos).wrapping_add(1), (*s).s.add(start_pos.wrapping_sub(1))
                                 as *const i8),
                         );
                     } else {
@@ -426,13 +426,13 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                     loc_2.line,
                     loc_2.column,
                 );
-                return ERROR_TOK as i32;
+                return ERROR_TOK;
             }
             (*yylval).str = cstr_dup(&raw mut (*s).buf as *mut i8);
             if (*yylval).str.is_null() {
-                return ERROR_TOK as i32;
+                return ERROR_TOK;
             }
-            return STRING as i32;
+            return STRING;
         }
         if (*s).chr(b'<' as i8) {
             while ((*s).peek() as u8).is_ascii_graphic() && (*s).peek() != b'>' as i8 {
@@ -449,62 +449,62 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                     loc_3.line,
                     loc_3.column,
                 );
-                return ERROR_TOK as i32;
+                return ERROR_TOK;
             }
             let start: *const i8 = (*s).s.add((*s).token_pos + 1);
             let len: usize = (*s).pos - (*s).token_pos - 2;
             (*yylval).atom = xkb_atom_intern((*s).ctx, start, len);
-            return KEYNAME as i32;
+            return KEYNAME;
         }
         if (*s).chr(b';' as i8) {
-            return SEMI as i32;
+            return SEMI;
         }
         if (*s).chr(b'{' as i8) {
-            return OBRACE as i32;
+            return OBRACE;
         }
         if (*s).chr(b'}' as i8) {
-            return CBRACE as i32;
+            return CBRACE;
         }
         if (*s).chr(b'=' as i8) {
-            return EQUALS as i32;
+            return EQUALS;
         }
         if (*s).chr(b'[' as i8) {
-            return OBRACKET as i32;
+            return OBRACKET;
         }
         if (*s).chr(b']' as i8) {
-            return CBRACKET as i32;
+            return CBRACKET;
         }
         if (*s).chr(b'(' as i8) {
-            return OPAREN as i32;
+            return OPAREN;
         }
         if (*s).chr(b')' as i8) {
-            return CPAREN as i32;
+            return CPAREN;
         }
         if (*s).chr(b'.' as i8) {
-            return DOT as i32;
+            return DOT;
         }
         if (*s).chr(b',' as i8) {
-            return COMMA as i32;
+            return COMMA;
         }
         if (*s).chr(b'+' as i8) {
-            return PLUS as i32;
+            return PLUS;
         }
         if (*s).chr(b'-' as i8) {
-            return MINUS as i32;
+            return MINUS;
         }
         if (*s).chr(b'*' as i8) {
-            return TIMES as i32;
+            return TIMES;
         }
         if (*s).chr(b'/' as i8) {
-            return DIVIDE as i32;
+            return DIVIDE;
         }
         if (*s).chr(b'!' as i8) {
-            return EXCLAM as i32;
+            return EXCLAM;
         }
         if (*s).chr(b'~' as i8) {
-            return INVERT as i32;
+            return INVERT;
         }
-        let mut tok: i32 = ERROR_TOK as i32;
+        let mut tok: i32 = ERROR_TOK;
         if ((*s).peek() as u8).is_ascii_alphabetic() || (*s).peek() == b'_' as i8 {
             while ((*s).peek() as u8).is_ascii_alphanumeric() || (*s).peek() == b'_' as i8 {
                 (*s).next_byte();
@@ -519,10 +519,10 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                 len: len_0,
                 start: start_0,
             };
-            return IDENT as i32;
+            return IDENT;
         }
         if number(s, &raw mut (*yylval).num, &raw mut tok) {
-            if tok == ERROR_TOK as i32 {
+            if tok == ERROR_TOK {
                 let loc_4 = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
@@ -534,7 +534,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                     loc_4.line,
                     loc_4.column,
                 );
-                return ERROR_TOK as i32;
+                return ERROR_TOK;
             }
             return tok;
         }
@@ -548,7 +548,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
             loc_5.line,
             loc_5.column,
         );
-        return ERROR_TOK as i32;
+        ERROR_TOK
     }
 }
 pub unsafe fn XkbParseStringInit(
@@ -586,7 +586,7 @@ pub unsafe fn XkbParseStringInit(
             );
             return false;
         }
-        return true;
+        true
     }
 }
 pub unsafe fn XkbParseString(
@@ -608,7 +608,7 @@ pub unsafe fn XkbParseString(
             return std::ptr::null_mut();
         }
         // Cast types between parser and scanner modules (same C struct, different Rust types)
-        return parse(ctx as *mut _, &raw mut sc as *mut _, map) as *mut XkbFile;
+        parse(ctx as *mut _, &raw mut sc as *mut _, map) as *mut XkbFile
     }
 }
 pub unsafe fn XkbParseStringNext(
@@ -621,11 +621,11 @@ pub unsafe fn XkbParseStringNext(
         if !map.is_null() {
             // Cast types between parser and scanner modules (same C struct, different Rust types)
             *out = parse(ctx as *mut _, scanner as *mut _, map) as *mut XkbFile;
-            return !(*out).is_null();
+            !(*out).is_null()
         } else {
             // Cast types between parser and scanner modules
-            return parse_next(ctx as *mut _, scanner as *mut _, out as *mut _);
-        };
+            parse_next(ctx as *mut _, scanner as *mut _, out as *mut _)
+        }
     }
 }
 pub unsafe fn XkbParseFile(
@@ -678,6 +678,6 @@ pub unsafe fn XkbParseFile(
         // Keep file descriptor open - don't close it
         std::mem::forget(rust_file);
 
-        return xkb_file;
+        xkb_file
     }
 }

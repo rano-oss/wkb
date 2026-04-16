@@ -6,16 +6,16 @@
 //! Note: This code was originally generated using c2rust. We keep c2rust-bitfields
 //! for the bitfield macros but have removed other c2rust dependencies.
 
-#![allow(
-    non_upper_case_globals,
-    non_camel_case_types,
-    non_snake_case,
-    mutable_transmutes,
-    improper_ctypes,
-    improper_ctypes_definitions,
-    unknown_lints,
-    clippy::all
-)]
+// #![allow(
+//     non_upper_case_globals,
+//     non_camel_case_types,
+//     non_snake_case,
+//     mutable_transmutes,
+//     improper_ctypes,
+//     improper_ctypes_definitions,
+//     unknown_lints,
+//     clippy::all
+// )]
 
 // Core XKB modules
 pub mod atom;
@@ -468,7 +468,7 @@ fn build_modifiers_from_keymap(
                             // Level3 keysyms
                             0xfe03 | 0xfe04 | 0xfe05 | 0xfe0d => Some(ModType::Level3),
                             // Level5 keysyms
-                            0xfe11 | 0xfe12 | 0xfe13 => Some(ModType::Level5),
+                            0xfe11..=0xfe13 => Some(ModType::Level5),
                             _ => None,
                         }
                     } else {

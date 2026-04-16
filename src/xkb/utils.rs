@@ -1,4 +1,4 @@
-pub const MAP_FAILED: *mut ::core::ffi::c_void = -1 as i32 as *mut ::core::ffi::c_void;
+pub const MAP_FAILED: *mut ::core::ffi::c_void = -1_i32 as *mut ::core::ffi::c_void;
 
 extern "C" {
     pub fn mmap(
@@ -10,8 +10,8 @@ extern "C" {
         __offset: i64,
     ) -> *mut ::core::ffi::c_void;
 }
-pub const PROT_READ: i32 = 0x1 as i32;
-pub const MAP_SHARED: i32 = 0x1 as i32;
+pub const PROT_READ: i32 = 0x1_i32;
+pub const MAP_SHARED: i32 = 0x1_i32;
 
 pub use crate::xkb::shared_types::timespec;
 use crate::xkb::shared_types::xkb_error_code;
@@ -63,7 +63,7 @@ pub unsafe fn _steal(ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void 
         let original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
         let swapped: *mut ::core::ffi::c_void = *original;
         *original = std::ptr::null_mut::<core::ffi::c_void>();
-        return swapped;
+        swapped
     }
 }
 
@@ -124,7 +124,7 @@ pub unsafe fn cstr_cmp(s1: *const i8, s2: *const i8) -> i32 {
     unsafe {
         let a = std::ffi::CStr::from_ptr(s1);
         let b = std::ffi::CStr::from_ptr(s2);
-        a.cmp(&b) as i32
+        a.cmp(b) as i32
     }
 }
 
@@ -477,9 +477,9 @@ pub unsafe fn xkb_check_versioned_struct_size_(
             return XKB_SUCCESS;
         }
         let mut p: *const ::core::ffi::c_uchar =
-            (caller_data as *const ::core::ffi::c_uchar).offset(lib_size as isize);
+            (caller_data as *const ::core::ffi::c_uchar).add(lib_size);
         let end: *const ::core::ffi::c_uchar =
-            (caller_data as *const ::core::ffi::c_uchar).offset(caller_size as isize);
+            (caller_data as *const ::core::ffi::c_uchar).add(caller_size);
         while p < end {
             let c2rust_fresh1 = p;
             p = p.offset(1);
@@ -487,7 +487,7 @@ pub unsafe fn xkb_check_versioned_struct_size_(
                 return XKB_ERROR_ABI_FORWARD_COMPAT;
             }
         }
-        return XKB_SUCCESS;
+        XKB_SUCCESS
     }
 }
 
@@ -612,10 +612,10 @@ pub unsafe fn cstr_parse_long(s: *const i8) -> (i64, usize) {
         }
         let start = i;
         let mut result: i64 = 0;
-        while (*s.offset(i as isize) as u8).is_ascii_digit() {
+        while (*s.add(i) as u8).is_ascii_digit() {
             result = result
                 .wrapping_mul(10)
-                .wrapping_add((*s.offset(i as isize) as u8 - b'0') as i64);
+                .wrapping_add((*s.add(i) as u8 - b'0') as i64);
             i += 1;
         }
         if i == start {

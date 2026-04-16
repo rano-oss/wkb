@@ -443,11 +443,11 @@ pub const false_0: i32 = 0;
 #[inline]
 pub unsafe fn safe_map_name(file: *mut XkbFile) -> *const i8 {
     unsafe {
-        return if !(*file).name.is_null() {
+        if !(*file).name.is_null() {
             (*file).name as *const i8
         } else {
             b"(unnamed map)\0".as_ptr() as *const i8
-        };
+        }
     }
 }
 
@@ -468,7 +468,7 @@ pub unsafe fn ReportNotArray(
         crate::xkb::utils::ByteSliceDisplay(field),
         crate::xkb::utils::ByteSliceDisplay(name),
     );
-    return false;
+    false
 }
 
 #[inline]
@@ -485,13 +485,13 @@ pub unsafe fn ReportBadType(
         XKB_LOG_LEVEL_ERROR,
         XKB_LOG_VERBOSITY_MINIMAL as i32,
         "[XKB-{:03}] The {} {} field must be a {}; Ignoring illegal assignment in {}\n",
-        code as u32,
+        { code },
         crate::xkb::utils::ByteSliceDisplay(type_0),
         crate::xkb::utils::ByteSliceDisplay(field),
         crate::xkb::utils::ByteSliceDisplay(wanted),
         crate::xkb::utils::ByteSliceDisplay(name),
     );
-    return false;
+    false
 }
 
 #[inline]
@@ -511,7 +511,7 @@ pub unsafe fn ReportBadField(
         crate::xkb::utils::ByteSliceDisplay(name),
         crate::xkb::utils::ByteSliceDisplay(name),
     );
-    return false;
+    false
 }
 
 #[inline]
@@ -531,5 +531,5 @@ pub unsafe fn ReportShouldBeArray(
         crate::xkb::utils::ByteSliceDisplay(field),
         crate::xkb::utils::ByteSliceDisplay(name),
     );
-    return false;
+    false
 }

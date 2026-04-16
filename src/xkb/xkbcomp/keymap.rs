@@ -25,21 +25,17 @@ pub type compile_file_fn = Option<unsafe fn(*mut XkbFile, *mut xkb_keymap_info) 
 #[inline]
 unsafe fn ComputeEffectiveMask(keymap: *mut xkb_keymap, mods: *mut xkb_mods) {
     unsafe {
-        let unknown_mods: u32 =
-            !(((1 as u64) << (*keymap).mods.num_mods).wrapping_sub(1 as u64) as u32);
+        let unknown_mods: u32 = !((1_u64 << (*keymap).mods.num_mods).wrapping_sub(1_u64) as u32);
         (*mods).mask = mod_mask_get_effective(keymap, (*mods).mods) | (*mods).mods & unknown_mods;
     }
 }
 unsafe fn UpdateActionMods(keymap: *mut xkb_keymap, act: *mut xkb_action, modmap: u32) {
     unsafe {
-        match (*act).type_0 as u32 {
-            2 | 3 | 4 => {
-                if (*act).mods.flags as u32 & ACTION_MODS_LOOKUP_MODMAP as u32 != 0 {
-                    (*act).mods.mods.mods = modmap;
-                }
-                ComputeEffectiveMask(keymap, &raw mut (*act).mods.mods);
+        if let 2..=4 = (*act).type_0 {
+            if (*act).mods.flags & ACTION_MODS_LOOKUP_MODMAP != 0 {
+                (*act).mods.mods.mods = modmap;
             }
-            _ => {}
+            ComputeEffectiveMask(keymap, &raw mut (*act).mods.mods);
         };
     }
 }
@@ -48,7 +44,7 @@ fn default_interpret() -> xkb_sym_interpret {
         sym: XKB_KEY_NoSymbol as u32,
         match_0: MATCH_ANY_OR_NONE,
         mods: 0,
-        virtual_mod: DEFAULT_INTERPRET_VMOD as u32,
+        virtual_mod: DEFAULT_INTERPRET_VMOD,
         level_one_only: false,
         repeat: DEFAULT_INTERPRET_KEY_REPEAT as i32 != 0,
         required: false,
@@ -68,35 +64,35 @@ unsafe fn FindInterpForKey(
 ) -> bool {
     unsafe {
         let mut syms: *const u32 = std::ptr::null();
-        let num_syms: i32 ;
-        num_syms =
+
+        let num_syms: i32 =
             xkb_keymap_key_get_syms_by_level(keymap, (*key).keycode, group, level, &raw mut syms);
-        if num_syms <= 0 as i32 {
+        if num_syms <= 0_i32 {
             return false;
         }
-        let mut s: i32 = 0 as i32;
+        let mut s: i32 = 0_i32;
         while s < num_syms {
             let mut c2rust_current_block_34: u64;
             let mut found: bool = false;
-            let mut i: u32 = 0 as u32;
+            let mut i: u32 = 0_u32;
             's_26: loop {
-                if !(i < (&(*keymap).sym_interprets).len() as u32) {
+                if i >= (*keymap).sym_interprets.len() as u32 {
                     c2rust_current_block_34 = 7659304154607701039;
                     break;
                 }
                 let interp: *mut xkb_sym_interpret =
                     &mut (&mut (*keymap).sym_interprets)[i as usize] as *mut xkb_sym_interpret;
-                let mods: u32 ;
+                let mods: u32;
                 found = false;
                 if !((*interp).sym != *syms.offset(s as isize)
                     && (*interp).sym != XKB_KEY_NoSymbol as u32)
                 {
-                    if (*interp).level_one_only as i32 != 0 && level != 0 as u32 {
-                        mods = 0 as u32;
+                    if (*interp).level_one_only as i32 != 0 && level != 0_u32 {
+                        mods = 0_u32;
                     } else {
                         mods = (*key).modmap;
                     }
-                    match (*interp).match_0 as u32 {
+                    match (*interp).match_0 {
                         0 => {
                             found = (*interp).mods & mods == 0;
                         }
@@ -114,26 +110,27 @@ unsafe fn FindInterpForKey(
                         }
                         _ => {}
                     }
-                    if found as i32 != 0 && i > 0 as u32 && (*interp).sym == XKB_KEY_NoSymbol as u32
+                    if found as i32 != 0
+                        && i > 0_u32
+                        && (*interp).sym == XKB_KEY_NoSymbol as u32
+                        && !interprets.is_empty()
                     {
-                        if !interprets.is_empty() {
-                            for previous in interprets.iter() {
-                                if *previous == interp as *const xkb_sym_interpret {
-                                    found = false;
-                                    xkb_logf!(
+                        for previous in interprets.iter() {
+                            if std::ptr::eq(*previous, interp) {
+                                found = false;
+                                xkb_logf!(
                                         (*keymap).ctx,
                                         XKB_LOG_LEVEL_WARNING,
                                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                                         "Repeated interpretation ignored for keysym #{} \"{}\" at level {}/group {} on key {}.\n",
-                                        s + 1 as i32,
+                                        s + 1_i32,
                                         crate::xkb::utils::ByteSliceDisplay(KeysymText((*keymap).ctx.clone(), *syms.offset(s as isize))),
-                                        level.wrapping_add(1 as u32),
-                                        group.wrapping_add(1 as u32),
+                                        level.wrapping_add(1_u32),
+                                        group.wrapping_add(1_u32),
                                         crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx.clone(), (*key).name)),
                                     );
-                                    c2rust_current_block_34 = 2209838995503123840;
-                                    break 's_26;
-                                }
+                                c2rust_current_block_34 = 2209838995503123840;
+                                break 's_26;
                             }
                         }
                     }
@@ -146,59 +143,50 @@ unsafe fn FindInterpForKey(
                 }
                 i = i.wrapping_add(1);
             }
-            match c2rust_current_block_34 {
-                7659304154607701039 => {
-                    if !found {
-                        c2rust_current_block_34 = 2209838995503123840;
-                    } else {
-                        c2rust_current_block_34 = 2989495919056355252;
-                    }
+            if c2rust_current_block_34 == 7659304154607701039 {
+                if !found {
+                    c2rust_current_block_34 = 2209838995503123840;
+                } else {
+                    c2rust_current_block_34 = 2989495919056355252;
                 }
-                _ => {}
             }
-            match c2rust_current_block_34 {
-                2209838995503123840 => {
-                    interprets.push(
-                        &*Box::leak(Box::new(default_interpret())) as *const xkb_sym_interpret
-                    );
-                }
-                _ => {}
+            if c2rust_current_block_34 == 2209838995503123840 {
+                interprets
+                    .push(&*Box::leak(Box::new(default_interpret())) as *const xkb_sym_interpret);
             }
             s += 1;
         }
-        return true;
+        true
     }
 }
 unsafe fn ApplyInterpsToKey(keymap: *mut xkb_keymap, key: *mut xkb_key) -> bool {
     unsafe {
-        let mut vmodmap: u32 = 0 as u32;
-        let mut level: u32 ;
+        let mut vmodmap: u32 = 0_u32;
+        let mut level: u32;
         let mut interprets: Vec<*const xkb_sym_interpret> = Vec::new();
         let mut actions: Vec<xkb_action> = Vec::new();
-        let mut group: u32 = 0 as u32;
+        let mut group: u32 = 0_u32;
         while group < (*key).num_groups {
             if !(&(*key).groups)[group as usize].explicit_actions {
-                level = 0 as u32;
+                level = 0_u32;
                 while level < XkbKeyNumLevels(keymap, key, group) {
-                    let mut interp: *const xkb_sym_interpret ;
+                    let mut interp: *const xkb_sym_interpret;
                     interprets.clear();
-                    let found: bool =
-                        FindInterpForKey(keymap, key, group, level, &mut interprets) as bool;
+                    let found: bool = FindInterpForKey(keymap, key, group, level, &mut interprets);
                     if found {
                         for &interp_ptr in interprets.iter() {
                             interp = interp_ptr;
-                            if group == 0 as u32 && level == 0 as u32 {
-                                if (*key).explicit as u32 & EXPLICIT_REPEAT as u32 == 0
-                                    && (*interp).repeat
-                                {
-                                    (*key).repeats = (true) as bool;
-                                }
+                            if group == 0_u32
+                                && level == 0_u32
+                                && (*key).explicit & EXPLICIT_REPEAT == 0
+                                && (*interp).repeat
+                            {
+                                (*key).repeats = true;
                             }
-                            if group == 0 as u32 && level == 0 as u32 || !(*interp).level_one_only {
-                                if (*interp).virtual_mod != XKB_MOD_INVALID as u32 {
-                                    vmodmap = (vmodmap as u32 | (1 as u32) << (*interp).virtual_mod)
-                                        as u32;
-                                }
+                            if (group == 0_u32 && level == 0_u32 || !(*interp).level_one_only)
+                                && (*interp).virtual_mod != XKB_MOD_INVALID
+                            {
+                                vmodmap |= 1_u32 << (*interp).virtual_mod;
                             }
                             match (*interp).num_actions as i32 {
                                 0 => {}
@@ -217,7 +205,7 @@ unsafe fn ApplyInterpsToKey(keymap: *mut xkb_keymap, key: *mut xkb_key) -> bool 
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                                 "Could not append interpret actions to key {}: maximum is {}, got: {}. Dropping excessive actions\n",
                                 crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx.clone(), (*key).name)),
-                                65535 as i32,
+                                65535_i32,
                                 actions.len() as u32,
                             );
                             actions.truncate(MAX_ACTIONS_PER_LEVEL as usize);
@@ -225,8 +213,8 @@ unsafe fn ApplyInterpsToKey(keymap: *mut xkb_keymap, key: *mut xkb_key) -> bool 
                         (&mut (*key).groups)[group as usize].levels[level as usize].actions =
                             actions.clone();
                         if !actions.is_empty() {
-                            let ref mut c2rust_fresh1 = (&mut (*key).groups)[group as usize];
-                            (*c2rust_fresh1).implicit_actions = true;
+                            let c2rust_fresh1 = &mut (&mut (*key).groups)[group as usize];
+                            c2rust_fresh1.implicit_actions = true;
                         }
                         actions.clear();
                     }
@@ -238,38 +226,38 @@ unsafe fn ApplyInterpsToKey(keymap: *mut xkb_keymap, key: *mut xkb_key) -> bool 
             }
             group = group.wrapping_add(1);
         }
-        if (*key).explicit as u32 & EXPLICIT_VMODMAP as u32 == 0 {
+        if (*key).explicit & EXPLICIT_VMODMAP == 0 {
             (*key).vmodmap = vmodmap;
         }
-        return true;
+        true
     }
 }
 #[inline]
 unsafe fn is_mod_action(action: *mut xkb_action) -> bool {
     unsafe {
-        return (*action).type_0 as u32 == ACTION_TYPE_MOD_SET as u32
-            || (*action).type_0 as u32 == ACTION_TYPE_MOD_LATCH as u32
-            || (*action).type_0 as u32 == ACTION_TYPE_MOD_LOCK as u32;
+        (*action).type_0 == ACTION_TYPE_MOD_SET
+            || (*action).type_0 == ACTION_TYPE_MOD_LATCH
+            || (*action).type_0 == ACTION_TYPE_MOD_LOCK
     }
 }
 #[inline]
 unsafe fn is_group_action(action: *mut xkb_action) -> bool {
     unsafe {
-        return (*action).type_0 as u32 == ACTION_TYPE_GROUP_SET as u32
-            || (*action).type_0 as u32 == ACTION_TYPE_GROUP_LATCH as u32
-            || (*action).type_0 as u32 == ACTION_TYPE_GROUP_LOCK as u32;
+        (*action).type_0 == ACTION_TYPE_GROUP_SET
+            || (*action).type_0 == ACTION_TYPE_GROUP_LATCH
+            || (*action).type_0 == ACTION_TYPE_GROUP_LOCK
     }
 }
 unsafe fn CheckMultipleActionsCategories(keymap: *mut xkb_keymap, key: *mut xkb_key) {
     unsafe {
-        let mut g: u32 = 0 as u32;
+        let mut g: u32 = 0_u32;
         while g < (*key).num_groups {
-            let mut l: u32 = 0 as u32;
+            let mut l: u32 = 0_u32;
             while l < XkbKeyNumLevels(keymap, key, g) {
                 let level: *mut xkb_level =
                     &mut (&mut (*key).groups)[g as usize].levels[l as usize] as *mut xkb_level;
-                if !((*level).actions.len() <= 1) {
-                    let mut i: u16 = 0 as u16;
+                if (*level).actions.len() > 1 {
+                    let mut i: u16 = 0_u16;
                     while (i as usize) < (*level).actions.len() {
                         let action1: *mut xkb_action =
                             &mut (&mut (*level).actions)[i as usize] as *mut xkb_action;
@@ -277,13 +265,13 @@ unsafe fn CheckMultipleActionsCategories(keymap: *mut xkb_keymap, key: *mut xkb_
                         let group_action: bool = is_group_action(action1);
                         if mod_action as i32 != 0
                             || group_action as i32 != 0
-                            || (*action1).type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as u32
+                            || (*action1).type_0 == ACTION_TYPE_REDIRECT_KEY
                         {
-                            let mut j: u16 = (i as i32 + 1 as i32) as u16;
+                            let mut j: u16 = (i as i32 + 1_i32) as u16;
                             while (j as usize) < (*level).actions.len() {
                                 let action2: *mut xkb_action =
                                     &mut (&mut (*level).actions)[j as usize] as *mut xkb_action;
-                                if (*action1).type_0 as u32 == (*action2).type_0 as u32
+                                if (*action1).type_0 == (*action2).type_0
                                     || mod_action as i32 != 0 && is_mod_action(action2) as i32 != 0
                                     || group_action as i32 != 0
                                         && is_group_action(action2) as i32 != 0
@@ -301,10 +289,10 @@ unsafe fn CheckMultipleActionsCategories(keymap: *mut xkb_keymap, key: *mut xkb_
                                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                                         "Cannot use multiple {} actions in the same level. Action #{} for key {} in group {}/level {} ignored.\n",
                                         crate::xkb::utils::ByteSliceDisplay(type_0),
-                                        j as i32 + 1 as i32,
+                                        j as i32 + 1_i32,
                                         crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx.clone(), (*key).name)),
-                                        g.wrapping_add(1 as u32),
-                                        l.wrapping_add(1 as u32),
+                                        g.wrapping_add(1_u32),
+                                        l.wrapping_add(1_u32),
                                     );
                                     (*action2).type_0 = ACTION_TYPE_NONE;
                                 }
@@ -333,7 +321,7 @@ unsafe fn add_key_aliases(
             if entry.is_alias as i32 != 0 && entry.found as i32 != 0 {
                 aliases.push(xkb_key_alias {
                     real: entry.index,
-                    alias: alias as u32,
+                    alias,
                 });
             }
             alias = alias.wrapping_add(1);
@@ -347,13 +335,13 @@ unsafe fn update_pending_key_fields(info: *mut xkb_keymap_info, key: *mut xkb_ke
                 [(*key).out_of_range_group_number as usize]
                 as *mut pending_computation;
             if !(*pc).computed {
-                let mut group: u32 = 0 as u32;
+                let mut group: u32 = 0_u32;
                 match ExprResolveGroup(info, (*pc).expr, true, &raw mut group, std::ptr::null_mut())
                     as u32
                 {
                     0 => {
                         (*pc).computed = true;
-                        (*pc).value = group.wrapping_sub(1 as u32) as u32;
+                        (*pc).value = group.wrapping_sub(1_u32);
                     }
                     2 => {
                         xkb_logf!(
@@ -361,17 +349,17 @@ unsafe fn update_pending_key_fields(info: *mut xkb_keymap_info, key: *mut xkb_ke
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] Invalid key redirect group index\n",
-                            XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
+                            { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
                         );
-                        return (*info).strict as u32 & PARSER_NO_FIELD_TYPE_MISMATCH as u32 != 0;
+                        return (*info).strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0;
                     }
                     _ => {}
                 }
             }
             (*key).out_of_range_pending_group = false;
-            (*key).out_of_range_group_number = (*pc).value as u32;
+            (*key).out_of_range_group_number = (*pc).value;
         }
-        return true;
+        true
     }
 }
 unsafe fn update_pending_action_fields(
@@ -380,16 +368,15 @@ unsafe fn update_pending_action_fields(
     act: *mut xkb_action,
 ) -> bool {
     unsafe {
-        match (*act).type_0 as u32 {
-            5 | 6 | 7 => {
-                if (*act).group.flags as u32 & ACTION_PENDING_COMPUTATION as u32 != 0 {
+        match (*act).type_0 {
+            5..=7 => {
+                if (*act).group.flags & ACTION_PENDING_COMPUTATION != 0 {
                     let pc: *mut pending_computation = &mut (&mut *(*info).pending_computations)
                         [(*act).group.group as usize]
                         as *mut pending_computation;
                     if !(*pc).computed {
-                        let mut group: u32 = 0 as u32;
-                        let absolute: bool =
-                            (*act).group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32 != 0;
+                        let mut group: u32 = 0_u32;
+                        let absolute: bool = (*act).group.flags & ACTION_ABSOLUTE_SWITCH != 0;
                         match ExprResolveGroup(
                             info,
                             (*pc).expr,
@@ -404,7 +391,7 @@ unsafe fn update_pending_action_fields(
                                     XKB_LOG_LEVEL_ERROR,
                                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                                     "[XKB-{:03}] Invalid action group index\n",
-                                    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
+                                    { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
                                 );
                                 return false;
                             }
@@ -412,11 +399,10 @@ unsafe fn update_pending_action_fields(
                             _ => {
                                 (*pc).computed = true;
                                 if absolute {
-                                    (*pc).value = group.wrapping_sub(1 as u32) as u32;
+                                    (*pc).value = group.wrapping_sub(1_u32);
                                 } else {
-                                    (*pc).value = group as u32;
-                                    if (*(*pc).expr).common.type_0 as u32 == STMT_EXPR_NEGATE as u32
-                                    {
+                                    (*pc).value = group;
+                                    if (*(*pc).expr).common.type_0 == STMT_EXPR_NEGATE {
                                         (*pc).value = -((*pc).value as i32) as u32;
                                     }
                                 }
@@ -424,40 +410,40 @@ unsafe fn update_pending_action_fields(
                         }
                     }
                     (*act).group.group = (*pc).value as i32;
-                    (*act).group.flags = ((*act).group.flags as u32
+                    (*act).group.flags = ((*act).group.flags
                         & !(ACTION_PENDING_COMPUTATION as i32) as u32)
                         as xkb_action_flags;
                 }
-                return true;
+                true
             }
             16 => {
-                if keycode == XKB_KEYCODE_INVALID as u32
+                if keycode == XKB_KEYCODE_INVALID
                     || (*act).redirect.keycode != (*(*info).keymap).redirect_key_auto
                 {
                     return true;
                 } else {
                     (*act).redirect.keycode = keycode;
                 }
-                return true;
+                true
             }
-            _ => return true,
-        };
+            _ => true,
+        }
     }
 }
 unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
     unsafe {
         let keymap: *mut xkb_keymap = (*info).keymap;
-        let mut num_key_aliases: u32 = 0 as u32;
-        let mut min_alias: u32 = 0 as u32;
-        let mut max_alias: u32 = 0 as u32;
-        let mut alias: u32 = 0 as u32;
-        while (alias as usize) < (&(*keymap).key_names).len() {
+        let mut num_key_aliases: u32 = 0_u32;
+        let mut min_alias: u32 = 0_u32;
+        let mut max_alias: u32 = 0_u32;
+        let mut alias: u32 = 0_u32;
+        while (alias as usize) < (*keymap).key_names.len() {
             let entry: KeycodeMatch = (&(*keymap).key_names)[alias as usize];
             if entry.is_alias as i32 != 0 && entry.found as i32 != 0 {
                 if num_key_aliases == 0 {
-                    min_alias = alias as u32;
+                    min_alias = alias;
                 }
-                max_alias = alias as u32;
+                max_alias = alias;
                 num_key_aliases = num_key_aliases.wrapping_add(1);
             }
             alias = alias.wrapping_add(1);
@@ -469,10 +455,10 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
         }
         // key_names is no longer needed after compilation; drop it
         (*keymap).key_names = Vec::new();
-        let mut key: *mut xkb_key ;
+        let mut key: *mut xkb_key;
         {
-            let start_idx = if (*keymap).num_keys_low == 0 as u32 {
-                0 as u32
+            let start_idx = if (*keymap).num_keys_low == 0_u32 {
+                0_u32
             } else {
                 (*keymap).min_key_code
             };
@@ -492,31 +478,31 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
             let num_groups: u32 = if (*keymap).num_groups != 0 {
                 (*keymap).num_groups
             } else {
-                1 as u32
+                1_u32
             };
             (*info).lookup.groupIndexNames[GROUP_INDEX_NAME_LAST as usize] = LookupEntry {
                 name: GROUP_LAST_INDEX_NAME,
-                value: num_groups as u32,
+                value: num_groups,
             };
             (*info).lookup.groupMaskNames[GROUP_MASK_NAME_LAST as usize] = LookupEntry {
                 name: GROUP_LAST_INDEX_NAME,
-                value: (1 as u32) << num_groups.wrapping_sub(1 as u32),
+                value: 1_u32 << num_groups.wrapping_sub(1_u32),
             };
-            let mut i: u32 = 0 as u32;
-            while (i as usize) < (&(*keymap).sym_interprets).len() {
+            let mut i: u32 = 0_u32;
+            while (i as usize) < (*keymap).sym_interprets.len() {
                 let interp: *mut xkb_sym_interpret =
                     &mut (&mut (*keymap).sym_interprets)[i as usize] as *mut xkb_sym_interpret;
-                if (*interp).num_actions as i32 <= 1 as i32 {
+                if (*interp).num_actions as i32 <= 1_i32 {
                     let act: *mut xkb_action = &raw mut (*interp).action;
-                    if !update_pending_action_fields(info, XKB_KEYCODE_INVALID as u32, act) {
+                    if !update_pending_action_fields(info, XKB_KEYCODE_INVALID, act) {
                         return false;
                     }
                 } else {
-                    let mut a: u16 = 0 as u16;
+                    let mut a: u16 = 0_u16;
                     while (a as i32) < (*interp).num_actions as i32 {
                         let act_0: *mut xkb_action =
                             (*interp).actions.as_mut_ptr().offset(a as isize) as *mut xkb_action;
-                        if !update_pending_action_fields(info, XKB_KEYCODE_INVALID as u32, act_0) {
+                        if !update_pending_action_fields(info, XKB_KEYCODE_INVALID, act_0) {
                             return false;
                         }
                         a = a.wrapping_add(1);
@@ -526,8 +512,8 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
             }
         }
         {
-            let start_idx = if (*keymap).num_keys_low == 0 as u32 {
-                0 as u32
+            let start_idx = if (*keymap).num_keys_low == 0_u32 {
+                0_u32
             } else {
                 (*keymap).min_key_code
             };
@@ -541,11 +527,11 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                 ki = ki.wrapping_add(1);
             }
         }
-        let mut idx: u32 ;
-        let mut mod_0: *mut xkb_mod ;
+        let mut idx: u32;
+        let mut mod_0: *mut xkb_mod;
         {
-            let start_idx = if (*keymap).num_keys_low == 0 as u32 {
-                0 as u32
+            let start_idx = if (*keymap).num_keys_low == 0_u32 {
+                0_u32
             } else {
                 (*keymap).min_key_code
             };
@@ -557,7 +543,7 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                     .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize)
                     as *mut xkb_mod;
                 while idx < (*keymap).mods.num_mods {
-                    if (*key).vmodmap & (1 as u32) << idx != 0 {
+                    if (*key).vmodmap & 1_u32 << idx != 0 {
                         (*mod_0).mapping |= (*key).modmap;
                     }
                     idx = idx.wrapping_add(1);
@@ -566,14 +552,14 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                 ki = ki.wrapping_add(1);
             }
         }
-        if (*keymap).format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32 {
+        if (*keymap).format >= XKB_KEYMAP_FORMAT_TEXT_V2 {
             idx = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
             mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
                 .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize)
                 as *mut xkb_mod;
             while idx < (*keymap).mods.num_mods {
-                let mask: u32 = (1 as u32) << idx;
-                if (*mod_0).mapping == 0 as u32 && (*keymap).mods.explicit_vmods & mask == 0 {
+                let mask: u32 = 1_u32 << idx;
+                if (*mod_0).mapping == 0_u32 && (*keymap).mods.explicit_vmods & mask == 0 {
                     (*mod_0).mapping = mask;
                     (*keymap).mods.explicit_vmods |= mask;
                 }
@@ -581,7 +567,7 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                 mod_0 = mod_0.offset(1);
             }
         }
-        let mut extra_canonical_mods: u32 = 0 as u32;
+        let mut extra_canonical_mods: u32 = 0_u32;
         idx = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
         mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
             .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize) as *mut xkb_mod;
@@ -591,12 +577,12 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
             mod_0 = mod_0.offset(1);
         }
         (*keymap).canonical_state_mask |= extra_canonical_mods;
-        let mut i_0: u32 = 0 as u32;
-        while (i_0 as usize) < (&(*keymap).types).len() {
+        let mut i_0: u32 = 0_u32;
+        while (i_0 as usize) < (*keymap).types.len() {
             ComputeEffectiveMask(keymap, &raw mut (&mut (*keymap).types)[i_0 as usize].mods);
-            let mut j: u32 = 0 as u32;
+            let mut j: u32 = 0_u32;
             while j < (&(*keymap).types)[i_0 as usize].entries.len() as u32 {
-                if {
+                let res = {
                     // has_unbound_vmods inlined
                     let entry_mods = (&(*keymap).types)[i_0 as usize].entries[j as usize]
                         .mods
@@ -607,7 +593,7 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                         .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize)
                         as *mut xkb_mod;
                     while k < (*keymap).mods.num_mods {
-                        if entry_mods & (1 as u32) << k != 0 && (*mod_0).mapping == 0 as u32 {
+                        if entry_mods & 1_u32 << k != 0 && (*mod_0).mapping == 0_u32 {
                             unbound = true;
                             break;
                         }
@@ -615,10 +601,11 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                         mod_0 = mod_0.offset(1);
                     }
                     unbound
-                } {
+                };
+                if res {
                     (&mut (*keymap).types)[i_0 as usize].entries[j as usize]
                         .mods
-                        .mask = 0 as u32;
+                        .mask = 0_u32;
                 } else {
                     ComputeEffectiveMask(
                         keymap,
@@ -634,8 +621,8 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
             i_0 = i_0.wrapping_add(1);
         }
         {
-            let start_idx = if (*keymap).num_keys_low == 0 as u32 {
-                0 as u32
+            let start_idx = if (*keymap).num_keys_low == 0_u32 {
+                0_u32
             } else {
                 (*keymap).min_key_code
             };
@@ -645,9 +632,9 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                 if !update_pending_key_fields(info, key) {
                     return false;
                 }
-                let mut i_1: u32 = 0 as u32;
+                let mut i_1: u32 = 0_u32;
                 while i_1 < (*key).num_groups {
-                    let mut j_0: u32 = 0 as u32;
+                    let mut j_0: u32 = 0_u32;
                     while j_0 < XkbKeyNumLevels(keymap, key, i_1) {
                         if (&(*key).groups)[i_1 as usize].levels[j_0 as usize]
                             .actions
@@ -664,14 +651,14 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                                     as *mut xkb_action;
                                 UpdateActionMods(keymap, act_1, (*key).modmap);
                                 if (pending_computations as i32 != 0
-                                    || (*act_1).type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as u32)
+                                    || (*act_1).type_0 == ACTION_TYPE_REDIRECT_KEY)
                                     && !update_pending_action_fields(info, (*key).keycode, act_1)
                                 {
                                     return false;
                                 }
                             }
                         } else {
-                            let mut k: u16 = 0 as u16;
+                            let mut k: u16 = 0_u16;
                             while (k as usize)
                                 < (&(*key).groups)[i_1 as usize].levels[j_0 as usize]
                                     .actions
@@ -683,7 +670,7 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                                     as *mut xkb_action;
                                 UpdateActionMods(keymap, act_2, (*key).modmap);
                                 if (pending_computations as i32 != 0
-                                    || (*act_2).type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as u32)
+                                    || (*act_2).type_0 == ACTION_TYPE_REDIRECT_KEY)
                                     && !update_pending_action_fields(info, (*key).keycode, act_2)
                                 {
                                     return false;
@@ -698,7 +685,7 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                 ki = ki.wrapping_add(1);
             }
         }
-        let mut led: *mut xkb_led ;
+        let mut led: *mut xkb_led;
         led = &raw mut (*keymap).leds as *mut xkb_led;
         while led < (&raw mut (*keymap).leds as *mut xkb_led).offset((*keymap).num_leds as isize) {
             ComputeEffectiveMask(keymap, &raw mut (*led).mods);
@@ -710,7 +697,7 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                         [(*led).groups as usize]
                         as *mut pending_computation;
                     if !(*pc).computed {
-                        let mut mask: u32 = 0 as u32;
+                        let mut mask: u32 = 0_u32;
                         if !ExprResolveGroupMask(
                             info,
                             (*pc).expr,
@@ -722,18 +709,18 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                                 XKB_LOG_LEVEL_ERROR,
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                                 "[XKB-{:03}] Invalid LED group mask\n",
-                                XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX as i32,
+                                { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
                             );
                             led_ok = false;
                         }
                         if led_ok {
                             (*pc).computed = true;
-                            (*pc).value = mask as u32;
+                            (*pc).value = mask;
                         }
                     }
                     if led_ok {
-                        (*led).pending_groups = (false) as bool;
-                        (*led).groups = (*pc).value as u32;
+                        (*led).pending_groups = false;
+                        (*led).groups = (*pc).value;
                     }
                 }
                 !led_ok
@@ -742,10 +729,10 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
             }
             led = led.offset(1);
         }
-        return true;
+        true
     }
 }
-static mut compile_file_fns: [compile_file_fn; 4] = {
+static mut COMPILE_FILE_FNS: [compile_file_fn; 4] = {
     [
         Some(CompileKeycodes as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
         Some(CompileKeyTypes as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
@@ -769,14 +756,14 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
             std::ptr::null_mut(),
             std::ptr::null_mut(),
         ];
-        let mut type_0: u32 ;
+        let mut type_0: u32;
         let _ctx: *mut xkb_context = &raw mut (*keymap).ctx;
         file = (*file).defs as *mut XkbFile;
         while !file.is_null() {
-            if ((*file).file_type as u32) < FIRST_KEYMAP_FILE_TYPE as u32
-                || (*file).file_type as u32 > LAST_KEYMAP_FILE_TYPE as u32
+            if (*file).file_type < FIRST_KEYMAP_FILE_TYPE
+                || (*file).file_type > LAST_KEYMAP_FILE_TYPE
             {
-                if (*file).file_type as u32 == FILE_TYPE_GEOMETRY as u32 {
+                if (*file).file_type == FILE_TYPE_GEOMETRY {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
@@ -808,14 +795,14 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
         }
         let mut pending_computations: Vec<pending_computation> = Vec::new();
         let mut info: xkb_keymap_info = xkb_keymap_info {
-            keymap: keymap,
-            strict: (if (*keymap).format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
-                if (*keymap).flags as u32 & XKB_KEYMAP_COMPILE_STRICT_MODE as u32 != 0 {
+            keymap,
+            strict: (if (*keymap).format == XKB_KEYMAP_FORMAT_TEXT_V1 {
+                if (*keymap).flags & XKB_KEYMAP_COMPILE_STRICT_MODE != 0 {
                     PARSER_V1_STRICT_FLAGS as i32
                 } else {
                     PARSER_V1_LAX_FLAGS as i32
                 }
-            } else if (*keymap).flags as u32 & XKB_KEYMAP_COMPILE_STRICT_MODE as u32 != 0 {
+            } else if (*keymap).flags & XKB_KEYMAP_COMPILE_STRICT_MODE != 0 {
                 PARSER_V2_STRICT_FLAGS as i32
             } else {
                 PARSER_V2_LAX_FLAGS as i32
@@ -833,7 +820,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                 groupIndexNames: [
                     LookupEntry {
                         name: b"first",
-                        value: 1 as u32,
+                        value: 1_u32,
                     },
                     LookupEntry {
                         name: if (*keymap).num_groups != 0 {
@@ -841,21 +828,21 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                         } else {
                             b""
                         },
-                        value: (*keymap).num_groups as u32,
+                        value: (*keymap).num_groups,
                     },
                     LookupEntry {
                         name: b"",
-                        value: 0 as u32,
+                        value: 0_u32,
                     },
                 ],
                 groupMaskNames: [
                     LookupEntry {
                         name: b"none",
-                        value: 0 as u32,
+                        value: 0_u32,
                     },
                     LookupEntry {
                         name: b"first",
-                        value: 0x1 as u32,
+                        value: 0x1_u32,
                     },
                     LookupEntry {
                         name: b"all",
@@ -870,21 +857,21 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                         value: if (*keymap).num_groups != 0
                             && (*keymap).num_groups <= XKB_MAX_GROUPS as u32
                         {
-                            (1 as u32) << (*keymap).num_groups.wrapping_sub(1 as u32)
+                            1_u32 << (*keymap).num_groups.wrapping_sub(1_u32)
                         } else {
-                            0 as u32
+                            0_u32
                         },
                     },
                     LookupEntry {
                         name: b"",
-                        value: 0 as u32,
+                        value: 0_u32,
                     },
                 ],
             },
             pending_computations: &raw mut pending_computations,
         };
         type_0 = FIRST_KEYMAP_FILE_TYPE;
-        while type_0 as u32 <= LAST_KEYMAP_FILE_TYPE as u32 {
+        while type_0 <= LAST_KEYMAP_FILE_TYPE {
             if files[type_0 as usize].is_null() {
                 xkb_logf!(
                     ctx,
@@ -903,7 +890,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                     crate::xkb::utils::CStrDisplay(safe_map_name(files[type_0 as usize])),
                 );
             }
-            let ok: bool = compile_file_fns[type_0 as usize].expect("non-null function pointer")(
+            let ok: bool = COMPILE_FILE_FNS[type_0 as usize].expect("non-null function pointer")(
                 files[type_0 as usize],
                 &raw mut info,
             ) as bool;
@@ -924,7 +911,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
         let ok_0: bool = UpdateDerivedKeymapFields(&raw mut info) as bool;
         // info.keymap is a pointer to the same keymap, no write-back needed
         pending_computations_array_free(&raw mut pending_computations);
-        return ok_0;
+        ok_0
     }
 }
 use crate::xkb::keymap::xkb_keymap_key_get_syms_by_level;

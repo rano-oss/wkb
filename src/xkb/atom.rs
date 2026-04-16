@@ -21,7 +21,7 @@ pub struct atom_table {
 fn hash_buf(bytes: &[u8]) -> u32 {
     let len = bytes.len();
     let mut hash: u32 = 2166136261;
-    for i in 0..(len + 1) / 2 {
+    for i in 0..len.div_ceil(2) {
         hash ^= bytes[i] as u32;
         hash = hash.wrapping_mul(0x1000193);
         hash ^= bytes[len - 1 - i] as u32;
@@ -96,7 +96,7 @@ pub unsafe fn atom_intern(table: &mut atom_table, string: *const i8, len: usize,
                         if index_pos == 0 {
                             continue;
                         }
-                        if t.index[index_pos] == XKB_ATOM_NONE as u32 {
+                        if t.index[index_pos] == XKB_ATOM_NONE {
                             t.index[index_pos] = j as u32;
                             break;
                         }
