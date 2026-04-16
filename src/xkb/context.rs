@@ -465,12 +465,12 @@ pub unsafe fn xkb_context_num_include_paths(ctx: *mut xkb_context) -> u32 {
         };
     }
 }
-pub unsafe fn xkb_context_include_path_get(ctx: *mut xkb_context, mut idx: u32) -> &'static str {
+pub unsafe fn xkb_context_include_path_get(ctx: *mut xkb_context, idx: u32) -> String {
     unsafe {
         if idx >= xkb_context_num_include_paths(ctx) {
-            return "";
+            return "".to_string();
         }
-        return &(&(*ctx).includes)[idx as usize];
+        return (&*ctx).includes.get(idx as usize).unwrap().clone();
     }
 }
 pub unsafe fn xkb_context_unref(ctx: *mut xkb_context) {
@@ -657,15 +657,12 @@ pub unsafe fn xkb_context_num_failed_include_paths(ctx: *mut xkb_context) -> u32
         };
     }
 }
-pub unsafe fn xkb_context_failed_include_path_get(
-    ctx: *mut xkb_context,
-    mut idx: u32,
-) -> &'static str {
+pub unsafe fn xkb_context_failed_include_path_get(ctx: *mut xkb_context, idx: u32) -> String {
     unsafe {
         if idx >= xkb_context_num_failed_include_paths(ctx) {
-            return "";
+            return "".to_string();
         }
-        return &(&(*ctx).failed_includes)[idx as usize];
+        return (&*ctx).failed_includes.get(idx as usize).unwrap().clone();
     }
 }
 

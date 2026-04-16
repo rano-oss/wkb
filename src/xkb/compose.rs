@@ -76,18 +76,18 @@ pub type xkb_compose_table_iter_t =
     Option<unsafe fn(*mut xkb_compose_table_entry, *mut ::core::ffi::c_void) -> ()>;
 
 unsafe fn for_each_helper(
-    mut table: *mut xkb_compose_table,
-    mut iter: xkb_compose_table_iter_t,
-    mut data: *mut ::core::ffi::c_void,
-    mut syms: *mut u32,
+    table: *mut xkb_compose_table,
+    iter: xkb_compose_table_iter_t,
+    data: *mut ::core::ffi::c_void,
+    syms: *mut u32,
     mut nsyms: usize,
-    mut p: u32,
+    p: u32,
 ) {
     unsafe {
         if p == 0 {
             return;
         }
-        let mut node: *const compose_node = (&(*table).nodes).as_ptr().offset(p as isize);
+        let node: *const compose_node = (&(*table).nodes).as_ptr().offset(p as isize);
         for_each_helper(table, iter, data, syms, nsyms, (*node).lokid);
         let c2rust_fresh0 = nsyms;
         nsyms = nsyms.wrapping_add(1);
@@ -112,9 +112,9 @@ unsafe fn for_each_helper(
 }
 
 pub unsafe fn xkb_compose_table_for_each(
-    mut table: *mut xkb_compose_table,
-    mut iter: xkb_compose_table_iter_t,
-    mut data: *mut ::core::ffi::c_void,
+    table: *mut xkb_compose_table,
+    iter: xkb_compose_table_iter_t,
+    data: *mut ::core::ffi::c_void,
 ) {
     unsafe {
         if (&(*table).nodes).len() <= 1 {

@@ -12,9 +12,6 @@
     non_snake_case,
     dead_code,
     mutable_transmutes,
-    unused_mut,
-    unused_assignments,
-    unused_variables,
     improper_ctypes,
     improper_ctypes_definitions,
     unknown_lints,
@@ -53,7 +50,6 @@ pub use compose as compose_parse;
 
 // Rules and registry
 pub mod registry;
-pub mod rmlvo;
 
 // Messages and logging
 pub mod messages;
