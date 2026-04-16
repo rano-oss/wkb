@@ -1,7 +1,5 @@
 #![feature(extern_types)]
 #![feature(c_variadic)]
-#![feature(register_tool)]
-#![register_tool(c2rust)]
 #![allow(deref_nullptr)]
 
 pub use composer::{ComposeState, Composer, ListComposer, Token};

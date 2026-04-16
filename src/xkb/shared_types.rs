@@ -571,9 +571,6 @@ pub const XKB_KEYBOARD_CONTROL_OVERLAY8: xkb_keyboard_control_flags = 256;
 pub type xkb_events_flags = u32;
 pub const XKB_EVENTS_NO_FLAGS: xkb_events_flags = 0;
 
-pub type xkb_rmlvo_builder_flags = u32;
-pub const XKB_RMLVO_BUILDER_NO_FLAGS: xkb_rmlvo_builder_flags = 0;
-
 pub type xkb_keymap_key_iterator_flags = u32;
 pub const XKB_KEYMAP_KEY_ITERATOR_NO_FLAGS: xkb_keymap_key_iterator_flags = 0;
 pub const XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER: xkb_keymap_key_iterator_flags = 1;
@@ -676,8 +673,6 @@ pub const XKB_MAX_MODS: u32 = (std::mem::size_of::<u32>()).wrapping_mul(CHAR_BIT
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_keymap_format_ops {
-    pub keymap_new_from_rmlvo:
-        Option<unsafe fn(*mut xkb_keymap, *const crate::xkb::rmlvo::xkb_rmlvo_builder) -> bool>,
     pub keymap_new_from_names: Option<unsafe fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
     pub keymap_new_from_string: Option<unsafe fn(*mut xkb_keymap, *const i8, usize) -> bool>,
     pub keymap_new_from_file: Option<unsafe fn(*mut xkb_keymap, *mut libc::FILE) -> bool>,

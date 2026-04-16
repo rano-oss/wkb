@@ -66,11 +66,6 @@ use crate::xkb::utils::{closedir, opendir, readdir, DIR};
 use crate::xkb::utils::{cstr_as_bytes, istrneq, strdup_safe};
 use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len};
 use libc::qsort;
-
-extern "C" {
-    pub fn secure_getenv(name: *const i8) -> *mut i8;
-}
-
 /// Macro that formats a message and prints to stderr.
 /// Usage: `xkb_logf!(ctx, level, verbosity, "format {}", arg)`
 /// The ctx, level, and verbosity args are accepted for compatibility but

@@ -48,9 +48,6 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
-pub use crate::xkb::rmlvo::{
-    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_option,
-};
 pub use crate::xkb::scanner_utils::{scanner, scanner_loc, sval, svaleq, svaleq_prefix};
 pub use crate::xkb::shared_ast_types::{
     _FILE_TYPE_NUM_ENTRIES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID,
@@ -496,170 +493,6 @@ unsafe fn split_comma_separated_mlvo(
             }
         }
         return arr;
-    }
-}
-unsafe fn matcher_new_from_rmlvo(
-    mut rmlvo: *const xkb_rmlvo_builder,
-    mut rules: *mut *const i8,
-) -> *mut matcher {
-    unsafe {
-        // Allocate zeroed memory for matcher, then initialize Vec fields properly.
-        // We use alloc_zeroed to avoid the stack-based zeroed() panic in debug mode.
-        let layout = std::alloc::Layout::new::<matcher>();
-        let ptr = std::alloc::alloc_zeroed(layout) as *mut matcher;
-        if ptr.is_null() {
-            std::alloc::handle_alloc_error(layout);
-        }
-        let mut m: *mut matcher = ptr;
-        // Vec fields cannot be safely zeroed — write proper empty Vecs
-        std::ptr::write(&raw mut (*m).rmlvo.layouts, Vec::new());
-        std::ptr::write(&raw mut (*m).rmlvo.variants, Vec::new());
-        std::ptr::write(&raw mut (*m).rmlvo.options, Vec::new());
-        std::ptr::write(&raw mut (*m).pending_kccgst.buffer, Vec::new());
-        std::ptr::write(&raw mut (*m).pending_kccgst.slices, Vec::new());
-        std::ptr::write(&raw mut (*m).groups, Vec::new());
-        std::ptr::write(&raw mut (*m).kccgst, std::array::from_fn(|_| Vec::new()));
-        (*m).ctx = std::ptr::addr_of!((*rmlvo).ctx) as *mut xkb_context;
-        let ptr_to_cstring = |p: *const i8| -> std::ffi::CString {
-            if p.is_null() {
-                std::ffi::CString::new("").unwrap()
-            } else {
-                std::ffi::CStr::from_ptr(p).to_owned()
-            }
-        };
-        let mut names: xkb_rule_names = xkb_rule_names {
-            rules: ptr_to_cstring((*rmlvo).rules),
-            model: ptr_to_cstring((*rmlvo).model),
-            layout: if (*rmlvo).layouts.is_empty() {
-                std::ffi::CString::new("").unwrap()
-            } else {
-                std::ffi::CString::new("x").unwrap()
-            },
-            variant: if (*rmlvo).layouts.is_empty() {
-                std::ffi::CString::new("").unwrap()
-            } else {
-                std::ffi::CString::new("x").unwrap()
-            },
-            options: if (*rmlvo).options.is_empty() {
-                std::ffi::CString::new("").unwrap()
-            } else {
-                std::ffi::CString::new("x").unwrap()
-            },
-        };
-        let changed: RMLVO =
-            xkb_context_sanitize_rule_names(&(*rmlvo).ctx, &raw mut names) as RMLVO;
-        if changed as u32 & RMLVO_RULES as u32 != 0 {
-            *rules = names.rules.as_ptr();
-        } else {
-            *rules = (*rmlvo).rules;
-        }
-        if changed as u32 & RMLVO_MODEL as u32 != 0 {
-            (*m).rmlvo.model.sval.start = names.model.as_ptr();
-        } else {
-            (*m).rmlvo.model.sval.start = (*rmlvo).model;
-        }
-        (*m).rmlvo.model.sval.len = cstr_len_safe((*rmlvo).model);
-        (*m).rmlvo.model.layout = OPTIONS_MATCH_ALL_GROUPS as u32 as u32;
-        if changed as u32 & RMLVO_LAYOUT as u32 != 0 {
-            (*m).rmlvo.layouts = split_comma_separated_mlvo(
-                std::ptr::addr_of!((*rmlvo).ctx) as *mut xkb_context,
-                MLVO_LAYOUT,
-                names.layout.as_ptr(),
-            );
-            (*m).rmlvo.variants = split_comma_separated_mlvo(
-                std::ptr::addr_of!((*rmlvo).ctx) as *mut xkb_context,
-                MLVO_VARIANT,
-                names.variant.as_ptr(),
-            );
-            if (*m).rmlvo.layouts.len() > (*m).rmlvo.variants.len() {
-                if !names.variant.as_bytes().is_empty() {
-                    xkb_logf!(
-                        (*m).ctx,
-                        XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "More layouts than variants: \"{}\" vs. \"{}\".\n",
-                        if !names.layout.as_bytes().is_empty() {
-                            names.layout.to_str().unwrap_or("")
-                        } else {
-                            "(none)"
-                        },
-                        if !names.variant.as_bytes().is_empty() {
-                            names.variant.to_str().unwrap_or("")
-                        } else {
-                            "(none)"
-                        },
-                    );
-                }
-                vec_resize_zero_matched_sval(&mut (*m).rmlvo.variants, (*m).rmlvo.layouts.len());
-            } else if (*m).rmlvo.layouts.len() < (*m).rmlvo.variants.len() {
-                xkb_logf!(
-                    (*m).ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Less layouts than variants: \"{}\" vs. \"{}\".\n",
-                    if !names.layout.as_bytes().is_empty() {
-                        names.layout.to_str().unwrap_or("")
-                    } else {
-                        "(none)"
-                    },
-                    if !names.variant.as_bytes().is_empty() {
-                        names.variant.to_str().unwrap_or("")
-                    } else {
-                        "(none)"
-                    },
-                );
-                (*m).rmlvo.variants.truncate((*m).rmlvo.layouts.len());
-            }
-        } else {
-            for layout in (*rmlvo).layouts.iter() {
-                let mut val: matched_sval = {
-                    let mut init = matched_sval {
-                        matched: false,
-                        layout: 0,
-                        sval: sval {
-                            len: cstr_len_safe(layout.layout),
-                            start: layout.layout,
-                        },
-                    };
-                    init.matched = false;
-                    init.layout = OPTIONS_MATCH_ALL_GROUPS as u32;
-                    init
-                };
-                (*m).rmlvo.layouts.push(val);
-                val.sval.start = layout.variant;
-                val.sval.len = cstr_len_safe(layout.variant);
-                (*m).rmlvo.variants.push(val);
-            }
-        }
-        if changed as u32 & RMLVO_OPTIONS as u32 != 0 {
-            (*m).rmlvo.options = split_comma_separated_mlvo(
-                std::ptr::addr_of!((*rmlvo).ctx) as *mut xkb_context,
-                MLVO_OPTION,
-                names.options.as_ptr(),
-            );
-        } else {
-            for option in (*rmlvo).options.iter() {
-                let val_0: matched_sval = {
-                    let mut init = matched_sval {
-                        matched: false,
-                        layout: 0,
-                        sval: sval {
-                            len: cstr_len_safe(option.option),
-                            start: option.option,
-                        },
-                    };
-                    init.matched = false;
-                    init.layout = if option.layout == XKB_LAYOUT_INVALID as u32 {
-                        OPTIONS_MATCH_ALL_GROUPS as u32
-                    } else {
-                        option.layout
-                    };
-                    init
-                };
-                (*m).rmlvo.options.push(val_0);
-            }
-        }
-        return m;
     }
 }
 unsafe fn matcher_new_from_names(
@@ -7363,28 +7196,6 @@ unsafe fn xkb_resolve_rules(
         if !file.is_null() {
             fclose(file);
         }
-        return ret;
-    }
-}
-pub unsafe fn xkb_components_from_rmlvo_builder(
-    mut rmlvo: *const xkb_rmlvo_builder,
-    mut out: *mut xkb_component_names,
-    mut explicit_layouts: *mut u32,
-) -> bool {
-    unsafe {
-        let mut rules: *const i8 = (*rmlvo).rules;
-        let mut matcher: *mut matcher = matcher_new_from_rmlvo(rmlvo, &raw mut rules);
-        if matcher.is_null() {
-            return false;
-        }
-        let ret: bool = xkb_resolve_rules(
-            std::ptr::addr_of!((*rmlvo).ctx) as *mut xkb_context,
-            rules,
-            matcher,
-            out,
-            explicit_layouts,
-        ) as bool;
-        matcher_free(matcher);
         return ret;
     }
 }

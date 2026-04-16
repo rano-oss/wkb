@@ -265,15 +265,6 @@ pub struct machine_mods_mapping {
     pub source: u32,
     pub target: u32,
 }
-// C2Rust_Unnamed_14 removed: replaced by Vec<xkb_overlaid_key>
-#[derive(Copy, Clone)]
-#[repr(C)]
-
-pub struct xkb_overlaid_key {
-    pub old: *const xkb_key,
-    pub new: *const xkb_key,
-    pub refcnt: i32,
-}
 #[derive(Clone)]
 
 pub struct xkb_state {

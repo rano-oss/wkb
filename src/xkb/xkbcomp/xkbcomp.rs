@@ -3,19 +3,6 @@ use crate::xkb_logf;
 
 use crate::xkb::shared_types::xkb_context;
 use crate::xkb::shared_types::{xkb_component_names, xkb_rule_names};
-pub unsafe fn xkb_components_from_rmlvo_builder(
-    rmlvo: *const xkb_rmlvo_builder,
-    out: *mut xkb_component_names,
-    explicit_layouts: *mut u32,
-) -> bool {
-    unsafe {
-        crate::xkb::xkbcomp::rules::xkb_components_from_rmlvo_builder(
-            rmlvo as *const _,
-            out as *mut _,
-            explicit_layouts,
-        )
-    }
-}
 pub unsafe fn xkb_components_from_rules_names(
     ctx: *mut xkb_context,
     rmlvo: *const xkb_rule_names,
@@ -75,10 +62,6 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
-};
-pub use crate::xkb::rmlvo::{
-    xkb_rmlvo_builder, xkb_rmlvo_builder_layout, xkb_rmlvo_builder_option,
-    xkb_rmlvo_builder_to_rules_names,
 };
 use crate::xkb::shared_ast_types::FreeXkbFile;
 pub use crate::xkb::shared_ast_types::{
@@ -165,120 +148,6 @@ unsafe fn compile_keymap_file(mut keymap: *mut xkb_keymap, mut file: *mut XkbFil
             return false;
         }
         return true;
-    }
-}
-unsafe fn text_v1_keymap_new_from_rmlvo(
-    mut keymap: *mut xkb_keymap,
-    mut rmlvo: *const xkb_rmlvo_builder,
-) -> bool {
-    unsafe {
-        let mut ok: bool = false;
-        let mut kccgst: xkb_component_names = xkb_component_names {
-            keycodes: std::ptr::null_mut(),
-            compatibility: std::ptr::null_mut(),
-            geometry: std::ptr::null_mut(),
-            symbols: std::ptr::null_mut(),
-            types: std::ptr::null_mut(),
-        };
-        let mut file: *mut XkbFile = std::ptr::null_mut();
-        if (*keymap).ctx.log_level as u32 >= XKB_LOG_LEVEL_DEBUG as u32 {
-            let mut names: xkb_rule_names = xkb_rule_names {
-                rules: std::ffi::CString::new("").unwrap(),
-                model: std::ffi::CString::new("").unwrap(),
-                layout: std::ffi::CString::new("").unwrap(),
-                variant: std::ffi::CString::new("").unwrap(),
-                options: std::ffi::CString::new("").unwrap(),
-            };
-            let buf_size: usize = (std::mem::size_of::<[i8; 2048]>()).wrapping_sub(1 as usize);
-            let mut buf: *mut i8 = xkb_context_get_buffer(&mut (*keymap).ctx, buf_size);
-            if buf.is_null() as i64 != 0 {
-                return false;
-            }
-            ok = xkb_rmlvo_builder_to_rules_names(rmlvo, &raw mut names, buf, buf_size);
-            if !ok as i64 != 0 {
-                return false;
-            }
-            xkb_logf!(
-                (*keymap).ctx,
-                XKB_LOG_LEVEL_DEBUG,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "Compiling from RMLVO builder: rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
-                names.rules.to_str().unwrap_or(""),
-                names.model.to_str().unwrap_or(""),
-                names.layout.to_str().unwrap_or(""),
-                names.variant.to_str().unwrap_or(""),
-                names.options.to_str().unwrap_or(""),
-            );
-        }
-        ok = xkb_components_from_rmlvo_builder(
-            rmlvo,
-            &raw mut kccgst,
-            &raw mut (*keymap).num_groups,
-        );
-        if !ok {
-            let mut names_0: xkb_rule_names = xkb_rule_names {
-                rules: std::ffi::CString::new("").unwrap(),
-                model: std::ffi::CString::new("").unwrap(),
-                layout: std::ffi::CString::new("").unwrap(),
-                variant: std::ffi::CString::new("").unwrap(),
-                options: std::ffi::CString::new("").unwrap(),
-            };
-            let buf_size_0: usize = std::mem::size_of::<[i8; 2048]>();
-            let mut buf_0: *mut i8 = xkb_context_get_buffer(&mut (*keymap).ctx, buf_size_0);
-            if buf_0.is_null() as i64 != 0 {
-                return false;
-            }
-            ok = xkb_rmlvo_builder_to_rules_names(rmlvo, &raw mut names_0, buf_0, buf_size_0);
-            if !ok as i64 != 0 {
-                return false;
-            }
-            xkb_logf!(
-                (*keymap).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Couldn't look up rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
-                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32,
-                names_0.rules.to_str().unwrap_or(""),
-                names_0.model.to_str().unwrap_or(""),
-                names_0.layout.to_str().unwrap_or(""),
-                names_0.variant.to_str().unwrap_or(""),
-                names_0.options.to_str().unwrap_or(""),
-            );
-            return false;
-        }
-        let max_groups: u32 = format_max_groups((*keymap).format) as u32;
-        if (*keymap).num_groups > max_groups {
-            (*keymap).num_groups = max_groups;
-        }
-        xkb_logf!(
-            (*keymap).ctx,
-            XKB_LOG_LEVEL_DEBUG,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "Compiling from KcCGST: keycodes '{}', types '{}', compat '{}', symbols '{}'\n",
-            crate::xkb::utils::CStrDisplay(kccgst.keycodes),
-            crate::xkb::utils::CStrDisplay(kccgst.types),
-            crate::xkb::utils::CStrDisplay(kccgst.compatibility),
-            crate::xkb::utils::CStrDisplay(kccgst.symbols),
-        );
-        file = XkbFileFromComponents(&raw mut (*keymap).ctx, &raw mut kccgst);
-        free(kccgst.keycodes as *mut ::core::ffi::c_void);
-        free(kccgst.types as *mut ::core::ffi::c_void);
-        free(kccgst.compatibility as *mut ::core::ffi::c_void);
-        free(kccgst.symbols as *mut ::core::ffi::c_void);
-        free(kccgst.geometry as *mut ::core::ffi::c_void);
-        if file.is_null() {
-            xkb_logf!(
-                (*keymap).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Failed to generate parsed XKB file from components\n",
-                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32,
-            );
-            return false;
-        }
-        ok = compile_keymap_file(keymap, file);
-        FreeXkbFile(file);
-        return ok;
     }
 }
 unsafe fn text_v1_keymap_new_from_names(
@@ -420,10 +289,6 @@ unsafe fn text_v1_keymap_new_from_file(mut keymap: *mut xkb_keymap, mut file: *m
 use crate::xkb::shared_types::*;
 pub static mut text_v1_keymap_format_ops: xkb_keymap_format_ops = {
     xkb_keymap_format_ops {
-        keymap_new_from_rmlvo: Some(
-            text_v1_keymap_new_from_rmlvo
-                as unsafe fn(*mut xkb_keymap, *const xkb_rmlvo_builder) -> bool,
-        ),
         keymap_new_from_names: Some(
             text_v1_keymap_new_from_names
                 as unsafe fn(*mut xkb_keymap, *const xkb_rule_names) -> bool,
