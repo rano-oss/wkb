@@ -190,7 +190,7 @@ unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] \t{}\n",
                     XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                    crate::xkb::utils::CStrDisplay(xkb_context_include_path_get(ctx, i)),
+                    xkb_context_include_path_get(ctx, i),
                 );
                 i = i.wrapping_add(1);
             }
@@ -220,7 +220,7 @@ unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] \t{}\n",
                     XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                    crate::xkb::utils::CStrDisplay(xkb_context_failed_include_path_get(ctx, i_0)),
+                    xkb_context_failed_include_path_get(ctx, i_0),
                 );
                 i_0 = i_0.wrapping_add(1);
             }
@@ -457,7 +457,7 @@ pub unsafe fn FindFileInXkbPath(
                 buf_size,
                 format_args!(
                     "{}/{}/{}",
-                    crate::xkb::utils::CStrDisplay(xkb_context_include_path_get(ctx, i)),
+                    xkb_context_include_path_get(ctx, i),
                     crate::xkb::utils::CStrDisplay(typeDir),
                     crate::xkb::utils::CStrNDisplay(name_len as usize, name)
                 ),
@@ -470,7 +470,7 @@ pub unsafe fn FindFileInXkbPath(
                     "[XKB-{:03}] Path is too long: expected max length of {}, got: {}/{}/{}\n",
                     XKB_ERROR_INVALID_PATH as i32,
                     buf_size,
-                    crate::xkb::utils::CStrDisplay(xkb_context_include_path_get(ctx, i)),
+                    xkb_context_include_path_get(ctx, i),
                     crate::xkb::utils::CStrDisplay(typeDir),
                     crate::xkb::utils::CStrNDisplay(name_len as usize, name),
                 );

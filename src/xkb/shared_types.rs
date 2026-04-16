@@ -75,8 +75,8 @@ pub struct xkb_context {
     pub log_verbosity: i32,
     // pub user_data: *mut ::core::ffi::c_void,
     pub names_dflt: xkb_rule_names,
-    pub includes: Vec<*mut i8>,
-    pub failed_includes: Vec<*mut i8>,
+    pub includes: Vec<String>,
+    pub failed_includes: Vec<String>,
     pub atom_table: atom_table,
     // pub x11_atom_cache: *mut ::core::ffi::c_void,
     pub text_buffer: [i8; 2048],
@@ -99,8 +99,9 @@ pub struct xkb_keymap {
     pub max_key_code: u32,
     pub num_keys: u32,
     pub num_keys_low: u32,
-    pub keys: *mut xkb_key,
-    pub c2rust_unnamed: C2Rust_Unnamed_3,
+    pub keys: Vec<xkb_key>,
+    pub key_names: Vec<KeycodeMatch>,
+    pub key_aliases: Vec<xkb_key_alias>,
     pub types: Vec<xkb_key_type>,
     pub sym_interprets: Vec<xkb_sym_interpret>,
     pub mods: xkb_mod_set,
@@ -357,30 +358,9 @@ pub struct xkb_key_type_entry {
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub union C2Rust_Unnamed_3 {
-    pub c2rust_unnamed: C2Rust_Unnamed_5,
-    pub c2rust_unnamed_0: C2Rust_Unnamed_4,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_4 {
-    pub num_key_aliases: u32,
-    pub key_aliases: *mut xkb_key_alias,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
 pub struct xkb_key_alias {
     pub real: u32,
     pub alias: u32,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_5 {
-    pub num_key_names: u32,
-    pub key_names: *mut KeycodeMatch,
 }
 
 #[derive(Copy, Clone)]
@@ -443,6 +423,30 @@ pub struct xkb_key {
 pub union C2Rust_Unnamed_9 {
     pub overlay_key: *const xkb_key,
     pub overlays_keys: *mut *const xkb_key,
+}
+
+impl Default for xkb_key {
+    fn default() -> Self {
+        Self {
+            keycode: 0,
+            name: 0,
+            explicit: 0,
+            modmap: 0,
+            vmodmap: 0,
+            overlays: 0,
+            overlays_inline: false,
+            repeats: false,
+            implicit_actions: false,
+            out_of_range_pending_group: false,
+            out_of_range_group_policy: 0,
+            out_of_range_group_number: 0,
+            num_groups: 0,
+            groups: Vec::new(),
+            c2rust_unnamed: C2Rust_Unnamed_9 {
+                overlay_key: std::ptr::null(),
+            },
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -741,7 +745,7 @@ pub unsafe fn XkbKey(mut keymap: *mut xkb_keymap, mut kc: u32) -> *const xkb_key
         if kc < (*keymap).min_key_code || kc > (*keymap).max_key_code {
             return std::ptr::null();
         } else if kc < (*keymap).num_keys_low {
-            return (*keymap).keys.offset(kc as isize) as *mut xkb_key;
+            return &(&(*keymap).keys)[kc as usize] as *const xkb_key;
         } else {
             let mut lower: u32 = (*keymap).num_keys_low;
             let mut upper: u32 = (*keymap).num_keys;
@@ -752,7 +756,7 @@ pub unsafe fn XkbKey(mut keymap: *mut xkb_keymap, mut kc: u32) -> *const xkb_key
                         .wrapping_sub(lower)
                         .wrapping_div(2 as u32),
                 );
-                let key: *const xkb_key = (*keymap).keys.offset(mid as isize) as *mut xkb_key;
+                let key: *const xkb_key = &(&(*keymap).keys)[mid as usize] as *const xkb_key;
                 if (*key).keycode < kc {
                     lower = mid.wrapping_add(1 as u32);
                 } else if (*key).keycode > kc {
@@ -773,25 +777,18 @@ pub unsafe fn XkbKeyByName(
     mut use_aliases: bool,
 ) -> *mut xkb_key {
     unsafe {
-        if name < (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names {
-            let match_0: KeycodeMatch = *(*keymap)
-                .c2rust_unnamed
-                .c2rust_unnamed
-                .key_names
-                .offset(name as isize);
+        if (name as usize) < (&(*keymap).key_names).len() {
+            let match_0: KeycodeMatch = (&(*keymap).key_names)[name as usize];
             if match_0.c2rust_unnamed.found {
                 if !match_0.c2rust_unnamed.is_alias {
-                    return (*keymap).keys.offset(match_0.key.index as isize) as *mut xkb_key;
+                    return ((&(*keymap).keys).as_ptr() as *mut xkb_key)
+                        .add(match_0.key.index as usize);
                 } else if use_aliases {
-                    return (*keymap).keys.offset(
-                        (*(*keymap)
-                            .c2rust_unnamed
-                            .c2rust_unnamed
-                            .key_names
-                            .offset(match_0.alias.real as isize))
-                        .key
-                        .index as isize,
-                    ) as *mut xkb_key;
+                    return ((&(*keymap).keys).as_ptr() as *mut xkb_key).add(
+                        (&(*keymap).key_names)[match_0.alias.real as usize]
+                            .key
+                            .index as usize,
+                    );
                 }
             }
         }

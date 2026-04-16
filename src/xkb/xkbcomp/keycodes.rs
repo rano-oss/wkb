@@ -1131,22 +1131,17 @@ unsafe fn CopyKeyNamesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyNa
                 .num_keys_low
                 .wrapping_add((&(*info).keycodes.high).len() as u32);
         }
-        let keys: *mut xkb_key =
-            calloc((*keymap).num_keys as usize, std::mem::size_of::<xkb_key>()) as *mut xkb_key;
-        if keys.is_null() {
-            (*keymap).num_keys = 0 as u32;
-            (*keymap).max_key_code = XKB_KEYCODE_INVALID as u32;
-            (*keymap).min_key_code = (*keymap).max_key_code;
-            return false;
-        }
+        let mut keys: Vec<xkb_key> = (0..(*keymap).num_keys as usize)
+            .map(|_| xkb_key::default())
+            .collect();
         let mut kc: u32 = (*keymap).min_key_code;
         while kc < (*keymap).num_keys_low {
-            (*keys.offset(kc as isize)).keycode = kc;
+            keys[kc as usize].keycode = kc;
             kc = kc.wrapping_add(1);
         }
         let mut kc_0: u32 = (*info).keycodes.min;
         while kc_0 < (&(*info).keycodes.low).len() as u32 {
-            (*keys.offset(kc_0 as isize)).name = (&(*info).keycodes.low)[kc_0 as usize];
+            keys[kc_0 as usize].name = (&(*info).keycodes.low)[kc_0 as usize];
             kc_0 = kc_0.wrapping_add(1);
         }
         let mut idx: u32 = (*keymap).num_keys_low;
@@ -1155,8 +1150,8 @@ unsafe fn CopyKeyNamesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyNa
             let high_len = (&(*info).keycodes.high).len();
             let mut entry: *const HighKeycodeEntry = high_ptr;
             while entry < high_ptr.add(high_len) {
-                (*keys.offset(idx as isize)).keycode = (*entry).keycode;
-                (*keys.offset(idx as isize)).name = (*entry).name;
+                keys[idx as usize].keycode = (*entry).keycode;
+                keys[idx as usize].name = (*entry).name;
                 idx = idx.wrapping_add(1);
                 entry = entry.offset(1);
             }
@@ -1210,17 +1205,10 @@ unsafe fn CopyKeycodeNameLUT(mut keymap: *mut xkb_keymap, mut info: *mut KeyName
             }
         }
         if names_len > 0 {
-            // Shrink the Vec to exact size, then steal the allocation
-            (&mut (*info).keycodes.names).shrink_to_fit();
-            let stolen_ptr = (*info).keycodes.names.as_mut_ptr();
-            let stolen_len = (&(*info).keycodes.names).len();
-            // Prevent Vec from freeing the allocation
-            std::mem::forget(std::mem::replace(&mut (*info).keycodes.names, Vec::new()));
-            (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names = stolen_len as u32;
-            (*keymap).c2rust_unnamed.c2rust_unnamed.key_names = stolen_ptr;
+            // Move the Vec directly to keymap
+            (*keymap).key_names = std::mem::take(&mut (*info).keycodes.names);
         } else {
-            (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names = 0 as u32;
-            (*keymap).c2rust_unnamed.c2rust_unnamed.key_names = std::ptr::null_mut();
+            (*keymap).key_names = Vec::new();
         }
         return true;
     }
@@ -1263,12 +1251,10 @@ unsafe fn CopyKeyNamesInfoToKeymap(
                 if !(c2rust_fresh0 > (*keymap).num_keys_low) {
                     break;
                 }
-                if keycode > (*(*keymap).keys.offset(k as isize)).keycode {
+                if keycode > (&(*keymap).keys)[k as usize].keycode {
                     break;
                 }
-                keycode = (*(*keymap).keys.offset(k as isize))
-                    .keycode
-                    .wrapping_sub(1 as u32);
+                keycode = (&(*keymap).keys)[k as usize].keycode.wrapping_sub(1 as u32);
             }
             (*keymap).redirect_key_auto = keycode;
         }

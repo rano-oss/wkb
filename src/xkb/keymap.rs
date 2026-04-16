@@ -63,20 +63,19 @@ pub use crate::xkb::shared_types::{
     xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_mask_t, xkb_pointer_action,
     xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
     xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_10,
-    C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4,
-    C2Rust_Unnamed_5, C2Rust_Unnamed_6, C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9,
-    KeycodeMatch, XkbKey, XkbKeyNumLevels, _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH,
-    ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS,
-    ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK,
-    ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION,
-    ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
-    ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
-    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
-    ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
-    ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
-    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
-    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
-    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2, C2Rust_Unnamed_6, C2Rust_Unnamed_7,
+    C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbKey, XkbKeyNumLevels,
+    _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y,
+    ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR,
+    ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
+    ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
+    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
+    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
+    ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK,
+    ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE,
+    ACTION_TYPE_UNKNOWN, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS,
+    CONTROL_ALL, CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX,
+    CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
     CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
     CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
     CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
@@ -134,16 +133,15 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
         } {
             return;
         }
-        if !(*keymap).keys.is_null() {
-            let mut key: *mut xkb_key = std::ptr::null_mut();
-            key = (*keymap).keys.offset(
-                (if (*keymap).num_keys_low == 0 as u32 {
-                    0 as u32
-                } else {
-                    (*keymap).min_key_code
-                }) as isize,
-            );
-            while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
+        if !(*keymap).keys.is_empty() {
+            let start_idx = if (*keymap).num_keys_low == 0 as u32 {
+                0 as u32
+            } else {
+                (*keymap).min_key_code
+            };
+            let mut ki: u32 = start_idx;
+            while ki < (*keymap).num_keys {
+                let key: *mut xkb_key = &mut (&mut (*keymap).keys)[ki as usize] as *mut xkb_key;
                 if !(&(*key).groups).is_empty() {
                     let mut i: u32 = 0 as u32;
                     while i < (*key).num_groups {
@@ -164,9 +162,9 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
                 if !(*key).overlays_inline && !(*key).c2rust_unnamed.overlays_keys.is_null() {
                     free((*key).c2rust_unnamed.overlays_keys as *mut ::core::ffi::c_void);
                 }
-                key = key.offset(1);
+                ki = ki.wrapping_add(1);
             }
-            free((*keymap).keys as *mut ::core::ffi::c_void);
+            // Vec drops automatically
         }
         if !(&(*keymap).types).is_empty() {
             let mut i_0: u32 = 0 as u32;
@@ -181,7 +179,7 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
             k = k.wrapping_add(1);
         }
         // sym_interprets Vec will be dropped below
-        free((*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases as *mut ::core::ffi::c_void);
+        // key_names and key_aliases Vecs will be dropped automatically
         // Box owner (Keymap.inner) handles final deallocation — do NOT Box::from_raw here
     }
 }
@@ -644,26 +642,13 @@ pub unsafe fn xkb_keymap_key_get_name(mut keymap: *mut xkb_keymap, mut kc: u32) 
 #[c2rust::src_loc = "707:1"]
 pub unsafe fn xkb_keymap_key_by_name(mut keymap: *mut xkb_keymap, mut name: *const i8) -> u32 {
     unsafe {
-        let mut key: *mut xkb_key = std::ptr::null_mut();
         let mut atom: u32 = 0;
         atom = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
         if atom != 0 {
             let mut i: u32 = 0 as u32;
-            while i < (*keymap).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases {
-                if (*(*keymap)
-                    .c2rust_unnamed
-                    .c2rust_unnamed_0
-                    .key_aliases
-                    .offset(i as isize))
-                .alias
-                    == atom
-                {
-                    atom = (*(*keymap)
-                        .c2rust_unnamed
-                        .c2rust_unnamed_0
-                        .key_aliases
-                        .offset(i as isize))
-                    .real;
+            while (i as usize) < (&(*keymap).key_aliases).len() {
+                if (&(*keymap).key_aliases)[i as usize].alias == atom {
+                    atom = (&(*keymap).key_aliases)[i as usize].real;
                 }
                 i = i.wrapping_add(1);
             }
@@ -671,18 +656,18 @@ pub unsafe fn xkb_keymap_key_by_name(mut keymap: *mut xkb_keymap, mut name: *con
         if atom == 0 {
             return XKB_KEYCODE_INVALID as u32;
         }
-        key = (*keymap).keys.offset(
-            (if (*keymap).num_keys_low == 0 as u32 {
-                0 as u32
-            } else {
-                (*keymap).min_key_code
-            }) as isize,
-        );
-        while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
+        let start_idx = if (*keymap).num_keys_low == 0 as u32 {
+            0 as u32
+        } else {
+            (*keymap).min_key_code
+        };
+        let mut ki: u32 = start_idx;
+        while ki < (*keymap).num_keys {
+            let key: *const xkb_key = &(&(*keymap).keys)[ki as usize] as *const xkb_key;
             if (*key).name == atom {
                 return (*key).keycode;
             }
-            key = key.offset(1);
+            ki = ki.wrapping_add(1);
         }
         return XKB_KEYCODE_INVALID as u32;
     }
@@ -737,6 +722,9 @@ pub unsafe fn xkb_keymap_new(
         std::ptr::write(&raw mut (*ptr).types, Vec::new());
         std::ptr::write(&raw mut (*ptr).sym_interprets, Vec::new());
         std::ptr::write(&raw mut (*ptr).group_names, Vec::new());
+        std::ptr::write(&raw mut (*ptr).keys, Vec::new());
+        std::ptr::write(&raw mut (*ptr).key_names, Vec::new());
+        std::ptr::write(&raw mut (*ptr).key_aliases, Vec::new());
         std::ptr::write(&raw mut (*ptr).keycodes_section_name, String::new());
         std::ptr::write(&raw mut (*ptr).symbols_section_name, String::new());
         std::ptr::write(&raw mut (*ptr).types_section_name, String::new());

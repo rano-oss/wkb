@@ -1042,12 +1042,8 @@ unsafe fn AddKeySymbols(
         {
             let keymap = (*(*info).keymap_info).keymap;
             let name = (*keyi).name;
-            if name < (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names {
-                let match_0: KeycodeMatch = *(*keymap)
-                    .c2rust_unnamed
-                    .c2rust_unnamed
-                    .key_names
-                    .offset(name as isize);
+            if (name as usize) < (&(*keymap).key_names).len() {
+                let match_0: KeycodeMatch = (&(*keymap).key_names)[name as usize];
                 if match_0.c2rust_unnamed.found as i32 != 0
                     && match_0.c2rust_unnamed.is_alias as i32 != 0
                 {
@@ -2585,14 +2581,14 @@ unsafe fn FindKeyForSymbol(mut keymap: *mut xkb_keymap, mut sym: u32) -> *mut xk
             loop {
                 got_one_level = false;
                 let mut key: *mut xkb_key = std::ptr::null_mut();
-                key = (*keymap).keys.offset(
-                    (if (*keymap).num_keys_low == 0 as u32 {
-                        0 as u32
-                    } else {
-                        (*keymap).min_key_code
-                    }) as isize,
-                );
-                while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
+                let start_idx = if (*keymap).num_keys_low == 0 as u32 {
+                    0 as u32
+                } else {
+                    (*keymap).min_key_code
+                };
+                let mut ki: u32 = start_idx;
+                while ki < (*keymap).num_keys {
+                    key = &mut (&mut (*keymap).keys)[ki as usize] as *mut xkb_key;
                     if group < (*key).num_groups && level < XkbKeyNumLevels(keymap, key, group) {
                         got_one_level = true;
                         got_one_group = got_one_level;
@@ -2620,7 +2616,7 @@ unsafe fn FindKeyForSymbol(mut keymap: *mut xkb_keymap, mut sym: u32) -> *mut xk
                             return key;
                         }
                     }
-                    key = key.offset(1);
+                    ki = ki.wrapping_add(1);
                 }
                 level = level.wrapping_add(1);
                 if !got_one_level {
@@ -3162,15 +3158,14 @@ unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Symbol
             }
         }
         if xkb_context_get_log_verbosity(&raw mut (*keymap).ctx) > 3 as i32 {
-            let mut key: *mut xkb_key = std::ptr::null_mut();
-            key = (*keymap).keys.offset(
-                (if (*keymap).num_keys_low == 0 as u32 {
-                    0 as u32
-                } else {
-                    (*keymap).min_key_code
-                }) as isize,
-            );
-            while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
+            let start_idx = if (*keymap).num_keys_low == 0 as u32 {
+                0 as u32
+            } else {
+                (*keymap).min_key_code
+            };
+            let mut ki: u32 = start_idx;
+            while ki < (*keymap).num_keys {
+                let key: *mut xkb_key = &mut (&mut (*keymap).keys)[ki as usize] as *mut xkb_key;
                 if !((*key).name == XKB_ATOM_NONE as u32) {
                     if ((*key).num_groups as i32) < 1 as i32 {
                         xkb_logf!(
@@ -3185,7 +3180,7 @@ unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Symbol
                         );
                     }
                 }
-                key = key.offset(1);
+                ki = ki.wrapping_add(1);
             }
         }
         for mm in (*info).modmaps.iter_mut() {

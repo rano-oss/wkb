@@ -12,14 +12,13 @@ pub use crate::xkb::shared_types::{
 };
 pub use crate::xkb::state::mod_mask_get_effective;
 use crate::xkb::text::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
-use crate::xkb::utils::{is_aligned, memdup};
+use crate::xkb::utils::memdup;
 pub use crate::xkb::xkbcomp::ast_build::FreeStmt;
 pub use crate::xkb::xkbcomp::compat::CompileCompatMap;
 use crate::xkb::xkbcomp::expr::ExprResolveGroupMask;
 pub use crate::xkb::xkbcomp::keycodes::CompileKeycodes;
 pub use crate::xkb::xkbcomp::symbols::CompileSymbols;
 pub use crate::xkb::xkbcomp::types::CompileKeyTypes;
-use libc::realloc;
 
 pub const GROUP_MASK_NAME_LAST: u32 = 3;
 pub const GROUP_INDEX_NAME_LAST: u32 = 1;
@@ -369,22 +368,17 @@ unsafe fn add_key_aliases(
     mut keymap: *mut xkb_keymap,
     mut min: u32,
     mut max: u32,
-    mut aliases: *mut xkb_key_alias,
+    aliases: &mut Vec<xkb_key_alias>,
 ) {
     unsafe {
         let mut alias: u32 = min;
         while alias <= max {
-            let entry: KeycodeMatch = *(*keymap)
-                .c2rust_unnamed
-                .c2rust_unnamed
-                .key_names
-                .offset(alias as isize);
+            let entry: KeycodeMatch = (&(*keymap).key_names)[alias as usize];
             if entry.c2rust_unnamed.is_alias as i32 != 0 && entry.c2rust_unnamed.found as i32 != 0 {
-                *aliases = xkb_key_alias {
+                aliases.push(xkb_key_alias {
                     real: entry.alias.real,
                     alias: alias as u32,
-                };
-                aliases = aliases.offset(1);
+                });
             }
             alias = alias.wrapping_add(1);
         }
@@ -501,12 +495,8 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
         let mut min_alias: u32 = 0 as u32;
         let mut max_alias: u32 = 0 as u32;
         let mut alias: u32 = 0 as u32;
-        while alias < (*keymap).c2rust_unnamed.c2rust_unnamed.num_key_names {
-            let entry: KeycodeMatch = *(*keymap)
-                .c2rust_unnamed
-                .c2rust_unnamed
-                .key_names
-                .offset(alias as isize);
+        while (alias as usize) < (&(*keymap).key_names).len() {
+            let entry: KeycodeMatch = (&(*keymap).key_names)[alias as usize];
             if entry.c2rust_unnamed.is_alias as i32 != 0 && entry.c2rust_unnamed.found as i32 != 0 {
                 if num_key_aliases == 0 {
                     min_alias = alias as u32;
@@ -517,95 +507,29 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             alias = alias.wrapping_add(1);
         }
         if num_key_aliases != 0 {
-            let required_space: u32 = (std::mem::size_of::<xkb_key_alias>())
-                .wrapping_div(std::mem::size_of::<KeycodeMatch>())
-                .wrapping_mul(num_key_aliases as usize)
-                as u32;
-            if min_alias >= required_space {
-                add_key_aliases(
-                    keymap,
-                    min_alias,
-                    max_alias,
-                    (*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases,
-                );
-                let r: *mut xkb_key_alias = realloc(
-                    (*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases
-                        as *mut ::core::ffi::c_void,
-                    (num_key_aliases as usize).wrapping_mul(std::mem::size_of::<xkb_key_alias>()),
-                ) as *mut xkb_key_alias;
-                if r.is_null() {
-                    return false;
-                }
-                (*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases = r;
-            } else if (*keymap)
-                .c2rust_unnamed
-                .c2rust_unnamed
-                .num_key_names
-                .wrapping_sub(max_alias)
-                .wrapping_sub(1 as u32)
-                > required_space
-            {
-                let aliases: *mut xkb_key_alias = (*keymap)
-                    .c2rust_unnamed
-                    .c2rust_unnamed
-                    .key_names
-                    .offset(max_alias as isize)
-                    .offset(1 as i32 as isize)
-                    .offset(!is_aligned(
-                        (*keymap)
-                            .c2rust_unnamed
-                            .c2rust_unnamed
-                            .key_names
-                            .offset(max_alias as isize)
-                            .offset(1 as i32 as isize)
-                            as *const ::core::ffi::c_void,
-                        std::mem::size_of::<xkb_key_alias>(),
-                    ) as i32 as isize)
-                    as *mut xkb_key_alias;
-                add_key_aliases(keymap, min_alias, max_alias, aliases);
-                std::ptr::copy_nonoverlapping::<xkb_key_alias>(
-                    aliases,
-                    (*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases,
-                    num_key_aliases as usize,
-                );
-                let r_0: *mut xkb_key_alias = realloc(
-                    (*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases
-                        as *mut ::core::ffi::c_void,
-                    (num_key_aliases as usize).wrapping_mul(std::mem::size_of::<xkb_key_alias>()),
-                ) as *mut xkb_key_alias;
-                if r_0.is_null() {
-                    return false;
-                }
-                (*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases = r_0;
-            } else {
-                let aliases_0: *mut xkb_key_alias = calloc(
-                    num_key_aliases as usize,
-                    std::mem::size_of::<xkb_key_alias>(),
-                ) as *mut xkb_key_alias;
-                if aliases_0.is_null() {
-                    return false;
-                }
-                add_key_aliases(keymap, min_alias, max_alias, aliases_0);
-                free((*keymap).c2rust_unnamed.c2rust_unnamed.key_names as *mut ::core::ffi::c_void);
-                (*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases = aliases_0;
-            }
+            let mut aliases: Vec<xkb_key_alias> = Vec::with_capacity(num_key_aliases as usize);
+            add_key_aliases(keymap, min_alias, max_alias, &mut aliases);
+            (*keymap).key_aliases = aliases;
         }
-        (*keymap).c2rust_unnamed.c2rust_unnamed_0.num_key_aliases = num_key_aliases;
+        // key_names is no longer needed after compilation; drop it
+        (*keymap).key_names = Vec::new();
         let mut key: *mut xkb_key = std::ptr::null_mut();
-        key = (*keymap).keys.offset(
-            (if (*keymap).num_keys_low == 0 as u32 {
+        {
+            let start_idx = if (*keymap).num_keys_low == 0 as u32 {
                 0 as u32
             } else {
                 (*keymap).min_key_code
-            }) as isize,
-        );
-        while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
-            (*keymap).num_groups = if (*keymap).num_groups > (*key).num_groups {
-                (*keymap).num_groups
-            } else {
-                (*key).num_groups
             };
-            key = key.offset(1);
+            let mut ki: u32 = start_idx;
+            while ki < (*keymap).num_keys {
+                key = &mut (&mut (*keymap).keys)[ki as usize] as *mut xkb_key;
+                (*keymap).num_groups = if (*keymap).num_groups > (*key).num_groups {
+                    (*keymap).num_groups
+                } else {
+                    (*key).num_groups
+                };
+                ki = ki.wrapping_add(1);
+            }
         }
         let pending_computations: bool = !(&*(*info).pending_computations).is_empty();
         if pending_computations {
@@ -645,42 +569,46 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                 i = i.wrapping_add(1);
             }
         }
-        key = (*keymap).keys.offset(
-            (if (*keymap).num_keys_low == 0 as u32 {
+        {
+            let start_idx = if (*keymap).num_keys_low == 0 as u32 {
                 0 as u32
             } else {
                 (*keymap).min_key_code
-            }) as isize,
-        );
-        while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
-            if !ApplyInterpsToKey(keymap, key) {
-                return false;
+            };
+            let mut ki: u32 = start_idx;
+            while ki < (*keymap).num_keys {
+                key = &mut (&mut (*keymap).keys)[ki as usize] as *mut xkb_key;
+                if !ApplyInterpsToKey(keymap, key) {
+                    return false;
+                }
+                CheckMultipleActionsCategories(keymap, key);
+                ki = ki.wrapping_add(1);
             }
-            CheckMultipleActionsCategories(keymap, key);
-            key = key.offset(1);
         }
         let mut idx: u32 = 0;
         let mut mod_0: *mut xkb_mod = std::ptr::null_mut();
-        key = (*keymap).keys.offset(
-            (if (*keymap).num_keys_low == 0 as u32 {
+        {
+            let start_idx = if (*keymap).num_keys_low == 0 as u32 {
                 0 as u32
             } else {
                 (*keymap).min_key_code
-            }) as isize,
-        );
-        while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
-            idx = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
-            mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
-                .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize)
-                as *mut xkb_mod;
-            while idx < (*keymap).mods.num_mods {
-                if (*key).vmodmap & (1 as u32) << idx != 0 {
-                    (*mod_0).mapping |= (*key).modmap;
+            };
+            let mut ki: u32 = start_idx;
+            while ki < (*keymap).num_keys {
+                key = &mut (&mut (*keymap).keys)[ki as usize] as *mut xkb_key;
+                idx = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
+                mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
+                    .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize)
+                    as *mut xkb_mod;
+                while idx < (*keymap).mods.num_mods {
+                    if (*key).vmodmap & (1 as u32) << idx != 0 {
+                        (*mod_0).mapping |= (*key).modmap;
+                    }
+                    idx = idx.wrapping_add(1);
+                    mod_0 = mod_0.offset(1);
                 }
-                idx = idx.wrapping_add(1);
-                mod_0 = mod_0.offset(1);
+                ki = ki.wrapping_add(1);
             }
-            key = key.offset(1);
         }
         if (*keymap).format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32 {
             idx = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
@@ -749,61 +677,64 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
             }
             i_0 = i_0.wrapping_add(1);
         }
-        key = (*keymap).keys.offset(
-            (if (*keymap).num_keys_low == 0 as u32 {
+        {
+            let start_idx = if (*keymap).num_keys_low == 0 as u32 {
                 0 as u32
             } else {
                 (*keymap).min_key_code
-            }) as isize,
-        );
-        while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
-            if !update_pending_key_fields(info, key) {
-                return false;
-            }
-            let mut i_1: u32 = 0 as u32;
-            while i_1 < (*key).num_groups {
-                let mut j_0: u32 = 0 as u32;
-                while j_0 < XkbKeyNumLevels(keymap, key, i_1) {
-                    if (&(*key).groups)[i_1 as usize].levels[j_0 as usize].num_actions as i32
-                        <= 1 as i32
-                    {
-                        let act_1: *mut xkb_action = &raw mut (&mut (*key).groups)[i_1 as usize]
-                            .levels[j_0 as usize]
-                            .a
-                            .action;
-                        UpdateActionMods(keymap, act_1, (*key).modmap);
-                        if (pending_computations as i32 != 0
-                            || (*act_1).type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as u32)
-                            && !update_pending_action_fields(info, (*key).keycode, act_1)
+            };
+            let mut ki: u32 = start_idx;
+            while ki < (*keymap).num_keys {
+                key = &mut (&mut (*keymap).keys)[ki as usize] as *mut xkb_key;
+                if !update_pending_key_fields(info, key) {
+                    return false;
+                }
+                let mut i_1: u32 = 0 as u32;
+                while i_1 < (*key).num_groups {
+                    let mut j_0: u32 = 0 as u32;
+                    while j_0 < XkbKeyNumLevels(keymap, key, i_1) {
+                        if (&(*key).groups)[i_1 as usize].levels[j_0 as usize].num_actions as i32
+                            <= 1 as i32
                         {
-                            return false;
-                        }
-                    } else {
-                        let mut k: u16 = 0 as u16;
-                        while (k as i32)
-                            < (&(*key).groups)[i_1 as usize].levels[j_0 as usize].num_actions as i32
-                        {
-                            let act_2: *mut xkb_action = (&mut (*key).groups)[i_1 as usize].levels
-                                [j_0 as usize]
-                                .a
-                                .actions
-                                .offset(k as isize)
-                                as *mut xkb_action;
-                            UpdateActionMods(keymap, act_2, (*key).modmap);
+                            let act_1: *mut xkb_action =
+                                &raw mut (&mut (*key).groups)[i_1 as usize].levels[j_0 as usize]
+                                    .a
+                                    .action;
+                            UpdateActionMods(keymap, act_1, (*key).modmap);
                             if (pending_computations as i32 != 0
-                                || (*act_2).type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as u32)
-                                && !update_pending_action_fields(info, (*key).keycode, act_2)
+                                || (*act_1).type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as u32)
+                                && !update_pending_action_fields(info, (*key).keycode, act_1)
                             {
                                 return false;
                             }
-                            k = k.wrapping_add(1);
+                        } else {
+                            let mut k: u16 = 0 as u16;
+                            while (k as i32)
+                                < (&(*key).groups)[i_1 as usize].levels[j_0 as usize].num_actions
+                                    as i32
+                            {
+                                let act_2: *mut xkb_action = (&mut (*key).groups)[i_1 as usize]
+                                    .levels[j_0 as usize]
+                                    .a
+                                    .actions
+                                    .offset(k as isize)
+                                    as *mut xkb_action;
+                                UpdateActionMods(keymap, act_2, (*key).modmap);
+                                if (pending_computations as i32 != 0
+                                    || (*act_2).type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as u32)
+                                    && !update_pending_action_fields(info, (*key).keycode, act_2)
+                                {
+                                    return false;
+                                }
+                                k = k.wrapping_add(1);
+                            }
                         }
+                        j_0 = j_0.wrapping_add(1);
                     }
-                    j_0 = j_0.wrapping_add(1);
+                    i_1 = i_1.wrapping_add(1);
                 }
-                i_1 = i_1.wrapping_add(1);
+                ki = ki.wrapping_add(1);
             }
-            key = key.offset(1);
         }
         let mut led: *mut xkb_led = std::ptr::null_mut();
         led = &raw mut (*keymap).leds as *mut xkb_led;

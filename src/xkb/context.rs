@@ -60,7 +60,6 @@ pub use crate::xkb::shared_types::{
 };
 pub use crate::xkb::shared_types::{R_OK, X_OK};
 use crate::xkb::utils::__errno_location;
-use crate::xkb::utils::cstr_dup;
 // isempty no longer needed — String fields use .is_empty()
 use crate::xkb::utils::xkb_stat;
 use crate::xkb::utils::{closedir, opendir, readdir, DIR};
@@ -111,8 +110,8 @@ unsafe fn context_include_path_append(ctx: *mut xkb_context, mut path: *const i8
             __glibc_reserved: [0; 3],
         };
         let mut err: i32 = ENOMEM;
-        let mut tmp: *mut i8 = cstr_dup(path);
-        if !tmp.is_null() {
+        let tmp = std::ffi::CStr::from_ptr(path).to_str().unwrap().to_string();
+        {
             stat_buf = stat {
                 st_dev: 0,
                 st_ino: 0,
@@ -145,18 +144,18 @@ unsafe fn context_include_path_append(ctx: *mut xkb_context, mut path: *const i8
             } else if !(stat_buf.st_mode & __S_IFMT as u32 == 0o40000 as u32) {
                 err = ENOTDIR;
             } else {
-                (*ctx).includes.push(tmp);
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_INFO,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Include path added: {}\n",
-                    crate::xkb::utils::CStrDisplay(tmp),
+                    &tmp,
                 );
+                (*ctx).includes.push(tmp);
                 return 1 as i32;
             }
         }
-        if !tmp.is_null() {
+        if !tmp.is_empty() {
             (*ctx).failed_includes.push(tmp);
         }
         xkb_logf!(
@@ -456,13 +455,7 @@ pub unsafe fn xkb_context_include_path_append_default(ctx: *mut xkb_context) -> 
 
 pub unsafe fn xkb_context_include_path_clear(ctx: *mut xkb_context) {
     unsafe {
-        for path in (*ctx).includes.iter() {
-            cstr_free(*path);
-        }
         (*ctx).includes.clear();
-        for path in (*ctx).failed_includes.iter() {
-            cstr_free(*path);
-        }
         (*ctx).failed_includes.clear();
         (*ctx).pending_default_includes = false;
     }
@@ -477,12 +470,12 @@ pub unsafe fn xkb_context_num_include_paths(ctx: *mut xkb_context) -> u32 {
         };
     }
 }
-pub unsafe fn xkb_context_include_path_get(ctx: *mut xkb_context, mut idx: u32) -> *const i8 {
+pub unsafe fn xkb_context_include_path_get(ctx: *mut xkb_context, mut idx: u32) -> &'static str {
     unsafe {
         if idx >= xkb_context_num_include_paths(ctx) {
-            return std::ptr::null();
+            return "";
         }
-        return *(*ctx).includes.as_ptr().add(idx as usize);
+        return &(&(*ctx).includes)[idx as usize];
     }
 }
 pub unsafe fn xkb_context_unref(ctx: *mut xkb_context) {
@@ -672,12 +665,12 @@ pub unsafe fn xkb_context_num_failed_include_paths(ctx: *mut xkb_context) -> u32
 pub unsafe fn xkb_context_failed_include_path_get(
     ctx: *mut xkb_context,
     mut idx: u32,
-) -> *const i8 {
+) -> &'static str {
     unsafe {
         if idx >= xkb_context_num_failed_include_paths(ctx) {
-            return std::ptr::null();
+            return "";
         }
-        return *(*ctx).failed_includes.as_ptr().add(idx as usize);
+        return &(&(*ctx).failed_includes)[idx as usize];
     }
 }
 
