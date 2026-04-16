@@ -474,9 +474,6 @@ pub const MOD_REAL_MASK_ALL: u32 = 0xff as i32 as u32;
 // ── Additional xkbcommon types ──────────────────────────────────────
 
 pub type xkb_keymap_serialize_flags = u32;
-pub const XKB_KEYMAP_SERIALIZE_EXPLICIT: xkb_keymap_serialize_flags = 4;
-pub const XKB_KEYMAP_SERIALIZE_KEEP_UNUSED: xkb_keymap_serialize_flags = 2;
-pub const XKB_KEYMAP_SERIALIZE_PRETTY: xkb_keymap_serialize_flags = 1;
 pub const XKB_KEYMAP_SERIALIZE_NO_FLAGS: xkb_keymap_serialize_flags = 0;
 
 pub type xkb_led_mask_t = u32;
@@ -492,14 +489,8 @@ pub const MAX_ACTIONS_PER_LEVEL: i32 = UINT16_MAX;
 
 // ── config_h constants ──────────────────────────────────────────────
 
-pub const DEFAULT_XKB_LAYOUT: [i8; 3] =
-    unsafe { ::core::mem::transmute::<[u8; 3], [i8; 3]>(*b"us\0") };
-pub const DEFAULT_XKB_MODEL: [i8; 6] =
-    unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"pc105\0") };
-pub const DEFAULT_XKB_OPTIONS: *mut ::core::ffi::c_void = std::ptr::null_mut::<core::ffi::c_void>();
 pub const DEFAULT_XKB_RULES: [i8; 6] =
     unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"evdev\0") };
-pub const DEFAULT_XKB_VARIANT: *mut ::core::ffi::c_void = std::ptr::null_mut::<core::ffi::c_void>();
 
 pub const DFLT_XKB_CONFIG_EXTRA_PATH: [i8; 19] =
     unsafe { ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/local/etc/xkb\0") };
@@ -511,8 +502,6 @@ pub const DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH: [i8; 32] =
     unsafe { ::core::mem::transmute::<[u8; 32], [i8; 32]>(*b"/usr/share/xkeyboard-config-2.d\0") };
 pub const DFLT_XKB_LEGACY_ROOT: [i8; 19] =
     unsafe { ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/share/X11/xkb\0") };
-
-pub const EXIT_INVALID_USAGE: i32 = 2;
 
 // ── xkbcommon_h types (moved from duplicated pub mod xkbcommon_h blocks) ─
 
@@ -535,7 +524,6 @@ pub const XKB_EVENT_TYPE_COMPONENTS_CHANGE: xkb_event_type = 4;
 
 pub type xkb_consumed_mode = u32;
 pub const XKB_CONSUMED_MODE_XKB: xkb_consumed_mode = 0;
-pub const XKB_CONSUMED_MODE_GTK: xkb_consumed_mode = 1;
 
 pub type xkb_keysym_flags = u32;
 pub const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
@@ -543,7 +531,6 @@ pub const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
 
 pub type xkb_state_match = u32;
 pub const XKB_STATE_MATCH_ANY: xkb_state_match = 1;
-pub const XKB_STATE_MATCH_ALL: xkb_state_match = 2;
 pub const XKB_STATE_MATCH_NON_EXCLUSIVE: xkb_state_match = 65536;
 
 pub type xkb_a11y_flags = u32;
@@ -553,26 +540,6 @@ pub const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: xkb_a11y_flags = 2;
 
 pub type xkb_keyboard_control_flags = u32;
 pub const XKB_KEYBOARD_CONTROL_NO_FLAGS: xkb_keyboard_control_flags = 0;
-pub const XKB_KEYBOARD_CONTROL_A11Y_STICKY_KEYS: xkb_keyboard_control_flags = 1;
-pub const XKB_KEYBOARD_CONTROL_OVERLAY1: xkb_keyboard_control_flags = 2;
-pub const XKB_KEYBOARD_CONTROL_OVERLAY2: xkb_keyboard_control_flags = 4;
-pub const XKB_KEYBOARD_CONTROL_OVERLAY3: xkb_keyboard_control_flags = 8;
-pub const XKB_KEYBOARD_CONTROL_OVERLAY4: xkb_keyboard_control_flags = 16;
-pub const XKB_KEYBOARD_CONTROL_OVERLAY5: xkb_keyboard_control_flags = 32;
-pub const XKB_KEYBOARD_CONTROL_OVERLAY6: xkb_keyboard_control_flags = 64;
-pub const XKB_KEYBOARD_CONTROL_OVERLAY7: xkb_keyboard_control_flags = 128;
-pub const XKB_KEYBOARD_CONTROL_OVERLAY8: xkb_keyboard_control_flags = 256;
-
-pub type xkb_events_flags = u32;
-pub const XKB_EVENTS_NO_FLAGS: xkb_events_flags = 0;
-
-pub type xkb_keymap_key_iterator_flags = u32;
-pub const XKB_KEYMAP_KEY_ITERATOR_NO_FLAGS: xkb_keymap_key_iterator_flags = 0;
-pub const XKB_KEYMAP_KEY_ITERATOR_DESCENDING_ORDER: xkb_keymap_key_iterator_flags = 1;
-pub const XKB_KEYMAP_KEY_ITERATOR_SKIP_UNBOUND: xkb_keymap_key_iterator_flags = 2;
-
-pub type xkb_keymap_key_iter_t =
-    Option<unsafe fn(*mut xkb_keymap, u32, *mut ::core::ffi::c_void) -> ()>;
 
 pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff;
 pub const XKB_KEYCODE_MAX: u32 = 0xffffffff_u32.wrapping_sub(1);
@@ -627,8 +594,6 @@ pub const XKB_ATOM_NONE: u32 = 0;
 // ── keymap_h types & constants (moved from duplicated pub mod keymap_h blocks) ─
 
 pub type real_mod_index = u32;
-
-pub const _LAST_XKB_EVENT_TYPE: u32 = 4;
 
 pub const FALLBACK_INTERPRET_KEY_REPEAT: u32 = 0;
 pub const DEFAULT_INTERPRET_KEY_REPEAT: u32 = 1;
@@ -845,20 +810,9 @@ pub const ENOTDIR: i32 = 20;
 pub const __LC_CTYPE: i32 = 0;
 pub const __LC_ALL: i32 = 6;
 
-// ── include_locale_h ──────────────────────────────────────────────────
-pub const LC_CTYPE: i32 = __LC_CTYPE;
-pub const LC_ALL: i32 = __LC_ALL;
-
 // ── unistd_h ──────────────────────────────────────────────────────────
-pub const STDIN_FILENO: i32 = 0;
-pub const STDOUT_FILENO: i32 = 1;
-pub const STDERR_FILENO: i32 = 2;
 pub const R_OK: i32 = 4;
 pub const X_OK: i32 = 1;
-
-// ── fcntl_linux_h ─────────────────────────────────────────────────────
-pub const O_RDONLY: i32 = 0;
-pub const O_WRONLY: i32 = 0o1;
 
 // ── dirent_h ──────────────────────────────────────────────────────────
 #[derive(Copy, Clone)]
