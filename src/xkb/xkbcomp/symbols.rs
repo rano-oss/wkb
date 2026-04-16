@@ -9,11 +9,11 @@ pub use crate::xkb::shared_types::{
 };
 use crate::xkb::text::ModIndexText;
 use crate::xkb::utils::cstr_free;
-use crate::xkb::utils::{istrneq, memdup};
+use crate::xkb::utils::istrneq;
 pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };
-use libc::{abort, realloc};
+use libc::abort;
 #[derive(Clone)]
 pub struct SymbolsInfo {
     pub name: Option<String>,

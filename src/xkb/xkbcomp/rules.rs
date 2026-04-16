@@ -1,4 +1,3 @@
-use crate::xkb::context::xkb_context_sanitize_rule_names;
 use crate::xkb_logf;
 
 pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
@@ -64,7 +63,7 @@ pub use crate::xkb::shared_types::{
 pub use crate::xkb::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
-use crate::xkb::utils::{cstr_as_bytes, cstr_len, cstr_len_safe};
+use crate::xkb::utils::{cstr_as_bytes, cstr_len};
 pub use crate::xkb::xkbcomp::include::{
     expand_path, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,

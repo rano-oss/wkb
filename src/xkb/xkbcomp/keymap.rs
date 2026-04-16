@@ -11,7 +11,7 @@ pub use crate::xkb::shared_types::{
 };
 pub use crate::xkb::state::mod_mask_get_effective;
 use crate::xkb::text::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
-use crate::xkb::utils::memdup;
+
 pub use crate::xkb::xkbcomp::ast_build::FreeStmt;
 pub use crate::xkb::xkbcomp::compat::CompileCompatMap;
 use crate::xkb::xkbcomp::expr::ExprResolveGroupMask;

@@ -87,9 +87,9 @@ pub use crate::xkb::shared_types::{
     XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, XKB_RMLVO_BUILDER_FLAGS_VALUES,
     XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
-use crate::xkb::utils::{cstr_free, cstr_len};
+use crate::xkb::utils::cstr_len;
 use crate::xkb_logf;
-use libc::{free, FILE};
+use libc::FILE;
 pub unsafe fn xkb_keymap_ref(mut keymap: *mut xkb_keymap) -> *mut xkb_keymap {
     unsafe {
         (*keymap).refcnt += 1;

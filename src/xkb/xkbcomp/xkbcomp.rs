@@ -1,4 +1,3 @@
-use crate::xkb::context::xkb_context_get_buffer;
 use crate::xkb_logf;
 
 use crate::xkb::shared_types::xkb_context;
@@ -286,7 +285,6 @@ unsafe fn text_v1_keymap_new_from_file(mut keymap: *mut xkb_keymap, mut file: *m
         return ok;
     }
 }
-use crate::xkb::shared_types::*;
 pub static mut text_v1_keymap_format_ops: xkb_keymap_format_ops = {
     xkb_keymap_format_ops {
         keymap_new_from_names: Some(
