@@ -193,19 +193,19 @@ pub use crate::xkb::shared_types::{
     xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_mod,
     xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t, xkb_overlay_mask_t,
     xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
-    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_9,
-    KeycodeMatch, XkbKey, _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES,
-    ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL,
-    ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK,
-    ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
-    ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
-    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
-    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
-    ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK,
-    ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE,
-    ACTION_TYPE_UNKNOWN, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS,
-    CONTROL_ALL, CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX,
-    CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, KeycodeMatch, XkbKey,
+    _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH,
+    ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS,
+    ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK,
+    ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION,
+    ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
+    ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
+    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
+    ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
+    ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
+    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
+    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
+    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
     CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
     CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
     CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
@@ -410,7 +410,6 @@ static mut synthetic_key_break_group_latch: xkb_key = xkb_key {
     modmap: 0,
     vmodmap: 0,
     overlays: 0,
-    overlays_inline: false,
     repeats: false,
     implicit_actions: false,
     out_of_range_pending_group: false,
@@ -418,9 +417,7 @@ static mut synthetic_key_break_group_latch: xkb_key = xkb_key {
     out_of_range_group_number: 0,
     num_groups: 1,
     groups: Vec::new(),
-    c2rust_unnamed: C2Rust_Unnamed_9 {
-        overlay_key: std::ptr::null(),
-    },
+    overlay_keys: Vec::new(),
 };
 static mut synthetic_key_level_break_group_latch: xkb_level = xkb_level {
     upper: XKB_KEY_NoSymbol as u32,
@@ -1912,17 +1909,14 @@ static mut synthetic_key: xkb_key = xkb_key {
     modmap: 0,
     vmodmap: 0,
     overlays: 0,
-    overlays_inline: false,
     repeats: false,
     implicit_actions: false,
     out_of_range_pending_group: false,
-    out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
+    out_of_range_group_policy: 0,
     out_of_range_group_number: 0,
-    num_groups: 0,
+    num_groups: 1,
     groups: Vec::new(),
-    c2rust_unnamed: C2Rust_Unnamed_9 {
-        overlay_key: std::ptr::null(),
-    },
+    overlay_keys: Vec::new(),
 };
 
 unsafe fn update_latch_modifiers(
@@ -1961,7 +1955,6 @@ unsafe fn update_latch_modifiers(
             modmap: 0,
             vmodmap: 0,
             overlays: 0,
-            overlays_inline: false,
             repeats: false,
             implicit_actions: false,
             out_of_range_pending_group: false,
@@ -1969,9 +1962,7 @@ unsafe fn update_latch_modifiers(
             out_of_range_group_number: 0,
             num_groups: 1,
             groups: vec![synthetic_key_group_break_mod_latch],
-            c2rust_unnamed: C2Rust_Unnamed_9 {
-                overlay_key: std::ptr::null(),
-            },
+            overlay_keys: Vec::new(),
         };
         xkb_filter_apply_all(
             state,
@@ -2925,7 +2916,6 @@ unsafe fn c2rust_run_static_initializers() {
             modmap: 0,
             vmodmap: 0,
             overlays: 0,
-            overlays_inline: false,
             repeats: false,
             implicit_actions: false,
             out_of_range_pending_group: false,
@@ -2933,9 +2923,7 @@ unsafe fn c2rust_run_static_initializers() {
             out_of_range_group_number: 0,
             num_groups: 1,
             groups: vec![synthetic_key_group_break_group_latch.clone()],
-            c2rust_unnamed: C2Rust_Unnamed_9 {
-                overlay_key: std::ptr::null(),
-            },
+            overlay_keys: Vec::new(),
         };
         synthetic_key = xkb_key {
             keycode: 0 as u32,
@@ -2944,7 +2932,6 @@ unsafe fn c2rust_run_static_initializers() {
             modmap: 0,
             vmodmap: 0,
             overlays: 0,
-            overlays_inline: false,
             repeats: false,
             implicit_actions: false,
             out_of_range_pending_group: false,
@@ -2952,9 +2939,7 @@ unsafe fn c2rust_run_static_initializers() {
             out_of_range_group_number: 0,
             num_groups: 0,
             groups: Vec::new(),
-            c2rust_unnamed: C2Rust_Unnamed_9 {
-                overlay_key: std::ptr::null(),
-            },
+            overlay_keys: Vec::new(),
         };
     }
 }

@@ -57,15 +57,8 @@ pub struct KeyInfo {
     pub repeat: key_repeat,
     pub out_of_range_pending_group: bool,
     pub overlays_clear: bool,
-    pub overlays_alloc: xkb_overlay_index_t,
     pub overlays: xkb_overlay_mask_t,
-    pub c2rust_unnamed: C2Rust_Unnamed_21,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub union C2Rust_Unnamed_21 {
-    pub overlay_key: *const xkb_key,
-    pub overlays_keys: *mut *const xkb_key,
+    pub overlay_keys: Vec<*const xkb_key>,
 }
 pub type key_repeat = u32;
 pub const _KEY_REPEAT_NUM_ENTRIES: key_repeat = 3;
@@ -114,11 +107,8 @@ impl KeyInfo {
             repeat: 0,
             out_of_range_pending_group: false,
             overlays_clear: false,
-            overlays_alloc: 0,
             overlays: 0,
-            c2rust_unnamed: C2Rust_Unnamed_21 {
-                overlay_key: std::ptr::null(),
-            },
+            overlay_keys: Vec::new(),
         }
     }
 }
@@ -224,7 +214,7 @@ unsafe fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyInfo) {
         );
         (*keyi).out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP as u32;
         std::ptr::write(&raw mut (*keyi).groups, Vec::new());
-        (*keyi).c2rust_unnamed.overlay_key = std::ptr::null();
+        std::ptr::write(&raw mut (*keyi).overlay_keys, Vec::new());
     }
 }
 unsafe fn ClearKeyInfo(mut keyi: *mut KeyInfo) {
@@ -233,9 +223,7 @@ unsafe fn ClearKeyInfo(mut keyi: *mut KeyInfo) {
             ClearGroupInfo(groupi as *mut GroupInfo);
         }
         (*keyi).groups.clear();
-        if (*keyi).overlays_alloc != 0 {
-            free((*keyi).c2rust_unnamed.overlays_keys as *mut ::core::ffi::c_void);
-        }
+        (*keyi).overlay_keys.clear();
     }
 }
 unsafe fn InitSymbolsInfo(
@@ -539,15 +527,11 @@ unsafe fn overlays_get(
             return false;
         }
         if !key_out.is_null() {
-            if (*info).overlays_alloc == 0 {
-                *key_out = (*info).c2rust_unnamed.overlay_key;
-            } else {
-                let low: xkb_overlay_mask_t = ((*info).overlays as u32
-                    & (mask as u32).wrapping_sub(1 as u32))
-                    as xkb_overlay_mask_t;
-                let index: xkb_overlay_index_t = (low as u32).count_ones() as xkb_overlay_index_t;
-                *key_out = *(*info).c2rust_unnamed.overlays_keys.offset(index as isize);
-            }
+            let low: xkb_overlay_mask_t = ((*info).overlays as u32
+                & (mask as u32).wrapping_sub(1 as u32))
+                as xkb_overlay_mask_t;
+            let index: usize = (low as u32).count_ones() as usize;
+            *key_out = (&(*info).overlay_keys)[index];
         }
         return true;
     }
@@ -566,105 +550,35 @@ unsafe fn overlays_insert(
         }
         let mask: xkb_overlay_mask_t = ((1 as u32) << bit as i32) as xkb_overlay_mask_t;
         if (*keyi).overlays as i32 & mask as i32 != 0 && !(*keyi).overlays_clear {
-            if (*keyi).overlays_alloc == 0 {
-                (*keyi).c2rust_unnamed.overlay_key = key;
-                if key.is_null() {
-                    (*keyi).overlays_clear = (true) as bool;
-                }
-            } else {
-                let low: xkb_overlay_mask_t = ((*keyi).overlays as i32
-                    & (mask as u32).wrapping_sub(1 as u32) as xkb_overlay_mask_t as i32)
-                    as xkb_overlay_mask_t;
-                let index: xkb_overlay_index_t = (low as u32).count_ones() as xkb_overlay_index_t;
-                let ref mut c2rust_fresh4 =
-                    *(*keyi).c2rust_unnamed.overlays_keys.offset(index as isize);
-                *c2rust_fresh4 = key;
+            // Bit already set — update existing entry
+            let low: xkb_overlay_mask_t = ((*keyi).overlays as u32
+                & (mask as u32).wrapping_sub(1 as u32))
+                as xkb_overlay_mask_t;
+            let index: usize = (low as u32).count_ones() as usize;
+            (&mut (*keyi).overlay_keys)[index] = key;
+            if key.is_null() && (&(*keyi).overlay_keys).len() == 1 {
+                (*keyi).overlays_clear = true;
             }
             return true;
         }
+        // New bit
+        let new_overlays: xkb_overlay_mask_t =
+            ((*keyi).overlays as i32 | mask as i32) as xkb_overlay_mask_t;
+        let low: xkb_overlay_mask_t =
+            (new_overlays as u32 & (mask as u32).wrapping_sub(1 as u32)) as xkb_overlay_mask_t;
+        let index: usize = (low as u32).count_ones() as usize;
+
         if (*keyi).overlays == 0 || (*keyi).overlays_clear as i32 != 0 && key.is_null() {
-            (*keyi).c2rust_unnamed.overlay_key = key;
-            (*keyi).overlays = ((*keyi).overlays as i32 | mask as i32) as xkb_overlay_mask_t;
-            (*keyi).overlays_clear = key.is_null() as bool;
-        } else if (*keyi).overlays_alloc == 0 {
-            let overlays: xkb_overlay_mask_t =
-                ((*keyi).overlays as i32 | mask as i32) as xkb_overlay_mask_t;
-            let alloc: xkb_overlay_index_t = (overlays as u32).count_ones() as xkb_overlay_index_t;
-            let tmp: *mut *const xkb_key =
-                calloc(alloc as usize, std::mem::size_of::<*const xkb_key>())
-                    as *mut *const xkb_key;
-            if tmp.is_null() {
-                return false;
-            }
-            if !(*keyi).overlays_clear {
-                let low_0: xkb_overlay_mask_t = (overlays as i32
-                    & ((*keyi).overlays as u32).wrapping_sub(1 as u32) as xkb_overlay_mask_t as i32)
-                    as xkb_overlay_mask_t;
-                let idx: xkb_overlay_index_t = (low_0 as u32).count_ones() as xkb_overlay_index_t;
-                let ref mut c2rust_fresh5 = *tmp.offset(idx as isize);
-                *c2rust_fresh5 = (*keyi).c2rust_unnamed.overlay_key;
-            }
-            let low_1: xkb_overlay_mask_t = (overlays as i32
-                & (mask as u32).wrapping_sub(1 as u32) as xkb_overlay_mask_t as i32)
-                as xkb_overlay_mask_t;
-            let idx_0: xkb_overlay_index_t = (low_1 as u32).count_ones() as xkb_overlay_index_t;
-            let ref mut c2rust_fresh6 = *tmp.offset(idx_0 as isize);
-            *c2rust_fresh6 = key;
-            (*keyi).c2rust_unnamed.overlays_keys = tmp;
-            (*keyi).overlays_alloc = alloc;
-            (*keyi).overlays = overlays;
-            (*keyi).overlays_clear = (false) as bool;
+            // First overlay or clearing
+            (*keyi).overlay_keys.clear();
+            (*keyi).overlay_keys.push(key);
+            (*keyi).overlays = new_overlays;
+            (*keyi).overlays_clear = key.is_null();
         } else {
-            let overlays_0: xkb_overlay_mask_t =
-                ((*keyi).overlays as i32 | mask as i32) as xkb_overlay_mask_t;
-            let count: xkb_overlay_index_t =
-                (overlays_0 as u32).count_ones() as xkb_overlay_index_t;
-            if count as i32 > (*keyi).overlays_alloc as i32 {
-                let alloc_0: xkb_overlay_index_t =
-                    (count as u32).next_power_of_two() as xkb_overlay_index_t;
-                let tmp_0: *mut *const xkb_key = realloc(
-                    (*keyi).c2rust_unnamed.overlays_keys as *mut ::core::ffi::c_void,
-                    (alloc_0 as usize).wrapping_mul(std::mem::size_of::<*const xkb_key>()),
-                ) as *mut *const xkb_key;
-                if tmp_0.is_null() {
-                    return false;
-                }
-                (*keyi).c2rust_unnamed.overlays_keys = tmp_0;
-                (*keyi).overlays_alloc = alloc_0;
-            }
-            let low_2: xkb_overlay_mask_t = (overlays_0 as i32
-                & (mask as u32).wrapping_sub(1 as u32) as xkb_overlay_mask_t as i32)
-                as xkb_overlay_mask_t;
-            let index_0: xkb_overlay_index_t = (low_2 as u32).count_ones() as xkb_overlay_index_t;
-            if index_0 as i32 >= (*keyi).overlays_alloc as i32 {
-                eprintln!(
-                    "Critical Error: Reached unreachable line in {} at {}",
-                    "../src/xkbcomp/symbols.c", 654
-                );
-                abort();
-            }
-            if (index_0 as u32) < (count as u32).wrapping_sub(1 as u32) {
-                std::ptr::copy(
-                    (*keyi)
-                        .c2rust_unnamed
-                        .overlays_keys
-                        .offset(index_0 as i32 as isize),
-                    (*keyi)
-                        .c2rust_unnamed
-                        .overlays_keys
-                        .offset(index_0 as i32 as isize)
-                        .offset(1 as i32 as isize),
-                    (count as u32)
-                        .wrapping_sub(1 as u32)
-                        .wrapping_sub(index_0 as u32) as usize,
-                );
-            }
-            let ref mut c2rust_fresh7 = *(*keyi)
-                .c2rust_unnamed
-                .overlays_keys
-                .offset(index_0 as isize);
-            *c2rust_fresh7 = key;
-            (*keyi).overlays = overlays_0;
+            // Insert at correct position in Vec
+            (*keyi).overlay_keys.insert(index, key);
+            (*keyi).overlays = new_overlays;
+            (*keyi).overlays_clear = false;
         }
         return true;
     }
@@ -680,16 +594,15 @@ unsafe fn merge_overlays(
     unsafe {
         if !((*from).defined as i32 & KEY_FIELD_OVERLAY as i32 == 0) {
             if (*into).defined as i32 & KEY_FIELD_OVERLAY as i32 == 0 {
+                // into has no overlays, take from's
                 (*into).overlays = (*from).overlays;
-                (*into).c2rust_unnamed.overlays_keys = (*from).c2rust_unnamed.overlays_keys;
-                (*from).c2rust_unnamed.overlays_keys = std::ptr::null_mut();
-                (*into).overlays_alloc = (*from).overlays_alloc;
-                (*from).overlays_alloc = 0 as xkb_overlay_index_t;
+                (*into).overlay_keys = std::mem::take(&mut (*from).overlay_keys);
                 (*into).defined = (*into).defined | KEY_FIELD_OVERLAY as i32 as key_field;
             } else if (*into).overlays_clear as i32 != 0 && (*from).overlays_clear as i32 != 0 {
                 (*into).overlays =
                     ((*into).overlays as i32 | (*from).overlays as i32) as xkb_overlay_mask_t;
             } else if (*(*info).keymap_info).features.overlapping_overlays {
+                // Complex merge with overlapping overlays
                 let result_mask: xkb_overlay_mask_t =
                     ((*into).overlays as i32 | (*from).overlays as i32) as xkb_overlay_mask_t;
                 let count: xkb_overlay_index_t =
@@ -703,55 +616,14 @@ unsafe fn merge_overlays(
                 }
                 let mut dest: *mut KeyInfo = into;
                 let mut src: *mut KeyInfo = from;
-                if !((*into).overlays_alloc as i32 >= count as i32
-                    && (*into).overlays_alloc as i32 >= (*from).overlays_alloc as i32)
-                {
-                    if (*from).overlays_alloc as i32 >= count as i32 {
-                        dest = from;
-                        src = into;
-                        clobber = !clobber;
-                    } else if count as i32 > 1 as i32 {
-                        if ((*into).overlays_alloc as i32) < (*from).overlays_alloc as i32 {
-                            dest = from;
-                            src = into;
-                            clobber = !clobber;
-                        }
-                        if (*dest).overlays_alloc == 0 {
-                            let mut tmp: *mut *const xkb_key =
-                                calloc(count as usize, std::mem::size_of::<*const xkb_key>())
-                                    as *mut *const xkb_key;
-                            if tmp.is_null() {
-                                return false;
-                            }
-                            if !(*dest).c2rust_unnamed.overlay_key.is_null() {
-                                let ref mut c2rust_fresh2 = *tmp.offset(0 as i32 as isize);
-                                *c2rust_fresh2 = (*dest).c2rust_unnamed.overlay_key;
-                            }
-                            (*dest).c2rust_unnamed.overlays_keys = tmp;
-                            (*dest).overlays_alloc = count;
-                        } else {
-                            let mut tmp_0: *mut *const xkb_key = realloc(
-                                (*dest).c2rust_unnamed.overlays_keys as *mut ::core::ffi::c_void,
-                                (count as usize)
-                                    .wrapping_mul(std::mem::size_of::<*const xkb_key>() as usize),
-                            )
-                                as *mut *const xkb_key;
-                            if tmp_0.is_null() {
-                                return false;
-                            }
-                            (*dest).c2rust_unnamed.overlays_keys = tmp_0;
-                            (*dest).overlays_alloc = count;
-                        }
-                    }
+                if (*from).overlay_keys.capacity() > (*into).overlay_keys.capacity() {
+                    dest = from;
+                    src = into;
+                    clobber = !clobber;
                 }
+                // Iterate over src's overlay bits and merge into dest
                 let mut remaining: xkb_overlay_mask_t = (*src).overlays;
-                let mut src_keys: *mut *const xkb_key = if (*src).overlays_clear as i32 != 0 {
-                    std::ptr::null_mut()
-                } else if (*src).overlays_alloc as i32 != 0 {
-                    (*src).c2rust_unnamed.overlays_keys
-                } else {
-                    &raw mut (*src).c2rust_unnamed.overlay_key
-                };
+                let mut src_idx: usize = 0;
                 while remaining != 0 {
                     let lsb: xkb_overlay_mask_t = (remaining as i32
                         & (!(remaining as i32) as u32).wrapping_add(1 as u32) as xkb_overlay_mask_t
@@ -760,21 +632,14 @@ unsafe fn merge_overlays(
                     let bit: xkb_overlay_index_t =
                         ((lsb as u32).wrapping_sub(1 as u32).count_ones()) as xkb_overlay_index_t;
                     remaining = (remaining as i32 & !(lsb as i32)) as xkb_overlay_mask_t;
-                    if !(*src).overlays_clear && (*src).overlays_alloc == 0 && remaining as i32 != 0
-                    {
-                        eprintln!(
-                            "Critical Error: Reached unreachable line in {} at {}",
-                            "../src/xkbcomp/symbols.c", 758
-                        );
-                        abort();
-                    }
-                    let mut src_key: *const xkb_key = if !src_keys.is_null() {
-                        let c2rust_fresh3 = src_keys;
-                        src_keys = src_keys.offset(1);
-                        *c2rust_fresh3
-                    } else {
-                        std::ptr::null()
-                    };
+                    let src_key: *const xkb_key =
+                        if (*src).overlays_clear || src_idx >= (*src).overlay_keys.len() {
+                            std::ptr::null()
+                        } else {
+                            let k = (&(*src).overlay_keys)[src_idx];
+                            src_idx += 1;
+                            k
+                        };
                     let mut dest_key: *const xkb_key = std::ptr::null();
                     let conflict: bool = overlays_get(dest, bit, &raw mut dest_key) as bool;
                     if conflict {
@@ -790,33 +655,34 @@ unsafe fn merge_overlays(
                     }
                 }
                 if into != dest {
-                    if (*into).overlays_alloc != 0 {
-                        free((*into).c2rust_unnamed.overlays_keys as *mut ::core::ffi::c_void);
-                    }
-                    (*into).overlays = (*from).overlays;
-                    (*into).overlays_clear = (*from).overlays_clear as bool;
-                    (*into).overlays_alloc = (*from).overlays_alloc;
-                    if (*from).overlays_alloc != 0 {
-                        (*into).c2rust_unnamed.overlays_keys = (*from).c2rust_unnamed.overlays_keys;
-                        (*from).c2rust_unnamed.overlays_keys = std::ptr::null_mut();
-                        (*from).overlays_alloc = 0 as xkb_overlay_index_t;
-                    } else {
-                        (*into).c2rust_unnamed.overlay_key = (*from).c2rust_unnamed.overlay_key;
-                    }
+                    (*into).overlays = (*dest).overlays;
+                    (*into).overlays_clear = (*dest).overlays_clear as bool;
+                    (*into).overlay_keys = std::mem::take(&mut (*dest).overlay_keys);
                 }
             } else {
                 if (*into).overlays as i32 == (*from).overlays as i32
                     && (*into).overlays_clear as i32 == (*from).overlays_clear as i32
-                    && (*into).c2rust_unnamed.overlay_key == (*from).c2rust_unnamed.overlay_key
                 {
-                    return true;
+                    // Check if single overlay keys match
+                    let into_key = (*into)
+                        .overlay_keys
+                        .first()
+                        .copied()
+                        .unwrap_or(std::ptr::null());
+                    let from_key = (*from)
+                        .overlay_keys
+                        .first()
+                        .copied()
+                        .unwrap_or(std::ptr::null());
+                    if into_key == from_key {
+                        return true;
+                    }
                 }
                 if (*into).overlays as i32 & (*from).overlays as i32 == 0 {
                     if (*into).overlays_clear {
                         (*into).overlays = (*from).overlays;
                         (*into).overlays_clear = (*from).overlays_clear as bool;
-                        (*into).overlays_alloc = (*from).overlays_alloc;
-                        (*into).c2rust_unnamed.overlay_key = (*from).c2rust_unnamed.overlay_key;
+                        (*into).overlay_keys = std::mem::take(&mut (*from).overlay_keys);
                         return true;
                     } else if (*from).overlays_clear {
                         return true;
@@ -828,8 +694,7 @@ unsafe fn merge_overlays(
                 if clobber {
                     (*into).overlays = (*from).overlays;
                     (*into).overlays_clear = (*from).overlays_clear as bool;
-                    (*into).overlays_alloc = (*from).overlays_alloc;
-                    (*into).c2rust_unnamed.overlay_key = (*from).c2rust_unnamed.overlay_key;
+                    (*into).overlay_keys = std::mem::take(&mut (*from).overlay_keys);
                 }
             }
         }
@@ -1826,15 +1691,21 @@ unsafe fn SetSymbolsField(
                         if !key.is_null() {
                             (*keyi).overlays = mask_0;
                             (*keyi).overlays_clear = (false) as bool;
-                            (*keyi).c2rust_unnamed.overlay_key = key;
+                            (*keyi).overlay_keys = vec![key];
                         } else {
                             (*keyi).overlays =
                                 ((*keyi).overlays as i32 | mask_0 as i32) as xkb_overlay_mask_t;
                             (*keyi).overlays_clear = (true) as bool;
+                            (*keyi).overlay_keys = vec![std::ptr::null()];
                         }
                         (*keyi).defined = (*keyi).defined | KEY_FIELD_OVERLAY as i32 as key_field;
                     } else if (*keyi).overlays != 0 {
                         if !key.is_null() {
+                            let existing_key = (*keyi)
+                                .overlay_keys
+                                .first()
+                                .copied()
+                                .unwrap_or(std::ptr::null());
                             xkb_logf!(
                                 (*info).ctx,
                                 XKB_LOG_LEVEL_ERROR,
@@ -1845,7 +1716,7 @@ unsafe fn SetSymbolsField(
                                 (*keyi).overlays as i32,
                                 crate::xkb::utils::ByteSliceDisplay(KeyNameText(
                                     (*(*info).ctx).clone(),
-                                    (*(*keyi).c2rust_unnamed.overlay_key).name,
+                                    if existing_key.is_null() { 0 } else { (*existing_key).name },
                                 )),
                                 overlay as i32 + 1 as i32,
                                 crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), (*key).name)),
@@ -2880,36 +2751,29 @@ unsafe fn CopySymbolsDefToKeymap(
             && (*keyi).overlays != 0
             && !(*keyi).overlays_clear
         {
-            (*key).overlays = (*keyi).overlays;
-            if (*keyi).overlays_alloc != 0 {
-                // Remove empty entries
-                let mut remaining: xkb_overlay_mask_t = (*key).overlays;
-                let mut overlays_keys: *mut *const xkb_key = (*keyi).c2rust_unnamed.overlays_keys;
-                while remaining != 0 {
-                    // isolate lowest set bit
-                    let lsb: xkb_overlay_mask_t = remaining & (!remaining).wrapping_add(1);
-                    remaining = remaining & !lsb;
-                    if !(*overlays_keys).is_null() {
-                        overlays_keys = overlays_keys.offset(1);
-                    } else {
-                        // drop current null value
-                        (*key).overlays &= !lsb;
-                    }
+            // Remove null entries from overlay_keys and clear corresponding bits
+            let mut clean_overlays: xkb_overlay_mask_t = 0;
+            let mut clean_keys: Vec<*const xkb_key> = Vec::new();
+            let mut remaining: xkb_overlay_mask_t = (*keyi).overlays;
+            let mut idx: usize = 0;
+            while remaining != 0 {
+                let lsb: xkb_overlay_mask_t = remaining & (!remaining).wrapping_add(1);
+                remaining &= !lsb;
+                let k = if idx < (&(*keyi).overlay_keys).len() {
+                    (&(*keyi).overlay_keys)[idx]
+                } else {
+                    std::ptr::null()
+                };
+                idx += 1;
+                if !k.is_null() {
+                    clean_overlays |= lsb;
+                    clean_keys.push(k);
                 }
+            }
 
-                if (*key).overlays != 0 {
-                    // Steal
-                    (*key).c2rust_unnamed.overlays_keys = (*keyi).c2rust_unnamed.overlays_keys;
-                    (*keyi).c2rust_unnamed.overlays_keys = ::core::ptr::null_mut();
-                    (*keyi).overlays_alloc = 0;
-
-                    (*key).overlays_inline = false;
-                    (*key).explicit = ((*key).explicit as u32 | EXPLICIT_OVERLAY as u32)
-                        as xkb_explicit_components;
-                }
-            } else {
-                (*key).c2rust_unnamed.overlay_key = (*keyi).c2rust_unnamed.overlay_key;
-                (*key).overlays_inline = true;
+            if clean_overlays != 0 {
+                (*key).overlays = clean_overlays;
+                std::ptr::write(&raw mut (*key).overlay_keys, clean_keys);
                 (*key).explicit =
                     ((*key).explicit as u32 | EXPLICIT_OVERLAY as u32) as xkb_explicit_components;
             }

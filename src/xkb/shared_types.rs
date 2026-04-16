@@ -375,7 +375,6 @@ pub struct xkb_key {
     pub modmap: u32,
     pub vmodmap: u32,
     pub overlays: xkb_overlay_mask_t,
-    pub overlays_inline: bool,
     pub repeats: bool,
     pub implicit_actions: bool,
     pub out_of_range_pending_group: bool,
@@ -383,14 +382,7 @@ pub struct xkb_key {
     pub out_of_range_group_number: u32,
     pub num_groups: u32,
     pub groups: Vec<xkb_group>,
-    pub c2rust_unnamed: C2Rust_Unnamed_9,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub union C2Rust_Unnamed_9 {
-    pub overlay_key: *const xkb_key,
-    pub overlays_keys: *mut *const xkb_key,
+    pub overlay_keys: Vec<*const xkb_key>,
 }
 
 impl Default for xkb_key {
@@ -402,7 +394,6 @@ impl Default for xkb_key {
             modmap: 0,
             vmodmap: 0,
             overlays: 0,
-            overlays_inline: false,
             repeats: false,
             implicit_actions: false,
             out_of_range_pending_group: false,
@@ -410,9 +401,7 @@ impl Default for xkb_key {
             out_of_range_group_number: 0,
             num_groups: 0,
             groups: Vec::new(),
-            c2rust_unnamed: C2Rust_Unnamed_9 {
-                overlay_key: std::ptr::null(),
-            },
+            overlay_keys: Vec::new(),
         }
     }
 }
