@@ -10,7 +10,7 @@ pub const CONTROL_NAMES_MIN_V2_INDEX: u32 = 0;
 pub const CONTROL_NAMES_MIN_V1_INDEX: u32 = 7;
 pub const GROUP_LAST_INDEX_NAME: &'static [u8] = b"last";
 #[inline]
-pub unsafe fn format_control_names_offset(mut format: u32) -> u8 {
+pub unsafe fn format_control_names_offset(format: u32) -> u8 {
     return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
         CONTROL_NAMES_MIN_V1_INDEX as i32
     } else {
@@ -39,9 +39,9 @@ pub use crate::xkb::shared_types::{
 };
 use crate::xkb::utils::{cstr_as_bytes, istreq};
 pub unsafe fn LookupString(
-    mut tab: *const LookupEntry,
+    tab: *const LookupEntry,
     string: &[u8],
-    mut value_rtrn: *mut u32,
+    value_rtrn: *mut u32,
 ) -> bool {
     unsafe {
         if string.is_empty() {
@@ -58,7 +58,7 @@ pub unsafe fn LookupString(
         return false;
     }
 }
-pub unsafe fn LookupValue(mut tab: *const LookupEntry, mut value: u32) -> &'static [u8] {
+pub unsafe fn LookupValue(tab: *const LookupEntry, value: u32) -> &'static [u8] {
     unsafe {
         let mut entry: *const LookupEntry = tab as *const LookupEntry;
         while !(&(*entry).name).is_empty() {
@@ -493,9 +493,9 @@ pub static mut symInterpretMatchMaskNames: [LookupEntry; 6] = [
     },
 ];
 pub unsafe fn ModIndexText(
-    mut ctx: *mut xkb_context,
-    mut mods: *const xkb_mod_set,
-    mut ndx: u32,
+    ctx: *mut xkb_context,
+    mods: *const xkb_mod_set,
+    ndx: u32,
 ) -> &'static [u8] {
     unsafe {
         if ndx == XKB_MOD_INVALID as u32 {
@@ -510,7 +510,7 @@ pub unsafe fn ModIndexText(
         return xkb_atom_text_bytes(&(*ctx).atom_table, (*mods).mods[ndx as usize].name);
     }
 }
-pub unsafe fn ActionTypeText(mut type_0: xkb_action_type) -> &'static [u8] {
+pub unsafe fn ActionTypeText(type_0: xkb_action_type) -> &'static [u8] {
     unsafe {
         let name: &'static [u8] = LookupValue(
             &raw const actionTypeNames as *const LookupEntry,
@@ -519,27 +519,27 @@ pub unsafe fn ActionTypeText(mut type_0: xkb_action_type) -> &'static [u8] {
         return if !name.is_empty() { name } else { b"Private" };
     }
 }
-pub unsafe fn KeysymText(mut ctx: xkb_context, mut sym: u32) -> &'static [u8] {
+pub unsafe fn KeysymText(mut ctx: xkb_context, sym: u32) -> &'static [u8] {
     unsafe {
-        let mut buffer: *mut i8 =
+        let buffer: *mut i8 =
             xkb_context_get_buffer(&mut ctx, XKB_KEYSYM_NAME_MAX_SIZE as usize);
         xkb_keysym_get_name(sym, buffer, XKB_KEYSYM_NAME_MAX_SIZE as usize);
         return cstr_as_bytes(buffer);
     }
 }
-pub unsafe fn KeyNameText(mut ctx: xkb_context, mut name: u32) -> &'static [u8] {
+pub unsafe fn KeyNameText(mut ctx: xkb_context, name: u32) -> &'static [u8] {
     unsafe {
         let atom_table = &ctx.atom_table.clone();
         let sname: &[u8] = xkb_atom_text_bytes(atom_table, name);
         let sname_str = std::str::from_utf8(sname).unwrap_or("");
-        let mut len: usize = sname_str.len().wrapping_add(3 as usize);
-        let mut buf: *mut i8 = xkb_context_get_buffer(&mut ctx, len);
+        let len: usize = sname_str.len().wrapping_add(3 as usize);
+        let buf: *mut i8 = xkb_context_get_buffer(&mut ctx, len);
         let (written, _) =
             crate::xkb::utils::snprintf_args(buf, len, format_args!("<{}>", sname_str));
         return std::slice::from_raw_parts(buf as *const u8, written);
     }
 }
-pub unsafe fn SIMatchText(mut type_0: u32) -> &'static [u8] {
+pub unsafe fn SIMatchText(type_0: u32) -> &'static [u8] {
     unsafe {
         return LookupValue(
             &raw const symInterpretMatchMaskNames as *const LookupEntry,
@@ -549,8 +549,8 @@ pub unsafe fn SIMatchText(mut type_0: u32) -> &'static [u8] {
 }
 pub unsafe fn ModMaskText(
     mut ctx: xkb_context,
-    mut type_0: u32,
-    mut mods: *const xkb_mod_set,
+    type_0: u32,
+    mods: *const xkb_mod_set,
     mut mask: u32,
 ) -> &'static [u8] {
     unsafe {

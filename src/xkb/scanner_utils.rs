@@ -318,7 +318,7 @@ impl scanner {
 
     pub fn token_location(&mut self) -> scanner_loc {
         let mut line: usize;
-        let mut column: usize;
+        let column: usize;
         let mut line_pos: usize = 0;
 
         if self.cached_pos > self.token_pos {

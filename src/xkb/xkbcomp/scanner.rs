@@ -261,7 +261,7 @@ fn is_space(ch: i8) -> bool {
 }
 use libc::FILE;
 pub static mut DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
-unsafe fn number(mut s: *mut scanner, mut out: *mut i64, mut out_tok: *mut i32) -> bool {
+unsafe fn number(s: *mut scanner, out: *mut i64, out_tok: *mut i32) -> bool {
     unsafe {
         if (*s).str_match(
             b"0x\0".as_ptr() as *const i8,
@@ -307,7 +307,7 @@ unsafe fn number(mut s: *mut scanner, mut out: *mut i64, mut out_tok: *mut i32) 
         };
     }
 }
-pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i32 {
+pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
     unsafe {
         loop {
             while is_space((*s).peek()) {
@@ -552,12 +552,12 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
     }
 }
 pub unsafe fn XkbParseStringInit(
-    mut ctx: *mut xkb_context,
-    mut sc: *mut scanner,
-    mut string: *const i8,
-    mut len: usize,
-    mut file_name: *const i8,
-    mut map: *const i8,
+    ctx: *mut xkb_context,
+    sc: *mut scanner,
+    string: *const i8,
+    len: usize,
+    file_name: *const i8,
+    _map: *const i8,
 ) -> bool {
     unsafe {
         *sc = scanner::new(ctx, string, len, file_name, std::ptr::null_mut());
@@ -590,11 +590,11 @@ pub unsafe fn XkbParseStringInit(
     }
 }
 pub unsafe fn XkbParseString(
-    mut ctx: *mut xkb_context,
-    mut string: *const i8,
-    mut len: usize,
-    mut file_name: *const i8,
-    mut map: *const i8,
+    ctx: *mut xkb_context,
+    string: *const i8,
+    len: usize,
+    file_name: *const i8,
+    map: *const i8,
 ) -> *mut XkbFile {
     unsafe {
         let mut sc = scanner::new(
@@ -612,10 +612,10 @@ pub unsafe fn XkbParseString(
     }
 }
 pub unsafe fn XkbParseStringNext(
-    mut ctx: *mut xkb_context,
-    mut scanner: *mut scanner,
-    mut map: *const i8,
-    mut out: *mut *mut XkbFile,
+    ctx: *mut xkb_context,
+    scanner: *mut scanner,
+    map: *const i8,
+    out: *mut *mut XkbFile,
 ) -> bool {
     unsafe {
         if !map.is_null() {
@@ -629,10 +629,10 @@ pub unsafe fn XkbParseStringNext(
     }
 }
 pub unsafe fn XkbParseFile(
-    mut ctx: *mut xkb_context,
-    mut file: *mut FILE,
-    mut file_name: *const i8,
-    mut map: *const i8,
+    ctx: *mut xkb_context,
+    file: *mut FILE,
+    file_name: *const i8,
+    map: *const i8,
 ) -> *mut XkbFile {
     unsafe {
         // Get file descriptor from FILE*

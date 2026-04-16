@@ -51,7 +51,7 @@ static mut legacy_keysym_offsets2: [u16; 40] = [
     0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0xbc,
 ];
 #[inline]
-unsafe fn get_legacy_keysym_entry(mut ks: u32) -> *const CaseMappings {
+unsafe fn get_legacy_keysym_entry(ks: u32) -> *const CaseMappings {
     unsafe {
         return (&raw const legacy_keysym_data as *const CaseMappings).offset(
             (*(&raw const legacy_keysym_offsets1 as *const u8).offset(
@@ -158,7 +158,7 @@ static mut unicode_offsets2: [u16; 498] = [
     0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x147, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x206,
 ];
 #[inline]
-unsafe fn get_unicode_entry(mut ks: u32) -> *const CaseMappings {
+unsafe fn get_unicode_entry(ks: u32) -> *const CaseMappings {
     unsafe {
         return (&raw const unicode_data as *const CaseMappings).offset(
             (*(&raw const unicode_offsets1 as *const u16).offset(
@@ -173,14 +173,14 @@ unsafe fn get_unicode_entry(mut ks: u32) -> *const CaseMappings {
 pub unsafe fn xkb_keysym_to_upper(mut ks: u32) -> u32 {
     unsafe {
         if ks <= 0x13be as u32 {
-            let mut m: *const CaseMappings = get_legacy_keysym_entry(ks);
+            let m: *const CaseMappings = get_legacy_keysym_entry(ks);
             return if (*m).upper as i32 != 0 {
                 ks.wrapping_sub((*m).offset as u32)
             } else {
                 ks
             };
         } else if XKB_KEYSYM_UNICODE_MIN as u32 <= ks && ks <= 0x101f189 as u32 {
-            let mut m_0: *const CaseMappings =
+            let m_0: *const CaseMappings =
                 get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as u32));
             if (*m_0).upper {
                 ks = ks.wrapping_sub((*m_0).offset as u32);
@@ -197,13 +197,13 @@ pub unsafe fn xkb_keysym_to_upper(mut ks: u32) -> u32 {
         };
     }
 }
-pub unsafe fn xkb_keysym_is_lower(mut ks: u32) -> bool {
+pub unsafe fn xkb_keysym_is_lower(ks: u32) -> bool {
     unsafe {
         if ks <= 0x13be as u32 {
-            let mut m: *const CaseMappings = get_legacy_keysym_entry(ks);
+            let m: *const CaseMappings = get_legacy_keysym_entry(ks);
             return (*m).upper as i32 != 0 && !(*m).lower;
         } else if XKB_KEYSYM_UNICODE_MIN as u32 <= ks && ks <= 0x101f189 as u32 {
-            let mut m_0: *const CaseMappings =
+            let m_0: *const CaseMappings =
                 get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as u32));
             return (*m_0).upper as i32 != 0 && !(*m_0).lower;
         } else {
@@ -211,7 +211,7 @@ pub unsafe fn xkb_keysym_is_lower(mut ks: u32) -> bool {
         };
     }
 }
-pub unsafe fn xkb_keysym_is_upper_or_title(mut ks: u32) -> bool {
+pub unsafe fn xkb_keysym_is_upper_or_title(ks: u32) -> bool {
     unsafe {
         if ks <= 0x13be as u32 {
             return (*get_legacy_keysym_entry(ks)).lower;

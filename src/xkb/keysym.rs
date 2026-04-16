@@ -266,10 +266,10 @@ pub mod keysym_names_h {
         2414,
     ];
     #[inline]
-    pub unsafe fn keysym_name_perfect_hash(mut key: *const i8) -> usize {
+    pub unsafe fn keysym_name_perfect_hash(key: *const i8) -> usize {
         unsafe {
-            let mut T1: *const i8 = b"gQEXVgBVbDK59TnjkSMO7UnyrqsrcaA4\0".as_ptr() as *const i8;
-            let mut T2: *const i8 = b"AB6xkcvEK5OHbYOD14cPYBxnVAoDGTPL\0".as_ptr() as *const i8;
+            let T1: *const i8 = b"gQEXVgBVbDK59TnjkSMO7UnyrqsrcaA4\0".as_ptr() as *const i8;
+            let T2: *const i8 = b"AB6xkcvEK5OHbYOD14cPYBxnVAoDGTPL\0".as_ptr() as *const i8;
             let mut h1: usize = 0 as usize;
             let mut h2: usize = 0 as usize;
             let mut i: usize = 0 as usize;
@@ -21803,7 +21803,7 @@ pub use self::keysym_names_h::{
 use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::{cstr_as_bytes, istrcmp, istrncmp};
 use crate::xkb::utils::{cstr_free, cstr_len};
-fn find_keysym_index(mut ks: u32) -> isize {
+fn find_keysym_index(ks: u32) -> isize {
     if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
         return -1 as i32 as isize;
     }
@@ -21812,7 +21812,7 @@ fn find_keysym_index(mut ks: u32) -> isize {
         .wrapping_div(std::mem::size_of::<name_keysym>())
         .wrapping_sub(1 as usize) as isize;
     while hi >= lo {
-        let mut mid: isize = (lo + hi) / 2 as isize;
+        let mid: isize = (lo + hi) / 2 as isize;
         unsafe {
             if ks > keysym_to_name[mid as usize].keysym {
                 lo = mid + 1 as isize;
@@ -21826,24 +21826,24 @@ fn find_keysym_index(mut ks: u32) -> isize {
     return -1 as i32 as isize;
 }
 #[inline]
-unsafe fn get_name(mut entry: *const name_keysym) -> *const i8 {
+unsafe fn get_name(entry: *const name_keysym) -> *const i8 {
     unsafe {
         return keysym_names.offset((*entry).offset as i32 as isize);
     }
 }
 #[inline]
-unsafe fn get_unicode_name(mut ks: u32, mut buffer: *mut i8, mut size: usize) -> i32 {
+unsafe fn get_unicode_name(ks: u32, buffer: *mut i8, size: usize) -> i32 {
     unsafe {
         return crate::xkb::utils::snprintf_c(buffer, size, format_args!("U{:04X}", ks & 0xffffff));
     }
 }
-pub unsafe fn xkb_keysym_get_name(mut ks: u32, mut buffer: *mut i8, mut size: usize) -> i32 {
+pub unsafe fn xkb_keysym_get_name(ks: u32, buffer: *mut i8, size: usize) -> i32 {
     unsafe {
         if ks > XKB_KEYSYM_MAX as u32 {
             crate::xkb::utils::snprintf_args(buffer, size, format_args!("Invalid"));
             return -1 as i32;
         }
-        let mut index: isize = find_keysym_index(ks);
+        let index: isize = find_keysym_index(ks);
         if index != -1 as i32 as isize {
             return crate::xkb::utils::snprintf_c(
                 buffer,
@@ -21864,7 +21864,7 @@ pub unsafe fn xkb_keysym_get_name(mut ks: u32, mut buffer: *mut i8, mut size: us
     }
 }
 
-unsafe fn parse_keysym_hex(mut s: *const i8, mut out: *mut u32) -> bool {
+unsafe fn parse_keysym_hex(s: *const i8, out: *mut u32) -> bool {
     unsafe {
         let s_bytes = std::ffi::CStr::from_ptr(s).to_bytes();
         let slice = if s_bytes.len() > 8 {
@@ -21877,7 +21877,7 @@ unsafe fn parse_keysym_hex(mut s: *const i8, mut out: *mut u32) -> bool {
         return count > 0 && *s.offset(count as isize) as i32 == '\0' as i32;
     }
 }
-pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_flags) -> u32 {
+pub unsafe fn xkb_keysym_from_name(name: *const i8, flags: xkb_keysym_flags) -> u32 {
     unsafe {
         static mut XKB_KEYSYM_FLAGS: xkb_keysym_flags = XKB_KEYSYM_CASE_INSENSITIVE;
         if flags as u32 & !(XKB_KEYSYM_FLAGS as u32) != 0 {
@@ -21886,14 +21886,14 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
         let mut entry: *const name_keysym = std::ptr::null();
         let mut tmp: *mut i8 = std::ptr::null_mut();
         let mut val: u32 = 0;
-        let mut icase: bool = flags as u32 & XKB_KEYSYM_CASE_INSENSITIVE as u32 != 0;
+        let icase: bool = flags as u32 & XKB_KEYSYM_CASE_INSENSITIVE as u32 != 0;
         if !icase {
-            let mut pos: usize = keysym_name_perfect_hash(name);
+            let pos: usize = keysym_name_perfect_hash(name);
             if pos
                 < (std::mem::size_of::<[name_keysym; 2635]>())
                     .wrapping_div(std::mem::size_of::<name_keysym>())
             {
-                let mut s: *const i8 = get_name(
+                let s: *const i8 = get_name(
                     (&raw const name_to_keysym as *const name_keysym).offset(pos as isize)
                         as *const name_keysym,
                 );
@@ -21907,8 +21907,8 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
                 .wrapping_div(std::mem::size_of::<name_keysym>())
                 .wrapping_sub(1 as usize) as i32;
             while hi >= lo {
-                let mut mid: i32 = (lo + hi) / 2 as i32;
-                let mut cmp: i32 = istrcmp(
+                let mid: i32 = (lo + hi) / 2 as i32;
+                let cmp: i32 = istrcmp(
                     cstr_as_bytes(name),
                     cstr_as_bytes(get_name(
                         (&raw const name_to_keysym as *const name_keysym).offset(mid as isize)
@@ -21988,14 +21988,14 @@ pub unsafe fn xkb_keysym_from_name(mut name: *const i8, mut flags: xkb_keysym_fl
     }
 }
 
-pub fn xkb_keysym_is_keypad(mut keysym: u32) -> bool {
+pub fn xkb_keysym_is_keypad(keysym: u32) -> bool {
     return keysym >= XKB_KEY_KP_Space as u32 && keysym <= XKB_KEY_KP_Equal as u32;
 }
 
 pub unsafe fn xkb_keysym_is_deprecated(
     mut _keysym: u32,
     mut _name: *const i8,
-    mut reference_name: *mut *const i8,
+    reference_name: *mut *const i8,
 ) -> bool {
     unsafe {
         // Stub implementation: For Wayland-only usage, we don't need to track deprecated keysym names

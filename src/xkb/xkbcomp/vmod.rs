@@ -25,7 +25,7 @@ pub use crate::xkb::shared_types::{
 };
 use crate::xkb::text::ModMaskText;
 use crate::xkb::xkbcomp::expr::ExprResolveModMask;
-pub unsafe fn InitVMods(mut info: *mut xkb_mod_set, mut mods: *const xkb_mod_set, mut reset: bool) {
+pub unsafe fn InitVMods(info: *mut xkb_mod_set, mods: *const xkb_mod_set, reset: bool) {
     unsafe {
         *info = *mods;
         if !reset {
@@ -44,10 +44,10 @@ pub unsafe fn InitVMods(mut info: *mut xkb_mod_set, mut mods: *const xkb_mod_set
     }
 }
 pub unsafe fn MergeModSets(
-    mut ctx: *mut xkb_context,
-    mut into: *mut xkb_mod_set,
-    mut from: *const xkb_mod_set,
-    mut merge: merge_mode,
+    ctx: *mut xkb_context,
+    into: *mut xkb_mod_set,
+    from: *const xkb_mod_set,
+    merge: merge_mode,
 ) {
     unsafe {
         let clobber: bool = merge as u32 != MERGE_AUGMENT as u32;
@@ -98,9 +98,9 @@ pub unsafe fn MergeModSets(
     }
 }
 pub unsafe fn HandleVModDef(
-    mut ctx: *mut xkb_context,
-    mut mods: *mut xkb_mod_set,
-    mut stmt: *mut VModDef,
+    ctx: *mut xkb_context,
+    mods: *mut xkb_mod_set,
+    stmt: *mut VModDef,
 ) -> bool {
     unsafe {
         let mut mapping: u32 = 0 as u32;

@@ -87,11 +87,11 @@ use crate::xkb::utils::{cstr_free, cstr_len};
 use crate::xkb::xkbcomp::scanner::XkbParseFile;
 use libc::{fclose, fopen, FILE};
 pub unsafe fn ParseIncludeMap(
-    mut str_inout: *mut *mut i8,
-    mut file_rtrn: *mut *mut i8,
-    mut map_rtrn: *mut *mut i8,
-    mut nextop_rtrn: *mut i8,
-    mut extra_data: *mut *mut i8,
+    str_inout: *mut *mut i8,
+    file_rtrn: *mut *mut i8,
+    map_rtrn: *mut *mut i8,
+    nextop_rtrn: *mut i8,
+    extra_data: *mut *mut i8,
 ) -> bool {
     unsafe {
         let mut tmp: *mut i8 = std::ptr::null_mut();
@@ -163,7 +163,7 @@ static mut xkb_file_type_include_dirs: [*const i8; 7] = [
     b"keymap\0".as_ptr() as *const i8,
     b"rules\0".as_ptr() as *const i8,
 ];
-unsafe fn DirectoryForInclude(mut type_0: u32) -> *const i8 {
+unsafe fn DirectoryForInclude(type_0: u32) -> *const i8 {
     unsafe {
         if type_0 as u32 >= _FILE_TYPE_NUM_ENTRIES as u32 {
             return b"\0".as_ptr() as *const i8;
@@ -171,7 +171,7 @@ unsafe fn DirectoryForInclude(mut type_0: u32) -> *const i8 {
         return xkb_file_type_include_dirs[type_0 as usize];
     }
 }
-unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
+unsafe fn LogIncludePaths(ctx: *mut xkb_context) {
     unsafe {
         if xkb_context_num_include_paths(ctx) > 0 as u32 {
             xkb_logf!(
@@ -228,13 +228,13 @@ unsafe fn LogIncludePaths(mut ctx: *mut xkb_context) {
     }
 }
 unsafe fn expand_percent(
-    mut ctx: *mut xkb_context,
-    mut parent_file_name: *const i8,
-    mut typeDir: *const i8,
-    mut buf: *mut i8,
-    mut buf_size: usize,
-    mut name: *const i8,
-    mut name_len: usize,
+    ctx: *mut xkb_context,
+    parent_file_name: *const i8,
+    typeDir: *const i8,
+    buf: *mut i8,
+    buf_size: usize,
+    name: *const i8,
+    name_len: usize,
 ) -> usize {
     unsafe {
         let mut s = scanner::new(ctx, name, name_len, parent_file_name, std::ptr::null_mut());
@@ -371,16 +371,16 @@ unsafe fn expand_percent(
     }
 }
 pub unsafe fn expand_path(
-    mut ctx: *mut xkb_context,
-    mut parent_file_name: *const i8,
-    mut name: *const i8,
-    mut name_len: usize,
-    mut type_0: u32,
-    mut buf: *mut i8,
-    mut buf_size: usize,
+    ctx: *mut xkb_context,
+    parent_file_name: *const i8,
+    name: *const i8,
+    name_len: usize,
+    type_0: u32,
+    buf: *mut i8,
+    buf_size: usize,
 ) -> isize {
     unsafe {
-        let mut c2rust_current_block: u64;
+        let c2rust_current_block: u64;
         let mut k: usize = 0;
         k = 0 as usize;
         loop {
@@ -411,7 +411,7 @@ pub unsafe fn expand_path(
                     return -1 as i32 as isize;
                 }
                 std::ptr::copy_nonoverlapping(name as *const u8, buf as *mut u8, k);
-                let mut typeDir: *const i8 = DirectoryForInclude(type_0);
+                let typeDir: *const i8 = DirectoryForInclude(type_0);
                 let mut count: usize = expand_percent(
                     ctx,
                     parent_file_name,
@@ -431,21 +431,21 @@ pub unsafe fn expand_path(
     }
 }
 pub unsafe fn FindFileInXkbPath(
-    mut ctx: *mut xkb_context,
-    mut parent_file_name: *const i8,
-    mut name: *const i8,
-    mut name_len: usize,
-    mut type_0: u32,
-    mut buf: *mut i8,
-    mut buf_size: usize,
-    mut offset: *mut u32,
-    mut required: bool,
+    ctx: *mut xkb_context,
+    _parent_file_name: *const i8,
+    name: *const i8,
+    name_len: usize,
+    type_0: u32,
+    buf: *mut i8,
+    buf_size: usize,
+    offset: *mut u32,
+    required: bool,
 ) -> *mut FILE {
     unsafe {
-        let mut c2rust_current_block: u64;
+        let c2rust_current_block: u64;
         let mut file: *mut FILE = std::ptr::null_mut();
-        let mut name_buffer: *mut i8 = std::ptr::null_mut();
-        let mut typeDir: *const i8 = DirectoryForInclude(type_0);
+        let name_buffer: *mut i8 = std::ptr::null_mut();
+        let typeDir: *const i8 = DirectoryForInclude(type_0);
         let mut i: u32 = *offset;
         loop {
             if !(i < xkb_context_num_include_paths(ctx)) {
@@ -505,7 +505,7 @@ pub unsafe fn FindFileInXkbPath(
         return file;
     }
 }
-pub unsafe fn ExceedsIncludeMaxDepth(mut ctx: *mut xkb_context, mut include_depth: u32) -> bool {
+pub unsafe fn ExceedsIncludeMaxDepth(_ctx: *mut xkb_context, include_depth: u32) -> bool {
     if include_depth >= INCLUDE_MAX_DEPTH as u32 {
         xkb_logf!(
             ctx,
@@ -521,11 +521,11 @@ pub unsafe fn ExceedsIncludeMaxDepth(mut ctx: *mut xkb_context, mut include_dept
     };
 }
 pub unsafe fn ProcessIncludeFile(
-    mut ctx: *mut xkb_context,
-    mut stmt: *const IncludeStmt,
-    mut file_type: u32,
-    mut path: *mut i8,
-    mut path_size: usize,
+    ctx: *mut xkb_context,
+    stmt: *const IncludeStmt,
+    file_type: u32,
+    path: *mut i8,
+    path_size: usize,
 ) -> *mut XkbFile {
     unsafe {
         let mut xkb_file: *mut XkbFile = std::ptr::null_mut();

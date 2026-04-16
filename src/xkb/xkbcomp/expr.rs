@@ -39,11 +39,11 @@ static mut level_name_pattern: named_integer_pattern = named_integer_pattern {
     error_id: 0 as xkb_message_code,
 };
 pub unsafe fn ExprResolveLhs<'a>(
-    mut ctx: *mut xkb_context,
-    mut expr: *const ExprDef,
+    ctx: *mut xkb_context,
+    expr: *const ExprDef,
     elem_rtrn: &mut &'a [u8],
     field_rtrn: &mut &'a [u8],
-    mut index_rtrn: *mut *mut ExprDef,
+    index_rtrn: *mut *mut ExprDef,
 ) -> bool {
     unsafe {
         match (*expr).common.type_0 as u32 {
@@ -85,11 +85,11 @@ pub unsafe fn ExprResolveLhs<'a>(
     }
 }
 unsafe fn SimpleLookup(
-    mut ctx: *mut xkb_context,
-    mut priv_0: *const ::core::ffi::c_void,
-    mut field: u32,
-    mut val_rtrn: *mut u32,
-    mut pending_rtrn: *mut bool,
+    ctx: *mut xkb_context,
+    priv_0: *const ::core::ffi::c_void,
+    field: u32,
+    val_rtrn: *mut u32,
+    _pending_rtrn: *mut bool,
 ) -> bool {
     unsafe {
         if priv_0.is_null() || field == XKB_ATOM_NONE as u32 {
@@ -108,11 +108,11 @@ unsafe fn SimpleLookup(
     }
 }
 unsafe fn NamedIntegerPatternLookup(
-    mut ctx: *mut xkb_context,
-    mut priv_0: *const ::core::ffi::c_void,
-    mut field: u32,
-    mut val_rtrn: *mut u32,
-    mut pending_rtrn: *mut bool,
+    ctx: *mut xkb_context,
+    priv_0: *const ::core::ffi::c_void,
+    field: u32,
+    val_rtrn: *mut u32,
+    pending_rtrn: *mut bool,
 ) -> bool {
     unsafe {
         if priv_0.is_null() || field == XKB_ATOM_NONE as u32 {
@@ -180,11 +180,11 @@ unsafe fn NamedIntegerPatternLookup(
     }
 }
 unsafe fn LookupModMask(
-    mut ctx: *mut xkb_context,
-    mut priv_0: *const ::core::ffi::c_void,
-    mut field: u32,
-    mut val_rtrn: *mut u32,
-    mut pending_rtrn: *mut bool,
+    ctx: *mut xkb_context,
+    priv_0: *const ::core::ffi::c_void,
+    field: u32,
+    val_rtrn: *mut u32,
+    _pending_rtrn: *mut bool,
 ) -> bool {
     unsafe {
         let str: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, field);
@@ -199,8 +199,8 @@ unsafe fn LookupModMask(
             *val_rtrn = 0 as u32;
             return true;
         }
-        let mut arg: *const LookupModMaskPriv = priv_0 as *const LookupModMaskPriv;
-        let mut mods: *const xkb_mod_set = (*arg).mods;
+        let arg: *const LookupModMaskPriv = priv_0 as *const LookupModMaskPriv;
+        let mods: *const xkb_mod_set = (*arg).mods;
         let mod_type: u32 = (*arg).mod_type;
         let ndx: u32 = XkbModNameToIndex(mods, field, mod_type) as u32;
         if ndx == XKB_MOD_INVALID as u32 {
@@ -211,9 +211,9 @@ unsafe fn LookupModMask(
     }
 }
 pub unsafe fn ExprResolveBoolean(
-    mut ctx: *mut xkb_context,
-    mut expr: *const ExprDef,
-    mut set_rtrn: *mut bool,
+    ctx: *mut xkb_context,
+    expr: *const ExprDef,
+    set_rtrn: *mut bool,
 ) -> bool {
     unsafe {
         let mut ok: bool = false;
@@ -308,12 +308,12 @@ pub unsafe fn ExprResolveBoolean(
     }
 }
 unsafe fn ExprResolveIntegerLookup(
-    mut ctx: *mut xkb_context,
-    mut expr: *const ExprDef,
-    mut val_rtrn: *mut i64,
-    mut pending: *mut bool,
-    mut lookup: IdentLookupFunc,
-    mut lookupPriv: *const ::core::ffi::c_void,
+    ctx: *mut xkb_context,
+    expr: *const ExprDef,
+    val_rtrn: *mut i64,
+    pending: *mut bool,
+    lookup: IdentLookupFunc,
+    lookupPriv: *const ::core::ffi::c_void,
 ) -> bool {
     unsafe {
         let mut ok: bool = false;
@@ -527,9 +527,9 @@ unsafe fn ExprResolveIntegerLookup(
     }
 }
 pub unsafe fn ExprResolveInteger(
-    mut ctx: *mut xkb_context,
-    mut expr: *const ExprDef,
-    mut val_rtrn: *mut i64,
+    ctx: *mut xkb_context,
+    expr: *const ExprDef,
+    val_rtrn: *mut i64,
 ) -> bool {
     unsafe {
         return ExprResolveIntegerLookup(
@@ -543,11 +543,11 @@ pub unsafe fn ExprResolveInteger(
     }
 }
 pub unsafe fn ExprResolveGroup(
-    mut keymap_info: *const xkb_keymap_info,
-    mut expr: *const ExprDef,
-    mut absolute: bool,
-    mut group_rtrn: *mut u32,
-    mut pending: *mut bool,
+    keymap_info: *const xkb_keymap_info,
+    expr: *const ExprDef,
+    absolute: bool,
+    group_rtrn: *mut u32,
+    pending: *mut bool,
 ) -> xkb_parser_error {
     unsafe {
         static mut pendingGroupIndexNames: [LookupEntry; 2] = [
@@ -616,9 +616,9 @@ pub unsafe fn ExprResolveGroup(
     }
 }
 pub unsafe fn ExprResolveLevel(
-    mut ctx: *mut xkb_context,
-    mut expr: *const ExprDef,
-    mut level_rtrn: *mut u32,
+    ctx: *mut xkb_context,
+    expr: *const ExprDef,
+    level_rtrn: *mut u32,
 ) -> bool {
     unsafe {
         let mut result: i64 = 0 as i64;
@@ -658,9 +658,9 @@ pub unsafe fn ExprResolveLevel(
     }
 }
 pub unsafe fn ExprResolveButton(
-    mut ctx: *mut xkb_context,
-    mut expr: *const ExprDef,
-    mut btn_rtrn: *mut i64,
+    ctx: *mut xkb_context,
+    expr: *const ExprDef,
+    btn_rtrn: *mut i64,
 ) -> bool {
     unsafe {
         return ExprResolveIntegerLookup(
@@ -683,9 +683,9 @@ pub unsafe fn ExprResolveButton(
     }
 }
 pub unsafe fn ExprResolveString(
-    mut ctx: *mut xkb_context,
-    mut expr: *const ExprDef,
-    mut val_rtrn: *mut u32,
+    ctx: *mut xkb_context,
+    expr: *const ExprDef,
+    val_rtrn: *mut u32,
 ) -> bool {
     unsafe {
         match (*expr).common.type_0 as u32 {
@@ -762,9 +762,9 @@ pub unsafe fn ExprResolveString(
     }
 }
 pub unsafe fn ExprResolveEnum(
-    mut ctx: *mut xkb_context,
-    mut expr: *const ExprDef,
-    mut val_rtrn: *mut u32,
+    ctx: *mut xkb_context,
+    expr: *const ExprDef,
+    val_rtrn: *mut u32,
     mut values: *const LookupEntry,
 ) -> bool {
     unsafe {
@@ -814,12 +814,12 @@ pub unsafe fn ExprResolveEnum(
     }
 }
 unsafe fn ExprResolveMaskLookup(
-    mut ctx: *mut xkb_context,
-    mut expr: *const ExprDef,
-    mut val_rtrn: *mut u32,
-    mut pending: *mut bool,
-    mut lookup: IdentLookupFunc,
-    mut lookupPriv: *const ::core::ffi::c_void,
+    ctx: *mut xkb_context,
+    expr: *const ExprDef,
+    val_rtrn: *mut u32,
+    pending: *mut bool,
+    lookup: IdentLookupFunc,
+    lookupPriv: *const ::core::ffi::c_void,
 ) -> bool {
     unsafe {
         let mut ok: bool = false;
@@ -829,7 +829,7 @@ unsafe fn ExprResolveMaskLookup(
         let mut left: *mut ExprDef = std::ptr::null_mut();
         let mut right: *mut ExprDef = std::ptr::null_mut();
         let mut bogus: *const i8 = std::ptr::null();
-        let mut c2rust_current_block_47: u64;
+        let c2rust_current_block_47: u64;
         match (*expr).common.type_0 as u32 {
             5 => {
                 if (*expr).integer.ival < 0 as i64 || (*expr).integer.ival > u32::MAX as i64 {
@@ -1031,10 +1031,10 @@ unsafe fn ExprResolveMaskLookup(
     }
 }
 pub unsafe fn ExprResolveMask(
-    mut ctx: *mut xkb_context,
-    mut expr: *const ExprDef,
-    mut mask_rtrn: *mut u32,
-    mut values: *const LookupEntry,
+    ctx: *mut xkb_context,
+    expr: *const ExprDef,
+    mask_rtrn: *mut u32,
+    values: *const LookupEntry,
 ) -> bool {
     unsafe {
         return ExprResolveMaskLookup(
@@ -1057,11 +1057,11 @@ pub unsafe fn ExprResolveMask(
     }
 }
 pub unsafe fn ExprResolveModMask(
-    mut ctx: *mut xkb_context,
-    mut expr: *const ExprDef,
-    mut mod_type: u32,
-    mut mods: *const xkb_mod_set,
-    mut mask_rtrn: *mut u32,
+    ctx: *mut xkb_context,
+    expr: *const ExprDef,
+    mod_type: u32,
+    mods: *const xkb_mod_set,
+    mask_rtrn: *mut u32,
 ) -> bool {
     unsafe {
         let mut priv_0: LookupModMaskPriv = LookupModMaskPriv {
@@ -1088,11 +1088,11 @@ pub unsafe fn ExprResolveModMask(
     }
 }
 pub unsafe fn ExprResolveMod(
-    mut ctx: *mut xkb_context,
-    mut def: *const ExprDef,
-    mut mod_type: u32,
-    mut mods: *const xkb_mod_set,
-    mut ndx_rtrn: *mut u32,
+    ctx: *mut xkb_context,
+    def: *const ExprDef,
+    mod_type: u32,
+    mods: *const xkb_mod_set,
+    ndx_rtrn: *mut u32,
 ) -> bool {
     unsafe {
         if (*def).common.type_0 as u32 != STMT_EXPR_IDENT as u32 {
@@ -1106,8 +1106,8 @@ pub unsafe fn ExprResolveMod(
             );
             return false;
         }
-        let mut name: u32 = (*def).ident.ident;
-        let mut ndx: u32 = XkbModNameToIndex(mods, name, mod_type);
+        let name: u32 = (*def).ident.ident;
+        let ndx: u32 = XkbModNameToIndex(mods, name, mod_type);
         if ndx == XKB_MOD_INVALID as u32 {
             xkb_logf!(
                 ctx,
@@ -1124,10 +1124,10 @@ pub unsafe fn ExprResolveMod(
     }
 }
 pub unsafe fn ExprResolveGroupMask(
-    mut keymap_info: *const xkb_keymap_info,
-    mut expr: *const ExprDef,
-    mut group_rtrn: *mut u32,
-    mut pending_rtrn: *mut bool,
+    keymap_info: *const xkb_keymap_info,
+    expr: *const ExprDef,
+    group_rtrn: *mut u32,
+    pending_rtrn: *mut bool,
 ) -> bool {
     unsafe {
         static mut pendingGroupMaskNames: [LookupEntry; 2] = [

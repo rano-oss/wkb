@@ -180,7 +180,7 @@ unsafe fn resize_groups_zero(v: &mut Vec<GroupInfo>, new_len: usize) {
     }
 }
 
-unsafe fn InitGroupInfo(mut groupi: *mut GroupInfo) {
+unsafe fn InitGroupInfo(groupi: *mut GroupInfo) {
     unsafe {
         std::ptr::write(
             groupi,
@@ -192,19 +192,19 @@ unsafe fn InitGroupInfo(mut groupi: *mut GroupInfo) {
         );
     }
 }
-unsafe fn ClearGroupInfo(mut groupi: *mut GroupInfo) {
+unsafe fn ClearGroupInfo(groupi: *mut GroupInfo) {
     unsafe {
         (*groupi).levels.clear();
     }
 }
-unsafe fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const GroupInfo) {
+unsafe fn CopyGroupInfo(to: *mut GroupInfo, from: *const GroupInfo) {
     unsafe {
         (*to).defined = (*from).defined;
         (*to).type_0 = (*from).type_0;
         (*to).levels = (*from).levels.clone();
     }
 }
-unsafe fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyInfo) {
+unsafe fn InitKeyInfo(ctx: *mut xkb_context, keyi: *mut KeyInfo) {
     unsafe {
         std::ptr::write_bytes::<KeyInfo>(keyi as *mut KeyInfo, 0u8, 1);
         (*keyi).name = xkb_atom_intern(
@@ -217,7 +217,7 @@ unsafe fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyInfo) {
         std::ptr::write(&raw mut (*keyi).overlay_keys, Vec::new());
     }
 }
-unsafe fn ClearKeyInfo(mut keyi: *mut KeyInfo) {
+unsafe fn ClearKeyInfo(keyi: *mut KeyInfo) {
     unsafe {
         for groupi in (*keyi).groups.iter_mut() {
             ClearGroupInfo(groupi as *mut GroupInfo);
@@ -227,10 +227,10 @@ unsafe fn ClearKeyInfo(mut keyi: *mut KeyInfo) {
     }
 }
 unsafe fn InitSymbolsInfo(
-    mut info: *mut SymbolsInfo,
-    mut keymap_info: *const xkb_keymap_info,
-    mut include_depth: u32,
-    mut mods: *const xkb_mod_set,
+    info: *mut SymbolsInfo,
+    keymap_info: *const xkb_keymap_info,
+    include_depth: u32,
+    mods: *const xkb_mod_set,
 ) {
     unsafe {
         std::ptr::write_bytes::<SymbolsInfo>(info as *mut SymbolsInfo, 0u8, 1);
@@ -250,7 +250,7 @@ unsafe fn InitSymbolsInfo(
         (*info).explicit_group = XKB_LAYOUT_INVALID as u32;
     }
 }
-unsafe fn ClearSymbolsInfo(mut info: *mut SymbolsInfo) {
+unsafe fn ClearSymbolsInfo(info: *mut SymbolsInfo) {
     unsafe {
         (*info).name = None;
         for keyi in (*info).keys.iter_mut() {
@@ -262,19 +262,19 @@ unsafe fn ClearSymbolsInfo(mut info: *mut SymbolsInfo) {
         ClearKeyInfo(&raw mut (*info).default_key);
     }
 }
-unsafe fn KeyInfoText(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -> &'static [u8] {
+unsafe fn KeyInfoText(info: *mut SymbolsInfo, keyi: *mut KeyInfo) -> &'static [u8] {
     unsafe {
         return KeyNameText((*((*info).ctx)).clone(), (*keyi).name);
     }
 }
 unsafe fn MergeGroups(
-    mut info: *mut SymbolsInfo,
-    mut into: *mut GroupInfo,
-    mut from: *mut GroupInfo,
-    mut clobber: bool,
-    mut report: bool,
-    mut group: u32,
-    mut key_name: u32,
+    info: *mut SymbolsInfo,
+    into: *mut GroupInfo,
+    from: *mut GroupInfo,
+    clobber: bool,
+    report: bool,
+    group: u32,
+    key_name: u32,
 ) -> bool {
     unsafe {
         if (*into).type_0 != (*from).type_0 {
@@ -282,12 +282,12 @@ unsafe fn MergeGroups(
                 if (*into).type_0 == XKB_ATOM_NONE as u32 {
                     (*into).type_0 = (*from).type_0;
                 } else {
-                    let mut use_0: u32 = if clobber as i32 != 0 {
+                    let use_0: u32 = if clobber as i32 != 0 {
                         (*from).type_0
                     } else {
                         (*into).type_0
                     };
-                    let mut ignore: u32 = if clobber as i32 != 0 {
+                    let ignore: u32 = if clobber as i32 != 0 {
                         (*into).type_0
                     } else {
                         (*from).type_0
@@ -490,12 +490,12 @@ unsafe fn MergeGroups(
     }
 }
 unsafe fn UseNewKeyField(
-    mut field: key_field,
-    mut old: key_field,
-    mut new: key_field,
-    mut clobber: bool,
-    mut report: bool,
-    mut collide: *mut key_field,
+    field: key_field,
+    old: key_field,
+    new: key_field,
+    clobber: bool,
+    report: bool,
+    collide: *mut key_field,
 ) -> bool {
     unsafe {
         if old as u32 & field as u32 == 0 {
@@ -511,9 +511,9 @@ unsafe fn UseNewKeyField(
     }
 }
 unsafe fn overlays_get(
-    mut info: *const KeyInfo,
-    mut bit: xkb_overlay_index_t,
-    mut key_out: *mut u32,
+    info: *const KeyInfo,
+    bit: xkb_overlay_index_t,
+    key_out: *mut u32,
 ) -> bool {
     unsafe {
         if bit as i32
@@ -537,9 +537,9 @@ unsafe fn overlays_get(
     }
 }
 unsafe fn overlays_insert(
-    mut keyi: *mut KeyInfo,
-    mut bit: xkb_overlay_index_t,
-    mut key: u32,
+    keyi: *mut KeyInfo,
+    bit: xkb_overlay_index_t,
+    key: u32,
 ) -> bool {
     unsafe {
         if bit as i32
@@ -585,12 +585,12 @@ unsafe fn overlays_insert(
     }
 }
 unsafe fn merge_overlays(
-    mut info: *mut SymbolsInfo,
-    mut into: *mut KeyInfo,
-    mut from: *mut KeyInfo,
+    info: *mut SymbolsInfo,
+    into: *mut KeyInfo,
+    from: *mut KeyInfo,
     mut clobber: bool,
-    mut report: bool,
-    mut collide: *mut key_field,
+    report: bool,
+    collide: *mut key_field,
 ) -> bool {
     unsafe {
         if !((*from).defined as i32 & KEY_FIELD_OVERLAY as i32 == 0) {
@@ -703,10 +703,10 @@ unsafe fn merge_overlays(
     }
 }
 unsafe fn MergeKeys(
-    mut info: *mut SymbolsInfo,
-    mut into: *mut KeyInfo,
-    mut from: *mut KeyInfo,
-    mut same_file: bool,
+    info: *mut SymbolsInfo,
+    into: *mut KeyInfo,
+    from: *mut KeyInfo,
+    same_file: bool,
 ) -> bool {
     unsafe {
         let mut i: u32 = 0;
@@ -816,9 +816,9 @@ unsafe fn MergeKeys(
     }
 }
 unsafe fn AddKeySymbols(
-    mut info: *mut SymbolsInfo,
-    mut keyi: *mut KeyInfo,
-    mut same_file: bool,
+    info: *mut SymbolsInfo,
+    keyi: *mut KeyInfo,
+    same_file: bool,
 ) -> bool {
     unsafe {
         // XkbResolveKeyAlias inlined
@@ -842,9 +842,9 @@ unsafe fn AddKeySymbols(
         return true;
     }
 }
-unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) -> bool {
+unsafe fn AddModMapEntry(info: *mut SymbolsInfo, new: *mut ModMapEntry) -> bool {
     unsafe {
-        let mut clobber: bool = (*new).merge as u32 != MERGE_AUGMENT as u32;
+        let clobber: bool = (*new).merge as u32 != MERGE_AUGMENT as u32;
         for old in (*info).modmaps.iter_mut() {
             if (*new).haveSymbol as i32 != old.haveSymbol as i32
                 || (*new).haveSymbol as i32 != 0 && (*new).u.keySym != old.u.keySym
@@ -896,9 +896,9 @@ unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) 
     }
 }
 unsafe fn MergeIncludedSymbols(
-    mut into: *mut SymbolsInfo,
-    mut from: *mut SymbolsInfo,
-    mut merge: merge_mode,
+    into: *mut SymbolsInfo,
+    from: *mut SymbolsInfo,
+    merge: merge_mode,
 ) {
     unsafe {
         let mut group_names_in_both: u32 = 0;
@@ -958,7 +958,7 @@ unsafe fn MergeIncludedSymbols(
         };
     }
 }
-unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut IncludeStmt) -> bool {
+unsafe fn HandleIncludeSymbols(info: *mut SymbolsInfo, include: *mut IncludeStmt) -> bool {
     unsafe {
         let mut included: SymbolsInfo = SymbolsInfo::new_zeroed();
         if ExceedsIncludeMaxDepth((*info).ctx, (*info).include_depth) {
@@ -1040,14 +1040,14 @@ unsafe fn HandleIncludeSymbols(mut info: *mut SymbolsInfo, mut include: *mut Inc
     }
 }
 unsafe fn GetGroupIndex(
-    mut info: *mut SymbolsInfo,
-    mut keyi: *mut KeyInfo,
-    mut arrayNdx: *mut ExprDef,
-    mut field: group_field,
-    mut ndx_rtrn: *mut u32,
+    info: *mut SymbolsInfo,
+    keyi: *mut KeyInfo,
+    arrayNdx: *mut ExprDef,
+    field: group_field,
+    ndx_rtrn: *mut u32,
 ) -> bool {
     unsafe {
-        let mut name: *const i8 = if field as u32 == GROUP_FIELD_SYMS as u32 {
+        let name: *const i8 = if field as u32 == GROUP_FIELD_SYMS as u32 {
             b"symbols\0".as_ptr() as *const i8
         } else {
             b"actions\0".as_ptr() as *const i8
@@ -1113,17 +1113,17 @@ unsafe fn GetGroupIndex(
     }
 }
 unsafe fn AddSymbolsToKey(
-    mut info: *mut SymbolsInfo,
-    mut keyi: *mut KeyInfo,
-    mut arrayNdx: *mut ExprDef,
-    mut value: *mut ExprDef,
+    info: *mut SymbolsInfo,
+    keyi: *mut KeyInfo,
+    arrayNdx: *mut ExprDef,
+    value: *mut ExprDef,
 ) -> bool {
     unsafe {
         let mut ndx: u32 = 0 as u32;
         if !GetGroupIndex(info, keyi, arrayNdx, GROUP_FIELD_SYMS, &raw mut ndx) {
             return false;
         }
-        let mut groupi: *mut GroupInfo = &mut (&mut (*keyi).groups)[ndx as usize] as *mut GroupInfo;
+        let groupi: *mut GroupInfo = &mut (&mut (*keyi).groups)[ndx as usize] as *mut GroupInfo;
         if (*value).common.type_0 as u32 == STMT_EXPR_EMPTY_LIST as u32 {
             (*groupi).defined = ((*groupi).defined as u32 | GROUP_FIELD_SYMS as u32) as group_field;
             return true;
@@ -1175,7 +1175,7 @@ unsafe fn AddSymbolsToKey(
         let mut level: u32 = 0 as u32;
         let mut keysymList_0: *mut ExprKeysymList = value as *mut ExprKeysymList;
         while !keysymList_0.is_null() && level < nLevels {
-            let mut leveli: *mut xkb_level =
+            let leveli: *mut xkb_level =
                 &mut (&mut (*groupi).levels)[level as usize] as *mut xkb_level;
             let syms_len = (&(*keysymList_0).syms).len() as u32;
             if (syms_len > 65535 as u32) as i64 != 0 {
@@ -1204,17 +1204,17 @@ unsafe fn AddSymbolsToKey(
     }
 }
 unsafe fn AddActionsToKey(
-    mut info: *mut SymbolsInfo,
-    mut keyi: *mut KeyInfo,
-    mut arrayNdx: *mut ExprDef,
-    mut value: *mut ExprDef,
+    info: *mut SymbolsInfo,
+    keyi: *mut KeyInfo,
+    arrayNdx: *mut ExprDef,
+    value: *mut ExprDef,
 ) -> bool {
     unsafe {
         let mut ndx: u32 = 0 as u32;
         if !GetGroupIndex(info, keyi, arrayNdx, GROUP_FIELD_ACTS, &raw mut ndx) {
             return false;
         }
-        let mut groupi: *mut GroupInfo = &mut (&mut (*keyi).groups)[ndx as usize] as *mut GroupInfo;
+        let groupi: *mut GroupInfo = &mut (&mut (*keyi).groups)[ndx as usize] as *mut GroupInfo;
         if (*value).common.type_0 as u32 == STMT_EXPR_EMPTY_LIST as u32 {
             (*groupi).defined = ((*groupi).defined as u32 | GROUP_FIELD_ACTS as u32) as group_field;
             return true;
@@ -1260,8 +1260,8 @@ unsafe fn AddActionsToKey(
         let mut nonEmptyLevels: u32 = 0 as u32;
         let mut actionList: *mut ExprActionList = value as *mut ExprActionList;
         while !actionList.is_null() {
-            let mut c2rust_current_block_102: u64;
-            let mut leveli: *mut xkb_level =
+            let c2rust_current_block_102: u64;
+            let leveli: *mut xkb_level =
                 &mut (&mut (*groupi).levels)[level as usize] as *mut xkb_level;
             let mut num_actions: u32 = 0 as u32;
             let mut act: *mut ExprDef = (*actionList).actions as *mut ExprDef;
@@ -1390,13 +1390,13 @@ static mut repeatEntries: [LookupEntry; 8] = [
     },
 ];
 unsafe fn ExprResolveOverlayEntry(
-    mut keymap_info: *const xkb_keymap_info,
+    keymap_info: *const xkb_keymap_info,
     field: &[u8],
-    mut arrayNdx: *const ExprDef,
-    mut expr: *const ExprDef,
-    mut keyi: *mut KeyInfo,
-    mut overlay_rtrn: *mut xkb_overlay_index_t,
-    mut key_rtrn: *mut u32,
+    arrayNdx: *const ExprDef,
+    expr: *const ExprDef,
+    keyi: *mut KeyInfo,
+    overlay_rtrn: *mut xkb_overlay_index_t,
+    key_rtrn: *mut u32,
 ) -> bool {
     unsafe {
         if !arrayNdx.is_null() {
@@ -1517,11 +1517,11 @@ unsafe fn ExprResolveOverlayEntry(
     }
 }
 unsafe fn SetSymbolsField(
-    mut info: *mut SymbolsInfo,
-    mut keyi: *mut KeyInfo,
+    info: *mut SymbolsInfo,
+    keyi: *mut KeyInfo,
     field: &[u8],
-    mut arrayNdx: *mut ExprDef,
-    mut value_ptr: *mut *mut ExprDef,
+    arrayNdx: *mut ExprDef,
+    value_ptr: *mut *mut ExprDef,
 ) -> bool {
     unsafe {
         let value: *mut ExprDef = *value_ptr;
@@ -1855,10 +1855,10 @@ unsafe fn SetSymbolsField(
     }
 }
 unsafe fn SetGroupName(
-    mut info: *mut SymbolsInfo,
-    mut arrayNdx: *mut ExprDef,
-    mut value: *mut ExprDef,
-    mut merge: merge_mode,
+    info: *mut SymbolsInfo,
+    arrayNdx: *mut ExprDef,
+    value: *mut ExprDef,
+    merge: merge_mode,
 ) -> bool {
     unsafe {
         if arrayNdx.is_null() {
@@ -1947,7 +1947,7 @@ unsafe fn SetGroupName(
         return true;
     }
 }
-unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> bool {
+unsafe fn HandleGlobalVar(info: *mut SymbolsInfo, stmt: *mut VarDef) -> bool {
     unsafe {
         let mut elem: &[u8] = b"";
         let mut field: &[u8] = b"";
@@ -2053,9 +2053,9 @@ unsafe fn HandleGlobalVar(mut info: *mut SymbolsInfo, mut stmt: *mut VarDef) -> 
     }
 }
 unsafe fn HandleSymbolsBody(
-    mut info: *mut SymbolsInfo,
+    info: *mut SymbolsInfo,
     mut def: *mut VarDef,
-    mut keyi: *mut KeyInfo,
+    keyi: *mut KeyInfo,
 ) -> bool {
     unsafe {
         let mut all_valid_entries: bool = true;
@@ -2114,10 +2114,10 @@ unsafe fn HandleSymbolsBody(
         return all_valid_entries;
     }
 }
-unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -> bool {
+unsafe fn SetExplicitGroup(info: *mut SymbolsInfo, keyi: *mut KeyInfo) -> bool {
     unsafe {
         let mut i: u32 = 0;
-        let mut groupi: *mut GroupInfo = std::ptr::null_mut();
+        let _groupi: *mut GroupInfo = std::ptr::null_mut();
         let mut warn: bool = false;
         if (*info).explicit_group == XKB_LAYOUT_INVALID as u32 {
             return true;
@@ -2160,7 +2160,7 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
         return true;
     }
 }
-unsafe fn HandleSymbolsDef(mut info: *mut SymbolsInfo, mut stmt: *mut SymbolsDef) -> bool {
+unsafe fn HandleSymbolsDef(info: *mut SymbolsInfo, stmt: *mut SymbolsDef) -> bool {
     unsafe {
         let mut keyi: KeyInfo = KeyInfo::new_zeroed();
         keyi = (*info).default_key.clone();
@@ -2191,7 +2191,7 @@ unsafe fn HandleSymbolsDef(mut info: *mut SymbolsInfo, mut stmt: *mut SymbolsDef
         return false;
     }
 }
-unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -> bool {
+unsafe fn HandleModMapDef(info: *mut SymbolsInfo, def: *mut ModMapDef) -> bool {
     unsafe {
         let mut tmp: ModMapEntry = ModMapEntry {
             merge: MERGE_DEFAULT,
@@ -2201,7 +2201,7 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
         };
         let mut ndx: u32 = 0;
         let mut ok: bool = false;
-        let mut ctx: *mut xkb_context = (*info).ctx;
+        let ctx: *mut xkb_context = (*info).ctx;
         let modifier_name: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, (*def).modifier);
         if istreq(modifier_name, b"none") {
             ndx = XKB_MOD_NONE as u32;
@@ -2259,7 +2259,7 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
         return ok;
     }
 }
-unsafe fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mut XkbFile) {
+unsafe fn HandleSymbolsFile(info: *mut SymbolsInfo, file: *mut XkbFile) {
     unsafe {
         let mut ok: bool = false;
         (*info).name = if (*file).name.is_null() {
@@ -2339,7 +2339,7 @@ unsafe fn HandleSymbolsFile(mut info: *mut SymbolsInfo, mut file: *mut XkbFile) 
         }
     }
 }
-unsafe fn FindKeyForSymbol(mut keymap: *mut xkb_keymap, mut sym: u32) -> *mut xkb_key {
+unsafe fn FindKeyForSymbol(keymap: *mut xkb_keymap, sym: u32) -> *mut xkb_key {
     unsafe {
         let mut got_one_group: bool = false;
         let mut group: u32 = 0 as u32;
@@ -2382,7 +2382,7 @@ unsafe fn FindKeyForSymbol(mut keymap: *mut xkb_keymap, mut sym: u32) -> *mut xk
         return std::ptr::null_mut();
     }
 }
-unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInfo) -> u32 {
+unsafe fn FindAutomaticType(ctx: *mut xkb_context, groupi: *mut GroupInfo) -> u32 {
     unsafe {
         let mut sym0: u32 = 0;
         let mut sym1: u32 = 0;
@@ -2479,14 +2479,14 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
     }
 }
 unsafe fn FindTypeForGroup(
-    mut keymap: *mut xkb_keymap,
-    mut keyi: *mut KeyInfo,
-    mut group: u32,
-    mut explicit_type: *mut bool,
+    keymap: *mut xkb_keymap,
+    keyi: *mut KeyInfo,
+    group: u32,
+    explicit_type: *mut bool,
 ) -> u32 {
     unsafe {
         let mut i: u32 = 0;
-        let mut groupi: *mut GroupInfo =
+        let groupi: *mut GroupInfo =
             &mut (&mut (*keyi).groups)[group as usize] as *mut GroupInfo;
         let mut type_name: u32 = (*groupi).type_0;
         *explicit_type = true;
@@ -2541,9 +2541,9 @@ unsafe fn FindTypeForGroup(
     }
 }
 unsafe fn CopySymbolsDefToKeymap(
-    mut keymap: *mut xkb_keymap,
-    mut info: *mut SymbolsInfo,
-    mut keyi: *mut KeyInfo,
+    keymap: *mut xkb_keymap,
+    info: *mut SymbolsInfo,
+    keyi: *mut KeyInfo,
 ) -> bool {
     unsafe {
         let mut key: *mut xkb_key = std::ptr::null_mut();
@@ -2795,9 +2795,9 @@ unsafe fn CopySymbolsDefToKeymap(
 }
 
 unsafe fn CopyModMapDefToKeymap(
-    mut keymap: *mut xkb_keymap,
-    mut info: *mut SymbolsInfo,
-    mut entry: *mut ModMapEntry,
+    keymap: *mut xkb_keymap,
+    info: *mut SymbolsInfo,
+    entry: *mut ModMapEntry,
 ) -> bool {
     unsafe {
         let mut key: *mut xkb_key = std::ptr::null_mut();
@@ -2836,7 +2836,7 @@ unsafe fn CopyModMapDefToKeymap(
         return true;
     }
 }
-unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut SymbolsInfo) -> bool {
+unsafe fn CopySymbolsToKeymap(keymap: *mut xkb_keymap, info: *mut SymbolsInfo) -> bool {
     unsafe {
         (*keymap).symbols_section_name = match &(*info).name {
             Some(s) => s.clone(),
@@ -2885,8 +2885,8 @@ unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Symbol
     }
 }
 pub unsafe fn CompileSymbols(
-    mut file: *mut XkbFile,
-    mut keymap_info: *mut xkb_keymap_info,
+    file: *mut XkbFile,
+    keymap_info: *mut xkb_keymap_info,
 ) -> bool {
     unsafe {
         let mut info: SymbolsInfo = SymbolsInfo::new_zeroed();

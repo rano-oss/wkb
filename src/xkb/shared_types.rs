@@ -645,7 +645,7 @@ pub unsafe fn XkbKeyNumLevels(keymap: *const xkb_keymap, key: *const xkb_key, la
 }
 
 #[inline]
-pub unsafe fn XkbKey(mut keymap: *mut xkb_keymap, mut kc: u32) -> *const xkb_key {
+pub unsafe fn XkbKey(keymap: *mut xkb_keymap, kc: u32) -> *const xkb_key {
     unsafe {
         if kc < (*keymap).min_key_code || kc > (*keymap).max_key_code {
             return std::ptr::null();
@@ -677,9 +677,9 @@ pub unsafe fn XkbKey(mut keymap: *mut xkb_keymap, mut kc: u32) -> *const xkb_key
 
 #[inline]
 pub unsafe fn XkbKeyByName(
-    mut keymap: *const xkb_keymap,
-    mut name: u32,
-    mut use_aliases: bool,
+    keymap: *const xkb_keymap,
+    name: u32,
+    use_aliases: bool,
 ) -> *mut xkb_key {
     unsafe {
         if (name as usize) < (&(*keymap).key_names).len() {
@@ -699,14 +699,14 @@ pub unsafe fn XkbKeyByName(
 }
 
 #[inline]
-pub unsafe fn entry_is_active(mut entry: *const xkb_key_type_entry) -> bool {
+pub unsafe fn entry_is_active(entry: *const xkb_key_type_entry) -> bool {
     unsafe {
         return (*entry).mods.mods == 0 as u32 || (*entry).mods.mask != 0 as u32;
     }
 }
 
 #[inline]
-pub unsafe fn format_max_overlays(mut format: u32) -> xkb_overlay_index_t {
+pub unsafe fn format_max_overlays(format: u32) -> xkb_overlay_index_t {
     return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
         XKB_OVERLAY_MAX_X11 as usize
     } else {
@@ -715,7 +715,7 @@ pub unsafe fn format_max_overlays(mut format: u32) -> xkb_overlay_index_t {
 }
 
 #[inline]
-pub unsafe fn format_max_groups(mut format: u32) -> u32 {
+pub unsafe fn format_max_groups(format: u32) -> u32 {
     return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
         XKB_MAX_GROUPS_X11
     } else {
@@ -724,7 +724,7 @@ pub unsafe fn format_max_groups(mut format: u32) -> u32 {
 }
 
 #[inline]
-pub unsafe fn format_boolean_controls(mut format: u32) -> xkb_action_controls {
+pub unsafe fn format_boolean_controls(format: u32) -> xkb_action_controls {
     return (if format as u32 == XKB_KEYMAP_FORMAT_TEXT_V1 as u32 {
         CONTROL_ALL_BOOLEAN_V1 as i32
     } else {
@@ -733,22 +733,22 @@ pub unsafe fn format_boolean_controls(mut format: u32) -> xkb_action_controls {
 }
 
 #[inline]
-pub unsafe fn isModsUnLockOnPressSupported(mut format: u32) -> bool {
+pub unsafe fn isModsUnLockOnPressSupported(format: u32) -> bool {
     return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
 }
 
 #[inline]
-pub unsafe fn isGroupLockOnReleaseSupported(mut format: u32) -> bool {
+pub unsafe fn isGroupLockOnReleaseSupported(format: u32) -> bool {
     return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
 }
 
 #[inline]
-pub unsafe fn isModsLatchOnPressSupported(mut format: u32) -> bool {
+pub unsafe fn isModsLatchOnPressSupported(format: u32) -> bool {
     return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
 }
 
 #[inline]
-pub unsafe fn areOverlappingOverlaysSupported(mut format: u32) -> bool {
+pub unsafe fn areOverlappingOverlaysSupported(format: u32) -> bool {
     return format as u32 >= XKB_KEYMAP_FORMAT_TEXT_V2 as u32;
 }
 

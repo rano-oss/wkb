@@ -74,18 +74,18 @@ use crate::xkb::utils::{isempty, strdup_safe};
 pub use crate::xkb::xkbcomp::include::{
     ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX,
 };
-unsafe fn ExprCreate(mut op: stmt_type) -> *mut ExprDef {
+unsafe fn ExprCreate(op: stmt_type) -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef = Box::into_raw(Box::new(std::mem::zeroed::<ExprDef>()));
+        let expr: *mut ExprDef = Box::into_raw(Box::new(std::mem::zeroed::<ExprDef>()));
         (*expr).common.type_0 = op;
         (*expr).common.next = std::ptr::null_mut();
         return expr;
     }
 }
 
-pub unsafe fn ExprCreateString(mut str: u32) -> *mut ExprDef {
+pub unsafe fn ExprCreateString(str: u32) -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_STRING_LITERAL);
+        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_STRING_LITERAL);
         if expr.is_null() {
             return std::ptr::null_mut();
         }
@@ -94,9 +94,9 @@ pub unsafe fn ExprCreateString(mut str: u32) -> *mut ExprDef {
     }
 }
 
-pub unsafe fn ExprCreateInteger(mut ival: i64) -> *mut ExprDef {
+pub unsafe fn ExprCreateInteger(ival: i64) -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_INTEGER_LITERAL);
+        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_INTEGER_LITERAL);
         if expr.is_null() {
             return std::ptr::null_mut();
         }
@@ -107,7 +107,7 @@ pub unsafe fn ExprCreateInteger(mut ival: i64) -> *mut ExprDef {
 
 pub unsafe fn ExprCreateFloat() -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_FLOAT_LITERAL);
+        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_FLOAT_LITERAL);
         if expr.is_null() {
             return std::ptr::null_mut();
         }
@@ -115,9 +115,9 @@ pub unsafe fn ExprCreateFloat() -> *mut ExprDef {
     }
 }
 
-pub unsafe fn ExprCreateKeyName(mut key_name: u32) -> *mut ExprDef {
+pub unsafe fn ExprCreateKeyName(key_name: u32) -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_KEYNAME_LITERAL);
+        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_KEYNAME_LITERAL);
         if expr.is_null() {
             return std::ptr::null_mut();
         }
@@ -126,9 +126,9 @@ pub unsafe fn ExprCreateKeyName(mut key_name: u32) -> *mut ExprDef {
     }
 }
 
-pub unsafe fn ExprCreateKeySym(mut keysym: u32) -> *mut ExprDef {
+pub unsafe fn ExprCreateKeySym(keysym: u32) -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_KEYSYM_LITERAL);
+        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_KEYSYM_LITERAL);
         if expr.is_null() {
             return std::ptr::null_mut();
         }
@@ -137,9 +137,9 @@ pub unsafe fn ExprCreateKeySym(mut keysym: u32) -> *mut ExprDef {
     }
 }
 
-pub unsafe fn ExprCreateIdent(mut ident: u32) -> *mut ExprDef {
+pub unsafe fn ExprCreateIdent(ident: u32) -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_IDENT);
+        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_IDENT);
         if expr.is_null() {
             return std::ptr::null_mut();
         }
@@ -148,9 +148,9 @@ pub unsafe fn ExprCreateIdent(mut ident: u32) -> *mut ExprDef {
     }
 }
 
-pub unsafe fn ExprCreateUnary(mut op: stmt_type, mut child: *mut ExprDef) -> *mut ExprDef {
+pub unsafe fn ExprCreateUnary(op: stmt_type, child: *mut ExprDef) -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef = ExprCreate(op);
+        let expr: *mut ExprDef = ExprCreate(op);
         if expr.is_null() {
             return std::ptr::null_mut();
         }
@@ -160,12 +160,12 @@ pub unsafe fn ExprCreateUnary(mut op: stmt_type, mut child: *mut ExprDef) -> *mu
 }
 
 pub unsafe fn ExprCreateBinary(
-    mut op: stmt_type,
-    mut left: *mut ExprDef,
-    mut right: *mut ExprDef,
+    op: stmt_type,
+    left: *mut ExprDef,
+    right: *mut ExprDef,
 ) -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef = ExprCreate(op);
+        let expr: *mut ExprDef = ExprCreate(op);
         if expr.is_null() {
             return std::ptr::null_mut();
         }
@@ -175,9 +175,9 @@ pub unsafe fn ExprCreateBinary(
     }
 }
 
-pub unsafe fn ExprCreateFieldRef(mut element: u32, mut field: u32) -> *mut ExprDef {
+pub unsafe fn ExprCreateFieldRef(element: u32, field: u32) -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_FIELD_REF);
+        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_FIELD_REF);
         if expr.is_null() {
             return std::ptr::null_mut();
         }
@@ -188,12 +188,12 @@ pub unsafe fn ExprCreateFieldRef(mut element: u32, mut field: u32) -> *mut ExprD
 }
 
 pub unsafe fn ExprCreateArrayRef(
-    mut element: u32,
-    mut field: u32,
-    mut entry: *mut ExprDef,
+    element: u32,
+    field: u32,
+    entry: *mut ExprDef,
 ) -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_ARRAY_REF);
+        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_ARRAY_REF);
         if expr.is_null() {
             return std::ptr::null_mut();
         }
@@ -210,9 +210,9 @@ pub unsafe fn ExprEmptyList() -> *mut ExprDef {
     }
 }
 
-pub unsafe fn ExprCreateAction(mut name: u32, mut args: *mut ExprDef) -> *mut ExprDef {
+pub unsafe fn ExprCreateAction(name: u32, args: *mut ExprDef) -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_ACTION_DECL);
+        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_ACTION_DECL);
         if expr.is_null() {
             return std::ptr::null_mut();
         }
@@ -222,9 +222,9 @@ pub unsafe fn ExprCreateAction(mut name: u32, mut args: *mut ExprDef) -> *mut Ex
     }
 }
 
-pub unsafe fn ExprCreateActionList(mut actions: *mut ExprDef) -> *mut ExprDef {
+pub unsafe fn ExprCreateActionList(actions: *mut ExprDef) -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_ACTION_LIST);
+        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_ACTION_LIST);
         if expr.is_null() {
             return std::ptr::null_mut();
         }
@@ -233,9 +233,9 @@ pub unsafe fn ExprCreateActionList(mut actions: *mut ExprDef) -> *mut ExprDef {
     }
 }
 
-pub unsafe fn ExprCreateKeySymList(mut sym: u32) -> *mut ExprDef {
+pub unsafe fn ExprCreateKeySymList(sym: u32) -> *mut ExprDef {
     unsafe {
-        let mut expr: *mut ExprDef = ExprCreate(STMT_EXPR_KEYSYM_LIST);
+        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_KEYSYM_LIST);
         if expr.is_null() {
             return std::ptr::null_mut();
         }
@@ -248,7 +248,7 @@ pub unsafe fn ExprCreateKeySymList(mut sym: u32) -> *mut ExprDef {
     }
 }
 
-pub unsafe fn ExprAppendKeySymList(mut expr: *mut ExprDef, mut sym: u32) -> *mut ExprDef {
+pub unsafe fn ExprAppendKeySymList(expr: *mut ExprDef, sym: u32) -> *mut ExprDef {
     unsafe {
         if !(sym == XKB_KEY_NoSymbol as u32) {
             let ksl = expr as *mut ExprKeysymList;
@@ -259,12 +259,12 @@ pub unsafe fn ExprAppendKeySymList(mut expr: *mut ExprDef, mut sym: u32) -> *mut
 }
 
 pub unsafe fn ExprKeySymListAppendString(
-    mut scanner: *mut scanner,
-    mut expr: *mut ExprDef,
-    mut string: *const i8,
+    scanner: *mut scanner,
+    expr: *mut ExprDef,
+    string: *const i8,
 ) -> *mut ExprDef {
     unsafe {
-        let mut c2rust_current_block: u64;
+        let c2rust_current_block: u64;
         let len: usize = cstr_len(string) as usize;
         let mut idx: usize = 0 as usize;
         let mut idx_cp: usize = 1 as usize;
@@ -274,13 +274,13 @@ pub unsafe fn ExprKeySymListAppendString(
                 break;
             }
             let mut count: usize = 0 as usize;
-            let mut cp: u32 = utf8_next_code_point(
+            let cp: u32 = utf8_next_code_point(
                 string.offset(idx as isize),
                 len.wrapping_sub(idx),
                 &raw mut count,
             );
             if cp == INVALID_UTF8_CODE_POINT as u32 {
-                let mut loc: scanner_loc = (*scanner).token_location();
+                let loc: scanner_loc = (*scanner).token_location();
                 xkb_logf!(
                     (*scanner).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -298,7 +298,7 @@ pub unsafe fn ExprKeySymListAppendString(
             } else {
                 let sym: u32 = xkb_utf32_to_keysym(cp) as u32;
                 if sym == XKB_KEY_NoSymbol as u32 {
-                    let mut loc_0: scanner_loc = (*scanner).token_location();
+                    let loc_0: scanner_loc = (*scanner).token_location();
                     xkb_logf!(
                         (*scanner).ctx,
                         XKB_LOG_LEVEL_ERROR,
@@ -333,11 +333,11 @@ pub unsafe fn ExprKeySymListAppendString(
     }
 }
 
-pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8) -> u32 {
+pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32 {
     unsafe {
         let len: usize = cstr_len(string) as usize;
         if len == 0 as usize {
-            let mut loc: scanner_loc = (*scanner).token_location();
+            let loc: scanner_loc = (*scanner).token_location();
             xkb_logf!(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -352,7 +352,7 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
         let mut count: usize = 0 as usize;
         let cp: u32 = utf8_next_code_point(string, len, &raw mut count) as u32;
         if cp == INVALID_UTF8_CODE_POINT as u32 {
-            let mut loc_0: scanner_loc = (*scanner).token_location();
+            let loc_0: scanner_loc = (*scanner).token_location();
             xkb_logf!(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -365,7 +365,7 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
             );
             return XKB_KEY_NoSymbol as u32;
         } else if count != len {
-            let mut loc_1: scanner_loc = (*scanner).token_location();
+            let loc_1: scanner_loc = (*scanner).token_location();
             xkb_logf!(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -381,7 +381,7 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
         }
         let sym: u32 = xkb_utf32_to_keysym(cp) as u32;
         if sym == XKB_KEY_NoSymbol as u32 {
-            let mut loc_2: scanner_loc = (*scanner).token_location();
+            let loc_2: scanner_loc = (*scanner).token_location();
             xkb_logf!(
                 (*scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -397,9 +397,9 @@ pub unsafe fn KeysymParseString(mut scanner: *mut scanner, mut string: *const i8
     }
 }
 
-pub unsafe fn KeycodeCreate(mut name: u32, mut value: i64) -> *mut KeycodeDef {
+pub unsafe fn KeycodeCreate(name: u32, value: i64) -> *mut KeycodeDef {
     unsafe {
-        let mut def: *mut KeycodeDef = Box::into_raw(Box::new(std::mem::zeroed::<KeycodeDef>()));
+        let def: *mut KeycodeDef = Box::into_raw(Box::new(std::mem::zeroed::<KeycodeDef>()));
         (*def).common.type_0 = STMT_KEYCODE;
         (*def).common.next = std::ptr::null_mut();
         (*def).name = name;
@@ -408,9 +408,9 @@ pub unsafe fn KeycodeCreate(mut name: u32, mut value: i64) -> *mut KeycodeDef {
     }
 }
 
-pub unsafe fn KeyAliasCreate(mut alias: u32, mut real: u32) -> *mut KeyAliasDef {
+pub unsafe fn KeyAliasCreate(alias: u32, real: u32) -> *mut KeyAliasDef {
     unsafe {
-        let mut def: *mut KeyAliasDef = Box::into_raw(Box::new(std::mem::zeroed::<KeyAliasDef>()));
+        let def: *mut KeyAliasDef = Box::into_raw(Box::new(std::mem::zeroed::<KeyAliasDef>()));
         (*def).common.type_0 = STMT_ALIAS;
         (*def).common.next = std::ptr::null_mut();
         (*def).alias = alias;
@@ -419,9 +419,9 @@ pub unsafe fn KeyAliasCreate(mut alias: u32, mut real: u32) -> *mut KeyAliasDef 
     }
 }
 
-pub unsafe fn VModCreate(mut name: u32, mut value: *mut ExprDef) -> *mut VModDef {
+pub unsafe fn VModCreate(name: u32, value: *mut ExprDef) -> *mut VModDef {
     unsafe {
-        let mut def: *mut VModDef = Box::into_raw(Box::new(std::mem::zeroed::<VModDef>()));
+        let def: *mut VModDef = Box::into_raw(Box::new(std::mem::zeroed::<VModDef>()));
         (*def).common.type_0 = STMT_VMOD;
         (*def).common.next = std::ptr::null_mut();
         (*def).name = name;
@@ -430,9 +430,9 @@ pub unsafe fn VModCreate(mut name: u32, mut value: *mut ExprDef) -> *mut VModDef
     }
 }
 
-pub unsafe fn VarCreate(mut name: *mut ExprDef, mut value: *mut ExprDef) -> *mut VarDef {
+pub unsafe fn VarCreate(name: *mut ExprDef, value: *mut ExprDef) -> *mut VarDef {
     unsafe {
-        let mut def: *mut VarDef = Box::into_raw(Box::new(std::mem::zeroed::<VarDef>()));
+        let def: *mut VarDef = Box::into_raw(Box::new(std::mem::zeroed::<VarDef>()));
         (*def).common.type_0 = STMT_VAR;
         (*def).common.next = std::ptr::null_mut();
         (*def).name = name as *mut ExprDef;
@@ -441,7 +441,7 @@ pub unsafe fn VarCreate(mut name: *mut ExprDef, mut value: *mut ExprDef) -> *mut
     }
 }
 
-pub unsafe fn BoolVarCreate(mut ident: u32, mut set: bool) -> *mut VarDef {
+pub unsafe fn BoolVarCreate(ident: u32, set: bool) -> *mut VarDef {
     unsafe {
         let mut name: *mut ExprDef = std::ptr::null_mut();
         let mut value: *mut ExprDef = std::ptr::null_mut();
@@ -468,9 +468,9 @@ pub unsafe fn BoolVarCreate(mut ident: u32, mut set: bool) -> *mut VarDef {
     }
 }
 
-pub unsafe fn InterpCreate(mut sym: u32, mut match_0: *mut ExprDef) -> *mut InterpDef {
+pub unsafe fn InterpCreate(sym: u32, match_0: *mut ExprDef) -> *mut InterpDef {
     unsafe {
-        let mut def: *mut InterpDef = Box::into_raw(Box::new(std::mem::zeroed::<InterpDef>()));
+        let def: *mut InterpDef = Box::into_raw(Box::new(std::mem::zeroed::<InterpDef>()));
         (*def).common.type_0 = STMT_INTERP;
         (*def).common.next = std::ptr::null_mut();
         (*def).sym = sym;
@@ -480,9 +480,9 @@ pub unsafe fn InterpCreate(mut sym: u32, mut match_0: *mut ExprDef) -> *mut Inte
     }
 }
 
-pub unsafe fn KeyTypeCreate(mut name: u32, mut body: *mut VarDef) -> *mut KeyTypeDef {
+pub unsafe fn KeyTypeCreate(name: u32, body: *mut VarDef) -> *mut KeyTypeDef {
     unsafe {
-        let mut def: *mut KeyTypeDef = Box::into_raw(Box::new(std::mem::zeroed::<KeyTypeDef>()));
+        let def: *mut KeyTypeDef = Box::into_raw(Box::new(std::mem::zeroed::<KeyTypeDef>()));
         (*def).common.type_0 = STMT_TYPE;
         (*def).common.next = std::ptr::null_mut();
         (*def).merge = MERGE_DEFAULT;
@@ -492,9 +492,9 @@ pub unsafe fn KeyTypeCreate(mut name: u32, mut body: *mut VarDef) -> *mut KeyTyp
     }
 }
 
-pub unsafe fn SymbolsCreate(mut keyName: u32, mut symbols: *mut VarDef) -> *mut SymbolsDef {
+pub unsafe fn SymbolsCreate(keyName: u32, symbols: *mut VarDef) -> *mut SymbolsDef {
     unsafe {
-        let mut def: *mut SymbolsDef = Box::into_raw(Box::new(std::mem::zeroed::<SymbolsDef>()));
+        let def: *mut SymbolsDef = Box::into_raw(Box::new(std::mem::zeroed::<SymbolsDef>()));
         (*def).common.type_0 = STMT_SYMBOLS;
         (*def).common.next = std::ptr::null_mut();
         (*def).merge = MERGE_DEFAULT;
@@ -504,9 +504,9 @@ pub unsafe fn SymbolsCreate(mut keyName: u32, mut symbols: *mut VarDef) -> *mut 
     }
 }
 
-pub unsafe fn GroupCompatCreate(mut group: i64, mut val: *mut ExprDef) -> *mut GroupCompatDef {
+pub unsafe fn GroupCompatCreate(group: i64, val: *mut ExprDef) -> *mut GroupCompatDef {
     unsafe {
-        let mut def: *mut GroupCompatDef =
+        let def: *mut GroupCompatDef =
             Box::into_raw(Box::new(std::mem::zeroed::<GroupCompatDef>()));
         (*def).common.type_0 = STMT_GROUP_COMPAT;
         (*def).common.next = std::ptr::null_mut();
@@ -517,9 +517,9 @@ pub unsafe fn GroupCompatCreate(mut group: i64, mut val: *mut ExprDef) -> *mut G
     }
 }
 
-pub unsafe fn ModMapCreate(mut modifier: u32, mut keys: *mut ExprDef) -> *mut ModMapDef {
+pub unsafe fn ModMapCreate(modifier: u32, keys: *mut ExprDef) -> *mut ModMapDef {
     unsafe {
-        let mut def: *mut ModMapDef = Box::into_raw(Box::new(std::mem::zeroed::<ModMapDef>()));
+        let def: *mut ModMapDef = Box::into_raw(Box::new(std::mem::zeroed::<ModMapDef>()));
         (*def).common.type_0 = STMT_MODMAP;
         (*def).common.next = std::ptr::null_mut();
         (*def).merge = MERGE_DEFAULT;
@@ -529,9 +529,9 @@ pub unsafe fn ModMapCreate(mut modifier: u32, mut keys: *mut ExprDef) -> *mut Mo
     }
 }
 
-pub unsafe fn LedMapCreate(mut name: u32, mut body: *mut VarDef) -> *mut LedMapDef {
+pub unsafe fn LedMapCreate(name: u32, body: *mut VarDef) -> *mut LedMapDef {
     unsafe {
-        let mut def: *mut LedMapDef = Box::into_raw(Box::new(std::mem::zeroed::<LedMapDef>()));
+        let def: *mut LedMapDef = Box::into_raw(Box::new(std::mem::zeroed::<LedMapDef>()));
         (*def).common.type_0 = STMT_LED_MAP;
         (*def).common.next = std::ptr::null_mut();
         (*def).merge = MERGE_DEFAULT;
@@ -542,12 +542,12 @@ pub unsafe fn LedMapCreate(mut name: u32, mut body: *mut VarDef) -> *mut LedMapD
 }
 
 pub unsafe fn LedNameCreate(
-    mut ndx: i64,
-    mut name: *mut ExprDef,
-    mut virtual_0: bool,
+    ndx: i64,
+    name: *mut ExprDef,
+    virtual_0: bool,
 ) -> *mut LedNameDef {
     unsafe {
-        let mut def: *mut LedNameDef = Box::into_raw(Box::new(std::mem::zeroed::<LedNameDef>()));
+        let def: *mut LedNameDef = Box::into_raw(Box::new(std::mem::zeroed::<LedNameDef>()));
         (*def).common.type_0 = STMT_LED_NAME;
         (*def).common.next = std::ptr::null_mut();
         (*def).merge = MERGE_DEFAULT;
@@ -559,11 +559,11 @@ pub unsafe fn LedNameCreate(
 }
 
 pub unsafe fn UnknownStatementCreate(
-    mut type_0: stmt_type,
-    mut name: sval,
+    type_0: stmt_type,
+    name: sval,
 ) -> *mut UnknownStatement {
     unsafe {
-        let mut def: *mut UnknownStatement =
+        let def: *mut UnknownStatement =
             Box::into_raw(Box::new(std::mem::zeroed::<UnknownStatement>()));
         (*def).common.type_0 = type_0;
         (*def).common.next = std::ptr::null_mut();
@@ -577,12 +577,12 @@ pub unsafe fn UnknownStatementCreate(
 }
 
 pub unsafe fn IncludeCreate(
-    mut ctx: *mut xkb_context,
-    mut str: *mut i8,
+    _ctx: *mut xkb_context,
+    str: *mut i8,
     mut merge: merge_mode,
 ) -> *mut IncludeStmt {
     unsafe {
-        let mut c2rust_current_block: u64;
+        let c2rust_current_block: u64;
         let mut incl: *mut IncludeStmt = std::ptr::null_mut();
         let mut first: *mut IncludeStmt = std::ptr::null_mut();
         let mut stmt: *mut i8 = std::ptr::null_mut();
@@ -679,10 +679,10 @@ pub unsafe fn IncludeCreate(
 }
 
 pub unsafe fn XkbFileCreate(
-    mut type_0: u32,
-    mut name: *mut i8,
-    mut defs: *mut ParseCommon,
-    mut flags: xkb_map_flags,
+    type_0: u32,
+    name: *mut i8,
+    defs: *mut ParseCommon,
+    flags: xkb_map_flags,
 ) -> *mut XkbFile {
     unsafe {
         let mut file: *mut XkbFile = std::ptr::null_mut();
@@ -697,11 +697,11 @@ pub unsafe fn XkbFileCreate(
 }
 
 pub unsafe fn XkbFileFromComponents(
-    mut ctx: *mut xkb_context,
-    mut kkctgs: *const xkb_component_names,
+    ctx: *mut xkb_context,
+    kkctgs: *const xkb_component_names,
 ) -> *mut XkbFile {
     unsafe {
-        let mut c2rust_current_block: u64;
+        let c2rust_current_block: u64;
         let components: [*mut i8; 4] = [
             (*kkctgs).keycodes.as_ptr() as *mut i8,
             (*kkctgs).types.as_ptr() as *mut i8,
@@ -896,7 +896,7 @@ static mut xkb_file_type_strings: [*const i8; 7] = [
     b"rules\0".as_ptr() as *const i8,
 ];
 
-pub unsafe fn xkb_file_type_to_string(mut type_0: u32) -> *const i8 {
+pub unsafe fn xkb_file_type_to_string(type_0: u32) -> *const i8 {
     unsafe {
         if type_0 as u32 >= _FILE_TYPE_NUM_ENTRIES as u32 {
             return b"unknown\0".as_ptr() as *const i8;
@@ -951,7 +951,7 @@ pub fn stmt_type_to_string(type_0: u32) -> &'static str {
     stmt_type_strings[type_0 as usize]
 }
 
-pub fn stmt_type_to_operator_char(mut type_0: u32) -> char {
+pub fn stmt_type_to_operator_char(type_0: u32) -> char {
     match type_0 {
         17 => return '+',
         18 => return '-',

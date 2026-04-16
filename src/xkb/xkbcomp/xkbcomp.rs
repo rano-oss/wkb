@@ -123,7 +123,7 @@ pub use crate::xkb::shared_types::{
 };
 use libc::FILE;
 
-unsafe fn compile_keymap_file(mut keymap: *mut xkb_keymap, mut file: *mut XkbFile) -> bool {
+unsafe fn compile_keymap_file(keymap: *mut xkb_keymap, file: *mut XkbFile) -> bool {
     unsafe {
         if (*file).file_type as u32 != FILE_TYPE_KEYMAP as u32 {
             xkb_logf!(
@@ -150,8 +150,8 @@ unsafe fn compile_keymap_file(mut keymap: *mut xkb_keymap, mut file: *mut XkbFil
     }
 }
 unsafe fn text_v1_keymap_new_from_names(
-    mut keymap: *mut xkb_keymap,
-    mut rmlvo: *const xkb_rule_names,
+    keymap: *mut xkb_keymap,
+    rmlvo: *const xkb_rule_names,
 ) -> bool {
     unsafe {
         let mut ok: bool = false;
@@ -221,9 +221,9 @@ unsafe fn text_v1_keymap_new_from_names(
     }
 }
 unsafe fn text_v1_keymap_new_from_string(
-    mut keymap: *mut xkb_keymap,
-    mut string: *const i8,
-    mut len: usize,
+    keymap: *mut xkb_keymap,
+    string: *const i8,
+    len: usize,
 ) -> bool {
     unsafe {
         let mut ok: bool = false;
@@ -250,7 +250,7 @@ unsafe fn text_v1_keymap_new_from_string(
         return ok;
     }
 }
-unsafe fn text_v1_keymap_new_from_file(mut keymap: *mut xkb_keymap, mut file: *mut FILE) -> bool {
+unsafe fn text_v1_keymap_new_from_file(keymap: *mut xkb_keymap, file: *mut FILE) -> bool {
     unsafe {
         let mut ok: bool = false;
         let mut xkb_file: *mut XkbFile = std::ptr::null_mut();

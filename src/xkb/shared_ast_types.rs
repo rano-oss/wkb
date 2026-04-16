@@ -441,7 +441,7 @@ pub struct XkbcompFeatures {
 pub const false_0: i32 = 0;
 
 #[inline]
-pub unsafe fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
+pub unsafe fn safe_map_name(file: *mut XkbFile) -> *const i8 {
     unsafe {
         return if !(*file).name.is_null() {
             (*file).name as *const i8
@@ -453,7 +453,7 @@ pub unsafe fn safe_map_name(mut file: *mut XkbFile) -> *const i8 {
 
 #[inline]
 pub unsafe fn ReportNotArray(
-    mut ctx: *mut xkb_context,
+    _ctx: *mut xkb_context,
     type_0: &[u8],
     field: &[u8],
     name: &[u8],
@@ -473,8 +473,8 @@ pub unsafe fn ReportNotArray(
 
 #[inline]
 pub unsafe fn ReportBadType(
-    mut ctx: *mut xkb_context,
-    mut code: xkb_message_code,
+    _ctx: *mut xkb_context,
+    code: xkb_message_code,
     type_0: &[u8],
     field: &[u8],
     name: &[u8],
@@ -496,7 +496,7 @@ pub unsafe fn ReportBadType(
 
 #[inline]
 pub unsafe fn ReportBadField(
-    mut ctx: *mut xkb_context,
+    _ctx: *mut xkb_context,
     type_0: &[u8],
     field: &[u8],
     name: &[u8],
@@ -516,7 +516,7 @@ pub unsafe fn ReportBadField(
 
 #[inline]
 pub unsafe fn ReportShouldBeArray(
-    mut ctx: *mut xkb_context,
+    _ctx: *mut xkb_context,
     type_0: &[u8],
     field: &[u8],
     name: &[u8],

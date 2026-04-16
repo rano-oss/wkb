@@ -222,10 +222,10 @@ fn is_space(ch: i8) -> bool {
     matches!(ch as u8, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
 }
 #[inline]
-unsafe fn is_ident(mut ch: i8) -> bool {
+unsafe fn is_ident(ch: i8) -> bool {
     return (ch as u8).is_ascii_graphic() && ch as i32 != '\\' as i32;
 }
-unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
+unsafe fn lex(s: *mut scanner, val: *mut lvalue) -> rules_token {
     unsafe {
         loop {
             while (*s).chr(' ' as i32 as i8) as i32 != 0
@@ -249,7 +249,7 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
             }
             (*s).chr('\r' as i32 as i8);
             if !(*s).eol() {
-                let mut loc: scanner_loc = (*s).token_location();
+                let loc: scanner_loc = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -303,7 +303,7 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
                 (*val).string.len = (*val).string.len.wrapping_add(1);
             }
             if (*val).string.len == 0 as usize {
-                let mut loc_0: scanner_loc = (*s).token_location();
+                let loc_0: scanner_loc = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -333,7 +333,7 @@ unsafe fn lex(mut s: *mut scanner, mut val: *mut lvalue) -> rules_token {
             }
             return TOK_IDENTIFIER;
         }
-        let mut loc_1: scanner_loc = (*s).token_location();
+        let loc_1: scanner_loc = (*s).token_location();
         xkb_logf!(
             (*s).ctx,
             XKB_LOG_LEVEL_ERROR,
@@ -381,14 +381,14 @@ fn vec_resize_zero_matched_sval(v: &mut Vec<matched_sval>, new_len: usize) {
 }
 
 unsafe fn split_comma_separated_mlvo(
-    mut ctx: *mut xkb_context,
-    mut mlvo: rules_mlvo,
+    _ctx: *mut xkb_context,
+    mlvo: rules_mlvo,
     mut s: *const i8,
 ) -> Vec<matched_sval> {
     unsafe {
         let mut arr: Vec<matched_sval> = Vec::new();
         if s.is_null() {
-            let mut val: matched_sval = {
+            let val: matched_sval = {
                 let mut init = matched_sval {
                     matched: false,
                     layout: 0,
@@ -433,7 +433,7 @@ unsafe fn split_comma_separated_mlvo(
                 let (val_parsed, count) =
                     crate::xkb::utils::parse_dec_u32(std::ffi::CStr::from_ptr(s).to_bytes());
                 layout = val_parsed;
-                let mut count: i32 = count;
+                let count: i32 = count;
                 if count > 0 as i32 {
                     s = s.offset(count as isize);
                     if layout == 0 as u32 || layout > XKB_MAX_GROUPS as u32 {
@@ -495,8 +495,8 @@ unsafe fn split_comma_separated_mlvo(
     }
 }
 unsafe fn matcher_new_from_names(
-    mut ctx: *mut xkb_context,
-    mut rmlvo: *const xkb_rule_names,
+    ctx: *mut xkb_context,
+    rmlvo: *const xkb_rule_names,
 ) -> *mut matcher {
     unsafe {
         // Allocate zeroed memory for matcher, then initialize Vec fields properly.
@@ -505,7 +505,7 @@ unsafe fn matcher_new_from_names(
         if ptr.is_null() {
             std::alloc::handle_alloc_error(layout);
         }
-        let mut m: *mut matcher = ptr;
+        let m: *mut matcher = ptr;
         // Vec fields cannot be safely zeroed — write proper empty Vecs
         std::ptr::write(&raw mut (*m).rmlvo.layouts, Vec::new());
         std::ptr::write(&raw mut (*m).rmlvo.variants, Vec::new());
@@ -592,7 +592,7 @@ unsafe fn matcher_new_from_names(
         return m;
     }
 }
-unsafe fn matcher_free(mut m: *mut matcher) {
+unsafe fn matcher_free(m: *mut matcher) {
     unsafe {
         if m.is_null() {
             return;
@@ -610,7 +610,7 @@ unsafe fn matcher_free(mut m: *mut matcher) {
         std::alloc::dealloc(m as *mut u8, layout);
     }
 }
-unsafe fn matcher_group_start_new(mut m: *mut matcher, mut name: sval) {
+unsafe fn matcher_group_start_new(m: *mut matcher, name: sval) {
     unsafe {
         let group: group = group {
             name: name,
@@ -619,21 +619,21 @@ unsafe fn matcher_group_start_new(mut m: *mut matcher, mut name: sval) {
         (&mut (*m).groups).push(group);
     }
 }
-unsafe fn matcher_group_add_element(mut m: *mut matcher, mut s: *mut scanner, mut element: sval) {
+unsafe fn matcher_group_add_element(m: *mut matcher, _s: *mut scanner, element: sval) {
     unsafe {
         let last_group = (&mut (*m).groups).last_mut().unwrap();
         last_group.elements.push(element);
     }
 }
 unsafe fn matcher_include(
-    mut m: *mut matcher,
-    mut parent_scanner: *mut scanner,
-    mut include_depth: u32,
-    mut inc: sval,
+    m: *mut matcher,
+    parent_scanner: *mut scanner,
+    include_depth: u32,
+    inc: sval,
 ) {
     unsafe {
         if include_depth >= MAX_INCLUDE_DEPTH as u32 {
-            let mut loc: scanner_loc = (*parent_scanner).token_location();
+            let loc: scanner_loc = (*parent_scanner).token_location();
             xkb_logf!(
                 (*parent_scanner).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -709,7 +709,7 @@ unsafe fn matcher_include(
             );
         }
         while !file.is_null() {
-            let mut ret: bool = read_rules_file(
+            let ret: bool = read_rules_file(
                 (*m).ctx,
                 m,
                 include_depth.wrapping_add(1 as u32),
@@ -752,7 +752,7 @@ unsafe fn matcher_include(
         );
     }
 }
-unsafe fn matcher_mapping_start_new(mut m: *mut matcher) {
+unsafe fn matcher_mapping_start_new(m: *mut matcher) {
     unsafe {
         let mut i: mlvo_index_t = 0 as mlvo_index_t;
         while (i as i32) < _MLVO_NUM_ENTRIES as i32 as mlvo_index_t as i32 {
@@ -774,7 +774,7 @@ unsafe fn matcher_mapping_start_new(mut m: *mut matcher) {
         (*m).mapping.active_or_candidates_mask = 1 as u32;
     }
 }
-unsafe fn parse_layout_int_index(mut s: *const i8, mut max_len: usize, mut out: *mut u32) -> i32 {
+unsafe fn parse_layout_int_index(s: *const i8, max_len: usize, out: *mut u32) -> i32 {
     unsafe {
         let slice = std::slice::from_raw_parts(s.offset(1) as *const u8, max_len.wrapping_sub(2));
         let (val, count) = crate::xkb::utils::parse_dec_u32(slice);
@@ -790,7 +790,7 @@ unsafe fn parse_layout_int_index(mut s: *const i8, mut max_len: usize, mut out: 
         return count + 2 as i32;
     }
 }
-unsafe fn extract_layout_index(mut s: *const i8, mut max_len: usize, mut out: *mut u32) -> i32 {
+unsafe fn extract_layout_index(s: *const i8, max_len: usize, out: *mut u32) -> i32 {
     unsafe {
         *out = XKB_LAYOUT_INVALID as u32;
         if max_len < 3 as usize || *s.offset(0 as i32 as isize) as i32 != '[' as i32 {
@@ -807,9 +807,9 @@ unsafe fn extract_layout_index(mut s: *const i8, mut max_len: usize, mut out: *m
     }
 }
 unsafe fn extract_mapping_layout_index(
-    mut s: *const i8,
-    mut max_len: usize,
-    mut out: *mut u32,
+    s: *const i8,
+    max_len: usize,
+    out: *mut u32,
 ) -> i32 {
     unsafe {
         static mut names: [LayoutIndexName; 4] = [
@@ -856,12 +856,12 @@ unsafe fn extract_mapping_layout_index(
     }
 }
 #[inline]
-unsafe fn is_mlvo_mask_defined(mut m: *mut matcher, mut mlvo: rules_mlvo) -> bool {
+unsafe fn is_mlvo_mask_defined(m: *mut matcher, mlvo: rules_mlvo) -> bool {
     unsafe {
         return (*m).mapping.defined_mlvo_mask as u32 & (1 as u32) << mlvo as u32 != 0;
     }
 }
-unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut ident: sval) {
+unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval) {
     unsafe {
         let mut mlvo: rules_mlvo = MLVO_MODEL;
         let mut mlvo_sval: sval = sval {
@@ -877,7 +877,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
             mlvo += 1;
         }
         if mlvo as u32 >= _MLVO_NUM_ENTRIES as u32 {
-            let mut loc: scanner_loc = (*s).token_location();
+            let loc: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -893,7 +893,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
             return;
         }
         if is_mlvo_mask_defined(m, mlvo) {
-            let mut loc_0: scanner_loc = (*s).token_location();
+            let loc_0: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -910,13 +910,13 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
         }
         if mlvo_sval.len < ident.len {
             let mut idx: u32 = 0;
-            let mut consumed: i32 = extract_mapping_layout_index(
+            let consumed: i32 = extract_mapping_layout_index(
                 ident.start.offset(mlvo_sval.len as isize),
                 ident.len.wrapping_sub(mlvo_sval.len),
                 &raw mut idx,
             );
             if ident.len.wrapping_sub(mlvo_sval.len) as i32 != consumed {
-                let mut loc_1: scanner_loc = (*s).token_location();
+                let loc_1: scanner_loc = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -936,7 +936,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
             } else if mlvo as u32 == MLVO_VARIANT as u32 {
                 (*m).mapping.layout.single.variant_idx = idx;
             } else {
-                let mut loc_2: scanner_loc = (*s).token_location();
+                let loc_2: scanner_loc = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -961,7 +961,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                 && is_mlvo_mask_defined(m, MLVO_LAYOUT) as i32 != 0)
             && (*m).mapping.layout.single.layout_idx != (*m).mapping.layout.single.variant_idx
         {
-            let mut loc_3: scanner_loc = (*s).token_location();
+            let loc_3: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -982,7 +982,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
         (*m).mapping.num_mlvo = (*m).mapping.num_mlvo.wrapping_add(1);
     }
 }
-unsafe fn matcher_mapping_set_layout_bounds(mut m: *mut matcher) {
+unsafe fn matcher_mapping_set_layout_bounds(m: *mut matcher) {
     unsafe {
         let mut idx: u32 =
             if (*m).mapping.layout.single.layout_idx < (*m).mapping.layout.single.variant_idx {
@@ -990,7 +990,7 @@ unsafe fn matcher_mapping_set_layout_bounds(mut m: *mut matcher) {
             } else {
                 (*m).mapping.layout.single.variant_idx
             };
-        let mut c2rust_current_block_17: u64;
+        let c2rust_current_block_17: u64;
         match idx {
             XKB_LAYOUT_INVALID => {
                 (*m).mapping.has_layout_idx_range = false;
@@ -1046,7 +1046,7 @@ unsafe fn matcher_mapping_set_layout_bounds(mut m: *mut matcher) {
         };
     }
 }
-unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, mut ident: sval) {
+unsafe fn matcher_mapping_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sval) {
     unsafe {
         let mut kccgst: rules_kccgst = KCCGST_KEYCODES;
         let mut kccgst_sval: sval = sval {
@@ -1062,7 +1062,7 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
             kccgst += 1;
         }
         if kccgst as u32 >= _KCCGST_NUM_ENTRIES as u32 {
-            let mut loc: scanner_loc = (*s).token_location();
+            let loc: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -1078,7 +1078,7 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
             return;
         }
         if (*m).mapping.defined_kccgst_mask as u32 & (1 as u32) << kccgst as u32 != 0 {
-            let mut loc_0: scanner_loc = (*s).token_location();
+            let loc_0: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -1100,11 +1100,11 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
         (*m).mapping.num_kccgst = (*m).mapping.num_kccgst.wrapping_add(1);
     }
 }
-unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bool {
+unsafe fn matcher_mapping_verify(m: *mut matcher, s: *mut scanner) -> bool {
     unsafe {
         let mut c2rust_current_block: u64;
         if (*m).mapping.num_mlvo as i32 == 0 as i32 {
-            let mut loc: scanner_loc = (*s).token_location();
+            let loc: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -1116,7 +1116,7 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
                 loc.column,
             );
         } else if (*m).mapping.num_kccgst as i32 == 0 as i32 {
-            let mut loc_0: scanner_loc = (*s).token_location();
+            let loc_0: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -1248,21 +1248,21 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
         return false;
     }
 }
-unsafe fn matcher_rule_start_new(mut m: *mut matcher) {
+unsafe fn matcher_rule_start_new(m: *mut matcher) {
     unsafe {
         std::ptr::write_bytes::<rule>(&raw mut (*m).rule as *mut rule, 0u8, 1);
         (*m).rule.skip = (*m).mapping.active_or_candidates_mask == 0;
     }
 }
 unsafe fn matcher_rule_set_mlvo_common(
-    mut m: *mut matcher,
-    mut s: *mut scanner,
-    mut ident: sval,
-    mut match_type: mlvo_match_type,
+    m: *mut matcher,
+    s: *mut scanner,
+    ident: sval,
+    match_type: mlvo_match_type,
 ) {
     unsafe {
         if (*m).rule.num_mlvo_values as i32 >= (*m).mapping.num_mlvo as i32 {
-            let mut loc: scanner_loc = (*s).token_location();
+            let loc: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -1282,32 +1282,32 @@ unsafe fn matcher_rule_set_mlvo_common(
     }
 }
 unsafe fn matcher_rule_set_mlvo_wildcard(
-    mut m: *mut matcher,
-    mut s: *mut scanner,
-    mut match_type: mlvo_match_type,
+    m: *mut matcher,
+    s: *mut scanner,
+    match_type: mlvo_match_type,
 ) {
     unsafe {
-        let mut dummy: sval = sval {
+        let dummy: sval = sval {
             len: 0 as usize,
             start: std::ptr::null(),
         };
         matcher_rule_set_mlvo_common(m, s, dummy, match_type);
     }
 }
-unsafe fn matcher_rule_set_mlvo_group(mut m: *mut matcher, mut s: *mut scanner, mut ident: sval) {
+unsafe fn matcher_rule_set_mlvo_group(m: *mut matcher, s: *mut scanner, ident: sval) {
     unsafe {
         matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_GROUP);
     }
 }
-unsafe fn matcher_rule_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut ident: sval) {
+unsafe fn matcher_rule_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval) {
     unsafe {
         matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_NORMAL);
     }
 }
-unsafe fn matcher_rule_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, mut ident: sval) {
+unsafe fn matcher_rule_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sval) {
     unsafe {
         if (*m).rule.num_kccgst_values as i32 >= (*m).mapping.num_kccgst as i32 {
-            let mut loc: scanner_loc = (*s).token_location();
+            let loc: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -1325,7 +1325,7 @@ unsafe fn matcher_rule_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, mut 
         (*m).rule.num_kccgst_values = (*m).rule.num_kccgst_values.wrapping_add(1);
     }
 }
-unsafe fn match_group(mut m: *mut matcher, mut group_name: sval, mut to: sval) -> bool {
+unsafe fn match_group(m: *mut matcher, group_name: sval, to: sval) -> bool {
     unsafe {
         let found_group = (&(*m).groups).iter().find(|g| svaleq(g.name, group_name));
         match found_group {
@@ -1342,11 +1342,11 @@ unsafe fn match_group(mut m: *mut matcher, mut group_name: sval, mut to: sval) -
     }
 }
 unsafe fn match_value(
-    mut m: *mut matcher,
-    mut val: sval,
-    mut to: sval,
-    mut match_type: mlvo_match_type,
-    mut wildcard_type: wildcard_match_type,
+    m: *mut matcher,
+    val: sval,
+    to: sval,
+    match_type: mlvo_match_type,
+    wildcard_type: wildcard_match_type,
 ) -> bool {
     unsafe {
         match match_type as u32 {
@@ -1364,14 +1364,14 @@ unsafe fn match_value(
     }
 }
 unsafe fn match_value_and_mark(
-    mut m: *mut matcher,
-    mut val: sval,
-    mut to: *mut matched_sval,
-    mut match_type: mlvo_match_type,
-    mut wildcard_type: wildcard_match_type,
+    m: *mut matcher,
+    val: sval,
+    to: *mut matched_sval,
+    match_type: mlvo_match_type,
+    wildcard_type: wildcard_match_type,
 ) -> bool {
     unsafe {
-        let mut matched: bool = match_value(m, val, (*to).sval, match_type, wildcard_type);
+        let matched: bool = match_value(m, val, (*to).sval, match_type, wildcard_type);
         if matched {
             (*to).matched = (true) as bool;
         }
@@ -1379,17 +1379,17 @@ unsafe fn match_value_and_mark(
     }
 }
 unsafe fn expand_rmlvo_in_kccgst_value(
-    mut m: *mut matcher,
-    mut s: *mut scanner,
-    mut value: sval,
-    mut layout_idx: u32,
-    mut expanded: *mut Vec<i8>,
-    mut i: *mut usize,
+    m: *mut matcher,
+    s: *mut scanner,
+    value: sval,
+    layout_idx: u32,
+    expanded: *mut Vec<i8>,
+    i: *mut usize,
 ) -> bool {
     unsafe {
         let mut expanded_index: bool = false;
         let mut c2rust_current_block: u64;
-        let mut str: *const i8 = value.start;
+        let str: *const i8 = value.start;
         let mut mlv: rules_mlvo = MLVO_MODEL;
         let mut idx: u32 = 0;
         let mut pfx: i8 = 0;
@@ -1405,7 +1405,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                         == MERGE_REPLACE_PREFIX))
         {
             if layout_idx == XKB_LAYOUT_INVALID as u32 {
-                let mut loc: scanner_loc = (*s).token_location();
+                let loc: scanner_loc = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -1420,7 +1420,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
             } else {
                 *i = (*i).wrapping_add(1);
                 let mut index_str: [i8; 12] = [0; 12];
-                let mut count: i32 = crate::xkb::utils::snprintf_c(
+                let count: i32 = crate::xkb::utils::snprintf_c(
                     &raw mut index_str as *mut i8,
                     std::mem::size_of::<[i8; 12]>(),
                     format_args!("{}", layout_idx.wrapping_add(1 as u32)),
@@ -1479,7 +1479,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                 if mlv as u32 != MLVO_LAYOUT as u32
                                     && mlv as u32 != MLVO_VARIANT as u32
                                 {
-                                    let mut loc_0: scanner_loc = (*s).token_location();
+                                    let loc_0: scanner_loc = (*s).token_location();
                                     xkb_logf!(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
@@ -1492,7 +1492,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                     );
                                     c2rust_current_block = 14165246690716487359;
                                 } else {
-                                    let mut consumed: i32 = extract_layout_index(
+                                    let consumed: i32 = extract_layout_index(
                                         str.offset(*i as isize),
                                         value.len.wrapping_sub(*i),
                                         &raw mut idx,
@@ -1630,7 +1630,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                 if mlv as u32 != MLVO_LAYOUT as u32
                                     && mlv as u32 != MLVO_VARIANT as u32
                                 {
-                                    let mut loc_0: scanner_loc = (*s).token_location();
+                                    let loc_0: scanner_loc = (*s).token_location();
                                     xkb_logf!(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
@@ -1643,7 +1643,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                     );
                                     c2rust_current_block = 14165246690716487359;
                                 } else {
-                                    let mut consumed: i32 = extract_layout_index(
+                                    let consumed: i32 = extract_layout_index(
                                         str.offset(*i as isize),
                                         value.len.wrapping_sub(*i),
                                         &raw mut idx,
@@ -1781,7 +1781,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                 if mlv as u32 != MLVO_LAYOUT as u32
                                     && mlv as u32 != MLVO_VARIANT as u32
                                 {
-                                    let mut loc_0: scanner_loc = (*s).token_location();
+                                    let loc_0: scanner_loc = (*s).token_location();
                                     xkb_logf!(
                                         (*s).ctx,
                                         XKB_LOG_LEVEL_ERROR,
@@ -1794,7 +1794,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                     );
                                     c2rust_current_block = 14165246690716487359;
                                 } else {
-                                    let mut consumed: i32 = extract_layout_index(
+                                    let consumed: i32 = extract_layout_index(
                                         str.offset(*i as isize),
                                         value.len.wrapping_sub(*i),
                                         &raw mut idx,
@@ -1918,7 +1918,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                 }
             }
         }
-        let mut loc_1: scanner_loc = (*s).token_location();
+        let loc_1: scanner_loc = (*s).token_location();
         xkb_logf!(
             (*s).ctx,
             XKB_LOG_LEVEL_ERROR,
@@ -1933,17 +1933,17 @@ unsafe fn expand_rmlvo_in_kccgst_value(
     }
 }
 unsafe fn expand_qualifier_in_kccgst_value(
-    mut m: *mut matcher,
-    mut s: *mut scanner,
-    mut value: sval,
-    mut expanded: *mut Vec<i8>,
-    mut has_layout_idx_range: bool,
-    mut has_separator: bool,
-    mut prefix_idx: u32,
-    mut i: *mut usize,
+    m: *mut matcher,
+    s: *mut scanner,
+    value: sval,
+    expanded: *mut Vec<i8>,
+    has_layout_idx_range: bool,
+    has_separator: bool,
+    prefix_idx: u32,
+    i: *mut usize,
 ) {
     unsafe {
-        let mut str: *const i8 = value.start;
+        let str: *const i8 = value.start;
         if ((*i).wrapping_add(3 as usize) <= value.len
             || (*str.offset((*i).wrapping_add(3 as usize) as isize) as i32
                 == MERGE_OVERRIDE_PREFIX
@@ -1956,7 +1956,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
             && *str.offset((*i).wrapping_add(2 as usize) as isize) as i32 == 'l' as i32
         {
             if has_layout_idx_range {
-                let mut loc: scanner_loc = (*s).token_location();
+                let loc: scanner_loc = (*s).token_location();
                 xkb_logf!(
                     (*s).ctx,
                     XKB_LOG_LEVEL_WARNING,
@@ -1999,7 +1999,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
                             .offset(new_size.wrapping_sub(1) as isize) = 0;
                         (*expanded).truncate(new_size.wrapping_sub(1));
                     }
-                    let mut count: i32 = crate::xkb::utils::snprintf_c(
+                    let count: i32 = crate::xkb::utils::snprintf_c(
                         &raw mut layout_index as *mut i8,
                         std::mem::size_of::<[i8; 12]>(),
                         format_args!("{}", l.wrapping_add(1 as u32)),
@@ -2017,7 +2017,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
     }
 }
 #[inline]
-unsafe fn concat_kccgst(mut into: *mut Vec<i8>, mut size: u32, mut from: *const i8) {
+unsafe fn concat_kccgst(into: *mut Vec<i8>, size: u32, from: *const i8) {
     unsafe {
         let from_plus: bool = *from.offset(0 as i32 as isize) as i32 == MERGE_OVERRIDE_PREFIX
             || *from.offset(0 as i32 as isize) as i32 == MERGE_AUGMENT_PREFIX
@@ -2055,16 +2055,16 @@ unsafe fn concat_kccgst(mut into: *mut Vec<i8>, mut size: u32, mut from: *const 
     }
 }
 unsafe fn append_expanded_kccgst_value(
-    mut m: *mut matcher,
-    mut s: *mut scanner,
-    mut merge: bool,
-    mut to: *mut Vec<i8>,
-    mut value: sval,
-    mut layout_idx: u32,
+    m: *mut matcher,
+    s: *mut scanner,
+    merge: bool,
+    to: *mut Vec<i8>,
+    value: sval,
+    layout_idx: u32,
 ) -> bool {
     unsafe {
-        let mut c2rust_current_block: u64;
-        let mut str: *const i8 = value.start;
+        let c2rust_current_block: u64;
+        let str: *const i8 = value.start;
         let mut expanded: Vec<i8> = Vec::new();
         let mut last_item_idx: u32 = 0;
         let mut has_separator: bool = false;
@@ -2139,7 +2139,7 @@ unsafe fn append_expanded_kccgst_value(
         };
     }
 }
-unsafe fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool {
+unsafe fn matcher_append_pending_kccgst(m: *mut matcher) -> bool {
     unsafe {
         if !(*m).mapping.has_layout_idx_range {
             return true;
@@ -2175,12 +2175,12 @@ unsafe fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool {
         return true;
     }
 }
-unsafe fn matcher_rule_verify(mut m: *mut matcher, mut s: *mut scanner) {
+unsafe fn matcher_rule_verify(m: *mut matcher, s: *mut scanner) {
     unsafe {
         if (*m).rule.num_mlvo_values as i32 != (*m).mapping.num_mlvo as i32
             || (*m).rule.num_kccgst_values as i32 != (*m).mapping.num_kccgst as i32
         {
-            let mut loc: scanner_loc = (*s).token_location();
+            let loc: scanner_loc = (*s).token_location();
             xkb_logf!(
                 (*s).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -2195,15 +2195,15 @@ unsafe fn matcher_rule_verify(mut m: *mut matcher, mut s: *mut scanner) {
         }
     }
 }
-unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner) {
+unsafe fn matcher_rule_apply_if_matches(m: *mut matcher, s: *mut scanner) {
     unsafe {
         let mut candidate_layouts: u32 = (*m).mapping.active_or_candidates_mask;
         let mut idx: u32 = 0;
         let mut i: mlvo_index_t = 0 as mlvo_index_t;
         while (i as i32) < (*m).mapping.num_mlvo as i32 {
-            let mut mlvo: rules_mlvo = (*m).mapping.mlvo_at_pos[i as usize];
-            let mut value: sval = (*m).rule.mlvo_value_at_pos[i as usize];
-            let mut match_type: mlvo_match_type = (*m).rule.match_type_at_pos[i as usize];
+            let mlvo: rules_mlvo = (*m).mapping.mlvo_at_pos[i as usize];
+            let value: sval = (*m).rule.mlvo_value_at_pos[i as usize];
+            let match_type: mlvo_match_type = (*m).rule.match_type_at_pos[i as usize];
             let mut to: *mut matched_sval = std::ptr::null_mut();
             let mut matched: bool = false;
             if mlvo as u32 == MLVO_MODEL as u32 {
@@ -2377,8 +2377,8 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
         } else {
             let mut i_1: kccgst_index_t = 0 as kccgst_index_t;
             while (i_1 as i32) < (*m).mapping.num_kccgst as i32 {
-                let mut kccgst_0: rules_kccgst = (*m).mapping.kccgst_at_pos[i_1 as usize];
-                let mut value_1: sval = (*m).rule.kccgst_value_at_pos[i_1 as usize];
+                let kccgst_0: rules_kccgst = (*m).mapping.kccgst_at_pos[i_1 as usize];
+                let value_1: sval = (*m).rule.kccgst_value_at_pos[i_1 as usize];
                 append_expanded_kccgst_value(
                     m,
                     s,
@@ -2395,21 +2395,21 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
         }
     }
 }
-unsafe fn gettok(mut m: *mut matcher, mut s: *mut scanner) -> rules_token {
+unsafe fn gettok(m: *mut matcher, s: *mut scanner) -> rules_token {
     unsafe {
         return lex(s, &raw mut (*m).val);
     }
 }
 unsafe fn matcher_match(
-    mut m: *mut matcher,
-    mut s: *mut scanner,
-    mut include_depth: u32,
-    mut string: *const i8,
-    mut len: usize,
-    mut file_name: *const i8,
+    m: *mut matcher,
+    s: *mut scanner,
+    include_depth: u32,
+    _string: *const i8,
+    _len: usize,
+    _file_name: *const i8,
 ) -> bool {
     unsafe {
-        let mut c2rust_current_block: u64;
+        let c2rust_current_block: u64;
         let mut tok: rules_token = TOK_END_OF_FILE;
         if m.is_null() {
             return false;
@@ -2661,7 +2661,7 @@ unsafe fn matcher_match(
                 match tok as u32 {
                     11 => {}
                     _ => {
-                        let mut loc: scanner_loc = (*s).token_location();
+                        let loc: scanner_loc = (*s).token_location();
                         xkb_logf!(
                             (*s).ctx,
                             XKB_LOG_LEVEL_ERROR,
@@ -2680,11 +2680,11 @@ unsafe fn matcher_match(
     }
 }
 unsafe fn read_rules_file(
-    mut ctx: *mut xkb_context,
-    mut matcher: *mut matcher,
-    mut include_depth: u32,
-    mut file: *mut FILE,
-    mut path: *const i8,
+    _ctx: *mut xkb_context,
+    matcher: *mut matcher,
+    include_depth: u32,
+    file: *mut FILE,
+    path: *const i8,
 ) -> bool {
     unsafe {
         let mut ret: bool = false;
@@ -2739,7 +2739,7 @@ unsafe fn read_rules_file(
             std::ptr::null_mut::<core::ffi::c_void>(),
         );
         if !scanner.check_supported_char_encoding() {
-            let mut loc: scanner_loc = scanner.token_location();
+            let loc: scanner_loc = scanner.token_location();
             xkb_logf!(
                 scanner.ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -2750,7 +2750,7 @@ unsafe fn read_rules_file(
                 loc.line,
                 loc.column,
             );
-            let mut loc_0: scanner_loc = scanner.token_location();
+            let loc_0: scanner_loc = scanner.token_location();
             xkb_logf!(
                 scanner.ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -2777,12 +2777,12 @@ unsafe fn read_rules_file(
     }
 }
 unsafe fn xkb_resolve_partial_rules(
-    mut ctx: *mut xkb_context,
-    mut path: *mut i8,
-    mut path_size: usize,
-    mut rules: *const i8,
-    mut suffix: *const i8,
-    mut matcher: *mut matcher,
+    ctx: *mut xkb_context,
+    path: *mut i8,
+    path_size: usize,
+    rules: *const i8,
+    suffix: *const i8,
+    matcher: *mut matcher,
 ) -> bool {
     unsafe {
         let mut partial_rules: [i8; 60] = [0; 60];
@@ -2844,11 +2844,11 @@ unsafe fn xkb_resolve_partial_rules(
     }
 }
 unsafe fn xkb_resolve_rules(
-    mut ctx: *mut xkb_context,
-    mut rules: *const i8,
-    mut matcher: *mut matcher,
-    mut out: *mut xkb_component_names,
-    mut explicit_layouts: *mut u32,
+    ctx: *mut xkb_context,
+    rules: *const i8,
+    matcher: *mut matcher,
+    out: *mut xkb_component_names,
+    explicit_layouts: *mut u32,
 ) -> bool {
     unsafe {
         let mut mval: *mut matched_sval = std::ptr::null_mut();
@@ -3101,14 +3101,14 @@ unsafe fn xkb_resolve_rules(
     }
 }
 pub unsafe fn xkb_components_from_rules_names(
-    mut ctx: *mut xkb_context,
-    mut rmlvo: *const xkb_rule_names,
-    mut out: *mut xkb_component_names,
-    mut explicit_layouts: *mut u32,
+    ctx: *mut xkb_context,
+    rmlvo: *const xkb_rule_names,
+    out: *mut xkb_component_names,
+    explicit_layouts: *mut u32,
 ) -> bool {
     unsafe {
         let rmlvo_ref = &*rmlvo;
-        let mut matcher: *mut matcher = matcher_new_from_names(ctx, rmlvo);
+        let matcher: *mut matcher = matcher_new_from_names(ctx, rmlvo);
         if matcher.is_null() {
             return false;
         }

@@ -62,8 +62,8 @@ pub const TYPE_FIELD_MAP: type_field = 2;
 pub const TYPE_FIELD_MASK: type_field = 1;
 #[inline]
 unsafe fn MapEntryTxt(
-    mut info: *mut KeyTypesInfo,
-    mut entry: *mut xkb_key_type_entry,
+    info: *mut KeyTypesInfo,
+    entry: *mut xkb_key_type_entry,
 ) -> &'static [u8] {
     unsafe {
         return ModMaskText(
@@ -75,15 +75,15 @@ unsafe fn MapEntryTxt(
     }
 }
 #[inline]
-unsafe fn TypeTxt<'a>(mut info: *mut KeyTypesInfo, mut type_0: *mut KeyTypeInfo) -> &'a [u8] {
+unsafe fn TypeTxt<'a>(info: *mut KeyTypesInfo, type_0: *mut KeyTypeInfo) -> &'a [u8] {
     unsafe {
         return xkb_atom_text_bytes(&(*(*info).ctx).atom_table, (*type_0).name);
     }
 }
 #[inline]
 unsafe fn ReportTypeShouldBeArray(
-    mut info: *mut KeyTypesInfo,
-    mut type_0: *mut KeyTypeInfo,
+    info: *mut KeyTypesInfo,
+    type_0: *mut KeyTypeInfo,
     field: &[u8],
 ) -> bool {
     unsafe {
@@ -92,9 +92,9 @@ unsafe fn ReportTypeShouldBeArray(
 }
 #[inline]
 unsafe fn ReportTypeBadType(
-    mut info: *mut KeyTypesInfo,
-    mut code: xkb_message_code,
-    mut type_0: *mut KeyTypeInfo,
+    info: *mut KeyTypesInfo,
+    code: xkb_message_code,
+    type_0: *mut KeyTypeInfo,
     field: &[u8],
     wanted: &[u8],
 ) -> bool {
@@ -110,10 +110,10 @@ unsafe fn ReportTypeBadType(
     }
 }
 unsafe fn InitKeyTypesInfo(
-    mut info: *mut KeyTypesInfo,
-    mut keymap_info: *const xkb_keymap_info,
-    mut include_depth: u32,
-    mut mods: *const xkb_mod_set,
+    info: *mut KeyTypesInfo,
+    keymap_info: *const xkb_keymap_info,
+    include_depth: u32,
+    mods: *const xkb_mod_set,
 ) {
     unsafe {
         (*info).name = None;
@@ -127,13 +127,13 @@ unsafe fn InitKeyTypesInfo(
         InitVMods(&raw mut (*info).mods, mods, include_depth > 0 as u32);
     }
 }
-unsafe fn ClearKeyTypeInfo(mut type_0: *mut KeyTypeInfo) {
+unsafe fn ClearKeyTypeInfo(type_0: *mut KeyTypeInfo) {
     unsafe {
         (*type_0).entries.clear();
         (*type_0).level_names.clear();
     }
 }
-unsafe fn ClearKeyTypesInfo(mut info: *mut KeyTypesInfo) {
+unsafe fn ClearKeyTypesInfo(info: *mut KeyTypesInfo) {
     unsafe {
         (*info).name = None;
         for type_0 in (*info).types.iter_mut() {
@@ -143,9 +143,9 @@ unsafe fn ClearKeyTypesInfo(mut info: *mut KeyTypesInfo) {
     }
 }
 unsafe fn AddKeyType(
-    mut info: *mut KeyTypesInfo,
-    mut new: *mut KeyTypeInfo,
-    mut same_file: bool,
+    info: *mut KeyTypesInfo,
+    new: *mut KeyTypeInfo,
+    same_file: bool,
 ) -> bool {
     unsafe {
         let mut old: *mut KeyTypeInfo = std::ptr::null_mut();
@@ -194,9 +194,9 @@ unsafe fn AddKeyType(
     }
 }
 unsafe fn MergeIncludedKeyTypes(
-    mut into: *mut KeyTypesInfo,
-    mut from: *mut KeyTypesInfo,
-    mut merge: merge_mode,
+    into: *mut KeyTypesInfo,
+    from: *mut KeyTypesInfo,
+    merge: merge_mode,
 ) {
     unsafe {
         if (*from).errorCount > 0 as i32 {
@@ -228,8 +228,8 @@ unsafe fn MergeIncludedKeyTypes(
     }
 }
 unsafe fn HandleIncludeKeyTypes(
-    mut info: *mut KeyTypesInfo,
-    mut include: *mut IncludeStmt,
+    info: *mut KeyTypesInfo,
+    include: *mut IncludeStmt,
 ) -> bool {
     unsafe {
         let mut included: KeyTypesInfo = KeyTypesInfo::new_zeroed();
@@ -291,10 +291,10 @@ unsafe fn HandleIncludeKeyTypes(
     }
 }
 unsafe fn SetModifiers(
-    mut info: *mut KeyTypesInfo,
-    mut type_0: *mut KeyTypeInfo,
-    mut arrayNdx: *mut ExprDef,
-    mut value: *mut ExprDef,
+    info: *mut KeyTypesInfo,
+    type_0: *mut KeyTypeInfo,
+    arrayNdx: *mut ExprDef,
+    value: *mut ExprDef,
 ) -> bool {
     unsafe {
         let mut mods: u32 = 0 as u32;
@@ -353,11 +353,11 @@ unsafe fn SetModifiers(
     }
 }
 unsafe fn AddMapEntry(
-    mut info: *mut KeyTypesInfo,
-    mut type_0: *mut KeyTypeInfo,
-    mut new: *mut xkb_key_type_entry,
-    mut clobber: bool,
-    mut report: bool,
+    info: *mut KeyTypesInfo,
+    type_0: *mut KeyTypeInfo,
+    new: *mut xkb_key_type_entry,
+    clobber: bool,
+    report: bool,
 ) -> bool {
     unsafe {
         let mut old: *mut xkb_key_type_entry = std::ptr::null_mut();
@@ -420,10 +420,10 @@ unsafe fn AddMapEntry(
     }
 }
 unsafe fn SetMapEntry(
-    mut info: *mut KeyTypesInfo,
-    mut type_0: *mut KeyTypeInfo,
-    mut arrayNdx: *mut ExprDef,
-    mut value: *mut ExprDef,
+    info: *mut KeyTypesInfo,
+    type_0: *mut KeyTypeInfo,
+    arrayNdx: *mut ExprDef,
+    value: *mut ExprDef,
 ) -> bool {
     unsafe {
         let mut entry: xkb_key_type_entry = xkb_key_type_entry {
@@ -482,13 +482,13 @@ unsafe fn SetMapEntry(
     }
 }
 unsafe fn AddPreserve(
-    mut info: *mut KeyTypesInfo,
-    mut type_0: *mut KeyTypeInfo,
-    mut mods: u32,
-    mut preserve_mods: u32,
+    info: *mut KeyTypesInfo,
+    type_0: *mut KeyTypeInfo,
+    mods: u32,
+    preserve_mods: u32,
 ) -> bool {
     unsafe {
-        let mut entry: *mut xkb_key_type_entry = std::ptr::null_mut();
+        let _entry: *mut xkb_key_type_entry = std::ptr::null_mut();
         let mut new: xkb_key_type_entry = xkb_key_type_entry {
             level: 0,
             mods: xkb_mods { mods: 0, mask: 0 },
@@ -553,10 +553,10 @@ unsafe fn AddPreserve(
     }
 }
 unsafe fn SetPreserve(
-    mut info: *mut KeyTypesInfo,
-    mut type_0: *mut KeyTypeInfo,
-    mut arrayNdx: *mut ExprDef,
-    mut value: *mut ExprDef,
+    info: *mut KeyTypesInfo,
+    type_0: *mut KeyTypeInfo,
+    arrayNdx: *mut ExprDef,
+    value: *mut ExprDef,
 ) -> bool {
     unsafe {
         if arrayNdx.is_null() {
@@ -661,11 +661,11 @@ unsafe fn SetPreserve(
     }
 }
 unsafe fn AddLevelName(
-    mut info: *mut KeyTypesInfo,
-    mut type_0: *mut KeyTypeInfo,
-    mut level: u32,
-    mut name: u32,
-    mut clobber: bool,
+    info: *mut KeyTypesInfo,
+    type_0: *mut KeyTypeInfo,
+    level: u32,
+    name: u32,
+    clobber: bool,
 ) -> bool {
     unsafe {
         if level >= (*type_0).level_names.len() as u32 {
@@ -710,10 +710,10 @@ unsafe fn AddLevelName(
     }
 }
 unsafe fn SetLevelName(
-    mut info: *mut KeyTypesInfo,
-    mut type_0: *mut KeyTypeInfo,
-    mut arrayNdx: *mut ExprDef,
-    mut value: *mut ExprDef,
+    info: *mut KeyTypesInfo,
+    type_0: *mut KeyTypeInfo,
+    arrayNdx: *mut ExprDef,
+    value: *mut ExprDef,
 ) -> bool {
     unsafe {
         if arrayNdx.is_null() {
@@ -746,11 +746,11 @@ unsafe fn SetLevelName(
     }
 }
 unsafe fn SetKeyTypeField(
-    mut info: *mut KeyTypesInfo,
-    mut type_0: *mut KeyTypeInfo,
+    info: *mut KeyTypesInfo,
+    type_0: *mut KeyTypeInfo,
     field: &[u8],
-    mut arrayNdx: *mut ExprDef,
-    mut value: *mut ExprDef,
+    arrayNdx: *mut ExprDef,
+    value: *mut ExprDef,
 ) -> bool {
     unsafe {
         let mut ok: bool = false;
@@ -784,9 +784,9 @@ unsafe fn SetKeyTypeField(
     }
 }
 unsafe fn HandleKeyTypeBody(
-    mut info: *mut KeyTypesInfo,
+    info: *mut KeyTypesInfo,
     mut def: *mut VarDef,
-    mut type_0: *mut KeyTypeInfo,
+    type_0: *mut KeyTypeInfo,
 ) -> bool {
     unsafe {
         let mut ok: bool = true;
@@ -835,7 +835,7 @@ unsafe fn HandleKeyTypeBody(
         return ok;
     }
 }
-unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) -> bool {
+unsafe fn HandleGlobalVar(info: *mut KeyTypesInfo, stmt: *mut VarDef) -> bool {
     unsafe {
         let mut elem: &[u8] = b"";
         let mut field: &[u8] = b"";
@@ -885,7 +885,7 @@ unsafe fn HandleGlobalVar(mut info: *mut KeyTypesInfo, mut stmt: *mut VarDef) ->
         return false;
     }
 }
-unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile) {
+unsafe fn HandleKeyTypesFile(info: *mut KeyTypesInfo, file: *mut XkbFile) {
     unsafe {
         let mut ok: bool = false;
         (*info).name = {
@@ -986,7 +986,7 @@ unsafe fn HandleKeyTypesFile(mut info: *mut KeyTypesInfo, mut file: *mut XkbFile
         }
     }
 }
-unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTypesInfo) -> bool {
+unsafe fn CopyKeyTypesToKeymap(keymap: *mut xkb_keymap, info: *mut KeyTypesInfo) -> bool {
     unsafe {
         let num_types: u32 = if (*info).types.len() == 0 {
             1 as u32
@@ -995,7 +995,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
         };
         let mut types_vec: Vec<xkb_key_type> = Vec::with_capacity(num_types as usize);
         if (*info).types.len() == 0 {
-            let mut type_0 = xkb_key_type {
+            let type_0 = xkb_key_type {
                 name: xkb_atom_intern(
                     &raw mut (*keymap).ctx,
                     b"ONE_LEVEL\0".as_ptr() as *const i8,
@@ -1033,7 +1033,7 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
             ];
             let mut i: u32 = 0 as u32;
             while i < num_types {
-                let mut def: *mut KeyTypeInfo = (*info).types.as_mut_ptr().add(i as usize);
+                let def: *mut KeyTypeInfo = (*info).types.as_mut_ptr().add(i as usize);
                 let level_names = std::mem::take(&mut (*def).level_names);
                 let entries = std::mem::take(&mut (*def).entries);
                 let mut required = false;
@@ -1070,8 +1070,8 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
     }
 }
 pub unsafe fn CompileKeyTypes(
-    mut file: *mut XkbFile,
-    mut keymap_info: *mut xkb_keymap_info,
+    file: *mut XkbFile,
+    keymap_info: *mut xkb_keymap_info,
 ) -> bool {
     unsafe {
         let mut info: KeyTypesInfo = KeyTypesInfo::new_zeroed();

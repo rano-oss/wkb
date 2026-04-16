@@ -58,10 +58,10 @@ pub unsafe fn cstr_as_bytes<'a>(s: *const i8) -> &'a [u8] {
 
 // New Rust file utilities
 #[inline]
-pub unsafe fn _steal(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
+pub unsafe fn _steal(ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
     unsafe {
-        let mut original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
-        let mut swapped: *mut ::core::ffi::c_void = *original;
+        let original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
+        let swapped: *mut ::core::ffi::c_void = *original;
         *original = std::ptr::null_mut::<core::ffi::c_void>();
         return swapped;
     }
@@ -456,11 +456,11 @@ pub unsafe fn is_absolute_path(path: *const i8) -> bool {
 }
 
 pub unsafe fn xkb_check_versioned_struct_size_(
-    mut v1_size: usize,
-    mut min_size: usize,
-    mut lib_size: usize,
-    mut caller_size: usize,
-    mut caller_data: *const ::core::ffi::c_void,
+    v1_size: usize,
+    min_size: usize,
+    lib_size: usize,
+    caller_size: usize,
+    caller_data: *const ::core::ffi::c_void,
 ) -> xkb_error_code {
     use crate::xkb::shared_types::{
         XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
@@ -478,7 +478,7 @@ pub unsafe fn xkb_check_versioned_struct_size_(
         }
         let mut p: *const ::core::ffi::c_uchar =
             (caller_data as *const ::core::ffi::c_uchar).offset(lib_size as isize);
-        let mut end: *const ::core::ffi::c_uchar =
+        let end: *const ::core::ffi::c_uchar =
             (caller_data as *const ::core::ffi::c_uchar).offset(caller_size as isize);
         while p < end {
             let c2rust_fresh1 = p;

@@ -88,11 +88,11 @@ unsafe fn gperf_case_memcmp(mut s1: *const i8, mut s2: *const i8, mut n: usize) 
         while n > 0 as usize {
             let c2rust_fresh0 = s1;
             s1 = s1.offset(1);
-            let mut c1: ::core::ffi::c_uchar =
+            let c1: ::core::ffi::c_uchar =
                 gperf_downcase[*c2rust_fresh0 as ::core::ffi::c_uchar as usize];
             let c2rust_fresh1 = s2;
             s2 = s2.offset(1);
-            let mut c2: ::core::ffi::c_uchar =
+            let c2: ::core::ffi::c_uchar =
                 gperf_downcase[*c2rust_fresh1 as ::core::ffi::c_uchar as usize];
             if c1 as i32 == c2 as i32 {
                 n = n.wrapping_sub(1);
@@ -104,7 +104,7 @@ unsafe fn gperf_case_memcmp(mut s1: *const i8, mut s2: *const i8, mut n: usize) 
     }
 }
 #[inline]
-unsafe fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> u32 {
+unsafe fn keyword_gperf_hash(str: *const i8, len: usize) -> u32 {
     unsafe {
         static mut asso_values: [::core::ffi::c_uchar; 256] = [
             73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
@@ -121,7 +121,7 @@ unsafe fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> u32 {
             73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
         ];
         let mut hval: u32 = len as u32;
-        let mut c2rust_current_block_2: u64;
+        let c2rust_current_block_2: u64;
         match hval {
             4 | 3 | 2 => {
                 c2rust_current_block_2 = 14734602837567950927;
@@ -152,9 +152,9 @@ unsafe fn keyword_gperf_hash(mut str: *const i8, mut len: usize) -> u32 {
         return hval;
     }
 }
-pub unsafe fn keyword_to_token(mut string: *const i8, mut len: usize) -> i32 {
+pub unsafe fn keyword_to_token(string: *const i8, len: usize) -> i32 {
     unsafe {
-        let mut kt: *const keyword_tok = keyword_gperf_lookup(string, len) as *const keyword_tok;
+        let kt: *const keyword_tok = keyword_gperf_lookup(string, len) as *const keyword_tok;
         if kt.is_null() {
             return -1 as i32;
         }
@@ -210,7 +210,7 @@ static mut stringpool_contents: stringpool_t = unsafe {
         stringpool_str72: ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"partial\0"),
     }
 };
-unsafe fn keyword_gperf_lookup(mut str: *const i8, mut len: usize) -> *const keyword_tok {
+unsafe fn keyword_gperf_lookup(str: *const i8, len: usize) -> *const keyword_tok {
     unsafe {
         static mut lengthtable: [::core::ffi::c_uchar; 73] = [
             0, 0, 0, 3, 4, 0, 0, 7, 0, 4, 10, 11, 12, 12, 9, 10, 0, 7, 0, 14, 10, 11, 17, 13, 4, 5,
@@ -218,10 +218,10 @@ unsafe fn keyword_gperf_lookup(mut str: *const i8, mut len: usize) -> *const key
             8, 0, 0, 0, 7, 0, 0, 0, 0, 12, 13, 9, 0, 5, 7, 0, 9, 0, 5, 7,
         ];
         if len <= MAX_WORD_LENGTH as usize && len >= MIN_WORD_LENGTH as usize {
-            let mut key: u32 = keyword_gperf_hash(str, len);
+            let key: u32 = keyword_gperf_hash(str, len);
             if key <= MAX_HASH_VALUE as u32 {
                 if len == lengthtable[key as usize] as usize {
-                    let mut s: *const i8 = (&raw const stringpool_contents as *const i8)
+                    let s: *const i8 = (&raw const stringpool_contents as *const i8)
                         .offset(wordlist[key as usize].name as isize);
                     if (*str as ::core::ffi::c_uchar as i32 ^ *s as ::core::ffi::c_uchar as i32)
                         & !(32 as i32)

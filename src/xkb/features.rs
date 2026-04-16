@@ -70,13 +70,13 @@ pub static mut xkb_feature_values: [u32; 24] = [
     XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT as u32,
 ];
 
-fn is_supported_enum_value_mask(mut values: u32, mut value: u32) -> bool {
+fn is_supported_enum_value_mask(values: u32, value: u32) -> bool {
     return value < 32 as u32 && values as u32 & (1 as u32) << value != 0;
 }
 unsafe fn is_supported_enum_value_array(
-    mut values: *const u32,
-    mut size: usize,
-    mut value: u32,
+    values: *const u32,
+    size: usize,
+    value: u32,
 ) -> bool {
     unsafe {
         let mut v: usize = 0 as usize;
@@ -89,10 +89,10 @@ unsafe fn is_supported_enum_value_array(
         return false;
     }
 }
-fn is_supported_flag_value(mut values: u32, mut accept_zero: bool, mut value: u32) -> bool {
+fn is_supported_flag_value(values: u32, accept_zero: bool, value: u32) -> bool {
     return (accept_zero as i32 != 0 || value != 0) && values as u32 & value == value;
 }
-pub unsafe fn xkb_feature_supported(mut feature: xkb_feature, mut value: u32) -> bool {
+pub unsafe fn xkb_feature_supported(feature: xkb_feature, value: u32) -> bool {
     unsafe {
         match feature as u32 {
             1 => {

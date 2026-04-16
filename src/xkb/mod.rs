@@ -912,7 +912,7 @@ mod wrapper_tests {
         let keymap = context
             .keymap_from_names(&rules)
             .expect("Failed to create keymap");
-        let mut state = keymap.new_state().expect("Failed to create state");
+        let state = keymap.new_state().expect("Failed to create state");
 
         // Initially no modifiers should be active
         assert!(!state.mod_name_is_active("Shift", 0xFF));
