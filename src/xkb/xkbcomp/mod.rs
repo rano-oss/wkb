@@ -10,7 +10,6 @@ pub mod expr;
 pub mod include;
 pub mod keycodes;
 pub mod keymap;
-pub mod keymap_file_iterator;
 pub mod keywords;
 pub mod parser;
 pub mod rules;

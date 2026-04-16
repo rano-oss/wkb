@@ -27,7 +27,6 @@ pub mod atom;
 pub mod context;
 pub mod features;
 pub mod keymap;
-pub mod keymap_formats;
 pub mod shared_ast_types;
 pub mod shared_types;
 pub mod state;
