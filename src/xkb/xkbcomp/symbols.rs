@@ -145,22 +145,6 @@ impl SymbolsInfo {
     }
 }
 
-/// Resize a Vec<T> to `new_len`, zero-initializing any new elements.
-/// If `new_len` < current len, the Vec is truncated.
-/// WARNING: Only safe for types where all-zeros is a valid representation.
-/// For types containing Vec/String/Box, use resize_groups_zero or similar.
-unsafe fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
-    if new_len > v.len() {
-        v.reserve(new_len - v.len());
-        let old_len = v.len();
-        let ptr = v.as_mut_ptr().add(old_len);
-        std::ptr::write_bytes(ptr, 0, new_len - old_len);
-        v.set_len(new_len);
-    } else if new_len < v.len() {
-        v.truncate(new_len);
-    }
-}
-
 /// Resize a Vec<GroupInfo> to `new_len`, properly initializing new elements.
 /// Unlike vec_resize_zero, this correctly initializes Vec fields in GroupInfo.
 unsafe fn resize_groups_zero(v: &mut Vec<GroupInfo>, new_len: usize) {
@@ -510,11 +494,7 @@ unsafe fn UseNewKeyField(
         return false;
     }
 }
-unsafe fn overlays_get(
-    info: *const KeyInfo,
-    bit: xkb_overlay_index_t,
-    key_out: *mut u32,
-) -> bool {
+unsafe fn overlays_get(info: *const KeyInfo, bit: xkb_overlay_index_t, key_out: *mut u32) -> bool {
     unsafe {
         if bit as i32
             >= (std::mem::size_of::<xkb_overlay_mask_t>()).wrapping_mul(8 as usize)
@@ -536,11 +516,7 @@ unsafe fn overlays_get(
         return true;
     }
 }
-unsafe fn overlays_insert(
-    keyi: *mut KeyInfo,
-    bit: xkb_overlay_index_t,
-    key: u32,
-) -> bool {
+unsafe fn overlays_insert(keyi: *mut KeyInfo, bit: xkb_overlay_index_t, key: u32) -> bool {
     unsafe {
         if bit as i32
             >= (std::mem::size_of::<xkb_overlay_mask_t>()).wrapping_mul(8 as usize)
@@ -709,8 +685,8 @@ unsafe fn MergeKeys(
     same_file: bool,
 ) -> bool {
     unsafe {
-        let mut i: u32 = 0;
-        let mut groups_in_both: u32 = 0;
+        let mut i: u32 ;
+        let groups_in_both: u32 ;
         let mut collide: key_field = 0 as key_field;
         let verbosity: i32 = xkb_context_get_log_verbosity((*info).ctx) as i32;
         let clobber: bool = (*from).merge as i32 != MERGE_AUGMENT as i32;
@@ -815,11 +791,7 @@ unsafe fn MergeKeys(
         return true;
     }
 }
-unsafe fn AddKeySymbols(
-    info: *mut SymbolsInfo,
-    keyi: *mut KeyInfo,
-    same_file: bool,
-) -> bool {
+unsafe fn AddKeySymbols(info: *mut SymbolsInfo, keyi: *mut KeyInfo, same_file: bool) -> bool {
     unsafe {
         // XkbResolveKeyAlias inlined
         {
@@ -895,13 +867,9 @@ unsafe fn AddModMapEntry(info: *mut SymbolsInfo, new: *mut ModMapEntry) -> bool 
         return true;
     }
 }
-unsafe fn MergeIncludedSymbols(
-    into: *mut SymbolsInfo,
-    from: *mut SymbolsInfo,
-    merge: merge_mode,
-) {
+unsafe fn MergeIncludedSymbols(into: *mut SymbolsInfo, from: *mut SymbolsInfo, merge: merge_mode) {
     unsafe {
-        let mut group_names_in_both: u32 = 0;
+        let group_names_in_both: u32 ;
         if (*from).errorCount > 0 as i32 {
             (*into).errorCount += (*from).errorCount;
             return;
@@ -986,7 +954,7 @@ unsafe fn HandleIncludeSymbols(info: *mut SymbolsInfo, include: *mut IncludeStmt
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: SymbolsInfo = SymbolsInfo::new_zeroed();
-            let mut file: *mut XkbFile = std::ptr::null_mut();
+            let file: *mut XkbFile ;
             let mut path: [i8; 4096] = [0; 4096];
             file = ProcessIncludeFile(
                 (*info).ctx,
@@ -1054,7 +1022,7 @@ unsafe fn GetGroupIndex(
         };
         if arrayNdx.is_null() {
             let mut i: u32 = 0 as u32;
-            let mut groupi: *mut GroupInfo = std::ptr::null_mut();
+            let mut groupi: *mut GroupInfo ;
             if !(*keyi).groups.is_empty() {
                 i = 0 as u32;
                 groupi = (*keyi).groups.as_mut_ptr();
@@ -1417,6 +1385,7 @@ unsafe fn ExprResolveOverlayEntry(
         let prefix: usize = (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize);
         let suffix = &field[prefix..];
         let len: usize = suffix.len();
+        #[allow(unused_assignments)]
         let mut raw_overlay: i64 = XKB_OVERLAY_INVALID as i64;
         let (val_parsed, parse_count) = crate::xkb::utils::parse_dec_u64(suffix);
         raw_overlay = val_parsed as i64;
@@ -1902,7 +1871,7 @@ unsafe fn SetGroupName(
             );
             return false;
         }
-        let mut group_to_use: u32 = 0;
+        let group_to_use: u32 ;
         if (*info).explicit_group == XKB_LAYOUT_INVALID as u32 {
             group_to_use = group.wrapping_sub(1 as u32);
         } else if group.wrapping_sub(1 as u32) == 0 as u32 {
@@ -1952,7 +1921,7 @@ unsafe fn HandleGlobalVar(info: *mut SymbolsInfo, stmt: *mut VarDef) -> bool {
         let mut elem: &[u8] = b"";
         let mut field: &[u8] = b"";
         let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
-        let mut ret: bool = false;
+        let ret: bool ;
         if !ExprResolveLhs(
             (*info).ctx,
             (*stmt).name,
@@ -2116,7 +2085,7 @@ unsafe fn HandleSymbolsBody(
 }
 unsafe fn SetExplicitGroup(info: *mut SymbolsInfo, keyi: *mut KeyInfo) -> bool {
     unsafe {
-        let mut i: u32 = 0;
+        let mut i: u32 ;
         let _groupi: *mut GroupInfo = std::ptr::null_mut();
         let mut warn: bool = false;
         if (*info).explicit_group == XKB_LAYOUT_INVALID as u32 {
@@ -2162,6 +2131,7 @@ unsafe fn SetExplicitGroup(info: *mut SymbolsInfo, keyi: *mut KeyInfo) -> bool {
 }
 unsafe fn HandleSymbolsDef(info: *mut SymbolsInfo, stmt: *mut SymbolsDef) -> bool {
     unsafe {
+        #[allow(unused_assignments)]
         let mut keyi: KeyInfo = KeyInfo::new_zeroed();
         keyi = (*info).default_key.clone();
         keyi.groups = Vec::new();
@@ -2199,8 +2169,8 @@ unsafe fn HandleModMapDef(info: *mut SymbolsInfo, def: *mut ModMapDef) -> bool {
             modifier: 0,
             u: ModMapData { keyName: 0 },
         };
-        let mut ndx: u32 = 0;
-        let mut ok: bool = false;
+        let ndx: u32 ;
+        let mut ok: bool ;
         let ctx: *mut xkb_context = (*info).ctx;
         let modifier_name: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, (*def).modifier);
         if istreq(modifier_name, b"none") {
@@ -2261,7 +2231,7 @@ unsafe fn HandleModMapDef(info: *mut SymbolsInfo, def: *mut ModMapDef) -> bool {
 }
 unsafe fn HandleSymbolsFile(info: *mut SymbolsInfo, file: *mut XkbFile) {
     unsafe {
-        let mut ok: bool = false;
+        let mut ok: bool ;
         (*info).name = if (*file).name.is_null() {
             None
         } else {
@@ -2341,15 +2311,15 @@ unsafe fn HandleSymbolsFile(info: *mut SymbolsInfo, file: *mut XkbFile) {
 }
 unsafe fn FindKeyForSymbol(keymap: *mut xkb_keymap, sym: u32) -> *mut xkb_key {
     unsafe {
-        let mut got_one_group: bool = false;
+        let mut got_one_group: bool ;
         let mut group: u32 = 0 as u32;
         loop {
             let mut level: u32 = 0 as u32;
             got_one_group = false;
-            let mut got_one_level: bool = false;
+            let mut got_one_level: bool ;
             loop {
                 got_one_level = false;
-                let mut key: *mut xkb_key = std::ptr::null_mut();
+                let mut key: *mut xkb_key ;
                 let start_idx = if (*keymap).num_keys_low == 0 as u32 {
                     0 as u32
                 } else {
@@ -2384,8 +2354,8 @@ unsafe fn FindKeyForSymbol(keymap: *mut xkb_keymap, sym: u32) -> *mut xkb_key {
 }
 unsafe fn FindAutomaticType(ctx: *mut xkb_context, groupi: *mut GroupInfo) -> u32 {
     unsafe {
-        let mut sym0: u32 = 0;
-        let mut sym1: u32 = 0;
+        let sym0: u32 ;
+        let sym1: u32 ;
         let width: u32 = (*groupi).levels.len() as u32;
         if width == 1 as u32 || width <= 0 as u32 {
             return xkb_atom_intern(
@@ -2431,8 +2401,8 @@ unsafe fn FindAutomaticType(ctx: *mut xkb_context, groupi: *mut GroupInfo) -> u3
             if xkb_keysym_is_lower(sym0) as i32 != 0
                 && xkb_keysym_is_upper_or_title(sym1) as i32 != 0
             {
-                let mut sym2: u32 = 0;
-                let mut sym3: u32 = 0;
+                let sym2: u32 ;
+                let sym3: u32 ;
                 sym2 = if (&(*groupi).levels)[2].syms.is_empty() {
                     XKB_KEY_NoSymbol as u32
                 } else {
@@ -2485,9 +2455,8 @@ unsafe fn FindTypeForGroup(
     explicit_type: *mut bool,
 ) -> u32 {
     unsafe {
-        let mut i: u32 = 0;
-        let groupi: *mut GroupInfo =
-            &mut (&mut (*keyi).groups)[group as usize] as *mut GroupInfo;
+        let mut i: u32 ;
+        let groupi: *mut GroupInfo = &mut (&mut (*keyi).groups)[group as usize] as *mut GroupInfo;
         let mut type_name: u32 = (*groupi).type_0;
         *explicit_type = true;
         if type_name == XKB_ATOM_NONE as u32 {
@@ -2512,7 +2481,7 @@ unsafe fn FindTypeForGroup(
                 (*groupi).levels.len(),
             );
         } else {
-            i = 0;
+            // dead store removed: i = 0;
             i = 0 as u32;
             while (i as usize) < (&(*keymap).types).len() {
                 if (&(*keymap).types)[i as usize].name == type_name {
@@ -2546,9 +2515,9 @@ unsafe fn CopySymbolsDefToKeymap(
     keyi: *mut KeyInfo,
 ) -> bool {
     unsafe {
-        let mut key: *mut xkb_key = std::ptr::null_mut();
-        let mut groupi: *mut GroupInfo = std::ptr::null_mut();
-        let mut i: u32 = 0;
+        let key: *mut xkb_key ;
+        let mut groupi: *mut GroupInfo ;
+        let mut i: u32 ;
 
         // The name is guaranteed to be real and not an alias, so 'false' is safe here
         key = XkbKeyByName(keymap, (*keyi).name, false);
@@ -2800,7 +2769,7 @@ unsafe fn CopyModMapDefToKeymap(
     entry: *mut ModMapEntry,
 ) -> bool {
     unsafe {
-        let mut key: *mut xkb_key = std::ptr::null_mut();
+        let key: *mut xkb_key ;
         if !(*entry).haveSymbol {
             key = XkbKeyByName(keymap, (*entry).u.keyName, true);
             if key.is_null() {
@@ -2884,10 +2853,7 @@ unsafe fn CopySymbolsToKeymap(keymap: *mut xkb_keymap, info: *mut SymbolsInfo) -
         return true;
     }
 }
-pub unsafe fn CompileSymbols(
-    file: *mut XkbFile,
-    keymap_info: *mut xkb_keymap_info,
-) -> bool {
+pub unsafe fn CompileSymbols(file: *mut XkbFile, keymap_info: *mut xkb_keymap_info) -> bool {
     unsafe {
         let mut info: SymbolsInfo = SymbolsInfo::new_zeroed();
         InitSymbolsInfo(

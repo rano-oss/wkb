@@ -142,11 +142,7 @@ unsafe fn siText(si: *mut SymInterpInfo, info: *mut CompatInfo) -> &'static [u8]
     }
 }
 #[inline]
-unsafe fn ReportSINotArray(
-    info: *mut CompatInfo,
-    si: *mut SymInterpInfo,
-    field: &[u8],
-) -> bool {
+unsafe fn ReportSINotArray(info: *mut CompatInfo, si: *mut SymInterpInfo, field: &[u8]) -> bool {
     unsafe {
         return ReportNotArray(
             (*info).ctx,
@@ -202,11 +198,7 @@ unsafe fn ReportLedBadType(
     }
 }
 #[inline]
-unsafe fn ReportLedNotArray(
-    info: *mut CompatInfo,
-    ledi: *mut LedInfo,
-    field: &[u8],
-) -> bool {
+unsafe fn ReportLedNotArray(info: *mut CompatInfo, ledi: *mut LedInfo, field: &[u8]) -> bool {
     unsafe {
         return ReportNotArray((*info).ctx, b"indicator map", field, LEDText(info, ledi));
     }
@@ -365,11 +357,7 @@ unsafe fn MergeInterp(
         return true;
     }
 }
-unsafe fn AddInterp(
-    info: *mut CompatInfo,
-    new: *mut SymInterpInfo,
-    same_file: bool,
-) -> bool {
+unsafe fn AddInterp(info: *mut CompatInfo, new: *mut SymInterpInfo, same_file: bool) -> bool {
     unsafe {
         // FindMatchingInterp inlined
         let mut old: *mut SymInterpInfo = std::ptr::null_mut();
@@ -471,7 +459,7 @@ unsafe fn MergeLedMap(
     same_file: bool,
 ) -> bool {
     unsafe {
-        let mut collide: led_field = 0 as led_field;
+        let mut collide: led_field ;
         let clobber: bool = (*new).merge as u32 != MERGE_AUGMENT as u32;
         let verbosity: i32 = xkb_context_get_log_verbosity((*info).ctx) as i32;
         let report: bool = same_file as i32 != 0 && verbosity > 0 as i32 || verbosity > 9 as i32;
@@ -580,11 +568,7 @@ unsafe fn AddLedMap(info: *mut CompatInfo, new: *mut LedInfo, same_file: bool) -
         return true;
     }
 }
-unsafe fn MergeIncludedCompatMaps(
-    into: *mut CompatInfo,
-    from: *mut CompatInfo,
-    merge: merge_mode,
-) {
+unsafe fn MergeIncludedCompatMaps(into: *mut CompatInfo, from: *mut CompatInfo, merge: merge_mode) {
     unsafe {
         if (*from).errorCount > 0 as i32 {
             (*into).errorCount += (*from).errorCount;
@@ -657,7 +641,7 @@ unsafe fn HandleIncludeCompatMap(info: *mut CompatInfo, include: *mut IncludeStm
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: CompatInfo = CompatInfo::new_zeroed();
-            let mut file: *mut XkbFile = std::ptr::null_mut();
+            let file: *mut XkbFile ;
             let mut path: [i8; 4096] = [0; 4096];
             file = ProcessIncludeFile(
                 (*info).ctx,
@@ -997,7 +981,7 @@ unsafe fn HandleGlobalVar(info: *mut CompatInfo, stmt: *mut VarDef) -> bool {
         let mut elem: &[u8] = b"";
         let mut field: &[u8] = b"";
         let mut ndx: *mut ExprDef = std::ptr::null_mut();
-        let mut ret: bool = false;
+        let ret: bool ;
         if !ExprResolveLhs(
             (*info).ctx,
             (*stmt).name,
@@ -1135,6 +1119,7 @@ unsafe fn HandleInterpDef(info: *mut CompatInfo, def: *mut InterpDef) -> bool {
     unsafe {
         let mut pred: u32 = MATCH_NONE;
         let mut mods: u32 = 0;
+        #[allow(unused_assignments)]
         let mut si: SymInterpInfo = SymInterpInfo {
             defined: 0 as si_field,
             merge: MERGE_DEFAULT,
@@ -1224,7 +1209,7 @@ unsafe fn HandleLedMapDef(info: *mut CompatInfo, def: *mut LedMapDef) -> bool {
 }
 unsafe fn HandleCompatMapFile(info: *mut CompatInfo, file: *mut XkbFile) {
     unsafe {
-        let mut ok: bool = false;
+        let mut ok: bool ;
         (*info).name = if (*file).name.is_null() {
             None
         } else {
@@ -1309,12 +1294,7 @@ unsafe fn HandleCompatMapFile(info: *mut CompatInfo, file: *mut XkbFile) {
         }
     }
 }
-unsafe fn CopyInterps(
-    info: *mut CompatInfo,
-    needSymbol: bool,
-    pred: u32,
-    collect: *mut collect,
-) {
+unsafe fn CopyInterps(info: *mut CompatInfo, needSymbol: bool, pred: u32, collect: *mut collect) {
     unsafe {
         for i in 0..(*info).interps.len() {
             let si = &(&(*info).interps)[i];
@@ -1333,8 +1313,8 @@ unsafe fn CopyLedMapDefsToKeymap(keymap: *mut xkb_keymap, info: *mut CompatInfo)
         while idx < (*info).num_leds {
             let ledi: *mut LedInfo =
                 (&raw mut (*info).leds as *mut LedInfo).offset(idx as isize) as *mut LedInfo;
-            let mut i: u32 = 0;
-            let mut led: *mut xkb_led = std::ptr::null_mut();
+            let mut i: u32 ;
+            let mut led: *mut xkb_led ;
             i = 0 as u32;
             led = &raw mut (*keymap).leds as *mut xkb_led;
             while i < (*keymap).num_leds {
@@ -1436,10 +1416,7 @@ unsafe fn CopyCompatToKeymap(keymap: *mut xkb_keymap, info: *mut CompatInfo) -> 
         return true;
     }
 }
-pub unsafe fn CompileCompatMap(
-    file: *mut XkbFile,
-    keymap_info: *mut xkb_keymap_info,
-) -> bool {
+pub unsafe fn CompileCompatMap(file: *mut XkbFile, keymap_info: *mut xkb_keymap_info) -> bool {
     unsafe {
         let mut info: CompatInfo = CompatInfo::new_zeroed();
         InitCompatInfo(

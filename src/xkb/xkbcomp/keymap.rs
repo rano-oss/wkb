@@ -68,7 +68,7 @@ unsafe fn FindInterpForKey(
 ) -> bool {
     unsafe {
         let mut syms: *const u32 = std::ptr::null();
-        let mut num_syms: i32 = 0;
+        let num_syms: i32 ;
         num_syms =
             xkb_keymap_key_get_syms_by_level(keymap, (*key).keycode, group, level, &raw mut syms);
         if num_syms <= 0 as i32 {
@@ -86,7 +86,7 @@ unsafe fn FindInterpForKey(
                 }
                 let interp: *mut xkb_sym_interpret =
                     &mut (&mut (*keymap).sym_interprets)[i as usize] as *mut xkb_sym_interpret;
-                let mut mods: u32 = 0;
+                let mods: u32 ;
                 found = false;
                 if !((*interp).sym != *syms.offset(s as isize)
                     && (*interp).sym != XKB_KEY_NoSymbol as u32)
@@ -172,7 +172,7 @@ unsafe fn FindInterpForKey(
 unsafe fn ApplyInterpsToKey(keymap: *mut xkb_keymap, key: *mut xkb_key) -> bool {
     unsafe {
         let mut vmodmap: u32 = 0 as u32;
-        let mut level: u32 = 0;
+        let mut level: u32 ;
         let mut interprets: Vec<*const xkb_sym_interpret> = Vec::new();
         let mut actions: Vec<xkb_action> = Vec::new();
         let mut group: u32 = 0 as u32;
@@ -180,7 +180,7 @@ unsafe fn ApplyInterpsToKey(keymap: *mut xkb_keymap, key: *mut xkb_key) -> bool 
             if !(&(*key).groups)[group as usize].explicit_actions {
                 level = 0 as u32;
                 while level < XkbKeyNumLevels(keymap, key, group) {
-                    let mut interp: *const xkb_sym_interpret = std::ptr::null();
+                    let mut interp: *const xkb_sym_interpret ;
                     interprets.clear();
                     let found: bool =
                         FindInterpForKey(keymap, key, group, level, &mut interprets) as bool;
@@ -469,7 +469,7 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
         }
         // key_names is no longer needed after compilation; drop it
         (*keymap).key_names = Vec::new();
-        let mut key: *mut xkb_key = std::ptr::null_mut();
+        let mut key: *mut xkb_key ;
         {
             let start_idx = if (*keymap).num_keys_low == 0 as u32 {
                 0 as u32
@@ -541,8 +541,8 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                 ki = ki.wrapping_add(1);
             }
         }
-        let mut idx: u32 = 0;
-        let mut mod_0: *mut xkb_mod = std::ptr::null_mut();
+        let mut idx: u32 ;
+        let mut mod_0: *mut xkb_mod ;
         {
             let start_idx = if (*keymap).num_keys_low == 0 as u32 {
                 0 as u32
@@ -698,7 +698,7 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                 ki = ki.wrapping_add(1);
             }
         }
-        let mut led: *mut xkb_led = std::ptr::null_mut();
+        let mut led: *mut xkb_led ;
         led = &raw mut (*keymap).leds as *mut xkb_led;
         while led < (&raw mut (*keymap).leds as *mut xkb_led).offset((*keymap).num_leds as isize) {
             ComputeEffectiveMask(keymap, &raw mut (*led).mods);
@@ -769,7 +769,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
             std::ptr::null_mut(),
             std::ptr::null_mut(),
         ];
-        let mut type_0: u32 = FILE_TYPE_KEYCODES;
+        let mut type_0: u32 ;
         let _ctx: *mut xkb_context = &raw mut (*keymap).ctx;
         file = (*file).defs as *mut XkbFile;
         while !file.is_null() {

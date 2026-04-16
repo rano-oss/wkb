@@ -720,7 +720,7 @@ impl ComposeTable {
             ctx: ctx.entity.clone(),
             locale: locale_cstr.to_str().unwrap().to_string(),
             utf8: Vec::new(),
-            nodes: todo!(),
+            nodes: Vec::new(),
         };
         Some(ComposeTable {
             entity: compose_table,

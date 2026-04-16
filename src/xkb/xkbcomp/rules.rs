@@ -429,6 +429,7 @@ unsafe fn split_comma_separated_mlvo(
             if *s as i32 == OPTIONS_GROUP_SPECIFIER_PREFIX {
                 s = s.offset(1);
                 let layout_start: *const i8 = s;
+                #[allow(unused_assignments)]
                 let mut layout: u32 = XKB_LAYOUT_INVALID as u32;
                 let (val_parsed, count) =
                     crate::xkb::utils::parse_dec_u32(std::ffi::CStr::from_ptr(s).to_bytes());
@@ -664,7 +665,7 @@ unsafe fn matcher_include(
             stmt_file = &raw mut buf as *mut i8;
             stmt_file_len = expanded as usize;
         }
-        let mut file: *mut FILE = std::ptr::null_mut();
+        let mut file: *mut FILE ;
         let mut offset: u32 = 0 as u32;
         let absolute_path: bool = is_absolute_path(stmt_file) as bool;
         if absolute_path {
@@ -806,11 +807,7 @@ unsafe fn extract_layout_index(s: *const i8, max_len: usize, out: *mut u32) -> i
         return parse_layout_int_index(s, max_len, out);
     }
 }
-unsafe fn extract_mapping_layout_index(
-    s: *const i8,
-    max_len: usize,
-    out: *mut u32,
-) -> i32 {
+unsafe fn extract_mapping_layout_index(s: *const i8, max_len: usize, out: *mut u32) -> i32 {
     unsafe {
         static mut names: [LayoutIndexName; 4] = [
             LayoutIndexName {
@@ -863,7 +860,7 @@ unsafe fn is_mlvo_mask_defined(m: *mut matcher, mlvo: rules_mlvo) -> bool {
 }
 unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval) {
     unsafe {
-        let mut mlvo: rules_mlvo = MLVO_MODEL;
+        let mut mlvo: rules_mlvo ;
         let mut mlvo_sval: sval = sval {
             len: 0,
             start: std::ptr::null(),
@@ -1048,7 +1045,7 @@ unsafe fn matcher_mapping_set_layout_bounds(m: *mut matcher) {
 }
 unsafe fn matcher_mapping_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sval) {
     unsafe {
-        let mut kccgst: rules_kccgst = KCCGST_KEYCODES;
+        let mut kccgst: rules_kccgst ;
         let mut kccgst_sval: sval = sval {
             len: 0,
             start: std::ptr::null(),
@@ -1387,14 +1384,14 @@ unsafe fn expand_rmlvo_in_kccgst_value(
     i: *mut usize,
 ) -> bool {
     unsafe {
-        let mut expanded_index: bool = false;
+        let mut expanded_index: bool ;
         let mut c2rust_current_block: u64;
         let str: *const i8 = value.start;
-        let mut mlv: rules_mlvo = MLVO_MODEL;
-        let mut idx: u32 = 0;
-        let mut pfx: i8 = 0;
-        let mut sfx: i8 = 0;
-        let mut expanded_value: *mut matched_sval = std::ptr::null_mut();
+        let mlv: rules_mlvo ;
+        let mut idx: u32 ;
+        let mut pfx: i8 ;
+        let mut sfx: i8 ;
+        let mut expanded_value: *mut matched_sval ;
         if *str.offset(*i as isize) as i32 == 'i' as i32
             && ((*i).wrapping_add(1 as usize) == value.len
                 || (*str.offset((*i).wrapping_add(1 as usize) as isize) as i32
@@ -2198,13 +2195,13 @@ unsafe fn matcher_rule_verify(m: *mut matcher, s: *mut scanner) {
 unsafe fn matcher_rule_apply_if_matches(m: *mut matcher, s: *mut scanner) {
     unsafe {
         let mut candidate_layouts: u32 = (*m).mapping.active_or_candidates_mask;
-        let mut idx: u32 = 0;
+        let mut idx: u32 ;
         let mut i: mlvo_index_t = 0 as mlvo_index_t;
         while (i as i32) < (*m).mapping.num_mlvo as i32 {
             let mlvo: rules_mlvo = (*m).mapping.mlvo_at_pos[i as usize];
             let value: sval = (*m).rule.mlvo_value_at_pos[i as usize];
             let match_type: mlvo_match_type = (*m).rule.match_type_at_pos[i as usize];
-            let mut to: *mut matched_sval = std::ptr::null_mut();
+            let mut to: *mut matched_sval ;
             let mut matched: bool = false;
             if mlvo as u32 == MLVO_MODEL as u32 {
                 to = &raw mut (*m).rmlvo.model;
@@ -2410,7 +2407,7 @@ unsafe fn matcher_match(
 ) -> bool {
     unsafe {
         let c2rust_current_block: u64;
-        let mut tok: rules_token = TOK_END_OF_FILE;
+        let mut tok: rules_token ;
         if m.is_null() {
             return false;
         }
@@ -2687,7 +2684,8 @@ unsafe fn read_rules_file(
     path: *const i8,
 ) -> bool {
     unsafe {
-        let mut ret: bool = false;
+        let ret: bool ;
+        #[allow(unused_assignments)]
         let mut scanner: scanner = scanner::new(
             std::ptr::null_mut(),
             std::ptr::null(),
@@ -2808,7 +2806,7 @@ unsafe fn xkb_resolve_partial_rules(
             return false;
         }
         let mut offset: u32 = 0 as u32;
-        let mut file: *mut FILE = std::ptr::null_mut();
+        let mut file: *mut FILE ;
         let len: usize = cstr_len(&raw mut partial_rules as *mut i8) as usize;
         loop {
             file = FindFileInXkbPath(
@@ -2851,7 +2849,7 @@ unsafe fn xkb_resolve_rules(
     explicit_layouts: *mut u32,
 ) -> bool {
     unsafe {
-        let mut mval: *mut matched_sval = std::ptr::null_mut();
+        let mut mval: *mut matched_sval ;
         let mut ret: bool = false;
         let mut offset: u32 = 0 as u32;
         let mut path: [i8; 4096] = [0; 4096];
@@ -3062,7 +3060,7 @@ unsafe fn xkb_resolve_rules(
                                     {
                                         break;
                                     }
-                                    let mut group: u32 = 0 as u32;
+                                    let group: u32 ;
                                     symbols = symbols.offset(1);
                                     let (val_parsed, count) = crate::xkb::utils::parse_dec_u32(
                                         std::ffi::CStr::from_ptr(symbols).to_bytes(),

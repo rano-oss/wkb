@@ -216,7 +216,8 @@ pub unsafe fn ExprResolveBoolean(
     set_rtrn: *mut bool,
 ) -> bool {
     unsafe {
-        let mut ok: bool = false;
+        let ok: bool ;
+        #[allow(unused_assignments)]
         let mut ident: &[u8] = b"";
         match (*expr).common.type_0 as u32 {
             7 => {
@@ -320,8 +321,8 @@ unsafe fn ExprResolveIntegerLookup(
         let mut l: i64 = 0 as i64;
         let mut r: i64 = 0 as i64;
         let mut u: u32 = 0 as u32;
-        let mut left: *mut ExprDef = std::ptr::null_mut();
-        let mut right: *mut ExprDef = std::ptr::null_mut();
+        let left: *mut ExprDef ;
+        let right: *mut ExprDef ;
         match (*expr).common.type_0 as u32 {
             5 => {
                 *val_rtrn = (*expr).integer.ival;
@@ -822,12 +823,12 @@ unsafe fn ExprResolveMaskLookup(
     lookupPriv: *const ::core::ffi::c_void,
 ) -> bool {
     unsafe {
-        let mut ok: bool = false;
+        let ok: bool ;
         let mut l: u32 = 0 as u32;
         let mut r: u32 = 0 as u32;
         let mut v: i64 = 0 as i64;
-        let mut left: *mut ExprDef = std::ptr::null_mut();
-        let mut right: *mut ExprDef = std::ptr::null_mut();
+        let left: *mut ExprDef ;
+        let right: *mut ExprDef ;
         let mut bogus: *const i8 = std::ptr::null();
         let c2rust_current_block_47: u64;
         match (*expr).common.type_0 as u32 {

@@ -154,9 +154,9 @@ unsafe fn text_v1_keymap_new_from_names(
     rmlvo: *const xkb_rule_names,
 ) -> bool {
     unsafe {
-        let mut ok: bool = false;
+        let mut ok: bool ;
         let mut kccgst: xkb_component_names = xkb_component_names::default();
-        let mut file: *mut XkbFile = std::ptr::null_mut();
+        let file: *mut XkbFile ;
         xkb_logf!(
             (*keymap).ctx,
             XKB_LOG_LEVEL_DEBUG,
@@ -226,8 +226,8 @@ unsafe fn text_v1_keymap_new_from_string(
     len: usize,
 ) -> bool {
     unsafe {
-        let mut ok: bool = false;
-        let mut xkb_file: *mut XkbFile = std::ptr::null_mut();
+        let ok: bool ;
+        let xkb_file: *mut XkbFile ;
         xkb_file = XkbParseString(
             &raw mut (*keymap).ctx,
             string,
@@ -252,8 +252,8 @@ unsafe fn text_v1_keymap_new_from_string(
 }
 unsafe fn text_v1_keymap_new_from_file(keymap: *mut xkb_keymap, file: *mut FILE) -> bool {
     unsafe {
-        let mut ok: bool = false;
-        let mut xkb_file: *mut XkbFile = std::ptr::null_mut();
+        let ok: bool ;
+        let xkb_file: *mut XkbFile ;
         xkb_file = XkbParseFile(
             &raw mut (*keymap).ctx,
             file,

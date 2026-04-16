@@ -73,11 +73,7 @@ pub static mut xkb_feature_values: [u32; 24] = [
 fn is_supported_enum_value_mask(values: u32, value: u32) -> bool {
     return value < 32 as u32 && values as u32 & (1 as u32) << value != 0;
 }
-unsafe fn is_supported_enum_value_array(
-    values: *const u32,
-    size: usize,
-    value: u32,
-) -> bool {
+unsafe fn is_supported_enum_value_array(values: *const u32, size: usize, value: u32) -> bool {
     unsafe {
         let mut v: usize = 0 as usize;
         while v < size {

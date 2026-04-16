@@ -335,13 +335,9 @@ unsafe fn _xkbcommon_error(param: *mut parser_param, msg: *const i8) {
         );
     }
 }
-unsafe fn resolve_keysym(
-    param: *mut parser_param,
-    name: sval,
-    sym_rtrn: *mut u32,
-) -> bool {
+unsafe fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u32) -> bool {
     unsafe {
-        let mut sym: u32 = 0;
+        let sym: u32;
         if isvaleq(
             name,
             sval {
@@ -752,13 +748,9 @@ static mut yycheck: [yytype_int16; 929] = [
     -1, 56, -1, -1, 59,
 ];
 
-pub unsafe fn parse(
-    ctx: *mut xkb_context,
-    scanner: *mut scanner,
-    map: *const i8,
-) -> *mut XkbFile {
+pub unsafe fn parse(ctx: *mut xkb_context, scanner: *mut scanner, map: *const i8) -> *mut XkbFile {
     unsafe {
-        let mut ret: i32 = 0;
+        let mut ret: i32;
         let mut first: *mut XkbFile = std::ptr::null_mut();
         let mut param: parser_param = parser_param {
             ctx: ctx,
@@ -833,7 +825,7 @@ pub unsafe fn parse_next(
     xkb_file: *mut *mut XkbFile,
 ) -> bool {
     unsafe {
-        let mut ret: i32 = 0;
+        let ret: i32;
         let mut param: parser_param = parser_param {
             ctx: ctx,
             scanner: scanner,
@@ -891,7 +883,7 @@ unsafe fn yypcontext_expected_tokens(
             } else {
                 YYNTOKENS
             };
-            let mut yyx: i32 = 0;
+            let mut yyx: i32;
             yyx = yyxbegin;
             while yyx < yyxend {
                 if yycheck[(yyx + yyn) as usize] as i32 == yyx
@@ -925,7 +917,7 @@ unsafe fn yy_syntax_error_arguments(
     unsafe {
         let mut yycount: i32 = 0 as i32;
         if (*yyctx).yytoken as i32 != YYSYMBOL_YYEMPTY as i32 {
-            let mut yyn: i32 = 0;
+            let yyn: i32;
             if !yyarg.is_null() {
                 *yyarg.offset(yycount as isize) = (*yyctx).yytoken;
             }
@@ -954,9 +946,9 @@ unsafe fn yysyntax_error(
     yyctx: *const yypcontext_t,
 ) -> i32 {
     unsafe {
-        let mut yyformat: *const i8 = std::ptr::null();
+        let mut yyformat: *const i8;
         let mut yyarg: [yysymbol_kind_t; 5] = [YYSYMBOL_YYEOF; 5];
-        let mut yysize: i64 = 0 as i64;
+        let mut yysize: i64;
         let yycount: i32 = yy_syntax_error_arguments(
             yyctx,
             &raw mut yyarg as *mut yysymbol_kind_t,
@@ -989,7 +981,7 @@ unsafe fn yysyntax_error(
             }
         }
         yysize = cstr_len(yyformat) as i64 - (2 as i32 * yycount) as i64 + 1 as i64;
-        let mut yyi: i32 = 0;
+        let mut yyi: i32;
         yyi = 0 as i32;
         while yyi < yycount {
             let yysize1: i64 = yysize + cstr_len(yysymbol_name(yyarg[yyi as usize])) as i64;
@@ -1050,14 +1042,14 @@ unsafe fn yysyntax_error(
     }
 }
 unsafe fn yydestruct(
-    mut yymsg: *const i8,
+    yymsg: *const i8,
     yykind: yysymbol_kind_t,
     yyvaluep: *mut YYSTYPE,
     param: *mut parser_param,
 ) {
     unsafe {
         if yymsg.is_null() {
-            yymsg = b"Deleting\0".as_ptr() as *const i8;
+            // dead store removed: yymsg = b"Deleting\0".as_ptr() as *const i8;
         }
         match yykind as i32 {
             52 => {
@@ -1215,7 +1207,7 @@ unsafe fn yydestruct(
 pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
     unsafe {
         let mut c2rust_current_block: u64;
-        let mut yychar: i32 = 0;
+        let mut yychar: i32;
         static mut yyval_default: YYSTYPE = YYSTYPE { num: 0 };
         let mut yylval: YYSTYPE = yyval_default;
         let mut _xkbcommon_nerrs: i32 = 0 as i32;
@@ -1228,9 +1220,10 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
         let mut yyvsa: [YYSTYPE; 200] = [YYSTYPE { num: 0 }; 200];
         let mut yyvs: *mut YYSTYPE = &raw mut yyvsa as *mut YYSTYPE;
         let mut yyvsp: *mut YYSTYPE = yyvs;
-        let mut yyn: i32 = 0;
-        let mut yyresult: i32 = 0;
-        let mut yytoken: yysymbol_kind_t = YYSYMBOL_YYEMPTY;
+        let mut yyn: i32;
+        let yyresult: i32;
+        let mut yytoken: yysymbol_kind_t;
+        #[allow(unused_assignments)]
         let mut yyval: YYSTYPE = YYSTYPE { num: 0 };
         let mut yymsgbuf: [i8; 128] = [0; 128];
         let mut yymsg: *mut i8 = &raw mut yymsgbuf as *mut i8;
@@ -1266,7 +1259,7 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     c2rust_current_block = 9310790481625056212;
                     break;
                 }
-                let mut yynewbytes: i64 = 0;
+                let yynewbytes: i64;
                 std::ptr::copy_nonoverlapping::<yy_state_t>(
                     yyss,
                     &raw mut (*yyptr).yyss_alloc,
@@ -1276,17 +1269,13 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                 yynewbytes =
                     yystacksize * std::mem::size_of::<yy_state_t>() as i64 + YYSTACK_GAP_MAXIMUM;
                 yyptr = yyptr.offset((yynewbytes / std::mem::size_of::<yyalloc>() as i64) as isize);
-                let mut yynewbytes_0: i64 = 0;
+
                 std::ptr::copy_nonoverlapping::<YYSTYPE>(
                     yyvs,
                     &raw mut (*yyptr).yyvs_alloc,
                     yysize as usize,
                 );
                 yyvs = &raw mut (*yyptr).yyvs_alloc;
-                yynewbytes_0 =
-                    yystacksize * std::mem::size_of::<YYSTYPE>() as i64 + YYSTACK_GAP_MAXIMUM;
-                yyptr =
-                    yyptr.offset((yynewbytes_0 / std::mem::size_of::<yyalloc>() as i64) as isize);
                 if yyss1 != &raw mut yyssa as *mut yy_state_t {
                     free(yyss1 as *mut ::core::ffi::c_void);
                 }
@@ -1374,7 +1363,7 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                                 yytoken: yytoken,
                             };
                             let mut yymsgp: *const i8 = b"syntax error\0".as_ptr() as *const i8;
-                            let mut yysyntax_error_status: i32 = 0;
+                            let mut yysyntax_error_status: i32;
                             yysyntax_error_status = yysyntax_error(
                                 &raw mut yymsg_alloc,
                                 &raw mut yymsg,
@@ -1442,7 +1431,7 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                         }
                         3 => {
                             (*param).rtrn = (*yyvsp.offset(0 as i32 as isize)).file;
-                            yyval.file = (*param).rtrn;
+                            // dead store removed: yyval.file = (*param).rtrn;
                             (*param).more_maps = !(*param).rtrn.is_null();
                             c2rust_current_block = 5508412643396263508;
                             break;
@@ -2792,8 +2781,7 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                                         }
                                     }
                                 } else {
-                                    let loc_4: scanner_loc =
-                                        (*(*param).scanner).token_location();
+                                    let loc_4: scanner_loc = (*(*param).scanner).token_location();
                                     xkb_logf!(
                                         (*(*param).scanner).ctx,
                                         XKB_LOG_LEVEL_WARNING,

@@ -78,33 +78,8 @@ macro_rules! xkb_logf {
 }
 unsafe fn context_include_path_append(ctx: *mut xkb_context, path: *const i8) -> i32 {
     unsafe {
-        let mut stat_buf: stat = stat {
-            st_dev: 0,
-            st_ino: 0,
-            st_nlink: 0,
-            st_mode: 0,
-            st_uid: 0,
-            st_gid: 0,
-            __pad0: 0,
-            st_rdev: 0,
-            st_size: 0,
-            st_blksize: 0,
-            st_blocks: 0,
-            st_atim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            st_mtim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            st_ctim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            __glibc_reserved: [0; 3],
-        };
-        let mut err: i32 = ENOMEM;
+        let mut stat_buf: stat;
+        let mut err: i32;
         let tmp = std::ffi::CStr::from_ptr(path).to_str().unwrap().to_string();
         {
             stat_buf = stat {
@@ -222,11 +197,11 @@ unsafe fn add_direct_subdirectories(
     mut versioned_path_length: usize,
 ) -> i32 {
     unsafe {
-        let mut entry: *mut dirent = std::ptr::null_mut();
-        let mut path_buf: [i8; 4096] = [0; 4096];
+        let mut entry: *mut dirent;
+        let mut path_buf: [i8; 4096];
         let c2rust_current_block: u64;
         let mut ret: i32 = 0 as i32;
-        let mut err: i32 = ENOMEM;
+        let mut err: i32;
         let mut dir: *mut DIR = std::ptr::null_mut();
         let mut stat_buf: stat = stat {
             st_dev: 0,
@@ -264,7 +239,7 @@ unsafe fn add_direct_subdirectories(
             if dir.is_null() {
                 err = EACCES;
             } else {
-                entry = std::ptr::null_mut();
+                // dead store removed: entry = std::ptr::null_mut();
                 path_buf = ::core::mem::transmute::<
                     [u8; 4096],
                     [i8; 4096],
@@ -340,7 +315,7 @@ unsafe fn add_direct_subdirectories(
                                             -> i32,
                                 ),
                             );
-                            let mut ext_path_0: *mut *mut i8 = std::ptr::null_mut();
+                            let mut ext_path_0: *mut *mut i8;
                             if !(*extensions).is_empty() {
                                 ext_path_0 =
                                     (*extensions).as_mut_ptr().offset(versioned_count as isize)
@@ -685,12 +660,7 @@ pub fn xkb_atom_text_bytes<'a>(atom_table: &'a atom_table, atom: u32) -> &'a [u8
     atom_text_bytes(atom_table, atom)
 }
 
-pub unsafe fn xkb_log(
-    ctx: *mut xkb_context,
-    level: u32,
-    verbosity: i32,
-    msg: *const i8,
-) {
+pub unsafe fn xkb_log(ctx: *mut xkb_context, level: u32, verbosity: i32, msg: *const i8) {
     unsafe {
         if ((*ctx).log_level as u32) < level as u32 || (*ctx).log_verbosity < verbosity {
             return;
@@ -700,7 +670,7 @@ pub unsafe fn xkb_log(
 }
 pub unsafe fn xkb_context_get_buffer(ctx: &mut xkb_context, size: usize) -> *mut i8 {
     unsafe {
-        let mut rtrn: *mut i8 = std::ptr::null_mut();
+        let rtrn: *mut i8;
         if size >= std::mem::size_of::<[i8; 2048]>() {
             return std::ptr::null_mut();
         }

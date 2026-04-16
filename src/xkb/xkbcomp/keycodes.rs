@@ -68,11 +68,7 @@ unsafe fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
 }
 
 #[inline]
-unsafe fn keycode_store_update_key(
-    store: *mut KeycodeStore,
-    match_0: KeycodeMatch,
-    name: u32,
-) {
+unsafe fn keycode_store_update_key(store: *mut KeycodeStore, match_0: KeycodeMatch, name: u32) {
     unsafe {
         if (!match_0.found || match_0.is_alias as i32 != 0) as i64 != 0 {
             return;
@@ -87,11 +83,7 @@ unsafe fn keycode_store_update_key(
         (&mut (*store).names)[name as usize] = match_0;
     }
 }
-unsafe fn keycode_store_insert_key(
-    store: *mut KeycodeStore,
-    kc: u32,
-    name: u32,
-) -> bool {
+unsafe fn keycode_store_insert_key(store: *mut KeycodeStore, kc: u32, name: u32) -> bool {
     unsafe {
         if name >= (&(*store).names).len() as u32 {
             vec_resize_zero(&mut (*store).names, (name as usize).wrapping_add(1));
@@ -173,11 +165,7 @@ unsafe fn keycode_store_insert_key(
     }
 }
 #[inline]
-unsafe fn keycode_store_insert_alias(
-    store: *mut KeycodeStore,
-    alias: u32,
-    real: u32,
-) -> bool {
+unsafe fn keycode_store_insert_alias(store: *mut KeycodeStore, alias: u32, real: u32) -> bool {
     unsafe {
         if alias >= (&(*store).names).len() as u32 {
             vec_resize_zero(&mut (*store).names, (alias as usize).wrapping_add(1));
@@ -265,10 +253,7 @@ unsafe fn keycode_store_delete_key(store: *mut KeycodeStore, match_0: KeycodeMat
         };
     }
 }
-unsafe fn keycode_store_lookup_keycode(
-    store: *const KeycodeStore,
-    kc: u32,
-) -> KeycodeMatch {
+unsafe fn keycode_store_lookup_keycode(store: *const KeycodeStore, kc: u32) -> KeycodeMatch {
     unsafe {
         if kc < (&(*store).low).len() as u32 {
             return KeycodeMatch {
@@ -472,8 +457,7 @@ unsafe fn AddKeyName(
     report: bool,
 ) -> bool {
     unsafe {
-        let mut match_name: KeycodeMatch =
-            keycode_store_lookup_name(&raw mut (*info).keycodes, name);
+        let match_name: KeycodeMatch = keycode_store_lookup_name(&raw mut (*info).keycodes, name);
         if match_name.found {
             let clobber: bool = merge as u32 != MERGE_AUGMENT as u32;
             if match_name.is_alias {
@@ -491,7 +475,7 @@ unsafe fn AddKeyName(
                 }
                 if clobber {
                     keycode_store_delete_name(&raw mut (*info).keycodes, name);
-                    match_name.found = false;
+                    // dead store removed: match_name.found = false;
                 } else {
                     return true;
                 }
@@ -633,8 +617,8 @@ unsafe fn MergeKeycodeStores(
             {
                 let names_ptr = (*from).keycodes.names.as_ptr();
                 let names_len = (&(*from).keycodes.names).len();
-                let mut match_0: *const KeycodeMatch = std::ptr::null();
-                let mut alias: u32 = 0;
+                let mut match_0: *const KeycodeMatch;
+                let mut alias: u32;
                 if names_len > 0 {
                     alias = 0 as u32;
                     match_0 = names_ptr;
@@ -729,7 +713,7 @@ unsafe fn HandleIncludeKeycodes(
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: KeyNamesInfo = KeyNamesInfo::new_zeroed();
-            let mut file: *mut XkbFile = std::ptr::null_mut();
+            let file: *mut XkbFile;
             let mut path: [i8; 4096] = [0; 4096];
             file = ProcessIncludeFile(
                 (*info).ctx,
@@ -759,11 +743,7 @@ unsafe fn HandleIncludeKeycodes(
         return (*info).errorCount == 0 as i32;
     }
 }
-unsafe fn HandleKeycodeDef(
-    info: *mut KeyNamesInfo,
-    stmt: *mut KeycodeDef,
-    report: bool,
-) -> bool {
+unsafe fn HandleKeycodeDef(info: *mut KeyNamesInfo, stmt: *mut KeycodeDef, report: bool) -> bool {
     unsafe {
         if (*stmt).value < 0 as i64 || (*stmt).value > XKB_KEYCODE_MAX as i64 {
             xkb_logf!(
@@ -785,11 +765,7 @@ unsafe fn HandleKeycodeDef(
         );
     }
 }
-unsafe fn HandleAliasDef(
-    info: *mut KeyNamesInfo,
-    def: *const KeyAliasDef,
-    report: bool,
-) -> bool {
+unsafe fn HandleAliasDef(info: *mut KeyNamesInfo, def: *const KeyAliasDef, report: bool) -> bool {
     unsafe {
         let match_name: KeycodeMatch =
             keycode_store_lookup_name(&raw mut (*info).keycodes, (*def).alias) as KeycodeMatch;
@@ -926,11 +902,7 @@ unsafe fn HandleKeyNameVar(info: *mut KeyNamesInfo, stmt: *mut VarDef) -> bool {
         return true;
     }
 }
-unsafe fn HandleLedNameDef(
-    info: *mut KeyNamesInfo,
-    def: *mut LedNameDef,
-    report: bool,
-) -> bool {
+unsafe fn HandleLedNameDef(info: *mut KeyNamesInfo, def: *mut LedNameDef, report: bool) -> bool {
     unsafe {
         if (*def).ndx < 1 as i64 || (*def).ndx > XKB_MAX_LEDS as i64 {
             (*info).errorCount += 1;
@@ -977,7 +949,7 @@ unsafe fn HandleLedNameDef(
 }
 unsafe fn HandleKeycodesFile(info: *mut KeyNamesInfo, file: *mut XkbFile) {
     unsafe {
-        let mut ok: bool = false;
+        let mut ok: bool;
         let verbosity: i32 = xkb_context_get_log_verbosity((*info).ctx) as i32;
         let report_same_file: bool = verbosity > 0 as i32;
         let report_include: bool = verbosity > 7 as i32;
@@ -1113,8 +1085,8 @@ unsafe fn CopyKeycodeNameLUT(keymap: *mut xkb_keymap, info: *mut KeyNamesInfo) -
         let names_len = (&(*info).keycodes.names).len();
         let names_ptr = (*info).keycodes.names.as_mut_ptr();
         {
-            let mut match_0: *mut KeycodeMatch = std::ptr::null_mut();
-            let mut name: u32 = 0;
+            let mut match_0: *mut KeycodeMatch;
+            let mut name: u32;
             if names_len > 0 {
                 name = 0 as u32;
                 match_0 = names_ptr;
@@ -1166,8 +1138,7 @@ unsafe fn CopyLedNamesToKeymap(keymap: *mut xkb_keymap, info: *mut KeyNamesInfo)
         let mut idx: u32 = 0 as u32;
         while idx < (*info).num_led_names {
             let ledi: *mut LedNameInfo = (&raw mut (*info).led_names as *mut LedNameInfo)
-                .offset(idx as isize)
-                as *mut LedNameInfo;
+                .offset(idx as isize) as *mut LedNameInfo;
             if !((*ledi).name == XKB_ATOM_NONE as u32) {
                 (*keymap).leds[idx as usize].name = (*ledi).name;
             }
@@ -1176,10 +1147,7 @@ unsafe fn CopyLedNamesToKeymap(keymap: *mut xkb_keymap, info: *mut KeyNamesInfo)
         return true;
     }
 }
-unsafe fn CopyKeyNamesInfoToKeymap(
-    keymap: *mut xkb_keymap,
-    info: *mut KeyNamesInfo,
-) -> bool {
+unsafe fn CopyKeyNamesInfoToKeymap(keymap: *mut xkb_keymap, info: *mut KeyNamesInfo) -> bool {
     unsafe {
         if !CopyKeyNamesToKeymap(keymap, info)
             || !CopyKeycodeNameLUT(keymap, info)
@@ -1213,10 +1181,7 @@ unsafe fn CopyKeyNamesInfoToKeymap(
         return true;
     }
 }
-pub unsafe fn CompileKeycodes(
-    file: *mut XkbFile,
-    keymap_info: *mut xkb_keymap_info,
-) -> bool {
+pub unsafe fn CompileKeycodes(file: *mut XkbFile, keymap_info: *mut xkb_keymap_info) -> bool {
     unsafe {
         let mut info: KeyNamesInfo = KeyNamesInfo::new_zeroed();
         InitKeyNamesInfo(&raw mut info, keymap_info, 0 as u32);

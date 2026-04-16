@@ -187,11 +187,7 @@ pub unsafe fn ExprCreateFieldRef(element: u32, field: u32) -> *mut ExprDef {
     }
 }
 
-pub unsafe fn ExprCreateArrayRef(
-    element: u32,
-    field: u32,
-    entry: *mut ExprDef,
-) -> *mut ExprDef {
+pub unsafe fn ExprCreateArrayRef(element: u32, field: u32, entry: *mut ExprDef) -> *mut ExprDef {
     unsafe {
         let expr: *mut ExprDef = ExprCreate(STMT_EXPR_ARRAY_REF);
         if expr.is_null() {
@@ -443,9 +439,9 @@ pub unsafe fn VarCreate(name: *mut ExprDef, value: *mut ExprDef) -> *mut VarDef 
 
 pub unsafe fn BoolVarCreate(ident: u32, set: bool) -> *mut VarDef {
     unsafe {
-        let mut name: *mut ExprDef = std::ptr::null_mut();
-        let mut value: *mut ExprDef = std::ptr::null_mut();
-        let mut def: *mut VarDef = std::ptr::null_mut();
+        let name: *mut ExprDef ;
+        let value: *mut ExprDef ;
+        let def: *mut VarDef ;
         name = ExprCreateIdent(ident);
         if name.is_null() {
             return std::ptr::null_mut();
@@ -541,11 +537,7 @@ pub unsafe fn LedMapCreate(name: u32, body: *mut VarDef) -> *mut LedMapDef {
     }
 }
 
-pub unsafe fn LedNameCreate(
-    ndx: i64,
-    name: *mut ExprDef,
-    virtual_0: bool,
-) -> *mut LedNameDef {
+pub unsafe fn LedNameCreate(ndx: i64, name: *mut ExprDef, virtual_0: bool) -> *mut LedNameDef {
     unsafe {
         let def: *mut LedNameDef = Box::into_raw(Box::new(std::mem::zeroed::<LedNameDef>()));
         (*def).common.type_0 = STMT_LED_NAME;
@@ -558,10 +550,7 @@ pub unsafe fn LedNameCreate(
     }
 }
 
-pub unsafe fn UnknownStatementCreate(
-    type_0: stmt_type,
-    name: sval,
-) -> *mut UnknownStatement {
+pub unsafe fn UnknownStatementCreate(type_0: stmt_type, name: sval) -> *mut UnknownStatement {
     unsafe {
         let def: *mut UnknownStatement =
             Box::into_raw(Box::new(std::mem::zeroed::<UnknownStatement>()));
@@ -583,10 +572,10 @@ pub unsafe fn IncludeCreate(
 ) -> *mut IncludeStmt {
     unsafe {
         let c2rust_current_block: u64;
-        let mut incl: *mut IncludeStmt = std::ptr::null_mut();
-        let mut first: *mut IncludeStmt = std::ptr::null_mut();
-        let mut stmt: *mut i8 = std::ptr::null_mut();
-        let mut tmp: *mut i8 = std::ptr::null_mut();
+        let mut incl: *mut IncludeStmt ;
+        let mut first: *mut IncludeStmt ;
+        let stmt: *mut i8 ;
+        let mut tmp: *mut i8 ;
         let mut nextop: i8 = 0;
         first = std::ptr::null_mut();
         incl = first;
@@ -685,7 +674,7 @@ pub unsafe fn XkbFileCreate(
     flags: xkb_map_flags,
 ) -> *mut XkbFile {
     unsafe {
-        let mut file: *mut XkbFile = std::ptr::null_mut();
+        let file: *mut XkbFile ;
         file = Box::into_raw(Box::new(std::mem::zeroed::<XkbFile>()));
         XkbEscapeMapName(name);
         (*file).file_type = type_0;
@@ -708,9 +697,9 @@ pub unsafe fn XkbFileFromComponents(
             (*kkctgs).compatibility.as_ptr() as *mut i8,
             (*kkctgs).symbols.as_ptr() as *mut i8,
         ];
-        let mut type_0: u32 = FILE_TYPE_KEYCODES;
-        let mut include: *mut IncludeStmt = std::ptr::null_mut();
-        let mut file: *mut XkbFile = std::ptr::null_mut();
+        let mut type_0: u32 ;
+        let mut include: *mut IncludeStmt ;
+        let mut file: *mut XkbFile ;
         let mut defs: *mut ParseCommon = std::ptr::null_mut();
         let mut defsLast: *mut ParseCommon = std::ptr::null_mut();
         type_0 = FIRST_KEYMAP_FILE_TYPE;
@@ -765,7 +754,7 @@ pub unsafe fn XkbFileFromComponents(
 }
 unsafe fn FreeInclude(mut incl: *mut IncludeStmt) {
     unsafe {
-        let mut next: *mut IncludeStmt = std::ptr::null_mut();
+        let mut next: *mut IncludeStmt ;
         while !incl.is_null() {
             next = (*incl).next_incl as *mut IncludeStmt;
             cstr_free((*incl).file);
@@ -780,7 +769,7 @@ unsafe fn FreeInclude(mut incl: *mut IncludeStmt) {
 
 pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
     unsafe {
-        let mut next: *mut ParseCommon = std::ptr::null_mut();
+        let mut next: *mut ParseCommon ;
         while !stmt.is_null() {
             next = (*stmt).next as *mut ParseCommon;
             match (*stmt).type_0 as u32 {
@@ -868,7 +857,7 @@ pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
 
 pub unsafe fn FreeXkbFile(mut file: *mut XkbFile) {
     unsafe {
-        let mut next: *mut XkbFile = std::ptr::null_mut();
+        let mut next: *mut XkbFile ;
         while !file.is_null() {
             next = (*file).common.next as *mut XkbFile;
             match (*file).file_type as u32 {

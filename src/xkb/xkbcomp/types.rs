@@ -61,10 +61,7 @@ pub const TYPE_FIELD_PRESERVE: type_field = 4;
 pub const TYPE_FIELD_MAP: type_field = 2;
 pub const TYPE_FIELD_MASK: type_field = 1;
 #[inline]
-unsafe fn MapEntryTxt(
-    info: *mut KeyTypesInfo,
-    entry: *mut xkb_key_type_entry,
-) -> &'static [u8] {
+unsafe fn MapEntryTxt(info: *mut KeyTypesInfo, entry: *mut xkb_key_type_entry) -> &'static [u8] {
     unsafe {
         return ModMaskText(
             (*(*info).ctx).clone(),
@@ -142,11 +139,7 @@ unsafe fn ClearKeyTypesInfo(info: *mut KeyTypesInfo) {
         (*info).types.clear();
     }
 }
-unsafe fn AddKeyType(
-    info: *mut KeyTypesInfo,
-    new: *mut KeyTypeInfo,
-    same_file: bool,
-) -> bool {
+unsafe fn AddKeyType(info: *mut KeyTypesInfo, new: *mut KeyTypeInfo, same_file: bool) -> bool {
     unsafe {
         let mut old: *mut KeyTypeInfo = std::ptr::null_mut();
         let verbosity: i32 = xkb_context_get_log_verbosity((*info).ctx) as i32;
@@ -215,7 +208,7 @@ unsafe fn MergeIncludedKeyTypes(
         if (*into).types.len() == 0 {
             (*into).types = std::mem::take(&mut (*from).types);
         } else {
-            let mut type_0: *mut KeyTypeInfo = std::ptr::null_mut();
+            let mut type_0: *mut KeyTypeInfo ;
             for i in 0..(*from).types.len() {
                 type_0 = (*from).types.as_mut_ptr().add(i);
                 (*type_0).merge = merge;
@@ -227,10 +220,7 @@ unsafe fn MergeIncludedKeyTypes(
         };
     }
 }
-unsafe fn HandleIncludeKeyTypes(
-    info: *mut KeyTypesInfo,
-    include: *mut IncludeStmt,
-) -> bool {
+unsafe fn HandleIncludeKeyTypes(info: *mut KeyTypesInfo, include: *mut IncludeStmt) -> bool {
     unsafe {
         let mut included: KeyTypesInfo = KeyTypesInfo::new_zeroed();
         if ExceedsIncludeMaxDepth((*info).ctx, (*info).include_depth) {
@@ -259,7 +249,7 @@ unsafe fn HandleIncludeKeyTypes(
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
             let mut next_incl: KeyTypesInfo = KeyTypesInfo::new_zeroed();
-            let mut file: *mut XkbFile = std::ptr::null_mut();
+            let file: *mut XkbFile ;
             let mut path: [i8; 4096] = [0; 4096];
             file = ProcessIncludeFile(
                 (*info).ctx,
@@ -753,7 +743,7 @@ unsafe fn SetKeyTypeField(
     value: *mut ExprDef,
 ) -> bool {
     unsafe {
-        let mut ok: bool = false;
+        let ok: bool ;
         let mut type_field: type_field = 0 as type_field;
         if istreq(field, b"modifiers") {
             type_field = TYPE_FIELD_MASK;
@@ -887,7 +877,7 @@ unsafe fn HandleGlobalVar(info: *mut KeyTypesInfo, stmt: *mut VarDef) -> bool {
 }
 unsafe fn HandleKeyTypesFile(info: *mut KeyTypesInfo, file: *mut XkbFile) {
     unsafe {
-        let mut ok: bool = false;
+        let mut ok: bool ;
         (*info).name = {
             let ptr = (*file).name as *const i8;
             if ptr.is_null() {
@@ -1069,10 +1059,7 @@ unsafe fn CopyKeyTypesToKeymap(keymap: *mut xkb_keymap, info: *mut KeyTypesInfo)
         return true;
     }
 }
-pub unsafe fn CompileKeyTypes(
-    file: *mut XkbFile,
-    keymap_info: *mut xkb_keymap_info,
-) -> bool {
+pub unsafe fn CompileKeyTypes(file: *mut XkbFile, keymap_info: *mut xkb_keymap_info) -> bool {
     unsafe {
         let mut info: KeyTypesInfo = KeyTypesInfo::new_zeroed();
         InitKeyTypesInfo(

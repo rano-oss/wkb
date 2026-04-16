@@ -655,7 +655,7 @@ unsafe fn CheckGroupField(
     group_rtrn: *mut i32,
 ) -> xkb_parser_error {
     unsafe {
-        let mut spec: *const ExprDef = std::ptr::null();
+        let spec: *const ExprDef ;
         let mut idx: u32 = 0 as u32;
         let mut flags: xkb_action_flags = *flags_inout;
         if !array_ndx.is_null() {
@@ -1021,7 +1021,7 @@ unsafe fn HandleSetPtrDflt(
         } else if field as u32 == ACTION_FIELD_BUTTON as u32
             || field as u32 == ACTION_FIELD_VALUE as u32
         {
-            let mut button: *const ExprDef = std::ptr::null();
+            let button: *const ExprDef ;
             let mut btn: i64 = 0 as i64;
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
@@ -1099,7 +1099,7 @@ unsafe fn HandleSwitchScreen(
         let ctx: *mut xkb_context = &raw mut (*(*keymap_info).keymap).ctx;
         let act: *mut xkb_switch_screen_action = &raw mut (*action).screen;
         if field as u32 == ACTION_FIELD_SCREEN as u32 {
-            let mut scrn: *const ExprDef = std::ptr::null();
+            let scrn: *const ExprDef ;
             let mut val: i64 = 0 as i64;
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
@@ -1784,9 +1784,9 @@ pub unsafe fn HandleActionDef(
         let mut ret: xkb_parser_error = PARSER_SUCCESS;
         let mut arg: *mut ExprDef = (*def).action.args as *mut ExprDef;
         while !arg.is_null() {
-            let mut value: *const ExprDef = std::ptr::null();
+            let value: *const ExprDef ;
             let mut value_ptr: *mut *mut ExprDef = std::ptr::null_mut();
-            let mut field: *mut ExprDef = std::ptr::null_mut();
+            let field: *mut ExprDef ;
             let mut arrayRtrn: *mut ExprDef = std::ptr::null_mut();
             let mut elemRtrn: &[u8] = b"";
             let mut fieldRtrn: &[u8] = b"";

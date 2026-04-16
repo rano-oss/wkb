@@ -21884,7 +21884,7 @@ pub unsafe fn xkb_keysym_from_name(name: *const i8, flags: xkb_keysym_flags) -> 
             return XKB_KEY_NoSymbol as u32;
         }
         let mut entry: *const name_keysym = std::ptr::null();
-        let mut tmp: *mut i8 = std::ptr::null_mut();
+        let tmp: *mut i8;
         let mut val: u32 = 0;
         let icase: bool = flags as u32 & XKB_KEYSYM_CASE_INSENSITIVE as u32 != 0;
         if !icase {
@@ -21926,7 +21926,7 @@ pub unsafe fn xkb_keysym_from_name(name: *const i8, flags: xkb_keysym_flags) -> 
                 }
             }
             if !entry.is_null() {
-                let mut last: *const name_keysym = std::ptr::null();
+                let last: *const name_keysym;
                 last = (&raw const name_to_keysym as *const name_keysym)
                     .offset(
                         (std::mem::size_of::<[name_keysym; 2635]>())
@@ -21968,7 +21968,6 @@ pub unsafe fn xkb_keysym_from_name(name: *const i8, flags: xkb_keysym_flags) -> 
         if cstr_as_bytes(name).starts_with(b"XF86_")
             || icase as i32 != 0 && istrncmp(cstr_as_bytes(name), b"XF86_", 5 as usize) == 0 as i32
         {
-            let mut ret: u32 = 0;
             tmp = cstr_dup(name);
             if tmp.is_null() {
                 return XKB_KEY_NoSymbol as u32;
@@ -21980,7 +21979,7 @@ pub unsafe fn xkb_keysym_from_name(name: *const i8, flags: xkb_keysym_flags) -> 
                     .wrapping_sub(5 as usize)
                     .wrapping_add(1 as usize),
             );
-            ret = xkb_keysym_from_name(tmp, flags);
+            let ret = xkb_keysym_from_name(tmp, flags);
             cstr_free(tmp);
             return ret;
         }

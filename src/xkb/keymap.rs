@@ -412,7 +412,6 @@ pub unsafe fn xkb_keymap_layout_get_index(keymap: *mut xkb_keymap, name: *const 
         if atom == XKB_ATOM_NONE as u32 {
             return XKB_LAYOUT_INVALID as u32;
         }
-        i = 0 as u32;
         while (i as usize) < (&(*keymap).group_names).len() {
             if (&(*keymap).group_names)[i as usize] == atom {
                 return i;
@@ -470,11 +469,10 @@ pub unsafe fn xkb_keymap_led_get_index(keymap: *mut xkb_keymap, name: *const i8)
     unsafe {
         let atom: u32 = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
         let mut i: u32 = 0;
-        let mut led: *const xkb_led = std::ptr::null();
+        let mut led: *const xkb_led ;
         if atom == XKB_ATOM_NONE as u32 {
             return XKB_LED_INVALID as u32;
         }
-        i = 0 as u32;
         led = &raw mut (*keymap).leds as *mut xkb_led;
         while i < (*keymap).num_leds {
             if (*led).name == atom {
@@ -517,10 +515,9 @@ pub unsafe fn xkb_keymap_key_get_syms_by_level(
     syms_out: *mut *const u32,
 ) -> i32 {
     unsafe {
-        let mut leveli: *const xkb_level = std::ptr::null();
         let key: *const xkb_key = XkbKey(keymap, kc);
         if !key.is_null() {
-            leveli = xkb_keymap_key_get_level(keymap, key, layout, level);
+            let leveli = xkb_keymap_key_get_level(keymap, key, layout, level);
             if !leveli.is_null() {
                 let num_syms = (*leveli).syms.len();
                 if num_syms > 0 {
@@ -554,8 +551,7 @@ pub unsafe fn xkb_keymap_key_get_name(keymap: *mut xkb_keymap, kc: u32) -> *cons
 }
 pub unsafe fn xkb_keymap_key_by_name(keymap: *mut xkb_keymap, name: *const i8) -> u32 {
     unsafe {
-        let mut atom: u32 = 0;
-        atom = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
+        let mut atom = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
         if atom != 0 {
             let mut i: u32 = 0 as u32;
             while (i as usize) < (&(*keymap).key_aliases).len() {
@@ -710,15 +706,10 @@ pub unsafe fn XkbEscapeMapName(mut name: *mut i8) {
         }
     }
 }
-pub unsafe fn XkbModNameToIndex(
-    mods: *const xkb_mod_set,
-    name: u32,
-    type_0: u32,
-) -> u32 {
+pub unsafe fn XkbModNameToIndex(mods: *const xkb_mod_set, name: u32, type_0: u32) -> u32 {
     unsafe {
         let mut i: u32 = 0;
-        let mut mod_0: *const xkb_mod = std::ptr::null();
-        i = 0 as u32;
+        let mut mod_0: *const xkb_mod ;
         mod_0 = &raw const (*mods).mods as *const xkb_mod;
         while i < (*mods).num_mods {
             if (*mod_0).type_0 as u32 & type_0 as u32 != 0 && name == (*mod_0).name {
@@ -854,7 +845,6 @@ pub unsafe fn xkb_keymap_key_get_actions_by_level(
     actions: *mut *const xkb_action,
 ) -> u16 {
     unsafe {
-        let mut count: u16 = 0;
         let _c2rust_current_block: u64;
         if !key.is_null() {
             layout = XkbWrapGroupIntoRange(
@@ -865,7 +855,7 @@ pub unsafe fn xkb_keymap_key_get_actions_by_level(
             );
             if !(layout == XKB_LAYOUT_INVALID as u32) {
                 if !(level >= XkbKeyNumLevels(keymap, key, layout)) {
-                    count = (&(*key).groups)[layout as usize].levels[level as usize]
+                    let count = (&(*key).groups)[layout as usize].levels[level as usize]
                         .actions
                         .len() as u16;
                     if count > 0 {

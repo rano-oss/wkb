@@ -10,7 +10,6 @@
     non_upper_case_globals,
     non_camel_case_types,
     non_snake_case,
-    dead_code,
     mutable_transmutes,
     improper_ctypes,
     improper_ctypes_definitions,
@@ -667,94 +666,6 @@ fn build_modifiers_from_keymap(
     }
 
     modifiers
-}
-
-/// Build composer (compose trie) from XKB compose table
-fn build_composer_from_xkb(ctx: &rust_types::Context, locale: &str) -> ListComposer {
-    let mut composer = ListComposer::new();
-
-    // For safety, catch any panics during compose table loading
-    // Some locales may have invalid or missing compose files
-    let mut compose_table = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        rust_types::ComposeTable::new_from_locale(ctx, locale)
-    })) {
-        Ok(Some(table)) => table,
-        _ => return composer, // Failed or null, return empty composer
-    };
-
-    // Define callback data structure to collect compose sequences
-    struct CallbackData {
-        composer: *mut ListComposer,
-    }
-
-    // Define callback function for compose table iteration
-    // Note: This MUST be unsafe extern "C" for FFI compatibility
-    unsafe fn collect_sequences(
-        entry: *mut compose::xkb_compose_table_entry,
-        data: *mut ::core::ffi::c_void,
-    ) {
-        // Safety checks
-        if entry.is_null() || data.is_null() {
-            return;
-        }
-
-        let callback_data = data as *mut CallbackData;
-        if (*callback_data).composer.is_null() {
-            return;
-        }
-        let composer = &mut *(*callback_data).composer;
-
-        let entry_ref = &*entry;
-
-        // Safety check for sequence
-        if entry_ref.sequence.is_null() || entry_ref.sequence_length == 0 {
-            return;
-        }
-
-        // Build sequence of tokens from keysyms
-        let mut tokens = Vec::new();
-        for i in 0..entry_ref.sequence_length {
-            let keysym = *entry_ref.sequence.offset(i as isize);
-
-            // Convert keysym to char
-            if let Some(ch) = keysym_utf::keysym_to_char(keysym) {
-                tokens.push(crate::composer::Token::Char(ch));
-            }
-        }
-
-        // Skip if we couldn't convert any keysyms
-        if tokens.is_empty() {
-            return;
-        }
-
-        // Get the output character from UTF-8 string
-        if !entry_ref.utf8.is_null() {
-            if let Ok(utf8_str) = std::ffi::CStr::from_ptr(entry_ref.utf8).to_str() {
-                if let Some(out_char) = utf8_str.chars().next() {
-                    // Insert this sequence into the composer trie
-                    composer.insert(&tokens, out_char);
-                }
-            }
-        }
-    }
-
-    // Prepare callback data
-    let mut callback_data = CallbackData {
-        composer: &mut composer as *mut ListComposer,
-    };
-
-    // Try to iterate through compose sequences, catching any errors
-    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
-        compose::xkb_compose_table_for_each(
-            &mut compose_table.entity,
-            Some(collect_sequences),
-            &mut callback_data as *mut CallbackData as *mut ::core::ffi::c_void,
-        );
-    }));
-
-    // ComposeTable is automatically cleaned up via Drop
-
-    composer
 }
 
 /// Create a new WKB instance from a keymap string

@@ -94,9 +94,9 @@ pub unsafe fn ParseIncludeMap(
     extra_data: *mut *mut i8,
 ) -> bool {
     unsafe {
-        let mut tmp: *mut i8 = std::ptr::null_mut();
-        let mut str: *mut i8 = std::ptr::null_mut();
-        let mut next: *mut i8 = std::ptr::null_mut();
+        let mut tmp: *mut i8 ;
+        let mut str: *mut i8 ;
+        let mut next: *mut i8 ;
         str = *str_inout;
         next = crate::xkb::utils::cstr_pbrk(str, &raw const MERGE_MODE_PREFIXES as *const i8);
         if !next.is_null() {
@@ -137,7 +137,7 @@ pub unsafe fn ParseIncludeMap(
                 return false;
             }
             let c2rust_fresh5 = tmp;
-            tmp = tmp.offset(1);
+            // dead store removed: tmp = tmp.offset(1);
             *c2rust_fresh5 = '\0' as i32 as i8;
             *map_rtrn = cstr_dup(str);
         }
@@ -381,7 +381,7 @@ pub unsafe fn expand_path(
 ) -> isize {
     unsafe {
         let c2rust_current_block: u64;
-        let mut k: usize = 0;
+        let mut k: usize ;
         k = 0 as usize;
         loop {
             if !(k < name_len) {
@@ -547,7 +547,7 @@ pub unsafe fn ProcessIncludeFile(
             stmt_file = path;
             stmt_file_len = expanded as usize;
         }
-        let mut file: *mut FILE = std::ptr::null_mut();
+        let mut file: *mut FILE ;
         let mut offset: u32 = 0 as u32;
         let absolute_path: bool = is_absolute_path(stmt_file) as bool;
         if absolute_path {

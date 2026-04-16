@@ -331,14 +331,6 @@ pub const XKB_STATE_MATCH_FLAGS: u32 = 65539;
 
 pub type xkb_filter_result = u32;
 
-static mut synthetic_key_group_break_group_latch: xkb_group = xkb_group {
-    explicit_symbols: false,
-    explicit_actions: false,
-    implicit_actions: false,
-    explicit_type: false,
-    type_idx: 0,
-    levels: Vec::new(),
-};
 static mut synthetic_key_break_group_latch: xkb_key = xkb_key {
     keycode: 0,
     name: 0,
@@ -355,17 +347,8 @@ static mut synthetic_key_break_group_latch: xkb_key = xkb_key {
     groups: Vec::new(),
     overlay_keys: Vec::new(),
 };
-static mut synthetic_key_level_break_group_latch: xkb_level = xkb_level {
-    upper: XKB_KEY_NoSymbol as u32,
-    has_upper: false,
-    syms: Vec::new(),
-    actions: Vec::new(),
-};
 
-unsafe fn get_entry_for_mods(
-    type_0: *const xkb_key_type,
-    mods: u32,
-) -> *const xkb_key_type_entry {
+unsafe fn get_entry_for_mods(type_0: *const xkb_key_type, mods: u32) -> *const xkb_key_type_entry {
     unsafe {
         let mut i: u32 = 0 as u32;
         while i < (&(*type_0).entries).len() as u32 {
@@ -396,11 +379,7 @@ unsafe fn get_entry_for_key_state(
 }
 #[inline]
 
-unsafe fn state_key_get_level(
-    state: *mut xkb_state,
-    key: *const xkb_key,
-    layout: u32,
-) -> u32 {
+unsafe fn state_key_get_level(state: *mut xkb_state, key: *const xkb_key, layout: u32) -> u32 {
     unsafe {
         if layout >= (*key).num_groups {
             return XKB_LEVEL_INVALID as u32;
@@ -415,11 +394,7 @@ unsafe fn state_key_get_level(
     }
 }
 
-pub unsafe fn xkb_state_key_get_level(
-    state: *mut xkb_state,
-    kc: u32,
-    layout: u32,
-) -> u32 {
+pub unsafe fn xkb_state_key_get_level(state: *mut xkb_state, kc: u32, layout: u32) -> u32 {
     unsafe {
         let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
         return if !key.is_null() {
@@ -462,7 +437,7 @@ unsafe fn xkb_key_get_actions(
     actions: *mut *const xkb_action,
 ) -> u16 {
     unsafe {
-        let mut count: u16 = 0;
+        let count: u16;
         let layout: u32 = state_key_get_layout(state, key) as u32;
         let level: u32 = state_key_get_level(state, key, layout) as u32;
         if !(level == XKB_LEVEL_INVALID as u32) {
@@ -1519,7 +1494,7 @@ unsafe fn xkb_filter_apply_all(
 ) {
     unsafe {
         let mut consumed: bool = false;
-        let mut filter: *mut xkb_filter = std::ptr::null_mut();
+        let mut filter: *mut xkb_filter;
         let filters_len = (&(*state).filters).len();
         if filters_len > 0 {
             filter = (*state).filters.as_mut_ptr();
@@ -1640,8 +1615,8 @@ pub unsafe fn xkb_state_get_keymap(state: *mut xkb_state) -> *mut xkb_keymap {
 
 unsafe fn xkb_state_led_update_all(state: *mut xkb_state) {
     unsafe {
-        let mut idx: u32 = 0;
-        let mut led: *const xkb_led = std::ptr::null();
+        let mut idx: u32;
+        let mut led: *const xkb_led;
         (*state).components.leds = 0 as xkb_led_mask_t;
         let mut c2rust_current_block_23: u64;
         idx = 0 as u32;
@@ -1741,7 +1716,7 @@ unsafe fn xkb_state_led_update_all(state: *mut xkb_state) {
 
 unsafe fn xkb_state_update_derived(state: *mut xkb_state) {
     unsafe {
-        let mut wrapped: u32 = 0;
+        let mut wrapped: u32;
         (*state).components.mods = (*state).components.base_mods
             | (*state).components.latched_mods
             | (*state).components.locked_mods;
@@ -1786,8 +1761,8 @@ pub unsafe fn xkb_state_update_key(
         (*state).set_mods = 0 as u32;
         (*state).clear_mods = 0 as u32;
         xkb_filter_apply_all(state, std::ptr::null_mut(), key, direction);
-        let mut i: u32 = 0;
-        let mut bit: u32 = 0;
+        let mut i: u32;
+        let mut bit: u32;
         i = 0 as u32;
         bit = 1 as u32;
         while (*state).set_mods != 0 {
@@ -1944,11 +1919,7 @@ unsafe fn update_latch_modifiers(
     }
 }
 
-unsafe fn update_latch_group(
-    state: *mut xkb_state,
-    events: *mut xkb_events,
-    group: i32,
-) {
+unsafe fn update_latch_group(state: *mut xkb_state, events: *mut xkb_events, group: i32) {
     unsafe {
         xkb_filter_apply_all(
             state,
@@ -2136,7 +2107,7 @@ unsafe fn check_state_update_abi_(
     update: *const xkb_state_update,
 ) -> xkb_error_code {
     unsafe {
-        let mut error: xkb_error_code = XKB_SUCCESS;
+        let mut error: xkb_error_code;
         error = xkb_check_versioned_struct_size_(
             std::mem::size_of::<xkb_state_update_v1>(),
             std::mem::size_of::<xkb_state_update_v1>(),
@@ -2281,9 +2252,9 @@ pub unsafe fn xkb_state_key_get_syms(
     syms_out: *mut *const u32,
 ) -> i32 {
     unsafe {
-        let mut level: u32 = 0;
-        let mut key: *const xkb_key = std::ptr::null();
-        let mut leveli: *const xkb_level = std::ptr::null();
+        let level: u32;
+        let key: *const xkb_key;
+        let leveli: *const xkb_level;
         let layout: u32 = xkb_state_key_get_layout(state, kc) as u32;
         if !(layout == XKB_LAYOUT_INVALID as u32) {
             level = xkb_state_key_get_level(state, kc, layout) as u32;
@@ -2383,7 +2354,7 @@ pub unsafe fn xkb_state_key_get_utf8(
 ) -> i32 {
     unsafe {
         let c2rust_current_block: u64;
-        let mut nsyms: i32 = 0;
+        let nsyms: i32;
         let mut syms: *const u32 = std::ptr::null();
         let sym: u32 = get_one_sym_for_string(state, kc) as u32;
         if sym != XKB_KEY_NoSymbol as u32 {
@@ -2516,27 +2487,12 @@ pub unsafe fn xkb_state_serialize_layout(state: *mut xkb_state, type_0: u32) -> 
         return serialize_layout(&raw mut (*state).components, type_0);
     }
 }
-#[inline]
-
-unsafe fn serialize_controls(
-    components: *const state_components,
-    type_0: u32,
-) -> xkb_keyboard_control_flags {
-    unsafe {
-        return (if type_0 as u32 & XKB_STATE_CONTROLS as u32 != 0 {
-            ((*components).controls as u32 & CONTROL_ALL_BOOLEAN as u32)
-                as xkb_keyboard_control_flags as u32
-        } else {
-            0 as u32
-        }) as xkb_keyboard_control_flags;
-    }
-}
 
 pub unsafe fn mod_mask_get_effective(keymap: *mut xkb_keymap, mods: u32) -> u32 {
     unsafe {
         let mut mask: u32 = mods & MOD_REAL_MASK_ALL;
-        let mut mod_0: *const xkb_mod = std::ptr::null();
-        let mut i: u32 = 0;
+        let mut mod_0: *const xkb_mod;
+        let mut i: u32;
         i = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
         mod_0 = (&raw mut (*keymap).mods.mods as *mut xkb_mod)
             .offset(_XKB_MOD_INDEX_NUM_ENTRIES as i32 as isize) as *mut xkb_mod;
@@ -2551,11 +2507,7 @@ pub unsafe fn mod_mask_get_effective(keymap: *mut xkb_keymap, mods: u32) -> u32 
     }
 }
 
-pub unsafe fn xkb_state_mod_index_is_active(
-    state: *mut xkb_state,
-    idx: u32,
-    type_0: u32,
-) -> i32 {
+pub unsafe fn xkb_state_mod_index_is_active(state: *mut xkb_state, idx: u32, type_0: u32) -> i32 {
     unsafe {
         if (idx >= xkb_keymap_num_mods((*state).keymap)) as i64 != 0 {
             return -1 as i32;
@@ -2813,11 +2765,7 @@ pub unsafe fn xkb_state_mod_index_is_consumed2(
     }
 }
 
-pub unsafe fn xkb_state_mod_index_is_consumed(
-    state: *mut xkb_state,
-    kc: u32,
-    idx: u32,
-) -> i32 {
+pub unsafe fn xkb_state_mod_index_is_consumed(state: *mut xkb_state, kc: u32, idx: u32) -> i32 {
     unsafe {
         return xkb_state_mod_index_is_consumed2(state, kc, idx, XKB_CONSUMED_MODE_XKB);
     }
@@ -2826,7 +2774,7 @@ pub unsafe fn xkb_state_mod_index_is_consumed(
 unsafe fn c2rust_run_static_initializers() {
     unsafe {
         synthetic_key_type.entries = vec![synthetic_key_level_entry];
-        synthetic_key_group_break_group_latch = xkb_group {
+        let synthetic_key_group_break_group_latch = xkb_group {
             explicit_symbols: false,
             explicit_actions: false,
             implicit_actions: false,
@@ -2858,7 +2806,7 @@ unsafe fn c2rust_run_static_initializers() {
             out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
             out_of_range_group_number: 0,
             num_groups: 1,
-            groups: vec![synthetic_key_group_break_group_latch.clone()],
+            groups: vec![synthetic_key_group_break_group_latch],
             overlay_keys: Vec::new(),
         };
         synthetic_key = xkb_key {

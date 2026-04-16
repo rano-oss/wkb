@@ -133,12 +133,6 @@ unsafe fn rxkb_object_init(object: *mut rxkb_object, parent: *mut rxkb_object) {
         (*object).parent = parent;
     }
 }
-unsafe fn rxkb_object_ref(object: *mut rxkb_object) -> *mut ::core::ffi::c_void {
-    unsafe {
-        (*object).refcount = (*object).refcount.wrapping_add(1);
-        return object as *mut ::core::ffi::c_void;
-    }
-}
 pub unsafe fn rxkb_layout_get_iso639_first(layout: *mut rxkb_layout) -> *mut rxkb_iso639_code {
     unsafe {
         (*layout)
@@ -187,9 +181,7 @@ pub unsafe fn rxkb_iso639_code_get_code(object: *mut rxkb_iso639_code) -> *const
         return (*object).code;
     }
 }
-pub unsafe fn rxkb_layout_get_iso3166_first(
-    layout: *mut rxkb_layout,
-) -> *mut rxkb_iso3166_code {
+pub unsafe fn rxkb_layout_get_iso3166_first(layout: *mut rxkb_layout) -> *mut rxkb_iso3166_code {
     unsafe {
         (*layout)
             .iso3166s
@@ -210,9 +202,7 @@ pub unsafe fn rxkb_iso3166_code_next(code: *mut rxkb_iso3166_code) -> *mut rxkb_
     }
 }
 
-pub unsafe fn rxkb_iso3166_code_unref(
-    object: *mut rxkb_iso3166_code,
-) -> *mut rxkb_iso3166_code {
+pub unsafe fn rxkb_iso3166_code_unref(object: *mut rxkb_iso3166_code) -> *mut rxkb_iso3166_code {
     unsafe {
         if object.is_null() {
             return std::ptr::null_mut();
@@ -444,9 +434,7 @@ pub unsafe fn rxkb_option_group_allows_multiple(g: *mut rxkb_option_group) -> bo
     }
 }
 
-pub unsafe fn rxkb_option_group_unref(
-    object: *mut rxkb_option_group,
-) -> *mut rxkb_option_group {
+pub unsafe fn rxkb_option_group_unref(object: *mut rxkb_option_group) -> *mut rxkb_option_group {
     unsafe {
         if object.is_null() {
             return std::ptr::null_mut();
@@ -559,11 +547,7 @@ unsafe fn log_level_to_prefix(level: rxkb_log_level) -> *const i8 {
         _ => return std::ptr::null(),
     };
 }
-unsafe fn default_log_fn(
-    _ctx: *mut rxkb_context,
-    level: rxkb_log_level,
-    msg: *const i8,
-) {
+unsafe fn default_log_fn(_ctx: *mut rxkb_context, level: rxkb_log_level, msg: *const i8) {
     unsafe {
         let prefix: *const i8 = log_level_to_prefix(level);
         if !prefix.is_null() {
@@ -643,7 +627,7 @@ pub unsafe fn rxkb_context_new(flags: rxkb_context_flags) -> *mut rxkb_context {
             rxkb_object_init(&raw mut (*t).base, std::ptr::null_mut());
             t
         };
-        let mut env: *const i8 = std::ptr::null();
+        let env: *const i8;
         if ctx.is_null() {
             return std::ptr::null_mut();
         }
@@ -695,11 +679,9 @@ pub unsafe fn rxkb_context_new(flags: rxkb_context_flags) -> *mut rxkb_context {
     }
 }
 
-pub unsafe fn rxkb_context_include_path_append(
-    ctx: *mut rxkb_context,
-    path: *const i8,
-) -> bool {
+pub unsafe fn rxkb_context_include_path_append(ctx: *mut rxkb_context, path: *const i8) -> bool {
     unsafe {
+        #[allow(unused_assignments)]
         let mut stat_buf: stat = stat {
             st_dev: 0,
             st_ino: 0,
@@ -726,8 +708,9 @@ pub unsafe fn rxkb_context_include_path_append(
             },
             __glibc_reserved: [0; 3],
         };
-        let mut rules: [i8; 4096] = [0; 4096];
-        let mut tmp: *mut i8 = std::ptr::null_mut();
+        #[allow(unused_assignments)]
+        let mut rules: [i8; 4096] = { std::mem::zeroed() };
+        let tmp: *mut i8;
         let mut err: i32 = 0 as i32;
         if (*ctx).context_state as u32 != CONTEXT_NEW as u32 {
             rxkb_logf!(
@@ -831,11 +814,12 @@ unsafe fn add_direct_subdirectories(
     mut versioned_path_length: usize,
 ) -> i32 {
     unsafe {
-        let mut entry: *mut dirent = std::ptr::null_mut();
-        let mut path_buf: [i8; 4096] = [0; 4096];
+        let mut entry: *mut dirent;
+        #[allow(unused_assignments)]
+        let mut path_buf: [i8; 4096] = { std::mem::zeroed() };
         let c2rust_current_block: u64;
         let mut ret: i32 = 0 as i32;
-        let mut err: i32 = ENOMEM;
+        let mut err: i32;
         let mut dir: *mut DIR = std::ptr::null_mut();
         let mut stat_buf: stat = stat {
             st_dev: 0,
@@ -873,7 +857,7 @@ unsafe fn add_direct_subdirectories(
             if dir.is_null() {
                 err = EACCES;
             } else {
-                entry = std::ptr::null_mut();
+                // dead store removed: entry = std::ptr::null_mut();
                 path_buf = ::core::mem::transmute::<
                     [u8; 4096],
                     [i8; 4096],
@@ -1602,11 +1586,7 @@ const XKBCONFIG_DTD: &str = "\
 <!ELEMENT hwList (hwId+)>\n\
 <!ELEMENT hwId (#PCDATA)>";
 
-unsafe fn parse(
-    ctx: *mut rxkb_context,
-    path: *const i8,
-    popularity: rxkb_popularity,
-) -> bool {
+unsafe fn parse(ctx: *mut rxkb_context, path: *const i8, popularity: rxkb_popularity) -> bool {
     unsafe {
         // Convert C path to Rust &str
         let path_cstr = std::ffi::CStr::from_ptr(path);

@@ -38,11 +38,7 @@ pub use crate::xkb::shared_types::{
     XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MOD_NONE,
 };
 use crate::xkb::utils::{cstr_as_bytes, istreq};
-pub unsafe fn LookupString(
-    tab: *const LookupEntry,
-    string: &[u8],
-    value_rtrn: *mut u32,
-) -> bool {
+pub unsafe fn LookupString(tab: *const LookupEntry, string: &[u8], value_rtrn: *mut u32) -> bool {
     unsafe {
         if string.is_empty() {
             return false;
@@ -521,8 +517,7 @@ pub unsafe fn ActionTypeText(type_0: xkb_action_type) -> &'static [u8] {
 }
 pub unsafe fn KeysymText(mut ctx: xkb_context, sym: u32) -> &'static [u8] {
     unsafe {
-        let buffer: *mut i8 =
-            xkb_context_get_buffer(&mut ctx, XKB_KEYSYM_NAME_MAX_SIZE as usize);
+        let buffer: *mut i8 = xkb_context_get_buffer(&mut ctx, XKB_KEYSYM_NAME_MAX_SIZE as usize);
         xkb_keysym_get_name(sym, buffer, XKB_KEYSYM_NAME_MAX_SIZE as usize);
         return cstr_as_bytes(buffer);
     }
@@ -556,7 +551,7 @@ pub unsafe fn ModMaskText(
     unsafe {
         let mut buf: [i8; 1024] = [0; 1024];
         let mut pos: usize = 0 as usize;
-        let mut mod_0: *const xkb_mod = std::ptr::null();
+        let mut mod_0: *const xkb_mod ;
         if mask == 0 as u32 {
             return b"none";
         }
