@@ -460,28 +460,34 @@ pub struct xkb_group {
     pub levels: Vec<xkb_level>,
 }
 
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone)]
 pub struct xkb_level {
-    pub num_syms: xkb_keysym_count_t,
-    pub num_actions: u16,
     pub c2rust_unnamed: C2Rust_Unnamed_12,
-    pub s: C2Rust_Unnamed_11,
-    pub a: C2Rust_Unnamed_10,
+    pub syms: Vec<u32>,
+    pub actions: Vec<xkb_action>,
 }
 
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub union C2Rust_Unnamed_10 {
-    pub action: xkb_action,
-    pub actions: *mut xkb_action,
+impl Default for xkb_level {
+    fn default() -> Self {
+        Self {
+            c2rust_unnamed: C2Rust_Unnamed_12 { upper: 0 },
+            syms: Vec::new(),
+            actions: Vec::new(),
+        }
+    }
 }
 
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub union C2Rust_Unnamed_11 {
-    pub sym: u32,
-    pub syms: *mut u32,
+impl Default for xkb_group {
+    fn default() -> Self {
+        Self {
+            explicit_symbols: false,
+            explicit_actions: false,
+            implicit_actions: false,
+            explicit_type: false,
+            type_idx: 0,
+            levels: Vec::new(),
+        }
+    }
 }
 
 #[derive(Copy, Clone)]

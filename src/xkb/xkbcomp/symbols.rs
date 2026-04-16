@@ -1,6 +1,5 @@
 use super::prelude::*;
 use crate::xkb::context::xkb_atom_intern;
-pub use crate::xkb::keymap::clear_level;
 pub use crate::xkb::keymap::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
 use crate::xkb::keysym::xkb_keysym_is_keypad;
 use crate::xkb::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
@@ -85,6 +84,16 @@ pub struct GroupInfo {
     pub levels: Vec<xkb_level>,
     pub defined: group_field,
     pub type_0: u32,
+}
+
+impl Default for GroupInfo {
+    fn default() -> Self {
+        Self {
+            levels: Vec::new(),
+            defined: 0,
+            type_0: 0,
+        }
+    }
 }
 pub type group_field = u32;
 pub const GROUP_FIELD_TYPE: group_field = 4;
@@ -195,9 +204,6 @@ unsafe fn InitGroupInfo(mut groupi: *mut GroupInfo) {
 }
 unsafe fn ClearGroupInfo(mut groupi: *mut GroupInfo) {
     unsafe {
-        for leveli in (*groupi).levels.iter_mut() {
-            clear_level(leveli as *mut xkb_level);
-        }
         (*groupi).levels.clear();
     }
 }
@@ -205,30 +211,7 @@ unsafe fn CopyGroupInfo(mut to: *mut GroupInfo, mut from: *const GroupInfo) {
     unsafe {
         (*to).defined = (*from).defined;
         (*to).type_0 = (*from).type_0;
-        (*to).levels = Vec::new();
-        if !(*from).levels.is_empty() {
-            (*to).levels.extend_from_slice(&(*from).levels);
-        }
-        let mut j: u32 = 0 as u32;
-        while j < (&(*to).levels).len() as u32 {
-            if (&(*from).levels)[j as usize].num_syms as i32 > 1 as i32 {
-                let ref mut c2rust_fresh0 = (&mut (*to).levels)[j as usize].s.syms;
-                *c2rust_fresh0 = memdup(
-                    (&(*from).levels)[j as usize].s.syms as *const ::core::ffi::c_void,
-                    (&(*from).levels)[j as usize].num_syms as usize,
-                    std::mem::size_of::<u32>(),
-                ) as *mut u32;
-            }
-            if (&(*from).levels)[j as usize].num_actions as i32 > 1 as i32 {
-                let ref mut c2rust_fresh1 = (&mut (*to).levels)[j as usize].a.actions;
-                *c2rust_fresh1 = memdup(
-                    (&(*from).levels)[j as usize].a.actions as *const ::core::ffi::c_void,
-                    (&(*from).levels)[j as usize].num_actions as usize,
-                    std::mem::size_of::<xkb_action>(),
-                ) as *mut xkb_action;
-            }
-            j = j.wrapping_add(1);
-        }
+        (*to).levels = (*from).levels.clone();
     }
 }
 unsafe fn InitKeyInfo(mut ctx: *mut xkb_context, mut keyi: *mut KeyInfo) {
@@ -365,32 +348,15 @@ unsafe fn MergeGroups(
                 &mut (&mut (*into).levels)[i as usize] as *mut xkb_level;
             let fromLevel: *mut xkb_level =
                 &mut (&mut (*from).levels)[i as usize] as *mut xkb_level;
-            let fromHasNoKeysym: bool = (*fromLevel).num_syms as i32 == 0 as i32;
-            let fromHasNoAction: bool = (*fromLevel).num_actions as i32 == 0 as i32;
+            let fromHasNoKeysym: bool = (*fromLevel).syms.is_empty();
+            let fromHasNoAction: bool = (*fromLevel).actions.is_empty();
             if !(fromHasNoKeysym as i32 != 0 && fromHasNoAction as i32 != 0) {
-                let intoHasNoKeysym: bool = (*intoLevel).num_syms as i32 == 0 as i32;
-                let intoHasNoAction: bool = (*intoLevel).num_actions as i32 == 0 as i32;
+                let intoHasNoKeysym: bool = (*intoLevel).syms.is_empty();
+                let intoHasNoAction: bool = (*intoLevel).actions.is_empty();
                 if intoHasNoKeysym as i32 != 0 && intoHasNoAction as i32 != 0 {
                     // StealLevelInfo inlined
-                    clear_level(intoLevel);
-                    if (*fromLevel).num_syms as i32 > 1 as i32 {
-                        (*intoLevel).s.syms =
-                            _steal(&raw mut (*fromLevel).s.syms as *mut ::core::ffi::c_void)
-                                as *mut u32 as *mut u32;
-                    } else {
-                        (*intoLevel).s.sym = (*fromLevel).s.sym;
-                    }
-                    (*intoLevel).num_syms = (*fromLevel).num_syms;
-                    (*fromLevel).num_syms = 0 as xkb_keysym_count_t;
-                    if (*fromLevel).num_actions as i32 > 1 as i32 {
-                        (*intoLevel).a.actions =
-                            _steal(&raw mut (*fromLevel).a.actions as *mut ::core::ffi::c_void)
-                                as *mut xkb_action as *mut xkb_action;
-                    } else {
-                        (*intoLevel).a.action = (*fromLevel).a.action;
-                    }
-                    (*intoLevel).num_actions = (*fromLevel).num_actions;
-                    (*fromLevel).num_actions = 0 as u16;
+                    (*intoLevel).syms = std::mem::take(&mut (*fromLevel).syms);
+                    (*intoLevel).actions = std::mem::take(&mut (*fromLevel).actions);
                     fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
                     fromActionsCount = fromActionsCount.wrapping_add(1);
                 } else {
@@ -421,36 +387,14 @@ unsafe fn MergeGroups(
                         }
                         if !fromHasNoKeysym {
                             if clobber {
-                                if ((*fromLevel).num_syms as i32 > 1 as i32) as i64 != 0 {
-                                    if ((*intoLevel).num_syms as i32 > 1 as i32) as i32 as i64 != 0
-                                    {
-                                        free((*intoLevel).s.syms as *mut ::core::ffi::c_void);
-                                    }
-                                    (*intoLevel).s.syms = (*fromLevel).s.syms;
-                                    (*intoLevel).num_syms = (*fromLevel).num_syms;
-                                    (*fromLevel).num_syms = 0 as xkb_keysym_count_t;
-                                    fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
-                                } else if (*fromLevel).s.sym != XKB_KEY_NoSymbol as u32 {
-                                    if ((*intoLevel).num_syms as i32 > 1 as i32) as i32 as i64 != 0
-                                    {
-                                        free((*intoLevel).s.syms as *mut ::core::ffi::c_void);
-                                    }
-                                    (*intoLevel).s.sym = (*fromLevel).s.sym;
-                                    (*intoLevel).num_syms = 1 as xkb_keysym_count_t;
+                                if !(*fromLevel).syms.is_empty() {
+                                    (*intoLevel).syms = std::mem::take(&mut (*fromLevel).syms);
                                     fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
                                 }
-                            } else if !(((*intoLevel).num_syms as i32 > 1 as i32) as i32 as i64
-                                != 0)
-                            {
-                                if (*intoLevel).s.sym == XKB_KEY_NoSymbol as u32 {
-                                    if ((*fromLevel).num_syms as i32 > 1 as i32) as i32 as i64 != 0
-                                    {
-                                        (*intoLevel).s.syms = (*fromLevel).s.syms;
-                                        (*intoLevel).num_syms = (*fromLevel).num_syms;
-                                        (*fromLevel).num_syms = 0 as xkb_keysym_count_t;
-                                    } else {
-                                        (*intoLevel).s.sym = (*fromLevel).s.sym;
-                                        (*intoLevel).num_syms = 1 as xkb_keysym_count_t;
+                            } else {
+                                if (*intoLevel).syms.is_empty() {
+                                    if !(*fromLevel).syms.is_empty() {
+                                        (*intoLevel).syms = std::mem::take(&mut (*fromLevel).syms);
                                     }
                                     fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
                                 }
@@ -461,7 +405,7 @@ unsafe fn MergeGroups(
                         if report as i32 != 0
                             && !(intoHasNoAction as i32 != 0 || fromHasNoAction as i32 != 0)
                         {
-                            if ((*intoLevel).num_actions as i32 > 1 as i32) as i64 != 0 {
+                            if (*intoLevel).actions.len() > 1 || (*fromLevel).actions.len() > 1 {
                                 xkb_logf!(
                                     (*info).ctx,
                                     XKB_LOG_LEVEL_WARNING,
@@ -480,17 +424,15 @@ unsafe fn MergeGroups(
                                     }),
                                 );
                             } else {
-                                let mut use_1: *mut xkb_action = std::ptr::null_mut();
-                                let mut ignore_0: *mut xkb_action = std::ptr::null_mut();
-                                use_1 = if clobber as i32 != 0 {
-                                    &raw mut (*fromLevel).a.action
+                                let use_action: &xkb_action = if clobber {
+                                    &(&(*fromLevel).actions)[0]
                                 } else {
-                                    &raw mut (*intoLevel).a.action
+                                    &(&(*intoLevel).actions)[0]
                                 };
-                                ignore_0 = if clobber as i32 != 0 {
-                                    &raw mut (*intoLevel).a.action
+                                let ignore_action: &xkb_action = if clobber {
+                                    &(&(*intoLevel).actions)[0]
                                 } else {
-                                    &raw mut (*fromLevel).a.action
+                                    &(&(*fromLevel).actions)[0]
                                 };
                                 xkb_logf!(
                                     (*info).ctx,
@@ -501,48 +443,23 @@ unsafe fn MergeGroups(
                                     i.wrapping_add(1 as u32),
                                     group.wrapping_add(1 as u32),
                                     crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), key_name)),
-                                    crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*use_1).type_0)),
-                                    crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*ignore_0).type_0)),
+                                    crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*use_action).type_0)),
+                                    crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*ignore_action).type_0)),
                                 );
                             }
                         }
                         if !fromHasNoAction {
                             if clobber {
-                                if ((*fromLevel).num_actions as i32 > 1 as i32) as i64 != 0 {
-                                    if ((*intoLevel).num_actions as i32 > 1 as i32) as i32 as i64
-                                        != 0
-                                    {
-                                        free((*intoLevel).a.actions as *mut ::core::ffi::c_void);
-                                    }
-                                    (*intoLevel).a.actions = (*fromLevel).a.actions;
-                                    (*intoLevel).num_actions = (*fromLevel).num_actions;
-                                    (*fromLevel).num_actions = 0 as u16;
-                                    fromActionsCount = fromActionsCount.wrapping_add(1);
-                                } else if (*fromLevel).a.action.type_0 as u32
-                                    != ACTION_TYPE_NONE as u32
-                                {
-                                    if ((*intoLevel).num_actions as i32 > 1 as i32) as i32 as i64
-                                        != 0
-                                    {
-                                        free((*intoLevel).a.actions as *mut ::core::ffi::c_void);
-                                    }
-                                    (*intoLevel).a.action = (*fromLevel).a.action;
-                                    (*intoLevel).num_actions = 1 as u16;
+                                if !(*fromLevel).actions.is_empty() {
+                                    (*intoLevel).actions =
+                                        std::mem::take(&mut (*fromLevel).actions);
                                     fromActionsCount = fromActionsCount.wrapping_add(1);
                                 }
-                            } else if !(((*intoLevel).num_actions as i32 > 1 as i32) as i32 as i64
-                                != 0)
-                            {
-                                if (*intoLevel).a.action.type_0 as u32 == ACTION_TYPE_NONE as u32 {
-                                    if ((*fromLevel).num_actions as i32 > 1 as i32) as i32 as i64
-                                        != 0
-                                    {
-                                        (*intoLevel).a.actions = (*fromLevel).a.actions;
-                                        (*intoLevel).num_actions = (*fromLevel).num_actions;
-                                        (*fromLevel).num_actions = 0 as u16;
-                                    } else {
-                                        (*intoLevel).a.action = (*fromLevel).a.action;
-                                        (*intoLevel).num_actions = 1 as u16;
+                            } else {
+                                if (*intoLevel).actions.is_empty() {
+                                    if !(*fromLevel).actions.is_empty() {
+                                        (*intoLevel).actions =
+                                            std::mem::take(&mut (*fromLevel).actions);
                                     }
                                     fromActionsCount = fromActionsCount.wrapping_add(1);
                                 }
@@ -555,10 +472,10 @@ unsafe fn MergeGroups(
         }
         let mut level_idx: u32 = levels_in_both;
         while level_idx < (&(*from).levels).len() as u32 {
-            let level_val = (&(*from).levels)[level_idx as usize];
+            let level_val = (&(*from).levels)[level_idx as usize].clone();
             (&mut (*into).levels).push(level_val);
-            (&mut (*from).levels)[level_idx as usize].num_syms = 0 as xkb_keysym_count_t;
-            (&mut (*from).levels)[level_idx as usize].num_actions = 0 as u16;
+            (&mut (*from).levels)[level_idx as usize].syms.clear();
+            (&mut (*from).levels)[level_idx as usize].actions.clear();
             fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
             fromActionsCount = fromActionsCount.wrapping_add(1);
             level_idx = level_idx.wrapping_add(1);
@@ -1386,7 +1303,9 @@ unsafe fn AddSymbolsToKey(
             nLevels = nonEmptyLevels;
         }
         if ((*groupi).levels.len() as u32) < nLevels {
-            vec_resize_zero(&mut (*groupi).levels, nLevels as usize);
+            (*groupi)
+                .levels
+                .resize_with(nLevels as usize, Default::default);
         }
         (*groupi).defined = ((*groupi).defined as u32 | GROUP_FIELD_SYMS as u32) as group_field;
         let mut level: u32 = 0 as u32;
@@ -1409,30 +1328,11 @@ unsafe fn AddSymbolsToKey(
                 );
                 return false;
             }
-            (*leveli).num_syms = syms_len as xkb_keysym_count_t;
-            match (*leveli).num_syms as i32 {
-                0 => {
-                    (*leveli).s.sym = XKB_KEY_NoSymbol as u32;
-                }
-                1 => {
-                    (*leveli).s.sym = (&(*keysymList_0).syms)[0];
-                }
-                _ => {
-                    // Steal the Vec buffer into a raw pointer for leveli.s.syms
-                    let syms_ref = &mut (*keysymList_0).syms;
-                    if !syms_ref.is_empty() {
-                        syms_ref.shrink_to_fit();
-                        (*leveli).s.syms = syms_ref.as_mut_ptr();
-                        // Prevent Vec from freeing the buffer
-                        let stolen = std::mem::take(syms_ref);
-                        std::mem::forget(stolen);
-                    }
-                    let mut k: xkb_keysym_count_t = 0 as xkb_keysym_count_t;
-                    while (k as i32) < (*leveli).num_syms as i32 {
-                        k = k.wrapping_add(1);
-                    }
-                }
-            }
+            (*leveli).syms = if syms_len == 0 {
+                Vec::new()
+            } else {
+                (&(*keysymList_0).syms)[..syms_len as usize].to_vec()
+            };
             keysymList_0 = (*keysymList_0).common.next as *mut ExprKeysymList;
             level = level.wrapping_add(1);
         }
@@ -1487,7 +1387,9 @@ unsafe fn AddActionsToKey(
             p = (*p).next as *mut ParseCommon;
         }
         if ((*groupi).levels.len() as u32) < nLevels {
-            vec_resize_zero(&mut (*groupi).levels, nLevels as usize);
+            (*groupi)
+                .levels
+                .resize_with(nLevels as usize, Default::default);
         }
         (*groupi).defined = ((*groupi).defined as u32 | GROUP_FIELD_ACTS as u32) as group_field;
         let mut level: u32 = 0 as u32;
@@ -1554,8 +1456,7 @@ unsafe fn AddActionsToKey(
                 }
                 if !(toAct.type_0 as u32 == ACTION_TYPE_NONE as u32) {
                     if (num_actions == 1 as u32) as i64 != 0 {
-                        (*leveli).num_actions = 1 as u16;
-                        (*leveli).a.action = toAct;
+                        (*leveli).actions = vec![toAct];
                         c2rust_current_block_102 = 1829140360157350833;
                         break;
                     } else {
@@ -1567,26 +1468,14 @@ unsafe fn AddActionsToKey(
             match c2rust_current_block_102 {
                 1134115459065347084 => {
                     if actions.is_empty() {
-                        (*leveli).num_actions = 0 as u16;
-                    } else if (actions.len() > 1) as i64 != 0 {
-                        (*leveli).num_actions = actions.len() as u16;
-                        // Shrink to fit and steal the buffer
-                        actions.shrink_to_fit();
-                        let ptr = actions.as_mut_ptr();
-                        let len = actions.len();
-                        std::mem::forget(actions);
-                        (*leveli).a.actions = ptr;
-                        actions = Vec::new();
+                        (*leveli).actions = Vec::new();
                     } else {
-                        (*leveli).num_actions = 1 as u16;
-                        (*leveli).a.action = actions[0];
-                        drop(actions);
-                        actions = Vec::new();
+                        (*leveli).actions = std::mem::take(&mut actions);
                     }
                 }
                 _ => {}
             }
-            if (*leveli).num_actions as i32 > 0 as i32 || (*leveli).num_syms as i32 > 0 as i32 {
+            if !(*leveli).actions.is_empty() || !(*leveli).syms.is_empty() {
                 nonEmptyLevels = level.wrapping_add(1 as u32);
             }
             actionList = (*actionList).common.next as *mut ExprActionList;
@@ -2376,9 +2265,9 @@ unsafe fn SetExplicitGroup(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -
                 crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
             );
         }
-        vec_resize_zero(
-            &mut (*keyi).groups,
+        (*keyi).groups.resize_with(
             ((*info).explicit_group as usize).wrapping_add(1),
+            Default::default,
         );
         if (*info).explicit_group > 0 as u32 {
             let swapped = std::ptr::read(&(&(*keyi).groups)[0]);
@@ -2592,27 +2481,9 @@ unsafe fn FindKeyForSymbol(mut keymap: *mut xkb_keymap, mut sym: u32) -> *mut xk
                     if group < (*key).num_groups && level < XkbKeyNumLevels(keymap, key, group) {
                         got_one_level = true;
                         got_one_group = got_one_level;
-                        let num_syms: xkb_keysym_count_t =
-                            (&(*key).groups)[group as usize].levels[level as usize].num_syms;
-                        if num_syms as i32 > 1 as i32 {
-                            let mut k: xkb_keysym_count_t = 0 as xkb_keysym_count_t;
-                            while (k as i32) < num_syms as i32 {
-                                if *(&(*key).groups)[group as usize].levels[level as usize]
-                                    .s
-                                    .syms
-                                    .offset(k as isize)
-                                    == sym
-                                {
-                                    return key;
-                                }
-                                k = k.wrapping_add(1);
-                            }
-                        } else if num_syms as i32 != 0
-                            && (&(*key).groups)[group as usize].levels[level as usize]
-                                .s
-                                .sym
-                                == sym
-                        {
+                        let level_syms =
+                            &(&(*key).groups)[group as usize].levels[level as usize].syms;
+                        if level_syms.contains(&sym) {
                             return key;
                         }
                     }
@@ -2643,29 +2514,21 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
                 (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
             );
         }
-        sym0 = if (*(*groupi).levels.as_ptr().offset(0 as i32 as isize)).num_syms as i32 == 0 as i32
+        sym0 = if (*(*groupi).levels.as_ptr().offset(0 as i32 as isize))
+            .syms
+            .is_empty()
         {
             XKB_KEY_NoSymbol as u32
-        } else if (*(*groupi).levels.as_ptr().offset(0 as i32 as isize)).num_syms as i32 == 1 as i32
-        {
-            (*(*groupi).levels.as_ptr().offset(0 as i32 as isize)).s.sym
         } else {
-            *(*(*groupi).levels.as_ptr().offset(0 as i32 as isize))
-                .s
-                .syms
-                .offset(0 as i32 as isize)
+            (&(*(*groupi).levels.as_ptr().offset(0 as i32 as isize)).syms)[0]
         };
-        sym1 = if (*(*groupi).levels.as_ptr().offset(1 as i32 as isize)).num_syms as i32 == 0 as i32
+        sym1 = if (*(*groupi).levels.as_ptr().offset(1 as i32 as isize))
+            .syms
+            .is_empty()
         {
             XKB_KEY_NoSymbol as u32
-        } else if (*(*groupi).levels.as_ptr().offset(1 as i32 as isize)).num_syms as i32 == 1 as i32
-        {
-            (*(*groupi).levels.as_ptr().offset(1 as i32 as isize)).s.sym
         } else {
-            *(*(*groupi).levels.as_ptr().offset(1 as i32 as isize))
-                .s
-                .syms
-                .offset(0 as i32 as isize)
+            (&(*(*groupi).levels.as_ptr().offset(1 as i32 as isize)).syms)[0]
         };
         if width == 2 as u32 {
             if xkb_keysym_is_lower(sym0) as i32 != 0
@@ -2696,34 +2559,22 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
             {
                 let mut sym2: u32 = 0;
                 let mut sym3: u32 = 0;
-                sym2 = if (*(*groupi).levels.as_ptr().offset(2 as i32 as isize)).num_syms as i32
-                    == 0 as i32
+                sym2 = if (*(*groupi).levels.as_ptr().offset(2 as i32 as isize))
+                    .syms
+                    .is_empty()
                 {
                     XKB_KEY_NoSymbol as u32
-                } else if (*(*groupi).levels.as_ptr().offset(2 as i32 as isize)).num_syms as i32
-                    == 1 as i32
-                {
-                    (*(*groupi).levels.as_ptr().offset(2 as i32 as isize)).s.sym
                 } else {
-                    *(*(*groupi).levels.as_ptr().offset(2 as i32 as isize))
-                        .s
-                        .syms
-                        .offset(0 as i32 as isize)
+                    (&(*(*groupi).levels.as_ptr().offset(2 as i32 as isize)).syms)[0]
                 };
                 sym3 = if width == 4 as u32 {
-                    if (*(*groupi).levels.as_ptr().offset(3 as i32 as isize)).num_syms as i32
-                        == 0 as i32
+                    if (*(*groupi).levels.as_ptr().offset(3 as i32 as isize))
+                        .syms
+                        .is_empty()
                     {
                         XKB_KEY_NoSymbol as u32
-                    } else if (*(*groupi).levels.as_ptr().offset(3 as i32 as isize)).num_syms as i32
-                        == 1 as i32
-                    {
-                        (*(*groupi).levels.as_ptr().offset(3 as i32 as isize)).s.sym
                     } else {
-                        *(*(*groupi).levels.as_ptr().offset(3 as i32 as isize))
-                            .s
-                            .syms
-                            .offset(0 as i32 as isize)
+                        (&(*(*groupi).levels.as_ptr().offset(3 as i32 as isize)).syms)[0]
                     }
                 } else {
                     XKB_KEY_NoSymbol as u32
@@ -2931,14 +2782,17 @@ unsafe fn CopySymbolsDefToKeymap(
                         for lvl_idx in (&(*keymap).types)[type_idx as usize].num_levels as usize
                             ..(*groupi).levels.len()
                         {
-                            clear_level(&mut (&mut (*groupi).levels)[lvl_idx] as *mut xkb_level);
+                            (&mut (*groupi).levels)[lvl_idx].syms.clear();
+                            (&mut (*groupi).levels)[lvl_idx].actions.clear();
                         }
                     }
 
                     // Resize levels array to match type
                     let __need_levels: usize =
                         (&(*keymap).types)[type_idx as usize].num_levels as usize;
-                    vec_resize_zero(&mut (*groupi).levels, __need_levels);
+                    (*groupi)
+                        .levels
+                        .resize_with(__need_levels, Default::default);
 
                     (&mut (*key).groups)[i as usize].explicit_type = explicit_type;
                     (&mut (*key).groups)[i as usize].type_idx = type_idx;
@@ -2958,49 +2812,32 @@ unsafe fn CopySymbolsDefToKeymap(
                     if !(*groupi).levels.is_empty() {
                         leveli = (*groupi).levels.as_mut_ptr();
                         while leveli < (*groupi).levels.as_mut_ptr().add((*groupi).levels.len()) {
-                            match (*leveli).num_syms {
+                            match (*leveli).syms.len() {
                                 0 => {
                                     (*leveli).c2rust_unnamed.upper = XKB_KEY_NoSymbol as u32;
                                 }
                                 1 => {
                                     (*leveli).c2rust_unnamed.upper =
-                                        xkb_keysym_to_upper((*leveli).s.sym);
+                                        xkb_keysym_to_upper((&(*leveli).syms)[0]);
                                 }
                                 _ => {
                                     // Multiple keysyms: check if there is any cased keysym
                                     (*leveli).c2rust_unnamed.has_upper = false;
-                                    let mut k: xkb_keysym_count_t = 0;
-                                    while k < (*leveli).num_syms {
-                                        let upper: u32 = xkb_keysym_to_upper(
-                                            *(*leveli).s.syms.offset(k as isize),
-                                        );
-                                        if upper != *(*leveli).s.syms.offset(k as isize) {
+                                    let num_syms = (&(*leveli).syms).len();
+                                    for k in 0..num_syms {
+                                        let upper: u32 = xkb_keysym_to_upper((&(*leveli).syms)[k]);
+                                        if upper != (&(*leveli).syms)[k] {
                                             (*leveli).c2rust_unnamed.has_upper = true;
                                             break;
                                         }
-                                        k = k.wrapping_add(1);
                                     }
                                     if (*leveli).c2rust_unnamed.has_upper {
                                         // Some cased keysyms: store the transformation result
-                                        (*leveli).s.syms = realloc(
-                                            (*leveli).s.syms as *mut ::core::ffi::c_void,
-                                            (2 * (*leveli).num_syms as usize)
-                                                .wrapping_mul(std::mem::size_of::<u32>()),
-                                        )
-                                            as *mut u32;
-                                        if (*leveli).s.syms.is_null() {
-                                            return false;
-                                        }
-                                        let mut k: xkb_keysym_count_t = 0;
-                                        while k < (*leveli).num_syms {
-                                            *(*leveli)
-                                                .s
-                                                .syms
-                                                .offset(((*leveli).num_syms + k) as isize) =
-                                                xkb_keysym_to_upper(
-                                                    *(*leveli).s.syms.offset(k as isize),
-                                                );
-                                            k = k.wrapping_add(1);
+                                        let num_syms = (&(*leveli).syms).len();
+                                        (&mut (*leveli).syms).reserve(num_syms);
+                                        for k in 0..num_syms {
+                                            let upper = xkb_keysym_to_upper((&(*leveli).syms)[k]);
+                                            (&mut (*leveli).syms).push(upper);
                                         }
                                     }
                                 }
@@ -3019,7 +2856,7 @@ unsafe fn CopySymbolsDefToKeymap(
 
                     if (&(*keymap).types)[(&(*key).groups)[i as usize].type_idx as usize].num_levels
                         > 1
-                        || (&(*key).groups)[i as usize].levels[0].num_syms > 0
+                        || !(&(*key).groups)[i as usize].levels[0].syms.is_empty()
                     {
                         (&mut (*key).groups)[i as usize].explicit_symbols = true;
                         (*key).explicit = ((*key).explicit as u32 | EXPLICIT_SYMBOLS as u32)

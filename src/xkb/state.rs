@@ -193,21 +193,20 @@ pub use crate::xkb::shared_types::{
     xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_mod,
     xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t, xkb_overlay_mask_t,
     xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
-    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_10,
-    C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2, C2Rust_Unnamed_23, C2Rust_Unnamed_6,
-    C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbKey,
-    _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH,
-    ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS,
-    ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK,
-    ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION,
-    ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
-    ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
-    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
-    ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
-    ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
-    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
-    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
-    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_12,
+    C2Rust_Unnamed_2, C2Rust_Unnamed_23, C2Rust_Unnamed_6, C2Rust_Unnamed_7, C2Rust_Unnamed_8,
+    C2Rust_Unnamed_9, KeycodeMatch, XkbKey, _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES,
+    ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL,
+    ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK,
+    ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
+    ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
+    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
+    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
+    ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK,
+    ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE,
+    ACTION_TYPE_UNKNOWN, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS,
+    CONTROL_ALL, CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX,
+    CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
     CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
     CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
     CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
@@ -425,25 +424,11 @@ static mut synthetic_key_break_group_latch: xkb_key = xkb_key {
     },
 };
 static mut synthetic_key_level_break_group_latch: xkb_level = xkb_level {
-    num_syms: 0 as xkb_keysym_count_t,
-    num_actions: 1 as u16,
     c2rust_unnamed: C2Rust_Unnamed_12 {
         upper: XKB_KEY_NoSymbol as u32,
     },
-    s: C2Rust_Unnamed_11 {
-        sym: XKB_KEY_NoSymbol as u32,
-    },
-    a: C2Rust_Unnamed_10 {
-        action: xkb_action {
-            internal: xkb_internal_action {
-                type_0: ACTION_TYPE_INTERNAL,
-                flags: INTERNAL_BREAKS_GROUP_LATCH,
-                c2rust_unnamed: C2Rust_Unnamed_2 {
-                    clear_latched_mods: 0 as i32 as u32,
-                },
-            },
-        },
-    },
+    syms: Vec::new(),
+    actions: Vec::new(),
 };
 
 unsafe fn get_entry_for_mods(
@@ -1952,25 +1937,19 @@ unsafe fn update_latch_modifiers(
         let clear: u32 = mask & !latches;
         (*state).components.latched_mods &= !clear;
         let mut synthetic_key_level_break_mod_latch: xkb_level = xkb_level {
-            num_syms: 0 as xkb_keysym_count_t,
-            num_actions: 1 as u16,
             c2rust_unnamed: C2Rust_Unnamed_12 {
                 upper: XKB_KEY_NoSymbol as u32,
             },
-            s: C2Rust_Unnamed_11 {
-                sym: XKB_KEY_NoSymbol as u32,
-            },
-            a: C2Rust_Unnamed_10 {
-                action: xkb_action {
-                    internal: xkb_internal_action {
-                        type_0: ACTION_TYPE_INTERNAL,
-                        flags: INTERNAL_BREAKS_MOD_LATCH,
-                        c2rust_unnamed: C2Rust_Unnamed_2 {
-                            clear_latched_mods: clear,
-                        },
+            syms: Vec::new(),
+            actions: vec![xkb_action {
+                internal: xkb_internal_action {
+                    type_0: ACTION_TYPE_INTERNAL,
+                    flags: INTERNAL_BREAKS_MOD_LATCH,
+                    c2rust_unnamed: C2Rust_Unnamed_2 {
+                        clear_latched_mods: clear,
                     },
                 },
-            },
+            }],
         };
         let mut synthetic_key_group_break_mod_latch: xkb_group = xkb_group {
             explicit_symbols: false,
@@ -2383,7 +2362,6 @@ pub unsafe fn xkb_state_key_get_syms(
         let mut level: u32 = 0;
         let mut key: *const xkb_key = std::ptr::null();
         let mut leveli: *const xkb_level = std::ptr::null();
-        let mut num_syms: xkb_keysym_count_t = 0;
         let layout: u32 = xkb_state_key_get_layout(state, kc) as u32;
         if !(layout == XKB_LAYOUT_INVALID as u32) {
             level = xkb_state_key_get_level(state, kc, layout) as u32;
@@ -2392,24 +2370,20 @@ pub unsafe fn xkb_state_key_get_syms(
                 if !key.is_null() {
                     leveli = xkb_keymap_key_get_level((*state).keymap, key, layout, level);
                     if !leveli.is_null() {
-                        num_syms = (*leveli).num_syms;
-                        if !(num_syms as i32 == 0 as i32) {
+                        let num_syms = (*leveli).syms.len();
+                        if num_syms > 0 {
                             if should_do_caps_transformation(state, kc) {
-                                if num_syms as i32 > 1 as i32 {
+                                if num_syms > 1 {
                                     *syms_out = if (*leveli).c2rust_unnamed.has_upper as i32 != 0 {
-                                        (*leveli).s.syms.offset(num_syms as i32 as isize)
+                                        (*leveli).syms.as_ptr().offset(num_syms as isize)
                                     } else {
-                                        (*leveli).s.syms
+                                        (*leveli).syms.as_ptr()
                                     };
                                 } else {
                                     *syms_out = &raw const (*leveli).c2rust_unnamed.upper;
                                 }
                             } else {
-                                *syms_out = if num_syms as i32 > 1 as i32 {
-                                    (*leveli).s.syms as *const u32
-                                } else {
-                                    &raw const (*leveli).s.sym
-                                };
+                                *syms_out = (*leveli).syms.as_ptr();
                             }
                             return num_syms as i32;
                         }
@@ -2936,7 +2910,21 @@ unsafe fn c2rust_run_static_initializers() {
             implicit_actions: false,
             explicit_type: false,
             type_idx: 0,
-            levels: vec![synthetic_key_level_break_group_latch],
+            levels: vec![xkb_level {
+                c2rust_unnamed: C2Rust_Unnamed_12 {
+                    upper: XKB_KEY_NoSymbol as u32,
+                },
+                syms: Vec::new(),
+                actions: vec![xkb_action {
+                    internal: xkb_internal_action {
+                        type_0: ACTION_TYPE_INTERNAL,
+                        flags: INTERNAL_BREAKS_GROUP_LATCH,
+                        c2rust_unnamed: C2Rust_Unnamed_2 {
+                            clear_latched_mods: 0,
+                        },
+                    },
+                }],
+            }],
         };
         synthetic_key_break_group_latch = xkb_key {
             keycode: 0,

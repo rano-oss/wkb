@@ -221,53 +221,10 @@ unsafe fn ApplyInterpsToKey(mut keymap: *mut xkb_keymap, mut key: *mut xkb_key) 
                                 65535 as i32,
                                 actions.len() as u32,
                             );
-                            (&mut (*key).groups)[group as usize].levels[level as usize]
-                                .num_actions = MAX_ACTIONS_PER_LEVEL as u16;
-                        } else {
-                            (&mut (*key).groups)[group as usize].levels[level as usize]
-                                .num_actions = actions.len() as u16;
+                            actions.truncate(MAX_ACTIONS_PER_LEVEL as usize);
                         }
-                        match actions.len() as u32 {
-                            0 => {
-                                (&mut (*key).groups)[group as usize].levels[level as usize]
-                                    .a
-                                    .action = xkb_action {
-                                    type_0: ACTION_TYPE_NONE,
-                                };
-                            }
-                            1 => {
-                                (&mut (*key).groups)[group as usize].levels[level as usize]
-                                    .a
-                                    .action = actions[0];
-                            }
-                            _ => {
-                                let ref mut c2rust_fresh0 = (&mut (*key).groups)[group as usize]
-                                    .levels[level as usize]
-                                    .a
-                                    .actions;
-                                *c2rust_fresh0 = memdup(
-                                    actions.as_ptr() as *const ::core::ffi::c_void,
-                                    (&(*key).groups)[group as usize].levels[level as usize]
-                                        .num_actions as usize,
-                                    std::mem::size_of::<xkb_action>(),
-                                )
-                                    as *mut xkb_action;
-                                if (&(*key).groups)[group as usize].levels[level as usize]
-                                    .a
-                                    .actions
-                                    .is_null()
-                                {
-                                    xkb_logf!(
-                                        (*keymap).ctx,
-                                        XKB_LOG_LEVEL_ERROR,
-                                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                        "[XKB-{:03}] Could not allocate interpret actions\n",
-                                        XKB_ERROR_ALLOCATION_ERROR as i32,
-                                    );
-                                    return false;
-                                }
-                            }
-                        }
+                        (&mut (*key).groups)[group as usize].levels[level as usize].actions =
+                            actions.clone();
                         if !actions.is_empty() {
                             let ref mut c2rust_fresh1 = (&mut (*key).groups)[group as usize];
                             (*c2rust_fresh1).implicit_actions = true;
@@ -312,11 +269,11 @@ unsafe fn CheckMultipleActionsCategories(mut keymap: *mut xkb_keymap, mut key: *
             while l < XkbKeyNumLevels(keymap, key, g) {
                 let mut level: *mut xkb_level =
                     &mut (&mut (*key).groups)[g as usize].levels[l as usize] as *mut xkb_level;
-                if !((*level).num_actions as i32 <= 1 as i32) {
+                if !((*level).actions.len() <= 1) {
                     let mut i: u16 = 0 as u16;
-                    while (i as i32) < (*level).num_actions as i32 {
+                    while (i as usize) < (*level).actions.len() {
                         let mut action1: *mut xkb_action =
-                            (*level).a.actions.offset(i as isize) as *mut xkb_action;
+                            &mut (&mut (*level).actions)[i as usize] as *mut xkb_action;
                         let mut mod_action: bool = is_mod_action(action1);
                         let mut group_action: bool = is_group_action(action1);
                         if mod_action as i32 != 0
@@ -324,9 +281,9 @@ unsafe fn CheckMultipleActionsCategories(mut keymap: *mut xkb_keymap, mut key: *
                             || (*action1).type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as u32
                         {
                             let mut j: u16 = (i as i32 + 1 as i32) as u16;
-                            while (j as i32) < (*level).num_actions as i32 {
+                            while (j as usize) < (*level).actions.len() {
                                 let mut action2: *mut xkb_action =
-                                    (*level).a.actions.offset(j as isize) as *mut xkb_action;
+                                    &mut (&mut (*level).actions)[j as usize] as *mut xkb_action;
                                 if (*action1).type_0 as u32 == (*action2).type_0 as u32
                                     || mod_action as i32 != 0 && is_mod_action(action2) as i32 != 0
                                     || group_action as i32 != 0
@@ -693,31 +650,37 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
                 while i_1 < (*key).num_groups {
                     let mut j_0: u32 = 0 as u32;
                     while j_0 < XkbKeyNumLevels(keymap, key, i_1) {
-                        if (&(*key).groups)[i_1 as usize].levels[j_0 as usize].num_actions as i32
-                            <= 1 as i32
+                        if (&(*key).groups)[i_1 as usize].levels[j_0 as usize]
+                            .actions
+                            .len()
+                            <= 1
                         {
-                            let act_1: *mut xkb_action =
-                                &raw mut (&mut (*key).groups)[i_1 as usize].levels[j_0 as usize]
-                                    .a
-                                    .action;
-                            UpdateActionMods(keymap, act_1, (*key).modmap);
-                            if (pending_computations as i32 != 0
-                                || (*act_1).type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as u32)
-                                && !update_pending_action_fields(info, (*key).keycode, act_1)
+                            if !(&(*key).groups)[i_1 as usize].levels[j_0 as usize]
+                                .actions
+                                .is_empty()
                             {
-                                return false;
+                                let act_1: *mut xkb_action = &mut (&mut (*key).groups)[i_1 as usize]
+                                    .levels[j_0 as usize]
+                                    .actions[0]
+                                    as *mut xkb_action;
+                                UpdateActionMods(keymap, act_1, (*key).modmap);
+                                if (pending_computations as i32 != 0
+                                    || (*act_1).type_0 as u32 == ACTION_TYPE_REDIRECT_KEY as u32)
+                                    && !update_pending_action_fields(info, (*key).keycode, act_1)
+                                {
+                                    return false;
+                                }
                             }
                         } else {
                             let mut k: u16 = 0 as u16;
-                            while (k as i32)
-                                < (&(*key).groups)[i_1 as usize].levels[j_0 as usize].num_actions
-                                    as i32
-                            {
-                                let act_2: *mut xkb_action = (&mut (*key).groups)[i_1 as usize]
-                                    .levels[j_0 as usize]
-                                    .a
+                            while (k as usize)
+                                < (&(*key).groups)[i_1 as usize].levels[j_0 as usize]
                                     .actions
-                                    .offset(k as isize)
+                                    .len()
+                            {
+                                let act_2: *mut xkb_action = &mut (&mut (*key).groups)[i_1 as usize]
+                                    .levels[j_0 as usize]
+                                    .actions[k as usize]
                                     as *mut xkb_action;
                                 UpdateActionMods(keymap, act_2, (*key).modmap);
                                 if (pending_computations as i32 != 0

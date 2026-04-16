@@ -62,20 +62,20 @@ pub use crate::xkb::shared_types::{
     xkb_keymap, xkb_keymap_format_ops, xkb_keysym_count_t, xkb_led, xkb_level, xkb_mod,
     xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_mask_t, xkb_pointer_action,
     xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
-    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_10,
-    C2Rust_Unnamed_11, C2Rust_Unnamed_12, C2Rust_Unnamed_2, C2Rust_Unnamed_6, C2Rust_Unnamed_7,
-    C2Rust_Unnamed_8, C2Rust_Unnamed_9, KeycodeMatch, XkbKey, XkbKeyNumLevels,
-    _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y,
-    ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR,
-    ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
-    ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
-    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
-    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
-    ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK,
-    ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE,
-    ACTION_TYPE_UNKNOWN, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS,
-    CONTROL_ALL, CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX,
-    CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_12,
+    C2Rust_Unnamed_2, C2Rust_Unnamed_6, C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9,
+    KeycodeMatch, XkbKey, XkbKeyNumLevels, _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH,
+    ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS,
+    ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK,
+    ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION,
+    ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
+    ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
+    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
+    ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
+    ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
+    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
+    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
+    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
     CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
     CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
     CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
@@ -116,12 +116,8 @@ pub unsafe fn xkb_keymap_ref(mut keymap: *mut xkb_keymap) -> *mut xkb_keymap {
 #[c2rust::src_loc = "34:1"]
 pub unsafe fn clear_level(mut leveli: *mut xkb_level) {
     unsafe {
-        if (*leveli).num_syms as i32 > 1 as i32 {
-            free((*leveli).s.syms as *mut ::core::ffi::c_void);
-        }
-        if (*leveli).num_actions as i32 > 1 as i32 {
-            free((*leveli).a.actions as *mut ::core::ffi::c_void);
-        }
+        (*leveli).syms.clear();
+        (*leveli).actions.clear();
     }
 }
 #[c2rust::src_loc = "50:1"]
@@ -146,15 +142,7 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
                     let mut i: u32 = 0 as u32;
                     while i < (*key).num_groups {
                         if !(&(&(*key).groups)[i as usize].levels).is_empty() {
-                            let mut j: u32 = 0 as u32;
-                            while j < XkbKeyNumLevels(keymap, key, i) {
-                                clear_level(
-                                    &mut (&mut (*(key as *mut xkb_key)).groups)[i as usize].levels
-                                        [j as usize]
-                                        as *mut xkb_level,
-                                );
-                                j = j.wrapping_add(1);
-                            }
+                            // Vec fields drop automatically, no manual clearing needed
                         }
                         i = i.wrapping_add(1);
                     }
@@ -597,18 +585,13 @@ pub unsafe fn xkb_keymap_key_get_syms_by_level(
 ) -> i32 {
     unsafe {
         let mut leveli: *const xkb_level = std::ptr::null();
-        let mut num_syms: xkb_keysym_count_t = 0;
         let mut key: *const xkb_key = XkbKey(keymap, kc);
         if !key.is_null() {
             leveli = xkb_keymap_key_get_level(keymap, key, layout, level);
             if !leveli.is_null() {
-                num_syms = (*leveli).num_syms;
-                if !(num_syms as i32 == 0 as i32) {
-                    if num_syms as i32 == 1 as i32 {
-                        *syms_out = &raw const (*leveli).s.sym;
-                    } else {
-                        *syms_out = (*leveli).s.syms;
-                    }
+                let num_syms = (*leveli).syms.len();
+                if num_syms > 0 {
+                    *syms_out = (*leveli).syms.as_ptr();
                     return num_syms as i32;
                 }
             }
@@ -820,19 +803,7 @@ pub unsafe fn XkbModNameToIndex(
     }
 }
 pub unsafe fn XkbLevelsSameSyms(mut a: *const xkb_level, mut b: *const xkb_level) -> bool {
-    unsafe {
-        if (*a).num_syms as i32 != (*b).num_syms as i32 {
-            return false;
-        }
-        if (*a).num_syms as i32 <= 1 as i32 {
-            return (*a).s.sym == (*b).s.sym;
-        }
-        {
-            let n = (std::mem::size_of::<u32>()).wrapping_mul((*a).num_syms as usize);
-            return std::slice::from_raw_parts((*a).s.syms as *const u8, n)
-                == std::slice::from_raw_parts((*b).s.syms as *const u8, n);
-        }
-    }
+    unsafe { (*a).syms == (*b).syms }
 }
 pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -> bool {
     unsafe {
@@ -898,21 +869,16 @@ pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -
 }
 pub unsafe fn XkbLevelsSameActions(mut a: *const xkb_level, mut b: *const xkb_level) -> bool {
     unsafe {
-        if (*a).num_actions as i32 != (*b).num_actions as i32 {
+        if (*a).actions.len() != (*b).actions.len() {
             return false;
         }
-        if (*a).num_actions as i32 <= 1 as i32 {
-            return action_equal(&raw const (*a).a.action, &raw const (*b).a.action);
-        }
-        let mut k: u16 = 0 as u16;
-        while (k as i32) < (*a).num_actions as i32 {
+        for k in 0..(*a).actions.len() {
             if !action_equal(
-                (*a).a.actions.offset(k as isize) as *mut xkb_action,
-                (*b).a.actions.offset(k as isize) as *mut xkb_action,
+                &(&(*a).actions)[k] as *const xkb_action,
+                &(&(*b).actions)[k] as *const xkb_action,
             ) {
                 return false;
             }
-            k = k.wrapping_add(1);
         }
         return true;
     }
@@ -972,21 +938,14 @@ pub unsafe fn xkb_keymap_key_get_actions_by_level(
             );
             if !(layout == XKB_LAYOUT_INVALID as u32) {
                 if !(level >= XkbKeyNumLevels(keymap, key, layout)) {
-                    count = (&(*key).groups)[layout as usize].levels[level as usize].num_actions;
-                    match count as i32 {
-                        0 => {}
-                        1 => {
-                            *actions = &(&(*key).groups)[layout as usize].levels[level as usize]
-                                .a
-                                .action as *const xkb_action;
-                            return count;
-                        }
-                        _ => {
-                            *actions = (&(*key).groups)[layout as usize].levels[level as usize]
-                                .a
-                                .actions;
-                            return count;
-                        }
+                    count = (&(*key).groups)[layout as usize].levels[level as usize]
+                        .actions
+                        .len() as u16;
+                    if count > 0 {
+                        *actions = (&(*key).groups)[layout as usize].levels[level as usize]
+                            .actions
+                            .as_ptr();
+                        return count;
                     }
                 }
             }
