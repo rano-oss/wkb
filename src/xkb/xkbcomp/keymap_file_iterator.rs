@@ -115,7 +115,7 @@ use crate::xkb::utils::cstr_len;
 use crate::xkb::xkbcomp::include::ProcessIncludeFile;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct C2Rust_Unnamed_1 {
+pub struct MapFlagName {
     pub flag: xkb_map_flags,
     pub name: *const i8,
 }

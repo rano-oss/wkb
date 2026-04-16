@@ -82,14 +82,14 @@ pub mod parser_h {
         pub mapFlags: xkb_map_flags,
         pub keysym: u32,
         pub any: *mut ParseCommon,
-        pub anyList: C2Rust_Unnamed_6,
+        pub anyList: AnyList,
         pub noSymbolOrActionList: u32,
         pub expr: *mut ExprDef,
-        pub exprList: C2Rust_Unnamed_5,
+        pub exprList: ExprList,
         pub var: *mut VarDef,
-        pub varList: C2Rust_Unnamed_4,
+        pub varList: VarList,
         pub vmod: *mut VModDef,
-        pub vmodList: C2Rust_Unnamed_3,
+        pub vmodList: VModList,
         pub interp: *mut InterpDef,
         pub keyType: *mut KeyTypeDef,
         pub syms: *mut SymbolsDef,
@@ -102,35 +102,35 @@ pub mod parser_h {
         pub unknown: *mut UnknownStatement,
         pub geom: *mut ::core::ffi::c_void,
         pub file: *mut XkbFile,
-        pub fileList: C2Rust_Unnamed_2,
+        pub fileList: FileList,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
-    pub struct C2Rust_Unnamed_2 {
+    pub struct FileList {
         pub head: *mut XkbFile,
         pub last: *mut XkbFile,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
-    pub struct C2Rust_Unnamed_3 {
+    pub struct VModList {
         pub head: *mut VModDef,
         pub last: *mut VModDef,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
-    pub struct C2Rust_Unnamed_4 {
+    pub struct VarList {
         pub head: *mut VarDef,
         pub last: *mut VarDef,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
-    pub struct C2Rust_Unnamed_5 {
+    pub struct ExprList {
         pub head: *mut ExprDef,
         pub last: *mut ExprDef,
     }
     #[derive(Copy, Clone)]
     #[repr(C)]
-    pub struct C2Rust_Unnamed_6 {
+    pub struct AnyList {
         pub head: *mut ParseCommon,
         pub last: *mut ParseCommon,
     }
@@ -178,15 +178,14 @@ pub use super::parser::{parse, parse_next};
 pub use crate::xkb::xkbcomp::keywords::keyword_to_token;
 
 pub use self::parser_h::{
-    C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6,
-    YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS, ALTERNATE, ALTERNATE_GROUP, AUGMENT, CBRACE,
-    CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DEFAULT, DIVIDE, DOT, END_OF_FILE, EQUALS, ERROR_TOK,
-    EXCLAM, FLOAT, FUNCTION_KEYS, GROUP, HIDDEN, IDENT, INCLUDE, INDICATOR, INTEGER, INTERPRET,
-    INVERT, KEY, KEYNAME, KEYPAD_KEYS, KEYS, LOGO, MINUS, MODIFIER_KEYS, MODIFIER_MAP, OBRACE,
-    OBRACKET, OPAREN, OUTLINE, OVERLAY, OVERRIDE, PARTIAL, PLUS, REPLACE, ROW, SECTION, SEMI,
-    SHAPE, SOLID, STRING, TEXT, TIMES, TYPE, VIRTUAL, VIRTUAL_MODS, XKB_COMPATMAP, XKB_GEOMETRY,
-    XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS, XKB_SYMBOLS, XKB_TYPES, YYEMPTY, YYSTYPE,
-    YYUNDEF,
+    AnyList, ExprList, FileList, VModList, VarList, YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS,
+    ALTERNATE, ALTERNATE_GROUP, AUGMENT, CBRACE, CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DEFAULT,
+    DIVIDE, DOT, END_OF_FILE, EQUALS, ERROR_TOK, EXCLAM, FLOAT, FUNCTION_KEYS, GROUP, HIDDEN,
+    IDENT, INCLUDE, INDICATOR, INTEGER, INTERPRET, INVERT, KEY, KEYNAME, KEYPAD_KEYS, KEYS, LOGO,
+    MINUS, MODIFIER_KEYS, MODIFIER_MAP, OBRACE, OBRACKET, OPAREN, OUTLINE, OVERLAY, OVERRIDE,
+    PARTIAL, PLUS, REPLACE, ROW, SECTION, SEMI, SHAPE, SOLID, STRING, TEXT, TIMES, TYPE, VIRTUAL,
+    VIRTUAL_MODS, XKB_COMPATMAP, XKB_GEOMETRY, XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS,
+    XKB_SYMBOLS, XKB_TYPES, YYEMPTY, YYSTYPE, YYUNDEF,
 };
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,

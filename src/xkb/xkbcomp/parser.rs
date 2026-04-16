@@ -50,7 +50,6 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, scanner: *mut scanner) -> i32
 }
 
 pub use super::scanner::parser_h::{
-    C2Rust_Unnamed_2, C2Rust_Unnamed_3, C2Rust_Unnamed_4, C2Rust_Unnamed_5, C2Rust_Unnamed_6,
     YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS, ALTERNATE, ALTERNATE_GROUP, AUGMENT, CBRACE,
     CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DEFAULT, DIVIDE, DOT, END_OF_FILE, EQUALS, ERROR_TOK,
     EXCLAM, FLOAT, FUNCTION_KEYS, GROUP, HIDDEN, IDENT, INCLUDE, INDICATOR, INTEGER, INTERPRET,
@@ -293,24 +292,23 @@ pub const YYSYMBOL_YYEMPTY: yysymbol_kind_t = -2;
 pub type yytype_uint8 = ::core::ffi::c_uchar;
 pub type yytype_int8 = i8;
 pub type yy_state_fast_t = i32;
-pub const YYENOMEM: C2Rust_Unnamed_10 = -2;
+pub const YYENOMEM: i32 = -2;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct yypcontext_t {
     pub yyssp: *mut yy_state_t,
     pub yytoken: yysymbol_kind_t,
 }
-pub const YYARGS_MAX: C2Rust_Unnamed_7 = 5;
-pub type C2Rust_Unnamed_7 = u32;
+pub const YYARGS_MAX: u32 = 5;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct C2Rust_Unnamed_8 {
+pub struct VModList {
     pub head: *mut ExprDef,
     pub last: *mut ExprDef,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct C2Rust_Unnamed_9 {
+pub struct ExprList {
     pub head: *mut ExprDef,
     pub last: *mut ExprDef,
 }
@@ -320,7 +318,7 @@ pub union yyalloc {
     pub yyss_alloc: yy_state_t,
     pub yyvs_alloc: YYSTYPE,
 }
-pub type C2Rust_Unnamed_10 = i32;
+
 unsafe fn _xkbcommon_error(mut param: *mut parser_param, mut msg: *const i8) {
     unsafe {
         let mut loc: scanner_loc = (*(*param).scanner).token_location();
@@ -5137,7 +5135,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         75 => {
-                            let mut list: C2Rust_Unnamed_9 = C2Rust_Unnamed_9 {
+                            let mut list: ExprList = ExprList {
                                 head: (*yyvsp.offset(-1 as i32 as isize)).exprList.head,
                                 last: (*yyvsp.offset(-1 as i32 as isize)).exprList.last,
                             };
@@ -5162,7 +5160,7 @@ pub unsafe fn _xkbcommon_parse(mut param: *mut parser_param) -> i32 {
                             c2rust_current_block = 9699707990742192723;
                         }
                         77 => {
-                            let mut list_0: C2Rust_Unnamed_8 = C2Rust_Unnamed_8 {
+                            let mut list_0: VModList = VModList {
                                 head: (*yyvsp.offset(-1 as i32 as isize)).exprList.head,
                                 last: (*yyvsp.offset(-1 as i32 as isize)).exprList.last,
                             };

@@ -18,23 +18,23 @@ pub struct compose_node {
     pub keysym: u32,
     pub lokid: u32,
     pub hikid: u32,
-    pub c2rust_unnamed: C2Rust_Unnamed_2,
+    pub data: ComposeNodeData,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub union C2Rust_Unnamed_2 {
-    pub c2rust_unnamed: C2Rust_Unnamed_5,
-    pub internal: C2Rust_Unnamed_4,
-    pub leaf: C2Rust_Unnamed_3,
+pub union ComposeNodeData {
+    pub tag: ComposeTag,
+    pub internal: ComposeInternal,
+    pub leaf: ComposeLeaf,
 }
 /// Leaf node: bits 0..30 = utf8 index, bit 31 = is_leaf (always true).
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct C2Rust_Unnamed_3 {
+pub struct ComposeLeaf {
     pub utf8_is_leaf: u32,
     pub keysym: u32,
 }
-impl C2Rust_Unnamed_3 {
+impl ComposeLeaf {
     #[inline]
     pub fn utf8(&self) -> u32 {
         self.utf8_is_leaf & 0x7FFF_FFFF
@@ -43,17 +43,17 @@ impl C2Rust_Unnamed_3 {
 /// Internal node: bits 0..30 = pad, bit 31 = is_leaf (always false).
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct C2Rust_Unnamed_4 {
+pub struct ComposeInternal {
     pub _pad_is_leaf: u32,
     pub eqkid: u32,
 }
 /// Tag-only accessor: bit 31 = is_leaf discriminant.
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct C2Rust_Unnamed_5 {
+pub struct ComposeTag {
     pub _pad_is_leaf: u32,
 }
-impl C2Rust_Unnamed_5 {
+impl ComposeTag {
     #[inline]
     pub fn is_leaf(&self) -> bool {
         (self._pad_is_leaf >> 31) != 0
@@ -92,27 +92,19 @@ unsafe fn for_each_helper(
         let c2rust_fresh0 = nsyms;
         nsyms = nsyms.wrapping_add(1);
         *syms.offset(c2rust_fresh0 as isize) = (*node).keysym;
-        if (*node).c2rust_unnamed.c2rust_unnamed.is_leaf() {
+        if (*node).data.tag.is_leaf() {
             let mut entry: xkb_compose_table_entry = xkb_compose_table_entry {
                 sequence_length: nsyms,
                 sequence: syms,
-                keysym: (*node).c2rust_unnamed.leaf.keysym,
+                keysym: (*node).data.leaf.keysym,
                 utf8: (*table)
                     .utf8
                     .as_ptr()
-                    .offset((*node).c2rust_unnamed.leaf.utf8() as isize)
-                    as *mut i8,
+                    .offset((*node).data.leaf.utf8() as isize) as *mut i8,
             };
             iter.expect("non-null function pointer")(&raw mut entry, data);
         } else {
-            for_each_helper(
-                table,
-                iter,
-                data,
-                syms,
-                nsyms,
-                (*node).c2rust_unnamed.internal.eqkid,
-            );
+            for_each_helper(table, iter, data, syms, nsyms, (*node).data.internal.eqkid);
         }
         nsyms = nsyms.wrapping_sub(1);
         for_each_helper(table, iter, data, syms, nsyms, (*node).hikid);

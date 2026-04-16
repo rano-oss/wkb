@@ -136,8 +136,8 @@ pub struct mapping {
     pub num_mlvo: mlvo_index_t,
     pub defined_mlvo_mask: mlvo_mask_t,
     pub has_layout_idx_range: bool,
-    pub c2rust_unnamed: C2Rust_Unnamed_3,
-    pub c2rust_unnamed_0: C2Rust_Unnamed_2,
+    pub layout: LayoutIdxUnion,
+    pub active_or_candidates_mask: u32,
     pub kccgst_at_pos: [rules_kccgst; 5],
     pub num_kccgst: kccgst_index_t,
     pub defined_kccgst_mask: kccgst_mask_t,
@@ -145,25 +145,19 @@ pub struct mapping {
 pub type kccgst_mask_t = u8;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub union C2Rust_Unnamed_2 {
-    pub active: u32,
-    pub layouts_candidates_mask: u32,
+pub union LayoutIdxUnion {
+    pub single: LayoutIdxSingle,
+    pub range: LayoutIdxRange,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub union C2Rust_Unnamed_3 {
-    pub c2rust_unnamed: C2Rust_Unnamed_5,
-    pub c2rust_unnamed_0: C2Rust_Unnamed_4,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_4 {
+pub struct LayoutIdxRange {
     pub layout_idx_min: u32,
     pub layout_idx_max: u32,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct C2Rust_Unnamed_5 {
+pub struct LayoutIdxSingle {
     pub layout_idx: u32,
     pub variant_idx: u32,
 }
@@ -217,7 +211,7 @@ pub const LAYOUT_INDEX_ANY: layout_index_ranges = 4294967294;
 pub const LAYOUT_INDEX_LATER: layout_index_ranges = 4294967293;
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct C2Rust_Unnamed_7 {
+pub struct LayoutIndexName {
     pub name: *const i8,
     pub length: i32,
     pub range: layout_index_ranges,
@@ -5036,14 +5030,13 @@ unsafe fn matcher_mapping_start_new(mut m: *mut matcher) {
             i_0 = i_0.wrapping_add(1);
         }
         (*m).mapping.has_layout_idx_range = false;
-        (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx = XKB_LAYOUT_INVALID as u32;
-        (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx =
-            (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx;
+        (*m).mapping.layout.single.variant_idx = XKB_LAYOUT_INVALID as u32;
+        (*m).mapping.layout.single.layout_idx = (*m).mapping.layout.single.variant_idx;
         (*m).mapping.num_kccgst = 0 as kccgst_index_t;
         (*m).mapping.num_mlvo = (*m).mapping.num_kccgst as mlvo_index_t;
         (*m).mapping.defined_mlvo_mask = 0 as mlvo_mask_t;
         (*m).mapping.defined_kccgst_mask = 0 as kccgst_mask_t;
-        (*m).mapping.c2rust_unnamed_0.active = 1 as u32;
+        (*m).mapping.active_or_candidates_mask = 1 as u32;
     }
 }
 unsafe fn parse_layout_int_index(mut s: *const i8, mut max_len: usize, mut out: *mut u32) -> i32 {
@@ -5084,23 +5077,23 @@ unsafe fn extract_mapping_layout_index(
     mut out: *mut u32,
 ) -> i32 {
     unsafe {
-        static mut names: [C2Rust_Unnamed_7; 4] = [
-            C2Rust_Unnamed_7 {
+        static mut names: [LayoutIndexName; 4] = [
+            LayoutIndexName {
                 name: b"single]\0".as_ptr() as *const i8,
                 length: 7 as i32,
                 range: LAYOUT_INDEX_SINGLE,
             },
-            C2Rust_Unnamed_7 {
+            LayoutIndexName {
                 name: b"first]\0".as_ptr() as *const i8,
                 length: 6 as i32,
                 range: LAYOUT_INDEX_FIRST,
             },
-            C2Rust_Unnamed_7 {
+            LayoutIndexName {
                 name: b"later]\0".as_ptr() as *const i8,
                 length: 6 as i32,
                 range: LAYOUT_INDEX_LATER,
             },
-            C2Rust_Unnamed_7 {
+            LayoutIndexName {
                 name: b"any]\0".as_ptr() as *const i8,
                 length: 4 as i32,
                 range: LAYOUT_INDEX_ANY,
@@ -5112,8 +5105,8 @@ unsafe fn extract_mapping_layout_index(
         }
         let mut k: u32 = 0 as u32;
         while (k as usize)
-            < (std::mem::size_of::<[C2Rust_Unnamed_7; 4]>())
-                .wrapping_div(std::mem::size_of::<C2Rust_Unnamed_7>())
+            < (std::mem::size_of::<[LayoutIndexName; 4]>())
+                .wrapping_div(std::mem::size_of::<LayoutIndexName>())
         {
             if cstr_as_bytes(s.offset(1 as i32 as isize) as *const i8).starts_with(
                 &cstr_as_bytes(names[k as usize].name)[..names[k as usize].length as usize],
@@ -5161,7 +5154,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                 loc.column,
                 crate::xkb::utils::CStrNDisplay(ident.len as usize, ident.start),
             );
-            (*m).mapping.c2rust_unnamed_0.active = 0 as u32;
+            (*m).mapping.active_or_candidates_mask = 0 as u32;
             return;
         }
         if is_mlvo_mask_defined(m, mlvo) {
@@ -5177,7 +5170,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                 loc_0.column,
                 crate::xkb::utils::CStrNDisplay(mlvo_sval.len as usize, mlvo_sval.start),
             );
-            (*m).mapping.c2rust_unnamed_0.active = 0 as u32;
+            (*m).mapping.active_or_candidates_mask = 0 as u32;
             return;
         }
         if mlvo_sval.len < ident.len {
@@ -5200,13 +5193,13 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                     loc_1.column,
                     crate::xkb::utils::CStrNDisplay(mlvo_sval.len as usize, mlvo_sval.start),
                 );
-                (*m).mapping.c2rust_unnamed_0.active = 0 as u32;
+                (*m).mapping.active_or_candidates_mask = 0 as u32;
                 return;
             }
             if mlvo as u32 == MLVO_LAYOUT as u32 {
-                (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx = idx;
+                (*m).mapping.layout.single.layout_idx = idx;
             } else if mlvo as u32 == MLVO_VARIANT as u32 {
-                (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx = idx;
+                (*m).mapping.layout.single.variant_idx = idx;
             } else {
                 let mut loc_2: scanner_loc = (*s).token_location();
                 xkb_logf!(
@@ -5220,21 +5213,18 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                     loc_2.column,
                     crate::xkb::utils::CStrNDisplay(mlvo_sval.len as usize, mlvo_sval.start),
                 );
-                (*m).mapping.c2rust_unnamed_0.active = 0 as u32;
+                (*m).mapping.active_or_candidates_mask = 0 as u32;
                 return;
             }
         } else if mlvo as u32 == MLVO_LAYOUT as u32 {
-            (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx =
-                LAYOUT_INDEX_SINGLE as u32 as u32;
+            (*m).mapping.layout.single.layout_idx = LAYOUT_INDEX_SINGLE as u32 as u32;
         } else if mlvo as u32 == MLVO_VARIANT as u32 {
-            (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx =
-                LAYOUT_INDEX_SINGLE as u32 as u32;
+            (*m).mapping.layout.single.variant_idx = LAYOUT_INDEX_SINGLE as u32 as u32;
         }
         if (mlvo as u32 == MLVO_LAYOUT as u32 && is_mlvo_mask_defined(m, MLVO_VARIANT) as i32 != 0
             || mlvo as u32 == MLVO_VARIANT as u32
                 && is_mlvo_mask_defined(m, MLVO_LAYOUT) as i32 != 0)
-            && (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx
-                != (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx
+            && (*m).mapping.layout.single.layout_idx != (*m).mapping.layout.single.variant_idx
         {
             let mut loc_3: scanner_loc = (*s).token_location();
             xkb_logf!(
@@ -5247,7 +5237,7 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
                 loc_3.line,
                 loc_3.column,
             );
-            (*m).mapping.c2rust_unnamed_0.active = 0 as u32;
+            (*m).mapping.active_or_candidates_mask = 0 as u32;
             return;
         }
         (*m).mapping.mlvo_at_pos[(*m).mapping.num_mlvo as usize] = mlvo;
@@ -5259,51 +5249,46 @@ unsafe fn matcher_mapping_set_mlvo(mut m: *mut matcher, mut s: *mut scanner, mut
 }
 unsafe fn matcher_mapping_set_layout_bounds(mut m: *mut matcher) {
     unsafe {
-        let mut idx: u32 = if (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx
-            < (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx
-        {
-            (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx
-        } else {
-            (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx
-        };
+        let mut idx: u32 =
+            if (*m).mapping.layout.single.layout_idx < (*m).mapping.layout.single.variant_idx {
+                (*m).mapping.layout.single.layout_idx
+            } else {
+                (*m).mapping.layout.single.variant_idx
+            };
         let mut c2rust_current_block_17: u64;
         match idx {
             XKB_LAYOUT_INVALID => {
                 (*m).mapping.has_layout_idx_range = false;
-                (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min =
-                    XKB_LAYOUT_INVALID as u32;
-                (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max =
-                    XKB_LAYOUT_INVALID as u32;
-                (*m).mapping.c2rust_unnamed_0.layouts_candidates_mask = 0x1 as u32;
+                (*m).mapping.layout.range.layout_idx_min = XKB_LAYOUT_INVALID as u32;
+                (*m).mapping.layout.range.layout_idx_max = XKB_LAYOUT_INVALID as u32;
+                (*m).mapping.active_or_candidates_mask = 0x1 as u32;
                 c2rust_current_block_17 = 13056961889198038528;
             }
             4294967293 => {
                 (*m).mapping.has_layout_idx_range = true;
-                (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min = 1 as u32;
-                (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max =
-                    (if (32) < (*m).rmlvo.layouts.len() {
-                        32
-                    } else {
-                        (*m).rmlvo.layouts.len()
-                    }) as u32;
-                (*m).mapping.c2rust_unnamed_0.layouts_candidates_mask =
-                    (((1 as u64) << (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max)
-                        .wrapping_sub(1 as u64) as u32 as u64
-                        & !(1 as u64)) as u32;
+                (*m).mapping.layout.range.layout_idx_min = 1 as u32;
+                (*m).mapping.layout.range.layout_idx_max = (if (32) < (*m).rmlvo.layouts.len() {
+                    32
+                } else {
+                    (*m).rmlvo.layouts.len()
+                }) as u32;
+                (*m).mapping.active_or_candidates_mask = (((1 as u64)
+                    << (*m).mapping.layout.range.layout_idx_max)
+                    .wrapping_sub(1 as u64)
+                    as u32 as u64
+                    & !(1 as u64)) as u32;
                 c2rust_current_block_17 = 13056961889198038528;
             }
             4294967294 => {
                 (*m).mapping.has_layout_idx_range = true;
-                (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min = 0 as u32;
-                (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max =
-                    (if (32) < (*m).rmlvo.layouts.len() {
-                        32
-                    } else {
-                        (*m).rmlvo.layouts.len()
-                    }) as u32;
-                (*m).mapping.c2rust_unnamed_0.layouts_candidates_mask =
-                    (((1 as u64) << (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max)
-                        as u32 as u64)
+                (*m).mapping.layout.range.layout_idx_min = 0 as u32;
+                (*m).mapping.layout.range.layout_idx_max = (if (32) < (*m).rmlvo.layouts.len() {
+                    32
+                } else {
+                    (*m).rmlvo.layouts.len()
+                }) as u32;
+                (*m).mapping.active_or_candidates_mask =
+                    (((1 as u64) << (*m).mapping.layout.range.layout_idx_max) as u32 as u64)
                         .wrapping_sub(1 as u64) as u32;
                 c2rust_current_block_17 = 13056961889198038528;
             }
@@ -5318,10 +5303,9 @@ unsafe fn matcher_mapping_set_layout_bounds(mut m: *mut matcher) {
         match c2rust_current_block_17 {
             9641388756612255828 => {
                 (*m).mapping.has_layout_idx_range = false;
-                (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min = idx;
-                (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max =
-                    idx.wrapping_add(1 as u32);
-                (*m).mapping.c2rust_unnamed_0.layouts_candidates_mask = ((1 as u32) << idx) as u32;
+                (*m).mapping.layout.range.layout_idx_min = idx;
+                (*m).mapping.layout.range.layout_idx_max = idx.wrapping_add(1 as u32);
+                (*m).mapping.active_or_candidates_mask = ((1 as u32) << idx) as u32;
             }
             _ => {}
         };
@@ -5355,7 +5339,7 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
                 loc.column,
                 crate::xkb::utils::CStrNDisplay(ident.len as usize, ident.start),
             );
-            (*m).mapping.c2rust_unnamed_0.active = 0 as u32;
+            (*m).mapping.active_or_candidates_mask = 0 as u32;
             return;
         }
         if (*m).mapping.defined_kccgst_mask as u32 & (1 as u32) << kccgst as u32 != 0 {
@@ -5371,7 +5355,7 @@ unsafe fn matcher_mapping_set_kccgst(mut m: *mut matcher, mut s: *mut scanner, m
                 loc_0.column,
                 crate::xkb::utils::CStrNDisplay(kccgst_sval.len as usize, kccgst_sval.start),
             );
-            (*m).mapping.c2rust_unnamed_0.active = 0 as u32;
+            (*m).mapping.active_or_candidates_mask = 0 as u32;
             return;
         }
         (*m).mapping.kccgst_at_pos[(*m).mapping.num_kccgst as usize] = kccgst;
@@ -5410,13 +5394,13 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
             );
         } else {
             if is_mlvo_mask_defined(m, MLVO_LAYOUT) {
-                match (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx {
+                match (*m).mapping.layout.single.layout_idx {
                     4294967291 => {
                         c2rust_current_block = 4840043166261277618;
                         match c2rust_current_block {
                             14825033830842003582 => {
                                 if (*m).rmlvo.layouts.len() < 2
-                                    || (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx
+                                    || (*m).mapping.layout.single.layout_idx
                                         >= (*m).rmlvo.layouts.len() as u32
                                 {
                                     c2rust_current_block = 436805222042109220;
@@ -5441,7 +5425,7 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
                         match c2rust_current_block {
                             14825033830842003582 => {
                                 if (*m).rmlvo.layouts.len() < 2
-                                    || (*m).mapping.c2rust_unnamed.c2rust_unnamed.layout_idx
+                                    || (*m).mapping.layout.single.layout_idx
                                         >= (*m).rmlvo.layouts.len() as u32
                                 {
                                     c2rust_current_block = 436805222042109220;
@@ -5466,17 +5450,13 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
                 436805222042109220 => {}
                 _ => {
                     if is_mlvo_mask_defined(m, MLVO_VARIANT) {
-                        match (*m).mapping.c2rust_unnamed.c2rust_unnamed.variant_idx {
+                        match (*m).mapping.layout.single.variant_idx {
                             4294967291 => {
                                 c2rust_current_block = 13345507216710712890;
                                 match c2rust_current_block {
                                     10338831042980687939 => {
                                         if (*m).rmlvo.variants.len() < 2
-                                            || (*m)
-                                                .mapping
-                                                .c2rust_unnamed
-                                                .c2rust_unnamed
-                                                .variant_idx
+                                            || (*m).mapping.layout.single.variant_idx
                                                 >= (*m).rmlvo.variants.len() as u32
                                         {
                                             c2rust_current_block = 436805222042109220;
@@ -5501,11 +5481,7 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
                                 match c2rust_current_block {
                                     10338831042980687939 => {
                                         if (*m).rmlvo.variants.len() < 2
-                                            || (*m)
-                                                .mapping
-                                                .c2rust_unnamed
-                                                .c2rust_unnamed
-                                                .variant_idx
+                                            || (*m).mapping.layout.single.variant_idx
                                                 >= (*m).rmlvo.variants.len() as u32
                                         {
                                             c2rust_current_block = 436805222042109220;
@@ -5533,14 +5509,14 @@ unsafe fn matcher_mapping_verify(mut m: *mut matcher, mut s: *mut scanner) -> bo
                 }
             }
         }
-        (*m).mapping.c2rust_unnamed_0.active = 0 as u32;
+        (*m).mapping.active_or_candidates_mask = 0 as u32;
         return false;
     }
 }
 unsafe fn matcher_rule_start_new(mut m: *mut matcher) {
     unsafe {
         std::ptr::write_bytes::<rule>(&raw mut (*m).rule as *mut rule, 0u8, 1);
-        (*m).rule.skip = (*m).mapping.c2rust_unnamed_0.active == 0;
+        (*m).rule.skip = (*m).mapping.active_or_candidates_mask == 0;
     }
 }
 unsafe fn matcher_rule_set_mlvo_common(
@@ -6436,8 +6412,8 @@ unsafe fn matcher_append_pending_kccgst(mut m: *mut matcher) -> bool {
         let mut i: kccgst_index_t = 0 as kccgst_index_t;
         while (i as i32) < (*m).mapping.num_kccgst as i32 {
             let kccgst: rules_kccgst = (*m).mapping.kccgst_at_pos[i as usize];
-            let mut layout: u32 = (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min;
-            while layout < (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max {
+            let mut layout: u32 = (*m).mapping.layout.range.layout_idx_min;
+            while layout < (*m).mapping.layout.range.layout_idx_max {
                 let buf: *const kccgst_buffer = &raw mut (*m).pending_kccgst;
                 let mut offset: usize = 0 as usize;
                 let mut k: u32 = 0;
@@ -6486,7 +6462,7 @@ unsafe fn matcher_rule_verify(mut m: *mut matcher, mut s: *mut scanner) {
 }
 unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner) {
     unsafe {
-        let mut candidate_layouts: u32 = (*m).mapping.c2rust_unnamed_0.layouts_candidates_mask;
+        let mut candidate_layouts: u32 = (*m).mapping.active_or_candidates_mask;
         let mut idx: u32 = 0;
         let mut i: mlvo_index_t = 0 as mlvo_index_t;
         while (i as i32) < (*m).mapping.num_mlvo as i32 {
@@ -6499,10 +6475,8 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                 to = &raw mut (*m).rmlvo.model;
                 matched = match_value_and_mark(m, value, to, match_type, WILDCARD_MATCH_ALL);
             } else if (*m).mapping.has_layout_idx_range {
-                idx = (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min;
-                while idx < (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max
-                    && candidate_layouts != 0
-                {
+                idx = (*m).mapping.layout.range.layout_idx_min;
+                while idx < (*m).mapping.layout.range.layout_idx_max && candidate_layouts != 0 {
                     let mask: u32 = (1 as u32) << idx;
                     if candidate_layouts & mask != 0 {
                         match mlvo as u32 {
@@ -6578,16 +6552,22 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
             } else {
                 match mlvo as u32 {
                     1 => {
-                        to = (*m).rmlvo.layouts.as_mut_ptr().offset(
-                            (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min as isize,
-                        ) as *mut matched_sval;
+                        to = (*m)
+                            .rmlvo
+                            .layouts
+                            .as_mut_ptr()
+                            .offset((*m).mapping.layout.range.layout_idx_min as isize)
+                            as *mut matched_sval;
                         matched =
                             match_value_and_mark(m, value, to, match_type, WILDCARD_MATCH_NONEMPTY);
                     }
                     2 => {
-                        to = (*m).rmlvo.variants.as_mut_ptr().offset(
-                            (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min as isize,
-                        ) as *mut matched_sval;
+                        to = (*m)
+                            .rmlvo
+                            .variants
+                            .as_mut_ptr()
+                            .offset((*m).mapping.layout.range.layout_idx_min as isize)
+                            as *mut matched_sval;
                         matched =
                             match_value_and_mark(m, value, to, match_type, WILDCARD_MATCH_NONEMPTY);
                     }
@@ -6604,12 +6584,7 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                                     as *mut matched_sval
                             {
                                 if !((*to).layout as i32 != OPTIONS_MATCH_ALL_GROUPS
-                                    && (*to).layout
-                                        != (*m)
-                                            .mapping
-                                            .c2rust_unnamed
-                                            .c2rust_unnamed_0
-                                            .layout_idx_min)
+                                    && (*to).layout != (*m).mapping.layout.range.layout_idx_min)
                                 {
                                     matched = match_value_and_mark(
                                         m,
@@ -6634,8 +6609,8 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
             i = i.wrapping_add(1);
         }
         if (*m).mapping.has_layout_idx_range {
-            idx = (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min;
-            while idx < (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_max {
+            idx = (*m).mapping.layout.range.layout_idx_min;
+            while idx < (*m).mapping.layout.range.layout_idx_max {
                 if candidate_layouts & (1 as u32) << idx != 0 {
                     let mut i_0: kccgst_index_t = 0 as kccgst_index_t;
                     while (i_0 as i32) < (*m).mapping.num_kccgst as i32 {
@@ -6675,13 +6650,13 @@ unsafe fn matcher_rule_apply_if_matches(mut m: *mut matcher, mut s: *mut scanner
                     true,
                     &mut (*m).kccgst[kccgst_0 as usize],
                     value_1,
-                    (*m).mapping.c2rust_unnamed.c2rust_unnamed_0.layout_idx_min,
+                    (*m).mapping.layout.range.layout_idx_min,
                 );
                 i_1 = i_1.wrapping_add(1);
             }
         }
         if !is_mlvo_mask_defined(m, MLVO_OPTION) {
-            (*m).mapping.c2rust_unnamed_0.layouts_candidates_mask &= !candidate_layouts;
+            (*m).mapping.active_or_candidates_mask &= !candidate_layouts;
         }
     }
 }
@@ -6772,7 +6747,7 @@ unsafe fn matcher_match(
                                     break '_initial;
                                 }
                             }
-                            if (*m).mapping.c2rust_unnamed_0.active != 0 {
+                            if (*m).mapping.active_or_candidates_mask != 0 {
                                 matcher_mapping_set_mlvo(m, s, (*m).val.string);
                             }
                         }
@@ -6788,11 +6763,11 @@ unsafe fn matcher_match(
                                     break '_initial;
                                 }
                             }
-                            if (*m).mapping.c2rust_unnamed_0.active != 0 {
+                            if (*m).mapping.active_or_candidates_mask != 0 {
                                 matcher_mapping_set_kccgst(m, s, (*m).val.string);
                             }
                         }
-                        if (*m).mapping.c2rust_unnamed_0.active != 0
+                        if (*m).mapping.active_or_candidates_mask != 0
                             && matcher_mapping_verify(m, s) as i32 != 0
                         {
                             matcher_mapping_set_layout_bounds(m);

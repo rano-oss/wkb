@@ -6,9 +6,8 @@ pub struct LookupEntry {
     pub name: &'static [u8],
     pub value: u32,
 }
-pub type C2Rust_Unnamed_1 = u32;
-pub const CONTROL_NAMES_MIN_V2_INDEX: C2Rust_Unnamed_1 = 0;
-pub const CONTROL_NAMES_MIN_V1_INDEX: C2Rust_Unnamed_1 = 7;
+pub const CONTROL_NAMES_MIN_V2_INDEX: u32 = 0;
+pub const CONTROL_NAMES_MIN_V1_INDEX: u32 = 7;
 pub const GROUP_LAST_INDEX_NAME: &'static [u8] = b"last";
 #[inline]
 pub unsafe fn format_control_names_offset(mut format: u32) -> u8 {
