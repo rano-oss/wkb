@@ -193,9 +193,8 @@ pub use crate::xkb::shared_types::{
     xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_mod,
     xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t, xkb_overlay_mask_t,
     xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
-    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_12,
-    C2Rust_Unnamed_2, C2Rust_Unnamed_23, C2Rust_Unnamed_6, C2Rust_Unnamed_7, C2Rust_Unnamed_8,
-    C2Rust_Unnamed_9, KeycodeMatch, XkbKey, _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES,
+    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_9,
+    KeycodeMatch, XkbKey, _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES,
     ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL,
     ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK,
     ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
@@ -424,9 +423,8 @@ static mut synthetic_key_break_group_latch: xkb_key = xkb_key {
     },
 };
 static mut synthetic_key_level_break_group_latch: xkb_level = xkb_level {
-    c2rust_unnamed: C2Rust_Unnamed_12 {
-        upper: XKB_KEY_NoSymbol as u32,
-    },
+    upper: XKB_KEY_NoSymbol as u32,
+    has_upper: false,
     syms: Vec::new(),
     actions: Vec::new(),
 };
@@ -734,7 +732,7 @@ unsafe fn xkb_action_breaks_latch(
             0 | 1 | 9 | 10 | 14 | 15 | 13 | 12 | 16 => return true,
             20 => {
                 return (*action).internal.flags as u32 & flag as u32 != 0
-                    && (*action).internal.c2rust_unnamed.clear_latched_mods & mask == mask;
+                    && (*action).internal.clear_latched_mods & mask == mask;
             }
             _ => return false,
         };
@@ -1937,17 +1935,14 @@ unsafe fn update_latch_modifiers(
         let clear: u32 = mask & !latches;
         (*state).components.latched_mods &= !clear;
         let mut synthetic_key_level_break_mod_latch: xkb_level = xkb_level {
-            c2rust_unnamed: C2Rust_Unnamed_12 {
-                upper: XKB_KEY_NoSymbol as u32,
-            },
+            upper: XKB_KEY_NoSymbol as u32,
+            has_upper: false,
             syms: Vec::new(),
             actions: vec![xkb_action {
                 internal: xkb_internal_action {
                     type_0: ACTION_TYPE_INTERNAL,
                     flags: INTERNAL_BREAKS_MOD_LATCH,
-                    c2rust_unnamed: C2Rust_Unnamed_2 {
-                        clear_latched_mods: clear,
-                    },
+                    clear_latched_mods: clear,
                 },
             }],
         };
@@ -2374,13 +2369,13 @@ pub unsafe fn xkb_state_key_get_syms(
                         if num_syms > 0 {
                             if should_do_caps_transformation(state, kc) {
                                 if num_syms > 1 {
-                                    *syms_out = if (*leveli).c2rust_unnamed.has_upper as i32 != 0 {
+                                    *syms_out = if (*leveli).has_upper as i32 != 0 {
                                         (*leveli).syms.as_ptr().offset(num_syms as isize)
                                     } else {
                                         (*leveli).syms.as_ptr()
                                     };
                                 } else {
-                                    *syms_out = &raw const (*leveli).c2rust_unnamed.upper;
+                                    *syms_out = &raw const (*leveli).upper;
                                 }
                             } else {
                                 *syms_out = (*leveli).syms.as_ptr();
@@ -2911,17 +2906,14 @@ unsafe fn c2rust_run_static_initializers() {
             explicit_type: false,
             type_idx: 0,
             levels: vec![xkb_level {
-                c2rust_unnamed: C2Rust_Unnamed_12 {
-                    upper: XKB_KEY_NoSymbol as u32,
-                },
+                upper: XKB_KEY_NoSymbol as u32,
+                has_upper: false,
                 syms: Vec::new(),
                 actions: vec![xkb_action {
                     internal: xkb_internal_action {
                         type_0: ACTION_TYPE_INTERNAL,
                         flags: INTERNAL_BREAKS_GROUP_LATCH,
-                        c2rust_unnamed: C2Rust_Unnamed_2 {
-                            clear_latched_mods: 0,
-                        },
+                        clear_latched_mods: 0,
                     },
                 }],
             }],

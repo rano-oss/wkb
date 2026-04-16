@@ -5,7 +5,7 @@ use crate::xkb::keysym::xkb_keysym_is_keypad;
 use crate::xkb::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 pub use crate::xkb::shared_ast_types::{ModMapDef, SymbolsDef};
 pub use crate::xkb::shared_types::{
-    C2Rust_Unnamed_15, XkbKeyByName, XkbKeyNumLevels, XKB_MOD_NONE, XKB_OVERLAY_INVALID,
+    XkbKeyByName, XkbKeyNumLevels, XKB_MOD_NONE, XKB_OVERLAY_INVALID,
 };
 use crate::xkb::text::ModIndexText;
 use crate::xkb::utils::cstr_free;
@@ -961,10 +961,8 @@ unsafe fn AddKeySymbols(
             let name = (*keyi).name;
             if (name as usize) < (&(*keymap).key_names).len() {
                 let match_0: KeycodeMatch = (&(*keymap).key_names)[name as usize];
-                if match_0.c2rust_unnamed.found as i32 != 0
-                    && match_0.c2rust_unnamed.is_alias as i32 != 0
-                {
-                    (*keyi).name = match_0.alias.real;
+                if match_0.found as i32 != 0 && match_0.is_alias as i32 != 0 {
+                    (*keyi).name = match_0.index;
                 }
             }
         }
@@ -2800,23 +2798,23 @@ unsafe fn CopySymbolsDefToKeymap(
                         let leveli = &mut (&mut (*groupi).levels)[li];
                         match leveli.syms.len() {
                             0 => {
-                                leveli.c2rust_unnamed.upper = XKB_KEY_NoSymbol as u32;
+                                leveli.upper = XKB_KEY_NoSymbol as u32;
                             }
                             1 => {
-                                leveli.c2rust_unnamed.upper = xkb_keysym_to_upper(leveli.syms[0]);
+                                leveli.upper = xkb_keysym_to_upper(leveli.syms[0]);
                             }
                             _ => {
                                 // Multiple keysyms: check if there is any cased keysym
-                                leveli.c2rust_unnamed.has_upper = false;
+                                leveli.has_upper = false;
                                 let num_syms = leveli.syms.len();
                                 for k in 0..num_syms {
                                     let upper: u32 = xkb_keysym_to_upper(leveli.syms[k]);
                                     if upper != leveli.syms[k] {
-                                        leveli.c2rust_unnamed.has_upper = true;
+                                        leveli.has_upper = true;
                                         break;
                                     }
                                 }
-                                if leveli.c2rust_unnamed.has_upper {
+                                if leveli.has_upper {
                                     // Some cased keysyms: store the transformation result
                                     let num_syms = leveli.syms.len();
                                     leveli.syms.reserve(num_syms);

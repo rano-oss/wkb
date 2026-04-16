@@ -62,8 +62,7 @@ pub use crate::xkb::shared_types::{
     xkb_keymap, xkb_keymap_format_ops, xkb_keysym_count_t, xkb_led, xkb_level, xkb_mod,
     xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_mask_t, xkb_pointer_action,
     xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
-    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_12,
-    C2Rust_Unnamed_2, C2Rust_Unnamed_6, C2Rust_Unnamed_7, C2Rust_Unnamed_8, C2Rust_Unnamed_9,
+    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, C2Rust_Unnamed_9,
     KeycodeMatch, XkbKey, XkbKeyNumLevels, _ACTION_TYPE_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH,
     ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS,
     ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK,
@@ -852,8 +851,7 @@ pub unsafe fn action_equal(mut a: *const xkb_action, mut b: *const xkb_action) -
             17 | 18 => return true,
             20 => {
                 return (*a).internal.flags as u32 == (*b).internal.flags as u32
-                    && (*a).internal.c2rust_unnamed.clear_latched_mods
-                        == (*b).internal.c2rust_unnamed.clear_latched_mods;
+                    && (*a).internal.clear_latched_mods == (*b).internal.clear_latched_mods;
             }
             _ => {
                 return std::slice::from_raw_parts(

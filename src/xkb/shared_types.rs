@@ -171,12 +171,6 @@ pub union xkb_action {
 pub struct xkb_internal_action {
     pub type_0: xkb_action_type,
     pub flags: xkb_internal_action_flags,
-    pub c2rust_unnamed: C2Rust_Unnamed_2,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub union C2Rust_Unnamed_2 {
     pub clear_latched_mods: u32,
 }
 
@@ -365,37 +359,11 @@ pub struct xkb_key_alias {
 
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub union KeycodeMatch {
-    pub c2rust_unnamed: C2Rust_Unnamed_8,
-    pub key: C2Rust_Unnamed_7,
-    pub alias: C2Rust_Unnamed_6,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_6 {
-    pub found: bool,
-    pub c2rust_unnamed: bool,
-    pub is_alias: bool,
-    pub real: u32,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_7 {
+pub struct KeycodeMatch {
     pub found: bool,
     pub low: bool,
     pub is_alias: bool,
     pub index: u32,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct C2Rust_Unnamed_8 {
-    pub found: bool,
-    pub c2rust_unnamed: bool,
-    pub is_alias: bool,
-    pub c2rust_unnamed_0: u32,
 }
 
 #[derive(Clone)]
@@ -462,7 +430,8 @@ pub struct xkb_group {
 
 #[derive(Clone)]
 pub struct xkb_level {
-    pub c2rust_unnamed: C2Rust_Unnamed_12,
+    pub upper: u32,
+    pub has_upper: bool,
     pub syms: Vec<u32>,
     pub actions: Vec<xkb_action>,
 }
@@ -470,7 +439,8 @@ pub struct xkb_level {
 impl Default for xkb_level {
     fn default() -> Self {
         Self {
-            c2rust_unnamed: C2Rust_Unnamed_12 { upper: 0 },
+            upper: 0,
+            has_upper: false,
             syms: Vec::new(),
             actions: Vec::new(),
         }
@@ -488,13 +458,6 @@ impl Default for xkb_group {
             levels: Vec::new(),
         }
     }
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub union C2Rust_Unnamed_12 {
-    pub upper: u32,
-    pub has_upper: bool,
 }
 
 pub type xkb_keysym_count_t = u16;
@@ -683,24 +646,20 @@ pub const XKB_ATOM_NONE: u32 = 0;
 
 // ── keymap_h types & constants (moved from duplicated pub mod keymap_h blocks) ─
 
-pub type C2Rust_Unnamed_13 = u32;
-pub type C2Rust_Unnamed_14 = u32;
-pub type C2Rust_Unnamed_15 = u32;
-pub type C2Rust_Unnamed_23 = u32;
 pub type real_mod_index = u32;
 
-pub const _LAST_XKB_EVENT_TYPE: C2Rust_Unnamed_13 = 4;
+pub const _LAST_XKB_EVENT_TYPE: u32 = 4;
 
-pub const FALLBACK_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_14 = 0;
-pub const DEFAULT_INTERPRET_KEY_REPEAT: C2Rust_Unnamed_14 = 1;
-pub const DEFAULT_KEY_REPEAT: C2Rust_Unnamed_14 = 0;
+pub const FALLBACK_INTERPRET_KEY_REPEAT: u32 = 0;
+pub const DEFAULT_INTERPRET_KEY_REPEAT: u32 = 1;
+pub const DEFAULT_KEY_REPEAT: u32 = 0;
 
-pub const FALLBACK_INTERPRET_VMODMAP: C2Rust_Unnamed_15 = 0;
-pub const DEFAULT_INTERPRET_VMODMAP: C2Rust_Unnamed_15 = 0;
-pub const DEFAULT_INTERPRET_VMOD: C2Rust_Unnamed_15 = 4294967295;
-pub const DEFAULT_KEY_VMODMAP: C2Rust_Unnamed_15 = 0;
+pub const FALLBACK_INTERPRET_VMODMAP: u32 = 0;
+pub const DEFAULT_INTERPRET_VMODMAP: u32 = 0;
+pub const DEFAULT_INTERPRET_VMOD: u32 = 4294967295;
+pub const DEFAULT_KEY_VMODMAP: u32 = 0;
 
-pub const XKB_MOD_ALL: C2Rust_Unnamed_23 = 4294967295;
+pub const XKB_MOD_ALL: u32 = 4294967295;
 pub const XKB_MOD_NONE: u32 = 0xffffffff;
 pub const XKB_MOD_INDEX_SHIFT: real_mod_index = 0;
 pub const XKB_MOD_INDEX_CAPS: real_mod_index = 1;
@@ -785,16 +744,13 @@ pub unsafe fn XkbKeyByName(
     unsafe {
         if (name as usize) < (&(*keymap).key_names).len() {
             let match_0: KeycodeMatch = (&(*keymap).key_names)[name as usize];
-            if match_0.c2rust_unnamed.found {
-                if !match_0.c2rust_unnamed.is_alias {
+            if match_0.found {
+                if !match_0.is_alias {
                     return ((&(*keymap).keys).as_ptr() as *mut xkb_key)
-                        .add(match_0.key.index as usize);
+                        .add(match_0.index as usize);
                 } else if use_aliases {
-                    return ((&(*keymap).keys).as_ptr() as *mut xkb_key).add(
-                        (&(*keymap).key_names)[match_0.alias.real as usize]
-                            .key
-                            .index as usize,
-                    );
+                    return ((&(*keymap).keys).as_ptr() as *mut xkb_key)
+                        .add((&(*keymap).key_names)[match_0.index as usize].index as usize);
                 }
             }
         }

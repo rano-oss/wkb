@@ -4,11 +4,10 @@ use crate::xkb::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
 pub use crate::xkb::shared_types::{
     areOverlappingOverlaysSupported, format_max_groups, format_max_overlays,
     isGroupLockOnReleaseSupported, isModsLatchOnPressSupported, isModsUnLockOnPressSupported,
-    real_mod_index, C2Rust_Unnamed_15, XkbKeyNumLevels, _XKB_MOD_INDEX_NUM_ENTRIES,
-    MAX_ACTIONS_PER_LEVEL, XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MAX_GROUPS_X11, XKB_MOD_INDEX_CAPS,
-    XKB_MOD_INDEX_CTRL, XKB_MOD_INDEX_MOD1, XKB_MOD_INDEX_MOD2, XKB_MOD_INDEX_MOD3,
-    XKB_MOD_INDEX_MOD4, XKB_MOD_INDEX_MOD5, XKB_MOD_INDEX_SHIFT, XKB_OVERLAY_MAX,
-    XKB_OVERLAY_MAX_X11,
+    real_mod_index, XkbKeyNumLevels, _XKB_MOD_INDEX_NUM_ENTRIES, MAX_ACTIONS_PER_LEVEL,
+    XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MAX_GROUPS_X11, XKB_MOD_INDEX_CAPS, XKB_MOD_INDEX_CTRL,
+    XKB_MOD_INDEX_MOD1, XKB_MOD_INDEX_MOD2, XKB_MOD_INDEX_MOD3, XKB_MOD_INDEX_MOD4,
+    XKB_MOD_INDEX_MOD5, XKB_MOD_INDEX_SHIFT, XKB_OVERLAY_MAX, XKB_OVERLAY_MAX_X11,
 };
 pub use crate::xkb::state::mod_mask_get_effective;
 use crate::xkb::text::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
@@ -331,9 +330,9 @@ unsafe fn add_key_aliases(
         let mut alias: u32 = min;
         while alias <= max {
             let entry: KeycodeMatch = (&(*keymap).key_names)[alias as usize];
-            if entry.c2rust_unnamed.is_alias as i32 != 0 && entry.c2rust_unnamed.found as i32 != 0 {
+            if entry.is_alias as i32 != 0 && entry.found as i32 != 0 {
                 aliases.push(xkb_key_alias {
-                    real: entry.alias.real,
+                    real: entry.index,
                     alias: alias as u32,
                 });
             }
@@ -454,7 +453,7 @@ unsafe fn UpdateDerivedKeymapFields(mut info: *mut xkb_keymap_info) -> bool {
         let mut alias: u32 = 0 as u32;
         while (alias as usize) < (&(*keymap).key_names).len() {
             let entry: KeycodeMatch = (&(*keymap).key_names)[alias as usize];
-            if entry.c2rust_unnamed.is_alias as i32 != 0 && entry.c2rust_unnamed.found as i32 != 0 {
+            if entry.is_alias as i32 != 0 && entry.found as i32 != 0 {
                 if num_key_aliases == 0 {
                     min_alias = alias as u32;
                 }

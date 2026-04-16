@@ -1,9 +1,7 @@
 use super::prelude::*;
 use crate::xkb::context::xkb_context_get_buffer;
 pub use crate::xkb::shared_ast_types::{InterpDef, LedMapDef, ReportBadField, ReportNotArray};
-pub use crate::xkb::shared_types::{
-    C2Rust_Unnamed_13, MAX_ACTIONS_PER_LEVEL, MOD_REAL_MASK_ALL, XKB_MAX_LEDS,
-};
+pub use crate::xkb::shared_types::{MAX_ACTIONS_PER_LEVEL, MOD_REAL_MASK_ALL, XKB_MAX_LEDS};
 use crate::xkb::text::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
     useModMapValueNames, LookupString, ModMaskText, SIMatchText,
