@@ -2514,21 +2514,15 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
                 (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
             );
         }
-        sym0 = if (*(*groupi).levels.as_ptr().offset(0 as i32 as isize))
-            .syms
-            .is_empty()
-        {
+        sym0 = if (&(*groupi).levels)[0].syms.is_empty() {
             XKB_KEY_NoSymbol as u32
         } else {
-            (&(*(*groupi).levels.as_ptr().offset(0 as i32 as isize)).syms)[0]
+            (&(*groupi).levels)[0].syms[0]
         };
-        sym1 = if (*(*groupi).levels.as_ptr().offset(1 as i32 as isize))
-            .syms
-            .is_empty()
-        {
+        sym1 = if (&(*groupi).levels)[1].syms.is_empty() {
             XKB_KEY_NoSymbol as u32
         } else {
-            (&(*(*groupi).levels.as_ptr().offset(1 as i32 as isize)).syms)[0]
+            (&(*groupi).levels)[1].syms[0]
         };
         if width == 2 as u32 {
             if xkb_keysym_is_lower(sym0) as i32 != 0
@@ -2559,22 +2553,16 @@ unsafe fn FindAutomaticType(mut ctx: *mut xkb_context, mut groupi: *mut GroupInf
             {
                 let mut sym2: u32 = 0;
                 let mut sym3: u32 = 0;
-                sym2 = if (*(*groupi).levels.as_ptr().offset(2 as i32 as isize))
-                    .syms
-                    .is_empty()
-                {
+                sym2 = if (&(*groupi).levels)[2].syms.is_empty() {
                     XKB_KEY_NoSymbol as u32
                 } else {
-                    (&(*(*groupi).levels.as_ptr().offset(2 as i32 as isize)).syms)[0]
+                    (&(*groupi).levels)[2].syms[0]
                 };
                 sym3 = if width == 4 as u32 {
-                    if (*(*groupi).levels.as_ptr().offset(3 as i32 as isize))
-                        .syms
-                        .is_empty()
-                    {
+                    if (&(*groupi).levels)[3].syms.is_empty() {
                         XKB_KEY_NoSymbol as u32
                     } else {
-                        (&(*(*groupi).levels.as_ptr().offset(3 as i32 as isize)).syms)[0]
+                        (&(*groupi).levels)[3].syms[0]
                     }
                 } else {
                     XKB_KEY_NoSymbol as u32
@@ -2808,41 +2796,36 @@ unsafe fn CopySymbolsDefToKeymap(
                 groupi = (*keyi).groups.as_mut_ptr();
                 while i < (*keyi).groups.len() as u32 {
                     // Compute the capitalization transformation of the keysyms
-                    let mut leveli: *mut xkb_level = std::ptr::null_mut();
-                    if !(*groupi).levels.is_empty() {
-                        leveli = (*groupi).levels.as_mut_ptr();
-                        while leveli < (*groupi).levels.as_mut_ptr().add((*groupi).levels.len()) {
-                            match (*leveli).syms.len() {
-                                0 => {
-                                    (*leveli).c2rust_unnamed.upper = XKB_KEY_NoSymbol as u32;
-                                }
-                                1 => {
-                                    (*leveli).c2rust_unnamed.upper =
-                                        xkb_keysym_to_upper((&(*leveli).syms)[0]);
-                                }
-                                _ => {
-                                    // Multiple keysyms: check if there is any cased keysym
-                                    (*leveli).c2rust_unnamed.has_upper = false;
-                                    let num_syms = (&(*leveli).syms).len();
-                                    for k in 0..num_syms {
-                                        let upper: u32 = xkb_keysym_to_upper((&(*leveli).syms)[k]);
-                                        if upper != (&(*leveli).syms)[k] {
-                                            (*leveli).c2rust_unnamed.has_upper = true;
-                                            break;
-                                        }
+                    for li in 0..(&(*groupi).levels).len() {
+                        let leveli = &mut (&mut (*groupi).levels)[li];
+                        match leveli.syms.len() {
+                            0 => {
+                                leveli.c2rust_unnamed.upper = XKB_KEY_NoSymbol as u32;
+                            }
+                            1 => {
+                                leveli.c2rust_unnamed.upper = xkb_keysym_to_upper(leveli.syms[0]);
+                            }
+                            _ => {
+                                // Multiple keysyms: check if there is any cased keysym
+                                leveli.c2rust_unnamed.has_upper = false;
+                                let num_syms = leveli.syms.len();
+                                for k in 0..num_syms {
+                                    let upper: u32 = xkb_keysym_to_upper(leveli.syms[k]);
+                                    if upper != leveli.syms[k] {
+                                        leveli.c2rust_unnamed.has_upper = true;
+                                        break;
                                     }
-                                    if (*leveli).c2rust_unnamed.has_upper {
-                                        // Some cased keysyms: store the transformation result
-                                        let num_syms = (&(*leveli).syms).len();
-                                        (&mut (*leveli).syms).reserve(num_syms);
-                                        for k in 0..num_syms {
-                                            let upper = xkb_keysym_to_upper((&(*leveli).syms)[k]);
-                                            (&mut (*leveli).syms).push(upper);
-                                        }
+                                }
+                                if leveli.c2rust_unnamed.has_upper {
+                                    // Some cased keysyms: store the transformation result
+                                    let num_syms = leveli.syms.len();
+                                    leveli.syms.reserve(num_syms);
+                                    for k in 0..num_syms {
+                                        let upper = xkb_keysym_to_upper(leveli.syms[k]);
+                                        leveli.syms.push(upper);
                                     }
                                 }
                             }
-                            leveli = leveli.offset(1);
                         }
                     }
 
