@@ -58,7 +58,7 @@ pub struct KeyInfo {
     pub out_of_range_pending_group: bool,
     pub overlays_clear: bool,
     pub overlays: xkb_overlay_mask_t,
-    pub overlay_keys: Vec<*const xkb_key>,
+    pub overlay_keys: Vec<u32>,
 }
 pub type key_repeat = u32;
 pub const _KEY_REPEAT_NUM_ENTRIES: key_repeat = 3;
@@ -513,7 +513,7 @@ unsafe fn UseNewKeyField(
 unsafe fn overlays_get(
     mut info: *const KeyInfo,
     mut bit: xkb_overlay_index_t,
-    mut key_out: *mut *const xkb_key,
+    mut key_out: *mut u32,
 ) -> bool {
     unsafe {
         if bit as i32
@@ -539,7 +539,7 @@ unsafe fn overlays_get(
 unsafe fn overlays_insert(
     mut keyi: *mut KeyInfo,
     mut bit: xkb_overlay_index_t,
-    mut key: *const xkb_key,
+    mut key: u32,
 ) -> bool {
     unsafe {
         if bit as i32
@@ -556,7 +556,7 @@ unsafe fn overlays_insert(
                 as xkb_overlay_mask_t;
             let index: usize = (low as u32).count_ones() as usize;
             (&mut (*keyi).overlay_keys)[index] = key;
-            if key.is_null() && (&(*keyi).overlay_keys).len() == 1 {
+            if key == XKB_KEYCODE_INVALID && (&(*keyi).overlay_keys).len() == 1 {
                 (*keyi).overlays_clear = true;
             }
             return true;
@@ -568,12 +568,13 @@ unsafe fn overlays_insert(
             (new_overlays as u32 & (mask as u32).wrapping_sub(1 as u32)) as xkb_overlay_mask_t;
         let index: usize = (low as u32).count_ones() as usize;
 
-        if (*keyi).overlays == 0 || (*keyi).overlays_clear as i32 != 0 && key.is_null() {
+        if (*keyi).overlays == 0 || (*keyi).overlays_clear as i32 != 0 && key == XKB_KEYCODE_INVALID
+        {
             // First overlay or clearing
             (*keyi).overlay_keys.clear();
             (*keyi).overlay_keys.push(key);
             (*keyi).overlays = new_overlays;
-            (*keyi).overlays_clear = key.is_null();
+            (*keyi).overlays_clear = key == XKB_KEYCODE_INVALID;
         } else {
             // Insert at correct position in Vec
             (*keyi).overlay_keys.insert(index, key);
@@ -632,15 +633,15 @@ unsafe fn merge_overlays(
                     let bit: xkb_overlay_index_t =
                         ((lsb as u32).wrapping_sub(1 as u32).count_ones()) as xkb_overlay_index_t;
                     remaining = (remaining as i32 & !(lsb as i32)) as xkb_overlay_mask_t;
-                    let src_key: *const xkb_key =
+                    let src_key: u32 =
                         if (*src).overlays_clear || src_idx >= (*src).overlay_keys.len() {
-                            std::ptr::null()
+                            XKB_KEYCODE_INVALID
                         } else {
                             let k = (&(*src).overlay_keys)[src_idx];
                             src_idx += 1;
                             k
                         };
-                    let mut dest_key: *const xkb_key = std::ptr::null();
+                    let mut dest_key: u32 = XKB_KEYCODE_INVALID;
                     let conflict: bool = overlays_get(dest, bit, &raw mut dest_key) as bool;
                     if conflict {
                         if dest_key == src_key {
@@ -668,12 +669,12 @@ unsafe fn merge_overlays(
                         .overlay_keys
                         .first()
                         .copied()
-                        .unwrap_or(std::ptr::null());
+                        .unwrap_or(XKB_KEYCODE_INVALID);
                     let from_key = (*from)
                         .overlay_keys
                         .first()
                         .copied()
-                        .unwrap_or(std::ptr::null());
+                        .unwrap_or(XKB_KEYCODE_INVALID);
                     if into_key == from_key {
                         return true;
                     }
@@ -1395,7 +1396,7 @@ unsafe fn ExprResolveOverlayEntry(
     mut expr: *const ExprDef,
     mut keyi: *mut KeyInfo,
     mut overlay_rtrn: *mut xkb_overlay_index_t,
-    mut key_rtrn: *mut *const xkb_key,
+    mut key_rtrn: *mut u32,
 ) -> bool {
     unsafe {
         if !arrayNdx.is_null() {
@@ -1440,8 +1441,13 @@ unsafe fn ExprResolveOverlayEntry(
             (raw_overlay as xkb_overlay_index_t as i32 - 1 as i32) as xkb_overlay_index_t;
         match (*expr).common.type_0 as u32 {
             8 => {
-                *key_rtrn = XkbKeyByName((*keymap_info).keymap, (*expr).key_name.key_name, false);
-                if (*key_rtrn).is_null() {
+                let key_ptr = XkbKeyByName((*keymap_info).keymap, (*expr).key_name.key_name, false);
+                *key_rtrn = if key_ptr.is_null() {
+                    XKB_KEYCODE_INVALID
+                } else {
+                    (*key_ptr).keycode
+                };
+                if *key_rtrn == XKB_KEYCODE_INVALID {
                     xkb_logf!(
                         (*(*keymap_info).keymap).ctx,
                         XKB_LOG_LEVEL_ERROR,
@@ -1468,10 +1474,10 @@ unsafe fn ExprResolveOverlayEntry(
                     (*expr).ident.ident,
                 );
                 if !id.is_empty() && istreq(id, b"none") {
-                    *key_rtrn = std::ptr::null();
+                    *key_rtrn = XKB_KEYCODE_INVALID;
                     return true;
                 } else if !id.is_empty() && istreq(id, b"any") {
-                    *key_rtrn = std::ptr::null();
+                    *key_rtrn = XKB_KEYCODE_INVALID;
                     *overlay_rtrn = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
                     return true;
                 }
@@ -1631,7 +1637,7 @@ unsafe fn SetSymbolsField(
             (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1 as usize),
         ) {
             let mut overlay: xkb_overlay_index_t = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
-            let mut key: *const xkb_key = std::ptr::null();
+            let mut key: u32 = XKB_KEYCODE_INVALID;
             if !ExprResolveOverlayEntry(
                 (*info).keymap_info,
                 field,
@@ -1645,7 +1651,10 @@ unsafe fn SetSymbolsField(
             }
             if overlay as i32 == XKB_OVERLAY_INVALID {
                 return true;
-            } else if !key.is_null() && (*key).name == (*keyi).name {
+            } else if key != XKB_KEYCODE_INVALID && {
+                let key_ptr = XkbKey((*(*info).keymap_info).keymap as *mut _, key);
+                !key_ptr.is_null() && (*key_ptr).name == (*keyi).name
+            } {
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
@@ -1655,7 +1664,7 @@ unsafe fn SetSymbolsField(
                     crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                 );
             } else {
-                let mut prev: *const xkb_key = std::ptr::null();
+                let mut prev: u32 = XKB_KEYCODE_INVALID;
                 if overlays_get(keyi, overlay, &raw mut prev) {
                     if key != prev {
                         xkb_logf!(
@@ -1666,14 +1675,16 @@ unsafe fn SetSymbolsField(
                             XKB_WARNING_CONFLICTING_KEY_FIELDS as i32,
                             crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                             overlay as i32 + 1 as i32,
-                            crate::xkb::utils::ByteSliceDisplay(if !prev.is_null() {
-                                KeyNameText((*((*info).ctx)).clone(), (*prev).name)
+                            crate::xkb::utils::ByteSliceDisplay(if prev != XKB_KEYCODE_INVALID {
+                                let prev_ptr = XkbKey((*(*info).keymap_info).keymap as *mut _, prev);
+                                KeyNameText((*((*info).ctx)).clone(), if !prev_ptr.is_null() { (*prev_ptr).name } else { 0 })
                             } else {
                                 b"none"
                             }),
                             overlay as i32 + 1 as i32,
-                            crate::xkb::utils::ByteSliceDisplay(if !key.is_null() {
-                                KeyNameText((*((*info).ctx)).clone(), (*key).name)
+                            crate::xkb::utils::ByteSliceDisplay(if key != XKB_KEYCODE_INVALID {
+                                let key_ptr = XkbKey((*(*info).keymap_info).keymap as *mut _, key);
+                                KeyNameText((*((*info).ctx)).clone(), if !key_ptr.is_null() { (*key_ptr).name } else { 0 })
                             } else {
                                 b"none"
                             }),
@@ -1688,7 +1699,7 @@ unsafe fn SetSymbolsField(
                     let mask_0: xkb_overlay_mask_t =
                         ((1 as u32) << overlay as i32) as xkb_overlay_mask_t;
                     if (*keyi).overlays == 0 || (*keyi).overlays_clear as i32 != 0 {
-                        if !key.is_null() {
+                        if key != XKB_KEYCODE_INVALID {
                             (*keyi).overlays = mask_0;
                             (*keyi).overlays_clear = (false) as bool;
                             (*keyi).overlay_keys = vec![key];
@@ -1696,16 +1707,16 @@ unsafe fn SetSymbolsField(
                             (*keyi).overlays =
                                 ((*keyi).overlays as i32 | mask_0 as i32) as xkb_overlay_mask_t;
                             (*keyi).overlays_clear = (true) as bool;
-                            (*keyi).overlay_keys = vec![std::ptr::null()];
+                            (*keyi).overlay_keys = vec![XKB_KEYCODE_INVALID];
                         }
                         (*keyi).defined = (*keyi).defined | KEY_FIELD_OVERLAY as i32 as key_field;
                     } else if (*keyi).overlays != 0 {
-                        if !key.is_null() {
+                        if key != XKB_KEYCODE_INVALID {
                             let existing_key = (*keyi)
                                 .overlay_keys
                                 .first()
                                 .copied()
-                                .unwrap_or(std::ptr::null());
+                                .unwrap_or(XKB_KEYCODE_INVALID);
                             xkb_logf!(
                                 (*info).ctx,
                                 XKB_LOG_LEVEL_ERROR,
@@ -1716,10 +1727,10 @@ unsafe fn SetSymbolsField(
                                 (*keyi).overlays as i32,
                                 crate::xkb::utils::ByteSliceDisplay(KeyNameText(
                                     (*(*info).ctx).clone(),
-                                    if existing_key.is_null() { 0 } else { (*existing_key).name },
+                                    if existing_key == XKB_KEYCODE_INVALID { 0 } else { let ek_ptr = XkbKey((*(*info).keymap_info).keymap as *mut _, existing_key); if !ek_ptr.is_null() { (*ek_ptr).name } else { 0 } },
                                 )),
                                 overlay as i32 + 1 as i32,
-                                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), (*key).name)),
+                                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), { let k_ptr = XkbKey((*(*info).keymap_info).keymap as *mut _, key); if !k_ptr.is_null() { (*k_ptr).name } else { 0 } })),
                             );
                             return (*(*info).keymap_info).strict as u32
                                 & PARSER_NO_FIELD_VALUE_MISMATCH as u32
@@ -2753,7 +2764,7 @@ unsafe fn CopySymbolsDefToKeymap(
         {
             // Remove null entries from overlay_keys and clear corresponding bits
             let mut clean_overlays: xkb_overlay_mask_t = 0;
-            let mut clean_keys: Vec<*const xkb_key> = Vec::new();
+            let mut clean_keys: Vec<u32> = Vec::new();
             let mut remaining: xkb_overlay_mask_t = (*keyi).overlays;
             let mut idx: usize = 0;
             while remaining != 0 {
@@ -2762,10 +2773,10 @@ unsafe fn CopySymbolsDefToKeymap(
                 let k = if idx < (&(*keyi).overlay_keys).len() {
                     (&(*keyi).overlay_keys)[idx]
                 } else {
-                    std::ptr::null()
+                    XKB_KEYCODE_INVALID
                 };
                 idx += 1;
-                if !k.is_null() {
+                if k != XKB_KEYCODE_INVALID {
                     clean_overlays |= lsb;
                     clean_keys.push(k);
                 }

@@ -382,7 +382,7 @@ pub struct xkb_key {
     pub out_of_range_group_number: u32,
     pub num_groups: u32,
     pub groups: Vec<xkb_group>,
-    pub overlay_keys: Vec<*const xkb_key>,
+    pub overlay_keys: Vec<u32>,
 }
 
 impl Default for xkb_key {
