@@ -7017,40 +7017,39 @@ unsafe fn xkb_resolve_rules(
                             );
                             ret = false;
                         } else {
-                            // Transfer ownership of Vec data to raw pointers.
-                            // Each Vec is taken (replaced with empty Vec), nul-terminated,
-                            // and leaked so the caller owns the allocation as a C string.
+                            // Transfer ownership of Vec data directly.
+                            // Each Vec is taken (replaced with empty Vec) and nul-terminated.
                             {
                                 let mut v = std::mem::take(
                                     &mut (*matcher).kccgst[KCCGST_KEYCODES as usize],
                                 );
                                 v.push(0);
-                                (*out).keycodes = Vec::leak(v).as_mut_ptr();
+                                (*out).keycodes = v;
                             }
                             {
                                 let mut v =
                                     std::mem::take(&mut (*matcher).kccgst[KCCGST_TYPES as usize]);
                                 v.push(0);
-                                (*out).types = Vec::leak(v).as_mut_ptr();
+                                (*out).types = v;
                             }
                             {
                                 let mut v =
                                     std::mem::take(&mut (*matcher).kccgst[KCCGST_COMPAT as usize]);
                                 v.push(0);
-                                (*out).compatibility = Vec::leak(v).as_mut_ptr();
+                                (*out).compatibility = v;
                             }
                             {
                                 let mut v =
                                     std::mem::take(&mut (*matcher).kccgst[KCCGST_SYMBOLS as usize]);
                                 v.push(0);
-                                (*out).symbols = Vec::leak(v).as_mut_ptr();
+                                (*out).symbols = v;
                             }
                             {
                                 let mut v = std::mem::take(
                                     &mut (*matcher).kccgst[KCCGST_GEOMETRY as usize],
                                 );
                                 v.push(0);
-                                (*out).geometry = Vec::leak(v).as_mut_ptr();
+                                (*out).geometry = v;
                             }
                             mval = &raw mut (*matcher).rmlvo.model;
                             if !(*mval).matched && (*mval).sval.len > 0 as usize {
@@ -7150,9 +7149,9 @@ unsafe fn xkb_resolve_rules(
                                     mval = mval.offset(1);
                                 }
                             }
-                            if !(*out).symbols.is_null() && !explicit_layouts.is_null() {
+                            if !(*out).symbols.is_empty() && !explicit_layouts.is_null() {
                                 *explicit_layouts = 1 as u32;
-                                let mut symbols: *const i8 = (*out).symbols;
+                                let mut symbols: *const i8 = (*out).symbols.as_ptr();
                                 loop {
                                     symbols = crate::xkb::utils::cstr_chr(symbols, ':' as i32);
                                     if !(!symbols.is_null()

@@ -20,7 +20,6 @@
     unknown_lints,
     clippy::all
 )]
-#![allow(unknown_lints)] // For c2rust attributes that are no longer used
 
 // Core XKB modules
 pub mod atom;

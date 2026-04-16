@@ -1,9 +1,4 @@
 //! Shared type definitions used across multiple modules.
-//!
-//! These types were previously duplicated in every file's local `mod xxx_h` blocks
-//! (a c2rust artifact). This module provides canonical definitions so that all modules
-//! can share the same Rust types, enabling direct `pub use` imports instead of
-//! `extern "C"` FFI imports.
 
 // ── xkbcommon public types ───────────────────────────────────────────
 
@@ -587,14 +582,13 @@ pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: u32 = 0xffffffff;
 
 pub const XKB_KEYSYM_MAX: i32 = 0x1fffffff;
 
-#[derive(Copy, Clone)]
-#[repr(C)]
+#[derive(Clone, Default)]
 pub struct xkb_component_names {
-    pub keycodes: *mut i8,
-    pub compatibility: *mut i8,
-    pub geometry: *mut i8,
-    pub symbols: *mut i8,
-    pub types: *mut i8,
+    pub keycodes: Vec<i8>,
+    pub compatibility: Vec<i8>,
+    pub geometry: Vec<i8>,
+    pub symbols: Vec<i8>,
+    pub types: Vec<i8>,
 }
 
 #[derive(Copy, Clone)]

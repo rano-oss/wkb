@@ -121,7 +121,7 @@ pub use crate::xkb::shared_types::{
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_GROUPS,
     XKB_MAX_GROUPS_X11,
 };
-use libc::{free, FILE};
+use libc::FILE;
 
 unsafe fn compile_keymap_file(mut keymap: *mut xkb_keymap, mut file: *mut XkbFile) -> bool {
     unsafe {
@@ -155,13 +155,7 @@ unsafe fn text_v1_keymap_new_from_names(
 ) -> bool {
     unsafe {
         let mut ok: bool = false;
-        let mut kccgst: xkb_component_names = xkb_component_names {
-            keycodes: std::ptr::null_mut(),
-            compatibility: std::ptr::null_mut(),
-            geometry: std::ptr::null_mut(),
-            symbols: std::ptr::null_mut(),
-            types: std::ptr::null_mut(),
-        };
+        let mut kccgst: xkb_component_names = xkb_component_names::default();
         let mut file: *mut XkbFile = std::ptr::null_mut();
         xkb_logf!(
             (*keymap).ctx,
@@ -204,17 +198,13 @@ unsafe fn text_v1_keymap_new_from_names(
             XKB_LOG_LEVEL_DEBUG,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "Compiling from KcCGST: keycodes '{}', types '{}', compat '{}', symbols '{}'\n",
-            crate::xkb::utils::CStrDisplay(kccgst.keycodes),
-            crate::xkb::utils::CStrDisplay(kccgst.types),
-            crate::xkb::utils::CStrDisplay(kccgst.compatibility),
-            crate::xkb::utils::CStrDisplay(kccgst.symbols),
+            crate::xkb::utils::CStrDisplay(kccgst.keycodes.as_ptr()),
+            crate::xkb::utils::CStrDisplay(kccgst.types.as_ptr()),
+            crate::xkb::utils::CStrDisplay(kccgst.compatibility.as_ptr()),
+            crate::xkb::utils::CStrDisplay(kccgst.symbols.as_ptr()),
         );
         file = XkbFileFromComponents(&raw mut (*keymap).ctx, &raw mut kccgst);
-        free(kccgst.keycodes as *mut ::core::ffi::c_void);
-        free(kccgst.types as *mut ::core::ffi::c_void);
-        free(kccgst.compatibility as *mut ::core::ffi::c_void);
-        free(kccgst.symbols as *mut ::core::ffi::c_void);
-        free(kccgst.geometry as *mut ::core::ffi::c_void);
+        drop(kccgst);
         if file.is_null() {
             xkb_logf!(
                 (*keymap).ctx,

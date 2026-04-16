@@ -703,10 +703,10 @@ pub unsafe fn XkbFileFromComponents(
     unsafe {
         let mut c2rust_current_block: u64;
         let components: [*mut i8; 4] = [
-            (*kkctgs).keycodes,
-            (*kkctgs).types,
-            (*kkctgs).compatibility,
-            (*kkctgs).symbols,
+            (*kkctgs).keycodes.as_ptr() as *mut i8,
+            (*kkctgs).types.as_ptr() as *mut i8,
+            (*kkctgs).compatibility.as_ptr() as *mut i8,
+            (*kkctgs).symbols.as_ptr() as *mut i8,
         ];
         let mut type_0: u32 = FILE_TYPE_KEYCODES;
         let mut include: *mut IncludeStmt = std::ptr::null_mut();
