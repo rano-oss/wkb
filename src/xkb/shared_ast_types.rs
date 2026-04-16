@@ -480,20 +480,18 @@ pub unsafe fn ReportBadType(
     name: &[u8],
     wanted: &[u8],
 ) -> bool {
-    unsafe {
-        xkb_logf!(
-            ctx,
-            XKB_LOG_LEVEL_ERROR,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "[XKB-{:03}] The {} {} field must be a {}; Ignoring illegal assignment in {}\n",
-            code as u32,
-            crate::xkb::utils::ByteSliceDisplay(type_0),
-            crate::xkb::utils::ByteSliceDisplay(field),
-            crate::xkb::utils::ByteSliceDisplay(wanted),
-            crate::xkb::utils::ByteSliceDisplay(name),
-        );
-        return false;
-    }
+    xkb_logf!(
+        ctx,
+        XKB_LOG_LEVEL_ERROR,
+        XKB_LOG_VERBOSITY_MINIMAL as i32,
+        "[XKB-{:03}] The {} {} field must be a {}; Ignoring illegal assignment in {}\n",
+        code as u32,
+        crate::xkb::utils::ByteSliceDisplay(type_0),
+        crate::xkb::utils::ByteSliceDisplay(field),
+        crate::xkb::utils::ByteSliceDisplay(wanted),
+        crate::xkb::utils::ByteSliceDisplay(name),
+    );
+    return false;
 }
 
 #[inline]
@@ -503,19 +501,17 @@ pub unsafe fn ReportBadField(
     field: &[u8],
     name: &[u8],
 ) -> bool {
-    unsafe {
-        xkb_logf!(
-            ctx,
-            XKB_LOG_LEVEL_ERROR,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "Unknown {} field \"{}\" in {}; Ignoring assignment to unknown field in {}\n",
-            crate::xkb::utils::ByteSliceDisplay(type_0),
-            crate::xkb::utils::ByteSliceDisplay(field),
-            crate::xkb::utils::ByteSliceDisplay(name),
-            crate::xkb::utils::ByteSliceDisplay(name),
-        );
-        return false;
-    }
+    xkb_logf!(
+        ctx,
+        XKB_LOG_LEVEL_ERROR,
+        XKB_LOG_VERBOSITY_MINIMAL as i32,
+        "Unknown {} field \"{}\" in {}; Ignoring assignment to unknown field in {}\n",
+        crate::xkb::utils::ByteSliceDisplay(type_0),
+        crate::xkb::utils::ByteSliceDisplay(field),
+        crate::xkb::utils::ByteSliceDisplay(name),
+        crate::xkb::utils::ByteSliceDisplay(name),
+    );
+    return false;
 }
 
 #[inline]
@@ -525,17 +521,15 @@ pub unsafe fn ReportShouldBeArray(
     field: &[u8],
     name: &[u8],
 ) -> bool {
-    unsafe {
-        xkb_logf!(
-            ctx,
-            XKB_LOG_LEVEL_ERROR,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "[XKB-{:03}] Missing subscript for {} {}; Ignoring illegal assignment in {}\n",
-            XKB_ERROR_EXPECTED_ARRAY_ENTRY as i32,
-            crate::xkb::utils::ByteSliceDisplay(type_0),
-            crate::xkb::utils::ByteSliceDisplay(field),
-            crate::xkb::utils::ByteSliceDisplay(name),
-        );
-        return false;
-    }
+    xkb_logf!(
+        ctx,
+        XKB_LOG_LEVEL_ERROR,
+        XKB_LOG_VERBOSITY_MINIMAL as i32,
+        "[XKB-{:03}] Missing subscript for {} {}; Ignoring illegal assignment in {}\n",
+        XKB_ERROR_EXPECTED_ARRAY_ENTRY as i32,
+        crate::xkb::utils::ByteSliceDisplay(type_0),
+        crate::xkb::utils::ByteSliceDisplay(field),
+        crate::xkb::utils::ByteSliceDisplay(name),
+    );
+    return false;
 }

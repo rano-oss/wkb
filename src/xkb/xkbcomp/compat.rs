@@ -1409,13 +1409,10 @@ unsafe fn CopyLedMapDefsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Com
 unsafe fn CopyCompatToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut CompatInfo) -> bool {
     unsafe {
         (*keymap).compat_section_name = match &(*info).name {
-            Some(s) => {
-                let cs = std::ffi::CString::new(s.as_str()).unwrap();
-                strdup_safe(cs.as_ptr())
-            }
-            None => std::ptr::null_mut(),
+            Some(s) => s.clone(),
+            None => String::new(),
         };
-        XkbEscapeMapName((*keymap).compat_section_name);
+        xkb_escape_map_name(&mut (*keymap).compat_section_name);
         (*keymap).mods = (*info).mods;
         if !(*info).interps.is_empty() {
             let mut collect: collect = collect {
@@ -1432,13 +1429,9 @@ unsafe fn CopyCompatToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut CompatI
             CopyInterps(info, false, MATCH_ANY, &raw mut collect);
             CopyInterps(info, false, MATCH_ANY_OR_NONE, &raw mut collect);
             if collect.sym_interprets.is_empty() {
-                (*keymap).sym_interprets = std::ptr::null_mut();
-                *&raw mut (*keymap).num_sym_interprets = 0 as u32;
+                (*keymap).sym_interprets = Vec::new();
             } else {
-                collect.sym_interprets.shrink_to_fit();
-                *&raw mut (*keymap).num_sym_interprets = collect.sym_interprets.len() as u32;
-                (*keymap).sym_interprets = collect.sym_interprets.as_mut_ptr();
-                std::mem::forget(collect.sym_interprets);
+                (*keymap).sym_interprets = collect.sym_interprets;
             }
         }
         CopyLedMapDefsToKeymap(keymap, info);

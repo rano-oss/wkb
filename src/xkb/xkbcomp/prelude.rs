@@ -10,6 +10,7 @@ pub use crate::xkb::context::xkb_atom_text_bytes;
 pub use crate::xkb::context::xkb_context_get_log_verbosity;
 
 // keymap
+pub use crate::xkb::keymap::xkb_escape_map_name;
 pub use crate::xkb::keymap::XkbEscapeMapName;
 
 // messages

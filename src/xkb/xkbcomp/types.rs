@@ -67,7 +67,7 @@ unsafe fn MapEntryTxt(
 ) -> &'static [u8] {
     unsafe {
         return ModMaskText(
-            (*info).ctx,
+            (*(*info).ctx).clone(),
             MOD_BOTH,
             &raw mut (*info).mods,
             (*entry).mods.mods,
@@ -77,7 +77,7 @@ unsafe fn MapEntryTxt(
 #[inline]
 unsafe fn TypeTxt<'a>(mut info: *mut KeyTypesInfo, mut type_0: *mut KeyTypeInfo) -> &'a [u8] {
     unsafe {
-        return xkb_atom_text_bytes((*info).ctx, (*type_0).name);
+        return xkb_atom_text_bytes(&(*(*info).ctx).atom_table, (*type_0).name);
     }
 }
 #[inline]
@@ -167,7 +167,7 @@ unsafe fn AddKeyType(
                         "[XKB-{:03}] Multiple definitions of the {} key type; Earlier definition ignored\n",
                         XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS
                             as i32,
-                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, (*new).name)),
+                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*(*info).ctx).atom_table, (*new).name)),
                     );
                 }
                 ClearKeyTypeInfo(old);
@@ -183,7 +183,7 @@ unsafe fn AddKeyType(
                     XKB_LOG_VERBOSITY_DETAILED as i32,
                     "[XKB-{:03}] Multiple definitions of the {} key type; Later definition ignored\n",
                     XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS as i32,
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, (*new).name)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*(*info).ctx).atom_table, (*new).name)),
                 );
             }
             ClearKeyTypeInfo(new);
@@ -330,17 +330,17 @@ unsafe fn SetModifiers(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Multiple modifier mask definitions for key type {}; Using {}, ignoring {}\n",
                 crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                    (*info).ctx,
+                    &(*(*info).ctx).atom_table,
                     (*type_0).name
                 )),
                 crate::xkb::utils::ByteSliceDisplay(ModMaskText(
-                    (*info).ctx,
+                    (*(*info).ctx).clone(),
                     MOD_BOTH,
                     &raw mut (*info).mods,
                     (*type_0).mods
                 )),
                 crate::xkb::utils::ByteSliceDisplay(ModMaskText(
-                    (*info).ctx,
+                    (*(*info).ctx).clone(),
                     MOD_BOTH,
                     &raw mut (*info).mods,
                     mods
@@ -458,7 +458,7 @@ unsafe fn SetMapEntry(
                 XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE as i32,
                 crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
                 crate::xkb::utils::ByteSliceDisplay(ModMaskText(
-                    (*info).ctx,
+                    (*(*info).ctx).clone(),
                     MOD_BOTH,
                     &raw mut (*info).mods,
                     entry.mods.mods & (*type_0).mods,
@@ -510,7 +510,7 @@ unsafe fn AddPreserve(
                         "[XKB-{:03}] Identical definitions for preserve[{}] in {}; Ignored\n",
                         XKB_WARNING_DUPLICATE_ENTRY as i32,
                         crate::xkb::utils::ByteSliceDisplay(ModMaskText(
-                            (*info).ctx,
+                            (*(*info).ctx).clone(),
                             MOD_BOTH,
                             &raw mut (*info).mods,
                             mods
@@ -526,16 +526,16 @@ unsafe fn AddPreserve(
                     "[XKB-{:03}] Multiple definitions for preserve[{}] in {}; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES
                         as i32,
-                    crate::xkb::utils::ByteSliceDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
+                    crate::xkb::utils::ByteSliceDisplay(ModMaskText((*(*info).ctx).clone(), MOD_BOTH, &raw mut (*info).mods, mods)),
                     crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
                     crate::xkb::utils::ByteSliceDisplay(ModMaskText(
-                        (*info).ctx,
+                        (*(*info).ctx).clone(),
                         MOD_BOTH,
                         &raw mut (*info).mods,
                         preserve_mods,
                     )),
                     crate::xkb::utils::ByteSliceDisplay(ModMaskText(
-                        (*info).ctx,
+                        (*(*info).ctx).clone(),
                         MOD_BOTH,
                         &raw mut (*info).mods,
                         e.preserve.mods,
@@ -581,9 +581,19 @@ unsafe fn SetPreserve(
         if mods & !(*type_0).mods != 0 {
             let before: &[u8];
             let after: &[u8];
-            before = ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods);
+            before = ModMaskText(
+                (*(*info).ctx).clone(),
+                MOD_BOTH,
+                &raw mut (*info).mods,
+                mods,
+            );
             mods &= (*type_0).mods;
-            after = ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods);
+            after = ModMaskText(
+                (*(*info).ctx).clone(),
+                MOD_BOTH,
+                &raw mut (*info).mods,
+                mods,
+            );
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
@@ -609,7 +619,7 @@ unsafe fn SetPreserve(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Preserve value in a key type is not a modifier mask; Ignoring preserve[{}] in type {}\n",
                 XKB_ERROR_UNSUPPORTED_MODIFIER_MASK as i32,
-                crate::xkb::utils::ByteSliceDisplay(ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, mods)),
+                crate::xkb::utils::ByteSliceDisplay(ModMaskText((*(*info).ctx).clone(), MOD_BOTH, &raw mut (*info).mods, mods)),
                 crate::xkb::utils::ByteSliceDisplay(TypeTxt(info, type_0)),
             );
             return false;
@@ -617,9 +627,19 @@ unsafe fn SetPreserve(
         if preserve_mods & !mods != 0 {
             let before_0: &[u8];
             let after_0: &[u8];
-            before_0 = ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, preserve_mods);
+            before_0 = ModMaskText(
+                (*(*info).ctx).clone(),
+                MOD_BOTH,
+                &raw mut (*info).mods,
+                preserve_mods,
+            );
             preserve_mods &= mods;
-            after_0 = ModMaskText((*info).ctx, MOD_BOTH, &raw mut (*info).mods, preserve_mods);
+            after_0 = ModMaskText(
+                (*(*info).ctx).clone(),
+                MOD_BOTH,
+                &raw mut (*info).mods,
+                preserve_mods,
+            );
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
@@ -627,7 +647,7 @@ unsafe fn SetPreserve(
                 "[XKB-{:03}] Illegal value for preserve[{}] in type {}; Converted {} to {}\n",
                 XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT as i32,
                 crate::xkb::utils::ByteSliceDisplay(ModMaskText(
-                    (*info).ctx,
+                    (*(*info).ctx).clone(),
                     MOD_BOTH,
                     &raw mut (*info).mods,
                     mods
@@ -665,10 +685,10 @@ unsafe fn AddLevelName(
             }
             if *(*type_0).level_names.as_ptr().add(level as usize) != XKB_ATOM_NONE as u32 {
                 let old: &[u8] = xkb_atom_text_bytes(
-                    (*info).ctx,
+                    &(*(*info).ctx).atom_table,
                     *(*type_0).level_names.as_ptr().add(level as usize),
                 );
-                let new: &[u8] = xkb_atom_text_bytes((*info).ctx, name);
+                let new: &[u8] = xkb_atom_text_bytes(&(*(*info).ctx).atom_table, name);
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
@@ -718,7 +738,7 @@ unsafe fn SetLevelName(
                 "[XKB-{:03}] Non-string name for level {} in key type {}; Ignoring illegal level name definition\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
                 level.wrapping_add(1 as u32),
-                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, (*type_0).name)),
+                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*(*info).ctx).atom_table, (*type_0).name)),
             );
             return false;
         }
@@ -973,26 +993,21 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
         } else {
             (*info).types.len() as u32
         };
-        let mut types: *mut xkb_key_type =
-            calloc(num_types as usize, std::mem::size_of::<xkb_key_type>()) as *mut xkb_key_type;
-        if types.is_null() {
-            return false;
-        }
+        let mut types_vec: Vec<xkb_key_type> = Vec::with_capacity(num_types as usize);
         if (*info).types.len() == 0 {
-            let mut type_0: *mut xkb_key_type =
-                types.offset(0 as i32 as isize) as *mut xkb_key_type;
-            (*type_0).mods.mods = 0 as u32;
-            (*type_0).num_levels = 1 as u32;
-            (*type_0).entries = std::ptr::null_mut();
-            (*type_0).num_entries = 0 as u32;
-            (*type_0).name = xkb_atom_intern(
-                &raw mut (*keymap).ctx,
-                b"ONE_LEVEL\0".as_ptr() as *const i8,
-                (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
-            );
-            (*type_0).level_names = std::ptr::null_mut();
-            (*type_0).num_level_names = 0 as u32;
-            (*type_0).required = true;
+            let mut type_0 = xkb_key_type {
+                name: xkb_atom_intern(
+                    &raw mut (*keymap).ctx,
+                    b"ONE_LEVEL\0".as_ptr() as *const i8,
+                    (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1 as usize),
+                ),
+                mods: xkb_mods { mods: 0, mask: 0 },
+                required: true,
+                num_levels: 1,
+                level_names: Vec::new(),
+                entries: Vec::new(),
+            };
+            types_vec.push(type_0);
         } else {
             let canonical_types: [u32; 4] = [
                 xkb_atom_intern(
@@ -1019,58 +1034,37 @@ unsafe fn CopyKeyTypesToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut KeyTy
             let mut i: u32 = 0 as u32;
             while i < num_types {
                 let mut def: *mut KeyTypeInfo = (*info).types.as_mut_ptr().add(i as usize);
-                let mut type_1: *mut xkb_key_type = types.offset(i as isize) as *mut xkb_key_type;
-                (*type_1).name = (*def).name;
-                (*type_1).mods.mods = (*def).mods;
-                (*type_1).num_levels = (*def).num_levels;
-                // Steal level_names Vec buffer
-                let mut ln_vec = std::mem::take(&mut (*def).level_names);
-                (*type_1).num_level_names = ln_vec.len() as u32;
-                if ln_vec.is_empty() {
-                    (*type_1).level_names = std::ptr::null_mut();
-                } else {
-                    ln_vec.shrink_to_fit();
-                    (*type_1).level_names = ln_vec.as_mut_ptr();
-                    std::mem::forget(ln_vec);
-                }
-                // Steal entries Vec buffer
-                let mut ent_vec = std::mem::take(&mut (*def).entries);
-                (*type_1).num_entries = ent_vec.len() as u32;
-                if ent_vec.is_empty() {
-                    (*type_1).entries = std::ptr::null_mut();
-                } else {
-                    ent_vec.shrink_to_fit();
-                    (*type_1).entries = ent_vec.as_mut_ptr();
-                    std::mem::forget(ent_vec);
-                }
-                (*type_1).required = false;
-                if (*type_1).num_levels <= 2 as u32 {
-                    let mut t: u8 = 0 as u8;
-                    while (t as i32)
-                        < (std::mem::size_of::<[u32; 4]>()).wrapping_div(std::mem::size_of::<u32>())
-                            as u8 as i32
-                    {
-                        if (*type_1).name == canonical_types[t as usize] {
-                            (*type_1).required = true;
+                let level_names = std::mem::take(&mut (*def).level_names);
+                let entries = std::mem::take(&mut (*def).entries);
+                let mut required = false;
+                if (*def).num_levels <= 2 {
+                    for t in 0..4 {
+                        if (*def).name == canonical_types[t] {
+                            required = true;
                             break;
-                        } else {
-                            t = t.wrapping_add(1);
                         }
                     }
                 }
+                types_vec.push(xkb_key_type {
+                    name: (*def).name,
+                    mods: xkb_mods {
+                        mods: (*def).mods,
+                        mask: 0,
+                    },
+                    required,
+                    num_levels: (*def).num_levels,
+                    level_names,
+                    entries,
+                });
                 i = i.wrapping_add(1);
             }
         }
         (*keymap).types_section_name = match &(*info).name {
-            Some(s) => {
-                let cs = std::ffi::CString::new(s.as_str()).unwrap();
-                strdup_safe(cs.as_ptr())
-            }
-            None => std::ptr::null_mut(),
+            Some(s) => s.clone(),
+            None => String::new(),
         };
-        XkbEscapeMapName((*keymap).types_section_name);
-        (*keymap).num_types = num_types;
-        (*keymap).types = types;
+        xkb_escape_map_name(&mut (*keymap).types_section_name);
+        (*keymap).types = types_vec;
         (*keymap).mods = (*info).mods;
         return true;
     }

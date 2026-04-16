@@ -249,10 +249,18 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
     mut buf_size: usize,
 ) -> bool {
     unsafe {
-        (*rmlvo).rules = (*builder).rules;
-        (*rmlvo).model = (*builder).model;
+        (*rmlvo).rules = if (*builder).rules.is_null() {
+            std::ffi::CString::new("").unwrap()
+        } else {
+            std::ffi::CStr::from_ptr((*builder).rules).to_owned()
+        };
+        (*rmlvo).model = if (*builder).model.is_null() {
+            std::ffi::CString::new("").unwrap()
+        } else {
+            std::ffi::CStr::from_ptr((*builder).model).to_owned()
+        };
         let mut start: *mut i8 = buf;
-        (*rmlvo).layout = start;
+        let layout_start: *const i8 = start;
         for (k, layout) in (*builder).layouts.iter().enumerate() {
             let (count, trunc) = crate::xkb::utils::snprintf_args(
                 start,
@@ -273,9 +281,10 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
             return false;
         }
         *start = '\0' as i32 as i8;
+        (*rmlvo).layout = std::ffi::CStr::from_ptr(layout_start).to_owned();
         start = start.offset(1);
         buf_size = buf_size.wrapping_sub(1);
-        (*rmlvo).variant = start;
+        let variant_start: *const i8 = start;
         for (k, layout) in (*builder).layouts.iter().enumerate() {
             let (count_0, trunc) = crate::xkb::utils::snprintf_args(
                 start,
@@ -300,9 +309,10 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
             return false;
         }
         *start = '\0' as i32 as i8;
+        (*rmlvo).variant = std::ffi::CStr::from_ptr(variant_start).to_owned();
         start = start.offset(1);
         buf_size = buf_size.wrapping_sub(1);
-        (*rmlvo).options = start;
+        let options_start: *const i8 = start;
         for (k, option) in (*builder).options.iter().enumerate() {
             let mut count_1: i32 = {
                 let (written, trunc) = crate::xkb::utils::snprintf_args(
@@ -347,6 +357,7 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
             return false;
         }
         *start = '\0' as i32 as i8;
+        (*rmlvo).options = std::ffi::CStr::from_ptr(options_start).to_owned();
         return true;
     }
 }

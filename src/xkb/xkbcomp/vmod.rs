@@ -84,9 +84,9 @@ pub unsafe fn MergeModSets(
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
-                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*mod_0).name)),
-                        crate::xkb::utils::ByteSliceDisplay(ModMaskText(ctx, MOD_REAL, from, use_0)),
-                        crate::xkb::utils::ByteSliceDisplay(ModMaskText(ctx, MOD_REAL, from, ignore)),
+                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*ctx).atom_table, (*mod_0).name)),
+                        crate::xkb::utils::ByteSliceDisplay(ModMaskText((*ctx).clone(), MOD_REAL, from, use_0)),
+                        crate::xkb::utils::ByteSliceDisplay(ModMaskText((*ctx).clone(), MOD_REAL, from, ignore)),
                     );
                     (*into).mods[vmod as usize].mapping = use_0;
                 }
@@ -111,7 +111,10 @@ pub unsafe fn HandleVModDef(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Declaration of {} ignored\n",
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*stmt).name)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                        &(*ctx).atom_table,
+                        (*stmt).name
+                    )),
                 );
                 return false;
             }
@@ -128,7 +131,7 @@ pub unsafe fn HandleVModDef(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Can't add a virtual modifier named \"{}\"; there is already a non-virtual modifier with this name! Ignored\n",
-                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*mod_0).name)),
+                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*ctx).atom_table, (*mod_0).name)),
                     );
                     return false;
                 }
@@ -154,9 +157,9 @@ pub unsafe fn HandleVModDef(
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
-                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*stmt).name)),
-                        crate::xkb::utils::ByteSliceDisplay(ModMaskText(ctx, MOD_REAL, mods, use_0)),
-                        crate::xkb::utils::ByteSliceDisplay(ModMaskText(ctx, MOD_REAL, mods, ignore)),
+                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*ctx).atom_table, (*stmt).name)),
+                        crate::xkb::utils::ByteSliceDisplay(ModMaskText((*ctx).clone(), MOD_REAL, mods, use_0)),
+                        crate::xkb::utils::ByteSliceDisplay(ModMaskText((*ctx).clone(), MOD_REAL, mods, ignore)),
                     );
                     (*mod_0).mapping = use_0;
                 }
@@ -172,7 +175,10 @@ pub unsafe fn HandleVModDef(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Cannot define virtual modifier {}: too many modifiers defined (maximum {})\n",
-                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*stmt).name)),
+                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                    &(*ctx).atom_table,
+                    (*stmt).name
+                )),
                 (std::mem::size_of::<u32>()).wrapping_mul(8 as usize) as u32,
             );
             return false;

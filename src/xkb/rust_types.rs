@@ -46,45 +46,17 @@ impl RuleNames {
         }
     }
 
-    /// Convert to C FFI structure compatible with keymap module
-    ///
-    /// Returns tuple of (C struct, CStrings that must be kept alive)
-    /// The CStrings must outlive the C struct since it contains pointers to them.
-    pub fn to_c_keymap(&self) -> (crate::xkb::shared_types::xkb_rule_names, RuleNamesCStrings) {
-        let rules_c = CString::new(self.rules.as_str()).unwrap_or_default();
-        let model_c = CString::new(self.model.as_str()).unwrap_or_default();
-        let layout_c = CString::new(self.layout.as_str()).unwrap_or_default();
-        let variant_c = CString::new(self.variant.as_str()).unwrap_or_default();
-        let options_c = CString::new(self.options.as_str()).unwrap_or_default();
-
-        let c_struct = crate::xkb::shared_types::xkb_rule_names {
-            rules: rules_c.as_ptr(),
-            model: model_c.as_ptr(),
-            layout: layout_c.as_ptr(),
-            variant: variant_c.as_ptr(),
-            options: options_c.as_ptr(),
-        };
-
-        let strings = RuleNamesCStrings {
-            rules: rules_c,
-            model: model_c,
-            layout: layout_c,
-            variant: variant_c,
-            options: options_c,
-        };
-
-        (c_struct, strings)
+    /// Convert to xkb_rule_names structure
+    pub fn to_c_keymap(&self) -> crate::xkb::shared_types::xkb_rule_names {
+        use std::ffi::CString;
+        crate::xkb::shared_types::xkb_rule_names {
+            rules: CString::new(self.rules.as_str()).unwrap(),
+            model: CString::new(self.model.as_str()).unwrap(),
+            layout: CString::new(self.layout.as_str()).unwrap(),
+            variant: CString::new(self.variant.as_str()).unwrap(),
+            options: CString::new(self.options.as_str()).unwrap(),
+        }
     }
-}
-
-/// Holder for CStrings that back the C FFI structure
-/// Must be kept alive as long as the C struct is in use
-pub struct RuleNamesCStrings {
-    pub rules: CString,
-    pub model: CString,
-    pub layout: CString,
-    pub variant: CString,
-    pub options: CString,
 }
 
 // ============================================================================
@@ -111,18 +83,13 @@ impl Context {
         unsafe {
             use crate::xkb::shared_types::XKB_KEYMAP_COMPILE_NO_FLAGS;
 
-            let (rmlvo_c, _strings) = rules.to_c_keymap();
-            let keymap_ptr = super::keymap::xkb_keymap_new_from_names(
+            let rmlvo_c = rules.to_c_keymap();
+            let keymap = super::keymap::xkb_keymap_new_from_names(
                 self.entity.clone(),
                 &rmlvo_c as *const _,
                 XKB_KEYMAP_COMPILE_NO_FLAGS,
-            );
-            return match keymap_ptr {
-                Some(mut keymap_ptr) => Some(Keymap {
-                    ptr: &mut keymap_ptr,
-                }),
-                None => None,
-            };
+            )?;
+            Some(Keymap { inner: keymap })
         }
     }
 
@@ -134,46 +101,48 @@ impl Context {
             };
 
             let keymap_cstr = CString::new(keymap_str).ok()?;
-            let keymap_ptr = super::keymap::xkb_keymap_new_from_string(
+            let keymap = super::keymap::xkb_keymap_new_from_string(
                 self.entity.clone(),
                 keymap_cstr.as_ptr(),
                 XKB_KEYMAP_FORMAT_TEXT_V1,
                 XKB_KEYMAP_COMPILE_NO_FLAGS,
-            );
-            return match keymap_ptr {
-                Some(mut keymap_ptr) => Some(Keymap {
-                    ptr: &mut keymap_ptr,
-                }),
-                None => None,
-            };
+            )?;
+            Some(Keymap { inner: keymap })
         }
     }
 }
 
 /// Safe wrapper around xkb_keymap with automatic cleanup
 pub struct Keymap {
-    ptr: *mut crate::xkb::shared_types::xkb_keymap,
+    inner: Box<crate::xkb::shared_types::xkb_keymap>,
 }
 
 impl Keymap {
     /// Get raw pointer (for FFI calls)
-    pub fn as_ptr(&self) -> *mut crate::xkb::shared_types::xkb_keymap {
-        self.ptr
+    pub fn as_ptr(&self) -> *const crate::xkb::shared_types::xkb_keymap {
+        &*self.inner as *const _
+    }
+
+    /// Get mutable raw pointer (for FFI calls)
+    pub fn as_mut_ptr(&mut self) -> *mut crate::xkb::shared_types::xkb_keymap {
+        &mut *self.inner as *mut _
     }
 
     /// Get minimum keycode
     pub fn min_keycode(&self) -> u32 {
-        unsafe { super::keymap::xkb_keymap_min_keycode(self.ptr) }
+        unsafe { super::keymap::xkb_keymap_min_keycode(self.as_ptr() as *mut _) }
     }
 
     /// Get maximum keycode
     pub fn max_keycode(&self) -> u32 {
-        unsafe { super::keymap::xkb_keymap_max_keycode(self.ptr) }
+        unsafe { super::keymap::xkb_keymap_max_keycode(self.as_ptr() as *mut _) }
     }
 
     /// Get number of levels for a key
     pub fn num_levels_for_key(&self, keycode: u32, layout: u32) -> u32 {
-        unsafe { super::keymap::xkb_keymap_num_levels_for_key(self.ptr, keycode, layout) }
+        unsafe {
+            super::keymap::xkb_keymap_num_levels_for_key(self.as_ptr() as *mut _, keycode, layout)
+        }
     }
 
     /// Get keysyms for a key at a specific level
@@ -181,7 +150,7 @@ impl Keymap {
         unsafe {
             let mut syms_ptr: *const u32 = std::ptr::null();
             let num_syms = super::keymap::xkb_keymap_key_get_syms_by_level(
-                self.ptr,
+                self.as_ptr() as *mut _,
                 keycode,
                 layout,
                 level,
@@ -198,13 +167,13 @@ impl Keymap {
 
     /// Get number of modifiers in the keymap
     pub fn num_mods(&self) -> u32 {
-        unsafe { super::keymap::xkb_keymap_num_mods(self.ptr) }
+        unsafe { super::keymap::xkb_keymap_num_mods(self.as_ptr() as *mut _) }
     }
 
     /// Get modifier name by index
     pub fn mod_get_name(&self, idx: u32) -> Option<String> {
         unsafe {
-            let name_ptr = super::keymap::xkb_keymap_mod_get_name(self.ptr, idx);
+            let name_ptr = super::keymap::xkb_keymap_mod_get_name(self.as_ptr() as *mut _, idx);
             if name_ptr.is_null() {
                 None
             } else {
@@ -221,19 +190,19 @@ impl Keymap {
     pub fn mod_get_mask(&self, name: &str) -> u32 {
         unsafe {
             let name_cstr = std::ffi::CString::new(name).unwrap_or_default();
-            super::keymap::xkb_keymap_mod_get_mask(self.ptr, name_cstr.as_ptr())
+            super::keymap::xkb_keymap_mod_get_mask(self.as_ptr() as *mut _, name_cstr.as_ptr())
         }
     }
 
     /// Check if a key can repeat
     pub fn key_repeats(&self, keycode: u32) -> bool {
-        unsafe { super::keymap::xkb_keymap_key_repeats(self.ptr, keycode) != 0 }
+        unsafe { super::keymap::xkb_keymap_key_repeats(self.as_ptr() as *mut _, keycode) != 0 }
     }
 
     /// Get modifier maps for a key (returns (modmap, vmodmap) or None if key doesn't exist)
     pub fn key_get_mods(&self, keycode: u32) -> Option<(u32, u32)> {
         unsafe {
-            let key = super::keymap::XkbKey(self.ptr, keycode);
+            let key = super::keymap::XkbKey(self.as_ptr() as *mut _, keycode);
             if key.is_null() {
                 None
             } else {
@@ -262,8 +231,9 @@ impl Keymap {
     /// Create a new state for this keymap
     pub fn new_state(&self) -> Option<State> {
         unsafe {
-            let state_ptr =
-                super::state::xkb_state_new(self.ptr as *mut crate::xkb::shared_types::xkb_keymap);
+            let state_ptr = super::state::xkb_state_new(
+                self.as_ptr() as *mut crate::xkb::shared_types::xkb_keymap
+            );
             if state_ptr.is_null() {
                 None
             } else {
@@ -274,13 +244,13 @@ impl Keymap {
 
     /// Get number of layouts in the keymap
     pub fn num_layouts(&self) -> u32 {
-        unsafe { super::keymap::xkb_keymap_num_layouts(self.ptr) }
+        unsafe { super::keymap::xkb_keymap_num_layouts(self.as_ptr() as *mut _) }
     }
 
     /// Get layout name by index
     pub fn layout_get_name(&self, idx: u32) -> Option<String> {
         unsafe {
-            let name_ptr = super::keymap::xkb_keymap_layout_get_name(self.ptr, idx);
+            let name_ptr = super::keymap::xkb_keymap_layout_get_name(self.as_ptr() as *mut _, idx);
             if name_ptr.is_null() {
                 None
             } else {
@@ -297,7 +267,10 @@ impl Keymap {
     pub fn layout_get_index(&self, name: &str) -> Option<u32> {
         unsafe {
             let name_cstr = std::ffi::CString::new(name).ok()?;
-            let idx = super::keymap::xkb_keymap_layout_get_index(self.ptr, name_cstr.as_ptr());
+            let idx = super::keymap::xkb_keymap_layout_get_index(
+                self.as_ptr() as *mut _,
+                name_cstr.as_ptr(),
+            );
             if idx == u32::MAX {
                 None
             } else {
@@ -308,13 +281,13 @@ impl Keymap {
 
     /// Get number of LEDs in the keymap
     pub fn num_leds(&self) -> u32 {
-        unsafe { super::keymap::xkb_keymap_num_leds(self.ptr) }
+        unsafe { super::keymap::xkb_keymap_num_leds(self.as_ptr() as *mut _) }
     }
 
     /// Get LED name by index
     pub fn led_get_name(&self, idx: u32) -> Option<String> {
         unsafe {
-            let name_ptr = super::keymap::xkb_keymap_led_get_name(self.ptr, idx);
+            let name_ptr = super::keymap::xkb_keymap_led_get_name(self.as_ptr() as *mut _, idx);
             if name_ptr.is_null() {
                 None
             } else {
@@ -331,7 +304,10 @@ impl Keymap {
     pub fn led_get_index(&self, name: &str) -> Option<u32> {
         unsafe {
             let name_cstr = std::ffi::CString::new(name).ok()?;
-            let idx = super::keymap::xkb_keymap_led_get_index(self.ptr, name_cstr.as_ptr());
+            let idx = super::keymap::xkb_keymap_led_get_index(
+                self.as_ptr() as *mut _,
+                name_cstr.as_ptr(),
+            );
             if idx == u32::MAX {
                 None
             } else {
@@ -343,7 +319,7 @@ impl Keymap {
     /// Get key name by keycode
     pub fn key_get_name(&self, keycode: u32) -> Option<String> {
         unsafe {
-            let name_ptr = super::keymap::xkb_keymap_key_get_name(self.ptr, keycode);
+            let name_ptr = super::keymap::xkb_keymap_key_get_name(self.as_ptr() as *mut _, keycode);
             if name_ptr.is_null() {
                 None
             } else {
@@ -360,7 +336,8 @@ impl Keymap {
     pub fn key_by_name(&self, name: &str) -> Option<u32> {
         unsafe {
             let name_cstr = std::ffi::CString::new(name).ok()?;
-            let keycode = super::keymap::xkb_keymap_key_by_name(self.ptr, name_cstr.as_ptr());
+            let keycode =
+                super::keymap::xkb_keymap_key_by_name(self.as_ptr() as *mut _, name_cstr.as_ptr());
             if keycode == 0 {
                 None
             } else {
@@ -371,14 +348,17 @@ impl Keymap {
 
     /// Get number of layouts for a specific key
     pub fn num_layouts_for_key(&self, keycode: u32) -> u32 {
-        unsafe { super::keymap::xkb_keymap_num_layouts_for_key(self.ptr, keycode) }
+        unsafe { super::keymap::xkb_keymap_num_layouts_for_key(self.as_ptr() as *mut _, keycode) }
     }
 
     /// Get modifier index by name
     pub fn mod_get_index(&self, name: &str) -> Option<u32> {
         unsafe {
             let name_cstr = std::ffi::CString::new(name).ok()?;
-            let idx = super::keymap::xkb_keymap_mod_get_index(self.ptr, name_cstr.as_ptr());
+            let idx = super::keymap::xkb_keymap_mod_get_index(
+                self.as_ptr() as *mut _,
+                name_cstr.as_ptr(),
+            );
             if idx == u32::MAX {
                 None
             } else {
@@ -447,7 +427,7 @@ impl ExactSizeIterator for KeycodeIter {
 impl Drop for Keymap {
     fn drop(&mut self) {
         unsafe {
-            super::keymap::xkb_keymap_unref(self.ptr);
+            super::keymap::xkb_keymap_unref(self.as_mut_ptr());
         }
     }
 }
@@ -738,7 +718,7 @@ impl ComposeTable {
             format: 0,
             flags: super::compose::XKB_COMPOSE_COMPILE_NO_FLAGS,
             ctx: ctx.entity.clone(),
-            locale: locale_cstr.into_raw(),
+            locale: locale_cstr.to_str().unwrap().to_string(),
             utf8: Vec::new(),
             nodes: todo!(),
         };
@@ -763,14 +743,11 @@ mod tests {
     #[test]
     fn test_rule_names_to_c() {
         let names = RuleNames::evdev("us".to_string(), Some("dvorak".to_string()));
-        let (c_struct, _strings) = names.to_c_keymap();
+        let c_struct = names.to_c_keymap();
 
-        unsafe {
-            use std::ffi::CStr;
-            assert_eq!(CStr::from_ptr(c_struct.rules).to_str().unwrap(), "evdev");
-            assert_eq!(CStr::from_ptr(c_struct.layout).to_str().unwrap(), "us");
-            assert_eq!(CStr::from_ptr(c_struct.variant).to_str().unwrap(), "dvorak");
-        }
+        assert_eq!(c_struct.rules.to_str().unwrap(), "evdev");
+        assert_eq!(c_struct.layout.to_str().unwrap(), "us");
+        assert_eq!(c_struct.variant.to_str().unwrap(), "dvorak");
     }
 
     #[test]

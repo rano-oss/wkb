@@ -402,8 +402,8 @@ static mut synthetic_key_group_break_group_latch: xkb_group = xkb_group {
     explicit_actions: false,
     implicit_actions: false,
     explicit_type: false,
-    type_0: std::ptr::null(),
-    levels: std::ptr::null_mut(),
+    type_idx: 0,
+    levels: Vec::new(),
 };
 static mut synthetic_key_break_group_latch: xkb_key = xkb_key {
     keycode: 0,
@@ -419,7 +419,7 @@ static mut synthetic_key_break_group_latch: xkb_key = xkb_key {
     out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
     out_of_range_group_number: 0,
     num_groups: 1,
-    groups: std::ptr::null_mut(),
+    groups: Vec::new(),
     c2rust_unnamed: C2Rust_Unnamed_9 {
         overlay_key: std::ptr::null(),
     },
@@ -452,13 +452,13 @@ unsafe fn get_entry_for_mods(
 ) -> *const xkb_key_type_entry {
     unsafe {
         let mut i: u32 = 0 as u32;
-        while i < (*type_0).num_entries {
-            if entry_is_active((*type_0).entries.offset(i as isize) as *mut xkb_key_type_entry)
+        while i < (&(*type_0).entries).len() as u32 {
+            if entry_is_active(&(&(*type_0).entries)[i as usize] as *const xkb_key_type_entry)
                 as i32
                 != 0
-                && (*(*type_0).entries.offset(i as isize)).mods.mask == mods
+                && (&(*type_0).entries)[i as usize].mods.mask == mods
             {
-                return (*type_0).entries.offset(i as isize) as *mut xkb_key_type_entry;
+                return &(&(*type_0).entries)[i as usize] as *const xkb_key_type_entry;
             }
             i = i.wrapping_add(1);
         }
@@ -472,7 +472,8 @@ unsafe fn get_entry_for_key_state(
     mut group: u32,
 ) -> *const xkb_key_type_entry {
     unsafe {
-        let type_0: *const xkb_key_type = (*(*key).groups.offset(group as isize)).type_0;
+        let type_0: *const xkb_key_type =
+            &(&(*(*state).keymap).types)[(&(*key).groups)[group as usize].type_idx as usize];
         let mut active_mods: u32 = (*state).components.mods & (*type_0).mods.mask;
         return get_entry_for_mods(type_0, active_mods);
     }
@@ -1916,10 +1917,8 @@ static mut synthetic_key_type: xkb_key_type = {
         mods: xkb_mods { mods: 0, mask: 0 },
         required: false,
         num_levels: 1 as u32,
-        num_level_names: 0,
-        level_names: std::ptr::null_mut(),
-        num_entries: 1 as u32,
-        entries: &raw const synthetic_key_level_entry as *mut xkb_key_type_entry,
+        level_names: Vec::new(),
+        entries: Vec::new(), // populated in c2rust_run_static_initializers
     }
 };
 
@@ -1937,7 +1936,7 @@ static mut synthetic_key: xkb_key = xkb_key {
     out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
     out_of_range_group_number: 0,
     num_groups: 0,
-    groups: std::ptr::null_mut(),
+    groups: Vec::new(),
     c2rust_unnamed: C2Rust_Unnamed_9 {
         overlay_key: std::ptr::null(),
     },
@@ -1978,8 +1977,8 @@ unsafe fn update_latch_modifiers(
             explicit_actions: false,
             implicit_actions: false,
             explicit_type: false,
-            type_0: &raw mut synthetic_key_type,
-            levels: &raw mut synthetic_key_level_break_mod_latch,
+            type_idx: 0,
+            levels: vec![synthetic_key_level_break_mod_latch],
         };
         let synthetic_key_break_mod_latch = xkb_key {
             keycode: 0,
@@ -1995,7 +1994,7 @@ unsafe fn update_latch_modifiers(
             out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
             out_of_range_group_number: 0,
             num_groups: 1,
-            groups: &raw mut synthetic_key_group_break_mod_latch,
+            groups: vec![synthetic_key_group_break_mod_latch],
             c2rust_unnamed: C2Rust_Unnamed_9 {
                 overlay_key: std::ptr::null(),
             },
@@ -2195,41 +2194,39 @@ unsafe fn state_update_layout_policy(
 }
 
 unsafe fn log_abi_error(mut ctx: *mut xkb_context, mut func: *const i8, mut error: xkb_error_code) {
-    unsafe {
-        match error as i32 {
-            450 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] {}: ABI error: unsupported versioned struct\n",
-                    XKB_ERROR_ABI_INVALID_STRUCT_SIZE as i32,
-                    crate::xkb::utils::CStrDisplay(func),
-                );
-            }
-            914 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] {}: ABI version mismatch: missing newer required fields\n",
-                    XKB_ERROR_ABI_BACKWARD_COMPAT as i32,
-                    crate::xkb::utils::CStrDisplay(func),
-                );
-            }
-            876 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] {}: ABI version mismatch: cannot use newer fields\n",
-                    XKB_ERROR_ABI_FORWARD_COMPAT as i32,
-                    crate::xkb::utils::CStrDisplay(func),
-                );
-            }
-            _ => {}
-        };
-    }
+    match error as i32 {
+        450 => {
+            xkb_logf!(
+                ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
+                "[XKB-{:03}] {}: ABI error: unsupported versioned struct\n",
+                XKB_ERROR_ABI_INVALID_STRUCT_SIZE as i32,
+                crate::xkb::utils::CStrDisplay(func),
+            );
+        }
+        914 => {
+            xkb_logf!(
+                ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
+                "[XKB-{:03}] {}: ABI version mismatch: missing newer required fields\n",
+                XKB_ERROR_ABI_BACKWARD_COMPAT as i32,
+                crate::xkb::utils::CStrDisplay(func),
+            );
+        }
+        876 => {
+            xkb_logf!(
+                ctx,
+                XKB_LOG_LEVEL_ERROR,
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
+                "[XKB-{:03}] {}: ABI version mismatch: cannot use newer fields\n",
+                XKB_ERROR_ABI_FORWARD_COMPAT as i32,
+                crate::xkb::utils::CStrDisplay(func),
+            );
+        }
+        _ => {}
+    };
 }
 
 unsafe fn check_state_update_abi_(
@@ -2858,7 +2855,8 @@ unsafe fn key_get_consumed(
         if !matching_entry.is_null() {
             preserve = (*matching_entry).preserve.mask;
         }
-        let type_0: *const xkb_key_type = (*(*key).groups.offset(group as isize)).type_0;
+        let type_0: *const xkb_key_type =
+            &(&(*(*state).keymap).types)[(&(*key).groups)[group as usize].type_idx as usize];
         match mode as u32 {
             0 => {
                 consumed = (*type_0).mods.mask;
@@ -2871,19 +2869,17 @@ unsafe fn key_get_consumed(
                 } else {
                     0 as u32
                 };
-                let no_mods_level: *const xkb_level = (*(*key).groups.offset(group as isize))
-                    .levels
-                    .offset(no_mods_leveli as isize)
-                    as *mut xkb_level;
+                let no_mods_level: *const xkb_level = &(&(*key).groups)[group as usize].levels
+                    [no_mods_leveli as usize]
+                    as *const xkb_level;
                 let mut i: u32 = 0 as u32;
-                while i < (*type_0).num_entries {
+                while i < (&(*type_0).entries).len() as u32 {
                     let entry: *const xkb_key_type_entry =
-                        (*type_0).entries.offset(i as isize) as *mut xkb_key_type_entry;
+                        &(&(*type_0).entries)[i as usize] as *const xkb_key_type_entry;
                     if entry_is_active(entry) {
-                        let level: *const xkb_level = (*(*key).groups.offset(group as isize))
-                            .levels
-                            .offset((*entry).level as isize)
-                            as *mut xkb_level;
+                        let level: *const xkb_level = &(&(*key).groups)[group as usize].levels
+                            [(*entry).level as usize]
+                            as *const xkb_level;
                         if !XkbLevelsSameSyms(level, no_mods_level) {
                             if entry == matching_entry
                                 || ((*entry).mods.mask as u32 != 0
@@ -2933,13 +2929,14 @@ pub unsafe fn xkb_state_mod_index_is_consumed(
 
 unsafe fn c2rust_run_static_initializers() {
     unsafe {
+        synthetic_key_type.entries = vec![synthetic_key_level_entry];
         synthetic_key_group_break_group_latch = xkb_group {
             explicit_symbols: false,
             explicit_actions: false,
             implicit_actions: false,
             explicit_type: false,
-            type_0: &raw mut synthetic_key_type,
-            levels: &raw mut synthetic_key_level_break_group_latch,
+            type_idx: 0,
+            levels: vec![synthetic_key_level_break_group_latch],
         };
         synthetic_key_break_group_latch = xkb_key {
             keycode: 0,
@@ -2955,7 +2952,7 @@ unsafe fn c2rust_run_static_initializers() {
             out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
             out_of_range_group_number: 0,
             num_groups: 1,
-            groups: &raw mut synthetic_key_group_break_group_latch,
+            groups: vec![synthetic_key_group_break_group_latch.clone()],
             c2rust_unnamed: C2Rust_Unnamed_9 {
                 overlay_key: std::ptr::null(),
             },
@@ -2974,7 +2971,7 @@ unsafe fn c2rust_run_static_initializers() {
             out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
             out_of_range_group_number: 0,
             num_groups: 0,
-            groups: std::ptr::null_mut(),
+            groups: Vec::new(),
             c2rust_unnamed: C2Rust_Unnamed_9 {
                 overlay_key: std::ptr::null(),
             },

@@ -39,13 +39,25 @@ pub const XKB_MOD_INVALID: u32 = 0xffffffff;
 
 // ── xkb_rule_names ──────────────────────────────────────────────────
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct xkb_rule_names {
-    pub rules: *const i8,
-    pub model: *const i8,
-    pub layout: *const i8,
-    pub variant: *const i8,
-    pub options: *const i8,
+    pub rules: std::ffi::CString,
+    pub model: std::ffi::CString,
+    pub layout: std::ffi::CString,
+    pub variant: std::ffi::CString,
+    pub options: std::ffi::CString,
+}
+
+impl Default for xkb_rule_names {
+    fn default() -> Self {
+        Self {
+            rules: std::ffi::CString::new("").unwrap(),
+            model: std::ffi::CString::new("").unwrap(),
+            layout: std::ffi::CString::new("").unwrap(),
+            variant: std::ffi::CString::new("").unwrap(),
+            options: std::ffi::CString::new("").unwrap(),
+        }
+    }
 }
 
 // ── Opaque types ────────────────────────────────────────────────────
@@ -76,7 +88,6 @@ pub struct xkb_context {
 
 // ── keymap_h types (from keymap_priv.rs) ────────────────────────────
 
-#[derive(Clone)]
 pub struct xkb_keymap {
     pub ctx: xkb_context,
     pub refcnt: i32,
@@ -90,20 +101,17 @@ pub struct xkb_keymap {
     pub num_keys_low: u32,
     pub keys: *mut xkb_key,
     pub c2rust_unnamed: C2Rust_Unnamed_3,
-    pub types: *mut xkb_key_type,
-    pub num_types: u32,
-    pub num_sym_interprets: u32,
-    pub sym_interprets: *mut xkb_sym_interpret,
+    pub types: Vec<xkb_key_type>,
+    pub sym_interprets: Vec<xkb_sym_interpret>,
     pub mods: xkb_mod_set,
     pub canonical_state_mask: u32,
     pub redirect_key_auto: u32,
     pub num_groups: u32,
-    pub num_group_names: u32,
-    pub group_names: *mut u32,
-    pub keycodes_section_name: *mut i8,
-    pub symbols_section_name: *mut i8,
-    pub types_section_name: *mut i8,
-    pub compat_section_name: *mut i8,
+    pub group_names: Vec<u32>,
+    pub keycodes_section_name: String,
+    pub symbols_section_name: String,
+    pub types_section_name: String,
+    pub compat_section_name: String,
 }
 
 #[derive(Copy, Clone)]
@@ -328,17 +336,15 @@ pub const MATCH_ANY: u32 = 2;
 pub const MATCH_ANY_OR_NONE: u32 = 1;
 pub const MATCH_NONE: u32 = 0;
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct xkb_key_type {
     pub name: u32,
     pub mods: xkb_mods,
     pub required: bool,
     pub num_levels: u32,
-    pub num_level_names: u32,
-    pub level_names: *mut u32,
-    pub num_entries: u32,
-    pub entries: *mut xkb_key_type_entry,
+    pub level_names: Vec<u32>,
+    pub entries: Vec<xkb_key_type_entry>,
 }
 
 #[derive(Copy, Clone)]
@@ -412,7 +418,7 @@ pub struct C2Rust_Unnamed_8 {
     pub c2rust_unnamed_0: u32,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct xkb_key {
     pub keycode: u32,
@@ -428,7 +434,7 @@ pub struct xkb_key {
     pub out_of_range_group_policy: u32,
     pub out_of_range_group_number: u32,
     pub num_groups: u32,
-    pub groups: *mut xkb_group,
+    pub groups: Vec<xkb_group>,
     pub c2rust_unnamed: C2Rust_Unnamed_9,
 }
 
@@ -439,15 +445,15 @@ pub union C2Rust_Unnamed_9 {
     pub overlays_keys: *mut *const xkb_key,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct xkb_group {
     pub explicit_symbols: bool,
     pub explicit_actions: bool,
     pub implicit_actions: bool,
     pub explicit_type: bool,
-    pub type_0: *const xkb_key_type,
-    pub levels: *mut xkb_level,
+    pub type_idx: u32,
+    pub levels: Vec<xkb_level>,
 }
 
 #[derive(Copy, Clone)]
@@ -724,10 +730,9 @@ pub struct xkb_keymap_format_ops {
 // ── Inline helpers ──────────────────────────────────────────────────
 
 #[inline]
-pub unsafe fn XkbKeyNumLevels(mut key: *const xkb_key, mut layout: u32) -> u32 {
-    unsafe {
-        return (*(*(*key).groups.offset(layout as isize)).type_0).num_levels;
-    }
+pub unsafe fn XkbKeyNumLevels(keymap: *const xkb_keymap, key: *const xkb_key, layout: u32) -> u32 {
+    let group = &(&(*key).groups)[layout as usize];
+    (&(*keymap).types)[group.type_idx as usize].num_levels
 }
 
 #[inline]

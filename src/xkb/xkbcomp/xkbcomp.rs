@@ -186,14 +186,14 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
         let mut file: *mut XkbFile = std::ptr::null_mut();
         if (*keymap).ctx.log_level as u32 >= XKB_LOG_LEVEL_DEBUG as u32 {
             let mut names: xkb_rule_names = xkb_rule_names {
-                rules: std::ptr::null(),
-                model: std::ptr::null(),
-                layout: std::ptr::null(),
-                variant: std::ptr::null(),
-                options: std::ptr::null(),
+                rules: std::ffi::CString::new("").unwrap(),
+                model: std::ffi::CString::new("").unwrap(),
+                layout: std::ffi::CString::new("").unwrap(),
+                variant: std::ffi::CString::new("").unwrap(),
+                options: std::ffi::CString::new("").unwrap(),
             };
             let buf_size: usize = (std::mem::size_of::<[i8; 2048]>()).wrapping_sub(1 as usize);
-            let mut buf: *mut i8 = xkb_context_get_buffer(&(*rmlvo).ctx, buf_size);
+            let mut buf: *mut i8 = xkb_context_get_buffer(&mut (*keymap).ctx, buf_size);
             if buf.is_null() as i64 != 0 {
                 return false;
             }
@@ -206,11 +206,11 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Compiling from RMLVO builder: rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
-                crate::xkb::utils::CStrDisplay(names.rules),
-                crate::xkb::utils::CStrDisplay(names.model),
-                crate::xkb::utils::CStrDisplay(names.layout),
-                crate::xkb::utils::CStrDisplay(names.variant),
-                crate::xkb::utils::CStrDisplay(names.options),
+                names.rules.to_str().unwrap_or(""),
+                names.model.to_str().unwrap_or(""),
+                names.layout.to_str().unwrap_or(""),
+                names.variant.to_str().unwrap_or(""),
+                names.options.to_str().unwrap_or(""),
             );
         }
         ok = xkb_components_from_rmlvo_builder(
@@ -220,14 +220,14 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
         );
         if !ok {
             let mut names_0: xkb_rule_names = xkb_rule_names {
-                rules: std::ptr::null(),
-                model: std::ptr::null(),
-                layout: std::ptr::null(),
-                variant: std::ptr::null(),
-                options: std::ptr::null(),
+                rules: std::ffi::CString::new("").unwrap(),
+                model: std::ffi::CString::new("").unwrap(),
+                layout: std::ffi::CString::new("").unwrap(),
+                variant: std::ffi::CString::new("").unwrap(),
+                options: std::ffi::CString::new("").unwrap(),
             };
             let buf_size_0: usize = std::mem::size_of::<[i8; 2048]>();
-            let mut buf_0: *mut i8 = xkb_context_get_buffer(&(*rmlvo).ctx, buf_size_0);
+            let mut buf_0: *mut i8 = xkb_context_get_buffer(&mut (*keymap).ctx, buf_size_0);
             if buf_0.is_null() as i64 != 0 {
                 return false;
             }
@@ -241,11 +241,11 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Couldn't look up rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32,
-                crate::xkb::utils::CStrDisplay(names_0.rules),
-                crate::xkb::utils::CStrDisplay(names_0.model),
-                crate::xkb::utils::CStrDisplay(names_0.layout),
-                crate::xkb::utils::CStrDisplay(names_0.variant),
-                crate::xkb::utils::CStrDisplay(names_0.options),
+                names_0.rules.to_str().unwrap_or(""),
+                names_0.model.to_str().unwrap_or(""),
+                names_0.layout.to_str().unwrap_or(""),
+                names_0.variant.to_str().unwrap_or(""),
+                names_0.options.to_str().unwrap_or(""),
             );
             return false;
         }
@@ -303,11 +303,11 @@ unsafe fn text_v1_keymap_new_from_names(
             XKB_LOG_LEVEL_DEBUG,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "Compiling from RMLVO: rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
-            crate::xkb::utils::CStrDisplay((*rmlvo).rules),
-            crate::xkb::utils::CStrDisplay((*rmlvo).model),
-            crate::xkb::utils::CStrDisplay((*rmlvo).layout),
-            crate::xkb::utils::CStrDisplay((*rmlvo).variant),
-            crate::xkb::utils::CStrDisplay((*rmlvo).options),
+            (*rmlvo).rules.to_str().unwrap_or(""),
+            (*rmlvo).model.to_str().unwrap_or(""),
+            (*rmlvo).layout.to_str().unwrap_or(""),
+            (*rmlvo).variant.to_str().unwrap_or(""),
+            (*rmlvo).options.to_str().unwrap_or(""),
         );
         ok = xkb_components_from_rules_names(
             &raw mut (*keymap).ctx,
@@ -322,12 +322,12 @@ unsafe fn text_v1_keymap_new_from_names(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Couldn't look up rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32,
-                crate::xkb::utils::CStrDisplay((*rmlvo).rules),
-                crate::xkb::utils::CStrDisplay((*rmlvo).model),
-                crate::xkb::utils::CStrDisplay((*rmlvo).layout),
-                crate::xkb::utils::CStrDisplay((*rmlvo).variant),
-                crate::xkb::utils::CStrDisplay((*rmlvo).options),
-            );
+            &(*rmlvo).rules.to_str().unwrap_or(""),
+            &(*rmlvo).model.to_str().unwrap_or(""),
+            &(*rmlvo).layout.to_str().unwrap_or(""),
+            &(*rmlvo).variant.to_str().unwrap_or(""),
+            &(*rmlvo).options.to_str().unwrap_or(""),
+        );
             return false;
         }
         let max_groups: u32 = format_max_groups((*keymap).format) as u32;

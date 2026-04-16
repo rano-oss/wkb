@@ -144,28 +144,22 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
                 }) as isize,
             );
             while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
-                if !(*key).groups.is_null() {
+                if !(&(*key).groups).is_empty() {
                     let mut i: u32 = 0 as u32;
                     while i < (*key).num_groups {
-                        if !(*(*key).groups.offset(i as isize)).levels.is_null() {
+                        if !(&(&(*key).groups)[i as usize].levels).is_empty() {
                             let mut j: u32 = 0 as u32;
-                            while j < XkbKeyNumLevels(key, i) {
+                            while j < XkbKeyNumLevels(keymap, key, i) {
                                 clear_level(
-                                    (*(*key).groups.offset(i as isize))
-                                        .levels
-                                        .offset(j as isize)
+                                    &mut (&mut (*(key as *mut xkb_key)).groups)[i as usize].levels
+                                        [j as usize]
                                         as *mut xkb_level,
                                 );
                                 j = j.wrapping_add(1);
                             }
-                            free(
-                                (*(*key).groups.offset(i as isize)).levels
-                                    as *mut ::core::ffi::c_void,
-                            );
                         }
                         i = i.wrapping_add(1);
                     }
-                    free((*key).groups as *mut ::core::ffi::c_void);
                 }
                 if !(*key).overlays_inline && !(*key).c2rust_unnamed.overlays_keys.is_null() {
                     free((*key).c2rust_unnamed.overlays_keys as *mut ::core::ffi::c_void);
@@ -174,36 +168,21 @@ pub unsafe fn xkb_keymap_unref(mut keymap: *mut xkb_keymap) {
             }
             free((*keymap).keys as *mut ::core::ffi::c_void);
         }
-        if !(*keymap).types.is_null() {
+        if !(&(*keymap).types).is_empty() {
             let mut i_0: u32 = 0 as u32;
-            while i_0 < (*keymap).num_types {
-                free((*(*keymap).types.offset(i_0 as isize)).entries as *mut ::core::ffi::c_void);
-                free(
-                    (*(*keymap).types.offset(i_0 as isize)).level_names as *mut ::core::ffi::c_void,
-                );
+            while (i_0 as usize) < (&(*keymap).types).len() {
                 i_0 = i_0.wrapping_add(1);
             }
-            free((*keymap).types as *mut ::core::ffi::c_void);
         }
+        // types Vec drops automatically
         let mut k: u32 = 0 as u32;
-        while k < (*keymap).num_sym_interprets {
-            // clear_interpret inlined
-            let interp = (*keymap).sym_interprets.offset(k as isize) as *mut xkb_sym_interpret;
-            (*interp).actions.clear();
+        while (k as usize) < (&(*keymap).sym_interprets).len() {
+            (&mut (*keymap).sym_interprets)[k as usize].actions.clear();
             k = k.wrapping_add(1);
         }
-        free((*keymap).sym_interprets as *mut ::core::ffi::c_void);
+        // sym_interprets Vec will be dropped below
         free((*keymap).c2rust_unnamed.c2rust_unnamed_0.key_aliases as *mut ::core::ffi::c_void);
-        free((*keymap).group_names as *mut ::core::ffi::c_void);
-        cstr_free((*keymap).keycodes_section_name);
-        cstr_free((*keymap).symbols_section_name);
-        cstr_free((*keymap).types_section_name);
-        cstr_free((*keymap).compat_section_name);
-        // Drop the owned ctx field (contains Vecs, HashMap — needs proper cleanup)
-        std::ptr::drop_in_place(&raw mut (*keymap).ctx);
-        // Free the keymap allocation (was allocated with alloc_zeroed)
-        let layout = std::alloc::Layout::new::<xkb_keymap>();
-        std::alloc::dealloc(keymap as *mut u8, layout);
+        // Box owner (Keymap.inner) handles final deallocation — do NOT Box::from_raw here
     }
 }
 #[c2rust::src_loc = "99:1"]
@@ -233,7 +212,7 @@ pub unsafe fn xkb_keymap_new_from_rmlvo(
     mut rmlvo: *const xkb_rmlvo_builder,
     mut format: u32,
     mut flags: u32,
-) -> Option<xkb_keymap> {
+) -> Option<Box<xkb_keymap>> {
     unsafe {
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
         if ops.is_null() || (*ops).keymap_new_from_rmlvo.is_none() {
@@ -252,15 +231,18 @@ pub unsafe fn xkb_keymap_new_from_rmlvo(
             b"xkb_keymap_new_from_rmlvo\0".as_ptr() as *const i8,
             format,
             flags,
-        );
-        return keymap;
+        )?;
+        if !((*ops).keymap_new_from_rmlvo.unwrap())(&mut *keymap as *mut xkb_keymap, rmlvo) {
+            return None;
+        }
+        return Some(keymap);
     }
 }
 pub unsafe fn xkb_keymap_new_from_names(
     mut ctx: xkb_context,
     mut rmlvo_in: *const xkb_rule_names,
     mut flags: u32,
-) -> Option<xkb_keymap> {
+) -> Option<Box<xkb_keymap>> {
     let format = XKB_KEYMAP_FORMAT_TEXT_V2;
     unsafe {
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
@@ -282,19 +264,25 @@ pub unsafe fn xkb_keymap_new_from_names(
             b"xkb_keymap_new_from_names2\0".as_ptr() as *const i8,
             format,
             flags,
-        );
+        )?;
         let mut rmlvo: xkb_rule_names = xkb_rule_names {
-            rules: std::ptr::null(),
-            model: std::ptr::null(),
-            layout: std::ptr::null(),
-            variant: std::ptr::null(),
-            options: std::ptr::null(),
+            rules: std::ffi::CString::new("").unwrap(),
+            model: std::ffi::CString::new("").unwrap(),
+            layout: std::ffi::CString::new("").unwrap(),
+            variant: std::ffi::CString::new("").unwrap(),
+            options: std::ffi::CString::new("").unwrap(),
         };
         if !rmlvo_in.is_null() {
-            rmlvo = *rmlvo_in;
+            rmlvo = (*rmlvo_in).clone();
         }
         xkb_context_sanitize_rule_names(&ctx, &raw mut rmlvo);
-        return keymap;
+        if !((*ops).keymap_new_from_names.unwrap())(
+            &mut *keymap as *mut xkb_keymap,
+            &rmlvo as *const xkb_rule_names,
+        ) {
+            return None;
+        }
+        return Some(keymap);
     }
 }
 pub unsafe fn xkb_keymap_new_from_string(
@@ -302,7 +290,7 @@ pub unsafe fn xkb_keymap_new_from_string(
     mut string: *const i8,
     mut format: u32,
     mut flags: u32,
-) -> Option<xkb_keymap> {
+) -> Option<Box<xkb_keymap>> {
     unsafe {
         let mut length = cstr_len(string);
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
@@ -336,13 +324,20 @@ pub unsafe fn xkb_keymap_new_from_string(
             b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8,
             format,
             flags,
-        );
+        )?;
         if cstr_len(string) > 0
             && *string.offset(length.wrapping_sub(1 as usize) as isize) as i32 == '\0' as i32
         {
             length = length.wrapping_sub(1);
         }
-        return keymap;
+        if !((*ops).keymap_new_from_string.unwrap())(
+            &mut *keymap as *mut xkb_keymap,
+            string,
+            length,
+        ) {
+            return None;
+        }
+        return Some(keymap);
     }
 }
 #[c2rust::src_loc = "223:1"]
@@ -351,7 +346,7 @@ pub unsafe fn xkb_keymap_new_from_file(
     mut file: *mut FILE,
     mut format: u32,
     mut flags: u32,
-) -> Option<xkb_keymap> {
+) -> Option<Box<xkb_keymap>> {
     unsafe {
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
         if ops.is_null() || (*ops).keymap_new_from_file.is_none() {
@@ -380,8 +375,11 @@ pub unsafe fn xkb_keymap_new_from_file(
             b"xkb_keymap_new_from_file\0".as_ptr() as *const i8,
             format,
             flags,
-        );
-        return keymap;
+        )?;
+        if !((*ops).keymap_new_from_file.unwrap())(&mut *keymap as *mut xkb_keymap, file) {
+            return None;
+        }
+        return Some(keymap);
     }
 }
 
@@ -471,12 +469,12 @@ pub unsafe fn xkb_keymap_num_layouts(mut keymap: *mut xkb_keymap) -> u32 {
 #[c2rust::src_loc = "359:1"]
 pub unsafe fn xkb_keymap_layout_get_name(mut keymap: *mut xkb_keymap, mut idx: u32) -> *const i8 {
     unsafe {
-        if idx >= (*keymap).num_group_names {
+        if idx as usize >= (&(*keymap).group_names).len() {
             return std::ptr::null();
         }
         return xkb_atom_text(
             &raw mut (*keymap).ctx,
-            *(*keymap).group_names.offset(idx as isize),
+            (&(*keymap).group_names)[idx as usize],
         );
     }
 }
@@ -489,8 +487,8 @@ pub unsafe fn xkb_keymap_layout_get_index(mut keymap: *mut xkb_keymap, mut name:
             return XKB_LAYOUT_INVALID as u32;
         }
         i = 0 as u32;
-        while i < (*keymap).num_group_names {
-            if *(*keymap).group_names.offset(i as isize) == atom {
+        while (i as usize) < (&(*keymap).group_names).len() {
+            if (&(*keymap).group_names)[i as usize] == atom {
                 return i;
             }
             i = i.wrapping_add(1);
@@ -528,7 +526,7 @@ pub unsafe fn xkb_keymap_num_levels_for_key(
         if layout == XKB_LAYOUT_INVALID as u32 {
             return 0 as u32;
         }
-        return XkbKeyNumLevels(key, layout);
+        return XkbKeyNumLevels(keymap, key, layout);
     }
 }
 #[c2rust::src_loc = "426:1"]
@@ -584,12 +582,11 @@ pub unsafe fn xkb_keymap_key_get_level(
         if layout == XKB_LAYOUT_INVALID as u32 {
             return std::ptr::null_mut();
         }
-        if level >= XkbKeyNumLevels(key, layout) {
+        if level >= XkbKeyNumLevels(keymap, key, layout) {
             return std::ptr::null_mut();
         }
-        return (*(*key).groups.offset(layout as isize))
-            .levels
-            .offset(level as isize) as *mut xkb_level;
+        return &mut (&mut (*(key as *mut xkb_key)).groups)[layout as usize].levels[level as usize]
+            as *mut xkb_level;
     }
 }
 #[c2rust::src_loc = "545:1"]
@@ -718,7 +715,7 @@ pub unsafe fn xkb_keymap_new(
     mut func: *const i8,
     mut format: u32,
     mut flags: u32,
-) -> Option<xkb_keymap> {
+) -> Option<Box<xkb_keymap>> {
     unsafe {
         static XKB_KEYMAP_COMPILE_FLAGS: u32 = XKB_KEYMAP_COMPILE_FLAGS_VALUES;
         if flags as u32 & !(XKB_KEYMAP_COMPILE_FLAGS as u32) != 0 {
@@ -732,14 +729,20 @@ pub unsafe fn xkb_keymap_new(
             );
             return None;
         }
-        let layout = std::alloc::Layout::new::<xkb_keymap>();
-        let ptr = std::alloc::alloc_zeroed(layout) as *mut xkb_keymap;
-        if ptr.is_null() {
-            return None;
-        }
-
-        let keymap = &mut *ptr;
-        std::ptr::write(&raw mut keymap.ctx, ctx);
+        // Use Box for allocation — zeroed via MaybeUninit to avoid UB
+        let mut keymap = Box::new(std::mem::MaybeUninit::<xkb_keymap>::zeroed());
+        let ptr = keymap.as_mut_ptr();
+        // Initialize non-Copy fields that can't be zeroed
+        std::ptr::write(&raw mut (*ptr).ctx, ctx);
+        std::ptr::write(&raw mut (*ptr).types, Vec::new());
+        std::ptr::write(&raw mut (*ptr).sym_interprets, Vec::new());
+        std::ptr::write(&raw mut (*ptr).group_names, Vec::new());
+        std::ptr::write(&raw mut (*ptr).keycodes_section_name, String::new());
+        std::ptr::write(&raw mut (*ptr).symbols_section_name, String::new());
+        std::ptr::write(&raw mut (*ptr).types_section_name, String::new());
+        std::ptr::write(&raw mut (*ptr).compat_section_name, String::new());
+        // Safety: all fields are now initialized (zeroed Copy fields + written non-Copy fields)
+        let mut keymap = Box::from_raw(Box::into_raw(keymap) as *mut xkb_keymap);
         keymap.refcnt = 1;
         keymap.flags = flags;
         keymap.format = format;
@@ -767,7 +770,25 @@ pub unsafe fn xkb_keymap_new(
         }
         keymap.mods.num_mods = builtin_mods.len() as u32;
         keymap.canonical_state_mask = MOD_REAL_MASK_ALL;
-        return ptr.as_ref().cloned();
+        return Some(keymap);
+    }
+}
+
+pub fn xkb_escape_map_name(name: &mut String) {
+    static LEGAL: [u8; 32] = [
+        0, 0, 0, 0, 0, 0xa7, 0xff, 0x83, 0xfe, 0xff, 0xff, 0x87, 0xfe, 0xff, 0xff, 0x7, 0, 0, 0, 0,
+        0, 0, 0, 0, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0x7f, 0xff,
+    ];
+    // Safety: we only replace ASCII bytes with '_' (ASCII), so UTF-8 validity is preserved
+    // if the input was valid UTF-8 (non-ASCII bytes have bit 7 set, and we only replace
+    // bytes that fail the legal check which includes all bytes >= 128 with bit patterns
+    // that would pass). Actually, to be safe, operate on bytes:
+    let bytes = unsafe { name.as_bytes_mut() };
+    for b in bytes.iter_mut() {
+        let c = *b;
+        if LEGAL[(c as usize) / 8] & (1u8 << (c % 8)) == 0 {
+            *b = b'_';
+        }
     }
 }
 
@@ -962,51 +983,20 @@ pub unsafe fn xkb_keymap_key_get_actions_by_level(
                 (*key).out_of_range_group_number,
             );
             if !(layout == XKB_LAYOUT_INVALID as u32) {
-                if !(level >= XkbKeyNumLevels(key, layout)) {
-                    count = (*(*(*key).groups.offset(layout as isize))
-                        .levels
-                        .offset(level as isize))
-                    .num_actions;
+                if !(level >= XkbKeyNumLevels(keymap, key, layout)) {
+                    count = (&(*key).groups)[layout as usize].levels[level as usize].num_actions;
                     match count as i32 {
                         0 => {}
                         1 => {
-                            c2rust_current_block = 945040705843674513;
-                            match c2rust_current_block {
-                                15050610111240922756 => {
-                                    *actions = (*(*(*key).groups.offset(layout as isize))
-                                        .levels
-                                        .offset(level as isize))
-                                    .a
-                                    .actions;
-                                }
-                                _ => {
-                                    *actions = &raw mut (*(*(*key).groups.offset(layout as isize))
-                                        .levels
-                                        .offset(level as isize))
-                                    .a
-                                    .action;
-                                }
-                            }
+                            *actions = &(&(*key).groups)[layout as usize].levels[level as usize]
+                                .a
+                                .action as *const xkb_action;
                             return count;
                         }
                         _ => {
-                            c2rust_current_block = 15050610111240922756;
-                            match c2rust_current_block {
-                                15050610111240922756 => {
-                                    *actions = (*(*(*key).groups.offset(layout as isize))
-                                        .levels
-                                        .offset(level as isize))
-                                    .a
-                                    .actions;
-                                }
-                                _ => {
-                                    *actions = &raw mut (*(*(*key).groups.offset(layout as isize))
-                                        .levels
-                                        .offset(level as isize))
-                                    .a
-                                    .action;
-                                }
-                            }
+                            *actions = (&(*key).groups)[layout as usize].levels[level as usize]
+                                .a
+                                .actions;
                             return count;
                         }
                     }

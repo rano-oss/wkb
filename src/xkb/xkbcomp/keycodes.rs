@@ -1273,13 +1273,10 @@ unsafe fn CopyKeyNamesInfoToKeymap(
             (*keymap).redirect_key_auto = keycode;
         }
         (*keymap).keycodes_section_name = match &(*info).name {
-            Some(s) => {
-                let cs = std::ffi::CString::new(s.as_str()).unwrap();
-                strdup_safe(cs.as_ptr())
-            }
-            None => std::ptr::null_mut(),
+            Some(s) => s.clone(),
+            None => String::new(),
         };
-        XkbEscapeMapName((*keymap).keycodes_section_name);
+        xkb_escape_map_name(&mut (*keymap).keycodes_section_name);
         return true;
     }
 }

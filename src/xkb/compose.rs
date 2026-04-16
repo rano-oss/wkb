@@ -8,7 +8,7 @@ pub struct xkb_compose_table {
     pub format: xkb_compose_format,
     pub flags: xkb_compose_compile_flags,
     pub ctx: xkb_context,
-    pub locale: *mut i8,
+    pub locale: String,
     pub utf8: Vec<i8>,
     pub nodes: Vec<compose_node>,
 }

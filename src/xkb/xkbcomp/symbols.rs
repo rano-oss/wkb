@@ -274,10 +274,7 @@ unsafe fn InitSymbolsInfo(
             &raw mut (*(*keymap_info).keymap).ctx,
             &raw mut (*info).default_key,
         );
-        InitActionsInfo(
-            (*keymap_info).keymap,
-            &raw mut (*info).default_actions,
-        );
+        InitActionsInfo((*keymap_info).keymap, &raw mut (*info).default_actions);
         InitVMods(&raw mut (*info).mods, mods, include_depth > 0 as u32);
         (*info).explicit_group = XKB_LAYOUT_INVALID as u32;
     }
@@ -296,7 +293,7 @@ unsafe fn ClearSymbolsInfo(mut info: *mut SymbolsInfo) {
 }
 unsafe fn KeyInfoText(mut info: *mut SymbolsInfo, mut keyi: *mut KeyInfo) -> &'static [u8] {
     unsafe {
-        return KeyNameText((*info).ctx, (*keyi).name);
+        return KeyNameText((*((*info).ctx)).clone(), (*keyi).name);
     }
 }
 unsafe fn MergeGroups(
@@ -333,9 +330,9 @@ unsafe fn MergeGroups(
                             XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS
                                 as i32,
                             group.wrapping_add(1 as u32),
-                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, key_name)),
-                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, use_0)),
-                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, ignore)),
+                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), key_name)),
+                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*((*info).ctx)).atom_table, use_0)),
+                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*((*info).ctx)).atom_table, ignore)),
                         );
                     }
                     (*into).type_0 = use_0;
@@ -409,7 +406,7 @@ unsafe fn MergeGroups(
                                 XKB_WARNING_CONFLICTING_KEY_SYMBOL as i32,
                                 i.wrapping_add(1 as u32),
                                 group.wrapping_add(1 as u32),
-                                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, key_name)),
+                                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), key_name)),
                                 crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
                                     b"from\0".as_ptr() as *const i8
                                 } else {
@@ -473,7 +470,7 @@ unsafe fn MergeGroups(
                                     XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
                                     i.wrapping_add(1 as u32),
                                     group.wrapping_add(1 as u32),
-                                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, key_name)),
+                                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), key_name)),
                                     crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
                                         b"Using from, ignoring to\0".as_ptr()
                                             as *const i8
@@ -503,7 +500,7 @@ unsafe fn MergeGroups(
                                     XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
                                     i.wrapping_add(1 as u32),
                                     group.wrapping_add(1 as u32),
-                                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, key_name)),
+                                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), key_name)),
                                     crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*use_1).type_0)),
                                     crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*ignore_0).type_0)),
                                 );
@@ -1022,7 +1019,7 @@ unsafe fn MergeKeys(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Symbol map for key {} redefined; Using {} definition for conflicting fields\n",
                 XKB_WARNING_CONFLICTING_KEY_FIELDS as i32,
-                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, (*into).name)),
+                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), (*into).name)),
                 crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
                     b"first\0".as_ptr() as *const i8
                 } else {
@@ -1098,7 +1095,7 @@ unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) 
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Symbol \"{}\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_MODMAP as i32,
-                    crate::xkb::utils::ByteSliceDisplay(KeysymText((*info).ctx, (*new).u.keySym)),
+                    crate::xkb::utils::ByteSliceDisplay(KeysymText((*((*info).ctx)).clone(), (*new).u.keySym)),
                     crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, use_0)),
                     crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, ignore)),
                 );
@@ -1109,7 +1106,7 @@ unsafe fn AddModMapEntry(mut info: *mut SymbolsInfo, mut new: *mut ModMapEntry) 
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Key \"{}\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_MODMAP as i32,
-                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, (*new).u.keyName)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), (*new).u.keyName)),
                     crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, use_0)),
                     crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, ignore)),
                 );
@@ -1662,7 +1659,7 @@ unsafe fn ExprResolveOverlayEntry(
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
                 crate::xkb::utils::ByteSliceDisplay(field),
                 crate::xkb::utils::ByteSliceDisplay(KeyNameText(
-                    &raw mut (*(*keymap_info).keymap).ctx,
+                    (*(*keymap_info).keymap).ctx.clone(),
                     (*keyi).name
                 )),
             );
@@ -1685,7 +1682,7 @@ unsafe fn ExprResolveOverlayEntry(
                 "[XKB-{:03}] Unsupported overlay index \"{}\" field for {}: expected 1..{}, got: {}; ignored\n",
                 XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX as i32,
                 crate::xkb::utils::ByteSliceDisplay(field),
-                crate::xkb::utils::ByteSliceDisplay(KeyNameText(&raw mut (*(*keymap_info).keymap).ctx, (*keyi).name)),
+                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*(*keymap_info).keymap).ctx.clone(), (*keyi).name)),
                 (*keymap_info).features.max_overlays as i32,
                 raw_overlay,
             );
@@ -1695,11 +1692,7 @@ unsafe fn ExprResolveOverlayEntry(
             (raw_overlay as xkb_overlay_index_t as i32 - 1 as i32) as xkb_overlay_index_t;
         match (*expr).common.type_0 as u32 {
             8 => {
-                *key_rtrn = XkbKeyByName(
-                    (*keymap_info).keymap,
-                    (*expr).key_name.key_name,
-                    false,
-                );
+                *key_rtrn = XkbKeyByName((*keymap_info).keymap, (*expr).key_name.key_name, false);
                 if (*key_rtrn).is_null() {
                     xkb_logf!(
                         (*(*keymap_info).keymap).ctx,
@@ -1708,12 +1701,12 @@ unsafe fn ExprResolveOverlayEntry(
                         "[XKB-{:03}] Unknown key \"{}\" for field {} in {}\n",
                         XKB_WARNING_UNDEFINED_KEYCODE as i32,
                         crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                            &raw mut (*(*keymap_info).keymap).ctx,
+                            &(*(*keymap_info).keymap).ctx.atom_table,
                             (*expr).key_name.key_name
                         )),
                         crate::xkb::utils::ByteSliceDisplay(field),
                         crate::xkb::utils::ByteSliceDisplay(KeyNameText(
-                            &raw mut (*(*keymap_info).keymap).ctx,
+                            (*(*keymap_info).keymap).ctx.clone(),
                             (*keyi).name
                         )),
                     );
@@ -1722,8 +1715,10 @@ unsafe fn ExprResolveOverlayEntry(
                 return true;
             }
             10 => {
-                let id: &[u8] =
-                    xkb_atom_text_bytes(&raw mut (*(*keymap_info).keymap).ctx, (*expr).ident.ident);
+                let id: &[u8] = xkb_atom_text_bytes(
+                    &(*(*keymap_info).keymap).ctx.atom_table,
+                    (*expr).ident.ident,
+                );
                 if !id.is_empty() && istreq(id, b"none") {
                     *key_rtrn = std::ptr::null();
                     return true;
@@ -1741,7 +1736,7 @@ unsafe fn ExprResolveOverlayEntry(
                     crate::xkb::utils::ByteSliceDisplay(id),
                     crate::xkb::utils::ByteSliceDisplay(field),
                     crate::xkb::utils::ByteSliceDisplay(KeyNameText(
-                        &raw mut (*(*keymap_info).keymap).ctx,
+                        (*(*keymap_info).keymap).ctx.clone(),
                         (*keyi).name
                     )),
                 );
@@ -1757,7 +1752,7 @@ unsafe fn ExprResolveOverlayEntry(
                     stmt_type_to_string(STMT_EXPR_KEYNAME_LITERAL),
                     crate::xkb::utils::ByteSliceDisplay(field),
                     crate::xkb::utils::ByteSliceDisplay(KeyNameText(
-                        &raw mut (*(*keymap_info).keymap).ctx,
+                        (*(*keymap_info).keymap).ctx.clone(),
                         (*keyi).name
                     )),
                     stmt_type_to_string((*expr).common.type_0),
@@ -1924,13 +1919,13 @@ unsafe fn SetSymbolsField(
                             crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                             overlay as i32 + 1 as i32,
                             crate::xkb::utils::ByteSliceDisplay(if !prev.is_null() {
-                                KeyNameText((*info).ctx, (*prev).name)
+                                KeyNameText((*((*info).ctx)).clone(), (*prev).name)
                             } else {
                                 b"none"
                             }),
                             overlay as i32 + 1 as i32,
                             crate::xkb::utils::ByteSliceDisplay(if !key.is_null() {
-                                KeyNameText((*info).ctx, (*key).name)
+                                KeyNameText((*((*info).ctx)).clone(), (*key).name)
                             } else {
                                 b"none"
                             }),
@@ -1966,11 +1961,11 @@ unsafe fn SetSymbolsField(
                                 crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                                 (*keyi).overlays as i32,
                                 crate::xkb::utils::ByteSliceDisplay(KeyNameText(
-                                    (*info).ctx,
+                                    (*(*info).ctx).clone(),
                                     (*(*keyi).c2rust_unnamed.overlay_key).name,
                                 )),
                                 overlay as i32 + 1 as i32,
-                                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, (*key).name)),
+                                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), (*key).name)),
                             );
                             return (*(*info).keymap_info).strict as u32
                                 & PARSER_NO_FIELD_VALUE_MISMATCH as u32
@@ -2156,7 +2151,7 @@ unsafe fn SetGroupName(
                 XKB_WARNING_NON_BASE_GROUP_NAME as i32,
                 (*info).name.as_deref().unwrap_or(""),
                 group,
-                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, name)),
+                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*((*info).ctx)).atom_table, name)),
             );
             return false;
         }
@@ -2177,8 +2172,8 @@ unsafe fn SetGroupName(
                 "Multiple definitions of group {} name in map '{}'; Using '{}', ignoring '{}'\n",
                 group_to_use,
                 (*info).name.as_deref().unwrap_or(""),
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, use_0)),
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes((*info).ctx, ignore)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*((*info).ctx)).atom_table, use_0)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*((*info).ctx)).atom_table, ignore)),
                 );
                 name = use_0;
             }
@@ -2442,7 +2437,7 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
         let mut ndx: u32 = 0;
         let mut ok: bool = false;
         let mut ctx: *mut xkb_context = (*info).ctx;
-        let modifier_name: &[u8] = xkb_atom_text_bytes(ctx, (*def).modifier);
+        let modifier_name: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, (*def).modifier);
         if istreq(modifier_name, b"none") {
             ndx = XKB_MOD_NONE as u32;
         } else {
@@ -2454,7 +2449,7 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Illegal modifier map definition; Ignoring map for non-modifier \"{}\"\n",
                     XKB_ERROR_INVALID_REAL_MODIFIER as i32,
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*def).modifier)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*ctx).atom_table, (*def).modifier)),
                 );
                 return false;
             }
@@ -2598,23 +2593,18 @@ unsafe fn FindKeyForSymbol(mut keymap: *mut xkb_keymap, mut sym: u32) -> *mut xk
                     }) as isize,
                 );
                 while key < (*keymap).keys.offset((*keymap).num_keys as isize) {
-                    if group < (*key).num_groups && level < XkbKeyNumLevels(key, group) {
+                    if group < (*key).num_groups && level < XkbKeyNumLevels(keymap, key, group) {
                         got_one_level = true;
                         got_one_group = got_one_level;
                         let num_syms: xkb_keysym_count_t =
-                            (*(*(*key).groups.offset(group as isize))
-                                .levels
-                                .offset(level as isize))
-                            .num_syms;
+                            (&(*key).groups)[group as usize].levels[level as usize].num_syms;
                         if num_syms as i32 > 1 as i32 {
                             let mut k: xkb_keysym_count_t = 0 as xkb_keysym_count_t;
                             while (k as i32) < num_syms as i32 {
-                                if *(*(*(*key).groups.offset(group as isize))
-                                    .levels
-                                    .offset(level as isize))
-                                .s
-                                .syms
-                                .offset(k as isize)
+                                if *(&(*key).groups)[group as usize].levels[level as usize]
+                                    .s
+                                    .syms
+                                    .offset(k as isize)
                                     == sym
                                 {
                                     return key;
@@ -2622,11 +2612,10 @@ unsafe fn FindKeyForSymbol(mut keymap: *mut xkb_keymap, mut sym: u32) -> *mut xk
                                 k = k.wrapping_add(1);
                             }
                         } else if num_syms as i32 != 0
-                            && (*(*(*key).groups.offset(group as isize))
-                                .levels
-                                .offset(level as isize))
-                            .s
-                            .sym == sym
+                            && (&(*key).groups)[group as usize].levels[level as usize]
+                                .s
+                                .sym
+                                == sym
                         {
                             return key;
                         }
@@ -2779,7 +2768,7 @@ unsafe fn FindTypeForGroup(
     mut keyi: *mut KeyInfo,
     mut group: u32,
     mut explicit_type: *mut bool,
-) -> *const xkb_key_type {
+) -> u32 {
     unsafe {
         let mut i: u32 = 0;
         let mut groupi: *mut GroupInfo =
@@ -2803,37 +2792,37 @@ unsafe fn FindTypeForGroup(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Couldn't find an automatic type for key '{}' group {} with {} levels; Using the default type\n",
                 XKB_WARNING_CANNOT_INFER_KEY_TYPE as i32,
-                crate::xkb::utils::ByteSliceDisplay(KeyNameText(&raw mut (*keymap).ctx, (*keyi).name)),
+                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx.clone(), (*keyi).name)),
                 group.wrapping_add(1 as u32),
                 (*groupi).levels.len(),
             );
         } else {
             i = 0;
             i = 0 as u32;
-            while i < (*keymap).num_types {
-                if (*(*keymap).types.offset(i as isize)).name == type_name {
+            while (i as usize) < (&(*keymap).types).len() {
+                if (&(*keymap).types)[i as usize].name == type_name {
                     break;
                 }
                 i = i.wrapping_add(1);
             }
-            if i >= (*keymap).num_types {
+            if i as usize >= (&(*keymap).types).len() {
                 xkb_logf!(
                     (*keymap).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] The type \"{}\" for key '{}' group {} was not previously defined; Using the default type\n",
                     XKB_WARNING_UNDEFINED_KEY_TYPE as i32,
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&raw mut (*keymap).ctx, type_name)),
-                    crate::xkb::utils::ByteSliceDisplay(KeyNameText(&raw mut (*keymap).ctx, (*keyi).name)),
+                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*keymap).ctx.atom_table, type_name)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx.clone(), (*keyi).name)),
                     group.wrapping_add(1 as u32),
                 );
             } else {
-                (*(*keymap).types.offset(i as isize)).required = true;
-                return (*keymap).types.offset(i as isize) as *mut xkb_key_type;
+                (&mut (*keymap).types)[i as usize].required = true;
+                return i;
             }
         }
-        (*(*keymap).types.offset(0 as i32 as isize)).required = true;
-        return (*keymap).types.offset(0 as i32 as isize) as *mut xkb_key_type;
+        (&mut (*keymap).types)[0].required = true;
+        return 0;
     }
 }
 unsafe fn CopySymbolsDefToKeymap(
@@ -2908,8 +2897,16 @@ unsafe fn CopySymbolsDefToKeymap(
                 }
             }
 
-            (*key).groups = calloc((*key).num_groups as usize, std::mem::size_of::<xkb_group>())
-                as *mut xkb_group;
+            (*key).groups = (0..(*key).num_groups)
+                .map(|_| xkb_group {
+                    explicit_symbols: false,
+                    explicit_actions: false,
+                    implicit_actions: false,
+                    explicit_type: false,
+                    type_idx: 0,
+                    levels: Vec::new(),
+                })
+                .collect();
 
             // Find and assign the groups' types in the keymap
             if !(*keyi).groups.is_empty() {
@@ -2917,34 +2914,38 @@ unsafe fn CopySymbolsDefToKeymap(
                 groupi = (*keyi).groups.as_mut_ptr();
                 while i < (*keyi).groups.len() as u32 {
                     let mut explicit_type = false;
-                    let type_0: *const xkb_key_type =
-                        FindTypeForGroup(keymap, keyi, i, &raw mut explicit_type);
+                    let type_idx: u32 = FindTypeForGroup(keymap, keyi, i, &raw mut explicit_type);
 
                     // Always have as many levels as the type specifies
-                    if (*type_0).num_levels < (*groupi).levels.len() as u32 {
+                    if (&(*keymap).types)[type_idx as usize].num_levels
+                        < (*groupi).levels.len() as u32
+                    {
                         xkb_logf!(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_BRIEF as i32,
                             "[XKB-{:03}] Type \"{}\" has {} levels, but {} has {} levels; Ignoring extra symbols\n",
                             XKB_WARNING_EXTRA_SYMBOLS_IGNORED as i32,
-                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&raw mut (*keymap).ctx, (*type_0).name)),
-                            (*type_0).num_levels,
+                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*keymap).ctx.atom_table, (&(*keymap).types)[type_idx as usize].name)),
+                            (&(*keymap).types)[type_idx as usize].num_levels,
                             crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                             (*groupi).levels.len(),
                         );
 
-                        for lvl_idx in (*type_0).num_levels as usize..(*groupi).levels.len() {
+                        for lvl_idx in (&(*keymap).types)[type_idx as usize].num_levels as usize
+                            ..(*groupi).levels.len()
+                        {
                             clear_level(&mut (&mut (*groupi).levels)[lvl_idx] as *mut xkb_level);
                         }
                     }
 
                     // Resize levels array to match type
-                    let __need_levels: usize = (*type_0).num_levels as usize;
+                    let __need_levels: usize =
+                        (&(*keymap).types)[type_idx as usize].num_levels as usize;
                     vec_resize_zero(&mut (*groupi).levels, __need_levels);
 
-                    (*(*key).groups.offset(i as isize)).explicit_type = explicit_type;
-                    (*(*key).groups.offset(i as isize)).type_0 = type_0;
+                    (&mut (*key).groups)[i as usize].explicit_type = explicit_type;
+                    (&mut (*key).groups)[i as usize].type_idx = type_idx;
 
                     i = i.wrapping_add(1);
                     groupi = groupi.offset(1);
@@ -3014,28 +3015,26 @@ unsafe fn CopySymbolsDefToKeymap(
 
                     // Copy the level (steal from Vec)
                     if (*groupi).levels.is_empty() {
-                        (*(*key).groups.offset(i as isize)).levels = std::ptr::null_mut();
+                        (&mut (*key).groups)[i as usize].levels = Vec::new();
                     } else {
-                        let levels_ptr = (*groupi).levels.as_mut_ptr();
-                        let levels_len = (*groupi).levels.len();
-                        // Forget the Vec so it doesn't free the buffer
-                        std::ptr::write(&raw mut (*groupi).levels, Vec::new());
-                        (*(*key).groups.offset(i as isize)).levels = levels_ptr;
+                        let stolen = std::mem::take(&mut (*groupi).levels);
+                        (&mut (*key).groups)[i as usize].levels = stolen;
                     }
 
-                    if (*(*(*key).groups.offset(i as isize)).type_0).num_levels > 1
-                        || (*(*(*key).groups.offset(i as isize)).levels.offset(0)).num_syms > 0
+                    if (&(*keymap).types)[(&(*key).groups)[i as usize].type_idx as usize].num_levels
+                        > 1
+                        || (&(*key).groups)[i as usize].levels[0].num_syms > 0
                     {
-                        (*(*key).groups.offset(i as isize)).explicit_symbols = true;
+                        (&mut (*key).groups)[i as usize].explicit_symbols = true;
                         (*key).explicit = ((*key).explicit as u32 | EXPLICIT_SYMBOLS as u32)
                             as xkb_explicit_components;
                     }
                     if (*groupi).defined as u32 & GROUP_FIELD_ACTS as u32 != 0 {
-                        (*(*key).groups.offset(i as isize)).explicit_actions = true;
+                        (&mut (*key).groups)[i as usize].explicit_actions = true;
                         (*key).explicit = ((*key).explicit as u32 | EXPLICIT_INTERP as u32)
                             as xkb_explicit_components;
                     }
-                    if (*(*key).groups.offset(i as isize)).explicit_type {
+                    if (&(*key).groups)[i as usize].explicit_type {
                         (*key).explicit = ((*key).explicit as u32 | EXPLICIT_TYPES as u32)
                             as xkb_explicit_components;
                     }
@@ -3122,7 +3121,7 @@ unsafe fn CopyModMapDefToKeymap(
                     XKB_LOG_VERBOSITY_DETAILED as i32,
                     "[XKB-{:03}] Key {} not found in keycodes; Modifier map entry for {} not updated\n",
                     XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*info).ctx, (*entry).u.keyName)),
+                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), (*entry).u.keyName)),
                     crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, (*entry).modifier)),
                 );
                 return false;
@@ -3136,7 +3135,7 @@ unsafe fn CopyModMapDefToKeymap(
                     XKB_LOG_VERBOSITY_DETAILED as i32,
                     "[XKB-{:03}] Key \"{}\" not found in symbol map; Modifier map entry for {} not updated\n",
                     XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL as i32,
-                    crate::xkb::utils::ByteSliceDisplay(KeysymText((*info).ctx, (*entry).u.keySym)),
+                    crate::xkb::utils::ByteSliceDisplay(KeysymText((*((*info).ctx)).clone(), (*entry).u.keySym)),
                     crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, (*entry).modifier)),
                 );
                 return false;
@@ -3151,24 +3150,12 @@ unsafe fn CopyModMapDefToKeymap(
 unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut SymbolsInfo) -> bool {
     unsafe {
         (*keymap).symbols_section_name = match &(*info).name {
-            Some(s) => {
-                let cs = std::ffi::CString::new(s.as_str()).unwrap();
-                strdup_safe(cs.as_ptr())
-            }
-            None => std::ptr::null_mut(),
+            Some(s) => s.clone(),
+            None => String::new(),
         };
-        XkbEscapeMapName((*keymap).symbols_section_name);
+        xkb_escape_map_name(&mut (*keymap).symbols_section_name);
         (*keymap).mods = (*info).mods;
-        (*keymap).num_group_names = (*info).group_names.len() as u32;
-        // Steal the group_names Vec's buffer
-        let mut gn = std::mem::take(&mut (*info).group_names);
-        if gn.is_empty() {
-            (*keymap).group_names = std::ptr::null_mut();
-        } else {
-            gn.shrink_to_fit();
-            (*keymap).group_names = gn.as_mut_ptr();
-            std::mem::forget(gn);
-        }
+        (*keymap).group_names = std::mem::take(&mut (*info).group_names);
         for keyi in (*info).keys.iter_mut() {
             if !CopySymbolsDefToKeymap(keymap, info, keyi as *mut KeyInfo) {
                 (*info).errorCount += 1;
@@ -3192,7 +3179,7 @@ unsafe fn CopySymbolsToKeymap(mut keymap: *mut xkb_keymap, mut info: *mut Symbol
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "No symbols defined for {}\n",
                             crate::xkb::utils::ByteSliceDisplay(KeyNameText(
-                                (*info).ctx,
+                                (*(*info).ctx).clone(),
                                 (*key).name
                             )),
                         );

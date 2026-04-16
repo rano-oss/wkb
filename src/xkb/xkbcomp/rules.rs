@@ -67,7 +67,7 @@ pub use crate::xkb::shared_types::{
 pub use crate::xkb::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
-use crate::xkb::utils::{cstr_as_bytes, cstr_len, cstr_len_safe, isempty};
+use crate::xkb::utils::{cstr_as_bytes, cstr_len, cstr_len_safe};
 pub use crate::xkb::xkbcomp::include::{
     expand_path, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
@@ -525,62 +525,75 @@ unsafe fn matcher_new_from_rmlvo(
         std::ptr::write(&raw mut (*m).pending_kccgst.slices, Vec::new());
         std::ptr::write(&raw mut (*m).groups, Vec::new());
         std::ptr::write(&raw mut (*m).kccgst, std::array::from_fn(|_| Vec::new()));
-        (*m).ctx = (*rmlvo).ctx;
-        let mut names: xkb_rule_names = xkb_rule_names {
-            rules: (*rmlvo).rules,
-            model: (*rmlvo).model,
-            layout: if (*rmlvo).layouts.is_empty() {
-                std::ptr::null()
+        (*m).ctx = std::ptr::addr_of!((*rmlvo).ctx) as *mut xkb_context;
+        let ptr_to_cstring = |p: *const i8| -> std::ffi::CString {
+            if p.is_null() {
+                std::ffi::CString::new("").unwrap()
             } else {
-                b"x\0".as_ptr() as *const i8
+                std::ffi::CStr::from_ptr(p).to_owned()
+            }
+        };
+        let mut names: xkb_rule_names = xkb_rule_names {
+            rules: ptr_to_cstring((*rmlvo).rules),
+            model: ptr_to_cstring((*rmlvo).model),
+            layout: if (*rmlvo).layouts.is_empty() {
+                std::ffi::CString::new("").unwrap()
+            } else {
+                std::ffi::CString::new("x").unwrap()
             },
             variant: if (*rmlvo).layouts.is_empty() {
-                std::ptr::null()
+                std::ffi::CString::new("").unwrap()
             } else {
-                b"x\0".as_ptr() as *const i8
+                std::ffi::CString::new("x").unwrap()
             },
             options: if (*rmlvo).options.is_empty() {
-                std::ptr::null()
+                std::ffi::CString::new("").unwrap()
             } else {
-                b"x\0".as_ptr() as *const i8
+                std::ffi::CString::new("x").unwrap()
             },
         };
         let changed: RMLVO =
             xkb_context_sanitize_rule_names(&(*rmlvo).ctx, &raw mut names) as RMLVO;
         if changed as u32 & RMLVO_RULES as u32 != 0 {
-            *rules = names.rules;
+            *rules = names.rules.as_ptr();
         } else {
             *rules = (*rmlvo).rules;
         }
         if changed as u32 & RMLVO_MODEL as u32 != 0 {
-            (*m).rmlvo.model.sval.start = names.model;
+            (*m).rmlvo.model.sval.start = names.model.as_ptr();
         } else {
             (*m).rmlvo.model.sval.start = (*rmlvo).model;
         }
         (*m).rmlvo.model.sval.len = cstr_len_safe((*rmlvo).model);
         (*m).rmlvo.model.layout = OPTIONS_MATCH_ALL_GROUPS as u32 as u32;
         if changed as u32 & RMLVO_LAYOUT as u32 != 0 {
-            (*m).rmlvo.layouts =
-                split_comma_separated_mlvo((*rmlvo).ctx, MLVO_LAYOUT, names.layout);
-            (*m).rmlvo.variants =
-                split_comma_separated_mlvo((*rmlvo).ctx, MLVO_VARIANT, names.variant);
+            (*m).rmlvo.layouts = split_comma_separated_mlvo(
+                std::ptr::addr_of!((*rmlvo).ctx) as *mut xkb_context,
+                MLVO_LAYOUT,
+                names.layout.as_ptr(),
+            );
+            (*m).rmlvo.variants = split_comma_separated_mlvo(
+                std::ptr::addr_of!((*rmlvo).ctx) as *mut xkb_context,
+                MLVO_VARIANT,
+                names.variant.as_ptr(),
+            );
             if (*m).rmlvo.layouts.len() > (*m).rmlvo.variants.len() {
-                if !isempty(names.variant) {
+                if !names.variant.as_bytes().is_empty() {
                     xkb_logf!(
                         (*m).ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "More layouts than variants: \"{}\" vs. \"{}\".\n",
-                        crate::xkb::utils::CStrDisplay(if !names.layout.is_null() {
-                            names.layout
+                        if !names.layout.as_bytes().is_empty() {
+                            names.layout.to_str().unwrap_or("")
                         } else {
-                            b"(none)\0".as_ptr() as *const i8
-                        }),
-                        crate::xkb::utils::CStrDisplay(if !names.variant.is_null() {
-                            names.variant
+                            "(none)"
+                        },
+                        if !names.variant.as_bytes().is_empty() {
+                            names.variant.to_str().unwrap_or("")
                         } else {
-                            b"(none)\0".as_ptr() as *const i8
-                        }),
+                            "(none)"
+                        },
                     );
                 }
                 vec_resize_zero_matched_sval(&mut (*m).rmlvo.variants, (*m).rmlvo.layouts.len());
@@ -590,16 +603,16 @@ unsafe fn matcher_new_from_rmlvo(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Less layouts than variants: \"{}\" vs. \"{}\".\n",
-                    crate::xkb::utils::CStrDisplay(if !names.layout.is_null() {
-                        names.layout
+                    if !names.layout.as_bytes().is_empty() {
+                        names.layout.to_str().unwrap_or("")
                     } else {
-                        b"(none)\0".as_ptr() as *const i8
-                    }),
-                    crate::xkb::utils::CStrDisplay(if !names.variant.is_null() {
-                        names.variant
+                        "(none)"
+                    },
+                    if !names.variant.as_bytes().is_empty() {
+                        names.variant.to_str().unwrap_or("")
                     } else {
-                        b"(none)\0".as_ptr() as *const i8
-                    }),
+                        "(none)"
+                    },
                 );
                 (*m).rmlvo.variants.truncate((*m).rmlvo.layouts.len());
             }
@@ -625,8 +638,11 @@ unsafe fn matcher_new_from_rmlvo(
             }
         }
         if changed as u32 & RMLVO_OPTIONS as u32 != 0 {
-            (*m).rmlvo.options =
-                split_comma_separated_mlvo((*rmlvo).ctx, MLVO_OPTION, names.options);
+            (*m).rmlvo.options = split_comma_separated_mlvo(
+                std::ptr::addr_of!((*rmlvo).ctx) as *mut xkb_context,
+                MLVO_OPTION,
+                names.options.as_ptr(),
+            );
         } else {
             for option in (*rmlvo).options.iter() {
                 let val_0: matched_sval = {
@@ -673,29 +689,58 @@ unsafe fn matcher_new_from_names(
         std::ptr::write(&raw mut (*m).groups, Vec::new());
         std::ptr::write(&raw mut (*m).kccgst, std::array::from_fn(|_| Vec::new()));
         (*m).ctx = ctx;
-        (*m).rmlvo.model.sval.start = (*rmlvo).model;
-        (*m).rmlvo.model.sval.len = cstr_len_safe((*rmlvo).model);
+        let rmlvo_ref = &*rmlvo;
+        (*m).rmlvo.model.sval.start = if rmlvo_ref.model.as_bytes().is_empty() {
+            std::ptr::null()
+        } else {
+            rmlvo_ref.model.as_ptr()
+        };
+        (*m).rmlvo.model.sval.len = rmlvo_ref.model.as_bytes().len();
         (*m).rmlvo.model.layout = OPTIONS_MATCH_ALL_GROUPS as u32 as u32;
-        (*m).rmlvo.layouts = split_comma_separated_mlvo(ctx, MLVO_LAYOUT, (*rmlvo).layout);
-        (*m).rmlvo.variants = split_comma_separated_mlvo(ctx, MLVO_VARIANT, (*rmlvo).variant);
-        (*m).rmlvo.options = split_comma_separated_mlvo(ctx, MLVO_OPTION, (*rmlvo).options);
+        (*m).rmlvo.layouts = split_comma_separated_mlvo(
+            ctx,
+            MLVO_LAYOUT,
+            if rmlvo_ref.layout.as_bytes().is_empty() {
+                std::ptr::null()
+            } else {
+                rmlvo_ref.layout.as_ptr()
+            },
+        );
+        (*m).rmlvo.variants = split_comma_separated_mlvo(
+            ctx,
+            MLVO_VARIANT,
+            if rmlvo_ref.variant.as_bytes().is_empty() {
+                std::ptr::null()
+            } else {
+                rmlvo_ref.variant.as_ptr()
+            },
+        );
+        (*m).rmlvo.options = split_comma_separated_mlvo(
+            ctx,
+            MLVO_OPTION,
+            if rmlvo_ref.options.as_bytes().is_empty() {
+                std::ptr::null()
+            } else {
+                rmlvo_ref.options.as_ptr()
+            },
+        );
         if (*m).rmlvo.layouts.len() > (*m).rmlvo.variants.len() {
-            if !isempty((*rmlvo).variant) {
+            if !rmlvo_ref.variant.as_bytes().is_empty() {
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "More layouts than variants: \"{}\" vs. \"{}\".\n",
-                    crate::xkb::utils::CStrDisplay(if !(*rmlvo).layout.is_null() {
-                        (*rmlvo).layout
+                    if !rmlvo_ref.layout.as_bytes().is_empty() {
+                        rmlvo_ref.layout.to_str().unwrap_or("")
                     } else {
-                        b"(none)\0".as_ptr() as *const i8
-                    }),
-                    crate::xkb::utils::CStrDisplay(if !(*rmlvo).variant.is_null() {
-                        (*rmlvo).variant
+                        "(none)"
+                    },
+                    if !rmlvo_ref.variant.as_bytes().is_empty() {
+                        rmlvo_ref.variant.to_str().unwrap_or("")
                     } else {
-                        b"(none)\0".as_ptr() as *const i8
-                    }),
+                        "(none)"
+                    },
                 );
             }
             vec_resize_zero_matched_sval(&mut (*m).rmlvo.variants, (*m).rmlvo.layouts.len());
@@ -705,16 +750,16 @@ unsafe fn matcher_new_from_names(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Less layouts than variants: \"{}\" vs. \"{}\".\n",
-                crate::xkb::utils::CStrDisplay(if !(*rmlvo).layout.is_null() {
-                    (*rmlvo).layout
+                if !rmlvo_ref.layout.as_bytes().is_empty() {
+                    rmlvo_ref.layout.to_str().unwrap_or("")
                 } else {
-                    b"(none)\0".as_ptr() as *const i8
-                }),
-                crate::xkb::utils::CStrDisplay(if !(*rmlvo).variant.is_null() {
-                    (*rmlvo).variant
+                    "(none)"
+                },
+                if !rmlvo_ref.variant.as_bytes().is_empty() {
+                    rmlvo_ref.variant.to_str().unwrap_or("")
                 } else {
-                    b"(none)\0".as_ptr() as *const i8
-                }),
+                    "(none)"
+                },
             );
             (*m).rmlvo.variants.truncate((*m).rmlvo.layouts.len());
         }
@@ -7357,8 +7402,13 @@ pub unsafe fn xkb_components_from_rmlvo_builder(
         if matcher.is_null() {
             return false;
         }
-        let ret: bool =
-            xkb_resolve_rules(&(*rmlvo).ctx, rules, matcher, out, explicit_layouts) as bool;
+        let ret: bool = xkb_resolve_rules(
+            std::ptr::addr_of!((*rmlvo).ctx) as *mut xkb_context,
+            rules,
+            matcher,
+            out,
+            explicit_layouts,
+        ) as bool;
         matcher_free(matcher);
         return ret;
     }
@@ -7370,12 +7420,22 @@ pub unsafe fn xkb_components_from_rules_names(
     mut explicit_layouts: *mut u32,
 ) -> bool {
     unsafe {
+        let rmlvo_ref = &*rmlvo;
         let mut matcher: *mut matcher = matcher_new_from_names(ctx, rmlvo);
         if matcher.is_null() {
             return false;
         }
-        let ret: bool =
-            xkb_resolve_rules(ctx, (*rmlvo).rules, matcher, out, explicit_layouts) as bool;
+        let ret: bool = xkb_resolve_rules(
+            ctx,
+            if rmlvo_ref.rules.as_bytes().is_empty() {
+                std::ptr::null()
+            } else {
+                rmlvo_ref.rules.as_ptr()
+            },
+            matcher,
+            out,
+            explicit_layouts,
+        ) as bool;
         matcher_free(matcher);
         return ret;
     }
