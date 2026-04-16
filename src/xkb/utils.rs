@@ -117,19 +117,6 @@ pub unsafe fn cstr_len(s: *const i8) -> usize {
     unsafe { std::ffi::CStr::from_ptr(s).to_bytes().len() }
 }
 
-/// Null-safe version of `cstr_len`. Returns 0 if `s` is null.
-/// # Safety: if non-null, `s` must point to a valid null-terminated C string.
-#[inline]
-pub unsafe fn cstr_len_safe(s: *const i8) -> usize {
-    unsafe {
-        if s.is_null() {
-            0
-        } else {
-            std::ffi::CStr::from_ptr(s).to_bytes().len()
-        }
-    }
-}
-
 /// Safe replacement for libc `strcmp`. Returns <0, 0, or >0.
 /// # Safety: both pointers must point to valid null-terminated C strings.
 #[inline]
@@ -462,24 +449,6 @@ pub unsafe fn streq_not_null(s1: *const i8, s2: *const i8) -> bool {
         return false;
     }
     unsafe { cstr_as_bytes(s1) == cstr_as_bytes(s2) }
-}
-
-#[inline]
-pub fn is_aligned(pointer: *const ::core::ffi::c_void, byte_count: usize) -> bool {
-    (pointer as usize).wrapping_rem(byte_count) == 0
-}
-
-#[inline]
-pub unsafe fn memdup(
-    mem: *const ::core::ffi::c_void,
-    nmemb: usize,
-    size: usize,
-) -> *mut ::core::ffi::c_void {
-    let p: *mut ::core::ffi::c_void = libc::calloc(nmemb, size);
-    if !p.is_null() {
-        std::ptr::copy_nonoverlapping(mem as *const u8, p as *mut u8, nmemb.wrapping_mul(size));
-    }
-    p
 }
 
 pub unsafe fn is_absolute_path(path: *const i8) -> bool {
