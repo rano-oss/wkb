@@ -5,6 +5,8 @@
 
 use std::ffi::CString;
 
+use crate::xkb::{compose::xkb_compose_table, shared_types::xkb_context};
+
 /// Rust-native version of xkb_rule_names
 #[derive(Debug, Clone, Default)]
 pub struct RuleNames {
@@ -91,7 +93,7 @@ pub struct RuleNamesCStrings {
 
 /// Safe wrapper around xkb_context with automatic cleanup
 pub struct Context {
-    ptr: *mut crate::xkb::shared_types::xkb_context,
+    entity: xkb_context,
 }
 
 impl Context {
@@ -100,14 +102,8 @@ impl Context {
         unsafe {
             use crate::xkb::shared_types::XKB_CONTEXT_NO_FLAGS;
             let ctx = super::context::xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-            let ptr = Box::into_raw(Box::new(ctx));
-            Some(Context { ptr })
+            Some(Context { entity: ctx })
         }
-    }
-
-    /// Get raw pointer (for FFI calls)
-    pub fn as_ptr(&self) -> *mut crate::xkb::shared_types::xkb_context {
-        self.ptr
     }
 
     /// Create a keymap from RMLVO names
@@ -117,16 +113,16 @@ impl Context {
 
             let (rmlvo_c, _strings) = rules.to_c_keymap();
             let keymap_ptr = super::keymap::xkb_keymap_new_from_names(
-                self.ptr as *mut _,
+                self.entity.clone(),
                 &rmlvo_c as *const _,
                 XKB_KEYMAP_COMPILE_NO_FLAGS,
             );
-
-            if keymap_ptr.is_null() {
-                None
-            } else {
-                Some(Keymap { ptr: keymap_ptr })
-            }
+            return match keymap_ptr {
+                Some(mut keymap_ptr) => Some(Keymap {
+                    ptr: &mut keymap_ptr,
+                }),
+                None => None,
+            };
         }
     }
 
@@ -139,27 +135,17 @@ impl Context {
 
             let keymap_cstr = CString::new(keymap_str).ok()?;
             let keymap_ptr = super::keymap::xkb_keymap_new_from_string(
-                self.ptr as *mut _,
+                self.entity.clone(),
                 keymap_cstr.as_ptr(),
                 XKB_KEYMAP_FORMAT_TEXT_V1,
                 XKB_KEYMAP_COMPILE_NO_FLAGS,
             );
-
-            if keymap_ptr.is_null() {
-                None
-            } else {
-                Some(Keymap { ptr: keymap_ptr })
-            }
-        }
-    }
-}
-
-impl Drop for Context {
-    fn drop(&mut self) {
-        unsafe {
-            super::context::xkb_context_unref(self.ptr);
-            // Context was Box::into_raw'd in Context::new(), so free it
-            drop(Box::from_raw(self.ptr));
+            return match keymap_ptr {
+                Some(mut keymap_ptr) => Some(Keymap {
+                    ptr: &mut keymap_ptr,
+                }),
+                None => None,
+            };
         }
     }
 }
@@ -739,43 +725,26 @@ impl RxkbLayout {
 ///
 /// Note: The underlying type is opaque to avoid private struct imports
 pub struct ComposeTable {
-    ptr: *mut ::core::ffi::c_void,
+    pub entity: xkb_compose_table,
 }
 
 impl ComposeTable {
     /// Create a new compose table from locale
     pub fn new_from_locale(ctx: &Context, locale: &str) -> Option<Self> {
-        unsafe {
-            let locale_cstr = std::ffi::CString::new(locale).ok()?;
-            let ctx_cast = ctx.as_ptr() as *mut crate::xkb::shared_types::xkb_context;
+        let locale_cstr = std::ffi::CString::new(locale).ok()?;
 
-            let ptr = super::compose::xkb_compose_table_new_from_locale(
-                ctx_cast,
-                locale_cstr.as_ptr(),
-                super::compose::XKB_COMPOSE_COMPILE_NO_FLAGS,
-            );
-
-            if ptr.is_null() {
-                None
-            } else {
-                Some(ComposeTable {
-                    ptr: ptr as *mut ::core::ffi::c_void,
-                })
-            }
-        }
-    }
-
-    /// Get raw pointer for FFI calls (needed for compose iteration)
-    pub fn as_ptr(&self) -> *mut ::core::ffi::c_void {
-        self.ptr
-    }
-}
-
-impl Drop for ComposeTable {
-    fn drop(&mut self) {
-        unsafe {
-            super::compose::xkb_compose_table_unref(self.ptr as *mut _);
-        }
+        let compose_table = xkb_compose_table {
+            refcnt: 0,
+            format: 0,
+            flags: super::compose::XKB_COMPOSE_COMPILE_NO_FLAGS,
+            ctx: ctx.entity.clone(),
+            locale: locale_cstr.into_raw(),
+            utf8: Vec::new(),
+            nodes: todo!(),
+        };
+        Some(ComposeTable {
+            entity: compose_table,
+        })
     }
 }
 

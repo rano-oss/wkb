@@ -40,7 +40,7 @@ pub struct scanner {
     pub pos: usize,
     pub len: usize,
     pub s: *const i8,
-    pub buf: [i8; 1024],
+    pub buf: [u8; 1024],
     pub buf_pos: usize,
     pub token_pos: usize,
     pub cached_pos: usize,
@@ -152,7 +152,7 @@ impl scanner {
     }
 
     #[inline]
-    pub fn buf_append(&mut self, ch: i8) -> bool {
+    pub fn buf_append(&mut self, ch: u8) -> bool {
         if self.buf_pos + 1 >= self.buf.len() {
             return false;
         }
@@ -162,7 +162,7 @@ impl scanner {
     }
 
     #[inline]
-    pub unsafe fn buf_appends(&mut self, s: *const i8) -> bool {
+    pub unsafe fn buf_appends(&mut self, s: *const u8) -> bool {
         unsafe {
             let mut i = 0usize;
             while *s.add(i) != 0 {
@@ -279,7 +279,7 @@ impl scanner {
 
     #[inline]
     pub unsafe fn check_supported_char_encoding(&mut self) -> bool {
-        use crate::xkb::messages::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_LOG_VERBOSITY_MINIMAL};
+        use crate::xkb::messages::XKB_ERROR_INVALID_FILE_ENCODING;
         unsafe {
             if self.str_match(b"\xEF\xBB\xBF\0".as_ptr() as *const i8, 3) || self.len < 2 {
                 return true;

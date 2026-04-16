@@ -121,16 +121,19 @@ unsafe fn siText(mut si: *mut SymInterpInfo, mut info: *mut CompatInfo) -> &'sta
         if si == &raw mut (*info).default_interp {
             return b"default";
         }
-        let mut buf: *mut i8 = xkb_context_get_buffer((*info).ctx, 128 as usize);
+        let mut buf: *mut i8 = xkb_context_get_buffer(&mut (*(*info).ctx).clone(), 128 as usize);
         let (written, _) = crate::xkb::utils::snprintf_args(
             buf,
             128 as usize,
             format_args!(
                 "{}+{}({})",
-                crate::xkb::utils::ByteSliceDisplay(KeysymText((*info).ctx, (*si).interp.sym)),
+                crate::xkb::utils::ByteSliceDisplay(KeysymText(
+                    (*(*info).ctx).clone(),
+                    (*si).interp.sym
+                )),
                 crate::xkb::utils::ByteSliceDisplay(SIMatchText((*si).interp.match_0)),
                 crate::xkb::utils::ByteSliceDisplay(ModMaskText(
-                    (*info).ctx,
+                    (*(*info).ctx).clone(),
                     MOD_BOTH,
                     &raw mut (*info).mods,
                     (*si).interp.mods,
@@ -178,7 +181,7 @@ unsafe fn LEDText(mut info: *mut CompatInfo, mut ledi: *mut LedInfo) -> &'static
         if ledi == &raw mut (*info).default_led {
             return b"default";
         } else {
-            return xkb_atom_text_bytes((*info).ctx, (*ledi).led.name);
+            return xkb_atom_text_bytes(&(*(*info).ctx).atom_table, (*ledi).led.name);
         };
     }
 }
@@ -234,10 +237,7 @@ unsafe fn InitCompatInfo(
         (*info).ctx = &raw mut (*(*keymap_info).keymap).ctx;
         (*info).keymap_info = keymap_info;
         (*info).include_depth = include_depth;
-        InitActionsInfo(
-            (*keymap_info).keymap,
-            &raw mut (*info).default_actions,
-        );
+        InitActionsInfo((*keymap_info).keymap, &raw mut (*info).default_actions);
         InitVMods(&raw mut (*info).mods, mods, include_depth > 0 as u32);
         InitInterp(&raw mut (*info).default_interp);
         InitLED(&raw mut (*info).default_led);
@@ -406,7 +406,8 @@ unsafe fn ResolveStateAndPredicate(
         }
         *pred_rtrn = MATCH_EXACTLY;
         if (*expr).common.type_0 as u32 == STMT_EXPR_ACTION_DECL as u32 {
-            let pred_txt: &[u8] = xkb_atom_text_bytes((*info).ctx, (*expr).action.name);
+            let pred_txt: &[u8] =
+                xkb_atom_text_bytes(&(*(*info).ctx).atom_table, (*expr).action.name);
             let mut pred: u32 = 0 as u32;
             if !LookupString(
                 &raw const symInterpretMatchMaskNames as *const LookupEntry,
@@ -427,7 +428,8 @@ unsafe fn ResolveStateAndPredicate(
             *pred_rtrn = pred as u32;
             expr = (*expr).action.args as *mut ExprDef;
         } else if (*expr).common.type_0 as u32 == STMT_EXPR_IDENT as u32 {
-            let pred_txt_0: &[u8] = xkb_atom_text_bytes((*info).ctx, (*expr).ident.ident);
+            let pred_txt_0: &[u8] =
+                xkb_atom_text_bytes(&(*(*info).ctx).atom_table, (*expr).ident.ident);
             if !pred_txt_0.is_empty() && istreq(pred_txt_0, b"any") as i32 != 0 {
                 *pred_rtrn = MATCH_ANY;
                 *mods_rtrn = MOD_REAL_MASK_ALL;

@@ -545,7 +545,8 @@ unsafe fn matcher_new_from_rmlvo(
                 b"x\0".as_ptr() as *const i8
             },
         };
-        let changed: RMLVO = xkb_context_sanitize_rule_names((*rmlvo).ctx, &raw mut names) as RMLVO;
+        let changed: RMLVO =
+            xkb_context_sanitize_rule_names(&(*rmlvo).ctx, &raw mut names) as RMLVO;
         if changed as u32 & RMLVO_RULES as u32 != 0 {
             *rules = names.rules;
         } else {
@@ -7357,7 +7358,7 @@ pub unsafe fn xkb_components_from_rmlvo_builder(
             return false;
         }
         let ret: bool =
-            xkb_resolve_rules((*rmlvo).ctx, rules, matcher, out, explicit_layouts) as bool;
+            xkb_resolve_rules(&(*rmlvo).ctx, rules, matcher, out, explicit_layouts) as bool;
         matcher_free(matcher);
         return ret;
     }

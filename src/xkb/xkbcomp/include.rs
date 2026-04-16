@@ -242,10 +242,29 @@ unsafe fn expand_percent(
         while !s.eof() && !s.eol() {
             if s.chr(b'%' as i8) {
                 if s.chr(b'%' as i8) {
-                    s.buf_append(b'%' as i8);
+                    s.buf_append(b'%');
                 } else if s.chr(b'H' as i8) {
-                    let home: *const i8 = xkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const i8);
-                    if home.is_null() {
+                    let home = xkb_context_getenv("HOME");
+                    match &home {
+                        Ok(home) => {
+                            if !s.buf_appends(home.as_ptr()) {
+                                let loc = s.token_location();
+                                xkb_logf!(
+                                    s.ctx,
+                                    XKB_LOG_LEVEL_ERROR,
+                                    XKB_LOG_VERBOSITY_MINIMAL as i32,
+                                    "[XKB-{:03}] {}:{}:{}: include path after expanding %H is too long\n",
+                                    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
+                                    crate::xkb::utils::CStrDisplay(s.file_name),
+                                    loc.line,
+                                    loc.column,
+                                );
+                                return 0;
+                            }
+                        }
+                        Err(_) => todo!(),
+                    }
+                    if home.is_err() {
                         let loc = s.token_location();
                         xkb_logf!(
                             s.ctx,
@@ -258,25 +277,11 @@ unsafe fn expand_percent(
                         );
                         return 0;
                     }
-                    if !s.buf_appends(home) {
-                        let loc = s.token_location();
-                        xkb_logf!(
-                            s.ctx,
-                            XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] {}:{}:{}: include path after expanding %H is too long\n",
-                            XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                            crate::xkb::utils::CStrDisplay(s.file_name),
-                            loc.line,
-                            loc.column,
-                        );
-                        return 0;
-                    }
                 } else if s.chr(b'S' as i8) {
                     let default_root: *const i8 = xkb_context_include_path_get_system_path(ctx);
-                    if !s.buf_appends(default_root)
-                        || !s.buf_append(b'/' as i8)
-                        || !s.buf_appends(typeDir)
+                    if !s.buf_appends(default_root as *const u8)
+                        || !s.buf_append(b'/')
+                        || !s.buf_appends(typeDir as *const u8)
                     {
                         let loc = s.token_location();
                         xkb_logf!(
@@ -293,9 +298,9 @@ unsafe fn expand_percent(
                     }
                 } else if s.chr(b'E' as i8) {
                     let default_root: *const i8 = xkb_context_include_path_get_extra_path(ctx);
-                    if !s.buf_appends(default_root)
-                        || !s.buf_append(b'/' as i8)
-                        || !s.buf_appends(typeDir)
+                    if !s.buf_appends(default_root as *const u8)
+                        || !s.buf_append(b'/')
+                        || !s.buf_appends(typeDir as *const u8)
                     {
                         let loc = s.token_location();
                         xkb_logf!(
@@ -327,7 +332,7 @@ unsafe fn expand_percent(
                 }
             } else {
                 let c = s.next_byte();
-                s.buf_append(c);
+                s.buf_append(c as u8);
             }
         }
         if !s.buf_append(0) {
@@ -501,21 +506,19 @@ pub unsafe fn FindFileInXkbPath(
     }
 }
 pub unsafe fn ExceedsIncludeMaxDepth(mut ctx: *mut xkb_context, mut include_depth: u32) -> bool {
-    unsafe {
-        if include_depth >= INCLUDE_MAX_DEPTH as u32 {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Exceeded include depth threshold ({})",
-                XKB_ERROR_RECURSIVE_INCLUDE as i32,
-                15 as i32,
-            );
-            return true;
-        } else {
-            return false;
-        };
-    }
+    if include_depth >= INCLUDE_MAX_DEPTH as u32 {
+        xkb_logf!(
+            ctx,
+            XKB_LOG_LEVEL_ERROR,
+            XKB_LOG_VERBOSITY_MINIMAL as i32,
+            "[XKB-{:03}] Exceeded include depth threshold ({})",
+            XKB_ERROR_RECURSIVE_INCLUDE as i32,
+            15 as i32,
+        );
+        return true;
+    } else {
+        return false;
+    };
 }
 pub unsafe fn ProcessIncludeFile(
     mut ctx: *mut xkb_context,

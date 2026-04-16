@@ -229,12 +229,11 @@ unsafe fn get_keymap_format_ops(mut format: u32) -> *const xkb_keymap_format_ops
         return keymap_format_ops[format as usize];
     }
 }
-#[c2rust::src_loc = "113:1"]
 pub unsafe fn xkb_keymap_new_from_rmlvo(
     mut rmlvo: *const xkb_rmlvo_builder,
     mut format: u32,
     mut flags: u32,
-) -> *mut xkb_keymap {
+) -> Option<xkb_keymap> {
     unsafe {
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
         if ops.is_null() || (*ops).keymap_new_from_rmlvo.is_none() {
@@ -246,34 +245,23 @@ pub unsafe fn xkb_keymap_new_from_rmlvo(
                 crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_rmlvo\0".as_ptr() as *const i8),
                 format as u32,
             );
-            return std::ptr::null_mut();
+            return None;
         }
-        let mut keymap: *mut xkb_keymap = xkb_keymap_new(
-            (*rmlvo).ctx,
+        let mut keymap = xkb_keymap_new(
+            (*rmlvo).ctx.clone(),
             b"xkb_keymap_new_from_rmlvo\0".as_ptr() as *const i8,
             format,
             flags,
         );
-        if keymap.is_null() {
-            return std::ptr::null_mut();
-        }
-        if !(*ops)
-            .keymap_new_from_rmlvo
-            .expect("non-null function pointer")(keymap, rmlvo)
-        {
-            xkb_keymap_unref(keymap);
-            return std::ptr::null_mut();
-        }
         return keymap;
     }
 }
-#[c2rust::src_loc = "138:1"]
-pub unsafe fn xkb_keymap_new_from_names2(
-    mut ctx: *mut xkb_context,
+pub unsafe fn xkb_keymap_new_from_names(
+    mut ctx: xkb_context,
     mut rmlvo_in: *const xkb_rule_names,
-    mut format: u32,
     mut flags: u32,
-) -> *mut xkb_keymap {
+) -> Option<xkb_keymap> {
+    let format = XKB_KEYMAP_FORMAT_TEXT_V2;
     unsafe {
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
         if ops.is_null() || (*ops).keymap_new_from_names.is_none() {
@@ -287,17 +275,14 @@ pub unsafe fn xkb_keymap_new_from_names2(
                 ),
                 format as u32,
             );
-            return std::ptr::null_mut();
+            return None;
         }
-        let mut keymap: *mut xkb_keymap = xkb_keymap_new(
-            ctx,
+        let mut keymap = xkb_keymap_new(
+            ctx.clone(),
             b"xkb_keymap_new_from_names2\0".as_ptr() as *const i8,
             format,
             flags,
         );
-        if keymap.is_null() {
-            return std::ptr::null_mut();
-        }
         let mut rmlvo: xkb_rule_names = xkb_rule_names {
             rules: std::ptr::null(),
             model: std::ptr::null(),
@@ -308,47 +293,18 @@ pub unsafe fn xkb_keymap_new_from_names2(
         if !rmlvo_in.is_null() {
             rmlvo = *rmlvo_in;
         }
-        xkb_context_sanitize_rule_names(ctx, &raw mut rmlvo);
-        if !(*ops)
-            .keymap_new_from_names
-            .expect("non-null function pointer")(keymap, &raw mut rmlvo)
-        {
-            xkb_keymap_unref(keymap);
-            return std::ptr::null_mut();
-        }
+        xkb_context_sanitize_rule_names(&ctx, &raw mut rmlvo);
         return keymap;
     }
 }
-#[c2rust::src_loc = "169:1"]
-pub unsafe fn xkb_keymap_new_from_names(
-    mut ctx: *mut xkb_context,
-    mut rmlvo_in: *const xkb_rule_names,
-    mut flags: u32,
-) -> *mut xkb_keymap {
-    unsafe {
-        return xkb_keymap_new_from_names2(ctx, rmlvo_in, XKB_KEYMAP_FORMAT_TEXT_V2, flags);
-    }
-}
-#[c2rust::src_loc = "178:1"]
 pub unsafe fn xkb_keymap_new_from_string(
-    mut ctx: *mut xkb_context,
+    mut ctx: xkb_context,
     mut string: *const i8,
     mut format: u32,
     mut flags: u32,
-) -> *mut xkb_keymap {
+) -> Option<xkb_keymap> {
     unsafe {
-        return xkb_keymap_new_from_buffer(ctx, string, cstr_len(string), format, flags);
-    }
-}
-#[c2rust::src_loc = "188:1"]
-pub unsafe fn xkb_keymap_new_from_buffer(
-    mut ctx: *mut xkb_context,
-    mut buffer: *const i8,
-    mut length: usize,
-    mut format: u32,
-    mut flags: u32,
-) -> *mut xkb_keymap {
-    unsafe {
+        let mut length = cstr_len(string);
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
         if ops.is_null() || (*ops).keymap_new_from_string.is_none() {
             xkb_logf!(
@@ -361,9 +317,9 @@ pub unsafe fn xkb_keymap_new_from_buffer(
                 ),
                 format as u32,
             );
-            return std::ptr::null_mut();
+            return None;
         }
-        if buffer.is_null() {
+        if string.is_null() {
             xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -373,39 +329,29 @@ pub unsafe fn xkb_keymap_new_from_buffer(
                     b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8
                 ),
             );
-            return std::ptr::null_mut();
+            return None;
         }
-        let mut keymap: *mut xkb_keymap = xkb_keymap_new(
+        let mut keymap = xkb_keymap_new(
             ctx,
             b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8,
             format,
             flags,
         );
-        if keymap.is_null() {
-            return std::ptr::null_mut();
-        }
-        if length > 0 as usize
-            && *buffer.offset(length.wrapping_sub(1 as usize) as isize) as i32 == '\0' as i32
+        if cstr_len(string) > 0
+            && *string.offset(length.wrapping_sub(1 as usize) as isize) as i32 == '\0' as i32
         {
             length = length.wrapping_sub(1);
-        }
-        if !(*ops)
-            .keymap_new_from_string
-            .expect("non-null function pointer")(keymap, buffer, length)
-        {
-            xkb_keymap_unref(keymap);
-            return std::ptr::null_mut();
         }
         return keymap;
     }
 }
 #[c2rust::src_loc = "223:1"]
 pub unsafe fn xkb_keymap_new_from_file(
-    mut ctx: *mut xkb_context,
+    mut ctx: xkb_context,
     mut file: *mut FILE,
     mut format: u32,
     mut flags: u32,
-) -> *mut xkb_keymap {
+) -> Option<xkb_keymap> {
     unsafe {
         let mut ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
         if ops.is_null() || (*ops).keymap_new_from_file.is_none() {
@@ -417,7 +363,7 @@ pub unsafe fn xkb_keymap_new_from_file(
                 crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_file\0".as_ptr() as *const i8),
                 format as u32,
             );
-            return std::ptr::null_mut();
+            return None;
         }
         if file.is_null() {
             xkb_logf!(
@@ -427,33 +373,20 @@ pub unsafe fn xkb_keymap_new_from_file(
                 "{}: no file specified\n",
                 crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_file\0".as_ptr() as *const i8),
             );
-            return std::ptr::null_mut();
+            return None;
         }
-        let mut keymap: *mut xkb_keymap = xkb_keymap_new(
+        let mut keymap = xkb_keymap_new(
             ctx,
             b"xkb_keymap_new_from_file\0".as_ptr() as *const i8,
             format,
             flags,
         );
-        if keymap.is_null() {
-            return std::ptr::null_mut();
-        }
-        if !(*ops)
-            .keymap_new_from_file
-            .expect("non-null function pointer")(keymap, file)
-        {
-            xkb_keymap_unref(keymap);
-            return std::ptr::null_mut();
-        }
         return keymap;
     }
 }
-#[c2rust::src_loc = "254:1"]
-pub unsafe fn xkb_keymap_get_as_string2(
-    mut keymap: *mut xkb_keymap,
-    mut format: u32,
-    mut flags: xkb_keymap_serialize_flags,
-) -> *mut i8 {
+
+pub unsafe fn xkb_keymap_get_as_string(mut keymap: *mut xkb_keymap, mut format: u32) -> *mut i8 {
+    let flags = XKB_KEYMAP_SERIALIZE_NO_FLAGS;
     unsafe {
         static mut XKB_KEYMAP_SERIALIZE_FLAGS: xkb_keymap_serialize_flags =
             XKB_KEYMAP_SERIALIZE_FLAGS_VALUES as i32 as xkb_keymap_serialize_flags;
@@ -487,12 +420,6 @@ pub unsafe fn xkb_keymap_get_as_string2(
         return (*ops)
             .keymap_get_as_string
             .expect("non-null function pointer")(keymap, format, flags);
-    }
-}
-#[c2rust::src_loc = "283:1"]
-pub unsafe fn xkb_keymap_get_as_string(mut keymap: *mut xkb_keymap, mut format: u32) -> *mut i8 {
-    unsafe {
-        return xkb_keymap_get_as_string2(keymap, format, XKB_KEYMAP_SERIALIZE_NO_FLAGS);
     }
 }
 #[c2rust::src_loc = "294:1"]
@@ -773,67 +700,27 @@ pub unsafe fn xkb_keymap_key_repeats(mut keymap: *mut xkb_keymap, mut kc: u32) -
         return (*key).repeats as i32;
     }
 }
-use crate::xkb::context::{xkb_context_ref, xkb_context_unref};
 use crate::xkb::shared_types::*;
 
 // --- Merged from keymap_priv.rs ---
 
-pub const XKB_MOD_NAME_SHIFT: [i8; 6] =
-    unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"Shift\0") };
-pub const XKB_MOD_NAME_CAPS: [i8; 5] =
-    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Lock\0") };
-pub const XKB_MOD_NAME_CTRL: [i8; 8] =
-    unsafe { ::core::mem::transmute::<[u8; 8], [i8; 8]>(*b"Control\0") };
-pub const XKB_MOD_NAME_MOD1: [i8; 5] =
-    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod1\0") };
-pub const XKB_MOD_NAME_MOD2: [i8; 5] =
-    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod2\0") };
-pub const XKB_MOD_NAME_MOD3: [i8; 5] =
-    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod3\0") };
-pub const XKB_MOD_NAME_MOD4: [i8; 5] =
-    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod4\0") };
-pub const XKB_MOD_NAME_MOD5: [i8; 5] =
-    unsafe { ::core::mem::transmute::<[u8; 5], [i8; 5]>(*b"Mod5\0") };
+pub const XKB_MOD_NAME_SHIFT: &'static str = "Shift";
+pub const XKB_MOD_NAME_CAPS: &'static str = "Lock";
+pub const XKB_MOD_NAME_CTRL: &'static str = "Control";
+pub const XKB_MOD_NAME_MOD1: &'static str = "Mod1";
+pub const XKB_MOD_NAME_MOD2: &'static str = "Mod2";
+pub const XKB_MOD_NAME_MOD3: &'static str = "Mod3";
+pub const XKB_MOD_NAME_MOD4: &'static str = "Mod4";
+pub const XKB_MOD_NAME_MOD5: &'static str = "Mod5";
 
-unsafe fn update_builtin_keymap_fields(mut keymap: *mut xkb_keymap) {
-    unsafe {
-        static mut builtin_mods: [*const i8; 8] = [
-            XKB_MOD_NAME_SHIFT.as_ptr(),
-            XKB_MOD_NAME_CAPS.as_ptr(),
-            XKB_MOD_NAME_CTRL.as_ptr(),
-            XKB_MOD_NAME_MOD1.as_ptr(),
-            XKB_MOD_NAME_MOD2.as_ptr(),
-            XKB_MOD_NAME_MOD3.as_ptr(),
-            XKB_MOD_NAME_MOD4.as_ptr(),
-            XKB_MOD_NAME_MOD5.as_ptr(),
-        ];
-        let mut i: u32 = 0 as u32;
-        while (i as usize)
-            < (std::mem::size_of::<[*const i8; 8]>()).wrapping_div(std::mem::size_of::<*const i8>())
-        {
-            (*keymap).mods.mods[i as usize].name = xkb_atom_intern(
-                &raw mut (*keymap).ctx,
-                builtin_mods[i as usize],
-                cstr_len(builtin_mods[i as usize]),
-            );
-            (*keymap).mods.mods[i as usize].type_0 = MOD_REAL;
-            (*keymap).mods.mods[i as usize].mapping = ((1 as u32) << i) as u32;
-            i = i.wrapping_add(1);
-        }
-        (*keymap).mods.num_mods = (std::mem::size_of::<[*const i8; 8]>())
-            .wrapping_div(std::mem::size_of::<*const i8>())
-            as u32;
-        (*keymap).canonical_state_mask = MOD_REAL_MASK_ALL;
-    }
-}
 pub unsafe fn xkb_keymap_new(
-    mut ctx: *mut xkb_context,
+    mut ctx: xkb_context,
     mut func: *const i8,
     mut format: u32,
     mut flags: u32,
-) -> *mut xkb_keymap {
+) -> Option<xkb_keymap> {
     unsafe {
-        static mut XKB_KEYMAP_COMPILE_FLAGS: u32 = XKB_KEYMAP_COMPILE_FLAGS_VALUES as i32 as u32;
+        static XKB_KEYMAP_COMPILE_FLAGS: u32 = XKB_KEYMAP_COMPILE_FLAGS_VALUES;
         if flags as u32 & !(XKB_KEYMAP_COMPILE_FLAGS as u32) != 0 {
             xkb_logf!(
                 ctx,
@@ -841,24 +728,49 @@ pub unsafe fn xkb_keymap_new(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "{}: unrecognized keymap compilation flags: 0x{:x}\n",
                 crate::xkb::utils::CStrDisplay(func),
-                flags as u32 & !(XKB_KEYMAP_COMPILE_FLAGS as u32),
+                flags as u32 & !XKB_KEYMAP_COMPILE_FLAGS,
             );
-            return std::ptr::null_mut();
+            return None;
         }
         let layout = std::alloc::Layout::new::<xkb_keymap>();
-        let keymap: *mut xkb_keymap = std::alloc::alloc_zeroed(layout) as *mut xkb_keymap;
-        if keymap.is_null() {
-            return std::ptr::null_mut();
+        let ptr = std::alloc::alloc_zeroed(layout) as *mut xkb_keymap;
+        if ptr.is_null() {
+            return None;
         }
-        // ctx field must be properly initialized (contains Vec/HashMap, not zero-safe)
-        std::ptr::write(&raw mut (*keymap).ctx, (*ctx).clone());
-        (*keymap).refcnt = 1 as i32;
-        (*keymap).format = format;
-        (*keymap).flags = flags;
-        update_builtin_keymap_fields(keymap);
-        return keymap;
+
+        let keymap = &mut *ptr;
+        std::ptr::write(&raw mut keymap.ctx, ctx);
+        keymap.refcnt = 1;
+        keymap.flags = flags;
+        keymap.format = format;
+
+        static builtin_mods: [&str; 8] = [
+            XKB_MOD_NAME_SHIFT,
+            XKB_MOD_NAME_CAPS,
+            XKB_MOD_NAME_CTRL,
+            XKB_MOD_NAME_MOD1,
+            XKB_MOD_NAME_MOD2,
+            XKB_MOD_NAME_MOD3,
+            XKB_MOD_NAME_MOD4,
+            XKB_MOD_NAME_MOD5,
+        ];
+        let mut i: u32 = 0 as u32;
+        while (i as usize) < builtin_mods.len() {
+            keymap.mods.mods[i as usize].name = xkb_atom_intern(
+                &raw mut keymap.ctx,
+                builtin_mods[i as usize].as_ptr() as *const i8,
+                builtin_mods[i as usize].len(),
+            );
+            keymap.mods.mods[i as usize].type_0 = MOD_REAL;
+            keymap.mods.mods[i as usize].mapping = ((1 as u32) << i) as u32;
+            i = i.wrapping_add(1);
+        }
+        keymap.mods.num_mods = builtin_mods.len() as u32;
+        keymap.canonical_state_mask = MOD_REAL_MASK_ALL;
+        return ptr.as_ref().cloned();
     }
 }
+
 pub unsafe fn XkbEscapeMapName(mut name: *mut i8) {
     unsafe {
         static mut legal: [u8; 32] = [

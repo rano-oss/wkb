@@ -49,19 +49,19 @@ pub unsafe fn ExprResolveLhs<'a>(
         match (*expr).common.type_0 as u32 {
             10 => {
                 *elem_rtrn = b"";
-                *field_rtrn = xkb_atom_text_bytes(ctx, (*expr).ident.ident);
+                *field_rtrn = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).ident.ident);
                 *index_rtrn = std::ptr::null_mut();
                 return !(*field_rtrn).is_empty();
             }
             12 => {
-                *elem_rtrn = xkb_atom_text_bytes(ctx, (*expr).field_ref.element);
-                *field_rtrn = xkb_atom_text_bytes(ctx, (*expr).field_ref.field);
+                *elem_rtrn = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).field_ref.element);
+                *field_rtrn = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).field_ref.field);
                 *index_rtrn = std::ptr::null_mut();
                 return !(*elem_rtrn).is_empty() && !(*field_rtrn).is_empty();
             }
             13 => {
-                *elem_rtrn = xkb_atom_text_bytes(ctx, (*expr).array_ref.element);
-                *field_rtrn = xkb_atom_text_bytes(ctx, (*expr).array_ref.field);
+                *elem_rtrn = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).array_ref.element);
+                *field_rtrn = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).array_ref.field);
                 *index_rtrn = (*expr).array_ref.entry as *mut ExprDef;
                 if (*expr).array_ref.element != XKB_ATOM_NONE as u32 && (*elem_rtrn).is_empty() {
                     return false;
@@ -95,7 +95,7 @@ unsafe fn SimpleLookup(
         if priv_0.is_null() || field == XKB_ATOM_NONE as u32 {
             return false;
         }
-        let str: &[u8] = xkb_atom_text_bytes(ctx, field);
+        let str: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, field);
         let mut entry: *const LookupEntry = priv_0 as *const LookupEntry;
         while !entry.is_null() && !(&(*entry).name).is_empty() {
             if istreq(str, (*entry).name) {
@@ -118,7 +118,7 @@ unsafe fn NamedIntegerPatternLookup(
         if priv_0.is_null() || field == XKB_ATOM_NONE as u32 {
             return false;
         }
-        let str_bytes: &[u8] = xkb_atom_text_bytes(ctx, field);
+        let str_bytes: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, field);
         let pattern: *const named_integer_pattern = priv_0 as *const named_integer_pattern;
         let prefix_bytes = cstr_as_bytes((*pattern).prefix);
         let count: i32 = if istrneq(str_bytes, prefix_bytes, (*pattern).prefix_length) {
@@ -187,7 +187,7 @@ unsafe fn LookupModMask(
     mut pending_rtrn: *mut bool,
 ) -> bool {
     unsafe {
-        let str: &[u8] = xkb_atom_text_bytes(ctx, field);
+        let str: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, field);
         if str.is_empty() {
             return false;
         }
@@ -235,7 +235,7 @@ pub unsafe fn ExprResolveBoolean(
                 return false;
             }
             10 => {
-                ident = xkb_atom_text_bytes(ctx, (*expr).ident.ident);
+                ident = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).ident.ident);
                 if !ident.is_empty() {
                     if istreq(ident, b"true") || istreq(ident, b"yes") || istreq(ident, b"on") {
                         *set_rtrn = true;
@@ -266,11 +266,11 @@ pub unsafe fn ExprResolveBoolean(
                     "[XKB-{:03}] Default \"{}.{}\" of type boolean is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
                     crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        ctx,
+                        &(*ctx).atom_table,
                         (*expr).field_ref.element
                     )),
                     crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        ctx,
+                        &(*ctx).atom_table,
                         (*expr).field_ref.field
                     )),
                 );
@@ -356,7 +356,7 @@ unsafe fn ExprResolveIntegerLookup(
                         "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
                         XKB_ERROR_INVALID_IDENTIFIER as i32,
                         crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                            ctx,
+                            &(*ctx).atom_table,
                             (*expr).ident.ident
                         )),
                     );
@@ -376,11 +376,11 @@ unsafe fn ExprResolveIntegerLookup(
                     "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
                     crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        ctx,
+                        &(*ctx).atom_table,
                         (*expr).field_ref.element
                     )),
                     crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        ctx,
+                        &(*ctx).atom_table,
                         (*expr).field_ref.field
                     )),
                 );
@@ -712,7 +712,7 @@ pub unsafe fn ExprResolveString(
                     "[XKB-{:03}] Identifier \"{}\" of type string not found\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
                     crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        ctx,
+                        &(*ctx).atom_table,
                         (*expr).ident.ident
                     )),
                 );
@@ -726,11 +726,11 @@ pub unsafe fn ExprResolveString(
                     "[XKB-{:03}] Default \"{}.{}\" of type string not found\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
                     crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        ctx,
+                        &(*ctx).atom_table,
                         (*expr).field_ref.element
                     )),
                     crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        ctx,
+                        &(*ctx).atom_table,
                         (*expr).field_ref.field
                     )),
                 );
@@ -792,7 +792,10 @@ pub unsafe fn ExprResolveEnum(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Illegal identifier {}; expected one of:\n",
                 XKB_ERROR_INVALID_IDENTIFIER as i32,
-                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, (*expr).ident.ident)),
+                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                    &(*ctx).atom_table,
+                    (*expr).ident.ident
+                )),
             );
             while !values.is_null() && !(&(*values).name).is_empty() {
                 xkb_logf!(
@@ -875,7 +878,7 @@ unsafe fn ExprResolveMaskLookup(
                         "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
                         XKB_ERROR_INVALID_IDENTIFIER as i32,
                         crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                            ctx,
+                            &(*ctx).atom_table,
                             (*expr).ident.ident
                         )),
                     );
@@ -893,11 +896,11 @@ unsafe fn ExprResolveMaskLookup(
                     "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
                     crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        ctx,
+                        &(*ctx).atom_table,
                         (*expr).field_ref.element
                     )),
                     crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        ctx,
+                        &(*ctx).atom_table,
                         (*expr).field_ref.field
                     )),
                 );
@@ -1112,7 +1115,7 @@ pub unsafe fn ExprResolveMod(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Cannot resolve virtual modifier: \"{}\" was not previously declared\n",
                 XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER as i32,
-                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(ctx, name)),
+                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*ctx).atom_table, name)),
             );
             return false;
         }

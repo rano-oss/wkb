@@ -1,5 +1,3 @@
-use crate::xkb::shared_types::*;
-
 pub const XKB_KEYSYM_UNICODE_OFFSET: i32 = 0x1000000;
 pub const XKB_KEYSYM_UNICODE_MIN: i32 = 0x1000100;
 
@@ -218,10 +216,7 @@ pub unsafe fn xkb_keysym_is_upper_or_title(mut ks: u32) -> bool {
         if ks <= 0x13be as u32 {
             return (*get_legacy_keysym_entry(ks)).lower;
         } else if XKB_KEYSYM_UNICODE_MIN as u32 <= ks && ks <= 0x101f189 as u32 {
-            return (*get_unicode_entry(
-                ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as u32),
-            ))
-            .lower;
+            return (*get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as u32))).lower;
         } else {
             return false;
         };

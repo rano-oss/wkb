@@ -458,19 +458,17 @@ pub unsafe fn ReportNotArray(
     field: &[u8],
     name: &[u8],
 ) -> bool {
-    unsafe {
-        xkb_logf!(
-            ctx,
-            XKB_LOG_LEVEL_ERROR,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "[XKB-{:03}] The {} {} field is not an array; Ignoring illegal assignment in {}\n",
-            XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            crate::xkb::utils::ByteSliceDisplay(type_0),
-            crate::xkb::utils::ByteSliceDisplay(field),
-            crate::xkb::utils::ByteSliceDisplay(name),
-        );
-        return false;
-    }
+    xkb_logf!(
+        ctx,
+        XKB_LOG_LEVEL_ERROR,
+        XKB_LOG_VERBOSITY_MINIMAL as i32,
+        "[XKB-{:03}] The {} {} field is not an array; Ignoring illegal assignment in {}\n",
+        XKB_ERROR_WRONG_FIELD_TYPE as i32,
+        crate::xkb::utils::ByteSliceDisplay(type_0),
+        crate::xkb::utils::ByteSliceDisplay(field),
+        crate::xkb::utils::ByteSliceDisplay(name),
+    );
+    return false;
 }
 
 #[inline]

@@ -448,7 +448,7 @@ unsafe fn CheckModifierField(
             return ReportActionNotArray(ctx, action, ACTION_FIELD_MODIFIERS, strict);
         }
         if (*value).common.type_0 as u32 == STMT_EXPR_IDENT as u32 {
-            let valStr: &[u8] = xkb_atom_text_bytes(ctx, (*value).ident.ident);
+            let valStr: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, (*value).ident.ident);
             if !valStr.is_empty()
                 && (istreq(valStr, b"usemodmapmods") || istreq(valStr, b"modmapmods"))
             {
@@ -1232,7 +1232,7 @@ unsafe fn HandleRedirectKey(
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
             if (*value).common.type_0 as u32 == STMT_EXPR_IDENT as u32 {
-                let valStr: &[u8] = xkb_atom_text_bytes(ctx, (*value).ident.ident);
+                let valStr: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, (*value).ident.ident);
                 if !valStr.is_empty() && istreq(valStr, b"auto") {
                     (*act).keycode = (*(*keymap_info).keymap).redirect_key_auto;
                     return PARSER_SUCCESS;
@@ -1257,7 +1257,7 @@ unsafe fn HandleRedirectKey(
                     "RedirectKey field {} cannot resolve {} to a valid key\n",
                     crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
                     crate::xkb::utils::ByteSliceDisplay(KeyNameText(
-                        ctx,
+                        (*ctx).clone(),
                         (*value).key_name.key_name
                     )),
                 );
@@ -1389,7 +1389,7 @@ unsafe fn HandlePrivate(
                         (*keymap_info).strict,
                     );
                 }
-                let str_bytes: &[u8] = xkb_atom_text_bytes(ctx, val);
+                let str_bytes: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, val);
                 let mut len: usize = str_bytes.len();
                 if len < 1 as usize || len > std::mem::size_of::<[u8; 7]>() {
                     xkb_logf!(
@@ -1753,7 +1753,7 @@ pub unsafe fn HandleActionDef(
             );
             return PARSER_FATAL_ERROR;
         }
-        let action_name: &[u8] = xkb_atom_text_bytes(ctx, (*def).action.name);
+        let action_name: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, (*def).action.name);
         let mut handler_type: xkb_action_type = ACTION_TYPE_NONE;
         if !stringToActionType(action_name, &raw mut handler_type) {
             xkb_logf!(

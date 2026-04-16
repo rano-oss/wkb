@@ -1,3 +1,5 @@
+use std::env::VarError;
+
 use crate::xkb::atom::{atom_intern, atom_table_new, atom_text, atom_text_bytes};
 
 pub use crate::xkb::messages::{
@@ -65,7 +67,7 @@ use crate::xkb::utils::xkb_stat;
 use crate::xkb::utils::{closedir, opendir, readdir, DIR};
 use crate::xkb::utils::{cstr_as_bytes, istrneq, strdup_safe};
 use crate::xkb::utils::{cstr_cmp, cstr_free, cstr_len};
-use libc::{getenv, qsort};
+use libc::qsort;
 
 extern "C" {
     pub fn secure_getenv(name: *const i8) -> *mut i8;
@@ -180,13 +182,11 @@ pub unsafe fn xkb_context_include_path_append(ctx: *mut xkb_context, mut path: *
 }
 pub unsafe fn xkb_context_include_path_get_extra_path(ctx: *mut xkb_context) -> *const i8 {
     unsafe {
-        let extra: *const i8 =
-            xkb_context_getenv(ctx, b"XKB_CONFIG_EXTRA_PATH\0".as_ptr() as *const i8);
-        return if !extra.is_null() {
-            extra
-        } else {
-            DFLT_XKB_CONFIG_EXTRA_PATH.as_ptr()
-        };
+        let extra = xkb_context_getenv("XKB_CONFIG_EXTRA_PATH");
+        match extra {
+            Ok(extra) => extra.as_ptr() as *const i8,
+            Err(_) => DFLT_XKB_CONFIG_EXTRA_PATH.as_ptr(),
+        }
     }
 }
 
@@ -194,10 +194,7 @@ pub unsafe fn xkb_context_include_path_get_unversioned_extensions_path(
     ctx: *mut xkb_context,
 ) -> *const i8 {
     unsafe {
-        let mut ext: *const i8 = xkb_context_getenv(
-            ctx,
-            b"XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH\0".as_ptr() as *const i8,
-        );
+        let mut ext = xkb_context_getenv("XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH");
         return if !ext.is_null() {
             ext
         } else {
@@ -210,10 +207,7 @@ pub unsafe fn xkb_context_include_path_get_versioned_extensions_path(
     ctx: *mut xkb_context,
 ) -> *const i8 {
     unsafe {
-        let mut ext: *const i8 = xkb_context_getenv(
-            ctx,
-            b"XKB_CONFIG_VERSIONED_EXTENSIONS_PATH\0".as_ptr() as *const i8,
-        );
+        let mut ext = xkb_context_getenv("XKB_CONFIG_VERSIONED_EXTENSIONS_PATH");
         return if !ext.is_null() {
             ext
         } else {
@@ -392,7 +386,7 @@ unsafe fn add_direct_subdirectories(
 }
 pub unsafe fn xkb_context_include_path_get_system_path(ctx: *mut xkb_context) -> *const i8 {
     unsafe {
-        let root: *const i8 = xkb_context_getenv(ctx, b"XKB_CONFIG_ROOT\0".as_ptr() as *const i8);
+        let root = xkb_context_getenv("XKB_CONFIG_ROOT");
         return if !root.is_null() {
             root
         } else {
@@ -403,8 +397,8 @@ pub unsafe fn xkb_context_include_path_get_system_path(ctx: *mut xkb_context) ->
 pub unsafe fn xkb_context_include_path_append_default(ctx: *mut xkb_context) -> i32 {
     unsafe {
         let mut ret: i32 = 0 as i32;
-        let home: *const i8 = xkb_context_getenv(ctx, b"HOME\0".as_ptr() as *const i8);
-        let xdg: *const i8 = xkb_context_getenv(ctx, b"XDG_CONFIG_HOME\0".as_ptr() as *const i8);
+        let home = xkb_context_getenv("HOME");
+        let xdg = xkb_context_getenv("XDG_CONFIG_HOME");
         if !xdg.is_null() {
             let user_path =
                 std::ffi::CString::new(format!("{}/xkb", crate::xkb::utils::CStrDisplay(xdg)))
@@ -503,12 +497,6 @@ pub unsafe fn xkb_context_include_path_get(ctx: *mut xkb_context, mut idx: u32) 
         return *(*ctx).includes.as_ptr().add(idx as usize);
     }
 }
-pub unsafe fn xkb_context_ref(ctx: *mut xkb_context) -> *mut xkb_context {
-    unsafe {
-        (*ctx).refcnt += 1;
-        return ctx;
-    }
-}
 pub unsafe fn xkb_context_unref(ctx: *mut xkb_context) {
     unsafe {
         if ctx.is_null() {
@@ -583,7 +571,6 @@ unsafe fn log_verbosity(mut verbosity: *const i8) -> i32 {
 }
 pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> xkb_context {
     unsafe {
-        let mut env: *const i8 = std::ptr::null();
         let mut ctx = xkb_context {
             refcnt: 1,
             log_fn: Some(default_log_fn as unsafe fn(*mut xkb_context, u32, *const i8) -> ()),
@@ -624,11 +611,11 @@ pub unsafe fn xkb_context_new(mut flags: xkb_context_flags) -> xkb_context {
         ctx.use_environment_names = flags as u32 & XKB_CONTEXT_NO_ENVIRONMENT_NAMES as u32 == 0;
         ctx.use_secure_getenv = flags as u32 & XKB_CONTEXT_NO_SECURE_GETENV as u32 == 0;
         ctx.pending_default_includes = flags as u32 & XKB_CONTEXT_NO_DEFAULT_INCLUDES as u32 == 0;
-        env = xkb_context_getenv(&raw mut ctx, b"XKB_LOG_LEVEL\0".as_ptr() as *const i8);
+        let mut env = xkb_context_getenv("XKB_LOG_LEVEL");
         if !env.is_null() {
             xkb_context_set_log_level(&raw mut ctx, log_level(env));
         }
-        env = xkb_context_getenv(&raw mut ctx, b"XKB_LOG_VERBOSITY\0".as_ptr() as *const i8);
+        env = xkb_context_getenv("XKB_LOG_VERBOSITY");
         if !env.is_null() {
             xkb_context_set_log_verbosity(&raw mut ctx, log_verbosity(env));
         }
@@ -655,18 +642,12 @@ pub unsafe fn xkb_context_set_log_verbosity(ctx: *mut xkb_context, mut verbosity
 
 // --- Merged from context_priv.rs ---
 
-pub unsafe fn xkb_context_getenv(ctx: *mut xkb_context, mut name: *const i8) -> *mut i8 {
-    unsafe {
-        if (*ctx).use_secure_getenv {
-            return secure_getenv(name);
-        } else {
-            return getenv(name);
-        };
-    }
+pub unsafe fn xkb_context_getenv(name: &str) -> Result<String, VarError> {
+    return std::env::var(name);
 }
 pub unsafe fn xkb_context_init_includes(ctx: *mut xkb_context) -> bool {
     unsafe {
-        if (*ctx).pending_default_includes {
+        if ctx.pending_default_includes {
             if (*ctx).failed_includes.is_empty() {
                 if xkb_context_include_path_append_default(ctx) == 0 {
                     xkb_logf!(
@@ -725,9 +706,10 @@ pub unsafe fn xkb_atom_text(ctx: *mut xkb_context, mut atom: u32) -> *const i8 {
         return atom_text(&(*ctx).atom_table, atom);
     }
 }
-pub unsafe fn xkb_atom_text_bytes<'a>(ctx: *mut xkb_context, atom: u32) -> &'a [u8] {
-    atom_text_bytes(&(*ctx).atom_table, atom)
+pub fn xkb_atom_text_bytes<'a>(atom_table: &'a atom_table, atom: u32) -> &'a [u8] {
+    atom_text_bytes(atom_table, atom)
 }
+
 pub unsafe fn xkb_log(
     ctx: *mut xkb_context,
     mut level: u32,
@@ -741,75 +723,66 @@ pub unsafe fn xkb_log(
         (*ctx).log_fn.expect("non-null function pointer")(ctx, level, msg);
     }
 }
-pub unsafe fn xkb_context_get_buffer(ctx: *mut xkb_context, mut size: usize) -> *mut i8 {
+pub unsafe fn xkb_context_get_buffer(mut ctx: &mut xkb_context, mut size: usize) -> *mut i8 {
     unsafe {
         let mut rtrn: *mut i8 = std::ptr::null_mut();
         if size >= std::mem::size_of::<[i8; 2048]>() {
             return std::ptr::null_mut();
         }
-        if (std::mem::size_of::<[i8; 2048]>()).wrapping_sub((*ctx).text_next as usize) <= size {
-            (*ctx).text_next = 0 as usize;
+        if (std::mem::size_of::<[i8; 2048]>()).wrapping_sub(ctx.text_next as usize) <= size {
+            ctx.text_next = 0 as usize;
         }
-        rtrn =
-            (&raw mut (*ctx).text_buffer as *mut i8).offset((*ctx).text_next as isize) as *mut i8;
-        (*ctx).text_next = (*ctx).text_next.wrapping_add(size);
+        rtrn = (&raw mut ctx.text_buffer as *mut i8).offset(ctx.text_next as isize) as *mut i8;
+        ctx.text_next = ctx.text_next.wrapping_add(size);
         return rtrn;
     }
 }
 pub unsafe fn xkb_context_sanitize_rule_names(
-    ctx: *mut xkb_context,
+    ctx: &xkb_context,
     mut rmlvo: *mut xkb_rule_names,
 ) -> RMLVO {
     unsafe {
         let mut modified: RMLVO = 0 as RMLVO;
         if isempty((*rmlvo).rules) {
-            let mut env: *const i8 = std::ptr::null();
-            if (*ctx).use_environment_names {
-                env = xkb_context_getenv(ctx, b"XKB_DEFAULT_RULES\0".as_ptr() as *const i8);
+            let mut env;
+            if ctx.use_environment_names {
+                env = xkb_context_getenv("XKB_DEFAULT_RULES");
             }
-            (*rmlvo).rules = if !env.is_null() {
-                env
-            } else {
-                DEFAULT_XKB_RULES.as_ptr()
+            (*rmlvo).rules = match env {
+                Ok(env) => env.as_ptr() as *const i8,
+                Err(_) => DEFAULT_XKB_RULES.as_ptr(),
             };
             modified = (modified as u32 | RMLVO_RULES as u32) as RMLVO;
         }
         if isempty((*rmlvo).model) {
-            let mut env: *const i8 = std::ptr::null();
-            if (*ctx).use_environment_names {
-                env = xkb_context_getenv(ctx, b"XKB_DEFAULT_MODEL\0".as_ptr() as *const i8);
+            let mut env;
+            if ctx.use_environment_names {
+                env = xkb_context_getenv("XKB_DEFAULT_MODEL");
             }
-            (*rmlvo).model = if !env.is_null() {
-                env
-            } else {
-                DEFAULT_XKB_MODEL.as_ptr()
+            (*rmlvo).model = match env {
+                Ok(env) => env.as_ptr() as *const i8,
+                Err(_) => DEFAULT_XKB_MODEL.as_ptr(),
             };
             modified = (modified as u32 | RMLVO_MODEL as u32) as RMLVO;
         }
         if isempty((*rmlvo).layout) {
             {
-                let mut env: *const i8 = std::ptr::null();
-                if (*ctx).use_environment_names {
-                    env = xkb_context_getenv(ctx, b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
+                let mut env;
+                if ctx.use_environment_names {
+                    env = xkb_context_getenv("XKB_DEFAULT_LAYOUT");
                 }
-                (*rmlvo).layout = if !env.is_null() {
-                    env
-                } else {
-                    DEFAULT_XKB_LAYOUT.as_ptr()
+                (*rmlvo).layout = match env {
+                    Ok(env) => env.as_ptr() as *const i8,
+                    Err(_) => DEFAULT_XKB_LAYOUT.as_ptr(),
                 };
             }
             modified = (modified as u32 | RMLVO_LAYOUT as u32) as RMLVO;
             let variant: *const i8 = {
-                let mut env: *const i8 = std::ptr::null();
-                let mut layout: *const i8 =
-                    xkb_context_getenv(ctx, b"XKB_DEFAULT_LAYOUT\0".as_ptr() as *const i8);
-                if !layout.is_null() && (*ctx).use_environment_names {
-                    env = xkb_context_getenv(ctx, b"XKB_DEFAULT_VARIANT\0".as_ptr() as *const i8);
-                }
-                if !env.is_null() {
-                    env
-                } else {
-                    std::ptr::null()
+                let mut layout = xkb_context_getenv("XKB_DEFAULT_LAYOUT");
+                let default_variant = xkb_context_getenv("XKB_DEFAULT_VARIANT");
+                match (layout, ctx.use_environment_names, default_variant) {
+                    (Ok(_), true, Ok(default_variant)) => default_variant.as_ptr() as *const i8,
+                    (_, _, _) => std::ptr::null(),
                 }
             };
             if !isempty((*rmlvo).variant) {
@@ -831,14 +804,14 @@ pub unsafe fn xkb_context_sanitize_rule_names(
             modified = (modified as u32 | RMLVO_VARIANT as u32) as RMLVO;
         }
         if (*rmlvo).options.is_null() {
-            let mut env: *const i8 = std::ptr::null();
-            if (*ctx).use_environment_names {
-                env = xkb_context_getenv(ctx, b"XKB_DEFAULT_OPTIONS\0".as_ptr() as *const i8);
-            }
-            (*rmlvo).options = if !env.is_null() {
-                env
+            if ctx.use_environment_names {
+                let env = xkb_context_getenv("XKB_DEFAULT_OPTIONS");
+                (*rmlvo).options = match env {
+                    Ok(env) => env.as_ptr() as *const i8,
+                    Err(_) => std::ptr::null(),
+                };
             } else {
-                std::ptr::null()
+                (*rmlvo).options = std::ptr::null();
             };
             modified = (modified as u32 | RMLVO_OPTIONS as u32) as RMLVO;
         }

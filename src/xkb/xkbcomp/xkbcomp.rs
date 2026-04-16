@@ -193,7 +193,7 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
                 options: std::ptr::null(),
             };
             let buf_size: usize = (std::mem::size_of::<[i8; 2048]>()).wrapping_sub(1 as usize);
-            let mut buf: *mut i8 = xkb_context_get_buffer((*rmlvo).ctx, buf_size);
+            let mut buf: *mut i8 = xkb_context_get_buffer(&(*rmlvo).ctx, buf_size);
             if buf.is_null() as i64 != 0 {
                 return false;
             }
@@ -227,7 +227,7 @@ unsafe fn text_v1_keymap_new_from_rmlvo(
                 options: std::ptr::null(),
             };
             let buf_size_0: usize = std::mem::size_of::<[i8; 2048]>();
-            let mut buf_0: *mut i8 = xkb_context_get_buffer((*rmlvo).ctx, buf_size_0);
+            let mut buf_0: *mut i8 = xkb_context_get_buffer(&(*rmlvo).ctx, buf_size_0);
             if buf_0.is_null() as i64 != 0 {
                 return false;
             }

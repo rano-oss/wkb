@@ -6,8 +6,7 @@ pub struct xkb_rmlvo_builder {
     pub model: *mut i8,
     pub layouts: Vec<xkb_rmlvo_builder_layout>,
     pub options: Vec<xkb_rmlvo_builder_option>,
-    pub refcnt: i32,
-    pub ctx: *mut xkb_context,
+    pub ctx: xkb_context,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -77,7 +76,7 @@ use crate::xkb::utils::cstr_as_bytes;
 use crate::xkb::utils::cstr_free;
 use crate::xkb::utils::strdup_safe;
 pub unsafe fn xkb_rmlvo_builder_new(
-    mut context: *mut xkb_context,
+    mut context: xkb_context,
     mut rules: *const i8,
     mut model: *const i8,
     mut flags: xkb_rmlvo_builder_flags,
@@ -118,8 +117,7 @@ pub unsafe fn xkb_rmlvo_builder_new(
             return std::ptr::null_mut();
         }
         let builder = Box::into_raw(Box::new(xkb_rmlvo_builder {
-            refcnt: 1,
-            ctx: xkb_context_ref(context),
+            ctx: context,
             rules: rules_dup,
             model: model_dup,
             layouts: Vec::new(),
@@ -244,28 +242,6 @@ pub unsafe fn xkb_rmlvo_builder_append_option(
     }
 }
 
-pub unsafe fn xkb_rmlvo_builder_unref(mut rmlvo: *mut xkb_rmlvo_builder) {
-    unsafe {
-        if rmlvo.is_null() || {
-            (*rmlvo).refcnt -= 1;
-            (*rmlvo).refcnt > 0 as i32
-        } {
-            return;
-        }
-        cstr_free((*rmlvo).rules);
-        cstr_free((*rmlvo).model);
-        for layout in (*rmlvo).layouts.iter() {
-            cstr_free(layout.layout);
-            cstr_free(layout.variant);
-        }
-        // Vec is dropped automatically when Box is dropped
-        for option in (*rmlvo).options.iter() {
-            cstr_free(option.option);
-        }
-        xkb_context_unref((*rmlvo).ctx);
-        drop(Box::from_raw(rmlvo));
-    }
-}
 pub unsafe fn xkb_rmlvo_builder_to_rules_names(
     mut builder: *const xkb_rmlvo_builder,
     mut rmlvo: *mut xkb_rule_names,
@@ -374,5 +350,4 @@ pub unsafe fn xkb_rmlvo_builder_to_rules_names(
         return true;
     }
 }
-use crate::xkb::context::{xkb_context_ref, xkb_context_unref};
 use crate::xkb::shared_types::*;

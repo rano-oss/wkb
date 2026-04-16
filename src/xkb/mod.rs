@@ -681,7 +681,7 @@ fn build_composer_from_xkb(ctx: &rust_types::Context, locale: &str) -> ListCompo
 
     // For safety, catch any panics during compose table loading
     // Some locales may have invalid or missing compose files
-    let compose_table = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+    let mut compose_table = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         rust_types::ComposeTable::new_from_locale(ctx, locale)
     })) {
         Ok(Some(table)) => table,
@@ -751,9 +751,8 @@ fn build_composer_from_xkb(ctx: &rust_types::Context, locale: &str) -> ListCompo
 
     // Try to iterate through compose sequences, catching any errors
     let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unsafe {
-        let table_iter = compose_table.as_ptr() as *mut compose::xkb_compose_table;
         compose::xkb_compose_table_for_each(
-            table_iter,
+            &mut compose_table.entity,
             Some(collect_sequences),
             &mut callback_data as *mut CallbackData as *mut ::core::ffi::c_void,
         );

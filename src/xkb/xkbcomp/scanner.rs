@@ -343,23 +343,23 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
                     let mut o: u8 = 0;
                     let start_pos: usize = (*s).pos;
                     if (*s).chr(b'\\' as i8) {
-                        (*s).buf_append(b'\\' as i8);
+                        (*s).buf_append(b'\\');
                     } else if (*s).chr(b'"' as i8) {
-                        (*s).buf_append(b'"' as i8);
+                        (*s).buf_append(b'"');
                     } else if (*s).chr(b'n' as i8) {
-                        (*s).buf_append(b'\n' as i8);
+                        (*s).buf_append(b'\n');
                     } else if (*s).chr(b't' as i8) {
-                        (*s).buf_append(b'\t' as i8);
+                        (*s).buf_append(b'\t');
                     } else if (*s).chr(b'r' as i8) {
-                        (*s).buf_append(b'\r' as i8);
+                        (*s).buf_append(b'\r');
                     } else if (*s).chr(b'b' as i8) {
-                        (*s).buf_append(b'\x08' as i8);
+                        (*s).buf_append(b'\x08');
                     } else if (*s).chr(b'f' as i8) {
-                        (*s).buf_append(b'\x0c' as i8);
+                        (*s).buf_append(b'\x0c');
                     } else if (*s).chr(b'v' as i8) {
-                        (*s).buf_append(b'\x0b' as i8);
+                        (*s).buf_append(b'\x0b');
                     } else if (*s).chr(b'e' as i8) {
-                        (*s).buf_append(b'\x1b' as i8);
+                        (*s).buf_append(b'\x1b');
                     } else if (*s).chr(b'u' as i8) {
                         let mut cp: u32 = 0;
                         if (*s).unicode_code_point(&raw mut cp) && cp != 0 {
@@ -381,7 +381,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
                             );
                         }
                     } else if (*s).oct(&mut o) && o != 0 {
-                        (*s).buf_append(o as i8);
+                        (*s).buf_append(o);
                     } else if (*s).pos > start_pos {
                         let loc_0 = (*s).token_location();
                         xkb_logf!(
@@ -413,7 +413,7 @@ pub unsafe fn _xkbcommon_lex(mut yylval: *mut YYSTYPE, mut s: *mut scanner) -> i
                     }
                 } else {
                     let c = (*s).next_byte();
-                    (*s).buf_append(c);
+                    (*s).buf_append(c as u8);
                 }
             }
             if !(*s).buf_append(0) || !(*s).chr(b'"' as i8) {
