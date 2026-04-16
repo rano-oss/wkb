@@ -236,35 +236,6 @@ unsafe fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
     }
 }
 
-#[derive(Copy, Clone)]
-#[repr(C)]
-
-pub struct machine_config {
-    pub modifiers: machine_modifiers_config,
-    pub shortcuts: machine_shortcuts_config,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-
-pub struct machine_shortcuts_config {
-    pub mask: u32,
-    pub targets: *mut u32,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-
-pub struct machine_modifiers_config {
-    pub mask: u32,
-    pub mappings_num: u32,
-    pub mappings: *mut machine_mods_mapping,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-
-pub struct machine_mods_mapping {
-    pub source: u32,
-    pub target: u32,
-}
 #[derive(Clone)]
 
 pub struct xkb_state {
@@ -313,18 +284,6 @@ pub struct machine_controls {
     pub out_of_range_redirect_group: u32,
 }
 
-#[derive(Clone)]
-
-pub struct xkb_shortcuts_config_options {
-    pub mask: u32,
-    pub targets: Vec<u32>,
-}
-// C2Rust_Unnamed_20 removed: replaced by Vec<xkb_layout_index_t>
-#[derive(Clone)]
-
-pub struct machine_mods_mappings {
-    pub items: Vec<machine_mods_mapping>,
-}
 #[derive(Copy, Clone)]
 #[repr(C)]
 
