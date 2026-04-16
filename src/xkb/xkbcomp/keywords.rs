@@ -62,12 +62,11 @@ pub struct stringpool_t {
     pub stringpool_str71: [i8; 6],
     pub stringpool_str72: [i8; 8],
 }
-pub const MAX_HASH_VALUE: C2Rust_Unnamed = 72;
-pub const MIN_WORD_LENGTH: C2Rust_Unnamed = 3;
-pub const MAX_WORD_LENGTH: C2Rust_Unnamed = 21;
-pub type C2Rust_Unnamed = u32;
-pub const MIN_HASH_VALUE: C2Rust_Unnamed = 3;
-pub const TOTAL_KEYWORDS: C2Rust_Unnamed = 45;
+pub const MAX_HASH_VALUE: u32 = 72;
+pub const MIN_WORD_LENGTH: u32 = 3;
+pub const MAX_WORD_LENGTH: u32 = 21;
+pub const MIN_HASH_VALUE: u32 = 3;
+pub const TOTAL_KEYWORDS: u32 = 45;
 static mut wordlist: [keyword_tok; 73] = [keyword_tok { name: 0, tok: 0 }; 73];
 static mut gperf_downcase: [u8; 256] = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,

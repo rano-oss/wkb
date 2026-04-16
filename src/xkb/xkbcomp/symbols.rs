@@ -36,11 +36,11 @@ pub struct ModMapEntry {
     pub merge: merge_mode,
     pub haveSymbol: bool,
     pub modifier: u32,
-    pub u: C2Rust_Unnamed_19,
+    pub u: ModMapData,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub union C2Rust_Unnamed_19 {
+pub union ModMapData {
     pub keyName: u32,
     pub keySym: u32,
 }
@@ -2197,7 +2197,7 @@ unsafe fn HandleModMapDef(mut info: *mut SymbolsInfo, mut def: *mut ModMapDef) -
             merge: MERGE_DEFAULT,
             haveSymbol: false,
             modifier: 0,
-            u: C2Rust_Unnamed_19 { keyName: 0 },
+            u: ModMapData { keyName: 0 },
         };
         let mut ndx: u32 = 0;
         let mut ok: bool = false;

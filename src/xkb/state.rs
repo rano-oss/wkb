@@ -5,19 +5,19 @@ use crate::xkb_logf;
 
 pub struct xkb_event {
     pub type_0: xkb_event_type,
-    pub c2rust_unnamed: C2Rust_Unnamed_17,
+    pub data: xkb_event_data,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
 
-pub union C2Rust_Unnamed_17 {
+pub union xkb_event_data {
     pub keycode: u32,
-    pub components: C2Rust_Unnamed_18,
+    pub components: xkb_event_components,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
 
-pub struct C2Rust_Unnamed_18 {
+pub struct xkb_event_components {
     pub components: state_components,
     pub changed: u32,
 }
@@ -265,13 +265,6 @@ pub struct machine_mods_mapping {
     pub source: u32,
     pub target: u32,
 }
-#[derive(Clone)]
-
-pub struct C2Rust_Unnamed_13 {
-    pub enabled: xkb_overlay_mask_t,
-    pub order: u32,
-    pub keys: Vec<xkb_overlaid_key>,
-}
 // C2Rust_Unnamed_14 removed: replaced by Vec<xkb_overlaid_key>
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -325,14 +318,8 @@ pub struct xkb_events {
 #[repr(C)]
 
 pub struct machine_controls {
-    pub out_of_range_group: C2Rust_Unnamed_19,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-
-pub struct C2Rust_Unnamed_19 {
-    pub policy: u32,
-    pub redirect_group: u32,
+    pub out_of_range_group_policy: u32,
+    pub out_of_range_redirect_group: u32,
 }
 
 #[derive(Clone)]
@@ -350,7 +337,7 @@ pub struct machine_mods_mappings {
 #[derive(Copy, Clone)]
 #[repr(C)]
 
-pub struct C2Rust_Unnamed_21 {
+pub struct FilterActionFuncs {
     pub new: Option<unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> ()>,
     pub func: Option<
         unsafe fn(
@@ -371,11 +358,11 @@ pub const XKB_FILTER_CONTINUE: xkb_filter_result = 1;
 
 pub union group_latch_priv {
     pub priv_0: u32,
-    pub c2rust_unnamed: C2Rust_Unnamed_22,
+    pub latch_state: GroupLatchState,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct C2Rust_Unnamed_22 {
+pub struct GroupLatchState {
     pub latch: u32,
     pub group_delta: i32,
 }
@@ -390,11 +377,10 @@ pub const LATCH_KEY_DOWN: xkb_key_latch_state = 1;
 
 pub const NO_LATCH: xkb_key_latch_state = 0;
 
-pub const XKB_STATE_MATCH_FLAGS: C2Rust_Unnamed_24 = 65539;
+pub const XKB_STATE_MATCH_FLAGS: u32 = 65539;
 
 pub type xkb_filter_result = u32;
 
-pub type C2Rust_Unnamed_24 = u32;
 static mut synthetic_key_group_break_group_latch: xkb_group = xkb_group {
     explicit_symbols: false,
     explicit_actions: false,
@@ -743,7 +729,7 @@ unsafe fn xkb_filter_group_latch_new(
 ) {
     unsafe {
         let priv_0: group_latch_priv = group_latch_priv {
-            c2rust_unnamed: C2Rust_Unnamed_22 {
+            latch_state: GroupLatchState {
                 latch: LATCH_KEY_DOWN as u32,
                 group_delta: if (*filter).action.group.flags as u32 & ACTION_ABSOLUTE_SWITCH as u32
                     != 0
@@ -774,7 +760,7 @@ unsafe fn xkb_filter_group_latch_func(
         let mut priv_0: group_latch_priv = group_latch_priv {
             priv_0: (*filter).priv_0,
         };
-        let mut latch: xkb_key_latch_state = priv_0.c2rust_unnamed.latch as xkb_key_latch_state;
+        let mut latch: xkb_key_latch_state = priv_0.latch_state.latch as xkb_key_latch_state;
         if direction as u32 == XKB_KEY_DOWN as u32 {
             let mut actions: *const xkb_action = std::ptr::null();
             let count: u16 = xkb_key_get_actions(state, key, &raw mut actions) as u16;
@@ -839,7 +825,7 @@ unsafe fn xkb_filter_group_latch_func(
                                     ) -> bool,
                                 >;
                             xkb_filter_group_lock_new(state, events, filter);
-                            (*state).components.latched_group -= priv_0.c2rust_unnamed.group_delta;
+                            (*state).components.latched_group -= priv_0.latch_state.group_delta;
                             (*filter).key = key;
                             return XKB_FILTER_CONSUME as i32 != 0;
                         }
@@ -848,7 +834,7 @@ unsafe fn xkb_filter_group_latch_func(
                         INTERNAL_BREAKS_GROUP_LATCH,
                         0 as u32,
                     ) {
-                        (*state).components.latched_group -= priv_0.c2rust_unnamed.group_delta;
+                        (*state).components.latched_group -= priv_0.latch_state.group_delta;
                         (*filter).func = None;
                         return XKB_FILTER_CONTINUE as i32 != 0;
                     }
@@ -863,22 +849,22 @@ unsafe fn xkb_filter_group_latch_func(
                 && (*state).components.locked_group != 0
             {
                 if latch as u32 == LATCH_PENDING as u32 {
-                    (*state).components.latched_group -= priv_0.c2rust_unnamed.group_delta;
+                    (*state).components.latched_group -= priv_0.latch_state.group_delta;
                 } else {
-                    (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta;
+                    (*state).components.base_group -= priv_0.latch_state.group_delta;
                 }
                 (*state).components.locked_group = 0 as i32 as i32;
                 (*filter).func = None;
             } else if latch as u32 == NO_LATCH as u32 {
-                (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta;
+                (*state).components.base_group -= priv_0.latch_state.group_delta;
                 (*filter).func = None;
             } else if latch as u32 == LATCH_KEY_DOWN as u32 {
                 latch = LATCH_PENDING;
-                (*state).components.base_group -= priv_0.c2rust_unnamed.group_delta;
-                (*state).components.latched_group += priv_0.c2rust_unnamed.group_delta;
+                (*state).components.base_group -= priv_0.latch_state.group_delta;
+                (*state).components.latched_group += priv_0.latch_state.group_delta;
             }
         }
-        priv_0.c2rust_unnamed.latch = latch as u32;
+        priv_0.latch_state.latch = latch as u32;
         (*filter).priv_0 = priv_0.priv_0;
         return XKB_FILTER_CONTINUE as i32 != 0;
     }
@@ -1257,7 +1243,7 @@ unsafe fn append_redirect_key_events(
                 let mut idx = queue.len() - 1;
                 loop {
                     if queue[idx].type_0 as u32 == XKB_EVENT_TYPE_COMPONENTS_CHANGE as u32 {
-                        last_components = queue[idx].c2rust_unnamed.components.components;
+                        last_components = queue[idx].data.components.components;
                         break;
                     }
                     if idx == 0 {
@@ -1277,8 +1263,8 @@ unsafe fn append_redirect_key_events(
             if changed as u64 != 0 {
                 (&mut (*events).queue).push(xkb_event {
                     type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
-                    c2rust_unnamed: C2Rust_Unnamed_17 {
-                        components: C2Rust_Unnamed_18 {
+                    data: xkb_event_data {
+                        components: xkb_event_components {
                             components: new,
                             changed: changed,
                         },
@@ -1294,15 +1280,15 @@ unsafe fn append_redirect_key_events(
             } else {
                 XKB_EVENT_TYPE_KEY_DOWN as i32
             }) as xkb_event_type,
-            c2rust_unnamed: C2Rust_Unnamed_17 {
+            data: xkb_event_data {
                 keycode: (*redirect).keycode,
             },
         });
         if mask != 0 && changed as u32 != 0 {
             (&mut (*events).queue).push(xkb_event {
                 type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
-                c2rust_unnamed: C2Rust_Unnamed_17 {
-                    components: C2Rust_Unnamed_18 {
+                data: xkb_event_data {
+                    components: xkb_event_components {
                         components: last_components,
                         changed: changed,
                     },
@@ -1378,17 +1364,17 @@ unsafe fn xkb_filter_redirect_key_func(
     }
 }
 
-static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = {
+static mut filter_action_funcs: [FilterActionFuncs; 21] = {
     [
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: None,
             func: None,
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: None,
             func: None,
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: Some(
                 xkb_filter_mod_set_new
                     as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
@@ -1404,7 +1390,7 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = {
                     ) -> bool,
             ),
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: Some(
                 xkb_filter_mod_latch_new
                     as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
@@ -1420,7 +1406,7 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = {
                     ) -> bool,
             ),
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: Some(
                 xkb_filter_mod_lock_new
                     as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
@@ -1436,7 +1422,7 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = {
                     ) -> bool,
             ),
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: Some(
                 xkb_filter_group_set_new
                     as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
@@ -1452,7 +1438,7 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = {
                     ) -> bool,
             ),
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: Some(
                 xkb_filter_group_latch_new
                     as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
@@ -1468,7 +1454,7 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = {
                     ) -> bool,
             ),
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: Some(
                 xkb_filter_group_lock_new
                     as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
@@ -1484,31 +1470,31 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = {
                     ) -> bool,
             ),
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: None,
             func: None,
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: None,
             func: None,
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: None,
             func: None,
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: None,
             func: None,
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: None,
             func: None,
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: None,
             func: None,
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: Some(
                 xkb_filter_ctrls_new
                     as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
@@ -1524,7 +1510,7 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = {
                     ) -> bool,
             ),
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: Some(
                 xkb_filter_ctrls_new
                     as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
@@ -1540,7 +1526,7 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = {
                     ) -> bool,
             ),
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: Some(
                 xkb_filter_redirect_key_new
                     as unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> (),
@@ -1556,19 +1542,19 @@ static mut filter_action_funcs: [C2Rust_Unnamed_21; 21] = {
                     ) -> bool,
             ),
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: None,
             func: None,
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: None,
             func: None,
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: None,
             func: None,
         },
-        C2Rust_Unnamed_21 {
+        FilterActionFuncs {
             new: None,
             func: None,
         },
@@ -1674,7 +1660,7 @@ pub unsafe fn xkb_state_new(mut keymap: *mut xkb_keymap) -> *mut xkb_state {
             (*state).flags =
                 ((*state).flags as u32 | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS as u32) as xkb_a11y_flags;
         }
-        (*state).controls.out_of_range_group.policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
+        (*state).controls.out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
         (*state).refcnt = 1 as i32;
         (*state).keymap = xkb_keymap_ref(keymap);
         xkb_state_update_derived(state);
@@ -1812,8 +1798,8 @@ unsafe fn xkb_state_update_derived(mut state: *mut xkb_state) {
         wrapped = XkbWrapGroupIntoRange(
             (*state).components.locked_group,
             (*(*state).keymap).num_groups,
-            (*state).controls.out_of_range_group.policy,
-            (*state).controls.out_of_range_group.redirect_group,
+            (*state).controls.out_of_range_group_policy,
+            (*state).controls.out_of_range_redirect_group,
         );
         (*state).components.locked_group = (if wrapped == XKB_LAYOUT_INVALID as u32 {
             0 as u32
@@ -1825,8 +1811,8 @@ unsafe fn xkb_state_update_derived(mut state: *mut xkb_state) {
                 + (*state).components.latched_group
                 + (*state).components.locked_group,
             (*(*state).keymap).num_groups,
-            (*state).controls.out_of_range_group.policy,
-            (*state).controls.out_of_range_group.redirect_group,
+            (*state).controls.out_of_range_group_policy,
+            (*state).controls.out_of_range_redirect_group,
         );
         (*state).components.group = if wrapped == XKB_LAYOUT_INVALID as u32 {
             0 as u32
@@ -2128,7 +2114,7 @@ unsafe fn state_update_layout_policy(
         ) {
             if (*update).policy as u32 == XKB_LAYOUT_OUT_OF_RANGE_REDIRECT as u32 {
                 if (*update).redirect < (*(*state).keymap).num_groups {
-                    (*state).controls.out_of_range_group.redirect_group = (*update).redirect;
+                    (*state).controls.out_of_range_redirect_group = (*update).redirect;
                 } else {
                     xkb_logf!(
                         (*(*state).keymap).ctx,
@@ -2142,7 +2128,7 @@ unsafe fn state_update_layout_policy(
                     return XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX;
                 }
             }
-            (*state).controls.out_of_range_group.policy = (*update).policy;
+            (*state).controls.out_of_range_group_policy = (*update).policy;
             return XKB_SUCCESS;
         } else {
             xkb_logf!(
