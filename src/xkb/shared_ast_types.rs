@@ -454,9 +454,9 @@ pub unsafe fn safe_map_name(file: *mut XkbFile) -> *const i8 {
 #[inline]
 pub unsafe fn ReportNotArray(
     _ctx: *mut xkb_context,
-    type_0: &[u8],
-    field: &[u8],
-    name: &[u8],
+    type_0: &str,
+    field: &str,
+    name: &str,
 ) -> bool {
     xkb_logf!(
         ctx,
@@ -464,9 +464,9 @@ pub unsafe fn ReportNotArray(
         XKB_LOG_VERBOSITY_MINIMAL as i32,
         "[XKB-{:03}] The {} {} field is not an array; Ignoring illegal assignment in {}\n",
         XKB_ERROR_WRONG_FIELD_TYPE as i32,
-        crate::xkb::utils::ByteSliceDisplay(type_0),
-        crate::xkb::utils::ByteSliceDisplay(field),
-        crate::xkb::utils::ByteSliceDisplay(name),
+        type_0,
+        field,
+        name,
     );
     false
 }
@@ -475,10 +475,10 @@ pub unsafe fn ReportNotArray(
 pub unsafe fn ReportBadType(
     _ctx: *mut xkb_context,
     code: xkb_message_code,
-    type_0: &[u8],
-    field: &[u8],
-    name: &[u8],
-    wanted: &[u8],
+    type_0: &str,
+    field: &str,
+    name: &str,
+    wanted: &str,
 ) -> bool {
     xkb_logf!(
         ctx,
@@ -486,10 +486,10 @@ pub unsafe fn ReportBadType(
         XKB_LOG_VERBOSITY_MINIMAL as i32,
         "[XKB-{:03}] The {} {} field must be a {}; Ignoring illegal assignment in {}\n",
         { code },
-        crate::xkb::utils::ByteSliceDisplay(type_0),
-        crate::xkb::utils::ByteSliceDisplay(field),
-        crate::xkb::utils::ByteSliceDisplay(wanted),
-        crate::xkb::utils::ByteSliceDisplay(name),
+        type_0,
+        field,
+        wanted,
+        name,
     );
     false
 }
@@ -497,19 +497,19 @@ pub unsafe fn ReportBadType(
 #[inline]
 pub unsafe fn ReportBadField(
     _ctx: *mut xkb_context,
-    type_0: &[u8],
-    field: &[u8],
-    name: &[u8],
+    type_0: &str,
+    field: &str,
+    name: &str,
 ) -> bool {
     xkb_logf!(
         ctx,
         XKB_LOG_LEVEL_ERROR,
         XKB_LOG_VERBOSITY_MINIMAL as i32,
         "Unknown {} field \"{}\" in {}; Ignoring assignment to unknown field in {}\n",
-        crate::xkb::utils::ByteSliceDisplay(type_0),
-        crate::xkb::utils::ByteSliceDisplay(field),
-        crate::xkb::utils::ByteSliceDisplay(name),
-        crate::xkb::utils::ByteSliceDisplay(name),
+        type_0,
+        field,
+        name,
+        name,
     );
     false
 }
@@ -517,9 +517,9 @@ pub unsafe fn ReportBadField(
 #[inline]
 pub unsafe fn ReportShouldBeArray(
     _ctx: *mut xkb_context,
-    type_0: &[u8],
-    field: &[u8],
-    name: &[u8],
+    type_0: &str,
+    field: &str,
+    name: &str,
 ) -> bool {
     xkb_logf!(
         ctx,
@@ -527,9 +527,9 @@ pub unsafe fn ReportShouldBeArray(
         XKB_LOG_VERBOSITY_MINIMAL as i32,
         "[XKB-{:03}] Missing subscript for {} {}; Ignoring illegal assignment in {}\n",
         XKB_ERROR_EXPECTED_ARRAY_ENTRY as i32,
-        crate::xkb::utils::ByteSliceDisplay(type_0),
-        crate::xkb::utils::ByteSliceDisplay(field),
-        crate::xkb::utils::ByteSliceDisplay(name),
+        type_0,
+        field,
+        name,
     );
     false
 }

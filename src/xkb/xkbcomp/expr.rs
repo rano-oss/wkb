@@ -45,27 +45,27 @@ static LEVEL_NAME_PATTERN: SyncNamedIntegerPattern =
 pub unsafe fn ExprResolveLhs<'a>(
     ctx: *mut xkb_context,
     expr: *const ExprDef,
-    elem_rtrn: &mut &'a [u8],
-    field_rtrn: &mut &'a [u8],
+    elem_rtrn: &mut &'a str,
+    field_rtrn: &mut &'a str,
     index_rtrn: *mut *mut ExprDef,
 ) -> bool {
     unsafe {
         match (*expr).common.type_0 {
             10 => {
-                *elem_rtrn = b"";
-                *field_rtrn = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).ident.ident);
+                *elem_rtrn = "";
+                *field_rtrn = xkb_atom_text(&(*ctx).atom_table, (*expr).ident.ident);
                 *index_rtrn = std::ptr::null_mut();
                 return !(*field_rtrn).is_empty();
             }
             12 => {
-                *elem_rtrn = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).field_ref.element);
-                *field_rtrn = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).field_ref.field);
+                *elem_rtrn = xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.element);
+                *field_rtrn = xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.field);
                 *index_rtrn = std::ptr::null_mut();
                 return !(*elem_rtrn).is_empty() && !(*field_rtrn).is_empty();
             }
             13 => {
-                *elem_rtrn = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).array_ref.element);
-                *field_rtrn = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).array_ref.field);
+                *elem_rtrn = xkb_atom_text(&(*ctx).atom_table, (*expr).array_ref.element);
+                *field_rtrn = xkb_atom_text(&(*ctx).atom_table, (*expr).array_ref.field);
                 *index_rtrn = (*expr).array_ref.entry as *mut ExprDef;
                 if (*expr).array_ref.element != XKB_ATOM_NONE && (*elem_rtrn).is_empty() {
                     return false;
@@ -99,7 +99,7 @@ unsafe fn SimpleLookup(
         if priv_0.is_null() || field == XKB_ATOM_NONE {
             return false;
         }
-        let str: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, field);
+        let str: &str = xkb_atom_text(&(*ctx).atom_table, field);
         let mut entry: *const LookupEntry = priv_0 as *const LookupEntry;
         while !entry.is_null() && !(&(*entry).name).is_empty() {
             if str.eq_ignore_ascii_case((*entry).name) {
@@ -122,15 +122,18 @@ unsafe fn NamedIntegerPatternLookup(
         if priv_0.is_null() || field == XKB_ATOM_NONE {
             return false;
         }
-        let str_bytes: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, field);
+        let str_bytes: &str = xkb_atom_text(&(*ctx).atom_table, field);
         let pattern: *const named_integer_pattern = priv_0 as *const named_integer_pattern;
         let prefix_bytes = cstr_as_bytes((*pattern).prefix);
-        let count: i32 = if str_bytes.get(..(*pattern).prefix_length).is_some_and(|s| {
-            prefix_bytes
-                .get(..(*pattern).prefix_length)
-                .map_or(false, |t| s.eq_ignore_ascii_case(t))
-        }) {
-            let suffix = &str_bytes[(*pattern).prefix_length..];
+        let count: i32 = if str_bytes
+            .as_bytes()
+            .get(..(*pattern).prefix_length)
+            .is_some_and(|s| {
+                prefix_bytes
+                    .get(..(*pattern).prefix_length)
+                    .map_or(false, |t| s.eq_ignore_ascii_case(t))
+            }) {
+            let suffix = &str_bytes.as_bytes()[(*pattern).prefix_length..];
             let (val_parsed, c) = crate::xkb::utils::parse_dec_u32(suffix);
             *(val_rtrn as *mut u32) = val_parsed;
             c
@@ -195,15 +198,15 @@ unsafe fn LookupModMask(
     _pending_rtrn: *mut bool,
 ) -> bool {
     unsafe {
-        let str: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, field);
+        let str: &str = xkb_atom_text(&(*ctx).atom_table, field);
         if str.is_empty() {
             return false;
         }
-        if str.eq_ignore_ascii_case(b"all") {
+        if str.eq_ignore_ascii_case("all") {
             *val_rtrn = MOD_REAL_MASK_ALL;
             return true;
         }
-        if str.eq_ignore_ascii_case(b"none") {
+        if str.eq_ignore_ascii_case("none") {
             *val_rtrn = 0_u32;
             return true;
         }
@@ -226,7 +229,7 @@ pub unsafe fn ExprResolveBoolean(
     unsafe {
         let ok: bool;
         #[allow(unused_assignments)]
-        let mut ident: &[u8] = b"";
+        let mut ident: &str = "";
         match (*expr).common.type_0 {
             7 => {
                 *set_rtrn = (*expr).boolean.set;
@@ -244,19 +247,18 @@ pub unsafe fn ExprResolveBoolean(
                 return false;
             }
             10 => {
-                ident = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).ident.ident);
+                ident = xkb_atom_text(&(*ctx).atom_table, (*expr).ident.ident);
                 if !ident.is_empty() {
-                    if ident.eq_ignore_ascii_case(b"true")
-                        || ident.eq_ignore_ascii_case(b"yes")
-                        || ident.eq_ignore_ascii_case(b"on")
+                    if ident.eq_ignore_ascii_case("true")
+                        || ident.eq_ignore_ascii_case("yes")
+                        || ident.eq_ignore_ascii_case("on")
                     {
                         *set_rtrn = true;
                         return true;
-                    } else if ident.eq_ignore_ascii_case(b"false") {
+                    } else if ident.eq_ignore_ascii_case("false") {
                         *set_rtrn = false;
                         return true;
-                    } else if ident.eq_ignore_ascii_case(b"no")
-                        || ident.eq_ignore_ascii_case(b"off")
+                    } else if ident.eq_ignore_ascii_case("no") || ident.eq_ignore_ascii_case("off")
                     {
                         *set_rtrn = false;
                         return true;
@@ -268,7 +270,7 @@ pub unsafe fn ExprResolveBoolean(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Identifier \"{}\" of type boolean is unknown\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    crate::xkb::utils::ByteSliceDisplay(ident),
+                    ident,
                 );
                 return false;
             }
@@ -279,14 +281,8 @@ pub unsafe fn ExprResolveBoolean(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Default \"{}.{}\" of type boolean is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        &(*ctx).atom_table,
-                        (*expr).field_ref.element
-                    )),
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        &(*ctx).atom_table,
-                        (*expr).field_ref.field
-                    )),
+                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.element),
+                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.field),
                 );
                 return false;
             }
@@ -369,10 +365,7 @@ unsafe fn ExprResolveIntegerLookup(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
                         XKB_ERROR_INVALID_IDENTIFIER as i32,
-                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                            &(*ctx).atom_table,
-                            (*expr).ident.ident
-                        )),
+                        xkb_atom_text(&(*ctx).atom_table, (*expr).ident.ident),
                     );
                 } else {
                     *val_rtrn = u as i64;
@@ -389,14 +382,8 @@ unsafe fn ExprResolveIntegerLookup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        &(*ctx).atom_table,
-                        (*expr).field_ref.element
-                    )),
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        &(*ctx).atom_table,
-                        (*expr).field_ref.field
-                    )),
+                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.element),
+                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.field),
                 );
                 return false;
             }
@@ -570,7 +557,7 @@ pub unsafe fn ExprResolveGroup(
                 value: 0_u32,
             },
             LookupEntry {
-                name: b"",
+                name: "",
                 value: 0_u32,
             },
         ];
@@ -580,7 +567,7 @@ pub unsafe fn ExprResolveGroup(
             min: 1_u32,
             max: (*keymap_info).features.max_groups,
             entries: &raw const (*keymap_info).lookup.groupIndexNames as *const LookupEntry,
-            pending_entries: &raw const PENDING_GROUP_INDEX_NAMES as *const LookupEntry,
+            pending_entries: &PENDING_GROUP_INDEX_NAMES as *const LookupEntry,
             is_mask: false,
             error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
         };
@@ -651,7 +638,7 @@ pub unsafe fn ExprResolveLevel(
                         *mut bool,
                     ) -> bool,
             ),
-            &raw const LEVEL_NAME_PATTERN.0 as *const ::core::ffi::c_void,
+            &LEVEL_NAME_PATTERN.0 as *const _ as *const ::core::ffi::c_void,
         ) {
             return false;
         }
@@ -692,7 +679,7 @@ pub unsafe fn ExprResolveButton(
                         *mut bool,
                     ) -> bool,
             ),
-            &raw const buttonNames as *const LookupEntry as *const ::core::ffi::c_void,
+            &buttonNames as *const _ as *const ::core::ffi::c_void,
         )
     }
 }
@@ -725,10 +712,7 @@ pub unsafe fn ExprResolveString(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Identifier \"{}\" of type string not found\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        &(*ctx).atom_table,
-                        (*expr).ident.ident
-                    )),
+                    xkb_atom_text(&(*ctx).atom_table, (*expr).ident.ident),
                 );
                 return false;
             }
@@ -739,14 +723,8 @@ pub unsafe fn ExprResolveString(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Default \"{}.{}\" of type string not found\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        &(*ctx).atom_table,
-                        (*expr).field_ref.element
-                    )),
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        &(*ctx).atom_table,
-                        (*expr).field_ref.field
-                    )),
+                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.element),
+                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.field),
                 );
                 return false;
             }
@@ -779,7 +757,7 @@ pub unsafe fn ExprResolveEnum(
     ctx: *mut xkb_context,
     expr: *const ExprDef,
     val_rtrn: *mut u32,
-    mut values: *const LookupEntry,
+    values: &[LookupEntry],
 ) -> bool {
     unsafe {
         if (*expr).common.type_0 != STMT_EXPR_IDENT {
@@ -795,7 +773,7 @@ pub unsafe fn ExprResolveEnum(
         }
         if !SimpleLookup(
             ctx,
-            values as *const ::core::ffi::c_void,
+            values.as_ptr() as *const ::core::ffi::c_void,
             (*expr).ident.ident,
             val_rtrn,
             std::ptr::null_mut(),
@@ -806,21 +784,20 @@ pub unsafe fn ExprResolveEnum(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Illegal identifier {}; expected one of:\n",
                 XKB_ERROR_INVALID_IDENTIFIER as i32,
-                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                    &(*ctx).atom_table,
-                    (*expr).ident.ident
-                )),
+                xkb_atom_text(&(*ctx).atom_table, (*expr).ident.ident),
             );
-            while !values.is_null() && !(&(*values).name).is_empty() {
+            for entry in values {
+                if entry.name.is_empty() {
+                    break;
+                }
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] \t{}\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    crate::xkb::utils::ByteSliceDisplay((*values).name),
+                    entry.name,
                 );
-                values = values.offset(1);
             }
             return false;
         }
@@ -891,10 +868,7 @@ unsafe fn ExprResolveMaskLookup(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
                         XKB_ERROR_INVALID_IDENTIFIER as i32,
-                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                            &(*ctx).atom_table,
-                            (*expr).ident.ident
-                        )),
+                        xkb_atom_text(&(*ctx).atom_table, (*expr).ident.ident),
                     );
                 }
                 if !pending.is_null() && *pending as i32 != 0 {
@@ -909,14 +883,8 @@ unsafe fn ExprResolveMaskLookup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        &(*ctx).atom_table,
-                        (*expr).field_ref.element
-                    )),
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        &(*ctx).atom_table,
-                        (*expr).field_ref.field
-                    )),
+                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.element),
+                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.field),
                 );
                 return false;
             }
@@ -1048,7 +1016,7 @@ pub unsafe fn ExprResolveMask(
     ctx: *mut xkb_context,
     expr: *const ExprDef,
     mask_rtrn: *mut u32,
-    values: *const LookupEntry,
+    values: &[LookupEntry],
 ) -> bool {
     unsafe {
         ExprResolveMaskLookup(
@@ -1066,7 +1034,7 @@ pub unsafe fn ExprResolveMask(
                         *mut bool,
                     ) -> bool,
             ),
-            values as *const ::core::ffi::c_void,
+            values.as_ptr() as *const ::core::ffi::c_void,
         )
     }
 }
@@ -1126,7 +1094,7 @@ pub unsafe fn ExprResolveMod(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Cannot resolve virtual modifier: \"{}\" was not previously declared\n",
                 XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER as i32,
-                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*ctx).atom_table, name)),
+                xkb_atom_text(&(*ctx).atom_table, name),
             );
             return false;
         }
@@ -1147,7 +1115,7 @@ pub unsafe fn ExprResolveGroupMask(
                 value: 0_u32,
             },
             LookupEntry {
-                name: b"",
+                name: "",
                 value: 0_u32,
             },
         ];
@@ -1157,7 +1125,7 @@ pub unsafe fn ExprResolveGroupMask(
             min: 1_u32,
             max: (*keymap_info).features.max_groups,
             entries: &raw const (*keymap_info).lookup.groupMaskNames as *const LookupEntry,
-            pending_entries: &raw const PENDING_GROUP_MASK_NAMES as *const LookupEntry,
+            pending_entries: &PENDING_GROUP_MASK_NAMES as *const LookupEntry,
             is_mask: true,
             error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
         };

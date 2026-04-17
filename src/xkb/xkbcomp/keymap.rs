@@ -276,10 +276,10 @@ unsafe fn CheckMultipleActionsCategories(keymap: *mut xkb_keymap, key: *mut xkb_
                                     || group_action as i32 != 0
                                         && is_group_action(action2) as i32 != 0
                                 {
-                                    let type_0: &[u8] = if mod_action as i32 != 0 {
-                                        b"modifiers"
+                                    let type_0: &str = if mod_action as i32 != 0 {
+                                        "modifiers"
                                     } else if group_action as i32 != 0 {
-                                        b"group"
+                                        "group"
                                     } else {
                                         ActionTypeText((*action1).type_0)
                                     };
@@ -288,7 +288,7 @@ unsafe fn CheckMultipleActionsCategories(keymap: *mut xkb_keymap, key: *mut xkb_
                                         XKB_LOG_LEVEL_ERROR,
                                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                                         "Cannot use multiple {} actions in the same level. Action #{} for key {} in group {}/level {} ignored.\n",
-                                        crate::xkb::utils::ByteSliceDisplay(type_0),
+                                        type_0,
                                         j as i32 + 1_i32,
                                         crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx.clone(), (*key).name)),
                                         g.wrapping_add(1_u32),
@@ -819,40 +819,40 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
             lookup: XkbcompLookup {
                 groupIndexNames: [
                     LookupEntry {
-                        name: b"first",
+                        name: "first",
                         value: 1_u32,
                     },
                     LookupEntry {
                         name: if (*keymap).num_groups != 0 {
                             GROUP_LAST_INDEX_NAME
                         } else {
-                            b""
+                            ""
                         },
                         value: (*keymap).num_groups,
                     },
                     LookupEntry {
-                        name: b"",
+                        name: "",
                         value: 0_u32,
                     },
                 ],
                 groupMaskNames: [
                     LookupEntry {
-                        name: b"none",
+                        name: "none",
                         value: 0_u32,
                     },
                     LookupEntry {
-                        name: b"first",
+                        name: "first",
                         value: 0x1_u32,
                     },
                     LookupEntry {
-                        name: b"all",
+                        name: "all",
                         value: XKB_ALL_GROUPS as u32,
                     },
                     LookupEntry {
                         name: if (*keymap).num_groups != 0 {
                             GROUP_LAST_INDEX_NAME
                         } else {
-                            b""
+                            ""
                         },
                         value: if (*keymap).num_groups != 0
                             && (*keymap).num_groups <= XKB_MAX_GROUPS as u32
@@ -863,7 +863,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                         },
                     },
                     LookupEntry {
-                        name: b"",
+                        name: "",
                         value: 0_u32,
                     },
                 ],

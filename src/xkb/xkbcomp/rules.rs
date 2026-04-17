@@ -843,22 +843,22 @@ unsafe fn extract_mapping_layout_index(s: *const i8, max_len: usize, out: *mut u
         unsafe impl Sync for SyncLayoutIndexName {}
         static NAMES: [SyncLayoutIndexName; 4] = [
             SyncLayoutIndexName(LayoutIndexName {
-                name: b"single]\0".as_ptr() as *const i8,
+                name: "single]\0".as_ptr() as *const i8,
                 length: 7_i32,
                 range: LAYOUT_INDEX_SINGLE,
             }),
             SyncLayoutIndexName(LayoutIndexName {
-                name: b"first]\0".as_ptr() as *const i8,
+                name: "first]\0".as_ptr() as *const i8,
                 length: 6_i32,
                 range: LAYOUT_INDEX_FIRST,
             }),
             SyncLayoutIndexName(LayoutIndexName {
-                name: b"later]\0".as_ptr() as *const i8,
+                name: "later]\0".as_ptr() as *const i8,
                 length: 6_i32,
                 range: LAYOUT_INDEX_LATER,
             }),
             SyncLayoutIndexName(LayoutIndexName {
-                name: b"any]\0".as_ptr() as *const i8,
+                name: "any]\0".as_ptr() as *const i8,
                 length: 4_i32,
                 range: LAYOUT_INDEX_ANY,
             }),

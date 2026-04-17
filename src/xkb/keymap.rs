@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 
-use crate::xkb::atom::atom_text_bytes;
+use crate::xkb::atom::atom_text;
 use crate::xkb::context::{xkb_atom_intern, xkb_atom_lookup, xkb_context_sanitize_rule_names};
 // text_v1_keymap_format_ops is defined in xkbcomp::xkbcomp with a local type.
 // Both types are #[repr(C)] with identical layout, so pointer cast is safe.
@@ -357,14 +357,14 @@ pub unsafe fn xkb_keymap_mod_get_name<'a>(keymap: *mut xkb_keymap, idx: u32) -> 
         if idx >= (*keymap).mods.num_mods {
             return None;
         }
-        let bytes = atom_text_bytes(
+        let s = atom_text(
             &(*keymap).ctx.atom_table,
             (*keymap).mods.mods[idx as usize].name,
         );
-        if bytes.is_empty() {
+        if s.is_empty() {
             None
         } else {
-            Some(std::str::from_utf8_unchecked(bytes))
+            Some(s)
         }
     }
 }
@@ -396,14 +396,14 @@ pub unsafe fn xkb_keymap_layout_get_name<'a>(keymap: *mut xkb_keymap, idx: u32) 
         if idx as usize >= (*keymap).group_names.len() {
             return None;
         }
-        let bytes = atom_text_bytes(
+        let s = atom_text(
             &(*keymap).ctx.atom_table,
             (&(*keymap).group_names)[idx as usize],
         );
-        if bytes.is_empty() {
+        if s.is_empty() {
             None
         } else {
-            Some(std::str::from_utf8_unchecked(bytes))
+            Some(s)
         }
     }
 }
@@ -462,11 +462,11 @@ pub unsafe fn xkb_keymap_led_get_name<'a>(keymap: *mut xkb_keymap, idx: u32) -> 
         if idx >= (*keymap).num_leds {
             return None;
         }
-        let bytes = atom_text_bytes(&(*keymap).ctx.atom_table, (*keymap).leds[idx as usize].name);
-        if bytes.is_empty() {
+        let s = atom_text(&(*keymap).ctx.atom_table, (*keymap).leds[idx as usize].name);
+        if s.is_empty() {
             None
         } else {
-            Some(std::str::from_utf8_unchecked(bytes))
+            Some(s)
         }
     }
 }
@@ -547,11 +547,11 @@ pub unsafe fn xkb_keymap_key_get_name<'a>(keymap: *mut xkb_keymap, kc: u32) -> O
         if key.is_null() {
             return None;
         }
-        let bytes = atom_text_bytes(&(*keymap).ctx.atom_table, (*key).name);
-        if bytes.is_empty() {
+        let s = atom_text(&(*keymap).ctx.atom_table, (*key).name);
+        if s.is_empty() {
             None
         } else {
-            Some(std::str::from_utf8_unchecked(bytes))
+            Some(s)
         }
     }
 }

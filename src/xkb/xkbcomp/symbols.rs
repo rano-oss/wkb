@@ -306,8 +306,8 @@ unsafe fn MergeGroups(
                                 as i32,
                             group.wrapping_add(1_u32),
                             crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), key_name)),
-                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*((*info).ctx)).atom_table, use_0)),
-                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*((*info).ctx)).atom_table, ignore)),
+                            xkb_atom_text(&(*((*info).ctx)).atom_table, use_0),
+                            xkb_atom_text(&(*((*info).ctx)).atom_table, ignore),
                         );
                 }
                 (*into).type_0 = use_0;
@@ -432,8 +432,8 @@ unsafe fn MergeGroups(
                                     i.wrapping_add(1_u32),
                                     group.wrapping_add(1_u32),
                                     crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), key_name)),
-                                    crate::xkb::utils::ByteSliceDisplay(ActionTypeText(use_action.type_0)),
-                                    crate::xkb::utils::ByteSliceDisplay(ActionTypeText(ignore_action.type_0)),
+                                    ActionTypeText(use_action.type_0),
+                                    ActionTypeText(ignore_action.type_0),
                                 );
                             }
                         }
@@ -855,8 +855,8 @@ unsafe fn AddModMapEntry(info: *mut SymbolsInfo, new: *mut ModMapEntry) -> bool 
                     "[XKB-{:03}] Symbol \"{}\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_MODMAP as i32,
                     crate::xkb::utils::ByteSliceDisplay(KeysymText((*((*info).ctx)).clone(), (*new).u.keySym)),
-                    crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, use_0)),
-                    crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, ignore)),
+                    ModIndexText((*info).ctx, &raw mut (*info).mods, use_0),
+                    ModIndexText((*info).ctx, &raw mut (*info).mods, ignore),
                 );
             } else {
                 xkb_logf!(
@@ -866,8 +866,8 @@ unsafe fn AddModMapEntry(info: *mut SymbolsInfo, new: *mut ModMapEntry) -> bool 
                     "[XKB-{:03}] Key \"{}\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_MODMAP as i32,
                     crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), (*new).u.keyName)),
-                    crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, use_0)),
-                    crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, ignore)),
+                    ModIndexText((*info).ctx, &raw mut (*info).mods, use_0),
+                    ModIndexText((*info).ctx, &raw mut (*info).mods, ignore),
                 );
             }
             old.modifier = use_0;
@@ -1329,35 +1329,35 @@ unsafe fn AddActionsToKey(
 }
 static REPEAT_ENTRIES: [LookupEntry; 8] = [
     LookupEntry {
-        name: b"true",
+        name: "true",
         value: KEY_REPEAT_YES,
     },
     LookupEntry {
-        name: b"yes",
+        name: "yes",
         value: KEY_REPEAT_YES,
     },
     LookupEntry {
-        name: b"on",
+        name: "on",
         value: KEY_REPEAT_YES,
     },
     LookupEntry {
-        name: b"false",
+        name: "false",
         value: KEY_REPEAT_NO,
     },
     LookupEntry {
-        name: b"no",
+        name: "no",
         value: KEY_REPEAT_NO,
     },
     LookupEntry {
-        name: b"off",
+        name: "off",
         value: KEY_REPEAT_NO,
     },
     LookupEntry {
-        name: b"default",
+        name: "default",
         value: KEY_REPEAT_UNDEFINED,
     },
     LookupEntry {
-        name: b"",
+        name: "",
         value: 0_u32,
     },
 ];
@@ -1426,10 +1426,10 @@ unsafe fn ExprResolveOverlayEntry(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Unknown key \"{}\" for field {} in {}\n",
                         XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
+                        xkb_atom_text(
                             &(*(*keymap_info).keymap).ctx.atom_table,
                             (*expr).key_name.key_name
-                        )),
+                        ),
                         crate::xkb::utils::ByteSliceDisplay(field),
                         crate::xkb::utils::ByteSliceDisplay(KeyNameText(
                             (*(*keymap_info).keymap).ctx.clone(),
@@ -1441,14 +1441,14 @@ unsafe fn ExprResolveOverlayEntry(
                 true
             }
             10 => {
-                let id: &[u8] = xkb_atom_text_bytes(
+                let id: &str = xkb_atom_text(
                     &(*(*keymap_info).keymap).ctx.atom_table,
                     (*expr).ident.ident,
                 );
-                if !id.is_empty() && id.eq_ignore_ascii_case(b"none") {
+                if !id.is_empty() && id.eq_ignore_ascii_case("none") {
                     *key_rtrn = XKB_KEYCODE_INVALID;
                     return true;
-                } else if !id.is_empty() && id.eq_ignore_ascii_case(b"any") {
+                } else if !id.is_empty() && id.eq_ignore_ascii_case("any") {
                     *key_rtrn = XKB_KEYCODE_INVALID;
                     *overlay_rtrn = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
                     return true;
@@ -1459,7 +1459,7 @@ unsafe fn ExprResolveOverlayEntry(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Unsupported overlay value \"{}\" for field {} in {}\n",
                     XKB_ERROR_INVALID_VALUE as i32,
-                    crate::xkb::utils::ByteSliceDisplay(id),
+                    id,
                     crate::xkb::utils::ByteSliceDisplay(field),
                     crate::xkb::utils::ByteSliceDisplay(KeyNameText(
                         (*(*keymap_info).keymap).ctx.clone(),
@@ -1713,12 +1713,7 @@ unsafe fn SetSymbolsField(
             || field.eq_ignore_ascii_case(b"repeat")
         {
             let mut val_0: u32 = 0_u32;
-            if !ExprResolveEnum(
-                (*info).ctx,
-                value,
-                &raw mut val_0,
-                &raw const REPEAT_ENTRIES as *const LookupEntry,
-            ) {
+            if !ExprResolveEnum((*info).ctx, value, &raw mut val_0, &REPEAT_ENTRIES) {
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_ERROR,
@@ -1891,7 +1886,7 @@ unsafe fn SetGroupName(
                 XKB_WARNING_NON_BASE_GROUP_NAME as i32,
                 (*info).name.as_deref().unwrap_or(""),
                 group,
-                crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*((*info).ctx)).atom_table, name)),
+                xkb_atom_text(&(*((*info).ctx)).atom_table, name),
             );
             return false;
         }
@@ -1912,8 +1907,8 @@ unsafe fn SetGroupName(
                 "Multiple definitions of group {} name in map '{}'; Using '{}', ignoring '{}'\n",
                 group_to_use,
                 (*info).name.as_deref().unwrap_or(""),
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*((*info).ctx)).atom_table, use_0)),
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*((*info).ctx)).atom_table, ignore)),
+                    xkb_atom_text(&(*((*info).ctx)).atom_table, use_0),
+                    xkb_atom_text(&(*((*info).ctx)).atom_table, ignore),
                 );
                 name = use_0;
             }
@@ -1924,8 +1919,8 @@ unsafe fn SetGroupName(
 }
 unsafe fn HandleGlobalVar(info: *mut SymbolsInfo, stmt: *mut VarDef) -> bool {
     unsafe {
-        let mut elem: &[u8] = b"";
-        let mut field: &[u8] = b"";
+        let mut elem: &str = "";
+        let mut field: &str = "";
         let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
         let ret: bool;
         if !ExprResolveLhs(
@@ -1937,7 +1932,7 @@ unsafe fn HandleGlobalVar(info: *mut SymbolsInfo, stmt: *mut VarDef) -> bool {
         ) {
             return false;
         }
-        if !elem.is_empty() && elem.eq_ignore_ascii_case(b"key") {
+        if !elem.is_empty() && elem.eq_ignore_ascii_case("key") {
             let mut temp: KeyInfo = {
                 let mut init = KeyInfo::new_zeroed();
                 init.out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
@@ -1954,15 +1949,21 @@ unsafe fn HandleGlobalVar(info: *mut SymbolsInfo, stmt: *mut VarDef) -> bool {
             } else {
                 (*stmt).merge as merge_mode
             };
-            ret = SetSymbolsField(info, &raw mut temp, field, arrayNdx, &raw mut (*stmt).value);
+            ret = SetSymbolsField(
+                info,
+                &raw mut temp,
+                field.as_bytes(),
+                arrayNdx,
+                &raw mut (*stmt).value,
+            );
             MergeKeys(info, &raw mut (*info).default_key, &raw mut temp, true);
         } else if elem.is_empty()
-            && (field.eq_ignore_ascii_case(b"name") || field.eq_ignore_ascii_case(b"groupname"))
+            && (field.eq_ignore_ascii_case("name") || field.eq_ignore_ascii_case("groupname"))
         {
             ret = SetGroupName(info, arrayNdx, (*stmt).value as *mut ExprDef, (*stmt).merge);
         } else if elem.is_empty()
-            && (field.eq_ignore_ascii_case(b"groupswrap")
-                || field.eq_ignore_ascii_case(b"wrapgroups"))
+            && (field.eq_ignore_ascii_case("groupswrap")
+                || field.eq_ignore_ascii_case("wrapgroups"))
         {
             xkb_logf!(
                 (*info).ctx,
@@ -1973,8 +1974,8 @@ unsafe fn HandleGlobalVar(info: *mut SymbolsInfo, stmt: *mut VarDef) -> bool {
             );
             ret = true;
         } else if elem.is_empty()
-            && (field.eq_ignore_ascii_case(b"groupsclamp")
-                || field.eq_ignore_ascii_case(b"clampgroups"))
+            && (field.eq_ignore_ascii_case("groupsclamp")
+                || field.eq_ignore_ascii_case("clampgroups"))
         {
             xkb_logf!(
                 (*info).ctx,
@@ -1985,8 +1986,8 @@ unsafe fn HandleGlobalVar(info: *mut SymbolsInfo, stmt: *mut VarDef) -> bool {
             );
             ret = true;
         } else if elem.is_empty()
-            && (field.eq_ignore_ascii_case(b"groupsredirect")
-                || field.eq_ignore_ascii_case(b"redirectgroups"))
+            && (field.eq_ignore_ascii_case("groupsredirect")
+                || field.eq_ignore_ascii_case("redirectgroups"))
         {
             xkb_logf!(
                 (*info).ctx,
@@ -1996,7 +1997,7 @@ unsafe fn HandleGlobalVar(info: *mut SymbolsInfo, stmt: *mut VarDef) -> bool {
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
             );
             ret = true;
-        } else if elem.is_empty() && field.eq_ignore_ascii_case(b"allownone") {
+        } else if elem.is_empty() && field.eq_ignore_ascii_case("allownone") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -2024,7 +2025,7 @@ unsafe fn HandleGlobalVar(info: *mut SymbolsInfo, stmt: *mut VarDef) -> bool {
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-                crate::xkb::utils::ByteSliceDisplay(field),
+                field,
             );
             return (*(*info).keymap_info).strict & PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS == 0;
         }
@@ -2039,20 +2040,20 @@ unsafe fn HandleSymbolsBody(
     unsafe {
         let mut all_valid_entries: bool = true;
         while !def.is_null() {
-            let mut field: &[u8] = b"";
+            let mut field: &str = "";
             let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
             let mut ok: bool = true;
             if (*def).name.is_null() {
                 if (*def).value.is_null() as i64 != 0
                     || (*(*def).value).common.type_0 != STMT_EXPR_ACTION_LIST
                 {
-                    field = b"symbols";
+                    field = "symbols";
                 } else {
-                    field = b"actions";
+                    field = "actions";
                 }
                 arrayNdx = std::ptr::null_mut();
             } else {
-                let mut elem: &[u8] = b"";
+                let mut elem: &str = "";
                 ok = ExprResolveLhs(
                     (*info).ctx,
                     (*def).name,
@@ -2067,9 +2068,9 @@ unsafe fn HandleSymbolsBody(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Cannot set global defaults for \"{}\" element within a key statement: move statements to the global file scope. Assignment to \"{}.{}\" ignored.\n",
                         XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                        crate::xkb::utils::ByteSliceDisplay(elem),
-                        crate::xkb::utils::ByteSliceDisplay(elem),
-                        crate::xkb::utils::ByteSliceDisplay(field),
+                        elem,
+                        elem,
+                        field,
                     );
                     ok = false;
                 }
@@ -2081,11 +2082,19 @@ unsafe fn HandleSymbolsBody(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Could not allocate the value of field \"{}\". Statement ignored.\n",
                     XKB_ERROR_ALLOCATION_ERROR as i32,
-                    crate::xkb::utils::ByteSliceDisplay(field),
+                    field,
                 );
                 ok = false;
             }
-            if !ok || !SetSymbolsField(info, keyi, field, arrayNdx, &raw mut (*def).value) {
+            if !ok
+                || !SetSymbolsField(
+                    info,
+                    keyi,
+                    field.as_bytes(),
+                    arrayNdx,
+                    &raw mut (*def).value,
+                )
+            {
                 all_valid_entries = false;
             }
             def = (*def).common.next as *mut VarDef;
@@ -2181,8 +2190,8 @@ unsafe fn HandleModMapDef(info: *mut SymbolsInfo, def: *mut ModMapDef) -> bool {
         let ndx: u32;
         let mut ok: bool;
         let ctx: *mut xkb_context = (*info).ctx;
-        let modifier_name: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, (*def).modifier);
-        if modifier_name.eq_ignore_ascii_case(b"none") {
+        let modifier_name: &str = xkb_atom_text(&(*ctx).atom_table, (*def).modifier);
+        if modifier_name.eq_ignore_ascii_case("none") {
             ndx = XKB_MOD_NONE;
         } else {
             ndx = XkbModNameToIndex(&raw mut (*info).mods, (*def).modifier, MOD_REAL);
@@ -2193,7 +2202,7 @@ unsafe fn HandleModMapDef(info: *mut SymbolsInfo, def: *mut ModMapDef) -> bool {
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Illegal modifier map definition; Ignoring map for non-modifier \"{}\"\n",
                     XKB_ERROR_INVALID_REAL_MODIFIER as i32,
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*ctx).atom_table, (*def).modifier)),
+                    xkb_atom_text(&(*ctx).atom_table, (*def).modifier),
                 );
                 return false;
             }
@@ -2223,7 +2232,7 @@ unsafe fn HandleModMapDef(info: *mut SymbolsInfo, def: *mut ModMapDef) -> bool {
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Modmap entries may contain only key names or keysyms; Illegal definition for {} modifier ignored\n",
                     XKB_ERROR_INVALID_MODMAP_ENTRY as i32,
-                    crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, tmp.modifier)),
+                    ModIndexText((*info).ctx, &raw mut (*info).mods, tmp.modifier),
                 );
                 c2rust_current_block_19 = 13536709405535804910;
             }
@@ -2465,7 +2474,7 @@ unsafe fn FindTypeForGroup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] The type \"{}\" for key '{}' group {} was not previously defined; Using the default type\n",
                     XKB_WARNING_UNDEFINED_KEY_TYPE as i32,
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*keymap).ctx.atom_table, type_name)),
+                    xkb_atom_text(&(*keymap).ctx.atom_table, type_name),
                     crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx.clone(), (*keyi).name)),
                     group.wrapping_add(1_u32),
                 );
@@ -2577,7 +2586,7 @@ unsafe fn CopySymbolsDefToKeymap(
                             XKB_LOG_VERBOSITY_BRIEF as i32,
                             "[XKB-{:03}] Type \"{}\" has {} levels, but {} has {} levels; Ignoring extra symbols\n",
                             XKB_WARNING_EXTRA_SYMBOLS_IGNORED as i32,
-                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(&(*keymap).ctx.atom_table, (&(*keymap).types)[type_idx as usize].name)),
+                            xkb_atom_text(&(*keymap).ctx.atom_table, (&(*keymap).types)[type_idx as usize].name),
                             (&(*keymap).types)[type_idx as usize].num_levels,
                             crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
                             (*groupi).levels.len(),
@@ -2744,7 +2753,7 @@ unsafe fn CopyModMapDefToKeymap(
                     "[XKB-{:03}] Key {} not found in keycodes; Modifier map entry for {} not updated\n",
                     XKB_WARNING_UNDEFINED_KEYCODE as i32,
                     crate::xkb::utils::ByteSliceDisplay(KeyNameText((*((*info).ctx)).clone(), (*entry).u.keyName)),
-                    crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, (*entry).modifier)),
+                    ModIndexText((*info).ctx, &raw mut (*info).mods, (*entry).modifier),
                 );
                 return false;
             }
@@ -2758,7 +2767,7 @@ unsafe fn CopyModMapDefToKeymap(
                     "[XKB-{:03}] Key \"{}\" not found in symbol map; Modifier map entry for {} not updated\n",
                     XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL as i32,
                     crate::xkb::utils::ByteSliceDisplay(KeysymText((*((*info).ctx)).clone(), (*entry).u.keySym)),
-                    crate::xkb::utils::ByteSliceDisplay(ModIndexText((*info).ctx, &raw mut (*info).mods, (*entry).modifier)),
+                    ModIndexText((*info).ctx, &raw mut (*info).mods, (*entry).modifier),
                 );
                 return false;
             }

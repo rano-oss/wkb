@@ -97,182 +97,174 @@ pub unsafe fn InitActionsInfo(keymap: *const xkb_keymap, info: *mut ActionsInfo)
             .keycode = (*keymap).redirect_key_auto;
     }
 }
-static mut FIELD_STRINGS: [LookupEntry; 37] = [
+static FIELD_STRINGS: [LookupEntry; 37] = [
     LookupEntry {
-        name: b"clearLocks",
+        name: "clearLocks",
         value: ACTION_FIELD_CLEAR_LOCKS,
     },
     LookupEntry {
-        name: b"latchToLock",
+        name: "latchToLock",
         value: ACTION_FIELD_LATCH_TO_LOCK,
     },
     LookupEntry {
-        name: b"genKeyEvent",
+        name: "genKeyEvent",
         value: ACTION_FIELD_GEN_KEY_EVENT,
     },
     LookupEntry {
-        name: b"generateKeyEvent",
+        name: "generateKeyEvent",
         value: ACTION_FIELD_GEN_KEY_EVENT,
     },
     LookupEntry {
-        name: b"report",
+        name: "report",
         value: ACTION_FIELD_REPORT,
     },
     LookupEntry {
-        name: b"default",
+        name: "default",
         value: ACTION_FIELD_DEFAULT,
     },
     LookupEntry {
-        name: b"affect",
+        name: "affect",
         value: ACTION_FIELD_AFFECT,
     },
     LookupEntry {
-        name: b"increment",
+        name: "increment",
         value: ACTION_FIELD_INCREMENT,
     },
     LookupEntry {
-        name: b"modifiers",
+        name: "modifiers",
         value: ACTION_FIELD_MODIFIERS,
     },
     LookupEntry {
-        name: b"mods",
+        name: "mods",
         value: ACTION_FIELD_MODIFIERS,
     },
     LookupEntry {
-        name: b"group",
+        name: "group",
         value: ACTION_FIELD_GROUP,
     },
     LookupEntry {
-        name: b"x",
+        name: "x",
         value: ACTION_FIELD_X,
     },
     LookupEntry {
-        name: b"y",
+        name: "y",
         value: ACTION_FIELD_Y,
     },
     LookupEntry {
-        name: b"accel",
+        name: "accel",
         value: ACTION_FIELD_ACCEL,
     },
     LookupEntry {
-        name: b"accelerate",
+        name: "accelerate",
         value: ACTION_FIELD_ACCEL,
     },
     LookupEntry {
-        name: b"repeat",
+        name: "repeat",
         value: ACTION_FIELD_ACCEL,
     },
     LookupEntry {
-        name: b"button",
+        name: "button",
         value: ACTION_FIELD_BUTTON,
     },
     LookupEntry {
-        name: b"value",
+        name: "value",
         value: ACTION_FIELD_VALUE,
     },
     LookupEntry {
-        name: b"controls",
+        name: "controls",
         value: ACTION_FIELD_CONTROLS,
     },
     LookupEntry {
-        name: b"ctrls",
+        name: "ctrls",
         value: ACTION_FIELD_CONTROLS,
     },
     LookupEntry {
-        name: b"type",
+        name: "type",
         value: ACTION_FIELD_TYPE,
     },
     LookupEntry {
-        name: b"count",
+        name: "count",
         value: ACTION_FIELD_COUNT,
     },
     LookupEntry {
-        name: b"screen",
+        name: "screen",
         value: ACTION_FIELD_SCREEN,
     },
     LookupEntry {
-        name: b"same",
+        name: "same",
         value: ACTION_FIELD_SAME,
     },
     LookupEntry {
-        name: b"sameServer",
+        name: "sameServer",
         value: ACTION_FIELD_SAME,
     },
     LookupEntry {
-        name: b"data",
+        name: "data",
         value: ACTION_FIELD_DATA,
     },
     LookupEntry {
-        name: b"device",
+        name: "device",
         value: ACTION_FIELD_DEVICE,
     },
     LookupEntry {
-        name: b"dev",
+        name: "dev",
         value: ACTION_FIELD_DEVICE,
     },
     LookupEntry {
-        name: b"key",
+        name: "key",
         value: ACTION_FIELD_KEYCODE,
     },
     LookupEntry {
-        name: b"keycode",
+        name: "keycode",
         value: ACTION_FIELD_KEYCODE,
     },
     LookupEntry {
-        name: b"kc",
+        name: "kc",
         value: ACTION_FIELD_KEYCODE,
     },
     LookupEntry {
-        name: b"clearmods",
+        name: "clearmods",
         value: ACTION_FIELD_MODS_TO_CLEAR,
     },
     LookupEntry {
-        name: b"clearmodifiers",
+        name: "clearmodifiers",
         value: ACTION_FIELD_MODS_TO_CLEAR,
     },
     LookupEntry {
-        name: b"lockOnRelease",
+        name: "lockOnRelease",
         value: ACTION_FIELD_LOCK_ON_RELEASE,
     },
     LookupEntry {
-        name: b"unlockOnPress",
+        name: "unlockOnPress",
         value: ACTION_FIELD_UNLOCK_ON_PRESS,
     },
     LookupEntry {
-        name: b"latchOnPress",
+        name: "latchOnPress",
         value: ACTION_FIELD_LATCH_ON_PRESS,
     },
     LookupEntry {
-        name: b"",
+        name: "",
         value: 0_u32,
     },
 ];
-unsafe fn stringToActionType(str: &[u8], type_rtrn: *mut xkb_action_type) -> bool {
+unsafe fn stringToActionType(str: &str, type_rtrn: *mut xkb_action_type) -> bool {
     unsafe {
         let mut type_0: u32 = 0_u32;
-        let ret: bool = LookupString(
-            &raw const actionTypeNames as *const LookupEntry,
-            str,
-            &raw mut type_0,
-        );
+        let ret: bool = LookupString(&actionTypeNames, str, &mut type_0);
         *type_rtrn = type_0 as xkb_action_type;
         ret
     }
 }
-unsafe fn stringToField(str: &[u8], field_rtrn: *mut u32) -> bool {
+unsafe fn stringToField(str: &str, field_rtrn: *mut u32) -> bool {
     unsafe {
         let mut field: u32 = 0_u32;
-        let ret: bool = LookupString(
-            &raw const FIELD_STRINGS as *const LookupEntry,
-            str,
-            &raw mut field,
-        );
+        let ret: bool = LookupString(&FIELD_STRINGS, str, &mut field);
         *field_rtrn = field;
         ret
     }
 }
-unsafe fn fieldText(field: u32) -> &'static [u8] {
-    unsafe { LookupValue(&raw const FIELD_STRINGS as *const LookupEntry, field) }
+unsafe fn fieldText(field: u32) -> &'static str {
+    unsafe { LookupValue(&FIELD_STRINGS, field) }
 }
 #[inline]
 unsafe fn ReportMismatch(
@@ -290,9 +282,9 @@ unsafe fn ReportMismatch(
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] Value of {} field must be of type {}; Action {} definition ignored\n",
             { code },
-            crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
+            fieldText(field),
             crate::xkb::utils::CStrDisplay(type_0),
-            crate::xkb::utils::ByteSliceDisplay(ActionTypeText(action)),
+            ActionTypeText(action),
         );
         (if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
             PARSER_FATAL_ERROR as i32
@@ -317,8 +309,8 @@ unsafe fn ReportFormatVersionMismatch(
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] Field {} for an action of type {} requires keymap text format {},  but got: {}; Action definition ignored\n",
             XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT as i32,
-            crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
-            crate::xkb::utils::ByteSliceDisplay(ActionTypeText(action)),
+            fieldText(field),
+            ActionTypeText(action),
             crate::xkb::utils::CStrDisplay(versions),
             { format },
         );
@@ -343,8 +335,8 @@ unsafe fn ReportIllegal(
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] Field {} is not defined for an action of type {}; Action definition ignored\n",
             XKB_ERROR_INVALID_ACTION_FIELD as i32,
-            crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
-            crate::xkb::utils::ByteSliceDisplay(ActionTypeText(action)),
+            fieldText(field),
+            ActionTypeText(action),
         );
         (if strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
             PARSER_FATAL_ERROR as i32
@@ -367,8 +359,8 @@ unsafe fn ReportActionNotArray(
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] The {} field in the {} action is not an array; Action definition ignored\n",
             XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
-            crate::xkb::utils::ByteSliceDisplay(ActionTypeText(action)),
+            fieldText(field),
+            ActionTypeText(action),
         );
         (if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
             PARSER_FATAL_ERROR as i32
@@ -393,8 +385,8 @@ unsafe fn HandleNoAction(
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] The \"{}\" action takes no argument, but got \"{}\" field; Action definition ignored\n",
             XKB_ERROR_INVALID_ACTION_FIELD as i32,
-            crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*action).type_0)),
-            crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
+            ActionTypeText((*action).type_0),
+            fieldText(field),
         );
         (if (*keymap_info).strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
             PARSER_FATAL_ERROR as i32
@@ -451,10 +443,10 @@ unsafe fn CheckModifierField(
             return ReportActionNotArray(ctx, action, ACTION_FIELD_MODIFIERS, strict);
         }
         if (*value).common.type_0 == STMT_EXPR_IDENT {
-            let valStr: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, (*value).ident.ident);
+            let valStr: &str = xkb_atom_text(&(*ctx).atom_table, (*value).ident.ident);
             if !valStr.is_empty()
-                && (valStr.eq_ignore_ascii_case(b"usemodmapmods")
-                    || valStr.eq_ignore_ascii_case(b"modmapmods"))
+                && (valStr.eq_ignore_ascii_case("usemodmapmods")
+                    || valStr.eq_ignore_ascii_case("modmapmods"))
             {
                 *mods_rtrn = 0_u32;
                 *flags_inout = (*flags_inout | ACTION_MODS_LOOKUP_MODMAP) as xkb_action_flags;
@@ -478,23 +470,23 @@ unsafe fn CheckModifierField(
 }
 static LOCK_WHICH: [LookupEntry; 5] = [
     LookupEntry {
-        name: b"both",
+        name: "both",
         value: 0_u32,
     },
     LookupEntry {
-        name: b"lock",
+        name: "lock",
         value: ACTION_LOCK_NO_UNLOCK,
     },
     LookupEntry {
-        name: b"neither",
+        name: "neither",
         value: (ACTION_LOCK_NO_LOCK as i32 | ACTION_LOCK_NO_UNLOCK as i32) as u32,
     },
     LookupEntry {
-        name: b"unlock",
+        name: "unlock",
         value: ACTION_LOCK_NO_LOCK,
     },
     LookupEntry {
-        name: b"",
+        name: "",
         value: 0_u32,
     },
 ];
@@ -511,12 +503,7 @@ unsafe fn CheckAffectField(
             return ReportActionNotArray(ctx, action, ACTION_FIELD_AFFECT, strict);
         }
         let mut flags: u32 = 0_u32;
-        if !ExprResolveEnum(
-            ctx,
-            value,
-            &raw mut flags,
-            &raw const LOCK_WHICH as *const LookupEntry,
-        ) {
+        if !ExprResolveEnum(ctx, value, &raw mut flags, &LOCK_WHICH) {
             return ReportMismatch(
                 ctx,
                 XKB_ERROR_WRONG_FIELD_TYPE,
@@ -829,8 +816,8 @@ unsafe fn HandleMovePtr(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "The {} field in the {} action must be in range {}..{}, but got {}. Action definition ignored\n",
-                    crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
-                    crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*action).type_0)),
+                    fieldText(field),
+                    ActionTypeText((*action).type_0),
                     -32767_i32 - 1_i32,
                     32767_i32,
                     val,
@@ -957,19 +944,19 @@ unsafe fn HandlePtrBtn(
 }
 static PTR_DFLTS: [LookupEntry; 4] = [
     LookupEntry {
-        name: b"dfltbtn",
+        name: "dfltbtn",
         value: 1_u32,
     },
     LookupEntry {
-        name: b"defaultbutton",
+        name: "defaultbutton",
         value: 1_u32,
     },
     LookupEntry {
-        name: b"button",
+        name: "button",
         value: 1_u32,
     },
     LookupEntry {
-        name: b"",
+        name: "",
         value: 0_u32,
     },
 ];
@@ -990,12 +977,7 @@ unsafe fn HandleSetPtrDflt(
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
-            if !ExprResolveEnum(
-                ctx,
-                value,
-                &raw mut val,
-                &raw const PTR_DFLTS as *const LookupEntry,
-            ) {
+            if !ExprResolveEnum(ctx, value, &raw mut val, &PTR_DFLTS) {
                 return ReportMismatch(
                     ctx,
                     XKB_ERROR_WRONG_FIELD_TYPE,
@@ -1163,12 +1145,7 @@ unsafe fn HandleSetLockControls(
             }
             let mut mask: u32 = 0_u32;
             let offset: u8 = (*keymap_info).features.controls_name_offset;
-            if !ExprResolveMask(
-                ctx,
-                value,
-                &raw mut mask,
-                (&raw const ctrlMaskNames as *const LookupEntry).offset(offset as i32 as isize),
-            ) {
+            if !ExprResolveMask(ctx, value, &raw mut mask, &ctrlMaskNames[offset as usize..]) {
                 return ReportMismatch(
                     ctx,
                     XKB_ERROR_WRONG_FIELD_TYPE,
@@ -1211,8 +1188,8 @@ unsafe fn HandleRedirectKey(
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
             if (*value).common.type_0 == STMT_EXPR_IDENT {
-                let valStr: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, (*value).ident.ident);
-                if !valStr.is_empty() && valStr.eq_ignore_ascii_case(b"auto") {
+                let valStr: &str = xkb_atom_text(&(*ctx).atom_table, (*value).ident.ident);
+                if !valStr.is_empty() && valStr.eq_ignore_ascii_case("auto") {
                     (*act).keycode = (*(*keymap_info).keymap).redirect_key_auto;
                     return PARSER_SUCCESS;
                 }
@@ -1234,7 +1211,7 @@ unsafe fn HandleRedirectKey(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "RedirectKey field {} cannot resolve {} to a valid key\n",
-                    crate::xkb::utils::ByteSliceDisplay(fieldText(field)),
+                    fieldText(field),
                     crate::xkb::utils::ByteSliceDisplay(KeyNameText(
                         (*ctx).clone(),
                         (*value).key_name.key_name
@@ -1344,7 +1321,7 @@ unsafe fn HandlePrivate(
                     XKB_LOG_LEVEL_INFO,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Private actions of type {} are not supported; Ignored\n",
-                    crate::xkb::utils::ByteSliceDisplay(ActionTypeText(type_0 as xkb_action_type)),
+                    ActionTypeText(type_0 as xkb_action_type),
                 );
                 (*act).type_0 = ACTION_TYPE_NONE;
             } else {
@@ -1364,7 +1341,7 @@ unsafe fn HandlePrivate(
                         (*keymap_info).strict,
                     );
                 }
-                let str_bytes: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, val);
+                let str_bytes: &str = xkb_atom_text(&(*ctx).atom_table, val);
                 let len: usize = str_bytes.len();
                 if len < 1_usize || len > std::mem::size_of::<[u8; 7]>() {
                     xkb_logf!(
@@ -1387,7 +1364,7 @@ unsafe fn HandlePrivate(
                     1,
                 );
                 std::ptr::copy_nonoverlapping(
-                    str_bytes.as_ptr(),
+                    str_bytes.as_bytes().as_ptr(),
                     &raw mut (*act).data as *mut u8,
                     len,
                 );
@@ -1719,7 +1696,7 @@ pub unsafe fn HandleActionDef(
             );
             return PARSER_FATAL_ERROR;
         }
-        let action_name: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, (*def).action.name);
+        let action_name: &str = xkb_atom_text(&(*ctx).atom_table, (*def).action.name);
         let mut handler_type: xkb_action_type = ACTION_TYPE_NONE;
         if !stringToActionType(action_name, &raw mut handler_type) {
             xkb_logf!(
@@ -1728,7 +1705,7 @@ pub unsafe fn HandleActionDef(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Unknown action \"{}\"\n",
                 XKB_ERROR_UNKNOWN_ACTION_TYPE as i32,
-                crate::xkb::utils::ByteSliceDisplay(action_name),
+                action_name,
             );
             handler_type = ACTION_TYPE_UNKNOWN;
             if (*keymap_info).strict & PARSER_NO_UNKNOWN_ACTION != 0 {
@@ -1743,7 +1720,7 @@ pub unsafe fn HandleActionDef(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Unsupported legacy action type \"{}\".\n",
                 XKB_WARNING_UNSUPPORTED_LEGACY_ACTION as i32,
-                crate::xkb::utils::ByteSliceDisplay(action_name),
+                action_name,
             );
             (*action).type_0 = ACTION_TYPE_NONE;
         }
@@ -1754,8 +1731,8 @@ pub unsafe fn HandleActionDef(
             let mut value_ptr: *mut *mut ExprDef = std::ptr::null_mut();
             let field: *mut ExprDef;
             let mut arrayRtrn: *mut ExprDef = std::ptr::null_mut();
-            let mut elemRtrn: &[u8] = b"";
-            let mut fieldRtrn: &[u8] = b"";
+            let mut elemRtrn: &str = "";
+            let mut fieldRtrn: &str = "";
             if (*arg).common.type_0 == STMT_EXPR_ASSIGN {
                 field = (*arg).binary.left as *mut ExprDef;
                 value = (*arg).binary.right;
@@ -1785,8 +1762,8 @@ pub unsafe fn HandleActionDef(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Cannot change defaults in an action definition; Ignoring attempt to change \"{}.{}\".\n",
                     XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                    crate::xkb::utils::ByteSliceDisplay(elemRtrn),
-                    crate::xkb::utils::ByteSliceDisplay(fieldRtrn),
+                    elemRtrn,
+                    fieldRtrn,
                 );
                 return PARSER_FATAL_ERROR;
             }
@@ -1798,8 +1775,8 @@ pub unsafe fn HandleActionDef(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Unknown field name {} for action {} discarded\n",
                     XKB_ERROR_INVALID_ACTION_FIELD as i32,
-                    crate::xkb::utils::ByteSliceDisplay(fieldRtrn),
-                    crate::xkb::utils::ByteSliceDisplay(ActionTypeText((*action).type_0)),
+                    fieldRtrn,
+                    ActionTypeText((*action).type_0),
                 );
                 if (*keymap_info).strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
                     return PARSER_FATAL_ERROR;
@@ -1835,8 +1812,8 @@ pub unsafe fn SetDefaultActionField(
     keymap_info: *const xkb_keymap_info,
     info: *mut ActionsInfo,
     mods: *mut xkb_mod_set,
-    elem: &[u8],
-    field: &[u8],
+    elem: &str,
+    field: &str,
     array_ndx: *mut ExprDef,
     value_ptr: *mut *mut ExprDef,
     merge: merge_mode,
@@ -1851,7 +1828,7 @@ pub unsafe fn SetDefaultActionField(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Unknown action \"{}\"\n",
                 XKB_ERROR_UNKNOWN_ACTION_TYPE as i32,
-                crate::xkb::utils::ByteSliceDisplay(elem),
+                elem,
             );
             return (if (*keymap_info).strict & PARSER_NO_UNKNOWN_ACTION != 0 {
                 PARSER_FATAL_ERROR as i32
@@ -1867,7 +1844,7 @@ pub unsafe fn SetDefaultActionField(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Unknown action field \"{}\"\n",
                 XKB_ERROR_INVALID_ACTION_FIELD as i32,
-                crate::xkb::utils::ByteSliceDisplay(field),
+                field,
             );
             return (if (*keymap_info).strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
                 PARSER_FATAL_ERROR as i32
@@ -1898,8 +1875,8 @@ pub unsafe fn SetDefaultActionField(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_VERBOSE as i32,
                 "Conflicting field \"{}\" for default action \"{}\"; Using {}, ignore {}\n",
-                crate::xkb::utils::ByteSliceDisplay(fieldText(action_field)),
-                crate::xkb::utils::ByteSliceDisplay(ActionTypeText(action)),
+                fieldText(action_field),
+                ActionTypeText(action),
                 crate::xkb::utils::CStrDisplay(if replace as i32 != 0 {
                     b"from\0".as_ptr() as *const i8
                 } else {

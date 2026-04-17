@@ -1,6 +1,6 @@
 use std::env::VarError;
 
-use crate::xkb::atom::{atom_intern, atom_table_new, atom_text_bytes};
+use crate::xkb::atom::{atom_intern, atom_table_new, atom_text};
 
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
@@ -508,8 +508,8 @@ pub fn xkb_atom_intern_bytes(ctx: &mut xkb_context, bytes: &[u8]) -> u32 {
 pub unsafe fn xkb_atom_intern(ctx: *mut xkb_context, bytes: &[u8]) -> u32 {
     unsafe { atom_intern(&mut (*ctx).atom_table, bytes, true) }
 }
-pub fn xkb_atom_text_bytes(atom_table: &atom_table, atom: u32) -> &[u8] {
-    atom_text_bytes(atom_table, atom)
+pub fn xkb_atom_text(atom_table: &atom_table, atom: u32) -> &str {
+    atom_text(atom_table, atom)
 }
 
 pub unsafe fn xkb_log(ctx: *mut xkb_context, level: u32, verbosity: i32, msg: *const i8) {

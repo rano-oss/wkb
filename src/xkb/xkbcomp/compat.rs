@@ -114,10 +114,10 @@ pub struct collect {
     pub sym_interprets: Vec<xkb_sym_interpret>,
 }
 // C2Rust_Unnamed_20 removed: replaced by Vec<xkb_action>
-unsafe fn siText(si: *mut SymInterpInfo, info: *mut CompatInfo) -> &'static [u8] {
+unsafe fn siText(si: *mut SymInterpInfo, info: *mut CompatInfo) -> &'static str {
     unsafe {
         if si == &raw mut (*info).default_interp {
-            return b"default";
+            return "default";
         }
         let buf: *mut i8 = xkb_context_get_buffer(&mut (*(*info).ctx).clone(), 128_usize);
         let (written, _) = crate::xkb::utils::snprintf_args(
@@ -129,7 +129,7 @@ unsafe fn siText(si: *mut SymInterpInfo, info: *mut CompatInfo) -> &'static [u8]
                     (*(*info).ctx).clone(),
                     (*si).interp.sym
                 )),
-                crate::xkb::utils::ByteSliceDisplay(SIMatchText((*si).interp.match_0)),
+                SIMatchText((*si).interp.match_0),
                 crate::xkb::utils::ByteSliceDisplay(ModMaskText(
                     (*(*info).ctx).clone(),
                     MOD_BOTH,
@@ -138,15 +138,15 @@ unsafe fn siText(si: *mut SymInterpInfo, info: *mut CompatInfo) -> &'static [u8]
                 )),
             ),
         );
-        std::slice::from_raw_parts(buf as *const u8, written)
+        std::str::from_utf8_unchecked(std::slice::from_raw_parts(buf as *const u8, written))
     }
 }
 #[inline]
-unsafe fn ReportSINotArray(info: *mut CompatInfo, si: *mut SymInterpInfo, field: &[u8]) -> bool {
+unsafe fn ReportSINotArray(info: *mut CompatInfo, si: *mut SymInterpInfo, field: &str) -> bool {
     unsafe {
         ReportNotArray(
             (*info).ctx,
-            b"symbol interpretation",
+            "symbol interpretation",
             field,
             siText(si, info),
         )
@@ -156,26 +156,26 @@ unsafe fn ReportSINotArray(info: *mut CompatInfo, si: *mut SymInterpInfo, field:
 unsafe fn ReportSIBadType(
     info: *mut CompatInfo,
     si: *mut SymInterpInfo,
-    field: &[u8],
-    wanted: &[u8],
+    field: &str,
+    wanted: &str,
 ) -> bool {
     unsafe {
         ReportBadType(
             (*info).ctx,
             XKB_ERROR_WRONG_FIELD_TYPE,
-            b"symbol interpretation",
+            "symbol interpretation",
             field,
             siText(si, info),
             wanted,
         )
     }
 }
-unsafe fn LEDText(info: *mut CompatInfo, ledi: *mut LedInfo) -> &'static [u8] {
+unsafe fn LEDText(info: *mut CompatInfo, ledi: *mut LedInfo) -> &'static str {
     unsafe {
         if ledi == &raw mut (*info).default_led {
-            b"default"
+            "default"
         } else {
-            xkb_atom_text_bytes(&(*(*info).ctx).atom_table, (*ledi).led.name)
+            xkb_atom_text(&(*(*info).ctx).atom_table, (*ledi).led.name)
         }
     }
 }
@@ -183,14 +183,14 @@ unsafe fn LEDText(info: *mut CompatInfo, ledi: *mut LedInfo) -> &'static [u8] {
 unsafe fn ReportLedBadType(
     info: *mut CompatInfo,
     ledi: *mut LedInfo,
-    field: &[u8],
-    wanted: &[u8],
+    field: &str,
+    wanted: &str,
 ) -> bool {
     unsafe {
         ReportBadType(
             (*info).ctx,
             XKB_ERROR_WRONG_FIELD_TYPE,
-            b"indicator map",
+            "indicator map",
             field,
             LEDText(info, ledi),
             wanted,
@@ -198,8 +198,8 @@ unsafe fn ReportLedBadType(
     }
 }
 #[inline]
-unsafe fn ReportLedNotArray(info: *mut CompatInfo, ledi: *mut LedInfo, field: &[u8]) -> bool {
-    unsafe { ReportNotArray((*info).ctx, b"indicator map", field, LEDText(info, ledi)) }
+unsafe fn ReportLedNotArray(info: *mut CompatInfo, ledi: *mut LedInfo, field: &str) -> bool {
+    unsafe { ReportNotArray((*info).ctx, "indicator map", field, LEDText(info, ledi)) }
 }
 #[inline]
 unsafe fn InitInterp(info: *mut SymInterpInfo) {
@@ -276,7 +276,7 @@ unsafe fn MergeInterp(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Multiple definitions for \"{}\"; Earlier interpretation ignored\n",
-                    crate::xkb::utils::ByteSliceDisplay(siText(new, info)),
+                    siText(new, info),
                 );
             }
             *old = (*new).clone();
@@ -344,7 +344,7 @@ unsafe fn MergeInterp(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Multiple interpretations of \"{}\"; Using {} definition for duplicate fields\n",
-                crate::xkb::utils::ByteSliceDisplay(siText(old, info)),
+                siText(old, info),
                 crate::xkb::utils::ByteSliceDisplay(if clobber {
                     b"last" as &[u8]
                 } else {
@@ -390,14 +390,10 @@ unsafe fn ResolveStateAndPredicate(
         }
         *pred_rtrn = MATCH_EXACTLY;
         if (*expr).common.type_0 == STMT_EXPR_ACTION_DECL {
-            let pred_txt: &[u8] =
-                xkb_atom_text_bytes(&(*(*info).ctx).atom_table, (*expr).action.name);
+            let pred_txt: &str = xkb_atom_text(&(*(*info).ctx).atom_table, (*expr).action.name);
             let mut pred: u32 = 0_u32;
-            if !LookupString(
-                &raw const symInterpretMatchMaskNames as *const LookupEntry,
-                pred_txt,
-                &raw mut pred,
-            ) || (*expr).action.args.is_null()
+            if !LookupString(&symInterpretMatchMaskNames, pred_txt, &mut pred)
+                || (*expr).action.args.is_null()
                 || !(*(*expr).action.args).common.next.is_null()
             {
                 xkb_logf!(
@@ -405,16 +401,15 @@ unsafe fn ResolveStateAndPredicate(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Illegal modifier predicate \"{}\"; Ignored\n",
-                    crate::xkb::utils::ByteSliceDisplay(pred_txt),
+                    pred_txt,
                 );
                 return false;
             }
             *pred_rtrn = pred;
             expr = (*expr).action.args as *mut ExprDef;
         } else if (*expr).common.type_0 == STMT_EXPR_IDENT {
-            let pred_txt_0: &[u8] =
-                xkb_atom_text_bytes(&(*(*info).ctx).atom_table, (*expr).ident.ident);
-            if !pred_txt_0.is_empty() && pred_txt_0.eq_ignore_ascii_case(b"any") {
+            let pred_txt_0: &str = xkb_atom_text(&(*(*info).ctx).atom_table, (*expr).ident.ident);
+            if !pred_txt_0.is_empty() && pred_txt_0.eq_ignore_ascii_case("any") {
                 *pred_rtrn = MATCH_ANY;
                 *mods_rtrn = MOD_REAL_MASK_ALL;
                 return true;
@@ -478,7 +473,7 @@ unsafe fn MergeLedMap(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Map for indicator {} redefined; Earlier definition ignored\n",
-                    crate::xkb::utils::ByteSliceDisplay(LEDText(info, old)),
+                    LEDText(info, old),
                 );
             }
             *old = *new;
@@ -527,7 +522,7 @@ unsafe fn MergeLedMap(
                 XKB_LOG_LEVEL_WARNING,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Map for indicator {} redefined; Using {} definition for duplicate fields\n",
-                crate::xkb::utils::ByteSliceDisplay(LEDText(info, old)),
+                LEDText(info, old),
                 crate::xkb::utils::ByteSliceDisplay(if clobber {
                     b"last" as &[u8]
                 } else {
@@ -675,12 +670,12 @@ unsafe fn HandleIncludeCompatMap(info: *mut CompatInfo, include: *mut IncludeStm
 unsafe fn SetInterpField(
     info: *mut CompatInfo,
     si: *mut SymInterpInfo,
-    field: &[u8],
+    field: &str,
     arrayNdx: *mut ExprDef,
     value: *mut ExprDef,
 ) -> bool {
     unsafe {
-        if field.eq_ignore_ascii_case(b"action") {
+        if field.eq_ignore_ascii_case("action") {
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
             }
@@ -697,7 +692,7 @@ unsafe fn SetInterpField(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Interpret {} has too many actions; expected max {}, got: {}\n",
-                        crate::xkb::utils::ByteSliceDisplay(siText(si, info)),
+                        siText(si, info),
                         65535_i32,
                         num_actions,
                     );
@@ -770,8 +765,8 @@ unsafe fn SetInterpField(
                 }
             }
             (*si).defined = ((*si).defined | SI_FIELD_ACTION) as si_field;
-        } else if field.eq_ignore_ascii_case(b"virtualmodifier")
-            || field.eq_ignore_ascii_case(b"virtualmod")
+        } else if field.eq_ignore_ascii_case("virtualmodifier")
+            || field.eq_ignore_ascii_case("virtualmod")
         {
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
@@ -784,48 +779,43 @@ unsafe fn SetInterpField(
                 &raw mut (*info).mods,
                 &raw mut ndx,
             ) {
-                return ReportSIBadType(info, si, field, b"virtual modifier");
+                return ReportSIBadType(info, si, field, "virtual modifier");
             }
             (*si).interp.virtual_mod = ndx;
             (*si).defined = ((*si).defined | SI_FIELD_VIRTUAL_MOD) as si_field;
-        } else if field.eq_ignore_ascii_case(b"repeat") {
+        } else if field.eq_ignore_ascii_case("repeat") {
             let mut set: bool = false;
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
             }
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set) {
-                return ReportSIBadType(info, si, field, b"boolean");
+                return ReportSIBadType(info, si, field, "boolean");
             }
             (*si).interp.repeat = set;
             (*si).defined = ((*si).defined | SI_FIELD_AUTO_REPEAT) as si_field;
-        } else if field.eq_ignore_ascii_case(b"locking") {
+        } else if field.eq_ignore_ascii_case("locking") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "The \"locking\" field in symbol interpretation is unsupported; Ignored\n",
             );
-        } else if field.eq_ignore_ascii_case(b"usemodmap")
-            || field.eq_ignore_ascii_case(b"usemodmapmods")
+        } else if field.eq_ignore_ascii_case("usemodmap")
+            || field.eq_ignore_ascii_case("usemodmapmods")
         {
             let mut val: u32 = 0_u32;
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
             }
-            if !ExprResolveEnum(
-                (*info).ctx,
-                value,
-                &raw mut val,
-                &raw const useModMapValueNames as *const LookupEntry,
-            ) {
-                return ReportSIBadType(info, si, field, b"level specification");
+            if !ExprResolveEnum((*info).ctx, value, &raw mut val, &useModMapValueNames) {
+                return ReportSIBadType(info, si, field, "level specification");
             }
             (*si).interp.level_one_only = val != 0;
             (*si).defined = ((*si).defined | SI_FIELD_LEVEL_ONE_ONLY) as si_field;
         } else {
             ReportBadField(
                 (*info).ctx,
-                b"symbol interpretation",
+                "symbol interpretation",
                 field,
                 siText(si, info),
             );
@@ -837,13 +827,13 @@ unsafe fn SetInterpField(
 unsafe fn SetLedMapField(
     info: *mut CompatInfo,
     ledi: *mut LedInfo,
-    field: &[u8],
+    field: &str,
     arrayNdx: *mut ExprDef,
     value_ptr: *mut *mut ExprDef,
 ) -> bool {
     unsafe {
         let value: *mut ExprDef = *value_ptr;
-        if field.eq_ignore_ascii_case(b"modifiers") || field.eq_ignore_ascii_case(b"mods") {
+        if field.eq_ignore_ascii_case("modifiers") || field.eq_ignore_ascii_case("mods") {
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
             }
@@ -854,10 +844,10 @@ unsafe fn SetLedMapField(
                 &raw mut (*info).mods,
                 &raw mut (*ledi).led.mods.mods,
             ) {
-                return ReportLedBadType(info, ledi, field, b"modifier mask");
+                return ReportLedBadType(info, ledi, field, "modifier mask");
             }
             (*ledi).defined = ((*ledi).defined | LED_FIELD_MODS) as led_field;
-        } else if field.eq_ignore_ascii_case(b"groups") {
+        } else if field.eq_ignore_ascii_case("groups") {
             let mut mask: u32 = 0_u32;
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
@@ -876,14 +866,14 @@ unsafe fn SetLedMapField(
                     *value_ptr = std::ptr::null_mut();
                     mask = pending_index;
                 } else {
-                    return ReportLedBadType(info, ledi, field, b"group mask");
+                    return ReportLedBadType(info, ledi, field, "group mask");
                 }
             } else {
                 (*ledi).led.pending_groups = false;
             }
             (*ledi).led.groups = mask;
             (*ledi).defined = ((*ledi).defined | LED_FIELD_GROUPS) as led_field;
-        } else if field.eq_ignore_ascii_case(b"controls") || field.eq_ignore_ascii_case(b"ctrls") {
+        } else if field.eq_ignore_ascii_case("controls") || field.eq_ignore_ascii_case("ctrls") {
             let mut mask_0: u32 = 0_u32;
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
@@ -893,36 +883,31 @@ unsafe fn SetLedMapField(
                 (*info).ctx,
                 value,
                 &raw mut mask_0,
-                (&raw const ctrlMaskNames as *const LookupEntry).offset(offset as i32 as isize),
+                &ctrlMaskNames[offset as usize..],
             ) {
-                return ReportLedBadType(info, ledi, field, b"controls mask");
+                return ReportLedBadType(info, ledi, field, "controls mask");
             }
             (*ledi).led.ctrls = mask_0 as xkb_action_controls;
             (*ledi).defined = ((*ledi).defined | LED_FIELD_CTRLS) as led_field;
-        } else if field.eq_ignore_ascii_case(b"allowexplicit") {
+        } else if field.eq_ignore_ascii_case("allowexplicit") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "The \"allowExplicit\" field in indicator statements is unsupported; Ignored\n",
             );
-        } else if field.eq_ignore_ascii_case(b"whichmodstate")
-            || field.eq_ignore_ascii_case(b"whichmodifierstate")
+        } else if field.eq_ignore_ascii_case("whichmodstate")
+            || field.eq_ignore_ascii_case("whichmodifierstate")
         {
             let mut mask_1: u32 = 0_u32;
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
             }
-            if !ExprResolveMask(
-                (*info).ctx,
-                value,
-                &raw mut mask_1,
-                &raw const modComponentMaskNames as *const LookupEntry,
-            ) {
-                return ReportLedBadType(info, ledi, field, b"mask of modifier state components");
+            if !ExprResolveMask((*info).ctx, value, &raw mut mask_1, &modComponentMaskNames) {
+                return ReportLedBadType(info, ledi, field, "mask of modifier state components");
             }
             (*ledi).led.which_mods = mask_1;
-        } else if field.eq_ignore_ascii_case(b"whichgroupstate") {
+        } else if field.eq_ignore_ascii_case("whichgroupstate") {
             let mut mask_2: u32 = 0_u32;
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
@@ -931,26 +916,26 @@ unsafe fn SetLedMapField(
                 (*info).ctx,
                 value,
                 &raw mut mask_2,
-                &raw const groupComponentMaskNames as *const LookupEntry,
+                &groupComponentMaskNames,
             ) {
-                return ReportLedBadType(info, ledi, field, b"mask of group state components");
+                return ReportLedBadType(info, ledi, field, "mask of group state components");
             }
             (*ledi).led.which_groups = mask_2;
-        } else if field.eq_ignore_ascii_case(b"driveskbd")
-            || field.eq_ignore_ascii_case(b"driveskeyboard")
-            || field.eq_ignore_ascii_case(b"leddriveskbd")
-            || field.eq_ignore_ascii_case(b"leddriveskeyboard")
-            || field.eq_ignore_ascii_case(b"indicatordriveskbd")
-            || field.eq_ignore_ascii_case(b"indicatordriveskeyboard")
+        } else if field.eq_ignore_ascii_case("driveskbd")
+            || field.eq_ignore_ascii_case("driveskeyboard")
+            || field.eq_ignore_ascii_case("leddriveskbd")
+            || field.eq_ignore_ascii_case("leddriveskeyboard")
+            || field.eq_ignore_ascii_case("indicatordriveskbd")
+            || field.eq_ignore_ascii_case("indicatordriveskeyboard")
         {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "The \"{}\" field in indicator statements is unsupported; Ignored\n",
-                crate::xkb::utils::ByteSliceDisplay(field),
+                field,
             );
-        } else if field.eq_ignore_ascii_case(b"index") {
+        } else if field.eq_ignore_ascii_case("index") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -963,8 +948,8 @@ unsafe fn SetLedMapField(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Unknown field \"{}\" in map for {} indicator; Definition ignored\n",
-                crate::xkb::utils::ByteSliceDisplay(field),
-                crate::xkb::utils::ByteSliceDisplay(LEDText(info, ledi)),
+                field,
+                LEDText(info, ledi),
             );
             return (*(*info).keymap_info).strict & PARSER_NO_UNKNOWN_LED_FIELDS == 0;
         }
@@ -973,8 +958,8 @@ unsafe fn SetLedMapField(
 }
 unsafe fn HandleGlobalVar(info: *mut CompatInfo, stmt: *mut VarDef) -> bool {
     unsafe {
-        let mut elem: &[u8] = b"";
-        let mut field: &[u8] = b"";
+        let mut elem: &str = "";
+        let mut field: &str = "";
         let mut ndx: *mut ExprDef = std::ptr::null_mut();
         let ret: bool;
         if !ExprResolveLhs(
@@ -985,7 +970,7 @@ unsafe fn HandleGlobalVar(info: *mut CompatInfo, stmt: *mut VarDef) -> bool {
             &raw mut ndx,
         ) {
             ret = false;
-        } else if !elem.is_empty() && elem.eq_ignore_ascii_case(b"interpret") {
+        } else if !elem.is_empty() && elem.eq_ignore_ascii_case("interpret") {
             let mut temp: SymInterpInfo = SymInterpInfo {
                 defined: 0 as si_field,
                 merge: MERGE_DEFAULT,
@@ -1020,7 +1005,7 @@ unsafe fn HandleGlobalVar(info: *mut CompatInfo, stmt: *mut VarDef) -> bool {
             if ret {
                 MergeInterp(info, &raw mut (*info).default_interp, &raw mut temp, true);
             }
-        } else if !elem.is_empty() && elem.eq_ignore_ascii_case(b"indicator") {
+        } else if !elem.is_empty() && elem.eq_ignore_ascii_case("indicator") {
             let mut temp_0: LedInfo = LedInfo {
                 defined: 0 as led_field,
                 merge: MERGE_DEFAULT,
@@ -1063,7 +1048,7 @@ unsafe fn HandleGlobalVar(info: *mut CompatInfo, stmt: *mut VarDef) -> bool {
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-                crate::xkb::utils::ByteSliceDisplay(field),
+                field,
             );
             return (*(*info).keymap_info).strict & PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS == 0;
         }
@@ -1077,8 +1062,8 @@ unsafe fn HandleInterpBody(
 ) -> bool {
     unsafe {
         let mut ok: bool = true;
-        let mut elem: &[u8] = b"";
-        let mut field: &[u8] = b"";
+        let mut elem: &str = "";
+        let mut field: &str = "";
         let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
         while !def.is_null() {
             if !ExprResolveLhs(
@@ -1095,9 +1080,9 @@ unsafe fn HandleInterpBody(
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Cannot set a global default value for \"{}\" element from within an interpret statement; Move assignment to \"{}.{}\" to the global file scope\n",
-                    crate::xkb::utils::ByteSliceDisplay(elem),
-                    crate::xkb::utils::ByteSliceDisplay(elem),
-                    crate::xkb::utils::ByteSliceDisplay(field),
+                    elem,
+                    elem,
+                    field,
                 );
                 ok = false;
             } else if !SetInterpField(info, si, field, arrayNdx, (*def).value as *mut ExprDef) {
@@ -1169,8 +1154,8 @@ unsafe fn HandleLedMapDef(info: *mut CompatInfo, def: *mut LedMapDef) -> bool {
         let mut ok: bool = true;
         let mut var: *mut VarDef = (*def).body;
         while !var.is_null() {
-            let mut elem: &[u8] = b"";
-            let mut field: &[u8] = b"";
+            let mut elem: &str = "";
+            let mut field: &str = "";
             let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
             if !ExprResolveLhs(
                 (*info).ctx,
@@ -1187,9 +1172,9 @@ unsafe fn HandleLedMapDef(info: *mut CompatInfo, def: *mut LedMapDef) -> bool {
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Cannot set defaults for \"{}\" element in indicator map; Assignment to {}.{} ignored\n",
                     XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                    crate::xkb::utils::ByteSliceDisplay(elem),
-                    crate::xkb::utils::ByteSliceDisplay(elem),
-                    crate::xkb::utils::ByteSliceDisplay(field),
+                    elem,
+                    elem,
+                    field,
                 );
                 ok = false;
             } else if !SetLedMapField(info, &raw mut ledi, field, arrayNdx, &raw mut (*var).value) {
@@ -1322,7 +1307,7 @@ unsafe fn CopyLedMapDefsToKeymap(keymap: *mut xkb_keymap, info: *mut CompatInfo)
                     XKB_LOG_LEVEL_DEBUG,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Indicator name \"{}\" was not declared in the keycodes section; Adding new indicator\n",
-                    crate::xkb::utils::ByteSliceDisplay(LEDText(info, ledi)),
+                    LEDText(info, ledi),
                 );
                 i = 0_u32;
                 led = &raw mut (*keymap).leds as *mut xkb_led;
@@ -1341,7 +1326,7 @@ unsafe fn CopyLedMapDefsToKeymap(keymap: *mut xkb_keymap, info: *mut CompatInfo)
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "Too many indicators (maximum is {}); Indicator name \"{}\" ignored\n",
                             (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8_usize) as u32,
-                            crate::xkb::utils::ByteSliceDisplay(LEDText(info, ledi)),
+                            LEDText(info, ledi),
                         );
                         c2rust_current_block_11 = 792017965103506125;
                     } else {

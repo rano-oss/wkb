@@ -1,16 +1,16 @@
-use crate::xkb::context::{xkb_atom_text_bytes, xkb_context_get_buffer};
+use crate::xkb::context::{xkb_atom_text, xkb_context_get_buffer};
 
 // Was in text_h module — now at file level
 #[derive(Copy, Clone)]
 pub struct LookupEntry {
-    pub name: &'static [u8],
+    pub name: &'static str,
     pub value: u32,
 }
 pub const CONTROL_NAMES_MIN_V2_INDEX: u32 = 0;
 pub const CONTROL_NAMES_MIN_V1_INDEX: u32 = 7;
-pub const GROUP_LAST_INDEX_NAME: &[u8] = b"last";
+pub const GROUP_LAST_INDEX_NAME: &str = "last";
 #[inline]
-pub unsafe fn format_control_names_offset(format: u32) -> u8 {
+pub fn format_control_names_offset(format: u32) -> u8 {
     (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
         CONTROL_NAMES_MIN_V1_INDEX as i32
     } else {
@@ -38,453 +38,461 @@ pub use crate::xkb::shared_types::{
     XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MOD_NONE, _ACTION_TYPE_NUM_ENTRIES,
 };
 use crate::xkb::utils::cstr_as_bytes;
-pub unsafe fn LookupString(tab: *const LookupEntry, string: &[u8], value_rtrn: *mut u32) -> bool {
-    unsafe {
-        if string.is_empty() {
-            return false;
-        }
-        let mut entry: *const LookupEntry = tab as *const LookupEntry;
-        while !(&(*entry).name).is_empty() {
-            if (*entry).name.eq_ignore_ascii_case(string) {
-                *value_rtrn = (*entry).value;
-                return true;
-            }
-            entry = entry.offset(1);
-        }
-        false
+pub fn LookupString(tab: &[LookupEntry], string: &str, value_rtrn: &mut u32) -> bool {
+    if string.is_empty() {
+        return false;
     }
-}
-pub unsafe fn LookupValue(tab: *const LookupEntry, value: u32) -> &'static [u8] {
-    unsafe {
-        let mut entry: *const LookupEntry = tab as *const LookupEntry;
-        while !(&(*entry).name).is_empty() {
-            if (*entry).value == value {
-                return (*entry).name;
-            }
-            entry = entry.offset(1);
+    for entry in tab {
+        if entry.name.is_empty() {
+            break;
         }
-        b""
+        if entry.name.eq_ignore_ascii_case(string) {
+            *value_rtrn = entry.value;
+            return true;
+        }
     }
+    false
 }
-pub static mut ctrlMaskNames: [LookupEntry; 25] = [
+pub fn LookupValue(tab: &[LookupEntry], value: u32) -> &'static str {
+    for entry in tab {
+        if entry.name.is_empty() {
+            break;
+        }
+        if entry.value == value {
+            return entry.name;
+        }
+    }
+    ""
+}
+pub static ctrlMaskNames: [LookupEntry; 25] = [
     LookupEntry {
-        name: b"Overlay3",
+        name: "Overlay3",
         value: CONTROL_OVERLAY3,
     },
     LookupEntry {
-        name: b"Overlay4",
+        name: "Overlay4",
         value: CONTROL_OVERLAY4,
     },
     LookupEntry {
-        name: b"Overlay5",
+        name: "Overlay5",
         value: CONTROL_OVERLAY5,
     },
     LookupEntry {
-        name: b"Overlay6",
+        name: "Overlay6",
         value: CONTROL_OVERLAY6,
     },
     LookupEntry {
-        name: b"Overlay7",
+        name: "Overlay7",
         value: CONTROL_OVERLAY7,
     },
     LookupEntry {
-        name: b"Overlay8",
+        name: "Overlay8",
         value: CONTROL_OVERLAY8,
     },
     LookupEntry {
-        name: b"all",
+        name: "all",
         value: CONTROL_ALL_BOOLEAN,
     },
     LookupEntry {
-        name: b"RepeatKeys",
+        name: "RepeatKeys",
         value: CONTROL_REPEAT,
     },
     LookupEntry {
-        name: b"Repeat",
+        name: "Repeat",
         value: CONTROL_REPEAT,
     },
     LookupEntry {
-        name: b"AutoRepeat",
+        name: "AutoRepeat",
         value: CONTROL_REPEAT,
     },
     LookupEntry {
-        name: b"SlowKeys",
+        name: "SlowKeys",
         value: CONTROL_SLOW,
     },
     LookupEntry {
-        name: b"BounceKeys",
+        name: "BounceKeys",
         value: CONTROL_DEBOUNCE,
     },
     LookupEntry {
-        name: b"StickyKeys",
+        name: "StickyKeys",
         value: CONTROL_STICKY_KEYS,
     },
     LookupEntry {
-        name: b"MouseKeys",
+        name: "MouseKeys",
         value: CONTROL_MOUSE_KEYS,
     },
     LookupEntry {
-        name: b"MouseKeysAccel",
+        name: "MouseKeysAccel",
         value: CONTROL_MOUSE_KEYS_ACCEL,
     },
     LookupEntry {
-        name: b"AccessXKeys",
+        name: "AccessXKeys",
         value: CONTROL_AX,
     },
     LookupEntry {
-        name: b"AccessXTimeout",
+        name: "AccessXTimeout",
         value: CONTROL_AX_TIMEOUT,
     },
     LookupEntry {
-        name: b"AccessXFeedback",
+        name: "AccessXFeedback",
         value: CONTROL_AX_FEEDBACK,
     },
     LookupEntry {
-        name: b"AudibleBell",
+        name: "AudibleBell",
         value: CONTROL_BELL,
     },
     LookupEntry {
-        name: b"IgnoreGroupLock",
+        name: "IgnoreGroupLock",
         value: CONTROL_IGNORE_GROUP_LOCK,
     },
     LookupEntry {
-        name: b"Overlay1",
+        name: "Overlay1",
         value: CONTROL_OVERLAY1,
     },
     LookupEntry {
-        name: b"Overlay2",
+        name: "Overlay2",
         value: CONTROL_OVERLAY2,
     },
     LookupEntry {
-        name: b"all",
+        name: "all",
         value: CONTROL_ALL_BOOLEAN_V1,
     },
     LookupEntry {
-        name: b"none",
+        name: "none",
         value: 0_u32,
     },
     LookupEntry {
-        name: b"",
+        name: "",
         value: 0_u32,
     },
 ];
-pub static mut modComponentMaskNames: [LookupEntry; 8] = [
+pub static modComponentMaskNames: [LookupEntry; 8] = [
     LookupEntry {
-        name: b"base",
+        name: "base",
         value: XKB_STATE_MODS_DEPRESSED,
     },
     LookupEntry {
-        name: b"latched",
+        name: "latched",
         value: XKB_STATE_MODS_LATCHED,
     },
     LookupEntry {
-        name: b"locked",
+        name: "locked",
         value: XKB_STATE_MODS_LOCKED,
     },
     LookupEntry {
-        name: b"effective",
+        name: "effective",
         value: XKB_STATE_MODS_EFFECTIVE,
     },
     LookupEntry {
-        name: b"compat",
+        name: "compat",
         value: XKB_STATE_MODS_EFFECTIVE,
     },
     LookupEntry {
-        name: b"any",
+        name: "any",
         value: XKB_STATE_MODS_EFFECTIVE,
     },
     LookupEntry {
-        name: b"none",
+        name: "none",
         value: 0_u32,
     },
     LookupEntry {
-        name: b"",
+        name: "",
         value: 0_u32,
     },
 ];
-pub static mut groupComponentMaskNames: [LookupEntry; 7] = [
+pub static groupComponentMaskNames: [LookupEntry; 7] = [
     LookupEntry {
-        name: b"base",
+        name: "base",
         value: XKB_STATE_LAYOUT_DEPRESSED,
     },
     LookupEntry {
-        name: b"latched",
+        name: "latched",
         value: XKB_STATE_LAYOUT_LATCHED,
     },
     LookupEntry {
-        name: b"locked",
+        name: "locked",
         value: XKB_STATE_LAYOUT_LOCKED,
     },
     LookupEntry {
-        name: b"effective",
+        name: "effective",
         value: XKB_STATE_LAYOUT_EFFECTIVE,
     },
     LookupEntry {
-        name: b"any",
+        name: "any",
         value: XKB_STATE_LAYOUT_EFFECTIVE,
     },
     LookupEntry {
-        name: b"none",
+        name: "none",
         value: 0_u32,
     },
     LookupEntry {
-        name: b"",
+        name: "",
         value: 0_u32,
     },
 ];
-pub static mut groupMaskNames: [LookupEntry; 3] = [LookupEntry {
-    name: b"",
-    value: 0,
-}; 3];
-pub static mut buttonNames: [LookupEntry; 7] = [
+pub static groupMaskNames: [LookupEntry; 3] = [
     LookupEntry {
-        name: b"Button1",
+        name: "none",
+        value: 0_u32,
+    },
+    LookupEntry {
+        name: "all",
+        value: XKB_ALL_GROUPS as u32,
+    },
+    LookupEntry {
+        name: "",
+        value: 0_u32,
+    },
+];
+pub static buttonNames: [LookupEntry; 7] = [
+    LookupEntry {
+        name: "Button1",
         value: 1_u32,
     },
     LookupEntry {
-        name: b"Button2",
+        name: "Button2",
         value: 2_u32,
     },
     LookupEntry {
-        name: b"Button3",
+        name: "Button3",
         value: 3_u32,
     },
     LookupEntry {
-        name: b"Button4",
+        name: "Button4",
         value: 4_u32,
     },
     LookupEntry {
-        name: b"Button5",
+        name: "Button5",
         value: 5_u32,
     },
     LookupEntry {
-        name: b"default",
+        name: "default",
         value: 0_u32,
     },
     LookupEntry {
-        name: b"",
-        value: 0_u32,
-    },
-];
-pub static mut useModMapValueNames: [LookupEntry; 5] = [
-    LookupEntry {
-        name: b"LevelOne",
-        value: 1_u32,
-    },
-    LookupEntry {
-        name: b"Level1",
-        value: 1_u32,
-    },
-    LookupEntry {
-        name: b"AnyLevel",
-        value: 0_u32,
-    },
-    LookupEntry {
-        name: b"any",
-        value: 0_u32,
-    },
-    LookupEntry {
-        name: b"",
+        name: "",
         value: 0_u32,
     },
 ];
-pub static mut actionTypeNames: [LookupEntry; 43] = [
+pub static useModMapValueNames: [LookupEntry; 5] = [
     LookupEntry {
-        name: b"NoAction",
+        name: "LevelOne",
+        value: 1_u32,
+    },
+    LookupEntry {
+        name: "Level1",
+        value: 1_u32,
+    },
+    LookupEntry {
+        name: "AnyLevel",
+        value: 0_u32,
+    },
+    LookupEntry {
+        name: "any",
+        value: 0_u32,
+    },
+    LookupEntry {
+        name: "",
+        value: 0_u32,
+    },
+];
+pub static actionTypeNames: [LookupEntry; 43] = [
+    LookupEntry {
+        name: "NoAction",
         value: ACTION_TYPE_NONE,
     },
     LookupEntry {
-        name: b"VoidAction",
+        name: "VoidAction",
         value: ACTION_TYPE_VOID,
     },
     LookupEntry {
-        name: b"SetMods",
+        name: "SetMods",
         value: ACTION_TYPE_MOD_SET,
     },
     LookupEntry {
-        name: b"LatchMods",
+        name: "LatchMods",
         value: ACTION_TYPE_MOD_LATCH,
     },
     LookupEntry {
-        name: b"LockMods",
+        name: "LockMods",
         value: ACTION_TYPE_MOD_LOCK,
     },
     LookupEntry {
-        name: b"SetGroup",
+        name: "SetGroup",
         value: ACTION_TYPE_GROUP_SET,
     },
     LookupEntry {
-        name: b"LatchGroup",
+        name: "LatchGroup",
         value: ACTION_TYPE_GROUP_LATCH,
     },
     LookupEntry {
-        name: b"LockGroup",
+        name: "LockGroup",
         value: ACTION_TYPE_GROUP_LOCK,
     },
     LookupEntry {
-        name: b"MovePtr",
+        name: "MovePtr",
         value: ACTION_TYPE_PTR_MOVE,
     },
     LookupEntry {
-        name: b"MovePointer",
+        name: "MovePointer",
         value: ACTION_TYPE_PTR_MOVE,
     },
     LookupEntry {
-        name: b"PtrBtn",
+        name: "PtrBtn",
         value: ACTION_TYPE_PTR_BUTTON,
     },
     LookupEntry {
-        name: b"PointerButton",
+        name: "PointerButton",
         value: ACTION_TYPE_PTR_BUTTON,
     },
     LookupEntry {
-        name: b"LockPtrBtn",
+        name: "LockPtrBtn",
         value: ACTION_TYPE_PTR_LOCK,
     },
     LookupEntry {
-        name: b"LockPtrButton",
+        name: "LockPtrButton",
         value: ACTION_TYPE_PTR_LOCK,
     },
     LookupEntry {
-        name: b"LockPointerButton",
+        name: "LockPointerButton",
         value: ACTION_TYPE_PTR_LOCK,
     },
     LookupEntry {
-        name: b"LockPointerBtn",
+        name: "LockPointerBtn",
         value: ACTION_TYPE_PTR_LOCK,
     },
     LookupEntry {
-        name: b"SetPtrDflt",
+        name: "SetPtrDflt",
         value: ACTION_TYPE_PTR_DEFAULT,
     },
     LookupEntry {
-        name: b"SetPointerDefault",
+        name: "SetPointerDefault",
         value: ACTION_TYPE_PTR_DEFAULT,
     },
     LookupEntry {
-        name: b"Terminate",
+        name: "Terminate",
         value: ACTION_TYPE_TERMINATE,
     },
     LookupEntry {
-        name: b"TerminateServer",
+        name: "TerminateServer",
         value: ACTION_TYPE_TERMINATE,
     },
     LookupEntry {
-        name: b"SwitchScreen",
+        name: "SwitchScreen",
         value: ACTION_TYPE_SWITCH_VT,
     },
     LookupEntry {
-        name: b"SetControls",
+        name: "SetControls",
         value: ACTION_TYPE_CTRL_SET,
     },
     LookupEntry {
-        name: b"LockControls",
+        name: "LockControls",
         value: ACTION_TYPE_CTRL_LOCK,
     },
     LookupEntry {
-        name: b"RedirectKey",
+        name: "RedirectKey",
         value: ACTION_TYPE_REDIRECT_KEY,
     },
     LookupEntry {
-        name: b"Redirect",
+        name: "Redirect",
         value: ACTION_TYPE_REDIRECT_KEY,
     },
     LookupEntry {
-        name: b"Private",
+        name: "Private",
         value: ACTION_TYPE_PRIVATE,
     },
     LookupEntry {
-        name: b"ISOLock",
+        name: "ISOLock",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"ActionMessage",
+        name: "ActionMessage",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"MessageAction",
+        name: "MessageAction",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"Message",
+        name: "Message",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"DeviceBtn",
+        name: "DeviceBtn",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"DevBtn",
+        name: "DevBtn",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"DevButton",
+        name: "DevButton",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"DeviceButton",
+        name: "DeviceButton",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"LockDeviceBtn",
+        name: "LockDeviceBtn",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"LockDevBtn",
+        name: "LockDevBtn",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"LockDevButton",
+        name: "LockDevButton",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"LockDeviceButton",
+        name: "LockDeviceButton",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"DeviceValuator",
+        name: "DeviceValuator",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"DevVal",
+        name: "DevVal",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"DeviceVal",
+        name: "DeviceVal",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"DevValuator",
+        name: "DevValuator",
         value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
-        name: b"",
+        name: "",
         value: 0_u32,
     },
 ];
-pub static mut symInterpretMatchMaskNames: [LookupEntry; 6] = [
+pub static symInterpretMatchMaskNames: [LookupEntry; 6] = [
     LookupEntry {
-        name: b"NoneOf",
+        name: "NoneOf",
         value: MATCH_NONE,
     },
     LookupEntry {
-        name: b"AnyOfOrNone",
+        name: "AnyOfOrNone",
         value: MATCH_ANY_OR_NONE,
     },
     LookupEntry {
-        name: b"AnyOf",
+        name: "AnyOf",
         value: MATCH_ANY,
     },
     LookupEntry {
-        name: b"AllOf",
+        name: "AllOf",
         value: MATCH_ALL,
     },
     LookupEntry {
-        name: b"Exactly",
+        name: "Exactly",
         value: MATCH_EXACTLY,
     },
     LookupEntry {
-        name: b"",
+        name: "",
         value: 0_u32,
     },
 ];
@@ -492,29 +500,26 @@ pub unsafe fn ModIndexText(
     ctx: *mut xkb_context,
     mods: *const xkb_mod_set,
     ndx: u32,
-) -> &'static [u8] {
+) -> &'static str {
     unsafe {
         if ndx == XKB_MOD_INVALID {
-            return b"none";
+            return "none";
         }
         if ndx == XKB_MOD_NONE {
-            return b"None";
+            return "None";
         }
         if ndx >= (*mods).num_mods {
-            return b"";
+            return "";
         }
-        xkb_atom_text_bytes(&(*ctx).atom_table, (*mods).mods[ndx as usize].name)
+        xkb_atom_text(&(*ctx).atom_table, (*mods).mods[ndx as usize].name)
     }
 }
-pub unsafe fn ActionTypeText(type_0: xkb_action_type) -> &'static [u8] {
-    unsafe {
-        let name: &'static [u8] =
-            LookupValue(&raw const actionTypeNames as *const LookupEntry, type_0);
-        if !name.is_empty() {
-            name
-        } else {
-            b"Private"
-        }
+pub fn ActionTypeText(type_0: xkb_action_type) -> &'static str {
+    let name: &'static str = LookupValue(&actionTypeNames, type_0);
+    if !name.is_empty() {
+        name
+    } else {
+        "Private"
     }
 }
 pub unsafe fn KeysymText(mut ctx: xkb_context, sym: u32) -> &'static [u8] {
@@ -527,22 +532,15 @@ pub unsafe fn KeysymText(mut ctx: xkb_context, sym: u32) -> &'static [u8] {
 pub unsafe fn KeyNameText(mut ctx: xkb_context, name: u32) -> &'static [u8] {
     unsafe {
         let atom_table = &ctx.atom_table.clone();
-        let sname: &[u8] = xkb_atom_text_bytes(atom_table, name);
-        let sname_str = std::str::from_utf8(sname).unwrap_or("");
-        let len: usize = sname_str.len().wrapping_add(3_usize);
+        let sname: &str = xkb_atom_text(atom_table, name);
+        let len: usize = sname.len().wrapping_add(3_usize);
         let buf: *mut i8 = xkb_context_get_buffer(&mut ctx, len);
-        let (written, _) =
-            crate::xkb::utils::snprintf_args(buf, len, format_args!("<{}>", sname_str));
+        let (written, _) = crate::xkb::utils::snprintf_args(buf, len, format_args!("<{}>", sname));
         std::slice::from_raw_parts(buf as *const u8, written)
     }
 }
-pub unsafe fn SIMatchText(type_0: u32) -> &'static [u8] {
-    unsafe {
-        LookupValue(
-            &raw const symInterpretMatchMaskNames as *const LookupEntry,
-            type_0,
-        )
-    }
+pub fn SIMatchText(type_0: u32) -> &'static str {
+    LookupValue(&symInterpretMatchMaskNames, type_0)
 }
 pub unsafe fn ModMaskText(
     mut ctx: xkb_context,
@@ -583,10 +581,7 @@ pub unsafe fn ModMaskText(
                         format_args!(
                             "{}{}",
                             if pos == 0_usize { "" } else { "+" },
-                            crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                                &ctx.atom_table,
-                                (*mod_0).name
-                            )),
+                            xkb_atom_text(&ctx.atom_table, (*mod_0).name),
                         ),
                     );
                     if trunc || written == 0 {
@@ -604,26 +599,5 @@ pub unsafe fn ModMaskText(
     }
 }
 
-unsafe fn c2rust_run_static_initializers() {
-    unsafe {
-        groupMaskNames = [
-            LookupEntry {
-                name: b"none",
-                value: 0_u32,
-            },
-            LookupEntry {
-                name: b"all",
-                value: XKB_ALL_GROUPS as u32,
-            },
-            LookupEntry {
-                name: b"",
-                value: 0_u32,
-            },
-        ]
-    }
-}
 use crate::xkb::keysym::xkb_keysym_get_name;
 use crate::xkb::shared_types::*;
-#[used]
-#[cfg_attr(target_os = "linux", link_section = ".init_array")]
-static INIT_ARRAY: [unsafe fn(); 1] = [c2rust_run_static_initializers];

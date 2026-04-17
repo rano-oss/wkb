@@ -339,10 +339,7 @@ unsafe fn AddLedName(
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Multiple indicators named \"{}\"; Identical definitions ignored\n",
-                        crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                            &(*(*info).ctx).atom_table,
-                            (*new).name
-                        )),
+                        xkb_atom_text(&(*(*info).ctx).atom_table, (*new).name),
                     );
                 }
                 return true;
@@ -363,10 +360,7 @@ unsafe fn AddLedName(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Multiple indicators named {}; Using {}, ignoring {}\n",
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        &(*(*info).ctx).atom_table,
-                        (*new).name
-                    )),
+                    xkb_atom_text(&(*(*info).ctx).atom_table, (*new).name),
                     use_0,
                     ignore,
                 );
@@ -400,14 +394,8 @@ unsafe fn AddLedName(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Multiple names for indicator {}; Using {}, ignoring {}\n",
                     new_idx.wrapping_add(1_u32),
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        &(*(*info).ctx).atom_table,
-                        use_1
-                    )),
-                    crate::xkb::utils::ByteSliceDisplay(xkb_atom_text_bytes(
-                        &(*(*info).ctx).atom_table,
-                        ignore_0
-                    )),
+                    xkb_atom_text(&(*(*info).ctx).atom_table, use_1),
+                    xkb_atom_text(&(*(*info).ctx).atom_table, ignore_0),
                 );
             }
             if replace {
@@ -826,8 +814,8 @@ unsafe fn HandleAliasDef(info: *mut KeyNamesInfo, def: *const KeyAliasDef, repor
 }
 unsafe fn HandleKeyNameVar(info: *mut KeyNamesInfo, stmt: *mut VarDef) -> bool {
     unsafe {
-        let mut elem: &[u8] = b"";
-        let mut field: &[u8] = b"";
+        let mut elem: &str = "";
+        let mut field: &str = "";
         let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
         if !ExprResolveLhs(
             (*info).ctx,
@@ -845,25 +833,25 @@ unsafe fn HandleKeyNameVar(info: *mut KeyNamesInfo, stmt: *mut VarDef) -> bool {
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Cannot set global defaults for \"{}\" element; Assignment to \"{}.{}\" ignored\n",
                 XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                crate::xkb::utils::ByteSliceDisplay(elem),
-                crate::xkb::utils::ByteSliceDisplay(elem),
-                crate::xkb::utils::ByteSliceDisplay(field),
+                elem,
+                elem,
+                field,
             );
             return (*(*info).keymap_info).strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
         }
-        if !field.eq_ignore_ascii_case(b"minimum") && !field.eq_ignore_ascii_case(b"maximum") {
+        if !field.eq_ignore_ascii_case("minimum") && !field.eq_ignore_ascii_case("maximum") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-                crate::xkb::utils::ByteSliceDisplay(field),
+                field,
             );
             return (*(*info).keymap_info).strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
         }
         if !arrayNdx.is_null() {
-            ReportNotArray((*info).ctx, b"keycodes", field, b"defaults");
+            ReportNotArray((*info).ctx, "keycodes", field, "defaults");
             return (*(*info).keymap_info).strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
         }
         let mut val: i64 = 0_i64;
@@ -874,10 +862,10 @@ unsafe fn HandleKeyNameVar(info: *mut KeyNamesInfo, stmt: *mut VarDef) -> bool {
             ReportBadType(
                 (*info).ctx,
                 XKB_ERROR_WRONG_FIELD_TYPE,
-                b"keycodes",
+                "keycodes",
                 field,
-                b"defaults",
-                b"integer 0..0xfffffffe",
+                "defaults",
+                "integer 0..0xfffffffe",
             );
             return (*(*info).keymap_info).strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
         }
@@ -910,10 +898,10 @@ unsafe fn HandleLedNameDef(info: *mut KeyNamesInfo, def: *mut LedNameDef, report
             return ReportBadType(
                 (*info).ctx,
                 XKB_ERROR_WRONG_FIELD_TYPE,
-                b"indicator",
-                b"name",
-                &buf[..buf_len],
-                b"string",
+                "indicator",
+                "name",
+                std::str::from_utf8_unchecked(&buf[..buf_len]),
+                "string",
             );
         }
         let mut ledi: LedNameInfo = LedNameInfo {

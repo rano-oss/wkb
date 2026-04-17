@@ -40,17 +40,17 @@ pub fn atom_table_size(table: &atom_table) -> u32 {
     table.strings.len() as u32
 }
 
-/// Get text for an atom as a byte slice.
+/// Get text for an atom as a string slice.
 ///
-/// Returns `b""` for `XKB_ATOM_NONE` or invalid atoms.
+/// Returns `""` for `XKB_ATOM_NONE` or invalid atoms.
 /// The returned slice is valid as long as the atom table is alive.
-pub fn atom_text_bytes(table: &atom_table, atom: u32) -> &[u8] {
+pub fn atom_text(table: &atom_table, atom: u32) -> &str {
     if (atom as usize) >= table.strings.len() {
-        return b"";
+        return "";
     }
     match &table.strings[atom as usize] {
-        Some(s) => s.as_bytes(),
-        None => b"",
+        Some(s) => s.as_str(),
+        None => "",
     }
 }
 
@@ -154,7 +154,7 @@ mod tests {
         assert_eq!(atom_table_size(&table), 3);
 
         // Get text back
-        assert_eq!(atom_text_bytes(&table, atom1), b"hello");
+        assert_eq!(atom_text(&table, atom1), "hello");
     }
 
     #[test]
