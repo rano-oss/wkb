@@ -67,7 +67,7 @@ pub use crate::xkb::shared_ast_types::{
     STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
     STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
 };
-pub use crate::xkb::utf8_decoding::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
+pub use crate::xkb::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
 use crate::xkb::utils::cstr_len;
 use crate::xkb::utils::{isempty, strdup_safe};
 pub use crate::xkb::xkbcomp::include::{
@@ -267,8 +267,10 @@ pub unsafe fn ExprKeySymListAppendString(
                 break;
             }
             let mut count: usize = 0_usize;
-            let cp: u32 =
-                utf8_next_code_point(string.add(idx), len.wrapping_sub(idx), &raw mut count);
+            let bytes =
+                std::slice::from_raw_parts(string.add(idx) as *const u8, len.wrapping_sub(idx));
+            let (cp, cp_len) = utf8_next_code_point_safe(bytes);
+            count = cp_len;
             if cp == INVALID_UTF8_CODE_POINT {
                 let loc: scanner_loc = (*scanner).token_location();
                 xkb_logf!(
@@ -338,7 +340,9 @@ pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32
             return XKB_KEY_NoSymbol as u32;
         }
         let mut count: usize = 0_usize;
-        let cp: u32 = utf8_next_code_point(string, len, &raw mut count);
+        let bytes = std::slice::from_raw_parts(string as *const u8, len);
+        let (cp, cp_len) = utf8_next_code_point_safe(bytes);
+        count = cp_len;
         if cp == INVALID_UTF8_CODE_POINT {
             let loc_0: scanner_loc = (*scanner).token_location();
             xkb_logf!(

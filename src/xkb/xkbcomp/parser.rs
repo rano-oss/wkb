@@ -2125,91 +2125,47 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                         c2rust_current_block = 9699707990742192723;
                     }
                     130 => {
-                        yyval.atom = xkb_atom_intern(
-                            (*param).ctx,
-                            b"action\0".as_ptr() as *const i8,
-                            (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1_usize),
-                        );
+                        yyval.atom = xkb_atom_intern((*param).ctx, b"action");
                         c2rust_current_block = 9699707990742192723;
                     }
                     131 => {
-                        yyval.atom = xkb_atom_intern(
-                            (*param).ctx,
-                            b"interpret\0".as_ptr() as *const i8,
-                            (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1_usize),
-                        );
+                        yyval.atom = xkb_atom_intern((*param).ctx, b"interpret");
                         c2rust_current_block = 9699707990742192723;
                     }
                     132 => {
-                        yyval.atom = xkb_atom_intern(
-                            (*param).ctx,
-                            b"type\0".as_ptr() as *const i8,
-                            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1_usize),
-                        );
+                        yyval.atom = xkb_atom_intern((*param).ctx, b"type");
                         c2rust_current_block = 9699707990742192723;
                     }
                     133 => {
-                        yyval.atom = xkb_atom_intern(
-                            (*param).ctx,
-                            b"key\0".as_ptr() as *const i8,
-                            (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1_usize),
-                        );
+                        yyval.atom = xkb_atom_intern((*param).ctx, b"key");
                         c2rust_current_block = 9699707990742192723;
                     }
                     134 => {
-                        yyval.atom = xkb_atom_intern(
-                            (*param).ctx,
-                            b"group\0".as_ptr() as *const i8,
-                            (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1_usize),
-                        );
+                        yyval.atom = xkb_atom_intern((*param).ctx, b"group");
                         c2rust_current_block = 9699707990742192723;
                     }
                     135 => {
-                        yyval.atom = xkb_atom_intern(
-                            (*param).ctx,
-                            b"modifier_map\0".as_ptr() as *const i8,
-                            (std::mem::size_of::<[i8; 13]>()).wrapping_sub(1_usize),
-                        );
+                        yyval.atom = xkb_atom_intern((*param).ctx, b"modifier_map");
                         c2rust_current_block = 9699707990742192723;
                     }
                     136 => {
-                        yyval.atom = xkb_atom_intern(
-                            (*param).ctx,
-                            b"indicator\0".as_ptr() as *const i8,
-                            (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1_usize),
-                        );
+                        yyval.atom = xkb_atom_intern((*param).ctx, b"indicator");
                         c2rust_current_block = 9699707990742192723;
                     }
                     137 => {
-                        yyval.atom = xkb_atom_intern(
-                            (*param).ctx,
-                            b"shape\0".as_ptr() as *const i8,
-                            (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1_usize),
-                        );
+                        yyval.atom = xkb_atom_intern((*param).ctx, b"shape");
                         c2rust_current_block = 9699707990742192723;
                     }
                     138 => {
-                        yyval.atom = xkb_atom_intern(
-                            (*param).ctx,
-                            b"row\0".as_ptr() as *const i8,
-                            (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1_usize),
-                        );
+                        yyval.atom = xkb_atom_intern((*param).ctx, b"row");
                         c2rust_current_block = 9699707990742192723;
                     }
                     139 => {
-                        yyval.atom = xkb_atom_intern(
-                            (*param).ctx,
-                            b"section\0".as_ptr() as *const i8,
-                            (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1_usize),
-                        );
+                        yyval.atom = xkb_atom_intern((*param).ctx, b"section");
                         c2rust_current_block = 9699707990742192723;
                     }
                     140 => {
-                        yyval.atom = xkb_atom_intern(
-                            (*param).ctx,
-                            b"text\0".as_ptr() as *const i8,
-                            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1_usize),
-                        );
+                        yyval.atom = xkb_atom_intern((*param).ctx, b"text");
                         c2rust_current_block = 9699707990742192723;
                     }
                     141 => {
@@ -2764,24 +2720,21 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     214 => {
                         yyval.atom = xkb_atom_intern(
                             (*param).ctx,
-                            (*yyvsp.offset(0_i32 as isize)).sval.start,
-                            (*yyvsp.offset(0_i32 as isize)).sval.len,
+                            (*yyvsp.offset(0_i32 as isize)).sval.as_bytes(),
                         );
                         c2rust_current_block = 9699707990742192723;
                     }
                     215 => {
-                        yyval.atom = xkb_atom_intern(
-                            (*param).ctx,
-                            b"default\0".as_ptr() as *const i8,
-                            (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1_usize),
-                        );
+                        yyval.atom = xkb_atom_intern((*param).ctx, b"default");
                         c2rust_current_block = 9699707990742192723;
                     }
                     216 => {
                         yyval.atom = xkb_atom_intern(
                             (*param).ctx,
-                            (*yyvsp.offset(0_i32 as isize)).str,
-                            cstr_len((*yyvsp.offset(0_i32 as isize)).str),
+                            std::slice::from_raw_parts(
+                                (*yyvsp.offset(0_i32 as isize)).str as *const u8,
+                                cstr_len((*yyvsp.offset(0_i32 as isize)).str),
+                            ),
                         );
                         free((*yyvsp.offset(0_i32 as isize)).str as *mut ::core::ffi::c_void);
                         c2rust_current_block = 9699707990742192723;

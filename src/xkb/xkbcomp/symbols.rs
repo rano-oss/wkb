@@ -184,11 +184,7 @@ unsafe fn InitKeyInfo(ctx: *mut xkb_context, keyi: *mut KeyInfo) {
         std::ptr::write(
             keyi,
             KeyInfo {
-                name: xkb_atom_intern(
-                    ctx,
-                    b"*\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 2]>()).wrapping_sub(1_usize),
-                ),
+                name: xkb_atom_intern(ctx, b"*"),
                 vmodmap: 0,
                 default_type: 0,
                 out_of_range_group_number: 0,
@@ -2352,11 +2348,7 @@ unsafe fn FindAutomaticType(ctx: *mut xkb_context, groupi: *mut GroupInfo) -> u3
     unsafe {
         let width: u32 = (*groupi).levels.len() as u32;
         if width == 1_u32 || width <= 0_u32 {
-            return xkb_atom_intern(
-                ctx,
-                b"ONE_LEVEL\0".as_ptr() as *const i8,
-                (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1_usize),
-            );
+            return xkb_atom_intern(ctx, b"ONE_LEVEL");
         }
         let sym0: u32 = if (&(*groupi).levels)[0].syms.is_empty() {
             XKB_KEY_NoSymbol as u32
@@ -2372,24 +2364,12 @@ unsafe fn FindAutomaticType(ctx: *mut xkb_context, groupi: *mut GroupInfo) -> u3
             if xkb_keysym_is_lower(sym0) as i32 != 0
                 && xkb_keysym_is_upper_or_title(sym1) as i32 != 0
             {
-                return xkb_atom_intern(
-                    ctx,
-                    b"ALPHABETIC\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 11]>()).wrapping_sub(1_usize),
-                );
+                return xkb_atom_intern(ctx, b"ALPHABETIC");
             }
             if xkb_keysym_is_keypad(sym0) as i32 != 0 || xkb_keysym_is_keypad(sym1) as i32 != 0 {
-                return xkb_atom_intern(
-                    ctx,
-                    b"KEYPAD\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1_usize),
-                );
+                return xkb_atom_intern(ctx, b"KEYPAD");
             }
-            return xkb_atom_intern(
-                ctx,
-                b"TWO_LEVEL\0".as_ptr() as *const i8,
-                (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1_usize),
-            );
+            return xkb_atom_intern(ctx, b"TWO_LEVEL");
         }
         if width <= 4_u32 {
             if xkb_keysym_is_lower(sym0) as i32 != 0
@@ -2412,30 +2392,14 @@ unsafe fn FindAutomaticType(ctx: *mut xkb_context, groupi: *mut GroupInfo) -> u3
                 if xkb_keysym_is_lower(sym2) as i32 != 0
                     && xkb_keysym_is_upper_or_title(sym3) as i32 != 0
                 {
-                    return xkb_atom_intern(
-                        ctx,
-                        b"FOUR_LEVEL_ALPHABETIC\0".as_ptr() as *const i8,
-                        (std::mem::size_of::<[i8; 22]>()).wrapping_sub(1_usize),
-                    );
+                    return xkb_atom_intern(ctx, b"FOUR_LEVEL_ALPHABETIC");
                 }
-                return xkb_atom_intern(
-                    ctx,
-                    b"FOUR_LEVEL_SEMIALPHABETIC\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 26]>()).wrapping_sub(1_usize),
-                );
+                return xkb_atom_intern(ctx, b"FOUR_LEVEL_SEMIALPHABETIC");
             }
             if xkb_keysym_is_keypad(sym0) as i32 != 0 || xkb_keysym_is_keypad(sym1) as i32 != 0 {
-                return xkb_atom_intern(
-                    ctx,
-                    b"FOUR_LEVEL_KEYPAD\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 18]>()).wrapping_sub(1_usize),
-                );
+                return xkb_atom_intern(ctx, b"FOUR_LEVEL_KEYPAD");
             }
-            return xkb_atom_intern(
-                ctx,
-                b"FOUR_LEVEL\0".as_ptr() as *const i8,
-                (std::mem::size_of::<[i8; 11]>()).wrapping_sub(1_usize),
-            );
+            return xkb_atom_intern(ctx, b"FOUR_LEVEL");
         }
         XKB_ATOM_NONE
     }

@@ -477,10 +477,18 @@ pub unsafe fn xkb_context_failed_include_path_get(ctx: *mut xkb_context, idx: u3
 }
 
 pub unsafe fn xkb_atom_lookup(ctx: *mut xkb_context, string: *const i8) -> u32 {
-    unsafe { atom_intern(&mut (*ctx).atom_table, string, cstr_len(string), false) }
+    unsafe {
+        let bytes = std::slice::from_raw_parts(string as *const u8, cstr_len(string));
+        atom_intern(&mut (*ctx).atom_table, bytes, false)
+    }
 }
-pub unsafe fn xkb_atom_intern(ctx: *mut xkb_context, string: *const i8, len: usize) -> u32 {
-    unsafe { atom_intern(&mut (*ctx).atom_table, string, len, true) }
+pub fn xkb_atom_intern_bytes(ctx: &mut xkb_context, bytes: &[u8]) -> u32 {
+    atom_intern(&mut ctx.atom_table, bytes, true)
+}
+/// # Safety
+/// ctx must be valid.
+pub unsafe fn xkb_atom_intern(ctx: *mut xkb_context, bytes: &[u8]) -> u32 {
+    unsafe { atom_intern(&mut (*ctx).atom_table, bytes, true) }
 }
 pub unsafe fn xkb_atom_text(ctx: *mut xkb_context, atom: u32) -> *const i8 {
     unsafe { atom_text(&(*ctx).atom_table, atom) }

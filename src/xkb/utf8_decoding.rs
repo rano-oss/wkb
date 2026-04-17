@@ -37,22 +37,6 @@ pub fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
     (cp, len)
 }
 
-/// FFI wrapper for raw pointer callers
-pub unsafe fn utf8_next_code_point(s: *const i8, max_size: usize, size_out: *mut usize) -> u32 {
-    if s.is_null() || size_out.is_null() || max_size == 0 {
-        if !size_out.is_null() {
-            unsafe { *size_out = 0 }
-        }
-        return INVALID_UTF8_CODE_POINT;
-    }
-    unsafe {
-        let bytes = std::slice::from_raw_parts(s as *const u8, max_size);
-        let (cp, len) = utf8_next_code_point_safe(bytes);
-        *size_out = len;
-        cp
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -85,16 +69,5 @@ mod tests {
             (INVALID_UTF8_CODE_POINT, 0)
         );
         assert_eq!(utf8_next_code_point_safe(&[]), (INVALID_UTF8_CODE_POINT, 0));
-    }
-
-    #[test]
-    fn test_ffi_wrapper() {
-        unsafe {
-            let mut size_out = 0;
-            let cp = utf8_next_code_point(b"A\0".as_ptr() as *const i8, 1, &mut size_out);
-            assert_eq!((cp, size_out), (b'A' as u32, 1));
-            let cp = utf8_next_code_point(std::ptr::null(), 1, &mut size_out);
-            assert_eq!(cp, INVALID_UTF8_CODE_POINT);
-        }
     }
 }

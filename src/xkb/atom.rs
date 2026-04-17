@@ -73,80 +73,75 @@ pub fn atom_text_bytes(table: &atom_table, atom: u32) -> &[u8] {
 ///
 /// If `add` is true, adds string to table if not found.
 /// Returns atom ID or XKB_ATOM_NONE if not found and add=false.
-pub unsafe fn atom_intern(table: &mut atom_table, string: *const i8, len: usize, add: bool) -> u32 {
-    unsafe {
-        // Convert input C string to a byte slice (not including null terminator)
-        let input_bytes = std::slice::from_raw_parts(string as *const u8, len);
+pub fn atom_intern(table: &mut atom_table, input_bytes: &[u8], add: bool) -> u32 {
+    let t = table;
 
-        let t = table;
+    // Resize hash table if load factor > 0.8
+    if t.strings.len() > t.index.len() * 4 / 5 {
+        let new_size = t.index.len() * 2;
+        t.index = vec![0; new_size];
 
-        // Resize hash table if load factor > 0.8
-        if t.strings.len() > t.index.len() * 4 / 5 {
-            let new_size = t.index.len() * 2;
-            t.index = vec![0; new_size];
+        // Rehash all strings (skip index 0)
+        for j in 1..t.strings.len() {
+            if let Some(ref s) = t.strings[j] {
+                let s_bytes = s.as_bytes(); // does not include null terminator
+                let hash = hash_buf(s_bytes);
 
-            // Rehash all strings (skip index 0)
-            for j in 1..t.strings.len() {
-                if let Some(ref s) = t.strings[j] {
-                    let s_bytes = s.as_bytes(); // does not include null terminator
-                    let hash = hash_buf(s_bytes);
-
-                    for i in 0..t.index.len() {
-                        let index_pos = ((hash as usize) + i) & (t.index.len() - 1);
-                        if index_pos == 0 {
-                            continue;
-                        }
-                        if t.index[index_pos] == XKB_ATOM_NONE {
-                            t.index[index_pos] = j as u32;
-                            break;
-                        }
+                for i in 0..t.index.len() {
+                    let index_pos = ((hash as usize) + i) & (t.index.len() - 1);
+                    if index_pos == 0 {
+                        continue;
+                    }
+                    if t.index[index_pos] == XKB_ATOM_NONE {
+                        t.index[index_pos] = j as u32;
+                        break;
                     }
                 }
             }
         }
+    }
 
-        // Look up or insert string
-        let hash = hash_buf(input_bytes);
+    // Look up or insert string
+    let hash = hash_buf(input_bytes);
 
-        for i in 0..t.index.len() {
-            let index_pos = ((hash as usize) + i) & (t.index.len() - 1);
-            if index_pos == 0 {
-                continue;
-            }
+    for i in 0..t.index.len() {
+        let index_pos = ((hash as usize) + i) & (t.index.len() - 1);
+        if index_pos == 0 {
+            continue;
+        }
 
-            let existing_atom = t.index[index_pos];
+        let existing_atom = t.index[index_pos];
 
-            // Empty slot - not found
-            if existing_atom == XKB_ATOM_NONE {
-                if add {
-                    let new_atom = t.strings.len() as u32;
+        // Empty slot - not found
+        if existing_atom == XKB_ATOM_NONE {
+            if add {
+                let new_atom = t.strings.len() as u32;
 
-                    // Create CString from bytes
-                    let new_string =
-                        CString::new(input_bytes.to_vec()).expect("string contains interior null");
-                    t.strings.push(Some(new_string));
+                // Create CString from bytes
+                let new_string =
+                    CString::new(input_bytes.to_vec()).expect("string contains interior null");
+                t.strings.push(Some(new_string));
 
-                    // Update hash table
-                    t.index[index_pos] = new_atom;
+                // Update hash table
+                t.index[index_pos] = new_atom;
 
-                    return new_atom;
-                } else {
-                    return XKB_ATOM_NONE;
-                }
-            }
-
-            // Check if existing string matches
-            if let Some(ref existing_cstr) = t.strings[existing_atom as usize] {
-                let existing_bytes = existing_cstr.as_bytes();
-                if existing_bytes == input_bytes {
-                    return existing_atom;
-                }
+                return new_atom;
+            } else {
+                return XKB_ATOM_NONE;
             }
         }
 
-        // Should never reach here - hash table is kept sparse enough
-        panic!("couldn't find an empty slot during probing");
+        // Check if existing string matches
+        if let Some(ref existing_cstr) = t.strings[existing_atom as usize] {
+            let existing_bytes = existing_cstr.as_bytes();
+            if existing_bytes == input_bytes {
+                return existing_atom;
+            }
+        }
     }
+
+    // Should never reach here - hash table is kept sparse enough
+    panic!("couldn't find an empty slot during probing");
 }
 
 #[cfg(test)]
@@ -155,44 +150,36 @@ mod tests {
 
     #[test]
     fn test_atom_table_basic() {
-        unsafe {
-            let mut table = atom_table_new();
+        let mut table = atom_table_new();
 
-            // Initially should have 1 atom (NONE at index 0)
-            assert_eq!(atom_table_size(&table), 1);
+        // Initially should have 1 atom (NONE at index 0)
+        assert_eq!(atom_table_size(&table), 1);
 
-            // Intern a string
-            let s1 = b"hello\0".as_ptr() as *const i8;
-            let atom1 = atom_intern(&mut table, s1, 5, true);
-            assert_ne!(atom1, XKB_ATOM_NONE as u32);
-            assert_eq!(atom_table_size(&table), 2);
+        // Intern a string
+        let atom1 = atom_intern(&mut table, b"hello", true);
+        assert_ne!(atom1, XKB_ATOM_NONE as u32);
+        assert_eq!(atom_table_size(&table), 2);
 
-            // Look up same string again
-            let atom2 = atom_intern(&mut table, s1, 5, false);
-            assert_eq!(atom1, atom2);
-            assert_eq!(atom_table_size(&table), 2); // No new atom
+        // Look up same string again
+        let atom2 = atom_intern(&mut table, b"hello", false);
+        assert_eq!(atom1, atom2);
+        assert_eq!(atom_table_size(&table), 2); // No new atom
 
-            // Intern different string
-            let s2 = b"world\0".as_ptr() as *const i8;
-            let atom3 = atom_intern(&mut table, s2, 5, true);
-            assert_ne!(atom3, atom1);
-            assert_eq!(atom_table_size(&table), 3);
+        // Intern different string
+        let atom3 = atom_intern(&mut table, b"world", true);
+        assert_ne!(atom3, atom1);
+        assert_eq!(atom_table_size(&table), 3);
 
-            // Get text back
-            let text1 = atom_text(&table, atom1);
-            assert_eq!(std::ffi::CStr::from_ptr(text1).to_str().unwrap(), "hello");
-        }
+        // Get text back
+        let text1 = atom_text(&table, atom1);
+        unsafe { assert_eq!(std::ffi::CStr::from_ptr(text1).to_str().unwrap(), "hello") };
     }
 
     #[test]
     fn test_atom_not_found() {
-        unsafe {
-            let mut table = atom_table_new();
-
-            let s = b"test\0".as_ptr() as *const i8;
-            let atom = atom_intern(&mut table, s, 4, false);
-            assert_eq!(atom, XKB_ATOM_NONE as u32);
-        }
+        let mut table = atom_table_new();
+        let atom = atom_intern(&mut table, b"test", false);
+        assert_eq!(atom, XKB_ATOM_NONE as u32);
     }
 }
 use crate::xkb::shared_types::*;

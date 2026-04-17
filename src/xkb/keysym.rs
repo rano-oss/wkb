@@ -21776,7 +21776,7 @@ pub mod keysym_names_h {
     ];
     pub static explicit_deprecated_aliases: [u32; 1] = [24103];
 }
-pub use crate::xkb::utf8_decoding::{utf8_next_code_point, INVALID_UTF8_CODE_POINT};
+pub use crate::xkb::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
 
 pub const XKB_KEYSYM_MAX_EXPLICIT: i32 = 0x1008ffb8;
 pub const XKB_KEYSYM_UNICODE_OFFSET: i32 = 0x1000000;

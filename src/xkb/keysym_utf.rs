@@ -167,7 +167,7 @@ fn codepoint_to_keysym(ucs: u32) -> Option<Keysym> {
 /// FFI wrapper: Convert keysym to UTF-32 codepoint (C-compatible)
 ///
 /// Returns 0 if conversion fails (matches old C behavior)
-pub unsafe fn xkb_keysym_to_utf32(keysym: u32) -> u32 {
+pub fn xkb_keysym_to_utf32(keysym: u32) -> u32 {
     keysym_to_codepoint(keysym).unwrap_or(0)
 }
 
@@ -210,7 +210,7 @@ pub unsafe fn xkb_keysym_to_utf8(keysym: u32, buffer: *mut i8, size: usize) -> i
 /// FFI wrapper: Convert UTF-32 codepoint to keysym (C-compatible)
 ///
 /// Returns 0 (XKB_KEY_NO_SYMBOL) if conversion fails
-pub unsafe fn xkb_utf32_to_keysym(ucs: u32) -> u32 {
+pub fn xkb_utf32_to_keysym(ucs: u32) -> u32 {
     codepoint_to_keysym(ucs).unwrap_or(0)
 }
 

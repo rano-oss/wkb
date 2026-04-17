@@ -974,11 +974,7 @@ unsafe fn CopyKeyTypesToKeymap(keymap: *mut xkb_keymap, info: *mut KeyTypesInfo)
         let mut types_vec: Vec<xkb_key_type> = Vec::with_capacity(num_types as usize);
         if (*info).types.is_empty() {
             let type_0 = xkb_key_type {
-                name: xkb_atom_intern(
-                    &raw mut (*keymap).ctx,
-                    b"ONE_LEVEL\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1_usize),
-                ),
+                name: xkb_atom_intern(&raw mut (*keymap).ctx, b"ONE_LEVEL"),
                 mods: xkb_mods { mods: 0, mask: 0 },
                 required: true,
                 num_levels: 1,
@@ -988,26 +984,10 @@ unsafe fn CopyKeyTypesToKeymap(keymap: *mut xkb_keymap, info: *mut KeyTypesInfo)
             types_vec.push(type_0);
         } else {
             let canonical_types: [u32; 4] = [
-                xkb_atom_intern(
-                    &raw mut (*keymap).ctx,
-                    b"ONE_LEVEL\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1_usize),
-                ),
-                xkb_atom_intern(
-                    &raw mut (*keymap).ctx,
-                    b"TWO_LEVEL\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 10]>()).wrapping_sub(1_usize),
-                ),
-                xkb_atom_intern(
-                    &raw mut (*keymap).ctx,
-                    b"ALPHABETIC\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 11]>()).wrapping_sub(1_usize),
-                ),
-                xkb_atom_intern(
-                    &raw mut (*keymap).ctx,
-                    b"KEYPAD\0".as_ptr() as *const i8,
-                    (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1_usize),
-                ),
+                xkb_atom_intern(&raw mut (*keymap).ctx, b"ONE_LEVEL"),
+                xkb_atom_intern(&raw mut (*keymap).ctx, b"TWO_LEVEL"),
+                xkb_atom_intern(&raw mut (*keymap).ctx, b"ALPHABETIC"),
+                xkb_atom_intern(&raw mut (*keymap).ctx, b"KEYPAD"),
             ];
             let mut i: u32 = 0_u32;
             while i < num_types {

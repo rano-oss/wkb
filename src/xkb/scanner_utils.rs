@@ -186,19 +186,21 @@ impl scanner {
 
     #[inline]
     pub fn buf_appends_code_point(&mut self, c: u32) -> bool {
-        if self.buf_pos + 5 <= self.buf.len() {
-            let mut count = crate::xkb::xkbcomp::scanner::utf8_h::utf32_to_utf8(c, unsafe {
-                (&raw mut self.buf as *mut i8).add(self.buf_pos)
-            });
+        if self.buf_pos + 4 <= self.buf.len() {
+            let mut count = crate::xkb::xkbcomp::scanner::utf8_h::utf32_to_utf8_safe(
+                c,
+                &mut self.buf[self.buf_pos..],
+            );
             if count == 0 {
-                count = crate::xkb::xkbcomp::scanner::utf8_h::utf32_to_utf8(0xfffd, unsafe {
-                    (&raw mut self.buf as *mut i8).add(self.buf_pos)
-                });
+                count = crate::xkb::xkbcomp::scanner::utf8_h::utf32_to_utf8_safe(
+                    0xfffd,
+                    &mut self.buf[self.buf_pos..],
+                );
             }
             if count == 0 {
                 return false;
             }
-            self.buf_pos += (count - 1) as usize;
+            self.buf_pos += count;
             true
         } else {
             false

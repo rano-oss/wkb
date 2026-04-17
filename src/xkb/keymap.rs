@@ -639,11 +639,8 @@ pub unsafe fn xkb_keymap_new(
         ];
         let mut i: u32 = 0_u32;
         while (i as usize) < BUILTIN_MODS.len() {
-            keymap.mods.mods[i as usize].name = xkb_atom_intern(
-                &raw mut keymap.ctx,
-                BUILTIN_MODS[i as usize].as_ptr() as *const i8,
-                BUILTIN_MODS[i as usize].len(),
-            );
+            keymap.mods.mods[i as usize].name =
+                xkb_atom_intern(&raw mut keymap.ctx, BUILTIN_MODS[i as usize].as_bytes());
             keymap.mods.mods[i as usize].type_0 = MOD_REAL;
             keymap.mods.mods[i as usize].mapping = 1_u32 << i;
             i = i.wrapping_add(1);

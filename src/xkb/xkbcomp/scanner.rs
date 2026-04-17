@@ -145,7 +145,18 @@ pub mod utf8_h {
 
     /// Native Rust UTF-32 to UTF-8 conversion (replaces C FFI)
     ///
-    /// Writes UTF-8 bytes to buffer (including null terminator).
+    /// Encode a Unicode code point to UTF-8 into the given buffer.
+    /// Returns the number of bytes written (NOT including null terminator), or 0 on failure.
+    #[inline]
+    pub fn utf32_to_utf8_safe(unichar: u32, buffer: &mut [u8]) -> usize {
+        let Some(ch) = char::from_u32(unichar) else {
+            return 0;
+        };
+        let encoded = ch.encode_utf8(&mut buffer[..]);
+        encoded.len()
+    }
+
+    /// Legacy FFI wrapper: Writes UTF-8 bytes to raw buffer (including null terminator).
     /// Returns total bytes written (including null), or 0 on failure.
     #[inline]
     pub fn utf32_to_utf8(unichar: u32, buffer: *mut i8) -> i32 {
@@ -452,7 +463,10 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
             }
             let start: *const i8 = (*s).s.add((*s).token_pos + 1);
             let len: usize = (*s).pos - (*s).token_pos - 2;
-            (*yylval).atom = xkb_atom_intern((*s).ctx, start, len);
+            (*yylval).atom = xkb_atom_intern(
+                (*s).ctx,
+                std::slice::from_raw_parts(start as *const u8, len),
+            );
             return KEYNAME;
         }
         if (*s).chr(b';' as i8) {
