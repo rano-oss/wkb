@@ -1,7 +1,7 @@
 use crate::xkb::messages::{XKB_ERROR_INVALID_PATH, XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH};
 use crate::xkb::utils::{
-    _steal, cstr_as_bytes, cstr_cmp, cstr_dup, cstr_free, cstr_len, istrneq, last_errno,
-    strdup_safe, streq, streq_null,
+    _steal, cstr_as_bytes, cstr_cmp, cstr_dup, cstr_free, cstr_len, last_errno, strdup_safe,
+    streq_null,
 };
 use libc::{free, getenv};
 
@@ -539,46 +539,36 @@ unsafe fn log_level(level: *const i8) -> rxkb_log_level {
                 return val as rxkb_log_level;
             }
         }
-        if istrneq(
-            b"crit",
-            cstr_as_bytes(level),
-            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1_usize),
-        ) {
+        if cstr_as_bytes(level)
+            .get(..4)
+            .is_some_and(|s| s.eq_ignore_ascii_case(b"crit"))
+        {
             return RXKB_LOG_LEVEL_CRITICAL;
         }
-        if istrneq(
-            b"err",
-            cstr_as_bytes(level),
-            (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1_usize),
-        ) {
+        if cstr_as_bytes(level)
+            .get(..3)
+            .is_some_and(|s| s.eq_ignore_ascii_case(b"err"))
+        {
             return RXKB_LOG_LEVEL_ERROR;
         }
-        if istrneq(
-            b"warn",
-            cstr_as_bytes(level),
-            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1_usize),
-        ) {
+        if cstr_as_bytes(level)
+            .get(..4)
+            .is_some_and(|s| s.eq_ignore_ascii_case(b"warn"))
+        {
             return RXKB_LOG_LEVEL_WARNING;
         }
-        if istrneq(
-            b"info",
-            cstr_as_bytes(level),
-            (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1_usize),
-        ) {
+        if cstr_as_bytes(level)
+            .get(..4)
+            .is_some_and(|s| s.eq_ignore_ascii_case(b"info"))
+        {
             return RXKB_LOG_LEVEL_INFO;
         }
-        if istrneq(
-            b"debug",
-            cstr_as_bytes(level),
-            (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1_usize),
-        ) as i32
-            != 0
-            || istrneq(
-                b"dbg",
-                cstr_as_bytes(level),
-                (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1_usize),
-            ) as i32
-                != 0
+        if cstr_as_bytes(level)
+            .get(..5)
+            .is_some_and(|s| s.eq_ignore_ascii_case(b"debug"))
+            || cstr_as_bytes(level)
+                .get(..3)
+                .is_some_and(|s| s.eq_ignore_ascii_case(b"dbg"))
         {
             return RXKB_LOG_LEVEL_DEBUG;
         }
@@ -1163,7 +1153,7 @@ unsafe fn parse_model(
         };
         if parse_config_item(ctx, doc, model, &raw mut config) {
             for &m in &(*ctx).models {
-                if streq(cstr_as_bytes((*m).name), cstr_as_bytes(config.name)) {
+                if cstr_as_bytes((*m).name) == cstr_as_bytes(config.name) {
                     config_item_free(&raw mut config);
                     return;
                 }
@@ -1243,7 +1233,7 @@ unsafe fn parse_variant(
             let mut exists: bool = false;
             for &v in &(*ctx).layouts {
                 if streq_null((*v).variant, config.name)
-                    && streq(cstr_as_bytes((*v).name), cstr_as_bytes((*l).name))
+                    && cstr_as_bytes((*v).name) == cstr_as_bytes((*l).name)
                 {
                     exists = true;
                     break;
@@ -1322,9 +1312,7 @@ unsafe fn parse_layout(
             return;
         }
         for &el in &(*ctx).layouts {
-            if streq(cstr_as_bytes((*el).name), cstr_as_bytes(config.name))
-                && (*el).variant.is_null()
-            {
+            if cstr_as_bytes((*el).name) == cstr_as_bytes(config.name) && (*el).variant.is_null() {
                 exists = true;
                 l = el;
                 break;
@@ -1384,7 +1372,7 @@ unsafe fn parse_option(
         };
         if parse_config_item(ctx, doc, option, &raw mut config) {
             for &o in &(*group).options {
-                if streq(cstr_as_bytes((*o).name), cstr_as_bytes(config.name)) {
+                if cstr_as_bytes((*o).name) == cstr_as_bytes(config.name) {
                     config_item_free(&raw mut config);
                     return;
                 }
@@ -1422,7 +1410,7 @@ unsafe fn parse_group(
             return;
         }
         for &el in &(*ctx).option_groups {
-            if streq(cstr_as_bytes((*el).name), cstr_as_bytes(config.name)) {
+            if cstr_as_bytes((*el).name) == cstr_as_bytes(config.name) {
                 exists = true;
                 g = el;
                 break;

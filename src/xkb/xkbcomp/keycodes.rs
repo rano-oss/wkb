@@ -851,7 +851,7 @@ unsafe fn HandleKeyNameVar(info: *mut KeyNamesInfo, stmt: *mut VarDef) -> bool {
             );
             return (*(*info).keymap_info).strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
         }
-        if !istreq(field, b"minimum") && !istreq(field, b"maximum") {
+        if !field.eq_ignore_ascii_case(b"minimum") && !field.eq_ignore_ascii_case(b"maximum") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,

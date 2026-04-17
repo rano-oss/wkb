@@ -2,8 +2,6 @@
 //!
 //! Fully safe internals. Functions are normal Rust — no FFI wrappers.
 
-use std::ffi::CString;
-
 /// Atom table - string interning system
 ///
 /// Fully safe Rust internals. No C allocations.
@@ -12,8 +10,7 @@ pub struct atom_table {
     /// Hash index for O(1) lookups (open addressing, linear probing)
     index: Vec<u32>,
     /// Interned strings. Index 0 is None (XKB_ATOM_NONE).
-    /// Stored as CString so `.as_ptr()` returns a valid `*const i8`.
-    strings: Vec<Option<CString>>,
+    strings: Vec<Option<String>>,
 }
 
 /// FNV-1a hash function for byte slices
@@ -43,19 +40,7 @@ pub fn atom_table_size(table: &atom_table) -> u32 {
     table.strings.len() as u32
 }
 
-/// Get text for an atom (returns pointer to interned string)
-pub fn atom_text(table: &atom_table, atom: u32) -> *const i8 {
-    assert!(
-        (atom as usize) < table.strings.len(),
-        "atom index out of bounds"
-    );
-    match &table.strings[atom as usize] {
-        Some(cstr) => cstr.as_ptr(),
-        None => std::ptr::null(),
-    }
-}
-
-/// Get text for an atom as a byte slice (safe alternative to atom_text)
+/// Get text for an atom as a byte slice.
 ///
 /// Returns `b""` for `XKB_ATOM_NONE` or invalid atoms.
 /// The returned slice is valid as long as the atom table is alive.
@@ -64,7 +49,7 @@ pub fn atom_text_bytes(table: &atom_table, atom: u32) -> &[u8] {
         return b"";
     }
     match &table.strings[atom as usize] {
-        Some(cstr) => cstr.as_bytes(),
+        Some(s) => s.as_bytes(),
         None => b"",
     }
 }
@@ -84,7 +69,7 @@ pub fn atom_intern(table: &mut atom_table, input_bytes: &[u8], add: bool) -> u32
         // Rehash all strings (skip index 0)
         for j in 1..t.strings.len() {
             if let Some(ref s) = t.strings[j] {
-                let s_bytes = s.as_bytes(); // does not include null terminator
+                let s_bytes = s.as_bytes();
                 let hash = hash_buf(s_bytes);
 
                 for i in 0..t.index.len() {
@@ -117,9 +102,8 @@ pub fn atom_intern(table: &mut atom_table, input_bytes: &[u8], add: bool) -> u32
             if add {
                 let new_atom = t.strings.len() as u32;
 
-                // Create CString from bytes
-                let new_string =
-                    CString::new(input_bytes.to_vec()).expect("string contains interior null");
+                let new_string = String::from_utf8(input_bytes.to_vec())
+                    .expect("atom string is not valid UTF-8");
                 t.strings.push(Some(new_string));
 
                 // Update hash table
@@ -132,9 +116,8 @@ pub fn atom_intern(table: &mut atom_table, input_bytes: &[u8], add: bool) -> u32
         }
 
         // Check if existing string matches
-        if let Some(ref existing_cstr) = t.strings[existing_atom as usize] {
-            let existing_bytes = existing_cstr.as_bytes();
-            if existing_bytes == input_bytes {
+        if let Some(ref existing) = t.strings[existing_atom as usize] {
+            if existing.as_bytes() == input_bytes {
                 return existing_atom;
             }
         }
@@ -171,8 +154,7 @@ mod tests {
         assert_eq!(atom_table_size(&table), 3);
 
         // Get text back
-        let text1 = atom_text(&table, atom1);
-        unsafe { assert_eq!(std::ffi::CStr::from_ptr(text1).to_str().unwrap(), "hello") };
+        assert_eq!(atom_text_bytes(&table, atom1), b"hello");
     }
 
     #[test]

@@ -414,7 +414,7 @@ unsafe fn ResolveStateAndPredicate(
         } else if (*expr).common.type_0 == STMT_EXPR_IDENT {
             let pred_txt_0: &[u8] =
                 xkb_atom_text_bytes(&(*(*info).ctx).atom_table, (*expr).ident.ident);
-            if !pred_txt_0.is_empty() && istreq(pred_txt_0, b"any") as i32 != 0 {
+            if !pred_txt_0.is_empty() && pred_txt_0.eq_ignore_ascii_case(b"any") {
                 *pred_rtrn = MATCH_ANY;
                 *mods_rtrn = MOD_REAL_MASK_ALL;
                 return true;
@@ -680,7 +680,7 @@ unsafe fn SetInterpField(
     value: *mut ExprDef,
 ) -> bool {
     unsafe {
-        if istreq(field, b"action") {
+        if field.eq_ignore_ascii_case(b"action") {
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
             }
@@ -770,8 +770,8 @@ unsafe fn SetInterpField(
                 }
             }
             (*si).defined = ((*si).defined | SI_FIELD_ACTION) as si_field;
-        } else if istreq(field, b"virtualmodifier") as i32 != 0
-            || istreq(field, b"virtualmod") as i32 != 0
+        } else if field.eq_ignore_ascii_case(b"virtualmodifier")
+            || field.eq_ignore_ascii_case(b"virtualmod")
         {
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
@@ -788,7 +788,7 @@ unsafe fn SetInterpField(
             }
             (*si).interp.virtual_mod = ndx;
             (*si).defined = ((*si).defined | SI_FIELD_VIRTUAL_MOD) as si_field;
-        } else if istreq(field, b"repeat") {
+        } else if field.eq_ignore_ascii_case(b"repeat") {
             let mut set: bool = false;
             if !arrayNdx.is_null() {
                 return ReportSINotArray(info, si, field);
@@ -798,15 +798,15 @@ unsafe fn SetInterpField(
             }
             (*si).interp.repeat = set;
             (*si).defined = ((*si).defined | SI_FIELD_AUTO_REPEAT) as si_field;
-        } else if istreq(field, b"locking") {
+        } else if field.eq_ignore_ascii_case(b"locking") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "The \"locking\" field in symbol interpretation is unsupported; Ignored\n",
             );
-        } else if istreq(field, b"usemodmap") as i32 != 0
-            || istreq(field, b"usemodmapmods") as i32 != 0
+        } else if field.eq_ignore_ascii_case(b"usemodmap")
+            || field.eq_ignore_ascii_case(b"usemodmapmods")
         {
             let mut val: u32 = 0_u32;
             if !arrayNdx.is_null() {
@@ -843,7 +843,7 @@ unsafe fn SetLedMapField(
 ) -> bool {
     unsafe {
         let value: *mut ExprDef = *value_ptr;
-        if istreq(field, b"modifiers") as i32 != 0 || istreq(field, b"mods") as i32 != 0 {
+        if field.eq_ignore_ascii_case(b"modifiers") || field.eq_ignore_ascii_case(b"mods") {
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
             }
@@ -857,7 +857,7 @@ unsafe fn SetLedMapField(
                 return ReportLedBadType(info, ledi, field, b"modifier mask");
             }
             (*ledi).defined = ((*ledi).defined | LED_FIELD_MODS) as led_field;
-        } else if istreq(field, b"groups") {
+        } else if field.eq_ignore_ascii_case(b"groups") {
             let mut mask: u32 = 0_u32;
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
@@ -883,7 +883,7 @@ unsafe fn SetLedMapField(
             }
             (*ledi).led.groups = mask;
             (*ledi).defined = ((*ledi).defined | LED_FIELD_GROUPS) as led_field;
-        } else if istreq(field, b"controls") as i32 != 0 || istreq(field, b"ctrls") as i32 != 0 {
+        } else if field.eq_ignore_ascii_case(b"controls") || field.eq_ignore_ascii_case(b"ctrls") {
             let mut mask_0: u32 = 0_u32;
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
@@ -899,15 +899,15 @@ unsafe fn SetLedMapField(
             }
             (*ledi).led.ctrls = mask_0 as xkb_action_controls;
             (*ledi).defined = ((*ledi).defined | LED_FIELD_CTRLS) as led_field;
-        } else if istreq(field, b"allowexplicit") {
+        } else if field.eq_ignore_ascii_case(b"allowexplicit") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_DEBUG,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "The \"allowExplicit\" field in indicator statements is unsupported; Ignored\n",
             );
-        } else if istreq(field, b"whichmodstate") as i32 != 0
-            || istreq(field, b"whichmodifierstate") as i32 != 0
+        } else if field.eq_ignore_ascii_case(b"whichmodstate")
+            || field.eq_ignore_ascii_case(b"whichmodifierstate")
         {
             let mut mask_1: u32 = 0_u32;
             if !arrayNdx.is_null() {
@@ -922,7 +922,7 @@ unsafe fn SetLedMapField(
                 return ReportLedBadType(info, ledi, field, b"mask of modifier state components");
             }
             (*ledi).led.which_mods = mask_1;
-        } else if istreq(field, b"whichgroupstate") {
+        } else if field.eq_ignore_ascii_case(b"whichgroupstate") {
             let mut mask_2: u32 = 0_u32;
             if !arrayNdx.is_null() {
                 return ReportLedNotArray(info, ledi, field);
@@ -936,12 +936,12 @@ unsafe fn SetLedMapField(
                 return ReportLedBadType(info, ledi, field, b"mask of group state components");
             }
             (*ledi).led.which_groups = mask_2;
-        } else if istreq(field, b"driveskbd") as i32 != 0
-            || istreq(field, b"driveskeyboard") as i32 != 0
-            || istreq(field, b"leddriveskbd") as i32 != 0
-            || istreq(field, b"leddriveskeyboard") as i32 != 0
-            || istreq(field, b"indicatordriveskbd") as i32 != 0
-            || istreq(field, b"indicatordriveskeyboard") as i32 != 0
+        } else if field.eq_ignore_ascii_case(b"driveskbd")
+            || field.eq_ignore_ascii_case(b"driveskeyboard")
+            || field.eq_ignore_ascii_case(b"leddriveskbd")
+            || field.eq_ignore_ascii_case(b"leddriveskeyboard")
+            || field.eq_ignore_ascii_case(b"indicatordriveskbd")
+            || field.eq_ignore_ascii_case(b"indicatordriveskeyboard")
         {
             xkb_logf!(
                 (*info).ctx,
@@ -950,7 +950,7 @@ unsafe fn SetLedMapField(
                 "The \"{}\" field in indicator statements is unsupported; Ignored\n",
                 crate::xkb::utils::ByteSliceDisplay(field),
             );
-        } else if istreq(field, b"index") {
+        } else if field.eq_ignore_ascii_case(b"index") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -985,7 +985,7 @@ unsafe fn HandleGlobalVar(info: *mut CompatInfo, stmt: *mut VarDef) -> bool {
             &raw mut ndx,
         ) {
             ret = false;
-        } else if !elem.is_empty() && istreq(elem, b"interpret") as i32 != 0 {
+        } else if !elem.is_empty() && elem.eq_ignore_ascii_case(b"interpret") {
             let mut temp: SymInterpInfo = SymInterpInfo {
                 defined: 0 as si_field,
                 merge: MERGE_DEFAULT,
@@ -1020,7 +1020,7 @@ unsafe fn HandleGlobalVar(info: *mut CompatInfo, stmt: *mut VarDef) -> bool {
             if ret {
                 MergeInterp(info, &raw mut (*info).default_interp, &raw mut temp, true);
             }
-        } else if !elem.is_empty() && istreq(elem, b"indicator") as i32 != 0 {
+        } else if !elem.is_empty() && elem.eq_ignore_ascii_case(b"indicator") {
             let mut temp_0: LedInfo = LedInfo {
                 defined: 0 as led_field,
                 merge: MERGE_DEFAULT,

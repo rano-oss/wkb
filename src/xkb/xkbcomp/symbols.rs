@@ -9,7 +9,7 @@ pub use crate::xkb::shared_types::{
 };
 use crate::xkb::text::ModIndexText;
 use crate::xkb::utils::cstr_free;
-use crate::xkb::utils::istrneq;
+
 pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };
@@ -1445,10 +1445,10 @@ unsafe fn ExprResolveOverlayEntry(
                     &(*(*keymap_info).keymap).ctx.atom_table,
                     (*expr).ident.ident,
                 );
-                if !id.is_empty() && istreq(id, b"none") {
+                if !id.is_empty() && id.eq_ignore_ascii_case(b"none") {
                     *key_rtrn = XKB_KEYCODE_INVALID;
                     return true;
-                } else if !id.is_empty() && istreq(id, b"any") {
+                } else if !id.is_empty() && id.eq_ignore_ascii_case(b"any") {
                     *key_rtrn = XKB_KEYCODE_INVALID;
                     *overlay_rtrn = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
                     return true;
@@ -1497,7 +1497,7 @@ unsafe fn SetSymbolsField(
 ) -> bool {
     unsafe {
         let value: *mut ExprDef = *value_ptr;
-        if istreq(field, b"type") {
+        if field.eq_ignore_ascii_case(b"type") {
             let mut ndx: u32 = 0_u32;
             let mut val: u32 = XKB_ATOM_NONE;
             if !ExprResolveString((*info).ctx, value, &raw mut val) {
@@ -1540,13 +1540,13 @@ unsafe fn SetSymbolsField(
                 let c2rust_fresh8 = &mut (&mut (*keyi).groups)[ndx as usize].defined;
                 *c2rust_fresh8 = (*c2rust_fresh8 | GROUP_FIELD_TYPE) as group_field;
             }
-        } else if istreq(field, b"symbols") {
+        } else if field.eq_ignore_ascii_case(b"symbols") {
             return AddSymbolsToKey(info, keyi, arrayNdx, value);
-        } else if istreq(field, b"actions") {
+        } else if field.eq_ignore_ascii_case(b"actions") {
             return AddActionsToKey(info, keyi, arrayNdx, value);
-        } else if istreq(field, b"vmods")
-            || istreq(field, b"virtualmods")
-            || istreq(field, b"virtualmodifiers")
+        } else if field.eq_ignore_ascii_case(b"vmods")
+            || field.eq_ignore_ascii_case(b"virtualmods")
+            || field.eq_ignore_ascii_case(b"virtualmodifiers")
         {
             let mut mask: u32 = 0_u32;
             if !ExprResolveModMask(
@@ -1569,7 +1569,10 @@ unsafe fn SetSymbolsField(
             }
             (*keyi).vmodmap = mask;
             (*keyi).defined |= KEY_FIELD_VMODMAP as i32 as key_field;
-        } else if istreq(field, b"locking") || istreq(field, b"lock") || istreq(field, b"locks") {
+        } else if field.eq_ignore_ascii_case(b"locking")
+            || field.eq_ignore_ascii_case(b"lock")
+            || field.eq_ignore_ascii_case(b"locks")
+        {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
@@ -1578,9 +1581,9 @@ unsafe fn SetSymbolsField(
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
                 crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
             );
-        } else if istreq(field, b"radiogroup")
-            || istreq(field, b"permanentradiogroup")
-            || istreq(field, b"allownone")
+        } else if field.eq_ignore_ascii_case(b"radiogroup")
+            || field.eq_ignore_ascii_case(b"permanentradiogroup")
+            || field.eq_ignore_ascii_case(b"allownone")
         {
             xkb_logf!(
                 (*info).ctx,
@@ -1590,11 +1593,10 @@ unsafe fn SetSymbolsField(
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
                 crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
             );
-        } else if istrneq(
-            b"permanentoverlay",
-            field,
-            (std::mem::size_of::<[i8; 17]>()).wrapping_sub(1_usize),
-        ) {
+        } else if field
+            .get(..16)
+            .is_some_and(|s| s.eq_ignore_ascii_case(b"permanentoverlay"))
+        {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_WARNING,
@@ -1603,11 +1605,10 @@ unsafe fn SetSymbolsField(
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
                 crate::xkb::utils::ByteSliceDisplay(KeyInfoText(info, keyi)),
             );
-        } else if istrneq(
-            b"overlay",
-            field,
-            (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1_usize),
-        ) {
+        } else if field
+            .get(..7)
+            .is_some_and(|s| s.eq_ignore_ascii_case(b"overlay"))
+        {
             let mut overlay: xkb_overlay_index_t = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
             let mut key: u32 = XKB_KEYCODE_INVALID;
             if !ExprResolveOverlayEntry(
@@ -1707,9 +1708,9 @@ unsafe fn SetSymbolsField(
                     }
                 }
             }
-        } else if istreq(field, b"repeating")
-            || istreq(field, b"repeats")
-            || istreq(field, b"repeat")
+        } else if field.eq_ignore_ascii_case(b"repeating")
+            || field.eq_ignore_ascii_case(b"repeats")
+            || field.eq_ignore_ascii_case(b"repeat")
         {
             let mut val_0: u32 = 0_u32;
             if !ExprResolveEnum(
@@ -1730,7 +1731,9 @@ unsafe fn SetSymbolsField(
             }
             (*keyi).repeat = val_0 as key_repeat as key_repeat;
             (*keyi).defined |= KEY_FIELD_REPEAT as i32 as key_field;
-        } else if istreq(field, b"groupswrap") || istreq(field, b"wrapgroups") {
+        } else if field.eq_ignore_ascii_case(b"groupswrap")
+            || field.eq_ignore_ascii_case(b"wrapgroups")
+        {
             let mut set: bool = false;
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set) {
                 xkb_logf!(
@@ -1749,7 +1752,9 @@ unsafe fn SetSymbolsField(
                 XKB_LAYOUT_OUT_OF_RANGE_CLAMP
             };
             (*keyi).defined |= KEY_FIELD_GROUPINFO as i32 as key_field;
-        } else if istreq(field, b"groupsclamp") || istreq(field, b"clampgroups") {
+        } else if field.eq_ignore_ascii_case(b"groupsclamp")
+            || field.eq_ignore_ascii_case(b"clampgroups")
+        {
             let mut set_0: bool = false;
             if !ExprResolveBoolean((*info).ctx, value, &raw mut set_0) {
                 xkb_logf!(
@@ -1768,7 +1773,9 @@ unsafe fn SetSymbolsField(
                 XKB_LAYOUT_OUT_OF_RANGE_WRAP
             };
             (*keyi).defined |= KEY_FIELD_GROUPINFO as i32 as key_field;
-        } else if istreq(field, b"groupsredirect") || istreq(field, b"redirectgroups") {
+        } else if field.eq_ignore_ascii_case(b"groupsredirect")
+            || field.eq_ignore_ascii_case(b"redirectgroups")
+        {
             let mut grp: u32 = 0_u32;
             let mut pending: bool = false;
             if ExprResolveGroup(
@@ -1930,7 +1937,7 @@ unsafe fn HandleGlobalVar(info: *mut SymbolsInfo, stmt: *mut VarDef) -> bool {
         ) {
             return false;
         }
-        if !elem.is_empty() && istreq(elem, b"key") {
+        if !elem.is_empty() && elem.eq_ignore_ascii_case(b"key") {
             let mut temp: KeyInfo = {
                 let mut init = KeyInfo::new_zeroed();
                 init.out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
@@ -1949,9 +1956,13 @@ unsafe fn HandleGlobalVar(info: *mut SymbolsInfo, stmt: *mut VarDef) -> bool {
             };
             ret = SetSymbolsField(info, &raw mut temp, field, arrayNdx, &raw mut (*stmt).value);
             MergeKeys(info, &raw mut (*info).default_key, &raw mut temp, true);
-        } else if elem.is_empty() && (istreq(field, b"name") || istreq(field, b"groupname")) {
+        } else if elem.is_empty()
+            && (field.eq_ignore_ascii_case(b"name") || field.eq_ignore_ascii_case(b"groupname"))
+        {
             ret = SetGroupName(info, arrayNdx, (*stmt).value as *mut ExprDef, (*stmt).merge);
-        } else if elem.is_empty() && (istreq(field, b"groupswrap") || istreq(field, b"wrapgroups"))
+        } else if elem.is_empty()
+            && (field.eq_ignore_ascii_case(b"groupswrap")
+                || field.eq_ignore_ascii_case(b"wrapgroups"))
         {
             xkb_logf!(
                 (*info).ctx,
@@ -1962,7 +1973,8 @@ unsafe fn HandleGlobalVar(info: *mut SymbolsInfo, stmt: *mut VarDef) -> bool {
             );
             ret = true;
         } else if elem.is_empty()
-            && (istreq(field, b"groupsclamp") || istreq(field, b"clampgroups"))
+            && (field.eq_ignore_ascii_case(b"groupsclamp")
+                || field.eq_ignore_ascii_case(b"clampgroups"))
         {
             xkb_logf!(
                 (*info).ctx,
@@ -1973,7 +1985,8 @@ unsafe fn HandleGlobalVar(info: *mut SymbolsInfo, stmt: *mut VarDef) -> bool {
             );
             ret = true;
         } else if elem.is_empty()
-            && (istreq(field, b"groupsredirect") || istreq(field, b"redirectgroups"))
+            && (field.eq_ignore_ascii_case(b"groupsredirect")
+                || field.eq_ignore_ascii_case(b"redirectgroups"))
         {
             xkb_logf!(
                 (*info).ctx,
@@ -1983,7 +1996,7 @@ unsafe fn HandleGlobalVar(info: *mut SymbolsInfo, stmt: *mut VarDef) -> bool {
                 XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
             );
             ret = true;
-        } else if elem.is_empty() && istreq(field, b"allownone") {
+        } else if elem.is_empty() && field.eq_ignore_ascii_case(b"allownone") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,
@@ -2169,7 +2182,7 @@ unsafe fn HandleModMapDef(info: *mut SymbolsInfo, def: *mut ModMapDef) -> bool {
         let mut ok: bool;
         let ctx: *mut xkb_context = (*info).ctx;
         let modifier_name: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, (*def).modifier);
-        if istreq(modifier_name, b"none") {
+        if modifier_name.eq_ignore_ascii_case(b"none") {
             ndx = XKB_MOD_NONE;
         } else {
             ndx = XkbModNameToIndex(&raw mut (*info).mods, (*def).modifier, MOD_REAL);

@@ -381,18 +381,6 @@ impl core::fmt::Display for StrerrorDisplay {
 
 // ── utils_h functions (moved from duplicated pub mod utils_h blocks) ─
 
-/// Case-insensitive byte slice equality.
-#[inline]
-pub fn istreq(s1: &[u8], s2: &[u8]) -> bool {
-    istrcmp(s1, s2) == 0
-}
-
-/// Case-insensitive byte slice prefix equality.
-#[inline]
-pub fn istrneq(s1: &[u8], s2: &[u8], len: usize) -> bool {
-    istrncmp(s1, s2, len) == 0
-}
-
 #[inline]
 pub unsafe fn strdup_safe(s: *const i8) -> *mut i8 {
     cstr_dup(s)
@@ -401,12 +389,6 @@ pub unsafe fn strdup_safe(s: *const i8) -> *mut i8 {
 #[inline]
 pub unsafe fn isempty(s: *const i8) -> bool {
     s.is_null() || *s == 0
-}
-
-/// Case-sensitive byte slice equality.
-#[inline]
-pub fn streq(s1: &[u8], s2: &[u8]) -> bool {
-    s1 == s2
 }
 
 /// Null-safe case-sensitive equality of two C strings.

@@ -1,6 +1,6 @@
 use std::env::VarError;
 
-use crate::xkb::atom::{atom_intern, atom_table_new, atom_text, atom_text_bytes};
+use crate::xkb::atom::{atom_intern, atom_table_new, atom_text_bytes};
 
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
@@ -55,8 +55,8 @@ pub use crate::xkb::shared_types::{
 };
 pub use crate::xkb::shared_types::{R_OK, X_OK};
 // isempty no longer needed — String fields use .is_empty()
+use crate::xkb::utils::cstr_as_bytes;
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::{cstr_as_bytes, istrneq};
 /// Macro that formats a message and prints to stderr.
 /// Usage: `xkb_logf!(ctx, level, verbosity, "format {}", arg)`
 /// The ctx, level, and verbosity args are accepted for compatibility but
@@ -332,19 +332,37 @@ unsafe fn log_level(level: *const i8) -> u32 {
                 return val as u32;
             }
         }
-        if istrneq(b"crit", cstr_as_bytes(level), 4) {
+        if cstr_as_bytes(level)
+            .get(..4)
+            .is_some_and(|s| s.eq_ignore_ascii_case(b"crit"))
+        {
             return XKB_LOG_LEVEL_CRITICAL;
         }
-        if istrneq(b"err", cstr_as_bytes(level), 3) {
+        if cstr_as_bytes(level)
+            .get(..3)
+            .is_some_and(|s| s.eq_ignore_ascii_case(b"err"))
+        {
             return XKB_LOG_LEVEL_ERROR;
         }
-        if istrneq(b"warn", cstr_as_bytes(level), 4) {
+        if cstr_as_bytes(level)
+            .get(..4)
+            .is_some_and(|s| s.eq_ignore_ascii_case(b"warn"))
+        {
             return XKB_LOG_LEVEL_WARNING;
         }
-        if istrneq(b"info", cstr_as_bytes(level), 4) {
+        if cstr_as_bytes(level)
+            .get(..4)
+            .is_some_and(|s| s.eq_ignore_ascii_case(b"info"))
+        {
             return XKB_LOG_LEVEL_INFO;
         }
-        if istrneq(b"debug", cstr_as_bytes(level), 5) || istrneq(b"dbg", cstr_as_bytes(level), 3) {
+        if cstr_as_bytes(level)
+            .get(..5)
+            .is_some_and(|s| s.eq_ignore_ascii_case(b"debug"))
+            || cstr_as_bytes(level)
+                .get(..3)
+                .is_some_and(|s| s.eq_ignore_ascii_case(b"dbg"))
+        {
             return XKB_LOG_LEVEL_DEBUG;
         }
         XKB_LOG_LEVEL_ERROR
@@ -489,9 +507,6 @@ pub fn xkb_atom_intern_bytes(ctx: &mut xkb_context, bytes: &[u8]) -> u32 {
 /// ctx must be valid.
 pub unsafe fn xkb_atom_intern(ctx: *mut xkb_context, bytes: &[u8]) -> u32 {
     unsafe { atom_intern(&mut (*ctx).atom_table, bytes, true) }
-}
-pub unsafe fn xkb_atom_text(ctx: *mut xkb_context, atom: u32) -> *const i8 {
-    unsafe { atom_text(&(*ctx).atom_table, atom) }
 }
 pub fn xkb_atom_text_bytes(atom_table: &atom_table, atom: u32) -> &[u8] {
     atom_text_bytes(atom_table, atom)

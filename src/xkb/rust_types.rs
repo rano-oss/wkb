@@ -173,16 +173,8 @@ impl Keymap {
     /// Get modifier name by index
     pub fn mod_get_name(&self, idx: u32) -> Option<String> {
         unsafe {
-            let name_ptr = super::keymap::xkb_keymap_mod_get_name(self.as_ptr() as *mut _, idx);
-            if name_ptr.is_null() {
-                None
-            } else {
-                Some(
-                    std::ffi::CStr::from_ptr(name_ptr)
-                        .to_string_lossy()
-                        .to_string(),
-                )
-            }
+            super::keymap::xkb_keymap_mod_get_name(self.as_ptr() as *mut _, idx)
+                .map(|s| s.to_string())
         }
     }
 
@@ -250,16 +242,8 @@ impl Keymap {
     /// Get layout name by index
     pub fn layout_get_name(&self, idx: u32) -> Option<String> {
         unsafe {
-            let name_ptr = super::keymap::xkb_keymap_layout_get_name(self.as_ptr() as *mut _, idx);
-            if name_ptr.is_null() {
-                None
-            } else {
-                Some(
-                    std::ffi::CStr::from_ptr(name_ptr)
-                        .to_string_lossy()
-                        .to_string(),
-                )
-            }
+            super::keymap::xkb_keymap_layout_get_name(self.as_ptr() as *mut _, idx)
+                .map(|s| s.to_string())
         }
     }
 
@@ -287,16 +271,8 @@ impl Keymap {
     /// Get LED name by index
     pub fn led_get_name(&self, idx: u32) -> Option<String> {
         unsafe {
-            let name_ptr = super::keymap::xkb_keymap_led_get_name(self.as_ptr() as *mut _, idx);
-            if name_ptr.is_null() {
-                None
-            } else {
-                Some(
-                    std::ffi::CStr::from_ptr(name_ptr)
-                        .to_string_lossy()
-                        .to_string(),
-                )
-            }
+            super::keymap::xkb_keymap_led_get_name(self.as_ptr() as *mut _, idx)
+                .map(|s| s.to_string())
         }
     }
 
@@ -319,16 +295,8 @@ impl Keymap {
     /// Get key name by keycode
     pub fn key_get_name(&self, keycode: u32) -> Option<String> {
         unsafe {
-            let name_ptr = super::keymap::xkb_keymap_key_get_name(self.as_ptr() as *mut _, keycode);
-            if name_ptr.is_null() {
-                None
-            } else {
-                Some(
-                    std::ffi::CStr::from_ptr(name_ptr)
-                        .to_string_lossy()
-                        .to_string(),
-                )
-            }
+            super::keymap::xkb_keymap_key_get_name(self.as_ptr() as *mut _, keycode)
+                .map(|s| s.to_string())
         }
     }
 

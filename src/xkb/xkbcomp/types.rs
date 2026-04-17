@@ -737,16 +737,18 @@ unsafe fn SetKeyTypeField(
     unsafe {
         let ok: bool;
         let mut type_field: type_field = 0 as type_field;
-        if istreq(field, b"modifiers") {
+        if field.eq_ignore_ascii_case(b"modifiers") {
             type_field = TYPE_FIELD_MASK;
             ok = SetModifiers(info, type_0, arrayNdx, value);
-        } else if istreq(field, b"map") {
+        } else if field.eq_ignore_ascii_case(b"map") {
             type_field = TYPE_FIELD_MAP;
             ok = SetMapEntry(info, type_0, arrayNdx, value);
-        } else if istreq(field, b"preserve") {
+        } else if field.eq_ignore_ascii_case(b"preserve") {
             type_field = TYPE_FIELD_PRESERVE;
             ok = SetPreserve(info, type_0, arrayNdx, value);
-        } else if istreq(field, b"levelname") || istreq(field, b"level_name") {
+        } else if field.eq_ignore_ascii_case(b"levelname")
+            || field.eq_ignore_ascii_case(b"level_name")
+        {
             type_field = TYPE_FIELD_LEVEL_NAME;
             ok = SetLevelName(info, type_0, arrayNdx, value);
         } else {
@@ -785,7 +787,7 @@ unsafe fn HandleKeyTypeBody(
             ) {
                 ok = false;
             } else if !elem.is_empty() {
-                if istreq(elem, b"type") {
+                if elem.eq_ignore_ascii_case(b"type") {
                     xkb_logf!(
                         (*info).ctx,
                         XKB_LOG_LEVEL_ERROR,
@@ -830,7 +832,7 @@ unsafe fn HandleGlobalVar(info: *mut KeyTypesInfo, stmt: *mut VarDef) -> bool {
             &raw mut arrayNdx,
         ) {
             return false;
-        } else if !elem.is_empty() && istreq(elem, b"type") {
+        } else if !elem.is_empty() && elem.eq_ignore_ascii_case(b"type") {
             xkb_logf!(
                 (*info).ctx,
                 XKB_LOG_LEVEL_ERROR,

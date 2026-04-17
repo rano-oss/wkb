@@ -4,7 +4,7 @@ use crate::xkb::text::{buttonNames, GROUP_LAST_INDEX_NAME};
 
 pub use crate::xkb::keymap::XkbModNameToIndex;
 pub use crate::xkb::shared_ast_types::stmt_type_to_operator_char;
-use crate::xkb::utils::{cstr_as_bytes, istrneq};
+use crate::xkb::utils::cstr_as_bytes;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct LookupModMaskPriv {
@@ -102,7 +102,7 @@ unsafe fn SimpleLookup(
         let str: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, field);
         let mut entry: *const LookupEntry = priv_0 as *const LookupEntry;
         while !entry.is_null() && !(&(*entry).name).is_empty() {
-            if istreq(str, (*entry).name) {
+            if str.eq_ignore_ascii_case((*entry).name) {
                 *val_rtrn = (*entry).value;
                 return true;
             }
@@ -125,7 +125,11 @@ unsafe fn NamedIntegerPatternLookup(
         let str_bytes: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, field);
         let pattern: *const named_integer_pattern = priv_0 as *const named_integer_pattern;
         let prefix_bytes = cstr_as_bytes((*pattern).prefix);
-        let count: i32 = if istrneq(str_bytes, prefix_bytes, (*pattern).prefix_length) {
+        let count: i32 = if str_bytes.get(..(*pattern).prefix_length).is_some_and(|s| {
+            prefix_bytes
+                .get(..(*pattern).prefix_length)
+                .map_or(false, |t| s.eq_ignore_ascii_case(t))
+        }) {
             let suffix = &str_bytes[(*pattern).prefix_length..];
             let (val_parsed, c) = crate::xkb::utils::parse_dec_u32(suffix);
             *(val_rtrn as *mut u32) = val_parsed;
@@ -195,11 +199,11 @@ unsafe fn LookupModMask(
         if str.is_empty() {
             return false;
         }
-        if istreq(str, b"all") {
+        if str.eq_ignore_ascii_case(b"all") {
             *val_rtrn = MOD_REAL_MASK_ALL;
             return true;
         }
-        if istreq(str, b"none") {
+        if str.eq_ignore_ascii_case(b"none") {
             *val_rtrn = 0_u32;
             return true;
         }
@@ -242,13 +246,18 @@ pub unsafe fn ExprResolveBoolean(
             10 => {
                 ident = xkb_atom_text_bytes(&(*ctx).atom_table, (*expr).ident.ident);
                 if !ident.is_empty() {
-                    if istreq(ident, b"true") || istreq(ident, b"yes") || istreq(ident, b"on") {
+                    if ident.eq_ignore_ascii_case(b"true")
+                        || ident.eq_ignore_ascii_case(b"yes")
+                        || ident.eq_ignore_ascii_case(b"on")
+                    {
                         *set_rtrn = true;
                         return true;
-                    } else if istreq(ident, b"false") {
+                    } else if ident.eq_ignore_ascii_case(b"false") {
                         *set_rtrn = false;
                         return true;
-                    } else if istreq(ident, b"no") || istreq(ident, b"off") {
+                    } else if ident.eq_ignore_ascii_case(b"no")
+                        || ident.eq_ignore_ascii_case(b"off")
+                    {
                         *set_rtrn = false;
                         return true;
                     }

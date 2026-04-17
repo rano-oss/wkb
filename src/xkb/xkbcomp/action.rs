@@ -453,7 +453,8 @@ unsafe fn CheckModifierField(
         if (*value).common.type_0 == STMT_EXPR_IDENT {
             let valStr: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, (*value).ident.ident);
             if !valStr.is_empty()
-                && (istreq(valStr, b"usemodmapmods") || istreq(valStr, b"modmapmods"))
+                && (valStr.eq_ignore_ascii_case(b"usemodmapmods")
+                    || valStr.eq_ignore_ascii_case(b"modmapmods"))
             {
                 *mods_rtrn = 0_u32;
                 *flags_inout = (*flags_inout | ACTION_MODS_LOOKUP_MODMAP) as xkb_action_flags;
@@ -1211,7 +1212,7 @@ unsafe fn HandleRedirectKey(
             }
             if (*value).common.type_0 == STMT_EXPR_IDENT {
                 let valStr: &[u8] = xkb_atom_text_bytes(&(*ctx).atom_table, (*value).ident.ident);
-                if !valStr.is_empty() && istreq(valStr, b"auto") {
+                if !valStr.is_empty() && valStr.eq_ignore_ascii_case(b"auto") {
                     (*act).keycode = (*(*keymap_info).keymap).redirect_key_auto;
                     return PARSER_SUCCESS;
                 }

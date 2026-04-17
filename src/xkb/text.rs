@@ -23,11 +23,11 @@ pub const XKB_KEYSYM_NAME_MAX_SIZE: i32 = 31;
 
 pub use crate::xkb::shared_types::{
     format_boolean_controls, xkb_action_controls, xkb_action_type, xkb_mod, xkb_mod_set,
-    _ACTION_TYPE_NUM_ENTRIES, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
-    ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
-    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
-    ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
-    ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
+    ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
+    ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK,
+    ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON,
+    ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY,
+    ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
     ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, CONTROL_ALL, CONTROL_ALL_BOOLEAN,
     CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT,
     CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP, CONTROL_IGNORE_GROUP_LOCK,
@@ -35,9 +35,9 @@ pub use crate::xkb::shared_types::{
     CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6, CONTROL_OVERLAY7,
     CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS, MATCH_ALL, MATCH_ANY,
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_REAL_MASK_ALL, MOD_VIRT,
-    XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MOD_NONE,
+    XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MOD_NONE, _ACTION_TYPE_NUM_ENTRIES,
 };
-use crate::xkb::utils::{cstr_as_bytes, istreq};
+use crate::xkb::utils::cstr_as_bytes;
 pub unsafe fn LookupString(tab: *const LookupEntry, string: &[u8], value_rtrn: *mut u32) -> bool {
     unsafe {
         if string.is_empty() {
@@ -45,7 +45,7 @@ pub unsafe fn LookupString(tab: *const LookupEntry, string: &[u8], value_rtrn: *
         }
         let mut entry: *const LookupEntry = tab as *const LookupEntry;
         while !(&(*entry).name).is_empty() {
-            if istreq((*entry).name, string) {
+            if (*entry).name.eq_ignore_ascii_case(string) {
                 *value_rtrn = (*entry).value;
                 return true;
             }
