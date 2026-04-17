@@ -221,7 +221,7 @@ unsafe fn InitCompatInfo(
     mods: *const xkb_mod_set,
 ) {
     unsafe {
-        std::ptr::write_bytes::<CompatInfo>(info as *mut CompatInfo, 0u8, 1);
+        std::ptr::write(info, CompatInfo::new_zeroed());
         (*info).ctx = &raw mut (*(*keymap_info).keymap).ctx;
         (*info).keymap_info = keymap_info;
         (*info).include_depth = include_depth;

@@ -1,9 +1,9 @@
 use crate::xkb::messages::{XKB_ERROR_INVALID_PATH, XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH};
 use crate::xkb::utils::{
-    __errno_location, _steal, closedir, cstr_as_bytes, cstr_cmp, cstr_dup, cstr_free, cstr_len,
-    istrneq, opendir, readdir, strdup_safe, streq, streq_null, xkb_stat, DIR,
+    __errno_location, _steal, cstr_as_bytes, cstr_cmp, cstr_dup, cstr_free, cstr_len, istrneq,
+    strdup_safe, streq, streq_null, xkb_stat,
 };
-use libc::{free, getenv, qsort};
+use libc::{closedir, free, getenv, opendir, qsort, readdir, DIR};
 
 pub type rxkb_log_level = u32;
 pub const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;
@@ -776,7 +776,7 @@ unsafe fn add_direct_subdirectories(
     mut versioned_path_length: usize,
 ) -> i32 {
     unsafe {
-        let mut entry: *mut dirent;
+        let mut entry: *mut libc::dirent;
         #[allow(unused_assignments)]
         let mut path_buf: [i8; 4096] = { std::mem::zeroed() };
         let c2rust_current_block: u64;

@@ -641,14 +641,3 @@ extern "C" {
     #[link_name = "stat"]
     pub fn xkb_stat(__file: *const i8, __buf: *mut stat) -> i32;
 }
-
-// include_dirent_h
-extern "C" {
-    pub type __dirstream;
-}
-pub type DIR = __dirstream;
-extern "C" {
-    pub fn closedir(__dirp: *mut DIR) -> i32;
-    pub fn opendir(__name: *const i8) -> *mut DIR;
-    pub fn readdir(__dirp: *mut DIR) -> *mut dirent;
-}

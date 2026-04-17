@@ -6,17 +6,6 @@
 //! Note: This code was originally generated using c2rust. We keep c2rust-bitfields
 //! for the bitfield macros but have removed other c2rust dependencies.
 
-// #![allow(
-//     non_upper_case_globals,
-//     non_camel_case_types,
-//     non_snake_case,
-//     mutable_transmutes,
-//     improper_ctypes,
-//     improper_ctypes_definitions,
-//     unknown_lints,
-//     clippy::all
-// )]
-
 // Core XKB modules
 pub mod atom;
 pub mod context;

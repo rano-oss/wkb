@@ -143,16 +143,15 @@ pub use crate::xkb::keymap::{
     xkb_keymap_key_get_actions_by_level, XkbLevelsSameSyms, XkbWrapGroupIntoRange,
 };
 pub use crate::xkb::messages::{
-    xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
-    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
-    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
-    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
-    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
-    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
-    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
-    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
-    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
-    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
+    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
+    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
+    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
+    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
+    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
+    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
+    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
+    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
     XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
     XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
     XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
@@ -184,7 +183,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
     XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
-    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
 };
 pub use crate::xkb::shared_types::{
     entry_is_active, format_max_overlays, real_mod_index, xkb_action, xkb_action_flags,
@@ -194,18 +193,17 @@ pub use crate::xkb::shared_types::{
     xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t, xkb_overlay_mask_t,
     xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
     xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, KeycodeMatch, XkbKey,
-    _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES, ACTION_ABSOLUTE_SWITCH,
-    ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS,
-    ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK,
-    ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION,
-    ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
-    ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
-    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
-    ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
-    ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
-    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
-    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
-    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL,
+    ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK,
+    ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
+    ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
+    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
+    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
+    ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK,
+    ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE,
+    ACTION_TYPE_UNKNOWN, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS,
+    CONTROL_ALL, CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX,
+    CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
     CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
     CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
     CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
@@ -215,6 +213,7 @@ pub use crate::xkb::shared_types::{
     XKB_MAX_GROUPS, XKB_MOD_ALL, XKB_MOD_INDEX_CAPS, XKB_MOD_INDEX_CTRL, XKB_MOD_INDEX_MOD1,
     XKB_MOD_INDEX_MOD2, XKB_MOD_INDEX_MOD3, XKB_MOD_INDEX_MOD4, XKB_MOD_INDEX_MOD5,
     XKB_MOD_INDEX_SHIFT, XKB_OVERLAY1_CONTROLS_OFFSET, XKB_OVERLAY_MAX, XKB_OVERLAY_MAX_X11,
+    _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES,
 };
 pub use crate::xkb::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
@@ -2482,43 +2481,6 @@ unsafe fn match_mod_masks(
     }
 }
 
-pub unsafe extern "C" fn xkb_state_mod_indices_are_active(
-    state: *mut xkb_state,
-    type_0: u32,
-    match_0: xkb_state_match,
-    c2rust_args: ...
-) -> i32 {
-    unsafe {
-        if match_0 & !(XKB_STATE_MATCH_FLAGS as i32 as xkb_state_match) != 0 {
-            return -2_i32;
-        }
-        let mut ap: ::core::ffi::VaList;
-        let mut wanted: u32 = 0_u32;
-        let mut ret: i32 = 0_i32;
-        let num_mods: u32 = xkb_keymap_num_mods((*state).keymap);
-        ap = c2rust_args.clone();
-        loop {
-            let idx: u32 = ap.arg::<u32>();
-            if idx == XKB_MOD_INVALID {
-                break;
-            }
-            if (idx >= num_mods) as i64 != 0 {
-                ret = -1_i32;
-                break;
-            } else {
-                wanted |= (*(*state).keymap).mods.mods[idx as usize].mapping;
-            }
-        }
-        if ret == -1_i32 {
-            return ret;
-        }
-        if wanted == 0 {
-            return 0_i32;
-        }
-        match_mod_masks(state, type_0, match_0, wanted) as i32
-    }
-}
-
 pub unsafe fn xkb_state_mod_name_is_active(
     state: *mut xkb_state,
     name: *const i8,
@@ -2530,43 +2492,6 @@ pub unsafe fn xkb_state_mod_name_is_active(
             return -1_i32;
         }
         xkb_state_mod_index_is_active(state, idx, type_0)
-    }
-}
-
-pub unsafe extern "C" fn xkb_state_mod_names_are_active(
-    state: *mut xkb_state,
-    type_0: u32,
-    match_0: xkb_state_match,
-    c2rust_args: ...
-) -> i32 {
-    unsafe {
-        if match_0 & !(XKB_STATE_MATCH_FLAGS as i32 as xkb_state_match) != 0 {
-            return -2_i32;
-        }
-        let mut ap: ::core::ffi::VaList;
-        let mut wanted: u32 = 0_u32;
-        let mut ret: i32 = 0_i32;
-        ap = c2rust_args.clone();
-        loop {
-            let str: *const i8 = ap.arg::<*const i8>();
-            if str.is_null() {
-                break;
-            }
-            let idx: u32 = xkb_keymap_mod_get_index((*state).keymap, str);
-            if idx == XKB_MOD_INVALID {
-                ret = -1_i32;
-                break;
-            } else {
-                wanted |= (*(*state).keymap).mods.mods[idx as usize].mapping;
-            }
-        }
-        if ret == -1_i32 {
-            return ret;
-        }
-        if wanted == 0 {
-            return 0_i32;
-        }
-        match_mod_masks(state, type_0, match_0, wanted) as i32
     }
 }
 
