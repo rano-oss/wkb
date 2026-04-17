@@ -181,15 +181,28 @@ unsafe fn CopyGroupInfo(to: *mut GroupInfo, from: *const GroupInfo) {
 }
 unsafe fn InitKeyInfo(ctx: *mut xkb_context, keyi: *mut KeyInfo) {
     unsafe {
-        std::ptr::write_bytes::<KeyInfo>(keyi as *mut KeyInfo, 0u8, 1);
-        (*keyi).name = xkb_atom_intern(
-            ctx,
-            b"*\0".as_ptr() as *const i8,
-            (std::mem::size_of::<[i8; 2]>()).wrapping_sub(1_usize),
+        std::ptr::write(
+            keyi,
+            KeyInfo {
+                name: xkb_atom_intern(
+                    ctx,
+                    b"*\0".as_ptr() as *const i8,
+                    (std::mem::size_of::<[i8; 2]>()).wrapping_sub(1_usize),
+                ),
+                vmodmap: 0,
+                default_type: 0,
+                out_of_range_group_number: 0,
+                groups: Vec::new(),
+                out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
+                defined: 0,
+                merge: 0,
+                repeat: 0,
+                out_of_range_pending_group: false,
+                overlays_clear: false,
+                overlays: 0,
+                overlay_keys: Vec::new(),
+            },
         );
-        (*keyi).out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
-        std::ptr::write(&raw mut (*keyi).groups, Vec::new());
-        std::ptr::write(&raw mut (*keyi).overlay_keys, Vec::new());
     }
 }
 unsafe fn ClearKeyInfo(keyi: *mut KeyInfo) {
@@ -208,21 +221,44 @@ unsafe fn InitSymbolsInfo(
     mods: *const xkb_mod_set,
 ) {
     unsafe {
-        std::ptr::write_bytes::<SymbolsInfo>(info as *mut SymbolsInfo, 0u8, 1);
-        std::ptr::write(&raw mut (*info).keys, Vec::new());
-        std::ptr::write(&raw mut (*info).group_names, Vec::new());
-        std::ptr::write(&raw mut (*info).modmaps, Vec::new());
-        (*info).ctx = &raw mut (*(*keymap_info).keymap).ctx;
-        (*info).include_depth = include_depth;
-        (*info).keymap_info = keymap_info;
-        (*info).max_groups = (*keymap_info).features.max_groups;
+        std::ptr::write(
+            info,
+            SymbolsInfo {
+                name: None,
+                errorCount: 0,
+                include_depth,
+                explicit_group: XKB_LAYOUT_INVALID,
+                max_groups: (*keymap_info).features.max_groups,
+                keys: Vec::new(),
+                default_key: KeyInfo {
+                    name: 0,
+                    vmodmap: 0,
+                    default_type: 0,
+                    out_of_range_group_number: 0,
+                    groups: Vec::new(),
+                    out_of_range_group_policy: 0,
+                    defined: 0,
+                    merge: 0,
+                    repeat: 0,
+                    out_of_range_pending_group: false,
+                    overlays_clear: false,
+                    overlays: 0,
+                    overlay_keys: Vec::new(),
+                },
+                default_actions: std::mem::zeroed(), // ActionsInfo is Copy, all-zeros valid
+                group_names: Vec::new(),
+                modmaps: Vec::new(),
+                mods: std::mem::zeroed(), // xkb_mod_set is Copy, all-zeros valid
+                ctx: &raw mut (*(*keymap_info).keymap).ctx,
+                keymap_info,
+            },
+        );
         InitKeyInfo(
             &raw mut (*(*keymap_info).keymap).ctx,
             &raw mut (*info).default_key,
         );
         InitActionsInfo((*keymap_info).keymap, &raw mut (*info).default_actions);
         InitVMods(&raw mut (*info).mods, mods, include_depth > 0_u32);
-        (*info).explicit_group = XKB_LAYOUT_INVALID;
     }
 }
 unsafe fn ClearSymbolsInfo(info: *mut SymbolsInfo) {

@@ -635,7 +635,7 @@ pub unsafe fn cstr_atoi(s: *const i8) -> i32 {
 
 // ── Consolidated extern "C" declarations ──────────────────────────────
 
-use crate::xkb::shared_types::{dirent, stat};
+use crate::xkb::shared_types::stat;
 
 extern "C" {
     #[link_name = "stat"]

@@ -2,10 +2,6 @@
 //!
 //! This module contains the libxkbcommon functionality transpiled from C to Rust.
 //! It provides complete XKB keymap compilation and state management for Wayland.
-//!
-//! Note: This code was originally generated using c2rust. We keep c2rust-bitfields
-//! for the bitfield macros but have removed other c2rust dependencies.
-
 // Core XKB modules
 pub mod atom;
 pub mod context;

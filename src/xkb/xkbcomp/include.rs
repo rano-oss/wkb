@@ -278,8 +278,9 @@ unsafe fn expand_percent(
                         return 0;
                     }
                 } else if s.chr(b'S' as i8) {
-                    let default_root: *const i8 = xkb_context_include_path_get_system_path(ctx);
-                    if !s.buf_appends(default_root as *const u8)
+                    let default_root_str = xkb_context_include_path_get_system_path(ctx);
+                    let default_root_c = std::ffi::CString::new(default_root_str).unwrap();
+                    if !s.buf_appends(default_root_c.as_ptr() as *const u8)
                         || !s.buf_append(b'/')
                         || !s.buf_appends(typeDir as *const u8)
                     {
@@ -297,8 +298,9 @@ unsafe fn expand_percent(
                         return 0;
                     }
                 } else if s.chr(b'E' as i8) {
-                    let default_root: *const i8 = xkb_context_include_path_get_extra_path(ctx);
-                    if !s.buf_appends(default_root as *const u8)
+                    let default_root_str = xkb_context_include_path_get_extra_path(ctx);
+                    let default_root_c = std::ffi::CString::new(default_root_str).unwrap();
+                    if !s.buf_appends(default_root_c.as_ptr() as *const u8)
                         || !s.buf_append(b'/')
                         || !s.buf_appends(typeDir as *const u8)
                     {
