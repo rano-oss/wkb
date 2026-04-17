@@ -522,80 +522,47 @@ pub fn ActionTypeText(type_0: xkb_action_type) -> &'static str {
         "Private"
     }
 }
-pub unsafe fn KeysymText(mut ctx: xkb_context, sym: u32) -> &'static [u8] {
-    unsafe {
-        let buffer: *mut i8 = xkb_context_get_buffer(&mut ctx, XKB_KEYSYM_NAME_MAX_SIZE as usize);
-        xkb_keysym_get_name(sym, buffer, XKB_KEYSYM_NAME_MAX_SIZE as usize);
-        cstr_as_bytes(buffer)
-    }
-}
-pub unsafe fn KeyNameText(mut ctx: xkb_context, name: u32) -> &'static [u8] {
-    unsafe {
-        let atom_table = &ctx.atom_table.clone();
-        let sname: &str = xkb_atom_text(atom_table, name);
-        let len: usize = sname.len().wrapping_add(3_usize);
-        let buf: *mut i8 = xkb_context_get_buffer(&mut ctx, len);
-        let (written, _) = crate::xkb::utils::snprintf_args(buf, len, format_args!("<{}>", sname));
-        std::slice::from_raw_parts(buf as *const u8, written)
-    }
+pub fn KeysymText(sym: u32) -> String {
+    xkb_keysym_get_name(sym)
 }
 pub fn SIMatchText(type_0: u32) -> &'static str {
     LookupValue(&symInterpretMatchMaskNames, type_0)
 }
 pub unsafe fn ModMaskText(
-    mut ctx: xkb_context,
+    ctx: &xkb_context,
     type_0: u32,
     mods: *const xkb_mod_set,
-    mut mask: u32,
-) -> &'static [u8] {
+    mask: u32,
+) -> String {
     unsafe {
-        let mut buf: [i8; 1024] = [0; 1024];
-        let mut pos: usize = 0_usize;
-        let mut mod_0: *const xkb_mod;
         if mask == 0_u32 {
-            return b"none";
+            return "none".to_string();
         }
         if mask == MOD_REAL_MASK_ALL {
-            return b"all";
+            return "all".to_string();
         }
         if type_0 == MOD_REAL && mask & !MOD_REAL_MASK_ALL != 0
             || (mask as u64 & !(1_u64 << (*mods).num_mods).wrapping_sub(1_u64) != 0) as i32 as i64
                 != 0
         {
-            let (written, _) = crate::xkb::utils::snprintf_args(
-                &raw mut buf as *mut i8,
-                std::mem::size_of::<[i8; 1024]>(),
-                format_args!("{:#x}", mask),
-            );
-            pos = written;
-        } else {
-            mod_0 = &raw const (*mods).mods as *const xkb_mod;
-            while mask != 0
-                && mod_0
-                    < (&raw const (*mods).mods as *const xkb_mod).offset((*mods).num_mods as isize)
-            {
-                if mask & 0x1_u32 != 0 {
-                    let (written, trunc) = crate::xkb::utils::snprintf_args(
-                        (&raw mut buf as *mut i8).add(pos),
-                        (std::mem::size_of::<[i8; 1024]>()).wrapping_sub(pos),
-                        format_args!(
-                            "{}{}",
-                            if pos == 0_usize { "" } else { "+" },
-                            xkb_atom_text(&ctx.atom_table, (*mod_0).name),
-                        ),
-                    );
-                    if trunc || written == 0 {
-                        break;
-                    }
-                    pos = pos.wrapping_add(written);
-                }
-                mod_0 = mod_0.offset(1);
-                mask >>= 1_i32;
-            }
+            return format!("{:#x}", mask);
         }
-        let dst = xkb_context_get_buffer(&mut ctx, pos);
-        std::ptr::copy_nonoverlapping(&raw mut buf as *const u8, dst as *mut u8, pos);
-        std::slice::from_raw_parts(dst as *const u8, pos)
+        let mut result = String::new();
+        let mut mod_0: *const xkb_mod = &raw const (*mods).mods as *const xkb_mod;
+        let mut remaining = mask;
+        while remaining != 0
+            && mod_0 < (&raw const (*mods).mods as *const xkb_mod).offset((*mods).num_mods as isize)
+        {
+            if remaining & 0x1_u32 != 0 {
+                if !result.is_empty() {
+                    result.push('+');
+                }
+                result.push_str(xkb_atom_text(&ctx.atom_table, (*mod_0).name));
+            }
+            mod_0 = mod_0.offset(1);
+            remaining >>= 1_i32;
+        }
+        result
     }
 }
 

@@ -85,8 +85,8 @@ pub unsafe fn MergeModSets(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
                         xkb_atom_text(&(*ctx).atom_table, (*mod_0).name),
-                        crate::xkb::utils::ByteSliceDisplay(ModMaskText((*ctx).clone(), MOD_REAL, from, use_0)),
-                        crate::xkb::utils::ByteSliceDisplay(ModMaskText((*ctx).clone(), MOD_REAL, from, ignore)),
+                        ModMaskText(&*ctx, MOD_REAL, from, use_0),
+                        ModMaskText(&*ctx, MOD_REAL, from, ignore),
                     );
                     (*into).mods[vmod as usize].mapping = use_0;
                 }
@@ -158,8 +158,8 @@ pub unsafe fn HandleVModDef(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
                         xkb_atom_text(&(*ctx).atom_table, (*stmt).name),
-                        crate::xkb::utils::ByteSliceDisplay(ModMaskText((*ctx).clone(), MOD_REAL, mods, use_0)),
-                        crate::xkb::utils::ByteSliceDisplay(ModMaskText((*ctx).clone(), MOD_REAL, mods, ignore)),
+                        ModMaskText(&*ctx, MOD_REAL, mods, use_0),
+                        ModMaskText(&*ctx, MOD_REAL, mods, ignore),
                     );
                     (*mod_0).mapping = use_0;
                 }

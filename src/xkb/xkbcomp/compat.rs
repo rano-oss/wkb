@@ -125,17 +125,14 @@ unsafe fn siText(si: *mut SymInterpInfo, info: *mut CompatInfo) -> &'static str 
             128_usize,
             format_args!(
                 "{}+{}({})",
-                crate::xkb::utils::ByteSliceDisplay(KeysymText(
-                    (*(*info).ctx).clone(),
-                    (*si).interp.sym
-                )),
+                KeysymText((*si).interp.sym),
                 SIMatchText((*si).interp.match_0),
-                crate::xkb::utils::ByteSliceDisplay(ModMaskText(
-                    (*(*info).ctx).clone(),
+                ModMaskText(
+                    &*(*info).ctx,
                     MOD_BOTH,
                     &raw mut (*info).mods,
-                    (*si).interp.mods,
-                )),
+                    (*si).interp.mods
+                ),
             ),
         );
         std::str::from_utf8_unchecked(std::slice::from_raw_parts(buf as *const u8, written))

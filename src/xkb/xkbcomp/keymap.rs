@@ -122,12 +122,12 @@ unsafe fn FindInterpForKey(
                                         (*keymap).ctx,
                                         XKB_LOG_LEVEL_WARNING,
                                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                        "Repeated interpretation ignored for keysym #{} \"{}\" at level {}/group {} on key {}.\n",
+                                        "Repeated interpretation ignored for keysym #{} \"{}\" at level {}/group {} on key <{}>.\n",
                                         s + 1_i32,
-                                        crate::xkb::utils::ByteSliceDisplay(KeysymText((*keymap).ctx.clone(), *syms.offset(s as isize))),
+                                        KeysymText(*syms.offset(s as isize)),
                                         level.wrapping_add(1_u32),
                                         group.wrapping_add(1_u32),
-                                        crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx.clone(), (*key).name)),
+                                        xkb_atom_text(&(*keymap).ctx.atom_table, (*key).name),
                                     );
                                 c2rust_current_block_34 = 2209838995503123840;
                                 break 's_26;
@@ -203,8 +203,8 @@ unsafe fn ApplyInterpsToKey(keymap: *mut xkb_keymap, key: *mut xkb_key) -> bool 
                                 (*keymap).ctx,
                                 XKB_LOG_LEVEL_WARNING,
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                "Could not append interpret actions to key {}: maximum is {}, got: {}. Dropping excessive actions\n",
-                                crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx.clone(), (*key).name)),
+                                "Could not append interpret actions to key <{}>: maximum is {}, got: {}. Dropping excessive actions\n",
+                                xkb_atom_text(&(*keymap).ctx.atom_table, (*key).name),
                                 65535_i32,
                                 actions.len() as u32,
                             );
@@ -287,10 +287,10 @@ unsafe fn CheckMultipleActionsCategories(keymap: *mut xkb_keymap, key: *mut xkb_
                                         (*keymap).ctx,
                                         XKB_LOG_LEVEL_ERROR,
                                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                        "Cannot use multiple {} actions in the same level. Action #{} for key {} in group {}/level {} ignored.\n",
+                                        "Cannot use multiple {} actions in the same level. Action #{} for key <{}> in group {}/level {} ignored.\n",
                                         type_0,
                                         j as i32 + 1_i32,
-                                        crate::xkb::utils::ByteSliceDisplay(KeyNameText((*keymap).ctx.clone(), (*key).name)),
+                                        xkb_atom_text(&(*keymap).ctx.atom_table, (*key).name),
                                         g.wrapping_add(1_u32),
                                         l.wrapping_add(1_u32),
                                     );

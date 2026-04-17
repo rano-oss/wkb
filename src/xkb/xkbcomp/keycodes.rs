@@ -444,11 +444,11 @@ unsafe fn AddKeyName(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] Key name {} already assigned to an alias; Using {}, ignoring {}\n",
+                        "[XKB-{:03}] Key name <{}> already assigned to an alias; Using {}, ignoring {}\n",
                         XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                        crate::xkb::utils::ByteSliceDisplay(KeyNameText((*(*info).ctx).clone(), name)),
-                        crate::xkb::utils::ByteSliceDisplay(if clobber { b"key" as &[u8] } else { b"alias" }),
-                        crate::xkb::utils::ByteSliceDisplay(if clobber { b"alias" as &[u8] } else { b"key" }),
+                        xkb_atom_text(&(*(*info).ctx).atom_table, name),
+                        if clobber { "key" } else { "alias" },
+                        if clobber { "alias" } else { "key" },
                     );
                 }
                 if clobber {
@@ -476,9 +476,9 @@ unsafe fn AddKeyName(
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] Key name {} assigned to multiple keys; Using {}, ignoring {}\n",
+                            "[XKB-{:03}] Key name <{}> assigned to multiple keys; Using {}, ignoring {}\n",
                             XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*(*info).ctx).clone(), name)),
+                            xkb_atom_text(&(*(*info).ctx).atom_table, name),
                             use_0,
                             ignore,
                         );
@@ -510,8 +510,8 @@ unsafe fn AddKeyName(
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "Multiple identical key name definitions; Later occurrences of \"{} = {}\" ignored\n",
-                        crate::xkb::utils::ByteSliceDisplay(KeyNameText((*(*info).ctx).clone(), old_name)),
+                        "Multiple identical key name definitions; Later occurrences of \"<{}> = {}\" ignored\n",
+                        xkb_atom_text(&(*(*info).ctx).atom_table, old_name),
                         kc,
                     );
                 }
@@ -519,18 +519,18 @@ unsafe fn AddKeyName(
             }
             let clobber_0: bool = merge != MERGE_AUGMENT;
             if report {
-                let kname: &[u8] = KeyNameText((*(*info).ctx).clone(), name);
-                let old_kname: &[u8] = KeyNameText((*(*info).ctx).clone(), old_name);
-                let use_1: &[u8] = if clobber_0 { kname } else { old_kname };
-                let ignore_0: &[u8] = if clobber_0 { old_kname } else { kname };
+                let kname: &str = xkb_atom_text(&(*(*info).ctx).atom_table, name);
+                let old_kname: &str = xkb_atom_text(&(*(*info).ctx).atom_table, old_name);
+                let use_1: &str = if clobber_0 { kname } else { old_kname };
+                let ignore_0: &str = if clobber_0 { old_kname } else { kname };
                 xkb_logf!(
                     (*info).ctx,
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Multiple names for keycode {}; Using {}, ignoring {}\n",
+                    "Multiple names for keycode {}; Using <{}>, ignoring <{}>\n",
                     kc,
-                    crate::xkb::utils::ByteSliceDisplay(use_1),
-                    crate::xkb::utils::ByteSliceDisplay(ignore_0),
+                    use_1,
+                    ignore_0,
                 );
             }
             if clobber_0 {
@@ -754,10 +754,10 @@ unsafe fn HandleAliasDef(info: *mut KeyNamesInfo, def: *const KeyAliasDef, repor
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] Alias of {} for {} declared more than once; First definition ignored\n",
+                            "[XKB-{:03}] Alias of <{}> for <{}> declared more than once; First definition ignored\n",
                             XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*(*info).ctx).clone(), (*def).alias)),
-                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*(*info).ctx).clone(), (*def).real)),
+                             xkb_atom_text(&(*(*info).ctx).atom_table, (*def).alias),
+                             xkb_atom_text(&(*(*info).ctx).atom_table, (*def).real),
                         );
                     }
                 } else {
@@ -776,11 +776,11 @@ unsafe fn HandleAliasDef(info: *mut KeyNamesInfo, def: *const KeyAliasDef, repor
                             (*info).ctx,
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] Multiple definitions for alias {}; Using {}, ignoring {}\n",
+                            "[XKB-{:03}] Multiple definitions for alias <{}>; Using <{}>, ignoring <{}>\n",
                             XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*(*info).ctx).clone(), (*def).alias)),
-                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*(*info).ctx).clone(), use_0)),
-                            crate::xkb::utils::ByteSliceDisplay(KeyNameText((*(*info).ctx).clone(), ignore)),
+                             xkb_atom_text(&(*(*info).ctx).atom_table, (*def).alias),
+                            xkb_atom_text(&(*(*info).ctx).atom_table, use_0),
+                            xkb_atom_text(&(*(*info).ctx).atom_table, ignore),
                         );
                     }
                     {
@@ -795,11 +795,11 @@ unsafe fn HandleAliasDef(info: *mut KeyNamesInfo, def: *const KeyAliasDef, repor
                         (*info).ctx,
                         XKB_LOG_LEVEL_WARNING,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] Alias name {} already assigned to a real key; Using {}, ignoring {}\n",
+                        "[XKB-{:03}] Alias name <{}> already assigned to a real key; Using {}, ignoring {}\n",
                         XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                        crate::xkb::utils::ByteSliceDisplay(KeyNameText((*(*info).ctx).clone(), (*def).alias)),
-                        crate::xkb::utils::ByteSliceDisplay(if clobber { b"alias" as &[u8] } else { b"key" }),
-                        crate::xkb::utils::ByteSliceDisplay(if clobber { b"key" as &[u8] } else { b"alias" }),
+                        xkb_atom_text(&(*(*info).ctx).atom_table, (*def).alias),
+                        if clobber { "alias" } else { "key" },
+                        if clobber { "key" } else { "alias" },
                     );
                 }
                 if clobber {
@@ -1072,13 +1072,13 @@ unsafe fn CopyKeycodeNameLUT(keymap: *mut xkb_keymap, info: *mut KeyNamesInfo) -
                                     (*info).ctx,
                                     XKB_LOG_LEVEL_WARNING,
                                     XKB_LOG_VERBOSITY_DETAILED as i32,
-                                    "[XKB-{:03}] Attempt to alias {} to non-existent key {}; Ignored\n",
+                                    "[XKB-{:03}] Attempt to alias <{}> to non-existent key <{}>; Ignored\n",
                                     XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                                    crate::xkb::utils::ByteSliceDisplay(KeyNameText((*(*info).ctx).clone(), name)),
-                                    crate::xkb::utils::ByteSliceDisplay(KeyNameText(
-                                        (*(*info).ctx).clone(),
+                            xkb_atom_text(&(*(*info).ctx).atom_table, name),
+                                    xkb_atom_text(
+                                        &(*(*info).ctx).atom_table,
                                         (*match_0).index
-                                    )),
+                                    ),
                                 );
                                 (*match_0).found = false;
                             }

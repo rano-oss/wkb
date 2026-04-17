@@ -124,7 +124,7 @@ pub use crate::xkb::shared_types::{
 };
 
 // text
-pub use crate::xkb::text::{ActionTypeText, KeyNameText, KeysymText, LookupEntry};
+pub use crate::xkb::text::{ActionTypeText, KeysymText, LookupEntry};
 
 // utils
 pub use crate::xkb::utils::{_steal, cstr_free, strdup_safe};

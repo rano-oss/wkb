@@ -1210,12 +1210,9 @@ unsafe fn HandleRedirectKey(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "RedirectKey field {} cannot resolve {} to a valid key\n",
+                    "RedirectKey field {} cannot resolve <{}> to a valid key\n",
                     fieldText(field),
-                    crate::xkb::utils::ByteSliceDisplay(KeyNameText(
-                        (*ctx).clone(),
-                        (*value).key_name.key_name
-                    )),
+                    xkb_atom_text(&(*ctx).atom_table, (*value).key_name.key_name),
                 );
                 return (if (*keymap_info).strict & PARSER_NO_FIELD_VALUE_MISMATCH != 0 {
                     PARSER_FATAL_ERROR as i32

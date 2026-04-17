@@ -21814,26 +21814,22 @@ fn get_name_bytes(entry: &name_keysym) -> &'static [u8] {
     &rest[..end]
 }
 #[inline]
-unsafe fn get_unicode_name(ks: u32, buffer: *mut i8, size: usize) -> i32 {
-    unsafe { crate::xkb::utils::snprintf_c(buffer, size, format_args!("U{:04X}", ks & 0xffffff)) }
+fn get_unicode_name(ks: u32) -> String {
+    format!("U{:04X}", ks & 0xffffff)
 }
-pub unsafe fn xkb_keysym_get_name(ks: u32, buffer: *mut i8, size: usize) -> i32 {
-    unsafe {
-        if ks > XKB_KEYSYM_MAX as u32 {
-            crate::xkb::utils::snprintf_args(buffer, size, format_args!("Invalid"));
-            return -1_i32;
-        }
-        let index: isize = find_keysym_index(ks);
-        if index != -1_i32 as isize {
-            let name_bytes = get_name_bytes(&keysym_to_name[index as usize]);
-            let name_str = std::str::from_utf8(name_bytes).unwrap_or("");
-            return crate::xkb::utils::snprintf_c(buffer, size, format_args!("{}", name_str));
-        }
-        if ks >= XKB_KEYSYM_UNICODE_MIN as u32 && ks <= XKB_KEYSYM_UNICODE_MAX as u32 {
-            return get_unicode_name(ks, buffer, size);
-        }
-        crate::xkb::utils::snprintf_c(buffer, size, format_args!("0x{:08x}", ks))
+pub fn xkb_keysym_get_name(ks: u32) -> String {
+    if ks > XKB_KEYSYM_MAX as u32 {
+        return "Invalid".to_string();
     }
+    let index: isize = find_keysym_index(ks);
+    if index != -1_i32 as isize {
+        let name_bytes = get_name_bytes(&keysym_to_name[index as usize]);
+        return std::str::from_utf8(name_bytes).unwrap_or("").to_string();
+    }
+    if ks >= XKB_KEYSYM_UNICODE_MIN as u32 && ks <= XKB_KEYSYM_UNICODE_MAX as u32 {
+        return get_unicode_name(ks);
+    }
+    format!("0x{:08x}", ks)
 }
 
 unsafe fn parse_keysym_hex(s: *const i8, out: *mut u32) -> bool {
