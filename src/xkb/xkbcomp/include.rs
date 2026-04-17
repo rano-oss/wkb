@@ -11,7 +11,7 @@ pub const INCLUDE_MAX_DEPTH: i32 = 15_i32;
 pub const MERGE_OVERRIDE_PREFIX: i32 = '+' as i32;
 pub const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
 pub const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
-pub static mut MERGE_MODE_PREFIXES: [i8; 4] = [
+pub static MERGE_MODE_PREFIXES: [i8; 4] = [
     MERGE_OVERRIDE_PREFIX as i8,
     MERGE_AUGMENT_PREFIX as i8,
     MERGE_REPLACE_PREFIX as i8,
@@ -154,20 +154,19 @@ pub unsafe fn ParseIncludeMap(
         true
     }
 }
-static mut XKB_FILE_TYPE_INCLUDE_DIRS: [*const i8; 7] = [
-    b"keycodes\0".as_ptr() as *const i8,
-    b"types\0".as_ptr() as *const i8,
-    b"compat\0".as_ptr() as *const i8,
-    b"symbols\0".as_ptr() as *const i8,
-    b"geometry\0".as_ptr() as *const i8,
-    b"keymap\0".as_ptr() as *const i8,
-    b"rules\0".as_ptr() as *const i8,
+static XKB_FILE_TYPE_INCLUDE_DIRS: [&str; 7] = [
+    "keycodes",
+    "types",
+    "compat",
+    "symbols",
+    "geometry",
+    "keymap",
+    "rules",
 ];
-unsafe fn DirectoryForInclude(type_0: u32) -> *const i8 {
-    unsafe {
-        if type_0 >= _FILE_TYPE_NUM_ENTRIES {
-            return b"\0".as_ptr() as *const i8;
-        }
+fn DirectoryForInclude(type_0: u32) -> &'static str {
+    if type_0 as usize >= XKB_FILE_TYPE_INCLUDE_DIRS.len() {
+        ""
+    } else {
         XKB_FILE_TYPE_INCLUDE_DIRS[type_0 as usize]
     }
 }
@@ -230,7 +229,7 @@ unsafe fn LogIncludePaths(ctx: *mut xkb_context) {
 unsafe fn expand_percent(
     ctx: *mut xkb_context,
     parent_file_name: *const i8,
-    typeDir: *const i8,
+    typeDir: &str,
     buf: *mut i8,
     buf_size: usize,
     name: *const i8,
@@ -282,7 +281,7 @@ unsafe fn expand_percent(
                     let default_root_c = std::ffi::CString::new(default_root_str).unwrap();
                     if !s.buf_appends(default_root_c.as_ptr() as *const u8)
                         || !s.buf_append(b'/')
-                        || !s.buf_appends(typeDir as *const u8)
+                        || !s.buf_appends_str(typeDir)
                     {
                         let loc = s.token_location();
                         xkb_logf!(
@@ -302,7 +301,7 @@ unsafe fn expand_percent(
                     let default_root_c = std::ffi::CString::new(default_root_str).unwrap();
                     if !s.buf_appends(default_root_c.as_ptr() as *const u8)
                         || !s.buf_append(b'/')
-                        || !s.buf_appends(typeDir as *const u8)
+                        || !s.buf_appends_str(typeDir)
                     {
                         let loc = s.token_location();
                         xkb_logf!(
@@ -413,7 +412,7 @@ pub unsafe fn expand_path(
                     return -1_i32 as isize;
                 }
                 std::ptr::copy_nonoverlapping(name as *const u8, buf as *mut u8, k);
-                let typeDir: *const i8 = DirectoryForInclude(type_0);
+                let typeDir = DirectoryForInclude(type_0);
                 let mut count: usize = expand_percent(
                     ctx,
                     parent_file_name,
@@ -447,7 +446,7 @@ pub unsafe fn FindFileInXkbPath(
         let c2rust_current_block: u64;
         let mut file: *mut FILE = std::ptr::null_mut();
         let name_buffer: *mut i8 = std::ptr::null_mut();
-        let typeDir: *const i8 = DirectoryForInclude(type_0);
+        let typeDir = DirectoryForInclude(type_0);
         let mut i: u32 = *offset;
         loop {
             if i >= xkb_context_num_include_paths(ctx) {
@@ -460,7 +459,7 @@ pub unsafe fn FindFileInXkbPath(
                 format_args!(
                     "{}/{}/{}",
                     xkb_context_include_path_get(ctx, i),
-                    crate::xkb::utils::CStrDisplay(typeDir),
+                    typeDir,
                     crate::xkb::utils::CStrNDisplay(name_len, name)
                 ),
             );
@@ -473,7 +472,7 @@ pub unsafe fn FindFileInXkbPath(
                     XKB_ERROR_INVALID_PATH as i32,
                     buf_size,
                     xkb_context_include_path_get(ctx, i),
-                    crate::xkb::utils::CStrDisplay(typeDir),
+                    typeDir,
                     crate::xkb::utils::CStrNDisplay(name_len, name),
                 );
             } else {
@@ -494,7 +493,7 @@ pub unsafe fn FindFileInXkbPath(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
                     XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                    crate::xkb::utils::CStrDisplay(typeDir),
+                    typeDir,
                     crate::xkb::utils::CStrNDisplay(name_len, name),
                 );
                 LogIncludePaths(ctx);
@@ -578,8 +577,8 @@ pub unsafe fn ProcessIncludeFile(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Include file of wrong type (expected {}, got {}); Include file \"{}\" ignored\n",
                         XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                        crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(file_type)),
-                        crate::xkb::utils::CStrDisplay(xkb_file_type_to_string((*xkb_file).file_type)),
+                        xkb_file_type_to_string(file_type),
+                        xkb_file_type_to_string((*xkb_file).file_type),
                         crate::xkb::utils::CStrDisplay((*stmt).file),
                     );
                     FreeXkbFile(xkb_file);

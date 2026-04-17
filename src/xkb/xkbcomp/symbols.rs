@@ -1331,7 +1331,7 @@ unsafe fn AddActionsToKey(
         true
     }
 }
-static mut REPEAT_ENTRIES: [LookupEntry; 8] = [
+static REPEAT_ENTRIES: [LookupEntry; 8] = [
     LookupEntry {
         name: b"true",
         value: KEY_REPEAT_YES,

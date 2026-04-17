@@ -4,10 +4,10 @@ use crate::xkb::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
 pub use crate::xkb::shared_types::{
     areOverlappingOverlaysSupported, format_max_groups, format_max_overlays,
     isGroupLockOnReleaseSupported, isModsLatchOnPressSupported, isModsUnLockOnPressSupported,
-    real_mod_index, XkbKeyNumLevels, _XKB_MOD_INDEX_NUM_ENTRIES, MAX_ACTIONS_PER_LEVEL,
-    XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MAX_GROUPS_X11, XKB_MOD_INDEX_CAPS, XKB_MOD_INDEX_CTRL,
-    XKB_MOD_INDEX_MOD1, XKB_MOD_INDEX_MOD2, XKB_MOD_INDEX_MOD3, XKB_MOD_INDEX_MOD4,
-    XKB_MOD_INDEX_MOD5, XKB_MOD_INDEX_SHIFT, XKB_OVERLAY_MAX, XKB_OVERLAY_MAX_X11,
+    real_mod_index, XkbKeyNumLevels, MAX_ACTIONS_PER_LEVEL, XKB_ALL_GROUPS, XKB_MAX_GROUPS,
+    XKB_MAX_GROUPS_X11, XKB_MOD_INDEX_CAPS, XKB_MOD_INDEX_CTRL, XKB_MOD_INDEX_MOD1,
+    XKB_MOD_INDEX_MOD2, XKB_MOD_INDEX_MOD3, XKB_MOD_INDEX_MOD4, XKB_MOD_INDEX_MOD5,
+    XKB_MOD_INDEX_SHIFT, XKB_OVERLAY_MAX, XKB_OVERLAY_MAX_X11, _XKB_MOD_INDEX_NUM_ENTRIES,
 };
 pub use crate::xkb::state::mod_mask_get_effective;
 use crate::xkb::text::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
@@ -732,7 +732,7 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
         true
     }
 }
-static mut COMPILE_FILE_FNS: [compile_file_fn; 4] = {
+static COMPILE_FILE_FNS: [compile_file_fn; 4] = {
     [
         Some(CompileKeycodes as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
         Some(CompileKeyTypes as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
@@ -777,7 +777,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Cannot define {} in a keymap file\n",
-                        crate::xkb::utils::CStrDisplay(xkb_file_type_to_string((*file).file_type)),
+                        xkb_file_type_to_string((*file).file_type),
                     );
                 }
             } else if !files[(*file).file_type as usize].is_null() {
@@ -786,7 +786,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "More than one {} section in keymap file; All sections after the first ignored\n",
-                    crate::xkb::utils::CStrDisplay(xkb_file_type_to_string((*file).file_type)),
+                    xkb_file_type_to_string((*file).file_type),
                 );
             } else {
                 files[(*file).file_type as usize] = file;
@@ -878,7 +878,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                     XKB_LOG_LEVEL_DEBUG,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Component {} not provided in keymap\n",
-                    crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(type_0)),
+                    xkb_file_type_to_string(type_0),
                 );
             } else {
                 xkb_logf!(
@@ -886,7 +886,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                     XKB_LOG_LEVEL_DEBUG,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Compiling {} \"{}\"\n",
-                    crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(type_0)),
+                    xkb_file_type_to_string(type_0),
                     crate::xkb::utils::CStrDisplay(safe_map_name(files[type_0 as usize])),
                 );
             }
@@ -900,7 +900,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Failed to compile {}\n",
-                    crate::xkb::utils::CStrDisplay(xkb_file_type_to_string(type_0)),
+                    xkb_file_type_to_string(type_0),
                 );
                 // info.keymap is a pointer to the same keymap, no write-back needed
                 pending_computations_array_free(&raw mut pending_computations);

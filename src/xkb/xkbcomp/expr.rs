@@ -1,9 +1,9 @@
 use super::prelude::*;
+use crate::xkb::shared_types::*;
 use crate::xkb::text::{buttonNames, GROUP_LAST_INDEX_NAME};
 
 pub use crate::xkb::keymap::XkbModNameToIndex;
 pub use crate::xkb::shared_ast_types::stmt_type_to_operator_char;
-pub use crate::xkb::shared_types::{MOD_REAL_MASK_ALL, XKB_LEVEL_MAX_IMPL};
 use crate::xkb::utils::{cstr_as_bytes, istrneq};
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -26,16 +26,22 @@ pub struct named_integer_pattern {
     pub is_mask: bool,
     pub error_id: xkb_message_code,
 }
-static mut LEVEL_NAME_PATTERN: named_integer_pattern = named_integer_pattern {
-    prefix: std::ptr::null(),
-    prefix_length: 0,
-    min: 0,
-    max: 0,
-    entries: std::ptr::null(),
-    pending_entries: std::ptr::null(),
-    is_mask: false,
-    error_id: 0 as xkb_message_code,
-};
+// SAFETY: LEVEL_NAME_PATTERN is never modified and all pointers are either null or
+// point to static data. Only accessed in single-threaded parser context.
+struct SyncNamedIntegerPattern(named_integer_pattern);
+unsafe impl Sync for SyncNamedIntegerPattern {}
+
+static LEVEL_NAME_PATTERN: SyncNamedIntegerPattern =
+    SyncNamedIntegerPattern(named_integer_pattern {
+        prefix: b"Level\0".as_ptr() as *const i8,
+        prefix_length: 5, // "Level".len()
+        min: 1_u32,
+        max: XKB_LEVEL_MAX_IMPL as u32,
+        entries: std::ptr::null(),
+        pending_entries: std::ptr::null(),
+        is_mask: false,
+        error_id: XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL,
+    });
 pub unsafe fn ExprResolveLhs<'a>(
     ctx: *mut xkb_context,
     expr: *const ExprDef,
@@ -549,7 +555,7 @@ pub unsafe fn ExprResolveGroup(
     pending: *mut bool,
 ) -> xkb_parser_error {
     unsafe {
-        static mut PENDING_GROUP_INDEX_NAMES: [LookupEntry; 2] = [
+        static PENDING_GROUP_INDEX_NAMES: [LookupEntry; 2] = [
             LookupEntry {
                 name: GROUP_LAST_INDEX_NAME,
                 value: 0_u32,
@@ -636,7 +642,7 @@ pub unsafe fn ExprResolveLevel(
                         *mut bool,
                     ) -> bool,
             ),
-            &raw const LEVEL_NAME_PATTERN as *const ::core::ffi::c_void,
+            &raw const LEVEL_NAME_PATTERN.0 as *const ::core::ffi::c_void,
         ) {
             return false;
         }
@@ -1126,7 +1132,7 @@ pub unsafe fn ExprResolveGroupMask(
     pending_rtrn: *mut bool,
 ) -> bool {
     unsafe {
-        static mut PENDING_GROUP_MASK_NAMES: [LookupEntry; 2] = [
+        static PENDING_GROUP_MASK_NAMES: [LookupEntry; 2] = [
             LookupEntry {
                 name: GROUP_LAST_INDEX_NAME,
                 value: 0_u32,
@@ -1165,23 +1171,3 @@ pub unsafe fn ExprResolveGroupMask(
         )
     }
 }
-unsafe fn c2rust_run_static_initializers() {
-    unsafe {
-        LEVEL_NAME_PATTERN = named_integer_pattern {
-            prefix: b"Level\0".as_ptr() as *const i8,
-            prefix_length: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1_usize),
-            min: 1_u32,
-            max: XKB_LEVEL_MAX_IMPL as u32,
-            entries: std::ptr::null(),
-            pending_entries: std::ptr::null(),
-            is_mask: false,
-            error_id: XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL,
-        }
-    }
-}
-use crate::xkb::shared_types::*;
-#[used]
-#[cfg_attr(target_os = "linux", link_section = ".init_array")]
-#[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]
-#[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
-static INIT_ARRAY: [unsafe fn(); 1] = [c2rust_run_static_initializers];

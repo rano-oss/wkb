@@ -426,7 +426,7 @@ pub unsafe fn xkb_state_key_get_layout(state: *mut xkb_state, kc: u32) -> u32 {
     }
 }
 
-static mut DUMMY_ACTION: xkb_action = xkb_action {
+static DUMMY_ACTION: xkb_action = xkb_action {
     type_0: ACTION_TYPE_NONE,
 };
 
@@ -1270,7 +1270,7 @@ unsafe fn xkb_filter_redirect_key_func(
     }
 }
 
-static mut FILTER_ACTION_FUNCS: [FilterActionFuncs; 21] = {
+static FILTER_ACTION_FUNCS: [FilterActionFuncs; 21] = {
     [
         FilterActionFuncs {
             new: None,
@@ -1963,7 +1963,7 @@ unsafe fn state_update_latched_locked(
 
 unsafe fn clear_all_latches_and_locks(state: *mut xkb_state, events: *mut xkb_events) {
     unsafe {
-        static mut COMPONENTS: u32 = (XKB_STATE_MODS_LATCHED as i32
+        static COMPONENTS: u32 = (XKB_STATE_MODS_LATCHED as i32
             | XKB_STATE_MODS_LOCKED as i32
             | XKB_STATE_LAYOUT_LATCHED as i32
             | XKB_STATE_LAYOUT_LOCKED as i32) as u32;

@@ -614,10 +614,10 @@ pub unsafe fn rxkb_context_new(flags: rxkb_context_flags) -> *mut rxkb_context {
         if !env.is_null() {
             rxkb_context_set_log_level(ctx, log_level(env));
         }
-        static mut RXKB_CONTEXT_FLAGS: rxkb_context_flags =
-            (RXKB_CONTEXT_NO_DEFAULT_INCLUDES as i32
-                | RXKB_CONTEXT_LOAD_EXOTIC_RULES as i32
-                | RXKB_CONTEXT_NO_SECURE_GETENV as i32) as rxkb_context_flags;
+        static RXKB_CONTEXT_FLAGS: rxkb_context_flags = (RXKB_CONTEXT_NO_DEFAULT_INCLUDES as i32
+            | RXKB_CONTEXT_LOAD_EXOTIC_RULES as i32
+            | RXKB_CONTEXT_NO_SECURE_GETENV as i32)
+            as rxkb_context_flags;
         if flags & !RXKB_CONTEXT_FLAGS != 0 {
             rxkb_logf!(
                 ctx,

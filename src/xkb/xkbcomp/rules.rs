@@ -4,16 +4,15 @@ pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 pub use crate::xkb::utils::is_absolute_path;
 
 pub use crate::xkb::messages::{
-    xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
-    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
-    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
-    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
-    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
-    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
-    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
-    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
-    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
-    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
+    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
+    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
+    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
+    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
+    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
+    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
+    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
+    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
     XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
     XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
     XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
@@ -45,13 +44,13 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
     XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
-    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
 };
 pub use crate::xkb::scanner_utils::{scanner, scanner_loc, sval, svaleq, svaleq_prefix};
 pub use crate::xkb::shared_ast_types::{
-    _FILE_TYPE_NUM_ENTRIES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID,
-    FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
-    FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
+    FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP,
+    FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
+    LAST_KEYMAP_FILE_TYPE, _FILE_TYPE_NUM_ENTRIES,
 };
 pub use crate::xkb::shared_types::XKB_MAX_GROUPS;
 pub use crate::xkb::shared_types::{
@@ -347,14 +346,52 @@ unsafe fn lex(s: *mut scanner, val: *mut lvalue) -> rules_token {
         TOK_ERROR
     }
 }
-static mut RULES_MLVO_SVALS: [sval; 4] = [sval {
-    len: 0,
-    start: std::ptr::null(),
-}; 4];
-static mut RULES_KCCGST_SVALS: [sval; 5] = [sval {
-    len: 0,
-    start: std::ptr::null(),
-}; 5];
+// SAFETY: SyncSval is a wrapper to allow sval (which contains *const i8) in a
+// static. The wrapped values point to byte-string literals with 'static lifetime
+// and are never mutated, so sharing across threads is safe.
+struct SyncSval(sval);
+unsafe impl Sync for SyncSval {}
+
+static RULES_MLVO_SVALS: [SyncSval; 4] = [
+    SyncSval(sval {
+        len: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1),
+        start: b"model\0".as_ptr() as *const i8,
+    }),
+    SyncSval(sval {
+        len: (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1),
+        start: b"layout\0".as_ptr() as *const i8,
+    }),
+    SyncSval(sval {
+        len: (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1),
+        start: b"variant\0".as_ptr() as *const i8,
+    }),
+    SyncSval(sval {
+        len: (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1),
+        start: b"option\0".as_ptr() as *const i8,
+    }),
+];
+static RULES_KCCGST_SVALS: [SyncSval; 5] = [
+    SyncSval(sval {
+        len: (std::mem::size_of::<[i8; 9]>()).wrapping_sub(1),
+        start: b"keycodes\0".as_ptr() as *const i8,
+    }),
+    SyncSval(sval {
+        len: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1),
+        start: b"types\0".as_ptr() as *const i8,
+    }),
+    SyncSval(sval {
+        len: (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1),
+        start: b"compat\0".as_ptr() as *const i8,
+    }),
+    SyncSval(sval {
+        len: (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1),
+        start: b"symbols\0".as_ptr() as *const i8,
+    }),
+    SyncSval(sval {
+        len: (std::mem::size_of::<[i8; 9]>()).wrapping_sub(1),
+        start: b"geometry\0".as_ptr() as *const i8,
+    }),
+];
 pub const OPTIONS_MATCH_ALL_GROUPS: i32 = XKB_MAX_GROUPS;
 unsafe fn strip_spaces(mut v: sval) -> sval {
     unsafe {
@@ -800,27 +837,31 @@ unsafe fn extract_layout_index(s: *const i8, max_len: usize, out: *mut u32) -> i
 }
 unsafe fn extract_mapping_layout_index(s: *const i8, max_len: usize, out: *mut u32) -> i32 {
     unsafe {
-        static mut NAMES: [LayoutIndexName; 4] = [
-            LayoutIndexName {
+        // SAFETY: SyncLayoutIndexName wraps LayoutIndexName (which contains *const i8)
+        // to satisfy Sync requirement for static. The pointers are to static byte string literals.
+        struct SyncLayoutIndexName(LayoutIndexName);
+        unsafe impl Sync for SyncLayoutIndexName {}
+        static NAMES: [SyncLayoutIndexName; 4] = [
+            SyncLayoutIndexName(LayoutIndexName {
                 name: b"single]\0".as_ptr() as *const i8,
                 length: 7_i32,
                 range: LAYOUT_INDEX_SINGLE,
-            },
-            LayoutIndexName {
+            }),
+            SyncLayoutIndexName(LayoutIndexName {
                 name: b"first]\0".as_ptr() as *const i8,
                 length: 6_i32,
                 range: LAYOUT_INDEX_FIRST,
-            },
-            LayoutIndexName {
+            }),
+            SyncLayoutIndexName(LayoutIndexName {
                 name: b"later]\0".as_ptr() as *const i8,
                 length: 6_i32,
                 range: LAYOUT_INDEX_LATER,
-            },
-            LayoutIndexName {
+            }),
+            SyncLayoutIndexName(LayoutIndexName {
                 name: b"any]\0".as_ptr() as *const i8,
                 length: 4_i32,
                 range: LAYOUT_INDEX_ANY,
-            },
+            }),
         ];
         if max_len < 3_usize || *s.offset(0_i32 as isize) as i32 != '[' as i32 {
             *out = XKB_LAYOUT_INVALID;
@@ -832,10 +873,10 @@ unsafe fn extract_mapping_layout_index(s: *const i8, max_len: usize, out: *mut u
                 .wrapping_div(std::mem::size_of::<LayoutIndexName>())
         {
             if cstr_as_bytes(s.offset(1_i32 as isize) as *const i8).starts_with(
-                &cstr_as_bytes(NAMES[k as usize].name)[..NAMES[k as usize].length as usize],
+                &cstr_as_bytes(NAMES[k as usize].0.name)[..NAMES[k as usize].0.length as usize],
             ) {
-                *out = NAMES[k as usize].range;
-                return NAMES[k as usize].length + 1_i32;
+                *out = NAMES[k as usize].0.range;
+                return NAMES[k as usize].0.length + 1_i32;
             }
             k = k.wrapping_add(1);
         }
@@ -856,7 +897,7 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
         };
         mlvo = MLVO_MODEL;
         while (mlvo as u32) < _MLVO_NUM_ENTRIES {
-            mlvo_sval = RULES_MLVO_SVALS[mlvo as usize];
+            mlvo_sval = RULES_MLVO_SVALS[mlvo as usize].0;
             if svaleq_prefix(mlvo_sval, ident) {
                 break;
             }
@@ -1036,8 +1077,8 @@ unsafe fn matcher_mapping_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sv
         };
         kccgst = KCCGST_KEYCODES;
         while (kccgst as u32) < _KCCGST_NUM_ENTRIES {
-            kccgst_sval = RULES_KCCGST_SVALS[kccgst as usize];
-            if svaleq(RULES_KCCGST_SVALS[kccgst as usize], ident) {
+            kccgst_sval = RULES_KCCGST_SVALS[kccgst as usize].0;
+            if svaleq(RULES_KCCGST_SVALS[kccgst as usize].0, ident) {
                 break;
             }
             kccgst += 1;
@@ -3073,53 +3114,4 @@ pub unsafe fn xkb_components_from_rules_names(
         ret
     }
 }
-unsafe fn c2rust_run_static_initializers() {
-    unsafe {
-        RULES_KCCGST_SVALS = [
-            sval {
-                len: (std::mem::size_of::<[i8; 9]>()).wrapping_sub(1_usize),
-                start: b"keycodes\0".as_ptr() as *const i8,
-            },
-            sval {
-                len: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1_usize),
-                start: b"types\0".as_ptr() as *const i8,
-            },
-            sval {
-                len: (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1_usize),
-                start: b"compat\0".as_ptr() as *const i8,
-            },
-            sval {
-                len: (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1_usize),
-                start: b"symbols\0".as_ptr() as *const i8,
-            },
-            sval {
-                len: (std::mem::size_of::<[i8; 9]>()).wrapping_sub(1_usize),
-                start: b"geometry\0".as_ptr() as *const i8,
-            },
-        ];
-        RULES_MLVO_SVALS = [
-            sval {
-                len: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1_usize),
-                start: b"model\0".as_ptr() as *const i8,
-            },
-            sval {
-                len: (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1_usize),
-                start: b"layout\0".as_ptr() as *const i8,
-            },
-            sval {
-                len: (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1_usize),
-                start: b"variant\0".as_ptr() as *const i8,
-            },
-            sval {
-                len: (std::mem::size_of::<[i8; 7]>()).wrapping_sub(1_usize),
-                start: b"option\0".as_ptr() as *const i8,
-            },
-        ];
-    }
-}
 use crate::xkb::shared_types::*;
-#[used]
-#[cfg_attr(target_os = "linux", link_section = ".init_array")]
-#[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]
-#[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
-static INIT_ARRAY: [unsafe fn(); 1] = [c2rust_run_static_initializers];

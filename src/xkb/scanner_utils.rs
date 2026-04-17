@@ -175,6 +175,15 @@ impl scanner {
         }
     }
 
+    pub fn buf_appends_str(&mut self, s: &str) -> bool {
+        for &b in s.as_bytes() {
+            if !self.buf_append(b) {
+                return false;
+            }
+        }
+        true
+    }
+
     #[inline]
     pub fn buf_appends_code_point(&mut self, c: u32) -> bool {
         if self.buf_pos + 5 <= self.buf.len() {

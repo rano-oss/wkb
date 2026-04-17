@@ -62,20 +62,25 @@ pub type actionHandler = Option<
         *mut *mut ExprDef,
     ) -> xkb_parser_error,
 >;
-static mut CONST_TRUE: ExprBoolean = ExprBoolean {
+// SAFETY: ExprBoolean contains *mut _ParseCommon which is always null and never dereferenced mutably.
+// These are read-only constants used only via `&raw const`.
+struct SyncExprBoolean(ExprBoolean);
+unsafe impl Sync for SyncExprBoolean {}
+
+static CONST_TRUE: SyncExprBoolean = SyncExprBoolean(ExprBoolean {
     common: _ParseCommon {
         next: std::ptr::null_mut(),
         type_0: STMT_EXPR_BOOLEAN_LITERAL,
     },
     set: true,
-};
-static mut CONST_FALSE: ExprBoolean = ExprBoolean {
+});
+static CONST_FALSE: SyncExprBoolean = SyncExprBoolean(ExprBoolean {
     common: _ParseCommon {
         next: std::ptr::null_mut(),
         type_0: STMT_EXPR_BOOLEAN_LITERAL,
     },
     set: false,
-};
+});
 pub unsafe fn InitActionsInfo(keymap: *const xkb_keymap, info: *mut ActionsInfo) {
     unsafe {
         let mut type_0: xkb_action_type = ACTION_TYPE_NONE;
@@ -470,7 +475,7 @@ unsafe fn CheckModifierField(
         PARSER_SUCCESS
     }
 }
-static mut LOCK_WHICH: [LookupEntry; 5] = [
+static LOCK_WHICH: [LookupEntry; 5] = [
     LookupEntry {
         name: b"both",
         value: 0_u32,
@@ -949,7 +954,7 @@ unsafe fn HandlePtrBtn(
         ReportIllegal(ctx, (*action).type_0, field, (*keymap_info).strict)
     }
 }
-static mut PTR_DFLTS: [LookupEntry; 4] = [
+static PTR_DFLTS: [LookupEntry; 4] = [
     LookupEntry {
         name: b"dfltbtn",
         value: 1_u32,
@@ -1448,7 +1453,7 @@ unsafe fn HandlePrivate(
         ReportIllegal(ctx, (*action).type_0, field, (*keymap_info).strict)
     }
 }
-static mut HANDLE_ACTION: [actionHandler; 21] = {
+static HANDLE_ACTION: [actionHandler; 21] = {
     [
         Some(
             HandleNoAction
@@ -1758,10 +1763,10 @@ pub unsafe fn HandleActionDef(
                 || (*arg).common.type_0 == STMT_EXPR_INVERT
             {
                 field = (*arg).unary.child as *mut ExprDef;
-                value = &raw const CONST_FALSE as *const ExprDef;
+                value = &raw const CONST_FALSE.0 as *const ExprDef;
             } else {
                 field = arg;
-                value = &raw const CONST_TRUE as *const ExprDef;
+                value = &raw const CONST_TRUE.0 as *const ExprDef;
             }
             if !ExprResolveLhs(
                 ctx,
