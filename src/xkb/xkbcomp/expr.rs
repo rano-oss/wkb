@@ -1,8 +1,6 @@
 use super::prelude::*;
 use crate::xkb::text::{buttonNames, GROUP_LAST_INDEX_NAME};
-extern "C" {
-    pub fn imaxabs(__n: i64) -> i64;
-}
+
 pub use crate::xkb::keymap::XkbModNameToIndex;
 pub use crate::xkb::shared_ast_types::stmt_type_to_operator_char;
 pub use crate::xkb::shared_types::{MOD_REAL_MASK_ALL, XKB_LEVEL_MAX_IMPL};
@@ -844,7 +842,7 @@ unsafe fn ExprResolveMaskLookup(
                         } else {
                             b"\0".as_ptr() as *const i8
                         }),
-                        imaxabs((*expr).integer.ival),
+                        (*expr).integer.ival.abs(),
                         4294967295_u32,
                     );
                     return false;
@@ -976,7 +974,7 @@ unsafe fn ExprResolveMaskLookup(
                         } else {
                             b"\0".as_ptr() as *const i8
                         }),
-                        imaxabs(v),
+                        v.abs(),
                         4294967295_u32,
                     );
                     return false;

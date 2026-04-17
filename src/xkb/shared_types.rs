@@ -718,38 +718,6 @@ pub const XKB_KEY_NoSymbol: i32 = 0;
 pub const XKB_SUCCESS: xkb_error_code = 0;
 pub const XKB_ERROR_INVALID: xkb_error_code = -1;
 
-// ── struct_timespec_h ─────────────────────────────────────────────────
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct timespec {
-    pub tv_sec: i64,
-    pub tv_nsec: i64,
-}
-
-// ── struct_stat_h ─────────────────────────────────────────────────────
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct stat {
-    pub st_dev: u64,
-    pub st_ino: u64,
-    pub st_nlink: u64,
-    pub st_mode: u32,
-    pub st_uid: u32,
-    pub st_gid: u32,
-    pub __pad0: i32,
-    pub st_rdev: u64,
-    pub st_size: i64,
-    pub st_blksize: i64,
-    pub st_blocks: i64,
-    pub st_atim: timespec,
-    pub st_mtim: timespec,
-    pub st_ctim: timespec,
-    pub __glibc_reserved: [i64; 3],
-}
-
-// ── bits_stat_h ───────────────────────────────────────────────────────
-pub const __S_IFMT: i32 = 0o170000;
-
 // ── errno_base_h ──────────────────────────────────────────────────────
 pub const ENOMEM: i32 = 12;
 pub const EACCES: i32 = 13;
@@ -762,17 +730,6 @@ pub const __LC_ALL: i32 = 6;
 // ── unistd_h ──────────────────────────────────────────────────────────
 pub const R_OK: i32 = 4;
 pub const X_OK: i32 = 1;
-
-// ── dirent_h ──────────────────────────────────────────────────────────
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct dirent {
-    pub d_ino: u64,
-    pub d_off: i64,
-    pub d_reclen: u16,
-    pub d_type: ::core::ffi::c_uchar,
-    pub d_name: [i8; 256],
-}
 
 // NOTE: DIR type alias and __dirstream extern type are in utils.rs
 // (because __dirstream is an extern type that must be declared alongside its extern block)

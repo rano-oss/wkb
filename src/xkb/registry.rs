@@ -1,9 +1,9 @@
 use crate::xkb::messages::{XKB_ERROR_INVALID_PATH, XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH};
 use crate::xkb::utils::{
-    __errno_location, _steal, cstr_as_bytes, cstr_cmp, cstr_dup, cstr_free, cstr_len, istrneq,
-    strdup_safe, streq, streq_null, xkb_stat,
+    _steal, cstr_as_bytes, cstr_cmp, cstr_dup, cstr_free, cstr_len, istrneq, last_errno,
+    strdup_safe, streq, streq_null,
 };
-use libc::{closedir, free, getenv, opendir, qsort, readdir, DIR};
+use libc::{free, getenv};
 
 pub type rxkb_log_level = u32;
 pub const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;
@@ -19,8 +19,16 @@ pub const RXKB_CONTEXT_NO_SECURE_GETENV: rxkb_context_flags = 4;
 pub const RXKB_CONTEXT_LOAD_EXOTIC_RULES: rxkb_context_flags = 2;
 pub const RXKB_CONTEXT_NO_DEFAULT_INCLUDES: rxkb_context_flags = 1;
 pub const RXKB_CONTEXT_NO_FLAGS: rxkb_context_flags = 0;
-extern "C" {
-    pub fn secure_getenv(name: *const i8) -> *mut i8;
+
+/// Rust replacement for glibc `secure_getenv`.
+/// Returns NULL if the process is running with elevated privileges (setuid/setgid).
+unsafe fn secure_getenv(name: *const i8) -> *mut i8 {
+    unsafe {
+        if libc::getuid() != libc::geteuid() || libc::getgid() != libc::getegid() {
+            return std::ptr::null_mut();
+        }
+        getenv(name)
+    }
 }
 #[repr(C)]
 pub struct rxkb_context {
@@ -646,33 +654,6 @@ pub unsafe fn rxkb_context_new(flags: rxkb_context_flags) -> *mut rxkb_context {
 pub unsafe fn rxkb_context_include_path_append(ctx: *mut rxkb_context, path: *const i8) -> bool {
     unsafe {
         #[allow(unused_assignments)]
-        let mut stat_buf: stat = stat {
-            st_dev: 0,
-            st_ino: 0,
-            st_nlink: 0,
-            st_mode: 0,
-            st_uid: 0,
-            st_gid: 0,
-            __pad0: 0,
-            st_rdev: 0,
-            st_size: 0,
-            st_blksize: 0,
-            st_blocks: 0,
-            st_atim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            st_mtim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            st_ctim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            __glibc_reserved: [0; 3],
-        };
-        #[allow(unused_assignments)]
         let mut rules: [i8; 4096] = { std::mem::zeroed() };
         let tmp: *mut i8;
         let mut err: i32 = 0_i32;
@@ -683,71 +664,62 @@ pub unsafe fn rxkb_context_include_path_append(ctx: *mut rxkb_context, path: *co
                 "include paths can only be appended to a new context\n",
             );
         } else {
-            stat_buf = stat {
-                st_dev: 0,
-                st_ino: 0,
-                st_nlink: 0,
-                st_mode: 0,
-                st_uid: 0,
-                st_gid: 0,
-                __pad0: 0,
-                st_rdev: 0,
-                st_size: 0,
-                st_blksize: 0,
-                st_blocks: 0,
-                st_atim: timespec {
-                    tv_sec: 0,
-                    tv_nsec: 0,
-                },
-                st_mtim: timespec {
-                    tv_sec: 0,
-                    tv_nsec: 0,
-                },
-                st_ctim: timespec {
-                    tv_sec: 0,
-                    tv_nsec: 0,
-                },
-                __glibc_reserved: [0; 3],
-            };
-            err = xkb_stat(path, &raw mut stat_buf);
-            if err != 0_i32 {
-                err = *__errno_location();
-            } else if stat_buf.st_mode & __S_IFMT as u32 != 0o40000_u32 {
-                err = ENOTDIR;
-            } else {
-                rules = [0; 4096];
-                let (_, _trunc) = crate::xkb::utils::snprintf_args(
-                    &raw mut rules as *mut i8,
-                    std::mem::size_of::<[i8; 4096]>(),
-                    format_args!(
-                        "{}/rules/{}.xml",
-                        crate::xkb::utils::CStrDisplay(path),
-                        crate::xkb::utils::CStrDisplay(DEFAULT_XKB_RULES.as_ptr())
-                    ),
-                );
-                if _trunc {
+            // Use std::fs::metadata instead of xkb_stat
+            let path_str = match std::ffi::CStr::from_ptr(path).to_str() {
+                Ok(s) => s,
+                Err(_) => {
+                    err = libc::EINVAL;
                     rxkb_logf!(
                         ctx,
-                        RXKB_LOG_LEVEL_ERROR,
-                        "[XKB-{:03}] Path is too long: expected max length of {}, got: {}/rules/{}.xml\n",
-                        XKB_ERROR_INVALID_PATH as i32,
-                        std::mem::size_of::<[i8; 4096]>(),
+                        RXKB_LOG_LEVEL_INFO,
+                        "Include path failed: \"{}\" (invalid UTF-8)\n",
                         crate::xkb::utils::CStrDisplay(path),
-                        crate::xkb::utils::CStrDisplay(b"evdev\0".as_ptr() as *const i8),
                     );
-                } else {
-                    tmp = cstr_dup(path);
-                    if tmp.is_null() {
-                        err = ENOMEM;
-                    } else {
-                        (*ctx).includes.push(tmp);
+                    return false;
+                }
+            };
+            match std::fs::metadata(path_str) {
+                Err(e) => {
+                    err = e.raw_os_error().unwrap_or(0);
+                }
+                Ok(m) if !m.is_dir() => {
+                    err = ENOTDIR;
+                }
+                Ok(_) => {
+                    rules = [0; 4096];
+                    let (_, _trunc) = crate::xkb::utils::snprintf_args(
+                        &raw mut rules as *mut i8,
+                        std::mem::size_of::<[i8; 4096]>(),
+                        format_args!(
+                            "{}/rules/{}.xml",
+                            crate::xkb::utils::CStrDisplay(path),
+                            crate::xkb::utils::CStrDisplay(DEFAULT_XKB_RULES.as_ptr())
+                        ),
+                    );
+                    if _trunc {
                         rxkb_logf!(
                             ctx,
-                            RXKB_LOG_LEVEL_INFO,
-                            "Include path added: {}\n",
-                            crate::xkb::utils::CStrDisplay(tmp),
+                            RXKB_LOG_LEVEL_ERROR,
+                            "[XKB-{:03}] Path is too long: expected max length of {}, got: {}/rules/{}.xml\n",
+                            XKB_ERROR_INVALID_PATH as i32,
+                            std::mem::size_of::<[i8; 4096]>(),
+                            crate::xkb::utils::CStrDisplay(path),
+                            crate::xkb::utils::CStrDisplay(b"evdev\0".as_ptr() as *const i8),
                         );
-                        return true;
+                    } else {
+                        tmp = cstr_dup(path);
+                        if tmp.is_null() {
+                            err = ENOMEM;
+                        } else {
+                            (*ctx).includes.push(tmp);
+                            rxkb_logf!(
+                                ctx,
+                                RXKB_LOG_LEVEL_INFO,
+                                "Include path added: {}\n",
+                                crate::xkb::utils::CStrDisplay(tmp),
+                            );
+                            return true;
+                        }
                     }
                 }
             }
@@ -762,12 +734,6 @@ pub unsafe fn rxkb_context_include_path_append(ctx: *mut rxkb_context, path: *co
         false
     }
 }
-unsafe extern "C" fn compare_str(
-    a: *const ::core::ffi::c_void,
-    b: *const ::core::ffi::c_void,
-) -> i32 {
-    unsafe { cstr_cmp(*(a as *mut *mut i8), *(b as *mut *mut i8)) }
-}
 unsafe fn add_direct_subdirectories(
     ctx: *mut rxkb_context,
     path: *const i8,
@@ -776,143 +742,129 @@ unsafe fn add_direct_subdirectories(
     mut versioned_path_length: usize,
 ) -> i32 {
     unsafe {
-        let mut entry: *mut libc::dirent;
-        #[allow(unused_assignments)]
-        let mut path_buf: [i8; 4096] = { std::mem::zeroed() };
-        let c2rust_current_block: u64;
         let mut ret: i32 = 0_i32;
-        let mut err: i32;
-        let mut dir: *mut DIR = std::ptr::null_mut();
-        let mut stat_buf: stat = stat {
-            st_dev: 0,
-            st_ino: 0,
-            st_nlink: 0,
-            st_mode: 0,
-            st_uid: 0,
-            st_gid: 0,
-            __pad0: 0,
-            st_rdev: 0,
-            st_size: 0,
-            st_blksize: 0,
-            st_blocks: 0,
-            st_atim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            st_mtim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            st_ctim: timespec {
-                tv_sec: 0,
-                tv_nsec: 0,
-            },
-            __glibc_reserved: [0; 3],
-        };
-        err = xkb_stat(path, &raw mut stat_buf);
-        if err != 0_i32 {
-            err = *__errno_location();
-        } else if stat_buf.st_mode & __S_IFMT as u32 != 0o40000_u32 {
-            err = ENOTDIR;
-        } else {
-            dir = opendir(path);
-            if dir.is_null() {
-                err = EACCES;
-            } else {
-                // dead store removed: entry = std::ptr::null_mut();
-                path_buf = ::core::mem::transmute::<
-                    [u8; 4096],
-                    [i8; 4096],
-                >(
-                    *b"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0",
+
+        // Convert C path to Rust str
+        let path_str = match std::ffi::CStr::from_ptr(path).to_str() {
+            Ok(s) => s,
+            Err(_) => {
+                rxkb_logf!(
+                    ctx,
+                    RXKB_LOG_LEVEL_DEBUG,
+                    "Include extensions path failed: {} (invalid UTF-8)\n",
+                    crate::xkb::utils::CStrDisplay(path),
                 );
-                versioned_path_length = versioned_path_length.wrapping_add(1);
-                's_62: loop {
-                    entry = readdir(dir);
-                    if entry.is_null() {
-                        c2rust_current_block = 14434620278749266018;
-                        break;
-                    }
-                    let name: *const i8 = &raw mut (*entry).d_name as *mut i8;
-                    if cstr_as_bytes(name) == b"." || cstr_as_bytes(name) == b".." {
-                        continue;
-                    }
-                    let (_, _trunc) = crate::xkb::utils::snprintf_args(
-                        &raw mut path_buf as *mut i8,
-                        std::mem::size_of::<[i8; 4096]>(),
-                        format_args!(
-                            "{}/{}",
-                            crate::xkb::utils::CStrDisplay(path),
-                            crate::xkb::utils::CStrDisplay(name)
-                        ),
-                    );
-                    if _trunc {
-                        err = ENOMEM;
-                        c2rust_current_block = 17009998909239196508;
-                        break;
-                    } else {
-                        if xkb_stat(&raw mut path_buf as *mut i8, &raw mut stat_buf) != 0_i32
-                            || (stat_buf.st_mode & __S_IFMT as u32 != 0o40000_u32)
-                        {
-                            continue;
-                        }
-                        let mut i: u32 = 0_u32;
-                        while i < versioned_count {
-                            let prev_name: *const i8 =
-                                (extensions[i as usize]).add(versioned_path_length);
-                            if cstr_as_bytes(name) == cstr_as_bytes(prev_name) {
-                                continue 's_62;
-                            }
-                            i = i.wrapping_add(1);
-                        }
-                        let ext_path: *mut i8 = strdup_safe(&raw mut path_buf as *mut i8);
-                        if ext_path.is_null() {
-                            err = ENOMEM;
-                            c2rust_current_block = 17009998909239196508;
-                            break;
-                        } else {
-                            extensions.push(ext_path);
-                        }
-                    }
-                }
-                match c2rust_current_block {
-                    17009998909239196508 => {}
-                    _ => {
-                        closedir(dir);
-                        if extensions.len() > versioned_count as usize {
-                            qsort(
-                                extensions.as_mut_ptr().add(versioned_count as usize)
-                                    as *mut ::core::ffi::c_void,
-                                extensions.len().wrapping_sub(versioned_count as usize),
-                                std::mem::size_of::<*mut i8>(),
-                                Some(
-                                    compare_str
-                                        as unsafe extern "C" fn(
-                                            *const ::core::ffi::c_void,
-                                            *const ::core::ffi::c_void,
-                                        )
-                                            -> i32,
-                                ),
-                            );
-                            for i in (versioned_count as usize)..extensions.len() {
-                                ret |= rxkb_context_include_path_append(ctx, extensions[i]) as i32;
-                            }
-                        }
-                        return ret;
-                    }
+                return ret;
+            }
+        };
+
+        // Check path is a directory
+        let meta = match std::fs::metadata(path_str) {
+            Ok(m) => m,
+            Err(e) => {
+                rxkb_logf!(
+                    ctx,
+                    RXKB_LOG_LEVEL_DEBUG,
+                    "Include extensions path failed: {} ({})\n",
+                    crate::xkb::utils::CStrDisplay(path),
+                    crate::xkb::utils::StrerrorDisplay(e.raw_os_error().unwrap_or(0)),
+                );
+                return ret;
+            }
+        };
+        if !meta.is_dir() {
+            rxkb_logf!(
+                ctx,
+                RXKB_LOG_LEVEL_DEBUG,
+                "Include extensions path failed: {} ({})\n",
+                crate::xkb::utils::CStrDisplay(path),
+                crate::xkb::utils::StrerrorDisplay(ENOTDIR),
+            );
+            return ret;
+        }
+
+        // Read directory entries
+        let dir_entries = match std::fs::read_dir(path_str) {
+            Ok(d) => d,
+            Err(_) => {
+                rxkb_logf!(
+                    ctx,
+                    RXKB_LOG_LEVEL_DEBUG,
+                    "Include extensions path failed: {} ({})\n",
+                    crate::xkb::utils::CStrDisplay(path),
+                    crate::xkb::utils::StrerrorDisplay(EACCES),
+                );
+                return ret;
+            }
+        };
+
+        versioned_path_length = versioned_path_length.wrapping_add(1);
+
+        for entry in dir_entries {
+            let entry = match entry {
+                Ok(e) => e,
+                Err(_) => continue,
+            };
+            let name = entry.file_name();
+            let name_str = match name.to_str() {
+                Some(s) => s,
+                None => continue,
+            };
+            if name_str == "." || name_str == ".." {
+                continue;
+            }
+
+            // Check if subdirectory
+            let entry_path = entry.path();
+            let entry_meta = match std::fs::metadata(&entry_path) {
+                Ok(m) => m,
+                Err(_) => continue,
+            };
+            if !entry_meta.is_dir() {
+                continue;
+            }
+
+            // Check for duplicates against versioned entries
+            let mut is_dup = false;
+            for i in 0..(versioned_count as usize) {
+                let prev_name_ptr = (extensions[i]).add(versioned_path_length);
+                let prev_name = cstr_as_bytes(prev_name_ptr);
+                if name_str.as_bytes() == prev_name {
+                    is_dup = true;
+                    break;
                 }
             }
+            if is_dup {
+                continue;
+            }
+
+            // Build full path and strdup it
+            let full_path = match std::ffi::CString::new(entry_path.to_string_lossy().as_bytes()) {
+                Ok(c) => c,
+                Err(_) => continue,
+            };
+            let ext_path = strdup_safe(full_path.as_ptr());
+            if ext_path.is_null() {
+                rxkb_logf!(
+                    ctx,
+                    RXKB_LOG_LEVEL_DEBUG,
+                    "Include extensions path failed: {} ({})\n",
+                    crate::xkb::utils::CStrDisplay(path),
+                    crate::xkb::utils::StrerrorDisplay(ENOMEM),
+                );
+                return ret;
+            }
+            extensions.push(ext_path);
         }
-        rxkb_logf!(
-            ctx,
-            RXKB_LOG_LEVEL_DEBUG,
-            "Include extensions path failed: {} ({})\n",
-            crate::xkb::utils::CStrDisplay(path),
-            crate::xkb::utils::StrerrorDisplay(err),
-        );
-        if !dir.is_null() {
-            closedir(dir);
+
+        // Sort new entries
+        if extensions.len() > versioned_count as usize {
+            extensions[versioned_count as usize..].sort_by(|a, b| cstr_cmp(*a, *b).cmp(&0));
+            for i in (versioned_count as usize)..extensions.len() {
+                ret |= rxkb_context_include_path_append(ctx, extensions[i]) as i32;
+            }
         }
+
         ret
     }
 }

@@ -1,19 +1,3 @@
-pub const MAP_FAILED: *mut ::core::ffi::c_void = -1_i32 as *mut ::core::ffi::c_void;
-
-extern "C" {
-    pub fn mmap(
-        __addr: *mut ::core::ffi::c_void,
-        __len: usize,
-        __prot: i32,
-        __flags: i32,
-        __fd: i32,
-        __offset: i64,
-    ) -> *mut ::core::ffi::c_void;
-}
-pub const PROT_READ: i32 = 0x1_i32;
-pub const MAP_SHARED: i32 = 0x1_i32;
-
-pub use crate::xkb::shared_types::timespec;
 use crate::xkb::shared_types::xkb_error_code;
 
 /// Case-insensitive comparison of two byte slices (like C `strcasecmp`).
@@ -67,8 +51,9 @@ pub unsafe fn _steal(ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void 
     }
 }
 
-extern "C" {
-    pub fn __errno_location() -> *mut i32;
+/// Returns the last OS error number (replacement for `*__errno_location()`).
+pub fn last_errno() -> i32 {
+    std::io::Error::last_os_error().raw_os_error().unwrap_or(0)
 }
 
 use memmap2::Mmap;
@@ -390,16 +375,7 @@ pub struct StrerrorDisplay(pub i32);
 
 impl core::fmt::Display for StrerrorDisplay {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        extern "C" {
-            fn strerror(__errnum: i32) -> *mut i8;
-        }
-        unsafe {
-            let p = strerror(self.0);
-            if p.is_null() {
-                return f.write_str("Unknown error");
-            }
-            CStrDisplay(p as *const i8).fmt(f)
-        }
+        write!(f, "{}", std::io::Error::from_raw_os_error(self.0))
     }
 }
 
@@ -631,13 +607,4 @@ pub unsafe fn cstr_parse_long(s: *const i8) -> (i64, usize) {
 /// Simple atoi replacement: parse entire C string as decimal i32, return 0 on failure.
 pub unsafe fn cstr_atoi(s: *const i8) -> i32 {
     unsafe { cstr_parse_long(s).0 as i32 }
-}
-
-// ── Consolidated extern "C" declarations ──────────────────────────────
-
-use crate::xkb::shared_types::stat;
-
-extern "C" {
-    #[link_name = "stat"]
-    pub fn xkb_stat(__file: *const i8, __buf: *mut stat) -> i32;
 }
