@@ -21787,7 +21787,7 @@ pub use self::keysym_names_h::{
     deprecated_keysyms, explicit_deprecated_aliases, keysym_name_G, keysym_name_perfect_hash,
     keysym_names, keysym_to_name, name_keysym, name_to_keysym, DEPRECATED_KEYSYM, UNICODE_KEYSYM,
 };
-use crate::xkb::utils::{cstr_as_bytes, istrcmp, istrncmp};
+use crate::xkb::utils::{cstr_as_bytes, istrcmp};
 fn find_keysym_index(ks: u32) -> isize {
     if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
         return -1_i32 as isize;
@@ -21916,7 +21916,12 @@ pub unsafe fn xkb_keysym_from_name(name: *const i8, flags: xkb_keysym_flags) -> 
             }
             return val;
         }
-        if name_bytes.starts_with(b"XF86_") || (icase && istrncmp(name_bytes, b"XF86_", 5) == 0) {
+        if name_bytes.starts_with(b"XF86_")
+            || (icase
+                && name_bytes
+                    .get(..5)
+                    .is_some_and(|s| s.eq_ignore_ascii_case(b"XF86_")))
+        {
             // Convert "XF86_Foo" -> "XF86Foo" by removing the underscore
             let mut tmp_buf: Vec<u8> = Vec::with_capacity(name_bytes.len());
             tmp_buf.extend_from_slice(&name_bytes[..4]); // "XF86"

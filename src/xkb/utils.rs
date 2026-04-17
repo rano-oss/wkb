@@ -16,23 +16,6 @@ pub fn istrcmp(a: &[u8], b: &[u8]) -> i32 {
     (a.len() as i32) - (b.len() as i32)
 }
 
-/// Case-insensitive prefix comparison of two byte slices (like C `strncasecmp`).
-/// Compares at most `n` bytes. Returns <0, 0, or >0.
-#[inline]
-pub fn istrncmp(a: &[u8], b: &[u8], n: usize) -> i32 {
-    let la = a.len().min(n);
-    let lb = b.len().min(n);
-    let m = la.min(lb);
-    for i in 0..m {
-        let al = a[i].to_ascii_lowercase();
-        let bl = b[i].to_ascii_lowercase();
-        if al != bl {
-            return al as i32 - bl as i32;
-        }
-    }
-    (la as i32) - (lb as i32)
-}
-
 /// Convert a `*const i8` C string to `&[u8]` (without the null terminator).
 /// # Safety: `s` must point to a valid null-terminated C string.
 #[inline]

@@ -387,7 +387,5 @@ pub unsafe fn svaleq_prefix(s1: sval, s2: sval) -> bool {
 
 #[inline]
 pub unsafe fn isvaleq(s1: sval, s2: sval) -> bool {
-    unsafe {
-        s1.len == s2.len && crate::xkb::utils::istrncmp(s1.as_bytes(), s2.as_bytes(), s1.len) == 0
-    }
+    unsafe { s1.len == s2.len && s1.as_bytes().eq_ignore_ascii_case(s2.as_bytes()) }
 }
