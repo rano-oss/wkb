@@ -198,19 +198,6 @@ impl core::fmt::Display for CStrDisplay {
     }
 }
 
-/// Display wrapper for byte slices (`&[u8]`).
-/// Treats the slice as UTF-8, displaying `<invalid utf8>` on error.
-pub struct ByteSliceDisplay<'a>(pub &'a [u8]);
-
-impl<'a> core::fmt::Display for ByteSliceDisplay<'a> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        match core::str::from_utf8(self.0) {
-            Ok(s) => f.write_str(s),
-            Err(_) => f.write_str("<invalid utf8>"),
-        }
-    }
-}
-
 /// Display wrapper for precision-limited C strings (`%.*s` replacement).
 /// Reads at most `len` bytes from the pointer, stopping at NUL.
 pub struct CStrNDisplay(pub usize, pub *const i8);

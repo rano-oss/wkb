@@ -60,12 +60,21 @@ use crate::xkb::utils::cstr_len;
 /// Macro that formats a message and prints to stderr.
 /// Usage: `xkb_logf!(ctx, level, verbosity, "format {}", arg)`
 /// The ctx, level, and verbosity args are accepted for compatibility but
-/// level/verbosity filtering is not currently implemented.
+/// XKB logging macro — dispatches to the `log` crate based on level.
+/// The ctx and verbosity arguments are accepted for compatibility but ignored.
 #[macro_export]
 macro_rules! xkb_logf {
-    ($ctx:expr, $level:expr, $verb:expr, $($arg:tt)*) => {{
-        eprint!($($arg)*);
-    }};
+    ($ctx:expr, $level:expr, $verb:expr, $($arg:tt)*) => {
+        log::log!(
+            match $level {
+                10 | 20 => log::Level::Error,
+                30 => log::Level::Warn,
+                40 => log::Level::Info,
+                _ => log::Level::Debug,
+            },
+            $($arg)*
+        )
+    };
 }
 unsafe fn context_include_path_append(ctx: *mut xkb_context, path: &str) -> i32 {
     unsafe {
@@ -438,8 +447,8 @@ pub unsafe fn xkb_context_set_log_level(ctx: *mut xkb_context, level: u32) {
         (*ctx).log_level = level;
     }
 }
-pub unsafe fn xkb_context_get_log_verbosity(ctx: *mut xkb_context) -> i32 {
-    unsafe { (*ctx).log_verbosity }
+pub fn xkb_context_get_log_verbosity(ctx: &xkb_context) -> i32 {
+    ctx.log_verbosity
 }
 
 pub unsafe fn xkb_context_set_log_verbosity(ctx: *mut xkb_context, verbosity: i32) {

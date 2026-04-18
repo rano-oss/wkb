@@ -528,42 +528,33 @@ pub fn KeysymText(sym: u32) -> String {
 pub fn SIMatchText(type_0: u32) -> &'static str {
     LookupValue(&symInterpretMatchMaskNames, type_0)
 }
-pub unsafe fn ModMaskText(
-    ctx: &xkb_context,
-    type_0: u32,
-    mods: *const xkb_mod_set,
-    mask: u32,
-) -> String {
-    unsafe {
-        if mask == 0_u32 {
-            return "none".to_string();
-        }
-        if mask == MOD_REAL_MASK_ALL {
-            return "all".to_string();
-        }
-        if type_0 == MOD_REAL && mask & !MOD_REAL_MASK_ALL != 0
-            || (mask as u64 & !(1_u64 << (*mods).num_mods).wrapping_sub(1_u64) != 0) as i32 as i64
-                != 0
-        {
-            return format!("{:#x}", mask);
-        }
-        let mut result = String::new();
-        let mut mod_0: *const xkb_mod = &raw const (*mods).mods as *const xkb_mod;
-        let mut remaining = mask;
-        while remaining != 0
-            && mod_0 < (&raw const (*mods).mods as *const xkb_mod).offset((*mods).num_mods as isize)
-        {
-            if remaining & 0x1_u32 != 0 {
-                if !result.is_empty() {
-                    result.push('+');
-                }
-                result.push_str(xkb_atom_text(&ctx.atom_table, (*mod_0).name));
-            }
-            mod_0 = mod_0.offset(1);
-            remaining >>= 1_i32;
-        }
-        result
+pub fn ModMaskText(ctx: &xkb_context, type_0: u32, mods: &xkb_mod_set, mask: u32) -> String {
+    if mask == 0_u32 {
+        return "none".to_string();
     }
+    if mask == MOD_REAL_MASK_ALL {
+        return "all".to_string();
+    }
+    if type_0 == MOD_REAL && mask & !MOD_REAL_MASK_ALL != 0
+        || (mask as u64 & !(1_u64 << mods.num_mods).wrapping_sub(1_u64) != 0) as i32 as i64 != 0
+    {
+        return format!("{:#x}", mask);
+    }
+    let mut result = String::new();
+    let mut remaining = mask;
+    for i in 0..mods.num_mods as usize {
+        if remaining == 0 {
+            break;
+        }
+        if remaining & 0x1_u32 != 0 {
+            if !result.is_empty() {
+                result.push('+');
+            }
+            result.push_str(xkb_atom_text(&ctx.atom_table, mods.mods[i].name));
+        }
+        remaining >>= 1_i32;
+    }
+    result
 }
 
 use crate::xkb::keysym::xkb_keysym_get_name;
