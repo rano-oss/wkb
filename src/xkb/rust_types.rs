@@ -620,15 +620,11 @@ impl RxkbLayout {
     /// Get the layout name (e.g., "us", "de", "fr")
     pub fn get_name(&self) -> Option<String> {
         unsafe {
-            let name_ptr = super::registry::rxkb_layout_get_name(self.ptr);
-            if name_ptr.is_null() {
+            let name = super::registry::rxkb_layout_get_name(self.ptr);
+            if name.is_empty() {
                 None
             } else {
-                Some(
-                    std::ffi::CStr::from_ptr(name_ptr)
-                        .to_string_lossy()
-                        .to_string(),
-                )
+                Some(name.to_string())
             }
         }
     }
@@ -636,18 +632,11 @@ impl RxkbLayout {
     /// Get the layout variant (e.g., "dvorak", "colemak"), returns None for base layout
     pub fn get_variant(&self) -> Option<String> {
         unsafe {
-            let variant_ptr = super::registry::rxkb_layout_get_variant(self.ptr);
-            if variant_ptr.is_null() {
+            let variant = super::registry::rxkb_layout_get_variant(self.ptr);
+            if variant.is_empty() {
                 None
             } else {
-                let variant = std::ffi::CStr::from_ptr(variant_ptr)
-                    .to_string_lossy()
-                    .to_string();
-                if variant.is_empty() {
-                    None
-                } else {
-                    Some(variant)
-                }
+                Some(variant.to_string())
             }
         }
     }

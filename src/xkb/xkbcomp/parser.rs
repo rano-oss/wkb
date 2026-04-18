@@ -2578,10 +2578,7 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                                 &(*(*param).scanner).file_name,
                                 loc_0.line,
                                 loc_0.column,
-                                crate::xkb::utils::CStrNDisplay(
-                                    (*yyvsp.offset(0_isize)).sval.len,
-                                    (*yyvsp.offset(0_isize)).sval.start
-                                ),
+                                (*yyvsp.offset(0_isize)).sval.as_str(),
                             );
                             yyval.keysym = XKB_KEY_NoSymbol as u32;
                         }

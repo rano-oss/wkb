@@ -480,7 +480,7 @@ unsafe fn split_comma_separated_mlvo(
                             "[XKB-{:03}] Invalid layout index {} for the RMVLO component: \"{}\"\n",
                             { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
                             layout,
-                            crate::xkb::utils::CStrNDisplay(val_0.sval.len, val_0.sval.start),
+                            val_0.sval.as_str(),
                         );
                     } else if mlvo != MLVO_OPTION {
                         xkb_logf!(
@@ -489,7 +489,7 @@ unsafe fn split_comma_separated_mlvo(
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "Layout index {} is not supported for the RMLVO component: \"{}\"\n",
                             layout,
-                            crate::xkb::utils::CStrNDisplay(val_0.sval.len, val_0.sval.start),
+                            val_0.sval.as_str(),
                         );
                     } else {
                         val_0.layout = layout.wrapping_sub(1_u32);
@@ -506,9 +506,8 @@ unsafe fn split_comma_separated_mlvo(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Invalid layout index \"{}\" for the RMLVO component \"{}\"; discarding specifier.\n",
                         { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                        crate::xkb::utils::CStrNDisplay(s.offset_from(layout_start) as i64
-                            as usize, layout_start),
-                        crate::xkb::utils::CStrNDisplay(val_0.sval.len, val_0.sval.start),
+                        std::str::from_utf8_unchecked(std::slice::from_raw_parts(layout_start as *const u8, s.offset_from(layout_start) as usize)),
+                        val_0.sval.as_str(),
                     );
                     val_0.layout = OPTIONS_MATCH_ALL_GROUPS as u32;
                 }
@@ -716,7 +715,10 @@ unsafe fn matcher_include(
                         XKB_ERROR_INVALID_PATH as i32,
                         stmt_file_len,
                         std::mem::size_of::<[i8; 4096]>(),
-                        crate::xkb::utils::CStrNDisplay(stmt_file_len, stmt_file),
+                        std::str::from_utf8_unchecked(std::slice::from_raw_parts(
+                            stmt_file as *const u8,
+                            stmt_file_len
+                        )),
                     );
                     return;
                 }
@@ -781,7 +783,10 @@ unsafe fn matcher_include(
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "Failed to open included XKB rules \"{}\"\n",
-            crate::xkb::utils::CStrNDisplay(stmt_file_len, stmt_file),
+            std::str::from_utf8_unchecked(std::slice::from_raw_parts(
+                stmt_file as *const u8,
+                stmt_file_len
+            )),
         );
     }
 }
@@ -918,7 +923,7 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
                 &(*s).file_name,
                 loc.line,
                 loc.column,
-                crate::xkb::utils::CStrNDisplay(ident.len, ident.start),
+                ident.as_str(),
             );
             (*m).mapping.active_or_candidates_mask = 0_u32;
             return;
@@ -934,7 +939,7 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
                 &(*s).file_name,
                 loc_0.line,
                 loc_0.column,
-                crate::xkb::utils::CStrNDisplay(mlvo_sval.len as usize, mlvo_sval.start),
+                mlvo_sval.as_str(),
             );
             (*m).mapping.active_or_candidates_mask = 0_u32;
             return;
@@ -957,7 +962,7 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
                     &(*s).file_name,
                     loc_1.line,
                     loc_1.column,
-                    crate::xkb::utils::CStrNDisplay(mlvo_sval.len as usize, mlvo_sval.start),
+                    mlvo_sval.as_str(),
                 );
                 (*m).mapping.active_or_candidates_mask = 0_u32;
                 return;
@@ -977,7 +982,7 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
                     &(*s).file_name,
                     loc_2.line,
                     loc_2.column,
-                    crate::xkb::utils::CStrNDisplay(mlvo_sval.len as usize, mlvo_sval.start),
+                    mlvo_sval.as_str(),
                 );
                 (*m).mapping.active_or_candidates_mask = 0_u32;
                 return;
@@ -1098,7 +1103,7 @@ unsafe fn matcher_mapping_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sv
                 &(*s).file_name,
                 loc.line,
                 loc.column,
-                crate::xkb::utils::CStrNDisplay(ident.len, ident.start),
+                ident.as_str(),
             );
             (*m).mapping.active_or_candidates_mask = 0_u32;
             return;
@@ -1114,7 +1119,7 @@ unsafe fn matcher_mapping_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sv
                 &(*s).file_name,
                 loc_0.line,
                 loc_0.column,
-                crate::xkb::utils::CStrNDisplay(kccgst_sval.len as usize, kccgst_sval.start),
+                kccgst_sval.as_str(),
             );
             (*m).mapping.active_or_candidates_mask = 0_u32;
             return;
@@ -2977,10 +2982,7 @@ unsafe fn xkb_resolve_rules(
                                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                                     "[XKB-{:03}] Unrecognized RMLVO model \"{}\" was ignored\n",
                                     XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                    crate::xkb::utils::CStrNDisplay(
-                                        (*mval).sval.len,
-                                        (*mval).sval.start
-                                    ),
+                                    (*mval).sval.as_str(),
                                 );
                             }
                             if !(*matcher).rmlvo.layouts.is_empty() {
@@ -3001,7 +3003,7 @@ unsafe fn xkb_resolve_rules(
                                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                                             "[XKB-{:03}] Unrecognized RMLVO layout \"{}\" was ignored\n",
                                             XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                            crate::xkb::utils::CStrNDisplay((*mval).sval.len, (*mval).sval.start),
+                                            (*mval).sval.as_str(),
                                         );
                                     }
                                     mval = mval.offset(1);
@@ -3029,7 +3031,7 @@ unsafe fn xkb_resolve_rules(
                                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                                             "[XKB-{:03}] Unrecognized RMLVO variant \"{}\" was ignored\n",
                                             XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                            crate::xkb::utils::CStrNDisplay((*mval).sval.len, (*mval).sval.start),
+                                            (*mval).sval.as_str(),
                                         );
                                     }
                                     mval = mval.offset(1);
@@ -3053,7 +3055,7 @@ unsafe fn xkb_resolve_rules(
                                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                                             "[XKB-{:03}] Unrecognized RMLVO option \"{}\" was ignored\n",
                                             XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                            crate::xkb::utils::CStrNDisplay((*mval).sval.len, (*mval).sval.start),
+                                            (*mval).sval.as_str(),
                                         );
                                     }
                                     mval = mval.offset(1);

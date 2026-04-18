@@ -388,7 +388,7 @@ pub unsafe fn expand_path(
                         XKB_ERROR_INVALID_PATH as i32,
                         k,
                         buf_size,
-                        crate::xkb::utils::CStrNDisplay(name_len, name),
+                        std::str::from_utf8_unchecked(std::slice::from_raw_parts(name as *const u8, name_len)),
                     );
                     return -1_i32 as isize;
                 }
@@ -427,6 +427,7 @@ pub unsafe fn FindFileInXkbPath(
         let c2rust_current_block: u64;
         let mut file: *mut FILE = std::ptr::null_mut();
         let name_buffer: *mut i8 = std::ptr::null_mut();
+        let name_str = std::str::from_utf8_unchecked(std::slice::from_raw_parts(name as *const u8, name_len));
         let typeDir = DirectoryForInclude(type_0);
         let mut i: u32 = *offset;
         loop {
@@ -441,7 +442,7 @@ pub unsafe fn FindFileInXkbPath(
                     "{}/{}/{}",
                     xkb_context_include_path_get(ctx, i),
                     typeDir,
-                    crate::xkb::utils::CStrNDisplay(name_len, name)
+                    name_str
                 ),
             );
             if _trunc {
@@ -454,7 +455,7 @@ pub unsafe fn FindFileInXkbPath(
                     buf_size,
                     xkb_context_include_path_get(ctx, i),
                     typeDir,
-                    crate::xkb::utils::CStrNDisplay(name_len, name),
+                    name_str,
                 );
             } else {
                 file = fopen(buf, b"rb\0".as_ptr() as *const i8) as *mut FILE;
@@ -475,7 +476,7 @@ pub unsafe fn FindFileInXkbPath(
                     "[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
                     XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
                     typeDir,
-                    crate::xkb::utils::CStrNDisplay(name_len, name),
+                    name_str,
                 );
                 LogIncludePaths(ctx);
             }

@@ -3,39 +3,30 @@ use crate::xkb::context::xkb_atom_intern;
 pub use crate::xkb::shared_ast_types::{KeyTypeDef, ReportShouldBeArray};
 use crate::xkb::text::ModMaskText;
 use crate::xkb::xkbcomp::expr::ExprResolveLevel;
-#[derive(Clone)]
-pub struct KeyTypesInfo {
+pub struct KeyTypesInfo<'a> {
     pub name: Option<String>,
     pub errorCount: i32,
     pub include_depth: u32,
     pub types: Vec<KeyTypeInfo>,
     pub mods: xkb_mod_set,
-    pub ctx: *mut xkb_context,
-    pub keymap_info: *mut xkb_keymap_info,
+    pub ctx: &'a mut xkb_context,
+    pub keymap_info: &'a mut xkb_keymap_info,
 }
-impl KeyTypesInfo {
-    pub fn new_zeroed() -> Self {
+impl<'a> KeyTypesInfo<'a> {
+    pub fn new(ctx: &'a mut xkb_context, keymap_info: &'a mut xkb_keymap_info) -> Self {
         Self {
             name: None,
             errorCount: 0,
             include_depth: 0,
             types: Vec::new(),
-            mods: xkb_mod_set {
-                mods: [xkb_mod {
-                    name: 0,
-                    type_0: 0_u32,
-                    mapping: 0,
-                }; 32],
-                num_mods: 0,
-                explicit_vmods: 0,
-            },
-            ctx: std::ptr::null_mut(),
-            keymap_info: std::ptr::null_mut(),
+            mods: unsafe { std::mem::zeroed() },
+            ctx,
+            keymap_info,
         }
     }
     #[inline]
     pub fn ctx(&self) -> &xkb_context {
-        unsafe { &*self.ctx }
+        &*self.ctx
     }
 }
 #[derive(Clone)]
@@ -65,20 +56,27 @@ pub const TYPE_FIELD_PRESERVE: type_field = 4;
 pub const TYPE_FIELD_MAP: type_field = 2;
 pub const TYPE_FIELD_MASK: type_field = 1;
 #[inline]
-fn MapEntryTxt(info: &KeyTypesInfo, entry: &xkb_key_type_entry) -> String {
+fn MapEntryTxt(info: &KeyTypesInfo<'_>, entry: &xkb_key_type_entry) -> String {
     ModMaskText(info.ctx(), MOD_BOTH, &info.mods, entry.mods.mods)
 }
 #[inline]
-fn TypeTxt<'a>(info: &'a KeyTypesInfo, type_0: &KeyTypeInfo) -> &'a str {
+fn TypeTxt<'a>(info: &'a KeyTypesInfo<'_>, type_0: &KeyTypeInfo) -> &'a str {
     xkb_atom_text(&info.ctx().atom_table, type_0.name)
 }
 #[inline]
-fn ReportTypeShouldBeArray(info: &KeyTypesInfo, type_0: &KeyTypeInfo, field: &str) -> bool {
-    unsafe { ReportShouldBeArray(info.ctx, "key type", field, TypeTxt(info, type_0)) }
+fn ReportTypeShouldBeArray(info: &KeyTypesInfo<'_>, type_0: &KeyTypeInfo, field: &str) -> bool {
+    unsafe {
+        ReportShouldBeArray(
+            info.ctx as *const _ as *mut _,
+            "key type",
+            field,
+            TypeTxt(info, type_0),
+        )
+    }
 }
 #[inline]
 fn ReportTypeBadType(
-    info: &KeyTypesInfo,
+    info: &KeyTypesInfo<'_>,
     code: u32,
     type_0: &KeyTypeInfo,
     field: &str,
@@ -86,7 +84,7 @@ fn ReportTypeBadType(
 ) -> bool {
     unsafe {
         ReportBadType(
-            info.ctx,
+            info.ctx as *const _ as *mut _,
             code,
             "key type",
             field,
@@ -95,21 +93,13 @@ fn ReportTypeBadType(
         )
     }
 }
-fn InitKeyTypesInfo(
-    info: &mut KeyTypesInfo,
-    keymap_info: *mut xkb_keymap_info,
-    include_depth: u32,
-    mods: *const xkb_mod_set,
-) {
+fn InitKeyTypesInfo(info: &mut KeyTypesInfo<'_>, include_depth: u32, mods: *const xkb_mod_set) {
     unsafe {
         info.name = None;
         info.errorCount = 0;
-        info.include_depth = 0;
+        info.include_depth = include_depth;
         info.types = Vec::new();
         info.mods = std::mem::zeroed();
-        info.ctx = &raw mut (*(*keymap_info).keymap).ctx;
-        info.keymap_info = keymap_info;
-        info.include_depth = include_depth;
         InitVMods(&mut info.mods, unsafe { &*mods }, include_depth > 0_u32);
     }
 }
@@ -117,14 +107,14 @@ fn ClearKeyTypeInfo(type_0: &mut KeyTypeInfo) {
     type_0.entries.clear();
     type_0.level_names.clear();
 }
-fn ClearKeyTypesInfo(info: &mut KeyTypesInfo) {
+fn ClearKeyTypesInfo(info: &mut KeyTypesInfo<'_>) {
     info.name = None;
     for type_0 in info.types.iter_mut() {
         ClearKeyTypeInfo(type_0);
     }
     info.types.clear();
 }
-fn AddKeyType(info: &mut KeyTypesInfo, new: *mut KeyTypeInfo, same_file: bool) -> bool {
+fn AddKeyType(info: &mut KeyTypesInfo<'_>, new: *mut KeyTypeInfo, same_file: bool) -> bool {
     unsafe {
         let mut old: *mut KeyTypeInfo = std::ptr::null_mut();
         let verbosity: i32 = xkb_context_get_log_verbosity(info.ctx());
@@ -171,13 +161,17 @@ fn AddKeyType(info: &mut KeyTypesInfo, new: *mut KeyTypeInfo, same_file: bool) -
         true
     }
 }
-fn MergeIncludedKeyTypes(into: &mut KeyTypesInfo, from: &mut KeyTypesInfo, merge: merge_mode) {
+fn MergeIncludedKeyTypes(
+    into: &mut KeyTypesInfo<'_>,
+    from: &mut KeyTypesInfo<'_>,
+    merge: merge_mode,
+) {
     unsafe {
         if from.errorCount > 0_i32 {
             into.errorCount += from.errorCount;
             return;
         }
-        MergeModSets(unsafe { &mut *into.ctx }, &mut into.mods, &from.mods, merge);
+        MergeModSets(&mut *into.ctx, &mut into.mods, &from.mods, merge);
         if into.name.is_none() {
             into.name = from.name.take();
         }
@@ -196,16 +190,17 @@ fn MergeIncludedKeyTypes(into: &mut KeyTypesInfo, from: &mut KeyTypesInfo, merge
         };
     }
 }
-fn HandleIncludeKeyTypes(info: &mut KeyTypesInfo, include: *mut IncludeStmt) -> bool {
+fn HandleIncludeKeyTypes(info: &mut KeyTypesInfo<'_>, include: *mut IncludeStmt) -> bool {
     unsafe {
-        let mut included: KeyTypesInfo = KeyTypesInfo::new_zeroed();
-        if ExceedsIncludeMaxDepth(info.ctx, info.include_depth) {
+        let ctx_ptr = &raw mut *info.ctx;
+        let ki_ptr = &raw mut *info.keymap_info;
+        let mut included = KeyTypesInfo::new(&mut *ctx_ptr, &mut *ki_ptr);
+        if ExceedsIncludeMaxDepth(&mut *ctx_ptr, info.include_depth) {
             info.errorCount += 10_i32;
             return false;
         }
         InitKeyTypesInfo(
             &mut included,
-            info.keymap_info,
             info.include_depth.wrapping_add(1_u32),
             &info.mods,
         );
@@ -219,11 +214,11 @@ fn HandleIncludeKeyTypes(info: &mut KeyTypesInfo, include: *mut IncludeStmt) -> 
         };
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
-            let mut next_incl: KeyTypesInfo = KeyTypesInfo::new_zeroed();
+            let mut next_incl = KeyTypesInfo::new(&mut *ctx_ptr, &mut *ki_ptr);
 
             let mut path: [i8; 4096] = [0; 4096];
             let file: *mut XkbFile = ProcessIncludeFile(
-                info.ctx,
+                &mut *ctx_ptr,
                 stmt,
                 FILE_TYPE_TYPES,
                 &raw mut path as *mut i8,
@@ -236,7 +231,6 @@ fn HandleIncludeKeyTypes(info: &mut KeyTypesInfo, include: *mut IncludeStmt) -> 
             }
             InitKeyTypesInfo(
                 &mut next_incl,
-                info.keymap_info,
                 info.include_depth.wrapping_add(1_u32),
                 &raw mut included.mods,
             );
@@ -255,7 +249,7 @@ fn HandleIncludeKeyTypes(info: &mut KeyTypesInfo, include: *mut IncludeStmt) -> 
     }
 }
 fn SetModifiers(
-    info: &mut KeyTypesInfo,
+    info: &mut KeyTypesInfo<'_>,
     type_0: *mut KeyTypeInfo,
     arrayNdx: *mut ExprDef,
     value: *mut ExprDef,
@@ -298,7 +292,7 @@ fn SetModifiers(
     }
 }
 fn AddMapEntry(
-    info: &mut KeyTypesInfo,
+    info: &mut KeyTypesInfo<'_>,
     type_0: *mut KeyTypeInfo,
     new: *mut xkb_key_type_entry,
     clobber: bool,
@@ -365,7 +359,7 @@ fn AddMapEntry(
     }
 }
 fn SetMapEntry(
-    info: &mut KeyTypesInfo,
+    info: &mut KeyTypesInfo<'_>,
     type_0: *mut KeyTypeInfo,
     arrayNdx: *mut ExprDef,
     value: *mut ExprDef,
@@ -427,7 +421,7 @@ fn SetMapEntry(
     }
 }
 fn AddPreserve(
-    info: &mut KeyTypesInfo,
+    info: &mut KeyTypesInfo<'_>,
     type_0: *mut KeyTypeInfo,
     mods: u32,
     preserve_mods: u32,
@@ -493,7 +487,7 @@ fn AddPreserve(
     }
 }
 fn SetPreserve(
-    info: &mut KeyTypesInfo,
+    info: &mut KeyTypesInfo<'_>,
     type_0: *mut KeyTypeInfo,
     arrayNdx: *mut ExprDef,
     value: *mut ExprDef,
@@ -566,7 +560,7 @@ fn SetPreserve(
     }
 }
 fn AddLevelName(
-    info: &mut KeyTypesInfo,
+    info: &mut KeyTypesInfo<'_>,
     type_0: *mut KeyTypeInfo,
     level: u32,
     name: u32,
@@ -615,7 +609,7 @@ fn AddLevelName(
     }
 }
 fn SetLevelName(
-    info: &mut KeyTypesInfo,
+    info: &mut KeyTypesInfo<'_>,
     type_0: *mut KeyTypeInfo,
     arrayNdx: *mut ExprDef,
     value: *mut ExprDef,
@@ -651,7 +645,7 @@ fn SetLevelName(
     }
 }
 fn SetKeyTypeField(
-    info: &mut KeyTypesInfo,
+    info: &mut KeyTypesInfo<'_>,
     type_0: *mut KeyTypeInfo,
     field: &str,
     arrayNdx: *mut ExprDef,
@@ -691,7 +685,7 @@ fn SetKeyTypeField(
     }
 }
 fn HandleKeyTypeBody(
-    info: &mut KeyTypesInfo,
+    info: &mut KeyTypesInfo<'_>,
     mut def: *mut VarDef,
     type_0: *mut KeyTypeInfo,
 ) -> bool {
@@ -742,7 +736,7 @@ fn HandleKeyTypeBody(
         ok
     }
 }
-fn HandleGlobalVar(info: &mut KeyTypesInfo, stmt: *mut VarDef) -> bool {
+fn HandleGlobalVar(info: &mut KeyTypesInfo<'_>, stmt: *mut VarDef) -> bool {
     unsafe {
         let mut elem: &str = "";
         let mut field: &str = "";
@@ -790,7 +784,7 @@ fn HandleGlobalVar(info: &mut KeyTypesInfo, stmt: *mut VarDef) -> bool {
         false
     }
 }
-unsafe fn HandleKeyTypesFile(info: &mut KeyTypesInfo, file: *mut XkbFile) {
+unsafe fn HandleKeyTypesFile(info: &mut KeyTypesInfo<'_>, file: *mut XkbFile) {
     unsafe {
         let mut ok: bool;
         info.name = {
@@ -947,13 +941,9 @@ unsafe fn CopyKeyTypesToKeymap(keymap: *mut xkb_keymap, info: &mut KeyTypesInfo)
 }
 pub unsafe fn CompileKeyTypes(file: *mut XkbFile, keymap_info: *mut xkb_keymap_info) -> bool {
     unsafe {
-        let mut info: KeyTypesInfo = KeyTypesInfo::new_zeroed();
-        InitKeyTypesInfo(
-            &mut info,
-            keymap_info,
-            0_u32,
-            &raw mut (*(*keymap_info).keymap).mods,
-        );
+        let ctx = &mut (*(*keymap_info).keymap).ctx;
+        let mut info = KeyTypesInfo::new(ctx, &mut *keymap_info);
+        InitKeyTypesInfo(&mut info, 0_u32, &raw mut (*(*keymap_info).keymap).mods);
         if !file.is_null() {
             HandleKeyTypesFile(&mut info, file);
         }

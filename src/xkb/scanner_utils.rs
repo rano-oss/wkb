@@ -25,6 +25,12 @@ impl sval {
             }
         }
     }
+
+    /// View the sval as a &str. Caller must ensure the pointer is valid and contents are UTF-8.
+    #[inline]
+    pub unsafe fn as_str(&self) -> &str {
+        unsafe { std::str::from_utf8_unchecked(self.as_bytes()) }
+    }
 }
 
 #[derive(Copy, Clone)]

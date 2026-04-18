@@ -178,30 +178,6 @@ pub unsafe fn snprintf_c(buf: *mut i8, size: usize, args: core::fmt::Arguments<'
     full_len as i32
 }
 
-/// Display wrapper for precision-limited C strings (`%.*s` replacement).
-/// Reads at most `len` bytes from the pointer, stopping at NUL.
-pub struct CStrNDisplay(pub usize, pub *const i8);
-
-impl core::fmt::Display for CStrNDisplay {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if self.1.is_null() {
-            return f.write_str("(null)");
-        }
-        unsafe {
-            let ptr = self.1 as *const u8;
-            let mut len = 0;
-            while len < self.0 && *ptr.add(len) != 0 {
-                len += 1;
-            }
-            let slice = std::slice::from_raw_parts(ptr, len);
-            match core::str::from_utf8(slice) {
-                Ok(s) => f.write_str(s),
-                Err(_) => f.write_str("<invalid utf8>"),
-            }
-        }
-    }
-}
-
 /// Safe replacement for libc `strdup`. Duplicates a C string using Rust's allocator.
 /// Returns a `*mut i8` allocated via `CString::into_raw()`.
 /// Returns null if `s` is null.

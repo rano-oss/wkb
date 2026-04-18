@@ -385,8 +385,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                                 &(*s).file_name,
                                 loc.line,
                                 loc.column,
-                                crate::xkb::utils::CStrNDisplay((*s).pos.wrapping_sub(start_pos).wrapping_add(1), (*s).s.add(start_pos.wrapping_sub(1))
-                                    as *const i8),
+                                std::str::from_utf8_unchecked(std::slice::from_raw_parts((*s).s.add(start_pos.wrapping_sub(1)) as *const u8, (*s).pos.wrapping_sub(start_pos).wrapping_add(1))),
                             );
                         }
                     } else if (*s).oct(&mut o) && o != 0 {
@@ -402,8 +401,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                             &(*s).file_name,
                             loc_0.line,
                             loc_0.column,
-                            crate::xkb::utils::CStrNDisplay((*s).pos.wrapping_sub(start_pos).wrapping_add(1), (*s).s.add(start_pos.wrapping_sub(1))
-                                as *const i8),
+                            std::str::from_utf8_unchecked(std::slice::from_raw_parts((*s).s.add(start_pos.wrapping_sub(1)) as *const u8, (*s).pos.wrapping_sub(start_pos).wrapping_add(1))),
                         );
                     } else {
                         let loc_1 = (*s).token_location();
