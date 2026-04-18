@@ -1,4 +1,3 @@
-
 pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 pub use crate::xkb::utils::is_absolute_path;
 
@@ -25,11 +24,11 @@ pub use crate::xkb::messages::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
     XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
-    XKB_WARNING_CANNOT_INFER_KEY_TYPE,
-    XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
-    XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY, XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
+    XKB_WARNING_CANNOT_INFER_KEY_TYPE, XKB_WARNING_CONFLICTING_KEY_ACTION,
+    XKB_WARNING_CONFLICTING_KEY_FIELDS, XKB_WARNING_CONFLICTING_KEY_NAME,
+    XKB_WARNING_CONFLICTING_KEY_SYMBOL, XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES, XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
     XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES, XKB_WARNING_CONFLICTING_MODMAP,
     XKB_WARNING_DEPRECATED_KEYSYM, XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_DUPLICATE_ENTRY,
     XKB_WARNING_EXTRA_SYMBOLS_IGNORED, XKB_WARNING_ILLEGAL_KEYCODE_ALIAS,
@@ -68,8 +67,8 @@ use libc::{fclose, fopen, FILE};
 
 /// Appends `count` bytes from `src` to the Vec.
 #[inline]
-unsafe fn vec_append_nul_terminated(v: &mut Vec<i8>, src: *const i8, count: u32) {
-    v.extend_from_slice(std::slice::from_raw_parts(src, count as usize));
+fn vec_append_nul_terminated(v: &mut Vec<i8>, src: *const i8, count: u32) {
+    v.extend_from_slice(unsafe { std::slice::from_raw_parts(src, count as usize) });
 }
 
 #[derive(Clone)]
@@ -218,10 +217,10 @@ fn is_space(ch: i8) -> bool {
     matches!(ch as u8, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
 }
 #[inline]
-unsafe fn is_ident(ch: i8) -> bool {
+fn is_ident(ch: i8) -> bool {
     (ch as u8).is_ascii_graphic() && ch as i32 != '\\' as i32
 }
-unsafe fn lex(s: *mut scanner, val: *mut lvalue) -> rules_token {
+fn lex(s: *mut scanner, val: *mut lvalue) -> rules_token {
     unsafe {
         loop {
             while (*s).chr(' ' as i32 as i8) as i32 != 0
@@ -246,11 +245,13 @@ unsafe fn lex(s: *mut scanner, val: *mut lvalue) -> rules_token {
             (*s).chr('\r' as i32 as i8);
             if !(*s).eol() {
                 let loc: scanner_loc = (*s).token_location();
-                log::error!("[XKB-{:03}] {}:{}:{}: illegal new line escape; must appear at end of line\n",
+                log::error!(
+                    "[XKB-{:03}] {}:{}:{}: illegal new line escape; must appear at end of line\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                     &(*s).file_name,
                     loc.line,
-                    loc.column);
+                    loc.column
+                );
                 return TOK_ERROR;
             }
             (*s).next_byte();
@@ -295,11 +296,13 @@ unsafe fn lex(s: *mut scanner, val: *mut lvalue) -> rules_token {
             }
             if (*val).string.len == 0_usize {
                 let loc_0: scanner_loc = (*s).token_location();
-                log::error!("[XKB-{:03}] {}:{}:{}: unexpected character after '$'; expected name\n",
+                log::error!(
+                    "[XKB-{:03}] {}:{}:{}: unexpected character after '$'; expected name\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                     &(*s).file_name,
                     loc_0.line,
-                    loc_0.column);
+                    loc_0.column
+                );
                 return TOK_ERROR;
             }
             return TOK_GROUP_NAME;
@@ -320,11 +323,13 @@ unsafe fn lex(s: *mut scanner, val: *mut lvalue) -> rules_token {
             return TOK_IDENTIFIER;
         }
         let loc_1: scanner_loc = (*s).token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: unrecognized token\n",
+        log::error!(
+            "[XKB-{:03}] {}:{}:{}: unrecognized token\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
             &(*s).file_name,
             loc_1.line,
-            loc_1.column);
+            loc_1.column
+        );
         TOK_ERROR
     }
 }
@@ -375,7 +380,7 @@ static RULES_KCCGST_SVALS: [SyncSval; 5] = [
     }),
 ];
 pub const OPTIONS_MATCH_ALL_GROUPS: i32 = XKB_MAX_GROUPS;
-unsafe fn strip_spaces(mut v: sval) -> sval {
+fn strip_spaces(mut v: sval) -> sval {
     unsafe {
         while v.len > 0_usize && is_space(*v.start.offset(0_i32 as isize)) as i32 != 0 {
             v.len = v.len.wrapping_sub(1);
@@ -397,7 +402,7 @@ fn vec_resize_zero_matched_sval(v: &mut Vec<matched_sval>, new_len: usize) {
     }
 }
 
-unsafe fn split_comma_separated_mlvo(
+fn split_comma_separated_mlvo(
     _ctx: *mut xkb_context,
     mlvo: rules_mlvo,
     mut s: *const i8,
@@ -455,14 +460,18 @@ unsafe fn split_comma_separated_mlvo(
                 if count > 0_i32 {
                     s = s.offset(count as isize);
                     if layout == 0_u32 || layout > XKB_MAX_GROUPS as u32 {
-                        log::error!("[XKB-{:03}] Invalid layout index {} for the RMVLO component: \"{}\"\n",
+                        log::error!(
+                            "[XKB-{:03}] Invalid layout index {} for the RMVLO component: \"{}\"\n",
                             { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
                             layout,
-                            val_0.sval.as_str());
+                            val_0.sval.as_str()
+                        );
                     } else if mlvo != MLVO_OPTION {
-                        log::warn!("Layout index {} is not supported for the RMLVO component: \"{}\"\n",
+                        log::warn!(
+                            "Layout index {} is not supported for the RMLVO component: \"{}\"\n",
                             layout,
-                            val_0.sval.as_str());
+                            val_0.sval.as_str()
+                        );
                     } else {
                         val_0.layout = layout.wrapping_sub(1_u32);
                     }
@@ -490,10 +499,7 @@ unsafe fn split_comma_separated_mlvo(
         arr
     }
 }
-unsafe fn matcher_new_from_names(
-    ctx: *mut xkb_context,
-    rmlvo: *const xkb_rule_names,
-) -> *mut matcher {
+fn matcher_new_from_names(ctx: *mut xkb_context, rmlvo: *const xkb_rule_names) -> *mut matcher {
     unsafe {
         // Allocate zeroed memory for matcher, then initialize Vec fields properly.
         let layout = std::alloc::Layout::new::<matcher>();
@@ -548,7 +554,8 @@ unsafe fn matcher_new_from_names(
         );
         if (*m).rmlvo.layouts.len() > (*m).rmlvo.variants.len() {
             if !rmlvo_ref.variant.as_bytes().is_empty() {
-                log::warn!("More layouts than variants: \"{}\" vs. \"{}\".\n",
+                log::warn!(
+                    "More layouts than variants: \"{}\" vs. \"{}\".\n",
                     if !rmlvo_ref.layout.as_bytes().is_empty() {
                         rmlvo_ref.layout.to_str().unwrap_or("")
                     } else {
@@ -558,11 +565,13 @@ unsafe fn matcher_new_from_names(
                         rmlvo_ref.variant.to_str().unwrap_or("")
                     } else {
                         "(none)"
-                    });
+                    }
+                );
             }
             vec_resize_zero_matched_sval(&mut (*m).rmlvo.variants, (*m).rmlvo.layouts.len());
         } else if (*m).rmlvo.layouts.len() < (*m).rmlvo.variants.len() {
-            log::error!("Less layouts than variants: \"{}\" vs. \"{}\".\n",
+            log::error!(
+                "Less layouts than variants: \"{}\" vs. \"{}\".\n",
                 if !rmlvo_ref.layout.as_bytes().is_empty() {
                     rmlvo_ref.layout.to_str().unwrap_or("")
                 } else {
@@ -572,13 +581,14 @@ unsafe fn matcher_new_from_names(
                     rmlvo_ref.variant.to_str().unwrap_or("")
                 } else {
                     "(none)"
-                });
+                }
+            );
             (*m).rmlvo.variants.truncate((*m).rmlvo.layouts.len());
         }
         m
     }
 }
-unsafe fn matcher_free(m: *mut matcher) {
+fn matcher_free(m: *mut matcher) {
     unsafe {
         if m.is_null() {
             return;
@@ -596,7 +606,7 @@ unsafe fn matcher_free(m: *mut matcher) {
         std::alloc::dealloc(m as *mut u8, layout);
     }
 }
-unsafe fn matcher_group_start_new(m: *mut matcher, name: sval) {
+fn matcher_group_start_new(m: *mut matcher, name: sval) {
     unsafe {
         let group: group = group {
             name,
@@ -605,26 +615,23 @@ unsafe fn matcher_group_start_new(m: *mut matcher, name: sval) {
         (*m).groups.push(group);
     }
 }
-unsafe fn matcher_group_add_element(m: *mut matcher, _s: *mut scanner, element: sval) {
+fn matcher_group_add_element(m: *mut matcher, _s: *mut scanner, element: sval) {
     unsafe {
         let last_group = (*m).groups.last_mut().unwrap();
         last_group.elements.push(element);
     }
 }
-unsafe fn matcher_include(
-    m: *mut matcher,
-    parent_scanner: *mut scanner,
-    include_depth: u32,
-    inc: sval,
-) {
+fn matcher_include(m: *mut matcher, parent_scanner: *mut scanner, include_depth: u32, inc: sval) {
     unsafe {
         if include_depth >= MAX_INCLUDE_DEPTH as u32 {
             let loc: scanner_loc = (*parent_scanner).token_location();
-            log::error!("{}:{}:{}: maximum include depth ({}) exceeded; maybe there is an include loop?\n",
+            log::error!(
+                "{}:{}:{}: maximum include depth ({}) exceeded; maybe there is an include loop?\n",
                 &(*parent_scanner).file_name,
                 loc.line,
                 loc.column,
-                MAX_INCLUDE_DEPTH);
+                MAX_INCLUDE_DEPTH
+            );
             return;
         }
         let mut stmt_file: *const i8 = inc.start;
@@ -659,14 +666,16 @@ unsafe fn matcher_include(
                     buf[stmt_file_len] = '\0' as i32 as i8;
                     stmt_file = &raw mut buf as *mut i8;
                 } else {
-                    log::error!("[XKB-{:03}] Path is too long: {} > {}, got raw path: {}\n",
+                    log::error!(
+                        "[XKB-{:03}] Path is too long: {} > {}, got raw path: {}\n",
                         XKB_ERROR_INVALID_PATH as i32,
                         stmt_file_len,
                         std::mem::size_of::<[i8; 4096]>(),
                         std::str::from_utf8_unchecked(std::slice::from_raw_parts(
                             stmt_file as *const u8,
                             stmt_file_len
-                        )));
+                        ))
+                    );
                     return;
                 }
             }
@@ -700,10 +709,12 @@ unsafe fn matcher_include(
             if ret {
                 return;
             }
-            log::error!("No components returned from included XKB rules \"{}\"\n",
+            log::error!(
+                "No components returned from included XKB rules \"{}\"\n",
                 std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
                     &raw mut buf as *const i8
-                )));
+                ))
+            );
             if absolute_path {
                 break;
             }
@@ -720,14 +731,16 @@ unsafe fn matcher_include(
                 true,
             );
         }
-        log::error!("Failed to open included XKB rules \"{}\"\n",
+        log::error!(
+            "Failed to open included XKB rules \"{}\"\n",
             std::str::from_utf8_unchecked(std::slice::from_raw_parts(
                 stmt_file as *const u8,
                 stmt_file_len
-            )));
+            ))
+        );
     }
 }
-unsafe fn matcher_mapping_start_new(m: *mut matcher) {
+fn matcher_mapping_start_new(m: *mut matcher) {
     unsafe {
         let mut i: mlvo_index_t = 0 as mlvo_index_t;
         while (i as i32) < _MLVO_NUM_ENTRIES as i32 as mlvo_index_t as i32 {
@@ -749,7 +762,7 @@ unsafe fn matcher_mapping_start_new(m: *mut matcher) {
         (*m).mapping.active_or_candidates_mask = 1_u32;
     }
 }
-unsafe fn parse_layout_int_index(s: *const i8, max_len: usize, out: *mut u32) -> i32 {
+fn parse_layout_int_index(s: *const i8, max_len: usize, out: *mut u32) -> i32 {
     unsafe {
         let slice = std::slice::from_raw_parts(s.offset(1) as *const u8, max_len.wrapping_sub(2));
         let (val, count) = crate::xkb::utils::parse_dec_u32(slice);
@@ -765,7 +778,7 @@ unsafe fn parse_layout_int_index(s: *const i8, max_len: usize, out: *mut u32) ->
         count + 2_i32
     }
 }
-unsafe fn extract_layout_index(s: *const i8, max_len: usize, out: *mut u32) -> i32 {
+fn extract_layout_index(s: *const i8, max_len: usize, out: *mut u32) -> i32 {
     unsafe {
         *out = XKB_LAYOUT_INVALID;
         if max_len < 3_usize || *s.offset(0_i32 as isize) as i32 != '[' as i32 {
@@ -781,7 +794,7 @@ unsafe fn extract_layout_index(s: *const i8, max_len: usize, out: *mut u32) -> i
         parse_layout_int_index(s, max_len, out)
     }
 }
-unsafe fn extract_mapping_layout_index(s: *const i8, max_len: usize, out: *mut u32) -> i32 {
+fn extract_mapping_layout_index(s: *const i8, max_len: usize, out: *mut u32) -> i32 {
     unsafe {
         // SAFETY: SyncLayoutIndexName wraps LayoutIndexName (which contains *const i8)
         // to satisfy Sync requirement for static. The pointers are to static byte string literals.
@@ -831,10 +844,10 @@ unsafe fn extract_mapping_layout_index(s: *const i8, max_len: usize, out: *mut u
     }
 }
 #[inline]
-unsafe fn is_mlvo_mask_defined(m: *mut matcher, mlvo: rules_mlvo) -> bool {
+fn is_mlvo_mask_defined(m: *mut matcher, mlvo: rules_mlvo) -> bool {
     unsafe { (*m).mapping.defined_mlvo_mask as u32 & 1_u32 << mlvo != 0 }
 }
-unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval) {
+fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval) {
     unsafe {
         let mut mlvo: rules_mlvo;
         let mut mlvo_sval: sval = sval {
@@ -929,7 +942,7 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
         (*m).mapping.num_mlvo = (*m).mapping.num_mlvo.wrapping_add(1);
     }
 }
-unsafe fn matcher_mapping_set_layout_bounds(m: *mut matcher) {
+fn matcher_mapping_set_layout_bounds(m: *mut matcher) {
     unsafe {
         let mut idx: u32 =
             if (*m).mapping.layout.single.layout_idx < (*m).mapping.layout.single.variant_idx {
@@ -989,7 +1002,7 @@ unsafe fn matcher_mapping_set_layout_bounds(m: *mut matcher) {
         };
     }
 }
-unsafe fn matcher_mapping_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sval) {
+fn matcher_mapping_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sval) {
     unsafe {
         let mut kccgst: rules_kccgst;
         let mut kccgst_sval: sval = sval {
@@ -1033,7 +1046,7 @@ unsafe fn matcher_mapping_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sv
         (*m).mapping.num_kccgst = (*m).mapping.num_kccgst.wrapping_add(1);
     }
 }
-unsafe fn matcher_mapping_verify(m: *mut matcher, s: *mut scanner) -> bool {
+fn matcher_mapping_verify(m: *mut matcher, s: *mut scanner) -> bool {
     unsafe {
         let mut c2rust_current_block: u64;
         if (*m).mapping.num_mlvo as i32 == 0_i32 {
@@ -1171,13 +1184,13 @@ unsafe fn matcher_mapping_verify(m: *mut matcher, s: *mut scanner) -> bool {
         false
     }
 }
-unsafe fn matcher_rule_start_new(m: *mut matcher) {
+fn matcher_rule_start_new(m: *mut matcher) {
     unsafe {
         std::ptr::write_bytes::<rule>(&raw mut (*m).rule as *mut rule, 0u8, 1);
         (*m).rule.skip = (*m).mapping.active_or_candidates_mask == 0;
     }
 }
-unsafe fn matcher_rule_set_mlvo_common(
+fn matcher_rule_set_mlvo_common(
     m: *mut matcher,
     s: *mut scanner,
     ident: sval,
@@ -1199,11 +1212,7 @@ unsafe fn matcher_rule_set_mlvo_common(
         (*m).rule.num_mlvo_values = (*m).rule.num_mlvo_values.wrapping_add(1);
     }
 }
-unsafe fn matcher_rule_set_mlvo_wildcard(
-    m: *mut matcher,
-    s: *mut scanner,
-    match_type: mlvo_match_type,
-) {
+fn matcher_rule_set_mlvo_wildcard(m: *mut matcher, s: *mut scanner, match_type: mlvo_match_type) {
     unsafe {
         let dummy: sval = sval {
             len: 0_usize,
@@ -1212,17 +1221,17 @@ unsafe fn matcher_rule_set_mlvo_wildcard(
         matcher_rule_set_mlvo_common(m, s, dummy, match_type);
     }
 }
-unsafe fn matcher_rule_set_mlvo_group(m: *mut matcher, s: *mut scanner, ident: sval) {
+fn matcher_rule_set_mlvo_group(m: *mut matcher, s: *mut scanner, ident: sval) {
     unsafe {
         matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_GROUP);
     }
 }
-unsafe fn matcher_rule_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval) {
+fn matcher_rule_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval) {
     unsafe {
         matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_NORMAL);
     }
 }
-unsafe fn matcher_rule_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sval) {
+fn matcher_rule_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sval) {
     unsafe {
         if (*m).rule.num_kccgst_values as i32 >= (*m).mapping.num_kccgst as i32 {
             let loc: scanner_loc = (*s).token_location();
@@ -1238,7 +1247,7 @@ unsafe fn matcher_rule_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sval)
         (*m).rule.num_kccgst_values = (*m).rule.num_kccgst_values.wrapping_add(1);
     }
 }
-unsafe fn match_group(m: *mut matcher, group_name: sval, to: sval) -> bool {
+fn match_group(m: *mut matcher, group_name: sval, to: sval) -> bool {
     unsafe {
         let found_group = (*m).groups.iter().find(|g| svaleq(g.name, group_name));
         match found_group {
@@ -1254,7 +1263,7 @@ unsafe fn match_group(m: *mut matcher, group_name: sval, to: sval) -> bool {
         }
     }
 }
-unsafe fn match_value(
+fn match_value(
     m: *mut matcher,
     val: sval,
     to: sval,
@@ -1272,7 +1281,7 @@ unsafe fn match_value(
         }
     }
 }
-unsafe fn match_value_and_mark(
+fn match_value_and_mark(
     m: *mut matcher,
     val: sval,
     to: *mut matched_sval,
@@ -1287,7 +1296,7 @@ unsafe fn match_value_and_mark(
         matched
     }
 }
-unsafe fn expand_rmlvo_in_kccgst_value(
+fn expand_rmlvo_in_kccgst_value(
     m: *mut matcher,
     s: *mut scanner,
     value: sval,
@@ -1793,15 +1802,17 @@ unsafe fn expand_rmlvo_in_kccgst_value(
             }
         }
         let loc_1: scanner_loc = (*s).token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
+        log::error!(
+            "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
             &(*s).file_name,
             loc_1.line,
-            loc_1.column);
+            loc_1.column
+        );
         false
     }
 }
-unsafe fn expand_qualifier_in_kccgst_value(
+fn expand_qualifier_in_kccgst_value(
     m: *mut matcher,
     s: *mut scanner,
     value: sval,
@@ -1823,10 +1834,12 @@ unsafe fn expand_qualifier_in_kccgst_value(
         {
             if has_layout_idx_range {
                 let loc: scanner_loc = (*s).token_location();
-                log::warn!("{}:{}:{}: Using :all qualifier with indices range is not recommended.\n",
+                log::warn!(
+                    "{}:{}:{}: Using :all qualifier with indices range is not recommended.\n",
                     &(*s).file_name,
                     loc.line,
-                    loc.column);
+                    loc.column
+                );
             }
             vec_append_nul_terminated(&mut *expanded, b"1\0".as_ptr() as *const i8, 1);
             if (*m).rmlvo.layouts.len() > 1 {
@@ -1876,7 +1889,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
     }
 }
 #[inline]
-unsafe fn concat_kccgst(into: *mut Vec<i8>, size: u32, from: *const i8) {
+fn concat_kccgst(into: *mut Vec<i8>, size: u32, from: *const i8) {
     unsafe {
         let from_plus: bool = *from.offset(0_i32 as isize) as i32 == MERGE_OVERRIDE_PREFIX
             || *from.offset(0_i32 as isize) as i32 == MERGE_AUGMENT_PREFIX
@@ -1913,7 +1926,7 @@ unsafe fn concat_kccgst(into: *mut Vec<i8>, size: u32, from: *const i8) {
         };
     }
 }
-unsafe fn append_expanded_kccgst_value(
+fn append_expanded_kccgst_value(
     m: *mut matcher,
     s: *mut scanner,
     merge: bool,
@@ -1998,7 +2011,7 @@ unsafe fn append_expanded_kccgst_value(
         }
     }
 }
-unsafe fn matcher_append_pending_kccgst(m: *mut matcher) -> bool {
+fn matcher_append_pending_kccgst(m: *mut matcher) -> bool {
     unsafe {
         if !(*m).mapping.has_layout_idx_range {
             return true;
@@ -2034,7 +2047,7 @@ unsafe fn matcher_append_pending_kccgst(m: *mut matcher) -> bool {
         true
     }
 }
-unsafe fn matcher_rule_verify(m: *mut matcher, s: *mut scanner) {
+fn matcher_rule_verify(m: *mut matcher, s: *mut scanner) {
     unsafe {
         if (*m).rule.num_mlvo_values as i32 != (*m).mapping.num_mlvo as i32
             || (*m).rule.num_kccgst_values as i32 != (*m).mapping.num_kccgst as i32
@@ -2049,7 +2062,7 @@ unsafe fn matcher_rule_verify(m: *mut matcher, s: *mut scanner) {
         }
     }
 }
-unsafe fn matcher_rule_apply_if_matches(m: *mut matcher, s: *mut scanner) {
+fn matcher_rule_apply_if_matches(m: *mut matcher, s: *mut scanner) {
     unsafe {
         let mut candidate_layouts: u32 = (*m).mapping.active_or_candidates_mask;
         let mut idx: u32;
@@ -2248,10 +2261,10 @@ unsafe fn matcher_rule_apply_if_matches(m: *mut matcher, s: *mut scanner) {
         }
     }
 }
-unsafe fn gettok(m: *mut matcher, s: *mut scanner) -> rules_token {
+fn gettok(m: *mut matcher, s: *mut scanner) -> rules_token {
     unsafe { lex(s, &raw mut (*m).val) }
 }
-unsafe fn matcher_match(
+fn matcher_match(
     m: *mut matcher,
     s: *mut scanner,
     include_depth: u32,
@@ -2513,11 +2526,13 @@ unsafe fn matcher_match(
                     11 => {}
                     _ => {
                         let loc: scanner_loc = (*s).token_location();
-                        log::error!("[XKB-{:03}] {}:{}:{}: unexpected token\n",
+                        log::error!(
+                            "[XKB-{:03}] {}:{}:{}: unexpected token\n",
                             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                             &(*s).file_name,
                             loc.line,
-                            loc.column);
+                            loc.column
+                        );
                     }
                 }
                 false
@@ -2525,7 +2540,7 @@ unsafe fn matcher_match(
         }
     }
 }
-unsafe fn read_rules_file(
+fn read_rules_file(
     _ctx: *mut xkb_context,
     matcher: *mut matcher,
     include_depth: u32,
@@ -2557,9 +2572,7 @@ unsafe fn read_rules_file(
         let mapped = match MappedFile::new(&rust_file) {
             Ok(m) => m,
             Err(e) => {
-                log::error!("Couldn't read rules file \"{}\": {}\n",
-                    path,
-                    e);
+                log::error!("Couldn't read rules file \"{}\": {}\n", path, e);
                 std::mem::forget(rust_file);
                 return false;
             }
@@ -2600,7 +2613,7 @@ unsafe fn read_rules_file(
         ret
     }
 }
-unsafe fn xkb_resolve_partial_rules(
+fn xkb_resolve_partial_rules(
     ctx: *mut xkb_context,
     path: *mut i8,
     path_size: usize,
@@ -2620,10 +2633,12 @@ unsafe fn xkb_resolve_partial_rules(
             ),
         );
         if _trunc {
-            log::error!("[XKB-{:03}] Cannot load XKB rules \"{}{}\"\n",
+            log::error!(
+                "[XKB-{:03}] Cannot load XKB rules \"{}{}\"\n",
                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                 std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(rules)),
-                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(suffix)));
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(suffix))
+            );
             return false;
         }
         let mut offset: u32 = 0_u32;
@@ -2653,9 +2668,11 @@ unsafe fn xkb_resolve_partial_rules(
             );
             fclose(file);
             if !ok {
-                log::error!("[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
+                log::error!(
+                    "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
                     XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)));
+                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path))
+                );
                 return false;
             }
             offset = offset.wrapping_add(1);
@@ -2663,7 +2680,7 @@ unsafe fn xkb_resolve_partial_rules(
         true
     }
 }
-unsafe fn xkb_resolve_rules(
+fn xkb_resolve_rules(
     ctx: *mut xkb_context,
     rules: *const i8,
     matcher: *mut matcher,
@@ -2687,9 +2704,11 @@ unsafe fn xkb_resolve_rules(
             true,
         ) as *mut FILE;
         if file.is_null() {
-            log::error!("[XKB-{:03}] Cannot load XKB rules \"{}\"\n",
+            log::error!(
+                "[XKB-{:03}] Cannot load XKB rules \"{}\"\n",
                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(rules)));
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(rules))
+            );
         } else {
             ret = xkb_resolve_partial_rules(
                 ctx,
@@ -2710,11 +2729,13 @@ unsafe fn xkb_resolve_rules(
                     )),
                 );
                 if !ret {
-                    log::error!("[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
+                    log::error!(
+                        "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
                         XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                         std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
                             &raw mut path as *mut i8
-                        )));
+                        ))
+                    );
                 } else {
                     ret = xkb_resolve_partial_rules(
                         ctx,
@@ -2730,11 +2751,13 @@ unsafe fn xkb_resolve_rules(
                             || (*matcher).kccgst[KCCGST_COMPAT as usize].is_empty()
                             || (*matcher).kccgst[KCCGST_SYMBOLS as usize].is_empty()
                         {
-                            log::error!("[XKB-{:03}] No components returned from XKB rules \"{}\"\n",
+                            log::error!(
+                                "[XKB-{:03}] No components returned from XKB rules \"{}\"\n",
                                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                                 std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
                                     rules
-                                )));
+                                ))
+                            );
                             ret = false;
                         } else {
                             // Transfer ownership of Vec data directly.
@@ -2773,9 +2796,11 @@ unsafe fn xkb_resolve_rules(
                             }
                             mval = &raw mut (*matcher).rmlvo.model;
                             if !(*mval).matched && (*mval).sval.len > 0_usize {
-                                log::error!("[XKB-{:03}] Unrecognized RMLVO model \"{}\" was ignored\n",
+                                log::error!(
+                                    "[XKB-{:03}] Unrecognized RMLVO model \"{}\" was ignored\n",
                                     XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                    (*mval).sval.as_str());
+                                    (*mval).sval.as_str()
+                                );
                             }
                             if !(*matcher).rmlvo.layouts.is_empty() {
                                 mval = (*matcher).rmlvo.layouts.as_mut_ptr().offset(0_i32 as isize)
@@ -2886,7 +2911,7 @@ unsafe fn xkb_resolve_rules(
         ret
     }
 }
-pub unsafe fn xkb_components_from_rules_names(
+pub fn xkb_components_from_rules_names(
     ctx: *mut xkb_context,
     rmlvo: *const xkb_rule_names,
     out: *mut xkb_component_names,

@@ -299,8 +299,10 @@ fn AddLedName(
     if let Some(old_idx) = found_old {
         if old_idx == new_idx {
             if report {
-                log::warn!("Multiple indicators named \"{}\"; Identical definitions ignored\n",
-                    xkb_atom_text(&info.ctx().atom_table, new.name));
+                log::warn!(
+                    "Multiple indicators named \"{}\"; Identical definitions ignored\n",
+                    xkb_atom_text(&info.ctx().atom_table, new.name)
+                );
             }
             return true;
         }
@@ -315,10 +317,12 @@ fn AddLedName(
             } else {
                 new_idx.wrapping_add(1_u32)
             };
-            log::warn!("Multiple indicators named {}; Using {}, ignoring {}\n",
+            log::warn!(
+                "Multiple indicators named {}; Using {}, ignoring {}\n",
                 xkb_atom_text(&info.ctx().atom_table, new.name),
                 use_0,
-                ignore);
+                ignore
+            );
         }
         if replace {
             info.led_names[old_idx as usize].name = XKB_ATOM_NONE;
@@ -341,10 +345,12 @@ fn AddLedName(
             } else {
                 new.name
             };
-            log::warn!("Multiple names for indicator {}; Using {}, ignoring {}\n",
+            log::warn!(
+                "Multiple names for indicator {}; Using {}, ignoring {}\n",
                 new_idx.wrapping_add(1_u32),
                 xkb_atom_text(&info.ctx().atom_table, use_1),
-                xkb_atom_text(&info.ctx().atom_table, ignore_0));
+                xkb_atom_text(&info.ctx().atom_table, ignore_0)
+            );
         }
         if replace {
             info.led_names[new_idx as usize] = *new;
@@ -453,18 +459,22 @@ fn AddKeyName(
             let old_kname: &str = xkb_atom_text(&info.ctx().atom_table, old_name);
             let use_1: &str = if clobber_0 { kname } else { old_kname };
             let ignore_0: &str = if clobber_0 { old_kname } else { kname };
-            log::warn!("Multiple names for keycode {}; Using <{}>, ignoring <{}>\n",
+            log::warn!(
+                "Multiple names for keycode {}; Using <{}>, ignoring <{}>\n",
                 kc,
                 use_1,
-                ignore_0);
+                ignore_0
+            );
         }
         if clobber_0 {
             keycode_store_delete_name(&mut info.keycodes, old_name);
             keycode_store_update_key(&mut info.keycodes, match_kc, name);
         }
     } else if !keycode_store_insert_key(&mut info.keycodes, kc, name) {
-        log::error!("[XKB-{:03}] Cannot add keycode\n",
-            XKB_ERROR_ALLOCATION_ERROR as i32);
+        log::error!(
+            "[XKB-{:03}] Cannot add keycode\n",
+            XKB_ERROR_ALLOCATION_ERROR as i32
+        );
         return false;
     }
     true
@@ -616,9 +626,11 @@ fn HandleIncludeKeycodes(
 }
 fn HandleKeycodeDef(info: &mut KeyNamesInfo<'_>, stmt: &KeycodeDef, report: bool) -> bool {
     if stmt.value < 0_i64 || stmt.value > XKB_KEYCODE_MAX as i64 {
-        log::error!("Illegal keycode {}: must be between 0..{}; Key ignored\n",
+        log::error!(
+            "Illegal keycode {}: must be between 0..{}; Key ignored\n",
             stmt.value,
-            0xffffffff_u32.wrapping_sub(1_u32));
+            0xffffffff_u32.wrapping_sub(1_u32)
+        );
         return false;
     }
     AddKeyName(info, stmt.value as u32, stmt.name, stmt.merge, report)
@@ -679,16 +691,9 @@ fn HandleAliasDef(info: &mut KeyNamesInfo<'_>, def: &KeyAliasDef, report: bool) 
 fn HandleKeyNameVar(info: &mut KeyNamesInfo<'_>, stmt: &VarDef) -> bool {
     let mut elem: &str = "";
     let mut field: &str = "";
-    let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
-    if !unsafe {
-        ExprResolveLhs(
-            info.ctx,
-            stmt.name.raw(),
-            &mut elem,
-            &mut field,
-            &raw mut arrayNdx,
-        )
-    } {
+    let mut arrayNdx: Option<&ExprDef> = None;
+    let name_ref = unsafe { &*stmt.name.raw() };
+    if !ExprResolveLhs(info.ctx(), name_ref, &mut elem, &mut field, &mut arrayNdx) {
         return false;
     }
     if !elem.is_empty() {
@@ -700,19 +705,20 @@ fn HandleKeyNameVar(info: &mut KeyNamesInfo<'_>, stmt: &VarDef) -> bool {
         return (*info.keymap_info).strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
     }
     if !field.eq_ignore_ascii_case("minimum") && !field.eq_ignore_ascii_case("maximum") {
-        log::error!("[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
+        log::error!(
+            "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
             XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-            field);
+            field
+        );
         return (*info.keymap_info).strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
     }
-    if !arrayNdx.is_null() {
+    if arrayNdx.is_some() {
         unsafe { ReportNotArray(info.ctx, "keycodes", field, "defaults") };
         return (*info.keymap_info).strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
     }
     let mut val: i64 = 0_i64;
-    if !unsafe { ExprResolveInteger(info.ctx, stmt.value.raw(), &raw mut val) }
-        || val < 0_i64
-        || val > u32::MAX as i64
+    let value_ref = unsafe { &*stmt.value.raw() };
+    if !ExprResolveInteger(info.ctx(), value_ref, &mut val) || val < 0_i64 || val > u32::MAX as i64
     {
         unsafe {
             ReportBadType(
@@ -731,13 +737,16 @@ fn HandleKeyNameVar(info: &mut KeyNamesInfo<'_>, stmt: &VarDef) -> bool {
 fn HandleLedNameDef(info: &mut KeyNamesInfo<'_>, def: &LedNameDef, report: bool) -> bool {
     if def.ndx < 1_i64 || def.ndx > XKB_MAX_LEDS as i64 {
         info.errorCount += 1;
-        log::error!("Illegal indicator index ({}) specified; must be between 1 .. {}; Ignored\n",
+        log::error!(
+            "Illegal indicator index ({}) specified; must be between 1 .. {}; Ignored\n",
             def.ndx,
-            (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8_usize) as u32);
+            (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8_usize) as u32
+        );
         return false;
     }
     let mut name: u32 = XKB_ATOM_NONE;
-    if !unsafe { ExprResolveString(info.ctx, def.name.raw(), &raw mut name) } {
+    let name_expr = unsafe { &*def.name.raw() };
+    if !ExprResolveString(info.ctx(), name_expr, &mut name) {
         let mut buf: [u8; 20] = [0; 20];
         let buf_len = {
             let mut w = crate::xkb::utils::LogBuf::new(&mut buf[..19]);
@@ -801,19 +810,23 @@ fn HandleKeycodesFile(info: &mut KeyNamesInfo<'_>, file: *mut XkbFile) {
                     ok = HandleLedNameDef(info, &*(stmt as *const LedNameDef), report_same_file);
                 }
                 35 | 36 => {
-                    log::error!("[XKB-{:03}] Unsupported keycodes {} statement \"{}\"; Ignoring\n",
+                    log::error!(
+                        "[XKB-{:03}] Unsupported keycodes {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
                         if (*stmt).type_0 == STMT_UNKNOWN_COMPOUND {
                             "compound"
                         } else {
                             "declaration"
                         },
-                        &(*(stmt as *mut UnknownStatement)).name);
+                        &(*(stmt as *mut UnknownStatement)).name
+                    );
                     ok = (*info.keymap_info).strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {
-                    log::error!("Keycode files may define key and indicator names only; Ignoring {}\n",
-                        stmt_type_to_string((*stmt).type_0));
+                    log::error!(
+                        "Keycode files may define key and indicator names only; Ignoring {}\n",
+                        stmt_type_to_string((*stmt).type_0)
+                    );
                     ok = false;
                 }
             }
@@ -821,8 +834,7 @@ fn HandleKeycodesFile(info: &mut KeyNamesInfo<'_>, file: *mut XkbFile) {
                 info.errorCount += 1;
             }
             if info.errorCount > 10_i32 {
-                log::error!("Abandoning keycodes file \"{}\"\n",
-                    safe_map_name(&*file));
+                log::error!("Abandoning keycodes file \"{}\"\n", safe_map_name(&*file));
                 break;
             } else {
                 stmt = (*stmt).next as *mut ParseCommon;

@@ -21,15 +21,15 @@ pub use crate::xkb::xkbcomp::types::CompileKeyTypes;
 
 pub const GROUP_MASK_NAME_LAST: u32 = 3;
 pub const GROUP_INDEX_NAME_LAST: u32 = 1;
-pub type compile_file_fn = Option<unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool>;
+pub type compile_file_fn = Option<fn(*mut XkbFile, *mut xkb_keymap_info) -> bool>;
 #[inline]
-unsafe fn ComputeEffectiveMask(keymap: *mut xkb_keymap, mods: *mut xkb_mods) {
+fn ComputeEffectiveMask(keymap: *mut xkb_keymap, mods: *mut xkb_mods) {
     unsafe {
         let unknown_mods: u32 = !((1_u64 << (*keymap).mods.num_mods).wrapping_sub(1_u64) as u32);
         (*mods).mask = mod_mask_get_effective(keymap, (*mods).mods) | (*mods).mods & unknown_mods;
     }
 }
-unsafe fn UpdateActionMods(keymap: *mut xkb_keymap, act: *mut xkb_action, modmap: u32) {
+fn UpdateActionMods(keymap: *mut xkb_keymap, act: *mut xkb_action, modmap: u32) {
     unsafe {
         if let 2..=4 = (*act).type_0 {
             if (*act).mods.flags & ACTION_MODS_LOOKUP_MODMAP != 0 {
@@ -55,7 +55,7 @@ fn default_interpret() -> xkb_sym_interpret {
         actions: Vec::new(),
     }
 }
-unsafe fn FindInterpForKey(
+fn FindInterpForKey(
     keymap: *mut xkb_keymap,
     key: *const xkb_key,
     group: u32,
@@ -154,7 +154,7 @@ unsafe fn FindInterpForKey(
         true
     }
 }
-unsafe fn ApplyInterpsToKey(keymap: *mut xkb_keymap, key: *mut xkb_key) -> bool {
+fn ApplyInterpsToKey(keymap: *mut xkb_keymap, key: *mut xkb_key) -> bool {
     unsafe {
         let mut vmodmap: u32 = 0_u32;
         let mut level: u32;
@@ -223,7 +223,7 @@ unsafe fn ApplyInterpsToKey(keymap: *mut xkb_keymap, key: *mut xkb_key) -> bool 
     }
 }
 #[inline]
-unsafe fn is_mod_action(action: *mut xkb_action) -> bool {
+fn is_mod_action(action: *mut xkb_action) -> bool {
     unsafe {
         (*action).type_0 == ACTION_TYPE_MOD_SET
             || (*action).type_0 == ACTION_TYPE_MOD_LATCH
@@ -231,14 +231,14 @@ unsafe fn is_mod_action(action: *mut xkb_action) -> bool {
     }
 }
 #[inline]
-unsafe fn is_group_action(action: *mut xkb_action) -> bool {
+fn is_group_action(action: *mut xkb_action) -> bool {
     unsafe {
         (*action).type_0 == ACTION_TYPE_GROUP_SET
             || (*action).type_0 == ACTION_TYPE_GROUP_LATCH
             || (*action).type_0 == ACTION_TYPE_GROUP_LOCK
     }
 }
-unsafe fn CheckMultipleActionsCategories(keymap: *mut xkb_keymap, key: *mut xkb_key) {
+fn CheckMultipleActionsCategories(keymap: *mut xkb_keymap, key: *mut xkb_key) {
     unsafe {
         let mut g: u32 = 0_u32;
         while g < (*key).num_groups {
@@ -293,12 +293,7 @@ unsafe fn CheckMultipleActionsCategories(keymap: *mut xkb_keymap, key: *mut xkb_
         }
     }
 }
-unsafe fn add_key_aliases(
-    keymap: *mut xkb_keymap,
-    min: u32,
-    max: u32,
-    aliases: &mut Vec<xkb_key_alias>,
-) {
+fn add_key_aliases(keymap: *mut xkb_keymap, min: u32, max: u32, aliases: &mut Vec<xkb_key_alias>) {
     unsafe {
         let mut alias: u32 = min;
         while alias <= max {
@@ -313,7 +308,7 @@ unsafe fn add_key_aliases(
         }
     }
 }
-unsafe fn update_pending_key_fields(info: *mut xkb_keymap_info, key: *mut xkb_key) -> bool {
+fn update_pending_key_fields(info: *mut xkb_keymap_info, key: *mut xkb_key) -> bool {
     unsafe {
         if (*key).out_of_range_pending_group {
             let info_ref = &mut *info;
@@ -322,12 +317,13 @@ unsafe fn update_pending_key_fields(info: *mut xkb_keymap_info, key: *mut xkb_ke
                 as *mut pending_computation;
             if !(*pc).computed {
                 let mut group: u32 = 0_u32;
+                let mut pending_dummy = false;
                 match ExprResolveGroup(
-                    info,
-                    (*pc).expr.raw(),
+                    info_ref,
+                    unsafe { &*(*pc).expr.raw() },
                     true,
-                    &raw mut group,
-                    std::ptr::null_mut(),
+                    &mut group,
+                    &mut pending_dummy,
                 ) as u32
                 {
                     0 => {
@@ -335,8 +331,9 @@ unsafe fn update_pending_key_fields(info: *mut xkb_keymap_info, key: *mut xkb_ke
                         (*pc).value = group.wrapping_sub(1_u32);
                     }
                     2 => {
-                        log::error!("[XKB-{:03}] Invalid key redirect group index\n",
-                            { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX });
+                        log::error!("[XKB-{:03}] Invalid key redirect group index\n", {
+                            XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX
+                        });
                         return (*info).strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0;
                     }
                     _ => {}
@@ -348,7 +345,7 @@ unsafe fn update_pending_key_fields(info: *mut xkb_keymap_info, key: *mut xkb_ke
         true
     }
 }
-unsafe fn update_pending_action_fields(
+fn update_pending_action_fields(
     info: *mut xkb_keymap_info,
     keycode: u32,
     act: *mut xkb_action,
@@ -364,17 +361,19 @@ unsafe fn update_pending_action_fields(
                     if !(*pc).computed {
                         let mut group: u32 = 0_u32;
                         let absolute: bool = (*act).group.flags & ACTION_ABSOLUTE_SWITCH != 0;
+                        let mut pending_dummy = false;
                         match ExprResolveGroup(
-                            info,
-                            (*pc).expr.raw(),
+                            info_ref,
+                            &*(*pc).expr.raw(),
                             absolute,
-                            &raw mut group,
-                            std::ptr::null_mut(),
+                            &mut group,
+                            &mut pending_dummy,
                         ) as u32
                         {
                             2 => {
-                                log::error!("[XKB-{:03}] Invalid action group index\n",
-                                    { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX });
+                                log::error!("[XKB-{:03}] Invalid action group index\n", {
+                                    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX
+                                });
                                 return false;
                             }
                             1 => {}
@@ -412,7 +411,7 @@ unsafe fn update_pending_action_fields(
         }
     }
 }
-unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
+fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
     unsafe {
         let keymap: *mut xkb_keymap = (*info).keymap;
         let mut num_key_aliases: u32 = 0_u32;
@@ -681,14 +680,16 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                         as *mut pending_computation;
                     if !(*pc).computed {
                         let mut mask: u32 = 0_u32;
+                        let mut pending_dummy = false;
                         if !ExprResolveGroupMask(
-                            info,
-                            (*pc).expr.raw(),
-                            &raw mut mask,
-                            std::ptr::null_mut(),
+                            info_ref,
+                            &*(*pc).expr.raw(),
+                            &mut mask,
+                            &mut pending_dummy,
                         ) {
-                            log::error!("[XKB-{:03}] Invalid LED group mask\n",
-                                { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX });
+                            log::error!("[XKB-{:03}] Invalid LED group mask\n", {
+                                XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX
+                            });
                             led_ok = false;
                         }
                         if led_ok {
@@ -712,13 +713,13 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
 }
 static COMPILE_FILE_FNS: [compile_file_fn; 4] = {
     [
-        Some(CompileKeycodes as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
-        Some(CompileKeyTypes as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
-        Some(CompileCompatMap as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
-        Some(CompileSymbols as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
+        Some(CompileKeycodes as fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
+        Some(CompileKeyTypes as fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
+        Some(CompileCompatMap as fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
+        Some(CompileSymbols as fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
     ]
 };
-unsafe fn pending_computations_array_free(p: &mut Vec<pending_computation>) {
+fn pending_computations_array_free(p: &mut Vec<pending_computation>) {
     unsafe {
         for pc in p.iter_mut() {
             if let Some(boxed) = pc.expr.take() {
@@ -728,7 +729,7 @@ unsafe fn pending_computations_array_free(p: &mut Vec<pending_computation>) {
         p.clear();
     }
 }
-pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> bool {
+pub fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> bool {
     unsafe {
         let mut files: [*mut XkbFile; 4] = [
             std::ptr::null_mut(),
@@ -744,11 +745,15 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                 || (*file).file_type > LAST_KEYMAP_FILE_TYPE
             {
                 if (*file).file_type == FILE_TYPE_GEOMETRY {
-                    log::warn!("[XKB-{:03}] Geometry sections are not supported; ignoring\n",
-                        XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION as i32);
+                    log::warn!(
+                        "[XKB-{:03}] Geometry sections are not supported; ignoring\n",
+                        XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION as i32
+                    );
                 } else {
-                    log::error!("Cannot define {} in a keymap file\n",
-                        xkb_file_type_to_string((*file).file_type));
+                    log::error!(
+                        "Cannot define {} in a keymap file\n",
+                        xkb_file_type_to_string((*file).file_type)
+                    );
                 }
             } else if !files[(*file).file_type as usize].is_null() {
                 log::error!("More than one {} section in keymap file; All sections after the first ignored\n",
@@ -837,20 +842,23 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
         type_0 = FIRST_KEYMAP_FILE_TYPE;
         while type_0 <= LAST_KEYMAP_FILE_TYPE {
             if files[type_0 as usize].is_null() {
-                log::debug!("Component {} not provided in keymap\n",
-                    xkb_file_type_to_string(type_0));
+                log::debug!(
+                    "Component {} not provided in keymap\n",
+                    xkb_file_type_to_string(type_0)
+                );
             } else {
-                log::debug!("Compiling {} \"{}\"\n",
+                log::debug!(
+                    "Compiling {} \"{}\"\n",
                     xkb_file_type_to_string(type_0),
-                    safe_map_name(&*files[type_0 as usize]));
+                    safe_map_name(&*files[type_0 as usize])
+                );
             }
             let ok: bool = COMPILE_FILE_FNS[type_0 as usize].expect("non-null function pointer")(
                 files[type_0 as usize],
                 &raw mut info,
             ) as bool;
             if !ok {
-                log::error!("Failed to compile {}\n",
-                    xkb_file_type_to_string(type_0));
+                log::error!("Failed to compile {}\n", xkb_file_type_to_string(type_0));
                 // info.keymap is a pointer to the same keymap, no write-back needed
                 pending_computations_array_free(&mut info.pending_computations);
                 return false;

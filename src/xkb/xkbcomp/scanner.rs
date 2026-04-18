@@ -266,7 +266,7 @@ fn is_space(ch: i8) -> bool {
 }
 use libc::FILE;
 pub static DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
-unsafe fn number(s: *mut scanner, out: *mut i64, out_tok: *mut i32) -> bool {
+fn number(s: *mut scanner, out: *mut i64, out_tok: *mut i32) -> bool {
     unsafe {
         if (*s).str_match(
             b"0x\0".as_ptr() as *const i8,
@@ -312,7 +312,7 @@ unsafe fn number(s: *mut scanner, out: *mut i64, out_tok: *mut i32) -> bool {
         }
     }
 }
-pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
+pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
     unsafe {
         loop {
             while is_space((*s).peek()) {
@@ -522,7 +522,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
         ERROR_TOK
     }
 }
-pub unsafe fn XkbParseStringInit(
+pub fn XkbParseStringInit(
     ctx: *mut xkb_context,
     sc: *mut scanner,
     string: *const i8,
@@ -550,7 +550,7 @@ pub unsafe fn XkbParseStringInit(
         true
     }
 }
-pub unsafe fn XkbParseString(
+pub fn XkbParseString(
     ctx: *mut xkb_context,
     string: *const i8,
     len: usize,
@@ -572,7 +572,7 @@ pub unsafe fn XkbParseString(
         parse(ctx as *mut _, &raw mut sc as *mut _, map) as *mut XkbFile
     }
 }
-pub unsafe fn XkbParseStringNext(
+pub fn XkbParseStringNext(
     ctx: *mut xkb_context,
     scanner: *mut scanner,
     map: *const i8,
@@ -589,7 +589,7 @@ pub unsafe fn XkbParseStringNext(
         }
     }
 }
-pub unsafe fn XkbParseFile(
+pub fn XkbParseFile(
     ctx: *mut xkb_context,
     file: *mut FILE,
     file_name: &str,

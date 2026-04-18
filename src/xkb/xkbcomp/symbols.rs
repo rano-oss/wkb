@@ -923,12 +923,13 @@ fn GetGroupIndex(
             *ndx_rtrn = (*keyi).groups.len().wrapping_sub(1) as u32;
             return true;
         }
+        let mut pending_dummy = false;
         if ExprResolveGroup(
-            info.keymap_info as *const _ as *mut _,
-            arrayNdx,
+            &mut *(info.keymap_info as *const _ as *mut xkb_keymap_info),
+            &*arrayNdx,
             false,
-            ndx_rtrn,
-            std::ptr::null_mut(),
+            &mut *ndx_rtrn,
+            &mut pending_dummy,
         ) as u32
             != PARSER_SUCCESS
         {
@@ -1052,10 +1053,12 @@ fn AddActionsToKey(
             return false;
         }
         if (*groupi).defined & GROUP_FIELD_ACTS != 0 {
-            log::error!("[XKB-{:03}] Actions for key <{}>, group {} already defined\n",
+            log::error!(
+                "[XKB-{:03}] Actions for key <{}>, group {} already defined\n",
                 XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
                 KeyInfoText(info, &*keyi),
-                ndx);
+                ndx
+            );
             return false;
         }
         let mut nLevels: u32 = 0_u32;
@@ -1210,10 +1213,12 @@ fn ExprResolveOverlayEntry(
 ) -> bool {
     unsafe {
         if !arrayNdx.is_null() {
-            log::error!("[XKB-{:03}] Overlay field \"{}\" in <{}> does not support array index; ignored\n",
+            log::error!(
+                "[XKB-{:03}] Overlay field \"{}\" in <{}> does not support array index; ignored\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
                 field,
-                xkb_atom_text(&(*(*keymap_info).keymap).ctx.atom_table, (*keyi).name));
+                xkb_atom_text(&(*(*keymap_info).keymap).ctx.atom_table, (*keyi).name)
+            );
             return false;
         }
         let prefix: usize = (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1_usize);
@@ -1248,11 +1253,13 @@ fn ExprResolveOverlayEntry(
                     (*key_ptr).keycode
                 };
                 if *key_rtrn == XKB_KEYCODE_INVALID {
-                    log::error!("[XKB-{:03}] Unknown key \"{}\" for field {} in <{}>\n",
+                    log::error!(
+                        "[XKB-{:03}] Unknown key \"{}\" for field {} in <{}>\n",
                         XKB_WARNING_UNDEFINED_KEYCODE as i32,
                         xkb_atom_text(&(*(*keymap_info).keymap).ctx.atom_table, key_name_val),
                         field,
-                        xkb_atom_text(&(*(*keymap_info).keymap).ctx.atom_table, (*keyi).name));
+                        xkb_atom_text(&(*(*keymap_info).keymap).ctx.atom_table, (*keyi).name)
+                    );
                     return false;
                 }
                 true
@@ -1270,20 +1277,24 @@ fn ExprResolveOverlayEntry(
                     *overlay_rtrn = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
                     return true;
                 }
-                log::error!("[XKB-{:03}] Unsupported overlay value \"{}\" for field {} in <{}>\n",
+                log::error!(
+                    "[XKB-{:03}] Unsupported overlay value \"{}\" for field {} in <{}>\n",
                     XKB_ERROR_INVALID_VALUE as i32,
                     id,
                     field,
-                    xkb_atom_text(&(*(*keymap_info).keymap).ctx.atom_table, (*keyi).name));
+                    xkb_atom_text(&(*(*keymap_info).keymap).ctx.atom_table, (*keyi).name)
+                );
                 false
             }
             _ => {
-                log::error!("[XKB-{:03}] Expected {} for field \"{}\" in <{}>, got: {}\n",
+                log::error!(
+                    "[XKB-{:03}] Expected {} for field \"{}\" in <{}>, got: {}\n",
                     XKB_ERROR_INVALID_VALUE as i32,
                     stmt_type_to_string(STMT_EXPR_KEYNAME_LITERAL),
                     field,
                     xkb_atom_text(&(*(*keymap_info).keymap).ctx.atom_table, (*keyi).name),
-                    stmt_type_to_string((*expr).common.type_0));
+                    stmt_type_to_string((*expr).common.type_0)
+                );
                 false
             }
         }
@@ -1301,7 +1312,7 @@ fn SetSymbolsField(
         if field.eq_ignore_ascii_case("type") {
             let mut ndx: u32 = 0_u32;
             let mut val: u32 = XKB_ATOM_NONE;
-            if !ExprResolveString(info.ctx, value, &raw mut val) {
+            if !ExprResolveString(info.ctx, &*value, &mut val) {
                 log::error!("[XKB-{:03}] The type field of a key symbol map must be a string; Ignoring illegal type definition\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32);
                 return false;
@@ -1309,13 +1320,16 @@ fn SetSymbolsField(
             if arrayNdx.is_null() {
                 (*keyi).default_type = val;
                 (*keyi).defined |= KEY_FIELD_DEFAULT_TYPE as i32 as key_field;
-            } else if ExprResolveGroup(
-                info.keymap_info,
-                arrayNdx,
-                false,
-                &raw mut ndx,
-                std::ptr::null_mut(),
-            ) as u32
+            } else if {
+                let mut pending_dummy = false;
+                ExprResolveGroup(
+                    info.keymap_info,
+                    &*arrayNdx,
+                    false,
+                    &mut ndx,
+                    &mut pending_dummy,
+                )
+            } as u32
                 != PARSER_SUCCESS
             {
                 log::error!("[XKB-{:03}] Illegal group index for type of key <{}>; Definition with non-integer array index ignored\n",
@@ -1340,7 +1354,7 @@ fn SetSymbolsField(
             || field.eq_ignore_ascii_case("virtualmodifiers")
         {
             let mut mask: u32 = 0_u32;
-            if !ExprResolveModMask(info.ctx, value, MOD_VIRT, &raw mut info.mods, &raw mut mask) {
+            if !ExprResolveModMask(info.ctx, &*value, MOD_VIRT, &info.mods, &mut mask) {
                 log::error!("[XKB-{:03}] Expected a virtual modifier mask, found {}; Ignoring virtual modifiers definition for key <{}>\n",
                     { XKB_ERROR_UNSUPPORTED_MODIFIER_MASK },
                     stmt_type_to_string((*value).common.type_0),
@@ -1463,7 +1477,7 @@ fn SetSymbolsField(
             || field.eq_ignore_ascii_case("repeat")
         {
             let mut val_0: u32 = 0_u32;
-            if !ExprResolveEnum(info.ctx, value, &raw mut val_0, &REPEAT_ENTRIES) {
+            if !ExprResolveEnum(info.ctx, &*value, &mut val_0, &REPEAT_ENTRIES) {
                 log::error!("[XKB-{:03}] Illegal repeat setting for <{}>; Non-boolean repeat setting ignored\n",
                     XKB_ERROR_INVALID_VALUE as i32,
                     KeyInfoText(info, &*keyi));
@@ -1475,10 +1489,12 @@ fn SetSymbolsField(
             || field.eq_ignore_ascii_case("wrapgroups")
         {
             let mut set: bool = false;
-            if !ExprResolveBoolean(info.ctx, value, &raw mut set) {
-                log::error!("[XKB-{:03}] Illegal groupsWrap setting for <{}>; Non-boolean value ignored\n",
+            if !ExprResolveBoolean(info.ctx, &*value, &mut set) {
+                log::error!(
+                    "[XKB-{:03}] Illegal groupsWrap setting for <{}>; Non-boolean value ignored\n",
                     XKB_ERROR_INVALID_VALUE as i32,
-                    KeyInfoText(info, &*keyi));
+                    KeyInfoText(info, &*keyi)
+                );
                 return false;
             }
             (*keyi).out_of_range_group_policy = if set {
@@ -1491,10 +1507,12 @@ fn SetSymbolsField(
             || field.eq_ignore_ascii_case("clampgroups")
         {
             let mut set_0: bool = false;
-            if !ExprResolveBoolean(info.ctx, value, &raw mut set_0) {
-                log::error!("[XKB-{:03}] Illegal groupsClamp setting for <{}>; Non-boolean value ignored\n",
+            if !ExprResolveBoolean(info.ctx, &*value, &mut set_0) {
+                log::error!(
+                    "[XKB-{:03}] Illegal groupsClamp setting for <{}>; Non-boolean value ignored\n",
                     XKB_ERROR_INVALID_VALUE as i32,
-                    KeyInfoText(info, &*keyi));
+                    KeyInfoText(info, &*keyi)
+                );
                 return false;
             }
             (*keyi).out_of_range_group_policy = if set_0 {
@@ -1508,13 +1526,7 @@ fn SetSymbolsField(
         {
             let mut grp: u32 = 0_u32;
             let mut pending: bool = false;
-            if ExprResolveGroup(
-                info.keymap_info as *const _ as *mut _,
-                value,
-                false,
-                &raw mut grp,
-                &raw mut pending,
-            ) as u32
+            if ExprResolveGroup(info.keymap_info, &*value, false, &mut grp, &mut pending) as u32
                 != PARSER_SUCCESS
                 && !pending
             {
@@ -1542,9 +1554,11 @@ fn SetSymbolsField(
             (*keyi).out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_REDIRECT;
             (*keyi).defined |= KEY_FIELD_GROUPINFO as i32 as key_field;
         } else {
-            log::error!("[XKB-{:03}] Unknown field \"{}\" in a key; definition ignored\n",
+            log::error!(
+                "[XKB-{:03}] Unknown field \"{}\" in a key; definition ignored\n",
                 XKB_ERROR_UNKNOWN_FIELD as i32,
-                field);
+                field
+            );
             return (*info.keymap_info).strict & PARSER_NO_UNKNOWN_KEY_FIELDS == 0;
         }
         true
@@ -1562,13 +1576,14 @@ fn SetGroupName(
         return false;
     }
     let mut group: u32 = 0_u32;
-    if unsafe {
+    let mut pending_dummy: bool = false;
+    if {
         ExprResolveGroup(
-            info.keymap_info,
-            arrayNdx,
+            unsafe { &mut *(info.keymap_info as *const _ as *mut xkb_keymap_info) },
+            unsafe { &*arrayNdx },
             false,
-            &raw mut group,
-            std::ptr::null_mut(),
+            &mut group,
+            &mut pending_dummy,
         )
     } as u32
         != PARSER_SUCCESS
@@ -1578,10 +1593,12 @@ fn SetGroupName(
         return false;
     }
     let mut name: u32 = XKB_ATOM_NONE;
-    if !unsafe { ExprResolveString(info.ctx, value, &raw mut name) } {
-        log::error!("[XKB-{:03}] Group name must be a string; Illegal name for group {} ignored\n",
+    if !ExprResolveString(unsafe { &*info.ctx }, unsafe { &*value }, &mut name) {
+        log::error!(
+            "[XKB-{:03}] Group name must be a string; Illegal name for group {} ignored\n",
             XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            group);
+            group
+        );
         return false;
     }
     let group_to_use: u32;
@@ -1606,11 +1623,13 @@ fn SetGroupName(
             let replace: bool = merge != MERGE_AUGMENT;
             let use_0: u32 = if replace as i32 != 0 { name } else { old_name };
             let ignore: u32 = if replace as i32 != 0 { old_name } else { name };
-            log::warn!("Multiple definitions of group {} name in map '{}'; Using '{}', ignoring '{}'\n",
+            log::warn!(
+                "Multiple definitions of group {} name in map '{}'; Using '{}', ignoring '{}'\n",
                 group_to_use,
                 info.name.as_deref().unwrap_or(""),
                 xkb_atom_text(&info.ctx().atom_table, use_0),
-                xkb_atom_text(&info.ctx().atom_table, ignore));
+                xkb_atom_text(&info.ctx().atom_table, ignore)
+            );
             name = use_0;
         }
     }
@@ -1620,19 +1639,19 @@ fn SetGroupName(
 fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
     let mut elem: &str = "";
     let mut field: &str = "";
-    let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
+    let mut arrayNdx_opt: Option<&ExprDef> = None;
     let ret: bool;
-    if !unsafe {
-        ExprResolveLhs(
-            info.ctx,
-            stmt.name.raw(),
-            &mut elem,
-            &mut field,
-            &raw mut arrayNdx,
-        )
-    } {
+    if !ExprResolveLhs(
+        info.ctx(),
+        unsafe { &*stmt.name.raw() },
+        &mut elem,
+        &mut field,
+        &mut arrayNdx_opt,
+    ) {
         return false;
     }
+    let arrayNdx: *mut ExprDef =
+        arrayNdx_opt.map_or(std::ptr::null_mut(), |r| r as *const _ as *mut _);
     if !elem.is_empty() && elem.eq_ignore_ascii_case("key") {
         let mut temp: KeyInfo = {
             let mut init = KeyInfo::new_zeroed();
@@ -1668,25 +1687,33 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
     } else if elem.is_empty()
         && (field.eq_ignore_ascii_case("groupswrap") || field.eq_ignore_ascii_case("wrapgroups"))
     {
-        log::error!("[XKB-{:03}] Global \"groupswrap\" not supported; Ignored\n",
-            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32);
+        log::error!(
+            "[XKB-{:03}] Global \"groupswrap\" not supported; Ignored\n",
+            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32
+        );
         ret = true;
     } else if elem.is_empty()
         && (field.eq_ignore_ascii_case("groupsclamp") || field.eq_ignore_ascii_case("clampgroups"))
     {
-        log::error!("[XKB-{:03}] Global \"groupsclamp\" not supported; Ignored\n",
-            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32);
+        log::error!(
+            "[XKB-{:03}] Global \"groupsclamp\" not supported; Ignored\n",
+            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32
+        );
         ret = true;
     } else if elem.is_empty()
         && (field.eq_ignore_ascii_case("groupsredirect")
             || field.eq_ignore_ascii_case("redirectgroups"))
     {
-        log::error!("[XKB-{:03}] Global \"groupsredirect\" not supported; Ignored\n",
-            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32);
+        log::error!(
+            "[XKB-{:03}] Global \"groupsredirect\" not supported; Ignored\n",
+            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32
+        );
         ret = true;
     } else if elem.is_empty() && field.eq_ignore_ascii_case("allownone") {
-        log::error!("[XKB-{:03}] Radio groups not supported; Ignoring \"allownone\" specification\n",
-            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32);
+        log::error!(
+            "[XKB-{:03}] Radio groups not supported; Ignoring \"allownone\" specification\n",
+            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32
+        );
         ret = true;
     } else if !elem.is_empty() {
         ret = {
@@ -1711,9 +1738,11 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
             r
         };
     } else {
-        log::error!("[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
+        log::error!(
+            "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
             XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-            field);
+            field
+        );
         return info.keymap_info.strict & PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS == 0;
     }
     ret
@@ -1723,6 +1752,7 @@ fn HandleSymbolsBody(info: &mut SymbolsInfo<'_>, mut def: *mut VarDef, keyi: *mu
         let mut all_valid_entries: bool = true;
         while !def.is_null() {
             let mut field: &str = "";
+            let mut arrayNdx_opt: Option<&ExprDef> = None;
             let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
             let mut ok: bool = true;
             if (*def).name.is_none() {
@@ -1737,12 +1767,13 @@ fn HandleSymbolsBody(info: &mut SymbolsInfo<'_>, mut def: *mut VarDef, keyi: *mu
             } else {
                 let mut elem: &str = "";
                 ok = ExprResolveLhs(
-                    info.ctx,
-                    (*def).name.raw(),
+                    &*info.ctx,
+                    &*(*def).name.raw(),
                     &mut elem,
                     &mut field,
-                    &raw mut arrayNdx,
+                    &mut arrayNdx_opt,
                 );
+                arrayNdx = arrayNdx_opt.map_or(std::ptr::null_mut(), |r| r as *const _ as *mut _);
                 if ok as i32 != 0 && !elem.is_empty() {
                     log::error!("[XKB-{:03}] Cannot set global defaults for \"{}\" element within a key statement: move statements to the global file scope. Assignment to \"{}.{}\" ignored.\n",
                         XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
@@ -1860,7 +1891,7 @@ fn HandleModMapDef(info: &mut SymbolsInfo<'_>, def: &mut ModMapDef) -> bool {
         if modifier_name.eq_ignore_ascii_case("none") {
             ndx = XKB_MOD_NONE;
         } else {
-            ndx = XkbModNameToIndex(&raw mut info.mods, def.modifier, MOD_REAL);
+            ndx = XkbModNameToIndex(&info.mods, def.modifier, MOD_REAL);
             if ndx == XKB_MOD_INVALID {
                 log::error!("[XKB-{:03}] Illegal modifier map definition; Ignoring map for non-modifier \"{}\"\n",
                     XKB_ERROR_INVALID_REAL_MODIFIER as i32,
@@ -1938,20 +1969,24 @@ fn HandleSymbolsFile(info: &mut SymbolsInfo<'_>, file: *mut XkbFile) {
                     ok = HandleModMapDef(info, unsafe { &mut *(stmt as *mut ModMapDef) });
                 }
                 35 | 36 => {
-                    log::error!("[XKB-{:03}] Unsupported symbols {} statement \"{}\"; Ignoring\n",
+                    log::error!(
+                        "[XKB-{:03}] Unsupported symbols {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
                         if (*stmt).type_0 == STMT_UNKNOWN_COMPOUND {
                             "compound"
                         } else {
                             "declaration"
                         },
-                        &(*(stmt as *mut UnknownStatement)).name);
+                        &(*(stmt as *mut UnknownStatement)).name
+                    );
                     ok = (*info.keymap_info).strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {
-                    log::error!("[XKB-{:03}] Symbols files may not include other types; Ignoring {}\n",
+                    log::error!(
+                        "[XKB-{:03}] Symbols files may not include other types; Ignoring {}\n",
                         XKB_ERROR_WRONG_STATEMENT_TYPE as i32,
-                        stmt_type_to_string((*stmt).type_0));
+                        stmt_type_to_string((*stmt).type_0)
+                    );
                     ok = false;
                 }
             }
@@ -1959,9 +1994,11 @@ fn HandleSymbolsFile(info: &mut SymbolsInfo<'_>, file: *mut XkbFile) {
                 info.errorCount += 1;
             }
             if info.errorCount > 10_i32 {
-                log::error!("[XKB-{:03}] Abandoning symbols file \"{}\"\n",
+                log::error!(
+                    "[XKB-{:03}] Abandoning symbols file \"{}\"\n",
                     XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-                    safe_map_name(&*file));
+                    safe_map_name(&*file)
+                );
                 break;
             } else {
                 stmt = (*stmt).next as *mut ParseCommon;
@@ -2135,9 +2172,11 @@ fn CopySymbolsDefToKeymap(
         // The name is guaranteed to be real and not an alias, so 'false' is safe here
         let key: *mut xkb_key = XkbKeyByName(keymap, (*keyi).name, false);
         if key.is_null() {
-            log::warn!("[XKB-{:03}] Key <{}> not found in keycodes; Symbols ignored\n",
+            log::warn!(
+                "[XKB-{:03}] Key <{}> not found in keycodes; Symbols ignored\n",
                 XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                KeyInfoText(info, &*keyi));
+                KeyInfoText(info, &*keyi)
+            );
             return false;
         }
 
@@ -2418,8 +2457,10 @@ fn CopySymbolsToKeymap(keymap: *mut xkb_keymap, info: &mut SymbolsInfo<'_>) -> b
             while ki < (*keymap).num_keys {
                 let key: *mut xkb_key = &mut (&mut (*keymap).keys)[ki as usize] as *mut xkb_key;
                 if ((*key).name != XKB_ATOM_NONE) && ((*key).num_groups as i32) < 1_i32 {
-                    log::info!("No symbols defined for <{}>\n",
-                        xkb_atom_text(&info.ctx().atom_table, (*key).name));
+                    log::info!(
+                        "No symbols defined for <{}>\n",
+                        xkb_atom_text(&info.ctx().atom_table, (*key).name)
+                    );
                 }
                 ki = ki.wrapping_add(1);
             }

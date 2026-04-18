@@ -13,7 +13,7 @@ pub use crate::xkb::xkbcomp::ast_build::{
     LedMapCreate, LedNameCreate, ModMapCreate, SymbolsCreate, VModCreate, VarCreate, XkbFileCreate,
 };
 
-pub unsafe fn ExprKeySymListAppendString(
+pub fn ExprKeySymListAppendString(
     param: *mut scanner,
     expr: *mut ExprDef,
     string: *const i8,
@@ -27,11 +27,11 @@ pub unsafe fn ExprKeySymListAppendString(
     }
 }
 
-pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32 {
+pub fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32 {
     unsafe { crate::xkb::xkbcomp::ast_build::KeysymParseString(scanner as *mut _, string) }
 }
 
-pub unsafe fn UnknownStatementCreate(
+pub fn UnknownStatementCreate(
     type_0: crate::xkb::shared_ast_types::stmt_type,
     name: sval,
 ) -> *mut crate::xkb::shared_ast_types::UnknownStatement {
@@ -42,7 +42,7 @@ pub unsafe fn UnknownStatementCreate(
         ) as *mut _
     }
 }
-pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, scanner: *mut scanner) -> i32 {
+pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, scanner: *mut scanner) -> i32 {
     unsafe { crate::xkb::xkbcomp::scanner::_xkbcommon_lex(yylval as *mut _, scanner as *mut _) }
 }
 
@@ -311,7 +311,7 @@ pub union yyalloc {
     pub yyvs_alloc: YYSTYPE,
 }
 
-unsafe fn _xkbcommon_error(param: *mut parser_param, msg: *const i8) {
+fn _xkbcommon_error(param: *mut parser_param, msg: *const i8) {
     unsafe {
         let loc: scanner_loc = (*(*param).scanner).token_location();
         let msg_str = std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(msg));
@@ -323,7 +323,7 @@ unsafe fn _xkbcommon_error(param: *mut parser_param, msg: *const i8) {
             msg_str);
     }
 }
-unsafe fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u32) -> bool {
+fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u32) -> bool {
     unsafe {
         if isvaleq(
             name,
@@ -729,7 +729,7 @@ static YYCHECK: [yytype_int16; 929] = [
     -1, 56, -1, -1, 59,
 ];
 
-pub unsafe fn parse(ctx: *mut xkb_context, scanner: *mut scanner, map: *const i8) -> *mut XkbFile {
+pub fn parse(ctx: *mut xkb_context, scanner: *mut scanner, map: *const i8) -> *mut XkbFile {
     unsafe {
         let mut ret: i32;
         let mut first: *mut XkbFile = std::ptr::null_mut();
@@ -797,7 +797,7 @@ static YYSTOS: [yytype_uint8; 384] = [
     123, 42, 48, 57, 49, 112, 42, 49, 109,
 ];
 
-pub unsafe fn parse_next(
+pub fn parse_next(
     ctx: *mut xkb_context,
     scanner: *mut scanner,
     xkb_file: *mut *mut XkbFile,
@@ -844,7 +844,7 @@ static YYR2: [yytype_int8; 220] = [
 ];
 pub const YYINITDEPTH: i32 = 200_i32;
 pub const YYMAXDEPTH: i32 = 10000_i32;
-unsafe fn yypcontext_expected_tokens(
+fn yypcontext_expected_tokens(
     yyctx: *const yypcontext_t,
     yyarg: *mut yysymbol_kind_t,
     yyargn: i32,
@@ -883,7 +883,7 @@ unsafe fn yypcontext_expected_tokens(
         yycount
     }
 }
-unsafe fn yy_syntax_error_arguments(
+fn yy_syntax_error_arguments(
     yyctx: *const yypcontext_t,
     yyarg: *mut yysymbol_kind_t,
     yyargn: i32,
@@ -913,7 +913,7 @@ unsafe fn yy_syntax_error_arguments(
         yycount
     }
 }
-unsafe fn yysyntax_error(
+fn yysyntax_error(
     yymsg_alloc: *mut i64,
     yymsg: *mut *mut i8,
     yyctx: *const yypcontext_t,
@@ -1014,7 +1014,7 @@ unsafe fn yysyntax_error(
         0_i32
     }
 }
-unsafe fn yydestruct(
+fn yydestruct(
     yymsg: *const i8,
     yykind: yysymbol_kind_t,
     yyvaluep: *mut YYSTYPE,
@@ -1171,7 +1171,7 @@ unsafe fn yydestruct(
     }
 }
 
-pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
+pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
     unsafe {
         let mut c2rust_current_block: u64;
         let mut yychar: i32;

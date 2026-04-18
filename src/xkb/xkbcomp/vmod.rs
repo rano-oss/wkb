@@ -73,22 +73,15 @@ pub fn MergeModSets(
 }
 pub fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModDef) -> bool {
     let mut mapping: u32 = 0_u32;
-    if stmt.value.is_some()
-        && !unsafe {
-            ExprResolveModMask(
-                ctx as *mut _,
-                stmt.value.raw(),
-                MOD_REAL,
-                mods as *const _,
-                &raw mut mapping,
-            )
+    if stmt.value.is_some() {
+        let value_ref = unsafe { &*stmt.value.raw() };
+        if !ExprResolveModMask(ctx, value_ref, MOD_REAL, mods, &mut mapping) {
+            log::error!(
+                "Declaration of {} ignored\n",
+                xkb_atom_text(&ctx.atom_table, stmt.name)
+            );
+            return false;
         }
-    {
-        log::error!(
-            "Declaration of {} ignored\n",
-            xkb_atom_text(&ctx.atom_table, stmt.name)
-        );
-        return false;
     }
     for vmod in 0..mods.num_mods as usize {
         if mods.mods[vmod].name == stmt.name {

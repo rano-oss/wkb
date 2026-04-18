@@ -148,7 +148,7 @@ fn DirectoryForInclude(type_0: u32) -> &'static str {
         XKB_FILE_TYPE_INCLUDE_DIRS[type_0 as usize]
     }
 }
-unsafe fn LogIncludePaths(ctx: *mut xkb_context) {
+fn LogIncludePaths(ctx: *mut xkb_context) {
     unsafe {
         if xkb_context_num_include_paths(ctx) > 0_u32 {
             log::error!("[XKB-{:03}] {} include paths searched:\n",
@@ -179,7 +179,7 @@ unsafe fn LogIncludePaths(ctx: *mut xkb_context) {
         }
     }
 }
-unsafe fn expand_percent(
+fn expand_percent(
     ctx: *mut xkb_context,
     parent_file_name: &str,
     typeDir: &str,
@@ -289,7 +289,7 @@ unsafe fn expand_percent(
         s.buf_pos
     }
 }
-pub unsafe fn expand_path(
+pub fn expand_path(
     ctx: *mut xkb_context,
     parent_file_name: &str,
     name: *const i8,
@@ -344,7 +344,7 @@ pub unsafe fn expand_path(
         }
     }
 }
-pub unsafe fn FindFileInXkbPath(
+pub fn FindFileInXkbPath(
     ctx: *mut xkb_context,
     _parent_file_name: &str,
     name: *const i8,
@@ -407,7 +407,7 @@ pub unsafe fn FindFileInXkbPath(
         file
     }
 }
-pub unsafe fn ExceedsIncludeMaxDepth(_ctx: *mut xkb_context, include_depth: u32) -> bool {
+pub fn ExceedsIncludeMaxDepth(_ctx: *mut xkb_context, include_depth: u32) -> bool {
     if include_depth >= INCLUDE_MAX_DEPTH as u32 {
         log::error!("[XKB-{:03}] Exceeded include depth threshold ({})",
             XKB_ERROR_RECURSIVE_INCLUDE as i32,
@@ -417,7 +417,7 @@ pub unsafe fn ExceedsIncludeMaxDepth(_ctx: *mut xkb_context, include_depth: u32)
         false
     }
 }
-pub unsafe fn ProcessIncludeFile(
+pub fn ProcessIncludeFile(
     ctx: *mut xkb_context,
     stmt: *const IncludeStmt,
     file_type: u32,

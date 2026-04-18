@@ -85,7 +85,7 @@ pub fn ExprCreateKeySymList(sym: u32) -> *mut ExprDef {
     expr_create(ExprKind::KeysymList { syms })
 }
 
-pub unsafe fn ExprAppendKeySymList(expr: *mut ExprDef, sym: u32) -> *mut ExprDef {
+pub fn ExprAppendKeySymList(expr: *mut ExprDef, sym: u32) -> *mut ExprDef {
     unsafe {
         if sym != XKB_KEY_NoSymbol as u32 {
             if let ExprKind::KeysymList { ref mut syms } = (*expr).kind {
@@ -96,7 +96,7 @@ pub unsafe fn ExprAppendKeySymList(expr: *mut ExprDef, sym: u32) -> *mut ExprDef
     }
 }
 
-pub unsafe fn ExprKeySymListAppendString(
+pub fn ExprKeySymListAppendString(
     scanner: *mut scanner,
     expr: *mut ExprDef,
     string: *const i8,
@@ -159,7 +159,7 @@ pub unsafe fn ExprKeySymListAppendString(
     }
 }
 
-pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32 {
+pub fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32 {
     unsafe {
         let len: usize = cstr_len(string);
         if len == 0_usize {
@@ -229,7 +229,7 @@ pub fn KeyAliasCreate(alias: u32, real: u32) -> *mut KeyAliasDef {
     }))
 }
 
-pub unsafe fn VModCreate(name: u32, value: *mut ExprDef) -> *mut VModDef {
+pub fn VModCreate(name: u32, value: *mut ExprDef) -> *mut VModDef {
     Box::into_raw(Box::new(VModDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -241,7 +241,7 @@ pub unsafe fn VModCreate(name: u32, value: *mut ExprDef) -> *mut VModDef {
     }))
 }
 
-pub unsafe fn VarCreate(name: *mut ExprDef, value: *mut ExprDef) -> *mut VarDef {
+pub fn VarCreate(name: *mut ExprDef, value: *mut ExprDef) -> *mut VarDef {
     Box::into_raw(Box::new(VarDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -277,7 +277,7 @@ pub fn BoolVarCreate(ident: u32, set: bool) -> *mut VarDef {
     }))
 }
 
-pub unsafe fn InterpCreate(sym: u32, match_0: *mut ExprDef) -> *mut InterpDef {
+pub fn InterpCreate(sym: u32, match_0: *mut ExprDef) -> *mut InterpDef {
     Box::into_raw(Box::new(InterpDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -290,7 +290,7 @@ pub unsafe fn InterpCreate(sym: u32, match_0: *mut ExprDef) -> *mut InterpDef {
     }))
 }
 
-pub unsafe fn KeyTypeCreate(name: u32, body: *mut VarDef) -> *mut KeyTypeDef {
+pub fn KeyTypeCreate(name: u32, body: *mut VarDef) -> *mut KeyTypeDef {
     Box::into_raw(Box::new(KeyTypeDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -302,7 +302,7 @@ pub unsafe fn KeyTypeCreate(name: u32, body: *mut VarDef) -> *mut KeyTypeDef {
     }))
 }
 
-pub unsafe fn SymbolsCreate(keyName: u32, symbols: *mut VarDef) -> *mut SymbolsDef {
+pub fn SymbolsCreate(keyName: u32, symbols: *mut VarDef) -> *mut SymbolsDef {
     Box::into_raw(Box::new(SymbolsDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -314,7 +314,7 @@ pub unsafe fn SymbolsCreate(keyName: u32, symbols: *mut VarDef) -> *mut SymbolsD
     }))
 }
 
-pub unsafe fn GroupCompatCreate(group: i64, val: *mut ExprDef) -> *mut GroupCompatDef {
+pub fn GroupCompatCreate(group: i64, val: *mut ExprDef) -> *mut GroupCompatDef {
     Box::into_raw(Box::new(GroupCompatDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -326,7 +326,7 @@ pub unsafe fn GroupCompatCreate(group: i64, val: *mut ExprDef) -> *mut GroupComp
     }))
 }
 
-pub unsafe fn ModMapCreate(modifier: u32, keys: *mut ExprDef) -> *mut ModMapDef {
+pub fn ModMapCreate(modifier: u32, keys: *mut ExprDef) -> *mut ModMapDef {
     Box::into_raw(Box::new(ModMapDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -338,7 +338,7 @@ pub unsafe fn ModMapCreate(modifier: u32, keys: *mut ExprDef) -> *mut ModMapDef 
     }))
 }
 
-pub unsafe fn LedMapCreate(name: u32, body: *mut VarDef) -> *mut LedMapDef {
+pub fn LedMapCreate(name: u32, body: *mut VarDef) -> *mut LedMapDef {
     Box::into_raw(Box::new(LedMapDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -350,7 +350,7 @@ pub unsafe fn LedMapCreate(name: u32, body: *mut VarDef) -> *mut LedMapDef {
     }))
 }
 
-pub unsafe fn LedNameCreate(ndx: i64, name: *mut ExprDef, virtual_0: bool) -> *mut LedNameDef {
+pub fn LedNameCreate(ndx: i64, name: *mut ExprDef, virtual_0: bool) -> *mut LedNameDef {
     Box::into_raw(Box::new(LedNameDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -363,7 +363,7 @@ pub unsafe fn LedNameCreate(ndx: i64, name: *mut ExprDef, virtual_0: bool) -> *m
     }))
 }
 
-pub unsafe fn UnknownStatementCreate(type_0: stmt_type, name: sval) -> *mut UnknownStatement {
+pub fn UnknownStatementCreate(type_0: stmt_type, name: sval) -> *mut UnknownStatement {
     let name_str = unsafe { std::str::from_utf8_unchecked(name.as_bytes()).to_string() };
     Box::into_raw(Box::new(UnknownStatement {
         common: ParseCommon {
@@ -374,7 +374,7 @@ pub unsafe fn UnknownStatementCreate(type_0: stmt_type, name: sval) -> *mut Unkn
     }))
 }
 
-pub unsafe fn IncludeCreate(
+pub fn IncludeCreate(
     _ctx: *mut xkb_context,
     str: *mut i8,
     mut merge: merge_mode,
@@ -450,7 +450,7 @@ pub unsafe fn IncludeCreate(
     }
 }
 
-pub unsafe fn XkbFileCreate(
+pub fn XkbFileCreate(
     type_0: u32,
     name: *mut i8,
     defs: *mut ParseCommon,
@@ -482,7 +482,7 @@ pub unsafe fn XkbFileCreate(
     }
 }
 
-pub unsafe fn XkbFileFromComponents(
+pub fn XkbFileFromComponents(
     ctx: *mut xkb_context,
     kkctgs: *const xkb_component_names,
 ) -> *mut XkbFile {
@@ -546,7 +546,7 @@ pub unsafe fn XkbFileFromComponents(
         std::ptr::null_mut()
     }
 }
-unsafe fn FreeInclude(incl: *mut IncludeStmt) {
+fn FreeInclude(incl: *mut IncludeStmt) {
     unsafe {
         if !incl.is_null() {
             // Dropping the Box will recursively drop next_incl (Option<Box<>>)
@@ -556,7 +556,7 @@ unsafe fn FreeInclude(incl: *mut IncludeStmt) {
     }
 }
 
-pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
+pub fn FreeStmt(mut stmt: *mut ParseCommon) {
     unsafe {
         let mut next: *mut ParseCommon;
         while !stmt.is_null() {
@@ -659,7 +659,7 @@ pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
     }
 }
 
-pub unsafe fn FreeXkbFile(mut file: *mut XkbFile) {
+pub fn FreeXkbFile(mut file: *mut XkbFile) {
     unsafe {
         let mut next: *mut XkbFile;
         while !file.is_null() {

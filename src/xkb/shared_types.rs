@@ -584,11 +584,11 @@ pub const XKB_MAX_MODS: u32 = (std::mem::size_of::<u32>()).wrapping_mul(CHAR_BIT
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xkb_keymap_format_ops {
-    pub keymap_new_from_names: Option<unsafe fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
-    pub keymap_new_from_string: Option<unsafe fn(*mut xkb_keymap, *const i8, usize) -> bool>,
-    pub keymap_new_from_file: Option<unsafe fn(*mut xkb_keymap, *mut libc::FILE) -> bool>,
+    pub keymap_new_from_names: Option<fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
+    pub keymap_new_from_string: Option<fn(*mut xkb_keymap, *const i8, usize) -> bool>,
+    pub keymap_new_from_file: Option<fn(*mut xkb_keymap, *mut libc::FILE) -> bool>,
     pub keymap_get_as_string:
-        Option<unsafe fn(*mut xkb_keymap, u32, xkb_keymap_serialize_flags) -> *mut i8>,
+        Option<fn(*mut xkb_keymap, u32, xkb_keymap_serialize_flags) -> *mut i8>,
 }
 
 // ── Inline helpers ──────────────────────────────────────────────────

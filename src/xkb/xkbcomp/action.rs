@@ -34,7 +34,7 @@ pub const ACTION_FIELD_GEN_KEY_EVENT: u32 = 2;
 pub const ACTION_FIELD_LATCH_TO_LOCK: u32 = 1;
 pub const ACTION_FIELD_CLEAR_LOCKS: u32 = 0;
 pub type actionHandler = Option<
-    unsafe fn(
+    fn(
         *mut xkb_keymap_info,
         *const xkb_mod_set,
         *mut xkb_action,
@@ -63,7 +63,7 @@ static CONST_FALSE: SyncExprDef = SyncExprDef(ExprDef {
     },
     kind: ExprKind::Boolean(false),
 });
-pub unsafe fn InitActionsInfo(keymap: *const xkb_keymap, info: *mut ActionsInfo) {
+pub fn InitActionsInfo(keymap: *const xkb_keymap, info: *mut ActionsInfo) {
     unsafe {
         // Zero-initialize the entire actions array to avoid reading uninitialized union bytes
         std::ptr::write_bytes(
@@ -235,27 +235,23 @@ static FIELD_STRINGS: [LookupEntry; 37] = [
         value: 0_u32,
     },
 ];
-unsafe fn stringToActionType(str: &str, type_rtrn: *mut xkb_action_type) -> bool {
-    unsafe {
-        let mut type_0: u32 = 0_u32;
-        let ret: bool = LookupString(&actionTypeNames, str, &mut type_0);
-        *type_rtrn = type_0 as xkb_action_type;
-        ret
-    }
+fn stringToActionType(str: &str, type_rtrn: &mut xkb_action_type) -> bool {
+    let mut type_0: u32 = 0_u32;
+    let ret: bool = LookupString(&actionTypeNames, str, &mut type_0);
+    *type_rtrn = type_0 as xkb_action_type;
+    ret
 }
-unsafe fn stringToField(str: &str, field_rtrn: *mut u32) -> bool {
-    unsafe {
-        let mut field: u32 = 0_u32;
-        let ret: bool = LookupString(&FIELD_STRINGS, str, &mut field);
-        *field_rtrn = field;
-        ret
-    }
+fn stringToField(str: &str, field_rtrn: &mut u32) -> bool {
+    let mut field: u32 = 0_u32;
+    let ret: bool = LookupString(&FIELD_STRINGS, str, &mut field);
+    *field_rtrn = field;
+    ret
 }
-unsafe fn fieldText(field: u32) -> &'static str {
-    unsafe { LookupValue(&FIELD_STRINGS, field) }
+fn fieldText(field: u32) -> &'static str {
+    LookupValue(&FIELD_STRINGS, field)
 }
 #[inline]
-unsafe fn ReportMismatch(
+fn ReportMismatch(
     _ctx: *mut xkb_context,
     code: u32,
     action: xkb_action_type,
@@ -263,21 +259,21 @@ unsafe fn ReportMismatch(
     type_0: &str,
     strict: xkb_parser_strict_flags,
 ) -> xkb_parser_error {
-    unsafe {
-        log::error!("[XKB-{:03}] Value of {} field must be of type {}; Action {} definition ignored\n",
-            { code },
-            fieldText(field),
-            type_0,
-            ActionTypeText(action));
-        (if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-            PARSER_FATAL_ERROR as i32
-        } else {
-            PARSER_RECOVERABLE_ERROR as i32
-        }) as xkb_parser_error
-    }
+    log::error!(
+        "[XKB-{:03}] Value of {} field must be of type {}; Action {} definition ignored\n",
+        { code },
+        fieldText(field),
+        type_0,
+        ActionTypeText(action)
+    );
+    (if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
+        PARSER_FATAL_ERROR as i32
+    } else {
+        PARSER_RECOVERABLE_ERROR as i32
+    }) as xkb_parser_error
 }
 #[inline]
-unsafe fn ReportFormatVersionMismatch(
+fn ReportFormatVersionMismatch(
     _ctx: *mut xkb_context,
     action: xkb_action_type,
     field: u32,
@@ -285,59 +281,57 @@ unsafe fn ReportFormatVersionMismatch(
     versions: &str,
     strict: xkb_parser_strict_flags,
 ) -> xkb_parser_error {
-    unsafe {
-        log::error!("[XKB-{:03}] Field {} for an action of type {} requires keymap text format {},  but got: {}; Action definition ignored\n",
-            XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT as i32,
-            fieldText(field),
-            ActionTypeText(action),
-            versions,
-            { format });
-        (if strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
-            PARSER_FATAL_ERROR as i32
-        } else {
-            PARSER_SUCCESS as i32
-        }) as xkb_parser_error
-    }
+    log::error!("[XKB-{:03}] Field {} for an action of type {} requires keymap text format {},  but got: {}; Action definition ignored\n",
+        XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT as i32,
+        fieldText(field),
+        ActionTypeText(action),
+        versions,
+        { format });
+    (if strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
+        PARSER_FATAL_ERROR as i32
+    } else {
+        PARSER_SUCCESS as i32
+    }) as xkb_parser_error
 }
 #[inline]
-unsafe fn ReportIllegal(
+fn ReportIllegal(
     _ctx: *mut xkb_context,
     action: xkb_action_type,
     field: u32,
     strict: xkb_parser_strict_flags,
 ) -> xkb_parser_error {
-    unsafe {
-        log::error!("[XKB-{:03}] Field {} is not defined for an action of type {}; Action definition ignored\n",
-            XKB_ERROR_INVALID_ACTION_FIELD as i32,
-            fieldText(field),
-            ActionTypeText(action));
-        (if strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
-            PARSER_FATAL_ERROR as i32
-        } else {
-            PARSER_SUCCESS as i32
-        }) as xkb_parser_error
-    }
+    log::error!(
+        "[XKB-{:03}] Field {} is not defined for an action of type {}; Action definition ignored\n",
+        XKB_ERROR_INVALID_ACTION_FIELD as i32,
+        fieldText(field),
+        ActionTypeText(action)
+    );
+    (if strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
+        PARSER_FATAL_ERROR as i32
+    } else {
+        PARSER_SUCCESS as i32
+    }) as xkb_parser_error
 }
 #[inline]
-unsafe fn ReportActionNotArray(
+fn ReportActionNotArray(
     _ctx: *mut xkb_context,
     action: xkb_action_type,
     field: u32,
     strict: xkb_parser_strict_flags,
 ) -> xkb_parser_error {
-    unsafe {
-        log::error!("[XKB-{:03}] The {} field in the {} action is not an array; Action definition ignored\n",
-            XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            fieldText(field),
-            ActionTypeText(action));
-        (if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-            PARSER_FATAL_ERROR as i32
-        } else {
-            PARSER_RECOVERABLE_ERROR as i32
-        }) as xkb_parser_error
-    }
+    log::error!(
+        "[XKB-{:03}] The {} field in the {} action is not an array; Action definition ignored\n",
+        XKB_ERROR_WRONG_FIELD_TYPE as i32,
+        fieldText(field),
+        ActionTypeText(action)
+    );
+    (if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
+        PARSER_FATAL_ERROR as i32
+    } else {
+        PARSER_RECOVERABLE_ERROR as i32
+    }) as xkb_parser_error
 }
-unsafe fn HandleNoAction(
+fn HandleNoAction(
     keymap_info: *mut xkb_keymap_info,
     _mods: *const xkb_mod_set,
     action: *mut xkb_action,
@@ -358,7 +352,7 @@ unsafe fn HandleNoAction(
         }) as xkb_parser_error
     }
 }
-unsafe fn CheckBooleanFlag(
+fn CheckBooleanFlag(
     ctx: *mut xkb_context,
     strict: xkb_parser_strict_flags,
     action: xkb_action_type,
@@ -373,7 +367,7 @@ unsafe fn CheckBooleanFlag(
         if !array_ndx.is_null() {
             return ReportActionNotArray(ctx, action, field, strict);
         }
-        if !ExprResolveBoolean(ctx, value, &raw mut set) {
+        if !ExprResolveBoolean(&*ctx, &*value, &mut set) {
             return ReportMismatch(
                 ctx,
                 XKB_ERROR_WRONG_FIELD_TYPE,
@@ -391,7 +385,7 @@ unsafe fn CheckBooleanFlag(
         PARSER_SUCCESS
     }
 }
-unsafe fn CheckModifierField(
+fn CheckModifierField(
     ctx: *mut xkb_context,
     strict: xkb_parser_strict_flags,
     mods: *const xkb_mod_set,
@@ -421,7 +415,7 @@ unsafe fn CheckModifierField(
                 return PARSER_SUCCESS;
             }
         }
-        if !ExprResolveModMask(ctx, value, MOD_BOTH, mods, mods_rtrn) {
+        if !ExprResolveModMask(&*ctx, &*value, MOD_BOTH, &*mods, &mut *mods_rtrn) {
             return ReportMismatch(
                 ctx,
                 XKB_ERROR_WRONG_FIELD_TYPE,
@@ -458,7 +452,7 @@ static LOCK_WHICH: [LookupEntry; 5] = [
         value: 0_u32,
     },
 ];
-unsafe fn CheckAffectField(
+fn CheckAffectField(
     ctx: *mut xkb_context,
     strict: xkb_parser_strict_flags,
     action: xkb_action_type,
@@ -471,7 +465,7 @@ unsafe fn CheckAffectField(
             return ReportActionNotArray(ctx, action, ACTION_FIELD_AFFECT, strict);
         }
         let mut flags: u32 = 0_u32;
-        if !ExprResolveEnum(ctx, value, &raw mut flags, &LOCK_WHICH) {
+        if !ExprResolveEnum(&*ctx, &*value, &mut flags, &LOCK_WHICH) {
             return ReportMismatch(
                 ctx,
                 XKB_ERROR_WRONG_FIELD_TYPE,
@@ -488,7 +482,7 @@ unsafe fn CheckAffectField(
         PARSER_SUCCESS
     }
 }
-unsafe fn HandleSetLatchLockMods(
+fn HandleSetLatchLockMods(
     keymap_info: *mut xkb_keymap_info,
     mods: *const xkb_mod_set,
     action: *mut xkb_action,
@@ -600,7 +594,7 @@ unsafe fn HandleSetLatchLockMods(
         ReportIllegal(ctx, (*action).type_0, field, (*keymap_info).strict)
     }
 }
-unsafe fn CheckGroupField(
+fn CheckGroupField(
     keymap_info: *mut xkb_keymap_info,
     action: xkb_action_type,
     array_ndx: *const ExprDef,
@@ -647,7 +641,7 @@ unsafe fn CheckGroupField(
         let absolute: bool = flags as u32 & ACTION_ABSOLUTE_SWITCH != 0;
         let mut pending: bool = false;
         let ret: xkb_parser_error =
-            ExprResolveGroup(keymap_info, spec, absolute, &raw mut idx, &raw mut pending)
+            ExprResolveGroup(&mut *keymap_info, &*spec, absolute, &mut idx, &mut pending)
                 as xkb_parser_error;
         if ret as u32 != PARSER_SUCCESS && !pending {
             ReportMismatch(
@@ -688,7 +682,7 @@ unsafe fn CheckGroupField(
         PARSER_SUCCESS
     }
 }
-unsafe fn HandleSetLatchLockGroup(
+fn HandleSetLatchLockGroup(
     keymap_info: *mut xkb_keymap_info,
     _mods: *const xkb_mod_set,
     action: *mut xkb_action,
@@ -764,7 +758,7 @@ unsafe fn HandleSetLatchLockGroup(
         ReportIllegal(ctx, (*action).type_0, field, (*keymap_info).strict)
     }
 }
-unsafe fn HandleMovePtr(
+fn HandleMovePtr(
     keymap_info: *mut xkb_keymap_info,
     _mods: *const xkb_mod_set,
     action: *mut xkb_action,
@@ -783,7 +777,7 @@ unsafe fn HandleMovePtr(
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
-            if !ExprResolveInteger(ctx, value, &raw mut val) {
+            if !ExprResolveInteger(&*ctx, &*value, &mut val) {
                 return ReportMismatch(
                     ctx,
                     XKB_ERROR_WRONG_FIELD_TYPE,
@@ -833,7 +827,7 @@ unsafe fn HandleMovePtr(
         ReportIllegal(ctx, (*action).type_0, field, (*keymap_info).strict)
     }
 }
-unsafe fn HandlePtrBtn(
+fn HandlePtrBtn(
     keymap_info: *mut xkb_keymap_info,
     _mods: *const xkb_mod_set,
     action: *mut xkb_action,
@@ -850,7 +844,7 @@ unsafe fn HandlePtrBtn(
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
-            if !ExprResolveButton(ctx, value, &raw mut btn) {
+            if !ExprResolveButton(&*ctx, &*value, &mut btn) {
                 return ReportMismatch(
                     ctx,
                     XKB_ERROR_WRONG_FIELD_TYPE,
@@ -885,7 +879,7 @@ unsafe fn HandlePtrBtn(
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
-            if !ExprResolveInteger(ctx, value, &raw mut val) {
+            if !ExprResolveInteger(&*ctx, &*value, &mut val) {
                 return ReportMismatch(
                     ctx,
                     XKB_ERROR_WRONG_FIELD_TYPE,
@@ -928,7 +922,7 @@ static PTR_DFLTS: [LookupEntry; 4] = [
         value: 0_u32,
     },
 ];
-unsafe fn HandleSetPtrDflt(
+fn HandleSetPtrDflt(
     keymap_info: *mut xkb_keymap_info,
     _mods: *const xkb_mod_set,
     action: *mut xkb_action,
@@ -945,7 +939,7 @@ unsafe fn HandleSetPtrDflt(
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
-            if !ExprResolveEnum(ctx, value, &raw mut val, &PTR_DFLTS) {
+            if !ExprResolveEnum(&*ctx, &*value, &mut val, &PTR_DFLTS) {
                 return ReportMismatch(
                     ctx,
                     XKB_ERROR_WRONG_FIELD_TYPE,
@@ -976,7 +970,7 @@ unsafe fn HandleSetPtrDflt(
                 (*act).flags = ((*act).flags | ACTION_ABSOLUTE_SWITCH) as xkb_action_flags;
                 button = value;
             }
-            if !ExprResolveButton(ctx, button, &raw mut btn) {
+            if !ExprResolveButton(&*ctx, &*button, &mut btn) {
                 return ReportMismatch(
                     ctx,
                     XKB_ERROR_WRONG_FIELD_TYPE,
@@ -1013,7 +1007,7 @@ unsafe fn HandleSetPtrDflt(
         ReportIllegal(ctx, (*action).type_0, field, (*keymap_info).strict)
     }
 }
-unsafe fn HandleSwitchScreen(
+fn HandleSwitchScreen(
     keymap_info: *mut xkb_keymap_info,
     _mods: *const xkb_mod_set,
     action: *mut xkb_action,
@@ -1045,7 +1039,7 @@ unsafe fn HandleSwitchScreen(
                 (*act).flags = ((*act).flags | ACTION_ABSOLUTE_SWITCH) as xkb_action_flags;
                 scrn = value;
             }
-            if !ExprResolveInteger(ctx, scrn, &raw mut val) {
+            if !ExprResolveInteger(&*ctx, &*scrn, &mut val) {
                 return ReportMismatch(
                     ctx,
                     XKB_ERROR_WRONG_FIELD_TYPE,
@@ -1061,10 +1055,12 @@ unsafe fn HandleSwitchScreen(
                 val
             };
             if val < i8::MIN as i64 || val > i8::MAX as i64 {
-                log::error!("Screen index must be in the range {}..{}; Illegal screen value {} ignored\n",
+                log::error!(
+                    "Screen index must be in the range {}..{}; Illegal screen value {} ignored\n",
                     -128_i32,
                     127_i32,
-                    val);
+                    val
+                );
                 return (if (*keymap_info).strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                     PARSER_FATAL_ERROR as i32
                 } else {
@@ -1088,7 +1084,7 @@ unsafe fn HandleSwitchScreen(
         ReportIllegal(ctx, (*action).type_0, field, (*keymap_info).strict)
     }
 }
-unsafe fn HandleSetLockControls(
+fn HandleSetLockControls(
     keymap_info: *mut xkb_keymap_info,
     _mods: *const xkb_mod_set,
     action: *mut xkb_action,
@@ -1106,7 +1102,7 @@ unsafe fn HandleSetLockControls(
             }
             let mut mask: u32 = 0_u32;
             let offset: u8 = (*keymap_info).features.controls_name_offset;
-            if !ExprResolveMask(ctx, value, &raw mut mask, &ctrlMaskNames[offset as usize..]) {
+            if !ExprResolveMask(&*ctx, &*value, &mut mask, &ctrlMaskNames[offset as usize..]) {
                 return ReportMismatch(
                     ctx,
                     XKB_ERROR_WRONG_FIELD_TYPE,
@@ -1131,7 +1127,7 @@ unsafe fn HandleSetLockControls(
         ReportIllegal(ctx, (*action).type_0, field, (*keymap_info).strict)
     }
 }
-unsafe fn HandleRedirectKey(
+fn HandleRedirectKey(
     keymap_info: *mut xkb_keymap_info,
     mods: *const xkb_mod_set,
     action: *mut xkb_action,
@@ -1177,9 +1173,11 @@ unsafe fn HandleRedirectKey(
             };
             let key: *const xkb_key = XkbKeyByName(keymap, key_name_val, true);
             if key.is_null() {
-                log::error!("RedirectKey field {} cannot resolve <{}> to a valid key\n",
+                log::error!(
+                    "RedirectKey field {} cannot resolve <{}> to a valid key\n",
                     fieldText(field),
-                    xkb_atom_text(&(*ctx).atom_table, key_name_val));
+                    xkb_atom_text(&(*ctx).atom_table, key_name_val)
+                );
                 return (if (*keymap_info).strict & PARSER_NO_FIELD_VALUE_MISMATCH != 0 {
                     PARSER_FATAL_ERROR as i32
                 } else {
@@ -1226,7 +1224,7 @@ unsafe fn HandleRedirectKey(
         ReportIllegal(ctx, (*action).type_0, field, (*keymap_info).strict)
     }
 }
-unsafe fn HandleUnsupported(
+fn HandleUnsupported(
     _keymap_info: *mut xkb_keymap_info,
     _mods: *const xkb_mod_set,
     _action: *mut xkb_action,
@@ -1237,7 +1235,7 @@ unsafe fn HandleUnsupported(
 ) -> xkb_parser_error {
     PARSER_SUCCESS
 }
-unsafe fn HandlePrivate(
+fn HandlePrivate(
     keymap_info: *mut xkb_keymap_info,
     _mods: *const xkb_mod_set,
     action: *mut xkb_action,
@@ -1254,7 +1252,7 @@ unsafe fn HandlePrivate(
             if !array_ndx.is_null() {
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
-            if !ExprResolveInteger(ctx, value, &raw mut type_0) {
+            if !ExprResolveInteger(&*ctx, &*value, &mut type_0) {
                 return ReportMismatch(
                     ctx,
                     XKB_ERROR_WRONG_FIELD_TYPE,
@@ -1265,8 +1263,10 @@ unsafe fn HandlePrivate(
                 );
             }
             if !(0_i64..=255_i64).contains(&type_0) {
-                log::error!("Private action type must be in the range 0..255; Illegal type {} ignored\n",
-                    type_0);
+                log::error!(
+                    "Private action type must be in the range 0..255; Illegal type {} ignored\n",
+                    type_0
+                );
                 return (if (*keymap_info).strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                     PARSER_FATAL_ERROR as i32
                 } else {
@@ -1274,8 +1274,10 @@ unsafe fn HandlePrivate(
                 }) as xkb_parser_error;
             }
             if type_0 < ACTION_TYPE_PRIVATE as i64 {
-                log::info!("Private actions of type {} are not supported; Ignored\n",
-                    ActionTypeText(type_0 as xkb_action_type));
+                log::info!(
+                    "Private actions of type {} are not supported; Ignored\n",
+                    ActionTypeText(type_0 as xkb_action_type)
+                );
                 (*act).type_0 = ACTION_TYPE_NONE;
             } else {
                 (*act).type_0 = type_0 as xkb_action_type;
@@ -1284,7 +1286,7 @@ unsafe fn HandlePrivate(
         } else if field == ACTION_FIELD_DATA {
             if array_ndx.is_null() {
                 let mut val: u32 = XKB_ATOM_NONE;
-                if !ExprResolveString(ctx, value, &raw mut val) {
+                if !ExprResolveString(&*ctx, &*value, &mut val) {
                     return ReportMismatch(
                         ctx,
                         XKB_ERROR_WRONG_FIELD_TYPE,
@@ -1297,9 +1299,11 @@ unsafe fn HandlePrivate(
                 let str_bytes: &str = xkb_atom_text(&(*ctx).atom_table, val);
                 let len: usize = str_bytes.len();
                 if len < 1_usize || len > std::mem::size_of::<[u8; 7]>() {
-                    log::warn!("A private action has {} data bytes, but got: {}; Illegal data ignored\n",
+                    log::warn!(
+                        "A private action has {} data bytes, but got: {}; Illegal data ignored\n",
                         std::mem::size_of::<[u8; 7]>(),
-                        len);
+                        len
+                    );
                     return (if (*keymap_info).strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                         PARSER_FATAL_ERROR as i32
                     } else {
@@ -1320,7 +1324,7 @@ unsafe fn HandlePrivate(
             } else {
                 let mut ndx: i64 = 0_i64;
                 let mut datum: i64 = 0_i64;
-                if !ExprResolveInteger(ctx, array_ndx, &raw mut ndx) {
+                if !ExprResolveInteger(&*ctx, &*array_ndx, &mut ndx) {
                     log::error!("Array subscript must be integer; Illegal subscript ignored\n");
                     return (if (*keymap_info).strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                         PARSER_FATAL_ERROR as i32
@@ -1338,7 +1342,7 @@ unsafe fn HandlePrivate(
                         PARSER_RECOVERABLE_ERROR as i32
                     }) as xkb_parser_error;
                 }
-                if !ExprResolveInteger(ctx, value, &raw mut datum) {
+                if !ExprResolveInteger(&*ctx, &*value, &mut datum) {
                     return ReportMismatch(
                         ctx,
                         XKB_ERROR_WRONG_FIELD_TYPE,
@@ -1349,8 +1353,10 @@ unsafe fn HandlePrivate(
                     );
                 }
                 if !(0_i64..=255_i64).contains(&datum) {
-                    log::error!("All data for a private action must be 0..255; Illegal datum {} ignored\n",
-                        datum);
+                    log::error!(
+                        "All data for a private action must be 0..255; Illegal datum {} ignored\n",
+                        datum
+                    );
                     return (if (*keymap_info).strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                         PARSER_FATAL_ERROR as i32
                     } else {
@@ -1368,7 +1374,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
     [
         Some(
             HandleNoAction
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1380,7 +1386,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleNoAction
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1392,7 +1398,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleSetLatchLockMods
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1404,7 +1410,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleSetLatchLockMods
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1416,7 +1422,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleSetLatchLockMods
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1428,7 +1434,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleSetLatchLockGroup
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1440,7 +1446,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleSetLatchLockGroup
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1452,7 +1458,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleSetLatchLockGroup
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1464,7 +1470,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleMovePtr
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1476,7 +1482,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandlePtrBtn
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1488,7 +1494,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandlePtrBtn
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1500,7 +1506,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleSetPtrDflt
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1512,7 +1518,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleNoAction
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1524,7 +1530,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleSwitchScreen
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1536,7 +1542,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleSetLockControls
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1548,7 +1554,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleSetLockControls
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1560,7 +1566,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleRedirectKey
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1572,7 +1578,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleUnsupported
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1584,7 +1590,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandleUnsupported
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1596,7 +1602,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         ),
         Some(
             HandlePrivate
-                as unsafe fn(
+                as fn(
                     *mut xkb_keymap_info,
                     *const xkb_mod_set,
                     *mut xkb_action,
@@ -1609,7 +1615,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         None,
     ]
 };
-pub unsafe fn HandleActionDef(
+pub fn HandleActionDef(
     keymap_info: *mut xkb_keymap_info,
     info: *mut ActionsInfo,
     mods: *const xkb_mod_set,
@@ -1619,9 +1625,11 @@ pub unsafe fn HandleActionDef(
     unsafe {
         let ctx: *mut xkb_context = &raw mut (*(*keymap_info).keymap).ctx;
         if (*def).common.type_0 != STMT_EXPR_ACTION_DECL {
-            log::error!("[XKB-{:03}] Expected an action definition, found {}\n",
+            log::error!(
+                "[XKB-{:03}] Expected an action definition, found {}\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                stmt_type_to_string((*def).common.type_0));
+                stmt_type_to_string((*def).common.type_0)
+            );
             return PARSER_FATAL_ERROR;
         }
         let (action_name_atom, action_args) = if let ExprKind::Action { name, args } = &(*def).kind
@@ -1632,10 +1640,12 @@ pub unsafe fn HandleActionDef(
         };
         let action_name: &str = xkb_atom_text(&(*ctx).atom_table, action_name_atom);
         let mut handler_type: xkb_action_type = ACTION_TYPE_NONE;
-        if !stringToActionType(action_name, &raw mut handler_type) {
-            log::error!("[XKB-{:03}] Unknown action \"{}\"\n",
+        if !stringToActionType(action_name, &mut handler_type) {
+            log::error!(
+                "[XKB-{:03}] Unknown action \"{}\"\n",
                 XKB_ERROR_UNKNOWN_ACTION_TYPE as i32,
-                action_name);
+                action_name
+            );
             handler_type = ACTION_TYPE_UNKNOWN;
             if (*keymap_info).strict & PARSER_NO_UNKNOWN_ACTION != 0 {
                 return PARSER_FATAL_ERROR;
@@ -1643,9 +1653,11 @@ pub unsafe fn HandleActionDef(
         }
         *action = (*info).actions[handler_type as usize];
         if handler_type as u32 == ACTION_TYPE_UNSUPPORTED_LEGACY {
-            log::warn!("[XKB-{:03}] Unsupported legacy action type \"{}\".\n",
+            log::warn!(
+                "[XKB-{:03}] Unsupported legacy action type \"{}\".\n",
                 XKB_WARNING_UNSUPPORTED_LEGACY_ACTION as i32,
-                action_name);
+                action_name
+            );
             (*action).type_0 = ACTION_TYPE_NONE;
         }
         let mut ret: xkb_parser_error = PARSER_SUCCESS;
@@ -1654,7 +1666,7 @@ pub unsafe fn HandleActionDef(
             let value: *const ExprDef;
             let mut value_ptr: *mut *mut ExprDef = std::ptr::null_mut();
             let field: *mut ExprDef;
-            let mut arrayRtrn: *mut ExprDef = std::ptr::null_mut();
+            let mut arrayRtrn_opt: Option<&ExprDef> = None;
             let mut elemRtrn: &str = "";
             let mut fieldRtrn: &str = "";
             if (*arg).common.type_0 == STMT_EXPR_ASSIGN {
@@ -1689,11 +1701,11 @@ pub unsafe fn HandleActionDef(
                 value = &raw const CONST_TRUE.0 as *const ExprDef;
             }
             if !ExprResolveLhs(
-                ctx,
-                field,
+                &*ctx,
+                &*field,
                 &mut elemRtrn,
                 &mut fieldRtrn,
-                &raw mut arrayRtrn,
+                &mut arrayRtrn_opt,
             ) {
                 return PARSER_FATAL_ERROR;
             }
@@ -1705,11 +1717,13 @@ pub unsafe fn HandleActionDef(
                 return PARSER_FATAL_ERROR;
             }
             let mut fieldNdx: u32 = ACTION_FIELD_CLEAR_LOCKS;
-            if !stringToField(fieldRtrn, &raw mut fieldNdx) {
-                log::error!("[XKB-{:03}] Unknown field name {} for action {} discarded\n",
+            if !stringToField(fieldRtrn, &mut fieldNdx) {
+                log::error!(
+                    "[XKB-{:03}] Unknown field name {} for action {} discarded\n",
                     XKB_ERROR_INVALID_ACTION_FIELD as i32,
                     fieldRtrn,
-                    ActionTypeText((*action).type_0));
+                    ActionTypeText((*action).type_0)
+                );
                 if (*keymap_info).strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
                     return PARSER_FATAL_ERROR;
                 }
@@ -1719,7 +1733,7 @@ pub unsafe fn HandleActionDef(
                     mods,
                     action,
                     fieldNdx,
-                    arrayRtrn,
+                    arrayRtrn_opt.map_or(std::ptr::null(), |r| r as *const ExprDef),
                     value,
                     value_ptr,
                 ) as u32
@@ -1740,7 +1754,7 @@ pub unsafe fn HandleActionDef(
         }) as xkb_parser_error
     }
 }
-pub unsafe fn SetDefaultActionField(
+pub fn SetDefaultActionField(
     keymap_info: *mut xkb_keymap_info,
     info: *mut ActionsInfo,
     mods: *mut xkb_mod_set,
@@ -1753,10 +1767,12 @@ pub unsafe fn SetDefaultActionField(
     unsafe {
         let value: *const ExprDef = *value_ptr;
         let mut action: xkb_action_type = ACTION_TYPE_NONE;
-        if !stringToActionType(elem, &raw mut action) {
-            log::error!("[XKB-{:03}] Unknown action \"{}\"\n",
+        if !stringToActionType(elem, &mut action) {
+            log::error!(
+                "[XKB-{:03}] Unknown action \"{}\"\n",
                 XKB_ERROR_UNKNOWN_ACTION_TYPE as i32,
-                elem);
+                elem
+            );
             return (if (*keymap_info).strict & PARSER_NO_UNKNOWN_ACTION != 0 {
                 PARSER_FATAL_ERROR as i32
             } else {
@@ -1764,10 +1780,12 @@ pub unsafe fn SetDefaultActionField(
             }) as xkb_parser_error;
         }
         let mut action_field: u32 = ACTION_FIELD_CLEAR_LOCKS;
-        if !stringToField(field, &raw mut action_field) {
-            log::error!("[XKB-{:03}] Unknown action field \"{}\"\n",
+        if !stringToField(field, &mut action_field) {
+            log::error!(
+                "[XKB-{:03}] Unknown action field \"{}\"\n",
                 XKB_ERROR_INVALID_ACTION_FIELD as i32,
-                field);
+                field
+            );
             return (if (*keymap_info).strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
                 PARSER_FATAL_ERROR as i32
             } else {
@@ -1792,11 +1810,13 @@ pub unsafe fn SetDefaultActionField(
         }
         if !action_equal(into, &raw mut from) {
             let replace: bool = merge != MERGE_AUGMENT;
-            log::warn!("Conflicting field \"{}\" for default action \"{}\"; Using {}, ignore {}\n",
+            log::warn!(
+                "Conflicting field \"{}\" for default action \"{}\"; Using {}, ignore {}\n",
                 fieldText(action_field),
                 ActionTypeText(action),
                 if replace { "from" } else { "into" },
-                if replace { "into" } else { "from" });
+                if replace { "into" } else { "from" }
+            );
             if replace {
                 *into = from;
             }

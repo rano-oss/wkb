@@ -39,13 +39,15 @@ pub struct KeyTypeInfo {
     pub entries: Vec<xkb_key_type_entry>,
     pub level_names: Vec<u32>,
 }
-unsafe fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
+fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
     if new_len > v.len() {
         v.reserve(new_len - v.len());
         let old_len = v.len();
-        let ptr = v.as_mut_ptr().add(old_len);
-        std::ptr::write_bytes(ptr, 0, new_len - old_len);
-        v.set_len(new_len);
+        unsafe {
+            let ptr = v.as_mut_ptr().add(old_len);
+            std::ptr::write_bytes(ptr, 0, new_len - old_len);
+            v.set_len(new_len);
+        }
     } else if new_len < v.len() {
         v.truncate(new_len);
     }
@@ -246,7 +248,13 @@ fn SetModifiers(
         );
         return false;
     }
-    if !unsafe { ExprResolveModMask(info.ctx, value, MOD_BOTH, &info.mods, &raw mut mods) } {
+    if !ExprResolveModMask(
+        info.ctx,
+        unsafe { &*value },
+        MOD_BOTH,
+        &info.mods,
+        &mut mods,
+    ) {
         log::error!("[XKB-{:03}] Key type mask field must be a modifier mask; Key type definition ignored\n",
             { XKB_ERROR_UNSUPPORTED_MODIFIER_MASK });
         return false;
@@ -327,15 +335,13 @@ fn SetMapEntry(
     if arrayNdx.is_null() {
         return ReportTypeShouldBeArray(info, type_0, "map entry");
     }
-    if !unsafe {
-        ExprResolveModMask(
-            info.ctx,
-            arrayNdx,
-            MOD_BOTH,
-            &info.mods,
-            &raw mut entry.mods.mods,
-        )
-    } {
+    if !ExprResolveModMask(
+        info.ctx,
+        unsafe { &*arrayNdx },
+        MOD_BOTH,
+        &info.mods,
+        &mut entry.mods.mods,
+    ) {
         return ReportTypeBadType(
             info,
             XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_,
@@ -359,7 +365,7 @@ fn SetMapEntry(
         );
         entry.mods.mods &= type_0.mods;
     }
-    if !unsafe { ExprResolveLevel(info.ctx, value, &raw mut entry.level) } {
+    if !ExprResolveLevel(info.ctx, unsafe { &*value }, &mut entry.level) {
         log::error!("[XKB-{:03}] Level specifications in a key type must be integer; Ignoring malformed level specification\n",
             XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL as i32);
         return false;
@@ -422,7 +428,13 @@ fn SetPreserve(
         return ReportTypeShouldBeArray(info, type_0, "preserve entry");
     }
     let mut mods: u32 = 0_u32;
-    if !unsafe { ExprResolveModMask(info.ctx, arrayNdx, MOD_BOTH, &info.mods, &raw mut mods) } {
+    if !ExprResolveModMask(
+        info.ctx,
+        unsafe { &*arrayNdx },
+        MOD_BOTH,
+        &info.mods,
+        &mut mods,
+    ) {
         return ReportTypeBadType(
             info,
             XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_,
@@ -442,15 +454,13 @@ fn SetPreserve(
             after);
     }
     let mut preserve_mods: u32 = 0_u32;
-    if !unsafe {
-        ExprResolveModMask(
-            info.ctx,
-            value,
-            MOD_BOTH,
-            &info.mods,
-            &raw mut preserve_mods,
-        )
-    } {
+    if !ExprResolveModMask(
+        info.ctx,
+        unsafe { &*value },
+        MOD_BOTH,
+        &info.mods,
+        &mut preserve_mods,
+    ) {
         log::error!("[XKB-{:03}] Preserve value in a key type is not a modifier mask; Ignoring preserve[{}] in type {}\n",
             { XKB_ERROR_UNSUPPORTED_MODIFIER_MASK },
             ModMaskText(info.ctx(), MOD_BOTH, &info.mods, mods),
@@ -521,7 +531,7 @@ fn SetLevelName(
         return ReportTypeShouldBeArray(info, type_0, "level name");
     }
     let mut level: u32 = 0_u32;
-    if !unsafe { ExprResolveLevel(info.ctx, arrayNdx, &raw mut level) } {
+    if !ExprResolveLevel(info.ctx, unsafe { &*arrayNdx }, &mut level) {
         return ReportTypeBadType(
             info,
             XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL,
@@ -531,7 +541,7 @@ fn SetLevelName(
         );
     }
     let mut level_name: u32 = XKB_ATOM_NONE;
-    if !unsafe { ExprResolveString(info.ctx, value, &raw mut level_name) } {
+    if !ExprResolveString(info.ctx, unsafe { &*value }, &mut level_name) {
         log::error!("[XKB-{:03}] Non-string name for level {} in key type {}; Ignoring illegal level name definition\n",
             XKB_ERROR_WRONG_FIELD_TYPE as i32,
             level.wrapping_add(1_u32),
@@ -580,17 +590,12 @@ fn HandleKeyTypeBody(
 ) -> bool {
     unsafe {
         let mut ok: bool = true;
-        let mut elem: &str = "";
-        let mut field: &str = "";
-        let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
         while !def.is_null() {
-            if !ExprResolveLhs(
-                info.ctx,
-                (*def).name.raw(),
-                &mut elem,
-                &mut field,
-                &raw mut arrayNdx,
-            ) {
+            let mut elem: &str = "";
+            let mut field: &str = "";
+            let mut arrayNdx: Option<&ExprDef> = None;
+            let name_ref = &*(*def).name.raw();
+            if !ExprResolveLhs(info.ctx, name_ref, &mut elem, &mut field, &mut arrayNdx) {
                 ok = false;
             } else if !elem.is_empty() {
                 if elem.eq_ignore_ascii_case("type") {
@@ -606,8 +611,14 @@ fn HandleKeyTypeBody(
                         field);
                     ok = false;
                 }
-            } else if !SetKeyTypeField(info, type_0, field, arrayNdx, (*def).value.raw()) {
-                ok = false;
+            } else {
+                // Convert field to a pointer-based value to release the borrow on info.ctx
+                let field_ptr: *const str = field;
+                let arrayNdx_ptr =
+                    arrayNdx.map_or(std::ptr::null_mut(), |r| r as *const _ as *mut _);
+                if !SetKeyTypeField(info, type_0, &*field_ptr, arrayNdx_ptr, (*def).value.raw()) {
+                    ok = false;
+                }
             }
             def = (*def).common.next as *mut VarDef;
         }
@@ -618,14 +629,9 @@ fn HandleGlobalVar(info: &mut KeyTypesInfo<'_>, stmt: *mut VarDef) -> bool {
     unsafe {
         let mut elem: &str = "";
         let mut field: &str = "";
-        let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
-        if !ExprResolveLhs(
-            info.ctx,
-            (*stmt).name.raw(),
-            &mut elem,
-            &mut field,
-            &raw mut arrayNdx,
-        ) {
+        let mut arrayNdx: Option<&ExprDef> = None;
+        let name_ref = &*(*stmt).name.raw();
+        if !ExprResolveLhs(info.ctx, name_ref, &mut elem, &mut field, &mut arrayNdx) {
             return false;
         } else if !elem.is_empty() && elem.eq_ignore_ascii_case("type") {
             log::error!("[XKB-{:03}] Support for changing the default type has been removed; Statement ignored\n",
@@ -649,7 +655,7 @@ fn HandleGlobalVar(info: &mut KeyTypesInfo<'_>, stmt: *mut VarDef) -> bool {
         false
     }
 }
-unsafe fn HandleKeyTypesFile(info: &mut KeyTypesInfo<'_>, file: *mut XkbFile) {
+fn HandleKeyTypesFile(info: &mut KeyTypesInfo<'_>, file: *mut XkbFile) {
     unsafe {
         let mut ok: bool;
         info.name = {
@@ -790,7 +796,7 @@ fn CopyKeyTypesToKeymap(keymap: &mut xkb_keymap, info: &mut KeyTypesInfo) -> boo
     keymap.mods = info.mods;
     true
 }
-pub unsafe fn CompileKeyTypes(file: *mut XkbFile, keymap_info: *mut xkb_keymap_info) -> bool {
+pub fn CompileKeyTypes(file: *mut XkbFile, keymap_info: *mut xkb_keymap_info) -> bool {
     unsafe {
         let ctx = &mut (*(*keymap_info).keymap).ctx;
         let mut info = KeyTypesInfo::new(ctx, &mut *keymap_info);
