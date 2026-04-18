@@ -2024,7 +2024,7 @@ unsafe fn state_update_layout_policy(
     }
 }
 
-unsafe fn log_abi_error(_ctx: *mut xkb_context, func: *const i8, error: xkb_error_code) {
+unsafe fn log_abi_error(_ctx: *mut xkb_context, func: &str, error: xkb_error_code) {
     match error {
         450 => {
             xkb_logf!(
@@ -2033,7 +2033,7 @@ unsafe fn log_abi_error(_ctx: *mut xkb_context, func: *const i8, error: xkb_erro
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}: ABI error: unsupported versioned struct\n",
                 { XKB_ERROR_ABI_INVALID_STRUCT_SIZE },
-                crate::xkb::utils::CStrDisplay(func),
+                func,
             );
         }
         914 => {
@@ -2043,7 +2043,7 @@ unsafe fn log_abi_error(_ctx: *mut xkb_context, func: *const i8, error: xkb_erro
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}: ABI version mismatch: missing newer required fields\n",
                 { XKB_ERROR_ABI_BACKWARD_COMPAT },
-                crate::xkb::utils::CStrDisplay(func),
+                func,
             );
         }
         876 => {
@@ -2053,7 +2053,7 @@ unsafe fn log_abi_error(_ctx: *mut xkb_context, func: *const i8, error: xkb_erro
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}: ABI version mismatch: cannot use newer fields\n",
                 { XKB_ERROR_ABI_FORWARD_COMPAT },
-                crate::xkb::utils::CStrDisplay(func),
+                func,
             );
         }
         _ => {}
@@ -2062,7 +2062,7 @@ unsafe fn log_abi_error(_ctx: *mut xkb_context, func: *const i8, error: xkb_erro
 
 unsafe fn check_state_update_abi_(
     ctx: *mut xkb_context,
-    func: *const i8,
+    func: &str,
     update: *const xkb_state_update,
 ) -> xkb_error_code {
     unsafe {
@@ -2110,7 +2110,7 @@ pub unsafe fn xkb_state_update_synthetic(
     unsafe {
         let mut error: xkb_error_code = check_state_update_abi_(
             &raw mut (*(*state).keymap).ctx,
-            b"xkb_state_update_synthetic\0".as_ptr() as *const i8,
+            "xkb_state_update_synthetic",
             update,
         );
         if error as u64 != 0 {

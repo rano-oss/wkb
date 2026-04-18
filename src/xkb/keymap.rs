@@ -182,19 +182,12 @@ pub unsafe fn xkb_keymap_new_from_names(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "{}: unsupported keymap format: {}\n",
-                crate::xkb::utils::CStrDisplay(
-                    b"xkb_keymap_new_from_names2\0".as_ptr() as *const i8
-                ),
+                "xkb_keymap_new_from_names2",
                 { format },
             );
             return None;
         }
-        let mut keymap = xkb_keymap_new(
-            ctx.clone(),
-            b"xkb_keymap_new_from_names2\0".as_ptr() as *const i8,
-            format,
-            flags,
-        )?;
+        let mut keymap = xkb_keymap_new(ctx.clone(), "xkb_keymap_new_from_names2", format, flags)?;
         let mut rmlvo: xkb_rule_names = xkb_rule_names {
             rules: std::ffi::CString::new("").unwrap(),
             model: std::ffi::CString::new("").unwrap(),
@@ -230,9 +223,7 @@ pub unsafe fn xkb_keymap_new_from_string(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "{}: unsupported keymap format: {}\n",
-                crate::xkb::utils::CStrDisplay(
-                    b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8
-                ),
+                "xkb_keymap_new_from_buffer",
                 { format },
             );
             return None;
@@ -243,18 +234,11 @@ pub unsafe fn xkb_keymap_new_from_string(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "{}: no buffer specified\n",
-                crate::xkb::utils::CStrDisplay(
-                    b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8
-                ),
+                "xkb_keymap_new_from_buffer",
             );
             return None;
         }
-        let mut keymap = xkb_keymap_new(
-            ctx,
-            b"xkb_keymap_new_from_buffer\0".as_ptr() as *const i8,
-            format,
-            flags,
-        )?;
+        let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_buffer", format, flags)?;
         if cstr_len(string) > 0 && *string.add(length.wrapping_sub(1_usize)) as i32 == '\0' as i32 {
             length = length.wrapping_sub(1);
         }
@@ -282,7 +266,7 @@ pub unsafe fn xkb_keymap_new_from_file(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "{}: unsupported keymap format: {}\n",
-                crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_file\0".as_ptr() as *const i8),
+                "xkb_keymap_new_from_file",
                 { format },
             );
             return None;
@@ -293,16 +277,11 @@ pub unsafe fn xkb_keymap_new_from_file(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "{}: no file specified\n",
-                crate::xkb::utils::CStrDisplay(b"xkb_keymap_new_from_file\0".as_ptr() as *const i8),
+                "xkb_keymap_new_from_file",
             );
             return None;
         }
-        let mut keymap = xkb_keymap_new(
-            ctx,
-            b"xkb_keymap_new_from_file\0".as_ptr() as *const i8,
-            format,
-            flags,
-        )?;
+        let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_file", format, flags)?;
         if !((*ops).keymap_new_from_file.unwrap())(&mut *keymap as *mut xkb_keymap, file) {
             return None;
         }
@@ -321,7 +300,7 @@ pub unsafe fn xkb_keymap_get_as_string(keymap: *mut xkb_keymap, mut format: u32)
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "{}: unrecognized serialization flags: {:#x}\n",
-                crate::xkb::utils::CStrDisplay(b"xkb_keymap_get_as_string2\0".as_ptr() as *const i8),
+                "xkb_keymap_get_as_string2",
                 flags & !XKB_KEYMAP_SERIALIZE_FLAGS,
             );
             return std::ptr::null_mut();
@@ -337,7 +316,7 @@ pub unsafe fn xkb_keymap_get_as_string(keymap: *mut xkb_keymap, mut format: u32)
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "{}: unsupported keymap format: {}\n",
-                crate::xkb::utils::CStrDisplay(b"xkb_keymap_get_as_string2\0".as_ptr() as *const i8),
+                "xkb_keymap_get_as_string2",
                 { format },
             );
             return std::ptr::null_mut();
@@ -610,7 +589,7 @@ pub const XKB_MOD_NAME_MOD5: &str = "Mod5";
 
 pub unsafe fn xkb_keymap_new(
     ctx: xkb_context,
-    func: *const i8,
+    func: &str,
     format: u32,
     flags: u32,
 ) -> Option<Box<xkb_keymap>> {
@@ -622,7 +601,7 @@ pub unsafe fn xkb_keymap_new(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "{}: unrecognized keymap compilation flags: 0x{:x}\n",
-                crate::xkb::utils::CStrDisplay(func),
+                func,
                 flags & !XKB_KEYMAP_COMPILE_FLAGS,
             );
             return None;
@@ -690,21 +669,18 @@ pub fn xkb_escape_map_name(name: &mut String) {
     }
 }
 
-pub unsafe fn XkbEscapeMapName(mut name: *mut i8) {
+pub fn XkbEscapeMapName(name: &mut String) {
+    static LEGAL: [u8; 32] = [
+        0, 0, 0, 0, 0, 0xa7, 0xff, 0x83, 0xfe, 0xff, 0xff, 0x87, 0xfe, 0xff, 0xff, 0x7, 0, 0, 0, 0,
+        0, 0, 0, 0, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0x7f, 0xff,
+    ];
+    // SAFETY: We only replace ASCII bytes with '_' (also ASCII), preserving UTF-8 validity
     unsafe {
-        static LEGAL: [u8; 32] = [
-            0, 0, 0, 0, 0, 0xa7, 0xff, 0x83, 0xfe, 0xff, 0xff, 0x87, 0xfe, 0xff, 0xff, 0x7, 0, 0,
-            0, 0, 0, 0, 0, 0, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0x7f, 0xff,
-        ];
-        if name.is_null() {
-            return;
-        }
-        while *name != 0 {
-            let c: ::core::ffi::c_uchar = *name as ::core::ffi::c_uchar;
-            if LEGAL[(c as i32 / 8_i32) as usize] as u32 & 1_u32 << (c as i32 % 8_i32) == 0 {
-                *name = '_' as i32 as i8;
+        for b in name.as_bytes_mut() {
+            let c = *b;
+            if LEGAL[(c as usize) / 8] & (1u8 << (c % 8)) == 0 {
+                *b = b'_';
             }
-            name = name.offset(1);
         }
     }
 }

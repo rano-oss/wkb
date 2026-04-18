@@ -331,7 +331,8 @@ unsafe fn add_key_aliases(
 unsafe fn update_pending_key_fields(info: *mut xkb_keymap_info, key: *mut xkb_key) -> bool {
     unsafe {
         if (*key).out_of_range_pending_group {
-            let pc: *mut pending_computation = &mut (&mut *(*info).pending_computations)
+            let info_ref = &mut *info;
+            let pc: *mut pending_computation = &mut info_ref.pending_computations
                 [(*key).out_of_range_group_number as usize]
                 as *mut pending_computation;
             if !(*pc).computed {
@@ -371,7 +372,8 @@ unsafe fn update_pending_action_fields(
         match (*act).type_0 {
             5..=7 => {
                 if (*act).group.flags & ACTION_PENDING_COMPUTATION != 0 {
-                    let pc: *mut pending_computation = &mut (&mut *(*info).pending_computations)
+                    let info_ref = &mut *info;
+                    let pc: *mut pending_computation = &mut info_ref.pending_computations
                         [(*act).group.group as usize]
                         as *mut pending_computation;
                     if !(*pc).computed {
@@ -473,7 +475,7 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                 ki = ki.wrapping_add(1);
             }
         }
-        let pending_computations: bool = !(&*(*info).pending_computations).is_empty();
+        let pending_computations: bool = !(*info).pending_computations.is_empty();
         if pending_computations {
             let num_groups: u32 = if (*keymap).num_groups != 0 {
                 (*keymap).num_groups
@@ -693,7 +695,8 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                 // update_pending_led_fields inlined
                 let mut led_ok = true;
                 if (*led).pending_groups {
-                    let pc: *mut pending_computation = &mut (&mut *(*info).pending_computations)
+                    let info_ref = &mut *info;
+                    let pc: *mut pending_computation = &mut info_ref.pending_computations
                         [(*led).groups as usize]
                         as *mut pending_computation;
                     if !(*pc).computed {
@@ -740,12 +743,12 @@ static COMPILE_FILE_FNS: [compile_file_fn; 4] = {
         Some(CompileSymbols as unsafe fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
     ]
 };
-unsafe fn pending_computations_array_free(p: *mut Vec<pending_computation>) {
+unsafe fn pending_computations_array_free(p: &mut Vec<pending_computation>) {
     unsafe {
-        for pc in (&*p).iter() {
+        for pc in p.iter() {
             FreeStmt(pc.expr as *mut ParseCommon);
         }
-        (&mut *p).clear();
+        p.clear();
     }
 }
 pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> bool {
@@ -793,7 +796,6 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
             }
             file = (*file).common.next as *mut XkbFile;
         }
-        let mut pending_computations: Vec<pending_computation> = Vec::new();
         let mut info: xkb_keymap_info = xkb_keymap_info {
             keymap,
             strict: (if (*keymap).format == XKB_KEYMAP_FORMAT_TEXT_V1 {
@@ -868,7 +870,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                     },
                 ],
             },
-            pending_computations: &raw mut pending_computations,
+            pending_computations: Vec::new(),
         };
         type_0 = FIRST_KEYMAP_FILE_TYPE;
         while type_0 <= LAST_KEYMAP_FILE_TYPE {
@@ -887,7 +889,7 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Compiling {} \"{}\"\n",
                     xkb_file_type_to_string(type_0),
-                    crate::xkb::utils::CStrDisplay(safe_map_name(files[type_0 as usize])),
+                    safe_map_name(&*files[type_0 as usize]),
                 );
             }
             let ok: bool = COMPILE_FILE_FNS[type_0 as usize].expect("non-null function pointer")(
@@ -903,14 +905,14 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                     xkb_file_type_to_string(type_0),
                 );
                 // info.keymap is a pointer to the same keymap, no write-back needed
-                pending_computations_array_free(&raw mut pending_computations);
+                pending_computations_array_free(&mut info.pending_computations);
                 return false;
             }
             type_0 += 1;
         }
         let ok_0: bool = UpdateDerivedKeymapFields(&raw mut info) as bool;
         // info.keymap is a pointer to the same keymap, no write-back needed
-        pending_computations_array_free(&raw mut pending_computations);
+        pending_computations_array_free(&mut info.pending_computations);
         ok_0
     }
 }

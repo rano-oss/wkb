@@ -69,10 +69,7 @@ pub use crate::xkb::shared_ast_types::{
 };
 pub use crate::xkb::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::{isempty, strdup_safe};
-pub use crate::xkb::xkbcomp::include::{
-    ParseIncludeMap, MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX,
-};
+pub use crate::xkb::xkbcomp::include::{MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
 unsafe fn ExprCreate(op: stmt_type) -> *mut ExprDef {
     unsafe {
         let expr: *mut ExprDef = Box::into_raw(Box::new(std::mem::zeroed::<ExprDef>()));
@@ -545,15 +542,14 @@ pub unsafe fn LedNameCreate(ndx: i64, name: *mut ExprDef, virtual_0: bool) -> *m
 
 pub unsafe fn UnknownStatementCreate(type_0: stmt_type, name: sval) -> *mut UnknownStatement {
     unsafe {
-        let def: *mut UnknownStatement =
-            Box::into_raw(Box::new(std::mem::zeroed::<UnknownStatement>()));
-        (*def).common.type_0 = type_0;
-        (*def).common.next = std::ptr::null_mut();
-        (*def).name = cstr_ndup(name.start, name.len);
-        if (*def).name.is_null() {
-            drop(Box::from_raw(def));
-            return std::ptr::null_mut();
-        }
+        let name_str = unsafe { std::str::from_utf8_unchecked(name.as_bytes()).to_string() };
+        let def = Box::into_raw(Box::new(UnknownStatement {
+            common: ParseCommon {
+                next: std::ptr::null_mut(),
+                type_0,
+            },
+            name: name_str,
+        }));
         def
     }
 }
@@ -564,99 +560,78 @@ pub unsafe fn IncludeCreate(
     mut merge: merge_mode,
 ) -> *mut IncludeStmt {
     unsafe {
-        let c2rust_current_block: u64;
-        let mut incl: *mut IncludeStmt;
-        let mut first: *mut IncludeStmt;
+        let mut first: *mut IncludeStmt = std::ptr::null_mut();
+        let mut incl: *mut IncludeStmt = std::ptr::null_mut();
 
-        let mut tmp: *mut i8;
-        let mut nextop: i8 = 0;
-        first = std::ptr::null_mut();
-        incl = first;
-        tmp = str;
-        let stmt: *mut i8 = strdup_safe(str);
+        let stmt_str = std::ffi::CStr::from_ptr(str)
+            .to_str()
+            .unwrap_or("")
+            .to_string();
+        let mut remaining: Option<&str> = Some(&stmt_str);
+
         loop {
-            if !(!tmp.is_null() && *tmp as i32 != 0) {
-                c2rust_current_block = 15125582407903384992;
-                break;
+            let input = match remaining {
+                Some(s) if !s.is_empty() => s,
+                _ => break,
+            };
+
+            let (parsed, rest) = match crate::xkb::xkbcomp::include::ParseIncludeMap(input) {
+                Some(r) => r,
+                None => {
+                    // Parse error
+                    xkb_logf!(
+                        ctx,
+                        XKB_LOG_LEVEL_ERROR,
+                        XKB_LOG_VERBOSITY_MINIMAL as i32,
+                        "[XKB-{:03}] Illegal include statement \"{}\"; Ignored\n",
+                        XKB_ERROR_INVALID_INCLUDE_STATEMENT as i32,
+                        &stmt_str,
+                    );
+                    FreeInclude(first);
+                    return std::ptr::null_mut();
+                }
+            };
+
+            if parsed.file.is_empty() {
+                // skip empty segments
+                remaining = rest;
+                continue;
             }
-            let mut file: *mut i8 = std::ptr::null_mut();
-            let mut map: *mut i8 = std::ptr::null_mut();
-            let mut extra_data: *mut i8 = std::ptr::null_mut();
-            if !ParseIncludeMap(
-                &raw mut tmp,
-                &raw mut file,
-                &raw mut map,
-                &raw mut nextop,
-                &raw mut extra_data,
-            ) {
-                c2rust_current_block = 15017566315148339459;
-                break;
-            }
-            if isempty(file) {
-                cstr_free(file);
-                cstr_free(map);
-                cstr_free(extra_data);
+
+            let new_incl = Box::into_raw(Box::new(IncludeStmt {
+                common: ParseCommon {
+                    next: std::ptr::null_mut(),
+                    type_0: STMT_INCLUDE,
+                },
+                merge,
+                stmt: String::new(),
+                file: parsed.file,
+                map: parsed.map,
+                modifier: parsed.extra_data,
+                next_incl: None,
+            }));
+
+            if first.is_null() {
+                first = new_incl;
+                incl = new_incl;
             } else {
-                if first.is_null() {
-                    incl = Box::into_raw(Box::new(std::mem::zeroed::<IncludeStmt>()));
-                    first = incl;
-                } else {
-                    (*incl).next_incl = Box::into_raw(Box::new(std::mem::zeroed::<IncludeStmt>()))
-                        as *mut _IncludeStmt;
-                    incl = (*incl).next_incl as *mut IncludeStmt;
-                }
-                if incl.is_null() {
-                    cstr_free(file);
-                    cstr_free(map);
-                    cstr_free(extra_data);
-                    c2rust_current_block = 15125582407903384992;
-                    break;
-                } else {
-                    (*incl).common.type_0 = STMT_INCLUDE;
-                    (*incl).common.next = std::ptr::null_mut();
-                    (*incl).merge = merge;
-                    (*incl).stmt = std::ptr::null_mut();
-                    (*incl).file = file;
-                    (*incl).map = map;
-                    (*incl).modifier = extra_data;
-                    (*incl).next_incl = std::ptr::null_mut();
-                    match nextop as i32 {
-                        MERGE_AUGMENT_PREFIX => {
-                            merge = MERGE_AUGMENT;
-                        }
-                        MERGE_REPLACE_PREFIX => {
-                            merge = MERGE_REPLACE;
-                        }
-                        _ => {
-                            merge = MERGE_OVERRIDE;
-                        }
-                    }
-                }
+                (*incl).next_incl = Some(Box::from_raw(new_incl));
+                incl = (*incl).next_incl.as_mut().unwrap().as_mut() as *mut IncludeStmt;
             }
+
+            match parsed.nextop {
+                '|' => merge = MERGE_AUGMENT,
+                '^' => merge = MERGE_REPLACE,
+                _ => merge = MERGE_OVERRIDE,
+            }
+
+            remaining = rest;
         }
-        match c2rust_current_block {
-            15017566315148339459 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Illegal include statement \"{}\"; Ignored\n",
-                    XKB_ERROR_INVALID_INCLUDE_STATEMENT as i32,
-                    crate::xkb::utils::CStrDisplay(stmt),
-                );
-                FreeInclude(first);
-                cstr_free(stmt);
-                std::ptr::null_mut()
-            }
-            _ => {
-                if !first.is_null() {
-                    (*first).stmt = stmt;
-                } else {
-                    cstr_free(stmt);
-                }
-                first
-            }
+
+        if !first.is_null() {
+            (*first).stmt = stmt_str;
         }
+        first
     }
 }
 
@@ -667,12 +642,27 @@ pub unsafe fn XkbFileCreate(
     flags: xkb_map_flags,
 ) -> *mut XkbFile {
     unsafe {
-        let file: *mut XkbFile = Box::into_raw(Box::new(std::mem::zeroed::<XkbFile>()));
-        XkbEscapeMapName(name);
-        (*file).file_type = type_0;
-        (*file).name = name;
-        (*file).defs = defs;
-        (*file).flags = flags;
+        let mut name_str = if name.is_null() {
+            String::new()
+        } else {
+            let s = std::ffi::CStr::from_ptr(name)
+                .to_str()
+                .unwrap_or("")
+                .to_string();
+            cstr_free(name);
+            s
+        };
+        XkbEscapeMapName(&mut name_str);
+        let file = Box::into_raw(Box::new(XkbFile {
+            common: ParseCommon {
+                next: std::ptr::null_mut(),
+                type_0: 0,
+            },
+            file_type: type_0,
+            name: name_str,
+            defs,
+            flags,
+        }));
         file
     }
 }
@@ -741,17 +731,12 @@ pub unsafe fn XkbFileFromComponents(
         std::ptr::null_mut()
     }
 }
-unsafe fn FreeInclude(mut incl: *mut IncludeStmt) {
+unsafe fn FreeInclude(incl: *mut IncludeStmt) {
     unsafe {
-        let mut next: *mut IncludeStmt;
-        while !incl.is_null() {
-            next = (*incl).next_incl as *mut IncludeStmt;
-            cstr_free((*incl).file);
-            cstr_free((*incl).map);
-            cstr_free((*incl).modifier);
-            cstr_free((*incl).stmt);
+        if !incl.is_null() {
+            // Dropping the Box will recursively drop next_incl (Option<Box<>>)
+            // and all String fields automatically
             drop(Box::from_raw(incl));
-            incl = next;
         }
     }
 }
@@ -817,7 +802,7 @@ pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
                     FreeStmt((*(stmt as *mut LedNameDef)).name as *mut ParseCommon);
                 }
                 35 | 36 => {
-                    cstr_free((*(stmt as *mut UnknownStatement)).name);
+                    // String name auto-drops via Box::from_raw below
                 }
                 _ => {}
             }
@@ -858,7 +843,7 @@ pub unsafe fn FreeXkbFile(mut file: *mut XkbFile) {
                 }
                 _ => {}
             }
-            cstr_free((*file).name);
+            // String name and child defs auto-drop via Box
             drop(Box::from_raw(file));
             file = next;
         }

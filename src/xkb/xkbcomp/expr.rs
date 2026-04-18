@@ -544,7 +544,7 @@ pub unsafe fn ExprResolveInteger(
     }
 }
 pub unsafe fn ExprResolveGroup(
-    keymap_info: *const xkb_keymap_info,
+    keymap_info: *mut xkb_keymap_info,
     expr: *const ExprDef,
     absolute: bool,
     group_rtrn: *mut u32,
@@ -1103,7 +1103,7 @@ pub unsafe fn ExprResolveMod(
     }
 }
 pub unsafe fn ExprResolveGroupMask(
-    keymap_info: *const xkb_keymap_info,
+    keymap_info: *mut xkb_keymap_info,
     expr: *const ExprDef,
     group_rtrn: *mut u32,
     pending_rtrn: *mut bool,

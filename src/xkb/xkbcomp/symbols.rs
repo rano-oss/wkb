@@ -8,7 +8,6 @@ pub use crate::xkb::shared_types::{
     XkbKeyByName, XkbKeyNumLevels, XKB_MOD_NONE, XKB_OVERLAY_INVALID,
 };
 use crate::xkb::text::ModIndexText;
-use crate::xkb::utils::cstr_free;
 
 pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
@@ -28,7 +27,7 @@ pub struct SymbolsInfo {
     pub modmaps: Vec<ModMapEntry>,
     pub mods: xkb_mod_set,
     pub ctx: *mut xkb_context,
-    pub keymap_info: *const xkb_keymap_info,
+    pub keymap_info: *mut xkb_keymap_info,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -136,7 +135,7 @@ impl SymbolsInfo {
                 explicit_vmods: 0,
             },
             ctx: std::ptr::null_mut(),
-            keymap_info: std::ptr::null(),
+            keymap_info: std::ptr::null_mut(),
         }
     }
 }
@@ -217,7 +216,7 @@ fn ClearKeyInfo(keyi: *mut KeyInfo) {
 }
 fn InitSymbolsInfo(
     info: *mut SymbolsInfo,
-    keymap_info: *const xkb_keymap_info,
+    keymap_info: *mut xkb_keymap_info,
     include_depth: u32,
     mods: *const xkb_mod_set,
 ) {
@@ -259,7 +258,7 @@ fn InitSymbolsInfo(
             &raw mut (*info).default_key,
         );
         InitActionsInfo((*keymap_info).keymap, &raw mut (*info).default_actions);
-        InitVMods(&raw mut (*info).mods, mods, include_depth > 0_u32);
+        InitVMods(&mut (*info).mods, &*mods, include_depth > 0_u32);
     }
 }
 fn ClearSymbolsInfo(info: &mut SymbolsInfo) {
@@ -886,7 +885,7 @@ fn MergeIncludedSymbols(into: &mut SymbolsInfo, from: &mut SymbolsInfo, merge: m
             into.errorCount += from.errorCount;
             return;
         }
-        MergeModSets(into.ctx, &raw mut into.mods, &raw mut from.mods, merge);
+        MergeModSets(unsafe { &mut *into.ctx }, &mut into.mods, &from.mods, merge);
         if into.name.is_none() {
             into.name = from.name.take();
         }
@@ -944,17 +943,13 @@ fn HandleIncludeSymbols(info: &mut SymbolsInfo, include: *mut IncludeStmt) -> bo
             info.include_depth.wrapping_add(1_u32),
             &raw mut info.mods,
         );
-        included.name = if (*include).stmt.is_null() {
-            None
-        } else {
-            let s = Some(String::from(
-                std::ffi::CStr::from_ptr((*include).stmt)
-                    .to_str()
-                    .unwrap_or(""),
-            ));
-            cstr_free((*include).stmt);
-            (*include).stmt = std::ptr::null_mut();
-            s
+        included.name = {
+            let inc = &mut *include;
+            if inc.stmt.is_empty() {
+                None
+            } else {
+                Some(std::mem::take(&mut inc.stmt))
+            }
         };
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
@@ -979,9 +974,10 @@ fn HandleIncludeSymbols(info: &mut SymbolsInfo, include: *mut IncludeStmt) -> bo
                 info.include_depth.wrapping_add(1_u32),
                 &raw mut included.mods,
             );
-            if !(*stmt).modifier.is_null() {
+            let stmt_ref = &*stmt;
+            if !stmt_ref.modifier.is_empty() {
                 next_incl.explicit_group =
-                    (crate::xkb::utils::cstr_atoi((*stmt).modifier) - 1_i32) as u32;
+                    (stmt_ref.modifier.parse::<i32>().unwrap_or(0) - 1_i32) as u32;
                 if next_incl.explicit_group >= info.max_groups {
                     xkb_logf!(
                         info.ctx,
@@ -1005,7 +1001,10 @@ fn HandleIncludeSymbols(info: &mut SymbolsInfo, include: *mut IncludeStmt) -> bo
             MergeIncludedSymbols(&mut included, &mut next_incl, (*stmt).merge);
             ClearSymbolsInfo(&mut next_incl);
             FreeXkbFile(file);
-            stmt = (*stmt).next_incl as *mut IncludeStmt;
+            stmt = match (*stmt).next_incl {
+                Some(ref mut b) => b.as_mut() as *mut IncludeStmt,
+                None => std::ptr::null_mut(),
+            };
         }
         MergeIncludedSymbols(info, &mut included, (*include).merge);
         ClearSymbolsInfo(&mut included);
@@ -1775,12 +1774,14 @@ fn SetSymbolsField(
             }
             if pending {
                 (*keyi).out_of_range_pending_group = true;
-                let pending_index: u32 = (&*(*info.keymap_info).pending_computations).len() as u32;
-                (&mut *(*info.keymap_info).pending_computations).push(pending_computation {
-                    expr: *value_ptr,
-                    computed: false,
-                    value: 0_u32,
-                });
+                let pending_index: u32 = (*info.keymap_info).pending_computations.len() as u32;
+                (*info.keymap_info)
+                    .pending_computations
+                    .push(pending_computation {
+                        expr: *value_ptr,
+                        computed: false,
+                        value: 0_u32,
+                    });
                 *value_ptr = std::ptr::null_mut();
                 (*keyi).out_of_range_group_number = pending_index;
             } else {
@@ -2209,14 +2210,13 @@ fn HandleModMapDef(info: &mut SymbolsInfo, def: *mut ModMapDef) -> bool {
 fn HandleSymbolsFile(info: &mut SymbolsInfo, file: *mut XkbFile) {
     unsafe {
         let mut ok: bool;
-        info.name = if (*file).name.is_null() {
-            None
-        } else {
-            Some(String::from(
-                std::ffi::CStr::from_ptr((*file).name)
-                    .to_str()
-                    .unwrap_or(""),
-            ))
+        info.name = {
+            let file_ref = &*file;
+            if file_ref.name.is_empty() {
+                None
+            } else {
+                Some(file_ref.name.clone())
+            }
         };
         let mut stmt: *mut ParseCommon = (*file).defs;
         while !stmt.is_null() {
@@ -2243,14 +2243,12 @@ fn HandleSymbolsFile(info: &mut SymbolsInfo, file: *mut XkbFile) {
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Unsupported symbols {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
-                        crate::xkb::utils::CStrDisplay(
-                            if (*stmt).type_0 == STMT_UNKNOWN_COMPOUND {
-                                b"compound\0".as_ptr() as *const i8
-                            } else {
-                                b"declaration\0".as_ptr() as *const i8
-                            }
-                        ),
-                        crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
+                        if (*stmt).type_0 == STMT_UNKNOWN_COMPOUND {
+                            "compound"
+                        } else {
+                            "declaration"
+                        },
+                        &(*(stmt as *mut UnknownStatement)).name,
                     );
                     ok = (*info.keymap_info).strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
@@ -2276,7 +2274,7 @@ fn HandleSymbolsFile(info: &mut SymbolsInfo, file: *mut XkbFile) {
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Abandoning symbols file \"{}\"\n",
                     XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-                    crate::xkb::utils::CStrDisplay(safe_map_name(file)),
+                    safe_map_name(&*file),
                 );
                 break;
             } else {

@@ -96,11 +96,11 @@ pub type ParseCommon = _ParseCommon;
 pub struct _IncludeStmt {
     pub common: ParseCommon,
     pub merge: merge_mode,
-    pub stmt: *mut i8,
-    pub file: *mut i8,
-    pub map: *mut i8,
-    pub modifier: *mut i8,
-    pub next_incl: *mut _IncludeStmt,
+    pub stmt: String,
+    pub file: String,
+    pub map: String,
+    pub modifier: String,
+    pub next_incl: Option<Box<_IncludeStmt>>,
 }
 pub type IncludeStmt = _IncludeStmt;
 
@@ -340,11 +340,11 @@ pub struct LedMapDef {
     pub body: *mut VarDef,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct UnknownStatement {
     pub common: ParseCommon,
-    pub name: *mut i8,
+    pub name: String,
 }
 
 // ── Map flags and XkbFile ───────────────────────────────────────────
@@ -359,11 +359,11 @@ pub const MAP_IS_HIDDEN: xkb_map_flags = 4;
 pub const MAP_IS_PARTIAL: xkb_map_flags = 2;
 pub const MAP_IS_DEFAULT: xkb_map_flags = 1;
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct XkbFile {
     pub common: ParseCommon,
-    pub name: *mut i8,
+    pub name: String,
     pub defs: *mut ParseCommon,
     pub file_type: u32,
     pub flags: xkb_map_flags,
@@ -405,14 +405,14 @@ pub struct pending_computation {
     pub value: u32,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct xkb_keymap_info {
     pub keymap: *mut xkb_keymap,
     pub strict: xkb_parser_strict_flags,
     pub features: XkbcompFeatures,
     pub lookup: XkbcompLookup,
-    pub pending_computations: *mut Vec<pending_computation>,
+    pub pending_computations: Vec<pending_computation>,
 }
 
 /// Lookup tables for group names/masks (was C2Rust_Unnamed_14 in xkbcomp_priv_h).
@@ -441,13 +441,11 @@ pub struct XkbcompFeatures {
 pub const false_0: i32 = 0;
 
 #[inline]
-pub unsafe fn safe_map_name(file: *mut XkbFile) -> *const i8 {
-    unsafe {
-        if !(*file).name.is_null() {
-            (*file).name as *const i8
-        } else {
-            b"(unnamed map)\0".as_ptr() as *const i8
-        }
+pub fn safe_map_name(file: &XkbFile) -> &str {
+    if file.name.is_empty() {
+        "(unnamed map)"
+    } else {
+        &file.name
     }
 }
 

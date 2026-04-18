@@ -11,12 +11,6 @@ pub const INCLUDE_MAX_DEPTH: i32 = 15_i32;
 pub const MERGE_OVERRIDE_PREFIX: i32 = '+' as i32;
 pub const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
 pub const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
-pub static MERGE_MODE_PREFIXES: [i8; 4] = [
-    MERGE_OVERRIDE_PREFIX as i8,
-    MERGE_AUGMENT_PREFIX as i8,
-    MERGE_REPLACE_PREFIX as i8,
-    0_i32 as i8,
-];
 
 pub use crate::xkb::messages::{
     xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
@@ -81,78 +75,65 @@ pub use crate::xkb::shared_ast_types::{
     STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-use crate::xkb::utils::cstr_dup;
 use crate::xkb::utils::is_absolute_path;
-use crate::xkb::utils::{cstr_free, cstr_len};
 use crate::xkb::xkbcomp::scanner::XkbParseFile;
 use libc::{fclose, fopen, FILE};
-pub unsafe fn ParseIncludeMap(
-    str_inout: *mut *mut i8,
-    file_rtrn: *mut *mut i8,
-    map_rtrn: *mut *mut i8,
-    nextop_rtrn: *mut i8,
-    extra_data: *mut *mut i8,
-) -> bool {
-    unsafe {
-        let mut tmp: *mut i8;
-        let mut str: *mut i8;
-        let mut next: *mut i8;
-        str = *str_inout;
-        next = crate::xkb::utils::cstr_pbrk(str, &raw const MERGE_MODE_PREFIXES as *const i8);
-        if !next.is_null() {
-            *nextop_rtrn = *next;
-            let c2rust_fresh2 = next;
-            next = next.offset(1);
-            *c2rust_fresh2 = '\0' as i32 as i8;
-        } else {
-            *nextop_rtrn = '\0' as i32 as i8;
-            next = std::ptr::null_mut();
+
+/// Parsed result from one segment of an include statement.
+pub struct ParsedIncludeMap {
+    pub file: String,
+    pub map: String,
+    pub extra_data: String,
+    pub nextop: char,
+}
+
+/// Parse one include map segment from `input`, returning the parsed result
+/// and the remaining input (if any). Returns None on parse error.
+pub fn ParseIncludeMap(input: &str) -> Option<(ParsedIncludeMap, Option<&str>)> {
+    // Split at merge-mode prefix (+, |, ^)
+    let (segment, nextop, rest) = if let Some(pos) = input.find(&['+', '|', '^'][..]) {
+        let op = input.as_bytes()[pos] as char;
+        (&input[..pos], op, Some(&input[pos + 1..]))
+    } else {
+        (input, '\0', None)
+    };
+
+    // Split off extra_data after ':'
+    let (segment, extra_data) = if let Some(pos) = segment.find(':') {
+        (&segment[..pos], segment[pos + 1..].to_string())
+    } else {
+        (segment, String::new())
+    };
+
+    // Parse file(map) pattern
+    let (file, map) = if let Some(pos) = segment.find('(') {
+        if pos == 0 {
+            return None; // starts with '(' — invalid
         }
-        tmp = crate::xkb::utils::cstr_chr(str, ':' as i32);
-        if !tmp.is_null() {
-            let c2rust_fresh3 = tmp;
-            tmp = tmp.offset(1);
-            *c2rust_fresh3 = '\0' as i32 as i8;
-            *extra_data = cstr_dup(tmp);
-        } else {
-            *extra_data = std::ptr::null_mut();
+        let rest_paren = &segment[pos + 1..];
+        if !rest_paren.ends_with(')') || rest_paren.len() < 1 {
+            return None;
         }
-        tmp = crate::xkb::utils::cstr_chr(str, '(' as i32);
-        if tmp.is_null() {
-            *file_rtrn = cstr_dup(str);
-            *map_rtrn = std::ptr::null_mut();
-        } else if *str.offset(0_i32 as isize) as i32 == '(' as i32 {
-            cstr_free(*extra_data);
-            return false;
-        } else {
-            let c2rust_fresh4 = tmp;
-            tmp = tmp.offset(1);
-            *c2rust_fresh4 = '\0' as i32 as i8;
-            *file_rtrn = cstr_dup(str);
-            str = tmp;
-            tmp = crate::xkb::utils::cstr_chr(str, ')' as i32);
-            if tmp.is_null() || *tmp.offset(1_i32 as isize) as i32 != '\0' as i32 {
-                cstr_free(*file_rtrn);
-                cstr_free(*extra_data);
-                return false;
-            }
-            let c2rust_fresh5 = tmp;
-            // dead store removed: tmp = tmp.offset(1);
-            *c2rust_fresh5 = '\0' as i32 as i8;
-            *map_rtrn = cstr_dup(str);
-        }
-        if *nextop_rtrn as i32 == '\0' as i32 {
-            *str_inout = std::ptr::null_mut();
-        } else if *nextop_rtrn as i32 == MERGE_OVERRIDE_PREFIX
-            || *nextop_rtrn as i32 == MERGE_AUGMENT_PREFIX
-            || *nextop_rtrn as i32 == MERGE_REPLACE_PREFIX
-        {
-            *str_inout = next;
-        } else {
-            return false;
-        }
-        true
+        let map_str = &rest_paren[..rest_paren.len() - 1];
+        (segment[..pos].to_string(), map_str.to_string())
+    } else {
+        (segment.to_string(), String::new())
+    };
+
+    // Validate nextop
+    if nextop != '\0' && nextop != '+' && nextop != '|' && nextop != '^' {
+        return None;
     }
+
+    Some((
+        ParsedIncludeMap {
+            file,
+            map,
+            extra_data,
+            nextop,
+        },
+        rest,
+    ))
 }
 static XKB_FILE_TYPE_INCLUDE_DIRS: [&str; 7] = [
     "keycodes",
@@ -500,7 +481,6 @@ pub unsafe fn FindFileInXkbPath(
             }
             _ => {}
         }
-        cstr_free(name_buffer);
         file
     }
 }
@@ -529,12 +509,16 @@ pub unsafe fn ProcessIncludeFile(
     unsafe {
         let mut xkb_file: *mut XkbFile = std::ptr::null_mut();
         let mut candidate: *mut XkbFile = std::ptr::null_mut();
-        let mut stmt_file = (*stmt).file;
-        let mut stmt_file_len: usize = cstr_len(stmt_file);
+        let stmt_ref = &*stmt;
+
+        // Create CStrings for FFI calls
+        let file_cstr = std::ffi::CString::new(stmt_ref.file.as_str()).unwrap();
+        let mut stmt_file: *const i8 = file_cstr.as_ptr();
+        let mut stmt_file_len: usize = stmt_ref.file.len();
         let expanded: isize = expand_path(
             ctx,
             b"(unknown)\0".as_ptr() as *const i8,
-            stmt_file,
+            stmt_file as *const i8,
             stmt_file_len,
             file_type,
             path,
@@ -548,16 +532,16 @@ pub unsafe fn ProcessIncludeFile(
         }
         let mut file: *mut FILE;
         let mut offset: u32 = 0_u32;
-        let absolute_path: bool = is_absolute_path(stmt_file);
+        let absolute_path: bool = is_absolute_path(stmt_file as *const i8);
         if absolute_path {
-            file = fopen(stmt_file, b"rb\0".as_ptr() as *const i8) as *mut FILE;
+            file = fopen(stmt_file as *const i8, b"rb\0".as_ptr() as *const i8) as *mut FILE;
         } else if (expanded != 0) as i64 != 0 {
             file = std::ptr::null_mut();
         } else {
             file = FindFileInXkbPath(
                 ctx,
                 b"(unknown)\0".as_ptr() as *const i8,
-                stmt_file,
+                stmt_file as *const i8,
                 stmt_file_len,
                 file_type,
                 path,
@@ -566,8 +550,14 @@ pub unsafe fn ProcessIncludeFile(
                 true,
             );
         }
+        let map_cstr = if stmt_ref.map.is_empty() {
+            None
+        } else {
+            Some(std::ffi::CString::new(stmt_ref.map.as_str()).unwrap())
+        };
+        let map_ptr = map_cstr.as_ref().map_or(std::ptr::null(), |c| c.as_ptr());
         while !file.is_null() {
-            xkb_file = XkbParseFile(ctx, file, (*stmt).file, (*stmt).map);
+            xkb_file = XkbParseFile(ctx, file, file_cstr.as_ptr(), map_ptr);
             fclose(file);
             if !xkb_file.is_null() {
                 if (*xkb_file).file_type as u32 != file_type {
@@ -579,11 +569,11 @@ pub unsafe fn ProcessIncludeFile(
                         XKB_ERROR_INVALID_INCLUDED_FILE as i32,
                         xkb_file_type_to_string(file_type),
                         xkb_file_type_to_string((*xkb_file).file_type),
-                        crate::xkb::utils::CStrDisplay((*stmt).file),
+                        &stmt_ref.file,
                     );
                     FreeXkbFile(xkb_file);
                     xkb_file = std::ptr::null_mut();
-                } else if !(*stmt).map.is_null()
+                } else if !stmt_ref.map.is_empty()
                     || (*xkb_file).flags as u32 != 0 && MAP_IS_DEFAULT as i32 != 0
                 {
                     break;
@@ -602,7 +592,7 @@ pub unsafe fn ProcessIncludeFile(
             file = FindFileInXkbPath(
                 ctx,
                 b"(unknown)\0".as_ptr() as *const i8,
-                stmt_file,
+                stmt_file as *const i8,
                 stmt_file_len,
                 file_type,
                 path,
@@ -617,15 +607,15 @@ pub unsafe fn ProcessIncludeFile(
             FreeXkbFile(candidate);
         }
         if xkb_file.is_null() {
-            if !(*stmt).map.is_null() {
+            if !stmt_ref.map.is_empty() {
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Couldn't process include statement for '{}({})'\n",
                     XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                    crate::xkb::utils::CStrDisplay((*stmt).file),
-                    crate::xkb::utils::CStrDisplay((*stmt).map),
+                    &stmt_ref.file,
+                    &stmt_ref.map,
                 );
             } else {
                 xkb_logf!(
@@ -634,7 +624,7 @@ pub unsafe fn ProcessIncludeFile(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Couldn't process include statement for '{}'\n",
                     XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                    crate::xkb::utils::CStrDisplay((*stmt).file),
+                    &stmt_ref.file,
                 );
             }
         }

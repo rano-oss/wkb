@@ -524,7 +524,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
             }
             let start_0: *const i8 = (*s).s.add((*s).token_pos);
             let len_0: usize = (*s).pos - (*s).token_pos;
-            tok = keyword_to_token(start_0, len_0);
+            tok = keyword_to_token(std::slice::from_raw_parts(start_0 as *const u8, len_0));
             if tok >= 0 {
                 return tok;
             }

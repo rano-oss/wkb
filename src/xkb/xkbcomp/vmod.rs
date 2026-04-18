@@ -25,77 +25,54 @@ pub use crate::xkb::shared_types::{
 };
 use crate::xkb::text::ModMaskText;
 use crate::xkb::xkbcomp::expr::ExprResolveModMask;
-pub unsafe fn InitVMods(info: *mut xkb_mod_set, mods: *const xkb_mod_set, reset: bool) {
-    unsafe {
-        *info = *mods;
-        if !reset {
-            return;
-        }
-        let mut mod_0: *mut xkb_mod;
-        let mut vmod: u32;
-        vmod = 0_u32;
-        mod_0 = &raw mut (*info).mods as *mut xkb_mod;
-        while vmod < (*info).num_mods {
-            (*mod_0).mapping = 0_u32;
-            vmod = vmod.wrapping_add(1);
-            mod_0 = mod_0.offset(1);
-        }
-        (*info).explicit_vmods = 0_u32;
+pub fn InitVMods(info: &mut xkb_mod_set, mods: &xkb_mod_set, reset: bool) {
+    *info = *mods;
+    if !reset {
+        return;
     }
+    for vmod in 0..info.num_mods as usize {
+        info.mods[vmod].mapping = 0_u32;
+    }
+    info.explicit_vmods = 0_u32;
 }
-pub unsafe fn MergeModSets(
-    ctx: *mut xkb_context,
-    into: *mut xkb_mod_set,
-    from: *const xkb_mod_set,
+pub fn MergeModSets(
+    ctx: &mut xkb_context,
+    into: &mut xkb_mod_set,
+    from: &xkb_mod_set,
     merge: merge_mode,
 ) {
-    unsafe {
-        let clobber: bool = merge != MERGE_AUGMENT;
-        let mut vmod: u32;
-        let mut mod_0: *const xkb_mod;
-        vmod = 0_u32;
-        mod_0 = &raw const (*from).mods as *const xkb_mod;
-        while vmod < (*from).num_mods {
-            let mask: u32 = 1_u32 << vmod;
-            if (*mod_0).type_0 != MOD_VIRT {
-            } else if (*into).mods[vmod as usize].type_0 == 0_u32 {
-                (*into).mods[vmod as usize] = *mod_0;
-                if (*from).explicit_vmods & mask != 0 {
-                    (*into).explicit_vmods |= mask;
-                }
-            } else {
-                if (*from).explicit_vmods & mask == 0 {
-                } else if (*into).explicit_vmods & mask == 0 {
-                    (*into).mods[vmod as usize].mapping = (*mod_0).mapping;
-                    (*into).explicit_vmods |= mask;
-                } else if (*mod_0).mapping != (*into).mods[vmod as usize].mapping {
-                    let use_0: u32 = if clobber as i32 != 0 {
-                        (*mod_0).mapping
-                    } else {
-                        (*into).mods[vmod as usize].mapping
-                    };
-                    let ignore: u32 = if clobber as i32 != 0 {
-                        (*into).mods[vmod as usize].mapping
-                    } else {
-                        (*mod_0).mapping
-                    };
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
-                        xkb_atom_text(&(*ctx).atom_table, (*mod_0).name),
-                        ModMaskText(&*ctx, MOD_REAL, &*from, use_0),
-                        ModMaskText(&*ctx, MOD_REAL, &*from, ignore),
-                    );
-                    (*into).mods[vmod as usize].mapping = use_0;
-                }
+    let clobber: bool = merge != MERGE_AUGMENT;
+    for vmod in 0..from.num_mods as usize {
+        let mod_0 = &from.mods[vmod];
+        let mask: u32 = 1_u32 << vmod;
+        if mod_0.type_0 != MOD_VIRT {
+        } else if into.mods[vmod].type_0 == 0_u32 {
+            into.mods[vmod] = *mod_0;
+            if from.explicit_vmods & mask != 0 {
+                into.explicit_vmods |= mask;
             }
-            vmod = vmod.wrapping_add(1);
-            mod_0 = mod_0.offset(1);
+        } else {
+            if from.explicit_vmods & mask == 0 {
+            } else if into.explicit_vmods & mask == 0 {
+                into.mods[vmod].mapping = mod_0.mapping;
+                into.explicit_vmods |= mask;
+            } else if mod_0.mapping != into.mods[vmod].mapping {
+                let use_0: u32 = if clobber { mod_0.mapping } else { into.mods[vmod].mapping };
+                let ignore: u32 = if clobber { into.mods[vmod].mapping } else { mod_0.mapping };
+                xkb_logf!(
+                    ctx,
+                    XKB_LOG_LEVEL_WARNING,
+                    XKB_LOG_VERBOSITY_MINIMAL as i32,
+                    "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
+                    xkb_atom_text(&ctx.atom_table, mod_0.name),
+                    ModMaskText(ctx, MOD_REAL, from, use_0),
+                    ModMaskText(ctx, MOD_REAL, from, ignore),
+                );
+                into.mods[vmod].mapping = use_0;
+            }
         }
-        (*into).num_mods = (*from).num_mods;
     }
+    into.num_mods = from.num_mods;
 }
 pub unsafe fn HandleVModDef(
     ctx: *mut xkb_context,
@@ -119,19 +96,15 @@ pub unsafe fn HandleVModDef(
             );
             return false;
         }
-        let mut vmod: u32;
-        let mut mod_0: *mut xkb_mod;
-        vmod = 0_u32;
-        mod_0 = &raw mut (*mods).mods as *mut xkb_mod;
-        while vmod < (*mods).num_mods {
-            if (*mod_0).name == (*stmt).name {
-                if (*mod_0).type_0 != MOD_VIRT {
+        for vmod in 0..(*mods).num_mods as usize {
+            if (*mods).mods[vmod].name == (*stmt).name {
+                if (*mods).mods[vmod].type_0 != MOD_VIRT {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Can't add a virtual modifier named \"{}\"; there is already a non-virtual modifier with this name! Ignored\n",
-                        xkb_atom_text(&(*ctx).atom_table, (*mod_0).name),
+                        xkb_atom_text(&(*ctx).atom_table, (*mods).mods[vmod].name),
                     );
                     return false;
                 }
@@ -139,19 +112,11 @@ pub unsafe fn HandleVModDef(
                 if (*stmt).value.is_null() {
                     return true;
                 } else if (*mods).explicit_vmods & mask == 0 {
-                    (*mod_0).mapping = mapping;
-                } else if (*mod_0).mapping != mapping {
+                    (*mods).mods[vmod].mapping = mapping;
+                } else if (*mods).mods[vmod].mapping != mapping {
                     let clobber: bool = (*stmt).merge != MERGE_AUGMENT;
-                    let use_0: u32 = if clobber as i32 != 0 {
-                        mapping
-                    } else {
-                        (*mod_0).mapping
-                    };
-                    let ignore: u32 = if clobber as i32 != 0 {
-                        (*mod_0).mapping
-                    } else {
-                        mapping
-                    };
+                    let use_0: u32 = if clobber { mapping } else { (*mods).mods[vmod].mapping };
+                    let ignore: u32 = if clobber { (*mods).mods[vmod].mapping } else { mapping };
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
@@ -161,13 +126,11 @@ pub unsafe fn HandleVModDef(
                         ModMaskText(&*ctx, MOD_REAL, &*mods, use_0),
                         ModMaskText(&*ctx, MOD_REAL, &*mods, ignore),
                     );
-                    (*mod_0).mapping = use_0;
+                    (*mods).mods[vmod].mapping = use_0;
                 }
                 (*mods).explicit_vmods |= mask;
                 return true;
             }
-            vmod = vmod.wrapping_add(1);
-            mod_0 = mod_0.offset(1);
         }
         if (*mods).num_mods >= XKB_MAX_MODS {
             xkb_logf!(

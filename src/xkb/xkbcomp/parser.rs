@@ -760,7 +760,9 @@ pub unsafe fn parse(ctx: *mut xkb_context, scanner: *mut scanner, map: *const i8
                 break;
             }
             if !map.is_null() {
-                if streq_not_null(map, (*param.rtrn).name) {
+                let map_str = std::ffi::CStr::from_ptr(map).to_str().unwrap_or("");
+                let rtrn_ref = &*param.rtrn;
+                if map_str == rtrn_ref.name {
                     return param.rtrn;
                 } else {
                     FreeXkbFile(param.rtrn);
@@ -788,7 +790,7 @@ pub unsafe fn parse(ctx: *mut xkb_context, scanner: *mut scanner, map: *const i8
                 "[XKB-{:03}] No map in include statement, but \"{}\" contains several; Using first defined map, \"{}\"\n",
                 XKB_WARNING_MISSING_DEFAULT_SECTION as i32,
                 crate::xkb::utils::CStrDisplay((*scanner).file_name),
-                crate::xkb::utils::CStrDisplay(safe_map_name(first)),
+                safe_map_name(&*first),
             );
         }
         first

@@ -11,7 +11,7 @@ pub struct KeyTypesInfo {
     pub types: Vec<KeyTypeInfo>,
     pub mods: xkb_mod_set,
     pub ctx: *mut xkb_context,
-    pub keymap_info: *const xkb_keymap_info,
+    pub keymap_info: *mut xkb_keymap_info,
 }
 impl KeyTypesInfo {
     pub fn new_zeroed() -> Self {
@@ -30,7 +30,7 @@ impl KeyTypesInfo {
                 explicit_vmods: 0,
             },
             ctx: std::ptr::null_mut(),
-            keymap_info: std::ptr::null(),
+            keymap_info: std::ptr::null_mut(),
         }
     }
     #[inline]
@@ -97,7 +97,7 @@ fn ReportTypeBadType(
 }
 fn InitKeyTypesInfo(
     info: &mut KeyTypesInfo,
-    keymap_info: *const xkb_keymap_info,
+    keymap_info: *mut xkb_keymap_info,
     include_depth: u32,
     mods: *const xkb_mod_set,
 ) {
@@ -110,7 +110,7 @@ fn InitKeyTypesInfo(
         info.ctx = &raw mut (*(*keymap_info).keymap).ctx;
         info.keymap_info = keymap_info;
         info.include_depth = include_depth;
-        InitVMods(&raw mut info.mods, mods, include_depth > 0_u32);
+        InitVMods(&mut info.mods, unsafe { &*mods }, include_depth > 0_u32);
     }
 }
 fn ClearKeyTypeInfo(type_0: &mut KeyTypeInfo) {
@@ -177,7 +177,7 @@ fn MergeIncludedKeyTypes(into: &mut KeyTypesInfo, from: &mut KeyTypesInfo, merge
             into.errorCount += from.errorCount;
             return;
         }
-        MergeModSets(into.ctx, &raw mut into.mods, &raw mut from.mods, merge);
+        MergeModSets(unsafe { &mut *into.ctx }, &mut into.mods, &from.mods, merge);
         if into.name.is_none() {
             into.name = from.name.take();
         }
@@ -210,16 +210,11 @@ fn HandleIncludeKeyTypes(info: &mut KeyTypesInfo, include: *mut IncludeStmt) -> 
             &info.mods,
         );
         included.name = {
-            let ptr = _steal(&raw mut (*include).stmt as *mut ::core::ffi::c_void) as *const i8;
-            if ptr.is_null() {
+            let inc = &mut *include;
+            if inc.stmt.is_empty() {
                 None
             } else {
-                Some(
-                    std::ffi::CStr::from_ptr(ptr)
-                        .to_str()
-                        .unwrap_or("")
-                        .to_string(),
-                )
+                Some(std::mem::take(&mut inc.stmt))
             }
         };
         let mut stmt: *mut IncludeStmt = include;
@@ -249,7 +244,10 @@ fn HandleIncludeKeyTypes(info: &mut KeyTypesInfo, include: *mut IncludeStmt) -> 
             MergeIncludedKeyTypes(&mut included, &mut next_incl, (*stmt).merge);
             ClearKeyTypesInfo(&mut next_incl);
             FreeXkbFile(file);
-            stmt = (*stmt).next_incl as *mut IncludeStmt;
+            stmt = match (*stmt).next_incl {
+                Some(ref mut b) => b.as_mut() as *mut IncludeStmt,
+                None => std::ptr::null_mut(),
+            };
         }
         MergeIncludedKeyTypes(info, &mut included, (*include).merge);
         ClearKeyTypesInfo(&mut included);
@@ -796,16 +794,11 @@ unsafe fn HandleKeyTypesFile(info: &mut KeyTypesInfo, file: *mut XkbFile) {
     unsafe {
         let mut ok: bool;
         info.name = {
-            let ptr = (*file).name as *const i8;
-            if ptr.is_null() {
+            let file_ref = &*file;
+            if file_ref.name.is_empty() {
                 None
             } else {
-                Some(
-                    std::ffi::CStr::from_ptr(ptr)
-                        .to_str()
-                        .unwrap_or("")
-                        .to_string(),
-                )
+                Some(file_ref.name.clone())
             }
         };
         let mut stmt: *mut ParseCommon = (*file).defs;
@@ -849,14 +842,12 @@ unsafe fn HandleKeyTypesFile(info: &mut KeyTypesInfo, file: *mut XkbFile) {
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Unsupported types {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
-                        crate::xkb::utils::CStrDisplay(
-                            if (*stmt).type_0 == STMT_UNKNOWN_COMPOUND {
-                                b"compound\0".as_ptr() as *const i8
-                            } else {
-                                b"declaration\0".as_ptr() as *const i8
-                            }
-                        ),
-                        crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
+                        if (*stmt).type_0 == STMT_UNKNOWN_COMPOUND {
+                            "compound"
+                        } else {
+                            "declaration"
+                        },
+                        &(*(stmt as *mut UnknownStatement)).name,
                     );
                     ok = (*info.keymap_info).strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
@@ -882,7 +873,7 @@ unsafe fn HandleKeyTypesFile(info: &mut KeyTypesInfo, file: *mut XkbFile) {
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Abandoning keytypes file \"{}\"\n",
                     XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-                    crate::xkb::utils::CStrDisplay(safe_map_name(file)),
+                    safe_map_name(&*file),
                 );
                 break;
             } else {

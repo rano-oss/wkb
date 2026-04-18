@@ -22,7 +22,7 @@ pub struct CompatInfo {
     pub num_leds: u32,
     pub default_actions: ActionsInfo,
     pub mods: xkb_mod_set,
-    pub keymap_info: *const xkb_keymap_info,
+    pub keymap_info: *mut xkb_keymap_info,
     pub ctx: *mut xkb_context,
 }
 impl CompatInfo {
@@ -84,7 +84,7 @@ impl CompatInfo {
                 num_mods: 0,
                 explicit_vmods: 0,
             },
-            keymap_info: std::ptr::null(),
+            keymap_info: std::ptr::null_mut(),
             ctx: std::ptr::null_mut(),
         }
     }
@@ -169,12 +169,7 @@ fn LEDText(info: &mut CompatInfo, ledi: *mut LedInfo) -> &'static str {
     }
 }
 #[inline]
-fn ReportLedBadType(
-    info: &mut CompatInfo,
-    ledi: *mut LedInfo,
-    field: &str,
-    wanted: &str,
-) -> bool {
+fn ReportLedBadType(info: &mut CompatInfo, ledi: *mut LedInfo, field: &str, wanted: &str) -> bool {
     unsafe {
         ReportBadType(
             info.ctx,
@@ -205,7 +200,7 @@ fn InitLED(info: *mut LedInfo) {
 }
 fn InitCompatInfo(
     info: &mut CompatInfo,
-    keymap_info: *const xkb_keymap_info,
+    keymap_info: *mut xkb_keymap_info,
     include_depth: u32,
     mods: *const xkb_mod_set,
 ) {
@@ -215,7 +210,7 @@ fn InitCompatInfo(
         info.keymap_info = keymap_info;
         info.include_depth = include_depth;
         InitActionsInfo((*keymap_info).keymap, &raw mut info.default_actions);
-        InitVMods(&raw mut info.mods, mods, include_depth > 0_u32);
+        InitVMods(&mut info.mods, unsafe { &*mods }, include_depth > 0_u32);
         InitInterp(&raw mut info.default_interp);
         InitLED(&raw mut info.default_led);
     }
@@ -536,7 +531,7 @@ fn MergeIncludedCompatMaps(into: &mut CompatInfo, from: &mut CompatInfo, merge: 
             into.errorCount += from.errorCount;
             return;
         }
-        MergeModSets(into.ctx, &raw mut into.mods, &raw mut from.mods, merge);
+        MergeModSets(unsafe { &mut *into.ctx }, &mut into.mods, &from.mods, merge);
         if into.name.is_none() {
             into.name = from.name.take();
         }
@@ -586,14 +581,13 @@ fn HandleIncludeCompatMap(info: &mut CompatInfo, include: *mut IncludeStmt) -> b
             info.include_depth.wrapping_add(1_u32),
             &info.mods,
         );
-        included.name = if (*include).stmt.is_null() {
-            None
-        } else {
-            Some(String::from(
-                std::ffi::CStr::from_ptr((*include).stmt)
-                    .to_str()
-                    .unwrap_or(""),
-            ))
+        included.name = {
+            let inc = &*include;
+            if inc.stmt.is_empty() {
+                None
+            } else {
+                Some(inc.stmt.clone())
+            }
         };
         let mut stmt: *mut IncludeStmt = include;
         while !stmt.is_null() {
@@ -624,7 +618,10 @@ fn HandleIncludeCompatMap(info: &mut CompatInfo, include: *mut IncludeStmt) -> b
             MergeIncludedCompatMaps(&mut included, &mut next_incl, (*stmt).merge);
             ClearCompatInfo(&mut next_incl);
             FreeXkbFile(file);
-            stmt = (*stmt).next_incl as *mut IncludeStmt;
+            stmt = match (*stmt).next_incl {
+                Some(ref mut b) => b.as_mut() as *mut IncludeStmt,
+                None => std::ptr::null_mut(),
+            };
         }
         MergeIncludedCompatMaps(info, &mut included, (*include).merge);
         ClearCompatInfo(&mut included);
@@ -809,13 +806,14 @@ fn SetLedMapField(
             if !ExprResolveGroupMask(info.keymap_info, value, &raw mut mask, &raw mut pending) {
                 if pending {
                     (*ledi).led.pending_groups = true;
-                    let pending_index: u32 =
-                        (&*(*info.keymap_info).pending_computations).len() as u32;
-                    (&mut *(*info.keymap_info).pending_computations).push(pending_computation {
-                        expr: *value_ptr,
-                        computed: false,
-                        value: 0_u32,
-                    });
+                    let pending_index: u32 = (*info.keymap_info).pending_computations.len() as u32;
+                    (*info.keymap_info)
+                        .pending_computations
+                        .push(pending_computation {
+                            expr: *value_ptr,
+                            computed: false,
+                            value: 0_u32,
+                        });
                     *value_ptr = std::ptr::null_mut();
                     mask = pending_index;
                 } else {
@@ -999,11 +997,7 @@ fn HandleGlobalVar(info: &mut CompatInfo, stmt: *mut VarDef) -> bool {
         ret
     }
 }
-fn HandleInterpBody(
-    info: &mut CompatInfo,
-    mut def: *mut VarDef,
-    si: *mut SymInterpInfo,
-) -> bool {
+fn HandleInterpBody(info: &mut CompatInfo, mut def: *mut VarDef, si: *mut SymInterpInfo) -> bool {
     unsafe {
         let mut ok: bool = true;
         let mut elem: &str = "";
@@ -1132,14 +1126,13 @@ fn HandleLedMapDef(info: &mut CompatInfo, def: *mut LedMapDef) -> bool {
 fn HandleCompatMapFile(info: &mut CompatInfo, file: *mut XkbFile) {
     unsafe {
         let mut ok: bool;
-        info.name = if (*file).name.is_null() {
-            None
-        } else {
-            Some(String::from(
-                std::ffi::CStr::from_ptr((*file).name)
-                    .to_str()
-                    .unwrap_or(""),
-            ))
+        info.name = {
+            let file_ref = &*file;
+            if file_ref.name.is_empty() {
+                None
+            } else {
+                Some(file_ref.name.clone())
+            }
         };
         let mut stmt: *mut ParseCommon = (*file).defs;
         while !stmt.is_null() {
@@ -1175,14 +1168,12 @@ fn HandleCompatMapFile(info: &mut CompatInfo, file: *mut XkbFile) {
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Unsupported compatibility {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
-                        crate::xkb::utils::CStrDisplay(
-                            if (*stmt).type_0 == STMT_UNKNOWN_COMPOUND {
-                                b"compound\0".as_ptr() as *const i8
-                            } else {
-                                b"declaration\0".as_ptr() as *const i8
-                            }
-                        ),
-                        crate::xkb::utils::CStrDisplay((*(stmt as *mut UnknownStatement)).name),
+                        if (*stmt).type_0 == STMT_UNKNOWN_COMPOUND {
+                            "compound"
+                        } else {
+                            "declaration"
+                        },
+                        &(*(stmt as *mut UnknownStatement)).name,
                     );
                     ok = (*info.keymap_info).strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
@@ -1206,7 +1197,7 @@ fn HandleCompatMapFile(info: &mut CompatInfo, file: *mut XkbFile) {
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Abandoning compatibility map \"{}\"\n",
-                    crate::xkb::utils::CStrDisplay(safe_map_name(file)),
+                    safe_map_name(&*file),
                 );
                 break;
             } else {
