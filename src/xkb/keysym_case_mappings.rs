@@ -9,242 +9,242 @@ pub struct CaseMappings {
     pub offset: i32,
 }
 static LEGACY_KEYSYM_DATA: [CaseMappings; 47] = [
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x1001dbf_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x717_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x12bf_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xfff89b_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x10_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x10_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x2_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x10_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x10_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x12bf_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x240_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x2_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x270_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x21_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-        ];
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x1001dbf_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x717_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x12bf_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xfff89b_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x10_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x10_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x2_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x10_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x10_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x12bf_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x240_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x2_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x270_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x21_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+];
 static LEGACY_KEYSYM_OFFSETS1: [u8; 540] = [
     0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2,
     0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x2, 0x3, 0x6, 0x6, 0x6, 0x6, 0x6,
@@ -296,5102 +296,5102 @@ unsafe fn get_legacy_keysym_entry(ks: u32) -> *const CaseMappings {
     }
 }
 static UNICODE_DATA: [CaseMappings; 1019] = [
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x80_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x80_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x70_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x70_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x7e_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x7e_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xa515_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xa512_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x2_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x2_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x61_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x38_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x1dbf_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x64_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x64_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x4a_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x4a_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x9_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1c25_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x79_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x2a1f_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x2a1c_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x2a1e_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xd2_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xce_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xcd_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xcd_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xa54b_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xcf_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xa567_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xa528_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xa544_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x2e7_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x9_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x7_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xf_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x20bf_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x2046_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x89c2_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x26_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x80_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x80_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x7e_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x7e_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x9_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x3e_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x39_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x2f_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x36_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x2_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x2_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x2_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x2_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x30_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xa543_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8a38_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xa3_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xa641_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xd3_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xd5_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x82_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xd6_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xc7_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xe8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xda_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xf_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x2a1c_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x29fd_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x2a1f_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1c_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x7_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x82_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x82_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x82_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x4f_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xa544_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xa54f_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xa54b_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xa541_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xa544_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xca_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xcb_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xa54f_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x3a0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x2a3f_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x2a3f_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x22_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x9_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xdb_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1a_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x54_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1b_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xa528_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1f_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x3f_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x3f_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x3b_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x1dbf_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x30_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8a04_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xee6_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1c60_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x82_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x82_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x82_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x74_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xa567_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1c_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xa512_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xa52a_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xa515_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x3a0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x28_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x27_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x2a1e_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x38_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xda_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x45_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xd9_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xd9_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x47_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x29e7_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x8a38_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x29fd_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xd5_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xd6_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x2a2b_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xa3_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x2a28_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x2a3f_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xc3_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x45_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x47_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xa641_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x1d5d_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xbc0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xda_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xda_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x30_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8a04_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x29f7_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0xee6_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x29e7_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x2a2b_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x2a28_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x79_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x12c_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x56_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x56_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x56_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x56_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x9_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x8_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x70_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x70_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x7_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xc3_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xd2_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xce_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x4a_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x4a_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x56_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x56_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x56_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x56_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x64_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x64_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xcd_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xcd_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x4f_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xca_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xd9_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xd9_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xdb_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x56_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x7_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x74_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: -0x3c_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x60_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xd1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xd3_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xa544_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x29f7_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xa541_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xd3_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xda_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xa543_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0xda_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0xa52a_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x186e_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x186d_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1864_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1862_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1862_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1863_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x185c_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1825_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x10_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x20_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x26_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x25_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x25_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x25_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x25_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x25_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x25_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x40_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: false,
-                offset: 0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x3f_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x3f_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x50_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xcb_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: 0x1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xcd_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xcf_i32,
-            },
-            CaseMappings {
-                lower: false,
-                upper: true,
-                offset: -0x61_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xd3_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0xd1_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x97d0_i32,
-            },
-            CaseMappings {
-                lower: true,
-                upper: false,
-                offset: 0x97d0_i32,
-            },
-        ];
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x80_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x80_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x70_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x70_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x7e_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x7e_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xa515_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xa512_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x2_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x2_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x61_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x38_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x1dbf_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x64_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x64_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x4a_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x4a_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x9_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1c25_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x79_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x2a1f_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x2a1c_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x2a1e_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xd2_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xce_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xcd_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xcd_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xa54b_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xcf_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xa567_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xa528_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xa544_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x2e7_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x9_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x7_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xf_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x20bf_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x2046_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x89c2_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x26_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x80_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x80_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x7e_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x7e_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x9_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x3e_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x39_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x2f_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x36_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x2_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x2_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x2_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x2_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x30_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xa543_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8a38_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xa3_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xa641_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xd3_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xd5_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x82_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xd6_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xc7_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xe8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xda_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xf_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x2a1c_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x29fd_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x2a1f_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1c_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x7_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x82_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x82_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x82_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x4f_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xa544_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xa54f_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xa54b_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xa541_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xa544_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xca_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xcb_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xa54f_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x3a0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x2a3f_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x2a3f_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x22_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x9_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xdb_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1a_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x54_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1b_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xa528_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1f_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x3f_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x3f_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x3b_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x1dbf_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x30_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8a04_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xee6_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1c60_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x82_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x82_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x82_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x74_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xa567_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1c_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xa512_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xa52a_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xa515_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x3a0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x28_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x27_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x2a1e_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x38_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xda_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x45_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xd9_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xd9_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x47_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x29e7_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x8a38_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x29fd_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xd5_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xd6_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x2a2b_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xa3_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x2a28_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x2a3f_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xc3_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x45_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x47_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xa641_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x1d5d_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xbc0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xda_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xda_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x30_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8a04_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x29f7_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0xee6_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x29e7_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x2a2b_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x2a28_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x79_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x12c_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x56_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x56_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x56_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x56_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x9_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x8_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x70_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x70_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x7_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xc3_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xd2_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xce_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x4a_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x4a_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x56_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x56_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x56_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x56_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x64_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x64_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xcd_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xcd_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x4f_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xca_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xd9_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xd9_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xdb_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x56_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x7_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x74_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: -0x3c_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x60_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xd1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xd3_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xa544_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x29f7_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xa541_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xd3_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xda_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xa543_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0xda_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0xa52a_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x186e_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x186d_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1864_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1862_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1862_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1863_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x185c_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1825_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x10_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x20_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x26_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x25_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x25_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x25_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x25_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x25_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x25_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x40_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: false,
+        offset: 0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x3f_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x3f_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x50_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xcb_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: 0x1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xcd_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xcf_i32,
+    },
+    CaseMappings {
+        lower: false,
+        upper: true,
+        offset: -0x61_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xd3_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0xd1_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x97d0_i32,
+    },
+    CaseMappings {
+        lower: true,
+        upper: false,
+        offset: 0x97d0_i32,
+    },
+];
 static UNICODE_OFFSETS1: [u16; 908] = [
     0xa6, 0x9, 0xe, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9,
     0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0xad, 0xb3,

@@ -363,11 +363,14 @@ fn ResolveStateAndPredicate(
         }
         *pred_rtrn = MATCH_EXACTLY;
         if (*expr).common.type_0 == STMT_EXPR_ACTION_DECL {
-            let pred_txt: &str = xkb_atom_text(&info.ctx().atom_table, (*expr).action.name);
+            let ExprKind::Action { name, args } = &(*expr).kind else {
+                unreachable!()
+            };
+            let pred_txt: &str = xkb_atom_text(&info.ctx().atom_table, *name);
             let mut pred: u32 = 0_u32;
             if !LookupString(&symInterpretMatchMaskNames, pred_txt, &mut pred)
-                || (*expr).action.args.is_null()
-                || !(*(*expr).action.args).common.next.is_null()
+                || (*args).is_null()
+                || !(**args).common.next.is_null()
             {
                 xkb_logf!(
                     info.ctx,
@@ -379,9 +382,12 @@ fn ResolveStateAndPredicate(
                 return false;
             }
             *pred_rtrn = pred;
-            expr = (*expr).action.args as *mut ExprDef;
+            expr = *args;
         } else if (*expr).common.type_0 == STMT_EXPR_IDENT {
-            let pred_txt_0: &str = xkb_atom_text(&info.ctx().atom_table, (*expr).ident.ident);
+            let ExprKind::Ident(ident_val) = &(*expr).kind else {
+                unreachable!()
+            };
+            let pred_txt_0: &str = xkb_atom_text(&info.ctx().atom_table, *ident_val);
             if !pred_txt_0.is_empty() && pred_txt_0.eq_ignore_ascii_case("any") {
                 *pred_rtrn = MATCH_ANY;
                 *mods_rtrn = MOD_REAL_MASK_ALL;
@@ -642,8 +648,14 @@ fn SetInterpField(
                 return ReportSINotArray(info, si, field);
             }
             if (*value).common.type_0 == STMT_EXPR_ACTION_LIST {
+                let ExprKind::ActionList {
+                    actions: action_head,
+                } = &(*value).kind
+                else {
+                    unreachable!()
+                };
                 let mut num_actions: u32 = 0_u32;
-                let mut act: *mut ExprDef = (*value).actions.actions as *mut ExprDef;
+                let mut act: *mut ExprDef = *action_head;
                 while !act.is_null() {
                     num_actions = num_actions.wrapping_add(1);
                     act = (*act).common.next as *mut ExprDef;
@@ -663,7 +675,7 @@ fn SetInterpField(
                 (*si).interp.num_actions = 0_u16;
                 (*si).interp.action.type_0 = ACTION_TYPE_NONE;
                 let mut actions: Vec<xkb_action> = Vec::new();
-                let mut act_0: *mut ExprDef = (*value).actions.actions as *mut ExprDef;
+                let mut act_0: *mut ExprDef = *action_head;
                 while !act_0.is_null() {
                     let mut toAct: xkb_action = xkb_action {
                         type_0: ACTION_TYPE_NONE,

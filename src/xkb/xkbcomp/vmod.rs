@@ -2,23 +2,21 @@ use crate::xkb::context::xkb_atom_text;
 use crate::xkb_logf;
 
 pub use crate::xkb::messages::{
-XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE,
-    XKB_LOG_VERBOSITY_DEFAULT, XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL,
-    XKB_LOG_VERBOSITY_SILENT, XKB_LOG_VERBOSITY_VERBOSE,
+    XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE, XKB_LOG_VERBOSITY_DEFAULT,
+    XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL, XKB_LOG_VERBOSITY_SILENT,
+    XKB_LOG_VERBOSITY_VERBOSE,
 };
 pub use crate::xkb::shared_ast_types::{
-    _ParseCommon, merge_mode, stmt_type, ExprAction, ExprActionList, ExprArrayRef, ExprBinary,
-    ExprBoolean, ExprDef, ExprFieldRef, ExprIdent, ExprInteger, ExprKeyName, ExprKeySym,
-    ExprKeysymList, ExprString, ExprUnary, ParseCommon, VModDef, _MERGE_MODE_NUM_ENTRIES,
-    _STMT_NUM_VALUES, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS,
-    STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF,
-    STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST,
-    STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL,
-    STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL,
-    STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL,
-    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP,
-    STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN,
-    STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
+    _ParseCommon, merge_mode, stmt_type, ExprDef, ExprKind, ParseCommon, VModDef, MERGE_AUGMENT,
+    MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL,
+    STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN,
+    STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF,
+    STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT,
+    STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY,
+    STMT_EXPR_NEGATE, STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT,
+    STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP,
+    STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
+    STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
 };
 pub use crate::xkb::shared_types::{
     xkb_mod, xkb_mod_set, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_MODS,
@@ -57,8 +55,16 @@ pub fn MergeModSets(
                 into.mods[vmod].mapping = mod_0.mapping;
                 into.explicit_vmods |= mask;
             } else if mod_0.mapping != into.mods[vmod].mapping {
-                let use_0: u32 = if clobber { mod_0.mapping } else { into.mods[vmod].mapping };
-                let ignore: u32 = if clobber { into.mods[vmod].mapping } else { mod_0.mapping };
+                let use_0: u32 = if clobber {
+                    mod_0.mapping
+                } else {
+                    into.mods[vmod].mapping
+                };
+                let ignore: u32 = if clobber {
+                    into.mods[vmod].mapping
+                } else {
+                    mod_0.mapping
+                };
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_WARNING,
@@ -89,10 +95,7 @@ pub unsafe fn HandleVModDef(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Declaration of {} ignored\n",
-                xkb_atom_text(
-                    &(*ctx).atom_table,
-                    (*stmt).name
-                ),
+                xkb_atom_text(&(*ctx).atom_table, (*stmt).name),
             );
             return false;
         }
@@ -115,8 +118,16 @@ pub unsafe fn HandleVModDef(
                     (*mods).mods[vmod].mapping = mapping;
                 } else if (*mods).mods[vmod].mapping != mapping {
                     let clobber: bool = (*stmt).merge != MERGE_AUGMENT;
-                    let use_0: u32 = if clobber { mapping } else { (*mods).mods[vmod].mapping };
-                    let ignore: u32 = if clobber { (*mods).mods[vmod].mapping } else { mapping };
+                    let use_0: u32 = if clobber {
+                        mapping
+                    } else {
+                        (*mods).mods[vmod].mapping
+                    };
+                    let ignore: u32 = if clobber {
+                        (*mods).mods[vmod].mapping
+                    } else {
+                        mapping
+                    };
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_WARNING,
@@ -138,10 +149,7 @@ pub unsafe fn HandleVModDef(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "Cannot define virtual modifier {}: too many modifiers defined (maximum {})\n",
-                xkb_atom_text(
-                    &(*ctx).atom_table,
-                    (*stmt).name
-                ),
+                xkb_atom_text(&(*ctx).atom_table, (*stmt).name),
                 (std::mem::size_of::<u32>()).wrapping_mul(8_usize) as u32,
             );
             return false;

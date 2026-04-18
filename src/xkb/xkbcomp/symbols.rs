@@ -1074,13 +1074,16 @@ fn AddSymbolsToKey(
         }
         let mut nLevels: u32 = 0_u32;
         let mut nonEmptyLevels: u32 = 0_u32;
-        let mut keysymList: *mut ExprKeysymList = value as *mut ExprKeysymList;
+        let mut keysymList: *mut ExprDef = value;
         while !keysymList.is_null() {
             nLevels = nLevels.wrapping_add(1);
-            if (*keysymList).syms.len() as u32 > 0_u32 {
+            let ExprKind::KeysymList { ref syms } = (*keysymList).kind else {
+                unreachable!()
+            };
+            if syms.len() as u32 > 0_u32 {
                 nonEmptyLevels = nLevels;
             }
-            keysymList = (*keysymList).common.next as *mut ExprKeysymList;
+            keysymList = (*keysymList).common.next as *mut ExprDef;
         }
         if nonEmptyLevels < nLevels {
             nLevels = nonEmptyLevels;
@@ -1092,11 +1095,14 @@ fn AddSymbolsToKey(
         }
         (*groupi).defined = ((*groupi).defined | GROUP_FIELD_SYMS) as group_field;
         let mut level: u32 = 0_u32;
-        let mut keysymList_0: *mut ExprKeysymList = value as *mut ExprKeysymList;
+        let mut keysymList_0: *mut ExprDef = value;
         while !keysymList_0.is_null() && level < nLevels {
             let leveli: *mut xkb_level =
                 &mut (&mut (*groupi).levels)[level as usize] as *mut xkb_level;
-            let syms_len = (*keysymList_0).syms.len() as u32;
+            let ExprKind::KeysymList { ref syms } = (*keysymList_0).kind else {
+                unreachable!()
+            };
+            let syms_len = syms.len() as u32;
             if (syms_len > 65535_u32) as i64 != 0 {
                 xkb_logf!(
                     info.ctx,
@@ -1114,9 +1120,9 @@ fn AddSymbolsToKey(
             (*leveli).syms = if syms_len == 0 {
                 Vec::new()
             } else {
-                (&(*keysymList_0).syms)[..syms_len as usize].to_vec()
+                syms[..syms_len as usize].to_vec()
             };
-            keysymList_0 = (*keysymList_0).common.next as *mut ExprKeysymList;
+            keysymList_0 = (*keysymList_0).common.next as *mut ExprDef;
             level = level.wrapping_add(1);
         }
         true
@@ -1177,13 +1183,16 @@ fn AddActionsToKey(
         (*groupi).defined = ((*groupi).defined | GROUP_FIELD_ACTS) as group_field;
         let mut level: u32 = 0_u32;
         let mut nonEmptyLevels: u32 = 0_u32;
-        let mut actionList: *mut ExprActionList = value as *mut ExprActionList;
+        let mut actionList: *mut ExprDef = value;
         while !actionList.is_null() {
             let c2rust_current_block_102: u64;
             let leveli: *mut xkb_level =
                 &mut (&mut (*groupi).levels)[level as usize] as *mut xkb_level;
             let mut num_actions: u32 = 0_u32;
-            let mut act: *mut ExprDef = (*actionList).actions as *mut ExprDef;
+            let ExprKind::ActionList { actions } = &(*actionList).kind else {
+                unreachable!()
+            };
+            let mut act: *mut ExprDef = *actions;
             while !act.is_null() {
                 num_actions = num_actions.wrapping_add(1);
                 act = (*act).common.next as *mut ExprDef;
@@ -1203,7 +1212,13 @@ fn AddActionsToKey(
                 return false;
             }
             let mut actions: Vec<xkb_action> = Vec::new();
-            let mut act_0: *mut ExprDef = (*actionList).actions as *mut ExprDef;
+            let ExprKind::ActionList {
+                actions: action_ptr,
+            } = &(*actionList).kind
+            else {
+                unreachable!()
+            };
+            let mut act_0: *mut ExprDef = *action_ptr;
             loop {
                 if act_0.is_null() {
                     c2rust_current_block_102 = 1134115459065347084;
@@ -1258,7 +1273,7 @@ fn AddActionsToKey(
             if !(*leveli).actions.is_empty() || !(*leveli).syms.is_empty() {
                 nonEmptyLevels = level.wrapping_add(1_u32);
             }
-            actionList = (*actionList).common.next as *mut ExprActionList;
+            actionList = (*actionList).common.next as *mut ExprDef;
             level = level.wrapping_add(1);
         }
         if nonEmptyLevels < nLevels {
@@ -1354,7 +1369,10 @@ fn ExprResolveOverlayEntry(
         *overlay_rtrn = (raw_overlay as xkb_overlay_index_t as i32 - 1_i32) as xkb_overlay_index_t;
         match (*expr).common.type_0 {
             8 => {
-                let key_ptr = XkbKeyByName((*keymap_info).keymap, (*expr).key_name.key_name, false);
+                let ExprKind::KeyName(key_name_val) = (*expr).kind else {
+                    unreachable!()
+                };
+                let key_ptr = XkbKeyByName((*keymap_info).keymap, key_name_val, false);
                 *key_rtrn = if key_ptr.is_null() {
                     XKB_KEYCODE_INVALID
                 } else {
@@ -1367,10 +1385,7 @@ fn ExprResolveOverlayEntry(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Unknown key \"{}\" for field {} in <{}>\n",
                         XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                        xkb_atom_text(
-                            &(*(*keymap_info).keymap).ctx.atom_table,
-                            (*expr).key_name.key_name
-                        ),
+                        xkb_atom_text(&(*(*keymap_info).keymap).ctx.atom_table, key_name_val),
                         field,
                         xkb_atom_text(&(*(*keymap_info).keymap).ctx.atom_table, (*keyi).name),
                     );
@@ -1379,10 +1394,10 @@ fn ExprResolveOverlayEntry(
                 true
             }
             10 => {
-                let id: &str = xkb_atom_text(
-                    &(*(*keymap_info).keymap).ctx.atom_table,
-                    (*expr).ident.ident,
-                );
+                let ExprKind::Ident(ident_val) = (*expr).kind else {
+                    unreachable!()
+                };
+                let id: &str = xkb_atom_text(&(*(*keymap_info).keymap).ctx.atom_table, ident_val);
                 if !id.is_empty() && id.eq_ignore_ascii_case("none") {
                     *key_rtrn = XKB_KEYCODE_INVALID;
                     return true;
@@ -2125,14 +2140,20 @@ fn HandleModMapDef(info: &mut SymbolsInfo<'_>, def: *mut ModMapDef) -> bool {
         while !key.is_null() {
             if (*key).common.type_0 == STMT_EXPR_KEYNAME_LITERAL {
                 tmp.haveSymbol = false;
-                tmp.u.keyName = (*key).key_name.key_name;
+                let ExprKind::KeyName(kn) = (*key).kind else {
+                    unreachable!()
+                };
+                tmp.u.keyName = kn;
                 c2rust_current_block_19 = 5601891728916014340;
             } else if (*key).common.type_0 == STMT_EXPR_KEYSYM_LITERAL {
-                if (*key).keysym.keysym == XKB_KEY_NoSymbol as u32 {
+                let ExprKind::KeySym(ks) = (*key).kind else {
+                    unreachable!()
+                };
+                if ks == XKB_KEY_NoSymbol as u32 {
                     c2rust_current_block_19 = 13536709405535804910;
                 } else {
                     tmp.haveSymbol = true;
-                    tmp.u.keySym = (*key).keysym.keysym;
+                    tmp.u.keySym = ks;
                     c2rust_current_block_19 = 5601891728916014340;
                 }
             } else {

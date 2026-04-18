@@ -44,27 +44,33 @@ pub type actionHandler = Option<
         *mut *mut ExprDef,
     ) -> xkb_parser_error,
 >;
-// SAFETY: ExprBoolean contains *mut _ParseCommon which is always null and never dereferenced mutably.
-// These are read-only constants used only via `&raw const`.
-struct SyncExprBoolean(ExprBoolean);
-unsafe impl Sync for SyncExprBoolean {}
+// SAFETY: These are read-only constants; the raw pointers in other ExprKind variants are irrelevant
+// because these use Boolean which contains no pointers.
+struct SyncExprDef(ExprDef);
+unsafe impl Sync for SyncExprDef {}
 
-static CONST_TRUE: SyncExprBoolean = SyncExprBoolean(ExprBoolean {
-    common: _ParseCommon {
+static CONST_TRUE: SyncExprDef = SyncExprDef(ExprDef {
+    common: ParseCommon {
         next: std::ptr::null_mut(),
         type_0: STMT_EXPR_BOOLEAN_LITERAL,
     },
-    set: true,
+    kind: ExprKind::Boolean(true),
 });
-static CONST_FALSE: SyncExprBoolean = SyncExprBoolean(ExprBoolean {
-    common: _ParseCommon {
+static CONST_FALSE: SyncExprDef = SyncExprDef(ExprDef {
+    common: ParseCommon {
         next: std::ptr::null_mut(),
         type_0: STMT_EXPR_BOOLEAN_LITERAL,
     },
-    set: false,
+    kind: ExprKind::Boolean(false),
 });
 pub unsafe fn InitActionsInfo(keymap: *const xkb_keymap, info: *mut ActionsInfo) {
     unsafe {
+        // Zero-initialize the entire actions array to avoid reading uninitialized union bytes
+        std::ptr::write_bytes(
+            &raw mut (*info).actions as *mut u8,
+            0,
+            std::mem::size_of_val(&(*info).actions),
+        );
         let mut type_0: xkb_action_type = ACTION_TYPE_NONE;
         while (type_0 as u32) < _ACTION_TYPE_NUM_ENTRIES {
             (*info).actions[type_0 as usize].type_0 = type_0;
@@ -425,7 +431,12 @@ unsafe fn CheckModifierField(
             return ReportActionNotArray(ctx, action, ACTION_FIELD_MODIFIERS, strict);
         }
         if (*value).common.type_0 == STMT_EXPR_IDENT {
-            let valStr: &str = xkb_atom_text(&(*ctx).atom_table, (*value).ident.ident);
+            let ident = if let ExprKind::Ident(id) = (*value).kind {
+                id
+            } else {
+                unreachable!()
+            };
+            let valStr: &str = xkb_atom_text(&(*ctx).atom_table, ident);
             if !valStr.is_empty()
                 && (valStr.eq_ignore_ascii_case("usemodmapmods")
                     || valStr.eq_ignore_ascii_case("modmapmods"))
@@ -639,8 +650,16 @@ unsafe fn CheckGroupField(
             || (*value).common.type_0 == STMT_EXPR_UNARY_PLUS
         {
             flags = (flags as u32 & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
-            spec = (*value).unary.child;
-            value_ptr = &raw mut (**value_ptr).unary.child as *mut *mut ExprDef;
+            spec = if let ExprKind::Unary { child, .. } = (*value).kind {
+                child
+            } else {
+                unreachable!()
+            };
+            value_ptr = if let ExprKind::Unary { ref mut child, .. } = (**value_ptr).kind {
+                child as *mut *mut ExprDef
+            } else {
+                unreachable!()
+            };
         } else {
             flags = (flags as u32 | ACTION_ABSOLUTE_SWITCH) as xkb_action_flags;
             spec = value;
@@ -983,7 +1002,11 @@ unsafe fn HandleSetPtrDflt(
             {
                 (*act).flags =
                     ((*act).flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
-                button = (*value).unary.child;
+                button = if let ExprKind::Unary { child, .. } = (*value).kind {
+                    child
+                } else {
+                    unreachable!()
+                };
             } else {
                 (*act).flags = ((*act).flags | ACTION_ABSOLUTE_SWITCH) as xkb_action_flags;
                 button = value;
@@ -1058,7 +1081,11 @@ unsafe fn HandleSwitchScreen(
             {
                 (*act).flags =
                     ((*act).flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
-                scrn = (*value).unary.child;
+                scrn = if let ExprKind::Unary { child, .. } = (*value).kind {
+                    child
+                } else {
+                    unreachable!()
+                };
             } else {
                 (*act).flags = ((*act).flags | ACTION_ABSOLUTE_SWITCH) as xkb_action_flags;
                 scrn = value;
@@ -1172,7 +1199,12 @@ unsafe fn HandleRedirectKey(
                 return ReportActionNotArray(ctx, (*action).type_0, field, (*keymap_info).strict);
             }
             if (*value).common.type_0 == STMT_EXPR_IDENT {
-                let valStr: &str = xkb_atom_text(&(*ctx).atom_table, (*value).ident.ident);
+                let ident = if let ExprKind::Ident(id) = (*value).kind {
+                    id
+                } else {
+                    unreachable!()
+                };
+                let valStr: &str = xkb_atom_text(&(*ctx).atom_table, ident);
                 if !valStr.is_empty() && valStr.eq_ignore_ascii_case("auto") {
                     (*act).keycode = (*(*keymap_info).keymap).redirect_key_auto;
                     return PARSER_SUCCESS;
@@ -1188,7 +1220,12 @@ unsafe fn HandleRedirectKey(
                     (*keymap_info).strict,
                 );
             }
-            let key: *const xkb_key = XkbKeyByName(keymap, (*value).key_name.key_name, true);
+            let key_name_val = if let ExprKind::KeyName(kn) = (*value).kind {
+                kn
+            } else {
+                unreachable!()
+            };
+            let key: *const xkb_key = XkbKeyByName(keymap, key_name_val, true);
             if key.is_null() {
                 xkb_logf!(
                     ctx,
@@ -1196,7 +1233,7 @@ unsafe fn HandleRedirectKey(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "RedirectKey field {} cannot resolve <{}> to a valid key\n",
                     fieldText(field),
-                    xkb_atom_text(&(*ctx).atom_table, (*value).key_name.key_name),
+                    xkb_atom_text(&(*ctx).atom_table, key_name_val),
                 );
                 return (if (*keymap_info).strict & PARSER_NO_FIELD_VALUE_MISMATCH != 0 {
                     PARSER_FATAL_ERROR as i32
@@ -1667,17 +1704,22 @@ pub unsafe fn HandleActionDef(
     unsafe {
         let ctx: *mut xkb_context = &raw mut (*(*keymap_info).keymap).ctx;
         if (*def).common.type_0 != STMT_EXPR_ACTION_DECL {
-            println!(
-                "{:?} {} {} [XKB-{{:03}}] Expected an action definition, found {{}}\n {} {:?}",
+            xkb_logf!(
                 ctx,
                 XKB_LOG_LEVEL_ERROR,
-                { XKB_LOG_VERBOSITY_MINIMAL },
+                XKB_LOG_VERBOSITY_MINIMAL as i32,
+                "[XKB-{:03}] Expected an action definition, found {}\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
                 stmt_type_to_string((*def).common.type_0)
             );
             return PARSER_FATAL_ERROR;
         }
-        let action_name: &str = xkb_atom_text(&(*ctx).atom_table, (*def).action.name);
+        let (action_name_atom, action_args) = if let ExprKind::Action { name, args } = (*def).kind {
+            (name, args)
+        } else {
+            unreachable!()
+        };
+        let action_name: &str = xkb_atom_text(&(*ctx).atom_table, action_name_atom);
         let mut handler_type: xkb_action_type = ACTION_TYPE_NONE;
         if !stringToActionType(action_name, &raw mut handler_type) {
             xkb_logf!(
@@ -1706,7 +1748,7 @@ pub unsafe fn HandleActionDef(
             (*action).type_0 = ACTION_TYPE_NONE;
         }
         let mut ret: xkb_parser_error = PARSER_SUCCESS;
-        let mut arg: *mut ExprDef = (*def).action.args as *mut ExprDef;
+        let mut arg: *mut ExprDef = action_args;
         while !arg.is_null() {
             let value: *const ExprDef;
             let mut value_ptr: *mut *mut ExprDef = std::ptr::null_mut();
@@ -1715,13 +1757,27 @@ pub unsafe fn HandleActionDef(
             let mut elemRtrn: &str = "";
             let mut fieldRtrn: &str = "";
             if (*arg).common.type_0 == STMT_EXPR_ASSIGN {
-                field = (*arg).binary.left as *mut ExprDef;
-                value = (*arg).binary.right;
-                value_ptr = &raw mut (*arg).binary.right as *mut *mut ExprDef;
+                let (left, right_ref) = if let ExprKind::Binary {
+                    ref mut left,
+                    ref mut right,
+                    ..
+                } = (*arg).kind
+                {
+                    (*left, right as *mut *mut ExprDef)
+                } else {
+                    unreachable!()
+                };
+                field = left;
+                value = *right_ref;
+                value_ptr = right_ref;
             } else if (*arg).common.type_0 == STMT_EXPR_NOT
                 || (*arg).common.type_0 == STMT_EXPR_INVERT
             {
-                field = (*arg).unary.child as *mut ExprDef;
+                field = if let ExprKind::Unary { child, .. } = (*arg).kind {
+                    child
+                } else {
+                    unreachable!()
+                };
                 value = &raw const CONST_FALSE.0 as *const ExprDef;
             } else {
                 field = arg;

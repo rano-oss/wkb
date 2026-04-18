@@ -48,11 +48,9 @@ pub use crate::xkb::messages::{
 };
 pub use crate::xkb::scanner_utils::{scanner, scanner_loc, sval};
 pub use crate::xkb::shared_ast_types::{
-    ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef,
-    ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary,
-    GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef,
-    LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile,
-    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_map_flags, FILE_TYPE_COMPAT,
+    ExprDef, ExprKind, GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
+    LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef,
+    XkbFile, _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_map_flags, FILE_TYPE_COMPAT,
     FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
     FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
     MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
@@ -70,179 +68,87 @@ pub use crate::xkb::shared_ast_types::{
 pub use crate::xkb::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
 use crate::xkb::utils::cstr_len;
 pub use crate::xkb::xkbcomp::include::{MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
-unsafe fn ExprCreate(op: stmt_type) -> *mut ExprDef {
-    unsafe {
-        let expr: *mut ExprDef = Box::into_raw(Box::new(std::mem::zeroed::<ExprDef>()));
-        (*expr).common.type_0 = op;
-        (*expr).common.next = std::ptr::null_mut();
-        expr
-    }
+fn expr_create(kind: ExprKind) -> *mut ExprDef {
+    let type_0 = ExprDef::stmt_type_for_kind(&kind);
+    Box::into_raw(Box::new(ExprDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0,
+        },
+        kind,
+    }))
 }
 
-pub unsafe fn ExprCreateString(str: u32) -> *mut ExprDef {
-    unsafe {
-        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_STRING_LITERAL);
-        if expr.is_null() {
-            return std::ptr::null_mut();
-        }
-        (*expr).string.str = str;
-        expr
-    }
+pub fn ExprCreateString(str: u32) -> *mut ExprDef {
+    expr_create(ExprKind::String(str))
 }
 
-pub unsafe fn ExprCreateInteger(ival: i64) -> *mut ExprDef {
-    unsafe {
-        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_INTEGER_LITERAL);
-        if expr.is_null() {
-            return std::ptr::null_mut();
-        }
-        (*expr).integer.ival = ival;
-        expr
-    }
+pub fn ExprCreateInteger(ival: i64) -> *mut ExprDef {
+    expr_create(ExprKind::Integer(ival))
 }
 
-pub unsafe fn ExprCreateFloat() -> *mut ExprDef {
-    unsafe {
-        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_FLOAT_LITERAL);
-        if expr.is_null() {
-            return std::ptr::null_mut();
-        }
-        expr
-    }
+pub fn ExprCreateFloat() -> *mut ExprDef {
+    expr_create(ExprKind::Float)
 }
 
-pub unsafe fn ExprCreateKeyName(key_name: u32) -> *mut ExprDef {
-    unsafe {
-        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_KEYNAME_LITERAL);
-        if expr.is_null() {
-            return std::ptr::null_mut();
-        }
-        (*expr).key_name.key_name = key_name;
-        expr
-    }
+pub fn ExprCreateKeyName(key_name: u32) -> *mut ExprDef {
+    expr_create(ExprKind::KeyName(key_name))
 }
 
-pub unsafe fn ExprCreateKeySym(keysym: u32) -> *mut ExprDef {
-    unsafe {
-        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_KEYSYM_LITERAL);
-        if expr.is_null() {
-            return std::ptr::null_mut();
-        }
-        (*expr).keysym.keysym = keysym;
-        expr
-    }
+pub fn ExprCreateKeySym(keysym: u32) -> *mut ExprDef {
+    expr_create(ExprKind::KeySym(keysym))
 }
 
-pub unsafe fn ExprCreateIdent(ident: u32) -> *mut ExprDef {
-    unsafe {
-        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_IDENT);
-        if expr.is_null() {
-            return std::ptr::null_mut();
-        }
-        (*expr).ident.ident = ident;
-        expr
-    }
+pub fn ExprCreateIdent(ident: u32) -> *mut ExprDef {
+    expr_create(ExprKind::Ident(ident))
 }
 
-pub unsafe fn ExprCreateUnary(op: stmt_type, child: *mut ExprDef) -> *mut ExprDef {
-    unsafe {
-        let expr: *mut ExprDef = ExprCreate(op);
-        if expr.is_null() {
-            return std::ptr::null_mut();
-        }
-        (*expr).unary.child = child as *mut ExprDef;
-        expr
-    }
+pub fn ExprCreateUnary(op: stmt_type, child: *mut ExprDef) -> *mut ExprDef {
+    expr_create(ExprKind::Unary { op, child })
 }
 
-pub unsafe fn ExprCreateBinary(
-    op: stmt_type,
-    left: *mut ExprDef,
-    right: *mut ExprDef,
-) -> *mut ExprDef {
-    unsafe {
-        let expr: *mut ExprDef = ExprCreate(op);
-        if expr.is_null() {
-            return std::ptr::null_mut();
-        }
-        (*expr).binary.left = left as *mut ExprDef;
-        (*expr).binary.right = right as *mut ExprDef;
-        expr
-    }
+pub fn ExprCreateBinary(op: stmt_type, left: *mut ExprDef, right: *mut ExprDef) -> *mut ExprDef {
+    expr_create(ExprKind::Binary { op, left, right })
 }
 
-pub unsafe fn ExprCreateFieldRef(element: u32, field: u32) -> *mut ExprDef {
-    unsafe {
-        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_FIELD_REF);
-        if expr.is_null() {
-            return std::ptr::null_mut();
-        }
-        (*expr).field_ref.element = element;
-        (*expr).field_ref.field = field;
-        expr
-    }
+pub fn ExprCreateFieldRef(element: u32, field: u32) -> *mut ExprDef {
+    expr_create(ExprKind::FieldRef { element, field })
 }
 
-pub unsafe fn ExprCreateArrayRef(element: u32, field: u32, entry: *mut ExprDef) -> *mut ExprDef {
-    unsafe {
-        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_ARRAY_REF);
-        if expr.is_null() {
-            return std::ptr::null_mut();
-        }
-        (*expr).array_ref.element = element;
-        (*expr).array_ref.field = field;
-        (*expr).array_ref.entry = entry as *mut ExprDef;
-        expr
-    }
+pub fn ExprCreateArrayRef(element: u32, field: u32, entry: *mut ExprDef) -> *mut ExprDef {
+    expr_create(ExprKind::ArrayRef {
+        element,
+        field,
+        entry,
+    })
 }
 
-pub unsafe fn ExprEmptyList() -> *mut ExprDef {
-    unsafe { ExprCreate(STMT_EXPR_EMPTY_LIST) }
+pub fn ExprEmptyList() -> *mut ExprDef {
+    expr_create(ExprKind::EmptyList)
 }
 
-pub unsafe fn ExprCreateAction(name: u32, args: *mut ExprDef) -> *mut ExprDef {
-    unsafe {
-        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_ACTION_DECL);
-        if expr.is_null() {
-            return std::ptr::null_mut();
-        }
-        (*expr).action.name = name;
-        (*expr).action.args = args as *mut ExprDef;
-        expr
-    }
+pub fn ExprCreateAction(name: u32, args: *mut ExprDef) -> *mut ExprDef {
+    expr_create(ExprKind::Action { name, args })
 }
 
-pub unsafe fn ExprCreateActionList(actions: *mut ExprDef) -> *mut ExprDef {
-    unsafe {
-        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_ACTION_LIST);
-        if expr.is_null() {
-            return std::ptr::null_mut();
-        }
-        (*expr).actions.actions = actions as *mut ExprDef;
-        expr
-    }
+pub fn ExprCreateActionList(actions: *mut ExprDef) -> *mut ExprDef {
+    expr_create(ExprKind::ActionList { actions })
 }
 
-pub unsafe fn ExprCreateKeySymList(sym: u32) -> *mut ExprDef {
-    unsafe {
-        let expr: *mut ExprDef = ExprCreate(STMT_EXPR_KEYSYM_LIST);
-        if expr.is_null() {
-            return std::ptr::null_mut();
-        }
-        let ksl = expr as *mut ExprKeysymList;
-        std::ptr::write(&raw mut (*ksl).syms, Vec::new());
-        if sym != XKB_KEY_NoSymbol as u32 {
-            (*ksl).syms.push(sym);
-        }
-        expr
+pub fn ExprCreateKeySymList(sym: u32) -> *mut ExprDef {
+    let mut syms = Vec::new();
+    if sym != XKB_KEY_NoSymbol as u32 {
+        syms.push(sym);
     }
+    expr_create(ExprKind::KeysymList { syms })
 }
 
 pub unsafe fn ExprAppendKeySymList(expr: *mut ExprDef, sym: u32) -> *mut ExprDef {
     unsafe {
         if sym != XKB_KEY_NoSymbol as u32 {
-            let ksl = expr as *mut ExprKeysymList;
-            (*ksl).syms.push(sym);
+            if let ExprKind::KeysymList { ref mut syms } = (*expr).kind {
+                syms.push(sym);
+            }
         }
         expr
     }
@@ -303,8 +209,9 @@ pub unsafe fn ExprKeySymListAppendString(
                     c2rust_current_block = 5140853804782746302;
                     break;
                 } else {
-                    let ksl = expr as *mut ExprKeysymList;
-                    (*ksl).syms.push(sym);
+                    if let ExprKind::KeysymList { ref mut syms } = (*expr).kind {
+                        syms.push(sym);
+                    }
                     idx = idx.wrapping_add(count);
                     idx_cp = idx_cp.wrapping_add(1);
                 }
@@ -436,10 +343,7 @@ pub unsafe fn BoolVarCreate(ident: u32, set: bool) -> *mut VarDef {
         if name.is_null() {
             return std::ptr::null_mut();
         }
-        let value: *mut ExprDef = ExprCreate(STMT_EXPR_BOOLEAN_LITERAL);
-        if !value.is_null() {
-            (*value).boolean.set = set;
-        }
+        let value: *mut ExprDef = expr_create(ExprKind::Boolean(set));
         if value.is_null() {
             FreeStmt(name as *mut ParseCommon);
             return std::ptr::null_mut();
@@ -751,26 +655,30 @@ pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
                     FreeInclude(stmt as *mut IncludeStmt);
                     stmt = std::ptr::null_mut();
                 }
-                22..=25 => {
-                    FreeStmt((*(stmt as *mut ExprUnary)).child as *mut ParseCommon);
-                }
-                17..=21 => {
-                    FreeStmt((*(stmt as *mut ExprBinary)).left as *mut ParseCommon);
-                    FreeStmt((*(stmt as *mut ExprBinary)).right as *mut ParseCommon);
-                }
-                11 => {
-                    FreeStmt((*(stmt as *mut ExprAction)).args as *mut ParseCommon);
-                }
-                16 => {
-                    FreeStmt((*(stmt as *mut ExprActionList)).actions as *mut ParseCommon);
-                }
-                13 => {
-                    FreeStmt((*(stmt as *mut ExprArrayRef)).entry as *mut ParseCommon);
-                }
-                15 => {
-                    // Drop the Vec to free its buffer
-                    let ksl = stmt as *mut ExprKeysymList;
-                    std::ptr::drop_in_place(&raw mut (*ksl).syms);
+                // All expression types: use ExprDef enum
+                4..=25 => {
+                    let expr = stmt as *mut ExprDef;
+                    match &(*expr).kind {
+                        ExprKind::Unary { child, .. } => {
+                            FreeStmt(*child as *mut ParseCommon);
+                        }
+                        ExprKind::Binary { left, right, .. } => {
+                            FreeStmt(*left as *mut ParseCommon);
+                            FreeStmt(*right as *mut ParseCommon);
+                        }
+                        ExprKind::Action { args, .. } => {
+                            FreeStmt(*args as *mut ParseCommon);
+                        }
+                        ExprKind::ActionList { actions } => {
+                            FreeStmt(*actions as *mut ParseCommon);
+                        }
+                        ExprKind::ArrayRef { entry, .. } => {
+                            FreeStmt(*entry as *mut ParseCommon);
+                        }
+                        // KeysymList Vec drops automatically via Box::from_raw below
+                        // Leaf types (String, Integer, Boolean, etc.) have no children
+                        _ => {}
+                    }
                 }
                 26 => {
                     FreeStmt((*(stmt as *mut VarDef)).name as *mut ParseCommon);

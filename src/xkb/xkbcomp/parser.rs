@@ -105,11 +105,9 @@ pub use crate::xkb::messages::{
 pub use crate::xkb::scanner_utils::{isvaleq, scanner, scanner_loc, sval};
 pub use crate::xkb::shared_ast_types::{safe_map_name, FreeXkbFile};
 pub use crate::xkb::shared_ast_types::{
-    ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprBoolean, ExprDef, ExprFieldRef,
-    ExprIdent, ExprInteger, ExprKeyName, ExprKeySym, ExprKeysymList, ExprString, ExprUnary,
-    GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef,
-    LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile,
-    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_map_flags, FILE_TYPE_COMPAT,
+    ExprDef, ExprKind, GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
+    LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef,
+    XkbFile, _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_map_flags, FILE_TYPE_COMPAT,
     FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
     FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
     MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,

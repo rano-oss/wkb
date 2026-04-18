@@ -106,41 +106,92 @@ pub type IncludeStmt = _IncludeStmt;
 
 // ── Expression types ────────────────────────────────────────────────
 
-#[derive(Copy, Clone)]
+/// Expression AST node. Replaces the old C-style tagged union.
+/// `common` maintains layout compatibility with ParseCommon overlay pattern.
+/// `common.next` is used for intrusive linked lists.
+/// `common.type_0` is redundant with `kind` but needed for FreeStmt dispatch.
 #[repr(C)]
-pub union ExprDef {
+pub struct ExprDef {
     pub common: ParseCommon,
-    pub ident: ExprIdent,
-    pub string: ExprString,
-    pub boolean: ExprBoolean,
-    pub integer: ExprInteger,
-    pub key_name: ExprKeyName,
-    pub keysym: ExprKeySym,
-    pub binary: ExprBinary,
-    pub unary: ExprUnary,
-    pub field_ref: ExprFieldRef,
-    pub array_ref: ExprArrayRef,
-    pub action: ExprAction,
-    pub actions: ExprActionList,
-    /// Placeholder for ExprKeysymList (non-Copy due to Vec).
-    /// Access via `*(ptr as *mut ExprKeysymList)` instead.
-    pub keysym_list_padding: ExprKeysymListPadding,
+    pub kind: ExprKind,
 }
 
-/// Padding type that keeps ExprDef union large enough for ExprKeysymList.
-/// ExprKeysymList contains a Vec and is not Copy, so it cannot be a union variant directly.
-/// Access ExprKeysymList only through `*mut ExprKeysymList` pointer casts.
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ExprKeysymListPadding {
-    pub _pad: [u8; std::mem::size_of::<ExprKeysymList>()],
+/// The discriminated payload of an expression node.
+pub enum ExprKind {
+    String(u32),
+    Integer(i64),
+    Float,
+    Boolean(bool),
+    KeyName(u32),
+    KeySym(u32),
+    Ident(u32),
+    FieldRef {
+        element: u32,
+        field: u32,
+    },
+    ArrayRef {
+        element: u32,
+        field: u32,
+        entry: *mut ExprDef,
+    },
+    Action {
+        name: u32,
+        args: *mut ExprDef,
+    },
+    ActionList {
+        actions: *mut ExprDef,
+    },
+    KeysymList {
+        syms: Vec<u32>,
+    },
+    EmptyList,
+    Binary {
+        op: stmt_type,
+        left: *mut ExprDef,
+        right: *mut ExprDef,
+    },
+    Unary {
+        op: stmt_type,
+        child: *mut ExprDef,
+    },
 }
 
-#[derive(Clone)]
-#[repr(C)]
-pub struct ExprKeysymList {
-    pub common: ParseCommon,
-    pub syms: Vec<u32>,
+impl ExprDef {
+    /// Returns the `stmt_type` discriminant for backward compatibility.
+    pub fn stmt_type(&self) -> stmt_type {
+        Self::stmt_type_for_kind(&self.kind)
+    }
+
+    /// Debug: assert common.type_0 matches kind
+    pub fn assert_consistent(&self) {
+        let expected = Self::stmt_type_for_kind(&self.kind);
+        assert_eq!(
+            self.common.type_0, expected,
+            "ExprDef inconsistent: common.type_0={} but kind expects {}",
+            self.common.type_0, expected
+        );
+    }
+
+    /// Returns the `stmt_type` for a given ExprKind (usable before construction).
+    pub fn stmt_type_for_kind(kind: &ExprKind) -> stmt_type {
+        match kind {
+            ExprKind::String(_) => STMT_EXPR_STRING_LITERAL,
+            ExprKind::Integer(_) => STMT_EXPR_INTEGER_LITERAL,
+            ExprKind::Float => STMT_EXPR_FLOAT_LITERAL,
+            ExprKind::Boolean(_) => STMT_EXPR_BOOLEAN_LITERAL,
+            ExprKind::KeyName(_) => STMT_EXPR_KEYNAME_LITERAL,
+            ExprKind::KeySym(_) => STMT_EXPR_KEYSYM_LITERAL,
+            ExprKind::Ident(_) => STMT_EXPR_IDENT,
+            ExprKind::FieldRef { .. } => STMT_EXPR_FIELD_REF,
+            ExprKind::ArrayRef { .. } => STMT_EXPR_ARRAY_REF,
+            ExprKind::Action { .. } => STMT_EXPR_ACTION_DECL,
+            ExprKind::ActionList { .. } => STMT_EXPR_ACTION_LIST,
+            ExprKind::KeysymList { .. } => STMT_EXPR_KEYSYM_LIST,
+            ExprKind::EmptyList => STMT_EXPR_EMPTY_LIST,
+            ExprKind::Binary { op, .. } => *op,
+            ExprKind::Unary { op, .. } => *op,
+        }
+    }
 }
 
 // Re-export ast_build functions used by consumers via ast_h
@@ -148,94 +199,9 @@ pub use crate::xkb::xkbcomp::ast_build::{
     stmt_type_to_operator_char, stmt_type_to_string, xkb_file_type_to_string, FreeXkbFile,
 };
 
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ExprActionList {
-    pub common: ParseCommon,
-    pub actions: *mut ExprDef,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ExprAction {
-    pub common: ParseCommon,
-    pub name: u32,
-    pub args: *mut ExprDef,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ExprArrayRef {
-    pub common: ParseCommon,
-    pub element: u32,
-    pub field: u32,
-    pub entry: *mut ExprDef,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ExprFieldRef {
-    pub common: ParseCommon,
-    pub element: u32,
-    pub field: u32,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ExprUnary {
-    pub common: ParseCommon,
-    pub child: *mut ExprDef,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ExprBinary {
-    pub common: ParseCommon,
-    pub left: *mut ExprDef,
-    pub right: *mut ExprDef,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ExprKeySym {
-    pub common: ParseCommon,
-    pub keysym: u32,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ExprKeyName {
-    pub common: ParseCommon,
-    pub key_name: u32,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ExprInteger {
-    pub common: ParseCommon,
-    pub ival: i64,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ExprBoolean {
-    pub common: ParseCommon,
-    pub set: bool,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ExprString {
-    pub common: ParseCommon,
-    pub str: u32,
-}
-
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct ExprIdent {
-    pub common: ParseCommon,
-    pub ident: u32,
-}
+// Note: ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprUnary,
+// ExprFieldRef, ExprIdent, ExprString, ExprBoolean, ExprInteger, ExprKeySym,
+// ExprKeyName, ExprKeysymList structs have been replaced by ExprKind enum variants.
 
 // ── Statement definition types ──────────────────────────────────────
 

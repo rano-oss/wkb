@@ -4,6 +4,7 @@ use crate::xkb::text::{buttonNames, GROUP_LAST_INDEX_NAME};
 
 pub use crate::xkb::keymap::XkbModNameToIndex;
 pub use crate::xkb::shared_ast_types::stmt_type_to_operator_char;
+use crate::xkb::shared_ast_types::ExprKind;
 use crate::xkb::utils::cstr_as_bytes;
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -49,22 +50,36 @@ pub unsafe fn ExprResolveLhs<'a>(
     unsafe {
         match (*expr).common.type_0 {
             10 => {
+                let ExprKind::Ident(ident) = &(*expr).kind else {
+                    unreachable!()
+                };
                 *elem_rtrn = "";
-                *field_rtrn = xkb_atom_text(&(*ctx).atom_table, (*expr).ident.ident);
+                *field_rtrn = xkb_atom_text(&(*ctx).atom_table, *ident);
                 *index_rtrn = std::ptr::null_mut();
                 return !(*field_rtrn).is_empty();
             }
             12 => {
-                *elem_rtrn = xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.element);
-                *field_rtrn = xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.field);
+                let ExprKind::FieldRef { element, field } = &(*expr).kind else {
+                    unreachable!()
+                };
+                *elem_rtrn = xkb_atom_text(&(*ctx).atom_table, *element);
+                *field_rtrn = xkb_atom_text(&(*ctx).atom_table, *field);
                 *index_rtrn = std::ptr::null_mut();
                 return !(*elem_rtrn).is_empty() && !(*field_rtrn).is_empty();
             }
             13 => {
-                *elem_rtrn = xkb_atom_text(&(*ctx).atom_table, (*expr).array_ref.element);
-                *field_rtrn = xkb_atom_text(&(*ctx).atom_table, (*expr).array_ref.field);
-                *index_rtrn = (*expr).array_ref.entry as *mut ExprDef;
-                if (*expr).array_ref.element != XKB_ATOM_NONE && (*elem_rtrn).is_empty() {
+                let ExprKind::ArrayRef {
+                    element,
+                    field,
+                    entry,
+                } = &(*expr).kind
+                else {
+                    unreachable!()
+                };
+                *elem_rtrn = xkb_atom_text(&(*ctx).atom_table, *element);
+                *field_rtrn = xkb_atom_text(&(*ctx).atom_table, *field);
+                *index_rtrn = *entry;
+                if *element != XKB_ATOM_NONE && (*elem_rtrn).is_empty() {
                     return false;
                 }
                 if (*field_rtrn).is_empty() {
@@ -226,7 +241,10 @@ pub unsafe fn ExprResolveBoolean(
         let mut ident: &str = "";
         match (*expr).common.type_0 {
             7 => {
-                *set_rtrn = (*expr).boolean.set;
+                let ExprKind::Boolean(set) = &(*expr).kind else {
+                    unreachable!()
+                };
+                *set_rtrn = *set;
                 return true;
             }
             4 | 5 | 6 | 8 | 9 => {
@@ -241,7 +259,10 @@ pub unsafe fn ExprResolveBoolean(
                 return false;
             }
             10 => {
-                ident = xkb_atom_text(&(*ctx).atom_table, (*expr).ident.ident);
+                let ExprKind::Ident(ident_atom) = &(*expr).kind else {
+                    unreachable!()
+                };
+                ident = xkb_atom_text(&(*ctx).atom_table, *ident_atom);
                 if !ident.is_empty() {
                     if ident.eq_ignore_ascii_case("true")
                         || ident.eq_ignore_ascii_case("yes")
@@ -269,19 +290,25 @@ pub unsafe fn ExprResolveBoolean(
                 return false;
             }
             12 => {
+                let ExprKind::FieldRef { element, field } = &(*expr).kind else {
+                    unreachable!()
+                };
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Default \"{}.{}\" of type boolean is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.element),
-                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.field),
+                    xkb_atom_text(&(*ctx).atom_table, *element),
+                    xkb_atom_text(&(*ctx).atom_table, *field),
                 );
                 return false;
             }
             24 | 22 => {
-                ok = ExprResolveBoolean(ctx, (*expr).unary.child, set_rtrn);
+                let ExprKind::Unary { child, .. } = &(*expr).kind else {
+                    unreachable!()
+                };
+                ok = ExprResolveBoolean(ctx, *child, set_rtrn);
                 if ok {
                     *set_rtrn = !*set_rtrn;
                 }
@@ -328,7 +355,10 @@ unsafe fn ExprResolveIntegerLookup(
         let right: *mut ExprDef;
         match (*expr).common.type_0 {
             5 => {
-                *val_rtrn = (*expr).integer.ival;
+                let ExprKind::Integer(ival) = &(*expr).kind else {
+                    unreachable!()
+                };
+                *val_rtrn = *ival;
                 return true;
             }
             4 | 6 | 7 | 8 | 9 => {
@@ -343,11 +373,14 @@ unsafe fn ExprResolveIntegerLookup(
                 return false;
             }
             10 => {
+                let ExprKind::Ident(ident_atom) = &(*expr).kind else {
+                    unreachable!()
+                };
                 if lookup.is_some() {
                     ok = lookup.expect("non-null function pointer")(
                         ctx,
                         lookupPriv,
-                        (*expr).ident.ident,
+                        *ident_atom,
                         &raw mut u,
                         pending,
                     );
@@ -359,7 +392,7 @@ unsafe fn ExprResolveIntegerLookup(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
                         XKB_ERROR_INVALID_IDENTIFIER as i32,
-                        xkb_atom_text(&(*ctx).atom_table, (*expr).ident.ident),
+                        xkb_atom_text(&(*ctx).atom_table, *ident_atom),
                     );
                 } else {
                     *val_rtrn = u as i64;
@@ -370,20 +403,31 @@ unsafe fn ExprResolveIntegerLookup(
                 return ok;
             }
             12 => {
+                let ExprKind::FieldRef { element, field } = &(*expr).kind else {
+                    unreachable!()
+                };
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.element),
-                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.field),
+                    xkb_atom_text(&(*ctx).atom_table, *element),
+                    xkb_atom_text(&(*ctx).atom_table, *field),
                 );
                 return false;
             }
             17..=20 => {
-                left = (*expr).binary.left as *mut ExprDef;
-                right = (*expr).binary.right as *mut ExprDef;
+                let ExprKind::Binary {
+                    left: bleft,
+                    right: bright,
+                    ..
+                } = &(*expr).kind
+                else {
+                    unreachable!()
+                };
+                left = *bleft;
+                right = *bright;
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut l, pending, lookup, lookupPriv)
                     || !ExprResolveIntegerLookup(
                         ctx, right, &raw mut r, pending, lookup, lookupPriv,
@@ -492,7 +536,10 @@ unsafe fn ExprResolveIntegerLookup(
                 return false;
             }
             24 | 23 => {
-                left = (*expr).unary.child as *mut ExprDef;
+                let ExprKind::Unary { child, .. } = &(*expr).kind else {
+                    unreachable!()
+                };
+                left = *child;
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut l, pending, lookup, lookupPriv) {
                     return false;
                 }
@@ -504,7 +551,10 @@ unsafe fn ExprResolveIntegerLookup(
                 return true;
             }
             25 => {
-                left = (*expr).unary.child as *mut ExprDef;
+                let ExprKind::Unary { child, .. } = &(*expr).kind else {
+                    unreachable!()
+                };
+                left = *child;
                 return ExprResolveIntegerLookup(ctx, left, val_rtrn, pending, lookup, lookupPriv);
             }
             _ => {
@@ -684,7 +734,10 @@ pub unsafe fn ExprResolveString(
     unsafe {
         match (*expr).common.type_0 {
             4 => {
-                *val_rtrn = (*expr).string.str;
+                let ExprKind::String(s) = &(*expr).kind else {
+                    unreachable!()
+                };
+                *val_rtrn = *s;
                 return true;
             }
             5..=9 => {
@@ -705,19 +758,27 @@ pub unsafe fn ExprResolveString(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Identifier \"{}\" of type string not found\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    xkb_atom_text(&(*ctx).atom_table, (*expr).ident.ident),
+                    xkb_atom_text(&(*ctx).atom_table, {
+                        let ExprKind::Ident(id) = &(*expr).kind else {
+                            unreachable!()
+                        };
+                        *id
+                    }),
                 );
                 return false;
             }
             12 => {
+                let ExprKind::FieldRef { element, field } = &(*expr).kind else {
+                    unreachable!()
+                };
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Default \"{}.{}\" of type string not found\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.element),
-                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.field),
+                    xkb_atom_text(&(*ctx).atom_table, *element),
+                    xkb_atom_text(&(*ctx).atom_table, *field),
                 );
                 return false;
             }
@@ -764,10 +825,13 @@ pub unsafe fn ExprResolveEnum(
             );
             return false;
         }
+        let ExprKind::Ident(ident_atom) = &(*expr).kind else {
+            unreachable!()
+        };
         if !SimpleLookup(
             ctx,
             values.as_ptr() as *const ::core::ffi::c_void,
-            (*expr).ident.ident,
+            *ident_atom,
             val_rtrn,
             std::ptr::null_mut(),
         ) {
@@ -777,7 +841,7 @@ pub unsafe fn ExprResolveEnum(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Illegal identifier {}; expected one of:\n",
                 XKB_ERROR_INVALID_IDENTIFIER as i32,
-                xkb_atom_text(&(*ctx).atom_table, (*expr).ident.ident),
+                xkb_atom_text(&(*ctx).atom_table, *ident_atom),
             );
             for entry in values {
                 if entry.name.is_empty() {
@@ -816,23 +880,22 @@ unsafe fn ExprResolveMaskLookup(
         let c2rust_current_block_47: u64;
         match (*expr).common.type_0 {
             5 => {
-                if (*expr).integer.ival < 0_i64 || (*expr).integer.ival > u32::MAX as i64 {
+                let ExprKind::Integer(ival) = &(*expr).kind else {
+                    unreachable!()
+                };
+                if *ival < 0_i64 || *ival > u32::MAX as i64 {
                     xkb_logf!(
                         ctx,
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Mask {}{:#x} is out of range (0..{:#x})\n",
-                        if (*expr).integer.ival < 0_i64 {
-                            "-"
-                        } else {
-                            ""
-                        },
-                        (*expr).integer.ival.abs(),
+                        if *ival < 0_i64 { "-" } else { "" },
+                        ival.abs(),
                         4294967295_u32,
                     );
                     return false;
                 }
-                *val_rtrn = (*expr).integer.ival as u32;
+                *val_rtrn = *ival as u32;
                 return true;
             }
             4 | 6 | 7 | 8 | 9 => {
@@ -847,10 +910,13 @@ unsafe fn ExprResolveMaskLookup(
                 return false;
             }
             10 => {
+                let ExprKind::Ident(ident_atom) = &(*expr).kind else {
+                    unreachable!()
+                };
                 ok = lookup.expect("non-null function pointer")(
                     ctx,
                     lookupPriv,
-                    (*expr).ident.ident,
+                    *ident_atom,
                     val_rtrn,
                     pending,
                 );
@@ -861,7 +927,7 @@ unsafe fn ExprResolveMaskLookup(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
                         XKB_ERROR_INVALID_IDENTIFIER as i32,
-                        xkb_atom_text(&(*ctx).atom_table, (*expr).ident.ident),
+                        xkb_atom_text(&(*ctx).atom_table, *ident_atom),
                     );
                 }
                 if !pending.is_null() && *pending as i32 != 0 {
@@ -870,14 +936,17 @@ unsafe fn ExprResolveMaskLookup(
                 return ok;
             }
             12 => {
+                let ExprKind::FieldRef { element, field } = &(*expr).kind else {
+                    unreachable!()
+                };
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.element),
-                    xkb_atom_text(&(*ctx).atom_table, (*expr).field_ref.field),
+                    xkb_atom_text(&(*ctx).atom_table, *element),
+                    xkb_atom_text(&(*ctx).atom_table, *field),
                 );
                 return false;
             }
@@ -889,8 +958,16 @@ unsafe fn ExprResolveMaskLookup(
                 c2rust_current_block_47 = 6716998617863641615;
             }
             17..=20 => {
-                left = (*expr).binary.left as *mut ExprDef;
-                right = (*expr).binary.right as *mut ExprDef;
+                let ExprKind::Binary {
+                    left: bleft,
+                    right: bright,
+                    ..
+                } = &(*expr).kind
+                else {
+                    unreachable!()
+                };
+                left = *bleft;
+                right = *bright;
                 if !ExprResolveMaskLookup(ctx, left, &raw mut l, pending, lookup, lookupPriv)
                     || !ExprResolveMaskLookup(ctx, right, &raw mut r, pending, lookup, lookupPriv)
                 {
@@ -933,7 +1010,10 @@ unsafe fn ExprResolveMaskLookup(
                 c2rust_current_block_47 = 11626999923138678822;
             }
             24 => {
-                left = (*expr).unary.child as *mut ExprDef;
+                let ExprKind::Unary { child, .. } = &(*expr).kind else {
+                    unreachable!()
+                };
+                left = *child;
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut v, pending, lookup, lookupPriv) {
                     return false;
                 }
@@ -953,7 +1033,10 @@ unsafe fn ExprResolveMaskLookup(
                 return true;
             }
             25 | 23 | 22 => {
-                left = (*expr).unary.child as *mut ExprDef;
+                let ExprKind::Unary { child, .. } = &(*expr).kind else {
+                    unreachable!()
+                };
+                left = *child;
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut v, pending, lookup, lookupPriv) {
                     return false;
                 }
@@ -1072,7 +1155,10 @@ pub unsafe fn ExprResolveMod(
             );
             return false;
         }
-        let name: u32 = (*def).ident.ident;
+        let ExprKind::Ident(ident_atom) = &(*def).kind else {
+            unreachable!()
+        };
+        let name: u32 = *ident_atom;
         let ndx: u32 = XkbModNameToIndex(mods, name, mod_type);
         if ndx == XKB_MOD_INVALID {
             xkb_logf!(
