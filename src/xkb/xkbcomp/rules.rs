@@ -4,15 +4,15 @@ pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 pub use crate::xkb::utils::is_absolute_path;
 
 pub use crate::xkb::messages::{
-    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
-    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
-    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
-    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
-    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
-    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
-    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
-    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
-    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
+    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
+    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
+    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
+    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
+    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
+    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
+    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
     XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
     XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
     XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
@@ -255,7 +255,7 @@ unsafe fn lex(s: *mut scanner, val: *mut lvalue) -> rules_token {
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {}:{}:{}: illegal new line escape; must appear at end of line\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    crate::xkb::utils::CStrDisplay((*s).file_name),
+                    &(*s).file_name,
                     loc.line,
                     loc.column,
                 );
@@ -309,7 +309,7 @@ unsafe fn lex(s: *mut scanner, val: *mut lvalue) -> rules_token {
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {}:{}:{}: unexpected character after '$'; expected name\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    crate::xkb::utils::CStrDisplay((*s).file_name),
+                    &(*s).file_name,
                     loc_0.line,
                     loc_0.column,
                 );
@@ -339,7 +339,7 @@ unsafe fn lex(s: *mut scanner, val: *mut lvalue) -> rules_token {
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] {}:{}:{}: unrecognized token\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            crate::xkb::utils::CStrDisplay((*s).file_name),
+            &(*s).file_name,
             loc_1.line,
             loc_1.column,
         );
@@ -669,7 +669,7 @@ unsafe fn matcher_include(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "{}:{}:{}: maximum include depth ({}) exceeded; maybe there is an include loop?\n",
-                crate::xkb::utils::CStrDisplay((*parent_scanner).file_name),
+                &(*parent_scanner).file_name,
                 loc.line,
                 loc.column,
                 MAX_INCLUDE_DEPTH,
@@ -681,7 +681,7 @@ unsafe fn matcher_include(
         let mut buf: [i8; 4096] = [0; 4096];
         let expanded: isize = expand_path(
             (*m).ctx,
-            (*parent_scanner).file_name,
+            &(*parent_scanner).file_name,
             stmt_file,
             stmt_file_len,
             FILE_TYPE_RULES,
@@ -727,7 +727,7 @@ unsafe fn matcher_include(
         } else {
             file = FindFileInXkbPath(
                 (*m).ctx,
-                (*parent_scanner).file_name,
+                (*parent_scanner).file_name.as_str(),
                 stmt_file,
                 stmt_file_len,
                 FILE_TYPE_RULES,
@@ -743,7 +743,9 @@ unsafe fn matcher_include(
                 m,
                 include_depth.wrapping_add(1_u32),
                 file,
-                &raw mut buf as *mut i8,
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
+                    &raw mut buf as *const i8,
+                )),
             );
             fclose(file);
             if ret {
@@ -754,7 +756,9 @@ unsafe fn matcher_include(
                 XKB_LOG_LEVEL_ERROR,
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "No components returned from included XKB rules \"{}\"\n",
-                crate::xkb::utils::CStrDisplay(&raw mut buf as *mut i8),
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
+                    &raw mut buf as *const i8
+                )),
             );
             if absolute_path {
                 break;
@@ -762,7 +766,7 @@ unsafe fn matcher_include(
             offset = offset.wrapping_add(1);
             file = FindFileInXkbPath(
                 (*m).ctx,
-                (*parent_scanner).file_name,
+                (*parent_scanner).file_name.as_str(),
                 stmt_file,
                 stmt_file_len,
                 FILE_TYPE_RULES,
@@ -911,7 +915,7 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                crate::xkb::utils::CStrDisplay((*s).file_name),
+                &(*s).file_name,
                 loc.line,
                 loc.column,
                 crate::xkb::utils::CStrNDisplay(ident.len, ident.start),
@@ -927,7 +931,7 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                crate::xkb::utils::CStrDisplay((*s).file_name),
+                &(*s).file_name,
                 loc_0.line,
                 loc_0.column,
                 crate::xkb::utils::CStrNDisplay(mlvo_sval.len as usize, mlvo_sval.start),
@@ -950,7 +954,7 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" may only be followed by a valid group index; ignoring rule set\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    crate::xkb::utils::CStrDisplay((*s).file_name),
+                    &(*s).file_name,
                     loc_1.line,
                     loc_1.column,
                     crate::xkb::utils::CStrNDisplay(mlvo_sval.len as usize, mlvo_sval.start),
@@ -970,7 +974,7 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" cannot be followed by a group index; ignoring rule set\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    crate::xkb::utils::CStrDisplay((*s).file_name),
+                    &(*s).file_name,
                     loc_2.line,
                     loc_2.column,
                     crate::xkb::utils::CStrNDisplay(mlvo_sval.len as usize, mlvo_sval.start),
@@ -994,7 +998,7 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid mapping: \"layout\" index must be the same as the \"variant\" index\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                crate::xkb::utils::CStrDisplay((*s).file_name),
+                &(*s).file_name,
                 loc_3.line,
                 loc_3.column,
             );
@@ -1091,7 +1095,7 @@ unsafe fn matcher_mapping_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sv
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                crate::xkb::utils::CStrDisplay((*s).file_name),
+                &(*s).file_name,
                 loc.line,
                 loc.column,
                 crate::xkb::utils::CStrNDisplay(ident.len, ident.start),
@@ -1107,7 +1111,7 @@ unsafe fn matcher_mapping_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sv
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                crate::xkb::utils::CStrDisplay((*s).file_name),
+                &(*s).file_name,
                 loc_0.line,
                 loc_0.column,
                 crate::xkb::utils::CStrNDisplay(kccgst_sval.len as usize, kccgst_sval.start),
@@ -1133,7 +1137,7 @@ unsafe fn matcher_mapping_verify(m: *mut matcher, s: *mut scanner) -> bool {
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the left hand side; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                crate::xkb::utils::CStrDisplay((*s).file_name),
+                &(*s).file_name,
                 loc.line,
                 loc.column,
             );
@@ -1145,7 +1149,7 @@ unsafe fn matcher_mapping_verify(m: *mut matcher, s: *mut scanner) -> bool {
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the right hand side; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                crate::xkb::utils::CStrDisplay((*s).file_name),
+                &(*s).file_name,
                 loc_0.line,
                 loc_0.column,
             );
@@ -1291,7 +1295,7 @@ unsafe fn matcher_rule_set_mlvo_common(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                crate::xkb::utils::CStrDisplay((*s).file_name),
+                &(*s).file_name,
                 loc.line,
                 loc.column,
             );
@@ -1336,7 +1340,7 @@ unsafe fn matcher_rule_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sval)
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                crate::xkb::utils::CStrDisplay((*s).file_name),
+                &(*s).file_name,
                 loc.line,
                 loc.column,
             );
@@ -1428,7 +1432,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                     "[XKB-{:03}] {}:{}:{}: Invalid %i in %-expansion: there is no corresponding layout nor variant in the MLVO fields of the rules header.\n",
                     XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION
                         as i32,
-                    crate::xkb::utils::CStrDisplay((*s).file_name),
+                    &(*s).file_name,
                     loc.line,
                     loc.column,
                 );
@@ -1499,7 +1503,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                                         "[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
                                         XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                                        crate::xkb::utils::CStrDisplay((*s).file_name),
+                                        &(*s).file_name,
                                         loc_0.line,
                                         loc_0.column,
                                     );
@@ -1646,7 +1650,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                                         "[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
                                         XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                                        crate::xkb::utils::CStrDisplay((*s).file_name),
+                                        &(*s).file_name,
                                         loc_0.line,
                                         loc_0.column,
                                     );
@@ -1793,7 +1797,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                                         "[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
                                         XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                                        crate::xkb::utils::CStrDisplay((*s).file_name),
+                                        &(*s).file_name,
                                         loc_0.line,
                                         loc_0.column,
                                     );
@@ -1928,7 +1932,7 @@ unsafe fn expand_rmlvo_in_kccgst_value(
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            crate::xkb::utils::CStrDisplay((*s).file_name),
+            &(*s).file_name,
             loc_1.line,
             loc_1.column,
         );
@@ -1962,7 +1966,7 @@ unsafe fn expand_qualifier_in_kccgst_value(
                     XKB_LOG_LEVEL_WARNING,
                     XKB_LOG_VERBOSITY_DETAILED as i32,
                     "{}:{}:{}: Using :all qualifier with indices range is not recommended.\n",
-                    crate::xkb::utils::CStrDisplay((*s).file_name),
+                    &(*s).file_name,
                     loc.line,
                     loc.column,
                 );
@@ -2185,7 +2189,7 @@ unsafe fn matcher_rule_verify(m: *mut matcher, s: *mut scanner) {
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: invalid rule: must have same number of values as mapping line; ignoring rule\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                crate::xkb::utils::CStrDisplay((*s).file_name),
+                &(*s).file_name,
                 loc.line,
                 loc.column,
             );
@@ -2401,7 +2405,7 @@ unsafe fn matcher_match(
     include_depth: u32,
     _string: *const i8,
     _len: usize,
-    _file_name: *const i8,
+    _file_name: &str,
 ) -> bool {
     unsafe {
         let c2rust_current_block: u64;
@@ -2663,7 +2667,7 @@ unsafe fn matcher_match(
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] {}:{}:{}: unexpected token\n",
                             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                            crate::xkb::utils::CStrDisplay((*s).file_name),
+                            &(*s).file_name,
                             loc.line,
                             loc.column,
                         );
@@ -2679,7 +2683,7 @@ unsafe fn read_rules_file(
     matcher: *mut matcher,
     include_depth: u32,
     file: *mut FILE,
-    path: *const i8,
+    path: &str,
 ) -> bool {
     unsafe {
         #[allow(unused_assignments)]
@@ -2687,7 +2691,7 @@ unsafe fn read_rules_file(
             std::ptr::null_mut(),
             std::ptr::null(),
             0,
-            std::ptr::null(),
+            "",
             std::ptr::null_mut(),
         );
 
@@ -2711,15 +2715,13 @@ unsafe fn read_rules_file(
         let mapped = match MappedFile::new(&rust_file) {
             Ok(m) => m,
             Err(e) => {
-                let err_msg = std::ffi::CString::new(e.to_string())
-                    .unwrap_or_else(|_| std::ffi::CString::new("unknown error").unwrap());
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Couldn't read rules file \"{}\": {}\n",
-                    crate::xkb::utils::CStrDisplay(path),
-                    crate::xkb::utils::CStrDisplay(err_msg.as_ptr()),
+                    path,
+                    e,
                 );
                 std::mem::forget(rust_file);
                 return false;
@@ -2741,7 +2743,7 @@ unsafe fn read_rules_file(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                crate::xkb::utils::CStrDisplay(scanner.file_name),
+                &scanner.file_name,
                 loc.line,
                 loc.column,
             );
@@ -2752,7 +2754,7 @@ unsafe fn read_rules_file(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                crate::xkb::utils::CStrDisplay(scanner.file_name),
+                &scanner.file_name,
                 loc_0.line,
                 loc_0.column,
             );
@@ -2786,8 +2788,8 @@ unsafe fn xkb_resolve_partial_rules(
             std::mem::size_of::<[i8; 60]>(),
             format_args!(
                 "{}{}",
-                crate::xkb::utils::CStrDisplay(rules),
-                crate::xkb::utils::CStrDisplay(suffix)
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(rules)),
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(suffix))
             ),
         );
         if _trunc {
@@ -2797,8 +2799,8 @@ unsafe fn xkb_resolve_partial_rules(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Cannot load XKB rules \"{}{}\"\n",
                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                crate::xkb::utils::CStrDisplay(rules),
-                crate::xkb::utils::CStrDisplay(suffix),
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(rules)),
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(suffix)),
             );
             return false;
         }
@@ -2808,7 +2810,7 @@ unsafe fn xkb_resolve_partial_rules(
         loop {
             file = FindFileInXkbPath(
                 ctx,
-                b"(unknown)\0".as_ptr() as *const i8,
+                "(unknown)",
                 &raw mut partial_rules as *mut i8,
                 len,
                 FILE_TYPE_RULES,
@@ -2820,7 +2822,13 @@ unsafe fn xkb_resolve_partial_rules(
             if file.is_null() {
                 break;
             }
-            let ok: bool = read_rules_file(ctx, matcher, 0_u32, file, path);
+            let ok: bool = read_rules_file(
+                ctx,
+                matcher,
+                0_u32,
+                file,
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
+            );
             fclose(file);
             if !ok {
                 xkb_logf!(
@@ -2829,7 +2837,7 @@ unsafe fn xkb_resolve_partial_rules(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
                     XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                    crate::xkb::utils::CStrDisplay(path),
+                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
                 );
                 return false;
             }
@@ -2852,7 +2860,7 @@ unsafe fn xkb_resolve_rules(
         let mut path: [i8; 4096] = [0; 4096];
         let file: *mut FILE = FindFileInXkbPath(
             ctx,
-            b"(unknown)\0".as_ptr() as *const i8,
+            "(unknown)",
             rules,
             cstr_len(rules),
             FILE_TYPE_RULES,
@@ -2868,7 +2876,7 @@ unsafe fn xkb_resolve_rules(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Cannot load XKB rules \"{}\"\n",
                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                crate::xkb::utils::CStrDisplay(rules),
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(rules)),
             );
         } else {
             ret = xkb_resolve_partial_rules(
@@ -2880,7 +2888,15 @@ unsafe fn xkb_resolve_rules(
                 matcher,
             );
             if ret {
-                ret = read_rules_file(ctx, matcher, 0_u32, file, &raw mut path as *mut i8);
+                ret = read_rules_file(
+                    ctx,
+                    matcher,
+                    0_u32,
+                    file,
+                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
+                        &raw mut path as *const i8,
+                    )),
+                );
                 if !ret {
                     xkb_logf!(
                         ctx,
@@ -2888,7 +2904,9 @@ unsafe fn xkb_resolve_rules(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
                         XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                        crate::xkb::utils::CStrDisplay(&raw mut path as *mut i8),
+                        std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
+                            &raw mut path as *mut i8
+                        )),
                     );
                 } else {
                     ret = xkb_resolve_partial_rules(
@@ -2911,7 +2929,9 @@ unsafe fn xkb_resolve_rules(
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                                 "[XKB-{:03}] No components returned from XKB rules \"{}\"\n",
                                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                crate::xkb::utils::CStrDisplay(rules),
+                                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
+                                    rules
+                                )),
                             );
                             ret = false;
                         } else {

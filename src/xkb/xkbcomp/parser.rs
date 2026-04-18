@@ -60,15 +60,15 @@ pub use super::scanner::parser_h::{
     YYUNDEF,
 };
 pub use crate::xkb::messages::{
-    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
-    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
-    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
-    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
-    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
-    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
-    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
-    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
-    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
+    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
+    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
+    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
+    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
+    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
+    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
+    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
     XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
     XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
     XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
@@ -321,16 +321,17 @@ pub union yyalloc {
 unsafe fn _xkbcommon_error(param: *mut parser_param, msg: *const i8) {
     unsafe {
         let loc: scanner_loc = (*(*param).scanner).token_location();
+        let msg_str = std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(msg));
         xkb_logf!(
             (*(*param).scanner).ctx,
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "[XKB-{:03}] {}:{}:{}: {}\n",
             XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-            crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+            &(*(*param).scanner).file_name,
             loc.line,
             loc.column,
-            crate::xkb::utils::CStrDisplay(msg),
+            msg_str,
         );
     }
 }
@@ -388,6 +389,9 @@ unsafe fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u3
             if ((*(*param).ctx).log_verbosity >= 2_i32) as i32 as i64 != 0 {
                 let mut ref_name: *const i8 = std::ptr::null();
                 if xkb_keysym_is_deprecated(sym, &raw mut buf as *mut i8, &raw mut ref_name) {
+                    let buf_str = std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
+                        &raw mut buf as *const i8,
+                    ));
                     if ref_name.is_null() {
                         let loc: scanner_loc = (*(*param).scanner).token_location();
                         xkb_logf!(
@@ -396,12 +400,15 @@ unsafe fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u3
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] {}:{}:{}: deprecated keysym \"{}\".\n",
                             XKB_WARNING_DEPRECATED_KEYSYM as i32,
-                            crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+                            &(*(*param).scanner).file_name,
                             loc.line,
                             loc.column,
-                            crate::xkb::utils::CStrDisplay(&raw mut buf as *mut i8),
+                            buf_str,
                         );
                     } else {
+                        let ref_str = std::str::from_utf8_unchecked(
+                            crate::xkb::utils::cstr_as_bytes(ref_name),
+                        );
                         let loc_0: scanner_loc = (*(*param).scanner).token_location();
                         xkb_logf!(
                             (*(*param).scanner).ctx,
@@ -409,11 +416,11 @@ unsafe fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u3
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{}\"; please use \"{}\" instead.\n",
                             XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
-                            crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+                            &(*(*param).scanner).file_name,
                             loc_0.line,
                             loc_0.column,
-                            crate::xkb::utils::CStrDisplay(&raw mut buf as *mut i8),
-                            crate::xkb::utils::CStrDisplay(ref_name),
+                            buf_str,
+                            ref_str,
                         );
                     }
                 }
@@ -789,7 +796,7 @@ pub unsafe fn parse(ctx: *mut xkb_context, scanner: *mut scanner, map: *const i8
                 XKB_LOG_VERBOSITY_DETAILED as i32,
                 "[XKB-{:03}] No map in include statement, but \"{}\" contains several; Using first defined map, \"{}\"\n",
                 XKB_WARNING_MISSING_DEFAULT_SECTION as i32,
-                crate::xkb::utils::CStrDisplay((*scanner).file_name),
+                &(*scanner).file_name,
                 safe_map_name(&*first),
             );
         }
@@ -2201,7 +2208,7 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                             XKB_LOG_LEVEL_WARNING,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "{}:{}:{}: ignored unsupported legacy merge mode \"alternate\"\n",
-                            crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+                            &(*(*param).scanner).file_name,
                             loc.line,
                             loc.column,
                         );
@@ -2568,7 +2575,7 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                                 "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{}\"\n",
                                 XKB_WARNING_UNRECOGNIZED_KEYSYM as i32,
-                                crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+                                &(*(*param).scanner).file_name,
                                 loc_0.line,
                                 loc_0.column,
                                 crate::xkb::utils::CStrNDisplay(
@@ -2598,7 +2605,7 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                                 "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"-{:#06x}\" ({})\n",
                                 XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
-                                crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+                                &(*(*param).scanner).file_name,
                                 loc_1.line,
                                 loc_1.column,
                                 -(*yyvsp.offset(0_i32 as isize)).num,
@@ -2624,7 +2631,7 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                                                 "[XKB-{:03}] {}:{}:{}: deprecated keysym \"{:#06x}\".\n",
                                                 XKB_WARNING_DEPRECATED_KEYSYM as i32,
-                                                crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+                                                &(*(*param).scanner).file_name,
                                                 loc_2.line,
                                                 loc_2.column,
                                                 yyval.keysym,
@@ -2638,11 +2645,11 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                                                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                                                 "[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{:#06x}\"; please use \"{}\" instead.\n",
                                                 XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
-                                                crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+                                                &(*(*param).scanner).file_name,
                                                 loc_3.line,
                                                 loc_3.column,
                                                 yyval.keysym,
-                                                crate::xkb::utils::CStrDisplay(ref_name),
+                                                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(ref_name)),
                                             );
                                         }
                                     }
@@ -2655,7 +2662,7 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                                     "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{:#06x}\" ({})\n",
                                     XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
-                                    crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+                                    &(*(*param).scanner).file_name,
                                     loc_4.line,
                                     loc_4.column,
                                     (*yyvsp.offset(0_i32 as isize)).num,
@@ -2670,7 +2677,7 @@ pub unsafe fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                                 XKB_LOG_VERBOSITY_COMPREHENSIVE as i32,
                                 "[XKB-{:03}] {}:{}:{}: numeric keysym \"{:#06x}\" ({})\n",
                                 XKB_WARNING_NUMERIC_KEYSYM as i32,
-                                crate::xkb::utils::CStrDisplay((*(*param).scanner).file_name),
+                                &(*(*param).scanner).file_name,
                                 loc_5.line,
                                 loc_5.column,
                                 (*yyvsp.offset(0_i32 as isize)).num,

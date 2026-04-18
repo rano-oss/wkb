@@ -178,26 +178,6 @@ pub unsafe fn snprintf_c(buf: *mut i8, size: usize, args: core::fmt::Arguments<'
     full_len as i32
 }
 
-/// Display wrapper for `*const i8` C strings in Rust format strings.
-/// Replaces `%s` format specifier usage. Reads the C string and writes it as UTF-8.
-pub struct CStrDisplay(pub *const i8);
-
-impl core::fmt::Display for CStrDisplay {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        if self.0.is_null() {
-            return f.write_str("(null)");
-        }
-        unsafe {
-            let cstr = std::ffi::CStr::from_ptr(self.0);
-            let bytes = cstr.to_bytes();
-            match core::str::from_utf8(bytes) {
-                Ok(s) => f.write_str(s),
-                Err(_) => f.write_str("<invalid utf8>"),
-            }
-        }
-    }
-}
-
 /// Display wrapper for precision-limited C strings (`%.*s` replacement).
 /// Reads at most `len` bytes from the pointer, stopping at NUL.
 pub struct CStrNDisplay(pub usize, pub *const i8);

@@ -45,7 +45,7 @@ pub struct scanner {
     pub token_pos: usize,
     pub cached_pos: usize,
     pub cached_loc: scanner_loc,
-    pub file_name: *const i8,
+    pub file_name: String,
     pub ctx: *mut xkb_context,
     pub priv_0: *mut ::core::ffi::c_void,
 }
@@ -55,7 +55,7 @@ impl scanner {
         ctx: *mut xkb_context,
         s: *const i8,
         len: usize,
-        file_name: *const i8,
+        file_name: &str,
         priv_0: *mut ::core::ffi::c_void,
     ) -> Self {
         scanner {
@@ -67,7 +67,7 @@ impl scanner {
             token_pos: 0,
             cached_pos: 0,
             cached_loc: scanner_loc { line: 1, column: 1 },
-            file_name,
+            file_name: file_name.to_string(),
             ctx,
             priv_0,
         }
@@ -303,7 +303,7 @@ impl scanner {
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {}:{}:{}: unexpected NULL character.\n",
                     XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                    crate::xkb::utils::CStrDisplay(self.file_name),
+                    &self.file_name,
                     loc.line,
                     loc.column,
                 );
@@ -317,7 +317,7 @@ impl scanner {
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {}:{}:{}: unexpected non-ASCII character.\n",
                     XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                    crate::xkb::utils::CStrDisplay(self.file_name),
+                    &self.file_name,
                     loc.line,
                     loc.column,
                 );

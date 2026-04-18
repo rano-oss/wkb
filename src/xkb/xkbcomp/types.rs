@@ -79,7 +79,7 @@ fn ReportTypeShouldBeArray(info: &KeyTypesInfo, type_0: &KeyTypeInfo, field: &st
 #[inline]
 fn ReportTypeBadType(
     info: &KeyTypesInfo,
-    code: xkb_message_code,
+    code: u32,
     type_0: &KeyTypeInfo,
     field: &str,
     wanted: &str,

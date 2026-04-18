@@ -20,15 +20,15 @@ pub unsafe fn xkb_components_from_rules_names(
 }
 
 pub use crate::xkb::messages::{
-    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
-    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
-    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
-    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
-    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
-    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
-    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
-    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
-    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
+    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
+    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
+    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
+    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
+    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
+    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
+    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
     XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
     XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
     XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
@@ -197,10 +197,16 @@ unsafe fn text_v1_keymap_new_from_names(
             XKB_LOG_LEVEL_DEBUG,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "Compiling from KcCGST: keycodes '{}', types '{}', compat '{}', symbols '{}'\n",
-            crate::xkb::utils::CStrDisplay(kccgst.keycodes.as_ptr()),
-            crate::xkb::utils::CStrDisplay(kccgst.types.as_ptr()),
-            crate::xkb::utils::CStrDisplay(kccgst.compatibility.as_ptr()),
-            crate::xkb::utils::CStrDisplay(kccgst.symbols.as_ptr()),
+            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
+                kccgst.keycodes.as_ptr()
+            )),
+            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(kccgst.types.as_ptr())),
+            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
+                kccgst.compatibility.as_ptr()
+            )),
+            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
+                kccgst.symbols.as_ptr()
+            )),
         );
         let file: *mut XkbFile = XkbFileFromComponents(&raw mut (*keymap).ctx, &raw mut kccgst);
         drop(kccgst);
@@ -229,7 +235,7 @@ unsafe fn text_v1_keymap_new_from_string(
             &raw mut (*keymap).ctx,
             string,
             len,
-            b"(input string)\0".as_ptr() as *const i8,
+            "(input string)",
             std::ptr::null(),
         );
         if xkb_file.is_null() {
@@ -252,7 +258,7 @@ unsafe fn text_v1_keymap_new_from_file(keymap: *mut xkb_keymap, file: *mut FILE)
         let xkb_file: *mut XkbFile = XkbParseFile(
             &raw mut (*keymap).ctx,
             file,
-            b"(unknown file)\0".as_ptr() as *const i8,
+            "(unknown file)",
             std::ptr::null(),
         );
         if xkb_file.is_null() {

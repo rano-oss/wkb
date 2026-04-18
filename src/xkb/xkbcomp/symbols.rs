@@ -366,16 +366,8 @@ fn MergeGroups(
                                 i.wrapping_add(1_u32),
                                 group.wrapping_add(1_u32),
                                 xkb_atom_text(&info.ctx().atom_table, key_name),
-                                crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
-                                    b"from\0".as_ptr() as *const i8
-                                } else {
-                                    b"to\0".as_ptr() as *const i8
-                                }),
-                                crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
-                                    b"to\0".as_ptr() as *const i8
-                                } else {
-                                    b"from\0".as_ptr() as *const i8
-                                }),
+                                if clobber { "from" } else { "to" },
+                                if clobber { "to" } else { "from" },
                             );
                         }
                         if !fromHasNoKeysym {
@@ -408,13 +400,7 @@ fn MergeGroups(
                                     i.wrapping_add(1_u32),
                                     group.wrapping_add(1_u32),
                                     xkb_atom_text(&info.ctx().atom_table, key_name),
-                                    crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
-                                        b"Using from, ignoring to\0".as_ptr()
-                                            as *const i8
-                                    } else {
-                                        b"Using to, ignoring from\0".as_ptr()
-                                            as *const i8
-                                    }),
+                                    if clobber { "Using from, ignoring to" } else { "Using to, ignoring from" },
                                 );
                             } else {
                                 let use_action: &xkb_action = if clobber {
@@ -788,11 +774,7 @@ fn MergeKeys(info: &SymbolsInfo, into: *mut KeyInfo, from: *mut KeyInfo, same_fi
                 "[XKB-{:03}] Symbol map for key <{}> redefined; Using {} definition for conflicting fields\n",
                 XKB_WARNING_CONFLICTING_KEY_FIELDS as i32,
                 xkb_atom_text(&info.ctx().atom_table, (*into).name),
-                crate::xkb::utils::CStrDisplay(if clobber as i32 != 0 {
-                    b"first\0".as_ptr() as *const i8
-                } else {
-                    b"last\0".as_ptr() as *const i8
-                }),
+                if clobber { "first" } else { "last" },
             );
         }
         ClearKeyInfo(from);
@@ -1019,10 +1001,10 @@ fn GetGroupIndex(
     ndx_rtrn: *mut u32,
 ) -> bool {
     unsafe {
-        let name: *const i8 = if field == GROUP_FIELD_SYMS {
-            b"symbols\0".as_ptr() as *const i8
+        let name: &str = if field == GROUP_FIELD_SYMS {
+            "symbols"
         } else {
-            b"actions\0".as_ptr() as *const i8
+            "actions"
         };
         if arrayNdx.is_null() {
             let mut i: u32 = 0_u32;
@@ -1046,10 +1028,10 @@ fn GetGroupIndex(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Too many groups of {} for key <{}> (max {}); Ignoring {} defined for extra groups\n",
                     { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                    crate::xkb::utils::CStrDisplay(name),
+                    name,
                     KeyInfoText(info, &*keyi),
                     info.max_groups,
-                    crate::xkb::utils::CStrDisplay(name),
+                    name,
                 );
                 return false;
             }
@@ -1072,7 +1054,7 @@ fn GetGroupIndex(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] Illegal group index for {} of key <{}>\nDefinition with non-integer array index ignored\n",
                 { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                crate::xkb::utils::CStrDisplay(name),
+                name,
                 KeyInfoText(info, &*keyi),
             );
             return false;

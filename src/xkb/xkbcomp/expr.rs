@@ -15,16 +15,14 @@ pub type IdentLookupFunc = Option<
     unsafe fn(*mut xkb_context, *const ::core::ffi::c_void, u32, *mut u32, *mut bool) -> bool,
 >;
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct named_integer_pattern {
-    pub prefix: *const i8,
-    pub prefix_length: usize,
+    pub prefix: &'static str,
     pub min: u32,
     pub max: u32,
     pub entries: *const LookupEntry,
     pub pending_entries: *const LookupEntry,
     pub is_mask: bool,
-    pub error_id: xkb_message_code,
+    pub error_id: u32,
 }
 // SAFETY: LEVEL_NAME_PATTERN is never modified and all pointers are either null or
 // point to static data. Only accessed in single-threaded parser context.
@@ -33,8 +31,7 @@ unsafe impl Sync for SyncNamedIntegerPattern {}
 
 static LEVEL_NAME_PATTERN: SyncNamedIntegerPattern =
     SyncNamedIntegerPattern(named_integer_pattern {
-        prefix: b"Level\0".as_ptr() as *const i8,
-        prefix_length: 5, // "Level".len()
+        prefix: "Level",
         min: 1_u32,
         max: XKB_LEVEL_MAX_IMPL as u32,
         entries: std::ptr::null(),
@@ -124,23 +121,20 @@ unsafe fn NamedIntegerPatternLookup(
         }
         let str_bytes: &str = xkb_atom_text(&(*ctx).atom_table, field);
         let pattern: *const named_integer_pattern = priv_0 as *const named_integer_pattern;
-        let prefix_bytes = cstr_as_bytes((*pattern).prefix);
+        let prefix = (*pattern).prefix;
         let count: i32 = if str_bytes
             .as_bytes()
-            .get(..(*pattern).prefix_length)
-            .is_some_and(|s| {
-                prefix_bytes
-                    .get(..(*pattern).prefix_length)
-                    .map_or(false, |t| s.eq_ignore_ascii_case(t))
-            }) {
-            let suffix = &str_bytes.as_bytes()[(*pattern).prefix_length..];
+            .get(..prefix.len())
+            .is_some_and(|s| s.eq_ignore_ascii_case(prefix.as_bytes()))
+        {
+            let suffix = &str_bytes.as_bytes()[prefix.len()..];
             let (val_parsed, c) = crate::xkb::utils::parse_dec_u32(suffix);
             *(val_rtrn as *mut u32) = val_parsed;
             c
         } else {
             0_i32
         };
-        if count > 0_i32 && (*pattern).prefix_length + count as usize == str_bytes.len() {
+        if count > 0_i32 && prefix.len() + count as usize == str_bytes.len() {
             if *val_rtrn < (*pattern).min || *val_rtrn > (*pattern).max {
                 xkb_logf!(
                     ctx,
@@ -148,7 +142,7 @@ unsafe fn NamedIntegerPatternLookup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {} index {} is out of range ({}..{})\n",
                     { (*pattern).error_id },
-                    crate::xkb::utils::CStrDisplay((*pattern).prefix),
+                    (*pattern).prefix,
                     *val_rtrn,
                     (*pattern).min,
                     (*pattern).max,
@@ -562,8 +556,7 @@ pub unsafe fn ExprResolveGroup(
             },
         ];
         let group_name_pattern: named_integer_pattern = named_integer_pattern {
-            prefix: b"Group\0".as_ptr() as *const i8,
-            prefix_length: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1_usize),
+            prefix: "Group",
             min: 1_u32,
             max: (*keymap_info).features.max_groups,
             entries: &raw const (*keymap_info).lookup.groupIndexNames as *const LookupEntry,
@@ -819,7 +812,7 @@ unsafe fn ExprResolveMaskLookup(
         let mut v: i64 = 0_i64;
         let left: *mut ExprDef;
         let right: *mut ExprDef;
-        let mut bogus: *const i8 = std::ptr::null();
+        let mut bogus: Option<&str> = None;
         let c2rust_current_block_47: u64;
         match (*expr).common.type_0 {
             5 => {
@@ -829,11 +822,11 @@ unsafe fn ExprResolveMaskLookup(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Mask {}{:#x} is out of range (0..{:#x})\n",
-                        crate::xkb::utils::CStrDisplay(if (*expr).integer.ival < 0_i64 {
-                            b"-\0".as_ptr() as *const i8
+                        if (*expr).integer.ival < 0_i64 {
+                            "-"
                         } else {
-                            b"\0".as_ptr() as *const i8
-                        }),
+                            ""
+                        },
                         (*expr).integer.ival.abs(),
                         4294967295_u32,
                     );
@@ -889,7 +882,7 @@ unsafe fn ExprResolveMaskLookup(
                 return false;
             }
             13 => {
-                bogus = b"array reference\0".as_ptr() as *const i8;
+                bogus = Some("array reference");
                 c2rust_current_block_47 = 6716998617863641615;
             }
             11 => {
@@ -917,13 +910,11 @@ unsafe fn ExprResolveMaskLookup(
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] Cannot {} masks; Illegal operation ignored\n",
                             XKB_ERROR_INVALID_OPERATION as i32,
-                            crate::xkb::utils::CStrDisplay(
-                                if (*expr).common.type_0 == STMT_EXPR_DIVIDE {
-                                    b"divide\0".as_ptr() as *const i8
-                                } else {
-                                    b"multiply\0".as_ptr() as *const i8
-                                }
-                            ),
+                            if (*expr).common.type_0 == STMT_EXPR_DIVIDE {
+                                "divide"
+                            } else {
+                                "multiply"
+                            },
                         );
                         return false;
                     }
@@ -952,11 +943,7 @@ unsafe fn ExprResolveMaskLookup(
                         XKB_LOG_LEVEL_ERROR,
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "Mask {}{:#x} is out of range (0..{:#x})\n",
-                        crate::xkb::utils::CStrDisplay(if v < 0_i64 {
-                            b"-\0".as_ptr() as *const i8
-                        } else {
-                            b"\0".as_ptr() as *const i8
-                        }),
+                        if v < 0_i64 { "-" } else { "" },
                         v.abs(),
                         4294967295_u32,
                     );
@@ -995,8 +982,8 @@ unsafe fn ExprResolveMaskLookup(
         match c2rust_current_block_47 {
             11626999923138678822 => {}
             _ => {
-                if bogus.is_null() {
-                    bogus = b"function use\0".as_ptr() as *const i8;
+                if bogus.is_none() {
+                    bogus = Some("function use");
                 }
                 xkb_logf!(
                     ctx,
@@ -1004,7 +991,7 @@ unsafe fn ExprResolveMaskLookup(
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] Unexpected {} in mask expression; Expression Ignored\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    crate::xkb::utils::CStrDisplay(bogus),
+                    bogus.unwrap_or("unknown"),
                 );
                 return false;
             }
@@ -1120,8 +1107,7 @@ pub unsafe fn ExprResolveGroupMask(
             },
         ];
         let group_name_pattern: named_integer_pattern = named_integer_pattern {
-            prefix: b"Group\0".as_ptr() as *const i8,
-            prefix_length: (std::mem::size_of::<[i8; 6]>()).wrapping_sub(1_usize),
+            prefix: "Group",
             min: 1_u32,
             max: (*keymap_info).features.max_groups,
             entries: &raw const (*keymap_info).lookup.groupMaskNames as *const LookupEntry,

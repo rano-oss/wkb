@@ -199,15 +199,15 @@ pub use self::parser_h::{
     XKB_SYMBOLS, XKB_TYPES, YYEMPTY, YYSTYPE, YYUNDEF,
 };
 pub use crate::xkb::messages::{
-    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
-    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
-    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
-    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
-    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
-    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
-    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
-    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
-    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
+    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
+    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
+    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
+    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
+    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
+    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
+    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
     XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
     XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
     XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
@@ -382,7 +382,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                                 "[XKB-{:03}] {}:{}:{}: invalid Unicode escape sequence \"{}\" in string literal\n",
                                 XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE
                                     as i32,
-                                crate::xkb::utils::CStrDisplay((*s).file_name),
+                                &(*s).file_name,
                                 loc.line,
                                 loc.column,
                                 crate::xkb::utils::CStrNDisplay((*s).pos.wrapping_sub(start_pos).wrapping_add(1), (*s).s.add(start_pos.wrapping_sub(1))
@@ -399,7 +399,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] {}:{}:{}: invalid octal escape sequence \"{}\" in string literal\n",
                             XKB_WARNING_INVALID_ESCAPE_SEQUENCE as i32,
-                            crate::xkb::utils::CStrDisplay((*s).file_name),
+                            &(*s).file_name,
                             loc_0.line,
                             loc_0.column,
                             crate::xkb::utils::CStrNDisplay((*s).pos.wrapping_sub(start_pos).wrapping_add(1), (*s).s.add(start_pos.wrapping_sub(1))
@@ -414,7 +414,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                             "[XKB-{:03}] {}:{}:{}: unknown escape sequence \"\\{}\" in string literal\n",
                             XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE
                                 as i32,
-                            crate::xkb::utils::CStrDisplay((*s).file_name),
+                            &(*s).file_name,
                             loc_1.line,
                             loc_1.column,
                             ((*s).peek() as u8 as char),
@@ -432,7 +432,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "{}:{}:{}: unterminated string literal\n",
-                    crate::xkb::utils::CStrDisplay((*s).file_name),
+                    &(*s).file_name,
                     loc_2.line,
                     loc_2.column,
                 );
@@ -455,7 +455,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "{}:{}:{}: unterminated key name literal\n",
-                    crate::xkb::utils::CStrDisplay((*s).file_name),
+                    &(*s).file_name,
                     loc_3.line,
                     loc_3.column,
                 );
@@ -543,7 +543,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "[XKB-{:03}] {}:{}:{}: malformed number literal\n",
                     XKB_ERROR_MALFORMED_NUMBER_LITERAL as i32,
-                    crate::xkb::utils::CStrDisplay((*s).file_name),
+                    &(*s).file_name,
                     loc_4.line,
                     loc_4.column,
                 );
@@ -557,7 +557,7 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
             XKB_LOG_LEVEL_ERROR,
             XKB_LOG_VERBOSITY_MINIMAL as i32,
             "{}:{}:{}: unrecognized token\n",
-            crate::xkb::utils::CStrDisplay((*s).file_name),
+            &(*s).file_name,
             loc_5.line,
             loc_5.column,
         );
@@ -569,7 +569,7 @@ pub unsafe fn XkbParseStringInit(
     sc: *mut scanner,
     string: *const i8,
     len: usize,
-    file_name: *const i8,
+    file_name: &str,
     _map: *const i8,
 ) -> bool {
     unsafe {
@@ -582,7 +582,7 @@ pub unsafe fn XkbParseStringInit(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                crate::xkb::utils::CStrDisplay((*sc).file_name),
+                &(*sc).file_name,
                 loc.line,
                 loc.column,
             );
@@ -593,7 +593,7 @@ pub unsafe fn XkbParseStringInit(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                crate::xkb::utils::CStrDisplay((*sc).file_name),
+                &(*sc).file_name,
                 loc_0.line,
                 loc_0.column,
             );
@@ -606,7 +606,7 @@ pub unsafe fn XkbParseString(
     ctx: *mut xkb_context,
     string: *const i8,
     len: usize,
-    file_name: *const i8,
+    file_name: &str,
     map: *const i8,
 ) -> *mut XkbFile {
     unsafe {
@@ -614,7 +614,7 @@ pub unsafe fn XkbParseString(
             std::ptr::null_mut(),
             std::ptr::null(),
             0,
-            std::ptr::null(),
+            "",
             std::ptr::null_mut(),
         );
         if !XkbParseStringInit(ctx, &raw mut sc, string, len, file_name, map) {
@@ -644,7 +644,7 @@ pub unsafe fn XkbParseStringNext(
 pub unsafe fn XkbParseFile(
     ctx: *mut xkb_context,
     file: *mut FILE,
-    file_name: *const i8,
+    file_name: &str,
     map: *const i8,
 ) -> *mut XkbFile {
     unsafe {
@@ -671,15 +671,13 @@ pub unsafe fn XkbParseFile(
         let mapped = match MappedFile::new(&rust_file) {
             Ok(m) => m,
             Err(e) => {
-                let err_msg = std::ffi::CString::new(e.to_string())
-                    .unwrap_or_else(|_| std::ffi::CString::new("unknown error").unwrap());
                 xkb_logf!(
                     ctx,
                     XKB_LOG_LEVEL_ERROR,
                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                     "Couldn't read XKB file {}: {}\n",
-                    crate::xkb::utils::CStrDisplay(file_name),
-                    crate::xkb::utils::CStrDisplay(err_msg.as_ptr()),
+                    file_name,
+                    e,
                 );
                 std::mem::forget(rust_file); // Don't close fd - caller owns FILE*
                 return std::ptr::null_mut();

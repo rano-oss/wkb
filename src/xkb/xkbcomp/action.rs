@@ -7,24 +7,6 @@ pub struct ActionsInfo {
     pub actions: [xkb_action; 21],
 }
 
-// impl ActionsInfo {
-//     pub fn new(mut keymap: &xkb_keymap) {
-//         let mut type_0 = ACTION_TYPE_NONE;
-//         let actions: [xkb_action; 21];
-//         for a in &actions {
-//             a.type_0
-//         }
-//         while type_0 < _ACTION_TYPE_NUM_ENTRIES {
-//             actions[type_0 as usize].type_0 = type_0;
-//             type_0 += 1;
-//         }
-//         actions[ACTION_TYPE_PTR_DEFAULT as usize].dflt.flags = 0 as xkb_action_flags;
-//         actions[ACTION_TYPE_PTR_DEFAULT as usize].dflt.value = 1 as i8;
-//         actions[ACTION_TYPE_PTR_MOVE as usize].ptr.flags = ACTION_ACCEL;
-//         actions[ACTION_TYPE_SWITCH_VT as usize].screen.flags = ACTION_SAME_SCREEN;
-//         actions[ACTION_TYPE_REDIRECT_KEY as usize].redirect.keycode = (*keymap).redirect_key_auto;
-//     }
-// }
 pub const ACTION_FIELD_LATCH_ON_PRESS: u32 = 25;
 pub const ACTION_FIELD_UNLOCK_ON_PRESS: u32 = 24;
 pub const ACTION_FIELD_LOCK_ON_RELEASE: u32 = 23;
@@ -269,10 +251,10 @@ unsafe fn fieldText(field: u32) -> &'static str {
 #[inline]
 unsafe fn ReportMismatch(
     _ctx: *mut xkb_context,
-    code: xkb_message_code,
+    code: u32,
     action: xkb_action_type,
     field: u32,
-    type_0: *const i8,
+    type_0: &str,
     strict: xkb_parser_strict_flags,
 ) -> xkb_parser_error {
     unsafe {
@@ -283,7 +265,7 @@ unsafe fn ReportMismatch(
             "[XKB-{:03}] Value of {} field must be of type {}; Action {} definition ignored\n",
             { code },
             fieldText(field),
-            crate::xkb::utils::CStrDisplay(type_0),
+            type_0,
             ActionTypeText(action),
         );
         (if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
@@ -299,7 +281,7 @@ unsafe fn ReportFormatVersionMismatch(
     action: xkb_action_type,
     field: u32,
     format: u32,
-    versions: *const i8,
+    versions: &str,
     strict: xkb_parser_strict_flags,
 ) -> xkb_parser_error {
     unsafe {
@@ -311,7 +293,7 @@ unsafe fn ReportFormatVersionMismatch(
             XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT as i32,
             fieldText(field),
             ActionTypeText(action),
-            crate::xkb::utils::CStrDisplay(versions),
+            versions,
             { format },
         );
         (if strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
@@ -416,7 +398,7 @@ unsafe fn CheckBooleanFlag(
                 XKB_ERROR_WRONG_FIELD_TYPE,
                 action,
                 field,
-                b"boolean\0".as_ptr() as *const i8,
+                "boolean",
                 strict,
             );
         }
@@ -459,7 +441,7 @@ unsafe fn CheckModifierField(
                 XKB_ERROR_WRONG_FIELD_TYPE,
                 action,
                 ACTION_FIELD_MODIFIERS,
-                b"modifier mask\0".as_ptr() as *const i8,
+                "modifier mask",
                 strict,
             );
         }
@@ -509,7 +491,7 @@ unsafe fn CheckAffectField(
                 XKB_ERROR_WRONG_FIELD_TYPE,
                 action,
                 ACTION_FIELD_AFFECT,
-                b"lock, unlock, both, neither\0".as_ptr() as *const i8,
+                "lock, unlock, both, neither",
                 strict,
             );
         }
@@ -563,7 +545,7 @@ unsafe fn HandleSetLatchLockMods(
                     (*action).type_0,
                     field,
                     (*(*keymap_info).keymap).format,
-                    b">= 2\0".as_ptr() as *const i8,
+                    ">= 2",
                     (*keymap_info).strict,
                 );
             }
@@ -613,7 +595,7 @@ unsafe fn HandleSetLatchLockMods(
                         (*action).type_0,
                         field,
                         (*(*keymap_info).keymap).format,
-                        b">= 2\0".as_ptr() as *const i8,
+                        ">= 2",
                         (*keymap_info).strict,
                     );
                 }
@@ -674,7 +656,7 @@ unsafe fn CheckGroupField(
                 XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
                 action,
                 ACTION_FIELD_GROUP,
-                b"integer\0".as_ptr() as *const i8,
+                "integer",
                 (*keymap_info).strict,
             );
             return ret;
@@ -775,7 +757,7 @@ unsafe fn HandleSetLatchLockGroup(
                     (*action).type_0,
                     field,
                     (*(*keymap_info).keymap).format,
-                    b">= v2\0".as_ptr() as *const i8,
+                    ">= v2",
                     (*keymap_info).strict,
                 );
             }
@@ -808,7 +790,7 @@ unsafe fn HandleMovePtr(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"integer\0".as_ptr() as *const i8,
+                    "integer",
                     (*keymap_info).strict,
                 );
             }
@@ -880,7 +862,7 @@ unsafe fn HandlePtrBtn(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"integer (range 1..5)\0".as_ptr() as *const i8,
+                    "integer (range 1..5)",
                     (*keymap_info).strict,
                 );
             }
@@ -920,7 +902,7 @@ unsafe fn HandlePtrBtn(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"integer\0".as_ptr() as *const i8,
+                    "integer",
                     (*keymap_info).strict,
                 );
             }
@@ -985,7 +967,7 @@ unsafe fn HandleSetPtrDflt(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"pointer component\0".as_ptr() as *const i8,
+                    "pointer component",
                     (*keymap_info).strict,
                 );
             }
@@ -1012,7 +994,7 @@ unsafe fn HandleSetPtrDflt(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"integer (range 1..5)\0".as_ptr() as *const i8,
+                    "integer (range 1..5)",
                     (*keymap_info).strict,
                 );
             }
@@ -1087,7 +1069,7 @@ unsafe fn HandleSwitchScreen(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"integer (-128..127)\0".as_ptr() as *const i8,
+                    "integer (-128..127)",
                     (*keymap_info).strict,
                 );
             }
@@ -1153,7 +1135,7 @@ unsafe fn HandleSetLockControls(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"controls mask\0".as_ptr() as *const i8,
+                    "controls mask",
                     (*keymap_info).strict,
                 );
             }
@@ -1202,7 +1184,7 @@ unsafe fn HandleRedirectKey(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"key name\0".as_ptr() as *const i8,
+                    "key name",
                     (*keymap_info).strict,
                 );
             }
@@ -1247,7 +1229,7 @@ unsafe fn HandleRedirectKey(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     (*action).type_0,
                     field,
-                    b"modifier mask\0".as_ptr() as *const i8,
+                    "modifier mask",
                     (*keymap_info).strict,
                 );
             }
@@ -1296,7 +1278,7 @@ unsafe fn HandlePrivate(
                     XKB_ERROR_WRONG_FIELD_TYPE,
                     ACTION_TYPE_PRIVATE,
                     field,
-                    b"integer\0".as_ptr() as *const i8,
+                    "integer",
                     (*keymap_info).strict,
                 );
             }
@@ -1336,7 +1318,7 @@ unsafe fn HandlePrivate(
                         XKB_ERROR_WRONG_FIELD_TYPE,
                         (*action).type_0,
                         field,
-                        b"string\0".as_ptr() as *const i8,
+                        "string",
                         (*keymap_info).strict,
                     );
                 }
@@ -1405,7 +1387,7 @@ unsafe fn HandlePrivate(
                         XKB_ERROR_WRONG_FIELD_TYPE,
                         (*act).type_0,
                         field,
-                        b"integer\0".as_ptr() as *const i8,
+                        "integer",
                         (*keymap_info).strict,
                     );
                 }
@@ -1876,16 +1858,8 @@ pub unsafe fn SetDefaultActionField(
                 "Conflicting field \"{}\" for default action \"{}\"; Using {}, ignore {}\n",
                 fieldText(action_field),
                 ActionTypeText(action),
-                crate::xkb::utils::CStrDisplay(if replace as i32 != 0 {
-                    b"from\0".as_ptr() as *const i8
-                } else {
-                    b"into\0".as_ptr() as *const i8
-                }),
-                crate::xkb::utils::CStrDisplay(if replace as i32 != 0 {
-                    b"into\0".as_ptr() as *const i8
-                } else {
-                    b"from\0".as_ptr() as *const i8
-                }),
+                if replace { "from" } else { "into" },
+                if replace { "into" } else { "from" },
             );
             if replace {
                 *into = from;

@@ -13,7 +13,7 @@ pub const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
 pub const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
 
 pub use crate::xkb::messages::{
-    xkb_log_verbosity, xkb_message_code, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
+    _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
     XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
@@ -209,7 +209,7 @@ unsafe fn LogIncludePaths(ctx: *mut xkb_context) {
 }
 unsafe fn expand_percent(
     ctx: *mut xkb_context,
-    parent_file_name: *const i8,
+    parent_file_name: &str,
     typeDir: &str,
     buf: *mut i8,
     buf_size: usize,
@@ -235,7 +235,7 @@ unsafe fn expand_percent(
                                     XKB_LOG_VERBOSITY_MINIMAL as i32,
                                     "[XKB-{:03}] {}:{}:{}: include path after expanding %H is too long\n",
                                     XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                                    crate::xkb::utils::CStrDisplay(s.file_name),
+                                    &s.file_name,
                                     loc.line,
                                     loc.column,
                                 );
@@ -251,7 +251,7 @@ unsafe fn expand_percent(
                             XKB_LOG_LEVEL_ERROR,
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "{}:{}:{}: %H was used in an include statement, but the HOME environment variable is not set\n",
-                            crate::xkb::utils::CStrDisplay(s.file_name),
+                            &s.file_name,
                             loc.line,
                             loc.column,
                         );
@@ -271,7 +271,7 @@ unsafe fn expand_percent(
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] {}:{}:{}: include path after expanding %S is too long\n",
                             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                            crate::xkb::utils::CStrDisplay(s.file_name),
+                            &s.file_name,
                             loc.line,
                             loc.column,
                         );
@@ -291,7 +291,7 @@ unsafe fn expand_percent(
                             XKB_LOG_VERBOSITY_MINIMAL as i32,
                             "[XKB-{:03}] {}:{}:{}: include path after expanding %E is too long\n",
                             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                            crate::xkb::utils::CStrDisplay(s.file_name),
+                            &s.file_name,
                             loc.line,
                             loc.column,
                         );
@@ -305,7 +305,7 @@ unsafe fn expand_percent(
                         XKB_LOG_VERBOSITY_MINIMAL as i32,
                         "[XKB-{:03}] {}:{}:{}: unknown % format ({}) in include statement\n",
                         XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                        crate::xkb::utils::CStrDisplay(s.file_name),
+                        &s.file_name,
                         loc.line,
                         loc.column,
                         (s.peek() as u8 as char),
@@ -325,7 +325,7 @@ unsafe fn expand_percent(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: include path is too long; max: {}\n",
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                crate::xkb::utils::CStrDisplay(s.file_name),
+                &s.file_name,
                 loc.line,
                 loc.column,
                 std::mem::size_of::<[i8; 1024]>(),
@@ -340,7 +340,7 @@ unsafe fn expand_percent(
                 XKB_LOG_VERBOSITY_MINIMAL as i32,
                 "[XKB-{:03}] {}:{}:{}: include path is too long: {} > {}\n",
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                crate::xkb::utils::CStrDisplay(s.file_name),
+                &s.file_name,
                 loc.line,
                 loc.column,
                 s.buf_pos,
@@ -354,7 +354,7 @@ unsafe fn expand_percent(
 }
 pub unsafe fn expand_path(
     ctx: *mut xkb_context,
-    parent_file_name: *const i8,
+    parent_file_name: &str,
     name: *const i8,
     name_len: usize,
     type_0: u32,
@@ -414,7 +414,7 @@ pub unsafe fn expand_path(
 }
 pub unsafe fn FindFileInXkbPath(
     ctx: *mut xkb_context,
-    _parent_file_name: *const i8,
+    _parent_file_name: &str,
     name: *const i8,
     name_len: usize,
     type_0: u32,
@@ -517,7 +517,7 @@ pub unsafe fn ProcessIncludeFile(
         let mut stmt_file_len: usize = stmt_ref.file.len();
         let expanded: isize = expand_path(
             ctx,
-            b"(unknown)\0".as_ptr() as *const i8,
+            "(unknown)",
             stmt_file as *const i8,
             stmt_file_len,
             file_type,
@@ -540,7 +540,7 @@ pub unsafe fn ProcessIncludeFile(
         } else {
             file = FindFileInXkbPath(
                 ctx,
-                b"(unknown)\0".as_ptr() as *const i8,
+                "(unknown)",
                 stmt_file as *const i8,
                 stmt_file_len,
                 file_type,
@@ -557,7 +557,7 @@ pub unsafe fn ProcessIncludeFile(
         };
         let map_ptr = map_cstr.as_ref().map_or(std::ptr::null(), |c| c.as_ptr());
         while !file.is_null() {
-            xkb_file = XkbParseFile(ctx, file, file_cstr.as_ptr(), map_ptr);
+            xkb_file = XkbParseFile(ctx, file, &stmt_ref.file, map_ptr);
             fclose(file);
             if !xkb_file.is_null() {
                 if (*xkb_file).file_type as u32 != file_type {
@@ -591,7 +591,7 @@ pub unsafe fn ProcessIncludeFile(
             offset = offset.wrapping_add(1);
             file = FindFileInXkbPath(
                 ctx,
-                b"(unknown)\0".as_ptr() as *const i8,
+                "(unknown)",
                 stmt_file as *const i8,
                 stmt_file_len,
                 file_type,

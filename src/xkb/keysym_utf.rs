@@ -2,8 +2,6 @@
 //!
 //! Converted from C FFI to idiomatic Rust.
 // Re-export type alias
-pub type Keysym = u32;
-
 // XKB key symbol constants
 pub const XKB_KEY_NO_SYMBOL: u32 = 0;
 pub const XKB_KEY_BACKSPACE: u32 = 0xff08;
@@ -57,7 +55,7 @@ fn bin_search_keysym(keysym: u32) -> Option<u32> {
 /// Convert an XKB keysym to a Unicode character
 ///
 /// Returns `None` if the keysym cannot be converted to Unicode.
-pub fn keysym_to_char(keysym: Keysym) -> Option<char> {
+pub fn keysym_to_char(keysym: u32) -> Option<char> {
     let codepoint = keysym_to_codepoint(keysym)?;
     char::from_u32(codepoint)
 }
@@ -65,7 +63,7 @@ pub fn keysym_to_char(keysym: Keysym) -> Option<char> {
 /// Convert an XKB keysym to a Unicode codepoint (U+XXXX)
 ///
 /// Returns `None` if the keysym cannot be converted.
-fn keysym_to_codepoint(keysym: Keysym) -> Option<u32> {
+fn keysym_to_codepoint(keysym: u32) -> Option<u32> {
     // ASCII printable and Latin-1
     if (0x20..=0x7E).contains(&keysym) || (0xA0..=0xFF).contains(&keysym) {
         return Some(keysym);
@@ -118,12 +116,12 @@ fn keysym_to_codepoint(keysym: Keysym) -> Option<u32> {
 /// Convert a Unicode character to an XKB keysym
 ///
 /// Returns `None` if the character has no corresponding keysym.
-pub fn char_to_keysym(ch: char) -> Option<Keysym> {
+pub fn char_to_keysym(ch: char) -> Option<u32> {
     codepoint_to_keysym(ch as u32)
 }
 
 /// Convert a Unicode codepoint to an XKB keysym
-fn codepoint_to_keysym(ucs: u32) -> Option<Keysym> {
+fn codepoint_to_keysym(ucs: u32) -> Option<u32> {
     // ASCII printable and Latin-1
     if (0x20..=0x7E).contains(&ucs) || (0xA0..=0xFF).contains(&ucs) {
         return Some(ucs);

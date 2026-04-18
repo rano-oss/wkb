@@ -1,7 +1,6 @@
 use crate::xkb::messages::{XKB_ERROR_INVALID_PATH, XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH};
 use crate::xkb::utils::{
-    _steal, cstr_as_bytes, cstr_cmp, cstr_dup, cstr_free, cstr_len, last_errno, strdup_safe,
-    streq_null,
+    _steal, cstr_as_bytes, cstr_cmp, cstr_dup, cstr_free, cstr_len, strdup_safe, streq_null,
 };
 use libc::{free, getenv};
 
@@ -509,23 +508,26 @@ pub unsafe fn rxkb_context_set_log_level(ctx: *mut rxkb_context, level: rxkb_log
         (*ctx).log_level = level;
     }
 }
-unsafe fn log_level_to_prefix(level: rxkb_log_level) -> *const i8 {
+fn log_level_to_prefix(level: rxkb_log_level) -> &'static str {
     match level {
-        50 => b"xkbregistry: DEBUG: \0".as_ptr() as *const i8,
-        40 => b"xkbregistry: INFO: \0".as_ptr() as *const i8,
-        30 => b"xkbregistry: WARNING: \0".as_ptr() as *const i8,
-        20 => b"xkbregistry: ERROR: \0".as_ptr() as *const i8,
-        10 => b"xkbregistry: CRITICAL: \0".as_ptr() as *const i8,
-        _ => std::ptr::null(),
+        50 => "xkbregistry: DEBUG: ",
+        40 => "xkbregistry: INFO: ",
+        30 => "xkbregistry: WARNING: ",
+        20 => "xkbregistry: ERROR: ",
+        10 => "xkbregistry: CRITICAL: ",
+        _ => "",
     }
 }
 unsafe fn default_log_fn(_ctx: *mut rxkb_context, level: rxkb_log_level, msg: *const i8) {
     unsafe {
-        let prefix: *const i8 = log_level_to_prefix(level);
-        if !prefix.is_null() {
-            eprint!("{}", crate::xkb::utils::CStrDisplay(prefix));
+        let prefix = log_level_to_prefix(level);
+        if !prefix.is_empty() {
+            eprint!("{}", prefix);
         }
-        eprint!("{}", crate::xkb::utils::CStrDisplay(msg));
+        eprint!(
+            "{}",
+            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(msg))
+        );
     }
 }
 unsafe fn log_level(level: *const i8) -> rxkb_log_level {
@@ -613,7 +615,7 @@ pub unsafe fn rxkb_context_new(flags: rxkb_context_flags) -> *mut rxkb_context {
                 ctx,
                 RXKB_LOG_LEVEL_ERROR,
                 "{}: Invalid context flags: 0x{:x}\n",
-                crate::xkb::utils::CStrDisplay(b"rxkb_context_new\0".as_ptr() as *const i8),
+                "rxkb_context_new",
                 flags & !RXKB_CONTEXT_FLAGS,
             );
             drop(Box::from_raw(ctx));
@@ -630,9 +632,7 @@ pub unsafe fn rxkb_context_new(flags: rxkb_context_flags) -> *mut rxkb_context {
                 RXKB_LOG_LEVEL_ERROR,
                 "[XKB-{:03}] Failed to add any default include path (default system path: {})\n",
                 XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH as i32,
-                crate::xkb::utils::CStrDisplay(
-                    b"/usr/share/xkeyboard-config-2\0".as_ptr() as *const i8
-                ),
+                "/usr/share/xkeyboard-config-2",
             );
             rxkb_context_unref(ctx);
             return std::ptr::null_mut();
@@ -663,7 +663,7 @@ pub unsafe fn rxkb_context_include_path_append(ctx: *mut rxkb_context, path: *co
                         ctx,
                         RXKB_LOG_LEVEL_INFO,
                         "Include path failed: \"{}\" (invalid UTF-8)\n",
-                        crate::xkb::utils::CStrDisplay(path),
+                        std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
                     );
                     return false;
                 }
@@ -682,8 +682,10 @@ pub unsafe fn rxkb_context_include_path_append(ctx: *mut rxkb_context, path: *co
                         std::mem::size_of::<[i8; 4096]>(),
                         format_args!(
                             "{}/rules/{}.xml",
-                            crate::xkb::utils::CStrDisplay(path),
-                            crate::xkb::utils::CStrDisplay(DEFAULT_XKB_RULES.as_ptr())
+                            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
+                            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
+                                DEFAULT_XKB_RULES.as_ptr()
+                            ))
                         ),
                     );
                     if _trunc {
@@ -693,8 +695,8 @@ pub unsafe fn rxkb_context_include_path_append(ctx: *mut rxkb_context, path: *co
                             "[XKB-{:03}] Path is too long: expected max length of {}, got: {}/rules/{}.xml\n",
                             XKB_ERROR_INVALID_PATH as i32,
                             std::mem::size_of::<[i8; 4096]>(),
-                            crate::xkb::utils::CStrDisplay(path),
-                            crate::xkb::utils::CStrDisplay(b"evdev\0".as_ptr() as *const i8),
+                            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
+                            "evdev",
                         );
                     } else {
                         tmp = cstr_dup(path);
@@ -706,7 +708,9 @@ pub unsafe fn rxkb_context_include_path_append(ctx: *mut rxkb_context, path: *co
                                 ctx,
                                 RXKB_LOG_LEVEL_INFO,
                                 "Include path added: {}\n",
-                                crate::xkb::utils::CStrDisplay(tmp),
+                                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
+                                    tmp
+                                )),
                             );
                             return true;
                         }
@@ -718,7 +722,7 @@ pub unsafe fn rxkb_context_include_path_append(ctx: *mut rxkb_context, path: *co
             ctx,
             RXKB_LOG_LEVEL_INFO,
             "Include path failed: \"{}\" ({})\n",
-            crate::xkb::utils::CStrDisplay(path),
+            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
             crate::xkb::utils::StrerrorDisplay(err),
         );
         false
@@ -742,7 +746,7 @@ unsafe fn add_direct_subdirectories(
                     ctx,
                     RXKB_LOG_LEVEL_DEBUG,
                     "Include extensions path failed: {} (invalid UTF-8)\n",
-                    crate::xkb::utils::CStrDisplay(path),
+                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
                 );
                 return ret;
             }
@@ -756,7 +760,7 @@ unsafe fn add_direct_subdirectories(
                     ctx,
                     RXKB_LOG_LEVEL_DEBUG,
                     "Include extensions path failed: {} ({})\n",
-                    crate::xkb::utils::CStrDisplay(path),
+                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
                     crate::xkb::utils::StrerrorDisplay(e.raw_os_error().unwrap_or(0)),
                 );
                 return ret;
@@ -767,7 +771,7 @@ unsafe fn add_direct_subdirectories(
                 ctx,
                 RXKB_LOG_LEVEL_DEBUG,
                 "Include extensions path failed: {} ({})\n",
-                crate::xkb::utils::CStrDisplay(path),
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
                 crate::xkb::utils::StrerrorDisplay(ENOTDIR),
             );
             return ret;
@@ -781,7 +785,7 @@ unsafe fn add_direct_subdirectories(
                     ctx,
                     RXKB_LOG_LEVEL_DEBUG,
                     "Include extensions path failed: {} ({})\n",
-                    crate::xkb::utils::CStrDisplay(path),
+                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
                     crate::xkb::utils::StrerrorDisplay(EACCES),
                 );
                 return ret;
@@ -839,7 +843,7 @@ unsafe fn add_direct_subdirectories(
                     ctx,
                     RXKB_LOG_LEVEL_DEBUG,
                     "Include extensions path failed: {} ({})\n",
-                    crate::xkb::utils::CStrDisplay(path),
+                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
                     crate::xkb::utils::StrerrorDisplay(ENOMEM),
                 );
                 return ret;
@@ -876,7 +880,10 @@ pub unsafe fn rxkb_context_include_path_append_default(ctx: *mut rxkb_context) -
             let (_, _trunc) = crate::xkb::utils::snprintf_args(
                 &raw mut user_path as *mut i8,
                 std::mem::size_of::<[i8; 4096]>(),
-                format_args!("{}/xkb", crate::xkb::utils::CStrDisplay(xdg)),
+                format_args!(
+                    "{}/xkb",
+                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(xdg))
+                ),
             );
             if !_trunc {
                 ret |= rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
@@ -885,7 +892,10 @@ pub unsafe fn rxkb_context_include_path_append_default(ctx: *mut rxkb_context) -
             let (_, _trunc) = crate::xkb::utils::snprintf_args(
                 &raw mut user_path as *mut i8,
                 std::mem::size_of::<[i8; 4096]>(),
-                format_args!("{}/.config/xkb", crate::xkb::utils::CStrDisplay(home)),
+                format_args!(
+                    "{}/.config/xkb",
+                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(home))
+                ),
             );
             if !_trunc {
                 ret |= rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
@@ -895,7 +905,10 @@ pub unsafe fn rxkb_context_include_path_append_default(ctx: *mut rxkb_context) -
             let (_, _trunc) = crate::xkb::utils::snprintf_args(
                 &raw mut user_path as *mut i8,
                 std::mem::size_of::<[i8; 4096]>(),
-                format_args!("{}/.xkb", crate::xkb::utils::CStrDisplay(home)),
+                format_args!(
+                    "{}/.xkb",
+                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(home))
+                ),
             );
             if !_trunc {
                 ret |= rxkb_context_include_path_append(ctx, &raw mut user_path as *mut i8) as i32;
@@ -960,13 +973,13 @@ pub unsafe fn rxkb_context_include_path_append_default(ctx: *mut rxkb_context) -
                 ctx,
                 RXKB_LOG_LEVEL_WARNING,
                 "Root include path failed; fallback to \"{}\". The setup is probably misconfigured. Please ensure that \"{}\" is available in the environment.\n",
-                crate::xkb::utils::CStrDisplay(b"/usr/share/X11/xkb\0".as_ptr() as *const i8),
-                crate::xkb::utils::CStrDisplay(if root.is_null() {
+                "/usr/share/X11/xkb",
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(if root.is_null() {
                     b"/usr/share/xkeyboard-config-2\0".as_ptr()
                         as *const i8
                 } else {
                     root
-                }),
+                })),
             );
             ret |= rxkb_context_include_path_append(ctx, DFLT_XKB_LEGACY_ROOT.as_ptr()) as i32;
         }
@@ -997,8 +1010,8 @@ pub unsafe fn rxkb_context_parse(ctx: *mut rxkb_context, ruleset: *const i8) -> 
                     std::mem::size_of::<[i8; 4096]>(),
                     format_args!(
                         "{}/rules/{}.xml",
-                        crate::xkb::utils::CStrDisplay(path),
-                        crate::xkb::utils::CStrDisplay(ruleset)
+                        std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
+                        std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(ruleset))
                     ),
                 );
                 if !_trunc {
@@ -1006,7 +1019,9 @@ pub unsafe fn rxkb_context_parse(ctx: *mut rxkb_context, ruleset: *const i8) -> 
                         ctx,
                         RXKB_LOG_LEVEL_DEBUG,
                         "Parsing {}\n",
-                        crate::xkb::utils::CStrDisplay(&raw mut rules as *mut i8),
+                        std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
+                            &raw mut rules as *mut i8
+                        )),
                     );
                     if parse(ctx, &raw mut rules as *mut i8, RXKB_POPULARITY_STANDARD) {
                         success = true;
@@ -1018,8 +1033,10 @@ pub unsafe fn rxkb_context_parse(ctx: *mut rxkb_context, ruleset: *const i8) -> 
                         std::mem::size_of::<[i8; 4096]>(),
                         format_args!(
                             "{}/rules/{}.extras.xml",
-                            crate::xkb::utils::CStrDisplay(path),
-                            crate::xkb::utils::CStrDisplay(ruleset)
+                            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
+                            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
+                                ruleset
+                            ))
                         ),
                     );
                     if !_trunc {
@@ -1027,7 +1044,9 @@ pub unsafe fn rxkb_context_parse(ctx: *mut rxkb_context, ruleset: *const i8) -> 
                             ctx,
                             RXKB_LOG_LEVEL_DEBUG,
                             "Parsing {}\n",
-                            crate::xkb::utils::CStrDisplay(&raw mut rules as *mut i8),
+                            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
+                                &raw mut rules as *mut i8
+                            )),
                         );
                         if parse(ctx, &raw mut rules as *mut i8, RXKB_POPULARITY_EXOTIC) {
                             success = true;
@@ -1502,7 +1521,7 @@ unsafe fn parse(ctx: *mut rxkb_context, path: *const i8, popularity: rxkb_popula
                     ctx,
                     RXKB_LOG_LEVEL_ERROR,
                     "XML error: failed to validate document at {}\n",
-                    crate::xkb::utils::CStrDisplay(path),
+                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
                 );
                 return false;
             }

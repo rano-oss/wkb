@@ -1,4 +1,4 @@
-use crate::xkb::context::{xkb_atom_text, xkb_context_get_buffer};
+use crate::xkb::context::xkb_atom_text;
 
 // Was in text_h module — now at file level
 #[derive(Copy, Clone)]
@@ -37,7 +37,6 @@ pub use crate::xkb::shared_types::{
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_REAL_MASK_ALL, MOD_VIRT,
     XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MOD_NONE, _ACTION_TYPE_NUM_ENTRIES,
 };
-use crate::xkb::utils::cstr_as_bytes;
 pub fn LookupString(tab: &[LookupEntry], string: &str, value_rtrn: &mut u32) -> bool {
     if string.is_empty() {
         return false;

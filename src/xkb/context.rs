@@ -3,15 +3,15 @@ use std::env::VarError;
 use crate::xkb::atom::{atom_intern, atom_table_new, atom_text};
 
 pub use crate::xkb::messages::{
-    xkb_log_verbosity, xkb_message_code, XKB_ERROR_ABI_BACKWARD_COMPAT_,
-    XKB_ERROR_ABI_FORWARD_COMPAT_, XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR,
-    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
-    XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE,
-    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT,
-    XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
-    XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_COMPOSE_LOCALE,
-    XKB_ERROR_INVALID_COMPOSE_SYNTAX, XKB_ERROR_INVALID_EXPRESSION_TYPE,
-    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
+    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
+    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
+    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
+    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
+    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
+    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
+    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
+    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
+    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
     XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
     XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
     XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
@@ -311,23 +311,26 @@ pub unsafe fn xkb_context_unref(ctx: *mut xkb_context) {
         // atom_table is owned, dropped automatically when xkb_context is dropped
     }
 }
-unsafe fn log_level_to_prefix(level: u32) -> *const i8 {
+fn log_level_to_prefix(level: u32) -> &'static str {
     match level {
-        50 => b"xkbcommon: DEBUG: \0".as_ptr() as *const i8,
-        40 => b"xkbcommon: INFO: \0".as_ptr() as *const i8,
-        30 => b"xkbcommon: WARNING: \0".as_ptr() as *const i8,
-        20 => b"xkbcommon: ERROR: \0".as_ptr() as *const i8,
-        10 => b"xkbcommon: CRITICAL: \0".as_ptr() as *const i8,
-        _ => std::ptr::null(),
+        50 => "xkbcommon: DEBUG: ",
+        40 => "xkbcommon: INFO: ",
+        30 => "xkbcommon: WARNING: ",
+        20 => "xkbcommon: ERROR: ",
+        10 => "xkbcommon: CRITICAL: ",
+        _ => "",
     }
 }
 unsafe fn default_log_fn(_ctx: *mut xkb_context, level: u32, msg: *const i8) {
     unsafe {
-        let prefix: *const i8 = log_level_to_prefix(level);
-        if !prefix.is_null() {
-            eprint!("{}", crate::xkb::utils::CStrDisplay(prefix));
+        let prefix = log_level_to_prefix(level);
+        if !prefix.is_empty() {
+            eprint!("{}", prefix);
         }
-        eprint!("{}", crate::xkb::utils::CStrDisplay(msg));
+        eprint!(
+            "{}",
+            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(msg))
+        );
     }
 }
 unsafe fn log_level(level: *const i8) -> u32 {
