@@ -692,7 +692,7 @@ fn HandleKeyNameVar(info: &mut KeyNamesInfo<'_>, stmt: &VarDef) -> bool {
     let mut elem: &str = "";
     let mut field: &str = "";
     let mut arrayNdx: Option<&ExprDef> = None;
-    let name_ref = unsafe { &*stmt.name.raw() };
+    let name_ref = stmt.name.as_deref().unwrap();
     if !ExprResolveLhs(info.ctx(), name_ref, &mut elem, &mut field, &mut arrayNdx) {
         return false;
     }
@@ -713,23 +713,20 @@ fn HandleKeyNameVar(info: &mut KeyNamesInfo<'_>, stmt: &VarDef) -> bool {
         return (*info.keymap_info).strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
     }
     if arrayNdx.is_some() {
-        unsafe { ReportNotArray(info.ctx, "keycodes", field, "defaults") };
+        ReportNotArray("keycodes", field, "defaults");
         return (*info.keymap_info).strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
     }
     let mut val: i64 = 0_i64;
-    let value_ref = unsafe { &*stmt.value.raw() };
+    let value_ref = stmt.value.as_deref().unwrap();
     if !ExprResolveInteger(info.ctx(), value_ref, &mut val) || val < 0_i64 || val > u32::MAX as i64
     {
-        unsafe {
-            ReportBadType(
-                info.ctx,
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                "keycodes",
-                field,
-                "defaults",
-                "integer 0..0xfffffffe",
-            )
-        };
+        ReportBadType(
+            XKB_ERROR_WRONG_FIELD_TYPE,
+            "keycodes",
+            field,
+            "defaults",
+            "integer 0..0xfffffffe",
+        );
         return (*info.keymap_info).strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
     }
     true
@@ -745,7 +742,7 @@ fn HandleLedNameDef(info: &mut KeyNamesInfo<'_>, def: &LedNameDef, report: bool)
         return false;
     }
     let mut name: u32 = XKB_ATOM_NONE;
-    let name_expr = unsafe { &*def.name.raw() };
+    let name_expr = def.name.as_deref().unwrap();
     if !ExprResolveString(info.ctx(), name_expr, &mut name) {
         let mut buf: [u8; 20] = [0; 20];
         let buf_len = {
@@ -754,16 +751,13 @@ fn HandleLedNameDef(info: &mut KeyNamesInfo<'_>, def: &LedNameDef, report: bool)
             w.pos
         };
         info.errorCount += 1;
-        return unsafe {
-            ReportBadType(
-                info.ctx,
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                "indicator",
-                "name",
-                std::str::from_utf8_unchecked(&buf[..buf_len]),
-                "string",
-            )
-        };
+        return ReportBadType(
+            XKB_ERROR_WRONG_FIELD_TYPE,
+            "indicator",
+            "name",
+            unsafe { std::str::from_utf8_unchecked(&buf[..buf_len]) },
+            "string",
+        );
     }
     let ledi: LedNameInfo = LedNameInfo {
         merge: def.merge,

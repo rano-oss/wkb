@@ -1,7 +1,7 @@
 // Canonical scanner utility types and functions (consolidated from scanner_utils_h blocks)
 use crate::xkb::shared_types::*;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct sval {
     pub len: usize,

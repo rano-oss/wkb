@@ -110,7 +110,7 @@ pub struct xkb_keymap {
     pub compat_section_name: String,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct xkb_mod_set {
     pub mods: [xkb_mod; 32],
@@ -118,7 +118,7 @@ pub struct xkb_mod_set {
     pub explicit_vmods: u32,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct xkb_mod {
     pub name: u32,

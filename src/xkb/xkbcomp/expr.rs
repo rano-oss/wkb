@@ -276,7 +276,7 @@ pub fn ExprResolveBoolean(ctx: &xkb_context, expr: &ExprDef, set_rtrn: &mut bool
             let ExprKind::Unary { child, .. } = &expr.kind else {
                 unreachable!()
             };
-            let child_ref = unsafe { &*child.raw() };
+            let child_ref = child.as_deref().unwrap();
             ok = ExprResolveBoolean(ctx, child_ref, set_rtrn);
             if ok {
                 *set_rtrn = !*set_rtrn;
@@ -379,8 +379,8 @@ fn ExprResolveIntegerLookup(
             else {
                 unreachable!()
             };
-            let left = unsafe { &*bleft.raw() };
-            let right = unsafe { &*bright.raw() };
+            let left = bleft.as_deref().unwrap();
+            let right = bright.as_deref().unwrap();
             if !ExprResolveIntegerLookup(ctx, left, &mut l, std::ptr::null_mut(), lookup)
                 || !ExprResolveIntegerLookup(ctx, right, &mut r, std::ptr::null_mut(), lookup)
             {
@@ -459,7 +459,7 @@ fn ExprResolveIntegerLookup(
             let ExprKind::Unary { child, .. } = &expr.kind else {
                 unreachable!()
             };
-            let left = unsafe { &*child.raw() };
+            let left = child.as_deref().unwrap();
             if !ExprResolveIntegerLookup(ctx, left, &mut l, std::ptr::null_mut(), lookup) {
                 return false;
             }
@@ -474,7 +474,7 @@ fn ExprResolveIntegerLookup(
             let ExprKind::Unary { child, .. } = &expr.kind else {
                 unreachable!()
             };
-            let left = unsafe { &*child.raw() };
+            let left = child.as_deref().unwrap();
             return ExprResolveIntegerLookup(ctx, left, val_rtrn, std::ptr::null_mut(), lookup);
         }
         _ => {
@@ -784,8 +784,8 @@ fn ExprResolveMaskLookup(
             else {
                 unreachable!()
             };
-            let left = unsafe { &*bleft.raw() };
-            let right = unsafe { &*bright.raw() };
+            let left = bleft.as_deref().unwrap();
+            let right = bright.as_deref().unwrap();
             if !ExprResolveMaskLookup(ctx, left, &mut l, std::ptr::null_mut(), lookup)
                 || !ExprResolveMaskLookup(ctx, right, &mut r, std::ptr::null_mut(), lookup)
             {
@@ -825,7 +825,7 @@ fn ExprResolveMaskLookup(
             let ExprKind::Unary { child, .. } = &expr.kind else {
                 unreachable!()
             };
-            let left = unsafe { &*child.raw() };
+            let left = child.as_deref().unwrap();
             if !ExprResolveIntegerLookup(ctx, left, &mut v, std::ptr::null_mut(), lookup) {
                 return false;
             }
@@ -845,7 +845,7 @@ fn ExprResolveMaskLookup(
             let ExprKind::Unary { child, .. } = &expr.kind else {
                 unreachable!()
             };
-            let left = unsafe { &*child.raw() };
+            let left = child.as_deref().unwrap();
             if !ExprResolveIntegerLookup(ctx, left, &mut v, std::ptr::null_mut(), lookup) {
                 return false;
             }

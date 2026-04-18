@@ -320,7 +320,7 @@ fn update_pending_key_fields(info: *mut xkb_keymap_info, key: *mut xkb_key) -> b
                 let mut pending_dummy = false;
                 match ExprResolveGroup(
                     info_ref,
-                    unsafe { &*(*pc).expr.raw() },
+                    unsafe { (*pc).expr.as_deref().unwrap() },
                     true,
                     &mut group,
                     &mut pending_dummy,

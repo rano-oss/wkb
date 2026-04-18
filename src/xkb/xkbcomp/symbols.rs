@@ -1643,7 +1643,7 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
     let ret: bool;
     if !ExprResolveLhs(
         info.ctx(),
-        unsafe { &*stmt.name.raw() },
+        stmt.name.as_deref().unwrap(),
         &mut elem,
         &mut field,
         &mut arrayNdx_opt,

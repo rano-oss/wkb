@@ -19,7 +19,7 @@ impl<'a> KeyTypesInfo<'a> {
             errorCount: 0,
             include_depth: 0,
             types: Vec::new(),
-            mods: unsafe { std::mem::zeroed() },
+            mods: Default::default(),
             ctx,
             keymap_info,
         }
@@ -39,18 +39,8 @@ pub struct KeyTypeInfo {
     pub entries: Vec<xkb_key_type_entry>,
     pub level_names: Vec<u32>,
 }
-fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
-    if new_len > v.len() {
-        v.reserve(new_len - v.len());
-        let old_len = v.len();
-        unsafe {
-            let ptr = v.as_mut_ptr().add(old_len);
-            std::ptr::write_bytes(ptr, 0, new_len - old_len);
-            v.set_len(new_len);
-        }
-    } else if new_len < v.len() {
-        v.truncate(new_len);
-    }
+fn vec_resize_zero(v: &mut Vec<u32>, new_len: usize) {
+    v.resize(new_len, 0);
 }
 pub type type_field = u32;
 pub const TYPE_FIELD_LEVEL_NAME: type_field = 8;
@@ -67,14 +57,7 @@ fn TypeTxt<'a>(info: &'a KeyTypesInfo<'_>, type_0: &KeyTypeInfo) -> &'a str {
 }
 #[inline]
 fn ReportTypeShouldBeArray(info: &KeyTypesInfo<'_>, type_0: &KeyTypeInfo, field: &str) -> bool {
-    unsafe {
-        ReportShouldBeArray(
-            info.ctx as *const _ as *mut _,
-            "key type",
-            field,
-            TypeTxt(info, type_0),
-        )
-    }
+    ReportShouldBeArray("key type", field, TypeTxt(info, type_0))
 }
 #[inline]
 fn ReportTypeBadType(
@@ -84,23 +67,14 @@ fn ReportTypeBadType(
     field: &str,
     wanted: &str,
 ) -> bool {
-    unsafe {
-        ReportBadType(
-            info.ctx as *const _ as *mut _,
-            code,
-            "key type",
-            field,
-            TypeTxt(info, type_0),
-            wanted,
-        )
-    }
+    ReportBadType(code, "key type", field, TypeTxt(info, type_0), wanted)
 }
 fn InitKeyTypesInfo(info: &mut KeyTypesInfo<'_>, include_depth: u32, mods: &xkb_mod_set) {
     info.name = None;
     info.errorCount = 0;
     info.include_depth = include_depth;
     info.types = Vec::new();
-    info.mods = unsafe { std::mem::zeroed() };
+    info.mods = Default::default();
     InitVMods(&mut info.mods, mods, include_depth > 0_u32);
 }
 fn ClearKeyTypeInfo(type_0: &mut KeyTypeInfo) {
@@ -491,7 +465,7 @@ fn AddLevelName(
 ) -> bool {
     let level_idx = level as usize;
     if level >= type_0.level_names.len() as u32 {
-        unsafe { vec_resize_zero(&mut type_0.level_names, level_idx.wrapping_add(1)) };
+        vec_resize_zero(&mut type_0.level_names, level_idx.wrapping_add(1));
     } else {
         if type_0.level_names[level_idx] == name {
             log::warn!(

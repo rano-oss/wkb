@@ -138,7 +138,7 @@ fn siText(si: *mut SymInterpInfo, info: &mut CompatInfo<'_>) -> &'static str {
 }
 #[inline]
 fn ReportSINotArray(info: &mut CompatInfo<'_>, si: *mut SymInterpInfo, field: &str) -> bool {
-    unsafe { ReportNotArray(info.ctx, "symbol interpretation", field, siText(si, info)) }
+    ReportNotArray("symbol interpretation", field, siText(si, info))
 }
 #[inline]
 fn ReportSIBadType(
@@ -147,16 +147,13 @@ fn ReportSIBadType(
     field: &str,
     wanted: &str,
 ) -> bool {
-    unsafe {
-        ReportBadType(
-            info.ctx,
-            XKB_ERROR_WRONG_FIELD_TYPE,
-            "symbol interpretation",
-            field,
-            siText(si, info),
-            wanted,
-        )
-    }
+    ReportBadType(
+        XKB_ERROR_WRONG_FIELD_TYPE,
+        "symbol interpretation",
+        field,
+        siText(si, info),
+        wanted,
+    )
 }
 fn LEDText(info: &mut CompatInfo<'_>, ledi: *mut LedInfo) -> &'static str {
     unsafe {
@@ -175,20 +172,17 @@ fn ReportLedBadType(
     field: &str,
     wanted: &str,
 ) -> bool {
-    unsafe {
-        ReportBadType(
-            info.ctx,
-            XKB_ERROR_WRONG_FIELD_TYPE,
-            "indicator map",
-            field,
-            LEDText(info, ledi),
-            wanted,
-        )
-    }
+    ReportBadType(
+        XKB_ERROR_WRONG_FIELD_TYPE,
+        "indicator map",
+        field,
+        LEDText(info, ledi),
+        wanted,
+    )
 }
 #[inline]
 fn ReportLedNotArray(info: &mut CompatInfo<'_>, ledi: *mut LedInfo, field: &str) -> bool {
-    unsafe { ReportNotArray(info.ctx, "indicator map", field, LEDText(info, ledi)) }
+    ReportNotArray("indicator map", field, LEDText(info, ledi))
 }
 #[inline]
 fn InitInterp(info: &mut SymInterpInfo) {
@@ -738,7 +732,7 @@ fn SetInterpField(
             (*si).interp.level_one_only = val != 0;
             (*si).defined = ((*si).defined | SI_FIELD_LEVEL_ONE_ONLY) as si_field;
         } else {
-            ReportBadField(info.ctx, "symbol interpretation", field, siText(si, info));
+            ReportBadField("symbol interpretation", field, siText(si, info));
             return (*info.keymap_info).strict & PARSER_NO_UNKNOWN_INTERPRET_FIELDS == 0;
         }
         true

@@ -74,7 +74,7 @@ pub fn MergeModSets(
 pub fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModDef) -> bool {
     let mut mapping: u32 = 0_u32;
     if stmt.value.is_some() {
-        let value_ref = unsafe { &*stmt.value.raw() };
+        let value_ref = stmt.value.as_deref().unwrap();
         if !ExprResolveModMask(ctx, value_ref, MOD_REAL, mods, &mut mapping) {
             log::error!(
                 "Declaration of {} ignored\n",

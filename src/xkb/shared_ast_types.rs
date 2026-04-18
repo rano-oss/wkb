@@ -429,64 +429,56 @@ pub fn safe_map_name(file: &XkbFile) -> &str {
 }
 
 #[inline]
-pub unsafe fn ReportNotArray(
-    _ctx: *mut xkb_context,
-    type_0: &str,
-    field: &str,
-    name: &str,
-) -> bool {
-    log::error!("[XKB-{:03}] The {} {} field is not an array; Ignoring illegal assignment in {}\n",
+pub fn ReportNotArray(type_0: &str, field: &str, name: &str) -> bool {
+    log::error!(
+        "[XKB-{:03}] The {} {} field is not an array; Ignoring illegal assignment in {}\n",
         XKB_ERROR_WRONG_FIELD_TYPE as i32,
         type_0,
         field,
-        name);
+        name
+    );
     false
 }
 
 #[inline]
-pub unsafe fn ReportBadType(
-    _ctx: *mut xkb_context,
+pub fn ReportBadType(
     code: xkb_message_code,
     type_0: &str,
     field: &str,
     name: &str,
     wanted: &str,
 ) -> bool {
-    log::error!("[XKB-{:03}] The {} {} field must be a {}; Ignoring illegal assignment in {}\n",
+    log::error!(
+        "[XKB-{:03}] The {} {} field must be a {}; Ignoring illegal assignment in {}\n",
         { code },
         type_0,
         field,
         wanted,
-        name);
+        name
+    );
     false
 }
 
 #[inline]
-pub unsafe fn ReportBadField(
-    _ctx: *mut xkb_context,
-    type_0: &str,
-    field: &str,
-    name: &str,
-) -> bool {
-    log::error!("Unknown {} field \"{}\" in {}; Ignoring assignment to unknown field in {}\n",
+pub fn ReportBadField(type_0: &str, field: &str, name: &str) -> bool {
+    log::error!(
+        "Unknown {} field \"{}\" in {}; Ignoring assignment to unknown field in {}\n",
         type_0,
         field,
         name,
-        name);
+        name
+    );
     false
 }
 
 #[inline]
-pub unsafe fn ReportShouldBeArray(
-    _ctx: *mut xkb_context,
-    type_0: &str,
-    field: &str,
-    name: &str,
-) -> bool {
-    log::error!("[XKB-{:03}] Missing subscript for {} {}; Ignoring illegal assignment in {}\n",
+pub fn ReportShouldBeArray(type_0: &str, field: &str, name: &str) -> bool {
+    log::error!(
+        "[XKB-{:03}] Missing subscript for {} {}; Ignoring illegal assignment in {}\n",
         XKB_ERROR_EXPECTED_ARRAY_ENTRY as i32,
         type_0,
         field,
-        name);
+        name
+    );
     false
 }

@@ -176,7 +176,7 @@ pub struct rule_names {
     pub variants: Vec<matched_sval>,
     pub options: Vec<matched_sval>,
 }
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct matched_sval {
     pub sval: sval,
@@ -396,7 +396,7 @@ fn strip_spaces(mut v: sval) -> sval {
 /// Resize a Vec<matched_sval>, zero-filling new elements.
 fn vec_resize_zero_matched_sval(v: &mut Vec<matched_sval>, new_len: usize) {
     if new_len > v.len() {
-        v.resize(new_len, unsafe { std::mem::zeroed::<matched_sval>() });
+        v.resize(new_len, matched_sval::default());
     } else {
         v.truncate(new_len);
     }
