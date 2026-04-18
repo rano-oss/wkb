@@ -1,4 +1,3 @@
-use crate::xkb_logf;
 
 use crate::xkb::shared_types::xkb_context;
 use crate::xkb::shared_types::*;
@@ -42,9 +41,7 @@ pub use crate::xkb::messages::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
     XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
-    XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE, XKB_LOG_VERBOSITY_DEFAULT,
-    XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL, XKB_LOG_VERBOSITY_SILENT,
-    XKB_LOG_VERBOSITY_VERBOSE, XKB_WARNING_CANNOT_INFER_KEY_TYPE,
+    XKB_WARNING_CANNOT_INFER_KEY_TYPE,
     XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
     XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
     XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
@@ -125,24 +122,14 @@ use libc::FILE;
 unsafe fn compile_keymap_file(keymap: *mut xkb_keymap, file: *mut XkbFile) -> bool {
     unsafe {
         if (*file).file_type != FILE_TYPE_KEYMAP {
-            xkb_logf!(
-                (*keymap).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Cannot compile a {} file alone into a keymap\n",
+            log::error!("[XKB-{:03}] Cannot compile a {} file alone into a keymap\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32,
-                xkb_file_type_to_string((*file).file_type),
-            );
+                xkb_file_type_to_string((*file).file_type));
             return false;
         }
         if !CompileKeymap(file, keymap) {
-            xkb_logf!(
-                (*keymap).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Failed to compile keymap\n",
-                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32,
-            );
+            log::error!("[XKB-{:03}] Failed to compile keymap\n",
+                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32);
             return false;
         }
         true
@@ -156,17 +143,12 @@ unsafe fn text_v1_keymap_new_from_names(
         let mut ok: bool;
         let mut kccgst: xkb_component_names = xkb_component_names::default();
 
-        xkb_logf!(
-            (*keymap).ctx,
-            XKB_LOG_LEVEL_DEBUG,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "Compiling from RMLVO: rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
+        log::debug!("Compiling from RMLVO: rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
             (*rmlvo).rules.to_str().unwrap_or(""),
             (*rmlvo).model.to_str().unwrap_or(""),
             (*rmlvo).layout.to_str().unwrap_or(""),
             (*rmlvo).variant.to_str().unwrap_or(""),
-            (*rmlvo).options.to_str().unwrap_or(""),
-        );
+            (*rmlvo).options.to_str().unwrap_or(""));
         ok = xkb_components_from_rules_names(
             &raw mut (*keymap).ctx,
             rmlvo,
@@ -174,29 +156,20 @@ unsafe fn text_v1_keymap_new_from_names(
             &raw mut (*keymap).num_groups,
         );
         if !ok {
-            xkb_logf!(
-                (*keymap).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Couldn't look up rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
+            log::error!("[XKB-{:03}] Couldn't look up rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32,
             &(*rmlvo).rules.to_str().unwrap_or(""),
             &(*rmlvo).model.to_str().unwrap_or(""),
             &(*rmlvo).layout.to_str().unwrap_or(""),
             &(*rmlvo).variant.to_str().unwrap_or(""),
-            &(*rmlvo).options.to_str().unwrap_or(""),
-        );
+            &(*rmlvo).options.to_str().unwrap_or(""));
             return false;
         }
         let max_groups: u32 = format_max_groups((*keymap).format);
         if (*keymap).num_groups > max_groups {
             (*keymap).num_groups = max_groups;
         }
-        xkb_logf!(
-            (*keymap).ctx,
-            XKB_LOG_LEVEL_DEBUG,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "Compiling from KcCGST: keycodes '{}', types '{}', compat '{}', symbols '{}'\n",
+        log::debug!("Compiling from KcCGST: keycodes '{}', types '{}', compat '{}', symbols '{}'\n",
             std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
                 kccgst.keycodes.as_ptr()
             )),
@@ -206,18 +179,12 @@ unsafe fn text_v1_keymap_new_from_names(
             )),
             std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
                 kccgst.symbols.as_ptr()
-            )),
-        );
+            )));
         let file: *mut XkbFile = XkbFileFromComponents(&raw mut (*keymap).ctx, &raw mut kccgst);
         drop(kccgst);
         if file.is_null() {
-            xkb_logf!(
-                (*keymap).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Failed to generate parsed XKB file from components\n",
-                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32,
-            );
+            log::error!("[XKB-{:03}] Failed to generate parsed XKB file from components\n",
+                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32);
             return false;
         }
         ok = compile_keymap_file(keymap, file);
@@ -239,13 +206,8 @@ unsafe fn text_v1_keymap_new_from_string(
             std::ptr::null(),
         );
         if xkb_file.is_null() {
-            xkb_logf!(
-                (*keymap).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Failed to parse input xkb string\n",
-                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32,
-            );
+            log::error!("[XKB-{:03}] Failed to parse input xkb string\n",
+                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32);
             return false;
         }
         let ok: bool = compile_keymap_file(keymap, xkb_file);
@@ -262,13 +224,8 @@ unsafe fn text_v1_keymap_new_from_file(keymap: *mut xkb_keymap, file: *mut FILE)
             std::ptr::null(),
         );
         if xkb_file.is_null() {
-            xkb_logf!(
-                (*keymap).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Failed to parse input xkb file\n",
-                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32,
-            );
+            log::error!("[XKB-{:03}] Failed to parse input xkb file\n",
+                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32);
             return false;
         }
         let ok: bool = compile_keymap_file(keymap, xkb_file);

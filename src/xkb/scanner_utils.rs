@@ -303,29 +303,23 @@ impl scanner {
             }
             if *self.s == 0 || *self.s.add(1) == 0 {
                 let loc = self.token_location();
-                crate::xkb_logf!(
-                    self.ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
+                log::error!(
                     "[XKB-{:03}] {}:{}:{}: unexpected NULL character.\n",
                     XKB_ERROR_INVALID_FILE_ENCODING as i32,
                     &self.file_name,
                     loc.line,
-                    loc.column,
+                    loc.column
                 );
                 return false;
             }
             if !(*self.s as u8).is_ascii() {
                 let loc = self.token_location();
-                crate::xkb_logf!(
-                    self.ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
+                log::error!(
                     "[XKB-{:03}] {}:{}:{}: unexpected non-ASCII character.\n",
                     XKB_ERROR_INVALID_FILE_ENCODING as i32,
                     &self.file_name,
                     loc.line,
-                    loc.column,
+                    loc.column
                 );
                 return false;
             }

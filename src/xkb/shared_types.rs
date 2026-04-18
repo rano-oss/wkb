@@ -351,7 +351,7 @@ pub struct xkb_key_alias {
     pub alias: u32,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct KeycodeMatch {
     pub found: bool,

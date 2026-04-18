@@ -88,7 +88,6 @@ pub use crate::xkb::shared_types::{
     XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
 use crate::xkb::utils::cstr_len;
-use crate::xkb_logf;
 use libc::FILE;
 pub unsafe fn xkb_keymap_ref(keymap: *mut xkb_keymap) -> *mut xkb_keymap {
     unsafe {
@@ -177,14 +176,9 @@ pub unsafe fn xkb_keymap_new_from_names(
     unsafe {
         let ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
         if ops.is_null() || (*ops).keymap_new_from_names.is_none() {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "{}: unsupported keymap format: {}\n",
+            log::error!("{}: unsupported keymap format: {}\n",
                 "xkb_keymap_new_from_names2",
-                { format },
-            );
+                { format });
             return None;
         }
         let mut keymap = xkb_keymap_new(ctx.clone(), "xkb_keymap_new_from_names2", format, flags)?;
@@ -218,24 +212,14 @@ pub unsafe fn xkb_keymap_new_from_string(
         let mut length = cstr_len(string);
         let ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
         if ops.is_null() || (*ops).keymap_new_from_string.is_none() {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "{}: unsupported keymap format: {}\n",
+            log::error!("{}: unsupported keymap format: {}\n",
                 "xkb_keymap_new_from_buffer",
-                { format },
-            );
+                { format });
             return None;
         }
         if string.is_null() {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "{}: no buffer specified\n",
-                "xkb_keymap_new_from_buffer",
-            );
+            log::error!("{}: no buffer specified\n",
+                "xkb_keymap_new_from_buffer");
             return None;
         }
         let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_buffer", format, flags)?;
@@ -261,24 +245,14 @@ pub unsafe fn xkb_keymap_new_from_file(
     unsafe {
         let ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
         if ops.is_null() || (*ops).keymap_new_from_file.is_none() {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "{}: unsupported keymap format: {}\n",
+            log::error!("{}: unsupported keymap format: {}\n",
                 "xkb_keymap_new_from_file",
-                { format },
-            );
+                { format });
             return None;
         }
         if file.is_null() {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "{}: no file specified\n",
-                "xkb_keymap_new_from_file",
-            );
+            log::error!("{}: no file specified\n",
+                "xkb_keymap_new_from_file");
             return None;
         }
         let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_file", format, flags)?;
@@ -295,14 +269,9 @@ pub unsafe fn xkb_keymap_get_as_string(keymap: *mut xkb_keymap, mut format: u32)
         static XKB_KEYMAP_SERIALIZE_FLAGS: xkb_keymap_serialize_flags =
             XKB_KEYMAP_SERIALIZE_FLAGS_VALUES as i32 as xkb_keymap_serialize_flags;
         if flags & !XKB_KEYMAP_SERIALIZE_FLAGS != 0 {
-            xkb_logf!(
-                (*keymap).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "{}: unrecognized serialization flags: {:#x}\n",
+            log::error!("{}: unrecognized serialization flags: {:#x}\n",
                 "xkb_keymap_get_as_string2",
-                flags & !XKB_KEYMAP_SERIALIZE_FLAGS,
-            );
+                flags & !XKB_KEYMAP_SERIALIZE_FLAGS);
             return std::ptr::null_mut();
         }
         if format == XKB_KEYMAP_USE_ORIGINAL_FORMAT {
@@ -311,14 +280,9 @@ pub unsafe fn xkb_keymap_get_as_string(keymap: *mut xkb_keymap, mut format: u32)
         let ops: *const xkb_keymap_format_ops =
             get_keymap_format_ops(format) as *const xkb_keymap_format_ops;
         if ops.is_null() || (*ops).keymap_get_as_string.is_none() {
-            xkb_logf!(
-                (*keymap).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "{}: unsupported keymap format: {}\n",
+            log::error!("{}: unsupported keymap format: {}\n",
                 "xkb_keymap_get_as_string2",
-                { format },
-            );
+                { format });
             return std::ptr::null_mut();
         }
         (*ops)
@@ -596,14 +560,9 @@ pub unsafe fn xkb_keymap_new(
     unsafe {
         static XKB_KEYMAP_COMPILE_FLAGS: u32 = XKB_KEYMAP_COMPILE_FLAGS_VALUES;
         if flags & !XKB_KEYMAP_COMPILE_FLAGS != 0 {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "{}: unrecognized keymap compilation flags: 0x{:x}\n",
+            log::error!("{}: unrecognized keymap compilation flags: 0x{:x}\n",
                 func,
-                flags & !XKB_KEYMAP_COMPILE_FLAGS,
-            );
+                flags & !XKB_KEYMAP_COMPILE_FLAGS);
             return None;
         }
         // Use Box for allocation — zeroed via MaybeUninit to avoid UB

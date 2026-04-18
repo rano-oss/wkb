@@ -191,26 +191,20 @@ fn ReportLedNotArray(info: &mut CompatInfo<'_>, ledi: *mut LedInfo, field: &str)
     unsafe { ReportNotArray(info.ctx, "indicator map", field, LEDText(info, ledi)) }
 }
 #[inline]
-fn InitInterp(info: *mut SymInterpInfo) {
-    unsafe {
-        (*info).merge = MERGE_DEFAULT;
-        (*info).interp.virtual_mod = XKB_MOD_INVALID;
-    }
+fn InitInterp(info: &mut SymInterpInfo) {
+    info.merge = MERGE_DEFAULT;
+    info.interp.virtual_mod = XKB_MOD_INVALID;
 }
 #[inline]
-fn InitLED(info: *mut LedInfo) {
-    unsafe {
-        (*info).merge = MERGE_DEFAULT;
-    }
+fn InitLED(info: &mut LedInfo) {
+    info.merge = MERGE_DEFAULT;
 }
-fn InitCompatInfo(info: &mut CompatInfo<'_>, include_depth: u32, mods: *const xkb_mod_set) {
-    unsafe {
-        info.include_depth = include_depth;
-        InitActionsInfo((*info.keymap_info).keymap, &raw mut info.default_actions);
-        InitVMods(&mut info.mods, &*mods, include_depth > 0_u32);
-        InitInterp(&raw mut info.default_interp);
-        InitLED(&raw mut info.default_led);
-    }
+fn InitCompatInfo(info: &mut CompatInfo<'_>, include_depth: u32, mods: &xkb_mod_set) {
+    info.include_depth = include_depth;
+    unsafe { InitActionsInfo((*info.keymap_info).keymap, &raw mut info.default_actions) };
+    InitVMods(&mut info.mods, mods, include_depth > 0_u32);
+    InitInterp(&mut info.default_interp);
+    InitLED(&mut info.default_led);
 }
 fn ClearCompatInfo(info: &mut CompatInfo<'_>) {
     info.name = None;
@@ -222,14 +216,14 @@ fn UseNewInterpField(
     new: si_field,
     clobber: bool,
     report: bool,
-    collide: *mut si_field,
+    collide: &mut si_field,
 ) -> bool {
     if old & field == 0 {
         return new & field != 0;
     }
     if new & field != 0 {
         if report {
-            unsafe { *collide = (*collide | field) as si_field };
+            *collide = (*collide | field) as si_field;
         }
         return clobber;
     }
@@ -248,13 +242,8 @@ fn MergeInterp(
         let mut collide: si_field = 0 as si_field;
         if (*new).merge == MERGE_REPLACE {
             if report {
-                xkb_logf!(
-                    info.ctx,
-                    XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Multiple definitions for \"{}\"; Earlier interpretation ignored\n",
-                    siText(new, info),
-                );
+                log::warn!("Multiple definitions for \"{}\"; Earlier interpretation ignored\n",
+                    siText(new, info));
             }
             *old = (*new).clone();
             return true;
@@ -265,7 +254,7 @@ fn MergeInterp(
             (*new).defined,
             clobber,
             report,
-            &raw mut collide,
+            &mut collide,
         ) {
             (*old).interp.virtual_mod = (*new).interp.virtual_mod;
             (*old).defined = ((*old).defined | SI_FIELD_VIRTUAL_MOD) as si_field;
@@ -276,7 +265,7 @@ fn MergeInterp(
             (*new).defined,
             clobber,
             report,
-            &raw mut collide,
+            &mut collide,
         ) {
             if (*old).interp.num_actions as i32 > 1_i32 {
                 (*old).interp.actions.clear();
@@ -299,7 +288,7 @@ fn MergeInterp(
             (*new).defined,
             clobber,
             report,
-            &raw mut collide,
+            &mut collide,
         ) {
             (*old).interp.repeat = (*new).interp.repeat;
             (*old).defined = ((*old).defined | SI_FIELD_AUTO_REPEAT) as si_field;
@@ -310,20 +299,15 @@ fn MergeInterp(
             (*new).defined,
             clobber,
             report,
-            &raw mut collide,
+            &mut collide,
         ) {
             (*old).interp.level_one_only = (*new).interp.level_one_only;
             (*old).defined = ((*old).defined | SI_FIELD_LEVEL_ONE_ONLY) as si_field;
         }
         if collide as u64 != 0 {
-            xkb_logf!(
-                info.ctx,
-                XKB_LOG_LEVEL_WARNING,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "Multiple interpretations of \"{}\"; Using {} definition for duplicate fields\n",
+            log::warn!("Multiple interpretations of \"{}\"; Using {} definition for duplicate fields\n",
                 siText(old, info),
-                if clobber { "last" } else { "first" },
-            );
+                if clobber { "last" } else { "first" });
         }
         true
     }
@@ -369,20 +353,15 @@ fn ResolveStateAndPredicate(
             let pred_txt: &str = xkb_atom_text(&info.ctx().atom_table, *name);
             let mut pred: u32 = 0_u32;
             if !LookupString(&symInterpretMatchMaskNames, pred_txt, &mut pred)
-                || (*args).is_null()
-                || !(**args).common.next.is_null()
+                || args.is_none()
+                || !args.as_ref().unwrap().common.next.is_null()
             {
-                xkb_logf!(
-                    info.ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Illegal modifier predicate \"{}\"; Ignored\n",
-                    pred_txt,
-                );
+                log::error!("Illegal modifier predicate \"{}\"; Ignored\n",
+                    pred_txt);
                 return false;
             }
             *pred_rtrn = pred;
-            expr = *args;
+            expr = args.raw();
         } else if (*expr).common.type_0 == STMT_EXPR_IDENT {
             let ExprKind::Ident(ident_val) = &(*expr).kind else {
                 unreachable!()
@@ -403,14 +382,14 @@ fn UseNewLEDField(
     new: led_field,
     clobber: bool,
     report: bool,
-    collide: *mut led_field,
+    collide: &mut led_field,
 ) -> bool {
     if old & field == 0 {
         return new & field != 0;
     }
     if new & field != 0 {
         if report {
-            unsafe { *collide = (*collide | field) as led_field };
+            *collide = (*collide | field) as led_field;
         }
         return clobber;
     }
@@ -439,13 +418,8 @@ fn MergeLedMap(
         }
         if (*new).merge == MERGE_REPLACE {
             if report {
-                xkb_logf!(
-                    info.ctx,
-                    XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Map for indicator {} redefined; Earlier definition ignored\n",
-                    LEDText(info, old),
-                );
+                log::warn!("Map for indicator {} redefined; Earlier definition ignored\n",
+                    LEDText(info, old));
             }
             *old = *new;
             return true;
@@ -457,7 +431,7 @@ fn MergeLedMap(
             (*new).defined,
             clobber,
             report,
-            &raw mut collide,
+            &mut collide,
         ) {
             (*old).led.which_mods = (*new).led.which_mods;
             (*old).led.mods = (*new).led.mods;
@@ -469,7 +443,7 @@ fn MergeLedMap(
             (*new).defined,
             clobber,
             report,
-            &raw mut collide,
+            &mut collide,
         ) {
             (*old).led.which_groups = (*new).led.which_groups;
             (*old).led.groups = (*new).led.groups;
@@ -482,20 +456,15 @@ fn MergeLedMap(
             (*new).defined,
             clobber,
             report,
-            &raw mut collide,
+            &mut collide,
         ) {
             (*old).led.ctrls = (*new).led.ctrls;
             (*old).defined = ((*old).defined | LED_FIELD_CTRLS) as led_field;
         }
         if collide as u64 != 0 {
-            xkb_logf!(
-                info.ctx,
-                XKB_LOG_LEVEL_WARNING,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "Map for indicator {} redefined; Using {} definition for duplicate fields\n",
+            log::warn!("Map for indicator {} redefined; Using {} definition for duplicate fields\n",
                 LEDText(info, old),
-                if clobber { "last" } else { "first" },
-            );
+                if clobber { "last" } else { "first" });
         }
         true
     }
@@ -513,13 +482,8 @@ fn AddLedMap(info: &mut CompatInfo<'_>, new: *mut LedInfo, same_file: bool) -> b
             }
         }
         if info.num_leds >= XKB_MAX_LEDS {
-            xkb_logf!(
-                info.ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "Too many LEDs defined (maximum {})\n",
-                (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8_usize) as u32,
-            );
+            log::error!("Too many LEDs defined (maximum {})\n",
+                (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8_usize) as u32);
             return false;
         }
         let c2rust_fresh1 = info.num_leds;
@@ -533,47 +497,39 @@ fn MergeIncludedCompatMaps(
     from: &mut CompatInfo<'_>,
     merge: merge_mode,
 ) {
-    unsafe {
-        if from.errorCount > 0_i32 {
-            into.errorCount += from.errorCount;
-            return;
-        }
-        MergeModSets(&mut *into.ctx, &mut into.mods, &from.mods, merge);
-        if into.name.is_none() {
-            into.name = from.name.take();
-        }
-        if into.interps.is_empty() {
-            into.interps = std::mem::take(&mut from.interps);
-        } else {
-            for i in 0..from.interps.len() {
-                (&mut from.interps)[i].merge = merge;
-                let si = (&mut from.interps)[i..].as_mut_ptr();
-                if !AddInterp(into, si, false) {
-                    into.errorCount += 1;
-                }
-            }
-        }
-        if into.num_leds == 0_u32 {
-            std::ptr::copy_nonoverlapping::<LedInfo>(
-                &raw mut from.leds as *mut LedInfo,
-                &raw mut into.leds as *mut LedInfo,
-                from.num_leds as usize,
-            );
-            into.num_leds = from.num_leds;
-            from.num_leds = 0_u32;
-        } else {
-            let mut i: u32 = 0_u32;
-            while i < from.num_leds {
-                let ledi: *mut LedInfo =
-                    (&raw mut from.leds as *mut LedInfo).offset(i as isize) as *mut LedInfo;
-                (*ledi).merge = merge;
-                if !AddLedMap(into, ledi, false) {
-                    into.errorCount += 1;
-                }
-                i = i.wrapping_add(1);
-            }
-        };
+    if from.errorCount > 0_i32 {
+        into.errorCount += from.errorCount;
+        return;
     }
+    unsafe { MergeModSets(&mut *into.ctx, &mut into.mods, &from.mods, merge) };
+    if into.name.is_none() {
+        into.name = from.name.take();
+    }
+    if into.interps.is_empty() {
+        into.interps = std::mem::take(&mut from.interps);
+    } else {
+        for i in 0..from.interps.len() {
+            (&mut from.interps)[i].merge = merge;
+            let si = (&mut from.interps)[i..].as_mut_ptr();
+            if !AddInterp(into, si, false) {
+                into.errorCount += 1;
+            }
+        }
+    }
+    if into.num_leds == 0_u32 {
+        let n = from.num_leds as usize;
+        into.leds[..n].copy_from_slice(&from.leds[..n]);
+        into.num_leds = from.num_leds;
+        from.num_leds = 0_u32;
+    } else {
+        for i in 0..from.num_leds as usize {
+            from.leds[i].merge = merge;
+            let ledi = &raw mut from.leds[i];
+            if !AddLedMap(into, ledi, false) {
+                into.errorCount += 1;
+            }
+        }
+    };
 }
 fn HandleIncludeCompatMap(info: &mut CompatInfo<'_>, include: *mut IncludeStmt) -> bool {
     unsafe {
@@ -617,7 +573,7 @@ fn HandleIncludeCompatMap(info: &mut CompatInfo<'_>, include: *mut IncludeStmt) 
             InitCompatInfo(
                 &mut next_incl,
                 info.include_depth.wrapping_add(1_u32),
-                &raw mut included.mods,
+                &included.mods,
             );
             next_incl.default_interp = info.default_interp.clone();
             next_incl.default_led = info.default_led;
@@ -655,27 +611,22 @@ fn SetInterpField(
                     unreachable!()
                 };
                 let mut num_actions: u32 = 0_u32;
-                let mut act: *mut ExprDef = *action_head;
+                let mut act: *mut ExprDef = action_head.raw();
                 while !act.is_null() {
                     num_actions = num_actions.wrapping_add(1);
                     act = (*act).common.next as *mut ExprDef;
                 }
                 if num_actions > MAX_ACTIONS_PER_LEVEL as u32 {
-                    xkb_logf!(
-                        info.ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "Interpret {} has too many actions; expected max {}, got: {}\n",
+                    log::error!("Interpret {} has too many actions; expected max {}, got: {}\n",
                         siText(si, info),
                         65535_i32,
-                        num_actions,
-                    );
+                        num_actions);
                     return false;
                 }
                 (*si).interp.num_actions = 0_u16;
                 (*si).interp.action.type_0 = ACTION_TYPE_NONE;
                 let mut actions: Vec<xkb_action> = Vec::new();
-                let mut act_0: *mut ExprDef = *action_head;
+                let mut act_0: *mut ExprDef = action_head.raw();
                 while !act_0.is_null() {
                     let mut toAct: xkb_action = xkb_action {
                         type_0: ACTION_TYPE_NONE,
@@ -762,12 +713,7 @@ fn SetInterpField(
             (*si).interp.repeat = set;
             (*si).defined = ((*si).defined | SI_FIELD_AUTO_REPEAT) as si_field;
         } else if field.eq_ignore_ascii_case("locking") {
-            xkb_logf!(
-                info.ctx,
-                XKB_LOG_LEVEL_DEBUG,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "The \"locking\" field in symbol interpretation is unsupported; Ignored\n",
-            );
+            log::debug!("The \"locking\" field in symbol interpretation is unsupported; Ignored\n");
         } else if field.eq_ignore_ascii_case("usemodmap")
             || field.eq_ignore_ascii_case("usemodmapmods")
         {
@@ -823,7 +769,7 @@ fn SetLedMapField(
                     (*info.keymap_info)
                         .pending_computations
                         .push(pending_computation {
-                            expr: *value_ptr,
+                            expr: box_from_raw(*value_ptr),
                             computed: false,
                             value: 0_u32,
                         });
@@ -854,12 +800,7 @@ fn SetLedMapField(
             (*ledi).led.ctrls = mask_0 as xkb_action_controls;
             (*ledi).defined = ((*ledi).defined | LED_FIELD_CTRLS) as led_field;
         } else if field.eq_ignore_ascii_case("allowexplicit") {
-            xkb_logf!(
-                info.ctx,
-                XKB_LOG_LEVEL_DEBUG,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "The \"allowExplicit\" field in indicator statements is unsupported; Ignored\n",
-            );
+            log::debug!("The \"allowExplicit\" field in indicator statements is unsupported; Ignored\n");
         } else if field.eq_ignore_ascii_case("whichmodstate")
             || field.eq_ignore_ascii_case("whichmodifierstate")
         {
@@ -887,29 +828,14 @@ fn SetLedMapField(
             || field.eq_ignore_ascii_case("indicatordriveskbd")
             || field.eq_ignore_ascii_case("indicatordriveskeyboard")
         {
-            xkb_logf!(
-                info.ctx,
-                XKB_LOG_LEVEL_DEBUG,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "The \"{}\" field in indicator statements is unsupported; Ignored\n",
-                field,
-            );
+            log::debug!("The \"{}\" field in indicator statements is unsupported; Ignored\n",
+                field);
         } else if field.eq_ignore_ascii_case("index") {
-            xkb_logf!(
-                info.ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "The \"index\" field in indicator statements is unsupported; Ignored\n",
-            );
+            log::error!("The \"index\" field in indicator statements is unsupported; Ignored\n");
         } else {
-            xkb_logf!(
-                info.ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "Unknown field \"{}\" in map for {} indicator; Definition ignored\n",
+            log::error!("Unknown field \"{}\" in map for {} indicator; Definition ignored\n",
                 field,
-                LEDText(info, ledi),
-            );
+                LEDText(info, ledi));
             return (*info.keymap_info).strict & PARSER_NO_UNKNOWN_LED_FIELDS == 0;
         }
         true
@@ -921,7 +847,13 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: *mut VarDef) -> bool {
         let mut field: &str = "";
         let mut ndx: *mut ExprDef = std::ptr::null_mut();
         let ret: bool;
-        if !ExprResolveLhs(info.ctx, (*stmt).name, &mut elem, &mut field, &raw mut ndx) {
+        if !ExprResolveLhs(
+            info.ctx,
+            (*stmt).name.raw(),
+            &mut elem,
+            &mut field,
+            &raw mut ndx,
+        ) {
             ret = false;
         } else if !elem.is_empty() && elem.eq_ignore_ascii_case("interpret") {
             let mut temp: SymInterpInfo = SymInterpInfo {
@@ -942,19 +874,13 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: *mut VarDef) -> bool {
                     actions: Vec::new(),
                 },
             };
-            InitInterp(&raw mut temp);
+            InitInterp(&mut temp);
             temp.merge = (if temp.merge == MERGE_REPLACE {
                 MERGE_OVERRIDE
             } else {
                 (*stmt).merge
             }) as merge_mode;
-            ret = SetInterpField(
-                info,
-                &raw mut temp,
-                field,
-                ndx,
-                (*stmt).value as *mut ExprDef,
-            );
+            ret = SetInterpField(info, &raw mut temp, field, ndx, (*stmt).value.raw());
             if ret {
                 let default_ptr = &raw mut info.default_interp;
                 MergeInterp(info, default_ptr, &raw mut temp, true);
@@ -973,38 +899,49 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: *mut VarDef) -> bool {
                     ctrls: 0 as xkb_action_controls,
                 },
             };
-            InitLED(&raw mut temp_0);
+            InitLED(&mut temp_0);
             temp_0.merge = (if temp_0.merge == MERGE_REPLACE {
                 MERGE_OVERRIDE
             } else {
                 (*stmt).merge
             }) as merge_mode;
-            ret = SetLedMapField(info, &raw mut temp_0, field, ndx, &raw mut (*stmt).value);
+            ret = {
+                let mut value_raw = (*stmt)
+                    .value
+                    .take()
+                    .map_or(std::ptr::null_mut(), |b| Box::into_raw(b));
+                let r = SetLedMapField(info, &raw mut temp_0, field, ndx, &raw mut value_raw);
+                (*stmt).value = box_from_raw(value_raw);
+                r
+            };
             if ret {
                 let default_ptr = &raw mut info.default_led;
                 MergeLedMap(info, default_ptr, &raw mut temp_0, true);
             }
         } else if !elem.is_empty() {
-            ret = SetDefaultActionField(
-                info.keymap_info,
-                &raw mut info.default_actions,
-                &raw mut info.mods,
-                elem,
-                field,
-                ndx,
-                &raw mut (*stmt).value,
-                (*stmt).merge,
-            ) as u32
-                != PARSER_FATAL_ERROR;
+            ret = {
+                let mut value_raw = (*stmt)
+                    .value
+                    .take()
+                    .map_or(std::ptr::null_mut(), |b| Box::into_raw(b));
+                let r = SetDefaultActionField(
+                    info.keymap_info,
+                    &raw mut info.default_actions,
+                    &raw mut info.mods,
+                    elem,
+                    field,
+                    ndx,
+                    &raw mut value_raw,
+                    (*stmt).merge,
+                ) as u32
+                    != PARSER_FATAL_ERROR;
+                (*stmt).value = box_from_raw(value_raw);
+                r
+            };
         } else {
-            xkb_logf!(
-                info.ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
+            log::error!("[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-                field,
-            );
+                field);
             return (*info.keymap_info).strict & PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS == 0;
         }
         ret
@@ -1023,24 +960,19 @@ fn HandleInterpBody(
         while !def.is_null() {
             if !ExprResolveLhs(
                 info.ctx,
-                (*def).name,
+                (*def).name.raw(),
                 &mut elem,
                 &mut field,
                 &raw mut arrayNdx,
             ) {
                 ok = false;
             } else if !elem.is_empty() {
-                xkb_logf!(
-                    info.ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Cannot set a global default value for \"{}\" element from within an interpret statement; Move assignment to \"{}.{}\" to the global file scope\n",
+                log::error!("Cannot set a global default value for \"{}\" element from within an interpret statement; Move assignment to \"{}.{}\" to the global file scope\n",
                     elem,
                     elem,
-                    field,
-                );
+                    field);
                 ok = false;
-            } else if !SetInterpField(info, si, field, arrayNdx, (*def).value as *mut ExprDef) {
+            } else if !SetInterpField(info, si, field, arrayNdx, (*def).value.raw()) {
                 ok = false;
             }
             def = (*def).common.next as *mut VarDef;
@@ -1048,7 +980,7 @@ fn HandleInterpBody(
         ok
     }
 }
-fn HandleInterpDef(info: &mut CompatInfo<'_>, def: *mut InterpDef) -> bool {
+fn HandleInterpDef(info: &mut CompatInfo<'_>, def: &InterpDef) -> bool {
     unsafe {
         let mut pred: u32 = MATCH_NONE;
         let mut mods: u32 = 0;
@@ -1071,26 +1003,16 @@ fn HandleInterpDef(info: &mut CompatInfo<'_>, def: *mut InterpDef) -> bool {
                 actions: Vec::new(),
             },
         };
-        if !ResolveStateAndPredicate(
-            (*def).match_0 as *mut ExprDef,
-            &raw mut pred,
-            &raw mut mods,
-            info,
-        ) {
-            xkb_logf!(
-                info.ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "Couldn't determine matching modifiers; Symbol interpretation ignored\n",
-            );
+        if !ResolveStateAndPredicate(def.match_0.raw(), &raw mut pred, &raw mut mods, info) {
+            log::error!("Couldn't determine matching modifiers; Symbol interpretation ignored\n");
             return false;
         }
         si = info.default_interp.clone();
-        si.merge = (*def).merge;
-        si.interp.sym = (*def).sym;
+        si.merge = def.merge;
+        si.interp.sym = def.sym;
         si.interp.match_0 = pred;
         si.interp.mods = mods;
-        if !HandleInterpBody(info, (*def).def, &raw mut si) {
+        if !HandleInterpBody(info, def.def.raw(), &raw mut si) {
             info.errorCount += 1;
             return false;
         }
@@ -1101,38 +1023,41 @@ fn HandleInterpDef(info: &mut CompatInfo<'_>, def: *mut InterpDef) -> bool {
         true
     }
 }
-fn HandleLedMapDef(info: &mut CompatInfo<'_>, def: *mut LedMapDef) -> bool {
+fn HandleLedMapDef(info: &mut CompatInfo<'_>, def: &LedMapDef) -> bool {
     unsafe {
         let mut ledi: LedInfo = info.default_led;
-        ledi.merge = (*def).merge;
-        ledi.led.name = (*def).name;
+        ledi.merge = def.merge;
+        ledi.led.name = def.name;
         let mut ok: bool = true;
-        let mut var: *mut VarDef = (*def).body;
+        let mut var: *mut VarDef = def.body.raw();
         while !var.is_null() {
             let mut elem: &str = "";
             let mut field: &str = "";
             let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
             if !ExprResolveLhs(
                 info.ctx,
-                (*var).name,
+                (*var).name.raw(),
                 &mut elem,
                 &mut field,
                 &raw mut arrayNdx,
             ) {
                 ok = false;
             } else if !elem.is_empty() {
-                xkb_logf!(
-                    info.ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Cannot set defaults for \"{}\" element in indicator map; Assignment to {}.{} ignored\n",
+                log::error!("[XKB-{:03}] Cannot set defaults for \"{}\" element in indicator map; Assignment to {}.{} ignored\n",
                     XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
                     elem,
                     elem,
-                    field,
-                );
+                    field);
                 ok = false;
-            } else if !SetLedMapField(info, &raw mut ledi, field, arrayNdx, &raw mut (*var).value) {
+            } else if !{
+                let mut value_raw = (*var)
+                    .value
+                    .take()
+                    .map_or(std::ptr::null_mut(), |b| Box::into_raw(b));
+                let r = SetLedMapField(info, &raw mut ledi, field, arrayNdx, &raw mut value_raw);
+                (*var).value = box_from_raw(value_raw);
+                r
+            } {
                 ok = false;
             }
             var = (*var).common.next as *mut VarDef;
@@ -1158,50 +1083,37 @@ fn HandleCompatMapFile(info: &mut CompatInfo<'_>, file: *mut XkbFile) {
                     ok = HandleIncludeCompatMap(info, stmt as *mut IncludeStmt);
                 }
                 28 => {
-                    ok = HandleInterpDef(info, stmt as *mut InterpDef);
+                    ok = HandleInterpDef(info, unsafe { &*(stmt as *const InterpDef) });
                 }
                 32 => {
-                    xkb_logf!(
-                        info.ctx,
-                        XKB_LOG_LEVEL_DEBUG,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "The \"group\" statement in compat is unsupported; Ignored\n",
-                    );
+                    log::debug!("The \"group\" statement in compat is unsupported; Ignored\n");
                     ok = true;
                 }
                 33 => {
-                    ok = HandleLedMapDef(info, stmt as *mut LedMapDef);
+                    ok = HandleLedMapDef(info, unsafe { &*(stmt as *const LedMapDef) });
                 }
                 26 => {
                     ok = HandleGlobalVar(info, stmt as *mut VarDef);
                 }
                 29 => {
-                    ok = HandleVModDef(info.ctx, &raw mut info.mods, stmt as *mut VModDef);
+                    ok = HandleVModDef(info.ctx, &mut info.mods, unsafe {
+                        &*(stmt as *const VModDef)
+                    });
                 }
                 35 | 36 => {
-                    xkb_logf!(
-                        info.ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] Unsupported compatibility {} statement \"{}\"; Ignoring\n",
+                    log::error!("[XKB-{:03}] Unsupported compatibility {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
                         if (*stmt).type_0 == STMT_UNKNOWN_COMPOUND {
                             "compound"
                         } else {
                             "declaration"
                         },
-                        &(*(stmt as *mut UnknownStatement)).name,
-                    );
+                        &(*(stmt as *mut UnknownStatement)).name);
                     ok = (*info.keymap_info).strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {
-                    xkb_logf!(
-                        info.ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "Compat files may not include other types; Ignoring {}\n",
-                        stmt_type_to_string((*stmt).type_0),
-                    );
+                    log::error!("Compat files may not include other types; Ignoring {}\n",
+                        stmt_type_to_string((*stmt).type_0));
                     ok = false;
                 }
             }
@@ -1209,13 +1121,8 @@ fn HandleCompatMapFile(info: &mut CompatInfo<'_>, file: *mut XkbFile) {
                 info.errorCount += 1;
             }
             if info.errorCount > 10_i32 {
-                xkb_logf!(
-                    info.ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Abandoning compatibility map \"{}\"\n",
-                    safe_map_name(&*file),
-                );
+                log::error!("Abandoning compatibility map \"{}\"\n",
+                    safe_map_name(&*file));
                 break;
             } else {
                 stmt = (*stmt).next as *mut ParseCommon;
@@ -1223,134 +1130,112 @@ fn HandleCompatMapFile(info: &mut CompatInfo<'_>, file: *mut XkbFile) {
         }
     }
 }
-fn CopyInterps(info: &CompatInfo<'_>, needSymbol: bool, pred: u32, collect: *mut collect) {
-    unsafe {
-        for i in 0..info.interps.len() {
-            let si = &info.interps[i];
-            if si.interp.match_0 == pred
-                && (si.interp.sym != XKB_KEY_NoSymbol as u32) as i32 == needSymbol as i32
-            {
-                (*collect).sym_interprets.push(si.interp.clone());
-            }
+fn CopyInterps(info: &CompatInfo<'_>, needSymbol: bool, pred: u32, collect: &mut collect) {
+    for i in 0..info.interps.len() {
+        let si = &info.interps[i];
+        if si.interp.match_0 == pred
+            && (si.interp.sym != XKB_KEY_NoSymbol as u32) as i32 == needSymbol as i32
+        {
+            collect.sym_interprets.push(si.interp.clone());
         }
     }
 }
-fn CopyLedMapDefsToKeymap(keymap: *mut xkb_keymap, info: &mut CompatInfo<'_>) {
-    unsafe {
-        let mut c2rust_current_block_11: u64;
-        let mut idx: u32 = 0_u32;
-        while idx < info.num_leds {
-            let ledi: *mut LedInfo =
-                (&raw mut info.leds as *mut LedInfo).offset(idx as isize) as *mut LedInfo;
-            let mut i: u32;
-            let mut led: *mut xkb_led;
+fn CopyLedMapDefsToKeymap(keymap: &mut xkb_keymap, info: &mut CompatInfo<'_>) {
+    let mut c2rust_current_block_11: u64;
+    let mut idx: u32 = 0_u32;
+    while idx < info.num_leds {
+        let ledi_led = info.leds[idx as usize].led;
+        let ledi_ptr = &raw mut info.leds[idx as usize] as *mut LedInfo;
+        let mut i: u32;
+        i = 0_u32;
+        while i < keymap.num_leds {
+            if keymap.leds[i as usize].name == ledi_led.name {
+                break;
+            }
+            i = i.wrapping_add(1);
+        }
+        if i >= keymap.num_leds {
+            log::debug!("Indicator name \"{}\" was not declared in the keycodes section; Adding new indicator\n",
+                LEDText(info, ledi_ptr));
             i = 0_u32;
-            led = &raw mut (*keymap).leds as *mut xkb_led;
-            while i < (*keymap).num_leds {
-                if (*led).name == (*ledi).led.name {
+            while i < keymap.num_leds {
+                if keymap.leds[i as usize].name == XKB_ATOM_NONE {
                     break;
                 }
                 i = i.wrapping_add(1);
-                led = led.offset(1);
             }
-            if i >= (*keymap).num_leds {
-                xkb_logf!(
-                    (*keymap).ctx,
-                    XKB_LOG_LEVEL_DEBUG,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Indicator name \"{}\" was not declared in the keycodes section; Adding new indicator\n",
-                    LEDText(info, ledi),
-                );
-                i = 0_u32;
-                led = &raw mut (*keymap).leds as *mut xkb_led;
-                while i < (*keymap).num_leds {
-                    if (*led).name == XKB_ATOM_NONE {
-                        break;
-                    }
-                    i = i.wrapping_add(1);
-                    led = led.offset(1);
-                }
-                if i >= (*keymap).num_leds {
-                    if i >= XKB_MAX_LEDS {
-                        xkb_logf!(
-                            (*keymap).ctx,
-                            XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "Too many indicators (maximum is {}); Indicator name \"{}\" ignored\n",
-                            (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8_usize) as u32,
-                            LEDText(info, ledi),
-                        );
-                        c2rust_current_block_11 = 792017965103506125;
-                    } else {
-                        let c2rust_fresh0 = (*keymap).num_leds;
-                        (*keymap).num_leds = (*keymap).num_leds.wrapping_add(1);
-                        led = (&raw mut (*keymap).leds as *mut xkb_led)
-                            .offset(c2rust_fresh0 as isize)
-                            as *mut xkb_led;
-                        c2rust_current_block_11 = 17860125682698302841;
-                    }
+            if i >= keymap.num_leds {
+                if i >= XKB_MAX_LEDS {
+                    log::error!("Too many indicators (maximum is {}); Indicator name \"{}\" ignored\n",
+                        (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8_usize) as u32,
+                        LEDText(info, ledi_ptr));
+                    c2rust_current_block_11 = 792017965103506125;
                 } else {
+                    i = keymap.num_leds;
+                    keymap.num_leds = keymap.num_leds.wrapping_add(1);
                     c2rust_current_block_11 = 17860125682698302841;
                 }
             } else {
                 c2rust_current_block_11 = 17860125682698302841;
             }
-            if c2rust_current_block_11 == 17860125682698302841 {
-                *led = (*ledi).led;
-                if (*led).which_groups as i32 == 0_i32
-                    && ((*led).groups != 0_u32 || (*led).pending_groups as i32 != 0)
-                {
-                    (*led).which_groups = XKB_STATE_LAYOUT_EFFECTIVE;
-                }
-                if (*led).which_mods == 0_u32 && (*led).mods.mods != 0_u32 {
-                    (*led).which_mods = XKB_STATE_MODS_EFFECTIVE;
-                }
-            }
-            idx = idx.wrapping_add(1);
+        } else {
+            c2rust_current_block_11 = 17860125682698302841;
         }
+        if c2rust_current_block_11 == 17860125682698302841 {
+            keymap.leds[i as usize] = ledi_led;
+            let led = &mut keymap.leds[i as usize];
+            if led.which_groups as i32 == 0_i32
+                && (led.groups != 0_u32 || led.pending_groups as i32 != 0)
+            {
+                led.which_groups = XKB_STATE_LAYOUT_EFFECTIVE;
+            }
+            if led.which_mods == 0_u32 && led.mods.mods != 0_u32 {
+                led.which_mods = XKB_STATE_MODS_EFFECTIVE;
+            }
+        }
+        idx = idx.wrapping_add(1);
     }
 }
-fn CopyCompatToKeymap(keymap: *mut xkb_keymap, info: &mut CompatInfo<'_>) -> bool {
-    unsafe {
-        (*keymap).compat_section_name = match &info.name {
-            Some(s) => s.clone(),
-            None => String::new(),
+fn CopyCompatToKeymap(keymap: &mut xkb_keymap, info: &mut CompatInfo<'_>) -> bool {
+    keymap.compat_section_name = match &info.name {
+        Some(s) => s.clone(),
+        None => String::new(),
+    };
+    xkb_escape_map_name(&mut keymap.compat_section_name);
+    keymap.mods = info.mods;
+    if !info.interps.is_empty() {
+        let mut collect: collect = collect {
+            sym_interprets: Vec::new(),
         };
-        xkb_escape_map_name(&mut (*keymap).compat_section_name);
-        (*keymap).mods = info.mods;
-        if !info.interps.is_empty() {
-            let mut collect: collect = collect {
-                sym_interprets: Vec::new(),
-            };
-            CopyInterps(info, true, MATCH_EXACTLY, &raw mut collect);
-            CopyInterps(info, true, MATCH_ALL, &raw mut collect);
-            CopyInterps(info, true, MATCH_NONE, &raw mut collect);
-            CopyInterps(info, true, MATCH_ANY, &raw mut collect);
-            CopyInterps(info, true, MATCH_ANY_OR_NONE, &raw mut collect);
-            CopyInterps(info, false, MATCH_EXACTLY, &raw mut collect);
-            CopyInterps(info, false, MATCH_ALL, &raw mut collect);
-            CopyInterps(info, false, MATCH_NONE, &raw mut collect);
-            CopyInterps(info, false, MATCH_ANY, &raw mut collect);
-            CopyInterps(info, false, MATCH_ANY_OR_NONE, &raw mut collect);
-            if collect.sym_interprets.is_empty() {
-                (*keymap).sym_interprets = Vec::new();
-            } else {
-                (*keymap).sym_interprets = collect.sym_interprets;
-            }
+        CopyInterps(info, true, MATCH_EXACTLY, &mut collect);
+        CopyInterps(info, true, MATCH_ALL, &mut collect);
+        CopyInterps(info, true, MATCH_NONE, &mut collect);
+        CopyInterps(info, true, MATCH_ANY, &mut collect);
+        CopyInterps(info, true, MATCH_ANY_OR_NONE, &mut collect);
+        CopyInterps(info, false, MATCH_EXACTLY, &mut collect);
+        CopyInterps(info, false, MATCH_ALL, &mut collect);
+        CopyInterps(info, false, MATCH_NONE, &mut collect);
+        CopyInterps(info, false, MATCH_ANY, &mut collect);
+        CopyInterps(info, false, MATCH_ANY_OR_NONE, &mut collect);
+        if collect.sym_interprets.is_empty() {
+            keymap.sym_interprets = Vec::new();
+        } else {
+            keymap.sym_interprets = collect.sym_interprets;
         }
-        CopyLedMapDefsToKeymap(keymap, info);
-        true
     }
+    CopyLedMapDefsToKeymap(keymap, info);
+    true
 }
 pub fn CompileCompatMap(file: *mut XkbFile, keymap_info: *mut xkb_keymap_info) -> bool {
     unsafe {
         let ctx = &mut (*(*keymap_info).keymap).ctx;
         let mut info = CompatInfo::new(ctx, &mut *keymap_info);
-        InitCompatInfo(&mut info, 0_u32, &raw mut (*(*keymap_info).keymap).mods);
+        InitCompatInfo(&mut info, 0_u32, &(*(*keymap_info).keymap).mods);
         if !file.is_null() {
             HandleCompatMapFile(&mut info, file);
         }
-        if (info.errorCount == 0_i32) && CopyCompatToKeymap((*keymap_info).keymap, &mut info) {
+        if (info.errorCount == 0_i32) && CopyCompatToKeymap(&mut *(*keymap_info).keymap, &mut info)
+        {
             ClearCompatInfo(&mut info);
             return true;
         }

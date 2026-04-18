@@ -4,7 +4,7 @@ use crate::xkb::text::{buttonNames, GROUP_LAST_INDEX_NAME};
 
 pub use crate::xkb::keymap::XkbModNameToIndex;
 pub use crate::xkb::shared_ast_types::stmt_type_to_operator_char;
-use crate::xkb::shared_ast_types::ExprKind;
+use crate::xkb::shared_ast_types::{ExprKind, OptBoxRaw};
 use crate::xkb::utils::cstr_as_bytes;
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -78,7 +78,7 @@ pub unsafe fn ExprResolveLhs<'a>(
                 };
                 *elem_rtrn = xkb_atom_text(&(*ctx).atom_table, *element);
                 *field_rtrn = xkb_atom_text(&(*ctx).atom_table, *field);
-                *index_rtrn = *entry;
+                *index_rtrn = entry.raw();
                 if *element != XKB_ATOM_NONE && (*elem_rtrn).is_empty() {
                     return false;
                 }
@@ -89,14 +89,9 @@ pub unsafe fn ExprResolveLhs<'a>(
             }
             _ => {}
         }
-        xkb_logf!(
-            ctx,
-            XKB_LOG_LEVEL_CRITICAL,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "[XKB-{:03}] Unexpected operator {} in ResolveLhs\n",
+        log::error!("[XKB-{:03}] Unexpected operator {} in ResolveLhs\n",
             XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-            { (*expr).common.type_0 },
-        );
+            { (*expr).common.type_0 });
         false
     }
 }
@@ -151,17 +146,12 @@ unsafe fn NamedIntegerPatternLookup(
         };
         if count > 0_i32 && prefix.len() + count as usize == str_bytes.len() {
             if *val_rtrn < (*pattern).min || *val_rtrn > (*pattern).max {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] {} index {} is out of range ({}..{})\n",
+                log::error!("[XKB-{:03}] {} index {} is out of range ({}..{})\n",
                     { (*pattern).error_id },
                     (*pattern).prefix,
                     *val_rtrn,
                     (*pattern).min,
-                    (*pattern).max,
-                );
+                    (*pattern).max);
                 return false;
             }
             if (*pattern).is_mask {
@@ -248,14 +238,9 @@ pub unsafe fn ExprResolveBoolean(
                 return true;
             }
             4 | 5 | 6 | 8 | 9 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Found {} where boolean was expected\n",
+                log::error!("[XKB-{:03}] Found {} where boolean was expected\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    stmt_type_to_string((*expr).common.type_0),
-                );
+                    stmt_type_to_string((*expr).common.type_0));
                 return false;
             }
             10 => {
@@ -279,60 +264,40 @@ pub unsafe fn ExprResolveBoolean(
                         return true;
                     }
                 }
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Identifier \"{}\" of type boolean is unknown\n",
+                log::error!("[XKB-{:03}] Identifier \"{}\" of type boolean is unknown\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    ident,
-                );
+                    ident);
                 return false;
             }
             12 => {
                 let ExprKind::FieldRef { element, field } = &(*expr).kind else {
                     unreachable!()
                 };
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Default \"{}.{}\" of type boolean is unknown\n",
+                log::error!("[XKB-{:03}] Default \"{}.{}\" of type boolean is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
                     xkb_atom_text(&(*ctx).atom_table, *element),
-                    xkb_atom_text(&(*ctx).atom_table, *field),
-                );
+                    xkb_atom_text(&(*ctx).atom_table, *field));
                 return false;
             }
             24 | 22 => {
                 let ExprKind::Unary { child, .. } = &(*expr).kind else {
                     unreachable!()
                 };
-                ok = ExprResolveBoolean(ctx, *child, set_rtrn);
+                ok = ExprResolveBoolean(ctx, child.raw(), set_rtrn);
                 if ok {
                     *set_rtrn = !*set_rtrn;
                 }
                 return ok;
             }
             17 | 18 | 19 | 20 | 21 | 23 | 25 | 14 | 11 | 16 | 15 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] {} of boolean values not permitted\n",
+                log::error!("[XKB-{:03}] {} of boolean values not permitted\n",
                     XKB_ERROR_INVALID_OPERATION as i32,
-                    stmt_type_to_string((*expr).common.type_0),
-                );
+                    stmt_type_to_string((*expr).common.type_0));
             }
             _ => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_CRITICAL,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Unknown operator {} in ResolveBoolean\n",
+                log::error!("[XKB-{:03}] Unknown operator {} in ResolveBoolean\n",
                     XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                    { (*expr).common.type_0 },
-                );
+                    { (*expr).common.type_0 });
             }
         }
         false
@@ -362,14 +327,9 @@ unsafe fn ExprResolveIntegerLookup(
                 return true;
             }
             4 | 6 | 7 | 8 | 9 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Found {} where an int was expected\n",
+                log::error!("[XKB-{:03}] Found {} where an int was expected\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    stmt_type_to_string((*expr).common.type_0),
-                );
+                    stmt_type_to_string((*expr).common.type_0));
                 return false;
             }
             10 => {
@@ -386,14 +346,9 @@ unsafe fn ExprResolveIntegerLookup(
                     );
                 }
                 if !ok {
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
+                    log::error!("[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
                         XKB_ERROR_INVALID_IDENTIFIER as i32,
-                        xkb_atom_text(&(*ctx).atom_table, *ident_atom),
-                    );
+                        xkb_atom_text(&(*ctx).atom_table, *ident_atom));
                 } else {
                     *val_rtrn = u as i64;
                 }
@@ -406,15 +361,10 @@ unsafe fn ExprResolveIntegerLookup(
                 let ExprKind::FieldRef { element, field } = &(*expr).kind else {
                     unreachable!()
                 };
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
+                log::error!("[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
                     xkb_atom_text(&(*ctx).atom_table, *element),
-                    xkb_atom_text(&(*ctx).atom_table, *field),
-                );
+                    xkb_atom_text(&(*ctx).atom_table, *field));
                 return false;
             }
             17..=20 => {
@@ -426,8 +376,8 @@ unsafe fn ExprResolveIntegerLookup(
                 else {
                     unreachable!()
                 };
-                left = *bleft;
-                right = *bright;
+                left = bleft.raw();
+                right = bright.raw();
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut l, pending, lookup, lookupPriv)
                     || !ExprResolveIntegerLookup(
                         ctx, right, &raw mut r, pending, lookup, lookupPriv,
@@ -440,16 +390,11 @@ unsafe fn ExprResolveIntegerLookup(
                         let (c2rust_fresh0, c2rust_fresh1) = l.overflowing_add(r);
                         *val_rtrn = c2rust_fresh0;
                         if c2rust_fresh1 {
-                            xkb_logf!(
-                                ctx,
-                                XKB_LOG_LEVEL_ERROR,
-                                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                "[XKB-{:03}] Addition {} + {} has an invalid mathematical result: {}\n",
+                            log::error!("[XKB-{:03}] Addition {} + {} has an invalid mathematical result: {}\n",
                                 XKB_ERROR_INTEGER_OVERFLOW as i32,
                                 l,
                                 r,
-                                *val_rtrn,
-                            );
+                                *val_rtrn);
                             return false;
                         }
                     }
@@ -457,16 +402,11 @@ unsafe fn ExprResolveIntegerLookup(
                         let (c2rust_fresh2, c2rust_fresh3) = l.overflowing_sub(r);
                         *val_rtrn = c2rust_fresh2;
                         if c2rust_fresh3 {
-                            xkb_logf!(
-                                ctx,
-                                XKB_LOG_LEVEL_ERROR,
-                                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                "[XKB-{:03}] Substraction {} - {} has an invalid mathematical result: {}\n",
+                            log::error!("[XKB-{:03}] Substraction {} - {} has an invalid mathematical result: {}\n",
                                 XKB_ERROR_INTEGER_OVERFLOW as i32,
                                 l,
                                 r,
-                                *val_rtrn,
-                            );
+                                *val_rtrn);
                             return false;
                         }
                     }
@@ -474,72 +414,47 @@ unsafe fn ExprResolveIntegerLookup(
                         let (c2rust_fresh4, c2rust_fresh5) = l.overflowing_mul(r);
                         *val_rtrn = c2rust_fresh4;
                         if c2rust_fresh5 {
-                            xkb_logf!(
-                                ctx,
-                                XKB_LOG_LEVEL_ERROR,
-                                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                "[XKB-{:03}] Multiplication {} * {} has an invalid mathematical result: {}\n",
+                            log::error!("[XKB-{:03}] Multiplication {} * {} has an invalid mathematical result: {}\n",
                                 XKB_ERROR_INTEGER_OVERFLOW as i32,
                                 l,
                                 r,
-                                *val_rtrn,
-                            );
+                                *val_rtrn);
                             return false;
                         }
                     }
                     20 => {
                         if r == 0_i64 {
-                            xkb_logf!(
-                                ctx,
-                                XKB_LOG_LEVEL_ERROR,
-                                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                "[XKB-{:03}] Cannot divide by zero: {} / {}\n",
+                            log::error!("[XKB-{:03}] Cannot divide by zero: {} / {}\n",
                                 XKB_ERROR_INVALID_OPERATION as i32,
                                 l,
-                                r,
-                            );
+                                r);
                             return false;
                         }
                         *val_rtrn = l / r;
                     }
                     _ => {
-                        xkb_logf!(
-                            ctx,
-                            XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] {} of integers not permitted\n",
+                        log::error!("[XKB-{:03}] {} of integers not permitted\n",
                             XKB_ERROR_INVALID_OPERATION as i32,
-                            stmt_type_to_string((*expr).common.type_0),
-                        );
+                            stmt_type_to_string((*expr).common.type_0));
                         return false;
                     }
                 }
                 return true;
             }
             21 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_CRITICAL,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Assignment operator not implemented yet\n",
-                    XKB_ERROR_INVALID_OPERATION as i32,
-                );
+                log::error!("[XKB-{:03}] Assignment operator not implemented yet\n",
+                    XKB_ERROR_INVALID_OPERATION as i32);
             }
             22 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] The ! operator cannot be applied to an integer\n",
-                    XKB_ERROR_INVALID_OPERATION as i32,
-                );
+                log::error!("[XKB-{:03}] The ! operator cannot be applied to an integer\n",
+                    XKB_ERROR_INVALID_OPERATION as i32);
                 return false;
             }
             24 | 23 => {
                 let ExprKind::Unary { child, .. } = &(*expr).kind else {
                     unreachable!()
                 };
-                left = *child;
+                left = child.raw();
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut l, pending, lookup, lookupPriv) {
                     return false;
                 }
@@ -554,18 +469,13 @@ unsafe fn ExprResolveIntegerLookup(
                 let ExprKind::Unary { child, .. } = &(*expr).kind else {
                     unreachable!()
                 };
-                left = *child;
+                left = child.raw();
                 return ExprResolveIntegerLookup(ctx, left, val_rtrn, pending, lookup, lookupPriv);
             }
             _ => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_CRITICAL,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Unknown operator {} in ResolveInteger\n",
+                log::error!("[XKB-{:03}] Unknown operator {} in ResolveInteger\n",
                     XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                    { (*expr).common.type_0 },
-                );
+                    { (*expr).common.type_0 });
             }
         }
         false
@@ -639,16 +549,11 @@ pub unsafe fn ExprResolveGroup(
             }) as xkb_parser_error;
         }
         if result < absolute as i64 || result > (*keymap_info).features.max_groups as i64 {
-            xkb_logf!(
-                (*(*keymap_info).keymap).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Group index {} is out of range ({}..{})\n",
+            log::error!("[XKB-{:03}] Group index {} is out of range ({}..{})\n",
                 { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
                 result,
                 absolute as i32,
-                (*keymap_info).features.max_groups,
-            );
+                (*keymap_info).features.max_groups);
             return (if (*keymap_info).strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                 PARSER_FATAL_ERROR as i32
             } else {
@@ -686,15 +591,10 @@ pub unsafe fn ExprResolveLevel(
             return false;
         }
         if result < 1_i64 || result > XKB_LEVEL_MAX_IMPL as i64 {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Shift level {} is out of range (1..{})\n",
+            log::error!("[XKB-{:03}] Shift level {} is out of range (1..{})\n",
                 XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL as i32,
                 result,
-                2048_i32,
-            );
+                2048_i32);
             return false;
         }
         *level_rtrn = (result - 1_i64) as u32;
@@ -741,67 +641,42 @@ pub unsafe fn ExprResolveString(
                 return true;
             }
             5..=9 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Found {}, expected a string\n",
+                log::error!("[XKB-{:03}] Found {}, expected a string\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    stmt_type_to_string((*expr).common.type_0),
-                );
+                    stmt_type_to_string((*expr).common.type_0));
                 return false;
             }
             10 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Identifier \"{}\" of type string not found\n",
+                log::error!("[XKB-{:03}] Identifier \"{}\" of type string not found\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
                     xkb_atom_text(&(*ctx).atom_table, {
                         let ExprKind::Ident(id) = &(*expr).kind else {
                             unreachable!()
                         };
                         *id
-                    }),
-                );
+                    }));
                 return false;
             }
             12 => {
                 let ExprKind::FieldRef { element, field } = &(*expr).kind else {
                     unreachable!()
                 };
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Default \"{}.{}\" of type string not found\n",
+                log::error!("[XKB-{:03}] Default \"{}.{}\" of type string not found\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
                     xkb_atom_text(&(*ctx).atom_table, *element),
-                    xkb_atom_text(&(*ctx).atom_table, *field),
-                );
+                    xkb_atom_text(&(*ctx).atom_table, *field));
                 return false;
             }
             17 | 18 | 19 | 20 | 21 | 23 | 24 | 22 | 25 | 14 | 11 | 16 | 15 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] {} of strings not permitted\n",
+                log::error!("[XKB-{:03}] {} of strings not permitted\n",
                     XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-                    stmt_type_to_string((*expr).common.type_0),
-                );
+                    stmt_type_to_string((*expr).common.type_0));
                 return false;
             }
             _ => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_CRITICAL,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Unknown operator {} in ResolveString\n",
+                log::error!("[XKB-{:03}] Unknown operator {} in ResolveString\n",
                     XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                    { (*expr).common.type_0 },
-                );
+                    { (*expr).common.type_0 });
             }
         }
         false
@@ -815,14 +690,9 @@ pub unsafe fn ExprResolveEnum(
 ) -> bool {
     unsafe {
         if (*expr).common.type_0 != STMT_EXPR_IDENT {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Found a {} where an enumerated value was expected\n",
+            log::error!("[XKB-{:03}] Found a {} where an enumerated value was expected\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                stmt_type_to_string((*expr).common.type_0),
-            );
+                stmt_type_to_string((*expr).common.type_0));
             return false;
         }
         let ExprKind::Ident(ident_atom) = &(*expr).kind else {
@@ -835,26 +705,16 @@ pub unsafe fn ExprResolveEnum(
             val_rtrn,
             std::ptr::null_mut(),
         ) {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Illegal identifier {}; expected one of:\n",
+            log::error!("[XKB-{:03}] Illegal identifier {}; expected one of:\n",
                 XKB_ERROR_INVALID_IDENTIFIER as i32,
-                xkb_atom_text(&(*ctx).atom_table, *ident_atom),
-            );
+                xkb_atom_text(&(*ctx).atom_table, *ident_atom));
             for entry in values {
                 if entry.name.is_empty() {
                     break;
                 }
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] \t{}\n",
+                log::error!("[XKB-{:03}] \t{}\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    entry.name,
-                );
+                    entry.name);
             }
             return false;
         }
@@ -884,29 +744,19 @@ unsafe fn ExprResolveMaskLookup(
                     unreachable!()
                 };
                 if *ival < 0_i64 || *ival > u32::MAX as i64 {
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "Mask {}{:#x} is out of range (0..{:#x})\n",
+                    log::error!("Mask {}{:#x} is out of range (0..{:#x})\n",
                         if *ival < 0_i64 { "-" } else { "" },
                         ival.abs(),
-                        4294967295_u32,
-                    );
+                        4294967295_u32);
                     return false;
                 }
                 *val_rtrn = *ival as u32;
                 return true;
             }
             4 | 6 | 7 | 8 | 9 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Found {} where a mask was expected\n",
+                log::error!("[XKB-{:03}] Found {} where a mask was expected\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    stmt_type_to_string((*expr).common.type_0),
-                );
+                    stmt_type_to_string((*expr).common.type_0));
                 return false;
             }
             10 => {
@@ -921,14 +771,9 @@ unsafe fn ExprResolveMaskLookup(
                     pending,
                 );
                 if !ok {
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
+                    log::error!("[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
                         XKB_ERROR_INVALID_IDENTIFIER as i32,
-                        xkb_atom_text(&(*ctx).atom_table, *ident_atom),
-                    );
+                        xkb_atom_text(&(*ctx).atom_table, *ident_atom));
                 }
                 if !pending.is_null() && *pending as i32 != 0 {
                     return false;
@@ -939,15 +784,10 @@ unsafe fn ExprResolveMaskLookup(
                 let ExprKind::FieldRef { element, field } = &(*expr).kind else {
                     unreachable!()
                 };
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
+                log::error!("[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
                     XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
                     xkb_atom_text(&(*ctx).atom_table, *element),
-                    xkb_atom_text(&(*ctx).atom_table, *field),
-                );
+                    xkb_atom_text(&(*ctx).atom_table, *field));
                 return false;
             }
             13 => {
@@ -966,8 +806,8 @@ unsafe fn ExprResolveMaskLookup(
                 else {
                     unreachable!()
                 };
-                left = *bleft;
-                right = *bright;
+                left = bleft.raw();
+                right = bright.raw();
                 if !ExprResolveMaskLookup(ctx, left, &raw mut l, pending, lookup, lookupPriv)
                     || !ExprResolveMaskLookup(ctx, right, &raw mut r, pending, lookup, lookupPriv)
                 {
@@ -981,18 +821,13 @@ unsafe fn ExprResolveMaskLookup(
                         *val_rtrn = l & !r;
                     }
                     19 | 20 => {
-                        xkb_logf!(
-                            ctx,
-                            XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] Cannot {} masks; Illegal operation ignored\n",
+                        log::error!("[XKB-{:03}] Cannot {} masks; Illegal operation ignored\n",
                             XKB_ERROR_INVALID_OPERATION as i32,
                             if (*expr).common.type_0 == STMT_EXPR_DIVIDE {
                                 "divide"
                             } else {
                                 "multiply"
-                            },
-                        );
+                            });
                         return false;
                     }
                     _ => {}
@@ -1000,33 +835,23 @@ unsafe fn ExprResolveMaskLookup(
                 return true;
             }
             21 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_CRITICAL,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Assignment operator not implemented yet\n",
-                    XKB_ERROR_INVALID_OPERATION as i32,
-                );
+                log::error!("[XKB-{:03}] Assignment operator not implemented yet\n",
+                    XKB_ERROR_INVALID_OPERATION as i32);
                 c2rust_current_block_47 = 11626999923138678822;
             }
             24 => {
                 let ExprKind::Unary { child, .. } = &(*expr).kind else {
                     unreachable!()
                 };
-                left = *child;
+                left = child.raw();
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut v, pending, lookup, lookupPriv) {
                     return false;
                 }
                 if v < 0_i64 || v > u32::MAX as i64 {
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "Mask {}{:#x} is out of range (0..{:#x})\n",
+                    log::error!("Mask {}{:#x} is out of range (0..{:#x})\n",
                         if v < 0_i64 { "-" } else { "" },
                         v.abs(),
-                        4294967295_u32,
-                    );
+                        4294967295_u32);
                     return false;
                 }
                 *val_rtrn = !(v as u32);
@@ -1036,29 +861,19 @@ unsafe fn ExprResolveMaskLookup(
                 let ExprKind::Unary { child, .. } = &(*expr).kind else {
                     unreachable!()
                 };
-                left = *child;
+                left = child.raw();
                 if !ExprResolveIntegerLookup(ctx, left, &raw mut v, pending, lookup, lookupPriv) {
                     return false;
                 }
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] The '{}' unary operator cannot be used with a mask\n",
+                log::error!("[XKB-{:03}] The '{}' unary operator cannot be used with a mask\n",
                     XKB_ERROR_INVALID_OPERATION as i32,
-                    (stmt_type_to_operator_char((*expr).common.type_0) as u8 as char),
-                );
+                    (stmt_type_to_operator_char((*expr).common.type_0) as u8 as char));
                 return false;
             }
             _ => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_CRITICAL,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Unknown operator type {} in ResolveMask\n",
+                log::error!("[XKB-{:03}] Unknown operator type {} in ResolveMask\n",
                     XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                    { (*expr).common.type_0 },
-                );
+                    { (*expr).common.type_0 });
                 c2rust_current_block_47 = 11626999923138678822;
             }
         }
@@ -1068,14 +883,9 @@ unsafe fn ExprResolveMaskLookup(
                 if bogus.is_none() {
                     bogus = Some("function use");
                 }
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Unexpected {} in mask expression; Expression Ignored\n",
+                log::error!("[XKB-{:03}] Unexpected {} in mask expression; Expression Ignored\n",
                     XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                    bogus.unwrap_or("unknown"),
-                );
+                    bogus.unwrap_or("unknown"));
                 return false;
             }
         }
@@ -1145,14 +955,9 @@ pub unsafe fn ExprResolveMod(
 ) -> bool {
     unsafe {
         if (*def).common.type_0 != STMT_EXPR_IDENT {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Cannot resolve virtual modifier: found {} where a virtual modifier name was expected\n",
+            log::error!("[XKB-{:03}] Cannot resolve virtual modifier: found {} where a virtual modifier name was expected\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                stmt_type_to_string((*def).common.type_0),
-            );
+                stmt_type_to_string((*def).common.type_0));
             return false;
         }
         let ExprKind::Ident(ident_atom) = &(*def).kind else {
@@ -1161,14 +966,9 @@ pub unsafe fn ExprResolveMod(
         let name: u32 = *ident_atom;
         let ndx: u32 = XkbModNameToIndex(mods, name, mod_type);
         if ndx == XKB_MOD_INVALID {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Cannot resolve virtual modifier: \"{}\" was not previously declared\n",
+            log::error!("[XKB-{:03}] Cannot resolve virtual modifier: \"{}\" was not previously declared\n",
                 XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER as i32,
-                xkb_atom_text(&(*ctx).atom_table, name),
-            );
+                xkb_atom_text(&(*ctx).atom_table, name));
             return false;
         }
         *ndx_rtrn = ndx;

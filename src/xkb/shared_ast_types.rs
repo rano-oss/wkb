@@ -6,7 +6,6 @@
 
 use crate::xkb::shared_types::{xkb_context, xkb_keymap, xkb_overlay_index_t};
 use crate::xkb::text::LookupEntry;
-use crate::xkb_logf;
 
 // message_code types needed by Report* inline functions
 pub type xkb_message_code = u32;
@@ -132,14 +131,14 @@ pub enum ExprKind {
     ArrayRef {
         element: u32,
         field: u32,
-        entry: *mut ExprDef,
+        entry: Option<Box<ExprDef>>,
     },
     Action {
         name: u32,
-        args: *mut ExprDef,
+        args: Option<Box<ExprDef>>,
     },
     ActionList {
-        actions: *mut ExprDef,
+        actions: Option<Box<ExprDef>>,
     },
     KeysymList {
         syms: Vec<u32>,
@@ -147,12 +146,12 @@ pub enum ExprKind {
     EmptyList,
     Binary {
         op: stmt_type,
-        left: *mut ExprDef,
-        right: *mut ExprDef,
+        left: Option<Box<ExprDef>>,
+        right: Option<Box<ExprDef>>,
     },
     Unary {
         op: stmt_type,
-        child: *mut ExprDef,
+        child: Option<Box<ExprDef>>,
     },
 }
 
@@ -194,6 +193,31 @@ impl ExprDef {
     }
 }
 
+/// Trait to extract raw mutable pointer from `Option<Box<T>>` for backward compat during migration.
+pub trait OptBoxRaw<T> {
+    fn raw(&self) -> *mut T;
+}
+impl<T> OptBoxRaw<T> for Option<Box<T>> {
+    #[inline]
+    fn raw(&self) -> *mut T {
+        match self {
+            Some(b) => &**b as *const T as *mut T,
+            None => std::ptr::null_mut(),
+        }
+    }
+}
+
+/// Convert raw pointer to `Option<Box<T>>`. Null → None.
+/// # Safety: ptr must be null or from `Box::into_raw`.
+#[inline]
+pub unsafe fn box_from_raw<T>(ptr: *mut T) -> Option<Box<T>> {
+    if ptr.is_null() {
+        None
+    } else {
+        Some(unsafe { Box::from_raw(ptr) })
+    }
+}
+
 // Re-export ast_build functions used by consumers via ast_h
 pub use crate::xkb::xkbcomp::ast_build::{
     stmt_type_to_operator_char, stmt_type_to_string, xkb_file_type_to_string, FreeXkbFile,
@@ -205,22 +229,20 @@ pub use crate::xkb::xkbcomp::ast_build::{
 
 // ── Statement definition types ──────────────────────────────────────
 
-#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct VarDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
-    pub name: *mut ExprDef,
-    pub value: *mut ExprDef,
+    pub name: Option<Box<ExprDef>>,
+    pub value: Option<Box<ExprDef>>,
 }
 
-#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct VModDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
     pub name: u32,
-    pub value: *mut ExprDef,
+    pub value: Option<Box<ExprDef>>,
 }
 
 #[derive(Copy, Clone)]
@@ -241,69 +263,62 @@ pub struct KeyAliasDef {
     pub real: u32,
 }
 
-#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct KeyTypeDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
     pub name: u32,
-    pub body: *mut VarDef,
+    pub body: Option<Box<VarDef>>,
 }
 
-#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct SymbolsDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
     pub keyName: u32,
-    pub symbols: *mut VarDef,
+    pub symbols: Option<Box<VarDef>>,
 }
 
-#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct ModMapDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
     pub modifier: u32,
-    pub keys: *mut ExprDef,
+    pub keys: Option<Box<ExprDef>>,
 }
 
-#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct GroupCompatDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
     pub group: i64,
-    pub def: *mut ExprDef,
+    pub def: Option<Box<ExprDef>>,
 }
 
-#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct InterpDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
     pub sym: u32,
-    pub match_0: *mut ExprDef,
-    pub def: *mut VarDef,
+    pub match_0: Option<Box<ExprDef>>,
+    pub def: Option<Box<VarDef>>,
 }
 
-#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct LedNameDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
     pub virtual_0: bool,
     pub ndx: i64,
-    pub name: *mut ExprDef,
+    pub name: Option<Box<ExprDef>>,
 }
 
-#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct LedMapDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
     pub name: u32,
-    pub body: *mut VarDef,
+    pub body: Option<Box<VarDef>>,
 }
 
 #[derive(Clone)]
@@ -363,15 +378,13 @@ pub const PARSER_NO_FIELD_TYPE_MISMATCH: xkb_parser_strict_flags = 2;
 pub const PARSER_NO_UNKNOWN_STATEMENTS: xkb_parser_strict_flags = 1;
 pub const PARSER_NO_STRICT_FLAGS: xkb_parser_strict_flags = 0;
 
-#[derive(Copy, Clone)]
 #[repr(C)]
 pub struct pending_computation {
-    pub expr: *mut ExprDef,
+    pub expr: Option<Box<ExprDef>>,
     pub computed: bool,
     pub value: u32,
 }
 
-#[derive(Clone)]
 #[repr(C)]
 pub struct xkb_keymap_info {
     pub keymap: *mut xkb_keymap,
@@ -422,16 +435,11 @@ pub unsafe fn ReportNotArray(
     field: &str,
     name: &str,
 ) -> bool {
-    xkb_logf!(
-        ctx,
-        XKB_LOG_LEVEL_ERROR,
-        XKB_LOG_VERBOSITY_MINIMAL as i32,
-        "[XKB-{:03}] The {} {} field is not an array; Ignoring illegal assignment in {}\n",
+    log::error!("[XKB-{:03}] The {} {} field is not an array; Ignoring illegal assignment in {}\n",
         XKB_ERROR_WRONG_FIELD_TYPE as i32,
         type_0,
         field,
-        name,
-    );
+        name);
     false
 }
 
@@ -444,17 +452,12 @@ pub unsafe fn ReportBadType(
     name: &str,
     wanted: &str,
 ) -> bool {
-    xkb_logf!(
-        ctx,
-        XKB_LOG_LEVEL_ERROR,
-        XKB_LOG_VERBOSITY_MINIMAL as i32,
-        "[XKB-{:03}] The {} {} field must be a {}; Ignoring illegal assignment in {}\n",
+    log::error!("[XKB-{:03}] The {} {} field must be a {}; Ignoring illegal assignment in {}\n",
         { code },
         type_0,
         field,
         wanted,
-        name,
-    );
+        name);
     false
 }
 
@@ -465,16 +468,11 @@ pub unsafe fn ReportBadField(
     field: &str,
     name: &str,
 ) -> bool {
-    xkb_logf!(
-        ctx,
-        XKB_LOG_LEVEL_ERROR,
-        XKB_LOG_VERBOSITY_MINIMAL as i32,
-        "Unknown {} field \"{}\" in {}; Ignoring assignment to unknown field in {}\n",
+    log::error!("Unknown {} field \"{}\" in {}; Ignoring assignment to unknown field in {}\n",
         type_0,
         field,
         name,
-        name,
-    );
+        name);
     false
 }
 
@@ -485,15 +483,10 @@ pub unsafe fn ReportShouldBeArray(
     field: &str,
     name: &str,
 ) -> bool {
-    xkb_logf!(
-        ctx,
-        XKB_LOG_LEVEL_ERROR,
-        XKB_LOG_VERBOSITY_MINIMAL as i32,
-        "[XKB-{:03}] Missing subscript for {} {}; Ignoring illegal assignment in {}\n",
+    log::error!("[XKB-{:03}] Missing subscript for {} {}; Ignoring illegal assignment in {}\n",
         XKB_ERROR_EXPECTED_ARRAY_ENTRY as i32,
         type_0,
         field,
-        name,
-    );
+        name);
     false
 }

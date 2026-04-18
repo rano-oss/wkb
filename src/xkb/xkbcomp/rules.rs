@@ -1,4 +1,3 @@
-use crate::xkb_logf;
 
 pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 pub use crate::xkb::utils::is_absolute_path;
@@ -26,9 +25,7 @@ pub use crate::xkb::messages::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
     XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
-    XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE, XKB_LOG_VERBOSITY_DEFAULT,
-    XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL, XKB_LOG_VERBOSITY_SILENT,
-    XKB_LOG_VERBOSITY_VERBOSE, XKB_WARNING_CANNOT_INFER_KEY_TYPE,
+    XKB_WARNING_CANNOT_INFER_KEY_TYPE,
     XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
     XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
     XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
@@ -249,16 +246,11 @@ unsafe fn lex(s: *mut scanner, val: *mut lvalue) -> rules_token {
             (*s).chr('\r' as i32 as i8);
             if !(*s).eol() {
                 let loc: scanner_loc = (*s).token_location();
-                xkb_logf!(
-                    (*s).ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] {}:{}:{}: illegal new line escape; must appear at end of line\n",
+                log::error!("[XKB-{:03}] {}:{}:{}: illegal new line escape; must appear at end of line\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                     &(*s).file_name,
                     loc.line,
-                    loc.column,
-                );
+                    loc.column);
                 return TOK_ERROR;
             }
             (*s).next_byte();
@@ -303,16 +295,11 @@ unsafe fn lex(s: *mut scanner, val: *mut lvalue) -> rules_token {
             }
             if (*val).string.len == 0_usize {
                 let loc_0: scanner_loc = (*s).token_location();
-                xkb_logf!(
-                    (*s).ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] {}:{}:{}: unexpected character after '$'; expected name\n",
+                log::error!("[XKB-{:03}] {}:{}:{}: unexpected character after '$'; expected name\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                     &(*s).file_name,
                     loc_0.line,
-                    loc_0.column,
-                );
+                    loc_0.column);
                 return TOK_ERROR;
             }
             return TOK_GROUP_NAME;
@@ -333,16 +320,11 @@ unsafe fn lex(s: *mut scanner, val: *mut lvalue) -> rules_token {
             return TOK_IDENTIFIER;
         }
         let loc_1: scanner_loc = (*s).token_location();
-        xkb_logf!(
-            (*s).ctx,
-            XKB_LOG_LEVEL_ERROR,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "[XKB-{:03}] {}:{}:{}: unrecognized token\n",
+        log::error!("[XKB-{:03}] {}:{}:{}: unrecognized token\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
             &(*s).file_name,
             loc_1.line,
-            loc_1.column,
-        );
+            loc_1.column);
         TOK_ERROR
     }
 }
@@ -473,24 +455,14 @@ unsafe fn split_comma_separated_mlvo(
                 if count > 0_i32 {
                     s = s.offset(count as isize);
                     if layout == 0_u32 || layout > XKB_MAX_GROUPS as u32 {
-                        xkb_logf!(
-                            ctx,
-                            XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] Invalid layout index {} for the RMVLO component: \"{}\"\n",
+                        log::error!("[XKB-{:03}] Invalid layout index {} for the RMVLO component: \"{}\"\n",
                             { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
                             layout,
-                            val_0.sval.as_str(),
-                        );
+                            val_0.sval.as_str());
                     } else if mlvo != MLVO_OPTION {
-                        xkb_logf!(
-                            ctx,
-                            XKB_LOG_LEVEL_WARNING,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "Layout index {} is not supported for the RMLVO component: \"{}\"\n",
+                        log::warn!("Layout index {} is not supported for the RMLVO component: \"{}\"\n",
                             layout,
-                            val_0.sval.as_str(),
-                        );
+                            val_0.sval.as_str());
                     } else {
                         val_0.layout = layout.wrapping_sub(1_u32);
                     }
@@ -500,15 +472,10 @@ unsafe fn split_comma_separated_mlvo(
                     s = s.offset(1);
                 }
                 if count <= 0_i32 || layout_index_end != s {
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] Invalid layout index \"{}\" for the RMLVO component \"{}\"; discarding specifier.\n",
+                    log::error!("[XKB-{:03}] Invalid layout index \"{}\" for the RMLVO component \"{}\"; discarding specifier.\n",
                         { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
                         std::str::from_utf8_unchecked(std::slice::from_raw_parts(layout_start as *const u8, s.offset_from(layout_start) as usize)),
-                        val_0.sval.as_str(),
-                    );
+                        val_0.sval.as_str());
                     val_0.layout = OPTIONS_MATCH_ALL_GROUPS as u32;
                 }
             }
@@ -581,11 +548,7 @@ unsafe fn matcher_new_from_names(
         );
         if (*m).rmlvo.layouts.len() > (*m).rmlvo.variants.len() {
             if !rmlvo_ref.variant.as_bytes().is_empty() {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "More layouts than variants: \"{}\" vs. \"{}\".\n",
+                log::warn!("More layouts than variants: \"{}\" vs. \"{}\".\n",
                     if !rmlvo_ref.layout.as_bytes().is_empty() {
                         rmlvo_ref.layout.to_str().unwrap_or("")
                     } else {
@@ -595,16 +558,11 @@ unsafe fn matcher_new_from_names(
                         rmlvo_ref.variant.to_str().unwrap_or("")
                     } else {
                         "(none)"
-                    },
-                );
+                    });
             }
             vec_resize_zero_matched_sval(&mut (*m).rmlvo.variants, (*m).rmlvo.layouts.len());
         } else if (*m).rmlvo.layouts.len() < (*m).rmlvo.variants.len() {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "Less layouts than variants: \"{}\" vs. \"{}\".\n",
+            log::error!("Less layouts than variants: \"{}\" vs. \"{}\".\n",
                 if !rmlvo_ref.layout.as_bytes().is_empty() {
                     rmlvo_ref.layout.to_str().unwrap_or("")
                 } else {
@@ -614,8 +572,7 @@ unsafe fn matcher_new_from_names(
                     rmlvo_ref.variant.to_str().unwrap_or("")
                 } else {
                     "(none)"
-                },
-            );
+                });
             (*m).rmlvo.variants.truncate((*m).rmlvo.layouts.len());
         }
         m
@@ -663,16 +620,11 @@ unsafe fn matcher_include(
     unsafe {
         if include_depth >= MAX_INCLUDE_DEPTH as u32 {
             let loc: scanner_loc = (*parent_scanner).token_location();
-            xkb_logf!(
-                (*parent_scanner).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "{}:{}:{}: maximum include depth ({}) exceeded; maybe there is an include loop?\n",
+            log::error!("{}:{}:{}: maximum include depth ({}) exceeded; maybe there is an include loop?\n",
                 &(*parent_scanner).file_name,
                 loc.line,
                 loc.column,
-                MAX_INCLUDE_DEPTH,
-            );
+                MAX_INCLUDE_DEPTH);
             return;
         }
         let mut stmt_file: *const i8 = inc.start;
@@ -707,19 +659,14 @@ unsafe fn matcher_include(
                     buf[stmt_file_len] = '\0' as i32 as i8;
                     stmt_file = &raw mut buf as *mut i8;
                 } else {
-                    xkb_logf!(
-                        (*m).ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] Path is too long: {} > {}, got raw path: {}\n",
+                    log::error!("[XKB-{:03}] Path is too long: {} > {}, got raw path: {}\n",
                         XKB_ERROR_INVALID_PATH as i32,
                         stmt_file_len,
                         std::mem::size_of::<[i8; 4096]>(),
                         std::str::from_utf8_unchecked(std::slice::from_raw_parts(
                             stmt_file as *const u8,
                             stmt_file_len
-                        )),
-                    );
+                        )));
                     return;
                 }
             }
@@ -753,15 +700,10 @@ unsafe fn matcher_include(
             if ret {
                 return;
             }
-            xkb_logf!(
-                (*m).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "No components returned from included XKB rules \"{}\"\n",
+            log::error!("No components returned from included XKB rules \"{}\"\n",
                 std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
                     &raw mut buf as *const i8
-                )),
-            );
+                )));
             if absolute_path {
                 break;
             }
@@ -778,16 +720,11 @@ unsafe fn matcher_include(
                 true,
             );
         }
-        xkb_logf!(
-            (*m).ctx,
-            XKB_LOG_LEVEL_ERROR,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "Failed to open included XKB rules \"{}\"\n",
+        log::error!("Failed to open included XKB rules \"{}\"\n",
             std::str::from_utf8_unchecked(std::slice::from_raw_parts(
                 stmt_file as *const u8,
                 stmt_file_len
-            )),
-        );
+            )));
     }
 }
 unsafe fn matcher_mapping_start_new(m: *mut matcher) {
@@ -914,33 +851,23 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
         }
         if mlvo as u32 >= _MLVO_NUM_ENTRIES {
             let loc: scanner_loc = (*s).token_location();
-            xkb_logf!(
-                (*s).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 &(*s).file_name,
                 loc.line,
                 loc.column,
-                ident.as_str(),
-            );
+                ident.as_str());
             (*m).mapping.active_or_candidates_mask = 0_u32;
             return;
         }
         if is_mlvo_mask_defined(m, mlvo) {
             let loc_0: scanner_loc = (*s).token_location();
-            xkb_logf!(
-                (*s).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 &(*s).file_name,
                 loc_0.line,
                 loc_0.column,
-                mlvo_sval.as_str(),
-            );
+                mlvo_sval.as_str());
             (*m).mapping.active_or_candidates_mask = 0_u32;
             return;
         }
@@ -953,17 +880,12 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
             );
             if ident.len.wrapping_sub(mlvo_sval.len) as i32 != consumed {
                 let loc_1: scanner_loc = (*s).token_location();
-                xkb_logf!(
-                    (*s).ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" may only be followed by a valid group index; ignoring rule set\n",
+                log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" may only be followed by a valid group index; ignoring rule set\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                     &(*s).file_name,
                     loc_1.line,
                     loc_1.column,
-                    mlvo_sval.as_str(),
-                );
+                    mlvo_sval.as_str());
                 (*m).mapping.active_or_candidates_mask = 0_u32;
                 return;
             }
@@ -973,17 +895,12 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
                 (*m).mapping.layout.single.variant_idx = idx;
             } else {
                 let loc_2: scanner_loc = (*s).token_location();
-                xkb_logf!(
-                    (*s).ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" cannot be followed by a group index; ignoring rule set\n",
+                log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" cannot be followed by a group index; ignoring rule set\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                     &(*s).file_name,
                     loc_2.line,
                     loc_2.column,
-                    mlvo_sval.as_str(),
-                );
+                    mlvo_sval.as_str());
                 (*m).mapping.active_or_candidates_mask = 0_u32;
                 return;
             }
@@ -997,16 +914,11 @@ unsafe fn matcher_mapping_set_mlvo(m: *mut matcher, s: *mut scanner, ident: sval
             && (*m).mapping.layout.single.layout_idx != (*m).mapping.layout.single.variant_idx
         {
             let loc_3: scanner_loc = (*s).token_location();
-            xkb_logf!(
-                (*s).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: invalid mapping: \"layout\" index must be the same as the \"variant\" index\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"layout\" index must be the same as the \"variant\" index\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 &(*s).file_name,
                 loc_3.line,
-                loc_3.column,
-            );
+                loc_3.column);
             (*m).mapping.active_or_candidates_mask = 0_u32;
             return;
         }
@@ -1094,33 +1006,23 @@ unsafe fn matcher_mapping_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sv
         }
         if kccgst as u32 >= _KCCGST_NUM_ENTRIES {
             let loc: scanner_loc = (*s).token_location();
-            xkb_logf!(
-                (*s).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 &(*s).file_name,
                 loc.line,
                 loc.column,
-                ident.as_str(),
-            );
+                ident.as_str());
             (*m).mapping.active_or_candidates_mask = 0_u32;
             return;
         }
         if (*m).mapping.defined_kccgst_mask as u32 & 1_u32 << kccgst as u32 != 0 {
             let loc_0: scanner_loc = (*s).token_location();
-            xkb_logf!(
-                (*s).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 &(*s).file_name,
                 loc_0.line,
                 loc_0.column,
-                kccgst_sval.as_str(),
-            );
+                kccgst_sval.as_str());
             (*m).mapping.active_or_candidates_mask = 0_u32;
             return;
         }
@@ -1136,28 +1038,18 @@ unsafe fn matcher_mapping_verify(m: *mut matcher, s: *mut scanner) -> bool {
         let mut c2rust_current_block: u64;
         if (*m).mapping.num_mlvo as i32 == 0_i32 {
             let loc: scanner_loc = (*s).token_location();
-            xkb_logf!(
-                (*s).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the left hand side; ignoring rule set\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the left hand side; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 &(*s).file_name,
                 loc.line,
-                loc.column,
-            );
+                loc.column);
         } else if (*m).mapping.num_kccgst as i32 == 0_i32 {
             let loc_0: scanner_loc = (*s).token_location();
-            xkb_logf!(
-                (*s).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the right hand side; ignoring rule set\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the right hand side; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 &(*s).file_name,
                 loc_0.line,
-                loc_0.column,
-            );
+                loc_0.column);
         } else {
             if is_mlvo_mask_defined(m, MLVO_LAYOUT) {
                 match (*m).mapping.layout.single.layout_idx {
@@ -1294,16 +1186,11 @@ unsafe fn matcher_rule_set_mlvo_common(
     unsafe {
         if (*m).rule.num_mlvo_values as i32 >= (*m).mapping.num_mlvo as i32 {
             let loc: scanner_loc = (*s).token_location();
-            xkb_logf!(
-                (*s).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 &(*s).file_name,
                 loc.line,
-                loc.column,
-            );
+                loc.column);
             (*m).rule.skip = true;
             return;
         }
@@ -1339,16 +1226,11 @@ unsafe fn matcher_rule_set_kccgst(m: *mut matcher, s: *mut scanner, ident: sval)
     unsafe {
         if (*m).rule.num_kccgst_values as i32 >= (*m).mapping.num_kccgst as i32 {
             let loc: scanner_loc = (*s).token_location();
-            xkb_logf!(
-                (*s).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 &(*s).file_name,
                 loc.line,
-                loc.column,
-            );
+                loc.column);
             (*m).rule.skip = true;
             return;
         }
@@ -1430,17 +1312,12 @@ unsafe fn expand_rmlvo_in_kccgst_value(
         {
             if layout_idx == XKB_LAYOUT_INVALID {
                 let loc: scanner_loc = (*s).token_location();
-                xkb_logf!(
-                    (*s).ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] {}:{}:{}: Invalid %i in %-expansion: there is no corresponding layout nor variant in the MLVO fields of the rules header.\n",
+                log::error!("[XKB-{:03}] {}:{}:{}: Invalid %i in %-expansion: there is no corresponding layout nor variant in the MLVO fields of the rules header.\n",
                     XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION
                         as i32,
                     &(*s).file_name,
                     loc.line,
-                    loc.column,
-                );
+                    loc.column);
             } else {
                 *i = (*i).wrapping_add(1);
                 let mut index_str: [i8; 12] = [0; 12];
@@ -1502,16 +1379,11 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             if *i < value.len && *str.add(*i) as i32 == '[' as i32 {
                                 if mlv as u32 != MLVO_LAYOUT && mlv as u32 != MLVO_VARIANT {
                                     let loc_0: scanner_loc = (*s).token_location();
-                                    xkb_logf!(
-                                        (*s).ctx,
-                                        XKB_LOG_LEVEL_ERROR,
-                                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                        "[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
+                                    log::error!("[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
                                         XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                                         &(*s).file_name,
                                         loc_0.line,
-                                        loc_0.column,
-                                    );
+                                        loc_0.column);
                                     c2rust_current_block = 14165246690716487359;
                                 } else {
                                     let consumed: i32 = extract_layout_index(
@@ -1649,16 +1521,11 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             if *i < value.len && *str.add(*i) as i32 == '[' as i32 {
                                 if mlv as u32 != MLVO_LAYOUT && mlv as u32 != MLVO_VARIANT {
                                     let loc_0: scanner_loc = (*s).token_location();
-                                    xkb_logf!(
-                                        (*s).ctx,
-                                        XKB_LOG_LEVEL_ERROR,
-                                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                        "[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
+                                    log::error!("[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
                                         XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                                         &(*s).file_name,
                                         loc_0.line,
-                                        loc_0.column,
-                                    );
+                                        loc_0.column);
                                     c2rust_current_block = 14165246690716487359;
                                 } else {
                                     let consumed: i32 = extract_layout_index(
@@ -1796,16 +1663,11 @@ unsafe fn expand_rmlvo_in_kccgst_value(
                             if *i < value.len && *str.add(*i) as i32 == '[' as i32 {
                                 if mlv as u32 != MLVO_LAYOUT && mlv as u32 != MLVO_VARIANT {
                                     let loc_0: scanner_loc = (*s).token_location();
-                                    xkb_logf!(
-                                        (*s).ctx,
-                                        XKB_LOG_LEVEL_ERROR,
-                                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                        "[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
+                                    log::error!("[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
                                         XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                                         &(*s).file_name,
                                         loc_0.line,
-                                        loc_0.column,
-                                    );
+                                        loc_0.column);
                                     c2rust_current_block = 14165246690716487359;
                                 } else {
                                     let consumed: i32 = extract_layout_index(
@@ -1931,16 +1793,11 @@ unsafe fn expand_rmlvo_in_kccgst_value(
             }
         }
         let loc_1: scanner_loc = (*s).token_location();
-        xkb_logf!(
-            (*s).ctx,
-            XKB_LOG_LEVEL_ERROR,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
+        log::error!("[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
             &(*s).file_name,
             loc_1.line,
-            loc_1.column,
-        );
+            loc_1.column);
         false
     }
 }
@@ -1966,15 +1823,10 @@ unsafe fn expand_qualifier_in_kccgst_value(
         {
             if has_layout_idx_range {
                 let loc: scanner_loc = (*s).token_location();
-                xkb_logf!(
-                    (*s).ctx,
-                    XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_DETAILED as i32,
-                    "{}:{}:{}: Using :all qualifier with indices range is not recommended.\n",
+                log::warn!("{}:{}:{}: Using :all qualifier with indices range is not recommended.\n",
                     &(*s).file_name,
                     loc.line,
-                    loc.column,
-                );
+                    loc.column);
             }
             vec_append_nul_terminated(&mut *expanded, b"1\0".as_ptr() as *const i8, 1);
             if (*m).rmlvo.layouts.len() > 1 {
@@ -2188,16 +2040,11 @@ unsafe fn matcher_rule_verify(m: *mut matcher, s: *mut scanner) {
             || (*m).rule.num_kccgst_values as i32 != (*m).mapping.num_kccgst as i32
         {
             let loc: scanner_loc = (*s).token_location();
-            xkb_logf!(
-                (*s).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: invalid rule: must have same number of values as mapping line; ignoring rule\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: must have same number of values as mapping line; ignoring rule\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 &(*s).file_name,
                 loc.line,
-                loc.column,
-            );
+                loc.column);
             (*m).rule.skip = true;
         }
     }
@@ -2666,16 +2513,11 @@ unsafe fn matcher_match(
                     11 => {}
                     _ => {
                         let loc: scanner_loc = (*s).token_location();
-                        xkb_logf!(
-                            (*s).ctx,
-                            XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] {}:{}:{}: unexpected token\n",
+                        log::error!("[XKB-{:03}] {}:{}:{}: unexpected token\n",
                             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                             &(*s).file_name,
                             loc.line,
-                            loc.column,
-                        );
+                            loc.column);
                     }
                 }
                 false
@@ -2707,12 +2549,7 @@ unsafe fn read_rules_file(
 
         let fd = libc::fileno(file as *mut libc::FILE);
         if fd < 0 {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "Invalid file descriptor\n",
-            );
+            log::error!("Invalid file descriptor\n");
             return false;
         }
 
@@ -2720,14 +2557,9 @@ unsafe fn read_rules_file(
         let mapped = match MappedFile::new(&rust_file) {
             Ok(m) => m,
             Err(e) => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Couldn't read rules file \"{}\": {}\n",
+                log::error!("Couldn't read rules file \"{}\": {}\n",
                     path,
-                    e,
-                );
+                    e);
                 std::mem::forget(rust_file);
                 return false;
             }
@@ -2742,27 +2574,17 @@ unsafe fn read_rules_file(
         );
         if !scanner.check_supported_char_encoding() {
             let loc: scanner_loc = scanner.token_location();
-            xkb_logf!(
-                scanner.ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
                 &scanner.file_name,
                 loc.line,
-                loc.column,
-            );
+                loc.column);
             let loc_0: scanner_loc = scanner.token_location();
-            xkb_logf!(
-                scanner.ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
                 &scanner.file_name,
                 loc_0.line,
-                loc_0.column,
-            );
+                loc_0.column);
             std::mem::forget(rust_file);
             return false;
         }
@@ -2798,15 +2620,10 @@ unsafe fn xkb_resolve_partial_rules(
             ),
         );
         if _trunc {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Cannot load XKB rules \"{}{}\"\n",
+            log::error!("[XKB-{:03}] Cannot load XKB rules \"{}{}\"\n",
                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                 std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(rules)),
-                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(suffix)),
-            );
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(suffix)));
             return false;
         }
         let mut offset: u32 = 0_u32;
@@ -2836,14 +2653,9 @@ unsafe fn xkb_resolve_partial_rules(
             );
             fclose(file);
             if !ok {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
+                log::error!("[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
                     XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
-                );
+                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)));
                 return false;
             }
             offset = offset.wrapping_add(1);
@@ -2875,14 +2687,9 @@ unsafe fn xkb_resolve_rules(
             true,
         ) as *mut FILE;
         if file.is_null() {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Cannot load XKB rules \"{}\"\n",
+            log::error!("[XKB-{:03}] Cannot load XKB rules \"{}\"\n",
                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(rules)),
-            );
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(rules)));
         } else {
             ret = xkb_resolve_partial_rules(
                 ctx,
@@ -2903,16 +2710,11 @@ unsafe fn xkb_resolve_rules(
                     )),
                 );
                 if !ret {
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
+                    log::error!("[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
                         XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                         std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
                             &raw mut path as *mut i8
-                        )),
-                    );
+                        )));
                 } else {
                     ret = xkb_resolve_partial_rules(
                         ctx,
@@ -2928,16 +2730,11 @@ unsafe fn xkb_resolve_rules(
                             || (*matcher).kccgst[KCCGST_COMPAT as usize].is_empty()
                             || (*matcher).kccgst[KCCGST_SYMBOLS as usize].is_empty()
                         {
-                            xkb_logf!(
-                                ctx,
-                                XKB_LOG_LEVEL_ERROR,
-                                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                "[XKB-{:03}] No components returned from XKB rules \"{}\"\n",
+                            log::error!("[XKB-{:03}] No components returned from XKB rules \"{}\"\n",
                                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                                 std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
                                     rules
-                                )),
-                            );
+                                )));
                             ret = false;
                         } else {
                             // Transfer ownership of Vec data directly.
@@ -2976,14 +2773,9 @@ unsafe fn xkb_resolve_rules(
                             }
                             mval = &raw mut (*matcher).rmlvo.model;
                             if !(*mval).matched && (*mval).sval.len > 0_usize {
-                                xkb_logf!(
-                                    (*matcher).ctx,
-                                    XKB_LOG_LEVEL_ERROR,
-                                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                    "[XKB-{:03}] Unrecognized RMLVO model \"{}\" was ignored\n",
+                                log::error!("[XKB-{:03}] Unrecognized RMLVO model \"{}\" was ignored\n",
                                     XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                    (*mval).sval.as_str(),
-                                );
+                                    (*mval).sval.as_str());
                             }
                             if !(*matcher).rmlvo.layouts.is_empty() {
                                 mval = (*matcher).rmlvo.layouts.as_mut_ptr().offset(0_i32 as isize)
@@ -2997,14 +2789,9 @@ unsafe fn xkb_resolve_rules(
                                         as *mut matched_sval
                                 {
                                     if !(*mval).matched && (*mval).sval.len > 0_usize {
-                                        xkb_logf!(
-                                            (*matcher).ctx,
-                                            XKB_LOG_LEVEL_ERROR,
-                                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                            "[XKB-{:03}] Unrecognized RMLVO layout \"{}\" was ignored\n",
+                                        log::error!("[XKB-{:03}] Unrecognized RMLVO layout \"{}\" was ignored\n",
                                             XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                            (*mval).sval.as_str(),
-                                        );
+                                            (*mval).sval.as_str());
                                     }
                                     mval = mval.offset(1);
                                 }
@@ -3025,14 +2812,9 @@ unsafe fn xkb_resolve_rules(
                                         as *mut matched_sval
                                 {
                                     if !(*mval).matched && (*mval).sval.len > 0_usize {
-                                        xkb_logf!(
-                                            (*matcher).ctx,
-                                            XKB_LOG_LEVEL_ERROR,
-                                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                            "[XKB-{:03}] Unrecognized RMLVO variant \"{}\" was ignored\n",
+                                        log::error!("[XKB-{:03}] Unrecognized RMLVO variant \"{}\" was ignored\n",
                                             XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                            (*mval).sval.as_str(),
-                                        );
+                                            (*mval).sval.as_str());
                                     }
                                     mval = mval.offset(1);
                                 }
@@ -3049,14 +2831,9 @@ unsafe fn xkb_resolve_rules(
                                         as *mut matched_sval
                                 {
                                     if !(*mval).matched && (*mval).sval.len > 0_usize {
-                                        xkb_logf!(
-                                            (*matcher).ctx,
-                                            XKB_LOG_LEVEL_ERROR,
-                                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                            "[XKB-{:03}] Unrecognized RMLVO option \"{}\" was ignored\n",
+                                        log::error!("[XKB-{:03}] Unrecognized RMLVO option \"{}\" was ignored\n",
                                             XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                            (*mval).sval.as_str(),
-                                        );
+                                            (*mval).sval.as_str());
                                     }
                                     mval = mval.offset(1);
                                 }

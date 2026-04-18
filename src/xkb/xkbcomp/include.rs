@@ -5,7 +5,6 @@ use crate::xkb::context::{xkb_context_include_path_get, xkb_context_num_include_
 use crate::xkb::context::{
     xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
 };
-use crate::xkb_logf;
 
 pub const INCLUDE_MAX_DEPTH: i32 = 15_i32;
 pub const MERGE_OVERRIDE_PREFIX: i32 = '+' as i32;
@@ -36,9 +35,7 @@ pub use crate::xkb::messages::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
     XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
-    XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE, XKB_LOG_VERBOSITY_DEFAULT,
-    XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL, XKB_LOG_VERBOSITY_SILENT,
-    XKB_LOG_VERBOSITY_VERBOSE, XKB_WARNING_CANNOT_INFER_KEY_TYPE,
+    XKB_WARNING_CANNOT_INFER_KEY_TYPE,
     XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
     XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
     XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
@@ -154,54 +151,29 @@ fn DirectoryForInclude(type_0: u32) -> &'static str {
 unsafe fn LogIncludePaths(ctx: *mut xkb_context) {
     unsafe {
         if xkb_context_num_include_paths(ctx) > 0_u32 {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {} include paths searched:\n",
+            log::error!("[XKB-{:03}] {} include paths searched:\n",
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                xkb_context_num_include_paths(ctx),
-            );
+                xkb_context_num_include_paths(ctx));
             let mut i: u32 = 0_u32;
             while i < xkb_context_num_include_paths(ctx) {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] \t{}\n",
+                log::error!("[XKB-{:03}] \t{}\n",
                     XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                    xkb_context_include_path_get(ctx, i),
-                );
+                    xkb_context_include_path_get(ctx, i));
                 i = i.wrapping_add(1);
             }
         } else {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] There are no include paths to search\n",
-                XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-            );
+            log::error!("[XKB-{:03}] There are no include paths to search\n",
+                XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32);
         }
         if xkb_context_num_failed_include_paths(ctx) > 0_u32 {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {} include paths could not be added:\n",
+            log::error!("[XKB-{:03}] {} include paths could not be added:\n",
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                xkb_context_num_failed_include_paths(ctx),
-            );
+                xkb_context_num_failed_include_paths(ctx));
             let mut i_0: u32 = 0_u32;
             while i_0 < xkb_context_num_failed_include_paths(ctx) {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] \t{}\n",
+                log::error!("[XKB-{:03}] \t{}\n",
                     XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                    xkb_context_failed_include_path_get(ctx, i_0),
-                );
+                    xkb_context_failed_include_path_get(ctx, i_0));
                 i_0 = i_0.wrapping_add(1);
             }
         }
@@ -229,16 +201,11 @@ unsafe fn expand_percent(
                         Ok(home) => {
                             if !s.buf_appends(home.as_ptr()) {
                                 let loc = s.token_location();
-                                xkb_logf!(
-                                    s.ctx,
-                                    XKB_LOG_LEVEL_ERROR,
-                                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                    "[XKB-{:03}] {}:{}:{}: include path after expanding %H is too long\n",
+                                log::error!("[XKB-{:03}] {}:{}:{}: include path after expanding %H is too long\n",
                                     XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
                                     &s.file_name,
                                     loc.line,
-                                    loc.column,
-                                );
+                                    loc.column);
                                 return 0;
                             }
                         }
@@ -246,15 +213,10 @@ unsafe fn expand_percent(
                     }
                     if home.is_err() {
                         let loc = s.token_location();
-                        xkb_logf!(
-                            s.ctx,
-                            XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "{}:{}:{}: %H was used in an include statement, but the HOME environment variable is not set\n",
+                        log::error!("{}:{}:{}: %H was used in an include statement, but the HOME environment variable is not set\n",
                             &s.file_name,
                             loc.line,
-                            loc.column,
-                        );
+                            loc.column);
                         return 0;
                     }
                 } else if s.chr(b'S' as i8) {
@@ -265,16 +227,11 @@ unsafe fn expand_percent(
                         || !s.buf_appends_str(typeDir)
                     {
                         let loc = s.token_location();
-                        xkb_logf!(
-                            s.ctx,
-                            XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] {}:{}:{}: include path after expanding %S is too long\n",
+                        log::error!("[XKB-{:03}] {}:{}:{}: include path after expanding %S is too long\n",
                             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
                             &s.file_name,
                             loc.line,
-                            loc.column,
-                        );
+                            loc.column);
                         return 0;
                     }
                 } else if s.chr(b'E' as i8) {
@@ -285,31 +242,21 @@ unsafe fn expand_percent(
                         || !s.buf_appends_str(typeDir)
                     {
                         let loc = s.token_location();
-                        xkb_logf!(
-                            s.ctx,
-                            XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] {}:{}:{}: include path after expanding %E is too long\n",
+                        log::error!("[XKB-{:03}] {}:{}:{}: include path after expanding %E is too long\n",
                             XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
                             &s.file_name,
                             loc.line,
-                            loc.column,
-                        );
+                            loc.column);
                         return 0;
                     }
                 } else {
                     let loc = s.token_location();
-                    xkb_logf!(
-                        s.ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] {}:{}:{}: unknown % format ({}) in include statement\n",
+                    log::error!("[XKB-{:03}] {}:{}:{}: unknown % format ({}) in include statement\n",
                         XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
                         &s.file_name,
                         loc.line,
                         loc.column,
-                        (s.peek() as u8 as char),
-                    );
+                        (s.peek() as u8 as char));
                     return 0;
                 }
             } else {
@@ -319,33 +266,23 @@ unsafe fn expand_percent(
         }
         if !s.buf_append(0) {
             let loc = s.token_location();
-            xkb_logf!(
-                s.ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: include path is too long; max: {}\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: include path is too long; max: {}\n",
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
                 &s.file_name,
                 loc.line,
                 loc.column,
-                std::mem::size_of::<[i8; 1024]>(),
-            );
+                std::mem::size_of::<[i8; 1024]>());
             return 0;
         }
         if s.buf_pos > buf_size {
             let loc = s.token_location();
-            xkb_logf!(
-                s.ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: include path is too long: {} > {}\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: include path is too long: {} > {}\n",
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
                 &s.file_name,
                 loc.line,
                 loc.column,
                 s.buf_pos,
-                buf_size,
-            );
+                buf_size);
             return 0;
         }
         std::ptr::copy_nonoverlapping(&raw mut s.buf as *const u8, buf as *mut u8, s.buf_pos);
@@ -380,16 +317,11 @@ pub unsafe fn expand_path(
             17179679302217393232 => 0_isize,
             _ => {
                 if (k >= buf_size) as i64 != 0 {
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] Path is too long: {} > {}, got raw path: {}\n",
+                    log::error!("[XKB-{:03}] Path is too long: {} > {}, got raw path: {}\n",
                         XKB_ERROR_INVALID_PATH as i32,
                         k,
                         buf_size,
-                        std::str::from_utf8_unchecked(std::slice::from_raw_parts(name as *const u8, name_len)),
-                    );
+                        std::str::from_utf8_unchecked(std::slice::from_raw_parts(name as *const u8, name_len)));
                     return -1_i32 as isize;
                 }
                 std::ptr::copy_nonoverlapping(name as *const u8, buf as *mut u8, k);
@@ -446,17 +378,12 @@ pub unsafe fn FindFileInXkbPath(
                 ),
             );
             if _trunc {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Path is too long: expected max length of {}, got: {}/{}/{}\n",
+                log::error!("[XKB-{:03}] Path is too long: expected max length of {}, got: {}/{}/{}\n",
                     XKB_ERROR_INVALID_PATH as i32,
                     buf_size,
                     xkb_context_include_path_get(ctx, i),
                     typeDir,
-                    name_str,
-                );
+                    name_str);
             } else {
                 file = fopen(buf, b"rb\0".as_ptr() as *const i8) as *mut FILE;
                 if !file.is_null() {
@@ -469,15 +396,10 @@ pub unsafe fn FindFileInXkbPath(
         }
         match c2rust_current_block {
             8515828400728868193 if required as i32 != 0 && *offset == 0_u32 => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
+                log::error!("[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
                     XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
                     typeDir,
-                    name_str,
-                );
+                    name_str);
                 LogIncludePaths(ctx);
             }
             _ => {}
@@ -487,14 +409,9 @@ pub unsafe fn FindFileInXkbPath(
 }
 pub unsafe fn ExceedsIncludeMaxDepth(_ctx: *mut xkb_context, include_depth: u32) -> bool {
     if include_depth >= INCLUDE_MAX_DEPTH as u32 {
-        xkb_logf!(
-            ctx,
-            XKB_LOG_LEVEL_ERROR,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "[XKB-{:03}] Exceeded include depth threshold ({})",
+        log::error!("[XKB-{:03}] Exceeded include depth threshold ({})",
             XKB_ERROR_RECURSIVE_INCLUDE as i32,
-            15_i32,
-        );
+            15_i32);
         true
     } else {
         false
@@ -562,16 +479,11 @@ pub unsafe fn ProcessIncludeFile(
             fclose(file);
             if !xkb_file.is_null() {
                 if (*xkb_file).file_type as u32 != file_type {
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] Include file of wrong type (expected {}, got {}); Include file \"{}\" ignored\n",
+                    log::error!("[XKB-{:03}] Include file of wrong type (expected {}, got {}); Include file \"{}\" ignored\n",
                         XKB_ERROR_INVALID_INCLUDED_FILE as i32,
                         xkb_file_type_to_string(file_type),
                         xkb_file_type_to_string((*xkb_file).file_type),
-                        &stmt_ref.file,
-                    );
+                        &stmt_ref.file);
                     FreeXkbFile(xkb_file);
                     xkb_file = std::ptr::null_mut();
                 } else if !stmt_ref.map.is_empty()
@@ -609,24 +521,14 @@ pub unsafe fn ProcessIncludeFile(
         }
         if xkb_file.is_null() {
             if !stmt_ref.map.is_empty() {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Couldn't process include statement for '{}({})'\n",
+                log::error!("[XKB-{:03}] Couldn't process include statement for '{}({})'\n",
                     XKB_ERROR_INVALID_INCLUDED_FILE as i32,
                     &stmt_ref.file,
-                    &stmt_ref.map,
-                );
+                    &stmt_ref.map);
             } else {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] Couldn't process include statement for '{}'\n",
+                log::error!("[XKB-{:03}] Couldn't process include statement for '{}'\n",
                     XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                    &stmt_ref.file,
-                );
+                    &stmt_ref.file);
             }
         }
         xkb_file

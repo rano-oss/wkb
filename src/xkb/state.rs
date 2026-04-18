@@ -1,4 +1,3 @@
-use crate::xkb_logf;
 
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -1996,29 +1995,19 @@ unsafe fn state_update_layout_policy(
                 if (*update).redirect < (*(*state).keymap).num_groups {
                     (*state).controls.out_of_range_redirect_group = (*update).redirect;
                 } else {
-                    xkb_logf!(
-                        (*(*state).keymap).ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] Layout policy: unsupported layout index {} > {}\n",
+                    log::error!("[XKB-{:03}] Layout policy: unsupported layout index {} > {}\n",
                         { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
                         (*update).redirect.wrapping_add(1_u32),
-                        (*(*state).keymap).num_groups,
-                    );
+                        (*(*state).keymap).num_groups);
                     return XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX;
                 }
             }
             (*state).controls.out_of_range_group_policy = (*update).policy;
             XKB_SUCCESS
         } else {
-            xkb_logf!(
-                (*(*state).keymap).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] Unsupported layout policy: {}\n",
+            log::error!("[XKB-{:03}] Unsupported layout policy: {}\n",
                 { XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY },
-                { (*update).policy },
-            );
+                { (*update).policy });
             XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY
         }
     }
@@ -2027,34 +2016,19 @@ unsafe fn state_update_layout_policy(
 unsafe fn log_abi_error(_ctx: *mut xkb_context, func: &str, error: xkb_error_code) {
     match error {
         450 => {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}: ABI error: unsupported versioned struct\n",
+            log::error!("[XKB-{:03}] {}: ABI error: unsupported versioned struct\n",
                 { XKB_ERROR_ABI_INVALID_STRUCT_SIZE },
-                func,
-            );
+                func);
         }
         914 => {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}: ABI version mismatch: missing newer required fields\n",
+            log::error!("[XKB-{:03}] {}: ABI version mismatch: missing newer required fields\n",
                 { XKB_ERROR_ABI_BACKWARD_COMPAT },
-                func,
-            );
+                func);
         }
         876 => {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}: ABI version mismatch: cannot use newer fields\n",
+            log::error!("[XKB-{:03}] {}: ABI version mismatch: cannot use newer fields\n",
                 { XKB_ERROR_ABI_FORWARD_COMPAT },
-                func,
-            );
+                func);
         }
         _ => {}
     };

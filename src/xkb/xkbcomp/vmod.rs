@@ -1,14 +1,8 @@
 use crate::xkb::context::xkb_atom_text;
-use crate::xkb_logf;
 
-pub use crate::xkb::messages::{
-    XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE, XKB_LOG_VERBOSITY_DEFAULT,
-    XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL, XKB_LOG_VERBOSITY_SILENT,
-    XKB_LOG_VERBOSITY_VERBOSE,
-};
 pub use crate::xkb::shared_ast_types::{
-    _ParseCommon, merge_mode, stmt_type, ExprDef, ExprKind, ParseCommon, VModDef, MERGE_AUGMENT,
-    MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL,
+    merge_mode, OptBoxRaw, _ParseCommon, stmt_type, ExprDef, ExprKind, ParseCommon, VModDef,
+    MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL,
     STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN,
     STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF,
     STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT,
@@ -65,14 +59,11 @@ pub fn MergeModSets(
                 } else {
                     mod_0.mapping
                 };
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
+                log::warn!(
                     "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
                     xkb_atom_text(&ctx.atom_table, mod_0.name),
                     ModMaskText(ctx, MOD_REAL, from, use_0),
-                    ModMaskText(ctx, MOD_REAL, from, ignore),
+                    ModMaskText(ctx, MOD_REAL, from, ignore)
                 );
                 into.mods[vmod].mapping = use_0;
             }
@@ -80,89 +71,77 @@ pub fn MergeModSets(
     }
     into.num_mods = from.num_mods;
 }
-pub unsafe fn HandleVModDef(
-    ctx: *mut xkb_context,
-    mods: *mut xkb_mod_set,
-    stmt: *mut VModDef,
-) -> bool {
-    unsafe {
-        let mut mapping: u32 = 0_u32;
-        if !(*stmt).value.is_null()
-            && !ExprResolveModMask(ctx, (*stmt).value, MOD_REAL, mods, &raw mut mapping)
-        {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "Declaration of {} ignored\n",
-                xkb_atom_text(&(*ctx).atom_table, (*stmt).name),
-            );
-            return false;
+pub fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModDef) -> bool {
+    let mut mapping: u32 = 0_u32;
+    if stmt.value.is_some()
+        && !unsafe {
+            ExprResolveModMask(
+                ctx as *mut _,
+                stmt.value.raw(),
+                MOD_REAL,
+                mods as *const _,
+                &raw mut mapping,
+            )
         }
-        for vmod in 0..(*mods).num_mods as usize {
-            if (*mods).mods[vmod].name == (*stmt).name {
-                if (*mods).mods[vmod].type_0 != MOD_VIRT {
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "Can't add a virtual modifier named \"{}\"; there is already a non-virtual modifier with this name! Ignored\n",
-                        xkb_atom_text(&(*ctx).atom_table, (*mods).mods[vmod].name),
-                    );
-                    return false;
-                }
-                let mask: u32 = 1_u32 << vmod;
-                if (*stmt).value.is_null() {
-                    return true;
-                } else if (*mods).explicit_vmods & mask == 0 {
-                    (*mods).mods[vmod].mapping = mapping;
-                } else if (*mods).mods[vmod].mapping != mapping {
-                    let clobber: bool = (*stmt).merge != MERGE_AUGMENT;
-                    let use_0: u32 = if clobber {
-                        mapping
-                    } else {
-                        (*mods).mods[vmod].mapping
-                    };
-                    let ignore: u32 = if clobber {
-                        (*mods).mods[vmod].mapping
-                    } else {
-                        mapping
-                    };
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
-                        xkb_atom_text(&(*ctx).atom_table, (*stmt).name),
-                        ModMaskText(&*ctx, MOD_REAL, &*mods, use_0),
-                        ModMaskText(&*ctx, MOD_REAL, &*mods, ignore),
-                    );
-                    (*mods).mods[vmod].mapping = use_0;
-                }
-                (*mods).explicit_vmods |= mask;
-                return true;
-            }
-        }
-        if (*mods).num_mods >= XKB_MAX_MODS {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "Cannot define virtual modifier {}: too many modifiers defined (maximum {})\n",
-                xkb_atom_text(&(*ctx).atom_table, (*stmt).name),
-                (std::mem::size_of::<u32>()).wrapping_mul(8_usize) as u32,
-            );
-            return false;
-        }
-        (*mods).mods[(*mods).num_mods as usize].name = (*stmt).name;
-        (*mods).mods[(*mods).num_mods as usize].type_0 = MOD_VIRT;
-        (*mods).mods[(*mods).num_mods as usize].mapping = mapping;
-        if !(*stmt).value.is_null() {
-            let mask_0: u32 = 1_u32 << (*mods).num_mods;
-            (*mods).explicit_vmods |= mask_0;
-        }
-        (*mods).num_mods = (*mods).num_mods.wrapping_add(1);
-        true
+    {
+        log::error!(
+            "Declaration of {} ignored\n",
+            xkb_atom_text(&ctx.atom_table, stmt.name)
+        );
+        return false;
     }
+    for vmod in 0..mods.num_mods as usize {
+        if mods.mods[vmod].name == stmt.name {
+            if mods.mods[vmod].type_0 != MOD_VIRT {
+                log::error!("Can't add a virtual modifier named \"{}\"; there is already a non-virtual modifier with this name! Ignored\n",
+                    xkb_atom_text(&ctx.atom_table, mods.mods[vmod].name));
+                return false;
+            }
+            let mask: u32 = 1_u32 << vmod;
+            if stmt.value.is_none() {
+                return true;
+            } else if mods.explicit_vmods & mask == 0 {
+                mods.mods[vmod].mapping = mapping;
+            } else if mods.mods[vmod].mapping != mapping {
+                let clobber: bool = stmt.merge != MERGE_AUGMENT;
+                let use_0: u32 = if clobber {
+                    mapping
+                } else {
+                    mods.mods[vmod].mapping
+                };
+                let ignore: u32 = if clobber {
+                    mods.mods[vmod].mapping
+                } else {
+                    mapping
+                };
+                log::warn!(
+                    "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
+                    xkb_atom_text(&ctx.atom_table, stmt.name),
+                    ModMaskText(ctx, MOD_REAL, mods, use_0),
+                    ModMaskText(ctx, MOD_REAL, mods, ignore)
+                );
+                mods.mods[vmod].mapping = use_0;
+            }
+            mods.explicit_vmods |= mask;
+            return true;
+        }
+    }
+    if mods.num_mods >= XKB_MAX_MODS {
+        log::error!(
+            "Cannot define virtual modifier {}: too many modifiers defined (maximum {})\n",
+            xkb_atom_text(&ctx.atom_table, stmt.name),
+            (std::mem::size_of::<u32>()).wrapping_mul(8_usize) as u32
+        );
+        return false;
+    }
+    mods.mods[mods.num_mods as usize].name = stmt.name;
+    mods.mods[mods.num_mods as usize].type_0 = MOD_VIRT;
+    mods.mods[mods.num_mods as usize].mapping = mapping;
+    if stmt.value.is_some() {
+        let mask_0: u32 = 1_u32 << mods.num_mods;
+        mods.explicit_vmods |= mask_0;
+    }
+    mods.num_mods = mods.num_mods.wrapping_add(1);
+    true
 }
 use crate::xkb::shared_types::*;

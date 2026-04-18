@@ -118,17 +118,12 @@ unsafe fn FindInterpForKey(
                         for previous in interprets.iter() {
                             if std::ptr::eq(*previous, interp) {
                                 found = false;
-                                xkb_logf!(
-                                        (*keymap).ctx,
-                                        XKB_LOG_LEVEL_WARNING,
-                                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                        "Repeated interpretation ignored for keysym #{} \"{}\" at level {}/group {} on key <{}>.\n",
+                                log::warn!("Repeated interpretation ignored for keysym #{} \"{}\" at level {}/group {} on key <{}>.\n",
                                         s + 1_i32,
                                         KeysymText(*syms.offset(s as isize)),
                                         level.wrapping_add(1_u32),
                                         group.wrapping_add(1_u32),
-                                        xkb_atom_text(&(*keymap).ctx.atom_table, (*key).name),
-                                    );
+                                        xkb_atom_text(&(*keymap).ctx.atom_table, (*key).name));
                                 c2rust_current_block_34 = 2209838995503123840;
                                 break 's_26;
                             }
@@ -199,15 +194,10 @@ unsafe fn ApplyInterpsToKey(keymap: *mut xkb_keymap, key: *mut xkb_key) -> bool 
                             }
                         }
                         if (actions.len() as u32 != 0) as i64 > MAX_ACTIONS_PER_LEVEL as i64 {
-                            xkb_logf!(
-                                (*keymap).ctx,
-                                XKB_LOG_LEVEL_WARNING,
-                                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                "Could not append interpret actions to key <{}>: maximum is {}, got: {}. Dropping excessive actions\n",
+                            log::warn!("Could not append interpret actions to key <{}>: maximum is {}, got: {}. Dropping excessive actions\n",
                                 xkb_atom_text(&(*keymap).ctx.atom_table, (*key).name),
                                 65535_i32,
-                                actions.len() as u32,
-                            );
+                                actions.len() as u32);
                             actions.truncate(MAX_ACTIONS_PER_LEVEL as usize);
                         }
                         (&mut (*key).groups)[group as usize].levels[level as usize].actions =
@@ -283,17 +273,12 @@ unsafe fn CheckMultipleActionsCategories(keymap: *mut xkb_keymap, key: *mut xkb_
                                     } else {
                                         ActionTypeText((*action1).type_0)
                                     };
-                                    xkb_logf!(
-                                        (*keymap).ctx,
-                                        XKB_LOG_LEVEL_ERROR,
-                                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                        "Cannot use multiple {} actions in the same level. Action #{} for key <{}> in group {}/level {} ignored.\n",
+                                    log::error!("Cannot use multiple {} actions in the same level. Action #{} for key <{}> in group {}/level {} ignored.\n",
                                         type_0,
                                         j as i32 + 1_i32,
                                         xkb_atom_text(&(*keymap).ctx.atom_table, (*key).name),
                                         g.wrapping_add(1_u32),
-                                        l.wrapping_add(1_u32),
-                                    );
+                                        l.wrapping_add(1_u32));
                                     (*action2).type_0 = ACTION_TYPE_NONE;
                                 }
                                 j = j.wrapping_add(1);
@@ -337,21 +322,21 @@ unsafe fn update_pending_key_fields(info: *mut xkb_keymap_info, key: *mut xkb_ke
                 as *mut pending_computation;
             if !(*pc).computed {
                 let mut group: u32 = 0_u32;
-                match ExprResolveGroup(info, (*pc).expr, true, &raw mut group, std::ptr::null_mut())
-                    as u32
+                match ExprResolveGroup(
+                    info,
+                    (*pc).expr.raw(),
+                    true,
+                    &raw mut group,
+                    std::ptr::null_mut(),
+                ) as u32
                 {
                     0 => {
                         (*pc).computed = true;
                         (*pc).value = group.wrapping_sub(1_u32);
                     }
                     2 => {
-                        xkb_logf!(
-                            (&raw mut (*(*info).keymap).ctx),
-                            XKB_LOG_LEVEL_ERROR,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] Invalid key redirect group index\n",
-                            { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                        );
+                        log::error!("[XKB-{:03}] Invalid key redirect group index\n",
+                            { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX });
                         return (*info).strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0;
                     }
                     _ => {}
@@ -381,20 +366,15 @@ unsafe fn update_pending_action_fields(
                         let absolute: bool = (*act).group.flags & ACTION_ABSOLUTE_SWITCH != 0;
                         match ExprResolveGroup(
                             info,
-                            (*pc).expr,
+                            (*pc).expr.raw(),
                             absolute,
                             &raw mut group,
                             std::ptr::null_mut(),
                         ) as u32
                         {
                             2 => {
-                                xkb_logf!(
-                                    (&raw mut (*(*info).keymap).ctx),
-                                    XKB_LOG_LEVEL_ERROR,
-                                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                    "[XKB-{:03}] Invalid action group index\n",
-                                    { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                                );
+                                log::error!("[XKB-{:03}] Invalid action group index\n",
+                                    { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX });
                                 return false;
                             }
                             1 => {}
@@ -404,7 +384,7 @@ unsafe fn update_pending_action_fields(
                                     (*pc).value = group.wrapping_sub(1_u32);
                                 } else {
                                     (*pc).value = group;
-                                    if (*(*pc).expr).common.type_0 == STMT_EXPR_NEGATE {
+                                    if (*(*pc).expr.raw()).common.type_0 == STMT_EXPR_NEGATE {
                                         (*pc).value = -((*pc).value as i32) as u32;
                                     }
                                 }
@@ -703,17 +683,12 @@ unsafe fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
                         let mut mask: u32 = 0_u32;
                         if !ExprResolveGroupMask(
                             info,
-                            (*pc).expr,
+                            (*pc).expr.raw(),
                             &raw mut mask,
                             std::ptr::null_mut(),
                         ) {
-                            xkb_logf!(
-                                (&raw mut (*(*info).keymap).ctx),
-                                XKB_LOG_LEVEL_ERROR,
-                                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                "[XKB-{:03}] Invalid LED group mask\n",
-                                { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                            );
+                            log::error!("[XKB-{:03}] Invalid LED group mask\n",
+                                { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX });
                             led_ok = false;
                         }
                         if led_ok {
@@ -745,8 +720,10 @@ static COMPILE_FILE_FNS: [compile_file_fn; 4] = {
 };
 unsafe fn pending_computations_array_free(p: &mut Vec<pending_computation>) {
     unsafe {
-        for pc in p.iter() {
-            FreeStmt(pc.expr as *mut ParseCommon);
+        for pc in p.iter_mut() {
+            if let Some(boxed) = pc.expr.take() {
+                FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
+            }
         }
         p.clear();
     }
@@ -767,30 +744,15 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
                 || (*file).file_type > LAST_KEYMAP_FILE_TYPE
             {
                 if (*file).file_type == FILE_TYPE_GEOMETRY {
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_WARNING,
-                        XKB_LOG_VERBOSITY_BRIEF as i32,
-                        "[XKB-{:03}] Geometry sections are not supported; ignoring\n",
-                        XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION as i32,
-                    );
+                    log::warn!("[XKB-{:03}] Geometry sections are not supported; ignoring\n",
+                        XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION as i32);
                 } else {
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "Cannot define {} in a keymap file\n",
-                        xkb_file_type_to_string((*file).file_type),
-                    );
+                    log::error!("Cannot define {} in a keymap file\n",
+                        xkb_file_type_to_string((*file).file_type));
                 }
             } else if !files[(*file).file_type as usize].is_null() {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "More than one {} section in keymap file; All sections after the first ignored\n",
-                    xkb_file_type_to_string((*file).file_type),
-                );
+                log::error!("More than one {} section in keymap file; All sections after the first ignored\n",
+                    xkb_file_type_to_string((*file).file_type));
             } else {
                 files[(*file).file_type as usize] = file;
             }
@@ -875,35 +837,20 @@ pub unsafe fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> 
         type_0 = FIRST_KEYMAP_FILE_TYPE;
         while type_0 <= LAST_KEYMAP_FILE_TYPE {
             if files[type_0 as usize].is_null() {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_DEBUG,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Component {} not provided in keymap\n",
-                    xkb_file_type_to_string(type_0),
-                );
+                log::debug!("Component {} not provided in keymap\n",
+                    xkb_file_type_to_string(type_0));
             } else {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_DEBUG,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Compiling {} \"{}\"\n",
+                log::debug!("Compiling {} \"{}\"\n",
                     xkb_file_type_to_string(type_0),
-                    safe_map_name(&*files[type_0 as usize]),
-                );
+                    safe_map_name(&*files[type_0 as usize]));
             }
             let ok: bool = COMPILE_FILE_FNS[type_0 as usize].expect("non-null function pointer")(
                 files[type_0 as usize],
                 &raw mut info,
             ) as bool;
             if !ok {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Failed to compile {}\n",
-                    xkb_file_type_to_string(type_0),
-                );
+                log::error!("Failed to compile {}\n",
+                    xkb_file_type_to_string(type_0));
                 // info.keymap is a pointer to the same keymap, no write-back needed
                 pending_computations_array_free(&mut info.pending_computations);
                 return false;

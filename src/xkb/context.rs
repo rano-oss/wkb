@@ -57,49 +57,18 @@ pub use crate::xkb::shared_types::{R_OK, X_OK};
 // isempty no longer needed — String fields use .is_empty()
 use crate::xkb::utils::cstr_as_bytes;
 use crate::xkb::utils::cstr_len;
-/// Macro that formats a message and prints to stderr.
-/// Usage: `xkb_logf!(ctx, level, verbosity, "format {}", arg)`
-/// The ctx, level, and verbosity args are accepted for compatibility but
-/// XKB logging macro — dispatches to the `log` crate based on level.
-/// The ctx and verbosity arguments are accepted for compatibility but ignored.
-#[macro_export]
-macro_rules! xkb_logf {
-    ($ctx:expr, $level:expr, $verb:expr, $($arg:tt)*) => {
-        log::log!(
-            match $level {
-                10 | 20 => log::Level::Error,
-                30 => log::Level::Warn,
-                40 => log::Level::Info,
-                _ => log::Level::Debug,
-            },
-            $($arg)*
-        )
-    };
-}
 unsafe fn context_include_path_append(ctx: *mut xkb_context, path: &str) -> i32 {
     unsafe {
         let is_dir = std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false);
         if is_dir {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_INFO,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "Include path added: {}\n",
-                path,
-            );
+            log::info!("Include path added: {}\n", path);
             (*ctx).includes.push(path.to_string());
             return 1_i32;
         }
         if !path.is_empty() {
             (*ctx).failed_includes.push(path.to_string());
         }
-        xkb_logf!(
-            ctx,
-            XKB_LOG_LEVEL_INFO,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "Include path failed: \"{}\"\n",
-            path,
-        );
+        log::info!("Include path failed: \"{}\"\n", path);
         0_i32
     }
 }
@@ -151,14 +120,7 @@ fn add_direct_subdirectories(
     let dir = match std::fs::read_dir(path) {
         Ok(d) => d,
         Err(e) => {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_DEBUG,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "Include extensions path failed: {} ({})\n",
-                path,
-                e,
-            );
+            log::debug!("Include extensions path failed: {} ({})\n", path, e);
             return 0_i32;
         }
     };
@@ -259,14 +221,9 @@ pub unsafe fn xkb_context_include_path_append_default(ctx: *mut xkb_context) -> 
         ret |= has_root as i32;
         if !has_root && !root.is_empty() {
             let legacy = cstr_const_to_string(&DFLT_XKB_LEGACY_ROOT);
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_WARNING,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "Root include path failed; fallback to \"{}\". The setup is probably misconfigured. Please ensure that \"{}\" is available in the environment.\n",
+            log::warn!("Root include path failed; fallback to \"{}\". The setup is probably misconfigured. Please ensure that \"{}\" is available in the environment.\n",
                 "/usr/share/X11/xkb",
-                root,
-            );
+                root);
             ret |= context_include_path_append(ctx, &legacy);
         }
         ret
@@ -417,12 +374,9 @@ pub unsafe fn xkb_context_new(flags: xkb_context_flags) -> xkb_context {
             | XKB_CONTEXT_NO_SECURE_GETENV as i32)
             as xkb_context_flags;
         if flags & !XKB_CONTEXT_FLAGS != 0 {
-            xkb_logf!(
-                &mut ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
+            log::error!(
                 "Invalid context flags: 0x{:x}\n",
-                flags & !XKB_CONTEXT_FLAGS,
+                flags & !XKB_CONTEXT_FLAGS
             );
             // Return a dummy/default — caller should check flags before calling
             // In practice this path is very rare
@@ -470,13 +424,10 @@ pub unsafe fn xkb_context_init_includes(ctx: *mut xkb_context) -> bool {
         if (*ctx).pending_default_includes {
             if (*ctx).failed_includes.is_empty() {
                 if xkb_context_include_path_append_default(ctx) == 0 {
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
+                    log::error!(
                         "[XKB-{:03}] Failed to add any default include path (system path: {})\n",
                         XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH as i32,
-                        xkb_context_include_path_get_system_path(ctx),
+                        xkb_context_include_path_get_system_path(ctx)
                     );
                     return false;
                 }
@@ -600,15 +551,10 @@ pub unsafe fn xkb_context_sanitize_rule_names(
                 }
             };
             if !rmlvo.variant.as_bytes().is_empty() {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_WARNING,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Layout not provided, but variant set to \"{}\": ignoring variant and using defaults for both: layout=\"{}\", variant=\"{}\".\n",
+                log::warn!("Layout not provided, but variant set to \"{}\": ignoring variant and using defaults for both: layout=\"{}\", variant=\"{}\".\n",
                     rmlvo.variant.to_str().unwrap_or(""),
                     rmlvo.layout.to_str().unwrap_or(""),
-                    variant.to_str().unwrap_or(""),
-                );
+                    variant.to_str().unwrap_or(""));
             }
             rmlvo.variant = variant;
             modified = (modified as u32 | RMLVO_VARIANT) as RMLVO;

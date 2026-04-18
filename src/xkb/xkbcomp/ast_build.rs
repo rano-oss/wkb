@@ -1,4 +1,3 @@
-use crate::xkb_logf;
 
 use crate::xkb::utils::{cstr_free, cstr_ndup};
 
@@ -26,9 +25,7 @@ pub use crate::xkb::messages::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
     XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
-    XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE, XKB_LOG_VERBOSITY_DEFAULT,
-    XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL, XKB_LOG_VERBOSITY_SILENT,
-    XKB_LOG_VERBOSITY_VERBOSE, XKB_WARNING_CANNOT_INFER_KEY_TYPE,
+    XKB_WARNING_CANNOT_INFER_KEY_TYPE,
     XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
     XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
     XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
@@ -48,27 +45,28 @@ pub use crate::xkb::messages::{
 };
 pub use crate::xkb::scanner_utils::{scanner, scanner_loc, sval};
 pub use crate::xkb::shared_ast_types::{
-    ExprDef, ExprKind, GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
-    LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef,
-    XkbFile, _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_map_flags, FILE_TYPE_COMPAT,
-    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
-    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
-    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
-    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
-    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
-    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
-    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
-    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
-    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
-    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
-    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
-    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
-    STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
+    box_from_raw, merge_mode, stmt_type, xkb_map_flags, ExprDef, ExprKind, GroupCompatDef,
+    IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef,
+    OptBoxRaw, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, _IncludeStmt,
+    _ParseCommon, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES,
+    FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
+    LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER,
+    MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT,
+    MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST,
+    STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL,
+    STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL,
+    STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL,
+    STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE,
+    STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
+    STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME,
+    STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
+    STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
+    _STMT_NUM_VALUES,
 };
 pub use crate::xkb::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
 use crate::xkb::utils::cstr_len;
 pub use crate::xkb::xkbcomp::include::{MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
-fn expr_create(kind: ExprKind) -> *mut ExprDef {
+pub fn expr_create(kind: ExprKind) -> *mut ExprDef {
     let type_0 = ExprDef::stmt_type_for_kind(&kind);
     Box::into_raw(Box::new(ExprDef {
         common: ParseCommon {
@@ -77,62 +75,6 @@ fn expr_create(kind: ExprKind) -> *mut ExprDef {
         },
         kind,
     }))
-}
-
-pub fn ExprCreateString(str: u32) -> *mut ExprDef {
-    expr_create(ExprKind::String(str))
-}
-
-pub fn ExprCreateInteger(ival: i64) -> *mut ExprDef {
-    expr_create(ExprKind::Integer(ival))
-}
-
-pub fn ExprCreateFloat() -> *mut ExprDef {
-    expr_create(ExprKind::Float)
-}
-
-pub fn ExprCreateKeyName(key_name: u32) -> *mut ExprDef {
-    expr_create(ExprKind::KeyName(key_name))
-}
-
-pub fn ExprCreateKeySym(keysym: u32) -> *mut ExprDef {
-    expr_create(ExprKind::KeySym(keysym))
-}
-
-pub fn ExprCreateIdent(ident: u32) -> *mut ExprDef {
-    expr_create(ExprKind::Ident(ident))
-}
-
-pub fn ExprCreateUnary(op: stmt_type, child: *mut ExprDef) -> *mut ExprDef {
-    expr_create(ExprKind::Unary { op, child })
-}
-
-pub fn ExprCreateBinary(op: stmt_type, left: *mut ExprDef, right: *mut ExprDef) -> *mut ExprDef {
-    expr_create(ExprKind::Binary { op, left, right })
-}
-
-pub fn ExprCreateFieldRef(element: u32, field: u32) -> *mut ExprDef {
-    expr_create(ExprKind::FieldRef { element, field })
-}
-
-pub fn ExprCreateArrayRef(element: u32, field: u32, entry: *mut ExprDef) -> *mut ExprDef {
-    expr_create(ExprKind::ArrayRef {
-        element,
-        field,
-        entry,
-    })
-}
-
-pub fn ExprEmptyList() -> *mut ExprDef {
-    expr_create(ExprKind::EmptyList)
-}
-
-pub fn ExprCreateAction(name: u32, args: *mut ExprDef) -> *mut ExprDef {
-    expr_create(ExprKind::Action { name, args })
-}
-
-pub fn ExprCreateActionList(actions: *mut ExprDef) -> *mut ExprDef {
-    expr_create(ExprKind::ActionList { actions })
 }
 
 pub fn ExprCreateKeySymList(sym: u32) -> *mut ExprDef {
@@ -176,36 +118,26 @@ pub unsafe fn ExprKeySymListAppendString(
             count = cp_len;
             if cp == INVALID_UTF8_CODE_POINT {
                 let loc: scanner_loc = (*scanner).token_location();
-                xkb_logf!(
-                    (*scanner).ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] {}:{}:{}: Cannot convert string to keysyms: Invalid UTF-8 encoding starting at byte position {} (code point position: {}).\n",
+                log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to keysyms: Invalid UTF-8 encoding starting at byte position {} (code point position: {}).\n",
                     XKB_ERROR_INVALID_FILE_ENCODING as i32,
                     &(*scanner).file_name,
                     loc.line,
                     loc.column,
                     idx.wrapping_add(1_usize),
-                    idx_cp,
-                );
+                    idx_cp);
                 c2rust_current_block = 5140853804782746302;
                 break;
             } else {
                 let sym: u32 = xkb_utf32_to_keysym(cp);
                 if sym == XKB_KEY_NoSymbol as u32 {
                     let loc_0: scanner_loc = (*scanner).token_location();
-                    xkb_logf!(
-                        (*scanner).ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "{}:{}:{}: Cannot convert string to keysyms: Unicode code point U+04{:X} has no keysym equivalent(byte position: {}, code point position: {}).\n",
+                    log::error!("{}:{}:{}: Cannot convert string to keysyms: Unicode code point U+04{:X} has no keysym equivalent(byte position: {}, code point position: {}).\n",
                         &(*scanner).file_name,
                         loc_0.line,
                         loc_0.column,
                         cp,
                         idx.wrapping_add(1_usize),
-                        idx_cp,
-                    );
+                        idx_cp);
                     c2rust_current_block = 5140853804782746302;
                     break;
                 } else {
@@ -232,15 +164,10 @@ pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32
         let len: usize = cstr_len(string);
         if len == 0_usize {
             let loc: scanner_loc = (*scanner).token_location();
-            xkb_logf!(
-                (*scanner).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "{}:{}:{}: Cannot convert string to single keysym: empty string.\n",
+            log::error!("{}:{}:{}: Cannot convert string to single keysym: empty string.\n",
                 &(*scanner).file_name,
                 loc.line,
-                loc.column,
-            );
+                loc.column);
             return XKB_KEY_NoSymbol as u32;
         }
         let mut count: usize = 0_usize;
@@ -249,213 +176,202 @@ pub unsafe fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32
         count = cp_len;
         if cp == INVALID_UTF8_CODE_POINT {
             let loc_0: scanner_loc = (*scanner).token_location();
-            xkb_logf!(
-                (*scanner).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: Cannot convert string to single keysym: Invalid UTF-8 encoding.\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to single keysym: Invalid UTF-8 encoding.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
                 &(*scanner).file_name,
                 loc_0.line,
-                loc_0.column,
-            );
+                loc_0.column);
             return XKB_KEY_NoSymbol as u32;
         } else if count != len {
             let loc_1: scanner_loc = (*scanner).token_location();
-            xkb_logf!(
-                (*scanner).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: Cannot convert string to single keysym: Expected a single Unicode code point, got: \"{}\".\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to single keysym: Expected a single Unicode code point, got: \"{}\".\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
                 &(*scanner).file_name,
                 loc_1.line,
                 loc_1.column,
-                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(string)),
-            );
+                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(string)));
             return XKB_KEY_NoSymbol as u32;
         }
         let sym: u32 = xkb_utf32_to_keysym(cp);
         if sym == XKB_KEY_NoSymbol as u32 {
             let loc_2: scanner_loc = (*scanner).token_location();
-            xkb_logf!(
-                (*scanner).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "{}:{}:{}: Cannot convert string to single keysym: Unicode code point U+{:04X} has no keysym equivalent.\n",
+            log::error!("{}:{}:{}: Cannot convert string to single keysym: Unicode code point U+{:04X} has no keysym equivalent.\n",
                 &(*scanner).file_name,
                 loc_2.line,
                 loc_2.column,
-                cp,
-            );
+                cp);
         }
         sym
     }
 }
 
-pub unsafe fn KeycodeCreate(name: u32, value: i64) -> *mut KeycodeDef {
-    unsafe {
-        let def: *mut KeycodeDef = Box::into_raw(Box::new(std::mem::zeroed::<KeycodeDef>()));
-        (*def).common.type_0 = STMT_KEYCODE;
-        (*def).common.next = std::ptr::null_mut();
-        (*def).name = name;
-        (*def).value = value;
-        def
-    }
+pub fn KeycodeCreate(name: u32, value: i64) -> *mut KeycodeDef {
+    Box::into_raw(Box::new(KeycodeDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0: STMT_KEYCODE,
+        },
+        merge: MERGE_DEFAULT,
+        name,
+        value,
+    }))
 }
 
-pub unsafe fn KeyAliasCreate(alias: u32, real: u32) -> *mut KeyAliasDef {
-    unsafe {
-        let def: *mut KeyAliasDef = Box::into_raw(Box::new(std::mem::zeroed::<KeyAliasDef>()));
-        (*def).common.type_0 = STMT_ALIAS;
-        (*def).common.next = std::ptr::null_mut();
-        (*def).alias = alias;
-        (*def).real = real;
-        def
-    }
+pub fn KeyAliasCreate(alias: u32, real: u32) -> *mut KeyAliasDef {
+    Box::into_raw(Box::new(KeyAliasDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0: STMT_ALIAS,
+        },
+        merge: MERGE_DEFAULT,
+        alias,
+        real,
+    }))
 }
 
 pub unsafe fn VModCreate(name: u32, value: *mut ExprDef) -> *mut VModDef {
-    unsafe {
-        let def: *mut VModDef = Box::into_raw(Box::new(std::mem::zeroed::<VModDef>()));
-        (*def).common.type_0 = STMT_VMOD;
-        (*def).common.next = std::ptr::null_mut();
-        (*def).name = name;
-        (*def).value = value as *mut ExprDef;
-        def
-    }
+    Box::into_raw(Box::new(VModDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0: STMT_VMOD,
+        },
+        merge: MERGE_DEFAULT,
+        name,
+        value: unsafe { box_from_raw(value) },
+    }))
 }
 
 pub unsafe fn VarCreate(name: *mut ExprDef, value: *mut ExprDef) -> *mut VarDef {
-    unsafe {
-        let def: *mut VarDef = Box::into_raw(Box::new(std::mem::zeroed::<VarDef>()));
-        (*def).common.type_0 = STMT_VAR;
-        (*def).common.next = std::ptr::null_mut();
-        (*def).name = name as *mut ExprDef;
-        (*def).value = value as *mut ExprDef;
-        def
-    }
+    Box::into_raw(Box::new(VarDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0: STMT_VAR,
+        },
+        merge: MERGE_DEFAULT,
+        name: unsafe { box_from_raw(name) },
+        value: unsafe { box_from_raw(value) },
+    }))
 }
 
-pub unsafe fn BoolVarCreate(ident: u32, set: bool) -> *mut VarDef {
-    unsafe {
-        let name: *mut ExprDef = ExprCreateIdent(ident);
-        if name.is_null() {
-            return std::ptr::null_mut();
-        }
-        let value: *mut ExprDef = expr_create(ExprKind::Boolean(set));
-        if value.is_null() {
-            FreeStmt(name as *mut ParseCommon);
-            return std::ptr::null_mut();
-        }
-        let def: *mut VarDef = VarCreate(name, value);
-        if def.is_null() {
-            FreeStmt(name as *mut ParseCommon);
-            FreeStmt(value as *mut ParseCommon);
-            return std::ptr::null_mut();
-        }
-        def
-    }
+pub fn BoolVarCreate(ident: u32, set: bool) -> *mut VarDef {
+    Box::into_raw(Box::new(VarDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0: STMT_VAR,
+        },
+        merge: MERGE_DEFAULT,
+        name: Some(Box::new(ExprDef {
+            common: ParseCommon {
+                next: std::ptr::null_mut(),
+                type_0: STMT_EXPR_IDENT,
+            },
+            kind: ExprKind::Ident(ident),
+        })),
+        value: Some(Box::new(ExprDef {
+            common: ParseCommon {
+                next: std::ptr::null_mut(),
+                type_0: STMT_EXPR_BOOLEAN_LITERAL,
+            },
+            kind: ExprKind::Boolean(set),
+        })),
+    }))
 }
 
 pub unsafe fn InterpCreate(sym: u32, match_0: *mut ExprDef) -> *mut InterpDef {
-    unsafe {
-        let def: *mut InterpDef = Box::into_raw(Box::new(std::mem::zeroed::<InterpDef>()));
-        (*def).common.type_0 = STMT_INTERP;
-        (*def).common.next = std::ptr::null_mut();
-        (*def).sym = sym;
-        (*def).match_0 = match_0 as *mut ExprDef;
-        (*def).def = std::ptr::null_mut();
-        def
-    }
+    Box::into_raw(Box::new(InterpDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0: STMT_INTERP,
+        },
+        merge: MERGE_DEFAULT,
+        sym,
+        match_0: unsafe { box_from_raw(match_0) },
+        def: None,
+    }))
 }
 
 pub unsafe fn KeyTypeCreate(name: u32, body: *mut VarDef) -> *mut KeyTypeDef {
-    unsafe {
-        let def: *mut KeyTypeDef = Box::into_raw(Box::new(std::mem::zeroed::<KeyTypeDef>()));
-        (*def).common.type_0 = STMT_TYPE;
-        (*def).common.next = std::ptr::null_mut();
-        (*def).merge = MERGE_DEFAULT;
-        (*def).name = name;
-        (*def).body = body;
-        def
-    }
+    Box::into_raw(Box::new(KeyTypeDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0: STMT_TYPE,
+        },
+        merge: MERGE_DEFAULT,
+        name,
+        body: unsafe { box_from_raw(body) },
+    }))
 }
 
 pub unsafe fn SymbolsCreate(keyName: u32, symbols: *mut VarDef) -> *mut SymbolsDef {
-    unsafe {
-        let def: *mut SymbolsDef = Box::into_raw(Box::new(std::mem::zeroed::<SymbolsDef>()));
-        (*def).common.type_0 = STMT_SYMBOLS;
-        (*def).common.next = std::ptr::null_mut();
-        (*def).merge = MERGE_DEFAULT;
-        (*def).keyName = keyName;
-        (*def).symbols = symbols;
-        def
-    }
+    Box::into_raw(Box::new(SymbolsDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0: STMT_SYMBOLS,
+        },
+        merge: MERGE_DEFAULT,
+        keyName,
+        symbols: unsafe { box_from_raw(symbols) },
+    }))
 }
 
 pub unsafe fn GroupCompatCreate(group: i64, val: *mut ExprDef) -> *mut GroupCompatDef {
-    unsafe {
-        let def: *mut GroupCompatDef =
-            Box::into_raw(Box::new(std::mem::zeroed::<GroupCompatDef>()));
-        (*def).common.type_0 = STMT_GROUP_COMPAT;
-        (*def).common.next = std::ptr::null_mut();
-        (*def).merge = MERGE_DEFAULT;
-        (*def).group = group;
-        (*def).def = val as *mut ExprDef;
-        def
-    }
+    Box::into_raw(Box::new(GroupCompatDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0: STMT_GROUP_COMPAT,
+        },
+        merge: MERGE_DEFAULT,
+        group,
+        def: unsafe { box_from_raw(val) },
+    }))
 }
 
 pub unsafe fn ModMapCreate(modifier: u32, keys: *mut ExprDef) -> *mut ModMapDef {
-    unsafe {
-        let def: *mut ModMapDef = Box::into_raw(Box::new(std::mem::zeroed::<ModMapDef>()));
-        (*def).common.type_0 = STMT_MODMAP;
-        (*def).common.next = std::ptr::null_mut();
-        (*def).merge = MERGE_DEFAULT;
-        (*def).modifier = modifier;
-        (*def).keys = keys as *mut ExprDef;
-        def
-    }
+    Box::into_raw(Box::new(ModMapDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0: STMT_MODMAP,
+        },
+        merge: MERGE_DEFAULT,
+        modifier,
+        keys: unsafe { box_from_raw(keys) },
+    }))
 }
 
 pub unsafe fn LedMapCreate(name: u32, body: *mut VarDef) -> *mut LedMapDef {
-    unsafe {
-        let def: *mut LedMapDef = Box::into_raw(Box::new(std::mem::zeroed::<LedMapDef>()));
-        (*def).common.type_0 = STMT_LED_MAP;
-        (*def).common.next = std::ptr::null_mut();
-        (*def).merge = MERGE_DEFAULT;
-        (*def).name = name;
-        (*def).body = body;
-        def
-    }
+    Box::into_raw(Box::new(LedMapDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0: STMT_LED_MAP,
+        },
+        merge: MERGE_DEFAULT,
+        name,
+        body: unsafe { box_from_raw(body) },
+    }))
 }
 
 pub unsafe fn LedNameCreate(ndx: i64, name: *mut ExprDef, virtual_0: bool) -> *mut LedNameDef {
-    unsafe {
-        let def: *mut LedNameDef = Box::into_raw(Box::new(std::mem::zeroed::<LedNameDef>()));
-        (*def).common.type_0 = STMT_LED_NAME;
-        (*def).common.next = std::ptr::null_mut();
-        (*def).merge = MERGE_DEFAULT;
-        (*def).ndx = ndx;
-        (*def).name = name as *mut ExprDef;
-        (*def).virtual_0 = virtual_0;
-        def
-    }
+    Box::into_raw(Box::new(LedNameDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0: STMT_LED_NAME,
+        },
+        merge: MERGE_DEFAULT,
+        ndx,
+        virtual_0,
+        name: unsafe { box_from_raw(name) },
+    }))
 }
 
 pub unsafe fn UnknownStatementCreate(type_0: stmt_type, name: sval) -> *mut UnknownStatement {
-    unsafe {
-        let name_str = unsafe { std::str::from_utf8_unchecked(name.as_bytes()).to_string() };
-        let def = Box::into_raw(Box::new(UnknownStatement {
-            common: ParseCommon {
-                next: std::ptr::null_mut(),
-                type_0,
-            },
-            name: name_str,
-        }));
-        def
-    }
+    let name_str = unsafe { std::str::from_utf8_unchecked(name.as_bytes()).to_string() };
+    Box::into_raw(Box::new(UnknownStatement {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0,
+        },
+        name: name_str,
+    }))
 }
 
 pub unsafe fn IncludeCreate(
@@ -483,14 +399,9 @@ pub unsafe fn IncludeCreate(
                 Some(r) => r,
                 None => {
                     // Parse error
-                    xkb_logf!(
-                        ctx,
-                        XKB_LOG_LEVEL_ERROR,
-                        XKB_LOG_VERBOSITY_MINIMAL as i32,
-                        "[XKB-{:03}] Illegal include statement \"{}\"; Ignored\n",
+                    log::error!("[XKB-{:03}] Illegal include statement \"{}\"; Ignored\n",
                         XKB_ERROR_INVALID_INCLUDE_STATEMENT as i32,
-                        &stmt_str,
-                    );
+                        &stmt_str);
                     FreeInclude(first);
                     return std::ptr::null_mut();
                 }
@@ -658,56 +569,67 @@ pub unsafe fn FreeStmt(mut stmt: *mut ParseCommon) {
                 // All expression types: use ExprDef enum
                 4..=25 => {
                     let expr = stmt as *mut ExprDef;
-                    match &(*expr).kind {
-                        ExprKind::Unary { child, .. } => {
-                            FreeStmt(*child as *mut ParseCommon);
+                    // Action.args and ActionList.actions are linked-list heads.
+                    // The first node lives in the Box; subsequent nodes are linked
+                    // via common.next raw pointers.  We must take ownership of the
+                    // whole chain and free it with FreeStmt (which walks common.next).
+                    // Binary/Unary/ArrayRef children are single nodes — their
+                    // Option<Box<ExprDef>> auto-drops when the parent ExprDef drops.
+                    match &mut (*expr).kind {
+                        ExprKind::Action { ref mut args, .. } => {
+                            if let Some(boxed) = args.take() {
+                                FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
+                            }
                         }
-                        ExprKind::Binary { left, right, .. } => {
-                            FreeStmt(*left as *mut ParseCommon);
-                            FreeStmt(*right as *mut ParseCommon);
+                        ExprKind::ActionList { ref mut actions } => {
+                            if let Some(boxed) = actions.take() {
+                                FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
+                            }
                         }
-                        ExprKind::Action { args, .. } => {
-                            FreeStmt(*args as *mut ParseCommon);
-                        }
-                        ExprKind::ActionList { actions } => {
-                            FreeStmt(*actions as *mut ParseCommon);
-                        }
-                        ExprKind::ArrayRef { entry, .. } => {
-                            FreeStmt(*entry as *mut ParseCommon);
-                        }
-                        // KeysymList Vec drops automatically via Box::from_raw below
-                        // Leaf types (String, Integer, Boolean, etc.) have no children
                         _ => {}
                     }
                 }
                 26 => {
-                    FreeStmt((*(stmt as *mut VarDef)).name as *mut ParseCommon);
-                    FreeStmt((*(stmt as *mut VarDef)).value as *mut ParseCommon);
+                    // VarDef: name and value are single nodes → auto-drop via Box
                 }
                 27 => {
-                    FreeStmt((*(stmt as *mut KeyTypeDef)).body as *mut ParseCommon);
+                    // KeyTypeDef: body is a linked list
+                    if let Some(boxed) = (*(stmt as *mut KeyTypeDef)).body.take() {
+                        FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
+                    }
                 }
                 28 => {
-                    FreeStmt((*(stmt as *mut InterpDef)).match_0 as *mut ParseCommon);
-                    FreeStmt((*(stmt as *mut InterpDef)).def as *mut ParseCommon);
+                    // InterpDef: match_0 is single node → auto-drop. def is linked list.
+                    if let Some(boxed) = (*(stmt as *mut InterpDef)).def.take() {
+                        FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
+                    }
                 }
                 29 => {
-                    FreeStmt((*(stmt as *mut VModDef)).value as *mut ParseCommon);
+                    // VModDef: value is single node → auto-drop
                 }
                 30 => {
-                    FreeStmt((*(stmt as *mut SymbolsDef)).symbols as *mut ParseCommon);
+                    // SymbolsDef: symbols is a linked list
+                    if let Some(boxed) = (*(stmt as *mut SymbolsDef)).symbols.take() {
+                        FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
+                    }
                 }
                 31 => {
-                    FreeStmt((*(stmt as *mut ModMapDef)).keys as *mut ParseCommon);
+                    // ModMapDef: keys is a linked list
+                    if let Some(boxed) = (*(stmt as *mut ModMapDef)).keys.take() {
+                        FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
+                    }
                 }
                 32 => {
-                    FreeStmt((*(stmt as *mut GroupCompatDef)).def as *mut ParseCommon);
+                    // GroupCompatDef: def is single node → auto-drop
                 }
                 33 => {
-                    FreeStmt((*(stmt as *mut LedMapDef)).body as *mut ParseCommon);
+                    // LedMapDef: body is a linked list
+                    if let Some(boxed) = (*(stmt as *mut LedMapDef)).body.take() {
+                        FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
+                    }
                 }
                 34 => {
-                    FreeStmt((*(stmt as *mut LedNameDef)).name as *mut ParseCommon);
+                    // LedNameDef: name is single node → auto-drop
                 }
                 35 | 36 => {
                     // String name auto-drops via Box::from_raw below

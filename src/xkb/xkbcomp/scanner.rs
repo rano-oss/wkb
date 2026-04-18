@@ -1,6 +1,5 @@
 use crate::xkb::context::xkb_atom_intern;
 use crate::xkb::shared_types::*;
-use crate::xkb_logf;
 
 pub mod parser_h {
     pub const ALTERNATE_GROUP: i32 = 77;
@@ -221,9 +220,7 @@ pub use crate::xkb::messages::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
     XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
-    XKB_LOG_VERBOSITY_BRIEF, XKB_LOG_VERBOSITY_COMPREHENSIVE, XKB_LOG_VERBOSITY_DEFAULT,
-    XKB_LOG_VERBOSITY_DETAILED, XKB_LOG_VERBOSITY_MINIMAL, XKB_LOG_VERBOSITY_SILENT,
-    XKB_LOG_VERBOSITY_VERBOSE, XKB_WARNING_CANNOT_INFER_KEY_TYPE,
+    XKB_WARNING_CANNOT_INFER_KEY_TYPE,
     XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
     XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
     XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
@@ -373,48 +370,33 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                             (*s).buf_appends_code_point(cp);
                         } else {
                             let loc = (*s).token_location();
-                            xkb_logf!(
-                                (*s).ctx,
-                                XKB_LOG_LEVEL_WARNING,
-                                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                                "[XKB-{:03}] {}:{}:{}: invalid Unicode escape sequence \"{}\" in string literal\n",
+                            log::warn!("[XKB-{:03}] {}:{}:{}: invalid Unicode escape sequence \"{}\" in string literal\n",
                                 XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE
                                     as i32,
                                 &(*s).file_name,
                                 loc.line,
                                 loc.column,
-                                std::str::from_utf8_unchecked(std::slice::from_raw_parts((*s).s.add(start_pos.wrapping_sub(1)) as *const u8, (*s).pos.wrapping_sub(start_pos).wrapping_add(1))),
-                            );
+                                std::str::from_utf8_unchecked(std::slice::from_raw_parts((*s).s.add(start_pos.wrapping_sub(1)) as *const u8, (*s).pos.wrapping_sub(start_pos).wrapping_add(1))));
                         }
                     } else if (*s).oct(&mut o) && o != 0 {
                         (*s).buf_append(o);
                     } else if (*s).pos > start_pos {
                         let loc_0 = (*s).token_location();
-                        xkb_logf!(
-                            (*s).ctx,
-                            XKB_LOG_LEVEL_WARNING,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] {}:{}:{}: invalid octal escape sequence \"{}\" in string literal\n",
+                        log::warn!("[XKB-{:03}] {}:{}:{}: invalid octal escape sequence \"{}\" in string literal\n",
                             XKB_WARNING_INVALID_ESCAPE_SEQUENCE as i32,
                             &(*s).file_name,
                             loc_0.line,
                             loc_0.column,
-                            std::str::from_utf8_unchecked(std::slice::from_raw_parts((*s).s.add(start_pos.wrapping_sub(1)) as *const u8, (*s).pos.wrapping_sub(start_pos).wrapping_add(1))),
-                        );
+                            std::str::from_utf8_unchecked(std::slice::from_raw_parts((*s).s.add(start_pos.wrapping_sub(1)) as *const u8, (*s).pos.wrapping_sub(start_pos).wrapping_add(1))));
                     } else {
                         let loc_1 = (*s).token_location();
-                        xkb_logf!(
-                            (*s).ctx,
-                            XKB_LOG_LEVEL_WARNING,
-                            XKB_LOG_VERBOSITY_MINIMAL as i32,
-                            "[XKB-{:03}] {}:{}:{}: unknown escape sequence \"\\{}\" in string literal\n",
+                        log::warn!("[XKB-{:03}] {}:{}:{}: unknown escape sequence \"\\{}\" in string literal\n",
                             XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE
                                 as i32,
                             &(*s).file_name,
                             loc_1.line,
                             loc_1.column,
-                            ((*s).peek() as u8 as char),
-                        );
+                            ((*s).peek() as u8 as char));
                     }
                 } else {
                     let c = (*s).next_byte();
@@ -423,15 +405,10 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
             }
             if !(*s).buf_append(0) || !(*s).chr(b'"' as i8) {
                 let loc_2 = (*s).token_location();
-                xkb_logf!(
-                    (*s).ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "{}:{}:{}: unterminated string literal\n",
+                log::error!("{}:{}:{}: unterminated string literal\n",
                     &(*s).file_name,
                     loc_2.line,
-                    loc_2.column,
-                );
+                    loc_2.column);
                 return ERROR_TOK;
             }
             (*yylval).str = cstr_dup(&raw mut (*s).buf as *mut i8);
@@ -446,15 +423,10 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
             }
             if !(*s).chr(b'>' as i8) {
                 let loc_3 = (*s).token_location();
-                xkb_logf!(
-                    (*s).ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "{}:{}:{}: unterminated key name literal\n",
+                log::error!("{}:{}:{}: unterminated key name literal\n",
                     &(*s).file_name,
                     loc_3.line,
-                    loc_3.column,
-                );
+                    loc_3.column);
                 return ERROR_TOK;
             }
             let start: *const i8 = (*s).s.add((*s).token_pos + 1);
@@ -533,30 +505,20 @@ pub unsafe fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
         if number(s, &raw mut (*yylval).num, &raw mut tok) {
             if tok == ERROR_TOK {
                 let loc_4 = (*s).token_location();
-                xkb_logf!(
-                    (*s).ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "[XKB-{:03}] {}:{}:{}: malformed number literal\n",
+                log::error!("[XKB-{:03}] {}:{}:{}: malformed number literal\n",
                     XKB_ERROR_MALFORMED_NUMBER_LITERAL as i32,
                     &(*s).file_name,
                     loc_4.line,
-                    loc_4.column,
-                );
+                    loc_4.column);
                 return ERROR_TOK;
             }
             return tok;
         }
         let loc_5 = (*s).token_location();
-        xkb_logf!(
-            (*s).ctx,
-            XKB_LOG_LEVEL_ERROR,
-            XKB_LOG_VERBOSITY_MINIMAL as i32,
-            "{}:{}:{}: unrecognized token\n",
+        log::error!("{}:{}:{}: unrecognized token\n",
             &(*s).file_name,
             loc_5.line,
-            loc_5.column,
-        );
+            loc_5.column);
         ERROR_TOK
     }
 }
@@ -572,27 +534,17 @@ pub unsafe fn XkbParseStringInit(
         *sc = scanner::new(ctx, string, len, file_name, std::ptr::null_mut());
         if !(*sc).check_supported_char_encoding() {
             let loc = (*sc).token_location();
-            xkb_logf!(
-                (*sc).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
                 &(*sc).file_name,
                 loc.line,
-                loc.column,
-            );
+                loc.column);
             let loc_0 = (*sc).token_location();
-            xkb_logf!(
-                (*sc).ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
+            log::error!("[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
                 &(*sc).file_name,
                 loc_0.line,
-                loc_0.column,
-            );
+                loc_0.column);
             return false;
         }
         true
@@ -647,12 +599,7 @@ pub unsafe fn XkbParseFile(
         // Get file descriptor from FILE*
         let fd = libc::fileno(file as *mut libc::FILE);
         if fd < 0 {
-            xkb_logf!(
-                ctx,
-                XKB_LOG_LEVEL_ERROR,
-                XKB_LOG_VERBOSITY_MINIMAL as i32,
-                "Invalid file descriptor\n",
-            );
+            log::error!("Invalid file descriptor\n");
             return std::ptr::null_mut();
         }
 
@@ -667,14 +614,9 @@ pub unsafe fn XkbParseFile(
         let mapped = match MappedFile::new(&rust_file) {
             Ok(m) => m,
             Err(e) => {
-                xkb_logf!(
-                    ctx,
-                    XKB_LOG_LEVEL_ERROR,
-                    XKB_LOG_VERBOSITY_MINIMAL as i32,
-                    "Couldn't read XKB file {}: {}\n",
+                log::error!("Couldn't read XKB file {}: {}\n",
                     file_name,
-                    e,
-                );
+                    e);
                 std::mem::forget(rust_file); // Don't close fd - caller owns FILE*
                 return std::ptr::null_mut();
             }
