@@ -1,7 +1,9 @@
 use std::sync::LazyLock;
 
-use crate::xkb::atom::atom_text;
-use crate::xkb::context::{xkb_atom_intern, xkb_atom_lookup, xkb_context_sanitize_rule_names};
+use crate::xkb::atom::{atom_lookup_ref, atom_text};
+use crate::xkb::context::{
+    xkb_atom_intern_bytes, xkb_atom_lookup, xkb_context_sanitize_rule_names,
+};
 // text_v1_keymap_format_ops is defined in xkbcomp::xkbcomp with a local type.
 // Both types are #[repr(C)] with identical layout, so pointer cast is safe.
 pub use crate::xkb::messages::{
@@ -54,18 +56,17 @@ pub use crate::xkb::shared_types::{
     xkb_keysym_count_t, xkb_led, xkb_level, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods,
     xkb_overlay_mask_t, xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action,
     xkb_private_action, xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret,
-    KeycodeMatch, XkbKey, XkbKeyNumLevels, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X,
-    ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK,
-    ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE,
-    ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN,
-    ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
-    ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK,
-    ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON,
-    ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY,
-    ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
-    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
-    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
-    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    KeycodeMatch, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL,
+    ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK,
+    ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
+    ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
+    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
+    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
+    ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK,
+    ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE,
+    ACTION_TYPE_UNKNOWN, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS,
+    CONTROL_ALL, CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX,
+    CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
     CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
     CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
     CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
@@ -90,62 +91,58 @@ pub use crate::xkb::shared_types::{
 use crate::xkb::utils::cstr_len;
 use libc::FILE;
 pub unsafe fn xkb_keymap_ref(keymap: *mut xkb_keymap) -> *mut xkb_keymap {
-    unsafe {
-        (*keymap).refcnt += 1;
-        keymap
-    }
+    (*keymap).refcnt += 1;
+    keymap
 }
 pub fn clear_level(leveli: &mut xkb_level) {
     leveli.syms.clear();
     leveli.actions.clear();
 }
 pub unsafe fn xkb_keymap_unref(keymap: *mut xkb_keymap) {
-    unsafe {
-        if keymap.is_null() || {
-            (*keymap).refcnt -= 1;
-            (*keymap).refcnt > 0_i32
-        } {
-            return;
-        }
-        if !(*keymap).keys.is_empty() {
-            let start_idx = if (*keymap).num_keys_low == 0_u32 {
-                0_u32
-            } else {
-                (*keymap).min_key_code
-            };
-            let mut ki: u32 = start_idx;
-            while ki < (*keymap).num_keys {
-                let key: *mut xkb_key = &mut (&mut (*keymap).keys)[ki as usize] as *mut xkb_key;
-                if !(*key).groups.is_empty() {
-                    let mut i: u32 = 0_u32;
-                    while i < (*key).num_groups {
-                        if !(&(*key).groups)[i as usize].levels.is_empty() {
-                            // Vec fields drop automatically, no manual clearing needed
-                        }
-                        i = i.wrapping_add(1);
-                    }
-                }
-                // overlay_keys is now a Vec, drops automatically
-                ki = ki.wrapping_add(1);
-            }
-            // Vec drops automatically
-        }
-        if !(*keymap).types.is_empty() {
-            let mut i_0: u32 = 0_u32;
-            while (i_0 as usize) < (*keymap).types.len() {
-                i_0 = i_0.wrapping_add(1);
-            }
-        }
-        // types Vec drops automatically
-        let mut k: u32 = 0_u32;
-        while (k as usize) < (*keymap).sym_interprets.len() {
-            (&mut (*keymap).sym_interprets)[k as usize].actions.clear();
-            k = k.wrapping_add(1);
-        }
-        // sym_interprets Vec will be dropped below
-        // key_names and key_aliases Vecs will be dropped automatically
-        // Box owner (Keymap.inner) handles final deallocation — do NOT Box::from_raw here
+    if keymap.is_null() || {
+        (*keymap).refcnt -= 1;
+        (*keymap).refcnt > 0_i32
+    } {
+        return;
     }
+    if !(*keymap).keys.is_empty() {
+        let start_idx = if (*keymap).num_keys_low == 0_u32 {
+            0_u32
+        } else {
+            (*keymap).min_key_code
+        };
+        let mut ki: u32 = start_idx;
+        while ki < (*keymap).num_keys {
+            let key: *mut xkb_key = &mut (&mut (*keymap).keys)[ki as usize] as *mut xkb_key;
+            if !(*key).groups.is_empty() {
+                let mut i: u32 = 0_u32;
+                while i < (*key).num_groups {
+                    if !(&(*key).groups)[i as usize].levels.is_empty() {
+                        // Vec fields drop automatically, no manual clearing needed
+                    }
+                    i = i.wrapping_add(1);
+                }
+            }
+            // overlay_keys is now a Vec, drops automatically
+            ki = ki.wrapping_add(1);
+        }
+        // Vec drops automatically
+    }
+    if !(*keymap).types.is_empty() {
+        let mut i_0: u32 = 0_u32;
+        while (i_0 as usize) < (*keymap).types.len() {
+            i_0 = i_0.wrapping_add(1);
+        }
+    }
+    // types Vec drops automatically
+    let mut k: u32 = 0_u32;
+    while (k as usize) < (*keymap).sym_interprets.len() {
+        (&mut (*keymap).sym_interprets)[k as usize].actions.clear();
+        k = k.wrapping_add(1);
+    }
+    // sym_interprets Vec will be dropped below
+    // key_names and key_aliases Vecs will be dropped automatically
+    // Box owner (Keymap.inner) handles final deallocation — do NOT Box::from_raw here
 }
 struct SyncPtr(*const xkb_keymap_format_ops);
 unsafe impl Sync for SyncPtr {}
@@ -169,36 +166,34 @@ pub unsafe fn xkb_keymap_new_from_names(
     flags: u32,
 ) -> Option<Box<xkb_keymap>> {
     let format = XKB_KEYMAP_FORMAT_TEXT_V2;
-    unsafe {
-        let ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
-        if ops.is_null() || (*ops).keymap_new_from_names.is_none() {
-            log::error!(
-                "{}: unsupported keymap format: {}\n",
-                "xkb_keymap_new_from_names2",
-                { format }
-            );
-            return None;
-        }
-        let mut keymap = xkb_keymap_new(ctx.clone(), "xkb_keymap_new_from_names2", format, flags)?;
-        let mut rmlvo: xkb_rule_names = xkb_rule_names {
-            rules: std::ffi::CString::new("").unwrap(),
-            model: std::ffi::CString::new("").unwrap(),
-            layout: std::ffi::CString::new("").unwrap(),
-            variant: std::ffi::CString::new("").unwrap(),
-            options: std::ffi::CString::new("").unwrap(),
-        };
-        if !rmlvo_in.is_null() {
-            rmlvo = (*rmlvo_in).clone();
-        }
-        xkb_context_sanitize_rule_names(&ctx, &raw mut rmlvo);
-        if !((*ops).keymap_new_from_names.unwrap())(
-            &mut *keymap as *mut xkb_keymap,
-            &rmlvo as *const xkb_rule_names,
-        ) {
-            return None;
-        }
-        Some(keymap)
+    let ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
+    if ops.is_null() || (*ops).keymap_new_from_names.is_none() {
+        log::error!(
+            "{}: unsupported keymap format: {}\n",
+            "xkb_keymap_new_from_names2",
+            { format }
+        );
+        return None;
     }
+    let mut keymap = xkb_keymap_new(ctx.clone(), "xkb_keymap_new_from_names2", format, flags)?;
+    let mut rmlvo: xkb_rule_names = xkb_rule_names {
+        rules: std::ffi::CString::new("").unwrap(),
+        model: std::ffi::CString::new("").unwrap(),
+        layout: std::ffi::CString::new("").unwrap(),
+        variant: std::ffi::CString::new("").unwrap(),
+        options: std::ffi::CString::new("").unwrap(),
+    };
+    if !rmlvo_in.is_null() {
+        rmlvo = (*rmlvo_in).clone();
+    }
+    xkb_context_sanitize_rule_names(&ctx, &raw mut rmlvo);
+    if !((*ops).keymap_new_from_names.unwrap())(
+        &mut *keymap as *mut xkb_keymap,
+        &rmlvo as *const xkb_rule_names,
+    ) {
+        return None;
+    }
+    Some(keymap)
 }
 pub unsafe fn xkb_keymap_new_from_string(
     ctx: xkb_context,
@@ -206,34 +201,28 @@ pub unsafe fn xkb_keymap_new_from_string(
     format: u32,
     flags: u32,
 ) -> Option<Box<xkb_keymap>> {
-    unsafe {
-        let mut length = cstr_len(string);
-        let ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
-        if ops.is_null() || (*ops).keymap_new_from_string.is_none() {
-            log::error!(
-                "{}: unsupported keymap format: {}\n",
-                "xkb_keymap_new_from_buffer",
-                { format }
-            );
-            return None;
-        }
-        if string.is_null() {
-            log::error!("{}: no buffer specified\n", "xkb_keymap_new_from_buffer");
-            return None;
-        }
-        let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_buffer", format, flags)?;
-        if cstr_len(string) > 0 && *string.add(length.wrapping_sub(1_usize)) as i32 == '\0' as i32 {
-            length = length.wrapping_sub(1);
-        }
-        if !((*ops).keymap_new_from_string.unwrap())(
-            &mut *keymap as *mut xkb_keymap,
-            string,
-            length,
-        ) {
-            return None;
-        }
-        Some(keymap)
+    let mut length = cstr_len(string);
+    let ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
+    if ops.is_null() || (*ops).keymap_new_from_string.is_none() {
+        log::error!(
+            "{}: unsupported keymap format: {}\n",
+            "xkb_keymap_new_from_buffer",
+            { format }
+        );
+        return None;
     }
+    if string.is_null() {
+        log::error!("{}: no buffer specified\n", "xkb_keymap_new_from_buffer");
+        return None;
+    }
+    let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_buffer", format, flags)?;
+    if cstr_len(string) > 0 && *string.add(length.wrapping_sub(1_usize)) as i32 == '\0' as i32 {
+        length = length.wrapping_sub(1);
+    }
+    if !((*ops).keymap_new_from_string.unwrap())(&mut *keymap as *mut xkb_keymap, string, length) {
+        return None;
+    }
+    Some(keymap)
 }
 pub unsafe fn xkb_keymap_new_from_file(
     ctx: xkb_context,
@@ -241,58 +230,54 @@ pub unsafe fn xkb_keymap_new_from_file(
     format: u32,
     flags: u32,
 ) -> Option<Box<xkb_keymap>> {
-    unsafe {
-        let ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
-        if ops.is_null() || (*ops).keymap_new_from_file.is_none() {
-            log::error!(
-                "{}: unsupported keymap format: {}\n",
-                "xkb_keymap_new_from_file",
-                { format }
-            );
-            return None;
-        }
-        if file.is_null() {
-            log::error!("{}: no file specified\n", "xkb_keymap_new_from_file");
-            return None;
-        }
-        let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_file", format, flags)?;
-        if !((*ops).keymap_new_from_file.unwrap())(&mut *keymap as *mut xkb_keymap, file) {
-            return None;
-        }
-        Some(keymap)
+    let ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
+    if ops.is_null() || (*ops).keymap_new_from_file.is_none() {
+        log::error!(
+            "{}: unsupported keymap format: {}\n",
+            "xkb_keymap_new_from_file",
+            { format }
+        );
+        return None;
     }
+    if file.is_null() {
+        log::error!("{}: no file specified\n", "xkb_keymap_new_from_file");
+        return None;
+    }
+    let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_file", format, flags)?;
+    if !((*ops).keymap_new_from_file.unwrap())(&mut *keymap as *mut xkb_keymap, file) {
+        return None;
+    }
+    Some(keymap)
 }
 
 pub unsafe fn xkb_keymap_get_as_string(keymap: *mut xkb_keymap, mut format: u32) -> *mut i8 {
     let flags = XKB_KEYMAP_SERIALIZE_NO_FLAGS;
-    unsafe {
-        static XKB_KEYMAP_SERIALIZE_FLAGS: xkb_keymap_serialize_flags =
-            XKB_KEYMAP_SERIALIZE_FLAGS_VALUES as i32 as xkb_keymap_serialize_flags;
-        if flags & !XKB_KEYMAP_SERIALIZE_FLAGS != 0 {
-            log::error!(
-                "{}: unrecognized serialization flags: {:#x}\n",
-                "xkb_keymap_get_as_string2",
-                flags & !XKB_KEYMAP_SERIALIZE_FLAGS
-            );
-            return std::ptr::null_mut();
-        }
-        if format == XKB_KEYMAP_USE_ORIGINAL_FORMAT {
-            format = (*keymap).format;
-        }
-        let ops: *const xkb_keymap_format_ops =
-            get_keymap_format_ops(format) as *const xkb_keymap_format_ops;
-        if ops.is_null() || (*ops).keymap_get_as_string.is_none() {
-            log::error!(
-                "{}: unsupported keymap format: {}\n",
-                "xkb_keymap_get_as_string2",
-                { format }
-            );
-            return std::ptr::null_mut();
-        }
-        (*ops)
-            .keymap_get_as_string
-            .expect("non-null function pointer")(keymap, format, flags)
+    static XKB_KEYMAP_SERIALIZE_FLAGS: xkb_keymap_serialize_flags =
+        XKB_KEYMAP_SERIALIZE_FLAGS_VALUES as i32 as xkb_keymap_serialize_flags;
+    if flags & !XKB_KEYMAP_SERIALIZE_FLAGS != 0 {
+        log::error!(
+            "{}: unrecognized serialization flags: {:#x}\n",
+            "xkb_keymap_get_as_string2",
+            flags & !XKB_KEYMAP_SERIALIZE_FLAGS
+        );
+        return std::ptr::null_mut();
     }
+    if format == XKB_KEYMAP_USE_ORIGINAL_FORMAT {
+        format = (*keymap).format;
+    }
+    let ops: *const xkb_keymap_format_ops =
+        get_keymap_format_ops(format) as *const xkb_keymap_format_ops;
+    if ops.is_null() || (*ops).keymap_get_as_string.is_none() {
+        log::error!(
+            "{}: unsupported keymap format: {}\n",
+            "xkb_keymap_get_as_string2",
+            { format }
+        );
+        return std::ptr::null_mut();
+    }
+    (*ops)
+        .keymap_get_as_string
+        .expect("non-null function pointer")(keymap, format, flags)
 }
 pub fn xkb_keymap_num_mods(keymap: &xkb_keymap) -> u32 {
     keymap.mods.num_mods
@@ -309,21 +294,19 @@ pub fn xkb_keymap_mod_get_name<'a>(keymap: &'a xkb_keymap, idx: u32) -> Option<&
     }
 }
 pub unsafe fn xkb_keymap_mod_get_index(keymap: *mut xkb_keymap, name: *const i8) -> u32 {
-    let atom: u32 = unsafe { xkb_atom_lookup(&raw mut (*keymap).ctx, name) };
+    let atom: u32 = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
     if atom == XKB_ATOM_NONE {
         XKB_MOD_INVALID
     } else {
-        unsafe { XkbModNameToIndex(&(*keymap).mods, atom, MOD_BOTH) }
+        XkbModNameToIndex(&(*keymap).mods, atom, MOD_BOTH)
     }
 }
 pub unsafe fn xkb_keymap_mod_get_mask(keymap: *mut xkb_keymap, name: *const i8) -> u32 {
-    let idx: u32 = unsafe { xkb_keymap_mod_get_index(keymap, name) };
-    unsafe {
-        if idx >= (*keymap).mods.num_mods {
-            0_u32
-        } else {
-            (*keymap).mods.mods[idx as usize].mapping
-        }
+    let idx: u32 = xkb_keymap_mod_get_index(keymap, name);
+    if idx >= (*keymap).mods.num_mods {
+        0_u32
+    } else {
+        (*keymap).mods.mods[idx as usize].mapping
     }
 }
 pub fn xkb_keymap_num_layouts(keymap: &xkb_keymap) -> u32 {
@@ -341,15 +324,13 @@ pub fn xkb_keymap_layout_get_name<'a>(keymap: &'a xkb_keymap, idx: u32) -> Optio
     }
 }
 pub unsafe fn xkb_keymap_layout_get_index(keymap: *mut xkb_keymap, name: *const i8) -> u32 {
-    let atom: u32 = unsafe { xkb_atom_lookup(&raw mut (*keymap).ctx, name) };
+    let atom: u32 = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
     if atom == XKB_ATOM_NONE {
         return XKB_LAYOUT_INVALID;
     }
-    unsafe {
-        for (i, &gn) in (*keymap).group_names.iter().enumerate() {
-            if gn == atom {
-                return i as u32;
-            }
+    for (i, &gn) in (*keymap).group_names.iter().enumerate() {
+        if gn == atom {
+            return i as u32;
         }
     }
     XKB_LAYOUT_INVALID
@@ -391,44 +372,64 @@ pub fn xkb_keymap_led_get_name<'a>(keymap: &'a xkb_keymap, idx: u32) -> Option<&
     }
 }
 pub unsafe fn xkb_keymap_led_get_index(keymap: *mut xkb_keymap, name: *const i8) -> u32 {
-    let atom: u32 = unsafe { xkb_atom_lookup(&raw mut (*keymap).ctx, name) };
+    let atom: u32 = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
     if atom == XKB_ATOM_NONE {
         return XKB_LED_INVALID;
     }
-    unsafe {
-        for i in 0..(*keymap).num_leds {
-            if (*keymap).leds[i as usize].name == atom {
-                return i;
-            }
+    for i in 0..(*keymap).num_leds {
+        if (*keymap).leds[i as usize].name == atom {
+            return i;
         }
     }
     XKB_LED_INVALID
 }
-pub unsafe fn xkb_keymap_key_get_level(
-    keymap: *mut xkb_keymap,
-    key: *const xkb_key,
-    mut layout: u32,
+pub fn xkb_keymap_key_get_level<'a>(
+    keymap: &'a xkb_keymap,
+    key: &'a xkb_key,
+    layout: u32,
     level: u32,
-) -> *mut xkb_level {
-    let key_ref = unsafe { &*key };
-    let km = unsafe { &*keymap };
-    layout = XkbWrapGroupIntoRange(
-        layout as i32,
-        key_ref.num_groups,
-        key_ref.out_of_range_group_policy,
-        key_ref.out_of_range_group_number,
-    );
-    if layout == XKB_LAYOUT_INVALID {
-        return std::ptr::null_mut();
-    }
-    if level >= km.key_num_levels(key_ref, layout) {
-        return std::ptr::null_mut();
-    }
-    unsafe {
-        &mut (&mut (*(key as *mut xkb_key)).groups)[layout as usize].levels[level as usize]
-            as *mut xkb_level
+) -> Option<&'a xkb_level> {
+    keymap.get_key_level(key, layout, level)
+}
+
+/// Safe version of `xkb_keymap_mod_get_index` using `&str` name and `&xkb_keymap`.
+pub fn xkb_keymap_mod_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
+    let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
+    if atom == XKB_ATOM_NONE {
+        XKB_MOD_INVALID
+    } else {
+        XkbModNameToIndex(&keymap.mods, atom, MOD_BOTH)
     }
 }
+
+/// Safe version of `xkb_keymap_layout_get_index` using `&str` name and `&xkb_keymap`.
+pub fn xkb_keymap_layout_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
+    let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
+    if atom == XKB_ATOM_NONE {
+        return XKB_LAYOUT_INVALID;
+    }
+    for (i, &gn) in keymap.group_names.iter().enumerate() {
+        if gn == atom {
+            return i as u32;
+        }
+    }
+    XKB_LAYOUT_INVALID
+}
+
+/// Safe version of `xkb_keymap_led_get_index` using `&str` name and `&xkb_keymap`.
+pub fn xkb_keymap_led_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
+    let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
+    if atom == XKB_ATOM_NONE {
+        return XKB_LED_INVALID;
+    }
+    for i in 0..keymap.num_leds {
+        if keymap.leds[i as usize].name == atom {
+            return i;
+        }
+    }
+    XKB_LED_INVALID
+}
+
 pub unsafe fn xkb_keymap_key_get_syms_by_level(
     keymap: *mut xkb_keymap,
     kc: u32,
@@ -449,6 +450,24 @@ pub unsafe fn xkb_keymap_key_get_syms_by_level(
     *syms_out = std::ptr::null();
     0_i32
 }
+
+/// Safe version: returns a slice of keysyms for a key at a given layout/level.
+pub fn xkb_keymap_key_get_syms_by_level_ref<'a>(
+    keymap: &'a xkb_keymap,
+    kc: u32,
+    layout: u32,
+    level: u32,
+) -> &'a [u32] {
+    if let Some(key) = keymap.get_key(kc) {
+        if let Some(leveli) = keymap.get_key_level(key, layout, level) {
+            if !leveli.syms.is_empty() {
+                return &leveli.syms;
+            }
+        }
+    }
+    &[]
+}
+
 pub fn xkb_keymap_min_keycode(keymap: &xkb_keymap) -> u32 {
     keymap.min_key_code
 }
@@ -465,35 +484,30 @@ pub fn xkb_keymap_key_get_name<'a>(keymap: &'a xkb_keymap, kc: u32) -> Option<&'
     }
 }
 pub unsafe fn xkb_keymap_key_by_name(keymap: *mut xkb_keymap, name: *const i8) -> u32 {
-    unsafe {
-        let mut atom = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
-        if atom != 0 {
-            let mut i: u32 = 0_u32;
-            while (i as usize) < (*keymap).key_aliases.len() {
-                if (&(*keymap).key_aliases)[i as usize].alias == atom {
-                    atom = (&(*keymap).key_aliases)[i as usize].real;
-                }
-                i = i.wrapping_add(1);
+    let km = &*keymap;
+    let mut atom = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
+    if atom != 0 {
+        for alias in km.key_aliases.iter() {
+            if alias.alias == atom {
+                atom = alias.real;
             }
         }
-        if atom == 0 {
-            return XKB_KEYCODE_INVALID;
-        }
-        let start_idx = if (*keymap).num_keys_low == 0_u32 {
-            0_u32
-        } else {
-            (*keymap).min_key_code
-        };
-        let mut ki: u32 = start_idx;
-        while ki < (*keymap).num_keys {
-            let key: *const xkb_key = &(&(*keymap).keys)[ki as usize] as *const xkb_key;
-            if (*key).name == atom {
-                return (*key).keycode;
-            }
-            ki = ki.wrapping_add(1);
-        }
-        XKB_KEYCODE_INVALID
     }
+    if atom == 0 {
+        return XKB_KEYCODE_INVALID;
+    }
+    let start_idx = if km.num_keys_low == 0_u32 {
+        0_u32
+    } else {
+        km.min_key_code
+    };
+    for ki in start_idx..km.num_keys {
+        let key = &km.keys[ki as usize];
+        if key.name == atom {
+            return key.keycode;
+        }
+    }
+    XKB_KEYCODE_INVALID
 }
 pub fn xkb_keymap_key_repeats(keymap: &xkb_keymap, kc: u32) -> i32 {
     match keymap.get_key(kc) {
@@ -564,7 +578,7 @@ pub fn xkb_keymap_new(
         XKB_MOD_NAME_MOD5,
     ];
     for (i, name) in BUILTIN_MODS.iter().enumerate() {
-        keymap.mods.mods[i].name = unsafe { xkb_atom_intern(&raw mut keymap.ctx, name.as_bytes()) };
+        keymap.mods.mods[i].name = xkb_atom_intern_bytes(&mut keymap.ctx, name.as_bytes());
         keymap.mods.mods[i].type_0 = MOD_REAL;
         keymap.mods.mods[i].mapping = 1_u32 << i;
     }
@@ -730,34 +744,23 @@ pub fn XkbWrapGroupIntoRange(
         }
     }
 }
-pub unsafe fn xkb_keymap_key_get_actions_by_level(
-    keymap: *mut xkb_keymap,
-    key: *const xkb_key,
-    mut layout: u32,
+pub fn xkb_keymap_key_get_actions_by_level<'a>(
+    keymap: &'a xkb_keymap,
+    key: &'a xkb_key,
+    layout: u32,
     level: u32,
-    actions: *mut *const xkb_action,
-) -> u16 {
-    if !key.is_null() {
-        let key_ref = &*key;
-        let km = &*keymap;
-        layout = XkbWrapGroupIntoRange(
-            layout as i32,
-            key_ref.num_groups,
-            key_ref.out_of_range_group_policy,
-            key_ref.out_of_range_group_number,
-        );
-        if layout != XKB_LAYOUT_INVALID && level < km.key_num_levels(key_ref, layout) {
-            let count = key_ref.groups[layout as usize].levels[level as usize]
-                .actions
-                .len() as u16;
-            if count > 0 {
-                *actions = key_ref.groups[layout as usize].levels[level as usize]
-                    .actions
-                    .as_ptr();
-                return count;
-            }
+) -> &'a [xkb_action] {
+    let wrapped_layout = XkbWrapGroupIntoRange(
+        layout as i32,
+        key.num_groups,
+        key.out_of_range_group_policy,
+        key.out_of_range_group_number,
+    );
+    if wrapped_layout != XKB_LAYOUT_INVALID && level < keymap.key_num_levels(key, wrapped_layout) {
+        let actions = &key.groups[wrapped_layout as usize].levels[level as usize].actions;
+        if !actions.is_empty() {
+            return actions.as_slice();
         }
     }
-    unsafe { *actions = std::ptr::null() };
-    0_u16
+    &[]
 }

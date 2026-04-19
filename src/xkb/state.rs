@@ -1505,52 +1505,58 @@ fn xkb_state_update_derived(state: &mut xkb_state) {
     };
     xkb_state_led_update_all(state);
 }
-pub unsafe fn xkb_state_update_key(
-    state: *mut xkb_state,
-    kc: u32,
-    direction: xkb_key_direction,
-) -> u32 {
-    let keymap = (*state).keymap();
-    let key = match keymap.get_key(kc) {
-        Some(k) => k as *const xkb_key,
+pub fn xkb_state_update_key(state: &mut xkb_state, kc: u32, direction: xkb_key_direction) -> u32 {
+    // SAFETY: raw pointer deref avoids borrowing `state` (needed for mutation below)
+    let keymap = unsafe { &*state.keymap };
+    let key_ref = match keymap.get_key(kc) {
+        Some(k) => k,
         None => return 0_u32,
     };
-    if direction == XKB_KEY_REPEATED && !(*key).repeats {
+    if direction == XKB_KEY_REPEATED && !key_ref.repeats {
         return 0_u32;
     }
-    let prev_components: state_components = (*state).components;
-    (*state).set_mods = 0_u32;
-    (*state).clear_mods = 0_u32;
-    xkb_filter_apply_all(state, std::ptr::null_mut(), key, direction);
+    let prev_components: state_components = state.components;
+    state.set_mods = 0_u32;
+    state.clear_mods = 0_u32;
+    let state_ptr = state as *mut xkb_state;
+    // SAFETY: xkb_filter_apply_all needs raw ptrs due to aliasing between state and its filters
+    unsafe {
+        xkb_filter_apply_all(
+            state_ptr,
+            std::ptr::null_mut(),
+            key_ref as *const xkb_key,
+            direction,
+        );
+    }
     let mut i: u32;
     let mut bit: u32;
     i = 0_u32;
     bit = 1_u32;
-    while (*state).set_mods != 0 {
-        if (*state).set_mods & bit != 0 {
-            (*state).mod_key_count[i as usize] += 1;
-            (*state).components.base_mods |= bit;
-            (*state).set_mods &= !bit;
+    while state.set_mods != 0 {
+        if state.set_mods & bit != 0 {
+            state.mod_key_count[i as usize] += 1;
+            state.components.base_mods |= bit;
+            state.set_mods &= !bit;
         }
         i = i.wrapping_add(1);
         bit <<= 1_i32;
     }
     i = 0_u32;
     bit = 1_u32;
-    while (*state).clear_mods != 0 {
-        if (*state).clear_mods & bit != 0 {
-            (*state).mod_key_count[i as usize] -= 1;
-            if (*state).mod_key_count[i as usize] as i32 <= 0_i32 {
-                (*state).components.base_mods &= !bit;
-                (*state).mod_key_count[i as usize] = 0_i16;
+    while state.clear_mods != 0 {
+        if state.clear_mods & bit != 0 {
+            state.mod_key_count[i as usize] -= 1;
+            if state.mod_key_count[i as usize] as i32 <= 0_i32 {
+                state.components.base_mods &= !bit;
+                state.mod_key_count[i as usize] = 0_i16;
             }
-            (*state).clear_mods &= !bit;
+            state.clear_mods &= !bit;
         }
         i = i.wrapping_add(1);
         bit <<= 1_i32;
     }
-    xkb_state_update_derived(&mut *state);
-    get_state_component_changes(&prev_components, &(*state).components)
+    xkb_state_update_derived(state);
+    get_state_component_changes(&prev_components, &state.components)
 }
 
 static mut SYNTHETIC_KEY_LEVEL_ENTRY: xkb_key_type_entry = xkb_key_type_entry {
@@ -1882,8 +1888,8 @@ pub unsafe fn xkb_state_update_synthetic(
     XKB_SUCCESS
 }
 
-pub unsafe fn xkb_state_update_mask(
-    state: *mut xkb_state,
+pub fn xkb_state_update_mask(
+    state: &mut xkb_state,
     base_mods: u32,
     latched_mods: u32,
     locked_mods: u32,
@@ -1891,16 +1897,19 @@ pub unsafe fn xkb_state_update_mask(
     latched_group: u32,
     locked_group: u32,
 ) -> u32 {
-    let prev_components: state_components = (*state).components;
-    let keymap = (*state).keymap();
-    (*state).components.base_mods = resolve_to_canonical_mods(keymap, base_mods);
-    (*state).components.latched_mods = resolve_to_canonical_mods(keymap, latched_mods);
-    (*state).components.locked_mods = resolve_to_canonical_mods(keymap, locked_mods);
-    (*state).components.base_group = base_group as i32;
-    (*state).components.latched_group = latched_group as i32;
-    (*state).components.locked_group = locked_group as i32;
-    xkb_state_update_derived(&mut *state);
-    get_state_component_changes(&prev_components, &(*state).components)
+    let prev_components: state_components = state.components;
+    let keymap = state.keymap();
+    let base_mods = resolve_to_canonical_mods(keymap, base_mods);
+    let latched_mods = resolve_to_canonical_mods(keymap, latched_mods);
+    let locked_mods = resolve_to_canonical_mods(keymap, locked_mods);
+    state.components.base_mods = base_mods;
+    state.components.latched_mods = latched_mods;
+    state.components.locked_mods = locked_mods;
+    state.components.base_group = base_group as i32;
+    state.components.latched_group = latched_group as i32;
+    state.components.locked_group = locked_group as i32;
+    xkb_state_update_derived(state);
+    get_state_component_changes(&prev_components, &state.components)
 }
 
 fn should_do_caps_transformation(state: &xkb_state, kc: u32) -> bool {
@@ -1920,21 +1929,17 @@ fn should_do_ctrl_transformation(state: &xkb_state, kc: u32) -> bool {
     ) > 0_i32
         && xkb_state_mod_index_is_consumed(state, kc, XKB_MOD_INDEX_CTRL as i32 as u32) == 0_i32
 }
-pub unsafe fn xkb_state_key_get_syms(
-    state: *mut xkb_state,
-    kc: u32,
-    syms_out: *mut *const u32,
-) -> i32 {
-    let layout: u32 = xkb_state_key_get_layout(&*state, kc);
+pub unsafe fn xkb_state_key_get_syms(state: &xkb_state, kc: u32, syms_out: *mut *const u32) -> i32 {
+    let layout: u32 = xkb_state_key_get_layout(state, kc);
     if layout != XKB_LAYOUT_INVALID {
-        let level = xkb_state_key_get_level(&*state, kc, layout);
+        let level = xkb_state_key_get_level(state, kc, layout);
         if level != XKB_LEVEL_INVALID {
-            let keymap = (*state).keymap();
+            let keymap = state.keymap();
             if let Some(key) = keymap.get_key(kc) {
                 if let Some(leveli) = keymap.get_key_level(key, layout, level) {
                     let num_syms = leveli.syms.len();
                     if num_syms > 0 {
-                        if should_do_caps_transformation(&*state, kc) {
+                        if should_do_caps_transformation(state, kc) {
                             if num_syms > 1 {
                                 *syms_out = if leveli.has_upper {
                                     leveli.syms.as_ptr().add(num_syms)
@@ -1957,7 +1962,7 @@ pub unsafe fn xkb_state_key_get_syms(
     0_i32
 }
 
-pub unsafe fn xkb_state_key_get_one_sym(state: *mut xkb_state, kc: u32) -> u32 {
+pub unsafe fn xkb_state_key_get_one_sym(state: &xkb_state, kc: u32) -> u32 {
     let mut syms: *const u32 = std::ptr::null();
     let num_syms: i32 = xkb_state_key_get_syms(state, kc, &raw mut syms) as i32;
     if num_syms != 1_i32 {
@@ -1967,46 +1972,35 @@ pub unsafe fn xkb_state_key_get_one_sym(state: *mut xkb_state, kc: u32) -> u32 {
     }
 }
 
-fn get_one_sym_for_string(state: *mut xkb_state, kc: u32) -> u32 {
-    unsafe {
-        let layout: u32 = xkb_state_key_get_layout(&*state, kc);
-        let num_layouts: u32 = xkb_keymap_num_layouts_for_key((*state).keymap(), kc);
-        let mut level: u32 = xkb_state_key_get_level(&*state, kc, layout);
-        if layout == XKB_LAYOUT_INVALID || num_layouts == 0_u32 || level == XKB_LEVEL_INVALID {
-            return XKB_KEY_NoSymbol as u32;
-        }
-        let mut syms: *const u32 = std::ptr::null();
-        let mut nsyms: i32 =
-            xkb_keymap_key_get_syms_by_level((*state).keymap, kc, layout, level, &raw mut syms);
-        if nsyms != 1_i32 {
-            return XKB_KEY_NoSymbol as u32;
-        }
-        let mut sym: u32 = *syms.offset(0_i32 as isize);
-        if should_do_ctrl_transformation(&*state, kc) as i32 != 0 && sym > 127_u32 {
-            let mut i: u32 = 0_u32;
-            while i < num_layouts {
-                level = xkb_state_key_get_level(&*state, kc, i);
-                if level != XKB_LEVEL_INVALID {
-                    nsyms = xkb_keymap_key_get_syms_by_level(
-                        (*state).keymap,
-                        kc,
-                        i,
-                        level,
-                        &raw mut syms,
-                    );
-                    if nsyms == 1_i32 && *syms.offset(0_i32 as isize) <= 127_u32 {
-                        sym = *syms.offset(0_i32 as isize);
-                        break;
-                    }
+fn get_one_sym_for_string(state: &xkb_state, kc: u32) -> u32 {
+    let layout = xkb_state_key_get_layout(state, kc);
+    let keymap = state.keymap();
+    let num_layouts = xkb_keymap_num_layouts_for_key(keymap, kc);
+    let mut level = xkb_state_key_get_level(state, kc, layout);
+    if layout == XKB_LAYOUT_INVALID || num_layouts == 0_u32 || level == XKB_LEVEL_INVALID {
+        return XKB_KEY_NoSymbol as u32;
+    }
+    let syms = xkb_keymap_key_get_syms_by_level_ref(keymap, kc, layout, level);
+    if syms.len() != 1 {
+        return XKB_KEY_NoSymbol as u32;
+    }
+    let mut sym = syms[0];
+    if should_do_ctrl_transformation(state, kc) && sym > 127_u32 {
+        for i in 0..num_layouts {
+            level = xkb_state_key_get_level(state, kc, i);
+            if level != XKB_LEVEL_INVALID {
+                let syms_i = xkb_keymap_key_get_syms_by_level_ref(keymap, kc, i, level);
+                if syms_i.len() == 1 && syms_i[0] <= 127_u32 {
+                    sym = syms_i[0];
+                    break;
                 }
-                i = i.wrapping_add(1);
             }
         }
-        if should_do_caps_transformation(&*state, kc) {
-            sym = xkb_keysym_to_upper(sym);
-        }
-        sym
     }
+    if should_do_caps_transformation(state, kc) {
+        sym = unsafe { xkb_keysym_to_upper(sym) };
+    }
+    sym
 }
 
 pub unsafe fn xkb_state_key_get_utf8(
@@ -2018,12 +2012,12 @@ pub unsafe fn xkb_state_key_get_utf8(
     let c2rust_current_block: u64;
     let nsyms: i32;
     let mut syms: *const u32 = std::ptr::null();
-    let sym: u32 = get_one_sym_for_string(state, kc);
+    let sym: u32 = get_one_sym_for_string(&*state, kc);
     if sym != XKB_KEY_NoSymbol as u32 {
         nsyms = 1_i32;
         syms = &raw const sym;
     } else {
-        nsyms = xkb_state_key_get_syms(state, kc, &raw mut syms);
+        nsyms = xkb_state_key_get_syms(&*state, kc, &raw mut syms);
     }
     let mut offset: i32 = 0_i32;
     let mut tmp: [i8; 5] = [0; 5];
@@ -2173,14 +2167,12 @@ fn match_mod_masks(state: &xkb_state, type_0: u32, match_0: xkb_state_match, wan
     active & wanted == wanted
 }
 
-pub fn xkb_state_mod_name_is_active(state: &xkb_state, name: *const i8, type_0: u32) -> i32 {
-    unsafe {
-        let idx: u32 = xkb_keymap_mod_get_index(state.keymap as *mut xkb_keymap, name);
-        if idx == XKB_MOD_INVALID {
-            return -1_i32;
-        }
-        xkb_state_mod_index_is_active(state, idx, type_0)
+pub fn xkb_state_mod_name_is_active(state: &xkb_state, name: &str, type_0: u32) -> i32 {
+    let idx = xkb_keymap_mod_get_index_ref(state.keymap(), name);
+    if idx == XKB_MOD_INVALID {
+        return -1_i32;
     }
+    xkb_state_mod_index_is_active(state, idx, type_0)
 }
 
 pub fn xkb_state_layout_index_is_active(state: &xkb_state, idx: u32, type_0: u32) -> i32 {
@@ -2203,15 +2195,14 @@ pub fn xkb_state_layout_index_is_active(state: &xkb_state, idx: u32, type_0: u32
     ret
 }
 
-pub fn xkb_state_layout_name_is_active(state: &xkb_state, name: *const i8, type_0: u32) -> i32 {
-    unsafe {
-        let idx: u32 = xkb_keymap_layout_get_index(state.keymap as *mut xkb_keymap, name);
-        if idx == XKB_LAYOUT_INVALID {
-            return -1_i32;
-        }
-        xkb_state_layout_index_is_active(state, idx, type_0)
+pub fn xkb_state_layout_name_is_active(state: &xkb_state, name: &str, type_0: u32) -> i32 {
+    let idx = xkb_keymap_layout_get_index_ref(state.keymap(), name);
+    if idx == XKB_LAYOUT_INVALID {
+        return -1_i32;
     }
+    xkb_state_layout_index_is_active(state, idx, type_0)
 }
+
 pub fn xkb_state_led_index_is_active(state: &xkb_state, idx: u32) -> i32 {
     let keymap = state.keymap();
     if idx >= keymap.num_leds || keymap.leds[idx as usize].name == XKB_ATOM_NONE {
@@ -2220,14 +2211,12 @@ pub fn xkb_state_led_index_is_active(state: &xkb_state, idx: u32) -> i32 {
     (state.components.leds & (1 as xkb_led_mask_t) << idx != 0) as i32
 }
 
-pub fn xkb_state_led_name_is_active(state: &xkb_state, name: *const i8) -> i32 {
-    unsafe {
-        let idx: u32 = xkb_keymap_led_get_index(state.keymap as *mut xkb_keymap, name);
-        if idx == XKB_LED_INVALID {
-            return -1_i32;
-        }
-        xkb_state_led_index_is_active(state, idx)
+pub fn xkb_state_led_name_is_active(state: &xkb_state, name: &str) -> i32 {
+    let idx = xkb_keymap_led_get_index_ref(state.keymap(), name);
+    if idx == XKB_LED_INVALID {
+        return -1_i32;
     }
+    xkb_state_led_index_is_active(state, idx)
 }
 
 fn key_get_consumed(state: &xkb_state, key: &xkb_key, mode: xkb_consumed_mode) -> u32 {
@@ -2354,9 +2343,10 @@ fn c2rust_run_static_initializers() {
 }
 
 use crate::xkb::keymap::{
-    xkb_keymap_key_get_syms_by_level, xkb_keymap_layout_get_index, xkb_keymap_led_get_index,
-    xkb_keymap_mod_get_index, xkb_keymap_num_layouts_for_key, xkb_keymap_num_mods, xkb_keymap_ref,
-    xkb_keymap_unref,
+    xkb_keymap_key_get_syms_by_level, xkb_keymap_key_get_syms_by_level_ref,
+    xkb_keymap_layout_get_index, xkb_keymap_layout_get_index_ref, xkb_keymap_led_get_index,
+    xkb_keymap_led_get_index_ref, xkb_keymap_mod_get_index, xkb_keymap_mod_get_index_ref,
+    xkb_keymap_num_layouts_for_key, xkb_keymap_num_mods, xkb_keymap_ref, xkb_keymap_unref,
 };
 use crate::xkb::keysym_case_mappings::xkb_keysym_to_upper;
 use crate::xkb::keysym_utf::xkb_keysym_to_utf8;

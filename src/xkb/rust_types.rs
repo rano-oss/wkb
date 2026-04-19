@@ -5,6 +5,13 @@
 
 use std::ffi::CString;
 
+use crate::xkb::atom::atom_lookup_ref;
+use crate::xkb::keymap::{
+    xkb_keymap_layout_get_index_ref, xkb_keymap_led_get_index_ref, xkb_keymap_mod_get_index_ref,
+};
+use crate::xkb::shared_types::{
+    XKB_ATOM_NONE, XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID,
+};
 use crate::xkb::{compose::xkb_compose_table, shared_types::xkb_context};
 
 /// Rust-native version of xkb_rule_names
@@ -143,24 +150,16 @@ impl Keymap {
         super::keymap::xkb_keymap_num_levels_for_key(&self.inner, keycode, layout)
     }
 
-    /// Get keysyms for a key at a specific level
+    /// Get keysyms for a key at a specific level (safe via get_key_level)
     pub fn key_get_syms_by_level(&self, keycode: u32, layout: u32, level: u32) -> &[u32] {
-        unsafe {
-            let mut syms_ptr: *const u32 = std::ptr::null();
-            let num_syms = super::keymap::xkb_keymap_key_get_syms_by_level(
-                self.as_ptr() as *mut _,
-                keycode,
-                layout,
-                level,
-                &mut syms_ptr as *mut _,
-            );
-
-            if num_syms > 0 && !syms_ptr.is_null() {
-                std::slice::from_raw_parts(syms_ptr, num_syms as usize)
-            } else {
-                &[]
+        if let Some(key) = self.inner.get_key(keycode) {
+            if let Some(leveli) = self.inner.get_key_level(key, layout, level) {
+                if !leveli.syms.is_empty() {
+                    return &leveli.syms[..];
+                }
             }
         }
+        &[]
     }
 
     /// Get number of modifiers in the keymap
@@ -173,11 +172,13 @@ impl Keymap {
         super::keymap::xkb_keymap_mod_get_name(&self.inner, idx).map(|s| s.to_string())
     }
 
-    /// Get modifier mask by name
+    /// Get modifier mask by name (safe via atom_lookup_ref)
     pub fn mod_get_mask(&self, name: &str) -> u32 {
-        unsafe {
-            let name_cstr = std::ffi::CString::new(name).unwrap_or_default();
-            super::keymap::xkb_keymap_mod_get_mask(self.as_ptr() as *mut _, name_cstr.as_ptr())
+        let idx = xkb_keymap_mod_get_index_ref(&self.inner, name);
+        if idx >= self.inner.mods.num_mods {
+            0_u32
+        } else {
+            self.inner.mods.mods[idx as usize].mapping
         }
     }
 
@@ -188,14 +189,8 @@ impl Keymap {
 
     /// Get modifier maps for a key (returns (modmap, vmodmap) or None if key doesn't exist)
     pub fn key_get_mods(&self, keycode: u32) -> Option<(u32, u32)> {
-        unsafe {
-            let key = super::keymap::XkbKey(self.as_ptr() as *mut _, keycode);
-            if key.is_null() {
-                None
-            } else {
-                Some(((*key).modmap, (*key).vmodmap))
-            }
-        }
+        let key = self.inner.get_key(keycode)?;
+        Some((key.modmap, key.vmodmap))
     }
 
     /// Iterate over all keycodes in the keymap
@@ -224,7 +219,9 @@ impl Keymap {
             if state_ptr.is_null() {
                 None
             } else {
-                Some(State { ptr: state_ptr })
+                Some(State {
+                    inner: Box::from_raw(state_ptr),
+                })
             }
         }
     }
@@ -239,19 +236,13 @@ impl Keymap {
         super::keymap::xkb_keymap_layout_get_name(&self.inner, idx).map(|s| s.to_string())
     }
 
-    /// Get layout index by name
+    /// Get layout index by name (safe via atom_lookup_ref)
     pub fn layout_get_index(&self, name: &str) -> Option<u32> {
-        unsafe {
-            let name_cstr = std::ffi::CString::new(name).ok()?;
-            let idx = super::keymap::xkb_keymap_layout_get_index(
-                self.as_ptr() as *mut _,
-                name_cstr.as_ptr(),
-            );
-            if idx == u32::MAX {
-                None
-            } else {
-                Some(idx)
-            }
+        let idx = xkb_keymap_layout_get_index_ref(&self.inner, name);
+        if idx == XKB_LAYOUT_INVALID {
+            None
+        } else {
+            Some(idx)
         }
     }
 
@@ -265,19 +256,13 @@ impl Keymap {
         super::keymap::xkb_keymap_led_get_name(&self.inner, idx).map(|s| s.to_string())
     }
 
-    /// Get LED index by name
+    /// Get LED index by name (safe via atom_lookup_ref)
     pub fn led_get_index(&self, name: &str) -> Option<u32> {
-        unsafe {
-            let name_cstr = std::ffi::CString::new(name).ok()?;
-            let idx = super::keymap::xkb_keymap_led_get_index(
-                self.as_ptr() as *mut _,
-                name_cstr.as_ptr(),
-            );
-            if idx == u32::MAX {
-                None
-            } else {
-                Some(idx)
-            }
+        let idx = xkb_keymap_led_get_index_ref(&self.inner, name);
+        if idx == XKB_LED_INVALID {
+            None
+        } else {
+            Some(idx)
         }
     }
 
@@ -286,18 +271,32 @@ impl Keymap {
         super::keymap::xkb_keymap_key_get_name(&self.inner, keycode).map(|s| s.to_string())
     }
 
-    /// Get keycode by key name
+    /// Get keycode by key name (safe via atom_lookup_ref)
     pub fn key_by_name(&self, name: &str) -> Option<u32> {
-        unsafe {
-            let name_cstr = std::ffi::CString::new(name).ok()?;
-            let keycode =
-                super::keymap::xkb_keymap_key_by_name(self.as_ptr() as *mut _, name_cstr.as_ptr());
-            if keycode == 0 {
-                None
-            } else {
-                Some(keycode)
+        let km = &*self.inner;
+        let mut atom = atom_lookup_ref(&km.ctx.atom_table, name.as_bytes());
+        if atom != XKB_ATOM_NONE {
+            for alias in km.key_aliases.iter() {
+                if alias.alias == atom {
+                    atom = alias.real;
+                }
             }
         }
+        if atom == XKB_ATOM_NONE {
+            return None;
+        }
+        let start_idx = if km.num_keys_low == 0 {
+            0
+        } else {
+            km.min_key_code
+        };
+        for ki in start_idx..km.num_keys {
+            let key = &km.keys[ki as usize];
+            if key.name == atom {
+                return Some(key.keycode);
+            }
+        }
+        None
     }
 
     /// Get number of layouts for a specific key
@@ -305,19 +304,13 @@ impl Keymap {
         super::keymap::xkb_keymap_num_layouts_for_key(&self.inner, keycode)
     }
 
-    /// Get modifier index by name
+    /// Get modifier index by name (safe via atom_lookup_ref)
     pub fn mod_get_index(&self, name: &str) -> Option<u32> {
-        unsafe {
-            let name_cstr = std::ffi::CString::new(name).ok()?;
-            let idx = super::keymap::xkb_keymap_mod_get_index(
-                self.as_ptr() as *mut _,
-                name_cstr.as_ptr(),
-            );
-            if idx == u32::MAX {
-                None
-            } else {
-                Some(idx)
-            }
+        let idx = xkb_keymap_mod_get_index_ref(&self.inner, name);
+        if idx == XKB_MOD_INVALID {
+            None
+        } else {
+            Some(idx)
         }
     }
 
@@ -387,14 +380,18 @@ impl Drop for Keymap {
 }
 
 /// Safe wrapper around xkb_state with automatic cleanup
+///
+/// Owns the xkb_state via Box. The state was originally allocated by
+/// `xkb_state_new` (which uses `Box::into_raw`), and we reclaim it
+/// via `Box::from_raw` in `Keymap::new_state`.
 pub struct State {
-    ptr: *mut super::state::xkb_state,
+    inner: Box<super::state::xkb_state>,
 }
 
 impl State {
-    /// Get raw pointer (for FFI calls)
+    /// Get raw pointer (for FFI calls that still require it)
     pub fn as_ptr(&self) -> *mut super::state::xkb_state {
-        self.ptr
+        &*self.inner as *const _ as *mut _
     }
 
     /// Update key state (press or release)
@@ -403,9 +400,7 @@ impl State {
         keycode: u32,
         direction: crate::xkb::shared_types::xkb_key_direction,
     ) {
-        unsafe {
-            super::state::xkb_state_update_key(self.ptr, keycode, direction);
-        }
+        super::state::xkb_state_update_key(&mut self.inner, keycode, direction);
     }
 
     /// Get UTF-8 string for a key
@@ -413,7 +408,7 @@ impl State {
         unsafe {
             let mut buffer: [u8; 32] = [0; 32];
             let size = super::state::xkb_state_key_get_utf8(
-                self.ptr,
+                &*self.inner as *const _ as *mut _,
                 keycode,
                 buffer.as_mut_ptr() as *mut i8,
                 buffer.len(),
@@ -439,7 +434,7 @@ impl State {
 
     /// Get keysym for a key in the current state
     pub fn key_get_one_sym(&self, keycode: u32) -> u32 {
-        unsafe { super::state::xkb_state_key_get_one_sym(self.ptr, keycode) }
+        unsafe { super::state::xkb_state_key_get_one_sym(&self.inner, keycode) }
     }
 
     /// Get all keysyms for a key in the current state
@@ -447,7 +442,7 @@ impl State {
         unsafe {
             let mut syms_ptr: *const u32 = std::ptr::null();
             let num_syms =
-                super::state::xkb_state_key_get_syms(self.ptr, keycode, &mut syms_ptr as *mut _);
+                super::state::xkb_state_key_get_syms(&self.inner, keycode, &mut syms_ptr as *mut _);
 
             if num_syms > 0 && !syms_ptr.is_null() {
                 std::slice::from_raw_parts(syms_ptr, num_syms as usize)
@@ -459,56 +454,42 @@ impl State {
 
     /// Get active layout index
     pub fn serialize_layout(&self, component: u32) -> u32 {
-        unsafe { super::state::xkb_state_serialize_layout(&*self.ptr, component) }
+        super::state::xkb_state_serialize_layout(&self.inner, component)
     }
 
     /// Get active modifiers mask
     pub fn serialize_mods(&self, component: u32) -> u32 {
-        unsafe { super::state::xkb_state_serialize_mods(&*self.ptr, component) }
+        super::state::xkb_state_serialize_mods(&self.inner, component)
     }
 
     /// Check if a modifier is active
     pub fn mod_name_is_active(&self, name: &str, state_type: u32) -> bool {
-        unsafe {
-            let name_cstr = std::ffi::CString::new(name).unwrap_or_default();
-            super::state::xkb_state_mod_name_is_active(&*self.ptr, name_cstr.as_ptr(), state_type)
-                > 0
-        }
+        super::state::xkb_state_mod_name_is_active(&self.inner, name, state_type) > 0
     }
 
     /// Check if a modifier index is active
     pub fn mod_index_is_active(&self, idx: u32, state_type: u32) -> bool {
-        unsafe { super::state::xkb_state_mod_index_is_active(&*self.ptr, idx, state_type) > 0 }
+        super::state::xkb_state_mod_index_is_active(&self.inner, idx, state_type) > 0
     }
 
     /// Check if a layout is active
     pub fn layout_name_is_active(&self, name: &str, state_type: u32) -> bool {
-        unsafe {
-            let name_cstr = std::ffi::CString::new(name).unwrap_or_default();
-            super::state::xkb_state_layout_name_is_active(
-                &*self.ptr,
-                name_cstr.as_ptr(),
-                state_type,
-            ) > 0
-        }
+        super::state::xkb_state_layout_name_is_active(&self.inner, name, state_type) > 0
     }
 
     /// Check if a layout index is active
     pub fn layout_index_is_active(&self, idx: u32, state_type: u32) -> bool {
-        unsafe { super::state::xkb_state_layout_index_is_active(&*self.ptr, idx, state_type) > 0 }
+        super::state::xkb_state_layout_index_is_active(&self.inner, idx, state_type) > 0
     }
 
     /// Check if a LED is active
     pub fn led_name_is_active(&self, name: &str) -> bool {
-        unsafe {
-            let name_cstr = std::ffi::CString::new(name).unwrap_or_default();
-            super::state::xkb_state_led_name_is_active(&*self.ptr, name_cstr.as_ptr()) > 0
-        }
+        super::state::xkb_state_led_name_is_active(&self.inner, name) > 0
     }
 
     /// Check if a LED index is active
     pub fn led_index_is_active(&self, idx: u32) -> bool {
-        unsafe { super::state::xkb_state_led_index_is_active(&*self.ptr, idx) > 0 }
+        super::state::xkb_state_led_index_is_active(&self.inner, idx) > 0
     }
 
     /// Update state from modifier/layout masks (e.g., from Wayland compositor)
@@ -521,24 +502,24 @@ impl State {
         latched_layout: u32,
         locked_layout: u32,
     ) -> u32 {
-        unsafe {
-            super::state::xkb_state_update_mask(
-                self.ptr,
-                depressed_mods,
-                latched_mods,
-                locked_mods,
-                depressed_layout,
-                latched_layout,
-                locked_layout,
-            )
-        }
+        super::state::xkb_state_update_mask(
+            &mut self.inner,
+            depressed_mods,
+            latched_mods,
+            locked_mods,
+            depressed_layout,
+            latched_layout,
+            locked_layout,
+        )
     }
 }
 
 impl Drop for State {
     fn drop(&mut self) {
+        // Replicate xkb_state_unref cleanup: unref the keymap, then let Box drop the state.
+        // We skip the refcount decrement since we are the sole owner.
         unsafe {
-            super::state::xkb_state_unref(self.ptr);
+            super::keymap::xkb_keymap_unref(self.inner.keymap);
         }
     }
 }

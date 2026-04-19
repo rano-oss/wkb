@@ -54,6 +54,29 @@ pub fn atom_text(table: &atom_table, atom: u32) -> &str {
     }
 }
 
+/// Look up an existing atom without mutating the table.
+///
+/// Returns atom ID or `XKB_ATOM_NONE` if not found.
+pub fn atom_lookup_ref(table: &atom_table, input_bytes: &[u8]) -> u32 {
+    let hash = hash_buf(input_bytes);
+    for i in 0..table.index.len() {
+        let index_pos = ((hash as usize) + i) & (table.index.len() - 1);
+        if index_pos == 0 {
+            continue;
+        }
+        let existing_atom = table.index[index_pos];
+        if existing_atom == XKB_ATOM_NONE {
+            return XKB_ATOM_NONE;
+        }
+        if let Some(ref existing) = table.strings[existing_atom as usize] {
+            if existing.as_bytes() == input_bytes {
+                return existing_atom;
+            }
+        }
+    }
+    XKB_ATOM_NONE
+}
+
 /// Intern a string or look up existing atom
 ///
 /// If `add` is true, adds string to table if not found.
