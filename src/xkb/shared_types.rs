@@ -897,6 +897,30 @@ impl xkb_keymap {
         let group = &key.groups[layout as usize];
         self.types[group.type_idx as usize].num_levels
     }
+
+    /// Safe wrapper: look up a key by keycode and resolve the level for a given layout+level index.
+    /// Returns `None` if the key doesn't exist, layout is invalid, or level is out of range.
+    #[inline]
+    pub fn get_key_level<'a>(
+        &'a self,
+        key: &'a xkb_key,
+        layout: u32,
+        level: u32,
+    ) -> Option<&'a xkb_level> {
+        let layout = super::keymap::XkbWrapGroupIntoRange(
+            layout as i32,
+            key.num_groups,
+            key.out_of_range_group_policy,
+            key.out_of_range_group_number,
+        );
+        if layout == XKB_LAYOUT_INVALID {
+            return None;
+        }
+        if level >= self.key_num_levels(key, layout) {
+            return None;
+        }
+        Some(&key.groups[layout as usize].levels[level as usize])
+    }
 }
 
 // ── Inline helpers ──────────────────────────────────────────────────
@@ -966,7 +990,7 @@ pub fn entry_is_active(entry: &xkb_key_type_entry) -> bool {
 }
 
 #[inline]
-pub unsafe fn format_max_overlays(format: u32) -> xkb_overlay_index_t {
+pub fn format_max_overlays(format: u32) -> xkb_overlay_index_t {
     (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
         XKB_OVERLAY_MAX_X11 as usize
     } else {
@@ -975,7 +999,7 @@ pub unsafe fn format_max_overlays(format: u32) -> xkb_overlay_index_t {
 }
 
 #[inline]
-pub unsafe fn format_max_groups(format: u32) -> u32 {
+pub fn format_max_groups(format: u32) -> u32 {
     (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
         XKB_MAX_GROUPS_X11
     } else {
@@ -984,7 +1008,7 @@ pub unsafe fn format_max_groups(format: u32) -> u32 {
 }
 
 #[inline]
-pub unsafe fn format_boolean_controls(format: u32) -> xkb_action_controls {
+pub fn format_boolean_controls(format: u32) -> xkb_action_controls {
     (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
         CONTROL_ALL_BOOLEAN_V1 as i32
     } else {
@@ -993,22 +1017,22 @@ pub unsafe fn format_boolean_controls(format: u32) -> xkb_action_controls {
 }
 
 #[inline]
-pub unsafe fn isModsUnLockOnPressSupported(format: u32) -> bool {
+pub fn isModsUnLockOnPressSupported(format: u32) -> bool {
     format >= XKB_KEYMAP_FORMAT_TEXT_V2
 }
 
 #[inline]
-pub unsafe fn isGroupLockOnReleaseSupported(format: u32) -> bool {
+pub fn isGroupLockOnReleaseSupported(format: u32) -> bool {
     format >= XKB_KEYMAP_FORMAT_TEXT_V2
 }
 
 #[inline]
-pub unsafe fn isModsLatchOnPressSupported(format: u32) -> bool {
+pub fn isModsLatchOnPressSupported(format: u32) -> bool {
     format >= XKB_KEYMAP_FORMAT_TEXT_V2
 }
 
 #[inline]
-pub unsafe fn areOverlappingOverlaysSupported(format: u32) -> bool {
+pub fn areOverlappingOverlaysSupported(format: u32) -> bool {
     format >= XKB_KEYMAP_FORMAT_TEXT_V2
 }
 

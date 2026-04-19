@@ -455,7 +455,7 @@ fn HandleSetLatchLockMods(
     value: &ExprDef,
     _value_ptr: *mut *mut ExprDef,
 ) -> u32 {
-    let ctx: &xkb_context = unsafe { &(*keymap_info.keymap).ctx };
+    let ctx: &xkb_context = keymap_info.ctx();
     let act = action.as_mods_mut();
     let type_0: u32 = act.type_0;
     if field == ACTION_FIELD_MODIFIERS {
@@ -486,7 +486,7 @@ fn HandleSetLatchLockMods(
             return ReportFormatVersionMismatch(
                 type_0,
                 field,
-                unsafe { (*keymap_info.keymap).format },
+                keymap_info.keymap_ref().format,
                 ">= 2",
                 keymap_info.strict,
             );
@@ -535,7 +535,7 @@ fn HandleSetLatchLockMods(
                 return ReportFormatVersionMismatch(
                     type_0,
                     field,
-                    unsafe { (*keymap_info.keymap).format },
+                    keymap_info.keymap_ref().format,
                     ">= 2",
                     keymap_info.strict,
                 );
@@ -640,7 +640,7 @@ fn HandleSetLatchLockGroup(
     value: &ExprDef,
     value_ptr: *mut *mut ExprDef,
 ) -> u32 {
-    let ctx: &xkb_context = unsafe { &(*keymap_info.keymap).ctx };
+    let ctx: &xkb_context = keymap_info.ctx();
     let type_0: u32 = action.action_type();
     if field == ACTION_FIELD_GROUP {
         let act = action.as_group_mut();
@@ -697,7 +697,7 @@ fn HandleSetLatchLockGroup(
             return ReportFormatVersionMismatch(
                 type_0,
                 field,
-                unsafe { (*keymap_info.keymap).format },
+                keymap_info.keymap_ref().format,
                 ">= v2",
                 keymap_info.strict,
             );
@@ -714,7 +714,7 @@ fn HandleMovePtr(
     value: &ExprDef,
     _value_ptr: *mut *mut ExprDef,
 ) -> u32 {
-    let ctx: &xkb_context = unsafe { &(*keymap_info.keymap).ctx };
+    let ctx: &xkb_context = keymap_info.ctx();
     let type_0 = action.action_type();
     let act = action.as_ptr_mut();
     if field == ACTION_FIELD_X || field == ACTION_FIELD_Y {
@@ -781,7 +781,7 @@ fn HandlePtrBtn(
     value: &ExprDef,
     _value_ptr: *mut *mut ExprDef,
 ) -> u32 {
-    let ctx: &xkb_context = unsafe { &(*keymap_info.keymap).ctx };
+    let ctx: &xkb_context = keymap_info.ctx();
     let type_0 = action.action_type();
     let act = action.as_btn_mut();
     if field == ACTION_FIELD_BUTTON {
@@ -875,7 +875,7 @@ fn HandleSetPtrDflt(
     value: &ExprDef,
     _value_ptr: *mut *mut ExprDef,
 ) -> u32 {
-    let ctx: &xkb_context = unsafe { &(*keymap_info.keymap).ctx };
+    let ctx: &xkb_context = keymap_info.ctx();
     let type_0 = action.action_type();
     let act = action.as_dflt_mut();
     if field == ACTION_FIELD_AFFECT {
@@ -954,7 +954,7 @@ fn HandleSwitchScreen(
     value: &ExprDef,
     _value_ptr: *mut *mut ExprDef,
 ) -> u32 {
-    let ctx: &xkb_context = unsafe { &(*keymap_info.keymap).ctx };
+    let ctx: &xkb_context = keymap_info.ctx();
     let type_0 = action.action_type();
     let act = action.as_screen_mut();
     if field == ACTION_FIELD_SCREEN {
@@ -1026,7 +1026,7 @@ fn HandleSetLockControls(
     value: &ExprDef,
     _value_ptr: *mut *mut ExprDef,
 ) -> u32 {
-    let ctx: &xkb_context = unsafe { &(*keymap_info.keymap).ctx };
+    let ctx: &xkb_context = keymap_info.ctx();
     let type_0 = action.action_type();
     let act = action.as_ctrls_mut();
     if field == ACTION_FIELD_CONTROLS {
@@ -1079,10 +1079,9 @@ fn HandleRedirectKey(
             } else {
                 unreachable!()
             };
-            let valStr: &str =
-                xkb_atom_text(unsafe { &(*keymap_info.keymap).ctx.atom_table }, ident);
+            let valStr: &str = xkb_atom_text(&keymap_info.keymap_ref().ctx.atom_table, ident);
             if !valStr.is_empty() && valStr.eq_ignore_ascii_case("auto") {
-                act.keycode = unsafe { (*keymap_info.keymap).redirect_key_auto };
+                act.keycode = keymap_info.keymap_ref().redirect_key_auto;
                 return PARSER_SUCCESS;
             }
         }
@@ -1106,10 +1105,7 @@ fn HandleRedirectKey(
             log::error!(
                 "RedirectKey field {} cannot resolve <{}> to a valid key\n",
                 fieldText(field),
-                xkb_atom_text(
-                    unsafe { &(*keymap_info.keymap).ctx.atom_table },
-                    key_name_val
-                )
+                xkb_atom_text(&keymap_info.keymap_ref().ctx.atom_table, key_name_val)
             );
             return (if keymap_info.strict & PARSER_NO_FIELD_VALUE_MISMATCH != 0 {
                 PARSER_FATAL_ERROR as i32
@@ -1123,7 +1119,7 @@ fn HandleRedirectKey(
     if field == ACTION_FIELD_MODIFIERS || field == ACTION_FIELD_MODS_TO_CLEAR {
         let mut flags: xkb_action_flags = 0 as xkb_action_flags;
         let mut m: u32 = 0_u32;
-        let ctx: &xkb_context = unsafe { &(*keymap_info.keymap).ctx };
+        let ctx: &xkb_context = keymap_info.ctx();
         let r: u32 = CheckModifierField(
             ctx,
             keymap_info.strict,
@@ -1176,7 +1172,7 @@ fn HandlePrivate(
     value: &ExprDef,
     _value_ptr: *mut *mut ExprDef,
 ) -> u32 {
-    let ctx: &xkb_context = unsafe { &(*keymap_info.keymap).ctx };
+    let ctx: &xkb_context = keymap_info.ctx();
     let type_0 = action.action_type();
     let act = action.as_priv_mut();
     if field == ACTION_FIELD_TYPE {

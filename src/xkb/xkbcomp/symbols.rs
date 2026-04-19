@@ -192,10 +192,7 @@ fn InitSymbolsInfo(info: &mut SymbolsInfo<'_>, include_depth: u32, mods: &xkb_mo
     info.explicit_group = XKB_LAYOUT_INVALID;
     info.max_groups = info.keymap_info.features.max_groups;
     InitKeyInfo(info.ctx, &raw mut info.default_key);
-    InitActionsInfo(
-        unsafe { &*info.keymap_info.keymap },
-        &mut info.default_actions,
-    );
+    InitActionsInfo(info.keymap_info.keymap_ref(), &mut info.default_actions);
     InitVMods(&mut info.mods, mods, include_depth > 0_u32);
 }
 fn ClearSymbolsInfo(info: &mut SymbolsInfo<'_>) {
