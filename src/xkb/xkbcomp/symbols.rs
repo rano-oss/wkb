@@ -119,9 +119,7 @@ impl<'a> SymbolsInfo<'a> {
             keys: Vec::new(),
             default_key: KeyInfo::new_zeroed(),
             default_actions: ActionsInfo {
-                actions: [xkb_action {
-                    type_0: ACTION_TYPE_NONE,
-                }; 21],
+                actions: [xkb_action::None; 21],
             },
             group_names: Vec::new(),
             modmaps: Vec::new(),
@@ -340,8 +338,8 @@ fn MergeGroups(
                                     i.wrapping_add(1_u32),
                                     group.wrapping_add(1_u32),
                                     xkb_atom_text(&info.ctx().atom_table, key_name),
-                                    ActionTypeText(use_action.type_0),
-                                    ActionTypeText(ignore_action.type_0));
+                                    ActionTypeText(use_action.action_type()),
+                                    ActionTypeText(ignore_action.action_type()));
                             }
                         }
                         if !fromHasNoAction {
@@ -1079,7 +1077,7 @@ fn AddActionsToKey(
                 &mut (&mut (*groupi).levels)[level as usize] as *mut xkb_level;
             let ExprKind::ActionList {
                 actions: action_vec,
-            } = &(*actionList).kind
+            } = &mut (*actionList).kind
             else {
                 unreachable!()
             };
@@ -1094,22 +1092,20 @@ fn AddActionsToKey(
                 return false;
             }
             let mut actions: Vec<xkb_action> = Vec::new();
-            let mut action_iter = action_vec.iter();
+            let mut action_iter = action_vec.iter_mut();
             loop {
                 let Some(act_expr) = action_iter.next() else {
                     c2rust_current_block_102 = 1134115459065347084;
                     break;
                 };
-                let mut toAct: xkb_action = xkb_action {
-                    type_0: ACTION_TYPE_NONE,
-                };
-                let r: xkb_parser_error = HandleActionDef(
+                let mut toAct: xkb_action = xkb_action::None;
+                let r: u32 = HandleActionDef(
                     info.keymap_info,
-                    &raw mut info.default_actions,
-                    &raw mut info.mods,
-                    act_expr as *const ExprDef as *mut ExprDef,
-                    &raw mut toAct,
-                ) as xkb_parser_error;
+                    &mut info.default_actions,
+                    &info.mods,
+                    act_expr,
+                    &mut toAct,
+                ) as u32;
                 if r as u32 != PARSER_SUCCESS {
                     log::error!("[XKB-{:03}] Illegal action definition for <{}>; Action for group {}/level {} ignored\n",
                         XKB_ERROR_INVALID_VALUE as i32,
@@ -1120,10 +1116,10 @@ fn AddActionsToKey(
                         drop(actions);
                         return false;
                     } else {
-                        toAct.type_0 = ACTION_TYPE_NONE;
+                        toAct.set_none();
                     }
                 }
-                if toAct.type_0 != ACTION_TYPE_NONE {
+                if toAct.action_type() != ACTION_TYPE_NONE {
                     if (num_actions == 1_u32) as i64 != 0 {
                         (*leveli).actions = vec![toAct];
                         c2rust_current_block_102 = 1829140360157350833;
@@ -1641,6 +1637,16 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
     }
     let arrayNdx: *mut ExprDef =
         arrayNdx_opt.map_or(std::ptr::null_mut(), |r| r as *const _ as *mut _);
+    // Break immutable borrows from ExprResolveLhs so we can mutably borrow info later
+    let arrayNdx_reborrow: Option<&ExprDef> = if arrayNdx.is_null() {
+        None
+    } else {
+        Some(unsafe { &*arrayNdx })
+    };
+    let elem_owned = elem.to_owned();
+    let field_owned = field.to_owned();
+    let elem: &str = &elem_owned;
+    let field: &str = &field_owned;
     if !elem.is_empty() && elem.eq_ignore_ascii_case("key") {
         let mut temp: KeyInfo = {
             let mut init = KeyInfo::new_zeroed();
@@ -1700,6 +1706,8 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
         );
         ret = true;
     } else if !elem.is_empty() {
+        let elem_owned = elem.to_owned();
+        let field_owned = field.to_owned();
         ret = {
             let mut value_raw = stmt
                 .value
@@ -1708,11 +1716,11 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
             let r = unsafe {
                 SetDefaultActionField(
                     info.keymap_info,
-                    &raw mut info.default_actions,
-                    &raw mut info.mods,
-                    elem,
-                    field,
-                    arrayNdx,
+                    &mut info.default_actions,
+                    &mut info.mods,
+                    &elem_owned,
+                    &field_owned,
+                    arrayNdx_reborrow,
                     &raw mut value_raw,
                     stmt.merge,
                 )

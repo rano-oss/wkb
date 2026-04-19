@@ -1,4 +1,3 @@
-
 #[derive(Copy, Clone)]
 #[repr(C)]
 
@@ -186,15 +185,14 @@ pub use crate::xkb::messages::{
 };
 pub use crate::xkb::shared_types::{
     entry_is_active, format_max_overlays, real_mod_index, xkb_action, xkb_action_flags,
-    xkb_action_type, xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action,
-    xkb_internal_action, xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type,
-    xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led, xkb_level, xkb_mod,
-    xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t, xkb_overlay_mask_t,
-    xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
-    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, KeycodeMatch, XkbKey,
-    ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL,
-    ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK,
-    ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
+    xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
+    xkb_key, xkb_key_alias, xkb_key_type, xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t,
+    xkb_led, xkb_level, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t,
+    xkb_overlay_mask_t, xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action,
+    xkb_private_action, xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret,
+    KeycodeMatch, XkbKey, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y,
+    ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR,
+    ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
     ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
     ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
     ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
@@ -425,9 +423,7 @@ pub unsafe fn xkb_state_key_get_layout(state: *mut xkb_state, kc: u32) -> u32 {
     }
 }
 
-static DUMMY_ACTION: xkb_action = xkb_action {
-    type_0: ACTION_TYPE_NONE,
-};
+static DUMMY_ACTION: xkb_action = xkb_action::None;
 
 unsafe fn xkb_key_get_actions(
     state: *mut xkb_state,
@@ -478,10 +474,10 @@ unsafe fn xkb_filter_group_set_new(
 ) {
     unsafe {
         (*filter).priv_0 = (*state).components.base_group as u32;
-        if (*filter).action.group.flags & ACTION_ABSOLUTE_SWITCH != 0 {
-            (*state).components.base_group = (*filter).action.group.group;
+        if (*filter).action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
+            (*state).components.base_group = (*filter).action.as_group().group;
         } else {
-            (*state).components.base_group += (*filter).action.group.group;
+            (*state).components.base_group += (*filter).action.as_group().group;
         };
     }
 }
@@ -495,7 +491,7 @@ unsafe fn xkb_filter_group_set_func(
 ) -> bool {
     unsafe {
         if key != (*filter).key {
-            (*filter).action.group.flags = ((*filter).action.group.flags
+            (*filter).action.as_group_mut().flags = ((*filter).action.as_group().flags
                 & !(ACTION_LOCK_CLEAR as i32) as u32)
                 as xkb_action_flags;
             return XKB_FILTER_CONTINUE as i32 != 0;
@@ -517,7 +513,7 @@ unsafe fn xkb_filter_group_set_func(
             return XKB_FILTER_CONSUME as i32 != 0;
         }
         (*state).components.base_group = (*filter).priv_0 as i32;
-        if (*filter).action.group.flags & ACTION_LOCK_CLEAR != 0 {
+        if (*filter).action.as_group().flags & ACTION_LOCK_CLEAR != 0 {
             (*state).components.locked_group = 0_i32;
         }
         (*filter).func = None;
@@ -571,11 +567,11 @@ unsafe fn xkb_filter_group_lock_new(
     filter: *mut xkb_filter,
 ) {
     unsafe {
-        if (*filter).action.group.flags & ACTION_LOCK_ON_RELEASE != 0 {
-        } else if (*filter).action.group.flags & ACTION_ABSOLUTE_SWITCH != 0 {
-            (*state).components.locked_group = (*filter).action.group.group;
+        if (*filter).action.as_group().flags & ACTION_LOCK_ON_RELEASE != 0 {
+        } else if (*filter).action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
+            (*state).components.locked_group = (*filter).action.as_group().group;
         } else {
-            (*state).components.locked_group += (*filter).action.group.group;
+            (*state).components.locked_group += (*filter).action.as_group().group;
         }
     }
 }
@@ -589,10 +585,10 @@ unsafe fn xkb_filter_group_lock_func(
 ) -> bool {
     unsafe {
         if key != (*filter).key {
-            if (*filter).action.group.flags & ACTION_LOCK_ON_RELEASE != 0
+            if (*filter).action.as_group().flags & ACTION_LOCK_ON_RELEASE != 0
                 && direction == XKB_KEY_DOWN
             {
-                (*filter).action.group.flags = ((*filter).action.group.flags
+                (*filter).action.as_group_mut().flags = ((*filter).action.as_group().flags
                     & !(ACTION_LOCK_ON_RELEASE as i32) as u32)
                     as xkb_action_flags;
             }
@@ -614,11 +610,11 @@ unsafe fn xkb_filter_group_lock_func(
             }
             return XKB_FILTER_CONSUME as i32 != 0;
         }
-        if (*filter).action.group.flags & ACTION_LOCK_ON_RELEASE != 0 {
-            if (*filter).action.group.flags & ACTION_ABSOLUTE_SWITCH != 0 {
-                (*state).components.locked_group = (*filter).action.group.group;
+        if (*filter).action.as_group().flags & ACTION_LOCK_ON_RELEASE != 0 {
+            if (*filter).action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
+                (*state).components.locked_group = (*filter).action.as_group().group;
             } else {
-                (*state).components.locked_group += (*filter).action.group.group;
+                (*state).components.locked_group += (*filter).action.as_group().group;
             }
         }
         (*filter).func = None;
@@ -626,17 +622,13 @@ unsafe fn xkb_filter_group_lock_func(
     }
 }
 
-unsafe fn xkb_action_breaks_latch(
-    action: *const xkb_action,
-    flag: xkb_internal_action_flags,
-    mask: u32,
-) -> bool {
+unsafe fn xkb_action_breaks_latch(action: *const xkb_action, flag: u32, mask: u32) -> bool {
     unsafe {
-        match (*action).type_0 {
+        match (*action).action_type() {
             0 | 1 | 9 | 10 | 14 | 15 | 13 | 12 | 16 => true,
             20 => {
-                (*action).internal.flags & flag != 0
-                    && (*action).internal.clear_latched_mods & mask == mask
+                (*action).as_internal().flags & flag != 0
+                    && (*action).as_internal().clear_latched_mods & mask == mask
             }
             _ => false,
         }
@@ -652,18 +644,18 @@ unsafe fn xkb_filter_group_latch_new(
         let priv_0: group_latch_priv = group_latch_priv {
             latch_state: GroupLatchState {
                 latch: LATCH_KEY_DOWN,
-                group_delta: if (*filter).action.group.flags & ACTION_ABSOLUTE_SWITCH != 0 {
-                    (*filter).action.group.group - (*state).components.base_group
+                group_delta: if (*filter).action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
+                    (*filter).action.as_group().group - (*state).components.base_group
                 } else {
-                    (*filter).action.group.group
+                    (*filter).action.as_group().group
                 },
             },
         };
         (*filter).priv_0 = priv_0.priv_0;
-        if (*filter).action.group.flags & ACTION_ABSOLUTE_SWITCH != 0 {
-            (*state).components.base_group = (*filter).action.group.group;
+        if (*filter).action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
+            (*state).components.base_group = (*filter).action.as_group().group;
         } else {
-            (*state).components.base_group += (*filter).action.group.group;
+            (*state).components.base_group += (*filter).action.as_group().group;
         };
     }
 }
@@ -703,24 +695,28 @@ unsafe fn xkb_filter_group_latch_func(
                 }
             } else if latch as u32 == LATCH_PENDING {
                 let sticky_keys: bool = (*state).components.controls & CONTROL_STICKY_KEYS != 0;
-                let flags: xkb_action_flags = ((*filter).action.group.flags
+                let flags: xkb_action_flags = ((*filter).action.as_group().flags
                     & !(ACTION_LATCH_TO_LOCK as i32) as u32)
                     as xkb_action_flags;
                 let mut k_0: u16 = 0_u16;
                 while (k_0 as i32) < count as i32 {
-                    if (*actions.offset(k_0 as isize)).type_0 as u32 == ACTION_TYPE_GROUP_LATCH
-                        && (*actions.offset(k_0 as isize)).group.group
-                            == (*filter).action.group.group
-                        && (*actions.offset(k_0 as isize)).group.flags as u32
-                            == (*filter).action.group.flags
-                        || (*actions.offset(k_0 as isize)).type_0 as u32 == ACTION_TYPE_GROUP_SET
+                    if (*actions.offset(k_0 as isize)).action_type() as u32
+                        == ACTION_TYPE_GROUP_LATCH
+                        && (*actions.offset(k_0 as isize)).as_group().group
+                            == (*filter).action.as_group().group
+                        && (*actions.offset(k_0 as isize)).as_group().flags as u32
+                            == (*filter).action.as_group().flags
+                        || (*actions.offset(k_0 as isize)).action_type() as u32
+                            == ACTION_TYPE_GROUP_SET
                             && sticky_keys as i32 != 0
-                            && (*actions.offset(k_0 as isize)).group.flags as u32 == flags as u32
+                            && (*actions.offset(k_0 as isize)).as_group().flags as u32
+                                == flags as u32
                     {
-                        if (*filter).action.group.flags & ACTION_LATCH_TO_LOCK != 0
-                            && (*filter).action.group.group != 0_i32
+                        if (*filter).action.as_group().flags & ACTION_LATCH_TO_LOCK != 0
+                            && (*filter).action.as_group().group != 0_i32
                         {
-                            (*filter).action.type_0 = ACTION_TYPE_GROUP_LOCK;
+                            let group_data = *(*filter).action.as_group();
+                            (*filter).action = xkb_action::GroupLock(group_data);
                             (*filter).func = Some(
                                 xkb_filter_group_lock_func
                                     as unsafe fn(
@@ -760,7 +756,7 @@ unsafe fn xkb_filter_group_latch_func(
         } else if key == (*filter).key {
             if direction == XKB_KEY_REPEATED {
                 return XKB_FILTER_CONSUME as i32 != 0;
-            } else if (*filter).action.group.flags & ACTION_LOCK_CLEAR != 0
+            } else if (*filter).action.as_group().flags & ACTION_LOCK_CLEAR != 0
                 && (*state).components.locked_group != 0
             {
                 if latch as u32 == LATCH_PENDING {
@@ -793,11 +789,12 @@ unsafe fn xkb_filter_mod_set_new(
     unsafe {
         let unlock: xkb_action_flags =
             (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as xkb_action_flags;
-        if (*filter).action.mods.flags & unlock as u32 == unlock as u32 {
-            (*filter).priv_0 = (*filter).action.mods.mods.mask & !(*state).components.locked_mods;
-            (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
+        if (*filter).action.as_mods().flags & unlock as u32 == unlock as u32 {
+            (*filter).priv_0 =
+                (*filter).action.as_mods().mods.mask & !(*state).components.locked_mods;
+            (*state).components.locked_mods &= !(*filter).action.as_mods().mods.mask;
         } else {
-            (*filter).priv_0 = (*filter).action.mods.mods.mask;
+            (*filter).priv_0 = (*filter).action.as_mods().mods.mask;
         }
         (*state).set_mods |= (*filter).priv_0;
     }
@@ -812,7 +809,7 @@ unsafe fn xkb_filter_mod_set_func(
 ) -> bool {
     unsafe {
         if key != (*filter).key {
-            (*filter).action.mods.flags = ((*filter).action.mods.flags
+            (*filter).action.as_mods_mut().flags = ((*filter).action.as_mods().flags
                 & !(ACTION_LOCK_CLEAR as i32) as u32)
                 as xkb_action_flags;
             return XKB_FILTER_CONTINUE as i32 != 0;
@@ -836,8 +833,8 @@ unsafe fn xkb_filter_mod_set_func(
         (*state).clear_mods |= (*filter).priv_0;
         let unlock: xkb_action_flags =
             (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as xkb_action_flags;
-        if (*filter).action.mods.flags & unlock as u32 == ACTION_LOCK_CLEAR {
-            (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
+        if (*filter).action.as_mods().flags & unlock as u32 == ACTION_LOCK_CLEAR {
+            (*state).components.locked_mods &= !(*filter).action.as_mods().mods.mask;
         }
         (*filter).func = None;
         XKB_FILTER_CONTINUE as i32 != 0
@@ -850,16 +847,16 @@ unsafe fn xkb_filter_mod_lock_new(
     filter: *mut xkb_filter,
 ) {
     unsafe {
-        (*filter).priv_0 = (*state).components.locked_mods & (*filter).action.mods.mods.mask;
-        if (*filter).priv_0 != 0 && (*filter).action.mods.flags & ACTION_UNLOCK_ON_PRESS != 0 {
-            if (*filter).action.mods.flags & ACTION_LOCK_NO_UNLOCK == 0 {
+        (*filter).priv_0 = (*state).components.locked_mods & (*filter).action.as_mods().mods.mask;
+        if (*filter).priv_0 != 0 && (*filter).action.as_mods().flags & ACTION_UNLOCK_ON_PRESS != 0 {
+            if (*filter).action.as_mods().flags & ACTION_LOCK_NO_UNLOCK == 0 {
                 (*state).components.locked_mods &= !(*filter).priv_0;
             }
             (*filter).func = None;
         } else {
-            (*state).set_mods |= (*filter).action.mods.mods.mask;
-            if (*filter).action.mods.flags & ACTION_LOCK_NO_LOCK == 0 {
-                (*state).components.locked_mods |= (*filter).action.mods.mods.mask;
+            (*state).set_mods |= (*filter).action.as_mods().mods.mask;
+            if (*filter).action.as_mods().flags & ACTION_LOCK_NO_LOCK == 0 {
+                (*state).components.locked_mods |= (*filter).action.as_mods().mods.mask;
             }
         };
     }
@@ -892,8 +889,8 @@ unsafe fn xkb_filter_mod_lock_func(
             }
             return XKB_FILTER_CONSUME as i32 != 0;
         }
-        (*state).clear_mods |= (*filter).action.mods.mods.mask;
-        if (*filter).action.mods.flags & ACTION_LOCK_NO_UNLOCK == 0 {
+        (*state).clear_mods |= (*filter).action.as_mods().mods.mask;
+        if (*filter).action.as_mods().flags & ACTION_LOCK_NO_UNLOCK == 0 {
             (*state).components.locked_mods &= !(*filter).priv_0;
         }
         (*filter).func = None;
@@ -909,19 +906,19 @@ unsafe fn xkb_filter_mod_latch_new(
     unsafe {
         let unlockOnPress: xkb_action_flags =
             (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LATCH_ON_PRESS as i32) as xkb_action_flags;
-        if (*filter).action.mods.flags & ACTION_LOCK_CLEAR != 0
-            && (*filter).action.mods.flags & unlockOnPress as u32 != 0
-            && (*state).components.locked_mods & (*filter).action.mods.mods.mask
-                == (*filter).action.mods.mods.mask
+        if (*filter).action.as_mods().flags & ACTION_LOCK_CLEAR != 0
+            && (*filter).action.as_mods().flags & unlockOnPress as u32 != 0
+            && (*state).components.locked_mods & (*filter).action.as_mods().mods.mask
+                == (*filter).action.as_mods().mods.mask
         {
-            (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
+            (*state).components.locked_mods &= !(*filter).action.as_mods().mods.mask;
             (*filter).func = None;
-        } else if (*filter).action.mods.flags & ACTION_LATCH_ON_PRESS != 0 {
+        } else if (*filter).action.as_mods().flags & ACTION_LATCH_ON_PRESS != 0 {
             (*filter).priv_0 = LATCH_PENDING;
-            (*state).components.latched_mods |= (*filter).action.mods.mods.mask;
+            (*state).components.latched_mods |= (*filter).action.as_mods().mods.mask;
         } else {
             (*filter).priv_0 = LATCH_KEY_DOWN;
-            (*state).set_mods |= (*filter).action.mods.mods.mask;
+            (*state).set_mods |= (*filter).action.as_mods().mods.mask;
         };
     }
 }
@@ -945,7 +942,7 @@ unsafe fn xkb_filter_mod_latch_func(
                         if xkb_action_breaks_latch(
                             actions.offset(k as isize) as *const xkb_action,
                             INTERNAL_BREAKS_MOD_LATCH,
-                            (*filter).action.mods.mods.mask,
+                            (*filter).action.as_mods().mods.mask,
                         ) {
                             latch = NO_LATCH;
                             break;
@@ -958,22 +955,26 @@ unsafe fn xkb_filter_mod_latch_func(
                 }
             } else if latch as u32 == LATCH_PENDING {
                 let sticky_keys: bool = (*state).components.controls & CONTROL_STICKY_KEYS != 0;
-                let flags: xkb_action_flags = ((*filter).action.mods.flags
+                let flags: xkb_action_flags = ((*filter).action.as_mods().flags
                     & !(ACTION_LATCH_TO_LOCK as i32) as u32)
                     as xkb_action_flags;
                 let mut k_0: u16 = 0_u16;
                 while (k_0 as i32) < count as i32 {
-                    if ((*actions.offset(k_0 as isize)).type_0 as u32 == ACTION_TYPE_MOD_LATCH
-                        && (*actions.offset(k_0 as isize)).mods.flags as u32
-                            == (*filter).action.mods.flags
-                        || (*actions.offset(k_0 as isize)).type_0 as u32 == ACTION_TYPE_MOD_SET
+                    if ((*actions.offset(k_0 as isize)).action_type() as u32
+                        == ACTION_TYPE_MOD_LATCH
+                        && (*actions.offset(k_0 as isize)).as_mods().flags as u32
+                            == (*filter).action.as_mods().flags
+                        || (*actions.offset(k_0 as isize)).action_type() as u32
+                            == ACTION_TYPE_MOD_SET
                             && sticky_keys as i32 != 0
-                            && (*actions.offset(k_0 as isize)).mods.flags as u32 == flags as u32)
-                        && (*actions.offset(k_0 as isize)).mods.mods.mask
-                            == (*filter).action.mods.mods.mask
+                            && (*actions.offset(k_0 as isize)).as_mods().flags as u32
+                                == flags as u32)
+                        && (*actions.offset(k_0 as isize)).as_mods().mods.mask
+                            == (*filter).action.as_mods().mods.mask
                     {
-                        if (*filter).action.mods.flags & ACTION_LATCH_TO_LOCK != 0 {
-                            (*filter).action.type_0 = ACTION_TYPE_MOD_LOCK;
+                        if (*filter).action.as_mods().flags & ACTION_LATCH_TO_LOCK != 0 {
+                            let mods_data = *(*filter).action.as_mods();
+                            (*filter).action = xkb_action::ModLock(mods_data);
                             (*filter).func = Some(
                                 xkb_filter_mod_lock_func
                                     as unsafe fn(
@@ -995,7 +996,8 @@ unsafe fn xkb_filter_mod_latch_func(
                                 >;
                             xkb_filter_mod_lock_new(state, events, filter);
                         } else {
-                            (*filter).action.type_0 = ACTION_TYPE_MOD_SET;
+                            let mods_data = *(*filter).action.as_mods();
+                            (*filter).action = xkb_action::ModSet(mods_data);
                             (*filter).func = Some(
                                 xkb_filter_mod_set_func
                                     as unsafe fn(
@@ -1018,14 +1020,14 @@ unsafe fn xkb_filter_mod_latch_func(
                             xkb_filter_mod_set_new(state, events, filter);
                         }
                         (*filter).key = key;
-                        (*state).components.latched_mods &= !(*filter).action.mods.mods.mask;
+                        (*state).components.latched_mods &= !(*filter).action.as_mods().mods.mask;
                         return XKB_FILTER_CONSUME as i32 != 0;
                     } else if xkb_action_breaks_latch(
                         actions.offset(k_0 as isize) as *const xkb_action,
                         INTERNAL_BREAKS_MOD_LATCH,
-                        (*filter).action.mods.mods.mask,
+                        (*filter).action.as_mods().mods.mask,
                     ) {
-                        (*state).components.latched_mods &= !(*filter).action.mods.mods.mask;
+                        (*state).components.latched_mods &= !(*filter).action.as_mods().mods.mask;
                         (*filter).func = None;
                         return XKB_FILTER_CONTINUE as i32 != 0;
                     }
@@ -1039,25 +1041,25 @@ unsafe fn xkb_filter_mod_latch_func(
                 let unlockOnPress: xkb_action_flags = (ACTION_UNLOCK_ON_PRESS as i32
                     | ACTION_LATCH_ON_PRESS as i32)
                     as xkb_action_flags;
-                if (*filter).action.mods.flags & ACTION_LOCK_CLEAR != 0
-                    && (*filter).action.mods.flags & unlockOnPress as u32 == 0
-                    && (*state).components.locked_mods & (*filter).action.mods.mods.mask
-                        == (*filter).action.mods.mods.mask
+                if (*filter).action.as_mods().flags & ACTION_LOCK_CLEAR != 0
+                    && (*filter).action.as_mods().flags & unlockOnPress as u32 == 0
+                    && (*state).components.locked_mods & (*filter).action.as_mods().mods.mask
+                        == (*filter).action.as_mods().mods.mask
                 {
                     if latch as u32 == LATCH_PENDING {
-                        (*state).components.latched_mods &= !(*filter).action.mods.mods.mask;
+                        (*state).components.latched_mods &= !(*filter).action.as_mods().mods.mask;
                     } else {
-                        (*state).clear_mods |= (*filter).action.mods.mods.mask;
+                        (*state).clear_mods |= (*filter).action.as_mods().mods.mask;
                     }
-                    (*state).components.locked_mods &= !(*filter).action.mods.mods.mask;
+                    (*state).components.locked_mods &= !(*filter).action.as_mods().mods.mask;
                     (*filter).func = None;
                 } else if latch as u32 == NO_LATCH {
-                    (*state).clear_mods |= (*filter).action.mods.mods.mask;
+                    (*state).clear_mods |= (*filter).action.as_mods().mods.mask;
                     (*filter).func = None;
-                } else if (*filter).action.mods.flags & ACTION_LATCH_ON_PRESS == 0 {
+                } else if (*filter).action.as_mods().flags & ACTION_LATCH_ON_PRESS == 0 {
                     latch = LATCH_PENDING;
-                    (*state).clear_mods |= (*filter).action.mods.mods.mask;
-                    (*state).components.latched_mods |= (*filter).action.mods.mods.mask;
+                    (*state).clear_mods |= (*filter).action.as_mods().mods.mask;
+                    (*state).components.latched_mods |= (*filter).action.as_mods().mods.mask;
                 }
             }
         }
@@ -1072,16 +1074,16 @@ unsafe fn xkb_filter_ctrls_new(
     filter: *mut xkb_filter,
 ) {
     unsafe {
-        if (*filter).action.type_0 == ACTION_TYPE_CTRL_SET {
-            (*filter).priv_0 = !(*state).components.controls & (*filter).action.ctrls.ctrls;
+        if (*filter).action.action_type() == ACTION_TYPE_CTRL_SET {
+            (*filter).priv_0 = !(*state).components.controls & (*filter).action.as_ctrls().ctrls;
         } else {
-            (*filter).priv_0 = (*state).components.controls & (*filter).action.ctrls.ctrls;
+            (*filter).priv_0 = (*state).components.controls & (*filter).action.as_ctrls().ctrls;
         }
-        if (*filter).action.type_0 == ACTION_TYPE_CTRL_SET
-            || (*filter).action.ctrls.flags & ACTION_LOCK_NO_LOCK == 0
+        if (*filter).action.action_type() == ACTION_TYPE_CTRL_SET
+            || (*filter).action.as_ctrls().flags & ACTION_LOCK_NO_LOCK == 0
         {
             (*state).components.controls = ((*state).components.controls
-                | (*filter).action.ctrls.ctrls)
+                | (*filter).action.as_ctrls().ctrls)
                 as xkb_action_controls;
         }
     }
@@ -1114,8 +1116,8 @@ unsafe fn xkb_filter_ctrls_func(
             }
             return XKB_FILTER_CONSUME as i32 != 0;
         }
-        if (*filter).action.type_0 == ACTION_TYPE_CTRL_SET
-            || (*filter).action.ctrls.flags & ACTION_LOCK_NO_UNLOCK == 0
+        if (*filter).action.action_type() == ACTION_TYPE_CTRL_SET
+            || (*filter).action.as_ctrls().flags & ACTION_LOCK_NO_UNLOCK == 0
         {
             let old: xkb_action_controls = (*state).components.controls;
             (*state).components.controls = ((*state).components.controls
@@ -1210,14 +1212,14 @@ unsafe fn xkb_filter_redirect_key_new(
     filter: *mut xkb_filter,
 ) {
     unsafe {
-        if events.is_null() || (*filter).action.redirect.keycode == XKB_KEYCODE_INVALID {
+        if events.is_null() || (*filter).action.as_redirect().keycode == XKB_KEYCODE_INVALID {
             (*filter).func = None;
             return;
         }
         append_redirect_key_events(
             state,
             events,
-            &raw mut (*filter).action.redirect,
+            (*filter).action.as_redirect() as *const xkb_redirect_key_action,
             XKB_KEY_DOWN,
         );
     }
@@ -1238,7 +1240,7 @@ unsafe fn xkb_filter_redirect_key_func(
             append_redirect_key_events(
                 state,
                 events,
-                &raw mut (*filter).action.redirect,
+                (*filter).action.as_redirect() as *const xkb_redirect_key_action,
                 XKB_KEY_UP,
             );
             (*filter).func = None;
@@ -1248,14 +1250,14 @@ unsafe fn xkb_filter_redirect_key_func(
             let count: u16 = xkb_key_get_actions(state, key, &raw mut actions) as u16;
             let mut a: u16 = 0_u16;
             while (a as i32) < count as i32 {
-                if (*actions.offset(a as isize)).type_0 as u32 == ACTION_TYPE_REDIRECT_KEY
-                    && (*actions.offset(a as isize)).redirect.keycode
-                        != (*filter).action.redirect.keycode
+                if (*actions.offset(a as isize)).action_type() as u32 == ACTION_TYPE_REDIRECT_KEY
+                    && (*actions.offset(a as isize)).as_redirect().keycode
+                        != (*filter).action.as_redirect().keycode
                 {
                     append_redirect_key_events(
                         state,
                         events,
-                        &raw mut (*filter).action.redirect,
+                        (*filter).action.as_redirect() as *const xkb_redirect_key_action,
                         XKB_KEY_UP,
                     );
                     (*filter).func = None;
@@ -1264,7 +1266,12 @@ unsafe fn xkb_filter_redirect_key_func(
                 a = a.wrapping_add(1);
             }
         }
-        append_redirect_key_events(state, events, &raw mut (*filter).action.redirect, direction);
+        append_redirect_key_events(
+            state,
+            events,
+            (*filter).action.as_redirect() as *const xkb_redirect_key_action,
+            direction,
+        );
         XKB_FILTER_CONSUME as i32 != 0
     }
 }
@@ -1498,8 +1505,8 @@ unsafe fn xkb_filter_apply_all(
         let count: u16 = xkb_key_get_actions(state, key, &raw mut actions) as u16;
         let mut k: u16 = 0_u16;
         while (k as i32) < count as i32 {
-            if (((*actions.offset(k as isize)).type_0 as u32) < _ACTION_TYPE_NUM_ENTRIES)
-                && FILTER_ACTION_FUNCS[(*actions.offset(k as isize)).type_0 as usize]
+            if (((*actions.offset(k as isize)).action_type() as u32) < _ACTION_TYPE_NUM_ENTRIES)
+                && FILTER_ACTION_FUNCS[(*actions.offset(k as isize)).action_type() as usize]
                     .new
                     .is_some()
             {
@@ -1507,30 +1514,36 @@ unsafe fn xkb_filter_apply_all(
                 (*filter).key = key;
                 (*filter).action = *actions.offset(k as isize);
                 if (*state).components.controls & CONTROL_STICKY_KEYS != 0 {
-                    if (*filter).action.type_0 == ACTION_TYPE_MOD_SET {
-                        (*filter).action.type_0 = ACTION_TYPE_MOD_LATCH;
+                    if (*filter).action.action_type() == ACTION_TYPE_MOD_SET {
+                        let mods_data = *(*filter).action.as_mods();
+                        (*filter).action = xkb_action::ModLatch(mods_data);
                         if (*state).flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
-                            (*filter).action.mods.flags = ((*filter).action.mods.flags
-                                | ACTION_LATCH_TO_LOCK)
-                                as xkb_action_flags;
+                            (*filter).action.as_mods_mut().flags =
+                                ((*filter).action.as_mods().flags | ACTION_LATCH_TO_LOCK)
+                                    as xkb_action_flags;
                         }
-                    } else if (*filter).action.type_0 == ACTION_TYPE_GROUP_SET {
-                        (*filter).action.type_0 = ACTION_TYPE_GROUP_LATCH;
+                    } else if (*filter).action.action_type() == ACTION_TYPE_GROUP_SET {
+                        let group_data = *(*filter).action.as_group();
+                        (*filter).action = xkb_action::GroupLatch(group_data);
                         if (*state).flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
-                            (*filter).action.group.flags = ((*filter).action.group.flags
-                                | ACTION_LATCH_TO_LOCK)
-                                as xkb_action_flags;
+                            (*filter).action.as_group_mut().flags =
+                                ((*filter).action.as_group().flags | ACTION_LATCH_TO_LOCK)
+                                    as xkb_action_flags;
                         }
                     }
                 }
-                if (*filter).action.type_0 == ACTION_TYPE_REDIRECT_KEY {
-                    (*filter).action.redirect.affect =
-                        mod_mask_get_effective((*state).keymap, (*filter).action.redirect.affect);
-                    (*filter).action.redirect.mods =
-                        mod_mask_get_effective((*state).keymap, (*filter).action.redirect.mods);
+                if (*filter).action.action_type() == ACTION_TYPE_REDIRECT_KEY {
+                    (*filter).action.as_redirect_mut().affect = mod_mask_get_effective(
+                        (*state).keymap,
+                        (*filter).action.as_redirect().affect,
+                    );
+                    (*filter).action.as_redirect_mut().mods = mod_mask_get_effective(
+                        (*state).keymap,
+                        (*filter).action.as_redirect().mods,
+                    );
                 }
-                (*filter).func = FILTER_ACTION_FUNCS[(*filter).action.type_0 as usize].func;
-                FILTER_ACTION_FUNCS[(*filter).action.type_0 as usize]
+                (*filter).func = FILTER_ACTION_FUNCS[(*filter).action.action_type() as usize].func;
+                FILTER_ACTION_FUNCS[(*filter).action.action_type() as usize]
                     .new
                     .expect("non-null function pointer")(state, events, filter);
             }
@@ -1801,13 +1814,11 @@ unsafe fn update_latch_modifiers(
             upper: XKB_KEY_NoSymbol as u32,
             has_upper: false,
             syms: Vec::new(),
-            actions: vec![xkb_action {
-                internal: xkb_internal_action {
-                    type_0: ACTION_TYPE_INTERNAL,
-                    flags: INTERNAL_BREAKS_MOD_LATCH,
-                    clear_latched_mods: clear,
-                },
-            }],
+            actions: vec![xkb_action::Internal(xkb_internal_action {
+                type_0: ACTION_TYPE_INTERNAL,
+                flags: INTERNAL_BREAKS_MOD_LATCH,
+                clear_latched_mods: clear,
+            })],
         };
         let synthetic_key_group_break_mod_latch: xkb_group = xkb_group {
             explicit_symbols: false,
@@ -1840,16 +1851,14 @@ unsafe fn update_latch_modifiers(
             XKB_KEY_DOWN,
         );
         let key: *const xkb_key = &raw const SYNTHETIC_KEY;
-        let latch_mods: xkb_action = xkb_action {
-            mods: xkb_mod_action {
-                type_0: ACTION_TYPE_MOD_LATCH,
-                flags: 0 as xkb_action_flags,
-                mods: xkb_mods {
-                    mods: 0,
-                    mask: mask & latches,
-                },
+        let latch_mods: xkb_action = xkb_action::ModLatch(xkb_mod_action {
+            type_0: ACTION_TYPE_MOD_LATCH,
+            flags: 0 as xkb_action_flags,
+            mods: xkb_mods {
+                mods: 0,
+                mask: mask & latches,
             },
-        };
+        });
         let filter: *mut xkb_filter = xkb_filter_new(state) as *mut xkb_filter;
         (*filter).key = key;
         (*filter).func = Some(
@@ -1886,13 +1895,11 @@ unsafe fn update_latch_group(state: *mut xkb_state, events: *mut xkb_events, gro
             XKB_KEY_DOWN,
         );
         let key: *const xkb_key = &raw const SYNTHETIC_KEY;
-        let latch_group: xkb_action = xkb_action {
-            group: xkb_group_action {
-                type_0: ACTION_TYPE_GROUP_LATCH,
-                flags: ACTION_ABSOLUTE_SWITCH,
-                group,
-            },
-        };
+        let latch_group: xkb_action = xkb_action::GroupLatch(xkb_group_action {
+            type_0: ACTION_TYPE_GROUP_LATCH,
+            flags: ACTION_ABSOLUTE_SWITCH,
+            group,
+        });
         let filter: *mut xkb_filter = xkb_filter_new(state) as *mut xkb_filter;
         (*filter).key = key;
         (*filter).func = Some(
@@ -1995,40 +2002,50 @@ unsafe fn state_update_layout_policy(
                 if (*update).redirect < (*(*state).keymap).num_groups {
                     (*state).controls.out_of_range_redirect_group = (*update).redirect;
                 } else {
-                    log::error!("[XKB-{:03}] Layout policy: unsupported layout index {} > {}\n",
+                    log::error!(
+                        "[XKB-{:03}] Layout policy: unsupported layout index {} > {}\n",
                         { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
                         (*update).redirect.wrapping_add(1_u32),
-                        (*(*state).keymap).num_groups);
+                        (*(*state).keymap).num_groups
+                    );
                     return XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX;
                 }
             }
             (*state).controls.out_of_range_group_policy = (*update).policy;
             XKB_SUCCESS
         } else {
-            log::error!("[XKB-{:03}] Unsupported layout policy: {}\n",
+            log::error!(
+                "[XKB-{:03}] Unsupported layout policy: {}\n",
                 { XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY },
-                { (*update).policy });
+                { (*update).policy }
+            );
             XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY
         }
     }
 }
 
-unsafe fn log_abi_error(_ctx: *mut xkb_context, func: &str, error: xkb_error_code) {
+fn log_abi_error(_ctx: *mut xkb_context, func: &str, error: xkb_error_code) {
     match error {
         450 => {
-            log::error!("[XKB-{:03}] {}: ABI error: unsupported versioned struct\n",
+            log::error!(
+                "[XKB-{:03}] {}: ABI error: unsupported versioned struct\n",
                 { XKB_ERROR_ABI_INVALID_STRUCT_SIZE },
-                func);
+                func
+            );
         }
         914 => {
-            log::error!("[XKB-{:03}] {}: ABI version mismatch: missing newer required fields\n",
+            log::error!(
+                "[XKB-{:03}] {}: ABI version mismatch: missing newer required fields\n",
                 { XKB_ERROR_ABI_BACKWARD_COMPAT },
-                func);
+                func
+            );
         }
         876 => {
-            log::error!("[XKB-{:03}] {}: ABI version mismatch: cannot use newer fields\n",
+            log::error!(
+                "[XKB-{:03}] {}: ABI version mismatch: cannot use newer fields\n",
                 { XKB_ERROR_ABI_FORWARD_COMPAT },
-                func);
+                func
+            );
         }
         _ => {}
     };
@@ -2624,13 +2641,11 @@ unsafe fn c2rust_run_static_initializers() {
                 upper: XKB_KEY_NoSymbol as u32,
                 has_upper: false,
                 syms: Vec::new(),
-                actions: vec![xkb_action {
-                    internal: xkb_internal_action {
-                        type_0: ACTION_TYPE_INTERNAL,
-                        flags: INTERNAL_BREAKS_GROUP_LATCH,
-                        clear_latched_mods: 0,
-                    },
-                }],
+                actions: vec![xkb_action::Internal(xkb_internal_action {
+                    type_0: ACTION_TYPE_INTERNAL,
+                    flags: INTERNAL_BREAKS_GROUP_LATCH,
+                    clear_latched_mods: 0,
+                })],
             }],
         };
         SYNTHETIC_KEY_BREAK_GROUP_LATCH = xkb_key {

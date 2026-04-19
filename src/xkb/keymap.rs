@@ -48,24 +48,24 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
 };
 pub use crate::xkb::shared_types::{
-    entry_is_active, xkb_action, xkb_action_controls, xkb_action_flags, xkb_action_type,
-    xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
-    xkb_internal_action_flags, xkb_key, xkb_key_alias, xkb_key_type, xkb_key_type_entry,
-    xkb_keymap, xkb_keymap_format_ops, xkb_keysym_count_t, xkb_led, xkb_level, xkb_mod,
-    xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_mask_t, xkb_pointer_action,
-    xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
-    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, KeycodeMatch, XkbKey,
-    XkbKeyNumLevels, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL,
-    ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK,
-    ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
-    ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
-    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
-    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
-    ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK,
-    ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE,
-    ACTION_TYPE_UNKNOWN, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS,
-    CONTROL_ALL, CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX,
-    CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
+    entry_is_active, xkb_action, xkb_action_controls, xkb_action_flags, xkb_controls_action,
+    xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action, xkb_key,
+    xkb_key_alias, xkb_key_type, xkb_key_type_entry, xkb_keymap, xkb_keymap_format_ops,
+    xkb_keysym_count_t, xkb_led, xkb_level, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods,
+    xkb_overlay_mask_t, xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action,
+    xkb_private_action, xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret,
+    KeycodeMatch, XkbKey, XkbKeyNumLevels, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X,
+    ACTION_ABSOLUTE_Y, ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK,
+    ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE,
+    ACTION_MODS_LOOKUP_MODMAP, ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN,
+    ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
+    ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK,
+    ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON,
+    ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY,
+    ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
+    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, ACTION_UNLOCK_ON_PRESS, CONTROL_ALL,
+    CONTROL_ALL_BOOLEAN, CONTROL_ALL_BOOLEAN_V1, CONTROL_ALL_V1, CONTROL_AX, CONTROL_AX_FEEDBACK,
+    CONTROL_AX_TIMEOUT, CONTROL_BELL, CONTROL_DEBOUNCE, CONTROL_GROUPS_WRAP,
     CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL, CONTROL_OVERLAY1,
     CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5, CONTROL_OVERLAY6,
     CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW, CONTROL_STICKY_KEYS,
@@ -154,10 +154,8 @@ unsafe impl Sync for SyncPtr {}
 unsafe impl Send for SyncPtr {}
 
 static KEYMAP_FORMAT_OPS: LazyLock<[SyncPtr; 3]> = LazyLock::new(|| {
-    let ptr = unsafe {
-        &raw const crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_format_ops as *const _
-            as *const xkb_keymap_format_ops
-    };
+    let ptr = &raw const crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_format_ops as *const _
+        as *const xkb_keymap_format_ops;
     [SyncPtr(std::ptr::null()), SyncPtr(ptr), SyncPtr(ptr)]
 });
 
@@ -664,78 +662,80 @@ pub fn XkbModNameToIndex(mods: &xkb_mod_set, name: u32, type_0: u32) -> u32 {
 pub unsafe fn XkbLevelsSameSyms(a: *const xkb_level, b: *const xkb_level) -> bool {
     unsafe { (*a).syms == (*b).syms }
 }
-pub unsafe fn action_equal(a: *const xkb_action, b: *const xkb_action) -> bool {
-    unsafe {
-        if (*a).type_0 != (*b).type_0 {
-            return false;
+pub fn action_equal(a: &xkb_action, b: &xkb_action) -> bool {
+    if a.action_type() != b.action_type() {
+        return false;
+    }
+    match a.action_type() {
+        0 | 1 => true,
+        2..=4 => {
+            let am = a.as_mods();
+            let bm = b.as_mods();
+            am.flags == bm.flags && am.mods.mask == bm.mods.mask && am.mods.mods == bm.mods.mods
         }
-        match (*a).type_0 {
-            0 | 1 => true,
-            2..=4 => {
-                (*a).mods.flags == (*b).mods.flags
-                    && (*a).mods.mods.mask == (*b).mods.mods.mask
-                    && (*a).mods.mods.mods == (*b).mods.mods.mods
-            }
-            5..=7 => (*a).group.flags == (*b).group.flags && (*a).group.group == (*b).group.group,
-            8 => {
-                (*a).ptr.flags == (*b).ptr.flags
-                    && (*a).ptr.x as i32 == (*b).ptr.x as i32
-                    && (*a).ptr.y as i32 == (*b).ptr.y as i32
-            }
-            9 | 10 => {
-                (*a).btn.flags == (*b).btn.flags
-                    && (*a).btn.button as i32 == (*b).btn.button as i32
-                    && (*a).btn.count as i32 == (*b).btn.count as i32
-            }
-            11 => {
-                (*a).dflt.flags == (*b).dflt.flags
-                    && (*a).dflt.value as i32 == (*b).dflt.value as i32
-            }
-            12 => true,
-            13 => {
-                (*a).screen.flags == (*b).screen.flags
-                    && (*a).screen.screen as i32 == (*b).screen.screen as i32
-            }
-            14 | 15 => (*a).ctrls.flags == (*b).ctrls.flags && (*a).ctrls.ctrls == (*b).ctrls.ctrls,
-            16 => {
-                (*a).redirect.keycode == (*b).redirect.keycode
-                    && (*a).redirect.affect == (*b).redirect.affect
-                    && (*a).redirect.mods == (*b).redirect.mods
-            }
-            17 | 18 => true,
-            20 => {
-                (*a).internal.flags == (*b).internal.flags
-                    && (*a).internal.clear_latched_mods == (*b).internal.clear_latched_mods
-            }
-            _ => {
-                std::slice::from_raw_parts(
-                    &raw const (*a).priv_0.data as *const u8,
-                    std::mem::size_of::<[u8; 7]>(),
-                ) == std::slice::from_raw_parts(
-                    &raw const (*b).priv_0.data as *const u8,
-                    std::mem::size_of::<[u8; 7]>(),
-                )
-            }
+        5..=7 => {
+            let ag = a.as_group();
+            let bg = b.as_group();
+            ag.flags == bg.flags && ag.group == bg.group
         }
+        8 => {
+            let ap = a.as_ptr();
+            let bp = b.as_ptr();
+            ap.flags == bp.flags && ap.x as i32 == bp.x as i32 && ap.y as i32 == bp.y as i32
+        }
+        9 | 10 => {
+            let ab = a.as_btn();
+            let bb = b.as_btn();
+            ab.flags == bb.flags
+                && ab.button as i32 == bb.button as i32
+                && ab.count as i32 == bb.count as i32
+        }
+        11 => {
+            let ad = a.as_dflt();
+            let bd = b.as_dflt();
+            ad.flags == bd.flags && ad.value as i32 == bd.value as i32
+        }
+        12 => true,
+        13 => {
+            let as_ = a.as_screen();
+            let bs = b.as_screen();
+            as_.flags == bs.flags && as_.screen as i32 == bs.screen as i32
+        }
+        14 | 15 => {
+            let ac = a.as_ctrls();
+            let bc = b.as_ctrls();
+            ac.flags == bc.flags && ac.ctrls == bc.ctrls
+        }
+        16 => {
+            let ar = a.as_redirect();
+            let br = b.as_redirect();
+            ar.keycode == br.keycode && ar.affect == br.affect && ar.mods == br.mods
+        }
+        17 | 18 => true,
+        20 => {
+            let ai = a.as_internal();
+            let bi = b.as_internal();
+            ai.flags == bi.flags && ai.clear_latched_mods == bi.clear_latched_mods
+        }
+        _ => a.as_priv().data == b.as_priv().data,
     }
 }
 pub unsafe fn XkbLevelsSameActions(a: *const xkb_level, b: *const xkb_level) -> bool {
     unsafe {
-        if (*a).actions.len() != (*b).actions.len() {
+        let a_actions = &(*a).actions;
+        let b_actions = &(*b).actions;
+        if a_actions.len() != b_actions.len() {
             return false;
         }
-        for k in 0..(*a).actions.len() {
-            if !action_equal(
-                &(&(*a).actions)[k] as *const xkb_action,
-                &(&(*b).actions)[k] as *const xkb_action,
-            ) {
+        for k in 0..a_actions.len() {
+            if !action_equal(&a_actions[k], &b_actions[k]) {
                 return false;
             }
         }
         true
     }
 }
-pub unsafe fn XkbWrapGroupIntoRange(
+pub fn XkbWrapGroupIntoRange(
     group: i32,
     num_groups: u32,
     out_of_range_group_policy: u32,

@@ -499,31 +499,29 @@ pub struct XkbFile {
 
 // ── xkbcomp_priv types (parser/keymap info) ─────────────────────────
 
-pub type xkb_parser_error = u32;
-pub const PARSER_FATAL_ERROR: xkb_parser_error = 2;
-pub const PARSER_RECOVERABLE_ERROR: xkb_parser_error = 1;
-pub const PARSER_SUCCESS: xkb_parser_error = 0;
+pub const PARSER_FATAL_ERROR: u32 = 2;
+pub const PARSER_RECOVERABLE_ERROR: u32 = 1;
+pub const PARSER_SUCCESS: u32 = 0;
 
-pub type xkb_parser_strict_flags = u32;
-pub const PARSER_V2_LAX_FLAGS: xkb_parser_strict_flags = 0;
-pub const PARSER_V2_STRICT_FLAGS: xkb_parser_strict_flags = 16383;
-pub const PARSER_V1_LAX_FLAGS: xkb_parser_strict_flags = 16379;
-pub const PARSER_V1_STRICT_FLAGS: xkb_parser_strict_flags = 16383;
-pub const PARSER_NO_ILLEGAL_ACTION_FIELDS: xkb_parser_strict_flags = 8192;
-pub const PARSER_NO_UNKNOWN_ACTION_FIELDS: xkb_parser_strict_flags = 4096;
-pub const PARSER_NO_UNKNOWN_ACTION: xkb_parser_strict_flags = 2048;
-pub const PARSER_NO_UNKNOWN_KEY_FIELDS: xkb_parser_strict_flags = 1024;
-pub const PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS: xkb_parser_strict_flags = 512;
-pub const PARSER_NO_UNKNOWN_LED_FIELDS: xkb_parser_strict_flags = 256;
-pub const PARSER_NO_UNKNOWN_INTERPRET_FIELDS: xkb_parser_strict_flags = 128;
-pub const PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS: xkb_parser_strict_flags = 64;
-pub const PARSER_NO_UNKNOWN_TYPE_FIELDS: xkb_parser_strict_flags = 32;
-pub const PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS: xkb_parser_strict_flags = 16;
-pub const PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS: xkb_parser_strict_flags = 8;
-pub const PARSER_NO_FIELD_VALUE_MISMATCH: xkb_parser_strict_flags = 4;
-pub const PARSER_NO_FIELD_TYPE_MISMATCH: xkb_parser_strict_flags = 2;
-pub const PARSER_NO_UNKNOWN_STATEMENTS: xkb_parser_strict_flags = 1;
-pub const PARSER_NO_STRICT_FLAGS: xkb_parser_strict_flags = 0;
+pub const PARSER_V2_LAX_FLAGS: u32 = 0;
+pub const PARSER_V2_STRICT_FLAGS: u32 = 16383;
+pub const PARSER_V1_LAX_FLAGS: u32 = 16379;
+pub const PARSER_V1_STRICT_FLAGS: u32 = 16383;
+pub const PARSER_NO_ILLEGAL_ACTION_FIELDS: u32 = 8192;
+pub const PARSER_NO_UNKNOWN_ACTION_FIELDS: u32 = 4096;
+pub const PARSER_NO_UNKNOWN_ACTION: u32 = 2048;
+pub const PARSER_NO_UNKNOWN_KEY_FIELDS: u32 = 1024;
+pub const PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS: u32 = 512;
+pub const PARSER_NO_UNKNOWN_LED_FIELDS: u32 = 256;
+pub const PARSER_NO_UNKNOWN_INTERPRET_FIELDS: u32 = 128;
+pub const PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS: u32 = 64;
+pub const PARSER_NO_UNKNOWN_TYPE_FIELDS: u32 = 32;
+pub const PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS: u32 = 16;
+pub const PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS: u32 = 8;
+pub const PARSER_NO_FIELD_VALUE_MISMATCH: u32 = 4;
+pub const PARSER_NO_FIELD_TYPE_MISMATCH: u32 = 2;
+pub const PARSER_NO_UNKNOWN_STATEMENTS: u32 = 1;
+pub const PARSER_NO_STRICT_FLAGS: u32 = 0;
 
 #[repr(C)]
 pub struct pending_computation {
@@ -535,7 +533,7 @@ pub struct pending_computation {
 #[repr(C)]
 pub struct xkb_keymap_info {
     pub keymap: *mut xkb_keymap,
-    pub strict: xkb_parser_strict_flags,
+    pub strict: u32,
     pub features: XkbcompFeatures,
     pub lookup: XkbcompLookup,
     pub pending_computations: Vec<pending_computation>,

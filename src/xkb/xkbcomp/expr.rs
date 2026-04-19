@@ -504,7 +504,7 @@ pub fn ExprResolveGroup(
     absolute: bool,
     group_rtrn: &mut u32,
     pending: &mut bool,
-) -> xkb_parser_error {
+) -> u32 {
     static PENDING_GROUP_INDEX_NAMES: [LookupEntry; 2] = [
         LookupEntry {
             name: GROUP_LAST_INDEX_NAME,
@@ -532,7 +532,7 @@ pub fn ExprResolveGroup(
             PARSER_FATAL_ERROR as i32
         } else {
             PARSER_RECOVERABLE_ERROR as i32
-        }) as xkb_parser_error;
+        }) as u32;
     }
     if result < absolute as i64 || result > keymap_info.features.max_groups as i64 {
         log::error!(
@@ -546,7 +546,7 @@ pub fn ExprResolveGroup(
             PARSER_FATAL_ERROR as i32
         } else {
             PARSER_RECOVERABLE_ERROR as i32
-        }) as xkb_parser_error;
+        }) as u32;
     }
     *group_rtrn = result as u32;
     PARSER_SUCCESS

@@ -146,77 +146,344 @@ pub struct xkb_sym_interpret {
 }
 
 #[derive(Copy, Clone)]
-#[repr(C)]
-pub union xkb_action {
-    pub type_0: xkb_action_type,
-    pub mods: xkb_mod_action,
-    pub group: xkb_group_action,
-    pub ctrls: xkb_controls_action,
-    pub dflt: xkb_pointer_default_action,
-    pub screen: xkb_switch_screen_action,
-    pub ptr: xkb_pointer_action,
-    pub btn: xkb_pointer_button_action,
-    pub redirect: xkb_redirect_key_action,
-    pub priv_0: xkb_private_action,
-    pub internal: xkb_internal_action,
+pub enum xkb_action {
+    None,
+    Void,
+    ModSet(xkb_mod_action),
+    ModLatch(xkb_mod_action),
+    ModLock(xkb_mod_action),
+    GroupSet(xkb_group_action),
+    GroupLatch(xkb_group_action),
+    GroupLock(xkb_group_action),
+    PtrMove(xkb_pointer_action),
+    PtrButton(xkb_pointer_button_action),
+    PtrLock(xkb_pointer_button_action),
+    PtrDefault(xkb_pointer_default_action),
+    Terminate,
+    SwitchVt(xkb_switch_screen_action),
+    CtrlSet(xkb_controls_action),
+    CtrlLock(xkb_controls_action),
+    RedirectKey(xkb_redirect_key_action),
+    UnsupportedLegacy,
+    Unknown,
+    Private(xkb_private_action),
+    Internal(xkb_internal_action),
 }
 
-#[derive(Copy, Clone)]
+impl Default for xkb_action {
+    fn default() -> Self {
+        xkb_action::None
+    }
+}
+
+impl xkb_action {
+    pub fn action_type(&self) -> u32 {
+        match self {
+            xkb_action::None => ACTION_TYPE_NONE,
+            xkb_action::Void => ACTION_TYPE_VOID,
+            xkb_action::ModSet(_) => ACTION_TYPE_MOD_SET,
+            xkb_action::ModLatch(_) => ACTION_TYPE_MOD_LATCH,
+            xkb_action::ModLock(_) => ACTION_TYPE_MOD_LOCK,
+            xkb_action::GroupSet(_) => ACTION_TYPE_GROUP_SET,
+            xkb_action::GroupLatch(_) => ACTION_TYPE_GROUP_LATCH,
+            xkb_action::GroupLock(_) => ACTION_TYPE_GROUP_LOCK,
+            xkb_action::PtrMove(_) => ACTION_TYPE_PTR_MOVE,
+            xkb_action::PtrButton(_) => ACTION_TYPE_PTR_BUTTON,
+            xkb_action::PtrLock(_) => ACTION_TYPE_PTR_LOCK,
+            xkb_action::PtrDefault(_) => ACTION_TYPE_PTR_DEFAULT,
+            xkb_action::Terminate => ACTION_TYPE_TERMINATE,
+            xkb_action::SwitchVt(_) => ACTION_TYPE_SWITCH_VT,
+            xkb_action::CtrlSet(_) => ACTION_TYPE_CTRL_SET,
+            xkb_action::CtrlLock(_) => ACTION_TYPE_CTRL_LOCK,
+            xkb_action::RedirectKey(_) => ACTION_TYPE_REDIRECT_KEY,
+            xkb_action::UnsupportedLegacy => ACTION_TYPE_UNSUPPORTED_LEGACY,
+            xkb_action::Unknown => ACTION_TYPE_UNKNOWN,
+            xkb_action::Private(_) => ACTION_TYPE_PRIVATE,
+            xkb_action::Internal(_) => ACTION_TYPE_INTERNAL,
+        }
+    }
+
+    pub fn from_type(t: u32) -> Self {
+        match t {
+            ACTION_TYPE_NONE => xkb_action::None,
+            ACTION_TYPE_VOID => xkb_action::Void,
+            ACTION_TYPE_MOD_SET => xkb_action::ModSet(xkb_mod_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_MOD_LATCH => xkb_action::ModLatch(xkb_mod_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_MOD_LOCK => xkb_action::ModLock(xkb_mod_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_GROUP_SET => xkb_action::GroupSet(xkb_group_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_GROUP_LATCH => xkb_action::GroupLatch(xkb_group_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_GROUP_LOCK => xkb_action::GroupLock(xkb_group_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_PTR_MOVE => xkb_action::PtrMove(xkb_pointer_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_PTR_BUTTON => xkb_action::PtrButton(xkb_pointer_button_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_PTR_LOCK => xkb_action::PtrLock(xkb_pointer_button_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_PTR_DEFAULT => xkb_action::PtrDefault(xkb_pointer_default_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_TERMINATE => xkb_action::Terminate,
+            ACTION_TYPE_SWITCH_VT => xkb_action::SwitchVt(xkb_switch_screen_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_CTRL_SET => xkb_action::CtrlSet(xkb_controls_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_CTRL_LOCK => xkb_action::CtrlLock(xkb_controls_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_REDIRECT_KEY => xkb_action::RedirectKey(xkb_redirect_key_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_UNSUPPORTED_LEGACY => xkb_action::UnsupportedLegacy,
+            ACTION_TYPE_UNKNOWN => xkb_action::Unknown,
+            ACTION_TYPE_PRIVATE => xkb_action::Private(xkb_private_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            ACTION_TYPE_INTERNAL => xkb_action::Internal(xkb_internal_action {
+                type_0: t,
+                ..Default::default()
+            }),
+            _ => xkb_action::None,
+        }
+    }
+
+    pub fn set_none(&mut self) {
+        *self = xkb_action::None;
+    }
+
+    pub fn as_mods(&self) -> &xkb_mod_action {
+        match self {
+            xkb_action::ModSet(m) | xkb_action::ModLatch(m) | xkb_action::ModLock(m) => m,
+            _ => panic!("not a mod action"),
+        }
+    }
+    pub fn as_mods_mut(&mut self) -> &mut xkb_mod_action {
+        match self {
+            xkb_action::ModSet(m) | xkb_action::ModLatch(m) | xkb_action::ModLock(m) => m,
+            _ => panic!("not a mod action"),
+        }
+    }
+
+    pub fn as_group(&self) -> &xkb_group_action {
+        match self {
+            xkb_action::GroupSet(g) | xkb_action::GroupLatch(g) | xkb_action::GroupLock(g) => g,
+            _ => panic!("not a group action"),
+        }
+    }
+    pub fn as_group_mut(&mut self) -> &mut xkb_group_action {
+        match self {
+            xkb_action::GroupSet(g) | xkb_action::GroupLatch(g) | xkb_action::GroupLock(g) => g,
+            _ => panic!("not a group action"),
+        }
+    }
+
+    pub fn as_ctrls(&self) -> &xkb_controls_action {
+        match self {
+            xkb_action::CtrlSet(c) | xkb_action::CtrlLock(c) => c,
+            _ => panic!("not a ctrls action"),
+        }
+    }
+    pub fn as_ctrls_mut(&mut self) -> &mut xkb_controls_action {
+        match self {
+            xkb_action::CtrlSet(c) | xkb_action::CtrlLock(c) => c,
+            _ => panic!("not a ctrls action"),
+        }
+    }
+
+    pub fn as_ptr(&self) -> &xkb_pointer_action {
+        match self {
+            xkb_action::PtrMove(p) => p,
+            _ => panic!("not a ptr action"),
+        }
+    }
+    pub fn as_ptr_mut(&mut self) -> &mut xkb_pointer_action {
+        match self {
+            xkb_action::PtrMove(p) => p,
+            _ => panic!("not a ptr action"),
+        }
+    }
+
+    pub fn as_btn(&self) -> &xkb_pointer_button_action {
+        match self {
+            xkb_action::PtrButton(b) | xkb_action::PtrLock(b) => b,
+            _ => panic!("not a btn action"),
+        }
+    }
+    pub fn as_btn_mut(&mut self) -> &mut xkb_pointer_button_action {
+        match self {
+            xkb_action::PtrButton(b) | xkb_action::PtrLock(b) => b,
+            _ => panic!("not a btn action"),
+        }
+    }
+
+    pub fn as_dflt(&self) -> &xkb_pointer_default_action {
+        match self {
+            xkb_action::PtrDefault(d) => d,
+            _ => panic!("not a dflt action"),
+        }
+    }
+    pub fn as_dflt_mut(&mut self) -> &mut xkb_pointer_default_action {
+        match self {
+            xkb_action::PtrDefault(d) => d,
+            _ => panic!("not a dflt action"),
+        }
+    }
+
+    pub fn as_screen(&self) -> &xkb_switch_screen_action {
+        match self {
+            xkb_action::SwitchVt(s) => s,
+            _ => panic!("not a screen action"),
+        }
+    }
+    pub fn as_screen_mut(&mut self) -> &mut xkb_switch_screen_action {
+        match self {
+            xkb_action::SwitchVt(s) => s,
+            _ => panic!("not a screen action"),
+        }
+    }
+
+    pub fn as_redirect(&self) -> &xkb_redirect_key_action {
+        match self {
+            xkb_action::RedirectKey(r) => r,
+            _ => panic!("not a redirect action"),
+        }
+    }
+    pub fn as_redirect_mut(&mut self) -> &mut xkb_redirect_key_action {
+        match self {
+            xkb_action::RedirectKey(r) => r,
+            _ => panic!("not a redirect action"),
+        }
+    }
+
+    pub fn as_priv(&self) -> &xkb_private_action {
+        match self {
+            xkb_action::Private(p) => p,
+            _ => panic!("not a priv action"),
+        }
+    }
+    pub fn as_priv_mut(&mut self) -> &mut xkb_private_action {
+        match self {
+            xkb_action::Private(p) => p,
+            _ => panic!("not a priv action"),
+        }
+    }
+
+    pub fn as_internal(&self) -> &xkb_internal_action {
+        match self {
+            xkb_action::Internal(i) => i,
+            _ => panic!("not an internal action"),
+        }
+    }
+    pub fn as_internal_mut(&mut self) -> &mut xkb_internal_action {
+        match self {
+            xkb_action::Internal(i) => i,
+            _ => panic!("not an internal action"),
+        }
+    }
+
+    pub fn flags(&self) -> xkb_action_flags {
+        match self {
+            xkb_action::ModSet(m) | xkb_action::ModLatch(m) | xkb_action::ModLock(m) => m.flags,
+            xkb_action::GroupSet(g) | xkb_action::GroupLatch(g) | xkb_action::GroupLock(g) => {
+                g.flags
+            }
+            xkb_action::CtrlSet(c) | xkb_action::CtrlLock(c) => c.flags,
+            xkb_action::PtrMove(p) => p.flags,
+            xkb_action::PtrButton(b) | xkb_action::PtrLock(b) => b.flags,
+            xkb_action::PtrDefault(d) => d.flags,
+            xkb_action::SwitchVt(s) => s.flags,
+            xkb_action::RedirectKey(_) => 0,
+            xkb_action::Internal(i) => i.flags,
+            _ => 0,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct xkb_internal_action {
-    pub type_0: xkb_action_type,
-    pub flags: xkb_internal_action_flags,
+    pub type_0: u32,
+    pub flags: u32,
     pub clear_latched_mods: u32,
 }
 
-pub type xkb_internal_action_flags = u32;
-pub const INTERNAL_BREAKS_MOD_LATCH: xkb_internal_action_flags = 2;
-pub const INTERNAL_BREAKS_GROUP_LATCH: xkb_internal_action_flags = 1;
+pub const INTERNAL_BREAKS_MOD_LATCH: u32 = 2;
+pub const INTERNAL_BREAKS_GROUP_LATCH: u32 = 1;
 
-pub type xkb_action_type = u32;
-pub const _ACTION_TYPE_NUM_ENTRIES: xkb_action_type = 21;
-pub const ACTION_TYPE_INTERNAL: xkb_action_type = 20;
-pub const ACTION_TYPE_PRIVATE: xkb_action_type = 19;
-pub const ACTION_TYPE_UNKNOWN: xkb_action_type = 18;
-pub const ACTION_TYPE_UNSUPPORTED_LEGACY: xkb_action_type = 17;
-pub const ACTION_TYPE_REDIRECT_KEY: xkb_action_type = 16;
-pub const ACTION_TYPE_CTRL_LOCK: xkb_action_type = 15;
-pub const ACTION_TYPE_CTRL_SET: xkb_action_type = 14;
-pub const ACTION_TYPE_SWITCH_VT: xkb_action_type = 13;
-pub const ACTION_TYPE_TERMINATE: xkb_action_type = 12;
-pub const ACTION_TYPE_PTR_DEFAULT: xkb_action_type = 11;
-pub const ACTION_TYPE_PTR_LOCK: xkb_action_type = 10;
-pub const ACTION_TYPE_PTR_BUTTON: xkb_action_type = 9;
-pub const ACTION_TYPE_PTR_MOVE: xkb_action_type = 8;
-pub const ACTION_TYPE_GROUP_LOCK: xkb_action_type = 7;
-pub const ACTION_TYPE_GROUP_LATCH: xkb_action_type = 6;
-pub const ACTION_TYPE_GROUP_SET: xkb_action_type = 5;
-pub const ACTION_TYPE_MOD_LOCK: xkb_action_type = 4;
-pub const ACTION_TYPE_MOD_LATCH: xkb_action_type = 3;
-pub const ACTION_TYPE_MOD_SET: xkb_action_type = 2;
-pub const ACTION_TYPE_VOID: xkb_action_type = 1;
-pub const ACTION_TYPE_NONE: xkb_action_type = 0;
+pub const _ACTION_TYPE_NUM_ENTRIES: u32 = 21;
+pub const ACTION_TYPE_INTERNAL: u32 = 20;
+pub const ACTION_TYPE_PRIVATE: u32 = 19;
+pub const ACTION_TYPE_UNKNOWN: u32 = 18;
+pub const ACTION_TYPE_UNSUPPORTED_LEGACY: u32 = 17;
+pub const ACTION_TYPE_REDIRECT_KEY: u32 = 16;
+pub const ACTION_TYPE_CTRL_LOCK: u32 = 15;
+pub const ACTION_TYPE_CTRL_SET: u32 = 14;
+pub const ACTION_TYPE_SWITCH_VT: u32 = 13;
+pub const ACTION_TYPE_TERMINATE: u32 = 12;
+pub const ACTION_TYPE_PTR_DEFAULT: u32 = 11;
+pub const ACTION_TYPE_PTR_LOCK: u32 = 10;
+pub const ACTION_TYPE_PTR_BUTTON: u32 = 9;
+pub const ACTION_TYPE_PTR_MOVE: u32 = 8;
+pub const ACTION_TYPE_GROUP_LOCK: u32 = 7;
+pub const ACTION_TYPE_GROUP_LATCH: u32 = 6;
+pub const ACTION_TYPE_GROUP_SET: u32 = 5;
+pub const ACTION_TYPE_MOD_LOCK: u32 = 4;
+pub const ACTION_TYPE_MOD_LATCH: u32 = 3;
+pub const ACTION_TYPE_MOD_SET: u32 = 2;
+pub const ACTION_TYPE_VOID: u32 = 1;
+pub const ACTION_TYPE_NONE: u32 = 0;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct xkb_private_action {
-    pub type_0: xkb_action_type,
+    pub type_0: u32,
     pub data: [u8; 7],
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct xkb_redirect_key_action {
-    pub type_0: xkb_action_type,
+    pub type_0: u32,
     pub keycode: u32,
     pub affect: u32,
     pub mods: u32,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct xkb_pointer_button_action {
-    pub type_0: xkb_action_type,
+    pub type_0: u32,
     pub flags: xkb_action_flags,
     pub count: u8,
     pub button: u8,
@@ -238,35 +505,35 @@ pub const ACTION_LOCK_NO_LOCK: xkb_action_flags = 4;
 pub const ACTION_LATCH_TO_LOCK: xkb_action_flags = 2;
 pub const ACTION_LOCK_CLEAR: xkb_action_flags = 1;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct xkb_pointer_action {
-    pub type_0: xkb_action_type,
+    pub type_0: u32,
     pub flags: xkb_action_flags,
     pub x: i16,
     pub y: i16,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct xkb_switch_screen_action {
-    pub type_0: xkb_action_type,
+    pub type_0: u32,
     pub flags: xkb_action_flags,
     pub screen: i8,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct xkb_pointer_default_action {
-    pub type_0: xkb_action_type,
+    pub type_0: u32,
     pub flags: xkb_action_flags,
     pub value: i8,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct xkb_controls_action {
-    pub type_0: xkb_action_type,
+    pub type_0: u32,
     pub flags: xkb_action_flags,
     pub ctrls: xkb_action_controls,
 }
@@ -297,23 +564,23 @@ pub const CONTROL_OVERLAY2: xkb_action_controls = 4;
 pub const CONTROL_OVERLAY1: xkb_action_controls = 2;
 pub const CONTROL_STICKY_KEYS: xkb_action_controls = 1;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct xkb_group_action {
-    pub type_0: xkb_action_type,
+    pub type_0: u32,
     pub flags: xkb_action_flags,
     pub group: i32,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct xkb_mod_action {
-    pub type_0: xkb_action_type,
+    pub type_0: u32,
     pub flags: xkb_action_flags,
     pub mods: xkb_mods,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct xkb_mods {
     pub mods: u32,

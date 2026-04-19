@@ -1647,8 +1647,8 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     }
                     48 => {
                         yyval.var = VarCreate(
-                            (*yyvsp.offset(-3_i32 as isize)).expr,
-                            (*yyvsp.offset(-1_i32 as isize)).expr,
+                            box_from_raw((*yyvsp.offset(-3_i32 as isize)).expr),
+                            box_from_raw((*yyvsp.offset(-1_i32 as isize)).expr),
                         );
                         c2rust_current_block = 9699707990742192723;
                     }
@@ -1692,14 +1692,13 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                         c2rust_current_block = 9699707990742192723;
                     }
                     56 => {
-                        yyval.vmod =
-                            VModCreate((*yyvsp.offset(0_i32 as isize)).atom, std::ptr::null_mut());
+                        yyval.vmod = VModCreate((*yyvsp.offset(0_i32 as isize)).atom, None);
                         c2rust_current_block = 9699707990742192723;
                     }
                     57 => {
                         yyval.vmod = VModCreate(
                             (*yyvsp.offset(-2_i32 as isize)).atom,
-                            (*yyvsp.offset(0_i32 as isize)).expr,
+                            box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
                         );
                         c2rust_current_block = 9699707990742192723;
                     }
@@ -1713,15 +1712,12 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     59 => {
                         yyval.interp = InterpCreate(
                             (*yyvsp.offset(-2_i32 as isize)).keysym,
-                            (*yyvsp.offset(0_i32 as isize)).expr,
+                            box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
                         );
                         c2rust_current_block = 9699707990742192723;
                     }
                     60 => {
-                        yyval.interp = InterpCreate(
-                            (*yyvsp.offset(0_i32 as isize)).keysym,
-                            std::ptr::null_mut(),
-                        );
+                        yyval.interp = InterpCreate((*yyvsp.offset(0_i32 as isize)).keysym, None);
                         c2rust_current_block = 9699707990742192723;
                     }
                     61 => {
@@ -1747,14 +1743,14 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     63 => {
                         yyval.keyType = KeyTypeCreate(
                             (*yyvsp.offset(-4_i32 as isize)).atom,
-                            (*yyvsp.offset(-2_i32 as isize)).varList.head,
+                            collect_vardefs((*yyvsp.offset(-2_i32 as isize)).varList.head),
                         );
                         c2rust_current_block = 9699707990742192723;
                     }
                     64 => {
                         yyval.syms = SymbolsCreate(
                             (*yyvsp.offset(-4_i32 as isize)).atom,
-                            (*yyvsp.offset(-2_i32 as isize)).varList.head,
+                            collect_vardefs((*yyvsp.offset(-2_i32 as isize)).varList.head),
                         );
                         c2rust_current_block = 9699707990742192723;
                     }
@@ -1782,15 +1778,15 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     }
                     69 => {
                         yyval.var = VarCreate(
-                            (*yyvsp.offset(-2_i32 as isize)).expr,
-                            (*yyvsp.offset(0_i32 as isize)).expr,
+                            box_from_raw((*yyvsp.offset(-2_i32 as isize)).expr),
+                            box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
                         );
                         c2rust_current_block = 9699707990742192723;
                     }
                     70 => {
                         yyval.var = VarCreate(
-                            (*yyvsp.offset(-2_i32 as isize)).expr,
-                            (*yyvsp.offset(0_i32 as isize)).expr,
+                            box_from_raw((*yyvsp.offset(-2_i32 as isize)).expr),
+                            box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
                         );
                         c2rust_current_block = 9699707990742192723;
                     }
@@ -1804,7 +1800,7 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     }
                     73 => {
                         yyval.var =
-                            VarCreate(std::ptr::null_mut(), (*yyvsp.offset(0_i32 as isize)).expr);
+                            VarCreate(None, box_from_raw((*yyvsp.offset(0_i32 as isize)).expr));
                         c2rust_current_block = 9699707990742192723;
                     }
                     74 => {
@@ -1878,7 +1874,7 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     82 => {
                         yyval.groupCompat = GroupCompatCreate(
                             (*yyvsp.offset(-3_i32 as isize)).num,
-                            (*yyvsp.offset(-1_i32 as isize)).expr,
+                            box_from_raw((*yyvsp.offset(-1_i32 as isize)).expr),
                         );
                         c2rust_current_block = 9699707990742192723;
                     }
@@ -1915,14 +1911,14 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     88 => {
                         yyval.ledMap = LedMapCreate(
                             (*yyvsp.offset(-4_i32 as isize)).atom,
-                            (*yyvsp.offset(-2_i32 as isize)).varList.head,
+                            collect_vardefs((*yyvsp.offset(-2_i32 as isize)).varList.head),
                         );
                         c2rust_current_block = 9699707990742192723;
                     }
                     89 => {
                         yyval.ledName = LedNameCreate(
                             (*yyvsp.offset(-3_i32 as isize)).num,
-                            (*yyvsp.offset(-1_i32 as isize)).expr,
+                            box_from_raw((*yyvsp.offset(-1_i32 as isize)).expr),
                             false,
                         );
                         c2rust_current_block = 9699707990742192723;
@@ -1930,7 +1926,7 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     90 => {
                         yyval.ledName = LedNameCreate(
                             (*yyvsp.offset(-3_i32 as isize)).num,
-                            (*yyvsp.offset(-1_i32 as isize)).expr,
+                            box_from_raw((*yyvsp.offset(-1_i32 as isize)).expr),
                             true,
                         );
                         c2rust_current_block = 9699707990742192723;

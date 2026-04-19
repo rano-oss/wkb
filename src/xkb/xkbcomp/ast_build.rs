@@ -231,7 +231,7 @@ pub fn KeyAliasCreate(alias: u32, real: u32) -> *mut KeyAliasDef {
     }))
 }
 
-pub fn VModCreate(name: u32, value: *mut ExprDef) -> *mut VModDef {
+pub fn VModCreate(name: u32, value: Option<Box<ExprDef>>) -> *mut VModDef {
     Box::into_raw(Box::new(VModDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -239,19 +239,19 @@ pub fn VModCreate(name: u32, value: *mut ExprDef) -> *mut VModDef {
         },
         merge: MERGE_DEFAULT,
         name,
-        value: unsafe { box_from_raw(value) },
+        value,
     }))
 }
 
-pub fn VarCreate(name: *mut ExprDef, value: *mut ExprDef) -> *mut VarDef {
+pub fn VarCreate(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>) -> *mut VarDef {
     Box::into_raw(Box::new(VarDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
             type_0: STMT_VAR,
         },
         merge: MERGE_DEFAULT,
-        name: unsafe { box_from_raw(name) },
-        value: unsafe { box_from_raw(value) },
+        name,
+        value,
     }))
 }
 
@@ -279,7 +279,7 @@ pub fn BoolVarCreate(ident: u32, set: bool) -> *mut VarDef {
     }))
 }
 
-pub fn InterpCreate(sym: u32, match_0: *mut ExprDef) -> *mut InterpDef {
+pub fn InterpCreate(sym: u32, match_0: Option<Box<ExprDef>>) -> *mut InterpDef {
     Box::into_raw(Box::new(InterpDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -287,12 +287,12 @@ pub fn InterpCreate(sym: u32, match_0: *mut ExprDef) -> *mut InterpDef {
         },
         merge: MERGE_DEFAULT,
         sym,
-        match_0: unsafe { box_from_raw(match_0) },
+        match_0,
         def: Vec::new(),
     }))
 }
 
-pub fn KeyTypeCreate(name: u32, body: *mut VarDef) -> *mut KeyTypeDef {
+pub fn KeyTypeCreate(name: u32, body: Vec<VarDef>) -> *mut KeyTypeDef {
     Box::into_raw(Box::new(KeyTypeDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -300,11 +300,11 @@ pub fn KeyTypeCreate(name: u32, body: *mut VarDef) -> *mut KeyTypeDef {
         },
         merge: MERGE_DEFAULT,
         name,
-        body: unsafe { collect_vardefs(body) },
+        body,
     }))
 }
 
-pub fn SymbolsCreate(keyName: u32, symbols: *mut VarDef) -> *mut SymbolsDef {
+pub fn SymbolsCreate(keyName: u32, symbols: Vec<VarDef>) -> *mut SymbolsDef {
     Box::into_raw(Box::new(SymbolsDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -312,11 +312,11 @@ pub fn SymbolsCreate(keyName: u32, symbols: *mut VarDef) -> *mut SymbolsDef {
         },
         merge: MERGE_DEFAULT,
         keyName,
-        symbols: unsafe { collect_vardefs(symbols) },
+        symbols,
     }))
 }
 
-pub fn GroupCompatCreate(group: i64, val: *mut ExprDef) -> *mut GroupCompatDef {
+pub fn GroupCompatCreate(group: i64, val: Option<Box<ExprDef>>) -> *mut GroupCompatDef {
     Box::into_raw(Box::new(GroupCompatDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -324,7 +324,7 @@ pub fn GroupCompatCreate(group: i64, val: *mut ExprDef) -> *mut GroupCompatDef {
         },
         merge: MERGE_DEFAULT,
         group,
-        def: unsafe { box_from_raw(val) },
+        def: val,
     }))
 }
 
@@ -340,7 +340,7 @@ pub fn ModMapCreate(modifier: u32, keys: Vec<ExprDef>) -> *mut ModMapDef {
     }))
 }
 
-pub fn LedMapCreate(name: u32, body: *mut VarDef) -> *mut LedMapDef {
+pub fn LedMapCreate(name: u32, body: Vec<VarDef>) -> *mut LedMapDef {
     Box::into_raw(Box::new(LedMapDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -348,11 +348,11 @@ pub fn LedMapCreate(name: u32, body: *mut VarDef) -> *mut LedMapDef {
         },
         merge: MERGE_DEFAULT,
         name,
-        body: unsafe { collect_vardefs(body) },
+        body,
     }))
 }
 
-pub fn LedNameCreate(ndx: i64, name: *mut ExprDef, virtual_0: bool) -> *mut LedNameDef {
+pub fn LedNameCreate(ndx: i64, name: Option<Box<ExprDef>>, virtual_0: bool) -> *mut LedNameDef {
     Box::into_raw(Box::new(LedNameDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -361,7 +361,7 @@ pub fn LedNameCreate(ndx: i64, name: *mut ExprDef, virtual_0: bool) -> *mut LedN
         merge: MERGE_DEFAULT,
         ndx,
         virtual_0,
-        name: unsafe { box_from_raw(name) },
+        name,
     }))
 }
 

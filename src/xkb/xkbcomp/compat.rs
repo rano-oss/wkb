@@ -60,9 +60,7 @@ impl<'a> CompatInfo<'a> {
                     repeat: false,
                     required: false,
                     num_actions: 0,
-                    action: xkb_action {
-                        type_0: ACTION_TYPE_NONE,
-                    },
+                    action: xkb_action::None,
                     actions: Vec::new(),
                 },
             },
@@ -71,9 +69,7 @@ impl<'a> CompatInfo<'a> {
             leds: [zeroed_led; 32],
             num_leds: 0,
             default_actions: ActionsInfo {
-                actions: [xkb_action {
-                    type_0: ACTION_TYPE_NONE,
-                }; 21],
+                actions: [xkb_action::None; 21],
             },
             mods: xkb_mod_set {
                 mods: [xkb_mod {
@@ -267,9 +263,7 @@ fn MergeInterp(
         old.interp.num_actions = new.interp.num_actions;
         if new.interp.num_actions as i32 > 1_i32 {
             old.interp.actions = std::mem::take(&mut new.interp.actions);
-            new.interp.action = xkb_action {
-                type_0: ACTION_TYPE_NONE,
-            };
+            new.interp.action = xkb_action::None;
             new.interp.num_actions = 0_u16;
         } else {
             old.interp.action = new.interp.action;
@@ -584,7 +578,7 @@ fn SetInterpField(
     si: &mut SymInterpInfo,
     field: &str,
     arrayNdx: Option<&ExprDef>,
-    value: &ExprDef,
+    value: &mut ExprDef,
 ) -> bool {
     unsafe {
         if field.eq_ignore_ascii_case("action") {
@@ -594,7 +588,7 @@ fn SetInterpField(
             if value.common.type_0 == STMT_EXPR_ACTION_LIST {
                 let ExprKind::ActionList {
                     actions: action_vec,
-                } = &value.kind
+                } = &mut value.kind
                 else {
                     unreachable!()
                 };
@@ -609,22 +603,20 @@ fn SetInterpField(
                     return false;
                 }
                 si.interp.num_actions = 0_u16;
-                si.interp.action.type_0 = ACTION_TYPE_NONE;
+                si.interp.action.set_none();
                 let mut actions: Vec<xkb_action> = Vec::new();
-                for act_expr in action_vec.iter() {
-                    let mut toAct: xkb_action = xkb_action {
-                        type_0: ACTION_TYPE_NONE,
-                    };
+                for act_expr in action_vec.iter_mut() {
+                    let mut toAct: xkb_action = xkb_action::None;
                     match HandleActionDef(
                         info.keymap_info,
-                        &raw mut info.default_actions,
-                        &raw mut info.mods,
-                        act_expr as *const ExprDef as *mut ExprDef,
-                        &raw mut toAct,
+                        &mut info.default_actions,
+                        &info.mods,
+                        act_expr,
+                        &mut toAct,
                     ) as u32
                     {
                         1 => {
-                            toAct.type_0 = ACTION_TYPE_NONE;
+                            toAct.set_none();
                         }
                         2 => {
                             drop(actions);
@@ -632,7 +624,7 @@ fn SetInterpField(
                         }
                         _ => {}
                     }
-                    if toAct.type_0 != ACTION_TYPE_NONE {
+                    if toAct.action_type() != ACTION_TYPE_NONE {
                         if (num_actions == 1_u32) as i64 != 0 {
                             si.interp.num_actions = 1_u16;
                             si.interp.action = toAct;
@@ -645,7 +637,7 @@ fn SetInterpField(
                     0 => {}
                     1 => {
                         si.interp.num_actions = 1_u16;
-                        si.interp.action = actions[1];
+                        si.interp.action = actions[0];
                     }
                     _ => {
                         si.interp.num_actions = actions.len() as u16;
@@ -655,20 +647,20 @@ fn SetInterpField(
             } else {
                 match HandleActionDef(
                     info.keymap_info,
-                    &raw mut info.default_actions,
+                    &mut info.default_actions,
                     &info.mods,
-                    value as *const ExprDef as *mut ExprDef,
-                    &raw mut si.interp.action,
+                    value,
+                    &mut si.interp.action,
                 ) as u32
                 {
                     1 => {
-                        si.interp.action.type_0 = ACTION_TYPE_NONE;
+                        si.interp.action.set_none();
                         si.interp.num_actions = 0_u16;
                     }
                     2 => return false,
                     _ => {
                         si.interp.num_actions =
-                            (si.interp.action.type_0 != ACTION_TYPE_NONE) as i32 as u16;
+                            (si.interp.action.action_type() != ACTION_TYPE_NONE) as i32 as u16;
                     }
                 }
             }
@@ -858,9 +850,7 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
                         repeat: false,
                         required: false,
                         num_actions: 0,
-                        action: xkb_action {
-                            type_0: ACTION_TYPE_NONE,
-                        },
+                        action: xkb_action::None,
                         actions: Vec::new(),
                     },
                 };
@@ -873,7 +863,7 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
                 // Break borrow from ExprResolveLhs
                 let field_ptr: *const str = field;
                 let ndx_ref = ndx.map(|r| r as *const ExprDef).map(|p| &*p);
-                let value_ref = stmt.value.as_deref().unwrap();
+                let value_ref = stmt.value.as_deref_mut().unwrap();
                 ret = SetInterpField(info, &mut temp, unsafe { &*field_ptr }, ndx_ref, value_ref);
                 if ret {
                     let default_ptr = &raw mut info.default_interp;
@@ -912,11 +902,11 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
                         .map_or(std::ptr::null_mut(), |b| Box::into_raw(b));
                     let r = SetDefaultActionField(
                         info.keymap_info,
-                        &raw mut info.default_actions,
-                        &raw mut info.mods,
+                        &mut info.default_actions,
+                        &mut info.mods,
                         elem,
                         field,
-                        ndx_ptr,
+                        ndx,
                         &raw mut value_raw,
                         stmt.merge,
                     ) as u32
@@ -936,7 +926,11 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
         ret
     }
 }
-fn HandleInterpBody(info: &mut CompatInfo<'_>, defs: &[VarDef], si: &mut SymInterpInfo) -> bool {
+fn HandleInterpBody(
+    info: &mut CompatInfo<'_>,
+    defs: &mut [VarDef],
+    si: &mut SymInterpInfo,
+) -> bool {
     let mut ok: bool = true;
     for def in defs {
         let mut elem: &str = "";
@@ -961,7 +955,7 @@ fn HandleInterpBody(info: &mut CompatInfo<'_>, defs: &[VarDef], si: &mut SymInte
             let field_ptr: *const str = field;
             let arrayNdx_ptr = arrayNdx.map(|r| r as *const ExprDef);
             let arrayNdx_ref = arrayNdx_ptr.map(|p| unsafe { &*p });
-            let value_ref = def.value.as_deref().unwrap();
+            let value_ref = def.value.as_deref_mut().unwrap();
             if !SetInterpField(info, si, unsafe { &*field_ptr }, arrayNdx_ref, value_ref) {
                 ok = false;
             }
@@ -969,7 +963,7 @@ fn HandleInterpBody(info: &mut CompatInfo<'_>, defs: &[VarDef], si: &mut SymInte
     }
     ok
 }
-fn HandleInterpDef(info: &mut CompatInfo<'_>, def: &InterpDef) -> bool {
+fn HandleInterpDef(info: &mut CompatInfo<'_>, def: &mut InterpDef) -> bool {
     unsafe {
         let mut pred: u32 = MATCH_NONE;
         let mut mods: u32 = 0;
@@ -986,9 +980,7 @@ fn HandleInterpDef(info: &mut CompatInfo<'_>, def: &InterpDef) -> bool {
                 repeat: false,
                 required: false,
                 num_actions: 0,
-                action: xkb_action {
-                    type_0: ACTION_TYPE_NONE,
-                },
+                action: xkb_action::None,
                 actions: Vec::new(),
             },
         };
@@ -1001,7 +993,7 @@ fn HandleInterpDef(info: &mut CompatInfo<'_>, def: &InterpDef) -> bool {
         si.interp.sym = def.sym;
         si.interp.match_0 = pred;
         si.interp.mods = mods;
-        if !HandleInterpBody(info, &def.def, &mut si) {
+        if !HandleInterpBody(info, &mut def.def, &mut si) {
             info.errorCount += 1;
             return false;
         }
@@ -1062,7 +1054,7 @@ fn HandleCompatMapFile(info: &mut CompatInfo<'_>, file: &mut XkbFile) {
                     ok = HandleIncludeCompatMap(info, &mut **incl);
                 }
                 Statement::Interp(ip) => {
-                    ok = HandleInterpDef(info, &**ip);
+                    ok = HandleInterpDef(info, &mut **ip);
                 }
                 Statement::GroupCompat(_) => {
                     log::debug!("The \"group\" statement in compat is unsupported; Ignored\n");
