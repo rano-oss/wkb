@@ -220,11 +220,11 @@ pub use crate::xkb::messages::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
     XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
-    XKB_WARNING_CANNOT_INFER_KEY_TYPE,
-    XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
-    XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY, XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
+    XKB_WARNING_CANNOT_INFER_KEY_TYPE, XKB_WARNING_CONFLICTING_KEY_ACTION,
+    XKB_WARNING_CONFLICTING_KEY_FIELDS, XKB_WARNING_CONFLICTING_KEY_NAME,
+    XKB_WARNING_CONFLICTING_KEY_SYMBOL, XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES, XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
     XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES, XKB_WARNING_CONFLICTING_MODMAP,
     XKB_WARNING_DEPRECATED_KEYSYM, XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_DUPLICATE_ENTRY,
     XKB_WARNING_EXTRA_SYMBOLS_IGNORED, XKB_WARNING_ILLEGAL_KEYCODE_ALIAS,
@@ -266,50 +266,50 @@ fn is_space(ch: i8) -> bool {
 }
 use libc::FILE;
 pub static DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
-fn number(s: *mut scanner, out: *mut i64, out_tok: *mut i32) -> bool {
-    unsafe {
-        if (*s).str_match(
+fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
+    if unsafe {
+        s.str_match(
             b"0x\0".as_ptr() as *const i8,
             (std::mem::size_of::<[i8; 3]>()).wrapping_sub(1),
-        ) {
-            match (*s).hex_int64(out) {
-                -1 => {
-                    *out_tok = ERROR_TOK;
-                    true
-                }
-                0 => false,
-                _ => {
-                    *out_tok = INTEGER;
-                    true
-                }
+        )
+    } {
+        match unsafe { s.hex_int64(out as *mut i64) } {
+            -1 => {
+                *out_tok = ERROR_TOK;
+                true
             }
-        } else {
-            let mut is_digit_0: bool = false;
-            match (*s).dec_int64(out) {
-                -1 => {
-                    *out_tok = ERROR_TOK;
-                    return true;
-                }
-                0 => return false,
-                1 => {
-                    is_digit_0 = true;
-                }
-                _ => {}
-            }
-            if (*s).chr(DECIMAL_SEPARATOR) {
-                let mut dec: i64 = 0;
-                if (*s).dec_int64(&raw mut dec) < 0 {
-                    *out_tok = ERROR_TOK;
-                    return true;
-                }
-                *out_tok = FLOAT;
-            } else if is_digit_0 {
-                *out_tok = DECIMAL_DIGIT;
-            } else {
+            0 => false,
+            _ => {
                 *out_tok = INTEGER;
+                true
             }
-            true
         }
+    } else {
+        let mut is_digit_0: bool = false;
+        match unsafe { s.dec_int64(out as *mut i64) } {
+            -1 => {
+                *out_tok = ERROR_TOK;
+                return true;
+            }
+            0 => return false,
+            1 => {
+                is_digit_0 = true;
+            }
+            _ => {}
+        }
+        if s.chr(DECIMAL_SEPARATOR) {
+            let mut dec: i64 = 0;
+            if unsafe { s.dec_int64(&mut dec as *mut i64) } < 0 {
+                *out_tok = ERROR_TOK;
+                return true;
+            }
+            *out_tok = FLOAT;
+        } else if is_digit_0 {
+            *out_tok = DECIMAL_DIGIT;
+        } else {
+            *out_tok = INTEGER;
+        }
+        true
     }
 }
 pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
@@ -405,10 +405,12 @@ pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
             }
             if !(*s).buf_append(0) || !(*s).chr(b'"' as i8) {
                 let loc_2 = (*s).token_location();
-                log::error!("{}:{}:{}: unterminated string literal\n",
+                log::error!(
+                    "{}:{}:{}: unterminated string literal\n",
                     &(*s).file_name,
                     loc_2.line,
-                    loc_2.column);
+                    loc_2.column
+                );
                 return ERROR_TOK;
             }
             (*yylval).str = cstr_dup(&raw mut (*s).buf as *mut i8);
@@ -423,10 +425,12 @@ pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
             }
             if !(*s).chr(b'>' as i8) {
                 let loc_3 = (*s).token_location();
-                log::error!("{}:{}:{}: unterminated key name literal\n",
+                log::error!(
+                    "{}:{}:{}: unterminated key name literal\n",
                     &(*s).file_name,
                     loc_3.line,
-                    loc_3.column);
+                    loc_3.column
+                );
                 return ERROR_TOK;
             }
             let start: *const i8 = (*s).s.add((*s).token_pos + 1);
@@ -502,23 +506,27 @@ pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
             };
             return IDENT;
         }
-        if number(s, &raw mut (*yylval).num, &raw mut tok) {
+        if number(&mut *s, &mut (*yylval).num, &mut tok) {
             if tok == ERROR_TOK {
                 let loc_4 = (*s).token_location();
-                log::error!("[XKB-{:03}] {}:{}:{}: malformed number literal\n",
+                log::error!(
+                    "[XKB-{:03}] {}:{}:{}: malformed number literal\n",
                     XKB_ERROR_MALFORMED_NUMBER_LITERAL as i32,
                     &(*s).file_name,
                     loc_4.line,
-                    loc_4.column);
+                    loc_4.column
+                );
                 return ERROR_TOK;
             }
             return tok;
         }
         let loc_5 = (*s).token_location();
-        log::error!("{}:{}:{}: unrecognized token\n",
+        log::error!(
+            "{}:{}:{}: unrecognized token\n",
             &(*s).file_name,
             loc_5.line,
-            loc_5.column);
+            loc_5.column
+        );
         ERROR_TOK
     }
 }
@@ -614,9 +622,7 @@ pub fn XkbParseFile(
         let mapped = match MappedFile::new(&rust_file) {
             Ok(m) => m,
             Err(e) => {
-                log::error!("Couldn't read XKB file {}: {}\n",
-                    file_name,
-                    e);
+                log::error!("Couldn't read XKB file {}: {}\n", file_name, e);
                 std::mem::forget(rust_file); // Don't close fd - caller owns FILE*
                 return std::ptr::null_mut();
             }

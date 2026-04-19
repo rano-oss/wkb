@@ -576,48 +576,46 @@ fn HandleIncludeKeycodes(
     include: &mut IncludeStmt,
     report: bool,
 ) -> bool {
-    unsafe {
-        let ctx_ptr = &raw mut *info.ctx;
-        let ki_ptr = &raw mut *info.keymap_info;
-        let mut included = KeyNamesInfo::new(&mut *ki_ptr);
-        if ExceedsIncludeMaxDepth(info.include_depth) {
+    let ctx_ptr = &raw mut *info.ctx;
+    let ki_ptr = &raw mut *info.keymap_info;
+    let mut included = KeyNamesInfo::new(unsafe { &mut *ki_ptr });
+    if ExceedsIncludeMaxDepth(info.include_depth) {
+        info.errorCount += 10_i32;
+        return false;
+    }
+    InitKeyNamesInfo(&mut included, 0_u32);
+    included.name = if include.stmt.is_empty() {
+        None
+    } else {
+        Some(std::mem::take(&mut include.stmt))
+    };
+    let mut current: Option<&IncludeStmt> = Some(include);
+    while let Some(stmt) = current {
+        let mut next_incl = KeyNamesInfo::new(unsafe { &mut *ki_ptr });
+
+        let mut path: [i8; 4096] = [0; 4096];
+        let file: *mut XkbFile = ProcessIncludeFile(
+            ctx_ptr,
+            stmt,
+            FILE_TYPE_KEYCODES,
+            path.as_mut_ptr(),
+            std::mem::size_of::<[i8; 4096]>(),
+        );
+        if file.is_null() {
             info.errorCount += 10_i32;
+            ClearKeyNamesInfo(&mut included);
             return false;
         }
-        InitKeyNamesInfo(&mut included, 0_u32);
-        included.name = if include.stmt.is_empty() {
-            None
-        } else {
-            Some(std::mem::take(&mut include.stmt))
-        };
-        let mut current: Option<&IncludeStmt> = Some(include);
-        while let Some(stmt) = current {
-            let mut next_incl = KeyNamesInfo::new(&mut *ki_ptr);
-
-            let mut path: [i8; 4096] = [0; 4096];
-            let file: *mut XkbFile = ProcessIncludeFile(
-                ctx_ptr,
-                stmt,
-                FILE_TYPE_KEYCODES,
-                path.as_mut_ptr(),
-                std::mem::size_of::<[i8; 4096]>(),
-            );
-            if file.is_null() {
-                info.errorCount += 10_i32;
-                ClearKeyNamesInfo(&mut included);
-                return false;
-            }
-            InitKeyNamesInfo(&mut next_incl, info.include_depth.wrapping_add(1_u32));
-            HandleKeycodesFile(&mut next_incl, &mut *file);
-            MergeIncludedKeycodes(&mut included, &mut next_incl, stmt.merge, report);
-            ClearKeyNamesInfo(&mut next_incl);
-            FreeXkbFile(file);
-            current = stmt.next_incl.as_deref();
-        }
-        MergeIncludedKeycodes(info, &mut included, include.merge, report);
-        ClearKeyNamesInfo(&mut included);
-        info.errorCount == 0_i32
+        InitKeyNamesInfo(&mut next_incl, info.include_depth.wrapping_add(1_u32));
+        HandleKeycodesFile(&mut next_incl, unsafe { &mut *file });
+        MergeIncludedKeycodes(&mut included, &mut next_incl, stmt.merge, report);
+        ClearKeyNamesInfo(&mut next_incl);
+        FreeXkbFile(file);
+        current = stmt.next_incl.as_deref();
     }
+    MergeIncludedKeycodes(info, &mut included, include.merge, report);
+    ClearKeyNamesInfo(&mut included);
+    info.errorCount == 0_i32
 }
 fn HandleKeycodeDef(info: &mut KeyNamesInfo<'_>, stmt: &KeycodeDef, report: bool) -> bool {
     if stmt.value < 0_i64 || stmt.value > XKB_KEYCODE_MAX as i64 {
@@ -750,7 +748,7 @@ fn HandleLedNameDef(info: &mut KeyNamesInfo<'_>, def: &LedNameDef, report: bool)
             XKB_ERROR_WRONG_FIELD_TYPE,
             "indicator",
             "name",
-            unsafe { std::str::from_utf8_unchecked(&buf[..buf_len]) },
+            std::str::from_utf8(&buf[..buf_len]).unwrap_or("?"),
             "string",
         );
     }

@@ -407,13 +407,14 @@ impl Statement {
 ///
 /// # Safety
 /// `head` must be null or a valid linked list of Box-allocated VarDef nodes.
-pub unsafe fn collect_vardefs(mut head: *mut VarDef) -> Vec<VarDef> {
+pub unsafe fn collect_vardefs(head: *mut VarDef) -> Vec<VarDef> {
     let mut defs = Vec::new();
-    while !head.is_null() {
-        let next = (*head).common.next;
-        (*head).common.next = std::ptr::null_mut();
-        defs.push(*Box::from_raw(head));
-        head = next as *mut VarDef;
+    let mut cur = head;
+    while !cur.is_null() {
+        let next = unsafe { (*cur).common.next };
+        unsafe { (*cur).common.next = std::ptr::null_mut() };
+        defs.push(unsafe { *Box::from_raw(cur) });
+        cur = next as *mut VarDef;
     }
     defs
 }
@@ -422,13 +423,14 @@ pub unsafe fn collect_vardefs(mut head: *mut VarDef) -> Vec<VarDef> {
 ///
 /// # Safety
 /// `head` must be null or a valid linked list of Box-allocated ExprDef nodes.
-pub unsafe fn collect_exprs(mut head: *mut ExprDef) -> Vec<ExprDef> {
+pub unsafe fn collect_exprs(head: *mut ExprDef) -> Vec<ExprDef> {
     let mut exprs = Vec::new();
-    while !head.is_null() {
-        let next = (*head).common.next;
-        (*head).common.next = std::ptr::null_mut();
-        exprs.push(*Box::from_raw(head));
-        head = next as *mut ExprDef;
+    let mut cur = head;
+    while !cur.is_null() {
+        let next = unsafe { (*cur).common.next };
+        unsafe { (*cur).common.next = std::ptr::null_mut() };
+        exprs.push(unsafe { *Box::from_raw(cur) });
+        cur = next as *mut ExprDef;
     }
     exprs
 }
@@ -438,34 +440,39 @@ pub unsafe fn collect_exprs(mut head: *mut ExprDef) -> Vec<ExprDef> {
 ///
 /// # Safety
 /// `head` must be null or a valid linked list of Box-allocated ParseCommon nodes.
-pub unsafe fn collect_stmts(mut head: *mut ParseCommon) -> Vec<Statement> {
+pub unsafe fn collect_stmts(head: *mut ParseCommon) -> Vec<Statement> {
     let mut stmts = Vec::new();
-    while !head.is_null() {
-        let next = (*head).next;
-        (*head).next = std::ptr::null_mut(); // detach from chain
-        let stmt = match (*head).type_0 {
-            STMT_INCLUDE => Statement::Include(Box::from_raw(head as *mut IncludeStmt)),
-            STMT_KEYCODE => Statement::Keycode(Box::from_raw(head as *mut KeycodeDef)),
-            STMT_ALIAS => Statement::KeyAlias(Box::from_raw(head as *mut KeyAliasDef)),
-            STMT_VAR => Statement::Var(Box::from_raw(head as *mut VarDef)),
-            STMT_TYPE => Statement::KeyType(Box::from_raw(head as *mut KeyTypeDef)),
-            STMT_INTERP => Statement::Interp(Box::from_raw(head as *mut InterpDef)),
-            STMT_VMOD => Statement::VMod(Box::from_raw(head as *mut VModDef)),
-            STMT_SYMBOLS => Statement::Symbols(Box::from_raw(head as *mut SymbolsDef)),
-            STMT_MODMAP => Statement::ModMap(Box::from_raw(head as *mut ModMapDef)),
-            STMT_GROUP_COMPAT => Statement::GroupCompat(Box::from_raw(head as *mut GroupCompatDef)),
-            STMT_LED_MAP => Statement::LedMap(Box::from_raw(head as *mut LedMapDef)),
-            STMT_LED_NAME => Statement::LedName(Box::from_raw(head as *mut LedNameDef)),
-            STMT_UNKNOWN_COMPOUND | STMT_UNKNOWN_DECLARATION => {
-                Statement::Unknown(Box::from_raw(head as *mut UnknownStatement))
-            }
-            _ => {
-                // All STMT_EXPR_* types
-                Statement::Expr(Box::from_raw(head as *mut ExprDef))
+    let mut cur = head;
+    while !cur.is_null() {
+        let next = unsafe { (*cur).next };
+        unsafe { (*cur).next = std::ptr::null_mut() }; // detach from chain
+        let stmt = unsafe {
+            match (*cur).type_0 {
+                STMT_INCLUDE => Statement::Include(Box::from_raw(cur as *mut IncludeStmt)),
+                STMT_KEYCODE => Statement::Keycode(Box::from_raw(cur as *mut KeycodeDef)),
+                STMT_ALIAS => Statement::KeyAlias(Box::from_raw(cur as *mut KeyAliasDef)),
+                STMT_VAR => Statement::Var(Box::from_raw(cur as *mut VarDef)),
+                STMT_TYPE => Statement::KeyType(Box::from_raw(cur as *mut KeyTypeDef)),
+                STMT_INTERP => Statement::Interp(Box::from_raw(cur as *mut InterpDef)),
+                STMT_VMOD => Statement::VMod(Box::from_raw(cur as *mut VModDef)),
+                STMT_SYMBOLS => Statement::Symbols(Box::from_raw(cur as *mut SymbolsDef)),
+                STMT_MODMAP => Statement::ModMap(Box::from_raw(cur as *mut ModMapDef)),
+                STMT_GROUP_COMPAT => {
+                    Statement::GroupCompat(Box::from_raw(cur as *mut GroupCompatDef))
+                }
+                STMT_LED_MAP => Statement::LedMap(Box::from_raw(cur as *mut LedMapDef)),
+                STMT_LED_NAME => Statement::LedName(Box::from_raw(cur as *mut LedNameDef)),
+                STMT_UNKNOWN_COMPOUND | STMT_UNKNOWN_DECLARATION => {
+                    Statement::Unknown(Box::from_raw(cur as *mut UnknownStatement))
+                }
+                _ => {
+                    // All STMT_EXPR_* types
+                    Statement::Expr(Box::from_raw(cur as *mut ExprDef))
+                }
             }
         };
         stmts.push(stmt);
-        head = next;
+        cur = next;
     }
     stmts
 }
@@ -474,13 +481,14 @@ pub unsafe fn collect_stmts(mut head: *mut ParseCommon) -> Vec<Statement> {
 ///
 /// # Safety
 /// `head` must be null or a valid linked list of Box-allocated XkbFile nodes.
-pub unsafe fn collect_file_stmts(mut head: *mut ParseCommon) -> Vec<Statement> {
+pub unsafe fn collect_file_stmts(head: *mut ParseCommon) -> Vec<Statement> {
     let mut stmts = Vec::new();
-    while !head.is_null() {
-        let next = (*head).next;
-        (*head).next = std::ptr::null_mut();
-        stmts.push(Statement::XkbFile(Box::from_raw(head as *mut XkbFile)));
-        head = next;
+    let mut cur = head;
+    while !cur.is_null() {
+        let next = unsafe { (*cur).next };
+        unsafe { (*cur).next = std::ptr::null_mut() };
+        stmts.push(unsafe { Statement::XkbFile(Box::from_raw(cur as *mut XkbFile)) });
+        cur = next;
     }
     stmts
 }

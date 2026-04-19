@@ -459,12 +459,12 @@ impl State {
 
     /// Get active layout index
     pub fn serialize_layout(&self, component: u32) -> u32 {
-        unsafe { super::state::xkb_state_serialize_layout(self.ptr, component) }
+        unsafe { super::state::xkb_state_serialize_layout(&*self.ptr, component) }
     }
 
     /// Get active modifiers mask
     pub fn serialize_mods(&self, component: u32) -> u32 {
-        unsafe { super::state::xkb_state_serialize_mods(self.ptr, component) }
+        unsafe { super::state::xkb_state_serialize_mods(&*self.ptr, component) }
     }
 
     /// Check if a modifier is active
@@ -477,7 +477,7 @@ impl State {
 
     /// Check if a modifier index is active
     pub fn mod_index_is_active(&self, idx: u32, state_type: u32) -> bool {
-        unsafe { super::state::xkb_state_mod_index_is_active(self.ptr, idx, state_type) > 0 }
+        unsafe { super::state::xkb_state_mod_index_is_active(&*self.ptr, idx, state_type) > 0 }
     }
 
     /// Check if a layout is active

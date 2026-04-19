@@ -495,23 +495,17 @@ pub static symInterpretMatchMaskNames: [LookupEntry; 6] = [
         value: 0_u32,
     },
 ];
-pub unsafe fn ModIndexText(
-    ctx: *mut xkb_context,
-    mods: *const xkb_mod_set,
-    ndx: u32,
-) -> &'static str {
-    unsafe {
-        if ndx == XKB_MOD_INVALID {
-            return "none";
-        }
-        if ndx == XKB_MOD_NONE {
-            return "None";
-        }
-        if ndx >= (*mods).num_mods {
-            return "";
-        }
-        xkb_atom_text(&(*ctx).atom_table, (*mods).mods[ndx as usize].name)
+pub fn ModIndexText<'a>(ctx: &'a xkb_context, mods: &xkb_mod_set, ndx: u32) -> &'a str {
+    if ndx == XKB_MOD_INVALID {
+        return "none";
     }
+    if ndx == XKB_MOD_NONE {
+        return "None";
+    }
+    if ndx >= mods.num_mods {
+        return "";
+    }
+    xkb_atom_text(&ctx.atom_table, mods.mods[ndx as usize].name)
 }
 pub fn ActionTypeText(type_0: u32) -> &'static str {
     let name: &'static str = LookupValue(&actionTypeNames, type_0);

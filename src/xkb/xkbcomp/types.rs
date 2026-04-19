@@ -153,56 +153,54 @@ fn MergeIncludedKeyTypes(
     }
 }
 fn HandleIncludeKeyTypes(info: &mut KeyTypesInfo<'_>, include: &mut IncludeStmt) -> bool {
-    unsafe {
-        let ctx_ptr = &raw mut *info.ctx;
-        let ki_ptr = &raw mut *info.keymap_info;
-        let mut included = KeyTypesInfo::new(&mut *ki_ptr);
-        if ExceedsIncludeMaxDepth(info.include_depth) {
+    let ctx_ptr = &raw mut *info.ctx;
+    let ki_ptr = &raw mut *info.keymap_info;
+    let mut included = KeyTypesInfo::new(unsafe { &mut *ki_ptr });
+    if ExceedsIncludeMaxDepth(info.include_depth) {
+        info.errorCount += 10_i32;
+        return false;
+    }
+    InitKeyTypesInfo(
+        &mut included,
+        info.include_depth.wrapping_add(1_u32),
+        &info.mods,
+    );
+    included.name = if include.stmt.is_empty() {
+        None
+    } else {
+        Some(std::mem::take(&mut include.stmt))
+    };
+    let mut current: Option<&IncludeStmt> = Some(include);
+    while let Some(stmt) = current {
+        let mut next_incl = KeyTypesInfo::new(unsafe { &mut *ki_ptr });
+
+        let mut path: [i8; 4096] = [0; 4096];
+        let file: *mut XkbFile = ProcessIncludeFile(
+            ctx_ptr,
+            stmt,
+            FILE_TYPE_TYPES,
+            path.as_mut_ptr(),
+            std::mem::size_of::<[i8; 4096]>(),
+        );
+        if file.is_null() {
             info.errorCount += 10_i32;
+            ClearKeyTypesInfo(&mut included);
             return false;
         }
         InitKeyTypesInfo(
-            &mut included,
+            &mut next_incl,
             info.include_depth.wrapping_add(1_u32),
-            &info.mods,
+            &included.mods,
         );
-        included.name = if include.stmt.is_empty() {
-            None
-        } else {
-            Some(std::mem::take(&mut include.stmt))
-        };
-        let mut current: Option<&IncludeStmt> = Some(include);
-        while let Some(stmt) = current {
-            let mut next_incl = KeyTypesInfo::new(&mut *ki_ptr);
-
-            let mut path: [i8; 4096] = [0; 4096];
-            let file: *mut XkbFile = ProcessIncludeFile(
-                ctx_ptr,
-                stmt,
-                FILE_TYPE_TYPES,
-                path.as_mut_ptr(),
-                std::mem::size_of::<[i8; 4096]>(),
-            );
-            if file.is_null() {
-                info.errorCount += 10_i32;
-                ClearKeyTypesInfo(&mut included);
-                return false;
-            }
-            InitKeyTypesInfo(
-                &mut next_incl,
-                info.include_depth.wrapping_add(1_u32),
-                &included.mods,
-            );
-            HandleKeyTypesFile(&mut next_incl, &mut *file);
-            MergeIncludedKeyTypes(&mut included, &mut next_incl, stmt.merge);
-            ClearKeyTypesInfo(&mut next_incl);
-            FreeXkbFile(file);
-            current = stmt.next_incl.as_deref();
-        }
-        MergeIncludedKeyTypes(info, &mut included, include.merge);
-        ClearKeyTypesInfo(&mut included);
-        info.errorCount == 0_i32
+        HandleKeyTypesFile(&mut next_incl, unsafe { &mut *file });
+        MergeIncludedKeyTypes(&mut included, &mut next_incl, stmt.merge);
+        ClearKeyTypesInfo(&mut next_incl);
+        FreeXkbFile(file);
+        current = stmt.next_incl.as_deref();
     }
+    MergeIncludedKeyTypes(info, &mut included, include.merge);
+    ClearKeyTypesInfo(&mut included);
+    info.errorCount == 0_i32
 }
 fn SetModifiers(
     info: &mut KeyTypesInfo<'_>,

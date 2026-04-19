@@ -305,7 +305,7 @@ fn ExprResolveIntegerLookup(
     ctx: &xkb_context,
     expr: &ExprDef,
     val_rtrn: &mut i64,
-    pending: *mut bool,
+    pending: Option<&mut bool>,
     lookup: &IdentLookup,
 ) -> bool {
     let mut ok: bool = false;
@@ -332,19 +332,14 @@ fn ExprResolveIntegerLookup(
                 unreachable!()
             };
             let mut pending_local = false;
-            let pending_ref = if pending.is_null() {
-                None
-            } else {
+            let pending_ref = if pending.is_some() {
                 Some(&mut pending_local)
+            } else {
+                None
             };
             if let Some(u) = ident_lookup(ctx, lookup, *ident_atom, pending_ref) {
                 *val_rtrn = u as i64;
                 ok = true;
-            }
-            if !pending.is_null() {
-                unsafe {
-                    *pending = pending_local;
-                }
             }
             if !ok {
                 log::error!(
@@ -353,8 +348,11 @@ fn ExprResolveIntegerLookup(
                     xkb_atom_text(&ctx.atom_table, *ident_atom)
                 );
             }
-            if !pending.is_null() && unsafe { *pending } {
-                return false;
+            if let Some(p) = pending {
+                *p = pending_local;
+                if pending_local {
+                    return false;
+                }
             }
             return ok;
         }
@@ -381,8 +379,8 @@ fn ExprResolveIntegerLookup(
             };
             let left = bleft.as_deref().unwrap();
             let right = bright.as_deref().unwrap();
-            if !ExprResolveIntegerLookup(ctx, left, &mut l, std::ptr::null_mut(), lookup)
-                || !ExprResolveIntegerLookup(ctx, right, &mut r, std::ptr::null_mut(), lookup)
+            if !ExprResolveIntegerLookup(ctx, left, &mut l, None, lookup)
+                || !ExprResolveIntegerLookup(ctx, right, &mut r, None, lookup)
             {
                 return false;
             }
@@ -460,7 +458,7 @@ fn ExprResolveIntegerLookup(
                 unreachable!()
             };
             let left = child.as_deref().unwrap();
-            if !ExprResolveIntegerLookup(ctx, left, &mut l, std::ptr::null_mut(), lookup) {
+            if !ExprResolveIntegerLookup(ctx, left, &mut l, None, lookup) {
                 return false;
             }
             *val_rtrn = if expr.common.type_0 == STMT_EXPR_NEGATE {
@@ -475,7 +473,7 @@ fn ExprResolveIntegerLookup(
                 unreachable!()
             };
             let left = child.as_deref().unwrap();
-            return ExprResolveIntegerLookup(ctx, left, val_rtrn, std::ptr::null_mut(), lookup);
+            return ExprResolveIntegerLookup(ctx, left, val_rtrn, None, lookup);
         }
         _ => {
             log::error!(
@@ -489,13 +487,7 @@ fn ExprResolveIntegerLookup(
 }
 
 pub fn ExprResolveInteger(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut i64) -> bool {
-    ExprResolveIntegerLookup(
-        ctx,
-        expr,
-        val_rtrn,
-        std::ptr::null_mut(),
-        &IdentLookup::None,
-    )
+    ExprResolveIntegerLookup(ctx, expr, val_rtrn, None, &IdentLookup::None)
 }
 
 pub fn ExprResolveGroup(
@@ -527,7 +519,7 @@ pub fn ExprResolveGroup(
     let lookup = IdentLookup::NamedPattern(&group_name_pattern);
     let ctx = keymap_info.ctx();
     let mut result: i64 = 0_i64;
-    if !ExprResolveIntegerLookup(ctx, expr, &mut result, pending as *mut bool, &lookup) {
+    if !ExprResolveIntegerLookup(ctx, expr, &mut result, Some(pending), &lookup) {
         return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
             PARSER_FATAL_ERROR as i32
         } else {
@@ -564,7 +556,7 @@ pub fn ExprResolveLevel(ctx: &xkb_context, expr: &ExprDef, level_rtrn: &mut u32)
     };
     let lookup = IdentLookup::NamedPattern(&pattern);
     let mut result: i64 = 0_i64;
-    if !ExprResolveIntegerLookup(ctx, expr, &mut result, std::ptr::null_mut(), &lookup) {
+    if !ExprResolveIntegerLookup(ctx, expr, &mut result, None, &lookup) {
         return false;
     }
     if result < 1_i64 || result > XKB_LEVEL_MAX_IMPL as i64 {
@@ -582,7 +574,7 @@ pub fn ExprResolveLevel(ctx: &xkb_context, expr: &ExprDef, level_rtrn: &mut u32)
 
 pub fn ExprResolveButton(ctx: &xkb_context, expr: &ExprDef, btn_rtrn: &mut i64) -> bool {
     let lookup = IdentLookup::Simple(&buttonNames);
-    ExprResolveIntegerLookup(ctx, expr, btn_rtrn, std::ptr::null_mut(), &lookup)
+    ExprResolveIntegerLookup(ctx, expr, btn_rtrn, None, &lookup)
 }
 
 pub fn ExprResolveString(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut u32) -> bool {
@@ -689,7 +681,7 @@ fn ExprResolveMaskLookup(
     ctx: &xkb_context,
     expr: &ExprDef,
     val_rtrn: &mut u32,
-    pending: *mut bool,
+    pending: Option<&mut bool>,
     lookup: &IdentLookup,
 ) -> bool {
     let ok: bool;
@@ -728,21 +720,16 @@ fn ExprResolveMaskLookup(
                 unreachable!()
             };
             let mut pending_local = false;
-            let pending_ref = if pending.is_null() {
-                None
-            } else {
+            let pending_ref = if pending.is_some() {
                 Some(&mut pending_local)
+            } else {
+                None
             };
             if let Some(val) = ident_lookup(ctx, lookup, *ident_atom, pending_ref) {
                 *val_rtrn = val;
                 ok = true;
             } else {
                 ok = false;
-            }
-            if !pending.is_null() {
-                unsafe {
-                    *pending = pending_local;
-                }
             }
             if !ok {
                 log::error!(
@@ -751,8 +738,11 @@ fn ExprResolveMaskLookup(
                     xkb_atom_text(&ctx.atom_table, *ident_atom)
                 );
             }
-            if !pending.is_null() && unsafe { *pending } {
-                return false;
+            if let Some(p) = pending {
+                *p = pending_local;
+                if pending_local {
+                    return false;
+                }
             }
             return ok;
         }
@@ -786,8 +776,8 @@ fn ExprResolveMaskLookup(
             };
             let left = bleft.as_deref().unwrap();
             let right = bright.as_deref().unwrap();
-            if !ExprResolveMaskLookup(ctx, left, &mut l, std::ptr::null_mut(), lookup)
-                || !ExprResolveMaskLookup(ctx, right, &mut r, std::ptr::null_mut(), lookup)
+            if !ExprResolveMaskLookup(ctx, left, &mut l, None, lookup)
+                || !ExprResolveMaskLookup(ctx, right, &mut r, None, lookup)
             {
                 return false;
             }
@@ -826,7 +816,7 @@ fn ExprResolveMaskLookup(
                 unreachable!()
             };
             let left = child.as_deref().unwrap();
-            if !ExprResolveIntegerLookup(ctx, left, &mut v, std::ptr::null_mut(), lookup) {
+            if !ExprResolveIntegerLookup(ctx, left, &mut v, None, lookup) {
                 return false;
             }
             if v < 0_i64 || v > u32::MAX as i64 {
@@ -846,7 +836,7 @@ fn ExprResolveMaskLookup(
                 unreachable!()
             };
             let left = child.as_deref().unwrap();
-            if !ExprResolveIntegerLookup(ctx, left, &mut v, std::ptr::null_mut(), lookup) {
+            if !ExprResolveIntegerLookup(ctx, left, &mut v, None, lookup) {
                 return false;
             }
             log::error!(
@@ -889,7 +879,7 @@ pub fn ExprResolveMask(
     values: &[LookupEntry],
 ) -> bool {
     let lookup = IdentLookup::Simple(values);
-    ExprResolveMaskLookup(ctx, expr, mask_rtrn, std::ptr::null_mut(), &lookup)
+    ExprResolveMaskLookup(ctx, expr, mask_rtrn, None, &lookup)
 }
 
 pub fn ExprResolveModMask(
@@ -901,7 +891,7 @@ pub fn ExprResolveModMask(
 ) -> bool {
     let priv_0 = LookupModMaskPriv { mods, mod_type };
     let lookup = IdentLookup::ModMask(&priv_0);
-    ExprResolveMaskLookup(ctx, expr, mask_rtrn, std::ptr::null_mut(), &lookup)
+    ExprResolveMaskLookup(ctx, expr, mask_rtrn, None, &lookup)
 }
 
 pub fn ExprResolveMod(
@@ -963,5 +953,5 @@ pub fn ExprResolveGroupMask(
     };
     let lookup = IdentLookup::NamedPattern(&group_name_pattern);
     let ctx = keymap_info.ctx();
-    ExprResolveMaskLookup(ctx, expr, group_rtrn, pending_rtrn as *mut bool, &lookup)
+    ExprResolveMaskLookup(ctx, expr, group_rtrn, Some(pending_rtrn), &lookup)
 }

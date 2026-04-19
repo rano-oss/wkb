@@ -858,6 +858,40 @@ pub struct xkb_keymap_format_ops {
         Option<fn(*mut xkb_keymap, u32, xkb_keymap_serialize_flags) -> *mut i8>,
 }
 
+// ── Safe methods on xkb_keymap ──────────────────────────────────────
+
+impl xkb_keymap {
+    /// Look up a key by keycode. Safe wrapper around the old `XkbKey` function.
+    #[inline]
+    pub fn get_key(&self, kc: u32) -> Option<&xkb_key> {
+        if kc < self.min_key_code || kc > self.max_key_code {
+            None
+        } else if kc < self.num_keys_low {
+            Some(&self.keys[kc as usize])
+        } else {
+            let mut lower: u32 = self.num_keys_low;
+            let mut upper: u32 = self.num_keys;
+            while lower < upper {
+                let mid: u32 = lower.wrapping_add(
+                    upper
+                        .wrapping_sub(1_u32)
+                        .wrapping_sub(lower)
+                        .wrapping_div(2_u32),
+                );
+                let key = &self.keys[mid as usize];
+                if key.keycode < kc {
+                    lower = mid.wrapping_add(1_u32);
+                } else if key.keycode > kc {
+                    upper = mid;
+                } else {
+                    return Some(key);
+                }
+            }
+            None
+        }
+    }
+}
+
 // ── Inline helpers ──────────────────────────────────────────────────
 
 #[inline]
@@ -920,8 +954,8 @@ pub unsafe fn XkbKeyByName(
 }
 
 #[inline]
-pub unsafe fn entry_is_active(entry: *const xkb_key_type_entry) -> bool {
-    unsafe { (*entry).mods.mods == 0_u32 || (*entry).mods.mask != 0_u32 }
+pub fn entry_is_active(entry: &xkb_key_type_entry) -> bool {
+    entry.mods.mods == 0_u32 || entry.mods.mask != 0_u32
 }
 
 #[inline]

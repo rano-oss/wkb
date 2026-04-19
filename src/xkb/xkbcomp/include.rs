@@ -149,32 +149,32 @@ fn DirectoryForInclude(type_0: u32) -> &'static str {
     }
 }
 fn LogIncludePaths(ctx: *mut xkb_context) {
+    // SAFETY: ctx is a valid pointer throughout this function; the context
+    // API functions require raw pointers (legacy FFI signatures).
     unsafe {
-        if xkb_context_num_include_paths(ctx) > 0_u32 {
+        let num = xkb_context_num_include_paths(ctx);
+        if num > 0_u32 {
             log::error!("[XKB-{:03}] {} include paths searched:\n",
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                xkb_context_num_include_paths(ctx));
-            let mut i: u32 = 0_u32;
-            while i < xkb_context_num_include_paths(ctx) {
+                num);
+            for i in 0..num {
                 log::error!("[XKB-{:03}] \t{}\n",
                     XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
                     xkb_context_include_path_get(ctx, i));
-                i = i.wrapping_add(1);
             }
         } else {
             log::error!("[XKB-{:03}] There are no include paths to search\n",
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32);
         }
-        if xkb_context_num_failed_include_paths(ctx) > 0_u32 {
+        let num_failed = xkb_context_num_failed_include_paths(ctx);
+        if num_failed > 0_u32 {
             log::error!("[XKB-{:03}] {} include paths could not be added:\n",
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                xkb_context_num_failed_include_paths(ctx));
-            let mut i_0: u32 = 0_u32;
-            while i_0 < xkb_context_num_failed_include_paths(ctx) {
+                num_failed);
+            for i in 0..num_failed {
                 log::error!("[XKB-{:03}] \t{}\n",
                     XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                    xkb_context_failed_include_path_get(ctx, i_0));
-                i_0 = i_0.wrapping_add(1);
+                    xkb_context_failed_include_path_get(ctx, i));
             }
         }
     }
