@@ -525,7 +525,7 @@ pub fn ExprResolveGroup(
         error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
     };
     let lookup = IdentLookup::NamedPattern(&group_name_pattern);
-    let ctx = unsafe { &(*keymap_info.keymap).ctx };
+    let ctx = keymap_info.ctx();
     let mut result: i64 = 0_i64;
     if !ExprResolveIntegerLookup(ctx, expr, &mut result, pending as *mut bool, &lookup) {
         return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
@@ -962,6 +962,6 @@ pub fn ExprResolveGroupMask(
         error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
     };
     let lookup = IdentLookup::NamedPattern(&group_name_pattern);
-    let ctx = unsafe { &(*keymap_info.keymap).ctx };
+    let ctx = keymap_info.ctx();
     ExprResolveMaskLookup(ctx, expr, group_rtrn, pending_rtrn as *mut bool, &lookup)
 }

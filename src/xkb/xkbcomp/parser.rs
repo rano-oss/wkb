@@ -6,7 +6,7 @@ use crate::xkb::keysym::{xkb_keysym_from_name, xkb_keysym_is_deprecated};
 
 pub const XKB_KEYSYM_MIN: i32 = 0;
 
-use crate::xkb::shared_ast_types::box_from_raw;
+use crate::xkb::shared_ast_types::{box_from_raw, collect_vardefs};
 pub use crate::xkb::xkbcomp::ast_build::{
     expr_create, BoolVarCreate, ExprAppendKeySymList, ExprCreateKeySymList, FreeStmt,
     GroupCompatCreate, IncludeCreate, InterpCreate, KeyAliasCreate, KeyTypeCreate, KeycodeCreate,
@@ -79,11 +79,11 @@ pub use crate::xkb::messages::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
     XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
-    XKB_WARNING_CANNOT_INFER_KEY_TYPE,
-    XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
-    XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY, XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
+    XKB_WARNING_CANNOT_INFER_KEY_TYPE, XKB_WARNING_CONFLICTING_KEY_ACTION,
+    XKB_WARNING_CONFLICTING_KEY_FIELDS, XKB_WARNING_CONFLICTING_KEY_NAME,
+    XKB_WARNING_CONFLICTING_KEY_SYMBOL, XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES, XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
     XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES, XKB_WARNING_CONFLICTING_MODMAP,
     XKB_WARNING_DEPRECATED_KEYSYM, XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_DUPLICATE_ENTRY,
     XKB_WARNING_EXTRA_SYMBOLS_IGNORED, XKB_WARNING_ILLEGAL_KEYCODE_ALIAS,
@@ -98,7 +98,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
 };
 pub use crate::xkb::scanner_utils::{isvaleq, scanner, scanner_loc, sval};
-pub use crate::xkb::shared_ast_types::{safe_map_name, FreeXkbFile};
+pub use crate::xkb::shared_ast_types::{collect_exprs, safe_map_name, FreeXkbFile};
 pub use crate::xkb::shared_ast_types::{
     ExprDef, ExprKind, GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
     LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef,
@@ -118,7 +118,6 @@ pub use crate::xkb::shared_ast_types::{
     STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
 };
 use crate::xkb::utils::cstr_len;
-use crate::xkb::utils::streq_not_null;
 use libc::{free, malloc};
 #[derive(Clone)]
 #[repr(C)]
@@ -315,12 +314,14 @@ fn _xkbcommon_error(param: *mut parser_param, msg: *const i8) {
     unsafe {
         let loc: scanner_loc = (*(*param).scanner).token_location();
         let msg_str = std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(msg));
-        log::error!("[XKB-{:03}] {}:{}:{}: {}\n",
+        log::error!(
+            "[XKB-{:03}] {}:{}:{}: {}\n",
             XKB_ERROR_INVALID_XKB_SYNTAX as i32,
             &(*(*param).scanner).file_name,
             loc.line,
             loc.column,
-            msg_str);
+            msg_str
+        );
     }
 }
 fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u32) -> bool {
@@ -382,12 +383,14 @@ fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u32) -> b
                     ));
                     if ref_name.is_null() {
                         let loc: scanner_loc = (*(*param).scanner).token_location();
-                        log::warn!("[XKB-{:03}] {}:{}:{}: deprecated keysym \"{}\".\n",
+                        log::warn!(
+                            "[XKB-{:03}] {}:{}:{}: deprecated keysym \"{}\".\n",
                             XKB_WARNING_DEPRECATED_KEYSYM as i32,
                             &(*(*param).scanner).file_name,
                             loc.line,
                             loc.column,
-                            buf_str);
+                            buf_str
+                        );
                     } else {
                         let ref_str = std::str::from_utf8_unchecked(
                             crate::xkb::utils::cstr_as_bytes(ref_name),
@@ -913,11 +916,7 @@ fn yy_syntax_error_arguments(
         yycount
     }
 }
-fn yysyntax_error(
-    yymsg_alloc: *mut i64,
-    yymsg: *mut *mut i8,
-    yyctx: *const yypcontext_t,
-) -> i32 {
+fn yysyntax_error(yymsg_alloc: *mut i64, yymsg: *mut *mut i8, yyctx: *const yypcontext_t) -> i32 {
     unsafe {
         let mut yyformat: *const i8;
         let mut yyarg: [yysymbol_kind_t; 5] = [YYSYMBOL_YYEOF; 5];
@@ -1707,7 +1706,7 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     58 => {
                         let c2rust_fresh2 = &mut (*(*yyvsp.offset(-4_i32 as isize)).interp).def;
                         *c2rust_fresh2 =
-                            box_from_raw((*yyvsp.offset(-2_i32 as isize)).varList.head);
+                            collect_vardefs((*yyvsp.offset(-2_i32 as isize)).varList.head);
                         yyval.interp = (*yyvsp.offset(-4_i32 as isize)).interp;
                         c2rust_current_block = 9699707990742192723;
                     }
@@ -1844,7 +1843,7 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                         let mut k_0: u32 = 0_u32;
                         while k_0 < (*yyvsp.offset(-3_i32 as isize)).noSymbolOrActionList {
                             let acts: *mut ExprDef = expr_create(ExprKind::ActionList {
-                                actions: box_from_raw(std::ptr::null_mut()),
+                                actions: Vec::new(),
                             }) as *mut ExprDef;
                             if acts.is_null() {
                                 c2rust_current_block = 7267896227379959561;
@@ -1886,7 +1885,7 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     83 => {
                         yyval.modMask = ModMapCreate(
                             (*yyvsp.offset(-4_i32 as isize)).atom,
-                            (*yyvsp.offset(-2_i32 as isize)).exprList.head,
+                            collect_exprs((*yyvsp.offset(-2_i32 as isize)).exprList.head),
                         );
                         c2rust_current_block = 9699707990742192723;
                     }
@@ -2180,10 +2179,12 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     }
                     147 => {
                         let loc: scanner_loc = (*(*param).scanner).token_location();
-                        log::warn!("{}:{}:{}: ignored unsupported legacy merge mode \"alternate\"\n",
+                        log::warn!(
+                            "{}:{}:{}: ignored unsupported legacy merge mode \"alternate\"\n",
                             &(*(*param).scanner).file_name,
                             loc.line,
-                            loc.column);
+                            loc.column
+                        );
                         yyval.merge = MERGE_DEFAULT;
                         c2rust_current_block = 9699707990742192723;
                     }
@@ -2292,7 +2293,7 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     162 => {
                         yyval.expr = expr_create(ExprKind::Action {
                             name: (*yyvsp.offset(-3_i32 as isize)).atom,
-                            args: box_from_raw((*yyvsp.offset(-1_i32 as isize)).exprList.head),
+                            args: collect_exprs((*yyvsp.offset(-1_i32 as isize)).exprList.head),
                         });
                         c2rust_current_block = 9699707990742192723;
                     }
@@ -2310,7 +2311,7 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     }
                     166 => {
                         let expr: *mut ExprDef = expr_create(ExprKind::ActionList {
-                            actions: box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
+                            actions: collect_exprs((*yyvsp.offset(0_i32 as isize)).expr),
                         });
                         yyval.exprList = (*yyvsp.offset(-2_i32 as isize)).exprList;
                         (*yyval.exprList.last).common.next =
@@ -2328,7 +2329,7 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     }
                     168 => {
                         yyval.exprList.last = expr_create(ExprKind::ActionList {
-                            actions: box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
+                            actions: collect_exprs((*yyvsp.offset(0_i32 as isize)).expr),
                         });
                         yyval.exprList.head = yyval.exprList.last;
                         c2rust_current_block = 9699707990742192723;
@@ -2353,7 +2354,7 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     }
                     172 => {
                         yyval.expr = expr_create(ExprKind::ActionList {
-                            actions: box_from_raw((*yyvsp.offset(-1_i32 as isize)).exprList.head),
+                            actions: collect_exprs((*yyvsp.offset(-1_i32 as isize)).exprList.head),
                         });
                         c2rust_current_block = 9699707990742192723;
                     }
@@ -2363,14 +2364,14 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     }
                     174 => {
                         yyval.expr = expr_create(ExprKind::ActionList {
-                            actions: box_from_raw(std::ptr::null_mut()),
+                            actions: Vec::new(),
                         });
                         c2rust_current_block = 9699707990742192723;
                     }
                     175 => {
                         yyval.expr = expr_create(ExprKind::Action {
                             name: (*yyvsp.offset(-3_i32 as isize)).atom,
-                            args: box_from_raw((*yyvsp.offset(-1_i32 as isize)).exprList.head),
+                            args: collect_exprs((*yyvsp.offset(-1_i32 as isize)).exprList.head),
                         });
                         c2rust_current_block = 9699707990742192723;
                     }
@@ -2556,12 +2557,14 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                             &raw mut yyval.keysym,
                         ) {
                             let loc_0: scanner_loc = (*(*param).scanner).token_location();
-                            log::warn!("[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{}\"\n",
+                            log::warn!(
+                                "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{}\"\n",
                                 XKB_WARNING_UNRECOGNIZED_KEYSYM as i32,
                                 &(*(*param).scanner).file_name,
                                 loc_0.line,
                                 loc_0.column,
-                                (*yyvsp.offset(0_isize)).sval.as_str());
+                                (*yyvsp.offset(0_isize)).sval.as_str()
+                            );
                             yyval.keysym = XKB_KEY_NoSymbol as u32;
                         }
                         c2rust_current_block = 9699707990742192723;
@@ -2578,13 +2581,15 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     203 => {
                         if (*yyvsp.offset(0_i32 as isize)).num < XKB_KEYSYM_MIN as i64 {
                             let loc_1: scanner_loc = (*(*param).scanner).token_location();
-                            log::warn!("[XKB-{:03}] {}:{}:{}: unrecognized keysym \"-{:#06x}\" ({})\n",
+                            log::warn!(
+                                "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"-{:#06x}\" ({})\n",
                                 XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
                                 &(*(*param).scanner).file_name,
                                 loc_1.line,
                                 loc_1.column,
                                 -(*yyvsp.offset(0_i32 as isize)).num,
-                                (*yyvsp.offset(0_i32 as isize)).num);
+                                (*yyvsp.offset(0_i32 as isize)).num
+                            );
                             yyval.keysym = XKB_KEY_NoSymbol as u32;
                         } else {
                             if (*yyvsp.offset(0_i32 as isize)).num <= XKB_KEYSYM_MAX as i64 {
@@ -2620,23 +2625,27 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                                 }
                             } else {
                                 let loc_4: scanner_loc = (*(*param).scanner).token_location();
-                                log::warn!("[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{:#06x}\" ({})\n",
+                                log::warn!(
+                                    "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{:#06x}\" ({})\n",
                                     XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
                                     &(*(*param).scanner).file_name,
                                     loc_4.line,
                                     loc_4.column,
                                     (*yyvsp.offset(0_i32 as isize)).num,
-                                    (*yyvsp.offset(0_i32 as isize)).num);
+                                    (*yyvsp.offset(0_i32 as isize)).num
+                                );
                                 yyval.keysym = XKB_KEY_NoSymbol as u32;
                             }
                             let loc_5: scanner_loc = (*(*param).scanner).token_location();
-                            log::warn!("[XKB-{:03}] {}:{}:{}: numeric keysym \"{:#06x}\" ({})\n",
+                            log::warn!(
+                                "[XKB-{:03}] {}:{}:{}: numeric keysym \"{:#06x}\" ({})\n",
                                 XKB_WARNING_NUMERIC_KEYSYM as i32,
                                 &(*(*param).scanner).file_name,
                                 loc_5.line,
                                 loc_5.column,
                                 (*yyvsp.offset(0_i32 as isize)).num,
-                                (*yyvsp.offset(0_i32 as isize)).num);
+                                (*yyvsp.offset(0_i32 as isize)).num
+                            );
                         }
                         c2rust_current_block = 9699707990742192723;
                     }

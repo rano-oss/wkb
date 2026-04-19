@@ -108,7 +108,8 @@ impl<'a> SymbolsInfo<'a> {
         &*self.ctx
     }
 
-    pub fn new(ctx: &'a mut xkb_context, keymap_info: &'a mut xkb_keymap_info) -> Self {
+    pub fn new(keymap_info: &'a mut xkb_keymap_info) -> Self {
+        let ctx = unsafe { &mut (*keymap_info.keymap).ctx };
         Self {
             name: None,
             errorCount: 0,
@@ -193,7 +194,10 @@ fn InitSymbolsInfo(info: &mut SymbolsInfo<'_>, include_depth: u32, mods: &xkb_mo
     info.explicit_group = XKB_LAYOUT_INVALID;
     info.max_groups = info.keymap_info.features.max_groups;
     InitKeyInfo(info.ctx, &raw mut info.default_key);
-    unsafe { InitActionsInfo(info.keymap_info.keymap, &raw mut info.default_actions) };
+    InitActionsInfo(
+        unsafe { &*info.keymap_info.keymap },
+        &mut info.default_actions,
+    );
     InitVMods(&mut info.mods, mods, include_depth > 0_u32);
 }
 fn ClearSymbolsInfo(info: &mut SymbolsInfo<'_>) {
@@ -808,12 +812,12 @@ fn MergeIncludedSymbols(into: &mut SymbolsInfo<'_>, from: &mut SymbolsInfo<'_>, 
         }
     };
 }
-fn HandleIncludeSymbols(info: &mut SymbolsInfo<'_>, include: *mut IncludeStmt) -> bool {
+fn HandleIncludeSymbols(info: &mut SymbolsInfo<'_>, include: &mut IncludeStmt) -> bool {
     unsafe {
         let ctx_ptr = &raw mut *info.ctx;
         let ki_ptr = &raw mut *info.keymap_info;
-        let mut included = SymbolsInfo::new(unsafe { &mut *ctx_ptr }, unsafe { &mut *ki_ptr });
-        if ExceedsIncludeMaxDepth(&mut *ctx_ptr, info.include_depth) {
+        let mut included = SymbolsInfo::new(unsafe { &mut *ki_ptr });
+        if ExceedsIncludeMaxDepth(info.include_depth) {
             info.errorCount += 10_i32;
             return false;
         }
@@ -822,24 +826,21 @@ fn HandleIncludeSymbols(info: &mut SymbolsInfo<'_>, include: *mut IncludeStmt) -
             info.include_depth.wrapping_add(1_u32),
             &info.mods,
         );
-        included.name = {
-            let inc = &mut *include;
-            if inc.stmt.is_empty() {
-                None
-            } else {
-                Some(std::mem::take(&mut inc.stmt))
-            }
+        included.name = if include.stmt.is_empty() {
+            None
+        } else {
+            Some(std::mem::take(&mut include.stmt))
         };
-        let mut stmt: *mut IncludeStmt = include;
-        while !stmt.is_null() {
-            let mut next_incl = SymbolsInfo::new(&mut *ctx_ptr, &mut *ki_ptr);
+        let mut current: Option<&IncludeStmt> = Some(include);
+        while let Some(stmt) = current {
+            let mut next_incl = SymbolsInfo::new(&mut *ki_ptr);
 
             let mut path: [i8; 4096] = [0; 4096];
             let file: *mut XkbFile = ProcessIncludeFile(
-                &mut *ctx_ptr,
+                ctx_ptr,
                 stmt,
                 FILE_TYPE_SYMBOLS,
-                &raw mut path as *mut i8,
+                path.as_mut_ptr(),
                 std::mem::size_of::<[i8; 4096]>(),
             );
             if file.is_null() {
@@ -852,10 +853,9 @@ fn HandleIncludeSymbols(info: &mut SymbolsInfo<'_>, include: *mut IncludeStmt) -
                 info.include_depth.wrapping_add(1_u32),
                 &included.mods,
             );
-            let stmt_ref = &*stmt;
-            if !stmt_ref.modifier.is_empty() {
+            if !stmt.modifier.is_empty() {
                 next_incl.explicit_group =
-                    (stmt_ref.modifier.parse::<i32>().unwrap_or(0) - 1_i32) as u32;
+                    (stmt.modifier.parse::<i32>().unwrap_or(0) - 1_i32) as u32;
                 if next_incl.explicit_group >= info.max_groups {
                     log::error!("[XKB-{:03}] Cannot set explicit group to {} - must be between 1..{}; Ignoring group number\n",
                         { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
@@ -868,16 +868,13 @@ fn HandleIncludeSymbols(info: &mut SymbolsInfo<'_>, include: *mut IncludeStmt) -
             } else {
                 next_incl.explicit_group = info.explicit_group;
             }
-            HandleSymbolsFile(&mut next_incl, file);
-            MergeIncludedSymbols(&mut included, &mut next_incl, (*stmt).merge);
+            HandleSymbolsFile(&mut next_incl, &mut *file);
+            MergeIncludedSymbols(&mut included, &mut next_incl, stmt.merge);
             ClearSymbolsInfo(&mut next_incl);
             FreeXkbFile(file);
-            stmt = match (*stmt).next_incl {
-                Some(ref mut b) => b.as_mut() as *mut IncludeStmt,
-                None => std::ptr::null_mut(),
-            };
+            current = stmt.next_incl.as_deref();
         }
-        MergeIncludedSymbols(info, &mut included, (*include).merge);
+        MergeIncludedSymbols(info, &mut included, include.merge);
         ClearSymbolsInfo(&mut included);
         info.errorCount == 0_i32
     }
@@ -1080,15 +1077,13 @@ fn AddActionsToKey(
             let c2rust_current_block_102: u64;
             let leveli: *mut xkb_level =
                 &mut (&mut (*groupi).levels)[level as usize] as *mut xkb_level;
-            let mut num_actions: u32 = 0_u32;
-            let ExprKind::ActionList { actions } = &(*actionList).kind else {
+            let ExprKind::ActionList {
+                actions: action_vec,
+            } = &(*actionList).kind
+            else {
                 unreachable!()
             };
-            let mut act: *mut ExprDef = actions.raw();
-            while !act.is_null() {
-                num_actions = num_actions.wrapping_add(1);
-                act = (*act).common.next as *mut ExprDef;
-            }
+            let num_actions: u32 = action_vec.len() as u32;
             if (num_actions > 65535_u32) as i64 != 0 {
                 log::error!("Key <{}> has too many actions for group {}, level {}; expected max {}, got: {}\n",
                     KeyInfoText(info, &*keyi),
@@ -1099,18 +1094,12 @@ fn AddActionsToKey(
                 return false;
             }
             let mut actions: Vec<xkb_action> = Vec::new();
-            let ExprKind::ActionList {
-                actions: action_ptr,
-            } = &(*actionList).kind
-            else {
-                unreachable!()
-            };
-            let mut act_0: *mut ExprDef = action_ptr.raw();
+            let mut action_iter = action_vec.iter();
             loop {
-                if act_0.is_null() {
+                let Some(act_expr) = action_iter.next() else {
                     c2rust_current_block_102 = 1134115459065347084;
                     break;
-                }
+                };
                 let mut toAct: xkb_action = xkb_action {
                     type_0: ACTION_TYPE_NONE,
                 };
@@ -1118,7 +1107,7 @@ fn AddActionsToKey(
                     info.keymap_info,
                     &raw mut info.default_actions,
                     &raw mut info.mods,
-                    act_0,
+                    act_expr as *const ExprDef as *mut ExprDef,
                     &raw mut toAct,
                 ) as xkb_parser_error;
                 if r as u32 != PARSER_SUCCESS {
@@ -1143,7 +1132,6 @@ fn AddActionsToKey(
                         actions.push(toAct);
                     }
                 }
-                act_0 = (*act_0).common.next as *mut ExprDef;
             }
             if c2rust_current_block_102 == 1134115459065347084 {
                 if actions.is_empty() {
@@ -1305,10 +1293,12 @@ fn SetSymbolsField(
     keyi: *mut KeyInfo,
     field: &str,
     arrayNdx: *mut ExprDef,
-    value_ptr: *mut *mut ExprDef,
+    value_opt: &mut Option<Box<ExprDef>>,
 ) -> bool {
     unsafe {
-        let value: *mut ExprDef = *value_ptr;
+        let value: *mut ExprDef = value_opt
+            .as_mut()
+            .map_or(std::ptr::null_mut(), |b| &mut **b as *mut ExprDef);
         if field.eq_ignore_ascii_case("type") {
             let mut ndx: u32 = 0_u32;
             let mut val: u32 = XKB_ATOM_NONE;
@@ -1394,7 +1384,7 @@ fn SetSymbolsField(
                 info.keymap_info,
                 field,
                 arrayNdx,
-                *value_ptr,
+                value,
                 keyi,
                 &raw mut overlay,
                 &raw mut key,
@@ -1541,11 +1531,10 @@ fn SetSymbolsField(
                 (*info.keymap_info)
                     .pending_computations
                     .push(pending_computation {
-                        expr: box_from_raw(*value_ptr),
+                        expr: value_opt.take(),
                         computed: false,
                         value: 0_u32,
                     });
-                *value_ptr = std::ptr::null_mut();
                 (*keyi).out_of_range_group_number = pending_index;
             } else {
                 (*keyi).out_of_range_pending_group = false;
@@ -1670,12 +1659,7 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
             stmt.merge as merge_mode
         };
         ret = {
-            let mut value_raw = stmt
-                .value
-                .take()
-                .map_or(std::ptr::null_mut(), |b| Box::into_raw(b));
-            let r = SetSymbolsField(info, &raw mut temp, field, arrayNdx, &raw mut value_raw);
-            stmt.value = unsafe { box_from_raw(value_raw) };
+            let r = SetSymbolsField(info, &raw mut temp, field, arrayNdx, &mut stmt.value);
             r
         };
         let dk_ptr = &raw mut info.default_key;
@@ -1747,17 +1731,17 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
     }
     ret
 }
-fn HandleSymbolsBody(info: &mut SymbolsInfo<'_>, mut def: *mut VarDef, keyi: *mut KeyInfo) -> bool {
+fn HandleSymbolsBody(info: &mut SymbolsInfo<'_>, defs: &mut [VarDef], keyi: *mut KeyInfo) -> bool {
     unsafe {
         let mut all_valid_entries: bool = true;
-        while !def.is_null() {
+        for def in defs.iter_mut() {
             let mut field: &str = "";
             let mut arrayNdx_opt: Option<&ExprDef> = None;
             let mut arrayNdx: *mut ExprDef = std::ptr::null_mut();
             let mut ok: bool = true;
-            if (*def).name.is_none() {
-                if (*def).value.is_none()
-                    || (*(*def).value.raw()).common.type_0 != STMT_EXPR_ACTION_LIST
+            if def.name.is_none() {
+                if def.value.is_none()
+                    || def.value.as_ref().unwrap().common.type_0 != STMT_EXPR_ACTION_LIST
                 {
                     field = "symbols";
                 } else {
@@ -1768,7 +1752,7 @@ fn HandleSymbolsBody(info: &mut SymbolsInfo<'_>, mut def: *mut VarDef, keyi: *mu
                 let mut elem: &str = "";
                 ok = ExprResolveLhs(
                     &*info.ctx,
-                    &*(*def).name.raw(),
+                    def.name.as_deref().unwrap(),
                     &mut elem,
                     &mut field,
                     &mut arrayNdx_opt,
@@ -1783,26 +1767,15 @@ fn HandleSymbolsBody(info: &mut SymbolsInfo<'_>, mut def: *mut VarDef, keyi: *mu
                     ok = false;
                 }
             }
-            if (*def).value.is_none() {
+            if def.value.is_none() {
                 log::error!("[XKB-{:03}] Could not allocate the value of field \"{}\". Statement ignored.\n",
                     XKB_ERROR_ALLOCATION_ERROR as i32,
                     field);
                 ok = false;
             }
-            if !ok
-                || !{
-                    let mut value_raw = (*def)
-                        .value
-                        .take()
-                        .map_or(std::ptr::null_mut(), |b| Box::into_raw(b));
-                    let r = SetSymbolsField(info, keyi, field, arrayNdx, &raw mut value_raw);
-                    (*def).value = box_from_raw(value_raw);
-                    r
-                }
-            {
+            if !ok || !SetSymbolsField(info, keyi, field, arrayNdx, &mut def.value) {
                 all_valid_entries = false;
             }
-            def = (*def).common.next as *mut VarDef;
         }
         all_valid_entries
     }
@@ -1867,7 +1840,7 @@ fn HandleSymbolsDef(info: &mut SymbolsInfo<'_>, stmt: &mut SymbolsDef) -> bool {
     }
     keyi.merge = stmt.merge as merge_mode;
     keyi.name = stmt.keyName;
-    if HandleSymbolsBody(info, stmt.symbols.raw(), &raw mut keyi) as i32 != 0
+    if HandleSymbolsBody(info, &mut stmt.symbols, &raw mut keyi) as i32 != 0
         && SetExplicitGroup(info, &raw mut keyi) as i32 != 0
         && AddKeySymbols(info, &raw mut keyi, true) as i32 != 0
     {
@@ -1903,17 +1876,16 @@ fn HandleModMapDef(info: &mut SymbolsInfo<'_>, def: &mut ModMapDef) -> bool {
         tmp.modifier = ndx;
         tmp.merge = def.merge;
         let mut c2rust_current_block_19: u64;
-        let mut key: *mut ExprDef = def.keys.raw();
-        while !key.is_null() {
-            if (*key).common.type_0 == STMT_EXPR_KEYNAME_LITERAL {
+        for key in def.keys.iter() {
+            if key.common.type_0 == STMT_EXPR_KEYNAME_LITERAL {
                 tmp.haveSymbol = false;
-                let ExprKind::KeyName(kn) = (*key).kind else {
+                let ExprKind::KeyName(kn) = key.kind else {
                     unreachable!()
                 };
                 tmp.u.keyName = kn;
                 c2rust_current_block_19 = 5601891728916014340;
-            } else if (*key).common.type_0 == STMT_EXPR_KEYSYM_LITERAL {
-                let ExprKind::KeySym(ks) = (*key).kind else {
+            } else if key.common.type_0 == STMT_EXPR_KEYSYM_LITERAL {
+                let ExprKind::KeySym(ks) = key.kind else {
                     unreachable!()
                 };
                 if ks == XKB_KEY_NoSymbol as u32 {
@@ -1932,52 +1904,45 @@ fn HandleModMapDef(info: &mut SymbolsInfo<'_>, def: &mut ModMapDef) -> bool {
             if c2rust_current_block_19 == 5601891728916014340 {
                 ok = AddModMapEntry(info, &raw mut tmp) as i32 != 0 && ok as i32 != 0;
             }
-            key = (*key).common.next as *mut ExprDef;
         }
         ok
     }
 }
-fn HandleSymbolsFile(info: &mut SymbolsInfo<'_>, file: *mut XkbFile) {
-    unsafe {
+fn HandleSymbolsFile(info: &mut SymbolsInfo<'_>, file: &mut XkbFile) {
+    {
         let mut ok: bool;
-        info.name = {
-            let file_ref = &*file;
-            if file_ref.name.is_empty() {
-                None
-            } else {
-                Some(file_ref.name.clone())
-            }
+        info.name = if file.name.is_empty() {
+            None
+        } else {
+            Some(file.name.clone())
         };
-        let mut stmt: *mut ParseCommon = (*file).defs;
-        while !stmt.is_null() {
-            match (*stmt).type_0 {
-                1 => {
-                    ok = HandleIncludeSymbols(info, stmt as *mut IncludeStmt);
+        for stmt in file.defs.iter_mut() {
+            match stmt {
+                Statement::Include(incl) => {
+                    ok = HandleIncludeSymbols(info, &mut **incl);
                 }
-                30 => {
-                    ok = HandleSymbolsDef(info, unsafe { &mut *(stmt as *mut SymbolsDef) });
+                Statement::Symbols(sym) => {
+                    ok = HandleSymbolsDef(info, &mut **sym);
                 }
-                26 => {
-                    ok = HandleGlobalVar(info, unsafe { &mut *(stmt as *mut VarDef) });
+                Statement::Var(var) => {
+                    ok = HandleGlobalVar(info, &mut **var);
                 }
-                29 => {
-                    ok = HandleVModDef(info.ctx, &mut info.mods, unsafe {
-                        &*(stmt as *const VModDef)
-                    });
+                Statement::VMod(vmod) => {
+                    ok = HandleVModDef(info.ctx, &mut info.mods, &**vmod);
                 }
-                31 => {
-                    ok = HandleModMapDef(info, unsafe { &mut *(stmt as *mut ModMapDef) });
+                Statement::ModMap(mm) => {
+                    ok = HandleModMapDef(info, &mut **mm);
                 }
-                35 | 36 => {
+                Statement::Unknown(unk) => {
                     log::error!(
                         "[XKB-{:03}] Unsupported symbols {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
-                        if (*stmt).type_0 == STMT_UNKNOWN_COMPOUND {
+                        if unk.common.type_0 == STMT_UNKNOWN_COMPOUND {
                             "compound"
                         } else {
                             "declaration"
                         },
-                        &(*(stmt as *mut UnknownStatement)).name
+                        &unk.name
                     );
                     ok = (*info.keymap_info).strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
@@ -1985,7 +1950,7 @@ fn HandleSymbolsFile(info: &mut SymbolsInfo<'_>, file: *mut XkbFile) {
                     log::error!(
                         "[XKB-{:03}] Symbols files may not include other types; Ignoring {}\n",
                         XKB_ERROR_WRONG_STATEMENT_TYPE as i32,
-                        stmt_type_to_string((*stmt).type_0)
+                        stmt_type_to_string(stmt.stmt_type())
                     );
                     ok = false;
                 }
@@ -1997,11 +1962,9 @@ fn HandleSymbolsFile(info: &mut SymbolsInfo<'_>, file: *mut XkbFile) {
                 log::error!(
                     "[XKB-{:03}] Abandoning symbols file \"{}\"\n",
                     XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-                    safe_map_name(&*file)
+                    safe_map_name(file)
                 );
                 break;
-            } else {
-                stmt = (*stmt).next as *mut ParseCommon;
             }
         }
     }
@@ -2474,22 +2437,20 @@ fn CopySymbolsToKeymap(keymap: *mut xkb_keymap, info: &mut SymbolsInfo<'_>) -> b
         true
     }
 }
-pub fn CompileSymbols(file: *mut XkbFile, keymap_info: *mut xkb_keymap_info) -> bool {
-    unsafe {
-        let ctx_ptr = &raw mut (*(*keymap_info).keymap).ctx;
-        let mods_ptr = &raw mut (*(*keymap_info).keymap).mods;
-        let mut info = SymbolsInfo::new(&mut *ctx_ptr, &mut *keymap_info);
-        InitSymbolsInfo(&mut info, 0_u32, &*mods_ptr);
-        if !file.is_null() {
-            HandleSymbolsFile(&mut info, file);
-        }
-        if (info.errorCount == 0_i32) && CopySymbolsToKeymap((*keymap_info).keymap, &mut info) {
-            ClearSymbolsInfo(&mut info);
-            return true;
-        }
-        ClearSymbolsInfo(&mut info);
-        false
+pub fn CompileSymbols(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info) -> bool {
+    let mods = keymap_info.keymap_ref().mods;
+    let keymap_ptr = keymap_info.keymap;
+    let mut info = SymbolsInfo::new(keymap_info);
+    InitSymbolsInfo(&mut info, 0_u32, &mods);
+    if let Some(file) = file {
+        HandleSymbolsFile(&mut info, file);
     }
+    if (info.errorCount == 0_i32) && CopySymbolsToKeymap(keymap_ptr, &mut info) {
+        ClearSymbolsInfo(&mut info);
+        return true;
+    }
+    ClearSymbolsInfo(&mut info);
+    false
 }
 use crate::xkb::context::xkb_context_get_log_verbosity;
 use crate::xkb::keysym_case_mappings::xkb_keysym_to_upper;

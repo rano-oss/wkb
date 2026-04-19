@@ -21,7 +21,7 @@ pub use crate::xkb::xkbcomp::types::CompileKeyTypes;
 
 pub const GROUP_MASK_NAME_LAST: u32 = 3;
 pub const GROUP_INDEX_NAME_LAST: u32 = 1;
-pub type compile_file_fn = Option<fn(*mut XkbFile, *mut xkb_keymap_info) -> bool>;
+pub type compile_file_fn = Option<fn(Option<&mut XkbFile>, &mut xkb_keymap_info) -> bool>;
 #[inline]
 fn ComputeEffectiveMask(keymap: *mut xkb_keymap, mods: *mut xkb_mods) {
     unsafe {
@@ -713,10 +713,10 @@ fn UpdateDerivedKeymapFields(info: *mut xkb_keymap_info) -> bool {
 }
 static COMPILE_FILE_FNS: [compile_file_fn; 4] = {
     [
-        Some(CompileKeycodes as fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
-        Some(CompileKeyTypes as fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
-        Some(CompileCompatMap as fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
-        Some(CompileSymbols as fn(*mut XkbFile, *mut xkb_keymap_info) -> bool),
+        Some(CompileKeycodes as fn(Option<&mut XkbFile>, &mut xkb_keymap_info) -> bool),
+        Some(CompileKeyTypes as fn(Option<&mut XkbFile>, &mut xkb_keymap_info) -> bool),
+        Some(CompileCompatMap as fn(Option<&mut XkbFile>, &mut xkb_keymap_info) -> bool),
+        Some(CompileSymbols as fn(Option<&mut XkbFile>, &mut xkb_keymap_info) -> bool),
     ]
 };
 fn pending_computations_array_free(p: &mut Vec<pending_computation>) {
@@ -739,29 +739,30 @@ pub fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> bool {
         ];
         let mut type_0: u32;
         let _ctx: *mut xkb_context = &raw mut (*keymap).ctx;
-        file = (*file).defs as *mut XkbFile;
-        while !file.is_null() {
-            if (*file).file_type < FIRST_KEYMAP_FILE_TYPE
-                || (*file).file_type > LAST_KEYMAP_FILE_TYPE
-            {
-                if (*file).file_type == FILE_TYPE_GEOMETRY {
-                    log::warn!(
-                        "[XKB-{:03}] Geometry sections are not supported; ignoring\n",
-                        XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION as i32
-                    );
+        for stmt in (*file).defs.iter_mut() {
+            if let Statement::XkbFile(ref sub_file) = stmt {
+                if sub_file.file_type < FIRST_KEYMAP_FILE_TYPE
+                    || sub_file.file_type > LAST_KEYMAP_FILE_TYPE
+                {
+                    if sub_file.file_type == FILE_TYPE_GEOMETRY {
+                        log::warn!(
+                            "[XKB-{:03}] Geometry sections are not supported; ignoring\n",
+                            XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION as i32
+                        );
+                    } else {
+                        log::error!(
+                            "Cannot define {} in a keymap file\n",
+                            xkb_file_type_to_string(sub_file.file_type)
+                        );
+                    }
+                } else if !files[sub_file.file_type as usize].is_null() {
+                    log::error!("More than one {} section in keymap file; All sections after the first ignored\n",
+                        xkb_file_type_to_string(sub_file.file_type));
                 } else {
-                    log::error!(
-                        "Cannot define {} in a keymap file\n",
-                        xkb_file_type_to_string((*file).file_type)
-                    );
+                    files[sub_file.file_type as usize] =
+                        &**sub_file as *const XkbFile as *mut XkbFile;
                 }
-            } else if !files[(*file).file_type as usize].is_null() {
-                log::error!("More than one {} section in keymap file; All sections after the first ignored\n",
-                    xkb_file_type_to_string((*file).file_type));
-            } else {
-                files[(*file).file_type as usize] = file;
             }
-            file = (*file).common.next as *mut XkbFile;
         }
         let mut info: xkb_keymap_info = xkb_keymap_info {
             keymap,
@@ -854,8 +855,12 @@ pub fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> bool {
                 );
             }
             let ok: bool = COMPILE_FILE_FNS[type_0 as usize].expect("non-null function pointer")(
-                files[type_0 as usize],
-                &raw mut info,
+                if files[type_0 as usize].is_null() {
+                    None
+                } else {
+                    Some(&mut *files[type_0 as usize])
+                },
+                &mut info,
             ) as bool;
             if !ok {
                 log::error!("Failed to compile {}\n", xkb_file_type_to_string(type_0));

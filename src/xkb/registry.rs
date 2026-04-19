@@ -1,6 +1,6 @@
 use crate::xkb::messages::{XKB_ERROR_INVALID_PATH, XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH};
 use crate::xkb::utils::{cstr_as_bytes, cstr_cmp, cstr_free, cstr_len, strdup_safe};
-use libc::{free, getenv};
+use libc::getenv;
 
 pub type rxkb_log_level = u32;
 pub const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;

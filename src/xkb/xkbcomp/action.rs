@@ -63,26 +63,28 @@ static CONST_FALSE: SyncExprDef = SyncExprDef(ExprDef {
     },
     kind: ExprKind::Boolean(false),
 });
-pub fn InitActionsInfo(keymap: *const xkb_keymap, info: *mut ActionsInfo) {
+pub fn InitActionsInfo(keymap: &xkb_keymap, info: &mut ActionsInfo) {
+    // Zero-initialize the entire actions array to avoid reading uninitialized union bytes
     unsafe {
-        // Zero-initialize the entire actions array to avoid reading uninitialized union bytes
         std::ptr::write_bytes(
-            &raw mut (*info).actions as *mut u8,
+            &raw mut info.actions as *mut u8,
             0,
-            std::mem::size_of_val(&(*info).actions),
+            std::mem::size_of_val(&info.actions),
         );
-        let mut type_0: xkb_action_type = ACTION_TYPE_NONE;
-        while (type_0 as u32) < _ACTION_TYPE_NUM_ENTRIES {
-            (*info).actions[type_0 as usize].type_0 = type_0;
-            type_0 += 1;
-        }
-        (*info).actions[ACTION_TYPE_PTR_DEFAULT as usize].dflt.flags = 0 as xkb_action_flags;
-        (*info).actions[ACTION_TYPE_PTR_DEFAULT as usize].dflt.value = 1_i8;
-        (*info).actions[ACTION_TYPE_PTR_MOVE as usize].ptr.flags = ACTION_ACCEL;
-        (*info).actions[ACTION_TYPE_SWITCH_VT as usize].screen.flags = ACTION_SAME_SCREEN;
-        (*info).actions[ACTION_TYPE_REDIRECT_KEY as usize]
+    }
+    let mut type_0: xkb_action_type = ACTION_TYPE_NONE;
+    while (type_0 as u32) < _ACTION_TYPE_NUM_ENTRIES {
+        info.actions[type_0 as usize].type_0 = type_0;
+        type_0 += 1;
+    }
+    unsafe {
+        info.actions[ACTION_TYPE_PTR_DEFAULT as usize].dflt.flags = 0 as xkb_action_flags;
+        info.actions[ACTION_TYPE_PTR_DEFAULT as usize].dflt.value = 1_i8;
+        info.actions[ACTION_TYPE_PTR_MOVE as usize].ptr.flags = ACTION_ACCEL;
+        info.actions[ACTION_TYPE_SWITCH_VT as usize].screen.flags = ACTION_SAME_SCREEN;
+        info.actions[ACTION_TYPE_REDIRECT_KEY as usize]
             .redirect
-            .keycode = (*keymap).redirect_key_auto;
+            .keycode = keymap.redirect_key_auto;
     }
 }
 static FIELD_STRINGS: [LookupEntry; 37] = [
@@ -1632,12 +1634,12 @@ pub fn HandleActionDef(
             );
             return PARSER_FATAL_ERROR;
         }
-        let (action_name_atom, action_args) = if let ExprKind::Action { name, args } = &(*def).kind
-        {
-            (*name, args.raw())
-        } else {
-            unreachable!()
-        };
+        let (action_name_atom, action_args) =
+            if let ExprKind::Action { name, ref mut args } = (*def).kind {
+                (name, args as *mut Vec<ExprDef>)
+            } else {
+                unreachable!()
+            };
         let action_name: &str = xkb_atom_text(&(*ctx).atom_table, action_name_atom);
         let mut handler_type: xkb_action_type = ACTION_TYPE_NONE;
         if !stringToActionType(action_name, &mut handler_type) {
@@ -1661,20 +1663,19 @@ pub fn HandleActionDef(
             (*action).type_0 = ACTION_TYPE_NONE;
         }
         let mut ret: xkb_parser_error = PARSER_SUCCESS;
-        let mut arg: *mut ExprDef = action_args;
-        while !arg.is_null() {
+        for arg in (*action_args).iter_mut() {
             let value: *const ExprDef;
             let mut value_ptr: *mut *mut ExprDef = std::ptr::null_mut();
             let field: *mut ExprDef;
             let mut arrayRtrn_opt: Option<&ExprDef> = None;
             let mut elemRtrn: &str = "";
             let mut fieldRtrn: &str = "";
-            if (*arg).common.type_0 == STMT_EXPR_ASSIGN {
+            if arg.common.type_0 == STMT_EXPR_ASSIGN {
                 let (left_ptr, right_ref) = if let ExprKind::Binary {
                     ref mut left,
                     ref mut right,
                     ..
-                } = (*arg).kind
+                } = arg.kind
                 {
                     // SAFETY: Option<Box<ExprDef>> has same layout as *mut ExprDef
                     (
@@ -1687,17 +1688,15 @@ pub fn HandleActionDef(
                 field = left_ptr;
                 value = *right_ref;
                 value_ptr = right_ref;
-            } else if (*arg).common.type_0 == STMT_EXPR_NOT
-                || (*arg).common.type_0 == STMT_EXPR_INVERT
-            {
-                field = if let ExprKind::Unary { child, .. } = &(*arg).kind {
+            } else if arg.common.type_0 == STMT_EXPR_NOT || arg.common.type_0 == STMT_EXPR_INVERT {
+                field = if let ExprKind::Unary { child, .. } = &arg.kind {
                     child.raw()
                 } else {
                     unreachable!()
                 };
                 value = &raw const CONST_FALSE.0 as *const ExprDef;
             } else {
-                field = arg;
+                field = arg as *mut ExprDef;
                 value = &raw const CONST_TRUE.0 as *const ExprDef;
             }
             if !ExprResolveLhs(
@@ -1745,7 +1744,6 @@ pub fn HandleActionDef(
                     _ => {}
                 }
             }
-            arg = (*arg).common.next as *mut ExprDef;
         }
         (if (*action).type_0 == ACTION_TYPE_UNKNOWN {
             PARSER_RECOVERABLE_ERROR

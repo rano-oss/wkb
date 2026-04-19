@@ -407,7 +407,7 @@ pub fn FindFileInXkbPath(
         file
     }
 }
-pub fn ExceedsIncludeMaxDepth(_ctx: *mut xkb_context, include_depth: u32) -> bool {
+pub fn ExceedsIncludeMaxDepth(include_depth: u32) -> bool {
     if include_depth >= INCLUDE_MAX_DEPTH as u32 {
         log::error!("[XKB-{:03}] Exceeded include depth threshold ({})",
             XKB_ERROR_RECURSIVE_INCLUDE as i32,
@@ -419,7 +419,7 @@ pub fn ExceedsIncludeMaxDepth(_ctx: *mut xkb_context, include_depth: u32) -> boo
 }
 pub fn ProcessIncludeFile(
     ctx: *mut xkb_context,
-    stmt: *const IncludeStmt,
+    stmt: &IncludeStmt,
     file_type: u32,
     path: *mut i8,
     path_size: usize,
@@ -427,12 +427,11 @@ pub fn ProcessIncludeFile(
     unsafe {
         let mut xkb_file: *mut XkbFile = std::ptr::null_mut();
         let mut candidate: *mut XkbFile = std::ptr::null_mut();
-        let stmt_ref = &*stmt;
 
         // Create CStrings for FFI calls
-        let file_cstr = std::ffi::CString::new(stmt_ref.file.as_str()).unwrap();
+        let file_cstr = std::ffi::CString::new(stmt.file.as_str()).unwrap();
         let mut stmt_file: *const i8 = file_cstr.as_ptr();
-        let mut stmt_file_len: usize = stmt_ref.file.len();
+        let mut stmt_file_len: usize = stmt.file.len();
         let expanded: isize = expand_path(
             ctx,
             "(unknown)",
@@ -468,14 +467,14 @@ pub fn ProcessIncludeFile(
                 true,
             );
         }
-        let map_cstr = if stmt_ref.map.is_empty() {
+        let map_cstr = if stmt.map.is_empty() {
             None
         } else {
-            Some(std::ffi::CString::new(stmt_ref.map.as_str()).unwrap())
+            Some(std::ffi::CString::new(stmt.map.as_str()).unwrap())
         };
         let map_ptr = map_cstr.as_ref().map_or(std::ptr::null(), |c| c.as_ptr());
         while !file.is_null() {
-            xkb_file = XkbParseFile(ctx, file, &stmt_ref.file, map_ptr);
+            xkb_file = XkbParseFile(ctx, file, &stmt.file, map_ptr);
             fclose(file);
             if !xkb_file.is_null() {
                 if (*xkb_file).file_type as u32 != file_type {
@@ -483,10 +482,10 @@ pub fn ProcessIncludeFile(
                         XKB_ERROR_INVALID_INCLUDED_FILE as i32,
                         xkb_file_type_to_string(file_type),
                         xkb_file_type_to_string((*xkb_file).file_type),
-                        &stmt_ref.file);
+                        &stmt.file);
                     FreeXkbFile(xkb_file);
                     xkb_file = std::ptr::null_mut();
-                } else if !stmt_ref.map.is_empty()
+                } else if !stmt.map.is_empty()
                     || (*xkb_file).flags as u32 != 0 && MAP_IS_DEFAULT as i32 != 0
                 {
                     break;
@@ -520,15 +519,15 @@ pub fn ProcessIncludeFile(
             FreeXkbFile(candidate);
         }
         if xkb_file.is_null() {
-            if !stmt_ref.map.is_empty() {
+            if !stmt.map.is_empty() {
                 log::error!("[XKB-{:03}] Couldn't process include statement for '{}({})'\n",
                     XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                    &stmt_ref.file,
-                    &stmt_ref.map);
+                    &stmt.file,
+                    &stmt.map);
             } else {
                 log::error!("[XKB-{:03}] Couldn't process include statement for '{}'\n",
                     XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                    &stmt_ref.file);
+                    &stmt.file);
             }
         }
         xkb_file

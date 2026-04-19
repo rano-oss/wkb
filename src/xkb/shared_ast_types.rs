@@ -135,10 +135,10 @@ pub enum ExprKind {
     },
     Action {
         name: u32,
-        args: Option<Box<ExprDef>>,
+        args: Vec<ExprDef>,
     },
     ActionList {
-        actions: Option<Box<ExprDef>>,
+        actions: Vec<ExprDef>,
     },
     KeysymList {
         syms: Vec<u32>,
@@ -268,7 +268,7 @@ pub struct KeyTypeDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
     pub name: u32,
-    pub body: Option<Box<VarDef>>,
+    pub body: Vec<VarDef>,
 }
 
 #[repr(C)]
@@ -276,7 +276,7 @@ pub struct SymbolsDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
     pub keyName: u32,
-    pub symbols: Option<Box<VarDef>>,
+    pub symbols: Vec<VarDef>,
 }
 
 #[repr(C)]
@@ -284,7 +284,7 @@ pub struct ModMapDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
     pub modifier: u32,
-    pub keys: Option<Box<ExprDef>>,
+    pub keys: Vec<ExprDef>,
 }
 
 #[repr(C)]
@@ -301,7 +301,7 @@ pub struct InterpDef {
     pub merge: merge_mode,
     pub sym: u32,
     pub match_0: Option<Box<ExprDef>>,
-    pub def: Option<Box<VarDef>>,
+    pub def: Vec<VarDef>,
 }
 
 #[repr(C)]
@@ -318,7 +318,7 @@ pub struct LedMapDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
     pub name: u32,
-    pub body: Option<Box<VarDef>>,
+    pub body: Vec<VarDef>,
 }
 
 #[derive(Clone)]
@@ -340,12 +340,159 @@ pub const MAP_IS_HIDDEN: xkb_map_flags = 4;
 pub const MAP_IS_PARTIAL: xkb_map_flags = 2;
 pub const MAP_IS_DEFAULT: xkb_map_flags = 1;
 
-#[derive(Clone)]
+/// Type-safe enum replacing the ParseCommon linked list for XkbFile.defs.
+/// Each variant owns the statement data (no raw pointers needed).
+pub enum Statement {
+    Include(Box<IncludeStmt>),
+    Keycode(Box<KeycodeDef>),
+    KeyAlias(Box<KeyAliasDef>),
+    Expr(Box<ExprDef>),
+    Var(Box<VarDef>),
+    KeyType(Box<KeyTypeDef>),
+    Interp(Box<InterpDef>),
+    VMod(Box<VModDef>),
+    Symbols(Box<SymbolsDef>),
+    ModMap(Box<ModMapDef>),
+    GroupCompat(Box<GroupCompatDef>),
+    LedMap(Box<LedMapDef>),
+    LedName(Box<LedNameDef>),
+    Unknown(Box<UnknownStatement>),
+    /// Sub-XkbFile (for FILE_TYPE_KEYMAP defs that are themselves XkbFiles)
+    XkbFile(Box<XkbFile>),
+}
+
+impl Statement {
+    /// Get the merge mode from a statement (most types have one).
+    pub fn merge(&self) -> merge_mode {
+        match self {
+            Statement::Include(s) => s.merge,
+            Statement::Keycode(s) => s.merge,
+            Statement::KeyAlias(s) => s.merge,
+            Statement::Var(s) => s.merge,
+            Statement::KeyType(s) => s.merge,
+            Statement::Interp(s) => s.merge,
+            Statement::VMod(s) => s.merge,
+            Statement::Symbols(s) => s.merge,
+            Statement::ModMap(s) => s.merge,
+            Statement::GroupCompat(s) => s.merge,
+            Statement::LedMap(s) => s.merge,
+            Statement::LedName(s) => s.merge,
+            Statement::Unknown(_) | Statement::Expr(_) | Statement::XkbFile(_) => 0,
+        }
+    }
+
+    /// Get the stmt_type discriminant.
+    pub fn stmt_type(&self) -> stmt_type {
+        match self {
+            Statement::Include(_) => STMT_INCLUDE,
+            Statement::Keycode(_) => STMT_KEYCODE,
+            Statement::KeyAlias(_) => STMT_ALIAS,
+            Statement::Expr(e) => e.common.type_0,
+            Statement::Var(_) => STMT_VAR,
+            Statement::KeyType(_) => STMT_TYPE,
+            Statement::Interp(_) => STMT_INTERP,
+            Statement::VMod(_) => STMT_VMOD,
+            Statement::Symbols(_) => STMT_SYMBOLS,
+            Statement::ModMap(_) => STMT_MODMAP,
+            Statement::GroupCompat(_) => STMT_GROUP_COMPAT,
+            Statement::LedMap(_) => STMT_LED_MAP,
+            Statement::LedName(_) => STMT_LED_NAME,
+            Statement::Unknown(u) => u.common.type_0,
+            Statement::XkbFile(_) => 0, // XkbFile used as sub-file
+        }
+    }
+}
+
+/// Walk a `*mut VarDef` linked list (via `common.next`) and collect into `Vec<VarDef>`.
+///
+/// # Safety
+/// `head` must be null or a valid linked list of Box-allocated VarDef nodes.
+pub unsafe fn collect_vardefs(mut head: *mut VarDef) -> Vec<VarDef> {
+    let mut defs = Vec::new();
+    while !head.is_null() {
+        let next = (*head).common.next;
+        (*head).common.next = std::ptr::null_mut();
+        defs.push(*Box::from_raw(head));
+        head = next as *mut VarDef;
+    }
+    defs
+}
+
+/// Walk a `*mut ExprDef` linked list (via `common.next`) and collect into `Vec<ExprDef>`.
+///
+/// # Safety
+/// `head` must be null or a valid linked list of Box-allocated ExprDef nodes.
+pub unsafe fn collect_exprs(mut head: *mut ExprDef) -> Vec<ExprDef> {
+    let mut exprs = Vec::new();
+    while !head.is_null() {
+        let next = (*head).common.next;
+        (*head).common.next = std::ptr::null_mut();
+        exprs.push(*Box::from_raw(head));
+        head = next as *mut ExprDef;
+    }
+    exprs
+}
+
+/// Walk a `*mut ParseCommon` linked list, take ownership of each node,
+/// and collect into a `Vec<Statement>`.  Consumes and frees the linked list.
+///
+/// # Safety
+/// `head` must be null or a valid linked list of Box-allocated ParseCommon nodes.
+pub unsafe fn collect_stmts(mut head: *mut ParseCommon) -> Vec<Statement> {
+    let mut stmts = Vec::new();
+    while !head.is_null() {
+        let next = (*head).next;
+        (*head).next = std::ptr::null_mut(); // detach from chain
+        let stmt = match (*head).type_0 {
+            STMT_INCLUDE => Statement::Include(Box::from_raw(head as *mut IncludeStmt)),
+            STMT_KEYCODE => Statement::Keycode(Box::from_raw(head as *mut KeycodeDef)),
+            STMT_ALIAS => Statement::KeyAlias(Box::from_raw(head as *mut KeyAliasDef)),
+            STMT_VAR => Statement::Var(Box::from_raw(head as *mut VarDef)),
+            STMT_TYPE => Statement::KeyType(Box::from_raw(head as *mut KeyTypeDef)),
+            STMT_INTERP => Statement::Interp(Box::from_raw(head as *mut InterpDef)),
+            STMT_VMOD => Statement::VMod(Box::from_raw(head as *mut VModDef)),
+            STMT_SYMBOLS => Statement::Symbols(Box::from_raw(head as *mut SymbolsDef)),
+            STMT_MODMAP => Statement::ModMap(Box::from_raw(head as *mut ModMapDef)),
+            STMT_GROUP_COMPAT => Statement::GroupCompat(Box::from_raw(head as *mut GroupCompatDef)),
+            STMT_LED_MAP => Statement::LedMap(Box::from_raw(head as *mut LedMapDef)),
+            STMT_LED_NAME => Statement::LedName(Box::from_raw(head as *mut LedNameDef)),
+            STMT_UNKNOWN_COMPOUND | STMT_UNKNOWN_DECLARATION => {
+                Statement::Unknown(Box::from_raw(head as *mut UnknownStatement))
+            }
+            _ => {
+                // All STMT_EXPR_* types
+                Statement::Expr(Box::from_raw(head as *mut ExprDef))
+            }
+        };
+        stmts.push(stmt);
+        head = next;
+    }
+    stmts
+}
+
+/// Walk a `*mut ParseCommon` linked list of XkbFile nodes and collect into Vec<Statement>.
+///
+/// # Safety
+/// `head` must be null or a valid linked list of Box-allocated XkbFile nodes.
+pub unsafe fn collect_file_stmts(mut head: *mut ParseCommon) -> Vec<Statement> {
+    let mut stmts = Vec::new();
+    while !head.is_null() {
+        let next = (*head).next;
+        (*head).next = std::ptr::null_mut();
+        stmts.push(Statement::XkbFile(Box::from_raw(head as *mut XkbFile)));
+        head = next;
+    }
+    stmts
+}
+
+// Statement::Drop — no longer needed since all inner linked lists have been converted to Vec.
+// Vec<ExprDef> and Vec<VarDef> drop automatically.
+
 #[repr(C)]
 pub struct XkbFile {
     pub common: ParseCommon,
     pub name: String,
-    pub defs: *mut ParseCommon,
+    pub defs: Vec<Statement>,
     pub file_type: u32,
     pub flags: xkb_map_flags,
 }
@@ -392,6 +539,28 @@ pub struct xkb_keymap_info {
     pub features: XkbcompFeatures,
     pub lookup: XkbcompLookup,
     pub pending_computations: Vec<pending_computation>,
+}
+
+impl xkb_keymap_info {
+    /// Safe accessor: dereference the raw keymap pointer to get a shared reference.
+    pub fn keymap_ref(&self) -> &xkb_keymap {
+        unsafe { &*self.keymap }
+    }
+
+    /// Safe accessor: dereference the raw keymap pointer to get a mutable reference.
+    pub fn keymap_mut(&mut self) -> &mut xkb_keymap {
+        unsafe { &mut *self.keymap }
+    }
+
+    /// Safe accessor: get a shared reference to the context through the keymap pointer.
+    pub fn ctx(&self) -> &xkb_context {
+        unsafe { &(*self.keymap).ctx }
+    }
+
+    /// Safe accessor: get a mutable reference to the context through the keymap pointer.
+    pub fn ctx_mut(&mut self) -> &mut xkb_context {
+        unsafe { &mut (*self.keymap).ctx }
+    }
 }
 
 /// Lookup tables for group names/masks (was C2Rust_Unnamed_14 in xkbcomp_priv_h).

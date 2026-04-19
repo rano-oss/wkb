@@ -1,4 +1,3 @@
-
 use crate::xkb::utils::{cstr_free, cstr_ndup};
 
 pub use crate::xkb::keymap::XkbEscapeMapName;
@@ -25,11 +24,11 @@ pub use crate::xkb::messages::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
     XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
-    XKB_WARNING_CANNOT_INFER_KEY_TYPE,
-    XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
-    XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY, XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
+    XKB_WARNING_CANNOT_INFER_KEY_TYPE, XKB_WARNING_CONFLICTING_KEY_ACTION,
+    XKB_WARNING_CONFLICTING_KEY_FIELDS, XKB_WARNING_CONFLICTING_KEY_NAME,
+    XKB_WARNING_CONFLICTING_KEY_SYMBOL, XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES, XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
     XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES, XKB_WARNING_CONFLICTING_MODMAP,
     XKB_WARNING_DEPRECATED_KEYSYM, XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_DUPLICATE_ENTRY,
     XKB_WARNING_EXTRA_SYMBOLS_IGNORED, XKB_WARNING_ILLEGAL_KEYCODE_ALIAS,
@@ -45,11 +44,12 @@ pub use crate::xkb::messages::{
 };
 pub use crate::xkb::scanner_utils::{scanner, scanner_loc, sval};
 pub use crate::xkb::shared_ast_types::{
-    box_from_raw, merge_mode, stmt_type, xkb_map_flags, ExprDef, ExprKind, GroupCompatDef,
-    IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef,
-    OptBoxRaw, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, _IncludeStmt,
-    _ParseCommon, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES,
-    FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
+    box_from_raw, collect_file_stmts, collect_stmts, collect_vardefs, merge_mode, stmt_type,
+    xkb_map_flags, ExprDef, ExprKind, GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef,
+    KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, OptBoxRaw, ParseCommon, Statement,
+    SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, _IncludeStmt, _ParseCommon,
+    FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP,
+    FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
     LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER,
     MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT,
     MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST,
@@ -164,10 +164,12 @@ pub fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32 {
         let len: usize = cstr_len(string);
         if len == 0_usize {
             let loc: scanner_loc = (*scanner).token_location();
-            log::error!("{}:{}:{}: Cannot convert string to single keysym: empty string.\n",
+            log::error!(
+                "{}:{}:{}: Cannot convert string to single keysym: empty string.\n",
                 &(*scanner).file_name,
                 loc.line,
-                loc.column);
+                loc.column
+            );
             return XKB_KEY_NoSymbol as u32;
         }
         let mut count: usize = 0_usize;
@@ -286,7 +288,7 @@ pub fn InterpCreate(sym: u32, match_0: *mut ExprDef) -> *mut InterpDef {
         merge: MERGE_DEFAULT,
         sym,
         match_0: unsafe { box_from_raw(match_0) },
-        def: None,
+        def: Vec::new(),
     }))
 }
 
@@ -298,7 +300,7 @@ pub fn KeyTypeCreate(name: u32, body: *mut VarDef) -> *mut KeyTypeDef {
         },
         merge: MERGE_DEFAULT,
         name,
-        body: unsafe { box_from_raw(body) },
+        body: unsafe { collect_vardefs(body) },
     }))
 }
 
@@ -310,7 +312,7 @@ pub fn SymbolsCreate(keyName: u32, symbols: *mut VarDef) -> *mut SymbolsDef {
         },
         merge: MERGE_DEFAULT,
         keyName,
-        symbols: unsafe { box_from_raw(symbols) },
+        symbols: unsafe { collect_vardefs(symbols) },
     }))
 }
 
@@ -326,7 +328,7 @@ pub fn GroupCompatCreate(group: i64, val: *mut ExprDef) -> *mut GroupCompatDef {
     }))
 }
 
-pub fn ModMapCreate(modifier: u32, keys: *mut ExprDef) -> *mut ModMapDef {
+pub fn ModMapCreate(modifier: u32, keys: Vec<ExprDef>) -> *mut ModMapDef {
     Box::into_raw(Box::new(ModMapDef {
         common: ParseCommon {
             next: std::ptr::null_mut(),
@@ -334,7 +336,7 @@ pub fn ModMapCreate(modifier: u32, keys: *mut ExprDef) -> *mut ModMapDef {
         },
         merge: MERGE_DEFAULT,
         modifier,
-        keys: unsafe { box_from_raw(keys) },
+        keys,
     }))
 }
 
@@ -346,7 +348,7 @@ pub fn LedMapCreate(name: u32, body: *mut VarDef) -> *mut LedMapDef {
         },
         merge: MERGE_DEFAULT,
         name,
-        body: unsafe { box_from_raw(body) },
+        body: unsafe { collect_vardefs(body) },
     }))
 }
 
@@ -399,10 +401,14 @@ pub fn IncludeCreate(
                 Some(r) => r,
                 None => {
                     // Parse error
-                    log::error!("[XKB-{:03}] Illegal include statement \"{}\"; Ignored\n",
+                    log::error!(
+                        "[XKB-{:03}] Illegal include statement \"{}\"; Ignored\n",
                         XKB_ERROR_INVALID_INCLUDE_STATEMENT as i32,
-                        &stmt_str);
-                    FreeInclude(first);
+                        &stmt_str
+                    );
+                    if !first.is_null() {
+                        drop(Box::from_raw(first));
+                    }
                     return std::ptr::null_mut();
                 }
             };
@@ -468,6 +474,11 @@ pub fn XkbFileCreate(
             s
         };
         XkbEscapeMapName(&mut name_str);
+        let defs_vec = if type_0 == FILE_TYPE_KEYMAP {
+            collect_file_stmts(defs)
+        } else {
+            collect_stmts(defs)
+        };
         let file = Box::into_raw(Box::new(XkbFile {
             common: ParseCommon {
                 next: std::ptr::null_mut(),
@@ -475,7 +486,7 @@ pub fn XkbFileCreate(
             },
             file_type: type_0,
             name: name_str,
-            defs,
+            defs: defs_vec,
             flags,
         }));
         file
@@ -517,7 +528,7 @@ pub fn XkbFileFromComponents(
                 0 as xkb_map_flags,
             );
             if file.is_null() {
-                FreeInclude(include);
+                drop(Box::from_raw(include));
                 c2rust_current_block = 183321912633560349;
                 break;
             } else {
@@ -546,113 +557,30 @@ pub fn XkbFileFromComponents(
         std::ptr::null_mut()
     }
 }
-fn FreeInclude(incl: *mut IncludeStmt) {
-    unsafe {
-        if !incl.is_null() {
-            // Dropping the Box will recursively drop next_incl (Option<Box<>>)
-            // and all String fields automatically
-            drop(Box::from_raw(incl));
-        }
-    }
-}
 
 pub fn FreeStmt(mut stmt: *mut ParseCommon) {
     unsafe {
         let mut next: *mut ParseCommon;
         while !stmt.is_null() {
             next = (*stmt).next as *mut ParseCommon;
+            // Deallocate the stmt with the correct type (Box::from_raw must match Box::into_raw type).
+            // All inner fields (Vec<VarDef>, Vec<ExprDef>, Option<Box<ExprDef>>, etc.) auto-drop.
             match (*stmt).type_0 {
-                1 => {
-                    FreeInclude(stmt as *mut IncludeStmt);
-                    stmt = std::ptr::null_mut();
-                }
-                // All expression types: use ExprDef enum
-                4..=25 => {
-                    let expr = stmt as *mut ExprDef;
-                    // Action.args and ActionList.actions are linked-list heads.
-                    // The first node lives in the Box; subsequent nodes are linked
-                    // via common.next raw pointers.  We must take ownership of the
-                    // whole chain and free it with FreeStmt (which walks common.next).
-                    // Binary/Unary/ArrayRef children are single nodes — their
-                    // Option<Box<ExprDef>> auto-drops when the parent ExprDef drops.
-                    match &mut (*expr).kind {
-                        ExprKind::Action { ref mut args, .. } => {
-                            if let Some(boxed) = args.take() {
-                                FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
-                            }
-                        }
-                        ExprKind::ActionList { ref mut actions } => {
-                            if let Some(boxed) = actions.take() {
-                                FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-                26 => {
-                    // VarDef: name and value are single nodes → auto-drop via Box
-                }
-                27 => {
-                    // KeyTypeDef: body is a linked list
-                    if let Some(boxed) = (*(stmt as *mut KeyTypeDef)).body.take() {
-                        FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
-                    }
-                }
-                28 => {
-                    // InterpDef: match_0 is single node → auto-drop. def is linked list.
-                    if let Some(boxed) = (*(stmt as *mut InterpDef)).def.take() {
-                        FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
-                    }
-                }
-                29 => {
-                    // VModDef: value is single node → auto-drop
-                }
-                30 => {
-                    // SymbolsDef: symbols is a linked list
-                    if let Some(boxed) = (*(stmt as *mut SymbolsDef)).symbols.take() {
-                        FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
-                    }
-                }
-                31 => {
-                    // ModMapDef: keys is a linked list
-                    if let Some(boxed) = (*(stmt as *mut ModMapDef)).keys.take() {
-                        FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
-                    }
-                }
-                32 => {
-                    // GroupCompatDef: def is single node → auto-drop
-                }
-                33 => {
-                    // LedMapDef: body is a linked list
-                    if let Some(boxed) = (*(stmt as *mut LedMapDef)).body.take() {
-                        FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
-                    }
-                }
-                34 => {
-                    // LedNameDef: name is single node → auto-drop
-                }
-                35 | 36 => {
-                    // String name auto-drops via Box::from_raw below
-                }
-                _ => {}
-            }
-            // Deallocate the stmt with the correct type (Box::from_raw must match Box::into_raw type)
-            if !stmt.is_null() {
-                match (*stmt).type_0 {
-                    2 => drop(Box::from_raw(stmt as *mut KeycodeDef)),
-                    3 => drop(Box::from_raw(stmt as *mut KeyAliasDef)),
-                    26 => drop(Box::from_raw(stmt as *mut VarDef)),
-                    27 => drop(Box::from_raw(stmt as *mut KeyTypeDef)),
-                    28 => drop(Box::from_raw(stmt as *mut InterpDef)),
-                    29 => drop(Box::from_raw(stmt as *mut VModDef)),
-                    30 => drop(Box::from_raw(stmt as *mut SymbolsDef)),
-                    31 => drop(Box::from_raw(stmt as *mut ModMapDef)),
-                    32 => drop(Box::from_raw(stmt as *mut GroupCompatDef)),
-                    33 => drop(Box::from_raw(stmt as *mut LedMapDef)),
-                    34 => drop(Box::from_raw(stmt as *mut LedNameDef)),
-                    35 | 36 => drop(Box::from_raw(stmt as *mut UnknownStatement)),
-                    _ => drop(Box::from_raw(stmt as *mut ExprDef)), // all STMT_EXPR_* types
-                }
+                1 => drop(Box::from_raw(stmt as *mut IncludeStmt)),
+                2 => drop(Box::from_raw(stmt as *mut KeycodeDef)),
+                3 => drop(Box::from_raw(stmt as *mut KeyAliasDef)),
+                4..=25 => drop(Box::from_raw(stmt as *mut ExprDef)),
+                26 => drop(Box::from_raw(stmt as *mut VarDef)),
+                27 => drop(Box::from_raw(stmt as *mut KeyTypeDef)),
+                28 => drop(Box::from_raw(stmt as *mut InterpDef)),
+                29 => drop(Box::from_raw(stmt as *mut VModDef)),
+                30 => drop(Box::from_raw(stmt as *mut SymbolsDef)),
+                31 => drop(Box::from_raw(stmt as *mut ModMapDef)),
+                32 => drop(Box::from_raw(stmt as *mut GroupCompatDef)),
+                33 => drop(Box::from_raw(stmt as *mut LedMapDef)),
+                34 => drop(Box::from_raw(stmt as *mut LedNameDef)),
+                35 | 36 => drop(Box::from_raw(stmt as *mut UnknownStatement)),
+                _ => drop(Box::from_raw(stmt as *mut ExprDef)),
             }
             stmt = next;
         }
@@ -664,16 +592,7 @@ pub fn FreeXkbFile(mut file: *mut XkbFile) {
         let mut next: *mut XkbFile;
         while !file.is_null() {
             next = (*file).common.next as *mut XkbFile;
-            match (*file).file_type {
-                5 => {
-                    FreeXkbFile((*file).defs as *mut XkbFile);
-                }
-                0..=4 => {
-                    FreeStmt((*file).defs);
-                }
-                _ => {}
-            }
-            // String name and child defs auto-drop via Box
+            // defs is Vec<Statement> — drops automatically with the Box
             drop(Box::from_raw(file));
             file = next;
         }
