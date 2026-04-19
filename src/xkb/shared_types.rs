@@ -110,7 +110,6 @@ pub struct xkb_keymap {
 }
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct xkb_mod_set {
     pub mods: [xkb_mod; 32],
     pub num_mods: u32,
@@ -118,7 +117,6 @@ pub struct xkb_mod_set {
 }
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct xkb_mod {
     pub name: u32,
     pub type_0: u32,
@@ -130,7 +128,6 @@ pub const MOD_VIRT: u32 = 2;
 pub const MOD_REAL: u32 = 1;
 
 #[derive(Clone)]
-#[repr(C)]
 pub struct xkb_sym_interpret {
     pub sym: u32,
     pub match_0: u32,
@@ -430,7 +427,6 @@ impl xkb_action {
 }
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct xkb_internal_action {
     pub type_0: u32,
     pub flags: u32,
@@ -464,14 +460,12 @@ pub const ACTION_TYPE_VOID: u32 = 1;
 pub const ACTION_TYPE_NONE: u32 = 0;
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct xkb_private_action {
     pub type_0: u32,
     pub data: [u8; 7],
 }
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct xkb_redirect_key_action {
     pub type_0: u32,
     pub keycode: u32,
@@ -480,7 +474,6 @@ pub struct xkb_redirect_key_action {
 }
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct xkb_pointer_button_action {
     pub type_0: u32,
     pub flags: xkb_action_flags,
@@ -505,7 +498,6 @@ pub const ACTION_LATCH_TO_LOCK: xkb_action_flags = 2;
 pub const ACTION_LOCK_CLEAR: xkb_action_flags = 1;
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct xkb_pointer_action {
     pub type_0: u32,
     pub flags: xkb_action_flags,
@@ -514,7 +506,6 @@ pub struct xkb_pointer_action {
 }
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct xkb_switch_screen_action {
     pub type_0: u32,
     pub flags: xkb_action_flags,
@@ -522,7 +513,6 @@ pub struct xkb_switch_screen_action {
 }
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct xkb_pointer_default_action {
     pub type_0: u32,
     pub flags: xkb_action_flags,
@@ -530,7 +520,6 @@ pub struct xkb_pointer_default_action {
 }
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct xkb_controls_action {
     pub type_0: u32,
     pub flags: xkb_action_flags,
@@ -564,7 +553,6 @@ pub const CONTROL_OVERLAY1: xkb_action_controls = 2;
 pub const CONTROL_STICKY_KEYS: xkb_action_controls = 1;
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct xkb_group_action {
     pub type_0: u32,
     pub flags: xkb_action_flags,
@@ -572,7 +560,6 @@ pub struct xkb_group_action {
 }
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct xkb_mod_action {
     pub type_0: u32,
     pub flags: xkb_action_flags,
@@ -580,7 +567,6 @@ pub struct xkb_mod_action {
 }
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct xkb_mods {
     pub mods: u32,
     pub mask: u32,
@@ -603,7 +589,6 @@ pub struct xkb_key_type {
 }
 
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct xkb_key_type_entry {
     pub level: u32,
     pub mods: xkb_mods,
@@ -611,14 +596,12 @@ pub struct xkb_key_type_entry {
 }
 
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct xkb_key_alias {
     pub real: u32,
     pub alias: u32,
 }
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct KeycodeMatch {
     pub found: bool,
     pub low: bool,
@@ -675,7 +658,6 @@ pub const EXPLICIT_INTERP: xkb_explicit_components = 2;
 pub const EXPLICIT_SYMBOLS: xkb_explicit_components = 1;
 
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct xkb_led {
     pub name: u32,
     pub which_groups: u32,

@@ -1,7 +1,6 @@
 use std::rc::Rc;
 
 #[derive(Copy, Clone)]
-#[repr(C)]
 
 pub struct xkb_event {
     pub type_0: xkb_event_type,
@@ -22,7 +21,6 @@ pub struct xkb_event_components {
     pub changed: u32,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
 
 pub struct state_components {
     pub base_group: i32,
@@ -261,7 +259,6 @@ impl xkb_state {
 }
 // C2Rust_Unnamed_15 removed: replaced by Vec<xkb_filter>
 #[derive(Copy, Clone)]
-#[repr(C)]
 
 pub struct xkb_filter {
     pub action: xkb_action,
@@ -287,7 +284,6 @@ pub struct xkb_events {
 }
 // C2Rust_Unnamed_16 removed: replaced by Vec<xkb_event>
 #[derive(Copy, Clone)]
-#[repr(C)]
 
 pub struct machine_controls {
     pub out_of_range_group_policy: u32,
@@ -295,7 +291,6 @@ pub struct machine_controls {
 }
 
 #[derive(Copy, Clone)]
-#[repr(C)]
 
 pub struct FilterActionFuncs {
     pub new: Option<unsafe fn(*mut xkb_state, *mut xkb_events, *mut xkb_filter) -> ()>,

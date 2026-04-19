@@ -34,14 +34,12 @@ impl sval {
 }
 
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct scanner_loc {
     pub line: usize,
     pub column: usize,
 }
 
 #[derive(Clone)]
-#[repr(C)]
 pub struct scanner {
     pub pos: usize,
     pub len: usize,

@@ -10,13 +10,11 @@ pub const XKB_KEY_ISO_Level5_Lock: i32 = 0xfe13_i32;
 use crate::xkb::shared_types::*;
 pub mod keysym_names_h {
     #[derive(Copy, Clone)]
-    #[repr(C)]
     pub struct name_keysym {
         pub keysym: u32,
         pub offset: u16,
     }
     #[derive(Copy, Clone)]
-    #[repr(C)]
     pub struct deprecated_keysym {
         pub keysym: u32,
         pub offset: u16,

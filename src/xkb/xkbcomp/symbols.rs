@@ -29,7 +29,6 @@ pub struct SymbolsInfo<'a> {
     pub keymap_info: &'a mut xkb_keymap_info,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct ModMapEntry {
     pub merge: merge_mode,
     pub haveSymbol: bool,

@@ -88,7 +88,6 @@ pub struct kccgst_buffer {
     pub slices: Vec<kccgst_buffer_slice>,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct kccgst_buffer_slice {
     pub length: u32,
     pub kccgst: rules_kccgst,
@@ -102,7 +101,6 @@ pub const KCCGST_COMPAT: rules_kccgst = 2;
 pub const KCCGST_TYPES: rules_kccgst = 1;
 pub const KCCGST_KEYCODES: rules_kccgst = 0;
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct rule {
     pub mlvo_value_at_pos: [sval; 4],
     pub match_type_at_pos: [mlvo_match_type; 4],
@@ -121,7 +119,6 @@ pub const MLVO_MATCH_WILDCARD_NONE: mlvo_match_type = 2;
 pub const MLVO_MATCH_WILDCARD_LEGACY: mlvo_match_type = 1;
 pub const MLVO_MATCH_NORMAL: mlvo_match_type = 0;
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct mapping {
     pub mlvo_at_pos: [rules_mlvo; 4],
     pub num_mlvo: mlvo_index_t,
@@ -177,7 +174,6 @@ pub struct rule_names {
     pub options: Vec<matched_sval>,
 }
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct matched_sval {
     pub sval: sval,
     pub matched: bool,

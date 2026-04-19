@@ -86,7 +86,6 @@ impl<'a> CompatInfo<'a> {
     }
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct LedInfo {
     pub defined: led_field,
     pub merge: merge_mode,
@@ -98,7 +97,6 @@ pub const LED_FIELD_GROUPS: led_field = 2;
 pub const LED_FIELD_MODS: led_field = 1;
 // C2Rust_Unnamed_18 removed: replaced by Vec<SymInterpInfo>
 #[derive(Clone)]
-#[repr(C)]
 pub struct SymInterpInfo {
     pub defined: si_field,
     pub merge: merge_mode,

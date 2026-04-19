@@ -2,7 +2,6 @@ pub const XKB_KEYSYM_UNICODE_OFFSET: i32 = 0x1000000;
 pub const XKB_KEYSYM_UNICODE_MIN: i32 = 0x1000100;
 
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct CaseMappings {
     pub lower: bool,
     pub upper: bool,

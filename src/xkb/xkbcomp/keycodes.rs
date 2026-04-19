@@ -40,7 +40,6 @@ impl<'a> KeyNamesInfo<'a> {
     }
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct LedNameInfo {
     pub merge: merge_mode,
     pub name: u32,
@@ -53,7 +52,6 @@ pub struct KeycodeStore {
     pub names: Vec<KeycodeMatch>,
 }
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct HighKeycodeEntry {
     pub keycode: u32,
     pub name: u32,
