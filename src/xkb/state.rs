@@ -190,9 +190,9 @@ pub use crate::xkb::shared_types::{
     xkb_led, xkb_level, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_index_t,
     xkb_overlay_mask_t, xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action,
     xkb_private_action, xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret,
-    KeycodeMatch, XkbKey, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y,
-    ACTION_ACCEL, ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR,
-    ACTION_LOCK_NO_LOCK, ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
+    KeycodeMatch, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL,
+    ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK,
+    ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
     ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
     ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
     ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE,
@@ -1401,7 +1401,7 @@ pub fn xkb_state_get_keymap(state: *mut xkb_state) -> *mut xkb_keymap {
 }
 
 fn xkb_state_led_update_all(state: &mut xkb_state) {
-    // Get keymap ref via raw pointer to avoid borrowing state
+    // SAFETY: raw pointer deref avoids borrowing `state` (needed for mutation below)
     let keymap = unsafe { &*state.keymap };
     state.components.leds = 0 as xkb_led_mask_t;
     let mut idx: u32 = 0_u32;
@@ -1477,7 +1477,7 @@ fn xkb_state_update_derived(state: &mut xkb_state) {
     let mut wrapped: u32;
     state.components.mods =
         state.components.base_mods | state.components.latched_mods | state.components.locked_mods;
-    // Get keymap ref via raw pointer to avoid borrowing state
+    // SAFETY: raw pointer deref avoids borrowing `state` (needed for mutation below)
     let keymap = unsafe { &*state.keymap };
     wrapped = XkbWrapGroupIntoRange(
         state.components.locked_group,
@@ -1925,31 +1925,27 @@ pub unsafe fn xkb_state_key_get_syms(
     kc: u32,
     syms_out: *mut *const u32,
 ) -> i32 {
-    let level: u32;
-    let key: *const xkb_key;
-    let leveli: *const xkb_level;
     let layout: u32 = xkb_state_key_get_layout(&*state, kc);
     if layout != XKB_LAYOUT_INVALID {
-        level = xkb_state_key_get_level(&*state, kc, layout);
+        let level = xkb_state_key_get_level(&*state, kc, layout);
         if level != XKB_LEVEL_INVALID {
-            key = XkbKey((*state).keymap, kc) as *const xkb_key;
-            if !key.is_null() {
-                leveli = xkb_keymap_key_get_level((*state).keymap, key, layout, level);
-                if !leveli.is_null() {
-                    let num_syms = (*leveli).syms.len();
+            let keymap = (*state).keymap();
+            if let Some(key) = keymap.get_key(kc) {
+                if let Some(leveli) = keymap.get_key_level(key, layout, level) {
+                    let num_syms = leveli.syms.len();
                     if num_syms > 0 {
                         if should_do_caps_transformation(&*state, kc) {
                             if num_syms > 1 {
-                                *syms_out = if (*leveli).has_upper as i32 != 0 {
-                                    (*leveli).syms.as_ptr().add(num_syms)
+                                *syms_out = if leveli.has_upper {
+                                    leveli.syms.as_ptr().add(num_syms)
                                 } else {
-                                    (*leveli).syms.as_ptr()
+                                    leveli.syms.as_ptr()
                                 };
                             } else {
-                                *syms_out = &raw const (*leveli).upper;
+                                *syms_out = &raw const leveli.upper;
                             }
                         } else {
-                            *syms_out = (*leveli).syms.as_ptr();
+                            *syms_out = leveli.syms.as_ptr();
                         }
                         return num_syms as i32;
                     }
@@ -1974,7 +1970,7 @@ pub unsafe fn xkb_state_key_get_one_sym(state: *mut xkb_state, kc: u32) -> u32 {
 fn get_one_sym_for_string(state: *mut xkb_state, kc: u32) -> u32 {
     unsafe {
         let layout: u32 = xkb_state_key_get_layout(&*state, kc);
-        let num_layouts: u32 = xkb_keymap_num_layouts_for_key(&*(*state).keymap, kc);
+        let num_layouts: u32 = xkb_keymap_num_layouts_for_key((*state).keymap(), kc);
         let mut level: u32 = xkb_state_key_get_level(&*state, kc, layout);
         if layout == XKB_LAYOUT_INVALID || num_layouts == 0_u32 || level == XKB_LEVEL_INVALID {
             return XKB_KEY_NoSymbol as u32;

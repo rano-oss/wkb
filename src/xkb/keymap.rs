@@ -410,19 +410,21 @@ pub unsafe fn xkb_keymap_key_get_level(
     mut layout: u32,
     level: u32,
 ) -> *mut xkb_level {
+    let key_ref = unsafe { &*key };
+    let km = unsafe { &*keymap };
+    layout = XkbWrapGroupIntoRange(
+        layout as i32,
+        key_ref.num_groups,
+        key_ref.out_of_range_group_policy,
+        key_ref.out_of_range_group_number,
+    );
+    if layout == XKB_LAYOUT_INVALID {
+        return std::ptr::null_mut();
+    }
+    if level >= km.key_num_levels(key_ref, layout) {
+        return std::ptr::null_mut();
+    }
     unsafe {
-        layout = XkbWrapGroupIntoRange(
-            layout as i32,
-            (*key).num_groups,
-            (*key).out_of_range_group_policy,
-            (*key).out_of_range_group_number,
-        );
-        if layout == XKB_LAYOUT_INVALID {
-            return std::ptr::null_mut();
-        }
-        if level >= XkbKeyNumLevels(keymap, key, layout) {
-            return std::ptr::null_mut();
-        }
         &mut (&mut (*(key as *mut xkb_key)).groups)[layout as usize].levels[level as usize]
             as *mut xkb_level
     }
@@ -434,17 +436,17 @@ pub unsafe fn xkb_keymap_key_get_syms_by_level(
     level: u32,
     syms_out: *mut *const u32,
 ) -> i32 {
-    let km = unsafe { &*keymap };
+    let km = &*keymap;
     if let Some(key) = km.get_key(kc) {
         if let Some(leveli) = km.get_key_level(key, layout, level) {
             let num_syms = leveli.syms.len();
             if num_syms > 0 {
-                unsafe { *syms_out = leveli.syms.as_ptr() };
+                *syms_out = leveli.syms.as_ptr();
                 return num_syms as i32;
             }
         }
     }
-    unsafe { *syms_out = std::ptr::null() };
+    *syms_out = std::ptr::null();
     0_i32
 }
 pub fn xkb_keymap_min_keycode(keymap: &xkb_keymap) -> u32 {
@@ -736,8 +738,8 @@ pub unsafe fn xkb_keymap_key_get_actions_by_level(
     actions: *mut *const xkb_action,
 ) -> u16 {
     if !key.is_null() {
-        let key_ref = unsafe { &*key };
-        let km = unsafe { &*keymap };
+        let key_ref = &*key;
+        let km = &*keymap;
         layout = XkbWrapGroupIntoRange(
             layout as i32,
             key_ref.num_groups,
@@ -749,11 +751,9 @@ pub unsafe fn xkb_keymap_key_get_actions_by_level(
                 .actions
                 .len() as u16;
             if count > 0 {
-                unsafe {
-                    *actions = key_ref.groups[layout as usize].levels[level as usize]
-                        .actions
-                        .as_ptr();
-                };
+                *actions = key_ref.groups[layout as usize].levels[level as usize]
+                    .actions
+                    .as_ptr();
                 return count;
             }
         }
