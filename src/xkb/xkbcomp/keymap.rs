@@ -59,13 +59,12 @@ fn FindInterpForKey(
     interprets: &mut Vec<*const xkb_sym_interpret>,
 ) -> bool {
     unsafe {
-        let mut syms: *const u32 = std::ptr::null();
+        let syms = xkb_keymap_key_get_syms_by_level_ref(&*keymap, (*key).keycode, group, level);
 
-        let num_syms: i32 =
-            xkb_keymap_key_get_syms_by_level(keymap, (*key).keycode, group, level, &raw mut syms);
-        if num_syms <= 0_i32 {
+        if syms.is_empty() {
             return false;
         }
+        let num_syms = syms.len() as i32;
         let mut s: i32 = 0_i32;
         while s < num_syms {
             let mut c2rust_current_block_34: u64;
@@ -80,8 +79,7 @@ fn FindInterpForKey(
                     &mut (&mut (*keymap).sym_interprets)[i as usize] as *mut xkb_sym_interpret;
                 let mods: u32;
                 found = false;
-                if !((*interp).sym != *syms.offset(s as isize)
-                    && (*interp).sym != XKB_KEY_NoSymbol as u32)
+                if !((*interp).sym != syms[s as usize] && (*interp).sym != XKB_KEY_NoSymbol as u32)
                 {
                     if (*interp).level_one_only as i32 != 0 && level != 0_u32 {
                         mods = 0_u32;
@@ -116,7 +114,7 @@ fn FindInterpForKey(
                                 found = false;
                                 log::warn!("Repeated interpretation ignored for keysym #{} \"{}\" at level {}/group {} on key <{}>.\n",
                                         s + 1_i32,
-                                        KeysymText(*syms.offset(s as isize)),
+                                        KeysymText(syms[s as usize]),
                                         level.wrapping_add(1_u32),
                                         group.wrapping_add(1_u32),
                                         xkb_atom_text(&(*keymap).ctx.atom_table, (*key).name));
@@ -843,5 +841,5 @@ pub fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> bool {
         ok_0
     }
 }
-use crate::xkb::keymap::xkb_keymap_key_get_syms_by_level;
+use crate::xkb::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use crate::xkb::shared_types::*;

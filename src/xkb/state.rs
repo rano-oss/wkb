@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 #[derive(Copy, Clone)]
 #[repr(C)]
 
@@ -247,16 +249,14 @@ pub struct xkb_state {
     pub flags: xkb_a11y_flags,
     pub refcnt: i32,
     pub filters: Vec<xkb_filter>,
-    pub keymap: *mut xkb_keymap,
+    pub keymap: Rc<xkb_keymap>,
 }
 
 impl xkb_state {
     /// Safe accessor for the keymap reference.
-    /// SAFETY: `self.keymap` is always a valid pointer set during `xkb_state_new`
-    /// and kept alive via refcount until `xkb_state_unref`.
     #[inline]
     pub fn keymap(&self) -> &xkb_keymap {
-        unsafe { &*self.keymap }
+        &self.keymap
     }
 }
 // C2Rust_Unnamed_15 removed: replaced by Vec<xkb_filter>
@@ -1357,30 +1357,30 @@ fn xkb_filter_apply_all(
         }
     }
 }
-pub unsafe fn xkb_state_new(keymap: *mut xkb_keymap) -> *mut xkb_state {
+pub fn xkb_state_new(keymap: Rc<xkb_keymap>) -> *mut xkb_state {
     let state: *mut xkb_state = Box::into_raw(Box::new(xkb_state {
-        components: std::mem::zeroed(),
-        controls: std::mem::zeroed(),
+        components: unsafe { std::mem::zeroed() },
+        controls: unsafe { std::mem::zeroed() },
         set_mods: 0,
         clear_mods: 0,
         mod_key_count: [0; 32],
-        flags: std::mem::zeroed(),
+        flags: unsafe { std::mem::zeroed() },
         refcnt: 0,
         filters: Vec::new(),
-        keymap: std::ptr::null_mut(),
+        keymap: keymap.clone(),
     }));
-    // xkb_state_init inlined
-    (*state).flags = XKB_A11Y_NO_FLAGS;
-    if (*keymap).format != XKB_KEYMAP_FORMAT_TEXT_V1
-        && XKB_A11Y_NO_FLAGS & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS == 0
-    {
-        (*state).flags =
-            ((*state).flags as u32 | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS) as xkb_a11y_flags;
+    unsafe {
+        (*state).flags = XKB_A11Y_NO_FLAGS;
+        if keymap.format != XKB_KEYMAP_FORMAT_TEXT_V1
+            && XKB_A11Y_NO_FLAGS & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS == 0
+        {
+            (*state).flags =
+                ((*state).flags as u32 | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS) as xkb_a11y_flags;
+        }
+        (*state).controls.out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
+        (*state).refcnt = 1_i32;
+        xkb_state_update_derived(&mut *state);
     }
-    (*state).controls.out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
-    (*state).refcnt = 1_i32;
-    (*state).keymap = xkb_keymap_ref(keymap);
-    xkb_state_update_derived(&mut *state);
     state
 }
 
@@ -1391,18 +1391,16 @@ pub unsafe fn xkb_state_unref(state: *mut xkb_state) {
     } {
         return;
     }
-    // xkb_state_destroy inlined
-    xkb_keymap_unref((*state).keymap);
+    // xkb_state_destroy inlined — Rc<xkb_keymap> drops automatically
     // Vec<xkb_filter> will be dropped when the owning struct is dropped
     drop(Box::from_raw(state));
 }
-pub fn xkb_state_get_keymap(state: *mut xkb_state) -> *mut xkb_keymap {
-    unsafe { (*state).keymap }
+pub fn xkb_state_get_keymap(state: &xkb_state) -> &xkb_keymap {
+    &state.keymap
 }
 
 fn xkb_state_led_update_all(state: &mut xkb_state) {
-    // SAFETY: raw pointer deref avoids borrowing `state` (needed for mutation below)
-    let keymap = unsafe { &*state.keymap };
+    let keymap = &*state.keymap;
     state.components.leds = 0 as xkb_led_mask_t;
     let mut idx: u32 = 0_u32;
     while idx < keymap.num_leds {
@@ -1478,7 +1476,7 @@ fn xkb_state_update_derived(state: &mut xkb_state) {
     state.components.mods =
         state.components.base_mods | state.components.latched_mods | state.components.locked_mods;
     // SAFETY: raw pointer deref avoids borrowing `state` (needed for mutation below)
-    let keymap = unsafe { &*state.keymap };
+    let keymap = &*state.keymap;
     wrapped = XkbWrapGroupIntoRange(
         state.components.locked_group,
         keymap.num_groups,
@@ -1506,8 +1504,8 @@ fn xkb_state_update_derived(state: &mut xkb_state) {
     xkb_state_led_update_all(state);
 }
 pub fn xkb_state_update_key(state: &mut xkb_state, kc: u32, direction: xkb_key_direction) -> u32 {
-    // SAFETY: raw pointer deref avoids borrowing `state` (needed for mutation below)
-    let keymap = unsafe { &*state.keymap };
+    // Use Rc::as_ptr to avoid creating a borrow on `state` (needed for mutation below)
+    let keymap = unsafe { &*Rc::as_ptr(&state.keymap) };
     let key_ref = match keymap.get_key(kc) {
         Some(k) => k,
         None => return 0_u32,
@@ -1846,7 +1844,7 @@ pub unsafe fn xkb_state_update_synthetic(
     changed: *mut u32,
 ) -> xkb_error_code {
     let mut error: xkb_error_code = check_state_update_abi_(
-        &raw mut (*(*state).keymap).ctx,
+        &raw mut (*(Rc::as_ptr(&(*state).keymap) as *mut xkb_keymap)).ctx,
         "xkb_state_update_synthetic",
         update,
     );
@@ -1929,7 +1927,7 @@ fn should_do_ctrl_transformation(state: &xkb_state, kc: u32) -> bool {
     ) > 0_i32
         && xkb_state_mod_index_is_consumed(state, kc, XKB_MOD_INDEX_CTRL as i32 as u32) == 0_i32
 }
-pub unsafe fn xkb_state_key_get_syms(state: &xkb_state, kc: u32, syms_out: *mut *const u32) -> i32 {
+pub fn xkb_state_key_get_syms(state: &xkb_state, kc: u32) -> &[u32] {
     let layout: u32 = xkb_state_key_get_layout(state, kc);
     if layout != XKB_LAYOUT_INVALID {
         let level = xkb_state_key_get_level(state, kc, layout);
@@ -1941,34 +1939,31 @@ pub unsafe fn xkb_state_key_get_syms(state: &xkb_state, kc: u32, syms_out: *mut 
                     if num_syms > 0 {
                         if should_do_caps_transformation(state, kc) {
                             if num_syms > 1 {
-                                *syms_out = if leveli.has_upper {
-                                    leveli.syms.as_ptr().add(num_syms)
+                                return if leveli.has_upper {
+                                    &leveli.syms[num_syms..]
                                 } else {
-                                    leveli.syms.as_ptr()
+                                    &leveli.syms[..num_syms]
                                 };
                             } else {
-                                *syms_out = &raw const leveli.upper;
+                                return std::slice::from_ref(&leveli.upper);
                             }
                         } else {
-                            *syms_out = leveli.syms.as_ptr();
+                            return &leveli.syms[..num_syms];
                         }
-                        return num_syms as i32;
                     }
                 }
             }
         }
     }
-    *syms_out = std::ptr::null();
-    0_i32
+    &[]
 }
 
-pub unsafe fn xkb_state_key_get_one_sym(state: &xkb_state, kc: u32) -> u32 {
-    let mut syms: *const u32 = std::ptr::null();
-    let num_syms: i32 = xkb_state_key_get_syms(state, kc, &raw mut syms) as i32;
-    if num_syms != 1_i32 {
+pub fn xkb_state_key_get_one_sym(state: &xkb_state, kc: u32) -> u32 {
+    let syms = xkb_state_key_get_syms(state, kc);
+    if syms.len() != 1 {
         XKB_KEY_NoSymbol as u32
     } else {
-        *syms.offset(0_i32 as isize)
+        syms[0]
     }
 }
 
@@ -2003,90 +1998,56 @@ fn get_one_sym_for_string(state: &xkb_state, kc: u32) -> u32 {
     sym
 }
 
-pub unsafe fn xkb_state_key_get_utf8(
-    state: *mut xkb_state,
-    kc: u32,
-    buffer: *mut i8,
-    size: usize,
-) -> i32 {
-    let c2rust_current_block: u64;
-    let nsyms: i32;
-    let mut syms: *const u32 = std::ptr::null();
-    let sym: u32 = get_one_sym_for_string(&*state, kc);
+pub fn xkb_state_key_get_utf8(state: &xkb_state, kc: u32) -> String {
+    let syms: &[u32];
+    let sym: u32 = get_one_sym_for_string(state, kc);
+    let sym_slice: [u32; 1];
     if sym != XKB_KEY_NoSymbol as u32 {
-        nsyms = 1_i32;
-        syms = &raw const sym;
+        sym_slice = [sym];
+        syms = &sym_slice;
     } else {
-        nsyms = xkb_state_key_get_syms(&*state, kc, &raw mut syms);
+        syms = xkb_state_key_get_syms(state, kc);
     }
-    let mut offset: i32 = 0_i32;
+    let mut result = Vec::new();
     let mut tmp: [i8; 5] = [0; 5];
-    let mut i: i32 = 0_i32;
-    loop {
-        if i >= nsyms {
-            c2rust_current_block = 11050875288958768710;
-            break;
+    for &s in syms {
+        let ret = unsafe {
+            xkb_keysym_to_utf8(s, &raw mut tmp as *mut i8, std::mem::size_of::<[i8; 5]>())
+        };
+        if ret <= 0 {
+            return String::new();
         }
-        let mut ret: i32 = xkb_keysym_to_utf8(
-            *syms.offset(i as isize),
-            &raw mut tmp as *mut i8,
-            std::mem::size_of::<[i8; 5]>(),
-        );
-        if ret <= 0_i32 {
-            c2rust_current_block = 17545813786824981435;
-            break;
-        }
-        ret -= 1;
-        if (offset as usize).wrapping_add(ret as usize) <= size {
-            std::ptr::copy_nonoverlapping(
-                &raw mut tmp as *const u8,
-                buffer.offset(offset as isize) as *mut u8,
-                ret as usize,
-            );
-        }
-        offset += ret;
-        i += 1;
-    }
-    if c2rust_current_block == 11050875288958768710 {
-        if offset as usize >= size {
-            if size > 0_usize {
-                *buffer.add(size.wrapping_sub(1_usize)) = '\0' as i32 as i8;
-            }
-            return offset;
-        } else {
-            *buffer.offset(offset as isize) = '\0' as i32 as i8;
-            if is_valid_utf8(buffer, offset as usize) {
-                if offset == 1_i32
-                    && *buffer.offset(0_i32 as isize) as u32 <= 127_u32
-                    && should_do_ctrl_transformation(&*state, kc) as i32 != 0
-                {
-                    // XkbToControl inlined
-                    *buffer.offset(0_i32 as isize) = {
-                        let mut c: i8 = *buffer.offset(0_i32 as isize);
-                        if c as i32 >= '@' as i32 && (c as i32) < '\u{7f}' as i32
-                            || c as i32 == ' ' as i32
-                        {
-                            c = (c as i32 & 0x1f_i32) as i8;
-                        } else if c as i32 == '2' as i32 {
-                            c = '\0' as i32 as i8;
-                        } else if c as i32 >= '3' as i32 && c as i32 <= '7' as i32 {
-                            c = (c as i32 - ('3' as i32 - '\u{1b}' as i32)) as i8;
-                        } else if c as i32 == '8' as i32 {
-                            c = '\u{7f}' as i32 as i8;
-                        } else if c as i32 == '/' as i32 {
-                            c = ('_' as i32 & 0x1f_i32) as i8;
-                        }
-                        c
-                    };
-                }
-                return offset;
-            }
+        let len = (ret - 1) as usize;
+        for j in 0..len {
+            result.push(tmp[j] as u8);
         }
     }
-    if size > 0_usize {
-        *buffer.offset(0_i32 as isize) = '\0' as i32 as i8;
+    // Validate UTF-8
+    if let Ok(s) = std::str::from_utf8(&result) {
+        let mut s = s.to_string();
+        if s.len() == 1 && s.as_bytes()[0] <= 127 && should_do_ctrl_transformation(state, kc) {
+            let c = s.as_bytes()[0] as i8;
+            let ctrl = if c as i32 >= '@' as i32 && (c as i32) < '\u{7f}' as i32
+                || c as i32 == ' ' as i32
+            {
+                (c as i32 & 0x1f_i32) as u8
+            } else if c as i32 == '2' as i32 {
+                0u8
+            } else if c as i32 >= '3' as i32 && c as i32 <= '7' as i32 {
+                (c as i32 - ('3' as i32 - '\u{1b}' as i32)) as u8
+            } else if c as i32 == '8' as i32 {
+                '\u{7f}' as u8
+            } else if c as i32 == '/' as i32 {
+                ('_' as i32 & 0x1f_i32) as u8
+            } else {
+                c as u8
+            };
+            s = String::from(ctrl as char);
+        }
+        s
+    } else {
+        String::new()
     }
-    0_i32
 }
 
 #[inline]
@@ -2343,10 +2304,9 @@ fn c2rust_run_static_initializers() {
 }
 
 use crate::xkb::keymap::{
-    xkb_keymap_key_get_syms_by_level, xkb_keymap_key_get_syms_by_level_ref,
-    xkb_keymap_layout_get_index, xkb_keymap_layout_get_index_ref, xkb_keymap_led_get_index,
-    xkb_keymap_led_get_index_ref, xkb_keymap_mod_get_index, xkb_keymap_mod_get_index_ref,
-    xkb_keymap_num_layouts_for_key, xkb_keymap_num_mods, xkb_keymap_ref, xkb_keymap_unref,
+    xkb_keymap_key_get_syms_by_level_ref, xkb_keymap_layout_get_index_ref,
+    xkb_keymap_led_get_index_ref, xkb_keymap_mod_get_index_ref, xkb_keymap_num_layouts_for_key,
+    xkb_keymap_num_mods,
 };
 use crate::xkb::keysym_case_mappings::xkb_keysym_to_upper;
 use crate::xkb::keysym_utf::xkb_keysym_to_utf8;

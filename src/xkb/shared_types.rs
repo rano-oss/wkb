@@ -85,7 +85,6 @@ pub struct xkb_context {
 
 pub struct xkb_keymap {
     pub ctx: xkb_context,
-    pub refcnt: i32,
     pub flags: u32,
     pub format: u32,
     pub num_leds: u32,

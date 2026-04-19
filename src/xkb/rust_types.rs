@@ -4,6 +4,7 @@
 //! They provide conversion methods to/from the C FFI types.
 
 use std::ffi::CString;
+use std::rc::Rc;
 
 use crate::xkb::atom::atom_lookup_ref;
 use crate::xkb::keymap::{
@@ -56,6 +57,7 @@ impl RuleNames {
     /// Convert to xkb_rule_names structure
     pub fn to_c_keymap(&self) -> crate::xkb::shared_types::xkb_rule_names {
         use std::ffi::CString;
+        use std::rc::Rc;
         crate::xkb::shared_types::xkb_rule_names {
             rules: CString::new(self.rules.as_str()).unwrap(),
             model: CString::new(self.model.as_str()).unwrap(),
@@ -87,52 +89,41 @@ impl Context {
 
     /// Create a keymap from RMLVO names
     pub fn keymap_from_names(&self, rules: &RuleNames) -> Option<Keymap> {
-        unsafe {
-            use crate::xkb::shared_types::XKB_KEYMAP_COMPILE_NO_FLAGS;
+        use crate::xkb::shared_types::XKB_KEYMAP_COMPILE_NO_FLAGS;
 
-            let rmlvo_c = rules.to_c_keymap();
-            let keymap = super::keymap::xkb_keymap_new_from_names(
-                self.entity.clone(),
-                &rmlvo_c as *const _,
-                XKB_KEYMAP_COMPILE_NO_FLAGS,
-            )?;
-            Some(Keymap { inner: keymap })
-        }
+        let rmlvo_c = rules.to_c_keymap();
+        let keymap = super::keymap::xkb_keymap_new_from_names(
+            self.entity.clone(),
+            Some(&rmlvo_c),
+            XKB_KEYMAP_COMPILE_NO_FLAGS,
+        )?;
+        Some(Keymap { inner: keymap })
     }
 
     /// Create a keymap from a keymap string
     pub fn keymap_from_string(&self, keymap_str: &str) -> Option<Keymap> {
-        unsafe {
-            use crate::xkb::shared_types::{
-                XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1,
-            };
+        use crate::xkb::shared_types::{XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1};
 
-            let keymap_cstr = CString::new(keymap_str).ok()?;
-            let keymap = super::keymap::xkb_keymap_new_from_string(
-                self.entity.clone(),
-                keymap_cstr.as_ptr(),
-                XKB_KEYMAP_FORMAT_TEXT_V1,
-                XKB_KEYMAP_COMPILE_NO_FLAGS,
-            )?;
-            Some(Keymap { inner: keymap })
-        }
+        let keymap_cstr = CString::new(keymap_str).ok()?;
+        let keymap = super::keymap::xkb_keymap_new_from_string(
+            self.entity.clone(),
+            &keymap_cstr,
+            XKB_KEYMAP_FORMAT_TEXT_V1,
+            XKB_KEYMAP_COMPILE_NO_FLAGS,
+        )?;
+        Some(Keymap { inner: keymap })
     }
 }
 
 /// Safe wrapper around xkb_keymap with automatic cleanup
 pub struct Keymap {
-    inner: Box<crate::xkb::shared_types::xkb_keymap>,
+    inner: Rc<crate::xkb::shared_types::xkb_keymap>,
 }
 
 impl Keymap {
     /// Get raw pointer (for FFI calls)
     pub fn as_ptr(&self) -> *const crate::xkb::shared_types::xkb_keymap {
         &*self.inner as *const _
-    }
-
-    /// Get mutable raw pointer (for FFI calls)
-    pub fn as_mut_ptr(&mut self) -> *mut crate::xkb::shared_types::xkb_keymap {
-        &mut *self.inner as *mut _
     }
 
     /// Get minimum keycode
@@ -212,17 +203,13 @@ impl Keymap {
 
     /// Create a new state for this keymap
     pub fn new_state(&self) -> Option<State> {
-        unsafe {
-            let state_ptr = super::state::xkb_state_new(
-                self.as_ptr() as *mut crate::xkb::shared_types::xkb_keymap
-            );
-            if state_ptr.is_null() {
-                None
-            } else {
-                Some(State {
-                    inner: Box::from_raw(state_ptr),
-                })
-            }
+        let state_ptr = super::state::xkb_state_new(self.inner.clone());
+        if state_ptr.is_null() {
+            None
+        } else {
+            Some(State {
+                inner: unsafe { Box::from_raw(state_ptr) },
+            })
         }
     }
 
@@ -371,14 +358,6 @@ impl ExactSizeIterator for KeycodeIter {
     }
 }
 
-impl Drop for Keymap {
-    fn drop(&mut self) {
-        unsafe {
-            super::keymap::xkb_keymap_unref(self.as_mut_ptr());
-        }
-    }
-}
-
 /// Safe wrapper around xkb_state with automatic cleanup
 ///
 /// Owns the xkb_state via Box. The state was originally allocated by
@@ -405,21 +384,7 @@ impl State {
 
     /// Get UTF-8 string for a key
     pub fn key_get_utf8(&self, keycode: u32) -> String {
-        unsafe {
-            let mut buffer: [u8; 32] = [0; 32];
-            let size = super::state::xkb_state_key_get_utf8(
-                &*self.inner as *const _ as *mut _,
-                keycode,
-                buffer.as_mut_ptr() as *mut i8,
-                buffer.len(),
-            );
-
-            if size > 0 && (size as usize) < buffer.len() {
-                String::from_utf8_lossy(&buffer[..size as usize]).into_owned()
-            } else {
-                String::new()
-            }
-        }
+        super::state::xkb_state_key_get_utf8(&self.inner, keycode)
     }
 
     /// Press a key (convenience wrapper for update_key with KEY_DOWN)
@@ -434,22 +399,12 @@ impl State {
 
     /// Get keysym for a key in the current state
     pub fn key_get_one_sym(&self, keycode: u32) -> u32 {
-        unsafe { super::state::xkb_state_key_get_one_sym(&self.inner, keycode) }
+        super::state::xkb_state_key_get_one_sym(&self.inner, keycode)
     }
 
     /// Get all keysyms for a key in the current state
     pub fn key_get_syms(&self, keycode: u32) -> &[u32] {
-        unsafe {
-            let mut syms_ptr: *const u32 = std::ptr::null();
-            let num_syms =
-                super::state::xkb_state_key_get_syms(&self.inner, keycode, &mut syms_ptr as *mut _);
-
-            if num_syms > 0 && !syms_ptr.is_null() {
-                std::slice::from_raw_parts(syms_ptr, num_syms as usize)
-            } else {
-                &[]
-            }
-        }
+        super::state::xkb_state_key_get_syms(&self.inner, keycode)
     }
 
     /// Get active layout index
@@ -516,11 +471,8 @@ impl State {
 
 impl Drop for State {
     fn drop(&mut self) {
-        // Replicate xkb_state_unref cleanup: unref the keymap, then let Box drop the state.
-        // We skip the refcount decrement since we are the sole owner.
-        unsafe {
-            super::keymap::xkb_keymap_unref(self.inner.keymap);
-        }
+        // Rc<xkb_keymap> inside the state drops automatically.
+        // Nothing else to clean up — Box<xkb_state> handles deallocation.
     }
 }
 
