@@ -890,6 +890,13 @@ impl xkb_keymap {
             None
         }
     }
+
+    /// Safe wrapper around `XkbKeyNumLevels`.
+    #[inline]
+    pub fn key_num_levels(&self, key: &xkb_key, layout: u32) -> u32 {
+        let group = &key.groups[layout as usize];
+        self.types[group.type_idx as usize].num_levels
+    }
 }
 
 // ── Inline helpers ──────────────────────────────────────────────────

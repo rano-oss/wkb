@@ -26,7 +26,7 @@ pub type compile_file_fn = Option<fn(Option<&mut XkbFile>, &mut xkb_keymap_info)
 fn ComputeEffectiveMask(keymap: *mut xkb_keymap, mods: *mut xkb_mods) {
     unsafe {
         let unknown_mods: u32 = !((1_u64 << (*keymap).mods.num_mods).wrapping_sub(1_u64) as u32);
-        (*mods).mask = mod_mask_get_effective(keymap, (*mods).mods) | (*mods).mods & unknown_mods;
+        (*mods).mask = mod_mask_get_effective(&*keymap, (*mods).mods) | (*mods).mods & unknown_mods;
     }
 }
 fn UpdateActionMods(keymap: *mut xkb_keymap, act: &mut xkb_action, modmap: u32) {

@@ -471,7 +471,8 @@ impl State {
     pub fn mod_name_is_active(&self, name: &str, state_type: u32) -> bool {
         unsafe {
             let name_cstr = std::ffi::CString::new(name).unwrap_or_default();
-            super::state::xkb_state_mod_name_is_active(self.ptr, name_cstr.as_ptr(), state_type) > 0
+            super::state::xkb_state_mod_name_is_active(&*self.ptr, name_cstr.as_ptr(), state_type)
+                > 0
         }
     }
 
@@ -484,27 +485,30 @@ impl State {
     pub fn layout_name_is_active(&self, name: &str, state_type: u32) -> bool {
         unsafe {
             let name_cstr = std::ffi::CString::new(name).unwrap_or_default();
-            super::state::xkb_state_layout_name_is_active(self.ptr, name_cstr.as_ptr(), state_type)
-                > 0
+            super::state::xkb_state_layout_name_is_active(
+                &*self.ptr,
+                name_cstr.as_ptr(),
+                state_type,
+            ) > 0
         }
     }
 
     /// Check if a layout index is active
     pub fn layout_index_is_active(&self, idx: u32, state_type: u32) -> bool {
-        unsafe { super::state::xkb_state_layout_index_is_active(self.ptr, idx, state_type) > 0 }
+        unsafe { super::state::xkb_state_layout_index_is_active(&*self.ptr, idx, state_type) > 0 }
     }
 
     /// Check if a LED is active
     pub fn led_name_is_active(&self, name: &str) -> bool {
         unsafe {
             let name_cstr = std::ffi::CString::new(name).unwrap_or_default();
-            super::state::xkb_state_led_name_is_active(self.ptr, name_cstr.as_ptr()) > 0
+            super::state::xkb_state_led_name_is_active(&*self.ptr, name_cstr.as_ptr()) > 0
         }
     }
 
     /// Check if a LED index is active
     pub fn led_index_is_active(&self, idx: u32) -> bool {
-        unsafe { super::state::xkb_state_led_index_is_active(self.ptr, idx) > 0 }
+        unsafe { super::state::xkb_state_led_index_is_active(&*self.ptr, idx) > 0 }
     }
 
     /// Update state from modifier/layout masks (e.g., from Wayland compositor)

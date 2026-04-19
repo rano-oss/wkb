@@ -355,29 +355,26 @@ pub unsafe fn xkb_keymap_layout_get_index(keymap: *mut xkb_keymap, name: *const 
     XKB_LAYOUT_INVALID
 }
 pub fn xkb_keymap_num_layouts_for_key(keymap: &xkb_keymap, kc: u32) -> u32 {
-    let key: *const xkb_key = unsafe { XkbKey(keymap as *const _ as *mut _, kc) };
-    if key.is_null() {
-        return 0_u32;
+    match keymap.get_key(kc) {
+        Some(key) => key.num_groups,
+        None => 0_u32,
     }
-    unsafe { (*key).num_groups }
 }
 pub fn xkb_keymap_num_levels_for_key(keymap: &xkb_keymap, kc: u32, mut layout: u32) -> u32 {
-    let key: *const xkb_key = unsafe { XkbKey(keymap as *const _ as *mut _, kc) };
-    if key.is_null() {
+    let key = match keymap.get_key(kc) {
+        Some(k) => k,
+        None => return 0_u32,
+    };
+    layout = XkbWrapGroupIntoRange(
+        layout as i32,
+        key.num_groups,
+        key.out_of_range_group_policy,
+        key.out_of_range_group_number,
+    );
+    if layout == XKB_LAYOUT_INVALID {
         return 0_u32;
     }
-    unsafe {
-        layout = XkbWrapGroupIntoRange(
-            layout as i32,
-            (*key).num_groups,
-            (*key).out_of_range_group_policy,
-            (*key).out_of_range_group_number,
-        );
-        if layout == XKB_LAYOUT_INVALID {
-            return 0_u32;
-        }
-        XkbKeyNumLevels(keymap as *const _, key, layout)
-    }
+    keymap.key_num_levels(key, layout)
 }
 pub fn xkb_keymap_num_leds(keymap: &xkb_keymap) -> u32 {
     keymap.num_leds
@@ -460,11 +457,8 @@ pub fn xkb_keymap_max_keycode(keymap: &xkb_keymap) -> u32 {
     keymap.max_key_code
 }
 pub fn xkb_keymap_key_get_name<'a>(keymap: &'a xkb_keymap, kc: u32) -> Option<&'a str> {
-    let key: *const xkb_key = unsafe { XkbKey(keymap as *const _ as *mut _, kc) };
-    if key.is_null() {
-        return None;
-    }
-    let s = atom_text(&keymap.ctx.atom_table, unsafe { (*key).name });
+    let key = keymap.get_key(kc)?;
+    let s = atom_text(&keymap.ctx.atom_table, key.name);
     if s.is_empty() {
         None
     } else {
@@ -503,11 +497,10 @@ pub unsafe fn xkb_keymap_key_by_name(keymap: *mut xkb_keymap, name: *const i8) -
     }
 }
 pub fn xkb_keymap_key_repeats(keymap: &xkb_keymap, kc: u32) -> i32 {
-    let key: *const xkb_key = unsafe { XkbKey(keymap as *const _ as *mut _, kc) };
-    if key.is_null() {
-        return 0_i32;
+    match keymap.get_key(kc) {
+        Some(key) => key.repeats as i32,
+        None => 0_i32,
     }
-    unsafe { (*key).repeats as i32 }
 }
 use crate::xkb::shared_types::*;
 
@@ -586,17 +579,21 @@ pub fn xkb_escape_map_name(name: &mut String) {
         0, 0, 0, 0, 0, 0xa7, 0xff, 0x83, 0xfe, 0xff, 0xff, 0x87, 0xfe, 0xff, 0xff, 0x7, 0, 0, 0, 0,
         0, 0, 0, 0, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0x7f, 0xff,
     ];
-    // Safety: we only replace ASCII bytes with '_' (ASCII), so UTF-8 validity is preserved
-    // if the input was valid UTF-8 (non-ASCII bytes have bit 7 set, and we only replace
-    // bytes that fail the legal check which includes all bytes >= 128 with bit patterns
-    // that would pass). Actually, to be safe, operate on bytes:
-    let bytes = unsafe { name.as_bytes_mut() };
-    for b in bytes.iter_mut() {
-        let c = *b;
-        if LEGAL[(c as usize) / 8] & (1u8 << (c % 8)) == 0 {
-            *b = b'_';
-        }
-    }
+    // Replace illegal bytes with '_'. Only ASCII bytes can be illegal,
+    // so replacing with '_' preserves UTF-8 validity.
+    *name = name
+        .bytes()
+        .map(|b| {
+            if LEGAL[(b as usize) / 8] & (1u8 << (b % 8)) == 0 {
+                '_' as u8
+            } else {
+                b
+            }
+        })
+        .collect::<Vec<u8>>()
+        .into_iter()
+        .map(|b| b as char)
+        .collect();
 }
 
 pub fn XkbEscapeMapName(name: &mut String) {
@@ -604,14 +601,19 @@ pub fn XkbEscapeMapName(name: &mut String) {
         0, 0, 0, 0, 0, 0xa7, 0xff, 0x83, 0xfe, 0xff, 0xff, 0x87, 0xfe, 0xff, 0xff, 0x7, 0, 0, 0, 0,
         0, 0, 0, 0, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0x7f, 0xff,
     ];
-    // Safety: we only replace ASCII bytes with '_' (ASCII), so UTF-8 validity is preserved
-    let bytes = unsafe { name.as_bytes_mut() };
-    for b in bytes.iter_mut() {
-        let c = *b;
-        if LEGAL[(c as usize) / 8] & (1u8 << (c % 8)) == 0 {
-            *b = b'_';
-        }
-    }
+    *name = name
+        .bytes()
+        .map(|b| {
+            if LEGAL[(b as usize) / 8] & (1u8 << (b % 8)) == 0 {
+                '_' as u8
+            } else {
+                b
+            }
+        })
+        .collect::<Vec<u8>>()
+        .into_iter()
+        .map(|b| b as char)
+        .collect();
 }
 pub fn XkbModNameToIndex(mods: &xkb_mod_set, name: u32, type_0: u32) -> u32 {
     for (i, mod_0) in mods.mods[..mods.num_mods as usize].iter().enumerate() {
