@@ -2248,7 +2248,7 @@ pub unsafe fn xkb_state_key_get_one_sym(state: *mut xkb_state, kc: u32) -> u32 {
 unsafe fn get_one_sym_for_string(state: *mut xkb_state, kc: u32) -> u32 {
     unsafe {
         let layout: u32 = xkb_state_key_get_layout(state, kc);
-        let num_layouts: u32 = xkb_keymap_num_layouts_for_key((*state).keymap, kc);
+        let num_layouts: u32 = xkb_keymap_num_layouts_for_key(&*(*state).keymap, kc);
         let mut level: u32 = xkb_state_key_get_level(state, kc, layout);
         if layout == XKB_LAYOUT_INVALID || num_layouts == 0_u32 || level == XKB_LEVEL_INVALID {
             return XKB_KEY_NoSymbol as u32;
@@ -2443,7 +2443,7 @@ pub unsafe fn mod_mask_get_effective(keymap: *mut xkb_keymap, mods: u32) -> u32 
 
 pub unsafe fn xkb_state_mod_index_is_active(state: *mut xkb_state, idx: u32, type_0: u32) -> i32 {
     unsafe {
-        if (idx >= xkb_keymap_num_mods((*state).keymap)) as i64 != 0 {
+        if (idx >= xkb_keymap_num_mods(&*(*state).keymap)) as i64 != 0 {
             return -1_i32;
         }
         let mapping: u32 = (*(*state).keymap).mods.mods[idx as usize].mapping;
@@ -2577,17 +2577,15 @@ unsafe fn key_get_consumed(
                 } else {
                     0_u32
                 };
-                let no_mods_level: *const xkb_level = &(&(*key).groups)[group as usize].levels
-                    [no_mods_leveli as usize]
-                    as *const xkb_level;
+                let no_mods_level: &xkb_level =
+                    &(&(*key).groups)[group as usize].levels[no_mods_leveli as usize];
                 let mut i: u32 = 0_u32;
                 while i < (*type_0).entries.len() as u32 {
                     let entry: *const xkb_key_type_entry =
                         &(&(*type_0).entries)[i as usize] as *const xkb_key_type_entry;
                     if entry_is_active(entry) {
-                        let level: *const xkb_level = &(&(*key).groups)[group as usize].levels
-                            [(*entry).level as usize]
-                            as *const xkb_level;
+                        let level: &xkb_level =
+                            &(&(*key).groups)[group as usize].levels[(*entry).level as usize];
                         if !XkbLevelsSameSyms(level, no_mods_level)
                             && (entry == matching_entry
                                 || ((*entry).mods.mask != 0
@@ -2613,7 +2611,7 @@ pub unsafe fn xkb_state_mod_index_is_consumed2(
 ) -> i32 {
     unsafe {
         let key: *const xkb_key = XkbKey((*state).keymap, kc) as *const xkb_key;
-        if (key.is_null() || idx >= xkb_keymap_num_mods((*state).keymap)) as i64 != 0 {
+        if (key.is_null() || idx >= xkb_keymap_num_mods(&*(*state).keymap)) as i64 != 0 {
             return -1_i32;
         }
         let mapping: u32 = (*(*state).keymap).mods.mods[idx as usize].mapping;

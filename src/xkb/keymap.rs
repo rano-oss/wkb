@@ -95,11 +95,9 @@ pub unsafe fn xkb_keymap_ref(keymap: *mut xkb_keymap) -> *mut xkb_keymap {
         keymap
     }
 }
-pub unsafe fn clear_level(leveli: *mut xkb_level) {
-    unsafe {
-        (*leveli).syms.clear();
-        (*leveli).actions.clear();
-    }
+pub fn clear_level(leveli: &mut xkb_level) {
+    leveli.syms.clear();
+    leveli.actions.clear();
 }
 pub unsafe fn xkb_keymap_unref(keymap: *mut xkb_keymap) {
     unsafe {
@@ -296,40 +294,31 @@ pub unsafe fn xkb_keymap_get_as_string(keymap: *mut xkb_keymap, mut format: u32)
             .expect("non-null function pointer")(keymap, format, flags)
     }
 }
-pub unsafe fn xkb_keymap_num_mods(keymap: *mut xkb_keymap) -> u32 {
-    unsafe { (*keymap).mods.num_mods }
+pub fn xkb_keymap_num_mods(keymap: &xkb_keymap) -> u32 {
+    keymap.mods.num_mods
 }
-/// # Safety
-/// keymap must be valid. Returned str borrows from keymap's atom table.
-pub unsafe fn xkb_keymap_mod_get_name<'a>(keymap: *mut xkb_keymap, idx: u32) -> Option<&'a str> {
-    unsafe {
-        if idx >= (*keymap).mods.num_mods {
-            return None;
-        }
-        let s = atom_text(
-            &(*keymap).ctx.atom_table,
-            (*keymap).mods.mods[idx as usize].name,
-        );
-        if s.is_empty() {
-            None
-        } else {
-            Some(s)
-        }
+pub fn xkb_keymap_mod_get_name<'a>(keymap: &'a xkb_keymap, idx: u32) -> Option<&'a str> {
+    if idx >= keymap.mods.num_mods {
+        return None;
+    }
+    let s = atom_text(&keymap.ctx.atom_table, keymap.mods.mods[idx as usize].name);
+    if s.is_empty() {
+        None
+    } else {
+        Some(s)
     }
 }
 pub unsafe fn xkb_keymap_mod_get_index(keymap: *mut xkb_keymap, name: *const i8) -> u32 {
-    unsafe {
-        let atom: u32 = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
-        if atom == XKB_ATOM_NONE {
-            XKB_MOD_INVALID
-        } else {
-            XkbModNameToIndex(&(*keymap).mods, atom, MOD_BOTH)
-        }
+    let atom: u32 = unsafe { xkb_atom_lookup(&raw mut (*keymap).ctx, name) };
+    if atom == XKB_ATOM_NONE {
+        XKB_MOD_INVALID
+    } else {
+        unsafe { XkbModNameToIndex(&(*keymap).mods, atom, MOD_BOTH) }
     }
 }
 pub unsafe fn xkb_keymap_mod_get_mask(keymap: *mut xkb_keymap, name: *const i8) -> u32 {
+    let idx: u32 = unsafe { xkb_keymap_mod_get_index(keymap, name) };
     unsafe {
-        let idx: u32 = xkb_keymap_mod_get_index(keymap, name);
         if idx >= (*keymap).mods.num_mods {
             0_u32
         } else {
@@ -337,60 +326,47 @@ pub unsafe fn xkb_keymap_mod_get_mask(keymap: *mut xkb_keymap, name: *const i8) 
         }
     }
 }
-pub unsafe fn xkb_keymap_num_layouts(keymap: *mut xkb_keymap) -> u32 {
-    unsafe { (*keymap).num_groups }
+pub fn xkb_keymap_num_layouts(keymap: &xkb_keymap) -> u32 {
+    keymap.num_groups
 }
-pub unsafe fn xkb_keymap_layout_get_name<'a>(keymap: *mut xkb_keymap, idx: u32) -> Option<&'a str> {
-    unsafe {
-        if idx as usize >= (*keymap).group_names.len() {
-            return None;
-        }
-        let s = atom_text(
-            &(*keymap).ctx.atom_table,
-            (&(*keymap).group_names)[idx as usize],
-        );
-        if s.is_empty() {
-            None
-        } else {
-            Some(s)
-        }
+pub fn xkb_keymap_layout_get_name<'a>(keymap: &'a xkb_keymap, idx: u32) -> Option<&'a str> {
+    if idx as usize >= keymap.group_names.len() {
+        return None;
+    }
+    let s = atom_text(&keymap.ctx.atom_table, keymap.group_names[idx as usize]);
+    if s.is_empty() {
+        None
+    } else {
+        Some(s)
     }
 }
 pub unsafe fn xkb_keymap_layout_get_index(keymap: *mut xkb_keymap, name: *const i8) -> u32 {
+    let atom: u32 = unsafe { xkb_atom_lookup(&raw mut (*keymap).ctx, name) };
+    if atom == XKB_ATOM_NONE {
+        return XKB_LAYOUT_INVALID;
+    }
     unsafe {
-        let atom: u32 = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
-        let mut i: u32 = 0;
-        if atom == XKB_ATOM_NONE {
-            return XKB_LAYOUT_INVALID;
-        }
-        while (i as usize) < (*keymap).group_names.len() {
-            if (&(*keymap).group_names)[i as usize] == atom {
-                return i;
+        for (i, &gn) in (*keymap).group_names.iter().enumerate() {
+            if gn == atom {
+                return i as u32;
             }
-            i = i.wrapping_add(1);
         }
-        XKB_LAYOUT_INVALID
     }
+    XKB_LAYOUT_INVALID
 }
-pub unsafe fn xkb_keymap_num_layouts_for_key(keymap: *mut xkb_keymap, kc: u32) -> u32 {
-    unsafe {
-        let key: *const xkb_key = XkbKey(keymap, kc);
-        if key.is_null() {
-            return 0_u32;
-        }
-        (*key).num_groups
+pub fn xkb_keymap_num_layouts_for_key(keymap: &xkb_keymap, kc: u32) -> u32 {
+    let key: *const xkb_key = unsafe { XkbKey(keymap as *const _ as *mut _, kc) };
+    if key.is_null() {
+        return 0_u32;
     }
+    unsafe { (*key).num_groups }
 }
-pub unsafe fn xkb_keymap_num_levels_for_key(
-    keymap: *mut xkb_keymap,
-    kc: u32,
-    mut layout: u32,
-) -> u32 {
+pub fn xkb_keymap_num_levels_for_key(keymap: &xkb_keymap, kc: u32, mut layout: u32) -> u32 {
+    let key: *const xkb_key = unsafe { XkbKey(keymap as *const _ as *mut _, kc) };
+    if key.is_null() {
+        return 0_u32;
+    }
     unsafe {
-        let key: *const xkb_key = XkbKey(keymap, kc);
-        if key.is_null() {
-            return 0_u32;
-        }
         layout = XkbWrapGroupIntoRange(
             layout as i32,
             (*key).num_groups,
@@ -400,43 +376,36 @@ pub unsafe fn xkb_keymap_num_levels_for_key(
         if layout == XKB_LAYOUT_INVALID {
             return 0_u32;
         }
-        XkbKeyNumLevels(keymap, key, layout)
+        XkbKeyNumLevels(keymap as *const _, key, layout)
     }
 }
-pub unsafe fn xkb_keymap_num_leds(keymap: *mut xkb_keymap) -> u32 {
-    unsafe { (*keymap).num_leds }
+pub fn xkb_keymap_num_leds(keymap: &xkb_keymap) -> u32 {
+    keymap.num_leds
 }
-pub unsafe fn xkb_keymap_led_get_name<'a>(keymap: *mut xkb_keymap, idx: u32) -> Option<&'a str> {
-    unsafe {
-        if idx >= (*keymap).num_leds {
-            return None;
-        }
-        let s = atom_text(&(*keymap).ctx.atom_table, (*keymap).leds[idx as usize].name);
-        if s.is_empty() {
-            None
-        } else {
-            Some(s)
-        }
+pub fn xkb_keymap_led_get_name<'a>(keymap: &'a xkb_keymap, idx: u32) -> Option<&'a str> {
+    if idx >= keymap.num_leds {
+        return None;
+    }
+    let s = atom_text(&keymap.ctx.atom_table, keymap.leds[idx as usize].name);
+    if s.is_empty() {
+        None
+    } else {
+        Some(s)
     }
 }
 pub unsafe fn xkb_keymap_led_get_index(keymap: *mut xkb_keymap, name: *const i8) -> u32 {
+    let atom: u32 = unsafe { xkb_atom_lookup(&raw mut (*keymap).ctx, name) };
+    if atom == XKB_ATOM_NONE {
+        return XKB_LED_INVALID;
+    }
     unsafe {
-        let atom: u32 = xkb_atom_lookup(&raw mut (*keymap).ctx, name);
-        let mut i: u32 = 0;
-        let mut led: *const xkb_led;
-        if atom == XKB_ATOM_NONE {
-            return XKB_LED_INVALID;
-        }
-        led = &raw mut (*keymap).leds as *mut xkb_led;
-        while i < (*keymap).num_leds {
-            if (*led).name == atom {
+        for i in 0..(*keymap).num_leds {
+            if (*keymap).leds[i as usize].name == atom {
                 return i;
             }
-            i = i.wrapping_add(1);
-            led = led.offset(1);
         }
-        XKB_LED_INVALID
     }
+    XKB_LED_INVALID
 }
 pub unsafe fn xkb_keymap_key_get_level(
     keymap: *mut xkb_keymap,
@@ -484,24 +453,22 @@ pub unsafe fn xkb_keymap_key_get_syms_by_level(
         0_i32
     }
 }
-pub unsafe fn xkb_keymap_min_keycode(keymap: *mut xkb_keymap) -> u32 {
-    unsafe { (*keymap).min_key_code }
+pub fn xkb_keymap_min_keycode(keymap: &xkb_keymap) -> u32 {
+    keymap.min_key_code
 }
-pub unsafe fn xkb_keymap_max_keycode(keymap: *mut xkb_keymap) -> u32 {
-    unsafe { (*keymap).max_key_code }
+pub fn xkb_keymap_max_keycode(keymap: &xkb_keymap) -> u32 {
+    keymap.max_key_code
 }
-pub unsafe fn xkb_keymap_key_get_name<'a>(keymap: *mut xkb_keymap, kc: u32) -> Option<&'a str> {
-    unsafe {
-        let key: *const xkb_key = XkbKey(keymap, kc);
-        if key.is_null() {
-            return None;
-        }
-        let s = atom_text(&(*keymap).ctx.atom_table, (*key).name);
-        if s.is_empty() {
-            None
-        } else {
-            Some(s)
-        }
+pub fn xkb_keymap_key_get_name<'a>(keymap: &'a xkb_keymap, kc: u32) -> Option<&'a str> {
+    let key: *const xkb_key = unsafe { XkbKey(keymap as *const _ as *mut _, kc) };
+    if key.is_null() {
+        return None;
+    }
+    let s = atom_text(&keymap.ctx.atom_table, unsafe { (*key).name });
+    if s.is_empty() {
+        None
+    } else {
+        Some(s)
     }
 }
 pub unsafe fn xkb_keymap_key_by_name(keymap: *mut xkb_keymap, name: *const i8) -> u32 {
@@ -535,14 +502,12 @@ pub unsafe fn xkb_keymap_key_by_name(keymap: *mut xkb_keymap, name: *const i8) -
         XKB_KEYCODE_INVALID
     }
 }
-pub unsafe fn xkb_keymap_key_repeats(keymap: *mut xkb_keymap, kc: u32) -> i32 {
-    unsafe {
-        let key: *const xkb_key = XkbKey(keymap, kc);
-        if key.is_null() {
-            return 0_i32;
-        }
-        (*key).repeats as i32
+pub fn xkb_keymap_key_repeats(keymap: &xkb_keymap, kc: u32) -> i32 {
+    let key: *const xkb_key = unsafe { XkbKey(keymap as *const _ as *mut _, kc) };
+    if key.is_null() {
+        return 0_i32;
     }
+    unsafe { (*key).repeats as i32 }
 }
 use crate::xkb::shared_types::*;
 
@@ -557,26 +522,27 @@ pub const XKB_MOD_NAME_MOD3: &str = "Mod3";
 pub const XKB_MOD_NAME_MOD4: &str = "Mod4";
 pub const XKB_MOD_NAME_MOD5: &str = "Mod5";
 
-pub unsafe fn xkb_keymap_new(
+pub fn xkb_keymap_new(
     ctx: xkb_context,
     func: &str,
     format: u32,
     flags: u32,
 ) -> Option<Box<xkb_keymap>> {
+    static XKB_KEYMAP_COMPILE_FLAGS: u32 = XKB_KEYMAP_COMPILE_FLAGS_VALUES;
+    if flags & !XKB_KEYMAP_COMPILE_FLAGS != 0 {
+        log::error!(
+            "{}: unrecognized keymap compilation flags: 0x{:x}\n",
+            func,
+            flags & !XKB_KEYMAP_COMPILE_FLAGS
+        );
+        return None;
+    }
+    // Use Box for allocation — zeroed via MaybeUninit to avoid UB
+    let mut keymap = Box::new(std::mem::MaybeUninit::<xkb_keymap>::zeroed());
+    let ptr = keymap.as_mut_ptr();
+    // Safety: Initialize non-Copy fields that can't be zeroed.
+    // All fields are written before the assume_init cast below.
     unsafe {
-        static XKB_KEYMAP_COMPILE_FLAGS: u32 = XKB_KEYMAP_COMPILE_FLAGS_VALUES;
-        if flags & !XKB_KEYMAP_COMPILE_FLAGS != 0 {
-            log::error!(
-                "{}: unrecognized keymap compilation flags: 0x{:x}\n",
-                func,
-                flags & !XKB_KEYMAP_COMPILE_FLAGS
-            );
-            return None;
-        }
-        // Use Box for allocation — zeroed via MaybeUninit to avoid UB
-        let mut keymap = Box::new(std::mem::MaybeUninit::<xkb_keymap>::zeroed());
-        let ptr = keymap.as_mut_ptr();
-        // Initialize non-Copy fields that can't be zeroed
         std::ptr::write(&raw mut (*ptr).ctx, ctx);
         std::ptr::write(&raw mut (*ptr).types, Vec::new());
         std::ptr::write(&raw mut (*ptr).sym_interprets, Vec::new());
@@ -588,34 +554,31 @@ pub unsafe fn xkb_keymap_new(
         std::ptr::write(&raw mut (*ptr).symbols_section_name, String::new());
         std::ptr::write(&raw mut (*ptr).types_section_name, String::new());
         std::ptr::write(&raw mut (*ptr).compat_section_name, String::new());
-        // Safety: all fields are now initialized (zeroed Copy fields + written non-Copy fields)
-        let mut keymap = Box::from_raw(Box::into_raw(keymap) as *mut xkb_keymap);
-        keymap.refcnt = 1;
-        keymap.flags = flags;
-        keymap.format = format;
-
-        static BUILTIN_MODS: [&str; 8] = [
-            XKB_MOD_NAME_SHIFT,
-            XKB_MOD_NAME_CAPS,
-            XKB_MOD_NAME_CTRL,
-            XKB_MOD_NAME_MOD1,
-            XKB_MOD_NAME_MOD2,
-            XKB_MOD_NAME_MOD3,
-            XKB_MOD_NAME_MOD4,
-            XKB_MOD_NAME_MOD5,
-        ];
-        let mut i: u32 = 0_u32;
-        while (i as usize) < BUILTIN_MODS.len() {
-            keymap.mods.mods[i as usize].name =
-                xkb_atom_intern(&raw mut keymap.ctx, BUILTIN_MODS[i as usize].as_bytes());
-            keymap.mods.mods[i as usize].type_0 = MOD_REAL;
-            keymap.mods.mods[i as usize].mapping = 1_u32 << i;
-            i = i.wrapping_add(1);
-        }
-        keymap.mods.num_mods = BUILTIN_MODS.len() as u32;
-        keymap.canonical_state_mask = MOD_REAL_MASK_ALL;
-        Some(keymap)
     }
+    // Safety: all fields are now initialized (zeroed Copy fields + written non-Copy fields)
+    let mut keymap = unsafe { Box::from_raw(Box::into_raw(keymap) as *mut xkb_keymap) };
+    keymap.refcnt = 1;
+    keymap.flags = flags;
+    keymap.format = format;
+
+    static BUILTIN_MODS: [&str; 8] = [
+        XKB_MOD_NAME_SHIFT,
+        XKB_MOD_NAME_CAPS,
+        XKB_MOD_NAME_CTRL,
+        XKB_MOD_NAME_MOD1,
+        XKB_MOD_NAME_MOD2,
+        XKB_MOD_NAME_MOD3,
+        XKB_MOD_NAME_MOD4,
+        XKB_MOD_NAME_MOD5,
+    ];
+    for (i, name) in BUILTIN_MODS.iter().enumerate() {
+        keymap.mods.mods[i].name = unsafe { xkb_atom_intern(&raw mut keymap.ctx, name.as_bytes()) };
+        keymap.mods.mods[i].type_0 = MOD_REAL;
+        keymap.mods.mods[i].mapping = 1_u32 << i;
+    }
+    keymap.mods.num_mods = BUILTIN_MODS.len() as u32;
+    keymap.canonical_state_mask = MOD_REAL_MASK_ALL;
+    Some(keymap)
 }
 
 pub fn xkb_escape_map_name(name: &mut String) {
@@ -641,13 +604,12 @@ pub fn XkbEscapeMapName(name: &mut String) {
         0, 0, 0, 0, 0, 0xa7, 0xff, 0x83, 0xfe, 0xff, 0xff, 0x87, 0xfe, 0xff, 0xff, 0x7, 0, 0, 0, 0,
         0, 0, 0, 0, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0x7f, 0xff,
     ];
-    // SAFETY: We only replace ASCII bytes with '_' (also ASCII), preserving UTF-8 validity
-    unsafe {
-        for b in name.as_bytes_mut() {
-            let c = *b;
-            if LEGAL[(c as usize) / 8] & (1u8 << (c % 8)) == 0 {
-                *b = b'_';
-            }
+    // Safety: we only replace ASCII bytes with '_' (ASCII), so UTF-8 validity is preserved
+    let bytes = unsafe { name.as_bytes_mut() };
+    for b in bytes.iter_mut() {
+        let c = *b;
+        if LEGAL[(c as usize) / 8] & (1u8 << (c % 8)) == 0 {
+            *b = b'_';
         }
     }
 }
@@ -659,8 +621,8 @@ pub fn XkbModNameToIndex(mods: &xkb_mod_set, name: u32, type_0: u32) -> u32 {
     }
     XKB_MOD_INVALID
 }
-pub unsafe fn XkbLevelsSameSyms(a: *const xkb_level, b: *const xkb_level) -> bool {
-    unsafe { (*a).syms == (*b).syms }
+pub fn XkbLevelsSameSyms(a: &xkb_level, b: &xkb_level) -> bool {
+    a.syms == b.syms
 }
 pub fn action_equal(a: &xkb_action, b: &xkb_action) -> bool {
     if a.action_type() != b.action_type() {
@@ -720,20 +682,16 @@ pub fn action_equal(a: &xkb_action, b: &xkb_action) -> bool {
         _ => a.as_priv().data == b.as_priv().data,
     }
 }
-pub unsafe fn XkbLevelsSameActions(a: *const xkb_level, b: *const xkb_level) -> bool {
-    unsafe {
-        let a_actions = &(*a).actions;
-        let b_actions = &(*b).actions;
-        if a_actions.len() != b_actions.len() {
+pub fn XkbLevelsSameActions(a: &xkb_level, b: &xkb_level) -> bool {
+    if a.actions.len() != b.actions.len() {
+        return false;
+    }
+    for k in 0..a.actions.len() {
+        if !action_equal(&a.actions[k], &b.actions[k]) {
             return false;
         }
-        for k in 0..a_actions.len() {
-            if !action_equal(&a_actions[k], &b_actions[k]) {
-                return false;
-            }
-        }
-        true
     }
+    true
 }
 pub fn XkbWrapGroupIntoRange(
     group: i32,

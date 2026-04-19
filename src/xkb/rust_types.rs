@@ -130,19 +130,17 @@ impl Keymap {
 
     /// Get minimum keycode
     pub fn min_keycode(&self) -> u32 {
-        unsafe { super::keymap::xkb_keymap_min_keycode(self.as_ptr() as *mut _) }
+        super::keymap::xkb_keymap_min_keycode(&self.inner)
     }
 
     /// Get maximum keycode
     pub fn max_keycode(&self) -> u32 {
-        unsafe { super::keymap::xkb_keymap_max_keycode(self.as_ptr() as *mut _) }
+        super::keymap::xkb_keymap_max_keycode(&self.inner)
     }
 
     /// Get number of levels for a key
     pub fn num_levels_for_key(&self, keycode: u32, layout: u32) -> u32 {
-        unsafe {
-            super::keymap::xkb_keymap_num_levels_for_key(self.as_ptr() as *mut _, keycode, layout)
-        }
+        super::keymap::xkb_keymap_num_levels_for_key(&self.inner, keycode, layout)
     }
 
     /// Get keysyms for a key at a specific level
@@ -167,15 +165,12 @@ impl Keymap {
 
     /// Get number of modifiers in the keymap
     pub fn num_mods(&self) -> u32 {
-        unsafe { super::keymap::xkb_keymap_num_mods(self.as_ptr() as *mut _) }
+        super::keymap::xkb_keymap_num_mods(&self.inner)
     }
 
     /// Get modifier name by index
     pub fn mod_get_name(&self, idx: u32) -> Option<String> {
-        unsafe {
-            super::keymap::xkb_keymap_mod_get_name(self.as_ptr() as *mut _, idx)
-                .map(|s| s.to_string())
-        }
+        super::keymap::xkb_keymap_mod_get_name(&self.inner, idx).map(|s| s.to_string())
     }
 
     /// Get modifier mask by name
@@ -188,7 +183,7 @@ impl Keymap {
 
     /// Check if a key can repeat
     pub fn key_repeats(&self, keycode: u32) -> bool {
-        unsafe { super::keymap::xkb_keymap_key_repeats(self.as_ptr() as *mut _, keycode) != 0 }
+        super::keymap::xkb_keymap_key_repeats(&self.inner, keycode) != 0
     }
 
     /// Get modifier maps for a key (returns (modmap, vmodmap) or None if key doesn't exist)
@@ -236,15 +231,12 @@ impl Keymap {
 
     /// Get number of layouts in the keymap
     pub fn num_layouts(&self) -> u32 {
-        unsafe { super::keymap::xkb_keymap_num_layouts(self.as_ptr() as *mut _) }
+        super::keymap::xkb_keymap_num_layouts(&self.inner)
     }
 
     /// Get layout name by index
     pub fn layout_get_name(&self, idx: u32) -> Option<String> {
-        unsafe {
-            super::keymap::xkb_keymap_layout_get_name(self.as_ptr() as *mut _, idx)
-                .map(|s| s.to_string())
-        }
+        super::keymap::xkb_keymap_layout_get_name(&self.inner, idx).map(|s| s.to_string())
     }
 
     /// Get layout index by name
@@ -265,15 +257,12 @@ impl Keymap {
 
     /// Get number of LEDs in the keymap
     pub fn num_leds(&self) -> u32 {
-        unsafe { super::keymap::xkb_keymap_num_leds(self.as_ptr() as *mut _) }
+        super::keymap::xkb_keymap_num_leds(&self.inner)
     }
 
     /// Get LED name by index
     pub fn led_get_name(&self, idx: u32) -> Option<String> {
-        unsafe {
-            super::keymap::xkb_keymap_led_get_name(self.as_ptr() as *mut _, idx)
-                .map(|s| s.to_string())
-        }
+        super::keymap::xkb_keymap_led_get_name(&self.inner, idx).map(|s| s.to_string())
     }
 
     /// Get LED index by name
@@ -294,10 +283,7 @@ impl Keymap {
 
     /// Get key name by keycode
     pub fn key_get_name(&self, keycode: u32) -> Option<String> {
-        unsafe {
-            super::keymap::xkb_keymap_key_get_name(self.as_ptr() as *mut _, keycode)
-                .map(|s| s.to_string())
-        }
+        super::keymap::xkb_keymap_key_get_name(&self.inner, keycode).map(|s| s.to_string())
     }
 
     /// Get keycode by key name
@@ -316,7 +302,7 @@ impl Keymap {
 
     /// Get number of layouts for a specific key
     pub fn num_layouts_for_key(&self, keycode: u32) -> u32 {
-        unsafe { super::keymap::xkb_keymap_num_layouts_for_key(self.as_ptr() as *mut _, keycode) }
+        super::keymap::xkb_keymap_num_layouts_for_key(&self.inner, keycode)
     }
 
     /// Get modifier index by name

@@ -283,7 +283,7 @@ fn MergeGroups(
                     fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
                     fromActionsCount = fromActionsCount.wrapping_add(1);
                 } else {
-                    if !XkbLevelsSameSyms(fromLevel, intoLevel) {
+                    if !XkbLevelsSameSyms(&*fromLevel, &*intoLevel) {
                         if report as i32 != 0
                             && !(intoHasNoKeysym as i32 != 0 || fromHasNoKeysym as i32 != 0)
                         {
@@ -311,7 +311,7 @@ fn MergeGroups(
                             }
                         }
                     }
-                    if !XkbLevelsSameActions(intoLevel, fromLevel) {
+                    if !XkbLevelsSameActions(&*intoLevel, &*fromLevel) {
                         if report as i32 != 0
                             && !(intoHasNoAction as i32 != 0 || fromHasNoAction as i32 != 0)
                         {
