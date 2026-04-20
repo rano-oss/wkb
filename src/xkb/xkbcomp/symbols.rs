@@ -2030,55 +2030,51 @@ fn FindAutomaticType(ctx: &mut xkb_context, groupi: &GroupInfo) -> u32 {
     XKB_ATOM_NONE
 }
 fn FindTypeForGroup(
-    keymap: *mut xkb_keymap,
-    keyi: *mut KeyInfo,
+    keymap: &mut xkb_keymap,
+    keyi: &mut KeyInfo,
     group: u32,
-    explicit_type: *mut bool,
+    explicit_type: &mut bool,
 ) -> u32 {
-    unsafe {
-        let mut i: u32;
-        let groupi: *mut GroupInfo = &mut (&mut (*keyi).groups)[group as usize] as *mut GroupInfo;
-        let mut type_name: u32 = (*groupi).type_0;
-        *explicit_type = true;
-        if type_name == XKB_ATOM_NONE {
-            if (*keyi).default_type != XKB_ATOM_NONE {
-                type_name = (*keyi).default_type;
-            } else {
-                type_name = FindAutomaticType(&mut (*keymap).ctx, &*groupi);
-                if type_name != XKB_ATOM_NONE {
-                    *explicit_type = false;
-                }
-            }
-        }
-        if type_name == XKB_ATOM_NONE {
-            log::warn!("[XKB-{:03}] Couldn't find an automatic type for key '<{}>' group {} with {} levels; Using the default type\n",
-                XKB_WARNING_CANNOT_INFER_KEY_TYPE as i32,
-                xkb_atom_text(&(*keymap).ctx.atom_table, (*keyi).name),
-                group.wrapping_add(1_u32),
-                (*groupi).levels.len());
+    let groupi = &keyi.groups[group as usize];
+    let mut type_name: u32 = groupi.type_0;
+    *explicit_type = true;
+    if type_name == XKB_ATOM_NONE {
+        if keyi.default_type != XKB_ATOM_NONE {
+            type_name = keyi.default_type;
         } else {
-            // dead store removed: i = 0;
-            i = 0_u32;
-            while (i as usize) < (*keymap).types.len() {
-                if (&(*keymap).types)[i as usize].name == type_name {
-                    break;
-                }
-                i = i.wrapping_add(1);
-            }
-            if i as usize >= (*keymap).types.len() {
-                log::warn!("[XKB-{:03}] The type \"{}\" for key '<{}>' group {} was not previously defined; Using the default type\n",
-                    XKB_WARNING_UNDEFINED_KEY_TYPE as i32,
-                    xkb_atom_text(&(*keymap).ctx.atom_table, type_name),
-                    xkb_atom_text(&(*keymap).ctx.atom_table, (*keyi).name),
-                    group.wrapping_add(1_u32));
-            } else {
-                (&mut (*keymap).types)[i as usize].required = true;
-                return i;
+            type_name = FindAutomaticType(&mut keymap.ctx, groupi);
+            if type_name != XKB_ATOM_NONE {
+                *explicit_type = false;
             }
         }
-        (&mut (*keymap).types)[0].required = true;
-        0
     }
+    if type_name == XKB_ATOM_NONE {
+        log::warn!("[XKB-{:03}] Couldn't find an automatic type for key '<{}>' group {} with {} levels; Using the default type\n",
+            XKB_WARNING_CANNOT_INFER_KEY_TYPE as i32,
+            xkb_atom_text(&keymap.ctx.atom_table, keyi.name),
+            group.wrapping_add(1_u32),
+            keyi.groups[group as usize].levels.len());
+    } else {
+        let mut i: u32 = 0_u32;
+        while (i as usize) < keymap.types.len() {
+            if keymap.types[i as usize].name == type_name {
+                break;
+            }
+            i = i.wrapping_add(1);
+        }
+        if i as usize >= keymap.types.len() {
+            log::warn!("[XKB-{:03}] The type \"{}\" for key '<{}>' group {} was not previously defined; Using the default type\n",
+                XKB_WARNING_UNDEFINED_KEY_TYPE as i32,
+                xkb_atom_text(&keymap.ctx.atom_table, type_name),
+                xkb_atom_text(&keymap.ctx.atom_table, keyi.name),
+                group.wrapping_add(1_u32));
+        } else {
+            keymap.types[i as usize].required = true;
+            return i;
+        }
+    }
+    keymap.types[0].required = true;
+    0
 }
 fn CopySymbolsDefToKeymap(
     keymap: *mut xkb_keymap,
@@ -2166,7 +2162,8 @@ fn CopySymbolsDefToKeymap(
                 groupi = (*keyi).groups.as_mut_ptr();
                 while i < (*keyi).groups.len() as u32 {
                     let mut explicit_type = false;
-                    let type_idx: u32 = FindTypeForGroup(keymap, keyi, i, &raw mut explicit_type);
+                    let type_idx: u32 =
+                        FindTypeForGroup(&mut *keymap, &mut *keyi, i, &mut explicit_type);
 
                     // Always have as many levels as the type specifies
                     if (&(*keymap).types)[type_idx as usize].num_levels
@@ -2356,46 +2353,45 @@ fn CopyModMapDefToKeymap(
         }
     }
 }
-fn CopySymbolsToKeymap(keymap: *mut xkb_keymap, info: &mut SymbolsInfo<'_>) -> bool {
-    unsafe {
-        (*keymap).symbols_section_name = match &info.name {
-            Some(s) => s.clone(),
-            None => String::new(),
-        };
-        xkb_escape_map_name(&mut (*keymap).symbols_section_name);
-        (*keymap).mods = info.mods;
-        (*keymap).group_names = std::mem::take(&mut info.group_names);
-        for i in 0..info.keys.len() {
-            let keyi_ptr = info.keys.as_mut_ptr().add(i);
-            if !CopySymbolsDefToKeymap(keymap, info, keyi_ptr) {
-                info.errorCount += 1;
-            }
+fn CopySymbolsToKeymap(keymap: &mut xkb_keymap, info: &mut SymbolsInfo<'_>) -> bool {
+    keymap.symbols_section_name = match &info.name {
+        Some(s) => s.clone(),
+        None => String::new(),
+    };
+    xkb_escape_map_name(&mut keymap.symbols_section_name);
+    keymap.mods = info.mods;
+    keymap.group_names = std::mem::take(&mut info.group_names);
+    let keymap_ptr = keymap as *mut xkb_keymap;
+    for i in 0..info.keys.len() {
+        let keyi_ptr = unsafe { info.keys.as_mut_ptr().add(i) };
+        if !CopySymbolsDefToKeymap(keymap_ptr, info, keyi_ptr) {
+            info.errorCount += 1;
         }
-        if xkb_context_get_log_verbosity(&(*keymap).ctx) > 3_i32 {
-            let start_idx = if (*keymap).num_keys_low == 0_u32 {
-                0_u32
-            } else {
-                (*keymap).min_key_code
-            };
-            let mut ki: u32 = start_idx;
-            while ki < (*keymap).num_keys {
-                let key: *mut xkb_key = &mut (&mut (*keymap).keys)[ki as usize] as *mut xkb_key;
-                if ((*key).name != XKB_ATOM_NONE) && ((*key).num_groups as i32) < 1_i32 {
-                    log::info!(
-                        "No symbols defined for <{}>\n",
-                        xkb_atom_text(&info.ctx().atom_table, (*key).name)
-                    );
-                }
-                ki = ki.wrapping_add(1);
-            }
-        }
-        for i in 0..info.modmaps.len() {
-            if !CopyModMapDefToKeymap(&mut *keymap, info, &info.modmaps[i]) {
-                info.errorCount += 1;
-            }
-        }
-        true
     }
+    if xkb_context_get_log_verbosity(&keymap.ctx) > 3_i32 {
+        let start_idx = if keymap.num_keys_low == 0_u32 {
+            0_u32
+        } else {
+            keymap.min_key_code
+        };
+        let mut ki: u32 = start_idx;
+        while ki < keymap.num_keys {
+            let key = &keymap.keys[ki as usize];
+            if (key.name != XKB_ATOM_NONE) && (key.num_groups as i32) < 1_i32 {
+                log::info!(
+                    "No symbols defined for <{}>\n",
+                    xkb_atom_text(&info.ctx().atom_table, key.name)
+                );
+            }
+            ki = ki.wrapping_add(1);
+        }
+    }
+    for i in 0..info.modmaps.len() {
+        if !CopyModMapDefToKeymap(keymap, info, &info.modmaps[i]) {
+            info.errorCount += 1;
+        }
+    }
+    true
 }
 pub fn CompileSymbols(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
     let keymap_info = unsafe { &mut *(keymap_info as *mut xkb_keymap_info) };
@@ -2406,7 +2402,8 @@ pub fn CompileSymbols(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_i
     if let Some(file) = file {
         HandleSymbolsFile(&mut info, file);
     }
-    if (info.errorCount == 0_i32) && CopySymbolsToKeymap(keymap_ptr, &mut info) {
+    let keymap_ref = unsafe { &mut *keymap_ptr };
+    if (info.errorCount == 0_i32) && CopySymbolsToKeymap(keymap_ref, &mut info) {
         ClearSymbolsInfo(&mut info);
         return true;
     }
