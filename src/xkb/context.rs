@@ -70,29 +70,30 @@ fn context_include_path_append(ctx: &mut xkb_context, path: &str) -> i32 {
 }
 pub unsafe fn xkb_context_include_path_append(ctx: *mut xkb_context, path: *const i8) -> i32 {
     unsafe {
-        if xkb_context_init_includes(ctx) as i32 != 0 {
+        let ctx = &mut *ctx;
+        if xkb_context_init_includes(ctx) {
             let path_str = std::ffi::CStr::from_ptr(path).to_str().unwrap_or("");
-            context_include_path_append(&mut *ctx, path_str)
+            context_include_path_append(ctx, path_str)
         } else {
             0_i32
         }
     }
 }
-pub fn xkb_context_include_path_get_extra_path(_ctx: *mut xkb_context) -> String {
+pub fn xkb_context_include_path_get_extra_path() -> String {
     match xkb_context_getenv("XKB_CONFIG_EXTRA_PATH") {
         Ok(extra) => extra,
         Err(_) => DFLT_XKB_CONFIG_EXTRA_PATH.to_string(),
     }
 }
 
-pub fn xkb_context_include_path_get_unversioned_extensions_path(_ctx: *mut xkb_context) -> String {
+pub fn xkb_context_include_path_get_unversioned_extensions_path() -> String {
     match xkb_context_getenv("XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH") {
         Ok(ext) => ext,
         Err(_) => DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH.to_string(),
     }
 }
 
-pub fn xkb_context_include_path_get_versioned_extensions_path(_ctx: *mut xkb_context) -> String {
+pub fn xkb_context_include_path_get_versioned_extensions_path() -> String {
     match xkb_context_getenv("XKB_CONFIG_VERSIONED_EXTENSIONS_PATH") {
         Ok(ext) => ext,
         Err(_) => DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH.to_string(),
@@ -162,16 +163,15 @@ fn add_direct_subdirectories(
     ret
 }
 
-pub fn xkb_context_include_path_get_system_path(_ctx: *mut xkb_context) -> String {
+pub fn xkb_context_include_path_get_system_path() -> String {
     match xkb_context_getenv("XKB_CONFIG_ROOT") {
         Ok(root) => root,
         Err(_) => DFLT_XKB_CONFIG_ROOT.to_string(),
     }
 }
 
-pub unsafe fn xkb_context_include_path_append_default(ctx: *mut xkb_context) -> i32 {
-    unsafe {
-        let ctx = &mut *ctx;
+pub fn xkb_context_include_path_append_default(ctx: &mut xkb_context) -> i32 {
+    {
         let mut ret: i32 = 0_i32;
         let home = xkb_context_getenv("HOME");
         let xdg = xkb_context_getenv("XDG_CONFIG_HOME");
@@ -183,19 +183,17 @@ pub unsafe fn xkb_context_include_path_append_default(ctx: *mut xkb_context) -> 
         if let Ok(ref home) = home {
             ret |= context_include_path_append(ctx, &format!("{}/.xkb", home));
         }
-        let extra = xkb_context_include_path_get_extra_path(std::ptr::null_mut());
+        let extra = xkb_context_include_path_get_extra_path();
         ret |= context_include_path_append(ctx, &extra);
 
         let mut extensions: Vec<String> = Vec::new();
-        let versioned_path =
-            xkb_context_include_path_get_versioned_extensions_path(std::ptr::null_mut());
+        let versioned_path = xkb_context_include_path_get_versioned_extensions_path();
         let mut versioned_path_length: usize = 0;
         if !versioned_path.is_empty() {
             ret |= add_direct_subdirectories(ctx, &versioned_path, &mut extensions, 0, 0);
             versioned_path_length = versioned_path.len();
         }
-        let unversioned_path =
-            xkb_context_include_path_get_unversioned_extensions_path(std::ptr::null_mut());
+        let unversioned_path = xkb_context_include_path_get_unversioned_extensions_path();
         if !unversioned_path.is_empty() {
             let versioned_count = extensions.len();
             ret |= add_direct_subdirectories(
@@ -207,7 +205,7 @@ pub unsafe fn xkb_context_include_path_append_default(ctx: *mut xkb_context) -> 
             );
         }
 
-        let root = xkb_context_include_path_get_system_path(std::ptr::null_mut());
+        let root = xkb_context_include_path_get_system_path();
         let has_root: bool = context_include_path_append(ctx, &root) != 0;
         ret |= has_root as i32;
         if !has_root && !root.is_empty() {
@@ -221,30 +219,24 @@ pub unsafe fn xkb_context_include_path_append_default(ctx: *mut xkb_context) -> 
     }
 }
 
-pub unsafe fn xkb_context_include_path_clear(ctx: *mut xkb_context) {
-    unsafe {
-        (*ctx).includes.clear();
-        (*ctx).failed_includes.clear();
-        (*ctx).pending_default_includes = false;
-    }
+pub fn xkb_context_include_path_clear(ctx: &mut xkb_context) {
+    ctx.includes.clear();
+    ctx.failed_includes.clear();
+    ctx.pending_default_includes = false;
 }
 
-pub unsafe fn xkb_context_num_include_paths(ctx: *mut xkb_context) -> u32 {
-    unsafe {
-        if xkb_context_init_includes(ctx) as i32 != 0 {
-            (*ctx).includes.len() as u32
-        } else {
-            0_u32
-        }
+pub fn xkb_context_num_include_paths(ctx: &mut xkb_context) -> u32 {
+    if xkb_context_init_includes(ctx) {
+        ctx.includes.len() as u32
+    } else {
+        0_u32
     }
 }
-pub unsafe fn xkb_context_include_path_get(ctx: *mut xkb_context, idx: u32) -> String {
-    unsafe {
-        if idx >= xkb_context_num_include_paths(ctx) {
-            return "".to_string();
-        }
-        (&*ctx).includes.get(idx as usize).unwrap().clone()
+pub fn xkb_context_include_path_get(ctx: &mut xkb_context, idx: u32) -> String {
+    if idx >= xkb_context_num_include_paths(ctx) {
+        return "".to_string();
     }
+    ctx.includes.get(idx as usize).unwrap().clone()
 }
 fn log_level_to_prefix(level: u32) -> &'static str {
     match level {
@@ -369,42 +361,36 @@ pub fn xkb_context_get_log_verbosity(ctx: &xkb_context) -> i32 {
 pub fn xkb_context_getenv(name: &str) -> Result<String, VarError> {
     std::env::var(name)
 }
-pub unsafe fn xkb_context_init_includes(ctx: *mut xkb_context) -> bool {
-    unsafe {
-        if (*ctx).pending_default_includes {
-            if (*ctx).failed_includes.is_empty() {
-                if xkb_context_include_path_append_default(ctx) == 0 {
-                    log::error!(
-                        "[XKB-{:03}] Failed to add any default include path (system path: {})\n",
-                        XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH as i32,
-                        xkb_context_include_path_get_system_path(ctx)
-                    );
-                    return false;
-                }
-                (*ctx).pending_default_includes = false;
-            } else {
+pub fn xkb_context_init_includes(ctx: &mut xkb_context) -> bool {
+    if ctx.pending_default_includes {
+        if ctx.failed_includes.is_empty() {
+            if xkb_context_include_path_append_default(ctx) == 0 {
+                log::error!(
+                    "[XKB-{:03}] Failed to add any default include path (system path: {})\n",
+                    XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH as i32,
+                    xkb_context_include_path_get_system_path()
+                );
                 return false;
             }
-        }
-        true
-    }
-}
-pub unsafe fn xkb_context_num_failed_include_paths(ctx: *mut xkb_context) -> u32 {
-    unsafe {
-        if xkb_context_init_includes(ctx) as i32 != 0 {
-            (*ctx).failed_includes.len() as u32
+            ctx.pending_default_includes = false;
         } else {
-            0_u32
+            return false;
         }
+    }
+    true
+}
+pub fn xkb_context_num_failed_include_paths(ctx: &mut xkb_context) -> u32 {
+    if xkb_context_init_includes(ctx) {
+        ctx.failed_includes.len() as u32
+    } else {
+        0_u32
     }
 }
-pub unsafe fn xkb_context_failed_include_path_get(ctx: *mut xkb_context, idx: u32) -> String {
-    unsafe {
-        if idx >= xkb_context_num_failed_include_paths(ctx) {
-            return "".to_string();
-        }
-        (&*ctx).failed_includes.get(idx as usize).unwrap().clone()
+pub fn xkb_context_failed_include_path_get(ctx: &mut xkb_context, idx: u32) -> String {
+    if idx >= xkb_context_num_failed_include_paths(ctx) {
+        return "".to_string();
     }
+    ctx.failed_includes.get(idx as usize).unwrap().clone()
 }
 
 pub fn xkb_atom_intern_bytes(ctx: &mut xkb_context, bytes: &[u8]) -> u32 {

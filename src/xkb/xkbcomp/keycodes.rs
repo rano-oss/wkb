@@ -9,12 +9,10 @@ pub struct KeyNamesInfo<'a> {
     pub keycodes: KeycodeStore,
     pub led_names: [LedNameInfo; 32],
     pub num_led_names: u32,
-    pub ctx: &'a mut xkb_context,
     pub keymap_info: &'a mut xkb_keymap_info,
 }
 impl<'a> KeyNamesInfo<'a> {
     pub fn new(keymap_info: &'a mut xkb_keymap_info) -> Self {
-        let ctx = unsafe { &mut (*keymap_info.keymap).ctx };
         Self {
             name: None,
             errorCount: 0,
@@ -30,13 +28,16 @@ impl<'a> KeyNamesInfo<'a> {
                 name: 0,
             }; 32],
             num_led_names: 0,
-            ctx,
             keymap_info,
         }
     }
     #[inline]
     pub fn ctx(&self) -> &xkb_context {
-        &*self.ctx
+        self.keymap_info.ctx()
+    }
+    #[inline]
+    pub fn ctx_mut(&mut self) -> &mut xkb_context {
+        self.keymap_info.ctx_mut()
     }
 }
 #[derive(Copy, Clone)]
@@ -574,8 +575,8 @@ fn HandleIncludeKeycodes(
     include: &mut IncludeStmt,
     report: bool,
 ) -> bool {
-    let ctx_ptr = &raw mut *info.ctx;
     let ki_ptr = &raw mut *info.keymap_info;
+    let ctx_ptr = unsafe { &raw mut (*(*ki_ptr).keymap).ctx };
     let mut included = KeyNamesInfo::new(unsafe { &mut *ki_ptr });
     if ExceedsIncludeMaxDepth(info.include_depth) {
         info.errorCount += 10_i32;

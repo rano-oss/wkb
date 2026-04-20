@@ -148,34 +148,30 @@ fn DirectoryForInclude(type_0: u32) -> &'static str {
         XKB_FILE_TYPE_INCLUDE_DIRS[type_0 as usize]
     }
 }
-fn LogIncludePaths(ctx: *mut xkb_context) {
-    // SAFETY: ctx is a valid pointer throughout this function; the context
-    // API functions require raw pointers (legacy FFI signatures).
-    unsafe {
-        let num = xkb_context_num_include_paths(ctx);
-        if num > 0_u32 {
-            log::error!("[XKB-{:03}] {} include paths searched:\n",
+fn LogIncludePaths(ctx: &mut xkb_context) {
+    let num = xkb_context_num_include_paths(ctx);
+    if num > 0_u32 {
+        log::error!("[XKB-{:03}] {} include paths searched:\n",
+            XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
+            num);
+        for i in 0..num {
+            log::error!("[XKB-{:03}] \t{}\n",
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                num);
-            for i in 0..num {
-                log::error!("[XKB-{:03}] \t{}\n",
-                    XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                    xkb_context_include_path_get(ctx, i));
-            }
-        } else {
-            log::error!("[XKB-{:03}] There are no include paths to search\n",
-                XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32);
+                xkb_context_include_path_get(ctx, i));
         }
-        let num_failed = xkb_context_num_failed_include_paths(ctx);
-        if num_failed > 0_u32 {
-            log::error!("[XKB-{:03}] {} include paths could not be added:\n",
+    } else {
+        log::error!("[XKB-{:03}] There are no include paths to search\n",
+            XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32);
+    }
+    let num_failed = xkb_context_num_failed_include_paths(ctx);
+    if num_failed > 0_u32 {
+        log::error!("[XKB-{:03}] {} include paths could not be added:\n",
+            XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
+            num_failed);
+        for i in 0..num_failed {
+            log::error!("[XKB-{:03}] \t{}\n",
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                num_failed);
-            for i in 0..num_failed {
-                log::error!("[XKB-{:03}] \t{}\n",
-                    XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                    xkb_context_failed_include_path_get(ctx, i));
-            }
+                xkb_context_failed_include_path_get(ctx, i));
         }
     }
 }
@@ -220,7 +216,7 @@ fn expand_percent(
                         return 0;
                     }
                 } else if s.chr(b'S' as i8) {
-                    let default_root_str = xkb_context_include_path_get_system_path(ctx);
+                    let default_root_str = xkb_context_include_path_get_system_path();
                     if !s.buf_appends_str(&default_root_str)
                         || !s.buf_append(b'/')
                         || !s.buf_appends_str(typeDir)
@@ -234,7 +230,7 @@ fn expand_percent(
                         return 0;
                     }
                 } else if s.chr(b'E' as i8) {
-                    let default_root_str = xkb_context_include_path_get_extra_path(ctx);
+                    let default_root_str = xkb_context_include_path_get_extra_path();
                     if !s.buf_appends_str(&default_root_str)
                         || !s.buf_append(b'/')
                         || !s.buf_appends_str(typeDir)
@@ -343,67 +339,64 @@ pub fn expand_path(
     }
 }
 pub fn FindFileInXkbPath(
-    ctx: *mut xkb_context,
+    ctx: &mut xkb_context,
     _parent_file_name: &str,
     name: *const i8,
     name_len: usize,
     type_0: u32,
     buf: *mut i8,
     buf_size: usize,
-    offset: *mut u32,
+    offset: &mut u32,
     required: bool,
 ) -> *mut FILE {
-    unsafe {
-        let c2rust_current_block: u64;
-        let mut file: *mut FILE = std::ptr::null_mut();
-        let name_buffer: *mut i8 = std::ptr::null_mut();
-        let name_str = std::str::from_utf8_unchecked(std::slice::from_raw_parts(name as *const u8, name_len));
-        let typeDir = DirectoryForInclude(type_0);
-        let mut i: u32 = *offset;
-        loop {
-            if i >= xkb_context_num_include_paths(ctx) {
-                c2rust_current_block = 8515828400728868193;
+    let name_str = unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(name as *const u8, name_len)) };
+    let typeDir = DirectoryForInclude(type_0);
+    let mut file: *mut FILE = std::ptr::null_mut();
+    let c2rust_current_block: u64;
+    let mut i: u32 = *offset;
+    loop {
+        if i >= xkb_context_num_include_paths(ctx) {
+            c2rust_current_block = 8515828400728868193;
+            break;
+        }
+        let (_, _trunc) = unsafe { crate::xkb::utils::snprintf_args(
+            buf,
+            buf_size,
+            format_args!(
+                "{}/{}/{}",
+                xkb_context_include_path_get(ctx, i),
+                typeDir,
+                name_str
+            ),
+        ) };
+        if _trunc {
+            log::error!("[XKB-{:03}] Path is too long: expected max length of {}, got: {}/{}/{}\n",
+                XKB_ERROR_INVALID_PATH as i32,
+                buf_size,
+                xkb_context_include_path_get(ctx, i),
+                typeDir,
+                name_str);
+        } else {
+            file = unsafe { fopen(buf, b"rb\0".as_ptr() as *const i8) as *mut FILE };
+            if !file.is_null() {
+                *offset = i;
+                c2rust_current_block = 17619028831370153636;
                 break;
             }
-            let (_, _trunc) = crate::xkb::utils::snprintf_args(
-                buf,
-                buf_size,
-                format_args!(
-                    "{}/{}/{}",
-                    xkb_context_include_path_get(ctx, i),
-                    typeDir,
-                    name_str
-                ),
-            );
-            if _trunc {
-                log::error!("[XKB-{:03}] Path is too long: expected max length of {}, got: {}/{}/{}\n",
-                    XKB_ERROR_INVALID_PATH as i32,
-                    buf_size,
-                    xkb_context_include_path_get(ctx, i),
-                    typeDir,
-                    name_str);
-            } else {
-                file = fopen(buf, b"rb\0".as_ptr() as *const i8) as *mut FILE;
-                if !file.is_null() {
-                    *offset = i;
-                    c2rust_current_block = 17619028831370153636;
-                    break;
-                }
-            }
-            i = i.wrapping_add(1);
         }
-        match c2rust_current_block {
-            8515828400728868193 if required as i32 != 0 && *offset == 0_u32 => {
-                log::error!("[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
-                    XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                    typeDir,
-                    name_str);
-                LogIncludePaths(ctx);
-            }
-            _ => {}
-        }
-        file
+        i = i.wrapping_add(1);
     }
+    match c2rust_current_block {
+        8515828400728868193 if required && *offset == 0_u32 => {
+            log::error!("[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
+                XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
+                typeDir,
+                name_str);
+            LogIncludePaths(ctx);
+        }
+        _ => {}
+    }
+    file
 }
 pub fn ExceedsIncludeMaxDepth(include_depth: u32) -> bool {
     if include_depth >= INCLUDE_MAX_DEPTH as u32 {
@@ -454,14 +447,14 @@ pub fn ProcessIncludeFile(
             file = std::ptr::null_mut();
         } else {
             file = FindFileInXkbPath(
-                ctx,
+                unsafe { &mut *ctx },
                 "(unknown)",
                 stmt_file as *const i8,
                 stmt_file_len,
                 file_type,
                 path,
                 path_size,
-                &raw mut offset,
+                &mut offset,
                 true,
             );
         }
@@ -500,14 +493,14 @@ pub fn ProcessIncludeFile(
             }
             offset = offset.wrapping_add(1);
             file = FindFileInXkbPath(
-                ctx,
+                unsafe { &mut *ctx },
                 "(unknown)",
                 stmt_file as *const i8,
                 stmt_file_len,
                 file_type,
                 path,
                 path_size,
-                &raw mut offset,
+                &mut offset,
                 true,
             );
         }

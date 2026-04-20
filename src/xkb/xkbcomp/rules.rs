@@ -693,14 +693,14 @@ fn matcher_include(m: &mut matcher, parent_scanner: &mut scanner, include_depth:
             file = std::ptr::null_mut();
         } else {
             file = FindFileInXkbPath(
-                m.ctx,
+                unsafe { &mut *m.ctx },
                 parent_scanner.file_name.as_str(),
                 stmt_file,
                 stmt_file_len,
                 FILE_TYPE_RULES,
                 &raw mut buf as *mut i8,
                 std::mem::size_of::<[i8; 4096]>(),
-                &raw mut offset,
+                &mut offset,
                 true,
             );
         }
@@ -729,14 +729,14 @@ fn matcher_include(m: &mut matcher, parent_scanner: &mut scanner, include_depth:
             }
             offset = offset.wrapping_add(1);
             file = FindFileInXkbPath(
-                m.ctx,
+                unsafe { &mut *m.ctx },
                 parent_scanner.file_name.as_str(),
                 stmt_file,
                 stmt_file_len,
                 FILE_TYPE_RULES,
                 &raw mut buf as *mut i8,
                 std::mem::size_of::<[i8; 4096]>(),
-                &raw mut offset,
+                &mut offset,
                 true,
             );
         }
@@ -2673,14 +2673,14 @@ fn xkb_resolve_partial_rules(
         let len: usize = cstr_len(&raw mut partial_rules as *mut i8);
         loop {
             file = FindFileInXkbPath(
-                ctx,
+                unsafe { &mut *ctx },
                 "(unknown)",
                 &raw mut partial_rules as *mut i8,
                 len,
                 FILE_TYPE_RULES,
                 path,
                 path_size,
-                &raw mut offset,
+                &mut offset,
                 false,
             );
             if file.is_null() {
@@ -2720,14 +2720,14 @@ fn xkb_resolve_rules(
         let mut offset: u32 = 0_u32;
         let mut path: [i8; 4096] = [0; 4096];
         let file: *mut FILE = FindFileInXkbPath(
-            ctx,
+            unsafe { &mut *ctx },
             "(unknown)",
             rules,
             cstr_len(rules),
             FILE_TYPE_RULES,
             &raw mut path as *mut i8,
             std::mem::size_of::<[i8; 4096]>(),
-            &raw mut offset,
+            &mut offset,
             true,
         ) as *mut FILE;
         if file.is_null() {
