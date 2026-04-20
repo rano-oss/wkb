@@ -702,152 +702,149 @@ fn pending_computations_array_free(p: &mut Vec<pending_computation>) {
     }
     p.clear();
 }
-pub fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> bool {
-    unsafe {
-        let mut files: [*mut XkbFile; 4] = [
-            std::ptr::null_mut(),
-            std::ptr::null_mut(),
-            std::ptr::null_mut(),
-            std::ptr::null_mut(),
-        ];
-        let mut type_0: u32;
-        let _ctx: *mut xkb_context = &raw mut (*keymap).ctx;
-        for stmt in (*file).defs.iter_mut() {
-            if let Statement::XkbFile(ref sub_file) = stmt {
-                if sub_file.file_type < FIRST_KEYMAP_FILE_TYPE
-                    || sub_file.file_type > LAST_KEYMAP_FILE_TYPE
-                {
-                    if sub_file.file_type == FILE_TYPE_GEOMETRY {
-                        log::warn!(
-                            "[XKB-{:03}] Geometry sections are not supported; ignoring\n",
-                            XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION as i32
-                        );
-                    } else {
-                        log::error!(
-                            "Cannot define {} in a keymap file\n",
-                            xkb_file_type_to_string(sub_file.file_type)
-                        );
-                    }
-                } else if !files[sub_file.file_type as usize].is_null() {
-                    log::error!("More than one {} section in keymap file; All sections after the first ignored\n",
-                        xkb_file_type_to_string(sub_file.file_type));
+pub fn CompileKeymap(file: &mut XkbFile, keymap: &mut xkb_keymap) -> bool {
+    let mut file_indices: [Option<usize>; 4] = [None; 4];
+    for (idx, stmt) in file.defs.iter().enumerate() {
+        if let Statement::XkbFile(ref sub_file) = stmt {
+            if sub_file.file_type < FIRST_KEYMAP_FILE_TYPE
+                || sub_file.file_type > LAST_KEYMAP_FILE_TYPE
+            {
+                if sub_file.file_type == FILE_TYPE_GEOMETRY {
+                    log::warn!(
+                        "[XKB-{:03}] Geometry sections are not supported; ignoring\n",
+                        XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION as i32
+                    );
                 } else {
-                    files[sub_file.file_type as usize] =
-                        &**sub_file as *const XkbFile as *mut XkbFile;
+                    log::error!(
+                        "Cannot define {} in a keymap file\n",
+                        xkb_file_type_to_string(sub_file.file_type)
+                    );
                 }
+            } else if file_indices[sub_file.file_type as usize].is_some() {
+                log::error!("More than one {} section in keymap file; All sections after the first ignored\n",
+                    xkb_file_type_to_string(sub_file.file_type));
+            } else {
+                file_indices[sub_file.file_type as usize] = Some(idx);
             }
         }
-        let mut info = xkb_keymap_info {
-            keymap: &mut *keymap,
-            strict: (if (*keymap).format == XKB_KEYMAP_FORMAT_TEXT_V1 {
-                if (*keymap).flags & XKB_KEYMAP_COMPILE_STRICT_MODE != 0 {
-                    PARSER_V1_STRICT_FLAGS as i32
-                } else {
-                    PARSER_V1_LAX_FLAGS as i32
-                }
-            } else if (*keymap).flags & XKB_KEYMAP_COMPILE_STRICT_MODE != 0 {
-                PARSER_V2_STRICT_FLAGS as i32
-            } else {
-                PARSER_V2_LAX_FLAGS as i32
-            }) as u32,
-            features: XkbcompFeatures {
-                max_groups: format_max_groups((*keymap).format),
-                max_overlays: format_max_overlays((*keymap).format),
-                controls_name_offset: format_control_names_offset((*keymap).format),
-                group_lock_on_release: isGroupLockOnReleaseSupported((*keymap).format),
-                mods_unlock_on_press: isModsUnLockOnPressSupported((*keymap).format),
-                mods_latch_on_press: isModsLatchOnPressSupported((*keymap).format),
-                overlapping_overlays: areOverlappingOverlaysSupported((*keymap).format),
-            },
-            lookup: XkbcompLookup {
-                groupIndexNames: [
-                    LookupEntry {
-                        name: "first",
-                        value: 1_u32,
-                    },
-                    LookupEntry {
-                        name: if (*keymap).num_groups != 0 {
-                            GROUP_LAST_INDEX_NAME
-                        } else {
-                            ""
-                        },
-                        value: (*keymap).num_groups,
-                    },
-                    LookupEntry {
-                        name: "",
-                        value: 0_u32,
-                    },
-                ],
-                groupMaskNames: [
-                    LookupEntry {
-                        name: "none",
-                        value: 0_u32,
-                    },
-                    LookupEntry {
-                        name: "first",
-                        value: 0x1_u32,
-                    },
-                    LookupEntry {
-                        name: "all",
-                        value: XKB_ALL_GROUPS as u32,
-                    },
-                    LookupEntry {
-                        name: if (*keymap).num_groups != 0 {
-                            GROUP_LAST_INDEX_NAME
-                        } else {
-                            ""
-                        },
-                        value: if (*keymap).num_groups != 0
-                            && (*keymap).num_groups <= XKB_MAX_GROUPS as u32
-                        {
-                            1_u32 << (*keymap).num_groups.wrapping_sub(1_u32)
-                        } else {
-                            0_u32
-                        },
-                    },
-                    LookupEntry {
-                        name: "",
-                        value: 0_u32,
-                    },
-                ],
-            },
-            pending_computations: Vec::new(),
-        };
-        type_0 = FIRST_KEYMAP_FILE_TYPE;
-        while type_0 <= LAST_KEYMAP_FILE_TYPE {
-            if files[type_0 as usize].is_null() {
-                log::debug!(
-                    "Component {} not provided in keymap\n",
-                    xkb_file_type_to_string(type_0)
-                );
-            } else {
-                log::debug!(
-                    "Compiling {} \"{}\"\n",
-                    xkb_file_type_to_string(type_0),
-                    safe_map_name(&*files[type_0 as usize])
-                );
-            }
-            let ok: bool = COMPILE_FILE_FNS[type_0 as usize].expect("non-null function pointer")(
-                if files[type_0 as usize].is_null() {
-                    None
-                } else {
-                    Some(&mut *files[type_0 as usize])
-                },
-                &mut info,
-            ) as bool;
-            if !ok {
-                log::error!("Failed to compile {}\n", xkb_file_type_to_string(type_0));
-                // info.keymap is a pointer to the same keymap, no write-back needed
-                pending_computations_array_free(&mut info.pending_computations);
-                return false;
-            }
-            type_0 += 1;
-        }
-        let ok_0: bool = UpdateDerivedKeymapFields(&mut info) as bool;
-        // info.keymap is a pointer to the same keymap, no write-back needed
-        pending_computations_array_free(&mut info.pending_computations);
-        ok_0
     }
+    let km_format = keymap.format;
+    let km_flags = keymap.flags;
+    let km_num_groups = keymap.num_groups;
+    let mut info = xkb_keymap_info {
+        keymap,
+        strict: (if km_format == XKB_KEYMAP_FORMAT_TEXT_V1 {
+            if km_flags & XKB_KEYMAP_COMPILE_STRICT_MODE != 0 {
+                PARSER_V1_STRICT_FLAGS as i32
+            } else {
+                PARSER_V1_LAX_FLAGS as i32
+            }
+        } else if km_flags & XKB_KEYMAP_COMPILE_STRICT_MODE != 0 {
+            PARSER_V2_STRICT_FLAGS as i32
+        } else {
+            PARSER_V2_LAX_FLAGS as i32
+        }) as u32,
+        features: XkbcompFeatures {
+            max_groups: format_max_groups(km_format),
+            max_overlays: format_max_overlays(km_format),
+            controls_name_offset: format_control_names_offset(km_format),
+            group_lock_on_release: isGroupLockOnReleaseSupported(km_format),
+            mods_unlock_on_press: isModsUnLockOnPressSupported(km_format),
+            mods_latch_on_press: isModsLatchOnPressSupported(km_format),
+            overlapping_overlays: areOverlappingOverlaysSupported(km_format),
+        },
+        lookup: XkbcompLookup {
+            groupIndexNames: [
+                LookupEntry {
+                    name: "first",
+                    value: 1_u32,
+                },
+                LookupEntry {
+                    name: if km_num_groups != 0 {
+                        GROUP_LAST_INDEX_NAME
+                    } else {
+                        ""
+                    },
+                    value: km_num_groups,
+                },
+                LookupEntry {
+                    name: "",
+                    value: 0_u32,
+                },
+            ],
+            groupMaskNames: [
+                LookupEntry {
+                    name: "none",
+                    value: 0_u32,
+                },
+                LookupEntry {
+                    name: "first",
+                    value: 0x1_u32,
+                },
+                LookupEntry {
+                    name: "all",
+                    value: XKB_ALL_GROUPS as u32,
+                },
+                LookupEntry {
+                    name: if km_num_groups != 0 {
+                        GROUP_LAST_INDEX_NAME
+                    } else {
+                        ""
+                    },
+                    value: if km_num_groups != 0 && km_num_groups <= XKB_MAX_GROUPS as u32 {
+                        1_u32 << km_num_groups.wrapping_sub(1_u32)
+                    } else {
+                        0_u32
+                    },
+                },
+                LookupEntry {
+                    name: "",
+                    value: 0_u32,
+                },
+            ],
+        },
+        pending_computations: Vec::new(),
+    };
+    let mut type_0: u32 = FIRST_KEYMAP_FILE_TYPE;
+    while type_0 <= LAST_KEYMAP_FILE_TYPE {
+        if file_indices[type_0 as usize].is_none() {
+            log::debug!(
+                "Component {} not provided in keymap\n",
+                xkb_file_type_to_string(type_0)
+            );
+        } else {
+            let idx = file_indices[type_0 as usize].unwrap();
+            let sub_name = if let Statement::XkbFile(ref sub_file) = file.defs[idx] {
+                safe_map_name(sub_file)
+            } else {
+                ""
+            };
+            log::debug!(
+                "Compiling {} \"{}\"\n",
+                xkb_file_type_to_string(type_0),
+                sub_name
+            );
+        }
+        let file_arg: Option<&mut XkbFile> = file_indices[type_0 as usize].map(|idx| {
+            if let Statement::XkbFile(ref mut sub_file) = file.defs[idx] {
+                &mut **sub_file
+            } else {
+                unreachable!()
+            }
+        });
+        let ok: bool = COMPILE_FILE_FNS[type_0 as usize].expect("non-null function pointer")(
+            file_arg, &mut info,
+        ) as bool;
+        if !ok {
+            log::error!("Failed to compile {}\n", xkb_file_type_to_string(type_0));
+            pending_computations_array_free(&mut info.pending_computations);
+            return false;
+        }
+        type_0 += 1;
+    }
+    let ok_0: bool = UpdateDerivedKeymapFields(&mut info) as bool;
+    pending_computations_array_free(&mut info.pending_computations);
+    ok_0
 }
 use crate::xkb::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use crate::xkb::shared_types::*;

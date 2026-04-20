@@ -117,7 +117,7 @@ fn compile_keymap_file(keymap: *mut xkb_keymap, file: *mut XkbFile) -> bool {
             );
             return false;
         }
-        if !CompileKeymap(file, keymap) {
+        if !CompileKeymap(&mut *file, &mut *keymap) {
             log::error!(
                 "[XKB-{:03}] Failed to compile keymap\n",
                 XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32
