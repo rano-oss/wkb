@@ -18,6 +18,3 @@ pub mod symbols;
 pub mod types;
 pub mod vmod;
 pub mod xkbcomp;
-
-// Re-export the text_v1_keymap_format_ops from xkbcomp for the main keymap module
-pub use xkbcomp::text_v1_keymap_format_ops;

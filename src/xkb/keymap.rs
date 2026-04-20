@@ -1,9 +1,7 @@
 use std::rc::Rc;
-use std::sync::LazyLock;
 
 use crate::xkb::atom::{atom_lookup_ref, atom_text};
 use crate::xkb::context::{xkb_atom_intern_bytes, xkb_context_sanitize_rule_names};
-// text_v1_keymap_format_ops is defined in xkbcomp::xkbcomp with a local type.
 pub use crate::xkb::messages::{
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
@@ -50,11 +48,11 @@ pub use crate::xkb::messages::{
 pub use crate::xkb::shared_types::{
     entry_is_active, xkb_action, xkb_action_controls, xkb_action_flags, xkb_controls_action,
     xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action, xkb_key,
-    xkb_key_alias, xkb_key_type, xkb_key_type_entry, xkb_keymap, xkb_keymap_format_ops,
-    xkb_keysym_count_t, xkb_led, xkb_level, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods,
-    xkb_overlay_mask_t, xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action,
-    xkb_private_action, xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret,
-    KeycodeMatch, ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL,
+    xkb_key_alias, xkb_key_type, xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led,
+    xkb_level, xkb_mod, xkb_mod_action, xkb_mod_set, xkb_mods, xkb_overlay_mask_t,
+    xkb_pointer_action, xkb_pointer_button_action, xkb_pointer_default_action, xkb_private_action,
+    xkb_redirect_key_action, xkb_switch_screen_action, xkb_sym_interpret, KeycodeMatch,
+    ACTION_ABSOLUTE_SWITCH, ACTION_ABSOLUTE_X, ACTION_ABSOLUTE_Y, ACTION_ACCEL,
     ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK,
     ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_MODS_LOOKUP_MODMAP,
     ACTION_PENDING_COMPUTATION, ACTION_SAME_SCREEN, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET,
@@ -90,37 +88,13 @@ pub fn clear_level(leveli: &mut xkb_level) {
     leveli.syms.clear();
     leveli.actions.clear();
 }
-struct SyncPtr(*const xkb_keymap_format_ops);
-unsafe impl Sync for SyncPtr {}
-unsafe impl Send for SyncPtr {}
 
-static KEYMAP_FORMAT_OPS: LazyLock<[SyncPtr; 3]> = LazyLock::new(|| {
-    let ptr = &raw const crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_format_ops as *const _
-        as *const xkb_keymap_format_ops;
-    [SyncPtr(std::ptr::null()), SyncPtr(ptr), SyncPtr(ptr)]
-});
-
-fn get_keymap_format_ops(format: u32) -> *const xkb_keymap_format_ops {
-    if (format as i32) < 0_i32 || format as usize >= KEYMAP_FORMAT_OPS.len() {
-        return std::ptr::null();
-    }
-    KEYMAP_FORMAT_OPS[format as usize].0
-}
 pub fn xkb_keymap_new_from_names(
     ctx: xkb_context,
     rmlvo_in: Option<&xkb_rule_names>,
     flags: u32,
 ) -> Option<Rc<xkb_keymap>> {
     let format = XKB_KEYMAP_FORMAT_TEXT_V2;
-    let ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
-    if ops.is_null() || unsafe { (*ops).keymap_new_from_names.is_none() } {
-        log::error!(
-            "{}: unsupported keymap format: {}\n",
-            "xkb_keymap_new_from_names2",
-            { format }
-        );
-        return None;
-    }
     let mut keymap = xkb_keymap_new(ctx.clone(), "xkb_keymap_new_from_names2", format, flags)?;
     let mut rmlvo: xkb_rule_names = match rmlvo_in {
         Some(r) => r.clone(),
@@ -133,7 +107,7 @@ pub fn xkb_keymap_new_from_names(
         },
     };
     xkb_context_sanitize_rule_names(&ctx, &mut rmlvo);
-    if !(unsafe { (*ops).keymap_new_from_names.unwrap() })(
+    if !crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_new_from_names(
         &mut *keymap as *mut xkb_keymap,
         &rmlvo as *const xkb_rule_names,
     ) {
@@ -149,15 +123,6 @@ pub fn xkb_keymap_new_from_string(
 ) -> Option<Rc<xkb_keymap>> {
     let bytes = string.to_bytes();
     let mut length = bytes.len();
-    let ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
-    if ops.is_null() || unsafe { (*ops).keymap_new_from_string.is_none() } {
-        log::error!(
-            "{}: unsupported keymap format: {}\n",
-            "xkb_keymap_new_from_buffer",
-            { format }
-        );
-        return None;
-    }
     if bytes.is_empty() {
         log::error!("{}: no buffer specified\n", "xkb_keymap_new_from_buffer");
         return None;
@@ -167,7 +132,7 @@ pub fn xkb_keymap_new_from_string(
     if length > 0 && bytes[length - 1] == 0 {
         length -= 1;
     }
-    if !(unsafe { (*ops).keymap_new_from_string.unwrap() })(
+    if !crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_new_from_string(
         &mut *keymap as *mut xkb_keymap,
         ptr,
         length,
