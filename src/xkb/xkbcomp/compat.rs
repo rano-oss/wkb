@@ -22,15 +22,17 @@ pub struct CompatInfo<'a> {
     pub default_actions: ActionsInfo,
     pub mods: xkb_mod_set,
     pub keymap_info: &'a mut xkb_keymap_info,
-    pub ctx: &'a mut xkb_context,
 }
 impl<'a> CompatInfo<'a> {
     #[inline]
     pub fn ctx(&self) -> &xkb_context {
-        &*self.ctx
+        self.keymap_info.ctx()
+    }
+    #[inline]
+    pub fn ctx_mut(&mut self) -> &mut xkb_context {
+        self.keymap_info.ctx_mut()
     }
     pub fn new(keymap_info: &'a mut xkb_keymap_info) -> Self {
-        let ctx = unsafe { &mut (*keymap_info.keymap).ctx };
         let zeroed_led = LedInfo {
             defined: 0 as led_field,
             merge: MERGE_DEFAULT,
@@ -81,7 +83,6 @@ impl<'a> CompatInfo<'a> {
                 explicit_vmods: 0,
             },
             keymap_info,
-            ctx,
         }
     }
 }
@@ -117,7 +118,7 @@ fn siText(si: &SymInterpInfo, info: &mut CompatInfo<'_>) -> &'static str {
         if std::ptr::eq(si, &info.default_interp) {
             return "default";
         }
-        let buf: *mut i8 = xkb_context_get_buffer(&mut (*info.ctx).clone(), 128_usize);
+        let buf: *mut i8 = xkb_context_get_buffer(&mut (*info.ctx()).clone(), 128_usize);
         let (written, _) = crate::xkb::utils::snprintf_args(
             buf,
             128_usize,
@@ -156,7 +157,7 @@ fn LEDText(info: &mut CompatInfo<'_>, ledi: &LedInfo) -> &'static str {
     } else {
         // SAFETY: atom_table strings live for the lifetime of the context.
         // We need 'static because the return is used after info is mutably borrowed.
-        let atom_table = &info.ctx.atom_table as *const _;
+        let atom_table = &info.ctx().atom_table as *const _;
         unsafe { xkb_atom_text(&*atom_table, ledi.led.name) }
     }
 }
@@ -361,7 +362,7 @@ fn ResolveStateAndPredicate(
     } else {
         resolve_expr = expr;
     }
-    ExprResolveModMask(info.ctx, resolve_expr, MOD_REAL, &info.mods, mods_rtrn)
+    ExprResolveModMask(info.ctx(), resolve_expr, MOD_REAL, &info.mods, mods_rtrn)
 }
 fn UseNewLEDField(
     field: led_field,
@@ -489,7 +490,12 @@ fn MergeIncludedCompatMaps(
         into.errorCount += from.errorCount;
         return;
     }
-    MergeModSets(&mut *into.ctx, &mut into.mods, &from.mods, merge);
+    MergeModSets(
+        into.keymap_info.ctx_mut(),
+        &mut into.mods,
+        &from.mods,
+        merge,
+    );
     if into.name.is_none() {
         into.name = from.name.take();
     }
@@ -520,8 +526,8 @@ fn MergeIncludedCompatMaps(
     };
 }
 fn HandleIncludeCompatMap(info: &mut CompatInfo<'_>, include: &mut IncludeStmt) -> bool {
-    let ctx_ptr = &raw mut *info.ctx;
     let ki_ptr = &raw mut *info.keymap_info;
+    let ctx_ptr = unsafe { &raw mut (*(*ki_ptr).keymap).ctx };
     let mut included = CompatInfo::new(unsafe { &mut *ki_ptr });
     if ExceedsIncludeMaxDepth(info.include_depth) {
         info.errorCount += 10_i32;
@@ -669,7 +675,7 @@ fn SetInterpField(
             return ReportSINotArray(info, si, field);
         }
         let mut ndx: u32 = 0_u32;
-        if !ExprResolveMod(info.ctx, value, MOD_VIRT, &info.mods, &mut ndx) {
+        if !ExprResolveMod(info.ctx(), value, MOD_VIRT, &info.mods, &mut ndx) {
             return ReportSIBadType(info, si, field, "virtual modifier");
         }
         si.interp.virtual_mod = ndx;
@@ -679,7 +685,7 @@ fn SetInterpField(
         if arrayNdx.is_some() {
             return ReportSINotArray(info, si, field);
         }
-        if !ExprResolveBoolean(info.ctx, value, &mut set) {
+        if !ExprResolveBoolean(info.ctx(), value, &mut set) {
             return ReportSIBadType(info, si, field, "boolean");
         }
         si.interp.repeat = set;
@@ -692,7 +698,7 @@ fn SetInterpField(
         if arrayNdx.is_some() {
             return ReportSINotArray(info, si, field);
         }
-        if !ExprResolveEnum(info.ctx, value, &mut val, &useModMapValueNames) {
+        if !ExprResolveEnum(info.ctx(), value, &mut val, &useModMapValueNames) {
             return ReportSIBadType(info, si, field, "level specification");
         }
         si.interp.level_one_only = val != 0;
@@ -716,7 +722,7 @@ fn SetLedMapField(
             return ReportLedNotArray(info, ledi, field);
         }
         if !ExprResolveModMask(
-            info.ctx,
+            info.ctx(),
             value,
             MOD_BOTH,
             &info.mods,
@@ -758,7 +764,7 @@ fn SetLedMapField(
         }
         let offset: u8 = info.keymap_info.features.controls_name_offset;
         if !ExprResolveMask(
-            info.ctx,
+            info.ctx(),
             value,
             &mut mask_0,
             &ctrlMaskNames[offset as usize..],
@@ -778,7 +784,7 @@ fn SetLedMapField(
         if arrayNdx.is_some() {
             return ReportLedNotArray(info, ledi, field);
         }
-        if !ExprResolveMask(info.ctx, value, &mut mask_1, &modComponentMaskNames) {
+        if !ExprResolveMask(info.ctx(), value, &mut mask_1, &modComponentMaskNames) {
             return ReportLedBadType(info, ledi, field, "mask of modifier state components");
         }
         ledi.led.which_mods = mask_1;
@@ -787,7 +793,7 @@ fn SetLedMapField(
         if arrayNdx.is_some() {
             return ReportLedNotArray(info, ledi, field);
         }
-        if !ExprResolveMask(info.ctx, value, &mut mask_2, &groupComponentMaskNames) {
+        if !ExprResolveMask(info.ctx(), value, &mut mask_2, &groupComponentMaskNames) {
             return ReportLedBadType(info, ledi, field, "mask of group state components");
         }
         ledi.led.which_groups = mask_2;
@@ -820,7 +826,7 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
     let mut ndx: Option<&ExprDef> = None;
     let ret: bool;
     if !ExprResolveLhs(
-        info.ctx,
+        info.ctx(),
         stmt.name.as_deref().unwrap(),
         &mut elem,
         &mut field,
@@ -889,6 +895,10 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
             }
         } else if !elem.is_empty() {
             ret = {
+                // Break borrows from ExprResolveLhs for this branch
+                let elem_ptr: *const str = elem;
+                let field_ptr2: *const str = field;
+                let ndx_ref2 = ndx.map(|r| r as *const ExprDef).map(|p| unsafe { &*p });
                 let mut value_raw = stmt
                     .value
                     .take()
@@ -897,9 +907,9 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
                     info.keymap_info,
                     &mut info.default_actions,
                     &mut info.mods,
-                    elem,
-                    field,
-                    ndx,
+                    unsafe { &*elem_ptr },
+                    unsafe { &*field_ptr2 },
+                    ndx_ref2,
                     &raw mut value_raw,
                     stmt.merge,
                 ) as u32
@@ -929,7 +939,7 @@ fn HandleInterpBody(
         let mut field: &str = "";
         let mut arrayNdx: Option<&ExprDef> = None;
         if !ExprResolveLhs(
-            info.ctx,
+            info.ctx(),
             def.name.as_deref().unwrap(),
             &mut elem,
             &mut field,
@@ -1004,7 +1014,7 @@ fn HandleLedMapDef(info: &mut CompatInfo<'_>, def: &mut LedMapDef) -> bool {
         let mut field: &str = "";
         let mut arrayNdx: Option<&ExprDef> = None;
         if !ExprResolveLhs(
-            info.ctx,
+            info.ctx(),
             var.name.as_deref().unwrap(),
             &mut elem,
             &mut field,
@@ -1059,7 +1069,7 @@ fn HandleCompatMapFile(info: &mut CompatInfo<'_>, file: &mut XkbFile) {
                     ok = HandleGlobalVar(info, &mut **var);
                 }
                 Statement::VMod(vmod) => {
-                    ok = HandleVModDef(info.ctx, &mut info.mods, &**vmod);
+                    ok = HandleVModDef(info.keymap_info.ctx_mut(), &mut info.mods, &**vmod);
                 }
                 Statement::Unknown(unk) => {
                     log::error!(
