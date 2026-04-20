@@ -9,10 +9,10 @@ pub struct KeyTypesInfo<'a> {
     pub include_depth: u32,
     pub types: Vec<KeyTypeInfo>,
     pub mods: xkb_mod_set,
-    pub keymap_info: &'a mut xkb_keymap_info<'a>,
+    pub(crate) keymap_info: *mut xkb_keymap_info<'a>,
 }
 impl<'a> KeyTypesInfo<'a> {
-    pub fn new(keymap_info: &'a mut xkb_keymap_info<'a>) -> Self {
+    pub fn new(keymap_info: *mut xkb_keymap_info<'a>) -> Self {
         Self {
             name: None,
             errorCount: 0,
@@ -24,11 +24,19 @@ impl<'a> KeyTypesInfo<'a> {
     }
     #[inline]
     pub fn ctx(&self) -> &xkb_context {
-        self.keymap_info.ctx()
+        unsafe { (*self.keymap_info).ctx() }
     }
     #[inline]
     pub fn ctx_mut(&mut self) -> &mut xkb_context {
-        self.keymap_info.ctx_mut()
+        unsafe { (*self.keymap_info).ctx_mut() }
+    }
+    #[inline]
+    pub fn keymap_info(&self) -> &xkb_keymap_info<'a> {
+        unsafe { &*self.keymap_info }
+    }
+    #[inline]
+    pub fn keymap_info_mut(&mut self) -> &mut xkb_keymap_info<'a> {
+        unsafe { &mut *self.keymap_info }
     }
 }
 #[derive(Clone)]
@@ -137,7 +145,7 @@ fn MergeIncludedKeyTypes(
         return;
     }
     MergeModSets(
-        into.keymap_info.ctx_mut(),
+        unsafe { (*into.keymap_info).ctx_mut() },
         &mut into.mods,
         &from.mods,
         merge,
@@ -159,9 +167,8 @@ fn MergeIncludedKeyTypes(
     }
 }
 fn HandleIncludeKeyTypes(info: &mut KeyTypesInfo<'_>, include: &mut IncludeStmt) -> bool {
-    let ki_ptr = &raw mut *info.keymap_info;
-    let ctx_ptr = unsafe { &raw mut (*(*ki_ptr).keymap).ctx };
-    let mut included = KeyTypesInfo::new(unsafe { &mut *ki_ptr });
+    let ki_ptr = info.keymap_info;
+    let mut included = KeyTypesInfo::new(ki_ptr);
     if ExceedsIncludeMaxDepth(info.include_depth) {
         info.errorCount += 10_i32;
         return false;
@@ -178,10 +185,10 @@ fn HandleIncludeKeyTypes(info: &mut KeyTypesInfo<'_>, include: &mut IncludeStmt)
     };
     let mut current: Option<&IncludeStmt> = Some(include);
     while let Some(stmt) = current {
-        let mut next_incl = KeyTypesInfo::new(unsafe { &mut *ki_ptr });
+        let mut next_incl = KeyTypesInfo::new(ki_ptr);
 
         let file: Option<Box<XkbFile>> =
-            ProcessIncludeFile(unsafe { &mut *ctx_ptr }, stmt, FILE_TYPE_TYPES);
+            ProcessIncludeFile(included.ctx_mut(), stmt, FILE_TYPE_TYPES);
         let Some(mut file) = file else {
             info.errorCount += 10_i32;
             ClearKeyTypesInfo(&mut included);
@@ -533,7 +540,7 @@ fn SetKeyTypeField(
             field,
             TypeTxt(info, type_0)
         );
-        ok = info.keymap_info.strict & PARSER_NO_UNKNOWN_TYPE_FIELDS == 0;
+        ok = info.keymap_info().strict & PARSER_NO_UNKNOWN_TYPE_FIELDS == 0;
     }
     type_0.defined = (type_0.defined | type_field as u32) as type_field;
     ok
@@ -598,14 +605,14 @@ fn HandleGlobalVar(info: &mut KeyTypesInfo<'_>, stmt: &VarDef) -> bool {
             elem,
             elem,
             field);
-        return info.keymap_info.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
+        return info.keymap_info().strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
     } else if !field.is_empty() {
         log::error!(
             "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
             XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
             field
         );
-        return info.keymap_info.strict & PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS == 0;
+        return info.keymap_info().strict & PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS == 0;
     }
     false
 }
@@ -646,7 +653,11 @@ fn HandleKeyTypesFile(info: &mut KeyTypesInfo<'_>, file: &mut XkbFile) {
                     ok = HandleGlobalVar(info, &**var);
                 }
                 Statement::VMod(vmod) => {
-                    ok = HandleVModDef(info.keymap_info.ctx_mut(), &mut info.mods, &**vmod);
+                    ok = HandleVModDef(
+                        unsafe { (*info.keymap_info).ctx_mut() },
+                        &mut info.mods,
+                        &**vmod,
+                    );
                 }
                 Statement::Unknown(unk) => {
                     log::error!(
@@ -659,7 +670,7 @@ fn HandleKeyTypesFile(info: &mut KeyTypesInfo<'_>, file: &mut XkbFile) {
                         },
                         &unk.name
                     );
-                    ok = info.keymap_info.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
+                    ok = info.keymap_info().strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {
                     log::error!(
@@ -685,7 +696,7 @@ fn HandleKeyTypesFile(info: &mut KeyTypesInfo<'_>, file: &mut XkbFile) {
     }
 }
 fn CopyKeyTypesToKeymap(info: &mut KeyTypesInfo) -> bool {
-    let keymap = info.keymap_info.keymap_mut();
+    let keymap = unsafe { (*info.keymap_info).keymap_mut() };
     let num_types: u32 = if info.types.is_empty() {
         1_u32
     } else {
@@ -744,7 +755,6 @@ fn CopyKeyTypesToKeymap(info: &mut KeyTypesInfo) -> bool {
     true
 }
 pub fn CompileKeyTypes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
-    let keymap_info = unsafe { &mut *(keymap_info as *mut xkb_keymap_info) };
     let mods = keymap_info.keymap_ref().mods;
     let mut info = KeyTypesInfo::new(keymap_info);
     InitKeyTypesInfo(&mut info, 0_u32, &mods);

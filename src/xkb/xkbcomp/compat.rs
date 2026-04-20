@@ -20,18 +20,26 @@ pub struct CompatInfo<'a> {
     pub num_leds: u32,
     pub default_actions: ActionsInfo,
     pub mods: xkb_mod_set,
-    pub keymap_info: &'a mut xkb_keymap_info<'a>,
+    pub(crate) keymap_info: *mut xkb_keymap_info<'a>,
 }
 impl<'a> CompatInfo<'a> {
     #[inline]
     pub fn ctx(&self) -> &xkb_context {
-        self.keymap_info.ctx()
+        unsafe { (*self.keymap_info).ctx() }
     }
     #[inline]
     pub fn ctx_mut(&mut self) -> &mut xkb_context {
-        self.keymap_info.ctx_mut()
+        unsafe { (*self.keymap_info).ctx_mut() }
     }
-    pub fn new(keymap_info: &'a mut xkb_keymap_info<'a>) -> Self {
+    #[inline]
+    pub fn keymap_info(&self) -> &xkb_keymap_info<'a> {
+        unsafe { &*self.keymap_info }
+    }
+    #[inline]
+    pub fn keymap_info_mut(&mut self) -> &mut xkb_keymap_info<'a> {
+        unsafe { &mut *self.keymap_info }
+    }
+    pub fn new(keymap_info: *mut xkb_keymap_info<'a>) -> Self {
         let zeroed_led = LedInfo {
             defined: 0 as led_field,
             merge: MERGE_DEFAULT,
@@ -174,7 +182,10 @@ fn InitLED(info: &mut LedInfo) {
 }
 fn InitCompatInfo(info: &mut CompatInfo<'_>, include_depth: u32, mods: &xkb_mod_set) {
     info.include_depth = include_depth;
-    InitActionsInfo(info.keymap_info.keymap_ref(), &mut info.default_actions);
+    InitActionsInfo(
+        unsafe { (*info.keymap_info).keymap_ref() },
+        &mut info.default_actions,
+    );
     InitVMods(&mut info.mods, mods, include_depth > 0_u32);
     InitInterp(&mut info.default_interp);
     InitLED(&mut info.default_led);
@@ -484,7 +495,7 @@ fn MergeIncludedCompatMaps(
         return;
     }
     MergeModSets(
-        into.keymap_info.ctx_mut(),
+        unsafe { (*into.keymap_info).ctx_mut() },
         &mut into.mods,
         &from.mods,
         merge,
@@ -519,9 +530,8 @@ fn MergeIncludedCompatMaps(
     };
 }
 fn HandleIncludeCompatMap(info: &mut CompatInfo<'_>, include: &mut IncludeStmt) -> bool {
-    let ki_ptr = &raw mut *info.keymap_info;
-    let ctx_ptr = unsafe { &raw mut (*(*ki_ptr).keymap).ctx };
-    let mut included = CompatInfo::new(unsafe { &mut *ki_ptr });
+    let ki_ptr = info.keymap_info;
+    let mut included = CompatInfo::new(ki_ptr);
     if ExceedsIncludeMaxDepth(info.include_depth) {
         info.errorCount += 10_i32;
         return false;
@@ -538,10 +548,10 @@ fn HandleIncludeCompatMap(info: &mut CompatInfo<'_>, include: &mut IncludeStmt) 
     };
     let mut current: Option<&IncludeStmt> = Some(include);
     while let Some(stmt) = current {
-        let mut next_incl = CompatInfo::new(unsafe { &mut *ki_ptr });
+        let mut next_incl = CompatInfo::new(ki_ptr);
 
         let file: Option<Box<XkbFile>> =
-            ProcessIncludeFile(unsafe { &mut *ctx_ptr }, stmt, FILE_TYPE_COMPAT);
+            ProcessIncludeFile(included.ctx_mut(), stmt, FILE_TYPE_COMPAT);
         let Some(mut file) = file else {
             info.errorCount += 10_i32;
             ClearCompatInfo(&mut included);
@@ -598,7 +608,7 @@ fn SetInterpField(
             for act_expr in action_vec.iter_mut() {
                 let mut toAct: xkb_action = xkb_action::None;
                 match HandleActionDef(
-                    info.keymap_info,
+                    unsafe { &mut *info.keymap_info },
                     &mut info.default_actions,
                     &info.mods,
                     act_expr,
@@ -636,7 +646,7 @@ fn SetInterpField(
             }
         } else {
             match HandleActionDef(
-                info.keymap_info,
+                unsafe { &mut *info.keymap_info },
                 &mut info.default_actions,
                 &info.mods,
                 value,
@@ -692,7 +702,7 @@ fn SetInterpField(
         si.defined = (si.defined | SI_FIELD_LEVEL_ONE_ONLY) as si_field;
     } else {
         ReportBadField("symbol interpretation", field, &siText(si, info));
-        return info.keymap_info.strict & PARSER_NO_UNKNOWN_INTERPRET_FIELDS == 0;
+        return info.keymap_info().strict & PARSER_NO_UNKNOWN_INTERPRET_FIELDS == 0;
     }
     true
 }
@@ -724,11 +734,11 @@ fn SetLedMapField(
             return ReportLedNotArray(info, ledi, field);
         }
         let mut pending: bool = false;
-        if !ExprResolveGroupMask(info.keymap_info, value, &mut mask, &mut pending) {
+        if !ExprResolveGroupMask(info.keymap_info_mut(), value, &mut mask, &mut pending) {
             if pending {
                 ledi.led.pending_groups = true;
-                let pending_index: u32 = info.keymap_info.pending_computations.len() as u32;
-                info.keymap_info
+                let pending_index: u32 = info.keymap_info().pending_computations.len() as u32;
+                info.keymap_info_mut()
                     .pending_computations
                     .push(pending_computation {
                         expr: value_opt.take(),
@@ -749,7 +759,7 @@ fn SetLedMapField(
         if arrayNdx.is_some() {
             return ReportLedNotArray(info, ledi, field);
         }
-        let offset: u8 = info.keymap_info.features.controls_name_offset;
+        let offset: u8 = info.keymap_info().features.controls_name_offset;
         if !ExprResolveMask(
             info.ctx(),
             value,
@@ -803,7 +813,7 @@ fn SetLedMapField(
             field,
             LEDText(info, ledi)
         );
-        return info.keymap_info.strict & PARSER_NO_UNKNOWN_LED_FIELDS == 0;
+        return info.keymap_info().strict & PARSER_NO_UNKNOWN_LED_FIELDS == 0;
     }
     true
 }
@@ -884,7 +894,7 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
             ret = {
                 let ndx_ref2 = ndx;
                 let r = SetDefaultActionField(
-                    info.keymap_info,
+                    unsafe { &mut *info.keymap_info },
                     &mut info.default_actions,
                     &mut info.mods,
                     &elem,
@@ -902,7 +912,7 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
                 XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
                 field
             );
-            return info.keymap_info.strict & PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS == 0;
+            return info.keymap_info().strict & PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS == 0;
         }
     } // close else from ExprResolveLhs
     ret
@@ -1042,7 +1052,11 @@ fn HandleCompatMapFile(info: &mut CompatInfo<'_>, file: &mut XkbFile) {
                     ok = HandleGlobalVar(info, &mut **var);
                 }
                 Statement::VMod(vmod) => {
-                    ok = HandleVModDef(info.keymap_info.ctx_mut(), &mut info.mods, &**vmod);
+                    ok = HandleVModDef(
+                        unsafe { (*info.keymap_info).ctx_mut() },
+                        &mut info.mods,
+                        &**vmod,
+                    );
                 }
                 Statement::Unknown(unk) => {
                     log::error!(
@@ -1055,7 +1069,7 @@ fn HandleCompatMapFile(info: &mut CompatInfo<'_>, file: &mut XkbFile) {
                         },
                         &unk.name
                     );
-                    ok = (*info.keymap_info).strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
+                    ok = info.keymap_info().strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {
                     log::error!(
@@ -1086,7 +1100,7 @@ fn CopyInterps(info: &CompatInfo<'_>, needSymbol: bool, pred: u32, collect: &mut
     }
 }
 fn CopyLedMapDefsToKeymap(info: &mut CompatInfo<'_>) {
-    let keymap = info.keymap_info.keymap_mut();
+    let keymap = unsafe { (*info.keymap_info).keymap_mut() };
     let mut c2rust_current_block_11: u64;
     let mut idx: u32 = 0_u32;
     while idx < info.num_leds {
@@ -1173,7 +1187,7 @@ fn CopyCompatToKeymap(info: &mut CompatInfo<'_>) -> bool {
         None
     };
     // Now get keymap and assign everything
-    let keymap = info.keymap_info.keymap_mut();
+    let keymap = unsafe { (*info.keymap_info).keymap_mut() };
     keymap.compat_section_name = match &info.name {
         Some(s) => s.clone(),
         None => String::new(),
@@ -1189,7 +1203,6 @@ fn CopyCompatToKeymap(info: &mut CompatInfo<'_>) -> bool {
     true
 }
 pub fn CompileCompatMap(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
-    let keymap_info = unsafe { &mut *(keymap_info as *mut xkb_keymap_info) };
     let mods = keymap_info.keymap_ref().mods;
     let mut info = CompatInfo::new(keymap_info);
     InitCompatInfo(&mut info, 0_u32, &mods);

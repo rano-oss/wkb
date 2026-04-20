@@ -24,7 +24,7 @@ pub struct SymbolsInfo<'a> {
     pub group_names: Vec<u32>,
     pub modmaps: Vec<ModMapEntry>,
     pub mods: xkb_mod_set,
-    pub keymap_info: &'a mut xkb_keymap_info<'a>,
+    pub(crate) keymap_info: *mut xkb_keymap_info<'a>,
     pub star_atom: u32,
 }
 #[derive(Copy, Clone)]
@@ -98,15 +98,24 @@ impl KeyInfo {
 impl<'a> SymbolsInfo<'a> {
     #[inline]
     pub fn ctx(&self) -> &xkb_context {
-        self.keymap_info.ctx()
+        unsafe { (*self.keymap_info).ctx() }
     }
     #[inline]
     pub fn ctx_mut(&mut self) -> &mut xkb_context {
-        self.keymap_info.ctx_mut()
+        unsafe { (*self.keymap_info).ctx_mut() }
+    }
+    #[inline]
+    pub fn keymap_info(&self) -> &xkb_keymap_info<'a> {
+        unsafe { &*self.keymap_info }
+    }
+    #[inline]
+    pub fn keymap_info_mut(&mut self) -> &mut xkb_keymap_info<'a> {
+        unsafe { &mut *self.keymap_info }
     }
 
-    pub fn new(keymap_info: &'a mut xkb_keymap_info<'a>) -> Self {
-        let star_atom = xkb_atom_intern_ref(&mut keymap_info.keymap_mut().ctx, b"*");
+    pub fn new(keymap_info: *mut xkb_keymap_info<'a>) -> Self {
+        let star_atom =
+            xkb_atom_intern_ref(&mut unsafe { &mut *keymap_info }.keymap_mut().ctx, b"*");
         Self {
             name: None,
             errorCount: 0,
@@ -208,9 +217,15 @@ fn ClearKeyInfo(keyi: &mut KeyInfo) {
 fn InitSymbolsInfo(info: &mut SymbolsInfo<'_>, include_depth: u32, mods: &xkb_mod_set) {
     info.include_depth = include_depth;
     info.explicit_group = XKB_LAYOUT_INVALID;
-    info.max_groups = info.keymap_info.features.max_groups;
-    InitKeyInfo(info.keymap_info.ctx_mut(), &mut info.default_key);
-    InitActionsInfo(info.keymap_info.keymap_ref(), &mut info.default_actions);
+    info.max_groups = info.keymap_info().features.max_groups;
+    InitKeyInfo(
+        unsafe { (*info.keymap_info).ctx_mut() },
+        &mut info.default_key,
+    );
+    InitActionsInfo(
+        unsafe { (*info.keymap_info).keymap_ref() },
+        &mut info.default_actions,
+    );
     InitVMods(&mut info.mods, mods, include_depth > 0_u32);
 }
 fn ClearSymbolsInfo(info: &mut SymbolsInfo<'_>) {
@@ -478,7 +493,7 @@ fn merge_overlays(
             into.defined |= KEY_FIELD_OVERLAY as i32 as key_field;
         } else if into.overlays_clear as i32 != 0 && from.overlays_clear as i32 != 0 {
             into.overlays = (into.overlays as i32 | from.overlays as i32) as xkb_overlay_mask_t;
-        } else if info.keymap_info.features.overlapping_overlays {
+        } else if info.keymap_info().features.overlapping_overlays {
             // Complex merge with overlapping overlays
             let result_mask: xkb_overlay_mask_t =
                 (into.overlays as i32 | from.overlays as i32) as xkb_overlay_mask_t;
@@ -677,7 +692,7 @@ fn MergeKeys(
 fn AddKeySymbols(info: &mut SymbolsInfo<'_>, keyi: &mut KeyInfo, same_file: bool) -> bool {
     // XkbResolveKeyAlias inlined
     {
-        let keymap = info.keymap_info.keymap_ref();
+        let keymap = info.keymap_info().keymap_ref();
         let name = keyi.name;
         if (name as usize) < keymap.key_names.len() {
             let match_0: KeycodeMatch = keymap.key_names[name as usize];
@@ -702,7 +717,7 @@ fn AddKeySymbols(info: &mut SymbolsInfo<'_>, keyi: &mut KeyInfo, same_file: bool
 }
 fn AddModMapEntry(info: &mut SymbolsInfo<'_>, new: &ModMapEntry) -> bool {
     let clobber: bool = new.merge != MERGE_AUGMENT;
-    let ctx = info.keymap_info.ctx();
+    let ctx = unsafe { (*info.keymap_info).ctx() };
     let mods = &info.mods;
     for old in info.modmaps.iter_mut() {
         if new.haveSymbol as i32 != old.haveSymbol as i32
@@ -749,7 +764,7 @@ fn MergeIncludedSymbols(into: &mut SymbolsInfo<'_>, from: &mut SymbolsInfo<'_>, 
         return;
     }
     MergeModSets(
-        into.keymap_info.ctx_mut(),
+        unsafe { (*into.keymap_info).ctx_mut() },
         &mut into.mods,
         &from.mods,
         merge,
@@ -798,65 +813,63 @@ fn MergeIncludedSymbols(into: &mut SymbolsInfo<'_>, from: &mut SymbolsInfo<'_>, 
     };
 }
 fn HandleIncludeSymbols(info: &mut SymbolsInfo<'_>, include: &mut IncludeStmt) -> bool {
-    unsafe {
-        let ki_ptr = &raw mut *info.keymap_info;
-        let ctx_ptr = unsafe { &raw mut (*ki_ptr).keymap.ctx };
-        let mut included = SymbolsInfo::new(&mut *ki_ptr);
-        if ExceedsIncludeMaxDepth(info.include_depth) {
-            info.errorCount += 10_i32;
-            return false;
-        }
-        InitSymbolsInfo(
-            &mut included,
-            info.include_depth.wrapping_add(1_u32),
-            &info.mods,
-        );
-        included.name = if include.stmt.is_empty() {
-            None
-        } else {
-            Some(std::mem::take(&mut include.stmt))
-        };
-        let mut current: Option<&IncludeStmt> = Some(include);
-        while let Some(stmt) = current {
-            let mut next_incl = SymbolsInfo::new(&mut *ki_ptr);
+    let ki_ptr = info.keymap_info;
+    let mut included = SymbolsInfo::new(ki_ptr);
+    if ExceedsIncludeMaxDepth(info.include_depth) {
+        info.errorCount += 10_i32;
+        return false;
+    }
+    InitSymbolsInfo(
+        &mut included,
+        info.include_depth.wrapping_add(1_u32),
+        &info.mods,
+    );
+    included.name = if include.stmt.is_empty() {
+        None
+    } else {
+        Some(std::mem::take(&mut include.stmt))
+    };
+    let mut current: Option<&IncludeStmt> = Some(include);
+    while let Some(stmt) = current {
+        let mut next_incl = SymbolsInfo::new(ki_ptr);
 
-            let file: Option<Box<XkbFile>> =
-                ProcessIncludeFile(unsafe { &mut *ctx_ptr }, stmt, FILE_TYPE_SYMBOLS);
-            let Some(mut file) = file else {
-                info.errorCount += 10_i32;
-                ClearSymbolsInfo(&mut included);
-                return false;
-            };
-            InitSymbolsInfo(
-                &mut next_incl,
-                info.include_depth.wrapping_add(1_u32),
-                &included.mods,
-            );
-            if !stmt.modifier.is_empty() {
-                next_incl.explicit_group =
-                    (stmt.modifier.parse::<i32>().unwrap_or(0) - 1_i32) as u32;
-                if next_incl.explicit_group >= info.max_groups {
-                    log::error!("[XKB-{:03}] Cannot set explicit group to {} - must be between 1..{}; Ignoring group number\n",
-                        { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                        next_incl.explicit_group.wrapping_add(1_u32),
-                        info.max_groups);
-                    next_incl.explicit_group = info.explicit_group;
-                }
-            } else if (*ki_ptr).keymap.num_groups != 0_u32 && next_incl.include_depth == 1_u32 {
-                next_incl.explicit_group = 0_u32;
-            } else {
+        let file: Option<Box<XkbFile>> =
+            ProcessIncludeFile(included.ctx_mut(), stmt, FILE_TYPE_SYMBOLS);
+        let Some(mut file) = file else {
+            info.errorCount += 10_i32;
+            ClearSymbolsInfo(&mut included);
+            return false;
+        };
+        InitSymbolsInfo(
+            &mut next_incl,
+            info.include_depth.wrapping_add(1_u32),
+            &included.mods,
+        );
+        if !stmt.modifier.is_empty() {
+            next_incl.explicit_group = (stmt.modifier.parse::<i32>().unwrap_or(0) - 1_i32) as u32;
+            if next_incl.explicit_group >= info.max_groups {
+                log::error!("[XKB-{:03}] Cannot set explicit group to {} - must be between 1..{}; Ignoring group number\n",
+                    { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
+                    next_incl.explicit_group.wrapping_add(1_u32),
+                    info.max_groups);
                 next_incl.explicit_group = info.explicit_group;
             }
-            HandleSymbolsFile(&mut next_incl, &mut *file);
-            MergeIncludedSymbols(&mut included, &mut next_incl, stmt.merge);
-            ClearSymbolsInfo(&mut next_incl);
-            drop(file);
-            current = stmt.next_incl.as_deref();
+        } else if unsafe { (*ki_ptr).keymap.num_groups } != 0_u32
+            && next_incl.include_depth == 1_u32
+        {
+            next_incl.explicit_group = 0_u32;
+        } else {
+            next_incl.explicit_group = info.explicit_group;
         }
-        MergeIncludedSymbols(info, &mut included, include.merge);
-        ClearSymbolsInfo(&mut included);
-        info.errorCount == 0_i32
+        HandleSymbolsFile(&mut next_incl, &mut *file);
+        MergeIncludedSymbols(&mut included, &mut next_incl, stmt.merge);
+        ClearSymbolsInfo(&mut next_incl);
+        drop(file);
+        current = stmt.next_incl.as_deref();
     }
+    MergeIncludedSymbols(info, &mut included, include.merge);
+    ClearSymbolsInfo(&mut included);
+    info.errorCount == 0_i32
 }
 fn GetGroupIndex(
     info: &SymbolsInfo<'_>,
@@ -898,7 +911,7 @@ fn GetGroupIndex(
     }
     let mut pending_dummy = false;
     if ExprResolveGroup(
-        unsafe { &mut *(info.keymap_info as *const _ as *mut xkb_keymap_info<'_>) },
+        unsafe { &mut *info.keymap_info },
         arrayNdx.unwrap(),
         false,
         ndx_rtrn,
@@ -1070,7 +1083,7 @@ fn AddActionsToKey(
             };
             let mut toAct: xkb_action = xkb_action::None;
             let r: u32 = HandleActionDef(
-                info.keymap_info,
+                unsafe { &mut *info.keymap_info },
                 &mut info.default_actions,
                 &info.mods,
                 act_expr,
@@ -1275,7 +1288,7 @@ fn SetSymbolsField(
         } else if {
             let mut pending_dummy = false;
             ExprResolveGroup(
-                info.keymap_info,
+                unsafe { &mut *info.keymap_info },
                 arrayNdx.unwrap(),
                 false,
                 &mut ndx,
@@ -1349,7 +1362,7 @@ fn SetSymbolsField(
         let mut overlay: xkb_overlay_index_t = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
         let mut key: u32 = XKB_KEYCODE_INVALID;
         if !ExprResolveOverlayEntry(
-            info.keymap_info,
+            info.keymap_info(),
             field,
             arrayNdx,
             value_opt.as_deref().unwrap(),
@@ -1362,7 +1375,7 @@ fn SetSymbolsField(
         if overlay as i32 == XKB_OVERLAY_INVALID {
             return true;
         } else if key != XKB_KEYCODE_INVALID && {
-            info.keymap_info
+            info.keymap_info()
                 .keymap
                 .get_key(key)
                 .is_some_and(|k| k.name == keyi.name)
@@ -1381,18 +1394,18 @@ fn SetSymbolsField(
                         KeyInfoText(info, keyi),
                         overlay as i32 + 1_i32,
                         if prev != XKB_KEYCODE_INVALID {
-                            xkb_atom_text(&info.ctx().atom_table, info.keymap_info.keymap.get_key(prev).map(|k| k.name).unwrap_or(0))
+                            xkb_atom_text(&info.ctx().atom_table, info.keymap_info().keymap.get_key(prev).map(|k| k.name).unwrap_or(0))
                         } else {
                             "none"
                         },
                         overlay as i32 + 1_i32,
                         if key != XKB_KEYCODE_INVALID {
-                            xkb_atom_text(&info.ctx().atom_table, info.keymap_info.keymap.get_key(key).map(|k| k.name).unwrap_or(0))
+                            xkb_atom_text(&info.ctx().atom_table, info.keymap_info().keymap.get_key(key).map(|k| k.name).unwrap_or(0))
                         } else {
                             "none"
                         });
                 }
-            } else if info.keymap_info.features.overlapping_overlays {
+            } else if info.keymap_info().features.overlapping_overlays {
                 if !overlays_insert(keyi, overlay, key) {
                     return false;
                 }
@@ -1423,11 +1436,11 @@ fn SetSymbolsField(
                             keyi.overlays as i32,
                             xkb_atom_text(
                                 &info.ctx().atom_table,
-                                if existing_key == XKB_KEYCODE_INVALID { 0 } else { info.keymap_info.keymap.get_key(existing_key).map(|k| k.name).unwrap_or(0) },
+                                if existing_key == XKB_KEYCODE_INVALID { 0 } else { info.keymap_info().keymap.get_key(existing_key).map(|k| k.name).unwrap_or(0) },
                             ),
                             overlay as i32 + 1_i32,
-                            xkb_atom_text(&info.ctx().atom_table, info.keymap_info.keymap.get_key(key).map(|k| k.name).unwrap_or(0)));
-                    return info.keymap_info.strict & PARSER_NO_FIELD_VALUE_MISMATCH == 0;
+                            xkb_atom_text(&info.ctx().atom_table, info.keymap_info().keymap.get_key(key).map(|k| k.name).unwrap_or(0)));
+                    return info.keymap_info().strict & PARSER_NO_FIELD_VALUE_MISMATCH == 0;
                 }
             }
         }
@@ -1490,7 +1503,7 @@ fn SetSymbolsField(
         let mut grp: u32 = 0_u32;
         let mut pending: bool = false;
         if ExprResolveGroup(
-            info.keymap_info,
+            info.keymap_info_mut(),
             value_opt.as_deref().unwrap(),
             false,
             &mut grp,
@@ -1506,8 +1519,8 @@ fn SetSymbolsField(
         }
         if pending {
             keyi.out_of_range_pending_group = true;
-            let pending_index: u32 = info.keymap_info.pending_computations.len() as u32;
-            info.keymap_info
+            let pending_index: u32 = info.keymap_info().pending_computations.len() as u32;
+            info.keymap_info_mut()
                 .pending_computations
                 .push(pending_computation {
                     expr: value_opt.take(),
@@ -1527,7 +1540,7 @@ fn SetSymbolsField(
             XKB_ERROR_UNKNOWN_FIELD as i32,
             field
         );
-        return info.keymap_info.strict & PARSER_NO_UNKNOWN_KEY_FIELDS == 0;
+        return info.keymap_info().strict & PARSER_NO_UNKNOWN_KEY_FIELDS == 0;
     }
     true
 }
@@ -1549,7 +1562,7 @@ fn SetGroupName(
     let mut pending_dummy: bool = false;
     if {
         ExprResolveGroup(
-            unsafe { &mut *(info.keymap_info as *const _ as *mut xkb_keymap_info<'_>) },
+            unsafe { &mut *info.keymap_info },
             arrayNdx,
             false,
             &mut group,
@@ -1634,7 +1647,7 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
             init.overlays_clear = false;
             init
         };
-        InitKeyInfo(info.keymap_info.ctx_mut(), &mut temp);
+        InitKeyInfo(unsafe { (*info.keymap_info).ctx_mut() }, &mut temp);
         temp.merge = if temp.merge == MERGE_REPLACE {
             MERGE_OVERRIDE
         } else {
@@ -1689,7 +1702,7 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
         let field_owned = field.to_owned();
         ret = {
             let r = SetDefaultActionField(
-                info.keymap_info,
+                unsafe { &mut *info.keymap_info },
                 &mut info.default_actions,
                 &mut info.mods,
                 &elem_owned,
@@ -1707,7 +1720,7 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
             XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
             field
         );
-        return info.keymap_info.strict & PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS == 0;
+        return info.keymap_info().strict & PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS == 0;
     }
     ret
 }
@@ -1897,7 +1910,11 @@ fn HandleSymbolsFile(info: &mut SymbolsInfo<'_>, file: &mut XkbFile) {
                     ok = HandleGlobalVar(info, &mut **var);
                 }
                 Statement::VMod(vmod) => {
-                    ok = HandleVModDef(info.keymap_info.ctx_mut(), &mut info.mods, &**vmod);
+                    ok = HandleVModDef(
+                        unsafe { (*info.keymap_info).ctx_mut() },
+                        &mut info.mods,
+                        &**vmod,
+                    );
                 }
                 Statement::ModMap(mm) => {
                     ok = HandleModMapDef(info, &mut **mm);
@@ -1913,7 +1930,7 @@ fn HandleSymbolsFile(info: &mut SymbolsInfo<'_>, file: &mut XkbFile) {
                         },
                         &unk.name
                     );
-                    ok = (*info.keymap_info).strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
+                    ok = info.keymap_info().strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {
                     log::error!(
@@ -2402,7 +2419,6 @@ fn CopySymbolsToKeymap(keymap: &mut xkb_keymap, info: &mut SymbolsInfo<'_>) -> b
     true
 }
 pub fn CompileSymbols(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
-    let keymap_info = unsafe { &mut *(keymap_info as *mut xkb_keymap_info) };
     let mods = keymap_info.keymap_ref().mods;
     let keymap_ptr = keymap_info.keymap as *const xkb_keymap as *mut xkb_keymap;
     let mut info = SymbolsInfo::new(keymap_info);
