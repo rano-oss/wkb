@@ -54,29 +54,25 @@ pub use crate::xkb::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
 pub use crate::xkb::shared_types::{R_OK, X_OK};
-// isempty no longer needed — String fields use .is_empty()
 use crate::xkb::utils::cstr_as_bytes;
-use crate::xkb::utils::cstr_len;
-unsafe fn context_include_path_append(ctx: *mut xkb_context, path: &str) -> i32 {
-    unsafe {
-        let is_dir = std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false);
-        if is_dir {
-            log::info!("Include path added: {}\n", path);
-            (*ctx).includes.push(path.to_string());
-            return 1_i32;
-        }
-        if !path.is_empty() {
-            (*ctx).failed_includes.push(path.to_string());
-        }
-        log::info!("Include path failed: \"{}\"\n", path);
-        0_i32
+fn context_include_path_append(ctx: &mut xkb_context, path: &str) -> i32 {
+    let is_dir = std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false);
+    if is_dir {
+        log::info!("Include path added: {}\n", path);
+        ctx.includes.push(path.to_string());
+        return 1_i32;
     }
+    if !path.is_empty() {
+        ctx.failed_includes.push(path.to_string());
+    }
+    log::info!("Include path failed: \"{}\"\n", path);
+    0_i32
 }
 pub unsafe fn xkb_context_include_path_append(ctx: *mut xkb_context, path: *const i8) -> i32 {
     unsafe {
         if xkb_context_init_includes(ctx) as i32 != 0 {
             let path_str = std::ffi::CStr::from_ptr(path).to_str().unwrap_or("");
-            context_include_path_append(ctx, path_str)
+            context_include_path_append(&mut *ctx, path_str)
         } else {
             0_i32
         }
@@ -105,7 +101,7 @@ pub fn xkb_context_include_path_get_versioned_extensions_path(_ctx: *mut xkb_con
 /// Convert a null-terminated `[i8]` constant to a Rust `String`.
 
 fn add_direct_subdirectories(
-    ctx: *mut xkb_context,
+    ctx: &mut xkb_context,
     path: &str,
     extensions: &mut Vec<String>,
     versioned_count: usize,
@@ -159,8 +155,7 @@ fn add_direct_subdirectories(
     if extensions.len() > versioned_count {
         extensions[versioned_count..].sort();
         for i in versioned_count..extensions.len() {
-            // SAFETY: ctx is a valid pointer, context_include_path_append only dereferences ctx
-            ret |= unsafe { context_include_path_append(ctx, &extensions[i]) };
+            ret |= context_include_path_append(ctx, &extensions[i]);
         }
     }
 
@@ -176,6 +171,7 @@ pub fn xkb_context_include_path_get_system_path(_ctx: *mut xkb_context) -> Strin
 
 pub unsafe fn xkb_context_include_path_append_default(ctx: *mut xkb_context) -> i32 {
     unsafe {
+        let ctx = &mut *ctx;
         let mut ret: i32 = 0_i32;
         let home = xkb_context_getenv("HOME");
         let xdg = xkb_context_getenv("XDG_CONFIG_HOME");
@@ -187,17 +183,19 @@ pub unsafe fn xkb_context_include_path_append_default(ctx: *mut xkb_context) -> 
         if let Ok(ref home) = home {
             ret |= context_include_path_append(ctx, &format!("{}/.xkb", home));
         }
-        let extra = xkb_context_include_path_get_extra_path(ctx);
+        let extra = xkb_context_include_path_get_extra_path(std::ptr::null_mut());
         ret |= context_include_path_append(ctx, &extra);
 
         let mut extensions: Vec<String> = Vec::new();
-        let versioned_path = xkb_context_include_path_get_versioned_extensions_path(ctx);
+        let versioned_path =
+            xkb_context_include_path_get_versioned_extensions_path(std::ptr::null_mut());
         let mut versioned_path_length: usize = 0;
         if !versioned_path.is_empty() {
             ret |= add_direct_subdirectories(ctx, &versioned_path, &mut extensions, 0, 0);
             versioned_path_length = versioned_path.len();
         }
-        let unversioned_path = xkb_context_include_path_get_unversioned_extensions_path(ctx);
+        let unversioned_path =
+            xkb_context_include_path_get_unversioned_extensions_path(std::ptr::null_mut());
         if !unversioned_path.is_empty() {
             let versioned_count = extensions.len();
             ret |= add_direct_subdirectories(
@@ -208,9 +206,8 @@ pub unsafe fn xkb_context_include_path_append_default(ctx: *mut xkb_context) -> 
                 versioned_path_length,
             );
         }
-        // extensions is Vec<String>, dropped automatically
 
-        let root = xkb_context_include_path_get_system_path(ctx);
+        let root = xkb_context_include_path_get_system_path(std::ptr::null_mut());
         let has_root: bool = context_include_path_append(ctx, &root) != 0;
         ret |= has_root as i32;
         if !has_root && !root.is_empty() {
@@ -247,19 +244,6 @@ pub unsafe fn xkb_context_include_path_get(ctx: *mut xkb_context, idx: u32) -> S
             return "".to_string();
         }
         (&*ctx).includes.get(idx as usize).unwrap().clone()
-    }
-}
-pub unsafe fn xkb_context_unref(ctx: *mut xkb_context) {
-    unsafe {
-        if ctx.is_null() {
-            return;
-        }
-        (*ctx).refcnt -= 1;
-        if (*ctx).refcnt > 0_i32 {
-            return;
-        }
-        xkb_context_include_path_clear(ctx);
-        // atom_table is owned, dropped automatically when xkb_context is dropped
     }
 }
 fn log_level_to_prefix(level: u32) -> &'static str {
@@ -376,19 +360,8 @@ pub fn xkb_context_new(flags: xkb_context_flags) -> xkb_context {
     ctx
 }
 
-pub unsafe fn xkb_context_set_log_level(ctx: *mut xkb_context, level: u32) {
-    unsafe {
-        (*ctx).log_level = level;
-    }
-}
 pub fn xkb_context_get_log_verbosity(ctx: &xkb_context) -> i32 {
     ctx.log_verbosity
-}
-
-pub unsafe fn xkb_context_set_log_verbosity(ctx: *mut xkb_context, verbosity: i32) {
-    unsafe {
-        (*ctx).log_verbosity = verbosity;
-    }
 }
 
 // --- Merged from context_priv.rs ---
@@ -434,12 +407,6 @@ pub unsafe fn xkb_context_failed_include_path_get(ctx: *mut xkb_context, idx: u3
     }
 }
 
-pub unsafe fn xkb_atom_lookup(ctx: *mut xkb_context, string: *const i8) -> u32 {
-    unsafe {
-        let bytes = std::slice::from_raw_parts(string as *const u8, cstr_len(string));
-        atom_intern(&mut (*ctx).atom_table, bytes, false)
-    }
-}
 pub fn xkb_atom_intern_bytes(ctx: &mut xkb_context, bytes: &[u8]) -> u32 {
     atom_intern(&mut ctx.atom_table, bytes, true)
 }
@@ -460,96 +427,88 @@ pub unsafe fn xkb_log(ctx: *mut xkb_context, level: u32, verbosity: i32, msg: *c
         (*ctx).log_fn.expect("non-null function pointer")(ctx, level, msg);
     }
 }
-pub unsafe fn xkb_context_get_buffer(ctx: &mut xkb_context, size: usize) -> *mut i8 {
-    unsafe {
-        if size >= std::mem::size_of::<[i8; 2048]>() {
-            return std::ptr::null_mut();
-        }
-        if (std::mem::size_of::<[i8; 2048]>()).wrapping_sub(ctx.text_next) <= size {
-            ctx.text_next = 0_usize;
-        }
-        let rtrn: *mut i8 = (&raw mut ctx.text_buffer as *mut i8).add(ctx.text_next) as *mut i8;
-        ctx.text_next = ctx.text_next.wrapping_add(size);
-        rtrn
+pub fn xkb_context_get_buffer(ctx: &mut xkb_context, size: usize) -> *mut i8 {
+    if size >= std::mem::size_of::<[i8; 2048]>() {
+        return std::ptr::null_mut();
     }
+    if (std::mem::size_of::<[i8; 2048]>()).wrapping_sub(ctx.text_next) <= size {
+        ctx.text_next = 0_usize;
+    }
+    let rtrn: *mut i8 = unsafe { (&raw mut ctx.text_buffer as *mut i8).add(ctx.text_next) };
+    ctx.text_next = ctx.text_next.wrapping_add(size);
+    rtrn
 }
-pub unsafe fn xkb_context_sanitize_rule_names(
-    ctx: &xkb_context,
-    rmlvo: *mut xkb_rule_names,
-) -> RMLVO {
-    unsafe {
-        let mut modified: RMLVO = 0 as RMLVO;
-        let rmlvo = &mut *rmlvo;
-        if rmlvo.rules.as_bytes().is_empty() {
+pub fn xkb_context_sanitize_rule_names(ctx: &xkb_context, rmlvo: &mut xkb_rule_names) -> RMLVO {
+    let mut modified: RMLVO = 0 as RMLVO;
+    if rmlvo.rules.as_bytes().is_empty() {
+        let env = if ctx.use_environment_names {
+            xkb_context_getenv("XKB_DEFAULT_RULES")
+        } else {
+            Err(VarError::NotPresent)
+        };
+        rmlvo.rules = match env {
+            Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
+            Err(_) => std::ffi::CString::new("evdev").unwrap(),
+        };
+        modified = (modified as u32 | RMLVO_RULES) as RMLVO;
+    }
+    if rmlvo.model.as_bytes().is_empty() {
+        let env = if ctx.use_environment_names {
+            xkb_context_getenv("XKB_DEFAULT_MODEL")
+        } else {
+            Err(VarError::NotPresent)
+        };
+        rmlvo.model = match env {
+            Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
+            Err(_) => std::ffi::CString::new("pc105").unwrap(),
+        };
+        modified = (modified as u32 | RMLVO_MODEL) as RMLVO;
+    }
+    if rmlvo.layout.as_bytes().is_empty() {
+        {
             let env = if ctx.use_environment_names {
-                xkb_context_getenv("XKB_DEFAULT_RULES")
+                xkb_context_getenv("XKB_DEFAULT_LAYOUT")
             } else {
                 Err(VarError::NotPresent)
             };
-            rmlvo.rules = match env {
+            rmlvo.layout = match env {
                 Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
-                Err(_) => std::ffi::CString::new("evdev").unwrap(),
+                Err(_) => std::ffi::CString::new("us").unwrap(),
             };
-            modified = (modified as u32 | RMLVO_RULES) as RMLVO;
         }
-        if rmlvo.model.as_bytes().is_empty() {
-            let env = if ctx.use_environment_names {
-                xkb_context_getenv("XKB_DEFAULT_MODEL")
-            } else {
-                Err(VarError::NotPresent)
-            };
-            rmlvo.model = match env {
-                Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
-                Err(_) => std::ffi::CString::new("pc105").unwrap(),
-            };
-            modified = (modified as u32 | RMLVO_MODEL) as RMLVO;
-        }
-        if rmlvo.layout.as_bytes().is_empty() {
-            {
-                let env = if ctx.use_environment_names {
-                    xkb_context_getenv("XKB_DEFAULT_LAYOUT")
-                } else {
-                    Err(VarError::NotPresent)
-                };
-                rmlvo.layout = match env {
-                    Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
-                    Err(_) => std::ffi::CString::new("us").unwrap(),
-                };
-            }
-            modified = (modified as u32 | RMLVO_LAYOUT) as RMLVO;
-            let variant: std::ffi::CString = {
-                let layout = xkb_context_getenv("XKB_DEFAULT_LAYOUT");
-                let default_variant = xkb_context_getenv("XKB_DEFAULT_VARIANT");
-                match (layout, ctx.use_environment_names, default_variant) {
-                    (Ok(_), true, Ok(default_variant)) => {
-                        std::ffi::CString::new(default_variant).unwrap_or_default()
-                    }
-                    (_, _, _) => std::ffi::CString::new("").unwrap(),
+        modified = (modified as u32 | RMLVO_LAYOUT) as RMLVO;
+        let variant: std::ffi::CString = {
+            let layout = xkb_context_getenv("XKB_DEFAULT_LAYOUT");
+            let default_variant = xkb_context_getenv("XKB_DEFAULT_VARIANT");
+            match (layout, ctx.use_environment_names, default_variant) {
+                (Ok(_), true, Ok(default_variant)) => {
+                    std::ffi::CString::new(default_variant).unwrap_or_default()
                 }
-            };
-            if !rmlvo.variant.as_bytes().is_empty() {
-                log::warn!("Layout not provided, but variant set to \"{}\": ignoring variant and using defaults for both: layout=\"{}\", variant=\"{}\".\n",
+                (_, _, _) => std::ffi::CString::new("").unwrap(),
+            }
+        };
+        if !rmlvo.variant.as_bytes().is_empty() {
+            log::warn!("Layout not provided, but variant set to \"{}\": ignoring variant and using defaults for both: layout=\"{}\", variant=\"{}\".\n",
                     rmlvo.variant.to_str().unwrap_or(""),
                     rmlvo.layout.to_str().unwrap_or(""),
                     variant.to_str().unwrap_or(""));
-            }
-            rmlvo.variant = variant;
-            modified = (modified as u32 | RMLVO_VARIANT) as RMLVO;
         }
-        if rmlvo.options.as_bytes().is_empty() {
-            if ctx.use_environment_names {
-                let env = xkb_context_getenv("XKB_DEFAULT_OPTIONS");
-                rmlvo.options = match env {
-                    Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
-                    Err(_) => std::ffi::CString::new("").unwrap(),
-                };
-            } else {
-                rmlvo.options = std::ffi::CString::new("").unwrap();
-            };
-            modified = (modified as u32 | RMLVO_OPTIONS) as RMLVO;
-        }
-        modified
+        rmlvo.variant = variant;
+        modified = (modified as u32 | RMLVO_VARIANT) as RMLVO;
     }
+    if rmlvo.options.as_bytes().is_empty() {
+        if ctx.use_environment_names {
+            let env = xkb_context_getenv("XKB_DEFAULT_OPTIONS");
+            rmlvo.options = match env {
+                Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
+                Err(_) => std::ffi::CString::new("").unwrap(),
+            };
+        } else {
+            rmlvo.options = std::ffi::CString::new("").unwrap();
+        };
+        modified = (modified as u32 | RMLVO_OPTIONS) as RMLVO;
+    }
+    modified
 }
 
 use crate::xkb::shared_types::*;

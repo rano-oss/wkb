@@ -24,15 +24,6 @@ pub unsafe fn cstr_as_bytes<'a>(s: *const i8) -> &'a [u8] {
 }
 
 // New Rust file utilities
-#[inline]
-pub unsafe fn _steal(ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
-    unsafe {
-        let original: *mut *mut ::core::ffi::c_void = ptr as *mut *mut ::core::ffi::c_void;
-        let swapped: *mut ::core::ffi::c_void = *original;
-        *original = std::ptr::null_mut::<core::ffi::c_void>();
-        swapped
-    }
-}
 
 /// Returns the last OS error number (replacement for `*__errno_location()`).
 pub fn last_errno() -> i32 {
@@ -186,34 +177,11 @@ pub unsafe fn cstr_dup(s: *const i8) -> *mut i8 {
     std::ffi::CString::from(cstr).into_raw()
 }
 
-/// Safe replacement for `strndup`. Duplicates up to `n` bytes of a C string
-/// using Rust's allocator. Returns a `*mut i8` allocated via `CString::into_raw()`.
-/// Returns null if `s` is null.
-///
-/// # Safety
-/// If non-null, `s` must point to at least `n` readable bytes.
-#[inline]
-pub unsafe fn cstr_ndup(s: *const i8, n: usize) -> *mut i8 {
-    if s.is_null() {
-        return std::ptr::null_mut();
-    }
-    // Find actual length (stop at null or n bytes)
-    let mut len = 0;
-    while len < n && *s.add(len) != 0 {
-        len += 1;
-    }
-    let slice = std::slice::from_raw_parts(s as *const u8, len);
-    match std::ffi::CString::new(slice) {
-        Ok(cstring) => cstring.into_raw(),
-        Err(_) => std::ptr::null_mut(), // interior null (shouldn't happen since we stopped at null)
-    }
-}
-
-/// Frees a C string that was allocated by `cstr_dup`, `cstr_ndup`, or `strdup_safe`.
+/// Frees a C string that was allocated by `cstr_dup`.
 /// Safe to call with null (no-op). Counterpart to `CString::into_raw()`.
 ///
 /// # Safety
-/// `s` must be null or a pointer previously returned by `cstr_dup`/`cstr_ndup`/`strdup_safe`.
+/// `s` must be null or a pointer previously returned by `cstr_dup`.
 #[inline]
 pub unsafe fn cstr_free(s: *mut i8) {
     if !s.is_null() {
@@ -274,14 +242,8 @@ impl core::fmt::Display for StrerrorDisplay {
 
 // ── utils_h functions (moved from duplicated pub mod utils_h blocks) ─
 
-#[inline]
-pub unsafe fn strdup_safe(s: *const i8) -> *mut i8 {
-    cstr_dup(s)
-}
-
-#[inline]
-pub unsafe fn isempty(s: *const i8) -> bool {
-    s.is_null() || *s == 0
+pub fn is_absolute_path_bytes(path: &[u8]) -> bool {
+    path.first() == Some(&b'/')
 }
 
 pub unsafe fn is_absolute_path(path: *const i8) -> bool {
@@ -428,35 +390,4 @@ pub fn parse_hex_u64(s: &[u8]) -> (u64, i32) {
         return (result, -1);
     }
     (result, i as i32)
-}
-
-/// Parse leading decimal integer from a C string.
-/// Returns `(value, bytes_consumed)`. On empty/non-digit input returns `(0, 0)`.
-pub unsafe fn cstr_parse_long(s: *const i8) -> (i64, usize) {
-    unsafe {
-        if s.is_null() {
-            return (0, 0);
-        }
-        let mut i: usize = 0;
-        let neg = *s.offset(0) as u8 == b'-';
-        let pos = *s.offset(0) as u8 == b'+';
-        if neg || pos {
-            i = 1;
-        }
-        let start = i;
-        let mut result: i64 = 0;
-        while (*s.add(i) as u8).is_ascii_digit() {
-            result = result
-                .wrapping_mul(10)
-                .wrapping_add((*s.add(i) as u8 - b'0') as i64);
-            i += 1;
-        }
-        if i == start {
-            return (0, 0); // no digits consumed
-        }
-        if neg {
-            result = -result;
-        }
-        (result, i)
-    }
 }

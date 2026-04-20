@@ -1,4 +1,4 @@
-use crate::xkb::utils::{cstr_free, cstr_ndup};
+use crate::xkb::utils::cstr_free;
 
 pub use crate::xkb::keymap::XkbEscapeMapName;
 pub use crate::xkb::messages::{

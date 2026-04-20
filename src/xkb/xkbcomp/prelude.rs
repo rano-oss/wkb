@@ -120,7 +120,7 @@ pub use crate::xkb::shared_types::{
 pub use crate::xkb::text::{ActionTypeText, KeysymText, LookupEntry};
 
 // utils
-pub use crate::xkb::utils::{_steal, cstr_free, strdup_safe};
+pub use crate::xkb::utils::cstr_free;
 
 // xkbcomp submodules
 pub use crate::xkb::xkbcomp::expr::{

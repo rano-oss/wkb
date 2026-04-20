@@ -133,7 +133,7 @@ pub fn xkb_keymap_new_from_names(
             options: std::ffi::CString::new("").unwrap(),
         },
     };
-    unsafe { xkb_context_sanitize_rule_names(&ctx, &raw mut rmlvo) };
+    xkb_context_sanitize_rule_names(&ctx, &mut rmlvo);
     if !(unsafe { (*ops).keymap_new_from_names.unwrap() })(
         &mut *keymap as *mut xkb_keymap,
         &rmlvo as *const xkb_rule_names,
