@@ -820,13 +820,13 @@ fn HandleIncludeSymbols(info: &mut SymbolsInfo<'_>, include: &mut IncludeStmt) -
         while let Some(stmt) = current {
             let mut next_incl = SymbolsInfo::new(&mut *ki_ptr);
 
-            let file: *mut XkbFile =
+            let file: Option<Box<XkbFile>> =
                 ProcessIncludeFile(unsafe { &mut *ctx_ptr }, stmt, FILE_TYPE_SYMBOLS);
-            if file.is_null() {
+            let Some(mut file) = file else {
                 info.errorCount += 10_i32;
                 ClearSymbolsInfo(&mut included);
                 return false;
-            }
+            };
             InitSymbolsInfo(
                 &mut next_incl,
                 info.include_depth.wrapping_add(1_u32),
@@ -850,7 +850,7 @@ fn HandleIncludeSymbols(info: &mut SymbolsInfo<'_>, include: &mut IncludeStmt) -
             HandleSymbolsFile(&mut next_incl, &mut *file);
             MergeIncludedSymbols(&mut included, &mut next_incl, stmt.merge);
             ClearSymbolsInfo(&mut next_incl);
-            FreeXkbFile(file);
+            drop(file);
             current = stmt.next_incl.as_deref();
         }
         MergeIncludedSymbols(info, &mut included, include.merge);

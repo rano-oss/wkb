@@ -180,22 +180,22 @@ fn HandleIncludeKeyTypes(info: &mut KeyTypesInfo<'_>, include: &mut IncludeStmt)
     while let Some(stmt) = current {
         let mut next_incl = KeyTypesInfo::new(unsafe { &mut *ki_ptr });
 
-        let file: *mut XkbFile =
+        let file: Option<Box<XkbFile>> =
             ProcessIncludeFile(unsafe { &mut *ctx_ptr }, stmt, FILE_TYPE_TYPES);
-        if file.is_null() {
+        let Some(mut file) = file else {
             info.errorCount += 10_i32;
             ClearKeyTypesInfo(&mut included);
             return false;
-        }
+        };
         InitKeyTypesInfo(
             &mut next_incl,
             info.include_depth.wrapping_add(1_u32),
             &included.mods,
         );
-        HandleKeyTypesFile(&mut next_incl, unsafe { &mut *file });
+        HandleKeyTypesFile(&mut next_incl, &mut *file);
         MergeIncludedKeyTypes(&mut included, &mut next_incl, stmt.merge);
         ClearKeyTypesInfo(&mut next_incl);
-        FreeXkbFile(file);
+        drop(file);
         current = stmt.next_incl.as_deref();
     }
     MergeIncludedKeyTypes(info, &mut included, include.merge);

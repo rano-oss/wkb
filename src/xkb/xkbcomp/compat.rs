@@ -540,13 +540,13 @@ fn HandleIncludeCompatMap(info: &mut CompatInfo<'_>, include: &mut IncludeStmt) 
     while let Some(stmt) = current {
         let mut next_incl = CompatInfo::new(unsafe { &mut *ki_ptr });
 
-        let file: *mut XkbFile =
+        let file: Option<Box<XkbFile>> =
             ProcessIncludeFile(unsafe { &mut *ctx_ptr }, stmt, FILE_TYPE_COMPAT);
-        if file.is_null() {
+        let Some(mut file) = file else {
             info.errorCount += 10_i32;
             ClearCompatInfo(&mut included);
             return false;
-        }
+        };
         InitCompatInfo(
             &mut next_incl,
             info.include_depth.wrapping_add(1_u32),
@@ -554,10 +554,10 @@ fn HandleIncludeCompatMap(info: &mut CompatInfo<'_>, include: &mut IncludeStmt) 
         );
         next_incl.default_interp = info.default_interp.clone();
         next_incl.default_led = info.default_led;
-        HandleCompatMapFile(&mut next_incl, unsafe { &mut *file });
+        HandleCompatMapFile(&mut next_incl, &mut *file);
         MergeIncludedCompatMaps(&mut included, &mut next_incl, stmt.merge);
         ClearCompatInfo(&mut next_incl);
-        FreeXkbFile(file);
+        drop(file);
         current = stmt.next_incl.as_deref();
     }
     MergeIncludedCompatMaps(info, &mut included, include.merge);

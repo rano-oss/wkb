@@ -54,7 +54,6 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
 };
 pub use crate::xkb::scanner_utils::{scanner, scanner_loc};
-use crate::xkb::shared_ast_types::FreeXkbFile;
 pub use crate::xkb::shared_ast_types::{
     _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type_to_string, xkb_map_flags,
     IncludeStmt, ParseCommon, XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
@@ -313,13 +312,13 @@ pub fn ProcessIncludeFile(
     ctx: &mut xkb_context,
     stmt: &IncludeStmt,
     file_type: u32,
-) -> *mut XkbFile {
-    let mut xkb_file: *mut XkbFile = std::ptr::null_mut();
-    let mut candidate: *mut XkbFile = std::ptr::null_mut();
+) -> Option<Box<XkbFile>> {
+    let mut xkb_file: Option<Box<XkbFile>> = None;
+    let mut candidate: Option<Box<XkbFile>> = None;
 
     // Expand %-sequences in the file name
     let stmt_file: String = match expand_path_str("(unknown)", &stmt.file, file_type) {
-        Err(()) => return std::ptr::null_mut(),
+        Err(()) => return None,
         Ok(Some(expanded)) => expanded,
         Ok(None) => stmt.file.clone(),
     };
@@ -352,32 +351,28 @@ pub fn ProcessIncludeFile(
     };
 
     while let Some((ref open_file, ref _path)) = file_and_path {
-        xkb_file = unsafe { XkbParseFile(ctx_ptr, open_file, &stmt.file, map_ptr) };
+        let raw = unsafe { XkbParseFile(ctx_ptr, open_file, &stmt.file, map_ptr) };
         // Drop the file (closes it)
         let _ = file_and_path.take();
 
-        if !xkb_file.is_null() {
-            unsafe {
-                if (*xkb_file).file_type as u32 != file_type {
-                    log::error!("[XKB-{:03}] Include file of wrong type (expected {}, got {}); Include file \"{}\" ignored\n",
-                        XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                        xkb_file_type_to_string(file_type),
-                        xkb_file_type_to_string((*xkb_file).file_type),
-                        &stmt.file);
-                    FreeXkbFile(xkb_file);
-                    xkb_file = std::ptr::null_mut();
-                } else if !stmt.map.is_empty()
-                    || (*xkb_file).flags as u32 != 0 && MAP_IS_DEFAULT as i32 != 0
-                {
-                    break;
-                } else if candidate.is_null() {
-                    candidate = xkb_file;
-                    xkb_file = std::ptr::null_mut();
-                } else {
-                    FreeXkbFile(xkb_file);
-                    xkb_file = std::ptr::null_mut();
-                }
+        if !raw.is_null() {
+            let mut parsed = unsafe { Box::from_raw(raw) };
+            if parsed.file_type as u32 != file_type {
+                log::error!("[XKB-{:03}] Include file of wrong type (expected {}, got {}); Include file \"{}\" ignored\n",
+                    XKB_ERROR_INVALID_INCLUDED_FILE as i32,
+                    xkb_file_type_to_string(file_type),
+                    xkb_file_type_to_string(parsed.file_type),
+                    &stmt.file);
+                // parsed drops automatically
+            } else if !stmt.map.is_empty()
+                || parsed.flags as u32 != 0 && MAP_IS_DEFAULT as i32 != 0
+            {
+                xkb_file = Some(parsed);
+                break;
+            } else if candidate.is_none() {
+                candidate = Some(parsed);
             }
+            // else: parsed drops automatically (was FreeXkbFile)
         }
         if absolute_path {
             break;
@@ -393,25 +388,23 @@ pub fn ProcessIncludeFile(
         );
     }
 
-    unsafe {
-        if xkb_file.is_null() {
-            xkb_file = candidate;
-        } else {
-            FreeXkbFile(candidate);
-        }
-        if xkb_file.is_null() {
-            if !stmt.map.is_empty() {
-                log::error!("[XKB-{:03}] Couldn't process include statement for '{}({})'\n",
-                    XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                    &stmt.file,
-                    &stmt.map);
-            } else {
-                log::error!("[XKB-{:03}] Couldn't process include statement for '{}'\n",
-                    XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                    &stmt.file);
-            }
-        }
-        xkb_file
+    if xkb_file.is_none() {
+        xkb_file = candidate;
     }
+    // else: candidate drops automatically
+
+    if xkb_file.is_none() {
+        if !stmt.map.is_empty() {
+            log::error!("[XKB-{:03}] Couldn't process include statement for '{}({})'\n",
+                XKB_ERROR_INVALID_INCLUDED_FILE as i32,
+                &stmt.file,
+                &stmt.map);
+        } else {
+            log::error!("[XKB-{:03}] Couldn't process include statement for '{}'\n",
+                XKB_ERROR_INVALID_INCLUDED_FILE as i32,
+                &stmt.file);
+        }
+    }
+    xkb_file
 }
 use crate::xkb::shared_types::*;

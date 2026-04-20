@@ -592,18 +592,18 @@ fn HandleIncludeKeycodes(
     while let Some(stmt) = current {
         let mut next_incl = KeyNamesInfo::new(unsafe { &mut *ki_ptr });
 
-        let file: *mut XkbFile =
+        let file: Option<Box<XkbFile>> =
             ProcessIncludeFile(unsafe { &mut *ctx_ptr }, stmt, FILE_TYPE_KEYCODES);
-        if file.is_null() {
+        let Some(mut file) = file else {
             info.errorCount += 10_i32;
             ClearKeyNamesInfo(&mut included);
             return false;
-        }
+        };
         InitKeyNamesInfo(&mut next_incl, info.include_depth.wrapping_add(1_u32));
-        HandleKeycodesFile(&mut next_incl, unsafe { &mut *file });
+        HandleKeycodesFile(&mut next_incl, &mut *file);
         MergeIncludedKeycodes(&mut included, &mut next_incl, stmt.merge, report);
         ClearKeyNamesInfo(&mut next_incl);
-        FreeXkbFile(file);
+        drop(file);
         current = stmt.next_incl.as_deref();
     }
     MergeIncludedKeycodes(info, &mut included, include.merge, report);
