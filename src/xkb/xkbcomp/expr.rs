@@ -491,7 +491,7 @@ pub fn ExprResolveInteger(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut i64)
 }
 
 pub fn ExprResolveGroup(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     expr: &ExprDef,
     absolute: bool,
     group_rtrn: &mut u32,
@@ -927,7 +927,7 @@ pub fn ExprResolveMod(
 }
 
 pub fn ExprResolveGroupMask(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     expr: &ExprDef,
     group_rtrn: &mut u32,
     pending_rtrn: &mut bool,

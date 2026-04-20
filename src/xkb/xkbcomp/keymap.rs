@@ -22,7 +22,8 @@ pub use crate::xkb::xkbcomp::types::CompileKeyTypes;
 
 pub const GROUP_MASK_NAME_LAST: u32 = 3;
 pub const GROUP_INDEX_NAME_LAST: u32 = 1;
-pub type compile_file_fn = Option<fn(Option<&mut XkbFile>, &mut xkb_keymap_info) -> bool>;
+pub type compile_file_fn =
+    Option<for<'a> fn(Option<&mut XkbFile>, &mut xkb_keymap_info<'a>) -> bool>;
 #[inline]
 fn ComputeEffectiveMask(keymap: *mut xkb_keymap, mods: *mut xkb_mods) {
     unsafe {
@@ -294,7 +295,7 @@ fn add_key_aliases(keymap: &xkb_keymap, min: u32, max: u32, aliases: &mut Vec<xk
         alias = alias.wrapping_add(1);
     }
 }
-fn update_pending_key_fields(info: &mut xkb_keymap_info, key: &mut xkb_key) -> bool {
+fn update_pending_key_fields(info: &mut xkb_keymap_info<'_>, key: &mut xkb_key) -> bool {
     if key.out_of_range_pending_group {
         let idx = key.out_of_range_group_number as usize;
         if !info.pending_computations[idx].computed {
@@ -323,7 +324,7 @@ fn update_pending_key_fields(info: &mut xkb_keymap_info, key: &mut xkb_key) -> b
     true
 }
 fn update_pending_action_fields(
-    info: &mut xkb_keymap_info,
+    info: &mut xkb_keymap_info<'_>,
     keycode: u32,
     act: &mut xkb_action,
 ) -> bool {
@@ -382,7 +383,7 @@ fn update_pending_action_fields(
         _ => true,
     }
 }
-fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info) -> bool {
+fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info<'_>) -> bool {
     unsafe {
         let keymap: *mut xkb_keymap = info.keymap;
         let mut num_key_aliases: u32 = 0_u32;
@@ -681,10 +682,12 @@ fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info) -> bool {
 }
 static COMPILE_FILE_FNS: [compile_file_fn; 4] = {
     [
-        Some(CompileKeycodes as fn(Option<&mut XkbFile>, &mut xkb_keymap_info) -> bool),
-        Some(CompileKeyTypes as fn(Option<&mut XkbFile>, &mut xkb_keymap_info) -> bool),
-        Some(CompileCompatMap as fn(Option<&mut XkbFile>, &mut xkb_keymap_info) -> bool),
-        Some(CompileSymbols as fn(Option<&mut XkbFile>, &mut xkb_keymap_info) -> bool),
+        Some(CompileKeycodes as for<'a> fn(Option<&mut XkbFile>, &mut xkb_keymap_info<'a>) -> bool),
+        Some(CompileKeyTypes as for<'a> fn(Option<&mut XkbFile>, &mut xkb_keymap_info<'a>) -> bool),
+        Some(
+            CompileCompatMap as for<'a> fn(Option<&mut XkbFile>, &mut xkb_keymap_info<'a>) -> bool,
+        ),
+        Some(CompileSymbols as for<'a> fn(Option<&mut XkbFile>, &mut xkb_keymap_info<'a>) -> bool),
     ]
 };
 fn pending_computations_array_free(p: &mut Vec<pending_computation>) {
@@ -730,8 +733,8 @@ pub fn CompileKeymap(mut file: *mut XkbFile, keymap: *mut xkb_keymap) -> bool {
                 }
             }
         }
-        let mut info: xkb_keymap_info = xkb_keymap_info {
-            keymap,
+        let mut info = xkb_keymap_info {
+            keymap: &mut *keymap,
             strict: (if (*keymap).format == XKB_KEYMAP_FORMAT_TEXT_V1 {
                 if (*keymap).flags & XKB_KEYMAP_COMPILE_STRICT_MODE != 0 {
                     PARSER_V1_STRICT_FLAGS as i32

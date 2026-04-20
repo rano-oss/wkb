@@ -9,10 +9,10 @@ pub struct KeyNamesInfo<'a> {
     pub keycodes: KeycodeStore,
     pub led_names: [LedNameInfo; 32],
     pub num_led_names: u32,
-    pub keymap_info: &'a mut xkb_keymap_info,
+    pub keymap_info: &'a mut xkb_keymap_info<'a>,
 }
 impl<'a> KeyNamesInfo<'a> {
-    pub fn new(keymap_info: &'a mut xkb_keymap_info) -> Self {
+    pub fn new(keymap_info: &'a mut xkb_keymap_info<'a>) -> Self {
         Self {
             name: None,
             errorCount: 0,
@@ -576,7 +576,7 @@ fn HandleIncludeKeycodes(
     report: bool,
 ) -> bool {
     let ki_ptr = &raw mut *info.keymap_info;
-    let ctx_ptr = unsafe { &raw mut (*(*ki_ptr).keymap).ctx };
+    let ctx_ptr = unsafe { &raw mut (*ki_ptr).keymap.ctx };
     let mut included = KeyNamesInfo::new(unsafe { &mut *ki_ptr });
     if ExceedsIncludeMaxDepth(info.include_depth) {
         info.errorCount += 10_i32;
@@ -944,7 +944,8 @@ fn CopyKeyNamesInfoToKeymap(info: &mut KeyNamesInfo<'_>) -> bool {
     xkb_escape_map_name(&mut keymap.keycodes_section_name);
     true
 }
-pub fn CompileKeycodes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info) -> bool {
+pub fn CompileKeycodes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
+    let keymap_info = unsafe { &mut *(keymap_info as *mut xkb_keymap_info) };
     let mut info = KeyNamesInfo::new(keymap_info);
     InitKeyNamesInfo(&mut info, 0_u32);
     if let Some(file) = file {

@@ -34,8 +34,8 @@ pub const ACTION_FIELD_GEN_KEY_EVENT: u32 = 2;
 pub const ACTION_FIELD_LATCH_TO_LOCK: u32 = 1;
 pub const ACTION_FIELD_CLEAR_LOCKS: u32 = 0;
 pub type actionHandler = Option<
-    fn(
-        &mut xkb_keymap_info,
+    for<'a> fn(
+        &mut xkb_keymap_info<'a>,
         &xkb_mod_set,
         &mut xkb_action,
         u32,
@@ -314,7 +314,7 @@ fn ReportActionNotArray(action: u32, field: u32, strict: u32) -> u32 {
     }) as u32
 }
 fn HandleNoAction(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     _mods: &xkb_mod_set,
     action: &mut xkb_action,
     field: u32,
@@ -447,7 +447,7 @@ fn CheckAffectField(
     PARSER_SUCCESS
 }
 fn HandleSetLatchLockMods(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     mods: &xkb_mod_set,
     action: &mut xkb_action,
     field: u32,
@@ -555,7 +555,7 @@ fn HandleSetLatchLockMods(
     ReportIllegal(type_0, field, keymap_info.strict)
 }
 fn CheckGroupField(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     action: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
@@ -632,7 +632,7 @@ fn CheckGroupField(
     }
 }
 fn HandleSetLatchLockGroup(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     _mods: &xkb_mod_set,
     action: &mut xkb_action,
     field: u32,
@@ -706,7 +706,7 @@ fn HandleSetLatchLockGroup(
     ReportIllegal(type_0, field, keymap_info.strict)
 }
 fn HandleMovePtr(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     _mods: &xkb_mod_set,
     action: &mut xkb_action,
     field: u32,
@@ -773,7 +773,7 @@ fn HandleMovePtr(
     ReportIllegal(type_0, field, keymap_info.strict)
 }
 fn HandlePtrBtn(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     _mods: &xkb_mod_set,
     action: &mut xkb_action,
     field: u32,
@@ -867,7 +867,7 @@ static PTR_DFLTS: [LookupEntry; 4] = [
     },
 ];
 fn HandleSetPtrDflt(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     _mods: &xkb_mod_set,
     action: &mut xkb_action,
     field: u32,
@@ -946,7 +946,7 @@ fn HandleSetPtrDflt(
     ReportIllegal(type_0, field, keymap_info.strict)
 }
 fn HandleSwitchScreen(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     _mods: &xkb_mod_set,
     action: &mut xkb_action,
     field: u32,
@@ -1018,7 +1018,7 @@ fn HandleSwitchScreen(
     ReportIllegal(type_0, field, keymap_info.strict)
 }
 fn HandleSetLockControls(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     _mods: &xkb_mod_set,
     action: &mut xkb_action,
     field: u32,
@@ -1059,7 +1059,7 @@ fn HandleSetLockControls(
     ReportIllegal(type_0, field, keymap_info.strict)
 }
 fn HandleRedirectKey(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     mods: &xkb_mod_set,
     action: &mut xkb_action,
     field: u32,
@@ -1153,7 +1153,7 @@ fn HandleRedirectKey(
     ReportIllegal(type_0, field, keymap_info.strict)
 }
 fn HandleUnsupported(
-    _keymap_info: &mut xkb_keymap_info,
+    _keymap_info: &mut xkb_keymap_info<'_>,
     _mods: &xkb_mod_set,
     _action: &mut xkb_action,
     _field: u32,
@@ -1164,7 +1164,7 @@ fn HandleUnsupported(
     PARSER_SUCCESS
 }
 fn HandlePrivate(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     _mods: &xkb_mod_set,
     action: &mut xkb_action,
     field: u32,
@@ -1302,7 +1302,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleNoAction
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1314,7 +1314,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleNoAction
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1326,7 +1326,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLatchLockMods
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1338,7 +1338,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLatchLockMods
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1350,7 +1350,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLatchLockMods
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1362,7 +1362,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLatchLockGroup
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1374,7 +1374,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLatchLockGroup
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1386,7 +1386,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLatchLockGroup
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1398,7 +1398,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleMovePtr
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1410,7 +1410,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandlePtrBtn
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1422,7 +1422,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandlePtrBtn
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1434,7 +1434,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetPtrDflt
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1446,7 +1446,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleNoAction
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1458,7 +1458,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSwitchScreen
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1470,7 +1470,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLockControls
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1482,7 +1482,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLockControls
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1494,7 +1494,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleRedirectKey
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1506,7 +1506,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleUnsupported
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1518,7 +1518,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleUnsupported
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1530,7 +1530,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandlePrivate
                 as fn(
-                    &mut xkb_keymap_info,
+                    &mut xkb_keymap_info<'_>,
                     &xkb_mod_set,
                     &mut xkb_action,
                     u32,
@@ -1543,13 +1543,13 @@ static HANDLE_ACTION: [actionHandler; 21] = {
     ]
 };
 pub fn HandleActionDef(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     info: &mut ActionsInfo,
     mods: &xkb_mod_set,
     def: &mut ExprDef,
     action: &mut xkb_action,
 ) -> u32 {
-    let ctx: &xkb_context = unsafe { &(*keymap_info.keymap).ctx };
+    let ctx: &xkb_context = unsafe { &*(&raw const (*keymap_info.keymap).ctx) };
     if def.common.type_0 != STMT_EXPR_ACTION_DECL {
         log::error!(
             "[XKB-{:03}] Expected an action definition, found {}\n",
@@ -1680,7 +1680,7 @@ pub fn HandleActionDef(
     }) as u32
 }
 pub fn SetDefaultActionField(
-    keymap_info: &mut xkb_keymap_info,
+    keymap_info: &mut xkb_keymap_info<'_>,
     info: &mut ActionsInfo,
     mods: &mut xkb_mod_set,
     elem: &str,

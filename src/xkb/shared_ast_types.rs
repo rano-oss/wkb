@@ -573,33 +573,33 @@ pub struct pending_computation {
     pub value: u32,
 }
 
-pub struct xkb_keymap_info {
-    pub keymap: *mut xkb_keymap,
+pub struct xkb_keymap_info<'a> {
+    pub keymap: &'a mut xkb_keymap,
     pub strict: u32,
     pub features: XkbcompFeatures,
     pub lookup: XkbcompLookup,
     pub pending_computations: Vec<pending_computation>,
 }
 
-impl xkb_keymap_info {
-    /// Safe accessor: dereference the raw keymap pointer to get a shared reference.
+impl<'a> xkb_keymap_info<'a> {
+    /// Safe accessor: get a shared reference to the keymap.
     pub fn keymap_ref(&self) -> &xkb_keymap {
-        unsafe { &*self.keymap }
+        &*self.keymap
     }
 
-    /// Safe accessor: dereference the raw keymap pointer to get a mutable reference.
+    /// Safe accessor: get a mutable reference to the keymap.
     pub fn keymap_mut(&mut self) -> &mut xkb_keymap {
-        unsafe { &mut *self.keymap }
+        &mut *self.keymap
     }
 
-    /// Safe accessor: get a shared reference to the context through the keymap pointer.
+    /// Safe accessor: get a shared reference to the context through the keymap.
     pub fn ctx(&self) -> &xkb_context {
-        unsafe { &(*self.keymap).ctx }
+        &self.keymap.ctx
     }
 
-    /// Safe accessor: get a mutable reference to the context through the keymap pointer.
+    /// Safe accessor: get a mutable reference to the context through the keymap.
     pub fn ctx_mut(&mut self) -> &mut xkb_context {
-        unsafe { &mut (*self.keymap).ctx }
+        &mut self.keymap.ctx
     }
 }
 

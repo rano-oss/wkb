@@ -9,10 +9,10 @@ pub struct KeyTypesInfo<'a> {
     pub include_depth: u32,
     pub types: Vec<KeyTypeInfo>,
     pub mods: xkb_mod_set,
-    pub keymap_info: &'a mut xkb_keymap_info,
+    pub keymap_info: &'a mut xkb_keymap_info<'a>,
 }
 impl<'a> KeyTypesInfo<'a> {
-    pub fn new(keymap_info: &'a mut xkb_keymap_info) -> Self {
+    pub fn new(keymap_info: &'a mut xkb_keymap_info<'a>) -> Self {
         Self {
             name: None,
             errorCount: 0,
@@ -744,7 +744,8 @@ fn CopyKeyTypesToKeymap(info: &mut KeyTypesInfo) -> bool {
     keymap.mods = info.mods;
     true
 }
-pub fn CompileKeyTypes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info) -> bool {
+pub fn CompileKeyTypes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
+    let keymap_info = unsafe { &mut *(keymap_info as *mut xkb_keymap_info) };
     let mods = keymap_info.keymap_ref().mods;
     let mut info = KeyTypesInfo::new(keymap_info);
     InitKeyTypesInfo(&mut info, 0_u32, &mods);

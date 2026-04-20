@@ -20,7 +20,7 @@ pub struct CompatInfo<'a> {
     pub num_leds: u32,
     pub default_actions: ActionsInfo,
     pub mods: xkb_mod_set,
-    pub keymap_info: &'a mut xkb_keymap_info,
+    pub keymap_info: &'a mut xkb_keymap_info<'a>,
 }
 impl<'a> CompatInfo<'a> {
     #[inline]
@@ -31,7 +31,7 @@ impl<'a> CompatInfo<'a> {
     pub fn ctx_mut(&mut self) -> &mut xkb_context {
         self.keymap_info.ctx_mut()
     }
-    pub fn new(keymap_info: &'a mut xkb_keymap_info) -> Self {
+    pub fn new(keymap_info: &'a mut xkb_keymap_info<'a>) -> Self {
         let zeroed_led = LedInfo {
             defined: 0 as led_field,
             merge: MERGE_DEFAULT,
@@ -1206,7 +1206,8 @@ fn CopyCompatToKeymap(info: &mut CompatInfo<'_>) -> bool {
     CopyLedMapDefsToKeymap(info);
     true
 }
-pub fn CompileCompatMap(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info) -> bool {
+pub fn CompileCompatMap(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
+    let keymap_info = unsafe { &mut *(keymap_info as *mut xkb_keymap_info) };
     let mods = keymap_info.keymap_ref().mods;
     let mut info = CompatInfo::new(keymap_info);
     InitCompatInfo(&mut info, 0_u32, &mods);

@@ -26,7 +26,7 @@ pub struct SymbolsInfo<'a> {
     pub group_names: Vec<u32>,
     pub modmaps: Vec<ModMapEntry>,
     pub mods: xkb_mod_set,
-    pub keymap_info: &'a mut xkb_keymap_info,
+    pub keymap_info: &'a mut xkb_keymap_info<'a>,
 }
 #[derive(Copy, Clone)]
 pub struct ModMapEntry {
@@ -110,7 +110,7 @@ impl<'a> SymbolsInfo<'a> {
         self.keymap_info.ctx_mut()
     }
 
-    pub fn new(keymap_info: &'a mut xkb_keymap_info) -> Self {
+    pub fn new(keymap_info: &'a mut xkb_keymap_info<'a>) -> Self {
         Self {
             name: None,
             errorCount: 0,
@@ -601,7 +601,13 @@ fn MergeKeys(
         if (*from).merge as i32 == MERGE_REPLACE as i32 {
             ClearKeyInfo(&mut *into);
             std::ptr::write(into, std::ptr::read(from));
-            InitKeyInfo(unsafe { &raw mut (*(*info.keymap_info).keymap).ctx }, from);
+            InitKeyInfo(
+                unsafe {
+                    &raw mut (*(info.keymap_info.keymap as *const xkb_keymap as *mut xkb_keymap))
+                        .ctx
+                },
+                from,
+            );
             return true;
         }
         let groups_in_both: u32 = (if (*into).groups.len() < (*from).groups.len() {
@@ -685,7 +691,12 @@ fn MergeKeys(
                 if clobber { "first" } else { "last" });
         }
         ClearKeyInfo(&mut *from);
-        InitKeyInfo(unsafe { &raw mut (*(*info.keymap_info).keymap).ctx }, from);
+        InitKeyInfo(
+            unsafe {
+                &raw mut (*(info.keymap_info.keymap as *const xkb_keymap as *mut xkb_keymap)).ctx
+            },
+            from,
+        );
         true
     }
 }
@@ -693,7 +704,7 @@ fn AddKeySymbols(info: &mut SymbolsInfo<'_>, keyi: *mut KeyInfo, same_file: bool
     unsafe {
         // XkbResolveKeyAlias inlined
         {
-            let keymap = (*info.keymap_info).keymap;
+            let keymap = &*(*info.keymap_info).keymap;
             let name = (*keyi).name;
             if (name as usize) < (*keymap).key_names.len() {
                 let match_0: KeycodeMatch = (&(*keymap).key_names)[name as usize];
@@ -815,7 +826,7 @@ fn MergeIncludedSymbols(into: &mut SymbolsInfo<'_>, from: &mut SymbolsInfo<'_>, 
 fn HandleIncludeSymbols(info: &mut SymbolsInfo<'_>, include: &mut IncludeStmt) -> bool {
     unsafe {
         let ki_ptr = &raw mut *info.keymap_info;
-        let ctx_ptr = unsafe { &raw mut (*(*ki_ptr).keymap).ctx };
+        let ctx_ptr = unsafe { &raw mut (*ki_ptr).keymap.ctx };
         let mut included = SymbolsInfo::new(&mut *ki_ptr);
         if ExceedsIncludeMaxDepth(info.include_depth) {
             info.errorCount += 10_i32;
@@ -863,7 +874,7 @@ fn HandleIncludeSymbols(info: &mut SymbolsInfo<'_>, include: &mut IncludeStmt) -
                         info.max_groups);
                     next_incl.explicit_group = info.explicit_group;
                 }
-            } else if (*(*ki_ptr).keymap).num_groups != 0_u32 && next_incl.include_depth == 1_u32 {
+            } else if (*ki_ptr).keymap.num_groups != 0_u32 && next_incl.include_depth == 1_u32 {
                 next_incl.explicit_group = 0_u32;
             } else {
                 next_incl.explicit_group = info.explicit_group;
@@ -922,7 +933,7 @@ fn GetGroupIndex(
         }
         let mut pending_dummy = false;
         if ExprResolveGroup(
-            &mut *(info.keymap_info as *const _ as *mut xkb_keymap_info),
+            &mut *(info.keymap_info as *const _ as *mut xkb_keymap_info<'_>),
             &*arrayNdx,
             false,
             &mut *ndx_rtrn,
@@ -1189,7 +1200,7 @@ static REPEAT_ENTRIES: [LookupEntry; 8] = [
     },
 ];
 fn ExprResolveOverlayEntry(
-    keymap_info: *const xkb_keymap_info,
+    keymap_info: *const xkb_keymap_info<'_>,
     field: &str,
     arrayNdx: *const ExprDef,
     expr: *const ExprDef,
@@ -1392,7 +1403,7 @@ fn SetSymbolsField(
             if overlay as i32 == XKB_OVERLAY_INVALID {
                 return true;
             } else if key != XKB_KEYCODE_INVALID && {
-                let key_ptr = XkbKey((*info.keymap_info).keymap as *mut _, key);
+                let key_ptr = XkbKey((*info.keymap_info).keymap as *const _ as *mut _, key);
                 !key_ptr.is_null() && (*key_ptr).name == (*keyi).name
             } {
                 log::warn!("Cannot overlay a key to itself; Ignoring overlay {} specification for key <{}>\n",
@@ -1407,14 +1418,14 @@ fn SetSymbolsField(
                             KeyInfoText(info, &*keyi),
                             overlay as i32 + 1_i32,
                             if prev != XKB_KEYCODE_INVALID {
-                                let prev_ptr = XkbKey((*info.keymap_info).keymap as *mut _, prev);
+                                let prev_ptr = XkbKey((*info.keymap_info).keymap as *const _ as *mut _, prev);
                                 xkb_atom_text(&info.ctx().atom_table, if !prev_ptr.is_null() { (*prev_ptr).name } else { 0 })
                             } else {
                                 "none"
                             },
                             overlay as i32 + 1_i32,
                             if key != XKB_KEYCODE_INVALID {
-                                let key_ptr = XkbKey((*info.keymap_info).keymap as *mut _, key);
+                                let key_ptr = XkbKey((*info.keymap_info).keymap as *const _ as *mut _, key);
                                 xkb_atom_text(&info.ctx().atom_table, if !key_ptr.is_null() { (*key_ptr).name } else { 0 })
                             } else {
                                 "none"
@@ -1452,10 +1463,10 @@ fn SetSymbolsField(
                                 (*keyi).overlays as i32,
                                 xkb_atom_text(
                                     &info.ctx().atom_table,
-                                    if existing_key == XKB_KEYCODE_INVALID { 0 } else { let ek_ptr = XkbKey((*info.keymap_info).keymap as *mut _, existing_key); if !ek_ptr.is_null() { (*ek_ptr).name } else { 0 } },
+                                    if existing_key == XKB_KEYCODE_INVALID { 0 } else { let ek_ptr = XkbKey((*info.keymap_info).keymap as *const _ as *mut _, existing_key); if !ek_ptr.is_null() { (*ek_ptr).name } else { 0 } },
                                 ),
                                 overlay as i32 + 1_i32,
-                                xkb_atom_text(&info.ctx().atom_table, { let k_ptr = XkbKey((*info.keymap_info).keymap as *mut _, key); if !k_ptr.is_null() { (*k_ptr).name } else { 0 } }));
+                                xkb_atom_text(&info.ctx().atom_table, { let k_ptr = XkbKey((*info.keymap_info).keymap as *const _ as *mut _, key); if !k_ptr.is_null() { (*k_ptr).name } else { 0 } }));
                         return (*info.keymap_info).strict & PARSER_NO_FIELD_VALUE_MISMATCH == 0;
                     }
                 }
@@ -1566,7 +1577,7 @@ fn SetGroupName(
     let mut pending_dummy: bool = false;
     if {
         ExprResolveGroup(
-            unsafe { &mut *(info.keymap_info as *const _ as *mut xkb_keymap_info) },
+            unsafe { &mut *(info.keymap_info as *const _ as *mut xkb_keymap_info<'_>) },
             unsafe { &*arrayNdx },
             false,
             &mut group,
@@ -2438,9 +2449,10 @@ fn CopySymbolsToKeymap(keymap: *mut xkb_keymap, info: &mut SymbolsInfo<'_>) -> b
         true
     }
 }
-pub fn CompileSymbols(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info) -> bool {
+pub fn CompileSymbols(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
+    let keymap_info = unsafe { &mut *(keymap_info as *mut xkb_keymap_info) };
     let mods = keymap_info.keymap_ref().mods;
-    let keymap_ptr = keymap_info.keymap;
+    let keymap_ptr = keymap_info.keymap as *const xkb_keymap as *mut xkb_keymap;
     let mut info = SymbolsInfo::new(keymap_info);
     InitSymbolsInfo(&mut info, 0_u32, &mods);
     if let Some(file) = file {
