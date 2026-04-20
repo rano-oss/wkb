@@ -48,11 +48,9 @@ pub struct scanner_loc {
     pub column: usize,
 }
 
-#[derive(Clone)]
-pub struct scanner {
+pub struct scanner<'a> {
     pub pos: usize,
-    pub len: usize,
-    pub s: *const i8,
+    pub s: &'a [u8],
     pub buf: [u8; 1024],
     pub buf_pos: usize,
     pub token_pos: usize,
@@ -63,17 +61,15 @@ pub struct scanner {
     pub priv_0: *mut ::core::ffi::c_void,
 }
 
-impl scanner {
+impl<'a> scanner<'a> {
     pub fn new(
         ctx: *mut xkb_context,
-        s: *const i8,
-        len: usize,
+        s: &'a [u8],
         file_name: &str,
         priv_0: *mut ::core::ffi::c_void,
     ) -> Self {
         scanner {
             pos: 0,
-            len,
             s,
             buf: [0; 1024],
             buf_pos: 0,
@@ -87,38 +83,34 @@ impl scanner {
     }
 
     /// The full input as a byte slice.
-    ///
-    /// SAFETY INVARIANT: `self.s` must point to valid memory of `self.len` bytes.
-    /// This is guaranteed because scanner is always constructed with a pointer to
-    /// a mapped file or string buffer that outlives the scanner.
     #[inline]
     fn input_bytes(&self) -> &[u8] {
-        if self.s.is_null() || self.len == 0 {
-            &[]
-        } else {
-            // SAFETY: scanner.s always points to a valid buffer of scanner.len bytes.
-            // The buffer (mapped file or string) outlives the scanner.
-            unsafe { std::slice::from_raw_parts(self.s as *const u8, self.len) }
-        }
+        self.s
+    }
+
+    /// The length of the input.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.s.len()
     }
 
     /// The remaining input as a byte slice.
     #[inline]
     fn remaining_bytes(&self) -> &[u8] {
-        &self.input_bytes()[self.pos..]
+        &self.s[self.pos..]
     }
 
     #[inline]
     pub fn peek(&self) -> i8 {
-        if self.pos >= self.len {
+        if self.pos >= self.s.len() {
             return 0;
         }
-        self.input_bytes()[self.pos] as i8
+        self.s[self.pos] as i8
     }
 
     #[inline]
     pub fn eof(&self) -> bool {
-        self.pos >= self.len
+        self.pos >= self.s.len()
     }
 
     #[inline]
@@ -131,16 +123,16 @@ impl scanner {
         let rem = self.remaining_bytes();
         match rem.iter().position(|&b| b == b'\n') {
             Some(i) => self.pos += i,
-            None => self.pos = self.len,
+            None => self.pos = self.s.len(),
         }
     }
 
     #[inline]
     pub fn next_byte(&mut self) -> i8 {
-        if self.pos >= self.len {
+        if self.pos >= self.s.len() {
             return 0;
         }
-        let c = self.input_bytes()[self.pos] as i8;
+        let c = self.s[self.pos] as i8;
         self.pos += 1;
         c
     }
@@ -157,10 +149,10 @@ impl scanner {
     #[inline]
     pub fn str_match(&mut self, string: &[u8]) -> bool {
         let len = string.len();
-        if self.len - self.pos < len {
+        if self.s.len() - self.pos < len {
             return false;
         }
-        let input = &self.input_bytes()[self.pos..self.pos + len];
+        let input = &self.s[self.pos..self.pos + len];
         if input != string {
             return false;
         }
@@ -295,10 +287,10 @@ impl scanner {
     pub fn check_supported_char_encoding(&mut self) -> bool {
         use crate::xkb::messages::XKB_ERROR_INVALID_FILE_ENCODING;
 
-        if self.str_match(b"\xEF\xBB\xBF") || self.len < 2 {
+        if self.str_match(b"\xEF\xBB\xBF") || self.s.len() < 2 {
             return true;
         }
-        let input = self.input_bytes();
+        let input = self.s;
         if input[0] == 0 || input[1] == 0 {
             let loc = self.token_location();
             log::error!(
@@ -324,18 +316,17 @@ impl scanner {
         true
     }
 
-    /// Get the byte at the given position (0-indexed) as a byte slice reference.
+    /// Get a pointer into the input at the given position.
     /// Used by callers that need a pointer into the input at a specific position.
     #[inline]
     pub fn input_at(&self, pos: usize) -> *const i8 {
-        // SAFETY: same invariant as input_bytes — s is valid for len bytes.
-        unsafe { self.s.add(pos) }
+        self.s[pos..].as_ptr() as *const i8
     }
 
     /// Get a slice of the input from `start` to `end` as bytes.
     #[inline]
     pub fn input_slice(&self, start: usize, end: usize) -> &[u8] {
-        &self.input_bytes()[start..end]
+        &self.s[start..end]
     }
 
     pub fn token_location(&mut self) -> scanner_loc {
@@ -350,7 +341,7 @@ impl scanner {
         }
 
         line = self.cached_loc.line;
-        let input = self.input_bytes();
+        let input = self.s;
         let start = self.cached_pos;
         let end = self.token_pos;
 

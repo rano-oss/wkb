@@ -122,9 +122,9 @@ pub use crate::xkb::shared_ast_types::{
 use crate::xkb::utils::cstr_len;
 use libc::{free, malloc};
 #[derive(Clone)]
-pub struct parser_param {
+pub struct parser_param<'a> {
     pub ctx: *mut xkb_context,
-    pub scanner: *mut scanner,
+    pub scanner: *mut scanner<'a>,
     pub rtrn: *mut XkbFile,
     pub more_maps: bool,
 }

@@ -675,13 +675,15 @@ fn HandleAliasDef(info: &mut KeyNamesInfo<'_>, def: &KeyAliasDef, report: bool) 
     keycode_store_insert_alias(&mut info.keycodes, def.alias, def.real)
 }
 fn HandleKeyNameVar(info: &mut KeyNamesInfo<'_>, stmt: &VarDef) -> bool {
-    let mut elem: &str = "";
-    let mut field: &str = "";
+    let mut elem_atom: u32 = 0;
+    let mut field_atom: u32 = 0;
     let mut arrayNdx: Option<&ExprDef> = None;
     let name_ref = stmt.name.as_deref().unwrap();
-    if !ExprResolveLhs(info.ctx(), name_ref, &mut elem, &mut field, &mut arrayNdx) {
+    if !ExprResolveLhs(name_ref, &mut elem_atom, &mut field_atom, &mut arrayNdx) {
         return false;
     }
+    let elem = xkb_atom_text(&info.ctx().atom_table, elem_atom);
+    let field = xkb_atom_text(&info.ctx().atom_table, field_atom);
     if !elem.is_empty() {
         log::error!("[XKB-{:03}] Cannot set global defaults for \"{}\" element; Assignment to \"{}.{}\" ignored\n",
             XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,

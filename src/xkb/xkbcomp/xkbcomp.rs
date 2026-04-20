@@ -193,10 +193,10 @@ pub fn text_v1_keymap_new_from_string(
     len: usize,
 ) -> bool {
     unsafe {
+        let input = std::slice::from_raw_parts(string as *const u8, len);
         let xkb_file: *mut XkbFile = XkbParseString(
             &raw mut (*keymap).ctx,
-            string,
-            len,
+            input,
             "(input string)",
             std::ptr::null(),
         );

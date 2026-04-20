@@ -2540,13 +2540,8 @@ fn read_rules_file(
 ) -> bool {
     unsafe {
         #[allow(unused_assignments)]
-        let mut scanner: scanner = scanner::new(
-            std::ptr::null_mut(),
-            std::ptr::null(),
-            0,
-            "",
-            std::ptr::null_mut(),
-        );
+        let mut scanner: scanner =
+            scanner::new(std::ptr::null_mut(), &[], "", std::ptr::null_mut());
 
         use crate::xkb::utils::MappedFile;
 
@@ -2560,8 +2555,7 @@ fn read_rules_file(
 
         scanner = scanner::new(
             (*matcher).ctx,
-            mapped.as_ptr(),
-            mapped.len(),
+            mapped.as_bytes(),
             path,
             std::ptr::null_mut::<core::ffi::c_void>(),
         );

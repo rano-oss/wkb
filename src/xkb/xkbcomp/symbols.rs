@@ -1607,23 +1607,22 @@ fn SetGroupName(
     true
 }
 fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
-    let mut elem: &str = "";
-    let mut field: &str = "";
+    let mut elem_atom: u32 = 0;
+    let mut field_atom: u32 = 0;
     let mut arrayNdx_opt: Option<&ExprDef> = None;
     let ret: bool;
     if !ExprResolveLhs(
-        info.ctx(),
         stmt.name.as_deref().unwrap(),
-        &mut elem,
-        &mut field,
+        &mut elem_atom,
+        &mut field_atom,
         &mut arrayNdx_opt,
     ) {
         return false;
     }
-    let elem_owned = elem.to_owned();
-    let field_owned = field.to_owned();
-    let elem: &str = &elem_owned;
-    let field: &str = &field_owned;
+    let elem = xkb_atom_text(&info.ctx().atom_table, elem_atom).to_owned();
+    let field = xkb_atom_text(&info.ctx().atom_table, field_atom).to_owned();
+    let elem: &str = &elem;
+    let field: &str = &field;
     if !elem.is_empty() && elem.eq_ignore_ascii_case("key") {
         let mut temp: KeyInfo = {
             let mut init = KeyInfo::new_zeroed();
@@ -1720,26 +1719,28 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
 fn HandleSymbolsBody(info: &mut SymbolsInfo<'_>, defs: &mut [VarDef], keyi: &mut KeyInfo) -> bool {
     let mut all_valid_entries: bool = true;
     for def in defs.iter_mut() {
-        let mut field: &str = "";
+        let mut field: String = String::new();
         let mut arrayNdx_opt: Option<&ExprDef> = None;
         let mut ok: bool = true;
         if def.name.is_none() {
             if def.value.is_none()
                 || def.value.as_ref().unwrap().common.type_0 != STMT_EXPR_ACTION_LIST
             {
-                field = "symbols";
+                field = "symbols".to_owned();
             } else {
-                field = "actions";
+                field = "actions".to_owned();
             }
         } else {
-            let mut elem: &str = "";
+            let mut elem_atom: u32 = 0;
+            let mut field_atom: u32 = 0;
             ok = ExprResolveLhs(
-                info.ctx(),
                 def.name.as_deref().unwrap(),
-                &mut elem,
-                &mut field,
+                &mut elem_atom,
+                &mut field_atom,
                 &mut arrayNdx_opt,
             );
+            let elem = xkb_atom_text(&info.ctx().atom_table, elem_atom);
+            field = xkb_atom_text(&info.ctx().atom_table, field_atom).to_owned();
             if ok as i32 != 0 && !elem.is_empty() {
                 log::error!("[XKB-{:03}] Cannot set global defaults for \"{}\" element within a key statement: move statements to the global file scope. Assignment to \"{}.{}\" ignored.\n",
                     XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
@@ -1757,7 +1758,7 @@ fn HandleSymbolsBody(info: &mut SymbolsInfo<'_>, defs: &mut [VarDef], keyi: &mut
             );
             ok = false;
         }
-        if !ok || !SetSymbolsField(info, keyi, field, arrayNdx_opt, &mut def.value) {
+        if !ok || !SetSymbolsField(info, keyi, &field, arrayNdx_opt, &mut def.value) {
             all_valid_entries = false;
         }
     }
@@ -2406,16 +2407,16 @@ fn CopySymbolsToKeymap(keymap: &mut xkb_keymap, info: &mut SymbolsInfo<'_>) -> b
     true
 }
 pub fn CompileSymbols(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
-    // let keymap_info = unsafe { &mut *(keymap_info as *mut xkb_keymap_info) };
+    let keymap_info = unsafe { &mut *(keymap_info as *mut xkb_keymap_info) };
     let mods = keymap_info.keymap_ref().mods;
-    // let keymap_ptr = keymap_info.keymap as *const xkb_keymap as *mut xkb_keymap;
+    let keymap_ptr = keymap_info.keymap as *const xkb_keymap as *mut xkb_keymap;
     let mut info = SymbolsInfo::new(keymap_info);
     InitSymbolsInfo(&mut info, 0_u32, &mods);
     if let Some(file) = file {
         HandleSymbolsFile(&mut info, file);
     }
-    // let keymap_ref = unsafe { &mut *keymap_ptr };
-    if (info.errorCount == 0_i32) && CopySymbolsToKeymap(keymap_info.keymap, &mut info) {
+    let keymap_ref = unsafe { &mut *keymap_ptr };
+    if (info.errorCount == 0_i32) && CopySymbolsToKeymap(keymap_ref, &mut info) {
         ClearSymbolsInfo(&mut info);
         return true;
     }

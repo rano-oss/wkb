@@ -808,19 +808,20 @@ fn SetLedMapField(
     true
 }
 fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
-    let mut elem: &str = "";
-    let mut field: &str = "";
+    let mut elem_atom: u32 = 0;
+    let mut field_atom: u32 = 0;
     let mut ndx: Option<&ExprDef> = None;
     let ret: bool;
     if !ExprResolveLhs(
-        info.ctx(),
         stmt.name.as_deref().unwrap(),
-        &mut elem,
-        &mut field,
+        &mut elem_atom,
+        &mut field_atom,
         &mut ndx,
     ) {
         ret = false;
     } else {
+        let elem = xkb_atom_text(&info.ctx().atom_table, elem_atom).to_owned();
+        let field = xkb_atom_text(&info.ctx().atom_table, field_atom).to_owned();
         if !elem.is_empty() && elem.eq_ignore_ascii_case("interpret") {
             let mut temp: SymInterpInfo = SymInterpInfo {
                 defined: 0 as si_field,
@@ -846,7 +847,7 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
             }) as merge_mode;
             // ndx borrows from stmt.name, value_ref borrows from stmt.value — disjoint fields
             let value_ref = stmt.value.as_deref_mut().unwrap();
-            ret = SetInterpField(info, &mut temp, field, ndx, value_ref);
+            ret = SetInterpField(info, &mut temp, &field, ndx, value_ref);
             if ret {
                 let mut default = info.default_interp.clone();
                 MergeInterp(info, &mut default, &mut temp, true);
@@ -873,7 +874,7 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
                 stmt.merge
             }) as merge_mode;
             // ndx borrows from stmt.name, field/value borrow from different fields — disjoint
-            ret = SetLedMapField(info, &mut temp_0, field, ndx, &mut stmt.value);
+            ret = SetLedMapField(info, &mut temp_0, &field, ndx, &mut stmt.value);
             if ret {
                 let mut default = info.default_led;
                 MergeLedMap(info, &mut default, &mut temp_0, true);
@@ -890,8 +891,8 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
                     info.keymap_info,
                     &mut info.default_actions,
                     &mut info.mods,
-                    elem,
-                    field,
+                    &elem,
+                    &field,
                     ndx_ref2,
                     &raw mut value_raw,
                     stmt.merge,
@@ -918,27 +919,30 @@ fn HandleInterpBody(
 ) -> bool {
     let mut ok: bool = true;
     for def in defs {
-        let mut elem: &str = "";
-        let mut field: &str = "";
+        let mut elem_atom: u32 = 0;
+        let mut field_atom: u32 = 0;
         let mut arrayNdx: Option<&ExprDef> = None;
         if !ExprResolveLhs(
-            info.ctx(),
             def.name.as_deref().unwrap(),
-            &mut elem,
-            &mut field,
+            &mut elem_atom,
+            &mut field_atom,
             &mut arrayNdx,
         ) {
             ok = false;
-        } else if !elem.is_empty() {
-            log::error!("Cannot set a global default value for \"{}\" element from within an interpret statement; Move assignment to \"{}.{}\" to the global file scope\n",
-                elem,
-                elem,
-                field);
-            ok = false;
         } else {
-            let value_ref = def.value.as_deref_mut().unwrap();
-            if !SetInterpField(info, si, field, arrayNdx, value_ref) {
+            let elem = xkb_atom_text(&info.ctx().atom_table, elem_atom).to_owned();
+            let field = xkb_atom_text(&info.ctx().atom_table, field_atom).to_owned();
+            if !elem.is_empty() {
+                log::error!("Cannot set a global default value for \"{}\" element from within an interpret statement; Move assignment to \"{}.{}\" to the global file scope\n",
+                    elem,
+                    elem,
+                    field);
                 ok = false;
+            } else {
+                let value_ref = def.value.as_deref_mut().unwrap();
+                if !SetInterpField(info, si, &field, arrayNdx, value_ref) {
+                    ok = false;
+                }
             }
         }
     }
@@ -989,26 +993,29 @@ fn HandleLedMapDef(info: &mut CompatInfo<'_>, def: &mut LedMapDef) -> bool {
     ledi.led.name = def.name;
     let mut ok: bool = true;
     for var in def.body.iter_mut() {
-        let mut elem: &str = "";
-        let mut field: &str = "";
+        let mut elem_atom: u32 = 0;
+        let mut field_atom: u32 = 0;
         let mut arrayNdx: Option<&ExprDef> = None;
         if !ExprResolveLhs(
-            info.ctx(),
             var.name.as_deref().unwrap(),
-            &mut elem,
-            &mut field,
+            &mut elem_atom,
+            &mut field_atom,
             &mut arrayNdx,
         ) {
             ok = false;
-        } else if !elem.is_empty() {
-            log::error!("[XKB-{:03}] Cannot set defaults for \"{}\" element in indicator map; Assignment to {}.{} ignored\n",
-                XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                elem,
-                elem,
-                field);
-            ok = false;
-        } else if !SetLedMapField(info, &mut ledi, field, arrayNdx, &mut var.value) {
-            ok = false;
+        } else {
+            let elem = xkb_atom_text(&info.ctx().atom_table, elem_atom).to_owned();
+            let field = xkb_atom_text(&info.ctx().atom_table, field_atom).to_owned();
+            if !elem.is_empty() {
+                log::error!("[XKB-{:03}] Cannot set defaults for \"{}\" element in indicator map; Assignment to {}.{} ignored\n",
+                    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
+                    elem,
+                    elem,
+                    field);
+                ok = false;
+            } else if !SetLedMapField(info, &mut ledi, &field, arrayNdx, &mut var.value) {
+                ok = false;
+            }
         }
     }
     ok && AddLedMap(info, &mut ledi, true)

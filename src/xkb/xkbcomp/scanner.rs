@@ -487,55 +487,43 @@ pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
         ERROR_TOK
     }
 }
-pub fn XkbParseStringInit(
+pub fn XkbParseStringInit<'a>(
     ctx: *mut xkb_context,
-    sc: *mut scanner,
-    string: *const i8,
-    len: usize,
+    sc: &mut scanner<'a>,
+    input: &'a [u8],
     file_name: &str,
     _map: *const i8,
 ) -> bool {
-    unsafe {
-        *sc = scanner::new(ctx, string, len, file_name, std::ptr::null_mut());
-        if !(*sc).check_supported_char_encoding() {
-            let loc = (*sc).token_location();
-            log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                &(*sc).file_name,
-                loc.line,
-                loc.column);
-            let loc_0 = (*sc).token_location();
-            log::error!("[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                &(*sc).file_name,
-                loc_0.line,
-                loc_0.column);
-            return false;
-        }
-        true
+    *sc = scanner::new(ctx, input, file_name, std::ptr::null_mut());
+    if !sc.check_supported_char_encoding() {
+        let loc = sc.token_location();
+        log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
+            XKB_ERROR_INVALID_FILE_ENCODING as i32,
+            &sc.file_name,
+            loc.line,
+            loc.column);
+        let loc_0 = sc.token_location();
+        log::error!("[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
+            XKB_ERROR_INVALID_FILE_ENCODING as i32,
+            &sc.file_name,
+            loc_0.line,
+            loc_0.column);
+        return false;
     }
+    true
 }
 pub fn XkbParseString(
     ctx: *mut xkb_context,
-    string: *const i8,
-    len: usize,
+    input: &[u8],
     file_name: &str,
     map: *const i8,
 ) -> *mut XkbFile {
-    unsafe {
-        let mut sc = scanner::new(
-            std::ptr::null_mut(),
-            std::ptr::null(),
-            0,
-            "",
-            std::ptr::null_mut(),
-        );
-        if !XkbParseStringInit(ctx, &raw mut sc, string, len, file_name, map) {
-            return std::ptr::null_mut();
-        }
-        // Cast types between parser and scanner modules (same C struct, different Rust types)
-        parse(ctx as *mut _, &raw mut sc as *mut _, map) as *mut XkbFile
+    let mut sc = scanner::new(std::ptr::null_mut(), &[], "", std::ptr::null_mut());
+    if !XkbParseStringInit(ctx, &mut sc, input, file_name, map) {
+        return std::ptr::null_mut();
     }
+    // Cast types between parser and scanner modules (same C struct, different Rust types)
+    unsafe { parse(ctx as *mut _, &raw mut sc as *mut _, map) as *mut XkbFile }
 }
 pub fn XkbParseStringNext(
     ctx: *mut xkb_context,
@@ -560,18 +548,16 @@ pub fn XkbParseFile(
     file_name: &str,
     map: *const i8,
 ) -> *mut XkbFile {
-    unsafe {
-        use crate::xkb::utils::MappedFile;
+    use crate::xkb::utils::MappedFile;
 
-        // Map the file
-        let mapped = match MappedFile::new(file) {
-            Ok(m) => m,
-            Err(e) => {
-                log::error!("Couldn't read XKB file {}: {}\n", file_name, e);
-                return std::ptr::null_mut();
-            }
-        };
+    // Map the file
+    let mapped = match MappedFile::new(file) {
+        Ok(m) => m,
+        Err(e) => {
+            log::error!("Couldn't read XKB file {}: {}\n", file_name, e);
+            return std::ptr::null_mut();
+        }
+    };
 
-        XkbParseString(ctx, mapped.as_ptr(), mapped.len(), file_name, map)
-    }
+    XkbParseString(ctx, mapped.as_bytes(), file_name, map)
 }

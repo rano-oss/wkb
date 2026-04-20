@@ -545,43 +545,50 @@ fn HandleKeyTypeBody(
 ) -> bool {
     let mut ok: bool = true;
     for def in defs {
-        let mut elem: &str = "";
-        let mut field: &str = "";
+        let mut elem_atom: u32 = 0;
+        let mut field_atom: u32 = 0;
         let mut arrayNdx: Option<&ExprDef> = None;
         let name_ref = def.name.as_deref().unwrap();
-        if !ExprResolveLhs(info.ctx(), name_ref, &mut elem, &mut field, &mut arrayNdx) {
+        if !ExprResolveLhs(name_ref, &mut elem_atom, &mut field_atom, &mut arrayNdx) {
             ok = false;
-        } else if !elem.is_empty() {
-            if elem.eq_ignore_ascii_case("type") {
-                log::error!("[XKB-{:03}] Support for changing the default type has been removed; Statement \"{}.{}\" ignored.\n",
-                    XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT as i32,
-                    elem,
-                    field);
-            } else {
-                log::error!("[XKB-{:03}] Cannot set global defaults for \"{}\" element within a key type statement: move statements to the global file scope. Assignment to \"{}.{}\" ignored.\n",
-                    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                    elem,
-                    elem,
-                    field);
-                ok = false;
-            }
         } else {
-            let value_ref = def.value.as_deref().unwrap();
-            if !SetKeyTypeField(info, type_0, field, arrayNdx, value_ref) {
-                ok = false;
+            let elem = xkb_atom_text(&info.ctx().atom_table, elem_atom).to_owned();
+            let field = xkb_atom_text(&info.ctx().atom_table, field_atom).to_owned();
+            if !elem.is_empty() {
+                if elem.eq_ignore_ascii_case("type") {
+                    log::error!("[XKB-{:03}] Support for changing the default type has been removed; Statement \"{}.{}\" ignored.\n",
+                        XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT as i32,
+                        elem,
+                        field);
+                } else {
+                    log::error!("[XKB-{:03}] Cannot set global defaults for \"{}\" element within a key type statement: move statements to the global file scope. Assignment to \"{}.{}\" ignored.\n",
+                        XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
+                        elem,
+                        elem,
+                        field);
+                    ok = false;
+                }
+            } else {
+                let value_ref = def.value.as_deref().unwrap();
+                if !SetKeyTypeField(info, type_0, &field, arrayNdx, value_ref) {
+                    ok = false;
+                }
             }
         }
     }
     ok
 }
 fn HandleGlobalVar(info: &mut KeyTypesInfo<'_>, stmt: &VarDef) -> bool {
-    let mut elem: &str = "";
-    let mut field: &str = "";
+    let mut elem_atom: u32 = 0;
+    let mut field_atom: u32 = 0;
     let mut arrayNdx: Option<&ExprDef> = None;
     let name_ref = stmt.name.as_deref().unwrap();
-    if !ExprResolveLhs(info.ctx(), name_ref, &mut elem, &mut field, &mut arrayNdx) {
+    if !ExprResolveLhs(name_ref, &mut elem_atom, &mut field_atom, &mut arrayNdx) {
         return false;
-    } else if !elem.is_empty() && elem.eq_ignore_ascii_case("type") {
+    }
+    let elem = xkb_atom_text(&info.ctx().atom_table, elem_atom);
+    let field = xkb_atom_text(&info.ctx().atom_table, field_atom);
+    if !elem.is_empty() && elem.eq_ignore_ascii_case("type") {
         log::error!("[XKB-{:03}] Support for changing the default type has been removed; Statement ignored\n",
             XKB_ERROR_WRONG_STATEMENT_TYPE as i32);
         return true;

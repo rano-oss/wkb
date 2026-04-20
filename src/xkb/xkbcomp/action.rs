@@ -1586,8 +1586,8 @@ pub fn HandleActionDef(
         let mut value_ptr: *mut *mut ExprDef = std::ptr::null_mut();
         let field: *mut ExprDef;
         let mut arrayRtrn_opt: Option<&ExprDef> = None;
-        let mut elemRtrn: &str = "";
-        let mut fieldRtrn: &str = "";
+        let mut elemRtrn_atom: u32 = 0;
+        let mut fieldRtrn_atom: u32 = 0;
         if arg.common.type_0 == STMT_EXPR_ASSIGN {
             let (left_ptr, right_ref) = if let ExprKind::Binary {
                 ref mut left,
@@ -1618,14 +1618,15 @@ pub fn HandleActionDef(
             value = &CONST_TRUE.0;
         }
         if !ExprResolveLhs(
-            ctx,
             unsafe { &*field },
-            &mut elemRtrn,
-            &mut fieldRtrn,
+            &mut elemRtrn_atom,
+            &mut fieldRtrn_atom,
             &mut arrayRtrn_opt,
         ) {
             return PARSER_FATAL_ERROR;
         }
+        let elemRtrn = xkb_atom_text(&ctx.atom_table, elemRtrn_atom);
+        let fieldRtrn = xkb_atom_text(&ctx.atom_table, fieldRtrn_atom);
         if !elemRtrn.is_empty() {
             log::error!("[XKB-{:03}] Cannot change defaults in an action definition; Ignoring attempt to change \"{}.{}\".\n",
                 XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,

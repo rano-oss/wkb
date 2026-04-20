@@ -144,10 +144,9 @@ fn ident_lookup(
 }
 
 pub fn ExprResolveLhs<'a>(
-    ctx: &xkb_context,
     expr: &'a ExprDef,
-    elem_rtrn: &mut &'static str,
-    field_rtrn: &mut &'static str,
+    elem_rtrn: &mut u32,
+    field_rtrn: &mut u32,
     index_rtrn: &mut Option<&'a ExprDef>,
 ) -> bool {
     match expr.common.type_0 {
@@ -155,29 +154,19 @@ pub fn ExprResolveLhs<'a>(
             let ExprKind::Ident(ident) = &expr.kind else {
                 unreachable!()
             };
-            *elem_rtrn = "";
-            // SAFETY: atom table strings live for the lifetime of the context,
-            // which outlives all callers. We extend to 'static to avoid borrow
-            // conflicts at call sites where info.ctx is borrowed immutably here
-            // but info needs to be borrowed mutably later.
-            *field_rtrn = unsafe {
-                std::mem::transmute::<&str, &'static str>(xkb_atom_text(&ctx.atom_table, *ident))
-            };
+            *elem_rtrn = XKB_ATOM_NONE;
+            *field_rtrn = *ident;
             *index_rtrn = None;
-            return !(*field_rtrn).is_empty();
+            return *field_rtrn != XKB_ATOM_NONE;
         }
         12 => {
             let ExprKind::FieldRef { element, field } = &expr.kind else {
                 unreachable!()
             };
-            *elem_rtrn = unsafe {
-                std::mem::transmute::<&str, &'static str>(xkb_atom_text(&ctx.atom_table, *element))
-            };
-            *field_rtrn = unsafe {
-                std::mem::transmute::<&str, &'static str>(xkb_atom_text(&ctx.atom_table, *field))
-            };
+            *elem_rtrn = *element;
+            *field_rtrn = *field;
             *index_rtrn = None;
-            return !(*elem_rtrn).is_empty() && !(*field_rtrn).is_empty();
+            return *elem_rtrn != XKB_ATOM_NONE && *field_rtrn != XKB_ATOM_NONE;
         }
         13 => {
             let ExprKind::ArrayRef {
@@ -188,17 +177,13 @@ pub fn ExprResolveLhs<'a>(
             else {
                 unreachable!()
             };
-            *elem_rtrn = unsafe {
-                std::mem::transmute::<&str, &'static str>(xkb_atom_text(&ctx.atom_table, *element))
-            };
-            *field_rtrn = unsafe {
-                std::mem::transmute::<&str, &'static str>(xkb_atom_text(&ctx.atom_table, *field))
-            };
+            *elem_rtrn = *element;
+            *field_rtrn = *field;
             *index_rtrn = entry.as_ref().map(|b| &**b);
-            if *element != XKB_ATOM_NONE && (*elem_rtrn).is_empty() {
+            if *element != XKB_ATOM_NONE && *elem_rtrn == XKB_ATOM_NONE {
                 return false;
             }
-            if (*field_rtrn).is_empty() {
+            if *field_rtrn == XKB_ATOM_NONE {
                 return false;
             }
             return true;
