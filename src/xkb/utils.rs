@@ -77,7 +77,7 @@ pub unsafe fn cstr_len(s: *const i8) -> usize {
 }
 
 /// Stack buffer writer implementing `core::fmt::Write`.
-/// Used by the `xkb_logf!` and `rxkb_logf!` macros and `snprintf_args` to replace C `snprintf`.
+/// Used by the `xkb_logf!` and `rxkb_logf!` macros to replace C `snprintf`.
 pub struct LogBuf<'a> {
     buf: &'a mut [u8],
     pub pos: usize,
@@ -115,32 +115,12 @@ impl<'a> core::fmt::Write for LogBuf<'a> {
 ///
 /// This replaces C `snprintf` and `snprintf_safe`.
 ///
-/// # Safety
-/// `buf` must point to at least `size` writable bytes.
-#[inline]
-pub unsafe fn snprintf_args(
-    buf: *mut i8,
-    size: usize,
-    args: core::fmt::Arguments<'_>,
-) -> (usize, bool) {
-    if size == 0 {
-        return (0, true);
-    }
-    let slice = std::slice::from_raw_parts_mut(buf as *mut u8, size);
-    let mut w = LogBuf::new(&mut slice[..size - 1]);
-    let _ = core::fmt::Write::write_fmt(&mut w, args);
-    let pos = w.pos;
-    let truncated = w.truncated;
-    slice[pos] = 0; // NUL terminate
-    (pos, truncated)
-}
-
 /// Like C `snprintf`: format into buffer, return the total formatted length
 /// (even if truncated). Always NUL-terminates if size > 0.
 /// Returns -1 on error (never happens with Rust formatting).
 ///
 /// Use this when callers need the would-be length (e.g. public API return values).
-/// For internal use where you just need truncation detection, use `snprintf_args`.
+/// Use this when callers need the would-be length (e.g. public API return values).
 ///
 /// # Safety
 /// `buf` must point to `size` writable bytes.
