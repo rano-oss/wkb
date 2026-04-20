@@ -142,6 +142,14 @@ pub enum LayoutIdx {
         layout_idx_max: u32,
     },
 }
+impl Default for LayoutIdx {
+    fn default() -> Self {
+        LayoutIdx::Single {
+            layout_idx: 0,
+            variant_idx: 0,
+        }
+    }
+}
 impl LayoutIdx {
     fn layout_idx_min(&self) -> u32 {
         match self {
@@ -165,8 +173,7 @@ pub struct group {
     pub elements: Vec<sval>,
 }
 #[derive(Copy, Clone)]
-
-pub union lvalue {
+pub struct lvalue {
     pub string: sval,
 }
 #[derive(Clone)]
@@ -208,24 +215,30 @@ pub struct LayoutIndexName {
 }
 pub type layout_index_ranges = u32;
 
-impl Default for LayoutIdx {
-    fn default() -> Self {
-        LayoutIdx::Single {
-            layout_idx: 0,
-            variant_idx: 0,
-        }
-    }
-}
 impl Default for mapping {
     fn default() -> Self {
-        // SAFETY: mapping is Copy and all-zero is valid
-        unsafe { std::mem::zeroed() }
+        mapping {
+            mlvo_at_pos: [0; 4],
+            num_mlvo: 0,
+            defined_mlvo_mask: 0,
+            layout: LayoutIdx::default(),
+            active_or_candidates_mask: 0,
+            kccgst_at_pos: [0; 5],
+            num_kccgst: 0,
+            defined_kccgst_mask: 0,
+        }
     }
 }
 impl Default for rule {
     fn default() -> Self {
-        // SAFETY: rule is Copy and all-zero is valid
-        unsafe { std::mem::zeroed() }
+        rule {
+            mlvo_value_at_pos: [sval::EMPTY; 4],
+            match_type_at_pos: [0; 4],
+            kccgst_value_at_pos: [sval::EMPTY; 5],
+            num_mlvo_values: 0,
+            num_kccgst_values: 0,
+            skip: false,
+        }
     }
 }
 impl Default for lvalue {
@@ -338,9 +351,9 @@ fn lex(s: &mut scanner, val: &mut lvalue) -> rules_token {
         val.string.len = 0_usize;
         while is_ident(s.peek()) {
             s.next_byte();
-            val.string.len = unsafe { val.string.len }.wrapping_add(1);
+            val.string.len = val.string.len.wrapping_add(1);
         }
-        if unsafe { val.string.len } == 0_usize {
+        if val.string.len == 0_usize {
             let loc_0: scanner_loc = s.token_location();
             log::error!(
                 "[XKB-{:03}] {}:{}:{}: unexpected character after '$'; expected name\n",
@@ -361,7 +374,7 @@ fn lex(s: &mut scanner, val: &mut lvalue) -> rules_token {
         val.string.len = 0_usize;
         while is_ident(s.peek()) {
             s.next_byte();
-            val.string.len = unsafe { val.string.len }.wrapping_add(1);
+            val.string.len = val.string.len.wrapping_add(1);
         }
         return TOK_IDENTIFIER;
     }
