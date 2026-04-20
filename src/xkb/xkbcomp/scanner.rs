@@ -267,13 +267,8 @@ fn is_space(ch: i8) -> bool {
 use libc::FILE;
 pub static DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
-    if unsafe {
-        s.str_match(
-            b"0x\0".as_ptr() as *const i8,
-            (std::mem::size_of::<[i8; 3]>()).wrapping_sub(1),
-        )
-    } {
-        match unsafe { s.hex_int64(out as *mut i64) } {
+    if s.str_match(b"0x") {
+        match s.hex_int64(out) {
             -1 => {
                 *out_tok = ERROR_TOK;
                 true
@@ -286,7 +281,7 @@ fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
         }
     } else {
         let mut is_digit_0: bool = false;
-        match unsafe { s.dec_int64(out as *mut i64) } {
+        match s.dec_int64(out) {
             -1 => {
                 *out_tok = ERROR_TOK;
                 return true;
@@ -299,7 +294,7 @@ fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
         }
         if s.chr(DECIMAL_SEPARATOR) {
             let mut dec: i64 = 0;
-            if unsafe { s.dec_int64(&mut dec as *mut i64) } < 0 {
+            if s.dec_int64(&mut dec) < 0 {
                 *out_tok = ERROR_TOK;
                 return true;
             }
@@ -318,20 +313,10 @@ pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
             while is_space((*s).peek()) {
                 (*s).next_byte();
             }
-            if (*s).str_match(
-                b"\xE2\x80\x8E\0".as_ptr() as *const i8,
-                (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1),
-            ) || (*s).str_match(
-                b"\xE2\x80\x8F\0".as_ptr() as *const i8,
-                (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1),
-            ) {
+            if (*s).str_match(b"\xE2\x80\x8E") || (*s).str_match(b"\xE2\x80\x8F") {
                 continue;
             }
-            if !((*s).str_match(
-                b"//\0".as_ptr() as *const i8,
-                (std::mem::size_of::<[i8; 3]>()).wrapping_sub(1),
-            ) || (*s).chr(b'#' as i8))
-            {
+            if !((*s).str_match(b"//") || (*s).chr(b'#' as i8)) {
                 break;
             }
             (*s).skip_to_eol();
@@ -366,7 +351,7 @@ pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                         (*s).buf_append(b'\x1b');
                     } else if (*s).chr(b'u' as i8) {
                         let mut cp: u32 = 0;
-                        if (*s).unicode_code_point(&raw mut cp) && cp != 0 {
+                        if (*s).unicode_code_point(&mut cp) && cp != 0 {
                             (*s).buf_appends_code_point(cp);
                         } else {
                             let loc = (*s).token_location();
@@ -376,7 +361,7 @@ pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                                 &(*s).file_name,
                                 loc.line,
                                 loc.column,
-                                std::str::from_utf8_unchecked(std::slice::from_raw_parts((*s).s.add(start_pos.wrapping_sub(1)) as *const u8, (*s).pos.wrapping_sub(start_pos).wrapping_add(1))));
+                                std::str::from_utf8_unchecked((*s).input_slice(start_pos.wrapping_sub(1), (*s).pos)));
                         }
                     } else if (*s).oct(&mut o) && o != 0 {
                         (*s).buf_append(o);
@@ -387,7 +372,7 @@ pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                             &(*s).file_name,
                             loc_0.line,
                             loc_0.column,
-                            std::str::from_utf8_unchecked(std::slice::from_raw_parts((*s).s.add(start_pos.wrapping_sub(1)) as *const u8, (*s).pos.wrapping_sub(start_pos).wrapping_add(1))));
+                            std::str::from_utf8_unchecked((*s).input_slice(start_pos.wrapping_sub(1), (*s).pos)));
                     } else {
                         let loc_1 = (*s).token_location();
                         log::warn!("[XKB-{:03}] {}:{}:{}: unknown escape sequence \"\\{}\" in string literal\n",
@@ -433,11 +418,10 @@ pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
                 );
                 return ERROR_TOK;
             }
-            let start: *const i8 = (*s).s.add((*s).token_pos + 1);
             let len: usize = (*s).pos - (*s).token_pos - 2;
             (*yylval).atom = xkb_atom_intern(
                 (*s).ctx,
-                std::slice::from_raw_parts(start as *const u8, len),
+                (*s).input_slice((*s).token_pos + 1, (*s).token_pos + 1 + len),
             );
             return KEYNAME;
         }
@@ -494,9 +478,9 @@ pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
             while ((*s).peek() as u8).is_ascii_alphanumeric() || (*s).peek() == b'_' as i8 {
                 (*s).next_byte();
             }
-            let start_0: *const i8 = (*s).s.add((*s).token_pos);
+            let start_0: *const i8 = (*s).input_at((*s).token_pos);
             let len_0: usize = (*s).pos - (*s).token_pos;
-            tok = keyword_to_token(std::slice::from_raw_parts(start_0 as *const u8, len_0));
+            tok = keyword_to_token((*s).input_slice((*s).token_pos, (*s).pos));
             if tok >= 0 {
                 return tok;
             }

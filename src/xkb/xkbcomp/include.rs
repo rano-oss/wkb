@@ -199,7 +199,7 @@ fn expand_percent(
                     let home = xkb_context_getenv("HOME");
                     match &home {
                         Ok(home) => {
-                            if !s.buf_appends(home.as_ptr()) {
+                            if !s.buf_appends(home.as_bytes()) {
                                 let loc = s.token_location();
                                 log::error!("[XKB-{:03}] {}:{}:{}: include path after expanding %H is too long\n",
                                     XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
@@ -221,8 +221,7 @@ fn expand_percent(
                     }
                 } else if s.chr(b'S' as i8) {
                     let default_root_str = xkb_context_include_path_get_system_path(ctx);
-                    let default_root_c = std::ffi::CString::new(default_root_str).unwrap();
-                    if !s.buf_appends(default_root_c.as_ptr() as *const u8)
+                    if !s.buf_appends_str(&default_root_str)
                         || !s.buf_append(b'/')
                         || !s.buf_appends_str(typeDir)
                     {
@@ -236,8 +235,7 @@ fn expand_percent(
                     }
                 } else if s.chr(b'E' as i8) {
                     let default_root_str = xkb_context_include_path_get_extra_path(ctx);
-                    let default_root_c = std::ffi::CString::new(default_root_str).unwrap();
-                    if !s.buf_appends(default_root_c.as_ptr() as *const u8)
+                    if !s.buf_appends_str(&default_root_str)
                         || !s.buf_append(b'/')
                         || !s.buf_appends_str(typeDir)
                     {

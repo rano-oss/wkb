@@ -219,8 +219,6 @@ fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
     if new_len > v.len() {
         v.reserve(new_len - v.len());
         let old_len = v.len();
-        // SAFETY: we just reserved enough capacity, and zeroed memory is
-        // valid for the repr(C) types stored in these vectors (xkb_filter).
         unsafe {
             let ptr = v.as_mut_ptr().add(old_len);
             std::ptr::write_bytes(ptr, 0, new_len - old_len);

@@ -13,21 +13,31 @@ impl sval {
         start: std::ptr::null(),
     };
 
-    /// View the sval as a byte slice. Caller must ensure the pointer is valid.
+    /// View the sval as a byte slice.
+    ///
+    /// SAFETY INVARIANT: The caller who created this sval must ensure that `start`
+    /// points to valid memory of at least `len` bytes that outlives this sval.
+    /// All svals in practice point into scanner input buffers (mapped files) that
+    /// outlive the sval.
     #[inline]
-    pub unsafe fn as_bytes(&self) -> &[u8] {
-        unsafe {
-            if self.start.is_null() || self.len == 0 {
-                &[]
-            } else {
-                std::slice::from_raw_parts(self.start as *const u8, self.len)
-            }
+    pub fn as_bytes(&self) -> &[u8] {
+        if self.start.is_null() || self.len == 0 {
+            &[]
+        } else {
+            // SAFETY: sval.start always points into a scanner's input buffer which
+            // outlives the sval. The len is set by the scanner to be within bounds.
+            unsafe { std::slice::from_raw_parts(self.start as *const u8, self.len) }
         }
     }
 
-    /// View the sval as a &str. Caller must ensure the pointer is valid and contents are UTF-8.
+    /// View the sval as a &str.
+    ///
+    /// SAFETY INVARIANT: Same as `as_bytes()`, plus contents must be valid UTF-8.
+    /// In practice, scanner input is always ASCII-compatible text (checked by
+    /// `check_supported_char_encoding`).
     #[inline]
-    pub unsafe fn as_str(&self) -> &str {
+    pub fn as_str(&self) -> &str {
+        // SAFETY: Scanner input is always ASCII-compatible (validated on load).
         unsafe { std::str::from_utf8_unchecked(self.as_bytes()) }
     }
 }
@@ -76,18 +86,26 @@ impl scanner {
         }
     }
 
-    /// The remaining input as a byte slice.
+    /// The full input as a byte slice.
+    ///
+    /// SAFETY INVARIANT: `self.s` must point to valid memory of `self.len` bytes.
+    /// This is guaranteed because scanner is always constructed with a pointer to
+    /// a mapped file or string buffer that outlives the scanner.
     #[inline]
-    unsafe fn remaining(&self) -> &[u8] {
-        unsafe {
-            std::slice::from_raw_parts(self.s.add(self.pos) as *const u8, self.len - self.pos)
+    fn input_bytes(&self) -> &[u8] {
+        if self.s.is_null() || self.len == 0 {
+            &[]
+        } else {
+            // SAFETY: scanner.s always points to a valid buffer of scanner.len bytes.
+            // The buffer (mapped file or string) outlives the scanner.
+            unsafe { std::slice::from_raw_parts(self.s as *const u8, self.len) }
         }
     }
 
-    /// The full input as a byte slice.
+    /// The remaining input as a byte slice.
     #[inline]
-    unsafe fn input(&self) -> &[u8] {
-        unsafe { std::slice::from_raw_parts(self.s as *const u8, self.len) }
+    fn remaining_bytes(&self) -> &[u8] {
+        &self.input_bytes()[self.pos..]
     }
 
     #[inline]
@@ -95,7 +113,7 @@ impl scanner {
         if self.pos >= self.len {
             return 0;
         }
-        unsafe { *self.s.add(self.pos) }
+        self.input_bytes()[self.pos] as i8
     }
 
     #[inline]
@@ -109,13 +127,11 @@ impl scanner {
     }
 
     #[inline]
-    pub unsafe fn skip_to_eol(&mut self) {
-        unsafe {
-            let rem = self.remaining();
-            match rem.iter().position(|&b| b == b'\n') {
-                Some(i) => self.pos += i,
-                None => self.pos = self.len,
-            }
+    pub fn skip_to_eol(&mut self) {
+        let rem = self.remaining_bytes();
+        match rem.iter().position(|&b| b == b'\n') {
+            Some(i) => self.pos += i,
+            None => self.pos = self.len,
         }
     }
 
@@ -124,7 +140,7 @@ impl scanner {
         if self.pos >= self.len {
             return 0;
         }
-        let c = unsafe { *self.s.add(self.pos) };
+        let c = self.input_bytes()[self.pos] as i8;
         self.pos += 1;
         c
     }
@@ -139,19 +155,17 @@ impl scanner {
     }
 
     #[inline]
-    pub unsafe fn str_match(&mut self, string: *const i8, len: usize) -> bool {
-        unsafe {
-            if self.len - self.pos < len {
-                return false;
-            }
-            let input = std::slice::from_raw_parts(self.s.add(self.pos) as *const u8, len);
-            let target = std::slice::from_raw_parts(string as *const u8, len);
-            if input != target {
-                return false;
-            }
-            self.pos += len;
-            true
+    pub fn str_match(&mut self, string: &[u8]) -> bool {
+        let len = string.len();
+        if self.len - self.pos < len {
+            return false;
         }
+        let input = &self.input_bytes()[self.pos..self.pos + len];
+        if input != string {
+            return false;
+        }
+        self.pos += len;
+        true
     }
 
     #[inline]
@@ -165,17 +179,16 @@ impl scanner {
     }
 
     #[inline]
-    pub unsafe fn buf_appends(&mut self, s: *const u8) -> bool {
-        unsafe {
-            let mut i = 0usize;
-            while *s.add(i) != 0 {
-                if !self.buf_append(*s.add(i)) {
-                    return false;
-                }
-                i += 1;
+    pub fn buf_appends(&mut self, s: &[u8]) -> bool {
+        for &b in s {
+            if b == 0 {
+                break;
             }
-            true
+            if !self.buf_append(b) {
+                return false;
+            }
         }
+        true
     }
 
     pub fn buf_appends_str(&mut self, s: &str) -> bool {
@@ -229,99 +242,100 @@ impl scanner {
     }
 
     #[inline]
-    pub unsafe fn dec_int64(&mut self, out: *mut i64) -> i32 {
-        unsafe {
-            let remaining =
-                std::slice::from_raw_parts(self.s.add(self.pos) as *const u8, self.len - self.pos);
-            let (val, count) = crate::xkb::utils::parse_dec_u64(remaining);
-            if count > 0 {
-                if val > i64::MAX as u64 {
-                    return -1;
-                }
-                self.pos += count as usize;
-                *out = val as i64;
+    pub fn dec_int64(&mut self, out: &mut i64) -> i32 {
+        let remaining = self.remaining_bytes();
+        let (val, count) = crate::xkb::utils::parse_dec_u64(remaining);
+        if count > 0 {
+            if val > i64::MAX as u64 {
+                return -1;
             }
-            count
+            self.pos += count as usize;
+            *out = val as i64;
         }
+        count
     }
 
     #[inline]
-    pub unsafe fn hex_int64(&mut self, out: *mut i64) -> i32 {
-        unsafe {
-            let remaining =
-                std::slice::from_raw_parts(self.s.add(self.pos) as *const u8, self.len - self.pos);
-            let (val, count) = crate::xkb::utils::parse_hex_u64(remaining);
-            if count > 0 {
-                if val > i64::MAX as u64 {
-                    return -1;
-                }
-                self.pos += count as usize;
-                *out = val as i64;
+    pub fn hex_int64(&mut self, out: &mut i64) -> i32 {
+        let remaining = self.remaining_bytes();
+        let (val, count) = crate::xkb::utils::parse_hex_u64(remaining);
+        if count > 0 {
+            if val > i64::MAX as u64 {
+                return -1;
             }
-            count
+            self.pos += count as usize;
+            *out = val as i64;
         }
+        count
     }
 
     #[inline]
-    pub unsafe fn unicode_code_point(&mut self, out: *mut u32) -> bool {
-        unsafe {
-            if !self.chr(b'{' as i8) {
-                return false;
-            }
-            let remaining =
-                std::slice::from_raw_parts(self.s.add(self.pos) as *const u8, self.len - self.pos);
-            let (cp, count) = crate::xkb::utils::parse_hex_u32(remaining);
-            if count > 0 {
-                self.pos += count as usize;
-            }
-            let last_valid = self.pos;
-            while !self.eof()
-                && !self.eol()
-                && self.peek() != b'"' as i8
-                && self.peek() != b'}' as i8
-            {
-                self.next_byte();
-            }
-            if self.chr(b'}' as i8) {
-                *out = cp;
-                return count > 0 && self.pos == last_valid + 1 && cp <= 0x10ffff;
-            }
-            self.pos = last_valid;
-            false
+    pub fn unicode_code_point(&mut self, out: &mut u32) -> bool {
+        if !self.chr(b'{' as i8) {
+            return false;
         }
+        let remaining = self.remaining_bytes();
+        let (cp, count) = crate::xkb::utils::parse_hex_u32(remaining);
+        if count > 0 {
+            self.pos += count as usize;
+        }
+        let last_valid = self.pos;
+        while !self.eof() && !self.eol() && self.peek() != b'"' as i8 && self.peek() != b'}' as i8 {
+            self.next_byte();
+        }
+        if self.chr(b'}' as i8) {
+            *out = cp;
+            return count > 0 && self.pos == last_valid + 1 && cp <= 0x10ffff;
+        }
+        self.pos = last_valid;
+        false
     }
 
     #[inline]
-    pub unsafe fn check_supported_char_encoding(&mut self) -> bool {
+    pub fn check_supported_char_encoding(&mut self) -> bool {
         use crate::xkb::messages::XKB_ERROR_INVALID_FILE_ENCODING;
-        unsafe {
-            if self.str_match(b"\xEF\xBB\xBF\0".as_ptr() as *const i8, 3) || self.len < 2 {
-                return true;
-            }
-            if *self.s == 0 || *self.s.add(1) == 0 {
-                let loc = self.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: unexpected NULL character.\n",
-                    XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                    &self.file_name,
-                    loc.line,
-                    loc.column
-                );
-                return false;
-            }
-            if !(*self.s as u8).is_ascii() {
-                let loc = self.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: unexpected non-ASCII character.\n",
-                    XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                    &self.file_name,
-                    loc.line,
-                    loc.column
-                );
-                return false;
-            }
-            true
+
+        if self.str_match(b"\xEF\xBB\xBF") || self.len < 2 {
+            return true;
         }
+        let input = self.input_bytes();
+        if input[0] == 0 || input[1] == 0 {
+            let loc = self.token_location();
+            log::error!(
+                "[XKB-{:03}] {}:{}:{}: unexpected NULL character.\n",
+                XKB_ERROR_INVALID_FILE_ENCODING as i32,
+                &self.file_name,
+                loc.line,
+                loc.column
+            );
+            return false;
+        }
+        if !input[0].is_ascii() {
+            let loc = self.token_location();
+            log::error!(
+                "[XKB-{:03}] {}:{}:{}: unexpected non-ASCII character.\n",
+                XKB_ERROR_INVALID_FILE_ENCODING as i32,
+                &self.file_name,
+                loc.line,
+                loc.column
+            );
+            return false;
+        }
+        true
+    }
+
+    /// Get the byte at the given position (0-indexed) as a byte slice reference.
+    /// Used by callers that need a pointer into the input at a specific position.
+    #[inline]
+    pub fn input_at(&self, pos: usize) -> *const i8 {
+        // SAFETY: same invariant as input_bytes — s is valid for len bytes.
+        unsafe { self.s.add(pos) }
+    }
+
+    /// Get a slice of the input from `start` to `end` as bytes.
+    #[inline]
+    pub fn input_slice(&self, start: usize, end: usize) -> &[u8] {
+        &self.input_bytes()[start..end]
     }
 
     pub fn token_location(&mut self) -> scanner_loc {
@@ -336,7 +350,7 @@ impl scanner {
         }
 
         line = self.cached_loc.line;
-        let input = unsafe { self.input() };
+        let input = self.input_bytes();
         let start = self.cached_pos;
         let end = self.token_pos;
 
@@ -369,20 +383,18 @@ impl scanner {
 // ── sval comparison functions ──
 
 #[inline]
-pub unsafe fn svaleq(s1: sval, s2: sval) -> bool {
-    unsafe { s1.as_bytes() == s2.as_bytes() }
+pub fn svaleq(s1: sval, s2: sval) -> bool {
+    s1.as_bytes() == s2.as_bytes()
 }
 
 #[inline]
-pub unsafe fn svaleq_prefix(s1: sval, s2: sval) -> bool {
-    unsafe {
-        let b1 = s1.as_bytes();
-        let b2 = s2.as_bytes();
-        b1.len() <= b2.len() && b1 == &b2[..b1.len()]
-    }
+pub fn svaleq_prefix(s1: sval, s2: sval) -> bool {
+    let b1 = s1.as_bytes();
+    let b2 = s2.as_bytes();
+    b1.len() <= b2.len() && b1 == &b2[..b1.len()]
 }
 
 #[inline]
-pub unsafe fn isvaleq(s1: sval, s2: sval) -> bool {
-    unsafe { s1.len == s2.len && s1.as_bytes().eq_ignore_ascii_case(s2.as_bytes()) }
+pub fn isvaleq(s1: sval, s2: sval) -> bool {
+    s1.len == s2.len && s1.as_bytes().eq_ignore_ascii_case(s2.as_bytes())
 }

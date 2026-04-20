@@ -21,10 +21,6 @@ pub const CONTEXT_FAILED: context_state = 2;
 pub const CONTEXT_PARSED: context_state = 1;
 pub const CONTEXT_NEW: context_state = 0;
 
-// ---------------------------------------------------------------------------
-// Types — fully owned, no raw pointers, no #[repr(C)], no rxkb_object
-// ---------------------------------------------------------------------------
-
 pub struct rxkb_context {
     pub context_state: context_state,
     pub load_extra_rules_files: bool,
