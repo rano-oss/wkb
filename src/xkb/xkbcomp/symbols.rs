@@ -137,12 +137,7 @@ fn resize_groups_zero(v: &mut Vec<GroupInfo>, new_len: usize) {
 }
 
 fn InitGroupInfo(groupi: &mut GroupInfo) {
-    // Use ptr::write to avoid dropping the old value — callers may have
-    // already moved the data out via ptr::read, leaving the slot logically
-    // uninitialized.
-    unsafe {
-        std::ptr::write(groupi as *mut GroupInfo, GroupInfo::default());
-    }
+    *groupi = GroupInfo::default();
 }
 fn ClearGroupInfo(groupi: &mut GroupInfo) {
     groupi.levels.clear();
@@ -153,29 +148,21 @@ fn CopyGroupInfo(to: &mut GroupInfo, from: &GroupInfo) {
     to.levels = from.levels.clone();
 }
 fn InitKeyInfo(ctx: &mut xkb_context, keyi: &mut KeyInfo) {
-    // Use ptr::write to avoid dropping the old value — callers may have
-    // already moved the data out via ptr::read, leaving the slot logically
-    // uninitialized.
-    unsafe {
-        std::ptr::write(
-            keyi as *mut KeyInfo,
-            KeyInfo {
-                name: xkb_atom_intern_ref(ctx, b"*"),
-                vmodmap: 0,
-                default_type: 0,
-                out_of_range_group_number: 0,
-                groups: Vec::new(),
-                out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
-                defined: 0,
-                merge: 0,
-                repeat: 0,
-                out_of_range_pending_group: false,
-                overlays_clear: false,
-                overlays: 0,
-                overlay_keys: Vec::new(),
-            },
-        );
-    }
+    *keyi = KeyInfo {
+        name: xkb_atom_intern_ref(ctx, b"*"),
+        vmodmap: 0,
+        default_type: 0,
+        out_of_range_group_number: 0,
+        groups: Vec::new(),
+        out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
+        defined: 0,
+        merge: 0,
+        repeat: 0,
+        out_of_range_pending_group: false,
+        overlays_clear: false,
+        overlays: 0,
+        overlay_keys: Vec::new(),
+    };
 }
 fn ClearKeyInfo(keyi: &mut KeyInfo) {
     for groupi in keyi.groups.iter_mut() {
