@@ -919,65 +919,6 @@ impl xkb_keymap {
 // ── Inline helpers ──────────────────────────────────────────────────
 
 #[inline]
-pub unsafe fn XkbKeyNumLevels(keymap: *const xkb_keymap, key: *const xkb_key, layout: u32) -> u32 {
-    let group = &(&(*key).groups)[layout as usize];
-    (&(*keymap).types)[group.type_idx as usize].num_levels
-}
-
-#[inline]
-pub unsafe fn XkbKey(keymap: *mut xkb_keymap, kc: u32) -> *const xkb_key {
-    unsafe {
-        if kc < (*keymap).min_key_code || kc > (*keymap).max_key_code {
-            std::ptr::null()
-        } else if kc < (*keymap).num_keys_low {
-            &(&(*keymap).keys)[kc as usize] as *const xkb_key
-        } else {
-            let mut lower: u32 = (*keymap).num_keys_low;
-            let mut upper: u32 = (*keymap).num_keys;
-            while lower < upper {
-                let mid: u32 = lower.wrapping_add(
-                    upper
-                        .wrapping_sub(1_u32)
-                        .wrapping_sub(lower)
-                        .wrapping_div(2_u32),
-                );
-                let key: *const xkb_key = &(&(*keymap).keys)[mid as usize] as *const xkb_key;
-                if (*key).keycode < kc {
-                    lower = mid.wrapping_add(1_u32);
-                } else if (*key).keycode > kc {
-                    upper = mid;
-                } else {
-                    return key;
-                }
-            }
-            std::ptr::null()
-        }
-    }
-}
-
-#[inline]
-pub unsafe fn XkbKeyByName(
-    keymap: *const xkb_keymap,
-    name: u32,
-    use_aliases: bool,
-) -> *mut xkb_key {
-    unsafe {
-        if (name as usize) < (*keymap).key_names.len() {
-            let match_0: KeycodeMatch = (&(*keymap).key_names)[name as usize];
-            if match_0.found {
-                if !match_0.is_alias {
-                    return ((*keymap).keys.as_ptr() as *mut xkb_key).add(match_0.index as usize);
-                } else if use_aliases {
-                    return ((*keymap).keys.as_ptr() as *mut xkb_key)
-                        .add((&(*keymap).key_names)[match_0.index as usize].index as usize);
-                }
-            }
-        }
-        std::ptr::null_mut()
-    }
-}
-
-#[inline]
 pub fn entry_is_active(entry: &xkb_key_type_entry) -> bool {
     entry.mods.mods == 0_u32 || entry.mods.mask != 0_u32
 }

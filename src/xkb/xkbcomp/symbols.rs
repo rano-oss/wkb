@@ -5,7 +5,7 @@ use crate::xkb::keysym::xkb_keysym_is_keypad;
 use crate::xkb::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 use crate::xkb::shared_ast_types::from_common;
 pub use crate::xkb::shared_ast_types::{ModMapDef, SymbolsDef};
-pub use crate::xkb::shared_types::{XkbKeyByName, XKB_MOD_NONE, XKB_OVERLAY_INVALID};
+pub use crate::xkb::shared_types::{XKB_MOD_NONE, XKB_OVERLAY_INVALID};
 use crate::xkb::text::ModIndexText;
 
 pub use crate::xkb::xkbcomp::action::{
@@ -1227,12 +1227,11 @@ fn ExprResolveOverlayEntry(
                 let ExprKind::KeyName(key_name_val) = (*expr).kind else {
                     unreachable!()
                 };
-                let key_ptr = XkbKeyByName((*keymap_info).keymap, key_name_val, false);
-                *key_rtrn = if key_ptr.is_null() {
-                    XKB_KEYCODE_INVALID
-                } else {
-                    (*key_ptr).keycode
-                };
+                let key_kc = (*keymap_info)
+                    .keymap
+                    .key_by_name(key_name_val, false)
+                    .map(|k| k.keycode);
+                *key_rtrn = key_kc.unwrap_or(XKB_KEYCODE_INVALID);
                 if *key_rtrn == XKB_KEYCODE_INVALID {
                     log::error!(
                         "[XKB-{:03}] Unknown key \"{}\" for field {} in <{}>\n",
@@ -1387,8 +1386,10 @@ fn SetSymbolsField(
             if overlay as i32 == XKB_OVERLAY_INVALID {
                 return true;
             } else if key != XKB_KEYCODE_INVALID && {
-                let key_ptr = XkbKey((*info.keymap_info).keymap as *const _ as *mut _, key);
-                !key_ptr.is_null() && (*key_ptr).name == (*keyi).name
+                info.keymap_info
+                    .keymap
+                    .get_key(key)
+                    .is_some_and(|k| k.name == (*keyi).name)
             } {
                 log::warn!("Cannot overlay a key to itself; Ignoring overlay {} specification for key <{}>\n",
                     overlay as i32 + 1_i32,
@@ -1402,15 +1403,13 @@ fn SetSymbolsField(
                             KeyInfoText(info, &*keyi),
                             overlay as i32 + 1_i32,
                             if prev != XKB_KEYCODE_INVALID {
-                                let prev_ptr = XkbKey((*info.keymap_info).keymap as *const _ as *mut _, prev);
-                                xkb_atom_text(&info.ctx().atom_table, if !prev_ptr.is_null() { (*prev_ptr).name } else { 0 })
+                                xkb_atom_text(&info.ctx().atom_table, info.keymap_info.keymap.get_key(prev).map(|k| k.name).unwrap_or(0))
                             } else {
                                 "none"
                             },
                             overlay as i32 + 1_i32,
                             if key != XKB_KEYCODE_INVALID {
-                                let key_ptr = XkbKey((*info.keymap_info).keymap as *const _ as *mut _, key);
-                                xkb_atom_text(&info.ctx().atom_table, if !key_ptr.is_null() { (*key_ptr).name } else { 0 })
+                                xkb_atom_text(&info.ctx().atom_table, info.keymap_info.keymap.get_key(key).map(|k| k.name).unwrap_or(0))
                             } else {
                                 "none"
                             });
@@ -1447,10 +1446,10 @@ fn SetSymbolsField(
                                 (*keyi).overlays as i32,
                                 xkb_atom_text(
                                     &info.ctx().atom_table,
-                                    if existing_key == XKB_KEYCODE_INVALID { 0 } else { let ek_ptr = XkbKey((*info.keymap_info).keymap as *const _ as *mut _, existing_key); if !ek_ptr.is_null() { (*ek_ptr).name } else { 0 } },
+                                    if existing_key == XKB_KEYCODE_INVALID { 0 } else { info.keymap_info.keymap.get_key(existing_key).map(|k| k.name).unwrap_or(0) },
                                 ),
                                 overlay as i32 + 1_i32,
-                                xkb_atom_text(&info.ctx().atom_table, { let k_ptr = XkbKey((*info.keymap_info).keymap as *const _ as *mut _, key); if !k_ptr.is_null() { (*k_ptr).name } else { 0 } }));
+                                xkb_atom_text(&info.ctx().atom_table, info.keymap_info.keymap.get_key(key).map(|k| k.name).unwrap_or(0)));
                         return (*info.keymap_info).strict & PARSER_NO_FIELD_VALUE_MISMATCH == 0;
                     }
                 }
@@ -2118,7 +2117,10 @@ fn CopySymbolsDefToKeymap(
         let mut i: u32;
 
         // The name is guaranteed to be real and not an alias, so 'false' is safe here
-        let key: *mut xkb_key = XkbKeyByName(keymap, (*keyi).name, false);
+        let key: *mut xkb_key = match (*keymap).key_by_name_mut((*keyi).name, false) {
+            Some(k) => k as *mut xkb_key,
+            None => std::ptr::null_mut(),
+        };
         if key.is_null() {
             log::warn!(
                 "[XKB-{:03}] Key <{}> not found in keycodes; Symbols ignored\n",
@@ -2339,7 +2341,7 @@ fn CopySymbolsDefToKeymap(
 
             if clean_overlays != 0 {
                 (*key).overlays = clean_overlays;
-                std::ptr::write(&raw mut (*key).overlay_keys, clean_keys);
+                (*key).overlay_keys = clean_keys;
                 (*key).explicit = ((*key).explicit | EXPLICIT_OVERLAY) as xkb_explicit_components;
             }
         }
