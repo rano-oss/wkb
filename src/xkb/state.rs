@@ -1343,30 +1343,38 @@ fn xkb_filter_apply_all(
         }
     }
 }
-pub fn xkb_state_new(keymap: Rc<xkb_keymap>) -> *mut xkb_state {
-    let state: *mut xkb_state = Box::into_raw(Box::new(xkb_state {
-        components: unsafe { std::mem::zeroed() },
-        controls: unsafe { std::mem::zeroed() },
+pub fn xkb_state_new(keymap: Rc<xkb_keymap>) -> Box<xkb_state> {
+    let mut state = Box::new(xkb_state {
+        components: state_components {
+            base_group: 0,
+            latched_group: 0,
+            locked_group: 0,
+            group: 0,
+            base_mods: 0,
+            latched_mods: 0,
+            locked_mods: 0,
+            mods: 0,
+            leds: 0,
+            controls: 0,
+        },
+        controls: machine_controls {
+            out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
+            out_of_range_redirect_group: 0,
+        },
         set_mods: 0,
         clear_mods: 0,
         mod_key_count: [0; 32],
-        flags: unsafe { std::mem::zeroed() },
-        refcnt: 0,
+        flags: XKB_A11Y_NO_FLAGS,
+        refcnt: 1,
         filters: Vec::new(),
         keymap: keymap.clone(),
-    }));
-    unsafe {
-        (*state).flags = XKB_A11Y_NO_FLAGS;
-        if keymap.format != XKB_KEYMAP_FORMAT_TEXT_V1
-            && XKB_A11Y_NO_FLAGS & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS == 0
-        {
-            (*state).flags =
-                ((*state).flags as u32 | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS) as xkb_a11y_flags;
-        }
-        (*state).controls.out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
-        (*state).refcnt = 1_i32;
-        xkb_state_update_derived(&mut *state);
+    });
+    if keymap.format != XKB_KEYMAP_FORMAT_TEXT_V1
+        && XKB_A11Y_NO_FLAGS & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS == 0
+    {
+        state.flags = (state.flags as u32 | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS) as xkb_a11y_flags;
     }
+    xkb_state_update_derived(&mut state);
     state
 }
 
@@ -1490,8 +1498,8 @@ fn xkb_state_update_derived(state: &mut xkb_state) {
     xkb_state_led_update_all(state);
 }
 pub fn xkb_state_update_key(state: &mut xkb_state, kc: u32, direction: xkb_key_direction) -> u32 {
-    // Use Rc::as_ptr to avoid creating a borrow on `state` (needed for mutation below)
-    let keymap = unsafe { &*Rc::as_ptr(&state.keymap) };
+    let keymap_rc = Rc::clone(&state.keymap);
+    let keymap = &*keymap_rc;
     let key_ref = match keymap.get_key(kc) {
         Some(k) => k,
         None => return 0_u32,
@@ -1979,7 +1987,7 @@ fn get_one_sym_for_string(state: &xkb_state, kc: u32) -> u32 {
         }
     }
     if should_do_caps_transformation(state, kc) {
-        sym = unsafe { xkb_keysym_to_upper(sym) };
+        sym = xkb_keysym_to_upper(sym);
     }
     sym
 }

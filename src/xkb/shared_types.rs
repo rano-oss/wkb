@@ -689,19 +689,13 @@ pub const MAX_ACTIONS_PER_LEVEL: i32 = UINT16_MAX;
 
 // ── config_h constants ──────────────────────────────────────────────
 
-pub const DEFAULT_XKB_RULES: [i8; 6] =
-    unsafe { ::core::mem::transmute::<[u8; 6], [i8; 6]>(*b"evdev\0") };
+pub const DEFAULT_XKB_RULES: &str = "evdev";
 
-pub const DFLT_XKB_CONFIG_EXTRA_PATH: [i8; 19] =
-    unsafe { ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/local/etc/xkb\0") };
-pub const DFLT_XKB_CONFIG_ROOT: [i8; 30] =
-    unsafe { ::core::mem::transmute::<[u8; 30], [i8; 30]>(*b"/usr/share/xkeyboard-config-2\0") };
-pub const DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH: [i8; 30] =
-    unsafe { ::core::mem::transmute::<[u8; 30], [i8; 30]>(*b"/usr/share/xkeyboard-config.d\0") };
-pub const DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH: [i8; 32] =
-    unsafe { ::core::mem::transmute::<[u8; 32], [i8; 32]>(*b"/usr/share/xkeyboard-config-2.d\0") };
-pub const DFLT_XKB_LEGACY_ROOT: [i8; 19] =
-    unsafe { ::core::mem::transmute::<[u8; 19], [i8; 19]>(*b"/usr/share/X11/xkb\0") };
+pub const DFLT_XKB_CONFIG_EXTRA_PATH: &str = "/usr/local/etc/xkb";
+pub const DFLT_XKB_CONFIG_ROOT: &str = "/usr/share/xkeyboard-config-2";
+pub const DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH: &str = "/usr/share/xkeyboard-config.d";
+pub const DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH: &str = "/usr/share/xkeyboard-config-2.d";
+pub const DFLT_XKB_LEGACY_ROOT: &str = "/usr/share/X11/xkb";
 
 // ── xkbcommon_h types (moved from duplicated pub mod xkbcommon_h blocks) ─
 

@@ -282,17 +282,10 @@ static LEGACY_KEYSYM_OFFSETS2: [u16; 40] = [
     0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0xbc,
 ];
 #[inline]
-unsafe fn get_legacy_keysym_entry(ks: u32) -> *const CaseMappings {
-    unsafe {
-        (&raw const LEGACY_KEYSYM_DATA as *const CaseMappings).offset(
-            (*(&raw const LEGACY_KEYSYM_OFFSETS1 as *const u8).offset(
-                (*(&raw const LEGACY_KEYSYM_OFFSETS2 as *const u16).offset((ks >> 7_i32) as isize)
-                    as u32)
-                    .wrapping_add(ks >> 1_i32 & 0x3f_u32) as isize,
-            ) as u32)
-                .wrapping_add(ks & 0x1_u32) as isize,
-        ) as *const CaseMappings
-    }
+fn get_legacy_keysym_entry(ks: u32) -> &'static CaseMappings {
+    let idx2 = LEGACY_KEYSYM_OFFSETS2[(ks >> 7) as usize] as u32;
+    let idx1 = LEGACY_KEYSYM_OFFSETS1[(idx2 + (ks >> 1 & 0x3f)) as usize] as u32;
+    &LEGACY_KEYSYM_DATA[(idx1 + (ks & 1)) as usize]
 }
 static UNICODE_DATA: [CaseMappings; 1019] = [
     CaseMappings {
@@ -5481,66 +5474,52 @@ static UNICODE_OFFSETS2: [u16; 498] = [
     0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x147, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x206,
 ];
 #[inline]
-unsafe fn get_unicode_entry(ks: u32) -> *const CaseMappings {
-    unsafe {
-        (&raw const UNICODE_DATA as *const CaseMappings).offset(
-            (*(&raw const UNICODE_OFFSETS1 as *const u16).offset(
-                (*(&raw const UNICODE_OFFSETS2 as *const u16).offset((ks >> 8_i32) as isize) as u32)
-                    .wrapping_add(ks >> 3_i32 & 0x1f_u32) as isize,
-            ) as u32)
-                .wrapping_add(ks & 0x7_u32) as isize,
-        ) as *const CaseMappings
-    }
+fn get_unicode_entry(ks: u32) -> &'static CaseMappings {
+    let idx2 = UNICODE_OFFSETS2[(ks >> 8) as usize] as u32;
+    let idx1 = UNICODE_OFFSETS1[(idx2 + (ks >> 3 & 0x1f)) as usize] as u32;
+    &UNICODE_DATA[(idx1 + (ks & 0x7)) as usize]
 }
-pub unsafe fn xkb_keysym_to_upper(mut ks: u32) -> u32 {
-    unsafe {
-        if ks <= 0x13be_u32 {
-            let m: *const CaseMappings = get_legacy_keysym_entry(ks);
-            if (*m).upper as i32 != 0 {
-                ks.wrapping_sub((*m).offset as u32)
-            } else {
-                ks
-            }
-        } else if XKB_KEYSYM_UNICODE_MIN as u32 <= ks && ks <= 0x101f189_u32 {
-            let m_0: *const CaseMappings =
-                get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as u32));
-            if (*m_0).upper {
-                ks = ks.wrapping_sub((*m_0).offset as u32);
-                if ks < XKB_KEYSYM_UNICODE_MIN as u32 {
-                    ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as u32)
-                } else {
-                    ks
-                }
+pub fn xkb_keysym_to_upper(mut ks: u32) -> u32 {
+    if ks <= 0x13be_u32 {
+        let m = get_legacy_keysym_entry(ks);
+        if m.upper as i32 != 0 {
+            ks.wrapping_sub(m.offset as u32)
+        } else {
+            ks
+        }
+    } else if XKB_KEYSYM_UNICODE_MIN as u32 <= ks && ks <= 0x101f189_u32 {
+        let m = get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as u32));
+        if m.upper {
+            ks = ks.wrapping_sub(m.offset as u32);
+            if ks < XKB_KEYSYM_UNICODE_MIN as u32 {
+                ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as u32)
             } else {
                 ks
             }
         } else {
             ks
         }
+    } else {
+        ks
     }
 }
-pub unsafe fn xkb_keysym_is_lower(ks: u32) -> bool {
-    unsafe {
-        if ks <= 0x13be_u32 {
-            let m: *const CaseMappings = get_legacy_keysym_entry(ks);
-            (*m).upper as i32 != 0 && !(*m).lower
-        } else if XKB_KEYSYM_UNICODE_MIN as u32 <= ks && ks <= 0x101f189_u32 {
-            let m_0: *const CaseMappings =
-                get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as u32));
-            (*m_0).upper as i32 != 0 && !(*m_0).lower
-        } else {
-            false
-        }
+pub fn xkb_keysym_is_lower(ks: u32) -> bool {
+    if ks <= 0x13be_u32 {
+        let m = get_legacy_keysym_entry(ks);
+        m.upper as i32 != 0 && !m.lower
+    } else if XKB_KEYSYM_UNICODE_MIN as u32 <= ks && ks <= 0x101f189_u32 {
+        let m = get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as u32));
+        m.upper as i32 != 0 && !m.lower
+    } else {
+        false
     }
 }
-pub unsafe fn xkb_keysym_is_upper_or_title(ks: u32) -> bool {
-    unsafe {
-        if ks <= 0x13be_u32 {
-            (*get_legacy_keysym_entry(ks)).lower
-        } else if XKB_KEYSYM_UNICODE_MIN as u32 <= ks && ks <= 0x101f189_u32 {
-            (*get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as u32))).lower
-        } else {
-            false
-        }
+pub fn xkb_keysym_is_upper_or_title(ks: u32) -> bool {
+    if ks <= 0x13be_u32 {
+        get_legacy_keysym_entry(ks).lower
+    } else if XKB_KEYSYM_UNICODE_MIN as u32 <= ks && ks <= 0x101f189_u32 {
+        get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET as u32)).lower
+    } else {
+        false
     }
 }

@@ -85,30 +85,24 @@ pub unsafe fn xkb_context_include_path_append(ctx: *mut xkb_context, path: *cons
 pub fn xkb_context_include_path_get_extra_path(_ctx: *mut xkb_context) -> String {
     match xkb_context_getenv("XKB_CONFIG_EXTRA_PATH") {
         Ok(extra) => extra,
-        Err(_) => cstr_const_to_string(&DFLT_XKB_CONFIG_EXTRA_PATH),
+        Err(_) => DFLT_XKB_CONFIG_EXTRA_PATH.to_string(),
     }
 }
 
 pub fn xkb_context_include_path_get_unversioned_extensions_path(_ctx: *mut xkb_context) -> String {
     match xkb_context_getenv("XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH") {
         Ok(ext) => ext,
-        Err(_) => cstr_const_to_string(&DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH),
+        Err(_) => DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH.to_string(),
     }
 }
 
 pub fn xkb_context_include_path_get_versioned_extensions_path(_ctx: *mut xkb_context) -> String {
     match xkb_context_getenv("XKB_CONFIG_VERSIONED_EXTENSIONS_PATH") {
         Ok(ext) => ext,
-        Err(_) => cstr_const_to_string(&DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH),
+        Err(_) => DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH.to_string(),
     }
 }
 /// Convert a null-terminated `[i8]` constant to a Rust `String`.
-fn cstr_const_to_string(bytes: &[i8]) -> String {
-    let end = bytes.iter().position(|&b| b == 0).unwrap_or(bytes.len());
-    // SAFETY: these are ASCII path constants from shared_types
-    String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(bytes.as_ptr() as *const u8, end) })
-        .into_owned()
-}
 
 fn add_direct_subdirectories(
     ctx: *mut xkb_context,
@@ -176,7 +170,7 @@ fn add_direct_subdirectories(
 pub fn xkb_context_include_path_get_system_path(_ctx: *mut xkb_context) -> String {
     match xkb_context_getenv("XKB_CONFIG_ROOT") {
         Ok(root) => root,
-        Err(_) => cstr_const_to_string(&DFLT_XKB_CONFIG_ROOT),
+        Err(_) => DFLT_XKB_CONFIG_ROOT.to_string(),
     }
 }
 
@@ -220,7 +214,7 @@ pub unsafe fn xkb_context_include_path_append_default(ctx: *mut xkb_context) -> 
         let has_root: bool = context_include_path_append(ctx, &root) != 0;
         ret |= has_root as i32;
         if !has_root && !root.is_empty() {
-            let legacy = cstr_const_to_string(&DFLT_XKB_LEGACY_ROOT);
+            let legacy = DFLT_XKB_LEGACY_ROOT.to_string();
             log::warn!("Root include path failed; fallback to \"{}\". The setup is probably misconfigured. Please ensure that \"{}\" is available in the environment.\n",
                 "/usr/share/X11/xkb",
                 root);
@@ -290,113 +284,96 @@ unsafe fn default_log_fn(_ctx: *mut xkb_context, level: u32, msg: *const i8) {
         );
     }
 }
-unsafe fn log_level(level: *const i8) -> u32 {
-    unsafe {
-        let (val, consumed) = crate::xkb::utils::cstr_parse_long(level);
-        if consumed > 0 {
-            let after = *level.add(consumed);
-            if after as i32 == '\0' as i32
-                || matches!(after as u8, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
-            {
-                return val as u32;
-            }
-        }
-        if cstr_as_bytes(level)
-            .get(..4)
-            .is_some_and(|s| s.eq_ignore_ascii_case(b"crit"))
-        {
-            return XKB_LOG_LEVEL_CRITICAL;
-        }
-        if cstr_as_bytes(level)
+fn log_level_from_str(level: &str) -> u32 {
+    let bytes = level.as_bytes();
+    // Try parsing as integer first
+    if let Ok(val) = level.trim().parse::<i64>() {
+        return val as u32;
+    }
+    if bytes
+        .get(..4)
+        .is_some_and(|s| s.eq_ignore_ascii_case(b"crit"))
+    {
+        return XKB_LOG_LEVEL_CRITICAL;
+    }
+    if bytes
+        .get(..3)
+        .is_some_and(|s| s.eq_ignore_ascii_case(b"err"))
+    {
+        return XKB_LOG_LEVEL_ERROR;
+    }
+    if bytes
+        .get(..4)
+        .is_some_and(|s| s.eq_ignore_ascii_case(b"warn"))
+    {
+        return XKB_LOG_LEVEL_WARNING;
+    }
+    if bytes
+        .get(..4)
+        .is_some_and(|s| s.eq_ignore_ascii_case(b"info"))
+    {
+        return XKB_LOG_LEVEL_INFO;
+    }
+    if bytes
+        .get(..5)
+        .is_some_and(|s| s.eq_ignore_ascii_case(b"debug"))
+        || bytes
             .get(..3)
-            .is_some_and(|s| s.eq_ignore_ascii_case(b"err"))
-        {
-            return XKB_LOG_LEVEL_ERROR;
-        }
-        if cstr_as_bytes(level)
-            .get(..4)
-            .is_some_and(|s| s.eq_ignore_ascii_case(b"warn"))
-        {
-            return XKB_LOG_LEVEL_WARNING;
-        }
-        if cstr_as_bytes(level)
-            .get(..4)
-            .is_some_and(|s| s.eq_ignore_ascii_case(b"info"))
-        {
-            return XKB_LOG_LEVEL_INFO;
-        }
-        if cstr_as_bytes(level)
-            .get(..5)
-            .is_some_and(|s| s.eq_ignore_ascii_case(b"debug"))
-            || cstr_as_bytes(level)
-                .get(..3)
-                .is_some_and(|s| s.eq_ignore_ascii_case(b"dbg"))
-        {
-            return XKB_LOG_LEVEL_DEBUG;
-        }
-        XKB_LOG_LEVEL_ERROR
+            .is_some_and(|s| s.eq_ignore_ascii_case(b"dbg"))
+    {
+        return XKB_LOG_LEVEL_DEBUG;
     }
+    XKB_LOG_LEVEL_ERROR
 }
-unsafe fn log_verbosity(verbosity: *const i8) -> i32 {
-    unsafe {
-        let (val, consumed) = crate::xkb::utils::cstr_parse_long(verbosity);
-        if consumed > 0 {
-            return val as i32;
-        }
-        XKB_LOG_VERBOSITY_DEFAULT
+fn log_verbosity_from_str(verbosity: &str) -> i32 {
+    if let Ok(val) = verbosity.trim().parse::<i64>() {
+        return val as i32;
     }
+    XKB_LOG_VERBOSITY_DEFAULT
 }
-pub unsafe fn xkb_context_new(flags: xkb_context_flags) -> xkb_context {
-    unsafe {
-        let mut ctx = xkb_context {
-            refcnt: 1,
-            log_fn: Some(default_log_fn as unsafe fn(*mut xkb_context, u32, *const i8) -> ()),
-            log_level: XKB_LOG_LEVEL_ERROR,
-            log_verbosity: XKB_LOG_VERBOSITY_DEFAULT,
-            names_dflt: xkb_rule_names {
-                rules: std::ffi::CString::new("").unwrap(),
-                model: std::ffi::CString::new("").unwrap(),
-                layout: std::ffi::CString::new("").unwrap(),
-                variant: std::ffi::CString::new("").unwrap(),
-                options: std::ffi::CString::new("").unwrap(),
-            },
-            includes: Vec::new(),
-            failed_includes: Vec::new(),
-            atom_table: atom_table_new(),
-            text_buffer: [0i8; 2048],
-            text_next: 0,
-            use_environment_names: false,
-            use_secure_getenv: false,
-            pending_default_includes: false,
-        };
-        static mut XKB_CONTEXT_FLAGS: xkb_context_flags = (XKB_CONTEXT_NO_DEFAULT_INCLUDES as i32
-            | XKB_CONTEXT_NO_ENVIRONMENT_NAMES as i32
-            | XKB_CONTEXT_NO_SECURE_GETENV as i32)
-            as xkb_context_flags;
-        if flags & !XKB_CONTEXT_FLAGS != 0 {
-            log::error!(
-                "Invalid context flags: 0x{:x}\n",
-                flags & !XKB_CONTEXT_FLAGS
-            );
-            // Return a dummy/default — caller should check flags before calling
-            // In practice this path is very rare
-            return ctx;
-        }
-        ctx.use_environment_names = flags & XKB_CONTEXT_NO_ENVIRONMENT_NAMES == 0;
-        ctx.use_secure_getenv = flags & XKB_CONTEXT_NO_SECURE_GETENV == 0;
-        ctx.pending_default_includes = flags & XKB_CONTEXT_NO_DEFAULT_INCLUDES == 0;
-        let env = xkb_context_getenv("XKB_LOG_LEVEL");
-        if let Ok(env) = env {
-            let cenv = std::ffi::CString::new(env).unwrap();
-            xkb_context_set_log_level(&raw mut ctx, log_level(cenv.as_ptr()));
-        }
-        let env = xkb_context_getenv("XKB_LOG_VERBOSITY");
-        if let Ok(env) = env {
-            let cenv = std::ffi::CString::new(env).unwrap();
-            xkb_context_set_log_verbosity(&raw mut ctx, log_verbosity(cenv.as_ptr()));
-        }
-        ctx
+pub fn xkb_context_new(flags: xkb_context_flags) -> xkb_context {
+    let mut ctx = xkb_context {
+        refcnt: 1,
+        log_fn: Some(default_log_fn as unsafe fn(*mut xkb_context, u32, *const i8) -> ()),
+        log_level: XKB_LOG_LEVEL_ERROR,
+        log_verbosity: XKB_LOG_VERBOSITY_DEFAULT,
+        names_dflt: xkb_rule_names {
+            rules: std::ffi::CString::new("").unwrap(),
+            model: std::ffi::CString::new("").unwrap(),
+            layout: std::ffi::CString::new("").unwrap(),
+            variant: std::ffi::CString::new("").unwrap(),
+            options: std::ffi::CString::new("").unwrap(),
+        },
+        includes: Vec::new(),
+        failed_includes: Vec::new(),
+        atom_table: atom_table_new(),
+        text_buffer: [0i8; 2048],
+        text_next: 0,
+        use_environment_names: false,
+        use_secure_getenv: false,
+        pending_default_includes: false,
+    };
+    const XKB_CONTEXT_ALL_FLAGS: xkb_context_flags = (XKB_CONTEXT_NO_DEFAULT_INCLUDES as i32
+        | XKB_CONTEXT_NO_ENVIRONMENT_NAMES as i32
+        | XKB_CONTEXT_NO_SECURE_GETENV as i32)
+        as xkb_context_flags;
+    if flags & !XKB_CONTEXT_ALL_FLAGS != 0 {
+        log::error!(
+            "Invalid context flags: 0x{:x}\n",
+            flags & !XKB_CONTEXT_ALL_FLAGS
+        );
+        return ctx;
     }
+    ctx.use_environment_names = flags & XKB_CONTEXT_NO_ENVIRONMENT_NAMES == 0;
+    ctx.use_secure_getenv = flags & XKB_CONTEXT_NO_SECURE_GETENV == 0;
+    ctx.pending_default_includes = flags & XKB_CONTEXT_NO_DEFAULT_INCLUDES == 0;
+    if let Ok(env) = xkb_context_getenv("XKB_LOG_LEVEL") {
+        ctx.log_level = log_level_from_str(&env);
+    }
+    if let Ok(env) = xkb_context_getenv("XKB_LOG_VERBOSITY") {
+        ctx.log_verbosity = log_verbosity_from_str(&env);
+    }
+    ctx
 }
 
 pub unsafe fn xkb_context_set_log_level(ctx: *mut xkb_context, level: u32) {

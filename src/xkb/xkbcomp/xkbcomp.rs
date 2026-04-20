@@ -7,14 +7,12 @@ pub fn xkb_components_from_rules_names(
     out: *mut xkb_component_names,
     explicit_layouts: *mut u32,
 ) -> bool {
-    unsafe {
-        crate::xkb::xkbcomp::rules::xkb_components_from_rules_names(
-            ctx,
-            rmlvo,
-            out as *mut _,
-            explicit_layouts,
-        )
-    }
+    crate::xkb::xkbcomp::rules::xkb_components_from_rules_names(
+        ctx,
+        rmlvo,
+        out as *mut _,
+        explicit_layouts,
+    )
 }
 
 pub use crate::xkb::messages::{

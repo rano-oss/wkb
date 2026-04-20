@@ -85,17 +85,6 @@ pub unsafe fn cstr_len(s: *const i8) -> usize {
     unsafe { std::ffi::CStr::from_ptr(s).to_bytes().len() }
 }
 
-/// Safe replacement for libc `strcmp`. Returns <0, 0, or >0.
-/// # Safety: both pointers must point to valid null-terminated C strings.
-#[inline]
-pub unsafe fn cstr_cmp(s1: *const i8, s2: *const i8) -> i32 {
-    unsafe {
-        let a = std::ffi::CStr::from_ptr(s1);
-        let b = std::ffi::CStr::from_ptr(s2);
-        a.cmp(b) as i32
-    }
-}
-
 /// Stack buffer writer implementing `core::fmt::Write`.
 /// Used by the `xkb_logf!` and `rxkb_logf!` macros and `snprintf_args` to replace C `snprintf`.
 pub struct LogBuf<'a> {
@@ -254,29 +243,6 @@ pub unsafe fn cstr_chr(s: *const i8, c: i32) -> *mut i8 {
     }
 }
 
-/// Like C `strpbrk`: find first occurrence of any byte from `accept` in C string `s`.
-/// Returns pointer to the byte, or null if not found.
-///
-/// # Safety
-/// `s` and `accept` must point to valid NUL-terminated C strings.
-pub unsafe fn cstr_pbrk(s: *const i8, accept: *const i8) -> *mut i8 {
-    if s.is_null() || accept.is_null() {
-        return std::ptr::null_mut();
-    }
-    let mut p = s;
-    while *p != 0 {
-        let mut a = accept;
-        while *a != 0 {
-            if *p == *a {
-                return p as *mut i8;
-            }
-            a = a.offset(1);
-        }
-        p = p.offset(1);
-    }
-    std::ptr::null_mut()
-}
-
 /// Like C `stpcpy`: copy C string `src` to `dst`, return pointer to the NUL terminator in dst.
 ///
 /// # Safety
@@ -297,6 +263,7 @@ pub unsafe fn cstr_pcpy(dst: *mut i8, src: *const i8) -> *mut i8 {
 }
 
 /// Safe wrapper around C `strerror`. Returns a display-able error message.
+
 pub struct StrerrorDisplay(pub i32);
 
 impl core::fmt::Display for StrerrorDisplay {
@@ -317,27 +284,13 @@ pub unsafe fn isempty(s: *const i8) -> bool {
     s.is_null() || *s == 0
 }
 
-/// Null-safe case-sensitive equality of two C strings.
-#[inline]
-pub unsafe fn streq_null(s1: *const i8, s2: *const i8) -> bool {
-    if s1.is_null() || s2.is_null() {
-        return s1 == s2;
-    }
-    unsafe { cstr_as_bytes(s1) == cstr_as_bytes(s2) }
-}
-
-/// Both-non-null case-sensitive equality of two C strings.
-#[inline]
-pub unsafe fn streq_not_null(s1: *const i8, s2: *const i8) -> bool {
-    if s1.is_null() || s2.is_null() {
-        return false;
-    }
-    unsafe { cstr_as_bytes(s1) == cstr_as_bytes(s2) }
-}
-
 pub unsafe fn is_absolute_path(path: *const i8) -> bool {
     !path.is_null() && *path == b'/' as i8
 }
+
+// === Number parsing utilities ===
+// Safe Rust replacements for C-style parse functions.
+// Return count of bytes consumed (positive) or -1 on overflow.
 
 pub unsafe fn xkb_check_versioned_struct_size_(
     v1_size: usize,
@@ -374,10 +327,6 @@ pub unsafe fn xkb_check_versioned_struct_size_(
         XKB_SUCCESS
     }
 }
-
-// === Number parsing utilities ===
-// Safe Rust replacements for C-style parse functions.
-// Return count of bytes consumed (positive) or -1 on overflow.
 
 /// Parse decimal digits from a byte slice into u32.
 /// Returns (value, count). count > 0 on success, -1 on overflow.
@@ -510,9 +459,4 @@ pub unsafe fn cstr_parse_long(s: *const i8) -> (i64, usize) {
         }
         (result, i)
     }
-}
-
-/// Simple atoi replacement: parse entire C string as decimal i32, return 0 on failure.
-pub unsafe fn cstr_atoi(s: *const i8) -> i32 {
-    unsafe { cstr_parse_long(s).0 as i32 }
 }

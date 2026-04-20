@@ -80,11 +80,9 @@ pub struct Context {
 impl Context {
     /// Create a new XKB context
     pub fn new() -> Option<Self> {
-        unsafe {
-            use crate::xkb::shared_types::XKB_CONTEXT_NO_FLAGS;
-            let ctx = super::context::xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-            Some(Context { entity: ctx })
-        }
+        use crate::xkb::shared_types::XKB_CONTEXT_NO_FLAGS;
+        let ctx = super::context::xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+        Some(Context { entity: ctx })
     }
 
     /// Create a keymap from RMLVO names
@@ -203,14 +201,8 @@ impl Keymap {
 
     /// Create a new state for this keymap
     pub fn new_state(&self) -> Option<State> {
-        let state_ptr = super::state::xkb_state_new(self.inner.clone());
-        if state_ptr.is_null() {
-            None
-        } else {
-            Some(State {
-                inner: unsafe { Box::from_raw(state_ptr) },
-            })
-        }
+        let state = super::state::xkb_state_new(self.inner.clone());
+        Some(State { inner: state })
     }
 
     /// Get number of layouts in the keymap

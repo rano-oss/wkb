@@ -336,11 +336,11 @@ fn lex(s: &mut scanner, val: &mut lvalue) -> rules_token {
         return TOK_WILD_CARD_ANY;
     }
     if s.chr('$' as i32 as i8) {
-        unsafe { val.string.start = s.input_at(s.pos) };
-        unsafe { val.string.len = 0_usize };
+        val.string.start = s.input_at(s.pos);
+        val.string.len = 0_usize;
         while is_ident(s.peek()) {
             s.next_byte();
-            unsafe { val.string.len = val.string.len.wrapping_add(1) };
+            val.string.len = unsafe { val.string.len }.wrapping_add(1);
         }
         if unsafe { val.string.len } == 0_usize {
             let loc_0: scanner_loc = s.token_location();
@@ -359,11 +359,11 @@ fn lex(s: &mut scanner, val: &mut lvalue) -> rules_token {
         return TOK_INCLUDE;
     }
     if is_ident(s.peek()) {
-        unsafe { val.string.start = s.input_at(s.pos) };
-        unsafe { val.string.len = 0_usize };
+        val.string.start = s.input_at(s.pos);
+        val.string.len = 0_usize;
         while is_ident(s.peek()) {
             s.next_byte();
-            unsafe { val.string.len = val.string.len.wrapping_add(1) };
+            val.string.len = unsafe { val.string.len }.wrapping_add(1);
         }
         return TOK_IDENTIFIER;
     }
