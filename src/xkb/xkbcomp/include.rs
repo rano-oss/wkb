@@ -72,9 +72,7 @@ pub use crate::xkb::shared_ast_types::{
     STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
 };
-use crate::xkb::utils::is_absolute_path;
 use crate::xkb::xkbcomp::scanner::XkbParseFile;
-use libc::{fclose, fopen, FILE};
 
 /// Parsed result from one segment of an include statement.
 pub struct ParsedIncludeMap {
@@ -175,228 +173,131 @@ fn LogIncludePaths(ctx: &mut xkb_context) {
         }
     }
 }
+/// Expand `%H`, `%S`, `%E`, `%%` in the given name string.
+/// Returns `Some(expanded)` on success, `None` on error.
 fn expand_percent(
-    ctx: *mut xkb_context,
     parent_file_name: &str,
-    typeDir: &str,
-    buf: *mut i8,
-    buf_size: usize,
-    name: *const i8,
-    name_len: usize,
-) -> usize {
-    unsafe {
-        let mut s = scanner::new(ctx, name, name_len, parent_file_name, std::ptr::null_mut());
-        s.buf_pos = 0;
-        while !s.eof() && !s.eol() {
-            if s.chr(b'%' as i8) {
-                if s.chr(b'%' as i8) {
-                    s.buf_append(b'%');
-                } else if s.chr(b'H' as i8) {
-                    let home = xkb_context_getenv("HOME");
-                    match &home {
-                        Ok(home) => {
-                            if !s.buf_appends(home.as_bytes()) {
-                                let loc = s.token_location();
-                                log::error!("[XKB-{:03}] {}:{}:{}: include path after expanding %H is too long\n",
-                                    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                                    &s.file_name,
-                                    loc.line,
-                                    loc.column);
-                                return 0;
-                            }
+    type_dir: &str,
+    name: &str,
+) -> Option<String> {
+    let max_len = 4096usize;
+    let mut result = String::new();
+    let mut chars = name.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '%' {
+            match chars.next() {
+                Some('%') => result.push('%'),
+                Some('H') => {
+                    match xkb_context_getenv("HOME") {
+                        Ok(home) => result.push_str(&home),
+                        Err(_) => {
+                            log::error!("{}: %H was used in an include statement, but the HOME environment variable is not set\n",
+                                parent_file_name);
+                            return None;
                         }
-                        Err(_) => todo!(),
                     }
-                    if home.is_err() {
-                        let loc = s.token_location();
-                        log::error!("{}:{}:{}: %H was used in an include statement, but the HOME environment variable is not set\n",
-                            &s.file_name,
-                            loc.line,
-                            loc.column);
-                        return 0;
-                    }
-                } else if s.chr(b'S' as i8) {
-                    let default_root_str = xkb_context_include_path_get_system_path();
-                    if !s.buf_appends_str(&default_root_str)
-                        || !s.buf_append(b'/')
-                        || !s.buf_appends_str(typeDir)
-                    {
-                        let loc = s.token_location();
-                        log::error!("[XKB-{:03}] {}:{}:{}: include path after expanding %S is too long\n",
-                            XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                            &s.file_name,
-                            loc.line,
-                            loc.column);
-                        return 0;
-                    }
-                } else if s.chr(b'E' as i8) {
-                    let default_root_str = xkb_context_include_path_get_extra_path();
-                    if !s.buf_appends_str(&default_root_str)
-                        || !s.buf_append(b'/')
-                        || !s.buf_appends_str(typeDir)
-                    {
-                        let loc = s.token_location();
-                        log::error!("[XKB-{:03}] {}:{}:{}: include path after expanding %E is too long\n",
-                            XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                            &s.file_name,
-                            loc.line,
-                            loc.column);
-                        return 0;
-                    }
-                } else {
-                    let loc = s.token_location();
-                    log::error!("[XKB-{:03}] {}:{}:{}: unknown % format ({}) in include statement\n",
+                }
+                Some('S') => {
+                    let sys = xkb_context_include_path_get_system_path();
+                    result.push_str(&sys);
+                    result.push('/');
+                    result.push_str(type_dir);
+                }
+                Some('E') => {
+                    let extra = xkb_context_include_path_get_extra_path();
+                    result.push_str(&extra);
+                    result.push('/');
+                    result.push_str(type_dir);
+                }
+                Some(other) => {
+                    log::error!("[XKB-{:03}] {}: unknown % format ({}) in include statement\n",
                         XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                        &s.file_name,
-                        loc.line,
-                        loc.column,
-                        (s.peek() as u8 as char));
-                    return 0;
+                        parent_file_name,
+                        other);
+                    return None;
                 }
-            } else {
-                let c = s.next_byte();
-                s.buf_append(c as u8);
+                None => {
+                    log::error!("[XKB-{:03}] {}: trailing %% in include statement\n",
+                        XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
+                        parent_file_name);
+                    return None;
+                }
             }
+        } else {
+            result.push(c);
         }
-        if !s.buf_append(0) {
-            let loc = s.token_location();
-            log::error!("[XKB-{:03}] {}:{}:{}: include path is too long; max: {}\n",
+        if result.len() > max_len {
+            log::error!("[XKB-{:03}] {}: include path after expansion is too long\n",
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                &s.file_name,
-                loc.line,
-                loc.column,
-                std::mem::size_of::<[i8; 1024]>());
-            return 0;
+                parent_file_name);
+            return None;
         }
-        if s.buf_pos > buf_size {
-            let loc = s.token_location();
-            log::error!("[XKB-{:03}] {}:{}:{}: include path is too long: {} > {}\n",
-                XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                &s.file_name,
-                loc.line,
-                loc.column,
-                s.buf_pos,
-                buf_size);
-            return 0;
-        }
-        std::ptr::copy_nonoverlapping(&raw mut s.buf as *const u8, buf as *mut u8, s.buf_pos);
-        s.buf_pos
     }
+    Some(result)
 }
-pub fn expand_path(
-    ctx: *mut xkb_context,
+/// Expand `%`-sequences in `name`. Returns:
+/// - `Ok(None)` if no `%` found (no expansion needed)
+/// - `Ok(Some(expanded))` if expansion succeeded
+/// - `Err(())` on error
+pub fn expand_path_str(
     parent_file_name: &str,
-    name: *const i8,
-    name_len: usize,
-    type_0: u32,
-    buf: *mut i8,
-    buf_size: usize,
-) -> isize {
-    unsafe {
-        let c2rust_current_block: u64;
-        let mut k: usize;
-        k = 0_usize;
-        loop {
-            if k >= name_len {
-                c2rust_current_block = 17179679302217393232;
-                break;
-            }
-            if *name.add(k) as i32 == '%' as i32 {
-                c2rust_current_block = 15593259132448327734;
-                break;
-            }
-            k = k.wrapping_add(1);
+    name: &str,
+    file_type: u32,
+) -> Result<Option<String>, ()> {
+    // Find first '%'
+    let k = match name.find('%') {
+        Some(pos) => pos,
+        None => return Ok(None),
+    };
+    let type_dir = DirectoryForInclude(file_type);
+    let prefix = &name[..k];
+    let rest = &name[k..];
+    match expand_percent(parent_file_name, type_dir, rest) {
+        Some(expanded) => {
+            let mut result = String::with_capacity(prefix.len() + expanded.len());
+            result.push_str(prefix);
+            result.push_str(&expanded);
+            Ok(Some(result))
         }
-        match c2rust_current_block {
-            17179679302217393232 => 0_isize,
-            _ => {
-                if (k >= buf_size) as i64 != 0 {
-                    log::error!("[XKB-{:03}] Path is too long: {} > {}, got raw path: {}\n",
-                        XKB_ERROR_INVALID_PATH as i32,
-                        k,
-                        buf_size,
-                        std::str::from_utf8_unchecked(std::slice::from_raw_parts(name as *const u8, name_len)));
-                    return -1_i32 as isize;
-                }
-                std::ptr::copy_nonoverlapping(name as *const u8, buf as *mut u8, k);
-                let typeDir = DirectoryForInclude(type_0);
-                let mut count: usize = expand_percent(
-                    ctx,
-                    parent_file_name,
-                    typeDir,
-                    buf.add(k),
-                    buf_size.wrapping_sub(k),
-                    name.add(k),
-                    name_len.wrapping_sub(k),
-                );
-                if count == 0 {
-                    return -1_i32 as isize;
-                }
-                count = count.wrapping_add(k);
-                count as isize - 1_isize
-            }
-        }
+        None => Err(()),
     }
 }
 pub fn FindFileInXkbPath(
     ctx: &mut xkb_context,
     _parent_file_name: &str,
-    name: *const i8,
-    name_len: usize,
+    name: &str,
     type_0: u32,
-    buf: *mut i8,
-    buf_size: usize,
     offset: &mut u32,
     required: bool,
-) -> *mut FILE {
-    let name_str = unsafe { std::str::from_utf8_unchecked(std::slice::from_raw_parts(name as *const u8, name_len)) };
-    let typeDir = DirectoryForInclude(type_0);
-    let mut file: *mut FILE = std::ptr::null_mut();
-    let c2rust_current_block: u64;
+) -> Option<(std::fs::File, String)> {
+    let type_dir = DirectoryForInclude(type_0);
     let mut i: u32 = *offset;
-    loop {
-        if i >= xkb_context_num_include_paths(ctx) {
-            c2rust_current_block = 8515828400728868193;
-            break;
-        }
-        let (_, _trunc) = unsafe { crate::xkb::utils::snprintf_args(
-            buf,
-            buf_size,
-            format_args!(
-                "{}/{}/{}",
-                xkb_context_include_path_get(ctx, i),
-                typeDir,
-                name_str
-            ),
-        ) };
-        if _trunc {
-            log::error!("[XKB-{:03}] Path is too long: expected max length of {}, got: {}/{}/{}\n",
+    while i < xkb_context_num_include_paths(ctx) {
+        let path = format!(
+            "{}/{}/{}",
+            xkb_context_include_path_get(ctx, i),
+            type_dir,
+            name
+        );
+        if path.len() >= 4096 {
+            log::error!("[XKB-{:03}] Path is too long: expected max length of {}, got: {}\n",
                 XKB_ERROR_INVALID_PATH as i32,
-                buf_size,
-                xkb_context_include_path_get(ctx, i),
-                typeDir,
-                name_str);
-        } else {
-            file = unsafe { fopen(buf, b"rb\0".as_ptr() as *const i8) as *mut FILE };
-            if !file.is_null() {
-                *offset = i;
-                c2rust_current_block = 17619028831370153636;
-                break;
-            }
+                4096,
+                &path);
+        } else if let Ok(file) = std::fs::File::open(&path) {
+            *offset = i;
+            return Some((file, path));
         }
-        i = i.wrapping_add(1);
+        i += 1;
     }
-    match c2rust_current_block {
-        8515828400728868193 if required && *offset == 0_u32 => {
-            log::error!("[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
-                XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                typeDir,
-                name_str);
-            LogIncludePaths(ctx);
-        }
-        _ => {}
+    if required && *offset == 0 {
+        log::error!("[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
+            XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
+            type_dir,
+            name);
+        LogIncludePaths(ctx);
     }
-    file
+    None
 }
 pub fn ExceedsIncludeMaxDepth(include_depth: u32) -> bool {
     if include_depth >= INCLUDE_MAX_DEPTH as u32 {
@@ -409,65 +310,54 @@ pub fn ExceedsIncludeMaxDepth(include_depth: u32) -> bool {
     }
 }
 pub fn ProcessIncludeFile(
-    ctx: *mut xkb_context,
+    ctx: &mut xkb_context,
     stmt: &IncludeStmt,
     file_type: u32,
-    path: *mut i8,
-    path_size: usize,
 ) -> *mut XkbFile {
-    unsafe {
-        let mut xkb_file: *mut XkbFile = std::ptr::null_mut();
-        let mut candidate: *mut XkbFile = std::ptr::null_mut();
+    let mut xkb_file: *mut XkbFile = std::ptr::null_mut();
+    let mut candidate: *mut XkbFile = std::ptr::null_mut();
 
-        // Create CStrings for FFI calls
-        let file_cstr = std::ffi::CString::new(stmt.file.as_str()).unwrap();
-        let mut stmt_file: *const i8 = file_cstr.as_ptr();
-        let mut stmt_file_len: usize = stmt.file.len();
-        let expanded: isize = expand_path(
+    // Expand %-sequences in the file name
+    let stmt_file: String = match expand_path_str("(unknown)", &stmt.file, file_type) {
+        Err(()) => return std::ptr::null_mut(),
+        Ok(Some(expanded)) => expanded,
+        Ok(None) => stmt.file.clone(),
+    };
+    let expanded = stmt_file != stmt.file;
+
+    let map_cstr = if stmt.map.is_empty() {
+        None
+    } else {
+        Some(std::ffi::CString::new(stmt.map.as_str()).unwrap())
+    };
+    let map_ptr = map_cstr.as_ref().map_or(std::ptr::null(), |c| c.as_ptr());
+
+    let absolute_path = stmt_file.starts_with('/');
+    let ctx_ptr: *mut xkb_context = ctx;
+    let mut offset: u32 = 0;
+    let mut file_and_path: Option<(std::fs::File, String)> = if absolute_path {
+        std::fs::File::open(&stmt_file).ok().map(|f| (f, stmt_file.clone()))
+    } else if expanded {
+        // Expanded but not absolute — don't search include paths
+        None
+    } else {
+        FindFileInXkbPath(
             ctx,
             "(unknown)",
-            stmt_file as *const i8,
-            stmt_file_len,
+            &stmt_file,
             file_type,
-            path,
-            path_size,
-        );
-        if expanded < 0_isize {
-            return std::ptr::null_mut();
-        } else if expanded > 0_isize {
-            stmt_file = path;
-            stmt_file_len = expanded as usize;
-        }
-        let mut file: *mut FILE;
-        let mut offset: u32 = 0_u32;
-        let absolute_path: bool = is_absolute_path(stmt_file as *const i8);
-        if absolute_path {
-            file = fopen(stmt_file as *const i8, b"rb\0".as_ptr() as *const i8) as *mut FILE;
-        } else if (expanded != 0) as i64 != 0 {
-            file = std::ptr::null_mut();
-        } else {
-            file = FindFileInXkbPath(
-                unsafe { &mut *ctx },
-                "(unknown)",
-                stmt_file as *const i8,
-                stmt_file_len,
-                file_type,
-                path,
-                path_size,
-                &mut offset,
-                true,
-            );
-        }
-        let map_cstr = if stmt.map.is_empty() {
-            None
-        } else {
-            Some(std::ffi::CString::new(stmt.map.as_str()).unwrap())
-        };
-        let map_ptr = map_cstr.as_ref().map_or(std::ptr::null(), |c| c.as_ptr());
-        while !file.is_null() {
-            xkb_file = XkbParseFile(ctx, file, &stmt.file, map_ptr);
-            fclose(file);
-            if !xkb_file.is_null() {
+            &mut offset,
+            true,
+        )
+    };
+
+    while let Some((ref open_file, ref _path)) = file_and_path {
+        xkb_file = unsafe { XkbParseFile(ctx_ptr, open_file, &stmt.file, map_ptr) };
+        // Drop the file (closes it)
+        let _ = file_and_path.take();
+
+        if !xkb_file.is_null() {
+            unsafe {
                 if (*xkb_file).file_type as u32 != file_type {
                     log::error!("[XKB-{:03}] Include file of wrong type (expected {}, got {}); Include file \"{}\" ignored\n",
                         XKB_ERROR_INVALID_INCLUDED_FILE as i32,
@@ -488,22 +378,22 @@ pub fn ProcessIncludeFile(
                     xkb_file = std::ptr::null_mut();
                 }
             }
-            if absolute_path {
-                break;
-            }
-            offset = offset.wrapping_add(1);
-            file = FindFileInXkbPath(
-                unsafe { &mut *ctx },
-                "(unknown)",
-                stmt_file as *const i8,
-                stmt_file_len,
-                file_type,
-                path,
-                path_size,
-                &mut offset,
-                true,
-            );
         }
+        if absolute_path {
+            break;
+        }
+        offset += 1;
+        file_and_path = FindFileInXkbPath(
+            unsafe { &mut *ctx_ptr },
+            "(unknown)",
+            &stmt_file,
+            file_type,
+            &mut offset,
+            true,
+        );
+    }
+
+    unsafe {
         if xkb_file.is_null() {
             xkb_file = candidate;
         } else {

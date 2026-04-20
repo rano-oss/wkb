@@ -846,14 +846,8 @@ fn HandleIncludeSymbols(info: &mut SymbolsInfo<'_>, include: &mut IncludeStmt) -
         while let Some(stmt) = current {
             let mut next_incl = SymbolsInfo::new(&mut *ki_ptr);
 
-            let mut path: [i8; 4096] = [0; 4096];
-            let file: *mut XkbFile = ProcessIncludeFile(
-                ctx_ptr,
-                stmt,
-                FILE_TYPE_SYMBOLS,
-                path.as_mut_ptr(),
-                std::mem::size_of::<[i8; 4096]>(),
-            );
+            let file: *mut XkbFile =
+                ProcessIncludeFile(unsafe { &mut *ctx_ptr }, stmt, FILE_TYPE_SYMBOLS);
             if file.is_null() {
                 info.errorCount += 10_i32;
                 ClearSymbolsInfo(&mut included);

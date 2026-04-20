@@ -246,10 +246,6 @@ pub fn is_absolute_path_bytes(path: &[u8]) -> bool {
     path.first() == Some(&b'/')
 }
 
-pub unsafe fn is_absolute_path(path: *const i8) -> bool {
-    !path.is_null() && *path == b'/' as i8
-}
-
 // === Number parsing utilities ===
 // Safe Rust replacements for C-style parse functions.
 // Return count of bytes consumed (positive) or -1 on overflow.

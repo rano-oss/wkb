@@ -77,7 +77,7 @@ pub use crate::xkb::shared_types::{
 };
 use crate::xkb::xkbcomp::ast_build::XkbFileFromComponents;
 use crate::xkb::xkbcomp::keymap::CompileKeymap;
-use crate::xkb::xkbcomp::scanner::{XkbParseFile, XkbParseString};
+use crate::xkb::xkbcomp::scanner::XkbParseString;
 
 pub use crate::xkb::shared_types::{
     format_max_groups, xkb_action, xkb_action_controls, xkb_action_flags, xkb_controls_action,
@@ -105,7 +105,6 @@ pub use crate::xkb::shared_types::{
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_GROUPS,
     XKB_MAX_GROUPS_X11, _ACTION_TYPE_NUM_ENTRIES,
 };
-use libc::FILE;
 
 fn compile_keymap_file(keymap: *mut xkb_keymap, file: *mut XkbFile) -> bool {
     unsafe {

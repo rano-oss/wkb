@@ -238,7 +238,6 @@ use crate::xkb::utils::cstr_dup;
 fn is_space(ch: i8) -> bool {
     matches!(ch as u8, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
 }
-use libc::FILE;
 pub static DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
     if s.str_match(b"0x") {
@@ -557,40 +556,22 @@ pub fn XkbParseStringNext(
 }
 pub fn XkbParseFile(
     ctx: *mut xkb_context,
-    file: *mut FILE,
+    file: &std::fs::File,
     file_name: &str,
     map: *const i8,
 ) -> *mut XkbFile {
     unsafe {
-        // Get file descriptor from FILE*
-        let fd = libc::fileno(file as *mut libc::FILE);
-        if fd < 0 {
-            log::error!("Invalid file descriptor\n");
-            return std::ptr::null_mut();
-        }
-
-        // Create Rust File from file descriptor
         use crate::xkb::utils::MappedFile;
-        use std::fs::File;
-        use std::os::unix::io::FromRawFd;
-
-        let rust_file = File::from_raw_fd(fd);
 
         // Map the file
-        let mapped = match MappedFile::new(&rust_file) {
+        let mapped = match MappedFile::new(file) {
             Ok(m) => m,
             Err(e) => {
                 log::error!("Couldn't read XKB file {}: {}\n", file_name, e);
-                std::mem::forget(rust_file); // Don't close fd - caller owns FILE*
                 return std::ptr::null_mut();
             }
         };
 
-        let xkb_file = XkbParseString(ctx, mapped.as_ptr(), mapped.len(), file_name, map);
-
-        // Keep file descriptor open - don't close it
-        std::mem::forget(rust_file);
-
-        xkb_file
+        XkbParseString(ctx, mapped.as_ptr(), mapped.len(), file_name, map)
     }
 }

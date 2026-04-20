@@ -1,5 +1,4 @@
 pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
-pub use crate::xkb::utils::is_absolute_path;
 
 pub use crate::xkb::messages::{
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -60,10 +59,9 @@ pub use crate::xkb::shared_types::{
 };
 use crate::xkb::utils::{cstr_as_bytes, cstr_len};
 pub use crate::xkb::xkbcomp::include::{
-    expand_path, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
+    expand_path_str, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
 };
-use libc::{fclose, fopen, FILE};
 
 /// Appends `count` bytes from `src` to the Vec.
 #[inline]
@@ -643,110 +641,63 @@ fn matcher_include(m: &mut matcher, parent_scanner: &mut scanner, include_depth:
             );
             return;
         }
-        let mut stmt_file: *const i8 = inc.start;
-        let mut stmt_file_len: usize = inc.len;
-        let mut buf: [i8; 4096] = [0; 4096];
-        let expanded: isize = expand_path(
-            m.ctx,
-            &parent_scanner.file_name,
-            stmt_file,
-            stmt_file_len,
-            FILE_TYPE_RULES,
-            &raw mut buf as *mut i8,
-            std::mem::size_of::<[i8; 4096]>(),
-        ) as isize;
-        if expanded < 0_isize {
-            return;
-        } else if expanded > 0_isize {
-            stmt_file = &raw mut buf as *mut i8;
-            stmt_file_len = expanded as usize;
-        }
-        let mut file: *mut FILE;
-        let mut offset: u32 = 0_u32;
-        let absolute_path: bool = is_absolute_path(stmt_file);
-        if absolute_path {
-            if expanded == 0 {
-                if stmt_file_len < std::mem::size_of::<[i8; 4096]>() {
-                    std::ptr::copy_nonoverlapping(
-                        stmt_file as *const u8,
-                        &raw mut buf as *mut i8 as *mut u8,
-                        stmt_file_len,
-                    );
-                    buf[stmt_file_len] = '\0' as i32 as i8;
-                    stmt_file = &raw mut buf as *mut i8;
-                } else {
-                    log::error!(
-                        "[XKB-{:03}] Path is too long: {} > {}, got raw path: {}\n",
-                        XKB_ERROR_INVALID_PATH as i32,
-                        stmt_file_len,
-                        std::mem::size_of::<[i8; 4096]>(),
-                        std::str::from_utf8_unchecked(std::slice::from_raw_parts(
-                            stmt_file as *const u8,
-                            stmt_file_len
-                        ))
-                    );
-                    return;
-                }
-            }
-            file = fopen(stmt_file, b"rb\0".as_ptr() as *const i8) as *mut FILE;
-        } else if (expanded != 0) as i64 != 0 {
-            file = std::ptr::null_mut();
+        let inc_str = std::str::from_utf8_unchecked(std::slice::from_raw_parts(
+            inc.start as *const u8,
+            inc.len,
+        ));
+        let stmt_file: String =
+            match expand_path_str(&parent_scanner.file_name, inc_str, FILE_TYPE_RULES) {
+                Err(()) => return,
+                Ok(Some(expanded)) => expanded,
+                Ok(None) => inc_str.to_string(),
+            };
+        let expanded = stmt_file != inc_str;
+
+        let absolute_path = stmt_file.starts_with('/');
+        let mut offset: u32 = 0;
+        let mut file_and_path: Option<(std::fs::File, String)> = if absolute_path {
+            std::fs::File::open(&stmt_file)
+                .ok()
+                .map(|f| (f, stmt_file.clone()))
+        } else if expanded {
+            None
         } else {
-            file = FindFileInXkbPath(
-                unsafe { &mut *m.ctx },
-                parent_scanner.file_name.as_str(),
-                stmt_file,
-                stmt_file_len,
+            FindFileInXkbPath(
+                &mut *m.ctx,
+                &parent_scanner.file_name,
+                &stmt_file,
                 FILE_TYPE_RULES,
-                &raw mut buf as *mut i8,
-                std::mem::size_of::<[i8; 4096]>(),
                 &mut offset,
                 true,
-            );
-        }
-        while !file.is_null() {
-            let ret: bool = read_rules_file(
-                m.ctx,
-                m,
-                include_depth.wrapping_add(1_u32),
-                file,
-                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
-                    &raw mut buf as *const i8,
-                )),
-            );
-            fclose(file);
+            )
+        };
+
+        while let Some((ref open_file, ref path)) = file_and_path {
+            let ret: bool =
+                read_rules_file(m.ctx, m, include_depth.wrapping_add(1_u32), open_file, path);
+            let path_str = path.clone();
+            let _ = file_and_path.take();
             if ret {
                 return;
             }
             log::error!(
                 "No components returned from included XKB rules \"{}\"\n",
-                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
-                    &raw mut buf as *const i8
-                ))
+                &path_str
             );
             if absolute_path {
                 break;
             }
-            offset = offset.wrapping_add(1);
-            file = FindFileInXkbPath(
-                unsafe { &mut *m.ctx },
-                parent_scanner.file_name.as_str(),
-                stmt_file,
-                stmt_file_len,
+            offset += 1;
+            file_and_path = FindFileInXkbPath(
+                &mut *m.ctx,
+                &parent_scanner.file_name,
+                &stmt_file,
                 FILE_TYPE_RULES,
-                &raw mut buf as *mut i8,
-                std::mem::size_of::<[i8; 4096]>(),
                 &mut offset,
                 true,
             );
         }
-        log::error!(
-            "Failed to open included XKB rules \"{}\"\n",
-            std::str::from_utf8_unchecked(std::slice::from_raw_parts(
-                stmt_file as *const u8,
-                stmt_file_len
-            ))
-        );
+        log::error!("Failed to open included XKB rules \"{}\"\n", &stmt_file);
     }
 }
 fn matcher_mapping_start_new(m: &mut matcher) {
@@ -2571,7 +2522,7 @@ fn read_rules_file(
     _ctx: *mut xkb_context,
     matcher: &mut matcher,
     include_depth: u32,
-    file: *mut FILE,
+    file: &std::fs::File,
     path: &str,
 ) -> bool {
     unsafe {
@@ -2584,23 +2535,12 @@ fn read_rules_file(
             std::ptr::null_mut(),
         );
 
-        // Convert FILE* to Rust File and map it
         use crate::xkb::utils::MappedFile;
-        use std::fs::File;
-        use std::os::unix::io::FromRawFd;
 
-        let fd = libc::fileno(file as *mut libc::FILE);
-        if fd < 0 {
-            log::error!("Invalid file descriptor\n");
-            return false;
-        }
-
-        let rust_file = File::from_raw_fd(fd);
-        let mapped = match MappedFile::new(&rust_file) {
+        let mapped = match MappedFile::new(file) {
             Ok(m) => m,
             Err(e) => {
                 log::error!("Couldn't read rules file \"{}\": {}\n", path, e);
-                std::mem::forget(rust_file);
                 return false;
             }
         };
@@ -2625,7 +2565,6 @@ fn read_rules_file(
                 &scanner.file_name,
                 loc_0.line,
                 loc_0.column);
-            std::mem::forget(rust_file);
             return false;
         }
         let ret: bool = matcher_match(
@@ -2636,76 +2575,49 @@ fn read_rules_file(
             mapped.len(),
             path,
         );
-        std::mem::forget(rust_file);
         ret
     }
 }
 fn xkb_resolve_partial_rules(
     ctx: *mut xkb_context,
-    path: *mut i8,
-    path_size: usize,
-    rules: *const i8,
-    suffix: *const i8,
+    rules: &str,
+    suffix: &str,
     matcher: &mut matcher,
 ) -> bool {
-    unsafe {
-        let mut partial_rules: [i8; 60] = [0; 60];
-        let (_, _trunc) = crate::xkb::utils::snprintf_args(
-            &raw mut partial_rules as *mut i8,
-            std::mem::size_of::<[i8; 60]>(),
-            format_args!(
-                "{}{}",
-                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(rules)),
-                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(suffix))
-            ),
+    let partial_rules = format!("{}{}", rules, suffix);
+    if partial_rules.len() >= 60 {
+        log::error!(
+            "[XKB-{:03}] Cannot load XKB rules \"{}{}\"\n",
+            XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
+            rules,
+            suffix
         );
-        if _trunc {
+        return false;
+    }
+    let mut offset: u32 = 0;
+    loop {
+        let found = FindFileInXkbPath(
+            unsafe { &mut *ctx },
+            "(unknown)",
+            &partial_rules,
+            FILE_TYPE_RULES,
+            &mut offset,
+            false,
+        );
+        let Some((file, path)) = found else { break };
+        let ok: bool = read_rules_file(ctx, matcher, 0, &file, &path);
+        drop(file);
+        if !ok {
             log::error!(
-                "[XKB-{:03}] Cannot load XKB rules \"{}{}\"\n",
+                "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(rules)),
-                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(suffix))
+                &path
             );
             return false;
         }
-        let mut offset: u32 = 0_u32;
-        let mut file: *mut FILE;
-        let len: usize = cstr_len(&raw mut partial_rules as *mut i8);
-        loop {
-            file = FindFileInXkbPath(
-                unsafe { &mut *ctx },
-                "(unknown)",
-                &raw mut partial_rules as *mut i8,
-                len,
-                FILE_TYPE_RULES,
-                path,
-                path_size,
-                &mut offset,
-                false,
-            );
-            if file.is_null() {
-                break;
-            }
-            let ok: bool = read_rules_file(
-                ctx,
-                matcher,
-                0_u32,
-                file,
-                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path)),
-            );
-            fclose(file);
-            if !ok {
-                log::error!(
-                    "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
-                    XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(path))
-                );
-                return false;
-            }
-            offset = offset.wrapping_add(1);
-        }
-        true
+        offset += 1;
     }
+    true
 }
 fn xkb_resolve_rules(
     ctx: *mut xkb_context,
@@ -2717,214 +2629,183 @@ fn xkb_resolve_rules(
     unsafe {
         let mut mval: *mut matched_sval;
         let mut ret: bool = false;
-        let mut offset: u32 = 0_u32;
-        let mut path: [i8; 4096] = [0; 4096];
-        let file: *mut FILE = FindFileInXkbPath(
-            unsafe { &mut *ctx },
+        let mut offset: u32 = 0;
+        let rules_str = std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(rules));
+        let found = FindFileInXkbPath(
+            &mut *ctx,
             "(unknown)",
-            rules,
-            cstr_len(rules),
+            rules_str,
             FILE_TYPE_RULES,
-            &raw mut path as *mut i8,
-            std::mem::size_of::<[i8; 4096]>(),
             &mut offset,
             true,
-        ) as *mut FILE;
-        if file.is_null() {
+        );
+        let Some((file, path)) = found else {
             log::error!(
                 "[XKB-{:03}] Cannot load XKB rules \"{}\"\n",
                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(rules))
+                rules_str
             );
-        } else {
-            ret = xkb_resolve_partial_rules(
-                ctx,
-                &raw mut path as *mut i8,
-                std::mem::size_of::<[i8; 4096]>(),
-                rules,
-                b".pre\0".as_ptr() as *const i8,
-                matcher,
-            );
-            if ret {
-                ret = read_rules_file(
-                    ctx,
-                    matcher,
-                    0_u32,
-                    file,
-                    std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
-                        &raw mut path as *const i8,
-                    )),
+            return false;
+        };
+        ret = xkb_resolve_partial_rules(ctx, rules_str, ".pre", matcher);
+        if ret {
+            ret = read_rules_file(ctx, matcher, 0, &file, &path);
+            if !ret {
+                log::error!(
+                    "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
+                    XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
+                    &path
                 );
-                if !ret {
-                    log::error!(
-                        "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
-                        XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                        std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
-                            &raw mut path as *mut i8
-                        ))
-                    );
-                } else {
-                    ret = xkb_resolve_partial_rules(
-                        ctx,
-                        &raw mut path as *mut i8,
-                        std::mem::size_of::<[i8; 4096]>(),
-                        rules,
-                        b".post\0".as_ptr() as *const i8,
-                        matcher,
-                    );
-                    if ret {
-                        if (*matcher).kccgst[KCCGST_KEYCODES as usize].is_empty()
-                            || (*matcher).kccgst[KCCGST_TYPES as usize].is_empty()
-                            || (*matcher).kccgst[KCCGST_COMPAT as usize].is_empty()
-                            || (*matcher).kccgst[KCCGST_SYMBOLS as usize].is_empty()
+            } else {
+                ret = xkb_resolve_partial_rules(ctx, rules_str, ".post", matcher);
+                if ret {
+                    if (*matcher).kccgst[KCCGST_KEYCODES as usize].is_empty()
+                        || (*matcher).kccgst[KCCGST_TYPES as usize].is_empty()
+                        || (*matcher).kccgst[KCCGST_COMPAT as usize].is_empty()
+                        || (*matcher).kccgst[KCCGST_SYMBOLS as usize].is_empty()
+                    {
+                        log::error!(
+                            "[XKB-{:03}] No components returned from XKB rules \"{}\"\n",
+                            XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
+                            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(rules))
+                        );
+                        ret = false;
+                    } else {
+                        // Transfer ownership of Vec data directly.
+                        // Each Vec is taken (replaced with empty Vec) and nul-terminated.
                         {
+                            let mut v =
+                                std::mem::take(&mut (*matcher).kccgst[KCCGST_KEYCODES as usize]);
+                            v.push(0);
+                            (*out).keycodes = v;
+                        }
+                        {
+                            let mut v =
+                                std::mem::take(&mut (*matcher).kccgst[KCCGST_TYPES as usize]);
+                            v.push(0);
+                            (*out).types = v;
+                        }
+                        {
+                            let mut v =
+                                std::mem::take(&mut (*matcher).kccgst[KCCGST_COMPAT as usize]);
+                            v.push(0);
+                            (*out).compatibility = v;
+                        }
+                        {
+                            let mut v =
+                                std::mem::take(&mut (*matcher).kccgst[KCCGST_SYMBOLS as usize]);
+                            v.push(0);
+                            (*out).symbols = v;
+                        }
+                        {
+                            let mut v =
+                                std::mem::take(&mut (*matcher).kccgst[KCCGST_GEOMETRY as usize]);
+                            v.push(0);
+                            (*out).geometry = v;
+                        }
+                        mval = &raw mut (*matcher).rmlvo.model;
+                        if !(*mval).matched && (*mval).sval.len > 0_usize {
                             log::error!(
-                                "[XKB-{:03}] No components returned from XKB rules \"{}\"\n",
+                                "[XKB-{:03}] Unrecognized RMLVO model \"{}\" was ignored\n",
                                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
-                                    rules
-                                ))
+                                (*mval).sval.as_str()
                             );
-                            ret = false;
-                        } else {
-                            // Transfer ownership of Vec data directly.
-                            // Each Vec is taken (replaced with empty Vec) and nul-terminated.
+                        }
+                        if !(*matcher).rmlvo.layouts.is_empty() {
+                            mval = (*matcher).rmlvo.layouts.as_mut_ptr().offset(0_i32 as isize)
+                                as *mut matched_sval;
+                            while mval
+                                < (*matcher)
+                                    .rmlvo
+                                    .layouts
+                                    .as_mut_ptr()
+                                    .add((*matcher).rmlvo.layouts.len())
+                                    as *mut matched_sval
                             {
-                                let mut v = std::mem::take(
-                                    &mut (*matcher).kccgst[KCCGST_KEYCODES as usize],
-                                );
-                                v.push(0);
-                                (*out).keycodes = v;
-                            }
-                            {
-                                let mut v =
-                                    std::mem::take(&mut (*matcher).kccgst[KCCGST_TYPES as usize]);
-                                v.push(0);
-                                (*out).types = v;
-                            }
-                            {
-                                let mut v =
-                                    std::mem::take(&mut (*matcher).kccgst[KCCGST_COMPAT as usize]);
-                                v.push(0);
-                                (*out).compatibility = v;
-                            }
-                            {
-                                let mut v =
-                                    std::mem::take(&mut (*matcher).kccgst[KCCGST_SYMBOLS as usize]);
-                                v.push(0);
-                                (*out).symbols = v;
-                            }
-                            {
-                                let mut v = std::mem::take(
-                                    &mut (*matcher).kccgst[KCCGST_GEOMETRY as usize],
-                                );
-                                v.push(0);
-                                (*out).geometry = v;
-                            }
-                            mval = &raw mut (*matcher).rmlvo.model;
-                            if !(*mval).matched && (*mval).sval.len > 0_usize {
-                                log::error!(
-                                    "[XKB-{:03}] Unrecognized RMLVO model \"{}\" was ignored\n",
-                                    XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                    (*mval).sval.as_str()
-                                );
-                            }
-                            if !(*matcher).rmlvo.layouts.is_empty() {
-                                mval = (*matcher).rmlvo.layouts.as_mut_ptr().offset(0_i32 as isize)
-                                    as *mut matched_sval;
-                                while mval
-                                    < (*matcher)
-                                        .rmlvo
-                                        .layouts
-                                        .as_mut_ptr()
-                                        .add((*matcher).rmlvo.layouts.len())
-                                        as *mut matched_sval
-                                {
-                                    if !(*mval).matched && (*mval).sval.len > 0_usize {
-                                        log::error!("[XKB-{:03}] Unrecognized RMLVO layout \"{}\" was ignored\n",
+                                if !(*mval).matched && (*mval).sval.len > 0_usize {
+                                    log::error!("[XKB-{:03}] Unrecognized RMLVO layout \"{}\" was ignored\n",
                                             XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                                             (*mval).sval.as_str());
-                                    }
-                                    mval = mval.offset(1);
                                 }
+                                mval = mval.offset(1);
                             }
-                            if !(*matcher).rmlvo.variants.is_empty() {
-                                mval = (*matcher)
+                        }
+                        if !(*matcher).rmlvo.variants.is_empty() {
+                            mval = (*matcher)
+                                .rmlvo
+                                .variants
+                                .as_mut_ptr()
+                                .offset(0_i32 as isize)
+                                as *mut matched_sval;
+                            while mval
+                                < (*matcher)
                                     .rmlvo
                                     .variants
                                     .as_mut_ptr()
-                                    .offset(0_i32 as isize)
-                                    as *mut matched_sval;
-                                while mval
-                                    < (*matcher)
-                                        .rmlvo
-                                        .variants
-                                        .as_mut_ptr()
-                                        .add((*matcher).rmlvo.variants.len())
-                                        as *mut matched_sval
-                                {
-                                    if !(*mval).matched && (*mval).sval.len > 0_usize {
-                                        log::error!("[XKB-{:03}] Unrecognized RMLVO variant \"{}\" was ignored\n",
+                                    .add((*matcher).rmlvo.variants.len())
+                                    as *mut matched_sval
+                            {
+                                if !(*mval).matched && (*mval).sval.len > 0_usize {
+                                    log::error!("[XKB-{:03}] Unrecognized RMLVO variant \"{}\" was ignored\n",
                                             XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                                             (*mval).sval.as_str());
-                                    }
-                                    mval = mval.offset(1);
                                 }
+                                mval = mval.offset(1);
                             }
-                            if !(*matcher).rmlvo.options.is_empty() {
-                                mval = (*matcher).rmlvo.options.as_mut_ptr().offset(0_i32 as isize)
-                                    as *mut matched_sval;
-                                while mval
-                                    < (*matcher)
-                                        .rmlvo
-                                        .options
-                                        .as_mut_ptr()
-                                        .add((*matcher).rmlvo.options.len())
-                                        as *mut matched_sval
-                                {
-                                    if !(*mval).matched && (*mval).sval.len > 0_usize {
-                                        log::error!("[XKB-{:03}] Unrecognized RMLVO option \"{}\" was ignored\n",
+                        }
+                        if !(*matcher).rmlvo.options.is_empty() {
+                            mval = (*matcher).rmlvo.options.as_mut_ptr().offset(0_i32 as isize)
+                                as *mut matched_sval;
+                            while mval
+                                < (*matcher)
+                                    .rmlvo
+                                    .options
+                                    .as_mut_ptr()
+                                    .add((*matcher).rmlvo.options.len())
+                                    as *mut matched_sval
+                            {
+                                if !(*mval).matched && (*mval).sval.len > 0_usize {
+                                    log::error!("[XKB-{:03}] Unrecognized RMLVO option \"{}\" was ignored\n",
                                             XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
                                             (*mval).sval.as_str());
-                                    }
-                                    mval = mval.offset(1);
                                 }
+                                mval = mval.offset(1);
                             }
-                            if !(*out).symbols.is_empty() && !explicit_layouts.is_null() {
-                                *explicit_layouts = 1_u32;
-                                let mut symbols: *const i8 = (*out).symbols.as_ptr();
-                                loop {
-                                    symbols = crate::xkb::utils::cstr_chr(symbols, ':' as i32);
-                                    if !(!symbols.is_null()
-                                        && *symbols.offset(1_isize) as i32 != '\0' as i32)
-                                    {
-                                        break;
-                                    }
+                        }
+                        if !(*out).symbols.is_empty() && !explicit_layouts.is_null() {
+                            *explicit_layouts = 1_u32;
+                            let mut symbols: *const i8 = (*out).symbols.as_ptr();
+                            loop {
+                                symbols = crate::xkb::utils::cstr_chr(symbols, ':' as i32);
+                                if !(!symbols.is_null()
+                                    && *symbols.offset(1_isize) as i32 != '\0' as i32)
+                                {
+                                    break;
+                                }
 
-                                    symbols = symbols.offset(1);
-                                    let (val_parsed, count) = crate::xkb::utils::parse_dec_u32(
-                                        std::ffi::CStr::from_ptr(symbols).to_bytes(),
-                                    );
-                                    let group: u32 = val_parsed;
-                                    let count: i32 = count;
-                                    if count > 0_i32
-                                        && (*symbols.offset(count as isize) as i32 == '\0' as i32
-                                            || (*symbols.offset(count as isize) as i32
-                                                == MERGE_OVERRIDE_PREFIX
-                                                || *symbols.offset(count as isize) as i32
-                                                    == MERGE_AUGMENT_PREFIX
-                                                || *symbols.offset(count as isize) as i32
-                                                    == MERGE_REPLACE_PREFIX))
-                                        && group > 0_u32
-                                        && group <= XKB_MAX_GROUPS as u32
-                                    {
-                                        *explicit_layouts = if *explicit_layouts > group {
-                                            *explicit_layouts
-                                        } else {
-                                            group
-                                        };
-                                        symbols = symbols.offset(count as isize);
-                                    }
+                                symbols = symbols.offset(1);
+                                let (val_parsed, count) = crate::xkb::utils::parse_dec_u32(
+                                    std::ffi::CStr::from_ptr(symbols).to_bytes(),
+                                );
+                                let group: u32 = val_parsed;
+                                let count: i32 = count;
+                                if count > 0_i32
+                                    && (*symbols.offset(count as isize) as i32 == '\0' as i32
+                                        || (*symbols.offset(count as isize) as i32
+                                            == MERGE_OVERRIDE_PREFIX
+                                            || *symbols.offset(count as isize) as i32
+                                                == MERGE_AUGMENT_PREFIX
+                                            || *symbols.offset(count as isize) as i32
+                                                == MERGE_REPLACE_PREFIX))
+                                    && group > 0_u32
+                                    && group <= XKB_MAX_GROUPS as u32
+                                {
+                                    *explicit_layouts = if *explicit_layouts > group {
+                                        *explicit_layouts
+                                    } else {
+                                        group
+                                    };
+                                    symbols = symbols.offset(count as isize);
                                 }
                             }
                         }
@@ -2932,9 +2813,7 @@ fn xkb_resolve_rules(
                 }
             }
         }
-        if !file.is_null() {
-            fclose(file);
-        }
+        // file is dropped automatically (closes on drop)
         ret
     }
 }

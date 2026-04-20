@@ -538,14 +538,8 @@ fn HandleIncludeCompatMap(info: &mut CompatInfo<'_>, include: &mut IncludeStmt) 
     while let Some(stmt) = current {
         let mut next_incl = CompatInfo::new(unsafe { &mut *ki_ptr });
 
-        let mut path: [i8; 4096] = [0; 4096];
-        let file: *mut XkbFile = ProcessIncludeFile(
-            ctx_ptr,
-            stmt,
-            FILE_TYPE_COMPAT,
-            path.as_mut_ptr(),
-            std::mem::size_of::<[i8; 4096]>(),
-        );
+        let file: *mut XkbFile =
+            ProcessIncludeFile(unsafe { &mut *ctx_ptr }, stmt, FILE_TYPE_COMPAT);
         if file.is_null() {
             info.errorCount += 10_i32;
             ClearCompatInfo(&mut included);
