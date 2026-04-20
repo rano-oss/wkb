@@ -86,7 +86,6 @@ pub use crate::xkb::shared_types::{
     XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES, XKB_RMLVO_BUILDER_FLAGS_VALUES,
     XKB_STATE_COMPONENT_VALUES, XKB_STATE_MATCH_VALUES,
 };
-use libc::FILE;
 pub fn clear_level(leveli: &mut xkb_level) {
     leveli.syms.clear();
     leveli.actions.clear();
@@ -177,61 +176,7 @@ pub fn xkb_keymap_new_from_string(
     }
     Some(Rc::new(*keymap))
 }
-pub unsafe fn xkb_keymap_new_from_file(
-    ctx: xkb_context,
-    file: *mut FILE,
-    format: u32,
-    flags: u32,
-) -> Option<Rc<xkb_keymap>> {
-    let ops: *const xkb_keymap_format_ops = get_keymap_format_ops(format);
-    if ops.is_null() || (*ops).keymap_new_from_file.is_none() {
-        log::error!(
-            "{}: unsupported keymap format: {}\n",
-            "xkb_keymap_new_from_file",
-            { format }
-        );
-        return None;
-    }
-    if file.is_null() {
-        log::error!("{}: no file specified\n", "xkb_keymap_new_from_file");
-        return None;
-    }
-    let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_file", format, flags)?;
-    if !((*ops).keymap_new_from_file.unwrap())(&mut *keymap as *mut xkb_keymap, file) {
-        return None;
-    }
-    Some(Rc::new(*keymap))
-}
 
-pub unsafe fn xkb_keymap_get_as_string(keymap: *mut xkb_keymap, mut format: u32) -> *mut i8 {
-    let flags = XKB_KEYMAP_SERIALIZE_NO_FLAGS;
-    static XKB_KEYMAP_SERIALIZE_FLAGS: xkb_keymap_serialize_flags =
-        XKB_KEYMAP_SERIALIZE_FLAGS_VALUES as i32 as xkb_keymap_serialize_flags;
-    if flags & !XKB_KEYMAP_SERIALIZE_FLAGS != 0 {
-        log::error!(
-            "{}: unrecognized serialization flags: {:#x}\n",
-            "xkb_keymap_get_as_string2",
-            flags & !XKB_KEYMAP_SERIALIZE_FLAGS
-        );
-        return std::ptr::null_mut();
-    }
-    if format == XKB_KEYMAP_USE_ORIGINAL_FORMAT {
-        format = (*keymap).format;
-    }
-    let ops: *const xkb_keymap_format_ops =
-        get_keymap_format_ops(format) as *const xkb_keymap_format_ops;
-    if ops.is_null() || (*ops).keymap_get_as_string.is_none() {
-        log::error!(
-            "{}: unsupported keymap format: {}\n",
-            "xkb_keymap_get_as_string2",
-            { format }
-        );
-        return std::ptr::null_mut();
-    }
-    (*ops)
-        .keymap_get_as_string
-        .expect("non-null function pointer")(keymap, format, flags)
-}
 pub fn xkb_keymap_num_mods(keymap: &xkb_keymap) -> u32 {
     keymap.mods.num_mods
 }
@@ -434,26 +379,31 @@ pub fn xkb_keymap_new(
         );
         return None;
     }
-    // Use Box for allocation — zeroed via MaybeUninit to avoid UB
-    let mut keymap = Box::new(std::mem::MaybeUninit::<xkb_keymap>::zeroed());
-    let ptr = keymap.as_mut_ptr();
-    // Safety: Initialize non-Copy fields that can't be zeroed.
-    // All fields are written before the assume_init cast below.
-    unsafe {
-        std::ptr::write(&raw mut (*ptr).ctx, ctx);
-        std::ptr::write(&raw mut (*ptr).types, Vec::new());
-        std::ptr::write(&raw mut (*ptr).sym_interprets, Vec::new());
-        std::ptr::write(&raw mut (*ptr).group_names, Vec::new());
-        std::ptr::write(&raw mut (*ptr).keys, Vec::new());
-        std::ptr::write(&raw mut (*ptr).key_names, Vec::new());
-        std::ptr::write(&raw mut (*ptr).key_aliases, Vec::new());
-        std::ptr::write(&raw mut (*ptr).keycodes_section_name, String::new());
-        std::ptr::write(&raw mut (*ptr).symbols_section_name, String::new());
-        std::ptr::write(&raw mut (*ptr).types_section_name, String::new());
-        std::ptr::write(&raw mut (*ptr).compat_section_name, String::new());
-    }
-    // Safety: all fields are now initialized (zeroed Copy fields + written non-Copy fields)
-    let mut keymap = unsafe { Box::from_raw(Box::into_raw(keymap) as *mut xkb_keymap) };
+    let mut keymap = Box::new(xkb_keymap {
+        ctx,
+        flags: 0,
+        format: 0,
+        num_leds: 0,
+        leds: [xkb_led::default(); 32],
+        min_key_code: 0,
+        max_key_code: 0,
+        num_keys: 0,
+        num_keys_low: 0,
+        keys: Vec::new(),
+        key_names: Vec::new(),
+        key_aliases: Vec::new(),
+        types: Vec::new(),
+        sym_interprets: Vec::new(),
+        mods: xkb_mod_set::default(),
+        canonical_state_mask: 0,
+        redirect_key_auto: 0,
+        num_groups: 0,
+        group_names: Vec::new(),
+        keycodes_section_name: String::new(),
+        symbols_section_name: String::new(),
+        types_section_name: String::new(),
+        compat_section_name: String::new(),
+    });
     keymap.flags = flags;
     keymap.format = format;
 

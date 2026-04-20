@@ -327,7 +327,9 @@ pub const XKB_STATE_MATCH_FLAGS: u32 = 65539;
 
 pub type xkb_filter_result = u32;
 
-static mut SYNTHETIC_KEY_BREAK_GROUP_LATCH: xkb_key = xkb_key {
+use std::sync::LazyLock;
+
+static SYNTHETIC_KEY_BREAK_GROUP_LATCH: LazyLock<xkb_key> = LazyLock::new(|| xkb_key {
     keycode: 0,
     name: 0,
     explicit: 0 as xkb_explicit_components,
@@ -340,9 +342,25 @@ static mut SYNTHETIC_KEY_BREAK_GROUP_LATCH: xkb_key = xkb_key {
     out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
     out_of_range_group_number: 0,
     num_groups: 1,
-    groups: Vec::new(),
+    groups: vec![xkb_group {
+        explicit_symbols: false,
+        explicit_actions: false,
+        implicit_actions: false,
+        explicit_type: false,
+        type_idx: 0,
+        levels: vec![xkb_level {
+            upper: XKB_KEY_NoSymbol as u32,
+            has_upper: false,
+            syms: Vec::new(),
+            actions: vec![xkb_action::Internal(xkb_internal_action {
+                type_0: ACTION_TYPE_INTERNAL,
+                flags: INTERNAL_BREAKS_GROUP_LATCH,
+                clear_latched_mods: 0,
+            })],
+        }],
+    }],
     overlay_keys: Vec::new(),
-};
+});
 
 fn get_entry_for_mods(type_0: &xkb_key_type, mods: u32) -> Option<&xkb_key_type_entry> {
     for entry in &type_0.entries {
@@ -1377,18 +1395,6 @@ pub fn xkb_state_new(keymap: Rc<xkb_keymap>) -> Box<xkb_state> {
     xkb_state_update_derived(&mut state);
     state
 }
-
-pub unsafe fn xkb_state_unref(state: *mut xkb_state) {
-    if state.is_null() || {
-        (*state).refcnt -= 1;
-        (*state).refcnt > 0_i32
-    } {
-        return;
-    }
-    // xkb_state_destroy inlined — Rc<xkb_keymap> drops automatically
-    // Vec<xkb_filter> will be dropped when the owning struct is dropped
-    drop(Box::from_raw(state));
-}
 pub fn xkb_state_get_keymap(state: &xkb_state) -> &xkb_keymap {
     &state.keymap
 }
@@ -1551,25 +1557,23 @@ pub fn xkb_state_update_key(state: &mut xkb_state, kc: u32, direction: xkb_key_d
     get_state_component_changes(&prev_components, &state.components)
 }
 
-static mut SYNTHETIC_KEY_LEVEL_ENTRY: xkb_key_type_entry = xkb_key_type_entry {
+static SYNTHETIC_KEY_LEVEL_ENTRY: xkb_key_type_entry = xkb_key_type_entry {
     level: 0_u32,
     mods: xkb_mods { mods: 0, mask: 0 },
     preserve: xkb_mods { mods: 0, mask: 0 },
 };
 
-static mut SYNTHETIC_KEY_TYPE: xkb_key_type = {
-    xkb_key_type {
-        name: 0,
-        mods: xkb_mods { mods: 0, mask: 0 },
-        required: false,
-        num_levels: 1_u32,
-        level_names: Vec::new(),
-        entries: Vec::new(), // populated in c2rust_run_static_initializers
-    }
-};
+static SYNTHETIC_KEY_TYPE: LazyLock<xkb_key_type> = LazyLock::new(|| xkb_key_type {
+    name: 0,
+    mods: xkb_mods { mods: 0, mask: 0 },
+    required: false,
+    num_levels: 1_u32,
+    level_names: Vec::new(),
+    entries: vec![SYNTHETIC_KEY_LEVEL_ENTRY],
+});
 
-static mut SYNTHETIC_KEY: xkb_key = xkb_key {
-    keycode: 0,
+static SYNTHETIC_KEY: LazyLock<xkb_key> = LazyLock::new(|| xkb_key {
+    keycode: 0_u32,
     name: 0,
     explicit: 0 as xkb_explicit_components,
     modmap: 0,
@@ -1578,12 +1582,12 @@ static mut SYNTHETIC_KEY: xkb_key = xkb_key {
     repeats: false,
     implicit_actions: false,
     out_of_range_pending_group: false,
-    out_of_range_group_policy: 0,
+    out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
     out_of_range_group_number: 0,
-    num_groups: 1,
+    num_groups: 0,
     groups: Vec::new(),
     overlay_keys: Vec::new(),
-};
+});
 
 fn update_latch_modifiers(state: *mut xkb_state, events: *mut xkb_events, mask: u32, latches: u32) {
     unsafe {
@@ -1629,7 +1633,7 @@ fn update_latch_modifiers(state: *mut xkb_state, events: *mut xkb_events, mask: 
             &raw const synthetic_key_break_mod_latch,
             XKB_KEY_DOWN,
         );
-        let key: *const xkb_key = &raw const SYNTHETIC_KEY;
+        let key: *const xkb_key = &*SYNTHETIC_KEY;
         let latch_mods: xkb_action = xkb_action::ModLatch(xkb_mod_action {
             type_0: ACTION_TYPE_MOD_LATCH,
             flags: 0 as xkb_action_flags,
@@ -1652,10 +1656,10 @@ fn update_latch_group(state: *mut xkb_state, events: *mut xkb_events, group: i32
         xkb_filter_apply_all(
             state,
             events,
-            &raw const SYNTHETIC_KEY_BREAK_GROUP_LATCH,
+            &*SYNTHETIC_KEY_BREAK_GROUP_LATCH,
             XKB_KEY_DOWN,
         );
-        let key: *const xkb_key = &raw const SYNTHETIC_KEY;
+        let key: *const xkb_key = &*SYNTHETIC_KEY;
         let latch_group: xkb_action = xkb_action::GroupLatch(xkb_group_action {
             type_0: ACTION_TYPE_GROUP_LATCH,
             flags: ACTION_ABSOLUTE_SWITCH,
@@ -2240,61 +2244,6 @@ pub fn xkb_state_mod_index_is_consumed(state: &xkb_state, kc: u32, idx: u32) -> 
     xkb_state_mod_index_is_consumed2(state, kc, idx, XKB_CONSUMED_MODE_XKB)
 }
 
-fn c2rust_run_static_initializers() {
-    unsafe {
-        SYNTHETIC_KEY_TYPE.entries = vec![SYNTHETIC_KEY_LEVEL_ENTRY];
-        let synthetic_key_group_break_group_latch = xkb_group {
-            explicit_symbols: false,
-            explicit_actions: false,
-            implicit_actions: false,
-            explicit_type: false,
-            type_idx: 0,
-            levels: vec![xkb_level {
-                upper: XKB_KEY_NoSymbol as u32,
-                has_upper: false,
-                syms: Vec::new(),
-                actions: vec![xkb_action::Internal(xkb_internal_action {
-                    type_0: ACTION_TYPE_INTERNAL,
-                    flags: INTERNAL_BREAKS_GROUP_LATCH,
-                    clear_latched_mods: 0,
-                })],
-            }],
-        };
-        SYNTHETIC_KEY_BREAK_GROUP_LATCH = xkb_key {
-            keycode: 0,
-            name: 0,
-            explicit: 0 as xkb_explicit_components,
-            modmap: 0,
-            vmodmap: 0,
-            overlays: 0,
-            repeats: false,
-            implicit_actions: false,
-            out_of_range_pending_group: false,
-            out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
-            out_of_range_group_number: 0,
-            num_groups: 1,
-            groups: vec![synthetic_key_group_break_group_latch],
-            overlay_keys: Vec::new(),
-        };
-        SYNTHETIC_KEY = xkb_key {
-            keycode: 0_u32,
-            name: 0,
-            explicit: 0 as xkb_explicit_components,
-            modmap: 0,
-            vmodmap: 0,
-            overlays: 0,
-            repeats: false,
-            implicit_actions: false,
-            out_of_range_pending_group: false,
-            out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
-            out_of_range_group_number: 0,
-            num_groups: 0,
-            groups: Vec::new(),
-            overlay_keys: Vec::new(),
-        };
-    }
-}
-
 use crate::xkb::keymap::{
     xkb_keymap_key_get_syms_by_level_ref, xkb_keymap_layout_get_index_ref,
     xkb_keymap_led_get_index_ref, xkb_keymap_mod_get_index_ref, xkb_keymap_num_layouts_for_key,
@@ -2303,8 +2252,3 @@ use crate::xkb::keymap::{
 use crate::xkb::keysym_case_mappings::xkb_keysym_to_upper;
 use crate::xkb::keysym_utf::xkb_keysym_to_utf8;
 use crate::xkb::shared_types::*;
-#[used]
-#[cfg_attr(target_os = "linux", link_section = ".init_array")]
-#[cfg_attr(target_os = "windows", link_section = ".CRT$XIB")]
-#[cfg_attr(target_os = "macos", link_section = "__DATA,__mod_init_func")]
-static INIT_ARRAY: [unsafe fn(); 1] = [c2rust_run_static_initializers];

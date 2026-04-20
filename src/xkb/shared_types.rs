@@ -657,7 +657,7 @@ pub const EXPLICIT_TYPES: xkb_explicit_components = 4;
 pub const EXPLICIT_INTERP: xkb_explicit_components = 2;
 pub const EXPLICIT_SYMBOLS: xkb_explicit_components = 1;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct xkb_led {
     pub name: u32,
     pub which_groups: u32,
