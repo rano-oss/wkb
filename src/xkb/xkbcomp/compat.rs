@@ -1,5 +1,4 @@
 use super::prelude::*;
-use crate::xkb::context::xkb_context_get_buffer;
 pub use crate::xkb::shared_ast_types::{InterpDef, LedMapDef, ReportBadField, ReportNotArray};
 pub use crate::xkb::shared_types::{MAX_ACTIONS_PER_LEVEL, MOD_REAL_MASK_ALL, XKB_MAX_LEDS};
 use crate::xkb::text::{
@@ -113,28 +112,20 @@ pub struct collect {
     pub sym_interprets: Vec<xkb_sym_interpret>,
 }
 // C2Rust_Unnamed_20 removed: replaced by Vec<xkb_action>
-fn siText(si: &SymInterpInfo, info: &mut CompatInfo<'_>) -> &'static str {
-    unsafe {
-        if std::ptr::eq(si, &info.default_interp) {
-            return "default";
-        }
-        let buf: *mut i8 = xkb_context_get_buffer(&mut (*info.ctx()).clone(), 128_usize);
-        let (written, _) = crate::xkb::utils::snprintf_args(
-            buf,
-            128_usize,
-            format_args!(
-                "{}+{}({})",
-                KeysymText(si.interp.sym),
-                SIMatchText(si.interp.match_0),
-                ModMaskText(info.ctx(), MOD_BOTH, &info.mods, si.interp.mods),
-            ),
-        );
-        std::str::from_utf8_unchecked(std::slice::from_raw_parts(buf as *const u8, written))
+fn siText(si: &SymInterpInfo, info: &mut CompatInfo<'_>) -> String {
+    if std::ptr::eq(si, &info.default_interp) {
+        return "default".to_string();
     }
+    format!(
+        "{}+{}({})",
+        KeysymText(si.interp.sym),
+        SIMatchText(si.interp.match_0),
+        ModMaskText(info.ctx(), MOD_BOTH, &info.mods, si.interp.mods),
+    )
 }
 #[inline]
 fn ReportSINotArray(info: &mut CompatInfo<'_>, si: &SymInterpInfo, field: &str) -> bool {
-    ReportNotArray("symbol interpretation", field, siText(si, info))
+    ReportNotArray("symbol interpretation", field, &siText(si, info))
 }
 #[inline]
 fn ReportSIBadType(
@@ -147,7 +138,7 @@ fn ReportSIBadType(
         XKB_ERROR_WRONG_FIELD_TYPE,
         "symbol interpretation",
         field,
-        siText(si, info),
+        &siText(si, info),
         wanted,
     )
 }
@@ -599,7 +590,7 @@ fn SetInterpField(
             if num_actions > MAX_ACTIONS_PER_LEVEL as u32 {
                 log::error!(
                     "Interpret {} has too many actions; expected max {}, got: {}\n",
-                    siText(si, info),
+                    &siText(si, info),
                     65535_i32,
                     num_actions
                 );
@@ -704,7 +695,7 @@ fn SetInterpField(
         si.interp.level_one_only = val != 0;
         si.defined = (si.defined | SI_FIELD_LEVEL_ONE_ONLY) as si_field;
     } else {
-        ReportBadField("symbol interpretation", field, siText(si, info));
+        ReportBadField("symbol interpretation", field, &siText(si, info));
         return info.keymap_info.strict & PARSER_NO_UNKNOWN_INTERPRET_FIELDS == 0;
     }
     true

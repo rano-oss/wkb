@@ -54,7 +54,6 @@ pub use crate::xkb::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
 pub use crate::xkb::shared_types::{R_OK, X_OK};
-use crate::xkb::utils::cstr_as_bytes;
 fn context_include_path_append(ctx: &mut xkb_context, path: &str) -> i32 {
     let is_dir = std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false);
     if is_dir {
@@ -68,17 +67,7 @@ fn context_include_path_append(ctx: &mut xkb_context, path: &str) -> i32 {
     log::info!("Include path failed: \"{}\"\n", path);
     0_i32
 }
-pub unsafe fn xkb_context_include_path_append(ctx: *mut xkb_context, path: *const i8) -> i32 {
-    unsafe {
-        let ctx = &mut *ctx;
-        if xkb_context_init_includes(ctx) {
-            let path_str = std::ffi::CStr::from_ptr(path).to_str().unwrap_or("");
-            context_include_path_append(ctx, path_str)
-        } else {
-            0_i32
-        }
-    }
-}
+
 pub fn xkb_context_include_path_get_extra_path() -> String {
     match xkb_context_getenv("XKB_CONFIG_EXTRA_PATH") {
         Ok(extra) => extra,
@@ -238,28 +227,7 @@ pub fn xkb_context_include_path_get(ctx: &mut xkb_context, idx: u32) -> String {
     }
     ctx.includes.get(idx as usize).unwrap().clone()
 }
-fn log_level_to_prefix(level: u32) -> &'static str {
-    match level {
-        50 => "xkbcommon: DEBUG: ",
-        40 => "xkbcommon: INFO: ",
-        30 => "xkbcommon: WARNING: ",
-        20 => "xkbcommon: ERROR: ",
-        10 => "xkbcommon: CRITICAL: ",
-        _ => "",
-    }
-}
-unsafe fn default_log_fn(_ctx: *mut xkb_context, level: u32, msg: *const i8) {
-    unsafe {
-        let prefix = log_level_to_prefix(level);
-        if !prefix.is_empty() {
-            eprint!("{}", prefix);
-        }
-        eprint!(
-            "{}",
-            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(msg))
-        );
-    }
-}
+
 fn log_level_from_str(level: &str) -> u32 {
     let bytes = level.as_bytes();
     // Try parsing as integer first
@@ -310,7 +278,6 @@ fn log_verbosity_from_str(verbosity: &str) -> i32 {
 pub fn xkb_context_new(flags: xkb_context_flags) -> xkb_context {
     let mut ctx = xkb_context {
         refcnt: 1,
-        log_fn: Some(default_log_fn as unsafe fn(*mut xkb_context, u32, *const i8) -> ()),
         log_level: XKB_LOG_LEVEL_ERROR,
         log_verbosity: XKB_LOG_VERBOSITY_DEFAULT,
         names_dflt: xkb_rule_names {
@@ -323,8 +290,6 @@ pub fn xkb_context_new(flags: xkb_context_flags) -> xkb_context {
         includes: Vec::new(),
         failed_includes: Vec::new(),
         atom_table: atom_table_new(),
-        text_buffer: [0i8; 2048],
-        text_next: 0,
         use_environment_names: false,
         use_secure_getenv: false,
         pending_default_includes: false,
@@ -405,25 +370,6 @@ pub fn xkb_atom_text(atom_table: &atom_table, atom: u32) -> &str {
     atom_text(atom_table, atom)
 }
 
-pub unsafe fn xkb_log(ctx: *mut xkb_context, level: u32, verbosity: i32, msg: *const i8) {
-    unsafe {
-        if (*ctx).log_level < level || (*ctx).log_verbosity < verbosity {
-            return;
-        }
-        (*ctx).log_fn.expect("non-null function pointer")(ctx, level, msg);
-    }
-}
-pub fn xkb_context_get_buffer(ctx: &mut xkb_context, size: usize) -> *mut i8 {
-    if size >= std::mem::size_of::<[i8; 2048]>() {
-        return std::ptr::null_mut();
-    }
-    if (std::mem::size_of::<[i8; 2048]>()).wrapping_sub(ctx.text_next) <= size {
-        ctx.text_next = 0_usize;
-    }
-    let rtrn: *mut i8 = unsafe { (&raw mut ctx.text_buffer as *mut i8).add(ctx.text_next) };
-    ctx.text_next = ctx.text_next.wrapping_add(size);
-    rtrn
-}
 pub fn xkb_context_sanitize_rule_names(ctx: &xkb_context, rmlvo: &mut xkb_rule_names) -> RMLVO {
     let mut modified: RMLVO = 0 as RMLVO;
     if rmlvo.rules.as_bytes().is_empty() {

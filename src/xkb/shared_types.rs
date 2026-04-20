@@ -65,7 +65,6 @@ pub use crate::xkb::atom::atom_table;
 #[derive(Clone, Debug)]
 pub struct xkb_context {
     pub refcnt: i32,
-    pub log_fn: Option<unsafe fn(*mut xkb_context, u32, *const i8) -> ()>,
     pub log_level: u32,
     pub log_verbosity: i32,
     // pub user_data: *mut ::core::ffi::c_void,
@@ -74,8 +73,6 @@ pub struct xkb_context {
     pub failed_includes: Vec<String>,
     pub atom_table: atom_table,
     // pub x11_atom_cache: *mut ::core::ffi::c_void,
-    pub text_buffer: [i8; 2048],
-    pub text_next: usize,
     pub use_environment_names: bool,
     pub use_secure_getenv: bool,
     pub pending_default_includes: bool,
