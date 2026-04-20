@@ -1688,10 +1688,6 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
         let elem_owned = elem.to_owned();
         let field_owned = field.to_owned();
         ret = {
-            let mut value_raw = stmt
-                .value
-                .take()
-                .map_or(std::ptr::null_mut(), |b| Box::into_raw(b));
             let r = SetDefaultActionField(
                 info.keymap_info,
                 &mut info.default_actions,
@@ -1699,11 +1695,10 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
                 &elem_owned,
                 &field_owned,
                 arrayNdx_opt,
-                &raw mut value_raw,
+                &mut stmt.value,
                 stmt.merge,
             ) as u32
                 != PARSER_FATAL_ERROR;
-            stmt.value = unsafe { box_from_raw(value_raw) };
             r
         };
     } else {

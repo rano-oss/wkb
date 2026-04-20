@@ -41,28 +41,28 @@ pub type actionHandler = Option<
         u32,
         Option<&ExprDef>,
         &ExprDef,
-        *mut *mut ExprDef,
+        Option<&mut Option<Box<ExprDef>>>,
     ) -> u32,
 >;
-// SAFETY: These are read-only constants; the raw pointers in other ExprKind variants are irrelevant
-// because these use Boolean which contains no pointers.
-struct SyncExprDef(ExprDef);
-unsafe impl Sync for SyncExprDef {}
-
-static CONST_TRUE: SyncExprDef = SyncExprDef(ExprDef {
-    common: ParseCommon {
-        next: std::ptr::null_mut(),
-        type_0: STMT_EXPR_BOOLEAN_LITERAL,
-    },
-    kind: ExprKind::Boolean(true),
-});
-static CONST_FALSE: SyncExprDef = SyncExprDef(ExprDef {
-    common: ParseCommon {
-        next: std::ptr::null_mut(),
-        type_0: STMT_EXPR_BOOLEAN_LITERAL,
-    },
-    kind: ExprKind::Boolean(false),
-});
+// Constant true/false ExprDef values used in HandleActionDef
+fn const_true_expr() -> ExprDef {
+    ExprDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0: STMT_EXPR_BOOLEAN_LITERAL,
+        },
+        kind: ExprKind::Boolean(true),
+    }
+}
+fn const_false_expr() -> ExprDef {
+    ExprDef {
+        common: ParseCommon {
+            next: std::ptr::null_mut(),
+            type_0: STMT_EXPR_BOOLEAN_LITERAL,
+        },
+        kind: ExprKind::Boolean(false),
+    }
+}
 pub fn InitActionsInfo(keymap: &xkb_keymap, info: &mut ActionsInfo) {
     let mut type_0: u32 = ACTION_TYPE_NONE;
     while (type_0 as u32) < _ACTION_TYPE_NUM_ENTRIES {
@@ -320,7 +320,7 @@ fn HandleNoAction(
     field: u32,
     _array_ndx: Option<&ExprDef>,
     _value: &ExprDef,
-    _value_ptr: *mut *mut ExprDef,
+    _value_ptr: Option<&mut Option<Box<ExprDef>>>,
 ) -> u32 {
     log::error!("[XKB-{:03}] The \"{}\" action takes no argument, but got \"{}\" field; Action definition ignored\n",
         XKB_ERROR_INVALID_ACTION_FIELD as i32,
@@ -453,7 +453,7 @@ fn HandleSetLatchLockMods(
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    _value_ptr: *mut *mut ExprDef,
+    _value_ptr: Option<&mut Option<Box<ExprDef>>>,
 ) -> u32 {
     let ctx: &xkb_context = keymap_info.ctx();
     let act = action.as_mods_mut();
@@ -559,77 +559,77 @@ fn CheckGroupField(
     action: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    mut value_ptr: *mut *mut ExprDef,
+    mut value_ptr: Option<&mut Option<Box<ExprDef>>>,
     flags_inout: &mut xkb_action_flags,
     group_rtrn: &mut i32,
 ) -> u32 {
-    unsafe {
-        let spec: *const ExprDef;
-        let mut idx: u32 = 0_u32;
-        let mut flags: xkb_action_flags = *flags_inout;
-        if array_ndx.is_some() {
-            return ReportActionNotArray(action, ACTION_FIELD_GROUP, keymap_info.strict);
-        }
-        if value.common.type_0 == STMT_EXPR_NEGATE || value.common.type_0 == STMT_EXPR_UNARY_PLUS {
-            flags = (flags as u32 & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
-            spec = if let ExprKind::Unary { child, .. } = &value.kind {
-                child.raw()
-            } else {
-                unreachable!()
-            };
-            // SAFETY: Option<Box<ExprDef>> has the same layout as *mut ExprDef
-            // (null-pointer optimisation).  Casting the field address lets us
-            // read/null the field through value_ptr without changing the handler
-            // signature.  Setting to null is equivalent to .take() + into_raw
-            // (intentionally leaks the Box, ownership moves to pending_computations).
-            value_ptr = if let ExprKind::Unary { ref mut child, .. } = (**value_ptr).kind {
-                child as *mut Option<Box<ExprDef>> as *mut *mut ExprDef
-            } else {
-                unreachable!()
-            };
-        } else {
-            flags = (flags as u32 | ACTION_ABSOLUTE_SWITCH) as xkb_action_flags;
-            spec = value as *const ExprDef;
-        }
-        let absolute: bool = flags as u32 & ACTION_ABSOLUTE_SWITCH != 0;
-        let mut pending: bool = false;
-        let ret: u32 =
-            ExprResolveGroup(keymap_info, &*spec, absolute, &mut idx, &mut pending) as u32;
-        if ret as u32 != PARSER_SUCCESS && !pending {
-            ReportMismatch(
-                XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
-                action,
-                ACTION_FIELD_GROUP,
-                "integer",
-                keymap_info.strict,
-            );
-            return ret;
-        }
-        if pending {
-            flags = (flags as u32 | ACTION_PENDING_COMPUTATION) as xkb_action_flags;
-            let pending_index: u32 = keymap_info.pending_computations.len() as u32;
-            keymap_info.pending_computations.push(pending_computation {
-                expr: box_from_raw(*value_ptr),
-                computed: false,
-                value: 0_u32,
-            });
-            *value_ptr = std::ptr::null_mut();
-            *group_rtrn = pending_index as i32;
-        } else {
-            flags =
-                (flags as u32 & !(ACTION_PENDING_COMPUTATION as i32) as u32) as xkb_action_flags;
-            if flags as u32 & ACTION_ABSOLUTE_SWITCH == 0 {
-                *group_rtrn = idx as i32;
-                if value.common.type_0 == STMT_EXPR_NEGATE {
-                    *group_rtrn = -*group_rtrn;
-                }
-            } else {
-                *group_rtrn = idx.wrapping_sub(1_u32) as i32;
-            }
-        }
-        *flags_inout = flags;
-        PARSER_SUCCESS
+    let mut idx: u32 = 0_u32;
+    let mut flags: xkb_action_flags = *flags_inout;
+    if array_ndx.is_some() {
+        return ReportActionNotArray(action, ACTION_FIELD_GROUP, keymap_info.strict);
     }
+    // If the value is a unary negate/plus, get the child as spec and
+    // rebind value_ptr to the child's slot for potential ownership transfer.
+    let spec_holder: &ExprDef;
+    if value.common.type_0 == STMT_EXPR_NEGATE || value.common.type_0 == STMT_EXPR_UNARY_PLUS {
+        flags = (flags as u32 & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
+        // Get a reference to the child for resolution
+        spec_holder = if let ExprKind::Unary { child, .. } = &value.kind {
+            child.as_deref().unwrap()
+        } else {
+            unreachable!()
+        };
+        // Rebind value_ptr to the child field inside the unary expr
+        // (for ownership transfer to pending_computations if needed)
+        value_ptr = if let Some(vp) = value_ptr {
+            if let ExprKind::Unary { ref mut child, .. } = vp.as_mut().unwrap().kind {
+                Some(child)
+            } else {
+                unreachable!()
+            }
+        } else {
+            None
+        };
+    } else {
+        flags = (flags as u32 | ACTION_ABSOLUTE_SWITCH) as xkb_action_flags;
+        spec_holder = value;
+    }
+    let absolute: bool = flags as u32 & ACTION_ABSOLUTE_SWITCH != 0;
+    let mut pending: bool = false;
+    let ret: u32 =
+        ExprResolveGroup(keymap_info, spec_holder, absolute, &mut idx, &mut pending) as u32;
+    if ret as u32 != PARSER_SUCCESS && !pending {
+        ReportMismatch(
+            XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
+            action,
+            ACTION_FIELD_GROUP,
+            "integer",
+            keymap_info.strict,
+        );
+        return ret;
+    }
+    if pending {
+        flags = (flags as u32 | ACTION_PENDING_COMPUTATION) as xkb_action_flags;
+        let pending_index: u32 = keymap_info.pending_computations.len() as u32;
+        keymap_info.pending_computations.push(pending_computation {
+            expr: value_ptr.as_mut().and_then(|vp| vp.take()),
+            computed: false,
+            value: 0_u32,
+        });
+        *group_rtrn = pending_index as i32;
+    } else {
+        flags = (flags as u32 & !(ACTION_PENDING_COMPUTATION as i32) as u32) as xkb_action_flags;
+        if flags as u32 & ACTION_ABSOLUTE_SWITCH == 0 {
+            *group_rtrn = idx as i32;
+            if value.common.type_0 == STMT_EXPR_NEGATE {
+                *group_rtrn = -*group_rtrn;
+            }
+        } else {
+            *group_rtrn = idx.wrapping_sub(1_u32) as i32;
+        }
+    }
+    *flags_inout = flags;
+    PARSER_SUCCESS
 }
 fn HandleSetLatchLockGroup(
     keymap_info: &mut xkb_keymap_info<'_>,
@@ -638,7 +638,7 @@ fn HandleSetLatchLockGroup(
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    value_ptr: *mut *mut ExprDef,
+    value_ptr: Option<&mut Option<Box<ExprDef>>>,
 ) -> u32 {
     let ctx: &xkb_context = keymap_info.ctx();
     let type_0: u32 = action.action_type();
@@ -712,7 +712,7 @@ fn HandleMovePtr(
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    _value_ptr: *mut *mut ExprDef,
+    _value_ptr: Option<&mut Option<Box<ExprDef>>>,
 ) -> u32 {
     let ctx: &xkb_context = keymap_info.ctx();
     let type_0 = action.action_type();
@@ -779,7 +779,7 @@ fn HandlePtrBtn(
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    _value_ptr: *mut *mut ExprDef,
+    _value_ptr: Option<&mut Option<Box<ExprDef>>>,
 ) -> u32 {
     let ctx: &xkb_context = keymap_info.ctx();
     let type_0 = action.action_type();
@@ -873,7 +873,7 @@ fn HandleSetPtrDflt(
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    _value_ptr: *mut *mut ExprDef,
+    _value_ptr: Option<&mut Option<Box<ExprDef>>>,
 ) -> u32 {
     let ctx: &xkb_context = keymap_info.ctx();
     let type_0 = action.action_type();
@@ -952,7 +952,7 @@ fn HandleSwitchScreen(
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    _value_ptr: *mut *mut ExprDef,
+    _value_ptr: Option<&mut Option<Box<ExprDef>>>,
 ) -> u32 {
     let ctx: &xkb_context = keymap_info.ctx();
     let type_0 = action.action_type();
@@ -1024,7 +1024,7 @@ fn HandleSetLockControls(
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    _value_ptr: *mut *mut ExprDef,
+    _value_ptr: Option<&mut Option<Box<ExprDef>>>,
 ) -> u32 {
     let ctx: &xkb_context = keymap_info.ctx();
     let type_0 = action.action_type();
@@ -1065,7 +1065,7 @@ fn HandleRedirectKey(
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    _value_ptr: *mut *mut ExprDef,
+    _value_ptr: Option<&mut Option<Box<ExprDef>>>,
 ) -> u32 {
     let type_0 = action.action_type();
     let act = action.as_redirect_mut();
@@ -1159,7 +1159,7 @@ fn HandleUnsupported(
     _field: u32,
     _array_ndx: Option<&ExprDef>,
     _value: &ExprDef,
-    _value_ptr: *mut *mut ExprDef,
+    _value_ptr: Option<&mut Option<Box<ExprDef>>>,
 ) -> u32 {
     PARSER_SUCCESS
 }
@@ -1170,7 +1170,7 @@ fn HandlePrivate(
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    _value_ptr: *mut *mut ExprDef,
+    _value_ptr: Option<&mut Option<Box<ExprDef>>>,
 ) -> u32 {
     let ctx: &xkb_context = keymap_info.ctx();
     let type_0 = action.action_type();
@@ -1298,7 +1298,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1310,7 +1310,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1322,7 +1322,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1334,7 +1334,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1346,7 +1346,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1358,7 +1358,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1370,7 +1370,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1382,7 +1382,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1394,7 +1394,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1406,7 +1406,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1418,7 +1418,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1430,7 +1430,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1442,7 +1442,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1454,7 +1454,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1466,7 +1466,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1478,7 +1478,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1490,7 +1490,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1502,7 +1502,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1514,7 +1514,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         Some(
@@ -1526,7 +1526,7 @@ static HANDLE_ACTION: [actionHandler; 21] = {
                     u32,
                     Option<&ExprDef>,
                     &ExprDef,
-                    *mut *mut ExprDef,
+                    Option<&mut Option<Box<ExprDef>>>,
                 ) -> u32,
         ),
         None,
@@ -1539,7 +1539,6 @@ pub fn HandleActionDef(
     def: &mut ExprDef,
     action: &mut xkb_action,
 ) -> u32 {
-    let ctx: &xkb_context = unsafe { &*(&raw const (*keymap_info.keymap).ctx) };
     if def.common.type_0 != STMT_EXPR_ACTION_DECL {
         log::error!(
             "[XKB-{:03}] Expected an action definition, found {}\n",
@@ -1548,13 +1547,13 @@ pub fn HandleActionDef(
         );
         return PARSER_FATAL_ERROR;
     }
-    let (action_name_atom, action_args) = if let ExprKind::Action { name, ref mut args } = def.kind
-    {
-        (name, args as *mut Vec<ExprDef>)
+    // Extract action name atom (Copy type, no borrow held)
+    let action_name_atom = if let ExprKind::Action { name, .. } = &def.kind {
+        *name
     } else {
         unreachable!()
     };
-    let action_name: &str = xkb_atom_text(&ctx.atom_table, action_name_atom);
+    let action_name: &str = xkb_atom_text(&keymap_info.keymap.ctx.atom_table, action_name_atom);
     let mut handler_type: u32 = ACTION_TYPE_NONE;
     if !stringToActionType(action_name, &mut handler_type) {
         log::error!(
@@ -1577,56 +1576,59 @@ pub fn HandleActionDef(
         action.set_none();
     }
     let mut ret: u32 = PARSER_SUCCESS;
-    // SAFETY: we need raw pointer to action_args (Vec inside def) because
-    // we pass &mut keymap_info and &mut action to the handler, and the
-    // handler signature requires *mut *mut ExprDef for ownership transfer.
-    // The action_args pointer is into def which is a separate allocation.
-    for arg in unsafe { &mut *action_args } {
+    let const_true = const_true_expr();
+    let const_false = const_false_expr();
+    // Get mutable access to the args Vec
+    let args = if let ExprKind::Action { ref mut args, .. } = def.kind {
+        args
+    } else {
+        unreachable!()
+    };
+    for arg in args.iter_mut() {
         let value: &ExprDef;
-        let mut value_ptr: *mut *mut ExprDef = std::ptr::null_mut();
-        let field: *mut ExprDef;
+        let mut value_ptr: Option<&mut Option<Box<ExprDef>>> = None;
+        let field_ref: &ExprDef;
         let mut arrayRtrn_opt: Option<&ExprDef> = None;
         let mut elemRtrn_atom: u32 = 0;
         let mut fieldRtrn_atom: u32 = 0;
         if arg.common.type_0 == STMT_EXPR_ASSIGN {
-            let (left_ptr, right_ref) = if let ExprKind::Binary {
-                ref mut left,
+            if let ExprKind::Binary {
+                ref left,
                 ref mut right,
                 ..
             } = arg.kind
             {
-                // SAFETY: Option<Box<ExprDef>> has same layout as *mut ExprDef
-                (
-                    left.raw(),
-                    right as *mut Option<Box<ExprDef>> as *mut *mut ExprDef,
-                )
+                field_ref = left.as_deref().unwrap();
+                // SAFETY: value borrows the ExprDef inside `right` immutably, while
+                // value_ptr borrows `right` mutably. These alias, but the handler
+                // implementations never use value after calling value_ptr.take().
+                let value_raw: *const ExprDef = &**right.as_ref().unwrap();
+                value = unsafe { &*value_raw };
+                value_ptr = Some(right);
             } else {
                 unreachable!()
-            };
-            field = left_ptr;
-            value = unsafe { &**right_ref };
-            value_ptr = right_ref;
+            }
         } else if arg.common.type_0 == STMT_EXPR_NOT || arg.common.type_0 == STMT_EXPR_INVERT {
-            field = if let ExprKind::Unary { child, .. } = &arg.kind {
-                child.raw()
+            field_ref = if let ExprKind::Unary { ref child, .. } = arg.kind {
+                child.as_deref().unwrap()
             } else {
                 unreachable!()
             };
-            value = &CONST_FALSE.0;
+            value = &const_false;
         } else {
-            field = arg as *mut ExprDef;
-            value = &CONST_TRUE.0;
+            field_ref = &*arg;
+            value = &const_true;
         }
         if !ExprResolveLhs(
-            unsafe { &*field },
+            field_ref,
             &mut elemRtrn_atom,
             &mut fieldRtrn_atom,
             &mut arrayRtrn_opt,
         ) {
             return PARSER_FATAL_ERROR;
         }
-        let elemRtrn = xkb_atom_text(&ctx.atom_table, elemRtrn_atom);
-        let fieldRtrn = xkb_atom_text(&ctx.atom_table, fieldRtrn_atom);
+        let elemRtrn = xkb_atom_text(&keymap_info.keymap.ctx.atom_table, elemRtrn_atom);
+        let fieldRtrn = xkb_atom_text(&keymap_info.keymap.ctx.atom_table, fieldRtrn_atom);
         if !elemRtrn.is_empty() {
             log::error!("[XKB-{:03}] Cannot change defaults in an action definition; Ignoring attempt to change \"{}.{}\".\n",
                 XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
@@ -1677,65 +1679,67 @@ pub fn SetDefaultActionField(
     elem: &str,
     field: &str,
     array_ndx: Option<&ExprDef>,
-    value_ptr: *mut *mut ExprDef,
+    value_rtrn: &mut Option<Box<ExprDef>>,
     merge: merge_mode,
 ) -> u32 {
-    unsafe {
-        let value: &ExprDef = &**value_ptr;
-        let mut action: u32 = ACTION_TYPE_NONE;
-        if !stringToActionType(elem, &mut action) {
-            log::error!(
-                "[XKB-{:03}] Unknown action \"{}\"\n",
-                XKB_ERROR_UNKNOWN_ACTION_TYPE as i32,
-                elem
-            );
-            return (if keymap_info.strict & PARSER_NO_UNKNOWN_ACTION != 0 {
-                PARSER_FATAL_ERROR as i32
-            } else {
-                PARSER_RECOVERABLE_ERROR as i32
-            }) as u32;
-        }
-        let mut action_field: u32 = ACTION_FIELD_CLEAR_LOCKS;
-        if !stringToField(field, &mut action_field) {
-            log::error!(
-                "[XKB-{:03}] Unknown action field \"{}\"\n",
-                XKB_ERROR_INVALID_ACTION_FIELD as i32,
-                field
-            );
-            return (if keymap_info.strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
-                PARSER_FATAL_ERROR as i32
-            } else {
-                PARSER_RECOVERABLE_ERROR as i32
-            }) as u32;
-        }
-        let into: &mut xkb_action = &mut info.actions[action as usize];
-        let mut from: xkb_action = *into;
-        let ret: u32 = HANDLE_ACTION[action as usize].expect("non-null function pointer")(
-            keymap_info,
-            mods,
-            &mut from,
-            action_field,
-            array_ndx,
-            value,
-            value_ptr,
-        ) as u32;
-        if ret as u32 != PARSER_SUCCESS {
-            return ret;
-        }
-        if !action_equal(into, &from) {
-            let replace: bool = merge != MERGE_AUGMENT;
-            log::warn!(
-                "Conflicting field \"{}\" for default action \"{}\"; Using {}, ignore {}\n",
-                fieldText(action_field),
-                ActionTypeText(action),
-                if replace { "from" } else { "into" },
-                if replace { "into" } else { "from" }
-            );
-            if replace {
-                *into = from;
-            }
-        }
-        PARSER_SUCCESS
+    // SAFETY: value borrows the ExprDef inside value_rtrn immutably, while
+    // value_ptr borrows value_rtrn mutably. The handler implementations
+    // never use value after calling value_ptr.take().
+    let value_raw: *const ExprDef = &**value_rtrn.as_ref().unwrap();
+    let value: &ExprDef = unsafe { &*value_raw };
+    let mut action: u32 = ACTION_TYPE_NONE;
+    if !stringToActionType(elem, &mut action) {
+        log::error!(
+            "[XKB-{:03}] Unknown action \"{}\"\n",
+            XKB_ERROR_UNKNOWN_ACTION_TYPE as i32,
+            elem
+        );
+        return (if keymap_info.strict & PARSER_NO_UNKNOWN_ACTION != 0 {
+            PARSER_FATAL_ERROR as i32
+        } else {
+            PARSER_RECOVERABLE_ERROR as i32
+        }) as u32;
     }
+    let mut action_field: u32 = ACTION_FIELD_CLEAR_LOCKS;
+    if !stringToField(field, &mut action_field) {
+        log::error!(
+            "[XKB-{:03}] Unknown action field \"{}\"\n",
+            XKB_ERROR_INVALID_ACTION_FIELD as i32,
+            field
+        );
+        return (if keymap_info.strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
+            PARSER_FATAL_ERROR as i32
+        } else {
+            PARSER_RECOVERABLE_ERROR as i32
+        }) as u32;
+    }
+    let into: &mut xkb_action = &mut info.actions[action as usize];
+    let mut from: xkb_action = *into;
+    let ret: u32 = HANDLE_ACTION[action as usize].expect("non-null function pointer")(
+        keymap_info,
+        mods,
+        &mut from,
+        action_field,
+        array_ndx,
+        value,
+        Some(value_rtrn),
+    ) as u32;
+    if ret as u32 != PARSER_SUCCESS {
+        return ret;
+    }
+    if !action_equal(into, &from) {
+        let replace: bool = merge != MERGE_AUGMENT;
+        log::warn!(
+            "Conflicting field \"{}\" for default action \"{}\"; Using {}, ignore {}\n",
+            fieldText(action_field),
+            ActionTypeText(action),
+            if replace { "from" } else { "into" },
+            if replace { "into" } else { "from" }
+        );
+        if replace {
+            *into = from;
+        }
+    }
+    PARSER_SUCCESS
 }
 use crate::xkb::shared_types::*;
