@@ -5,9 +5,7 @@ use crate::xkb::keysym::xkb_keysym_is_keypad;
 use crate::xkb::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 use crate::xkb::shared_ast_types::from_common;
 pub use crate::xkb::shared_ast_types::{ModMapDef, SymbolsDef};
-pub use crate::xkb::shared_types::{
-    XkbKeyByName, XkbKeyNumLevels, XKB_MOD_NONE, XKB_OVERLAY_INVALID,
-};
+pub use crate::xkb::shared_types::{XkbKeyByName, XKB_MOD_NONE, XKB_OVERLAY_INVALID};
 use crate::xkb::text::ModIndexText;
 
 pub use crate::xkb::xkbcomp::action::{
@@ -33,12 +31,8 @@ pub struct ModMapEntry {
     pub merge: merge_mode,
     pub haveSymbol: bool,
     pub modifier: u32,
-    pub u: ModMapData,
-}
-#[derive(Copy, Clone)]
-pub union ModMapData {
-    pub keyName: u32,
-    pub keySym: u32,
+    /// keyName (atom) when !haveSymbol, keySym when haveSymbol
+    pub u: u32,
 }
 #[derive(Clone)]
 pub struct KeyInfo {
@@ -731,8 +725,8 @@ fn AddModMapEntry(info: &mut SymbolsInfo<'_>, new: *mut ModMapEntry) -> bool {
         let mods_ptr = &raw mut info.mods;
         for old in info.modmaps.iter_mut() {
             if (*new).haveSymbol as i32 != old.haveSymbol as i32
-                || (*new).haveSymbol as i32 != 0 && (*new).u.keySym != old.u.keySym
-                || !(*new).haveSymbol && (*new).u.keyName != old.u.keyName
+                || (*new).haveSymbol as i32 != 0 && (*new).u != old.u
+                || !(*new).haveSymbol && (*new).u != old.u
             {
                 continue;
             }
@@ -752,13 +746,13 @@ fn AddModMapEntry(info: &mut SymbolsInfo<'_>, new: *mut ModMapEntry) -> bool {
             if (*new).haveSymbol {
                 log::warn!("[XKB-{:03}] Symbol \"{}\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_MODMAP as i32,
-                    KeysymText((*new).u.keySym),
+                    KeysymText((*new).u),
                     ModIndexText(&*ctx, &*mods_ptr, use_0),
                     ModIndexText(&*ctx, &*mods_ptr, ignore));
             } else {
                 log::warn!("[XKB-{:03}] Key \"<{}>\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_MODMAP as i32,
-                    xkb_atom_text(&(*ctx).atom_table, (*new).u.keyName),
+                    xkb_atom_text(&(*ctx).atom_table, (*new).u),
                     ModIndexText(&*ctx, &*mods_ptr, use_0),
                     ModIndexText(&*ctx, &*mods_ptr, ignore));
             }
@@ -1860,7 +1854,7 @@ fn HandleModMapDef(info: &mut SymbolsInfo<'_>, def: &mut ModMapDef) -> bool {
         merge: MERGE_DEFAULT,
         haveSymbol: false,
         modifier: 0,
-        u: ModMapData { keyName: 0 },
+        u: 0,
     };
     let ndx: u32;
     let mut ok: bool;
@@ -1886,7 +1880,7 @@ fn HandleModMapDef(info: &mut SymbolsInfo<'_>, def: &mut ModMapDef) -> bool {
             let ExprKind::KeyName(kn) = key.kind else {
                 unreachable!()
             };
-            tmp.u.keyName = kn;
+            tmp.u = kn;
             c2rust_current_block_19 = 5601891728916014340;
         } else if key.common.type_0 == STMT_EXPR_KEYSYM_LITERAL {
             let ExprKind::KeySym(ks) = key.kind else {
@@ -1896,7 +1890,7 @@ fn HandleModMapDef(info: &mut SymbolsInfo<'_>, def: &mut ModMapDef) -> bool {
                 c2rust_current_block_19 = 13536709405535804910;
             } else {
                 tmp.haveSymbol = true;
-                tmp.u.keySym = ks;
+                tmp.u = ks;
                 c2rust_current_block_19 = 5601891728916014340;
             }
         } else {
@@ -1972,48 +1966,46 @@ fn HandleSymbolsFile(info: &mut SymbolsInfo<'_>, file: &mut XkbFile) {
         }
     }
 }
-fn FindKeyForSymbol(keymap: *mut xkb_keymap, sym: u32) -> *mut xkb_key {
-    unsafe {
-        let mut got_one_group: bool;
-        let mut group: u32 = 0_u32;
+fn FindKeyForSymbol(keymap: &mut xkb_keymap, sym: u32) -> Option<&mut xkb_key> {
+    let mut got_one_group: bool;
+    let mut group: u32 = 0_u32;
+    loop {
+        let mut level: u32 = 0_u32;
+        got_one_group = false;
+        let mut got_one_level: bool;
         loop {
-            let mut level: u32 = 0_u32;
-            got_one_group = false;
-            let mut got_one_level: bool;
-            loop {
-                got_one_level = false;
-                let mut key: *mut xkb_key;
-                let start_idx = if (*keymap).num_keys_low == 0_u32 {
-                    0_u32
-                } else {
-                    (*keymap).min_key_code
-                };
-                let mut ki: u32 = start_idx;
-                while ki < (*keymap).num_keys {
-                    key = &mut (&mut (*keymap).keys)[ki as usize] as *mut xkb_key;
-                    if group < (*key).num_groups && level < XkbKeyNumLevels(keymap, key, group) {
-                        got_one_level = true;
-                        got_one_group = got_one_level;
-                        let level_syms =
-                            &(&(*key).groups)[group as usize].levels[level as usize].syms;
-                        if level_syms.contains(&sym) {
-                            return key;
-                        }
+            got_one_level = false;
+            let start_idx = if keymap.num_keys_low == 0_u32 {
+                0_u32
+            } else {
+                keymap.min_key_code
+            };
+            let mut ki: u32 = start_idx;
+            while ki < keymap.num_keys {
+                let key = &keymap.keys[ki as usize];
+                if group < key.num_groups
+                    && level < keymap.types[key.groups[group as usize].type_idx as usize].num_levels
+                {
+                    got_one_level = true;
+                    got_one_group = got_one_level;
+                    let level_syms = &key.groups[group as usize].levels[level as usize].syms;
+                    if level_syms.contains(&sym) {
+                        return Some(&mut keymap.keys[ki as usize]);
                     }
-                    ki = ki.wrapping_add(1);
                 }
-                level = level.wrapping_add(1);
-                if !got_one_level {
-                    break;
-                }
+                ki = ki.wrapping_add(1);
             }
-            group = group.wrapping_add(1);
-            if !got_one_group {
+            level = level.wrapping_add(1);
+            if !got_one_level {
                 break;
             }
         }
-        std::ptr::null_mut()
+        group = group.wrapping_add(1);
+        if !got_one_group {
+            break;
+        }
     }
+    None
 }
 fn FindAutomaticType(ctx: &mut xkb_context, groupi: &GroupInfo) -> u32 {
     let ctx_ptr: *mut xkb_context = ctx;
@@ -2370,35 +2362,36 @@ fn CopySymbolsDefToKeymap(
 }
 
 fn CopyModMapDefToKeymap(
-    keymap: *mut xkb_keymap,
+    keymap: &mut xkb_keymap,
     info: &SymbolsInfo<'_>,
-    entry: *mut ModMapEntry,
+    entry: &ModMapEntry,
 ) -> bool {
-    unsafe {
-        let key: *mut xkb_key;
-        if !(*entry).haveSymbol {
-            key = XkbKeyByName(keymap, (*entry).u.keyName, true);
-            if key.is_null() {
-                log::warn!("[XKB-{:03}] Key <{}> not found in keycodes; Modifier map entry for {} not updated\n",
-                    XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                    xkb_atom_text(&info.ctx().atom_table, (*entry).u.keyName),
-                    ModIndexText(info.ctx(), &info.mods, (*entry).modifier));
-                return false;
+    if !entry.haveSymbol {
+        if let Some(key) = keymap.key_by_name_mut(entry.u, true) {
+            if entry.modifier != XKB_MOD_NONE {
+                key.modmap |= 1_u32 << entry.modifier;
             }
+            true
         } else {
-            key = FindKeyForSymbol(keymap, (*entry).u.keySym);
-            if key.is_null() {
-                log::warn!("[XKB-{:03}] Key \"{}\" not found in symbol map; Modifier map entry for {} not updated\n",
-                    XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL as i32,
-                    KeysymText((*entry).u.keySym),
-                    ModIndexText(info.ctx(), &info.mods, (*entry).modifier));
-                return false;
+            log::warn!("[XKB-{:03}] Key <{}> not found in keycodes; Modifier map entry for {} not updated\n",
+                XKB_WARNING_UNDEFINED_KEYCODE as i32,
+                xkb_atom_text(&info.ctx().atom_table, entry.u),
+                ModIndexText(info.ctx(), &info.mods, entry.modifier));
+            false
+        }
+    } else {
+        if let Some(key) = FindKeyForSymbol(keymap, entry.u) {
+            if entry.modifier != XKB_MOD_NONE {
+                key.modmap |= 1_u32 << entry.modifier;
             }
+            true
+        } else {
+            log::warn!("[XKB-{:03}] Key \"{}\" not found in symbol map; Modifier map entry for {} not updated\n",
+                XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL as i32,
+                KeysymText(entry.u),
+                ModIndexText(info.ctx(), &info.mods, entry.modifier));
+            false
         }
-        if (*entry).modifier != XKB_MOD_NONE {
-            (*key).modmap |= 1_u32 << (*entry).modifier;
-        }
-        true
     }
 }
 fn CopySymbolsToKeymap(keymap: *mut xkb_keymap, info: &mut SymbolsInfo<'_>) -> bool {
@@ -2435,8 +2428,7 @@ fn CopySymbolsToKeymap(keymap: *mut xkb_keymap, info: &mut SymbolsInfo<'_>) -> b
             }
         }
         for i in 0..info.modmaps.len() {
-            let mm_ptr = info.modmaps.as_mut_ptr().add(i);
-            if !CopyModMapDefToKeymap(keymap, info, mm_ptr) {
+            if !CopyModMapDefToKeymap(&mut *keymap, info, &info.modmaps[i]) {
                 info.errorCount += 1;
             }
         }
