@@ -116,22 +116,6 @@ pub const XKB_FEATURE_ENUM_ERROR_CODE: xkb_feature = 1000;
 pub const XKB_FEATURE_ENUM_FEATURE: xkb_feature = 1;
 pub use crate::xkb::features::xkb_feature_supported;
 
-pub mod utf8_h {
-
-    /// Native Rust UTF-8 validation (replaces C FFI)
-    #[inline]
-    pub fn is_valid_utf8(ss: *const i8, len: usize) -> bool {
-        if ss.is_null() {
-            return false;
-        }
-        unsafe {
-            let slice = std::slice::from_raw_parts(ss as *const u8, len);
-            std::str::from_utf8(slice).is_ok()
-        }
-    }
-}
-
-use self::utf8_h::is_valid_utf8;
 pub use crate::xkb::keymap::xkb_keymap_key_get_level;
 pub use crate::xkb::keymap::{
     xkb_keymap_key_get_actions_by_level, XkbLevelsSameSyms, XkbWrapGroupIntoRange,
@@ -215,18 +199,8 @@ pub use crate::xkb::shared_types::{
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
 
-fn vec_resize_zero<T>(v: &mut Vec<T>, new_len: usize) {
-    if new_len > v.len() {
-        v.reserve(new_len - v.len());
-        let old_len = v.len();
-        unsafe {
-            let ptr = v.as_mut_ptr().add(old_len);
-            std::ptr::write_bytes(ptr, 0, new_len - old_len);
-            v.set_len(new_len);
-        }
-    } else if new_len < v.len() {
-        v.truncate(new_len);
-    }
+fn vec_resize_zero<T: Default>(v: &mut Vec<T>, new_len: usize) {
+    v.resize_with(new_len, Default::default);
 }
 
 #[derive(Clone)]
@@ -257,13 +231,7 @@ pub struct xkb_filter {
     pub action: xkb_action,
     pub key: *const xkb_key,
     pub func: Option<
-        fn(
-            &mut xkb_state,
-            &mut xkb_events,
-            &mut xkb_filter,
-            *const xkb_key,
-            xkb_key_direction,
-        ) -> bool,
+        fn(&mut xkb_state, &mut xkb_events, &mut xkb_filter, &xkb_key, xkb_key_direction) -> bool,
     >,
     pub priv_0: u32,
     pub refcnt: i32,
@@ -308,13 +276,7 @@ pub struct machine_controls {
 pub struct FilterActionFuncs {
     pub new: Option<fn(&mut xkb_state, &mut xkb_events, &mut xkb_filter) -> ()>,
     pub func: Option<
-        fn(
-            &mut xkb_state,
-            &mut xkb_events,
-            &mut xkb_filter,
-            *const xkb_key,
-            xkb_key_direction,
-        ) -> bool,
+        fn(&mut xkb_state, &mut xkb_events, &mut xkb_filter, &xkb_key, xkb_key_direction) -> bool,
     >,
 }
 
@@ -494,10 +456,10 @@ fn xkb_filter_group_set_func(
     state: &mut xkb_state,
     _events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: *const xkb_key,
+    key: &xkb_key,
     direction: xkb_key_direction,
 ) -> bool {
-    if key != filter.key {
+    if !std::ptr::eq(key, filter.key) {
         filter.action.as_group_mut().flags = (filter.action.as_group().flags
             & !(ACTION_LOCK_CLEAR as i32) as u32)
             as xkb_action_flags;
@@ -579,10 +541,10 @@ fn xkb_filter_group_lock_func(
     state: &mut xkb_state,
     _events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: *const xkb_key,
+    key: &xkb_key,
     direction: xkb_key_direction,
 ) -> bool {
-    if key != filter.key {
+    if !std::ptr::eq(key, filter.key) {
         if filter.action.as_group().flags & ACTION_LOCK_ON_RELEASE != 0 && direction == XKB_KEY_DOWN
         {
             filter.action.as_group_mut().flags = (filter.action.as_group().flags
@@ -658,7 +620,7 @@ fn xkb_filter_group_latch_func(
     state: &mut xkb_state,
     events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: *const xkb_key,
+    key: &xkb_key,
     direction: xkb_key_direction,
 ) -> bool {
     let mut priv_0: group_latch_priv = group_latch_priv {
@@ -666,7 +628,7 @@ fn xkb_filter_group_latch_func(
     };
     let mut latch: xkb_key_latch_state = unsafe { priv_0.latch_state.latch } as xkb_key_latch_state;
     if direction == XKB_KEY_DOWN {
-        let actions = xkb_key_get_actions(state, unsafe { &*key });
+        let actions = xkb_key_get_actions(state, key);
         if latch as u32 == LATCH_KEY_DOWN {
             if state.flags & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS != 0 {
                 let mut k: u16 = 0_u16;
@@ -723,7 +685,7 @@ fn xkb_filter_group_latch_func(
                 k_0 = k_0.wrapping_add(1);
             }
         }
-    } else if key == filter.key {
+    } else if std::ptr::eq(key, filter.key) {
         if direction == XKB_KEY_REPEATED {
             return XKB_FILTER_CONSUME as i32 != 0;
         } else if filter.action.as_group().flags & ACTION_LOCK_CLEAR != 0
@@ -772,10 +734,10 @@ fn xkb_filter_mod_set_func(
     state: &mut xkb_state,
     _events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: *const xkb_key,
+    key: &xkb_key,
     direction: xkb_key_direction,
 ) -> bool {
-    if key != filter.key {
+    if !std::ptr::eq(key, filter.key) {
         filter.action.as_mods_mut().flags = (filter.action.as_mods().flags
             & !(ACTION_LOCK_CLEAR as i32) as u32)
             as xkb_action_flags;
@@ -830,10 +792,10 @@ fn xkb_filter_mod_lock_func(
     state: &mut xkb_state,
     _events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: *const xkb_key,
+    key: &xkb_key,
     direction: xkb_key_direction,
 ) -> bool {
-    if key != filter.key {
+    if !std::ptr::eq(key, filter.key) {
         return XKB_FILTER_CONTINUE as i32 != 0;
     }
     's_32: {
@@ -887,12 +849,12 @@ fn xkb_filter_mod_latch_func(
     state: &mut xkb_state,
     events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: *const xkb_key,
+    key: &xkb_key,
     direction: xkb_key_direction,
 ) -> bool {
     let mut latch: xkb_key_latch_state = filter.priv_0 as xkb_key_latch_state;
     if direction == XKB_KEY_DOWN {
-        let actions = xkb_key_get_actions(state, unsafe { &*key });
+        let actions = xkb_key_get_actions(state, key);
         if latch as u32 == LATCH_KEY_DOWN {
             if state.flags & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS != 0 {
                 let mut k: u16 = 0_u16;
@@ -953,7 +915,7 @@ fn xkb_filter_mod_latch_func(
                 k_0 = k_0.wrapping_add(1);
             }
         }
-    } else if key == filter.key {
+    } else if std::ptr::eq(key, filter.key) {
         if direction == XKB_KEY_REPEATED {
             return XKB_FILTER_CONSUME as i32 != 0;
         } else {
@@ -1003,10 +965,10 @@ fn xkb_filter_ctrls_func(
     state: &mut xkb_state,
     events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: *const xkb_key,
+    key: &xkb_key,
     direction: xkb_key_direction,
 ) -> bool {
-    if key != filter.key {
+    if !std::ptr::eq(key, filter.key) {
         return XKB_FILTER_CONTINUE as i32 != 0;
     }
     's_32: {
@@ -1128,10 +1090,10 @@ fn xkb_filter_redirect_key_func(
     state: &mut xkb_state,
     events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: *const xkb_key,
+    key: &xkb_key,
     direction: xkb_key_direction,
 ) -> bool {
-    if key != filter.key {
+    if !std::ptr::eq(key, filter.key) {
         return XKB_FILTER_CONTINUE as i32 != 0;
     }
     if direction == XKB_KEY_UP {
@@ -1139,7 +1101,7 @@ fn xkb_filter_redirect_key_func(
         filter.func = None;
         return XKB_FILTER_CONSUME as i32 != 0;
     } else if direction == XKB_KEY_DOWN {
-        let actions = xkb_key_get_actions(state, unsafe { &*key });
+        let actions = xkb_key_get_actions(state, key);
         let mut a: u16 = 0_u16;
         while (a as usize) < actions.len() {
             if actions[a as usize].action_type() as u32 == ACTION_TYPE_REDIRECT_KEY
@@ -1248,7 +1210,7 @@ static FILTER_ACTION_FUNCS: [FilterActionFuncs; 21] = {
 fn xkb_filter_apply_all(
     state: &mut xkb_state,
     events: &mut xkb_events,
-    key: *const xkb_key,
+    key: &xkb_key,
     direction: xkb_key_direction,
 ) {
     let mut consumed: bool = false;
@@ -1271,7 +1233,7 @@ fn xkb_filter_apply_all(
         return;
     }
     // Phase 2: create new filters for key-down actions
-    let actions = xkb_key_get_actions(state, unsafe { &*key });
+    let actions = xkb_key_get_actions(state, key);
     let actions: Vec<xkb_action> = actions.to_vec();
     let mut k: u16 = 0_u16;
     while (k as usize) < actions.len() {
@@ -1478,12 +1440,7 @@ pub fn xkb_state_update_key(state: &mut xkb_state, kc: u32, direction: xkb_key_d
     state.set_mods = 0_u32;
     state.clear_mods = 0_u32;
     let mut dummy_events = xkb_events::dummy();
-    xkb_filter_apply_all(
-        state,
-        &mut dummy_events,
-        key_ref as *const xkb_key,
-        direction,
-    );
+    xkb_filter_apply_all(state, &mut dummy_events, key_ref, direction);
     let mut i: u32;
     let mut bit: u32;
     i = 0_u32;
@@ -1584,13 +1541,8 @@ fn update_latch_modifiers(state: &mut xkb_state, events: &mut xkb_events, mask: 
         groups: vec![synthetic_key_group_break_mod_latch],
         overlay_keys: Vec::new(),
     };
-    xkb_filter_apply_all(
-        state,
-        events,
-        &raw const synthetic_key_break_mod_latch,
-        XKB_KEY_DOWN,
-    );
-    let key: *const xkb_key = &*SYNTHETIC_KEY;
+    xkb_filter_apply_all(state, events, &synthetic_key_break_mod_latch, XKB_KEY_DOWN);
+    let key: &xkb_key = &*SYNTHETIC_KEY;
     let latch_mods: xkb_action = xkb_action::ModLatch(xkb_mod_action {
         type_0: ACTION_TYPE_MOD_LATCH,
         flags: 0 as xkb_action_flags,
@@ -1617,7 +1569,7 @@ fn update_latch_group(state: &mut xkb_state, events: &mut xkb_events, group: i32
         &*SYNTHETIC_KEY_BREAK_GROUP_LATCH,
         XKB_KEY_DOWN,
     );
-    let key: *const xkb_key = &*SYNTHETIC_KEY;
+    let key: &xkb_key = &*SYNTHETIC_KEY;
     let latch_group: xkb_action = xkb_action::GroupLatch(xkb_group_action {
         type_0: ACTION_TYPE_GROUP_LATCH,
         flags: ACTION_ABSOLUTE_SWITCH,

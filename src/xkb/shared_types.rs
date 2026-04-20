@@ -857,6 +857,40 @@ impl xkb_keymap {
         self.types[group.type_idx as usize].num_levels
     }
 
+    /// Safe wrapper around `XkbKeyByName`. Looks up a key by atom name using the key_names table.
+    #[inline]
+    pub fn key_by_name(&self, name: u32, use_aliases: bool) -> Option<&xkb_key> {
+        if (name as usize) < self.key_names.len() {
+            let match_0 = self.key_names[name as usize];
+            if match_0.found {
+                if !match_0.is_alias {
+                    return Some(&self.keys[match_0.index as usize]);
+                } else if use_aliases {
+                    let alias_match = self.key_names[match_0.index as usize];
+                    return Some(&self.keys[alias_match.index as usize]);
+                }
+            }
+        }
+        None
+    }
+
+    /// Mutable version of `key_by_name`.
+    #[inline]
+    pub fn key_by_name_mut(&mut self, name: u32, use_aliases: bool) -> Option<&mut xkb_key> {
+        if (name as usize) < self.key_names.len() {
+            let match_0 = self.key_names[name as usize];
+            if match_0.found {
+                if !match_0.is_alias {
+                    return Some(&mut self.keys[match_0.index as usize]);
+                } else if use_aliases {
+                    let alias_match = self.key_names[match_0.index as usize];
+                    return Some(&mut self.keys[alias_match.index as usize]);
+                }
+            }
+        }
+        None
+    }
+
     /// Safe wrapper: look up a key by keycode and resolve the level for a given layout+level index.
     /// Returns `None` if the key doesn't exist, layout is invalid, or level is out of range.
     #[inline]

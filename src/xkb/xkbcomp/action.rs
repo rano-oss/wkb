@@ -1099,9 +1099,11 @@ fn HandleRedirectKey(
         } else {
             unreachable!()
         };
-        let keymap: *const xkb_keymap = keymap_info.keymap;
-        let key: *const xkb_key = unsafe { XkbKeyByName(keymap, key_name_val, true) };
-        if key.is_null() {
+        let key = keymap_info.keymap_ref().key_by_name(key_name_val, true);
+        if let Some(key) = key {
+            act.keycode = key.keycode;
+            return PARSER_SUCCESS;
+        } else {
             log::error!(
                 "RedirectKey field {} cannot resolve <{}> to a valid key\n",
                 fieldText(field),
@@ -1113,8 +1115,6 @@ fn HandleRedirectKey(
                 PARSER_RECOVERABLE_ERROR as i32
             }) as u32;
         }
-        act.keycode = unsafe { (*key).keycode };
-        return PARSER_SUCCESS;
     }
     if field == ACTION_FIELD_MODIFIERS || field == ACTION_FIELD_MODS_TO_CLEAR {
         let mut flags: xkb_action_flags = 0 as xkb_action_flags;

@@ -372,7 +372,7 @@ fn update_pending_action_fields(
         }
         16 => {
             if keycode == XKB_KEYCODE_INVALID
-                || act.as_redirect().keycode != unsafe { (*info.keymap).redirect_key_auto }
+                || act.as_redirect().keycode != info.keymap.redirect_key_auto
             {
                 return true;
             } else {
