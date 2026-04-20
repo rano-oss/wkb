@@ -207,183 +207,161 @@ fn KeyInfoText<'a>(info: &'a SymbolsInfo, keyi: &KeyInfo) -> &'a str {
 }
 fn MergeGroups(
     info: &SymbolsInfo<'_>,
-    into: *mut GroupInfo,
-    from: *mut GroupInfo,
+    into: &mut GroupInfo,
+    from: &mut GroupInfo,
     clobber: bool,
     report: bool,
     group: u32,
     key_name: u32,
 ) -> bool {
-    unsafe {
-        if (*into).type_0 != (*from).type_0 && ((*from).type_0 != XKB_ATOM_NONE) {
-            if (*into).type_0 == XKB_ATOM_NONE {
-                (*into).type_0 = (*from).type_0;
+    if into.type_0 != from.type_0 && (from.type_0 != XKB_ATOM_NONE) {
+        if into.type_0 == XKB_ATOM_NONE {
+            into.type_0 = from.type_0;
+        } else {
+            let use_0: u32 = if clobber { from.type_0 } else { into.type_0 };
+            let ignore: u32 = if clobber { into.type_0 } else { from.type_0 };
+            if report {
+                log::warn!("[XKB-{:03}] Multiple definitions for group {} type of key <{}>; Using {}, ignoring {}\n",
+                        XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS as i32,
+                        group.wrapping_add(1_u32),
+                        xkb_atom_text(&info.ctx().atom_table, key_name),
+                        xkb_atom_text(&info.ctx().atom_table, use_0),
+                        xkb_atom_text(&info.ctx().atom_table, ignore));
+            }
+            into.type_0 = use_0;
+        }
+    }
+    into.defined = (into.defined | from.defined & GROUP_FIELD_TYPE) as group_field;
+    if from.levels.is_empty() {
+        *from = GroupInfo::default();
+        return true;
+    }
+    if into.levels.is_empty() {
+        from.type_0 = into.type_0;
+        *into = std::mem::take(from);
+        return true;
+    }
+    let levels_in_both: u32 = if into.levels.len() < from.levels.len() {
+        into.levels.len()
+    } else {
+        from.levels.len()
+    } as u32;
+    let mut fromKeysymsCount: u32 = 0_u32;
+    let mut fromActionsCount: u32 = 0_u32;
+    let mut i: u32 = 0_u32;
+    while i < levels_in_both {
+        let intoLevel = &mut into.levels[i as usize];
+        let fromLevel = &mut from.levels[i as usize];
+        let fromHasNoKeysym: bool = fromLevel.syms.is_empty();
+        let fromHasNoAction: bool = fromLevel.actions.is_empty();
+        if !(fromHasNoKeysym && fromHasNoAction) {
+            let intoHasNoKeysym: bool = intoLevel.syms.is_empty();
+            let intoHasNoAction: bool = intoLevel.actions.is_empty();
+            if intoHasNoKeysym && intoHasNoAction {
+                // StealLevelInfo inlined
+                intoLevel.syms = std::mem::take(&mut fromLevel.syms);
+                intoLevel.actions = std::mem::take(&mut fromLevel.actions);
+                fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
+                fromActionsCount = fromActionsCount.wrapping_add(1);
             } else {
-                let use_0: u32 = if clobber as i32 != 0 {
-                    (*from).type_0
-                } else {
-                    (*into).type_0
-                };
-                let ignore: u32 = if clobber as i32 != 0 {
-                    (*into).type_0
-                } else {
-                    (*from).type_0
-                };
-                if report {
-                    log::warn!("[XKB-{:03}] Multiple definitions for group {} type of key <{}>; Using {}, ignoring {}\n",
-                            XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS
-                                as i32,
+                if !XkbLevelsSameSyms(fromLevel, intoLevel) {
+                    if report && !(intoHasNoKeysym || fromHasNoKeysym) {
+                        log::warn!("[XKB-{:03}] Multiple symbols for level {}/group {} on key <{}>; Using {}, ignoring {}\n",
+                            XKB_WARNING_CONFLICTING_KEY_SYMBOL as i32,
+                            i.wrapping_add(1_u32),
                             group.wrapping_add(1_u32),
                             xkb_atom_text(&info.ctx().atom_table, key_name),
-                            xkb_atom_text(&info.ctx().atom_table, use_0),
-                            xkb_atom_text(&info.ctx().atom_table, ignore));
+                            if clobber { "from" } else { "to" },
+                            if clobber { "to" } else { "from" });
+                    }
+                    if !fromHasNoKeysym {
+                        if clobber {
+                            if !fromLevel.syms.is_empty() {
+                                intoLevel.syms = std::mem::take(&mut fromLevel.syms);
+                                fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
+                            }
+                        } else {
+                            if intoLevel.syms.is_empty() {
+                                if !fromLevel.syms.is_empty() {
+                                    intoLevel.syms = std::mem::take(&mut fromLevel.syms);
+                                }
+                                fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
+                            }
+                        }
+                    }
                 }
-                (*into).type_0 = use_0;
-            }
-        }
-        (*into).defined = ((*into).defined | (*from).defined & GROUP_FIELD_TYPE) as group_field;
-        if (*from).levels.is_empty() {
-            InitGroupInfo(&mut *from);
-            return true;
-        }
-        if (*into).levels.is_empty() {
-            (*from).type_0 = (*into).type_0;
-            std::ptr::write(into, std::ptr::read(from));
-            InitGroupInfo(&mut *from);
-            return true;
-        }
-        let levels_in_both: u32 = if (*into).levels.len() < (*from).levels.len() {
-            (*into).levels.len()
-        } else {
-            (*from).levels.len()
-        } as u32;
-        let mut fromKeysymsCount: u32 = 0_u32;
-        let mut fromActionsCount: u32 = 0_u32;
-        let mut i: u32 = 0_u32;
-        while i < levels_in_both {
-            let intoLevel: *mut xkb_level =
-                &mut (&mut (*into).levels)[i as usize] as *mut xkb_level;
-            let fromLevel: *mut xkb_level =
-                &mut (&mut (*from).levels)[i as usize] as *mut xkb_level;
-            let fromHasNoKeysym: bool = (*fromLevel).syms.is_empty();
-            let fromHasNoAction: bool = (*fromLevel).actions.is_empty();
-            if !(fromHasNoKeysym as i32 != 0 && fromHasNoAction as i32 != 0) {
-                let intoHasNoKeysym: bool = (*intoLevel).syms.is_empty();
-                let intoHasNoAction: bool = (*intoLevel).actions.is_empty();
-                if intoHasNoKeysym as i32 != 0 && intoHasNoAction as i32 != 0 {
-                    // StealLevelInfo inlined
-                    (*intoLevel).syms = std::mem::take(&mut (*fromLevel).syms);
-                    (*intoLevel).actions = std::mem::take(&mut (*fromLevel).actions);
-                    fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
-                    fromActionsCount = fromActionsCount.wrapping_add(1);
-                } else {
-                    if !XkbLevelsSameSyms(&*fromLevel, &*intoLevel) {
-                        if report as i32 != 0
-                            && !(intoHasNoKeysym as i32 != 0 || fromHasNoKeysym as i32 != 0)
-                        {
-                            log::warn!("[XKB-{:03}] Multiple symbols for level {}/group {} on key <{}>; Using {}, ignoring {}\n",
-                                XKB_WARNING_CONFLICTING_KEY_SYMBOL as i32,
+                if !XkbLevelsSameActions(intoLevel, fromLevel) {
+                    if report && !(intoHasNoAction || fromHasNoAction) {
+                        if intoLevel.actions.len() > 1 || fromLevel.actions.len() > 1 {
+                            log::warn!("[XKB-{:03}] Multiple actions for level {}/group {} on key <{}>; {}\n",
+                                XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
                                 i.wrapping_add(1_u32),
                                 group.wrapping_add(1_u32),
                                 xkb_atom_text(&info.ctx().atom_table, key_name),
-                                if clobber { "from" } else { "to" },
-                                if clobber { "to" } else { "from" });
-                        }
-                        if !fromHasNoKeysym {
-                            if clobber {
-                                if !(*fromLevel).syms.is_empty() {
-                                    (*intoLevel).syms = std::mem::take(&mut (*fromLevel).syms);
-                                    fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
-                                }
+                                if clobber { "Using from, ignoring to" } else { "Using to, ignoring from" });
+                        } else {
+                            let use_action: &xkb_action = if clobber {
+                                &fromLevel.actions[0]
                             } else {
-                                if (*intoLevel).syms.is_empty() {
-                                    if !(*fromLevel).syms.is_empty() {
-                                        (*intoLevel).syms = std::mem::take(&mut (*fromLevel).syms);
-                                    }
-                                    fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
-                                }
-                            }
+                                &intoLevel.actions[0]
+                            };
+                            let ignore_action: &xkb_action = if clobber {
+                                &intoLevel.actions[0]
+                            } else {
+                                &fromLevel.actions[0]
+                            };
+                            log::warn!("[XKB-{:03}] Multiple actions for level {}/group {} on key <{}>; Using {}, ignoring {}\n",
+                                XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
+                                i.wrapping_add(1_u32),
+                                group.wrapping_add(1_u32),
+                                xkb_atom_text(&info.ctx().atom_table, key_name),
+                                ActionTypeText(use_action.action_type()),
+                                ActionTypeText(ignore_action.action_type()));
                         }
                     }
-                    if !XkbLevelsSameActions(&*intoLevel, &*fromLevel) {
-                        if report as i32 != 0
-                            && !(intoHasNoAction as i32 != 0 || fromHasNoAction as i32 != 0)
-                        {
-                            if (*intoLevel).actions.len() > 1 || (*fromLevel).actions.len() > 1 {
-                                log::warn!("[XKB-{:03}] Multiple actions for level {}/group {} on key <{}>; {}\n",
-                                    XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
-                                    i.wrapping_add(1_u32),
-                                    group.wrapping_add(1_u32),
-                                    xkb_atom_text(&info.ctx().atom_table, key_name),
-                                    if clobber { "Using from, ignoring to" } else { "Using to, ignoring from" });
-                            } else {
-                                let use_action: &xkb_action = if clobber {
-                                    &(&(*fromLevel).actions)[0]
-                                } else {
-                                    &(&(*intoLevel).actions)[0]
-                                };
-                                let ignore_action: &xkb_action = if clobber {
-                                    &(&(*intoLevel).actions)[0]
-                                } else {
-                                    &(&(*fromLevel).actions)[0]
-                                };
-                                log::warn!("[XKB-{:03}] Multiple actions for level {}/group {} on key <{}>; Using {}, ignoring {}\n",
-                                    XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
-                                    i.wrapping_add(1_u32),
-                                    group.wrapping_add(1_u32),
-                                    xkb_atom_text(&info.ctx().atom_table, key_name),
-                                    ActionTypeText(use_action.action_type()),
-                                    ActionTypeText(ignore_action.action_type()));
+                    if !fromHasNoAction {
+                        if clobber {
+                            if !fromLevel.actions.is_empty() {
+                                intoLevel.actions = std::mem::take(&mut fromLevel.actions);
+                                fromActionsCount = fromActionsCount.wrapping_add(1);
                             }
-                        }
-                        if !fromHasNoAction {
-                            if clobber {
-                                if !(*fromLevel).actions.is_empty() {
-                                    (*intoLevel).actions =
-                                        std::mem::take(&mut (*fromLevel).actions);
-                                    fromActionsCount = fromActionsCount.wrapping_add(1);
+                        } else {
+                            if intoLevel.actions.is_empty() {
+                                if !fromLevel.actions.is_empty() {
+                                    intoLevel.actions = std::mem::take(&mut fromLevel.actions);
                                 }
-                            } else {
-                                if (*intoLevel).actions.is_empty() {
-                                    if !(*fromLevel).actions.is_empty() {
-                                        (*intoLevel).actions =
-                                            std::mem::take(&mut (*fromLevel).actions);
-                                    }
-                                    fromActionsCount = fromActionsCount.wrapping_add(1);
-                                }
+                                fromActionsCount = fromActionsCount.wrapping_add(1);
                             }
                         }
                     }
                 }
             }
-            i = i.wrapping_add(1);
         }
-        let mut level_idx: u32 = levels_in_both;
-        while level_idx < (*from).levels.len() as u32 {
-            let level_val = (&(*from).levels)[level_idx as usize].clone();
-            (*into).levels.push(level_val);
-            (&mut (*from).levels)[level_idx as usize].syms.clear();
-            (&mut (*from).levels)[level_idx as usize].actions.clear();
-            fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
-            fromActionsCount = fromActionsCount.wrapping_add(1);
-            level_idx = level_idx.wrapping_add(1);
-        }
-        if fromKeysymsCount != 0 {
-            if fromKeysymsCount == (*into).levels.len() as u32 {
-                (*into).defined =
-                    ((*into).defined & !(GROUP_FIELD_SYMS as i32) as u32) as group_field;
-            }
-            (*into).defined = ((*into).defined | (*from).defined & GROUP_FIELD_SYMS) as group_field;
-        }
-        if fromActionsCount != 0 {
-            if fromActionsCount == (*into).levels.len() as u32 {
-                (*into).defined =
-                    ((*into).defined & !(GROUP_FIELD_ACTS as i32) as u32) as group_field;
-            }
-            (*into).defined = ((*into).defined | (*from).defined & GROUP_FIELD_ACTS) as group_field;
-        }
-        true
+        i = i.wrapping_add(1);
     }
+    let mut level_idx: u32 = levels_in_both;
+    while level_idx < from.levels.len() as u32 {
+        let level_val = from.levels[level_idx as usize].clone();
+        into.levels.push(level_val);
+        from.levels[level_idx as usize].syms.clear();
+        from.levels[level_idx as usize].actions.clear();
+        fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
+        fromActionsCount = fromActionsCount.wrapping_add(1);
+        level_idx = level_idx.wrapping_add(1);
+    }
+    if fromKeysymsCount != 0 {
+        if fromKeysymsCount == into.levels.len() as u32 {
+            into.defined = (into.defined & !(GROUP_FIELD_SYMS as i32) as u32) as group_field;
+        }
+        into.defined = (into.defined | from.defined & GROUP_FIELD_SYMS) as group_field;
+    }
+    if fromActionsCount != 0 {
+        if fromActionsCount == into.levels.len() as u32 {
+            into.defined = (into.defined & !(GROUP_FIELD_ACTS as i32) as u32) as group_field;
+        }
+        into.defined = (into.defined | from.defined & GROUP_FIELD_ACTS) as group_field;
+    }
+    true
 }
 fn UseNewKeyField(
     field: key_field,
@@ -613,8 +591,8 @@ fn MergeKeys(
         while i < groups_in_both {
             MergeGroups(
                 info,
-                &mut (&mut (*into).groups)[i as usize] as *mut GroupInfo,
-                &mut (&mut (*from).groups)[i as usize] as *mut GroupInfo,
+                &mut (*into).groups.as_mut_slice()[i as usize],
+                &mut (*from).groups.as_mut_slice()[i as usize],
                 clobber,
                 report,
                 i,
