@@ -128,167 +128,164 @@ pub struct parser_param {
     pub rtrn: *mut XkbFile,
     pub more_maps: bool,
 }
-pub type yy_state_t = yytype_int16;
-pub type yytype_int16 = ::core::ffi::c_short;
-pub type yysymbol_kind_t = i32;
-pub const YYSYMBOL_MapName: yysymbol_kind_t = 148;
-pub const YYSYMBOL_OptMapName: yysymbol_kind_t = 147;
-pub const YYSYMBOL_String: yysymbol_kind_t = 146;
-pub const YYSYMBOL_Ident: yysymbol_kind_t = 145;
-pub const YYSYMBOL_KeyCode: yysymbol_kind_t = 144;
-pub const YYSYMBOL_Integer: yysymbol_kind_t = 143;
-pub const YYSYMBOL_Float: yysymbol_kind_t = 142;
-pub const YYSYMBOL_Number: yysymbol_kind_t = 141;
-pub const YYSYMBOL_SignedNumber: yysymbol_kind_t = 140;
-pub const YYSYMBOL_KeySymLit: yysymbol_kind_t = 139;
-pub const YYSYMBOL_KeySym: yysymbol_kind_t = 138;
-pub const YYSYMBOL_KeySyms: yysymbol_kind_t = 137;
-pub const YYSYMBOL_NonEmptyKeySyms: yysymbol_kind_t = 136;
-pub const YYSYMBOL_KeySymList: yysymbol_kind_t = 135;
-pub const YYSYMBOL_MultiKeySymList: yysymbol_kind_t = 134;
-pub const YYSYMBOL_Terminal: yysymbol_kind_t = 133;
-pub const YYSYMBOL_OptTerminal: yysymbol_kind_t = 132;
-pub const YYSYMBOL_Lhs: yysymbol_kind_t = 131;
-pub const YYSYMBOL_Action: yysymbol_kind_t = 130;
-pub const YYSYMBOL_Actions: yysymbol_kind_t = 129;
-pub const YYSYMBOL_NonEmptyActions: yysymbol_kind_t = 128;
-pub const YYSYMBOL_ActionList: yysymbol_kind_t = 127;
-pub const YYSYMBOL_MultiActionList: yysymbol_kind_t = 126;
-pub const YYSYMBOL_Term: yysymbol_kind_t = 125;
-pub const YYSYMBOL_Expr: yysymbol_kind_t = 124;
-pub const YYSYMBOL_ExprList: yysymbol_kind_t = 123;
-pub const YYSYMBOL_MergeMode: yysymbol_kind_t = 122;
-pub const YYSYMBOL_OptMergeMode: yysymbol_kind_t = 121;
-pub const YYSYMBOL_Element: yysymbol_kind_t = 120;
-pub const YYSYMBOL_FieldSpec: yysymbol_kind_t = 119;
-pub const YYSYMBOL_DoodadType: yysymbol_kind_t = 118;
-pub const YYSYMBOL_DoodadDecl: yysymbol_kind_t = 117;
-pub const YYSYMBOL_Coord: yysymbol_kind_t = 116;
-pub const YYSYMBOL_CoordList: yysymbol_kind_t = 115;
-pub const YYSYMBOL_OutlineInList: yysymbol_kind_t = 114;
-pub const YYSYMBOL_OutlineList: yysymbol_kind_t = 113;
-pub const YYSYMBOL_OverlayKey: yysymbol_kind_t = 112;
-pub const YYSYMBOL_OverlayKeyList: yysymbol_kind_t = 111;
-pub const YYSYMBOL_OverlayDecl: yysymbol_kind_t = 110;
-pub const YYSYMBOL_Key: yysymbol_kind_t = 109;
-pub const YYSYMBOL_Keys: yysymbol_kind_t = 108;
-pub const YYSYMBOL_RowBodyItem: yysymbol_kind_t = 107;
-pub const YYSYMBOL_RowBody: yysymbol_kind_t = 106;
-pub const YYSYMBOL_SectionBodyItem: yysymbol_kind_t = 105;
-pub const YYSYMBOL_SectionBody: yysymbol_kind_t = 104;
-pub const YYSYMBOL_SectionDecl: yysymbol_kind_t = 103;
-pub const YYSYMBOL_ShapeDecl: yysymbol_kind_t = 102;
-pub const YYSYMBOL_UnknownCompoundStatementDecl: yysymbol_kind_t = 101;
-pub const YYSYMBOL_UnknownDecl: yysymbol_kind_t = 100;
-pub const YYSYMBOL_LedNameDecl: yysymbol_kind_t = 99;
-pub const YYSYMBOL_LedMapDecl: yysymbol_kind_t = 98;
-pub const YYSYMBOL_KeyOrKeySym: yysymbol_kind_t = 97;
-pub const YYSYMBOL_KeyOrKeySymList: yysymbol_kind_t = 96;
-pub const YYSYMBOL_ModMapDecl: yysymbol_kind_t = 95;
-pub const YYSYMBOL_GroupCompatDecl: yysymbol_kind_t = 94;
-pub const YYSYMBOL_NoSymbolOrActionList: yysymbol_kind_t = 93;
-pub const YYSYMBOL_MultiKeySymOrActionList: yysymbol_kind_t = 92;
-pub const YYSYMBOL_SymbolsVarDecl: yysymbol_kind_t = 91;
-pub const YYSYMBOL_SymbolsBody: yysymbol_kind_t = 90;
-pub const YYSYMBOL_OptSymbolsBody: yysymbol_kind_t = 89;
-pub const YYSYMBOL_SymbolsDecl: yysymbol_kind_t = 88;
-pub const YYSYMBOL_KeyTypeDecl: yysymbol_kind_t = 87;
-pub const YYSYMBOL_VarDeclList: yysymbol_kind_t = 86;
-pub const YYSYMBOL_InterpretMatch: yysymbol_kind_t = 85;
-pub const YYSYMBOL_InterpretDecl: yysymbol_kind_t = 84;
-pub const YYSYMBOL_VModDef: yysymbol_kind_t = 83;
-pub const YYSYMBOL_VModDefList: yysymbol_kind_t = 82;
-pub const YYSYMBOL_VModDecl: yysymbol_kind_t = 81;
-pub const YYSYMBOL_KeyAliasDecl: yysymbol_kind_t = 80;
-pub const YYSYMBOL_KeyNameDecl: yysymbol_kind_t = 79;
-pub const YYSYMBOL_VarDecl: yysymbol_kind_t = 78;
-pub const YYSYMBOL_Decl: yysymbol_kind_t = 77;
-pub const YYSYMBOL_DeclList: yysymbol_kind_t = 76;
-pub const YYSYMBOL_Flag: yysymbol_kind_t = 75;
-pub const YYSYMBOL_Flags: yysymbol_kind_t = 74;
-pub const YYSYMBOL_OptFlags: yysymbol_kind_t = 73;
-pub const YYSYMBOL_FileType: yysymbol_kind_t = 72;
-pub const YYSYMBOL_XkbMapConfig: yysymbol_kind_t = 71;
-pub const YYSYMBOL_XkbMapConfigList: yysymbol_kind_t = 70;
-pub const YYSYMBOL_XkbCompositeType: yysymbol_kind_t = 69;
-pub const YYSYMBOL_XkbCompositeMap: yysymbol_kind_t = 68;
-pub const YYSYMBOL_XkbFile: yysymbol_kind_t = 67;
-pub const YYSYMBOL_YYACCEPT: yysymbol_kind_t = 66;
-pub const YYSYMBOL_ALTERNATE_GROUP: yysymbol_kind_t = 65;
-pub const YYSYMBOL_FUNCTION_KEYS: yysymbol_kind_t = 64;
-pub const YYSYMBOL_KEYPAD_KEYS: yysymbol_kind_t = 63;
-pub const YYSYMBOL_MODIFIER_KEYS: yysymbol_kind_t = 62;
-pub const YYSYMBOL_ALPHANUMERIC_KEYS: yysymbol_kind_t = 61;
-pub const YYSYMBOL_HIDDEN: yysymbol_kind_t = 60;
-pub const YYSYMBOL_DEFAULT: yysymbol_kind_t = 59;
-pub const YYSYMBOL_PARTIAL: yysymbol_kind_t = 58;
-pub const YYSYMBOL_KEYNAME: yysymbol_kind_t = 57;
-pub const YYSYMBOL_IDENT: yysymbol_kind_t = 56;
-pub const YYSYMBOL_FLOAT: yysymbol_kind_t = 55;
-pub const YYSYMBOL_INTEGER: yysymbol_kind_t = 54;
-pub const YYSYMBOL_DECIMAL_DIGIT: yysymbol_kind_t = 53;
-pub const YYSYMBOL_STRING: yysymbol_kind_t = 52;
-pub const YYSYMBOL_INVERT: yysymbol_kind_t = 51;
-pub const YYSYMBOL_EXCLAM: yysymbol_kind_t = 50;
-pub const YYSYMBOL_SEMI: yysymbol_kind_t = 49;
-pub const YYSYMBOL_COMMA: yysymbol_kind_t = 48;
-pub const YYSYMBOL_DOT: yysymbol_kind_t = 47;
-pub const YYSYMBOL_CBRACKET: yysymbol_kind_t = 46;
-pub const YYSYMBOL_OBRACKET: yysymbol_kind_t = 45;
-pub const YYSYMBOL_CPAREN: yysymbol_kind_t = 44;
-pub const YYSYMBOL_OPAREN: yysymbol_kind_t = 43;
-pub const YYSYMBOL_CBRACE: yysymbol_kind_t = 42;
-pub const YYSYMBOL_OBRACE: yysymbol_kind_t = 41;
-pub const YYSYMBOL_TIMES: yysymbol_kind_t = 40;
-pub const YYSYMBOL_DIVIDE: yysymbol_kind_t = 39;
-pub const YYSYMBOL_MINUS: yysymbol_kind_t = 38;
-pub const YYSYMBOL_PLUS: yysymbol_kind_t = 37;
-pub const YYSYMBOL_EQUALS: yysymbol_kind_t = 36;
-pub const YYSYMBOL_VIRTUAL: yysymbol_kind_t = 35;
-pub const YYSYMBOL_LOGO: yysymbol_kind_t = 34;
-pub const YYSYMBOL_SOLID: yysymbol_kind_t = 33;
-pub const YYSYMBOL_OUTLINE: yysymbol_kind_t = 32;
-pub const YYSYMBOL_TEXT: yysymbol_kind_t = 31;
-pub const YYSYMBOL_OVERLAY: yysymbol_kind_t = 30;
-pub const YYSYMBOL_SECTION: yysymbol_kind_t = 29;
-pub const YYSYMBOL_ROW: yysymbol_kind_t = 28;
-pub const YYSYMBOL_KEYS: yysymbol_kind_t = 27;
-pub const YYSYMBOL_SHAPE: yysymbol_kind_t = 26;
-pub const YYSYMBOL_INDICATOR: yysymbol_kind_t = 25;
-pub const YYSYMBOL_MODIFIER_MAP: yysymbol_kind_t = 24;
-pub const YYSYMBOL_GROUP: yysymbol_kind_t = 23;
-pub const YYSYMBOL_ALIAS: yysymbol_kind_t = 22;
-pub const YYSYMBOL_KEY: yysymbol_kind_t = 21;
-pub const YYSYMBOL_ACTION_TOK: yysymbol_kind_t = 20;
-pub const YYSYMBOL_INTERPRET: yysymbol_kind_t = 19;
-pub const YYSYMBOL_TYPE: yysymbol_kind_t = 18;
-pub const YYSYMBOL_VIRTUAL_MODS: yysymbol_kind_t = 17;
-pub const YYSYMBOL_ALTERNATE: yysymbol_kind_t = 16;
-pub const YYSYMBOL_REPLACE: yysymbol_kind_t = 15;
-pub const YYSYMBOL_AUGMENT: yysymbol_kind_t = 14;
-pub const YYSYMBOL_OVERRIDE: yysymbol_kind_t = 13;
-pub const YYSYMBOL_INCLUDE: yysymbol_kind_t = 12;
-pub const YYSYMBOL_XKB_LAYOUT: yysymbol_kind_t = 11;
-pub const YYSYMBOL_XKB_SEMANTICS: yysymbol_kind_t = 10;
-pub const YYSYMBOL_XKB_GEOMETRY: yysymbol_kind_t = 9;
-pub const YYSYMBOL_XKB_COMPATMAP: yysymbol_kind_t = 8;
-pub const YYSYMBOL_XKB_SYMBOLS: yysymbol_kind_t = 7;
-pub const YYSYMBOL_XKB_TYPES: yysymbol_kind_t = 6;
-pub const YYSYMBOL_XKB_KEYCODES: yysymbol_kind_t = 5;
-pub const YYSYMBOL_XKB_KEYMAP: yysymbol_kind_t = 4;
-pub const YYSYMBOL_ERROR_TOK: yysymbol_kind_t = 3;
-pub const YYSYMBOL_YYUNDEF: yysymbol_kind_t = 2;
-pub const YYSYMBOL_YYerror: yysymbol_kind_t = 1;
-pub const YYSYMBOL_YYEOF: yysymbol_kind_t = 0;
-pub const YYSYMBOL_YYEMPTY: yysymbol_kind_t = -2;
+pub const YYSYMBOL_MapName: i32 = 148;
+pub const YYSYMBOL_OptMapName: i32 = 147;
+pub const YYSYMBOL_String: i32 = 146;
+pub const YYSYMBOL_Ident: i32 = 145;
+pub const YYSYMBOL_KeyCode: i32 = 144;
+pub const YYSYMBOL_Integer: i32 = 143;
+pub const YYSYMBOL_Float: i32 = 142;
+pub const YYSYMBOL_Number: i32 = 141;
+pub const YYSYMBOL_SignedNumber: i32 = 140;
+pub const YYSYMBOL_KeySymLit: i32 = 139;
+pub const YYSYMBOL_KeySym: i32 = 138;
+pub const YYSYMBOL_KeySyms: i32 = 137;
+pub const YYSYMBOL_NonEmptyKeySyms: i32 = 136;
+pub const YYSYMBOL_KeySymList: i32 = 135;
+pub const YYSYMBOL_MultiKeySymList: i32 = 134;
+pub const YYSYMBOL_Terminal: i32 = 133;
+pub const YYSYMBOL_OptTerminal: i32 = 132;
+pub const YYSYMBOL_Lhs: i32 = 131;
+pub const YYSYMBOL_Action: i32 = 130;
+pub const YYSYMBOL_Actions: i32 = 129;
+pub const YYSYMBOL_NonEmptyActions: i32 = 128;
+pub const YYSYMBOL_ActionList: i32 = 127;
+pub const YYSYMBOL_MultiActionList: i32 = 126;
+pub const YYSYMBOL_Term: i32 = 125;
+pub const YYSYMBOL_Expr: i32 = 124;
+pub const YYSYMBOL_ExprList: i32 = 123;
+pub const YYSYMBOL_MergeMode: i32 = 122;
+pub const YYSYMBOL_OptMergeMode: i32 = 121;
+pub const YYSYMBOL_Element: i32 = 120;
+pub const YYSYMBOL_FieldSpec: i32 = 119;
+pub const YYSYMBOL_DoodadType: i32 = 118;
+pub const YYSYMBOL_DoodadDecl: i32 = 117;
+pub const YYSYMBOL_Coord: i32 = 116;
+pub const YYSYMBOL_CoordList: i32 = 115;
+pub const YYSYMBOL_OutlineInList: i32 = 114;
+pub const YYSYMBOL_OutlineList: i32 = 113;
+pub const YYSYMBOL_OverlayKey: i32 = 112;
+pub const YYSYMBOL_OverlayKeyList: i32 = 111;
+pub const YYSYMBOL_OverlayDecl: i32 = 110;
+pub const YYSYMBOL_Key: i32 = 109;
+pub const YYSYMBOL_Keys: i32 = 108;
+pub const YYSYMBOL_RowBodyItem: i32 = 107;
+pub const YYSYMBOL_RowBody: i32 = 106;
+pub const YYSYMBOL_SectionBodyItem: i32 = 105;
+pub const YYSYMBOL_SectionBody: i32 = 104;
+pub const YYSYMBOL_SectionDecl: i32 = 103;
+pub const YYSYMBOL_ShapeDecl: i32 = 102;
+pub const YYSYMBOL_UnknownCompoundStatementDecl: i32 = 101;
+pub const YYSYMBOL_UnknownDecl: i32 = 100;
+pub const YYSYMBOL_LedNameDecl: i32 = 99;
+pub const YYSYMBOL_LedMapDecl: i32 = 98;
+pub const YYSYMBOL_KeyOrKeySym: i32 = 97;
+pub const YYSYMBOL_KeyOrKeySymList: i32 = 96;
+pub const YYSYMBOL_ModMapDecl: i32 = 95;
+pub const YYSYMBOL_GroupCompatDecl: i32 = 94;
+pub const YYSYMBOL_NoSymbolOrActionList: i32 = 93;
+pub const YYSYMBOL_MultiKeySymOrActionList: i32 = 92;
+pub const YYSYMBOL_SymbolsVarDecl: i32 = 91;
+pub const YYSYMBOL_SymbolsBody: i32 = 90;
+pub const YYSYMBOL_OptSymbolsBody: i32 = 89;
+pub const YYSYMBOL_SymbolsDecl: i32 = 88;
+pub const YYSYMBOL_KeyTypeDecl: i32 = 87;
+pub const YYSYMBOL_VarDeclList: i32 = 86;
+pub const YYSYMBOL_InterpretMatch: i32 = 85;
+pub const YYSYMBOL_InterpretDecl: i32 = 84;
+pub const YYSYMBOL_VModDef: i32 = 83;
+pub const YYSYMBOL_VModDefList: i32 = 82;
+pub const YYSYMBOL_VModDecl: i32 = 81;
+pub const YYSYMBOL_KeyAliasDecl: i32 = 80;
+pub const YYSYMBOL_KeyNameDecl: i32 = 79;
+pub const YYSYMBOL_VarDecl: i32 = 78;
+pub const YYSYMBOL_Decl: i32 = 77;
+pub const YYSYMBOL_DeclList: i32 = 76;
+pub const YYSYMBOL_Flag: i32 = 75;
+pub const YYSYMBOL_Flags: i32 = 74;
+pub const YYSYMBOL_OptFlags: i32 = 73;
+pub const YYSYMBOL_FileType: i32 = 72;
+pub const YYSYMBOL_XkbMapConfig: i32 = 71;
+pub const YYSYMBOL_XkbMapConfigList: i32 = 70;
+pub const YYSYMBOL_XkbCompositeType: i32 = 69;
+pub const YYSYMBOL_XkbCompositeMap: i32 = 68;
+pub const YYSYMBOL_XkbFile: i32 = 67;
+pub const YYSYMBOL_YYACCEPT: i32 = 66;
+pub const YYSYMBOL_ALTERNATE_GROUP: i32 = 65;
+pub const YYSYMBOL_FUNCTION_KEYS: i32 = 64;
+pub const YYSYMBOL_KEYPAD_KEYS: i32 = 63;
+pub const YYSYMBOL_MODIFIER_KEYS: i32 = 62;
+pub const YYSYMBOL_ALPHANUMERIC_KEYS: i32 = 61;
+pub const YYSYMBOL_HIDDEN: i32 = 60;
+pub const YYSYMBOL_DEFAULT: i32 = 59;
+pub const YYSYMBOL_PARTIAL: i32 = 58;
+pub const YYSYMBOL_KEYNAME: i32 = 57;
+pub const YYSYMBOL_IDENT: i32 = 56;
+pub const YYSYMBOL_FLOAT: i32 = 55;
+pub const YYSYMBOL_INTEGER: i32 = 54;
+pub const YYSYMBOL_DECIMAL_DIGIT: i32 = 53;
+pub const YYSYMBOL_STRING: i32 = 52;
+pub const YYSYMBOL_INVERT: i32 = 51;
+pub const YYSYMBOL_EXCLAM: i32 = 50;
+pub const YYSYMBOL_SEMI: i32 = 49;
+pub const YYSYMBOL_COMMA: i32 = 48;
+pub const YYSYMBOL_DOT: i32 = 47;
+pub const YYSYMBOL_CBRACKET: i32 = 46;
+pub const YYSYMBOL_OBRACKET: i32 = 45;
+pub const YYSYMBOL_CPAREN: i32 = 44;
+pub const YYSYMBOL_OPAREN: i32 = 43;
+pub const YYSYMBOL_CBRACE: i32 = 42;
+pub const YYSYMBOL_OBRACE: i32 = 41;
+pub const YYSYMBOL_TIMES: i32 = 40;
+pub const YYSYMBOL_DIVIDE: i32 = 39;
+pub const YYSYMBOL_MINUS: i32 = 38;
+pub const YYSYMBOL_PLUS: i32 = 37;
+pub const YYSYMBOL_EQUALS: i32 = 36;
+pub const YYSYMBOL_VIRTUAL: i32 = 35;
+pub const YYSYMBOL_LOGO: i32 = 34;
+pub const YYSYMBOL_SOLID: i32 = 33;
+pub const YYSYMBOL_OUTLINE: i32 = 32;
+pub const YYSYMBOL_TEXT: i32 = 31;
+pub const YYSYMBOL_OVERLAY: i32 = 30;
+pub const YYSYMBOL_SECTION: i32 = 29;
+pub const YYSYMBOL_ROW: i32 = 28;
+pub const YYSYMBOL_KEYS: i32 = 27;
+pub const YYSYMBOL_SHAPE: i32 = 26;
+pub const YYSYMBOL_INDICATOR: i32 = 25;
+pub const YYSYMBOL_MODIFIER_MAP: i32 = 24;
+pub const YYSYMBOL_GROUP: i32 = 23;
+pub const YYSYMBOL_ALIAS: i32 = 22;
+pub const YYSYMBOL_KEY: i32 = 21;
+pub const YYSYMBOL_ACTION_TOK: i32 = 20;
+pub const YYSYMBOL_INTERPRET: i32 = 19;
+pub const YYSYMBOL_TYPE: i32 = 18;
+pub const YYSYMBOL_VIRTUAL_MODS: i32 = 17;
+pub const YYSYMBOL_ALTERNATE: i32 = 16;
+pub const YYSYMBOL_REPLACE: i32 = 15;
+pub const YYSYMBOL_AUGMENT: i32 = 14;
+pub const YYSYMBOL_OVERRIDE: i32 = 13;
+pub const YYSYMBOL_INCLUDE: i32 = 12;
+pub const YYSYMBOL_XKB_LAYOUT: i32 = 11;
+pub const YYSYMBOL_XKB_SEMANTICS: i32 = 10;
+pub const YYSYMBOL_XKB_GEOMETRY: i32 = 9;
+pub const YYSYMBOL_XKB_COMPATMAP: i32 = 8;
+pub const YYSYMBOL_XKB_SYMBOLS: i32 = 7;
+pub const YYSYMBOL_XKB_TYPES: i32 = 6;
+pub const YYSYMBOL_XKB_KEYCODES: i32 = 5;
+pub const YYSYMBOL_XKB_KEYMAP: i32 = 4;
+pub const YYSYMBOL_ERROR_TOK: i32 = 3;
+pub const YYSYMBOL_YYUNDEF: i32 = 2;
+pub const YYSYMBOL_YYerror: i32 = 1;
+pub const YYSYMBOL_YYEOF: i32 = 0;
+pub const YYSYMBOL_YYEMPTY: i32 = -2;
 pub type yytype_uint8 = ::core::ffi::c_uchar;
 pub type yytype_int8 = i8;
 pub type yy_state_fast_t = i32;
 pub const YYENOMEM: i32 = -2;
 #[derive(Copy, Clone)]
 pub struct yypcontext_t {
-    pub yyssp: *mut yy_state_t,
-    pub yytoken: yysymbol_kind_t,
+    pub yyssp: *mut i16,
+    pub yytoken: i32,
 }
 pub const YYARGS_MAX: u32 = 5;
 #[derive(Copy, Clone)]
@@ -303,7 +300,7 @@ pub struct ExprList {
 }
 #[derive(Copy, Clone)]
 pub union yyalloc {
-    pub yyss_alloc: yy_state_t,
+    pub yyss_alloc: i16,
     pub yyvs_alloc: YYSTYPE,
 }
 
@@ -408,7 +405,7 @@ static YYTRANSLATE: [i8; 258] = [
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 1, 2,
 ];
-fn yysymbol_name(yysymbol: yysymbol_kind_t) -> *const i8 {
+fn yysymbol_name(yysymbol: i32) -> *const i8 {
     static YY_SNAME: [&str; 150] = [
         "end of file\0",
         "error\0",
@@ -608,21 +605,21 @@ static YYDEFACT: [u8; 384] = [
     190, 79, 77, 75, 197, 122, 118, 150, 109, 0, 108, 98, 0, 0, 0, 0, 0, 0, 114, 111, 112, 110,
     105, 107,
 ];
-static YYPGOTO: [yytype_int16; 83] = [
+static YYPGOTO: [i16; 83] = [
     -280, -280, -280, -280, -280, 434, -280, 443, -280, 469, -280, -280, -45, -280, -280, -280,
     -280, 356, -280, -280, 51, -280, -280, -280, -280, 244, 251, -280, -280, -280, -280, 249, 466,
     -280, -280, -280, -280, -280, -280, 302, -280, 187, -280, 138, -280, -280, 144, -280, 257,
     -196, 259, 470, -280, -46, -280, -280, -280, -279, 63, 5, 232, -280, -176, 231, -181, -35,
     -280, 474, 247, -280, 240, -280, 500, -182, 236, 291, -280, -44, -280, -37, -23, 528, -280,
 ];
-static YYDEFGOTO: [yytype_int16; 83] = [
+static YYDEFGOTO: [i16; 83] = [
     0, 10, 11, 25, 34, 12, 26, 13, 14, 15, 35, 45, 241, 72, 73, 74, 94, 95, 75, 104, 181, 76, 77,
     186, 187, 188, 189, 247, 78, 79, 195, 196, 211, 81, 82, 83, 84, 85, 212, 213, 326, 327, 369,
     370, 214, 355, 356, 202, 203, 204, 205, 215, 87, 169, 89, 46, 47, 288, 289, 171, 248, 226, 172,
     173, 227, 174, 121, 175, 251, 300, 252, 347, 197, 106, 269, 270, 123, 124, 152, 176, 125, 29,
     30,
 ];
-static YYTABLE: [yytype_int16; 929] = [
+static YYTABLE: [i16; 929] = [
     88, 71, 253, 250, 264, 333, 335, 1, 249, 91, 336, 90, 111, 96, 113, -71, 200, 367, 132, 133,
     112, -71, 39, 40, 41, 42, 43, 128, 98, 129, 118, 93, 16, 368, 70, 114, 115, 231, 116, 128, 28,
     129, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 44, 60, 61, 260, 62, 63, 64, 65, 66, 261, 301, 32,
@@ -668,7 +665,7 @@ static YYTABLE: [yytype_int16; 929] = [
     53, 156, 0, 157, 158, 159, 160, 0, 60, 161, 0, 162, 93, 0, 0, 70, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 93, 0, 0, 70,
 ];
-static YYCHECK: [yytype_int16; 929] = [
+static YYCHECK: [i16; 929] = [
     46, 46, 184, 184, 200, 284, 44, 0, 184, 46, 48, 46, 56, 50, 58, 42, 41, 41, 48, 49, 57, 48, 12,
     13, 14, 15, 16, 45, 51, 47, 67, 56, 0, 57, 59, 58, 59, 43, 61, 45, 52, 47, 17, 18, 19, 20, 21,
     22, 23, 24, 25, 26, 42, 28, 29, 42, 31, 32, 33, 34, 35, 48, 244, 41, 87, 58, 59, 60, 61, 62,
@@ -827,11 +824,7 @@ static YYR2: [yytype_int8; 220] = [
 ];
 pub const YYINITDEPTH: i32 = 200_i32;
 pub const YYMAXDEPTH: i32 = 10000_i32;
-fn yypcontext_expected_tokens(
-    yyctx: *const yypcontext_t,
-    yyarg: *mut yysymbol_kind_t,
-    yyargn: i32,
-) -> i32 {
+fn yypcontext_expected_tokens(yyctx: *const yypcontext_t, yyarg: *mut i32, yyargn: i32) -> i32 {
     unsafe {
         let mut yycount: i32 = 0_i32;
         let yyn: i32 = YYPACT[*(*yyctx).yyssp as usize] as i32;
@@ -854,7 +847,7 @@ fn yypcontext_expected_tokens(
                     } else {
                         let c2rust_fresh4 = yycount;
                         yycount += 1;
-                        *yyarg.offset(c2rust_fresh4 as isize) = yyx as yysymbol_kind_t;
+                        *yyarg.offset(c2rust_fresh4 as isize) = yyx as i32;
                     }
                 }
                 yyx += 1;
@@ -866,11 +859,7 @@ fn yypcontext_expected_tokens(
         yycount
     }
 }
-fn yy_syntax_error_arguments(
-    yyctx: *const yypcontext_t,
-    yyarg: *mut yysymbol_kind_t,
-    yyargn: i32,
-) -> i32 {
+fn yy_syntax_error_arguments(yyctx: *const yypcontext_t, yyarg: *mut i32, yyargn: i32) -> i32 {
     unsafe {
         let mut yycount: i32 = 0_i32;
         if (*yyctx).yytoken != YYSYMBOL_YYEMPTY {
@@ -899,13 +888,10 @@ fn yy_syntax_error_arguments(
 fn yysyntax_error(yymsg_alloc: *mut i64, yymsg: *mut *mut i8, yyctx: *const yypcontext_t) -> i32 {
     unsafe {
         let mut yyformat: *const i8;
-        let mut yyarg: [yysymbol_kind_t; 5] = [YYSYMBOL_YYEOF; 5];
+        let mut yyarg: [i32; 5] = [YYSYMBOL_YYEOF; 5];
         let mut yysize: i64;
-        let yycount: i32 = yy_syntax_error_arguments(
-            yyctx,
-            &raw mut yyarg as *mut yysymbol_kind_t,
-            YYARGS_MAX as i32,
-        );
+        let yycount: i32 =
+            yy_syntax_error_arguments(yyctx, &raw mut yyarg as *mut i32, YYARGS_MAX as i32);
         if yycount == YYENOMEM {
             return YYENOMEM;
         }
@@ -993,12 +979,7 @@ fn yysyntax_error(yymsg_alloc: *mut i64, yymsg: *mut *mut i8, yyctx: *const yypc
         0_i32
     }
 }
-fn yydestruct(
-    yymsg: *const i8,
-    yykind: yysymbol_kind_t,
-    yyvaluep: *mut YYSTYPE,
-    param: *mut parser_param,
-) {
+fn yydestruct(yymsg: *const i8, yykind: i32, yyvaluep: *mut YYSTYPE, param: *mut parser_param) {
     unsafe {
         if yymsg.is_null() {
             // dead store removed: yymsg = b"Deleting\0".as_ptr() as *const i8;
@@ -1160,17 +1141,16 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
         let mut yystate: yy_state_fast_t = 0 as yy_state_fast_t;
         let mut yyerrstatus: i32 = 0_i32;
         let mut yystacksize: i64 = YYINITDEPTH as i64;
-        let mut yyssa: [yy_state_t; 200] = [0; 200];
-        let mut yyss: *mut yy_state_t = &raw mut yyssa as *mut yy_state_t;
-        let mut yyssp: *mut yy_state_t = yyss;
+        let mut yyssa: [i16; 200] = [0; 200];
+        let mut yyss: *mut i16 = &raw mut yyssa as *mut i16;
+        let mut yyssp: *mut i16 = yyss;
         let mut yyvsa: [YYSTYPE; 200] = [YYSTYPE { num: 0 }; 200];
         let mut yyvs: *mut YYSTYPE = &raw mut yyvsa as *mut YYSTYPE;
         let mut yyvsp: *mut YYSTYPE = yyvs;
         let mut yyn: i32;
         let yyresult: i32;
-        let mut yytoken: yysymbol_kind_t;
-        #[allow(unused_assignments)]
-        let mut yyval: YYSTYPE = YYSTYPE { num: 0 };
+        let mut yytoken: i32;
+        let mut yyval;
         let mut yymsgbuf: [i8; 128] = [0; 128];
         let mut yymsg: *mut i8 = &raw mut yymsgbuf as *mut i8;
         let mut yymsg_alloc: i64 = std::mem::size_of::<[i8; 128]>() as i64;
@@ -1180,7 +1160,7 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
             if false {
                 (0_i32..384_i32).contains(&yystate);
             }
-            *yyssp = yystate as yy_state_t;
+            *yyssp = yystate as i16;
             if yyss.offset(yystacksize as isize).offset(-(1_i32 as isize)) <= yyssp {
                 let yysize: i64 = yyssp.offset_from(yyss) as i64 + 1_i64;
                 if YYMAXDEPTH as i64 <= yystacksize {
@@ -1191,10 +1171,10 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                 if (YYMAXDEPTH as i64) < yystacksize {
                     yystacksize = YYMAXDEPTH as i64;
                 }
-                let yyss1: *mut yy_state_t = yyss;
+                let yyss1: *mut i16 = yyss;
                 let mut yyptr: *mut yyalloc = malloc(
                     (yystacksize
-                        * (std::mem::size_of::<yy_state_t>() as i64
+                        * (std::mem::size_of::<i16>() as i64
                             + std::mem::size_of::<YYSTYPE>() as i64)
                         + (std::mem::size_of::<yyalloc>() as i64 - 1_i64))
                         as usize,
@@ -1204,14 +1184,14 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     break;
                 }
 
-                std::ptr::copy_nonoverlapping::<yy_state_t>(
+                std::ptr::copy_nonoverlapping::<i16>(
                     yyss,
                     &raw mut (*yyptr).yyss_alloc,
                     yysize as usize,
                 );
                 yyss = &raw mut (*yyptr).yyss_alloc;
                 let yynewbytes: i64 =
-                    yystacksize * std::mem::size_of::<yy_state_t>() as i64 + YYSTACK_GAP_MAXIMUM;
+                    yystacksize * std::mem::size_of::<i16>() as i64 + YYSTACK_GAP_MAXIMUM;
                 yyptr = yyptr.offset((yynewbytes / std::mem::size_of::<yyalloc>() as i64) as isize);
 
                 std::ptr::copy_nonoverlapping::<YYSTYPE>(
@@ -1220,7 +1200,7 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     yysize as usize,
                 );
                 yyvs = &raw mut (*yyptr).yyvs_alloc;
-                if yyss1 != &raw mut yyssa as *mut yy_state_t {
+                if yyss1 != &raw mut yyssa as *mut i16 {
                     free(yyss1 as *mut ::core::ffi::c_void);
                 }
                 yyssp = yyss.offset(yysize as isize).offset(-(1_i32 as isize));
@@ -1251,10 +1231,10 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     c2rust_current_block = 12965144090463719536;
                 } else {
                     yytoken = (if (0_i32..=YYMAXUTOK).contains(&yychar) {
-                        YYTRANSLATE[yychar as usize] as yysymbol_kind_t
+                        YYTRANSLATE[yychar as usize] as i32
                     } else {
                         YYSYMBOL_YYUNDEF
-                    }) as yysymbol_kind_t;
+                    }) as i32;
                     c2rust_current_block = 3689906465960840878;
                 }
                 match c2rust_current_block {
@@ -1290,10 +1270,10 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     yytoken = (if yychar == YYEMPTY {
                         YYSYMBOL_YYEMPTY
                     } else if (0_i32..=YYMAXUTOK).contains(&yychar) {
-                        YYTRANSLATE[yychar as usize] as yysymbol_kind_t
+                        YYTRANSLATE[yychar as usize] as i32
                     } else {
                         YYSYMBOL_YYUNDEF
-                    }) as yysymbol_kind_t;
+                    }) as i32;
                     if yyerrstatus == 0 {
                         _xkbcommon_nerrs += 1;
                         let mut yyctx: yypcontext_t = yypcontext_t { yyssp, yytoken };
@@ -2728,7 +2708,7 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     }
                     yydestruct(
                         b"Error: popping\0".as_ptr() as *const i8,
-                        YYSTOS[yystate as usize] as yysymbol_kind_t,
+                        YYSTOS[yystate as usize] as i32,
                         yyvsp,
                         param,
                     );
@@ -2756,10 +2736,10 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
         }
         if yychar != YYEMPTY {
             yytoken = (if (0_i32..=YYMAXUTOK).contains(&yychar) {
-                YYTRANSLATE[yychar as usize] as yysymbol_kind_t
+                YYTRANSLATE[yychar as usize] as i32
             } else {
                 YYSYMBOL_YYUNDEF
-            }) as yysymbol_kind_t;
+            }) as i32;
             yydestruct(
                 b"Cleanup: discarding lookahead\0".as_ptr() as *const i8,
                 yytoken,
@@ -2772,14 +2752,14 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
         while yyssp != yyss {
             yydestruct(
                 b"Cleanup: popping\0".as_ptr() as *const i8,
-                YYSTOS[*yyssp as usize] as yysymbol_kind_t,
+                YYSTOS[*yyssp as usize] as i32,
                 yyvsp,
                 param,
             );
             yyvsp = yyvsp.offset(-(1_i32 as isize));
             yyssp = yyssp.offset(-(1_i32 as isize));
         }
-        if yyss != &raw mut yyssa as *mut yy_state_t {
+        if yyss != &raw mut yyssa as *mut i16 {
             free(yyss as *mut ::core::ffi::c_void);
         }
         if yymsg != &raw mut yymsgbuf as *mut i8 {

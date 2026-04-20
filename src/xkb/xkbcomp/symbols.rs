@@ -139,6 +139,34 @@ fn resize_groups_zero(v: &mut Vec<GroupInfo>, new_len: usize) {
     v.resize_with(new_len, Default::default);
 }
 
+/// Collect a ParseCommon linked list of ExprDef nodes into a Vec of references.
+/// SAFETY: All nodes must be valid ExprDef allocations connected via common.next.
+fn collect_expr_list<'a>(head: *const ExprDef) -> Vec<&'a ExprDef> {
+    let mut result = Vec::new();
+    let mut cur = head;
+    while !cur.is_null() {
+        let expr_ref = unsafe { &*cur };
+        result.push(expr_ref);
+        cur = unsafe { from_common!(expr_ref.common.next, ExprDef) };
+    }
+    result
+}
+
+/// Collect a ParseCommon linked list of ExprDef nodes into a Vec of mutable references.
+/// SAFETY: All nodes must be valid ExprDef allocations connected via common.next.
+/// Caller must ensure no aliasing.
+fn collect_expr_list_mut<'a>(head: *mut ExprDef) -> Vec<&'a mut ExprDef> {
+    let mut result = Vec::new();
+    let mut cur = head;
+    while !cur.is_null() {
+        let expr_ref = unsafe { &mut *cur };
+        let next = unsafe { from_common!(expr_ref.common.next, ExprDef) };
+        result.push(expr_ref);
+        cur = next;
+    }
+    result
+}
+
 fn InitGroupInfo(groupi: &mut GroupInfo) {
     *groupi = GroupInfo::default();
 }
@@ -922,16 +950,15 @@ fn AddSymbolsToKey(
     }
     let mut nLevels: u32 = 0_u32;
     let mut nonEmptyLevels: u32 = 0_u32;
-    let mut keysymList: *const ExprDef = value;
-    while !keysymList.is_null() {
+    let keysym_nodes = collect_expr_list(value);
+    for node in &keysym_nodes {
         nLevels = nLevels.wrapping_add(1);
-        let ExprKind::KeysymList { ref syms } = (unsafe { &*keysymList }).kind else {
+        let ExprKind::KeysymList { ref syms } = node.kind else {
             unreachable!()
         };
         if syms.len() as u32 > 0_u32 {
             nonEmptyLevels = nLevels;
         }
-        keysymList = unsafe { from_common!((*keysymList).common.next, ExprDef) };
     }
     if nonEmptyLevels < nLevels {
         nLevels = nonEmptyLevels;
@@ -943,11 +970,12 @@ fn AddSymbolsToKey(
             .resize_with(nLevels as usize, Default::default);
     }
     groupi.defined = (groupi.defined | GROUP_FIELD_SYMS) as group_field;
-    let mut level: u32 = 0_u32;
-    let mut keysymList_0: *const ExprDef = value;
-    while !keysymList_0.is_null() && level < nLevels {
-        let leveli = &mut keyi.groups[ndx as usize].levels[level as usize];
-        let ExprKind::KeysymList { ref syms } = (unsafe { &*keysymList_0 }).kind else {
+    for (level, node) in keysym_nodes.iter().enumerate() {
+        if level as u32 >= nLevels {
+            break;
+        }
+        let leveli = &mut keyi.groups[ndx as usize].levels[level];
+        let ExprKind::KeysymList { ref syms } = node.kind else {
             unreachable!()
         };
         let syms_len = syms.len() as u32;
@@ -956,7 +984,7 @@ fn AddSymbolsToKey(
                 "Key <{}> has too many keysyms for group {}, level {}; expected max {}, got: {}\n",
                 KeyInfoText(info, keyi),
                 ndx.wrapping_add(1_u32),
-                level.wrapping_add(1_u32),
+                (level as u32).wrapping_add(1_u32),
                 65535_i32,
                 syms_len
             );
@@ -967,8 +995,6 @@ fn AddSymbolsToKey(
         } else {
             syms[..syms_len as usize].to_vec()
         };
-        keysymList_0 = unsafe { from_common!((*keysymList_0).common.next, ExprDef) };
-        level = level.wrapping_add(1);
     }
     true
 }
@@ -1004,12 +1030,8 @@ fn AddActionsToKey(
         );
         return false;
     }
-    let mut nLevels: u32 = 0_u32;
-    let mut p: *mut ParseCommon = &raw mut value.common;
-    while !p.is_null() {
-        nLevels = nLevels.wrapping_add(1);
-        p = unsafe { (*p).next };
-    }
+    let action_nodes = collect_expr_list_mut(value as *mut ExprDef);
+    let nLevels: u32 = action_nodes.len() as u32;
     let groupi = &mut keyi.groups[ndx as usize];
     if (groupi.levels.len() as u32) < nLevels {
         groupi
@@ -1019,12 +1041,11 @@ fn AddActionsToKey(
     groupi.defined = (groupi.defined | GROUP_FIELD_ACTS) as group_field;
     let mut level: u32 = 0_u32;
     let mut nonEmptyLevels: u32 = 0_u32;
-    let mut actionList: *mut ExprDef = value as *mut ExprDef;
-    while !actionList.is_null() {
+    for action_node in action_nodes {
         let c2rust_current_block_102: u64;
         let ExprKind::ActionList {
             actions: action_vec,
-        } = &mut (unsafe { &mut *actionList }).kind
+        } = &mut action_node.kind
         else {
             unreachable!()
         };
@@ -1092,7 +1113,6 @@ fn AddActionsToKey(
                 nonEmptyLevels = level.wrapping_add(1_u32);
             }
         }
-        actionList = unsafe { from_common!((*actionList).common.next, ExprDef) };
         level = level.wrapping_add(1);
     }
     let groupi = &mut keyi.groups[ndx as usize];
@@ -2386,16 +2406,16 @@ fn CopySymbolsToKeymap(keymap: &mut xkb_keymap, info: &mut SymbolsInfo<'_>) -> b
     true
 }
 pub fn CompileSymbols(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
-    let keymap_info = unsafe { &mut *(keymap_info as *mut xkb_keymap_info) };
+    // let keymap_info = unsafe { &mut *(keymap_info as *mut xkb_keymap_info) };
     let mods = keymap_info.keymap_ref().mods;
-    let keymap_ptr = keymap_info.keymap as *const xkb_keymap as *mut xkb_keymap;
+    // let keymap_ptr = keymap_info.keymap as *const xkb_keymap as *mut xkb_keymap;
     let mut info = SymbolsInfo::new(keymap_info);
     InitSymbolsInfo(&mut info, 0_u32, &mods);
     if let Some(file) = file {
         HandleSymbolsFile(&mut info, file);
     }
-    let keymap_ref = unsafe { &mut *keymap_ptr };
-    if (info.errorCount == 0_i32) && CopySymbolsToKeymap(keymap_ref, &mut info) {
+    // let keymap_ref = unsafe { &mut *keymap_ptr };
+    if (info.errorCount == 0_i32) && CopySymbolsToKeymap(keymap_info.keymap, &mut info) {
         ClearSymbolsInfo(&mut info);
         return true;
     }
