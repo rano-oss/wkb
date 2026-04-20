@@ -1,5 +1,5 @@
 use super::prelude::*;
-use crate::xkb::context::{xkb_atom_intern, xkb_atom_intern_bytes};
+use crate::xkb::context::xkb_atom_intern_ref;
 pub use crate::xkb::keymap::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
 use crate::xkb::keysym::xkb_keysym_is_keypad;
 use crate::xkb::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
@@ -152,12 +152,15 @@ fn CopyGroupInfo(to: &mut GroupInfo, from: &GroupInfo) {
     to.type_0 = from.type_0;
     to.levels = from.levels.clone();
 }
-fn InitKeyInfo(ctx: *mut xkb_context, keyi: *mut KeyInfo) {
+fn InitKeyInfo(ctx: &mut xkb_context, keyi: &mut KeyInfo) {
+    // Use ptr::write to avoid dropping the old value — callers may have
+    // already moved the data out via ptr::read, leaving the slot logically
+    // uninitialized.
     unsafe {
         std::ptr::write(
-            keyi,
+            keyi as *mut KeyInfo,
             KeyInfo {
-                name: xkb_atom_intern(ctx, b"*"),
+                name: xkb_atom_intern_ref(ctx, b"*"),
                 vmodmap: 0,
                 default_type: 0,
                 out_of_range_group_number: 0,
@@ -185,7 +188,7 @@ fn InitSymbolsInfo(info: &mut SymbolsInfo<'_>, include_depth: u32, mods: &xkb_mo
     info.include_depth = include_depth;
     info.explicit_group = XKB_LAYOUT_INVALID;
     info.max_groups = info.keymap_info.features.max_groups;
-    InitKeyInfo(info.keymap_info.ctx_mut(), &raw mut info.default_key);
+    InitKeyInfo(info.keymap_info.ctx_mut(), &mut info.default_key);
     InitActionsInfo(info.keymap_info.keymap_ref(), &mut info.default_actions);
     InitVMods(&mut info.mods, mods, include_depth > 0_u32);
 }
@@ -596,11 +599,8 @@ fn MergeKeys(
             ClearKeyInfo(&mut *into);
             std::ptr::write(into, std::ptr::read(from));
             InitKeyInfo(
-                unsafe {
-                    &raw mut (*(info.keymap_info.keymap as *const xkb_keymap as *mut xkb_keymap))
-                        .ctx
-                },
-                from,
+                &mut (*(info.keymap_info.keymap as *const _ as *mut xkb_keymap)).ctx,
+                &mut *from,
             );
             return true;
         }
@@ -686,10 +686,8 @@ fn MergeKeys(
         }
         ClearKeyInfo(&mut *from);
         InitKeyInfo(
-            unsafe {
-                &raw mut (*(info.keymap_info.keymap as *const xkb_keymap as *mut xkb_keymap)).ctx
-            },
-            from,
+            &mut (*(info.keymap_info.keymap as *const _ as *mut xkb_keymap)).ctx,
+            &mut *from,
         );
         true
     }
@@ -714,54 +712,52 @@ fn AddKeySymbols(info: &mut SymbolsInfo<'_>, keyi: *mut KeyInfo, same_file: bool
             }
         }
         info.keys.push(std::ptr::read(keyi));
-        InitKeyInfo(info.keymap_info.ctx_mut(), keyi);
+        InitKeyInfo(info.keymap_info.ctx_mut(), &mut *keyi);
         true
     }
 }
-fn AddModMapEntry(info: &mut SymbolsInfo<'_>, new: *mut ModMapEntry) -> bool {
-    unsafe {
-        let clobber: bool = (*new).merge != MERGE_AUGMENT;
-        let ctx: *mut xkb_context = info.keymap_info.ctx_mut();
-        let mods_ptr = &raw mut info.mods;
-        for old in info.modmaps.iter_mut() {
-            if (*new).haveSymbol as i32 != old.haveSymbol as i32
-                || (*new).haveSymbol as i32 != 0 && (*new).u != old.u
-                || !(*new).haveSymbol && (*new).u != old.u
-            {
-                continue;
-            }
-            if (*new).modifier == old.modifier {
-                return true;
-            }
-            let use_0: u32 = if clobber as i32 != 0 {
-                (*new).modifier
-            } else {
-                old.modifier
-            };
-            let ignore: u32 = if clobber as i32 != 0 {
-                old.modifier
-            } else {
-                (*new).modifier
-            };
-            if (*new).haveSymbol {
-                log::warn!("[XKB-{:03}] Symbol \"{}\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
-                    XKB_WARNING_CONFLICTING_MODMAP as i32,
-                    KeysymText((*new).u),
-                    ModIndexText(&*ctx, &*mods_ptr, use_0),
-                    ModIndexText(&*ctx, &*mods_ptr, ignore));
-            } else {
-                log::warn!("[XKB-{:03}] Key \"<{}>\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
-                    XKB_WARNING_CONFLICTING_MODMAP as i32,
-                    xkb_atom_text(&(*ctx).atom_table, (*new).u),
-                    ModIndexText(&*ctx, &*mods_ptr, use_0),
-                    ModIndexText(&*ctx, &*mods_ptr, ignore));
-            }
-            old.modifier = use_0;
+fn AddModMapEntry(info: &mut SymbolsInfo<'_>, new: &ModMapEntry) -> bool {
+    let clobber: bool = new.merge != MERGE_AUGMENT;
+    let ctx = info.keymap_info.ctx();
+    let mods = &info.mods;
+    for old in info.modmaps.iter_mut() {
+        if new.haveSymbol as i32 != old.haveSymbol as i32
+            || new.haveSymbol as i32 != 0 && new.u != old.u
+            || !new.haveSymbol && new.u != old.u
+        {
+            continue;
+        }
+        if new.modifier == old.modifier {
             return true;
         }
-        info.modmaps.push(*new);
-        true
+        let use_0: u32 = if clobber as i32 != 0 {
+            new.modifier
+        } else {
+            old.modifier
+        };
+        let ignore: u32 = if clobber as i32 != 0 {
+            old.modifier
+        } else {
+            new.modifier
+        };
+        if new.haveSymbol {
+            log::warn!("[XKB-{:03}] Symbol \"{}\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
+                XKB_WARNING_CONFLICTING_MODMAP as i32,
+                KeysymText(new.u),
+                ModIndexText(ctx, mods, use_0),
+                ModIndexText(ctx, mods, ignore));
+        } else {
+            log::warn!("[XKB-{:03}] Key \"<{}>\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
+                XKB_WARNING_CONFLICTING_MODMAP as i32,
+                xkb_atom_text(&ctx.atom_table, new.u),
+                ModIndexText(ctx, mods, use_0),
+                ModIndexText(ctx, mods, ignore));
+        }
+        old.modifier = use_0;
+        return true;
     }
+    info.modmaps.push(*new);
+    true
 }
 fn MergeIncludedSymbols(into: &mut SymbolsInfo<'_>, from: &mut SymbolsInfo<'_>, merge: merge_mode) {
     if from.errorCount > 0_i32 {
@@ -811,7 +807,7 @@ fn MergeIncludedSymbols(into: &mut SymbolsInfo<'_>, from: &mut SymbolsInfo<'_>, 
     } else {
         for mm in from.modmaps.iter_mut() {
             mm.merge = merge;
-            if !AddModMapEntry(into, mm as *mut ModMapEntry) {
+            if !AddModMapEntry(into, mm) {
                 into.errorCount += 1;
             }
         }
@@ -1659,7 +1655,7 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
             init.overlays_clear = false;
             init
         };
-        InitKeyInfo(info.keymap_info.ctx_mut(), &raw mut temp);
+        InitKeyInfo(info.keymap_info.ctx_mut(), &mut temp);
         temp.merge = if temp.merge == MERGE_REPLACE {
             MERGE_OVERRIDE
         } else {
@@ -1900,7 +1896,7 @@ fn HandleModMapDef(info: &mut SymbolsInfo<'_>, def: &mut ModMapDef) -> bool {
             c2rust_current_block_19 = 13536709405535804910;
         }
         if c2rust_current_block_19 == 5601891728916014340 {
-            ok = AddModMapEntry(info, &raw mut tmp) as i32 != 0 && ok as i32 != 0;
+            ok = AddModMapEntry(info, &tmp) as i32 != 0 && ok as i32 != 0;
         }
     }
     ok
@@ -2008,67 +2004,58 @@ fn FindKeyForSymbol(keymap: &mut xkb_keymap, sym: u32) -> Option<&mut xkb_key> {
     None
 }
 fn FindAutomaticType(ctx: &mut xkb_context, groupi: &GroupInfo) -> u32 {
-    let ctx_ptr: *mut xkb_context = ctx;
-    // SAFETY: ctx_ptr is derived from a valid &mut reference; xkb_keysym_is_lower/upper_or_title
-    // are safe to call with any u32 keysym value; xkb_atom_intern is safe with valid ctx.
-    unsafe {
-        let width: u32 = groupi.levels.len() as u32;
-        if width == 1_u32 || width <= 0_u32 {
-            return xkb_atom_intern(ctx_ptr, b"ONE_LEVEL");
-        }
-        let sym0: u32 = if groupi.levels[0].syms.is_empty() {
-            XKB_KEY_NoSymbol as u32
-        } else {
-            groupi.levels[0].syms[0]
-        };
-        let sym1: u32 = if groupi.levels[1].syms.is_empty() {
-            XKB_KEY_NoSymbol as u32
-        } else {
-            groupi.levels[1].syms[0]
-        };
-        if width == 2_u32 {
-            if xkb_keysym_is_lower(sym0) as i32 != 0
-                && xkb_keysym_is_upper_or_title(sym1) as i32 != 0
-            {
-                return xkb_atom_intern(ctx_ptr, b"ALPHABETIC");
-            }
-            if xkb_keysym_is_keypad(sym0) as i32 != 0 || xkb_keysym_is_keypad(sym1) as i32 != 0 {
-                return xkb_atom_intern(ctx_ptr, b"KEYPAD");
-            }
-            return xkb_atom_intern(ctx_ptr, b"TWO_LEVEL");
-        }
-        if width <= 4_u32 {
-            if xkb_keysym_is_lower(sym0) as i32 != 0
-                && xkb_keysym_is_upper_or_title(sym1) as i32 != 0
-            {
-                let sym2: u32 = if groupi.levels[2].syms.is_empty() {
-                    XKB_KEY_NoSymbol as u32
-                } else {
-                    groupi.levels[2].syms[0]
-                };
-                let sym3: u32 = if width == 4_u32 {
-                    if groupi.levels[3].syms.is_empty() {
-                        XKB_KEY_NoSymbol as u32
-                    } else {
-                        groupi.levels[3].syms[0]
-                    }
-                } else {
-                    XKB_KEY_NoSymbol as u32
-                };
-                if xkb_keysym_is_lower(sym2) as i32 != 0
-                    && xkb_keysym_is_upper_or_title(sym3) as i32 != 0
-                {
-                    return xkb_atom_intern(ctx_ptr, b"FOUR_LEVEL_ALPHABETIC");
-                }
-                return xkb_atom_intern(ctx_ptr, b"FOUR_LEVEL_SEMIALPHABETIC");
-            }
-            if xkb_keysym_is_keypad(sym0) as i32 != 0 || xkb_keysym_is_keypad(sym1) as i32 != 0 {
-                return xkb_atom_intern(ctx_ptr, b"FOUR_LEVEL_KEYPAD");
-            }
-            return xkb_atom_intern(ctx_ptr, b"FOUR_LEVEL");
-        }
-        XKB_ATOM_NONE
+    let width: u32 = groupi.levels.len() as u32;
+    if width == 1_u32 || width <= 0_u32 {
+        return xkb_atom_intern_ref(ctx, b"ONE_LEVEL");
     }
+    let sym0: u32 = if groupi.levels[0].syms.is_empty() {
+        XKB_KEY_NoSymbol as u32
+    } else {
+        groupi.levels[0].syms[0]
+    };
+    let sym1: u32 = if groupi.levels[1].syms.is_empty() {
+        XKB_KEY_NoSymbol as u32
+    } else {
+        groupi.levels[1].syms[0]
+    };
+    if width == 2_u32 {
+        if xkb_keysym_is_lower(sym0) as i32 != 0 && xkb_keysym_is_upper_or_title(sym1) as i32 != 0 {
+            return xkb_atom_intern_ref(ctx, b"ALPHABETIC");
+        }
+        if xkb_keysym_is_keypad(sym0) as i32 != 0 || xkb_keysym_is_keypad(sym1) as i32 != 0 {
+            return xkb_atom_intern_ref(ctx, b"KEYPAD");
+        }
+        return xkb_atom_intern_ref(ctx, b"TWO_LEVEL");
+    }
+    if width <= 4_u32 {
+        if xkb_keysym_is_lower(sym0) as i32 != 0 && xkb_keysym_is_upper_or_title(sym1) as i32 != 0 {
+            let sym2: u32 = if groupi.levels[2].syms.is_empty() {
+                XKB_KEY_NoSymbol as u32
+            } else {
+                groupi.levels[2].syms[0]
+            };
+            let sym3: u32 = if width == 4_u32 {
+                if groupi.levels[3].syms.is_empty() {
+                    XKB_KEY_NoSymbol as u32
+                } else {
+                    groupi.levels[3].syms[0]
+                }
+            } else {
+                XKB_KEY_NoSymbol as u32
+            };
+            if xkb_keysym_is_lower(sym2) as i32 != 0
+                && xkb_keysym_is_upper_or_title(sym3) as i32 != 0
+            {
+                return xkb_atom_intern_ref(ctx, b"FOUR_LEVEL_ALPHABETIC");
+            }
+            return xkb_atom_intern_ref(ctx, b"FOUR_LEVEL_SEMIALPHABETIC");
+        }
+        if xkb_keysym_is_keypad(sym0) as i32 != 0 || xkb_keysym_is_keypad(sym1) as i32 != 0 {
+            return xkb_atom_intern_ref(ctx, b"FOUR_LEVEL_KEYPAD");
+        }
+        return xkb_atom_intern_ref(ctx, b"FOUR_LEVEL");
+    }
+    XKB_ATOM_NONE
 }
 fn FindTypeForGroup(
     keymap: *mut xkb_keymap,
