@@ -320,12 +320,14 @@ fn update_pending_key_fields(info: &mut xkb_keymap_info<'_>, key_idx: usize) -> 
     if info.keymap.keys[key_idx].out_of_range_pending_group {
         let idx = info.keymap.keys[key_idx].out_of_range_group_number as usize;
         if !info.pending_computations[idx].computed {
-            // Extract raw pointer to expr to avoid holding a borrow of info
-            let expr_ptr = info.pending_computations[idx].expr.raw();
-            let expr_ref = unsafe { &*expr_ptr };
+            // Temporarily take the expr out to avoid borrow conflict with info
+            let expr_box = info.pending_computations[idx].expr.take().unwrap();
             let mut group: u32 = 0_u32;
             let mut pending_dummy = false;
-            match ExprResolveGroup(info, expr_ref, true, &mut group, &mut pending_dummy) as u32 {
+            let resolve_ret =
+                ExprResolveGroup(info, &expr_box, true, &mut group, &mut pending_dummy) as u32;
+            info.pending_computations[idx].expr = Some(expr_box);
+            match resolve_ret {
                 0 => {
                     info.pending_computations[idx].computed = true;
                     info.pending_computations[idx].value = group.wrapping_sub(1_u32);
@@ -352,16 +354,17 @@ fn update_pending_action_fields(
     match act.action_type() {
         5..=7 => {
             if act.as_group().flags & ACTION_PENDING_COMPUTATION != 0 {
-                let pc: &mut pending_computation =
-                    &mut info.pending_computations[act.as_group().group as usize];
-                if !pc.computed {
+                let pc_idx = act.as_group().group as usize;
+                if !info.pending_computations[pc_idx].computed {
                     let mut group: u32 = 0_u32;
                     let absolute: bool = act.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0;
                     let mut pending_dummy = false;
-                    let expr_ref = unsafe { &*pc.expr.raw() };
-                    match ExprResolveGroup(info, expr_ref, absolute, &mut group, &mut pending_dummy)
-                        as u32
-                    {
+                    let expr_box = info.pending_computations[pc_idx].expr.take().unwrap();
+                    let resolve_ret =
+                        ExprResolveGroup(info, &expr_box, absolute, &mut group, &mut pending_dummy)
+                            as u32;
+                    info.pending_computations[pc_idx].expr = Some(expr_box);
+                    match resolve_ret {
                         2 => {
                             log::error!("[XKB-{:03}] Invalid action group index\n", {
                                 XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX
@@ -370,21 +373,27 @@ fn update_pending_action_fields(
                         }
                         1 => {}
                         _ => {
-                            let pc = &mut info.pending_computations[act.as_group().group as usize];
-                            pc.computed = true;
+                            info.pending_computations[pc_idx].computed = true;
                             if absolute {
-                                pc.value = group.wrapping_sub(1_u32);
+                                info.pending_computations[pc_idx].value = group.wrapping_sub(1_u32);
                             } else {
-                                pc.value = group;
-                                if unsafe { (*pc.expr.raw()).common.type_0 } == STMT_EXPR_NEGATE {
-                                    pc.value = -(pc.value as i32) as u32;
+                                info.pending_computations[pc_idx].value = group;
+                                if info.pending_computations[pc_idx]
+                                    .expr
+                                    .as_ref()
+                                    .unwrap()
+                                    .common
+                                    .type_0
+                                    == STMT_EXPR_NEGATE
+                                {
+                                    info.pending_computations[pc_idx].value =
+                                        -(info.pending_computations[pc_idx].value as i32) as u32;
                                 }
                             }
                         }
                     }
                 }
-                let pc = &info.pending_computations[act.as_group().group as usize];
-                act.as_group_mut().group = pc.value as i32;
+                act.as_group_mut().group = info.pending_computations[pc_idx].value as i32;
                 act.as_group_mut().flags = (act.as_group().flags
                     & !(ACTION_PENDING_COMPUTATION as i32) as u32)
                     as xkb_action_flags;
@@ -663,10 +672,13 @@ fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info<'_>) -> bool {
             if info.keymap.leds[led_idx as usize].pending_groups {
                 let groups_idx = info.keymap.leds[led_idx as usize].groups as usize;
                 if !info.pending_computations[groups_idx].computed {
-                    let expr_ref = unsafe { &*info.pending_computations[groups_idx].expr.raw() };
+                    let expr_box = info.pending_computations[groups_idx].expr.take().unwrap();
                     let mut mask: u32 = 0_u32;
                     let mut pending_dummy = false;
-                    if !ExprResolveGroupMask(info, expr_ref, &mut mask, &mut pending_dummy) {
+                    let resolved =
+                        ExprResolveGroupMask(info, &expr_box, &mut mask, &mut pending_dummy);
+                    info.pending_computations[groups_idx].expr = Some(expr_box);
+                    if !resolved {
                         log::error!("[XKB-{:03}] Invalid LED group mask\n", {
                             XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX
                         });

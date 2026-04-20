@@ -902,7 +902,7 @@ fn HandleSetPtrDflt(
         if value.common.type_0 == STMT_EXPR_NEGATE || value.common.type_0 == STMT_EXPR_UNARY_PLUS {
             act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
             button = if let ExprKind::Unary { child, .. } = &value.kind {
-                unsafe { &*child.raw() }
+                child.as_deref().unwrap()
             } else {
                 unreachable!()
             };
@@ -966,7 +966,7 @@ fn HandleSwitchScreen(
         if value.common.type_0 == STMT_EXPR_NEGATE || value.common.type_0 == STMT_EXPR_UNARY_PLUS {
             act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
             scrn = if let ExprKind::Unary { child, .. } = &value.kind {
-                unsafe { &*child.raw() }
+                child.as_deref().unwrap()
             } else {
                 unreachable!()
             };
@@ -1236,18 +1236,8 @@ fn HandlePrivate(
                     PARSER_RECOVERABLE_ERROR as i32
                 }) as u32;
             }
-            unsafe {
-                std::ptr::write_bytes::<[u8; 7]>(
-                    &raw mut act.data as *mut u8 as *mut [u8; 7],
-                    0u8,
-                    1,
-                );
-                std::ptr::copy_nonoverlapping(
-                    str_bytes.as_bytes().as_ptr(),
-                    &raw mut act.data as *mut u8,
-                    len,
-                );
-            }
+            act.data = [0u8; 7];
+            act.data[..len].copy_from_slice(&str_bytes.as_bytes()[..len]);
             return PARSER_SUCCESS;
         } else {
             let array_ndx = array_ndx.unwrap();
