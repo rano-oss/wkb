@@ -566,10 +566,8 @@ fn HandleKeyTypeBody(
                 ok = false;
             }
         } else {
-            // Convert arrayNdx through raw pointer to break the borrow from ExprResolveLhs
-            let arrayNdx_ref = arrayNdx.map(|r| unsafe { &*(r as *const ExprDef) });
             let value_ref = def.value.as_deref().unwrap();
-            if !SetKeyTypeField(info, type_0, field, arrayNdx_ref, value_ref) {
+            if !SetKeyTypeField(info, type_0, field, arrayNdx, value_ref) {
                 ok = false;
             }
         }

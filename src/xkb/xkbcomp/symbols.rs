@@ -1611,12 +1611,7 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
     }
     let arrayNdx: *mut ExprDef =
         arrayNdx_opt.map_or(std::ptr::null_mut(), |r| r as *const _ as *mut _);
-    // Break immutable borrows from ExprResolveLhs so we can mutably borrow info later
-    let arrayNdx_reborrow: Option<&ExprDef> = if arrayNdx.is_null() {
-        None
-    } else {
-        Some(unsafe { &*arrayNdx })
-    };
+    let arrayNdx_reborrow: Option<&ExprDef> = arrayNdx_opt;
     let elem_owned = elem.to_owned();
     let field_owned = field.to_owned();
     let elem: &str = &elem_owned;

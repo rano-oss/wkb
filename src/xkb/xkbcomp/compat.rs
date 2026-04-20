@@ -844,11 +844,9 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
             } else {
                 stmt.merge
             }) as merge_mode;
-            // Break borrow from ExprResolveLhs
-            let field_ptr: *const str = field;
-            let ndx_ref = ndx.map(|r| r as *const ExprDef).map(|p| unsafe { &*p });
+            // ndx borrows from stmt.name, value_ref borrows from stmt.value — disjoint fields
             let value_ref = stmt.value.as_deref_mut().unwrap();
-            ret = SetInterpField(info, &mut temp, unsafe { &*field_ptr }, ndx_ref, value_ref);
+            ret = SetInterpField(info, &mut temp, field, ndx, value_ref);
             if ret {
                 let mut default = info.default_interp.clone();
                 MergeInterp(info, &mut default, &mut temp, true);
@@ -874,9 +872,8 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
             } else {
                 stmt.merge
             }) as merge_mode;
-            // Break borrow: ndx borrows from info.ctx via ExprResolveLhs lifetime
-            let ndx_ref = ndx.map(|r| r as *const ExprDef).map(|p| unsafe { &*p });
-            ret = SetLedMapField(info, &mut temp_0, field, ndx_ref, &mut stmt.value);
+            // ndx borrows from stmt.name, field/value borrow from different fields — disjoint
+            ret = SetLedMapField(info, &mut temp_0, field, ndx, &mut stmt.value);
             if ret {
                 let mut default = info.default_led;
                 MergeLedMap(info, &mut default, &mut temp_0, true);
@@ -884,10 +881,7 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
             }
         } else if !elem.is_empty() {
             ret = {
-                // Break borrows from ExprResolveLhs for this branch
-                let elem_ptr: *const str = elem;
-                let field_ptr2: *const str = field;
-                let ndx_ref2 = ndx.map(|r| r as *const ExprDef).map(|p| unsafe { &*p });
+                let ndx_ref2 = ndx;
                 let mut value_raw = stmt
                     .value
                     .take()
@@ -896,8 +890,8 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
                     info.keymap_info,
                     &mut info.default_actions,
                     &mut info.mods,
-                    unsafe { &*elem_ptr },
-                    unsafe { &*field_ptr2 },
+                    elem,
+                    field,
                     ndx_ref2,
                     &raw mut value_raw,
                     stmt.merge,
@@ -942,12 +936,8 @@ fn HandleInterpBody(
                 field);
             ok = false;
         } else {
-            // Break the borrow from ExprResolveLhs by going through raw pointers
-            let field_ptr: *const str = field;
-            let arrayNdx_ptr = arrayNdx.map(|r| r as *const ExprDef);
-            let arrayNdx_ref = arrayNdx_ptr.map(|p| unsafe { &*p });
             let value_ref = def.value.as_deref_mut().unwrap();
-            if !SetInterpField(info, si, unsafe { &*field_ptr }, arrayNdx_ref, value_ref) {
+            if !SetInterpField(info, si, field, arrayNdx, value_ref) {
                 ok = false;
             }
         }
@@ -1017,15 +1007,7 @@ fn HandleLedMapDef(info: &mut CompatInfo<'_>, def: &mut LedMapDef) -> bool {
                 elem,
                 field);
             ok = false;
-        } else if !SetLedMapField(
-            info,
-            &mut ledi,
-            field,
-            arrayNdx
-                .map(|r| r as *const ExprDef)
-                .map(|p| unsafe { &*p }),
-            &mut var.value,
-        ) {
+        } else if !SetLedMapField(info, &mut ledi, field, arrayNdx, &mut var.value) {
             ok = false;
         }
     }

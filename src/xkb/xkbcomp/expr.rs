@@ -144,7 +144,7 @@ fn ident_lookup(
 }
 
 pub fn ExprResolveLhs<'a>(
-    ctx: &'a xkb_context,
+    ctx: &xkb_context,
     expr: &'a ExprDef,
     elem_rtrn: &mut &'static str,
     field_rtrn: &mut &'static str,
