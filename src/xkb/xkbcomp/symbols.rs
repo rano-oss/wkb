@@ -2086,247 +2086,251 @@ fn FindTypeForGroup(
     0
 }
 fn CopySymbolsDefToKeymap(
-    keymap: *mut xkb_keymap,
+    keymap: &mut xkb_keymap,
     info: &SymbolsInfo<'_>,
-    keyi: *mut KeyInfo,
+    keyi: &mut KeyInfo,
 ) -> bool {
-    unsafe {
-        let mut groupi: *mut GroupInfo;
-        let mut i: u32;
+    let mut i: u32;
 
-        // The name is guaranteed to be real and not an alias, so 'false' is safe here
-        let key: *mut xkb_key = match (*keymap).key_by_name_mut((*keyi).name, false) {
-            Some(k) => k as *mut xkb_key,
-            None => std::ptr::null_mut(),
-        };
-        if key.is_null() {
+    // The name is guaranteed to be real and not an alias, so 'false' is safe here
+    // Look up key index to avoid holding a mutable borrow on keymap
+    let key_idx = if (keyi.name as usize) < keymap.key_names.len() {
+        let match_0 = keymap.key_names[keyi.name as usize];
+        if match_0.found && !match_0.is_alias {
+            Some(match_0.index as usize)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+    let key_idx = match key_idx {
+        Some(idx) => idx,
+        None => {
             log::warn!(
                 "[XKB-{:03}] Key <{}> not found in keycodes; Symbols ignored\n",
                 XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                KeyInfoText(info, &*keyi)
+                KeyInfoText(info, keyi)
             );
             return false;
         }
+    };
 
-        // Find the range of groups we need
-        (*key).num_groups = 0;
-        if !(*keyi).groups.is_empty() {
-            i = 0;
-            groupi = (*keyi).groups.as_mut_ptr();
-            while i < (*keyi).groups.len() as u32 {
-                // Skip groups that have no levels and no explicit type
-                let has_explicit_type = ((*keyi).defined as i32 & KEY_FIELD_DEFAULT_TYPE as i32
-                    != 0)
-                    || ((*groupi).defined & GROUP_FIELD_TYPE != 0);
-                if !(*groupi).levels.is_empty() || has_explicit_type {
-                    (*key).num_groups = i.wrapping_add(1);
-                }
-                if has_explicit_type {
-                    (*key).explicit = ((*key).explicit | EXPLICIT_TYPES) as xkb_explicit_components;
+    // Find the range of groups we need
+    keymap.keys[key_idx].num_groups = 0;
+    if !keyi.groups.is_empty() {
+        for (idx, groupi) in keyi.groups.iter().enumerate() {
+            let has_explicit_type = (keyi.defined as i32 & KEY_FIELD_DEFAULT_TYPE as i32 != 0)
+                || (groupi.defined & GROUP_FIELD_TYPE != 0);
+            if !groupi.levels.is_empty() || has_explicit_type {
+                keymap.keys[key_idx].num_groups = (idx as u32).wrapping_add(1);
+            }
+            if has_explicit_type {
+                keymap.keys[key_idx].explicit =
+                    (keymap.keys[key_idx].explicit | EXPLICIT_TYPES) as xkb_explicit_components;
+            }
+        }
+    }
+
+    if keymap.keys[key_idx].num_groups <= 0 {
+        // A key with no group may still have other fields defined
+        if keyi.defined as i32 != 0 {
+            // goto key_fields
+        } else {
+            return false;
+        }
+    } else {
+        // Resize groups array
+        let __need: usize = keymap.keys[key_idx].num_groups as usize;
+        resize_groups_zero(&mut keyi.groups, __need);
+
+        // If there are empty groups between non-empty ones, fill them with data from the first group
+        if !keyi.groups.is_empty() {
+            let groups_len = keyi.groups.len();
+            i = 1;
+            while i < groups_len as u32 {
+                if keyi.groups[i as usize].defined == 0 {
+                    let src = keyi.groups[0].clone();
+                    keyi.groups[i as usize] = src;
                 }
                 i = i.wrapping_add(1);
-                groupi = groupi.offset(1);
             }
         }
 
-        if (*key).num_groups <= 0 {
-            // A key with no group may still have other fields defined
-            if (*keyi).defined as i32 != 0 {
-                // goto key_fields
-            } else {
-                return false;
-            }
-        } else {
-            // Resize groups array
-            let __need: usize = (*key).num_groups as usize;
-            resize_groups_zero(&mut (*keyi).groups, __need);
+        keymap.keys[key_idx].groups = (0..keymap.keys[key_idx].num_groups)
+            .map(|_| xkb_group {
+                explicit_symbols: false,
+                explicit_actions: false,
+                implicit_actions: false,
+                explicit_type: false,
+                type_idx: 0,
+                levels: Vec::new(),
+            })
+            .collect();
 
-            // If there are empty groups between non-empty ones, fill them with data from the first group
-            if !(*keyi).groups.is_empty() {
-                let groups_len = (*keyi).groups.len();
-                i = 1;
-                while i < groups_len as u32 {
-                    if (&(*keyi).groups)[i as usize].defined == 0 {
-                        let src = (&(*keyi).groups)[0].clone();
-                        (&mut (*keyi).groups)[i as usize] = src;
-                    }
-                    i = i.wrapping_add(1);
-                }
-            }
+        // Find and assign the groups' types in the keymap
+        if !keyi.groups.is_empty() {
+            i = 0;
+            while i < keyi.groups.len() as u32 {
+                let mut explicit_type = false;
+                let type_idx: u32 = FindTypeForGroup(keymap, keyi, i, &mut explicit_type);
 
-            (*key).groups = (0..(*key).num_groups)
-                .map(|_| xkb_group {
-                    explicit_symbols: false,
-                    explicit_actions: false,
-                    implicit_actions: false,
-                    explicit_type: false,
-                    type_idx: 0,
-                    levels: Vec::new(),
-                })
-                .collect();
+                // Always have as many levels as the type specifies
+                if keymap.types[type_idx as usize].num_levels
+                    < keyi.groups[i as usize].levels.len() as u32
+                {
+                    log::warn!("[XKB-{:03}] Type \"{}\" has {} levels, but <{}> has {} levels; Ignoring extra symbols\n",
+                        XKB_WARNING_EXTRA_SYMBOLS_IGNORED as i32,
+                        xkb_atom_text(&keymap.ctx.atom_table, keymap.types[type_idx as usize].name),
+                        keymap.types[type_idx as usize].num_levels,
+                        KeyInfoText(info, keyi),
+                        keyi.groups[i as usize].levels.len());
 
-            // Find and assign the groups' types in the keymap
-            if !(*keyi).groups.is_empty() {
-                i = 0;
-                groupi = (*keyi).groups.as_mut_ptr();
-                while i < (*keyi).groups.len() as u32 {
-                    let mut explicit_type = false;
-                    let type_idx: u32 =
-                        FindTypeForGroup(&mut *keymap, &mut *keyi, i, &mut explicit_type);
-
-                    // Always have as many levels as the type specifies
-                    if (&(*keymap).types)[type_idx as usize].num_levels
-                        < (*groupi).levels.len() as u32
+                    for lvl_idx in keymap.types[type_idx as usize].num_levels as usize
+                        ..keyi.groups[i as usize].levels.len()
                     {
-                        log::warn!("[XKB-{:03}] Type \"{}\" has {} levels, but <{}> has {} levels; Ignoring extra symbols\n",
-                            XKB_WARNING_EXTRA_SYMBOLS_IGNORED as i32,
-                            xkb_atom_text(&(*keymap).ctx.atom_table, (&(*keymap).types)[type_idx as usize].name),
-                            (&(*keymap).types)[type_idx as usize].num_levels,
-                            KeyInfoText(info, &*keyi),
-                            (*groupi).levels.len());
-
-                        for lvl_idx in (&(*keymap).types)[type_idx as usize].num_levels as usize
-                            ..(*groupi).levels.len()
-                        {
-                            (&mut (*groupi).levels)[lvl_idx].syms.clear();
-                            (&mut (*groupi).levels)[lvl_idx].actions.clear();
-                        }
+                        keyi.groups[i as usize].levels[lvl_idx].syms.clear();
+                        keyi.groups[i as usize].levels[lvl_idx].actions.clear();
                     }
-
-                    // Resize levels array to match type
-                    let __need_levels: usize =
-                        (&(*keymap).types)[type_idx as usize].num_levels as usize;
-                    (*groupi)
-                        .levels
-                        .resize_with(__need_levels, Default::default);
-
-                    (&mut (*key).groups)[i as usize].explicit_type = explicit_type;
-                    (&mut (*key).groups)[i as usize].type_idx = type_idx;
-
-                    i = i.wrapping_add(1);
-                    groupi = groupi.offset(1);
                 }
-            }
 
-            // Copy levels
-            if !(*keyi).groups.is_empty() {
-                i = 0;
-                groupi = (*keyi).groups.as_mut_ptr();
-                while i < (*keyi).groups.len() as u32 {
-                    // Compute the capitalization transformation of the keysyms
-                    for li in 0..(*groupi).levels.len() {
-                        let leveli = &mut (&mut (*groupi).levels)[li];
-                        match leveli.syms.len() {
-                            0 => {
-                                leveli.upper = XKB_KEY_NoSymbol as u32;
+                // Resize levels array to match type
+                let __need_levels: usize = keymap.types[type_idx as usize].num_levels as usize;
+                keyi.groups[i as usize]
+                    .levels
+                    .resize_with(__need_levels, Default::default);
+
+                keymap.keys[key_idx].groups[i as usize].explicit_type = explicit_type;
+                keymap.keys[key_idx].groups[i as usize].type_idx = type_idx;
+
+                i = i.wrapping_add(1);
+            }
+        }
+
+        // Copy levels
+        if !keyi.groups.is_empty() {
+            i = 0;
+            while i < keyi.groups.len() as u32 {
+                let groupi = &mut keyi.groups[i as usize];
+                // Compute the capitalization transformation of the keysyms
+                for li in 0..groupi.levels.len() {
+                    let leveli = &mut groupi.levels[li];
+                    match leveli.syms.len() {
+                        0 => {
+                            leveli.upper = XKB_KEY_NoSymbol as u32;
+                        }
+                        1 => {
+                            leveli.upper = xkb_keysym_to_upper(leveli.syms[0]);
+                        }
+                        _ => {
+                            // Multiple keysyms: check if there is any cased keysym
+                            leveli.has_upper = false;
+                            let num_syms = leveli.syms.len();
+                            for k in 0..num_syms {
+                                let upper: u32 = xkb_keysym_to_upper(leveli.syms[k]);
+                                if upper != leveli.syms[k] {
+                                    leveli.has_upper = true;
+                                    break;
+                                }
                             }
-                            1 => {
-                                leveli.upper = xkb_keysym_to_upper(leveli.syms[0]);
-                            }
-                            _ => {
-                                // Multiple keysyms: check if there is any cased keysym
-                                leveli.has_upper = false;
+                            if leveli.has_upper {
+                                // Some cased keysyms: store the transformation result
                                 let num_syms = leveli.syms.len();
+                                leveli.syms.reserve(num_syms);
                                 for k in 0..num_syms {
-                                    let upper: u32 = xkb_keysym_to_upper(leveli.syms[k]);
-                                    if upper != leveli.syms[k] {
-                                        leveli.has_upper = true;
-                                        break;
-                                    }
-                                }
-                                if leveli.has_upper {
-                                    // Some cased keysyms: store the transformation result
-                                    let num_syms = leveli.syms.len();
-                                    leveli.syms.reserve(num_syms);
-                                    for k in 0..num_syms {
-                                        let upper = xkb_keysym_to_upper(leveli.syms[k]);
-                                        leveli.syms.push(upper);
-                                    }
+                                    let upper = xkb_keysym_to_upper(leveli.syms[k]);
+                                    leveli.syms.push(upper);
                                 }
                             }
                         }
                     }
-
-                    // Copy the level (steal from Vec)
-                    if (*groupi).levels.is_empty() {
-                        (&mut (*key).groups)[i as usize].levels = Vec::new();
-                    } else {
-                        let stolen = std::mem::take(&mut (*groupi).levels);
-                        (&mut (*key).groups)[i as usize].levels = stolen;
-                    }
-
-                    if (&(*keymap).types)[(&(*key).groups)[i as usize].type_idx as usize].num_levels
-                        > 1
-                        || !(&(*key).groups)[i as usize].levels[0].syms.is_empty()
-                    {
-                        (&mut (*key).groups)[i as usize].explicit_symbols = true;
-                        (*key).explicit =
-                            ((*key).explicit | EXPLICIT_SYMBOLS) as xkb_explicit_components;
-                    }
-                    if (*groupi).defined & GROUP_FIELD_ACTS != 0 {
-                        (&mut (*key).groups)[i as usize].explicit_actions = true;
-                        (*key).explicit =
-                            ((*key).explicit | EXPLICIT_INTERP) as xkb_explicit_components;
-                    }
-                    if (&(*key).groups)[i as usize].explicit_type {
-                        (*key).explicit =
-                            ((*key).explicit | EXPLICIT_TYPES) as xkb_explicit_components;
-                    }
-
-                    i = i.wrapping_add(1);
-                    groupi = groupi.offset(1);
                 }
-            }
 
-            (*key).out_of_range_pending_group = (*keyi).out_of_range_pending_group;
-            (*key).out_of_range_group_number = (*keyi).out_of_range_group_number;
-            (*key).out_of_range_group_policy = (*keyi).out_of_range_group_policy;
-        }
-
-        // key_fields:
-        if (*keyi).defined as i32 & KEY_FIELD_VMODMAP as i32 != 0 {
-            (*key).vmodmap = (*keyi).vmodmap;
-            (*key).explicit = ((*key).explicit | EXPLICIT_VMODMAP) as xkb_explicit_components;
-        }
-
-        if (*keyi).repeat != KEY_REPEAT_UNDEFINED as key_repeat {
-            (*key).repeats = (*keyi).repeat == KEY_REPEAT_YES as key_repeat;
-            (*key).explicit = ((*key).explicit | EXPLICIT_REPEAT) as xkb_explicit_components;
-        }
-
-        if ((*keyi).defined as i32 & KEY_FIELD_OVERLAY as i32 != 0)
-            && (*keyi).overlays != 0
-            && !(*keyi).overlays_clear
-        {
-            // Remove null entries from overlay_keys and clear corresponding bits
-            let mut clean_overlays: xkb_overlay_mask_t = 0;
-            let mut clean_keys: Vec<u32> = Vec::new();
-            let mut remaining: xkb_overlay_mask_t = (*keyi).overlays;
-            let mut idx: usize = 0;
-            while remaining != 0 {
-                let lsb: xkb_overlay_mask_t = remaining & (!remaining).wrapping_add(1);
-                remaining &= !lsb;
-                let k = if idx < (*keyi).overlay_keys.len() {
-                    (&(*keyi).overlay_keys)[idx]
+                // Copy the level (steal from Vec)
+                if groupi.levels.is_empty() {
+                    keymap.keys[key_idx].groups[i as usize].levels = Vec::new();
                 } else {
-                    XKB_KEYCODE_INVALID
-                };
-                idx += 1;
-                if k != XKB_KEYCODE_INVALID {
-                    clean_overlays |= lsb;
-                    clean_keys.push(k);
+                    let stolen = std::mem::take(&mut groupi.levels);
+                    keymap.keys[key_idx].groups[i as usize].levels = stolen;
                 }
-            }
 
-            if clean_overlays != 0 {
-                (*key).overlays = clean_overlays;
-                (*key).overlay_keys = clean_keys;
-                (*key).explicit = ((*key).explicit | EXPLICIT_OVERLAY) as xkb_explicit_components;
+                let type_idx = keymap.keys[key_idx].groups[i as usize].type_idx;
+                if keymap.types[type_idx as usize].num_levels > 1
+                    || !keymap.keys[key_idx].groups[i as usize].levels[0]
+                        .syms
+                        .is_empty()
+                {
+                    keymap.keys[key_idx].groups[i as usize].explicit_symbols = true;
+                    keymap.keys[key_idx].explicit = (keymap.keys[key_idx].explicit
+                        | EXPLICIT_SYMBOLS)
+                        as xkb_explicit_components;
+                }
+                if groupi.defined & GROUP_FIELD_ACTS != 0 {
+                    keymap.keys[key_idx].groups[i as usize].explicit_actions = true;
+                    keymap.keys[key_idx].explicit = (keymap.keys[key_idx].explicit
+                        | EXPLICIT_INTERP)
+                        as xkb_explicit_components;
+                }
+                if keymap.keys[key_idx].groups[i as usize].explicit_type {
+                    keymap.keys[key_idx].explicit =
+                        (keymap.keys[key_idx].explicit | EXPLICIT_TYPES) as xkb_explicit_components;
+                }
+
+                i = i.wrapping_add(1);
             }
         }
 
-        true
+        keymap.keys[key_idx].out_of_range_pending_group = keyi.out_of_range_pending_group;
+        keymap.keys[key_idx].out_of_range_group_number = keyi.out_of_range_group_number;
+        keymap.keys[key_idx].out_of_range_group_policy = keyi.out_of_range_group_policy;
     }
+
+    // key_fields:
+    if keyi.defined as i32 & KEY_FIELD_VMODMAP as i32 != 0 {
+        keymap.keys[key_idx].vmodmap = keyi.vmodmap;
+        keymap.keys[key_idx].explicit =
+            (keymap.keys[key_idx].explicit | EXPLICIT_VMODMAP) as xkb_explicit_components;
+    }
+
+    if keyi.repeat != KEY_REPEAT_UNDEFINED as key_repeat {
+        keymap.keys[key_idx].repeats = keyi.repeat == KEY_REPEAT_YES as key_repeat;
+        keymap.keys[key_idx].explicit =
+            (keymap.keys[key_idx].explicit | EXPLICIT_REPEAT) as xkb_explicit_components;
+    }
+
+    if (keyi.defined as i32 & KEY_FIELD_OVERLAY as i32 != 0)
+        && keyi.overlays != 0
+        && !keyi.overlays_clear
+    {
+        // Remove null entries from overlay_keys and clear corresponding bits
+        let mut clean_overlays: xkb_overlay_mask_t = 0;
+        let mut clean_keys: Vec<u32> = Vec::new();
+        let mut remaining: xkb_overlay_mask_t = keyi.overlays;
+        let mut idx: usize = 0;
+        while remaining != 0 {
+            let lsb: xkb_overlay_mask_t = remaining & (!remaining).wrapping_add(1);
+            remaining &= !lsb;
+            let k = if idx < keyi.overlay_keys.len() {
+                keyi.overlay_keys[idx]
+            } else {
+                XKB_KEYCODE_INVALID
+            };
+            idx += 1;
+            if k != XKB_KEYCODE_INVALID {
+                clean_overlays |= lsb;
+                clean_keys.push(k);
+            }
+        }
+
+        if clean_overlays != 0 {
+            keymap.keys[key_idx].overlays = clean_overlays;
+            keymap.keys[key_idx].overlay_keys = clean_keys;
+            keymap.keys[key_idx].explicit =
+                (keymap.keys[key_idx].explicit | EXPLICIT_OVERLAY) as xkb_explicit_components;
+        }
+    }
+
+    true
 }
 
 fn CopyModMapDefToKeymap(
@@ -2372,8 +2376,8 @@ fn CopySymbolsToKeymap(keymap: &mut xkb_keymap, info: &mut SymbolsInfo<'_>) -> b
     keymap.group_names = std::mem::take(&mut info.group_names);
     let keymap_ptr = keymap as *mut xkb_keymap;
     for i in 0..info.keys.len() {
-        let keyi_ptr = unsafe { info.keys.as_mut_ptr().add(i) };
-        if !CopySymbolsDefToKeymap(keymap_ptr, info, keyi_ptr) {
+        let keyi_ptr = info.keys.as_mut_ptr().wrapping_add(i);
+        if !CopySymbolsDefToKeymap(unsafe { &mut *keymap_ptr }, info, unsafe { &mut *keyi_ptr }) {
             info.errorCount += 1;
         }
     }
