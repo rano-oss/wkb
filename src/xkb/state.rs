@@ -9,9 +9,9 @@ pub struct xkb_event {
 }
 #[derive(Copy, Clone)]
 
-pub union xkb_event_data {
-    pub keycode: u32,
-    pub components: xkb_event_components,
+pub enum xkb_event_data {
+    Keycode(u32),
+    Components(xkb_event_components),
 }
 #[derive(Copy, Clone)]
 
@@ -233,7 +233,7 @@ pub struct xkb_filter {
     pub func: Option<
         fn(&mut xkb_state, &mut xkb_events, &mut xkb_filter, &xkb_key, xkb_key_direction) -> bool,
     >,
-    pub priv_0: u32,
+    pub priv_0: u64,
     pub refcnt: i32,
 }
 impl Default for xkb_filter {
@@ -242,7 +242,7 @@ impl Default for xkb_filter {
             action: xkb_action::default(),
             key: std::ptr::null(),
             func: None,
-            priv_0: 0,
+            priv_0: 0u64,
             refcnt: 0,
         }
     }
@@ -283,16 +283,23 @@ pub struct FilterActionFuncs {
 pub const XKB_FILTER_CONSUME: xkb_filter_result = 0;
 
 pub const XKB_FILTER_CONTINUE: xkb_filter_result = 1;
-#[derive(Copy, Clone)]
 
-pub union group_latch_priv {
-    pub priv_0: u32,
-    pub latch_state: GroupLatchState,
+/// Pack latch state and group delta into a u64 (replacing the old union group_latch_priv).
+#[inline]
+fn pack_group_latch(latch: u32, group_delta: i32) -> u64 {
+    (latch as u64) | ((group_delta as u32 as u64) << 32)
 }
-#[derive(Copy, Clone)]
-pub struct GroupLatchState {
-    pub latch: u32,
-    pub group_delta: i32,
+
+/// Unpack latch state from a u64.
+#[inline]
+fn unpack_group_latch_state(packed: u64) -> u32 {
+    packed as u32
+}
+
+/// Unpack group delta from a u64.
+#[inline]
+fn unpack_group_delta(packed: u64) -> i32 {
+    (packed >> 32) as u32 as i32
 }
 
 pub type xkb_key_latch_state = u32;
@@ -444,7 +451,7 @@ fn xkb_filter_group_set_new(
     _events: &mut xkb_events,
     filter: &mut xkb_filter,
 ) {
-    filter.priv_0 = state.components.base_group as u32;
+    filter.priv_0 = state.components.base_group as u32 as u64;
     if filter.action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
         state.components.base_group = filter.action.as_group().group;
     } else {
@@ -596,19 +603,12 @@ fn xkb_filter_group_latch_new(
     _events: &mut xkb_events,
     filter: &mut xkb_filter,
 ) {
-    unsafe {
-        let priv_0: group_latch_priv = group_latch_priv {
-            latch_state: GroupLatchState {
-                latch: LATCH_KEY_DOWN,
-                group_delta: if filter.action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
-                    filter.action.as_group().group - state.components.base_group
-                } else {
-                    filter.action.as_group().group
-                },
-            },
-        };
-        filter.priv_0 = priv_0.priv_0;
-    }
+    let group_delta = if filter.action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
+        filter.action.as_group().group - state.components.base_group
+    } else {
+        filter.action.as_group().group
+    };
+    filter.priv_0 = pack_group_latch(LATCH_KEY_DOWN, group_delta);
     if filter.action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
         state.components.base_group = filter.action.as_group().group;
     } else {
@@ -623,10 +623,9 @@ fn xkb_filter_group_latch_func(
     key: &xkb_key,
     direction: xkb_key_direction,
 ) -> bool {
-    let mut priv_0: group_latch_priv = group_latch_priv {
-        priv_0: filter.priv_0,
-    };
-    let mut latch: xkb_key_latch_state = unsafe { priv_0.latch_state.latch } as xkb_key_latch_state;
+    let group_delta = unpack_group_delta(filter.priv_0);
+    let mut latch: xkb_key_latch_state =
+        unpack_group_latch_state(filter.priv_0) as xkb_key_latch_state;
     if direction == XKB_KEY_DOWN {
         let actions = xkb_key_get_actions(state, key);
         if latch as u32 == LATCH_KEY_DOWN {
@@ -669,7 +668,7 @@ fn xkb_filter_group_latch_func(
                         filter.action = xkb_action::GroupLock(group_data);
                         filter.func = Some(xkb_filter_group_lock_func);
                         xkb_filter_group_lock_new(state, events, filter);
-                        state.components.latched_group -= unsafe { priv_0.latch_state.group_delta };
+                        state.components.latched_group -= group_delta;
                         filter.key = key;
                         return XKB_FILTER_CONSUME as i32 != 0;
                     }
@@ -678,7 +677,7 @@ fn xkb_filter_group_latch_func(
                     INTERNAL_BREAKS_GROUP_LATCH,
                     0_u32,
                 ) {
-                    state.components.latched_group -= unsafe { priv_0.latch_state.group_delta };
+                    state.components.latched_group -= group_delta;
                     filter.func = None;
                     return XKB_FILTER_CONTINUE as i32 != 0;
                 }
@@ -692,25 +691,22 @@ fn xkb_filter_group_latch_func(
             && state.components.locked_group != 0
         {
             if latch as u32 == LATCH_PENDING {
-                state.components.latched_group -= unsafe { priv_0.latch_state.group_delta };
+                state.components.latched_group -= group_delta;
             } else {
-                state.components.base_group -= unsafe { priv_0.latch_state.group_delta };
+                state.components.base_group -= group_delta;
             }
             state.components.locked_group = 0_i32;
             filter.func = None;
         } else if latch as u32 == NO_LATCH {
-            state.components.base_group -= unsafe { priv_0.latch_state.group_delta };
+            state.components.base_group -= group_delta;
             filter.func = None;
         } else if latch as u32 == LATCH_KEY_DOWN {
             latch = LATCH_PENDING;
-            state.components.base_group -= unsafe { priv_0.latch_state.group_delta };
-            state.components.latched_group += unsafe { priv_0.latch_state.group_delta };
+            state.components.base_group -= group_delta;
+            state.components.latched_group += group_delta;
         }
     }
-    unsafe {
-        priv_0.latch_state.latch = latch as u32;
-    }
-    filter.priv_0 = unsafe { priv_0.priv_0 };
+    filter.priv_0 = pack_group_latch(latch as u32, group_delta);
     XKB_FILTER_CONTINUE as i32 != 0
 }
 
@@ -722,12 +718,12 @@ fn xkb_filter_mod_set_new(
     let unlock: xkb_action_flags =
         (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as xkb_action_flags;
     if filter.action.as_mods().flags & unlock as u32 == unlock as u32 {
-        filter.priv_0 = filter.action.as_mods().mods.mask & !state.components.locked_mods;
+        filter.priv_0 = (filter.action.as_mods().mods.mask & !state.components.locked_mods) as u64;
         state.components.locked_mods &= !filter.action.as_mods().mods.mask;
     } else {
-        filter.priv_0 = filter.action.as_mods().mods.mask;
+        filter.priv_0 = filter.action.as_mods().mods.mask as u64;
     }
-    state.set_mods |= filter.priv_0;
+    state.set_mods |= filter.priv_0 as u32;
 }
 
 fn xkb_filter_mod_set_func(
@@ -759,7 +755,7 @@ fn xkb_filter_mod_set_func(
         }
         return XKB_FILTER_CONSUME as i32 != 0;
     }
-    state.clear_mods |= filter.priv_0;
+    state.clear_mods |= filter.priv_0 as u32;
     let unlock: xkb_action_flags =
         (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as xkb_action_flags;
     if filter.action.as_mods().flags & unlock as u32 == ACTION_LOCK_CLEAR {
@@ -774,10 +770,10 @@ fn xkb_filter_mod_lock_new(
     _events: &mut xkb_events,
     filter: &mut xkb_filter,
 ) {
-    filter.priv_0 = state.components.locked_mods & filter.action.as_mods().mods.mask;
+    filter.priv_0 = (state.components.locked_mods & filter.action.as_mods().mods.mask) as u64;
     if filter.priv_0 != 0 && filter.action.as_mods().flags & ACTION_UNLOCK_ON_PRESS != 0 {
         if filter.action.as_mods().flags & ACTION_LOCK_NO_UNLOCK == 0 {
-            state.components.locked_mods &= !filter.priv_0;
+            state.components.locked_mods &= !(filter.priv_0 as u32);
         }
         filter.func = None;
     } else {
@@ -816,7 +812,7 @@ fn xkb_filter_mod_lock_func(
     }
     state.clear_mods |= filter.action.as_mods().mods.mask;
     if filter.action.as_mods().flags & ACTION_LOCK_NO_UNLOCK == 0 {
-        state.components.locked_mods &= !filter.priv_0;
+        state.components.locked_mods &= !(filter.priv_0 as u32);
     }
     filter.func = None;
     XKB_FILTER_CONTINUE as i32 != 0
@@ -837,10 +833,10 @@ fn xkb_filter_mod_latch_new(
         state.components.locked_mods &= !filter.action.as_mods().mods.mask;
         filter.func = None;
     } else if filter.action.as_mods().flags & ACTION_LATCH_ON_PRESS != 0 {
-        filter.priv_0 = LATCH_PENDING;
+        filter.priv_0 = LATCH_PENDING as u64;
         state.components.latched_mods |= filter.action.as_mods().mods.mask;
     } else {
-        filter.priv_0 = LATCH_KEY_DOWN;
+        filter.priv_0 = LATCH_KEY_DOWN as u64;
         state.set_mods |= filter.action.as_mods().mods.mask;
     };
 }
@@ -943,15 +939,15 @@ fn xkb_filter_mod_latch_func(
             }
         }
     }
-    filter.priv_0 = latch as u32;
+    filter.priv_0 = latch as u64;
     XKB_FILTER_CONTINUE as i32 != 0
 }
 
 fn xkb_filter_ctrls_new(state: &mut xkb_state, _events: &mut xkb_events, filter: &mut xkb_filter) {
     if filter.action.action_type() == ACTION_TYPE_CTRL_SET {
-        filter.priv_0 = !state.components.controls & filter.action.as_ctrls().ctrls;
+        filter.priv_0 = (!state.components.controls & filter.action.as_ctrls().ctrls) as u64;
     } else {
-        filter.priv_0 = state.components.controls & filter.action.as_ctrls().ctrls;
+        filter.priv_0 = (state.components.controls & filter.action.as_ctrls().ctrls) as u64;
     }
     if filter.action.action_type() == ACTION_TYPE_CTRL_SET
         || filter.action.as_ctrls().flags & ACTION_LOCK_NO_LOCK == 0
@@ -1019,7 +1015,9 @@ fn append_redirect_key_events(
             let mut idx = queue.len() - 1;
             loop {
                 if queue[idx].type_0 == XKB_EVENT_TYPE_COMPONENTS_CHANGE {
-                    last_components = unsafe { queue[idx].data.components.components };
+                    if let xkb_event_data::Components(comp) = &queue[idx].data {
+                        last_components = comp.components;
+                    }
                     break;
                 }
                 if idx == 0 {
@@ -1039,12 +1037,10 @@ fn append_redirect_key_events(
         if changed as u64 != 0 {
             events.queue.push(xkb_event {
                 type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
-                data: xkb_event_data {
-                    components: xkb_event_components {
-                        components: new,
-                        changed,
-                    },
-                },
+                data: xkb_event_data::Components(xkb_event_components {
+                    components: new,
+                    changed,
+                }),
             });
         }
     }
@@ -1056,19 +1052,15 @@ fn append_redirect_key_events(
         } else {
             XKB_EVENT_TYPE_KEY_DOWN as i32
         }) as xkb_event_type,
-        data: xkb_event_data {
-            keycode: redirect.keycode,
-        },
+        data: xkb_event_data::Keycode(redirect.keycode),
     });
     if mask != 0 && changed != 0 {
         events.queue.push(xkb_event {
             type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
-            data: xkb_event_data {
-                components: xkb_event_components {
-                    components: last_components,
-                    changed,
-                },
-            },
+            data: xkb_event_data::Components(xkb_event_components {
+                components: last_components,
+                changed,
+            }),
         });
     }
     true
