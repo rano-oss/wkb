@@ -2,17 +2,16 @@ use super::prelude::*;
 pub use crate::xkb::shared_ast_types::{KeyAliasDef, KeycodeDef, LedNameDef, ReportNotArray};
 pub use crate::xkb::shared_types::{XKB_KEYCODE_MAX_CONTIGUOUS, XKB_MAX_LEDS};
 use crate::xkb::xkbcomp::expr::ExprResolveInteger;
-pub struct KeyNamesInfo<'a> {
+pub struct KeyNamesInfo {
     pub name: Option<String>,
     pub errorCount: i32,
     pub include_depth: u32,
     pub keycodes: KeycodeStore,
     pub led_names: [LedNameInfo; 32],
     pub num_led_names: u32,
-    pub(crate) keymap_info: *mut xkb_keymap_info<'a>,
 }
-impl<'a> KeyNamesInfo<'a> {
-    pub fn new(keymap_info: *mut xkb_keymap_info<'a>) -> Self {
+impl KeyNamesInfo {
+    pub fn new() -> Self {
         Self {
             name: None,
             errorCount: 0,
@@ -28,24 +27,7 @@ impl<'a> KeyNamesInfo<'a> {
                 name: 0,
             }; 32],
             num_led_names: 0,
-            keymap_info,
         }
-    }
-    #[inline]
-    pub fn ctx(&self) -> &xkb_context {
-        unsafe { (*self.keymap_info).ctx() }
-    }
-    #[inline]
-    pub fn ctx_mut(&mut self) -> &mut xkb_context {
-        unsafe { (*self.keymap_info).ctx_mut() }
-    }
-    #[inline]
-    pub fn keymap_info(&self) -> &xkb_keymap_info<'a> {
-        unsafe { &*self.keymap_info }
-    }
-    #[inline]
-    pub fn keymap_info_mut(&mut self) -> &mut xkb_keymap_info<'a> {
-        unsafe { &mut *self.keymap_info }
     }
 }
 #[derive(Copy, Clone)]
@@ -285,7 +267,8 @@ fn keycode_store_lookup_name(store: &KeycodeStore, name: u32) -> KeycodeMatch {
     }
 }
 fn AddLedName(
-    info: &mut KeyNamesInfo<'_>,
+    info: &mut KeyNamesInfo,
+    ki: &mut xkb_keymap_info<'_>,
     _same_file: bool,
     new: &LedNameInfo,
     new_idx: u32,
@@ -309,7 +292,7 @@ fn AddLedName(
             if report {
                 log::warn!(
                     "Multiple indicators named \"{}\"; Identical definitions ignored\n",
-                    xkb_atom_text(&info.ctx().atom_table, new.name)
+                    xkb_atom_text(&ki.ctx().atom_table, new.name)
                 );
             }
             return true;
@@ -327,7 +310,7 @@ fn AddLedName(
             };
             log::warn!(
                 "Multiple indicators named {}; Using {}, ignoring {}\n",
-                xkb_atom_text(&info.ctx().atom_table, new.name),
+                xkb_atom_text(&ki.ctx().atom_table, new.name),
                 use_0,
                 ignore
             );
@@ -356,8 +339,8 @@ fn AddLedName(
             log::warn!(
                 "Multiple names for indicator {}; Using {}, ignoring {}\n",
                 new_idx.wrapping_add(1_u32),
-                xkb_atom_text(&info.ctx().atom_table, use_1),
-                xkb_atom_text(&info.ctx().atom_table, ignore_0)
+                xkb_atom_text(&ki.ctx().atom_table, use_1),
+                xkb_atom_text(&ki.ctx().atom_table, ignore_0)
             );
         }
         if replace {
@@ -368,13 +351,13 @@ fn AddLedName(
     info.led_names[new_idx as usize] = *new;
     true
 }
-fn ClearKeyNamesInfo(info: &mut KeyNamesInfo<'_>) {
+fn ClearKeyNamesInfo(info: &mut KeyNamesInfo) {
     info.name = None;
     let store = &mut info.keycodes;
     store.high.clear();
     store.names.clear();
 }
-fn InitKeyNamesInfo(info: &mut KeyNamesInfo<'_>, include_depth: u32) {
+fn InitKeyNamesInfo(info: &mut KeyNamesInfo, include_depth: u32) {
     info.name = None;
     info.errorCount = 0;
     info.include_depth = include_depth;
@@ -391,7 +374,8 @@ fn InitKeyNamesInfo(info: &mut KeyNamesInfo<'_>, include_depth: u32) {
     info.num_led_names = 0;
 }
 fn AddKeyName(
-    info: &mut KeyNamesInfo<'_>,
+    info: &mut KeyNamesInfo,
+    ki: &mut xkb_keymap_info<'_>,
     kc: u32,
     name: u32,
     merge: merge_mode,
@@ -404,7 +388,7 @@ fn AddKeyName(
             if report {
                 log::warn!("[XKB-{:03}] Key name <{}> already assigned to an alias; Using {}, ignoring {}\n",
                         XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                        xkb_atom_text(&info.ctx().atom_table, name),
+                        xkb_atom_text(&ki.ctx().atom_table, name),
                         if clobber { "key" } else { "alias" },
                         if clobber { "alias" } else { "key" });
             }
@@ -430,7 +414,7 @@ fn AddKeyName(
                     let ignore: u32 = if clobber as i32 != 0 { old_kc } else { kc };
                     log::warn!("[XKB-{:03}] Key name <{}> assigned to multiple keys; Using {}, ignoring {}\n",
                             XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                            xkb_atom_text(&info.ctx().atom_table, name),
+                        xkb_atom_text(&ki.ctx().atom_table, name),
                             use_0,
                             ignore);
                 }
@@ -456,15 +440,15 @@ fn AddKeyName(
         if old_name == name {
             if report {
                 log::warn!("Multiple identical key name definitions; Later occurrences of \"<{}> = {}\" ignored\n",
-                        xkb_atom_text(&info.ctx().atom_table, old_name),
+                        xkb_atom_text(&ki.ctx().atom_table, old_name),
                         kc);
             }
             return true;
         }
         let clobber_0: bool = merge != MERGE_AUGMENT;
         if report {
-            let kname: &str = xkb_atom_text(&info.ctx().atom_table, name);
-            let old_kname: &str = xkb_atom_text(&info.ctx().atom_table, old_name);
+            let kname: &str = xkb_atom_text(&ki.ctx().atom_table, name);
+            let old_kname: &str = xkb_atom_text(&ki.ctx().atom_table, old_name);
             let use_1: &str = if clobber_0 { kname } else { old_kname };
             let ignore_0: &str = if clobber_0 { old_kname } else { kname };
             log::warn!(
@@ -488,8 +472,9 @@ fn AddKeyName(
     true
 }
 fn MergeKeycodeStores(
-    into: &mut KeyNamesInfo<'_>,
-    from: &mut KeyNamesInfo<'_>,
+    into: &mut KeyNamesInfo,
+    from: &mut KeyNamesInfo,
+    ki: &mut xkb_keymap_info<'_>,
     merge: merge_mode,
     report: bool,
 ) {
@@ -510,13 +495,13 @@ fn MergeKeycodeStores(
         let mut kc: u32 = from.keycodes.min;
         while kc < from.keycodes.low.len() as u32 {
             let name: u32 = (&from.keycodes.low)[kc as usize];
-            if (name != XKB_ATOM_NONE) && !AddKeyName(into, kc, name, merge, report) {
+            if (name != XKB_ATOM_NONE) && !AddKeyName(into, ki, kc, name, merge, report) {
                 into.errorCount += 1;
             }
             kc = kc.wrapping_add(1);
         }
         for entry in from.keycodes.high.iter() {
-            if !AddKeyName(into, entry.keycode, entry.name, merge, report) {
+            if !AddKeyName(into, ki, entry.keycode, entry.name, merge, report) {
                 into.errorCount += 1;
             }
         }
@@ -535,7 +520,7 @@ fn MergeKeycodeStores(
                             alias,
                             real: match_0.index,
                         };
-                        if !HandleAliasDef(into, &def, report) {
+                        if !HandleAliasDef(into, ki, &def, report) {
                             into.errorCount += 1;
                         }
                     }
@@ -545,8 +530,9 @@ fn MergeKeycodeStores(
     };
 }
 fn MergeIncludedKeycodes(
-    into: &mut KeyNamesInfo<'_>,
-    from: &mut KeyNamesInfo<'_>,
+    into: &mut KeyNamesInfo,
+    from: &mut KeyNamesInfo,
+    ki: &mut xkb_keymap_info<'_>,
     merge: merge_mode,
     report: bool,
 ) {
@@ -557,7 +543,7 @@ fn MergeIncludedKeycodes(
     if into.name.is_none() {
         into.name = from.name.take();
     }
-    MergeKeycodeStores(into, from, merge, report);
+    MergeKeycodeStores(into, from, ki, merge, report);
     if into.num_led_names == 0_u32 {
         into.led_names[..from.num_led_names as usize]
             .copy_from_slice(&from.led_names[..from.num_led_names as usize]);
@@ -570,7 +556,7 @@ fn MergeIncludedKeycodes(
             if ledi.name != XKB_ATOM_NONE {
                 let mut ledi = ledi;
                 ledi.merge = merge;
-                if !AddLedName(into, false, &ledi, idx, report) {
+                if !AddLedName(into, ki, false, &ledi, idx, report) {
                     into.errorCount += 1;
                 }
             }
@@ -579,12 +565,12 @@ fn MergeIncludedKeycodes(
     };
 }
 fn HandleIncludeKeycodes(
-    info: &mut KeyNamesInfo<'_>,
+    info: &mut KeyNamesInfo,
     include: &mut IncludeStmt,
+    ki: &mut xkb_keymap_info<'_>,
     report: bool,
 ) -> bool {
-    let ki_ptr = info.keymap_info;
-    let mut included = KeyNamesInfo::new(ki_ptr);
+    let mut included = KeyNamesInfo::new();
     if ExceedsIncludeMaxDepth(info.include_depth) {
         info.errorCount += 10_i32;
         return false;
@@ -597,27 +583,31 @@ fn HandleIncludeKeycodes(
     };
     let mut current: Option<&IncludeStmt> = Some(include);
     while let Some(stmt) = current {
-        let mut next_incl = KeyNamesInfo::new(ki_ptr);
+        let mut next_incl = KeyNamesInfo::new();
 
-        let file: Option<Box<XkbFile>> =
-            ProcessIncludeFile(included.ctx_mut(), stmt, FILE_TYPE_KEYCODES);
+        let file: Option<Box<XkbFile>> = ProcessIncludeFile(ki.ctx_mut(), stmt, FILE_TYPE_KEYCODES);
         let Some(mut file) = file else {
             info.errorCount += 10_i32;
             ClearKeyNamesInfo(&mut included);
             return false;
         };
         InitKeyNamesInfo(&mut next_incl, info.include_depth.wrapping_add(1_u32));
-        HandleKeycodesFile(&mut next_incl, &mut *file);
-        MergeIncludedKeycodes(&mut included, &mut next_incl, stmt.merge, report);
+        HandleKeycodesFile(&mut next_incl, &mut *file, ki);
+        MergeIncludedKeycodes(&mut included, &mut next_incl, ki, stmt.merge, report);
         ClearKeyNamesInfo(&mut next_incl);
         drop(file);
         current = stmt.next_incl.as_deref();
     }
-    MergeIncludedKeycodes(info, &mut included, include.merge, report);
+    MergeIncludedKeycodes(info, &mut included, ki, include.merge, report);
     ClearKeyNamesInfo(&mut included);
     info.errorCount == 0_i32
 }
-fn HandleKeycodeDef(info: &mut KeyNamesInfo<'_>, stmt: &KeycodeDef, report: bool) -> bool {
+fn HandleKeycodeDef(
+    info: &mut KeyNamesInfo,
+    ki: &mut xkb_keymap_info<'_>,
+    stmt: &KeycodeDef,
+    report: bool,
+) -> bool {
     if stmt.value < 0_i64 || stmt.value > XKB_KEYCODE_MAX as i64 {
         log::error!(
             "Illegal keycode {}: must be between 0..{}; Key ignored\n",
@@ -626,9 +616,14 @@ fn HandleKeycodeDef(info: &mut KeyNamesInfo<'_>, stmt: &KeycodeDef, report: bool
         );
         return false;
     }
-    AddKeyName(info, stmt.value as u32, stmt.name, stmt.merge, report)
+    AddKeyName(info, ki, stmt.value as u32, stmt.name, stmt.merge, report)
 }
-fn HandleAliasDef(info: &mut KeyNamesInfo<'_>, def: &KeyAliasDef, report: bool) -> bool {
+fn HandleAliasDef(
+    info: &mut KeyNamesInfo,
+    ki: &mut xkb_keymap_info<'_>,
+    def: &KeyAliasDef,
+    report: bool,
+) -> bool {
     let match_name: KeycodeMatch =
         keycode_store_lookup_name(&info.keycodes, def.alias) as KeycodeMatch;
     if match_name.found {
@@ -638,8 +633,8 @@ fn HandleAliasDef(info: &mut KeyNamesInfo<'_>, def: &KeyAliasDef, report: bool) 
                 if report {
                     log::warn!("[XKB-{:03}] Alias of <{}> for <{}> declared more than once; First definition ignored\n",
                         XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                         xkb_atom_text(&info.ctx().atom_table, def.alias),
-                         xkb_atom_text(&info.ctx().atom_table, def.real));
+                         xkb_atom_text(&ki.ctx().atom_table, def.alias),
+                         xkb_atom_text(&ki.ctx().atom_table, def.real));
                 }
             } else {
                 let use_0: u32 = if clobber as i32 != 0 {
@@ -655,9 +650,9 @@ fn HandleAliasDef(info: &mut KeyNamesInfo<'_>, def: &KeyAliasDef, report: bool) 
                 if report {
                     log::warn!("[XKB-{:03}] Multiple definitions for alias <{}>; Using <{}>, ignoring <{}>\n",
                         XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                         xkb_atom_text(&info.ctx().atom_table, def.alias),
-                        xkb_atom_text(&info.ctx().atom_table, use_0),
-                        xkb_atom_text(&info.ctx().atom_table, ignore));
+                         xkb_atom_text(&ki.ctx().atom_table, def.alias),
+                        xkb_atom_text(&ki.ctx().atom_table, use_0),
+                        xkb_atom_text(&ki.ctx().atom_table, ignore));
                 }
                 {
                     info.keycodes.names[def.alias as usize].index = use_0;
@@ -668,7 +663,7 @@ fn HandleAliasDef(info: &mut KeyNamesInfo<'_>, def: &KeyAliasDef, report: bool) 
             if report {
                 log::warn!("[XKB-{:03}] Alias name <{}> already assigned to a real key; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                    xkb_atom_text(&info.ctx().atom_table, def.alias),
+                    xkb_atom_text(&ki.ctx().atom_table, def.alias),
                     if clobber { "alias" } else { "key" },
                     if clobber { "key" } else { "alias" });
             }
@@ -681,7 +676,7 @@ fn HandleAliasDef(info: &mut KeyNamesInfo<'_>, def: &KeyAliasDef, report: bool) 
     }
     keycode_store_insert_alias(&mut info.keycodes, def.alias, def.real)
 }
-fn HandleKeyNameVar(info: &mut KeyNamesInfo<'_>, stmt: &VarDef) -> bool {
+fn HandleKeyNameVar(info: &mut KeyNamesInfo, ki: &mut xkb_keymap_info<'_>, stmt: &VarDef) -> bool {
     let mut elem_atom: u32 = 0;
     let mut field_atom: u32 = 0;
     let mut arrayNdx: Option<&ExprDef> = None;
@@ -689,15 +684,15 @@ fn HandleKeyNameVar(info: &mut KeyNamesInfo<'_>, stmt: &VarDef) -> bool {
     if !ExprResolveLhs(name_ref, &mut elem_atom, &mut field_atom, &mut arrayNdx) {
         return false;
     }
-    let elem = xkb_atom_text(&info.ctx().atom_table, elem_atom);
-    let field = xkb_atom_text(&info.ctx().atom_table, field_atom);
+    let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom);
+    let field = xkb_atom_text(&ki.ctx().atom_table, field_atom);
     if !elem.is_empty() {
         log::error!("[XKB-{:03}] Cannot set global defaults for \"{}\" element; Assignment to \"{}.{}\" ignored\n",
             XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
             elem,
             elem,
             field);
-        return info.keymap_info().strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
+        return ki.strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
     }
     if !field.eq_ignore_ascii_case("minimum") && !field.eq_ignore_ascii_case("maximum") {
         log::error!(
@@ -705,16 +700,15 @@ fn HandleKeyNameVar(info: &mut KeyNamesInfo<'_>, stmt: &VarDef) -> bool {
             XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
             field
         );
-        return info.keymap_info().strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
+        return ki.strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
     }
     if arrayNdx.is_some() {
         ReportNotArray("keycodes", field, "defaults");
-        return info.keymap_info().strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
+        return ki.strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
     }
     let mut val: i64 = 0_i64;
     let value_ref = stmt.value.as_deref().unwrap();
-    if !ExprResolveInteger(info.ctx(), value_ref, &mut val) || val < 0_i64 || val > u32::MAX as i64
-    {
+    if !ExprResolveInteger(ki.ctx(), value_ref, &mut val) || val < 0_i64 || val > u32::MAX as i64 {
         ReportBadType(
             XKB_ERROR_WRONG_FIELD_TYPE,
             "keycodes",
@@ -722,11 +716,16 @@ fn HandleKeyNameVar(info: &mut KeyNamesInfo<'_>, stmt: &VarDef) -> bool {
             "defaults",
             "integer 0..0xfffffffe",
         );
-        return info.keymap_info().strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
+        return ki.strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
     }
     true
 }
-fn HandleLedNameDef(info: &mut KeyNamesInfo<'_>, def: &LedNameDef, report: bool) -> bool {
+fn HandleLedNameDef(
+    info: &mut KeyNamesInfo,
+    ki: &mut xkb_keymap_info<'_>,
+    def: &LedNameDef,
+    report: bool,
+) -> bool {
     if def.ndx < 1_i64 || def.ndx > XKB_MAX_LEDS as i64 {
         info.errorCount += 1;
         log::error!(
@@ -738,7 +737,7 @@ fn HandleLedNameDef(info: &mut KeyNamesInfo<'_>, def: &LedNameDef, report: bool)
     }
     let mut name: u32 = XKB_ATOM_NONE;
     let name_expr = def.name.as_deref().unwrap();
-    if !ExprResolveString(info.ctx(), name_expr, &mut name) {
+    if !ExprResolveString(ki.ctx(), name_expr, &mut name) {
         let mut buf: [u8; 20] = [0; 20];
         let buf_len = {
             let mut w = crate::xkb::utils::LogBuf::new(&mut buf[..19]);
@@ -760,16 +759,17 @@ fn HandleLedNameDef(info: &mut KeyNamesInfo<'_>, def: &LedNameDef, report: bool)
     };
     AddLedName(
         info,
+        ki,
         true,
         &ledi,
         (def.ndx as u32).wrapping_sub(1_u32),
         report,
     )
 }
-fn HandleKeycodesFile(info: &mut KeyNamesInfo<'_>, file: &mut XkbFile) {
+fn HandleKeycodesFile(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut xkb_keymap_info<'_>) {
     {
         let mut ok: bool;
-        let verbosity: i32 = xkb_context_get_log_verbosity(info.ctx());
+        let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
         let report_same_file: bool = verbosity > 0_i32;
         let report_include: bool = verbosity > 2_i32;
         info.name = if file.name.is_empty() {
@@ -780,19 +780,19 @@ fn HandleKeycodesFile(info: &mut KeyNamesInfo<'_>, file: &mut XkbFile) {
         for stmt in file.defs.iter_mut() {
             match stmt {
                 Statement::Include(incl) => {
-                    ok = HandleIncludeKeycodes(info, &mut **incl, report_include);
+                    ok = HandleIncludeKeycodes(info, &mut **incl, ki, report_include);
                 }
                 Statement::Keycode(kc) => {
-                    ok = HandleKeycodeDef(info, &**kc, report_same_file);
+                    ok = HandleKeycodeDef(info, ki, &**kc, report_same_file);
                 }
                 Statement::KeyAlias(ka) => {
-                    ok = HandleAliasDef(info, &**ka, report_same_file);
+                    ok = HandleAliasDef(info, ki, &**ka, report_same_file);
                 }
                 Statement::Var(var) => {
-                    ok = HandleKeyNameVar(info, &**var);
+                    ok = HandleKeyNameVar(info, ki, &**var);
                 }
                 Statement::LedName(ln) => {
-                    ok = HandleLedNameDef(info, &**ln, report_same_file);
+                    ok = HandleLedNameDef(info, ki, &**ln, report_same_file);
                 }
                 Statement::Unknown(unk) => {
                     log::error!(
@@ -805,7 +805,7 @@ fn HandleKeycodesFile(info: &mut KeyNamesInfo<'_>, file: &mut XkbFile) {
                         },
                         &unk.name
                     );
-                    ok = info.keymap_info().strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
+                    ok = ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {
                     log::error!(
@@ -914,8 +914,8 @@ fn CopyLedNamesToKeymap(
     }
     true
 }
-fn CopyKeyNamesInfoToKeymap(info: &mut KeyNamesInfo<'_>) -> bool {
-    let keymap = unsafe { (*info.keymap_info).keymap_mut() };
+fn CopyKeyNamesInfoToKeymap(info: &mut KeyNamesInfo, ki: &mut xkb_keymap_info<'_>) -> bool {
+    let keymap = ki.keymap_mut();
     if !CopyKeyNamesToKeymap(keymap, &info.keycodes)
         || !CopyKeycodeNameLUT(keymap, &mut info.keycodes)
         || !CopyLedNamesToKeymap(keymap, &info.led_names, info.num_led_names)
@@ -948,12 +948,12 @@ fn CopyKeyNamesInfoToKeymap(info: &mut KeyNamesInfo<'_>) -> bool {
     true
 }
 pub fn CompileKeycodes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
-    let mut info = KeyNamesInfo::new(keymap_info);
+    let mut info = KeyNamesInfo::new();
     InitKeyNamesInfo(&mut info, 0_u32);
     if let Some(file) = file {
-        HandleKeycodesFile(&mut info, file);
+        HandleKeycodesFile(&mut info, file, keymap_info);
     }
-    if (info.errorCount == 0_i32) && CopyKeyNamesInfoToKeymap(&mut info) {
+    if (info.errorCount == 0_i32) && CopyKeyNamesInfoToKeymap(&mut info, keymap_info) {
         ClearKeyNamesInfo(&mut info);
         return true;
     }

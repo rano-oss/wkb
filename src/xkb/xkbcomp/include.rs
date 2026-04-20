@@ -356,7 +356,7 @@ pub fn ProcessIncludeFile(
         let _ = file_and_path.take();
 
         if !raw.is_null() {
-            let mut parsed = unsafe { Box::from_raw(raw) };
+            let parsed = unsafe { Box::from_raw(raw) };
             if parsed.file_type as u32 != file_type {
                 log::error!("[XKB-{:03}] Include file of wrong type (expected {}, got {}); Include file \"{}\" ignored\n",
                     XKB_ERROR_INVALID_INCLUDED_FILE as i32,
