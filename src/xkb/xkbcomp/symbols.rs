@@ -11,7 +11,7 @@ use crate::xkb::text::ModIndexText;
 pub use crate::xkb::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };
-use libc::abort;
+
 pub struct SymbolsInfo<'a> {
     pub name: Option<String>,
     pub errorCount: i32,
@@ -461,7 +461,7 @@ fn merge_overlays(
                     "Critical Error: Reached unreachable line in ../src/xkbcomp/symbols.c at {}",
                     696
                 );
-                unsafe { abort() };
+                std::process::abort();
             }
             // Determine which one is dest (larger capacity) and which is src
             let swapped = from.overlay_keys.capacity() > into.overlay_keys.capacity();
