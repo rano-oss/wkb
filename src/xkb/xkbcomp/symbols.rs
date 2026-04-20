@@ -25,6 +25,7 @@ pub struct SymbolsInfo<'a> {
     pub modmaps: Vec<ModMapEntry>,
     pub mods: xkb_mod_set,
     pub keymap_info: &'a mut xkb_keymap_info<'a>,
+    pub star_atom: u32,
 }
 #[derive(Copy, Clone)]
 pub struct ModMapEntry {
@@ -105,6 +106,7 @@ impl<'a> SymbolsInfo<'a> {
     }
 
     pub fn new(keymap_info: &'a mut xkb_keymap_info<'a>) -> Self {
+        let star_atom = xkb_atom_intern_ref(&mut keymap_info.keymap_mut().ctx, b"*");
         Self {
             name: None,
             errorCount: 0,
@@ -128,6 +130,7 @@ impl<'a> SymbolsInfo<'a> {
                 explicit_vmods: 0,
             },
             keymap_info,
+            star_atom,
         }
     }
 }
@@ -147,9 +150,9 @@ fn CopyGroupInfo(to: &mut GroupInfo, from: &GroupInfo) {
     to.type_0 = from.type_0;
     to.levels = from.levels.clone();
 }
-fn InitKeyInfo(ctx: &mut xkb_context, keyi: &mut KeyInfo) {
+fn InitKeyInfo_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
     *keyi = KeyInfo {
-        name: xkb_atom_intern_ref(ctx, b"*"),
+        name: star_atom,
         vmodmap: 0,
         default_type: 0,
         out_of_range_group_number: 0,
@@ -163,6 +166,9 @@ fn InitKeyInfo(ctx: &mut xkb_context, keyi: &mut KeyInfo) {
         overlays: 0,
         overlay_keys: Vec::new(),
     };
+}
+fn InitKeyInfo(ctx: &mut xkb_context, keyi: &mut KeyInfo) {
+    InitKeyInfo_with_atom(keyi, xkb_atom_intern_ref(ctx, b"*"));
 }
 fn ClearKeyInfo(keyi: &mut KeyInfo) {
     for groupi in keyi.groups.iter_mut() {
@@ -554,10 +560,7 @@ fn MergeKeys(
     if from.merge as i32 == MERGE_REPLACE as i32 {
         ClearKeyInfo(into);
         std::mem::swap(into, from);
-        InitKeyInfo(
-            unsafe { &mut (*(info.keymap_info.keymap as *const _ as *mut xkb_keymap)).ctx },
-            from,
-        );
+        InitKeyInfo_with_atom(from, info.star_atom);
         return true;
     }
     let groups_in_both: u32 = (if into.groups.len() < from.groups.len() {
@@ -640,10 +643,7 @@ fn MergeKeys(
             if clobber { "first" } else { "last" });
     }
     ClearKeyInfo(from);
-    InitKeyInfo(
-        unsafe { &mut (*(info.keymap_info.keymap as *const _ as *mut xkb_keymap)).ctx },
-        from,
-    );
+    InitKeyInfo_with_atom(from, info.star_atom);
     true
 }
 fn AddKeySymbols(info: &mut SymbolsInfo<'_>, keyi: &mut KeyInfo, same_file: bool) -> bool {
@@ -669,7 +669,7 @@ fn AddKeySymbols(info: &mut SymbolsInfo<'_>, keyi: &mut KeyInfo, same_file: bool
     // Move keyi's data into the keys vec
     let moved = std::mem::replace(keyi, KeyInfo::new_zeroed());
     info.keys.push(moved);
-    InitKeyInfo(info.keymap_info.ctx_mut(), keyi);
+    InitKeyInfo_with_atom(keyi, info.star_atom);
     true
 }
 fn AddModMapEntry(info: &mut SymbolsInfo<'_>, new: &ModMapEntry) -> bool {
