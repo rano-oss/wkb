@@ -443,256 +443,247 @@ fn overlays_insert(keyi: &mut KeyInfo, bit: xkb_overlay_index_t, key: u32) -> bo
 }
 fn merge_overlays(
     info: &SymbolsInfo<'_>,
-    into: *mut KeyInfo,
-    from: *mut KeyInfo,
+    into: &mut KeyInfo,
+    from: &mut KeyInfo,
     mut clobber: bool,
     report: bool,
     collide: &mut key_field,
 ) -> bool {
-    unsafe {
-        if (*from).defined as i32 & KEY_FIELD_OVERLAY as i32 != 0 {
-            if (*into).defined as i32 & KEY_FIELD_OVERLAY as i32 == 0 {
-                // into has no overlays, take from's
-                (*into).overlays = (*from).overlays;
-                (*into).overlay_keys = std::mem::take(&mut (*from).overlay_keys);
-                (*into).defined |= KEY_FIELD_OVERLAY as i32 as key_field;
-            } else if (*into).overlays_clear as i32 != 0 && (*from).overlays_clear as i32 != 0 {
-                (*into).overlays =
-                    ((*into).overlays as i32 | (*from).overlays as i32) as xkb_overlay_mask_t;
-            } else if (*info.keymap_info).features.overlapping_overlays {
-                // Complex merge with overlapping overlays
-                let result_mask: xkb_overlay_mask_t =
-                    ((*into).overlays as i32 | (*from).overlays as i32) as xkb_overlay_mask_t;
-                let count: xkb_overlay_index_t =
-                    (result_mask as u32).count_ones() as xkb_overlay_index_t;
-                if count as i32 == 0_i32 {
-                    eprintln!(
-                        "Critical Error: Reached unreachable line in ../src/xkbcomp/symbols.c at {}", 696
-                    );
-                    abort();
-                }
-                let mut dest: *mut KeyInfo = into;
-                let mut src: *mut KeyInfo = from;
-                if (*from).overlay_keys.capacity() > (*into).overlay_keys.capacity() {
-                    dest = from;
-                    src = into;
-                    clobber = !clobber;
-                }
-                // Iterate over src's overlay bits and merge into dest
-                let mut remaining: xkb_overlay_mask_t = (*src).overlays;
-                let mut src_idx: usize = 0;
-                while remaining != 0 {
-                    let lsb: xkb_overlay_mask_t = (remaining as i32
-                        & (!(remaining as i32) as u32).wrapping_add(1_u32) as xkb_overlay_mask_t
-                            as i32)
-                        as xkb_overlay_mask_t;
-                    let bit: xkb_overlay_index_t =
-                        ((lsb as u32).wrapping_sub(1_u32).count_ones()) as xkb_overlay_index_t;
-                    remaining = (remaining as i32 & !(lsb as i32)) as xkb_overlay_mask_t;
-                    let src_key: u32 =
-                        if (*src).overlays_clear || src_idx >= (*src).overlay_keys.len() {
-                            XKB_KEYCODE_INVALID
-                        } else {
-                            let k = (&(*src).overlay_keys)[src_idx];
-                            src_idx += 1;
-                            k
-                        };
-                    let mut dest_key: u32 = XKB_KEYCODE_INVALID;
-                    let conflict: bool = overlays_get(&*dest, bit, Some(&mut dest_key)) as bool;
-                    if conflict {
-                        if dest_key == src_key {
-                            continue;
-                        }
-                        if report {
-                            *collide = (*collide | KEY_FIELD_OVERLAY) as key_field;
-                        }
+    if from.defined as i32 & KEY_FIELD_OVERLAY as i32 != 0 {
+        if into.defined as i32 & KEY_FIELD_OVERLAY as i32 == 0 {
+            // into has no overlays, take from's
+            into.overlays = from.overlays;
+            into.overlay_keys = std::mem::take(&mut from.overlay_keys);
+            into.defined |= KEY_FIELD_OVERLAY as i32 as key_field;
+        } else if into.overlays_clear as i32 != 0 && from.overlays_clear as i32 != 0 {
+            into.overlays = (into.overlays as i32 | from.overlays as i32) as xkb_overlay_mask_t;
+        } else if info.keymap_info.features.overlapping_overlays {
+            // Complex merge with overlapping overlays
+            let result_mask: xkb_overlay_mask_t =
+                (into.overlays as i32 | from.overlays as i32) as xkb_overlay_mask_t;
+            let count: xkb_overlay_index_t =
+                (result_mask as u32).count_ones() as xkb_overlay_index_t;
+            if count as i32 == 0_i32 {
+                eprintln!(
+                    "Critical Error: Reached unreachable line in ../src/xkbcomp/symbols.c at {}",
+                    696
+                );
+                unsafe { abort() };
+            }
+            // Determine which one is dest (larger capacity) and which is src
+            let swapped = from.overlay_keys.capacity() > into.overlay_keys.capacity();
+            if swapped {
+                std::mem::swap(into, from);
+                clobber = !clobber;
+            }
+            // Now `into` is dest and `from` is src
+            let mut remaining: xkb_overlay_mask_t = from.overlays;
+            let mut src_idx: usize = 0;
+            while remaining != 0 {
+                let lsb: xkb_overlay_mask_t = (remaining as i32
+                    & (!(remaining as i32) as u32).wrapping_add(1_u32) as xkb_overlay_mask_t as i32)
+                    as xkb_overlay_mask_t;
+                let bit: xkb_overlay_index_t =
+                    ((lsb as u32).wrapping_sub(1_u32).count_ones()) as xkb_overlay_index_t;
+                remaining = (remaining as i32 & !(lsb as i32)) as xkb_overlay_mask_t;
+                let src_key: u32 = if from.overlays_clear || src_idx >= from.overlay_keys.len() {
+                    XKB_KEYCODE_INVALID
+                } else {
+                    let k = from.overlay_keys[src_idx];
+                    src_idx += 1;
+                    k
+                };
+                let mut dest_key: u32 = XKB_KEYCODE_INVALID;
+                let conflict: bool = overlays_get(into, bit, Some(&mut dest_key)) as bool;
+                if conflict {
+                    if dest_key == src_key {
+                        continue;
                     }
-                    if (!conflict || clobber as i32 != 0)
-                        && !overlays_insert(&mut *dest, bit, src_key)
-                    {
-                        return false;
+                    if report {
+                        *collide = (*collide | KEY_FIELD_OVERLAY) as key_field;
                     }
                 }
-                if into != dest {
-                    (*into).overlays = (*dest).overlays;
-                    (*into).overlays_clear = (*dest).overlays_clear;
-                    (*into).overlay_keys = std::mem::take(&mut (*dest).overlay_keys);
-                }
-            } else {
-                if (*into).overlays as i32 == (*from).overlays as i32
-                    && (*into).overlays_clear as i32 == (*from).overlays_clear as i32
-                {
-                    // Check if single overlay keys match
-                    let into_key = (*into)
-                        .overlay_keys
-                        .first()
-                        .copied()
-                        .unwrap_or(XKB_KEYCODE_INVALID);
-                    let from_key = (*from)
-                        .overlay_keys
-                        .first()
-                        .copied()
-                        .unwrap_or(XKB_KEYCODE_INVALID);
-                    if into_key == from_key {
-                        return true;
-                    }
-                }
-                if (*into).overlays as i32 & (*from).overlays as i32 == 0 {
-                    if (*into).overlays_clear {
-                        (*into).overlays = (*from).overlays;
-                        (*into).overlays_clear = (*from).overlays_clear;
-                        (*into).overlay_keys = std::mem::take(&mut (*from).overlay_keys);
-                        return true;
-                    } else if (*from).overlays_clear {
-                        return true;
-                    }
-                }
-                if report {
-                    *collide = (*collide | KEY_FIELD_OVERLAY) as key_field;
-                }
-                if clobber {
-                    (*into).overlays = (*from).overlays;
-                    (*into).overlays_clear = (*from).overlays_clear;
-                    (*into).overlay_keys = std::mem::take(&mut (*from).overlay_keys);
+                if (!conflict || clobber as i32 != 0) && !overlays_insert(into, bit, src_key) {
+                    return false;
                 }
             }
+            if swapped {
+                // We swapped into/from, so move dest data back to into
+                std::mem::swap(into, from);
+            }
+        } else {
+            if into.overlays as i32 == from.overlays as i32
+                && into.overlays_clear as i32 == from.overlays_clear as i32
+            {
+                // Check if single overlay keys match
+                let into_key = into
+                    .overlay_keys
+                    .first()
+                    .copied()
+                    .unwrap_or(XKB_KEYCODE_INVALID);
+                let from_key = from
+                    .overlay_keys
+                    .first()
+                    .copied()
+                    .unwrap_or(XKB_KEYCODE_INVALID);
+                if into_key == from_key {
+                    return true;
+                }
+            }
+            if into.overlays as i32 & from.overlays as i32 == 0 {
+                if into.overlays_clear {
+                    into.overlays = from.overlays;
+                    into.overlays_clear = from.overlays_clear;
+                    into.overlay_keys = std::mem::take(&mut from.overlay_keys);
+                    return true;
+                } else if from.overlays_clear {
+                    return true;
+                }
+            }
+            if report {
+                *collide = (*collide | KEY_FIELD_OVERLAY) as key_field;
+            }
+            if clobber {
+                into.overlays = from.overlays;
+                into.overlays_clear = from.overlays_clear;
+                into.overlay_keys = std::mem::take(&mut from.overlay_keys);
+            }
         }
-        true
     }
+    true
 }
 fn MergeKeys(
     info: &SymbolsInfo<'_>,
-    into: *mut KeyInfo,
-    from: *mut KeyInfo,
+    into: &mut KeyInfo,
+    from: &mut KeyInfo,
     same_file: bool,
 ) -> bool {
-    unsafe {
-        let mut i: u32;
+    let mut i: u32;
 
-        let mut collide: key_field = 0 as key_field;
-        let verbosity: i32 = xkb_context_get_log_verbosity(info.ctx());
-        let clobber: bool = (*from).merge as i32 != MERGE_AUGMENT as i32;
-        let report: bool = same_file as i32 != 0 && verbosity > 0_i32 || verbosity > 9_i32;
-        if (*from).merge as i32 == MERGE_REPLACE as i32 {
-            ClearKeyInfo(&mut *into);
-            std::ptr::write(into, std::ptr::read(from));
-            InitKeyInfo(
-                &mut (*(info.keymap_info.keymap as *const _ as *mut xkb_keymap)).ctx,
-                &mut *from,
-            );
-            return true;
-        }
-        let groups_in_both: u32 = (if (*into).groups.len() < (*from).groups.len() {
-            (*into).groups.len()
-        } else {
-            (*from).groups.len()
-        }) as u32;
-        i = 0_u32;
-        while i < groups_in_both {
-            MergeGroups(
-                info,
-                &mut (*into).groups.as_mut_slice()[i as usize],
-                &mut (*from).groups.as_mut_slice()[i as usize],
-                clobber,
-                report,
-                i,
-                (*into).name,
-            );
-            i = i.wrapping_add(1);
-        }
-        i = groups_in_both;
-        while i < (*from).groups.len() as u32 {
-            let group_val = std::ptr::read(&(&(*from).groups)[i as usize]);
-            (*into).groups.push(group_val);
-            InitGroupInfo(&mut (&mut (*from).groups)[i as usize]);
-            i = i.wrapping_add(1);
-        }
-        if UseNewKeyField(
-            KEY_FIELD_VMODMAP,
-            (*into).defined,
-            (*from).defined,
-            clobber,
-            report,
-            &mut collide,
-        ) {
-            (*into).vmodmap = (*from).vmodmap;
-            (*into).defined |= KEY_FIELD_VMODMAP as i32 as key_field;
-        }
-        if UseNewKeyField(
-            KEY_FIELD_REPEAT,
-            (*into).defined,
-            (*from).defined,
-            clobber,
-            report,
-            &mut collide,
-        ) {
-            (*into).repeat = (*from).repeat;
-            (*into).defined |= KEY_FIELD_REPEAT as i32 as key_field;
-        }
-        if UseNewKeyField(
-            KEY_FIELD_DEFAULT_TYPE,
-            (*into).defined,
-            (*from).defined,
-            clobber,
-            report,
-            &mut collide,
-        ) {
-            (*into).default_type = (*from).default_type;
-            (*into).defined |= KEY_FIELD_DEFAULT_TYPE as i32 as key_field;
-        }
-        if UseNewKeyField(
-            KEY_FIELD_GROUPINFO,
-            (*into).defined,
-            (*from).defined,
-            clobber,
-            report,
-            &mut collide,
-        ) {
-            (*into).out_of_range_pending_group = (*from).out_of_range_pending_group;
-            (*into).out_of_range_group_policy = (*from).out_of_range_group_policy;
-            (*into).out_of_range_group_number = (*from).out_of_range_group_number;
-            (*into).defined |= KEY_FIELD_GROUPINFO as i32 as key_field;
-        }
-        if !merge_overlays(info, into, from, clobber, report, &mut collide) {
-            return false;
-        }
-        if collide as u64 != 0 {
-            log::warn!("[XKB-{:03}] Symbol map for key <{}> redefined; Using {} definition for conflicting fields\n",
-                XKB_WARNING_CONFLICTING_KEY_FIELDS as i32,
-                xkb_atom_text(&info.ctx().atom_table, (*into).name),
-                if clobber { "first" } else { "last" });
-        }
-        ClearKeyInfo(&mut *from);
+    let mut collide: key_field = 0 as key_field;
+    let verbosity: i32 = xkb_context_get_log_verbosity(info.ctx());
+    let clobber: bool = from.merge as i32 != MERGE_AUGMENT as i32;
+    let report: bool = same_file as i32 != 0 && verbosity > 0_i32 || verbosity > 9_i32;
+    if from.merge as i32 == MERGE_REPLACE as i32 {
+        ClearKeyInfo(into);
+        std::mem::swap(into, from);
         InitKeyInfo(
-            &mut (*(info.keymap_info.keymap as *const _ as *mut xkb_keymap)).ctx,
-            &mut *from,
+            unsafe { &mut (*(info.keymap_info.keymap as *const _ as *mut xkb_keymap)).ctx },
+            from,
         );
-        true
+        return true;
     }
+    let groups_in_both: u32 = (if into.groups.len() < from.groups.len() {
+        into.groups.len()
+    } else {
+        from.groups.len()
+    }) as u32;
+    i = 0_u32;
+    while i < groups_in_both {
+        MergeGroups(
+            info,
+            &mut into.groups[i as usize],
+            &mut from.groups[i as usize],
+            clobber,
+            report,
+            i,
+            into.name,
+        );
+        i = i.wrapping_add(1);
+    }
+    i = groups_in_both;
+    while i < from.groups.len() as u32 {
+        let group_val = std::mem::take(&mut from.groups[i as usize]);
+        into.groups.push(group_val);
+        i = i.wrapping_add(1);
+    }
+    if UseNewKeyField(
+        KEY_FIELD_VMODMAP,
+        into.defined,
+        from.defined,
+        clobber,
+        report,
+        &mut collide,
+    ) {
+        into.vmodmap = from.vmodmap;
+        into.defined |= KEY_FIELD_VMODMAP as i32 as key_field;
+    }
+    if UseNewKeyField(
+        KEY_FIELD_REPEAT,
+        into.defined,
+        from.defined,
+        clobber,
+        report,
+        &mut collide,
+    ) {
+        into.repeat = from.repeat;
+        into.defined |= KEY_FIELD_REPEAT as i32 as key_field;
+    }
+    if UseNewKeyField(
+        KEY_FIELD_DEFAULT_TYPE,
+        into.defined,
+        from.defined,
+        clobber,
+        report,
+        &mut collide,
+    ) {
+        into.default_type = from.default_type;
+        into.defined |= KEY_FIELD_DEFAULT_TYPE as i32 as key_field;
+    }
+    if UseNewKeyField(
+        KEY_FIELD_GROUPINFO,
+        into.defined,
+        from.defined,
+        clobber,
+        report,
+        &mut collide,
+    ) {
+        into.out_of_range_pending_group = from.out_of_range_pending_group;
+        into.out_of_range_group_policy = from.out_of_range_group_policy;
+        into.out_of_range_group_number = from.out_of_range_group_number;
+        into.defined |= KEY_FIELD_GROUPINFO as i32 as key_field;
+    }
+    if !merge_overlays(info, into, from, clobber, report, &mut collide) {
+        return false;
+    }
+    if collide as u64 != 0 {
+        log::warn!("[XKB-{:03}] Symbol map for key <{}> redefined; Using {} definition for conflicting fields\n",
+            XKB_WARNING_CONFLICTING_KEY_FIELDS as i32,
+            xkb_atom_text(&info.ctx().atom_table, into.name),
+            if clobber { "first" } else { "last" });
+    }
+    ClearKeyInfo(from);
+    InitKeyInfo(
+        unsafe { &mut (*(info.keymap_info.keymap as *const _ as *mut xkb_keymap)).ctx },
+        from,
+    );
+    true
 }
-fn AddKeySymbols(info: &mut SymbolsInfo<'_>, keyi: *mut KeyInfo, same_file: bool) -> bool {
-    unsafe {
-        // XkbResolveKeyAlias inlined
-        {
-            let keymap = &*(*info.keymap_info).keymap;
-            let name = (*keyi).name;
-            if (name as usize) < (*keymap).key_names.len() {
-                let match_0: KeycodeMatch = (&(*keymap).key_names)[name as usize];
-                if match_0.found as i32 != 0 && match_0.is_alias as i32 != 0 {
-                    (*keyi).name = match_0.index;
-                }
+fn AddKeySymbols(info: &mut SymbolsInfo<'_>, keyi: &mut KeyInfo, same_file: bool) -> bool {
+    // XkbResolveKeyAlias inlined
+    {
+        let keymap = info.keymap_info.keymap_ref();
+        let name = keyi.name;
+        if (name as usize) < keymap.key_names.len() {
+            let match_0: KeycodeMatch = keymap.key_names[name as usize];
+            if match_0.found as i32 != 0 && match_0.is_alias as i32 != 0 {
+                keyi.name = match_0.index;
             }
         }
-        for i in 0..info.keys.len() {
-            if info.keys[i].name == (*keyi).name {
-                let iter_ptr = info.keys.as_mut_ptr().add(i);
-                return MergeKeys(info, iter_ptr, keyi, same_file);
-            }
-        }
-        info.keys.push(std::ptr::read(keyi));
-        InitKeyInfo(info.keymap_info.ctx_mut(), &mut *keyi);
-        true
     }
+    for i in 0..info.keys.len() {
+        if info.keys[i].name == keyi.name {
+            let mut existing = std::mem::replace(&mut info.keys[i], KeyInfo::new_zeroed());
+            let result = MergeKeys(info, &mut existing, keyi, same_file);
+            info.keys[i] = existing;
+            return result;
+        }
+    }
+    // Move keyi's data into the keys vec
+    let moved = std::mem::replace(keyi, KeyInfo::new_zeroed());
+    info.keys.push(moved);
+    InitKeyInfo(info.keymap_info.ctx_mut(), keyi);
+    true
 }
 fn AddModMapEntry(info: &mut SymbolsInfo<'_>, new: &ModMapEntry) -> bool {
     let clobber: bool = new.merge != MERGE_AUGMENT;
@@ -775,7 +766,7 @@ fn MergeIncludedSymbols(into: &mut SymbolsInfo<'_>, from: &mut SymbolsInfo<'_>, 
     } else {
         for keyi in from.keys.iter_mut() {
             keyi.merge = merge as merge_mode;
-            if !AddKeySymbols(into, keyi as *mut KeyInfo, false) {
+            if !AddKeySymbols(into, keyi, false) {
                 into.errorCount += 1;
             }
         }
@@ -1644,8 +1635,9 @@ fn HandleGlobalVar(info: &mut SymbolsInfo<'_>, stmt: &mut VarDef) -> bool {
             stmt.merge as merge_mode
         };
         ret = SetSymbolsField(info, &mut temp, field, arrayNdx_opt, &mut stmt.value);
-        let dk_ptr = &raw mut info.default_key;
-        MergeKeys(info, dk_ptr, &raw mut temp, true);
+        let mut dk = std::mem::replace(&mut info.default_key, KeyInfo::new_zeroed());
+        MergeKeys(info, &mut dk, &mut temp, true);
+        info.default_key = dk;
     } else if elem.is_empty()
         && (field.eq_ignore_ascii_case("name") || field.eq_ignore_ascii_case("groupname"))
     {
@@ -1818,7 +1810,7 @@ fn HandleSymbolsDef(info: &mut SymbolsInfo<'_>, stmt: &mut SymbolsDef) -> bool {
     keyi.name = stmt.keyName;
     if HandleSymbolsBody(info, &mut stmt.symbols, &mut keyi) as i32 != 0
         && SetExplicitGroup(info, &mut keyi) as i32 != 0
-        && AddKeySymbols(info, &raw mut keyi, true) as i32 != 0
+        && AddKeySymbols(info, &mut keyi, true) as i32 != 0
     {
         return true;
     }
