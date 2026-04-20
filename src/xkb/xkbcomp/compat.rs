@@ -142,14 +142,11 @@ fn ReportSIBadType(
         wanted,
     )
 }
-fn LEDText(info: &mut CompatInfo<'_>, ledi: &LedInfo) -> &'static str {
+fn LEDText<'a>(info: &'a CompatInfo<'_>, ledi: &LedInfo) -> &'a str {
     if std::ptr::eq(ledi, &info.default_led) {
         "default"
     } else {
-        // SAFETY: atom_table strings live for the lifetime of the context.
-        // We need 'static because the return is used after info is mutably borrowed.
-        let atom_table = &info.ctx().atom_table as *const _;
-        unsafe { xkb_atom_text(&*atom_table, ledi.led.name) }
+        xkb_atom_text(&info.ctx().atom_table, ledi.led.name)
     }
 }
 #[inline]
@@ -301,9 +298,11 @@ fn AddInterp(info: &mut CompatInfo<'_>, new: &mut SymInterpInfo, same_file: bool
         }
     }
     if let Some(idx) = old_idx {
-        // Safe: new is a separate local, not from info.interps
-        let old = &mut info.interps[idx] as *mut SymInterpInfo;
-        return MergeInterp(info, unsafe { &mut *old }, new, same_file);
+        // Clone the old element out to avoid borrow conflict with info
+        let mut old = info.interps[idx].clone();
+        let result = MergeInterp(info, &mut old, new, same_file);
+        info.interps[idx] = old;
+        return result;
     }
     info.interps.push(new.clone());
     true
@@ -456,8 +455,11 @@ fn AddLedMap(info: &mut CompatInfo<'_>, new: &mut LedInfo, same_file: bool) -> b
         if info.leds[i as usize].led.name != new.led.name {
             i = i.wrapping_add(1);
         } else {
-            let old = &mut info.leds[i as usize] as *mut LedInfo;
-            return MergeLedMap(info, unsafe { &mut *old }, new, same_file);
+            // Clone the old element out to avoid borrow conflict with info
+            let mut old = info.leds[i as usize];
+            let result = MergeLedMap(info, &mut old, new, same_file);
+            info.leds[i as usize] = old;
+            return result;
         }
     }
     if info.num_leds >= XKB_MAX_LEDS {
@@ -848,8 +850,9 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
             let value_ref = stmt.value.as_deref_mut().unwrap();
             ret = SetInterpField(info, &mut temp, unsafe { &*field_ptr }, ndx_ref, value_ref);
             if ret {
-                let default_ptr = &raw mut info.default_interp;
-                MergeInterp(info, unsafe { &mut *default_ptr }, &mut temp, true);
+                let mut default = info.default_interp.clone();
+                MergeInterp(info, &mut default, &mut temp, true);
+                info.default_interp = default;
             }
         } else if !elem.is_empty() && elem.eq_ignore_ascii_case("indicator") {
             let mut temp_0: LedInfo = LedInfo {
@@ -875,8 +878,9 @@ fn HandleGlobalVar(info: &mut CompatInfo<'_>, stmt: &mut VarDef) -> bool {
             let ndx_ref = ndx.map(|r| r as *const ExprDef).map(|p| unsafe { &*p });
             ret = SetLedMapField(info, &mut temp_0, field, ndx_ref, &mut stmt.value);
             if ret {
-                let default_ptr = &raw mut info.default_led;
-                MergeLedMap(info, unsafe { &mut *default_ptr }, &mut temp_0, true);
+                let mut default = info.default_led;
+                MergeLedMap(info, &mut default, &mut temp_0, true);
+                info.default_led = default;
             }
         } else if !elem.is_empty() {
             ret = {
