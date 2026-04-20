@@ -4,7 +4,6 @@ use std::sync::LazyLock;
 use crate::xkb::atom::{atom_lookup_ref, atom_text};
 use crate::xkb::context::{xkb_atom_intern_bytes, xkb_context_sanitize_rule_names};
 // text_v1_keymap_format_ops is defined in xkbcomp::xkbcomp with a local type.
-// Both types are #[repr(C)] with identical layout, so pointer cast is safe.
 pub use crate::xkb::messages::{
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,

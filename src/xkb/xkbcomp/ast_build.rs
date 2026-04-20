@@ -63,6 +63,7 @@ pub use crate::xkb::shared_ast_types::{
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
     _STMT_NUM_VALUES,
 };
+use crate::xkb::shared_ast_types::{from_common, to_common, to_common_or_null};
 pub use crate::xkb::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
 use crate::xkb::utils::cstr_len;
 pub use crate::xkb::xkbcomp::include::{MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
@@ -151,7 +152,7 @@ pub fn ExprKeySymListAppendString(
         }
         match c2rust_current_block {
             5140853804782746302 => {
-                FreeStmt(expr as *mut ParseCommon);
+                FreeStmt(to_common_or_null!(expr));
                 std::ptr::null_mut()
             }
             _ => expr,
@@ -524,7 +525,7 @@ pub fn XkbFileFromComponents(
             file = XkbFileCreate(
                 type_0,
                 std::ptr::null_mut(),
-                include as *mut ParseCommon,
+                to_common_or_null!(include),
                 0 as xkb_map_flags,
             );
             if file.is_null() {
@@ -536,8 +537,8 @@ pub fn XkbFileFromComponents(
                     defs = &raw mut (*file).common;
                     defsLast = defs;
                 } else {
-                    (*defsLast).next = &raw mut (*file).common as *mut _ParseCommon;
-                    defsLast = (*defsLast).next as *mut ParseCommon;
+                    (*defsLast).next = &raw mut (*file).common;
+                    defsLast = (*defsLast).next;
                 }
                 type_0 += 1;
             }
@@ -562,25 +563,25 @@ pub fn FreeStmt(mut stmt: *mut ParseCommon) {
     unsafe {
         let mut next: *mut ParseCommon;
         while !stmt.is_null() {
-            next = (*stmt).next as *mut ParseCommon;
+            next = (*stmt).next;
             // Deallocate the stmt with the correct type (Box::from_raw must match Box::into_raw type).
             // All inner fields (Vec<VarDef>, Vec<ExprDef>, Option<Box<ExprDef>>, etc.) auto-drop.
             match (*stmt).type_0 {
-                1 => drop(Box::from_raw(stmt as *mut IncludeStmt)),
-                2 => drop(Box::from_raw(stmt as *mut KeycodeDef)),
-                3 => drop(Box::from_raw(stmt as *mut KeyAliasDef)),
-                4..=25 => drop(Box::from_raw(stmt as *mut ExprDef)),
-                26 => drop(Box::from_raw(stmt as *mut VarDef)),
-                27 => drop(Box::from_raw(stmt as *mut KeyTypeDef)),
-                28 => drop(Box::from_raw(stmt as *mut InterpDef)),
-                29 => drop(Box::from_raw(stmt as *mut VModDef)),
-                30 => drop(Box::from_raw(stmt as *mut SymbolsDef)),
-                31 => drop(Box::from_raw(stmt as *mut ModMapDef)),
-                32 => drop(Box::from_raw(stmt as *mut GroupCompatDef)),
-                33 => drop(Box::from_raw(stmt as *mut LedMapDef)),
-                34 => drop(Box::from_raw(stmt as *mut LedNameDef)),
-                35 | 36 => drop(Box::from_raw(stmt as *mut UnknownStatement)),
-                _ => drop(Box::from_raw(stmt as *mut ExprDef)),
+                1 => drop(Box::from_raw(from_common!(stmt, IncludeStmt))),
+                2 => drop(Box::from_raw(from_common!(stmt, KeycodeDef))),
+                3 => drop(Box::from_raw(from_common!(stmt, KeyAliasDef))),
+                4..=25 => drop(Box::from_raw(from_common!(stmt, ExprDef))),
+                26 => drop(Box::from_raw(from_common!(stmt, VarDef))),
+                27 => drop(Box::from_raw(from_common!(stmt, KeyTypeDef))),
+                28 => drop(Box::from_raw(from_common!(stmt, InterpDef))),
+                29 => drop(Box::from_raw(from_common!(stmt, VModDef))),
+                30 => drop(Box::from_raw(from_common!(stmt, SymbolsDef))),
+                31 => drop(Box::from_raw(from_common!(stmt, ModMapDef))),
+                32 => drop(Box::from_raw(from_common!(stmt, GroupCompatDef))),
+                33 => drop(Box::from_raw(from_common!(stmt, LedMapDef))),
+                34 => drop(Box::from_raw(from_common!(stmt, LedNameDef))),
+                35 | 36 => drop(Box::from_raw(from_common!(stmt, UnknownStatement))),
+                _ => drop(Box::from_raw(from_common!(stmt, ExprDef))),
             }
             stmt = next;
         }
@@ -591,7 +592,7 @@ pub fn FreeXkbFile(mut file: *mut XkbFile) {
     unsafe {
         let mut next: *mut XkbFile;
         while !file.is_null() {
-            next = (*file).common.next as *mut XkbFile;
+            next = from_common!((*file).common.next, XkbFile);
             // defs is Vec<Statement> — drops automatically with the Box
             drop(Box::from_raw(file));
             file = next;

@@ -3,6 +3,7 @@ use crate::xkb::context::{xkb_atom_intern, xkb_atom_intern_bytes};
 pub use crate::xkb::keymap::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
 use crate::xkb::keysym::xkb_keysym_is_keypad;
 use crate::xkb::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
+use crate::xkb::shared_ast_types::from_common;
 pub use crate::xkb::shared_ast_types::{ModMapDef, SymbolsDef};
 pub use crate::xkb::shared_types::{
     XkbKeyByName, XkbKeyNumLevels, XKB_MOD_NONE, XKB_OVERLAY_INVALID,
@@ -36,7 +37,6 @@ pub struct ModMapEntry {
     pub u: ModMapData,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub union ModMapData {
     pub keyName: u32,
     pub keySym: u32,
@@ -979,7 +979,7 @@ fn AddSymbolsToKey(
             if syms.len() as u32 > 0_u32 {
                 nonEmptyLevels = nLevels;
             }
-            keysymList = (*keysymList).common.next as *mut ExprDef;
+            keysymList = from_common!((*keysymList).common.next, ExprDef);
         }
         if nonEmptyLevels < nLevels {
             nLevels = nonEmptyLevels;
@@ -1013,7 +1013,7 @@ fn AddSymbolsToKey(
             } else {
                 syms[..syms_len as usize].to_vec()
             };
-            keysymList_0 = (*keysymList_0).common.next as *mut ExprDef;
+            keysymList_0 = from_common!((*keysymList_0).common.next, ExprDef);
             level = level.wrapping_add(1);
         }
         true
@@ -1056,7 +1056,7 @@ fn AddActionsToKey(
         let mut p: *mut ParseCommon = &raw mut (*value).common;
         while !p.is_null() {
             nLevels = nLevels.wrapping_add(1);
-            p = (*p).next as *mut ParseCommon;
+            p = (*p).next;
         }
         if ((*groupi).levels.len() as u32) < nLevels {
             (*groupi)
@@ -1135,7 +1135,7 @@ fn AddActionsToKey(
             if !(*leveli).actions.is_empty() || !(*leveli).syms.is_empty() {
                 nonEmptyLevels = level.wrapping_add(1_u32);
             }
-            actionList = (*actionList).common.next as *mut ExprDef;
+            actionList = from_common!((*actionList).common.next, ExprDef);
             level = level.wrapping_add(1);
         }
         if nonEmptyLevels < nLevels {

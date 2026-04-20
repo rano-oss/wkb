@@ -7,14 +7,12 @@ pub struct xkb_event {
     pub data: xkb_event_data,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
 
 pub union xkb_event_data {
     pub keycode: u32,
     pub components: xkb_event_components,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
 
 pub struct xkb_event_components {
     pub components: state_components,
@@ -35,7 +33,6 @@ pub struct state_components {
     pub controls: xkb_action_controls,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
 
 pub struct xkb_state_update_v1 {
     pub size: usize,
@@ -43,7 +40,6 @@ pub struct xkb_state_update_v1 {
     pub layout_policy: *const xkb_layout_policy_update_v1,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
 
 pub struct xkb_layout_policy_update_v1 {
     pub size: usize,
@@ -51,7 +47,6 @@ pub struct xkb_layout_policy_update_v1 {
     pub redirect: u32,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
 
 pub struct xkb_state_components_update_v1 {
     pub size: usize,
@@ -309,14 +304,12 @@ pub const XKB_FILTER_CONSUME: xkb_filter_result = 0;
 
 pub const XKB_FILTER_CONTINUE: xkb_filter_result = 1;
 #[derive(Copy, Clone)]
-#[repr(C)]
 
 pub union group_latch_priv {
     pub priv_0: u32,
     pub latch_state: GroupLatchState,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct GroupLatchState {
     pub latch: u32,
     pub group_delta: i32,

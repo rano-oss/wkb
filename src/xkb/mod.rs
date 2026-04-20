@@ -54,7 +54,7 @@ fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
     use rust_types::RxkbContext;
 
     // Create registry context
-    let ctx = match RxkbContext::new() {
+    let mut ctx = match RxkbContext::new() {
         Some(ctx) => ctx,
         None => return vec![String::new()], // Failed to create context, return default
     };
@@ -70,26 +70,18 @@ fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
     let mut layouts = Vec::new();
 
     // Iterate through all layouts
-    let mut layout_opt = ctx.layout_first();
-
-    while let Some(layout) = layout_opt {
-        if let Some(layout_name) = layout.get_name() {
-            // Check if this layout matches our locale
-            if layout_name == locale {
-                match layout.get_variant() {
-                    None => {
-                        // Base layout (no variant) - store empty string
-                        layouts.push(String::new());
-                    }
-                    Some(variant) => {
-                        // Variant layout - store the variant name
-                        layouts.push(variant);
-                    }
-                }
+    for layout in ctx.layouts() {
+        let layout_name = layout.name();
+        if !layout_name.is_empty() && layout_name == locale {
+            let variant = layout.variant();
+            if variant.is_empty() {
+                // Base layout (no variant) - store empty string
+                layouts.push(String::new());
+            } else {
+                // Variant layout - store the variant name
+                layouts.push(variant.to_string());
             }
         }
-
-        layout_opt = layout.next();
     }
 
     // Context is automatically cleaned up via Drop

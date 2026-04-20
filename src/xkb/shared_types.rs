@@ -759,7 +759,6 @@ pub struct xkb_component_names {
 }
 
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct xkb_state_components_update {
     pub size: usize,
     pub components: u32,
@@ -774,7 +773,6 @@ pub struct xkb_state_components_update {
 }
 
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct xkb_layout_policy_update {
     pub size: usize,
     pub policy: u32,
@@ -782,7 +780,6 @@ pub struct xkb_layout_policy_update {
 }
 
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct xkb_state_update {
     pub size: usize,
     pub components: *const xkb_state_components_update,
@@ -830,7 +827,6 @@ pub const XKB_LEVEL_MAX_IMPL: i32 = 2048;
 pub const XKB_MAX_MODS: u32 = (std::mem::size_of::<u32>()).wrapping_mul(CHAR_BIT as usize) as u32;
 
 #[derive(Copy, Clone)]
-#[repr(C)]
 pub struct xkb_keymap_format_ops {
     pub keymap_new_from_names: Option<fn(*mut xkb_keymap, *const xkb_rule_names) -> bool>,
     pub keymap_new_from_string: Option<fn(*mut xkb_keymap, *const i8, usize) -> bool>,

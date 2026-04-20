@@ -132,19 +132,19 @@ pub struct mapping {
 }
 pub type kccgst_mask_t = u8;
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub union LayoutIdxUnion {
     pub single: LayoutIdxSingle,
     pub range: LayoutIdxRange,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub struct LayoutIdxRange {
     pub layout_idx_min: u32,
     pub layout_idx_max: u32,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub struct LayoutIdxSingle {
     pub layout_idx: u32,
     pub variant_idx: u32,
@@ -162,7 +162,7 @@ pub struct group {
     pub elements: Vec<sval>,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub union lvalue {
     pub string: sval,
 }
@@ -197,7 +197,7 @@ pub const LAYOUT_INDEX_SINGLE: layout_index_ranges = 4294967291;
 pub const LAYOUT_INDEX_ANY: layout_index_ranges = 4294967294;
 pub const LAYOUT_INDEX_LATER: layout_index_ranges = 4294967293;
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub struct LayoutIndexName {
     pub name: *const i8,
     pub length: i32,

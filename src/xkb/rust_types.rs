@@ -482,98 +482,29 @@ impl Drop for State {
 
 /// Safe wrapper around rxkb_context for keyboard layout registry
 pub struct RxkbContext {
-    ptr: *mut super::registry::rxkb_context,
+    inner: Box<super::registry::rxkb_context>,
 }
 
 impl RxkbContext {
     /// Create a new registry context
     pub fn new() -> Option<Self> {
-        unsafe {
-            let ptr = super::registry::rxkb_context_new(super::registry::RXKB_CONTEXT_NO_FLAGS);
-            if ptr.is_null() {
-                None
-            } else {
-                Some(RxkbContext { ptr })
-            }
-        }
+        let inner = super::registry::rxkb_context::new(super::registry::RXKB_CONTEXT_NO_FLAGS)?;
+        Some(RxkbContext { inner })
     }
 
     /// Load default registry paths
-    pub fn include_path_append_default(&self) {
-        unsafe {
-            super::registry::rxkb_context_include_path_append_default(self.ptr);
-        }
+    pub fn include_path_append_default(&mut self) {
+        self.inner.include_path_append_default();
     }
 
     /// Parse the registry for the given ruleset (typically "evdev")
-    pub fn parse(&self, ruleset: &str) -> bool {
-        unsafe {
-            let ruleset_cstr = std::ffi::CString::new(ruleset).unwrap_or_default();
-            super::registry::rxkb_context_parse(self.ptr, ruleset_cstr.as_ptr())
-        }
+    pub fn parse(&mut self, ruleset: &str) -> bool {
+        self.inner.parse(ruleset)
     }
 
-    /// Get the first layout in the registry
-    pub fn layout_first(&self) -> Option<RxkbLayout> {
-        unsafe {
-            let ptr = super::registry::rxkb_layout_first(self.ptr);
-            if ptr.is_null() {
-                None
-            } else {
-                Some(RxkbLayout { ptr })
-            }
-        }
-    }
-}
-
-impl Drop for RxkbContext {
-    fn drop(&mut self) {
-        unsafe {
-            super::registry::rxkb_context_unref(self.ptr);
-        }
-    }
-}
-
-/// Safe wrapper around rxkb_layout for keyboard layout information
-pub struct RxkbLayout {
-    ptr: *mut super::registry::rxkb_layout,
-}
-
-impl RxkbLayout {
-    /// Get the layout name (e.g., "us", "de", "fr")
-    pub fn get_name(&self) -> Option<String> {
-        unsafe {
-            let name = super::registry::rxkb_layout_get_name(self.ptr);
-            if name.is_empty() {
-                None
-            } else {
-                Some(name.to_string())
-            }
-        }
-    }
-
-    /// Get the layout variant (e.g., "dvorak", "colemak"), returns None for base layout
-    pub fn get_variant(&self) -> Option<String> {
-        unsafe {
-            let variant = super::registry::rxkb_layout_get_variant(self.ptr);
-            if variant.is_empty() {
-                None
-            } else {
-                Some(variant.to_string())
-            }
-        }
-    }
-
-    /// Get the next layout in the registry
-    pub fn next(&self) -> Option<RxkbLayout> {
-        unsafe {
-            let ptr = super::registry::rxkb_layout_next(self.ptr);
-            if ptr.is_null() {
-                None
-            } else {
-                Some(RxkbLayout { ptr })
-            }
-        }
+    /// Iterate over all layouts in the registry
+    pub fn layouts(&self) -> impl Iterator<Item = &super::registry::rxkb_layout> {
+        self.inner.layouts().iter()
     }
 }
 

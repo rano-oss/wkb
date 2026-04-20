@@ -13,7 +13,7 @@ pub struct xkb_compose_table {
     pub nodes: Vec<compose_node>,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub struct compose_node {
     pub keysym: u32,
     pub lokid: u32,
@@ -21,7 +21,7 @@ pub struct compose_node {
     pub data: ComposeNodeData,
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub union ComposeNodeData {
     pub tag: ComposeTag,
     pub internal: ComposeInternal,
@@ -29,7 +29,7 @@ pub union ComposeNodeData {
 }
 /// Leaf node: bits 0..30 = utf8 index, bit 31 = is_leaf (always true).
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub struct ComposeLeaf {
     pub utf8_is_leaf: u32,
     pub keysym: u32,
@@ -42,14 +42,14 @@ impl ComposeLeaf {
 }
 /// Internal node: bits 0..30 = pad, bit 31 = is_leaf (always false).
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub struct ComposeInternal {
     pub _pad_is_leaf: u32,
     pub eqkid: u32,
 }
 /// Tag-only accessor: bit 31 = is_leaf discriminant.
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub struct ComposeTag {
     pub _pad_is_leaf: u32,
 }
@@ -60,7 +60,7 @@ impl ComposeTag {
     }
 }
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub struct xkb_compose_table_entry {
     pub sequence_length: usize,
     pub sequence: *mut u32,

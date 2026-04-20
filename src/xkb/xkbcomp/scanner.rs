@@ -70,7 +70,7 @@ pub mod parser_h {
     pub const END_OF_FILE: i32 = 0;
     pub const YYEMPTY: i32 = -2;
     #[derive(Copy, Clone)]
-    #[repr(C)]
+
     pub union YYSTYPE {
         pub num: i64,
         pub file_type: u32,
@@ -104,31 +104,31 @@ pub mod parser_h {
         pub fileList: FileList,
     }
     #[derive(Copy, Clone)]
-    #[repr(C)]
+
     pub struct FileList {
         pub head: *mut XkbFile,
         pub last: *mut XkbFile,
     }
     #[derive(Copy, Clone)]
-    #[repr(C)]
+
     pub struct VModList {
         pub head: *mut VModDef,
         pub last: *mut VModDef,
     }
     #[derive(Copy, Clone)]
-    #[repr(C)]
+
     pub struct VarList {
         pub head: *mut VarDef,
         pub last: *mut VarDef,
     }
     #[derive(Copy, Clone)]
-    #[repr(C)]
+
     pub struct ExprList {
         pub head: *mut ExprDef,
         pub last: *mut ExprDef,
     }
     #[derive(Copy, Clone)]
-    #[repr(C)]
+
     pub struct AnyList {
         pub head: *mut ParseCommon,
         pub last: *mut ParseCommon,

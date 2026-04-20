@@ -7,6 +7,52 @@
 use crate::xkb::shared_types::{xkb_context, xkb_keymap, xkb_overlay_index_t};
 use crate::xkb::text::LookupEntry;
 
+/// Convert a `*mut ParseCommon` (pointing to the `common` field inside a struct at the given offset)
+/// back to the struct pointer.  Works regardless of struct layout.
+/// Returns null if `common_ptr` is null.
+///
+/// # Safety
+/// `common_ptr` must be null or actually point to the `common` field of a valid struct
+/// whose `common` field is at the given `offset`.
+#[inline]
+pub unsafe fn from_common_ptr_offset(common_ptr: *mut ParseCommon, offset: usize) -> *mut u8 {
+    if common_ptr.is_null() {
+        return std::ptr::null_mut();
+    }
+    unsafe { (common_ptr as *mut u8).sub(offset) }
+}
+
+/// Convenience macro: `from_common!(ptr, Type)` → `*mut Type`
+macro_rules! from_common {
+    ($ptr:expr, $T:ty) => {
+        crate::xkb::shared_ast_types::from_common_ptr_offset($ptr, std::mem::offset_of!($T, common))
+            as *mut $T
+    };
+}
+pub(crate) use from_common;
+
+/// Get a `*mut ParseCommon` from a pointer to a struct that has a `common` field.
+/// This is equivalent to `&raw mut (*ptr).common` but expressed as a macro for brevity.
+macro_rules! to_common {
+    ($ptr:expr) => {
+        &raw mut (*$ptr).common as *mut ParseCommon
+    };
+}
+pub(crate) use to_common;
+
+/// Null-safe version: returns null if input is null, otherwise to_common!
+macro_rules! to_common_or_null {
+    ($ptr:expr) => {{
+        let __p = $ptr;
+        if __p.is_null() {
+            std::ptr::null_mut()
+        } else {
+            unsafe { &raw mut (*__p).common as *mut ParseCommon }
+        }
+    }};
+}
+pub(crate) use to_common_or_null;
+
 // message_code types needed by Report* inline functions
 pub type xkb_message_code = u32;
 pub const XKB_ERROR_WRONG_FIELD_TYPE: xkb_message_code = 578;
@@ -83,7 +129,7 @@ pub const MERGE_DEFAULT: merge_mode = 0;
 // ── Core AST node types ─────────────────────────────────────────────
 
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub struct _ParseCommon {
     pub next: *mut _ParseCommon,
     pub type_0: stmt_type,
@@ -91,7 +137,7 @@ pub struct _ParseCommon {
 pub type ParseCommon = _ParseCommon;
 
 #[derive(Clone)]
-#[repr(C)]
+
 pub struct _IncludeStmt {
     pub common: ParseCommon,
     pub merge: merge_mode,
@@ -109,7 +155,7 @@ pub type IncludeStmt = _IncludeStmt;
 /// `common` maintains layout compatibility with ParseCommon overlay pattern.
 /// `common.next` is used for intrusive linked lists.
 /// `common.type_0` is redundant with `kind` but needed for FreeStmt dispatch.
-#[repr(C)]
+
 pub struct ExprDef {
     pub common: ParseCommon,
     pub kind: ExprKind,
@@ -229,7 +275,6 @@ pub use crate::xkb::xkbcomp::ast_build::{
 
 // ── Statement definition types ──────────────────────────────────────
 
-#[repr(C)]
 pub struct VarDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
@@ -237,7 +282,6 @@ pub struct VarDef {
     pub value: Option<Box<ExprDef>>,
 }
 
-#[repr(C)]
 pub struct VModDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
@@ -246,7 +290,7 @@ pub struct VModDef {
 }
 
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub struct KeycodeDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
@@ -255,7 +299,7 @@ pub struct KeycodeDef {
 }
 
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub struct KeyAliasDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
@@ -263,7 +307,6 @@ pub struct KeyAliasDef {
     pub real: u32,
 }
 
-#[repr(C)]
 pub struct KeyTypeDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
@@ -271,7 +314,6 @@ pub struct KeyTypeDef {
     pub body: Vec<VarDef>,
 }
 
-#[repr(C)]
 pub struct SymbolsDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
@@ -279,7 +321,6 @@ pub struct SymbolsDef {
     pub symbols: Vec<VarDef>,
 }
 
-#[repr(C)]
 pub struct ModMapDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
@@ -287,7 +328,6 @@ pub struct ModMapDef {
     pub keys: Vec<ExprDef>,
 }
 
-#[repr(C)]
 pub struct GroupCompatDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
@@ -295,7 +335,6 @@ pub struct GroupCompatDef {
     pub def: Option<Box<ExprDef>>,
 }
 
-#[repr(C)]
 pub struct InterpDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
@@ -304,7 +343,6 @@ pub struct InterpDef {
     pub def: Vec<VarDef>,
 }
 
-#[repr(C)]
 pub struct LedNameDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
@@ -313,7 +351,6 @@ pub struct LedNameDef {
     pub name: Option<Box<ExprDef>>,
 }
 
-#[repr(C)]
 pub struct LedMapDef {
     pub common: ParseCommon,
     pub merge: merge_mode,
@@ -322,7 +359,7 @@ pub struct LedMapDef {
 }
 
 #[derive(Clone)]
-#[repr(C)]
+
 pub struct UnknownStatement {
     pub common: ParseCommon,
     pub name: String,
@@ -414,7 +451,7 @@ pub unsafe fn collect_vardefs(head: *mut VarDef) -> Vec<VarDef> {
         let next = unsafe { (*cur).common.next };
         unsafe { (*cur).common.next = std::ptr::null_mut() };
         defs.push(unsafe { *Box::from_raw(cur) });
-        cur = next as *mut VarDef;
+        cur = unsafe { from_common!(next, VarDef) };
     }
     defs
 }
@@ -430,7 +467,7 @@ pub unsafe fn collect_exprs(head: *mut ExprDef) -> Vec<ExprDef> {
         let next = unsafe { (*cur).common.next };
         unsafe { (*cur).common.next = std::ptr::null_mut() };
         exprs.push(unsafe { *Box::from_raw(cur) });
-        cur = next as *mut ExprDef;
+        cur = unsafe { from_common!(next, ExprDef) };
     }
     exprs
 }
@@ -448,26 +485,26 @@ pub unsafe fn collect_stmts(head: *mut ParseCommon) -> Vec<Statement> {
         unsafe { (*cur).next = std::ptr::null_mut() }; // detach from chain
         let stmt = unsafe {
             match (*cur).type_0 {
-                STMT_INCLUDE => Statement::Include(Box::from_raw(cur as *mut IncludeStmt)),
-                STMT_KEYCODE => Statement::Keycode(Box::from_raw(cur as *mut KeycodeDef)),
-                STMT_ALIAS => Statement::KeyAlias(Box::from_raw(cur as *mut KeyAliasDef)),
-                STMT_VAR => Statement::Var(Box::from_raw(cur as *mut VarDef)),
-                STMT_TYPE => Statement::KeyType(Box::from_raw(cur as *mut KeyTypeDef)),
-                STMT_INTERP => Statement::Interp(Box::from_raw(cur as *mut InterpDef)),
-                STMT_VMOD => Statement::VMod(Box::from_raw(cur as *mut VModDef)),
-                STMT_SYMBOLS => Statement::Symbols(Box::from_raw(cur as *mut SymbolsDef)),
-                STMT_MODMAP => Statement::ModMap(Box::from_raw(cur as *mut ModMapDef)),
+                STMT_INCLUDE => Statement::Include(Box::from_raw(from_common!(cur, IncludeStmt))),
+                STMT_KEYCODE => Statement::Keycode(Box::from_raw(from_common!(cur, KeycodeDef))),
+                STMT_ALIAS => Statement::KeyAlias(Box::from_raw(from_common!(cur, KeyAliasDef))),
+                STMT_VAR => Statement::Var(Box::from_raw(from_common!(cur, VarDef))),
+                STMT_TYPE => Statement::KeyType(Box::from_raw(from_common!(cur, KeyTypeDef))),
+                STMT_INTERP => Statement::Interp(Box::from_raw(from_common!(cur, InterpDef))),
+                STMT_VMOD => Statement::VMod(Box::from_raw(from_common!(cur, VModDef))),
+                STMT_SYMBOLS => Statement::Symbols(Box::from_raw(from_common!(cur, SymbolsDef))),
+                STMT_MODMAP => Statement::ModMap(Box::from_raw(from_common!(cur, ModMapDef))),
                 STMT_GROUP_COMPAT => {
-                    Statement::GroupCompat(Box::from_raw(cur as *mut GroupCompatDef))
+                    Statement::GroupCompat(Box::from_raw(from_common!(cur, GroupCompatDef)))
                 }
-                STMT_LED_MAP => Statement::LedMap(Box::from_raw(cur as *mut LedMapDef)),
-                STMT_LED_NAME => Statement::LedName(Box::from_raw(cur as *mut LedNameDef)),
+                STMT_LED_MAP => Statement::LedMap(Box::from_raw(from_common!(cur, LedMapDef))),
+                STMT_LED_NAME => Statement::LedName(Box::from_raw(from_common!(cur, LedNameDef))),
                 STMT_UNKNOWN_COMPOUND | STMT_UNKNOWN_DECLARATION => {
-                    Statement::Unknown(Box::from_raw(cur as *mut UnknownStatement))
+                    Statement::Unknown(Box::from_raw(from_common!(cur, UnknownStatement)))
                 }
                 _ => {
                     // All STMT_EXPR_* types
-                    Statement::Expr(Box::from_raw(cur as *mut ExprDef))
+                    Statement::Expr(Box::from_raw(from_common!(cur, ExprDef)))
                 }
             }
         };
@@ -487,7 +524,7 @@ pub unsafe fn collect_file_stmts(head: *mut ParseCommon) -> Vec<Statement> {
     while !cur.is_null() {
         let next = unsafe { (*cur).next };
         unsafe { (*cur).next = std::ptr::null_mut() };
-        stmts.push(unsafe { Statement::XkbFile(Box::from_raw(cur as *mut XkbFile)) });
+        stmts.push(unsafe { Statement::XkbFile(Box::from_raw(from_common!(cur, XkbFile))) });
         cur = next;
     }
     stmts
@@ -496,7 +533,6 @@ pub unsafe fn collect_file_stmts(head: *mut ParseCommon) -> Vec<Statement> {
 // Statement::Drop — no longer needed since all inner linked lists have been converted to Vec.
 // Vec<ExprDef> and Vec<VarDef> drop automatically.
 
-#[repr(C)]
 pub struct XkbFile {
     pub common: ParseCommon,
     pub name: String,
@@ -531,14 +567,12 @@ pub const PARSER_NO_FIELD_TYPE_MISMATCH: u32 = 2;
 pub const PARSER_NO_UNKNOWN_STATEMENTS: u32 = 1;
 pub const PARSER_NO_STRICT_FLAGS: u32 = 0;
 
-#[repr(C)]
 pub struct pending_computation {
     pub expr: Option<Box<ExprDef>>,
     pub computed: bool,
     pub value: u32,
 }
 
-#[repr(C)]
 pub struct xkb_keymap_info {
     pub keymap: *mut xkb_keymap,
     pub strict: u32,
@@ -571,7 +605,7 @@ impl xkb_keymap_info {
 
 /// Lookup tables for group names/masks (was C2Rust_Unnamed_14 in xkbcomp_priv_h).
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub struct XkbcompLookup {
     pub groupIndexNames: [LookupEntry; 3],
     pub groupMaskNames: [LookupEntry; 5],
@@ -579,7 +613,7 @@ pub struct XkbcompLookup {
 
 /// Feature flags for keymap compilation (was C2Rust_Unnamed_15 in xkbcomp_priv_h).
 #[derive(Copy, Clone)]
-#[repr(C)]
+
 pub struct XkbcompFeatures {
     pub max_groups: u32,
     pub max_overlays: xkb_overlay_index_t,

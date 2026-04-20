@@ -2,7 +2,6 @@
 use crate::xkb::shared_types::*;
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct sval {
     pub len: usize,
     pub start: *const i8,

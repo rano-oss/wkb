@@ -1,4 +1,5 @@
 use super::prelude::*;
+use crate::xkb::shared_ast_types::to_common_or_null;
 pub use crate::xkb::shared_ast_types::xkb_file_type_to_string;
 use crate::xkb::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
 pub use crate::xkb::shared_types::{
@@ -689,7 +690,7 @@ static COMPILE_FILE_FNS: [compile_file_fn; 4] = {
 fn pending_computations_array_free(p: &mut Vec<pending_computation>) {
     for pc in p.iter_mut() {
         if let Some(boxed) = pc.expr.take() {
-            FreeStmt(Box::into_raw(boxed) as *mut ParseCommon);
+            FreeStmt(to_common_or_null!(Box::into_raw(boxed)));
         }
     }
     p.clear();
