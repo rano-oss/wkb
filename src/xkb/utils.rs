@@ -254,42 +254,6 @@ pub unsafe fn is_absolute_path(path: *const i8) -> bool {
 // Safe Rust replacements for C-style parse functions.
 // Return count of bytes consumed (positive) or -1 on overflow.
 
-pub unsafe fn xkb_check_versioned_struct_size_(
-    v1_size: usize,
-    min_size: usize,
-    lib_size: usize,
-    caller_size: usize,
-    caller_data: *const ::core::ffi::c_void,
-) -> xkb_error_code {
-    use crate::xkb::shared_types::{
-        XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
-        XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_SUCCESS,
-    };
-    unsafe {
-        if caller_size < v1_size {
-            return XKB_ERROR_ABI_INVALID_STRUCT_SIZE;
-        }
-        if caller_size < min_size {
-            return XKB_ERROR_ABI_BACKWARD_COMPAT;
-        }
-        if caller_size <= lib_size {
-            return XKB_SUCCESS;
-        }
-        let mut p: *const ::core::ffi::c_uchar =
-            (caller_data as *const ::core::ffi::c_uchar).add(lib_size);
-        let end: *const ::core::ffi::c_uchar =
-            (caller_data as *const ::core::ffi::c_uchar).add(caller_size);
-        while p < end {
-            let c2rust_fresh1 = p;
-            p = p.offset(1);
-            if *c2rust_fresh1 != 0 {
-                return XKB_ERROR_ABI_FORWARD_COMPAT;
-            }
-        }
-        XKB_SUCCESS
-    }
-}
-
 /// Parse decimal digits from a byte slice into u32.
 /// Returns (value, count). count > 0 on success, -1 on overflow.
 pub fn parse_dec_u32(s: &[u8]) -> (u32, i32) {

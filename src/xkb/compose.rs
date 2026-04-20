@@ -72,58 +72,6 @@ pub type xkb_compose_compile_flags = u32;
 pub const XKB_COMPOSE_COMPILE_NO_FLAGS: xkb_compose_compile_flags = 0;
 pub type xkb_compose_format = u32;
 pub const XKB_COMPOSE_FORMAT_TEXT_V1: xkb_compose_format = 1;
-pub type xkb_compose_table_iter_t =
-    Option<unsafe fn(*mut xkb_compose_table_entry, *mut ::core::ffi::c_void) -> ()>;
-
-unsafe fn for_each_helper(
-    table: *mut xkb_compose_table,
-    iter: xkb_compose_table_iter_t,
-    data: *mut ::core::ffi::c_void,
-    syms: *mut u32,
-    mut nsyms: usize,
-    p: u32,
-) {
-    unsafe {
-        if p == 0 {
-            return;
-        }
-        let node: *const compose_node = (*table).nodes.as_ptr().offset(p as isize);
-        for_each_helper(table, iter, data, syms, nsyms, (*node).lokid);
-        let c2rust_fresh0 = nsyms;
-        nsyms = nsyms.wrapping_add(1);
-        *syms.add(c2rust_fresh0) = (*node).keysym;
-        if (*node).data.tag.is_leaf() {
-            let mut entry: xkb_compose_table_entry = xkb_compose_table_entry {
-                sequence_length: nsyms,
-                sequence: syms,
-                keysym: (*node).data.leaf.keysym,
-                utf8: (*table)
-                    .utf8
-                    .as_ptr()
-                    .offset((*node).data.leaf.utf8() as isize) as *mut i8,
-            };
-            iter.expect("non-null function pointer")(&raw mut entry, data);
-        } else {
-            for_each_helper(table, iter, data, syms, nsyms, (*node).data.internal.eqkid);
-        }
-        nsyms = nsyms.wrapping_sub(1);
-        for_each_helper(table, iter, data, syms, nsyms, (*node).hikid);
-    }
-}
-
-pub unsafe fn xkb_compose_table_for_each(
-    table: *mut xkb_compose_table,
-    iter: xkb_compose_table_iter_t,
-    data: *mut ::core::ffi::c_void,
-) {
-    unsafe {
-        if (*table).nodes.len() <= 1 {
-            return;
-        }
-        let mut syms: [u32; 10] = [0; 10];
-        for_each_helper(table, iter, data, &raw mut syms as *mut u32, 0_usize, 1_u32);
-    }
-}
 
 use crate::xkb::shared_types::*;
 
