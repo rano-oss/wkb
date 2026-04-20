@@ -369,38 +369,21 @@ fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u32) -> b
         }
         std::ptr::copy_nonoverlapping(name.start as *const u8, &raw mut buf as *mut u8, name.len);
         buf[name.len] = '\0' as i32 as i8;
-        let sym: u32 = xkb_keysym_from_name(&raw mut buf as *mut i8, XKB_KEYSYM_NO_FLAGS);
+        let buf_bytes = std::slice::from_raw_parts(&buf as *const i8 as *const u8, name.len + 1);
+        let sym: u32 = xkb_keysym_from_name(buf_bytes, XKB_KEYSYM_NO_FLAGS);
         if sym != XKB_KEY_NoSymbol as u32 {
             *sym_rtrn = sym;
             if ((*(*param).ctx).log_verbosity >= 2_i32) as i32 as i64 != 0 {
-                let mut ref_name: *const i8 = std::ptr::null();
-                if xkb_keysym_is_deprecated(sym, &raw mut buf as *mut i8, &raw mut ref_name) {
-                    let buf_str = std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
-                        &raw mut buf as *const i8,
-                    ));
-                    if ref_name.is_null() {
-                        let loc: scanner_loc = (*(*param).scanner).token_location();
-                        log::warn!(
-                            "[XKB-{:03}] {}:{}:{}: deprecated keysym \"{}\".\n",
-                            XKB_WARNING_DEPRECATED_KEYSYM as i32,
-                            &(*(*param).scanner).file_name,
-                            loc.line,
-                            loc.column,
-                            buf_str
-                        );
-                    } else {
-                        let ref_str = std::str::from_utf8_unchecked(
-                            crate::xkb::utils::cstr_as_bytes(ref_name),
-                        );
-                        let loc_0: scanner_loc = (*(*param).scanner).token_location();
-                        log::warn!("[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{}\"; please use \"{}\" instead.\n",
-                            XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
-                            &(*(*param).scanner).file_name,
-                            loc_0.line,
-                            loc_0.column,
-                            buf_str,
-                            ref_str);
-                    }
+                let buf_str = std::str::from_utf8_unchecked(&buf_bytes[..name.len]);
+                if let Some(ref_name) = xkb_keysym_is_deprecated(sym, buf_bytes) {
+                    let loc: scanner_loc = (*(*param).scanner).token_location();
+                    log::warn!("[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{}\"; please use \"{}\" instead.\n",
+                        XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
+                        &(*(*param).scanner).file_name,
+                        loc.line,
+                        loc.column,
+                        buf_str,
+                        ref_name);
                 }
             }
             return true;
@@ -2578,32 +2561,18 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                             if (*yyvsp.offset(0_i32 as isize)).num <= XKB_KEYSYM_MAX as i64 {
                                 yyval.keysym = (*yyvsp.offset(0_i32 as isize)).num as u32;
                                 if ((*(*param).ctx).log_verbosity >= 2_i32) as i32 as i64 != 0 {
-                                    let mut ref_name: *const i8 = std::ptr::null();
-                                    if xkb_keysym_is_deprecated(
-                                        yyval.keysym,
-                                        std::ptr::null(),
-                                        &raw mut ref_name,
-                                    ) {
-                                        if ref_name.is_null() {
-                                            let loc_2: scanner_loc =
-                                                (*(*param).scanner).token_location();
-                                            log::warn!("[XKB-{:03}] {}:{}:{}: deprecated keysym \"{:#06x}\".\n",
-                                                XKB_WARNING_DEPRECATED_KEYSYM as i32,
-                                                &(*(*param).scanner).file_name,
-                                                loc_2.line,
-                                                loc_2.column,
-                                                yyval.keysym);
-                                        } else {
-                                            let loc_3: scanner_loc =
-                                                (*(*param).scanner).token_location();
-                                            log::warn!("[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{:#06x}\"; please use \"{}\" instead.\n",
-                                                XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
-                                                &(*(*param).scanner).file_name,
-                                                loc_3.line,
-                                                loc_3.column,
-                                                yyval.keysym,
-                                                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(ref_name)));
-                                        }
+                                    if let Some(ref_name) =
+                                        xkb_keysym_is_deprecated(yyval.keysym, &[])
+                                    {
+                                        let loc_3: scanner_loc =
+                                            (*(*param).scanner).token_location();
+                                        log::warn!("[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{:#06x}\"; please use \"{}\" instead.\n",
+                                            XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
+                                            &(*(*param).scanner).file_name,
+                                            loc_3.line,
+                                            loc_3.column,
+                                            yyval.keysym,
+                                            ref_name);
                                     }
                                 }
                             } else {

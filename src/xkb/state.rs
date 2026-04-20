@@ -2003,17 +2003,15 @@ pub fn xkb_state_key_get_utf8(state: &xkb_state, kc: u32) -> String {
         syms = xkb_state_key_get_syms(state, kc);
     }
     let mut result = Vec::new();
-    let mut tmp: [i8; 5] = [0; 5];
+    let mut tmp = [0u8; 5];
     for &s in syms {
-        let ret = unsafe {
-            xkb_keysym_to_utf8(s, &raw mut tmp as *mut i8, std::mem::size_of::<[i8; 5]>())
-        };
+        let ret = xkb_keysym_to_utf8(s, &mut tmp);
         if ret <= 0 {
             return String::new();
         }
         let len = (ret - 1) as usize;
         for j in 0..len {
-            result.push(tmp[j] as u8);
+            result.push(tmp[j]);
         }
     }
     // Validate UTF-8

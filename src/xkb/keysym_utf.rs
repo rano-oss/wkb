@@ -3984,20 +3984,14 @@ pub fn xkb_keysym_to_utf32(keysym: u32) -> u32 {
     keysym_to_codepoint(keysym).unwrap_or(0)
 }
 
-/// FFI wrapper: Convert keysym to UTF-8 string (C-compatible)
-///
-/// Writes UTF-8 bytes to `buffer` (must have space for at least 5 bytes).
+/// Convert keysym to UTF-8 string, written into `buffer`.
 /// Returns number of bytes written (including null terminator), or:
 /// - 0 if conversion fails
-/// - -1 if buffer too small
-pub unsafe fn xkb_keysym_to_utf8(keysym: u32, buffer: *mut i8, size: usize) -> i32 {
+/// - -1 if buffer too small (needs at least 5 bytes)
+pub fn xkb_keysym_to_utf8(keysym: u32, buffer: &mut [u8]) -> i32 {
     const MAX_UTF8_SIZE: usize = 5;
 
-    if size < MAX_UTF8_SIZE {
-        return -1;
-    }
-
-    if buffer.is_null() {
+    if buffer.len() < MAX_UTF8_SIZE {
         return -1;
     }
 
@@ -4010,11 +4004,8 @@ pub unsafe fn xkb_keysym_to_utf8(keysym: u32, buffer: *mut i8, size: usize) -> i
     let utf8_bytes = ch.encode_utf8(&mut tmp).as_bytes();
 
     // Copy to buffer
-    unsafe {
-        std::ptr::copy_nonoverlapping(utf8_bytes.as_ptr(), buffer as *mut u8, utf8_bytes.len());
-        // Null terminate
-        *buffer.add(utf8_bytes.len()) = 0;
-    }
+    buffer[..utf8_bytes.len()].copy_from_slice(utf8_bytes);
+    buffer[utf8_bytes.len()] = 0; // Null terminate
 
     // Return length + 1 for null terminator (matches old C behavior)
     (utf8_bytes.len() + 1) as i32
@@ -4060,18 +4051,14 @@ mod tests {
     #[test]
     fn test_ffi_compat() {
         // Test xkb_keysym_to_utf32
-        unsafe {
-            assert_eq!(xkb_keysym_to_utf32(0x41), 0x41); // 'A'
-            assert_eq!(xkb_keysym_to_utf32(0), 0); // Invalid
-        }
+        assert_eq!(xkb_keysym_to_utf32(0x41), 0x41); // 'A'
+        assert_eq!(xkb_keysym_to_utf32(0), 0); // Invalid
 
         // Test xkb_keysym_to_utf8
-        unsafe {
-            let mut buf = [0i8; 10];
-            let len = xkb_keysym_to_utf8(0x41, buf.as_mut_ptr(), 10);
-            assert_eq!(len, 2); // 'A' + null = 2 bytes
-            assert_eq!(buf[0], b'A' as i8);
-            assert_eq!(buf[1], 0);
-        }
+        let mut buf = [0u8; 10];
+        let len = xkb_keysym_to_utf8(0x41, &mut buf);
+        assert_eq!(len, 2); // 'A' + null = 2 bytes
+        assert_eq!(buf[0], b'A');
+        assert_eq!(buf[1], 0);
     }
 }

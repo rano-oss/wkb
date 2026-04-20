@@ -154,32 +154,6 @@ pub mod utf8_h {
         let encoded = ch.encode_utf8(&mut buffer[..]);
         encoded.len()
     }
-
-    /// Legacy FFI wrapper: Writes UTF-8 bytes to raw buffer (including null terminator).
-    /// Returns total bytes written (including null), or 0 on failure.
-    #[inline]
-    pub fn utf32_to_utf8(unichar: u32, buffer: *mut i8) -> i32 {
-        if buffer.is_null() {
-            return 0;
-        }
-
-        let Some(ch) = char::from_u32(unichar) else {
-            return 0;
-        };
-
-        unsafe {
-            let mut tmp = [0u8; 4];
-            let utf8_bytes = ch.encode_utf8(&mut tmp).as_bytes();
-
-            std::ptr::copy_nonoverlapping(utf8_bytes.as_ptr(), buffer as *mut u8, utf8_bytes.len());
-
-            // Null terminate
-            *buffer.add(utf8_bytes.len()) = 0;
-
-            // Return length + 1 for null terminator
-            (utf8_bytes.len() + 1) as i32
-        }
-    }
 }
 
 // Re-export parse functions from parser module

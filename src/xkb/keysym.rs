@@ -21785,7 +21785,7 @@ pub use self::keysym_names_h::{
     deprecated_keysyms, explicit_deprecated_aliases, keysym_name_G, keysym_name_perfect_hash,
     keysym_names, keysym_to_name, name_keysym, name_to_keysym, DEPRECATED_KEYSYM, UNICODE_KEYSYM,
 };
-use crate::xkb::utils::{cstr_as_bytes, istrcmp};
+use crate::xkb::utils::istrcmp;
 fn find_keysym_index(ks: u32) -> isize {
     if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
         return -1_i32 as isize;
@@ -21830,117 +21830,104 @@ pub fn xkb_keysym_get_name(ks: u32) -> String {
     format!("0x{:08x}", ks)
 }
 
-unsafe fn parse_keysym_hex(s: *const i8, out: *mut u32) -> bool {
-    unsafe {
-        let s_bytes = std::ffi::CStr::from_ptr(s).to_bytes();
-        let slice = if s_bytes.len() > 8 {
-            &s_bytes[..8]
-        } else {
-            s_bytes
-        };
-        let (val, count) = crate::xkb::utils::parse_hex_u32(slice);
-        *out = val;
-        count > 0 && *s.offset(count as isize) as i32 == '\0' as i32
-    }
+fn parse_keysym_hex(s: &[u8], out: &mut u32) -> bool {
+    let slice = if s.len() > 8 { &s[..8] } else { s };
+    let (val, count) = crate::xkb::utils::parse_hex_u32(slice);
+    *out = val;
+    count > 0 && s.get(count as usize).copied() == Some(0)
 }
-pub unsafe fn xkb_keysym_from_name(name: *const i8, flags: xkb_keysym_flags) -> u32 {
-    unsafe {
-        const XKB_KEYSYM_FLAGS: xkb_keysym_flags = XKB_KEYSYM_CASE_INSENSITIVE;
-        if flags & !XKB_KEYSYM_FLAGS != 0 {
+pub fn xkb_keysym_from_name(name: &[u8], flags: xkb_keysym_flags) -> u32 {
+    const XKB_KEYSYM_FLAGS: xkb_keysym_flags = XKB_KEYSYM_CASE_INSENSITIVE;
+    if flags & !XKB_KEYSYM_FLAGS != 0 {
+        return XKB_KEY_NoSymbol as u32;
+    }
+    let mut entry_idx: Option<usize> = None;
+    let mut val: u32 = 0;
+    let icase: bool = flags & XKB_KEYSYM_CASE_INSENSITIVE != 0;
+    // name includes null terminator from C buffers; get the content before null
+    let name_bytes = if let Some(null_pos) = name.iter().position(|&b| b == 0) {
+        &name[..null_pos]
+    } else {
+        name
+    };
+    if !icase {
+        let pos: usize = keysym_name_perfect_hash(name_bytes);
+        if pos < name_to_keysym.len() {
+            if name_bytes == get_name_bytes(&name_to_keysym[pos]) {
+                return name_to_keysym[pos].keysym;
+            }
+        }
+    } else {
+        let mut lo: i32 = 0;
+        let mut hi: i32 = name_to_keysym.len() as i32 - 1;
+        while hi >= lo {
+            let mid = ((lo + hi) / 2) as usize;
+            let cmp = istrcmp(name_bytes, get_name_bytes(&name_to_keysym[mid]));
+            if cmp > 0 {
+                lo = mid as i32 + 1;
+            } else if cmp < 0 {
+                hi = mid as i32 - 1;
+            } else {
+                entry_idx = Some(mid);
+                break;
+            }
+        }
+        if let Some(mut idx) = entry_idx {
+            let last = name_to_keysym.len() - 1;
+            while idx < last
+                && istrcmp(
+                    get_name_bytes(&name_to_keysym[idx + 1]),
+                    get_name_bytes(&name_to_keysym[idx]),
+                ) == 0
+            {
+                idx += 1;
+            }
+            return name_to_keysym[idx].keysym;
+        }
+    }
+    if name_bytes.first() == Some(&b'U') || (icase && name_bytes.first() == Some(&b'u')) {
+        // Pass rest including original null terminator
+        let rest_start = 1;
+        let rest = &name[rest_start..];
+        if !parse_keysym_hex(rest, &mut val) {
             return XKB_KEY_NoSymbol as u32;
         }
-        let mut entry_idx: Option<usize> = None;
-        let mut val: u32 = 0;
-        let icase: bool = flags & XKB_KEYSYM_CASE_INSENSITIVE != 0;
-        let name_bytes = cstr_as_bytes(name);
-        if !icase {
-            let pos: usize = keysym_name_perfect_hash(name_bytes);
-            if pos < name_to_keysym.len() {
-                if name_bytes == get_name_bytes(&name_to_keysym[pos]) {
-                    return name_to_keysym[pos].keysym;
-                }
-            }
+        return if val > 0xff_u32 && val <= 0x10ffff_u32 {
+            (XKB_KEYSYM_UNICODE_OFFSET as u32).wrapping_add(val)
         } else {
-            let mut lo: i32 = 0;
-            let mut hi: i32 = name_to_keysym.len() as i32 - 1;
-            while hi >= lo {
-                let mid = ((lo + hi) / 2) as usize;
-                let cmp = istrcmp(name_bytes, get_name_bytes(&name_to_keysym[mid]));
-                if cmp > 0 {
-                    lo = mid as i32 + 1;
-                } else if cmp < 0 {
-                    hi = mid as i32 - 1;
-                } else {
-                    entry_idx = Some(mid);
-                    break;
-                }
-            }
-            if let Some(mut idx) = entry_idx {
-                // Walk forward to the last entry with the same case-insensitive name
-                // (preferring the exact-case match which comes last in sorted order)
-                let last = name_to_keysym.len() - 1;
-                while idx < last
-                    && istrcmp(
-                        get_name_bytes(&name_to_keysym[idx + 1]),
-                        get_name_bytes(&name_to_keysym[idx]),
-                    ) == 0
-                {
-                    idx += 1;
-                }
-                return name_to_keysym[idx].keysym;
-            }
+            xkb_utf32_to_keysym(val)
+        };
+    } else if name_bytes.get(0) == Some(&b'0')
+        && (name_bytes.get(1) == Some(&b'x') || (icase && name_bytes.get(1) == Some(&b'X')))
+    {
+        let rest = &name[2..];
+        if !parse_keysym_hex(rest, &mut val) || val > XKB_KEYSYM_MAX as u32 {
+            return XKB_KEY_NoSymbol as u32;
         }
-        if *name as i32 == 'U' as i32 || icase as i32 != 0 && *name as i32 == 'u' as i32 {
-            if !parse_keysym_hex(name.offset(1_i32 as isize) as *const i8, &raw mut val) {
-                return XKB_KEY_NoSymbol as u32;
-            }
-            return if val > 0xff_u32 && val <= 0x10ffff_u32 {
-                (XKB_KEYSYM_UNICODE_OFFSET as u32).wrapping_add(val)
-            } else {
-                xkb_utf32_to_keysym(val)
-            };
-        } else if *name.offset(0_i32 as isize) as i32 == '0' as i32
-            && (*name.offset(1_i32 as isize) as i32 == 'x' as i32
-                || icase as i32 != 0 && *name.offset(1_i32 as isize) as i32 == 'X' as i32)
-        {
-            if !parse_keysym_hex(name.offset(2_i32 as isize) as *const i8, &raw mut val)
-                || val > XKB_KEYSYM_MAX as u32
-            {
-                return XKB_KEY_NoSymbol as u32;
-            }
-            return val;
-        }
-        if name_bytes.starts_with(b"XF86_")
-            || (icase
-                && name_bytes
-                    .get(..5)
-                    .is_some_and(|s| s.eq_ignore_ascii_case(b"XF86_")))
-        {
-            // Convert "XF86_Foo" -> "XF86Foo" by removing the underscore
-            let mut tmp_buf: Vec<u8> = Vec::with_capacity(name_bytes.len());
-            tmp_buf.extend_from_slice(&name_bytes[..4]); // "XF86"
-            tmp_buf.extend_from_slice(&name_bytes[5..]); // skip underscore
-            tmp_buf.push(0); // null terminator
-            let ret = xkb_keysym_from_name(tmp_buf.as_ptr() as *const i8, flags);
-            return ret;
-        }
-        XKB_KEY_NoSymbol as u32
+        return val;
     }
+    if name_bytes.starts_with(b"XF86_")
+        || (icase
+            && name_bytes
+                .get(..5)
+                .is_some_and(|s| s.eq_ignore_ascii_case(b"XF86_")))
+    {
+        // Convert "XF86_Foo" -> "XF86Foo" by removing the underscore
+        let mut tmp_buf: Vec<u8> = Vec::with_capacity(name.len());
+        tmp_buf.extend_from_slice(&name_bytes[..4]); // "XF86"
+        tmp_buf.extend_from_slice(&name_bytes[5..]); // skip underscore
+        tmp_buf.push(0); // null terminator
+        let ret = xkb_keysym_from_name(&tmp_buf, flags);
+        return ret;
+    }
+    XKB_KEY_NoSymbol as u32
 }
 
 pub fn xkb_keysym_is_keypad(keysym: u32) -> bool {
     keysym >= XKB_KEY_KP_Space as u32 && keysym <= XKB_KEY_KP_Equal as u32
 }
 
-pub unsafe fn xkb_keysym_is_deprecated(
-    mut _keysym: u32,
-    mut _name: *const i8,
-    reference_name: *mut *const i8,
-) -> bool {
-    unsafe {
-        // Stub implementation: For Wayland-only usage, we don't need to track deprecated keysym names
-        // This function is used by the parser to warn about deprecated keysym names
-        *reference_name = std::ptr::null();
-        false
-    }
+pub fn xkb_keysym_is_deprecated(_keysym: u32, _name: &[u8]) -> Option<&'static str> {
+    // Stub: For Wayland-only usage, we don't need to track deprecated keysym names
+    None
 }
