@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "xkb-core"]
+members = [".", "xkb-core", "xkbcommon-compat"]
 
 [package]
 name = "wkb"

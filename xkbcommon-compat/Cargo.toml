@@ -1,0 +1,11 @@
+[package]
+name = "xkbcommon-compat"
+version = "0.1.0"
+edition = "2021"
+description = "Thin extern \"C\" wrapper over xkb-core matching the libxkbcommon ABI"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+xkb-core = { path = "../xkb-core" }
