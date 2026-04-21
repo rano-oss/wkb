@@ -1,5 +1,4 @@
 use super::prelude::*;
-use crate::xkb::shared_ast_types::to_common_or_null;
 pub use crate::xkb::shared_ast_types::xkb_file_type_to_string;
 pub use crate::xkb::shared_types::{
     areOverlappingOverlaysSupported, format_max_groups, format_max_overlays,
@@ -13,7 +12,6 @@ use crate::xkb::shared_types::{MOD_REAL_MASK_ALL, XKB_KEYMAP_FORMAT_TEXT_V1};
 pub use crate::xkb::state::mod_mask_get_effective;
 use crate::xkb::text::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
 
-pub use crate::xkb::xkbcomp::ast_build::FreeStmt;
 pub use crate::xkb::xkbcomp::compat::CompileCompatMap;
 use crate::xkb::xkbcomp::expr::ExprResolveGroupMask;
 pub use crate::xkb::xkbcomp::keycodes::CompileKeycodes;
@@ -382,8 +380,7 @@ fn update_pending_action_fields(
                                     .expr
                                     .as_ref()
                                     .unwrap()
-                                    .common
-                                    .type_0
+                                    .stmt_type()
                                     == STMT_EXPR_NEGATE
                                 {
                                     info.pending_computations[pc_idx].value =
@@ -708,9 +705,7 @@ static COMPILE_FILE_FNS: [compile_file_fn; 4] = {
 };
 fn pending_computations_array_free(p: &mut Vec<pending_computation>) {
     for pc in p.iter_mut() {
-        if let Some(boxed) = pc.expr.take() {
-            FreeStmt(to_common_or_null!(Box::into_raw(boxed)));
-        }
+        pc.expr.take(); // Drop handles cleanup
     }
     p.clear();
 }

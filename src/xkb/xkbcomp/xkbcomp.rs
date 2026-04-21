@@ -51,13 +51,12 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
 };
-use crate::xkb::shared_ast_types::FreeXkbFile;
 pub use crate::xkb::shared_ast_types::{
-    _ParseCommon, stmt_type, xkb_file_type_to_string, xkb_map_flags, ParseCommon, XkbFile,
-    FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP,
-    FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
-    LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER,
-    MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, STMT_ALIAS, STMT_EXPR_ACTION_DECL,
+    stmt_type, xkb_file_type_to_string, xkb_map_flags, XkbFile, FILE_TYPE_COMPAT,
+    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
+    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
+    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
+    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, STMT_ALIAS, STMT_EXPR_ACTION_DECL,
     STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN,
     STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF,
     STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT,
@@ -163,10 +162,7 @@ pub fn text_v1_keymap_new_from_names(keymap: &mut xkb_keymap, rmlvo: &xkb_rule_n
         vec_i8_to_str(&kccgst.compatibility),
         vec_i8_to_str(&kccgst.symbols),
     );
-    let file_opt: Option<Box<XkbFile>> = XkbFileFromComponents(
-        &mut keymap.ctx as *mut xkb_context,
-        &kccgst as *const xkb_component_names,
-    );
+    let file_opt: Option<Box<XkbFile>> = XkbFileFromComponents(&mut keymap.ctx, &kccgst);
     drop(kccgst);
     let Some(mut file) = file_opt else {
         log::error!(
@@ -179,12 +175,7 @@ pub fn text_v1_keymap_new_from_names(keymap: &mut xkb_keymap, rmlvo: &xkb_rule_n
     ok
 }
 pub fn text_v1_keymap_new_from_string(keymap: &mut xkb_keymap, input: &[u8]) -> bool {
-    let Some(mut xkb_file) = XkbParseString(
-        &mut keymap.ctx as *mut xkb_context,
-        input,
-        "(input string)",
-        std::ptr::null(),
-    ) else {
+    let Some(mut xkb_file) = XkbParseString(&mut keymap.ctx, input, "(input string)", "") else {
         log::error!(
             "[XKB-{:03}] Failed to parse input xkb string\n",
             XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32

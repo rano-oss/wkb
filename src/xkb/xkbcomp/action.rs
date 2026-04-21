@@ -88,19 +88,11 @@ pub type actionHandler = Option<
 // Constant true/false ExprDef values used in HandleActionDef
 fn const_true_expr() -> ExprDef {
     ExprDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0: STMT_EXPR_BOOLEAN_LITERAL,
-        },
         kind: ExprKind::Boolean(true),
     }
 }
 fn const_false_expr() -> ExprDef {
     ExprDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0: STMT_EXPR_BOOLEAN_LITERAL,
-        },
         kind: ExprKind::Boolean(false),
     }
 }
@@ -409,7 +401,7 @@ fn CheckModifierField(
     if array_ndx.is_some() {
         return ReportActionNotArray(action, ACTION_FIELD_MODIFIERS, strict);
     }
-    if value.common.type_0 == STMT_EXPR_IDENT {
+    if value.stmt_type() == STMT_EXPR_IDENT {
         let ident = if let ExprKind::Ident(id) = &value.kind {
             *id
         } else {
@@ -608,8 +600,8 @@ fn CheckGroupField(
         return ReportActionNotArray(action, ACTION_FIELD_GROUP, keymap_info.strict);
     }
     // If the value is a unary negate/plus, rebind to child and record negate.
-    let is_negate = value.get().common.type_0 == STMT_EXPR_NEGATE;
-    let is_unary = is_negate || value.get().common.type_0 == STMT_EXPR_UNARY_PLUS;
+    let is_negate = value.get().stmt_type() == STMT_EXPR_NEGATE;
+    let is_unary = is_negate || value.get().stmt_type() == STMT_EXPR_UNARY_PLUS;
     if is_unary {
         flags = (flags as u32 & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
         // Rebind value to the child field inside the unary expr
@@ -744,7 +736,7 @@ fn HandleMovePtr(
     if field == ACTION_FIELD_X || field == ACTION_FIELD_Y {
         let mut val: i64 = 0_i64;
         let absolute: bool =
-            value.common.type_0 != STMT_EXPR_NEGATE && value.common.type_0 != STMT_EXPR_UNARY_PLUS;
+            value.stmt_type() != STMT_EXPR_NEGATE && value.stmt_type() != STMT_EXPR_UNARY_PLUS;
         if array_ndx.is_some() {
             return ReportActionNotArray(type_0, field, keymap_info.strict);
         }
@@ -923,7 +915,7 @@ fn HandleSetPtrDflt(
         if array_ndx.is_some() {
             return ReportActionNotArray(type_0, field, keymap_info.strict);
         }
-        if value.common.type_0 == STMT_EXPR_NEGATE || value.common.type_0 == STMT_EXPR_UNARY_PLUS {
+        if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
             act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
             button = if let ExprKind::Unary { child, .. } = &value.kind {
                 child.as_deref().unwrap()
@@ -960,7 +952,7 @@ fn HandleSetPtrDflt(
                 PARSER_RECOVERABLE_ERROR as i32
             }) as u32;
         }
-        act.value = (if value.common.type_0 == STMT_EXPR_NEGATE {
+        act.value = (if value.stmt_type() == STMT_EXPR_NEGATE {
             -btn
         } else {
             btn
@@ -987,7 +979,7 @@ fn HandleSwitchScreen(
         if array_ndx.is_some() {
             return ReportActionNotArray(type_0, field, keymap_info.strict);
         }
-        if value.common.type_0 == STMT_EXPR_NEGATE || value.common.type_0 == STMT_EXPR_UNARY_PLUS {
+        if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
             act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
             scrn = if let ExprKind::Unary { child, .. } = &value.kind {
                 child.as_deref().unwrap()
@@ -1007,7 +999,7 @@ fn HandleSwitchScreen(
                 keymap_info.strict,
             );
         }
-        val = if value.common.type_0 == STMT_EXPR_NEGATE {
+        val = if value.stmt_type() == STMT_EXPR_NEGATE {
             -val
         } else {
             val
@@ -1097,7 +1089,7 @@ fn HandleRedirectKey(
         if array_ndx.is_some() {
             return ReportActionNotArray(type_0, field, keymap_info.strict);
         }
-        if value.common.type_0 == STMT_EXPR_IDENT {
+        if value.stmt_type() == STMT_EXPR_IDENT {
             let ident = if let ExprKind::Ident(id) = &value.kind {
                 *id
             } else {
@@ -1109,7 +1101,7 @@ fn HandleRedirectKey(
                 return PARSER_SUCCESS;
             }
         }
-        if value.common.type_0 != STMT_EXPR_KEYNAME_LITERAL {
+        if value.stmt_type() != STMT_EXPR_KEYNAME_LITERAL {
             return ReportMismatch(
                 XKB_ERROR_WRONG_FIELD_TYPE,
                 type_0,
@@ -1542,11 +1534,11 @@ pub fn HandleActionDef(
     def: &mut ExprDef,
     action: &mut xkb_action,
 ) -> u32 {
-    if def.common.type_0 != STMT_EXPR_ACTION_DECL {
+    if def.stmt_type() != STMT_EXPR_ACTION_DECL {
         log::error!(
             "[XKB-{:03}] Expected an action definition, found {}\n",
             XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            stmt_type_to_string(def.common.type_0)
+            stmt_type_to_string(def.stmt_type())
         );
         return PARSER_FATAL_ERROR;
     }
@@ -1593,7 +1585,7 @@ pub fn HandleActionDef(
         let mut arrayRtrn_opt: Option<&ExprDef> = None;
         let mut elemRtrn_atom: u32 = 0;
         let mut fieldRtrn_atom: u32 = 0;
-        if arg.common.type_0 == STMT_EXPR_ASSIGN {
+        if arg.stmt_type() == STMT_EXPR_ASSIGN {
             if let ExprKind::Binary {
                 ref left,
                 ref mut right,
@@ -1605,7 +1597,7 @@ pub fn HandleActionDef(
             } else {
                 unreachable!()
             }
-        } else if arg.common.type_0 == STMT_EXPR_NOT || arg.common.type_0 == STMT_EXPR_INVERT {
+        } else if arg.stmt_type() == STMT_EXPR_NOT || arg.stmt_type() == STMT_EXPR_INVERT {
             field_ref = if let ExprKind::Unary { ref child, .. } = arg.kind {
                 child.as_deref().unwrap()
             } else {

@@ -512,10 +512,6 @@ fn MergeKeycodeStores(
                     let match_0 = from.keycodes.names[alias as usize];
                     if match_0.found && match_0.is_alias {
                         let def: KeyAliasDef = KeyAliasDef {
-                            common: _ParseCommon {
-                                next: std::ptr::null_mut(),
-                                type_0: STMT_UNKNOWN,
-                            },
                             merge,
                             alias,
                             real: match_0.index,
@@ -798,7 +794,7 @@ fn HandleKeycodesFile(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut xkb_
                     log::error!(
                         "[XKB-{:03}] Unsupported keycodes {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
-                        if unk.common.type_0 == STMT_UNKNOWN_COMPOUND {
+                        if unk.stmt_type == STMT_UNKNOWN_COMPOUND {
                             "compound"
                         } else {
                             "declaration"

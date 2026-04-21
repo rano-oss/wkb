@@ -1,5 +1,3 @@
-use crate::xkb::utils::cstr_free;
-
 pub use crate::xkb::keymap::XkbEscapeMapName;
 pub use crate::xkb::messages::{
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -44,41 +42,31 @@ pub use crate::xkb::messages::{
 };
 pub use crate::xkb::scanner_utils::{scanner, scanner_loc, sval};
 pub use crate::xkb::shared_ast_types::{
-    box_from_raw, collect_file_stmts, collect_stmts, collect_vardefs, merge_mode, stmt_type,
-    xkb_map_flags, ExprDef, ExprKind, GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef,
-    KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, OptBoxRaw, ParseCommon, Statement,
-    SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, _IncludeStmt, _ParseCommon,
-    FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP,
-    FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
-    LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER,
-    MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT,
-    MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST,
-    STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL,
-    STMT_EXPR_DIVIDE, STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL,
-    STMT_EXPR_IDENT, STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL,
-    STMT_EXPR_KEYSYM_LIST, STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE,
-    STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
-    STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME,
-    STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
-    STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
-    _STMT_NUM_VALUES,
+    merge_mode, stmt_type, xkb_map_flags, ExprDef, ExprKind, GroupCompatDef, IncludeStmt,
+    InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, Statement,
+    SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, _IncludeStmt, FILE_TYPE_COMPAT,
+    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
+    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
+    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
+    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
+    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
+    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
+    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
+    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
+    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
+    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
+    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
+    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
+    STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
 };
-use crate::xkb::shared_ast_types::{from_common, to_common, to_common_or_null};
 pub use crate::xkb::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
-use crate::xkb::utils::cstr_len;
 pub use crate::xkb::xkbcomp::include::{MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
-pub fn expr_create(kind: ExprKind) -> *mut ExprDef {
-    let type_0 = ExprDef::stmt_type_for_kind(&kind);
-    Box::into_raw(Box::new(ExprDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0,
-        },
-        kind,
-    }))
+
+pub fn expr_create(kind: ExprKind) -> Box<ExprDef> {
+    Box::new(ExprDef { kind })
 }
 
-pub fn ExprCreateKeySymList(sym: u32) -> *mut ExprDef {
+pub fn ExprCreateKeySymList(sym: u32) -> Box<ExprDef> {
     let mut syms = Vec::new();
     if sym != XKB_KEY_NoSymbol as u32 {
         syms.push(sym);
@@ -86,519 +74,327 @@ pub fn ExprCreateKeySymList(sym: u32) -> *mut ExprDef {
     expr_create(ExprKind::KeysymList { syms })
 }
 
-pub fn ExprAppendKeySymList(expr: *mut ExprDef, sym: u32) -> *mut ExprDef {
-    unsafe {
-        if sym != XKB_KEY_NoSymbol as u32 {
-            if let ExprKind::KeysymList { ref mut syms } = (*expr).kind {
-                syms.push(sym);
-            }
+pub fn ExprAppendKeySymList(mut expr: Box<ExprDef>, sym: u32) -> Box<ExprDef> {
+    if sym != XKB_KEY_NoSymbol as u32 {
+        if let ExprKind::KeysymList { ref mut syms } = expr.kind {
+            syms.push(sym);
         }
-        expr
     }
+    expr
 }
 
 pub fn ExprKeySymListAppendString(
-    scanner: *mut scanner,
-    expr: *mut ExprDef,
-    string: *const i8,
-) -> *mut ExprDef {
-    unsafe {
-        let c2rust_current_block: u64;
-        let len: usize = cstr_len(string);
-        let mut idx: usize = 0_usize;
-        let mut idx_cp: usize = 1_usize;
-        loop {
-            if idx >= len {
-                c2rust_current_block = 18317007320854588510;
-                break;
-            }
-            let mut count: usize = 0_usize;
-            let bytes =
-                std::slice::from_raw_parts(string.add(idx) as *const u8, len.wrapping_sub(idx));
-            let (cp, cp_len) = utf8_next_code_point_safe(bytes);
-            count = cp_len;
-            if cp == INVALID_UTF8_CODE_POINT {
-                let loc: scanner_loc = (*scanner).token_location();
-                log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to keysyms: Invalid UTF-8 encoding starting at byte position {} (code point position: {}).\n",
-                    XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                    &(*scanner).file_name,
-                    loc.line,
-                    loc.column,
-                    idx.wrapping_add(1_usize),
-                    idx_cp);
-                c2rust_current_block = 5140853804782746302;
-                break;
-            } else {
-                let sym: u32 = xkb_utf32_to_keysym(cp);
-                if sym == XKB_KEY_NoSymbol as u32 {
-                    let loc_0: scanner_loc = (*scanner).token_location();
-                    log::error!("{}:{}:{}: Cannot convert string to keysyms: Unicode code point U+04{:X} has no keysym equivalent(byte position: {}, code point position: {}).\n",
-                        &(*scanner).file_name,
-                        loc_0.line,
-                        loc_0.column,
-                        cp,
-                        idx.wrapping_add(1_usize),
-                        idx_cp);
-                    c2rust_current_block = 5140853804782746302;
-                    break;
-                } else {
-                    if let ExprKind::KeysymList { ref mut syms } = (*expr).kind {
-                        syms.push(sym);
-                    }
-                    idx = idx.wrapping_add(count);
-                    idx_cp = idx_cp.wrapping_add(1);
-                }
-            }
+    scanner: &mut scanner,
+    mut expr: Box<ExprDef>,
+    string: &str,
+) -> Option<Box<ExprDef>> {
+    let bytes = string.as_bytes();
+    let len = bytes.len();
+    let mut idx: usize = 0;
+    let mut idx_cp: usize = 1;
+    loop {
+        if idx >= len {
+            return Some(expr);
         }
-        match c2rust_current_block {
-            5140853804782746302 => {
-                FreeStmt(to_common_or_null!(expr));
-                std::ptr::null_mut()
-            }
-            _ => expr,
-        }
-    }
-}
-
-pub fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32 {
-    unsafe {
-        let len: usize = cstr_len(string);
-        if len == 0_usize {
-            let loc: scanner_loc = (*scanner).token_location();
-            log::error!(
-                "{}:{}:{}: Cannot convert string to single keysym: empty string.\n",
-                &(*scanner).file_name,
-                loc.line,
-                loc.column
-            );
-            return XKB_KEY_NoSymbol as u32;
-        }
-        let mut count: usize = 0_usize;
-        let bytes = std::slice::from_raw_parts(string as *const u8, len);
-        let (cp, cp_len) = utf8_next_code_point_safe(bytes);
-        count = cp_len;
+        let (cp, cp_len) = utf8_next_code_point_safe(&bytes[idx..]);
         if cp == INVALID_UTF8_CODE_POINT {
-            let loc_0: scanner_loc = (*scanner).token_location();
-            log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to single keysym: Invalid UTF-8 encoding.\n",
+            let loc = scanner.token_location();
+            log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to keysyms: Invalid UTF-8 encoding starting at byte position {} (code point position: {}).\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                &(*scanner).file_name,
-                loc_0.line,
-                loc_0.column);
-            return XKB_KEY_NoSymbol as u32;
-        } else if count != len {
-            let loc_1: scanner_loc = (*scanner).token_location();
-            log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to single keysym: Expected a single Unicode code point, got: \"{}\".\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                &(*scanner).file_name,
-                loc_1.line,
-                loc_1.column,
-                std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(string)));
-            return XKB_KEY_NoSymbol as u32;
+                &scanner.file_name,
+                loc.line,
+                loc.column,
+                idx + 1,
+                idx_cp);
+            return None;
         }
-        let sym: u32 = xkb_utf32_to_keysym(cp);
+        let sym = xkb_utf32_to_keysym(cp);
         if sym == XKB_KEY_NoSymbol as u32 {
-            let loc_2: scanner_loc = (*scanner).token_location();
-            log::error!("{}:{}:{}: Cannot convert string to single keysym: Unicode code point U+{:04X} has no keysym equivalent.\n",
-                &(*scanner).file_name,
-                loc_2.line,
-                loc_2.column,
-                cp);
+            let loc = scanner.token_location();
+            log::error!("{}:{}:{}: Cannot convert string to keysyms: Unicode code point U+04{:X} has no keysym equivalent(byte position: {}, code point position: {}).\n",
+                &scanner.file_name,
+                loc.line,
+                loc.column,
+                cp,
+                idx + 1,
+                idx_cp);
+            return None;
         }
-        sym
+        if let ExprKind::KeysymList { ref mut syms } = expr.kind {
+            syms.push(sym);
+        }
+        idx += cp_len;
+        idx_cp += 1;
     }
 }
 
-pub fn KeycodeCreate(name: u32, value: i64) -> *mut KeycodeDef {
-    Box::into_raw(Box::new(KeycodeDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0: STMT_KEYCODE,
-        },
+pub fn KeysymParseString(scanner: &mut scanner, string: &str) -> u32 {
+    let bytes = string.as_bytes();
+    let len = bytes.len();
+    if len == 0 {
+        let loc = scanner.token_location();
+        log::error!(
+            "{}:{}:{}: Cannot convert string to single keysym: empty string.\n",
+            &scanner.file_name,
+            loc.line,
+            loc.column
+        );
+        return XKB_KEY_NoSymbol as u32;
+    }
+    let (cp, cp_len) = utf8_next_code_point_safe(bytes);
+    if cp == INVALID_UTF8_CODE_POINT {
+        let loc = scanner.token_location();
+        log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to single keysym: Invalid UTF-8 encoding.\n",
+            XKB_ERROR_INVALID_FILE_ENCODING as i32,
+            &scanner.file_name,
+            loc.line,
+            loc.column);
+        return XKB_KEY_NoSymbol as u32;
+    } else if cp_len != len {
+        let loc = scanner.token_location();
+        log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to single keysym: Expected a single Unicode code point, got: \"{}\".\n",
+            XKB_ERROR_INVALID_FILE_ENCODING as i32,
+            &scanner.file_name,
+            loc.line,
+            loc.column,
+            string);
+        return XKB_KEY_NoSymbol as u32;
+    }
+    let sym = xkb_utf32_to_keysym(cp);
+    if sym == XKB_KEY_NoSymbol as u32 {
+        let loc = scanner.token_location();
+        log::error!("{}:{}:{}: Cannot convert string to single keysym: Unicode code point U+{:04X} has no keysym equivalent.\n",
+            &scanner.file_name,
+            loc.line,
+            loc.column,
+            cp);
+    }
+    sym
+}
+
+pub fn KeycodeCreate(name: u32, value: i64) -> Box<KeycodeDef> {
+    Box::new(KeycodeDef {
         merge: MERGE_DEFAULT,
         name,
         value,
-    }))
+    })
 }
 
-pub fn KeyAliasCreate(alias: u32, real: u32) -> *mut KeyAliasDef {
-    Box::into_raw(Box::new(KeyAliasDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0: STMT_ALIAS,
-        },
+pub fn KeyAliasCreate(alias: u32, real: u32) -> Box<KeyAliasDef> {
+    Box::new(KeyAliasDef {
         merge: MERGE_DEFAULT,
         alias,
         real,
-    }))
+    })
 }
 
-pub fn VModCreate(name: u32, value: Option<Box<ExprDef>>) -> *mut VModDef {
-    Box::into_raw(Box::new(VModDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0: STMT_VMOD,
-        },
+pub fn VModCreate(name: u32, value: Option<Box<ExprDef>>) -> Box<VModDef> {
+    Box::new(VModDef {
         merge: MERGE_DEFAULT,
         name,
         value,
-    }))
+    })
 }
 
-pub fn VarCreate(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>) -> *mut VarDef {
-    Box::into_raw(Box::new(VarDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0: STMT_VAR,
-        },
+pub fn VarCreate(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>) -> Box<VarDef> {
+    Box::new(VarDef {
         merge: MERGE_DEFAULT,
         name,
         value,
-    }))
+    })
 }
 
-pub fn BoolVarCreate(ident: u32, set: bool) -> *mut VarDef {
-    Box::into_raw(Box::new(VarDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0: STMT_VAR,
-        },
+pub fn BoolVarCreate(ident: u32, set: bool) -> Box<VarDef> {
+    Box::new(VarDef {
         merge: MERGE_DEFAULT,
         name: Some(Box::new(ExprDef {
-            common: ParseCommon {
-                next: std::ptr::null_mut(),
-                type_0: STMT_EXPR_IDENT,
-            },
             kind: ExprKind::Ident(ident),
         })),
         value: Some(Box::new(ExprDef {
-            common: ParseCommon {
-                next: std::ptr::null_mut(),
-                type_0: STMT_EXPR_BOOLEAN_LITERAL,
-            },
             kind: ExprKind::Boolean(set),
         })),
-    }))
+    })
 }
 
-pub fn InterpCreate(sym: u32, match_0: Option<Box<ExprDef>>) -> *mut InterpDef {
-    Box::into_raw(Box::new(InterpDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0: STMT_INTERP,
-        },
+pub fn InterpCreate(sym: u32, match_0: Option<Box<ExprDef>>) -> Box<InterpDef> {
+    Box::new(InterpDef {
         merge: MERGE_DEFAULT,
         sym,
         match_0,
         def: Vec::new(),
-    }))
+    })
 }
 
-pub fn KeyTypeCreate(name: u32, body: Vec<VarDef>) -> *mut KeyTypeDef {
-    Box::into_raw(Box::new(KeyTypeDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0: STMT_TYPE,
-        },
+pub fn KeyTypeCreate(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
+    Box::new(KeyTypeDef {
         merge: MERGE_DEFAULT,
         name,
         body,
-    }))
+    })
 }
 
-pub fn SymbolsCreate(keyName: u32, symbols: Vec<VarDef>) -> *mut SymbolsDef {
-    Box::into_raw(Box::new(SymbolsDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0: STMT_SYMBOLS,
-        },
+pub fn SymbolsCreate(keyName: u32, symbols: Vec<VarDef>) -> Box<SymbolsDef> {
+    Box::new(SymbolsDef {
         merge: MERGE_DEFAULT,
         keyName,
         symbols,
-    }))
+    })
 }
 
-pub fn GroupCompatCreate(group: i64, val: Option<Box<ExprDef>>) -> *mut GroupCompatDef {
-    Box::into_raw(Box::new(GroupCompatDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0: STMT_GROUP_COMPAT,
-        },
+pub fn GroupCompatCreate(group: i64, val: Option<Box<ExprDef>>) -> Box<GroupCompatDef> {
+    Box::new(GroupCompatDef {
         merge: MERGE_DEFAULT,
         group,
         def: val,
-    }))
+    })
 }
 
-pub fn ModMapCreate(modifier: u32, keys: Vec<ExprDef>) -> *mut ModMapDef {
-    Box::into_raw(Box::new(ModMapDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0: STMT_MODMAP,
-        },
+pub fn ModMapCreate(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef> {
+    Box::new(ModMapDef {
         merge: MERGE_DEFAULT,
         modifier,
         keys,
-    }))
+    })
 }
 
-pub fn LedMapCreate(name: u32, body: Vec<VarDef>) -> *mut LedMapDef {
-    Box::into_raw(Box::new(LedMapDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0: STMT_LED_MAP,
-        },
+pub fn LedMapCreate(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
+    Box::new(LedMapDef {
         merge: MERGE_DEFAULT,
         name,
         body,
-    }))
+    })
 }
 
-pub fn LedNameCreate(ndx: i64, name: Option<Box<ExprDef>>, virtual_0: bool) -> *mut LedNameDef {
-    Box::into_raw(Box::new(LedNameDef {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0: STMT_LED_NAME,
-        },
+pub fn LedNameCreate(ndx: i64, name: Option<Box<ExprDef>>, virtual_0: bool) -> Box<LedNameDef> {
+    Box::new(LedNameDef {
         merge: MERGE_DEFAULT,
         ndx,
         virtual_0,
         name,
-    }))
+    })
 }
 
-pub fn UnknownStatementCreate(type_0: stmt_type, name: sval) -> *mut UnknownStatement {
-    let name_str = name.as_str().to_string();
-    Box::into_raw(Box::new(UnknownStatement {
-        common: ParseCommon {
-            next: std::ptr::null_mut(),
-            type_0,
-        },
-        name: name_str,
-    }))
+pub fn UnknownStatementCreate(type_0: stmt_type, name: &str) -> Box<UnknownStatement> {
+    Box::new(UnknownStatement {
+        stmt_type: type_0,
+        name: name.to_string(),
+    })
 }
 
 pub fn IncludeCreate(
-    _ctx: *mut xkb_context,
-    str: *mut i8,
+    _ctx: &mut xkb_context,
+    stmt_str: &str,
     mut merge: merge_mode,
-) -> *mut IncludeStmt {
-    unsafe {
-        let mut first: *mut IncludeStmt = std::ptr::null_mut();
-        let mut incl: *mut IncludeStmt = std::ptr::null_mut();
+) -> Option<Box<IncludeStmt>> {
+    let mut first: Option<Box<IncludeStmt>> = None;
+    let mut last_ptr: *mut IncludeStmt = std::ptr::null_mut();
+    let mut remaining: Option<&str> = Some(stmt_str);
 
-        let stmt_str = std::ffi::CStr::from_ptr(str)
-            .to_str()
-            .unwrap_or("")
-            .to_string();
-        let mut remaining: Option<&str> = Some(&stmt_str);
+    loop {
+        let input = match remaining {
+            Some(s) if !s.is_empty() => s,
+            _ => break,
+        };
 
-        loop {
-            let input = match remaining {
-                Some(s) if !s.is_empty() => s,
-                _ => break,
-            };
-
-            let (parsed, rest) = match crate::xkb::xkbcomp::include::ParseIncludeMap(input) {
-                Some(r) => r,
-                None => {
-                    // Parse error
-                    log::error!(
-                        "[XKB-{:03}] Illegal include statement \"{}\"; Ignored\n",
-                        XKB_ERROR_INVALID_INCLUDE_STATEMENT as i32,
-                        &stmt_str
-                    );
-                    if !first.is_null() {
-                        drop(Box::from_raw(first));
-                    }
-                    return std::ptr::null_mut();
-                }
-            };
-
-            if parsed.file.is_empty() {
-                // skip empty segments
-                remaining = rest;
-                continue;
+        let (parsed, rest) = match crate::xkb::xkbcomp::include::ParseIncludeMap(input) {
+            Some(r) => r,
+            None => {
+                log::error!(
+                    "[XKB-{:03}] Illegal include statement \"{}\"; Ignored\n",
+                    XKB_ERROR_INVALID_INCLUDE_STATEMENT as i32,
+                    stmt_str
+                );
+                return None;
             }
+        };
 
-            let new_incl = Box::into_raw(Box::new(IncludeStmt {
-                common: ParseCommon {
-                    next: std::ptr::null_mut(),
-                    type_0: STMT_INCLUDE,
-                },
-                merge,
-                stmt: String::new(),
-                file: parsed.file,
-                map: parsed.map,
-                modifier: parsed.extra_data,
-                next_incl: None,
-            }));
-
-            if first.is_null() {
-                first = new_incl;
-                incl = new_incl;
-            } else {
-                (*incl).next_incl = Some(Box::from_raw(new_incl));
-                incl = (*incl).next_incl.as_mut().unwrap().as_mut() as *mut IncludeStmt;
-            }
-
-            match parsed.nextop {
-                '|' => merge = MERGE_AUGMENT,
-                '^' => merge = MERGE_REPLACE,
-                _ => merge = MERGE_OVERRIDE,
-            }
-
+        if parsed.file.is_empty() {
             remaining = rest;
+            continue;
         }
 
-        if !first.is_null() {
-            (*first).stmt = stmt_str;
+        let new_incl = Box::new(IncludeStmt {
+            merge,
+            stmt: String::new(),
+            file: parsed.file,
+            map: parsed.map,
+            modifier: parsed.extra_data,
+            next_incl: None,
+        });
+
+        if first.is_none() {
+            first = Some(new_incl);
+            last_ptr = first.as_mut().unwrap().as_mut() as *mut IncludeStmt;
+        } else {
+            // Safe: last_ptr always points to a valid IncludeStmt we own
+            unsafe {
+                (*last_ptr).next_incl = Some(new_incl);
+                last_ptr = (*last_ptr).next_incl.as_mut().unwrap().as_mut() as *mut IncludeStmt;
+            }
         }
-        first
+
+        match parsed.nextop {
+            '|' => merge = MERGE_AUGMENT,
+            '^' => merge = MERGE_REPLACE,
+            _ => merge = MERGE_OVERRIDE,
+        }
+
+        remaining = rest;
     }
+
+    if let Some(ref mut f) = first {
+        f.stmt = stmt_str.to_string();
+    }
+    first
 }
 
 pub fn XkbFileCreate(
     type_0: u32,
-    name: *mut i8,
-    defs: *mut ParseCommon,
+    name: Option<String>,
+    defs: Vec<Statement>,
     flags: xkb_map_flags,
-) -> *mut XkbFile {
-    unsafe {
-        let mut name_str = if name.is_null() {
-            String::new()
-        } else {
-            let s = std::ffi::CStr::from_ptr(name)
-                .to_str()
-                .unwrap_or("")
-                .to_string();
-            cstr_free(name);
-            s
-        };
-        XkbEscapeMapName(&mut name_str);
-        let defs_vec = if type_0 == FILE_TYPE_KEYMAP {
-            collect_file_stmts(defs)
-        } else {
-            collect_stmts(defs)
-        };
-        let file = Box::into_raw(Box::new(XkbFile {
-            common: ParseCommon {
-                next: std::ptr::null_mut(),
-                type_0: 0,
-            },
-            file_type: type_0,
-            name: name_str,
-            defs: defs_vec,
-            flags,
-        }));
-        file
-    }
+) -> Box<XkbFile> {
+    let mut name_str = name.unwrap_or_default();
+    XkbEscapeMapName(&mut name_str);
+    Box::new(XkbFile {
+        file_type: type_0,
+        name: name_str,
+        defs,
+        flags,
+    })
 }
 
 pub fn XkbFileFromComponents(
-    ctx: *mut xkb_context,
-    kkctgs: *const xkb_component_names,
+    ctx: &mut xkb_context,
+    kkctgs: &xkb_component_names,
 ) -> Option<Box<XkbFile>> {
-    unsafe {
-        let c2rust_current_block: u64;
-        let components: [*mut i8; 4] = [
-            (*kkctgs).keycodes.as_ptr() as *mut i8,
-            (*kkctgs).types.as_ptr() as *mut i8,
-            (*kkctgs).compatibility.as_ptr() as *mut i8,
-            (*kkctgs).symbols.as_ptr() as *mut i8,
-        ];
-        let mut type_0: u32;
-        let mut include: *mut IncludeStmt;
-        let mut file: *mut XkbFile;
-        let mut defs: *mut ParseCommon = std::ptr::null_mut();
-        let mut defsLast: *mut ParseCommon = std::ptr::null_mut();
-        type_0 = FIRST_KEYMAP_FILE_TYPE;
-        loop {
-            if type_0 > LAST_KEYMAP_FILE_TYPE {
-                c2rust_current_block = 13536709405535804910;
-                break;
-            }
-            include = IncludeCreate(ctx, components[type_0 as usize], MERGE_DEFAULT);
-            if include.is_null() {
-                c2rust_current_block = 183321912633560349;
-                break;
-            }
-            file = XkbFileCreate(
-                type_0,
-                std::ptr::null_mut(),
-                to_common_or_null!(include),
-                0 as xkb_map_flags,
-            );
-            if file.is_null() {
-                drop(Box::from_raw(include));
-                c2rust_current_block = 183321912633560349;
-                break;
-            } else {
-                if defs.is_null() {
-                    defs = &raw mut (*file).common;
-                    defsLast = defs;
-                } else {
-                    (*defsLast).next = &raw mut (*file).common;
-                    defsLast = (*defsLast).next;
-                }
-                type_0 += 1;
-            }
-        }
-        if c2rust_current_block == 13536709405535804910 {
-            file = XkbFileCreate(
-                FILE_TYPE_KEYMAP,
-                std::ptr::null_mut(),
-                defs,
-                0 as xkb_map_flags,
-            );
-            if !file.is_null() {
-                return Some(Box::from_raw(file));
-            }
-        }
-        FreeXkbFile(defs as *mut XkbFile);
-        None
+    let components = [
+        &kkctgs.keycodes,
+        &kkctgs.types,
+        &kkctgs.compatibility,
+        &kkctgs.symbols,
+    ];
+    let mut file_stmts: Vec<Statement> = Vec::new();
+    let mut type_0 = FIRST_KEYMAP_FILE_TYPE;
+    while type_0 <= LAST_KEYMAP_FILE_TYPE {
+        let component_bytes: Vec<u8> = components[type_0 as usize]
+            .iter()
+            .map(|&b| b as u8)
+            .collect();
+        let end = component_bytes
+            .iter()
+            .position(|&b| b == 0)
+            .unwrap_or(component_bytes.len());
+        let component_str = std::str::from_utf8(&component_bytes[..end]).unwrap_or("");
+        let include = IncludeCreate(ctx, component_str, MERGE_DEFAULT)?;
+        let defs = vec![Statement::Include(include)];
+        let file = XkbFileCreate(type_0, None, defs, 0);
+        file_stmts.push(Statement::XkbFile(file));
+        type_0 += 1;
     }
+    Some(XkbFileCreate(FILE_TYPE_KEYMAP, None, file_stmts, 0))
 }
 
-pub fn FreeStmt(mut stmt: *mut ParseCommon) {
-    unsafe {
-        let mut next: *mut ParseCommon;
-        while !stmt.is_null() {
-            next = (*stmt).next;
-            // Deallocate the stmt with the correct type (Box::from_raw must match Box::into_raw type).
-            // All inner fields (Vec<VarDef>, Vec<ExprDef>, Option<Box<ExprDef>>, etc.) auto-drop.
-            match (*stmt).type_0 {
-                1 => drop(Box::from_raw(from_common!(stmt, IncludeStmt))),
-                2 => drop(Box::from_raw(from_common!(stmt, KeycodeDef))),
-                3 => drop(Box::from_raw(from_common!(stmt, KeyAliasDef))),
-                4..=25 => drop(Box::from_raw(from_common!(stmt, ExprDef))),
-                26 => drop(Box::from_raw(from_common!(stmt, VarDef))),
-                27 => drop(Box::from_raw(from_common!(stmt, KeyTypeDef))),
-                28 => drop(Box::from_raw(from_common!(stmt, InterpDef))),
-                29 => drop(Box::from_raw(from_common!(stmt, VModDef))),
-                30 => drop(Box::from_raw(from_common!(stmt, SymbolsDef))),
-                31 => drop(Box::from_raw(from_common!(stmt, ModMapDef))),
-                32 => drop(Box::from_raw(from_common!(stmt, GroupCompatDef))),
-                33 => drop(Box::from_raw(from_common!(stmt, LedMapDef))),
-                34 => drop(Box::from_raw(from_common!(stmt, LedNameDef))),
-                35 | 36 => drop(Box::from_raw(from_common!(stmt, UnknownStatement))),
-                _ => drop(Box::from_raw(from_common!(stmt, ExprDef))),
-            }
-            stmt = next;
-        }
-    }
-}
-
-pub fn FreeXkbFile(mut file: *mut XkbFile) {
-    unsafe {
-        let mut next: *mut XkbFile;
-        while !file.is_null() {
-            next = from_common!((*file).common.next, XkbFile);
-            // defs is Vec<Statement> — drops automatically with the Box
-            drop(Box::from_raw(file));
-            file = next;
-        }
-    }
-}
 static XKB_FILE_TYPE_STRINGS: [&str; 7] = [
     "xkb_keycodes",
     "xkb_types",

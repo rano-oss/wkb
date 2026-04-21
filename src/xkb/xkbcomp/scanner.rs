@@ -69,76 +69,6 @@ pub mod parser_h {
     pub const YYerror: i32 = 256;
     pub const END_OF_FILE: i32 = 0;
     pub const YYEMPTY: i32 = -2;
-    #[derive(Copy, Clone)]
-
-    pub union YYSTYPE {
-        pub num: i64,
-        pub file_type: u32,
-        pub str: *mut i8,
-        pub sval: sval,
-        pub atom: u32,
-        pub merge: merge_mode,
-        pub mapFlags: xkb_map_flags,
-        pub keysym: u32,
-        pub any: *mut ParseCommon,
-        pub anyList: AnyList,
-        pub noSymbolOrActionList: u32,
-        pub expr: *mut ExprDef,
-        pub exprList: ExprList,
-        pub var: *mut VarDef,
-        pub varList: VarList,
-        pub vmod: *mut VModDef,
-        pub vmodList: VModList,
-        pub interp: *mut InterpDef,
-        pub keyType: *mut KeyTypeDef,
-        pub syms: *mut SymbolsDef,
-        pub modMask: *mut ModMapDef,
-        pub groupCompat: *mut GroupCompatDef,
-        pub ledMap: *mut LedMapDef,
-        pub ledName: *mut LedNameDef,
-        pub keyCode: *mut KeycodeDef,
-        pub keyAlias: *mut KeyAliasDef,
-        pub unknown: *mut UnknownStatement,
-        pub geom: *mut ::core::ffi::c_void,
-        pub file: *mut XkbFile,
-        pub fileList: FileList,
-    }
-    #[derive(Copy, Clone)]
-
-    pub struct FileList {
-        pub head: *mut XkbFile,
-        pub last: *mut XkbFile,
-    }
-    #[derive(Copy, Clone)]
-
-    pub struct VModList {
-        pub head: *mut VModDef,
-        pub last: *mut VModDef,
-    }
-    #[derive(Copy, Clone)]
-
-    pub struct VarList {
-        pub head: *mut VarDef,
-        pub last: *mut VarDef,
-    }
-    #[derive(Copy, Clone)]
-
-    pub struct ExprList {
-        pub head: *mut ExprDef,
-        pub last: *mut ExprDef,
-    }
-    #[derive(Copy, Clone)]
-
-    pub struct AnyList {
-        pub head: *mut ParseCommon,
-        pub last: *mut ParseCommon,
-    }
-    use crate::xkb::scanner_utils::sval;
-    use crate::xkb::shared_ast_types::{
-        merge_mode, xkb_map_flags, ExprDef, GroupCompatDef, InterpDef, KeyAliasDef, KeyTypeDef,
-        KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement,
-        VModDef, VarDef, XkbFile,
-    };
 }
 pub mod utf8_h {
 
@@ -162,14 +92,13 @@ pub use super::parser::{parse, parse_next};
 pub use crate::xkb::xkbcomp::keywords::keyword_to_token;
 
 pub use self::parser_h::{
-    AnyList, ExprList, FileList, VModList, VarList, YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS,
-    ALTERNATE, ALTERNATE_GROUP, AUGMENT, CBRACE, CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DEFAULT,
-    DIVIDE, DOT, END_OF_FILE, EQUALS, ERROR_TOK, EXCLAM, FLOAT, FUNCTION_KEYS, GROUP, HIDDEN,
-    IDENT, INCLUDE, INDICATOR, INTEGER, INTERPRET, INVERT, KEY, KEYNAME, KEYPAD_KEYS, KEYS, LOGO,
-    MINUS, MODIFIER_KEYS, MODIFIER_MAP, OBRACE, OBRACKET, OPAREN, OUTLINE, OVERLAY, OVERRIDE,
-    PARTIAL, PLUS, REPLACE, ROW, SECTION, SEMI, SHAPE, SOLID, STRING, TEXT, TIMES, TYPE, VIRTUAL,
-    VIRTUAL_MODS, XKB_COMPATMAP, XKB_GEOMETRY, XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS,
-    XKB_SYMBOLS, XKB_TYPES, YYEMPTY, YYSTYPE, YYUNDEF,
+    YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS, ALTERNATE, ALTERNATE_GROUP, AUGMENT, CBRACE,
+    CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DEFAULT, DIVIDE, DOT, END_OF_FILE, EQUALS, ERROR_TOK,
+    EXCLAM, FLOAT, FUNCTION_KEYS, GROUP, HIDDEN, IDENT, INCLUDE, INDICATOR, INTEGER, INTERPRET,
+    INVERT, KEY, KEYNAME, KEYPAD_KEYS, KEYS, LOGO, MINUS, MODIFIER_KEYS, MODIFIER_MAP, OBRACE,
+    OBRACKET, OPAREN, OUTLINE, OVERLAY, OVERRIDE, PARTIAL, PLUS, REPLACE, ROW, SECTION, SEMI,
+    SHAPE, SOLID, STRING, TEXT, TIMES, TYPE, VIRTUAL, VIRTUAL_MODS, XKB_COMPATMAP, XKB_GEOMETRY,
+    XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS, XKB_SYMBOLS, XKB_TYPES, YYEMPTY, YYUNDEF,
 };
 pub use crate::xkb::messages::{
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
@@ -215,8 +144,8 @@ pub use crate::xkb::messages::{
 pub use crate::xkb::scanner_utils::{scanner, scanner_loc, sval};
 pub use crate::xkb::shared_ast_types::{
     ExprDef, ExprKind, GroupCompatDef, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef,
-    LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile,
-    _ParseCommon, merge_mode, stmt_type, xkb_map_flags, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
+    LedNameDef, ModMapDef, Statement, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile,
+    _IncludeStmt, merge_mode, stmt_type, xkb_map_flags, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
     FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
     FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
     MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
@@ -231,6 +160,167 @@ pub use crate::xkb::shared_ast_types::{
     STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES,
     _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
 };
+
+// ── YYValue: safe replacement for the YYSTYPE union ──
+
+use crate::xkb::shared_ast_types::IncludeStmt;
+
+/// Safe parser value stack type, replacing the old YYSTYPE union.
+/// Each variant owns its data. `Default` produces `None`.
+pub enum YYValue {
+    None,
+    Num(i64),
+    FileType(u32),
+    Str(String),
+    Sval(sval),
+    Atom(u32),
+    Merge(merge_mode),
+    MapFlags(xkb_map_flags),
+    Keysym(u32),
+    NoSymbolOrActionList(u32),
+    Expr(Box<ExprDef>),
+    ExprList(Vec<Box<ExprDef>>),
+    Var(Box<VarDef>),
+    VarList(Vec<Box<VarDef>>),
+    VMod(Box<VModDef>),
+    VModList(Vec<Box<VModDef>>),
+    Interp(Box<InterpDef>),
+    KeyType(Box<KeyTypeDef>),
+    Symbols(Box<SymbolsDef>),
+    ModMask(Box<ModMapDef>),
+    GroupCompat(Box<GroupCompatDef>),
+    LedMap(Box<LedMapDef>),
+    LedName(Box<LedNameDef>),
+    Keycode(Box<KeycodeDef>),
+    KeyAlias(Box<KeyAliasDef>),
+    Unknown(Box<UnknownStatement>),
+    File(Box<XkbFile>),
+    FileList(Vec<Box<XkbFile>>),
+    Stmt(Statement),
+    StmtList(Vec<Statement>),
+}
+
+impl Default for YYValue {
+    fn default() -> Self {
+        YYValue::None
+    }
+}
+
+// Helper to take a value out and replace with None
+impl YYValue {
+    pub fn take(&mut self) -> YYValue {
+        std::mem::take(self)
+    }
+
+    pub fn take_expr(&mut self) -> Option<Box<ExprDef>> {
+        match std::mem::take(self) {
+            YYValue::Expr(e) => Some(e),
+            _ => Option::None,
+        }
+    }
+    pub fn take_expr_list(&mut self) -> Vec<Box<ExprDef>> {
+        match std::mem::take(self) {
+            YYValue::ExprList(v) => v,
+            _ => Vec::new(),
+        }
+    }
+    pub fn take_var(&mut self) -> Option<Box<VarDef>> {
+        match std::mem::take(self) {
+            YYValue::Var(v) => Some(v),
+            _ => Option::None,
+        }
+    }
+    pub fn take_var_list(&mut self) -> Vec<Box<VarDef>> {
+        match std::mem::take(self) {
+            YYValue::VarList(v) => v,
+            _ => Vec::new(),
+        }
+    }
+    pub fn take_vmod(&mut self) -> Option<Box<VModDef>> {
+        match std::mem::take(self) {
+            YYValue::VMod(v) => Some(v),
+            _ => Option::None,
+        }
+    }
+    pub fn take_vmod_list(&mut self) -> Vec<Box<VModDef>> {
+        match std::mem::take(self) {
+            YYValue::VModList(v) => v,
+            _ => Vec::new(),
+        }
+    }
+    pub fn take_file(&mut self) -> Option<Box<XkbFile>> {
+        match std::mem::take(self) {
+            YYValue::File(f) => Some(f),
+            _ => Option::None,
+        }
+    }
+    pub fn take_file_list(&mut self) -> Vec<Box<XkbFile>> {
+        match std::mem::take(self) {
+            YYValue::FileList(v) => v,
+            _ => Vec::new(),
+        }
+    }
+    pub fn take_stmt_list(&mut self) -> Vec<Statement> {
+        match std::mem::take(self) {
+            YYValue::StmtList(v) => v,
+            _ => Vec::new(),
+        }
+    }
+    pub fn as_num(&self) -> i64 {
+        match self {
+            YYValue::Num(n) => *n,
+            _ => 0,
+        }
+    }
+    pub fn as_atom(&self) -> u32 {
+        match self {
+            YYValue::Atom(a) => *a,
+            _ => 0,
+        }
+    }
+    pub fn as_merge(&self) -> merge_mode {
+        match self {
+            YYValue::Merge(m) => *m,
+            _ => MERGE_DEFAULT,
+        }
+    }
+    pub fn as_map_flags(&self) -> xkb_map_flags {
+        match self {
+            YYValue::MapFlags(f) => *f,
+            _ => 0,
+        }
+    }
+    pub fn as_file_type(&self) -> u32 {
+        match self {
+            YYValue::FileType(f) => *f,
+            _ => 0,
+        }
+    }
+    pub fn as_keysym(&self) -> u32 {
+        match self {
+            YYValue::Keysym(k) => *k,
+            _ => 0,
+        }
+    }
+    pub fn as_no_sym_or_action_list(&self) -> u32 {
+        match self {
+            YYValue::NoSymbolOrActionList(n) => *n,
+            _ => 0,
+        }
+    }
+    pub fn as_sval(&self) -> sval {
+        match self {
+            YYValue::Sval(s) => *s,
+            _ => sval::EMPTY,
+        }
+    }
+    pub fn take_str(&mut self) -> String {
+        match std::mem::take(self) {
+            YYValue::Str(s) => s,
+            _ => String::new(),
+        }
+    }
+}
 
 /// Check if byte is whitespace (space, HT, LF, VT, FF, CR).
 /// Matches C `isspace()` for ASCII range.
@@ -280,7 +370,9 @@ fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
         true
     }
 }
-pub fn _xkbcommon_lex(yylval: &mut YYSTYPE, s: &mut scanner) -> i32 {
+
+/// Lex one token and write the semantic value into `yylval`.
+pub fn _xkbcommon_lex(yylval: &mut YYValue, s: &mut scanner) -> i32 {
     loop {
         while is_space(s.peek()) {
             s.next_byte();
@@ -370,15 +462,10 @@ pub fn _xkbcommon_lex(yylval: &mut YYSTYPE, s: &mut scanner) -> i32 {
             );
             return ERROR_TOK;
         }
-        // Duplicate scanner buffer as a C string for the parser
-        let buf_len = s.buf_pos.saturating_sub(1); // exclude null terminator
-        let str_ptr = std::ffi::CString::new(&s.buf[..buf_len])
-            .map(|cs| cs.into_raw())
-            .unwrap_or(std::ptr::null_mut());
-        if str_ptr.is_null() {
-            return ERROR_TOK;
-        }
-        yylval.str = str_ptr;
+        // Convert buffer to String (exclude null terminator)
+        let buf_len = s.buf_pos.saturating_sub(1);
+        let string = String::from_utf8_lossy(&s.buf[..buf_len]).into_owned();
+        *yylval = YYValue::Str(string);
         return STRING;
     }
     if s.chr(b'<' as i8) {
@@ -399,7 +486,7 @@ pub fn _xkbcommon_lex(yylval: &mut YYSTYPE, s: &mut scanner) -> i32 {
         let keyname_bytes: Vec<u8> = s
             .input_slice(s.token_pos + 1, s.token_pos + 1 + len)
             .to_vec();
-        yylval.atom = xkb_atom_intern(s.ctx_mut(), &keyname_bytes);
+        *yylval = YYValue::Atom(xkb_atom_intern(s.ctx_mut(), &keyname_bytes));
         return KEYNAME;
     }
     if s.chr(b';' as i8) {
@@ -461,15 +548,15 @@ pub fn _xkbcommon_lex(yylval: &mut YYSTYPE, s: &mut scanner) -> i32 {
         if tok >= 0 {
             return tok;
         }
-        yylval.sval = sval {
+        *yylval = YYValue::Sval(sval {
             len: len_0,
             start: start_0,
-        };
+        });
         return IDENT;
     }
     let mut num_val: i64 = 0;
     if number(s, &mut num_val, &mut tok) {
-        yylval.num = num_val;
+        *yylval = YYValue::Num(num_val);
         if tok == ERROR_TOK {
             let loc_4 = s.token_location();
             log::error!(
@@ -497,7 +584,7 @@ pub fn XkbParseStringInit<'a>(
     sc: &mut scanner<'a>,
     input: &'a [u8],
     file_name: &str,
-    _map: *const i8,
+    _map: &str,
 ) -> bool {
     *sc = scanner::new(ctx, input, file_name, std::ptr::null_mut());
     if !sc.check_supported_char_encoding() {
@@ -518,47 +605,22 @@ pub fn XkbParseStringInit<'a>(
     true
 }
 pub fn XkbParseString(
-    ctx: *mut xkb_context,
+    ctx: &mut xkb_context,
     input: &[u8],
     file_name: &str,
-    map: *const i8,
+    map: &str,
 ) -> Option<Box<XkbFile>> {
     let mut sc = scanner::new(std::ptr::null_mut(), &[], "", std::ptr::null_mut());
-    if !XkbParseStringInit(ctx, &mut sc, input, file_name, map) {
+    if !XkbParseStringInit(ctx as *mut _, &mut sc, input, file_name, map) {
         return None;
     }
-    // Cast types between parser and scanner modules (same C struct, different Rust types)
-    unsafe {
-        let raw = parse(ctx as *mut _, &raw mut sc as *mut _, map) as *mut XkbFile;
-        if raw.is_null() {
-            None
-        } else {
-            Some(Box::from_raw(raw))
-        }
-    }
-}
-pub fn XkbParseStringNext(
-    ctx: *mut xkb_context,
-    scanner: *mut scanner,
-    map: *const i8,
-    out: *mut *mut XkbFile,
-) -> bool {
-    unsafe {
-        if !map.is_null() {
-            // Cast types between parser and scanner modules (same C struct, different Rust types)
-            *out = parse(ctx as *mut _, scanner as *mut _, map) as *mut XkbFile;
-            !(*out).is_null()
-        } else {
-            // Cast types between parser and scanner modules
-            parse_next(ctx as *mut _, scanner as *mut _, out as *mut _)
-        }
-    }
+    parse(ctx, &mut sc, map)
 }
 pub fn XkbParseFile(
-    ctx: *mut xkb_context,
+    ctx: &mut xkb_context,
     file: &std::fs::File,
     file_name: &str,
-    map: *const i8,
+    map: &str,
 ) -> Option<Box<XkbFile>> {
     use crate::xkb::utils::MappedFile;
 

@@ -7,52 +7,6 @@
 use crate::xkb::shared_types::{xkb_context, xkb_keymap, xkb_overlay_index_t};
 use crate::xkb::text::LookupEntry;
 
-/// Convert a `*mut ParseCommon` (pointing to the `common` field inside a struct at the given offset)
-/// back to the struct pointer.  Works regardless of struct layout.
-/// Returns null if `common_ptr` is null.
-///
-/// # Safety
-/// `common_ptr` must be null or actually point to the `common` field of a valid struct
-/// whose `common` field is at the given `offset`.
-#[inline]
-pub unsafe fn from_common_ptr_offset(common_ptr: *mut ParseCommon, offset: usize) -> *mut u8 {
-    if common_ptr.is_null() {
-        return std::ptr::null_mut();
-    }
-    unsafe { (common_ptr as *mut u8).sub(offset) }
-}
-
-/// Convenience macro: `from_common!(ptr, Type)` → `*mut Type`
-macro_rules! from_common {
-    ($ptr:expr, $T:ty) => {
-        crate::xkb::shared_ast_types::from_common_ptr_offset($ptr, std::mem::offset_of!($T, common))
-            as *mut $T
-    };
-}
-pub(crate) use from_common;
-
-/// Get a `*mut ParseCommon` from a pointer to a struct that has a `common` field.
-/// This is equivalent to `&raw mut (*ptr).common` but expressed as a macro for brevity.
-macro_rules! to_common {
-    ($ptr:expr) => {
-        &raw mut (*$ptr).common as *mut ParseCommon
-    };
-}
-pub(crate) use to_common;
-
-/// Null-safe version: returns null if input is null, otherwise to_common!
-macro_rules! to_common_or_null {
-    ($ptr:expr) => {{
-        let __p = $ptr;
-        if __p.is_null() {
-            std::ptr::null_mut()
-        } else {
-            unsafe { &raw mut (*__p).common as *mut ParseCommon }
-        }
-    }};
-}
-pub(crate) use to_common_or_null;
-
 // message_code types needed by Report* inline functions
 pub type xkb_message_code = u32;
 pub const XKB_ERROR_WRONG_FIELD_TYPE: xkb_message_code = 578;
@@ -128,18 +82,9 @@ pub const MERGE_DEFAULT: merge_mode = 0;
 
 // ── Core AST node types ─────────────────────────────────────────────
 
-#[derive(Copy, Clone)]
-
-pub struct _ParseCommon {
-    pub next: *mut _ParseCommon,
-    pub type_0: stmt_type,
-}
-pub type ParseCommon = _ParseCommon;
-
 #[derive(Clone)]
 
 pub struct _IncludeStmt {
-    pub common: ParseCommon,
     pub merge: merge_mode,
     pub stmt: String,
     pub file: String,
@@ -151,39 +96,9 @@ pub type IncludeStmt = _IncludeStmt;
 
 // ── Expression types ────────────────────────────────────────────────
 
-/// Expression AST node. Replaces the old C-style tagged union.
-/// `common` maintains layout compatibility with ParseCommon overlay pattern.
-/// `common.next` is used for intrusive linked lists.
-/// `common.type_0` is redundant with `kind` but needed for FreeStmt dispatch.
-
+/// Expression AST node.
 pub struct ExprDef {
-    pub common: ParseCommon,
     pub kind: ExprKind,
-}
-
-impl ExprDef {
-    /// Safe accessor for the next ExprDef in a ParseCommon linked list.
-    /// Uses the correct field offset since Rust may reorder fields without `#[repr(C)]`.
-    pub fn next(&self) -> Option<&ExprDef> {
-        let next_ptr = self.common.next;
-        if next_ptr.is_null() {
-            None
-        } else {
-            let offset = std::mem::offset_of!(ExprDef, common);
-            Some(unsafe { &*((next_ptr as *const u8).sub(offset) as *const ExprDef) })
-        }
-    }
-
-    /// Mutable version of `next()`.
-    pub fn next_mut(&mut self) -> Option<&mut ExprDef> {
-        let next_ptr = self.common.next;
-        if next_ptr.is_null() {
-            None
-        } else {
-            let offset = std::mem::offset_of!(ExprDef, common);
-            Some(unsafe { &mut *((next_ptr as *mut u8).sub(offset) as *mut ExprDef) })
-        }
-    }
 }
 
 /// The discriminated payload of an expression node.
@@ -232,16 +147,6 @@ impl ExprDef {
         Self::stmt_type_for_kind(&self.kind)
     }
 
-    /// Debug: assert common.type_0 matches kind
-    pub fn assert_consistent(&self) {
-        let expected = Self::stmt_type_for_kind(&self.kind);
-        assert_eq!(
-            self.common.type_0, expected,
-            "ExprDef inconsistent: common.type_0={} but kind expects {}",
-            self.common.type_0, expected
-        );
-    }
-
     /// Returns the `stmt_type` for a given ExprKind (usable before construction).
     pub fn stmt_type_for_kind(kind: &ExprKind) -> stmt_type {
         match kind {
@@ -264,51 +169,20 @@ impl ExprDef {
     }
 }
 
-/// Trait to extract raw mutable pointer from `Option<Box<T>>` for backward compat during migration.
-pub trait OptBoxRaw<T> {
-    fn raw(&self) -> *mut T;
-}
-impl<T> OptBoxRaw<T> for Option<Box<T>> {
-    #[inline]
-    fn raw(&self) -> *mut T {
-        match self {
-            Some(b) => &**b as *const T as *mut T,
-            None => std::ptr::null_mut(),
-        }
-    }
-}
-
-/// Convert raw pointer to `Option<Box<T>>`. Null → None.
-/// # Safety: ptr must be null or from `Box::into_raw`.
-#[inline]
-pub unsafe fn box_from_raw<T>(ptr: *mut T) -> Option<Box<T>> {
-    if ptr.is_null() {
-        None
-    } else {
-        Some(unsafe { Box::from_raw(ptr) })
-    }
-}
-
 // Re-export ast_build functions used by consumers via ast_h
 pub use crate::xkb::xkbcomp::ast_build::{
-    stmt_type_to_operator_char, stmt_type_to_string, xkb_file_type_to_string, FreeXkbFile,
+    stmt_type_to_operator_char, stmt_type_to_string, xkb_file_type_to_string,
 };
-
-// Note: ExprAction, ExprActionList, ExprArrayRef, ExprBinary, ExprUnary,
-// ExprFieldRef, ExprIdent, ExprString, ExprBoolean, ExprInteger, ExprKeySym,
-// ExprKeyName, ExprKeysymList structs have been replaced by ExprKind enum variants.
 
 // ── Statement definition types ──────────────────────────────────────
 
 pub struct VarDef {
-    pub common: ParseCommon,
     pub merge: merge_mode,
     pub name: Option<Box<ExprDef>>,
     pub value: Option<Box<ExprDef>>,
 }
 
 pub struct VModDef {
-    pub common: ParseCommon,
     pub merge: merge_mode,
     pub name: u32,
     pub value: Option<Box<ExprDef>>,
@@ -317,7 +191,6 @@ pub struct VModDef {
 #[derive(Copy, Clone)]
 
 pub struct KeycodeDef {
-    pub common: ParseCommon,
     pub merge: merge_mode,
     pub name: u32,
     pub value: i64,
@@ -326,42 +199,36 @@ pub struct KeycodeDef {
 #[derive(Copy, Clone)]
 
 pub struct KeyAliasDef {
-    pub common: ParseCommon,
     pub merge: merge_mode,
     pub alias: u32,
     pub real: u32,
 }
 
 pub struct KeyTypeDef {
-    pub common: ParseCommon,
     pub merge: merge_mode,
     pub name: u32,
     pub body: Vec<VarDef>,
 }
 
 pub struct SymbolsDef {
-    pub common: ParseCommon,
     pub merge: merge_mode,
     pub keyName: u32,
     pub symbols: Vec<VarDef>,
 }
 
 pub struct ModMapDef {
-    pub common: ParseCommon,
     pub merge: merge_mode,
     pub modifier: u32,
     pub keys: Vec<ExprDef>,
 }
 
 pub struct GroupCompatDef {
-    pub common: ParseCommon,
     pub merge: merge_mode,
     pub group: i64,
     pub def: Option<Box<ExprDef>>,
 }
 
 pub struct InterpDef {
-    pub common: ParseCommon,
     pub merge: merge_mode,
     pub sym: u32,
     pub match_0: Option<Box<ExprDef>>,
@@ -369,7 +236,6 @@ pub struct InterpDef {
 }
 
 pub struct LedNameDef {
-    pub common: ParseCommon,
     pub merge: merge_mode,
     pub virtual_0: bool,
     pub ndx: i64,
@@ -377,7 +243,6 @@ pub struct LedNameDef {
 }
 
 pub struct LedMapDef {
-    pub common: ParseCommon,
     pub merge: merge_mode,
     pub name: u32,
     pub body: Vec<VarDef>,
@@ -386,7 +251,7 @@ pub struct LedMapDef {
 #[derive(Clone)]
 
 pub struct UnknownStatement {
-    pub common: ParseCommon,
+    pub stmt_type: stmt_type,
     pub name: String,
 }
 
@@ -449,7 +314,7 @@ impl Statement {
             Statement::Include(_) => STMT_INCLUDE,
             Statement::Keycode(_) => STMT_KEYCODE,
             Statement::KeyAlias(_) => STMT_ALIAS,
-            Statement::Expr(e) => e.common.type_0,
+            Statement::Expr(e) => e.stmt_type(),
             Statement::Var(_) => STMT_VAR,
             Statement::KeyType(_) => STMT_TYPE,
             Statement::Interp(_) => STMT_INTERP,
@@ -459,107 +324,13 @@ impl Statement {
             Statement::GroupCompat(_) => STMT_GROUP_COMPAT,
             Statement::LedMap(_) => STMT_LED_MAP,
             Statement::LedName(_) => STMT_LED_NAME,
-            Statement::Unknown(u) => u.common.type_0,
+            Statement::Unknown(_) => STMT_UNKNOWN,
             Statement::XkbFile(_) => 0, // XkbFile used as sub-file
         }
     }
 }
 
-/// Walk a `*mut VarDef` linked list (via `common.next`) and collect into `Vec<VarDef>`.
-///
-/// # Safety
-/// `head` must be null or a valid linked list of Box-allocated VarDef nodes.
-pub unsafe fn collect_vardefs(head: *mut VarDef) -> Vec<VarDef> {
-    let mut defs = Vec::new();
-    let mut cur = head;
-    while !cur.is_null() {
-        let next = unsafe { (*cur).common.next };
-        unsafe { (*cur).common.next = std::ptr::null_mut() };
-        defs.push(unsafe { *Box::from_raw(cur) });
-        cur = unsafe { from_common!(next, VarDef) };
-    }
-    defs
-}
-
-/// Walk a `*mut ExprDef` linked list (via `common.next`) and collect into `Vec<ExprDef>`.
-///
-/// # Safety
-/// `head` must be null or a valid linked list of Box-allocated ExprDef nodes.
-pub unsafe fn collect_exprs(head: *mut ExprDef) -> Vec<ExprDef> {
-    let mut exprs = Vec::new();
-    let mut cur = head;
-    while !cur.is_null() {
-        let next = unsafe { (*cur).common.next };
-        unsafe { (*cur).common.next = std::ptr::null_mut() };
-        exprs.push(unsafe { *Box::from_raw(cur) });
-        cur = unsafe { from_common!(next, ExprDef) };
-    }
-    exprs
-}
-
-/// Walk a `*mut ParseCommon` linked list, take ownership of each node,
-/// and collect into a `Vec<Statement>`.  Consumes and frees the linked list.
-///
-/// # Safety
-/// `head` must be null or a valid linked list of Box-allocated ParseCommon nodes.
-pub unsafe fn collect_stmts(head: *mut ParseCommon) -> Vec<Statement> {
-    let mut stmts = Vec::new();
-    let mut cur = head;
-    while !cur.is_null() {
-        let next = unsafe { (*cur).next };
-        unsafe { (*cur).next = std::ptr::null_mut() }; // detach from chain
-        let stmt = unsafe {
-            match (*cur).type_0 {
-                STMT_INCLUDE => Statement::Include(Box::from_raw(from_common!(cur, IncludeStmt))),
-                STMT_KEYCODE => Statement::Keycode(Box::from_raw(from_common!(cur, KeycodeDef))),
-                STMT_ALIAS => Statement::KeyAlias(Box::from_raw(from_common!(cur, KeyAliasDef))),
-                STMT_VAR => Statement::Var(Box::from_raw(from_common!(cur, VarDef))),
-                STMT_TYPE => Statement::KeyType(Box::from_raw(from_common!(cur, KeyTypeDef))),
-                STMT_INTERP => Statement::Interp(Box::from_raw(from_common!(cur, InterpDef))),
-                STMT_VMOD => Statement::VMod(Box::from_raw(from_common!(cur, VModDef))),
-                STMT_SYMBOLS => Statement::Symbols(Box::from_raw(from_common!(cur, SymbolsDef))),
-                STMT_MODMAP => Statement::ModMap(Box::from_raw(from_common!(cur, ModMapDef))),
-                STMT_GROUP_COMPAT => {
-                    Statement::GroupCompat(Box::from_raw(from_common!(cur, GroupCompatDef)))
-                }
-                STMT_LED_MAP => Statement::LedMap(Box::from_raw(from_common!(cur, LedMapDef))),
-                STMT_LED_NAME => Statement::LedName(Box::from_raw(from_common!(cur, LedNameDef))),
-                STMT_UNKNOWN_COMPOUND | STMT_UNKNOWN_DECLARATION => {
-                    Statement::Unknown(Box::from_raw(from_common!(cur, UnknownStatement)))
-                }
-                _ => {
-                    // All STMT_EXPR_* types
-                    Statement::Expr(Box::from_raw(from_common!(cur, ExprDef)))
-                }
-            }
-        };
-        stmts.push(stmt);
-        cur = next;
-    }
-    stmts
-}
-
-/// Walk a `*mut ParseCommon` linked list of XkbFile nodes and collect into Vec<Statement>.
-///
-/// # Safety
-/// `head` must be null or a valid linked list of Box-allocated XkbFile nodes.
-pub unsafe fn collect_file_stmts(head: *mut ParseCommon) -> Vec<Statement> {
-    let mut stmts = Vec::new();
-    let mut cur = head;
-    while !cur.is_null() {
-        let next = unsafe { (*cur).next };
-        unsafe { (*cur).next = std::ptr::null_mut() };
-        stmts.push(unsafe { Statement::XkbFile(Box::from_raw(from_common!(cur, XkbFile))) });
-        cur = next;
-    }
-    stmts
-}
-
-// Statement::Drop — no longer needed since all inner linked lists have been converted to Vec.
-// Vec<ExprDef> and Vec<VarDef> drop automatically.
-
 pub struct XkbFile {
-    pub common: ParseCommon,
     pub name: String,
     pub defs: Vec<Statement>,
     pub file_type: u32,

@@ -342,7 +342,7 @@ fn ResolveStateAndPredicate(
     };
     *pred_rtrn = MATCH_EXACTLY;
     let resolve_expr: &ExprDef;
-    if expr.common.type_0 == STMT_EXPR_ACTION_DECL {
+    if expr.stmt_type() == STMT_EXPR_ACTION_DECL {
         let ExprKind::Action { name, args } = &expr.kind else {
             unreachable!()
         };
@@ -357,7 +357,7 @@ fn ResolveStateAndPredicate(
         }
         *pred_rtrn = pred;
         resolve_expr = &args[0];
-    } else if expr.common.type_0 == STMT_EXPR_IDENT {
+    } else if expr.stmt_type() == STMT_EXPR_IDENT {
         let ExprKind::Ident(ident_val) = &expr.kind else {
             unreachable!()
         };
@@ -600,7 +600,7 @@ fn SetInterpField(
         if arrayNdx.is_some() {
             return ReportSINotArray(info, ki, si, field);
         }
-        if value.common.type_0 == STMT_EXPR_ACTION_LIST {
+        if value.stmt_type() == STMT_EXPR_ACTION_LIST {
             let ExprKind::ActionList {
                 actions: action_vec,
             } = &mut value.kind
@@ -1081,7 +1081,7 @@ fn HandleCompatMapFile(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo, file
                     log::error!(
                         "[XKB-{:03}] Unsupported compatibility {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
-                        if unk.common.type_0 == STMT_UNKNOWN_COMPOUND {
+                        if unk.stmt_type == STMT_UNKNOWN_COMPOUND {
                             "compound"
                         } else {
                             "declaration"

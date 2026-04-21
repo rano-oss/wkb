@@ -4,7 +4,7 @@ use crate::xkb::text::{buttonNames, GROUP_LAST_INDEX_NAME};
 
 pub use crate::xkb::keymap::XkbModNameToIndex;
 pub use crate::xkb::shared_ast_types::stmt_type_to_operator_char;
-use crate::xkb::shared_ast_types::{ExprKind, OptBoxRaw};
+use crate::xkb::shared_ast_types::ExprKind;
 
 pub struct LookupModMaskPriv<'a> {
     pub mods: &'a xkb_mod_set,
@@ -149,7 +149,7 @@ pub fn ExprResolveLhs<'a>(
     field_rtrn: &mut u32,
     index_rtrn: &mut Option<&'a ExprDef>,
 ) -> bool {
-    match expr.common.type_0 {
+    match expr.stmt_type() {
         10 => {
             let ExprKind::Ident(ident) = &expr.kind else {
                 unreachable!()
@@ -193,7 +193,7 @@ pub fn ExprResolveLhs<'a>(
     log::error!(
         "[XKB-{:03}] Unexpected operator {} in ResolveLhs\n",
         XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-        { expr.common.type_0 }
+        { expr.stmt_type() }
     );
     false
 }
@@ -202,7 +202,7 @@ pub fn ExprResolveBoolean(ctx: &xkb_context, expr: &ExprDef, set_rtrn: &mut bool
     let ok: bool;
     #[allow(unused_assignments)]
     let mut ident: &str = "";
-    match expr.common.type_0 {
+    match expr.stmt_type() {
         7 => {
             let ExprKind::Boolean(set) = &expr.kind else {
                 unreachable!()
@@ -214,7 +214,7 @@ pub fn ExprResolveBoolean(ctx: &xkb_context, expr: &ExprDef, set_rtrn: &mut bool
             log::error!(
                 "[XKB-{:03}] Found {} where boolean was expected\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                stmt_type_to_string(expr.common.type_0)
+                stmt_type_to_string(expr.stmt_type())
             );
             return false;
         }
@@ -272,14 +272,14 @@ pub fn ExprResolveBoolean(ctx: &xkb_context, expr: &ExprDef, set_rtrn: &mut bool
             log::error!(
                 "[XKB-{:03}] {} of boolean values not permitted\n",
                 XKB_ERROR_INVALID_OPERATION as i32,
-                stmt_type_to_string(expr.common.type_0)
+                stmt_type_to_string(expr.stmt_type())
             );
         }
         _ => {
             log::error!(
                 "[XKB-{:03}] Unknown operator {} in ResolveBoolean\n",
                 XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                { expr.common.type_0 }
+                { expr.stmt_type() }
             );
         }
     }
@@ -296,7 +296,7 @@ fn ExprResolveIntegerLookup(
     let mut ok: bool = false;
     let mut l: i64 = 0_i64;
     let mut r: i64 = 0_i64;
-    match expr.common.type_0 {
+    match expr.stmt_type() {
         5 => {
             let ExprKind::Integer(ival) = &expr.kind else {
                 unreachable!()
@@ -308,7 +308,7 @@ fn ExprResolveIntegerLookup(
             log::error!(
                 "[XKB-{:03}] Found {} where an int was expected\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                stmt_type_to_string(expr.common.type_0)
+                stmt_type_to_string(expr.stmt_type())
             );
             return false;
         }
@@ -369,7 +369,7 @@ fn ExprResolveIntegerLookup(
             {
                 return false;
             }
-            match expr.common.type_0 {
+            match expr.stmt_type() {
                 17 => {
                     let (v, overflow) = l.overflowing_add(r);
                     *val_rtrn = v;
@@ -418,7 +418,7 @@ fn ExprResolveIntegerLookup(
                     log::error!(
                         "[XKB-{:03}] {} of integers not permitted\n",
                         XKB_ERROR_INVALID_OPERATION as i32,
-                        stmt_type_to_string(expr.common.type_0)
+                        stmt_type_to_string(expr.stmt_type())
                     );
                     return false;
                 }
@@ -446,7 +446,7 @@ fn ExprResolveIntegerLookup(
             if !ExprResolveIntegerLookup(ctx, left, &mut l, None, lookup) {
                 return false;
             }
-            *val_rtrn = if expr.common.type_0 == STMT_EXPR_NEGATE {
+            *val_rtrn = if expr.stmt_type() == STMT_EXPR_NEGATE {
                 -l
             } else {
                 !l
@@ -464,7 +464,7 @@ fn ExprResolveIntegerLookup(
             log::error!(
                 "[XKB-{:03}] Unknown operator {} in ResolveInteger\n",
                 XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                { expr.common.type_0 }
+                { expr.stmt_type() }
             );
         }
     }
@@ -563,7 +563,7 @@ pub fn ExprResolveButton(ctx: &xkb_context, expr: &ExprDef, btn_rtrn: &mut i64) 
 }
 
 pub fn ExprResolveString(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut u32) -> bool {
-    match expr.common.type_0 {
+    match expr.stmt_type() {
         4 => {
             let ExprKind::String(s) = &expr.kind else {
                 unreachable!()
@@ -575,7 +575,7 @@ pub fn ExprResolveString(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut u32) 
             log::error!(
                 "[XKB-{:03}] Found {}, expected a string\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                stmt_type_to_string(expr.common.type_0)
+                stmt_type_to_string(expr.stmt_type())
             );
             return false;
         }
@@ -608,7 +608,7 @@ pub fn ExprResolveString(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut u32) 
             log::error!(
                 "[XKB-{:03}] {} of strings not permitted\n",
                 XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-                stmt_type_to_string(expr.common.type_0)
+                stmt_type_to_string(expr.stmt_type())
             );
             return false;
         }
@@ -616,7 +616,7 @@ pub fn ExprResolveString(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut u32) 
             log::error!(
                 "[XKB-{:03}] Unknown operator {} in ResolveString\n",
                 XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                { expr.common.type_0 }
+                { expr.stmt_type() }
             );
         }
     }
@@ -629,11 +629,11 @@ pub fn ExprResolveEnum(
     val_rtrn: &mut u32,
     values: &[LookupEntry],
 ) -> bool {
-    if expr.common.type_0 != STMT_EXPR_IDENT {
+    if expr.stmt_type() != STMT_EXPR_IDENT {
         log::error!(
             "[XKB-{:03}] Found a {} where an enumerated value was expected\n",
             XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            stmt_type_to_string(expr.common.type_0)
+            stmt_type_to_string(expr.stmt_type())
         );
         return false;
     }
@@ -675,7 +675,7 @@ fn ExprResolveMaskLookup(
     let mut v: i64 = 0_i64;
     let mut bogus: Option<&str> = None;
     let c2rust_current_block_47: u64;
-    match expr.common.type_0 {
+    match expr.stmt_type() {
         5 => {
             let ExprKind::Integer(ival) = &expr.kind else {
                 unreachable!()
@@ -696,7 +696,7 @@ fn ExprResolveMaskLookup(
             log::error!(
                 "[XKB-{:03}] Found {} where a mask was expected\n",
                 XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                stmt_type_to_string(expr.common.type_0)
+                stmt_type_to_string(expr.stmt_type())
             );
             return false;
         }
@@ -766,7 +766,7 @@ fn ExprResolveMaskLookup(
             {
                 return false;
             }
-            match expr.common.type_0 {
+            match expr.stmt_type() {
                 17 => {
                     *val_rtrn = l | r;
                 }
@@ -777,7 +777,7 @@ fn ExprResolveMaskLookup(
                     log::error!(
                         "[XKB-{:03}] Cannot {} masks; Illegal operation ignored\n",
                         XKB_ERROR_INVALID_OPERATION as i32,
-                        if expr.common.type_0 == STMT_EXPR_DIVIDE {
+                        if expr.stmt_type() == STMT_EXPR_DIVIDE {
                             "divide"
                         } else {
                             "multiply"
@@ -827,7 +827,7 @@ fn ExprResolveMaskLookup(
             log::error!(
                 "[XKB-{:03}] The '{}' unary operator cannot be used with a mask\n",
                 XKB_ERROR_INVALID_OPERATION as i32,
-                (stmt_type_to_operator_char(expr.common.type_0) as u8 as char)
+                (stmt_type_to_operator_char(expr.stmt_type()) as u8 as char)
             );
             return false;
         }
@@ -835,7 +835,7 @@ fn ExprResolveMaskLookup(
             log::error!(
                 "[XKB-{:03}] Unknown operator type {} in ResolveMask\n",
                 XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                { expr.common.type_0 }
+                { expr.stmt_type() }
             );
             c2rust_current_block_47 = 11626999923138678822;
         }
@@ -886,11 +886,11 @@ pub fn ExprResolveMod(
     mods: &xkb_mod_set,
     ndx_rtrn: &mut u32,
 ) -> bool {
-    if def.common.type_0 != STMT_EXPR_IDENT {
+    if def.stmt_type() != STMT_EXPR_IDENT {
         log::error!(
             "[XKB-{:03}] Cannot resolve virtual modifier: found {} where a virtual modifier name was expected\n",
             XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            stmt_type_to_string(def.common.type_0)
+            stmt_type_to_string(def.stmt_type())
         );
         return false;
     }

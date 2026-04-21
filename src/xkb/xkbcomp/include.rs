@@ -12,7 +12,6 @@ pub const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
 pub const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
 
 pub use crate::xkb::messages::{
-    _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
     XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
@@ -35,11 +34,11 @@ pub use crate::xkb::messages::{
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
     XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
-    XKB_WARNING_CANNOT_INFER_KEY_TYPE,
-    XKB_WARNING_CONFLICTING_KEY_ACTION, XKB_WARNING_CONFLICTING_KEY_FIELDS,
-    XKB_WARNING_CONFLICTING_KEY_NAME, XKB_WARNING_CONFLICTING_KEY_SYMBOL,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS, XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY, XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
+    XKB_WARNING_CANNOT_INFER_KEY_TYPE, XKB_WARNING_CONFLICTING_KEY_ACTION,
+    XKB_WARNING_CONFLICTING_KEY_FIELDS, XKB_WARNING_CONFLICTING_KEY_NAME,
+    XKB_WARNING_CONFLICTING_KEY_SYMBOL, XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES, XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY,
+    XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
     XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES, XKB_WARNING_CONFLICTING_MODMAP,
     XKB_WARNING_DEPRECATED_KEYSYM, XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_DUPLICATE_ENTRY,
     XKB_WARNING_EXTRA_SYMBOLS_IGNORED, XKB_WARNING_ILLEGAL_KEYCODE_ALIAS,
@@ -51,13 +50,12 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
     XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
-    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD,
+    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
 };
 pub use crate::xkb::scanner_utils::{scanner, scanner_loc};
 pub use crate::xkb::shared_ast_types::{
-    _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_file_type_to_string, xkb_map_flags,
-    IncludeStmt, ParseCommon, XkbFile, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
-    _STMT_NUM_VALUES, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES,
+    _IncludeStmt, merge_mode, stmt_type, xkb_file_type_to_string, xkb_map_flags, IncludeStmt,
+    XkbFile, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES,
     FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
     LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER,
     MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT,
@@ -69,7 +67,8 @@ pub use crate::xkb::shared_ast_types::{
     STMT_EXPR_NOT, STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
     STMT_GROUP_COMPAT, STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME,
     STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
-    STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD,
+    STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
+    _STMT_NUM_VALUES,
 };
 use crate::xkb::xkbcomp::scanner::XkbParseFile;
 
@@ -130,13 +129,7 @@ pub fn ParseIncludeMap(input: &str) -> Option<(ParsedIncludeMap, Option<&str>)> 
     ))
 }
 static XKB_FILE_TYPE_INCLUDE_DIRS: [&str; 7] = [
-    "keycodes",
-    "types",
-    "compat",
-    "symbols",
-    "geometry",
-    "keymap",
-    "rules",
+    "keycodes", "types", "compat", "symbols", "geometry", "keymap", "rules",
 ];
 fn DirectoryForInclude(type_0: u32) -> &'static str {
     if type_0 as usize >= XKB_FILE_TYPE_INCLUDE_DIRS.len() {
@@ -148,37 +141,43 @@ fn DirectoryForInclude(type_0: u32) -> &'static str {
 fn LogIncludePaths(ctx: &mut xkb_context) {
     let num = xkb_context_num_include_paths(ctx);
     if num > 0_u32 {
-        log::error!("[XKB-{:03}] {} include paths searched:\n",
+        log::error!(
+            "[XKB-{:03}] {} include paths searched:\n",
             XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-            num);
+            num
+        );
         for i in 0..num {
-            log::error!("[XKB-{:03}] \t{}\n",
+            log::error!(
+                "[XKB-{:03}] \t{}\n",
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                xkb_context_include_path_get(ctx, i));
+                xkb_context_include_path_get(ctx, i)
+            );
         }
     } else {
-        log::error!("[XKB-{:03}] There are no include paths to search\n",
-            XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32);
+        log::error!(
+            "[XKB-{:03}] There are no include paths to search\n",
+            XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32
+        );
     }
     let num_failed = xkb_context_num_failed_include_paths(ctx);
     if num_failed > 0_u32 {
-        log::error!("[XKB-{:03}] {} include paths could not be added:\n",
+        log::error!(
+            "[XKB-{:03}] {} include paths could not be added:\n",
             XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-            num_failed);
+            num_failed
+        );
         for i in 0..num_failed {
-            log::error!("[XKB-{:03}] \t{}\n",
+            log::error!(
+                "[XKB-{:03}] \t{}\n",
                 XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                xkb_context_failed_include_path_get(ctx, i));
+                xkb_context_failed_include_path_get(ctx, i)
+            );
         }
     }
 }
 /// Expand `%H`, `%S`, `%E`, `%%` in the given name string.
 /// Returns `Some(expanded)` on success, `None` on error.
-fn expand_percent(
-    parent_file_name: &str,
-    type_dir: &str,
-    name: &str,
-) -> Option<String> {
+fn expand_percent(parent_file_name: &str, type_dir: &str, name: &str) -> Option<String> {
     let max_len = 4096usize;
     let mut result = String::new();
     let mut chars = name.chars().peekable();
@@ -186,16 +185,14 @@ fn expand_percent(
         if c == '%' {
             match chars.next() {
                 Some('%') => result.push('%'),
-                Some('H') => {
-                    match xkb_context_getenv("HOME") {
-                        Ok(home) => result.push_str(&home),
-                        Err(_) => {
-                            log::error!("{}: %H was used in an include statement, but the HOME environment variable is not set\n",
+                Some('H') => match xkb_context_getenv("HOME") {
+                    Ok(home) => result.push_str(&home),
+                    Err(_) => {
+                        log::error!("{}: %H was used in an include statement, but the HOME environment variable is not set\n",
                                 parent_file_name);
-                            return None;
-                        }
+                        return None;
                     }
-                }
+                },
                 Some('S') => {
                     let sys = xkb_context_include_path_get_system_path();
                     result.push_str(&sys);
@@ -209,16 +206,20 @@ fn expand_percent(
                     result.push_str(type_dir);
                 }
                 Some(other) => {
-                    log::error!("[XKB-{:03}] {}: unknown % format ({}) in include statement\n",
+                    log::error!(
+                        "[XKB-{:03}] {}: unknown % format ({}) in include statement\n",
                         XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
                         parent_file_name,
-                        other);
+                        other
+                    );
                     return None;
                 }
                 None => {
-                    log::error!("[XKB-{:03}] {}: trailing %% in include statement\n",
+                    log::error!(
+                        "[XKB-{:03}] {}: trailing %% in include statement\n",
                         XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                        parent_file_name);
+                        parent_file_name
+                    );
                     return None;
                 }
             }
@@ -226,9 +227,11 @@ fn expand_percent(
             result.push(c);
         }
         if result.len() > max_len {
-            log::error!("[XKB-{:03}] {}: include path after expansion is too long\n",
+            log::error!(
+                "[XKB-{:03}] {}: include path after expansion is too long\n",
                 XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                parent_file_name);
+                parent_file_name
+            );
             return None;
         }
     }
@@ -279,10 +282,12 @@ pub fn FindFileInXkbPath(
             name
         );
         if path.len() >= 4096 {
-            log::error!("[XKB-{:03}] Path is too long: expected max length of {}, got: {}\n",
+            log::error!(
+                "[XKB-{:03}] Path is too long: expected max length of {}, got: {}\n",
                 XKB_ERROR_INVALID_PATH as i32,
                 4096,
-                &path);
+                &path
+            );
         } else if let Ok(file) = std::fs::File::open(&path) {
             *offset = i;
             return Some((file, path));
@@ -290,19 +295,23 @@ pub fn FindFileInXkbPath(
         i += 1;
     }
     if required && *offset == 0 {
-        log::error!("[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
+        log::error!(
+            "[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
             XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
             type_dir,
-            name);
+            name
+        );
         LogIncludePaths(ctx);
     }
     None
 }
 pub fn ExceedsIncludeMaxDepth(include_depth: u32) -> bool {
     if include_depth >= INCLUDE_MAX_DEPTH as u32 {
-        log::error!("[XKB-{:03}] Exceeded include depth threshold ({})",
+        log::error!(
+            "[XKB-{:03}] Exceeded include depth threshold ({})",
             XKB_ERROR_RECURSIVE_INCLUDE as i32,
-            15_i32);
+            15_i32
+        );
         true
     } else {
         false
@@ -324,34 +333,23 @@ pub fn ProcessIncludeFile(
     };
     let expanded = stmt_file != stmt.file;
 
-    let map_cstr = if stmt.map.is_empty() {
-        None
-    } else {
-        Some(std::ffi::CString::new(stmt.map.as_str()).unwrap())
-    };
-    let map_ptr = map_cstr.as_ref().map_or(std::ptr::null(), |c| c.as_ptr());
+    let map_str = if stmt.map.is_empty() { "" } else { &stmt.map };
 
     let absolute_path = stmt_file.starts_with('/');
     let mut offset: u32 = 0;
     let mut file_and_path: Option<(std::fs::File, String)> = if absolute_path {
-        std::fs::File::open(&stmt_file).ok().map(|f| (f, stmt_file.clone()))
+        std::fs::File::open(&stmt_file)
+            .ok()
+            .map(|f| (f, stmt_file.clone()))
     } else if expanded {
         // Expanded but not absolute — don't search include paths
         None
     } else {
-        FindFileInXkbPath(
-            ctx,
-            "(unknown)",
-            &stmt_file,
-            file_type,
-            &mut offset,
-            true,
-        )
+        FindFileInXkbPath(ctx, "(unknown)", &stmt_file, file_type, &mut offset, true)
     };
 
     while let Some((ref open_file, ref _path)) = file_and_path {
-        let ctx_ptr: *mut xkb_context = ctx;
-        if let Some(parsed) = XkbParseFile(ctx_ptr, open_file, &stmt.file, map_ptr) {
+        if let Some(parsed) = XkbParseFile(ctx, open_file, &stmt.file, map_str) {
             // Drop the file (closes it)
             let _ = file_and_path.take();
 
@@ -362,8 +360,7 @@ pub fn ProcessIncludeFile(
                     xkb_file_type_to_string(parsed.file_type),
                     &stmt.file);
                 // parsed drops automatically
-            } else if !stmt.map.is_empty()
-                || parsed.flags as u32 != 0 && MAP_IS_DEFAULT as i32 != 0
+            } else if !stmt.map.is_empty() || parsed.flags as u32 != 0 && MAP_IS_DEFAULT as i32 != 0
             {
                 xkb_file = Some(parsed);
                 break;
@@ -379,14 +376,8 @@ pub fn ProcessIncludeFile(
             break;
         }
         offset += 1;
-        file_and_path = FindFileInXkbPath(
-            ctx,
-            "(unknown)",
-            &stmt_file,
-            file_type,
-            &mut offset,
-            true,
-        );
+        file_and_path =
+            FindFileInXkbPath(ctx, "(unknown)", &stmt_file, file_type, &mut offset, true);
     }
 
     if xkb_file.is_none() {
@@ -396,14 +387,18 @@ pub fn ProcessIncludeFile(
 
     if xkb_file.is_none() {
         if !stmt.map.is_empty() {
-            log::error!("[XKB-{:03}] Couldn't process include statement for '{}({})'\n",
+            log::error!(
+                "[XKB-{:03}] Couldn't process include statement for '{}({})'\n",
                 XKB_ERROR_INVALID_INCLUDED_FILE as i32,
                 &stmt.file,
-                &stmt.map);
+                &stmt.map
+            );
         } else {
-            log::error!("[XKB-{:03}] Couldn't process include statement for '{}'\n",
+            log::error!(
+                "[XKB-{:03}] Couldn't process include statement for '{}'\n",
                 XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                &stmt.file);
+                &stmt.file
+            );
         }
     }
     xkb_file

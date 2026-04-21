@@ -651,7 +651,7 @@ fn HandleKeyTypesFile(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo, fil
                     log::error!(
                         "[XKB-{:03}] Unsupported types {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
-                        if unk.common.type_0 == STMT_UNKNOWN_COMPOUND {
+                        if unk.stmt_type == STMT_UNKNOWN_COMPOUND {
                             "compound"
                         } else {
                             "declaration"

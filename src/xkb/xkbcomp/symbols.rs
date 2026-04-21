@@ -128,33 +128,45 @@ fn resize_groups_zero(v: &mut Vec<GroupInfo>, new_len: usize) {
     v.resize_with(new_len, Default::default);
 }
 
-/// Collect a ParseCommon linked list of ExprDef nodes into a Vec of references.
-fn collect_expr_list(head: &ExprDef) -> Vec<&ExprDef> {
-    let mut result = Vec::new();
-    let mut cur = Some(head);
-    while let Some(expr) = cur {
-        result.push(expr);
-        cur = expr.next();
+/// Check if an ActionList container actually holds action data (vs keysym data).
+/// In the old linked-list model, the head node's type distinguished these.
+/// Now both are wrapped in ActionList containers, so we check the first inner node.
+fn is_action_list_value(value: &ExprDef) -> bool {
+    if let ExprKind::ActionList { actions } = &value.kind {
+        if let Some(first) = actions.first() {
+            // If the first inner node is an ActionList (actions for one level) or
+            // Action (single action), it's action data. KeysymList means keysym data.
+            matches!(
+                first.kind,
+                ExprKind::ActionList { .. } | ExprKind::Action { .. }
+            )
+        } else {
+            // Empty ActionList — treat as actions
+            true
+        }
+    } else {
+        false
     }
-    result
 }
 
-/// Collect a ParseCommon linked list of ExprDef nodes into a Vec of mutable references.
-/// The linked list nodes are distinct heap allocations so no aliasing occurs.
-fn collect_expr_list_mut(head: &mut ExprDef) -> Vec<&mut ExprDef> {
-    // First, collect raw pointers using safe next() for traversal
-    let mut ptrs: Vec<*mut ExprDef> = Vec::new();
-    // Walk the immutable view to collect pointers
-    let head_ptr = head as *mut ExprDef;
-    let mut cur: Option<&ExprDef> = Some(&*head);
-    while let Some(expr) = cur {
-        ptrs.push(expr as *const ExprDef as *mut ExprDef);
-        cur = expr.next();
+/// Extract child expressions from an ActionList container node, or return a single-element slice.
+fn collect_expr_list(container: &ExprDef) -> &[ExprDef] {
+    match &container.kind {
+        ExprKind::ActionList { actions } => actions.as_slice(),
+        _ => std::slice::from_ref(container),
     }
-    // Verify head_ptr matches first element (sanity check)
-    debug_assert!(ptrs.first() == Some(&head_ptr));
-    // SAFETY: All pointers are to distinct heap-allocated ExprDef nodes
-    ptrs.into_iter().map(|p| unsafe { &mut *p }).collect()
+}
+
+/// Extract child expressions from an ActionList container node as mutable slice.
+fn collect_expr_list_mut(container: &mut ExprDef) -> &mut [ExprDef] {
+    if matches!(container.kind, ExprKind::ActionList { .. }) {
+        if let ExprKind::ActionList { ref mut actions } = container.kind {
+            return actions.as_mut_slice();
+        }
+        unreachable!()
+    } else {
+        std::slice::from_mut(container)
+    }
 }
 
 fn InitGroupInfo(groupi: &mut GroupInfo) {
@@ -926,14 +938,14 @@ fn AddSymbolsToKey(
         return false;
     }
     let groupi = &mut keyi.groups[ndx as usize];
-    if value.common.type_0 == STMT_EXPR_EMPTY_LIST {
+    if value.stmt_type() == STMT_EXPR_EMPTY_LIST {
         groupi.defined = (groupi.defined | GROUP_FIELD_SYMS) as group_field;
         return true;
     }
-    if value.common.type_0 != STMT_EXPR_KEYSYM_LIST {
+    if value.stmt_type() != STMT_EXPR_KEYSYM_LIST && value.stmt_type() != STMT_EXPR_ACTION_LIST {
         log::error!("[XKB-{:03}] Expected a list of symbols, found {}; Ignoring symbols for group {} of <{}>\n",
             XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            stmt_type_to_string(value.common.type_0),
+            stmt_type_to_string(value.stmt_type()),
             ndx.wrapping_add(1_u32),
             KeyInfoText(ki.ctx(), keyi));
         return false;
@@ -948,7 +960,7 @@ fn AddSymbolsToKey(
     let mut nLevels: u32 = 0_u32;
     let mut nonEmptyLevels: u32 = 0_u32;
     let keysym_nodes = collect_expr_list(value);
-    for node in &keysym_nodes {
+    for node in keysym_nodes {
         nLevels = nLevels.wrapping_add(1);
         let ExprKind::KeysymList { ref syms } = node.kind else {
             unreachable!()
@@ -1007,14 +1019,14 @@ fn AddActionsToKey(
         return false;
     }
     let groupi = &mut keyi.groups[ndx as usize];
-    if value.common.type_0 == STMT_EXPR_EMPTY_LIST {
+    if value.stmt_type() == STMT_EXPR_EMPTY_LIST {
         groupi.defined = (groupi.defined | GROUP_FIELD_ACTS) as group_field;
         return true;
     }
-    if value.common.type_0 != STMT_EXPR_ACTION_LIST {
+    if value.stmt_type() != STMT_EXPR_ACTION_LIST {
         log::error!("[XKB-{:03}] Bad expression type ({}) for action list value; Ignoring actions for group {} of <{}>\n",
             XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-            value.common.type_0,
+            value.stmt_type(),
             ndx,
             KeyInfoText(ki.ctx(), keyi));
         return false;
@@ -1195,7 +1207,7 @@ fn ExprResolveOverlayEntry(
         return false;
     }
     *overlay_rtrn = (raw_overlay as xkb_overlay_index_t as i32 - 1_i32) as xkb_overlay_index_t;
-    match expr.common.type_0 {
+    match expr.stmt_type() {
         8 => {
             let ExprKind::KeyName(key_name_val) = expr.kind else {
                 unreachable!()
@@ -1246,7 +1258,7 @@ fn ExprResolveOverlayEntry(
                 stmt_type_to_string(STMT_EXPR_KEYNAME_LITERAL),
                 field,
                 xkb_atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name),
-                stmt_type_to_string(expr.common.type_0)
+                stmt_type_to_string(expr.stmt_type())
             );
             false
         }
@@ -1309,7 +1321,7 @@ fn SetSymbolsField(
         if !ExprResolveModMask(ki.ctx(), val, MOD_VIRT, &info.mods, &mut mask) {
             log::error!("[XKB-{:03}] Expected a virtual modifier mask, found {}; Ignoring virtual modifiers definition for key <{}>\n",
                 { XKB_ERROR_UNSUPPORTED_MODIFIER_MASK },
-                stmt_type_to_string(val.common.type_0),
+                stmt_type_to_string(val.stmt_type()),
                 KeyInfoText(ki.ctx(), keyi));
             return false;
         }
@@ -1710,9 +1722,7 @@ fn HandleSymbolsBody(
         let mut arrayNdx_opt: Option<&ExprDef> = None;
         let mut ok: bool = true;
         if def.name.is_none() {
-            if def.value.is_none()
-                || def.value.as_ref().unwrap().common.type_0 != STMT_EXPR_ACTION_LIST
-            {
+            if def.value.is_none() || !is_action_list_value(def.value.as_ref().unwrap()) {
                 field = "symbols".to_owned();
             } else {
                 field = "actions".to_owned();
@@ -1847,14 +1857,14 @@ fn HandleModMapDef(
     tmp.merge = def.merge;
     let mut c2rust_current_block_19: u64;
     for key in def.keys.iter() {
-        if key.common.type_0 == STMT_EXPR_KEYNAME_LITERAL {
+        if key.stmt_type() == STMT_EXPR_KEYNAME_LITERAL {
             tmp.haveSymbol = false;
             let ExprKind::KeyName(kn) = key.kind else {
                 unreachable!()
             };
             tmp.u = kn;
             c2rust_current_block_19 = 5601891728916014340;
-        } else if key.common.type_0 == STMT_EXPR_KEYSYM_LITERAL {
+        } else if key.stmt_type() == STMT_EXPR_KEYSYM_LITERAL {
             let ExprKind::KeySym(ks) = key.kind else {
                 unreachable!()
             };
@@ -1906,7 +1916,7 @@ fn HandleSymbolsFile(ki: &mut xkb_keymap_info<'_>, info: &mut SymbolsInfo, file:
                     log::error!(
                         "[XKB-{:03}] Unsupported symbols {} statement \"{}\"; Ignoring\n",
                         XKB_ERROR_UNKNOWN_STATEMENT as i32,
-                        if unk.common.type_0 == STMT_UNKNOWN_COMPOUND {
+                        if unk.stmt_type == STMT_UNKNOWN_COMPOUND {
                             "compound"
                         } else {
                             "declaration"

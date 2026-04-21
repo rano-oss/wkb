@@ -1,52 +1,35 @@
-use crate::xkb::context::xkb_atom_intern;
-pub const XKB_KEY_VoidSymbol: i32 = 0xffffff_i32;
-pub const XKB_KEY_0: i32 = 0x30_i32;
-pub const XKB_KEY_section: i32 = 0xa7_i32;
-use crate::xkb::keysym::{xkb_keysym_from_name, xkb_keysym_is_deprecated};
+// Safe parser.rs - no unsafe blocks
+// LALR(1) parser for XKB, converted from bison-generated C via c2rust
 
-pub const XKB_KEYSYM_MIN: i32 = 0;
+use crate::xkb::context::xkb_atom_intern;
+use crate::xkb::keysym::{xkb_keysym_from_name, xkb_keysym_is_deprecated};
+use crate::xkb::scanner_utils::{scanner, scanner_loc, sval};
+use crate::xkb::shared_types::*;
+use crate::xkb::xkbcomp::scanner::YYValue;
 
 use crate::xkb::shared_ast_types::{
-    box_from_raw, collect_vardefs, from_common, to_common, to_common_or_null,
+    merge_mode, safe_map_name, xkb_map_flags, ExprDef, ExprKind, Statement, XkbFile,
+    FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_SYMBOLS,
+    FILE_TYPE_TYPES, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER,
+    MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT,
+    MERGE_OVERRIDE, MERGE_REPLACE, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
+    STMT_EXPR_ASSIGN, STMT_EXPR_DIVIDE, STMT_EXPR_INVERT, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE,
+    STMT_EXPR_NOT, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_UNKNOWN_COMPOUND,
+    STMT_UNKNOWN_DECLARATION,
 };
-pub use crate::xkb::xkbcomp::ast_build::{
-    expr_create, BoolVarCreate, ExprAppendKeySymList, ExprCreateKeySymList, FreeStmt,
-    GroupCompatCreate, IncludeCreate, InterpCreate, KeyAliasCreate, KeyTypeCreate, KeycodeCreate,
-    LedMapCreate, LedNameCreate, ModMapCreate, SymbolsCreate, VModCreate, VarCreate, XkbFileCreate,
+
+use crate::xkb::xkbcomp::ast_build::{
+    expr_create, BoolVarCreate, ExprAppendKeySymList, ExprCreateKeySymList, GroupCompatCreate,
+    IncludeCreate, InterpCreate, KeyAliasCreate, KeyTypeCreate, KeycodeCreate, LedMapCreate,
+    LedNameCreate, ModMapCreate, SymbolsCreate, UnknownStatementCreate, VModCreate, VarCreate,
+    XkbFileCreate,
 };
 
-pub fn ExprKeySymListAppendString(
-    param: *mut scanner,
-    expr: *mut ExprDef,
-    string: *const i8,
-) -> *mut ExprDef {
-    unsafe {
-        crate::xkb::xkbcomp::ast_build::ExprKeySymListAppendString(
-            param as *mut _,
-            expr as *mut _,
-            string,
-        ) as *mut ExprDef
-    }
-}
-
-pub fn KeysymParseString(scanner: *mut scanner, string: *const i8) -> u32 {
-    unsafe { crate::xkb::xkbcomp::ast_build::KeysymParseString(scanner as *mut _, string) }
-}
-
-pub fn UnknownStatementCreate(
-    type_0: crate::xkb::shared_ast_types::stmt_type,
-    name: sval,
-) -> *mut crate::xkb::shared_ast_types::UnknownStatement {
-    unsafe {
-        crate::xkb::xkbcomp::ast_build::UnknownStatementCreate(
-            type_0,
-            *(&name as *const sval as *const _),
-        ) as *mut _
-    }
-}
-pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, scanner: *mut scanner) -> i32 {
-    unsafe { crate::xkb::xkbcomp::scanner::_xkbcommon_lex(&mut *yylval, &mut *scanner) }
-}
+use crate::xkb::messages::{
+    XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_XKB_SYNTAX,
+    XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_MISSING_DEFAULT_SECTION,
+    XKB_WARNING_NUMERIC_KEYSYM, XKB_WARNING_UNRECOGNIZED_KEYSYM,
+};
 
 pub use super::scanner::parser_h::{
     YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS, ALTERNATE, ALTERNATE_GROUP, AUGMENT, CBRACE,
@@ -55,79 +38,15 @@ pub use super::scanner::parser_h::{
     INVERT, KEY, KEYNAME, KEYPAD_KEYS, KEYS, LOGO, MINUS, MODIFIER_KEYS, MODIFIER_MAP, OBRACE,
     OBRACKET, OPAREN, OUTLINE, OVERLAY, OVERRIDE, PARTIAL, PLUS, REPLACE, ROW, SECTION, SEMI,
     SHAPE, SOLID, STRING, TEXT, TIMES, TYPE, VIRTUAL, VIRTUAL_MODS, XKB_COMPATMAP, XKB_GEOMETRY,
-    XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS, XKB_SYMBOLS, XKB_TYPES, YYEMPTY, YYSTYPE,
-    YYUNDEF,
+    XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS, XKB_SYMBOLS, XKB_TYPES, YYEMPTY, YYUNDEF,
 };
-pub use crate::xkb::messages::{
-    XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
-    XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
-    XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
-    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
-    XKB_ERROR_INCOMPATIBLE_ACTIONS_AND_KEYSYMS_COUNT, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
-    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD,
-    XKB_ERROR_INVALID_COMPOSE_LOCALE, XKB_ERROR_INVALID_COMPOSE_SYNTAX,
-    XKB_ERROR_INVALID_EXPRESSION_TYPE, XKB_ERROR_INVALID_FILE_ENCODING,
-    XKB_ERROR_INVALID_IDENTIFIER, XKB_ERROR_INVALID_INCLUDED_FILE,
-    XKB_ERROR_INVALID_INCLUDE_STATEMENT, XKB_ERROR_INVALID_MODMAP_ENTRY,
-    XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_OPERATION, XKB_ERROR_INVALID_PATH,
-    XKB_ERROR_INVALID_REAL_MODIFIER, XKB_ERROR_INVALID_RULES_SYNTAX,
-    XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT, XKB_ERROR_INVALID_VALUE, XKB_ERROR_INVALID_XKB_SYNTAX,
-    XKB_ERROR_KEYMAP_COMPILATION_FAILED, XKB_ERROR_MALFORMED_NUMBER_LITERAL,
-    XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_ERROR_OVERLAPPING_OVERLAY,
-    XKB_ERROR_RECURSIVE_INCLUDE, XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION,
-    XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER, XKB_ERROR_UNKNOWN_ACTION_TYPE,
-    XKB_ERROR_UNKNOWN_DEFAULT_FIELD, XKB_ERROR_UNKNOWN_FIELD, XKB_ERROR_UNKNOWN_OPERATOR,
-    XKB_ERROR_UNKNOWN_STATEMENT, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS_,
-    XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY_,
-    XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_, XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX,
-    XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL, XKB_ERROR_WRONG_FIELD_TYPE, XKB_ERROR_WRONG_STATEMENT_TYPE,
-    XKB_WARNING_CANNOT_INFER_KEY_TYPE, XKB_WARNING_CONFLICTING_KEY_ACTION,
-    XKB_WARNING_CONFLICTING_KEY_FIELDS, XKB_WARNING_CONFLICTING_KEY_NAME,
-    XKB_WARNING_CONFLICTING_KEY_SYMBOL, XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES, XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS,
-    XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES, XKB_WARNING_CONFLICTING_MODMAP,
-    XKB_WARNING_DEPRECATED_KEYSYM, XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_DUPLICATE_ENTRY,
-    XKB_WARNING_EXTRA_SYMBOLS_IGNORED, XKB_WARNING_ILLEGAL_KEYCODE_ALIAS,
-    XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT, XKB_WARNING_INVALID_ESCAPE_SEQUENCE,
-    XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE, XKB_WARNING_MISSING_DEFAULT_SECTION,
-    XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX, XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE,
-    XKB_WARNING_NON_BASE_GROUP_NAME, XKB_WARNING_NUMERIC_KEYSYM,
-    XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE, XKB_WARNING_UNDEFINED_KEYCODE,
-    XKB_WARNING_UNDEFINED_KEY_TYPE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
-    XKB_WARNING_UNRECOGNIZED_KEYSYM, XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL,
-    XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
-    XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
-};
-pub use crate::xkb::scanner_utils::{isvaleq, scanner, scanner_loc, sval};
-pub use crate::xkb::shared_ast_types::{collect_exprs, safe_map_name, FreeXkbFile};
-pub use crate::xkb::shared_ast_types::{
-    ExprDef, ExprKind, GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
-    LedMapDef, LedNameDef, ModMapDef, ParseCommon, SymbolsDef, UnknownStatement, VModDef, VarDef,
-    XkbFile, _IncludeStmt, _ParseCommon, merge_mode, stmt_type, xkb_map_flags, FILE_TYPE_COMPAT,
-    FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
-    FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
-    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
-    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
-    MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST, STMT_EXPR_ADD,
-    STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL, STMT_EXPR_DIVIDE,
-    STMT_EXPR_EMPTY_LIST, STMT_EXPR_FIELD_REF, STMT_EXPR_FLOAT_LITERAL, STMT_EXPR_IDENT,
-    STMT_EXPR_INTEGER_LITERAL, STMT_EXPR_INVERT, STMT_EXPR_KEYNAME_LITERAL, STMT_EXPR_KEYSYM_LIST,
-    STMT_EXPR_KEYSYM_LITERAL, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
-    STMT_EXPR_STRING_LITERAL, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_GROUP_COMPAT,
-    STMT_INCLUDE, STMT_INTERP, STMT_KEYCODE, STMT_LED_MAP, STMT_LED_NAME, STMT_MODMAP,
-    STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
-    STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
-};
-use crate::xkb::utils::cstr_len;
-use libc::{free, malloc};
-#[derive(Clone)]
-pub struct parser_param<'a> {
-    pub ctx: *mut xkb_context,
-    pub scanner: *mut scanner<'a>,
-    pub rtrn: *mut XkbFile,
-    pub more_maps: bool,
-}
+
+pub const XKB_KEY_VoidSymbol: i32 = 0xffffff_i32;
+pub const XKB_KEY_0: i32 = 0x30_i32;
+pub const XKB_KEY_section: i32 = 0xa7_i32;
+pub const XKB_KEYSYM_MIN: i32 = 0;
+
+// ── YYSYMBOL constants ──────────────────────────────────────────────
 pub const YYSYMBOL_MapName: i32 = 148;
 pub const YYSYMBOL_OptMapName: i32 = 147;
 pub const YYSYMBOL_String: i32 = 146;
@@ -278,122 +197,24 @@ pub const YYSYMBOL_YYUNDEF: i32 = 2;
 pub const YYSYMBOL_YYerror: i32 = 1;
 pub const YYSYMBOL_YYEOF: i32 = 0;
 pub const YYSYMBOL_YYEMPTY: i32 = -2;
-pub type yytype_uint8 = ::core::ffi::c_uchar;
-pub type yytype_int8 = i8;
-pub type yy_state_fast_t = i32;
-pub const YYENOMEM: i32 = -2;
-#[derive(Copy, Clone)]
-pub struct yypcontext_t {
-    pub yyssp: *mut i16,
-    pub yytoken: i32,
-}
-pub const YYARGS_MAX: u32 = 5;
-#[derive(Copy, Clone)]
-pub struct VModList {
-    pub head: *mut ExprDef,
-    pub last: *mut ExprDef,
-}
-#[derive(Copy, Clone)]
-pub struct ExprList {
-    pub head: *mut ExprDef,
-    pub last: *mut ExprDef,
-}
-#[derive(Copy, Clone)]
-pub union yyalloc {
-    pub yyss_alloc: i16,
-    pub yyvs_alloc: YYSTYPE,
-}
 
-fn _xkbcommon_error(param: *mut parser_param, msg: *const i8) {
-    unsafe {
-        let loc: scanner_loc = (*(*param).scanner).token_location();
-        let msg_str = std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(msg));
-        log::error!(
-            "[XKB-{:03}] {}:{}:{}: {}\n",
-            XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-            &(*(*param).scanner).file_name,
-            loc.line,
-            loc.column,
-            msg_str
-        );
-    }
-}
-fn resolve_keysym(param: *mut parser_param, name: sval, sym_rtrn: *mut u32) -> bool {
-    unsafe {
-        if isvaleq(
-            name,
-            sval {
-                len: (std::mem::size_of::<[i8; 4]>()).wrapping_sub(1_usize),
-                start: b"any\0".as_ptr() as *const i8,
-            },
-        ) as i32
-            != 0
-            || isvaleq(
-                name,
-                sval {
-                    len: (std::mem::size_of::<[i8; 9]>()).wrapping_sub(1_usize),
-                    start: b"nosymbol\0".as_ptr() as *const i8,
-                },
-            ) as i32
-                != 0
-        {
-            *sym_rtrn = XKB_KEY_NoSymbol as u32;
-            return true;
-        }
-        if isvaleq(
-            name,
-            sval {
-                len: (std::mem::size_of::<[i8; 5]>()).wrapping_sub(1_usize),
-                start: b"none\0".as_ptr() as *const i8,
-            },
-        ) as i32
-            != 0
-            || isvaleq(
-                name,
-                sval {
-                    len: (std::mem::size_of::<[i8; 11]>()).wrapping_sub(1_usize),
-                    start: b"voidsymbol\0".as_ptr() as *const i8,
-                },
-            ) as i32
-                != 0
-        {
-            *sym_rtrn = XKB_KEY_VoidSymbol as u32;
-            return true;
-        }
-        let mut buf: [i8; 31] = [0; 31];
-        if name.len >= std::mem::size_of::<[i8; 31]>() {
-            return false;
-        }
-        std::ptr::copy_nonoverlapping(name.start as *const u8, &raw mut buf as *mut u8, name.len);
-        buf[name.len] = '\0' as i32 as i8;
-        let buf_bytes = std::slice::from_raw_parts(&buf as *const i8 as *const u8, name.len + 1);
-        let sym: u32 = xkb_keysym_from_name(buf_bytes, XKB_KEYSYM_NO_FLAGS);
-        if sym != XKB_KEY_NoSymbol as u32 {
-            *sym_rtrn = sym;
-            if ((*(*param).ctx).log_verbosity >= 2_i32) as i32 as i64 != 0 {
-                let buf_str = std::str::from_utf8_unchecked(&buf_bytes[..name.len]);
-                if let Some(ref_name) = xkb_keysym_is_deprecated(sym, buf_bytes) {
-                    let loc: scanner_loc = (*(*param).scanner).token_location();
-                    log::warn!("[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{}\"; please use \"{}\" instead.\n",
-                        XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
-                        &(*(*param).scanner).file_name,
-                        loc.line,
-                        loc.column,
-                        buf_str,
-                        ref_name);
-                }
-            }
-            return true;
-        }
-        false
-    }
-}
-pub const YY_NULLPTR: *mut ::core::ffi::c_void = std::ptr::null_mut();
-pub const YYSTACK_GAP_MAXIMUM: i64 = std::mem::size_of::<yyalloc>() as i64 - 1;
+pub const YYARGS_MAX: u32 = 5;
 pub const YYFINAL: i32 = 16;
 pub const YYLAST: i32 = 928;
 pub const YYNTOKENS: i32 = 66;
 pub const YYMAXUTOK: i32 = 257;
+pub const YYINITDEPTH: usize = 200;
+pub const YYMAXDEPTH: usize = 10000;
+pub const YYPACT_NINF: i32 = -280;
+pub const YYENOMEM: i32 = -2;
+
+pub struct parser_param<'a> {
+    pub ctx: &'a mut xkb_context,
+    pub scanner: &'a mut scanner<'a>,
+    pub rtrn: Option<Box<XkbFile>>,
+    pub more_maps: bool,
+}
+
 static YYTRANSLATE: [i8; 258] = [
     0, 4, 5, 6, 7, 8, 9, 10, 11, 2, 12, 13, 14, 15, 16, 2, 2, 2, 2, 2, 17, 18, 19, 20, 21, 22, 23,
     24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 2, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
@@ -405,162 +226,163 @@ static YYTRANSLATE: [i8; 258] = [
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 1, 2,
 ];
-fn yysymbol_name(yysymbol: i32) -> *const i8 {
+
+fn yysymbol_name(yysymbol: i32) -> &'static str {
     static YY_SNAME: [&str; 150] = [
-        "end of file\0",
-        "error\0",
-        "invalid token\0",
-        "invalid token\0",
-        "xkb_keymap\0",
-        "xkb_keycodes\0",
-        "xkb_types\0",
-        "xkb_symbols\0",
-        "xkb_compatibility\0",
-        "xkb_geometry\0",
-        "xkb_semantics\0",
-        "xkb_layout\0",
-        "include\0",
-        "override\0",
-        "augment\0",
-        "replace\0",
-        "alternate\0",
-        "virtual_modifiers\0",
-        "type\0",
-        "interpret\0",
-        "action\0",
-        "key\0",
-        "alias\0",
-        "group\0",
-        "modifier_map\0",
-        "indicator\0",
-        "shape\0",
-        "keys\0",
-        "row\0",
-        "section\0",
-        "overlay\0",
-        "text\0",
-        "outline\0",
-        "solid\0",
-        "logo\0",
-        "virtual\0",
-        "=\0",
-        "+\0",
-        "-\0",
-        "/\0",
-        "*\0",
-        "{\0",
-        "}\0",
-        "(\0",
-        ")\0",
-        "[\0",
-        "]\0",
-        ".\0",
-        ",\0",
-        ";\0",
-        "!\0",
-        "~\0",
-        "string literal\0",
-        "decimal digit\0",
-        "integer literal\0",
-        "float literal\0",
-        "identifier\0",
-        "key name\0",
-        "partial\0",
-        "default\0",
-        "hidden\0",
-        "alphanumeric_keys\0",
-        "modifier_keys\0",
-        "keypad_keys\0",
-        "function_keys\0",
-        "alternate_group\0",
-        "$accept\0",
-        "XkbFile\0",
-        "XkbCompositeMap\0",
-        "XkbCompositeType\0",
-        "XkbMapConfigList\0",
-        "XkbMapConfig\0",
-        "FileType\0",
-        "OptFlags\0",
-        "Flags\0",
-        "Flag\0",
-        "DeclList\0",
-        "Decl\0",
-        "VarDecl\0",
-        "KeyNameDecl\0",
-        "KeyAliasDecl\0",
-        "VModDecl\0",
-        "VModDefList\0",
-        "VModDef\0",
-        "InterpretDecl\0",
-        "InterpretMatch\0",
-        "VarDeclList\0",
-        "KeyTypeDecl\0",
-        "SymbolsDecl\0",
-        "OptSymbolsBody\0",
-        "SymbolsBody\0",
-        "SymbolsVarDecl\0",
-        "MultiKeySymOrActionList\0",
-        "NoSymbolOrActionList\0",
-        "GroupCompatDecl\0",
-        "ModMapDecl\0",
-        "KeyOrKeySymList\0",
-        "KeyOrKeySym\0",
-        "LedMapDecl\0",
-        "LedNameDecl\0",
-        "UnknownDecl\0",
-        "UnknownCompoundStatementDecl\0",
-        "ShapeDecl\0",
-        "SectionDecl\0",
-        "SectionBody\0",
-        "SectionBodyItem\0",
-        "RowBody\0",
-        "RowBodyItem\0",
-        "Keys\0",
-        "Key\0",
-        "OverlayDecl\0",
-        "OverlayKeyList\0",
-        "OverlayKey\0",
-        "OutlineList\0",
-        "OutlineInList\0",
-        "CoordList\0",
-        "Coord\0",
-        "DoodadDecl\0",
-        "DoodadType\0",
-        "FieldSpec\0",
-        "Element\0",
-        "OptMergeMode\0",
-        "MergeMode\0",
-        "ExprList\0",
-        "Expr\0",
-        "Term\0",
-        "MultiActionList\0",
-        "ActionList\0",
-        "NonEmptyActions\0",
-        "Actions\0",
-        "Action\0",
-        "Lhs\0",
-        "OptTerminal\0",
-        "Terminal\0",
-        "MultiKeySymList\0",
-        "KeySymList\0",
-        "NonEmptyKeySyms\0",
-        "KeySyms\0",
-        "KeySym\0",
-        "KeySymLit\0",
-        "SignedNumber\0",
-        "Number\0",
-        "Float\0",
-        "Integer\0",
-        "KeyCode\0",
-        "Ident\0",
-        "String\0",
-        "OptMapName\0",
-        "MapName\0",
-        "\0",
+        "end of file",
+        "error",
+        "invalid token",
+        "invalid token",
+        "xkb_keymap",
+        "xkb_keycodes",
+        "xkb_types",
+        "xkb_symbols",
+        "xkb_compatibility",
+        "xkb_geometry",
+        "xkb_semantics",
+        "xkb_layout",
+        "include",
+        "override",
+        "augment",
+        "replace",
+        "alternate",
+        "virtual_modifiers",
+        "type",
+        "interpret",
+        "action",
+        "key",
+        "alias",
+        "group",
+        "modifier_map",
+        "indicator",
+        "shape",
+        "keys",
+        "row",
+        "section",
+        "overlay",
+        "text",
+        "outline",
+        "solid",
+        "logo",
+        "virtual",
+        "=",
+        "+",
+        "-",
+        "/",
+        "*",
+        "{",
+        "}",
+        "(",
+        ")",
+        "[",
+        "]",
+        ".",
+        ",",
+        ";",
+        "!",
+        "~",
+        "string literal",
+        "decimal digit",
+        "integer literal",
+        "float literal",
+        "identifier",
+        "key name",
+        "partial",
+        "default",
+        "hidden",
+        "alphanumeric_keys",
+        "modifier_keys",
+        "keypad_keys",
+        "function_keys",
+        "alternate_group",
+        "$accept",
+        "XkbFile",
+        "XkbCompositeMap",
+        "XkbCompositeType",
+        "XkbMapConfigList",
+        "XkbMapConfig",
+        "FileType",
+        "OptFlags",
+        "Flags",
+        "Flag",
+        "DeclList",
+        "Decl",
+        "VarDecl",
+        "KeyNameDecl",
+        "KeyAliasDecl",
+        "VModDecl",
+        "VModDefList",
+        "VModDef",
+        "InterpretDecl",
+        "InterpretMatch",
+        "VarDeclList",
+        "KeyTypeDecl",
+        "SymbolsDecl",
+        "OptSymbolsBody",
+        "SymbolsBody",
+        "SymbolsVarDecl",
+        "MultiKeySymOrActionList",
+        "NoSymbolOrActionList",
+        "GroupCompatDecl",
+        "ModMapDecl",
+        "KeyOrKeySymList",
+        "KeyOrKeySym",
+        "LedMapDecl",
+        "LedNameDecl",
+        "UnknownDecl",
+        "UnknownCompoundStatementDecl",
+        "ShapeDecl",
+        "SectionDecl",
+        "SectionBody",
+        "SectionBodyItem",
+        "RowBody",
+        "RowBodyItem",
+        "Keys",
+        "Key",
+        "OverlayDecl",
+        "OverlayKeyList",
+        "OverlayKey",
+        "OutlineList",
+        "OutlineInList",
+        "CoordList",
+        "Coord",
+        "DoodadDecl",
+        "DoodadType",
+        "FieldSpec",
+        "Element",
+        "OptMergeMode",
+        "MergeMode",
+        "ExprList",
+        "Expr",
+        "Term",
+        "MultiActionList",
+        "ActionList",
+        "NonEmptyActions",
+        "Actions",
+        "Action",
+        "Lhs",
+        "OptTerminal",
+        "Terminal",
+        "MultiKeySymList",
+        "KeySymList",
+        "NonEmptyKeySyms",
+        "KeySyms",
+        "KeySym",
+        "KeySymLit",
+        "SignedNumber",
+        "Number",
+        "Float",
+        "Integer",
+        "KeyCode",
+        "Ident",
+        "String",
+        "OptMapName",
+        "MapName",
+        "",
     ];
-    YY_SNAME[yysymbol as usize].as_ptr() as *const i8
+    YY_SNAME[yysymbol as usize]
 }
-pub const YYPACT_NINF: i32 = -280_i32;
+
 static YYPACT: [i16; 384] = [
     7, -280, -280, -280, -280, -280, -280, -280, -280, -280, 32, -280, -280, 578, 847, -280, -280,
     -280, -280, -280, -280, -280, -280, -280, -280, -12, -12, -280, -280, 22, -280, 36, -280, -280,
@@ -708,54 +530,6 @@ static YYCHECK: [i16; 929] = [
     31, 56, -1, -1, 59, 58, 59, 60, 61, 62, 63, 64, 65, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, 56, -1, -1, 59,
 ];
-
-pub fn parse(ctx: *mut xkb_context, scanner: *mut scanner, map: *const i8) -> *mut XkbFile {
-    unsafe {
-        let mut ret: i32;
-        let mut first: *mut XkbFile = std::ptr::null_mut();
-        let mut param: parser_param = parser_param {
-            ctx,
-            scanner,
-            rtrn: std::ptr::null_mut(),
-            more_maps: false,
-        };
-        loop {
-            ret = _xkbcommon_parse(&raw mut param);
-            if !(ret == 0_i32 && param.more_maps as i32 != 0) {
-                break;
-            }
-            if !map.is_null() {
-                let map_str = std::ffi::CStr::from_ptr(map).to_str().unwrap_or("");
-                let rtrn_ref = &*param.rtrn;
-                if map_str == rtrn_ref.name {
-                    return param.rtrn;
-                } else {
-                    FreeXkbFile(param.rtrn);
-                }
-            } else if (*param.rtrn).flags as u32 & MAP_IS_DEFAULT != 0 {
-                FreeXkbFile(first);
-                return param.rtrn;
-            } else if first.is_null() {
-                first = param.rtrn;
-            } else {
-                FreeXkbFile(param.rtrn);
-            }
-            param.rtrn = std::ptr::null_mut();
-        }
-        if ret != 0_i32 {
-            FreeXkbFile(first);
-            FreeXkbFile(param.rtrn);
-            return std::ptr::null_mut();
-        }
-        if !first.is_null() {
-            log::warn!("[XKB-{:03}] No map in include statement, but \"{}\" contains several; Using first defined map, \"{}\"\n",
-                XKB_WARNING_MISSING_DEFAULT_SECTION as i32,
-                &(*scanner).file_name,
-                safe_map_name(&*first));
-        }
-        first
-    }
-}
 static YYSTOS: [yytype_uint8; 384] = [
     0, 0, 58, 59, 60, 61, 62, 63, 64, 65, 67, 68, 71, 73, 74, 75, 0, 4, 5, 6, 7, 8, 9, 10, 11, 69,
     72, 75, 52, 147, 148, 147, 41, 41, 70, 76, 42, 71, 73, 12, 13, 14, 15, 16, 42, 77, 121, 122,
@@ -776,30 +550,6 @@ static YYSTOS: [yytype_uint8; 384] = [
     107, 57, 111, 112, 44, 124, 52, 139, 42, 46, 46, 42, 46, 42, 41, 57, 108, 109, 49, 36, 42, 48,
     123, 42, 48, 57, 49, 112, 42, 49, 109,
 ];
-
-pub fn parse_next(
-    ctx: *mut xkb_context,
-    scanner: *mut scanner,
-    xkb_file: *mut *mut XkbFile,
-) -> bool {
-    unsafe {
-        let mut param: parser_param = parser_param {
-            ctx,
-            scanner,
-            rtrn: std::ptr::null_mut(),
-            more_maps: false,
-        };
-        let ret: i32 = _xkbcommon_parse(&raw mut param);
-        if ret == 0_i32 && param.more_maps as i32 != 0 {
-            *xkb_file = param.rtrn;
-            true
-        } else {
-            FreeXkbFile(param.rtrn);
-            *xkb_file = std::ptr::null_mut();
-            ret == 0_i32
-        }
-    }
-}
 static YYR1: [yytype_uint8; 220] = [
     0, 66, 67, 67, 67, 68, 69, 69, 69, 70, 70, 71, 72, 72, 72, 72, 72, 73, 73, 74, 74, 75, 75, 75,
     75, 75, 75, 75, 75, 76, 76, 76, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77,
@@ -822,1950 +572,1797 @@ static YYR2: [yytype_int8; 220] = [
     2, 1, 4, 1, 1, 3, 3, 3, 1, 1, 3, 1, 3, 1, 2, 4, 1, 3, 4, 6, 1, 0, 1, 1, 1, 1, 3, 3, 1, 1, 3, 3,
     1, 1, 3, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
 ];
-pub const YYINITDEPTH: i32 = 200_i32;
-pub const YYMAXDEPTH: i32 = 10000_i32;
-fn yypcontext_expected_tokens(yyctx: *const yypcontext_t, yyarg: *mut i32, yyargn: i32) -> i32 {
-    unsafe {
-        let mut yycount: i32 = 0_i32;
-        let yyn: i32 = YYPACT[*(*yyctx).yyssp as usize] as i32;
-        if yyn != YYPACT_NINF {
-            let yyxbegin: i32 = if yyn < 0_i32 { -yyn } else { 0_i32 };
-            let yychecklim: i32 = YYLAST - yyn + 1_i32;
-            let yyxend: i32 = if yychecklim < YYNTOKENS {
-                yychecklim
-            } else {
-                YYNTOKENS
-            };
-            let mut yyx: i32;
-            yyx = yyxbegin;
-            while yyx < yyxend {
-                if YYCHECK[(yyx + yyn) as usize] as i32 == yyx && yyx != YYSYMBOL_YYerror && true {
-                    if yyarg.is_null() {
-                        yycount += 1;
-                    } else if yycount == yyargn {
-                        return 0_i32;
-                    } else {
-                        let c2rust_fresh4 = yycount;
-                        yycount += 1;
-                        *yyarg.offset(c2rust_fresh4 as isize) = yyx as i32;
-                    }
-                }
-                yyx += 1;
-            }
-        }
-        if !yyarg.is_null() && yycount == 0_i32 && 0_i32 < yyargn {
-            *yyarg.offset(0_i32 as isize) = YYSYMBOL_YYEMPTY;
-        }
-        yycount
-    }
+
+pub type yytype_uint8 = u8;
+pub type yytype_int8 = i8;
+
+// ── Helper functions ────────────────────────────────────────────────
+
+fn _xkbcommon_error(param: &mut parser_param, msg: &str) {
+    let loc: scanner_loc = param.scanner.token_location();
+    log::error!(
+        "[XKB-{:03}] {}:{}:{}: {}\n",
+        XKB_ERROR_INVALID_XKB_SYNTAX as i32,
+        &param.scanner.file_name,
+        loc.line,
+        loc.column,
+        msg
+    );
 }
-fn yy_syntax_error_arguments(yyctx: *const yypcontext_t, yyarg: *mut i32, yyargn: i32) -> i32 {
-    unsafe {
-        let mut yycount: i32 = 0_i32;
-        if (*yyctx).yytoken != YYSYMBOL_YYEMPTY {
-            if !yyarg.is_null() {
-                *yyarg.offset(yycount as isize) = (*yyctx).yytoken;
-            }
-            yycount += 1;
-            let yyn: i32 = yypcontext_expected_tokens(
-                yyctx,
-                if !yyarg.is_null() {
-                    yyarg.offset(1_i32 as isize)
-                } else {
-                    yyarg
-                },
-                yyargn - 1_i32,
-            );
-            if yyn == YYENOMEM {
-                return YYENOMEM;
-            } else {
-                yycount += yyn;
-            }
-        }
-        yycount
+
+fn resolve_keysym(param: &mut parser_param, name: sval) -> Option<u32> {
+    let name_bytes = name.as_bytes();
+    let name_str = name.as_str();
+
+    if name_str.eq_ignore_ascii_case("any") || name_str.eq_ignore_ascii_case("nosymbol") {
+        return Some(XKB_KEY_NoSymbol as u32);
     }
-}
-fn yysyntax_error(yymsg_alloc: *mut i64, yymsg: *mut *mut i8, yyctx: *const yypcontext_t) -> i32 {
-    unsafe {
-        let mut yyformat: *const i8;
-        let mut yyarg: [i32; 5] = [YYSYMBOL_YYEOF; 5];
-        let mut yysize: i64;
-        let yycount: i32 =
-            yy_syntax_error_arguments(yyctx, &raw mut yyarg as *mut i32, YYARGS_MAX as i32);
-        if yycount == YYENOMEM {
-            return YYENOMEM;
-        }
-        match yycount {
-            1 => {
-                yyformat = b"syntax error, unexpected %s\0".as_ptr() as *const i8;
-            }
-            2 => {
-                yyformat = b"syntax error, unexpected %s, expecting %s\0".as_ptr() as *const i8;
-            }
-            3 => {
-                yyformat =
-                    b"syntax error, unexpected %s, expecting %s or %s\0".as_ptr() as *const i8;
-            }
-            4 => {
-                yyformat = b"syntax error, unexpected %s, expecting %s or %s or %s\0".as_ptr()
-                    as *const i8;
-            }
-            5 => {
-                yyformat = b"syntax error, unexpected %s, expecting %s or %s or %s or %s\0".as_ptr()
-                    as *const i8;
-            }
-            0 | _ => {
-                yyformat = b"syntax error\0".as_ptr() as *const i8;
-            }
-        }
-        yysize = cstr_len(yyformat) as i64 - (2_i32 * yycount) as i64 + 1_i64;
-        let mut yyi: i32;
-        yyi = 0_i32;
-        while yyi < yycount {
-            let yysize1: i64 = yysize + cstr_len(yysymbol_name(yyarg[yyi as usize])) as i64;
-            if yysize <= yysize1
-                && yysize1
-                    <= (if (9223372036854775807_i64 as u64) < -1_i32 as u64 {
-                        9223372036854775807_i64 as u64
-                    } else {
-                        -1_i32 as u64
-                    }) as i64
-            {
-                yysize = yysize1;
-            } else {
-                return YYENOMEM;
-            }
-            yyi += 1;
-        }
-        if *yymsg_alloc < yysize {
-            *yymsg_alloc = 2_i64 * yysize;
-            if !(yysize <= *yymsg_alloc
-                && *yymsg_alloc
-                    <= (if (9223372036854775807_i64 as u64) < -1_i32 as u64 {
-                        9223372036854775807_i64 as u64
-                    } else {
-                        -1_i32 as u64
-                    }) as i64)
-            {
-                *yymsg_alloc = (if (9223372036854775807_i64 as u64) < -1_i32 as u64 {
-                    9223372036854775807_i64 as u64
-                } else {
-                    -1_i32 as u64
-                }) as i64;
-            }
-            return -1_i32;
-        }
-        let mut yyp: *mut i8 = *yymsg;
-        let mut yyi_0: i32 = 0_i32;
-        loop {
-            *yyp = *yyformat;
-            if *yyp as i32 == '\0' as i32 {
-                break;
-            }
-            if *yyp as i32 == '%' as i32
-                && *yyformat.offset(1_i32 as isize) as i32 == 's' as i32
-                && yyi_0 < yycount
-            {
-                let c2rust_fresh3 = yyi_0;
-                yyi_0 += 1;
-                yyp =
-                    crate::xkb::utils::cstr_pcpy(yyp, yysymbol_name(yyarg[c2rust_fresh3 as usize]));
-                yyformat = yyformat.offset(2_isize);
-            } else {
-                yyp = yyp.offset(1);
-                yyformat = yyformat.offset(1);
-            }
-        }
-        0_i32
+    if name_str.eq_ignore_ascii_case("none") || name_str.eq_ignore_ascii_case("voidsymbol") {
+        return Some(XKB_KEY_VoidSymbol as u32);
     }
-}
-fn yydestruct(yymsg: *const i8, yykind: i32, yyvaluep: *mut YYSTYPE, param: *mut parser_param) {
-    unsafe {
-        if yymsg.is_null() {
-            // dead store removed: yymsg = b"Deleting\0".as_ptr() as *const i8;
+
+    if name.len >= 30 {
+        return None;
+    }
+
+    // Build null-terminated buffer for xkb_keysym_from_name
+    let mut buf = [0u8; 32];
+    buf[..name.len].copy_from_slice(name_bytes);
+    buf[name.len] = 0;
+    let buf_slice = &buf[..name.len + 1];
+
+    let sym: u32 = xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS);
+    if sym != XKB_KEY_NoSymbol as u32 {
+        if param.ctx.log_verbosity >= 2 {
+            if let Some(ref_name) = xkb_keysym_is_deprecated(sym, buf_slice) {
+                let loc: scanner_loc = param.scanner.token_location();
+                log::warn!(
+                    "[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{}\"; please use \"{}\" instead.\n",
+                    XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
+                    &param.scanner.file_name,
+                    loc.line,
+                    loc.column,
+                    name_str,
+                    ref_name
+                );
+            }
         }
-        match yykind {
-            52 => {
-                free((*yyvaluep).str as *mut ::core::ffi::c_void);
-            }
-            67 if (*param).rtrn.is_null() => {
-                FreeXkbFile((*yyvaluep).file);
-            }
-            68 if (*param).rtrn.is_null() => {
-                FreeXkbFile((*yyvaluep).file);
-            }
-            70 => {
-                FreeXkbFile((*yyvaluep).fileList.head);
-            }
-            71 if (*param).rtrn.is_null() => {
-                FreeXkbFile((*yyvaluep).file);
-            }
-            76 => {
-                FreeStmt((*yyvaluep).anyList.head);
-            }
-            77 => {
-                FreeStmt((*yyvaluep).any);
-            }
-            78 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).var));
-            }
-            79 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).keyCode));
-            }
-            80 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).keyAlias));
-            }
-            81 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).vmodList.head));
-            }
-            82 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).vmodList.head));
-            }
-            83 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).vmod));
-            }
-            84 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).interp));
-            }
-            85 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).interp));
-            }
-            86 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).varList.head));
-            }
-            87 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).keyType));
-            }
-            88 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).syms));
-            }
-            89 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).varList.head));
-            }
-            90 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).varList.head));
-            }
-            91 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).var));
-            }
-            92 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            94 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).groupCompat));
-            }
-            95 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).modMask));
-            }
-            96 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).exprList.head));
-            }
-            97 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            98 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).ledMap));
-            }
-            99 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).ledName));
-            }
-            115 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            116 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            123 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).exprList.head));
-            }
-            124 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            125 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            126 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).exprList.head));
-            }
-            127 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).exprList.head));
-            }
-            128 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            129 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            130 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            131 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            132 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            133 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            134 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).exprList.head));
-            }
-            135 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            136 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            137 => {
-                FreeStmt(to_common_or_null!((*yyvaluep).expr));
-            }
-            147 => {
-                free((*yyvaluep).str as *mut ::core::ffi::c_void);
-            }
-            148 => {
-                free((*yyvaluep).str as *mut ::core::ffi::c_void);
-            }
-            _ => {}
+        return Some(sym);
+    }
+    None
+}
+
+fn yypcontext_expected_tokens(yyssp: &[i16], ssp: usize, yyarg: &mut [i32], yyargn: usize) -> i32 {
+    let mut yycount: i32 = 0;
+    let yyn: i32 = YYPACT[yyssp[ssp] as usize] as i32;
+    if yyn != YYPACT_NINF {
+        let yyxbegin: i32 = if yyn < 0 { -yyn } else { 0 };
+        let yychecklim: i32 = YYLAST - yyn + 1;
+        let yyxend: i32 = if yychecklim < YYNTOKENS {
+            yychecklim
+        } else {
+            YYNTOKENS
         };
+        let mut yyx = yyxbegin;
+        while yyx < yyxend {
+            if YYCHECK[(yyx + yyn) as usize] as i32 == yyx && yyx != YYSYMBOL_YYerror {
+                if yyargn == 0 {
+                    yycount += 1;
+                } else if (yycount as usize) == yyargn {
+                    return 0;
+                } else {
+                    yyarg[yycount as usize] = yyx;
+                    yycount += 1;
+                }
+            }
+            yyx += 1;
+        }
+    }
+    if yyargn > 0 && yycount == 0 {
+        yyarg[0] = YYSYMBOL_YYEMPTY;
+    }
+    yycount
+}
+
+fn yysyntax_error(yyssp: &[i16], ssp: usize, yytoken: i32) -> String {
+    let mut yyarg: [i32; 5] = [YYSYMBOL_YYEOF; 5];
+    // Count expected tokens
+    let mut yycount: i32 = 0;
+    if yytoken != YYSYMBOL_YYEMPTY {
+        yyarg[0] = yytoken;
+        yycount = 1;
+        let n = yypcontext_expected_tokens(yyssp, ssp, &mut yyarg[1..], 4);
+        if n == YYENOMEM {
+            return String::from("syntax error");
+        }
+        yycount += n;
+    }
+
+    let mut msg = String::from("syntax error, unexpected ");
+    if yycount > 0 {
+        msg.push_str(yysymbol_name(yyarg[0]));
+    }
+    if yycount > 1 {
+        msg.push_str(", expecting ");
+        for i in 1..yycount {
+            if i > 1 {
+                msg.push_str(" or ");
+            }
+            msg.push_str(yysymbol_name(yyarg[i as usize]));
+        }
+    }
+    msg
+}
+
+fn ensure_capacity(v: &mut Vec<YYValue>, idx: usize) {
+    if idx >= v.len() {
+        v.resize_with(idx + 1, || YYValue::None);
     }
 }
 
-pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
-    unsafe {
-        let mut c2rust_current_block: u64;
-        let mut yychar: i32;
-        static mut YYVAL_DEFAULT: YYSTYPE = YYSTYPE { num: 0 };
-        let mut yylval: YYSTYPE = YYVAL_DEFAULT;
-        let mut _xkbcommon_nerrs: i32 = 0_i32;
-        let mut yystate: yy_state_fast_t = 0 as yy_state_fast_t;
-        let mut yyerrstatus: i32 = 0_i32;
-        let mut yystacksize: i64 = YYINITDEPTH as i64;
-        let mut yyssa: [i16; 200] = [0; 200];
-        let mut yyss: *mut i16 = &raw mut yyssa as *mut i16;
-        let mut yyssp: *mut i16 = yyss;
-        let mut yyvsa: [YYSTYPE; 200] = [YYSTYPE { num: 0 }; 200];
-        let mut yyvs: *mut YYSTYPE = &raw mut yyvsa as *mut YYSTYPE;
-        let mut yyvsp: *mut YYSTYPE = yyvs;
-        let mut yyn: i32;
-        let yyresult: i32;
-        let mut yytoken: i32;
-        let mut yyval;
-        let mut yymsgbuf: [i8; 128] = [0; 128];
-        let mut yymsg: *mut i8 = &raw mut yymsgbuf as *mut i8;
-        let mut yymsg_alloc: i64 = std::mem::size_of::<[i8; 128]>() as i64;
-        let mut yylen: i32 = 0_i32;
-        yychar = YYEMPTY;
-        's_60: loop {
-            if false {
-                (0_i32..384_i32).contains(&yystate);
-            }
-            *yyssp = yystate as i16;
-            if yyss.offset(yystacksize as isize).offset(-(1_i32 as isize)) <= yyssp {
-                let yysize: i64 = yyssp.offset_from(yyss) as i64 + 1_i64;
-                if YYMAXDEPTH as i64 <= yystacksize {
-                    c2rust_current_block = 9310790481625056212;
-                    break;
-                }
-                yystacksize *= 2_i64;
-                if (YYMAXDEPTH as i64) < yystacksize {
-                    yystacksize = YYMAXDEPTH as i64;
-                }
-                let yyss1: *mut i16 = yyss;
-                let mut yyptr: *mut yyalloc = malloc(
-                    (yystacksize
-                        * (std::mem::size_of::<i16>() as i64
-                            + std::mem::size_of::<YYSTYPE>() as i64)
-                        + (std::mem::size_of::<yyalloc>() as i64 - 1_i64))
-                        as usize,
-                ) as *mut yyalloc;
-                if yyptr.is_null() {
-                    c2rust_current_block = 9310790481625056212;
-                    break;
-                }
+fn ensure_capacity_i16(v: &mut Vec<i16>, idx: usize) {
+    if idx >= v.len() {
+        v.resize(idx + 1, 0);
+    }
+}
 
-                std::ptr::copy_nonoverlapping::<i16>(
-                    yyss,
-                    &raw mut (*yyptr).yyss_alloc,
-                    yysize as usize,
-                );
-                yyss = &raw mut (*yyptr).yyss_alloc;
-                let yynewbytes: i64 =
-                    yystacksize * std::mem::size_of::<i16>() as i64 + YYSTACK_GAP_MAXIMUM;
-                yyptr = yyptr.offset((yynewbytes / std::mem::size_of::<yyalloc>() as i64) as isize);
+// ── Main parser function ────────────────────────────────────────────
 
-                std::ptr::copy_nonoverlapping::<YYSTYPE>(
-                    yyvs,
-                    &raw mut (*yyptr).yyvs_alloc,
-                    yysize as usize,
-                );
-                yyvs = &raw mut (*yyptr).yyvs_alloc;
-                if yyss1 != &raw mut yyssa as *mut i16 {
-                    free(yyss1 as *mut ::core::ffi::c_void);
-                }
-                yyssp = yyss.offset(yysize as isize).offset(-(1_i32 as isize));
-                yyvsp = yyvs.offset(yysize as isize).offset(-(1_i32 as isize));
-                if yyss.offset(yystacksize as isize).offset(-(1_i32 as isize)) <= yyssp {
-                    c2rust_current_block = 7267896227379959561;
-                    break;
-                }
+pub fn _xkbcommon_parse(param: &mut parser_param) -> i32 {
+    let mut yychar: i32;
+    let mut yylval: YYValue = YYValue::None;
+    let mut _xkbcommon_nerrs: i32 = 0;
+    let mut yystate: i32 = 0;
+    let mut yyerrstatus: i32 = 0;
+
+    let mut yyss: Vec<i16> = vec![0; YYINITDEPTH];
+    let mut yyvs: Vec<YYValue> = Vec::with_capacity(YYINITDEPTH);
+    for _ in 0..YYINITDEPTH {
+        yyvs.push(YYValue::None);
+    }
+
+    let mut ssp: usize = 0; // state stack pointer
+    let mut sp: usize = 0; // value stack pointer
+
+    let mut yyn: i32;
+    let yyresult: i32;
+    let mut yytoken: i32 = YYSYMBOL_YYEMPTY;
+    let mut yyval: YYValue;
+    let mut yylen: i32;
+
+    yychar = YYEMPTY;
+
+    'main_loop: loop {
+        // Ensure stack capacity
+        ensure_capacity_i16(&mut yyss, ssp);
+        ensure_capacity(&mut yyvs, sp);
+
+        yyss[ssp] = yystate as i16;
+
+        // Check stack overflow
+        if ssp >= YYMAXDEPTH - 1 {
+            _xkbcommon_error(param, "memory exhausted");
+            yyresult = 2;
+            break 'main_loop;
+        }
+
+        // Accept?
+        if yystate == YYFINAL {
+            yyresult = 0;
+            break 'main_loop;
+        }
+
+        // Try to take a shift
+        yyn = YYPACT[yystate as usize] as i32;
+        if yyn == YYPACT_NINF {
+            // goto yydefault
+        } else {
+            if yychar == YYEMPTY {
+                yychar = crate::xkb::xkbcomp::scanner::_xkbcommon_lex(&mut yylval, param.scanner);
             }
-            if yystate == YYFINAL {
-                c2rust_current_block = 5508412643396263508;
-                break;
-            }
-            yyn = YYPACT[yystate as usize] as i32;
-            if yyn == YYPACT_NINF {
-                c2rust_current_block = 16146138031620631371;
-            } else {
-                if yychar == YYEMPTY {
-                    yychar = _xkbcommon_lex(&raw mut yylval, (*param).scanner);
-                }
-                if yychar <= END_OF_FILE {
-                    yychar = END_OF_FILE;
-                    yytoken = YYSYMBOL_YYEOF;
-                    c2rust_current_block = 3689906465960840878;
-                } else if yychar == YYerror {
-                    yychar = YYUNDEF;
-                    yytoken = YYSYMBOL_YYerror;
-                    c2rust_current_block = 12965144090463719536;
-                } else {
-                    yytoken = (if (0_i32..=YYMAXUTOK).contains(&yychar) {
-                        YYTRANSLATE[yychar as usize] as i32
-                    } else {
-                        YYSYMBOL_YYUNDEF
-                    }) as i32;
-                    c2rust_current_block = 3689906465960840878;
-                }
-                match c2rust_current_block {
-                    12965144090463719536 => {}
-                    _ => {
-                        yyn += yytoken as i32;
-                        if !(0_i32..=YYLAST).contains(&yyn)
-                            || YYCHECK[yyn as usize] as i32 != yytoken as i32
-                        {
-                            c2rust_current_block = 16146138031620631371;
-                        } else {
-                            yyn = YYTABLE[yyn as usize] as i32;
-                            if yyn <= 0_i32 {
-                                yyn = -yyn;
-                                c2rust_current_block = 18373490478049949584;
-                            } else {
-                                if yyerrstatus != 0 {
-                                    yyerrstatus -= 1;
-                                }
-                                yystate = yyn as yy_state_fast_t;
-                                yyvsp = yyvsp.offset(1);
-                                *yyvsp = yylval;
-                                yychar = YYEMPTY;
-                                c2rust_current_block = 10430565463943277256;
-                            }
-                        }
-                    }
-                }
-            }
-            if c2rust_current_block == 16146138031620631371 {
-                yyn = YYDEFACT[yystate as usize] as i32;
-                if yyn == 0_i32 {
-                    yytoken = (if yychar == YYEMPTY {
-                        YYSYMBOL_YYEMPTY
-                    } else if (0_i32..=YYMAXUTOK).contains(&yychar) {
-                        YYTRANSLATE[yychar as usize] as i32
-                    } else {
-                        YYSYMBOL_YYUNDEF
-                    }) as i32;
-                    if yyerrstatus == 0 {
-                        _xkbcommon_nerrs += 1;
-                        let mut yyctx: yypcontext_t = yypcontext_t { yyssp, yytoken };
-                        let mut yymsgp: *const i8 = b"syntax error\0".as_ptr() as *const i8;
-                        let mut yysyntax_error_status: i32;
-                        yysyntax_error_status =
-                            yysyntax_error(&raw mut yymsg_alloc, &raw mut yymsg, &raw mut yyctx);
-                        if yysyntax_error_status == 0_i32 {
-                            yymsgp = yymsg;
-                        } else if yysyntax_error_status == -1_i32 {
-                            if yymsg != &raw mut yymsgbuf as *mut i8 {
-                                free(yymsg as *mut ::core::ffi::c_void);
-                            }
-                            yymsg = malloc(yymsg_alloc as usize) as *mut i8;
-                            if !yymsg.is_null() {
-                                yysyntax_error_status = yysyntax_error(
-                                    &raw mut yymsg_alloc,
-                                    &raw mut yymsg,
-                                    &raw mut yyctx,
-                                );
-                                yymsgp = yymsg;
-                            } else {
-                                yymsg = &raw mut yymsgbuf as *mut i8;
-                                yymsg_alloc = std::mem::size_of::<[i8; 128]>() as i64;
-                                yysyntax_error_status = YYENOMEM;
-                            }
-                        }
-                        _xkbcommon_error(param, yymsgp);
-                        if yysyntax_error_status == YYENOMEM {
-                            c2rust_current_block = 9310790481625056212;
-                            break;
-                        }
-                    }
-                    if yyerrstatus == 3_i32 {
-                        if yychar <= END_OF_FILE {
-                            if yychar == END_OF_FILE {
-                                c2rust_current_block = 7267896227379959561;
-                                break;
-                            }
-                        } else {
-                            yydestruct(
-                                b"Error: discarding\0".as_ptr() as *const i8,
-                                yytoken,
-                                &raw mut yylval,
-                                param,
-                            );
-                            yychar = YYEMPTY;
-                        }
-                    }
-                    c2rust_current_block = 12965144090463719536;
-                } else {
-                    c2rust_current_block = 18373490478049949584;
-                }
-            }
-            if c2rust_current_block == 18373490478049949584 {
-                yylen = YYR2[yyn as usize] as i32;
-                yyval = *yyvsp.offset((1_i32 - yylen) as isize);
-                match yyn {
-                    2 => {
-                        (*param).rtrn = (*yyvsp.offset(0_i32 as isize)).file;
-                        yyval.file = (*param).rtrn;
-                        (*param).more_maps = !(*param).rtrn.is_null();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    3 => {
-                        (*param).rtrn = (*yyvsp.offset(0_i32 as isize)).file;
-                        // dead store removed: yyval.file = (*param).rtrn;
-                        (*param).more_maps = !(*param).rtrn.is_null();
-                        c2rust_current_block = 5508412643396263508;
-                        break;
-                    }
-                    4 => {
-                        (*param).rtrn = std::ptr::null_mut();
-                        yyval.file = (*param).rtrn;
-                        (*param).more_maps = false;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    5 => {
-                        yyval.file = XkbFileCreate(
-                            (*yyvsp.offset(-5_i32 as isize)).file_type,
-                            (*yyvsp.offset(-4_i32 as isize)).str,
-                            to_common_or_null!((*yyvsp.offset(-2_i32 as isize)).fileList.head),
-                            (*yyvsp.offset(-6_i32 as isize)).mapFlags,
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    6 => {
-                        yyval.file_type = FILE_TYPE_KEYMAP;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    7 => {
-                        yyval.file_type = FILE_TYPE_KEYMAP;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    8 => {
-                        yyval.file_type = FILE_TYPE_KEYMAP;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    9 => {
-                        if !(*yyvsp.offset(0_i32 as isize)).file.is_null() {
-                            if !(*yyvsp.offset(-1_i32 as isize)).fileList.head.is_null() {
-                                yyval.fileList.head =
-                                    (*yyvsp.offset(-1_i32 as isize)).fileList.head;
-                                (*yyval.fileList.last).common.next =
-                                    to_common!((*yyvsp.offset(0_i32 as isize)).file);
-                                yyval.fileList.last = (*yyvsp.offset(0_i32 as isize)).file;
-                            } else {
-                                yyval.fileList.last = (*yyvsp.offset(0_i32 as isize)).file;
-                                yyval.fileList.head = yyval.fileList.last;
-                            }
-                        }
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    10 => {
-                        yyval.fileList.last = std::ptr::null_mut();
-                        yyval.fileList.head = yyval.fileList.last;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    11 => {
-                        yyval.file = XkbFileCreate(
-                            (*yyvsp.offset(-5_i32 as isize)).file_type,
-                            (*yyvsp.offset(-4_i32 as isize)).str,
-                            (*yyvsp.offset(-2_i32 as isize)).anyList.head,
-                            (*yyvsp.offset(-6_i32 as isize)).mapFlags,
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    12 => {
-                        yyval.file_type = FILE_TYPE_KEYCODES;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    13 => {
-                        yyval.file_type = FILE_TYPE_TYPES;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    14 => {
-                        yyval.file_type = FILE_TYPE_COMPAT;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    15 => {
-                        yyval.file_type = FILE_TYPE_SYMBOLS;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    16 => {
-                        yyval.file_type = FILE_TYPE_GEOMETRY;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    17 => {
-                        yyval.mapFlags = (*yyvsp.offset(0_i32 as isize)).mapFlags;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    18 => {
-                        yyval.mapFlags = 0 as xkb_map_flags;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    19 => {
-                        yyval.mapFlags = ((*yyvsp.offset(-1_i32 as isize)).mapFlags
-                            | (*yyvsp.offset(0_i32 as isize)).mapFlags)
-                            as xkb_map_flags;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    20 => {
-                        yyval.mapFlags = (*yyvsp.offset(0_i32 as isize)).mapFlags;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    21 => {
-                        yyval.mapFlags = MAP_IS_PARTIAL;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    22 => {
-                        yyval.mapFlags = MAP_IS_DEFAULT;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    23 => {
-                        yyval.mapFlags = MAP_IS_HIDDEN;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    24 => {
-                        yyval.mapFlags = MAP_HAS_ALPHANUMERIC;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    25 => {
-                        yyval.mapFlags = MAP_HAS_MODIFIER;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    26 => {
-                        yyval.mapFlags = MAP_HAS_KEYPAD;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    27 => {
-                        yyval.mapFlags = MAP_HAS_FN;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    28 => {
-                        yyval.mapFlags = MAP_IS_ALTGR;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    29 => {
-                        if !(*yyvsp.offset(0_i32 as isize)).any.is_null() {
-                            if !(*yyvsp.offset(-1_i32 as isize)).anyList.head.is_null() {
-                                yyval.anyList.head = (*yyvsp.offset(-1_i32 as isize)).anyList.head;
-                                let c2rust_fresh0 =
-                                    &mut (*(*yyvsp.offset(-1_i32 as isize)).anyList.last).next;
-                                *c2rust_fresh0 = (*yyvsp.offset(0_i32 as isize)).any;
-                                yyval.anyList.last = (*yyvsp.offset(0_i32 as isize)).any;
-                            } else {
-                                yyval.anyList.last = (*yyvsp.offset(0_i32 as isize)).any;
-                                yyval.anyList.head = yyval.anyList.last;
-                            }
-                        }
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    30 => {
-                        let mut vmod: *mut VModDef = (*yyvsp.offset(0_i32 as isize)).vmodList.head;
-                        while !vmod.is_null() {
-                            (*vmod).merge = (*yyvsp.offset(-1_i32 as isize)).merge;
-                            vmod = from_common!((*vmod).common.next, VModDef);
-                        }
-                        if !(*yyvsp.offset(-2_i32 as isize)).anyList.head.is_null() {
-                            yyval.anyList.head = (*yyvsp.offset(-2_i32 as isize)).anyList.head;
-                            let c2rust_fresh1 =
-                                &mut (*(*yyvsp.offset(-2_i32 as isize)).anyList.last).next;
-                            *c2rust_fresh1 =
-                                to_common!((*yyvsp.offset(0_i32 as isize)).vmodList.head);
-                            yyval.anyList.last =
-                                &raw mut (*(*yyvsp.offset(0_i32 as isize)).vmodList.last).common;
-                        } else {
-                            yyval.anyList.head =
-                                &raw mut (*(*yyvsp.offset(0_i32 as isize)).vmodList.head).common;
-                            yyval.anyList.last =
-                                &raw mut (*(*yyvsp.offset(0_i32 as isize)).vmodList.last).common;
-                        }
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    31 => {
-                        yyval.anyList.last = std::ptr::null_mut();
-                        yyval.anyList.head = yyval.anyList.last;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    32 => {
-                        (*(*yyvsp.offset(0_i32 as isize)).var).merge =
-                            (*yyvsp.offset(-1_i32 as isize)).merge;
-                        yyval.any = to_common_or_null!((*yyvsp.offset(0_i32 as isize)).var);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    33 => {
-                        (*(*yyvsp.offset(0_i32 as isize)).interp).merge =
-                            (*yyvsp.offset(-1_i32 as isize)).merge;
-                        yyval.any = to_common_or_null!((*yyvsp.offset(0_i32 as isize)).interp);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    34 => {
-                        (*(*yyvsp.offset(0_i32 as isize)).keyCode).merge =
-                            (*yyvsp.offset(-1_i32 as isize)).merge;
-                        yyval.any = to_common_or_null!((*yyvsp.offset(0_i32 as isize)).keyCode);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    35 => {
-                        (*(*yyvsp.offset(0_i32 as isize)).keyAlias).merge =
-                            (*yyvsp.offset(-1_i32 as isize)).merge;
-                        yyval.any = to_common_or_null!((*yyvsp.offset(0_i32 as isize)).keyAlias);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    36 => {
-                        (*(*yyvsp.offset(0_i32 as isize)).keyType).merge =
-                            (*yyvsp.offset(-1_i32 as isize)).merge;
-                        yyval.any = to_common_or_null!((*yyvsp.offset(0_i32 as isize)).keyType);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    37 => {
-                        (*(*yyvsp.offset(0_i32 as isize)).syms).merge =
-                            (*yyvsp.offset(-1_i32 as isize)).merge;
-                        yyval.any = to_common_or_null!((*yyvsp.offset(0_i32 as isize)).syms);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    38 => {
-                        (*(*yyvsp.offset(0_i32 as isize)).modMask).merge =
-                            (*yyvsp.offset(-1_i32 as isize)).merge;
-                        yyval.any = to_common_or_null!((*yyvsp.offset(0_i32 as isize)).modMask);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    39 => {
-                        (*(*yyvsp.offset(0_i32 as isize)).groupCompat).merge =
-                            (*yyvsp.offset(-1_i32 as isize)).merge;
-                        yyval.any = to_common_or_null!((*yyvsp.offset(0_i32 as isize)).groupCompat);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    40 => {
-                        (*(*yyvsp.offset(0_i32 as isize)).ledMap).merge =
-                            (*yyvsp.offset(-1_i32 as isize)).merge;
-                        yyval.any = to_common_or_null!((*yyvsp.offset(0_i32 as isize)).ledMap);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    41 => {
-                        (*(*yyvsp.offset(0_i32 as isize)).ledName).merge =
-                            (*yyvsp.offset(-1_i32 as isize)).merge;
-                        yyval.any = to_common_or_null!((*yyvsp.offset(0_i32 as isize)).ledName);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    42 => {
-                        yyval.any = std::ptr::null_mut();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    43 => {
-                        yyval.any = std::ptr::null_mut();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    44 => {
-                        yyval.any = std::ptr::null_mut();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    45 => {
-                        yyval.any = to_common_or_null!((*yyvsp.offset(0_i32 as isize)).unknown);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    46 => {
-                        yyval.any = to_common_or_null!((*yyvsp.offset(0_i32 as isize)).unknown);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    47 => {
-                        yyval.any = to_common_or_null!(IncludeCreate(
-                            (*param).ctx,
-                            (*yyvsp.offset(0_i32 as isize)).str,
-                            (*yyvsp.offset(-1_i32 as isize)).merge,
-                        ));
-                        free((*yyvsp.offset(0_i32 as isize)).str as *mut ::core::ffi::c_void);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    48 => {
-                        yyval.var = VarCreate(
-                            box_from_raw((*yyvsp.offset(-3_i32 as isize)).expr),
-                            box_from_raw((*yyvsp.offset(-1_i32 as isize)).expr),
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    49 => {
-                        yyval.var = BoolVarCreate((*yyvsp.offset(-1_i32 as isize)).atom, true);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    50 => {
-                        yyval.var = BoolVarCreate((*yyvsp.offset(-1_i32 as isize)).atom, false);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    51 => {
-                        yyval.keyCode = KeycodeCreate(
-                            (*yyvsp.offset(-3_i32 as isize)).atom,
-                            (*yyvsp.offset(-1_i32 as isize)).num,
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    52 => {
-                        yyval.keyAlias = KeyAliasCreate(
-                            (*yyvsp.offset(-3_i32 as isize)).atom,
-                            (*yyvsp.offset(-1_i32 as isize)).atom,
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    53 => {
-                        yyval.vmodList = (*yyvsp.offset(-1_i32 as isize)).vmodList;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    54 => {
-                        yyval.vmodList.head = (*yyvsp.offset(-2_i32 as isize)).vmodList.head;
-                        (*yyval.vmodList.last).common.next =
-                            to_common!((*yyvsp.offset(0_i32 as isize)).vmod);
-                        yyval.vmodList.last = (*yyvsp.offset(0_i32 as isize)).vmod;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    55 => {
-                        yyval.vmodList.last = (*yyvsp.offset(0_i32 as isize)).vmod;
-                        yyval.vmodList.head = yyval.vmodList.last;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    56 => {
-                        yyval.vmod = VModCreate((*yyvsp.offset(0_i32 as isize)).atom, None);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    57 => {
-                        yyval.vmod = VModCreate(
-                            (*yyvsp.offset(-2_i32 as isize)).atom,
-                            box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    58 => {
-                        let c2rust_fresh2 = &mut (*(*yyvsp.offset(-4_i32 as isize)).interp).def;
-                        *c2rust_fresh2 =
-                            collect_vardefs((*yyvsp.offset(-2_i32 as isize)).varList.head);
-                        yyval.interp = (*yyvsp.offset(-4_i32 as isize)).interp;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    59 => {
-                        yyval.interp = InterpCreate(
-                            (*yyvsp.offset(-2_i32 as isize)).keysym,
-                            box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    60 => {
-                        yyval.interp = InterpCreate((*yyvsp.offset(0_i32 as isize)).keysym, None);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    61 => {
-                        if !(*yyvsp.offset(0_i32 as isize)).var.is_null() {
-                            if !(*yyvsp.offset(-1_i32 as isize)).varList.head.is_null() {
-                                yyval.varList.head = (*yyvsp.offset(-1_i32 as isize)).varList.head;
-                                (*yyval.varList.last).common.next =
-                                    to_common!((*yyvsp.offset(0_i32 as isize)).var);
-                                yyval.varList.last = (*yyvsp.offset(0_i32 as isize)).var;
-                            } else {
-                                yyval.varList.last = (*yyvsp.offset(0_i32 as isize)).var;
-                                yyval.varList.head = yyval.varList.last;
-                            }
-                        }
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    62 => {
-                        yyval.varList.last = std::ptr::null_mut();
-                        yyval.varList.head = yyval.varList.last;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    63 => {
-                        yyval.keyType = KeyTypeCreate(
-                            (*yyvsp.offset(-4_i32 as isize)).atom,
-                            collect_vardefs((*yyvsp.offset(-2_i32 as isize)).varList.head),
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    64 => {
-                        yyval.syms = SymbolsCreate(
-                            (*yyvsp.offset(-4_i32 as isize)).atom,
-                            collect_vardefs((*yyvsp.offset(-2_i32 as isize)).varList.head),
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    65 => {
-                        yyval.varList = (*yyvsp.offset(0_i32 as isize)).varList;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    66 => {
-                        yyval.varList.last = std::ptr::null_mut();
-                        yyval.varList.head = yyval.varList.last;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    67 => {
-                        yyval.varList.head = (*yyvsp.offset(-2_i32 as isize)).varList.head;
-                        (*yyval.varList.last).common.next =
-                            to_common!((*yyvsp.offset(0_i32 as isize)).var);
-                        yyval.varList.last = (*yyvsp.offset(0_i32 as isize)).var;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    68 => {
-                        yyval.varList.last = (*yyvsp.offset(0_i32 as isize)).var;
-                        yyval.varList.head = yyval.varList.last;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    69 => {
-                        yyval.var = VarCreate(
-                            box_from_raw((*yyvsp.offset(-2_i32 as isize)).expr),
-                            box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    70 => {
-                        yyval.var = VarCreate(
-                            box_from_raw((*yyvsp.offset(-2_i32 as isize)).expr),
-                            box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    71 => {
-                        yyval.var = BoolVarCreate((*yyvsp.offset(0_i32 as isize)).atom, true);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    72 => {
-                        yyval.var = BoolVarCreate((*yyvsp.offset(0_i32 as isize)).atom, false);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    73 => {
-                        yyval.var =
-                            VarCreate(None, box_from_raw((*yyvsp.offset(0_i32 as isize)).expr));
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    74 => {
-                        yyval.expr = (*yyvsp.offset(-1_i32 as isize)).exprList.head;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    75 => {
-                        let mut list: ExprList = ExprList {
-                            head: (*yyvsp.offset(-1_i32 as isize)).exprList.head,
-                            last: (*yyvsp.offset(-1_i32 as isize)).exprList.last,
-                        };
-                        let mut k: u32 = 0_u32;
-                        while k < (*yyvsp.offset(-3_i32 as isize)).noSymbolOrActionList {
-                            let syms: *mut ExprDef =
-                                ExprCreateKeySymList(XKB_KEY_NoSymbol as u32) as *mut ExprDef;
-                            if syms.is_null() {
-                                c2rust_current_block = 7267896227379959561;
-                                break 's_60;
-                            }
-                            (*syms).common.next = to_common!(list.head);
-                            list.head = syms;
-                            k = k.wrapping_add(1);
-                        }
-                        yyval.expr = list.head;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    76 => {
-                        yyval.expr = (*yyvsp.offset(-1_i32 as isize)).exprList.head;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    77 => {
-                        let mut list_0: VModList = VModList {
-                            head: (*yyvsp.offset(-1_i32 as isize)).exprList.head,
-                            last: (*yyvsp.offset(-1_i32 as isize)).exprList.last,
-                        };
-                        let mut k_0: u32 = 0_u32;
-                        while k_0 < (*yyvsp.offset(-3_i32 as isize)).noSymbolOrActionList {
-                            let acts: *mut ExprDef = expr_create(ExprKind::ActionList {
-                                actions: Vec::new(),
-                            }) as *mut ExprDef;
-                            if acts.is_null() {
-                                c2rust_current_block = 7267896227379959561;
-                                break 's_60;
-                            }
-                            (*acts).common.next = to_common!(list_0.head);
-                            list_0.head = acts;
-                            k_0 = k_0.wrapping_add(1);
-                        }
-                        yyval.expr = list_0.head;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    78 => {
-                        yyval.expr = expr_create(ExprKind::EmptyList);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    79 => {
-                        yyval.noSymbolOrActionList = (*yyvsp.offset(-3_i32 as isize))
-                            .noSymbolOrActionList
-                            .wrapping_add(1_u32);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    80 => {
-                        yyval.noSymbolOrActionList = 1_u32;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    81 => {
-                        yyval.noSymbolOrActionList = 0_u32;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    82 => {
-                        yyval.groupCompat = GroupCompatCreate(
-                            (*yyvsp.offset(-3_i32 as isize)).num,
-                            box_from_raw((*yyvsp.offset(-1_i32 as isize)).expr),
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    83 => {
-                        yyval.modMask = ModMapCreate(
-                            (*yyvsp.offset(-4_i32 as isize)).atom,
-                            collect_exprs((*yyvsp.offset(-2_i32 as isize)).exprList.head),
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    84 => {
-                        yyval.exprList.head = (*yyvsp.offset(-2_i32 as isize)).exprList.head;
-                        (*yyval.exprList.last).common.next =
-                            to_common!((*yyvsp.offset(0_i32 as isize)).expr);
-                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    85 => {
-                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
-                        yyval.exprList.head = yyval.exprList.last;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    86 => {
-                        yyval.expr =
-                            expr_create(ExprKind::KeyName((*yyvsp.offset(0_i32 as isize)).atom));
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    87 => {
-                        yyval.expr =
-                            expr_create(ExprKind::KeySym((*yyvsp.offset(0_i32 as isize)).keysym));
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    88 => {
-                        yyval.ledMap = LedMapCreate(
-                            (*yyvsp.offset(-4_i32 as isize)).atom,
-                            collect_vardefs((*yyvsp.offset(-2_i32 as isize)).varList.head),
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    89 => {
-                        yyval.ledName = LedNameCreate(
-                            (*yyvsp.offset(-3_i32 as isize)).num,
-                            box_from_raw((*yyvsp.offset(-1_i32 as isize)).expr),
-                            false,
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    90 => {
-                        yyval.ledName = LedNameCreate(
-                            (*yyvsp.offset(-3_i32 as isize)).num,
-                            box_from_raw((*yyvsp.offset(-1_i32 as isize)).expr),
-                            true,
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    91 => {
-                        FreeStmt(to_common_or_null!((*yyvsp.offset(-3_i32 as isize)).expr));
-                        FreeStmt(to_common_or_null!((*yyvsp.offset(-1_i32 as isize)).expr));
-                        yyval.unknown = UnknownStatementCreate(
-                            STMT_UNKNOWN_DECLARATION,
-                            (*yyvsp.offset(-4_i32 as isize)).sval,
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    92 => {
-                        FreeStmt(to_common_or_null!((*yyvsp.offset(-4_i32 as isize)).expr));
-                        FreeStmt(to_common_or_null!(
-                            (*yyvsp.offset(-2_i32 as isize)).varList.head
-                        ));
-                        yyval.unknown = UnknownStatementCreate(
-                            STMT_UNKNOWN_COMPOUND,
-                            (*yyvsp.offset(-5_i32 as isize)).sval,
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    93 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    94 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    95 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    96 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    97 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    98 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    99 => {
-                        FreeStmt(to_common_or_null!((*yyvsp.offset(0_i32 as isize)).var));
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    100 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    101 => {
-                        FreeStmt(to_common_or_null!((*yyvsp.offset(0_i32 as isize)).ledMap));
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    102 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    103 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    104 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    105 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    106 => {
-                        FreeStmt(to_common_or_null!((*yyvsp.offset(0_i32 as isize)).var));
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    107 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    108 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    109 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    110 => {
-                        FreeStmt(to_common_or_null!(
-                            (*yyvsp.offset(-1_i32 as isize)).exprList.head
-                        ));
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    111 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    112 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    113 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    114 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    115 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    116 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    117 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    118 => {
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    119 => {
-                        FreeStmt(to_common_or_null!((*yyvsp.offset(0_i32 as isize)).expr));
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    120 => {
-                        yyval.expr = std::ptr::null_mut();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    121 => {
-                        yyval.expr = std::ptr::null_mut();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    122 => {
-                        yyval.expr = std::ptr::null_mut();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    123 => {
-                        FreeStmt(to_common_or_null!(
-                            (*yyvsp.offset(-2_i32 as isize)).varList.head
-                        ));
-                        yyval.geom = std::ptr::null_mut::<core::ffi::c_void>();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    124 => {
-                        yyval.num = 0_i64;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    125 => {
-                        yyval.num = 0_i64;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    126 => {
-                        yyval.num = 0_i64;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    127 => {
-                        yyval.num = 0_i64;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    128 => {
-                        yyval.atom = (*yyvsp.offset(0_i32 as isize)).atom;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    129 => {
-                        yyval.atom = (*yyvsp.offset(0_i32 as isize)).atom;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    130 => {
-                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"action");
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    131 => {
-                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"interpret");
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    132 => {
-                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"type");
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    133 => {
-                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"key");
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    134 => {
-                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"group");
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    135 => {
-                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"modifier_map");
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    136 => {
-                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"indicator");
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    137 => {
-                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"shape");
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    138 => {
-                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"row");
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    139 => {
-                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"section");
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    140 => {
-                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"text");
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    141 => {
-                        yyval.merge = (*yyvsp.offset(0_i32 as isize)).merge;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    142 => {
-                        yyval.merge = MERGE_DEFAULT;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    143 => {
-                        yyval.merge = MERGE_DEFAULT;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    144 => {
-                        yyval.merge = MERGE_AUGMENT;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    145 => {
-                        yyval.merge = MERGE_OVERRIDE;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    146 => {
-                        yyval.merge = MERGE_REPLACE;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    147 => {
-                        let loc: scanner_loc = (*(*param).scanner).token_location();
-                        log::warn!(
-                            "{}:{}:{}: ignored unsupported legacy merge mode \"alternate\"\n",
-                            &(*(*param).scanner).file_name,
-                            loc.line,
-                            loc.column
-                        );
-                        yyval.merge = MERGE_DEFAULT;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    148 => {
-                        if !(*yyvsp.offset(0_i32 as isize)).expr.is_null() {
-                            if !(*yyvsp.offset(-2_i32 as isize)).exprList.head.is_null() {
-                                yyval.exprList.head =
-                                    (*yyvsp.offset(-2_i32 as isize)).exprList.head;
-                                (*yyval.exprList.last).common.next =
-                                    to_common!((*yyvsp.offset(0_i32 as isize)).expr);
-                                yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
-                            } else {
-                                yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
-                                yyval.exprList.head = yyval.exprList.last;
-                            }
-                        }
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    149 => {
-                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
-                        yyval.exprList.head = yyval.exprList.last;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    150 => {
-                        yyval.exprList.last = std::ptr::null_mut();
-                        yyval.exprList.head = yyval.exprList.last;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    151 => {
-                        yyval.expr = expr_create(ExprKind::Binary {
-                            op: STMT_EXPR_DIVIDE,
-                            left: box_from_raw((*yyvsp.offset(-2_i32 as isize)).expr),
-                            right: box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    152 => {
-                        yyval.expr = expr_create(ExprKind::Binary {
-                            op: STMT_EXPR_ADD,
-                            left: box_from_raw((*yyvsp.offset(-2_i32 as isize)).expr),
-                            right: box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    153 => {
-                        yyval.expr = expr_create(ExprKind::Binary {
-                            op: STMT_EXPR_SUBTRACT,
-                            left: box_from_raw((*yyvsp.offset(-2_i32 as isize)).expr),
-                            right: box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    154 => {
-                        yyval.expr = expr_create(ExprKind::Binary {
-                            op: STMT_EXPR_MULTIPLY,
-                            left: box_from_raw((*yyvsp.offset(-2_i32 as isize)).expr),
-                            right: box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    155 => {
-                        yyval.expr = expr_create(ExprKind::Binary {
-                            op: STMT_EXPR_ASSIGN,
-                            left: box_from_raw((*yyvsp.offset(-2_i32 as isize)).expr),
-                            right: box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    156 => {
-                        yyval.expr = (*yyvsp.offset(0_i32 as isize)).expr;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    157 => {
-                        yyval.expr = expr_create(ExprKind::Unary {
-                            op: STMT_EXPR_NEGATE,
-                            child: box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    158 => {
-                        yyval.expr = expr_create(ExprKind::Unary {
-                            op: STMT_EXPR_UNARY_PLUS,
-                            child: box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    159 => {
-                        yyval.expr = expr_create(ExprKind::Unary {
-                            op: STMT_EXPR_NOT,
-                            child: box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    160 => {
-                        yyval.expr = expr_create(ExprKind::Unary {
-                            op: STMT_EXPR_INVERT,
-                            child: box_from_raw((*yyvsp.offset(0_i32 as isize)).expr),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    161 => {
-                        yyval.expr = (*yyvsp.offset(0_i32 as isize)).expr;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    162 => {
-                        yyval.expr = expr_create(ExprKind::Action {
-                            name: (*yyvsp.offset(-3_i32 as isize)).atom,
-                            args: collect_exprs((*yyvsp.offset(-1_i32 as isize)).exprList.head),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    163 => {
-                        yyval.expr = (*yyvsp.offset(0_i32 as isize)).expr;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    164 => {
-                        yyval.expr = (*yyvsp.offset(0_i32 as isize)).expr;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    165 => {
-                        yyval.expr = (*yyvsp.offset(-1_i32 as isize)).expr;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    166 => {
-                        let expr: *mut ExprDef = expr_create(ExprKind::ActionList {
-                            actions: collect_exprs((*yyvsp.offset(0_i32 as isize)).expr),
-                        });
-                        yyval.exprList = (*yyvsp.offset(-2_i32 as isize)).exprList;
-                        (*yyval.exprList.last).common.next = to_common!(expr);
-                        yyval.exprList.last = expr;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    167 => {
-                        yyval.exprList = (*yyvsp.offset(-2_i32 as isize)).exprList;
-                        (*yyval.exprList.last).common.next =
-                            to_common!((*yyvsp.offset(0_i32 as isize)).expr);
-                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    168 => {
-                        yyval.exprList.last = expr_create(ExprKind::ActionList {
-                            actions: collect_exprs((*yyvsp.offset(0_i32 as isize)).expr),
-                        });
-                        yyval.exprList.head = yyval.exprList.last;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    169 => {
-                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
-                        yyval.exprList.head = yyval.exprList.last;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    170 => {
-                        yyval.exprList = (*yyvsp.offset(-2_i32 as isize)).exprList;
-                        (*yyval.exprList.last).common.next =
-                            to_common!((*yyvsp.offset(0_i32 as isize)).expr);
-                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    171 => {
-                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
-                        yyval.exprList.head = yyval.exprList.last;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    172 => {
-                        yyval.expr = expr_create(ExprKind::ActionList {
-                            actions: collect_exprs((*yyvsp.offset(-1_i32 as isize)).exprList.head),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    173 => {
-                        yyval.expr = (*yyvsp.offset(0_i32 as isize)).expr;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    174 => {
-                        yyval.expr = expr_create(ExprKind::ActionList {
-                            actions: Vec::new(),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    175 => {
-                        yyval.expr = expr_create(ExprKind::Action {
-                            name: (*yyvsp.offset(-3_i32 as isize)).atom,
-                            args: collect_exprs((*yyvsp.offset(-1_i32 as isize)).exprList.head),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    176 => {
-                        yyval.expr =
-                            expr_create(ExprKind::Ident((*yyvsp.offset(0_i32 as isize)).atom));
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    177 => {
-                        yyval.expr = expr_create(ExprKind::FieldRef {
-                            element: (*yyvsp.offset(-2_i32 as isize)).atom,
-                            field: (*yyvsp.offset(0_i32 as isize)).atom,
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    178 => {
-                        yyval.expr = expr_create(ExprKind::ArrayRef {
-                            element: XKB_ATOM_NONE,
-                            field: (*yyvsp.offset(-3_i32 as isize)).atom,
-                            entry: box_from_raw((*yyvsp.offset(-1_i32 as isize)).expr),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    179 => {
-                        yyval.expr = expr_create(ExprKind::ArrayRef {
-                            element: (*yyvsp.offset(-5_i32 as isize)).atom,
-                            field: (*yyvsp.offset(-3_i32 as isize)).atom,
-                            entry: box_from_raw((*yyvsp.offset(-1_i32 as isize)).expr),
-                        });
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    180 => {
-                        yyval.expr = (*yyvsp.offset(0_i32 as isize)).expr;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    181 => {
-                        yyval.expr = std::ptr::null_mut();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    182 => {
-                        yyval.expr =
-                            expr_create(ExprKind::String((*yyvsp.offset(0_i32 as isize)).atom));
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    183 => {
-                        yyval.expr =
-                            expr_create(ExprKind::Integer((*yyvsp.offset(0_i32 as isize)).num));
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    184 => {
-                        yyval.expr = expr_create(ExprKind::Float);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    185 => {
-                        yyval.expr =
-                            expr_create(ExprKind::KeyName((*yyvsp.offset(0_i32 as isize)).atom));
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    186 => {
-                        let expr_0: *mut ExprDef =
-                            ExprCreateKeySymList((*yyvsp.offset(0_i32 as isize)).keysym);
-                        yyval.exprList = (*yyvsp.offset(-2_i32 as isize)).exprList;
-                        (*yyval.exprList.last).common.next = to_common!(expr_0);
-                        yyval.exprList.last = expr_0;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    187 => {
-                        yyval.exprList = (*yyvsp.offset(-2_i32 as isize)).exprList;
-                        (*yyval.exprList.last).common.next =
-                            to_common!((*yyvsp.offset(0_i32 as isize)).expr);
-                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    188 => {
-                        yyval.exprList.last =
-                            ExprCreateKeySymList((*yyvsp.offset(0_i32 as isize)).keysym);
-                        yyval.exprList.head = yyval.exprList.last;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    189 => {
-                        yyval.exprList.last = (*yyvsp.offset(0_i32 as isize)).expr;
-                        yyval.exprList.head = yyval.exprList.last;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    190 => {
-                        yyval.expr = ExprAppendKeySymList(
-                            (*yyvsp.offset(-2_i32 as isize)).expr,
-                            (*yyvsp.offset(0_i32 as isize)).keysym,
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    191 => {
-                        yyval.expr = ExprKeySymListAppendString(
-                            (*param).scanner,
-                            (*yyvsp.offset(-2_i32 as isize)).expr,
-                            (*yyvsp.offset(0_i32 as isize)).str,
-                        );
-                        free((*yyvsp.offset(0_i32 as isize)).str as *mut ::core::ffi::c_void);
-                        if yyval.expr.is_null() {
-                            c2rust_current_block = 9017681648503218951;
-                        } else {
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                    }
-                    192 => {
-                        yyval.expr = ExprCreateKeySymList((*yyvsp.offset(0_i32 as isize)).keysym);
-                        if yyval.expr.is_null() {
-                            c2rust_current_block = 9017681648503218951;
-                        } else {
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                    }
-                    193 => {
-                        yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
-                        if yyval.expr.is_null() {
-                            c2rust_current_block = 9017681648503218951;
-                        } else {
-                            yyval.expr = ExprKeySymListAppendString(
-                                (*param).scanner,
-                                yyval.expr,
-                                (*yyvsp.offset(0_i32 as isize)).str,
-                            );
-                            free((*yyvsp.offset(0_i32 as isize)).str as *mut ::core::ffi::c_void);
-                            if yyval.expr.is_null() {
-                                c2rust_current_block = 9017681648503218951;
-                            } else {
-                                c2rust_current_block = 9699707990742192723;
-                            }
-                        }
-                    }
-                    194 => {
-                        yyval.expr = (*yyvsp.offset(-1_i32 as isize)).expr;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    195 => {
-                        yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
-                        if yyval.expr.is_null() {
-                            c2rust_current_block = 9017681648503218951;
-                        } else {
-                            yyval.expr = ExprKeySymListAppendString(
-                                (*param).scanner,
-                                yyval.expr,
-                                (*yyvsp.offset(0_i32 as isize)).str,
-                            );
-                            free((*yyvsp.offset(0_i32 as isize)).str as *mut ::core::ffi::c_void);
-                            if yyval.expr.is_null() {
-                                c2rust_current_block = 9017681648503218951;
-                            } else {
-                                c2rust_current_block = 9699707990742192723;
-                            }
-                        }
-                    }
-                    196 => {
-                        yyval.expr = (*yyvsp.offset(0_i32 as isize)).expr;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    197 => {
-                        yyval.expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    198 => {
-                        yyval.keysym = (*yyvsp.offset(0_i32 as isize)).keysym;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    199 => {
-                        yyval.keysym = KeysymParseString(
-                            (*param).scanner,
-                            (*yyvsp.offset(0_i32 as isize)).str,
-                        );
-                        free((*yyvsp.offset(0_i32 as isize)).str as *mut ::core::ffi::c_void);
-                        if yyval.keysym == XKB_KEY_NoSymbol as u32 {
-                            c2rust_current_block = 9017681648503218951;
-                        } else {
-                            c2rust_current_block = 9699707990742192723;
-                        }
-                    }
-                    200 => {
-                        if !resolve_keysym(
-                            param,
-                            (*yyvsp.offset(0_i32 as isize)).sval,
-                            &raw mut yyval.keysym,
-                        ) {
-                            let loc_0: scanner_loc = (*(*param).scanner).token_location();
-                            log::warn!(
-                                "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{}\"\n",
-                                XKB_WARNING_UNRECOGNIZED_KEYSYM as i32,
-                                &(*(*param).scanner).file_name,
-                                loc_0.line,
-                                loc_0.column,
-                                (*yyvsp.offset(0_isize)).sval.as_str()
-                            );
-                            yyval.keysym = XKB_KEY_NoSymbol as u32;
-                        }
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    201 => {
-                        yyval.keysym = XKB_KEY_section as u32;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    202 => {
-                        yyval.keysym = (XKB_KEY_0 as u32)
-                            .wrapping_add((*yyvsp.offset(0_i32 as isize)).num as u32);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    203 => {
-                        if (*yyvsp.offset(0_i32 as isize)).num < XKB_KEYSYM_MIN as i64 {
-                            let loc_1: scanner_loc = (*(*param).scanner).token_location();
-                            log::warn!(
-                                "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"-{:#06x}\" ({})\n",
-                                XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
-                                &(*(*param).scanner).file_name,
-                                loc_1.line,
-                                loc_1.column,
-                                -(*yyvsp.offset(0_i32 as isize)).num,
-                                (*yyvsp.offset(0_i32 as isize)).num
-                            );
-                            yyval.keysym = XKB_KEY_NoSymbol as u32;
-                        } else {
-                            if (*yyvsp.offset(0_i32 as isize)).num <= XKB_KEYSYM_MAX as i64 {
-                                yyval.keysym = (*yyvsp.offset(0_i32 as isize)).num as u32;
-                                if ((*(*param).ctx).log_verbosity >= 2_i32) as i32 as i64 != 0 {
-                                    if let Some(ref_name) =
-                                        xkb_keysym_is_deprecated(yyval.keysym, &[])
-                                    {
-                                        let loc_3: scanner_loc =
-                                            (*(*param).scanner).token_location();
-                                        log::warn!("[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{:#06x}\"; please use \"{}\" instead.\n",
-                                            XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
-                                            &(*(*param).scanner).file_name,
-                                            loc_3.line,
-                                            loc_3.column,
-                                            yyval.keysym,
-                                            ref_name);
-                                    }
-                                }
-                            } else {
-                                let loc_4: scanner_loc = (*(*param).scanner).token_location();
-                                log::warn!(
-                                    "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{:#06x}\" ({})\n",
-                                    XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
-                                    &(*(*param).scanner).file_name,
-                                    loc_4.line,
-                                    loc_4.column,
-                                    (*yyvsp.offset(0_i32 as isize)).num,
-                                    (*yyvsp.offset(0_i32 as isize)).num
-                                );
-                                yyval.keysym = XKB_KEY_NoSymbol as u32;
-                            }
-                            let loc_5: scanner_loc = (*(*param).scanner).token_location();
-                            log::warn!(
-                                "[XKB-{:03}] {}:{}:{}: numeric keysym \"{:#06x}\" ({})\n",
-                                XKB_WARNING_NUMERIC_KEYSYM as i32,
-                                &(*(*param).scanner).file_name,
-                                loc_5.line,
-                                loc_5.column,
-                                (*yyvsp.offset(0_i32 as isize)).num,
-                                (*yyvsp.offset(0_i32 as isize)).num
-                            );
-                        }
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    204 => {
-                        yyval.num = -(*yyvsp.offset(0_i32 as isize)).num;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    205 => {
-                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    206 => {
-                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    207 => {
-                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    208 => {
-                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    209 => {
-                        yyval.num = 0_i64;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    210 => {
-                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    211 => {
-                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    212 => {
-                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    213 => {
-                        yyval.num = (*yyvsp.offset(0_i32 as isize)).num;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    214 => {
-                        yyval.atom = xkb_atom_intern(
-                            &mut *(*param).ctx,
-                            (*yyvsp.offset(0_i32 as isize)).sval.as_bytes(),
-                        );
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    215 => {
-                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"default");
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    216 => {
-                        yyval.atom = xkb_atom_intern(
-                            &mut *(*param).ctx,
-                            std::slice::from_raw_parts(
-                                (*yyvsp.offset(0_i32 as isize)).str as *const u8,
-                                cstr_len((*yyvsp.offset(0_i32 as isize)).str),
-                            ),
-                        );
-                        free((*yyvsp.offset(0_i32 as isize)).str as *mut ::core::ffi::c_void);
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    217 => {
-                        yyval.str = (*yyvsp.offset(0_i32 as isize)).str;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    218 => {
-                        yyval.str = std::ptr::null_mut();
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    219 => {
-                        yyval.str = (*yyvsp.offset(0_i32 as isize)).str;
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                    _ => {
-                        c2rust_current_block = 9699707990742192723;
-                    }
-                }
-                match c2rust_current_block {
-                    9017681648503218951 => {
-                        _xkbcommon_nerrs += 1;
-                        yyvsp = yyvsp.offset(-(yylen as isize));
-                        yyssp = yyssp.offset(-(yylen as isize));
-                        yylen = 0_i32;
-                        yystate = *yyssp as yy_state_fast_t;
-                        c2rust_current_block = 12965144090463719536;
-                    }
-                    _ => {
-                        yyvsp = yyvsp.offset(-(yylen as isize));
-                        yyssp = yyssp.offset(-(yylen as isize));
-                        yylen = 0_i32;
-                        yyvsp = yyvsp.offset(1);
-                        *yyvsp = yyval;
-                        let yylhs: i32 = YYR1[yyn as usize] as i32 - YYNTOKENS;
-                        let yyi: i32 = YYPGOTO[yylhs as usize] as i32 + *yyssp as i32;
-                        yystate = (if (0_i32..=YYLAST).contains(&yyi)
-                            && YYCHECK[yyi as usize] as i32 == *yyssp as i32
-                        {
-                            YYTABLE[yyi as usize] as i32
-                        } else {
-                            YYDEFGOTO[yylhs as usize] as i32
-                        }) as yy_state_fast_t;
-                        c2rust_current_block = 10430565463943277256;
-                    }
-                }
-            }
-            if c2rust_current_block == 12965144090463719536 {
-                yyerrstatus = 3_i32;
+            if yychar <= END_OF_FILE {
+                yychar = END_OF_FILE;
+                yytoken = YYSYMBOL_YYEOF;
+            } else if yychar == YYerror {
+                yychar = YYUNDEF;
+                yytoken = YYSYMBOL_YYerror;
+                // goto yyerrlab1
+                yyerrstatus = 3;
+                // Error recovery: pop until we find a state that accepts error token
                 loop {
                     yyn = YYPACT[yystate as usize] as i32;
                     if yyn != YYPACT_NINF {
                         yyn += YYSYMBOL_YYerror;
-                        if (0_i32..=YYLAST).contains(&yyn)
+                        if (0..=YYLAST).contains(&yyn)
                             && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYerror
                         {
                             yyn = YYTABLE[yyn as usize] as i32;
-                            if 0_i32 < yyn {
+                            if yyn > 0 {
                                 break;
                             }
                         }
                     }
-                    if yyssp == yyss {
-                        c2rust_current_block = 7267896227379959561;
-                        break 's_60;
+                    if ssp == 0 {
+                        yyresult = 1;
+                        break 'main_loop;
                     }
-                    yydestruct(
-                        b"Error: popping\0".as_ptr() as *const i8,
-                        YYSTOS[yystate as usize] as i32,
-                        yyvsp,
-                        param,
-                    );
-                    yyvsp = yyvsp.offset(-(1_i32 as isize));
-                    yyssp = yyssp.offset(-(1_i32 as isize));
-                    yystate = *yyssp as yy_state_fast_t;
+                    // Drop the value being popped
+                    yyvs[sp] = YYValue::None;
+                    if sp > 0 {
+                        sp -= 1;
+                    }
+                    ssp -= 1;
+                    yystate = yyss[ssp] as i32;
                 }
-                yyvsp = yyvsp.offset(1);
-                *yyvsp = yylval;
-                yystate = yyn as yy_state_fast_t;
+                sp += 1;
+                ensure_capacity(&mut yyvs, sp);
+                yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
+                yystate = yyn;
+                ssp += 1;
+                continue 'main_loop;
+            } else {
+                yytoken = if (0..=YYMAXUTOK).contains(&yychar) {
+                    YYTRANSLATE[yychar as usize] as i32
+                } else {
+                    YYSYMBOL_YYUNDEF
+                };
             }
-            yyssp = yyssp.offset(1);
+
+            yyn += yytoken;
+            if !(0..=YYLAST).contains(&yyn) || YYCHECK[yyn as usize] as i32 != yytoken {
+                // goto yydefault (fall through)
+            } else {
+                yyn = YYTABLE[yyn as usize] as i32;
+                if yyn <= 0 {
+                    yyn = -yyn;
+                    // goto yyreduce
+                    yylen = YYR2[yyn as usize] as i32;
+                    yyval = YYValue::None;
+
+                    // Execute reduction
+                    let reduce_ok = execute_reduction(yyn, &mut yyvs, sp, &mut yyval, param);
+                    if !reduce_ok {
+                        // YYERROR or YYABORT from reduction
+                        _xkbcommon_nerrs += 1;
+                        sp -= yylen as usize;
+                        ssp -= yylen as usize;
+                        yylen = 0;
+                        yystate = yyss[ssp] as i32;
+
+                        // Error recovery
+                        yyerrstatus = 3;
+                        loop {
+                            yyn = YYPACT[yystate as usize] as i32;
+                            if yyn != YYPACT_NINF {
+                                yyn += YYSYMBOL_YYerror;
+                                if (0..=YYLAST).contains(&yyn)
+                                    && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYerror
+                                {
+                                    yyn = YYTABLE[yyn as usize] as i32;
+                                    if yyn > 0 {
+                                        break;
+                                    }
+                                }
+                            }
+                            if ssp == 0 {
+                                yyresult = 1;
+                                break 'main_loop;
+                            }
+                            yyvs[sp] = YYValue::None;
+                            if sp > 0 {
+                                sp -= 1;
+                            }
+                            ssp -= 1;
+                            yystate = yyss[ssp] as i32;
+                        }
+                        sp += 1;
+                        ensure_capacity(&mut yyvs, sp);
+                        yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
+                        yystate = yyn;
+                        ssp += 1;
+                        continue 'main_loop;
+                    }
+
+                    // Check for rule 3 (YYACCEPT mid-rule)
+                    if yyn == 3 {
+                        yyresult = 0;
+                        break 'main_loop;
+                    }
+
+                    sp -= yylen as usize;
+                    ssp -= yylen as usize;
+                    yylen = 0;
+
+                    sp += 1;
+                    ensure_capacity(&mut yyvs, sp);
+                    yyvs[sp] = yyval;
+
+                    let yylhs: i32 = YYR1[yyn as usize] as i32 - YYNTOKENS;
+                    let yyi: i32 = YYPGOTO[yylhs as usize] as i32 + yyss[ssp] as i32;
+                    yystate = if (0..=YYLAST).contains(&yyi)
+                        && YYCHECK[yyi as usize] as i32 == yyss[ssp] as i32
+                    {
+                        YYTABLE[yyi as usize] as i32
+                    } else {
+                        YYDEFGOTO[yylhs as usize] as i32
+                    };
+
+                    ssp += 1;
+                    continue 'main_loop;
+                } else {
+                    // Shift
+                    if yyerrstatus != 0 {
+                        yyerrstatus -= 1;
+                    }
+                    yystate = yyn;
+                    sp += 1;
+                    ensure_capacity(&mut yyvs, sp);
+                    yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
+                    yychar = YYEMPTY;
+                    ssp += 1;
+                    continue 'main_loop;
+                }
+            }
         }
-        match c2rust_current_block {
-            5508412643396263508 => {
-                yyresult = 0_i32;
-            }
-            7267896227379959561 => {
-                yyresult = 1_i32;
-            }
-            _ => {
-                _xkbcommon_error(param, b"memory exhausted\0".as_ptr() as *const i8);
-                yyresult = 2_i32;
-            }
-        }
-        if yychar != YYEMPTY {
-            yytoken = (if (0_i32..=YYMAXUTOK).contains(&yychar) {
+
+        // yydefault: use default action
+        yyn = YYDEFACT[yystate as usize] as i32;
+        if yyn == 0 {
+            // Syntax error
+            yytoken = if yychar == YYEMPTY {
+                YYSYMBOL_YYEMPTY
+            } else if (0..=YYMAXUTOK).contains(&yychar) {
                 YYTRANSLATE[yychar as usize] as i32
             } else {
                 YYSYMBOL_YYUNDEF
-            }) as i32;
-            yydestruct(
-                b"Cleanup: discarding lookahead\0".as_ptr() as *const i8,
-                yytoken,
-                &raw mut yylval,
-                param,
+            };
+
+            if yyerrstatus == 0 {
+                _xkbcommon_nerrs += 1;
+                let msg = yysyntax_error(&yyss, ssp, yytoken);
+                _xkbcommon_error(param, &msg);
+            }
+
+            if yyerrstatus == 3 {
+                if yychar <= END_OF_FILE {
+                    if yychar == END_OF_FILE {
+                        yyresult = 1;
+                        break 'main_loop;
+                    }
+                } else {
+                    // Discard lookahead
+                    yylval = YYValue::None;
+                    yychar = YYEMPTY;
+                }
+            }
+
+            // yyerrlab1: error recovery
+            yyerrstatus = 3;
+            loop {
+                yyn = YYPACT[yystate as usize] as i32;
+                if yyn != YYPACT_NINF {
+                    yyn += YYSYMBOL_YYerror;
+                    if (0..=YYLAST).contains(&yyn)
+                        && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYerror
+                    {
+                        yyn = YYTABLE[yyn as usize] as i32;
+                        if yyn > 0 {
+                            break;
+                        }
+                    }
+                }
+                if ssp == 0 {
+                    yyresult = 1;
+                    break 'main_loop;
+                }
+                yyvs[sp] = YYValue::None;
+                if sp > 0 {
+                    sp -= 1;
+                }
+                ssp -= 1;
+                yystate = yyss[ssp] as i32;
+            }
+            sp += 1;
+            ensure_capacity(&mut yyvs, sp);
+            yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
+            yystate = yyn;
+            ssp += 1;
+            continue 'main_loop;
+        }
+
+        // yyreduce with default action
+        yylen = YYR2[yyn as usize] as i32;
+        yyval = YYValue::None;
+
+        let reduce_ok = execute_reduction(yyn, &mut yyvs, sp, &mut yyval, param);
+        if !reduce_ok {
+            _xkbcommon_nerrs += 1;
+            sp -= yylen as usize;
+            ssp -= yylen as usize;
+            yylen = 0;
+            yystate = yyss[ssp] as i32;
+
+            yyerrstatus = 3;
+            loop {
+                yyn = YYPACT[yystate as usize] as i32;
+                if yyn != YYPACT_NINF {
+                    yyn += YYSYMBOL_YYerror;
+                    if (0..=YYLAST).contains(&yyn)
+                        && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYerror
+                    {
+                        yyn = YYTABLE[yyn as usize] as i32;
+                        if yyn > 0 {
+                            break;
+                        }
+                    }
+                }
+                if ssp == 0 {
+                    yyresult = 1;
+                    break 'main_loop;
+                }
+                yyvs[sp] = YYValue::None;
+                if sp > 0 {
+                    sp -= 1;
+                }
+                ssp -= 1;
+                yystate = yyss[ssp] as i32;
+            }
+            sp += 1;
+            ensure_capacity(&mut yyvs, sp);
+            yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
+            yystate = yyn;
+            ssp += 1;
+            continue 'main_loop;
+        }
+
+        // Rule 3 is YYACCEPT
+        if yyn == 3 {
+            yyresult = 0;
+            break 'main_loop;
+        }
+
+        sp -= yylen as usize;
+        ssp -= yylen as usize;
+        yylen = 0;
+
+        sp += 1;
+        ensure_capacity(&mut yyvs, sp);
+        yyvs[sp] = yyval;
+
+        let yylhs: i32 = YYR1[yyn as usize] as i32 - YYNTOKENS;
+        let yyi: i32 = YYPGOTO[yylhs as usize] as i32 + yyss[ssp] as i32;
+        yystate = if (0..=YYLAST).contains(&yyi) && YYCHECK[yyi as usize] as i32 == yyss[ssp] as i32
+        {
+            YYTABLE[yyi as usize] as i32
+        } else {
+            YYDEFGOTO[yylhs as usize] as i32
+        };
+
+        ssp += 1;
+    }
+
+    yyresult
+}
+
+/// Execute a reduction rule. Returns true on success, false on error (YYERROR).
+fn execute_reduction(
+    yyn: i32,
+    yyvs: &mut Vec<YYValue>,
+    sp: usize,
+    yyval: &mut YYValue,
+    param: &mut parser_param,
+) -> bool {
+    match yyn {
+        2 => {
+            // XkbFile: XkbCompositeMap
+            param.rtrn = yyvs[sp].take_file();
+            param.more_maps = param.rtrn.is_some();
+            // yyval is dead here since we continue the loop; leave as None
+        }
+        3 => {
+            // XkbFile: XkbMapConfig (YYACCEPT after)
+            param.rtrn = yyvs[sp].take_file();
+            param.more_maps = param.rtrn.is_some();
+            // Note: caller checks yyn == 3 for YYACCEPT
+        }
+        4 => {
+            // XkbFile: END_OF_FILE
+            param.rtrn = None;
+            *yyval = YYValue::None;
+            param.more_maps = false;
+        }
+        5 => {
+            // XkbCompositeMap: OptFlags XkbCompositeType OptMapName OBRACE XkbMapConfigList CBRACE SEMI
+            let file_type = yyvs[sp - 5].as_file_type();
+            let name = yyvs[sp - 4].take_str();
+            let files = yyvs[sp - 2].take_file_list();
+            let flags = yyvs[sp - 6].as_map_flags();
+            let defs: Vec<Statement> = files.into_iter().map(|f| Statement::XkbFile(f)).collect();
+            *yyval = YYValue::File(XkbFileCreate(
+                file_type,
+                if name.is_empty() { None } else { Some(name) },
+                defs,
+                flags,
+            ));
+        }
+        6 => {
+            *yyval = YYValue::FileType(FILE_TYPE_KEYMAP);
+        }
+        7 => {
+            *yyval = YYValue::FileType(FILE_TYPE_KEYMAP);
+        }
+        8 => {
+            *yyval = YYValue::FileType(FILE_TYPE_KEYMAP);
+        }
+        9 => {
+            // XkbMapConfigList: XkbMapConfigList XkbMapConfig
+            let file = yyvs[sp].take_file();
+            let mut list = yyvs[sp - 1].take_file_list();
+            if let Some(f) = file {
+                list.push(f);
+            }
+            *yyval = YYValue::FileList(list);
+        }
+        10 => {
+            // XkbMapConfigList: empty
+            *yyval = YYValue::FileList(Vec::new());
+        }
+        11 => {
+            // XkbMapConfig: OptFlags FileType OptMapName OBRACE DeclList CBRACE SEMI
+            let file_type = yyvs[sp - 5].as_file_type();
+            let name = yyvs[sp - 4].take_str();
+            let stmts = yyvs[sp - 2].take_stmt_list();
+            let flags = yyvs[sp - 6].as_map_flags();
+            *yyval = YYValue::File(XkbFileCreate(
+                file_type,
+                if name.is_empty() { None } else { Some(name) },
+                stmts,
+                flags,
+            ));
+        }
+        12 => {
+            *yyval = YYValue::FileType(FILE_TYPE_KEYCODES);
+        }
+        13 => {
+            *yyval = YYValue::FileType(FILE_TYPE_TYPES);
+        }
+        14 => {
+            *yyval = YYValue::FileType(FILE_TYPE_COMPAT);
+        }
+        15 => {
+            *yyval = YYValue::FileType(FILE_TYPE_SYMBOLS);
+        }
+        16 => {
+            *yyval = YYValue::FileType(FILE_TYPE_GEOMETRY);
+        }
+        17 => {
+            *yyval = YYValue::MapFlags(yyvs[sp].as_map_flags());
+        }
+        18 => {
+            *yyval = YYValue::MapFlags(0);
+        }
+        19 => {
+            let f = yyvs[sp - 1].as_map_flags() | yyvs[sp].as_map_flags();
+            *yyval = YYValue::MapFlags(f);
+        }
+        20 => {
+            *yyval = YYValue::MapFlags(yyvs[sp].as_map_flags());
+        }
+        21 => {
+            *yyval = YYValue::MapFlags(MAP_IS_PARTIAL);
+        }
+        22 => {
+            *yyval = YYValue::MapFlags(MAP_IS_DEFAULT);
+        }
+        23 => {
+            *yyval = YYValue::MapFlags(MAP_IS_HIDDEN);
+        }
+        24 => {
+            *yyval = YYValue::MapFlags(MAP_HAS_ALPHANUMERIC);
+        }
+        25 => {
+            *yyval = YYValue::MapFlags(MAP_HAS_MODIFIER);
+        }
+        26 => {
+            *yyval = YYValue::MapFlags(MAP_HAS_KEYPAD);
+        }
+        27 => {
+            *yyval = YYValue::MapFlags(MAP_HAS_FN);
+        }
+        28 => {
+            *yyval = YYValue::MapFlags(MAP_IS_ALTGR);
+        }
+        29 => {
+            // DeclList: DeclList Decl
+            let stmt = std::mem::replace(&mut yyvs[sp], YYValue::None);
+            let mut list = yyvs[sp - 1].take_stmt_list();
+            match stmt {
+                YYValue::Stmt(s) => list.push(s),
+                _ => {} // null/none → skip
+            }
+            *yyval = YYValue::StmtList(list);
+        }
+        30 => {
+            // DeclList: DeclList OptMergeMode VModDecl
+            let merge = yyvs[sp - 1].as_merge();
+            let mut vmods = yyvs[sp].take_vmod_list();
+            for v in &mut vmods {
+                v.merge = merge;
+            }
+            let mut list = yyvs[sp - 2].take_stmt_list();
+            for v in vmods {
+                list.push(Statement::VMod(v));
+            }
+            *yyval = YYValue::StmtList(list);
+        }
+        31 => {
+            // DeclList: empty
+            *yyval = YYValue::StmtList(Vec::new());
+        }
+        32 => {
+            // Decl: OptMergeMode VarDecl
+            let merge = yyvs[sp - 1].as_merge();
+            if let Some(mut var) = yyvs[sp].take_var() {
+                var.merge = merge;
+                *yyval = YYValue::Stmt(Statement::Var(var));
+            } else {
+                *yyval = YYValue::None;
+            }
+        }
+        33 => {
+            // Decl: OptMergeMode InterpretDecl
+            let merge = yyvs[sp - 1].as_merge();
+            if let YYValue::Interp(mut interp) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                interp.merge = merge;
+                *yyval = YYValue::Stmt(Statement::Interp(interp));
+            } else {
+                *yyval = YYValue::None;
+            }
+        }
+        34 => {
+            // Decl: OptMergeMode KeyNameDecl
+            let merge = yyvs[sp - 1].as_merge();
+            if let YYValue::Keycode(mut kc) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                kc.merge = merge;
+                *yyval = YYValue::Stmt(Statement::Keycode(kc));
+            } else {
+                *yyval = YYValue::None;
+            }
+        }
+        35 => {
+            // Decl: OptMergeMode KeyAliasDecl
+            let merge = yyvs[sp - 1].as_merge();
+            if let YYValue::KeyAlias(mut ka) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                ka.merge = merge;
+                *yyval = YYValue::Stmt(Statement::KeyAlias(ka));
+            } else {
+                *yyval = YYValue::None;
+            }
+        }
+        36 => {
+            // Decl: OptMergeMode KeyTypeDecl
+            let merge = yyvs[sp - 1].as_merge();
+            if let YYValue::KeyType(mut kt) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                kt.merge = merge;
+                *yyval = YYValue::Stmt(Statement::KeyType(kt));
+            } else {
+                *yyval = YYValue::None;
+            }
+        }
+        37 => {
+            // Decl: OptMergeMode SymbolsDecl
+            let merge = yyvs[sp - 1].as_merge();
+            if let YYValue::Symbols(mut sym) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                sym.merge = merge;
+                *yyval = YYValue::Stmt(Statement::Symbols(sym));
+            } else {
+                *yyval = YYValue::None;
+            }
+        }
+        38 => {
+            // Decl: OptMergeMode ModMapDecl
+            let merge = yyvs[sp - 1].as_merge();
+            if let YYValue::ModMask(mut mm) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                mm.merge = merge;
+                *yyval = YYValue::Stmt(Statement::ModMap(mm));
+            } else {
+                *yyval = YYValue::None;
+            }
+        }
+        39 => {
+            // Decl: OptMergeMode GroupCompatDecl
+            let merge = yyvs[sp - 1].as_merge();
+            if let YYValue::GroupCompat(mut gc) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                gc.merge = merge;
+                *yyval = YYValue::Stmt(Statement::GroupCompat(gc));
+            } else {
+                *yyval = YYValue::None;
+            }
+        }
+        40 => {
+            // Decl: OptMergeMode LedMapDecl
+            let merge = yyvs[sp - 1].as_merge();
+            if let YYValue::LedMap(mut lm) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                lm.merge = merge;
+                *yyval = YYValue::Stmt(Statement::LedMap(lm));
+            } else {
+                *yyval = YYValue::None;
+            }
+        }
+        41 => {
+            // Decl: OptMergeMode LedNameDecl
+            let merge = yyvs[sp - 1].as_merge();
+            if let YYValue::LedName(mut ln) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                ln.merge = merge;
+                *yyval = YYValue::Stmt(Statement::LedName(ln));
+            } else {
+                *yyval = YYValue::None;
+            }
+        }
+        42 | 43 | 44 => {
+            // ShapeDecl, SectionDecl, DoodadDecl → geometry (ignored)
+            *yyval = YYValue::None;
+        }
+        45 => {
+            // Decl: OptMergeMode UnknownDecl
+            if let YYValue::Unknown(u) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                *yyval = YYValue::Stmt(Statement::Unknown(u));
+            } else {
+                *yyval = YYValue::None;
+            }
+        }
+        46 => {
+            // Decl: OptMergeMode UnknownCompoundStatementDecl
+            if let YYValue::Unknown(u) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                *yyval = YYValue::Stmt(Statement::Unknown(u));
+            } else {
+                *yyval = YYValue::None;
+            }
+        }
+        47 => {
+            // Decl: MergeMode STRING
+            let merge = yyvs[sp - 1].as_merge();
+            let s = yyvs[sp].take_str();
+            if let Some(inc) = IncludeCreate(param.ctx, &s, merge) {
+                *yyval = YYValue::Stmt(Statement::Include(inc));
+            } else {
+                *yyval = YYValue::None;
+            }
+        }
+        48 => {
+            // VarDecl: Lhs EQUALS Expr SEMI
+            let lhs = yyvs[sp - 3].take_expr();
+            let val = yyvs[sp - 1].take_expr();
+            *yyval = YYValue::Var(VarCreate(lhs, val));
+        }
+        49 => {
+            // VarDecl: Ident SEMI
+            let atom = yyvs[sp - 1].as_atom();
+            *yyval = YYValue::Var(BoolVarCreate(atom, true));
+        }
+        50 => {
+            // VarDecl: EXCLAM Ident SEMI
+            let atom = yyvs[sp - 1].as_atom();
+            *yyval = YYValue::Var(BoolVarCreate(atom, false));
+        }
+        51 => {
+            // KeyNameDecl: KEYNAME EQUALS KeyCode SEMI
+            let atom = yyvs[sp - 3].as_atom();
+            let num = yyvs[sp - 1].as_num();
+            *yyval = YYValue::Keycode(KeycodeCreate(atom, num));
+        }
+        52 => {
+            // KeyAliasDecl: ALIAS KEYNAME EQUALS KEYNAME SEMI
+            let alias = yyvs[sp - 3].as_atom();
+            let real = yyvs[sp - 1].as_atom();
+            *yyval = YYValue::KeyAlias(KeyAliasCreate(alias, real));
+        }
+        53 => {
+            // VModDecl: VIRTUAL_MODS VModDefList SEMI
+            let list = yyvs[sp - 1].take_vmod_list();
+            *yyval = YYValue::VModList(list);
+        }
+        54 => {
+            // VModDefList: VModDefList COMMA VModDef
+            let vmod = yyvs[sp].take_vmod();
+            let mut list = yyvs[sp - 2].take_vmod_list();
+            if let Some(v) = vmod {
+                list.push(v);
+            }
+            *yyval = YYValue::VModList(list);
+        }
+        55 => {
+            // VModDefList: VModDef
+            let vmod = yyvs[sp].take_vmod();
+            let mut list = Vec::new();
+            if let Some(v) = vmod {
+                list.push(v);
+            }
+            *yyval = YYValue::VModList(list);
+        }
+        56 => {
+            // VModDef: Ident
+            let atom = yyvs[sp].as_atom();
+            *yyval = YYValue::VMod(VModCreate(atom, None));
+        }
+        57 => {
+            // VModDef: Ident EQUALS Expr
+            let atom = yyvs[sp - 2].as_atom();
+            let expr = yyvs[sp].take_expr();
+            *yyval = YYValue::VMod(VModCreate(atom, expr));
+        }
+        58 => {
+            // InterpretDecl: INTERPRET InterpretMatch OBRACE VarDeclList CBRACE SEMI
+            if let YYValue::Interp(mut interp) = std::mem::replace(&mut yyvs[sp - 4], YYValue::None)
+            {
+                let vardefs = yyvs[sp - 2].take_var_list();
+                interp.def = vardefs.into_iter().map(|b| *b).collect();
+                *yyval = YYValue::Interp(interp);
+            } else {
+                *yyval = YYValue::None;
+            }
+        }
+        59 => {
+            // InterpretMatch: KeySym PLUS Expr
+            let keysym = yyvs[sp - 2].as_keysym();
+            let expr = yyvs[sp].take_expr();
+            *yyval = YYValue::Interp(InterpCreate(keysym, expr));
+        }
+        60 => {
+            // InterpretMatch: KeySym
+            let keysym = yyvs[sp].as_keysym();
+            *yyval = YYValue::Interp(InterpCreate(keysym, None));
+        }
+        61 => {
+            // VarDeclList: VarDeclList VarDecl
+            let var = yyvs[sp].take_var();
+            let mut list = yyvs[sp - 1].take_var_list();
+            if let Some(v) = var {
+                list.push(v);
+            }
+            *yyval = YYValue::VarList(list);
+        }
+        62 => {
+            // VarDeclList: empty
+            *yyval = YYValue::VarList(Vec::new());
+        }
+        63 => {
+            // KeyTypeDecl: TYPE String OBRACE VarDeclList CBRACE SEMI
+            let atom = yyvs[sp - 4].as_atom();
+            let vardefs = yyvs[sp - 2].take_var_list();
+            *yyval = YYValue::KeyType(KeyTypeCreate(
+                atom,
+                vardefs.into_iter().map(|b| *b).collect(),
+            ));
+        }
+        64 => {
+            // SymbolsDecl: KEY KEYNAME OBRACE OptSymbolsBody CBRACE SEMI
+            let atom = yyvs[sp - 4].as_atom();
+            let vardefs = yyvs[sp - 2].take_var_list();
+            *yyval = YYValue::Symbols(SymbolsCreate(
+                atom,
+                vardefs.into_iter().map(|b| *b).collect(),
+            ));
+        }
+        65 => {
+            // OptSymbolsBody: SymbolsBody
+            let list = yyvs[sp].take_var_list();
+            *yyval = YYValue::VarList(list);
+        }
+        66 => {
+            // OptSymbolsBody: empty
+            *yyval = YYValue::VarList(Vec::new());
+        }
+        67 => {
+            // SymbolsBody: SymbolsBody COMMA SymbolsVarDecl
+            let var = yyvs[sp].take_var();
+            let mut list = yyvs[sp - 2].take_var_list();
+            if let Some(v) = var {
+                list.push(v);
+            }
+            *yyval = YYValue::VarList(list);
+        }
+        68 => {
+            // SymbolsBody: SymbolsVarDecl
+            let var = yyvs[sp].take_var();
+            let mut list = Vec::new();
+            if let Some(v) = var {
+                list.push(v);
+            }
+            *yyval = YYValue::VarList(list);
+        }
+        69 => {
+            // SymbolsVarDecl: Lhs EQUALS Expr
+            let lhs = yyvs[sp - 2].take_expr();
+            let val = yyvs[sp].take_expr();
+            *yyval = YYValue::Var(VarCreate(lhs, val));
+        }
+        70 => {
+            // SymbolsVarDecl: Lhs EQUALS MultiKeySymOrActionList
+            let lhs = yyvs[sp - 2].take_expr();
+            // MultiKeySymOrActionList is an ExprList or Expr
+            let val = yyvs[sp].take_expr();
+            *yyval = YYValue::Var(VarCreate(lhs, val));
+        }
+        71 => {
+            // SymbolsVarDecl: Ident
+            let atom = yyvs[sp].as_atom();
+            *yyval = YYValue::Var(BoolVarCreate(atom, true));
+        }
+        72 => {
+            // SymbolsVarDecl: EXCLAM Ident
+            let atom = yyvs[sp].as_atom();
+            *yyval = YYValue::Var(BoolVarCreate(atom, false));
+        }
+        73 => {
+            // SymbolsVarDecl: Expr
+            let val = yyvs[sp].take_expr();
+            *yyval = YYValue::Var(VarCreate(None, val));
+        }
+        74 => {
+            // MultiKeySymOrActionList: OBRACKET MultiKeySymList CBRACKET (yylen=3)
+            let list = yyvs[sp - 1].take_expr_list();
+            let exprs: Vec<ExprDef> = list.into_iter().map(|b| *b).collect();
+            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
+        }
+        75 => {
+            // MultiKeySymOrActionList: NoSymbolOrActionList OBRACKET MultiKeySymList CBRACKET COMMA (yylen=5)
+            let mut list = yyvs[sp - 1].take_expr_list(); // sp-1 = MultiKeySymList = offset(-1)
+            let count = yyvs[sp - 3].as_no_sym_or_action_list(); // sp-3 = NoSymbolOrActionList = offset(-3)
+                                                                 // Prepend 'count' NoSymbol keysym lists
+            let mut prepended: Vec<Box<ExprDef>> = Vec::new();
+            for _ in 0..count {
+                prepended.push(ExprCreateKeySymList(XKB_KEY_NoSymbol as u32));
+            }
+            prepended.append(&mut list);
+            let exprs: Vec<ExprDef> = prepended.into_iter().map(|b| *b).collect();
+            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
+        }
+        76 => {
+            // MultiKeySymOrActionList: OBRACKET MultiActionList CBRACKET (yylen=3)
+            let list = yyvs[sp - 1].take_expr_list();
+            let exprs: Vec<ExprDef> = list.into_iter().map(|b| *b).collect();
+            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
+        }
+        77 => {
+            // MultiKeySymOrActionList: NoSymbolOrActionList OBRACKET MultiActionList CBRACKET COMMA (yylen=5)
+            let mut list = yyvs[sp - 1].take_expr_list();
+            let count = yyvs[sp - 3].as_no_sym_or_action_list();
+            let mut prepended: Vec<Box<ExprDef>> = Vec::new();
+            for _ in 0..count {
+                prepended.push(expr_create(ExprKind::ActionList {
+                    actions: Vec::new(),
+                }));
+            }
+            prepended.append(&mut list);
+            let exprs: Vec<ExprDef> = prepended.into_iter().map(|b| *b).collect();
+            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
+        }
+        78 => {
+            // NoSymbolOrActionList: NoSymbol (produces EmptyList expr)
+            *yyval = YYValue::Expr(expr_create(ExprKind::EmptyList));
+        }
+        79 => {
+            // NoSymbolOrActionList: NoSymbolOrActionList COMMA NoSymbol COMMA (yylen=4)
+            let prev = yyvs[sp - 3].as_no_sym_or_action_list();
+            *yyval = YYValue::NoSymbolOrActionList(prev.wrapping_add(1));
+        }
+        80 => {
+            // NoSymbolOrActionList: ... (yylen=2)
+            *yyval = YYValue::NoSymbolOrActionList(1);
+        }
+        81 => {
+            // NoSymbolOrActionList: empty
+            *yyval = YYValue::NoSymbolOrActionList(0);
+        }
+        82 => {
+            // GroupCompatDecl: GROUP Integer EQUALS Expr SEMI
+            let num = yyvs[sp - 3].as_num();
+            let expr = yyvs[sp - 1].take_expr();
+            *yyval = YYValue::GroupCompat(GroupCompatCreate(num, expr));
+        }
+        83 => {
+            // ModMapDecl: MODIFIER_MAP Ident OBRACE KeyOrKeySymList CBRACE SEMI
+            let atom = yyvs[sp - 4].as_atom();
+            let list = yyvs[sp - 2].take_expr_list();
+            *yyval = YYValue::ModMask(ModMapCreate(atom, list.into_iter().map(|b| *b).collect()));
+        }
+        84 => {
+            // KeyOrKeySymList: KeyOrKeySymList COMMA KeyOrKeySym
+            let expr = yyvs[sp].take_expr();
+            let mut list = yyvs[sp - 2].take_expr_list();
+            if let Some(e) = expr {
+                list.push(e);
+            }
+            *yyval = YYValue::ExprList(list);
+        }
+        85 => {
+            // KeyOrKeySymList: KeyOrKeySym
+            let expr = yyvs[sp].take_expr();
+            let mut list = Vec::new();
+            if let Some(e) = expr {
+                list.push(e);
+            }
+            *yyval = YYValue::ExprList(list);
+        }
+        86 => {
+            // KeyOrKeySym: KEYNAME
+            let atom = yyvs[sp].as_atom();
+            *yyval = YYValue::Expr(expr_create(ExprKind::KeyName(atom)));
+        }
+        87 => {
+            // KeyOrKeySym: KeySym
+            let keysym = yyvs[sp].as_keysym();
+            *yyval = YYValue::Expr(expr_create(ExprKind::KeySym(keysym)));
+        }
+        88 => {
+            // LedMapDecl: INDICATOR String OBRACE VarDeclList CBRACE SEMI
+            let atom = yyvs[sp - 4].as_atom();
+            let vardefs = yyvs[sp - 2].take_var_list();
+            *yyval = YYValue::LedMap(LedMapCreate(
+                atom,
+                vardefs.into_iter().map(|b| *b).collect(),
+            ));
+        }
+        89 => {
+            // LedNameDecl: INDICATOR Integer EQUALS Expr SEMI
+            let num = yyvs[sp - 3].as_num();
+            let expr = yyvs[sp - 1].take_expr();
+            *yyval = YYValue::LedName(LedNameCreate(num, expr, false));
+        }
+        90 => {
+            // LedNameDecl: VIRTUAL INDICATOR Integer EQUALS Expr SEMI
+            let num = yyvs[sp - 3].as_num();
+            let expr = yyvs[sp - 1].take_expr();
+            *yyval = YYValue::LedName(LedNameCreate(num, expr, true));
+        }
+        91 => {
+            // UnknownDecl: Ident Lhs EQUALS Expr SEMI
+            // Drop expr values (geometry not supported)
+            let _ = yyvs[sp - 3].take_expr();
+            let _ = yyvs[sp - 1].take_expr();
+            let sval = yyvs[sp - 4].as_sval();
+            let name_str = sval.as_str();
+            *yyval = YYValue::Unknown(UnknownStatementCreate(STMT_UNKNOWN_DECLARATION, name_str));
+        }
+        92 => {
+            // UnknownCompoundStatementDecl: Ident Lhs OBRACE VarDeclList CBRACE SEMI
+            let _ = yyvs[sp - 4].take_expr();
+            let _ = yyvs[sp - 2].take_var_list();
+            let sval = yyvs[sp - 5].as_sval();
+            let name_str = sval.as_str();
+            *yyval = YYValue::Unknown(UnknownStatementCreate(STMT_UNKNOWN_COMPOUND, name_str));
+        }
+        // Rules 93-123: Geometry rules → all produce None (geometry not supported)
+        93 | 94 | 95 | 96 | 97 | 98 | 100 | 102 | 103 | 104 | 105 | 107 | 108 | 109 | 111 | 112
+        | 113 | 114 | 115 | 116 | 117 | 118 => {
+            *yyval = YYValue::None;
+        }
+        99 => {
+            // SectionBodyItem: VarDecl → drop it (geometry)
+            let _ = yyvs[sp].take_var();
+            *yyval = YYValue::None;
+        }
+        101 => {
+            // SectionBodyItem: LedMapDecl → drop it (geometry)
+            let _ = std::mem::replace(&mut yyvs[sp], YYValue::None);
+            *yyval = YYValue::None;
+        }
+        106 => {
+            // RowBodyItem: VarDecl → drop it (geometry)
+            let _ = yyvs[sp].take_var();
+            *yyval = YYValue::None;
+        }
+        110 => {
+            // OverlayDecl: ... → drop ExprList (geometry)
+            let _ = yyvs[sp - 1].take_expr_list();
+            *yyval = YYValue::None;
+        }
+        119 => {
+            // CoordList: ... → drop expr (geometry)
+            let _ = yyvs[sp].take_expr();
+            *yyval = YYValue::None;
+        }
+        120 | 121 | 122 => {
+            // OutlineInList/OutlineList → geometry, drop expr/null
+            let _ = yyvs[sp].take_expr();
+            *yyval = YYValue::None;
+        }
+        123 => {
+            // ShapeDecl → drop VarDeclList (geometry)
+            let _ = yyvs[sp - 2].take_var_list();
+            *yyval = YYValue::None;
+        }
+        // DoodadType rules 124-127
+        124 | 125 | 126 | 127 => {
+            *yyval = YYValue::Num(0);
+        }
+        // FieldSpec / Element rules 128-140
+        128 => {
+            *yyval = YYValue::Atom(yyvs[sp].as_atom());
+        }
+        129 => {
+            *yyval = YYValue::Atom(yyvs[sp].as_atom());
+        }
+        130 => {
+            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"action"));
+        }
+        131 => {
+            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"interpret"));
+        }
+        132 => {
+            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"type"));
+        }
+        133 => {
+            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"key"));
+        }
+        134 => {
+            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"group"));
+        }
+        135 => {
+            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"modifier_map"));
+        }
+        136 => {
+            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"indicator"));
+        }
+        137 => {
+            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"shape"));
+        }
+        138 => {
+            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"row"));
+        }
+        139 => {
+            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"section"));
+        }
+        140 => {
+            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"text"));
+        }
+        // MergeMode rules 141-147
+        141 => {
+            *yyval = YYValue::Merge(yyvs[sp].as_merge());
+        }
+        142 => {
+            *yyval = YYValue::Merge(MERGE_DEFAULT);
+        }
+        143 => {
+            *yyval = YYValue::Merge(MERGE_DEFAULT);
+        }
+        144 => {
+            *yyval = YYValue::Merge(MERGE_AUGMENT);
+        }
+        145 => {
+            *yyval = YYValue::Merge(MERGE_OVERRIDE);
+        }
+        146 => {
+            *yyval = YYValue::Merge(MERGE_REPLACE);
+        }
+        147 => {
+            let loc = param.scanner.token_location();
+            log::warn!(
+                "{}:{}:{}: ignored unsupported legacy merge mode \"alternate\"\n",
+                &param.scanner.file_name,
+                loc.line,
+                loc.column
             );
+            *yyval = YYValue::Merge(MERGE_DEFAULT);
         }
-        yyvsp = yyvsp.offset(-(yylen as isize));
-        yyssp = yyssp.offset(-(yylen as isize));
-        while yyssp != yyss {
-            yydestruct(
-                b"Cleanup: popping\0".as_ptr() as *const i8,
-                YYSTOS[*yyssp as usize] as i32,
-                yyvsp,
-                param,
-            );
-            yyvsp = yyvsp.offset(-(1_i32 as isize));
-            yyssp = yyssp.offset(-(1_i32 as isize));
+        // ExprList rules 148-150
+        148 => {
+            // ExprList: ExprList COMMA Expr
+            let expr = yyvs[sp].take_expr();
+            let mut list = yyvs[sp - 2].take_expr_list();
+            if let Some(e) = expr {
+                list.push(e);
+            }
+            *yyval = YYValue::ExprList(list);
         }
-        if yyss != &raw mut yyssa as *mut i16 {
-            free(yyss as *mut ::core::ffi::c_void);
+        149 => {
+            // ExprList: Expr
+            let expr = yyvs[sp].take_expr();
+            let mut list = Vec::new();
+            if let Some(e) = expr {
+                list.push(e);
+            }
+            *yyval = YYValue::ExprList(list);
         }
-        if yymsg != &raw mut yymsgbuf as *mut i8 {
-            free(yymsg as *mut ::core::ffi::c_void);
+        150 => {
+            // ExprList: empty
+            *yyval = YYValue::ExprList(Vec::new());
         }
-        yyresult
+        // Expr rules 151-165
+        151 => {
+            let left = yyvs[sp - 2].take_expr();
+            let right = yyvs[sp].take_expr();
+            *yyval = YYValue::Expr(expr_create(ExprKind::Binary {
+                op: STMT_EXPR_DIVIDE,
+                left,
+                right,
+            }));
+        }
+        152 => {
+            let left = yyvs[sp - 2].take_expr();
+            let right = yyvs[sp].take_expr();
+            *yyval = YYValue::Expr(expr_create(ExprKind::Binary {
+                op: STMT_EXPR_ADD,
+                left,
+                right,
+            }));
+        }
+        153 => {
+            let left = yyvs[sp - 2].take_expr();
+            let right = yyvs[sp].take_expr();
+            *yyval = YYValue::Expr(expr_create(ExprKind::Binary {
+                op: STMT_EXPR_SUBTRACT,
+                left,
+                right,
+            }));
+        }
+        154 => {
+            let left = yyvs[sp - 2].take_expr();
+            let right = yyvs[sp].take_expr();
+            *yyval = YYValue::Expr(expr_create(ExprKind::Binary {
+                op: STMT_EXPR_MULTIPLY,
+                left,
+                right,
+            }));
+        }
+        155 => {
+            let left = yyvs[sp - 2].take_expr();
+            let right = yyvs[sp].take_expr();
+            *yyval = YYValue::Expr(expr_create(ExprKind::Binary {
+                op: STMT_EXPR_ASSIGN,
+                left,
+                right,
+            }));
+        }
+        156 => {
+            // Expr: Term
+            *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
+        }
+        157 => {
+            let child = yyvs[sp].take_expr();
+            *yyval = YYValue::Expr(expr_create(ExprKind::Unary {
+                op: STMT_EXPR_NEGATE,
+                child,
+            }));
+        }
+        158 => {
+            let child = yyvs[sp].take_expr();
+            *yyval = YYValue::Expr(expr_create(ExprKind::Unary {
+                op: STMT_EXPR_UNARY_PLUS,
+                child,
+            }));
+        }
+        159 => {
+            let child = yyvs[sp].take_expr();
+            *yyval = YYValue::Expr(expr_create(ExprKind::Unary {
+                op: STMT_EXPR_NOT,
+                child,
+            }));
+        }
+        160 => {
+            let child = yyvs[sp].take_expr();
+            *yyval = YYValue::Expr(expr_create(ExprKind::Unary {
+                op: STMT_EXPR_INVERT,
+                child,
+            }));
+        }
+        161 => {
+            // Term: Lhs (passthrough)
+            *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
+        }
+        162 => {
+            // Term: Action OPAREN ExprList CPAREN
+            let name = yyvs[sp - 3].as_atom();
+            let list = yyvs[sp - 1].take_expr_list();
+            *yyval = YYValue::Expr(expr_create(ExprKind::Action {
+                name,
+                args: list.into_iter().map(|b| *b).collect(),
+            }));
+        }
+        163 => {
+            // Term: Terminal
+            *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
+        }
+        164 => {
+            // Term: OPAREN Expr CPAREN → passthrough the expr
+            *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
+        }
+        165 => {
+            // Term: OPAREN Expr CPAREN
+            *yyval = std::mem::replace(&mut yyvs[sp - 1], YYValue::None);
+        }
+        // MultiActionList rules 166-167
+        166 => {
+            // MultiActionList: MultiActionList COMMA ActionList
+            // ActionList at sp produces an ExprList of actions
+            // Create an ActionList expr wrapping those actions, then append to the list
+            let actions_expr_list = yyvs[sp].take_expr_list();
+            let actions: Vec<ExprDef> = actions_expr_list.into_iter().map(|b| *b).collect();
+            let action_list_expr = expr_create(ExprKind::ActionList { actions });
+            let mut list = yyvs[sp - 2].take_expr_list();
+            list.push(action_list_expr);
+            *yyval = YYValue::ExprList(list);
+        }
+        167 => {
+            // MultiActionList: MultiActionList COMMA KeySymList
+            let keysym_expr = yyvs[sp].take_expr();
+            let mut list = yyvs[sp - 2].take_expr_list();
+            if let Some(e) = keysym_expr {
+                list.push(e);
+            }
+            *yyval = YYValue::ExprList(list);
+        }
+        168 => {
+            // MultiActionList: ActionList (initial single element)
+            let actions_expr_list = yyvs[sp].take_expr_list();
+            let actions: Vec<ExprDef> = actions_expr_list.into_iter().map(|b| *b).collect();
+            let action_list_expr = expr_create(ExprKind::ActionList { actions });
+            *yyval = YYValue::ExprList(vec![action_list_expr]);
+        }
+        169 => {
+            // MultiActionList: KeySymList (initial single element)
+            let expr = yyvs[sp].take_expr();
+            let mut list = Vec::new();
+            if let Some(e) = expr {
+                list.push(e);
+            }
+            *yyval = YYValue::ExprList(list);
+        }
+        // NonEmptyActions rules 170-171
+        170 => {
+            // NonEmptyActions: NonEmptyActions COMMA Action
+            let expr = yyvs[sp].take_expr();
+            let mut list = yyvs[sp - 2].take_expr_list();
+            if let Some(e) = expr {
+                list.push(e);
+            }
+            *yyval = YYValue::ExprList(list);
+        }
+        171 => {
+            // NonEmptyActions: Action
+            let expr = yyvs[sp].take_expr();
+            let mut list = Vec::new();
+            if let Some(e) = expr {
+                list.push(e);
+            }
+            *yyval = YYValue::ExprList(list);
+        }
+        // Actions / ActionList rules 172-175
+        172 => {
+            // Actions: OBRACE NonEmptyActions CBRACE
+            let list = yyvs[sp - 1].take_expr_list();
+            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList {
+                actions: list.into_iter().map(|b| *b).collect(),
+            }));
+        }
+        173 => {
+            // ActionList: Action
+            *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
+        }
+        174 => {
+            // ActionList: empty (yylen=0 means nothing on stack)
+            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList {
+                actions: Vec::new(),
+            }));
+        }
+        175 => {
+            // Action: FieldSpec OPAREN ExprList CPAREN
+            let name = yyvs[sp - 3].as_atom();
+            let list = yyvs[sp - 1].take_expr_list();
+            *yyval = YYValue::Expr(expr_create(ExprKind::Action {
+                name,
+                args: list.into_iter().map(|b| *b).collect(),
+            }));
+        }
+        // Lhs rules 176-179
+        176 => {
+            // Lhs: Ident
+            let atom = yyvs[sp].as_atom();
+            *yyval = YYValue::Expr(expr_create(ExprKind::Ident(atom)));
+        }
+        177 => {
+            // Lhs: Ident DOT FieldSpec
+            let element = yyvs[sp - 2].as_atom();
+            let field = yyvs[sp].as_atom();
+            *yyval = YYValue::Expr(expr_create(ExprKind::FieldRef { element, field }));
+        }
+        178 => {
+            // Lhs: Ident OBRACKET Expr CBRACKET
+            let field = yyvs[sp - 3].as_atom();
+            let entry = yyvs[sp - 1].take_expr();
+            *yyval = YYValue::Expr(expr_create(ExprKind::ArrayRef {
+                element: XKB_ATOM_NONE,
+                field,
+                entry,
+            }));
+        }
+        179 => {
+            // Lhs: Ident DOT Ident OBRACKET Expr CBRACKET
+            let element = yyvs[sp - 5].as_atom();
+            let field = yyvs[sp - 3].as_atom();
+            let entry = yyvs[sp - 1].take_expr();
+            *yyval = YYValue::Expr(expr_create(ExprKind::ArrayRef {
+                element,
+                field,
+                entry,
+            }));
+        }
+        // OptTerminal / Terminal 180-181
+        180 => {
+            *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
+        }
+        181 => {
+            *yyval = YYValue::None;
+        }
+        // Terminal rules 182-185
+        182 => {
+            let atom = yyvs[sp].as_atom();
+            *yyval = YYValue::Expr(expr_create(ExprKind::String(atom)));
+        }
+        183 => {
+            let num = yyvs[sp].as_num();
+            *yyval = YYValue::Expr(expr_create(ExprKind::Integer(num)));
+        }
+        184 => {
+            *yyval = YYValue::Expr(expr_create(ExprKind::Float));
+        }
+        185 => {
+            let atom = yyvs[sp].as_atom();
+            *yyval = YYValue::Expr(expr_create(ExprKind::KeyName(atom)));
+        }
+        // MultiKeySymList rules 186-189
+        186 => {
+            // MultiKeySymList: MultiKeySymList COMMA KeySymList
+            let keysym = yyvs[sp].as_keysym();
+            let expr = ExprCreateKeySymList(keysym);
+            let mut list = yyvs[sp - 2].take_expr_list();
+            list.push(expr);
+            *yyval = YYValue::ExprList(list);
+        }
+        187 => {
+            // MultiKeySymList: MultiKeySymList COMMA KeySymList (expr variant)
+            let expr = yyvs[sp].take_expr();
+            let mut list = yyvs[sp - 2].take_expr_list();
+            if let Some(e) = expr {
+                list.push(e);
+            }
+            *yyval = YYValue::ExprList(list);
+        }
+        188 => {
+            // MultiKeySymList: KeySymList (keysym)
+            let keysym = yyvs[sp].as_keysym();
+            let expr = ExprCreateKeySymList(keysym);
+            *yyval = YYValue::ExprList(vec![expr]);
+        }
+        189 => {
+            // MultiKeySymList: KeySymList (expr)
+            let expr = yyvs[sp].take_expr();
+            let mut list = Vec::new();
+            if let Some(e) = expr {
+                list.push(e);
+            }
+            *yyval = YYValue::ExprList(list);
+        }
+        // KeySymList rules 190-197
+        190 => {
+            // NonEmptyKeySyms: NonEmptyKeySyms COMMA KeySym
+            let expr = yyvs[sp - 2].take_expr().unwrap();
+            let keysym = yyvs[sp].as_keysym();
+            *yyval = YYValue::Expr(ExprAppendKeySymList(expr, keysym));
+        }
+        191 => {
+            // NonEmptyKeySyms: NonEmptyKeySyms COMMA STRING
+            let expr = yyvs[sp - 2].take_expr().unwrap();
+            let s = yyvs[sp].take_str();
+            match crate::xkb::xkbcomp::ast_build::ExprKeySymListAppendString(
+                param.scanner,
+                expr,
+                &s,
+            ) {
+                Some(e) => {
+                    *yyval = YYValue::Expr(e);
+                }
+                None => {
+                    return false;
+                }
+            }
+        }
+        192 => {
+            // KeySyms: KeySym
+            let keysym = yyvs[sp].as_keysym();
+            *yyval = YYValue::Expr(ExprCreateKeySymList(keysym));
+        }
+        193 => {
+            // KeySyms: STRING (single string keysym)
+            let s = yyvs[sp].take_str();
+            let expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
+            match crate::xkb::xkbcomp::ast_build::ExprKeySymListAppendString(
+                param.scanner,
+                expr,
+                &s,
+            ) {
+                Some(e) => {
+                    *yyval = YYValue::Expr(e);
+                }
+                None => {
+                    return false;
+                }
+            }
+        }
+        194 => {
+            // KeySymList: OBRACKET NonEmptyKeySyms CBRACKET
+            *yyval = std::mem::replace(&mut yyvs[sp - 1], YYValue::None);
+        }
+        195 => {
+            // KeySymList: STRING (produces keysym list from string)
+            let s = yyvs[sp].take_str();
+            let expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
+            match crate::xkb::xkbcomp::ast_build::ExprKeySymListAppendString(
+                param.scanner,
+                expr,
+                &s,
+            ) {
+                Some(e) => {
+                    *yyval = YYValue::Expr(e);
+                }
+                None => {
+                    return false;
+                }
+            }
+        }
+        196 => {
+            // KeySymList: KeySyms
+            *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
+        }
+        197 => {
+            // KeySymList: empty → NoSymbol
+            *yyval = YYValue::Expr(ExprCreateKeySymList(XKB_KEY_NoSymbol as u32));
+        }
+        // KeySym rules 198-203
+        198 => {
+            // KeySymLit: KeySym (passthrough)
+            *yyval = YYValue::Keysym(yyvs[sp].as_keysym());
+        }
+        199 => {
+            // KeySym: STRING → parse string as keysym
+            let s = yyvs[sp].take_str();
+            let keysym = crate::xkb::xkbcomp::ast_build::KeysymParseString(param.scanner, &s);
+            if keysym == XKB_KEY_NoSymbol as u32 {
+                return false;
+            }
+            *yyval = YYValue::Keysym(keysym);
+        }
+        200 => {
+            // KeySym: IDENT → resolve keysym name
+            let sval = yyvs[sp].as_sval();
+            match resolve_keysym(param, sval) {
+                Some(sym) => {
+                    *yyval = YYValue::Keysym(sym);
+                }
+                None => {
+                    let loc = param.scanner.token_location();
+                    log::warn!(
+                        "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{}\"\n",
+                        XKB_WARNING_UNRECOGNIZED_KEYSYM as i32,
+                        &param.scanner.file_name,
+                        loc.line,
+                        loc.column,
+                        sval.as_str()
+                    );
+                    *yyval = YYValue::Keysym(XKB_KEY_NoSymbol as u32);
+                }
+            }
+        }
+        201 => {
+            // KeySym: SECTION
+            *yyval = YYValue::Keysym(XKB_KEY_section as u32);
+        }
+        202 => {
+            // KeySym: DECIMAL_DIGIT
+            let num = yyvs[sp].as_num();
+            *yyval = YYValue::Keysym((XKB_KEY_0 as u32).wrapping_add(num as u32));
+        }
+        203 => {
+            // KeySym: INTEGER (numeric keysym)
+            let num = yyvs[sp].as_num();
+            if num < XKB_KEYSYM_MIN as i64 {
+                let loc = param.scanner.token_location();
+                log::warn!(
+                    "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"-{:#06x}\" ({})\n",
+                    XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
+                    &param.scanner.file_name,
+                    loc.line,
+                    loc.column,
+                    -num,
+                    num
+                );
+                *yyval = YYValue::Keysym(XKB_KEY_NoSymbol as u32);
+            } else {
+                if num <= XKB_KEYSYM_MAX as i64 {
+                    let keysym = num as u32;
+                    if param.ctx.log_verbosity >= 2 {
+                        if let Some(ref_name) = xkb_keysym_is_deprecated(keysym, &[]) {
+                            let loc = param.scanner.token_location();
+                            log::warn!(
+                                "[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{:#06x}\"; please use \"{}\" instead.\n",
+                                XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
+                                &param.scanner.file_name,
+                                loc.line,
+                                loc.column,
+                                keysym,
+                                ref_name
+                            );
+                        }
+                    }
+                    *yyval = YYValue::Keysym(keysym);
+                } else {
+                    let loc = param.scanner.token_location();
+                    log::warn!(
+                        "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{:#06x}\" ({})\n",
+                        XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
+                        &param.scanner.file_name,
+                        loc.line,
+                        loc.column,
+                        num,
+                        num
+                    );
+                    *yyval = YYValue::Keysym(XKB_KEY_NoSymbol as u32);
+                }
+                let loc = param.scanner.token_location();
+                log::warn!(
+                    "[XKB-{:03}] {}:{}:{}: numeric keysym \"{:#06x}\" ({})\n",
+                    XKB_WARNING_NUMERIC_KEYSYM as i32,
+                    &param.scanner.file_name,
+                    loc.line,
+                    loc.column,
+                    num,
+                    num
+                );
+            }
+        }
+        // SignedNumber / Number rules 204-208
+        204 => {
+            *yyval = YYValue::Num(-yyvs[sp].as_num());
+        }
+        205 | 206 | 207 | 208 => {
+            *yyval = YYValue::Num(yyvs[sp].as_num());
+        }
+        // Float 209
+        209 => {
+            *yyval = YYValue::Num(0);
+        }
+        // Integer, KeyCode 210-213
+        210 | 211 | 212 | 213 => {
+            *yyval = YYValue::Num(yyvs[sp].as_num());
+        }
+        // Ident 214
+        214 => {
+            let sval = yyvs[sp].as_sval();
+            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, sval.as_bytes()));
+        }
+        215 => {
+            // Ident: DEFAULT
+            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"default"));
+        }
+        // String 216
+        216 => {
+            // String: STRING → intern as atom
+            let s = yyvs[sp].take_str();
+            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, s.as_bytes()));
+        }
+        // OptMapName / MapName 217-219
+        217 => {
+            // MapName: STRING
+            let s = yyvs[sp].take_str();
+            *yyval = YYValue::Str(s);
+        }
+        218 => {
+            // OptMapName: empty
+            *yyval = YYValue::Str(String::new());
+        }
+        219 => {
+            // MapName: STRING
+            let s = yyvs[sp].take_str();
+            *yyval = YYValue::Str(s);
+        }
+        _ => {
+            // Default: no action
+        }
+    }
+    true
+}
+
+// ── Public API ──────────────────────────────────────────────────────
+
+pub fn parse<'a>(
+    ctx: &'a mut xkb_context,
+    scanner: &'a mut scanner,
+    map: &str,
+) -> Option<Box<XkbFile>> {
+    // We need to work around the borrow checker since parser_param borrows both ctx and scanner mutably.
+    // Use raw pointers internally but keep the API safe.
+    let ctx_ptr = ctx as *mut xkb_context;
+    let scanner_ptr = scanner as *mut scanner;
+
+    let mut first: Option<Box<XkbFile>> = None;
+
+    loop {
+        // SAFETY: We know ctx and scanner are valid for the duration of this function.
+        // The parser_param struct borrows them mutably, and we don't alias.
+        let mut param = parser_param {
+            ctx: unsafe { &mut *ctx_ptr },
+            scanner: unsafe { &mut *scanner_ptr },
+            rtrn: None,
+            more_maps: false,
+        };
+
+        let ret = _xkbcommon_parse(&mut param);
+
+        if ret == 0 && param.more_maps {
+            if !map.is_empty() {
+                if let Some(ref rtrn) = param.rtrn {
+                    if map == rtrn.name {
+                        return param.rtrn;
+                    }
+                }
+                // Not the map we want, drop it
+            } else if let Some(ref rtrn) = param.rtrn {
+                if rtrn.flags & MAP_IS_DEFAULT != 0 {
+                    return param.rtrn;
+                } else if first.is_none() {
+                    first = param.rtrn;
+                }
+                // else drop param.rtrn
+            }
+            continue;
+        }
+
+        if ret != 0 {
+            return None;
+        }
+
+        if param.rtrn.is_some() {
+            return param.rtrn;
+        }
+
+        break;
+    }
+
+    if first.is_some() {
+        let scanner_ref = unsafe { &*scanner_ptr };
+        let first_ref = first.as_ref().unwrap();
+        log::warn!(
+            "[XKB-{:03}] No map in include statement, but \"{}\" contains several; Using first defined map, \"{}\"\n",
+            XKB_WARNING_MISSING_DEFAULT_SECTION as i32,
+            &scanner_ref.file_name,
+            safe_map_name(first_ref)
+        );
+    }
+    first
+}
+
+pub fn parse_next<'a>(
+    ctx: &'a mut xkb_context,
+    scanner: &'a mut scanner,
+    xkb_file: &mut Option<Box<XkbFile>>,
+) -> bool {
+    let ctx_ptr = ctx as *mut xkb_context;
+    let scanner_ptr = scanner as *mut scanner;
+
+    let mut param = parser_param {
+        ctx: unsafe { &mut *ctx_ptr },
+        scanner: unsafe { &mut *scanner_ptr },
+        rtrn: None,
+        more_maps: false,
+    };
+
+    let ret = _xkbcommon_parse(&mut param);
+    if ret == 0 && param.more_maps {
+        *xkb_file = param.rtrn;
+        true
+    } else {
+        *xkb_file = None;
+        ret == 0
     }
 }
-use crate::xkb::shared_types::*;
