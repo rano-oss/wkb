@@ -361,12 +361,9 @@ pub fn xkb_context_failed_include_path_get(ctx: &mut xkb_context, idx: u32) -> S
 pub fn xkb_atom_intern_bytes(ctx: &mut xkb_context, bytes: &[u8]) -> u32 {
     atom_intern(&mut ctx.atom_table, bytes, true)
 }
-/// # Safety
-/// ctx must be valid.
-pub unsafe fn xkb_atom_intern(ctx: *mut xkb_context, bytes: &[u8]) -> u32 {
-    unsafe { atom_intern(&mut (*ctx).atom_table, bytes, true) }
+pub fn xkb_atom_intern(ctx: &mut xkb_context, bytes: &[u8]) -> u32 {
+    atom_intern(&mut ctx.atom_table, bytes, true)
 }
-/// Safe version of xkb_atom_intern that takes a reference.
 pub fn xkb_atom_intern_ref(ctx: &mut xkb_context, bytes: &[u8]) -> u32 {
     atom_intern(&mut ctx.atom_table, bytes, true)
 }

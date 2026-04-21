@@ -393,7 +393,7 @@ pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
             }
             let len: usize = (*s).pos - (*s).token_pos - 2;
             (*yylval).atom = xkb_atom_intern(
-                (*s).ctx,
+                &mut *(*s).ctx,
                 (*s).input_slice((*s).token_pos + 1, (*s).token_pos + 1 + len),
             );
             return KEYNAME;

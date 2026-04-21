@@ -2062,47 +2062,47 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                         c2rust_current_block = 9699707990742192723;
                     }
                     130 => {
-                        yyval.atom = xkb_atom_intern((*param).ctx, b"action");
+                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"action");
                         c2rust_current_block = 9699707990742192723;
                     }
                     131 => {
-                        yyval.atom = xkb_atom_intern((*param).ctx, b"interpret");
+                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"interpret");
                         c2rust_current_block = 9699707990742192723;
                     }
                     132 => {
-                        yyval.atom = xkb_atom_intern((*param).ctx, b"type");
+                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"type");
                         c2rust_current_block = 9699707990742192723;
                     }
                     133 => {
-                        yyval.atom = xkb_atom_intern((*param).ctx, b"key");
+                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"key");
                         c2rust_current_block = 9699707990742192723;
                     }
                     134 => {
-                        yyval.atom = xkb_atom_intern((*param).ctx, b"group");
+                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"group");
                         c2rust_current_block = 9699707990742192723;
                     }
                     135 => {
-                        yyval.atom = xkb_atom_intern((*param).ctx, b"modifier_map");
+                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"modifier_map");
                         c2rust_current_block = 9699707990742192723;
                     }
                     136 => {
-                        yyval.atom = xkb_atom_intern((*param).ctx, b"indicator");
+                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"indicator");
                         c2rust_current_block = 9699707990742192723;
                     }
                     137 => {
-                        yyval.atom = xkb_atom_intern((*param).ctx, b"shape");
+                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"shape");
                         c2rust_current_block = 9699707990742192723;
                     }
                     138 => {
-                        yyval.atom = xkb_atom_intern((*param).ctx, b"row");
+                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"row");
                         c2rust_current_block = 9699707990742192723;
                     }
                     139 => {
-                        yyval.atom = xkb_atom_intern((*param).ctx, b"section");
+                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"section");
                         c2rust_current_block = 9699707990742192723;
                     }
                     140 => {
-                        yyval.atom = xkb_atom_intern((*param).ctx, b"text");
+                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"text");
                         c2rust_current_block = 9699707990742192723;
                     }
                     141 => {
@@ -2623,18 +2623,18 @@ pub fn _xkbcommon_parse(param: *mut parser_param) -> i32 {
                     }
                     214 => {
                         yyval.atom = xkb_atom_intern(
-                            (*param).ctx,
+                            &mut *(*param).ctx,
                             (*yyvsp.offset(0_i32 as isize)).sval.as_bytes(),
                         );
                         c2rust_current_block = 9699707990742192723;
                     }
                     215 => {
-                        yyval.atom = xkb_atom_intern((*param).ctx, b"default");
+                        yyval.atom = xkb_atom_intern(&mut *(*param).ctx, b"default");
                         c2rust_current_block = 9699707990742192723;
                     }
                     216 => {
                         yyval.atom = xkb_atom_intern(
-                            (*param).ctx,
+                            &mut *(*param).ctx,
                             std::slice::from_raw_parts(
                                 (*yyvsp.offset(0_i32 as isize)).str as *const u8,
                                 cstr_len((*yyvsp.offset(0_i32 as isize)).str),
