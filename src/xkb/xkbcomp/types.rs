@@ -1,5 +1,5 @@
 use super::prelude::*;
-use crate::xkb::context::xkb_atom_intern;
+
 pub use crate::xkb::shared_ast_types::{KeyTypeDef, ReportShouldBeArray};
 use crate::xkb::text::ModMaskText;
 use crate::xkb::xkbcomp::expr::ExprResolveLevel;
@@ -434,7 +434,7 @@ fn SetPreserve(
 }
 fn AddLevelName(
     ki: &xkb_keymap_info<'_>,
-    info: &mut KeyTypesInfo,
+    _info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
     level: u32,
     name: u32,
@@ -577,7 +577,7 @@ fn HandleKeyTypeBody(
     }
     ok
 }
-fn HandleGlobalVar(ki: &xkb_keymap_info<'_>, info: &mut KeyTypesInfo, stmt: &VarDef) -> bool {
+fn HandleGlobalVar(ki: &xkb_keymap_info<'_>, _info: &mut KeyTypesInfo, stmt: &VarDef) -> bool {
     let mut elem_atom: u32 = 0;
     let mut field_atom: u32 = 0;
     let mut arrayNdx: Option<&ExprDef> = None;

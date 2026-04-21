@@ -1,5 +1,4 @@
 // Canonical scanner utility types and functions (consolidated from scanner_utils_h blocks)
-use crate::xkb::shared_types::*;
 
 #[derive(Copy, Clone)]
 pub struct sval<'a> {
@@ -74,6 +73,7 @@ impl<'a> scanner<'a> {
 
     /// The full input as a byte slice.
     #[inline]
+    #[allow(dead_code)]
     fn input_bytes(&self) -> &[u8] {
         self.s
     }

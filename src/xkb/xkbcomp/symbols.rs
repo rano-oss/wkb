@@ -1718,7 +1718,7 @@ fn HandleSymbolsBody(
 ) -> bool {
     let mut all_valid_entries: bool = true;
     for def in defs.iter_mut() {
-        let mut field: String = String::new();
+        let field: String;
         let mut arrayNdx_opt: Option<&ExprDef> = None;
         let mut ok: bool = true;
         if def.name.is_none() {
@@ -2090,7 +2090,11 @@ fn FindTypeForGroup(
     keymap.types[0].required = true;
     0
 }
-fn CopySymbolsDefToKeymap(keymap: &mut xkb_keymap, info: &SymbolsInfo, keyi: &mut KeyInfo) -> bool {
+fn CopySymbolsDefToKeymap(
+    keymap: &mut xkb_keymap,
+    _info: &SymbolsInfo,
+    keyi: &mut KeyInfo,
+) -> bool {
     let mut i: u32;
 
     // The name is guaranteed to be real and not an alias, so 'false' is safe here

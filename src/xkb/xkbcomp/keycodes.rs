@@ -672,7 +672,7 @@ fn HandleAliasDef(
     }
     keycode_store_insert_alias(&mut info.keycodes, def.alias, def.real)
 }
-fn HandleKeyNameVar(info: &mut KeyNamesInfo, ki: &mut xkb_keymap_info<'_>, stmt: &VarDef) -> bool {
+fn HandleKeyNameVar(_info: &mut KeyNamesInfo, ki: &mut xkb_keymap_info<'_>, stmt: &VarDef) -> bool {
     let mut elem_atom: u32 = 0;
     let mut field_atom: u32 = 0;
     let mut arrayNdx: Option<&ExprDef> = None;

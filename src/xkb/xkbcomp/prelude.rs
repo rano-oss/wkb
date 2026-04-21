@@ -128,6 +128,3 @@ pub use crate::xkb::xkbcomp::expr::{
 pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 
 pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
-
-// libc
-pub use libc::{calloc, free};

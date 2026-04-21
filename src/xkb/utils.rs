@@ -1,5 +1,3 @@
-use crate::xkb::shared_types::xkb_error_code;
-
 /// Case-insensitive comparison of two byte slices (like C `strcasecmp`).
 /// Returns <0, 0, or >0.
 #[inline]

@@ -163,8 +163,6 @@ pub use crate::xkb::shared_ast_types::{
 
 // ── YYValue: safe replacement for the YYSTYPE union ──
 
-use crate::xkb::shared_ast_types::IncludeStmt;
-
 /// Safe parser value stack type, replacing the old YYSTYPE union.
 /// Each variant owns its data. `Default` produces `None`.
 pub enum YYValue<'a> {
@@ -208,7 +206,7 @@ impl<'a> Default for YYValue<'a> {
 
 // Helper to take a value out and replace with None
 impl<'a> YYValue<'a> {
-    pub fn take(&mut self) -> YYValue {
+    pub fn take(&mut self) -> YYValue<'a> {
         std::mem::take(self)
     }
 
@@ -308,7 +306,7 @@ impl<'a> YYValue<'a> {
             _ => 0,
         }
     }
-    pub fn as_sval(&self) -> sval {
+    pub fn as_sval(&self) -> sval<'a> {
         match self {
             YYValue::Sval(s) => *s,
             _ => sval::EMPTY,

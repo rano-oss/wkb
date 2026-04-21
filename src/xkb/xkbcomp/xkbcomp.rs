@@ -1,5 +1,4 @@
 use crate::xkb::shared_types::xkb_context;
-use crate::xkb::shared_types::*;
 use crate::xkb::shared_types::{xkb_component_names, xkb_rule_names};
 pub fn xkb_components_from_rules_names(
     ctx: &mut xkb_context,

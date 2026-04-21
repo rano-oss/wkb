@@ -57,7 +57,7 @@ pub use crate::xkb::shared_types::{
 pub use crate::xkb::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
-use crate::xkb::utils::parse_dec_u32;
+
 pub use crate::xkb::xkbcomp::include::{
     expand_path_str, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
@@ -72,7 +72,7 @@ fn vec_append_nul_terminated(v: &mut Vec<i8>, src: &[u8]) {
 /// Index-based sval for scanner input. Used in lvalue/rule to avoid
 /// lifetime issues across include boundaries. Reconstruct sval via to_sval().
 #[derive(Copy, Clone, Default)]
-struct SvalIdx {
+pub struct SvalIdx {
     start: usize,
     end: usize,
 }
@@ -2185,7 +2185,7 @@ fn xkb_resolve_rules(
     out: &mut xkb_component_names,
     explicit_layouts: &mut u32,
 ) -> bool {
-    let mut ret: bool = false;
+    let mut ret: bool;
     let mut offset: u32 = 0;
     let rules_str = rules;
     let found = FindFileInXkbPath(

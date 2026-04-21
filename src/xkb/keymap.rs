@@ -125,7 +125,7 @@ pub fn xkb_keymap_new_from_string(
         return None;
     }
     let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_buffer", format, flags)?;
-    let ptr = string.as_ptr();
+    let _ptr = string.as_ptr();
     if length > 0 && bytes[length - 1] == 0 {
         length -= 1;
     }

@@ -1,3 +1,7 @@
+#![allow(non_snake_case)]
+#![allow(non_camel_case_types)]
+#![allow(non_upper_case_globals)]
+
 pub use composer::{ComposeState, Composer, ListComposer, Token};
 use std::collections::{BTreeMap, HashSet};
 pub mod composer;

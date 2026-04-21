@@ -1464,12 +1464,14 @@ pub fn xkb_state_update_key(state: &mut xkb_state, kc: u32, direction: xkb_key_d
     get_state_component_changes(&prev_components, &state.components)
 }
 
+#[allow(dead_code)]
 static SYNTHETIC_KEY_LEVEL_ENTRY: xkb_key_type_entry = xkb_key_type_entry {
     level: 0_u32,
     mods: xkb_mods { mods: 0, mask: 0 },
     preserve: xkb_mods { mods: 0, mask: 0 },
 };
 
+#[allow(dead_code)]
 static SYNTHETIC_KEY_TYPE: LazyLock<xkb_key_type> = LazyLock::new(|| xkb_key_type {
     name: 0,
     mods: xkb_mods { mods: 0, mask: 0 },
@@ -1859,6 +1861,7 @@ pub fn xkb_state_mod_index_is_active(state: &xkb_state, idx: u32, type_0: u32) -
     (xkb_state_serialize_mods(state, type_0) & mapping == mapping) as i32
 }
 
+#[allow(dead_code)]
 fn match_mod_masks(state: &xkb_state, type_0: u32, match_0: xkb_state_match, wanted: u32) -> bool {
     let active: u32 = xkb_state_serialize_mods(state, type_0);
     if match_0 & XKB_STATE_MATCH_NON_EXCLUSIVE == 0 && active & !wanted != 0 {

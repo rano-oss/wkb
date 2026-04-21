@@ -57,7 +57,6 @@ impl RuleNames {
     /// Convert to xkb_rule_names structure
     pub fn to_c_keymap(&self) -> crate::xkb::shared_types::xkb_rule_names {
         use std::ffi::CString;
-        use std::rc::Rc;
         crate::xkb::shared_types::xkb_rule_names {
             rules: CString::new(self.rules.as_str()).unwrap(),
             model: CString::new(self.model.as_str()).unwrap(),

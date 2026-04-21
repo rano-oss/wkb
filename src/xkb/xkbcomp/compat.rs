@@ -1206,18 +1206,19 @@ fn CopyCompatToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) -> bo
         None
     };
     // Now get keymap and assign everything
-    let keymap = ki.keymap_mut();
-    keymap.compat_section_name = match &info.name {
-        Some(s) => s.clone(),
-        None => String::new(),
-    };
-    xkb_escape_map_name(&mut keymap.compat_section_name);
-    keymap.mods = info.mods;
-    if let Some(interps) = sym_interprets {
-        keymap.sym_interprets = interps;
+    {
+        let keymap = ki.keymap_mut();
+        keymap.compat_section_name = match &info.name {
+            Some(s) => s.clone(),
+            None => String::new(),
+        };
+        xkb_escape_map_name(&mut keymap.compat_section_name);
+        keymap.mods = info.mods;
+        if let Some(interps) = sym_interprets {
+            keymap.sym_interprets = interps;
+        }
     }
-    // CopyLedMapDefsToKeymap needs keymap dropped first since it gets its own
-    drop(keymap);
+    // CopyLedMapDefsToKeymap needs keymap borrow ended; scope block ensures this
     CopyLedMapDefsToKeymap(ki, info);
     true
 }
