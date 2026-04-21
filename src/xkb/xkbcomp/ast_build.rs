@@ -497,7 +497,7 @@ pub fn XkbFileCreate(
 pub fn XkbFileFromComponents(
     ctx: *mut xkb_context,
     kkctgs: *const xkb_component_names,
-) -> *mut XkbFile {
+) -> Option<Box<XkbFile>> {
     unsafe {
         let c2rust_current_block: u64;
         let components: [*mut i8; 4] = [
@@ -551,11 +551,11 @@ pub fn XkbFileFromComponents(
                 0 as xkb_map_flags,
             );
             if !file.is_null() {
-                return file;
+                return Some(Box::from_raw(file));
             }
         }
         FreeXkbFile(defs as *mut XkbFile);
-        std::ptr::null_mut()
+        None
     }
 }
 

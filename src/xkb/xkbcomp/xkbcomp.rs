@@ -163,37 +163,34 @@ pub fn text_v1_keymap_new_from_names(keymap: &mut xkb_keymap, rmlvo: &xkb_rule_n
         vec_i8_to_str(&kccgst.compatibility),
         vec_i8_to_str(&kccgst.symbols),
     );
-    let file_ptr: *mut XkbFile = XkbFileFromComponents(
+    let file_opt: Option<Box<XkbFile>> = XkbFileFromComponents(
         &mut keymap.ctx as *mut xkb_context,
         &kccgst as *const xkb_component_names,
     );
     drop(kccgst);
-    if file_ptr.is_null() {
+    let Some(mut file) = file_opt else {
         log::error!(
             "[XKB-{:03}] Failed to generate parsed XKB file from components\n",
             XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32
         );
         return false;
-    }
-    let mut file = unsafe { *Box::from_raw(file_ptr) };
+    };
     ok = compile_keymap_file(keymap, &mut file);
     ok
 }
 pub fn text_v1_keymap_new_from_string(keymap: &mut xkb_keymap, input: &[u8]) -> bool {
-    let xkb_file_ptr: *mut XkbFile = XkbParseString(
+    let Some(mut xkb_file) = XkbParseString(
         &mut keymap.ctx as *mut xkb_context,
         input,
         "(input string)",
         std::ptr::null(),
-    );
-    if xkb_file_ptr.is_null() {
+    ) else {
         log::error!(
             "[XKB-{:03}] Failed to parse input xkb string\n",
             XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32
         );
         return false;
-    }
-    let mut xkb_file = unsafe { *Box::from_raw(xkb_file_ptr) };
+    };
     let ok: bool = compile_keymap_file(keymap, &mut xkb_file);
     ok
 }

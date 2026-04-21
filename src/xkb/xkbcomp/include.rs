@@ -332,7 +332,6 @@ pub fn ProcessIncludeFile(
     let map_ptr = map_cstr.as_ref().map_or(std::ptr::null(), |c| c.as_ptr());
 
     let absolute_path = stmt_file.starts_with('/');
-    let ctx_ptr: *mut xkb_context = ctx;
     let mut offset: u32 = 0;
     let mut file_and_path: Option<(std::fs::File, String)> = if absolute_path {
         std::fs::File::open(&stmt_file).ok().map(|f| (f, stmt_file.clone()))
@@ -351,12 +350,11 @@ pub fn ProcessIncludeFile(
     };
 
     while let Some((ref open_file, ref _path)) = file_and_path {
-        let raw = unsafe { XkbParseFile(ctx_ptr, open_file, &stmt.file, map_ptr) };
-        // Drop the file (closes it)
-        let _ = file_and_path.take();
+        let ctx_ptr: *mut xkb_context = ctx;
+        if let Some(parsed) = XkbParseFile(ctx_ptr, open_file, &stmt.file, map_ptr) {
+            // Drop the file (closes it)
+            let _ = file_and_path.take();
 
-        if !raw.is_null() {
-            let parsed = unsafe { Box::from_raw(raw) };
             if parsed.file_type as u32 != file_type {
                 log::error!("[XKB-{:03}] Include file of wrong type (expected {}, got {}); Include file \"{}\" ignored\n",
                     XKB_ERROR_INVALID_INCLUDED_FILE as i32,
@@ -373,13 +371,16 @@ pub fn ProcessIncludeFile(
                 candidate = Some(parsed);
             }
             // else: parsed drops automatically (was FreeXkbFile)
+        } else {
+            // Drop the file (closes it)
+            let _ = file_and_path.take();
         }
         if absolute_path {
             break;
         }
         offset += 1;
         file_and_path = FindFileInXkbPath(
-            unsafe { &mut *ctx_ptr },
+            ctx,
             "(unknown)",
             &stmt_file,
             file_type,

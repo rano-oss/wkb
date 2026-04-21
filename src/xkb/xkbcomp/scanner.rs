@@ -517,13 +517,20 @@ pub fn XkbParseString(
     input: &[u8],
     file_name: &str,
     map: *const i8,
-) -> *mut XkbFile {
+) -> Option<Box<XkbFile>> {
     let mut sc = scanner::new(std::ptr::null_mut(), &[], "", std::ptr::null_mut());
     if !XkbParseStringInit(ctx, &mut sc, input, file_name, map) {
-        return std::ptr::null_mut();
+        return None;
     }
     // Cast types between parser and scanner modules (same C struct, different Rust types)
-    unsafe { parse(ctx as *mut _, &raw mut sc as *mut _, map) as *mut XkbFile }
+    unsafe {
+        let raw = parse(ctx as *mut _, &raw mut sc as *mut _, map) as *mut XkbFile;
+        if raw.is_null() {
+            None
+        } else {
+            Some(Box::from_raw(raw))
+        }
+    }
 }
 pub fn XkbParseStringNext(
     ctx: *mut xkb_context,
@@ -547,7 +554,7 @@ pub fn XkbParseFile(
     file: &std::fs::File,
     file_name: &str,
     map: *const i8,
-) -> *mut XkbFile {
+) -> Option<Box<XkbFile>> {
     use crate::xkb::utils::MappedFile;
 
     // Map the file
@@ -555,7 +562,7 @@ pub fn XkbParseFile(
         Ok(m) => m,
         Err(e) => {
             log::error!("Couldn't read XKB file {}: {}\n", file_name, e);
-            return std::ptr::null_mut();
+            return None;
         }
     };
 
