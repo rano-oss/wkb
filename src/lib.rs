@@ -89,34 +89,32 @@ impl<C: Composer> WKB<C> {
             (ALTGR, 128),
         ];
         for (code, bit) in mapping {
-            if let Some(modifier) = self.modifiers.0.get(&code) {
-                if let Modifier::Single(mk) = modifier {
-                    match mk {
-                        ModKind::Pressed { pressed: true, .. } => depressed |= bit,
-                        ModKind::Lock {
-                            pressed, locked: l, ..
-                        } => {
-                            if *pressed {
-                                depressed |= bit;
-                            }
-                            if *l > 0 {
-                                locked |= bit;
-                            }
+            if let Some(Modifier::Single(mk)) = self.modifiers.0.get(&code) {
+                match mk {
+                    ModKind::Pressed { pressed: true, .. } => depressed |= bit,
+                    ModKind::Lock {
+                        pressed, locked: l, ..
+                    } => {
+                        if *pressed {
+                            depressed |= bit;
                         }
-                        ModKind::Latch {
-                            pressed,
-                            latched: is_latched,
-                            ..
-                        } => {
-                            if *pressed {
-                                depressed |= bit;
-                            }
-                            if *is_latched {
-                                latched |= bit;
-                            }
+                        if *l > 0 {
+                            locked |= bit;
                         }
-                        _ => {}
                     }
+                    ModKind::Latch {
+                        pressed,
+                        latched: is_latched,
+                        ..
+                    } => {
+                        if *pressed {
+                            depressed |= bit;
+                        }
+                        if *is_latched {
+                            latched |= bit;
+                        }
+                    }
+                    _ => {}
                 }
             }
         }

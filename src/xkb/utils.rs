@@ -91,7 +91,6 @@ impl<'a> core::fmt::Write for LogBuf<'a> {
 }
 
 /// Safe wrapper around C `strerror`. Returns a display-able error message.
-
 pub struct StrerrorDisplay(pub i32);
 
 impl core::fmt::Display for StrerrorDisplay {

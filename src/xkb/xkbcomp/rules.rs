@@ -92,10 +92,6 @@ impl SvalIdx {
     fn len(&self) -> usize {
         self.end - self.start
     }
-    #[inline]
-    fn is_empty(&self) -> bool {
-        self.start == self.end
-    }
 }
 
 pub struct matcher<'a> {
@@ -602,9 +598,6 @@ fn matcher_new_from_names<'a>(
         m.rmlvo.variants.truncate(m.rmlvo.layouts.len());
     }
     m
-}
-fn matcher_free(_m: Box<matcher>) {
-    // Box drop handles deallocation
 }
 fn matcher_group_start_new(m: &mut matcher, name: &[u8]) {
     let group: group = group {

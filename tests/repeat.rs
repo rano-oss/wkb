@@ -1,5 +1,4 @@
 use test_case::test_matrix;
-use wkb;
 use xkbcommon::{
     self,
     xkb::{self, Keycode},
@@ -37,7 +36,7 @@ fn repeat_keys(locale: &str) {
         let wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout));
         for i in 0..701 {
             println!("{i}");
-            assert!(xkb.key_repeats(Keycode::new(i as u32 + 8)) == wkb.key_repeats(i));
+            assert!(xkb.key_repeats(Keycode::new(i + 8)) == wkb.key_repeats(i));
         }
     }
 }

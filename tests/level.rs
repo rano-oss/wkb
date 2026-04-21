@@ -1,5 +1,4 @@
 use test_case::test_matrix;
-use wkb;
 use xkbcommon::{
     self,
     xkb::{self, Keycode},
@@ -48,11 +47,11 @@ fn level_keys(locale: &str, level: usize) {
             if k2.unwrap_or_default() == '\0' {
                 k2 = None;
             }
-            if k1 != k2 && k2 != None {
+            if k1 != k2 && k2.is_some() {
                 println!("wkb: {:?}, xkb: {:?} {}", k1, k2, i);
                 println!("{:?}", wkb.state_keymap[level]);
             }
-            assert!(k1 == k2 || k2 == None);
+            assert!(k1 == k2 || k2.is_none());
         }
     }
 }

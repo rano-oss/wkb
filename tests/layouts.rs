@@ -4,12 +4,11 @@
 //! of layout variants for each locale, and that each variant can be loaded.
 
 use test_case::test_matrix;
-use wkb;
 use xkbcommon::xkb;
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
     let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-    let variant_str = layout.unwrap_or_else(|| String::new());
+    let variant_str = layout.unwrap_or_else(String::new);
     let keymap = xkb::Keymap::new_from_names(
         &context,
         "evdev",
@@ -51,7 +50,7 @@ fn layouts_enumeration(locale: &str) {
     // The first variant is typically "" (empty string for base layout)
     // This is just a sanity check that we got a list of strings
     assert!(
-        layouts.iter().all(|l| l == "" || !l.is_empty()),
+        layouts.iter().all(|l| l.is_empty() || !l.is_empty()),
         "All layouts should be empty string or valid variant names for locale {}",
         locale
     );

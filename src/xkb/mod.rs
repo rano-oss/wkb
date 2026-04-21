@@ -164,7 +164,11 @@ fn build_wkb_from_keymap(
 
     // Populate level_exceptions_keymap by querying keysyms directly from keymap
     // This is used by level_key() to return raw keymap level definitions
-    for level in 0..XKB_MAX_LEVELS {
+    for (level, level_map) in level_exceptions_keymap
+        .iter_mut()
+        .enumerate()
+        .take(XKB_MAX_LEVELS)
+    {
         for keycode in min_keycode..=max_keycode {
             let evdev_code = keycode - evdev_offset;
             let layout_idx = 0;
@@ -174,7 +178,7 @@ fn build_wkb_from_keymap(
 
             if let Some(&keysym) = syms.first() {
                 if let Some(ch) = keysym_utf::keysym_to_char(keysym) {
-                    level_exceptions_keymap[level].insert(evdev_code, ch);
+                    level_map.insert(evdev_code, ch);
                 }
             }
         }
@@ -188,7 +192,7 @@ fn build_wkb_from_keymap(
         let level3_keycode = modifiers.level3_code().map(|(code, _)| code + evdev_offset);
         let level5_keycode = modifiers.level5_code().map(|(code, _)| code + evdev_offset);
 
-        for level in 0..XKB_MAX_LEVELS {
+        for (level, state_level_map) in state_keymap.iter_mut().enumerate().take(XKB_MAX_LEVELS) {
             let mut state = match keymap.new_state() {
                 Some(s) => s,
                 None => continue,
@@ -205,12 +209,12 @@ fn build_wkb_from_keymap(
                 let evdev_code = keycode - evdev_offset;
                 let s = state.key_get_utf8(keycode);
                 if let Some(ch) = s.chars().next() {
-                    state_keymap[level].insert(evdev_code, ch);
+                    state_level_map.insert(evdev_code, ch);
                 } else {
                     let syms = keymap.key_get_syms_by_level(keycode, 0, level as u32);
                     if let Some(&keysym) = syms.first() {
                         if let Some(ch) = keysym_utf::keysym_to_char(keysym) {
-                            state_keymap[level].insert(evdev_code, ch);
+                            state_level_map.insert(evdev_code, ch);
                         }
                     }
                 }
@@ -229,7 +233,9 @@ fn build_wkb_from_keymap(
             let level3_keycode = modifiers.level3_code().map(|(code, _)| code + evdev_offset);
             let level5_keycode = modifiers.level5_code().map(|(code, _)| code + evdev_offset);
 
-            for level in 0..XKB_MAX_LEVELS {
+            for (level, caps_level_map) in
+                caps_lock_keymap.iter_mut().enumerate().take(XKB_MAX_LEVELS)
+            {
                 let mut caps_state = match keymap.new_state() {
                     Some(s) => s,
                     None => continue,
@@ -249,7 +255,7 @@ fn build_wkb_from_keymap(
                     let s = caps_state.key_get_utf8(keycode);
                     if let Some(ch) = s.chars().next() {
                         if state_keymap.get(level).and_then(|m| m.get(&evdev_code)) != Some(&ch) {
-                            caps_lock_keymap[level].insert(evdev_code, ch);
+                            caps_level_map.insert(evdev_code, ch);
                         }
                     }
                 }
@@ -268,7 +274,8 @@ fn build_wkb_from_keymap(
             let level3_keycode = modifiers.level3_code().map(|(code, _)| code + evdev_offset);
             let level5_keycode = modifiers.level5_code().map(|(code, _)| code + evdev_offset);
 
-            for level in 0..XKB_MAX_LEVELS {
+            for (level, num_level_map) in num_lock_keys.iter_mut().enumerate().take(XKB_MAX_LEVELS)
+            {
                 let mut num_state = match keymap.new_state() {
                     Some(s) => s,
                     None => continue,
@@ -289,7 +296,7 @@ fn build_wkb_from_keymap(
                     let s = num_state.key_get_utf8(keycode);
                     if let Some(ch) = s.chars().next() {
                         if state_keymap.get(level).and_then(|m| m.get(&evdev_code)) != Some(&ch) {
-                            num_lock_keys[level].insert(evdev_code, ch);
+                            num_level_map.insert(evdev_code, ch);
                         }
                     }
                 }

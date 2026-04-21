@@ -529,26 +529,6 @@ static YYCHECK: [i16; 929] = [
     31, 56, -1, -1, 59, 58, 59, 60, 61, 62, 63, 64, 65, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, 56, -1, -1, 59,
 ];
-static YYSTOS: [yytype_uint8; 384] = [
-    0, 0, 58, 59, 60, 61, 62, 63, 64, 65, 67, 68, 71, 73, 74, 75, 0, 4, 5, 6, 7, 8, 9, 10, 11, 69,
-    72, 75, 52, 147, 148, 147, 41, 41, 70, 76, 42, 71, 73, 12, 13, 14, 15, 16, 42, 77, 121, 122,
-    49, 49, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 31, 32, 33, 34, 35, 50, 56, 57, 59, 78,
-    79, 80, 81, 84, 87, 88, 94, 95, 98, 99, 100, 101, 102, 103, 117, 118, 119, 120, 131, 145, 52,
-    56, 82, 83, 145, 52, 146, 29, 52, 53, 54, 56, 85, 138, 139, 57, 57, 53, 54, 143, 145, 143, 146,
-    146, 146, 25, 145, 55, 57, 132, 133, 142, 143, 146, 36, 146, 45, 47, 36, 49, 48, 49, 36, 41,
-    41, 37, 41, 36, 36, 41, 36, 41, 41, 41, 143, 49, 41, 36, 53, 54, 144, 41, 18, 19, 21, 23, 24,
-    25, 26, 29, 31, 37, 38, 41, 43, 50, 51, 119, 124, 125, 128, 129, 131, 133, 145, 119, 124, 83,
-    124, 86, 86, 124, 45, 50, 89, 90, 91, 92, 131, 145, 57, 124, 57, 96, 97, 138, 124, 86, 41, 45,
-    113, 114, 115, 116, 145, 25, 28, 30, 78, 98, 104, 105, 110, 117, 36, 86, 124, 49, 86, 125, 131,
-    125, 42, 119, 127, 130, 124, 125, 125, 43, 37, 38, 39, 40, 46, 36, 45, 49, 42, 78, 42, 29, 41,
-    52, 56, 93, 126, 128, 130, 134, 136, 139, 145, 42, 48, 36, 49, 49, 42, 48, 49, 42, 115, 38, 53,
-    54, 55, 140, 141, 42, 48, 42, 48, 36, 41, 146, 42, 105, 124, 42, 49, 42, 43, 42, 48, 44, 123,
-    124, 124, 124, 124, 124, 124, 124, 49, 49, 42, 52, 135, 139, 46, 48, 46, 48, 46, 48, 49, 91,
-    92, 124, 49, 97, 49, 42, 141, 48, 49, 114, 49, 116, 41, 124, 27, 78, 106, 107, 41, 49, 49, 49,
-    49, 123, 130, 44, 48, 46, 42, 48, 41, 126, 134, 129, 130, 41, 136, 137, 139, 140, 115, 41, 42,
-    107, 57, 111, 112, 44, 124, 52, 139, 42, 46, 46, 42, 46, 42, 41, 57, 108, 109, 49, 36, 42, 48,
-    123, 42, 48, 57, 49, 112, 42, 49, 109,
-];
 static YYR1: [yytype_uint8; 220] = [
     0, 66, 67, 67, 67, 68, 69, 69, 69, 70, 70, 71, 72, 72, 72, 72, 72, 73, 73, 74, 74, 75, 75, 75,
     75, 75, 75, 75, 75, 76, 76, 76, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77,
@@ -725,7 +705,7 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
 
     let mut yyn: i32;
     let yyresult: i32;
-    let mut yytoken: i32 = YYSYMBOL_YYEMPTY;
+    let mut yytoken: i32;
     let mut yyval: YYValue<'a>;
     let mut yylen: i32;
 
@@ -768,7 +748,6 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
                 yytoken = YYSYMBOL_YYEOF;
             } else if yychar == YYerror {
                 yychar = YYUNDEF;
-                yytoken = YYSYMBOL_YYerror;
                 // goto yyerrlab1
                 yyerrstatus = 3;
                 // Error recovery: pop until we find a state that accepts error token
@@ -829,7 +808,6 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
                         _xkbcommon_nerrs += 1;
                         sp -= yylen as usize;
                         ssp -= yylen as usize;
-                        yylen = 0;
                         yystate = yyss[ssp] as i32;
 
                         // Error recovery
@@ -874,7 +852,6 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
 
                     sp -= yylen as usize;
                     ssp -= yylen as usize;
-                    yylen = 0;
 
                     sp += 1;
                     ensure_capacity(&mut yyvs, sp);
@@ -982,7 +959,6 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
             _xkbcommon_nerrs += 1;
             sp -= yylen as usize;
             ssp -= yylen as usize;
-            yylen = 0;
             yystate = yyss[ssp] as i32;
 
             yyerrstatus = 3;
@@ -1026,7 +1002,6 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
 
         sp -= yylen as usize;
         ssp -= yylen as usize;
-        yylen = 0;
 
         sp += 1;
         ensure_capacity(&mut yyvs, sp);
@@ -2287,8 +2262,8 @@ pub fn parse<'a>(
 
     loop {
         let mut param = parser_param {
-            ctx: ctx,
-            scanner: scanner,
+            ctx,
+            scanner,
             rtrn: None,
             more_maps: false,
         };
