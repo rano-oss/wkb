@@ -323,6 +323,15 @@ impl<'a> scanner<'a> {
         self.s[pos..].as_ptr() as *const i8
     }
 
+    /// Get a mutable reference to the context.
+    /// # Safety invariant: self.ctx must be a valid, non-null pointer.
+    #[inline]
+    pub fn ctx_mut(&mut self) -> &mut xkb_context {
+        // SAFETY: scanner.ctx is always set to a valid pointer in scanner::new()
+        // and remains valid for the scanner's lifetime.
+        unsafe { &mut *self.ctx }
+    }
+
     /// Get a slice of the input from `start` to `end` as bytes.
     #[inline]
     pub fn input_slice(&self, start: usize, end: usize) -> &[u8] {

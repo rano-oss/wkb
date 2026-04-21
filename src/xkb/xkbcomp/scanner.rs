@@ -231,7 +231,7 @@ pub use crate::xkb::shared_ast_types::{
     STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES,
     _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
 };
-use crate::xkb::utils::cstr_dup;
+
 /// Check if byte is whitespace (space, HT, LF, VT, FF, CR).
 /// Matches C `isspace()` for ASCII range.
 #[inline]
@@ -280,212 +280,217 @@ fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
         true
     }
 }
-pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, s: *mut scanner) -> i32 {
-    unsafe {
-        loop {
-            while is_space((*s).peek()) {
-                (*s).next_byte();
-            }
-            if (*s).str_match(b"\xE2\x80\x8E") || (*s).str_match(b"\xE2\x80\x8F") {
-                continue;
-            }
-            if !((*s).str_match(b"//") || (*s).chr(b'#' as i8)) {
-                break;
-            }
-            (*s).skip_to_eol();
+pub fn _xkbcommon_lex(yylval: &mut YYSTYPE, s: &mut scanner) -> i32 {
+    loop {
+        while is_space(s.peek()) {
+            s.next_byte();
         }
-        if (*s).eof() {
-            return END_OF_FILE;
+        if s.str_match(b"\xE2\x80\x8E") || s.str_match(b"\xE2\x80\x8F") {
+            continue;
         }
-        (*s).token_pos = (*s).pos;
-        (*s).buf_pos = 0;
-        if (*s).chr(b'"' as i8) {
-            while !(*s).eof() && !(*s).eol() && (*s).peek() != b'"' as i8 {
-                if (*s).chr(b'\\' as i8) {
-                    let mut o: u8 = 0;
-                    let start_pos: usize = (*s).pos;
-                    if (*s).chr(b'\\' as i8) {
-                        (*s).buf_append(b'\\');
-                    } else if (*s).chr(b'"' as i8) {
-                        (*s).buf_append(b'"');
-                    } else if (*s).chr(b'n' as i8) {
-                        (*s).buf_append(b'\n');
-                    } else if (*s).chr(b't' as i8) {
-                        (*s).buf_append(b'\t');
-                    } else if (*s).chr(b'r' as i8) {
-                        (*s).buf_append(b'\r');
-                    } else if (*s).chr(b'b' as i8) {
-                        (*s).buf_append(b'\x08');
-                    } else if (*s).chr(b'f' as i8) {
-                        (*s).buf_append(b'\x0c');
-                    } else if (*s).chr(b'v' as i8) {
-                        (*s).buf_append(b'\x0b');
-                    } else if (*s).chr(b'e' as i8) {
-                        (*s).buf_append(b'\x1b');
-                    } else if (*s).chr(b'u' as i8) {
-                        let mut cp: u32 = 0;
-                        if (*s).unicode_code_point(&mut cp) && cp != 0 {
-                            (*s).buf_appends_code_point(cp);
-                        } else {
-                            let loc = (*s).token_location();
-                            log::warn!("[XKB-{:03}] {}:{}:{}: invalid Unicode escape sequence \"{}\" in string literal\n",
-                                XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE
-                                    as i32,
-                                &(*s).file_name,
-                                loc.line,
-                                loc.column,
-                                std::str::from_utf8_unchecked((*s).input_slice(start_pos.wrapping_sub(1), (*s).pos)));
-                        }
-                    } else if (*s).oct(&mut o) && o != 0 {
-                        (*s).buf_append(o);
-                    } else if (*s).pos > start_pos {
-                        let loc_0 = (*s).token_location();
-                        log::warn!("[XKB-{:03}] {}:{}:{}: invalid octal escape sequence \"{}\" in string literal\n",
-                            XKB_WARNING_INVALID_ESCAPE_SEQUENCE as i32,
-                            &(*s).file_name,
-                            loc_0.line,
-                            loc_0.column,
-                            std::str::from_utf8_unchecked((*s).input_slice(start_pos.wrapping_sub(1), (*s).pos)));
+        if !(s.str_match(b"//") || s.chr(b'#' as i8)) {
+            break;
+        }
+        s.skip_to_eol();
+    }
+    if s.eof() {
+        return END_OF_FILE;
+    }
+    s.token_pos = s.pos;
+    s.buf_pos = 0;
+    if s.chr(b'"' as i8) {
+        while !s.eof() && !s.eol() && s.peek() != b'"' as i8 {
+            if s.chr(b'\\' as i8) {
+                let mut o: u8 = 0;
+                let start_pos: usize = s.pos;
+                if s.chr(b'\\' as i8) {
+                    s.buf_append(b'\\');
+                } else if s.chr(b'"' as i8) {
+                    s.buf_append(b'"');
+                } else if s.chr(b'n' as i8) {
+                    s.buf_append(b'\n');
+                } else if s.chr(b't' as i8) {
+                    s.buf_append(b'\t');
+                } else if s.chr(b'r' as i8) {
+                    s.buf_append(b'\r');
+                } else if s.chr(b'b' as i8) {
+                    s.buf_append(b'\x08');
+                } else if s.chr(b'f' as i8) {
+                    s.buf_append(b'\x0c');
+                } else if s.chr(b'v' as i8) {
+                    s.buf_append(b'\x0b');
+                } else if s.chr(b'e' as i8) {
+                    s.buf_append(b'\x1b');
+                } else if s.chr(b'u' as i8) {
+                    let mut cp: u32 = 0;
+                    if s.unicode_code_point(&mut cp) && cp != 0 {
+                        s.buf_appends_code_point(cp);
                     } else {
-                        let loc_1 = (*s).token_location();
-                        log::warn!("[XKB-{:03}] {}:{}:{}: unknown escape sequence \"\\{}\" in string literal\n",
-                            XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE
+                        let loc = s.token_location();
+                        log::warn!("[XKB-{:03}] {}:{}:{}: invalid Unicode escape sequence \"{}\" in string literal\n",
+                            XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE
                                 as i32,
-                            &(*s).file_name,
-                            loc_1.line,
-                            loc_1.column,
-                            ((*s).peek() as u8 as char));
+                            &s.file_name,
+                            loc.line,
+                            loc.column,
+                            std::str::from_utf8(s.input_slice(start_pos.wrapping_sub(1), s.pos)).unwrap_or(""));
                     }
+                } else if s.oct(&mut o) && o != 0 {
+                    s.buf_append(o);
+                } else if s.pos > start_pos {
+                    let loc_0 = s.token_location();
+                    log::warn!("[XKB-{:03}] {}:{}:{}: invalid octal escape sequence \"{}\" in string literal\n",
+                        XKB_WARNING_INVALID_ESCAPE_SEQUENCE as i32,
+                        &s.file_name,
+                        loc_0.line,
+                        loc_0.column,
+                        std::str::from_utf8(s.input_slice(start_pos.wrapping_sub(1), s.pos)).unwrap_or(""));
                 } else {
-                    let c = (*s).next_byte();
-                    (*s).buf_append(c as u8);
+                    let loc_1 = s.token_location();
+                    log::warn!("[XKB-{:03}] {}:{}:{}: unknown escape sequence \"\\{}\" in string literal\n",
+                        XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE
+                            as i32,
+                        &s.file_name,
+                        loc_1.line,
+                        loc_1.column,
+                        (s.peek() as u8 as char));
                 }
+            } else {
+                let c = s.next_byte();
+                s.buf_append(c as u8);
             }
-            if !(*s).buf_append(0) || !(*s).chr(b'"' as i8) {
-                let loc_2 = (*s).token_location();
-                log::error!(
-                    "{}:{}:{}: unterminated string literal\n",
-                    &(*s).file_name,
-                    loc_2.line,
-                    loc_2.column
-                );
-                return ERROR_TOK;
-            }
-            (*yylval).str = cstr_dup(&raw mut (*s).buf as *mut i8);
-            if (*yylval).str.is_null() {
-                return ERROR_TOK;
-            }
-            return STRING;
         }
-        if (*s).chr(b'<' as i8) {
-            while ((*s).peek() as u8).is_ascii_graphic() && (*s).peek() != b'>' as i8 {
-                (*s).next_byte();
-            }
-            if !(*s).chr(b'>' as i8) {
-                let loc_3 = (*s).token_location();
-                log::error!(
-                    "{}:{}:{}: unterminated key name literal\n",
-                    &(*s).file_name,
-                    loc_3.line,
-                    loc_3.column
-                );
-                return ERROR_TOK;
-            }
-            let len: usize = (*s).pos - (*s).token_pos - 2;
-            (*yylval).atom = xkb_atom_intern(
-                &mut *(*s).ctx,
-                (*s).input_slice((*s).token_pos + 1, (*s).token_pos + 1 + len),
+        if !s.buf_append(0) || !s.chr(b'"' as i8) {
+            let loc_2 = s.token_location();
+            log::error!(
+                "{}:{}:{}: unterminated string literal\n",
+                &s.file_name,
+                loc_2.line,
+                loc_2.column
             );
-            return KEYNAME;
+            return ERROR_TOK;
         }
-        if (*s).chr(b';' as i8) {
-            return SEMI;
+        // Duplicate scanner buffer as a C string for the parser
+        let buf_len = s.buf_pos.saturating_sub(1); // exclude null terminator
+        let str_ptr = std::ffi::CString::new(&s.buf[..buf_len])
+            .map(|cs| cs.into_raw())
+            .unwrap_or(std::ptr::null_mut());
+        if str_ptr.is_null() {
+            return ERROR_TOK;
         }
-        if (*s).chr(b'{' as i8) {
-            return OBRACE;
+        yylval.str = str_ptr;
+        return STRING;
+    }
+    if s.chr(b'<' as i8) {
+        while (s.peek() as u8).is_ascii_graphic() && s.peek() != b'>' as i8 {
+            s.next_byte();
         }
-        if (*s).chr(b'}' as i8) {
-            return CBRACE;
+        if !s.chr(b'>' as i8) {
+            let loc_3 = s.token_location();
+            log::error!(
+                "{}:{}:{}: unterminated key name literal\n",
+                &s.file_name,
+                loc_3.line,
+                loc_3.column
+            );
+            return ERROR_TOK;
         }
-        if (*s).chr(b'=' as i8) {
-            return EQUALS;
+        let len: usize = s.pos - s.token_pos - 2;
+        let keyname_bytes: Vec<u8> = s
+            .input_slice(s.token_pos + 1, s.token_pos + 1 + len)
+            .to_vec();
+        yylval.atom = xkb_atom_intern(s.ctx_mut(), &keyname_bytes);
+        return KEYNAME;
+    }
+    if s.chr(b';' as i8) {
+        return SEMI;
+    }
+    if s.chr(b'{' as i8) {
+        return OBRACE;
+    }
+    if s.chr(b'}' as i8) {
+        return CBRACE;
+    }
+    if s.chr(b'=' as i8) {
+        return EQUALS;
+    }
+    if s.chr(b'[' as i8) {
+        return OBRACKET;
+    }
+    if s.chr(b']' as i8) {
+        return CBRACKET;
+    }
+    if s.chr(b'(' as i8) {
+        return OPAREN;
+    }
+    if s.chr(b')' as i8) {
+        return CPAREN;
+    }
+    if s.chr(b'.' as i8) {
+        return DOT;
+    }
+    if s.chr(b',' as i8) {
+        return COMMA;
+    }
+    if s.chr(b'+' as i8) {
+        return PLUS;
+    }
+    if s.chr(b'-' as i8) {
+        return MINUS;
+    }
+    if s.chr(b'*' as i8) {
+        return TIMES;
+    }
+    if s.chr(b'/' as i8) {
+        return DIVIDE;
+    }
+    if s.chr(b'!' as i8) {
+        return EXCLAM;
+    }
+    if s.chr(b'~' as i8) {
+        return INVERT;
+    }
+    let mut tok: i32 = ERROR_TOK;
+    if (s.peek() as u8).is_ascii_alphabetic() || s.peek() == b'_' as i8 {
+        while (s.peek() as u8).is_ascii_alphanumeric() || s.peek() == b'_' as i8 {
+            s.next_byte();
         }
-        if (*s).chr(b'[' as i8) {
-            return OBRACKET;
-        }
-        if (*s).chr(b']' as i8) {
-            return CBRACKET;
-        }
-        if (*s).chr(b'(' as i8) {
-            return OPAREN;
-        }
-        if (*s).chr(b')' as i8) {
-            return CPAREN;
-        }
-        if (*s).chr(b'.' as i8) {
-            return DOT;
-        }
-        if (*s).chr(b',' as i8) {
-            return COMMA;
-        }
-        if (*s).chr(b'+' as i8) {
-            return PLUS;
-        }
-        if (*s).chr(b'-' as i8) {
-            return MINUS;
-        }
-        if (*s).chr(b'*' as i8) {
-            return TIMES;
-        }
-        if (*s).chr(b'/' as i8) {
-            return DIVIDE;
-        }
-        if (*s).chr(b'!' as i8) {
-            return EXCLAM;
-        }
-        if (*s).chr(b'~' as i8) {
-            return INVERT;
-        }
-        let mut tok: i32 = ERROR_TOK;
-        if ((*s).peek() as u8).is_ascii_alphabetic() || (*s).peek() == b'_' as i8 {
-            while ((*s).peek() as u8).is_ascii_alphanumeric() || (*s).peek() == b'_' as i8 {
-                (*s).next_byte();
-            }
-            let start_0: *const i8 = (*s).input_at((*s).token_pos);
-            let len_0: usize = (*s).pos - (*s).token_pos;
-            tok = keyword_to_token((*s).input_slice((*s).token_pos, (*s).pos));
-            if tok >= 0 {
-                return tok;
-            }
-            (*yylval).sval = sval {
-                len: len_0,
-                start: start_0,
-            };
-            return IDENT;
-        }
-        if number(&mut *s, &mut (*yylval).num, &mut tok) {
-            if tok == ERROR_TOK {
-                let loc_4 = (*s).token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: malformed number literal\n",
-                    XKB_ERROR_MALFORMED_NUMBER_LITERAL as i32,
-                    &(*s).file_name,
-                    loc_4.line,
-                    loc_4.column
-                );
-                return ERROR_TOK;
-            }
+        let start_0: *const i8 = s.input_at(s.token_pos);
+        let len_0: usize = s.pos - s.token_pos;
+        tok = keyword_to_token(s.input_slice(s.token_pos, s.pos));
+        if tok >= 0 {
             return tok;
         }
-        let loc_5 = (*s).token_location();
-        log::error!(
-            "{}:{}:{}: unrecognized token\n",
-            &(*s).file_name,
-            loc_5.line,
-            loc_5.column
-        );
-        ERROR_TOK
+        yylval.sval = sval {
+            len: len_0,
+            start: start_0,
+        };
+        return IDENT;
     }
+    let mut num_val: i64 = 0;
+    if number(s, &mut num_val, &mut tok) {
+        yylval.num = num_val;
+        if tok == ERROR_TOK {
+            let loc_4 = s.token_location();
+            log::error!(
+                "[XKB-{:03}] {}:{}:{}: malformed number literal\n",
+                XKB_ERROR_MALFORMED_NUMBER_LITERAL as i32,
+                &s.file_name,
+                loc_4.line,
+                loc_4.column
+            );
+            return ERROR_TOK;
+        }
+        return tok;
+    }
+    let loc_5 = s.token_location();
+    log::error!(
+        "{}:{}:{}: unrecognized token\n",
+        &s.file_name,
+        loc_5.line,
+        loc_5.column
+    );
+    ERROR_TOK
 }
 pub fn XkbParseStringInit<'a>(
     ctx: *mut xkb_context,

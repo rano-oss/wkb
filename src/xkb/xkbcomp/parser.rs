@@ -45,7 +45,7 @@ pub fn UnknownStatementCreate(
     }
 }
 pub fn _xkbcommon_lex(yylval: *mut YYSTYPE, scanner: *mut scanner) -> i32 {
-    unsafe { crate::xkb::xkbcomp::scanner::_xkbcommon_lex(yylval as *mut _, scanner as *mut _) }
+    unsafe { crate::xkb::xkbcomp::scanner::_xkbcommon_lex(&mut *yylval, &mut *scanner) }
 }
 
 pub use super::scanner::parser_h::{

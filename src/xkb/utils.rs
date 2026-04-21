@@ -109,26 +109,7 @@ impl<'a> core::fmt::Write for LogBuf<'a> {
     }
 }
 
-/// Safe replacement for libc `strdup`. Duplicates a C string using Rust's allocator.
-/// Returns a `*mut i8` allocated via `CString::into_raw()`.
-/// Returns null if `s` is null.
-///
-/// # Safety
-/// If non-null, `s` must point to a valid null-terminated C string.
-///
-/// # Deallocation
-/// The returned pointer should be freed with `drop(CString::from_raw(ptr))`,
-/// or with `free()` on Linux where the default global allocator is the system allocator.
-#[inline]
-pub unsafe fn cstr_dup(s: *const i8) -> *mut i8 {
-    if s.is_null() {
-        return std::ptr::null_mut();
-    }
-    let cstr = std::ffi::CStr::from_ptr(s);
-    std::ffi::CString::from(cstr).into_raw()
-}
-
-/// Frees a C string that was allocated by `cstr_dup`.
+/// Frees a C string that was allocated by `CString::into_raw()`.
 /// Safe to call with null (no-op). Counterpart to `CString::into_raw()`.
 ///
 /// # Safety
