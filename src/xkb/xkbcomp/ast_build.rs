@@ -367,7 +367,7 @@ pub fn LedNameCreate(ndx: i64, name: Option<Box<ExprDef>>, virtual_0: bool) -> *
 }
 
 pub fn UnknownStatementCreate(type_0: stmt_type, name: sval) -> *mut UnknownStatement {
-    let name_str = unsafe { std::str::from_utf8_unchecked(name.as_bytes()).to_string() };
+    let name_str = name.as_str().to_string();
     Box::into_raw(Box::new(UnknownStatement {
         common: ParseCommon {
             next: std::ptr::null_mut(),
