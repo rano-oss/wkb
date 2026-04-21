@@ -138,8 +138,7 @@ pub struct xkb_sym_interpret {
     pub actions: Vec<xkb_action>,
 }
 
-#[derive(Copy, Clone)]
-#[derive(Default)]
+#[derive(Copy, Clone, Default)]
 pub enum xkb_action {
     #[default]
     None,
@@ -164,7 +163,6 @@ pub enum xkb_action {
     Private(xkb_private_action),
     Internal(xkb_internal_action),
 }
-
 
 impl xkb_action {
     pub fn action_type(&self) -> u32 {

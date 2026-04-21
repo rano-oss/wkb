@@ -1282,8 +1282,7 @@ fn SetSymbolsField(
         } else if {
             let mut pending_dummy = false;
             ExprResolveGroup(ki, arrayNdx.unwrap(), false, &mut ndx, &mut pending_dummy)
-        }
-            != PARSER_SUCCESS
+        } != PARSER_SUCCESS
         {
             log::error!("[XKB-{:03}] Illegal group index for type of key <{}>; Definition with non-integer array index ignored\n",
                 { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
@@ -1494,8 +1493,7 @@ fn SetSymbolsField(
             false,
             &mut grp,
             &mut pending,
-        )
-            != PARSER_SUCCESS
+        ) != PARSER_SUCCESS
             && !pending
         {
             log::error!("[XKB-{:03}] Illegal group index for redirect of key <{}>; Definition with non-integer group ignored\n",
@@ -1683,7 +1681,6 @@ fn HandleGlobalVar(
         let elem_owned = elem.to_owned();
         let field_owned = field.to_owned();
         ret = {
-            
             SetDefaultActionField(
                 ki,
                 &mut info.default_actions,

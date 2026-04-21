@@ -104,8 +104,7 @@ pub struct matcher<'a> {
     pub pending_kccgst: kccgst_buffer,
     pub kccgst: [Vec<i8>; 5],
 }
-#[derive(Clone)]
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct kccgst_buffer {
     pub buffer: Vec<i8>,
     pub slices: Vec<kccgst_buffer_slice>,
@@ -141,8 +140,7 @@ pub const MLVO_MATCH_WILDCARD_SOME: mlvo_match_type = 3;
 pub const MLVO_MATCH_WILDCARD_NONE: mlvo_match_type = 2;
 pub const MLVO_MATCH_WILDCARD_LEGACY: mlvo_match_type = 1;
 pub const MLVO_MATCH_NORMAL: mlvo_match_type = 0;
-#[derive(Copy, Clone)]
-#[derive(Default)]
+#[derive(Copy, Clone, Default)]
 pub struct mapping {
     pub mlvo_at_pos: [rules_mlvo; 4],
     pub num_mlvo: mlvo_index_t,
@@ -202,8 +200,7 @@ pub struct group {
 pub struct lvalue {
     pub string: SvalIdx,
 }
-#[derive(Clone)]
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct rule_names<'a> {
     pub model: matched_sval<'a>,
     pub layouts: Vec<matched_sval<'a>>,

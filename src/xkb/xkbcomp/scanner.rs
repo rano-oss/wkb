@@ -200,7 +200,6 @@ pub enum YYValue<'a> {
     StmtList(Vec<Statement>),
 }
 
-
 // Helper to take a value out and replace with None
 impl<'a> YYValue<'a> {
     pub fn take(&mut self) -> YYValue<'a> {

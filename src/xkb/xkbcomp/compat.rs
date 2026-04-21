@@ -634,8 +634,7 @@ fn SetInterpField(
                     &info.mods,
                     act_expr,
                     &mut toAct,
-                )
-                {
+                ) {
                     1 => {
                         toAct.set_none();
                     }
@@ -672,8 +671,7 @@ fn SetInterpField(
                 &info.mods,
                 value,
                 &mut si.interp.action,
-            )
-            {
+            ) {
                 1 => {
                     si.interp.action.set_none();
                     si.interp.num_actions = 0_u16;
@@ -913,7 +911,7 @@ fn HandleGlobalVar(info: &mut CompatInfo, ki: &mut xkb_keymap_info<'_>, stmt: &m
         } else if !elem.is_empty() {
             ret = {
                 let ndx_ref2 = ndx;
-                
+
                 SetDefaultActionField(
                     ki,
                     &mut info.default_actions,

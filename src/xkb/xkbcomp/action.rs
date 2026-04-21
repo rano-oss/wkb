@@ -1644,8 +1644,7 @@ pub fn HandleActionDef(
                 fieldNdx,
                 arrayRtrn_opt,
                 av,
-            )
-            {
+            ) {
                 2 => return PARSER_FATAL_ERROR,
                 1 => {
                     ret = PARSER_RECOVERABLE_ERROR;
@@ -1658,7 +1657,7 @@ pub fn HandleActionDef(
         PARSER_RECOVERABLE_ERROR
     } else {
         ret
-    } 
+    }
 }
 pub fn SetDefaultActionField(
     keymap_info: &mut xkb_keymap_info<'_>,

@@ -360,8 +360,7 @@ pub fn ProcessIncludeFile(
                     xkb_file_type_to_string(parsed.file_type),
                     &stmt.file);
                 // parsed drops automatically
-            } else if !stmt.map.is_empty() || parsed.flags != 0 && MAP_IS_DEFAULT as i32 != 0
-            {
+            } else if !stmt.map.is_empty() || parsed.flags != 0 && MAP_IS_DEFAULT as i32 != 0 {
                 xkb_file = Some(parsed);
                 break;
             } else if candidate.is_none() {
