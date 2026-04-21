@@ -352,12 +352,11 @@ static SYNTHETIC_KEY_BREAK_GROUP_LATCH: LazyLock<xkb_key> = LazyLock::new(|| xkb
 });
 
 fn get_entry_for_mods(type_0: &xkb_key_type, mods: u32) -> Option<&xkb_key_type_entry> {
-    for entry in &type_0.entries {
-        if entry_is_active(entry) && entry.mods.mask == mods {
-            return Some(entry);
-        }
-    }
-    None
+    type_0
+        .entries
+        .iter()
+        .find(|&entry| entry_is_active(entry) && entry.mods.mask == mods)
+        .map(|v| v as _)
 }
 
 fn get_entry_for_key_state<'a>(
@@ -371,7 +370,6 @@ fn get_entry_for_key_state<'a>(
     get_entry_for_mods(type_0, active_mods)
 }
 #[inline]
-
 fn state_key_get_level(state: &xkb_state, key: &xkb_key, layout: u32) -> u32 {
     if layout >= key.num_groups {
         return XKB_LEVEL_INVALID;
@@ -389,7 +387,6 @@ pub fn xkb_state_key_get_level(state: &xkb_state, kc: u32, layout: u32) -> u32 {
     }
 }
 #[inline]
-
 fn state_key_get_layout(state: &xkb_state, key: &xkb_key) -> u32 {
     XkbWrapGroupIntoRange(
         state.components.group as i32,
@@ -1305,7 +1302,7 @@ pub fn xkb_state_new(keymap: Rc<xkb_keymap>) -> Box<xkb_state> {
     if keymap.format != XKB_KEYMAP_FORMAT_TEXT_V1
         && XKB_A11Y_NO_FLAGS & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS == 0
     {
-        state.flags = (state.flags as u32 | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS) as xkb_a11y_flags;
+        state.flags = (state.flags | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS) as xkb_a11y_flags;
     }
     xkb_state_update_derived(&mut state);
     state
@@ -1375,11 +1372,8 @@ fn xkb_state_led_update_all(state: &mut xkb_state) {
                     set_led = true;
                 }
             }
-            if !set_led {
-                if led.ctrls & state.components.controls != 0 {
-                    state.components.leds =
-                        (state.components.leds | 1_u32 << idx) as xkb_led_mask_t;
-                }
+            if !set_led && led.ctrls & state.components.controls != 0 {
+                state.components.leds = (state.components.leds | 1_u32 << idx) as xkb_led_mask_t;
             }
         }
         idx = idx.wrapping_add(1);
@@ -1536,7 +1530,7 @@ fn update_latch_modifiers(state: &mut xkb_state, events: &mut xkb_events, mask: 
         overlay_keys: Vec::new(),
     };
     xkb_filter_apply_all(state, events, &synthetic_key_break_mod_latch, XKB_KEY_DOWN);
-    let key: &xkb_key = &*SYNTHETIC_KEY;
+    let key: &xkb_key = &SYNTHETIC_KEY;
     let latch_mods: xkb_action = xkb_action::ModLatch(xkb_mod_action {
         type_0: ACTION_TYPE_MOD_LATCH,
         flags: 0 as xkb_action_flags,
@@ -1560,10 +1554,10 @@ fn update_latch_group(state: &mut xkb_state, events: &mut xkb_events, group: i32
     xkb_filter_apply_all(
         state,
         events,
-        &*SYNTHETIC_KEY_BREAK_GROUP_LATCH,
+        &SYNTHETIC_KEY_BREAK_GROUP_LATCH,
         XKB_KEY_DOWN,
     );
-    let key: &xkb_key = &*SYNTHETIC_KEY;
+    let key: &xkb_key = &SYNTHETIC_KEY;
     let latch_group: xkb_action = xkb_action::GroupLatch(xkb_group_action {
         type_0: ACTION_TYPE_GROUP_LATCH,
         flags: ACTION_ABSOLUTE_SWITCH,
@@ -1579,7 +1573,6 @@ fn update_latch_group(state: &mut xkb_state, events: &mut xkb_events, group: i32
     state.filters[idx] = filter;
 }
 #[inline]
-
 fn resolve_to_canonical_mods(keymap: &xkb_keymap, mods: u32) -> u32 {
     mods & keymap.canonical_state_mask
         | mod_mask_get_effective(keymap, mods & !keymap.canonical_state_mask)
@@ -1611,7 +1604,6 @@ fn state_update_latched_locked(
 }
 
 #[inline]
-
 fn clear_all_latches_and_locks(state: &mut xkb_state, events: &mut xkb_events) {
     static COMPONENTS: u32 = (XKB_STATE_MODS_LATCHED as i32
         | XKB_STATE_MODS_LOCKED as i32
@@ -1780,7 +1772,7 @@ pub fn xkb_state_key_get_utf8(state: &xkb_state, kc: u32) -> String {
             } else if c as i32 >= '3' as i32 && c as i32 <= '7' as i32 {
                 (c as i32 - ('3' as i32 - '\u{1b}' as i32)) as u8
             } else if c as i32 == '8' as i32 {
-                '\u{7f}' as u8
+                0x7f_u8
             } else if c as i32 == '/' as i32 {
                 ('_' as i32 & 0x1f_i32) as u8
             } else {
@@ -1795,7 +1787,6 @@ pub fn xkb_state_key_get_utf8(state: &xkb_state, kc: u32) -> String {
 }
 
 #[inline]
-
 fn serialize_mods(components: &state_components, type_0: u32) -> u32 {
     let mut ret: u32 = 0_u32;
     if type_0 & XKB_STATE_MODS_EFFECTIVE != 0 {
@@ -1816,7 +1807,6 @@ pub fn xkb_state_serialize_mods(state: &xkb_state, type_0: u32) -> u32 {
     serialize_mods(&state.components, type_0)
 }
 #[inline]
-
 fn serialize_layout(components: &state_components, type_0: u32) -> u32 {
     let mut ret: u32 = 0_u32;
     if type_0 & XKB_STATE_LAYOUT_EFFECTIVE != 0 {
@@ -1955,7 +1945,7 @@ fn key_get_consumed(state: &xkb_state, key: &xkb_key, mode: xkb_consumed_mode) -
                     let level: &xkb_level =
                         &key.groups[group as usize].levels[entry.level as usize];
                     if !XkbLevelsSameSyms(level, no_mods_level)
-                        && (matching_entry.map_or(false, |m| std::ptr::eq(entry, m))
+                        && (matching_entry.is_some_and(|m| std::ptr::eq(entry, m))
                             || (entry.mods.mask != 0 && entry.mods.mask.is_power_of_two()))
                     {
                         consumed |= entry.mods.mask & !entry.preserve.mask;

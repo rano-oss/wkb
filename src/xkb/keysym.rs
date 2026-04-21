@@ -21852,11 +21852,10 @@ pub fn xkb_keysym_from_name(name: &[u8], flags: xkb_keysym_flags) -> u32 {
     };
     if !icase {
         let pos: usize = keysym_name_perfect_hash(name_bytes);
-        if pos < name_to_keysym.len() {
-            if name_bytes == get_name_bytes(&name_to_keysym[pos]) {
+        if pos < name_to_keysym.len()
+            && name_bytes == get_name_bytes(&name_to_keysym[pos]) {
                 return name_to_keysym[pos].keysym;
             }
-        }
     } else {
         let mut lo: i32 = 0;
         let mut hi: i32 = name_to_keysym.len() as i32 - 1;
@@ -21897,7 +21896,7 @@ pub fn xkb_keysym_from_name(name: &[u8], flags: xkb_keysym_flags) -> u32 {
         } else {
             xkb_utf32_to_keysym(val)
         };
-    } else if name_bytes.get(0) == Some(&b'0')
+    } else if name_bytes.first() == Some(&b'0')
         && (name_bytes.get(1) == Some(&b'x') || (icase && name_bytes.get(1) == Some(&b'X')))
     {
         let rest = &name[2..];

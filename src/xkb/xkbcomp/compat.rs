@@ -21,6 +21,12 @@ pub struct CompatInfo {
     pub default_actions: ActionsInfo,
     pub mods: xkb_mod_set,
 }
+impl Default for CompatInfo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CompatInfo {
     pub fn new() -> Self {
         let zeroed_led = LedInfo {
@@ -578,7 +584,7 @@ fn HandleIncludeCompatMap(
         );
         next_incl.default_interp = info.default_interp.clone();
         next_incl.default_led = info.default_led;
-        HandleCompatMapFile(ki, &mut next_incl, &mut *file);
+        HandleCompatMapFile(ki, &mut next_incl, &mut file);
         MergeIncludedCompatMaps(ki, &mut included, &mut next_incl, stmt.merge);
         ClearCompatInfo(&mut next_incl);
         drop(file);
@@ -628,7 +634,7 @@ fn SetInterpField(
                     &info.mods,
                     act_expr,
                     &mut toAct,
-                ) as u32
+                )
                 {
                     1 => {
                         toAct.set_none();
@@ -666,7 +672,7 @@ fn SetInterpField(
                 &info.mods,
                 value,
                 &mut si.interp.action,
-            ) as u32
+            )
             {
                 1 => {
                     si.interp.action.set_none();
@@ -907,7 +913,8 @@ fn HandleGlobalVar(info: &mut CompatInfo, ki: &mut xkb_keymap_info<'_>, stmt: &m
         } else if !elem.is_empty() {
             ret = {
                 let ndx_ref2 = ndx;
-                let r = SetDefaultActionField(
+                
+                SetDefaultActionField(
                     ki,
                     &mut info.default_actions,
                     &mut info.mods,
@@ -917,8 +924,7 @@ fn HandleGlobalVar(info: &mut CompatInfo, ki: &mut xkb_keymap_info<'_>, stmt: &m
                     &mut stmt.value,
                     stmt.merge,
                 ) as u32
-                    != PARSER_FATAL_ERROR;
-                r
+                    != PARSER_FATAL_ERROR
             };
         } else {
             log::error!(
@@ -1059,23 +1065,23 @@ fn HandleCompatMapFile(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo, file
         for stmt in file.defs.iter_mut() {
             match stmt {
                 Statement::Include(incl) => {
-                    ok = HandleIncludeCompatMap(ki, info, &mut **incl);
+                    ok = HandleIncludeCompatMap(ki, info, incl);
                 }
                 Statement::Interp(ip) => {
-                    ok = HandleInterpDef(info, ki, &mut **ip);
+                    ok = HandleInterpDef(info, ki, ip);
                 }
                 Statement::GroupCompat(_) => {
                     log::debug!("The \"group\" statement in compat is unsupported; Ignored\n");
                     ok = true;
                 }
                 Statement::LedMap(lm) => {
-                    ok = HandleLedMapDef(info, ki, &mut **lm);
+                    ok = HandleLedMapDef(info, ki, lm);
                 }
                 Statement::Var(var) => {
-                    ok = HandleGlobalVar(info, ki, &mut **var);
+                    ok = HandleGlobalVar(info, ki, var);
                 }
                 Statement::VMod(vmod) => {
-                    ok = HandleVModDef(ki.ctx_mut(), &mut info.mods, &**vmod);
+                    ok = HandleVModDef(ki.ctx_mut(), &mut info.mods, vmod);
                 }
                 Statement::Unknown(unk) => {
                     log::error!(

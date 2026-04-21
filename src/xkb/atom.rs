@@ -149,6 +149,7 @@ pub fn atom_intern(table: &mut atom_table, input_bytes: &[u8], add: bool) -> u32
     // Should never reach here - hash table is kept sparse enough
     panic!("couldn't find an empty slot during probing");
 }
+use crate::xkb::shared_types::*;
 
 #[cfg(test)]
 mod tests {
@@ -163,7 +164,7 @@ mod tests {
 
         // Intern a string
         let atom1 = atom_intern(&mut table, b"hello", true);
-        assert_ne!(atom1, XKB_ATOM_NONE as u32);
+        assert_ne!(atom1, XKB_ATOM_NONE);
         assert_eq!(atom_table_size(&table), 2);
 
         // Look up same string again
@@ -184,7 +185,6 @@ mod tests {
     fn test_atom_not_found() {
         let mut table = atom_table_new();
         let atom = atom_intern(&mut table, b"test", false);
-        assert_eq!(atom, XKB_ATOM_NONE as u32);
+        assert_eq!(atom, XKB_ATOM_NONE);
     }
 }
-use crate::xkb::shared_types::*;

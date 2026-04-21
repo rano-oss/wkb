@@ -105,6 +105,7 @@ pub struct matcher<'a> {
     pub kccgst: [Vec<i8>; 5],
 }
 #[derive(Clone)]
+#[derive(Default)]
 pub struct kccgst_buffer {
     pub buffer: Vec<i8>,
     pub slices: Vec<kccgst_buffer_slice>,
@@ -141,6 +142,7 @@ pub const MLVO_MATCH_WILDCARD_NONE: mlvo_match_type = 2;
 pub const MLVO_MATCH_WILDCARD_LEGACY: mlvo_match_type = 1;
 pub const MLVO_MATCH_NORMAL: mlvo_match_type = 0;
 #[derive(Copy, Clone)]
+#[derive(Default)]
 pub struct mapping {
     pub mlvo_at_pos: [rules_mlvo; 4],
     pub num_mlvo: mlvo_index_t,
@@ -201,6 +203,7 @@ pub struct lvalue {
     pub string: SvalIdx,
 }
 #[derive(Clone)]
+#[derive(Default)]
 pub struct rule_names<'a> {
     pub model: matched_sval<'a>,
     pub layouts: Vec<matched_sval<'a>>,
@@ -239,20 +242,6 @@ pub struct LayoutIndexName {
 }
 pub type layout_index_ranges = u32;
 
-impl Default for mapping {
-    fn default() -> Self {
-        mapping {
-            mlvo_at_pos: [0; 4],
-            num_mlvo: 0,
-            defined_mlvo_mask: 0,
-            layout: LayoutIdx::default(),
-            active_or_candidates_mask: 0,
-            kccgst_at_pos: [0; 5],
-            num_kccgst: 0,
-            defined_kccgst_mask: 0,
-        }
-    }
-}
 impl Default for rule {
     fn default() -> Self {
         rule {
@@ -269,24 +258,6 @@ impl Default for lvalue {
     fn default() -> Self {
         lvalue {
             string: SvalIdx::EMPTY,
-        }
-    }
-}
-impl Default for kccgst_buffer {
-    fn default() -> Self {
-        kccgst_buffer {
-            buffer: Vec::new(),
-            slices: Vec::new(),
-        }
-    }
-}
-impl Default for rule_names<'_> {
-    fn default() -> Self {
-        rule_names {
-            model: matched_sval::default(),
-            layouts: Vec::new(),
-            variants: Vec::new(),
-            options: Vec::new(),
         }
     }
 }
@@ -699,7 +670,7 @@ fn matcher_mapping_start_new(m: &mut matcher) {
     m.mapping.num_kccgst = 0 as kccgst_index_t;
     m.mapping.num_mlvo = m.mapping.num_kccgst as mlvo_index_t;
     m.mapping.defined_mlvo_mask = 0 as mlvo_mask_t;
-    m.mapping.defined_kccgst_mask = 0 as u8;
+    m.mapping.defined_kccgst_mask = 0_u8;
     m.mapping.active_or_candidates_mask = 1_u32;
 }
 fn parse_layout_int_index(s: &[u8], out: &mut u32) -> i32 {
@@ -1214,9 +1185,9 @@ fn match_value(
     wildcard_type: wildcard_match_type,
 ) -> bool {
     match match_type {
-        1 => wildcard_type == WILDCARD_MATCH_ALL || to.len() != 0,
-        2 => to.len() == 0,
-        3 => to.len() != 0,
+        1 => wildcard_type == WILDCARD_MATCH_ALL || !to.is_empty(),
+        2 => to.is_empty(),
+        3 => !to.is_empty(),
         4 => true,
         5 => match_group(groups, val, to),
         _ => svaleq(val, to),
@@ -1430,7 +1401,7 @@ fn expand_rmlvo_in_kccgst_value(
             None => sval::EMPTY,
         };
 
-        if ev_ref.is_none() || ev_sval.len() == 0 {
+        if ev_ref.is_none() || ev_sval.is_empty() {
             return true;
         }
 
@@ -2247,7 +2218,7 @@ fn xkb_resolve_rules(
                         v.push(0);
                         out.geometry = v;
                     }
-                    if !matcher.rmlvo.model.matched && matcher.rmlvo.model.sval.len() > 0 {
+                    if !matcher.rmlvo.model.matched && !matcher.rmlvo.model.sval.is_empty() {
                         log::error!(
                             "[XKB-{:03}] Unrecognized RMLVO model \"{}\" was ignored\n",
                             XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
@@ -2255,7 +2226,7 @@ fn xkb_resolve_rules(
                         );
                     }
                     for mval in matcher.rmlvo.layouts.iter() {
-                        if !mval.matched && mval.sval.len() > 0 {
+                        if !mval.matched && !mval.sval.is_empty() {
                             log::error!(
                                 "[XKB-{:03}] Unrecognized RMLVO layout \"{}\" was ignored\n",
                                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
@@ -2264,7 +2235,7 @@ fn xkb_resolve_rules(
                         }
                     }
                     for mval in matcher.rmlvo.variants.iter() {
-                        if !mval.matched && mval.sval.len() > 0 {
+                        if !mval.matched && !mval.sval.is_empty() {
                             log::error!(
                                 "[XKB-{:03}] Unrecognized RMLVO variant \"{}\" was ignored\n",
                                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
@@ -2273,7 +2244,7 @@ fn xkb_resolve_rules(
                         }
                     }
                     for mval in matcher.rmlvo.options.iter() {
-                        if !mval.matched && mval.sval.len() > 0 {
+                        if !mval.matched && !mval.sval.is_empty() {
                             log::error!(
                                 "[XKB-{:03}] Unrecognized RMLVO option \"{}\" was ignored\n",
                                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
@@ -2331,7 +2302,7 @@ pub fn xkb_components_from_rules_names(
 ) -> bool {
     let mut matcher = matcher_new_from_names(ctx, rmlvo);
     let rules_str = rmlvo.rules.to_str().unwrap_or("");
-    let ret: bool = xkb_resolve_rules(rules_str, &mut *matcher, out, explicit_layouts);
+    let ret: bool = xkb_resolve_rules(rules_str, &mut matcher, out, explicit_layouts);
     drop(matcher);
     ret
 }

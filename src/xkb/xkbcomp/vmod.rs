@@ -43,30 +43,28 @@ pub fn MergeModSets(
             if from.explicit_vmods & mask != 0 {
                 into.explicit_vmods |= mask;
             }
-        } else {
-            if from.explicit_vmods & mask == 0 {
-            } else if into.explicit_vmods & mask == 0 {
-                into.mods[vmod].mapping = mod_0.mapping;
-                into.explicit_vmods |= mask;
-            } else if mod_0.mapping != into.mods[vmod].mapping {
-                let use_0: u32 = if clobber {
-                    mod_0.mapping
-                } else {
-                    into.mods[vmod].mapping
-                };
-                let ignore: u32 = if clobber {
-                    into.mods[vmod].mapping
-                } else {
-                    mod_0.mapping
-                };
-                log::warn!(
-                    "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
-                    xkb_atom_text(&ctx.atom_table, mod_0.name),
-                    ModMaskText(ctx, MOD_REAL, from, use_0),
-                    ModMaskText(ctx, MOD_REAL, from, ignore)
-                );
-                into.mods[vmod].mapping = use_0;
-            }
+        } else if from.explicit_vmods & mask == 0 {
+        } else if into.explicit_vmods & mask == 0 {
+            into.mods[vmod].mapping = mod_0.mapping;
+            into.explicit_vmods |= mask;
+        } else if mod_0.mapping != into.mods[vmod].mapping {
+            let use_0: u32 = if clobber {
+                mod_0.mapping
+            } else {
+                into.mods[vmod].mapping
+            };
+            let ignore: u32 = if clobber {
+                into.mods[vmod].mapping
+            } else {
+                mod_0.mapping
+            };
+            log::warn!(
+                "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
+                xkb_atom_text(&ctx.atom_table, mod_0.name),
+                ModMaskText(ctx, MOD_REAL, from, use_0),
+                ModMaskText(ctx, MOD_REAL, from, ignore)
+            );
+            into.mods[vmod].mapping = use_0;
         }
     }
     into.num_mods = from.num_mods;

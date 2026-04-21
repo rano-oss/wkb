@@ -308,13 +308,11 @@ fn MergeGroups(
                                 intoLevel.syms = std::mem::take(&mut fromLevel.syms);
                                 fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
                             }
-                        } else {
-                            if intoLevel.syms.is_empty() {
-                                if !fromLevel.syms.is_empty() {
-                                    intoLevel.syms = std::mem::take(&mut fromLevel.syms);
-                                }
-                                fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
+                        } else if intoLevel.syms.is_empty() {
+                            if !fromLevel.syms.is_empty() {
+                                intoLevel.syms = std::mem::take(&mut fromLevel.syms);
                             }
+                            fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
                         }
                     }
                 }
@@ -353,13 +351,11 @@ fn MergeGroups(
                                 intoLevel.actions = std::mem::take(&mut fromLevel.actions);
                                 fromActionsCount = fromActionsCount.wrapping_add(1);
                             }
-                        } else {
-                            if intoLevel.actions.is_empty() {
-                                if !fromLevel.actions.is_empty() {
-                                    intoLevel.actions = std::mem::take(&mut fromLevel.actions);
-                                }
-                                fromActionsCount = fromActionsCount.wrapping_add(1);
+                        } else if intoLevel.actions.is_empty() {
+                            if !fromLevel.actions.is_empty() {
+                                intoLevel.actions = std::mem::take(&mut fromLevel.actions);
                             }
+                            fromActionsCount = fromActionsCount.wrapping_add(1);
                         }
                     }
                 }
@@ -861,7 +857,7 @@ fn HandleIncludeSymbols(
         } else {
             next_incl.explicit_group = info.explicit_group;
         }
-        HandleSymbolsFile(ki, &mut next_incl, &mut *file);
+        HandleSymbolsFile(ki, &mut next_incl, &mut file);
         MergeIncludedSymbols(ki, &mut included, &mut next_incl, stmt.merge);
         ClearSymbolsInfo(&mut next_incl);
         drop(file);
@@ -911,7 +907,7 @@ fn GetGroupIndex(
         return true;
     }
     let mut pending_dummy = false;
-    if ExprResolveGroup(ki, arrayNdx.unwrap(), false, ndx_rtrn, &mut pending_dummy) as u32
+    if ExprResolveGroup(ki, arrayNdx.unwrap(), false, ndx_rtrn, &mut pending_dummy)
         != PARSER_SUCCESS
     {
         log::error!("[XKB-{:03}] Illegal group index for {} of key <{}>\nDefinition with non-integer array index ignored\n",
@@ -1085,14 +1081,14 @@ fn AddActionsToKey(
                 &info.mods,
                 act_expr,
                 &mut toAct,
-            ) as u32;
-            if r as u32 != PARSER_SUCCESS {
+            );
+            if r != PARSER_SUCCESS {
                 log::error!("[XKB-{:03}] Illegal action definition for <{}>; Action for group {}/level {} ignored\n",
                     XKB_ERROR_INVALID_VALUE as i32,
                     KeyInfoText(ki.ctx(), keyi),
                     ndx.wrapping_add(1_u32),
                     level.wrapping_add(1_u32));
-                if r as u32 == PARSER_FATAL_ERROR {
+                if r == PARSER_FATAL_ERROR {
                     drop(actions);
                     return false;
                 } else {
@@ -1286,7 +1282,7 @@ fn SetSymbolsField(
         } else if {
             let mut pending_dummy = false;
             ExprResolveGroup(ki, arrayNdx.unwrap(), false, &mut ndx, &mut pending_dummy)
-        } as u32
+        }
             != PARSER_SUCCESS
         {
             log::error!("[XKB-{:03}] Illegal group index for type of key <{}>; Definition with non-integer array index ignored\n",
@@ -1498,7 +1494,7 @@ fn SetSymbolsField(
             false,
             &mut grp,
             &mut pending,
-        ) as u32
+        )
             != PARSER_SUCCESS
             && !pending
         {
@@ -1687,7 +1683,8 @@ fn HandleGlobalVar(
         let elem_owned = elem.to_owned();
         let field_owned = field.to_owned();
         ret = {
-            let r = SetDefaultActionField(
+            
+            SetDefaultActionField(
                 ki,
                 &mut info.default_actions,
                 &mut info.mods,
@@ -1697,8 +1694,7 @@ fn HandleGlobalVar(
                 &mut stmt.value,
                 stmt.merge,
             ) as u32
-                != PARSER_FATAL_ERROR;
-            r
+                != PARSER_FATAL_ERROR
         };
     } else {
         log::error!(
@@ -1898,19 +1894,19 @@ fn HandleSymbolsFile(ki: &mut xkb_keymap_info<'_>, info: &mut SymbolsInfo, file:
         for stmt in file.defs.iter_mut() {
             match stmt {
                 Statement::Include(incl) => {
-                    ok = HandleIncludeSymbols(ki, info, &mut **incl);
+                    ok = HandleIncludeSymbols(ki, info, incl);
                 }
                 Statement::Symbols(sym) => {
-                    ok = HandleSymbolsDef(ki, info, &mut **sym);
+                    ok = HandleSymbolsDef(ki, info, sym);
                 }
                 Statement::Var(var) => {
-                    ok = HandleGlobalVar(ki, info, &mut **var);
+                    ok = HandleGlobalVar(ki, info, var);
                 }
                 Statement::VMod(vmod) => {
-                    ok = HandleVModDef(ki.ctx_mut(), &mut info.mods, &**vmod);
+                    ok = HandleVModDef(ki.ctx_mut(), &mut info.mods, vmod);
                 }
                 Statement::ModMap(mm) => {
-                    ok = HandleModMapDef(ki, info, &mut **mm);
+                    ok = HandleModMapDef(ki, info, mm);
                 }
                 Statement::Unknown(unk) => {
                     log::error!(
@@ -2352,19 +2348,17 @@ fn CopyModMapDefToKeymap(keymap: &mut xkb_keymap, info: &SymbolsInfo, entry: &Mo
                 ModIndexText(&keymap.ctx, &info.mods, entry.modifier));
             false
         }
-    } else {
-        if let Some(key) = FindKeyForSymbol(keymap, entry.u) {
-            if entry.modifier != XKB_MOD_NONE {
-                key.modmap |= 1_u32 << entry.modifier;
-            }
-            true
-        } else {
-            log::warn!("[XKB-{:03}] Key \"{}\" not found in symbol map; Modifier map entry for {} not updated\n",
-                XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL as i32,
-                KeysymText(entry.u),
-                ModIndexText(&keymap.ctx, &info.mods, entry.modifier));
-            false
+    } else if let Some(key) = FindKeyForSymbol(keymap, entry.u) {
+        if entry.modifier != XKB_MOD_NONE {
+            key.modmap |= 1_u32 << entry.modifier;
         }
+        true
+    } else {
+        log::warn!("[XKB-{:03}] Key \"{}\" not found in symbol map; Modifier map entry for {} not updated\n",
+            XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL as i32,
+            KeysymText(entry.u),
+            ModIndexText(&keymap.ctx, &info.mods, entry.modifier));
+        false
     }
 }
 fn CopySymbolsToKeymap(keymap: &mut xkb_keymap, info: &mut SymbolsInfo) -> bool {

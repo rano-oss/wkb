@@ -107,7 +107,7 @@ pub fn xkb_keymap_new_from_names(
         },
     };
     xkb_context_sanitize_rule_names(&ctx, &mut rmlvo);
-    if !crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_new_from_names(&mut *keymap, &rmlvo) {
+    if !crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_new_from_names(&mut keymap, &rmlvo) {
         return None;
     }
     Some(Rc::new(*keymap))
@@ -129,7 +129,7 @@ pub fn xkb_keymap_new_from_string(
     if length > 0 && bytes[length - 1] == 0 {
         length -= 1;
     }
-    if !crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_new_from_string(&mut *keymap, &bytes[..length])
+    if !crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_new_from_string(&mut keymap, &bytes[..length])
     {
         return None;
     }
@@ -139,7 +139,7 @@ pub fn xkb_keymap_new_from_string(
 pub fn xkb_keymap_num_mods(keymap: &xkb_keymap) -> u32 {
     keymap.mods.num_mods
 }
-pub fn xkb_keymap_mod_get_name<'a>(keymap: &'a xkb_keymap, idx: u32) -> Option<&'a str> {
+pub fn xkb_keymap_mod_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
     if idx >= keymap.mods.num_mods {
         return None;
     }
@@ -153,7 +153,7 @@ pub fn xkb_keymap_mod_get_name<'a>(keymap: &'a xkb_keymap, idx: u32) -> Option<&
 pub fn xkb_keymap_num_layouts(keymap: &xkb_keymap) -> u32 {
     keymap.num_groups
 }
-pub fn xkb_keymap_layout_get_name<'a>(keymap: &'a xkb_keymap, idx: u32) -> Option<&'a str> {
+pub fn xkb_keymap_layout_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
     if idx as usize >= keymap.group_names.len() {
         return None;
     }
@@ -189,7 +189,7 @@ pub fn xkb_keymap_num_levels_for_key(keymap: &xkb_keymap, kc: u32, mut layout: u
 pub fn xkb_keymap_num_leds(keymap: &xkb_keymap) -> u32 {
     keymap.num_leds
 }
-pub fn xkb_keymap_led_get_name<'a>(keymap: &'a xkb_keymap, idx: u32) -> Option<&'a str> {
+pub fn xkb_keymap_led_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
     if idx >= keymap.num_leds {
         return None;
     }
@@ -248,12 +248,12 @@ pub fn xkb_keymap_led_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
 }
 
 /// Safe version: returns a slice of keysyms for a key at a given layout/level.
-pub fn xkb_keymap_key_get_syms_by_level_ref<'a>(
-    keymap: &'a xkb_keymap,
+pub fn xkb_keymap_key_get_syms_by_level_ref(
+    keymap: &xkb_keymap,
     kc: u32,
     layout: u32,
     level: u32,
-) -> &'a [u32] {
+) -> &[u32] {
     if let Some(key) = keymap.get_key(kc) {
         if let Some(leveli) = keymap.get_key_level(key, layout, level) {
             if !leveli.syms.is_empty() {
@@ -270,7 +270,7 @@ pub fn xkb_keymap_min_keycode(keymap: &xkb_keymap) -> u32 {
 pub fn xkb_keymap_max_keycode(keymap: &xkb_keymap) -> u32 {
     keymap.max_key_code
 }
-pub fn xkb_keymap_key_get_name<'a>(keymap: &'a xkb_keymap, kc: u32) -> Option<&'a str> {
+pub fn xkb_keymap_key_get_name(keymap: &xkb_keymap, kc: u32) -> Option<&str> {
     let key = keymap.get_key(kc)?;
     let s = atom_text(&keymap.ctx.atom_table, key.name);
     if s.is_empty() {
@@ -397,7 +397,7 @@ pub fn xkb_escape_map_name(name: &mut String) {
         .bytes()
         .map(|b| {
             if LEGAL[(b as usize) / 8] & (1u8 << (b % 8)) == 0 {
-                '_' as u8
+                b'_'
             } else {
                 b
             }
@@ -417,7 +417,7 @@ pub fn XkbEscapeMapName(name: &mut String) {
         .bytes()
         .map(|b| {
             if LEGAL[(b as usize) / 8] & (1u8 << (b % 8)) == 0 {
-                '_' as u8
+                b'_'
             } else {
                 b
             }

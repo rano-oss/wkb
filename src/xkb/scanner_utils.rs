@@ -1,15 +1,11 @@
 // Canonical scanner utility types and functions (consolidated from scanner_utils_h blocks)
 
 #[derive(Copy, Clone)]
+#[derive(Default)]
 pub struct sval<'a> {
     pub data: &'a [u8],
 }
 
-impl<'a> Default for sval<'a> {
-    fn default() -> Self {
-        sval { data: &[] }
-    }
-}
 
 impl<'a> sval<'a> {
     pub const EMPTY: sval<'static> = sval { data: &[] };

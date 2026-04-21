@@ -10,6 +10,12 @@ pub struct KeyNamesInfo {
     pub led_names: [LedNameInfo; 32],
     pub num_led_names: u32,
 }
+impl Default for KeyNamesInfo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl KeyNamesInfo {
     pub fn new() -> Self {
         Self {
@@ -588,7 +594,7 @@ fn HandleIncludeKeycodes(
             return false;
         };
         InitKeyNamesInfo(&mut next_incl, info.include_depth.wrapping_add(1_u32));
-        HandleKeycodesFile(&mut next_incl, &mut *file, ki);
+        HandleKeycodesFile(&mut next_incl, &mut file, ki);
         MergeIncludedKeycodes(&mut included, &mut next_incl, ki, stmt.merge, report);
         ClearKeyNamesInfo(&mut next_incl);
         drop(file);
@@ -776,19 +782,19 @@ fn HandleKeycodesFile(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut xkb_
         for stmt in file.defs.iter_mut() {
             match stmt {
                 Statement::Include(incl) => {
-                    ok = HandleIncludeKeycodes(info, &mut **incl, ki, report_include);
+                    ok = HandleIncludeKeycodes(info, incl, ki, report_include);
                 }
                 Statement::Keycode(kc) => {
-                    ok = HandleKeycodeDef(info, ki, &**kc, report_same_file);
+                    ok = HandleKeycodeDef(info, ki, kc, report_same_file);
                 }
                 Statement::KeyAlias(ka) => {
-                    ok = HandleAliasDef(info, ki, &**ka, report_same_file);
+                    ok = HandleAliasDef(info, ki, ka, report_same_file);
                 }
                 Statement::Var(var) => {
-                    ok = HandleKeyNameVar(info, ki, &**var);
+                    ok = HandleKeyNameVar(info, ki, var);
                 }
                 Statement::LedName(ln) => {
-                    ok = HandleLedNameDef(info, ki, &**ln, report_same_file);
+                    ok = HandleLedNameDef(info, ki, ln, report_same_file);
                 }
                 Statement::Unknown(unk) => {
                     log::error!(

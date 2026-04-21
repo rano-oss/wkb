@@ -165,7 +165,9 @@ pub use crate::xkb::shared_ast_types::{
 
 /// Safe parser value stack type, replacing the old YYSTYPE union.
 /// Each variant owns its data. `Default` produces `None`.
+#[derive(Default)]
 pub enum YYValue<'a> {
+    #[default]
     None,
     Num(i64),
     FileType(u32),
@@ -198,11 +200,6 @@ pub enum YYValue<'a> {
     StmtList(Vec<Statement>),
 }
 
-impl<'a> Default for YYValue<'a> {
-    fn default() -> Self {
-        YYValue::None
-    }
-}
 
 // Helper to take a value out and replace with None
 impl<'a> YYValue<'a> {

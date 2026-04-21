@@ -10,6 +10,12 @@ pub struct KeyTypesInfo {
     pub types: Vec<KeyTypeInfo>,
     pub mods: xkb_mod_set,
 }
+impl Default for KeyTypesInfo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl KeyTypesInfo {
     pub fn new() -> Self {
         Self {
@@ -188,7 +194,7 @@ fn HandleIncludeKeyTypes(
             info.include_depth.wrapping_add(1_u32),
             &included.mods,
         );
-        HandleKeyTypesFile(ki, &mut next_incl, &mut *file);
+        HandleKeyTypesFile(ki, &mut next_incl, &mut file);
         MergeIncludedKeyTypes(ki, &mut included, &mut next_incl, stmt.merge);
         ClearKeyTypesInfo(&mut next_incl);
         drop(file);
@@ -619,7 +625,7 @@ fn HandleKeyTypesFile(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo, fil
         for stmt in file.defs.iter_mut() {
             match stmt {
                 Statement::Include(incl) => {
-                    ok = HandleIncludeKeyTypes(ki, info, &mut **incl);
+                    ok = HandleIncludeKeyTypes(ki, info, incl);
                 }
                 Statement::KeyType(def) => {
                     let mut type_0: KeyTypeInfo = KeyTypeInfo {
@@ -642,10 +648,10 @@ fn HandleKeyTypesFile(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo, fil
                     }
                 }
                 Statement::Var(var) => {
-                    ok = HandleGlobalVar(ki, info, &**var);
+                    ok = HandleGlobalVar(ki, info, var);
                 }
                 Statement::VMod(vmod) => {
-                    ok = HandleVModDef(ki.ctx_mut(), &mut info.mods, &**vmod);
+                    ok = HandleVModDef(ki.ctx_mut(), &mut info.mods, vmod);
                 }
                 Statement::Unknown(unk) => {
                     log::error!(

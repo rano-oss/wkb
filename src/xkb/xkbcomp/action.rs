@@ -98,7 +98,7 @@ fn const_false_expr() -> ExprDef {
 }
 pub fn InitActionsInfo(keymap: &xkb_keymap, info: &mut ActionsInfo) {
     let mut type_0: u32 = ACTION_TYPE_NONE;
-    while (type_0 as u32) < _ACTION_TYPE_NUM_ENTRIES {
+    while type_0 < _ACTION_TYPE_NUM_ENTRIES {
         info.actions[type_0 as usize] = xkb_action::from_type(type_0);
         type_0 += 1;
     }
@@ -271,7 +271,7 @@ static FIELD_STRINGS: [LookupEntry; 37] = [
 fn stringToActionType(str: &str, type_rtrn: &mut u32) -> bool {
     let mut type_0: u32 = 0_u32;
     let ret: bool = LookupString(&actionTypeNames, str, &mut type_0);
-    *type_rtrn = type_0 as u32;
+    *type_rtrn = type_0;
     ret
 }
 fn stringToField(str: &str, field_rtrn: &mut u32) -> bool {
@@ -524,7 +524,7 @@ fn HandleSetLatchLockMods(
             );
         }
     }
-    if (type_0 as u32 == ACTION_TYPE_MOD_SET || type_0 as u32 == ACTION_TYPE_MOD_LATCH)
+    if (type_0 == ACTION_TYPE_MOD_SET || type_0 == ACTION_TYPE_MOD_LATCH)
         && field == ACTION_FIELD_CLEAR_LOCKS
     {
         return CheckBooleanFlag(
@@ -538,7 +538,7 @@ fn HandleSetLatchLockMods(
             &mut act.flags,
         );
     }
-    if type_0 as u32 == ACTION_TYPE_MOD_LATCH {
+    if type_0 == ACTION_TYPE_MOD_LATCH {
         if field == ACTION_FIELD_LATCH_TO_LOCK {
             return CheckBooleanFlag(
                 ctx,
@@ -574,7 +574,7 @@ fn HandleSetLatchLockMods(
             }
         }
     }
-    if type_0 as u32 == ACTION_TYPE_MOD_LOCK && field == ACTION_FIELD_AFFECT {
+    if type_0 == ACTION_TYPE_MOD_LOCK && field == ACTION_FIELD_AFFECT {
         return CheckAffectField(
             ctx,
             keymap_info.strict,
@@ -671,7 +671,7 @@ fn HandleSetLatchLockGroup(
     }
     let value = value.get();
     let act = action.as_group_mut();
-    if (type_0 as u32 == ACTION_TYPE_GROUP_SET || type_0 as u32 == ACTION_TYPE_GROUP_LATCH)
+    if (type_0 == ACTION_TYPE_GROUP_SET || type_0 == ACTION_TYPE_GROUP_LATCH)
         && field == ACTION_FIELD_CLEAR_LOCKS
     {
         return CheckBooleanFlag(
@@ -685,7 +685,7 @@ fn HandleSetLatchLockGroup(
             &mut act.flags,
         );
     }
-    if type_0 as u32 == ACTION_TYPE_GROUP_LATCH && field == ACTION_FIELD_LATCH_TO_LOCK {
+    if type_0 == ACTION_TYPE_GROUP_LATCH && field == ACTION_FIELD_LATCH_TO_LOCK {
         return CheckBooleanFlag(
             ctx,
             keymap_info.strict,
@@ -697,7 +697,7 @@ fn HandleSetLatchLockGroup(
             &mut act.flags,
         );
     }
-    if type_0 as u32 == ACTION_TYPE_GROUP_LOCK && field == ACTION_FIELD_LOCK_ON_RELEASE {
+    if type_0 == ACTION_TYPE_GROUP_LOCK && field == ACTION_FIELD_LOCK_ON_RELEASE {
         if keymap_info.features.group_lock_on_release {
             return CheckBooleanFlag(
                 ctx,
@@ -1562,7 +1562,7 @@ pub fn HandleActionDef(
         }
     }
     *action = info.actions[handler_type as usize];
-    if handler_type as u32 == ACTION_TYPE_UNSUPPORTED_LEGACY {
+    if handler_type == ACTION_TYPE_UNSUPPORTED_LEGACY {
         log::warn!(
             "[XKB-{:03}] Unsupported legacy action type \"{}\".\n",
             XKB_WARNING_UNSUPPORTED_LEGACY_ACTION as i32,
@@ -1644,7 +1644,7 @@ pub fn HandleActionDef(
                 fieldNdx,
                 arrayRtrn_opt,
                 av,
-            ) as u32
+            )
             {
                 2 => return PARSER_FATAL_ERROR,
                 1 => {
@@ -1654,11 +1654,11 @@ pub fn HandleActionDef(
             }
         }
     }
-    (if action.action_type() == ACTION_TYPE_UNKNOWN {
+    if action.action_type() == ACTION_TYPE_UNKNOWN {
         PARSER_RECOVERABLE_ERROR
     } else {
-        ret as u32
-    }) as u32
+        ret
+    } 
 }
 pub fn SetDefaultActionField(
     keymap_info: &mut xkb_keymap_info<'_>,
@@ -1706,8 +1706,8 @@ pub fn SetDefaultActionField(
         action_field,
         array_ndx,
         av,
-    ) as u32;
-    if ret as u32 != PARSER_SUCCESS {
+    );
+    if ret != PARSER_SUCCESS {
         return ret;
     }
     if !action_equal(into, &from) {

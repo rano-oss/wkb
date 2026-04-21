@@ -104,7 +104,7 @@ pub fn ParseIncludeMap(input: &str) -> Option<(ParsedIncludeMap, Option<&str>)> 
             return None; // starts with '(' — invalid
         }
         let rest_paren = &segment[pos + 1..];
-        if !rest_paren.ends_with(')') || rest_paren.len() < 1 {
+        if !rest_paren.ends_with(')') || rest_paren.is_empty() {
             return None;
         }
         let map_str = &rest_paren[..rest_paren.len() - 1];
@@ -353,14 +353,14 @@ pub fn ProcessIncludeFile(
             // Drop the file (closes it)
             let _ = file_and_path.take();
 
-            if parsed.file_type as u32 != file_type {
+            if parsed.file_type != file_type {
                 log::error!("[XKB-{:03}] Include file of wrong type (expected {}, got {}); Include file \"{}\" ignored\n",
                     XKB_ERROR_INVALID_INCLUDED_FILE as i32,
                     xkb_file_type_to_string(file_type),
                     xkb_file_type_to_string(parsed.file_type),
                     &stmt.file);
                 // parsed drops automatically
-            } else if !stmt.map.is_empty() || parsed.flags as u32 != 0 && MAP_IS_DEFAULT as i32 != 0
+            } else if !stmt.map.is_empty() || parsed.flags != 0 && MAP_IS_DEFAULT as i32 != 0
             {
                 xkb_file = Some(parsed);
                 break;

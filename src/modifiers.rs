@@ -336,7 +336,7 @@ impl Modifiers {
     pub fn active_mod_type(&self, mod_type: ModType) -> bool {
         self.0
             .values()
-            .find(|modifier| match modifier {
+            .any(|modifier| match &modifier {
                 Modifier::Single(mod_kind) => {
                     if let Some(mod_kind) = mod_kind.get_modkind_from_modtype(mod_type) {
                         mod_kind.is_active()
@@ -352,7 +352,6 @@ impl Modifiers {
                     }
                 }),
             })
-            .is_some()
     }
 
     pub fn level5(&self) -> bool {

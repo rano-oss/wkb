@@ -323,7 +323,7 @@ fn update_pending_key_fields(info: &mut xkb_keymap_info<'_>, key_idx: usize) -> 
             let mut group: u32 = 0_u32;
             let mut pending_dummy = false;
             let resolve_ret =
-                ExprResolveGroup(info, &expr_box, true, &mut group, &mut pending_dummy) as u32;
+                ExprResolveGroup(info, &expr_box, true, &mut group, &mut pending_dummy);
             info.pending_computations[idx].expr = Some(expr_box);
             match resolve_ret {
                 0 => {
@@ -359,8 +359,7 @@ fn update_pending_action_fields(
                     let mut pending_dummy = false;
                     let expr_box = info.pending_computations[pc_idx].expr.take().unwrap();
                     let resolve_ret =
-                        ExprResolveGroup(info, &expr_box, absolute, &mut group, &mut pending_dummy)
-                            as u32;
+                        ExprResolveGroup(info, &expr_box, absolute, &mut group, &mut pending_dummy);
                     info.pending_computations[pc_idx].expr = Some(expr_box);
                     match resolve_ret {
                         2 => {

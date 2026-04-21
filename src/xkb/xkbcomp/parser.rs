@@ -770,9 +770,7 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
                     }
                     // Drop the value being popped
                     yyvs[sp] = YYValue::None;
-                    if sp > 0 {
-                        sp -= 1;
-                    }
+                    sp = sp.saturating_sub(1);
                     ssp -= 1;
                     yystate = yyss[ssp] as i32;
                 }
@@ -830,9 +828,7 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
                                 break 'main_loop;
                             }
                             yyvs[sp] = YYValue::None;
-                            if sp > 0 {
-                                sp -= 1;
-                            }
+                            sp = sp.saturating_sub(1);
                             ssp -= 1;
                             yystate = yyss[ssp] as i32;
                         }
@@ -936,9 +932,7 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
                     break 'main_loop;
                 }
                 yyvs[sp] = YYValue::None;
-                if sp > 0 {
-                    sp -= 1;
-                }
+                sp = sp.saturating_sub(1);
                 ssp -= 1;
                 yystate = yyss[ssp] as i32;
             }
@@ -980,9 +974,7 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
                     break 'main_loop;
                 }
                 yyvs[sp] = YYValue::None;
-                if sp > 0 {
-                    sp -= 1;
-                }
+                sp = sp.saturating_sub(1);
                 ssp -= 1;
                 yystate = yyss[ssp] as i32;
             }
@@ -1055,7 +1047,7 @@ fn execute_reduction<'a>(
             let name = yyvs[sp - 4].take_str();
             let files = yyvs[sp - 2].take_file_list();
             let flags = yyvs[sp - 6].as_map_flags();
-            let defs: Vec<Statement> = files.into_iter().map(|f| Statement::XkbFile(f)).collect();
+            let defs: Vec<Statement> = files.into_iter().map(Statement::XkbFile).collect();
             *yyval = YYValue::File(XkbFileCreate(
                 file_type,
                 if name.is_empty() { None } else { Some(name) },
@@ -1277,7 +1269,7 @@ fn execute_reduction<'a>(
                 *yyval = YYValue::None;
             }
         }
-        42 | 43 | 44 => {
+        42..=44 => {
             // ShapeDecl, SectionDecl, DoodadDecl → geometry (ignored)
             *yyval = YYValue::None;
         }
@@ -1641,7 +1633,7 @@ fn execute_reduction<'a>(
             let _ = yyvs[sp].take_expr();
             *yyval = YYValue::None;
         }
-        120 | 121 | 122 => {
+        120..=122 => {
             // OutlineInList/OutlineList → geometry, drop expr/null
             let _ = yyvs[sp].take_expr();
             *yyval = YYValue::None;
@@ -1652,7 +1644,7 @@ fn execute_reduction<'a>(
             *yyval = YYValue::None;
         }
         // DoodadType rules 124-127
-        124 | 125 | 126 | 127 => {
+        124..=127 => {
             *yyval = YYValue::Num(0);
         }
         // FieldSpec / Element rules 128-140
@@ -2203,7 +2195,7 @@ fn execute_reduction<'a>(
         204 => {
             *yyval = YYValue::Num(-yyvs[sp].as_num());
         }
-        205 | 206 | 207 | 208 => {
+        205..=208 => {
             *yyval = YYValue::Num(yyvs[sp].as_num());
         }
         // Float 209
@@ -2211,7 +2203,7 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Num(0);
         }
         // Integer, KeyCode 210-213
-        210 | 211 | 212 | 213 => {
+        210..=213 => {
             *yyval = YYValue::Num(yyvs[sp].as_num());
         }
         // Ident 214

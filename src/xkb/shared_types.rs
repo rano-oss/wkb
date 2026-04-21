@@ -139,7 +139,9 @@ pub struct xkb_sym_interpret {
 }
 
 #[derive(Copy, Clone)]
+#[derive(Default)]
 pub enum xkb_action {
+    #[default]
     None,
     Void,
     ModSet(xkb_mod_action),
@@ -163,11 +165,6 @@ pub enum xkb_action {
     Internal(xkb_internal_action),
 }
 
-impl Default for xkb_action {
-    fn default() -> Self {
-        xkb_action::None
-    }
-}
 
 impl xkb_action {
     pub fn action_type(&self) -> u32 {

@@ -89,7 +89,6 @@ pub fn xkb_context_include_path_get_versioned_extensions_path() -> String {
     }
 }
 /// Convert a null-terminated `[i8]` constant to a Rust `String`.
-
 fn add_direct_subdirectories(
     ctx: &mut xkb_context,
     path: &str,
