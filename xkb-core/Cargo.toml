@@ -1,0 +1,8 @@
+[package]
+name = "xkb-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+xmloxide = "0.4"
+log = "0.4.29"

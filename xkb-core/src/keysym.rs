@@ -1,4 +1,4 @@
-use crate::xkb::keysym_utf::xkb_utf32_to_keysym;
+use crate::keysym_utf::xkb_utf32_to_keysym;
 pub const XKB_KEY_Mode_switch: i32 = 0xff7e_i32;
 pub const XKB_KEY_Num_Lock: i32 = 0xff7f_i32;
 pub const XKB_KEY_KP_Space: i32 = 0xff80_i32;
@@ -7,7 +7,7 @@ pub const XKB_KEY_Shift_L: i32 = 0xffe1_i32;
 pub const XKB_KEY_Hyper_R: i32 = 0xffee_i32;
 pub const XKB_KEY_ISO_Lock: i32 = 0xfe01_i32;
 pub const XKB_KEY_ISO_Level5_Lock: i32 = 0xfe13_i32;
-use crate::xkb::shared_types::*;
+use crate::shared_types::*;
 pub mod keysym_names_h {
     #[derive(Copy, Clone)]
     pub struct name_keysym {
@@ -21774,7 +21774,7 @@ pub mod keysym_names_h {
     ];
     pub static explicit_deprecated_aliases: [u32; 1] = [24103];
 }
-pub use crate::xkb::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
+pub use crate::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
 
 pub const XKB_KEYSYM_MAX_EXPLICIT: i32 = 0x1008ffb8;
 pub const XKB_KEYSYM_UNICODE_OFFSET: i32 = 0x1000000;
@@ -21785,7 +21785,7 @@ pub use self::keysym_names_h::{
     deprecated_keysyms, explicit_deprecated_aliases, keysym_name_G, keysym_name_perfect_hash,
     keysym_names, keysym_to_name, name_keysym, name_to_keysym, DEPRECATED_KEYSYM, UNICODE_KEYSYM,
 };
-use crate::xkb::utils::istrcmp;
+use crate::utils::istrcmp;
 fn find_keysym_index(ks: u32) -> isize {
     if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
         return -1_i32 as isize;
@@ -21832,7 +21832,7 @@ pub fn xkb_keysym_get_name(ks: u32) -> String {
 
 fn parse_keysym_hex(s: &[u8], out: &mut u32) -> bool {
     let slice = if s.len() > 8 { &s[..8] } else { s };
-    let (val, count) = crate::xkb::utils::parse_hex_u32(slice);
+    let (val, count) = crate::utils::parse_hex_u32(slice);
     *out = val;
     count > 0 && s.get(count as usize).copied() == Some(0)
 }

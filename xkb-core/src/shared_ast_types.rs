@@ -4,8 +4,8 @@
 //! (a c2rust artifact). This module provides canonical definitions so that all modules
 //! can share the same Rust types.
 
-use crate::xkb::shared_types::{xkb_context, xkb_keymap, xkb_overlay_index_t};
-use crate::xkb::text::LookupEntry;
+use crate::shared_types::{xkb_context, xkb_keymap, xkb_overlay_index_t};
+use crate::text::LookupEntry;
 
 // message_code types needed by Report* inline functions
 pub type xkb_message_code = u32;
@@ -170,7 +170,7 @@ impl ExprDef {
 }
 
 // Re-export ast_build functions used by consumers via ast_h
-pub use crate::xkb::xkbcomp::ast_build::{
+pub use crate::xkbcomp::ast_build::{
     stmt_type_to_operator_char, stmt_type_to_string, xkb_file_type_to_string,
 };
 

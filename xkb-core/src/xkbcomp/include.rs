@@ -1,8 +1,8 @@
-use crate::xkb::context::{
+use crate::context::{
     xkb_context_failed_include_path_get, xkb_context_getenv, xkb_context_num_failed_include_paths,
 };
-use crate::xkb::context::{xkb_context_include_path_get, xkb_context_num_include_paths};
-use crate::xkb::context::{
+use crate::context::{xkb_context_include_path_get, xkb_context_num_include_paths};
+use crate::context::{
     xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
 };
 
@@ -11,7 +11,7 @@ pub const MERGE_OVERRIDE_PREFIX: i32 = '+' as i32;
 pub const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
 pub const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
 
-pub use crate::xkb::messages::{
+pub use crate::messages::{
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
     XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
@@ -52,8 +52,8 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
 };
-pub use crate::xkb::scanner_utils::{scanner, scanner_loc};
-pub use crate::xkb::shared_ast_types::{
+pub use crate::scanner_utils::{scanner, scanner_loc};
+pub use crate::shared_ast_types::{
     _IncludeStmt, merge_mode, stmt_type, xkb_file_type_to_string, xkb_map_flags, IncludeStmt,
     XkbFile, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES,
     FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
@@ -70,7 +70,7 @@ pub use crate::xkb::shared_ast_types::{
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES,
     _STMT_NUM_VALUES,
 };
-use crate::xkb::xkbcomp::scanner::XkbParseFile;
+use crate::xkbcomp::scanner::XkbParseFile;
 
 /// Parsed result from one segment of an include statement.
 pub struct ParsedIncludeMap {
@@ -402,4 +402,4 @@ pub fn ProcessIncludeFile(
     }
     xkb_file
 }
-use crate::xkb::shared_types::*;
+use crate::shared_types::*;

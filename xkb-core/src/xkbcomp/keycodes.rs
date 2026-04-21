@@ -1,7 +1,7 @@
 use super::prelude::*;
-pub use crate::xkb::shared_ast_types::{KeyAliasDef, KeycodeDef, LedNameDef, ReportNotArray};
-pub use crate::xkb::shared_types::{XKB_KEYCODE_MAX_CONTIGUOUS, XKB_MAX_LEDS};
-use crate::xkb::xkbcomp::expr::ExprResolveInteger;
+pub use crate::shared_ast_types::{KeyAliasDef, KeycodeDef, LedNameDef, ReportNotArray};
+pub use crate::shared_types::{XKB_KEYCODE_MAX_CONTIGUOUS, XKB_MAX_LEDS};
+use crate::xkbcomp::expr::ExprResolveInteger;
 pub struct KeyNamesInfo {
     pub name: Option<String>,
     pub errorCount: i32,
@@ -742,7 +742,7 @@ fn HandleLedNameDef(
     if !ExprResolveString(ki.ctx(), name_expr, &mut name) {
         let mut buf: [u8; 20] = [0; 20];
         let buf_len = {
-            let mut w = crate::xkb::utils::LogBuf::new(&mut buf[..19]);
+            let mut w = crate::utils::LogBuf::new(&mut buf[..19]);
             let _ = core::fmt::Write::write_fmt(&mut w, format_args!("{}", def.ndx));
             w.pos
         };
@@ -962,5 +962,5 @@ pub fn CompileKeycodes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_
     ClearKeyNamesInfo(&mut info);
     false
 }
-use crate::xkb::context::xkb_context_get_log_verbosity;
-use crate::xkb::shared_types::*;
+use crate::context::xkb_context_get_log_verbosity;
+use crate::shared_types::*;

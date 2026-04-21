@@ -1,6 +1,6 @@
-use crate::xkb::context::xkb_atom_text;
+use crate::context::xkb_atom_text;
 
-pub use crate::xkb::shared_ast_types::{
+pub use crate::shared_ast_types::{
     merge_mode, stmt_type, ExprDef, ExprKind, VModDef, MERGE_AUGMENT, MERGE_DEFAULT,
     MERGE_OVERRIDE, MERGE_REPLACE, STMT_ALIAS, STMT_EXPR_ACTION_DECL, STMT_EXPR_ACTION_LIST,
     STMT_EXPR_ADD, STMT_EXPR_ARRAY_REF, STMT_EXPR_ASSIGN, STMT_EXPR_BOOLEAN_LITERAL,
@@ -12,11 +12,11 @@ pub use crate::xkb::shared_ast_types::{
     STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
 };
-pub use crate::xkb::shared_types::{
+pub use crate::shared_types::{
     xkb_mod, xkb_mod_set, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_MODS,
 };
-use crate::xkb::text::ModMaskText;
-use crate::xkb::xkbcomp::expr::ExprResolveModMask;
+use crate::text::ModMaskText;
+use crate::xkbcomp::expr::ExprResolveModMask;
 pub fn InitVMods(info: &mut xkb_mod_set, mods: &xkb_mod_set, reset: bool) {
     *info = *mods;
     if !reset {
@@ -135,4 +135,4 @@ pub fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModD
     mods.num_mods = mods.num_mods.wrapping_add(1);
     true
 }
-use crate::xkb::shared_types::*;
+use crate::shared_types::*;

@@ -1,4 +1,4 @@
-use crate::xkb::shared_types::*;
+use crate::shared_types::*;
 pub type xkb_feature = u32;
 pub const XKB_FEATURE_ENUM_COMPOSE_FEED_RESULT: xkb_feature = 31300;
 pub const XKB_FEATURE_ENUM_COMPOSE_STATE_FLAGS: xkb_feature = 31200;

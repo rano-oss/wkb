@@ -1,10 +1,10 @@
 use super::prelude::*;
-use crate::xkb::shared_types::*;
-use crate::xkb::text::{buttonNames, GROUP_LAST_INDEX_NAME};
+use crate::shared_types::*;
+use crate::text::{buttonNames, GROUP_LAST_INDEX_NAME};
 
-pub use crate::xkb::keymap::XkbModNameToIndex;
-pub use crate::xkb::shared_ast_types::stmt_type_to_operator_char;
-use crate::xkb::shared_ast_types::ExprKind;
+pub use crate::keymap::XkbModNameToIndex;
+pub use crate::shared_ast_types::stmt_type_to_operator_char;
+use crate::shared_ast_types::ExprKind;
 
 pub struct LookupModMaskPriv<'a> {
     pub mods: &'a xkb_mod_set,
@@ -64,7 +64,7 @@ fn named_integer_pattern_lookup(
         .is_some_and(|s| s.eq_ignore_ascii_case(prefix.as_bytes()))
     {
         let suffix = &str_bytes.as_bytes()[prefix.len()..];
-        let (val_parsed, c) = crate::xkb::utils::parse_dec_u32(suffix);
+        let (val_parsed, c) = crate::utils::parse_dec_u32(suffix);
         // Return parsed value via count mechanism
         let _ = val_parsed;
         c
@@ -75,7 +75,7 @@ fn named_integer_pattern_lookup(
     if count > 0_i32 && prefix.len() + count as usize == str_bytes.len() {
         // Re-parse to get the value
         let suffix = &str_bytes.as_bytes()[prefix.len()..];
-        let (val, _) = crate::xkb::utils::parse_dec_u32(suffix);
+        let (val, _) = crate::utils::parse_dec_u32(suffix);
         if val < pattern.min || val > pattern.max {
             log::error!(
                 "[XKB-{:03}] {} index {} is out of range ({}..{})\n",

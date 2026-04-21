@@ -73,7 +73,7 @@ pub const XKB_COMPOSE_COMPILE_NO_FLAGS: xkb_compose_compile_flags = 0;
 pub type xkb_compose_format = u32;
 pub const XKB_COMPOSE_FORMAT_TEXT_V1: xkb_compose_format = 1;
 
-use crate::xkb::shared_types::*;
+use crate::shared_types::*;
 
 // --- Compose file resolution (from compose_parse.rs) ---
 
@@ -82,8 +82,6 @@ use std::{
     io::{self, BufRead},
     path::Path,
 };
-
-use crate::composer::{ListComposer, Token};
 
 const LOCALE_DIR: &str = "/usr/share/X11/locale";
 
@@ -100,9 +98,9 @@ pub struct ComposeEntry {
 /// Resolve an XKB keysym name to its Unicode character using our existing
 /// keysym database.
 pub fn keysym_name_to_char(name: &str) -> Option<char> {
-    use crate::xkb::keysym::xkb_keysym_from_name;
-    use crate::xkb::keysym_utf::xkb_keysym_to_utf32;
-    use crate::xkb::shared_types::{XKB_KEY_NoSymbol, XKB_KEYSYM_NO_FLAGS};
+    use crate::keysym::xkb_keysym_from_name;
+    use crate::keysym_utf::xkb_keysym_to_utf32;
+    use crate::shared_types::{XKB_KEY_NoSymbol, XKB_KEYSYM_NO_FLAGS};
 
     let ks = xkb_keysym_from_name(name.as_bytes(), XKB_KEYSYM_NO_FLAGS);
     if ks == XKB_KEY_NoSymbol as u32 {
@@ -324,28 +322,6 @@ pub fn resolve_compose_file(locale: &str) -> Option<String> {
     }
 
     lookup_compose_dir("en_US.UTF-8")
-}
-
-pub fn load_compose_from_path(path: &Path) -> ListComposer {
-    let mut regular = ListComposer::new();
-
-    let entries = parse_compose_file(path);
-
-    for entry in entries {
-        let mut tokens: Vec<Token> = Vec::new();
-        let mk_idx = entry.multi_key_index;
-
-        for (i, ch) in entry.keys.iter().enumerate() {
-            if let Some(idx) = mk_idx {
-                if idx == i {
-                    tokens.push(Token::Compose);
-                }
-            }
-            tokens.push(Token::Char(*ch));
-        }
-        regular.insert(&tokens, entry.output);
-    }
-    regular
 }
 
 // --- Layout-to-locale mapping (from xkb_compose_map.rs) ---

@@ -1,14 +1,14 @@
 use super::prelude::*;
-use crate::xkb::context::xkb_atom_intern_ref;
-pub use crate::xkb::keymap::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
-use crate::xkb::keysym::xkb_keysym_is_keypad;
-use crate::xkb::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
+use crate::context::xkb_atom_intern_ref;
+pub use crate::keymap::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
+use crate::keysym::xkb_keysym_is_keypad;
+use crate::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 
-pub use crate::xkb::shared_ast_types::{ModMapDef, SymbolsDef};
-pub use crate::xkb::shared_types::{XKB_MOD_NONE, XKB_OVERLAY_INVALID};
-use crate::xkb::text::ModIndexText;
+pub use crate::shared_ast_types::{ModMapDef, SymbolsDef};
+pub use crate::shared_types::{XKB_MOD_NONE, XKB_OVERLAY_INVALID};
+use crate::text::ModIndexText;
 
-pub use crate::xkb::xkbcomp::action::{
+pub use crate::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };
 
@@ -1188,7 +1188,7 @@ fn ExprResolveOverlayEntry(
     let len: usize = suffix.len();
     #[allow(unused_assignments)]
     let mut raw_overlay: i64 = XKB_OVERLAY_INVALID as i64;
-    let (val_parsed, parse_count) = crate::xkb::utils::parse_dec_u64(suffix.as_bytes());
+    let (val_parsed, parse_count) = crate::utils::parse_dec_u64(suffix.as_bytes());
     raw_overlay = val_parsed as i64;
     if parse_count != len as i32
         || raw_overlay < 1_i64
@@ -2412,6 +2412,6 @@ pub fn CompileSymbols(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_i
     ClearSymbolsInfo(&mut info);
     false
 }
-use crate::xkb::context::xkb_context_get_log_verbosity;
-use crate::xkb::keysym_case_mappings::xkb_keysym_to_upper;
-use crate::xkb::shared_types::*;
+use crate::context::xkb_context_get_log_verbosity;
+use crate::keysym_case_mappings::xkb_keysym_to_upper;
+use crate::shared_types::*;

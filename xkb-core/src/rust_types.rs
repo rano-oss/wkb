@@ -6,14 +6,14 @@
 use std::ffi::CString;
 use std::rc::Rc;
 
-use crate::xkb::atom::atom_lookup_ref;
-use crate::xkb::keymap::{
+use crate::atom::atom_lookup_ref;
+use crate::keymap::{
     xkb_keymap_layout_get_index_ref, xkb_keymap_led_get_index_ref, xkb_keymap_mod_get_index_ref,
 };
-use crate::xkb::shared_types::{
+use crate::shared_types::{
     XKB_ATOM_NONE, XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID,
 };
-use crate::xkb::{compose::xkb_compose_table, shared_types::xkb_context};
+use crate::{compose::xkb_compose_table, shared_types::xkb_context};
 
 /// Rust-native version of xkb_rule_names
 #[derive(Debug, Clone, Default)]
@@ -55,9 +55,9 @@ impl RuleNames {
     }
 
     /// Convert to xkb_rule_names structure
-    pub fn to_c_keymap(&self) -> crate::xkb::shared_types::xkb_rule_names {
+    pub fn to_c_keymap(&self) -> crate::shared_types::xkb_rule_names {
         use std::ffi::CString;
-        crate::xkb::shared_types::xkb_rule_names {
+        crate::shared_types::xkb_rule_names {
             rules: CString::new(self.rules.as_str()).unwrap(),
             model: CString::new(self.model.as_str()).unwrap(),
             layout: CString::new(self.layout.as_str()).unwrap(),
@@ -79,14 +79,14 @@ pub struct Context {
 impl Context {
     /// Create a new XKB context
     pub fn new() -> Option<Self> {
-        use crate::xkb::shared_types::XKB_CONTEXT_NO_FLAGS;
+        use crate::shared_types::XKB_CONTEXT_NO_FLAGS;
         let ctx = super::context::xkb_context_new(XKB_CONTEXT_NO_FLAGS);
         Some(Context { entity: ctx })
     }
 
     /// Create a keymap from RMLVO names
     pub fn keymap_from_names(&self, rules: &RuleNames) -> Option<Keymap> {
-        use crate::xkb::shared_types::XKB_KEYMAP_COMPILE_NO_FLAGS;
+        use crate::shared_types::XKB_KEYMAP_COMPILE_NO_FLAGS;
 
         let rmlvo_c = rules.to_c_keymap();
         let keymap = super::keymap::xkb_keymap_new_from_names(
@@ -99,7 +99,7 @@ impl Context {
 
     /// Create a keymap from a keymap string
     pub fn keymap_from_string(&self, keymap_str: &str) -> Option<Keymap> {
-        use crate::xkb::shared_types::{XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1};
+        use crate::shared_types::{XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1};
 
         let keymap_cstr = CString::new(keymap_str).ok()?;
         let keymap = super::keymap::xkb_keymap_new_from_string(
@@ -114,12 +114,12 @@ impl Context {
 
 /// Safe wrapper around xkb_keymap with automatic cleanup
 pub struct Keymap {
-    inner: Rc<crate::xkb::shared_types::xkb_keymap>,
+    inner: Rc<crate::shared_types::xkb_keymap>,
 }
 
 impl Keymap {
     /// Get raw pointer (for FFI calls)
-    pub fn as_ptr(&self) -> *const crate::xkb::shared_types::xkb_keymap {
+    pub fn as_ptr(&self) -> *const crate::shared_types::xkb_keymap {
         &*self.inner as *const _
     }
 
@@ -368,7 +368,7 @@ impl State {
     pub fn update_key(
         &mut self,
         keycode: u32,
-        direction: crate::xkb::shared_types::xkb_key_direction,
+        direction: crate::shared_types::xkb_key_direction,
     ) {
         super::state::xkb_state_update_key(&mut self.inner, keycode, direction);
     }

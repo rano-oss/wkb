@@ -1,13 +1,13 @@
 // Safe parser.rs
 // LALR(1) parser for XKB, converted from bison-generated C via c2rust
 
-use crate::xkb::context::xkb_atom_intern;
-use crate::xkb::keysym::{xkb_keysym_from_name, xkb_keysym_is_deprecated};
-use crate::xkb::scanner_utils::{scanner, scanner_loc, sval};
-use crate::xkb::shared_types::*;
-use crate::xkb::xkbcomp::scanner::YYValue;
+use crate::context::xkb_atom_intern;
+use crate::keysym::{xkb_keysym_from_name, xkb_keysym_is_deprecated};
+use crate::scanner_utils::{scanner, scanner_loc, sval};
+use crate::shared_types::*;
+use crate::xkbcomp::scanner::YYValue;
 
-use crate::xkb::shared_ast_types::{
+use crate::shared_ast_types::{
     safe_map_name, ExprDef, ExprKind, Statement, XkbFile, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
     FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, MAP_HAS_ALPHANUMERIC,
     MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
@@ -17,14 +17,14 @@ use crate::xkb::shared_ast_types::{
     STMT_UNKNOWN_DECLARATION,
 };
 
-use crate::xkb::xkbcomp::ast_build::{
+use crate::xkbcomp::ast_build::{
     expr_create, BoolVarCreate, ExprAppendKeySymList, ExprCreateKeySymList, GroupCompatCreate,
     IncludeCreate, InterpCreate, KeyAliasCreate, KeyTypeCreate, KeycodeCreate, LedMapCreate,
     LedNameCreate, ModMapCreate, SymbolsCreate, UnknownStatementCreate, VModCreate, VarCreate,
     XkbFileCreate,
 };
 
-use crate::xkb::messages::{
+use crate::messages::{
     XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_XKB_SYNTAX,
     XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_MISSING_DEFAULT_SECTION,
     XKB_WARNING_NUMERIC_KEYSYM, XKB_WARNING_UNRECOGNIZED_KEYSYM,
@@ -737,7 +737,7 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
             // goto yydefault
         } else {
             if yychar == YYEMPTY {
-                yychar = crate::xkb::xkbcomp::scanner::_xkbcommon_lex(
+                yychar = crate::xkbcomp::scanner::_xkbcommon_lex(
                     &mut yylval,
                     param.scanner,
                     param.ctx,
@@ -2025,7 +2025,7 @@ fn execute_reduction<'a>(
             // NonEmptyKeySyms: NonEmptyKeySyms COMMA STRING
             let expr = yyvs[sp - 2].take_expr().unwrap();
             let s = yyvs[sp].take_str();
-            match crate::xkb::xkbcomp::ast_build::ExprKeySymListAppendString(
+            match crate::xkbcomp::ast_build::ExprKeySymListAppendString(
                 param.scanner,
                 expr,
                 &s,
@@ -2047,7 +2047,7 @@ fn execute_reduction<'a>(
             // KeySyms: STRING (single string keysym)
             let s = yyvs[sp].take_str();
             let expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
-            match crate::xkb::xkbcomp::ast_build::ExprKeySymListAppendString(
+            match crate::xkbcomp::ast_build::ExprKeySymListAppendString(
                 param.scanner,
                 expr,
                 &s,
@@ -2068,7 +2068,7 @@ fn execute_reduction<'a>(
             // KeySymList: STRING (produces keysym list from string)
             let s = yyvs[sp].take_str();
             let expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
-            match crate::xkb::xkbcomp::ast_build::ExprKeySymListAppendString(
+            match crate::xkbcomp::ast_build::ExprKeySymListAppendString(
                 param.scanner,
                 expr,
                 &s,
@@ -2097,7 +2097,7 @@ fn execute_reduction<'a>(
         199 => {
             // KeySym: STRING → parse string as keysym
             let s = yyvs[sp].take_str();
-            let keysym = crate::xkb::xkbcomp::ast_build::KeysymParseString(param.scanner, &s);
+            let keysym = crate::xkbcomp::ast_build::KeysymParseString(param.scanner, &s);
             if keysym == XKB_KEY_NoSymbol as u32 {
                 return false;
             }

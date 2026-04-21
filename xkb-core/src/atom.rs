@@ -149,7 +149,7 @@ pub fn atom_intern(table: &mut atom_table, input_bytes: &[u8], add: bool) -> u32
     // Should never reach here - hash table is kept sparse enough
     panic!("couldn't find an empty slot during probing");
 }
-use crate::xkb::shared_types::*;
+use crate::shared_types::*;
 
 #[cfg(test)]
 mod tests {

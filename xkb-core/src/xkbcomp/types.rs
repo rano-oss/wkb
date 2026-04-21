@@ -1,8 +1,8 @@
 use super::prelude::*;
 
-pub use crate::xkb::shared_ast_types::{KeyTypeDef, ReportShouldBeArray};
-use crate::xkb::text::ModMaskText;
-use crate::xkb::xkbcomp::expr::ExprResolveLevel;
+pub use crate::shared_ast_types::{KeyTypeDef, ReportShouldBeArray};
+use crate::text::ModMaskText;
+use crate::xkbcomp::expr::ExprResolveLevel;
 pub struct KeyTypesInfo {
     pub name: Option<String>,
     pub errorCount: i32,
@@ -762,6 +762,6 @@ pub fn CompileKeyTypes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_
     ClearKeyTypesInfo(&mut info);
     false
 }
-use crate::xkb::context::xkb_atom_intern_bytes;
-use crate::xkb::context::xkb_context_get_log_verbosity;
-use crate::xkb::shared_types::*;
+use crate::context::xkb_atom_intern_bytes;
+use crate::context::xkb_context_get_log_verbosity;
+use crate::shared_types::*;

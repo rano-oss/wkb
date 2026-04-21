@@ -1,14 +1,14 @@
 use super::prelude::*;
-pub use crate::xkb::shared_ast_types::{InterpDef, LedMapDef, ReportBadField, ReportNotArray};
-pub use crate::xkb::shared_types::{MAX_ACTIONS_PER_LEVEL, MOD_REAL_MASK_ALL, XKB_MAX_LEDS};
-use crate::xkb::text::{
+pub use crate::shared_ast_types::{InterpDef, LedMapDef, ReportBadField, ReportNotArray};
+pub use crate::shared_types::{MAX_ACTIONS_PER_LEVEL, MOD_REAL_MASK_ALL, XKB_MAX_LEDS};
+use crate::text::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
     useModMapValueNames, LookupString, ModMaskText, SIMatchText,
 };
-pub use crate::xkb::xkbcomp::action::{
+pub use crate::xkbcomp::action::{
     ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField,
 };
-use crate::xkb::xkbcomp::expr::{ExprResolveGroupMask, ExprResolveMask, ExprResolveMod};
+use crate::xkbcomp::expr::{ExprResolveGroupMask, ExprResolveMask, ExprResolveMod};
 pub struct CompatInfo {
     pub name: Option<String>,
     pub errorCount: i32,
@@ -1240,5 +1240,5 @@ pub fn CompileCompatMap(file: Option<&mut XkbFile>, ki: &mut xkb_keymap_info<'_>
     ClearCompatInfo(&mut info);
     false
 }
-use crate::xkb::context::xkb_context_get_log_verbosity;
-use crate::xkb::shared_types::*;
+use crate::context::xkb_context_get_log_verbosity;
+use crate::shared_types::*;

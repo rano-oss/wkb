@@ -1,6 +1,6 @@
 use super::prelude::*;
-pub use crate::xkb::shared_ast_types::xkb_file_type_to_string;
-pub use crate::xkb::shared_types::{
+pub use crate::shared_ast_types::xkb_file_type_to_string;
+pub use crate::shared_types::{
     areOverlappingOverlaysSupported, format_max_groups, format_max_overlays,
     isGroupLockOnReleaseSupported, isModsLatchOnPressSupported, isModsUnLockOnPressSupported,
     real_mod_index, MAX_ACTIONS_PER_LEVEL, XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MAX_GROUPS_X11,
@@ -8,15 +8,15 @@ pub use crate::xkb::shared_types::{
     XKB_MOD_INDEX_MOD3, XKB_MOD_INDEX_MOD4, XKB_MOD_INDEX_MOD5, XKB_MOD_INDEX_SHIFT,
     XKB_OVERLAY_MAX, XKB_OVERLAY_MAX_X11, _XKB_MOD_INDEX_NUM_ENTRIES,
 };
-use crate::xkb::shared_types::{MOD_REAL_MASK_ALL, XKB_KEYMAP_FORMAT_TEXT_V1};
-pub use crate::xkb::state::mod_mask_get_effective;
-use crate::xkb::text::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
+use crate::shared_types::{MOD_REAL_MASK_ALL, XKB_KEYMAP_FORMAT_TEXT_V1};
+pub use crate::state::mod_mask_get_effective;
+use crate::text::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
 
-pub use crate::xkb::xkbcomp::compat::CompileCompatMap;
-use crate::xkb::xkbcomp::expr::ExprResolveGroupMask;
-pub use crate::xkb::xkbcomp::keycodes::CompileKeycodes;
-pub use crate::xkb::xkbcomp::symbols::CompileSymbols;
-pub use crate::xkb::xkbcomp::types::CompileKeyTypes;
+pub use crate::xkbcomp::compat::CompileCompatMap;
+use crate::xkbcomp::expr::ExprResolveGroupMask;
+pub use crate::xkbcomp::keycodes::CompileKeycodes;
+pub use crate::xkbcomp::symbols::CompileSymbols;
+pub use crate::xkbcomp::types::CompileKeyTypes;
 
 pub const GROUP_MASK_NAME_LAST: u32 = 3;
 pub const GROUP_INDEX_NAME_LAST: u32 = 1;
@@ -852,5 +852,5 @@ pub fn CompileKeymap(file: &mut XkbFile, keymap: &mut xkb_keymap) -> bool {
     pending_computations_array_free(&mut info.pending_computations);
     ok_0
 }
-use crate::xkb::keymap::xkb_keymap_key_get_syms_by_level_ref;
-use crate::xkb::shared_types::*;
+use crate::keymap::xkb_keymap_key_get_syms_by_level_ref;
+use crate::shared_types::*;

@@ -1,6 +1,6 @@
 pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 
-pub use crate::xkb::messages::{
+pub use crate::messages::{
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
     XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
@@ -41,24 +41,24 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
 };
-pub use crate::xkb::scanner_utils::{scanner, scanner_loc, sval, svaleq, svaleq_prefix};
-pub use crate::xkb::shared_ast_types::{
+pub use crate::scanner_utils::{scanner, scanner_loc, sval, svaleq, svaleq_prefix};
+pub use crate::shared_ast_types::{
     FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP,
     FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE,
     LAST_KEYMAP_FILE_TYPE, _FILE_TYPE_NUM_ENTRIES,
 };
-pub use crate::xkb::shared_types::XKB_MAX_GROUPS;
-pub use crate::xkb::shared_types::{
+pub use crate::shared_types::XKB_MAX_GROUPS;
+pub use crate::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
     XKB_ERROR_UNSUPPORTED_MODIFIER_MASK, XKB_SUCCESS,
 };
-pub use crate::xkb::shared_types::{
+pub use crate::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
 
-pub use crate::xkb::xkbcomp::include::{
+pub use crate::xkbcomp::include::{
     expand_path_str, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
 };
@@ -453,7 +453,7 @@ fn split_comma_separated_mlvo<'a>(mlvo: rules_mlvo, s: Option<&'a [u8]>) -> Vec<
             let layout_start = pos;
             #[allow(unused_assignments)]
             let mut layout: u32 = XKB_LAYOUT_INVALID;
-            let (val_parsed, count) = crate::xkb::utils::parse_dec_u32(&bytes[pos..]);
+            let (val_parsed, count) = crate::utils::parse_dec_u32(&bytes[pos..]);
             layout = val_parsed;
             let count = count as usize;
             if count > 0 {
@@ -676,7 +676,7 @@ fn parse_layout_int_index(s: &[u8], out: &mut u32) -> i32 {
         return -1_i32;
     }
     let inner = &s[1..]; // skip '['
-    let (val, count) = crate::xkb::utils::parse_dec_u32(inner);
+    let (val, count) = crate::utils::parse_dec_u32(inner);
     let count: i32 = count;
     if count <= 0_i32
         || (1 + count as usize) >= s.len()
@@ -2075,7 +2075,7 @@ fn read_rules_file(
     #[allow(unused_assignments)]
     let mut scanner: scanner = scanner::new(&[], "");
 
-    use crate::xkb::utils::MappedFile;
+    use crate::utils::MappedFile;
 
     let mapped = match MappedFile::new(file) {
         Ok(m) => m,
@@ -2263,7 +2263,7 @@ fn xkb_resolve_rules(
                                         break;
                                     }
                                     let (val_parsed, count) =
-                                        crate::xkb::utils::parse_dec_u32(&sym_bytes[pos..]);
+                                        crate::utils::parse_dec_u32(&sym_bytes[pos..]);
                                     let group: u32 = val_parsed;
                                     let count = count as usize;
                                     if count > 0
@@ -2303,4 +2303,4 @@ pub fn xkb_components_from_rules_names(
     drop(matcher);
     ret
 }
-use crate::xkb::shared_types::*;
+use crate::shared_types::*;

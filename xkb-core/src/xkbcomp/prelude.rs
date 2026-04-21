@@ -4,15 +4,15 @@
 // Category A (5+ files) and Category B (3-4 files) imports.
 
 // context
-pub use crate::xkb::context::xkb_atom_text;
-pub use crate::xkb::context::xkb_context_get_log_verbosity;
+pub use crate::context::xkb_atom_text;
+pub use crate::context::xkb_context_get_log_verbosity;
 
 // keymap
-pub use crate::xkb::keymap::xkb_escape_map_name;
-pub use crate::xkb::keymap::XkbEscapeMapName;
+pub use crate::keymap::xkb_escape_map_name;
+pub use crate::keymap::XkbEscapeMapName;
 
 // messages
-pub use crate::xkb::messages::{
+pub use crate::messages::{
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
     XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
@@ -55,7 +55,7 @@ pub use crate::xkb::messages::{
 };
 
 // shared_ast_types
-pub use crate::xkb::shared_ast_types::{
+pub use crate::shared_ast_types::{
     _IncludeStmt, merge_mode, pending_computation, safe_map_name, stmt_type, stmt_type_to_string,
     xkb_keymap_info, xkb_map_flags, ExprDef, ExprKind, IncludeStmt, ReportBadType, Statement,
     UnknownStatement, VModDef, VarDef, XkbFile, XkbcompFeatures, XkbcompLookup, FILE_TYPE_COMPAT,
@@ -84,7 +84,7 @@ pub use crate::xkb::shared_ast_types::{
 };
 
 // shared_types
-pub use crate::xkb::shared_types::{
+pub use crate::shared_types::{
     xkb_action, xkb_action_controls, xkb_action_flags, xkb_controls_action, xkb_error_code,
     xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action, xkb_key,
     xkb_key_alias, xkb_key_type, xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led,
@@ -117,14 +117,14 @@ pub use crate::xkb::shared_types::{
 };
 
 // text
-pub use crate::xkb::text::{ActionTypeText, KeysymText, LookupEntry};
+pub use crate::text::{ActionTypeText, KeysymText, LookupEntry};
 
 // xkbcomp submodules
-pub use crate::xkb::xkbcomp::expr::{
+pub use crate::xkbcomp::expr::{
     ExprResolveBoolean, ExprResolveEnum, ExprResolveGroup, ExprResolveLhs, ExprResolveModMask,
     ExprResolveString,
 };
 
-pub use crate::xkb::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
+pub use crate::xkbcomp::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 
-pub use crate::xkb::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};
+pub use crate::xkbcomp::vmod::{HandleVModDef, InitVMods, MergeModSets};

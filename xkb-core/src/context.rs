@@ -1,8 +1,8 @@
 use std::env::VarError;
 
-use crate::xkb::atom::{atom_intern, atom_table_new, atom_text};
+use crate::atom::{atom_intern, atom_table_new, atom_text};
 
-pub use crate::xkb::messages::{
+pub use crate::messages::{
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
     XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
@@ -45,15 +45,15 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
 };
-use crate::xkb::shared_types::{
+use crate::shared_types::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
     DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
 };
-pub use crate::xkb::shared_types::{EACCES, ENOMEM, ENOTDIR};
-pub use crate::xkb::shared_types::{
+pub use crate::shared_types::{EACCES, ENOMEM, ENOTDIR};
+pub use crate::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
-pub use crate::xkb::shared_types::{R_OK, X_OK};
+pub use crate::shared_types::{R_OK, X_OK};
 fn context_include_path_append(ctx: &mut xkb_context, path: &str) -> i32 {
     let is_dir = std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false);
     if is_dir {
@@ -443,4 +443,4 @@ pub fn xkb_context_sanitize_rule_names(ctx: &xkb_context, rmlvo: &mut xkb_rule_n
     modified
 }
 
-use crate::xkb::shared_types::*;
+use crate::shared_types::*;

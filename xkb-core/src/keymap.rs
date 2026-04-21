@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
-use crate::xkb::atom::{atom_lookup_ref, atom_text};
-use crate::xkb::context::{xkb_atom_intern_bytes, xkb_context_sanitize_rule_names};
-pub use crate::xkb::messages::{
+use crate::atom::{atom_lookup_ref, atom_text};
+use crate::context::{xkb_atom_intern_bytes, xkb_context_sanitize_rule_names};
+pub use crate::messages::{
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
     XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
@@ -45,7 +45,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
 };
-pub use crate::xkb::shared_types::{
+pub use crate::shared_types::{
     entry_is_active, xkb_action, xkb_action_controls, xkb_action_flags, xkb_controls_action,
     xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action, xkb_key,
     xkb_key_alias, xkb_key_type, xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t, xkb_led,
@@ -71,10 +71,10 @@ pub use crate::xkb::shared_types::{
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_GROUPS,
     _ACTION_TYPE_NUM_ENTRIES,
 };
-pub use crate::xkb::shared_types::{
+pub use crate::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
-pub use crate::xkb::shared_types::{
+pub use crate::shared_types::{
     XKB_A11Y_FLAGS_VALUES, XKB_COMPOSE_COMPILE_FLAGS_VALUES, XKB_COMPOSE_FEED_RESULT_VALUES,
     XKB_COMPOSE_FORMAT_VALUES, XKB_COMPOSE_STATE_FLAGS_VALUES, XKB_COMPOSE_STATUS_VALUES,
     XKB_CONSUMED_MODE_VALUES, XKB_CONTEXT_FLAGS_VALUES, XKB_EVENTS_FLAGS_VALUES,
@@ -107,7 +107,7 @@ pub fn xkb_keymap_new_from_names(
         },
     };
     xkb_context_sanitize_rule_names(&ctx, &mut rmlvo);
-    if !crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_new_from_names(&mut keymap, &rmlvo) {
+    if !crate::xkbcomp::xkbcomp::text_v1_keymap_new_from_names(&mut keymap, &rmlvo) {
         return None;
     }
     Some(Rc::new(*keymap))
@@ -129,7 +129,7 @@ pub fn xkb_keymap_new_from_string(
     if length > 0 && bytes[length - 1] == 0 {
         length -= 1;
     }
-    if !crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_new_from_string(&mut keymap, &bytes[..length])
+    if !crate::xkbcomp::xkbcomp::text_v1_keymap_new_from_string(&mut keymap, &bytes[..length])
     {
         return None;
     }
@@ -310,7 +310,7 @@ pub fn xkb_keymap_key_repeats(keymap: &xkb_keymap, kc: u32) -> i32 {
         None => 0_i32,
     }
 }
-use crate::xkb::shared_types::*;
+use crate::shared_types::*;
 
 // --- Merged from keymap_priv.rs ---
 

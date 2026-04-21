@@ -179,12 +179,12 @@ impl<'a> scanner<'a> {
     #[inline]
     pub fn buf_appends_code_point(&mut self, c: u32) -> bool {
         if self.buf_pos + 4 <= self.buf.len() {
-            let mut count = crate::xkb::xkbcomp::scanner::utf8_h::utf32_to_utf8_safe(
+            let mut count = crate::xkbcomp::scanner::utf8_h::utf32_to_utf8_safe(
                 c,
                 &mut self.buf[self.buf_pos..],
             );
             if count == 0 {
-                count = crate::xkb::xkbcomp::scanner::utf8_h::utf32_to_utf8_safe(
+                count = crate::xkbcomp::scanner::utf8_h::utf32_to_utf8_safe(
                     0xfffd,
                     &mut self.buf[self.buf_pos..],
                 );
@@ -220,7 +220,7 @@ impl<'a> scanner<'a> {
     #[inline]
     pub fn dec_int64(&mut self, out: &mut i64) -> i32 {
         let remaining = self.remaining_bytes();
-        let (val, count) = crate::xkb::utils::parse_dec_u64(remaining);
+        let (val, count) = crate::utils::parse_dec_u64(remaining);
         if count > 0 {
             if val > i64::MAX as u64 {
                 return -1;
@@ -234,7 +234,7 @@ impl<'a> scanner<'a> {
     #[inline]
     pub fn hex_int64(&mut self, out: &mut i64) -> i32 {
         let remaining = self.remaining_bytes();
-        let (val, count) = crate::xkb::utils::parse_hex_u64(remaining);
+        let (val, count) = crate::utils::parse_hex_u64(remaining);
         if count > 0 {
             if val > i64::MAX as u64 {
                 return -1;
@@ -251,7 +251,7 @@ impl<'a> scanner<'a> {
             return false;
         }
         let remaining = self.remaining_bytes();
-        let (cp, count) = crate::xkb::utils::parse_hex_u32(remaining);
+        let (cp, count) = crate::utils::parse_hex_u32(remaining);
         if count > 0 {
             self.pos += count as usize;
         }
@@ -269,7 +269,7 @@ impl<'a> scanner<'a> {
 
     #[inline]
     pub fn check_supported_char_encoding(&mut self) -> bool {
-        use crate::xkb::messages::XKB_ERROR_INVALID_FILE_ENCODING;
+        use crate::messages::XKB_ERROR_INVALID_FILE_ENCODING;
 
         if self.str_match(b"\xEF\xBB\xBF") || self.s.len() < 2 {
             return true;

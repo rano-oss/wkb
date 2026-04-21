@@ -1,5 +1,5 @@
-use crate::xkb::context::xkb_atom_intern;
-use crate::xkb::shared_types::*;
+use crate::context::xkb_atom_intern;
+use crate::shared_types::*;
 
 pub mod parser_h {
     pub const ALTERNATE_GROUP: i32 = 77;
@@ -89,7 +89,7 @@ pub mod utf8_h {
 // Re-export parse functions from parser module
 pub use super::parser::{parse, parse_next};
 
-pub use crate::xkb::xkbcomp::keywords::keyword_to_token;
+pub use crate::xkbcomp::keywords::keyword_to_token;
 
 pub use self::parser_h::{
     YYerror, ACTION_TOK, ALIAS, ALPHANUMERIC_KEYS, ALTERNATE, ALTERNATE_GROUP, AUGMENT, CBRACE,
@@ -100,7 +100,7 @@ pub use self::parser_h::{
     SHAPE, SOLID, STRING, TEXT, TIMES, TYPE, VIRTUAL, VIRTUAL_MODS, XKB_COMPATMAP, XKB_GEOMETRY,
     XKB_KEYCODES, XKB_KEYMAP, XKB_LAYOUT, XKB_SEMANTICS, XKB_SYMBOLS, XKB_TYPES, YYEMPTY, YYUNDEF,
 };
-pub use crate::xkb::messages::{
+pub use crate::messages::{
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
     XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
@@ -141,8 +141,8 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
 };
-pub use crate::xkb::scanner_utils::{scanner, scanner_loc, sval};
-pub use crate::xkb::shared_ast_types::{
+pub use crate::scanner_utils::{scanner, scanner_loc, sval};
+pub use crate::shared_ast_types::{
     ExprDef, ExprKind, GroupCompatDef, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef,
     LedNameDef, ModMapDef, Statement, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile,
     _IncludeStmt, merge_mode, stmt_type, xkb_map_flags, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
@@ -616,7 +616,7 @@ pub fn XkbParseFile(
     file_name: &str,
     map: &str,
 ) -> Option<Box<XkbFile>> {
-    use crate::xkb::utils::MappedFile;
+    use crate::utils::MappedFile;
 
     // Map the file
     let mapped = match MappedFile::new(file) {

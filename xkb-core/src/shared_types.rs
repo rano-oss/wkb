@@ -58,7 +58,7 @@ impl Default for xkb_rule_names {
 // ── Opaque types ────────────────────────────────────────────────────
 
 // atom_table is defined in atom.rs — re-export it here for unified access
-pub use crate::xkb::atom::atom_table;
+pub use crate::atom::atom_table;
 
 // ── xkb_context ─────────────────────────────────────────────────────
 

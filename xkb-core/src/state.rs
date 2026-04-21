@@ -1,4 +1,4 @@
-use crate::xkb::context::xkb_context_new;
+use crate::context::xkb_context_new;
 use std::rc::Rc;
 
 #[derive(Copy, Clone)]
@@ -61,7 +61,7 @@ pub struct xkb_state_components_update_v1 {
     pub affect_controls: xkb_keyboard_control_flags,
     pub controls: xkb_keyboard_control_flags,
 }
-use crate::xkb::shared_types::{
+use crate::shared_types::{
     xkb_action_controls, xkb_event_type, xkb_keyboard_control_flags, xkb_led_mask_t,
 };
 
@@ -114,13 +114,13 @@ pub const XKB_FEATURE_ENUM_CONTEXT_FLAGS: xkb_feature = 3200;
 pub const XKB_FEATURE_ENUM_ERROR_CODE: xkb_feature = 1000;
 
 pub const XKB_FEATURE_ENUM_FEATURE: xkb_feature = 1;
-pub use crate::xkb::features::xkb_feature_supported;
+pub use crate::features::xkb_feature_supported;
 
-pub use crate::xkb::keymap::xkb_keymap_key_get_level;
-pub use crate::xkb::keymap::{
+pub use crate::keymap::xkb_keymap_key_get_level;
+pub use crate::keymap::{
     xkb_keymap_key_get_actions_by_level, XkbLevelsSameSyms, XkbWrapGroupIntoRange,
 };
-pub use crate::xkb::messages::{
+pub use crate::messages::{
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
     XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
@@ -163,7 +163,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
 };
-pub use crate::xkb::shared_types::{
+pub use crate::shared_types::{
     entry_is_active, format_max_overlays, real_mod_index, xkb_action, xkb_action_flags,
     xkb_controls_action, xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
     xkb_key, xkb_key_alias, xkb_key_type, xkb_key_type_entry, xkb_keymap, xkb_keysym_count_t,
@@ -192,7 +192,7 @@ pub use crate::xkb::shared_types::{
     XKB_MOD_INDEX_SHIFT, XKB_OVERLAY1_CONTROLS_OFFSET, XKB_OVERLAY_MAX, XKB_OVERLAY_MAX_X11,
     _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES,
 };
-pub use crate::xkb::shared_types::{
+pub use crate::shared_types::{
     xkb_error_code, XKB_ERROR_ABI_BACKWARD_COMPAT, XKB_ERROR_ABI_FORWARD_COMPAT,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE, XKB_ERROR_INVALID, XKB_ERROR_UNSUPPORTED_A11Y_FLAGS,
     XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX, XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY,
@@ -1983,11 +1983,11 @@ pub fn xkb_state_mod_index_is_consumed(state: &xkb_state, kc: u32, idx: u32) -> 
     xkb_state_mod_index_is_consumed2(state, kc, idx, XKB_CONSUMED_MODE_XKB)
 }
 
-use crate::xkb::keymap::{
+use crate::keymap::{
     xkb_keymap_key_get_syms_by_level_ref, xkb_keymap_layout_get_index_ref,
     xkb_keymap_led_get_index_ref, xkb_keymap_mod_get_index_ref, xkb_keymap_num_layouts_for_key,
     xkb_keymap_num_mods,
 };
-use crate::xkb::keysym_case_mappings::xkb_keysym_to_upper;
-use crate::xkb::keysym_utf::xkb_keysym_to_utf8;
-use crate::xkb::shared_types::*;
+use crate::keysym_case_mappings::xkb_keysym_to_upper;
+use crate::keysym_utf::xkb_keysym_to_utf8;
+use crate::shared_types::*;

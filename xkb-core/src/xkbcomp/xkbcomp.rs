@@ -1,15 +1,15 @@
-use crate::xkb::shared_types::xkb_context;
-use crate::xkb::shared_types::{xkb_component_names, xkb_rule_names};
+use crate::shared_types::xkb_context;
+use crate::shared_types::{xkb_component_names, xkb_rule_names};
 pub fn xkb_components_from_rules_names(
     ctx: &mut xkb_context,
     rmlvo: &xkb_rule_names,
     out: &mut xkb_component_names,
     explicit_layouts: &mut u32,
 ) -> bool {
-    crate::xkb::xkbcomp::rules::xkb_components_from_rules_names(ctx, rmlvo, out, explicit_layouts)
+    crate::xkbcomp::rules::xkb_components_from_rules_names(ctx, rmlvo, out, explicit_layouts)
 }
 
-pub use crate::xkb::messages::{
+pub use crate::messages::{
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
     XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
@@ -50,7 +50,7 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
 };
-pub use crate::xkb::shared_ast_types::{
+pub use crate::shared_ast_types::{
     stmt_type, xkb_file_type_to_string, xkb_map_flags, XkbFile, FILE_TYPE_COMPAT,
     FILE_TYPE_GEOMETRY, FILE_TYPE_INVALID, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES,
     FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE,
@@ -65,14 +65,14 @@ pub use crate::xkb::shared_ast_types::{
     STMT_LED_NAME, STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES, _STMT_NUM_VALUES,
 };
-pub use crate::xkb::shared_types::{
+pub use crate::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
-use crate::xkb::xkbcomp::ast_build::XkbFileFromComponents;
-use crate::xkb::xkbcomp::keymap::CompileKeymap;
-use crate::xkb::xkbcomp::scanner::XkbParseString;
+use crate::xkbcomp::ast_build::XkbFileFromComponents;
+use crate::xkbcomp::keymap::CompileKeymap;
+use crate::xkbcomp::scanner::XkbParseString;
 
-pub use crate::xkb::shared_types::{
+pub use crate::shared_types::{
     format_max_groups, xkb_action, xkb_action_controls, xkb_action_flags, xkb_controls_action,
     xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action, xkb_key,
     xkb_key_alias, xkb_key_type, xkb_key_type_entry, xkb_keymap, xkb_keymap_serialize_flags,

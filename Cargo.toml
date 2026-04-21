@@ -1,12 +1,13 @@
+[workspace]
+members = [".", "xkb-core"]
+
 [package]
 name = "wkb"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-xmloxide = "0.4"
+xkb-core = { path = "xkb-core" }
 log = "0.4.29"
 
 [dev-dependencies]

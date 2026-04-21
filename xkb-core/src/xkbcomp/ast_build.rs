@@ -1,5 +1,5 @@
-pub use crate::xkb::keymap::XkbEscapeMapName;
-pub use crate::xkb::messages::{
+pub use crate::keymap::XkbEscapeMapName;
+pub use crate::messages::{
     XKB_ERROR_ABI_BACKWARD_COMPAT_, XKB_ERROR_ABI_FORWARD_COMPAT_,
     XKB_ERROR_ABI_INVALID_STRUCT_SIZE_, XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CANNOT_RESOLVE_RMLVO,
     XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY, XKB_ERROR_EXPECTED_ARRAY_ENTRY,
@@ -40,8 +40,8 @@ pub use crate::xkb::messages::{
     XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION, XKB_WARNING_UNSUPPORTED_LEGACY_ACTION,
     XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD, _XKB_LOG_MESSAGE_MAX_CODE, _XKB_LOG_MESSAGE_MIN_CODE,
 };
-pub use crate::xkb::scanner_utils::{scanner, scanner_loc, sval};
-pub use crate::xkb::shared_ast_types::{
+pub use crate::scanner_utils::{scanner, scanner_loc, sval};
+pub use crate::shared_ast_types::{
     merge_mode, stmt_type, xkb_map_flags, ExprDef, ExprKind, GroupCompatDef, IncludeStmt,
     InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, Statement,
     SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, _IncludeStmt, FILE_TYPE_COMPAT,
@@ -59,8 +59,8 @@ pub use crate::xkb::shared_ast_types::{
     STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
     STMT_VAR, STMT_VMOD, _FILE_TYPE_NUM_ENTRIES, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
 };
-pub use crate::xkb::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
-pub use crate::xkb::xkbcomp::include::{MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
+pub use crate::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
+pub use crate::xkbcomp::include::{MERGE_AUGMENT_PREFIX, MERGE_REPLACE_PREFIX};
 
 pub fn expr_create(kind: ExprKind) -> Box<ExprDef> {
     Box::new(ExprDef { kind })
@@ -295,7 +295,7 @@ pub fn IncludeCreate(
             _ => break,
         };
 
-        let (parsed, rest) = match crate::xkb::xkbcomp::include::ParseIncludeMap(input) {
+        let (parsed, rest) = match crate::xkbcomp::include::ParseIncludeMap(input) {
             Some(r) => r,
             None => {
                 log::error!(
@@ -467,5 +467,5 @@ pub fn stmt_type_to_operator_char(type_0: u32) -> char {
         _ => '\0',
     }
 }
-use crate::xkb::keysym_utf::xkb_utf32_to_keysym;
-use crate::xkb::shared_types::*;
+use crate::keysym_utf::xkb_utf32_to_keysym;
+use crate::shared_types::*;

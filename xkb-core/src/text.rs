@@ -1,4 +1,4 @@
-use crate::xkb::context::xkb_atom_text;
+use crate::context::xkb_atom_text;
 
 // Was in text_h module — now at file level
 #[derive(Copy, Clone)]
@@ -17,11 +17,11 @@ pub fn format_control_names_offset(format: u32) -> u8 {
         CONTROL_NAMES_MIN_V2_INDEX as i32
     }) as u8
 }
-use crate::xkb::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
+use crate::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
 
 pub const XKB_KEYSYM_NAME_MAX_SIZE: i32 = 31;
 
-pub use crate::xkb::shared_types::{
+pub use crate::shared_types::{
     format_boolean_controls, xkb_action_controls, xkb_mod, xkb_mod_set, ACTION_TYPE_CTRL_LOCK,
     ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET,
     ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET,
@@ -550,5 +550,5 @@ pub fn ModMaskText(ctx: &xkb_context, type_0: u32, mods: &xkb_mod_set, mask: u32
     result
 }
 
-use crate::xkb::keysym::xkb_keysym_get_name;
-use crate::xkb::shared_types::*;
+use crate::keysym::xkb_keysym_get_name;
+use crate::shared_types::*;

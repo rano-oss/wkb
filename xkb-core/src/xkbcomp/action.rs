@@ -1,7 +1,7 @@
 use super::prelude::*;
-pub use crate::xkb::keymap::action_equal;
-use crate::xkb::text::{actionTypeNames, ctrlMaskNames, LookupString, LookupValue};
-pub use crate::xkb::xkbcomp::expr::{ExprResolveButton, ExprResolveInteger, ExprResolveMask};
+pub use crate::keymap::action_equal;
+use crate::text::{actionTypeNames, ctrlMaskNames, LookupString, LookupValue};
+pub use crate::xkbcomp::expr::{ExprResolveButton, ExprResolveInteger, ExprResolveMask};
 #[derive(Copy, Clone)]
 pub struct ActionsInfo {
     pub actions: [xkb_action; 21],
@@ -1724,4 +1724,4 @@ pub fn SetDefaultActionField(
     }
     PARSER_SUCCESS
 }
-use crate::xkb::shared_types::*;
+use crate::shared_types::*;
