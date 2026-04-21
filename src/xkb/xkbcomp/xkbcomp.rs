@@ -3,16 +3,11 @@ use crate::xkb::shared_types::*;
 use crate::xkb::shared_types::{xkb_component_names, xkb_rule_names};
 pub fn xkb_components_from_rules_names(
     ctx: *mut xkb_context,
-    rmlvo: *const xkb_rule_names,
-    out: *mut xkb_component_names,
-    explicit_layouts: *mut u32,
+    rmlvo: &xkb_rule_names,
+    out: &mut xkb_component_names,
+    explicit_layouts: &mut u32,
 ) -> bool {
-    crate::xkb::xkbcomp::rules::xkb_components_from_rules_names(
-        ctx,
-        rmlvo,
-        out as *mut _,
-        explicit_layouts,
-    )
+    crate::xkb::xkbcomp::rules::xkb_components_from_rules_names(ctx, rmlvo, out, explicit_layouts)
 }
 
 pub use crate::xkb::messages::{
@@ -106,109 +101,99 @@ pub use crate::xkb::shared_types::{
     XKB_MAX_GROUPS_X11, _ACTION_TYPE_NUM_ENTRIES,
 };
 
-fn compile_keymap_file(keymap: *mut xkb_keymap, file: *mut XkbFile) -> bool {
-    unsafe {
-        if (*file).file_type != FILE_TYPE_KEYMAP {
-            log::error!(
-                "[XKB-{:03}] Cannot compile a {} file alone into a keymap\n",
-                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32,
-                xkb_file_type_to_string((*file).file_type)
-            );
-            return false;
-        }
-        if !CompileKeymap(&mut *file, &mut *keymap) {
-            log::error!(
-                "[XKB-{:03}] Failed to compile keymap\n",
-                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32
-            );
-            return false;
-        }
-        true
+fn compile_keymap_file(keymap: &mut xkb_keymap, file: &mut XkbFile) -> bool {
+    if file.file_type != FILE_TYPE_KEYMAP {
+        log::error!(
+            "[XKB-{:03}] Cannot compile a {} file alone into a keymap\n",
+            XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32,
+            xkb_file_type_to_string(file.file_type)
+        );
+        return false;
     }
+    if !CompileKeymap(file, keymap) {
+        log::error!(
+            "[XKB-{:03}] Failed to compile keymap\n",
+            XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32
+        );
+        return false;
+    }
+    true
 }
-pub fn text_v1_keymap_new_from_names(
-    keymap: *mut xkb_keymap,
-    rmlvo: *const xkb_rule_names,
-) -> bool {
-    unsafe {
-        let mut ok: bool;
-        let mut kccgst: xkb_component_names = xkb_component_names::default();
+pub fn text_v1_keymap_new_from_names(keymap: &mut xkb_keymap, rmlvo: &xkb_rule_names) -> bool {
+    let mut ok: bool;
+    let mut kccgst: xkb_component_names = xkb_component_names::default();
 
-        log::debug!("Compiling from RMLVO: rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
-            (*rmlvo).rules.to_str().unwrap_or(""),
-            (*rmlvo).model.to_str().unwrap_or(""),
-            (*rmlvo).layout.to_str().unwrap_or(""),
-            (*rmlvo).variant.to_str().unwrap_or(""),
-            (*rmlvo).options.to_str().unwrap_or(""));
-        ok = xkb_components_from_rules_names(
-            &raw mut (*keymap).ctx,
-            rmlvo,
-            &raw mut kccgst,
-            &raw mut (*keymap).num_groups,
-        );
-        if !ok {
-            log::error!("[XKB-{:03}] Couldn't look up rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
-                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32,
-            &(*rmlvo).rules.to_str().unwrap_or(""),
-            &(*rmlvo).model.to_str().unwrap_or(""),
-            &(*rmlvo).layout.to_str().unwrap_or(""),
-            &(*rmlvo).variant.to_str().unwrap_or(""),
-            &(*rmlvo).options.to_str().unwrap_or(""));
-            return false;
-        }
-        let max_groups: u32 = format_max_groups((*keymap).format);
-        if (*keymap).num_groups > max_groups {
-            (*keymap).num_groups = max_groups;
-        }
-        log::debug!(
-            "Compiling from KcCGST: keycodes '{}', types '{}', compat '{}', symbols '{}'\n",
-            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
-                kccgst.keycodes.as_ptr()
-            )),
-            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(kccgst.types.as_ptr())),
-            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
-                kccgst.compatibility.as_ptr()
-            )),
-            std::str::from_utf8_unchecked(crate::xkb::utils::cstr_as_bytes(
-                kccgst.symbols.as_ptr()
-            ))
-        );
-        let file: *mut XkbFile = XkbFileFromComponents(&raw mut (*keymap).ctx, &raw mut kccgst);
-        drop(kccgst);
-        if file.is_null() {
-            log::error!(
-                "[XKB-{:03}] Failed to generate parsed XKB file from components\n",
-                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32
-            );
-            return false;
-        }
-        ok = compile_keymap_file(keymap, file);
-        FreeXkbFile(file);
-        ok
+    log::debug!(
+        "Compiling from RMLVO: rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
+        rmlvo.rules.to_str().unwrap_or(""),
+        rmlvo.model.to_str().unwrap_or(""),
+        rmlvo.layout.to_str().unwrap_or(""),
+        rmlvo.variant.to_str().unwrap_or(""),
+        rmlvo.options.to_str().unwrap_or("")
+    );
+    ok = xkb_components_from_rules_names(
+        &mut keymap.ctx as *mut xkb_context,
+        rmlvo,
+        &mut kccgst,
+        &mut keymap.num_groups,
+    );
+    if !ok {
+        log::error!("[XKB-{:03}] Couldn't look up rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
+            XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32,
+        &rmlvo.rules.to_str().unwrap_or(""),
+        &rmlvo.model.to_str().unwrap_or(""),
+        &rmlvo.layout.to_str().unwrap_or(""),
+        &rmlvo.variant.to_str().unwrap_or(""),
+        &rmlvo.options.to_str().unwrap_or(""));
+        return false;
     }
+    let max_groups: u32 = format_max_groups(keymap.format);
+    if keymap.num_groups > max_groups {
+        keymap.num_groups = max_groups;
+    }
+    // Safe conversion of Vec<i8> fields to string slices for logging
+    fn vec_i8_to_str(v: &[i8]) -> String {
+        let end = v.iter().position(|&b| b == 0).unwrap_or(v.len());
+        v[..end].iter().map(|&b| b as u8 as char).collect()
+    }
+    log::debug!(
+        "Compiling from KcCGST: keycodes '{}', types '{}', compat '{}', symbols '{}'\n",
+        vec_i8_to_str(&kccgst.keycodes),
+        vec_i8_to_str(&kccgst.types),
+        vec_i8_to_str(&kccgst.compatibility),
+        vec_i8_to_str(&kccgst.symbols),
+    );
+    let file_ptr: *mut XkbFile = XkbFileFromComponents(
+        &mut keymap.ctx as *mut xkb_context,
+        &kccgst as *const xkb_component_names,
+    );
+    drop(kccgst);
+    if file_ptr.is_null() {
+        log::error!(
+            "[XKB-{:03}] Failed to generate parsed XKB file from components\n",
+            XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32
+        );
+        return false;
+    }
+    let mut file = unsafe { *Box::from_raw(file_ptr) };
+    ok = compile_keymap_file(keymap, &mut file);
+    ok
 }
-pub fn text_v1_keymap_new_from_string(
-    keymap: *mut xkb_keymap,
-    string: *const i8,
-    len: usize,
-) -> bool {
-    unsafe {
-        let input = std::slice::from_raw_parts(string as *const u8, len);
-        let xkb_file: *mut XkbFile = XkbParseString(
-            &raw mut (*keymap).ctx,
-            input,
-            "(input string)",
-            std::ptr::null(),
+pub fn text_v1_keymap_new_from_string(keymap: &mut xkb_keymap, input: &[u8]) -> bool {
+    let xkb_file_ptr: *mut XkbFile = XkbParseString(
+        &mut keymap.ctx as *mut xkb_context,
+        input,
+        "(input string)",
+        std::ptr::null(),
+    );
+    if xkb_file_ptr.is_null() {
+        log::error!(
+            "[XKB-{:03}] Failed to parse input xkb string\n",
+            XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32
         );
-        if xkb_file.is_null() {
-            log::error!(
-                "[XKB-{:03}] Failed to parse input xkb string\n",
-                XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32
-            );
-            return false;
-        }
-        let ok: bool = compile_keymap_file(keymap, xkb_file);
-        FreeXkbFile(xkb_file);
-        ok
+        return false;
     }
+    let mut xkb_file = unsafe { *Box::from_raw(xkb_file_ptr) };
+    let ok: bool = compile_keymap_file(keymap, &mut xkb_file);
+    ok
 }

@@ -2177,15 +2177,14 @@ fn xkb_resolve_partial_rules(
 }
 fn xkb_resolve_rules(
     ctx: *mut xkb_context,
-    rules: *const i8,
+    rules: &str,
     matcher: &mut matcher,
-    out: *mut xkb_component_names,
-    explicit_layouts: *mut u32,
+    out: &mut xkb_component_names,
+    explicit_layouts: &mut u32,
 ) -> bool {
     let mut ret: bool = false;
     let mut offset: u32 = 0;
-    let rules_bytes = unsafe { crate::xkb::utils::cstr_as_bytes(rules) };
-    let rules_str = std::str::from_utf8(rules_bytes).unwrap_or("");
+    let rules_str = rules;
     let found = FindFileInXkbPath(
         unsafe { &mut *ctx },
         "(unknown)",
@@ -2226,32 +2225,31 @@ fn xkb_resolve_rules(
                     );
                     ret = false;
                 } else {
-                    let out_ref = unsafe { &mut *out };
                     // Transfer ownership of Vec data directly.
                     {
                         let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_KEYCODES as usize]);
                         v.push(0);
-                        out_ref.keycodes = v;
+                        out.keycodes = v;
                     }
                     {
                         let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_TYPES as usize]);
                         v.push(0);
-                        out_ref.types = v;
+                        out.types = v;
                     }
                     {
                         let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_COMPAT as usize]);
                         v.push(0);
-                        out_ref.compatibility = v;
+                        out.compatibility = v;
                     }
                     {
                         let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_SYMBOLS as usize]);
                         v.push(0);
-                        out_ref.symbols = v;
+                        out.symbols = v;
                     }
                     {
                         let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_GEOMETRY as usize]);
                         v.push(0);
-                        out_ref.geometry = v;
+                        out.geometry = v;
                     }
                     if !matcher.rmlvo.model.matched && matcher.rmlvo.model.sval.len > 0 {
                         log::error!(
@@ -2287,11 +2285,10 @@ fn xkb_resolve_rules(
                             );
                         }
                     }
-                    if !out_ref.symbols.is_empty() && !explicit_layouts.is_null() {
-                        let el = unsafe { &mut *explicit_layouts };
-                        *el = 1_u32;
+                    if !out.symbols.is_empty() {
+                        *explicit_layouts = 1_u32;
                         // Parse symbols string to find explicit layout count
-                        let sym_bytes: Vec<u8> = out_ref.symbols.iter().map(|&b| b as u8).collect();
+                        let sym_bytes: Vec<u8> = out.symbols.iter().map(|&b| b as u8).collect();
                         let mut pos: usize = 0;
                         loop {
                             match sym_bytes[pos..].iter().position(|&b| b == b':') {
@@ -2317,7 +2314,7 @@ fn xkb_resolve_rules(
                                         && group > 0
                                         && group <= XKB_MAX_GROUPS as u32
                                     {
-                                        *el = (*el).max(group);
+                                        *explicit_layouts = (*explicit_layouts).max(group);
                                         pos += count;
                                     }
                                 }
@@ -2332,23 +2329,13 @@ fn xkb_resolve_rules(
 }
 pub fn xkb_components_from_rules_names(
     ctx: *mut xkb_context,
-    rmlvo: *const xkb_rule_names,
-    out: *mut xkb_component_names,
-    explicit_layouts: *mut u32,
+    rmlvo: &xkb_rule_names,
+    out: &mut xkb_component_names,
+    explicit_layouts: &mut u32,
 ) -> bool {
-    let rmlvo_ref = unsafe { &*rmlvo };
-    let mut matcher = matcher_new_from_names(ctx, rmlvo_ref);
-    let ret: bool = xkb_resolve_rules(
-        ctx,
-        if rmlvo_ref.rules.as_bytes().is_empty() {
-            std::ptr::null()
-        } else {
-            rmlvo_ref.rules.as_ptr()
-        },
-        &mut *matcher,
-        out,
-        explicit_layouts,
-    );
+    let mut matcher = matcher_new_from_names(ctx, rmlvo);
+    let rules_str = rmlvo.rules.to_str().unwrap_or("");
+    let ret: bool = xkb_resolve_rules(ctx, rules_str, &mut *matcher, out, explicit_layouts);
     drop(matcher);
     ret
 }

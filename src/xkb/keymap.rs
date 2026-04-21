@@ -107,10 +107,7 @@ pub fn xkb_keymap_new_from_names(
         },
     };
     xkb_context_sanitize_rule_names(&ctx, &mut rmlvo);
-    if !crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_new_from_names(
-        &mut *keymap as *mut xkb_keymap,
-        &rmlvo as *const xkb_rule_names,
-    ) {
+    if !crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_new_from_names(&mut *keymap, &rmlvo) {
         return None;
     }
     Some(Rc::new(*keymap))
@@ -132,11 +129,8 @@ pub fn xkb_keymap_new_from_string(
     if length > 0 && bytes[length - 1] == 0 {
         length -= 1;
     }
-    if !crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_new_from_string(
-        &mut *keymap as *mut xkb_keymap,
-        ptr,
-        length,
-    ) {
+    if !crate::xkb::xkbcomp::xkbcomp::text_v1_keymap_new_from_string(&mut *keymap, &bytes[..length])
+    {
         return None;
     }
     Some(Rc::new(*keymap))
