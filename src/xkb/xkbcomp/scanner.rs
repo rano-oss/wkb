@@ -372,7 +372,11 @@ fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
 }
 
 /// Lex one token and write the semantic value into `yylval`.
-pub fn _xkbcommon_lex<'a>(yylval: &mut YYValue<'a>, s: &mut scanner<'a>) -> i32 {
+pub fn _xkbcommon_lex<'a>(
+    yylval: &mut YYValue<'a>,
+    s: &mut scanner<'a>,
+    ctx: &mut xkb_context,
+) -> i32 {
     loop {
         while is_space(s.peek()) {
             s.next_byte();
@@ -486,7 +490,7 @@ pub fn _xkbcommon_lex<'a>(yylval: &mut YYValue<'a>, s: &mut scanner<'a>) -> i32 
         let keyname_bytes: Vec<u8> = s
             .input_slice(s.token_pos + 1, s.token_pos + 1 + len)
             .to_vec();
-        *yylval = YYValue::Atom(xkb_atom_intern(s.ctx_mut(), &keyname_bytes));
+        *yylval = YYValue::Atom(xkb_atom_intern(ctx, &keyname_bytes));
         return KEYNAME;
     }
     if s.chr(b';' as i8) {
@@ -577,13 +581,12 @@ pub fn _xkbcommon_lex<'a>(yylval: &mut YYValue<'a>, s: &mut scanner<'a>) -> i32 
     ERROR_TOK
 }
 pub fn XkbParseStringInit<'a>(
-    ctx: *mut xkb_context,
     sc: &mut scanner<'a>,
     input: &'a [u8],
     file_name: &str,
     _map: &str,
 ) -> bool {
-    *sc = scanner::new(ctx, input, file_name);
+    *sc = scanner::new(input, file_name);
     if !sc.check_supported_char_encoding() {
         let loc = sc.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
@@ -607,8 +610,8 @@ pub fn XkbParseString(
     file_name: &str,
     map: &str,
 ) -> Option<Box<XkbFile>> {
-    let mut sc = scanner::new(std::ptr::null_mut(), &[], "");
-    if !XkbParseStringInit(ctx as *mut _, &mut sc, input, file_name, map) {
+    let mut sc = scanner::new(&[], "");
+    if !XkbParseStringInit(&mut sc, input, file_name, map) {
         return None;
     }
     parse(ctx, &mut sc, map)

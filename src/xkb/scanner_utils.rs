@@ -56,11 +56,10 @@ pub struct scanner<'a> {
     pub cached_pos: usize,
     pub cached_loc: scanner_loc,
     pub file_name: String,
-    pub ctx: *mut xkb_context,
 }
 
 impl<'a> scanner<'a> {
-    pub fn new(ctx: *mut xkb_context, s: &'a [u8], file_name: &str) -> Self {
+    pub fn new(s: &'a [u8], file_name: &str) -> Self {
         scanner {
             pos: 0,
             s,
@@ -70,7 +69,6 @@ impl<'a> scanner<'a> {
             cached_pos: 0,
             cached_loc: scanner_loc { line: 1, column: 1 },
             file_name: file_name.to_string(),
-            ctx,
         }
     }
 
@@ -313,15 +311,6 @@ impl<'a> scanner<'a> {
     #[inline]
     pub fn input_at(&self, pos: usize) -> *const i8 {
         self.s[pos..].as_ptr() as *const i8
-    }
-
-    /// Get a mutable reference to the context.
-    /// # Safety invariant: self.ctx must be a valid, non-null pointer.
-    #[inline]
-    pub fn ctx_mut(&mut self) -> &mut xkb_context {
-        // SAFETY: scanner.ctx is always set to a valid pointer in scanner::new()
-        // and remains valid for the scanner's lifetime.
-        unsafe { &mut *self.ctx }
     }
 
     /// Get a slice of the input from `start` to `end` as bytes.

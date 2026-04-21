@@ -2119,7 +2119,7 @@ fn read_rules_file(
     path: &str,
 ) -> bool {
     #[allow(unused_assignments)]
-    let mut scanner: scanner = scanner::new(std::ptr::null_mut(), &[], "");
+    let mut scanner: scanner = scanner::new(&[], "");
 
     use crate::xkb::utils::MappedFile;
 
@@ -2131,11 +2131,7 @@ fn read_rules_file(
         }
     };
 
-    scanner = scanner::new(
-        &mut *matcher.ctx as *mut xkb_context,
-        mapped.as_bytes(),
-        path,
-    );
+    scanner = scanner::new(mapped.as_bytes(), path);
     if !scanner.check_supported_char_encoding() {
         let loc: scanner_loc = scanner.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",

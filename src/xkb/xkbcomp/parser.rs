@@ -1,4 +1,4 @@
-// Safe parser.rs - no unsafe blocks
+// Safe parser.rs
 // LALR(1) parser for XKB, converted from bison-generated C via c2rust
 
 use crate::xkb::context::xkb_atom_intern;
@@ -758,7 +758,11 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
             // goto yydefault
         } else {
             if yychar == YYEMPTY {
-                yychar = crate::xkb::xkbcomp::scanner::_xkbcommon_lex(&mut yylval, param.scanner);
+                yychar = crate::xkb::xkbcomp::scanner::_xkbcommon_lex(
+                    &mut yylval,
+                    param.scanner,
+                    param.ctx,
+                );
             }
             if yychar <= END_OF_FILE {
                 yychar = END_OF_FILE;

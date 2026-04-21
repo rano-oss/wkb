@@ -16,13 +16,6 @@ pub fn istrcmp(a: &[u8], b: &[u8]) -> i32 {
     (a.len() as i32) - (b.len() as i32)
 }
 
-/// Convert a `*const i8` C string to `&[u8]` (without the null terminator).
-/// # Safety: `s` must point to a valid null-terminated C string.
-#[inline]
-pub unsafe fn cstr_as_bytes<'a>(s: *const i8) -> &'a [u8] {
-    unsafe { std::ffi::CStr::from_ptr(s).to_bytes() }
-}
-
 // New Rust file utilities
 
 /// Returns the last OS error number (replacement for `*__errno_location()`).
@@ -69,13 +62,6 @@ impl MappedFile {
 
 // --- libc replacement helpers ---
 
-/// Safe replacement for libc `strlen`. Returns the length of a C string.
-/// # Safety: `s` must point to a valid null-terminated C string.
-#[inline]
-pub unsafe fn cstr_len(s: *const i8) -> usize {
-    unsafe { std::ffi::CStr::from_ptr(s).to_bytes().len() }
-}
-
 /// Stack buffer writer implementing `core::fmt::Write`.
 /// Used by the `xkb_logf!` and `rxkb_logf!` macros to replace C `snprintf`.
 pub struct LogBuf<'a> {
@@ -107,37 +93,6 @@ impl<'a> core::fmt::Write for LogBuf<'a> {
         self.pos += n;
         Ok(())
     }
-}
-
-/// Frees a C string that was allocated by `CString::into_raw()`.
-/// Safe to call with null (no-op). Counterpart to `CString::into_raw()`.
-///
-/// # Safety
-/// `s` must be null or a pointer previously returned by `cstr_dup`.
-#[inline]
-pub unsafe fn cstr_free(s: *mut i8) {
-    if !s.is_null() {
-        drop(std::ffi::CString::from_raw(s));
-    }
-}
-
-/// Like C `stpcpy`: copy C string `src` to `dst`, return pointer to the NUL terminator in dst.
-///
-/// # Safety
-/// `dst` must have enough space for the copy. Both must be valid C strings.
-pub unsafe fn cstr_pcpy(dst: *mut i8, src: *const i8) -> *mut i8 {
-    if src.is_null() || dst.is_null() {
-        return dst;
-    }
-    let mut d = dst;
-    let mut s = src;
-    while *s != 0 {
-        *d = *s;
-        d = d.offset(1);
-        s = s.offset(1);
-    }
-    *d = 0;
-    d
 }
 
 /// Safe wrapper around C `strerror`. Returns a display-able error message.
