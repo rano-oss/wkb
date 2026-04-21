@@ -56,22 +56,6 @@ impl WKB<ListComposer> {
 }
 
 impl<C: Composer> WKB<C> {
-    /// Get keymap string by reading from filesystem
-    ///
-    /// # Deprecated
-    /// This method just reads from `/usr/share/X11/xkb/symbols/` and doesn't
-    /// represent the actual WKB state. Use `new_from_string()` for proper
-    /// keymap interchange instead.
-    #[deprecated(since = "0.1.0", note = "Use new_from_string() for keymap interchange")]
-    pub fn get_keymap_string(&self) -> String {
-        if let Some(locale) = &self.locale {
-            let path = std::path::Path::new(xkb::XKB_SYMBOLS_PATH);
-            std::fs::read_to_string(path.join(locale)).unwrap_or_default()
-        } else {
-            String::new()
-        }
-    }
-
     pub fn modifiers_state(&self) -> (u32, u32, u32, u32) {
         let mut depressed = 0;
         let mut latched = 0;

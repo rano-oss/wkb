@@ -1,21 +1,21 @@
 use test_case::test_matrix;
-use wkb::{modifiers::CAPS_LOCK, KeyDirection};
-use xkbcommon::xkb::{self, Keycode};
+use wkb::{modifiers::CAPS_LOCK, xkb, KeyDirection};
+use xkbcommon::xkb::{self as xkbcmn, Keycode};
 
-fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
-    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkbcmn::State {
+    let context = xkbcmn::Context::new(xkbcmn::CONTEXT_NO_FLAGS);
     let variant_str = layout.unwrap_or_default();
-    let keymap = xkb::Keymap::new_from_names(
+    let keymap = xkbcmn::Keymap::new_from_names(
         &context,
         "evdev",
         "pc105",
         &locale,
         &variant_str,
         None,
-        xkb::KEYMAP_COMPILE_NO_FLAGS,
+        xkbcmn::KEYMAP_COMPILE_NO_FLAGS,
     )
     .unwrap();
-    xkb::State::new(&keymap)
+    xkbcmn::State::new(&keymap)
 }
 
 /// Test Level2Lock modifier (locks shift level)
@@ -37,7 +37,7 @@ fn shift_lock_behavior(locale: &str) {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         // Get shift keycode
-        let shift_code = wkb.modifiers.level2_code();
+        let shift_code = xkb::level2_code(&wkb.modifiers);
         if shift_code.is_none() {
             continue;
         }
@@ -48,7 +48,7 @@ fn shift_lock_behavior(locale: &str) {
 
         // Press and hold shift
         wkb.update_key(shift_code, KeyDirection::Down);
-        xkb.update_key(Keycode::new(shift_code + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(shift_code + 8), xkbcmn::KeyDirection::Down);
 
         for &keycode in &test_keys {
             let wkb_char = wkb.utf8(keycode);
@@ -67,7 +67,7 @@ fn shift_lock_behavior(locale: &str) {
 
         // Release shift
         wkb.update_key(shift_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(shift_code + 8), xkb::KeyDirection::Up);
+        xkb.update_key(Keycode::new(shift_code + 8), xkbcmn::KeyDirection::Up);
 
         // Test keys without shift
         for &keycode in &test_keys {
@@ -139,7 +139,7 @@ fn caps_plus_shift_combination(locale: &str) {
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        let shift_code = wkb.modifiers.level2_code();
+        let shift_code = xkb::level2_code(&wkb.modifiers);
         if shift_code.is_none() {
             continue;
         }
@@ -148,12 +148,12 @@ fn caps_plus_shift_combination(locale: &str) {
         // Activate caps lock
         wkb.update_key(CAPS_LOCK, KeyDirection::Down);
         wkb.update_key(CAPS_LOCK, KeyDirection::Up);
-        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
-        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkbcmn::KeyDirection::Down);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkbcmn::KeyDirection::Up);
 
         // Hold shift while caps is active
         wkb.update_key(shift_code, KeyDirection::Down);
-        xkb.update_key(Keycode::new(shift_code + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(shift_code + 8), xkbcmn::KeyDirection::Down);
 
         // Test letter keys with caps+shift (should give lowercase in many layouts)
         let letter_keys = vec![38, 39, 40, 41, 42, 43, 44]; // a-g
@@ -182,7 +182,7 @@ fn caps_plus_shift_combination(locale: &str) {
 
         // Release shift
         wkb.update_key(shift_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(shift_code + 8), xkb::KeyDirection::Up);
+        xkb.update_key(Keycode::new(shift_code + 8), xkbcmn::KeyDirection::Up);
     }
 }
 
@@ -203,7 +203,7 @@ fn altgr_combinations(locale: &str) {
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        let altgr_code = wkb.modifiers.level3_code();
+        let altgr_code = xkb::level3_code(&wkb.modifiers);
         if altgr_code.is_none() {
             continue;
         }
@@ -211,7 +211,7 @@ fn altgr_combinations(locale: &str) {
 
         // Test with AltGr pressed
         wkb.update_key(altgr_code, KeyDirection::Down);
-        xkb.update_key(Keycode::new(altgr_code + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(altgr_code + 8), xkbcmn::KeyDirection::Down);
 
         // Test various keys with AltGr
         for keycode in 0..701u32 {
@@ -230,15 +230,15 @@ fn altgr_combinations(locale: &str) {
         }
 
         wkb.update_key(altgr_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(altgr_code + 8), xkb::KeyDirection::Up);
+        xkb.update_key(Keycode::new(altgr_code + 8), xkbcmn::KeyDirection::Up);
 
         // Test AltGr + Shift combination
-        let shift_code = wkb.modifiers.level2_code();
+        let shift_code = xkb::level2_code(&wkb.modifiers);
         if let Some((shift_code, _)) = shift_code {
             wkb.update_key(shift_code, KeyDirection::Down);
             wkb.update_key(altgr_code, KeyDirection::Down);
-            xkb.update_key(Keycode::new(shift_code + 8), xkb::KeyDirection::Down);
-            xkb.update_key(Keycode::new(altgr_code + 8), xkb::KeyDirection::Down);
+            xkb.update_key(Keycode::new(shift_code + 8), xkbcmn::KeyDirection::Down);
+            xkb.update_key(Keycode::new(altgr_code + 8), xkbcmn::KeyDirection::Down);
 
             // Test sample keys with AltGr+Shift
             let test_keys = vec![2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // number row
@@ -260,8 +260,8 @@ fn altgr_combinations(locale: &str) {
 
             wkb.update_key(shift_code, KeyDirection::Up);
             wkb.update_key(altgr_code, KeyDirection::Up);
-            xkb.update_key(Keycode::new(shift_code + 8), xkb::KeyDirection::Up);
-            xkb.update_key(Keycode::new(altgr_code + 8), xkb::KeyDirection::Up);
+            xkb.update_key(Keycode::new(shift_code + 8), xkbcmn::KeyDirection::Up);
+            xkb.update_key(Keycode::new(altgr_code + 8), xkbcmn::KeyDirection::Up);
         }
     }
 }
@@ -283,7 +283,7 @@ fn level5_modifier(locale: &str) {
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        let level5_code = wkb.modifiers.level5_code();
+        let level5_code = xkb::level5_code(&wkb.modifiers);
         if level5_code.is_none() {
             continue;
         }
@@ -291,7 +291,7 @@ fn level5_modifier(locale: &str) {
 
         // Test with Level5 pressed
         wkb.update_key(level5_code, KeyDirection::Down);
-        xkb.update_key(Keycode::new(level5_code + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(level5_code + 8), xkbcmn::KeyDirection::Down);
 
         for keycode in 0..701u32 {
             let wkb_char = wkb.utf8(keycode);
@@ -309,7 +309,7 @@ fn level5_modifier(locale: &str) {
         }
 
         wkb.update_key(level5_code, KeyDirection::Up);
-        xkb.update_key(Keycode::new(level5_code + 8), xkb::KeyDirection::Up);
+        xkb.update_key(Keycode::new(level5_code + 8), xkbcmn::KeyDirection::Up);
     }
 }
 
@@ -322,7 +322,7 @@ fn rapid_modifier_changes(locale: &str) {
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        let shift_code = wkb.modifiers.level2_code();
+        let shift_code = xkb::level2_code(&wkb.modifiers);
         if shift_code.is_none() {
             continue;
         }
@@ -334,8 +334,8 @@ fn rapid_modifier_changes(locale: &str) {
         for _ in 0..10 {
             wkb.update_key(shift_code, KeyDirection::Down);
             wkb.update_key(shift_code, KeyDirection::Up);
-            xkb.update_key(Keycode::new(shift_code + 8), xkb::KeyDirection::Down);
-            xkb.update_key(Keycode::new(shift_code + 8), xkb::KeyDirection::Up);
+            xkb.update_key(Keycode::new(shift_code + 8), xkbcmn::KeyDirection::Down);
+            xkb.update_key(Keycode::new(shift_code + 8), xkbcmn::KeyDirection::Up);
         }
 
         // Check state after rapid changes
@@ -351,16 +351,20 @@ fn rapid_modifier_changes(locale: &str) {
     }
 }
 
-fn serialized_modifiers(state: &xkb::State) -> (u32, u32, u32, u32) {
+fn serialized_modifiers(state: &xkbcmn::State) -> (u32, u32, u32, u32) {
     (
-        state.serialize_mods(xkb::STATE_MODS_DEPRESSED),
-        state.serialize_mods(xkb::STATE_MODS_LATCHED),
-        state.serialize_mods(xkb::STATE_MODS_LOCKED),
-        state.serialize_layout(xkb::STATE_LAYOUT_EFFECTIVE),
+        state.serialize_mods(xkbcmn::STATE_MODS_DEPRESSED),
+        state.serialize_mods(xkbcmn::STATE_MODS_LATCHED),
+        state.serialize_mods(xkbcmn::STATE_MODS_LOCKED),
+        state.serialize_layout(xkbcmn::STATE_LAYOUT_EFFECTIVE),
     )
 }
 
-fn assert_same_modifiers_state(wkb: &wkb::WKB<wkb::ListComposer>, xkb: &xkb::State, context: &str) {
+fn assert_same_modifiers_state(
+    wkb: &wkb::WKB<wkb::ListComposer>,
+    xkb: &xkbcmn::State,
+    context: &str,
+) {
     let wkb_state = wkb.modifiers_state();
     let xkb_state = serialized_modifiers(xkb);
     assert_eq!(
@@ -371,7 +375,7 @@ fn assert_same_modifiers_state(wkb: &wkb::WKB<wkb::ListComposer>, xkb: &xkb::Sta
 
 fn update_both(
     wkb: &mut wkb::WKB<wkb::ListComposer>,
-    xkb: &mut xkb::State,
+    xkb: &mut xkbcmn::State,
     evdev_code: u32,
     direction: KeyDirection,
 ) {
@@ -379,8 +383,8 @@ fn update_both(
     xkb.update_key(
         Keycode::new(evdev_code + 8),
         match direction {
-            KeyDirection::Down => xkb::KeyDirection::Down,
-            KeyDirection::Up => xkb::KeyDirection::Up,
+            KeyDirection::Down => xkbcmn::KeyDirection::Down,
+            KeyDirection::Up => xkbcmn::KeyDirection::Up,
         },
     );
 }
@@ -419,22 +423,22 @@ fn modifiers_state_matches_xkbcommon() {
 
 #[test]
 fn test_mm_zawgyi_latch_sequence() {
-    use xkb::{self, Keycode};
+    use xkbcommon::xkb::Keycode;
 
     let mut wkb = wkb::WKB::new_from_names("mm".to_string(), Some("zawgyi".to_string()));
 
-    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-    let keymap = xkb::Keymap::new_from_names(
+    let context = xkbcmn::Context::new(xkbcmn::CONTEXT_NO_FLAGS);
+    let keymap = xkbcmn::Keymap::new_from_names(
         &context,
         "evdev",
         "pc105",
         "mm",
         "zawgyi",
         None,
-        xkb::KEYMAP_COMPILE_NO_FLAGS,
+        xkbcmn::KEYMAP_COMPILE_NO_FLAGS,
     )
     .unwrap();
-    let mut xkb_state = xkb::State::new(&keymap);
+    let mut xkb_state = xkbcmn::State::new(&keymap);
 
     let latch_key = 41; // TLDE key
 
@@ -443,42 +447,42 @@ fn test_mm_zawgyi_latch_sequence() {
     // Step 1: Press latch
     eprintln!("1. Press latch key {}", latch_key);
     wkb.update_key(latch_key, KeyDirection::Down);
-    xkb_state.update_key(Keycode::new(latch_key + 8), xkb::KeyDirection::Down);
+    xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Down);
     eprintln!("   WKB level3: {}", wkb.modifiers.level3());
     eprintln!(
         "   XKB Mod5: {}",
-        xkb_state.mod_name_is_active("Mod5", xkb::STATE_MODS_EFFECTIVE)
+        xkb_state.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE)
     );
 
     // Step 2: Release latch
     eprintln!("\n2. Release latch key");
     wkb.update_key(latch_key, KeyDirection::Up);
-    xkb_state.update_key(Keycode::new(latch_key + 8), xkb::KeyDirection::Up);
+    xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Up);
     eprintln!("   WKB level3: {}", wkb.modifiers.level3());
     eprintln!(
         "   XKB Mod5: {}",
-        xkb_state.mod_name_is_active("Mod5", xkb::STATE_MODS_EFFECTIVE)
+        xkb_state.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE)
     );
 
     // Step 3: Press Shift
     eprintln!("\n3. Press Shift");
     let shift_key = 42;
     wkb.update_key(shift_key, KeyDirection::Down);
-    xkb_state.update_key(Keycode::new(shift_key + 8), xkb::KeyDirection::Down);
+    xkb_state.update_key(Keycode::new(shift_key + 8), xkbcmn::KeyDirection::Down);
     eprintln!("   WKB level3: {}", wkb.modifiers.level3());
     eprintln!(
         "   XKB Mod5: {}",
-        xkb_state.mod_name_is_active("Mod5", xkb::STATE_MODS_EFFECTIVE)
+        xkb_state.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE)
     );
 
     // Step 4: Press latch again (second press)
     eprintln!("\n4. Press latch key again (second press)");
     wkb.update_key(latch_key, KeyDirection::Down);
-    xkb_state.update_key(Keycode::new(latch_key + 8), xkb::KeyDirection::Down);
+    xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Down);
     eprintln!("   WKB level3: {}", wkb.modifiers.level3());
     eprintln!(
         "   XKB Mod5: {}",
-        xkb_state.mod_name_is_active("Mod5", xkb::STATE_MODS_EFFECTIVE)
+        xkb_state.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE)
     );
 
     // Check key 2 with both active
@@ -495,7 +499,7 @@ fn test_mm_zawgyi_latch_sequence() {
 
     assert_eq!(
         wkb.modifiers.level3(),
-        xkb_state.mod_name_is_active("Mod5", xkb::STATE_MODS_EFFECTIVE),
+        xkb_state.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE),
         "Level3 state should match XKB Mod5"
     );
     assert_eq!(key_2_wkb, key_2_xkb, "Key 2 character should match");
@@ -505,7 +509,7 @@ fn test_mm_zawgyi_latch_sequence() {
 fn test_cm_modifier_type() {
     let wkb = wkb::WKB::new_from_names("cm".to_string(), Some("qwerty".to_string()));
 
-    if let Some((code, level)) = wkb.modifiers.level3_code() {
+    if let Some((code, level)) = xkb::level3_code(&wkb.modifiers) {
         eprintln!("cm/qwerty Level3 code: {} level: {:?}", code, level);
 
         // Try to determine if it's Latch or Pressed
@@ -517,7 +521,7 @@ fn test_cm_modifier_type() {
 fn test_ie_ogam_shift_type() {
     let wkb = wkb::WKB::new_from_names("ie".to_string(), Some("ogam_is434".to_string()));
 
-    if let Some((code, level)) = wkb.modifiers.level2_code() {
+    if let Some((code, level)) = xkb::level2_code(&wkb.modifiers) {
         eprintln!("ie/ogam_is434 Shift code: {} level: {:?}", code, level);
         eprintln!("Modifiers: {:#?}", wkb.modifiers);
     }
