@@ -109,35 +109,6 @@ impl<'a> core::fmt::Write for LogBuf<'a> {
     }
 }
 
-/// Write formatted args into a raw C buffer, NUL-terminated.
-/// Returns (bytes_written, truncated). The buffer is always NUL-terminated if size > 0.
-/// On truncation, writes as much as fits and sets truncated=true.
-///
-/// This replaces C `snprintf` and `snprintf_safe`.
-///
-/// Like C `snprintf`: format into buffer, return the total formatted length
-/// (even if truncated). Always NUL-terminates if size > 0.
-/// Returns -1 on error (never happens with Rust formatting).
-///
-/// Use this when callers need the would-be length (e.g. public API return values).
-/// Use this when callers need the would-be length (e.g. public API return values).
-///
-/// # Safety
-/// `buf` must point to `size` writable bytes.
-pub unsafe fn snprintf_c(buf: *mut i8, size: usize, args: core::fmt::Arguments<'_>) -> i32 {
-    use core::fmt::Write;
-    // Format into a String to get the true full length
-    let mut s = String::new();
-    let _ = Write::write_fmt(&mut s, args);
-    let full_len = s.len();
-    if size > 0 {
-        let copy_len = full_len.min(size - 1);
-        std::ptr::copy_nonoverlapping(s.as_ptr(), buf as *mut u8, copy_len);
-        *(buf as *mut u8).add(copy_len) = 0;
-    }
-    full_len as i32
-}
-
 /// Safe replacement for libc `strdup`. Duplicates a C string using Rust's allocator.
 /// Returns a `*mut i8` allocated via `CString::into_raw()`.
 /// Returns null if `s` is null.
@@ -166,28 +137,6 @@ pub unsafe fn cstr_dup(s: *const i8) -> *mut i8 {
 pub unsafe fn cstr_free(s: *mut i8) {
     if !s.is_null() {
         drop(std::ffi::CString::from_raw(s));
-    }
-}
-
-/// Like C `strchr`: find first occurrence of byte `c` in C string `s`.
-/// Returns pointer to the byte, or null if not found.
-///
-/// # Safety
-/// `s` must point to a valid NUL-terminated C string.
-pub unsafe fn cstr_chr(s: *const i8, c: i32) -> *mut i8 {
-    if s.is_null() {
-        return std::ptr::null_mut();
-    }
-    let mut p = s;
-    let target = c as i8;
-    loop {
-        if *p == target {
-            return p as *mut i8;
-        }
-        if *p == 0 {
-            return std::ptr::null_mut();
-        }
-        p = p.offset(1);
     }
 }
 
