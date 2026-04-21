@@ -737,11 +737,8 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
             // goto yydefault
         } else {
             if yychar == YYEMPTY {
-                yychar = crate::xkbcomp::scanner::_xkbcommon_lex(
-                    &mut yylval,
-                    param.scanner,
-                    param.ctx,
-                );
+                yychar =
+                    crate::xkbcomp::scanner::_xkbcommon_lex(&mut yylval, param.scanner, param.ctx);
             }
             if yychar <= END_OF_FILE {
                 yychar = END_OF_FILE;
@@ -2025,11 +2022,7 @@ fn execute_reduction<'a>(
             // NonEmptyKeySyms: NonEmptyKeySyms COMMA STRING
             let expr = yyvs[sp - 2].take_expr().unwrap();
             let s = yyvs[sp].take_str();
-            match crate::xkbcomp::ast_build::ExprKeySymListAppendString(
-                param.scanner,
-                expr,
-                &s,
-            ) {
+            match crate::xkbcomp::ast_build::ExprKeySymListAppendString(param.scanner, expr, &s) {
                 Some(e) => {
                     *yyval = YYValue::Expr(e);
                 }
@@ -2047,11 +2040,7 @@ fn execute_reduction<'a>(
             // KeySyms: STRING (single string keysym)
             let s = yyvs[sp].take_str();
             let expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
-            match crate::xkbcomp::ast_build::ExprKeySymListAppendString(
-                param.scanner,
-                expr,
-                &s,
-            ) {
+            match crate::xkbcomp::ast_build::ExprKeySymListAppendString(param.scanner, expr, &s) {
                 Some(e) => {
                     *yyval = YYValue::Expr(e);
                 }
@@ -2068,11 +2057,7 @@ fn execute_reduction<'a>(
             // KeySymList: STRING (produces keysym list from string)
             let s = yyvs[sp].take_str();
             let expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
-            match crate::xkbcomp::ast_build::ExprKeySymListAppendString(
-                param.scanner,
-                expr,
-                &s,
-            ) {
+            match crate::xkbcomp::ast_build::ExprKeySymListAppendString(param.scanner, expr, &s) {
                 Some(e) => {
                     *yyval = YYValue::Expr(e);
                 }

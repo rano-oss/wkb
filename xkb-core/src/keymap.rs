@@ -129,8 +129,7 @@ pub fn xkb_keymap_new_from_string(
     if length > 0 && bytes[length - 1] == 0 {
         length -= 1;
     }
-    if !crate::xkbcomp::xkbcomp::text_v1_keymap_new_from_string(&mut keymap, &bytes[..length])
-    {
+    if !crate::xkbcomp::xkbcomp::text_v1_keymap_new_from_string(&mut keymap, &bytes[..length]) {
         return None;
     }
     Some(Rc::new(*keymap))

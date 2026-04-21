@@ -1,4 +1,4 @@
-use crate::keysym_utf::xkb_utf32_to_keysym;
+use crate::keysym_utf::utf32_to_keysym;
 pub const XKB_KEY_Mode_switch: i32 = 0xff7e_i32;
 pub const XKB_KEY_Num_Lock: i32 = 0xff7f_i32;
 pub const XKB_KEY_KP_Space: i32 = 0xff80_i32;
@@ -21893,7 +21893,7 @@ pub fn xkb_keysym_from_name(name: &[u8], flags: xkb_keysym_flags) -> u32 {
         return if val > 0xff_u32 && val <= 0x10ffff_u32 {
             (XKB_KEYSYM_UNICODE_OFFSET as u32).wrapping_add(val)
         } else {
-            xkb_utf32_to_keysym(val)
+            utf32_to_keysym(val)
         };
     } else if name_bytes.first() == Some(&b'0')
         && (name_bytes.get(1) == Some(&b'x') || (icase && name_bytes.get(1) == Some(&b'X')))

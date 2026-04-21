@@ -10,9 +10,7 @@ use crate::atom::atom_lookup_ref;
 use crate::keymap::{
     xkb_keymap_layout_get_index_ref, xkb_keymap_led_get_index_ref, xkb_keymap_mod_get_index_ref,
 };
-use crate::shared_types::{
-    XKB_ATOM_NONE, XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID,
-};
+use crate::shared_types::{XKB_ATOM_NONE, XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID};
 use crate::{compose::xkb_compose_table, shared_types::xkb_context};
 
 /// Rust-native version of xkb_rule_names
@@ -365,11 +363,7 @@ impl State {
     }
 
     /// Update key state (press or release)
-    pub fn update_key(
-        &mut self,
-        keycode: u32,
-        direction: crate::shared_types::xkb_key_direction,
-    ) {
+    pub fn update_key(&mut self, keycode: u32, direction: crate::shared_types::xkb_key_direction) {
         super::state::xkb_state_update_key(&mut self.inner, keycode, direction);
     }
 

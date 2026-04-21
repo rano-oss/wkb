@@ -1749,7 +1749,7 @@ pub fn xkb_state_key_get_utf8(state: &xkb_state, kc: u32) -> String {
     let mut result = Vec::new();
     let mut tmp = [0u8; 5];
     for &s in syms {
-        let ret = xkb_keysym_to_utf8(s, &mut tmp);
+        let ret = keysym_to_utf8(s, &mut tmp);
         if ret <= 0 {
             return String::new();
         }
@@ -1989,5 +1989,5 @@ use crate::keymap::{
     xkb_keymap_num_mods,
 };
 use crate::keysym_case_mappings::xkb_keysym_to_upper;
-use crate::keysym_utf::xkb_keysym_to_utf8;
+use crate::keysym_utf::keysym_to_utf8;
 use crate::shared_types::*;

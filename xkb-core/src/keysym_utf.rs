@@ -3,28 +3,28 @@
 //! Converted from C FFI to idiomatic Rust.
 // Re-export type alias
 // XKB key symbol constants
-pub const XKB_KEY_NO_SYMBOL: u32 = 0;
-pub const XKB_KEY_BACKSPACE: u32 = 0xff08;
-pub const XKB_KEY_CLEAR: u32 = 0xff0b;
-pub const XKB_KEY_RETURN: u32 = 0xff0d;
-pub const XKB_KEY_ESCAPE: u32 = 0xff1b;
-pub const XKB_KEY_DELETE: u32 = 0xffff;
-pub const XKB_KEY_KP_SPACE: u32 = 0xff80;
-pub const XKB_KEY_KP_TAB: u32 = 0xff89;
-pub const XKB_KEY_KP_ENTER: u32 = 0xff8d;
-pub const XKB_KEY_KP_EQUAL: u32 = 0xffbd;
-pub const XKB_KEY_KP_MULTIPLY: u32 = 0xffaa;
-pub const XKB_KEY_KP_9: u32 = 0xffb9;
-pub const XKB_KEY_SPACE: u32 = 0x20;
-pub const XKB_KEY_XF86_NUMERIC_0: u32 = 0x10081200;
-pub const XKB_KEY_XF86_NUMERIC_9: u32 = 0x10081209;
-pub const XKB_KEY_XF86_NUMERIC_STAR: u32 = 268964362;
-pub const XKB_KEY_XF86_NUMERIC_POUND: u32 = 268964363;
+pub(crate) const XKB_KEY_NO_SYMBOL: u32 = 0;
+pub(crate) const XKB_KEY_BACKSPACE: u32 = 0xff08;
+pub(crate) const XKB_KEY_CLEAR: u32 = 0xff0b;
+pub(crate) const XKB_KEY_RETURN: u32 = 0xff0d;
+pub(crate) const XKB_KEY_ESCAPE: u32 = 0xff1b;
+pub(crate) const XKB_KEY_DELETE: u32 = 0xffff;
+pub(crate) const XKB_KEY_KP_SPACE: u32 = 0xff80;
+pub(crate) const XKB_KEY_KP_TAB: u32 = 0xff89;
+pub(crate) const XKB_KEY_KP_ENTER: u32 = 0xff8d;
+pub(crate) const XKB_KEY_KP_EQUAL: u32 = 0xffbd;
+pub(crate) const XKB_KEY_KP_MULTIPLY: u32 = 0xffaa;
+pub(crate) const XKB_KEY_KP_9: u32 = 0xffb9;
+pub(crate) const XKB_KEY_SPACE: u32 = 0x20;
+pub(crate) const XKB_KEY_XF86_NUMERIC_0: u32 = 0x10081200;
+pub(crate) const XKB_KEY_XF86_NUMERIC_9: u32 = 0x10081209;
+pub(crate) const XKB_KEY_XF86_NUMERIC_STAR: u32 = 268964362;
+pub(crate) const XKB_KEY_XF86_NUMERIC_POUND: u32 = 268964363;
 
-pub const XKB_KEYSYM_UNICODE_OFFSET: u32 = 0x1000000;
-pub const XKB_KEYSYM_UNICODE_SURROGATE_MIN: u32 = 0x100d800;
-pub const XKB_KEYSYM_UNICODE_SURROGATE_MAX: u32 = 0x100dfff;
-pub const XKB_KEYSYM_UNICODE_MAX: u32 = 0x110ffff;
+pub(crate) const XKB_KEYSYM_UNICODE_OFFSET: u32 = 0x1000000;
+pub(crate) const XKB_KEYSYM_UNICODE_SURROGATE_MIN: u32 = 0x100d800;
+pub(crate) const XKB_KEYSYM_UNICODE_SURROGATE_MAX: u32 = 0x100dfff;
+pub(crate) const XKB_KEYSYM_UNICODE_MAX: u32 = 0x110ffff;
 
 /// Keysym lookup table entry
 #[derive(Copy, Clone, Debug)]
@@ -3980,7 +3980,7 @@ fn codepoint_to_keysym(ucs: u32) -> Option<u32> {
 /// FFI wrapper: Convert keysym to UTF-32 codepoint (C-compatible)
 ///
 /// Returns 0 if conversion fails (matches old C behavior)
-pub fn xkb_keysym_to_utf32(keysym: u32) -> u32 {
+pub fn keysym_to_utf32(keysym: u32) -> u32 {
     keysym_to_codepoint(keysym).unwrap_or(0)
 }
 
@@ -3988,7 +3988,7 @@ pub fn xkb_keysym_to_utf32(keysym: u32) -> u32 {
 /// Returns number of bytes written (including null terminator), or:
 /// - 0 if conversion fails
 /// - -1 if buffer too small (needs at least 5 bytes)
-pub fn xkb_keysym_to_utf8(keysym: u32, buffer: &mut [u8]) -> i32 {
+pub fn keysym_to_utf8(keysym: u32, buffer: &mut [u8]) -> i32 {
     const MAX_UTF8_SIZE: usize = 5;
 
     if buffer.len() < MAX_UTF8_SIZE {
@@ -4014,7 +4014,7 @@ pub fn xkb_keysym_to_utf8(keysym: u32, buffer: &mut [u8]) -> i32 {
 /// FFI wrapper: Convert UTF-32 codepoint to keysym (C-compatible)
 ///
 /// Returns 0 (XKB_KEY_NO_SYMBOL) if conversion fails
-pub fn xkb_utf32_to_keysym(ucs: u32) -> u32 {
+pub fn utf32_to_keysym(ucs: u32) -> u32 {
     codepoint_to_keysym(ucs).unwrap_or(0)
 }
 
@@ -4050,13 +4050,13 @@ mod tests {
 
     #[test]
     fn test_ffi_compat() {
-        // Test xkb_keysym_to_utf32
-        assert_eq!(xkb_keysym_to_utf32(0x41), 0x41); // 'A'
-        assert_eq!(xkb_keysym_to_utf32(0), 0); // Invalid
+        // Test keysym_to_utf32
+        assert_eq!(keysym_to_utf32(0x41), 0x41); // 'A'
+        assert_eq!(keysym_to_utf32(0), 0); // Invalid
 
-        // Test xkb_keysym_to_utf8
+        // Test keysym_to_utf8
         let mut buf = [0u8; 10];
-        let len = xkb_keysym_to_utf8(0x41, &mut buf);
+        let len = keysym_to_utf8(0x41, &mut buf);
         assert_eq!(len, 2); // 'A' + null = 2 bytes
         assert_eq!(buf[0], b'A');
         assert_eq!(buf[1], 0);

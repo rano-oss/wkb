@@ -108,7 +108,7 @@ pub fn ExprKeySymListAppendString(
                 idx_cp);
             return None;
         }
-        let sym = xkb_utf32_to_keysym(cp);
+        let sym = utf32_to_keysym(cp);
         if sym == XKB_KEY_NoSymbol as u32 {
             let loc = scanner.token_location();
             log::error!("{}:{}:{}: Cannot convert string to keysyms: Unicode code point U+04{:X} has no keysym equivalent(byte position: {}, code point position: {}).\n",
@@ -160,7 +160,7 @@ pub fn KeysymParseString(scanner: &mut scanner, string: &str) -> u32 {
             string);
         return XKB_KEY_NoSymbol as u32;
     }
-    let sym = xkb_utf32_to_keysym(cp);
+    let sym = utf32_to_keysym(cp);
     if sym == XKB_KEY_NoSymbol as u32 {
         let loc = scanner.token_location();
         log::error!("{}:{}:{}: Cannot convert string to single keysym: Unicode code point U+{:04X} has no keysym equivalent.\n",
@@ -467,5 +467,5 @@ pub fn stmt_type_to_operator_char(type_0: u32) -> char {
         _ => '\0',
     }
 }
-use crate::keysym_utf::xkb_utf32_to_keysym;
+use crate::keysym_utf::utf32_to_keysym;
 use crate::shared_types::*;

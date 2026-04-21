@@ -12,9 +12,7 @@ pub use crate::shared_ast_types::{
     STMT_MODMAP, STMT_SYMBOLS, STMT_TYPE, STMT_UNKNOWN, STMT_UNKNOWN_COMPOUND,
     STMT_UNKNOWN_DECLARATION, STMT_VAR, STMT_VMOD, _MERGE_MODE_NUM_ENTRIES, _STMT_NUM_VALUES,
 };
-pub use crate::shared_types::{
-    xkb_mod, xkb_mod_set, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_MODS,
-};
+pub use crate::shared_types::{xkb_mod, xkb_mod_set, MOD_BOTH, MOD_REAL, MOD_VIRT, XKB_MAX_MODS};
 use crate::text::ModMaskText;
 use crate::xkbcomp::expr::ExprResolveModMask;
 pub fn InitVMods(info: &mut xkb_mod_set, mods: &xkb_mod_set, reset: bool) {

@@ -3,75 +3,75 @@
 // --- Compose table types and iteration (from compose_iter.rs) ---
 
 #[derive(Clone)]
-pub struct xkb_compose_table {
-    pub refcnt: i32,
-    pub format: xkb_compose_format,
-    pub flags: xkb_compose_compile_flags,
-    pub ctx: xkb_context,
-    pub locale: String,
-    pub utf8: Vec<i8>,
-    pub nodes: Vec<compose_node>,
+pub(crate) struct xkb_compose_table {
+    pub(crate) refcnt: i32,
+    pub(crate) format: xkb_compose_format,
+    pub(crate) flags: xkb_compose_compile_flags,
+    pub(crate) ctx: xkb_context,
+    pub(crate) locale: String,
+    pub(crate) utf8: Vec<i8>,
+    pub(crate) nodes: Vec<compose_node>,
 }
 #[derive(Copy, Clone)]
 
-pub struct compose_node {
-    pub keysym: u32,
-    pub lokid: u32,
-    pub hikid: u32,
-    pub data: ComposeNodeData,
+pub(crate) struct compose_node {
+    pub(crate) keysym: u32,
+    pub(crate) lokid: u32,
+    pub(crate) hikid: u32,
+    pub(crate) data: ComposeNodeData,
 }
 #[derive(Copy, Clone)]
 
-pub union ComposeNodeData {
-    pub tag: ComposeTag,
-    pub internal: ComposeInternal,
-    pub leaf: ComposeLeaf,
+pub(crate) union ComposeNodeData {
+    pub(crate) tag: ComposeTag,
+    pub(crate) internal: ComposeInternal,
+    pub(crate) leaf: ComposeLeaf,
 }
 /// Leaf node: bits 0..30 = utf8 index, bit 31 = is_leaf (always true).
 #[derive(Copy, Clone)]
 
-pub struct ComposeLeaf {
-    pub utf8_is_leaf: u32,
-    pub keysym: u32,
+pub(crate) struct ComposeLeaf {
+    pub(crate) utf8_is_leaf: u32,
+    pub(crate) keysym: u32,
 }
 impl ComposeLeaf {
     #[inline]
-    pub fn utf8(&self) -> u32 {
+    pub(crate) fn utf8(&self) -> u32 {
         self.utf8_is_leaf & 0x7FFF_FFFF
     }
 }
 /// Internal node: bits 0..30 = pad, bit 31 = is_leaf (always false).
 #[derive(Copy, Clone)]
 
-pub struct ComposeInternal {
-    pub _pad_is_leaf: u32,
-    pub eqkid: u32,
+pub(crate) struct ComposeInternal {
+    pub(crate) _pad_is_leaf: u32,
+    pub(crate) eqkid: u32,
 }
 /// Tag-only accessor: bit 31 = is_leaf discriminant.
 #[derive(Copy, Clone)]
 
-pub struct ComposeTag {
-    pub _pad_is_leaf: u32,
+pub(crate) struct ComposeTag {
+    pub(crate) _pad_is_leaf: u32,
 }
 impl ComposeTag {
     #[inline]
-    pub fn is_leaf(&self) -> bool {
+    pub(crate) fn is_leaf(&self) -> bool {
         (self._pad_is_leaf >> 31) != 0
     }
 }
 #[derive(Copy, Clone)]
 
-pub struct xkb_compose_table_entry {
-    pub sequence_length: usize,
-    pub sequence: *mut u32,
-    pub keysym: u32,
-    pub utf8: *const i8,
+pub(crate) struct xkb_compose_table_entry {
+    pub(crate) sequence_length: usize,
+    pub(crate) sequence: *mut u32,
+    pub(crate) keysym: u32,
+    pub(crate) utf8: *const i8,
 }
 
-pub type xkb_compose_compile_flags = u32;
-pub const XKB_COMPOSE_COMPILE_NO_FLAGS: xkb_compose_compile_flags = 0;
-pub type xkb_compose_format = u32;
-pub const XKB_COMPOSE_FORMAT_TEXT_V1: xkb_compose_format = 1;
+pub(crate) type xkb_compose_compile_flags = u32;
+pub(crate) const XKB_COMPOSE_COMPILE_NO_FLAGS: xkb_compose_compile_flags = 0;
+pub(crate) type xkb_compose_format = u32;
+pub(crate) const XKB_COMPOSE_FORMAT_TEXT_V1: xkb_compose_format = 1;
 
 use crate::shared_types::*;
 
@@ -99,7 +99,7 @@ pub struct ComposeEntry {
 /// keysym database.
 pub fn keysym_name_to_char(name: &str) -> Option<char> {
     use crate::keysym::xkb_keysym_from_name;
-    use crate::keysym_utf::xkb_keysym_to_utf32;
+    use crate::keysym_utf::keysym_to_utf32;
     use crate::shared_types::{XKB_KEY_NoSymbol, XKB_KEYSYM_NO_FLAGS};
 
     let ks = xkb_keysym_from_name(name.as_bytes(), XKB_KEYSYM_NO_FLAGS);
@@ -116,7 +116,7 @@ pub fn keysym_name_to_char(name: &str) -> Option<char> {
         }
         return None;
     }
-    let utf32 = xkb_keysym_to_utf32(ks);
+    let utf32 = keysym_to_utf32(ks);
     if utf32 == 0 {
         return None;
     }
