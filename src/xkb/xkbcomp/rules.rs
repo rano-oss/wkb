@@ -69,9 +69,8 @@ fn vec_append_nul_terminated(v: &mut Vec<i8>, src: &[u8]) {
     v.extend(src.iter().map(|&b| b as i8));
 }
 
-#[derive(Clone)]
-pub struct matcher {
-    pub ctx: *mut xkb_context,
+pub struct matcher<'a> {
+    pub ctx: &'a mut xkb_context,
     pub rmlvo: rule_names,
     pub val: lvalue,
     pub groups: Vec<group>,
@@ -266,10 +265,10 @@ impl Default for rule_names {
         }
     }
 }
-impl Default for matcher {
-    fn default() -> Self {
+impl<'a> matcher<'a> {
+    fn new(ctx: &'a mut xkb_context) -> Self {
         matcher {
-            ctx: std::ptr::null_mut(),
+            ctx,
             rmlvo: rule_names::default(),
             val: lvalue::default(),
             groups: Vec::new(),
@@ -501,9 +500,11 @@ fn split_comma_separated_mlvo(mlvo: rules_mlvo, s: Option<&[u8]>) -> Vec<matched
     }
     arr
 }
-fn matcher_new_from_names(ctx: *mut xkb_context, rmlvo: &xkb_rule_names) -> Box<matcher> {
-    let mut m = Box::new(matcher::default());
-    m.ctx = ctx;
+fn matcher_new_from_names<'a>(
+    ctx: &'a mut xkb_context,
+    rmlvo: &xkb_rule_names,
+) -> Box<matcher<'a>> {
+    let mut m = Box::new(matcher::new(ctx));
     let rmlvo_ref = rmlvo;
     m.rmlvo.model.sval.start = if rmlvo_ref.model.as_bytes().is_empty() {
         std::ptr::null()
@@ -585,7 +586,12 @@ fn matcher_group_add_element(m: &mut matcher, _s: &mut scanner, element: sval) {
     let last_group = m.groups.last_mut().unwrap();
     last_group.elements.push(element);
 }
-fn matcher_include(m: &mut matcher, parent_scanner: &mut scanner, include_depth: u32, inc: sval) {
+fn matcher_include(
+    m: &mut matcher<'_>,
+    parent_scanner: &mut scanner,
+    include_depth: u32,
+    inc: sval,
+) {
     if include_depth >= MAX_INCLUDE_DEPTH as u32 {
         let loc: scanner_loc = parent_scanner.token_location();
         log::error!(
@@ -616,7 +622,7 @@ fn matcher_include(m: &mut matcher, parent_scanner: &mut scanner, include_depth:
         None
     } else {
         FindFileInXkbPath(
-            unsafe { &mut *m.ctx },
+            &mut *m.ctx,
             &parent_scanner.file_name,
             &stmt_file,
             FILE_TYPE_RULES,
@@ -641,7 +647,7 @@ fn matcher_include(m: &mut matcher, parent_scanner: &mut scanner, include_depth:
         }
         offset += 1;
         file_and_path = FindFileInXkbPath(
-            unsafe { &mut *m.ctx },
+            &mut *m.ctx,
             &parent_scanner.file_name,
             &stmt_file,
             FILE_TYPE_RULES,
@@ -2079,7 +2085,7 @@ fn matcher_match(
     }
 }
 fn read_rules_file(
-    matcher: &mut matcher,
+    matcher: &mut matcher<'_>,
     include_depth: u32,
     file: &std::fs::File,
     path: &str,
@@ -2098,7 +2104,7 @@ fn read_rules_file(
     };
 
     scanner = scanner::new(
-        matcher.ctx,
+        &mut *matcher.ctx as *mut xkb_context,
         mapped.as_bytes(),
         path,
         std::ptr::null_mut::<core::ffi::c_void>(),
@@ -2128,12 +2134,7 @@ fn read_rules_file(
     );
     ret
 }
-fn xkb_resolve_partial_rules(
-    ctx: &mut xkb_context,
-    rules: &str,
-    suffix: &str,
-    matcher: &mut matcher,
-) -> bool {
+fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut matcher<'_>) -> bool {
     let partial_rules = format!("{}{}", rules, suffix);
     if partial_rules.len() >= 60 {
         log::error!(
@@ -2147,7 +2148,7 @@ fn xkb_resolve_partial_rules(
     let mut offset: u32 = 0;
     loop {
         let found = FindFileInXkbPath(
-            ctx,
+            &mut *matcher.ctx,
             "(unknown)",
             &partial_rules,
             FILE_TYPE_RULES,
@@ -2170,9 +2171,8 @@ fn xkb_resolve_partial_rules(
     true
 }
 fn xkb_resolve_rules(
-    ctx: &mut xkb_context,
     rules: &str,
-    matcher: &mut matcher,
+    matcher: &mut matcher<'_>,
     out: &mut xkb_component_names,
     explicit_layouts: &mut u32,
 ) -> bool {
@@ -2180,7 +2180,7 @@ fn xkb_resolve_rules(
     let mut offset: u32 = 0;
     let rules_str = rules;
     let found = FindFileInXkbPath(
-        ctx,
+        &mut *matcher.ctx,
         "(unknown)",
         rules_str,
         FILE_TYPE_RULES,
@@ -2195,7 +2195,7 @@ fn xkb_resolve_rules(
         );
         return false;
     };
-    ret = xkb_resolve_partial_rules(ctx, rules_str, ".pre", matcher);
+    ret = xkb_resolve_partial_rules(rules_str, ".pre", matcher);
     if ret {
         ret = read_rules_file(matcher, 0, &file, &path);
         if !ret {
@@ -2205,7 +2205,7 @@ fn xkb_resolve_rules(
                 &path
             );
         } else {
-            ret = xkb_resolve_partial_rules(ctx, rules_str, ".post", matcher);
+            ret = xkb_resolve_partial_rules(rules_str, ".post", matcher);
             if ret {
                 if matcher.kccgst[KCCGST_KEYCODES as usize].is_empty()
                     || matcher.kccgst[KCCGST_TYPES as usize].is_empty()
@@ -2322,20 +2322,14 @@ fn xkb_resolve_rules(
     ret
 }
 pub fn xkb_components_from_rules_names(
-    ctx: *mut xkb_context,
+    ctx: &mut xkb_context,
     rmlvo: &xkb_rule_names,
     out: &mut xkb_component_names,
     explicit_layouts: &mut u32,
 ) -> bool {
     let mut matcher = matcher_new_from_names(ctx, rmlvo);
     let rules_str = rmlvo.rules.to_str().unwrap_or("");
-    let ret: bool = xkb_resolve_rules(
-        unsafe { &mut *ctx },
-        rules_str,
-        &mut *matcher,
-        out,
-        explicit_layouts,
-    );
+    let ret: bool = xkb_resolve_rules(rules_str, &mut *matcher, out, explicit_layouts);
     drop(matcher);
     ret
 }

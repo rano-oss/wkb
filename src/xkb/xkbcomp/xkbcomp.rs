@@ -2,7 +2,7 @@ use crate::xkb::shared_types::xkb_context;
 use crate::xkb::shared_types::*;
 use crate::xkb::shared_types::{xkb_component_names, xkb_rule_names};
 pub fn xkb_components_from_rules_names(
-    ctx: *mut xkb_context,
+    ctx: &mut xkb_context,
     rmlvo: &xkb_rule_names,
     out: &mut xkb_component_names,
     explicit_layouts: &mut u32,
@@ -132,7 +132,7 @@ pub fn text_v1_keymap_new_from_names(keymap: &mut xkb_keymap, rmlvo: &xkb_rule_n
         rmlvo.options.to_str().unwrap_or("")
     );
     ok = xkb_components_from_rules_names(
-        &mut keymap.ctx as *mut xkb_context,
+        &mut keymap.ctx,
         rmlvo,
         &mut kccgst,
         &mut keymap.num_groups,
