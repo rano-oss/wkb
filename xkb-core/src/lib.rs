@@ -40,7 +40,10 @@ pub(crate) mod messages;
 pub mod compose;
 pub mod keysym_utf;
 pub mod rust_types;
-pub mod shared_types;
+pub(crate) mod shared_types;
+
+// Re-export only the externally-needed constants from shared_types
+pub use shared_types::{XKB_KEY_DOWN, XKB_KEY_REPEATED, XKB_KEY_UP};
 
 /// Path to XKB symbols directory
 pub const XKB_SYMBOLS_PATH: &str = "/usr/share/X11/xkb/symbols/";

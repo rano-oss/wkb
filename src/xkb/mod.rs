@@ -4,8 +4,8 @@
 pub use xkb_core::compose;
 pub use xkb_core::keysym_utf;
 pub use xkb_core::rust_types;
-pub use xkb_core::shared_types;
 pub use xkb_core::XKB_SYMBOLS_PATH;
+pub use xkb_core::{XKB_KEY_DOWN, XKB_KEY_REPEATED, XKB_KEY_UP};
 
 // WKB integration functions
 use crate::composer::Token;
@@ -109,17 +109,17 @@ fn press_level_modifiers(
 ) {
     if level & 4 != 0 {
         if let Some(kc) = level5 {
-            state.update_key(kc, xkb_core::shared_types::XKB_KEY_DOWN);
+            state.update_key(kc, xkb_core::XKB_KEY_DOWN);
         }
     }
     if level & 2 != 0 {
         if let Some(kc) = level3 {
-            state.update_key(kc, xkb_core::shared_types::XKB_KEY_DOWN);
+            state.update_key(kc, xkb_core::XKB_KEY_DOWN);
         }
     }
     if level & 1 != 0 {
         if let Some(kc) = level2 {
-            state.update_key(kc, xkb_core::shared_types::XKB_KEY_DOWN);
+            state.update_key(kc, xkb_core::XKB_KEY_DOWN);
         }
     }
 }
@@ -178,12 +178,12 @@ fn build_wkb_from_keymap(
             for (lvl, map) in maps.iter_mut().enumerate().take(XKB_MAX_LEVELS) {
                 if let Some(mut st) = keymap.new_state() {
                     if toggle {
-                        st.update_key(lkc, xkb_core::shared_types::XKB_KEY_DOWN);
-                        st.update_key(lkc, xkb_core::shared_types::XKB_KEY_UP);
+                        st.update_key(lkc, xkb_core::XKB_KEY_DOWN);
+                        st.update_key(lkc, xkb_core::XKB_KEY_UP);
                     }
                     press_level_modifiers(&mut st, lvl, level_keys.0, level_keys.1, level_keys.2);
                     if !toggle {
-                        st.update_key(lkc, xkb_core::shared_types::XKB_KEY_DOWN);
+                        st.update_key(lkc, xkb_core::XKB_KEY_DOWN);
                     }
                     for kc in min_keycode..=max_keycode {
                         if let Some(ch) = get_char(kc, &st, lvl) {
