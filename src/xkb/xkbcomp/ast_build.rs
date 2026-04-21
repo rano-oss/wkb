@@ -286,8 +286,7 @@ pub fn IncludeCreate(
     stmt_str: &str,
     mut merge: merge_mode,
 ) -> Option<Box<IncludeStmt>> {
-    let mut first: Option<Box<IncludeStmt>> = None;
-    let mut last_ptr: *mut IncludeStmt = std::ptr::null_mut();
+    let mut items: Vec<Box<IncludeStmt>> = Vec::new();
     let mut remaining: Option<&str> = Some(stmt_str);
 
     loop {
@@ -313,25 +312,14 @@ pub fn IncludeCreate(
             continue;
         }
 
-        let new_incl = Box::new(IncludeStmt {
+        items.push(Box::new(IncludeStmt {
             merge,
             stmt: String::new(),
             file: parsed.file,
             map: parsed.map,
             modifier: parsed.extra_data,
             next_incl: None,
-        });
-
-        if first.is_none() {
-            first = Some(new_incl);
-            last_ptr = first.as_mut().unwrap().as_mut() as *mut IncludeStmt;
-        } else {
-            // Safe: last_ptr always points to a valid IncludeStmt we own
-            unsafe {
-                (*last_ptr).next_incl = Some(new_incl);
-                last_ptr = (*last_ptr).next_incl.as_mut().unwrap().as_mut() as *mut IncludeStmt;
-            }
-        }
+        }));
 
         match parsed.nextop {
             '|' => merge = MERGE_AUGMENT,
@@ -340,6 +328,13 @@ pub fn IncludeCreate(
         }
 
         remaining = rest;
+    }
+
+    // Build linked list in reverse
+    let mut first: Option<Box<IncludeStmt>> = None;
+    for mut item in items.into_iter().rev() {
+        item.next_incl = first;
+        first = Some(item);
     }
 
     if let Some(ref mut f) = first {

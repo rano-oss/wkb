@@ -167,12 +167,12 @@ use crate::xkb::shared_ast_types::IncludeStmt;
 
 /// Safe parser value stack type, replacing the old YYSTYPE union.
 /// Each variant owns its data. `Default` produces `None`.
-pub enum YYValue {
+pub enum YYValue<'a> {
     None,
     Num(i64),
     FileType(u32),
     Str(String),
-    Sval(sval),
+    Sval(sval<'a>),
     Atom(u32),
     Merge(merge_mode),
     MapFlags(xkb_map_flags),
@@ -200,14 +200,14 @@ pub enum YYValue {
     StmtList(Vec<Statement>),
 }
 
-impl Default for YYValue {
+impl<'a> Default for YYValue<'a> {
     fn default() -> Self {
         YYValue::None
     }
 }
 
 // Helper to take a value out and replace with None
-impl YYValue {
+impl<'a> YYValue<'a> {
     pub fn take(&mut self) -> YYValue {
         std::mem::take(self)
     }
@@ -372,7 +372,7 @@ fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
 }
 
 /// Lex one token and write the semantic value into `yylval`.
-pub fn _xkbcommon_lex(yylval: &mut YYValue, s: &mut scanner) -> i32 {
+pub fn _xkbcommon_lex<'a>(yylval: &mut YYValue<'a>, s: &mut scanner<'a>) -> i32 {
     loop {
         while is_space(s.peek()) {
             s.next_byte();
@@ -542,15 +542,12 @@ pub fn _xkbcommon_lex(yylval: &mut YYValue, s: &mut scanner) -> i32 {
         while (s.peek() as u8).is_ascii_alphanumeric() || s.peek() == b'_' as i8 {
             s.next_byte();
         }
-        let start_0: *const i8 = s.input_at(s.token_pos);
-        let len_0: usize = s.pos - s.token_pos;
         tok = keyword_to_token(s.input_slice(s.token_pos, s.pos));
         if tok >= 0 {
             return tok;
         }
         *yylval = YYValue::Sval(sval {
-            len: len_0,
-            start: start_0,
+            data: &s.s[s.token_pos..s.pos],
         });
         return IDENT;
     }
@@ -586,7 +583,7 @@ pub fn XkbParseStringInit<'a>(
     file_name: &str,
     _map: &str,
 ) -> bool {
-    *sc = scanner::new(ctx, input, file_name, std::ptr::null_mut());
+    *sc = scanner::new(ctx, input, file_name);
     if !sc.check_supported_char_encoding() {
         let loc = sc.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
@@ -610,7 +607,7 @@ pub fn XkbParseString(
     file_name: &str,
     map: &str,
 ) -> Option<Box<XkbFile>> {
-    let mut sc = scanner::new(std::ptr::null_mut(), &[], "", std::ptr::null_mut());
+    let mut sc = scanner::new(std::ptr::null_mut(), &[], "");
     if !XkbParseStringInit(ctx as *mut _, &mut sc, input, file_name, map) {
         return None;
     }

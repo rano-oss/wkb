@@ -69,9 +69,38 @@ fn vec_append_nul_terminated(v: &mut Vec<i8>, src: &[u8]) {
     v.extend(src.iter().map(|&b| b as i8));
 }
 
+/// Index-based sval for scanner input. Used in lvalue/rule to avoid
+/// lifetime issues across include boundaries. Reconstruct sval via to_sval().
+#[derive(Copy, Clone, Default)]
+struct SvalIdx {
+    start: usize,
+    end: usize,
+}
+impl SvalIdx {
+    const EMPTY: SvalIdx = SvalIdx { start: 0, end: 0 };
+    #[inline]
+    fn to_sval<'a>(&self, input: &'a [u8]) -> sval<'a> {
+        if self.start >= self.end || self.start >= input.len() {
+            sval::EMPTY
+        } else {
+            sval {
+                data: &input[self.start..self.end.min(input.len())],
+            }
+        }
+    }
+    #[inline]
+    fn len(&self) -> usize {
+        self.end - self.start
+    }
+    #[inline]
+    fn is_empty(&self) -> bool {
+        self.start == self.end
+    }
+}
+
 pub struct matcher<'a> {
     pub ctx: &'a mut xkb_context,
-    pub rmlvo: rule_names,
+    pub rmlvo: rule_names<'a>,
     pub val: lvalue,
     pub groups: Vec<group>,
     pub mapping: mapping,
@@ -99,9 +128,9 @@ pub const KCCGST_TYPES: rules_kccgst = 1;
 pub const KCCGST_KEYCODES: rules_kccgst = 0;
 #[derive(Copy, Clone)]
 pub struct rule {
-    pub mlvo_value_at_pos: [sval; 4],
+    pub mlvo_value_at_pos: [SvalIdx; 4],
     pub match_type_at_pos: [mlvo_match_type; 4],
-    pub kccgst_value_at_pos: [sval; 5],
+    pub kccgst_value_at_pos: [SvalIdx; 5],
     pub num_mlvo_values: mlvo_index_t,
     pub num_kccgst_values: kccgst_index_t,
     pub skip: bool,
@@ -168,23 +197,23 @@ pub const MLVO_LAYOUT: rules_mlvo = 1;
 pub const MLVO_MODEL: rules_mlvo = 0;
 #[derive(Clone)]
 pub struct group {
-    pub name: sval,
-    pub elements: Vec<sval>,
+    pub name: Vec<u8>,
+    pub elements: Vec<Vec<u8>>,
 }
 #[derive(Copy, Clone)]
 pub struct lvalue {
-    pub string: sval,
+    pub string: SvalIdx,
 }
 #[derive(Clone)]
-pub struct rule_names {
-    pub model: matched_sval,
-    pub layouts: Vec<matched_sval>,
-    pub variants: Vec<matched_sval>,
-    pub options: Vec<matched_sval>,
+pub struct rule_names<'a> {
+    pub model: matched_sval<'a>,
+    pub layouts: Vec<matched_sval<'a>>,
+    pub variants: Vec<matched_sval<'a>>,
+    pub options: Vec<matched_sval<'a>>,
 }
 #[derive(Copy, Clone, Default)]
-pub struct matched_sval {
-    pub sval: sval,
+pub struct matched_sval<'a> {
+    pub sval: sval<'a>,
     pub matched: bool,
     pub layout: u32,
 }
@@ -231,9 +260,9 @@ impl Default for mapping {
 impl Default for rule {
     fn default() -> Self {
         rule {
-            mlvo_value_at_pos: [sval::EMPTY; 4],
+            mlvo_value_at_pos: [SvalIdx::EMPTY; 4],
             match_type_at_pos: [0; 4],
-            kccgst_value_at_pos: [sval::EMPTY; 5],
+            kccgst_value_at_pos: [SvalIdx::EMPTY; 5],
             num_mlvo_values: 0,
             num_kccgst_values: 0,
             skip: false,
@@ -243,7 +272,7 @@ impl Default for rule {
 impl Default for lvalue {
     fn default() -> Self {
         lvalue {
-            string: sval::EMPTY,
+            string: SvalIdx::EMPTY,
         }
     }
 }
@@ -255,7 +284,7 @@ impl Default for kccgst_buffer {
         }
     }
 }
-impl Default for rule_names {
+impl Default for rule_names<'_> {
     fn default() -> Self {
         rule_names {
             model: matched_sval::default(),
@@ -346,13 +375,15 @@ fn lex(s: &mut scanner, val: &mut lvalue) -> rules_token {
         return TOK_WILD_CARD_ANY;
     }
     if s.chr('$' as i32 as i8) {
-        val.string.start = s.input_at(s.pos);
-        val.string.len = 0_usize;
+        val.string = SvalIdx {
+            start: s.pos,
+            end: s.pos,
+        };
         while is_ident(s.peek()) {
             s.next_byte();
-            val.string.len = val.string.len.wrapping_add(1);
+            val.string.end += 1;
         }
-        if val.string.len == 0_usize {
+        if val.string.len() == 0 {
             let loc_0: scanner_loc = s.token_location();
             log::error!(
                 "[XKB-{:03}] {}:{}:{}: unexpected character after '$'; expected name\n",
@@ -369,11 +400,13 @@ fn lex(s: &mut scanner, val: &mut lvalue) -> rules_token {
         return TOK_INCLUDE;
     }
     if is_ident(s.peek()) {
-        val.string.start = s.input_at(s.pos);
-        val.string.len = 0_usize;
+        val.string = SvalIdx {
+            start: s.pos,
+            end: s.pos,
+        };
         while is_ident(s.peek()) {
             s.next_byte();
-            val.string.len = val.string.len.wrapping_add(1);
+            val.string.end += 1;
         }
         return TOK_IDENTIFIER;
     }
@@ -390,8 +423,8 @@ fn lex(s: &mut scanner, val: &mut lvalue) -> rules_token {
 static RULES_MLVO_SVALS: [&[u8]; 4] = [b"model", b"layout", b"variant", b"option"];
 static RULES_KCCGST_SVALS: [&[u8]; 5] = [b"keycodes", b"types", b"compat", b"symbols", b"geometry"];
 pub const OPTIONS_MATCH_ALL_GROUPS: i32 = XKB_MAX_GROUPS;
-fn strip_spaces(v: sval) -> sval {
-    let bytes = v.as_bytes();
+fn strip_spaces<'a>(v: sval<'a>) -> sval<'a> {
+    let bytes = v.data;
     let start_trim = bytes
         .iter()
         .position(|&b| !is_space(b as i8))
@@ -405,14 +438,13 @@ fn strip_spaces(v: sval) -> sval {
         sval::EMPTY
     } else {
         sval {
-            len: end_trim - start_trim,
-            start: v.start.wrapping_add(start_trim),
+            data: &bytes[start_trim..end_trim],
         }
     }
 }
 
 /// Resize a Vec<matched_sval>, zero-filling new elements.
-fn vec_resize_zero_matched_sval(v: &mut Vec<matched_sval>, new_len: usize) {
+fn vec_resize_zero_matched_sval(v: &mut Vec<matched_sval<'_>>, new_len: usize) {
     if new_len > v.len() {
         v.resize(new_len, matched_sval::default());
     } else {
@@ -420,8 +452,8 @@ fn vec_resize_zero_matched_sval(v: &mut Vec<matched_sval>, new_len: usize) {
     }
 }
 
-fn split_comma_separated_mlvo(mlvo: rules_mlvo, s: Option<&[u8]>) -> Vec<matched_sval> {
-    let mut arr: Vec<matched_sval> = Vec::new();
+fn split_comma_separated_mlvo<'a>(mlvo: rules_mlvo, s: Option<&'a [u8]>) -> Vec<matched_sval<'a>> {
+    let mut arr: Vec<matched_sval<'a>> = Vec::new();
     let Some(bytes) = s else {
         arr.push(matched_sval::default());
         return arr;
@@ -430,16 +462,15 @@ fn split_comma_separated_mlvo(mlvo: rules_mlvo, s: Option<&[u8]>) -> Vec<matched
         arr.push(matched_sval::default());
         return arr;
     }
-    let base = bytes.as_ptr() as *const i8;
     let mut pos: usize = 0;
     loop {
         let start = pos;
+        let mut end = pos;
         let mut val_0 = matched_sval {
             matched: false,
             layout: OPTIONS_MATCH_ALL_GROUPS as u32,
             sval: sval {
-                len: 0,
-                start: base.wrapping_add(start),
+                data: &bytes[start..start],
             },
         };
         while pos < bytes.len()
@@ -447,8 +478,11 @@ fn split_comma_separated_mlvo(mlvo: rules_mlvo, s: Option<&[u8]>) -> Vec<matched
             && bytes[pos] as i32 != OPTIONS_GROUP_SPECIFIER_PREFIX
         {
             pos += 1;
-            val_0.sval.len += 1;
+            end += 1;
         }
+        val_0.sval = sval {
+            data: &bytes[start..end],
+        };
         val_0.sval = strip_spaces(val_0.sval);
         if pos < bytes.len() && bytes[pos] as i32 == OPTIONS_GROUP_SPECIFIER_PREFIX {
             pos += 1;
@@ -502,16 +536,13 @@ fn split_comma_separated_mlvo(mlvo: rules_mlvo, s: Option<&[u8]>) -> Vec<matched
 }
 fn matcher_new_from_names<'a>(
     ctx: &'a mut xkb_context,
-    rmlvo: &xkb_rule_names,
+    rmlvo: &'a xkb_rule_names,
 ) -> Box<matcher<'a>> {
     let mut m = Box::new(matcher::new(ctx));
     let rmlvo_ref = rmlvo;
-    m.rmlvo.model.sval.start = if rmlvo_ref.model.as_bytes().is_empty() {
-        std::ptr::null()
-    } else {
-        rmlvo_ref.model.as_ptr()
+    m.rmlvo.model.sval = sval {
+        data: rmlvo_ref.model.as_bytes(),
     };
-    m.rmlvo.model.sval.len = rmlvo_ref.model.as_bytes().len();
     m.rmlvo.model.layout = OPTIONS_MATCH_ALL_GROUPS as u32;
     m.rmlvo.layouts = split_comma_separated_mlvo(
         MLVO_LAYOUT,
@@ -575,16 +606,16 @@ fn matcher_new_from_names<'a>(
 fn matcher_free(_m: Box<matcher>) {
     // Box drop handles deallocation
 }
-fn matcher_group_start_new(m: &mut matcher, name: sval) {
+fn matcher_group_start_new(m: &mut matcher, name: &[u8]) {
     let group: group = group {
-        name,
+        name: name.to_vec(),
         elements: Vec::new(),
     };
     m.groups.push(group);
 }
-fn matcher_group_add_element(m: &mut matcher, _s: &mut scanner, element: sval) {
+fn matcher_group_add_element(m: &mut matcher, _s: &mut scanner, element: &[u8]) {
     let last_group = m.groups.last_mut().unwrap();
-    last_group.elements.push(element);
+    last_group.elements.push(element.to_vec());
 }
 fn matcher_include(
     m: &mut matcher<'_>,
@@ -1127,7 +1158,7 @@ fn matcher_rule_start_new(m: &mut matcher) {
 fn matcher_rule_set_mlvo_common(
     m: &mut matcher,
     s: &mut scanner,
-    ident: sval,
+    ident: SvalIdx,
     match_type: mlvo_match_type,
 ) {
     if m.rule.num_mlvo_values as i32 >= m.mapping.num_mlvo as i32 {
@@ -1145,19 +1176,16 @@ fn matcher_rule_set_mlvo_common(
     m.rule.num_mlvo_values = m.rule.num_mlvo_values.wrapping_add(1);
 }
 fn matcher_rule_set_mlvo_wildcard(m: &mut matcher, s: &mut scanner, match_type: mlvo_match_type) {
-    let dummy: sval = sval {
-        len: 0_usize,
-        start: std::ptr::null(),
-    };
+    let dummy = SvalIdx::EMPTY;
     matcher_rule_set_mlvo_common(m, s, dummy, match_type);
 }
-fn matcher_rule_set_mlvo_group(m: &mut matcher, s: &mut scanner, ident: sval) {
+fn matcher_rule_set_mlvo_group(m: &mut matcher, s: &mut scanner, ident: SvalIdx) {
     matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_GROUP);
 }
-fn matcher_rule_set_mlvo(m: &mut matcher, s: &mut scanner, ident: sval) {
+fn matcher_rule_set_mlvo(m: &mut matcher, s: &mut scanner, ident: SvalIdx) {
     matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_NORMAL);
 }
-fn matcher_rule_set_kccgst(m: &mut matcher, s: &mut scanner, ident: sval) {
+fn matcher_rule_set_kccgst(m: &mut matcher, s: &mut scanner, ident: SvalIdx) {
     if m.rule.num_kccgst_values as i32 >= m.mapping.num_kccgst as i32 {
         let loc: scanner_loc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
@@ -1172,12 +1200,12 @@ fn matcher_rule_set_kccgst(m: &mut matcher, s: &mut scanner, ident: sval) {
     m.rule.num_kccgst_values = m.rule.num_kccgst_values.wrapping_add(1);
 }
 fn match_group(groups: &[group], group_name: sval, to: sval) -> bool {
-    let found_group = groups.iter().find(|g| svaleq(g.name, group_name));
+    let found_group = groups.iter().find(|g| g.name.as_slice() == group_name.data);
     match found_group {
         None => false,
         Some(group) => {
             for elem in group.elements.iter() {
-                if svaleq(to, *elem) {
+                if elem.as_slice() == to.data {
                     return true;
                 }
             }
@@ -1193,9 +1221,9 @@ fn match_value(
     wildcard_type: wildcard_match_type,
 ) -> bool {
     match match_type {
-        1 => wildcard_type == WILDCARD_MATCH_ALL || to.len != 0,
-        2 => to.len == 0,
-        3 => to.len != 0,
+        1 => wildcard_type == WILDCARD_MATCH_ALL || to.len() != 0,
+        2 => to.len() == 0,
+        3 => to.len() != 0,
         4 => true,
         5 => match_group(groups, val, to),
         _ => svaleq(val, to),
@@ -1225,7 +1253,7 @@ fn expand_rmlvo_in_kccgst_value(
     let bytes = value.as_bytes();
     // Handle %i expansion
     if bytes[*i] == b'i'
-        && ((*i).wrapping_add(1_usize) == value.len
+        && ((*i).wrapping_add(1_usize) == value.len()
             || (bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_OVERRIDE_PREFIX
                 || bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_AUGMENT_PREFIX
                 || bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_REPLACE_PREFIX))
@@ -1259,7 +1287,7 @@ fn expand_rmlvo_in_kccgst_value(
                 sfx = b')' as i8;
             }
             *i = (*i).wrapping_add(1);
-            if *i >= value.len {
+            if *i >= value.len() {
                 // fall through to error
                 let loc_1: scanner_loc = s.token_location();
                 log::error!(
@@ -1294,7 +1322,7 @@ fn expand_rmlvo_in_kccgst_value(
 
         let mut idx: u32 = XKB_LAYOUT_INVALID;
         let mut expanded_index: bool = false;
-        if *i < value.len && bytes[*i] == b'[' {
+        if *i < value.len() && bytes[*i] == b'[' {
             if mlv as u32 != MLVO_LAYOUT && mlv as u32 != MLVO_VARIANT {
                 let loc_0: scanner_loc = s.token_location();
                 log::error!("[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
@@ -1332,7 +1360,7 @@ fn expand_rmlvo_in_kccgst_value(
         }
 
         if sfx as i32 != 0_i32 {
-            if *i >= value.len {
+            if *i >= value.len() {
                 let loc_1: scanner_loc = s.token_location();
                 log::error!(
                     "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
@@ -1409,7 +1437,7 @@ fn expand_rmlvo_in_kccgst_value(
             None => sval::EMPTY,
         };
 
-        if ev_ref.is_none() || ev_sval.len == 0 {
+        if ev_ref.is_none() || ev_sval.len() == 0 {
             return true;
         }
 
@@ -1452,8 +1480,8 @@ fn expand_qualifier_in_kccgst_value(
     i: &mut usize,
 ) {
     let bytes = value.as_bytes();
-    if (*i).wrapping_add(3_usize) <= value.len
-        && ((*i).wrapping_add(3_usize) == value.len
+    if (*i).wrapping_add(3_usize) <= value.len()
+        && ((*i).wrapping_add(3_usize) == value.len()
             || bytes[(*i).wrapping_add(3_usize)] as i32 == MERGE_OVERRIDE_PREFIX
             || bytes[(*i).wrapping_add(3_usize)] as i32 == MERGE_AUGMENT_PREFIX
             || bytes[(*i).wrapping_add(3_usize)] as i32 == MERGE_REPLACE_PREFIX)
@@ -1541,7 +1569,7 @@ fn expand_kccgst_value(
     let mut has_separator: bool = false;
     let mut i: usize = 0_usize;
     loop {
-        if i >= value.len {
+        if i >= value.len() {
             c2rust_current_block = 10758786907990354186;
             break;
         }
@@ -1563,7 +1591,7 @@ fn expand_kccgst_value(
             }
             b'%' => {
                 i = i.wrapping_add(1);
-                if i >= value.len
+                if i >= value.len()
                     || !expand_rmlvo_in_kccgst_value(m, s, value, layout_idx, &mut expanded, &mut i)
                 {
                     c2rust_current_block = 1032266188497003083;
@@ -1651,7 +1679,7 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut scanner) {
     let mut i: mlvo_index_t = 0 as mlvo_index_t;
     while (i as i32) < m.mapping.num_mlvo as i32 {
         let mlvo: rules_mlvo = m.mapping.mlvo_at_pos[i as usize];
-        let value: sval = m.rule.mlvo_value_at_pos[i as usize];
+        let value: sval = m.rule.mlvo_value_at_pos[i as usize].to_sval(s.s);
         let match_type: mlvo_match_type = m.rule.match_type_at_pos[i as usize];
         let mut matched: bool = false;
         if mlvo as u32 == MLVO_MODEL {
@@ -1786,7 +1814,7 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut scanner) {
                 let mut i_0: kccgst_index_t = 0 as kccgst_index_t;
                 while (i_0 as i32) < m.mapping.num_kccgst as i32 {
                     let kccgst: rules_kccgst = m.mapping.kccgst_at_pos[i_0 as usize];
-                    let value_0: sval = m.rule.kccgst_value_at_pos[i_0 as usize];
+                    let value_0: sval = m.rule.kccgst_value_at_pos[i_0 as usize].to_sval(s.s);
                     let prev_buffer_length: u32 = m.pending_kccgst.buffer.len() as u32;
                     if let Some(expanded) = expand_kccgst_value(m, s, value_0, idx) {
                         if !expanded.is_empty() {
@@ -1810,7 +1838,7 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut scanner) {
         let mut i_1: kccgst_index_t = 0 as kccgst_index_t;
         while (i_1 as i32) < m.mapping.num_kccgst as i32 {
             let kccgst_0: rules_kccgst = m.mapping.kccgst_at_pos[i_1 as usize];
-            let value_1: sval = m.rule.kccgst_value_at_pos[i_1 as usize];
+            let value_1: sval = m.rule.kccgst_value_at_pos[i_1 as usize].to_sval(s.s);
             if let Some(expanded) = expand_kccgst_value(m, s, value_1, layout_idx_min) {
                 if !expanded.is_empty() {
                     concat_kccgst(&mut m.kccgst[kccgst_0 as usize], &expanded);
@@ -1857,7 +1885,7 @@ fn matcher_match(
             tok = gettok(m, s);
             match tok as u32 {
                 3 => {
-                    matcher_group_start_new(m, m.val.string);
+                    matcher_group_start_new(m, m.val.string.to_sval(s.s).data);
                     tok = gettok(m, s);
                     match tok as u32 {
                         5 => {
@@ -1878,7 +1906,7 @@ fn matcher_match(
                             break '_initial;
                         }
                     }
-                    matcher_include(m, s, include_depth, m.val.string);
+                    matcher_include(m, s, include_depth, m.val.string.to_sval(s.s));
                     tok = gettok(m, s);
                     match tok as u32 {
                         1 => {
@@ -1892,7 +1920,7 @@ fn matcher_match(
                 }
                 2 => {
                     matcher_mapping_start_new(m);
-                    matcher_mapping_set_mlvo(m, s, m.val.string);
+                    matcher_mapping_set_mlvo(m, s, m.val.string.to_sval(s.s));
                     loop {
                         tok = gettok(m, s);
                         match tok as u32 {
@@ -1906,7 +1934,7 @@ fn matcher_match(
                             }
                         }
                         if m.mapping.active_or_candidates_mask != 0 {
-                            matcher_mapping_set_mlvo(m, s, m.val.string);
+                            matcher_mapping_set_mlvo(m, s, m.val.string.to_sval(s.s));
                         }
                     }
                     loop {
@@ -1922,7 +1950,7 @@ fn matcher_match(
                             }
                         }
                         if m.mapping.active_or_candidates_mask != 0 {
-                            matcher_mapping_set_kccgst(m, s, m.val.string);
+                            matcher_mapping_set_kccgst(m, s, m.val.string.to_sval(s.s));
                         }
                     }
                     if m.mapping.active_or_candidates_mask != 0
@@ -1953,8 +1981,8 @@ fn matcher_match(
                                     match tok as u32 {
                                         2 => {
                                             if !m.rule.skip {
-                                                if m.val.string.len == 1_usize
-                                                    && m.val.string.as_bytes()[0] == b'+'
+                                                if m.val.string.len() == 1
+                                                    && s.s[m.val.string.start] == b'+'
                                                 {
                                                     matcher_rule_set_mlvo_wildcard(
                                                         m,
@@ -2061,7 +2089,7 @@ fn matcher_match(
                     break '_initial;
                 }
             }
-            matcher_group_add_element(m, s, m.val.string);
+            matcher_group_add_element(m, s, m.val.string.to_sval(s.s).data);
         }
     }
     match c2rust_current_block {
@@ -2091,7 +2119,7 @@ fn read_rules_file(
     path: &str,
 ) -> bool {
     #[allow(unused_assignments)]
-    let mut scanner: scanner = scanner::new(std::ptr::null_mut(), &[], "", std::ptr::null_mut());
+    let mut scanner: scanner = scanner::new(std::ptr::null_mut(), &[], "");
 
     use crate::xkb::utils::MappedFile;
 
@@ -2107,7 +2135,6 @@ fn read_rules_file(
         &mut *matcher.ctx as *mut xkb_context,
         mapped.as_bytes(),
         path,
-        std::ptr::null_mut::<core::ffi::c_void>(),
     );
     if !scanner.check_supported_char_encoding() {
         let loc: scanner_loc = scanner.token_location();
@@ -2245,7 +2272,7 @@ fn xkb_resolve_rules(
                         v.push(0);
                         out.geometry = v;
                     }
-                    if !matcher.rmlvo.model.matched && matcher.rmlvo.model.sval.len > 0 {
+                    if !matcher.rmlvo.model.matched && matcher.rmlvo.model.sval.len() > 0 {
                         log::error!(
                             "[XKB-{:03}] Unrecognized RMLVO model \"{}\" was ignored\n",
                             XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
@@ -2253,7 +2280,7 @@ fn xkb_resolve_rules(
                         );
                     }
                     for mval in matcher.rmlvo.layouts.iter() {
-                        if !mval.matched && mval.sval.len > 0 {
+                        if !mval.matched && mval.sval.len() > 0 {
                             log::error!(
                                 "[XKB-{:03}] Unrecognized RMLVO layout \"{}\" was ignored\n",
                                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
@@ -2262,7 +2289,7 @@ fn xkb_resolve_rules(
                         }
                     }
                     for mval in matcher.rmlvo.variants.iter() {
-                        if !mval.matched && mval.sval.len > 0 {
+                        if !mval.matched && mval.sval.len() > 0 {
                             log::error!(
                                 "[XKB-{:03}] Unrecognized RMLVO variant \"{}\" was ignored\n",
                                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
@@ -2271,7 +2298,7 @@ fn xkb_resolve_rules(
                         }
                     }
                     for mval in matcher.rmlvo.options.iter() {
-                        if !mval.matched && mval.sval.len > 0 {
+                        if !mval.matched && mval.sval.len() > 0 {
                             log::error!(
                                 "[XKB-{:03}] Unrecognized RMLVO option \"{}\" was ignored\n",
                                 XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,

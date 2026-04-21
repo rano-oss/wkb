@@ -1,44 +1,43 @@
 // Canonical scanner utility types and functions (consolidated from scanner_utils_h blocks)
 use crate::xkb::shared_types::*;
 
-#[derive(Copy, Clone, Default)]
-pub struct sval {
-    pub len: usize,
-    pub start: *const i8,
+#[derive(Copy, Clone)]
+pub struct sval<'a> {
+    pub data: &'a [u8],
 }
 
-impl sval {
-    pub const EMPTY: sval = sval {
-        len: 0,
-        start: std::ptr::null(),
-    };
+impl<'a> Default for sval<'a> {
+    fn default() -> Self {
+        sval { data: &[] }
+    }
+}
 
-    /// View the sval as a byte slice.
-    ///
-    /// SAFETY INVARIANT: The caller who created this sval must ensure that `start`
-    /// points to valid memory of at least `len` bytes that outlives this sval.
-    /// All svals in practice point into scanner input buffers (mapped files) that
-    /// outlive the sval.
+impl<'a> sval<'a> {
+    pub const EMPTY: sval<'static> = sval { data: &[] };
+
     #[inline]
     pub fn as_bytes(&self) -> &[u8] {
-        if self.start.is_null() || self.len == 0 {
-            &[]
-        } else {
-            // SAFETY: sval.start always points into a scanner's input buffer which
-            // outlives the sval. The len is set by the scanner to be within bounds.
-            unsafe { std::slice::from_raw_parts(self.start as *const u8, self.len) }
-        }
+        self.data
     }
 
-    /// View the sval as a &str.
-    ///
-    /// SAFETY INVARIANT: Same as `as_bytes()`, plus contents must be valid UTF-8.
-    /// In practice, scanner input is always ASCII-compatible text (checked by
-    /// `check_supported_char_encoding`).
     #[inline]
     pub fn as_str(&self) -> &str {
-        // SAFETY: Scanner input is always ASCII-compatible (validated on load).
-        unsafe { std::str::from_utf8_unchecked(self.as_bytes()) }
+        std::str::from_utf8(self.data).unwrap_or("")
+    }
+
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+
+    #[inline]
+    pub fn start_ptr(&self) -> *const i8 {
+        self.data.as_ptr() as *const i8
+    }
+
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
     }
 }
 
@@ -58,16 +57,10 @@ pub struct scanner<'a> {
     pub cached_loc: scanner_loc,
     pub file_name: String,
     pub ctx: *mut xkb_context,
-    pub priv_0: *mut ::core::ffi::c_void,
 }
 
 impl<'a> scanner<'a> {
-    pub fn new(
-        ctx: *mut xkb_context,
-        s: &'a [u8],
-        file_name: &str,
-        priv_0: *mut ::core::ffi::c_void,
-    ) -> Self {
+    pub fn new(ctx: *mut xkb_context, s: &'a [u8], file_name: &str) -> Self {
         scanner {
             pos: 0,
             s,
@@ -78,7 +71,6 @@ impl<'a> scanner<'a> {
             cached_loc: scanner_loc { line: 1, column: 1 },
             file_name: file_name.to_string(),
             ctx,
-            priv_0,
         }
     }
 
@@ -384,17 +376,15 @@ impl<'a> scanner<'a> {
 
 #[inline]
 pub fn svaleq(s1: sval, s2: sval) -> bool {
-    s1.as_bytes() == s2.as_bytes()
+    s1.data == s2.data
 }
 
 #[inline]
 pub fn svaleq_prefix(s1: sval, s2: sval) -> bool {
-    let b1 = s1.as_bytes();
-    let b2 = s2.as_bytes();
-    b1.len() <= b2.len() && b1 == &b2[..b1.len()]
+    s1.data.len() <= s2.data.len() && s1.data == &s2.data[..s1.data.len()]
 }
 
 #[inline]
 pub fn isvaleq(s1: sval, s2: sval) -> bool {
-    s1.len == s2.len && s1.as_bytes().eq_ignore_ascii_case(s2.as_bytes())
+    s1.data.len() == s2.data.len() && s1.data.eq_ignore_ascii_case(s2.data)
 }

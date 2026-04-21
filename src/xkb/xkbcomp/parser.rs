@@ -601,15 +601,15 @@ fn resolve_keysym(param: &mut parser_param, name: sval) -> Option<u32> {
         return Some(XKB_KEY_VoidSymbol as u32);
     }
 
-    if name.len >= 30 {
+    if name.len() >= 30 {
         return None;
     }
 
     // Build null-terminated buffer for xkb_keysym_from_name
     let mut buf = [0u8; 32];
-    buf[..name.len].copy_from_slice(name_bytes);
-    buf[name.len] = 0;
-    let buf_slice = &buf[..name.len + 1];
+    buf[..name.len()].copy_from_slice(name_bytes);
+    buf[name.len()] = 0;
+    let buf_slice = &buf[..name.len() + 1];
 
     let sym: u32 = xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS);
     if sym != XKB_KEY_NoSymbol as u32 {
@@ -694,7 +694,7 @@ fn yysyntax_error(yyssp: &[i16], ssp: usize, yytoken: i32) -> String {
     msg
 }
 
-fn ensure_capacity(v: &mut Vec<YYValue>, idx: usize) {
+fn ensure_capacity<'a>(v: &mut Vec<YYValue<'a>>, idx: usize) {
     if idx >= v.len() {
         v.resize_with(idx + 1, || YYValue::None);
     }
@@ -708,15 +708,15 @@ fn ensure_capacity_i16(v: &mut Vec<i16>, idx: usize) {
 
 // ── Main parser function ────────────────────────────────────────────
 
-pub fn _xkbcommon_parse(param: &mut parser_param) -> i32 {
+pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
     let mut yychar: i32;
-    let mut yylval: YYValue = YYValue::None;
+    let mut yylval: YYValue<'a> = YYValue::None;
     let mut _xkbcommon_nerrs: i32 = 0;
     let mut yystate: i32 = 0;
     let mut yyerrstatus: i32 = 0;
 
     let mut yyss: Vec<i16> = vec![0; YYINITDEPTH];
-    let mut yyvs: Vec<YYValue> = Vec::with_capacity(YYINITDEPTH);
+    let mut yyvs: Vec<YYValue<'a>> = Vec::with_capacity(YYINITDEPTH);
     for _ in 0..YYINITDEPTH {
         yyvs.push(YYValue::None);
     }
@@ -727,7 +727,7 @@ pub fn _xkbcommon_parse(param: &mut parser_param) -> i32 {
     let mut yyn: i32;
     let yyresult: i32;
     let mut yytoken: i32 = YYSYMBOL_YYEMPTY;
-    let mut yyval: YYValue;
+    let mut yyval: YYValue<'a>;
     let mut yylen: i32;
 
     yychar = YYEMPTY;
@@ -1045,12 +1045,12 @@ pub fn _xkbcommon_parse(param: &mut parser_param) -> i32 {
 }
 
 /// Execute a reduction rule. Returns true on success, false on error (YYERROR).
-fn execute_reduction(
+fn execute_reduction<'a>(
     yyn: i32,
-    yyvs: &mut Vec<YYValue>,
+    yyvs: &mut Vec<YYValue<'a>>,
     sp: usize,
-    yyval: &mut YYValue,
-    param: &mut parser_param,
+    yyval: &mut YYValue<'a>,
+    param: &mut parser_param<'a>,
 ) -> bool {
     match yyn {
         2 => {
@@ -2276,28 +2276,25 @@ fn execute_reduction(
 // ── Public API ──────────────────────────────────────────────────────
 
 pub fn parse<'a>(
-    ctx: &'a mut xkb_context,
-    scanner: &'a mut scanner,
+    mut ctx: &'a mut xkb_context,
+    mut scanner: &'a mut scanner<'a>,
     map: &str,
 ) -> Option<Box<XkbFile>> {
-    // We need to work around the borrow checker since parser_param borrows both ctx and scanner mutably.
-    // Use raw pointers internally but keep the API safe.
-    let ctx_ptr = ctx as *mut xkb_context;
-    let scanner_ptr = scanner as *mut scanner;
-
     let mut first: Option<Box<XkbFile>> = None;
 
     loop {
-        // SAFETY: We know ctx and scanner are valid for the duration of this function.
-        // The parser_param struct borrows them mutably, and we don't alias.
         let mut param = parser_param {
-            ctx: unsafe { &mut *ctx_ptr },
-            scanner: unsafe { &mut *scanner_ptr },
+            ctx: ctx,
+            scanner: scanner,
             rtrn: None,
             more_maps: false,
         };
 
         let ret = _xkbcommon_parse(&mut param);
+
+        // Recover ctx and scanner from param before it's dropped
+        ctx = param.ctx;
+        scanner = param.scanner;
 
         if ret == 0 && param.more_maps {
             if !map.is_empty() {
@@ -2330,12 +2327,11 @@ pub fn parse<'a>(
     }
 
     if first.is_some() {
-        let scanner_ref = unsafe { &*scanner_ptr };
         let first_ref = first.as_ref().unwrap();
         log::warn!(
             "[XKB-{:03}] No map in include statement, but \"{}\" contains several; Using first defined map, \"{}\"\n",
             XKB_WARNING_MISSING_DEFAULT_SECTION as i32,
-            &scanner_ref.file_name,
+            &scanner.file_name,
             safe_map_name(first_ref)
         );
     }
@@ -2344,15 +2340,12 @@ pub fn parse<'a>(
 
 pub fn parse_next<'a>(
     ctx: &'a mut xkb_context,
-    scanner: &'a mut scanner,
+    scanner: &'a mut scanner<'a>,
     xkb_file: &mut Option<Box<XkbFile>>,
 ) -> bool {
-    let ctx_ptr = ctx as *mut xkb_context;
-    let scanner_ptr = scanner as *mut scanner;
-
     let mut param = parser_param {
-        ctx: unsafe { &mut *ctx_ptr },
-        scanner: unsafe { &mut *scanner_ptr },
+        ctx,
+        scanner,
         rtrn: None,
         more_maps: false,
     };
