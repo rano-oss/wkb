@@ -6,7 +6,7 @@ use xkbcommon::{
 
 fn xkb_new_keymap_from_names(locale: String, layout: Option<String>) -> xkb::Keymap {
     let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-    let variant_str = layout.unwrap_or_else(String::new);
+    let variant_str = layout.unwrap_or_default();
     xkb::Keymap::new_from_names(
         &context,
         "evdev",
