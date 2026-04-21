@@ -6,9 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lazy_static = "1.4.0"
 xmloxide = "0.4"
-xkb-parser = { git = "https://github.com/rano-oss/xkb-parser.git" }
 log = "0.4.29"
 
 [dev-dependencies]

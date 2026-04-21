@@ -94,6 +94,62 @@ fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
     layouts
 }
 
+/// Get the keycode (and optional level) for a specific modifier type from the Modifiers state.
+/// Returns the first pressed modifier of the given type, or if none are pressed,
+/// the first latched/locked modifier of that type.
+pub fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Option<u8>)> {
+    let mut other_mod = None;
+
+    for (code, modifier) in modifiers.0.iter() {
+        match modifier {
+            Modifier::Single(mod_kind) => {
+                if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
+                    // Prefer Pressed over Latch/Lock
+                    match mod_kind {
+                        ModKind::Pressed { .. } => return Some((*code, None)),
+
+                        _ => {
+                            if other_mod.is_none() {
+                                other_mod = Some((*code, None));
+                            }
+                        }
+                    }
+                }
+            }
+            Modifier::Leveled(map) => {
+                for (level, mod_kind) in map {
+                    if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
+                        match mod_kind {
+                            ModKind::Pressed { .. } => return Some((*code, Some(*level))),
+                            _ => {
+                                if other_mod.is_none() {
+                                    other_mod = Some((*code, Some(*level)));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    other_mod
+}
+
+/// Get the keycode (and optional level) for Level2 (Shift) modifier.
+pub fn level2_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
+    level_code(modifiers, ModType::Level2)
+}
+
+/// Get the keycode (and optional level) for Level3 (AltGr) modifier.
+pub fn level3_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
+    level_code(modifiers, ModType::Level3)
+}
+
+/// Get the keycode (and optional level) for Level5 modifier.
+pub fn level5_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
+    level_code(modifiers, ModType::Level5)
+}
+
 /// Press the appropriate level modifier keys on `state` for the given level index.
 /// Level 0 = no modifiers, 1 = Shift, 2 = Level3, 3 = Level3+Shift, etc.
 fn press_level_modifiers(
@@ -173,9 +229,9 @@ fn build_wkb_from_keymap(
     };
 
     let level_keys = (
-        modifiers.level2_code().map(|(c, _)| c + EVDEV_OFFSET),
-        modifiers.level3_code().map(|(c, _)| c + EVDEV_OFFSET),
-        modifiers.level5_code().map(|(c, _)| c + EVDEV_OFFSET),
+        level2_code(&modifiers).map(|(c, _)| c + EVDEV_OFFSET),
+        level3_code(&modifiers).map(|(c, _)| c + EVDEV_OFFSET),
+        level5_code(&modifiers).map(|(c, _)| c + EVDEV_OFFSET),
     );
 
     // Build level exceptions (direct keysym mapping)
@@ -209,9 +265,7 @@ fn build_wkb_from_keymap(
 
     // Build caps/num lock keymaps (only store differences)
     let caps_lock_keymap = {
-        let caps_kc = modifiers
-            .level_code(ModType::Caps)
-            .map(|(c, _)| c + EVDEV_OFFSET);
+        let caps_kc = level_code(&modifiers, ModType::Caps).map(|(c, _)| c + EVDEV_OFFSET);
         let mut maps = populate_lock(caps_kc, false, level_keys);
         // Keep only differences from state_keymap
         for (lvl, map) in maps.iter_mut().enumerate() {
@@ -221,9 +275,7 @@ fn build_wkb_from_keymap(
     };
 
     let num_lock_keys = {
-        let num_kc = modifiers
-            .level_code(ModType::Num)
-            .map(|(c, _)| c + EVDEV_OFFSET);
+        let num_kc = level_code(&modifiers, ModType::Num).map(|(c, _)| c + EVDEV_OFFSET);
         let mut maps = populate_lock(num_kc, true, level_keys);
         for (lvl, map) in maps.iter_mut().enumerate() {
             map.retain(|&k, &mut v| state_keymap.get(lvl).and_then(|m| m.get(&k)) != Some(&v));
@@ -237,6 +289,16 @@ fn build_wkb_from_keymap(
         .map(|kc| kc - EVDEV_OFFSET)
         .collect();
 
+    // Load compose table from locale
+    let composer = locale
+        .as_deref()
+        .and_then(compose::resolve_compose_file)
+        .map(|subpath| {
+            let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
+            compose::load_compose_from_path(&path)
+        })
+        .unwrap_or_else(ListComposer::new);
+
     WKB {
         layouts: all_layouts,
         layout: layout
@@ -245,7 +307,7 @@ fn build_wkb_from_keymap(
         locale,
         pressed_keys: HashSet::new(),
         repeat_keys,
-        composer: ListComposer::new(),
+        composer,
         modifiers,
         state_keymap,
         num_lock_keys,

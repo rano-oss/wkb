@@ -5,8 +5,7 @@ use test_case::test_matrix;
 use wkb::Token;
 use xkbcommon::xkb::{self, compose};
 
-// Use xkb-parser for compose file parsing
-use xkb_parser::{keysym_name_to_char, parse_compose_file, ComposeEntry};
+use wkb::xkb::compose_parse::{keysym_name_to_char, parse_compose_file, ComposeEntry};
 
 // ---------------------------------------------------------------------------
 // Helpers: keysym / char resolution
@@ -52,10 +51,20 @@ fn xkb_compose_sequence(
 }
 
 /// Feed a sequence of chars to a wkb ListComposer clone.
-fn wkb_compose_sequence(composer: &wkb::composer::ListComposer, chars: &[char]) -> Option<char> {
+fn wkb_compose_sequence(
+    composer: &wkb::composer::ListComposer,
+    chars: &[char],
+    is_multi_key: bool,
+) -> Option<char> {
     use wkb::composer::{ComposeState, Composer};
     let mut c = composer.clone();
     let mut result = None;
+    if is_multi_key {
+        match c.feed(Token::Compose) {
+            ComposeState::Cancelled(_) => return None,
+            _ => {}
+        }
+    }
     for &ch in chars {
         match c.feed(Token::Char(ch)) {
             ComposeState::Finished(out) => {
@@ -180,7 +189,11 @@ fn run_compose_test(
 
         let wkb_result = {
             let composer = regular;
-            wkb_compose_sequence(composer, &resolve_entry_chars(entry))
+            wkb_compose_sequence(
+                composer,
+                &resolve_entry_chars(entry),
+                entry.multi_key_index.is_some(),
+            )
         };
 
         if has_xkb {
