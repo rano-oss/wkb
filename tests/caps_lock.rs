@@ -10,7 +10,7 @@ use xkbcommon::{
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
     let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-    let variant_str = layout.unwrap_or_else(|| String::new());
+    let variant_str = layout.unwrap_or_else(String::new);
     let keymap = xkb::Keymap::new_from_names(
         &context,
         "evdev",
@@ -33,14 +33,14 @@ fn test_all_keys_locale<C: wkb::composer::Composer>(
     let mut wkb = wkb;
     for i in 0..701 {
         let k1 = wkb.utf8(i);
-        let k2 = xkb.key_get_utf8(Keycode::new(i as u32 + 8));
+        let k2 = xkb.key_get_utf8(Keycode::new(i + 8));
 
         if k1 != k2.chars().last() && !k2.is_empty() {
             let level = level_index(
                 wkb.modifiers.level5(),
                 wkb.modifiers.level3(),
                 wkb.modifiers.level2(),
-            ) as usize;
+            );
             println!(
                 "locale={} layout={} key={} level={}",
                 locale, layout, i, level
