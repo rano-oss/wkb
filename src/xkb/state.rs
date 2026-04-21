@@ -430,9 +430,9 @@ fn xkb_key_get_actions<'a>(state: &'a xkb_state, key: &'a xkb_key) -> &'a [xkb_a
 
 fn xkb_filter_new(state: &mut xkb_state) -> usize {
     let filters = &mut state.filters;
-    for i in 0..filters.len() {
-        if filters[i].func.is_none() {
-            filters[i].refcnt = 1;
+    for (i, filter) in filters.iter_mut().enumerate() {
+        if filter.func.is_none() {
+            filter.refcnt = 1;
             return i;
         }
     }
@@ -1754,8 +1754,8 @@ pub fn xkb_state_key_get_utf8(state: &xkb_state, kc: u32) -> String {
             return String::new();
         }
         let len = (ret - 1) as usize;
-        for j in 0..len {
-            result.push(tmp[j]);
+        for &byte in tmp.iter().take(len) {
+            result.push(byte);
         }
     }
     // Validate UTF-8

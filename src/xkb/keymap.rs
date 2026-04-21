@@ -533,7 +533,7 @@ pub fn XkbWrapGroupIntoRange(
                 num_groups.wrapping_sub(1_u32)
             }
         }
-        0 | _ => {
+        _ => {
             let rem: i32 = group % num_groups as i32;
             (if rem >= 0_i32 {
                 rem

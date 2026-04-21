@@ -127,8 +127,8 @@ fn add_direct_subdirectories(
         }
         // Check if already in versioned list
         let mut duplicate = false;
-        for i in 0..versioned_count {
-            if name_offset <= extensions[i].len() && *name_str == extensions[i][name_offset..] {
+        for ext in extensions.iter().take(versioned_count) {
+            if name_offset <= ext.len() && *name_str == ext[name_offset..] {
                 duplicate = true;
                 break;
             }
@@ -143,8 +143,8 @@ fn add_direct_subdirectories(
     // Sort the newly added entries and append as include paths
     if extensions.len() > versioned_count {
         extensions[versioned_count..].sort();
-        for i in versioned_count..extensions.len() {
-            ret |= context_include_path_append(ctx, &extensions[i]);
+        for ext in extensions.iter().skip(versioned_count) {
+            ret |= context_include_path_append(ctx, ext);
         }
     }
 

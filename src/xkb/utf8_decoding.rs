@@ -19,11 +19,11 @@ pub fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
     if len > bytes.len() {
         return (INVALID_UTF8_CODE_POINT, 0);
     }
-    for k in 1..len {
-        if (bytes[k] & 0xC0) != 0x80 {
+    for &byte in bytes.iter().take(len).skip(1) {
+        if (byte & 0xC0) != 0x80 {
             return (INVALID_UTF8_CODE_POINT, 0);
         }
-        cp = (cp << 6) | ((bytes[k] as u32) & 0x3F);
+        cp = (cp << 6) | ((byte as u32) & 0x3F);
     }
     // Reject overlong encodings and surrogates
     if (len == 2 && cp < 0x80)
