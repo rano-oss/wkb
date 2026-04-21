@@ -12,7 +12,6 @@ regex = "1.10.2"
 unicode-normalization = "0.1.22"
 libc = "0.2"
 xmloxide = "0.4"
-memmap2 = "0.9"
 xkb-parser = { git = "https://github.com/rano-oss/xkb-parser.git" }
 log = "0.4.29"
 

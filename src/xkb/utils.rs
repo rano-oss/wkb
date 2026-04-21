@@ -23,40 +23,37 @@ pub fn last_errno() -> i32 {
     std::io::Error::last_os_error().raw_os_error().unwrap_or(0)
 }
 
-use memmap2::Mmap;
 use std::fs::File;
 use std::io;
+use std::io::Read;
 
-/// Memory-mapped file wrapper with automatic cleanup
+/// File contents loaded into memory
 pub struct MappedFile {
-    mmap: Mmap,
+    data: Vec<u8>,
 }
 
 impl MappedFile {
-    /// Create a new memory-mapped file
+    /// Read the entire file into memory
     pub fn new(file: &File) -> io::Result<Self> {
-        let mmap = unsafe { Mmap::map(file)? };
-        Ok(MappedFile { mmap })
+        let mut data = Vec::new();
+        let mut file = file;
+        file.read_to_end(&mut data)?;
+        Ok(MappedFile { data })
     }
 
-    /// Get the mapped data as a byte slice
+    /// Get the data as a byte slice
     pub fn as_bytes(&self) -> &[u8] {
-        &self.mmap
+        &self.data
     }
 
-    /// Get the mapped data as a C string pointer (for FFI compatibility)
-    pub fn as_ptr(&self) -> *const i8 {
-        self.mmap.as_ptr() as *const i8
-    }
-
-    /// Get the size of the mapped file
+    /// Get the size of the file
     pub fn len(&self) -> usize {
-        self.mmap.len()
+        self.data.len()
     }
 
-    /// Check if the mapped file is empty
+    /// Check if the file is empty
     pub fn is_empty(&self) -> bool {
-        self.mmap.is_empty()
+        self.data.is_empty()
     }
 }
 

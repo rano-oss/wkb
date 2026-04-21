@@ -1854,14 +1854,7 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut scanner) {
 fn gettok(m: &mut matcher, s: &mut scanner) -> rules_token {
     lex(s, &mut m.val)
 }
-fn matcher_match(
-    m: &mut matcher,
-    s: &mut scanner,
-    include_depth: u32,
-    _string: *const i8,
-    _len: usize,
-    _file_name: &str,
-) -> bool {
+fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_name: &str) -> bool {
     let c2rust_current_block: u64;
     let mut tok: rules_token;
 
@@ -2147,14 +2140,7 @@ fn read_rules_file(
                 loc_0.column);
         return false;
     }
-    let ret: bool = matcher_match(
-        matcher,
-        &mut scanner,
-        include_depth,
-        mapped.as_ptr(),
-        mapped.len(),
-        path,
-    );
+    let ret: bool = matcher_match(matcher, &mut scanner, include_depth, path);
     ret
 }
 fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut matcher<'_>) -> bool {
