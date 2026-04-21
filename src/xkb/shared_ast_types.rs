@@ -161,6 +161,31 @@ pub struct ExprDef {
     pub kind: ExprKind,
 }
 
+impl ExprDef {
+    /// Safe accessor for the next ExprDef in a ParseCommon linked list.
+    /// Uses the correct field offset since Rust may reorder fields without `#[repr(C)]`.
+    pub fn next(&self) -> Option<&ExprDef> {
+        let next_ptr = self.common.next;
+        if next_ptr.is_null() {
+            None
+        } else {
+            let offset = std::mem::offset_of!(ExprDef, common);
+            Some(unsafe { &*((next_ptr as *const u8).sub(offset) as *const ExprDef) })
+        }
+    }
+
+    /// Mutable version of `next()`.
+    pub fn next_mut(&mut self) -> Option<&mut ExprDef> {
+        let next_ptr = self.common.next;
+        if next_ptr.is_null() {
+            None
+        } else {
+            let offset = std::mem::offset_of!(ExprDef, common);
+            Some(unsafe { &mut *((next_ptr as *mut u8).sub(offset) as *mut ExprDef) })
+        }
+    }
+}
+
 /// The discriminated payload of an expression node.
 pub enum ExprKind {
     String(u32),

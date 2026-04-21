@@ -3,7 +3,7 @@ use crate::xkb::context::xkb_atom_intern_ref;
 pub use crate::xkb::keymap::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
 use crate::xkb::keysym::xkb_keysym_is_keypad;
 use crate::xkb::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
-use crate::xkb::shared_ast_types::from_common;
+
 pub use crate::xkb::shared_ast_types::{ModMapDef, SymbolsDef};
 pub use crate::xkb::shared_types::{XKB_MOD_NONE, XKB_OVERLAY_INVALID};
 use crate::xkb::text::ModIndexText;
@@ -129,31 +129,32 @@ fn resize_groups_zero(v: &mut Vec<GroupInfo>, new_len: usize) {
 }
 
 /// Collect a ParseCommon linked list of ExprDef nodes into a Vec of references.
-/// SAFETY: All nodes must be valid ExprDef allocations connected via common.next.
-fn collect_expr_list<'a>(head: *const ExprDef) -> Vec<&'a ExprDef> {
+fn collect_expr_list(head: &ExprDef) -> Vec<&ExprDef> {
     let mut result = Vec::new();
-    let mut cur = head;
-    while !cur.is_null() {
-        let expr_ref = unsafe { &*cur };
-        result.push(expr_ref);
-        cur = unsafe { from_common!(expr_ref.common.next, ExprDef) };
+    let mut cur = Some(head);
+    while let Some(expr) = cur {
+        result.push(expr);
+        cur = expr.next();
     }
     result
 }
 
 /// Collect a ParseCommon linked list of ExprDef nodes into a Vec of mutable references.
-/// SAFETY: All nodes must be valid ExprDef allocations connected via common.next.
-/// Caller must ensure no aliasing.
-fn collect_expr_list_mut<'a>(head: *mut ExprDef) -> Vec<&'a mut ExprDef> {
-    let mut result = Vec::new();
-    let mut cur = head;
-    while !cur.is_null() {
-        let expr_ref = unsafe { &mut *cur };
-        let next = unsafe { from_common!(expr_ref.common.next, ExprDef) };
-        result.push(expr_ref);
-        cur = next;
+/// The linked list nodes are distinct heap allocations so no aliasing occurs.
+fn collect_expr_list_mut(head: &mut ExprDef) -> Vec<&mut ExprDef> {
+    // First, collect raw pointers using safe next() for traversal
+    let mut ptrs: Vec<*mut ExprDef> = Vec::new();
+    // Walk the immutable view to collect pointers
+    let head_ptr = head as *mut ExprDef;
+    let mut cur: Option<&ExprDef> = Some(&*head);
+    while let Some(expr) = cur {
+        ptrs.push(expr as *const ExprDef as *mut ExprDef);
+        cur = expr.next();
     }
-    result
+    // Verify head_ptr matches first element (sanity check)
+    debug_assert!(ptrs.first() == Some(&head_ptr));
+    // SAFETY: All pointers are to distinct heap-allocated ExprDef nodes
+    ptrs.into_iter().map(|p| unsafe { &mut *p }).collect()
 }
 
 fn InitGroupInfo(groupi: &mut GroupInfo) {
@@ -1027,7 +1028,7 @@ fn AddActionsToKey(
         );
         return false;
     }
-    let action_nodes = collect_expr_list_mut(value as *mut ExprDef);
+    let action_nodes = collect_expr_list_mut(value);
     let nLevels: u32 = action_nodes.len() as u32;
     let groupi = &mut keyi.groups[ndx as usize];
     if (groupi.levels.len() as u32) < nLevels {
