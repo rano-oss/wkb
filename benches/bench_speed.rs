@@ -5,6 +5,37 @@ use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criteri
 use std::ffi::CString;
 use std::os::raw::c_char;
 use std::ptr;
+use std::time::Duration;
+
+fn fast() -> Criterion {
+    Criterion::default()
+        .warm_up_time(Duration::from_millis(500))
+        .measurement_time(Duration::from_secs(2))
+        .sample_size(50)
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// COMPAT HELPERS — call xkb-core Rust API directly (same code path as
+// xkbcommon-compat, but avoids #[no_mangle] symbol collision with libxkbcommon)
+// ════════════════════════════════════════════════════════════════════════
+
+fn compat_setup(
+    locale: &str,
+    variant: Option<&str>,
+) -> (xkb_core::rust_types::Keymap, xkb_core::rust_types::State) {
+    use xkb_core::rust_types::{Context, RuleNames};
+    let ctx = Context::new().expect("xkb-core context");
+    let rmlvo = RuleNames {
+        rules: "evdev".to_string(),
+        model: String::new(),
+        layout: locale.to_string(),
+        variant: variant.unwrap_or("").to_string(),
+        options: String::new(),
+    };
+    let km = ctx.keymap_from_names(&rmlvo).expect("xkb-core keymap");
+    let st = km.new_state().expect("xkb-core state");
+    (km, st)
+}
 
 // ════════════════════════════════════════════════════════════════════════
 // 1. COMPOSE BENCHMARKS
@@ -12,6 +43,8 @@ use std::ptr;
 
 fn bench_compose_table_creation(c: &mut Criterion) {
     let mut group = c.benchmark_group("compose/table_creation");
+    group.warm_up_time(Duration::from_millis(500));
+    group.sample_size(50);
     let locale = COMPOSE_LOCALE;
 
     // ── wkb ────────────────────────────────────────────────────────────
@@ -64,11 +97,16 @@ fn bench_compose_table_creation(c: &mut Criterion) {
         unsafe { (xkb.xkb_context_unref)(ctx) };
     });
 
+    // ── xkbcommon-compat ───────────────────────────────────────────────
+    // (no compose API in compat crate yet — skip)
+
     group.finish();
 }
 
 fn bench_compose_state_creation(c: &mut Criterion) {
     let mut group = c.benchmark_group("compose/state_creation");
+    group.warm_up_time(Duration::from_millis(500));
+    group.sample_size(50);
     let locale = COMPOSE_LOCALE;
 
     // ── wkb ────────────────────────────────────────────────────────────
@@ -144,6 +182,8 @@ fn bench_compose_state_creation(c: &mut Criterion) {
 
 fn bench_compose_feed(c: &mut Criterion) {
     let mut group = c.benchmark_group("compose/feed");
+    group.warm_up_time(Duration::from_millis(500));
+    group.sample_size(50);
 
     for seq in COMPOSE_SEQUENCES {
         // ── wkb ────────────────────────────────────────────────────────
@@ -296,11 +336,9 @@ fn xkbcommon_dl_setup(
     let xkb = xkbcommon_dl::xkbcommon_handle();
     let ctx =
         unsafe { (xkb.xkb_context_new)(xkbcommon_dl::xkb_context_flags::XKB_CONTEXT_NO_FLAGS) };
-
     let c_rules = CString::new("evdev").unwrap();
     let c_layout = CString::new(locale).unwrap();
     let c_variant = variant.map(|v| CString::new(v).unwrap());
-
     let names = xkbcommon_dl::xkb_rule_names {
         rules: c_rules.as_ptr(),
         model: ptr::null(),
@@ -308,7 +346,6 @@ fn xkbcommon_dl_setup(
         variant: c_variant.as_ref().map_or(ptr::null(), |v| v.as_ptr()),
         options: ptr::null(),
     };
-
     let km = unsafe {
         (xkb.xkb_keymap_new_from_names)(
             ctx,
@@ -322,6 +359,8 @@ fn xkbcommon_dl_setup(
 
 fn bench_key_update(c: &mut Criterion) {
     let mut group = c.benchmark_group("key/update");
+    group.warm_up_time(Duration::from_millis(500));
+    group.sample_size(50);
 
     for &(locale, variant) in LAYOUTS {
         let layout_id = variant.map_or(locale.to_string(), |v| format!("{locale}_{v}"));
@@ -387,6 +426,24 @@ fn bench_key_update(c: &mut Criterion) {
                     (xkb.xkb_context_unref)(ctx);
                 }
             }
+
+            // ── xkbcommon-compat ───────────────────────────────────────
+            {
+                let (_km, mut st) = compat_setup(locale, variant);
+                group.bench_function(BenchmarkId::new("xkbcommon-compat", &bench_id), |b| {
+                    b.iter(|| {
+                        for &(code, down) in case.keys {
+                            let xkb_kc = code + EVDEV_OFFSET;
+                            let dir = if down {
+                                xkb_core::XKB_KEY_DOWN
+                            } else {
+                                xkb_core::XKB_KEY_UP
+                            };
+                            black_box(st.update_key(xkb_kc, dir));
+                        }
+                    });
+                });
+            }
         }
     }
     group.finish();
@@ -394,6 +451,8 @@ fn bench_key_update(c: &mut Criterion) {
 
 fn bench_key_get_sym(c: &mut Criterion) {
     let mut group = c.benchmark_group("key/get_sym");
+    group.warm_up_time(Duration::from_millis(500));
+    group.sample_size(50);
 
     for &(locale, variant) in LAYOUTS {
         let layout_id = variant.map_or(locale.to_string(), |v| format!("{locale}_{v}"));
@@ -470,6 +529,27 @@ fn bench_key_get_sym(c: &mut Criterion) {
                     (xkb.xkb_context_unref)(ctx);
                 }
             }
+
+            // ── xkbcommon-compat ───────────────────────────────────────
+            {
+                let (_km, mut st) = compat_setup(locale, variant);
+                group.bench_function(BenchmarkId::new("xkbcommon-compat", &bench_id), |b| {
+                    b.iter(|| {
+                        for &(code, down) in case.keys {
+                            let xkb_kc = code + EVDEV_OFFSET;
+                            let dir = if down {
+                                xkb_core::XKB_KEY_DOWN
+                            } else {
+                                xkb_core::XKB_KEY_UP
+                            };
+                            st.update_key(xkb_kc, dir);
+                            if down {
+                                black_box(st.key_get_one_sym(black_box(xkb_kc)));
+                            }
+                        }
+                    });
+                });
+            }
         }
     }
     group.finish();
@@ -477,6 +557,8 @@ fn bench_key_get_sym(c: &mut Criterion) {
 
 fn bench_key_get_utf8(c: &mut Criterion) {
     let mut group = c.benchmark_group("key/get_utf8");
+    group.warm_up_time(Duration::from_millis(500));
+    group.sample_size(50);
 
     for &(locale, variant) in LAYOUTS {
         let layout_id = variant.map_or(locale.to_string(), |v| format!("{locale}_{v}"));
@@ -559,6 +641,27 @@ fn bench_key_get_utf8(c: &mut Criterion) {
                     (xkb.xkb_context_unref)(ctx);
                 }
             }
+
+            // ── xkbcommon-compat ───────────────────────────────────────
+            {
+                let (_km, mut st) = compat_setup(locale, variant);
+                group.bench_function(BenchmarkId::new("xkbcommon-compat", &bench_id), |b| {
+                    b.iter(|| {
+                        for &(code, down) in case.keys {
+                            let xkb_kc = code + EVDEV_OFFSET;
+                            let dir = if down {
+                                xkb_core::XKB_KEY_DOWN
+                            } else {
+                                xkb_core::XKB_KEY_UP
+                            };
+                            st.update_key(xkb_kc, dir);
+                            if down {
+                                black_box(st.key_get_utf8(black_box(xkb_kc)));
+                            }
+                        }
+                    });
+                });
+            }
         }
     }
     group.finish();
@@ -568,13 +671,15 @@ fn bench_key_get_utf8(c: &mut Criterion) {
 // CRITERION ENTRY
 // ════════════════════════════════════════════════════════════════════════
 
-criterion_group!(
-    benches,
-    bench_compose_table_creation,
-    bench_compose_state_creation,
-    bench_compose_feed,
-    bench_key_update,
-    bench_key_get_sym,
-    bench_key_get_utf8,
-);
+criterion_group! {
+    name = benches;
+    config = fast();
+    targets =
+        bench_compose_table_creation,
+        bench_compose_state_creation,
+        bench_compose_feed,
+        bench_key_update,
+        bench_key_get_sym,
+        bench_key_get_utf8,
+}
 criterion_main!(benches);

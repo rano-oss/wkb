@@ -244,6 +244,50 @@ fn run_workload_xkbcommon_dl() -> u64 {
     checksum
 }
 
+fn run_workload_xkbcommon_compat() -> u64 {
+    use xkb_core::rust_types::{Context, RuleNames};
+    let mut checksum: u64 = 0;
+
+    print_rss("xkbcommon-compat/before_setup");
+
+    let ctx = Context::new().expect("xkb-core context");
+
+    for &(locale, variant) in LAYOUTS {
+        let rmlvo = RuleNames {
+            rules: "evdev".to_string(),
+            model: String::new(),
+            layout: locale.to_string(),
+            variant: variant.unwrap_or("").to_string(),
+            options: String::new(),
+        };
+        let km = ctx.keymap_from_names(&rmlvo).expect("keymap");
+        let mut st = km.new_state().expect("state");
+
+        for case in KEY_CASES {
+            for _ in 0..HOT_PATH_ITERATIONS {
+                for &(code, down) in case.keys {
+                    let xkb_kc = code + EVDEV_OFFSET;
+                    let dir = if down {
+                        xkb_core::XKB_KEY_DOWN
+                    } else {
+                        xkb_core::XKB_KEY_UP
+                    };
+                    st.update_key(xkb_kc, dir);
+                    if down {
+                        let s = st.key_get_utf8(xkb_kc);
+                        checksum = checksum.wrapping_add(s.len() as u64);
+                    }
+                }
+            }
+        }
+    }
+
+    // No compose API benchmarked for compat path
+
+    print_rss("xkbcommon-compat/after_workload");
+    checksum
+}
+
 fn main() {
     println!("=== Memory Benchmark ===\n");
 
@@ -259,7 +303,10 @@ fn main() {
     let c3 = run_workload_xkbcommon_dl();
     println!("  xkbcommon-dl checksum: {c3}\n");
 
-    black_box((c1, c2, c3));
+    let c4 = run_workload_xkbcommon_compat();
+    println!("  xkbcommon-compat checksum: {c4}\n");
+
+    black_box((c1, c2, c3, c4));
 
     println!("=== Done ===");
 }

@@ -14,6 +14,7 @@ log = "0.4.29"
 test-case = "3.3.1"
 xkbcommon = "0.9.0"
 xkbcommon-dl = "0.4.2"
+xkbcommon-compat = { path = "xkbcommon-compat" }
 criterion = { version = "0.5", features = ["html_reports"] }
 
 [[bench]]
@@ -31,3 +32,6 @@ name = "bench_size_xkbcommon"
 
 [[example]]
 name = "bench_size_xkbcommon_dl"
+
+[[example]]
+name = "bench_size_xkbcommon_compat"
