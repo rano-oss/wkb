@@ -3,12 +3,57 @@
 #![allow(non_upper_case_globals)]
 
 pub use composer::{ComposeState, Composer, ListComposer, Token};
-use std::collections::{BTreeMap, HashSet};
+use std::collections::HashSet;
 pub mod composer;
 pub use modifiers::KeyDirection;
 use modifiers::{level_index, Modifiers, *};
 pub mod modifiers;
 pub mod xkb;
+
+/// Maximum number of shift levels.
+const MAX_LEVELS: usize = 8;
+
+/// Flat keymap: `MAX_LEVELS` planes of `num_keys` slots.
+/// Index: `level * num_keys + evdev_code`.
+#[derive(Debug, Clone)]
+pub struct FlatKeymap {
+    pub data: Vec<Option<char>>,
+    pub num_keys: usize,
+}
+
+impl FlatKeymap {
+    pub fn new(num_keys: usize) -> Self {
+        Self {
+            data: vec![None; MAX_LEVELS * num_keys],
+            num_keys,
+        }
+    }
+
+    #[inline]
+    pub fn num_levels(&self) -> usize {
+        MAX_LEVELS
+    }
+
+    #[inline(always)]
+    pub fn get(&self, level: usize, evdev_code: u32) -> Option<char> {
+        let k = evdev_code as usize;
+        if k < self.num_keys {
+            let idx = level * self.num_keys + k;
+            self.data[idx]
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    pub fn set(&mut self, level: usize, evdev_code: u32, ch: char) {
+        let k = evdev_code as usize;
+        if k < self.num_keys {
+            let idx = level * self.num_keys + k;
+            self.data[idx] = Some(ch);
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct WKB<C: Composer> {
@@ -19,10 +64,10 @@ pub struct WKB<C: Composer> {
     pub repeat_keys: HashSet<u32>,
     pub composer: C,
     pub modifiers: Modifiers,
-    pub state_keymap: Vec<BTreeMap<u32, char>>,
-    pub num_lock_keys: Vec<BTreeMap<u32, char>>,
-    pub caps_lock_keymap: Vec<BTreeMap<u32, char>>,
-    pub level_exceptions_keymap: Vec<BTreeMap<u32, char>>,
+    pub state_keymap: FlatKeymap,
+    pub num_lock_keys: FlatKeymap,
+    pub caps_lock_keymap: FlatKeymap,
+    pub level_exceptions_keymap: FlatKeymap,
 }
 
 impl WKB<ListComposer> {
@@ -73,7 +118,7 @@ impl<C: Composer> WKB<C> {
             (ALTGR, 128),
         ];
         for (code, bit) in mapping {
-            if let Some(Modifier::Single(mk)) = self.modifiers.0.get(&code) {
+            if let Some(Modifier::Single(mk)) = self.modifiers.map.get(&code) {
                 match mk {
                     ModKind::Pressed { pressed: true, .. } => depressed |= bit,
                     ModKind::Lock {
@@ -143,7 +188,7 @@ impl<C: Composer> WKB<C> {
             let is_locked = (locked & bit) != 0;
             let is_latched = (latched & bit) != 0;
 
-            self.modifiers.0.entry(code).and_modify(|m| {
+            self.modifiers.map.entry(code).and_modify(|m| {
                 if let Modifier::Single(mk) = m {
                     match mk {
                         ModKind::Pressed { pressed, .. } => *pressed = is_depressed,
@@ -166,57 +211,41 @@ impl<C: Composer> WKB<C> {
         }
     }
 
+    #[inline]
     pub fn level_key(&self, evdev_code: u32, level_index: usize) -> Option<char> {
-        if let Some(c) = self
-            .level_exceptions_keymap
-            .get(level_index)
-            .and_then(|m| m.get(&evdev_code).copied())
-        {
-            return Some(c);
-        }
-        self.state_keymap
-            .get(level_index)
-            .and_then(|hm| hm.get(&evdev_code).copied())
+        self.level_exceptions_keymap
+            .get(level_index, evdev_code)
+            .or_else(|| self.state_keymap.get(level_index, evdev_code))
     }
 
     pub fn key_repeats(&self, evdev_code: u32) -> bool {
         self.repeat_keys.contains(&evdev_code)
     }
 
+    #[inline]
     pub fn utf8(&mut self, evdev_code: u32) -> Option<char> {
         if self.modifiers.active_mod_type(ModType::None) {
             return None;
         }
-        let level5 = self.modifiers.level5() && self.state_keymap.len() > 4;
-        let level3 = self.modifiers.level3() && self.state_keymap.len() > 2;
-        let level2 = self.modifiers.level2() && self.state_keymap.len() > 1;
+        let nk = self.state_keymap.num_keys;
+        let level5 = self.modifiers.level5() && self.state_keymap.data.len() > 4 * nk;
+        let level3 = self.modifiers.level3() && self.state_keymap.data.len() > 2 * nk;
+        let level2 = self.modifiers.level2() && self.state_keymap.data.len() > 1 * nk;
         let base_level = level_index(level5, level3, level2);
 
         if self.modifiers.locked(NUM_LOCK) {
-            if let Some(&key) = self
-                .num_lock_keys
-                .get(base_level)
-                .and_then(|m| m.get(&evdev_code))
-            {
+            if let Some(key) = self.num_lock_keys.get(base_level, evdev_code) {
                 return Some(key);
             }
         }
 
         if self.modifiers.locked(CAPS_LOCK) {
-            if let Some(&c) = self
-                .caps_lock_keymap
-                .get(base_level)
-                .and_then(|m| m.get(&evdev_code))
-            {
+            if let Some(c) = self.caps_lock_keymap.get(base_level, evdev_code) {
                 return Some(c);
             }
         }
 
-        let key = self
-            .state_keymap
-            .get(base_level)
-            .and_then(|m| m.get(&evdev_code).copied());
-        key
+        self.state_keymap.get(base_level, evdev_code)
     }
 
     pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {

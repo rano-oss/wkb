@@ -9,9 +9,9 @@ use std::time::Duration;
 
 fn fast() -> Criterion {
     Criterion::default()
-        .warm_up_time(Duration::from_millis(500))
-        .measurement_time(Duration::from_secs(2))
-        .sample_size(50)
+        .warm_up_time(Duration::from_millis(100))
+        .measurement_time(Duration::from_millis(500))
+        .sample_size(20)
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -43,8 +43,6 @@ fn compat_setup(
 
 fn bench_compose_table_creation(c: &mut Criterion) {
     let mut group = c.benchmark_group("compose/table_creation");
-    group.warm_up_time(Duration::from_millis(500));
-    group.sample_size(50);
     let locale = COMPOSE_LOCALE;
 
     // ── wkb ────────────────────────────────────────────────────────────
@@ -110,8 +108,6 @@ fn bench_compose_table_creation(c: &mut Criterion) {
 
 fn bench_compose_state_creation(c: &mut Criterion) {
     let mut group = c.benchmark_group("compose/state_creation");
-    group.warm_up_time(Duration::from_millis(500));
-    group.sample_size(50);
     let locale = COMPOSE_LOCALE;
 
     // ── wkb ────────────────────────────────────────────────────────────
@@ -199,8 +195,6 @@ fn bench_compose_state_creation(c: &mut Criterion) {
 
 fn bench_compose_feed(c: &mut Criterion) {
     let mut group = c.benchmark_group("compose/feed");
-    group.warm_up_time(Duration::from_millis(500));
-    group.sample_size(50);
 
     for seq in COMPOSE_SEQUENCES {
         // ── wkb ────────────────────────────────────────────────────────
@@ -395,8 +389,6 @@ fn xkbcommon_dl_setup(
 
 fn bench_key_update(c: &mut Criterion) {
     let mut group = c.benchmark_group("key/update");
-    group.warm_up_time(Duration::from_millis(500));
-    group.sample_size(50);
 
     for &(locale, variant) in LAYOUTS {
         let layout_id = variant.map_or(locale.to_string(), |v| format!("{locale}_{v}"));
@@ -487,8 +479,6 @@ fn bench_key_update(c: &mut Criterion) {
 
 fn bench_key_get_sym(c: &mut Criterion) {
     let mut group = c.benchmark_group("key/get_sym");
-    group.warm_up_time(Duration::from_millis(500));
-    group.sample_size(50);
 
     for &(locale, variant) in LAYOUTS {
         let layout_id = variant.map_or(locale.to_string(), |v| format!("{locale}_{v}"));
@@ -593,8 +583,6 @@ fn bench_key_get_sym(c: &mut Criterion) {
 
 fn bench_key_get_utf8(c: &mut Criterion) {
     let mut group = c.benchmark_group("key/get_utf8");
-    group.warm_up_time(Duration::from_millis(500));
-    group.sample_size(50);
 
     for &(locale, variant) in LAYOUTS {
         let layout_id = variant.map_or(locale.to_string(), |v| format!("{locale}_{v}"));

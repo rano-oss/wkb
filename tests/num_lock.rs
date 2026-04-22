@@ -1,7 +1,7 @@
 use test_case::test_matrix;
-use wkb::{xkb as wkbxkb, 
+use wkb::{
     modifiers::{level_index, ALTGR, NUM_LOCK},
-    KeyDirection, WKB,
+    xkb as wkbxkb, KeyDirection, WKB,
 };
 use xkbcommon::{
     self,
@@ -70,7 +70,11 @@ fn set_level<C: wkb::composer::Composer>(
             }
             3 => {
                 modifiers.push(wkbxkb::level2_code(&wkb.modifiers).unwrap().0);
-                modifiers.push(wkbxkb::level3_code(&wkb.modifiers).unwrap_or((ALTGR, None)).0);
+                modifiers.push(
+                    wkbxkb::level3_code(&wkb.modifiers)
+                        .unwrap_or((ALTGR, None))
+                        .0,
+                );
             }
             2 => {
                 modifiers.push(wkbxkb::level3_code(&wkb.modifiers).unwrap().0);
@@ -126,9 +130,10 @@ fn set_modifier_level<C: wkb::composer::Composer>(
             }
         }
         3 => {
-            if let (Some((c3, l3)), Some((c2, l2))) =
-                (wkbxkb::level3_code(&wkb.modifiers), wkbxkb::level2_code(&wkb.modifiers))
-            {
+            if let (Some((c3, l3)), Some((c2, l2))) = (
+                wkbxkb::level3_code(&wkb.modifiers),
+                wkbxkb::level2_code(&wkb.modifiers),
+            ) {
                 set_level(wkb, xkb, c3, l3);
                 set_level(wkb, xkb, c2, l2);
                 true
@@ -145,9 +150,10 @@ fn set_modifier_level<C: wkb::composer::Composer>(
             }
         }
         5 => {
-            if let (Some((c5, l5)), Some((c2, l2))) =
-                (wkbxkb::level5_code(&wkb.modifiers), wkbxkb::level2_code(&wkb.modifiers))
-            {
+            if let (Some((c5, l5)), Some((c2, l2))) = (
+                wkbxkb::level5_code(&wkb.modifiers),
+                wkbxkb::level2_code(&wkb.modifiers),
+            ) {
                 set_level(wkb, xkb, c5, l5);
                 set_level(wkb, xkb, c2, l2);
                 true
@@ -156,9 +162,10 @@ fn set_modifier_level<C: wkb::composer::Composer>(
             }
         }
         6 => {
-            if let (Some((c5, l5)), Some((c3, l3))) =
-                (wkbxkb::level5_code(&wkb.modifiers), wkbxkb::level3_code(&wkb.modifiers))
-            {
+            if let (Some((c5, l5)), Some((c3, l3))) = (
+                wkbxkb::level5_code(&wkb.modifiers),
+                wkbxkb::level3_code(&wkb.modifiers),
+            ) {
                 set_level(wkb, xkb, c5, l5);
                 set_level(wkb, xkb, c3, l3);
                 true
@@ -199,7 +206,7 @@ fn num_lock(locale: &str, level: usize) {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
 
-        if wkb.state_keymap.len() <= level {
+        if wkb.state_keymap.num_levels() <= level {
             continue;
         }
 
