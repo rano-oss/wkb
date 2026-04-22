@@ -70,7 +70,7 @@ fn wkb_compose_sequence(
             ComposeState::Finished(out) => {
                 result = Some(out);
             }
-            ComposeState::Idle(_) | ComposeState::Composing => {}
+            ComposeState::Idle(_) | ComposeState::Composing(_) => {}
             ComposeState::Cancelled => {
                 return None;
             }

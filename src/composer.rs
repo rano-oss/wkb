@@ -13,7 +13,7 @@ pub trait Composer: std::fmt::Debug {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ComposeState {
     Idle(Token),
-    Composing,
+    Composing(String),
     Finished(char),
     Cancelled,
 }
@@ -127,7 +127,7 @@ impl Composer for ListComposer {
                     ComposeState::Finished(out)
                 } else {
                     self.cur = next;
-                    ComposeState::Composing
+                    ComposeState::Composing(self.pending_string())
                 }
             }
             Err(_) => {
