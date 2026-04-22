@@ -118,7 +118,7 @@ impl<C: Composer> WKB<C> {
             (ALTGR, 128),
         ];
         for (code, bit) in mapping {
-            if let Some(Modifier::Single(mk)) = self.modifiers.map.get(&code) {
+            if let Some(Modifier::Single(mk)) = self.modifiers.get(code) {
                 match mk {
                     ModKind::Pressed { pressed: true, .. } => depressed |= bit,
                     ModKind::Lock {
@@ -188,7 +188,7 @@ impl<C: Composer> WKB<C> {
             let is_locked = (locked & bit) != 0;
             let is_latched = (latched & bit) != 0;
 
-            self.modifiers.map.entry(code).and_modify(|m| {
+            if let Some(m) = self.modifiers.get_mut(code) {
                 if let Modifier::Single(mk) = m {
                     match mk {
                         ModKind::Pressed { pressed, .. } => *pressed = is_depressed,
@@ -207,7 +207,7 @@ impl<C: Composer> WKB<C> {
                         _ => {}
                     }
                 }
-            });
+            }
         }
     }
 

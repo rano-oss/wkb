@@ -55,7 +55,7 @@ fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
 pub fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Option<u8>)> {
     let mut other_mod = None;
 
-    for (code, modifier) in modifiers.map.iter() {
+    for (code, modifier) in modifiers.iter() {
         match modifier {
             Modifier::Single(mod_kind) => {
                 if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
@@ -315,9 +315,7 @@ fn build_modifiers_from_keymap(
     min_keycode: u32,
     max_keycode: u32,
 ) -> Modifiers {
-    let mut modifiers = Modifiers {
-        map: std::collections::BTreeMap::new(),
-    };
+    let mut modifiers = Modifiers::new();
     let num_mods = keymap.num_mods();
 
     let keysym_to_modtype = |ks: u32| -> Option<ModType> {

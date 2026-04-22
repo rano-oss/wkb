@@ -1,5 +1,8 @@
 use std::{collections::BTreeMap, fmt};
 
+// Max modifier slots — keymaps typically have 10-20 modifiers
+const MAX_MOD_SLOTS: usize = 32;
+
 // Key constants
 pub const LEFT_CTRL: u32 = 29;
 pub const LEFT_SHIFT: u32 = 42;
@@ -198,12 +201,13 @@ pub enum Modifier {
 
 #[derive(Debug, Clone)]
 pub struct Modifiers {
-    pub map: BTreeMap<u32, Modifier>,
+    /// Flat array of (evdev_code, Modifier) pairs. Typically 10-20 entries.
+    entries: Vec<(u32, Modifier)>,
 }
 
 impl fmt::Display for Modifiers {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (code, modifier) in &self.map {
+        for (code, modifier) in &self.entries {
             write!(f, "code {}: ", code)?;
             match modifier {
                 Modifier::Single(mod_kind) => {
@@ -225,130 +229,165 @@ impl fmt::Display for Modifiers {
 
 impl Default for Modifiers {
     fn default() -> Self {
-        Self {
-            map: BTreeMap::from([
-                (
-                    LEFT_CTRL,
-                    Modifier::Single(ModKind::Pressed {
-                        pressed: false,
-                        mod_type: ModType::None,
-                    }),
-                ),
-                (
-                    RIGHT_CTRL,
-                    Modifier::Single(ModKind::Pressed {
-                        pressed: false,
-                        mod_type: ModType::None,
-                    }),
-                ),
-                (
-                    LEFT_SHIFT,
-                    Modifier::Single(ModKind::Pressed {
-                        pressed: false,
-                        mod_type: ModType::Level2,
-                    }),
-                ),
-                (
-                    RIGHT_SHIFT,
-                    Modifier::Single(ModKind::Pressed {
-                        pressed: false,
-                        mod_type: ModType::Level2,
-                    }),
-                ),
-                (
-                    ALT,
-                    Modifier::Single(ModKind::Pressed {
-                        pressed: false,
-                        mod_type: ModType::None,
-                    }),
-                ),
-                (
-                    ALTGR,
-                    Modifier::Single(ModKind::Pressed {
-                        pressed: false,
-                        mod_type: ModType::None,
-                    }),
-                ),
-                (
-                    LOGO,
-                    Modifier::Single(ModKind::Pressed {
-                        pressed: false,
-                        mod_type: ModType::None,
-                    }),
-                ),
-                (
-                    CAPS_LOCK,
-                    Modifier::Single(ModKind::Lock {
-                        pressed: false,
-                        locked: 0,
-                        mod_type: ModType::Caps,
-                    }),
-                ),
-                (
-                    NUM_LOCK,
-                    Modifier::Single(ModKind::Lock {
-                        pressed: false,
-                        locked: 0,
-                        mod_type: ModType::Num,
-                    }),
-                ),
-                (
-                    SCROLL_LOCK,
-                    Modifier::Single(ModKind::Lock {
-                        pressed: false,
-                        locked: 0,
-                        mod_type: ModType::Scroll,
-                    }),
-                ),
-            ]),
-        }
+        let entries = vec![
+            (
+                LEFT_CTRL,
+                Modifier::Single(ModKind::Pressed {
+                    pressed: false,
+                    mod_type: ModType::None,
+                }),
+            ),
+            (
+                RIGHT_CTRL,
+                Modifier::Single(ModKind::Pressed {
+                    pressed: false,
+                    mod_type: ModType::None,
+                }),
+            ),
+            (
+                LEFT_SHIFT,
+                Modifier::Single(ModKind::Pressed {
+                    pressed: false,
+                    mod_type: ModType::Level2,
+                }),
+            ),
+            (
+                RIGHT_SHIFT,
+                Modifier::Single(ModKind::Pressed {
+                    pressed: false,
+                    mod_type: ModType::Level2,
+                }),
+            ),
+            (
+                ALT,
+                Modifier::Single(ModKind::Pressed {
+                    pressed: false,
+                    mod_type: ModType::None,
+                }),
+            ),
+            (
+                ALTGR,
+                Modifier::Single(ModKind::Pressed {
+                    pressed: false,
+                    mod_type: ModType::None,
+                }),
+            ),
+            (
+                LOGO,
+                Modifier::Single(ModKind::Pressed {
+                    pressed: false,
+                    mod_type: ModType::None,
+                }),
+            ),
+            (
+                CAPS_LOCK,
+                Modifier::Single(ModKind::Lock {
+                    pressed: false,
+                    locked: 0,
+                    mod_type: ModType::Caps,
+                }),
+            ),
+            (
+                NUM_LOCK,
+                Modifier::Single(ModKind::Lock {
+                    pressed: false,
+                    locked: 0,
+                    mod_type: ModType::Num,
+                }),
+            ),
+            (
+                SCROLL_LOCK,
+                Modifier::Single(ModKind::Lock {
+                    pressed: false,
+                    locked: 0,
+                    mod_type: ModType::Scroll,
+                }),
+            ),
+        ];
+        Self { entries }
     }
 }
 
 impl Modifiers {
+    pub fn new() -> Self {
+        Self {
+            entries: Vec::with_capacity(MAX_MOD_SLOTS),
+        }
+    }
+
+    /// Get a reference to a modifier by evdev code.
+    #[inline]
+    pub fn get(&self, evdev_code: u32) -> Option<&Modifier> {
+        self.entries
+            .iter()
+            .find(|(c, _)| *c == evdev_code)
+            .map(|(_, m)| m)
+    }
+
+    /// Get a mutable reference to a modifier by evdev code.
+    #[inline]
+    pub fn get_mut(&mut self, evdev_code: u32) -> Option<&mut Modifier> {
+        self.entries
+            .iter_mut()
+            .find(|(c, _)| *c == evdev_code)
+            .map(|(_, m)| m)
+    }
+
+    /// Iterate over all (evdev_code, modifier) pairs.
+    #[inline]
+    pub fn iter(&self) -> impl Iterator<Item = (&u32, &Modifier)> {
+        self.entries.iter().map(|(c, m)| (c, m))
+    }
+
+    /// Insert or replace a modifier for the given evdev code.
+    pub fn set_modifier(&mut self, evdev_code: u32, modifier: Modifier) {
+        if let Some((_, existing)) = self.entries.iter_mut().find(|(c, _)| *c == evdev_code) {
+            *existing = modifier;
+        } else {
+            self.entries.push((evdev_code, modifier));
+        }
+    }
+
     pub fn insert(&mut self, evdev_code: u32, mod_kind: ModKind, level: u8) {
-        match self.map.get_mut(&evdev_code) {
-            Some(Modifier::Single(existing)) => {
-                if level == 0 {
-                    *existing = mod_kind.clone();
-                } else {
-                    let mut map = BTreeMap::new();
-                    map.insert(0, existing.clone());
+        if let Some((_, existing)) = self.entries.iter_mut().find(|(c, _)| *c == evdev_code) {
+            match existing {
+                Modifier::Single(ex_kind) => {
+                    if level == 0 {
+                        *ex_kind = mod_kind;
+                    } else {
+                        let mut map = BTreeMap::new();
+                        map.insert(0, ex_kind.clone());
+                        map.insert(level, mod_kind);
+                        *existing = Modifier::Leveled(map);
+                    }
+                }
+                Modifier::Leveled(map) => {
                     map.insert(level, mod_kind);
-                    *self.map.get_mut(&evdev_code).unwrap() = Modifier::Leveled(map);
                 }
             }
-            Some(Modifier::Leveled(map)) => {
+        } else {
+            if level == 0 {
+                self.entries.push((evdev_code, Modifier::Single(mod_kind)));
+            } else {
+                let mut map = BTreeMap::new();
                 map.insert(level, mod_kind);
-            }
-            None => {
-                if level == 0 {
-                    self.map.insert(evdev_code, Modifier::Single(mod_kind));
-                } else {
-                    let mut map = BTreeMap::new();
-                    map.insert(level, mod_kind);
-                    self.map.insert(evdev_code, Modifier::Leveled(map));
-                }
+                self.entries.push((evdev_code, Modifier::Leveled(map)));
             }
         }
     }
 
-    pub fn set_modifier(&mut self, evdev_code: u32, modifier: Modifier) {
-        self.map.insert(evdev_code, modifier);
-    }
-
     pub fn active_mod_type(&self, mod_type: ModType) -> bool {
-        self.map.values().any(|modifier| match &modifier {
+        self.entries.iter().any(|(_, modifier)| match modifier {
             Modifier::Single(mod_kind) => {
-                if let Some(mod_kind) = mod_kind.get_modkind_from_modtype(mod_type) {
-                    mod_kind.is_active()
+                if let Some(mk) = mod_kind.get_modkind_from_modtype(mod_type) {
+                    mk.is_active()
                 } else {
                     false
                 }
             }
             Modifier::Leveled(map) => map.values().any(|mod_kind| {
-                if let Some(mod_kind) = mod_kind.get_modkind_from_modtype(mod_type) {
-                    mod_kind.is_active()
+                if let Some(mk) = mod_kind.get_modkind_from_modtype(mod_type) {
+                    mk.is_active()
                 } else {
                     false
                 }
@@ -369,52 +408,48 @@ impl Modifiers {
     }
 
     pub fn unlatch(&mut self) {
-        self.map.values_mut().for_each(|modifier| match modifier {
-            Modifier::Single(mod_kind) => {
-                mod_kind.unlatch();
-            }
-            Modifier::Leveled(map) => {
-                map.values_mut().for_each(|mod_kind| {
+        self.entries
+            .iter_mut()
+            .for_each(|(_, modifier)| match modifier {
+                Modifier::Single(mod_kind) => {
                     mod_kind.unlatch();
-                });
-            }
-        });
+                }
+                Modifier::Leveled(map) => {
+                    map.values_mut().for_each(|mod_kind| {
+                        mod_kind.unlatch();
+                    });
+                }
+            });
     }
 
     pub fn pressed(&self, evdev_code: u32) -> bool {
-        self.map
-            .get(&evdev_code)
-            .is_some_and(|modifier| match modifier {
-                Modifier::Single(mod_kind) => *mod_kind.pressed(),
-                Modifier::Leveled(map) => map.values().any(|mod_kind| *mod_kind.pressed()),
-            })
+        self.get(evdev_code).is_some_and(|modifier| match modifier {
+            Modifier::Single(mod_kind) => *mod_kind.pressed(),
+            Modifier::Leveled(map) => map.values().any(|mod_kind| *mod_kind.pressed()),
+        })
     }
 
     pub fn locked(&self, evdev_code: u32) -> bool {
-        self.map
-            .get(&evdev_code)
-            .is_some_and(|modifier| match modifier {
-                Modifier::Single(mod_kind) => mod_kind.locked(),
-                Modifier::Leveled(map) => map.values().any(|mod_kind| mod_kind.locked()),
-            })
+        self.get(evdev_code).is_some_and(|modifier| match modifier {
+            Modifier::Single(mod_kind) => mod_kind.locked(),
+            Modifier::Leveled(map) => map.values().any(|mod_kind| mod_kind.locked()),
+        })
     }
 
     pub fn locked_with_type(&self, evdev_code: u32, mod_type: ModType) -> bool {
-        self.map
-            .get(&evdev_code)
-            .is_some_and(|modifier| match modifier {
-                Modifier::Single(mod_kind) => {
-                    mod_kind.locked() && mod_kind.get_modkind_from_modtype(mod_type).is_some()
-                }
-                Modifier::Leveled(map) => map.values().any(|mod_kind| {
-                    mod_kind.locked() && mod_kind.get_modkind_from_modtype(mod_type).is_some()
-                }),
-            })
+        self.get(evdev_code).is_some_and(|modifier| match modifier {
+            Modifier::Single(mod_kind) => {
+                mod_kind.locked() && mod_kind.get_modkind_from_modtype(mod_type).is_some()
+            }
+            Modifier::Leveled(map) => map.values().any(|mod_kind| {
+                mod_kind.locked() && mod_kind.get_modkind_from_modtype(mod_type).is_some()
+            }),
+        })
     }
 
     pub fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let level = level_index(self.level5(), self.level3(), self.level2()) as u8;
-        if let Some(modifier) = self.map.get_mut(&evdev_code) {
+        if let Some((_, modifier)) = self.entries.iter_mut().find(|(c, _)| *c == evdev_code) {
             match modifier {
                 Modifier::Single(mod_kind) => {
                     mod_kind.update(key_direction);
