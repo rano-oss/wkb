@@ -11,8 +11,7 @@ pub use xkb_core::{XKB_KEY_DOWN, XKB_KEY_REPEATED, XKB_KEY_UP};
 use crate::composer::Token;
 use crate::modifiers::*;
 use crate::FlatKeymap;
-use crate::{ListComposer, WKB};
-use std::collections::HashSet;
+use crate::{KeyBitSet, ListComposer, WKB};
 use std::path::Path;
 
 /// Get all available layouts/variants for a given locale
@@ -258,10 +257,12 @@ fn build_wkb_from_keymap(
         fk
     };
 
-    let repeat_keys = (min_keycode..=max_keycode)
-        .filter(|&kc| keymap.key_repeats(kc))
-        .map(|kc| kc - EVDEV_OFFSET)
-        .collect();
+    let mut repeat_keys = KeyBitSet::new();
+    for kc in min_keycode..=max_keycode {
+        if keymap.key_repeats(kc) {
+            repeat_keys.insert(kc - EVDEV_OFFSET);
+        }
+    }
 
     let composer = locale
         .as_deref()
@@ -278,7 +279,7 @@ fn build_wkb_from_keymap(
             .clone()
             .unwrap_or_else(|| locale.clone().unwrap_or_default()),
         locale,
-        pressed_keys: HashSet::new(),
+        pressed_keys: KeyBitSet::new(),
         repeat_keys,
         composer,
         modifiers,

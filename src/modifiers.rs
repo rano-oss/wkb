@@ -395,6 +395,125 @@ impl Modifiers {
         })
     }
 
+    /// Check for active None-type modifier AND compute level2/3/5 in a single scan.
+    /// Returns (has_active_none, level2, level3, level5).
+    #[inline]
+    pub fn active_none_and_levels(&self) -> (bool, bool, bool, bool) {
+        let mut none_active = false;
+        let mut l2 = false;
+        let mut l3 = false;
+        let mut l5 = false;
+
+        for (_, modifier) in &self.entries {
+            match modifier {
+                Modifier::Single(mk) => {
+                    Self::check_mod_kind(mk, &mut none_active, &mut l2, &mut l3, &mut l5);
+                }
+                Modifier::Leveled(map) => {
+                    for mk in map.values() {
+                        Self::check_mod_kind(mk, &mut none_active, &mut l2, &mut l3, &mut l5);
+                    }
+                }
+            }
+        }
+        (none_active, l2, l3, l5)
+    }
+
+    #[inline(always)]
+    fn check_mod_kind(
+        mk: &ModKind,
+        none_active: &mut bool,
+        l2: &mut bool,
+        l3: &mut bool,
+        l5: &mut bool,
+    ) {
+        match mk {
+            ModKind::Pressed { pressed, mod_type } if *pressed => match mod_type {
+                ModType::None => *none_active = true,
+                ModType::Level2 => *l2 = true,
+                ModType::Level3 => *l3 = true,
+                ModType::Level5 => *l5 = true,
+                _ => {}
+            },
+            ModKind::Lock {
+                locked, mod_type, ..
+            } if *locked > 0 => match mod_type {
+                ModType::None => *none_active = true,
+                ModType::Level2 => *l2 = true,
+                ModType::Level3 => *l3 = true,
+                ModType::Level5 => *l5 = true,
+                _ => {}
+            },
+            ModKind::Latch {
+                latched, mod_type, ..
+            } if *latched => match mod_type {
+                ModType::None => *none_active = true,
+                ModType::Level2 => *l2 = true,
+                ModType::Level3 => *l3 = true,
+                ModType::Level5 => *l5 = true,
+                _ => {}
+            },
+            _ => {}
+        }
+    }
+
+    /// Compute level2/3/5 bits in a single scan.
+    /// Returns (level2, level3, level5).
+    #[inline]
+    pub fn level_bits(&self) -> (bool, bool, bool) {
+        let mut l2 = false;
+        let mut l3 = false;
+        let mut l5 = false;
+
+        for (_, modifier) in &self.entries {
+            match modifier {
+                Modifier::Single(mk) => {
+                    Self::check_mod_kind_levels(mk, &mut l2, &mut l3, &mut l5);
+                }
+                Modifier::Leveled(map) => {
+                    for mk in map.values() {
+                        Self::check_mod_kind_levels(mk, &mut l2, &mut l3, &mut l5);
+                    }
+                }
+            }
+        }
+        (l2, l3, l5)
+    }
+
+    #[inline(always)]
+    fn check_mod_kind_levels(mk: &ModKind, l2: &mut bool, l3: &mut bool, l5: &mut bool) {
+        match mk {
+            ModKind::Pressed {
+                pressed: true,
+                mod_type,
+            } => match mod_type {
+                ModType::Level2 => *l2 = true,
+                ModType::Level3 => *l3 = true,
+                ModType::Level5 => *l5 = true,
+                _ => {}
+            },
+            ModKind::Lock {
+                locked, mod_type, ..
+            } if *locked > 0 => match mod_type {
+                ModType::Level2 => *l2 = true,
+                ModType::Level3 => *l3 = true,
+                ModType::Level5 => *l5 = true,
+                _ => {}
+            },
+            ModKind::Latch {
+                latched: true,
+                mod_type,
+                ..
+            } => match mod_type {
+                ModType::Level2 => *l2 = true,
+                ModType::Level3 => *l3 = true,
+                ModType::Level5 => *l5 = true,
+                _ => {}
+            },
+            _ => {}
+        }
+    }
+
     pub fn level5(&self) -> bool {
         self.active_mod_type(ModType::Level5)
     }
@@ -448,7 +567,8 @@ impl Modifiers {
     }
 
     pub fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
-        let level = level_index(self.level5(), self.level3(), self.level2()) as u8;
+        let (l2, l3, l5) = self.level_bits();
+        let level = level_index(l5, l3, l2) as u8;
         if let Some((_, modifier)) = self.entries.iter_mut().find(|(c, _)| *c == evdev_code) {
             match modifier {
                 Modifier::Single(mod_kind) => {

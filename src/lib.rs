@@ -3,7 +3,6 @@
 #![allow(non_upper_case_globals)]
 
 pub use composer::{ComposeState, Composer, ListComposer, Token};
-use std::collections::HashSet;
 pub mod composer;
 pub use modifiers::KeyDirection;
 use modifiers::{level_index, Modifiers, *};
@@ -12,6 +11,50 @@ pub mod xkb;
 
 /// Maximum number of shift levels.
 const MAX_LEVELS: usize = 8;
+
+/// Maximum evdev key code we support (768 covers all standard keycodes).
+const BITSET_WORDS: usize = 12; // 12 * 64 = 768 bits
+
+/// Compact bitset for tracking key states. Covers evdev codes 0..767.
+#[derive(Debug, Clone)]
+pub struct KeyBitSet {
+    bits: [u64; BITSET_WORDS],
+}
+
+impl KeyBitSet {
+    #[inline]
+    pub const fn new() -> Self {
+        Self {
+            bits: [0; BITSET_WORDS],
+        }
+    }
+
+    #[inline(always)]
+    pub fn contains(&self, key: u32) -> bool {
+        let k = key as usize;
+        if k < BITSET_WORDS * 64 {
+            self.bits[k >> 6] & (1u64 << (k & 63)) != 0
+        } else {
+            false
+        }
+    }
+
+    #[inline(always)]
+    pub fn insert(&mut self, key: u32) {
+        let k = key as usize;
+        if k < BITSET_WORDS * 64 {
+            self.bits[k >> 6] |= 1u64 << (k & 63);
+        }
+    }
+
+    #[inline(always)]
+    pub fn remove(&mut self, key: u32) {
+        let k = key as usize;
+        if k < BITSET_WORDS * 64 {
+            self.bits[k >> 6] &= !(1u64 << (k & 63));
+        }
+    }
+}
 
 /// Flat keymap: `MAX_LEVELS` planes of `num_keys` slots.
 /// Index: `level * num_keys + evdev_code`.
@@ -60,8 +103,8 @@ pub struct WKB<C: Composer> {
     pub layouts: Vec<String>,
     pub layout: String,
     pub locale: Option<String>,
-    pub pressed_keys: HashSet<u32>,
-    pub repeat_keys: HashSet<u32>,
+    pub pressed_keys: KeyBitSet,
+    pub repeat_keys: KeyBitSet,
     pub composer: C,
     pub modifiers: Modifiers,
     pub state_keymap: FlatKeymap,
@@ -219,18 +262,19 @@ impl<C: Composer> WKB<C> {
     }
 
     pub fn key_repeats(&self, evdev_code: u32) -> bool {
-        self.repeat_keys.contains(&evdev_code)
+        self.repeat_keys.contains(evdev_code)
     }
 
     #[inline]
     pub fn utf8(&mut self, evdev_code: u32) -> Option<char> {
-        if self.modifiers.active_mod_type(ModType::None) {
+        let (none_active, level2, level3, level5) = self.modifiers.active_none_and_levels();
+        if none_active {
             return None;
         }
         let nk = self.state_keymap.num_keys;
-        let level5 = self.modifiers.level5() && self.state_keymap.data.len() > 4 * nk;
-        let level3 = self.modifiers.level3() && self.state_keymap.data.len() > 2 * nk;
-        let level2 = self.modifiers.level2() && self.state_keymap.data.len() > 1 * nk;
+        let level5 = level5 && self.state_keymap.data.len() > 4 * nk;
+        let level3 = level3 && self.state_keymap.data.len() > 2 * nk;
+        let level2 = level2 && self.state_keymap.data.len() > 1 * nk;
         let base_level = level_index(level5, level3, level2);
 
         if self.modifiers.locked(NUM_LOCK) {
@@ -256,8 +300,12 @@ impl<C: Composer> WKB<C> {
                 self.modifiers.unlatch();
             }
             match key_direction {
-                KeyDirection::Up => self.pressed_keys.remove(&evdev_code),
-                KeyDirection::Down => self.pressed_keys.insert(evdev_code),
+                KeyDirection::Up => {
+                    self.pressed_keys.remove(evdev_code);
+                }
+                KeyDirection::Down => {
+                    self.pressed_keys.insert(evdev_code);
+                }
             };
         }
         is_modifier
