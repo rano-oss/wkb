@@ -208,20 +208,21 @@ fn bench_compose_feed(c: &mut Criterion) {
             if let Some(ref p) = path {
                 let mut composer = wkb::xkb::load_compose_from_path(p);
                 use wkb::composer::Composer;
-                group.bench_with_input(
-                    BenchmarkId::new("wkb", seq.name),
-                    &seq.keysyms,
-                    |b, keysyms| {
-                        b.iter(|| {
-                            for &ks in *keysyms {
-                                if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(ks) {
-                                    let token = wkb::composer::Token::Char(ch);
-                                    black_box(composer.feed(token));
-                                }
-                            }
-                        });
-                    },
-                );
+                // Pre-convert keysyms to tokens outside the benchmark loop
+                let tokens: Vec<wkb::composer::Token> = seq
+                    .keysyms
+                    .iter()
+                    .filter_map(|&ks| {
+                        xkb_core::keysym_utf::keysym_to_char(ks).map(wkb::composer::Token::Char)
+                    })
+                    .collect();
+                group.bench_with_input(BenchmarkId::new("wkb", seq.name), &tokens, |b, tokens| {
+                    b.iter(|| {
+                        for token in tokens {
+                            black_box(composer.feed(*token));
+                        }
+                    });
+                });
             }
         }
 
