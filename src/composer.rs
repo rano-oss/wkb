@@ -39,6 +39,7 @@ pub(crate) struct TrieNode {
 pub struct ListComposer {
     pub(crate) nodes: Vec<TrieNode>,
     cur: u32,
+    pending: Vec<Token>,
 }
 
 impl Default for ListComposer {
@@ -55,7 +56,16 @@ impl ListComposer {
                 emit: None,
             }],
             cur: 0,
+            pending: Vec::new(),
         }
+    }
+
+    /// Returns the tokens fed so far in the current compose sequence.
+    /// Non-empty while in `Composing` state. Clients can use this to
+    /// display the in-progress sequence (e.g. `'` `¨` with underline).
+    #[inline]
+    pub fn pending(&self) -> &[Token] {
+        &self.pending
     }
 
     /// Insert a sequence of tokens into the trie.
@@ -93,9 +103,11 @@ impl Composer for ListComposer {
         match node.children.binary_search_by_key(&key, |&(k, _)| k) {
             Ok(pos) => {
                 let next = node.children[pos].1;
+                self.pending.push(token);
                 let next_node = &self.nodes[next as usize];
                 if let Some(out) = next_node.emit {
                     self.cur = 0;
+                    self.pending.clear();
                     ComposeState::Finished(out)
                 } else {
                     self.cur = next;
@@ -107,6 +119,7 @@ impl Composer for ListComposer {
                     ComposeState::Idle(token)
                 } else {
                     self.cur = 0;
+                    self.pending.clear();
                     ComposeState::Cancelled
                 }
             }
