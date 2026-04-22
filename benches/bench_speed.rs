@@ -98,7 +98,12 @@ fn bench_compose_table_creation(c: &mut Criterion) {
     });
 
     // ── xkbcommon-compat ───────────────────────────────────────────────
-    // (no compose API in compat crate yet — skip)
+    group.bench_function("xkbcommon-compat", |b| {
+        b.iter(|| {
+            let table = xkb_core::compose::ComposeTable::new_from_locale(black_box(locale));
+            black_box(table);
+        });
+    });
 
     group.finish();
 }
@@ -175,6 +180,18 @@ fn bench_compose_state_creation(c: &mut Criterion) {
             (xkb_compose.xkb_compose_table_unref)(table);
             (xkb.xkb_context_unref)(ctx);
         };
+    }
+
+    // ── xkbcommon-compat ───────────────────────────────────────────────
+    {
+        let table = xkb_core::compose::ComposeTable::new_from_locale(locale)
+            .expect("xkb-core compose table");
+        group.bench_function("xkbcommon-compat", |b| {
+            b.iter(|| {
+                let state = table.new_state();
+                black_box(state);
+            });
+        });
     }
 
     group.finish();
@@ -281,6 +298,25 @@ fn bench_compose_feed(c: &mut Criterion) {
                     (xkb_compose.xkb_compose_table_unref)(table);
                     (xkb.xkb_context_unref)(ctx);
                 };
+            }
+        }
+
+        // ── xkbcommon-compat ───────────────────────────────────────────
+        {
+            if let Some(table) = xkb_core::compose::ComposeTable::new_from_locale(COMPOSE_LOCALE) {
+                let mut state = table.new_state();
+                group.bench_with_input(
+                    BenchmarkId::new("xkbcommon-compat", seq.name),
+                    &seq.keysyms,
+                    |b, keysyms| {
+                        b.iter(|| {
+                            for &ks in *keysyms {
+                                black_box(state.feed(ks));
+                            }
+                            state.reset();
+                        });
+                    },
+                );
             }
         }
     }

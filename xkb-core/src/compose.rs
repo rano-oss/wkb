@@ -386,3 +386,496 @@ static XKB_COMPOSE_MAP: LazyLock<BTreeMap<&'static str, &'static str>> = LazyLoc
     ]
     .into()
 });
+
+// ════════════════════════════════════════════════════════════════════════
+// Public compose API — keysym-based table + state machine
+// ════════════════════════════════════════════════════════════════════════
+
+/// Status of the compose state machine after feeding a keysym.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u32)]
+pub enum ComposeStatus {
+    /// No compose sequence in progress.
+    Nothing = 0,
+    /// A compose sequence is in progress.
+    Composing = 1,
+    /// A complete compose sequence was matched.
+    Composed = 2,
+    /// The compose sequence was cancelled (no match).
+    Cancelled = 3,
+}
+
+/// Result of feeding a keysym to the compose state.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ComposeFeedResult {
+    Ignored,
+    Accepted,
+}
+
+/// A node in the keysym-based ternary search trie.
+#[derive(Clone)]
+struct TstNode {
+    keysym: u32,
+    lo: u32, // index of lo child (0 = none)
+    hi: u32, // index of hi child (0 = none)
+    eq: u32, // index of eq child (0 = none)
+    // Leaf data (valid when is_leaf is true)
+    is_leaf: bool,
+    leaf_keysym: u32,
+    leaf_utf8: String,
+}
+
+/// A compiled compose table built from a locale's Compose file.
+/// Uses a keysym-based ternary search trie, matching libxkbcommon's structure.
+pub struct ComposeTable {
+    nodes: Vec<TstNode>,
+}
+
+impl ComposeTable {
+    /// Create a compose table from a locale string (e.g. "en_US.UTF-8" or "de").
+    /// Returns `None` if the compose file cannot be resolved or parsed.
+    pub fn new_from_locale(locale: &str) -> Option<Self> {
+        let subpath = resolve_compose_file(locale)?;
+        let path = Path::new(LOCALE_DIR).join(&subpath);
+        Some(Self::new_from_file(&path))
+    }
+
+    /// Create a compose table from a Compose file path.
+    pub fn new_from_file(path: &Path) -> Self {
+        use crate::keysym::xkb_keysym_from_name;
+        use crate::keysym_utf::keysym_to_utf32;
+        use crate::shared_types::XKB_KEYSYM_NO_FLAGS;
+
+        let mut table = ComposeTable {
+            // Index 0 is reserved as "null" sentinel
+            nodes: vec![TstNode {
+                keysym: 0,
+                lo: 0,
+                hi: 0,
+                eq: 0,
+                is_leaf: false,
+                leaf_keysym: 0,
+                leaf_utf8: String::new(),
+            }],
+        };
+
+        // Parse the raw compose file to get keysym-name-based entries
+        let raw_entries = parse_compose_file_raw(path);
+
+        for entry in &raw_entries {
+            // Convert keysym names to keysym values
+            let mut keysyms = Vec::new();
+            let mut valid = true;
+            for name in &entry.keysym_names {
+                let ks = xkb_keysym_from_name(name.as_bytes(), XKB_KEYSYM_NO_FLAGS);
+                if ks == 0 {
+                    valid = false;
+                    break;
+                }
+                keysyms.push(ks);
+            }
+            if !valid || keysyms.is_empty() {
+                continue;
+            }
+
+            // Resolve output keysym
+            let out_ks = if let Some(ref name) = entry.output_keysym_name {
+                xkb_keysym_from_name(name.as_bytes(), XKB_KEYSYM_NO_FLAGS)
+            } else {
+                0
+            };
+
+            // Resolve output UTF-8
+            let out_utf8 = if !entry.output_string.is_empty() {
+                entry.output_string.clone()
+            } else if out_ks != 0 {
+                let cp = keysym_to_utf32(out_ks);
+                if cp != 0 {
+                    char::from_u32(cp).map_or(String::new(), |c| c.to_string())
+                } else {
+                    String::new()
+                }
+            } else {
+                String::new()
+            };
+
+            table.insert(&keysyms, out_ks, &out_utf8);
+        }
+
+        table
+    }
+
+    fn insert(&mut self, keysyms: &[u32], out_keysym: u32, out_utf8: &str) {
+        if keysyms.is_empty() {
+            return;
+        }
+        let mut cur = self.insert_path(keysyms);
+        self.nodes[cur].is_leaf = true;
+        self.nodes[cur].leaf_keysym = out_keysym;
+        self.nodes[cur].leaf_utf8 = out_utf8.to_string();
+    }
+
+    fn insert_path(&mut self, keysyms: &[u32]) -> usize {
+        let mut node_idx = 1; // root is at index 1 (0 is null sentinel)
+
+        // Ensure root exists
+        if self.nodes.len() < 2 {
+            self.nodes.push(TstNode {
+                keysym: keysyms[0],
+                lo: 0,
+                hi: 0,
+                eq: 0,
+                is_leaf: false,
+                leaf_keysym: 0,
+                leaf_utf8: String::new(),
+            });
+        }
+
+        for (i, &ks) in keysyms.iter().enumerate() {
+            node_idx = self.tst_insert(node_idx, ks);
+            if i + 1 < keysyms.len() {
+                // Move to eq child for next keysym in sequence
+                if self.nodes[node_idx].eq == 0 {
+                    let new_idx = self.nodes.len();
+                    self.nodes.push(TstNode {
+                        keysym: keysyms[i + 1],
+                        lo: 0,
+                        hi: 0,
+                        eq: 0,
+                        is_leaf: false,
+                        leaf_keysym: 0,
+                        leaf_utf8: String::new(),
+                    });
+                    self.nodes[node_idx].eq = new_idx as u32;
+                }
+                node_idx = self.nodes[node_idx].eq as usize;
+            }
+        }
+        node_idx
+    }
+
+    fn tst_insert(&mut self, start: usize, ks: u32) -> usize {
+        let mut idx = start;
+        loop {
+            let node_ks = self.nodes[idx].keysym;
+            if node_ks == 0 {
+                // Uninitialized node — claim it
+                self.nodes[idx].keysym = ks;
+                return idx;
+            }
+            if ks < node_ks {
+                if self.nodes[idx].lo == 0 {
+                    let new_idx = self.nodes.len();
+                    self.nodes.push(TstNode {
+                        keysym: ks,
+                        lo: 0,
+                        hi: 0,
+                        eq: 0,
+                        is_leaf: false,
+                        leaf_keysym: 0,
+                        leaf_utf8: String::new(),
+                    });
+                    self.nodes[idx].lo = new_idx as u32;
+                    return new_idx;
+                }
+                idx = self.nodes[idx].lo as usize;
+            } else if ks > node_ks {
+                if self.nodes[idx].hi == 0 {
+                    let new_idx = self.nodes.len();
+                    self.nodes.push(TstNode {
+                        keysym: ks,
+                        lo: 0,
+                        hi: 0,
+                        eq: 0,
+                        is_leaf: false,
+                        leaf_keysym: 0,
+                        leaf_utf8: String::new(),
+                    });
+                    self.nodes[idx].hi = new_idx as u32;
+                    return new_idx;
+                }
+                idx = self.nodes[idx].hi as usize;
+            } else {
+                return idx; // exact match
+            }
+        }
+    }
+
+    /// Create a new compose state from this table.
+    pub fn new_state(&self) -> ComposeState<'_> {
+        ComposeState {
+            table: self,
+            node_idx: if self.nodes.len() > 1 { 1 } else { 0 },
+            status: ComposeStatus::Nothing,
+            result_keysym: 0,
+            result_utf8: String::new(),
+        }
+    }
+}
+
+/// Compose state machine that navigates a `ComposeTable`.
+pub struct ComposeState<'a> {
+    table: &'a ComposeTable,
+    node_idx: usize,
+    status: ComposeStatus,
+    result_keysym: u32,
+    result_utf8: String,
+}
+
+impl<'a> ComposeState<'a> {
+    /// Feed a keysym to the compose state machine.
+    pub fn feed(&mut self, keysym: u32) -> ComposeFeedResult {
+        // Modifier keysyms and special keysyms are ignored
+        if is_modifier_or_non_printable(keysym) {
+            return ComposeFeedResult::Ignored;
+        }
+
+        if self.status == ComposeStatus::Composed || self.status == ComposeStatus::Cancelled {
+            // Auto-reset after composed/cancelled
+            self.reset();
+        }
+
+        if self.node_idx == 0 || self.table.nodes.len() <= 1 {
+            self.status = ComposeStatus::Nothing;
+            return ComposeFeedResult::Ignored;
+        }
+
+        // If we're at Nothing state, start from root
+        let search_from = if self.status == ComposeStatus::Nothing {
+            1 // root
+        } else {
+            // We're composing — search_from is the eq child of current matched node
+            let eq = self.table.nodes[self.node_idx].eq as usize;
+            if eq == 0 {
+                self.status = ComposeStatus::Cancelled;
+                return ComposeFeedResult::Accepted;
+            }
+            eq
+        };
+
+        // Search for this keysym in the TST level
+        match self.tst_lookup(search_from, keysym) {
+            Some(found_idx) => {
+                self.node_idx = found_idx;
+                if self.table.nodes[found_idx].is_leaf {
+                    self.status = ComposeStatus::Composed;
+                    self.result_keysym = self.table.nodes[found_idx].leaf_keysym;
+                    self.result_utf8 = self.table.nodes[found_idx].leaf_utf8.clone();
+                } else {
+                    self.status = ComposeStatus::Composing;
+                }
+                ComposeFeedResult::Accepted
+            }
+            None => {
+                if self.status == ComposeStatus::Nothing {
+                    // Not in a sequence, keysym doesn't start any sequence
+                    ComposeFeedResult::Ignored
+                } else {
+                    self.status = ComposeStatus::Cancelled;
+                    ComposeFeedResult::Accepted
+                }
+            }
+        }
+    }
+
+    fn tst_lookup(&self, start: usize, keysym: u32) -> Option<usize> {
+        let mut idx = start;
+        loop {
+            if idx == 0 || idx >= self.table.nodes.len() {
+                return None;
+            }
+            let node = &self.table.nodes[idx];
+            if keysym < node.keysym {
+                idx = node.lo as usize;
+            } else if keysym > node.keysym {
+                idx = node.hi as usize;
+            } else {
+                return Some(idx);
+            }
+        }
+    }
+
+    /// Get the current compose status.
+    pub fn status(&self) -> ComposeStatus {
+        self.status
+    }
+
+    /// Get the composed keysym (valid when status is `Composed`).
+    pub fn keysym(&self) -> u32 {
+        if self.status == ComposeStatus::Composed {
+            self.result_keysym
+        } else {
+            0 // XKB_KEY_NoSymbol
+        }
+    }
+
+    /// Get the composed UTF-8 string (valid when status is `Composed`).
+    pub fn utf8(&self) -> &str {
+        if self.status == ComposeStatus::Composed {
+            &self.result_utf8
+        } else {
+            ""
+        }
+    }
+
+    /// Reset the compose state machine.
+    pub fn reset(&mut self) {
+        self.node_idx = if self.table.nodes.len() > 1 { 1 } else { 0 };
+        self.status = ComposeStatus::Nothing;
+        self.result_keysym = 0;
+        self.result_utf8.clear();
+    }
+}
+
+/// Check if a keysym is a modifier or non-printable key that should be
+/// ignored by the compose state machine (matching libxkbcommon behavior).
+fn is_modifier_or_non_printable(ks: u32) -> bool {
+    // XKB modifier keysyms: Shift, Control, Caps_Lock, Meta, Alt, Super, Hyper
+    // Range: 0xFFE1..=0xFFEE
+    if (0xFFE1..=0xFFEE).contains(&ks) {
+        return true;
+    }
+    // Misc function keys that don't produce text: 0xFF00..=0xFF1F
+    // (but allow some like Return=0xFF0D, Tab=0xFF09, Escape=0xFF1B, Delete=0xFFFF, BackSpace=0xFF08)
+    false
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// Raw compose file parser — preserves keysym names for TST construction
+// ════════════════════════════════════════════════════════════════════════
+
+struct RawComposeEntry {
+    keysym_names: Vec<String>,
+    output_string: String,
+    output_keysym_name: Option<String>,
+}
+
+fn parse_compose_file_raw(path: &Path) -> Vec<RawComposeEntry> {
+    let mut out = Vec::new();
+    parse_compose_file_raw_impl(path, &mut out);
+    out
+}
+
+fn parse_compose_file_raw_impl(path: &Path, out: &mut Vec<RawComposeEntry>) {
+    let content = match fs::read_to_string(path) {
+        Ok(s) => s,
+        Err(_) => return,
+    };
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+
+        if let Some(rest) = trimmed.strip_prefix("include") {
+            let rest = rest.trim();
+            if let Some(include_str) = rest.strip_prefix('"').and_then(|s| s.strip_suffix('"')) {
+                if include_str.is_empty() {
+                    continue;
+                }
+                let include_path = Path::new(include_str);
+                let resolved = if include_path.is_absolute() {
+                    include_path.to_path_buf()
+                } else if let Some(parent) = path.parent() {
+                    parent.join(include_path)
+                } else {
+                    include_path.to_path_buf()
+                };
+                parse_compose_file_raw_impl(&resolved, out);
+            }
+            continue;
+        }
+
+        if let Some(entry) = parse_raw_rule_line(trimmed) {
+            out.push(entry);
+        }
+    }
+}
+
+fn parse_raw_rule_line(line: &str) -> Option<RawComposeEntry> {
+    let colon_pos = line.find(':')?;
+    let lhs = &line[..colon_pos];
+    let rhs = line[colon_pos + 1..].trim();
+
+    // Strip trailing comment
+    let rhs = if let Some(hash) = rhs.find('#') {
+        rhs[..hash].trim()
+    } else {
+        rhs
+    };
+
+    // Parse LHS: sequence of <keysym_name>
+    let mut keysym_names = Vec::new();
+    let mut pos = 0;
+    let lhs_bytes = lhs.as_bytes();
+    while pos < lhs_bytes.len() {
+        if lhs_bytes[pos] == b'<' {
+            let end = lhs[pos..].find('>')? + pos;
+            let name = &lhs[pos + 1..end];
+            keysym_names.push(name.to_string());
+            pos = end + 1;
+        } else {
+            pos += 1;
+        }
+    }
+
+    if keysym_names.is_empty() {
+        return None;
+    }
+
+    // Parse RHS: "string" [keysym_name]
+    let (output_string, output_keysym_name) = parse_raw_rhs(rhs);
+
+    Some(RawComposeEntry {
+        keysym_names,
+        output_string,
+        output_keysym_name,
+    })
+}
+
+fn parse_raw_rhs(rhs: &str) -> (String, Option<String>) {
+    let rhs = rhs.trim();
+    if rhs.starts_with('"') {
+        if let Some(end_quote) = rhs[1..].find('"') {
+            let s = &rhs[1..end_quote + 1];
+            // Unescape basic sequences
+            let output_string = unescape_compose_string(s);
+            let after = rhs[end_quote + 2..].trim();
+            let keysym_name = if !after.is_empty() {
+                after.split_whitespace().next().map(|s| s.to_string())
+            } else {
+                None
+            };
+            return (output_string, keysym_name);
+        }
+    }
+    // Bare keysym name
+    let name = rhs.split_whitespace().next();
+    (String::new(), name.map(|s| s.to_string()))
+}
+
+fn unescape_compose_string(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut chars = s.chars();
+    while let Some(c) = chars.next() {
+        if c == '\\' {
+            match chars.next() {
+                Some('\\') => out.push('\\'),
+                Some('"') => out.push('"'),
+                Some('n') => out.push('\n'),
+                Some('t') => out.push('\t'),
+                Some('r') => out.push('\r'),
+                Some('0') => { /* null — skip */ }
+                Some(other) => {
+                    out.push('\\');
+                    out.push(other);
+                }
+                None => out.push('\\'),
+            }
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}

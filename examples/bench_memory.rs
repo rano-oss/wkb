@@ -282,7 +282,19 @@ fn run_workload_xkbcommon_compat() -> u64 {
         }
     }
 
-    // No compose API benchmarked for compat path
+    // Compose workload
+    if let Some(table) = xkb_core::compose::ComposeTable::new_from_locale(COMPOSE_LOCALE) {
+        let mut state = table.new_state();
+        for seq in COMPOSE_SEQUENCES {
+            for _ in 0..HOT_PATH_ITERATIONS {
+                for &ks in seq.keysyms {
+                    let _ = state.feed(ks);
+                    checksum = checksum.wrapping_add(state.status() as u64);
+                }
+                state.reset();
+            }
+        }
+    }
 
     print_rss("xkbcommon-compat/after_workload");
     checksum
