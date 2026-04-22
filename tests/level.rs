@@ -1,9 +1,23 @@
 use test_case::test_matrix;
-use wkb;
-use xkbcommon::{self, xkb::Keycode};
+use xkbcommon::{
+    self,
+    xkb::{self, Keycode},
+};
 
-mod common;
-use common::xkb_new_keymap_from_names;
+fn xkb_new_keymap_from_names(locale: String, layout: Option<String>) -> xkb::Keymap {
+    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+    let variant_str = layout.unwrap_or_default();
+    xkb::Keymap::new_from_names(
+        &context,
+        "evdev",
+        "pc105",
+        &locale,
+        &variant_str,
+        None,
+        xkb::KEYMAP_COMPILE_NO_FLAGS,
+    )
+    .unwrap()
+}
 
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "bqn",
@@ -17,13 +31,13 @@ use common::xkb_new_keymap_from_names;
 fn level_keys(locale: &str, level: usize) {
     let wkb = wkb::WKB::new_from_names(locale.to_string(), None);
     for layout in wkb.layouts() {
-        println!("{:?}", layout);
+        // println!("{:?}", layout);
         let xkb = xkb_new_keymap_from_names(locale.to_string(), Some(layout.to_owned()));
         let wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout));
-        if wkb.state_keymap.len() <= level {
-            assert!(true);
-            continue;
-        }
+        // if wkb.state_keymap.len() <= level {
+        //     assert!(true);
+        //     continue;
+        // }
         for i in 0..701 {
             let k1 = wkb.level_key(i as u32, level);
             let mut k2 = xkb
@@ -33,11 +47,11 @@ fn level_keys(locale: &str, level: usize) {
             if k2.unwrap_or_default() == '\0' {
                 k2 = None;
             }
-            if k1 != k2 && k2 != None {
+            if k1 != k2 && k2.is_some() {
                 println!("wkb: {:?}, xkb: {:?} {}", k1, k2, i);
                 println!("{:?}", wkb.state_keymap[level]);
             }
-            assert!(k1 == k2 || k2 == None);
+            assert!(k1 == k2 || k2.is_none());
         }
     }
 }

@@ -1,9 +1,23 @@
 use test_case::test_matrix;
-use wkb;
-use xkbcommon::{self, xkb::Keycode};
+use xkbcommon::{
+    self,
+    xkb::{self, Keycode},
+};
 
-mod common;
-use common::xkb_new_keymap_from_names;
+fn xkb_new_keymap_from_names(locale: String, layout: Option<String>) -> xkb::Keymap {
+    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+    let variant_str = layout.unwrap_or_default();
+    xkb::Keymap::new_from_names(
+        &context,
+        "evdev",
+        "pc105",
+        &locale,
+        &variant_str,
+        None,
+        xkb::KEYMAP_COMPILE_NO_FLAGS,
+    )
+    .unwrap()
+}
 
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "bqn",
@@ -22,7 +36,7 @@ fn repeat_keys(locale: &str) {
         let wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout));
         for i in 0..701 {
             println!("{i}");
-            assert!(xkb.key_repeats(Keycode::new(i as u32 + 8)) == wkb.key_repeats(i));
+            assert!(xkb.key_repeats(Keycode::new(i + 8)) == wkb.key_repeats(i));
         }
     }
 }

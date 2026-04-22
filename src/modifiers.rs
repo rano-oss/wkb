@@ -85,8 +85,15 @@ impl ModKind {
                 mod_type: _,
             } => match key_direction {
                 KeyDirection::Down => {
-                    *pressed = true;
-                    *latched = true;
+                    if *latched {
+                        // Already latched - pressing again deactivates (toggle off)
+                        *pressed = false;
+                        *latched = false;
+                    } else {
+                        // Not latched - activate it
+                        *pressed = true;
+                        *latched = true;
+                    }
                 }
                 KeyDirection::Up => {
                     *pressed = false;
@@ -97,13 +104,13 @@ impl ModKind {
     }
 
     fn unlatch(&mut self) {
-        match self {
-            ModKind::Latch {
-                pressed,
-                latched,
-                mod_type: _,
-            } => *latched = *pressed,
-            _ => {}
+        if let ModKind::Latch {
+            pressed: _,
+            latched,
+            mod_type: _,
+        } = self
+        {
+            *latched = false
         }
     }
 
@@ -167,7 +174,7 @@ impl ModKind {
         }
     }
 
-    fn get_modkind_from_modtype(&self, mod_type: ModType) -> Option<ModKind> {
+    pub(crate) fn get_modkind_from_modtype(&self, mod_type: ModType) -> Option<ModKind> {
         match self {
             ModKind::Pressed { mod_type: m_t, .. }
             | ModKind::Lock { mod_type: m_t, .. }
@@ -322,26 +329,27 @@ impl Modifiers {
         }
     }
 
+    pub fn set_modifier(&mut self, evdev_code: u32, modifier: Modifier) {
+        self.0.insert(evdev_code, modifier);
+    }
+
     pub fn active_mod_type(&self, mod_type: ModType) -> bool {
-        self.0
-            .values()
-            .find(|modifier| match modifier {
-                Modifier::Single(mod_kind) => {
-                    if let Some(mod_kind) = mod_kind.get_modkind_from_modtype(mod_type) {
-                        mod_kind.is_active()
-                    } else {
-                        false
-                    }
+        self.0.values().any(|modifier| match &modifier {
+            Modifier::Single(mod_kind) => {
+                if let Some(mod_kind) = mod_kind.get_modkind_from_modtype(mod_type) {
+                    mod_kind.is_active()
+                } else {
+                    false
                 }
-                Modifier::Leveled(map) => map.values().any(|mod_kind| {
-                    if let Some(mod_kind) = mod_kind.get_modkind_from_modtype(mod_type) {
-                        mod_kind.is_active()
-                    } else {
-                        false
-                    }
-                }),
-            })
-            .is_some()
+            }
+            Modifier::Leveled(map) => map.values().any(|mod_kind| {
+                if let Some(mod_kind) = mod_kind.get_modkind_from_modtype(mod_type) {
+                    mod_kind.is_active()
+                } else {
+                    false
+                }
+            }),
+        })
     }
 
     pub fn level5(&self) -> bool {
@@ -354,38 +362,6 @@ impl Modifiers {
 
     pub fn level2(&self) -> bool {
         self.active_mod_type(ModType::Level2)
-    }
-
-    pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
-        self.0.iter().find_map(|(code, modifier)| match modifier {
-            Modifier::Single(mod_kind) => {
-                if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
-                    Some((*code, None))
-                } else {
-                    None
-                }
-            }
-            Modifier::Leveled(map) => {
-                for (level, mod_kind) in map {
-                    if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
-                        return Some((*code, Some(*level)));
-                    }
-                }
-                None
-            }
-        })
-    }
-
-    pub fn level2_code(&self) -> Option<(u32, Option<u8>)> {
-        self.level_code(ModType::Level2)
-    }
-
-    pub fn level3_code(&self) -> Option<(u32, Option<u8>)> {
-        self.level_code(ModType::Level3)
-    }
-
-    pub fn level5_code(&self) -> Option<(u32, Option<u8>)> {
-        self.level_code(ModType::Level5)
     }
 
     pub fn unlatch(&mut self) {
@@ -416,6 +392,19 @@ impl Modifiers {
             .is_some_and(|modifier| match modifier {
                 Modifier::Single(mod_kind) => mod_kind.locked(),
                 Modifier::Leveled(map) => map.values().any(|mod_kind| mod_kind.locked()),
+            })
+    }
+
+    pub fn locked_with_type(&self, evdev_code: u32, mod_type: ModType) -> bool {
+        self.0
+            .get(&evdev_code)
+            .is_some_and(|modifier| match modifier {
+                Modifier::Single(mod_kind) => {
+                    mod_kind.locked() && mod_kind.get_modkind_from_modtype(mod_type).is_some()
+                }
+                Modifier::Leveled(map) => map.values().any(|mod_kind| {
+                    mod_kind.locked() && mod_kind.get_modkind_from_modtype(mod_type).is_some()
+                }),
             })
     }
 

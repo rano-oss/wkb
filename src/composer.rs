@@ -30,6 +30,12 @@ pub struct ListComposer {
     pending: Vec<Token>,
 }
 
+impl Default for ListComposer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ListComposer {
     pub fn new() -> Self {
         Self {
@@ -51,11 +57,13 @@ impl ListComposer {
                         *next
                     } else {
                         items.push((t.clone(), i));
+                        self.nodes.push(Node::Next(Vec::new()));
                         i
                     }
                 }
                 Node::Emit(_) => {
                     self.nodes[n] = Node::Next(vec![(t.clone(), i)]);
+                    self.nodes.push(Node::Next(Vec::new()));
                     i
                 }
             };
@@ -71,7 +79,16 @@ impl Composer for ListComposer {
                 if let Some((_, next)) = items.iter().find(|(k, _)| k == &token) {
                     self.pending.push(token);
                     self.cur = *next;
-                    ComposeState::Composing(self.pending.clone())
+                    // Check if we landed on an Emit node
+                    match &self.nodes[self.cur] {
+                        Node::Emit(outc) => {
+                            let out = *outc;
+                            self.cur = 0;
+                            self.pending.clear();
+                            ComposeState::Finished(out)
+                        }
+                        _ => ComposeState::Composing(self.pending.clone()),
+                    }
                 } else if self.cur == 0 {
                     ComposeState::Idle(token)
                 } else {

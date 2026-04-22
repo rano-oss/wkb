@@ -4,3 +4,7 @@
 used_functions
 save.rs
 /.vscode
+/.opencode
+/.ruff_cache
+/scripts
+# /.cargo

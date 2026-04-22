@@ -1,13 +1,14 @@
+#![allow(non_snake_case)]
+#![allow(non_camel_case_types)]
+#![allow(non_upper_case_globals)]
+
 pub use composer::{ComposeState, Composer, ListComposer, Token};
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 pub mod composer;
 pub use modifiers::KeyDirection;
 use modifiers::{level_index, Modifiers, *};
-use repeat::REPEAT_DEFAULT;
 pub mod modifiers;
-use xkb::repeat;
 pub mod xkb;
-include!(concat!(env!("OUT_DIR"), "/repeat.rs"));
 
 #[derive(Debug, Clone)]
 pub struct WKB<C: Composer> {
@@ -25,25 +26,36 @@ pub struct WKB<C: Composer> {
 }
 
 impl WKB<ListComposer> {
+    /// Create WKB instance from RMLVO names (Rules, Model, Layout, Variant, Options)
+    ///
+    /// # Example
+    /// ```no_run
+    /// use wkb::WKB;
+    /// let wkb = WKB::new_from_names("us".to_string(), None);
+    /// ```
     pub fn new_from_names(locale: String, layout: Option<String>) -> Self {
         xkb::new_from_names(locale, layout)
     }
 
+    /// Create WKB instance from XKB keymap string
+    ///
+    /// This enables WKB to receive keymaps from Wayland compositors via the
+    /// wl_keyboard.keymap event, or from any source that provides XKB format.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use wkb::WKB;
+    ///
+    /// // Receive keymap string from Wayland compositor
+    /// let keymap_string = "xkb_keymap { ... }".to_string();
+    /// let wkb = WKB::new_from_string(keymap_string);
+    /// ```
     pub fn new_from_string(string: String) -> Self {
         xkb::new_from_string(string)
     }
 }
 
 impl<C: Composer> WKB<C> {
-    pub fn get_keymap_string(&self) -> String {
-        if let Some(locale) = &self.locale {
-            let path = std::path::Path::new(xkb::XKB_SYMBOLS_PATH);
-            std::fs::read_to_string(path.join(locale)).unwrap_or_default()
-        } else {
-            String::new()
-        }
-    }
-
     pub fn modifiers_state(&self) -> (u32, u32, u32, u32) {
         let mut depressed = 0;
         let mut latched = 0;
@@ -61,34 +73,31 @@ impl<C: Composer> WKB<C> {
             (ALTGR, 128),
         ];
         for (code, bit) in mapping {
-            if let Some(modifier) = self.modifiers.0.get(&code) {
-                match modifier {
-                    Modifier::Single(mk) => match mk {
-                        ModKind::Pressed { pressed: true, .. } => depressed |= bit,
-                        ModKind::Lock {
-                            pressed, locked: l, ..
-                        } => {
-                            if *pressed {
-                                depressed |= bit;
-                            }
-                            if *l > 0 {
-                                locked |= bit;
-                            }
+            if let Some(Modifier::Single(mk)) = self.modifiers.0.get(&code) {
+                match mk {
+                    ModKind::Pressed { pressed: true, .. } => depressed |= bit,
+                    ModKind::Lock {
+                        pressed, locked: l, ..
+                    } => {
+                        if *pressed {
+                            depressed |= bit;
                         }
-                        ModKind::Latch {
-                            pressed,
-                            latched: is_latched,
-                            ..
-                        } => {
-                            if *pressed {
-                                depressed |= bit;
-                            }
-                            if *is_latched {
-                                latched |= bit;
-                            }
+                        if *l > 0 {
+                            locked |= bit;
                         }
-                        _ => {}
-                    },
+                    }
+                    ModKind::Latch {
+                        pressed,
+                        latched: is_latched,
+                        ..
+                    } => {
+                        if *pressed {
+                            depressed |= bit;
+                        }
+                        if *is_latched {
+                            latched |= bit;
+                        }
+                    }
                     _ => {}
                 }
             }
@@ -99,13 +108,16 @@ impl<C: Composer> WKB<C> {
 
     pub fn leds_state(&self) -> u32 {
         let mut leds = 0;
-        if self.modifiers.locked(NUM_LOCK) {
+        if self.modifiers.locked_with_type(NUM_LOCK, ModType::Num) {
             leds |= 1;
         }
-        if self.modifiers.locked(CAPS_LOCK) {
+        if self.modifiers.locked_with_type(CAPS_LOCK, ModType::Caps) {
             leds |= 2;
         }
-        if self.modifiers.locked(SCROLL_LOCK) {
+        if self
+            .modifiers
+            .locked_with_type(SCROLL_LOCK, ModType::Scroll)
+        {
             leds |= 4;
         }
         leds
@@ -131,24 +143,25 @@ impl<C: Composer> WKB<C> {
             let is_locked = (locked & bit) != 0;
             let is_latched = (latched & bit) != 0;
 
-            self.modifiers.0.entry(code).and_modify(|m| match m {
-                Modifier::Single(mk) => match mk {
-                    ModKind::Pressed { pressed, .. } => *pressed = is_depressed,
-                    ModKind::Lock {
-                        pressed, locked, ..
-                    } => {
-                        *pressed = is_depressed;
-                        *locked = if is_locked { 1 } else { 0 };
+            self.modifiers.0.entry(code).and_modify(|m| {
+                if let Modifier::Single(mk) = m {
+                    match mk {
+                        ModKind::Pressed { pressed, .. } => *pressed = is_depressed,
+                        ModKind::Lock {
+                            pressed, locked, ..
+                        } => {
+                            *pressed = is_depressed;
+                            *locked = if is_locked { 1 } else { 0 };
+                        }
+                        ModKind::Latch {
+                            pressed, latched, ..
+                        } => {
+                            *pressed = is_depressed;
+                            *latched = is_latched;
+                        }
+                        _ => {}
                     }
-                    ModKind::Latch {
-                        pressed, latched, ..
-                    } => {
-                        *pressed = is_depressed;
-                        *latched = is_latched;
-                    }
-                    _ => {}
-                },
-                _ => {}
+                }
             });
         }
     }
@@ -185,7 +198,6 @@ impl<C: Composer> WKB<C> {
                 .get(base_level)
                 .and_then(|m| m.get(&evdev_code))
             {
-                self.modifiers.unlatch();
                 return Some(key);
             }
         }
@@ -196,7 +208,6 @@ impl<C: Composer> WKB<C> {
                 .get(base_level)
                 .and_then(|m| m.get(&evdev_code))
             {
-                self.modifiers.unlatch();
                 return Some(c);
             }
         }
@@ -205,15 +216,16 @@ impl<C: Composer> WKB<C> {
             .state_keymap
             .get(base_level)
             .and_then(|m| m.get(&evdev_code).copied());
-        if key.is_some() {
-            self.modifiers.unlatch()
-        }
         key
     }
 
     pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let is_modifier = self.modifiers.set_state(evdev_code, key_direction);
         if !is_modifier {
+            // Non-modifier key: unlatch any latched modifiers on key press
+            if key_direction == KeyDirection::Down {
+                self.modifiers.unlatch();
+            }
             match key_direction {
                 KeyDirection::Up => self.pressed_keys.remove(&evdev_code),
                 KeyDirection::Down => self.pressed_keys.insert(evdev_code),
