@@ -61,7 +61,7 @@ fn wkb_compose_sequence(
     let mut result = None;
     if is_multi_key {
         match c.feed(Token::Compose) {
-            ComposeState::Cancelled(_) => return None,
+            ComposeState::Cancelled => return None,
             _ => {}
         }
     }
@@ -70,8 +70,8 @@ fn wkb_compose_sequence(
             ComposeState::Finished(out) => {
                 result = Some(out);
             }
-            ComposeState::Idle(_) | ComposeState::Composing(_) => {}
-            ComposeState::Cancelled(_) => {
+            ComposeState::Idle(_) | ComposeState::Composing => {}
+            ComposeState::Cancelled => {
                 return None;
             }
         }

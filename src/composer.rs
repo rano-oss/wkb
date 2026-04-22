@@ -12,9 +12,9 @@ pub trait Composer: std::fmt::Debug {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ComposeState {
     Idle(Token),
-    Composing(Vec<Token>),
+    Composing,
     Finished(char),
-    Cancelled(Vec<Token>),
+    Cancelled,
 }
 
 #[derive(Debug, Clone)]
@@ -87,15 +87,15 @@ impl Composer for ListComposer {
                             self.pending.clear();
                             ComposeState::Finished(out)
                         }
-                        _ => ComposeState::Composing(self.pending.clone()),
+                        _ => ComposeState::Composing,
                     }
                 } else if self.cur == 0 {
                     ComposeState::Idle(token)
                 } else {
                     self.pending.push(token);
                     self.cur = 0;
-                    let failed = self.pending.drain(..);
-                    ComposeState::Cancelled(failed.collect())
+                    self.pending.clear();
+                    ComposeState::Cancelled
                 }
             }
             Node::Emit(outc) => {
