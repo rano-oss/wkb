@@ -6,9 +6,12 @@ name = "wkb"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["compose"]
+compose = []
+
 [dependencies]
 xkb-core = { path = "xkb-core" }
-log = "0.4.29"
 
 [dev-dependencies]
 test-case = "3.3.1"

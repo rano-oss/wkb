@@ -37,9 +37,9 @@ fn test_all_keys_locale<C: wkb::composer::Composer>(
 
         if k1 != k2.chars().last() && !k2.is_empty() {
             let level = level_index(
-                wkb.modifiers.level5(),
-                wkb.modifiers.level3(),
-                wkb.modifiers.level2(),
+                wkb.modifiers.active_mod_type(wkb::modifiers::ModType::Level5),
+                wkb.modifiers.active_mod_type(wkb::modifiers::ModType::Level3),
+                wkb.modifiers.active_mod_type(wkb::modifiers::ModType::Level2),
             );
             println!(
                 "locale={} layout={} key={} level={}",

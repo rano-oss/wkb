@@ -7,6 +7,7 @@ pub enum Token {
 
 pub trait Composer: std::fmt::Debug {
     fn feed(&mut self, token: Token) -> ComposeState;
+    fn reset(&mut self);
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -92,6 +93,21 @@ impl ListComposer {
         }
         self.nodes[n as usize].emit = Some(out);
     }
+
+    /// Returns an opinionated display string of the in-progress compose sequence.
+    /// Compose key shows as `·` if it is the last token pressed.
+    /// Characters show as themselves.
+    pub fn pending_string(&self) -> String {
+        let mut s = String::new();
+        for (i, token) in self.pending.iter().enumerate() {
+            match token {
+                Token::Compose if i == self.pending.len() - 1 => s.push('·'),
+                Token::Compose => {}
+                Token::Char(c) => s.push(*c),
+            }
+        }
+        s
+    }
 }
 
 impl Composer for ListComposer {
@@ -124,5 +140,10 @@ impl Composer for ListComposer {
                 }
             }
         }
+    }
+
+    fn reset(&mut self) {
+        self.cur = 0;
+        self.pending.clear();
     }
 }

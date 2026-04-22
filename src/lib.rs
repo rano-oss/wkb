@@ -98,6 +98,20 @@ impl FlatKeymap {
     }
 }
 
+// --- WKB struct (always generic over Composer) ---
+
+const MODIFIER_MAPPING: [(u32, u32); 9] = [
+    (LEFT_SHIFT, 1),
+    (RIGHT_SHIFT, 1),
+    (CAPS_LOCK, 2),
+    (LEFT_CTRL, 4),
+    (RIGHT_CTRL, 4),
+    (ALT, 8),
+    (NUM_LOCK, 16),
+    (LOGO, 64),
+    (ALTGR, 128),
+];
+
 #[derive(Debug, Clone)]
 pub struct WKB<C: Composer> {
     pub layouts: Vec<String>,
@@ -115,52 +129,30 @@ pub struct WKB<C: Composer> {
 
 impl WKB<ListComposer> {
     /// Create WKB instance from RMLVO names (Rules, Model, Layout, Variant, Options)
-    ///
-    /// # Example
-    /// ```no_run
-    /// use wkb::WKB;
-    /// let wkb = WKB::new_from_names("us".to_string(), None);
-    /// ```
     pub fn new_from_names(locale: String, layout: Option<String>) -> Self {
         xkb::new_from_names(locale, layout)
     }
 
     /// Create WKB instance from XKB keymap string
-    ///
-    /// This enables WKB to receive keymaps from Wayland compositors via the
-    /// wl_keyboard.keymap event, or from any source that provides XKB format.
-    ///
-    /// # Example
-    /// ```no_run
-    /// use wkb::WKB;
-    ///
-    /// // Receive keymap string from Wayland compositor
-    /// let keymap_string = "xkb_keymap { ... }".to_string();
-    /// let wkb = WKB::new_from_string(keymap_string);
-    /// ```
     pub fn new_from_string(string: String) -> Self {
         xkb::new_from_string(string)
     }
 }
 
 impl<C: Composer> WKB<C> {
+    /// Reset all transient input state: compose sequence and pressed keys.
+    /// Call on wl_keyboard.leave or when focus changes.
+    pub fn reset_state(&mut self) {
+        self.composer.reset();
+        self.pressed_keys = KeyBitSet::new();
+    }
+
     pub fn modifiers_state(&self) -> (u32, u32, u32, u32) {
         let mut depressed = 0;
         let mut latched = 0;
         let mut locked = 0;
         let group = 0;
-        let mapping = [
-            (LEFT_SHIFT, 1),
-            (RIGHT_SHIFT, 1),
-            (CAPS_LOCK, 2),
-            (LEFT_CTRL, 4),
-            (RIGHT_CTRL, 4),
-            (ALT, 8),
-            (NUM_LOCK, 16),
-            (LOGO, 64),
-            (ALTGR, 128),
-        ];
-        for (code, bit) in mapping {
+        for (code, bit) in MODIFIER_MAPPING {
             if let Some(Modifier::Single(mk)) = self.modifiers.get(code) {
                 match mk {
                     ModKind::Pressed { pressed: true, .. } => depressed |= bit,
@@ -190,7 +182,6 @@ impl<C: Composer> WKB<C> {
                 }
             }
         }
-
         (depressed, latched, locked, group)
     }
 
@@ -212,21 +203,10 @@ impl<C: Composer> WKB<C> {
     }
 
     pub fn update_modifiers(&mut self, depressed: u32, latched: u32, locked: u32, group: u32) {
-        if let Some(layout) = self.layouts.get(group as usize) {
-            self.layout = layout.clone();
+        if let Some(l) = self.layouts.get(group as usize) {
+            self.layout = l.clone();
         }
-        let mapping = [
-            (LEFT_SHIFT, 1),
-            (RIGHT_SHIFT, 1),
-            (CAPS_LOCK, 2),
-            (LEFT_CTRL, 4),
-            (RIGHT_CTRL, 4),
-            (ALT, 8),
-            (NUM_LOCK, 16),
-            (LOGO, 64),
-            (ALTGR, 128),
-        ];
-        for (code, bit) in mapping {
+        for (code, bit) in MODIFIER_MAPPING {
             let is_depressed = (depressed & bit) != 0;
             let is_locked = (locked & bit) != 0;
             let is_latched = (latched & bit) != 0;
@@ -295,7 +275,6 @@ impl<C: Composer> WKB<C> {
     pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let is_modifier = self.modifiers.set_state(evdev_code, key_direction);
         if !is_modifier {
-            // Non-modifier key: unlatch any latched modifiers on key press
             if key_direction == KeyDirection::Down {
                 self.modifiers.unlatch();
             }
@@ -321,6 +300,7 @@ impl<C: Composer> WKB<C> {
         (utf8, is_modifier)
     }
 
+    #[cfg(feature = "compose")]
     pub fn key_compose(
         &mut self,
         evdev_code: u32,

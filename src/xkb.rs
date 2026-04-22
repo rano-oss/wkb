@@ -11,8 +11,8 @@ pub use xkb_core::{XKB_KEY_DOWN, XKB_KEY_REPEATED, XKB_KEY_UP};
 use crate::composer::Token;
 use crate::modifiers::*;
 use crate::FlatKeymap;
-use crate::{KeyBitSet, ListComposer, WKB};
-use std::path::Path;
+use crate::ListComposer;
+use crate::{KeyBitSet, WKB};
 
 /// Get all available layouts/variants for a given locale
 fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
@@ -125,7 +125,7 @@ fn press_level_modifiers(
 }
 
 /// Load compose entries from a file and build a ListComposer.
-pub fn load_compose_from_path(path: &Path) -> ListComposer {
+pub fn load_compose_from_path(path: &std::path::Path) -> ListComposer {
     let mut regular = ListComposer::new();
 
     let entries = xkb_core::compose::parse_compose_file(path);
@@ -264,6 +264,7 @@ fn build_wkb_from_keymap(
         }
     }
 
+    #[cfg(feature = "compose")]
     let composer = locale
         .as_deref()
         .and_then(xkb_core::compose::resolve_compose_file)
@@ -272,6 +273,9 @@ fn build_wkb_from_keymap(
             load_compose_from_path(&path)
         })
         .unwrap_or_else(ListComposer::new);
+
+    #[cfg(not(feature = "compose"))]
+    let composer = ListComposer::new();
 
     WKB {
         layouts: all_layouts,

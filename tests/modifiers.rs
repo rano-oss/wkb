@@ -448,7 +448,7 @@ fn test_mm_zawgyi_latch_sequence() {
     eprintln!("1. Press latch key {}", latch_key);
     wkb.update_key(latch_key, KeyDirection::Down);
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Down);
-    eprintln!("   WKB level3: {}", wkb.modifiers.level3());
+    eprintln!("   WKB level3: {}", wkb.modifiers.active_mod_type(wkb::modifiers::ModType::Level3));
     eprintln!(
         "   XKB Mod5: {}",
         xkb_state.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE)
@@ -458,7 +458,7 @@ fn test_mm_zawgyi_latch_sequence() {
     eprintln!("\n2. Release latch key");
     wkb.update_key(latch_key, KeyDirection::Up);
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Up);
-    eprintln!("   WKB level3: {}", wkb.modifiers.level3());
+    eprintln!("   WKB level3: {}", wkb.modifiers.active_mod_type(wkb::modifiers::ModType::Level3));
     eprintln!(
         "   XKB Mod5: {}",
         xkb_state.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE)
@@ -469,7 +469,7 @@ fn test_mm_zawgyi_latch_sequence() {
     let shift_key = 42;
     wkb.update_key(shift_key, KeyDirection::Down);
     xkb_state.update_key(Keycode::new(shift_key + 8), xkbcmn::KeyDirection::Down);
-    eprintln!("   WKB level3: {}", wkb.modifiers.level3());
+    eprintln!("   WKB level3: {}", wkb.modifiers.active_mod_type(wkb::modifiers::ModType::Level3));
     eprintln!(
         "   XKB Mod5: {}",
         xkb_state.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE)
@@ -479,7 +479,7 @@ fn test_mm_zawgyi_latch_sequence() {
     eprintln!("\n4. Press latch key again (second press)");
     wkb.update_key(latch_key, KeyDirection::Down);
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Down);
-    eprintln!("   WKB level3: {}", wkb.modifiers.level3());
+    eprintln!("   WKB level3: {}", wkb.modifiers.active_mod_type(wkb::modifiers::ModType::Level3));
     eprintln!(
         "   XKB Mod5: {}",
         xkb_state.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE)
@@ -492,13 +492,13 @@ fn test_mm_zawgyi_latch_sequence() {
     eprintln!(
         "   WKB: {:?} (level2={} level3={})",
         key_2_wkb,
-        wkb.modifiers.level2(),
-        wkb.modifiers.level3()
+        wkb.modifiers.active_mod_type(wkb::modifiers::ModType::Level2),
+        wkb.modifiers.active_mod_type(wkb::modifiers::ModType::Level3)
     );
     eprintln!("   XKB: {:?}", key_2_xkb);
 
     assert_eq!(
-        wkb.modifiers.level3(),
+        wkb.modifiers.active_mod_type(wkb::modifiers::ModType::Level3),
         xkb_state.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE),
         "Level3 state should match XKB Mod5"
     );

@@ -119,26 +119,6 @@ impl ModKind {
         }
     }
 
-    pub fn pressed(&self) -> &bool {
-        match self {
-            ModKind::Pressed {
-                pressed,
-                mod_type: _,
-            } => pressed,
-            ModKind::Lock {
-                pressed,
-                locked: _,
-                mod_type: _,
-            } => pressed,
-            ModKind::Latch {
-                pressed,
-                latched: _,
-                mod_type: _,
-            } => pressed,
-            ModKind::None => &false,
-        }
-    }
-
     pub fn locked(&self) -> bool {
         match self {
             ModKind::Pressed {
@@ -350,34 +330,6 @@ impl Modifiers {
         }
     }
 
-    pub fn insert(&mut self, evdev_code: u32, mod_kind: ModKind, level: u8) {
-        if let Some((_, existing)) = self.entries.iter_mut().find(|(c, _)| *c == evdev_code) {
-            match existing {
-                Modifier::Single(ex_kind) => {
-                    if level == 0 {
-                        *ex_kind = mod_kind;
-                    } else {
-                        let mut map = BTreeMap::new();
-                        map.insert(0, ex_kind.clone());
-                        map.insert(level, mod_kind);
-                        *existing = Modifier::Leveled(map);
-                    }
-                }
-                Modifier::Leveled(map) => {
-                    map.insert(level, mod_kind);
-                }
-            }
-        } else {
-            if level == 0 {
-                self.entries.push((evdev_code, Modifier::Single(mod_kind)));
-            } else {
-                let mut map = BTreeMap::new();
-                map.insert(level, mod_kind);
-                self.entries.push((evdev_code, Modifier::Leveled(map)));
-            }
-        }
-    }
-
     pub fn active_mod_type(&self, mod_type: ModType) -> bool {
         self.entries.iter().any(|(_, modifier)| match modifier {
             Modifier::Single(mod_kind) => {
@@ -462,7 +414,7 @@ impl Modifiers {
     /// Compute level2/3/5 bits in a single scan.
     /// Returns (level2, level3, level5).
     #[inline]
-    pub fn level_bits(&self) -> (bool, bool, bool) {
+    fn level_bits(&self) -> (bool, bool, bool) {
         let mut l2 = false;
         let mut l3 = false;
         let mut l5 = false;
@@ -516,18 +468,6 @@ impl Modifiers {
         }
     }
 
-    pub fn level5(&self) -> bool {
-        self.active_mod_type(ModType::Level5)
-    }
-
-    pub fn level3(&self) -> bool {
-        self.active_mod_type(ModType::Level3)
-    }
-
-    pub fn level2(&self) -> bool {
-        self.active_mod_type(ModType::Level2)
-    }
-
     pub fn unlatch(&mut self) {
         self.entries
             .iter_mut()
@@ -541,13 +481,6 @@ impl Modifiers {
                     });
                 }
             });
-    }
-
-    pub fn pressed(&self, evdev_code: u32) -> bool {
-        self.get(evdev_code).is_some_and(|modifier| match modifier {
-            Modifier::Single(mod_kind) => *mod_kind.pressed(),
-            Modifier::Leveled(map) => map.values().any(|mod_kind| *mod_kind.pressed()),
-        })
     }
 
     pub fn locked(&self, evdev_code: u32) -> bool {
