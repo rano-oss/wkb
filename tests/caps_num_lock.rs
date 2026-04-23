@@ -5,7 +5,7 @@
 
 use test_case::test_matrix;
 use wkb::{
-    modifiers::{CAPS_LOCK, NUM_LOCK},
+    testing::{CAPS_LOCK, NUM_LOCK},
     KeyDirection,
 };
 use xkbcommon::xkb::{self, Keycode};

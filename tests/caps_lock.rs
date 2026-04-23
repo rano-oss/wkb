@@ -1,7 +1,6 @@
 use test_case::test_matrix;
 use wkb::{
-    modifiers::{level_index, ALTGR, CAPS_LOCK},
-    testing::WKBTestExt,
+    testing::{level_index, WKBTestExt, ALTGR, CAPS_LOCK},
     KeyDirection, WKB,
 };
 use xkbcommon::{
@@ -25,7 +24,7 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
     xkb::State::new(&keymap)
 }
 
-fn test_all_keys_locale<C: wkb::composer::Composer>(
+fn test_all_keys_locale<C: wkb::testing::Composer>(
     wkb: WKB<C>,
     xkb: xkb::State,
     layout: String,
@@ -38,9 +37,9 @@ fn test_all_keys_locale<C: wkb::composer::Composer>(
 
         if k1 != k2.chars().last() && !k2.is_empty() {
             let level = level_index(
-                wkb.active_mod_type(wkb::ModType::Level5),
-                wkb.active_mod_type(wkb::ModType::Level3),
-                wkb.active_mod_type(wkb::ModType::Level2),
+                wkb.active_mod_type(wkb::testing::ModType::Level5),
+                wkb.active_mod_type(wkb::testing::ModType::Level3),
+                wkb.active_mod_type(wkb::testing::ModType::Level2),
             );
             println!(
                 "locale={} layout={} key={} level={}",
@@ -52,7 +51,7 @@ fn test_all_keys_locale<C: wkb::composer::Composer>(
     }
 }
 
-fn set_level<C: wkb::composer::Composer>(
+fn set_level<C: wkb::testing::Composer>(
     wkb: &mut WKB<C>,
     xkb: &mut xkb::State,
     code: u32,
@@ -111,7 +110,7 @@ fn set_level<C: wkb::composer::Composer>(
     }
 }
 
-fn set_modifier_level<C: wkb::composer::Composer>(
+fn set_modifier_level<C: wkb::testing::Composer>(
     wkb: &mut WKB<C>,
     xkb: &mut xkb::State,
     level: usize,

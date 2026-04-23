@@ -1,5 +1,8 @@
 use test_case::test_matrix;
-use wkb::{modifiers::CAPS_LOCK, testing::WKBTestExt, KeyDirection};
+use wkb::{
+    testing::{WKBTestExt, CAPS_LOCK},
+    KeyDirection,
+};
 use xkbcommon::xkb::{self as xkbcmn, Keycode};
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkbcmn::State {
@@ -361,7 +364,7 @@ fn serialized_modifiers(state: &xkbcmn::State) -> (u32, u32, u32, u32) {
 }
 
 fn assert_same_modifiers_state(
-    wkb: &wkb::WKB<wkb::ListComposer>,
+    wkb: &wkb::WKB<wkb::testing::ListComposer>,
     xkb: &xkbcmn::State,
     context: &str,
 ) {
@@ -374,7 +377,7 @@ fn assert_same_modifiers_state(
 }
 
 fn update_both(
-    wkb: &mut wkb::WKB<wkb::ListComposer>,
+    wkb: &mut wkb::WKB<wkb::testing::ListComposer>,
     xkb: &mut xkbcmn::State,
     evdev_code: u32,
     direction: KeyDirection,
@@ -450,7 +453,7 @@ fn test_mm_zawgyi_latch_sequence() {
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Down);
     eprintln!(
         "   WKB level3: {}",
-        wkb.active_mod_type(wkb::ModType::Level3)
+        wkb.active_mod_type(wkb::testing::ModType::Level3)
     );
     eprintln!(
         "   XKB Mod5: {}",
@@ -463,7 +466,7 @@ fn test_mm_zawgyi_latch_sequence() {
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Up);
     eprintln!(
         "   WKB level3: {}",
-        wkb.active_mod_type(wkb::ModType::Level3)
+        wkb.active_mod_type(wkb::testing::ModType::Level3)
     );
     eprintln!(
         "   XKB Mod5: {}",
@@ -477,7 +480,7 @@ fn test_mm_zawgyi_latch_sequence() {
     xkb_state.update_key(Keycode::new(shift_key + 8), xkbcmn::KeyDirection::Down);
     eprintln!(
         "   WKB level3: {}",
-        wkb.active_mod_type(wkb::ModType::Level3)
+        wkb.active_mod_type(wkb::testing::ModType::Level3)
     );
     eprintln!(
         "   XKB Mod5: {}",
@@ -490,7 +493,7 @@ fn test_mm_zawgyi_latch_sequence() {
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Down);
     eprintln!(
         "   WKB level3: {}",
-        wkb.active_mod_type(wkb::ModType::Level3)
+        wkb.active_mod_type(wkb::testing::ModType::Level3)
     );
     eprintln!(
         "   XKB Mod5: {}",
@@ -504,13 +507,13 @@ fn test_mm_zawgyi_latch_sequence() {
     eprintln!(
         "   WKB: {:?} (level2={} level3={})",
         key_2_wkb,
-        wkb.active_mod_type(wkb::ModType::Level2),
-        wkb.active_mod_type(wkb::ModType::Level3)
+        wkb.active_mod_type(wkb::testing::ModType::Level2),
+        wkb.active_mod_type(wkb::testing::ModType::Level3)
     );
     eprintln!("   XKB: {:?}", key_2_xkb);
 
     assert_eq!(
-        wkb.active_mod_type(wkb::ModType::Level3),
+        wkb.active_mod_type(wkb::testing::ModType::Level3),
         xkb_state.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE),
         "Level3 state should match XKB Mod5"
     );

@@ -1,14 +1,14 @@
-pub use composer::{ComposeState, Composer, ListComposer, Token};
-#[doc(hidden)]
-pub mod composer;
+use composer::{ComposeState, Composer, ListComposer, Token};
+mod composer;
+pub use modifiers::KeyDirection;
+use modifiers::ModType;
 use modifiers::{level_index, Modifiers, *};
-pub use modifiers::{KeyDirection, ModType};
-#[doc(hidden)]
-pub mod modifiers;
-#[doc(hidden)]
+mod modifiers;
+/// Test-only utilities. Not part of the public API.
+#[cfg(feature = "testing")]
 pub mod testing;
-#[doc(hidden)]
-pub mod xkb;
+#[cfg(feature = "xkb")]
+mod xkb;
 
 /// Maximum number of shift levels.
 const MAX_LEVELS: usize = 8;
@@ -126,6 +126,7 @@ pub struct WKB<C: Composer> {
     pub(crate) level_exceptions_keymap: FlatKeymap,
 }
 
+#[cfg(feature = "xkb")]
 impl WKB<ListComposer> {
     /// Create WKB instance from RMLVO names (Rules, Model, Layout, Variant, Options)
     pub fn new_from_names(locale: String, layout: Option<String>) -> Self {

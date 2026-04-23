@@ -3,10 +3,10 @@ use std::ffi::OsStr;
 use std::path::Path;
 use test_case::test_matrix;
 use wkb::testing::ComposerTestExt;
-use wkb::Token;
+use wkb::testing::Token;
 use xkbcommon::xkb::{self, compose};
 
-use wkb::xkb::compose_parse::{keysym_name_to_char, parse_compose_file, ComposeEntry};
+use wkb::testing::compose_parse::{keysym_name_to_char, parse_compose_file, ComposeEntry};
 
 // ---------------------------------------------------------------------------
 // Helpers: keysym / char resolution
@@ -53,11 +53,11 @@ fn xkb_compose_sequence(
 
 /// Feed a sequence of chars to a wkb ListComposer clone.
 fn wkb_compose_sequence(
-    composer: &wkb::composer::ListComposer,
+    composer: &wkb::testing::ListComposer,
     chars: &[char],
     is_multi_key: bool,
 ) -> Option<char> {
-    use wkb::composer::{ComposeState, Composer};
+    use wkb::testing::{ComposeState, Composer};
     let mut c = composer.clone();
     let mut result = None;
     if is_multi_key {
@@ -105,7 +105,7 @@ fn run_compose_test(
     label: &str,
     xkb_locale: &str,
     compose_path: &Path,
-    regular: &wkb::composer::ListComposer,
+    regular: &wkb::testing::ListComposer,
 ) {
     if !compose_path.exists() {
         println!("SKIP: compose file not found: {}", compose_path.display());
@@ -337,7 +337,7 @@ fn run_compose_test(
 /// 3. Parses the compose file and tests every entry against the WKB's
 ///    composers, cross-checked with xkbcommon.
 fn test_wkb_compose(xkb_locale: &str) {
-    let compose_file_subpath = wkb::xkb::compose_parse::resolve_compose_file(xkb_locale)
+    let compose_file_subpath = wkb::testing::compose_parse::resolve_compose_file(xkb_locale)
         .unwrap_or_else(|| {
             panic!(
                 "resolve_compose_file('{}') returned None — \
@@ -409,7 +409,7 @@ fn test_compose_file_direct(label: &str, xkb_locale: &str, compose_file: &str) {
         return;
     }
 
-    let regular = wkb::xkb::compose_parse::load_compose_from_path(compose_path);
+    let regular = wkb::testing::compose_parse::load_compose_from_path(compose_path);
 
     run_compose_test(label, xkb_locale, compose_path, &regular);
 }
@@ -603,7 +603,7 @@ fn compose_resolution_short_names() {
     ];
 
     for &(locale, expected) in cases {
-        let resolved = wkb::xkb::compose_parse::resolve_compose_file(locale);
+        let resolved = wkb::testing::compose_parse::resolve_compose_file(locale);
         assert_eq!(
             resolved.as_deref(),
             Some(expected),
@@ -645,7 +645,7 @@ fn compose_resolution_xkb_compose_map() {
     ];
 
     for &(locale, expected) in cases {
-        let resolved = wkb::xkb::compose_parse::resolve_compose_file(locale);
+        let resolved = wkb::testing::compose_parse::resolve_compose_file(locale);
         assert_eq!(
             resolved.as_deref(),
             Some(expected),
@@ -681,7 +681,7 @@ fn compose_resolution_full_locale_names() {
     ];
 
     for &(locale, expected) in cases {
-        let resolved = wkb::xkb::compose_parse::resolve_compose_file(locale);
+        let resolved = wkb::testing::compose_parse::resolve_compose_file(locale);
         assert_eq!(
             resolved.as_deref(),
             Some(expected),
@@ -707,7 +707,7 @@ fn compose_resolution_every_xkb_layout() {
     ];
 
     for &layout in &xkb_layouts {
-        let resolved = wkb::xkb::compose_parse::resolve_compose_file(layout);
+        let resolved = wkb::testing::compose_parse::resolve_compose_file(layout);
         assert!(
             resolved.is_some(),
             "resolve_compose_file('{}') returned None — every XKB layout must resolve",

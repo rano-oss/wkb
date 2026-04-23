@@ -1,11 +1,6 @@
 //! XKB module — re-exports from xkb-core and WKB integration glue.
 
 // Re-export xkb-core public API selectively
-pub use xkb_core::compose;
-pub use xkb_core::keysym_utf;
-pub use xkb_core::rust_types;
-pub use xkb_core::XKB_SYMBOLS_PATH;
-pub use xkb_core::{XKB_KEY_DOWN, XKB_KEY_REPEATED, XKB_KEY_UP};
 
 // WKB integration functions
 use crate::composer::Token;

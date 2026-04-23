@@ -39,15 +39,15 @@ fn run_workload_wkb() -> u64 {
 
     for &(locale, variant) in LAYOUTS {
         let layout = variant.map(String::from);
-        let mut wb = wkb::xkb::new_from_names(locale.to_string(), layout);
+        let mut wb = wkb::WKB::new_from_names(locale.to_string(), layout);
 
         for case in KEY_CASES {
             for _ in 0..HOT_PATH_ITERATIONS {
                 for &(code, down) in case.keys {
                     let dir = if down {
-                        wkb::modifiers::KeyDirection::Down
+                        wkb::KeyDirection::Down
                     } else {
-                        wkb::modifiers::KeyDirection::Up
+                        wkb::KeyDirection::Up
                     };
                     wb.update_key(code, dir);
                     if down {
@@ -63,13 +63,13 @@ fn run_workload_wkb() -> u64 {
     // Compose workload
     if let Some(subpath) = xkb_core::compose::resolve_compose_file(COMPOSE_LOCALE) {
         let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
-        let mut composer = wkb::xkb::load_compose_from_path(&path);
-        use wkb::composer::Composer;
+        let mut composer = wkb::testing::compose_parse::load_compose_from_path(&path);
+        use wkb::testing::Composer;
         for seq in COMPOSE_SEQUENCES {
             for _ in 0..HOT_PATH_ITERATIONS {
                 for &ks in seq.keysyms {
                     if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(ks) {
-                        let st = composer.feed(wkb::composer::Token::Char(ch));
+                        let st = composer.feed(wkb::testing::Token::Char(ch));
                         checksum = checksum.wrapping_add(format!("{st:?}").len() as u64);
                     }
                 }

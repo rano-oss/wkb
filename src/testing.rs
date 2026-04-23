@@ -1,10 +1,18 @@
-//! Test-only extension trait for WKB.
-//! Import `use wkb::testing::WKBTestExt;` in test files.
+//! Test-only utilities for WKB integration tests.
+//! Not part of the public API — use `wkb::testing::*` in test files only.
 
-use crate::composer::Composer;
-use crate::modifiers::{ModType, Modifiers};
+pub use crate::composer::{ComposeState, Composer, ListComposer, Token};
+pub use crate::modifiers::{ModType, Modifiers};
 use crate::xkb;
-use crate::WKB;
+pub use crate::WKB;
+
+// Re-export modifier constants and helpers needed by integration tests.
+pub use crate::modifiers::{level_index, ALTGR, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK};
+
+// Re-export compose parsing utilities needed by compose tests.
+pub mod compose_parse {
+    pub use crate::xkb::compose_parse::*;
+}
 
 pub trait WKBTestExt {
     fn active_mod_type(&self, mod_type: ModType) -> bool;

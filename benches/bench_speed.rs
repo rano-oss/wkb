@@ -6,6 +6,7 @@ use std::ffi::CString;
 use std::os::raw::c_char;
 use std::ptr;
 use std::time::Duration;
+use wkb::KeyDirection;
 
 fn fast() -> Criterion {
     Criterion::default()
@@ -51,7 +52,7 @@ fn bench_compose_table_creation(c: &mut Criterion) {
             let resolved = xkb_core::compose::resolve_compose_file(black_box(locale));
             if let Some(subpath) = resolved {
                 let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
-                let composer = wkb::xkb::load_compose_from_path(&path);
+                let composer = wkb::testing::compose_parse::load_compose_from_path(&path);
                 black_box(composer);
             }
         });
@@ -121,7 +122,7 @@ fn bench_compose_state_creation(c: &mut Criterion) {
         group.bench_function("wkb", |b| {
             b.iter(|| {
                 if let Some(ref p) = path {
-                    let composer = wkb::xkb::load_compose_from_path(p);
+                    let composer = wkb::testing::compose_parse::load_compose_from_path(p);
                     black_box(composer);
                 }
             });
@@ -206,14 +207,14 @@ fn bench_compose_feed(c: &mut Criterion) {
                     .to_path_buf()
             });
             if let Some(ref p) = path {
-                let mut composer = wkb::xkb::load_compose_from_path(p);
-                use wkb::composer::Composer;
+                let mut composer = wkb::testing::compose_parse::load_compose_from_path(p);
+                use wkb::testing::Composer;
                 // Pre-convert keysyms to tokens outside the benchmark loop
-                let tokens: Vec<wkb::composer::Token> = seq
+                let tokens: Vec<wkb::testing::Token> = seq
                     .keysyms
                     .iter()
                     .filter_map(|&ks| {
-                        xkb_core::keysym_utf::keysym_to_char(ks).map(wkb::composer::Token::Char)
+                        xkb_core::keysym_utf::keysym_to_char(ks).map(wkb::testing::Token::Char)
                     })
                     .collect();
                 group.bench_with_input(BenchmarkId::new("wkb", seq.name), &tokens, |b, tokens| {
@@ -324,9 +325,9 @@ fn bench_compose_feed(c: &mut Criterion) {
 // ════════════════════════════════════════════════════════════════════════
 
 /// Helper: set up wkb for a given layout.
-fn wkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB<wkb::ListComposer> {
+fn wkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB<wkb::testing::ListComposer> {
     let layout = variant.map(String::from);
-    wkb::xkb::new_from_names(locale.to_string(), layout)
+    wkb::WKB::new_from_names(locale.to_string(), layout)
 }
 
 /// Helper: set up xkbcommon context + keymap + state.
@@ -404,9 +405,9 @@ fn bench_key_update(c: &mut Criterion) {
                     b.iter(|| {
                         for &(code, down) in case.keys {
                             let dir = if down {
-                                wkb::modifiers::KeyDirection::Down
+                                KeyDirection::Down
                             } else {
-                                wkb::modifiers::KeyDirection::Up
+                                KeyDirection::Up
                             };
                             black_box(wb.update_key(black_box(code), dir));
                         }
@@ -494,9 +495,9 @@ fn bench_key_get_sym(c: &mut Criterion) {
                     b.iter(|| {
                         for &(code, down) in case.keys {
                             let dir = if down {
-                                wkb::modifiers::KeyDirection::Down
+                                KeyDirection::Down
                             } else {
-                                wkb::modifiers::KeyDirection::Up
+                                KeyDirection::Up
                             };
                             wb.update_key(code, dir);
                             if down {
@@ -598,9 +599,9 @@ fn bench_key_get_utf8(c: &mut Criterion) {
                     b.iter(|| {
                         for &(code, down) in case.keys {
                             let dir = if down {
-                                wkb::modifiers::KeyDirection::Down
+                                KeyDirection::Down
                             } else {
-                                wkb::modifiers::KeyDirection::Up
+                                KeyDirection::Up
                             };
                             wb.update_key(code, dir);
                             if down {

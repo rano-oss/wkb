@@ -14,8 +14,8 @@ pub const LOGO: u32 = 125;
 pub const CAPS_LOCK: u32 = 58;
 pub const NUM_LOCK: u32 = 69;
 pub const SCROLL_LOCK: u32 = 70;
-pub const BACKSPACE: u32 = 14;
-pub const TAB: u32 = 15;
+// pub const BACKSPACE: u32 = 14;
+// pub const TAB: u32 = 15;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum KeyDirection {
@@ -90,15 +90,6 @@ impl ModKind {
                 KeyDirection::Down => {
                     *pressed = true;
                     *latched = !*latched;
-                    // if *latched {
-                    //     // Already latched - pressing again deactivates (toggle off)
-                    //     *pressed = false;
-                    //     *latched = false;
-                    // } else {
-                    //     // Not latched - activate it
-                    //     *pressed = true;
-                    //     *latched = true;
-                    // }
                 }
                 KeyDirection::Up => {
                     *pressed = false;
