@@ -1,52 +1,58 @@
-# WKB(Wayland Keyboard)
+# wkb — Wayland Keyboard
 
-This is a start to a rewrite of xkb/xkbcommon for wayland.
-
-Goals: 
-- A complete replacement for the used parts of xkb. Meaning just evdev and no geometry support etc.
-- Creating a new more intuitive keyboard format that is serializable(TOML, RON, etc)
+A lightweight, pure Rust keyboard handling library for Wayland. WKB is a
+drop-in alternative to `xkbcommon` that compiles XKB keymaps, tracks modifier
+and compose state, and maps evdev key codes to characters — all without C
+dependencies.
 
 ## Features
 
-### XKB Keymap Import
-WKB can parse XKB keymap strings, enabling interoperability with existing Wayland compositors and clients:
+- **XKB keymap import** — parse keymap strings received from Wayland
+  compositors via `wl_keyboard`.
+- **XKB keymap export** — serialize keymaps back to XKB v1 text format via
+  `as_xkb_string()`.
+- **Full modifier support** — Shift, Ctrl, Alt, AltGr, Caps Lock, Num Lock,
+  Scroll Lock, and multi-level keys.
+- **Compose sequences** — built-in compose key and automatic compose handling.
+- **LED state** — query Caps/Num/Scroll Lock indicator state.
+- **Repeat info** — query whether a key repeats.
+- **Lightweight** — no C FFI, no `unsafe`, minimal dependencies.
+
+## Quick Start
 
 ```rust
-use wkb::WKB;
+use wkb::{WKB, KeyDirection};
 
-// Receive keymap from Wayland compositor
-let keymap_string = "xkb_keymap { ... }";
-let wkb = WKB::new_from_string(keymap_string.to_string());
+// Build from an XKB keymap string (e.g. received from a Wayland compositor)
+let keymap_string = std::fs::read_to_string("/path/to/keymap").unwrap();
+let mut wkb = WKB::new_from_string(keymap_string);
 
-// Use normally
-let char = wkb.utf8(keycode);
+// Process a key press (evdev code 38 = 'a' on US layout)
+let (ch, is_modifier) = wkb.key(38, KeyDirection::Down);
+assert_eq!(ch, Some('a'));
 ```
 
-This allows WKB to be a drop-in replacement for xkbcommon in Wayland clients today.
+## Feature Flags
 
-Todo list(tentative):
-- [x] Keymap
-- [x] Keymap functions 
-- [x] Level keys
-- [x] Repeat keys
-- [x] Modifier support
-- [x] Level keys tests
-- [x] State keys tests
-- [x] Num_lock tests
-- [x] Caps_lock tests
-- [x] Combined modifiers tests, edge case tests for all modifiers
-- [x] Layout comparison test, light test, etc
-- [x] Try reaching edge case parity for exisisting tests
-- [x] Handle cases where no keys should be returned
-- [x] Test cases where no keys should be returned
-- [x] Compare Modifiers State between xkb and wkb test
-- [x] XKB keymap string import (`new_from_string()`)
-- [ ] New WKB keyboard format (TOML, RON, etc)
-- [ ] WKB keymap export (for native format)
-- [x] Composing
-  - [x] Compose Key
-  - [x] Compose Automagic
-  - [x] Tests
-- [x] Add wayland specific functions
-- [x] Lightbulbs
-- [x] Benchmarks
+| Flag | Default | Description |
+|------|---------|-------------|
+| `xkb` | yes | XKB keymap compilation via the `xkb-core` crate |
+| `compose` | yes | Compose-key / dead-key sequence support |
+| `testing` | no | Exposes internal helpers for integration tests (not public API) |
+
+## Benchmarks
+
+<!-- BENCHMARK_START -->
+*Benchmarks are generated automatically by CI. Run `cargo bench` locally or push to `main` to update.*
+<!-- BENCHMARK_END -->
+
+## Scope and Limitations
+
+WKB targets the subset of XKB used by Wayland clients and compositors.
+Geometry descriptions and other X11-only features are intentionally out of
+scope. A future native keyboard format (TOML/RON) is planned but not yet
+available.
+
+## License
+
+MIT

@@ -2,6 +2,20 @@
 name = "xkb-core"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.70"
+description = "Pure Rust XKB keymap compiler, state tracker, compose engine, and keysym utilities"
+license = "MIT"
+repository = "https://github.com/rano-oss/wkb"
+readme = "README.md"
+keywords = ["xkb", "keyboard", "keymap", "wayland", "keysym"]
+categories = ["os::linux-apis", "parser-implementations"]
+
+include = [
+    "src/**/*",
+    "Cargo.toml",
+    "README.md",
+    "LICENSE",
+]
 
 [dependencies]
 xmloxide = "0.4"

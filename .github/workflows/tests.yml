@@ -65,6 +65,7 @@ jobs:
         test_target:
           - compose
           - ctrl_keys
+          - keymap
           - layouts
           - led_lights
           - level

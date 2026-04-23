@@ -148,6 +148,7 @@ fn build_wkb_from_keymap(
     locale: Option<String>,
     layout: Option<String>,
     all_layouts: Vec<String>,
+    store_keymap: bool,
 ) -> WKB<ListComposer> {
     const XKB_MAX_LEVELS: usize = 8;
     const EVDEV_OFFSET: u32 = 8;
@@ -286,6 +287,11 @@ fn build_wkb_from_keymap(
         num_lock_keys,
         caps_lock_keymap,
         level_exceptions_keymap,
+        xkb_keymap: if store_keymap {
+            Some(keymap.clone())
+        } else {
+            None
+        },
     }
 }
 
@@ -306,7 +312,7 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
         .keymap_from_names(&rules)
         .unwrap_or_else(|| panic!("Failed to compile keymap for layout: {:?}", layout));
 
-    build_wkb_from_keymap(&keymap, Some(locale), layout, all_layouts)
+    build_wkb_from_keymap(&keymap, Some(locale), layout, all_layouts, true)
 }
 
 /// Build Modifiers struct from XKB keymap
@@ -475,7 +481,7 @@ pub fn new_from_string(string: String) -> WKB<ListComposer> {
         .keymap_from_string(&string)
         .expect("Failed to parse keymap from string");
 
-    build_wkb_from_keymap(&keymap, None, None, vec![String::new()])
+    build_wkb_from_keymap(&keymap, None, None, vec![String::new()], true)
 }
 
 /// Backward-compatible alias for compose module access
