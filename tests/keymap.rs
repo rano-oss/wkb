@@ -131,24 +131,16 @@ fn export_round_trip(locale: &str) {
 
 // ── String construction tests ───────────────────────────────────────────
 
-fn keymap_string_from_xkbcomp(layout: &str, variant: Option<&str>) -> String {
-    let var_arg = variant
-        .map(|v| format!(" -variant {v}"))
-        .unwrap_or_default();
-    let cmd = format!(
-        "setxkbmap -layout {layout}{var_arg} -print 2>/dev/null | xkbcomp -xkb - - 2>/dev/null"
-    );
-    let output = std::process::Command::new("sh")
-        .arg("-c")
-        .arg(&cmd)
-        .output()
-        .expect("Failed to generate keymap");
-    String::from_utf8_lossy(&output.stdout).to_string()
+/// Get an XKB keymap string using wkb's own serializer (no external tools needed).
+fn keymap_string_from_export(locale: &str, variant: Option<&str>) -> String {
+    let wkb = WKB::new_from_names(locale.to_string(), variant.map(String::from));
+    wkb.as_xkb_string()
+        .expect("WKB should have xkb_keymap stored")
 }
 
 #[test]
 fn string_us() {
-    let keymap_str = keymap_string_from_xkbcomp("us", None);
+    let keymap_str = keymap_string_from_export("us", None);
     let mut wkb_from_string = WKB::new_from_string(keymap_str);
     let mut wkb_from_names = WKB::new_from_names("us".to_string(), None);
 
@@ -176,7 +168,7 @@ fn string_us() {
 
 #[test]
 fn string_de() {
-    let keymap_str = keymap_string_from_xkbcomp("de", None);
+    let keymap_str = keymap_string_from_export("de", None);
     let mut wkb_from_string = WKB::new_from_string(keymap_str);
     let mut wkb_from_names = WKB::new_from_names("de".to_string(), None);
 
@@ -191,7 +183,7 @@ fn string_de() {
 
 #[test]
 fn string_dvorak() {
-    let keymap_str = keymap_string_from_xkbcomp("us", Some("dvorak"));
+    let keymap_str = keymap_string_from_export("us", Some("dvorak"));
     let mut wkb_from_string = WKB::new_from_string(keymap_str);
     let mut wkb_from_names = WKB::new_from_names("us".to_string(), Some("dvorak".to_string()));
 
@@ -206,7 +198,7 @@ fn string_dvorak() {
 
 #[test]
 fn string_modifiers() {
-    let keymap_str = keymap_string_from_xkbcomp("us", None);
+    let keymap_str = keymap_string_from_export("us", None);
     let wkb = WKB::new_from_string(keymap_str);
 
     assert!(
@@ -221,7 +213,7 @@ fn string_modifiers() {
 
 #[test]
 fn string_caps_lock() {
-    let keymap_str = keymap_string_from_xkbcomp("us", None);
+    let keymap_str = keymap_string_from_export("us", None);
     let mut wkb = WKB::new_from_string(keymap_str);
 
     assert_eq!(wkb.utf8(38), Some('l'));
