@@ -43,7 +43,35 @@ assert_eq!(ch, Some('a'));
 ## Benchmarks
 
 <!-- BENCHMARK_START -->
-*Benchmarks are generated automatically by CI. Run `cargo bench` locally or push to `main` to update.*
+*Last updated: 2026-04-23 (automated via CI)*
+
+### Speed
+
+| Benchmark | wkb | xkbcommon | xkbcommon-dl | vs xkbcommon |
+|-----------|-----|-----------|--------------|-------------|
+| full setup | 13.85 ms | 4.27 ms | 4.26 ms | 3.2x slower |
+| key update | 32 ns | 172 ns | 172 ns | **5.4x faster** |
+| key get utf8 | 93 ns | 282 ns | 265 ns | **3.0x faster** |
+| key get sym | 92 ns | 208 ns | 207 ns | **2.3x faster** |
+| compose table creation | 2.44 ms | 1.85 ms | 1.90 ms | 1.3x slower |
+| compose feed | 16 ns | 28 ns | 29 ns | **1.8x faster** |
+
+### Memory
+
+| Library | Peak RSS |
+|---------|----------|
+| wkb | 11.1 MB |
+| xkbcommon | 11.4 MB |
+| xkbcommon-dl | 11.4 MB |
+
+### Binary Size
+
+| Binary | Size (stripped) |
+|--------|----------------|
+| wkb | 1641 KB |
+| xkbcommon | 341 KB |
+| xkbcommon-dl | 375 KB |
+
 <!-- BENCHMARK_END -->
 
 ## Scope and Limitations
