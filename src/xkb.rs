@@ -51,7 +51,7 @@ fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
 }
 
 /// Get the keycode (and optional level) for a specific modifier type.
-pub fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Option<u8>)> {
+pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Option<u8>)> {
     let mut other_mod = None;
 
     for (code, modifier) in modifiers.iter() {
@@ -87,15 +87,15 @@ pub fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Opti
     other_mod
 }
 
-pub fn level2_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
+pub(crate) fn level2_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
     level_code(modifiers, ModType::Level2)
 }
 
-pub fn level3_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
+pub(crate) fn level3_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
     level_code(modifiers, ModType::Level3)
 }
 
-pub fn level5_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
+pub(crate) fn level5_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
     level_code(modifiers, ModType::Level5)
 }
 

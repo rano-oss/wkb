@@ -411,63 +411,6 @@ impl Modifiers {
         }
     }
 
-    /// Compute level2/3/5 bits in a single scan.
-    /// Returns (level2, level3, level5).
-    #[inline]
-    fn level_bits(&self) -> (bool, bool, bool) {
-        let mut l2 = false;
-        let mut l3 = false;
-        let mut l5 = false;
-
-        for (_, modifier) in &self.entries {
-            match modifier {
-                Modifier::Single(mk) => {
-                    Self::check_mod_kind_levels(mk, &mut l2, &mut l3, &mut l5);
-                }
-                Modifier::Leveled(map) => {
-                    for mk in map.values() {
-                        Self::check_mod_kind_levels(mk, &mut l2, &mut l3, &mut l5);
-                    }
-                }
-            }
-        }
-        (l2, l3, l5)
-    }
-
-    #[inline(always)]
-    fn check_mod_kind_levels(mk: &ModKind, l2: &mut bool, l3: &mut bool, l5: &mut bool) {
-        match mk {
-            ModKind::Pressed {
-                pressed: true,
-                mod_type,
-            } => match mod_type {
-                ModType::Level2 => *l2 = true,
-                ModType::Level3 => *l3 = true,
-                ModType::Level5 => *l5 = true,
-                _ => {}
-            },
-            ModKind::Lock {
-                locked, mod_type, ..
-            } if *locked > 0 => match mod_type {
-                ModType::Level2 => *l2 = true,
-                ModType::Level3 => *l3 = true,
-                ModType::Level5 => *l5 = true,
-                _ => {}
-            },
-            ModKind::Latch {
-                latched: true,
-                mod_type,
-                ..
-            } => match mod_type {
-                ModType::Level2 => *l2 = true,
-                ModType::Level3 => *l3 = true,
-                ModType::Level5 => *l5 = true,
-                _ => {}
-            },
-            _ => {}
-        }
-    }
-
     pub fn unlatch(&mut self) {
         self.entries
             .iter_mut()
@@ -509,7 +452,7 @@ impl Modifiers {
         };
         let is_leveled = matches!(&self.entries[pos].1, Modifier::Leveled(_));
         if is_leveled {
-            let (l2, l3, l5) = self.level_bits();
+            let (_, l2, l3, l5) = self.active_none_and_levels();
             let level = level_index(l5, l3, l2) as u8;
             if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
                 if let Some(mod_kind) = map.get_mut(&level) {

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::Path;
 use test_case::test_matrix;
+use wkb::testing::ComposerTestExt;
 use wkb::Token;
 use xkbcommon::xkb::{self, compose};
 

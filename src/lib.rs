@@ -10,6 +10,8 @@ pub use modifiers::{KeyDirection, ModType};
 #[doc(hidden)]
 pub mod modifiers;
 #[doc(hidden)]
+pub mod testing;
+#[doc(hidden)]
 pub mod xkb;
 
 /// Maximum number of shift levels.
@@ -148,24 +150,6 @@ impl<C: Composer> WKB<C> {
     pub fn reset_state(&mut self) {
         self.composer.reset();
         self.pressed_keys = KeyBitSet::new();
-    }
-
-    /// Check if a specific modifier type is currently active.
-    #[doc(hidden)]
-    pub fn active_mod_type(&self, mod_type: ModType) -> bool {
-        self.modifiers.active_mod_type(mod_type)
-    }
-
-    /// Access the composer (e.g. for tests that need to clone it).
-    #[doc(hidden)]
-    pub fn composer(&self) -> &C {
-        &self.composer
-    }
-
-    /// Access the modifiers (e.g. for tests that call level2_code etc).
-    #[doc(hidden)]
-    pub fn modifiers(&self) -> &Modifiers {
-        &self.modifiers
     }
 
     pub fn modifiers_state(&self) -> (u32, u32, u32, u32) {
