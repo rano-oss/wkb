@@ -5,6 +5,20 @@ members = [".", "xkb-core", "xkbcommon-compat"]
 name = "wkb"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.70"
+description = "Lightweight keyboard handling library for Wayland — a pure Rust alternative to xkbcommon"
+license = "MIT"
+repository = "https://github.com/rano-oss/wkb"
+readme = "README.md"
+keywords = ["keyboard", "wayland", "xkb", "input", "linux"]
+categories = ["os::linux-apis"]
+
+include = [
+    "src/**/*",
+    "Cargo.toml",
+    "LICENSE",
+    "README.md",
+]
 
 [features]
 default = ["xkb", "compose"]
@@ -13,7 +27,7 @@ compose = []
 testing = ["xkb"]
 
 [dependencies]
-xkb-core = { path = "xkb-core", optional = true }
+xkb-core = { version = "0.1.0", path = "xkb-core", optional = true }
 
 [dev-dependencies]
 wkb = { path = ".", features = ["testing"] }

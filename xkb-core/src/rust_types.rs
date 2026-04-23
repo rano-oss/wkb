@@ -111,8 +111,18 @@ impl Context {
 }
 
 /// Safe wrapper around xkb_keymap with automatic cleanup
+#[derive(Clone)]
 pub struct Keymap {
     inner: Rc<crate::shared_types::xkb_keymap>,
+}
+
+impl std::fmt::Debug for Keymap {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Keymap")
+            .field("min_key", &self.inner.min_key_code)
+            .field("max_key", &self.inner.max_key_code)
+            .finish()
+    }
 }
 
 impl Keymap {
@@ -312,6 +322,11 @@ impl Keymap {
         (0..num_leds)
             .filter_map(|idx| self.led_get_name(idx))
             .collect()
+    }
+
+    /// Serialize the keymap to XKB v1 text format.
+    pub fn as_xkb_string(&self) -> String {
+        crate::serialize::xkb_keymap_get_as_string(&self.inner)
     }
 }
 

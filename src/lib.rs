@@ -1,3 +1,28 @@
+//! # wkb — Wayland Keyboard
+//!
+//! A lightweight, pure Rust keyboard handling library for Wayland.
+//! WKB compiles XKB keymaps, tracks modifier and compose state, and maps
+//! evdev key codes to characters — all without C dependencies.
+//!
+//! ## Quick Start
+//!
+//! ```rust,no_run
+//! use wkb::{WKB, KeyDirection};
+//!
+//! // Build from an XKB keymap string (e.g. received from a Wayland compositor)
+//! let keymap_string = std::fs::read_to_string("/path/to/keymap").unwrap();
+//! let mut wkb = WKB::new_from_string(keymap_string);
+//!
+//! // Process a key press (evdev code 38 = 'a' on US layout)
+//! let (ch, is_modifier) = wkb.key(38, KeyDirection::Down);
+//! ```
+//!
+//! ## Feature Flags
+//!
+//! - **`xkb`** (default) — XKB keymap compilation via the `xkb-core` crate.
+//! - **`compose`** (default) — Compose-key / dead-key sequence support.
+//! - **`testing`** — Exposes internal helpers for integration tests. Not part of the public API.
+
 use composer::{ComposeState, Composer, ListComposer, Token};
 mod composer;
 pub use modifiers::KeyDirection;
@@ -111,6 +136,9 @@ const MODIFIER_MAPPING: [(u32, u32); 9] = [
     (ALTGR, 128),
 ];
 
+/// Core keyboard state machine. Tracks modifier state, key presses, and compose sequences.
+///
+/// `C` is the compose backend — typically [`ListComposer`] when using the `xkb` feature.
 #[derive(Debug, Clone)]
 pub struct WKB<C: Composer> {
     pub(crate) layouts: Vec<String>,
@@ -124,6 +152,8 @@ pub struct WKB<C: Composer> {
     pub(crate) num_lock_keys: FlatKeymap,
     pub(crate) caps_lock_keymap: FlatKeymap,
     pub(crate) level_exceptions_keymap: FlatKeymap,
+    #[cfg(feature = "xkb")]
+    pub(crate) xkb_keymap: Option<xkb_core::rust_types::Keymap>,
 }
 
 #[cfg(feature = "xkb")]
@@ -147,6 +177,7 @@ impl<C: Composer> WKB<C> {
         self.pressed_keys = KeyBitSet::new();
     }
 
+    /// Return the current modifier state as `(depressed, latched, locked, group)` bitmasks.
     pub fn modifiers_state(&self) -> (u32, u32, u32, u32) {
         let mut depressed = 0;
         let mut latched = 0;
@@ -185,6 +216,7 @@ impl<C: Composer> WKB<C> {
         (depressed, latched, locked, group)
     }
 
+    /// Return the LED indicator state as a bitmask (bit 0 = NumLock, bit 1 = CapsLock, bit 2 = ScrollLock).
     pub fn leds_state(&self) -> u32 {
         let mut leds = 0;
         if self.modifiers.locked_with_type(NUM_LOCK, ModType::Num) {
@@ -202,6 +234,7 @@ impl<C: Composer> WKB<C> {
         leds
     }
 
+    /// Apply modifier state received from `wl_keyboard.modifiers`. Updates depressed, latched, locked masks and active layout group.
     pub fn update_modifiers(&mut self, depressed: u32, latched: u32, locked: u32, group: u32) {
         if let Some(l) = self.layouts.get(group as usize) {
             self.layout = l.clone();
@@ -234,6 +267,7 @@ impl<C: Composer> WKB<C> {
         }
     }
 
+    /// Look up the character at a specific shift level for the given evdev keycode.
     #[inline]
     pub fn level_key(&self, evdev_code: u32, level_index: usize) -> Option<char> {
         self.level_exceptions_keymap
@@ -241,15 +275,18 @@ impl<C: Composer> WKB<C> {
             .or_else(|| self.state_keymap.get(level_index, evdev_code))
     }
 
+    /// Return the number of shift levels supported by this keymap.
     #[inline]
     pub fn num_levels(&self) -> usize {
         self.state_keymap.num_levels()
     }
 
+    /// Return whether the given evdev keycode is a repeating key.
     pub fn key_repeats(&self, evdev_code: u32) -> bool {
         self.repeat_keys.contains(evdev_code)
     }
 
+    /// Resolve the character for the given evdev keycode under the current modifier state.
     #[inline]
     pub fn utf8(&mut self, evdev_code: u32) -> Option<char> {
         let (none_active, level2, level3, level5) = self.modifiers.active_none_and_levels();
@@ -277,6 +314,7 @@ impl<C: Composer> WKB<C> {
         self.state_keymap.get(base_level, evdev_code)
     }
 
+    /// Update internal modifier/key-press state for a key event. Returns `true` if the key is a modifier.
     pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let is_modifier = self.modifiers.set_state(evdev_code, key_direction);
         if !is_modifier {
@@ -295,6 +333,7 @@ impl<C: Composer> WKB<C> {
         is_modifier
     }
 
+    /// Process a key event: update state and return `(character, is_modifier)`.
     pub fn key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> (Option<char>, bool) {
         let is_modifier = self.update_key(evdev_code, key_direction);
         let utf8 = if key_direction == KeyDirection::Down && !is_modifier {
@@ -305,6 +344,7 @@ impl<C: Composer> WKB<C> {
         (utf8, is_modifier)
     }
 
+    /// Process a key event with compose support. Returns `(compose_state, is_modifier)`.
     #[cfg(feature = "compose")]
     pub fn key_compose(
         &mut self,
@@ -326,11 +366,21 @@ impl<C: Composer> WKB<C> {
         (compose_state, is_modifier)
     }
 
+    /// Return the list of layout names available in this keymap.
     pub fn layouts(&self) -> Vec<String> {
         self.layouts.clone()
     }
 
+    /// Return the name of the currently active layout.
     pub fn current_layout(&self) -> String {
         self.layout.clone()
+    }
+
+    /// Serialize the underlying XKB keymap to v1 text format.
+    ///
+    /// Returns `None` if the instance was not built from an XKB keymap.
+    #[cfg(feature = "xkb")]
+    pub fn as_xkb_string(&self) -> Option<String> {
+        self.xkb_keymap.as_ref().map(|km| km.as_xkb_string())
     }
 }

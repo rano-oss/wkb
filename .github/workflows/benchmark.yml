@@ -1,0 +1,63 @@
+name: Benchmarks
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  benchmark:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    steps:
+      - name: Install system dependencies
+        run: dnf install -y gcc binutils libxkbcommon-devel xkeyboard-config libX11-common nodejs
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run criterion benchmarks
+        run: cargo bench --bench bench_speed
+
+      - name: Run memory benchmark
+        run: |
+          cargo build --example bench_memory --release
+          ./target/release/examples/bench_memory > /tmp/mem_output.txt 2>&1
+
+      - name: Measure binary sizes
+        run: |
+          cargo build --example bench_size_wkb --release
+          cargo build --example bench_size_xkbcommon --release
+          cargo build --example bench_size_xkbcommon_dl --release
+          strip target/release/examples/bench_size_wkb
+          strip target/release/examples/bench_size_xkbcommon
+          strip target/release/examples/bench_size_xkbcommon_dl
+          {
+            echo "wkb $(stat -c%s target/release/examples/bench_size_wkb)"
+            echo "xkbcommon $(stat -c%s target/release/examples/bench_size_xkbcommon)"
+            echo "xkbcommon-dl $(stat -c%s target/release/examples/bench_size_xkbcommon_dl)"
+          } > /tmp/size_output.txt
+
+      - name: Generate benchmark table
+        run: node scripts/generate_benchmark_table.js --mem=/tmp/mem_output.txt --size=/tmp/size_output.txt --update-readme
+
+      - name: Commit updated README
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet README.md || {
+            git add README.md
+            git commit -m "docs: update benchmark results [skip ci]"
+            git push
+          }
