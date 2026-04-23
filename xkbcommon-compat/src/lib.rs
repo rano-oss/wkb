@@ -418,3 +418,134 @@ pub extern "C" fn xkb_keysym_to_utf32(keysym: u32) -> u32 {
 pub extern "C" fn xkb_utf32_to_keysym(ucs: u32) -> u32 {
     xkb_core::keysym_utf::utf32_to_keysym(ucs)
 }
+
+// --- Compose API ---
+
+/// Opaque compose table handle.
+pub struct xkb_compose_table {
+    inner: xkb_core::compose::ComposeTable,
+}
+
+/// Opaque compose state handle.
+pub struct xkb_compose_state {
+    inner: xkb_core::compose::ComposeState<'static>,
+    // Safety: the ComposeTable is kept alive by the xkb_compose_table Box.
+    // We use a raw pointer to extend the lifetime; the user must ensure
+    // the table outlives the state (matching libxkbcommon's contract).
+    _table: *const xkb_compose_table,
+}
+
+/// Create a compose table from a locale string. Returns null on failure.
+/// The context parameter is currently unused but kept for API compatibility.
+#[no_mangle]
+pub unsafe extern "C" fn xkb_compose_table_new_from_locale(
+    _ctx: *mut xkb_context,
+    locale: *const c_char,
+    _flags: u32,
+) -> *mut xkb_compose_table {
+    if locale.is_null() {
+        return ptr::null_mut();
+    }
+    let locale_str = CStr::from_ptr(locale).to_string_lossy();
+    match xkb_core::compose::ComposeTable::new_from_locale(&locale_str) {
+        Some(table) => Box::into_raw(Box::new(xkb_compose_table { inner: table })),
+        None => ptr::null_mut(),
+    }
+}
+
+/// Free a compose table.
+#[no_mangle]
+pub unsafe extern "C" fn xkb_compose_table_unref(table: *mut xkb_compose_table) {
+    if !table.is_null() {
+        drop(Box::from_raw(table));
+    }
+}
+
+/// Create a compose state from a table. Returns null on failure.
+#[no_mangle]
+pub unsafe extern "C" fn xkb_compose_state_new(
+    table: *mut xkb_compose_table,
+    _flags: u32,
+) -> *mut xkb_compose_state {
+    if table.is_null() {
+        return ptr::null_mut();
+    }
+    // Extend the lifetime of the table reference to 'static.
+    // This is safe as long as the table outlives the state (caller's responsibility).
+    let table_ref: &'static xkb_core::compose::ComposeTable =
+        &*(&(*table).inner as *const xkb_core::compose::ComposeTable);
+    let state = table_ref.new_state();
+    Box::into_raw(Box::new(xkb_compose_state {
+        inner: state,
+        _table: table,
+    }))
+}
+
+/// Free a compose state.
+#[no_mangle]
+pub unsafe extern "C" fn xkb_compose_state_unref(state: *mut xkb_compose_state) {
+    if !state.is_null() {
+        drop(Box::from_raw(state));
+    }
+}
+
+/// Feed a keysym to the compose state. Returns 0 (ignored) or 1 (accepted).
+#[no_mangle]
+pub unsafe extern "C" fn xkb_compose_state_feed(state: *mut xkb_compose_state, keysym: u32) -> u32 {
+    if state.is_null() {
+        return 0;
+    }
+    match (*state).inner.feed(keysym) {
+        xkb_core::compose::ComposeFeedResult::Ignored => 0,
+        xkb_core::compose::ComposeFeedResult::Accepted => 1,
+    }
+}
+
+/// Get the current compose status.
+/// Returns: 0=Nothing, 1=Composing, 2=Composed, 3=Cancelled
+#[no_mangle]
+pub unsafe extern "C" fn xkb_compose_state_get_status(state: *const xkb_compose_state) -> u32 {
+    if state.is_null() {
+        return 0;
+    }
+    (*state).inner.status() as u32
+}
+
+/// Get the composed keysym. Valid when status is Composed.
+#[no_mangle]
+pub unsafe extern "C" fn xkb_compose_state_get_one_sym(state: *const xkb_compose_state) -> u32 {
+    if state.is_null() {
+        return 0;
+    }
+    (*state).inner.keysym()
+}
+
+/// Get the composed UTF-8 string. Writes to buffer, returns bytes needed (excl NUL).
+#[no_mangle]
+pub unsafe extern "C" fn xkb_compose_state_get_utf8(
+    state: *const xkb_compose_state,
+    buffer: *mut c_char,
+    size: usize,
+) -> i32 {
+    if state.is_null() {
+        return 0;
+    }
+    let s = (*state).inner.utf8();
+    let needed = s.len();
+
+    if !buffer.is_null() && size > 0 {
+        let copy_len = std::cmp::min(needed, size - 1);
+        ptr::copy_nonoverlapping(s.as_ptr() as *const c_char, buffer, copy_len);
+        *buffer.add(copy_len) = 0;
+    }
+
+    needed as i32
+}
+
+/// Reset the compose state.
+#[no_mangle]
+pub unsafe extern "C" fn xkb_compose_state_reset(state: *mut xkb_compose_state) {
+    if !state.is_null() {
+        (*state).inner.reset();
+    }
+}

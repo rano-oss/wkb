@@ -1,5 +1,5 @@
 /// Token fed into the composer: either a regular character or a Compose key press
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token {
     Char(char),
     Compose,
@@ -7,26 +7,39 @@ pub enum Token {
 
 pub trait Composer: std::fmt::Debug {
     fn feed(&mut self, token: Token) -> ComposeState;
+    fn reset(&mut self);
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ComposeState {
     Idle(Token),
-    Composing(Vec<Token>),
+    Composing(String),
     Finished(char),
-    Cancelled(Vec<Token>),
+    Cancelled,
 }
 
+/// Convert a Token to a u32 key for fast comparison.
+/// Compose = 0, Char(c) = c as u32 (always >= 1 for valid chars).
+#[inline(always)]
+fn token_key(token: &Token) -> u32 {
+    match token {
+        Token::Compose => 0,
+        Token::Char(c) => *c as u32,
+    }
+}
+
+/// Trie node: children stored as sorted (key, child_index) pairs for binary search.
+/// `emit` is Some(char) if this node is a leaf that produces output.
 #[derive(Debug, Clone)]
-pub(crate) enum Node {
-    Next(Vec<(Token, usize)>),
-    Emit(char),
+pub(crate) struct TrieNode {
+    children: Vec<(u32, u32)>, // (token_key, node_index), sorted by token_key
+    emit: Option<char>,
 }
 
 #[derive(Debug, Clone)]
 pub struct ListComposer {
-    pub(crate) nodes: Vec<Node>,
-    cur: usize,
+    pub(crate) nodes: Vec<TrieNode>,
+    cur: u32,
     pending: Vec<Token>,
 }
 
@@ -39,117 +52,108 @@ impl Default for ListComposer {
 impl ListComposer {
     pub fn new() -> Self {
         Self {
-            // root exists and is a Next node
-            nodes: vec![Node::Next(Vec::new())],
+            nodes: vec![TrieNode {
+                children: Vec::new(),
+                emit: None,
+            }],
             cur: 0,
             pending: Vec::new(),
         }
     }
 
-    /// Insert a sequence of tokens into the trie. Tokens are either `Token::Char` or `Token::Compose`.
+    /// Returns the tokens fed so far in the current compose sequence.
+    /// Non-empty while in `Composing` state. Clients can use this to
+    /// display the in-progress sequence (e.g. `'` `¨` with underline).
+    #[inline]
+    pub fn pending(&self) -> &[Token] {
+        &self.pending
+    }
+
+    /// Insert a sequence of tokens into the trie.
     pub fn insert(&mut self, tokens: &[Token], out: char) {
-        let mut n = 0usize;
+        let mut n = 0u32;
         for t in tokens.iter() {
-            let i = self.nodes.len();
-            n = match self.nodes[n] {
-                Node::Next(ref mut items) => {
-                    if let Some((_, next)) = items.iter().find(|(k, _)| k == t) {
-                        *next
-                    } else {
-                        items.push((t.clone(), i));
-                        self.nodes.push(Node::Next(Vec::new()));
-                        i
-                    }
+            let key = token_key(t);
+            let children = &self.nodes[n as usize].children;
+            // Binary search for existing child
+            match children.binary_search_by_key(&key, |&(k, _)| k) {
+                Ok(pos) => {
+                    n = children[pos].1;
                 }
-                Node::Emit(_) => {
-                    self.nodes[n] = Node::Next(vec![(t.clone(), i)]);
-                    self.nodes.push(Node::Next(Vec::new()));
-                    i
+                Err(pos) => {
+                    let new_idx = self.nodes.len() as u32;
+                    self.nodes.push(TrieNode {
+                        children: Vec::new(),
+                        emit: None,
+                    });
+                    self.nodes[n as usize].children.insert(pos, (key, new_idx));
+                    n = new_idx;
                 }
-            };
+            }
         }
-        self.nodes[n] = Node::Emit(out);
+        self.nodes[n as usize].emit = Some(out);
+    }
+
+    /// Returns an opinionated display string of the in-progress compose sequence.
+    /// Compose key shows as `·` if it is the last token pressed.
+    /// Characters show as themselves.
+    pub fn pending_string(&self) -> String {
+        if self.pending.is_empty() {
+            return String::new();
+        }
+
+        let mut s = String::with_capacity(self.pending.len());
+        let last = self.pending.len() - 1;
+
+        for token in &self.pending[..last] {
+            if let Token::Char(c) = token {
+                s.push(*c);
+            }
+        }
+
+        match self.pending[last] {
+            Token::Compose => s.push('·'),
+            Token::Char(c) => s.push(c),
+        }
+
+        s
     }
 }
 
 impl Composer for ListComposer {
+    #[inline]
     fn feed(&mut self, token: Token) -> ComposeState {
-        match &self.nodes[self.cur] {
-            Node::Next(items) => {
-                if let Some((_, next)) = items.iter().find(|(k, _)| k == &token) {
-                    self.pending.push(token);
-                    self.cur = *next;
-                    // Check if we landed on an Emit node
-                    match &self.nodes[self.cur] {
-                        Node::Emit(outc) => {
-                            let out = *outc;
-                            self.cur = 0;
-                            self.pending.clear();
-                            ComposeState::Finished(out)
-                        }
-                        _ => ComposeState::Composing(self.pending.clone()),
-                    }
-                } else if self.cur == 0 {
-                    ComposeState::Idle(token)
-                } else {
-                    self.pending.push(token);
+        let key = token_key(&token);
+        let node = &self.nodes[self.cur as usize];
+
+        match node.children.binary_search_by_key(&key, |&(k, _)| k) {
+            Ok(pos) => {
+                let next = node.children[pos].1;
+                self.pending.push(token);
+                let next_node = &self.nodes[next as usize];
+                if let Some(out) = next_node.emit {
                     self.cur = 0;
-                    let failed = self.pending.drain(..);
-                    ComposeState::Cancelled(failed.collect())
+                    self.pending.clear();
+                    ComposeState::Finished(out)
+                } else {
+                    self.cur = next;
+                    ComposeState::Composing(self.pending_string())
                 }
             }
-            Node::Emit(outc) => {
-                self.cur = 0;
-                self.pending.clear();
-                ComposeState::Finished(*outc)
+            Err(_) => {
+                if self.cur == 0 {
+                    ComposeState::Idle(token)
+                } else {
+                    self.cur = 0;
+                    self.pending.clear();
+                    ComposeState::Cancelled
+                }
             }
         }
     }
+
+    fn reset(&mut self) {
+        self.cur = 0;
+        self.pending.clear();
+    }
 }
-
-// #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-// pub struct UnicodeComposer {
-//     pub(crate) pending: Vec<char>,
-// }
-
-// impl UnicodeComposer {
-//     pub fn new() -> Self {
-//         Self {
-//             pending: Vec::new(),
-//         }
-//     }
-// }
-
-// impl Composer for UnicodeComposer {
-//     fn feed(&mut self, character: char) -> ComposeState {
-//         if unicode_normalization::char::is_combining_mark(character) {
-//             self.pending.push(character);
-//             ComposeState::Composing(self.pending.iter().collect())
-//         } else {
-//             if self.pending.is_empty() {
-//                 return ComposeState::Idle(character);
-//             }
-
-//             let mut current = character;
-//             let mut success = true;
-//             for &mark in &self.pending {
-//                 if let Some(c) = unicode_normalization::char::compose(current, mark) {
-//                     current = c;
-//                 } else {
-//                     success = false;
-//                     break;
-//                 }
-//             }
-
-//             if success {
-//                 self.pending.clear();
-//                 ComposeState::Finished(current)
-//             } else {
-//                 let mut s: String = self.pending.iter().collect();
-//                 s.push(character);
-//                 self.pending.clear();
-//                 ComposeState::Cancelled(s)
-//             }
-//         }
-//     }
-// }

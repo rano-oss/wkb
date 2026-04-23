@@ -1,6 +1,6 @@
 /// Test new_from_string() - parsing XKB keymap strings
 /// This enables WKB to receive keymaps from Wayland compositors
-use wkb::{xkb, KeyDirection, WKB};
+use wkb::{testing::WKBTestExt, KeyDirection, WKB};
 
 #[test]
 fn test_new_from_string_us() {
@@ -32,7 +32,7 @@ fn test_new_from_string_us() {
     }
 
     // Test with Shift
-    if let Some((shift_code, _)) = xkb::level2_code(&wkb_from_string.modifiers) {
+    if let Some((shift_code, _)) = wkb_from_string.level2_code() {
         wkb_from_string.update_key(shift_code, KeyDirection::Down);
         wkb_from_names.update_key(shift_code, KeyDirection::Down);
 
@@ -115,11 +115,11 @@ fn test_new_from_string_modifiers() {
 
     // Check modifiers exist
     assert!(
-        xkb::level2_code(&wkb.modifiers).is_some(),
+        wkb.level2_code().is_some(),
         "Level2 (Shift) should be detected"
     );
     assert!(
-        xkb::level3_code(&wkb.modifiers).is_some(),
+        wkb.level3_code().is_some(),
         "Level3 (AltGr) should be detected"
     );
 }

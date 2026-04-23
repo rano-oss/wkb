@@ -49,4 +49,4 @@ Todo list(tentative):
   - [x] Tests
 - [x] Add wayland specific functions
 - [x] Lightbulbs
-- [ ] Benchmarks
+- [x] Benchmarks

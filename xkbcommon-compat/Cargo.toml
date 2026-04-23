@@ -5,7 +5,7 @@ edition = "2021"
 description = "Thin extern \"C\" wrapper over xkb-core matching the libxkbcommon ABI"
 
 [lib]
-crate-type = ["cdylib", "staticlib"]
+crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
 xkb-core = { path = "../xkb-core" }

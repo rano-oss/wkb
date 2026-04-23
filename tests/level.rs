@@ -49,7 +49,7 @@ fn level_keys(locale: &str, level: usize) {
             }
             if k1 != k2 && k2.is_some() {
                 println!("wkb: {:?}, xkb: {:?} {}", k1, k2, i);
-                println!("{:?}", wkb.state_keymap[level]);
+                // println!("{:?}", wkb.state_keymap[level]);
             }
             assert!(k1 == k2 || k2.is_none());
         }

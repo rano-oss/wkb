@@ -1,18 +1,13 @@
 //! XKB module — re-exports from xkb-core and WKB integration glue.
 
 // Re-export xkb-core public API selectively
-pub use xkb_core::compose;
-pub use xkb_core::keysym_utf;
-pub use xkb_core::rust_types;
-pub use xkb_core::XKB_SYMBOLS_PATH;
-pub use xkb_core::{XKB_KEY_DOWN, XKB_KEY_REPEATED, XKB_KEY_UP};
 
 // WKB integration functions
 use crate::composer::Token;
 use crate::modifiers::*;
-use crate::{ListComposer, WKB};
-use std::collections::{BTreeMap, HashSet};
-use std::path::Path;
+use crate::FlatKeymap;
+use crate::ListComposer;
+use crate::{KeyBitSet, WKB};
 
 /// Get all available layouts/variants for a given locale
 fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
@@ -51,10 +46,10 @@ fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
 }
 
 /// Get the keycode (and optional level) for a specific modifier type.
-pub fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Option<u8>)> {
+pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Option<u8>)> {
     let mut other_mod = None;
 
-    for (code, modifier) in modifiers.0.iter() {
+    for (code, modifier) in modifiers.iter() {
         match modifier {
             Modifier::Single(mod_kind) => {
                 if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
@@ -87,15 +82,15 @@ pub fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Opti
     other_mod
 }
 
-pub fn level2_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
+pub(crate) fn level2_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
     level_code(modifiers, ModType::Level2)
 }
 
-pub fn level3_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
+pub(crate) fn level3_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
     level_code(modifiers, ModType::Level3)
 }
 
-pub fn level5_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
+pub(crate) fn level5_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
     level_code(modifiers, ModType::Level5)
 }
 
@@ -125,7 +120,7 @@ fn press_level_modifiers(
 }
 
 /// Load compose entries from a file and build a ListComposer.
-pub fn load_compose_from_path(path: &Path) -> ListComposer {
+pub fn load_compose_from_path(path: &std::path::Path) -> ListComposer {
     let mut regular = ListComposer::new();
 
     let entries = xkb_core::compose::parse_compose_file(path);
@@ -158,6 +153,7 @@ fn build_wkb_from_keymap(
     const EVDEV_OFFSET: u32 = 8;
 
     let (min_keycode, max_keycode) = (keymap.min_keycode(), keymap.max_keycode());
+    let num_keys = (max_keycode - EVDEV_OFFSET + 1) as usize;
     let modifiers = build_modifiers_from_keymap(keymap, min_keycode, max_keycode);
 
     let get_char = |kc: u32, state: &xkb_core::rust_types::State, lvl: usize| -> Option<char> {
@@ -172,10 +168,10 @@ fn build_wkb_from_keymap(
     let populate_lock = |lock_kc: Option<u32>,
                          toggle: bool,
                          level_keys: (Option<u32>, Option<u32>, Option<u32>)|
-     -> Vec<BTreeMap<u32, char>> {
-        let mut maps = vec![BTreeMap::new(); XKB_MAX_LEVELS];
+     -> FlatKeymap {
+        let mut fk = FlatKeymap::new(num_keys);
         if let Some(lkc) = lock_kc {
-            for (lvl, map) in maps.iter_mut().enumerate().take(XKB_MAX_LEVELS) {
+            for lvl in 0..XKB_MAX_LEVELS {
                 if let Some(mut st) = keymap.new_state() {
                     if toggle {
                         st.update_key(lkc, xkb_core::XKB_KEY_DOWN);
@@ -187,13 +183,13 @@ fn build_wkb_from_keymap(
                     }
                     for kc in min_keycode..=max_keycode {
                         if let Some(ch) = get_char(kc, &st, lvl) {
-                            map.insert(kc - EVDEV_OFFSET, ch);
+                            fk.set(lvl, kc - EVDEV_OFFSET, ch);
                         }
                     }
                 }
             }
         }
-        maps
+        fk
     };
 
     let level_keys = (
@@ -202,28 +198,24 @@ fn build_wkb_from_keymap(
         level5_code(&modifiers).map(|(c, _)| c + EVDEV_OFFSET),
     );
 
-    let mut level_exceptions_keymap = vec![BTreeMap::new(); XKB_MAX_LEVELS];
-    for (lvl, map) in level_exceptions_keymap
-        .iter_mut()
-        .enumerate()
-        .take(XKB_MAX_LEVELS)
-    {
+    let mut level_exceptions_keymap = FlatKeymap::new(num_keys);
+    for lvl in 0..XKB_MAX_LEVELS {
         for kc in min_keycode..=max_keycode {
             if let Some(&sym) = keymap.key_get_syms_by_level(kc, 0, lvl as u32).first() {
                 if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(sym) {
-                    map.insert(kc - EVDEV_OFFSET, ch);
+                    level_exceptions_keymap.set(lvl, kc - EVDEV_OFFSET, ch);
                 }
             }
         }
     }
 
-    let mut state_keymap = vec![BTreeMap::new(); XKB_MAX_LEVELS];
-    for (lvl, map) in state_keymap.iter_mut().enumerate().take(XKB_MAX_LEVELS) {
+    let mut state_keymap = FlatKeymap::new(num_keys);
+    for lvl in 0..XKB_MAX_LEVELS {
         if let Some(mut st) = keymap.new_state() {
             press_level_modifiers(&mut st, lvl, level_keys.0, level_keys.1, level_keys.2);
             for kc in min_keycode..=max_keycode {
                 if let Some(ch) = get_char(kc, &st, lvl) {
-                    map.insert(kc - EVDEV_OFFSET, ch);
+                    state_keymap.set(lvl, kc - EVDEV_OFFSET, ch);
                 }
             }
         }
@@ -231,27 +223,43 @@ fn build_wkb_from_keymap(
 
     let caps_lock_keymap = {
         let caps_kc = level_code(&modifiers, ModType::Caps).map(|(c, _)| c + EVDEV_OFFSET);
-        let mut maps = populate_lock(caps_kc, false, level_keys);
-        for (lvl, map) in maps.iter_mut().enumerate() {
-            map.retain(|&k, &mut v| state_keymap.get(lvl).and_then(|m| m.get(&k)) != Some(&v));
+        let mut fk = populate_lock(caps_kc, false, level_keys);
+        // Remove entries that are identical to state_keymap (only keep diffs)
+        for lvl in 0..XKB_MAX_LEVELS {
+            for k in 0..fk.num_keys as u32 {
+                if let Some(v) = fk.get(lvl, k) {
+                    if state_keymap.get(lvl, k) == Some(v) {
+                        fk.data[lvl * fk.num_keys + k as usize] = None;
+                    }
+                }
+            }
         }
-        maps
+        fk
     };
 
     let num_lock_keys = {
         let num_kc = level_code(&modifiers, ModType::Num).map(|(c, _)| c + EVDEV_OFFSET);
-        let mut maps = populate_lock(num_kc, true, level_keys);
-        for (lvl, map) in maps.iter_mut().enumerate() {
-            map.retain(|&k, &mut v| state_keymap.get(lvl).and_then(|m| m.get(&k)) != Some(&v));
+        let mut fk = populate_lock(num_kc, true, level_keys);
+        for lvl in 0..XKB_MAX_LEVELS {
+            for k in 0..fk.num_keys as u32 {
+                if let Some(v) = fk.get(lvl, k) {
+                    if state_keymap.get(lvl, k) == Some(v) {
+                        fk.data[lvl * fk.num_keys + k as usize] = None;
+                    }
+                }
+            }
         }
-        maps
+        fk
     };
 
-    let repeat_keys = (min_keycode..=max_keycode)
-        .filter(|&kc| keymap.key_repeats(kc))
-        .map(|kc| kc - EVDEV_OFFSET)
-        .collect();
+    let mut repeat_keys = KeyBitSet::new();
+    for kc in min_keycode..=max_keycode {
+        if keymap.key_repeats(kc) {
+            repeat_keys.insert(kc - EVDEV_OFFSET);
+        }
+    }
 
+    #[cfg(feature = "compose")]
     let composer = locale
         .as_deref()
         .and_then(xkb_core::compose::resolve_compose_file)
@@ -261,13 +269,16 @@ fn build_wkb_from_keymap(
         })
         .unwrap_or_else(ListComposer::new);
 
+    #[cfg(not(feature = "compose"))]
+    let composer = ListComposer::new();
+
     WKB {
         layouts: all_layouts,
         layout: layout
             .clone()
             .unwrap_or_else(|| locale.clone().unwrap_or_default()),
-        locale,
-        pressed_keys: HashSet::new(),
+        // locale,
+        pressed_keys: KeyBitSet::new(),
         repeat_keys,
         composer,
         modifiers,
@@ -304,7 +315,7 @@ fn build_modifiers_from_keymap(
     min_keycode: u32,
     max_keycode: u32,
 ) -> Modifiers {
-    let mut modifiers = Modifiers(std::collections::BTreeMap::new());
+    let mut modifiers = Modifiers::new();
     let num_mods = keymap.num_mods();
 
     let keysym_to_modtype = |ks: u32| -> Option<ModType> {
@@ -408,7 +419,7 @@ fn build_modifiers_from_keymap(
                 }
                 if caps_levels.len() < num_levels as usize {
                     let min_caps = *caps_levels.iter().min().unwrap();
-                    let level_map: BTreeMap<u8, ModKind> = (0..8)
+                    let level_map: std::collections::BTreeMap<u8, ModKind> = (0..8)
                         .map(|l| {
                             (
                                 l,
