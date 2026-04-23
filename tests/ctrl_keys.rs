@@ -7,7 +7,7 @@
 //! When xkbcommon returns a control character, we treat it as equivalent to None.
 
 use test_case::test_matrix;
-use wkb::KeyDirection;
+use wkb::{testing::WKBTestExt, KeyDirection};
 use xkbcommon::xkb::{self, Keycode};
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
