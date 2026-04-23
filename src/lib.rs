@@ -3,10 +3,13 @@
 #![allow(non_upper_case_globals)]
 
 pub use composer::{ComposeState, Composer, ListComposer, Token};
+#[doc(hidden)]
 pub mod composer;
-pub use modifiers::KeyDirection;
 use modifiers::{level_index, Modifiers, *};
+pub use modifiers::{KeyDirection, ModType};
+#[doc(hidden)]
 pub mod modifiers;
+#[doc(hidden)]
 pub mod xkb;
 
 /// Maximum number of shift levels.
@@ -17,20 +20,20 @@ const BITSET_WORDS: usize = 12; // 12 * 64 = 768 bits
 
 /// Compact bitset for tracking key states. Covers evdev codes 0..767.
 #[derive(Debug, Clone)]
-pub struct KeyBitSet {
+pub(crate) struct KeyBitSet {
     bits: [u64; BITSET_WORDS],
 }
 
 impl KeyBitSet {
     #[inline]
-    pub const fn new() -> Self {
+    pub(crate) const fn new() -> Self {
         Self {
             bits: [0; BITSET_WORDS],
         }
     }
 
     #[inline(always)]
-    pub fn contains(&self, key: u32) -> bool {
+    pub(crate) fn contains(&self, key: u32) -> bool {
         let k = key as usize;
         if k < BITSET_WORDS * 64 {
             self.bits[k >> 6] & (1u64 << (k & 63)) != 0
@@ -40,7 +43,7 @@ impl KeyBitSet {
     }
 
     #[inline(always)]
-    pub fn insert(&mut self, key: u32) {
+    pub(crate) fn insert(&mut self, key: u32) {
         let k = key as usize;
         if k < BITSET_WORDS * 64 {
             self.bits[k >> 6] |= 1u64 << (k & 63);
@@ -48,7 +51,7 @@ impl KeyBitSet {
     }
 
     #[inline(always)]
-    pub fn remove(&mut self, key: u32) {
+    pub(crate) fn remove(&mut self, key: u32) {
         let k = key as usize;
         if k < BITSET_WORDS * 64 {
             self.bits[k >> 6] &= !(1u64 << (k & 63));
@@ -59,13 +62,13 @@ impl KeyBitSet {
 /// Flat keymap: `MAX_LEVELS` planes of `num_keys` slots.
 /// Index: `level * num_keys + evdev_code`.
 #[derive(Debug, Clone)]
-pub struct FlatKeymap {
-    pub data: Vec<Option<char>>,
-    pub num_keys: usize,
+pub(crate) struct FlatKeymap {
+    pub(crate) data: Vec<Option<char>>,
+    pub(crate) num_keys: usize,
 }
 
 impl FlatKeymap {
-    pub fn new(num_keys: usize) -> Self {
+    pub(crate) fn new(num_keys: usize) -> Self {
         Self {
             data: vec![None; MAX_LEVELS * num_keys],
             num_keys,
@@ -73,12 +76,12 @@ impl FlatKeymap {
     }
 
     #[inline]
-    pub fn num_levels(&self) -> usize {
+    pub(crate) fn num_levels(&self) -> usize {
         MAX_LEVELS
     }
 
     #[inline(always)]
-    pub fn get(&self, level: usize, evdev_code: u32) -> Option<char> {
+    pub(crate) fn get(&self, level: usize, evdev_code: u32) -> Option<char> {
         let k = evdev_code as usize;
         if k < self.num_keys {
             let idx = level * self.num_keys + k;
@@ -89,7 +92,7 @@ impl FlatKeymap {
     }
 
     #[inline]
-    pub fn set(&mut self, level: usize, evdev_code: u32, ch: char) {
+    pub(crate) fn set(&mut self, level: usize, evdev_code: u32, ch: char) {
         let k = evdev_code as usize;
         if k < self.num_keys {
             let idx = level * self.num_keys + k;
@@ -114,17 +117,17 @@ const MODIFIER_MAPPING: [(u32, u32); 9] = [
 
 #[derive(Debug, Clone)]
 pub struct WKB<C: Composer> {
-    pub layouts: Vec<String>,
-    pub layout: String,
-    pub locale: Option<String>,
-    pub pressed_keys: KeyBitSet,
-    pub repeat_keys: KeyBitSet,
-    pub composer: C,
-    pub modifiers: Modifiers,
-    pub state_keymap: FlatKeymap,
-    pub num_lock_keys: FlatKeymap,
-    pub caps_lock_keymap: FlatKeymap,
-    pub level_exceptions_keymap: FlatKeymap,
+    pub(crate) layouts: Vec<String>,
+    pub(crate) layout: String,
+    pub(crate) locale: Option<String>,
+    pub(crate) pressed_keys: KeyBitSet,
+    pub(crate) repeat_keys: KeyBitSet,
+    pub(crate) composer: C,
+    pub(crate) modifiers: Modifiers,
+    pub(crate) state_keymap: FlatKeymap,
+    pub(crate) num_lock_keys: FlatKeymap,
+    pub(crate) caps_lock_keymap: FlatKeymap,
+    pub(crate) level_exceptions_keymap: FlatKeymap,
 }
 
 impl WKB<ListComposer> {
@@ -145,6 +148,24 @@ impl<C: Composer> WKB<C> {
     pub fn reset_state(&mut self) {
         self.composer.reset();
         self.pressed_keys = KeyBitSet::new();
+    }
+
+    /// Check if a specific modifier type is currently active.
+    #[doc(hidden)]
+    pub fn active_mod_type(&self, mod_type: ModType) -> bool {
+        self.modifiers.active_mod_type(mod_type)
+    }
+
+    /// Access the composer (e.g. for tests that need to clone it).
+    #[doc(hidden)]
+    pub fn composer(&self) -> &C {
+        &self.composer
+    }
+
+    /// Access the modifiers (e.g. for tests that call level2_code etc).
+    #[doc(hidden)]
+    pub fn modifiers(&self) -> &Modifiers {
+        &self.modifiers
     }
 
     pub fn modifiers_state(&self) -> (u32, u32, u32, u32) {
@@ -239,6 +260,11 @@ impl<C: Composer> WKB<C> {
         self.level_exceptions_keymap
             .get(level_index, evdev_code)
             .or_else(|| self.state_keymap.get(level_index, evdev_code))
+    }
+
+    #[inline]
+    pub fn num_levels(&self) -> usize {
+        self.state_keymap.num_levels()
     }
 
     pub fn key_repeats(&self, evdev_code: u32) -> bool {

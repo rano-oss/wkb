@@ -501,40 +501,33 @@ impl Modifiers {
         })
     }
 
+    #[inline]
     pub fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
-        let (l2, l3, l5) = self.level_bits();
-        let level = level_index(l5, l3, l2) as u8;
-        if let Some((_, modifier)) = self.entries.iter_mut().find(|(c, _)| *c == evdev_code) {
-            match modifier {
-                Modifier::Single(mod_kind) => {
+        let pos = match self.entries.iter().position(|(c, _)| *c == evdev_code) {
+            Some(p) => p,
+            None => return false,
+        };
+        let is_leveled = matches!(&self.entries[pos].1, Modifier::Leveled(_));
+        if is_leveled {
+            let (l2, l3, l5) = self.level_bits();
+            let level = level_index(l5, l3, l2) as u8;
+            if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
+                if let Some(mod_kind) = map.get_mut(&level) {
                     mod_kind.update(key_direction);
-                }
-                Modifier::Leveled(map) => {
-                    if let Some(mod_kind) = map.get_mut(&level) {
-                        mod_kind.update(key_direction);
-                    } else if let Some(mod_kind) = map.get_mut(&0) {
-                        mod_kind.update(key_direction);
-                    } else {
-                        return false;
-                    }
+                } else if let Some(mod_kind) = map.get_mut(&0) {
+                    mod_kind.update(key_direction);
+                } else {
+                    return false;
                 }
             }
-            true
-        } else {
-            false
+        } else if let Modifier::Single(mod_kind) = &mut self.entries[pos].1 {
+            mod_kind.update(key_direction);
         }
+        true
     }
 }
 
+#[inline(always)]
 pub fn level_index(level5: bool, level3: bool, level2: bool) -> usize {
-    match (level5, level3, level2) {
-        (true, true, true) => 7,
-        (true, true, false) => 6,
-        (true, false, true) => 5,
-        (true, false, false) => 4,
-        (false, true, true) => 3,
-        (false, true, false) => 2,
-        (false, false, true) => 1,
-        (false, false, false) => 0,
-    }
+    ((level5 as usize) << 2) | ((level3 as usize) << 1) | (level2 as usize)
 }

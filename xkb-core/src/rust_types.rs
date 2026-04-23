@@ -501,7 +501,7 @@ impl RxkbContext {
 ///
 /// Note: The underlying type is opaque to avoid private struct imports
 pub struct ComposeTable {
-    pub entity: xkb_compose_table,
+    entity: xkb_compose_table,
 }
 
 impl ComposeTable {

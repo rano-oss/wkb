@@ -98,14 +98,24 @@ impl ListComposer {
     /// Compose key shows as `·` if it is the last token pressed.
     /// Characters show as themselves.
     pub fn pending_string(&self) -> String {
-        let mut s = String::new();
-        for (i, token) in self.pending.iter().enumerate() {
-            match token {
-                Token::Compose if i == self.pending.len() - 1 => s.push('·'),
-                Token::Compose => {}
-                Token::Char(c) => s.push(*c),
+        if self.pending.is_empty() {
+            return String::new();
+        }
+
+        let mut s = String::with_capacity(self.pending.len());
+        let last = self.pending.len() - 1;
+
+        for token in &self.pending[..last] {
+            if let Token::Char(c) = token {
+                s.push(*c);
             }
         }
+
+        match self.pending[last] {
+            Token::Compose => s.push('·'),
+            Token::Char(c) => s.push(c),
+        }
+
         s
     }
 }

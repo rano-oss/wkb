@@ -37,9 +37,9 @@ fn test_all_keys_locale<C: wkb::composer::Composer>(
 
         if k1 != k2.chars().last() && !k2.is_empty() {
             let level = level_index(
-                wkb.modifiers.active_mod_type(wkb::modifiers::ModType::Level5),
-                wkb.modifiers.active_mod_type(wkb::modifiers::ModType::Level3),
-                wkb.modifiers.active_mod_type(wkb::modifiers::ModType::Level2),
+                wkb.active_mod_type(wkb::ModType::Level5),
+                wkb.active_mod_type(wkb::ModType::Level3),
+                wkb.active_mod_type(wkb::ModType::Level2),
             );
             println!(
                 "locale={} layout={} key={} level={}",
@@ -61,30 +61,30 @@ fn set_level<C: wkb::composer::Composer>(
         let mut modifiers = Vec::new();
         match level {
             7 => {
-                modifiers.push(wkbxkb::level5_code(&wkb.modifiers).unwrap().0);
-                modifiers.push(wkbxkb::level3_code(&wkb.modifiers).unwrap().0);
-                modifiers.push(wkbxkb::level2_code(&wkb.modifiers).unwrap().0);
+                modifiers.push(wkbxkb::level5_code(&wkb.modifiers()).unwrap().0);
+                modifiers.push(wkbxkb::level3_code(&wkb.modifiers()).unwrap().0);
+                modifiers.push(wkbxkb::level2_code(&wkb.modifiers()).unwrap().0);
             }
             6 => {
-                modifiers.push(wkbxkb::level5_code(&wkb.modifiers).unwrap().0);
-                modifiers.push(wkbxkb::level3_code(&wkb.modifiers).unwrap().0);
+                modifiers.push(wkbxkb::level5_code(&wkb.modifiers()).unwrap().0);
+                modifiers.push(wkbxkb::level3_code(&wkb.modifiers()).unwrap().0);
             }
             5 => {
-                modifiers.push(wkbxkb::level5_code(&wkb.modifiers).unwrap().0);
-                modifiers.push(wkbxkb::level2_code(&wkb.modifiers).unwrap().0);
+                modifiers.push(wkbxkb::level5_code(&wkb.modifiers()).unwrap().0);
+                modifiers.push(wkbxkb::level2_code(&wkb.modifiers()).unwrap().0);
             }
             4 => {
-                modifiers.push(wkbxkb::level5_code(&wkb.modifiers).unwrap().0);
+                modifiers.push(wkbxkb::level5_code(&wkb.modifiers()).unwrap().0);
             }
             3 => {
-                modifiers.push(wkbxkb::level2_code(&wkb.modifiers).unwrap().0);
-                modifiers.push(wkbxkb::level3_code(&wkb.modifiers).unwrap_or((ALTGR, None)).0);
+                modifiers.push(wkbxkb::level2_code(&wkb.modifiers()).unwrap().0);
+                modifiers.push(wkbxkb::level3_code(&wkb.modifiers()).unwrap_or((ALTGR, None)).0);
             }
             2 => {
-                modifiers.push(wkbxkb::level3_code(&wkb.modifiers).unwrap().0);
+                modifiers.push(wkbxkb::level3_code(&wkb.modifiers()).unwrap().0);
             }
             1 => {
-                modifiers.push(wkbxkb::level2_code(&wkb.modifiers).unwrap().0);
+                modifiers.push(wkbxkb::level2_code(&wkb.modifiers()).unwrap().0);
             }
             _ => {}
         }
@@ -118,7 +118,7 @@ fn set_modifier_level<C: wkb::composer::Composer>(
     match level {
         0 => true,
         1 => {
-            if let Some((code, lvl)) = wkbxkb::level2_code(&wkb.modifiers) {
+            if let Some((code, lvl)) = wkbxkb::level2_code(&wkb.modifiers()) {
                 set_level(wkb, xkb, code, lvl);
                 true
             } else {
@@ -126,7 +126,7 @@ fn set_modifier_level<C: wkb::composer::Composer>(
             }
         }
         2 => {
-            if let Some((code, lvl)) = wkbxkb::level3_code(&wkb.modifiers) {
+            if let Some((code, lvl)) = wkbxkb::level3_code(&wkb.modifiers()) {
                 set_level(wkb, xkb, code, lvl);
                 true
             } else {
@@ -135,8 +135,8 @@ fn set_modifier_level<C: wkb::composer::Composer>(
         }
         3 => {
             if let (Some((c3, l3)), Some((c2, l2))) = (
-                wkbxkb::level3_code(&wkb.modifiers),
-                wkbxkb::level2_code(&wkb.modifiers),
+                wkbxkb::level3_code(&wkb.modifiers()),
+                wkbxkb::level2_code(&wkb.modifiers()),
             ) {
                 set_level(wkb, xkb, c3, l3);
                 set_level(wkb, xkb, c2, l2);
@@ -146,7 +146,7 @@ fn set_modifier_level<C: wkb::composer::Composer>(
             }
         }
         4 => {
-            if let Some((code, lvl)) = wkbxkb::level5_code(&wkb.modifiers) {
+            if let Some((code, lvl)) = wkbxkb::level5_code(&wkb.modifiers()) {
                 set_level(wkb, xkb, code, lvl);
                 true
             } else {
@@ -155,8 +155,8 @@ fn set_modifier_level<C: wkb::composer::Composer>(
         }
         5 => {
             if let (Some((c5, l5)), Some((c2, l2))) = (
-                wkbxkb::level5_code(&wkb.modifiers),
-                wkbxkb::level2_code(&wkb.modifiers),
+                wkbxkb::level5_code(&wkb.modifiers()),
+                wkbxkb::level2_code(&wkb.modifiers()),
             ) {
                 set_level(wkb, xkb, c5, l5);
                 set_level(wkb, xkb, c2, l2);
@@ -167,8 +167,8 @@ fn set_modifier_level<C: wkb::composer::Composer>(
         }
         6 => {
             if let (Some((c5, l5)), Some((c3, l3))) = (
-                wkbxkb::level5_code(&wkb.modifiers),
-                wkbxkb::level3_code(&wkb.modifiers),
+                wkbxkb::level5_code(&wkb.modifiers()),
+                wkbxkb::level3_code(&wkb.modifiers()),
             ) {
                 set_level(wkb, xkb, c5, l5);
                 set_level(wkb, xkb, c3, l3);
@@ -179,9 +179,9 @@ fn set_modifier_level<C: wkb::composer::Composer>(
         }
         7 => {
             if let (Some((c5, l5)), Some((c3, l3)), Some((c2, l2))) = (
-                wkbxkb::level5_code(&wkb.modifiers),
-                wkbxkb::level3_code(&wkb.modifiers),
-                wkbxkb::level2_code(&wkb.modifiers),
+                wkbxkb::level5_code(&wkb.modifiers()),
+                wkbxkb::level3_code(&wkb.modifiers()),
+                wkbxkb::level2_code(&wkb.modifiers()),
             ) {
                 set_level(wkb, xkb, c5, l5);
                 set_level(wkb, xkb, c3, l3);

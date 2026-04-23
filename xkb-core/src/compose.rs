@@ -509,7 +509,7 @@ impl ComposeTable {
         if keysyms.is_empty() {
             return;
         }
-        let mut cur = self.insert_path(keysyms);
+        let cur = self.insert_path(keysyms);
         self.nodes[cur].is_leaf = true;
         self.nodes[cur].leaf_keysym = out_keysym;
         self.nodes[cur].leaf_utf8 = out_utf8.to_string();

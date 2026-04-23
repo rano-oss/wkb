@@ -379,7 +379,7 @@ fn test_wkb_compose(xkb_locale: &str) {
         &format!("wkb({})", xkb_locale),
         &xkb_locale_full,
         &compose_path,
-        &wkb.composer,
+        wkb.composer(),
     );
 }
 

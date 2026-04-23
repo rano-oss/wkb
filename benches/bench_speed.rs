@@ -68,7 +68,7 @@ fn bench_compose_table_creation(c: &mut Criterion) {
                 locale_os,
                 xkb::compose::COMPILE_NO_FLAGS,
             );
-            black_box(table);
+            let _ = black_box(table);
         });
     });
 
@@ -693,6 +693,126 @@ fn bench_key_get_utf8(c: &mut Criterion) {
 }
 
 // ════════════════════════════════════════════════════════════════════════
+// 4. FULL SETUP BENCHMARKS — total cost from zero to ready-to-use
+// ════════════════════════════════════════════════════════════════════════
+
+fn bench_full_setup(c: &mut Criterion) {
+    let mut group = c.benchmark_group("full_setup");
+    group.sample_size(10);
+    group.measurement_time(Duration::from_secs(2));
+    let locale = "us";
+
+    // ── wkb: new_from_names builds keymap + flat tables + compose in one call
+    group.bench_function("wkb", |b| {
+        b.iter(|| {
+            let wkb = wkb_setup(black_box(locale), None);
+            black_box(wkb);
+        });
+    });
+
+    // ── xkbcommon: context + keymap + state + compose_table + compose_state
+    group.bench_function("xkbcommon", |b| {
+        use xkbcommon::xkb;
+        b.iter(|| {
+            let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+            let km = xkb::Keymap::new_from_names(
+                &ctx,
+                "evdev",
+                "",
+                black_box(locale),
+                "",
+                None,
+                xkb::KEYMAP_COMPILE_NO_FLAGS,
+            )
+            .expect("keymap");
+            let st = xkb::State::new(&km);
+            let locale_os = std::ffi::OsStr::new(COMPOSE_LOCALE);
+            let table = xkb::compose::Table::new_from_locale(
+                &ctx,
+                locale_os,
+                xkb::compose::COMPILE_NO_FLAGS,
+            );
+            let compose_state = table
+                .as_ref()
+                .map(|t| xkb::compose::State::new(t, xkb::compose::STATE_NO_FLAGS));
+            black_box(&table);
+            black_box((ctx, km, st, compose_state));
+        });
+    });
+
+    // ── xkbcommon-dl: same via dlopen
+    group.bench_function("xkbcommon-dl", |b| {
+        let xkb = xkbcommon_dl::xkbcommon_handle();
+        let xkb_compose = xkbcommon_dl::xkbcommon_compose_handle();
+        let c_locale = CString::new(COMPOSE_LOCALE).unwrap();
+        b.iter(|| {
+            let ctx = unsafe {
+                (xkb.xkb_context_new)(xkbcommon_dl::xkb_context_flags::XKB_CONTEXT_NO_FLAGS)
+            };
+            let rmlvo = xkbcommon_dl::xkb_rule_names {
+                rules: c"evdev".as_ptr(),
+                model: ptr::null(),
+                layout: c"us".as_ptr(),
+                variant: ptr::null(),
+                options: ptr::null(),
+            };
+            let km = unsafe {
+                (xkb.xkb_keymap_new_from_names)(
+                    ctx,
+                    &rmlvo,
+                    xkbcommon_dl::xkb_keymap_compile_flags::XKB_KEYMAP_COMPILE_NO_FLAGS,
+                )
+            };
+            let st = unsafe { (xkb.xkb_state_new)(km) };
+            let table = unsafe {
+                (xkb_compose.xkb_compose_table_new_from_locale)(
+                    ctx,
+                    c_locale.as_ptr(),
+                    xkbcommon_dl::xkb_compose_compile_flags::XKB_COMPOSE_COMPILE_NO_FLAGS,
+                )
+            };
+            let cs = if !table.is_null() {
+                unsafe {
+                    (xkb_compose.xkb_compose_state_new)(
+                        table,
+                        xkbcommon_dl::xkb_compose_state_flags::XKB_COMPOSE_STATE_NO_FLAGS,
+                    )
+                }
+            } else {
+                ptr::null_mut()
+            };
+            black_box((ctx, km, st, table, cs));
+            // Cleanup
+            if !cs.is_null() {
+                unsafe { (xkb_compose.xkb_compose_state_unref)(cs) };
+            }
+            if !table.is_null() {
+                unsafe { (xkb_compose.xkb_compose_table_unref)(table) };
+            }
+            unsafe {
+                (xkb.xkb_state_unref)(st);
+                (xkb.xkb_keymap_unref)(km);
+                (xkb.xkb_context_unref)(ctx);
+            }
+        });
+    });
+
+    // ── xkbcommon-compat: xkb-core Rust API
+    group.bench_function("xkbcommon-compat", |b| {
+        b.iter(|| {
+            let (km, st) = compat_setup(black_box(locale), None);
+            let table =
+                xkb_core::compose::ComposeTable::new_from_locale(black_box(COMPOSE_LOCALE));
+            let cs = table.as_ref().map(|t| t.new_state());
+            black_box(&table);
+            black_box((km, st, cs));
+        });
+    });
+
+    group.finish();
+}
+
+// ════════════════════════════════════════════════════════════════════════
 // CRITERION ENTRY
 // ════════════════════════════════════════════════════════════════════════
 
@@ -700,6 +820,7 @@ criterion_group! {
     name = benches;
     config = fast();
     targets =
+        bench_full_setup,
         bench_compose_table_creation,
         bench_compose_state_creation,
         bench_compose_feed,
