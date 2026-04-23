@@ -1,7 +1,3 @@
-#![allow(non_snake_case)]
-#![allow(non_camel_case_types)]
-#![allow(non_upper_case_globals)]
-
 pub use composer::{ComposeState, Composer, ListComposer, Token};
 #[doc(hidden)]
 pub mod composer;
@@ -103,8 +99,6 @@ impl FlatKeymap {
     }
 }
 
-// --- WKB struct (always generic over Composer) ---
-
 const MODIFIER_MAPPING: [(u32, u32); 9] = [
     (LEFT_SHIFT, 1),
     (RIGHT_SHIFT, 1),
@@ -121,7 +115,7 @@ const MODIFIER_MAPPING: [(u32, u32); 9] = [
 pub struct WKB<C: Composer> {
     pub(crate) layouts: Vec<String>,
     pub(crate) layout: String,
-    pub(crate) locale: Option<String>,
+    // pub(crate) locale: Option<String>,
     pub(crate) pressed_keys: KeyBitSet,
     pub(crate) repeat_keys: KeyBitSet,
     pub(crate) composer: C,

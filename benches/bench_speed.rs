@@ -736,7 +736,7 @@ fn bench_full_setup(c: &mut Criterion) {
                 .as_ref()
                 .map(|t| xkb::compose::State::new(t, xkb::compose::STATE_NO_FLAGS));
             black_box(&table);
-            black_box((ctx, km, st, compose_state));
+            let _ = black_box((ctx, km, st, compose_state));
         });
     });
 
@@ -801,8 +801,7 @@ fn bench_full_setup(c: &mut Criterion) {
     group.bench_function("xkbcommon-compat", |b| {
         b.iter(|| {
             let (km, st) = compat_setup(black_box(locale), None);
-            let table =
-                xkb_core::compose::ComposeTable::new_from_locale(black_box(COMPOSE_LOCALE));
+            let table = xkb_core::compose::ComposeTable::new_from_locale(black_box(COMPOSE_LOCALE));
             let cs = table.as_ref().map(|t| t.new_state());
             black_box(&table);
             black_box((km, st, cs));

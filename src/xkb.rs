@@ -282,7 +282,7 @@ fn build_wkb_from_keymap(
         layout: layout
             .clone()
             .unwrap_or_else(|| locale.clone().unwrap_or_default()),
-        locale,
+        // locale,
         pressed_keys: KeyBitSet::new(),
         repeat_keys,
         composer,
