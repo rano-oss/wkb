@@ -315,7 +315,7 @@ impl<C: Composer> WKB<C> {
     }
 
     /// Update internal modifier/key-press state for a key event. Returns `true` if the key is a modifier.
-    pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
+    pub(crate) fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let is_modifier = self.modifiers.set_state(evdev_code, key_direction);
         if !is_modifier {
             if key_direction == KeyDirection::Down {

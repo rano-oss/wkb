@@ -21,6 +21,7 @@ pub trait WKBTestExt {
     fn level2_code(&self) -> Option<(u32, Option<u8>)>;
     fn level3_code(&self) -> Option<(u32, Option<u8>)>;
     fn level5_code(&self) -> Option<(u32, Option<u8>)>;
+    fn update_key(&mut self, evdev_code: u32, key_direction: crate::KeyDirection) -> bool;
 }
 
 impl<C: Composer> WKBTestExt for WKB<C> {
@@ -46,6 +47,10 @@ impl<C: Composer> WKBTestExt for WKB<C> {
 
     fn level5_code(&self) -> Option<(u32, Option<u8>)> {
         xkb::level5_code(&self.modifiers)
+    }
+
+    fn update_key(&mut self, evdev_code: u32, key_direction: crate::KeyDirection) -> bool {
+        self.update_key(evdev_code, key_direction)
     }
 }
 

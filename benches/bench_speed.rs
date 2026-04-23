@@ -7,6 +7,7 @@ use std::os::raw::c_char;
 use std::ptr;
 use std::time::Duration;
 use wkb::KeyDirection;
+use wkb::testing::WKBTestExt;
 
 fn fast() -> Criterion {
     Criterion::default()

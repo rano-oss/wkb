@@ -8,6 +8,8 @@
 //! Or for quick RSS measurement:
 //!   /usr/bin/time -v ./target/release/examples/bench_memory 2>&1 | grep "Maximum resident"
 
+use wkb::testing::WKBTestExt;
+
 #[path = "../benches/common.rs"]
 mod common;
 

@@ -2,7 +2,7 @@
 members = [".", "xkb-core", "xkbcommon-compat"]
 
 [package]
-name = "wkb"
+name = "wayland-keyboard"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.70"
@@ -12,13 +12,15 @@ repository = "https://github.com/rano-oss/wkb"
 readme = "README.md"
 keywords = ["keyboard", "wayland", "xkb", "input", "linux"]
 categories = ["os::linux-apis"]
-
 include = [
     "src/**/*",
     "Cargo.toml",
     "LICENSE",
     "README.md",
 ]
+
+[lib]
+name = "wkb"
 
 [features]
 default = ["xkb", "compose"]
@@ -30,7 +32,7 @@ testing = ["xkb"]
 xkb-core = { version = "0.1.0", path = "xkb-core", optional = true }
 
 [dev-dependencies]
-wkb = { path = ".", features = ["testing"] }
+wkb = { package = "wayland-keyboard", path = ".", features = ["testing"] }
 test-case = "3.3.1"
 xkbcommon = "0.9.0"
 xkbcommon-dl = "0.4.2"

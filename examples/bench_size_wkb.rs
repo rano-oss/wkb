@@ -7,6 +7,7 @@
 mod common;
 use common::*;
 use std::hint::black_box;
+use wkb::testing::WKBTestExt;
 
 fn main() {
     let mut checksum: u64 = 0;
