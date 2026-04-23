@@ -16,7 +16,7 @@ jobs:
       image: fedora:latest
     steps:
       - name: Install system dependencies
-        run: dnf install -y gcc binutils libxkbcommon-devel xkeyboard-config libX11-common nodejs
+        run: dnf install -y gcc git binutils libxkbcommon-devel xkeyboard-config libX11-common nodejs
 
       - name: Checkout
         uses: actions/checkout@v5
