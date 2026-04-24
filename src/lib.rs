@@ -26,7 +26,7 @@
 #[cfg(feature = "xkb")]
 use std::cell::OnceCell;
 
-use composer::{ComposeState, Composer, ListComposer, Token};
+use composer::{ComposeState, ListComposer, Token};
 mod composer;
 pub use modifiers::KeyDirection;
 use modifiers::ModType;
@@ -143,10 +143,10 @@ const MODIFIER_MAPPING: [(u32, u32); 9] = [
 ///
 /// `C` is the compose backend — typically [`ListComposer`] when using the `xkb` feature.
 #[derive(Debug, Clone)]
-pub struct WKB<C: Composer> {
+pub struct WKB {
     pub(crate) pressed_keys: KeyBitSet,
     pub(crate) repeat_keys: KeyBitSet,
-    pub(crate) composer: C,
+    pub(crate) composer: ListComposer,
     pub(crate) modifiers: Modifiers,
     pub(crate) state_keymap: FlatKeymap,
     pub(crate) num_lock_keys: FlatKeymap,
@@ -164,7 +164,7 @@ pub struct WKB<C: Composer> {
 }
 
 #[cfg(feature = "xkb")]
-impl WKB<ListComposer> {
+impl WKB {
     /// Create WKB instance from RMLVO names (Rules, Model, Layout, Variant, Options)
     pub fn new_from_names(locale: String, layout: Option<String>) -> Self {
         xkb::new_from_names(locale, layout)
@@ -176,7 +176,7 @@ impl WKB<ListComposer> {
     }
 }
 
-impl<C: Composer> WKB<C> {
+impl WKB {
     /// Reset all transient input state: compose sequence and pressed keys.
     /// Call on wl_keyboard.leave or when focus changes.
     pub fn reset_state(&mut self) {
@@ -300,7 +300,7 @@ impl<C: Composer> WKB<C> {
 
     /// Resolve the character for the given evdev keycode under the current modifier state.
     #[inline]
-    pub fn utf8(&mut self, evdev_code: u32) -> Option<char> {
+    fn utf8(&mut self, evdev_code: u32) -> Option<char> {
         let (none_active, level2, level3, level5) = self.modifiers.active_none_and_levels();
         if none_active {
             return None;

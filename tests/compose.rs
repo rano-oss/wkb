@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::Path;
 use test_case::test_matrix;
-use wkb::testing::ComposerTestExt;
 use wkb::testing::Token;
+use wkb::testing::{ListComposerTestExt, WKBTestExt};
 use xkbcommon::xkb::{self, compose};
 
 use wkb::testing::compose_parse::{keysym_name_to_char, parse_compose_file, ComposeEntry};
@@ -57,7 +57,7 @@ fn wkb_compose_sequence(
     chars: &[char],
     is_multi_key: bool,
 ) -> Option<char> {
-    use wkb::testing::{ComposeState, Composer};
+    use wkb::testing::{ComposeState, ListComposerTestExt};
     let mut c = composer.clone();
     let mut result = None;
     if is_multi_key {

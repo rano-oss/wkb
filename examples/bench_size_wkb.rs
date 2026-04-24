@@ -7,7 +7,7 @@
 mod common;
 use common::*;
 use std::hint::black_box;
-use wkb::testing::WKBTestExt;
+use wkb::testing::{ListComposerTestExt, WKBTestExt};
 
 fn main() {
     let mut checksum: u64 = 0;
@@ -36,7 +36,6 @@ fn main() {
     if let Some(subpath) = xkb_core::compose::resolve_compose_file(COMPOSE_LOCALE) {
         let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
         let mut composer = wkb::testing::compose_parse::load_compose_from_path(&path);
-        use wkb::testing::Composer;
         for seq in COMPOSE_SEQUENCES {
             for &ks in seq.keysyms {
                 if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(ks) {

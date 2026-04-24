@@ -18,7 +18,7 @@ fn cfg() -> Criterion {
 
 // ── Setup helpers ──────────────────────────────────────────────────────
 
-fn wkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB<wkb::testing::ListComposer> {
+fn wkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB {
     wkb::WKB::new_from_names(locale.to_string(), variant.map(String::from))
 }
 
@@ -176,10 +176,7 @@ fn bench_key_update(c: &mut Criterion) {
                 locale,
                 variant,
                 case,
-                |wb: &mut wkb::WKB<wkb::testing::ListComposer>,
-                 code: u32,
-                 _down: bool,
-                 dir: KeyDirection| {
+                |wb: &mut wkb::WKB, code: u32, _down: bool, dir: KeyDirection| {
                     black_box(wb.update_key(black_box(code), dir));
                 }
             );
@@ -232,10 +229,7 @@ fn bench_key_get_utf8(c: &mut Criterion) {
                 locale,
                 variant,
                 case,
-                |wb: &mut wkb::WKB<wkb::testing::ListComposer>,
-                 code: u32,
-                 down: bool,
-                 dir: KeyDirection| {
+                |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
                     wb.update_key(code, dir);
                     if down {
                         black_box(wb.utf8(black_box(code)));
@@ -313,10 +307,7 @@ fn bench_key_get_sym(c: &mut Criterion) {
                 locale,
                 variant,
                 case,
-                |wb: &mut wkb::WKB<wkb::testing::ListComposer>,
-                 code: u32,
-                 down: bool,
-                 dir: KeyDirection| {
+                |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
                     wb.update_key(code, dir);
                     if down {
                         black_box(wb.utf8(black_box(code)));

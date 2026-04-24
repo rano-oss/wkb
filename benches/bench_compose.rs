@@ -4,6 +4,7 @@ use common::*;
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::ffi::CString;
 use std::time::Duration;
+use wkb::testing::ListComposerTestExt;
 
 fn cfg() -> Criterion {
     Criterion::default()
@@ -151,7 +152,6 @@ fn bench_compose_feed(c: &mut Criterion) {
             });
             if let Some(ref p) = path {
                 let mut composer = wkb::testing::compose_parse::load_compose_from_path(p);
-                use wkb::testing::Composer;
                 let tokens: Vec<wkb::testing::Token> = seq
                     .keysyms
                     .iter()

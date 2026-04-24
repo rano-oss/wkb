@@ -148,7 +148,7 @@ fn build_wkb_from_keymap(
     locale: Option<String>,
     layout: Option<String>,
     store_keymap: bool,
-) -> WKB<ListComposer> {
+) -> WKB {
     const XKB_MAX_LEVELS: usize = 8;
     const EVDEV_OFFSET: u32 = 8;
 
@@ -301,7 +301,7 @@ fn build_wkb_from_keymap(
 }
 
 /// Create a new WKB instance from locale and layout names
-pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListComposer> {
+pub fn new_from_names(locale: String, layout: Option<String>) -> WKB {
     use xkb_core::rust_types::{Context, RuleNames};
 
     let ctx = Context::new().expect("Failed to create XKB context");
@@ -471,7 +471,7 @@ fn build_modifiers_from_keymap(
 }
 
 /// Create a new WKB instance from a keymap string
-pub fn new_from_string(string: String) -> WKB<ListComposer> {
+pub fn new_from_string(string: String) -> WKB {
     use xkb_core::rust_types::Context;
 
     let ctx = Context::new().expect("Failed to create XKB context");

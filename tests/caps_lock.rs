@@ -24,12 +24,7 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
     xkb::State::new(&keymap)
 }
 
-fn test_all_keys_locale<C: wkb::testing::Composer>(
-    wkb: WKB<C>,
-    xkb: xkb::State,
-    layout: String,
-    locale: &str,
-) {
+fn test_all_keys_locale(wkb: WKB, xkb: xkb::State, layout: String, locale: &str) {
     let mut wkb = wkb;
     for i in 0..701 {
         let k1 = wkb.utf8(i);
@@ -51,12 +46,7 @@ fn test_all_keys_locale<C: wkb::testing::Composer>(
     }
 }
 
-fn set_level<C: wkb::testing::Composer>(
-    wkb: &mut WKB<C>,
-    xkb: &mut xkb::State,
-    code: u32,
-    level: Option<u8>,
-) {
+fn set_level(wkb: &mut WKB, xkb: &mut xkb::State, code: u32, level: Option<u8>) {
     if let Some(level) = level {
         let mut modifiers = Vec::new();
         match level {
@@ -110,11 +100,7 @@ fn set_level<C: wkb::testing::Composer>(
     }
 }
 
-fn set_modifier_level<C: wkb::testing::Composer>(
-    wkb: &mut WKB<C>,
-    xkb: &mut xkb::State,
-    level: usize,
-) -> bool {
+fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool {
     match level {
         0 => true,
         1 => {
