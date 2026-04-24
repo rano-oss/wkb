@@ -68,11 +68,14 @@ jobs:
           - compose
           - ctrl_keys
           - keymap
+          - compile
+          - type
           - layouts
           - led_lights
           - level
           - modifiers
           - repeat
+          - unicode
     steps:
       - name: Install system dependencies
         run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common

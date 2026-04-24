@@ -5,14 +5,9 @@ pub enum Token {
     Compose,
 }
 
-pub trait Composer: std::fmt::Debug {
-    fn feed(&mut self, token: Token) -> ComposeState;
-    fn reset(&mut self);
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ComposeState {
-    Idle(Token),
+    Idle(char),
     Composing(String),
     Finished(char),
     Cancelled,
@@ -37,19 +32,19 @@ pub(crate) struct TrieNode {
 }
 
 #[derive(Debug, Clone)]
-pub struct ListComposer {
+pub struct Composer {
     pub(crate) nodes: Vec<TrieNode>,
     cur: u32,
     pending: Vec<Token>,
 }
 
-impl Default for ListComposer {
+impl Default for Composer {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl ListComposer {
+impl Composer {
     pub fn new() -> Self {
         Self {
             nodes: vec![TrieNode {
@@ -118,11 +113,9 @@ impl ListComposer {
 
         s
     }
-}
 
-impl Composer for ListComposer {
     #[inline]
-    fn feed(&mut self, token: Token) -> ComposeState {
+    pub(crate) fn feed(&mut self, token: Token) -> ComposeState {
         let key = token_key(&token);
         let node = &self.nodes[self.cur as usize];
 
@@ -142,7 +135,10 @@ impl Composer for ListComposer {
             }
             Err(_) => {
                 if self.cur == 0 {
-                    ComposeState::Idle(token)
+                    match token {
+                        Token::Compose => ComposeState::Idle('·'),
+                        Token::Char(c) => ComposeState::Idle(c),
+                    }
                 } else {
                     self.cur = 0;
                     self.pending.clear();
@@ -152,7 +148,7 @@ impl Composer for ListComposer {
         }
     }
 
-    fn reset(&mut self) {
+    pub(crate) fn reset(&mut self) {
         self.cur = 0;
         self.pending.clear();
     }

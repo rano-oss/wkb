@@ -5,12 +5,12 @@
 // WKB integration functions
 use crate::composer::Token;
 use crate::modifiers::*;
+use crate::Composer;
 use crate::FlatKeymap;
-use crate::ListComposer;
 use crate::{KeyBitSet, WKB};
 
 /// Get all available layouts/variants for a given locale
-fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
+pub(crate) fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
     use xkb_core::rust_types::RxkbContext;
 
     let mut ctx = match RxkbContext::new() {
@@ -120,8 +120,8 @@ fn press_level_modifiers(
 }
 
 /// Load compose entries from a file and build a ListComposer.
-pub fn load_compose_from_path(path: &std::path::Path) -> ListComposer {
-    let mut regular = ListComposer::new();
+pub fn load_compose_from_path(path: &std::path::Path) -> Composer {
+    let mut regular = Composer::new();
 
     let entries = xkb_core::compose::parse_compose_file(path);
 
@@ -147,14 +147,19 @@ fn build_wkb_from_keymap(
     keymap: &xkb_core::rust_types::Keymap,
     locale: Option<String>,
     layout: Option<String>,
-    all_layouts: Vec<String>,
     store_keymap: bool,
-) -> WKB<ListComposer> {
+) -> WKB {
     const XKB_MAX_LEVELS: usize = 8;
     const EVDEV_OFFSET: u32 = 8;
 
     let (min_keycode, max_keycode) = (keymap.min_keycode(), keymap.max_keycode());
-    let num_keys = (max_keycode - EVDEV_OFFSET + 1) as usize;
+    // Keycodes below EVDEV_OFFSET don't map to evdev codes; clamp to avoid underflow.
+    let min_keycode = min_keycode.max(EVDEV_OFFSET);
+    let num_keys = if max_keycode >= EVDEV_OFFSET {
+        (max_keycode - EVDEV_OFFSET + 1) as usize
+    } else {
+        0
+    };
     let modifiers = build_modifiers_from_keymap(keymap, min_keycode, max_keycode);
 
     let get_char = |kc: u32, state: &xkb_core::rust_types::State, lvl: usize| -> Option<char> {
@@ -268,17 +273,17 @@ fn build_wkb_from_keymap(
             let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
             load_compose_from_path(&path)
         })
-        .unwrap_or_else(ListComposer::new);
+        .unwrap_or_else(Composer::new);
 
     #[cfg(not(feature = "compose"))]
-    let composer = ListComposer::new();
+    let composer = Composer::new();
 
     WKB {
-        layouts: all_layouts,
+        layouts: std::cell::OnceCell::new(),
+        locale: locale.clone(),
         layout: layout
             .clone()
             .unwrap_or_else(|| locale.clone().unwrap_or_default()),
-        // locale,
         pressed_keys: KeyBitSet::new(),
         repeat_keys,
         composer,
@@ -296,14 +301,8 @@ fn build_wkb_from_keymap(
 }
 
 /// Create a new WKB instance from locale and layout names
-pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListComposer> {
+pub fn new_from_names(locale: String, layout: Option<String>) -> WKB {
     use xkb_core::rust_types::{Context, RuleNames};
-
-    let all_layouts = if layout.is_none() {
-        get_all_layouts_for_locale(&locale)
-    } else {
-        vec![layout.clone().unwrap()]
-    };
 
     let ctx = Context::new().expect("Failed to create XKB context");
     let rules = RuleNames::evdev(locale.clone(), layout.clone());
@@ -312,7 +311,7 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
         .keymap_from_names(&rules)
         .unwrap_or_else(|| panic!("Failed to compile keymap for layout: {:?}", layout));
 
-    build_wkb_from_keymap(&keymap, Some(locale), layout, all_layouts, true)
+    build_wkb_from_keymap(&keymap, Some(locale), layout, true)
 }
 
 /// Build Modifiers struct from XKB keymap
@@ -373,7 +372,7 @@ fn build_modifiers_from_keymap(
         .collect();
 
     const EVDEV_OFFSET: u32 = 8;
-    for keycode in min_keycode..=max_keycode {
+    for keycode in min_keycode.max(EVDEV_OFFSET)..=max_keycode {
         let evdev_code = keycode - EVDEV_OFFSET;
         let syms = keymap.key_get_syms_by_level(keycode, 0, 0);
         let num_levels = keymap.num_levels_for_key(keycode, 0);
@@ -472,7 +471,7 @@ fn build_modifiers_from_keymap(
 }
 
 /// Create a new WKB instance from a keymap string
-pub fn new_from_string(string: String) -> WKB<ListComposer> {
+pub fn new_from_string(string: String) -> WKB {
     use xkb_core::rust_types::Context;
 
     let ctx = Context::new().expect("Failed to create XKB context");
@@ -481,13 +480,15 @@ pub fn new_from_string(string: String) -> WKB<ListComposer> {
         .keymap_from_string(&string)
         .expect("Failed to parse keymap from string");
 
-    build_wkb_from_keymap(&keymap, None, None, vec![String::new()], true)
+    build_wkb_from_keymap(&keymap, None, None, true)
 }
 
 /// Backward-compatible alias for compose module access
 pub mod compose_parse {
     pub use super::load_compose_from_path;
-    pub use xkb_core::compose::*;
+    pub use xkb_core::compose::{
+        keysym_name_to_char, parse_compose_file, resolve_compose_file, ComposeEntry,
+    };
 }
 
 #[cfg(test)]

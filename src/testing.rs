@@ -1,7 +1,7 @@
 //! Test-only utilities for WKB integration tests.
 //! Not part of the public API — use `wkb::testing::*` in test files only.
 
-pub use crate::composer::{ComposeState, Composer, ListComposer, Token};
+pub use crate::composer::{ComposeState, Composer, Token};
 pub use crate::modifiers::{ModType, Modifiers};
 use crate::xkb;
 pub use crate::WKB;
@@ -22,9 +22,11 @@ pub trait WKBTestExt {
     fn level3_code(&self) -> Option<(u32, Option<u8>)>;
     fn level5_code(&self) -> Option<(u32, Option<u8>)>;
     fn update_key(&mut self, evdev_code: u32, key_direction: crate::KeyDirection) -> bool;
+    fn utf8(&mut self, evdev_code: u32) -> Option<char>;
+    fn composer(&self) -> &Composer;
 }
 
-impl<C: Composer> WKBTestExt for WKB<C> {
+impl WKBTestExt for WKB {
     fn active_mod_type(&self, mod_type: ModType) -> bool {
         self.modifiers.active_mod_type(mod_type)
     }
@@ -52,14 +54,22 @@ impl<C: Composer> WKBTestExt for WKB<C> {
     fn update_key(&mut self, evdev_code: u32, key_direction: crate::KeyDirection) -> bool {
         self.update_key(evdev_code, key_direction)
     }
-}
 
-pub trait ComposerTestExt<C: Composer> {
-    fn composer(&self) -> &C;
-}
+    fn utf8(&mut self, evdev_code: u32) -> Option<char> {
+        self.utf8(evdev_code)
+    }
 
-impl<C: Composer> ComposerTestExt<C> for WKB<C> {
-    fn composer(&self) -> &C {
+    fn composer(&self) -> &Composer {
         &self.composer
+    }
+}
+
+pub trait ListComposerTestExt {
+    fn feed(&mut self, token: Token) -> ComposeState;
+}
+
+impl ListComposerTestExt for Composer {
+    fn feed(&mut self, token: Token) -> ComposeState {
+        self.feed(token)
     }
 }

@@ -2,11 +2,7 @@ use super::prelude::*;
 pub use crate::shared_ast_types::xkb_file_type_to_string;
 pub use crate::shared_types::{
     areOverlappingOverlaysSupported, format_max_groups, format_max_overlays,
-    isGroupLockOnReleaseSupported, isModsLatchOnPressSupported, isModsUnLockOnPressSupported,
-    real_mod_index, MAX_ACTIONS_PER_LEVEL, XKB_ALL_GROUPS, XKB_MAX_GROUPS, XKB_MAX_GROUPS_X11,
-    XKB_MOD_INDEX_CAPS, XKB_MOD_INDEX_CTRL, XKB_MOD_INDEX_MOD1, XKB_MOD_INDEX_MOD2,
-    XKB_MOD_INDEX_MOD3, XKB_MOD_INDEX_MOD4, XKB_MOD_INDEX_MOD5, XKB_MOD_INDEX_SHIFT,
-    XKB_OVERLAY_MAX, XKB_OVERLAY_MAX_X11, _XKB_MOD_INDEX_NUM_ENTRIES,
+    isGroupLockOnReleaseSupported, isModsLatchOnPressSupported, isModsUnLockOnPressSupported, MAX_ACTIONS_PER_LEVEL, XKB_ALL_GROUPS, XKB_MAX_GROUPS, _XKB_MOD_INDEX_NUM_ENTRIES,
 };
 use crate::shared_types::{MOD_REAL_MASK_ALL, XKB_KEYMAP_FORMAT_TEXT_V1};
 pub use crate::state::mod_mask_get_effective;

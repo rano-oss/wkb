@@ -1,5 +1,10 @@
 # wkb — Wayland Keyboard
 
+[![Crates.io](https://img.shields.io/crates/v/wayland-keyboard.svg)](https://crates.io/crates/wayland-keyboard)
+[![Documentation](https://docs.rs/wayland-keyboard/badge.svg)](https://docs.rs/wayland-keyboard)
+[![License](https://img.shields.io/crates/l/wayland-keyboard.svg)](https://github.com/rano-oss/wkb/blob/main/LICENSE)
+[![Test Status](https://img.shields.io/github/actions/workflow/status/rano-oss/wkb/tests.yml?branch=main&event=push&label=tests)](https://github.com/rano-oss/wkb/actions)
+
 A lightweight, pure Rust keyboard handling library for Wayland. WKB is a
 drop-in alternative to `xkbcommon` that compiles XKB keymaps, tracks modifier
 and compose state, and maps evdev key codes to characters — all without C
@@ -19,6 +24,11 @@ dependencies.
 - **Lightweight** — no C FFI, no `unsafe`, minimal dependencies.
 
 ## Quick Start
+
+```toml
+[dependencies]
+wayland-keyboard = "0.1"
+```
 
 ```rust
 use wkb::{WKB, KeyDirection};

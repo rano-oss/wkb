@@ -40,7 +40,15 @@ xkbcommon-compat = { path = "xkbcommon-compat" }
 criterion = { version = "0.5", features = ["html_reports"] }
 
 [[bench]]
-name = "bench_speed"
+name = "bench_setup"
+harness = false
+
+[[bench]]
+name = "bench_key"
+harness = false
+
+[[bench]]
+name = "bench_compose"
 harness = false
 
 [[example]]

@@ -8,7 +8,7 @@
 //! Or for quick RSS measurement:
 //!   /usr/bin/time -v ./target/release/examples/bench_memory 2>&1 | grep "Maximum resident"
 
-use wkb::testing::WKBTestExt;
+use wkb::testing::{ListComposerTestExt, WKBTestExt};
 
 #[path = "../benches/common.rs"]
 mod common;
@@ -66,7 +66,6 @@ fn run_workload_wkb() -> u64 {
     if let Some(subpath) = xkb_core::compose::resolve_compose_file(COMPOSE_LOCALE) {
         let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
         let mut composer = wkb::testing::compose_parse::load_compose_from_path(&path);
-        use wkb::testing::Composer;
         for seq in COMPOSE_SEQUENCES {
             for _ in 0..HOT_PATH_ITERATIONS {
                 for &ks in seq.keysyms {

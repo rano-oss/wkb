@@ -363,11 +363,7 @@ fn serialized_modifiers(state: &xkbcmn::State) -> (u32, u32, u32, u32) {
     )
 }
 
-fn assert_same_modifiers_state(
-    wkb: &wkb::WKB<wkb::testing::ListComposer>,
-    xkb: &xkbcmn::State,
-    context: &str,
-) {
+fn assert_same_modifiers_state(wkb: &wkb::WKB, xkb: &xkbcmn::State, context: &str) {
     let wkb_state = wkb.modifiers_state();
     let xkb_state = serialized_modifiers(xkb);
     assert_eq!(
@@ -377,7 +373,7 @@ fn assert_same_modifiers_state(
 }
 
 fn update_both(
-    wkb: &mut wkb::WKB<wkb::testing::ListComposer>,
+    wkb: &mut wkb::WKB,
     xkb: &mut xkbcmn::State,
     evdev_code: u32,
     direction: KeyDirection,
