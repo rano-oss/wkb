@@ -1,5 +1,6 @@
 **/target
 **/test_files
+!/test_files
 **/Cargo.lock
 /.vscode
 /.opencode
