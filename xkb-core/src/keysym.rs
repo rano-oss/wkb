@@ -21774,7 +21774,6 @@ pub mod keysym_names_h {
     ];
     pub static explicit_deprecated_aliases: [u32; 1] = [24103];
 }
-pub use crate::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
 
 pub const XKB_KEYSYM_MAX_EXPLICIT: i32 = 0x1008ffb8;
 pub const XKB_KEYSYM_UNICODE_OFFSET: i32 = 0x1000000;
@@ -21782,8 +21781,8 @@ pub const XKB_KEYSYM_UNICODE_MIN: i32 = 0x1000100;
 pub const XKB_KEYSYM_UNICODE_MAX: i32 = 0x110ffff;
 
 pub use self::keysym_names_h::{
-    deprecated_keysyms, explicit_deprecated_aliases, keysym_name_G, keysym_name_perfect_hash,
-    keysym_names, keysym_to_name, name_keysym, name_to_keysym, DEPRECATED_KEYSYM, UNICODE_KEYSYM,
+    keysym_name_perfect_hash,
+    keysym_names, keysym_to_name, name_keysym, name_to_keysym,
 };
 use crate::utils::istrcmp;
 fn find_keysym_index(ks: u32) -> isize {

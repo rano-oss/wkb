@@ -1,6 +1,6 @@
 use super::prelude::*;
 
-pub use crate::shared_ast_types::{KeyTypeDef, ReportShouldBeArray};
+pub use crate::shared_ast_types::ReportShouldBeArray;
 use crate::text::ModMaskText;
 use crate::xkbcomp::expr::ExprResolveLevel;
 pub struct KeyTypesInfo {

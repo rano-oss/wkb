@@ -23,6 +23,9 @@
 //! - **`compose`** (default) — Compose-key / dead-key sequence support.
 //! - **`testing`** — Exposes internal helpers for integration tests. Not part of the public API.
 
+#[cfg(feature = "xkb")]
+use std::cell::OnceCell;
+
 use composer::{ComposeState, Composer, ListComposer, Token};
 mod composer;
 pub use modifiers::KeyDirection;
@@ -141,9 +144,6 @@ const MODIFIER_MAPPING: [(u32, u32); 9] = [
 /// `C` is the compose backend — typically [`ListComposer`] when using the `xkb` feature.
 #[derive(Debug, Clone)]
 pub struct WKB<C: Composer> {
-    pub(crate) layouts: Vec<String>,
-    pub(crate) layout: String,
-    // pub(crate) locale: Option<String>,
     pub(crate) pressed_keys: KeyBitSet,
     pub(crate) repeat_keys: KeyBitSet,
     pub(crate) composer: C,
@@ -151,7 +151,14 @@ pub struct WKB<C: Composer> {
     pub(crate) state_keymap: FlatKeymap,
     pub(crate) num_lock_keys: FlatKeymap,
     pub(crate) caps_lock_keymap: FlatKeymap,
+    #[cfg(feature = "xkb")]
     pub(crate) level_exceptions_keymap: FlatKeymap,
+    #[cfg(feature = "xkb")]
+    pub(crate) layouts: OnceCell<Vec<String>>,
+    #[cfg(feature = "xkb")]
+    pub(crate) locale: Option<String>,
+    #[cfg(feature = "xkb")]
+    pub(crate) layout: String,
     #[cfg(feature = "xkb")]
     pub(crate) xkb_keymap: Option<xkb_core::rust_types::Keymap>,
 }
@@ -235,10 +242,7 @@ impl<C: Composer> WKB<C> {
     }
 
     /// Apply modifier state received from `wl_keyboard.modifiers`. Updates depressed, latched, locked masks and active layout group.
-    pub fn update_modifiers(&mut self, depressed: u32, latched: u32, locked: u32, group: u32) {
-        if let Some(l) = self.layouts.get(group as usize) {
-            self.layout = l.clone();
-        }
+    pub fn update_modifiers(&mut self, depressed: u32, latched: u32, locked: u32, _group: u32) {
         for (code, bit) in MODIFIER_MAPPING {
             let is_depressed = (depressed & bit) != 0;
             let is_locked = (locked & bit) != 0;
@@ -268,11 +272,19 @@ impl<C: Composer> WKB<C> {
     }
 
     /// Look up the character at a specific shift level for the given evdev keycode.
+    #[cfg(feature = "xkb")]
     #[inline]
     pub fn level_key(&self, evdev_code: u32, level_index: usize) -> Option<char> {
         self.level_exceptions_keymap
             .get(level_index, evdev_code)
             .or_else(|| self.state_keymap.get(level_index, evdev_code))
+    }
+
+    /// Look up the character at a specific shift level for the given evdev keycode.
+    #[cfg(not(feature = "xkb"))]
+    #[inline]
+    pub fn level_key(&self, evdev_code: u32, level_index: usize) -> Option<char> {
+        self.state_keymap.get(level_index, evdev_code)
     }
 
     /// Return the number of shift levels supported by this keymap.
@@ -367,11 +379,20 @@ impl<C: Composer> WKB<C> {
     }
 
     /// Return the list of layout names available in this keymap.
+    #[cfg(feature = "xkb")]
     pub fn layouts(&self) -> Vec<String> {
-        self.layouts.clone()
+        self.layouts
+            .get_or_init(|| {
+                self.locale
+                    .as_deref()
+                    .map(xkb::get_all_layouts_for_locale)
+                    .unwrap_or_else(|| vec![self.layout.clone()])
+            })
+            .clone()
     }
 
     /// Return the name of the currently active layout.
+    #[cfg(feature = "xkb")]
     pub fn current_layout(&self) -> String {
         self.layout.clone()
     }

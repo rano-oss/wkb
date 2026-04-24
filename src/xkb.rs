@@ -10,7 +10,7 @@ use crate::ListComposer;
 use crate::{KeyBitSet, WKB};
 
 /// Get all available layouts/variants for a given locale
-fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
+pub(crate) fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
     use xkb_core::rust_types::RxkbContext;
 
     let mut ctx = match RxkbContext::new() {
@@ -147,7 +147,6 @@ fn build_wkb_from_keymap(
     keymap: &xkb_core::rust_types::Keymap,
     locale: Option<String>,
     layout: Option<String>,
-    all_layouts: Vec<String>,
     store_keymap: bool,
 ) -> WKB<ListComposer> {
     const XKB_MAX_LEVELS: usize = 8;
@@ -280,11 +279,11 @@ fn build_wkb_from_keymap(
     let composer = ListComposer::new();
 
     WKB {
-        layouts: all_layouts,
+        layouts: std::cell::OnceCell::new(),
+        locale: locale.clone(),
         layout: layout
             .clone()
             .unwrap_or_else(|| locale.clone().unwrap_or_default()),
-        // locale,
         pressed_keys: KeyBitSet::new(),
         repeat_keys,
         composer,
@@ -305,12 +304,6 @@ fn build_wkb_from_keymap(
 pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListComposer> {
     use xkb_core::rust_types::{Context, RuleNames};
 
-    let all_layouts = if layout.is_none() {
-        get_all_layouts_for_locale(&locale)
-    } else {
-        vec![layout.clone().unwrap()]
-    };
-
     let ctx = Context::new().expect("Failed to create XKB context");
     let rules = RuleNames::evdev(locale.clone(), layout.clone());
 
@@ -318,7 +311,7 @@ pub fn new_from_names(locale: String, layout: Option<String>) -> WKB<ListCompose
         .keymap_from_names(&rules)
         .unwrap_or_else(|| panic!("Failed to compile keymap for layout: {:?}", layout));
 
-    build_wkb_from_keymap(&keymap, Some(locale), layout, all_layouts, true)
+    build_wkb_from_keymap(&keymap, Some(locale), layout, true)
 }
 
 /// Build Modifiers struct from XKB keymap
@@ -487,13 +480,15 @@ pub fn new_from_string(string: String) -> WKB<ListComposer> {
         .keymap_from_string(&string)
         .expect("Failed to parse keymap from string");
 
-    build_wkb_from_keymap(&keymap, None, None, vec![String::new()], true)
+    build_wkb_from_keymap(&keymap, None, None, true)
 }
 
 /// Backward-compatible alias for compose module access
 pub mod compose_parse {
     pub use super::load_compose_from_path;
-    pub use xkb_core::compose::*;
+    pub use xkb_core::compose::{
+        keysym_name_to_char, parse_compose_file, resolve_compose_file, ComposeEntry,
+    };
 }
 
 #[cfg(test)]
