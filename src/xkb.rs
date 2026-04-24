@@ -5,8 +5,8 @@
 // WKB integration functions
 use crate::composer::Token;
 use crate::modifiers::*;
+use crate::Composer;
 use crate::FlatKeymap;
-use crate::ListComposer;
 use crate::{KeyBitSet, WKB};
 
 /// Get all available layouts/variants for a given locale
@@ -120,8 +120,8 @@ fn press_level_modifiers(
 }
 
 /// Load compose entries from a file and build a ListComposer.
-pub fn load_compose_from_path(path: &std::path::Path) -> ListComposer {
-    let mut regular = ListComposer::new();
+pub fn load_compose_from_path(path: &std::path::Path) -> Composer {
+    let mut regular = Composer::new();
 
     let entries = xkb_core::compose::parse_compose_file(path);
 
@@ -273,10 +273,10 @@ fn build_wkb_from_keymap(
             let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
             load_compose_from_path(&path)
         })
-        .unwrap_or_else(ListComposer::new);
+        .unwrap_or_else(Composer::new);
 
     #[cfg(not(feature = "compose"))]
-    let composer = ListComposer::new();
+    let composer = Composer::new();
 
     WKB {
         layouts: std::cell::OnceCell::new(),

@@ -32,19 +32,19 @@ pub(crate) struct TrieNode {
 }
 
 #[derive(Debug, Clone)]
-pub struct ListComposer {
+pub struct Composer {
     pub(crate) nodes: Vec<TrieNode>,
     cur: u32,
     pending: Vec<Token>,
 }
 
-impl Default for ListComposer {
+impl Default for Composer {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl ListComposer {
+impl Composer {
     pub fn new() -> Self {
         Self {
             nodes: vec![TrieNode {

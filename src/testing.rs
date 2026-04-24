@@ -1,7 +1,7 @@
 //! Test-only utilities for WKB integration tests.
 //! Not part of the public API — use `wkb::testing::*` in test files only.
 
-pub use crate::composer::{ComposeState, ListComposer, Token};
+pub use crate::composer::{ComposeState, Composer, Token};
 pub use crate::modifiers::{ModType, Modifiers};
 use crate::xkb;
 pub use crate::WKB;
@@ -23,7 +23,7 @@ pub trait WKBTestExt {
     fn level5_code(&self) -> Option<(u32, Option<u8>)>;
     fn update_key(&mut self, evdev_code: u32, key_direction: crate::KeyDirection) -> bool;
     fn utf8(&mut self, evdev_code: u32) -> Option<char>;
-    fn composer(&self) -> &ListComposer;
+    fn composer(&self) -> &Composer;
 }
 
 impl WKBTestExt for WKB {
@@ -59,7 +59,7 @@ impl WKBTestExt for WKB {
         self.utf8(evdev_code)
     }
 
-    fn composer(&self) -> &ListComposer {
+    fn composer(&self) -> &Composer {
         &self.composer
     }
 }
@@ -68,7 +68,7 @@ pub trait ListComposerTestExt {
     fn feed(&mut self, token: Token) -> ComposeState;
 }
 
-impl ListComposerTestExt for ListComposer {
+impl ListComposerTestExt for Composer {
     fn feed(&mut self, token: Token) -> ComposeState {
         self.feed(token)
     }

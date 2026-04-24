@@ -26,7 +26,7 @@
 #[cfg(feature = "xkb")]
 use std::cell::OnceCell;
 
-use composer::{ComposeState, ListComposer, Token};
+use composer::{ComposeState, Composer, Token};
 mod composer;
 pub use modifiers::KeyDirection;
 use modifiers::ModType;
@@ -146,7 +146,7 @@ const MODIFIER_MAPPING: [(u32, u32); 9] = [
 pub struct WKB {
     pub(crate) pressed_keys: KeyBitSet,
     pub(crate) repeat_keys: KeyBitSet,
-    pub(crate) composer: ListComposer,
+    pub(crate) composer: Composer,
     pub(crate) modifiers: Modifiers,
     pub(crate) state_keymap: FlatKeymap,
     pub(crate) num_lock_keys: FlatKeymap,

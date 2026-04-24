@@ -53,7 +53,7 @@ fn xkb_compose_sequence(
 
 /// Feed a sequence of chars to a wkb ListComposer clone.
 fn wkb_compose_sequence(
-    composer: &wkb::testing::ListComposer,
+    composer: &wkb::testing::Composer,
     chars: &[char],
     is_multi_key: bool,
 ) -> Option<char> {
@@ -105,7 +105,7 @@ fn run_compose_test(
     label: &str,
     xkb_locale: &str,
     compose_path: &Path,
-    regular: &wkb::testing::ListComposer,
+    regular: &wkb::testing::Composer,
 ) {
     if !compose_path.exists() {
         println!("SKIP: compose file not found: {}", compose_path.display());
