@@ -53,34 +53,31 @@ assert_eq!(ch, Some('a'));
 ## Benchmarks
 
 <!-- BENCHMARK_START -->
-*Last updated: 2026-04-23 (automated via CI)*
+*Last updated: 2026-04-24 (automated via CI)*
 
 ### Speed
 
 | Benchmark | wkb | xkbcommon | xkbcommon-dl | vs xkbcommon |
 |-----------|-----|-----------|--------------|-------------|
-| full setup | 13.85 ms | 4.27 ms | 4.26 ms | 3.2x slower |
-| key update | 32 ns | 172 ns | 172 ns | **5.4x faster** |
-| key get utf8 | 93 ns | 282 ns | 265 ns | **3.0x faster** |
-| key get sym | 92 ns | 208 ns | 207 ns | **2.3x faster** |
-| compose table creation | 2.44 ms | 1.85 ms | 1.90 ms | 1.3x slower |
-| compose feed | 16 ns | 28 ns | 29 ns | **1.8x faster** |
+| full setup | 6.35 ms | 4.25 ms | 4.28 ms | 1.5x slower |
 
 ### Memory
 
 | Library | Peak RSS |
 |---------|----------|
-| wkb | 11.1 MB |
-| xkbcommon | 11.4 MB |
-| xkbcommon-dl | 11.4 MB |
+| wkb | 4.9 MB |
+| xkbcommon | 5.0 MB |
+| xkbcommon-dl | 5.0 MB |
 
 ### Binary Size
 
+Sizes for xkbcommon and xkbcommon-dl include the dynamically-linked `libxkbcommon.so`.
+
 | Binary | Size (stripped) |
 |--------|----------------|
-| wkb | 1641 KB |
-| xkbcommon | 341 KB |
-| xkbcommon-dl | 375 KB |
+| wkb | 1151 KB |
+| xkbcommon | 701 KB |
+| xkbcommon-dl | 735 KB |
 
 <!-- BENCHMARK_END -->
 
