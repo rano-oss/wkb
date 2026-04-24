@@ -28,7 +28,10 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run criterion benchmarks
-        run: cargo bench --bench bench_speed
+        run: |
+          cargo bench --bench bench_setup
+          cargo bench --bench bench_key
+          cargo bench --bench bench_compose
 
       - name: Run memory benchmark
         run: |
@@ -43,10 +46,23 @@ jobs:
           strip target/release/examples/bench_size_wkb
           strip target/release/examples/bench_size_xkbcommon
           strip target/release/examples/bench_size_xkbcommon_dl
+          # Find libxkbcommon.so and get its stripped size (xkbcommon/xkbcommon-dl depend on it)
+          LIBXKB=$(find /usr/lib64 /usr/lib -name 'libxkbcommon.so.0.*' 2>/dev/null | head -1)
+          if [ -n "$LIBXKB" ]; then
+            strip --strip-all -o /tmp/libxkbcommon_stripped.so "$LIBXKB"
+            LIBXKB_SIZE=$(stat -c%s /tmp/libxkbcommon_stripped.so)
+          else
+            LIBXKB_SIZE=0
+          fi
+          WKB_SIZE=$(stat -c%s target/release/examples/bench_size_wkb)
+          XKB_BIN=$(stat -c%s target/release/examples/bench_size_xkbcommon)
+          XKB_DL_BIN=$(stat -c%s target/release/examples/bench_size_xkbcommon_dl)
+          XKB_TOTAL=$((XKB_BIN + LIBXKB_SIZE))
+          XKB_DL_TOTAL=$((XKB_DL_BIN + LIBXKB_SIZE))
           {
-            echo "wkb $(stat -c%s target/release/examples/bench_size_wkb)"
-            echo "xkbcommon $(stat -c%s target/release/examples/bench_size_xkbcommon)"
-            echo "xkbcommon-dl $(stat -c%s target/release/examples/bench_size_xkbcommon_dl)"
+            echo "wkb ${WKB_SIZE}"
+            echo "xkbcommon ${XKB_TOTAL}"
+            echo "xkbcommon-dl ${XKB_DL_TOTAL}"
           } > /tmp/size_output.txt
 
       - name: Generate benchmark table

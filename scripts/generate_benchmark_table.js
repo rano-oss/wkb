@@ -59,9 +59,9 @@ function generateSpeedTable() {
     const groups = fs.readdirSync(CRITERION_DIR)
         .filter(d => !d.startsWith('.') && d !== 'report');
 
-    // Focus on key benchmark groups
-    const interesting = ['full_setup', 'key_update', 'key_get_utf8', 'key_get_sym',
-        'compose_table_creation', 'compose_feed'];
+    // Focus on key benchmark groups (criterion uses '/' as dir separator)
+    const interesting = ['full_setup', 'key/update', 'key/get_utf8', 'key/get_sym',
+        'compose/table_creation', 'compose/state_creation', 'compose/feed'];
 
     const rows = [];
     for (const group of interesting) {
@@ -149,7 +149,7 @@ function generateFullSection(memOutput, sizeOutput) {
 
     if (sizeOutput) {
         const sizeTable = generateSizeTable(sizeOutput);
-        if (sizeTable) section += '### Binary Size\n\n' + sizeTable + '\n';
+        if (sizeTable) section += '### Binary Size\n\nSizes for xkbcommon and xkbcommon-dl include the dynamically-linked `libxkbcommon.so`.\n\n' + sizeTable + '\n';
     }
 
     return section;

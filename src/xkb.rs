@@ -154,7 +154,13 @@ fn build_wkb_from_keymap(
     const EVDEV_OFFSET: u32 = 8;
 
     let (min_keycode, max_keycode) = (keymap.min_keycode(), keymap.max_keycode());
-    let num_keys = (max_keycode - EVDEV_OFFSET + 1) as usize;
+    // Keycodes below EVDEV_OFFSET don't map to evdev codes; clamp to avoid underflow.
+    let min_keycode = min_keycode.max(EVDEV_OFFSET);
+    let num_keys = if max_keycode >= EVDEV_OFFSET {
+        (max_keycode - EVDEV_OFFSET + 1) as usize
+    } else {
+        0
+    };
     let modifiers = build_modifiers_from_keymap(keymap, min_keycode, max_keycode);
 
     let get_char = |kc: u32, state: &xkb_core::rust_types::State, lvl: usize| -> Option<char> {
@@ -373,7 +379,7 @@ fn build_modifiers_from_keymap(
         .collect();
 
     const EVDEV_OFFSET: u32 = 8;
-    for keycode in min_keycode..=max_keycode {
+    for keycode in min_keycode.max(EVDEV_OFFSET)..=max_keycode {
         let evdev_code = keycode - EVDEV_OFFSET;
         let syms = keymap.key_get_syms_by_level(keycode, 0, 0);
         let num_levels = keymap.num_levels_for_key(keycode, 0);

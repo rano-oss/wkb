@@ -66,6 +66,104 @@ impl RuleNames {
 }
 
 // ============================================================================
+// Unicode Preprocessing
+// ============================================================================
+
+/// Convert non-ASCII characters in XKB keymap strings to UXXXX keysym notation.
+///
+/// The XKB scanner only accepts ASCII identifiers. When a keymap contains raw
+/// Unicode characters as keysym names (e.g., `ㄙ` instead of `U3119`), this
+/// function converts them so the parser can handle them.
+///
+/// Characters inside strings (`"..."`), comments (`//` or `/* */`), and key
+/// names (`<...>`) are left untouched.
+fn preprocess_unicode_keysyms(input: &str) -> std::borrow::Cow<'_, str> {
+    use std::borrow::Cow;
+    use std::fmt::Write;
+    // Fast path: if there are no non-ASCII bytes, return as-is.
+    if input.is_ascii() {
+        return Cow::Borrowed(input);
+    }
+
+    let mut result = String::with_capacity(input.len() + 64);
+    let mut chars = input.chars().peekable();
+    let mut in_string = false;
+    let mut in_line_comment = false;
+    let mut in_block_comment = false;
+    let mut in_keyname = false;
+    let mut prev_char = '\0';
+
+    while let Some(ch) = chars.next() {
+        if in_line_comment {
+            result.push(ch);
+            if ch == '\n' {
+                in_line_comment = false;
+            }
+            prev_char = ch;
+            continue;
+        }
+
+        if in_block_comment {
+            result.push(ch);
+            if prev_char == '*' && ch == '/' {
+                in_block_comment = false;
+            }
+            prev_char = ch;
+            continue;
+        }
+
+        if in_string {
+            result.push(ch);
+            if ch == '"' && prev_char != '\\' {
+                in_string = false;
+            }
+            prev_char = ch;
+            continue;
+        }
+
+        if in_keyname {
+            result.push(ch);
+            if ch == '>' {
+                in_keyname = false;
+            }
+            prev_char = ch;
+            continue;
+        }
+
+        match ch {
+            '"' => {
+                in_string = true;
+                result.push(ch);
+            }
+            '/' if chars.peek() == Some(&'/') => {
+                in_line_comment = true;
+                result.push(ch);
+            }
+            '/' if chars.peek() == Some(&'*') => {
+                in_block_comment = true;
+                result.push(ch);
+            }
+            '<' => {
+                in_keyname = true;
+                result.push(ch);
+            }
+            c if !c.is_ascii() => {
+                let cp = c as u32;
+                if cp <= 0xFFFF {
+                    write!(result, "U{:04X}", cp).unwrap();
+                } else {
+                    write!(result, "U{:05X}", cp).unwrap();
+                }
+            }
+            _ => result.push(ch),
+        }
+        prev_char = ch;
+    }
+
+    Cow::Owned(result)
+}
+
+// ============================================================================
 // Safe RAII Wrappers for XKB FFI Types
 // ============================================================================
 
@@ -99,7 +197,8 @@ impl Context {
     pub fn keymap_from_string(&self, keymap_str: &str) -> Option<Keymap> {
         use crate::shared_types::{XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1};
 
-        let keymap_cstr = CString::new(keymap_str).ok()?;
+        let processed = preprocess_unicode_keysyms(keymap_str);
+        let keymap_cstr = CString::new(processed.as_ref()).ok()?;
         let keymap = super::keymap::xkb_keymap_new_from_string(
             self.entity.clone(),
             &keymap_cstr,
