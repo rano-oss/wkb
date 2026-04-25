@@ -33,10 +33,8 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkbcmn::State {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn shift_lock_behavior(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
-
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         // Get shift keycode
@@ -94,10 +92,8 @@ fn shift_lock_behavior(locale: &str) {
 /// Eisu_toggle switches between ASCII and Kana input modes
 #[test_matrix(["jp"])]
 fn eisu_toggle_japanese(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
-
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         // Test all keys to ensure behavior matches
@@ -136,10 +132,8 @@ fn eisu_toggle_japanese(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn caps_plus_shift_combination(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
-
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let shift_code = wkb.level2_code();
@@ -200,10 +194,8 @@ fn caps_plus_shift_combination(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn altgr_combinations(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
-
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let altgr_code = wkb.level3_code();
@@ -280,10 +272,8 @@ fn altgr_combinations(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn level5_modifier(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
-
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let level5_code = wkb.level5_code();
@@ -319,10 +309,8 @@ fn level5_modifier(locale: &str) {
 /// Test modifier state after multiple rapid presses/releases
 #[test_matrix(["us", "de", "fr", "jp", "ru", "gr"])]
 fn rapid_modifier_changes(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
-
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let shift_code = wkb.level2_code();
@@ -364,7 +352,8 @@ fn serialized_modifiers(state: &xkbcmn::State) -> (u32, u32, u32, u32) {
 }
 
 fn assert_same_modifiers_state(wkb: &wkb::WKB, xkb: &xkbcmn::State, context: &str) {
-    let wkb_state = wkb.modifiers_state();
+    let ms = wkb.modifiers_state();
+    let wkb_state = (ms.depressed, ms.latched, ms.locked, ms.layout);
     let xkb_state = serialized_modifiers(xkb);
     assert_eq!(
         wkb_state, xkb_state,
@@ -390,7 +379,7 @@ fn update_both(
 
 #[test]
 fn modifiers_state_matches_xkbcommon() {
-    let mut wkb = wkb::WKB::new_from_names("us".to_string(), None);
+    let mut wkb = wkb::WKB::new_from_names("", "", "us", "", None).unwrap();
     let mut xkb = xkb_new_from_names("us".to_string(), None);
 
     assert_same_modifiers_state(&wkb, &xkb, "initial state");
@@ -424,7 +413,7 @@ fn modifiers_state_matches_xkbcommon() {
 fn test_mm_zawgyi_latch_sequence() {
     use xkbcommon::xkb::Keycode;
 
-    let mut wkb = wkb::WKB::new_from_names("mm".to_string(), Some("zawgyi".to_string()));
+    let mut wkb = wkb::WKB::new_from_names("", "", "mm", "zawgyi", None).unwrap();
 
     let context = xkbcmn::Context::new(xkbcmn::CONTEXT_NO_FLAGS);
     let keymap = xkbcmn::Keymap::new_from_names(
@@ -518,7 +507,7 @@ fn test_mm_zawgyi_latch_sequence() {
 
 #[test]
 fn test_cm_modifier_type() {
-    let wkb = wkb::WKB::new_from_names("cm".to_string(), Some("qwerty".to_string()));
+    let wkb = wkb::WKB::new_from_names("", "", "cm", "qwerty", None).unwrap();
 
     if let Some((code, level)) = wkb.level3_code() {
         eprintln!("cm/qwerty Level3 code: {} level: {:?}", code, level);
@@ -530,7 +519,7 @@ fn test_cm_modifier_type() {
 
 #[test]
 fn test_ie_ogam_shift_type() {
-    let wkb = wkb::WKB::new_from_names("ie".to_string(), Some("ogam_is434".to_string()));
+    let wkb = wkb::WKB::new_from_names("", "", "ie", "ogam_is434", None).unwrap();
 
     if let Some((code, level)) = wkb.level2_code() {
         eprintln!("ie/ogam_is434 Shift code: {} level: {:?}", code, level);

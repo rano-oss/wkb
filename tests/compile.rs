@@ -68,9 +68,11 @@ fn run_xkb_compile_test(case_dir: &Path) -> Result<(), String> {
     let xkb_str = keymap.get_as_string(xkbcommon::xkb::KEYMAP_FORMAT_TEXT_V1);
     let prev_hook = panic::take_hook();
     panic::set_hook(Box::new(|_| {}));
-    let wkb_result = panic::catch_unwind(|| wkb::WKB::new_from_string(xkb_str));
+    let wkb_result = panic::catch_unwind(|| wkb::WKB::new_from_string(&xkb_str));
     panic::set_hook(prev_hook);
-    let wkb = wkb_result.map_err(|_| format!("{name}: WKB panicked"))?;
+    let wkb = wkb_result
+        .map_err(|_| format!("{name}: WKB panicked"))?
+        .map_err(|e| format!("{name}: WKB error: {e}"))?;
 
     // Round-trip: serialize with WKB and verify xkbcommon can re-parse
     let serialized = wkb
@@ -80,7 +82,7 @@ fn run_xkb_compile_test(case_dir: &Path) -> Result<(), String> {
     let ctx2 = xkbcommon::xkb::Context::new(xkbcommon::xkb::CONTEXT_NO_FLAGS);
     xkbcommon::xkb::Keymap::new_from_string(
         &ctx2,
-        serialized,
+        serialized.to_string(),
         xkbcommon::xkb::KEYMAP_FORMAT_TEXT_V1,
         xkbcommon::xkb::KEYMAP_COMPILE_NO_FLAGS,
     )

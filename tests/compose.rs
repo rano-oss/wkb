@@ -355,7 +355,7 @@ fn test_wkb_compose(xkb_locale: &str) {
         return;
     }
 
-    let wkb = wkb::WKB::new_from_names(xkb_locale.to_string(), None);
+    let wkb = wkb::WKB::new_from_names("", "", xkb_locale, "", None).unwrap();
 
     let compose_path = Path::new("/usr/share/X11/locale").join(&compose_file_subpath);
     println!(

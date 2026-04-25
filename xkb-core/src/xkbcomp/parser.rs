@@ -30,9 +30,7 @@ use crate::messages::{
     XKB_WARNING_NUMERIC_KEYSYM, XKB_WARNING_UNRECOGNIZED_KEYSYM,
 };
 
-pub use super::scanner::parser_h::{
-    YYerror, END_OF_FILE, YYEMPTY, YYUNDEF,
-};
+pub use super::scanner::parser_h::{YYerror, END_OF_FILE, YYEMPTY, YYUNDEF};
 
 pub const XKB_KEY_VoidSymbol: i32 = 0xffffff_i32;
 pub const XKB_KEY_0: i32 = 0x30_i32;
@@ -2240,7 +2238,6 @@ pub fn parse<'a>(
         };
 
         let ret = _xkbcommon_parse(&mut param);
-
         // Recover ctx and scanner from param before it's dropped
         ctx = param.ctx;
         scanner = param.scanner;

@@ -14,6 +14,11 @@ pub mod compose_parse {
     pub use crate::xkb::compose_parse::*;
 }
 
+/// Get all available layout variants for a given locale (test utility).
+pub fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
+    crate::xkb::get_all_layouts_for_locale(locale)
+}
+
 pub trait WKBTestExt {
     fn active_mod_type(&self, mod_type: ModType) -> bool;
     fn modifiers(&self) -> &Modifiers;

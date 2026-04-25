@@ -37,10 +37,9 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn caps_num_lock_keys(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
 
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         // Activate caps lock
@@ -92,10 +91,9 @@ fn caps_num_lock_keys(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn caps_then_num_lock_sequence(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
 
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         // Sample key to test (using 'a' key which is typically keycode 38 on evdev)
@@ -159,10 +157,9 @@ fn caps_then_num_lock_sequence(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn keypad_with_locks(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
 
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         // Keypad keys (evdev keycodes): KP_0=82, KP_1=79, KP_2=80, etc.

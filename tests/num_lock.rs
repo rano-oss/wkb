@@ -177,10 +177,10 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ], 0..8)]
 fn num_lock(locale: &str, level: usize) {
-    let wkb_init = wkb::WKB::new_from_names(locale.to_string(), None);
-    for layout in wkb_init.layouts() {
+    let wkb_init = wkb::WKB::new_from_names("", "", locale, "", None).unwrap();
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
 
         if wkb.num_levels() <= level {
             continue;

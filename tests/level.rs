@@ -29,11 +29,10 @@ fn xkb_new_keymap_from_names(locale: String, layout: Option<String>) -> xkb::Key
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ], 0..8)]
 fn level_keys(locale: &str, level: usize) {
-    let wkb = wkb::WKB::new_from_names(locale.to_string(), None);
-    for layout in wkb.layouts() {
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
         // println!("{:?}", layout);
         let xkb = xkb_new_keymap_from_names(locale.to_string(), Some(layout.to_owned()));
-        let wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout));
+        let wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         // if wkb.state_keymap.len() <= level {
         //     assert!(true);
         //     continue;

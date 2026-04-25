@@ -81,9 +81,10 @@ fn get_xkbcommon_string(locale: &str, variant: Option<&str>) -> String {
 
 fn get_wkb_string(locale: &str, variant: Option<&str>) -> String {
     let layout = variant.map(String::from);
-    let wkb = WKB::new_from_names(locale.to_string(), layout);
+    let wkb = WKB::new_from_names("", "", locale, layout.as_deref().unwrap_or(""), None).unwrap();
     wkb.as_xkb_string()
         .expect("WKB should have xkb_keymap stored")
+        .to_string()
 }
 
 // ── Export tests (test_matrix over all locales) ─────────────────────────
@@ -120,10 +121,10 @@ fn export_us_intl_matches_xkbcommon() {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn export_round_trip(locale: &str) {
-    let wkb = WKB::new_from_names(locale.to_string(), None);
+    let wkb = WKB::new_from_names("", "", locale, "", None).unwrap();
     let exported = wkb.as_xkb_string().expect("should have keymap");
 
-    let wkb2 = WKB::new_from_string(exported.clone());
+    let wkb2 = WKB::new_from_string(&exported).unwrap();
     let exported2 = wkb2.as_xkb_string().expect("round-trip should have keymap");
 
     compare_keymaps_functionally(&exported, &exported2, &format!("{locale}_roundtrip"));
@@ -133,16 +134,17 @@ fn export_round_trip(locale: &str) {
 
 /// Get an XKB keymap string using wkb's own serializer (no external tools needed).
 fn keymap_string_from_export(locale: &str, variant: Option<&str>) -> String {
-    let wkb = WKB::new_from_names(locale.to_string(), variant.map(String::from));
+    let wkb = WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
     wkb.as_xkb_string()
         .expect("WKB should have xkb_keymap stored")
+        .to_string()
 }
 
 #[test]
 fn string_us() {
     let keymap_str = keymap_string_from_export("us", None);
-    let mut wkb_from_string = WKB::new_from_string(keymap_str);
-    let mut wkb_from_names = WKB::new_from_names("us".to_string(), None);
+    let mut wkb_from_string = WKB::new_from_string(&keymap_str).unwrap();
+    let mut wkb_from_names = WKB::new_from_names("", "", "us", "", None).unwrap();
 
     for keycode in [38, 44, 2, 3, 4] {
         assert_eq!(
@@ -169,8 +171,8 @@ fn string_us() {
 #[test]
 fn string_de() {
     let keymap_str = keymap_string_from_export("de", None);
-    let mut wkb_from_string = WKB::new_from_string(keymap_str);
-    let mut wkb_from_names = WKB::new_from_names("de".to_string(), None);
+    let mut wkb_from_string = WKB::new_from_string(&keymap_str).unwrap();
+    let mut wkb_from_names = WKB::new_from_names("", "", "de", "", None).unwrap();
 
     for keycode in [44, 52] {
         assert_eq!(
@@ -184,8 +186,8 @@ fn string_de() {
 #[test]
 fn string_dvorak() {
     let keymap_str = keymap_string_from_export("us", Some("dvorak"));
-    let mut wkb_from_string = WKB::new_from_string(keymap_str);
-    let mut wkb_from_names = WKB::new_from_names("us".to_string(), Some("dvorak".to_string()));
+    let mut wkb_from_string = WKB::new_from_string(&keymap_str).unwrap();
+    let mut wkb_from_names = WKB::new_from_names("", "", "us", "dvorak", None).unwrap();
 
     for keycode in [38, 39, 40, 44] {
         assert_eq!(
@@ -199,7 +201,7 @@ fn string_dvorak() {
 #[test]
 fn string_modifiers() {
     let keymap_str = keymap_string_from_export("us", None);
-    let wkb = WKB::new_from_string(keymap_str);
+    let wkb = WKB::new_from_string(&keymap_str).unwrap();
 
     assert!(
         wkb.level2_code().is_some(),
@@ -214,7 +216,7 @@ fn string_modifiers() {
 #[test]
 fn string_caps_lock() {
     let keymap_str = keymap_string_from_export("us", None);
-    let mut wkb = WKB::new_from_string(keymap_str);
+    let mut wkb = WKB::new_from_string(&keymap_str).unwrap();
 
     assert_eq!(wkb.utf8(38), Some('l'));
 

@@ -19,7 +19,7 @@ fn cfg() -> Criterion {
 // ── Setup helpers ──────────────────────────────────────────────────────
 
 fn wkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB {
-    wkb::WKB::new_from_names(locale.to_string(), variant.map(String::from))
+    wkb::WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap()
 }
 
 fn xkbcommon_setup(

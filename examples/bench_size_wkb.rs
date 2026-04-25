@@ -13,8 +13,7 @@ fn main() {
     let mut checksum: u64 = 0;
 
     for &(locale, variant) in LAYOUTS {
-        let layout = variant.map(String::from);
-        let mut wb = wkb::WKB::new_from_names(locale.to_string(), layout);
+        let mut wb = wkb::WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
 
         for case in KEY_CASES {
             for &(code, down) in case.keys {

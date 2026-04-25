@@ -37,7 +37,7 @@ fn bench_full_setup(c: &mut Criterion) {
 
     group.bench_function("wkb", |b| {
         b.iter(|| {
-            let wkb: wkb::WKB = wkb::WKB::new_from_names(black_box(locale).to_string(), None);
+            let wkb: wkb::WKB = wkb::WKB::new_from_names("", "", black_box(locale), "", None).unwrap();
             black_box(wkb);
         });
     });

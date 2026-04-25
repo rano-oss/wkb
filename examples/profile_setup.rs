@@ -74,12 +74,12 @@ fn main() {
 
     // Full WKB setup for comparison
     let t_wkb = Instant::now();
-    let _wkb: wkb::WKB = wkb::WKB::new_from_names("us".to_string(), None);
+    let _wkb: wkb::WKB = wkb::WKB::new_from_names("", "", "us", "", None).unwrap();
     eprintln!("\nFull WKB new_from_names: {:?}", t_wkb.elapsed());
 
     // With explicit layout (skip get_all_layouts)
     let t_wkb2 = Instant::now();
-    let _wkb2: wkb::WKB = wkb::WKB::new_from_names("us".to_string(), Some(String::new()));
+    let _wkb2: wkb::WKB = wkb::WKB::new_from_names("", "", "us", "", None).unwrap();
     eprintln!("WKB with explicit layout: {:?}", t_wkb2.elapsed());
 
     eprintln!("Total profiling time:   {:?}", t0.elapsed());

@@ -40,8 +40,7 @@ fn run_workload_wkb() -> u64 {
     print_rss("wkb/before_setup");
 
     for &(locale, variant) in LAYOUTS {
-        let layout = variant.map(String::from);
-        let mut wb = wkb::WKB::new_from_names(locale.to_string(), layout);
+        let mut wb = wkb::WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
 
         for case in KEY_CASES {
             for _ in 0..HOT_PATH_ITERATIONS {

@@ -57,10 +57,9 @@ fn normalize_xkb_char(xkb_str: String) -> Option<char> {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn ctrl_letter_combinations(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
 
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let left_ctrl = 29u32;
@@ -113,10 +112,9 @@ fn ctrl_letter_combinations(locale: &str) {
 /// Note: wkb may suppress more keys with CTRL than xkbcommon
 #[test_matrix(["us", "de", "fr", "gb", "es", "it", "ru"])]
 fn ctrl_alt_combinations(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
 
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let ctrl_code = 29u32;
@@ -162,10 +160,9 @@ fn ctrl_alt_combinations(locale: &str) {
 /// Note: wkb may suppress more keys with CTRL than xkbcommon
 #[test_matrix(["us", "de", "fr", "gb", "es", "it"])]
 fn ctrl_shift_combinations(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
 
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let ctrl_code = 29u32;
@@ -211,10 +208,9 @@ fn ctrl_shift_combinations(locale: &str) {
 /// Note: wkb may suppress more keys with CTRL than xkbcommon
 #[test_matrix(["us", "de", "fr", "jp"])]
 fn ctrl_suppresses_output(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
 
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let ctrl_code = 29u32;
@@ -251,10 +247,9 @@ fn ctrl_suppresses_output(locale: &str) {
 /// Test function keys with CTRL
 #[test_matrix(["us", "de", "fr"])]
 fn ctrl_function_keys(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
 
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let ctrl_code = 29u32;
