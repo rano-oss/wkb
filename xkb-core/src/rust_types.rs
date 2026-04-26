@@ -470,6 +470,12 @@ pub struct State {
     inner: Box<super::state::xkb_state>,
 }
 
+impl std::fmt::Debug for State {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("State").finish_non_exhaustive()
+    }
+}
+
 impl State {
     /// Get raw pointer (for FFI calls that still require it)
     pub fn as_ptr(&self) -> *mut super::state::xkb_state {
@@ -544,6 +550,24 @@ impl State {
     /// Check if a LED index is active
     pub fn led_index_is_active(&self, idx: u32) -> bool {
         super::state::xkb_state_led_index_is_active(&self.inner, idx) > 0
+    }
+
+    /// Get keysyms for a key at a specific layout and level (delegates to keymap)
+    pub fn key_get_syms_by_level(&self, keycode: u32, layout: u32, level: u32) -> &[u32] {
+        let keymap = self.inner.keymap();
+        if let Some(key) = keymap.get_key(keycode) {
+            if let Some(leveli) = keymap.get_key_level(key, layout, level) {
+                if !leveli.syms.is_empty() {
+                    return &leveli.syms[..];
+                }
+            }
+        }
+        &[]
+    }
+
+    /// Get the number of layouts in the underlying keymap
+    pub fn num_keymap_layouts(&self) -> u32 {
+        super::keymap::xkb_keymap_num_layouts(self.inner.keymap())
     }
 
     /// Update state from modifier/layout masks (e.g., from Wayland compositor)

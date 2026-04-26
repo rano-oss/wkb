@@ -10,16 +10,12 @@ pub fn xkb_components_from_rules_names(
 }
 
 pub use crate::messages::XKB_ERROR_KEYMAP_COMPILATION_FAILED;
-pub use crate::shared_ast_types::{
-    xkb_file_type_to_string, XkbFile, FILE_TYPE_KEYMAP,
-};
+pub use crate::shared_ast_types::{xkb_file_type_to_string, XkbFile, FILE_TYPE_KEYMAP};
 use crate::xkbcomp::ast_build::XkbFileFromComponents;
 use crate::xkbcomp::keymap::CompileKeymap;
 use crate::xkbcomp::scanner::XkbParseString;
 
-pub use crate::shared_types::{
-    format_max_groups, xkb_keymap,
-};
+pub use crate::shared_types::{format_max_groups, xkb_keymap};
 
 fn compile_keymap_file(keymap: &mut xkb_keymap, file: &mut XkbFile) -> bool {
     if file.file_type != FILE_TYPE_KEYMAP {

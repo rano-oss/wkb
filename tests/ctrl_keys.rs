@@ -7,7 +7,7 @@
 //! When xkbcommon returns a control character, we treat it as equivalent to None.
 
 use test_case::test_matrix;
-use wkb::{testing::WKBTestExt, KeyDirection};
+use wkb::testing::{WKBTestExt, KeyDirection};
 use xkbcommon::xkb::{self, Keycode};
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
@@ -57,10 +57,9 @@ fn normalize_xkb_char(xkb_str: String) -> Option<char> {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn ctrl_letter_combinations(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
 
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let left_ctrl = 29u32;
@@ -71,7 +70,7 @@ fn ctrl_letter_combinations(locale: &str) {
         wkb.update_key(left_ctrl, KeyDirection::Down);
         xkb.update_key(Keycode::new(left_ctrl + 8), xkb::KeyDirection::Down);
 
-        let wkb_left = wkb.utf8(test_key);
+        let wkb_left = wkb.key_char(test_key);
         let xkb_str_left = xkb.key_get_utf8(Keycode::new(test_key + 8));
         let xkb_left = normalize_xkb_char(xkb_str_left);
 
@@ -91,7 +90,7 @@ fn ctrl_letter_combinations(locale: &str) {
         wkb.update_key(right_ctrl, KeyDirection::Down);
         xkb.update_key(Keycode::new(right_ctrl + 8), xkb::KeyDirection::Down);
 
-        let wkb_right = wkb.utf8(test_key);
+        let wkb_right = wkb.key_char(test_key);
         let xkb_str_right = xkb.key_get_utf8(Keycode::new(test_key + 8));
         let xkb_right = normalize_xkb_char(xkb_str_right);
 
@@ -113,10 +112,9 @@ fn ctrl_letter_combinations(locale: &str) {
 /// Note: wkb may suppress more keys with CTRL than xkbcommon
 #[test_matrix(["us", "de", "fr", "gb", "es", "it", "ru"])]
 fn ctrl_alt_combinations(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
 
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let ctrl_code = 29u32;
@@ -132,7 +130,7 @@ fn ctrl_alt_combinations(locale: &str) {
         let test_keys = vec![38, 39, 40, 44, 45, 46]; // a, s, d, z, x, c
 
         for &keycode in &test_keys {
-            let wkb_char = wkb.utf8(keycode);
+            let wkb_char = wkb.key_char(keycode);
             let xkb_str = xkb.key_get_utf8(Keycode::new(keycode + 8));
             let xkb_char = normalize_xkb_char(xkb_str);
 
@@ -162,10 +160,9 @@ fn ctrl_alt_combinations(locale: &str) {
 /// Note: wkb may suppress more keys with CTRL than xkbcommon
 #[test_matrix(["us", "de", "fr", "gb", "es", "it"])]
 fn ctrl_shift_combinations(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
 
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let ctrl_code = 29u32;
@@ -181,7 +178,7 @@ fn ctrl_shift_combinations(locale: &str) {
         let test_keys = vec![38, 39, 40, 41, 42, 43, 44]; // a-g
 
         for &keycode in &test_keys {
-            let wkb_char = wkb.utf8(keycode);
+            let wkb_char = wkb.key_char(keycode);
             let xkb_str = xkb.key_get_utf8(Keycode::new(keycode + 8));
             let xkb_char = normalize_xkb_char(xkb_str);
 
@@ -211,10 +208,9 @@ fn ctrl_shift_combinations(locale: &str) {
 /// Note: wkb may suppress more keys with CTRL than xkbcommon
 #[test_matrix(["us", "de", "fr", "jp"])]
 fn ctrl_suppresses_output(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
 
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let ctrl_code = 29u32;
@@ -222,14 +218,14 @@ fn ctrl_suppresses_output(locale: &str) {
 
         for &keycode in &test_keys {
             // Test without CTRL - should produce a character (usually)
-            let wkb_no_ctrl = wkb.utf8(keycode);
+            let wkb_no_ctrl = wkb.key_char(keycode);
             let xkb_no_ctrl = xkb.key_get_utf8(Keycode::new(keycode + 8)).chars().last();
 
             // Test with CTRL - behavior should match xkbcommon
             wkb.update_key(ctrl_code, KeyDirection::Down);
             xkb.update_key(Keycode::new(ctrl_code + 8), xkb::KeyDirection::Down);
 
-            let wkb_with_ctrl = wkb.utf8(keycode);
+            let wkb_with_ctrl = wkb.key_char(keycode);
             let xkb_str = xkb.key_get_utf8(Keycode::new(keycode + 8));
             let xkb_with_ctrl = normalize_xkb_char(xkb_str);
 
@@ -251,10 +247,9 @@ fn ctrl_suppresses_output(locale: &str) {
 /// Test function keys with CTRL
 #[test_matrix(["us", "de", "fr"])]
 fn ctrl_function_keys(locale: &str) {
-    let base_wkb = wkb::WKB::new_from_names(locale.to_string(), None);
 
-    for layout in base_wkb.layouts() {
-        let mut wkb = wkb::WKB::new_from_names(locale.to_string(), Some(layout.clone()));
+    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         let ctrl_code = 29u32;
@@ -267,7 +262,7 @@ fn ctrl_function_keys(locale: &str) {
         xkb.update_key(Keycode::new(ctrl_code + 8), xkb::KeyDirection::Down);
 
         for &keycode in &function_keys {
-            let wkb_char = wkb.utf8(keycode);
+            let wkb_char = wkb.key_char(keycode);
             let xkb_str = xkb.key_get_utf8(Keycode::new(keycode + 8));
             let xkb_char = normalize_xkb_char(xkb_str);
 

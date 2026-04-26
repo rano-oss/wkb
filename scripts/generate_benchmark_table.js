@@ -59,23 +59,43 @@ function generateSpeedTable() {
     const groups = fs.readdirSync(CRITERION_DIR)
         .filter(d => !d.startsWith('.') && d !== 'report');
 
-    // Focus on key benchmark groups (criterion uses '/' as dir separator)
-    const interesting = ['full_setup', 'key/update', 'key/get_utf8', 'key/get_sym',
-        'compose/table_creation', 'compose/state_creation', 'compose/feed'];
+    // Criterion stores groups with '_' separators in directory names
+    const interesting = [
+        { dir: 'full_setup',             label: 'Full setup' },
+        { dir: 'key_update',             label: 'Key update' },
+        { dir: 'key_get_utf8',           label: 'Get UTF-8' },
+        { dir: 'key_get_sym',            label: 'Get keysym' },
+        { dir: 'compose_setup',          label: 'Compose setup', combine: ['compose_table_creation', 'compose_state_creation'] },
+        { dir: 'compose_feed',           label: 'Compose feed' },
+    ];
 
     const rows = [];
-    for (const group of interesting) {
-        const gpath = path.join(CRITERION_DIR, group);
-        if (!fs.existsSync(gpath)) continue;
-
+    for (const { dir, label, combine } of interesting) {
         const vals = {};
-        for (const impl_ of IMPLS) {
-            vals[impl_] = readEstimates(gpath, impl_);
+
+        if (combine) {
+            // Sum estimates from multiple benchmark groups
+            for (const impl_ of IMPLS) {
+                let total = 0;
+                let found = false;
+                for (const subDir of combine) {
+                    const gpath = path.join(CRITERION_DIR, subDir);
+                    const v = fs.existsSync(gpath) ? readEstimates(gpath, impl_) : null;
+                    if (v != null) { total += v; found = true; }
+                }
+                vals[impl_] = found ? total : null;
+            }
+        } else {
+            const gpath = path.join(CRITERION_DIR, dir);
+            if (!fs.existsSync(gpath)) continue;
+            for (const impl_ of IMPLS) {
+                vals[impl_] = readEstimates(gpath, impl_);
+            }
         }
         if (!vals['wkb']) continue;
 
         const row = [
-            group.replace(/_/g, ' '),
+            label,
             vals['wkb'] ? fmt_ns(vals['wkb']) : '-',
             vals['xkbcommon'] ? fmt_ns(vals['xkbcommon']) : '-',
             vals['xkbcommon-dl'] ? fmt_ns(vals['xkbcommon-dl']) : '-',

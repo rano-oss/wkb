@@ -194,7 +194,7 @@ fn write_symbols(buf: &mut String, km: &xkb_keymap) {
         if let Some(gn_atom) = km.group_names.get(i as usize) {
             if *gn_atom != XKB_ATOM_NONE {
                 let gn = xkb_atom_text(&km.ctx.atom_table, *gn_atom);
-                buf.push_str(&format!("\tname[group{}]=\"{}\";\n", i + 1, gn));
+                buf.push_str(&format!("\tname[{}]=\"{}\";\n", i + 1, gn));
             }
         }
     }
@@ -248,11 +248,11 @@ fn write_symbols(buf: &mut String, km: &xkb_keymap) {
         if key.num_groups > 1 {
             buf.push('\n');
             for gi in 0..key.num_groups {
-                write_key_symbols_group(buf, km, key, gi, true);
+                write_key_symbols_group(buf, km, key, gi, true, gi == key.num_groups - 1);
             }
             buf.push('\t');
         } else {
-            write_key_symbols_group(buf, km, key, 0, false);
+            write_key_symbols_group(buf, km, key, 0, false, true);
         }
 
         // Repeat
@@ -325,12 +325,13 @@ fn write_key_symbols_group(
     key: &xkb_key,
     group_idx: u32,
     multigroup: bool,
+    last_group: bool,
 ) {
     let group = &key.groups[group_idx as usize];
     let num_levels = km.types[group.type_idx as usize].num_levels;
 
     if multigroup {
-        buf.push_str("\t\tsymbols[Group");
+        buf.push_str("\t\tsymbols[");
         buf.push_str(&(group_idx + 1).to_string());
         buf.push_str("]= [ ");
     } else {
@@ -362,7 +363,7 @@ fn write_key_symbols_group(
     // Actions (if explicitly set)
     if group.explicit_actions {
         if multigroup {
-            buf.push_str(",\n\t\tactions[Group");
+            buf.push_str(",\n\t\tactions[");
             buf.push_str(&(group_idx + 1).to_string());
             buf.push_str("]= [ ");
         } else {
@@ -383,7 +384,10 @@ fn write_key_symbols_group(
     }
 
     if multigroup {
-        buf.push_str(",\n");
+        if !last_group {
+            buf.push(',');
+        }
+        buf.push('\n');
     }
 }
 

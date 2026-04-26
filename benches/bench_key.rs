@@ -6,8 +6,7 @@ use std::ffi::CString;
 use std::os::raw::c_char;
 use std::ptr;
 use std::time::Duration;
-use wkb::testing::WKBTestExt;
-use wkb::KeyDirection;
+use wkb::testing::{KeyDirection, WKBTestExt};
 
 fn cfg() -> Criterion {
     Criterion::default()
@@ -19,7 +18,7 @@ fn cfg() -> Criterion {
 // ── Setup helpers ──────────────────────────────────────────────────────
 
 fn wkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB {
-    wkb::WKB::new_from_names(locale.to_string(), variant.map(String::from))
+    wkb::WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap()
 }
 
 fn xkbcommon_setup(
@@ -232,7 +231,7 @@ fn bench_key_get_utf8(c: &mut Criterion) {
                 |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
                     wb.update_key(code, dir);
                     if down {
-                        black_box(wb.utf8(black_box(code)));
+                        black_box(wb.key_char(black_box(code)));
                     }
                 }
             );
@@ -310,7 +309,7 @@ fn bench_key_get_sym(c: &mut Criterion) {
                 |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
                     wb.update_key(code, dir);
                     if down {
-                        black_box(wb.utf8(black_box(code)));
+                        black_box(wb.key_char(black_box(code)));
                     }
                 }
             );

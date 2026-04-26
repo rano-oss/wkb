@@ -35,7 +35,7 @@ pub(crate) struct TrieNode {
 pub struct Composer {
     pub(crate) nodes: Vec<TrieNode>,
     cur: u32,
-    pending: Vec<Token>,
+    pub(crate) pending: Vec<Token>,
 }
 
 impl Default for Composer {
@@ -54,14 +54,6 @@ impl Composer {
             cur: 0,
             pending: Vec::new(),
         }
-    }
-
-    /// Returns the tokens fed so far in the current compose sequence.
-    /// Non-empty while in `Composing` state. Clients can use this to
-    /// display the in-progress sequence (e.g. `'` `¨` with underline).
-    #[inline]
-    pub fn pending(&self) -> &[Token] {
-        &self.pending
     }
 
     /// Insert a sequence of tokens into the trie.

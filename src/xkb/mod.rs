@@ -1,49 +1,39 @@
-//! XKB module — re-exports from xkb-core and WKB integration glue.
+//! XKB module — keymap construction from RMLVO names and XKB strings,
+//! plus XKB v1 text serialization.
 
-// Re-export xkb-core public API selectively
+mod serialize;
 
-// WKB integration functions
+use crate::bitset::KeyBitSet;
 use crate::composer::Token;
+use crate::flat_keymap::{FlatKeymap, FlatKeysymMap, MAX_LEVELS};
 use crate::modifiers::*;
 use crate::Composer;
-use crate::FlatKeymap;
-use crate::{KeyBitSet, WKB};
+use crate::WKB;
 
-/// Get all available layouts/variants for a given locale
-pub(crate) fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
-    use xkb_core::rust_types::RxkbContext;
+// ── Error type ──
 
-    let mut ctx = match RxkbContext::new() {
-        Some(ctx) => ctx,
-        None => return vec![String::new()],
-    };
+/// Errors returned by XKB keymap construction.
+#[derive(Debug)]
+pub enum XkbError {
+    /// Failed to create an XKB context.
+    ContextCreation,
+    /// Failed to compile keymap from RMLVO names.
+    KeymapCompilation,
+    /// Failed to parse keymap from string.
+    KeymapParsing,
+}
 
-    ctx.include_path_append_default();
-
-    if !ctx.parse("evdev") {
-        return vec![String::new()];
-    }
-
-    let mut layouts = Vec::new();
-
-    for layout in ctx.layouts() {
-        let layout_name = layout.name();
-        if !layout_name.is_empty() && layout_name == locale {
-            let variant = layout.variant();
-            if variant.is_empty() {
-                layouts.push(String::new());
-            } else {
-                layouts.push(variant.to_string());
-            }
+impl std::fmt::Display for XkbError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            XkbError::ContextCreation => write!(f, "Failed to create XKB context"),
+            XkbError::KeymapCompilation => write!(f, "Failed to compile keymap"),
+            XkbError::KeymapParsing => write!(f, "Failed to parse keymap string"),
         }
     }
-
-    if layouts.is_empty() {
-        layouts.push(String::new());
-    }
-
-    layouts
 }
+
+impl std::error::Error for XkbError {}
 
 /// Get the keycode (and optional level) for a specific modifier type.
 pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Option<u8>)> {
@@ -142,54 +132,112 @@ pub fn load_compose_from_path(path: &std::path::Path) -> Composer {
     regular
 }
 
-/// Build WKB instance from an XKB keymap
+/// Build WKB instance from an XKB keymap, extracting all layouts.
 fn build_wkb_from_keymap(
     keymap: &xkb_core::rust_types::Keymap,
-    locale: Option<String>,
-    layout: Option<String>,
+    locale: Option<&str>,
     store_keymap: bool,
 ) -> WKB {
     const XKB_MAX_LEVELS: usize = 8;
     const EVDEV_OFFSET: u32 = 8;
 
     let (min_keycode, max_keycode) = (keymap.min_keycode(), keymap.max_keycode());
-    // Keycodes below EVDEV_OFFSET don't map to evdev codes; clamp to avoid underflow.
     let min_keycode = min_keycode.max(EVDEV_OFFSET);
     let num_keys = if max_keycode >= EVDEV_OFFSET {
         (max_keycode - EVDEV_OFFSET + 1) as usize
     } else {
         0
     };
+    let num_layouts = (keymap.num_layouts() as usize).max(1);
+
+    // Modifiers are global to the keymap (not per-layout), use layout 0.
     let modifiers = build_modifiers_from_keymap(keymap, min_keycode, max_keycode);
 
-    let get_char = |kc: u32, state: &xkb_core::rust_types::State, lvl: usize| -> Option<char> {
+    let level_keys = (
+        level2_code(&modifiers).map(|(c, _)| c + EVDEV_OFFSET),
+        level3_code(&modifiers).map(|(c, _)| c + EVDEV_OFFSET),
+        level5_code(&modifiers).map(|(c, _)| c + EVDEV_OFFSET),
+    );
+
+    // ── Build flat keymaps for ALL layouts ──
+
+    let mut level_exceptions_keymap = FlatKeymap::new(num_keys, num_layouts);
+    for layout_idx in 0..num_layouts {
+        for lvl in 0..XKB_MAX_LEVELS {
+            for kc in min_keycode..=max_keycode {
+                if let Some(&sym) = keymap
+                    .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
+                    .first()
+                {
+                    if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(sym) {
+                        level_exceptions_keymap.set(layout_idx, lvl, kc - EVDEV_OFFSET, ch);
+                    }
+                }
+            }
+        }
+    }
+
+    let get_char = |kc: u32,
+                    state: &xkb_core::rust_types::State,
+                    layout_idx: usize,
+                    lvl: usize|
+     -> Option<char> {
         state.key_get_utf8(kc).chars().next().or_else(|| {
             keymap
-                .key_get_syms_by_level(kc, 0, lvl as u32)
+                .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
                 .first()
                 .and_then(|&s| xkb_core::keysym_utf::keysym_to_char(s))
         })
     };
 
+    let mut state_keymap = FlatKeymap::new(num_keys, num_layouts);
+    for layout_idx in 0..num_layouts {
+        for lvl in 0..XKB_MAX_LEVELS {
+            if let Some(mut st) = keymap.new_state() {
+                // Set the layout group on the state before querying.
+                if layout_idx > 0 {
+                    st.update_mask(0, 0, 0, 0, 0, layout_idx as u32);
+                }
+                press_level_modifiers(&mut st, lvl, level_keys.0, level_keys.1, level_keys.2);
+                for kc in min_keycode..=max_keycode {
+                    if let Some(ch) = get_char(kc, &st, layout_idx, lvl) {
+                        state_keymap.set(layout_idx, lvl, kc - EVDEV_OFFSET, ch);
+                    }
+                }
+            }
+        }
+    }
+
     let populate_lock = |lock_kc: Option<u32>,
                          toggle: bool,
                          level_keys: (Option<u32>, Option<u32>, Option<u32>)|
      -> FlatKeymap {
-        let mut fk = FlatKeymap::new(num_keys);
+        let mut fk = FlatKeymap::new(num_keys, num_layouts);
         if let Some(lkc) = lock_kc {
-            for lvl in 0..XKB_MAX_LEVELS {
-                if let Some(mut st) = keymap.new_state() {
-                    if toggle {
-                        st.update_key(lkc, xkb_core::XKB_KEY_DOWN);
-                        st.update_key(lkc, xkb_core::XKB_KEY_UP);
-                    }
-                    press_level_modifiers(&mut st, lvl, level_keys.0, level_keys.1, level_keys.2);
-                    if !toggle {
-                        st.update_key(lkc, xkb_core::XKB_KEY_DOWN);
-                    }
-                    for kc in min_keycode..=max_keycode {
-                        if let Some(ch) = get_char(kc, &st, lvl) {
-                            fk.set(lvl, kc - EVDEV_OFFSET, ch);
+            for layout_idx in 0..num_layouts {
+                for lvl in 0..XKB_MAX_LEVELS {
+                    if let Some(mut st) = keymap.new_state() {
+                        if layout_idx > 0 {
+                            st.update_mask(0, 0, 0, 0, 0, layout_idx as u32);
+                        }
+                        if toggle {
+                            st.update_key(lkc, xkb_core::XKB_KEY_DOWN);
+                            st.update_key(lkc, xkb_core::XKB_KEY_UP);
+                        }
+                        press_level_modifiers(
+                            &mut st,
+                            lvl,
+                            level_keys.0,
+                            level_keys.1,
+                            level_keys.2,
+                        );
+                        if !toggle {
+                            st.update_key(lkc, xkb_core::XKB_KEY_DOWN);
+                        }
+                        for kc in min_keycode..=max_keycode {
+                            if let Some(ch) = get_char(kc, &st, layout_idx, lvl) {
+                                fk.set(layout_idx, lvl, kc - EVDEV_OFFSET, ch);
+                            }
                         }
                     }
                 }
@@ -198,44 +246,18 @@ fn build_wkb_from_keymap(
         fk
     };
 
-    let level_keys = (
-        level2_code(&modifiers).map(|(c, _)| c + EVDEV_OFFSET),
-        level3_code(&modifiers).map(|(c, _)| c + EVDEV_OFFSET),
-        level5_code(&modifiers).map(|(c, _)| c + EVDEV_OFFSET),
-    );
-
-    let mut level_exceptions_keymap = FlatKeymap::new(num_keys);
-    for lvl in 0..XKB_MAX_LEVELS {
-        for kc in min_keycode..=max_keycode {
-            if let Some(&sym) = keymap.key_get_syms_by_level(kc, 0, lvl as u32).first() {
-                if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(sym) {
-                    level_exceptions_keymap.set(lvl, kc - EVDEV_OFFSET, ch);
-                }
-            }
-        }
-    }
-
-    let mut state_keymap = FlatKeymap::new(num_keys);
-    for lvl in 0..XKB_MAX_LEVELS {
-        if let Some(mut st) = keymap.new_state() {
-            press_level_modifiers(&mut st, lvl, level_keys.0, level_keys.1, level_keys.2);
-            for kc in min_keycode..=max_keycode {
-                if let Some(ch) = get_char(kc, &st, lvl) {
-                    state_keymap.set(lvl, kc - EVDEV_OFFSET, ch);
-                }
-            }
-        }
-    }
-
     let caps_lock_keymap = {
         let caps_kc = level_code(&modifiers, ModType::Caps).map(|(c, _)| c + EVDEV_OFFSET);
         let mut fk = populate_lock(caps_kc, false, level_keys);
-        // Remove entries that are identical to state_keymap (only keep diffs)
-        for lvl in 0..XKB_MAX_LEVELS {
-            for k in 0..fk.num_keys as u32 {
-                if let Some(v) = fk.get(lvl, k) {
-                    if state_keymap.get(lvl, k) == Some(v) {
-                        fk.data[lvl * fk.num_keys + k as usize] = None;
+        // Remove entries identical to state_keymap (only keep diffs)
+        for layout_idx in 0..num_layouts {
+            for lvl in 0..XKB_MAX_LEVELS {
+                for k in 0..fk.num_keys as u32 {
+                    if let Some(v) = fk.get(layout_idx, lvl, k) {
+                        if state_keymap.get(layout_idx, lvl, k) == Some(v) {
+                            let idx = (layout_idx * MAX_LEVELS + lvl) * fk.num_keys + k as usize;
+                            fk.data[idx] = None;
+                        }
                     }
                 }
             }
@@ -246,11 +268,14 @@ fn build_wkb_from_keymap(
     let num_lock_keys = {
         let num_kc = level_code(&modifiers, ModType::Num).map(|(c, _)| c + EVDEV_OFFSET);
         let mut fk = populate_lock(num_kc, true, level_keys);
-        for lvl in 0..XKB_MAX_LEVELS {
-            for k in 0..fk.num_keys as u32 {
-                if let Some(v) = fk.get(lvl, k) {
-                    if state_keymap.get(lvl, k) == Some(v) {
-                        fk.data[lvl * fk.num_keys + k as usize] = None;
+        for layout_idx in 0..num_layouts {
+            for lvl in 0..XKB_MAX_LEVELS {
+                for k in 0..fk.num_keys as u32 {
+                    if let Some(v) = fk.get(layout_idx, lvl, k) {
+                        if state_keymap.get(layout_idx, lvl, k) == Some(v) {
+                            let idx = (layout_idx * MAX_LEVELS + lvl) * fk.num_keys + k as usize;
+                            fk.data[idx] = None;
+                        }
                     }
                 }
             }
@@ -265,9 +290,20 @@ fn build_wkb_from_keymap(
         }
     }
 
+    // Extract layout names from keymap
+    let layout_names: Vec<String> = (0..num_layouts)
+        .map(|i| {
+            keymap
+                .layout_get_name(i as u32)
+                .unwrap_or_else(|| format!("Layout {}", i))
+        })
+        .collect();
+
+    // Cache XKB string for Wayland client sharing
+    let _ = store_keymap; // no longer cached; generated on demand
+
     #[cfg(feature = "compose")]
     let composer = locale
-        .as_deref()
         .and_then(xkb_core::compose::resolve_compose_file)
         .map(|subpath| {
             let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
@@ -278,13 +314,25 @@ fn build_wkb_from_keymap(
     #[cfg(not(feature = "compose"))]
     let composer = Composer::new();
 
+    // Build flat keysym table from keymap
+    let mut keysym_map = FlatKeysymMap::new(num_keys, num_layouts);
+    for layout_idx in 0..num_layouts {
+        for lvl in 0..XKB_MAX_LEVELS {
+            for k in 0..num_keys as u32 {
+                let xkb_keycode = k + EVDEV_OFFSET;
+                let syms = keymap.key_get_syms_by_level(xkb_keycode, layout_idx as u32, lvl as u32);
+                if let Some(&sym) = syms.first() {
+                    if sym != 0 {
+                        keysym_map.set(layout_idx, lvl, k, sym);
+                    }
+                }
+            }
+        }
+    }
+
     WKB {
-        layouts: std::cell::OnceCell::new(),
-        locale: locale.clone(),
-        layout: layout
-            .clone()
-            .unwrap_or_else(|| locale.clone().unwrap_or_default()),
-        pressed_keys: KeyBitSet::new(),
+        current_layout_idx: 0,
+        layout_names,
         repeat_keys,
         composer,
         modifiers,
@@ -292,26 +340,50 @@ fn build_wkb_from_keymap(
         num_lock_keys,
         caps_lock_keymap,
         level_exceptions_keymap,
-        xkb_keymap: if store_keymap {
-            Some(keymap.clone())
-        } else {
-            None
-        },
+        keysym_map,
     }
 }
 
-/// Create a new WKB instance from locale and layout names
-pub fn new_from_names(locale: String, layout: Option<String>) -> WKB {
+/// Create a new WKB instance from RMLVO names.
+pub fn new_from_names(
+    rules: &str,
+    model: &str,
+    layout: &str,
+    variant: &str,
+    options: Option<&str>,
+) -> Result<WKB, XkbError> {
     use xkb_core::rust_types::{Context, RuleNames};
 
-    let ctx = Context::new().expect("Failed to create XKB context");
-    let rules = RuleNames::evdev(locale.clone(), layout.clone());
+    let ctx = Context::new().ok_or(XkbError::ContextCreation)?;
+    let rule_names = RuleNames {
+        rules: rules.to_string(),
+        model: model.to_string(),
+        layout: layout.to_string(),
+        variant: variant.to_string(),
+        options: options.unwrap_or("").to_string(),
+    };
 
     let keymap = ctx
-        .keymap_from_names(&rules)
-        .unwrap_or_else(|| panic!("Failed to compile keymap for layout: {:?}", layout));
+        .keymap_from_names(&rule_names)
+        .ok_or(XkbError::KeymapCompilation)?;
 
-    build_wkb_from_keymap(&keymap, Some(locale), layout, true)
+    // Use first layout name as locale for compose file resolution
+    let locale = layout.split(',').next().filter(|s| !s.is_empty());
+
+    Ok(build_wkb_from_keymap(&keymap, locale, true))
+}
+
+/// Create a new WKB instance from a keymap string.
+pub fn new_from_string(string: &str) -> Result<WKB, XkbError> {
+    use xkb_core::rust_types::Context;
+
+    let ctx = Context::new().ok_or(XkbError::ContextCreation)?;
+
+    let keymap = ctx
+        .keymap_from_string(string)
+        .ok_or(XkbError::KeymapParsing)?;
+
+    Ok(build_wkb_from_keymap(&keymap, None, true))
 }
 
 /// Build Modifiers struct from XKB keymap
@@ -468,27 +540,6 @@ fn build_modifiers_from_keymap(
         }
     }
     modifiers
-}
-
-/// Create a new WKB instance from a keymap string
-pub fn new_from_string(string: String) -> WKB {
-    use xkb_core::rust_types::Context;
-
-    let ctx = Context::new().expect("Failed to create XKB context");
-
-    let keymap = ctx
-        .keymap_from_string(&string)
-        .expect("Failed to parse keymap from string");
-
-    build_wkb_from_keymap(&keymap, None, None, true)
-}
-
-/// Backward-compatible alias for compose module access
-pub mod compose_parse {
-    pub use super::load_compose_from_path;
-    pub use xkb_core::compose::{
-        keysym_name_to_char, parse_compose_file, resolve_compose_file, ComposeEntry,
-    };
 }
 
 #[cfg(test)]
@@ -654,5 +705,121 @@ mod wrapper_tests {
         state.update_mask(shift_mask, 0, 0, 0, 0, 0);
 
         assert!(state.mod_name_is_active("Shift", 0xFF));
+    }
+
+    #[test]
+    fn test_multi_layout_wkb() {
+        let wkb = crate::WKB::new_from_names("", "", "us,fr", "", None).unwrap();
+        assert_eq!(wkb.num_layouts(), 2);
+        assert!(wkb.layout_name(0).is_some());
+        assert!(wkb.layout_name(1).is_some());
+        assert_eq!(wkb.active_layout_idx(), 0);
+    }
+
+    #[test]
+    fn test_layout_switching() {
+        let mut wkb = crate::WKB::new_from_names("", "", "us,fr", "", None).unwrap();
+        assert_eq!(wkb.active_layout_idx(), 0);
+
+        wkb.set_layout(1).unwrap();
+        assert_eq!(wkb.active_layout_idx(), 1);
+
+        assert!(wkb.set_layout(5).is_err());
+    }
+
+    #[test]
+    fn test_xkb_string_roundtrip() {
+        // Test 1: single layout roundtrip
+        let wkb = crate::WKB::new_from_names("", "", "us", "", None).unwrap();
+        let s = wkb.as_xkb_string().expect("should have xkb string");
+        let wkb2 = crate::WKB::new_from_string(&s).unwrap();
+        assert_eq!(wkb2.num_layouts(), 1);
+
+        // Test 2: multi-layout roundtrip
+        let wkb = crate::WKB::new_from_names("", "", "us,fr", "", None).unwrap();
+        let s = wkb.as_xkb_string().expect("should have xkb string");
+        let wkb2 = crate::WKB::new_from_string(&s).unwrap();
+        assert_eq!(wkb2.num_layouts(), 2);
+
+        // Test 2: multi-layout roundtrip
+        let wkb = crate::WKB::new_from_names("", "", "us,fr", "", None).unwrap();
+        let s = wkb.as_xkb_string().expect("should have xkb string");
+        let wkb2 = crate::WKB::new_from_string(&s).unwrap();
+        assert_eq!(wkb2.num_layouts(), 2);
+    }
+
+    #[test]
+    fn test_keysym_flat_table() {
+        let wkb = crate::WKB::new_from_names("", "", "us", "", None).unwrap();
+
+        // 'a' key (evdev 30) at level 0 should be KEY_a
+        let sym = wkb.level_keysym(30, 0, 0);
+        assert_eq!(
+            sym,
+            crate::keysyms::a,
+            "expected KEY_a for evdev 30 level 0"
+        );
+
+        // 'a' key at level 1 (shifted) should be KEY_A
+        let sym = wkb.level_keysym(30, 0, 1);
+        assert_eq!(
+            sym,
+            crate::keysyms::A,
+            "expected KEY_A for evdev 30 level 1"
+        );
+
+        // Return key (evdev 28) should be KEY_Return
+        let sym = wkb.level_keysym(28, 0, 0);
+        assert_eq!(
+            sym,
+            crate::keysyms::Return,
+            "expected KEY_Return for evdev 28"
+        );
+
+        // Escape key (evdev 1) should be KEY_Escape
+        let sym = wkb.level_keysym(1, 0, 0);
+        assert_eq!(
+            sym,
+            crate::keysyms::Escape,
+            "expected KEY_Escape for evdev 1"
+        );
+
+        // state_keysym should use current modifier state (level 0 = unshifted)
+        let sym = wkb.state_keysym(30);
+        assert_eq!(
+            sym,
+            crate::keysyms::a,
+            "state_keysym should return KEY_a unshifted"
+        );
+    }
+
+    #[test]
+    fn test_keysym_get_name() {
+        assert_eq!(
+            crate::keysyms::keysym_get_name(crate::keysyms::a),
+            Some("a")
+        );
+        assert_eq!(
+            crate::keysyms::keysym_get_name(crate::keysyms::BackSpace),
+            Some("BackSpace")
+        );
+        assert_eq!(
+            crate::keysyms::keysym_get_name(crate::keysyms::Return),
+            Some("Return")
+        );
+        assert_eq!(crate::keysyms::keysym_get_name(0xDEADBEEF), None);
+    }
+
+    #[test]
+    fn test_vt_switch() {
+        assert_eq!(
+            crate::keysyms::vt_switch(crate::keysyms::XF86Switch_VT_1),
+            Some(1)
+        );
+        assert_eq!(
+            crate::keysyms::vt_switch(crate::keysyms::XF86Switch_VT_12),
+            Some(12)
+        );
+        assert_eq!(crate::keysyms::vt_switch(crate::keysyms::a), None);
     }
 }

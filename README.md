@@ -19,9 +19,11 @@ dependencies.
 - **Full modifier support** — Shift, Ctrl, Alt, AltGr, Caps Lock, Num Lock,
   Scroll Lock, and multi-level keys.
 - **Compose sequences** — built-in compose key and automatic compose handling.
+- **Multi-layout keymaps** — supports multiple layouts with group switching.
 - **LED state** — query Caps/Num/Scroll Lock indicator state.
 - **Repeat info** — query whether a key repeats.
-- **Lightweight** — no C FFI, no `unsafe`, minimal dependencies.
+- **Lightweight** — no C FFI, no `unsafe` beyond `Send`/`Sync` impls, minimal
+  dependencies.
 
 ## Quick Start
 
@@ -30,16 +32,50 @@ dependencies.
 wayland-keyboard = "0.1"
 ```
 
-```rust
-use wkb::{WKB, KeyDirection};
+```rust,no_run
+use wkb::WKB;
 
 // Build from an XKB keymap string (e.g. received from a Wayland compositor)
 let keymap_string = std::fs::read_to_string("/path/to/keymap").unwrap();
-let mut wkb = WKB::new_from_string(keymap_string);
+let mut wkb = WKB::new_from_string(&keymap_string).unwrap();
 
 // Process a key press (evdev code 38 = 'a' on US layout)
-let (ch, is_modifier) = wkb.key(38, KeyDirection::Down);
-assert_eq!(ch, Some('a'));
+let result = wkb.press_key(38);
+println!("keysym: {:#x}, compose: {:?}", result.keysym, result.compose);
+
+// Release the key
+let result = wkb.release_key(38);
+
+// Query current modifier state
+let mods = wkb.modifiers_state();
+println!("ctrl={} alt={} shift={}", mods.ctrl, mods.alt, mods.shift);
+```
+
+### Key Event API
+
+| Method | Mutates state | Use case |
+|--------|--------------|----------|
+| `press_key(evdev)` | yes | Key down — updates modifiers, advances compose |
+| `release_key(evdev)` | yes | Key up — updates modifiers |
+| `repeat_key(evdev)` | yes | Key repeat — advances compose |
+| `key_char(evdev)` | no | Raw character under current modifiers (no compose) |
+
+All three event methods return a [`KeyResult`](https://docs.rs/wayland-keyboard/latest/wkb/struct.KeyResult.html)
+containing the keysym, compose state, and whether the key is a modifier.
+
+### Compositor Usage
+
+```rust,no_run
+use wkb::WKB;
+
+// Build from RMLVO names (compositor side)
+let wkb = WKB::new_from_names("evdev", "pc105", "us,de", "dvorak,", None).unwrap();
+
+// Serialize to XKB string for wl_keyboard.keymap
+let xkb_string = wkb.as_xkb_string().unwrap();
+
+// Switch layouts via group index (no re-parsing needed)
+// wkb.set_layout(1).unwrap(); // switch to German
 ```
 
 ## Feature Flags
@@ -53,31 +89,18 @@ assert_eq!(ch, Some('a'));
 ## Benchmarks
 
 <!-- BENCHMARK_START -->
-*Last updated: 2026-04-24 (automated via CI)*
+*Last updated: 2026-04-25 (automated via CI)*
 
 ### Speed
 
 | Benchmark | wkb | xkbcommon | xkbcommon-dl | vs xkbcommon |
 |-----------|-----|-----------|--------------|-------------|
-| full setup | 6.35 ms | 4.25 ms | 4.28 ms | 1.5x slower |
-
-### Memory
-
-| Library | Peak RSS |
-|---------|----------|
-| wkb | 4.9 MB |
-| xkbcommon | 5.0 MB |
-| xkbcommon-dl | 5.0 MB |
-
-### Binary Size
-
-Sizes for xkbcommon and xkbcommon-dl include the dynamically-linked `libxkbcommon.so`.
-
-| Binary | Size (stripped) |
-|--------|----------------|
-| wkb | 1151 KB |
-| xkbcommon | 701 KB |
-| xkbcommon-dl | 735 KB |
+| Full setup | 14.43 ms | 4.99 ms | 4.99 ms | 2.9x slower |
+| Key update | 38 ns | 200 ns | 203 ns | **5.3x faster** |
+| Get UTF-8 | 125 ns | 388 ns | 309 ns | **3.1x faster** |
+| Get keysym | 120 ns | 244 ns | 248 ns | **2.0x faster** |
+| Compose setup | 7.72 ms | 3.53 ms | 2.33 ms | 2.2x slower |
+| Compose feed | 23 ns | 45 ns | 46 ns | **2.0x faster** |
 
 <!-- BENCHMARK_END -->
 
@@ -85,8 +108,7 @@ Sizes for xkbcommon and xkbcommon-dl include the dynamically-linked `libxkbcommo
 
 WKB targets the subset of XKB used by Wayland clients and compositors.
 Geometry descriptions and other X11-only features are intentionally out of
-scope. A future native keyboard format (TOML/RON) is planned but not yet
-available.
+scope.
 
 ## License
 

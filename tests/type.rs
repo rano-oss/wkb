@@ -106,7 +106,7 @@ fn run_type_test(case_dir: &Path, key_names: &HashMap<String, u32>) -> Result<()
     // Parse with WKB using xkbcommon's fully-expanded keymap string
     // (the original minimal keymap may lack types/compat sections that WKB needs)
     let full_keymap_str = xkb_keymap.get_as_string(xkb::KEYMAP_FORMAT_TEXT_V1);
-    let mut wkb = wkb::WKB::new_from_string(full_keymap_str);
+    let mut wkb = wkb::WKB::new_from_string(&full_keymap_str).unwrap();
 
     let input = std::fs::read_to_string(case_dir.join("input.txt"))
         .map_err(|e| format!("{name}: read input.txt: {e}"))?;
@@ -154,7 +154,7 @@ fn run_type_test(case_dir: &Path, key_names: &HashMap<String, u32>) -> Result<()
                     let xkb_char = xkb_syms.first().and_then(|&s| keysym_char(s));
 
                     // Get char from WKB
-                    let wkb_char = wkb.utf8(evdev_code);
+                    let wkb_char = wkb.key_char(evdev_code);
 
                     if xkb_char != wkb_char {
                         diffs.push(format!(
@@ -165,7 +165,7 @@ fn run_type_test(case_dir: &Path, key_names: &HashMap<String, u32>) -> Result<()
 
                     // Update both states
                     xkb_state.update_key(xkb_kc, xkb::KeyDirection::Down);
-                    wkb.update_key(evdev_code, wkb::KeyDirection::Down);
+                    wkb.update_key(evdev_code, wkb::testing::KeyDirection::Down);
 
                     // Compare modifier state
                     let xkb_mods = (
@@ -173,7 +173,8 @@ fn run_type_test(case_dir: &Path, key_names: &HashMap<String, u32>) -> Result<()
                         xkb_state.serialize_mods(xkb::STATE_MODS_LATCHED),
                         xkb_state.serialize_mods(xkb::STATE_MODS_LOCKED),
                     );
-                    let (wkb_dep, wkb_lat, wkb_lock, _) = wkb.modifiers_state();
+                    let ms = wkb.modifiers_state();
+                    let (wkb_dep, wkb_lat, wkb_lock) = (ms.depressed, ms.latched, ms.locked);
 
                     if xkb_mods != (wkb_dep, wkb_lat, wkb_lock) {
                         diffs.push(format!(
@@ -187,14 +188,15 @@ fn run_type_test(case_dir: &Path, key_names: &HashMap<String, u32>) -> Result<()
 
                 if do_up {
                     xkb_state.update_key(xkb_kc, xkb::KeyDirection::Up);
-                    wkb.update_key(evdev_code, wkb::KeyDirection::Up);
+                    wkb.update_key(evdev_code, wkb::testing::KeyDirection::Up);
 
                     let xkb_mods = (
                         xkb_state.serialize_mods(xkb::STATE_MODS_DEPRESSED),
                         xkb_state.serialize_mods(xkb::STATE_MODS_LATCHED),
                         xkb_state.serialize_mods(xkb::STATE_MODS_LOCKED),
                     );
-                    let (wkb_dep, wkb_lat, wkb_lock, _) = wkb.modifiers_state();
+                    let ms = wkb.modifiers_state();
+                    let (wkb_dep, wkb_lat, wkb_lock) = (ms.depressed, ms.latched, ms.locked);
 
                     if xkb_mods != (wkb_dep, wkb_lat, wkb_lock) {
                         diffs.push(format!(

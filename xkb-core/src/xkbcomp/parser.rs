@@ -30,9 +30,7 @@ use crate::messages::{
     XKB_WARNING_NUMERIC_KEYSYM, XKB_WARNING_UNRECOGNIZED_KEYSYM,
 };
 
-pub use super::scanner::parser_h::{
-    YYerror, END_OF_FILE, YYEMPTY, YYUNDEF,
-};
+pub use super::scanner::parser_h::{YYerror, END_OF_FILE, YYEMPTY, YYUNDEF};
 
 pub const XKB_KEY_VoidSymbol: i32 = 0xffffff_i32;
 pub const XKB_KEY_0: i32 = 0x30_i32;
@@ -2133,7 +2131,7 @@ fn execute_reduction<'a>(
                     if param.ctx.log_verbosity >= 2 {
                         if let Some(ref_name) = xkb_keysym_is_deprecated(keysym, &[]) {
                             let loc = param.scanner.token_location();
-                            log::warn!(
+                            log::debug!(
                                 "[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{:#06x}\"; please use \"{}\" instead.\n",
                                 XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
                                 &param.scanner.file_name,
@@ -2159,7 +2157,7 @@ fn execute_reduction<'a>(
                     *yyval = YYValue::Keysym(XKB_KEY_NoSymbol as u32);
                 }
                 let loc = param.scanner.token_location();
-                log::warn!(
+                log::debug!(
                     "[XKB-{:03}] {}:{}:{}: numeric keysym \"{:#06x}\" ({})\n",
                     XKB_WARNING_NUMERIC_KEYSYM as i32,
                     &param.scanner.file_name,
@@ -2240,7 +2238,6 @@ pub fn parse<'a>(
         };
 
         let ret = _xkbcommon_parse(&mut param);
-
         // Recover ctx and scanner from param before it's dropped
         ctx = param.ctx;
         scanner = param.scanner;
@@ -2277,7 +2274,7 @@ pub fn parse<'a>(
 
     if first.is_some() {
         let first_ref = first.as_ref().unwrap();
-        log::warn!(
+        log::debug!(
             "[XKB-{:03}] No map in include statement, but \"{}\" contains several; Using first defined map, \"{}\"\n",
             XKB_WARNING_MISSING_DEFAULT_SECTION as i32,
             &scanner.file_name,

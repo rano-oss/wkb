@@ -8,8 +8,6 @@
 //! Or for quick RSS measurement:
 //!   /usr/bin/time -v ./target/release/examples/bench_memory 2>&1 | grep "Maximum resident"
 
-use wkb::testing::{ListComposerTestExt, WKBTestExt};
-
 #[path = "../benches/common.rs"]
 mod common;
 
@@ -18,6 +16,7 @@ use std::ffi::CString;
 use std::hint::black_box;
 use std::os::raw::c_char;
 use std::ptr;
+use wkb::testing::composer_feed;
 
 fn get_rss_kb() -> Option<u64> {
     std::fs::read_to_string("/proc/self/status")
@@ -40,22 +39,20 @@ fn run_workload_wkb() -> u64 {
     print_rss("wkb/before_setup");
 
     for &(locale, variant) in LAYOUTS {
-        let layout = variant.map(String::from);
-        let mut wb = wkb::WKB::new_from_names(locale.to_string(), layout);
+        let mut wb = wkb::WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
 
         for case in KEY_CASES {
             for _ in 0..HOT_PATH_ITERATIONS {
                 for &(code, down) in case.keys {
-                    let dir = if down {
-                        wkb::KeyDirection::Down
-                    } else {
-                        wkb::KeyDirection::Up
-                    };
-                    wb.update_key(code, dir);
                     if down {
-                        if let Some(ch) = wb.utf8(code) {
+                        let result = wb.press_key(code);
+                        if let Some(ch) = wb.key_char(code) {
                             checksum = checksum.wrapping_add(ch as u64);
                         }
+                        black_box(result);
+                    } else {
+                        let result = wb.release_key(code);
+                        black_box(result);
                     }
                 }
             }
@@ -70,7 +67,7 @@ fn run_workload_wkb() -> u64 {
             for _ in 0..HOT_PATH_ITERATIONS {
                 for &ks in seq.keysyms {
                     if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(ks) {
-                        let st = composer.feed(wkb::testing::Token::Char(ch));
+                        let st = composer_feed(&mut composer, wkb::testing::Token::Char(ch));
                         checksum = checksum.wrapping_add(format!("{st:?}").len() as u64);
                     }
                 }

@@ -13,31 +13,14 @@ fn cfg() -> Criterion {
         .sample_size(10)
 }
 
-fn compat_setup(
-    locale: &str,
-    variant: Option<&str>,
-) -> (xkb_core::rust_types::Keymap, xkb_core::rust_types::State) {
-    use xkb_core::rust_types::{Context, RuleNames};
-    let ctx = Context::new().expect("xkb-core context");
-    let rmlvo = RuleNames {
-        rules: "evdev".to_string(),
-        model: String::new(),
-        layout: locale.to_string(),
-        variant: variant.unwrap_or("").to_string(),
-        options: String::new(),
-    };
-    let km = ctx.keymap_from_names(&rmlvo).expect("xkb-core keymap");
-    let st = km.new_state().expect("xkb-core state");
-    (km, st)
-}
-
 fn bench_full_setup(c: &mut Criterion) {
     let mut group = c.benchmark_group("full_setup");
     let locale = "us";
 
     group.bench_function("wkb", |b| {
         b.iter(|| {
-            let wkb: wkb::WKB = wkb::WKB::new_from_names(black_box(locale).to_string(), None);
+            let wkb: wkb::WKB =
+                wkb::WKB::new_from_names("", "", black_box(locale), "", None).unwrap();
             black_box(wkb);
         });
     });
