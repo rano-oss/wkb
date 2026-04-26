@@ -57,7 +57,7 @@ println!("ctrl={} alt={} shift={}", mods.ctrl, mods.alt, mods.shift);
 |--------|--------------|----------|
 | `press_key(evdev)` | yes | Key down — updates modifiers, advances compose |
 | `release_key(evdev)` | yes | Key up — updates modifiers |
-| `repeat_key(evdev)` | no | Key repeat — pure lookup, no state changes |
+| `repeat_key(evdev)` | yes | Key repeat — advances compose |
 | `key_char(evdev)` | no | Raw character under current modifiers (no compose) |
 
 All three event methods return a [`KeyResult`](https://docs.rs/wayland-keyboard/latest/wkb/struct.KeyResult.html)
