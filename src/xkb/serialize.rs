@@ -217,19 +217,28 @@ fn type_for_levels(num_levels: usize) -> &'static str {
     }
 }
 
-/// Format a keysym as its XKB name, or hex fallback.
+/// Format a keysym as its XKB name, or Unicode/hex fallback.
+///
+/// Legacy Latin-1 keysyms (0x20-0x7E, 0xA0-0xFF) are emitted as raw hex
+/// Unicode keysyms (`0x10000XX`) to match C xkbcommon's serializer output.
+/// This ensures round-tripping through xkbcommon produces identical keysym
+/// values.
 fn sym_name(sym: u32) -> String {
     if sym == 0 {
         return "NoSymbol".to_string();
     }
+    // Unicode keysyms (0x01000000+): always emit as raw hex literal.
+    // C xkbcommon's serializer does the same — e.g. 0x010000d7 for ×.
+    // Using a named keysym (e.g. "multiply") would re-parse to the legacy
+    // value (0xd7), causing a round-trip mismatch.
+    if (0x0100_0000..=0x0110_ffff).contains(&sym) {
+        return format!("{:#010x}", sym);
+    }
+    // Named keysyms (legacy Latin-1, function keys, etc.): use the name.
     if let Some(name) = keysym_get_name(sym) {
         name.to_string()
-    } else if (0x0100_0000..=0x0110_ffff).contains(&sym) {
-        // Unicode keysym: 0x1000000 + codepoint → "U<4-6 hex digits>"
-        let cp = sym - 0x0100_0000;
-        format!("U{:04X}", cp)
     } else {
-        format!("0x{:08x}", sym)
+        format!("{:#010x}", sym)
     }
 }
 
