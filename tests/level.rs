@@ -38,7 +38,7 @@ fn level_keys(locale: &str, level: usize) {
         //     continue;
         // }
         for i in 0..701 {
-            let k1 = wkb.level_key(i as u32, level);
+            let k1 = wkb.level_key_char(i as u32, 0, level);
             let mut k2 = xkb
                 .key_get_syms_by_level(Keycode::new(i as u32 + 8), 0, level as u32)
                 .first()

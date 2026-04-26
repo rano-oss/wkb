@@ -4,10 +4,7 @@
 //! and num lock modifiers the same way as xkbcommon for all keys.
 
 use test_case::test_matrix;
-use wkb::{
-    testing::{WKBTestExt, CAPS_LOCK, NUM_LOCK},
-    KeyDirection,
-};
+use wkb::testing::{KeyDirection, WKBTestExt, CAPS_LOCK, NUM_LOCK};
 use xkbcommon::xkb::{self, Keycode};
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
@@ -37,7 +34,6 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn caps_num_lock_keys(locale: &str) {
-
     for layout in wkb::testing::get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
@@ -56,7 +52,7 @@ fn caps_num_lock_keys(locale: &str) {
 
         // Test all keys with both modifiers active
         for keycode in 0..701u32 {
-            let wkb_char = wkb.utf8(keycode);
+            let wkb_char = wkb.key_char(keycode);
             let xkb_str = xkb.key_get_utf8(Keycode::new(keycode + 8));
             let xkb_char = xkb_str.chars().last();
 
@@ -91,7 +87,6 @@ fn caps_num_lock_keys(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn caps_then_num_lock_sequence(locale: &str) {
-
     for layout in wkb::testing::get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
@@ -105,7 +100,7 @@ fn caps_then_num_lock_sequence(locale: &str) {
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
 
-        let wkb_char1 = wkb.utf8(test_key);
+        let wkb_char1 = wkb.key_char(test_key);
         let xkb_char1 = xkb.key_get_utf8(Keycode::new(test_key + 8)).chars().last();
         assert!(
             wkb_char1 == xkb_char1 || xkb_char1.is_none(),
@@ -120,7 +115,7 @@ fn caps_then_num_lock_sequence(locale: &str) {
         xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Down);
         xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Up);
 
-        let wkb_char2 = wkb.utf8(test_key);
+        let wkb_char2 = wkb.key_char(test_key);
         let xkb_char2 = xkb.key_get_utf8(Keycode::new(test_key + 8)).chars().last();
         assert!(
             wkb_char2 == xkb_char2 || xkb_char2.is_none(),
@@ -135,7 +130,7 @@ fn caps_then_num_lock_sequence(locale: &str) {
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
 
-        let wkb_char3 = wkb.utf8(test_key);
+        let wkb_char3 = wkb.key_char(test_key);
         let xkb_char3 = xkb.key_get_utf8(Keycode::new(test_key + 8)).chars().last();
         assert!(
             wkb_char3 == xkb_char3 || xkb_char3.is_none(),
@@ -157,7 +152,6 @@ fn caps_then_num_lock_sequence(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn keypad_with_locks(locale: &str) {
-
     for layout in wkb::testing::get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
@@ -172,7 +166,7 @@ fn keypad_with_locks(locale: &str) {
         xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Up);
 
         for &keycode in &keypad_keys {
-            let wkb_char = wkb.utf8(keycode);
+            let wkb_char = wkb.key_char(keycode);
             let xkb_char = xkb.key_get_utf8(Keycode::new(keycode + 8)).chars().last();
 
             if wkb_char != xkb_char && xkb_char.is_some() {
@@ -195,7 +189,7 @@ fn keypad_with_locks(locale: &str) {
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
 
         for &keycode in &keypad_keys {
-            let wkb_char = wkb.utf8(keycode);
+            let wkb_char = wkb.key_char(keycode);
             let xkb_char = xkb.key_get_utf8(Keycode::new(keycode + 8)).chars().last();
 
             if wkb_char != xkb_char && xkb_char.is_some() {

@@ -1,8 +1,5 @@
 use test_case::test_matrix;
-use wkb::{
-    testing::{WKBTestExt, CAPS_LOCK},
-    KeyDirection,
-};
+use wkb::testing::{KeyDirection, WKBTestExt, CAPS_LOCK};
 use xkbcommon::xkb::{self as xkbcmn, Keycode};
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkbcmn::State {
@@ -52,7 +49,7 @@ fn shift_lock_behavior(locale: &str) {
         xkb.update_key(Keycode::new(shift_code + 8), xkbcmn::KeyDirection::Down);
 
         for &keycode in &test_keys {
-            let wkb_char = wkb.utf8(keycode);
+            let wkb_char = wkb.key_char(keycode);
             let xkb_char = xkb.key_get_utf8(Keycode::new(keycode + 8)).chars().last();
 
             assert!(
@@ -72,7 +69,7 @@ fn shift_lock_behavior(locale: &str) {
 
         // Test keys without shift
         for &keycode in &test_keys {
-            let wkb_char = wkb.utf8(keycode);
+            let wkb_char = wkb.key_char(keycode);
             let xkb_char = xkb.key_get_utf8(Keycode::new(keycode + 8)).chars().last();
 
             assert!(
@@ -93,12 +90,12 @@ fn shift_lock_behavior(locale: &str) {
 #[test_matrix(["jp"])]
 fn eisu_toggle_japanese(locale: &str) {
     for layout in wkb::testing::get_all_layouts_for_locale(locale) {
-        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
+        let wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         // Test all keys to ensure behavior matches
         for keycode in 0..701u32 {
-            let wkb_char = wkb.utf8(keycode);
+            let wkb_char = wkb.key_char(keycode);
             let xkb_char = xkb.key_get_utf8(Keycode::new(keycode + 8)).chars().last();
 
             if wkb_char != xkb_char && xkb_char.is_some() {
@@ -156,7 +153,7 @@ fn caps_plus_shift_combination(locale: &str) {
         let letter_keys = vec![38, 39, 40, 41, 42, 43, 44]; // a-g
 
         for &keycode in &letter_keys {
-            let wkb_char = wkb.utf8(keycode);
+            let wkb_char = wkb.key_char(keycode);
             let xkb_char = xkb.key_get_utf8(Keycode::new(keycode + 8)).chars().last();
 
             if wkb_char != xkb_char && xkb_char.is_some() {
@@ -210,7 +207,7 @@ fn altgr_combinations(locale: &str) {
 
         // Test various keys with AltGr
         for keycode in 0..701u32 {
-            let wkb_char = wkb.utf8(keycode);
+            let wkb_char = wkb.key_char(keycode);
             let xkb_char = xkb.key_get_utf8(Keycode::new(keycode + 8)).chars().last();
 
             assert!(
@@ -239,7 +236,7 @@ fn altgr_combinations(locale: &str) {
             let test_keys = vec![2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // number row
 
             for &keycode in &test_keys {
-                let wkb_char = wkb.utf8(keycode);
+                let wkb_char = wkb.key_char(keycode);
                 let xkb_char = xkb.key_get_utf8(Keycode::new(keycode + 8)).chars().last();
 
                 assert!(
@@ -287,7 +284,7 @@ fn level5_modifier(locale: &str) {
         xkb.update_key(Keycode::new(level5_code + 8), xkbcmn::KeyDirection::Down);
 
         for keycode in 0..701u32 {
-            let wkb_char = wkb.utf8(keycode);
+            let wkb_char = wkb.key_char(keycode);
             let xkb_char = xkb.key_get_utf8(Keycode::new(keycode + 8)).chars().last();
 
             assert!(
@@ -330,7 +327,7 @@ fn rapid_modifier_changes(locale: &str) {
         }
 
         // Check state after rapid changes
-        let wkb_char = wkb.utf8(test_key);
+        let wkb_char = wkb.key_char(test_key);
         let xkb_char = xkb.key_get_utf8(Keycode::new(test_key + 8)).chars().last();
 
         assert!(
@@ -487,7 +484,7 @@ fn test_mm_zawgyi_latch_sequence() {
 
     // Check key 2 with both active
     eprintln!("\n5. Check key 2 value:");
-    let key_2_wkb = wkb.utf8(2);
+    let key_2_wkb = wkb.key_char(2);
     let key_2_xkb = xkb_state.key_get_utf8(Keycode::new(10)).chars().last();
     eprintln!(
         "   WKB: {:?} (level2={} level3={})",

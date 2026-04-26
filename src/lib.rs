@@ -7,14 +7,14 @@
 //! ## Quick Start
 //!
 //! ```rust,no_run
-//! use wkb::{WKB, KeyDirection};
+//! use wkb::WKB;
 //!
 //! // Build from an XKB keymap string (e.g. received from a Wayland compositor)
 //! let keymap_string = std::fs::read_to_string("/path/to/keymap").unwrap();
-//! let mut wkb = WKB::new_from_string(keymap_string);
+//! let mut wkb = WKB::new_from_string(&keymap_string).unwrap();
 //!
 //! // Process a key press (evdev code 38 = 'a' on US layout)
-//! let (ch, is_modifier) = wkb.key(38, KeyDirection::Down);
+//! let result = wkb.press_key(38);
 //! ```
 //!
 //! ## Feature Flags
@@ -23,173 +23,110 @@
 //! - **`compose`** (default) — Compose-key / dead-key sequence support.
 //! - **`testing`** — Exposes internal helpers for integration tests. Not part of the public API.
 
-#[cfg(feature = "xkb")]
-use std::cell::OnceCell;
+use std::fmt;
 
-use composer::{ComposeState, Composer, Token};
+pub use composer::ComposeState;
+use composer::{Composer, Token};
 mod composer;
-pub use modifiers::KeyDirection;
-use modifiers::ModType;
-use modifiers::{level_index, Modifiers, *};
 mod modifiers;
+use modifiers::{
+    level_index, KeyDirection, ModKind, ModType, Modifier, Modifiers, CAPS_LOCK, MODIFIER_MAPPING,
+    MOD_ALT, MOD_CAPS_LOCK, MOD_CTRL, MOD_LOGO, MOD_NUM_LOCK, MOD_SHIFT, NUM_LOCK, SCROLL_LOCK,
+};
+pub use modifiers::{ModifiersState, LED_CAPS_LOCK, LED_NUM_LOCK, LED_SCROLL_LOCK};
+mod bitset;
+pub(crate) use bitset::KeyBitSet;
+mod flat_keymap;
+pub(crate) use flat_keymap::{FlatKeymap, FlatKeysymMap};
+pub mod keysyms;
+pub use keysyms::Keysym;
 /// Test-only utilities. Not part of the public API.
 #[cfg(feature = "testing")]
 pub mod testing;
 #[cfg(feature = "xkb")]
 mod xkb;
+#[cfg(feature = "xkb")]
+pub use xkb::XkbError;
 
-/// Maximum number of shift levels.
-const MAX_LEVELS: usize = 8;
-
-/// Maximum evdev key code we support (768 covers all standard keycodes).
-const BITSET_WORDS: usize = 12; // 12 * 64 = 768 bits
-
-/// Compact bitset for tracking key states. Covers evdev codes 0..767.
-#[derive(Debug, Clone)]
-pub(crate) struct KeyBitSet {
-    bits: [u64; BITSET_WORDS],
+/// Errors from WKB operations (not related to XKB parsing/compilation).
+#[derive(Debug)]
+pub enum WkbError {
+    /// Layout index out of range.
+    InvalidLayout(usize),
 }
 
-impl KeyBitSet {
-    #[inline]
-    pub(crate) const fn new() -> Self {
-        Self {
-            bits: [0; BITSET_WORDS],
-        }
-    }
-
-    #[inline(always)]
-    pub(crate) fn contains(&self, key: u32) -> bool {
-        let k = key as usize;
-        if k < BITSET_WORDS * 64 {
-            self.bits[k >> 6] & (1u64 << (k & 63)) != 0
-        } else {
-            false
-        }
-    }
-
-    #[inline(always)]
-    pub(crate) fn insert(&mut self, key: u32) {
-        let k = key as usize;
-        if k < BITSET_WORDS * 64 {
-            self.bits[k >> 6] |= 1u64 << (k & 63);
-        }
-    }
-
-    #[inline(always)]
-    pub(crate) fn remove(&mut self, key: u32) {
-        let k = key as usize;
-        if k < BITSET_WORDS * 64 {
-            self.bits[k >> 6] &= !(1u64 << (k & 63));
+impl fmt::Display for WkbError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            WkbError::InvalidLayout(idx) => write!(f, "Invalid layout index: {}", idx),
         }
     }
 }
 
-/// Flat keymap: `MAX_LEVELS` planes of `num_keys` slots.
-/// Index: `level * num_keys + evdev_code`.
-#[derive(Debug, Clone)]
-pub(crate) struct FlatKeymap {
-    pub(crate) data: Vec<Option<char>>,
-    pub(crate) num_keys: usize,
-}
-
-impl FlatKeymap {
-    pub(crate) fn new(num_keys: usize) -> Self {
-        Self {
-            data: vec![None; MAX_LEVELS * num_keys],
-            num_keys,
-        }
-    }
-
-    #[inline]
-    pub(crate) fn num_levels(&self) -> usize {
-        MAX_LEVELS
-    }
-
-    #[inline(always)]
-    pub(crate) fn get(&self, level: usize, evdev_code: u32) -> Option<char> {
-        let k = evdev_code as usize;
-        if k < self.num_keys {
-            let idx = level * self.num_keys + k;
-            self.data[idx]
-        } else {
-            None
-        }
-    }
-
-    #[inline]
-    pub(crate) fn set(&mut self, level: usize, evdev_code: u32, ch: char) {
-        let k = evdev_code as usize;
-        if k < self.num_keys {
-            let idx = level * self.num_keys + k;
-            self.data[idx] = Some(ch);
-        }
-    }
-}
-
-const MODIFIER_MAPPING: [(u32, u32); 9] = [
-    (LEFT_SHIFT, 1),
-    (RIGHT_SHIFT, 1),
-    (CAPS_LOCK, 2),
-    (LEFT_CTRL, 4),
-    (RIGHT_CTRL, 4),
-    (ALT, 8),
-    (NUM_LOCK, 16),
-    (LOGO, 64),
-    (ALTGR, 128),
-];
+impl std::error::Error for WkbError {}
 
 /// Core keyboard state machine. Tracks modifier state, key presses, and compose sequences.
-///
-/// `C` is the compose backend — typically [`ListComposer`] when using the `xkb` feature.
 #[derive(Debug, Clone)]
 pub struct WKB {
-    pub(crate) pressed_keys: KeyBitSet,
     pub(crate) repeat_keys: KeyBitSet,
     pub(crate) composer: Composer,
     pub(crate) modifiers: Modifiers,
     pub(crate) state_keymap: FlatKeymap,
     pub(crate) num_lock_keys: FlatKeymap,
     pub(crate) caps_lock_keymap: FlatKeymap,
+    /// Index of the currently active layout (0-based).
+    pub(crate) current_layout_idx: usize,
+    /// Human-readable names for each layout in the keymap.
+    pub(crate) layout_names: Vec<String>,
+    /// Flat keysym lookup table, same indexing as state_keymap.
+    pub(crate) keysym_map: FlatKeysymMap,
     #[cfg(feature = "xkb")]
     pub(crate) level_exceptions_keymap: FlatKeymap,
-    #[cfg(feature = "xkb")]
-    pub(crate) layouts: OnceCell<Vec<String>>,
-    #[cfg(feature = "xkb")]
-    pub(crate) locale: Option<String>,
-    #[cfg(feature = "xkb")]
-    pub(crate) layout: String,
-    #[cfg(feature = "xkb")]
-    pub(crate) xkb_keymap: Option<xkb_core::rust_types::Keymap>,
 }
+
+// WKB is Send + Sync: all fields are owned, no Rc/RefCell.
+// The Rc<xkb_keymap> from xkb-core is only used during construction and not stored.
+unsafe impl Send for WKB {}
+unsafe impl Sync for WKB {}
 
 #[cfg(feature = "xkb")]
 impl WKB {
-    /// Create WKB instance from RMLVO names (Rules, Model, Layout, Variant, Options)
-    pub fn new_from_names(locale: String, layout: Option<String>) -> Self {
-        xkb::new_from_names(locale, layout)
+    /// Create WKB instance from RMLVO names, matching xkbcommon's `xkb_keymap_new_from_names`.
+    ///
+    /// `layout` and `variant` are comma-separated lists (e.g. `"us,fr"`, `"dvorak,azerty"`).
+    pub fn new_from_names(
+        rules: &str,
+        model: &str,
+        layout: &str,
+        variant: &str,
+        options: Option<&str>,
+    ) -> Result<Self, XkbError> {
+        xkb::new_from_names(rules, model, layout, variant, options)
     }
 
-    /// Create WKB instance from XKB keymap string
-    pub fn new_from_string(string: String) -> Self {
-        xkb::new_from_string(string)
+    /// Create WKB instance from an XKB keymap string (v1 text format).
+    pub fn new_from_string(keymap: &str) -> Result<Self, XkbError> {
+        xkb::new_from_string(keymap)
     }
 }
 
 impl WKB {
-    /// Reset all transient input state: compose sequence and pressed keys.
+    /// Reset all transient input state: compose sequence.
     /// Call on wl_keyboard.leave or when focus changes.
     pub fn reset_state(&mut self) {
         self.composer.reset();
-        self.pressed_keys = KeyBitSet::new();
     }
 
-    /// Return the current modifier state as `(depressed, latched, locked, group)` bitmasks.
-    pub fn modifiers_state(&self) -> (u32, u32, u32, u32) {
+    /// Return the current modifier state.
+    ///
+    /// The returned [`ModifiersState`] contains both high-level boolean fields
+    /// (`ctrl`, `alt`, `shift`, etc.) and raw bitmasks (`depressed`, `latched`,
+    /// `locked`, `layout`) suitable for `wl_keyboard.modifiers`.
+    pub fn modifiers_state(&self) -> ModifiersState {
         let mut depressed = 0;
         let mut latched = 0;
         let mut locked = 0;
-        let group = 0;
+        let layout = self.current_layout_idx as u32;
         for (code, bit) in MODIFIER_MAPPING {
             if let Some(Modifier::Single(mk)) = self.modifiers.get(code) {
                 match mk {
@@ -220,29 +157,49 @@ impl WKB {
                 }
             }
         }
-        (depressed, latched, locked, group)
+        let effective = depressed | latched | locked;
+        ModifiersState {
+            ctrl: (effective & MOD_CTRL) != 0,
+            alt: (effective & MOD_ALT) != 0,
+            shift: (effective & MOD_SHIFT) != 0,
+            caps_lock: (effective & MOD_CAPS_LOCK) != 0,
+            logo: (effective & MOD_LOGO) != 0,
+            num_lock: (effective & MOD_NUM_LOCK) != 0,
+            depressed,
+            latched,
+            locked,
+            layout,
+        }
     }
 
-    /// Return the LED indicator state as a bitmask (bit 0 = NumLock, bit 1 = CapsLock, bit 2 = ScrollLock).
+    /// Return the LED indicator state as a bitmask.
+    ///
+    /// Use [`LED_NUM_LOCK`], [`LED_CAPS_LOCK`], [`LED_SCROLL_LOCK`] to test bits.
     pub fn leds_state(&self) -> u32 {
         let mut leds = 0;
         if self.modifiers.locked_with_type(NUM_LOCK, ModType::Num) {
-            leds |= 1;
+            leds |= LED_NUM_LOCK;
         }
         if self.modifiers.locked_with_type(CAPS_LOCK, ModType::Caps) {
-            leds |= 2;
+            leds |= LED_CAPS_LOCK;
         }
         if self
             .modifiers
             .locked_with_type(SCROLL_LOCK, ModType::Scroll)
         {
-            leds |= 4;
+            leds |= LED_SCROLL_LOCK;
         }
         leds
     }
 
-    /// Apply modifier state received from `wl_keyboard.modifiers`. Updates depressed, latched, locked masks and active layout group.
-    pub fn update_modifiers(&mut self, depressed: u32, latched: u32, locked: u32, _group: u32) {
+    /// Apply modifier state received from `wl_keyboard.modifiers`.
+    ///
+    /// The `group` parameter selects the active layout index.
+    pub fn update_modifiers(&mut self, depressed: u32, latched: u32, locked: u32, group: u32) {
+        // Switch layout based on group index from compositor.
+        if (group as usize) < self.num_layouts() {
+            let _ = self.set_layout(group as usize);
+        }
         for (code, bit) in MODIFIER_MAPPING {
             let is_depressed = (depressed & bit) != 0;
             let is_locked = (locked & bit) != 0;
@@ -271,36 +228,85 @@ impl WKB {
         }
     }
 
-    /// Look up the character at a specific shift level for the given evdev keycode.
-    #[cfg(feature = "xkb")]
-    #[inline]
-    pub fn level_key(&self, evdev_code: u32, level_index: usize) -> Option<char> {
-        self.level_exceptions_keymap
-            .get(level_index, evdev_code)
-            .or_else(|| self.state_keymap.get(level_index, evdev_code))
-    }
-
-    /// Look up the character at a specific shift level for the given evdev keycode.
-    #[cfg(not(feature = "xkb"))]
-    #[inline]
-    pub fn level_key(&self, evdev_code: u32, level_index: usize) -> Option<char> {
-        self.state_keymap.get(level_index, evdev_code)
-    }
-
-    /// Return the number of shift levels supported by this keymap.
-    #[inline]
-    pub fn num_levels(&self) -> usize {
-        self.state_keymap.num_levels()
-    }
-
     /// Return whether the given evdev keycode is a repeating key.
     pub fn key_repeats(&self, evdev_code: u32) -> bool {
         self.repeat_keys.contains(evdev_code)
     }
 
+    /// Return the number of layouts in this keymap.
+    pub fn num_layouts(&self) -> usize {
+        self.layout_names.len()
+    }
+
+    /// Return the index of the currently active layout.
+    pub fn active_layout_idx(&self) -> usize {
+        self.current_layout_idx
+    }
+
+    /// Switch to a different layout by index.
+    pub fn set_layout(&mut self, layout_idx: usize) -> Result<(), WkbError> {
+        if layout_idx >= self.layout_names.len() {
+            return Err(WkbError::InvalidLayout(layout_idx));
+        }
+        self.current_layout_idx = layout_idx;
+        Ok(())
+    }
+
+    /// Return the name of the layout at the given index.
+    pub fn layout_name(&self, layout_idx: usize) -> Option<&str> {
+        self.layout_names.get(layout_idx).map(|s| s.as_str())
+    }
+
+    /// Serialize the underlying XKB keymap to v1 text format.
+    ///
+    /// Generates the string on demand from the flat keysym tables.
+    /// Returns the generated XKB v1 keymap string.
+    #[cfg(feature = "xkb")]
+    pub fn as_xkb_string(&self) -> Option<String> {
+        Some(self.generate_xkb_string())
+    }
+
+    /// Get the keysym for an evdev keycode under the current modifier state.
+    /// Returns `0` (NoSymbol) if no keysym is mapped.
+    pub fn state_keysym(&self, evdev_code: u32) -> u32 {
+        let (none_active, level2, level3, level5) = self.modifiers.active_none_and_levels();
+        if none_active {
+            return 0;
+        }
+        let nk = self.keysym_map.num_keys;
+        let level5 = level5 && self.keysym_map.data.len() > 4 * nk;
+        let level3 = level3 && self.keysym_map.data.len() > 2 * nk;
+        let level2 = level2 && self.keysym_map.data.len() > 1 * nk;
+        let level = level_index(level5, level3, level2);
+        self.keysym_map
+            .get(self.current_layout_idx, level, evdev_code)
+    }
+
+    /// Get the keysym at a specific layout and level for an evdev keycode.
+    /// Bypasses current modifier state.
+    /// Returns `0` (KEY_NoSymbol) if no keysym is mapped.
+    pub fn level_keysym(&self, evdev_code: u32, layout: usize, level: usize) -> u32 {
+        self.keysym_map.get(layout, level, evdev_code)
+    }
+
+    /// Get the character at a specific layout and level for an evdev keycode.
+    /// Bypasses current modifier state.
+    /// Does not consider caps lock or num lock overrides.
+    pub fn level_key_char(&self, evdev_code: u32, layout: usize, level: usize) -> Option<char> {
+        #[cfg(feature = "xkb")]
+        if let Some(exception_char) = self.level_exceptions_keymap.get(layout, level, evdev_code) {
+            return Some(exception_char);
+        }
+        self.state_keymap.get(layout, level, evdev_code)
+    }
+
     /// Resolve the character for the given evdev keycode under the current modifier state.
+    /// This is a pure lookup with no side effects — it does not update modifier state
+    /// or advance compose sequences. Use this for:
+    /// - `text_with_all_modifiers` (winit): the raw character including all modifier effects
+    /// - Re-resolving characters when modifiers change during key repeat
     #[inline]
-    fn utf8(&mut self, evdev_code: u32) -> Option<char> {
+    pub fn key_char(&self, evdev_code: u32) -> Option<char> {
         let (none_active, level2, level3, level5) = self.modifiers.active_none_and_levels();
         if none_active {
             return None;
@@ -310,98 +316,116 @@ impl WKB {
         let level3 = level3 && self.state_keymap.data.len() > 2 * nk;
         let level2 = level2 && self.state_keymap.data.len() > 1 * nk;
         let base_level = level_index(level5, level3, level2);
+        let layout_index = self.current_layout_idx;
 
         if self.modifiers.locked(NUM_LOCK) {
-            if let Some(key) = self.num_lock_keys.get(base_level, evdev_code) {
+            if let Some(key) = self.num_lock_keys.get(layout_index, base_level, evdev_code) {
                 return Some(key);
             }
         }
 
         if self.modifiers.locked(CAPS_LOCK) {
-            if let Some(c) = self.caps_lock_keymap.get(base_level, evdev_code) {
+            if let Some(c) = self
+                .caps_lock_keymap
+                .get(layout_index, base_level, evdev_code)
+            {
                 return Some(c);
             }
         }
 
-        self.state_keymap.get(base_level, evdev_code)
+        self.state_keymap.get(layout_index, base_level, evdev_code)
     }
 
-    /// Update internal modifier/key-press state for a key event. Returns `true` if the key is a modifier.
+    /// Update internal modifier state for a key event. Returns `true` if the key is a modifier.
     pub(crate) fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let is_modifier = self.modifiers.set_state(evdev_code, key_direction);
-        if !is_modifier {
-            if key_direction == KeyDirection::Down {
-                self.modifiers.unlatch();
-            }
-            match key_direction {
-                KeyDirection::Up => {
-                    self.pressed_keys.remove(evdev_code);
-                }
-                KeyDirection::Down => {
-                    self.pressed_keys.insert(evdev_code);
-                }
-            };
+        if !is_modifier && key_direction == KeyDirection::Down {
+            self.modifiers.unlatch();
         }
         is_modifier
     }
 
-    /// Process a key event: update state and return `(character, is_modifier)`.
-    pub fn key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> (Option<char>, bool) {
-        let is_modifier = self.update_key(evdev_code, key_direction);
-        let utf8 = if key_direction == KeyDirection::Down && !is_modifier {
-            self.utf8(evdev_code)
-        } else {
-            None
-        };
-        (utf8, is_modifier)
-    }
-
-    /// Process a key event with compose support. Returns `(compose_state, is_modifier)`.
-    #[cfg(feature = "compose")]
-    pub fn key_compose(
-        &mut self,
-        evdev_code: u32,
-        key_direction: KeyDirection,
-    ) -> (Option<ComposeState>, bool) {
-        let is_modifier = self.update_key(evdev_code, key_direction);
-        let compose_state = if key_direction == KeyDirection::Down
-            && is_modifier
-            && self.modifiers.active_mod_type(ModType::Compose)
-        {
+    /// Process a key press. Updates modifier state and advances compose sequences.
+    ///
+    /// Returns a [`KeyResult`] with the keysym, compose state, and whether the key is a modifier.
+    /// Extract the final character from the [`ComposeState`] variant:
+    /// - `Idle(char)` — no compose active, this is the character
+    /// - `Finished(char)` — compose sequence completed, this is the composed character
+    /// - `Composing(_)` — mid-sequence, no final character yet
+    /// - `Cancelled` — broken compose sequence
+    pub fn press_key(&mut self, evdev_code: u32) -> KeyResult {
+        let is_modifier = self.update_key(evdev_code, KeyDirection::Down);
+        let keysym = self.state_keysym(evdev_code);
+        #[cfg(feature = "compose")]
+        let compose = if is_modifier && self.modifiers.active_mod_type(ModType::Compose) {
             Some(self.composer.feed(Token::Compose))
-        } else if key_direction == KeyDirection::Down && !is_modifier {
-            self.utf8(evdev_code)
+        } else if !is_modifier {
+            self.key_char(evdev_code)
                 .map(|c| self.composer.feed(Token::Char(c)))
         } else {
             None
         };
-        (compose_state, is_modifier)
+        #[cfg(not(feature = "compose"))]
+        let compose = if !is_modifier {
+            self.key_char(evdev_code).map(ComposeState::Idle)
+        } else {
+            None
+        };
+
+        KeyResult {
+            keysym,
+            compose,
+            is_modifier,
+        }
     }
 
-    /// Return the list of layout names available in this keymap.
-    #[cfg(feature = "xkb")]
-    pub fn layouts(&self) -> Vec<String> {
-        self.layouts
-            .get_or_init(|| {
-                self.locale
-                    .as_deref()
-                    .map(xkb::get_all_layouts_for_locale)
-                    .unwrap_or_else(|| vec![self.layout.clone()])
-            })
-            .clone()
-    }
-
-    /// Return the name of the currently active layout.
-    #[cfg(feature = "xkb")]
-    pub fn current_layout(&self) -> String {
-        self.layout.clone()
-    }
-
-    /// Serialize the underlying XKB keymap to v1 text format.
+    /// Process a key release. Updates modifier state.
     ///
-    /// Returns `None` if the instance was not built from an XKB keymap.
-    #[cfg(feature = "xkb")]
-    pub fn as_xkb_string(&self) -> Option<String> {
-        self.xkb_keymap.as_ref().map(|km| km.as_xkb_string())
+    /// Compose is not advanced on release. The returned `keysym` reflects
+    /// the keysym under the (now updated) modifier state.
+    pub fn release_key(&mut self, evdev_code: u32) -> KeyResult {
+        let is_modifier = self.update_key(evdev_code, KeyDirection::Up);
+        let keysym = self.state_keysym(evdev_code);
+        KeyResult {
+            keysym,
+            compose: None,
+            is_modifier,
+        }
     }
+
+    /// Process a key repeat. Does NOT update modifier state or advance compose.
+    ///
+    /// Returns the keysym and raw character under the current modifier state.
+    /// The compose field will be `Some(Idle(char))` if a character is available,
+    /// or `None` for modifier keys or keys with no character mapping.
+    pub fn repeat_key(&self, evdev_code: u32) -> KeyResult {
+        let keysym = self.state_keysym(evdev_code);
+        let ch = self.key_char(evdev_code);
+        let compose = ch.map(ComposeState::Idle);
+        KeyResult {
+            keysym,
+            compose,
+            is_modifier: false,
+        }
+    }
+}
+
+/// Result of a key event processed by [`WKB::press_key`], [`WKB::release_key`], or [`WKB::repeat_key`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KeyResult {
+    /// The keysym for this key under the current modifier state.
+    /// `0` (NoSymbol) if no keysym is mapped or the `xkb` feature is disabled.
+    pub keysym: u32,
+
+    /// The compose state after processing this key.
+    ///
+    /// - `None` — no character produced (modifier key, release event, or unmapped key)
+    /// - `Some(Idle(char))` — no compose active, `char` is the direct character
+    /// - `Some(Composing(seq))` — mid-compose sequence, `seq` is the sequence so far
+    /// - `Some(Finished(char))` — compose completed, `char` is the composed character
+    /// - `Some(Cancelled)` — compose sequence was broken
+    pub compose: Option<ComposeState>,
+
+    /// Whether the key is a modifier (Shift, Ctrl, Alt, etc.).
+    pub is_modifier: bool,
 }

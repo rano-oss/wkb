@@ -1,11 +1,39 @@
-//! XKB module — re-exports from xkb-core and WKB integration glue.
+//! XKB module — keymap construction from RMLVO names and XKB strings,
+//! plus XKB v1 text serialization.
 
-// WKB integration functions
+mod serialize;
+
+use crate::bitset::KeyBitSet;
 use crate::composer::Token;
+use crate::flat_keymap::{FlatKeymap, FlatKeysymMap, MAX_LEVELS};
 use crate::modifiers::*;
 use crate::Composer;
-use crate::FlatKeymap;
-use crate::{KeyBitSet, WkbError, WKB};
+use crate::WKB;
+
+// ── Error type ──
+
+/// Errors returned by XKB keymap construction.
+#[derive(Debug)]
+pub enum XkbError {
+    /// Failed to create an XKB context.
+    ContextCreation,
+    /// Failed to compile keymap from RMLVO names.
+    KeymapCompilation,
+    /// Failed to parse keymap from string.
+    KeymapParsing,
+}
+
+impl std::fmt::Display for XkbError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            XkbError::ContextCreation => write!(f, "Failed to create XKB context"),
+            XkbError::KeymapCompilation => write!(f, "Failed to compile keymap"),
+            XkbError::KeymapParsing => write!(f, "Failed to parse keymap string"),
+        }
+    }
+}
+
+impl std::error::Error for XkbError {}
 
 /// Get all available layouts/variants for a given locale
 pub(crate) fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
@@ -263,8 +291,7 @@ fn build_wkb_from_keymap(
                 for k in 0..fk.num_keys as u32 {
                     if let Some(v) = fk.get(layout_idx, lvl, k) {
                         if state_keymap.get(layout_idx, lvl, k) == Some(v) {
-                            let idx =
-                                (layout_idx * crate::MAX_LEVELS + lvl) * fk.num_keys + k as usize;
+                            let idx = (layout_idx * MAX_LEVELS + lvl) * fk.num_keys + k as usize;
                             fk.data[idx] = None;
                         }
                     }
@@ -282,8 +309,7 @@ fn build_wkb_from_keymap(
                 for k in 0..fk.num_keys as u32 {
                     if let Some(v) = fk.get(layout_idx, lvl, k) {
                         if state_keymap.get(layout_idx, lvl, k) == Some(v) {
-                            let idx =
-                                (layout_idx * crate::MAX_LEVELS + lvl) * fk.num_keys + k as usize;
+                            let idx = (layout_idx * MAX_LEVELS + lvl) * fk.num_keys + k as usize;
                             fk.data[idx] = None;
                         }
                     }
@@ -310,11 +336,7 @@ fn build_wkb_from_keymap(
         .collect();
 
     // Cache XKB string for Wayland client sharing
-    let xkb_string = if store_keymap {
-        Some(keymap.as_xkb_string())
-    } else {
-        None
-    };
+    let _ = store_keymap; // no longer cached; generated on demand
 
     #[cfg(feature = "compose")]
     let composer = locale
@@ -329,7 +351,7 @@ fn build_wkb_from_keymap(
     let composer = Composer::new();
 
     // Build flat keysym table from keymap
-    let mut keysym_map = crate::FlatKeysymMap::new(num_keys, num_layouts);
+    let mut keysym_map = FlatKeysymMap::new(num_keys, num_layouts);
     for layout_idx in 0..num_layouts {
         for lvl in 0..XKB_MAX_LEVELS {
             for k in 0..num_keys as u32 {
@@ -347,7 +369,6 @@ fn build_wkb_from_keymap(
     WKB {
         current_layout_idx: 0,
         layout_names,
-        pressed_keys: KeyBitSet::new(),
         repeat_keys,
         composer,
         modifiers,
@@ -355,7 +376,6 @@ fn build_wkb_from_keymap(
         num_lock_keys,
         caps_lock_keymap,
         level_exceptions_keymap,
-        xkb_string,
         keysym_map,
     }
 }
@@ -367,10 +387,10 @@ pub fn new_from_names(
     layout: &str,
     variant: &str,
     options: Option<&str>,
-) -> Result<WKB, WkbError> {
+) -> Result<WKB, XkbError> {
     use xkb_core::rust_types::{Context, RuleNames};
 
-    let ctx = Context::new().ok_or(WkbError::ContextCreation)?;
+    let ctx = Context::new().ok_or(XkbError::ContextCreation)?;
     let rule_names = RuleNames {
         rules: rules.to_string(),
         model: model.to_string(),
@@ -381,7 +401,7 @@ pub fn new_from_names(
 
     let keymap = ctx
         .keymap_from_names(&rule_names)
-        .ok_or(WkbError::KeymapCompilation)?;
+        .ok_or(XkbError::KeymapCompilation)?;
 
     // Use first layout name as locale for compose file resolution
     let locale = layout.split(',').next().filter(|s| !s.is_empty());
@@ -390,14 +410,14 @@ pub fn new_from_names(
 }
 
 /// Create a new WKB instance from a keymap string.
-pub fn new_from_string(string: &str) -> Result<WKB, WkbError> {
+pub fn new_from_string(string: &str) -> Result<WKB, XkbError> {
     use xkb_core::rust_types::Context;
 
-    let ctx = Context::new().ok_or(WkbError::ContextCreation)?;
+    let ctx = Context::new().ok_or(XkbError::ContextCreation)?;
 
     let keymap = ctx
         .keymap_from_string(string)
-        .ok_or(WkbError::KeymapParsing)?;
+        .ok_or(XkbError::KeymapParsing)?;
 
     Ok(build_wkb_from_keymap(&keymap, None, true))
 }
@@ -752,18 +772,23 @@ mod wrapper_tests {
     }
 
     #[test]
-    #[test]
     fn test_xkb_string_roundtrip() {
         // Test 1: single layout roundtrip
         let wkb = crate::WKB::new_from_names("", "", "us", "", None).unwrap();
         let s = wkb.as_xkb_string().expect("should have xkb string");
-        let wkb2 = crate::WKB::new_from_string(s).unwrap();
+        let wkb2 = crate::WKB::new_from_string(&s).unwrap();
         assert_eq!(wkb2.num_layouts(), 1);
 
         // Test 2: multi-layout roundtrip
         let wkb = crate::WKB::new_from_names("", "", "us,fr", "", None).unwrap();
         let s = wkb.as_xkb_string().expect("should have xkb string");
-        let wkb2 = crate::WKB::new_from_string(s).unwrap();
+        let wkb2 = crate::WKB::new_from_string(&s).unwrap();
+        assert_eq!(wkb2.num_layouts(), 2);
+
+        // Test 2: multi-layout roundtrip
+        let wkb = crate::WKB::new_from_names("", "", "us,fr", "", None).unwrap();
+        let s = wkb.as_xkb_string().expect("should have xkb string");
+        let wkb2 = crate::WKB::new_from_string(&s).unwrap();
         assert_eq!(wkb2.num_layouts(), 2);
     }
 
@@ -772,58 +797,58 @@ mod wrapper_tests {
         let wkb = crate::WKB::new_from_names("", "", "us", "", None).unwrap();
 
         // 'a' key (evdev 30) at level 0 should be KEY_a
-        let sym = wkb.key_get_sym_by_level(30, 0, 0);
+        let sym = wkb.level_keysym(30, 0, 0);
         assert_eq!(
             sym,
-            crate::keysyms::KEY_a,
+            crate::keysyms::a,
             "expected KEY_a for evdev 30 level 0"
         );
 
         // 'a' key at level 1 (shifted) should be KEY_A
-        let sym = wkb.key_get_sym_by_level(30, 0, 1);
+        let sym = wkb.level_keysym(30, 0, 1);
         assert_eq!(
             sym,
-            crate::keysyms::KEY_A,
+            crate::keysyms::A,
             "expected KEY_A for evdev 30 level 1"
         );
 
         // Return key (evdev 28) should be KEY_Return
-        let sym = wkb.key_get_sym_by_level(28, 0, 0);
+        let sym = wkb.level_keysym(28, 0, 0);
         assert_eq!(
             sym,
-            crate::keysyms::KEY_Return,
+            crate::keysyms::Return,
             "expected KEY_Return for evdev 28"
         );
 
         // Escape key (evdev 1) should be KEY_Escape
-        let sym = wkb.key_get_sym_by_level(1, 0, 0);
+        let sym = wkb.level_keysym(1, 0, 0);
         assert_eq!(
             sym,
-            crate::keysyms::KEY_Escape,
+            crate::keysyms::Escape,
             "expected KEY_Escape for evdev 1"
         );
 
-        // key_get_one_sym should use current modifier state (level 0 = unshifted)
-        let sym = wkb.key_get_one_sym(30);
+        // state_keysym should use current modifier state (level 0 = unshifted)
+        let sym = wkb.state_keysym(30);
         assert_eq!(
             sym,
-            crate::keysyms::KEY_a,
-            "key_get_one_sym should return KEY_a unshifted"
+            crate::keysyms::a,
+            "state_keysym should return KEY_a unshifted"
         );
     }
 
     #[test]
     fn test_keysym_get_name() {
         assert_eq!(
-            crate::keysyms::keysym_get_name(crate::keysyms::KEY_a),
+            crate::keysyms::keysym_get_name(crate::keysyms::a),
             Some("a")
         );
         assert_eq!(
-            crate::keysyms::keysym_get_name(crate::keysyms::KEY_BackSpace),
+            crate::keysyms::keysym_get_name(crate::keysyms::BackSpace),
             Some("BackSpace")
         );
         assert_eq!(
-            crate::keysyms::keysym_get_name(crate::keysyms::KEY_Return),
+            crate::keysyms::keysym_get_name(crate::keysyms::Return),
             Some("Return")
         );
         assert_eq!(crate::keysyms::keysym_get_name(0xDEADBEEF), None);
@@ -832,13 +857,13 @@ mod wrapper_tests {
     #[test]
     fn test_vt_switch() {
         assert_eq!(
-            crate::keysyms::vt_switch(crate::keysyms::KEY_XF86Switch_VT_1),
+            crate::keysyms::vt_switch(crate::keysyms::XF86Switch_VT_1),
             Some(1)
         );
         assert_eq!(
-            crate::keysyms::vt_switch(crate::keysyms::KEY_XF86Switch_VT_12),
+            crate::keysyms::vt_switch(crate::keysyms::XF86Switch_VT_12),
             Some(12)
         );
-        assert_eq!(crate::keysyms::vt_switch(crate::keysyms::KEY_a), None);
+        assert_eq!(crate::keysyms::vt_switch(crate::keysyms::a), None);
     }
 }

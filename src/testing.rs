@@ -7,11 +7,16 @@ use crate::xkb;
 pub use crate::WKB;
 
 // Re-export modifier constants and helpers needed by integration tests.
-pub use crate::modifiers::{level_index, ALTGR, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK};
+pub use crate::modifiers::{level_index, KeyDirection, ALTGR, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK};
 
 // Re-export compose parsing utilities needed by compose tests.
 pub mod compose_parse {
     pub use crate::xkb::compose_parse::*;
+}
+
+/// Feed a token to a composer (wraps the `pub(crate)` method for tests).
+pub fn composer_feed(composer: &mut Composer, token: Token) -> ComposeState {
+    composer.feed(token)
 }
 
 /// Get all available layout variants for a given locale (test utility).
@@ -27,8 +32,10 @@ pub trait WKBTestExt {
     fn level3_code(&self) -> Option<(u32, Option<u8>)>;
     fn level5_code(&self) -> Option<(u32, Option<u8>)>;
     fn update_key(&mut self, evdev_code: u32, key_direction: crate::KeyDirection) -> bool;
-    fn utf8(&mut self, evdev_code: u32) -> Option<char>;
+    fn key_char(&self, evdev_code: u32) -> Option<char>;
     fn composer(&self) -> &Composer;
+    fn num_levels(&self) -> usize;
+    fn feed(&mut self, token: Token) -> ComposeState;
 }
 
 impl WKBTestExt for WKB {
@@ -60,21 +67,19 @@ impl WKBTestExt for WKB {
         self.update_key(evdev_code, key_direction)
     }
 
-    fn utf8(&mut self, evdev_code: u32) -> Option<char> {
-        self.utf8(evdev_code)
+    fn key_char(&self, evdev_code: u32) -> Option<char> {
+        self.key_char(evdev_code)
     }
 
     fn composer(&self) -> &Composer {
         &self.composer
     }
-}
 
-pub trait ListComposerTestExt {
-    fn feed(&mut self, token: Token) -> ComposeState;
-}
+    fn num_levels(&self) -> usize {
+        self.state_keymap.num_levels()
+    }
 
-impl ListComposerTestExt for Composer {
     fn feed(&mut self, token: Token) -> ComposeState {
-        self.feed(token)
+        self.composer.feed(token)
     }
 }

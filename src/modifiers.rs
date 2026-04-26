@@ -3,6 +3,108 @@ use std::{collections::BTreeMap, fmt};
 // Max modifier slots — keymaps typically have 10-20 modifiers
 const MAX_MOD_SLOTS: usize = 32;
 
+// ── Public modifier bit constants (match standard XKB evdev indices) ──
+
+/// Shift modifier bitmask (XKB mod index 0).
+pub(crate) const MOD_SHIFT: u32 = 1;
+/// Caps Lock modifier bitmask (XKB mod index 1).
+pub(crate) const MOD_CAPS_LOCK: u32 = 2;
+/// Control modifier bitmask (XKB mod index 2).
+pub(crate) const MOD_CTRL: u32 = 4;
+/// Alt/Mod1 modifier bitmask (XKB mod index 3).
+pub(crate) const MOD_ALT: u32 = 8;
+/// Num Lock/Mod2 modifier bitmask (XKB mod index 4).
+pub(crate) const MOD_NUM_LOCK: u32 = 16;
+/// Mod3/ISO Level5 Shift modifier bitmask (XKB mod index 5).
+pub(crate) const _MOD_ISO_LEVEL5_SHIFT: u32 = 32;
+/// Logo/Mod4 modifier bitmask (XKB mod index 6).
+pub(crate) const MOD_LOGO: u32 = 64;
+/// AltGr/Mod5/ISO Level3 Shift modifier bitmask (XKB mod index 7).
+pub(crate) const MOD_ISO_LEVEL3_SHIFT: u32 = 128;
+
+/// LED bitmask for Num Lock (bit 0).
+pub const LED_NUM_LOCK: u32 = 1;
+/// LED bitmask for Caps Lock (bit 1).
+pub const LED_CAPS_LOCK: u32 = 2;
+/// LED bitmask for Scroll Lock (bit 2).
+pub const LED_SCROLL_LOCK: u32 = 4;
+
+// ── Modifier state ──
+
+/// Current keyboard modifier state.
+///
+/// Combines high-level boolean fields for common keybinding checks with the
+/// raw depressed/latched/locked bitmasks needed for `wl_keyboard.modifiers`.
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub struct ModifiersState {
+    /// The "Control" modifier is active.
+    pub ctrl: bool,
+    /// The "Alt" modifier is active.
+    pub alt: bool,
+    /// The "Shift" modifier is active.
+    pub shift: bool,
+    /// The "Caps Lock" modifier is active.
+    pub caps_lock: bool,
+    /// The "Logo" (Super/Windows) modifier is active.
+    pub logo: bool,
+    /// The "Num Lock" modifier is active.
+    pub num_lock: bool,
+    /// Depressed modifiers bitmask (keys physically held down).
+    pub depressed: u32,
+    /// Latched modifiers bitmask (sticky, cleared on next keypress).
+    pub latched: u32,
+    /// Locked modifiers bitmask (toggled, e.g. Caps Lock).
+    pub locked: u32,
+    /// Active keyboard layout index.
+    pub layout: u32,
+}
+
+impl ModifiersState {
+    /// Reconstruct raw bitmasks from the boolean fields.
+    ///
+    /// Useful when a virtual keyboard or external source sets modifier state
+    /// from booleans and you need to feed it back to [`WKB::update_modifiers`].
+    pub fn serialize(&self) -> (u32, u32, u32, u32) {
+        let mut locked: u32 = 0;
+        let mut depressed: u32 = 0;
+
+        if self.caps_lock {
+            locked |= MOD_CAPS_LOCK;
+        }
+        if self.num_lock {
+            locked |= MOD_NUM_LOCK;
+        }
+        if self.ctrl {
+            depressed |= MOD_CTRL;
+        }
+        if self.alt {
+            depressed |= MOD_ALT;
+        }
+        if self.shift {
+            depressed |= MOD_SHIFT;
+        }
+        if self.logo {
+            depressed |= MOD_LOGO;
+        }
+
+        (depressed, 0, locked, self.layout)
+    }
+}
+
+// ── Evdev code → modifier bitmask mapping ──
+
+pub(crate) const MODIFIER_MAPPING: [(u32, u32); 9] = [
+    (LEFT_SHIFT, MOD_SHIFT),
+    (RIGHT_SHIFT, MOD_SHIFT),
+    (CAPS_LOCK, MOD_CAPS_LOCK),
+    (LEFT_CTRL, MOD_CTRL),
+    (RIGHT_CTRL, MOD_CTRL),
+    (ALT, MOD_ALT),
+    (NUM_LOCK, MOD_NUM_LOCK),
+    (LOGO, MOD_LOGO),
+    (ALTGR, MOD_ISO_LEVEL3_SHIFT),
+];
+
 // Key constants
 pub const LEFT_CTRL: u32 = 29;
 pub const LEFT_SHIFT: u32 = 42;

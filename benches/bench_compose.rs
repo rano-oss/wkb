@@ -4,7 +4,7 @@ use common::*;
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::ffi::CString;
 use std::time::Duration;
-use wkb::testing::ListComposerTestExt;
+use wkb::testing::composer_feed;
 
 fn cfg() -> Criterion {
     Criterion::default()
@@ -162,7 +162,7 @@ fn bench_compose_feed(c: &mut Criterion) {
                 group.bench_with_input(BenchmarkId::new("wkb", seq.name), &tokens, |b, tokens| {
                     b.iter(|| {
                         for token in tokens {
-                            black_box(composer.feed(*token));
+                            black_box(composer_feed(&mut composer, *token));
                         }
                     });
                 });

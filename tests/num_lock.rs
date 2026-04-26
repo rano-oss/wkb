@@ -1,7 +1,7 @@
 use test_case::test_matrix;
 use wkb::{
-    testing::{level_index, WKBTestExt, ALTGR, NUM_LOCK},
-    KeyDirection, WKB,
+    testing::{level_index, KeyDirection, WKBTestExt, ALTGR, NUM_LOCK},
+    WKB,
 };
 use xkbcommon::{
     self,
@@ -25,9 +25,8 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
 }
 
 fn test_all_keys(wkb: WKB, xkb: xkb::State, layout: String) {
-    let mut wkb = wkb;
     for i in 0..701 {
-        let k1 = wkb.utf8(i);
+        let k1 = wkb.key_char(i);
         let k2 = xkb.key_get_utf8(Keycode::new(i + 8));
 
         if k1 != k2.chars().last() && !k2.is_empty() {
@@ -177,7 +176,6 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ], 0..8)]
 fn num_lock(locale: &str, level: usize) {
-    let wkb_init = wkb::WKB::new_from_names("", "", locale, "", None).unwrap();
     for layout in wkb::testing::get_all_layouts_for_locale(locale) {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
@@ -192,7 +190,7 @@ fn num_lock(locale: &str, level: usize) {
 
         // Activate num lock
         xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Down);
-        wkb.update_key(NUM_LOCK, wkb::KeyDirection::Down);
+        wkb.update_key(NUM_LOCK, wkb::testing::KeyDirection::Down);
 
         test_all_keys(wkb, xkb, layout);
     }

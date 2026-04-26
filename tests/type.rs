@@ -154,7 +154,7 @@ fn run_type_test(case_dir: &Path, key_names: &HashMap<String, u32>) -> Result<()
                     let xkb_char = xkb_syms.first().and_then(|&s| keysym_char(s));
 
                     // Get char from WKB
-                    let wkb_char = wkb.utf8(evdev_code);
+                    let wkb_char = wkb.key_char(evdev_code);
 
                     if xkb_char != wkb_char {
                         diffs.push(format!(
@@ -165,7 +165,7 @@ fn run_type_test(case_dir: &Path, key_names: &HashMap<String, u32>) -> Result<()
 
                     // Update both states
                     xkb_state.update_key(xkb_kc, xkb::KeyDirection::Down);
-                    wkb.update_key(evdev_code, wkb::KeyDirection::Down);
+                    wkb.update_key(evdev_code, wkb::testing::KeyDirection::Down);
 
                     // Compare modifier state
                     let xkb_mods = (
@@ -188,7 +188,7 @@ fn run_type_test(case_dir: &Path, key_names: &HashMap<String, u32>) -> Result<()
 
                 if do_up {
                     xkb_state.update_key(xkb_kc, xkb::KeyDirection::Up);
-                    wkb.update_key(evdev_code, wkb::KeyDirection::Up);
+                    wkb.update_key(evdev_code, wkb::testing::KeyDirection::Up);
 
                     let xkb_mods = (
                         xkb_state.serialize_mods(xkb::STATE_MODS_DEPRESSED),

@@ -7,7 +7,7 @@
 mod common;
 use common::*;
 use std::hint::black_box;
-use wkb::testing::{ListComposerTestExt, WKBTestExt};
+use wkb::testing::composer_feed;
 
 fn main() {
     let mut checksum: u64 = 0;
@@ -17,16 +17,15 @@ fn main() {
 
         for case in KEY_CASES {
             for &(code, down) in case.keys {
-                let dir = if down {
-                    wkb::KeyDirection::Down
-                } else {
-                    wkb::KeyDirection::Up
-                };
-                wb.update_key(code, dir);
                 if down {
-                    if let Some(ch) = wb.utf8(code) {
+                    let result = wb.press_key(code);
+                    if let Some(ch) = wb.key_char(code) {
                         checksum = checksum.wrapping_add(ch as u64);
                     }
+                    black_box(result);
+                } else {
+                    let result = wb.release_key(code);
+                    black_box(result);
                 }
             }
         }
@@ -38,7 +37,7 @@ fn main() {
         for seq in COMPOSE_SEQUENCES {
             for &ks in seq.keysyms {
                 if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(ks) {
-                    let _ = composer.feed(wkb::testing::Token::Char(ch));
+                    let _ = composer_feed(&mut composer, wkb::testing::Token::Char(ch));
                     checksum = checksum.wrapping_add(1);
                 }
             }
