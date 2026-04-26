@@ -63,7 +63,7 @@ impl ModifiersState {
     /// Reconstruct raw bitmasks from the boolean fields.
     ///
     /// Useful when a virtual keyboard or external source sets modifier state
-    /// from booleans and you need to feed it back to [`WKB::update_modifiers`].
+    /// from booleans and you need to feed it back to [`crate::WKB::update_modifiers`].
     pub fn serialize(&self) -> (u32, u32, u32, u32) {
         let mut locked: u32 = 0;
         let mut depressed: u32 = 0;

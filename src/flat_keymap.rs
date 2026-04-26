@@ -19,11 +19,6 @@ impl FlatKeymap {
         }
     }
 
-    #[inline]
-    pub(crate) fn num_levels(&self) -> usize {
-        MAX_LEVELS
-    }
-
     #[inline(always)]
     pub(crate) fn get(&self, layout: usize, level: usize, evdev_code: u32) -> Option<char> {
         let k = evdev_code as usize;

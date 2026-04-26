@@ -35,42 +35,6 @@ impl std::fmt::Display for XkbError {
 
 impl std::error::Error for XkbError {}
 
-/// Get all available layouts/variants for a given locale
-pub(crate) fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
-    use xkb_core::rust_types::RxkbContext;
-
-    let mut ctx = match RxkbContext::new() {
-        Some(ctx) => ctx,
-        None => return vec![String::new()],
-    };
-
-    ctx.include_path_append_default();
-
-    if !ctx.parse("evdev") {
-        return vec![String::new()];
-    }
-
-    let mut layouts = Vec::new();
-
-    for layout in ctx.layouts() {
-        let layout_name = layout.name();
-        if !layout_name.is_empty() && layout_name == locale {
-            let variant = layout.variant();
-            if variant.is_empty() {
-                layouts.push(String::new());
-            } else {
-                layouts.push(variant.to_string());
-            }
-        }
-    }
-
-    if layouts.is_empty() {
-        layouts.push(String::new());
-    }
-
-    layouts
-}
-
 /// Get the keycode (and optional level) for a specific modifier type.
 pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Option<u8>)> {
     let mut other_mod = None;
@@ -576,14 +540,6 @@ fn build_modifiers_from_keymap(
         }
     }
     modifiers
-}
-
-/// Backward-compatible alias for compose module access
-pub mod compose_parse {
-    pub use super::load_compose_from_path;
-    pub use xkb_core::compose::{
-        keysym_name_to_char, parse_compose_file, resolve_compose_file, ComposeEntry,
-    };
 }
 
 #[cfg(test)]

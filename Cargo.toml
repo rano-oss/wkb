@@ -3,7 +3,7 @@ members = [".", "xkb-core", "xkbcommon-compat"]
 
 [package]
 name = "wayland-keyboard"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.70"
 description = "Lightweight keyboard handling library for Wayland — a pure Rust alternative to xkbcommon"
@@ -29,7 +29,7 @@ compose = []
 testing = ["xkb"]
 
 [dependencies]
-xkb-core = { version = "0.1.0", path = "xkb-core", optional = true }
+xkb-core = { version = "0.2.0", path = "xkb-core", optional = true }
 
 [dev-dependencies]
 wkb = { package = "wayland-keyboard", path = ".", features = ["testing"] }

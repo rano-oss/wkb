@@ -15,7 +15,20 @@
 //!
 //! // Process a key press (evdev code 38 = 'a' on US layout)
 //! let result = wkb.press_key(38);
+//! println!("keysym: {:#x}, compose: {:?}", result.keysym, result.compose);
 //! ```
+//!
+//! ## Key Event API
+//!
+//! | Method | Mutates state | Use case |
+//! |--------|--------------|----------|
+//! | [`WKB::press_key`] | yes | Key down — updates modifiers, advances compose |
+//! | [`WKB::release_key`] | yes | Key up — updates modifiers |
+//! | [`WKB::repeat_key`] | no | Key repeat — pure lookup, no state changes |
+//! | [`WKB::key_char`] | no | Raw character under current modifiers (no compose) |
+//!
+//! All three event methods return a [`KeyResult`] containing the keysym,
+//! compose state, and whether the key is a modifier.
 //!
 //! ## Feature Flags
 //!
