@@ -24,7 +24,7 @@
 //! |--------|--------------|----------|
 //! | [`WKB::press_key`] | yes | Key down — updates modifiers, advances compose |
 //! | [`WKB::release_key`] | yes | Key up — updates modifiers |
-//! | [`WKB::repeat_key`] | no | Key repeat — pure lookup, no state changes |
+//! | [`WKB::repeat_key`] | yes | Key repeat — advances compose, no modifier changes |
 //! | [`WKB::key_char`] | no | Raw character under current modifiers (no compose) |
 //!
 //! All three event methods return a [`KeyResult`] containing the keysym,
@@ -406,15 +406,19 @@ impl WKB {
         }
     }
 
-    /// Process a key repeat. Does NOT update modifier state or advance compose.
+    /// Process a key repeat. Advances compose sequences but does NOT update modifier state.
     ///
-    /// Returns the keysym and raw character under the current modifier state.
-    /// The compose field will be `Some(Idle(char))` if a character is available,
-    /// or `None` for modifier keys or keys with no character mapping.
-    pub fn repeat_key(&self, evdev_code: u32) -> KeyResult {
+    /// Returns a [`KeyResult`] with the keysym and compose state.
+    /// Compose is advanced the same way as [`press_key`](Self::press_key) so that
+    /// repeating a dead key (e.g. ¨) correctly progresses the compose sequence.
+    pub fn repeat_key(&mut self, evdev_code: u32) -> KeyResult {
         let keysym = self.state_keysym(evdev_code);
-        let ch = self.key_char(evdev_code);
-        let compose = ch.map(ComposeState::Idle);
+        #[cfg(feature = "compose")]
+        let compose = self
+            .key_char(evdev_code)
+            .map(|c| self.composer.feed(Token::Char(c)));
+        #[cfg(not(feature = "compose"))]
+        let compose = self.key_char(evdev_code).map(ComposeState::Idle);
         KeyResult {
             keysym,
             compose,
