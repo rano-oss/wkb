@@ -1,3 +1,5 @@
+use compact_str::CompactString;
+
 /// Token fed into the composer: either a regular character or a Compose key press
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token {
@@ -8,7 +10,7 @@ pub enum Token {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ComposeState {
     Idle(char),
-    Composing(String),
+    Composing(CompactString),
     Finished(char),
     Cancelled,
 }
@@ -84,12 +86,12 @@ impl Composer {
     /// Returns an opinionated display string of the in-progress compose sequence.
     /// Compose key shows as `·` if it is the last token pressed.
     /// Characters show as themselves.
-    pub fn pending_string(&self) -> String {
+    pub fn pending_string(&self) -> CompactString {
         if self.pending.is_empty() {
-            return String::new();
+            return CompactString::default();
         }
 
-        let mut s = String::with_capacity(self.pending.len());
+        let mut s = CompactString::with_capacity(self.pending.len());
         let last = self.pending.len() - 1;
 
         for token in &self.pending[..last] {
