@@ -161,16 +161,21 @@ fn build_wkb_from_keymap(
 
     // ── Build flat keymaps for ALL layouts ──
 
+    // Build level_exceptions_keymap and keysym_map in a single pass
+    // (both use key_get_syms_by_level, no state needed)
     let mut level_exceptions_keymap = FlatKeymap::new(num_keys, num_layouts);
+    let mut keysym_map = FlatKeysymMap::new(num_keys, num_layouts);
     for layout_idx in 0..num_layouts {
         for lvl in 0..XKB_MAX_LEVELS {
             for kc in min_keycode..=max_keycode {
-                if let Some(&sym) = keymap
-                    .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
-                    .first()
-                {
+                let syms = keymap.key_get_syms_by_level(kc, layout_idx as u32, lvl as u32);
+                if let Some(&sym) = syms.first() {
+                    let evdev = kc - EVDEV_OFFSET;
+                    if sym != 0 {
+                        keysym_map.set(layout_idx, lvl, evdev, sym);
+                    }
                     if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(sym) {
-                        level_exceptions_keymap.set(layout_idx, lvl, kc - EVDEV_OFFSET, ch);
+                        level_exceptions_keymap.set(layout_idx, lvl, evdev, ch);
                     }
                 }
             }
@@ -182,12 +187,15 @@ fn build_wkb_from_keymap(
                     layout_idx: usize,
                     lvl: usize|
      -> Option<char> {
-        state.key_get_utf8(kc).chars().next().or_else(|| {
+        let sym = state.key_get_one_sym(kc);
+        if sym != 0 {
+            xkb_core::keysym_utf::keysym_to_char(sym)
+        } else {
             keymap
                 .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
                 .first()
                 .and_then(|&s| xkb_core::keysym_utf::keysym_to_char(s))
-        })
+        }
     };
 
     let mut state_keymap = FlatKeymap::new(num_keys, num_layouts);
@@ -322,23 +330,6 @@ fn build_wkb_from_keymap(
 
     #[cfg(not(feature = "compose"))]
     let composer = Composer::new();
-
-    // Build flat keysym table from keymap
-    let mut keysym_map = FlatKeysymMap::new(num_keys, num_layouts);
-    for layout_idx in 0..num_layouts {
-        for lvl in 0..XKB_MAX_LEVELS {
-            for k in 0..num_keys as u32 {
-                let xkb_keycode = k + EVDEV_OFFSET;
-                let syms = keymap.key_get_syms_by_level(xkb_keycode, layout_idx as u32, lvl as u32);
-                if let Some(&sym) = syms.first() {
-                    if sym != 0 {
-                        keysym_map.set(layout_idx, lvl, k, sym);
-                    }
-                }
-            }
-        }
-    }
-
     WKB {
         current_layout_idx: 0,
         layout_names,

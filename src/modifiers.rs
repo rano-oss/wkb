@@ -33,27 +33,6 @@ pub struct LedState {
 
 // ── Modifier state ──
 
-/// Current keyboard modifier state.
-///
-/// Contains high-level boolean fields for common keybinding checks.
-/// For the raw depressed/latched/locked bitmasks needed by
-/// `wl_keyboard.modifiers`, use [`crate::WKB::raw_modifiers`] instead.
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
-pub struct ModifiersState {
-    /// The "Control" modifier is active.
-    pub ctrl: bool,
-    /// The "Alt" modifier is active.
-    pub alt: bool,
-    /// The "Shift" modifier is active.
-    pub shift: bool,
-    /// The "Caps Lock" modifier is active.
-    pub caps_lock: bool,
-    /// The "Logo" (Super/Windows) modifier is active.
-    pub logo: bool,
-    /// The "Num Lock" modifier is active.
-    pub num_lock: bool,
-}
-
 /// Raw modifier bitmasks for the Wayland `wl_keyboard.modifiers` protocol event.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct RawModifiers {
@@ -66,8 +45,6 @@ pub struct RawModifiers {
     /// Active keyboard layout index.
     pub layout: u32,
 }
-
-// ── Evdev code → modifier bitmask mapping ──
 
 pub(crate) const MODIFIER_MAPPING: [(u32, u32); 9] = [
     (LEFT_SHIFT, MOD_SHIFT),
@@ -514,7 +491,7 @@ impl Modifiers {
         true
     }
 
-    pub fn state(&self, layout_index: usize) -> (ModifiersState, RawModifiers) {
+    pub fn state(&self, layout_index: usize) -> RawModifiers {
         let mut depressed = 0;
         let mut latched = 0;
         let mut locked = 0;
@@ -555,23 +532,12 @@ impl Modifiers {
                 }
             }
         }
-        let effective = depressed | latched | locked;
-        (
-            ModifiersState {
-                ctrl: (effective & MOD_CTRL) != 0,
-                alt: (effective & MOD_ALT) != 0,
-                shift: (effective & MOD_SHIFT) != 0,
-                caps_lock: (effective & MOD_CAPS_LOCK) != 0,
-                logo: (effective & MOD_LOGO) != 0,
-                num_lock: (effective & MOD_NUM_LOCK) != 0,
-            },
-            RawModifiers {
-                depressed,
-                latched,
-                locked,
-                layout,
-            },
-        )
+        RawModifiers {
+            depressed,
+            latched,
+            locked,
+            layout,
+        }
     }
 
     pub(crate) fn update(&mut self, depressed: u32, latched: u32, locked: u32) {

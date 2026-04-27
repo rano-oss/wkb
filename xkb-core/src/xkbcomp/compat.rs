@@ -1193,7 +1193,7 @@ fn CopyCompatToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) -> bo
     // Collect sym_interprets first (doesn't need keymap)
     let sym_interprets = if !info.interps.is_empty() {
         let mut collect: collect = collect {
-            sym_interprets: Vec::new(),
+            sym_interprets: Vec::with_capacity(info.interps.len()),
         };
         CopyInterps(info, true, MATCH_EXACTLY, &mut collect);
         CopyInterps(info, true, MATCH_ALL, &mut collect);

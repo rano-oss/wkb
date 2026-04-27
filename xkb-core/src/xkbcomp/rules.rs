@@ -1,12 +1,13 @@
 pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 
 pub use crate::messages::{
-    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_RULES_SYNTAX, XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION,
+    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_INVALID_FILE_ENCODING,
+    XKB_ERROR_INVALID_RULES_SYNTAX, XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION,
 };
 pub use crate::scanner_utils::{scanner, scanner_loc, sval, svaleq};
 pub use crate::shared_ast_types::FILE_TYPE_RULES;
-pub use crate::shared_types::XKB_MAX_GROUPS;
 pub use crate::shared_types::XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX;
+pub use crate::shared_types::XKB_MAX_GROUPS;
 
 pub use crate::xkbcomp::include::{
     expand_path_str, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
@@ -556,10 +557,8 @@ fn matcher_include(
 
     let absolute_path = stmt_file.starts_with('/');
     let mut offset: u32 = 0;
-    let mut file_and_path: Option<(std::fs::File, String)> = if absolute_path {
-        std::fs::File::open(&stmt_file)
-            .ok()
-            .map(|f| (f, stmt_file.clone()))
+    let mut file_and_path: Option<(std::sync::Arc<Vec<u8>>, String)> = if absolute_path {
+        crate::shared_types::read_file_cached(&stmt_file).map(|data| (data, stmt_file.clone()))
     } else if expanded {
         None
     } else {
@@ -573,8 +572,8 @@ fn matcher_include(
         )
     };
 
-    while let Some((ref open_file, ref path)) = file_and_path {
-        let ret: bool = read_rules_file(m, include_depth.wrapping_add(1_u32), open_file, path);
+    while let Some((ref file_data, ref path)) = file_and_path {
+        let ret: bool = read_rules_file(m, include_depth.wrapping_add(1_u32), file_data, path);
         let path_str = path.clone();
         let _ = file_and_path.take();
         if ret {
@@ -2019,23 +2018,13 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
 fn read_rules_file(
     matcher: &mut matcher<'_>,
     include_depth: u32,
-    file: &std::fs::File,
+    file_data: &[u8],
     path: &str,
 ) -> bool {
     #[allow(unused_assignments)]
     let mut scanner: scanner = scanner::new(&[], "");
 
-    use crate::utils::MappedFile;
-
-    let mapped = match MappedFile::new(file) {
-        Ok(m) => m,
-        Err(e) => {
-            log::error!("Couldn't read rules file \"{}\": {}\n", path, e);
-            return false;
-        }
-    };
-
-    scanner = scanner::new(mapped.as_bytes(), path);
+    scanner = scanner::new(file_data, path);
     if !scanner.check_supported_char_encoding() {
         let loc: scanner_loc = scanner.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
@@ -2075,9 +2064,11 @@ fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut matcher<'_
             &mut offset,
             false,
         );
-        let Some((file, path)) = found else { break };
-        let ok: bool = read_rules_file(matcher, 0, &file, &path);
-        drop(file);
+        let Some((file_data, path)) = found else {
+            break;
+        };
+        let ok: bool = read_rules_file(matcher, 0, &file_data, &path);
+        drop(file_data);
         if !ok {
             log::error!(
                 "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
@@ -2107,7 +2098,7 @@ fn xkb_resolve_rules(
         &mut offset,
         true,
     );
-    let Some((file, path)) = found else {
+    let Some((file_data, path)) = found else {
         log::error!(
             "[XKB-{:03}] Cannot load XKB rules \"{}\"\n",
             XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
@@ -2117,7 +2108,7 @@ fn xkb_resolve_rules(
     };
     ret = xkb_resolve_partial_rules(rules_str, ".pre", matcher);
     if ret {
-        ret = read_rules_file(matcher, 0, &file, &path);
+        ret = read_rules_file(matcher, 0, &file_data, &path);
         if !ret {
             log::error!(
                 "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",

@@ -1,5 +1,9 @@
 //! Shared type definitions used across multiple modules.
 
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::sync::Arc;
+
 // ── xkbcommon public types ───────────────────────────────────────────
 
 pub const XKB_LOG_LEVEL_DEBUG: u32 = 50;
@@ -67,15 +71,46 @@ pub struct xkb_context {
     pub refcnt: i32,
     pub log_level: u32,
     pub log_verbosity: i32,
-    // pub user_data: *mut ::core::ffi::c_void,
     pub names_dflt: xkb_rule_names,
     pub includes: Vec<String>,
     pub failed_includes: Vec<String>,
     pub atom_table: atom_table,
-    // pub x11_atom_cache: *mut ::core::ffi::c_void,
     pub use_environment_names: bool,
     pub use_secure_getenv: bool,
     pub pending_default_includes: bool,
+}
+
+thread_local! {
+    /// Thread-local file cache shared across all xkb_context instances.
+    /// Survives context clones and keymap compilations within the same thread.
+    static FILE_CACHE: RefCell<HashMap<String, Arc<Vec<u8>>>> = RefCell::new(HashMap::new());
+}
+
+/// Read a file from the thread-local cache, or read from disk and cache it.
+pub fn read_file_cached(path: &str) -> Option<Arc<Vec<u8>>> {
+    FILE_CACHE
+        .with(|cache| {
+            let cache = cache.borrow();
+            cache.get(path).cloned()
+        })
+        .or_else(|| {
+            use std::io::Read;
+            let mut file = std::fs::File::open(path).ok()?;
+            let mut data = Vec::new();
+            file.read_to_end(&mut data).ok()?;
+            let arc = Arc::new(data);
+            FILE_CACHE.with(|cache| {
+                cache.borrow_mut().insert(path.to_string(), arc.clone());
+            });
+            Some(arc)
+        })
+}
+
+/// Clear the thread-local file cache.
+pub fn clear_file_cache() {
+    FILE_CACHE.with(|cache| {
+        cache.borrow_mut().clear();
+    });
 }
 
 // ── keymap_h types (from keymap_priv.rs) ────────────────────────────

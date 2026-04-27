@@ -2,9 +2,7 @@ use std::env::VarError;
 
 use crate::atom::{atom_intern, atom_table_new, atom_text};
 
-pub use crate::messages::{
-    XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_LOG_VERBOSITY_DEFAULT,
-};
+pub use crate::messages::{XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_LOG_VERBOSITY_DEFAULT};
 use crate::shared_types::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
     DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,

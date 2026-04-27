@@ -91,7 +91,7 @@ pub unsafe extern "C" fn xkb_keymap_new_from_names(
         }
     };
 
-    match ctx.keymap_from_names(&rules) {
+    match (*ctx).clone().keymap_from_names(&rules) {
         Some(km) => Box::into_raw(Box::new(xkb_keymap(km))),
         None => ptr::null_mut(),
     }
@@ -111,7 +111,7 @@ pub unsafe extern "C" fn xkb_keymap_new_from_string(
     let ctx = &(*ctx).0;
     let s = CStr::from_ptr(string).to_string_lossy();
 
-    match ctx.keymap_from_string(&s) {
+    match (*ctx).clone().keymap_from_string(&s) {
         Some(km) => Box::into_raw(Box::new(xkb_keymap(km))),
         None => ptr::null_mut(),
     }

@@ -43,7 +43,7 @@ use composer::{Composer, Token};
 mod composer;
 mod modifiers;
 use modifiers::{level_index, KeyDirection, ModType, Modifiers, CAPS_LOCK, NUM_LOCK};
-pub use modifiers::{LedState, ModifiersState, RawModifiers};
+pub use modifiers::{LedState, RawModifiers};
 mod bitset;
 pub(crate) use bitset::KeyBitSet;
 mod flat_keymap;
@@ -83,11 +83,8 @@ pub struct WKB {
     pub(crate) state_keymap: FlatKeymap,
     pub(crate) num_lock_keys: FlatKeymap,
     pub(crate) caps_lock_keymap: FlatKeymap,
-    /// Index of the currently active layout (0-based).
     pub(crate) current_layout_idx: usize,
-    /// Human-readable names for each layout in the keymap.
     pub(crate) layout_names: Vec<String>,
-    /// Flat keysym lookup table, same indexing as state_keymap.
     pub(crate) keysym_map: FlatKeysymMap,
     #[cfg(feature = "xkb")]
     pub(crate) level_exceptions_keymap: FlatKeymap,
@@ -126,19 +123,47 @@ impl WKB {
         self.composer.reset();
     }
 
-    /// Return the current modifier state (boolean fields only).
-    ///
-    /// For the raw bitmasks needed by `wl_keyboard.modifiers`, use
-    /// [`raw_modifiers`](Self::raw_modifiers) instead.
-    pub fn modifiers_state(&self) -> ModifiersState {
-        self.modifiers.state(self.current_layout_idx).0
-    }
-
     /// Return the raw modifier bitmasks for `wl_keyboard.modifiers`.
     ///
     /// Returns depressed, latched, locked bitmasks and the active layout index.
     pub fn raw_modifiers(&self) -> RawModifiers {
-        self.modifiers.state(self.current_layout_idx).1
+        self.modifiers.state(self.current_layout_idx)
+    }
+
+    /// Return `true` if the Shift modifier is active.
+    pub fn shift(&self) -> bool {
+        let raw = self.raw_modifiers();
+        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_SHIFT != 0
+    }
+
+    /// Return `true` if the Control modifier is active.
+    pub fn ctrl(&self) -> bool {
+        let raw = self.raw_modifiers();
+        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_CTRL != 0
+    }
+
+    /// Return `true` if the Alt modifier is active.
+    pub fn alt(&self) -> bool {
+        let raw = self.raw_modifiers();
+        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_ALT != 0
+    }
+
+    /// Return `true` if the Logo (Super/Windows) modifier is active.
+    pub fn logo(&self) -> bool {
+        let raw = self.raw_modifiers();
+        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_LOGO != 0
+    }
+
+    /// Return `true` if Caps Lock is active.
+    pub fn caps_lock(&self) -> bool {
+        let raw = self.raw_modifiers();
+        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_CAPS_LOCK != 0
+    }
+
+    /// Return `true` if Num Lock is active.
+    pub fn num_lock(&self) -> bool {
+        let raw = self.raw_modifiers();
+        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_NUM_LOCK != 0
     }
 
     /// Apply modifier state received from `wl_keyboard.modifiers`.
@@ -246,13 +271,11 @@ impl WKB {
         let level2 = level2 && self.state_keymap.data.len() > 1 * nk;
         let base_level = level_index(level5, level3, level2);
         let layout_index = self.current_layout_idx;
-
         if self.modifiers.locked(NUM_LOCK) {
-            if let Some(key) = self.num_lock_keys.get(layout_index, base_level, evdev_code) {
-                return Some(key);
+            if let Some(c) = self.num_lock_keys.get(layout_index, base_level, evdev_code) {
+                return Some(c);
             }
         }
-
         if self.modifiers.locked(CAPS_LOCK) {
             if let Some(c) = self
                 .caps_lock_keymap

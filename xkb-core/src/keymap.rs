@@ -2,11 +2,10 @@ use std::rc::Rc;
 
 use crate::atom::{atom_lookup_ref, atom_text};
 use crate::context::{xkb_atom_intern_bytes, xkb_context_sanitize_rule_names};
-pub use crate::shared_types::{
-    xkb_action, xkb_key, xkb_keymap, xkb_led,
-    xkb_level, xkb_mod_set, MOD_BOTH, MOD_REAL,
-};
 pub use crate::shared_types::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
+pub use crate::shared_types::{
+    xkb_action, xkb_key, xkb_keymap, xkb_led, xkb_level, xkb_mod_set, MOD_BOTH, MOD_REAL,
+};
 pub fn clear_level(leveli: &mut xkb_level) {
     leveli.syms.clear();
     leveli.actions.clear();
@@ -18,7 +17,6 @@ pub fn xkb_keymap_new_from_names(
     flags: u32,
 ) -> Option<Rc<xkb_keymap>> {
     let format = XKB_KEYMAP_FORMAT_TEXT_V2;
-    let mut keymap = xkb_keymap_new(ctx.clone(), "xkb_keymap_new_from_names2", format, flags)?;
     let mut rmlvo: xkb_rule_names = match rmlvo_in {
         Some(r) => r.clone(),
         None => xkb_rule_names {
@@ -30,6 +28,7 @@ pub fn xkb_keymap_new_from_names(
         },
     };
     xkb_context_sanitize_rule_names(&ctx, &mut rmlvo);
+    let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_names2", format, flags)?;
     if !crate::xkbcomp::xkbcomp::text_v1_keymap_new_from_names(&mut keymap, &rmlvo) {
         return None;
     }
