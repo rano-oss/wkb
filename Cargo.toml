@@ -30,6 +30,7 @@ testing = ["xkb"]
 
 [dependencies]
 xkb-core = { version = "0.2.0", path = "xkb-core", optional = true }
+smol_str = "0.3"
 
 [dev-dependencies]
 wkb = { package = "wayland-keyboard", path = ".", features = ["testing"] }

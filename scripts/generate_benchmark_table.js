@@ -59,14 +59,15 @@ function generateSpeedTable() {
     const groups = fs.readdirSync(CRITERION_DIR)
         .filter(d => !d.startsWith('.') && d !== 'report');
 
-    // Criterion stores groups with '_' separators in directory names
+    // Criterion stores group names using '/' as directory separators.
+    // The benchmark groups are defined in bench_setup.rs, bench_key.rs, bench_compose.rs.
     const interesting = [
-        { dir: 'full_setup',             label: 'Full setup' },
-        { dir: 'key_update',             label: 'Key update' },
-        { dir: 'key_get_utf8',           label: 'Get UTF-8' },
-        { dir: 'key_get_sym',            label: 'Get keysym' },
-        { dir: 'compose_setup',          label: 'Compose setup', combine: ['compose_table_creation', 'compose_state_creation'] },
-        { dir: 'compose_feed',           label: 'Compose feed' },
+        { dir: 'setup/with_compose',     label: 'Full setup (with compose)' },
+        { dir: 'setup/no_compose',       label: 'Setup (no compose)' },
+        { dir: 'key/update',             label: 'Key update' },
+        { dir: 'key/get_char',           label: 'Key get char' },
+        { dir: 'key/get_sym',            label: 'Key get sym' },
+        { dir: 'compose/feed',           label: 'Compose feed' },
     ];
 
     const rows = [];

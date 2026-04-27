@@ -1,3 +1,5 @@
+use smol_str::SmolStr;
+
 /// Token fed into the composer: either a regular character or a Compose key press
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token {
@@ -8,7 +10,7 @@ pub enum Token {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ComposeState {
     Idle(char),
-    Composing(String),
+    Composing(SmolStr),
     Finished(char),
     Cancelled,
 }
@@ -84,9 +86,9 @@ impl Composer {
     /// Returns an opinionated display string of the in-progress compose sequence.
     /// Compose key shows as `·` if it is the last token pressed.
     /// Characters show as themselves.
-    pub fn pending_string(&self) -> String {
+    pub fn pending_string(&self) -> SmolStr {
         if self.pending.is_empty() {
-            return String::new();
+            return SmolStr::default();
         }
 
         let mut s = String::with_capacity(self.pending.len());
@@ -104,7 +106,7 @@ impl Composer {
             Token::Char(c) => s.push(c),
         }
 
-        s
+        SmolStr::new(&s)
     }
 
     #[inline]
