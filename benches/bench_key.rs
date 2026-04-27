@@ -10,9 +10,9 @@ use wkb::testing::{KeyDirection, WKBTestExt};
 
 fn cfg() -> Criterion {
     Criterion::default()
-        .warm_up_time(Duration::from_millis(50))
-        .measurement_time(Duration::from_millis(200))
-        .sample_size(10)
+        .warm_up_time(Duration::from_millis(200))
+        .measurement_time(Duration::from_secs(1))
+        .sample_size(50)
 }
 
 // ── Setup helpers ──────────────────────────────────────────────────────
@@ -310,6 +310,23 @@ fn bench_key_get_sym(c: &mut Criterion) {
                     wb.update_key(code, dir);
                     if down {
                         black_box(wb.state_keysym(black_box(code)));
+                    }
+                }
+            );
+
+            bench_xkb!(
+                group,
+                bid,
+                locale,
+                variant,
+                case,
+                |st: &mut xkbcommon::xkb::State,
+                 kc: xkbcommon::xkb::Keycode,
+                 down: bool,
+                 dir: xkbcommon::xkb::KeyDirection| {
+                    st.update_key(kc, dir);
+                    if down {
+                        black_box(st.key_get_one_sym(black_box(kc)));
                     }
                 }
             );

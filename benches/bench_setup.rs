@@ -8,9 +8,9 @@ use std::time::Duration;
 
 fn cfg() -> Criterion {
     Criterion::default()
-        .warm_up_time(Duration::from_millis(50))
-        .measurement_time(Duration::from_millis(300))
-        .sample_size(10)
+        .warm_up_time(Duration::from_millis(200))
+        .measurement_time(Duration::from_secs(1))
+        .sample_size(20)
 }
 
 fn bench_setup_no_compose(c: &mut Criterion) {
