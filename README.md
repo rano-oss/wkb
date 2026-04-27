@@ -95,9 +95,9 @@ let xkb_string = wkb.as_xkb_string().unwrap();
 
 | Benchmark | wkb | xkbcommon | xkbcommon-dl | vs xkbcommon |
 |-----------|-----|-----------|--------------|-------------|
-| Key update | 38 ns | 163 ns | 164 ns | **4.3x faster** |
-| Get keysym | 85 ns | - | 202 ns |  |
-| Compose feed | 20 ns | 26 ns | 26 ns | **1.3x faster** |
+| Key update | 29 ns | 166 ns | 162 ns | **5.7x faster** |
+| Get keysym | 75 ns | 197 ns | 198 ns | **2.6x faster** |
+| Compose feed | 22 ns | 26 ns | 26 ns | **1.2x faster** |
 
 ### Memory
 
