@@ -173,8 +173,8 @@ fn run_type_test(case_dir: &Path, key_names: &HashMap<String, u32>) -> Result<()
                         xkb_state.serialize_mods(xkb::STATE_MODS_LATCHED),
                         xkb_state.serialize_mods(xkb::STATE_MODS_LOCKED),
                     );
-                    let ms = wkb.modifiers_state();
-                    let (wkb_dep, wkb_lat, wkb_lock) = (ms.depressed, ms.latched, ms.locked);
+                    let rm = wkb.raw_modifiers();
+                    let (wkb_dep, wkb_lat, wkb_lock) = (rm.depressed, rm.latched, rm.locked);
 
                     if xkb_mods != (wkb_dep, wkb_lat, wkb_lock) {
                         diffs.push(format!(
@@ -195,8 +195,8 @@ fn run_type_test(case_dir: &Path, key_names: &HashMap<String, u32>) -> Result<()
                         xkb_state.serialize_mods(xkb::STATE_MODS_LATCHED),
                         xkb_state.serialize_mods(xkb::STATE_MODS_LOCKED),
                     );
-                    let ms = wkb.modifiers_state();
-                    let (wkb_dep, wkb_lat, wkb_lock) = (ms.depressed, ms.latched, ms.locked);
+                    let rm = wkb.raw_modifiers();
+                    let (wkb_dep, wkb_lat, wkb_lock) = (rm.depressed, rm.latched, rm.locked);
 
                     if xkb_mods != (wkb_dep, wkb_lat, wkb_lock) {
                         diffs.push(format!(

@@ -110,24 +110,32 @@ fn press_level_modifiers(
 }
 
 /// Load compose entries from a file and build a ListComposer.
+/// Uses first-wins semantics to match xkbcommon behavior: if multiple
+/// entries resolve to the same token sequence, only the first is kept.
 pub fn load_compose_from_path(path: &std::path::Path) -> Composer {
     let mut regular = Composer::new();
+    let mut seen: std::collections::HashSet<Vec<u32>> = std::collections::HashSet::new();
 
     let entries = xkb_core::compose::parse_compose_file(path);
 
     for entry in entries {
         let mut tokens: Vec<Token> = Vec::new();
+        let mut key: Vec<u32> = Vec::new();
         let mk_idx = entry.multi_key_index;
 
         for (i, ch) in entry.keys.iter().enumerate() {
             if let Some(idx) = mk_idx {
                 if idx == i {
                     tokens.push(Token::Compose);
+                    key.push(0);
                 }
             }
             tokens.push(Token::Char(*ch));
+            key.push(*ch as u32);
         }
-        regular.insert(&tokens, entry.output);
+        if seen.insert(key) {
+            regular.insert(&tokens, entry.output);
+        }
     }
     regular
 }
@@ -161,16 +169,21 @@ fn build_wkb_from_keymap(
 
     // ── Build flat keymaps for ALL layouts ──
 
+    // Build level_exceptions_keymap and keysym_map in a single pass
+    // (both use key_get_syms_by_level, no state needed)
     let mut level_exceptions_keymap = FlatKeymap::new(num_keys, num_layouts);
+    let mut keysym_map = FlatKeysymMap::new(num_keys, num_layouts);
     for layout_idx in 0..num_layouts {
         for lvl in 0..XKB_MAX_LEVELS {
             for kc in min_keycode..=max_keycode {
-                if let Some(&sym) = keymap
-                    .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
-                    .first()
-                {
+                let syms = keymap.key_get_syms_by_level(kc, layout_idx as u32, lvl as u32);
+                if let Some(&sym) = syms.first() {
+                    let evdev = kc - EVDEV_OFFSET;
+                    if sym != 0 {
+                        keysym_map.set(layout_idx, lvl, evdev, sym);
+                    }
                     if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(sym) {
-                        level_exceptions_keymap.set(layout_idx, lvl, kc - EVDEV_OFFSET, ch);
+                        level_exceptions_keymap.set(layout_idx, lvl, evdev, ch);
                     }
                 }
             }
@@ -182,12 +195,15 @@ fn build_wkb_from_keymap(
                     layout_idx: usize,
                     lvl: usize|
      -> Option<char> {
-        state.key_get_utf8(kc).chars().next().or_else(|| {
+        let sym = state.key_get_one_sym(kc);
+        if sym != 0 {
+            xkb_core::keysym_utf::keysym_to_char(sym)
+        } else {
             keymap
                 .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
                 .first()
                 .and_then(|&s| xkb_core::keysym_utf::keysym_to_char(s))
-        })
+        }
     };
 
     let mut state_keymap = FlatKeymap::new(num_keys, num_layouts);
@@ -303,33 +319,25 @@ fn build_wkb_from_keymap(
     let _ = store_keymap; // no longer cached; generated on demand
 
     #[cfg(feature = "compose")]
-    let composer = locale
-        .and_then(xkb_core::compose::resolve_compose_file)
-        .map(|subpath| {
-            let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
-            load_compose_from_path(&path)
-        })
-        .unwrap_or_else(Composer::new);
+    let composer = {
+        // Resolve compose locale from environment (LC_ALL > LC_CTYPE > LANG),
+        // falling back to the explicit locale hint (e.g. layout name).
+        let env_locale = std::env::var("LC_ALL")
+            .or_else(|_| std::env::var("LC_CTYPE"))
+            .or_else(|_| std::env::var("LANG"))
+            .ok();
+        let compose_locale = env_locale.as_deref().or(locale);
+        compose_locale
+            .and_then(xkb_core::compose::resolve_compose_file)
+            .map(|subpath| {
+                let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
+                load_compose_from_path(&path)
+            })
+            .unwrap_or_else(Composer::new)
+    };
 
     #[cfg(not(feature = "compose"))]
     let composer = Composer::new();
-
-    // Build flat keysym table from keymap
-    let mut keysym_map = FlatKeysymMap::new(num_keys, num_layouts);
-    for layout_idx in 0..num_layouts {
-        for lvl in 0..XKB_MAX_LEVELS {
-            for k in 0..num_keys as u32 {
-                let xkb_keycode = k + EVDEV_OFFSET;
-                let syms = keymap.key_get_syms_by_level(xkb_keycode, layout_idx as u32, lvl as u32);
-                if let Some(&sym) = syms.first() {
-                    if sym != 0 {
-                        keysym_map.set(layout_idx, lvl, k, sym);
-                    }
-                }
-            }
-        }
-    }
-
     WKB {
         current_layout_idx: 0,
         layout_names,
@@ -367,10 +375,7 @@ pub fn new_from_names(
         .keymap_from_names(&rule_names)
         .ok_or(XkbError::KeymapCompilation)?;
 
-    // Use first layout name as locale for compose file resolution
-    let locale = layout.split(',').next().filter(|s| !s.is_empty());
-
-    Ok(build_wkb_from_keymap(&keymap, locale, true))
+    Ok(build_wkb_from_keymap(&keymap, None, true))
 }
 
 /// Create a new WKB instance from a keymap string.

@@ -46,7 +46,7 @@ fn caps_lock_led(locale: &str) {
 
         // Check initial state matches between wkb and xkbcommon
         let wkb_leds = wkb.leds_state();
-        let wkb_caps_on = (wkb_leds & 2) != 0; // Bit 1 is caps lock
+        let wkb_caps_on = wkb_leds.caps_lock;
 
         let xkb_caps_on = xkb.led_index_is_active(caps_led_idx);
 
@@ -63,7 +63,7 @@ fn caps_lock_led(locale: &str) {
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_leds = wkb.leds_state();
-        let wkb_caps_on = (wkb_leds & 2) != 0;
+        let wkb_caps_on = wkb_leds.caps_lock;
         let xkb_caps_on = xkb.led_index_is_active(caps_led_idx);
 
         assert_eq!(
@@ -79,7 +79,7 @@ fn caps_lock_led(locale: &str) {
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_leds = wkb.leds_state();
-        let wkb_caps_on = (wkb_leds & 2) != 0;
+        let wkb_caps_on = wkb_leds.caps_lock;
         let xkb_caps_on = xkb.led_index_is_active(caps_led_idx);
 
         assert_eq!(
@@ -112,7 +112,7 @@ fn num_lock_led(locale: &str) {
 
         // Check initial state matches between wkb and xkbcommon
         let wkb_leds = wkb.leds_state();
-        let wkb_num_on = (wkb_leds & 1) != 0; // Bit 0 is num lock
+        let wkb_num_on = wkb_leds.num_lock;
         let xkb_num_on = xkb.led_index_is_active(num_led_idx);
 
         assert_eq!(
@@ -128,7 +128,7 @@ fn num_lock_led(locale: &str) {
         xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_leds = wkb.leds_state();
-        let wkb_num_on = (wkb_leds & 1) != 0;
+        let wkb_num_on = wkb_leds.num_lock;
         let xkb_num_on = xkb.led_index_is_active(num_led_idx);
 
         assert_eq!(
@@ -144,7 +144,7 @@ fn num_lock_led(locale: &str) {
         xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_leds = wkb.leds_state();
-        let wkb_num_on = (wkb_leds & 1) != 0;
+        let wkb_num_on = wkb_leds.num_lock;
         let xkb_num_on = xkb.led_index_is_active(num_led_idx);
 
         assert_eq!(
@@ -177,7 +177,7 @@ fn scroll_lock_led(locale: &str) {
 
         // Check initial state matches between wkb and xkbcommon
         let wkb_leds = wkb.leds_state();
-        let wkb_scroll_on = (wkb_leds & 4) != 0; // Bit 2 is scroll lock
+        let wkb_scroll_on = wkb_leds.scroll_lock;
         let xkb_scroll_on = xkb.led_index_is_active(scroll_led_idx);
 
         assert_eq!(
@@ -193,7 +193,7 @@ fn scroll_lock_led(locale: &str) {
         xkb.update_key(Keycode::new(SCROLL_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_leds = wkb.leds_state();
-        let wkb_scroll_on = (wkb_leds & 4) != 0;
+        let wkb_scroll_on = wkb_leds.scroll_lock;
         let xkb_scroll_on = xkb.led_index_is_active(scroll_led_idx);
 
         assert_eq!(
@@ -209,7 +209,7 @@ fn scroll_lock_led(locale: &str) {
         xkb.update_key(Keycode::new(SCROLL_LOCK + 8), xkb::KeyDirection::Up);
 
         let wkb_leds = wkb.leds_state();
-        let wkb_scroll_on = (wkb_leds & 4) != 0;
+        let wkb_scroll_on = wkb_leds.scroll_lock;
         let xkb_scroll_on = xkb.led_index_is_active(scroll_led_idx);
 
         assert_eq!(
@@ -243,9 +243,9 @@ fn all_locks_pressed(locale: &str) {
 
         // Compare LED states between wkb and xkbcommon
         let wkb_leds = wkb.leds_state();
-        let wkb_caps = (wkb_leds & 2) != 0;
-        let wkb_num = (wkb_leds & 1) != 0;
-        let wkb_scroll = (wkb_leds & 4) != 0;
+        let wkb_caps = wkb_leds.caps_lock;
+        let wkb_num = wkb_leds.num_lock;
+        let wkb_scroll = wkb_leds.scroll_lock;
 
         let xkb_caps = xkb.led_index_is_active(caps_led_idx);
         let xkb_num = xkb.led_index_is_active(num_led_idx);

@@ -2,7 +2,8 @@ use super::prelude::*;
 pub use crate::shared_ast_types::xkb_file_type_to_string;
 pub use crate::shared_types::{
     areOverlappingOverlaysSupported, format_max_groups, format_max_overlays,
-    isGroupLockOnReleaseSupported, isModsLatchOnPressSupported, isModsUnLockOnPressSupported, MAX_ACTIONS_PER_LEVEL, XKB_ALL_GROUPS, XKB_MAX_GROUPS, _XKB_MOD_INDEX_NUM_ENTRIES,
+    isGroupLockOnReleaseSupported, isModsLatchOnPressSupported, isModsUnLockOnPressSupported,
+    MAX_ACTIONS_PER_LEVEL, XKB_ALL_GROUPS, XKB_MAX_GROUPS, _XKB_MOD_INDEX_NUM_ENTRIES,
 };
 use crate::shared_types::{MOD_REAL_MASK_ALL, XKB_KEYMAP_FORMAT_TEXT_V1};
 pub use crate::state::mod_mask_get_effective;
@@ -57,7 +58,7 @@ fn default_interpret() -> xkb_sym_interpret {
         required: false,
         num_actions: 0,
         action: xkb_action::None,
-        actions: Vec::new(),
+        actions: Vec::new(), // Note: xkb_action is Copy, so Vec::new() is zero-alloc (no heap until push)
     }
 }
 /// Returns interp indices into `keymap.sym_interprets`, or `usize::MAX` for default interprets.
@@ -69,11 +70,16 @@ fn FindInterpForKey(
     interp_indices: &mut Vec<usize>,
 ) -> bool {
     let keycode = keymap.keys[key_idx].keycode;
-    let syms = xkb_keymap_key_get_syms_by_level_ref(keymap, keycode, group, level).to_vec();
+    let syms_ref = xkb_keymap_key_get_syms_by_level_ref(keymap, keycode, group, level);
 
-    if syms.is_empty() {
+    if syms_ref.is_empty() {
         return false;
     }
+    // Copy syms to stack to release borrow on keymap (most keys have 1-2 syms)
+    let mut syms_buf = [0u32; 8];
+    let num_syms = syms_ref.len().min(8);
+    syms_buf[..num_syms].copy_from_slice(&syms_ref[..num_syms]);
+    let syms = &syms_buf[..num_syms];
     let key_modmap = keymap.keys[key_idx].modmap;
     let key_name = keymap.keys[key_idx].name;
     let num_syms = syms.len() as i32;
@@ -160,8 +166,8 @@ fn FindInterpForKey(
 fn ApplyInterpsToKey(keymap: &mut xkb_keymap, key_idx: usize) -> bool {
     let mut vmodmap: u32 = 0_u32;
     let mut level: u32;
-    let mut interp_indices: Vec<usize> = Vec::new();
-    let mut actions: Vec<xkb_action> = Vec::new();
+    let mut interp_indices: Vec<usize> = Vec::with_capacity(4);
+    let mut actions: Vec<xkb_action> = Vec::with_capacity(4);
     let num_groups = keymap.keys[key_idx].num_groups;
     let mut group: u32 = 0_u32;
     while group < num_groups {
@@ -212,11 +218,13 @@ fn ApplyInterpsToKey(keymap: &mut xkb_keymap, key_idx: usize) -> bool {
                         actions.truncate(MAX_ACTIONS_PER_LEVEL as usize);
                     }
                     keymap.keys[key_idx].groups[group as usize].levels[level as usize].actions =
-                        actions.clone();
-                    if !actions.is_empty() {
+                        std::mem::take(&mut actions);
+                    if !keymap.keys[key_idx].groups[group as usize].levels[level as usize]
+                        .actions
+                        .is_empty()
+                    {
                         keymap.keys[key_idx].groups[group as usize].implicit_actions = true;
                     }
-                    actions.clear();
                 }
                 level = level.wrapping_add(1);
             }

@@ -349,8 +349,8 @@ fn serialized_modifiers(state: &xkbcmn::State) -> (u32, u32, u32, u32) {
 }
 
 fn assert_same_modifiers_state(wkb: &wkb::WKB, xkb: &xkbcmn::State, context: &str) {
-    let ms = wkb.modifiers_state();
-    let wkb_state = (ms.depressed, ms.latched, ms.locked, ms.layout);
+    let rm = wkb.raw_modifiers();
+    let wkb_state = (rm.depressed, rm.latched, rm.locked, rm.layout);
     let xkb_state = serialized_modifiers(xkb);
     assert_eq!(
         wkb_state, xkb_state,

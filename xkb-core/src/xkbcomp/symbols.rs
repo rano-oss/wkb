@@ -103,7 +103,7 @@ impl SymbolsInfo {
             include_depth: 0,
             explicit_group: 0,
             max_groups: 0,
-            keys: Vec::new(),
+            keys: Vec::with_capacity(256),
             default_key: KeyInfo::new_zeroed(),
             default_actions: ActionsInfo {
                 actions: [xkb_action::None; 21],
@@ -1711,14 +1711,15 @@ fn HandleSymbolsBody(
 ) -> bool {
     let mut all_valid_entries: bool = true;
     for def in defs.iter_mut() {
-        let field: String;
+        let field_owned: String;
+        let field: &str;
         let mut arrayNdx_opt: Option<&ExprDef> = None;
         let mut ok: bool = true;
         if def.name.is_none() {
             if def.value.is_none() || !is_action_list_value(def.value.as_ref().unwrap()) {
-                field = "symbols".to_owned();
+                field = "symbols";
             } else {
-                field = "actions".to_owned();
+                field = "actions";
             }
         } else {
             let mut elem_atom: u32 = 0;
@@ -1730,7 +1731,8 @@ fn HandleSymbolsBody(
                 &mut arrayNdx_opt,
             );
             let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom);
-            field = xkb_atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+            field_owned = xkb_atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+            field = &field_owned;
             if ok as i32 != 0 && !elem.is_empty() {
                 log::error!("[XKB-{:03}] Cannot set global defaults for \"{}\" element within a key statement: move statements to the global file scope. Assignment to \"{}.{}\" ignored.\n",
                     XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
@@ -1792,22 +1794,23 @@ fn HandleSymbolsDef(
     info: &mut SymbolsInfo,
     stmt: &mut SymbolsDef,
 ) -> bool {
-    #[allow(unused_assignments)]
-    let mut keyi: KeyInfo = KeyInfo::new_zeroed();
-    keyi = info.default_key.clone();
-    keyi.groups = Vec::new();
-    if !info.default_key.groups.is_empty() {
-        // Shallow copy the GroupInfo structs (bitwise), then deep-copy inner pointers
-        keyi.groups.extend_from_slice(&info.default_key.groups);
-    }
-    let mut i: u32 = 0_u32;
-    while i < keyi.groups.len() as u32 {
-        CopyGroupInfo(
-            &mut keyi.groups[i as usize],
-            &info.default_key.groups[i as usize],
-        );
-        i = i.wrapping_add(1);
-    }
+    // Clone scalar fields from default_key, deep-copy groups
+    let dk = &info.default_key;
+    let mut keyi = KeyInfo {
+        name: dk.name,
+        vmodmap: dk.vmodmap,
+        default_type: dk.default_type,
+        out_of_range_group_number: dk.out_of_range_group_number,
+        groups: dk.groups.clone(), // deep clone via derive(Clone)
+        out_of_range_group_policy: dk.out_of_range_group_policy,
+        defined: dk.defined,
+        merge: dk.merge,
+        repeat: dk.repeat,
+        out_of_range_pending_group: dk.out_of_range_pending_group,
+        overlays_clear: dk.overlays_clear,
+        overlays: dk.overlays,
+        overlay_keys: dk.overlay_keys.clone(),
+    };
     keyi.merge = stmt.merge as merge_mode;
     keyi.name = stmt.keyName;
     if HandleSymbolsBody(ki, info, &mut stmt.symbols, &mut keyi) as i32 != 0

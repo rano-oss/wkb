@@ -12,15 +12,11 @@ pub const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
 pub const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
 
 pub use crate::messages::{
-    XKB_ERROR_INCLUDED_FILE_NOT_FOUND,
-    XKB_ERROR_INSUFFICIENT_BUFFER_SIZE, XKB_ERROR_INVALID_INCLUDED_FILE, XKB_ERROR_INVALID_PATH,
-    XKB_ERROR_RECURSIVE_INCLUDE,
+    XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
+    XKB_ERROR_INVALID_INCLUDED_FILE, XKB_ERROR_INVALID_PATH, XKB_ERROR_RECURSIVE_INCLUDE,
 };
-pub use crate::shared_ast_types::{
-    xkb_file_type_to_string, IncludeStmt,
-    XkbFile, MAP_IS_DEFAULT,
-};
-use crate::xkbcomp::scanner::XkbParseFile;
+pub use crate::shared_ast_types::{xkb_file_type_to_string, IncludeStmt, XkbFile, MAP_IS_DEFAULT};
+use crate::xkbcomp::scanner::XkbParseString;
 
 /// Parsed result from one segment of an include statement.
 pub struct ParsedIncludeMap {
@@ -221,7 +217,7 @@ pub fn FindFileInXkbPath(
     type_0: u32,
     offset: &mut u32,
     required: bool,
-) -> Option<(std::fs::File, String)> {
+) -> Option<(std::sync::Arc<Vec<u8>>, String)> {
     let type_dir = DirectoryForInclude(type_0);
     let mut i: u32 = *offset;
     while i < xkb_context_num_include_paths(ctx) {
@@ -238,9 +234,9 @@ pub fn FindFileInXkbPath(
                 4096,
                 &path
             );
-        } else if let Ok(file) = std::fs::File::open(&path) {
+        } else if let Some(data) = crate::shared_types::read_file_cached(&path) {
             *offset = i;
-            return Some((file, path));
+            return Some((data, path));
         }
         i += 1;
     }
@@ -287,10 +283,8 @@ pub fn ProcessIncludeFile(
 
     let absolute_path = stmt_file.starts_with('/');
     let mut offset: u32 = 0;
-    let mut file_and_path: Option<(std::fs::File, String)> = if absolute_path {
-        std::fs::File::open(&stmt_file)
-            .ok()
-            .map(|f| (f, stmt_file.clone()))
+    let mut file_and_path: Option<(std::sync::Arc<Vec<u8>>, String)> = if absolute_path {
+        crate::shared_types::read_file_cached(&stmt_file).map(|data| (data, stmt_file.clone()))
     } else if expanded {
         // Expanded but not absolute — don't search include paths
         None
@@ -298,9 +292,8 @@ pub fn ProcessIncludeFile(
         FindFileInXkbPath(ctx, "(unknown)", &stmt_file, file_type, &mut offset, true)
     };
 
-    while let Some((ref open_file, ref _path)) = file_and_path {
-        if let Some(parsed) = XkbParseFile(ctx, open_file, &stmt.file, map_str) {
-            // Drop the file (closes it)
+    while let Some((ref file_data, ref _path)) = file_and_path {
+        if let Some(parsed) = XkbParseString(ctx, file_data, &stmt.file, map_str) {
             let _ = file_and_path.take();
 
             if parsed.file_type != file_type {

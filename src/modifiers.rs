@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fmt};
+use std::collections::BTreeMap;
 
 // Max modifier slots — keymaps typically have 10-20 modifiers
 const MAX_MOD_SLOTS: usize = 32;
@@ -16,39 +16,26 @@ pub(crate) const MOD_ALT: u32 = 8;
 /// Num Lock/Mod2 modifier bitmask (XKB mod index 4).
 pub(crate) const MOD_NUM_LOCK: u32 = 16;
 /// Mod3/ISO Level5 Shift modifier bitmask (XKB mod index 5).
-pub(crate) const _MOD_ISO_LEVEL5_SHIFT: u32 = 32;
+// pub(crate) const _MOD_ISO_LEVEL5_SHIFT: u32 = 32;
 /// Logo/Mod4 modifier bitmask (XKB mod index 6).
 pub(crate) const MOD_LOGO: u32 = 64;
-/// AltGr/Mod5/ISO Level3 Shift modifier bitmask (XKB mod index 7).
-pub(crate) const MOD_ISO_LEVEL3_SHIFT: u32 = 128;
+/// AltGr modifier bitmask (XKB mod index 7).
+pub(crate) const MOD_ALTGR: u32 = 128;
 
 /// LED bitmask for Num Lock (bit 0).
-pub const LED_NUM_LOCK: u32 = 1;
-/// LED bitmask for Caps Lock (bit 1).
-pub const LED_CAPS_LOCK: u32 = 2;
-/// LED bitmask for Scroll Lock (bit 2).
-pub const LED_SCROLL_LOCK: u32 = 4;
+/// LED indicator state.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct LedState {
+    pub num_lock: bool,
+    pub caps_lock: bool,
+    pub scroll_lock: bool,
+}
 
 // ── Modifier state ──
 
-/// Current keyboard modifier state.
-///
-/// Combines high-level boolean fields for common keybinding checks with the
-/// raw depressed/latched/locked bitmasks needed for `wl_keyboard.modifiers`.
+/// Raw modifier bitmasks for the Wayland `wl_keyboard.modifiers` protocol event.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
-pub struct ModifiersState {
-    /// The "Control" modifier is active.
-    pub ctrl: bool,
-    /// The "Alt" modifier is active.
-    pub alt: bool,
-    /// The "Shift" modifier is active.
-    pub shift: bool,
-    /// The "Caps Lock" modifier is active.
-    pub caps_lock: bool,
-    /// The "Logo" (Super/Windows) modifier is active.
-    pub logo: bool,
-    /// The "Num Lock" modifier is active.
-    pub num_lock: bool,
+pub struct RawModifiers {
     /// Depressed modifiers bitmask (keys physically held down).
     pub depressed: u32,
     /// Latched modifiers bitmask (sticky, cleared on next keypress).
@@ -59,40 +46,6 @@ pub struct ModifiersState {
     pub layout: u32,
 }
 
-impl ModifiersState {
-    /// Reconstruct raw bitmasks from the boolean fields.
-    ///
-    /// Useful when a virtual keyboard or external source sets modifier state
-    /// from booleans and you need to feed it back to [`crate::WKB::update_modifiers`].
-    pub fn serialize(&self) -> (u32, u32, u32, u32) {
-        let mut locked: u32 = 0;
-        let mut depressed: u32 = 0;
-
-        if self.caps_lock {
-            locked |= MOD_CAPS_LOCK;
-        }
-        if self.num_lock {
-            locked |= MOD_NUM_LOCK;
-        }
-        if self.ctrl {
-            depressed |= MOD_CTRL;
-        }
-        if self.alt {
-            depressed |= MOD_ALT;
-        }
-        if self.shift {
-            depressed |= MOD_SHIFT;
-        }
-        if self.logo {
-            depressed |= MOD_LOGO;
-        }
-
-        (depressed, 0, locked, self.layout)
-    }
-}
-
-// ── Evdev code → modifier bitmask mapping ──
-
 pub(crate) const MODIFIER_MAPPING: [(u32, u32); 9] = [
     (LEFT_SHIFT, MOD_SHIFT),
     (RIGHT_SHIFT, MOD_SHIFT),
@@ -102,7 +55,7 @@ pub(crate) const MODIFIER_MAPPING: [(u32, u32); 9] = [
     (ALT, MOD_ALT),
     (NUM_LOCK, MOD_NUM_LOCK),
     (LOGO, MOD_LOGO),
-    (ALTGR, MOD_ISO_LEVEL3_SHIFT),
+    (ALTGR, MOD_ALTGR),
 ];
 
 // Key constants
@@ -116,8 +69,6 @@ pub const LOGO: u32 = 125;
 pub const CAPS_LOCK: u32 = 58;
 pub const NUM_LOCK: u32 = 69;
 pub const SCROLL_LOCK: u32 = 70;
-// pub const BACKSPACE: u32 = 14;
-// pub const TAB: u32 = 15;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum KeyDirection {
@@ -278,28 +229,6 @@ pub enum Modifier {
 pub struct Modifiers {
     /// Flat array of (evdev_code, Modifier) pairs. Typically 10-20 entries.
     entries: Vec<(u32, Modifier)>,
-}
-
-impl fmt::Display for Modifiers {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (code, modifier) in &self.entries {
-            write!(f, "code {}: ", code)?;
-            match modifier {
-                Modifier::Single(mod_kind) => {
-                    write!(f, "{:?}", mod_kind)?;
-                }
-                Modifier::Leveled(map) => {
-                    writeln!(f, "[")?;
-                    for (index, mod_kind) in map {
-                        writeln!(f, "   index {}: {:?}, ", index, mod_kind)?;
-                    }
-                    write!(f, "]")?;
-                }
-            }
-            writeln!(f)?;
-        }
-        Ok(())
-    }
 }
 
 impl Default for Modifiers {
@@ -560,6 +489,96 @@ impl Modifiers {
             mod_kind.update(key_direction);
         }
         true
+    }
+
+    pub fn state(&self, layout_index: usize) -> RawModifiers {
+        let mut depressed = 0;
+        let mut latched = 0;
+        let mut locked = 0;
+        let layout = layout_index as u32;
+        for (code, bit) in MODIFIER_MAPPING {
+            if let Some(modifier) = self.get(code) {
+                let mod_kinds: &[&ModKind] = &match modifier {
+                    Modifier::Single(mk) => vec![mk],
+                    Modifier::Leveled(map) => map.values().collect(),
+                };
+                for mk in mod_kinds {
+                    match mk {
+                        ModKind::Pressed { pressed: true, .. } => depressed |= bit,
+                        ModKind::Lock {
+                            pressed, locked: l, ..
+                        } => {
+                            if *pressed {
+                                depressed |= bit;
+                            }
+                            if *l > 0 {
+                                locked |= bit;
+                            }
+                        }
+                        ModKind::Latch {
+                            pressed,
+                            latched: is_latched,
+                            ..
+                        } => {
+                            if *pressed {
+                                depressed |= bit;
+                            }
+                            if *is_latched {
+                                latched |= bit;
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+        RawModifiers {
+            depressed,
+            latched,
+            locked,
+            layout,
+        }
+    }
+
+    pub(crate) fn update(&mut self, depressed: u32, latched: u32, locked: u32) {
+        for (code, bit) in MODIFIER_MAPPING {
+            let is_depressed = (depressed & bit) != 0;
+            let is_locked = (locked & bit) != 0;
+            let is_latched = (latched & bit) != 0;
+
+            if let Some(m) = self.get_mut(code) {
+                let mod_kinds: Vec<&mut ModKind> = match m {
+                    Modifier::Single(mk) => vec![mk],
+                    Modifier::Leveled(map) => map.values_mut().collect(),
+                };
+                for mk in mod_kinds {
+                    match mk {
+                        ModKind::Pressed { pressed, .. } => *pressed = is_depressed,
+                        ModKind::Lock {
+                            pressed, locked, ..
+                        } => {
+                            *pressed = is_depressed;
+                            *locked = if is_locked { 1 } else { 0 };
+                        }
+                        ModKind::Latch {
+                            pressed, latched, ..
+                        } => {
+                            *pressed = is_depressed;
+                            *latched = is_latched;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+    }
+
+    pub(crate) fn leds_state(&self) -> LedState {
+        LedState {
+            num_lock: self.locked_with_type(NUM_LOCK, ModType::Num),
+            caps_lock: self.locked_with_type(CAPS_LOCK, ModType::Caps),
+            scroll_lock: self.locked_with_type(SCROLL_LOCK, ModType::Scroll),
+        }
     }
 }
 

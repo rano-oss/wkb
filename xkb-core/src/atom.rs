@@ -27,11 +27,17 @@ fn hash_buf(bytes: &[u8]) -> u32 {
     hash
 }
 
-/// Create new atom table
+/// Create new atom table with pre-allocated capacity
 pub fn atom_table_new() -> atom_table {
+    // Pre-allocate for typical keymap compilation (~300-500 atoms)
+    // Avoids 6+ resize+rehash cycles during compilation
     atom_table {
-        index: vec![0; 4],
-        strings: vec![None], // index 0 = XKB_ATOM_NONE
+        index: vec![0; 1024],
+        strings: {
+            let mut v = Vec::with_capacity(512);
+            v.push(None); // index 0 = XKB_ATOM_NONE
+            v
+        },
     }
 }
 

@@ -213,10 +213,10 @@ fn bench_key_update(c: &mut Criterion) {
     group.finish();
 }
 
-// ── key/get_utf8 ───────────────────────────────────────────────────────
+// ── key/get_char ───────────────────────────────────────────────────────
 
-fn bench_key_get_utf8(c: &mut Criterion) {
-    let mut group = c.benchmark_group("key/get_utf8");
+fn bench_key_get_char(c: &mut Criterion) {
+    let mut group = c.benchmark_group("key/get_char");
 
     for case in KEY_CASES {
         for (lid, locale, variant) in layouts_for_case(case.name) {
@@ -309,24 +309,7 @@ fn bench_key_get_sym(c: &mut Criterion) {
                 |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
                     wb.update_key(code, dir);
                     if down {
-                        black_box(wb.key_char(black_box(code)));
-                    }
-                }
-            );
-
-            bench_xkb!(
-                group,
-                bid,
-                locale,
-                variant,
-                case,
-                |st: &mut xkbcommon::xkb::State,
-                 kc: xkbcommon::xkb::Keycode,
-                 down: bool,
-                 dir: xkbcommon::xkb::KeyDirection| {
-                    st.update_key(kc, dir);
-                    if down {
-                        black_box(st.key_get_one_sym(black_box(kc)));
+                        black_box(wb.state_keysym(black_box(code)));
                     }
                 }
             );
@@ -358,7 +341,7 @@ criterion_group! {
     config = cfg();
     targets =
         bench_key_update,
-        bench_key_get_utf8,
+        bench_key_get_char,
         bench_key_get_sym,
 }
 criterion_main!(benches);

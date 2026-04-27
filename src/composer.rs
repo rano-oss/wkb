@@ -93,8 +93,9 @@ impl Composer {
         let last = self.pending.len() - 1;
 
         for token in &self.pending[..last] {
-            if let Token::Char(c) = token {
-                s.push(*c);
+            match token {
+                Token::Char(c) => s.push(*c),
+                Token::Compose => {}
             }
         }
 

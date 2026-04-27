@@ -3924,6 +3924,63 @@ fn keysym_to_codepoint(keysym: u32) -> Option<u32> {
         _ => {}
     }
 
+    // Dead keysyms → Unicode combining characters
+    // These are needed so dead keys get character entries in the flat table,
+    // allowing the character-based composer to process them.
+    match keysym {
+        0xfe50 => return Some(0x0300), // dead_grave → COMBINING GRAVE ACCENT
+        0xfe51 => return Some(0x0301), // dead_acute → COMBINING ACUTE ACCENT
+        0xfe52 => return Some(0x0302), // dead_circumflex → COMBINING CIRCUMFLEX ACCENT
+        0xfe53 => return Some(0x0303), // dead_tilde → COMBINING TILDE
+        0xfe54 => return Some(0x0304), // dead_macron → COMBINING MACRON
+        0xfe55 => return Some(0x0306), // dead_breve → COMBINING BREVE
+        0xfe56 => return Some(0x0307), // dead_abovedot → COMBINING DOT ABOVE
+        0xfe57 => return Some(0x0308), // dead_diaeresis → COMBINING DIAERESIS
+        0xfe58 => return Some(0x030A), // dead_abovering → COMBINING RING ABOVE
+        0xfe59 => return Some(0x030B), // dead_doubleacute → COMBINING DOUBLE ACUTE ACCENT
+        0xfe5a => return Some(0x030C), // dead_caron → COMBINING CARON
+        0xfe5b => return Some(0x0327), // dead_cedilla → COMBINING CEDILLA
+        0xfe5c => return Some(0x0328), // dead_ogonek → COMBINING OGONEK
+        0xfe5d => return Some(0x0345), // dead_iota → COMBINING GREEK YPOGEGRAMMENI
+        0xfe5e => return Some(0x3099), // dead_voiced_sound → COMBINING KATAKANA-HIRAGANA VOICED SOUND MARK
+        0xfe5f => return Some(0x309A), // dead_semivoiced_sound → COMBINING KATAKANA-HIRAGANA SEMI-VOICED SOUND MARK
+        0xfe60 => return Some(0x0323), // dead_belowdot → COMBINING DOT BELOW
+        0xfe61 => return Some(0x0309), // dead_hook → COMBINING HOOK ABOVE
+        0xfe62 => return Some(0x031B), // dead_horn → COMBINING HORN
+        0xfe63 => return Some(0x0338), // dead_stroke → COMBINING LONG SOLIDUS OVERLAY
+        0xfe64 => return Some(0x0313), // dead_abovecomma → COMBINING COMMA ABOVE
+        0xfe65 => return Some(0x0314), // dead_abovereversedcomma → COMBINING REVERSED COMMA ABOVE
+        0xfe66 => return Some(0x030F), // dead_doublegrave → COMBINING DOUBLE GRAVE ACCENT
+        0xfe67 => return Some(0x0325), // dead_belowring → COMBINING RING BELOW
+        0xfe68 => return Some(0x0332), // dead_belowmacron → COMBINING LOW LINE
+        0xfe69 => return Some(0x032D), // dead_belowcircumflex → COMBINING CIRCUMFLEX ACCENT BELOW
+        0xfe6a => return Some(0x0330), // dead_belowtilde → COMBINING TILDE BELOW
+        0xfe6b => return Some(0x032E), // dead_belowbreve → COMBINING BREVE BELOW
+        0xfe6c => return Some(0x0324), // dead_belowdiaeresis → COMBINING DIAERESIS BELOW
+        0xfe6d => return Some(0x0311), // dead_invertedbreve → COMBINING INVERTED BREVE
+        0xfe6e => return Some(0x0326), // dead_belowcomma → COMBINING COMMA BELOW
+        0xfe6f => return Some(0x00A4), // dead_currency → CURRENCY SIGN
+        0xfe80 => return Some(0x0061), // dead_a → 'a'
+        0xfe81 => return Some(0x0041), // dead_A → 'A'
+        0xfe82 => return Some(0x0065), // dead_e → 'e'
+        0xfe83 => return Some(0x0045), // dead_E → 'E'
+        0xfe84 => return Some(0x0069), // dead_i → 'i'
+        0xfe85 => return Some(0x0049), // dead_I → 'I'
+        0xfe86 => return Some(0x006F), // dead_o → 'o'
+        0xfe87 => return Some(0x004F), // dead_O → 'O'
+        0xfe88 => return Some(0x0075), // dead_u → 'u'
+        0xfe89 => return Some(0x0055), // dead_U → 'U'
+        0xfe8a => return Some(0x0259), // dead_schwa → 'ə'
+        0xfe8b => return Some(0x018F), // dead_SCHWA → 'Ə'
+        0xfe8c => return Some(0x03B1), // dead_greek → GREEK SMALL LETTER ALPHA (approximate)
+        0xfe8d => return Some(0x0654), // dead_hamza → ARABIC HAMZA ABOVE
+        0xfe90 => return Some(0x0331), // dead_lowline → COMBINING MACRON BELOW
+        0xfe91 => return Some(0x030D), // dead_aboveverticalline → COMBINING VERTICAL LINE ABOVE
+        0xfe92 => return Some(0x0329), // dead_belowverticalline → COMBINING VERTICAL LINE BELOW
+        0xfe93 => return Some(0x0338), // dead_longsolidusoverlay → COMBINING LONG SOLIDUS OVERLAY
+        _ => {}
+    }
+
     // Look up in the static table
     bin_search_keysym(keysym)
 }

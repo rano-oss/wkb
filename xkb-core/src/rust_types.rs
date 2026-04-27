@@ -168,6 +168,7 @@ fn preprocess_unicode_keysyms(input: &str) -> std::borrow::Cow<'_, str> {
 // ============================================================================
 
 /// Safe wrapper around xkb_context with automatic cleanup
+#[derive(Clone)]
 pub struct Context {
     entity: xkb_context,
 }
@@ -180,27 +181,27 @@ impl Context {
         Some(Context { entity: ctx })
     }
 
-    /// Create a keymap from RMLVO names
-    pub fn keymap_from_names(&self, rules: &RuleNames) -> Option<Keymap> {
+    /// Create a keymap from RMLVO names. Consumes the context.
+    pub fn keymap_from_names(self, rules: &RuleNames) -> Option<Keymap> {
         use crate::shared_types::XKB_KEYMAP_COMPILE_NO_FLAGS;
 
         let rmlvo_c = rules.to_c_keymap();
         let keymap = super::keymap::xkb_keymap_new_from_names(
-            self.entity.clone(),
+            self.entity,
             Some(&rmlvo_c),
             XKB_KEYMAP_COMPILE_NO_FLAGS,
         )?;
         Some(Keymap { inner: keymap })
     }
 
-    /// Create a keymap from a keymap string
-    pub fn keymap_from_string(&self, keymap_str: &str) -> Option<Keymap> {
+    /// Create a keymap from a keymap string. Consumes the context.
+    pub fn keymap_from_string(self, keymap_str: &str) -> Option<Keymap> {
         use crate::shared_types::{XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1};
 
         let processed = preprocess_unicode_keysyms(keymap_str);
         let keymap_cstr = CString::new(processed.as_ref()).ok()?;
         let keymap = super::keymap::xkb_keymap_new_from_string(
-            self.entity.clone(),
+            self.entity,
             &keymap_cstr,
             XKB_KEYMAP_FORMAT_TEXT_V1,
             XKB_KEYMAP_COMPILE_NO_FLAGS,

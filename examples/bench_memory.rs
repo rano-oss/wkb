@@ -258,7 +258,7 @@ fn run_workload_xkbcommon_compat() -> u64 {
             variant: variant.unwrap_or("").to_string(),
             options: String::new(),
         };
-        let km = ctx.keymap_from_names(&rmlvo).expect("keymap");
+        let km = ctx.clone().keymap_from_names(&rmlvo).expect("keymap");
         let mut st = km.new_state().expect("state");
 
         for case in KEY_CASES {
