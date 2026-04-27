@@ -42,17 +42,13 @@ pub use composer::ComposeState;
 use composer::{Composer, Token};
 mod composer;
 mod modifiers;
-use modifiers::{
-    level_index, KeyDirection, ModKind, ModType, Modifier, Modifiers, CAPS_LOCK, MODIFIER_MAPPING,
-    MOD_ALT, MOD_CAPS_LOCK, MOD_CTRL, MOD_LOGO, MOD_NUM_LOCK, MOD_SHIFT, NUM_LOCK, SCROLL_LOCK,
-};
-pub use modifiers::{ModifiersState, LED_CAPS_LOCK, LED_NUM_LOCK, LED_SCROLL_LOCK};
+use modifiers::{level_index, KeyDirection, ModType, Modifiers, CAPS_LOCK, NUM_LOCK};
+pub use modifiers::{LedState, ModifiersState, RawModifiers};
 mod bitset;
 pub(crate) use bitset::KeyBitSet;
 mod flat_keymap;
 pub(crate) use flat_keymap::{FlatKeymap, FlatKeysymMap};
 pub mod keysyms;
-pub use keysyms::Keysym;
 /// Test-only utilities. Not part of the public API.
 #[cfg(feature = "testing")]
 pub mod testing;
@@ -130,79 +126,19 @@ impl WKB {
         self.composer.reset();
     }
 
-    /// Return the current modifier state.
+    /// Return the current modifier state (boolean fields only).
     ///
-    /// The returned [`ModifiersState`] contains both high-level boolean fields
-    /// (`ctrl`, `alt`, `shift`, etc.) and raw bitmasks (`depressed`, `latched`,
-    /// `locked`, `layout`) suitable for `wl_keyboard.modifiers`.
+    /// For the raw bitmasks needed by `wl_keyboard.modifiers`, use
+    /// [`raw_modifiers`](Self::raw_modifiers) instead.
     pub fn modifiers_state(&self) -> ModifiersState {
-        let mut depressed = 0;
-        let mut latched = 0;
-        let mut locked = 0;
-        let layout = self.current_layout_idx as u32;
-        for (code, bit) in MODIFIER_MAPPING {
-            if let Some(Modifier::Single(mk)) = self.modifiers.get(code) {
-                match mk {
-                    ModKind::Pressed { pressed: true, .. } => depressed |= bit,
-                    ModKind::Lock {
-                        pressed, locked: l, ..
-                    } => {
-                        if *pressed {
-                            depressed |= bit;
-                        }
-                        if *l > 0 {
-                            locked |= bit;
-                        }
-                    }
-                    ModKind::Latch {
-                        pressed,
-                        latched: is_latched,
-                        ..
-                    } => {
-                        if *pressed {
-                            depressed |= bit;
-                        }
-                        if *is_latched {
-                            latched |= bit;
-                        }
-                    }
-                    _ => {}
-                }
-            }
-        }
-        let effective = depressed | latched | locked;
-        ModifiersState {
-            ctrl: (effective & MOD_CTRL) != 0,
-            alt: (effective & MOD_ALT) != 0,
-            shift: (effective & MOD_SHIFT) != 0,
-            caps_lock: (effective & MOD_CAPS_LOCK) != 0,
-            logo: (effective & MOD_LOGO) != 0,
-            num_lock: (effective & MOD_NUM_LOCK) != 0,
-            depressed,
-            latched,
-            locked,
-            layout,
-        }
+        self.modifiers.state(self.current_layout_idx).0
     }
 
-    /// Return the LED indicator state as a bitmask.
+    /// Return the raw modifier bitmasks for `wl_keyboard.modifiers`.
     ///
-    /// Use [`LED_NUM_LOCK`], [`LED_CAPS_LOCK`], [`LED_SCROLL_LOCK`] to test bits.
-    pub fn leds_state(&self) -> u32 {
-        let mut leds = 0;
-        if self.modifiers.locked_with_type(NUM_LOCK, ModType::Num) {
-            leds |= LED_NUM_LOCK;
-        }
-        if self.modifiers.locked_with_type(CAPS_LOCK, ModType::Caps) {
-            leds |= LED_CAPS_LOCK;
-        }
-        if self
-            .modifiers
-            .locked_with_type(SCROLL_LOCK, ModType::Scroll)
-        {
-            leds |= LED_SCROLL_LOCK;
-        }
-        leds
+    /// Returns depressed, latched, locked bitmasks and the active layout index.
+    pub fn raw_modifiers(&self) -> RawModifiers {
+        self.modifiers.state(self.current_layout_idx).1
     }
 
     /// Apply modifier state received from `wl_keyboard.modifiers`.
@@ -213,32 +149,12 @@ impl WKB {
         if (group as usize) < self.num_layouts() {
             let _ = self.set_layout(group as usize);
         }
-        for (code, bit) in MODIFIER_MAPPING {
-            let is_depressed = (depressed & bit) != 0;
-            let is_locked = (locked & bit) != 0;
-            let is_latched = (latched & bit) != 0;
+        self.modifiers.update(depressed, latched, locked);
+    }
 
-            if let Some(m) = self.modifiers.get_mut(code) {
-                if let Modifier::Single(mk) = m {
-                    match mk {
-                        ModKind::Pressed { pressed, .. } => *pressed = is_depressed,
-                        ModKind::Lock {
-                            pressed, locked, ..
-                        } => {
-                            *pressed = is_depressed;
-                            *locked = if is_locked { 1 } else { 0 };
-                        }
-                        ModKind::Latch {
-                            pressed, latched, ..
-                        } => {
-                            *pressed = is_depressed;
-                            *latched = is_latched;
-                        }
-                        _ => {}
-                    }
-                }
-            }
-        }
+    /// Return the LED indicator state.
+    pub fn leds_state(&self) -> LedState {
+        self.modifiers.leds_state()
     }
 
     /// Return whether the given evdev keycode is a repeating key.

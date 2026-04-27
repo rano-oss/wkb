@@ -54,18 +54,20 @@ fn xkb_compose_sequence(
 fn wkb_compose_sequence(
     composer: &wkb::testing::Composer,
     chars: &[char],
-    is_multi_key: bool,
+    multi_key_index: Option<usize>,
 ) -> Option<char> {
     use wkb::testing::ComposeState;
     let mut c = composer.clone();
     let mut result = None;
-    if is_multi_key {
-        match composer_feed(&mut c, Token::Compose) {
-            ComposeState::Cancelled => return None,
-            _ => {}
+    for (i, &ch) in chars.iter().enumerate() {
+        if let Some(idx) = multi_key_index {
+            if idx == i {
+                match composer_feed(&mut c, Token::Compose) {
+                    ComposeState::Cancelled => return None,
+                    _ => {}
+                }
+            }
         }
-    }
-    for &ch in chars {
         match composer_feed(&mut c, Token::Char(ch)) {
             ComposeState::Finished(out) => {
                 result = Some(out);
@@ -189,11 +191,7 @@ fn run_compose_test(
 
         let wkb_result = {
             let composer = regular;
-            wkb_compose_sequence(
-                composer,
-                &resolve_entry_chars(entry),
-                entry.multi_key_index.is_some(),
-            )
+            wkb_compose_sequence(composer, &resolve_entry_chars(entry), entry.multi_key_index)
         };
 
         if has_xkb {
@@ -220,7 +218,9 @@ fn run_compose_test(
                     let key = (entry.multi_key_index.is_some(), entry.keys.clone());
                     let is_known =
                         collision_seqs.contains(&key) || prefix_conflict_seqs.contains(&key);
-                    if is_known {
+                    // If wkb matches expected but xkb doesn't, wkb is correct — not a mismatch
+                    let wkb_correct = wkb_result == Some(expected);
+                    if is_known || wkb_correct {
                         char_collisions.push(msg);
                     } else {
                         mismatches.push(msg);
@@ -354,7 +354,28 @@ fn test_wkb_compose(xkb_locale: &str) {
         return;
     }
 
+    // Derive the full locale from the compose file subpath for env override.
+    let locale_full = if xkb_locale.contains('.') {
+        xkb_locale.to_string()
+    } else {
+        compose_file_subpath
+            .strip_suffix("/Compose")
+            .unwrap_or(xkb_locale)
+            .to_string()
+    };
+
+    // Override locale env so WKB loads the locale-specific compose file,
+    // not whatever LANG is set to on this machine.
+    let saved_lc_all = std::env::var("LC_ALL").ok();
+    unsafe { std::env::set_var("LC_ALL", &locale_full) };
+
     let wkb = wkb::WKB::new_from_names("", "", xkb_locale, "", None).unwrap();
+
+    // Restore
+    match saved_lc_all {
+        Some(v) => unsafe { std::env::set_var("LC_ALL", v) },
+        None => unsafe { std::env::remove_var("LC_ALL") },
+    }
 
     let compose_path = Path::new("/usr/share/X11/locale").join(&compose_file_subpath);
     println!(
@@ -362,22 +383,9 @@ fn test_wkb_compose(xkb_locale: &str) {
         xkb_locale, compose_file_subpath
     );
 
-    // Determine the xkbcommon locale for cross-checking.
-    // Try the UTF-8 full locale first; for locales already containing
-    // a dot (like full locale names) use as-is.
-    let xkb_locale_full = if xkb_locale.contains('.') {
-        xkb_locale.to_string()
-    } else {
-        // Derive from compose file subpath: e.g. "en_US.UTF-8/Compose" → "en_US.UTF-8"
-        compose_file_subpath
-            .strip_suffix("/Compose")
-            .unwrap_or(xkb_locale)
-            .to_string()
-    };
-
     run_compose_test(
         &format!("wkb({})", xkb_locale),
-        &xkb_locale_full,
+        &locale_full,
         &compose_path,
         wkb.composer(),
     );

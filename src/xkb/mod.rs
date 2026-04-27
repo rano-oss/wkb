@@ -303,13 +303,22 @@ fn build_wkb_from_keymap(
     let _ = store_keymap; // no longer cached; generated on demand
 
     #[cfg(feature = "compose")]
-    let composer = locale
-        .and_then(xkb_core::compose::resolve_compose_file)
-        .map(|subpath| {
-            let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
-            load_compose_from_path(&path)
-        })
-        .unwrap_or_else(Composer::new);
+    let composer = {
+        // Resolve compose locale from environment (LC_ALL > LC_CTYPE > LANG),
+        // falling back to the explicit locale hint (e.g. layout name).
+        let env_locale = std::env::var("LC_ALL")
+            .or_else(|_| std::env::var("LC_CTYPE"))
+            .or_else(|_| std::env::var("LANG"))
+            .ok();
+        let compose_locale = env_locale.as_deref().or(locale);
+        compose_locale
+            .and_then(xkb_core::compose::resolve_compose_file)
+            .map(|subpath| {
+                let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
+                load_compose_from_path(&path)
+            })
+            .unwrap_or_else(Composer::new)
+    };
 
     #[cfg(not(feature = "compose"))]
     let composer = Composer::new();
@@ -367,10 +376,7 @@ pub fn new_from_names(
         .keymap_from_names(&rule_names)
         .ok_or(XkbError::KeymapCompilation)?;
 
-    // Use first layout name as locale for compose file resolution
-    let locale = layout.split(',').next().filter(|s| !s.is_empty());
-
-    Ok(build_wkb_from_keymap(&keymap, locale, true))
+    Ok(build_wkb_from_keymap(&keymap, None, true))
 }
 
 /// Create a new WKB instance from a keymap string.

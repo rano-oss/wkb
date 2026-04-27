@@ -4,70 +4,11 @@
 
 #![allow(non_upper_case_globals)]
 
-use core::fmt;
-
-/// A keysym value — a platform-independent identifier for a key symbol.
-/// This is a newtype around `u32`
-#[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-#[repr(transparent)]
-pub struct Keysym(u32);
-
-impl Keysym {
-    /// Create a `Keysym` from a raw `u32` value.
-    #[inline]
-    pub const fn new(raw: u32) -> Self {
-        Self(raw)
-    }
-
-    /// Return the raw `u32` keysym value.
-    #[inline]
-    pub const fn raw(self) -> u32 {
-        self.0
-    }
-
-    /// Return the canonical name of this keysym (e.g. `"BackSpace"`).
-    pub fn name(self) -> Option<&'static str> {
-        keysym_get_name(self.0)
-    }
-}
-
-impl fmt::Debug for Keysym {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(name) = keysym_get_name(self.0) {
-            return write!(f, "Keysym({name} = {:#x})", self.0);
-        }
-        write!(f, "Keysym({:#x})", self.0)
-    }
-}
-
-impl fmt::Display for Keysym {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(name) = keysym_get_name(self.0) {
-            return write!(f, "{name}");
-        }
-        write!(f, "{:#x}", self.0)
-    }
-}
-
-impl From<u32> for Keysym {
-    #[inline]
-    fn from(raw: u32) -> Self {
-        Self(raw)
-    }
-}
-
-impl From<Keysym> for u32 {
-    #[inline]
-    fn from(k: Keysym) -> Self {
-        k.0
-    }
-}
-
 /// No symbol (empty/invalid keysym).
 pub const NoSymbol: u32 = 0;
 
 // pub const _0: u32 = 0x30;
-// pub const _1: u32 = 0x31;
+pub const _1: u32 = 0x31;
 // pub const _2: u32 = 0x32;
 pub const _3: u32 = 0x33;
 // pub const _4: u32 = 0x34;
