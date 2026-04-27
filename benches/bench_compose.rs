@@ -8,9 +8,9 @@ use wkb::testing::composer_feed;
 
 fn cfg() -> Criterion {
     Criterion::default()
-        .warm_up_time(Duration::from_millis(50))
-        .measurement_time(Duration::from_millis(200))
-        .sample_size(10)
+        .warm_up_time(Duration::from_millis(200))
+        .measurement_time(Duration::from_secs(1))
+        .sample_size(50)
 }
 
 fn bench_compose_feed(c: &mut Criterion) {
