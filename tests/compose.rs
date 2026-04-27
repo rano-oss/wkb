@@ -700,6 +700,37 @@ fn compose_resolution_full_locale_names() {
 }
 
 #[test]
+fn debug_cyrillic_keysym_mapping() {
+    use wkb::testing::compose_parse::keysym_name_to_char;
+
+    let names = [
+        "Cyrillic_e",
+        "Cyrillic_E",
+        "Cyrillic_ie",
+        "Cyrillic_IE",
+        "Cyrillic_i",
+        "Cyrillic_I",
+        "Cyrillic_a",
+        "Cyrillic_A",
+        "Cyrillic_o",
+        "Cyrillic_O",
+        "Cyrillic_u",
+        "Cyrillic_U",
+        "dead_grave",
+        "dead_acute",
+        "dead_diaeresis",
+        "dead_doubleacute",
+    ];
+    for name in &names {
+        let ch = keysym_name_to_char(name);
+        match ch {
+            Some(c) => eprintln!("{}: U+{:04X} ('{}')", name, c as u32, c),
+            None => eprintln!("{}: None", name),
+        }
+    }
+}
+
+#[test]
 fn compose_resolution_every_xkb_layout() {
     // Every XKB layout file that is a real keyboard layout should
     // resolve to some compose file (no None allowed).

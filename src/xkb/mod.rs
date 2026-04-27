@@ -110,24 +110,32 @@ fn press_level_modifiers(
 }
 
 /// Load compose entries from a file and build a ListComposer.
+/// Uses first-wins semantics to match xkbcommon behavior: if multiple
+/// entries resolve to the same token sequence, only the first is kept.
 pub fn load_compose_from_path(path: &std::path::Path) -> Composer {
     let mut regular = Composer::new();
+    let mut seen: std::collections::HashSet<Vec<u32>> = std::collections::HashSet::new();
 
     let entries = xkb_core::compose::parse_compose_file(path);
 
     for entry in entries {
         let mut tokens: Vec<Token> = Vec::new();
+        let mut key: Vec<u32> = Vec::new();
         let mk_idx = entry.multi_key_index;
 
         for (i, ch) in entry.keys.iter().enumerate() {
             if let Some(idx) = mk_idx {
                 if idx == i {
                     tokens.push(Token::Compose);
+                    key.push(0);
                 }
             }
             tokens.push(Token::Char(*ch));
+            key.push(*ch as u32);
         }
-        regular.insert(&tokens, entry.output);
+        if seen.insert(key) {
+            regular.insert(&tokens, entry.output);
+        }
     }
     regular
 }

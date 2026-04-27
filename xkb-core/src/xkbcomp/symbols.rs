@@ -1711,7 +1711,7 @@ fn HandleSymbolsBody(
 ) -> bool {
     let mut all_valid_entries: bool = true;
     for def in defs.iter_mut() {
-        let mut field_owned: String = String::new();
+        let field_owned: String;
         let field: &str;
         let mut arrayNdx_opt: Option<&ExprDef> = None;
         let mut ok: bool = true;
