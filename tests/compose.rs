@@ -1,11 +1,17 @@
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::Path;
+use std::sync::Mutex;
 use test_case::test_matrix;
 use wkb::testing::{composer_feed, Token, WKBTestExt};
 use xkbcommon::xkb::{self, compose};
 
 use wkb::testing::compose_parse::{keysym_name_to_char, parse_compose_file, ComposeEntry};
+
+/// Guard for env-var mutations (LC_ALL) during WKB construction.
+/// `set_var` / `remove_var` are process-wide and not thread-safe,
+/// so parallel tests must serialize around them.
+static ENV_LOCK: Mutex<()> = Mutex::new(());
 
 // ---------------------------------------------------------------------------
 // Helpers: keysym / char resolution
@@ -366,16 +372,21 @@ fn test_wkb_compose(xkb_locale: &str) {
 
     // Override locale env so WKB loads the locale-specific compose file,
     // not whatever LANG is set to on this machine.
-    let saved_lc_all = std::env::var("LC_ALL").ok();
-    unsafe { std::env::set_var("LC_ALL", &locale_full) };
+    // Lock around env mutation + WKB construction to prevent races with
+    // parallel tests that also set LC_ALL.
+    let wkb = {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let saved_lc_all = std::env::var("LC_ALL").ok();
+        unsafe { std::env::set_var("LC_ALL", &locale_full) };
 
-    let wkb = wkb::WKB::new_from_names("", "", xkb_locale, "", None).unwrap();
+        let wkb = wkb::WKB::new_from_names("", "", xkb_locale, "", None).unwrap();
 
-    // Restore
-    match saved_lc_all {
-        Some(v) => unsafe { std::env::set_var("LC_ALL", v) },
-        None => unsafe { std::env::remove_var("LC_ALL") },
-    }
+        match saved_lc_all {
+            Some(v) => unsafe { std::env::set_var("LC_ALL", v) },
+            None => unsafe { std::env::remove_var("LC_ALL") },
+        }
+        wkb
+    };
 
     let compose_path = Path::new("/usr/share/X11/locale").join(&compose_file_subpath);
     println!(
