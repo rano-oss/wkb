@@ -487,6 +487,7 @@ fn build_modifiers_from_keymap(
         match ks {
             0xfe03 | 0xfe04 | 0xfe05 | 0xfe0d => Some(ModType::Level3),
             0xfe11..=0xfe13 => Some(ModType::Level5),
+            0xff20 => Some(ModType::Compose),
             _ => None,
         }
     };

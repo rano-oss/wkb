@@ -1,4 +1,4 @@
-use compact_str::CompactString;
+use arrayvec::ArrayString;
 
 /// Token fed into the composer: either a regular character or a Compose key press
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -7,10 +7,13 @@ pub enum Token {
     Compose,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Compose sequence display string — fixed-size, stack-only, no allocation.
+pub type ComposeString = ArrayString<16>;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ComposeState {
     Idle(char),
-    Composing(CompactString),
+    Composing(ComposeString),
     Finished(char),
     Cancelled,
 }
@@ -36,8 +39,10 @@ pub(crate) struct TrieNode {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Composer {
     pub(crate) nodes: Vec<TrieNode>,
+    #[serde(skip)]
     cur: u32,
-    pub(crate) pending: Vec<Token>,
+    #[serde(skip)]
+    buf: ComposeString,
 }
 
 impl Default for Composer {
@@ -54,7 +59,7 @@ impl Composer {
                 emit: None,
             }],
             cur: 0,
-            pending: Vec::new(),
+            buf: ComposeString::new(),
         }
     }
 
@@ -64,7 +69,6 @@ impl Composer {
         for t in tokens.iter() {
             let key = token_key(t);
             let children = &self.nodes[n as usize].children;
-            // Binary search for existing child
             match children.binary_search_by_key(&key, |&(k, _)| k) {
                 Ok(pos) => {
                     n = children[pos].1;
@@ -83,32 +87,6 @@ impl Composer {
         self.nodes[n as usize].emit = Some(out);
     }
 
-    /// Returns an opinionated display string of the in-progress compose sequence.
-    /// Compose key shows as `·` if it is the last token pressed.
-    /// Characters show as themselves.
-    pub fn pending_string(&self) -> CompactString {
-        if self.pending.is_empty() {
-            return CompactString::default();
-        }
-
-        let mut s = CompactString::with_capacity(self.pending.len());
-        let last = self.pending.len() - 1;
-
-        for token in &self.pending[..last] {
-            match token {
-                Token::Char(c) => s.push(*c),
-                Token::Compose => {}
-            }
-        }
-
-        match self.pending[last] {
-            Token::Compose => s.push('·'),
-            Token::Char(c) => s.push(c),
-        }
-
-        s
-    }
-
     #[inline]
     pub(crate) fn feed(&mut self, token: Token) -> ComposeState {
         let key = token_key(&token);
@@ -117,15 +95,24 @@ impl Composer {
         match node.children.binary_search_by_key(&key, |&(k, _)| k) {
             Ok(pos) => {
                 let next = node.children[pos].1;
-                self.pending.push(token);
                 let next_node = &self.nodes[next as usize];
                 if let Some(out) = next_node.emit {
                     self.cur = 0;
-                    self.pending.clear();
+                    self.buf.clear();
                     ComposeState::Finished(out)
                 } else {
                     self.cur = next;
-                    ComposeState::Composing(self.pending_string())
+                    match token {
+                        Token::Char(c) => {
+                            let _ = self.buf.try_push(c);
+                            ComposeState::Composing(self.buf)
+                        }
+                        Token::Compose => {
+                            let mut display = self.buf;
+                            let _ = display.try_push('·');
+                            ComposeState::Composing(display)
+                        }
+                    }
                 }
             }
             Err(_) => {
@@ -136,7 +123,7 @@ impl Composer {
                     }
                 } else {
                     self.cur = 0;
-                    self.pending.clear();
+                    self.buf.clear();
                     ComposeState::Cancelled
                 }
             }
@@ -145,6 +132,6 @@ impl Composer {
 
     pub(crate) fn reset(&mut self) {
         self.cur = 0;
-        self.pending.clear();
+        self.buf.clear();
     }
 }

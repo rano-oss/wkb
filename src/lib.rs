@@ -38,7 +38,7 @@
 
 use std::fmt;
 
-pub use composer::ComposeState;
+pub use composer::{ComposeState, ComposeString};
 use composer::{Composer, Token};
 mod composer;
 mod modifiers;

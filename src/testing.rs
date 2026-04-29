@@ -71,7 +71,6 @@ pub trait WKBTestExt {
     fn composer(&self) -> &Composer;
     fn num_levels(&self) -> usize;
     fn producible_chars(&self) -> std::collections::HashSet<char>;
-    fn pending(&self) -> &[Token];
     fn feed(&mut self, token: Token) -> ComposeState;
 }
 
@@ -129,10 +128,6 @@ impl WKBTestExt for WKB {
             }
         }
         chars
-    }
-
-    fn pending(&self) -> &[Token] {
-        &self.composer.pending
     }
 
     fn feed(&mut self, token: Token) -> ComposeState {

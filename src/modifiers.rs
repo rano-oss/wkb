@@ -1,25 +1,13 @@
 use std::collections::BTreeMap;
 
-// Max modifier slots — keymaps typically have 10-20 modifiers
 const MAX_MOD_SLOTS: usize = 32;
 
-// ── Public modifier bit constants (match standard XKB evdev indices) ──
-
-/// Shift modifier bitmask (XKB mod index 0).
 pub(crate) const MOD_SHIFT: u32 = 1;
-/// Caps Lock modifier bitmask (XKB mod index 1).
 pub(crate) const MOD_CAPS_LOCK: u32 = 2;
-/// Control modifier bitmask (XKB mod index 2).
 pub(crate) const MOD_CTRL: u32 = 4;
-/// Alt/Mod1 modifier bitmask (XKB mod index 3).
 pub(crate) const MOD_ALT: u32 = 8;
-/// Num Lock/Mod2 modifier bitmask (XKB mod index 4).
 pub(crate) const MOD_NUM_LOCK: u32 = 16;
-/// Mod3/ISO Level5 Shift modifier bitmask (XKB mod index 5).
-// pub(crate) const _MOD_ISO_LEVEL5_SHIFT: u32 = 32;
-/// Logo/Mod4 modifier bitmask (XKB mod index 6).
 pub(crate) const MOD_LOGO: u32 = 64;
-/// AltGr modifier bitmask (XKB mod index 7).
 pub(crate) const MOD_ALTGR: u32 = 128;
 
 /// LED bitmask for Num Lock (bit 0).
@@ -30,8 +18,6 @@ pub struct LedState {
     pub caps_lock: bool,
     pub scroll_lock: bool,
 }
-
-// ── Modifier state ──
 
 /// Raw modifier bitmasks for the Wayland `wl_keyboard.modifiers` protocol event.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
@@ -183,26 +169,6 @@ impl ModKind {
         }
     }
 
-    pub fn is_active(&self) -> bool {
-        match self {
-            ModKind::Pressed {
-                pressed,
-                mod_type: _,
-            } => *pressed,
-            ModKind::Lock {
-                pressed: _,
-                locked,
-                mod_type: _,
-            } => locked > &0,
-            ModKind::Latch {
-                pressed: _,
-                latched,
-                mod_type: _,
-            } => *latched,
-            ModKind::None => false,
-        }
-    }
-
     pub(crate) fn get_modkind_from_modtype(&self, mod_type: ModType) -> Option<ModKind> {
         match self {
             ModKind::Pressed { mod_type: m_t, .. }
@@ -229,6 +195,8 @@ pub enum Modifier {
 pub struct Modifiers {
     /// Flat array of (evdev_code, Modifier) pairs. Typically 10-20 entries.
     pub(crate) entries: Vec<(u32, Modifier)>,
+    /// Active modifier state: bit0=none, bit1=level2, bit2=level3, bit3=level5, bit4=compose
+    state: u8,
 }
 
 impl Default for Modifiers {
@@ -308,7 +276,7 @@ impl Default for Modifiers {
                 }),
             ),
         ];
-        Self { entries }
+        Self { entries, state: 0 }
     }
 }
 
@@ -316,6 +284,7 @@ impl Modifiers {
     pub fn new() -> Self {
         Self {
             entries: Vec::with_capacity(MAX_MOD_SLOTS),
+            state: 0,
         }
     }
 
@@ -353,82 +322,66 @@ impl Modifiers {
     }
 
     pub fn active_mod_type(&self, mod_type: ModType) -> bool {
-        self.entries.iter().any(|(_, modifier)| match modifier {
-            Modifier::Single(mod_kind) => {
-                if let Some(mk) = mod_kind.get_modkind_from_modtype(mod_type) {
-                    mk.is_active()
-                } else {
-                    false
-                }
-            }
-            Modifier::Leveled(map) => map.values().any(|mod_kind| {
-                if let Some(mk) = mod_kind.get_modkind_from_modtype(mod_type) {
-                    mk.is_active()
-                } else {
-                    false
-                }
-            }),
-        })
+        match mod_type {
+            ModType::None => self.state & 1 != 0,
+            ModType::Level2 => self.state & 2 != 0,
+            ModType::Level3 => self.state & 4 != 0,
+            ModType::Level5 => self.state & 8 != 0,
+            ModType::Compose => self.state & 16 != 0,
+            _ => false,
+        }
     }
 
     /// Check for active None-type modifier AND compute level2/3/5 in a single scan.
     /// Returns (has_active_none, level2, level3, level5).
     #[inline]
     pub fn active_none_and_levels(&self) -> (bool, bool, bool, bool) {
-        let mut none_active = false;
-        let mut l2 = false;
-        let mut l3 = false;
-        let mut l5 = false;
+        (
+            self.state & 1 != 0,
+            self.state & 2 != 0,
+            self.state & 4 != 0,
+            self.state & 8 != 0,
+        )
+    }
 
+    fn refresh_state(&mut self) {
+        let mut s = 0u8;
         for (_, modifier) in &self.entries {
             match modifier {
-                Modifier::Single(mk) => {
-                    Self::check_mod_kind(mk, &mut none_active, &mut l2, &mut l3, &mut l5);
-                }
+                Modifier::Single(mk) => Self::accumulate_state(mk, &mut s),
                 Modifier::Leveled(map) => {
                     for mk in map.values() {
-                        Self::check_mod_kind(mk, &mut none_active, &mut l2, &mut l3, &mut l5);
+                        Self::accumulate_state(mk, &mut s);
                     }
                 }
             }
         }
-        (none_active, l2, l3, l5)
+        self.state = s;
     }
 
     #[inline(always)]
-    fn check_mod_kind(
-        mk: &ModKind,
-        none_active: &mut bool,
-        l2: &mut bool,
-        l3: &mut bool,
-        l5: &mut bool,
-    ) {
-        match mk {
-            ModKind::Pressed { pressed, mod_type } if *pressed => match mod_type {
-                ModType::None => *none_active = true,
-                ModType::Level2 => *l2 = true,
-                ModType::Level3 => *l3 = true,
-                ModType::Level5 => *l5 = true,
-                _ => {}
-            },
+    fn accumulate_state(mk: &ModKind, state: &mut u8) {
+        let mod_type = match mk {
+            ModKind::Pressed {
+                pressed: true,
+                mod_type,
+            } => mod_type,
             ModKind::Lock {
                 locked, mod_type, ..
-            } if *locked > 0 => match mod_type {
-                ModType::None => *none_active = true,
-                ModType::Level2 => *l2 = true,
-                ModType::Level3 => *l3 = true,
-                ModType::Level5 => *l5 = true,
-                _ => {}
-            },
+            } if *locked > 0 => mod_type,
             ModKind::Latch {
-                latched, mod_type, ..
-            } if *latched => match mod_type {
-                ModType::None => *none_active = true,
-                ModType::Level2 => *l2 = true,
-                ModType::Level3 => *l3 = true,
-                ModType::Level5 => *l5 = true,
-                _ => {}
-            },
+                latched: true,
+                mod_type,
+                ..
+            } => mod_type,
+            _ => return,
+        };
+        match mod_type {
+            ModType::None => *state |= 1,
+            ModType::Level2 => *state |= 2,
+            ModType::Level3 => *state |= 4,
+            ModType::Level5 => *state |= 8,
+            ModType::Compose => *state |= 16,
             _ => {}
         }
     }
@@ -446,6 +399,7 @@ impl Modifiers {
                     });
                 }
             });
+        self.refresh_state();
     }
 
     pub fn locked(&self, evdev_code: u32) -> bool {
@@ -488,6 +442,7 @@ impl Modifiers {
         } else if let Modifier::Single(mod_kind) = &mut self.entries[pos].1 {
             mod_kind.update(key_direction);
         }
+        self.refresh_state();
         true
     }
 
@@ -571,6 +526,7 @@ impl Modifiers {
                 }
             }
         }
+        self.refresh_state();
     }
 
     pub(crate) fn leds_state(&self) -> LedState {
