@@ -1,7 +1,7 @@
 use compact_str::CompactString;
 
 /// Token fed into the composer: either a regular character or a Compose key press
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum Token {
     Char(char),
     Compose,
@@ -27,13 +27,13 @@ fn token_key(token: &Token) -> u32 {
 
 /// Trie node: children stored as sorted (key, child_index) pairs for binary search.
 /// `emit` is Some(char) if this node is a leaf that produces output.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub(crate) struct TrieNode {
-    children: Vec<(u32, u32)>, // (token_key, node_index), sorted by token_key
-    emit: Option<char>,
+    pub(crate) children: Vec<(u32, u32)>, // (token_key, node_index), sorted by token_key
+    pub(crate) emit: Option<char>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Composer {
     pub(crate) nodes: Vec<TrieNode>,
     cur: u32,

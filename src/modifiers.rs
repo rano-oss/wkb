@@ -76,7 +76,7 @@ pub enum KeyDirection {
     Down,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ModType {
     None,
     Level2,
@@ -228,7 +228,7 @@ pub enum Modifier {
 #[derive(Debug, Clone)]
 pub struct Modifiers {
     /// Flat array of (evdev_code, Modifier) pairs. Typically 10-20 entries.
-    entries: Vec<(u32, Modifier)>,
+    pub(crate) entries: Vec<(u32, Modifier)>,
 }
 
 impl Default for Modifiers {

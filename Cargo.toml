@@ -30,7 +30,9 @@ testing = ["xkb"]
 
 [dependencies]
 xkb-core = { version = "0.2.0", path = "xkb-core", optional = true }
-compact_str = "0.8"
+compact_str = { version = "0.8", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+ron = "0.8"
 
 [dev-dependencies]
 wkb = { package = "wayland-keyboard", path = ".", features = ["testing"] }
@@ -66,3 +68,9 @@ name = "bench_size_xkbcommon_dl"
 
 [[example]]
 name = "bench_size_xkbcommon_compat"
+
+[[example]]
+name = "generate_ron"
+
+[[example]]
+name = "find_invariant_keys"

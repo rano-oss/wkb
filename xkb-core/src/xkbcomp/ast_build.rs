@@ -1,13 +1,11 @@
 pub use crate::keymap::XkbEscapeMapName;
-pub use crate::messages::{
-    XKB_ERROR_INVALID_FILE_ENCODING,
-    XKB_ERROR_INVALID_INCLUDE_STATEMENT,
-};
+pub use crate::messages::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_INCLUDE_STATEMENT};
 pub use crate::scanner_utils::scanner;
 pub use crate::shared_ast_types::{
     merge_mode, stmt_type, xkb_map_flags, ExprDef, ExprKind, GroupCompatDef, IncludeStmt,
     InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, Statement,
-    SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, FILE_TYPE_KEYMAP, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
+    SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, FILE_TYPE_KEYMAP,
+    FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
     MERGE_REPLACE, _STMT_NUM_VALUES,
 };
 pub use crate::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};

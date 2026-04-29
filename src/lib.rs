@@ -49,6 +49,7 @@ pub(crate) use bitset::KeyBitSet;
 mod flat_keymap;
 pub(crate) use flat_keymap::{FlatKeymap, FlatKeysymMap};
 pub mod keysyms;
+mod ron_format;
 /// Test-only utilities. Not part of the public API.
 #[cfg(feature = "testing")]
 pub mod testing;

@@ -187,9 +187,26 @@ fn bench_setup_with_compose(c: &mut Criterion) {
     group.finish();
 }
 
+fn bench_setup_from_ron(c: &mut Criterion) {
+    let mut group = c.benchmark_group("setup/from_ron");
+
+    // Pre-build a WKB and serialize to RON (this is the "compiled" artifact)
+    let wkb = wkb::WKB::new_from_names("", "", "us", "", None).unwrap();
+    let ron_str = wkb.to_ron().expect("serialize to RON");
+
+    group.bench_function("wkb-from-ron", |b| {
+        b.iter(|| {
+            let wkb = wkb::WKB::from_ron(black_box(&ron_str)).expect("deserialize from RON");
+            black_box(wkb);
+        });
+    });
+
+    group.finish();
+}
+
 criterion_group! {
     name = benches;
     config = cfg();
-    targets = bench_setup_no_compose, bench_setup_with_compose,
+    targets = bench_setup_no_compose, bench_setup_with_compose, bench_setup_from_ron,
 }
 criterion_main!(benches);

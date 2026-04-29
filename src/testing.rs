@@ -70,6 +70,7 @@ pub trait WKBTestExt {
     fn key_char(&self, evdev_code: u32) -> Option<char>;
     fn composer(&self) -> &Composer;
     fn num_levels(&self) -> usize;
+    fn producible_chars(&self) -> std::collections::HashSet<char>;
     fn pending(&self) -> &[Token];
     fn feed(&mut self, token: Token) -> ComposeState;
 }
@@ -113,6 +114,21 @@ impl WKBTestExt for WKB {
 
     fn num_levels(&self) -> usize {
         MAX_LEVELS
+    }
+
+    fn producible_chars(&self) -> std::collections::HashSet<char> {
+        let mut chars = std::collections::HashSet::new();
+        let num_layouts = self.layout_names.len();
+        for li in 0..num_layouts {
+            for lvl in 0..MAX_LEVELS {
+                for k in 0..self.state_keymap.num_keys as u32 {
+                    if let Some(ch) = self.state_keymap.get(li, lvl, k) {
+                        chars.insert(ch);
+                    }
+                }
+            }
+        }
+        chars
     }
 
     fn pending(&self) -> &[Token] {

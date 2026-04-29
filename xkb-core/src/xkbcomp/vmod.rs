@@ -1,8 +1,6 @@
 use crate::context::xkb_atom_text;
 
-pub use crate::shared_ast_types::{
-    merge_mode, VModDef, MERGE_AUGMENT,
-};
+pub use crate::shared_ast_types::{merge_mode, VModDef, MERGE_AUGMENT};
 pub use crate::shared_types::{xkb_mod_set, MOD_REAL, MOD_VIRT, XKB_MAX_MODS};
 use crate::text::ModMaskText;
 use crate::xkbcomp::expr::ExprResolveModMask;

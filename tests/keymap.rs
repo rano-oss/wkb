@@ -6,8 +6,27 @@ use xkbcommon::xkb;
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
+/// Normalize a keysym for comparison: convert to the character it produces.
+/// This makes legacy/Unicode keysym encodings and dead-vs-regular variants equal
+/// when they produce the same character (e.g. dead_greek and Greek_alpha both → α).
+fn normalize_keysym(ks: u32) -> u32 {
+    // First try xkbcommon's utf32 (handles legacy keysyms, Unicode keysyms, KP keys)
+    let utf32 = unsafe { xkbcommon::xkb::ffi::xkb_keysym_to_utf32(ks) };
+    if utf32 != 0 {
+        return utf32;
+    }
+    // Fall back to our own table (handles dead keysyms → char)
+    if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(ks) {
+        return ch as u32;
+    }
+    ks
+}
+
 /// Parse both keymap strings and compare them structurally: for every keycode,
 /// check that the same keysyms are produced at every level in every group.
+/// Keysyms are normalized to their character before comparison, since the same
+/// character can be represented by different keysym encodings (legacy vs Unicode,
+/// dead vs regular).
 fn compare_keymaps_functionally(wkb_string: &str, xkb_string: &str, layout_name: &str) {
     let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
 
@@ -54,10 +73,15 @@ fn compare_keymaps_functionally(wkb_string: &str, xkb_string: &str, layout_name:
                     continue;
                 }
 
+                let norm_wkb: Vec<u32> =
+                    syms_wkb.iter().map(|s| normalize_keysym(s.raw())).collect();
+                let norm_xkb: Vec<u32> =
+                    syms_xkb.iter().map(|s| normalize_keysym(s.raw())).collect();
+
                 assert_eq!(
-                    syms_wkb, syms_xkb,
-                    "[{layout_name}] keycode {} layout {layout} level {level}: syms differ",
-                    kc_raw
+                    norm_wkb, norm_xkb,
+                    "[{layout_name}] keycode {} layout {layout} level {level}: syms differ\n  wkb: {:?}\n  xkb: {:?}",
+                    kc_raw, syms_wkb, syms_xkb,
                 );
             }
         }
@@ -239,7 +263,14 @@ fn export_all_variants_match_xkbcommon(locale: &str) {
                         continue;
                     }
 
-                    if syms_wkb != syms_rmlvo {
+                    let norm_wkb: Vec<u32> =
+                        syms_wkb.iter().map(|s| normalize_keysym(s.raw())).collect();
+                    let norm_rmlvo: Vec<u32> = syms_rmlvo
+                        .iter()
+                        .map(|s| normalize_keysym(s.raw()))
+                        .collect();
+
+                    if norm_wkb != norm_rmlvo {
                         failures.push(format!(
                             "{label}: keycode {kc_raw} layout {layout} level {level}: \
                              wkb={syms_wkb:?} xkb={syms_rmlvo:?}"
@@ -341,10 +372,27 @@ fn string_modifiers() {
         wkb.level2_code().is_some(),
         "Level2 (Shift) should be detected"
     );
+    // US layout has no AltGr (Level3) — RALT produces Alt_R, not ISO_Level3_Shift.
+    // Layouts like dk, de, fr have Level3 on physical RALT via level3(ralt_switch).
     assert!(
-        wkb.level3_code().is_some(),
-        "Level3 (AltGr) should be detected"
+        wkb.level3_code().is_none(),
+        "US layout should NOT have Level3 (no AltGr)"
     );
+}
+
+#[test]
+fn string_modifiers_dk() {
+    let keymap_str = keymap_string_from_export("dk", None);
+    let wkb = WKB::new_from_string(&keymap_str).unwrap();
+
+    assert!(
+        wkb.level2_code().is_some(),
+        "Level2 (Shift) should be detected"
+    );
+    // Danish layout has AltGr on physical RALT (evdev 100) via level3(ralt_switch).
+    let l3 = wkb.level3_code();
+    assert!(l3.is_some(), "dk layout should have Level3 (AltGr)");
+    assert_eq!(l3.unwrap().0, 100, "Level3 should be on evdev 100 (RALT)");
 }
 
 #[test]
