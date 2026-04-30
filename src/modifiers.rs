@@ -150,37 +150,15 @@ impl ModKind {
     }
 
     pub fn locked(&self) -> bool {
-        match self {
-            ModKind::Pressed {
-                pressed: _,
-                mod_type: _,
-            } => false,
-            ModKind::Lock {
-                pressed: _,
-                locked,
-                mod_type: _,
-            } => locked > &0,
-            ModKind::Latch {
-                pressed: _,
-                latched: _,
-                mod_type: _,
-            } => false,
-            ModKind::None => false,
-        }
+        matches!(self, ModKind::Lock { locked, .. } if *locked > 0)
     }
 
-    pub(crate) fn get_modkind_from_modtype(&self, mod_type: ModType) -> Option<ModKind> {
+    pub(crate) fn has_mod_type(&self, mod_type: ModType) -> bool {
         match self {
-            ModKind::Pressed { mod_type: m_t, .. }
-            | ModKind::Lock { mod_type: m_t, .. }
-            | ModKind::Latch { mod_type: m_t, .. } => {
-                if *m_t == mod_type {
-                    Some(self.clone())
-                } else {
-                    None
-                }
-            }
-            ModKind::None => None,
+            ModKind::Pressed { mod_type: m, .. }
+            | ModKind::Lock { mod_type: m, .. }
+            | ModKind::Latch { mod_type: m, .. } => *m == mod_type,
+            ModKind::None => false,
         }
     }
 }
@@ -411,12 +389,10 @@ impl Modifiers {
 
     pub fn locked_with_type(&self, evdev_code: u32, mod_type: ModType) -> bool {
         self.get(evdev_code).is_some_and(|modifier| match modifier {
-            Modifier::Single(mod_kind) => {
-                mod_kind.locked() && mod_kind.get_modkind_from_modtype(mod_type).is_some()
-            }
-            Modifier::Leveled(map) => map.values().any(|mod_kind| {
-                mod_kind.locked() && mod_kind.get_modkind_from_modtype(mod_type).is_some()
-            }),
+            Modifier::Single(mk) => mk.locked() && mk.has_mod_type(mod_type),
+            Modifier::Leveled(map) => map
+                .values()
+                .any(|mk| mk.locked() && mk.has_mod_type(mod_type)),
         })
     }
 
