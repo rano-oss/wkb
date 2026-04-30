@@ -21781,8 +21781,7 @@ pub const XKB_KEYSYM_UNICODE_MIN: i32 = 0x1000100;
 pub const XKB_KEYSYM_UNICODE_MAX: i32 = 0x110ffff;
 
 pub use self::keysym_names_h::{
-    keysym_name_perfect_hash,
-    keysym_names, keysym_to_name, name_keysym, name_to_keysym,
+    keysym_name_perfect_hash, keysym_names, keysym_to_name, name_keysym, name_to_keysym,
 };
 use crate::utils::istrcmp;
 fn find_keysym_index(ks: u32) -> isize {

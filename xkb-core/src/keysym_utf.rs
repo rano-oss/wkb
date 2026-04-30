@@ -3924,6 +3924,12 @@ fn keysym_to_codepoint(keysym: u32) -> Option<u32> {
         _ => {}
     }
 
+    // Braille dot keys → single-dot braille patterns
+    // dot N maps to U+2800 with bit (N-1) set: dot1=U+2801, dot2=U+2802, dot3=U+2804, etc.
+    if (0xfff1..=0xfff8).contains(&keysym) {
+        return Some(0x2800 | (1 << (keysym - 0xfff1)));
+    }
+
     // Dead keysyms → Unicode combining characters
     // These are needed so dead keys get character entries in the flat table,
     // allowing the character-based composer to process them.

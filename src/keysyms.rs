@@ -2727,6 +2727,19 @@ pub fn keysym_get_name(sym: u32) -> Option<&'static str> {
         .map(|i| KEYSYM_TO_NAME[i].1)
 }
 
+/// Look up the keysym value from a human-readable name.
+///
+/// Delegates to xkb-core's keysym lookup (case-sensitive).
+/// Returns `None` for unknown names.
+pub fn keysym_from_name(name: &str) -> Option<u32> {
+    let sym = xkb_core::xkb_keysym_from_name(name.as_bytes(), 0);
+    if sym == 0 {
+        None
+    } else {
+        Some(sym)
+    }
+}
+
 /// Return the VT number (1–12) if this is a VT-switch keysym, or `None`.
 pub fn vt_switch(sym: u32) -> Option<u32> {
     if sym >= XF86Switch_VT_1 && sym <= XF86Switch_VT_12 {

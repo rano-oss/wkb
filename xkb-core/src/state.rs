@@ -115,17 +115,17 @@ pub const XKB_FEATURE_ENUM_ERROR_CODE: xkb_feature = 1000;
 
 pub const XKB_FEATURE_ENUM_FEATURE: xkb_feature = 1;
 
-pub use crate::keymap::{
-    XkbLevelsSameSyms, XkbWrapGroupIntoRange,
-};
+pub use crate::keymap::{XkbLevelsSameSyms, XkbWrapGroupIntoRange};
 pub use crate::shared_types::{
-    entry_is_active, xkb_action, xkb_action_flags, xkb_explicit_components, xkb_group, xkb_group_action, xkb_internal_action,
-    xkb_key, xkb_key_type, xkb_key_type_entry, xkb_keymap, xkb_level, xkb_mod_action, xkb_mods, xkb_redirect_key_action, ACTION_ABSOLUTE_SWITCH,
+    entry_is_active, xkb_action, xkb_action_flags, xkb_explicit_components, xkb_group,
+    xkb_group_action, xkb_internal_action, xkb_key, xkb_key_type, xkb_key_type_entry, xkb_keymap,
+    xkb_level, xkb_mod_action, xkb_mods, xkb_redirect_key_action, ACTION_ABSOLUTE_SWITCH,
     ACTION_LATCH_ON_PRESS, ACTION_LATCH_TO_LOCK, ACTION_LOCK_CLEAR, ACTION_LOCK_NO_LOCK,
-    ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_TYPE_CTRL_SET,
-    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL,
-    ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_SET, ACTION_TYPE_REDIRECT_KEY, ACTION_UNLOCK_ON_PRESS, CONTROL_STICKY_KEYS, INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MOD_REAL_MASK_ALL, XKB_MOD_ALL, XKB_MOD_INDEX_CAPS, XKB_MOD_INDEX_CTRL,
-    _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES,
+    ACTION_LOCK_NO_UNLOCK, ACTION_LOCK_ON_RELEASE, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
+    ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_SET,
+    ACTION_TYPE_REDIRECT_KEY, ACTION_UNLOCK_ON_PRESS, CONTROL_STICKY_KEYS,
+    INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MOD_REAL_MASK_ALL, XKB_MOD_ALL,
+    XKB_MOD_INDEX_CAPS, XKB_MOD_INDEX_CTRL, _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES,
 };
 
 fn vec_resize_zero<T: Default>(v: &mut Vec<T>, new_len: usize) {

@@ -1,26 +1,23 @@
 use std::collections::BTreeMap;
 
-// Max modifier slots — keymaps typically have 10-20 modifiers
 const MAX_MOD_SLOTS: usize = 32;
 
-// ── Public modifier bit constants (match standard XKB evdev indices) ──
-
-/// Shift modifier bitmask (XKB mod index 0).
 pub(crate) const MOD_SHIFT: u32 = 1;
-/// Caps Lock modifier bitmask (XKB mod index 1).
 pub(crate) const MOD_CAPS_LOCK: u32 = 2;
-/// Control modifier bitmask (XKB mod index 2).
 pub(crate) const MOD_CTRL: u32 = 4;
-/// Alt/Mod1 modifier bitmask (XKB mod index 3).
 pub(crate) const MOD_ALT: u32 = 8;
-/// Num Lock/Mod2 modifier bitmask (XKB mod index 4).
 pub(crate) const MOD_NUM_LOCK: u32 = 16;
-/// Mod3/ISO Level5 Shift modifier bitmask (XKB mod index 5).
-// pub(crate) const _MOD_ISO_LEVEL5_SHIFT: u32 = 32;
-/// Logo/Mod4 modifier bitmask (XKB mod index 6).
 pub(crate) const MOD_LOGO: u32 = 64;
-/// AltGr modifier bitmask (XKB mod index 7).
 pub(crate) const MOD_ALTGR: u32 = 128;
+
+// State bitfield constants
+const STATE_NONE: u8 = 1;
+const STATE_LEVEL2: u8 = 2;
+const STATE_LEVEL3: u8 = 4;
+const STATE_LEVEL5: u8 = 8;
+const STATE_COMPOSE: u8 = 16;
+const STATE_CAPS_LOCKED: u8 = 32;
+const STATE_NUM_LOCKED: u8 = 64;
 
 /// LED bitmask for Num Lock (bit 0).
 /// LED indicator state.
@@ -30,8 +27,6 @@ pub struct LedState {
     pub caps_lock: bool,
     pub scroll_lock: bool,
 }
-
-// ── Modifier state ──
 
 /// Raw modifier bitmasks for the Wayland `wl_keyboard.modifiers` protocol event.
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
@@ -76,7 +71,7 @@ pub enum KeyDirection {
     Down,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ModType {
     None,
     Level2,
@@ -164,57 +159,15 @@ impl ModKind {
     }
 
     pub fn locked(&self) -> bool {
-        match self {
-            ModKind::Pressed {
-                pressed: _,
-                mod_type: _,
-            } => false,
-            ModKind::Lock {
-                pressed: _,
-                locked,
-                mod_type: _,
-            } => locked > &0,
-            ModKind::Latch {
-                pressed: _,
-                latched: _,
-                mod_type: _,
-            } => false,
-            ModKind::None => false,
-        }
+        matches!(self, ModKind::Lock { locked, .. } if *locked > 0)
     }
 
-    pub fn is_active(&self) -> bool {
+    pub(crate) fn has_mod_type(&self, mod_type: ModType) -> bool {
         match self {
-            ModKind::Pressed {
-                pressed,
-                mod_type: _,
-            } => *pressed,
-            ModKind::Lock {
-                pressed: _,
-                locked,
-                mod_type: _,
-            } => locked > &0,
-            ModKind::Latch {
-                pressed: _,
-                latched,
-                mod_type: _,
-            } => *latched,
+            ModKind::Pressed { mod_type: m, .. }
+            | ModKind::Lock { mod_type: m, .. }
+            | ModKind::Latch { mod_type: m, .. } => *m == mod_type,
             ModKind::None => false,
-        }
-    }
-
-    pub(crate) fn get_modkind_from_modtype(&self, mod_type: ModType) -> Option<ModKind> {
-        match self {
-            ModKind::Pressed { mod_type: m_t, .. }
-            | ModKind::Lock { mod_type: m_t, .. }
-            | ModKind::Latch { mod_type: m_t, .. } => {
-                if *m_t == mod_type {
-                    Some(self.clone())
-                } else {
-                    None
-                }
-            }
-            ModKind::None => None,
         }
     }
 }
@@ -225,10 +178,28 @@ pub enum Modifier {
     Leveled(BTreeMap<u8, ModKind>),
 }
 
+impl Modifier {
+    fn for_each(&self, mut f: impl FnMut(&ModKind)) {
+        match self {
+            Modifier::Single(mk) => f(mk),
+            Modifier::Leveled(map) => map.values().for_each(|mk| f(mk)),
+        }
+    }
+
+    fn for_each_mut(&mut self, mut f: impl FnMut(&mut ModKind)) {
+        match self {
+            Modifier::Single(mk) => f(mk),
+            Modifier::Leveled(map) => map.values_mut().for_each(|mk| f(mk)),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Modifiers {
     /// Flat array of (evdev_code, Modifier) pairs. Typically 10-20 entries.
-    entries: Vec<(u32, Modifier)>,
+    pub(crate) entries: Vec<(u32, Modifier)>,
+    /// Active modifier state: bit0=none, bit1=level2, bit2=level3, bit3=level5, bit4=compose, bit5=caps_locked, bit6=num_locked
+    state: u8,
 }
 
 impl Default for Modifiers {
@@ -308,7 +279,7 @@ impl Default for Modifiers {
                 }),
             ),
         ];
-        Self { entries }
+        Self { entries, state: 0 }
     }
 }
 
@@ -316,6 +287,7 @@ impl Modifiers {
     pub fn new() -> Self {
         Self {
             entries: Vec::with_capacity(MAX_MOD_SLOTS),
+            state: 0,
         }
     }
 
@@ -353,116 +325,89 @@ impl Modifiers {
     }
 
     pub fn active_mod_type(&self, mod_type: ModType) -> bool {
-        self.entries.iter().any(|(_, modifier)| match modifier {
-            Modifier::Single(mod_kind) => {
-                if let Some(mk) = mod_kind.get_modkind_from_modtype(mod_type) {
-                    mk.is_active()
-                } else {
-                    false
-                }
-            }
-            Modifier::Leveled(map) => map.values().any(|mod_kind| {
-                if let Some(mk) = mod_kind.get_modkind_from_modtype(mod_type) {
-                    mk.is_active()
-                } else {
-                    false
-                }
-            }),
-        })
+        match mod_type {
+            ModType::None => self.state & STATE_NONE != 0,
+            ModType::Level2 => self.state & STATE_LEVEL2 != 0,
+            ModType::Level3 => self.state & STATE_LEVEL3 != 0,
+            ModType::Level5 => self.state & STATE_LEVEL5 != 0,
+            ModType::Compose => self.state & STATE_COMPOSE != 0,
+            _ => false,
+        }
     }
 
     /// Check for active None-type modifier AND compute level2/3/5 in a single scan.
     /// Returns (has_active_none, level2, level3, level5).
     #[inline]
     pub fn active_none_and_levels(&self) -> (bool, bool, bool, bool) {
-        let mut none_active = false;
-        let mut l2 = false;
-        let mut l3 = false;
-        let mut l5 = false;
+        (
+            self.state & STATE_NONE != 0,
+            self.state & STATE_LEVEL2 != 0,
+            self.state & STATE_LEVEL3 != 0,
+            self.state & STATE_LEVEL5 != 0,
+        )
+    }
 
+    /// Return true if Caps Lock is locked (O(1) from state bitfield).
+    #[inline]
+    pub fn caps_locked(&self) -> bool {
+        self.state & STATE_CAPS_LOCKED != 0
+    }
+
+    /// Return true if Num Lock is locked (O(1) from state bitfield).
+    #[inline]
+    pub fn num_locked(&self) -> bool {
+        self.state & STATE_NUM_LOCKED != 0
+    }
+
+    fn refresh_state(&mut self) {
+        let mut s = 0u8;
         for (_, modifier) in &self.entries {
-            match modifier {
-                Modifier::Single(mk) => {
-                    Self::check_mod_kind(mk, &mut none_active, &mut l2, &mut l3, &mut l5);
-                }
-                Modifier::Leveled(map) => {
-                    for mk in map.values() {
-                        Self::check_mod_kind(mk, &mut none_active, &mut l2, &mut l3, &mut l5);
-                    }
-                }
-            }
+            modifier.for_each(|mk| Self::accumulate_state(mk, &mut s));
         }
-        (none_active, l2, l3, l5)
+        self.state = s;
     }
 
     #[inline(always)]
-    fn check_mod_kind(
-        mk: &ModKind,
-        none_active: &mut bool,
-        l2: &mut bool,
-        l3: &mut bool,
-        l5: &mut bool,
-    ) {
-        match mk {
-            ModKind::Pressed { pressed, mod_type } if *pressed => match mod_type {
-                ModType::None => *none_active = true,
-                ModType::Level2 => *l2 = true,
-                ModType::Level3 => *l3 = true,
-                ModType::Level5 => *l5 = true,
-                _ => {}
-            },
+    fn accumulate_state(mk: &ModKind, state: &mut u8) {
+        let mod_type = match mk {
+            ModKind::Pressed {
+                pressed: true,
+                mod_type,
+            } => mod_type,
             ModKind::Lock {
                 locked, mod_type, ..
-            } if *locked > 0 => match mod_type {
-                ModType::None => *none_active = true,
-                ModType::Level2 => *l2 = true,
-                ModType::Level3 => *l3 = true,
-                ModType::Level5 => *l5 = true,
-                _ => {}
-            },
+            } if *locked > 0 => mod_type,
             ModKind::Latch {
-                latched, mod_type, ..
-            } if *latched => match mod_type {
-                ModType::None => *none_active = true,
-                ModType::Level2 => *l2 = true,
-                ModType::Level3 => *l3 = true,
-                ModType::Level5 => *l5 = true,
-                _ => {}
-            },
-            _ => {}
+                latched: true,
+                mod_type,
+                ..
+            } => mod_type,
+            _ => return,
+        };
+        match mod_type {
+            ModType::None => *state |= STATE_NONE,
+            ModType::Level2 => *state |= STATE_LEVEL2,
+            ModType::Level3 => *state |= STATE_LEVEL3,
+            ModType::Level5 => *state |= STATE_LEVEL5,
+            ModType::Compose => *state |= STATE_COMPOSE,
+            ModType::Caps => *state |= STATE_CAPS_LOCKED,
+            ModType::Num => *state |= STATE_NUM_LOCKED,
+            ModType::Scroll => {}
         }
     }
 
     pub fn unlatch(&mut self) {
         self.entries
             .iter_mut()
-            .for_each(|(_, modifier)| match modifier {
-                Modifier::Single(mod_kind) => {
-                    mod_kind.unlatch();
-                }
-                Modifier::Leveled(map) => {
-                    map.values_mut().for_each(|mod_kind| {
-                        mod_kind.unlatch();
-                    });
-                }
-            });
-    }
-
-    pub fn locked(&self, evdev_code: u32) -> bool {
-        self.get(evdev_code).is_some_and(|modifier| match modifier {
-            Modifier::Single(mod_kind) => mod_kind.locked(),
-            Modifier::Leveled(map) => map.values().any(|mod_kind| mod_kind.locked()),
-        })
+            .for_each(|(_, modifier)| modifier.for_each_mut(|mk| mk.unlatch()));
+        self.refresh_state();
     }
 
     pub fn locked_with_type(&self, evdev_code: u32, mod_type: ModType) -> bool {
-        self.get(evdev_code).is_some_and(|modifier| match modifier {
-            Modifier::Single(mod_kind) => {
-                mod_kind.locked() && mod_kind.get_modkind_from_modtype(mod_type).is_some()
-            }
-            Modifier::Leveled(map) => map.values().any(|mod_kind| {
-                mod_kind.locked() && mod_kind.get_modkind_from_modtype(mod_type).is_some()
-            }),
+        self.get(evdev_code).is_some_and(|modifier| {
+            let mut found = false;
+            modifier.for_each(|mk| found |= mk.locked() && mk.has_mod_type(mod_type));
+            found
         })
     }
 
@@ -488,6 +433,7 @@ impl Modifiers {
         } else if let Modifier::Single(mod_kind) = &mut self.entries[pos].1 {
             mod_kind.update(key_direction);
         }
+        self.refresh_state();
         true
     }
 
@@ -498,38 +444,34 @@ impl Modifiers {
         let layout = layout_index as u32;
         for (code, bit) in MODIFIER_MAPPING {
             if let Some(modifier) = self.get(code) {
-                let mod_kinds: &[&ModKind] = &match modifier {
-                    Modifier::Single(mk) => vec![mk],
-                    Modifier::Leveled(map) => map.values().collect(),
-                };
-                for mk in mod_kinds {
-                    match mk {
-                        ModKind::Pressed { pressed: true, .. } => depressed |= bit,
-                        ModKind::Lock {
-                            pressed, locked: l, ..
-                        } => {
-                            if *pressed {
-                                depressed |= bit;
-                            }
-                            if *l > 0 {
-                                locked |= bit;
-                            }
+                modifier.for_each(|mk| match mk {
+                    ModKind::Pressed { pressed: true, .. } => depressed |= bit,
+                    ModKind::Lock {
+                        pressed: p,
+                        locked: l,
+                        ..
+                    } => {
+                        if *p {
+                            depressed |= bit;
                         }
-                        ModKind::Latch {
-                            pressed,
-                            latched: is_latched,
-                            ..
-                        } => {
-                            if *pressed {
-                                depressed |= bit;
-                            }
-                            if *is_latched {
-                                latched |= bit;
-                            }
+                        if *l > 0 {
+                            locked |= bit;
                         }
-                        _ => {}
                     }
-                }
+                    ModKind::Latch {
+                        pressed: p,
+                        latched: lt,
+                        ..
+                    } => {
+                        if *p {
+                            depressed |= bit;
+                        }
+                        if *lt {
+                            latched |= bit;
+                        }
+                    }
+                    _ => {}
+                });
             }
         }
         RawModifiers {
@@ -547,30 +489,25 @@ impl Modifiers {
             let is_latched = (latched & bit) != 0;
 
             if let Some(m) = self.get_mut(code) {
-                let mod_kinds: Vec<&mut ModKind> = match m {
-                    Modifier::Single(mk) => vec![mk],
-                    Modifier::Leveled(map) => map.values_mut().collect(),
-                };
-                for mk in mod_kinds {
-                    match mk {
-                        ModKind::Pressed { pressed, .. } => *pressed = is_depressed,
-                        ModKind::Lock {
-                            pressed, locked, ..
-                        } => {
-                            *pressed = is_depressed;
-                            *locked = if is_locked { 1 } else { 0 };
-                        }
-                        ModKind::Latch {
-                            pressed, latched, ..
-                        } => {
-                            *pressed = is_depressed;
-                            *latched = is_latched;
-                        }
-                        _ => {}
+                m.for_each_mut(|mk| match mk {
+                    ModKind::Pressed { pressed, .. } => *pressed = is_depressed,
+                    ModKind::Lock {
+                        pressed, locked, ..
+                    } => {
+                        *pressed = is_depressed;
+                        *locked = if is_locked { 1 } else { 0 };
                     }
-                }
+                    ModKind::Latch {
+                        pressed, latched, ..
+                    } => {
+                        *pressed = is_depressed;
+                        *latched = is_latched;
+                    }
+                    ModKind::None => {}
+                });
             }
         }
+        self.refresh_state();
     }
 
     pub(crate) fn leds_state(&self) -> LedState {
