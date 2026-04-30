@@ -42,7 +42,7 @@ pub use composer::{ComposeState, ComposeString};
 use composer::{Composer, Token};
 mod composer;
 mod modifiers;
-use modifiers::{level_index, KeyDirection, ModType, Modifiers, CAPS_LOCK, NUM_LOCK};
+use modifiers::{level_index, KeyDirection, ModType, Modifiers};
 pub use modifiers::{LedState, RawModifiers};
 mod bitset;
 pub(crate) use bitset::KeyBitSet;
@@ -272,12 +272,12 @@ impl WKB {
         let level2 = level2 && self.state_keymap.data.len() > 1 * nk;
         let base_level = level_index(level5, level3, level2);
         let layout_index = self.current_layout_idx;
-        if self.modifiers.locked(NUM_LOCK) {
+        if self.modifiers.num_locked() {
             if let Some(c) = self.num_lock_keys.get(layout_index, base_level, evdev_code) {
                 return Some(c);
             }
         }
-        if self.modifiers.locked(CAPS_LOCK) {
+        if self.modifiers.caps_locked() {
             if let Some(c) = self
                 .caps_lock_keymap
                 .get(layout_index, base_level, evdev_code)

@@ -10,6 +10,15 @@ pub(crate) const MOD_NUM_LOCK: u32 = 16;
 pub(crate) const MOD_LOGO: u32 = 64;
 pub(crate) const MOD_ALTGR: u32 = 128;
 
+// State bitfield constants
+const STATE_NONE: u8 = 1;
+const STATE_LEVEL2: u8 = 2;
+const STATE_LEVEL3: u8 = 4;
+const STATE_LEVEL5: u8 = 8;
+const STATE_COMPOSE: u8 = 16;
+const STATE_CAPS_LOCKED: u8 = 32;
+const STATE_NUM_LOCKED: u8 = 64;
+
 /// LED bitmask for Num Lock (bit 0).
 /// LED indicator state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -189,7 +198,7 @@ impl Modifier {
 pub struct Modifiers {
     /// Flat array of (evdev_code, Modifier) pairs. Typically 10-20 entries.
     pub(crate) entries: Vec<(u32, Modifier)>,
-    /// Active modifier state: bit0=none, bit1=level2, bit2=level3, bit3=level5, bit4=compose
+    /// Active modifier state: bit0=none, bit1=level2, bit2=level3, bit3=level5, bit4=compose, bit5=caps_locked, bit6=num_locked
     state: u8,
 }
 
@@ -317,11 +326,11 @@ impl Modifiers {
 
     pub fn active_mod_type(&self, mod_type: ModType) -> bool {
         match mod_type {
-            ModType::None => self.state & 1 != 0,
-            ModType::Level2 => self.state & 2 != 0,
-            ModType::Level3 => self.state & 4 != 0,
-            ModType::Level5 => self.state & 8 != 0,
-            ModType::Compose => self.state & 16 != 0,
+            ModType::None => self.state & STATE_NONE != 0,
+            ModType::Level2 => self.state & STATE_LEVEL2 != 0,
+            ModType::Level3 => self.state & STATE_LEVEL3 != 0,
+            ModType::Level5 => self.state & STATE_LEVEL5 != 0,
+            ModType::Compose => self.state & STATE_COMPOSE != 0,
             _ => false,
         }
     }
@@ -331,11 +340,23 @@ impl Modifiers {
     #[inline]
     pub fn active_none_and_levels(&self) -> (bool, bool, bool, bool) {
         (
-            self.state & 1 != 0,
-            self.state & 2 != 0,
-            self.state & 4 != 0,
-            self.state & 8 != 0,
+            self.state & STATE_NONE != 0,
+            self.state & STATE_LEVEL2 != 0,
+            self.state & STATE_LEVEL3 != 0,
+            self.state & STATE_LEVEL5 != 0,
         )
+    }
+
+    /// Return true if Caps Lock is locked (O(1) from state bitfield).
+    #[inline]
+    pub fn caps_locked(&self) -> bool {
+        self.state & STATE_CAPS_LOCKED != 0
+    }
+
+    /// Return true if Num Lock is locked (O(1) from state bitfield).
+    #[inline]
+    pub fn num_locked(&self) -> bool {
+        self.state & STATE_NUM_LOCKED != 0
     }
 
     fn refresh_state(&mut self) {
@@ -364,12 +385,14 @@ impl Modifiers {
             _ => return,
         };
         match mod_type {
-            ModType::None => *state |= 1,
-            ModType::Level2 => *state |= 2,
-            ModType::Level3 => *state |= 4,
-            ModType::Level5 => *state |= 8,
-            ModType::Compose => *state |= 16,
-            _ => {}
+            ModType::None => *state |= STATE_NONE,
+            ModType::Level2 => *state |= STATE_LEVEL2,
+            ModType::Level3 => *state |= STATE_LEVEL3,
+            ModType::Level5 => *state |= STATE_LEVEL5,
+            ModType::Compose => *state |= STATE_COMPOSE,
+            ModType::Caps => *state |= STATE_CAPS_LOCKED,
+            ModType::Num => *state |= STATE_NUM_LOCKED,
+            ModType::Scroll => {}
         }
     }
 
@@ -378,14 +401,6 @@ impl Modifiers {
             .iter_mut()
             .for_each(|(_, modifier)| modifier.for_each_mut(|mk| mk.unlatch()));
         self.refresh_state();
-    }
-
-    pub fn locked(&self, evdev_code: u32) -> bool {
-        self.get(evdev_code).is_some_and(|modifier| {
-            let mut found = false;
-            modifier.for_each(|mk| found |= mk.locked());
-            found
-        })
     }
 
     pub fn locked_with_type(&self, evdev_code: u32, mod_type: ModType) -> bool {

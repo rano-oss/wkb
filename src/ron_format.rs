@@ -75,12 +75,18 @@ static INVARIANT_CHARS: &[(u32, &[(u8, char)])] = &[
     (72, &[(1, '8')]),
     (73, &[(1, '9')]),
     (74, &[(0, '-'), (4, '-')]),
+    (75, &[(1, '4')]),
+    (76, &[(1, '5')]),
+    (77, &[(1, '6')]),
     (
         78,
         &[(0, '+'), (1, '+'), (2, '+'), (4, '+'), (5, '+'), (6, '+')],
     ),
+    (79, &[(1, '1')]),
     (80, &[(1, '2')]),
     (81, &[(1, '3')]),
+    (82, &[(1, '0')]),
+    (83, &[(1, '.')]),
     (
         96,
         &[
@@ -498,6 +504,7 @@ static INVARIANT_KEYSYMS: &[(u32, &[(u8, u32)])] = &[
     (29, &[(0, 0xffe3 /*Control_L*/)]),
     (42, &[(0, 0xffe1 /*Shift_L*/)]),
     (54, &[(0, 0xffe2 /*Shift_R*/)]),
+    (55, &[(4, 0x1008fe21 /*XF86ClearGrab*/)]),
     (
         59,
         &[
@@ -598,6 +605,8 @@ static INVARIANT_KEYSYMS: &[(u32, &[(u8, u32)])] = &[
             (4, 0x1008fe0a /*XF86Switch_VT_10*/),
         ],
     ),
+    (74, &[(4, 0x1008fe23 /*XF86Prev_VMode*/)]),
+    (78, &[(4, 0x1008fe22 /*XF86Ungrab*/)]),
     (84, &[(0, 0xfe03 /*ISO_Level3_Shift*/)]),
     (85, &[(0, 0x1008ffa9 /*XF86TouchpadToggle*/)]),
     (
@@ -625,6 +634,7 @@ static INVARIANT_KEYSYMS: &[(u32, &[(u8, u32)])] = &[
     (92, &[(0, 0xff23 /*Henkan_Mode*/)]),
     (93, &[(0, 0xff27 /*Hiragana_Katakana*/)]),
     (94, &[(0, 0xff22 /*Muhenkan*/)]),
+    (98, &[(4, 0x1008fe20 /*XF86Grab*/)]),
     (99, &[(0, 0xff61 /*SunPrint_Screen*/)]),
     (101, &[(0, 0xff0a /*Linefeed*/)]),
     (102, &[(0, 0xff50 /*Home*/)]),
@@ -1256,14 +1266,83 @@ fn keysym_from_name_or_hex(name: &str) -> u32 {
     0
 }
 
+/// Convert a Unicode char to its X11 keysym value.
+/// ASCII 0x20-0x7e → same code point, Latin-1 0xa0-0xff → same code point,
+/// Unicode 0x100+ → cp | 0x0100_0000.
+fn char_to_keysym(c: char) -> u32 {
+    let cp = c as u32;
+    match cp {
+        0x20..=0x7e | 0xa0..=0xff => cp,
+        _ if cp >= 0x100 => cp | 0x0100_0000,
+        _ => 0,
+    }
+}
+
+/// Look up char at (layout, level, evdev) from char_map, falling back to INVARIANT_CHARS.
+fn get_char_with_invariants(
+    char_map: &crate::FlatKeymap,
+    li: usize,
+    level: usize,
+    evdev: u32,
+) -> Option<char> {
+    if let Some(c) = char_map.get(li, level, evdev) {
+        return Some(c);
+    }
+    // Fall back to INVARIANT_CHARS
+    for &(e, levels) in INVARIANT_CHARS {
+        if e == evdev {
+            // Direct level match
+            if let Some(&(_, c)) = levels.iter().find(|&&(l, _)| l as usize == level) {
+                return Some(c);
+            }
+            // If level 0 char exists and this level > 0, check if it propagates
+            // (keys with level-0 char are invariant at all levels per is_invariant_char)
+            if level > 0 {
+                if let Some(&(_, c)) = levels.iter().find(|&&(l, _)| l == 0) {
+                    return Some(c);
+                }
+            }
+            break;
+        }
+    }
+    None
+}
+
+/// Evdev codes for keypad keys where char→keysym mapping differs from standard.
+/// E.g. '*' on KP should map to KP_Multiply (0xffaa), not asterisk (0x2a).
+const KP_EVDEV_CODES: &[u32] = &[
+    55, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 96, 98,
+];
+
+/// Convert a char on a keypad key to the appropriate KP keysym.
+fn kp_char_to_keysym(c: char) -> u32 {
+    match c {
+        '*' => 0xffaa,                                 // KP_Multiply
+        '-' => 0xffad,                                 // KP_Subtract
+        '+' => 0xffab,                                 // KP_Add
+        '/' => 0xffaf,                                 // KP_Divide
+        '0'..='9' => 0xffb0 + (c as u32 - '0' as u32), // KP_0..KP_9
+        '.' => 0xffae,                                 // KP_Decimal
+        '\r' => 0xff8d,                                // KP_Enter
+        _ => 0,
+    }
+}
+
+fn is_kp_evdev(evdev: u32) -> bool {
+    KP_EVDEV_CODES.contains(&evdev)
+}
+
 fn flat_keysym_map_to_map(
     km: &crate::FlatKeysymMap,
+    char_map: &crate::FlatKeymap,
     layout_names: &[String],
+    reachable: &[usize],
 ) -> BTreeMap<String, BTreeMap<u8, BTreeMap<u32, String>>> {
     let mut result = BTreeMap::new();
     for (li, name) in layout_names.iter().enumerate() {
         let mut levels = BTreeMap::new();
         for level in 0..MAX_LEVELS {
+            let is_reachable = reachable.contains(&level);
             let mut keys = BTreeMap::new();
             for evdev in 0..km.num_keys as u32 {
                 let sym = km.get(li, level, evdev);
@@ -1272,7 +1351,45 @@ fn flat_keysym_map_to_map(
                     if is_invariant_keysym(evdev, level as u8, sym) {
                         continue;
                     }
+                    // Skip keysyms derivable from chars
+                    if is_reachable {
+                        if let Some(c) = get_char_with_invariants(char_map, li, level, evdev) {
+                            if is_kp_evdev(evdev) {
+                                // KP keys: always derive from kp_char_to_keysym
+                                if kp_char_to_keysym(c) == sym {
+                                    continue;
+                                }
+                            } else if level == 0 {
+                                // Non-KP level 0: derive from char_to_keysym
+                                if char_to_keysym(c) == sym {
+                                    continue;
+                                }
+                            } else {
+                                // Non-KP level > 0: only derive if char differs from level 0
+                                let level0_char = get_char_with_invariants(char_map, li, 0, evdev);
+                                if level0_char != Some(c) && char_to_keysym(c) == sym {
+                                    continue;
+                                }
+                            }
+                        }
+                    }
                     keys.insert(evdev, keysym_name(sym));
+                } else if is_reachable {
+                    // Explicit NoSymbol: char exists and would produce a derivation,
+                    // but the actual keysym is 0. Must store to prevent false restoration.
+                    if let Some(c) = get_char_with_invariants(char_map, li, level, evdev) {
+                        let would_derive = if is_kp_evdev(evdev) {
+                            kp_char_to_keysym(c) != 0
+                        } else if level == 0 {
+                            char_to_keysym(c) != 0
+                        } else {
+                            let level0_char = get_char_with_invariants(char_map, li, 0, evdev);
+                            level0_char != Some(c) && char_to_keysym(c) != 0
+                        };
+                        if would_derive {
+                            keys.insert(evdev, "NoSymbol".to_string());
+                        }
+                    }
                 }
             }
             if !keys.is_empty() {
@@ -1290,9 +1407,14 @@ fn map_to_flat_keysym_map(
     map: &BTreeMap<String, BTreeMap<u8, BTreeMap<u32, String>>>,
     layout_names: &[String],
     num_keys: usize,
+    char_map: &crate::FlatKeymap,
+    reachable: &[usize],
 ) -> crate::FlatKeysymMap {
     let num_layouts = layout_names.len();
     let mut km = crate::FlatKeysymMap::new(num_keys, num_layouts);
+    // Track positions explicitly set to NoSymbol (keysym 0 despite char existing)
+    let mut no_symbol: std::collections::HashSet<(usize, usize, u32)> =
+        std::collections::HashSet::new();
     // First apply RON data
     for (name, levels) in map {
         if let Some(li) = layout_names.iter().position(|n| n == name) {
@@ -1301,13 +1423,15 @@ fn map_to_flat_keysym_map(
                     let sym = keysym_from_name_or_hex(sym_name);
                     if sym != 0 {
                         km.set(li, level as usize, evdev, sym);
+                    } else {
+                        // Explicit NoSymbol entry
+                        no_symbol.insert((li, level as usize, evdev));
                     }
                 }
             }
         }
     }
     // Restore invariant keysyms only at their specific listed levels.
-    // These are keysyms present in ALL layouts, so restore unconditionally.
     for li in 0..num_layouts {
         for &(evdev, levels) in INVARIANT_KEYSYMS {
             if (evdev as usize) >= num_keys {
@@ -1316,6 +1440,38 @@ fn map_to_flat_keysym_map(
             for &(level, sym) in levels {
                 if km.get(li, level as usize, evdev) == 0 {
                     km.set(li, level as usize, evdev, sym);
+                }
+            }
+        }
+    }
+    // Restore keysyms derivable from the char map (only at reachable levels)
+    for li in 0..num_layouts {
+        for level in 0..MAX_LEVELS {
+            if !reachable.contains(&level) {
+                continue;
+            }
+            for evdev in 0..num_keys as u32 {
+                if km.get(li, level, evdev) == 0 && !no_symbol.contains(&(li, level, evdev)) {
+                    if let Some(c) = get_char_with_invariants(char_map, li, level, evdev) {
+                        let sym = if is_kp_evdev(evdev) {
+                            // KP keys: always derive from kp_char_to_keysym
+                            kp_char_to_keysym(c)
+                        } else if level == 0 {
+                            // Non-KP level 0: derive from char_to_keysym
+                            char_to_keysym(c)
+                        } else {
+                            // Non-KP level > 0: only derive if char differs from level 0
+                            let level0_char = get_char_with_invariants(char_map, li, 0, evdev);
+                            if level0_char != Some(c) {
+                                char_to_keysym(c)
+                            } else {
+                                0
+                            }
+                        };
+                        if sym != 0 {
+                            km.set(li, level, evdev, sym);
+                        }
+                    }
                 }
             }
         }
@@ -1603,7 +1759,12 @@ impl ReadableWKB {
                 false,
                 Some(&reachable),
             ),
-            keysym_map: flat_keysym_map_to_map(&wkb.keysym_map, &wkb.layout_names),
+            keysym_map: flat_keysym_map_to_map(
+                &wkb.keysym_map,
+                &wkb.state_keymap,
+                &wkb.layout_names,
+                &reachable,
+            ),
             compose: composer_to_sequences(&wkb.composer),
         }
     }
@@ -1619,6 +1780,29 @@ impl ReadableWKB {
             map_to_flat_keymap(&self.level_exceptions_keymap, &layout_names, num_keys);
         let modifiers = readable_to_modifiers(&self.modifiers);
 
+        // Compute reachable levels from modifier keys.
+        let has_mod = |target: crate::modifiers::ModType| -> bool {
+            modifiers.entries.iter().any(|(_, modifier)| {
+                let mod_kind_has = |mk: &crate::modifiers::ModKind| -> bool {
+                    match mk {
+                        crate::modifiers::ModKind::Pressed { mod_type, .. }
+                        | crate::modifiers::ModKind::Lock { mod_type, .. }
+                        | crate::modifiers::ModKind::Latch { mod_type, .. } => *mod_type == target,
+                        crate::modifiers::ModKind::None => false,
+                    }
+                };
+                match modifier {
+                    crate::modifiers::Modifier::Single(mk) => mod_kind_has(mk),
+                    crate::modifiers::Modifier::Leveled(map) => map.values().any(mod_kind_has),
+                }
+            })
+        };
+        let has_level3 = has_mod(crate::modifiers::ModType::Level3);
+        let has_level5 = has_mod(crate::modifiers::ModType::Level5);
+        let reachable: Vec<usize> = (0..MAX_LEVELS)
+            .filter(|&lvl| (lvl & 2 == 0 || has_level3) && (lvl & 4 == 0 || has_level5))
+            .collect();
+
         // Reconstruct repeat keys from defaults + add/remove diffs
         let mut repeat_set: std::collections::HashSet<u32> =
             DEFAULT_REPEAT_KEYS.iter().copied().collect();
@@ -1632,7 +1816,13 @@ impl ReadableWKB {
         for code in repeat_set {
             repeat_keys.insert(code);
         }
-        let keysym_map = map_to_flat_keysym_map(&self.keysym_map, &layout_names, num_keys);
+        let keysym_map = map_to_flat_keysym_map(
+            &self.keysym_map,
+            &layout_names,
+            num_keys,
+            &state_keymap,
+            &reachable,
+        );
         let wkb = crate::WKB {
             repeat_keys,
             composer: sequences_to_composer(&self.compose),
