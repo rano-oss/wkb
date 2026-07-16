@@ -92,20 +92,20 @@ pub use super::parser::parse;
 pub use crate::xkbcomp::keywords::keyword_to_token;
 
 pub use self::parser_h::{
-    CBRACE,
-    CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DIVIDE, DOT, END_OF_FILE, EQUALS, ERROR_TOK,
-    EXCLAM, FLOAT, IDENT, INTEGER,
-    INVERT, KEYNAME, MINUS, OBRACE,
-    OBRACKET, OPAREN, PLUS, SEMI, STRING, TIMES,
+    CBRACE, CBRACKET, COMMA, CPAREN, DECIMAL_DIGIT, DIVIDE, DOT, END_OF_FILE, EQUALS, ERROR_TOK,
+    EXCLAM, FLOAT, IDENT, INTEGER, INVERT, KEYNAME, MINUS, OBRACE, OBRACKET, OPAREN, PLUS, SEMI,
+    STRING, TIMES,
 };
 pub use crate::messages::{
-    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_MALFORMED_NUMBER_LITERAL, XKB_WARNING_INVALID_ESCAPE_SEQUENCE,
-    XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE, XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
+    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_MALFORMED_NUMBER_LITERAL,
+    XKB_WARNING_INVALID_ESCAPE_SEQUENCE, XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE,
+    XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
 };
 pub use crate::scanner_utils::{scanner, sval};
 pub use crate::shared_ast_types::{
-    ExprDef, GroupCompatDef, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef,
-    LedNameDef, ModMapDef, Statement, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, merge_mode, xkb_map_flags, MERGE_DEFAULT,
+    merge_mode, xkb_map_flags, ExprDef, GroupCompatDef, InterpDef, KeyAliasDef, KeyTypeDef,
+    KeycodeDef, LedMapDef, LedNameDef, ModMapDef, Statement, SymbolsDef, UnknownStatement, VModDef,
+    VarDef, XkbFile, MERGE_DEFAULT,
 };
 
 // ── YYValue: safe replacement for the YYSTYPE union ──

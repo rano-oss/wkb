@@ -20,16 +20,22 @@ fn bench_setup_no_compose(c: &mut Criterion) {
     group.bench_function("wkb", |b| {
         // Temporarily unset locale env vars so compose is not loaded
         let saved = std::env::var("LC_ALL").ok();
-        std::env::set_var("LC_ALL", "C");
+        unsafe {
+            std::env::set_var("LC_ALL", "C");
+        }
         b.iter(|| {
             let wkb: wkb::WKB =
                 wkb::WKB::new_from_names("", "", black_box(locale), "", None).unwrap();
             black_box(wkb);
         });
         if let Some(v) = saved {
+            unsafe {
             std::env::set_var("LC_ALL", v);
+            }
         } else {
+            unsafe {
             std::env::remove_var("LC_ALL");
+            }
         }
     });
 
@@ -91,7 +97,9 @@ fn bench_setup_with_compose(c: &mut Criterion) {
 
     group.bench_function("wkb", |b| {
         // Ensure compose locale resolves
+        unsafe {
         std::env::set_var("LC_ALL", COMPOSE_LOCALE);
+        }
         b.iter(|| {
             let wkb: wkb::WKB =
                 wkb::WKB::new_from_names("", "", black_box(locale), "", None).unwrap();
@@ -187,9 +195,26 @@ fn bench_setup_with_compose(c: &mut Criterion) {
     group.finish();
 }
 
+fn bench_setup_from_ron(c: &mut Criterion) {
+    let mut group = c.benchmark_group("setup/from_ron");
+
+    // Pre-build a WKB and serialize to RON (this is the "compiled" artifact)
+    let wkb = wkb::WKB::new_from_names("", "", "us", "", None).unwrap();
+    let ron_str = wkb.to_ron().expect("serialize to RON");
+
+    group.bench_function("wkb-from-ron", |b| {
+        b.iter(|| {
+            let wkb = wkb::WKB::from_ron(black_box(&ron_str)).expect("deserialize from RON");
+            black_box(wkb);
+        });
+    });
+
+    group.finish();
+}
+
 criterion_group! {
     name = benches;
     config = cfg();
-    targets = bench_setup_no_compose, bench_setup_with_compose,
+    targets = bench_setup_no_compose, bench_setup_with_compose, bench_setup_from_ron,
 }
 criterion_main!(benches);

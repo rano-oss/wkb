@@ -68,6 +68,7 @@ function generateSpeedTable() {
         { dir: 'key/get_char',           label: 'Key get char' },
         { dir: 'key/get_sym',            label: 'Key get sym' },
         { dir: 'compose/feed',           label: 'Compose feed' },
+        { dir: 'setup/from_ron',         label: 'Setup (from RON)' },
     ];
 
     const rows = [];

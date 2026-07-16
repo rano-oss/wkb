@@ -383,6 +383,49 @@ impl WKB {
         out.push_str("\tmodifier_map Mod2 { <NMLK> };\n");
         out.push_str("\tmodifier_map Mod4 { <LWIN> };\n");
         out.push_str("\tmodifier_map Mod5 { <LVL3> };\n");
+
+        // Dynamic modifier_map entries for Level3/Level5 physical keys
+        use crate::modifiers::{ModKind, ModType};
+        let mod_kind_type = |mk: &ModKind| -> ModType {
+            match mk {
+                ModKind::Pressed { mod_type, .. }
+                | ModKind::Lock { mod_type, .. }
+                | ModKind::Latch { mod_type, .. } => *mod_type,
+                ModKind::None => ModType::None,
+            }
+        };
+        for (evdev, modifier) in self.modifiers.iter() {
+            let mod_type = match modifier {
+                crate::modifiers::Modifier::Single(mk) => mod_kind_type(mk),
+                crate::modifiers::Modifier::Leveled(map) => map
+                    .values()
+                    .find_map(|mk| {
+                        let mt = mod_kind_type(mk);
+                        if mt != ModType::None {
+                            Some(mt)
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or(ModType::None),
+            };
+            let keyname = evdev_to_keyname(*evdev);
+            match mod_type {
+                ModType::Level3 => {
+                    // Skip virtual keys already in base set
+                    if *evdev != 84 {
+                        use std::fmt::Write;
+                        writeln!(out, "\tmodifier_map Mod5 {{ <{}> }};", keyname).unwrap();
+                    }
+                }
+                ModType::Level5 => {
+                    use std::fmt::Write;
+                    writeln!(out, "\tmodifier_map Mod3 {{ <{}> }};", keyname).unwrap();
+                }
+                _ => {}
+            }
+        }
+
         out.push_str("};\n\n");
     }
 }
