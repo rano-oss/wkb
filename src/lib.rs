@@ -285,7 +285,6 @@ impl WKB {
                 return Some(c);
             }
         }
-
         self.state_keymap.get(layout_index, base_level, evdev_code)
     }
 

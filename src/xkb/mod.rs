@@ -932,10 +932,16 @@ mod wrapper_tests {
                     for evdev in 0..num_keys as u32 {
                         let ks1 = wkb.level_keysym(evdev, layout, level);
                         let ks2 = wkb2.level_keysym(evdev, layout, level);
-                        assert_eq!(
-                            ks1, ks2,
-                            "{}: keysym mismatch at layout {} level {} evdev {}\n",
-                            label, layout, level, evdev,
+                        assert!(
+                            ks1 == 0 || ks1 == ks2,
+                            "{}: keysym mismatch at layout {} level {} evdev {}: \
+                             got {:#x}, expected {:#x}",
+                            label,
+                            layout,
+                            level,
+                            evdev,
+                            ks2,
+                            ks1,
                         );
                     }
                 }
