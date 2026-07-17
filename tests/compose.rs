@@ -113,20 +113,34 @@ fn run_compose_test(
     xkb_locale: &str,
     compose_path: &Path,
     regular: &wkb::testing::Composer,
+    producible: Option<&std::collections::HashSet<char>>,
 ) {
     if !compose_path.exists() {
         println!("SKIP: compose file not found: {}", compose_path.display());
         return;
     }
 
-    let entries = parse_compose_file(compose_path);
-    if entries.is_empty() {
+    let all_entries = parse_compose_file(compose_path);
+    if all_entries.is_empty() {
         println!(
             "SKIP: no entries in {} (parser not fully implemented)",
             compose_path.display()
         );
         return;
     }
+
+    // Filter to keyboard-reachable entries when producible set is provided
+    let entries: Vec<&ComposeEntry> = if let Some(prod) = producible {
+        all_entries
+            .iter()
+            .filter(|e| resolve_entry_chars(e).iter().all(|ch| prod.contains(ch)))
+            .collect()
+    } else {
+        all_entries.iter().collect()
+    };
+
+    let total = all_entries.len();
+    let reachable = entries.len();
 
     // Build xkb compose state for cross-checking
     let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
@@ -142,9 +156,10 @@ fn run_compose_test(
     let mut xkb_state = xkb_state;
 
     println!(
-        "{}: {} total entries, xkb={}",
+        "{}: {} total entries, {} reachable, xkb={}",
         label,
-        entries.len(),
+        total,
+        reachable,
         if has_xkb { "yes" } else { "no" },
     );
 
@@ -394,11 +409,15 @@ fn test_wkb_compose(xkb_locale: &str) {
         xkb_locale, compose_file_subpath
     );
 
+    // Collect all chars producible by this keyboard
+    let producible = wkb.producible_chars();
+
     run_compose_test(
         &format!("wkb({})", xkb_locale),
         &locale_full,
         &compose_path,
         wkb.composer(),
+        Some(&producible),
     );
 }
 
@@ -429,7 +448,7 @@ fn test_compose_file_direct(label: &str, xkb_locale: &str, compose_file: &str) {
 
     let regular = wkb::testing::compose_parse::load_compose_from_path(compose_path);
 
-    run_compose_test(label, xkb_locale, compose_path, &regular);
+    run_compose_test(label, xkb_locale, compose_path, &regular, None);
 }
 
 // ===================================================================

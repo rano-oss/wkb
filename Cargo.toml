@@ -30,6 +30,8 @@ testing = ["xkb"]
 
 [dependencies]
 xkb-core = { version = "0.2.0", path = "xkb-core", optional = true }
+arrayvec = "0.7"
+serde = { version = "1", features = ["derive"] }
 
 [dev-dependencies]
 wkb = { package = "wayland-keyboard", path = ".", features = ["testing"] }
