@@ -12,9 +12,9 @@ echo ""
 
 # ── 1. Speed Benchmarks (Criterion) ─────────────────────────────────
 echo "▶ [1/3] Speed benchmarks (Criterion)"
-echo "  Running: cargo bench --bench bench_speed"
+echo "  Running: cargo bench --bench bench_setup --bench bench_key --bench bench_compose"
 echo ""
-cargo bench --bench bench_speed 2>&1 | tee "$RESULTS_DIR/speed.txt"
+cargo bench --bench bench_setup --bench bench_key --bench bench_compose 2>&1 | tee "$RESULTS_DIR/speed.txt"
 echo ""
 
 # ── 2. Memory Benchmarks ────────────────────────────────────────────
@@ -180,3 +180,12 @@ echo "════════════════════════�
 echo "  Criterion HTML reports: target/criterion/"
 echo "  Raw results:            $RESULTS_DIR/"
 echo "══════════════════════════════════════════════════════════════════════════════"
+
+# ── Update README.md with benchmark results ──────────────────────────
+echo ""
+echo "▶ Updating README.md with benchmark results"
+node scripts/generate_benchmark_table.js \
+    --mem="$RESULTS_DIR/memory.txt" \
+    --size="$RESULTS_DIR/binary_size.txt" \
+    --update-readme
+echo ""

@@ -884,6 +884,14 @@ fn CopyKeycodeNameLUT(keymap: &mut xkb_keymap, keycodes: &mut KeycodeStore) -> b
                                     entry.index
                                 ));
                             keycodes.names[name as usize].found = false;
+                        } else if match_real.is_alias {
+                            log::warn!(
+                                "[XKB-{:03}] Attempt to alias <{}> to alias <{}>; Ignored\n",
+                                XKB_WARNING_UNDEFINED_KEYCODE as i32,
+                                xkb_atom_text(&keymap.ctx.atom_table, name),
+                                xkb_atom_text(&keymap.ctx.atom_table, entry.index)
+                            );
+                            keycodes.names[name as usize].found = false;
                         }
                     } else if !entry.low {
                         keycodes.names[name as usize].index += keymap.num_keys_low;
