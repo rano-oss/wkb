@@ -4,6 +4,7 @@ set -euo pipefail
 BINS="bench_size_wkb bench_size_xkbcommon bench_size_xkbcommon_dl bench_size_xkbcommon_compat"
 RESULTS_DIR="/tmp/wkb_bench_results"
 mkdir -p "$RESULTS_DIR"
+: > "$RESULTS_DIR/speed.txt"
 
 echo "══════════════════════════════════════════════════════════════"
 echo "  WKB Benchmark Suite"
@@ -12,10 +13,12 @@ echo ""
 
 # ── 1. Speed Benchmarks (Criterion) ─────────────────────────────────
 echo "▶ [1/3] Speed benchmarks (Criterion)"
-echo "  Running: cargo bench --bench bench_setup --bench bench_key --bench bench_compose"
+echo "  Running: bench_setup, bench_key, bench_compose"
 echo ""
-cargo bench --bench bench_setup --bench bench_key --bench bench_compose 2>&1 | tee "$RESULTS_DIR/speed.txt"
-echo ""
+for bench in bench_setup bench_key bench_compose; do
+    cargo bench --bench "$bench" 2>&1 | tee -a "$RESULTS_DIR/speed.txt"
+    echo ""
+done
 
 # ── 2. Memory Benchmarks ────────────────────────────────────────────
 echo "▶ [2/3] Memory benchmarks"

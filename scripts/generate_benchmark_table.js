@@ -61,11 +61,11 @@ function generateSpeedTable() {
 
     // Criterion stores groups with '_' separators in directory names
     const interesting = [
-        { dir: 'full_setup',             label: 'Full setup' },
+        { dir: 'setup_no_compose',       label: 'Setup (no compose)' },
+        { dir: 'setup_with_compose',     label: 'Setup (with compose)' },
         { dir: 'key_update',             label: 'Key update' },
-        { dir: 'key_get_utf8',           label: 'Get UTF-8' },
+        { dir: 'key_get_char',           label: 'Get char' },
         { dir: 'key_get_sym',            label: 'Get keysym' },
-        { dir: 'compose_setup',          label: 'Compose setup', combine: ['compose_table_creation', 'compose_state_creation'] },
         { dir: 'compose_feed',           label: 'Compose feed' },
     ];
 
