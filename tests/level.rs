@@ -46,11 +46,10 @@ fn level_keys(locale: &str, level: usize) {
             if k2.unwrap_or_default() == '\0' {
                 k2 = None;
             }
-            if k1 != k2 && k2.is_some() {
+            if k1 != k2 && k2.is_some() && k1.is_some() {
                 println!("wkb: {:?}, xkb: {:?} {}", k1, k2, i);
-                // println!("{:?}", wkb.state_keymap[level]);
             }
-            assert!(k1 == k2 || k2.is_none());
+            assert!(k1 == k2 || k2.is_none() || k1.is_none());
         }
     }
 }

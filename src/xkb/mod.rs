@@ -42,7 +42,7 @@ pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u3
     for (code, modifier) in modifiers.iter() {
         match modifier {
             Modifier::Single(mod_kind) => {
-                if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
+                if mod_kind.has_mod_type(mod_type) {
                     match mod_kind {
                         ModKind::Pressed { .. } => return Some((*code, None)),
                         _ => {
@@ -55,7 +55,7 @@ pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u3
             }
             Modifier::Leveled(map) => {
                 for (level, mod_kind) in map {
-                    if mod_kind.get_modkind_from_modtype(mod_type).is_some() {
+                    if mod_kind.has_mod_type(mod_type) {
                         match mod_kind {
                             ModKind::Pressed { .. } => return Some((*code, Some(*level))),
                             _ => {

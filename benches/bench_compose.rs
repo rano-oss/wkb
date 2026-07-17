@@ -30,7 +30,11 @@ fn bench_compose_feed(c: &mut Criterion) {
                     .keysyms
                     .iter()
                     .filter_map(|&ks| {
-                        xkb_core::keysym_utf::keysym_to_char(ks).map(wkb::testing::Token::Char)
+                        if ks == XKB_KEY_MULTI_KEY {
+                            Some(wkb::testing::Token::Compose)
+                        } else {
+                            xkb_core::keysym_utf::keysym_to_char(ks).map(wkb::testing::Token::Char)
+                        }
                     })
                     .collect();
                 group.bench_with_input(BenchmarkId::new("wkb", seq.name), &tokens, |b, tokens| {
@@ -59,7 +63,16 @@ fn bench_compose_feed(c: &mut Criterion) {
                     |b, keysyms| {
                         b.iter(|| {
                             for &ks in *keysyms {
-                                black_box(state.feed(xkb::Keysym::new(ks)));
+                                state.feed(xkb::Keysym::new(ks));
+                                match state.status() {
+                                    xkb::compose::Status::Composing => {
+                                        black_box(state.utf8());
+                                    }
+                                    xkb::compose::Status::Composed => {
+                                        black_box(state.utf8());
+                                    }
+                                    _ => {}
+                                }
                             }
                             state.reset();
                         });
@@ -89,15 +102,31 @@ fn bench_compose_feed(c: &mut Criterion) {
                         xkbcommon_dl::xkb_compose_state_flags::XKB_COMPOSE_STATE_NO_FLAGS,
                     )
                 };
+                let mut utf8_buf = [0u8; 256];
                 group.bench_with_input(
                     BenchmarkId::new("xkbcommon-dl", seq.name),
                     &seq.keysyms,
                     |b, keysyms| {
                         b.iter(|| {
                             for &ks in *keysyms {
-                                black_box(unsafe {
-                                    (xkb_compose.xkb_compose_state_feed)(state, ks)
-                                });
+                                unsafe {
+                                    (xkb_compose.xkb_compose_state_feed)(state, ks);
+                                    let status =
+                                        (xkb_compose.xkb_compose_state_get_status)(state);
+                                    if status
+                                        == xkbcommon_dl::xkb_compose_status::XKB_COMPOSE_COMPOSING
+                                        || status
+                                            == xkbcommon_dl::xkb_compose_status::XKB_COMPOSE_COMPOSED
+                                    {
+                                        black_box(
+                                            (xkb_compose.xkb_compose_state_get_utf8)(
+                                                state,
+                                                utf8_buf.as_mut_ptr() as *mut _,
+                                                utf8_buf.len(),
+                                            ),
+                                        );
+                                    }
+                                };
                             }
                             unsafe { (xkb_compose.xkb_compose_state_reset)(state) };
                         });
