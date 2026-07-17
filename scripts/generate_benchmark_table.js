@@ -62,12 +62,12 @@ function generateSpeedTable() {
     // Criterion stores group names using '/' as directory separators.
     // The benchmark groups are defined in bench_setup.rs, bench_key.rs, bench_compose.rs.
     const interesting = [
-        { dir: 'setup/with_compose',     label: 'Full setup (with compose)' },
-        { dir: 'setup/no_compose',       label: 'Setup (no compose)' },
-        { dir: 'key/update',             label: 'Key update' },
-        { dir: 'key/get_char',           label: 'Key get char' },
-        { dir: 'key/get_sym',            label: 'Key get sym' },
-        { dir: 'compose/feed',           label: 'Compose feed' },
+        { dir: 'setup_no_compose',       label: 'Setup (no compose)' },
+        { dir: 'setup_with_compose',     label: 'Setup (with compose)' },
+        { dir: 'key_update',             label: 'Key update' },
+        { dir: 'key_get_char',           label: 'Get char' },
+        { dir: 'key_get_sym',            label: 'Get keysym' },
+        { dir: 'compose_feed',           label: 'Compose feed' },
     ];
 
     const rows = [];
