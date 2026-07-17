@@ -180,3 +180,12 @@ echo "════════════════════════�
 echo "  Criterion HTML reports: target/criterion/"
 echo "  Raw results:            $RESULTS_DIR/"
 echo "══════════════════════════════════════════════════════════════════════════════"
+
+# ── Update README.md with benchmark results ──────────────────────────
+echo ""
+echo "▶ Updating README.md with benchmark results"
+node scripts/generate_benchmark_table.js \
+    --mem="$RESULTS_DIR/memory.txt" \
+    --size="$RESULTS_DIR/binary_size.txt" \
+    --update-readme
+echo ""
