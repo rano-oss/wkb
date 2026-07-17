@@ -59,7 +59,8 @@ function generateSpeedTable() {
     const groups = fs.readdirSync(CRITERION_DIR)
         .filter(d => !d.startsWith('.') && d !== 'report');
 
-    // Criterion stores groups with '_' separators in directory names
+    // Criterion stores group names using '/' as directory separators.
+    // The benchmark groups are defined in bench_setup.rs, bench_key.rs, bench_compose.rs.
     const interesting = [
         { dir: 'setup_no_compose',       label: 'Setup (no compose)' },
         { dir: 'setup_with_compose',     label: 'Setup (with compose)' },
