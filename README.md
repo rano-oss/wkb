@@ -95,9 +95,9 @@ let xkb_string = wkb.as_xkb_string().unwrap();
 
 | Library | Peak RSS |
 |---------|----------|
-| wkb | 5.5 MB |
-| xkbcommon | 5.8 MB |
-| xkbcommon-dl | 5.8 MB |
+| wkb | 5.6 MB |
+| xkbcommon | 5.9 MB |
+| xkbcommon-dl | 5.9 MB |
 
 ### Binary Size
 
@@ -105,7 +105,7 @@ Sizes for xkbcommon and xkbcommon-dl include the dynamically-linked `libxkbcommo
 
 | Binary | Size (stripped) |
 |--------|----------------|
-| wkb | 1158 KB |
+| wkb | 1155 KB |
 | xkbcommon | 720 KB |
 | xkbcommon-dl | 754 KB |
 
