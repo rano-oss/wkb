@@ -10,8 +10,8 @@ use super::atom::atom_lookup_ref;
 use super::keymap::{
     xkb_keymap_layout_get_index_ref, xkb_keymap_led_get_index_ref, xkb_keymap_mod_get_index_ref,
 };
+use super::shared_types::xkb_context;
 use super::shared_types::{XKB_ATOM_NONE, XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID};
-use super::{compose::xkb_compose_table, shared_types::xkb_context};
 
 /// Rust-native version of xkb_rule_names
 #[derive(Debug, Clone, Default)]
@@ -624,37 +624,6 @@ impl RxkbContext {
     /// Iterate over all layouts in the registry
     pub fn layouts(&self) -> impl Iterator<Item = &super::registry::rxkb_layout> {
         self.inner.layouts().iter()
-    }
-}
-
-// ============================================================================
-// Compose Table Wrappers for Dead Key Sequences
-// ============================================================================
-
-/// Safe wrapper around xkb_compose_table for dead key composition
-///
-/// Note: The underlying type is opaque to avoid private struct imports
-pub struct ComposeTable {
-    entity: xkb_compose_table,
-}
-
-impl ComposeTable {
-    /// Create a new compose table from locale
-    pub fn new_from_locale(ctx: &Context, locale: &str) -> Option<Self> {
-        let locale_cstr = std::ffi::CString::new(locale).ok()?;
-
-        let compose_table = xkb_compose_table {
-            refcnt: 0,
-            format: 0,
-            flags: super::compose::XKB_COMPOSE_COMPILE_NO_FLAGS,
-            ctx: ctx.entity.clone(),
-            locale: locale_cstr.to_str().unwrap().to_string(),
-            utf8: Vec::new(),
-            nodes: Vec::new(),
-        };
-        Some(ComposeTable {
-            entity: compose_table,
-        })
     }
 }
 

@@ -4,7 +4,9 @@ use super::atom::{atom_lookup_ref, atom_text};
 use super::context::{xkb_atom_intern_bytes, xkb_context_sanitize_rule_names};
 pub use super::shared_types::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
 pub use super::shared_types::{
-    xkb_action, xkb_key, xkb_keymap, xkb_led, xkb_level, xkb_mod_set, MOD_BOTH, MOD_REAL,
+    xkb_action, xkb_context, xkb_key, xkb_keymap, xkb_led, xkb_level, xkb_mod_set, xkb_rule_names,
+    MOD_BOTH, MOD_REAL, MOD_REAL_MASK_ALL, XKB_ATOM_NONE, XKB_KEYCODE_INVALID,
+    XKB_KEYMAP_FORMAT_TEXT_V2, XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID,
 };
 
 pub fn xkb_keymap_new_from_names(
@@ -81,113 +83,6 @@ pub fn xkb_keymap_layout_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str>
         Some(s)
     }
 }
-pub fn xkb_keymap_num_layouts_for_key(keymap: &xkb_keymap, kc: u32) -> u32 {
-    match keymap.get_key(kc) {
-        Some(key) => key.num_groups,
-        None => 0_u32,
-    }
-}
-pub fn xkb_keymap_num_levels_for_key(keymap: &xkb_keymap, kc: u32, mut layout: u32) -> u32 {
-    let key = match keymap.get_key(kc) {
-        Some(k) => k,
-        None => return 0_u32,
-    };
-    layout = XkbWrapGroupIntoRange(
-        layout as i32,
-        key.num_groups,
-        key.out_of_range_group_policy,
-        key.out_of_range_group_number,
-    );
-    if layout == XKB_LAYOUT_INVALID {
-        return 0_u32;
-    }
-    keymap.key_num_levels(key, layout)
-}
-pub fn xkb_keymap_num_leds(keymap: &xkb_keymap) -> u32 {
-    keymap.num_leds
-}
-pub fn xkb_keymap_led_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
-    if idx >= keymap.num_leds {
-        return None;
-    }
-    let s = atom_text(&keymap.ctx.atom_table, keymap.leds[idx as usize].name);
-    if s.is_empty() {
-        None
-    } else {
-        Some(s)
-    }
-}
-
-/// Safe version of `xkb_keymap_mod_get_index` using `&str` name and `&xkb_keymap`.
-pub fn xkb_keymap_mod_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
-    let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
-    if atom == XKB_ATOM_NONE {
-        XKB_MOD_INVALID
-    } else {
-        XkbModNameToIndex(&keymap.mods, atom, MOD_BOTH)
-    }
-}
-
-/// Safe version of `xkb_keymap_layout_get_index` using `&str` name and `&xkb_keymap`.
-pub fn xkb_keymap_layout_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
-    let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
-    if atom == XKB_ATOM_NONE {
-        return XKB_LAYOUT_INVALID;
-    }
-    for (i, &gn) in keymap.group_names.iter().enumerate() {
-        if gn == atom {
-            return i as u32;
-        }
-    }
-    XKB_LAYOUT_INVALID
-}
-
-/// Safe version of `xkb_keymap_led_get_index` using `&str` name and `&xkb_keymap`.
-pub fn xkb_keymap_led_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
-    let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
-    if atom == XKB_ATOM_NONE {
-        return XKB_LED_INVALID;
-    }
-    for i in 0..keymap.num_leds {
-        if keymap.leds[i as usize].name == atom {
-            return i;
-        }
-    }
-    XKB_LED_INVALID
-}
-
-/// Safe version: returns a slice of keysyms for a key at a given layout/level.
-pub fn xkb_keymap_key_get_syms_by_level_ref(
-    keymap: &xkb_keymap,
-    kc: u32,
-    layout: u32,
-    level: u32,
-) -> &[u32] {
-    if let Some(key) = keymap.get_key(kc) {
-        if let Some(leveli) = keymap.get_key_level(key, layout, level) {
-            if !leveli.syms.is_empty() {
-                return &leveli.syms;
-            }
-        }
-    }
-    &[]
-}
-
-pub fn xkb_keymap_min_keycode(keymap: &xkb_keymap) -> u32 {
-    keymap.min_key_code
-}
-pub fn xkb_keymap_max_keycode(keymap: &xkb_keymap) -> u32 {
-    keymap.max_key_code
-}
-pub fn xkb_keymap_key_get_name(keymap: &xkb_keymap, kc: u32) -> Option<&str> {
-    let key = keymap.get_key(kc)?;
-    let s = atom_text(&keymap.ctx.atom_table, key.name);
-    if s.is_empty() {
-        None
-    } else {
-        Some(s)
-    }
-}
 pub fn xkb_keymap_key_by_name(keymap: &xkb_keymap, name: &str) -> u32 {
     let mut atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
     if atom != 0 {
@@ -213,13 +108,60 @@ pub fn xkb_keymap_key_by_name(keymap: &xkb_keymap, name: &str) -> u32 {
     }
     XKB_KEYCODE_INVALID
 }
+pub fn xkb_keymap_key_get_name(keymap: &xkb_keymap, kc: u32) -> Option<&str> {
+    let key = keymap.get_key(kc)?;
+    let s = atom_text(&keymap.ctx.atom_table, key.name);
+    if s.is_empty() {
+        None
+    } else {
+        Some(s)
+    }
+}
 pub fn xkb_keymap_key_repeats(keymap: &xkb_keymap, kc: u32) -> i32 {
     match keymap.get_key(kc) {
         Some(key) => key.repeats as i32,
         None => 0_i32,
     }
 }
-use super::shared_types::*;
+
+pub fn xkb_keymap_min_keycode(keymap: &xkb_keymap) -> u32 {
+    keymap.min_key_code
+}
+
+pub fn xkb_keymap_max_keycode(keymap: &xkb_keymap) -> u32 {
+    keymap.max_key_code
+}
+
+pub fn xkb_keymap_num_levels_for_key(keymap: &xkb_keymap, keycode: u32, layout: u32) -> u32 {
+    keymap
+        .get_key(keycode)
+        .and_then(|k| k.groups.get(layout as usize))
+        .map(|g| g.levels.len() as u32)
+        .unwrap_or(0)
+}
+
+pub fn xkb_keymap_mod_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
+    let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
+    if atom == XKB_ATOM_NONE {
+        XKB_MOD_INVALID
+    } else {
+        XkbModNameToIndex(&keymap.mods, atom, MOD_BOTH)
+    }
+}
+
+pub fn xkb_keymap_key_get_syms_by_level_ref<'a>(
+    keymap: &'a xkb_keymap,
+    kc: u32,
+    layout: u32,
+    level: u32,
+) -> &'a [u32] {
+    keymap
+        .get_key(kc)
+        .and_then(|k| k.groups.get(layout as usize))
+        .and_then(|g| g.levels.get(level as usize))
+        .map(|lvl| lvl.syms.as_slice())
+        .unwrap_or(&[])
+}
 
 // --- Merged from keymap_priv.rs ---
 
@@ -452,6 +394,47 @@ pub fn XkbWrapGroupIntoRange(
         }
     }
 }
+pub fn xkb_keymap_num_layouts_for_key(keymap: &xkb_keymap, kc: u32) -> u32 {
+    keymap.get_key(kc).map(|k| k.num_groups as u32).unwrap_or(0)
+}
+
+pub fn xkb_keymap_num_leds(keymap: &xkb_keymap) -> u32 {
+    keymap.leds.len() as u32
+}
+
+pub fn xkb_keymap_led_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
+    keymap
+        .leds
+        .get(idx as usize)
+        .map(|l| atom_text(&keymap.ctx.atom_table, l.name))
+}
+
+pub fn xkb_keymap_layout_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
+    let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
+    if atom == XKB_ATOM_NONE {
+        XKB_LAYOUT_INVALID
+    } else {
+        keymap
+            .group_names
+            .iter()
+            .position(|&n| n == atom)
+            .map_or(XKB_LAYOUT_INVALID, |i| i as u32)
+    }
+}
+
+pub fn xkb_keymap_led_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
+    let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
+    if atom == XKB_ATOM_NONE {
+        XKB_LED_INVALID
+    } else {
+        keymap
+            .leds
+            .iter()
+            .position(|l| l.name == atom)
+            .map_or(XKB_LED_INVALID, |i| i as u32)
+    }
+}
+
 pub fn xkb_keymap_key_get_actions_by_level<'a>(
     keymap: &'a xkb_keymap,
     key: &'a xkb_key,
