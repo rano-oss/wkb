@@ -820,7 +820,7 @@ pub(crate) fn named_key_to_keysym(key: NamedKey) -> u32 {
         NamedKey::Katakana => 0xff26,
         NamedKey::Romaji => ks::Romaji,
         NamedKey::ZenkakuHankaku => ks::Zenkaku_Hankaku,
-        NamedKey::EisuToggle => ks::Eisu_Shift,
+        NamedKey::EisuToggle => ks::Eisu_toggle,
 
         // Korean input
         NamedKey::HangulHanja => 0xff34,
