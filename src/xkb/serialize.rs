@@ -5,8 +5,11 @@
 //! standard evdev offset (XKB keycode = evdev + 8) and infers key types from the
 //! number of distinct keysym levels per key.
 
-use crate::flat_keymap::{FlatKeysymMap, MAX_LEVELS};
+use crate::flat_keymap::{FlatNamedKeyMap, MAX_LEVELS};
 use crate::keysyms::keysym_get_name;
+use crate::named_keys::NamedKey;
+
+use super::named_key_to_keysym;
 use crate::WKB;
 
 // ── Standard evdev → XKB key name table ──
@@ -192,11 +195,11 @@ fn evdev_to_keyname(evdev: u32) -> String {
 }
 
 /// Determine how many levels a key actually uses across all groups.
-fn key_max_level(keysym_map: &FlatKeysymMap, evdev: u32, num_layouts: usize) -> usize {
+fn key_max_level(named_key_map: &FlatNamedKeyMap, evdev: u32, num_layouts: usize) -> usize {
     let mut max_level = 0;
     for layout in 0..num_layouts {
         for level in (0..MAX_LEVELS).rev() {
-            if keysym_map.get(layout, level, evdev) != 0 {
+            if named_key_map.get(layout, level, evdev) != NamedKey::Unnamed {
                 if level + 1 > max_level {
                     max_level = level + 1;
                 }
@@ -249,8 +252,8 @@ impl WKB {
     /// can parse. Returns `None` if the keysym map is empty (non-xkb build).
     #[cfg(feature = "xkb")]
     pub fn generate_xkb_string(&self) -> String {
-        let num_layouts = self.keysym_map.num_layouts;
-        let num_keys = self.keysym_map.num_keys;
+        let num_layouts = self.named_key_map.num_layouts;
+        let num_keys = self.named_key_map.num_keys;
         // XKB keycodes max at 255; evdev = xkb - 8, so max evdev = 247
         let max_evdev = num_keys.min(248) as u32;
         // Estimate capacity: ~40KB for a typical keymap
@@ -283,7 +286,7 @@ impl WKB {
 
         for evdev in 0..max_evdev {
             // Only emit keys that have at least one keysym
-            if key_max_level(&self.keysym_map, evdev, self.keysym_map.num_layouts) > 0 {
+            if key_max_level(&self.named_key_map, evdev, self.named_key_map.num_layouts) > 0 {
                 let name = evdev_to_keyname(evdev);
                 writeln!(out, "\t<{}> = {};", name, evdev + 8).unwrap();
             }
@@ -309,7 +312,7 @@ impl WKB {
 
         // Per-key symbols
         for evdev in 0..max_evdev {
-            let max_level = key_max_level(&self.keysym_map, evdev, num_layouts);
+            let max_level = key_max_level(&self.named_key_map, evdev, num_layouts);
             if max_level == 0 {
                 continue;
             }
@@ -324,7 +327,9 @@ impl WKB {
                     if level > 0 {
                         out.push_str(", ");
                     }
-                    out.push_str(&sym_name(self.keysym_map.get(0, level, evdev)));
+                    out.push_str(&sym_name(named_key_to_keysym(
+                        self.named_key_map.get(0, level, evdev),
+                    )));
                 }
                 out.push_str(" ]");
                 // repeat
@@ -342,7 +347,7 @@ impl WKB {
                     // Compute per-group level count
                     let mut glevel = 0;
                     for level in (0..MAX_LEVELS).rev() {
-                        if self.keysym_map.get(g, level, evdev) != 0 {
+                        if self.named_key_map.get(g, level, evdev) != NamedKey::Unnamed {
                             glevel = level + 1;
                             break;
                         }
@@ -357,7 +362,9 @@ impl WKB {
                         if level > 0 {
                             out.push_str(", ");
                         }
-                        out.push_str(&sym_name(self.keysym_map.get(g, level, evdev)));
+                        out.push_str(&sym_name(named_key_to_keysym(
+                            self.named_key_map.get(g, level, evdev),
+                        )));
                     }
                     if g < num_layouts - 1 {
                         out.push_str(" ],\n");

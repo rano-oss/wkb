@@ -1,4 +1,5 @@
 use test_case::test_matrix;
+use wkb::testing::{keysym_to_named_key, NamedKey};
 use xkbcommon::xkb::{self, Keycode};
 
 fn xkb_new_keymap_from_names(locale: &str, layout: &str) -> xkb::Keymap {
@@ -30,22 +31,22 @@ fn keysym(locale: &str, level: usize) {
         let wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
 
         for evdev in 0..701 {
-            let wkb_sym = wkb.level_keysym(evdev, 0, level);
+            let wkb_key = wkb.level_keysym(evdev, 0, level);
             let xkb_sym = xkb
                 .key_get_syms_by_level(Keycode::new(evdev + 8), 0, level as u32)
                 .first()
                 .map(|k| k.raw())
                 .unwrap_or(0);
 
-            if wkb_sym != xkb_sym && xkb_sym != 0 {
-                let wkb_name = wkb::keysyms::keysym_get_name(wkb_sym).unwrap_or("?");
-                let xkb_name = wkb::keysyms::keysym_get_name(xkb_sym).unwrap_or("?");
-                panic!(
-                    "locale={} layout={} evdev={} level={}: wkb={:#x}({}) xkb={:#x}({})",
-                    locale, layout, evdev, level, wkb_sym, wkb_name, xkb_sym, xkb_name
-                );
+            if xkb_sym != 0 {
+                let xkb_key = keysym_to_named_key(xkb_sym);
+                if wkb_key != xkb_key {
+                    panic!(
+                        "locale={} layout={} evdev={} level={}: wkb={:?} xkb_sym={:#x} xkb_key={:?}",
+                        locale, layout, evdev, level, wkb_key, xkb_sym, xkb_key
+                    );
+                }
             }
-            assert!(wkb_sym == xkb_sym || xkb_sym == 0);
         }
     }
 }

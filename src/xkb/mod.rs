@@ -5,8 +5,9 @@ mod serialize;
 
 use crate::bitset::KeyBitSet;
 use crate::composer::Token;
-use crate::flat_keymap::{FlatKeymap, FlatKeysymMap, MAX_LEVELS};
+use crate::flat_keymap::{FlatKeymap, FlatNamedKeyMap, MAX_LEVELS};
 use crate::modifiers::*;
+use crate::named_keys::{keysym_to_named_key, NamedKey};
 use crate::Composer;
 use crate::WKB;
 
@@ -169,10 +170,10 @@ fn build_wkb_from_keymap(
 
     // ── Build flat keymaps for ALL layouts ──
 
-    // Build level_exceptions_keymap and keysym_map in a single pass
+    // Build level_exceptions_keymap and named_key_map in a single pass
     // (both use key_get_syms_by_level, no state needed)
     let mut level_exceptions_keymap = FlatKeymap::new(num_keys, num_layouts);
-    let mut keysym_map = FlatKeysymMap::new(num_keys, num_layouts);
+    let mut named_key_map = FlatNamedKeyMap::new(num_keys, num_layouts);
     for layout_idx in 0..num_layouts {
         for lvl in 0..XKB_MAX_LEVELS {
             for kc in min_keycode..=max_keycode {
@@ -180,7 +181,7 @@ fn build_wkb_from_keymap(
                 if let Some(&sym) = syms.first() {
                     let evdev = kc - EVDEV_OFFSET;
                     if sym != 0 {
-                        keysym_map.set(layout_idx, lvl, evdev, sym);
+                        named_key_map.set(layout_idx, lvl, evdev, keysym_to_named_key(sym));
                     }
                     if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(sym) {
                         level_exceptions_keymap.set(layout_idx, lvl, evdev, ch);
@@ -348,7 +349,7 @@ fn build_wkb_from_keymap(
         num_lock_keys,
         caps_lock_keymap,
         level_exceptions_keymap,
-        keysym_map,
+        named_key_map,
     }
 }
 
@@ -545,6 +546,142 @@ fn build_modifiers_from_keymap(
         }
     }
     modifiers
+}
+
+/// Map a [`NamedKey`] back to its XKB keysym value.
+///
+/// Returns `0` (NoSymbol) for [`NamedKey::Unnamed`] and for character keys
+/// that don't have a canonical keysym.
+pub(crate) fn named_key_to_keysym(key: NamedKey) -> u32 {
+    use crate::keysyms as ks;
+    match key {
+        NamedKey::Unnamed => 0,
+
+        // Navigation and editing
+        NamedKey::Space => ks::space,
+        NamedKey::Enter => ks::Return,
+        NamedKey::Tab => ks::Tab,
+        NamedKey::Backspace => ks::BackSpace,
+        NamedKey::Escape => ks::Escape,
+        NamedKey::Delete => ks::Delete,
+        NamedKey::Insert => ks::Insert,
+        NamedKey::ArrowLeft => ks::Left,
+        NamedKey::ArrowRight => ks::Right,
+        NamedKey::ArrowUp => ks::Up,
+        NamedKey::ArrowDown => ks::Down,
+        NamedKey::Home => ks::Home,
+        NamedKey::End => ks::End,
+        NamedKey::PageUp => ks::Prior,
+        NamedKey::PageDown => ks::Next,
+
+        // Function keys
+        NamedKey::F1 => ks::F1,
+        NamedKey::F2 => ks::F2,
+        NamedKey::F3 => ks::F3,
+        NamedKey::F4 => ks::F4,
+        NamedKey::F5 => ks::F5,
+        NamedKey::F6 => ks::F6,
+        NamedKey::F7 => ks::F7,
+        NamedKey::F8 => ks::F8,
+        NamedKey::F9 => ks::F9,
+        NamedKey::F10 => ks::F10,
+        NamedKey::F11 => ks::F11,
+        NamedKey::F12 => ks::F12,
+        NamedKey::F13 => ks::F13,
+        NamedKey::F14 => ks::F14,
+        NamedKey::F15 => ks::F15,
+        NamedKey::F16 => ks::F16,
+        NamedKey::F17 => ks::F17,
+        NamedKey::F18 => ks::F18,
+        NamedKey::F19 => ks::F19,
+        NamedKey::F20 => ks::F20,
+        NamedKey::F21 => ks::F21,
+        NamedKey::F22 => ks::F22,
+        NamedKey::F23 => ks::F23,
+        NamedKey::F24 => ks::F24,
+        NamedKey::F25 => ks::F25,
+        NamedKey::F26 => ks::F26,
+        NamedKey::F27 => ks::F27,
+        NamedKey::F28 => ks::F28,
+        NamedKey::F29 => ks::F29,
+        NamedKey::F30 => ks::F30,
+        NamedKey::F31 => ks::F31,
+        NamedKey::F32 => ks::F32,
+        NamedKey::F33 => ks::F33,
+        NamedKey::F34 => ks::F34,
+        NamedKey::F35 => ks::F35,
+
+        // Modifiers
+        NamedKey::LeftShift => ks::Shift_L,
+        NamedKey::RightShift => ks::Shift_R,
+        NamedKey::LeftControl => ks::Control_L,
+        NamedKey::RightControl => ks::Control_R,
+        NamedKey::LeftAlt => ks::Alt_L,
+        NamedKey::RightAlt => ks::Alt_R,
+        NamedKey::LeftMeta => ks::Meta_L,
+        NamedKey::RightMeta => ks::Meta_R,
+        NamedKey::LeftSuper => ks::Super_L,
+        NamedKey::RightSuper => ks::Super_R,
+        NamedKey::LeftHyper => ks::Hyper_L,
+        NamedKey::RightHyper => ks::Hyper_R,
+
+        // Locks
+        NamedKey::CapsLock => ks::Caps_Lock,
+        NamedKey::NumLock => ks::Num_Lock,
+        NamedKey::ScrollLock => ks::Scroll_Lock,
+
+        // System
+        NamedKey::PrintScreen => ks::Print,
+        NamedKey::Pause => ks::Pause,
+        NamedKey::SysReq => ks::Sys_Req,
+        NamedKey::ContextMenu => ks::Menu,
+
+        // Power (XF86)
+        NamedKey::Power => 0x1008ff21,
+        NamedKey::PowerOff => 0x1008ff2a,
+        NamedKey::Sleep => 0x1008ff2f,
+        NamedKey::WakeUp => 0x1008ff2b,
+        NamedKey::Suspend => 0x1008ffa7,
+        NamedKey::Hibernate => 0x1008ffa8,
+
+        // Media (XF86)
+        NamedKey::MediaPlay => 0x1008ff14,
+        NamedKey::MediaPause => 0x1008ff31,
+        NamedKey::MediaStop => 0x1008ff15,
+        NamedKey::MediaNextTrack => 0x1008ff17,
+        NamedKey::MediaPreviousTrack => 0x1008ff16,
+        NamedKey::VolumeUp => 0x1008ff13,
+        NamedKey::VolumeDown => 0x1008ff11,
+        NamedKey::VolumeMute => 0x1008ff12,
+
+        // Browser (XF86)
+        NamedKey::BrowserBack => 0x1008ff26,
+        NamedKey::BrowserForward => 0x1008ff27,
+        NamedKey::BrowserRefresh => 0x1008ff29,
+        NamedKey::BrowserHome => 0x1008ff18,
+
+        // Launch (XF86)
+        NamedKey::LaunchMail => 0x1008ff19,
+        NamedKey::LaunchCalculator => 0x1008ff1d,
+        NamedKey::LaunchTerminal => 0x1008ff80,
+
+        // Display (XF86)
+        NamedKey::BrightnessUp => 0x1008ff02,
+        NamedKey::BrightnessDown => 0x1008ff03,
+        NamedKey::KeyboardBrightnessUp => 0x1008ff05,
+        NamedKey::KeyboardBrightnessDown => 0x1008ff06,
+
+        // Japanese input
+        NamedKey::KanjiMode => ks::Kanji,
+        NamedKey::Hiragana => ks::Hiragana,
+        NamedKey::Katakana => 0xff26,
+        NamedKey::Romaji => ks::Romaji,
+        NamedKey::ZenkakuHankaku => ks::Zenkaku_Hankaku,
+        NamedKey::EisuToggle => ks::Eisu_Shift,
+
+        // Korean input
+        NamedKey::HangulHanja => 0xff34,
+    }
 }
 
 #[cfg(test)]
@@ -755,46 +892,36 @@ mod wrapper_tests {
 
     #[test]
     fn test_keysym_flat_table() {
+        use crate::named_keys::NamedKey;
+
         let wkb = crate::WKB::new_from_names("", "", "us", "", None).unwrap();
 
-        // 'a' key (evdev 30) at level 0 should be KEY_a
-        let sym = wkb.level_keysym(30, 0, 0);
+        // 'a' key (evdev 30) at level 0: character key → Unnamed
+        let key = wkb.level_keysym(30, 0, 0);
+        assert_eq!(key, NamedKey::Unnamed, "character key should be Unnamed");
+
+        // 'a' key at level 1 (shifted): character key → Unnamed
+        let key = wkb.level_keysym(30, 0, 1);
         assert_eq!(
-            sym,
-            crate::keysyms::a,
-            "expected KEY_a for evdev 30 level 0"
+            key,
+            NamedKey::Unnamed,
+            "shifted character key should be Unnamed"
         );
 
-        // 'a' key at level 1 (shifted) should be KEY_A
-        let sym = wkb.level_keysym(30, 0, 1);
-        assert_eq!(
-            sym,
-            crate::keysyms::A,
-            "expected KEY_A for evdev 30 level 1"
-        );
+        // Return key (evdev 28) → Enter
+        let key = wkb.level_keysym(28, 0, 0);
+        assert_eq!(key, NamedKey::Enter, "expected Enter for evdev 28");
 
-        // Return key (evdev 28) should be KEY_Return
-        let sym = wkb.level_keysym(28, 0, 0);
-        assert_eq!(
-            sym,
-            crate::keysyms::Return,
-            "expected KEY_Return for evdev 28"
-        );
-
-        // Escape key (evdev 1) should be KEY_Escape
-        let sym = wkb.level_keysym(1, 0, 0);
-        assert_eq!(
-            sym,
-            crate::keysyms::Escape,
-            "expected KEY_Escape for evdev 1"
-        );
+        // Escape key (evdev 1) → Escape
+        let key = wkb.level_keysym(1, 0, 0);
+        assert_eq!(key, NamedKey::Escape, "expected Escape for evdev 1");
 
         // state_keysym should use current modifier state (level 0 = unshifted)
-        let sym = wkb.state_keysym(30);
+        let key = wkb.state_keysym(30);
         assert_eq!(
-            sym,
-            crate::keysyms::a,
-            "state_keysym should return KEY_a unshifted"
+            key,
+            NamedKey::Unnamed,
+            "state_keysym should return Unnamed for 'a' unshifted"
         );
     }
 

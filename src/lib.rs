@@ -47,8 +47,9 @@ pub use modifiers::{LedState, RawModifiers};
 mod bitset;
 pub(crate) use bitset::KeyBitSet;
 mod flat_keymap;
-pub(crate) use flat_keymap::{FlatKeymap, FlatKeysymMap};
+pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
 pub mod keysyms;
+mod named_keys;
 /// Test-only utilities. Not part of the public API.
 #[cfg(feature = "testing")]
 pub mod testing;
@@ -56,6 +57,8 @@ pub mod testing;
 mod xkb;
 #[cfg(feature = "xkb")]
 pub use xkb::XkbError;
+
+use crate::named_keys::NamedKey;
 
 /// Errors from WKB operations (not related to XKB parsing/compilation).
 #[derive(Debug)]
@@ -85,7 +88,7 @@ pub struct WKB {
     pub(crate) caps_lock_keymap: FlatKeymap,
     pub(crate) current_layout_idx: usize,
     pub(crate) layout_names: Vec<String>,
-    pub(crate) keysym_map: FlatKeysymMap,
+    pub(crate) named_key_map: FlatNamedKeyMap,
     #[cfg(feature = "xkb")]
     pub(crate) level_exceptions_keymap: FlatKeymap,
 }
@@ -220,27 +223,27 @@ impl WKB {
         Some(self.generate_xkb_string())
     }
 
-    /// Get the keysym for an evdev keycode under the current modifier state.
-    /// Returns `0` (NoSymbol) if no keysym is mapped.
-    pub fn state_keysym(&self, evdev_code: u32) -> u32 {
+    /// Get the named key for an evdev keycode under the current modifier state.
+    /// Returns [`NamedKey::Unnamed`] if no named key is mapped.
+    pub fn state_keysym(&self, evdev_code: u32) -> NamedKey {
         let (none_active, level2, level3, level5) = self.modifiers.active_none_and_levels();
         if none_active {
-            return 0;
+            return NamedKey::Unnamed;
         }
-        let nk = self.keysym_map.num_keys;
-        let level5 = level5 && self.keysym_map.data.len() > 4 * nk;
-        let level3 = level3 && self.keysym_map.data.len() > 2 * nk;
-        let level2 = level2 && self.keysym_map.data.len() > 1 * nk;
+        let nk = self.named_key_map.num_keys;
+        let level5 = level5 && self.named_key_map.data.len() > 4 * nk;
+        let level3 = level3 && self.named_key_map.data.len() > 2 * nk;
+        let level2 = level2 && self.named_key_map.data.len() > 1 * nk;
         let level = level_index(level5, level3, level2);
-        self.keysym_map
+        self.named_key_map
             .get(self.current_layout_idx, level, evdev_code)
     }
 
-    /// Get the keysym at a specific layout and level for an evdev keycode.
+    /// Get the named key at a specific layout and level for an evdev keycode.
     /// Bypasses current modifier state.
-    /// Returns `0` (KEY_NoSymbol) if no keysym is mapped.
-    pub fn level_keysym(&self, evdev_code: u32, layout: usize, level: usize) -> u32 {
-        self.keysym_map.get(layout, level, evdev_code)
+    /// Returns [`NamedKey::Unnamed`] if no named key is mapped.
+    pub fn level_keysym(&self, evdev_code: u32, layout: usize, level: usize) -> NamedKey {
+        self.named_key_map.get(layout, level, evdev_code)
     }
 
     /// Get the character at a specific layout and level for an evdev keycode.
@@ -306,7 +309,7 @@ impl WKB {
     /// - `Cancelled` — broken compose sequence
     pub fn press_key(&mut self, evdev_code: u32) -> KeyResult {
         let is_modifier = self.update_key(evdev_code, KeyDirection::Down);
-        let keysym = self.state_keysym(evdev_code);
+        let key = self.state_keysym(evdev_code);
         #[cfg(feature = "compose")]
         let compose = if is_modifier && self.modifiers.active_mod_type(ModType::Compose) {
             Some(self.composer.feed(Token::Compose))
@@ -324,7 +327,7 @@ impl WKB {
         };
 
         KeyResult {
-            keysym,
+            key,
             compose,
             is_modifier,
         }
@@ -336,9 +339,9 @@ impl WKB {
     /// the keysym under the (now updated) modifier state.
     pub fn release_key(&mut self, evdev_code: u32) -> KeyResult {
         let is_modifier = self.update_key(evdev_code, KeyDirection::Up);
-        let keysym = self.state_keysym(evdev_code);
+        let key = self.state_keysym(evdev_code);
         KeyResult {
-            keysym,
+            key,
             compose: None,
             is_modifier,
         }
@@ -346,11 +349,11 @@ impl WKB {
 
     /// Process a key repeat. Advances compose sequences but does NOT update modifier state.
     ///
-    /// Returns a [`KeyResult`] with the keysym and compose state.
+    /// Returns a [`KeyResult`] with the named key and compose state.
     /// Compose is advanced the same way as [`press_key`](Self::press_key) so that
     /// repeating a dead key (e.g. ¨) correctly progresses the compose sequence.
     pub fn repeat_key(&mut self, evdev_code: u32) -> KeyResult {
-        let keysym = self.state_keysym(evdev_code);
+        let key = self.state_keysym(evdev_code);
         #[cfg(feature = "compose")]
         let compose = self
             .key_char(evdev_code)
@@ -358,7 +361,7 @@ impl WKB {
         #[cfg(not(feature = "compose"))]
         let compose = self.key_char(evdev_code).map(ComposeState::Idle);
         KeyResult {
-            keysym,
+            key,
             compose,
             is_modifier: false,
         }
@@ -368,19 +371,8 @@ impl WKB {
 /// Result of a key event processed by [`WKB::press_key`], [`WKB::release_key`], or [`WKB::repeat_key`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KeyResult {
-    /// The keysym for this key under the current modifier state.
-    /// `0` (NoSymbol) if no keysym is mapped or the `xkb` feature is disabled.
-    pub keysym: u32,
-
-    /// The compose state after processing this key.
-    ///
-    /// - `None` — no character produced (modifier key, release event, or unmapped key)
-    /// - `Some(Idle(char))` — no compose active, `char` is the direct character
-    /// - `Some(Composing(seq))` — mid-compose sequence, `seq` is the sequence so far
-    /// - `Some(Finished(char))` — compose completed, `char` is the composed character
-    /// - `Some(Cancelled)` — compose sequence was broken
+    pub key: NamedKey,
     pub compose: Option<ComposeState>,
-
     /// Whether the key is a modifier (Shift, Ctrl, Alt, etc.).
     pub is_modifier: bool,
 }

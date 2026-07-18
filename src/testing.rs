@@ -4,6 +4,7 @@
 pub use crate::composer::{ComposeState, Composer, Token};
 use crate::flat_keymap::MAX_LEVELS;
 pub use crate::modifiers::{ModType, Modifiers};
+pub use crate::named_keys::{keysym_to_named_key, NamedKey};
 use crate::xkb;
 pub use crate::WKB;
 
