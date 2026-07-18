@@ -371,7 +371,15 @@ impl WKB {
 /// Result of a key event processed by [`WKB::press_key`], [`WKB::release_key`], or [`WKB::repeat_key`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KeyResult {
+    /// The symbolic name of the key
     pub key: NamedKey,
+    /// The compose state after processing this key.
+    ///
+    /// - `None` — no character produced (modifier key, release event, or unmapped key)
+    /// - `Some(Idle(char))` — no compose active, `char` is the direct character
+    /// - `Some(Composing(seq))` — mid-compose sequence, `seq` is the sequence so far
+    /// - `Some(Finished(char))` — compose completed, `char` is the composed character
+    /// - `Some(Cancelled)` — compose sequence was broken
     pub compose: Option<ComposeState>,
     /// Whether the key is a modifier (Shift, Ctrl, Alt, etc.).
     pub is_modifier: bool,
