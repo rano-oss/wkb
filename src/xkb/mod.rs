@@ -1040,11 +1040,11 @@ mod wrapper_tests {
         let wkb = crate::WKB::new_from_names("", "", "us", "", None).unwrap();
 
         // 'a' key (evdev 30) at level 0: character key → Unnamed
-        let key = wkb.level_keysym(30, 0, 0);
+        let key = wkb.level_named_key(30, 0, 0);
         assert_eq!(key, NamedKey::Unnamed, "character key should be Unnamed");
 
         // 'a' key at level 1 (shifted): character key → Unnamed
-        let key = wkb.level_keysym(30, 0, 1);
+        let key = wkb.level_named_key(30, 0, 1);
         assert_eq!(
             key,
             NamedKey::Unnamed,
@@ -1052,15 +1052,15 @@ mod wrapper_tests {
         );
 
         // Return key (evdev 28) → Enter
-        let key = wkb.level_keysym(28, 0, 0);
+        let key = wkb.level_named_key(28, 0, 0);
         assert_eq!(key, NamedKey::Enter, "expected Enter for evdev 28");
 
         // Escape key (evdev 1) → Escape
-        let key = wkb.level_keysym(1, 0, 0);
+        let key = wkb.level_named_key(1, 0, 0);
         assert_eq!(key, NamedKey::Escape, "expected Escape for evdev 1");
 
         // state_keysym should use current modifier state (level 0 = unshifted)
-        let key = wkb.state_keysym(30);
+        let key = wkb.state_named_key(30);
         assert_eq!(
             key,
             NamedKey::Unnamed,

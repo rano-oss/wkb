@@ -249,7 +249,7 @@ impl WKB {
     /// Generate XKB v1 text format string from flat keysym tables.
     ///
     /// This produces a minimal but fully valid keymap that Wayland clients
-    /// can parse. Returns `None` if the keysym map is empty (non-xkb build).
+    /// can parse.
     #[cfg(feature = "xkb")]
     pub fn generate_xkb_string(&self) -> String {
         let num_layouts = self.named_key_map.num_layouts;

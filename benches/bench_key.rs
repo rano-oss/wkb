@@ -309,7 +309,7 @@ fn bench_key_get_sym(c: &mut Criterion) {
                 |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
                     wb.update_key(code, dir);
                     if down {
-                        black_box(wb.state_keysym(black_box(code)));
+                        black_box(wb.state_named_key(black_box(code)));
                     }
                 }
             );

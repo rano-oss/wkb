@@ -15,7 +15,7 @@
 //!
 //! // Process a key press (evdev code 38 = 'a' on US layout)
 //! let result = wkb.press_key(38);
-//! println!("keysym: {:#x}, compose: {:?}", result.keysym, result.compose);
+//! println!("key_name: {:#x}, compose: {:?}", result.key, result.compose);
 //! ```
 //!
 //! ## Key Event API
@@ -27,7 +27,7 @@
 //! | [`WKB::repeat_key`] | yes | Key repeat — advances compose, no modifier changes |
 //! | [`WKB::key_char`] | no | Raw character under current modifiers (no compose) |
 //!
-//! All three event methods return a [`KeyResult`] containing the keysym,
+//! All three event methods return a [`KeyResult`] containing the key name,
 //! compose state, and whether the key is a modifier.
 //!
 //! ## Feature Flags
@@ -225,7 +225,7 @@ impl WKB {
 
     /// Get the named key for an evdev keycode under the current modifier state.
     /// Returns [`NamedKey::Unnamed`] if no named key is mapped.
-    pub fn state_keysym(&self, evdev_code: u32) -> NamedKey {
+    pub fn state_named_key(&self, evdev_code: u32) -> NamedKey {
         let (none_active, level2, level3, level5) = self.modifiers.active_none_and_levels();
         if none_active {
             return NamedKey::Unnamed;
@@ -242,7 +242,7 @@ impl WKB {
     /// Get the named key at a specific layout and level for an evdev keycode.
     /// Bypasses current modifier state.
     /// Returns [`NamedKey::Unnamed`] if no named key is mapped.
-    pub fn level_keysym(&self, evdev_code: u32, layout: usize, level: usize) -> NamedKey {
+    pub fn level_named_key(&self, evdev_code: u32, layout: usize, level: usize) -> NamedKey {
         self.named_key_map.get(layout, level, evdev_code)
     }
 
@@ -301,7 +301,7 @@ impl WKB {
 
     /// Process a key press. Updates modifier state and advances compose sequences.
     ///
-    /// Returns a [`KeyResult`] with the keysym, compose state, and whether the key is a modifier.
+    /// Returns a [`KeyResult`] with the key name, compose state, and whether the key is a modifier.
     /// Extract the final character from the [`ComposeState`] variant:
     /// - `Idle(char)` — no compose active, this is the character
     /// - `Finished(char)` — compose sequence completed, this is the composed character
@@ -309,7 +309,7 @@ impl WKB {
     /// - `Cancelled` — broken compose sequence
     pub fn press_key(&mut self, evdev_code: u32) -> KeyResult {
         let is_modifier = self.update_key(evdev_code, KeyDirection::Down);
-        let key = self.state_keysym(evdev_code);
+        let key = self.state_named_key(evdev_code);
         #[cfg(feature = "compose")]
         let compose = if is_modifier && self.modifiers.active_mod_type(ModType::Compose) {
             Some(self.composer.feed(Token::Compose))
@@ -335,11 +335,11 @@ impl WKB {
 
     /// Process a key release. Updates modifier state.
     ///
-    /// Compose is not advanced on release. The returned `keysym` reflects
-    /// the keysym under the (now updated) modifier state.
+    /// Compose is not advanced on release. The returned `NamedKey` reflects
+    /// the named key under the (now updated) modifier state.
     pub fn release_key(&mut self, evdev_code: u32) -> KeyResult {
         let is_modifier = self.update_key(evdev_code, KeyDirection::Up);
-        let key = self.state_keysym(evdev_code);
+        let key = self.state_named_key(evdev_code);
         KeyResult {
             key,
             compose: None,
@@ -353,7 +353,7 @@ impl WKB {
     /// Compose is advanced the same way as [`press_key`](Self::press_key) so that
     /// repeating a dead key (e.g. ¨) correctly progresses the compose sequence.
     pub fn repeat_key(&mut self, evdev_code: u32) -> KeyResult {
-        let key = self.state_keysym(evdev_code);
+        let key = self.state_named_key(evdev_code);
         #[cfg(feature = "compose")]
         let compose = self
             .key_char(evdev_code)

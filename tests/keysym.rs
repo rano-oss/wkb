@@ -1,5 +1,5 @@
 use test_case::test_matrix;
-use wkb::testing::{keysym_to_named_key, NamedKey};
+use wkb::testing::keysym_to_named_key;
 use xkbcommon::xkb::{self, Keycode};
 
 fn xkb_new_keymap_from_names(locale: &str, layout: &str) -> xkb::Keymap {
@@ -31,7 +31,7 @@ fn keysym(locale: &str, level: usize) {
         let wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
 
         for evdev in 0..701 {
-            let wkb_key = wkb.level_keysym(evdev, 0, level);
+            let wkb_key = wkb.level_named_key(evdev, 0, level);
             let xkb_sym = xkb
                 .key_get_syms_by_level(Keycode::new(evdev + 8), 0, level as u32)
                 .first()
