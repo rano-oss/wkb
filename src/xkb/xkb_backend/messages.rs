@@ -1,12 +1,6 @@
 // ── Message codes (consolidated from duplicated pub mod messages_codes_h blocks) ─
 
-pub const XKB_LOG_VERBOSITY_SILENT: i32 = -1;
-pub const XKB_LOG_VERBOSITY_MINIMAL: i32 = 0;
 pub const XKB_LOG_VERBOSITY_DEFAULT: i32 = 0;
-pub const XKB_LOG_VERBOSITY_BRIEF: i32 = 1;
-pub const XKB_LOG_VERBOSITY_DETAILED: i32 = 5;
-pub const XKB_LOG_VERBOSITY_VERBOSE: i32 = 10;
-pub const XKB_LOG_VERBOSITY_COMPREHENSIVE: i32 = 11;
 
 pub const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
 pub const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;

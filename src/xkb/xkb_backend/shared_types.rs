@@ -1002,17 +1002,9 @@ pub fn areOverlappingOverlaysSupported(format: u32) -> bool {
 
 // Error codes (from xkbcommon_errors_h)
 pub type xkb_error_code = i32;
-pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
-pub const XKB_ERROR_ABI_FORWARD_COMPAT: xkb_error_code = 876;
-pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE: xkb_error_code = 450;
-pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS: xkb_error_code = 371;
 pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX: xkb_error_code = 237;
-pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY: xkb_error_code = 214;
 pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: xkb_error_code = 60;
 pub const XKB_KEY_NoSymbol: i32 = 0;
-
-pub const XKB_SUCCESS: xkb_error_code = 0;
-pub const XKB_ERROR_INVALID: xkb_error_code = -1;
 
 // ── errno_base_h ──────────────────────────────────────────────────────
 pub const ENOMEM: i32 = 12;

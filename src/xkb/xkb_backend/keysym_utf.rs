@@ -3,7 +3,6 @@
 //! Converted from C FFI to idiomatic Rust.
 // Re-export type alias
 // XKB key symbol constants
-pub(crate) const XKB_KEY_NO_SYMBOL: u32 = 0;
 pub(crate) const XKB_KEY_BACKSPACE: u32 = 0xff08;
 pub(crate) const XKB_KEY_CLEAR: u32 = 0xff0b;
 pub(crate) const XKB_KEY_RETURN: u32 = 0xff0d;
