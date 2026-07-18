@@ -4,7 +4,7 @@
 pub use crate::composer::{ComposeState, Composer, Token};
 use crate::flat_keymap::MAX_LEVELS;
 pub use crate::modifiers::{ModType, Modifiers};
-pub use crate::named_keys::{keysym_to_named_key, NamedKey};
+pub use crate::named_keys::NamedKey;
 use crate::xkb;
 pub use crate::WKB;
 
@@ -22,6 +22,11 @@ pub mod compose_parse {
 /// Feed a token to a composer (wraps the `pub(crate)` method for tests).
 pub fn composer_feed(composer: &mut Composer, token: Token) -> ComposeState {
     composer.feed(token)
+}
+
+/// Map an XKB keysym to a [`NamedKey`]. Delegates to the xkb module.
+pub fn keysym_to_named_key(keysym: u32) -> NamedKey {
+    xkb::keysym_to_named_key(keysym)
 }
 
 /// Get all available layout variants for a given locale (test utility).
