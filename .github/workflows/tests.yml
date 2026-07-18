@@ -27,6 +27,30 @@ jobs:
       - name: Run test target
         run: cargo test --test state
 
+  test-unit-doc:
+    name: test (lib + doc)
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    steps:
+      - name: Install system dependencies
+        run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run lib tests
+        run: cargo test --lib
+
+      - name: Run doc tests
+        run: cargo test --doc
+
   test-dependent:
     name: test (${{ matrix.test_target }})
     needs: test-state

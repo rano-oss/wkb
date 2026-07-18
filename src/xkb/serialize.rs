@@ -5,8 +5,12 @@
 //! standard evdev offset (XKB keycode = evdev + 8) and infers key types from the
 //! number of distinct keysym levels per key.
 
-use crate::flat_keymap::{FlatKeysymMap, MAX_LEVELS};
+use crate::flat_keymap::{FlatKeymap, FlatNamedKeyMap, MAX_LEVELS};
 use crate::keysyms::keysym_get_name;
+use crate::modifiers::{ModKind, ModType, Modifier, Modifiers};
+use crate::named_keys::NamedKey;
+
+use super::named_key_to_keysym;
 use crate::WKB;
 
 // ── Standard evdev → XKB key name table ──
@@ -192,11 +196,21 @@ fn evdev_to_keyname(evdev: u32) -> String {
 }
 
 /// Determine how many levels a key actually uses across all groups.
-fn key_max_level(keysym_map: &FlatKeysymMap, evdev: u32, num_layouts: usize) -> usize {
+/// Checks `named_key_map`, `level_exceptions_keymap`, and the modifier map
+/// (modifier keys must be included even if they produce no named key or character).
+fn key_max_level(
+    named_key_map: &FlatNamedKeyMap,
+    level_exceptions: &FlatKeymap,
+    modifiers: &Modifiers,
+    evdev: u32,
+    num_layouts: usize,
+) -> usize {
     let mut max_level = 0;
     for layout in 0..num_layouts {
         for level in (0..MAX_LEVELS).rev() {
-            if keysym_map.get(layout, level, evdev) != 0 {
+            let has_named = named_key_map.get(layout, level, evdev) != NamedKey::Unnamed;
+            let has_char = level_exceptions.get(layout, level, evdev).is_some();
+            if has_named || has_char {
                 if level + 1 > max_level {
                     max_level = level + 1;
                 }
@@ -204,7 +218,71 @@ fn key_max_level(keysym_map: &FlatKeysymMap, evdev: u32, num_layouts: usize) -> 
             }
         }
     }
+    // Modifier keys must always be included even if named_key is Unnamed
+    // and they produce no character (e.g. ISO_Level3_Shift).
+    if max_level == 0 && modifiers.get(evdev).is_some() {
+        max_level = 1;
+    }
     max_level
+}
+
+/// Resolve the keysym for a modifier key from the modifier map.
+///
+/// Maps each `ModType` to its canonical keysym so the re-parsed keymap
+/// gets the correct modifier interpretation.
+fn modifier_keysym(modifiers: &Modifiers, evdev: u32) -> Option<u32> {
+    let modifier = modifiers.get(evdev)?;
+    match modifier {
+        Modifier::Single(mk) => modkind_keysym(mk),
+        Modifier::Leveled(map) => map.values().next().and_then(modkind_keysym),
+    }
+}
+
+fn modkind_keysym(mk: &ModKind) -> Option<u32> {
+    match mk {
+        ModKind::Pressed {
+            mod_type: ModType::Level3,
+            ..
+        } => Some(0xfe03),
+        ModKind::Pressed {
+            mod_type: ModType::Level5,
+            ..
+        } => Some(0xfe11),
+        ModKind::Latch {
+            mod_type: ModType::Level3,
+            ..
+        } => Some(0xfe04),
+        ModKind::Latch {
+            mod_type: ModType::Level5,
+            ..
+        } => Some(0xfe12),
+        ModKind::Lock {
+            mod_type: ModType::Level3,
+            ..
+        } => Some(0xfe0d),
+        ModKind::Lock {
+            mod_type: ModType::Level5,
+            ..
+        } => Some(0xfe13),
+        _ => None,
+    }
+}
+
+/// Check if a key is a letter key (has both lowercase and uppercase
+/// characters at levels 0 and 1). Used to select ALPHABETIC type.
+fn is_alphabetic(keymap: &FlatKeymap, evdev: u32, num_layouts: usize) -> bool {
+    for layout in 0..num_layouts {
+        if let (Some(ch0), Some(ch1)) = (keymap.get(layout, 0, evdev), keymap.get(layout, 1, evdev))
+        {
+            if ch0.is_ascii_lowercase()
+                && ch1.is_ascii_uppercase()
+                && ch1 == ch0.to_ascii_uppercase()
+            {
+                return true;
+            }
+        }
+    }
+    false
 }
 
 /// Pick a key type name based on the number of levels.
@@ -246,11 +324,11 @@ impl WKB {
     /// Generate XKB v1 text format string from flat keysym tables.
     ///
     /// This produces a minimal but fully valid keymap that Wayland clients
-    /// can parse. Returns `None` if the keysym map is empty (non-xkb build).
+    /// can parse.
     #[cfg(feature = "xkb")]
     pub fn generate_xkb_string(&self) -> String {
-        let num_layouts = self.keysym_map.num_layouts;
-        let num_keys = self.keysym_map.num_keys;
+        let num_layouts = self.named_key_map.num_layouts;
+        let num_keys = self.named_key_map.num_keys;
         // XKB keycodes max at 255; evdev = xkb - 8, so max evdev = 247
         let max_evdev = num_keys.min(248) as u32;
         // Estimate capacity: ~40KB for a typical keymap
@@ -274,6 +352,35 @@ impl WKB {
         out
     }
 
+    /// Resolve the keysym for a (layout, level, evdev) triple.
+    ///
+    /// For named keys, returns the canonical keysym via `named_key_to_keysym`.
+    /// For character keys (`NamedKey::Unnamed`), falls back to the character
+    /// keymaps (`level_exceptions_keymap` then `state_keymap`) and emits a
+    /// Unicode keysym so that the serialized string preserves character data.
+    fn resolve_keysym(&self, layout: usize, level: usize, evdev: u32) -> u32 {
+        let nk = self.named_key_map.get(layout, level, evdev);
+        let sym = named_key_to_keysym(nk);
+        if sym != 0 {
+            return sym;
+        }
+        // Unnamed key — recover from character keymaps.
+        if let Some(ch) = self.level_exceptions_keymap.get(layout, level, evdev) {
+            return 0x0100_0000 | ch as u32;
+        }
+        if let Some(ch) = self.state_keymap.get(layout, level, evdev) {
+            return 0x0100_0000 | ch as u32;
+        }
+        // Modifier key — derive keysym from the modifier map so that the
+        // re-parsed keymap retains the correct modifier associations.
+        if level == 0 {
+            if let Some(ks) = modifier_keysym(&self.modifiers, evdev) {
+                return ks;
+            }
+        }
+        0
+    }
+
     fn write_keycodes(&self, out: &mut String, max_evdev: u32) {
         use std::fmt::Write;
 
@@ -283,7 +390,14 @@ impl WKB {
 
         for evdev in 0..max_evdev {
             // Only emit keys that have at least one keysym
-            if key_max_level(&self.keysym_map, evdev, self.keysym_map.num_layouts) > 0 {
+            if key_max_level(
+                &self.named_key_map,
+                &self.level_exceptions_keymap,
+                &self.modifiers,
+                evdev,
+                self.named_key_map.num_layouts,
+            ) > 0
+            {
                 let name = evdev_to_keyname(evdev);
                 writeln!(out, "\t<{}> = {};", name, evdev + 8).unwrap();
             }
@@ -309,12 +423,23 @@ impl WKB {
 
         // Per-key symbols
         for evdev in 0..max_evdev {
-            let max_level = key_max_level(&self.keysym_map, evdev, num_layouts);
+            let max_level = key_max_level(
+                &self.named_key_map,
+                &self.level_exceptions_keymap,
+                &self.modifiers,
+                evdev,
+                num_layouts,
+            );
             if max_level == 0 {
                 continue;
             }
             let name = evdev_to_keyname(evdev);
-            let type_name = type_for_levels(max_level);
+            let type_name =
+                if max_level == 2 && is_alphabetic(&self.state_keymap, evdev, num_layouts) {
+                    "ALPHABETIC"
+                } else {
+                    type_for_levels(max_level)
+                };
 
             if num_layouts == 1 {
                 // Single-group format
@@ -324,7 +449,7 @@ impl WKB {
                     if level > 0 {
                         out.push_str(", ");
                     }
-                    out.push_str(&sym_name(self.keysym_map.get(0, level, evdev)));
+                    out.push_str(&sym_name(self.resolve_keysym(0, level, evdev)));
                 }
                 out.push_str(" ]");
                 // repeat
@@ -342,12 +467,18 @@ impl WKB {
                     // Compute per-group level count
                     let mut glevel = 0;
                     for level in (0..MAX_LEVELS).rev() {
-                        if self.keysym_map.get(g, level, evdev) != 0 {
+                        if self.named_key_map.get(g, level, evdev) != NamedKey::Unnamed {
                             glevel = level + 1;
                             break;
                         }
                     }
-                    let gt = type_for_levels(glevel.max(max_level));
+                    let gt = if glevel.max(max_level) == 2
+                        && is_alphabetic(&self.state_keymap, evdev, num_layouts)
+                    {
+                        "ALPHABETIC"
+                    } else {
+                        type_for_levels(glevel.max(max_level))
+                    };
                     writeln!(out, "\t\ttype[group{}]= \"{}\",", g + 1, gt).unwrap();
                 }
                 // Per-group symbols
@@ -357,7 +488,7 @@ impl WKB {
                         if level > 0 {
                             out.push_str(", ");
                         }
-                        out.push_str(&sym_name(self.keysym_map.get(g, level, evdev)));
+                        out.push_str(&sym_name(self.resolve_keysym(g, level, evdev)));
                     }
                     if g < num_layouts - 1 {
                         out.push_str(" ],\n");
