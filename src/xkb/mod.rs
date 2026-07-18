@@ -2,6 +2,7 @@
 //! plus XKB v1 text serialization.
 
 mod serialize;
+pub(crate) mod xkb_backend;
 
 use crate::bitset::KeyBitSet;
 use crate::composer::Token;
@@ -87,7 +88,7 @@ pub(crate) fn level5_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
 
 /// Press the appropriate level modifier keys on `state` for the given level index.
 fn press_level_modifiers(
-    state: &mut xkb_core::rust_types::State,
+    state: &mut xkb_backend::rust_types::State,
     level: usize,
     level2: Option<u32>,
     level3: Option<u32>,
@@ -95,17 +96,17 @@ fn press_level_modifiers(
 ) {
     if level & 4 != 0 {
         if let Some(kc) = level5 {
-            state.update_key(kc, xkb_core::XKB_KEY_DOWN);
+            state.update_key(kc, xkb_backend::XKB_KEY_DOWN);
         }
     }
     if level & 2 != 0 {
         if let Some(kc) = level3 {
-            state.update_key(kc, xkb_core::XKB_KEY_DOWN);
+            state.update_key(kc, xkb_backend::XKB_KEY_DOWN);
         }
     }
     if level & 1 != 0 {
         if let Some(kc) = level2 {
-            state.update_key(kc, xkb_core::XKB_KEY_DOWN);
+            state.update_key(kc, xkb_backend::XKB_KEY_DOWN);
         }
     }
 }
@@ -117,7 +118,7 @@ pub fn load_compose_from_path(path: &std::path::Path) -> Composer {
     let mut regular = Composer::new();
     let mut seen: std::collections::HashSet<Vec<u32>> = std::collections::HashSet::new();
 
-    let entries = xkb_core::compose::parse_compose_file(path);
+    let entries = xkb_backend::compose::parse_compose_file(path);
 
     for entry in entries {
         let mut tokens: Vec<Token> = Vec::new();
@@ -286,7 +287,7 @@ pub(crate) fn keysym_to_named_key(keysym: u32) -> NamedKey {
 
 /// Build WKB instance from an XKB keymap, extracting all layouts.
 fn build_wkb_from_keymap(
-    keymap: &xkb_core::rust_types::Keymap,
+    keymap: &xkb_backend::rust_types::Keymap,
     locale: Option<&str>,
     store_keymap: bool,
 ) -> WKB {
@@ -326,7 +327,7 @@ fn build_wkb_from_keymap(
                     if sym != 0 {
                         named_key_map.set(layout_idx, lvl, evdev, keysym_to_named_key(sym));
                     }
-                    if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(sym) {
+                    if let Some(ch) = xkb_backend::keysym_utf::keysym_to_char(sym) {
                         level_exceptions_keymap.set(layout_idx, lvl, evdev, ch);
                     }
                 }
@@ -335,18 +336,18 @@ fn build_wkb_from_keymap(
     }
 
     let get_char = |kc: u32,
-                    state: &xkb_core::rust_types::State,
+                    state: &xkb_backend::rust_types::State,
                     layout_idx: usize,
                     lvl: usize|
      -> Option<char> {
         let sym = state.key_get_one_sym(kc);
         if sym != 0 {
-            xkb_core::keysym_utf::keysym_to_char(sym)
+            xkb_backend::keysym_utf::keysym_to_char(sym)
         } else {
             keymap
                 .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
                 .first()
-                .and_then(|&s| xkb_core::keysym_utf::keysym_to_char(s))
+                .and_then(|&s| xkb_backend::keysym_utf::keysym_to_char(s))
         }
     };
 
@@ -381,8 +382,8 @@ fn build_wkb_from_keymap(
                             st.update_mask(0, 0, 0, 0, 0, layout_idx as u32);
                         }
                         if toggle {
-                            st.update_key(lkc, xkb_core::XKB_KEY_DOWN);
-                            st.update_key(lkc, xkb_core::XKB_KEY_UP);
+                            st.update_key(lkc, xkb_backend::XKB_KEY_DOWN);
+                            st.update_key(lkc, xkb_backend::XKB_KEY_UP);
                         }
                         press_level_modifiers(
                             &mut st,
@@ -392,7 +393,7 @@ fn build_wkb_from_keymap(
                             level_keys.2,
                         );
                         if !toggle {
-                            st.update_key(lkc, xkb_core::XKB_KEY_DOWN);
+                            st.update_key(lkc, xkb_backend::XKB_KEY_DOWN);
                         }
                         for kc in min_keycode..=max_keycode {
                             if let Some(ch) = get_char(kc, &st, layout_idx, lvl) {
@@ -472,7 +473,7 @@ fn build_wkb_from_keymap(
             .ok();
         let compose_locale = env_locale.as_deref().or(locale);
         compose_locale
-            .and_then(xkb_core::compose::resolve_compose_file)
+            .and_then(xkb_backend::compose::resolve_compose_file)
             .map(|subpath| {
                 let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
                 load_compose_from_path(&path)
@@ -504,7 +505,7 @@ pub fn new_from_names(
     variant: &str,
     options: Option<&str>,
 ) -> Result<WKB, XkbError> {
-    use xkb_core::rust_types::{Context, RuleNames};
+    use xkb_backend::rust_types::{Context, RuleNames};
 
     let ctx = Context::new().ok_or(XkbError::ContextCreation)?;
     let rule_names = RuleNames {
@@ -524,7 +525,7 @@ pub fn new_from_names(
 
 /// Create a new WKB instance from a keymap string.
 pub fn new_from_string(string: &str) -> Result<WKB, XkbError> {
-    use xkb_core::rust_types::Context;
+    use xkb_backend::rust_types::Context;
 
     let ctx = Context::new().ok_or(XkbError::ContextCreation)?;
 
@@ -537,7 +538,7 @@ pub fn new_from_string(string: &str) -> Result<WKB, XkbError> {
 
 /// Build Modifiers struct from XKB keymap
 fn build_modifiers_from_keymap(
-    keymap: &xkb_core::rust_types::Keymap,
+    keymap: &xkb_backend::rust_types::Keymap,
     min_keycode: u32,
     max_keycode: u32,
 ) -> Modifiers {
@@ -829,7 +830,7 @@ pub(crate) fn named_key_to_keysym(key: NamedKey) -> u32 {
 
 #[cfg(test)]
 mod wrapper_tests {
-    use xkb_core::rust_types::{Context, RuleNames};
+    use super::xkb_backend::rust_types::{Context, RuleNames};
 
     #[test]
     fn test_keymap_layout_methods() {

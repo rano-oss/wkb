@@ -10,12 +10,12 @@
 
 #[path = "../benches/common.rs"]
 mod common;
-
 use common::*;
 use std::ffi::CString;
 use std::hint::black_box;
 use std::os::raw::c_char;
 use std::ptr;
+use wkb::testing::compose_parse::{keysym_to_char, load_compose_from_path, resolve_compose_file};
 use wkb::testing::composer_feed;
 
 fn get_rss_kb() -> Option<u64> {
@@ -60,13 +60,13 @@ fn run_workload_wkb() -> u64 {
     }
 
     // Compose workload
-    if let Some(subpath) = xkb_core::compose::resolve_compose_file(COMPOSE_LOCALE) {
+    if let Some(subpath) = resolve_compose_file(COMPOSE_LOCALE) {
         let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
-        let mut composer = wkb::testing::compose_parse::load_compose_from_path(&path);
+        let mut composer = load_compose_from_path(&path);
         for seq in COMPOSE_SEQUENCES {
             for _ in 0..HOT_PATH_ITERATIONS {
                 for &ks in seq.keysyms {
-                    if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(ks) {
+                    if let Some(ch) = keysym_to_char(ks) {
                         let st = composer_feed(&mut composer, wkb::testing::Token::Char(ch));
                         checksum = checksum.wrapping_add(format!("{st:?}").len() as u64);
                     }
@@ -243,32 +243,34 @@ fn run_workload_xkbcommon_dl() -> u64 {
 }
 
 fn run_workload_xkbcommon_compat() -> u64 {
-    use xkb_core::rust_types::{Context, RuleNames};
+    use xkbcommon::xkb;
     let mut checksum: u64 = 0;
 
     print_rss("xkbcommon-compat/before_setup");
 
-    let ctx = Context::new().expect("xkb-core context");
+    let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
 
     for &(locale, variant) in LAYOUTS {
-        let rmlvo = RuleNames {
-            rules: "evdev".to_string(),
-            model: String::new(),
-            layout: locale.to_string(),
-            variant: variant.unwrap_or("").to_string(),
-            options: String::new(),
-        };
-        let km = ctx.clone().keymap_from_names(&rmlvo).expect("keymap");
-        let mut st = km.new_state().expect("state");
+        let km = xkb::Keymap::new_from_names(
+            &ctx,
+            "evdev",
+            "",
+            locale,
+            variant.unwrap_or(""),
+            None,
+            xkb::KEYMAP_COMPILE_NO_FLAGS,
+        )
+        .expect("keymap");
+        let mut st = xkb::State::new(&km);
 
         for case in KEY_CASES {
             for _ in 0..HOT_PATH_ITERATIONS {
                 for &(code, down) in case.keys {
-                    let xkb_kc = code + EVDEV_OFFSET;
+                    let xkb_kc = xkb::Keycode::new(code + EVDEV_OFFSET);
                     let dir = if down {
-                        xkb_core::XKB_KEY_DOWN
+                        xkb::KeyDirection::Down
                     } else {
-                        xkb_core::XKB_KEY_UP
+                        xkb::KeyDirection::Up
                     };
                     st.update_key(xkb_kc, dir);
                     if down {
@@ -281,12 +283,15 @@ fn run_workload_xkbcommon_compat() -> u64 {
     }
 
     // Compose workload
-    if let Some(table) = xkb_core::compose::ComposeTable::new_from_locale(COMPOSE_LOCALE) {
-        let mut state = table.new_state();
+    let locale_os = std::ffi::OsStr::new(COMPOSE_LOCALE);
+    if let Ok(table) =
+        xkb::compose::Table::new_from_locale(&ctx, locale_os, xkb::compose::COMPILE_NO_FLAGS)
+    {
+        let mut state = xkb::compose::State::new(&table, xkb::compose::STATE_NO_FLAGS);
         for seq in COMPOSE_SEQUENCES {
             for _ in 0..HOT_PATH_ITERATIONS {
                 for &ks in seq.keysyms {
-                    let _ = state.feed(ks);
+                    let _ = state.feed(xkb::Keysym::new(ks));
                     checksum = checksum.wrapping_add(state.status() as u64);
                 }
                 state.reset();

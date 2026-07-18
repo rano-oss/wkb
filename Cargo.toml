@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "xkb-core", "xkbcommon-compat"]
+members = [".", "xkbcommon-compat"]
 
 [package]
 name = "wayland-keyboard"
@@ -24,12 +24,13 @@ name = "wkb"
 
 [features]
 default = ["xkb", "compose"]
-xkb = ["xkb-core"]
+xkb = []
 compose = []
 testing = ["xkb"]
 
 [dependencies]
-xkb-core = { version = "0.2.0", path = "xkb-core", optional = true }
+log = "0.4.29"
+xmloxide = "0.4"
 arrayvec = "0.7"
 serde = { version = "1", features = ["derive"] }
 

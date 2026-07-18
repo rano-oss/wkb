@@ -7,6 +7,7 @@
 mod common;
 use common::*;
 use std::hint::black_box;
+use wkb::testing::compose_parse::{keysym_to_char, load_compose_from_path, resolve_compose_file};
 use wkb::testing::composer_feed;
 
 fn main() {
@@ -31,12 +32,12 @@ fn main() {
         }
     }
 
-    if let Some(subpath) = xkb_core::compose::resolve_compose_file(COMPOSE_LOCALE) {
+    if let Some(subpath) = resolve_compose_file(COMPOSE_LOCALE) {
         let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
-        let mut composer = wkb::testing::compose_parse::load_compose_from_path(&path);
+        let mut composer = load_compose_from_path(&path);
         for seq in COMPOSE_SEQUENCES {
             for &ks in seq.keysyms {
-                if let Some(ch) = xkb_core::keysym_utf::keysym_to_char(ks) {
+                if let Some(ch) = keysym_to_char(ks) {
                     let _ = composer_feed(&mut composer, wkb::testing::Token::Char(ch));
                     checksum = checksum.wrapping_add(1);
                 }
