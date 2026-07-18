@@ -15,7 +15,7 @@
 //!
 //! // Process a key press (evdev code 38 = 'a' on US layout)
 //! let result = wkb.press_key(38);
-//! println!("key_name: {:#x}, compose: {:?}", result.key, result.compose);
+//! println!("key_name: {:?}, compose: {:?}", result.key, result.compose);
 //! ```
 //!
 //! ## Key Event API
