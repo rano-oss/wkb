@@ -1,5 +1,6 @@
 use crate::named_keys::NamedKey;
 
+/// Maximum number of shift levels.
 pub(crate) const MAX_LEVELS: usize = 8;
 
 pub(crate) trait FlatMapValue: Copy {
@@ -61,5 +62,10 @@ impl<T: FlatMapValue> FlatMap<T> {
     }
 }
 
+/// Flat keymap: `num_layouts * MAX_LEVELS` planes of `num_keys` slots.
+/// Index: `(layout * MAX_LEVELS + level) * num_keys + evdev_code`.
 pub(crate) type FlatKeymap = FlatMap<Option<char>>;
+/// Flat named-key map: same layout as `FlatKeymap` but stores [`NamedKey`] values.
+/// Index: `(layout * MAX_LEVELS + level) * num_keys + evdev_code`.
+/// [`NamedKey::Unnamed`] means no named key is mapped.
 pub(crate) type FlatNamedKeyMap = FlatMap<NamedKey>;
