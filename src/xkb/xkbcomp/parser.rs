@@ -4132,8 +4132,11 @@ fn compute_effective_mask_with(mod_set: &xkb_mod_set, mods: &mut xkb_mods) {
     }
     mods.mask = mask | mods.mods & unknown_mods;
 }
-fn UpdateActionMods(keymap: &xkb_keymap, act: &mut xkb_action, _modmap: u32) {
+fn UpdateActionMods(keymap: &xkb_keymap, act: &mut xkb_action, modmap: u32) {
     if let 2..=4 = act.action_type() {
+        if act.as_mods().flags & ACTION_MODS_LOOKUP_MODMAP != 0 {
+            act.as_mods_mut().mods.mods = modmap;
+        }
         ComputeEffectiveMask(keymap, &mut act.as_mods_mut().mods);
     };
 }
@@ -4349,7 +4352,10 @@ fn CheckMultipleActionsCategories(keymap: &mut xkb_keymap, key_idx: usize) {
                     let mod_action: bool = is_mod_action(&level.actions[i as usize]);
                     let group_action: bool = is_group_action(&level.actions[i as usize]);
                     let action1_type = level.actions[i as usize].action_type();
-                    if mod_action as i32 != 0 || group_action as i32 != 0 {
+                    if mod_action as i32 != 0
+                        || group_action as i32 != 0
+                        || action1_type == ACTION_TYPE_REDIRECT_KEY
+                    {
                         let mut j: u16 = (i as i32 + 1_i32) as u16;
                         while (j as usize) < level.actions.len() {
                             if action1_type == level.actions[j as usize].action_type()
@@ -4428,11 +4434,69 @@ fn update_pending_key_fields(info: &mut xkb_keymap_info<'_>, key_idx: usize) -> 
     true
 }
 fn update_pending_action_fields(
-    _info: &mut xkb_keymap_info<'_>,
-    _keycode: u32,
-    _act: &mut xkb_action,
+    info: &mut xkb_keymap_info<'_>,
+    keycode: u32,
+    act: &mut xkb_action,
 ) -> bool {
-    true
+    match act.action_type() {
+        5..=7 => {
+            if act.as_group().flags & ACTION_PENDING_COMPUTATION != 0 {
+                let pc_idx = act.as_group().group as usize;
+                if !info.pending_computations[pc_idx].computed {
+                    let mut group: u32 = 0_u32;
+                    let absolute: bool = act.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0;
+                    let mut pending_dummy = false;
+                    let expr_box = info.pending_computations[pc_idx].expr.take().unwrap();
+                    let resolve_ret =
+                        ExprResolveGroup(info, &expr_box, absolute, &mut group, &mut pending_dummy);
+                    info.pending_computations[pc_idx].expr = Some(expr_box);
+                    match resolve_ret {
+                        2 => {
+                            log::error!("[XKB-{:03}] Invalid action group index\n", {
+                                XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX
+                            });
+                            return false;
+                        }
+                        1 => {}
+                        _ => {
+                            info.pending_computations[pc_idx].computed = true;
+                            if absolute {
+                                info.pending_computations[pc_idx].value = group.wrapping_sub(1_u32);
+                            } else {
+                                info.pending_computations[pc_idx].value = group;
+                                if info.pending_computations[pc_idx]
+                                    .expr
+                                    .as_ref()
+                                    .unwrap()
+                                    .stmt_type()
+                                    == STMT_EXPR_NEGATE
+                                {
+                                    info.pending_computations[pc_idx].value =
+                                        -(info.pending_computations[pc_idx].value as i32) as u32;
+                                }
+                            }
+                        }
+                    }
+                }
+                act.as_group_mut().group = info.pending_computations[pc_idx].value as i32;
+                act.as_group_mut().flags = (act.as_group().flags
+                    & !(ACTION_PENDING_COMPUTATION as i32) as u32)
+                    as xkb_action_flags;
+            }
+            true
+        }
+        16 => {
+            if keycode == XKB_KEYCODE_INVALID
+                || act.as_redirect().keycode != info.keymap.redirect_key_auto
+            {
+                return true;
+            } else {
+                act.as_redirect_mut().keycode = keycode;
+            }
+            true
+        }
+        _ => true,
+    }
 }
 fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info<'_>) -> bool {
     let keymap: &mut xkb_keymap = &mut *info.keymap;
@@ -4645,7 +4709,8 @@ fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info<'_>) -> bool {
                                 [j_0 as usize]
                                 .actions[0];
                             UpdateActionMods(&*info.keymap, &mut act, key_modmap);
-                            if pending_computations as i32 != 0
+                            if (pending_computations as i32 != 0
+                                || act.action_type() == ACTION_TYPE_REDIRECT_KEY)
                                 && !update_pending_action_fields(info, key_keycode, &mut act)
                             {
                                 return false;
@@ -4661,7 +4726,8 @@ fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info<'_>) -> bool {
                                 [j_0 as usize]
                                 .actions[k as usize];
                             UpdateActionMods(&*info.keymap, &mut act, key_modmap);
-                            if pending_computations as i32 != 0
+                            if (pending_computations as i32 != 0
+                                || act.action_type() == ACTION_TYPE_REDIRECT_KEY)
                                 && !update_pending_action_fields(info, key_keycode, &mut act)
                             {
                                 return false;

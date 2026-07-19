@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+pub use super::shared_types::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
 use super::shared_types::{atom_lookup_ref, atom_text};
 pub(crate) use super::shared_types::{
     xkb_action, xkb_context, xkb_keymap, xkb_led, xkb_level, xkb_mod_set, xkb_rule_names, MOD_BOTH,
@@ -559,18 +560,57 @@ pub(crate) fn action_equal(a: &xkb_action, b: &xkb_action) -> bool {
         return false;
     }
     match a.action_type() {
-        ACTION_TYPE_NONE => true,
-        ACTION_TYPE_MOD_SET | ACTION_TYPE_MOD_LATCH | ACTION_TYPE_MOD_LOCK => {
+        0 | 1 => true,
+        2..=4 => {
             let am = a.as_mods();
             let bm = b.as_mods();
             am.flags == bm.flags && am.mods.mask == bm.mods.mask && am.mods.mods == bm.mods.mods
         }
-        ACTION_TYPE_GROUP_SET | ACTION_TYPE_GROUP_LATCH | ACTION_TYPE_GROUP_LOCK => {
+        5..=7 => {
             let ag = a.as_group();
             let bg = b.as_group();
             ag.flags == bg.flags && ag.group == bg.group
         }
-        _ => false,
+        8 => {
+            let ap = a.as_ptr();
+            let bp = b.as_ptr();
+            ap.flags == bp.flags && ap.x as i32 == bp.x as i32 && ap.y as i32 == bp.y as i32
+        }
+        9 | 10 => {
+            let ab = a.as_btn();
+            let bb = b.as_btn();
+            ab.flags == bb.flags
+                && ab.button as i32 == bb.button as i32
+                && ab.count as i32 == bb.count as i32
+        }
+        11 => {
+            let ad = a.as_dflt();
+            let bd = b.as_dflt();
+            ad.flags == bd.flags && ad.value as i32 == bd.value as i32
+        }
+        12 => true,
+        13 => {
+            let as_ = a.as_screen();
+            let bs = b.as_screen();
+            as_.flags == bs.flags && as_.screen as i32 == bs.screen as i32
+        }
+        14 | 15 => {
+            let ac = a.as_ctrls();
+            let bc = b.as_ctrls();
+            ac.flags == bc.flags && ac.ctrls == bc.ctrls
+        }
+        16 => {
+            let ar = a.as_redirect();
+            let br = b.as_redirect();
+            ar.keycode == br.keycode && ar.affect == br.affect && ar.mods == br.mods
+        }
+        17 | 18 => true,
+        20 => {
+            let ai = a.as_internal();
+            let bi = b.as_internal();
+            ai.flags == bi.flags && ai.clear_latched_mods == bi.clear_latched_mods
+        }
+        _ => a.as_priv().data == b.as_priv().data,
     }
 }
 pub(crate) fn XkbLevelsSameActions(a: &xkb_level, b: &xkb_level) -> bool {
@@ -671,6 +711,7 @@ use super::shared_types::{
 pub(crate) use super::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
+pub use super::shared_types::{XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_LOG_VERBOSITY_DEFAULT};
 fn context_include_path_append(ctx: &mut xkb_context, path: &str) -> i32 {
     let is_dir = std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false);
     if is_dir {
@@ -1060,9 +1101,12 @@ use super::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
 
 pub(crate) const XKB_KEYSYM_NAME_MAX_SIZE: i32 = 31;
 
-pub(crate) use super::shared_types::{
-    ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_MOD_LATCH,
-    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, CONTROL_ALL_BOOLEAN,
+pub use super::shared_types::{
+    ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
+    ACTION_TYPE_GROUP_SET, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET,
+    ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT,
+    ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT,
+    ACTION_TYPE_TERMINATE, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, CONTROL_ALL_BOOLEAN,
     CONTROL_ALL_BOOLEAN_V1, CONTROL_AX, CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL,
     CONTROL_DEBOUNCE, CONTROL_IGNORE_GROUP_LOCK, CONTROL_MOUSE_KEYS, CONTROL_MOUSE_KEYS_ACCEL,
     CONTROL_OVERLAY1, CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5,
@@ -1314,10 +1358,18 @@ pub(crate) static useModMapValueNames: [LookupEntry; 5] = [
         value: 0_u32,
     },
 ];
+<<<<<<< HEAD
 pub(crate) static actionTypeNames: [LookupEntry; 8] = [
+=======
+pub static actionTypeNames: [LookupEntry; 43] = [
+>>>>>>> parent of fc807ab (Remove more LOC)
     LookupEntry {
         name: "NoAction",
         value: ACTION_TYPE_NONE,
+    },
+    LookupEntry {
+        name: "VoidAction",
+        value: ACTION_TYPE_VOID,
     },
     LookupEntry {
         name: "SetMods",
@@ -1342,6 +1394,142 @@ pub(crate) static actionTypeNames: [LookupEntry; 8] = [
     LookupEntry {
         name: "LockGroup",
         value: ACTION_TYPE_GROUP_LOCK,
+    },
+    LookupEntry {
+        name: "MovePtr",
+        value: ACTION_TYPE_PTR_MOVE,
+    },
+    LookupEntry {
+        name: "MovePointer",
+        value: ACTION_TYPE_PTR_MOVE,
+    },
+    LookupEntry {
+        name: "PtrBtn",
+        value: ACTION_TYPE_PTR_BUTTON,
+    },
+    LookupEntry {
+        name: "PointerButton",
+        value: ACTION_TYPE_PTR_BUTTON,
+    },
+    LookupEntry {
+        name: "LockPtrBtn",
+        value: ACTION_TYPE_PTR_LOCK,
+    },
+    LookupEntry {
+        name: "LockPtrButton",
+        value: ACTION_TYPE_PTR_LOCK,
+    },
+    LookupEntry {
+        name: "LockPointerButton",
+        value: ACTION_TYPE_PTR_LOCK,
+    },
+    LookupEntry {
+        name: "LockPointerBtn",
+        value: ACTION_TYPE_PTR_LOCK,
+    },
+    LookupEntry {
+        name: "SetPtrDflt",
+        value: ACTION_TYPE_PTR_DEFAULT,
+    },
+    LookupEntry {
+        name: "SetPointerDefault",
+        value: ACTION_TYPE_PTR_DEFAULT,
+    },
+    LookupEntry {
+        name: "Terminate",
+        value: ACTION_TYPE_TERMINATE,
+    },
+    LookupEntry {
+        name: "TerminateServer",
+        value: ACTION_TYPE_TERMINATE,
+    },
+    LookupEntry {
+        name: "SwitchScreen",
+        value: ACTION_TYPE_SWITCH_VT,
+    },
+    LookupEntry {
+        name: "SetControls",
+        value: ACTION_TYPE_CTRL_SET,
+    },
+    LookupEntry {
+        name: "LockControls",
+        value: ACTION_TYPE_CTRL_LOCK,
+    },
+    LookupEntry {
+        name: "RedirectKey",
+        value: ACTION_TYPE_REDIRECT_KEY,
+    },
+    LookupEntry {
+        name: "Redirect",
+        value: ACTION_TYPE_REDIRECT_KEY,
+    },
+    LookupEntry {
+        name: "Private",
+        value: ACTION_TYPE_PRIVATE,
+    },
+    LookupEntry {
+        name: "ISOLock",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "ActionMessage",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "MessageAction",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "Message",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "DeviceBtn",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "DevBtn",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "DevButton",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "DeviceButton",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "LockDeviceBtn",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "LockDevBtn",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "LockDevButton",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "LockDeviceButton",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "DeviceValuator",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "DevVal",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "DeviceVal",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
+    },
+    LookupEntry {
+        name: "DevValuator",
+        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
     },
     LookupEntry {
         name: "",
@@ -1909,6 +2097,9 @@ impl State {
     }
 
     /// Get the number of layouts in the underlying keymap
+    pub fn num_keymap_layouts(&self) -> u32 {
+        xkb_keymap_num_layouts(self.inner.keymap())
+    }
 
     /// Update state from modifier/layout masks (e.g., from Wayland compositor)
     pub(crate) fn update_mask(
@@ -2228,7 +2419,11 @@ static SYNTHETIC_KEY_BREAK_GROUP_LATCH: LazyLock<xkb_key> = LazyLock::new(|| xkb
             upper: XKB_KEY_NoSymbol as u32,
             has_upper: false,
             syms: Vec::new(),
-            actions: vec![xkb_action::None],
+            actions: vec![xkb_action::Internal(xkb_internal_action {
+                type_0: ACTION_TYPE_INTERNAL,
+                flags: INTERNAL_BREAKS_GROUP_LATCH,
+                clear_latched_mods: 0,
+            })],
         }],
     }],
     overlay_keys: Vec::new(),
@@ -2467,9 +2662,13 @@ fn xkb_filter_group_lock_func(
     XKB_FILTER_CONTINUE as i32 != 0
 }
 
-fn xkb_action_breaks_latch(action: &xkb_action, _flag: u32, _mask: u32) -> bool {
+fn xkb_action_breaks_latch(action: &xkb_action, flag: u32, mask: u32) -> bool {
     match action.action_type() {
-        ACTION_TYPE_NONE => true,
+        0 | 1 | 9 | 10 | 14 | 15 | 13 | 12 | 16 => true,
+        20 => {
+            action.as_internal().flags & flag != 0
+                && action.as_internal().clear_latched_mods & mask == mask
+        }
         _ => false,
     }
 }
@@ -2508,7 +2707,11 @@ fn xkb_filter_group_latch_func(
             if state.flags & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS != 0 {
                 let mut k: u16 = 0_u16;
                 while (k as usize) < actions.len() {
-                    if xkb_action_breaks_latch(&actions[k as usize], 0, 0_u32) {
+                    if xkb_action_breaks_latch(
+                        &actions[k as usize],
+                        INTERNAL_BREAKS_GROUP_LATCH,
+                        0_u32,
+                    ) {
                         latch = NO_LATCH;
                         break;
                     } else {
@@ -2544,7 +2747,11 @@ fn xkb_filter_group_latch_func(
                         filter.key = key;
                         return XKB_FILTER_CONSUME as i32 != 0;
                     }
-                } else if xkb_action_breaks_latch(&actions[k_0 as usize], 0, 0_u32) {
+                } else if xkb_action_breaks_latch(
+                    &actions[k_0 as usize],
+                    INTERNAL_BREAKS_GROUP_LATCH,
+                    0_u32,
+                ) {
                     state.components.latched_group -= group_delta;
                     filter.func = None;
                     return XKB_FILTER_CONTINUE as i32 != 0;
@@ -2725,7 +2932,7 @@ fn xkb_filter_mod_latch_func(
                 while (k as usize) < actions.len() {
                     if xkb_action_breaks_latch(
                         &actions[k as usize],
-                        0,
+                        INTERNAL_BREAKS_MOD_LATCH,
                         filter.action.as_mods().mods.mask,
                     ) {
                         latch = NO_LATCH;
@@ -2769,7 +2976,7 @@ fn xkb_filter_mod_latch_func(
                     return XKB_FILTER_CONSUME as i32 != 0;
                 } else if xkb_action_breaks_latch(
                     &actions[k_0 as usize],
-                    0,
+                    INTERNAL_BREAKS_MOD_LATCH,
                     filter.action.as_mods().mods.mask,
                 ) {
                     state.components.latched_mods &= !filter.action.as_mods().mods.mask;
@@ -2811,7 +3018,174 @@ fn xkb_filter_mod_latch_func(
     XKB_FILTER_CONTINUE as i32 != 0
 }
 
-static FILTER_ACTION_FUNCS: [FilterActionFuncs; 8] = {
+fn xkb_filter_ctrls_new(state: &mut xkb_state, _events: &mut xkb_events, filter: &mut xkb_filter) {
+    if filter.action.action_type() == ACTION_TYPE_CTRL_SET {
+        filter.priv_0 = (!state.components.controls & filter.action.as_ctrls().ctrls) as u64;
+    } else {
+        filter.priv_0 = (state.components.controls & filter.action.as_ctrls().ctrls) as u64;
+    }
+    if filter.action.action_type() == ACTION_TYPE_CTRL_SET
+        || filter.action.as_ctrls().flags & ACTION_LOCK_NO_LOCK == 0
+    {
+        state.components.controls =
+            (state.components.controls | filter.action.as_ctrls().ctrls) as xkb_action_controls;
+    }
+}
+
+fn xkb_filter_ctrls_func(
+    state: &mut xkb_state,
+    events: &mut xkb_events,
+    filter: &mut xkb_filter,
+    key: &xkb_key,
+    direction: xkb_key_direction,
+) -> bool {
+    if !std::ptr::eq(key, filter.key) {
+        return XKB_FILTER_CONTINUE as i32 != 0;
+    }
+    's_32: {
+        match direction {
+            1 => {
+                filter.refcnt += 1;
+            }
+            2 => {}
+            _ => {
+                filter.refcnt -= 1;
+                if filter.refcnt > 0_i32 {
+                    return XKB_FILTER_CONSUME as i32 != 0;
+                }
+                break 's_32;
+            }
+        }
+        return XKB_FILTER_CONSUME as i32 != 0;
+    }
+    if filter.action.action_type() == ACTION_TYPE_CTRL_SET
+        || filter.action.as_ctrls().flags & ACTION_LOCK_NO_UNLOCK == 0
+    {
+        let old: xkb_action_controls = state.components.controls;
+        state.components.controls = (state.components.controls
+            & !(filter.priv_0 as xkb_action_controls))
+            as xkb_action_controls;
+        if old as u32 & CONTROL_STICKY_KEYS != 0
+            && state.components.controls & CONTROL_STICKY_KEYS == 0
+        {
+            clear_all_latches_and_locks(state, events);
+        }
+    }
+    filter.func = None;
+    XKB_FILTER_CONTINUE as i32 != 0
+}
+
+fn append_redirect_key_events(
+    state: &mut xkb_state,
+    events: &mut xkb_events,
+    redirect: &xkb_redirect_key_action,
+    direction: xkb_key_direction,
+) -> bool {
+    let mut changed: u32 = 0_u32;
+    let mask: u32 = redirect.affect;
+    let mut last_components: state_components = state.components;
+    {
+        let queue = &events.queue;
+        if !queue.is_empty() {
+            let mut idx = queue.len() - 1;
+            loop {
+                if queue[idx].type_0 == XKB_EVENT_TYPE_COMPONENTS_CHANGE {
+                    if let xkb_event_data::Components(comp) = &queue[idx].data {
+                        last_components = comp.components;
+                    }
+                    break;
+                }
+                if idx == 0 {
+                    break;
+                }
+                idx -= 1;
+            }
+        }
+    }
+    if mask != 0 {
+        let mut new: state_components = last_components;
+        new.base_mods = new.base_mods & !mask | redirect.mods;
+        new.latched_mods = new.latched_mods & !mask | redirect.mods;
+        new.locked_mods = new.locked_mods & !mask | redirect.mods;
+        new.mods = new.mods & !mask | redirect.mods;
+        changed = get_state_component_changes(&last_components, &new);
+        if changed as u64 != 0 {
+            events.queue.push(xkb_event {
+                type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+                data: xkb_event_data::Components(xkb_event_components {
+                    components: new,
+                    changed,
+                }),
+            });
+        }
+    }
+    events.queue.push(xkb_event {
+        type_0: (if direction == XKB_KEY_UP {
+            XKB_EVENT_TYPE_KEY_UP as i32
+        } else if direction == XKB_KEY_REPEATED {
+            XKB_EVENT_TYPE_KEY_REPEATED as i32
+        } else {
+            XKB_EVENT_TYPE_KEY_DOWN as i32
+        }) as xkb_event_type,
+        data: xkb_event_data::Keycode(redirect.keycode),
+    });
+    if mask != 0 && changed != 0 {
+        events.queue.push(xkb_event {
+            type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
+            data: xkb_event_data::Components(xkb_event_components {
+                components: last_components,
+                changed,
+            }),
+        });
+    }
+    true
+}
+
+fn xkb_filter_redirect_key_new(
+    state: &mut xkb_state,
+    events: &mut xkb_events,
+    filter: &mut xkb_filter,
+) {
+    if filter.action.as_redirect().keycode == XKB_KEYCODE_INVALID {
+        filter.func = None;
+        return;
+    }
+    append_redirect_key_events(state, events, filter.action.as_redirect(), XKB_KEY_DOWN);
+}
+
+fn xkb_filter_redirect_key_func(
+    state: &mut xkb_state,
+    events: &mut xkb_events,
+    filter: &mut xkb_filter,
+    key: &xkb_key,
+    direction: xkb_key_direction,
+) -> bool {
+    if !std::ptr::eq(key, filter.key) {
+        return XKB_FILTER_CONTINUE as i32 != 0;
+    }
+    if direction == XKB_KEY_UP {
+        append_redirect_key_events(state, events, filter.action.as_redirect(), XKB_KEY_UP);
+        filter.func = None;
+        return XKB_FILTER_CONSUME as i32 != 0;
+    } else if direction == XKB_KEY_DOWN {
+        let actions = xkb_key_get_actions(state, key);
+        let mut a: u16 = 0_u16;
+        while (a as usize) < actions.len() {
+            if actions[a as usize].action_type() as u32 == ACTION_TYPE_REDIRECT_KEY
+                && actions[a as usize].as_redirect().keycode != filter.action.as_redirect().keycode
+            {
+                append_redirect_key_events(state, events, filter.action.as_redirect(), XKB_KEY_UP);
+                filter.func = None;
+                return XKB_FILTER_CONTINUE as i32 != 0;
+            }
+            a = a.wrapping_add(1);
+        }
+    }
+    append_redirect_key_events(state, events, filter.action.as_redirect(), direction);
+    XKB_FILTER_CONSUME as i32 != 0
+}
+
+static FILTER_ACTION_FUNCS: [FilterActionFuncs; 21] = {
     [
         FilterActionFuncs {
             new: None,
@@ -2844,6 +3218,58 @@ static FILTER_ACTION_FUNCS: [FilterActionFuncs; 8] = {
         FilterActionFuncs {
             new: Some(xkb_filter_group_lock_new),
             func: Some(xkb_filter_group_lock_func),
+        },
+        FilterActionFuncs {
+            new: None,
+            func: None,
+        },
+        FilterActionFuncs {
+            new: None,
+            func: None,
+        },
+        FilterActionFuncs {
+            new: None,
+            func: None,
+        },
+        FilterActionFuncs {
+            new: None,
+            func: None,
+        },
+        FilterActionFuncs {
+            new: None,
+            func: None,
+        },
+        FilterActionFuncs {
+            new: None,
+            func: None,
+        },
+        FilterActionFuncs {
+            new: Some(xkb_filter_ctrls_new),
+            func: Some(xkb_filter_ctrls_func),
+        },
+        FilterActionFuncs {
+            new: Some(xkb_filter_ctrls_new),
+            func: Some(xkb_filter_ctrls_func),
+        },
+        FilterActionFuncs {
+            new: Some(xkb_filter_redirect_key_new),
+            func: Some(xkb_filter_redirect_key_func),
+        },
+        FilterActionFuncs {
+            new: None,
+            func: None,
+        },
+        FilterActionFuncs {
+            new: None,
+            func: None,
+        },
+        FilterActionFuncs {
+            new: None,
+            func: None,
+        },
+        FilterActionFuncs {
+            new: None,
+            func: None,
         },
     ]
 };
@@ -2904,6 +3330,13 @@ fn xkb_filter_apply_all(
                                 as xkb_action_flags;
                     }
                 }
+            }
+            if state.filters[idx].action.action_type() == ACTION_TYPE_REDIRECT_KEY {
+                let km = Rc::clone(&state.keymap);
+                state.filters[idx].action.as_redirect_mut().affect =
+                    mod_mask_get_effective(&km, state.filters[idx].action.as_redirect().affect);
+                state.filters[idx].action.as_redirect_mut().mods =
+                    mod_mask_get_effective(&km, state.filters[idx].action.as_redirect().mods);
             }
             state.filters[idx].func =
                 FILTER_ACTION_FUNCS[state.filters[idx].action.action_type() as usize].func;
@@ -3127,7 +3560,11 @@ fn update_latch_modifiers(state: &mut xkb_state, events: &mut xkb_events, mask: 
         upper: XKB_KEY_NoSymbol as u32,
         has_upper: false,
         syms: Vec::new(),
-        actions: vec![xkb_action::None],
+        actions: vec![xkb_action::Internal(xkb_internal_action {
+            type_0: ACTION_TYPE_INTERNAL,
+            flags: INTERNAL_BREAKS_MOD_LATCH,
+            clear_latched_mods: clear,
+        })],
     };
     let synthetic_key_group_break_mod_latch: xkb_group = xkb_group {
         explicit_symbols: false,
@@ -3563,8 +4000,10 @@ impl rxkb_option_group {
     pub(crate) fn description(&self) -> &str {
         &self.description
     }
-
-    pub(crate) fn options(&self) -> &[rxkb_option] {
+    pub fn allows_multiple(&self) -> bool {
+        self.allow_multiple
+    }
+    pub fn options(&self) -> &[rxkb_option] {
         &self.options
     }
 }
@@ -3578,6 +4017,9 @@ impl rxkb_option {
     }
     pub(crate) fn description(&self) -> &str {
         &self.description
+    }
+    pub fn is_layout_specific(&self) -> bool {
+        self.layout_specific
     }
 }
 
