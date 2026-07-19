@@ -1,5 +1,3 @@
-use super::super::keymap::xkb_atom_intern_bytes;
-use super::super::keymap::xkb_atom_intern_ref;
 use super::super::keymap::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
     useModMapValueNames, LookupString, ModMaskText, SIMatchText,
@@ -102,7 +100,7 @@ impl KeyInfo {
 
 impl SymbolsInfo {
     pub fn new(ki: &mut xkb_keymap_info<'_>) -> Self {
-        let star_atom = xkb_atom_intern_ref(&mut ki.keymap_mut().ctx, b"*");
+        let star_atom = atom_intern(&mut ki.keymap_mut().ctx.atom_table, b"*", true);
         Self {
             name: None,
             errorCount: 0,
@@ -199,7 +197,7 @@ fn InitKeyInfo_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
     };
 }
 fn InitKeyInfo(ctx: &mut xkb_context, keyi: &mut KeyInfo) {
-    InitKeyInfo_with_atom(keyi, xkb_atom_intern_ref(ctx, b"*"));
+    InitKeyInfo_with_atom(keyi, atom_intern(&mut ctx.atom_table, b"*", true));
 }
 fn ClearKeyInfo(keyi: &mut KeyInfo) {
     for groupi in keyi.groups.iter_mut() {
@@ -232,7 +230,7 @@ fn ClearSymbolsInfo(info: &mut SymbolsInfo) {
     ClearKeyInfo(&mut info.default_key);
 }
 fn KeyInfoText<'a>(ctx: &'a xkb_context, keyi: &KeyInfo) -> &'a str {
-    xkb_atom_text(&ctx.atom_table, keyi.name)
+    atom_text(&ctx.atom_table, keyi.name)
 }
 fn MergeGroups(
     ki: &xkb_keymap_info<'_>,
@@ -253,9 +251,9 @@ fn MergeGroups(
                 log::warn!("[XKB-{:03}] Multiple definitions for group {} type of key <{}>; Using {}, ignoring {}\n",
                         XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS as i32,
                         group.wrapping_add(1_u32),
-                        xkb_atom_text(&ki.ctx().atom_table, key_name),
-                        xkb_atom_text(&ki.ctx().atom_table, use_0),
-                        xkb_atom_text(&ki.ctx().atom_table, ignore));
+                        atom_text(&ki.ctx().atom_table, key_name),
+                        atom_text(&ki.ctx().atom_table, use_0),
+                        atom_text(&ki.ctx().atom_table, ignore));
             }
             into.type_0 = use_0;
         }
@@ -299,7 +297,7 @@ fn MergeGroups(
                             XKB_WARNING_CONFLICTING_KEY_SYMBOL as i32,
                             i.wrapping_add(1_u32),
                             group.wrapping_add(1_u32),
-                            xkb_atom_text(&ki.ctx().atom_table, key_name),
+                            atom_text(&ki.ctx().atom_table, key_name),
                             if clobber { "from" } else { "to" },
                             if clobber { "to" } else { "from" });
                     }
@@ -324,7 +322,7 @@ fn MergeGroups(
                                 XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
                                 i.wrapping_add(1_u32),
                                 group.wrapping_add(1_u32),
-                                xkb_atom_text(&ki.ctx().atom_table, key_name),
+                                atom_text(&ki.ctx().atom_table, key_name),
                                 if clobber { "Using from, ignoring to" } else { "Using to, ignoring from" });
                         } else {
                             let use_action: &xkb_action = if clobber {
@@ -341,7 +339,7 @@ fn MergeGroups(
                                 XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
                                 i.wrapping_add(1_u32),
                                 group.wrapping_add(1_u32),
-                                xkb_atom_text(&ki.ctx().atom_table, key_name),
+                                atom_text(&ki.ctx().atom_table, key_name),
                                 ActionTypeText(use_action.action_type()),
                                 ActionTypeText(ignore_action.action_type()));
                         }
@@ -672,7 +670,7 @@ fn MergeKeys(
     if collide as u64 != 0 {
         log::warn!("[XKB-{:03}] Symbol map for key <{}> redefined; Using {} definition for conflicting fields\n",
             XKB_WARNING_CONFLICTING_KEY_FIELDS as i32,
-            xkb_atom_text(&ki.ctx().atom_table, into.name),
+            atom_text(&ki.ctx().atom_table, into.name),
             if clobber { "first" } else { "last" });
     }
     ClearKeyInfo(from);
@@ -743,7 +741,7 @@ fn AddModMapEntry(ki: &xkb_keymap_info<'_>, info: &mut SymbolsInfo, new: &ModMap
         } else {
             log::warn!("[XKB-{:03}] Key \"<{}>\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
                 XKB_WARNING_CONFLICTING_MODMAP as i32,
-                xkb_atom_text(&ctx.atom_table, new.u),
+                atom_text(&ctx.atom_table, new.u),
                 ModIndexText(ctx, mods, use_0),
                 ModIndexText(ctx, mods, ignore));
         }
@@ -1179,7 +1177,7 @@ fn ExprResolveOverlayEntry(
             "[XKB-{:03}] Overlay field \"{}\" in <{}> does not support array index; ignored\n",
             XKB_ERROR_WRONG_FIELD_TYPE as i32,
             field,
-            xkb_atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name)
+            atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name)
         );
         return false;
     }
@@ -1197,7 +1195,7 @@ fn ExprResolveOverlayEntry(
         log::error!("[XKB-{:03}] Unsupported overlay index \"{}\" field for <{}>: expected 1..{}, got: {}; ignored\n",
             XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX as i32,
             field,
-            xkb_atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name),
+            atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name),
             keymap_info.features.max_overlays as i32,
             raw_overlay);
         return false;
@@ -1217,9 +1215,9 @@ fn ExprResolveOverlayEntry(
                 log::error!(
                     "[XKB-{:03}] Unknown key \"{}\" for field {} in <{}>\n",
                     XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                    xkb_atom_text(&keymap_info.keymap.ctx.atom_table, key_name_val),
+                    atom_text(&keymap_info.keymap.ctx.atom_table, key_name_val),
                     field,
-                    xkb_atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name)
+                    atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name)
                 );
                 return false;
             }
@@ -1229,7 +1227,7 @@ fn ExprResolveOverlayEntry(
             let ExprKind::Ident(ident_val) = expr.kind else {
                 unreachable!()
             };
-            let id: &str = xkb_atom_text(&keymap_info.keymap.ctx.atom_table, ident_val);
+            let id: &str = atom_text(&keymap_info.keymap.ctx.atom_table, ident_val);
             if !id.is_empty() && id.eq_ignore_ascii_case("none") {
                 *key_rtrn = XKB_KEYCODE_INVALID;
                 return true;
@@ -1243,7 +1241,7 @@ fn ExprResolveOverlayEntry(
                 XKB_ERROR_INVALID_VALUE as i32,
                 id,
                 field,
-                xkb_atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name)
+                atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name)
             );
             false
         }
@@ -1253,7 +1251,7 @@ fn ExprResolveOverlayEntry(
                 XKB_ERROR_INVALID_VALUE as i32,
                 stmt_type_to_string(STMT_EXPR_KEYNAME_LITERAL),
                 field,
-                xkb_atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name),
+                atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name),
                 stmt_type_to_string(expr.stmt_type())
             );
             false
@@ -1379,13 +1377,13 @@ fn SetSymbolsField(
                         KeyInfoText(ki.ctx(), keyi),
                         overlay as i32 + 1_i32,
                         if prev != XKB_KEYCODE_INVALID {
-                            xkb_atom_text(&ki.ctx().atom_table, ki.keymap.get_key(prev).map(|k| k.name).unwrap_or(0))
+                            atom_text(&ki.ctx().atom_table, ki.keymap.get_key(prev).map(|k| k.name).unwrap_or(0))
                         } else {
                             "none"
                         },
                         overlay as i32 + 1_i32,
                         if key != XKB_KEYCODE_INVALID {
-                            xkb_atom_text(&ki.ctx().atom_table, ki.keymap.get_key(key).map(|k| k.name).unwrap_or(0))
+                            atom_text(&ki.ctx().atom_table, ki.keymap.get_key(key).map(|k| k.name).unwrap_or(0))
                         } else {
                             "none"
                         });
@@ -1419,12 +1417,12 @@ fn SetSymbolsField(
                             XKB_ERROR_OVERLAPPING_OVERLAY as i32,
                             KeyInfoText(ki.ctx(), keyi),
                             keyi.overlays as i32,
-                            xkb_atom_text(
+                            atom_text(
                                 &ki.ctx().atom_table,
                                 if existing_key == XKB_KEYCODE_INVALID { 0 } else { ki.keymap.get_key(existing_key).map(|k| k.name).unwrap_or(0) },
                             ),
                             overlay as i32 + 1_i32,
-                            xkb_atom_text(&ki.ctx().atom_table, ki.keymap.get_key(key).map(|k| k.name).unwrap_or(0)));
+                            atom_text(&ki.ctx().atom_table, ki.keymap.get_key(key).map(|k| k.name).unwrap_or(0)));
                     return ki.strict & PARSER_NO_FIELD_VALUE_MISMATCH == 0;
                 }
             }
@@ -1569,7 +1567,7 @@ fn SetGroupName(
             XKB_WARNING_NON_BASE_GROUP_NAME as i32,
             info.name.as_deref().unwrap_or(""),
             group,
-            xkb_atom_text(&ki.ctx().atom_table, name));
+            atom_text(&ki.ctx().atom_table, name));
         return false;
     }
     if group_to_use >= info.group_names.len() as u32 {
@@ -1585,8 +1583,8 @@ fn SetGroupName(
                 "Multiple definitions of group {} name in map '{}'; Using '{}', ignoring '{}'\n",
                 group_to_use,
                 info.name.as_deref().unwrap_or(""),
-                xkb_atom_text(&ki.ctx().atom_table, use_0),
-                xkb_atom_text(&ki.ctx().atom_table, ignore)
+                atom_text(&ki.ctx().atom_table, use_0),
+                atom_text(&ki.ctx().atom_table, ignore)
             );
             name = use_0;
         }
@@ -1611,8 +1609,8 @@ fn HandleGlobalVar(
     ) {
         return false;
     }
-    let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-    let field = xkb_atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+    let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
+    let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
     let elem: &str = &elem;
     let field: &str = &field;
     if !elem.is_empty() && elem.eq_ignore_ascii_case("key") {
@@ -1730,8 +1728,8 @@ fn HandleSymbolsBody(
                 &mut field_atom,
                 &mut arrayNdx_opt,
             );
-            let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom);
-            field_owned = xkb_atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+            let elem = atom_text(&ki.ctx().atom_table, elem_atom);
+            field_owned = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
             field = &field_owned;
             if ok as i32 != 0 && !elem.is_empty() {
                 log::error!("[XKB-{:03}] Cannot set global defaults for \"{}\" element within a key statement: move statements to the global file scope. Assignment to \"{}.{}\" ignored.\n",
@@ -1836,7 +1834,7 @@ fn HandleModMapDef(
     };
     let ndx: u32;
     let mut ok: bool;
-    let modifier_name: &str = xkb_atom_text(&ki.ctx().atom_table, def.modifier);
+    let modifier_name: &str = atom_text(&ki.ctx().atom_table, def.modifier);
     if modifier_name.eq_ignore_ascii_case("none") {
         ndx = XKB_MOD_NONE;
     } else {
@@ -1844,7 +1842,7 @@ fn HandleModMapDef(
         if ndx == XKB_MOD_INVALID {
             log::error!("[XKB-{:03}] Illegal modifier map definition; Ignoring map for non-modifier \"{}\"\n",
                 XKB_ERROR_INVALID_REAL_MODIFIER as i32,
-                xkb_atom_text(&ki.ctx().atom_table, def.modifier));
+                atom_text(&ki.ctx().atom_table, def.modifier));
             return false;
         }
     }
@@ -1985,7 +1983,7 @@ fn FindKeyForSymbol(keymap: &mut xkb_keymap, sym: u32) -> Option<&mut xkb_key> {
 fn FindAutomaticType(ctx: &mut xkb_context, groupi: &GroupInfo) -> u32 {
     let width: u32 = groupi.levels.len() as u32;
     if width == 1_u32 || width <= 0_u32 {
-        return xkb_atom_intern_ref(ctx, b"ONE_LEVEL");
+        return atom_intern(&mut ctx.atom_table, b"ONE_LEVEL", true);
     }
     let sym0: u32 = if groupi.levels[0].syms.is_empty() {
         XKB_KEY_NoSymbol as u32
@@ -1999,12 +1997,12 @@ fn FindAutomaticType(ctx: &mut xkb_context, groupi: &GroupInfo) -> u32 {
     };
     if width == 2_u32 {
         if xkb_keysym_is_lower(sym0) as i32 != 0 && xkb_keysym_is_upper_or_title(sym1) as i32 != 0 {
-            return xkb_atom_intern_ref(ctx, b"ALPHABETIC");
+            return atom_intern(&mut ctx.atom_table, b"ALPHABETIC", true);
         }
         if xkb_keysym_is_keypad(sym0) as i32 != 0 || xkb_keysym_is_keypad(sym1) as i32 != 0 {
-            return xkb_atom_intern_ref(ctx, b"KEYPAD");
+            return atom_intern(&mut ctx.atom_table, b"KEYPAD", true);
         }
-        return xkb_atom_intern_ref(ctx, b"TWO_LEVEL");
+        return atom_intern(&mut ctx.atom_table, b"TWO_LEVEL", true);
     }
     if width <= 4_u32 {
         if xkb_keysym_is_lower(sym0) as i32 != 0 && xkb_keysym_is_upper_or_title(sym1) as i32 != 0 {
@@ -2025,14 +2023,14 @@ fn FindAutomaticType(ctx: &mut xkb_context, groupi: &GroupInfo) -> u32 {
             if xkb_keysym_is_lower(sym2) as i32 != 0
                 && xkb_keysym_is_upper_or_title(sym3) as i32 != 0
             {
-                return xkb_atom_intern_ref(ctx, b"FOUR_LEVEL_ALPHABETIC");
+                return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL_ALPHABETIC", true);
             }
-            return xkb_atom_intern_ref(ctx, b"FOUR_LEVEL_SEMIALPHABETIC");
+            return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL_SEMIALPHABETIC", true);
         }
         if xkb_keysym_is_keypad(sym0) as i32 != 0 || xkb_keysym_is_keypad(sym1) as i32 != 0 {
-            return xkb_atom_intern_ref(ctx, b"FOUR_LEVEL_KEYPAD");
+            return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL_KEYPAD", true);
         }
-        return xkb_atom_intern_ref(ctx, b"FOUR_LEVEL");
+        return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL", true);
     }
     XKB_ATOM_NONE
 }
@@ -2058,7 +2056,7 @@ fn FindTypeForGroup(
     if type_name == XKB_ATOM_NONE {
         log::warn!("[XKB-{:03}] Couldn't find an automatic type for key '<{}>' group {} with {} levels; Using the default type\n",
             XKB_WARNING_CANNOT_INFER_KEY_TYPE as i32,
-            xkb_atom_text(&keymap.ctx.atom_table, keyi.name),
+            atom_text(&keymap.ctx.atom_table, keyi.name),
             group.wrapping_add(1_u32),
             keyi.groups[group as usize].levels.len());
     } else {
@@ -2072,8 +2070,8 @@ fn FindTypeForGroup(
         if i as usize >= keymap.types.len() {
             log::warn!("[XKB-{:03}] The type \"{}\" for key '<{}>' group {} was not previously defined; Using the default type\n",
                 XKB_WARNING_UNDEFINED_KEY_TYPE as i32,
-                xkb_atom_text(&keymap.ctx.atom_table, type_name),
-                xkb_atom_text(&keymap.ctx.atom_table, keyi.name),
+                atom_text(&keymap.ctx.atom_table, type_name),
+                atom_text(&keymap.ctx.atom_table, keyi.name),
                 group.wrapping_add(1_u32));
         } else {
             keymap.types[i as usize].required = true;
@@ -2179,7 +2177,7 @@ fn CopySymbolsDefToKeymap(
                 {
                     log::warn!("[XKB-{:03}] Type \"{}\" has {} levels, but <{}> has {} levels; Ignoring extra symbols\n",
                         XKB_WARNING_EXTRA_SYMBOLS_IGNORED as i32,
-                        xkb_atom_text(&keymap.ctx.atom_table, keymap.types[type_idx as usize].name),
+                        atom_text(&keymap.ctx.atom_table, keymap.types[type_idx as usize].name),
                         keymap.types[type_idx as usize].num_levels,
                         KeyInfoText(&keymap.ctx, keyi),
                         keyi.groups[i as usize].levels.len());
@@ -2341,7 +2339,7 @@ fn CopyModMapDefToKeymap(keymap: &mut xkb_keymap, info: &SymbolsInfo, entry: &Mo
         } else {
             log::warn!("[XKB-{:03}] Key <{}> not found in keycodes; Modifier map entry for {} not updated\n",
                 XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                xkb_atom_text(&keymap.ctx.atom_table, entry.u),
+                atom_text(&keymap.ctx.atom_table, entry.u),
                 ModIndexText(&keymap.ctx, &info.mods, entry.modifier));
             false
         }
@@ -2385,7 +2383,7 @@ fn CopySymbolsToKeymap(keymap: &mut xkb_keymap, info: &mut SymbolsInfo) -> bool 
             if (key.name != XKB_ATOM_NONE) && (key.num_groups as i32) < 1_i32 {
                 log::info!(
                     "No symbols defined for <{}>\n",
-                    xkb_atom_text(&keymap.ctx.atom_table, key.name)
+                    atom_text(&keymap.ctx.atom_table, key.name)
                 );
             }
             ki = ki.wrapping_add(1);
@@ -2554,7 +2552,7 @@ fn LEDText<'a>(info: &'a CompatInfo, ki: &'a xkb_keymap_info<'_>, ledi: &LedInfo
     if std::ptr::eq(ledi, &info.default_led) {
         "default"
     } else {
-        xkb_atom_text(&ki.ctx().atom_table, ledi.led.name)
+        atom_text(&ki.ctx().atom_table, ledi.led.name)
     }
 }
 #[inline]
@@ -2758,7 +2756,7 @@ fn ResolveStateAndPredicate(
         let ExprKind::Action { name, args } = &expr.kind else {
             unreachable!()
         };
-        let pred_txt: &str = xkb_atom_text(&ki.ctx().atom_table, *name);
+        let pred_txt: &str = atom_text(&ki.ctx().atom_table, *name);
         let mut pred: u32 = 0_u32;
         if !LookupString(&symInterpretMatchMaskNames, pred_txt, &mut pred)
             || args.is_empty()
@@ -2773,7 +2771,7 @@ fn ResolveStateAndPredicate(
         let ExprKind::Ident(ident_val) = &expr.kind else {
             unreachable!()
         };
-        let pred_txt_0: &str = xkb_atom_text(&ki.ctx().atom_table, *ident_val);
+        let pred_txt_0: &str = atom_text(&ki.ctx().atom_table, *ident_val);
         if !pred_txt_0.is_empty() && pred_txt_0.eq_ignore_ascii_case("any") {
             *pred_rtrn = MATCH_ANY;
             *mods_rtrn = MOD_REAL_MASK_ALL;
@@ -3258,8 +3256,8 @@ fn HandleCompatGlobalVar(
     ) {
         ret = false;
     } else {
-        let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-        let field = xkb_atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+        let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
+        let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
         if !elem.is_empty() && elem.eq_ignore_ascii_case("interpret") {
             let mut temp: SymInterpInfo = SymInterpInfo {
                 defined: 0 as si_field,
@@ -3364,8 +3362,8 @@ fn HandleInterpBody(
         ) {
             ok = false;
         } else {
-            let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-            let field = xkb_atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+            let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
+            let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
             if !elem.is_empty() {
                 log::error!("Cannot set a global default value for \"{}\" element from within an interpret statement; Move assignment to \"{}.{}\" to the global file scope\n",
                     elem,
@@ -3446,8 +3444,8 @@ fn HandleLedMapDef(
         ) {
             ok = false;
         } else {
-            let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-            let field = xkb_atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+            let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
+            let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
             if !elem.is_empty() {
                 log::error!("[XKB-{:03}] Cannot set defaults for \"{}\" element in indicator map; Assignment to {}.{} ignored\n",
                     XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
@@ -3544,7 +3542,7 @@ fn CopyLedMapDefsToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) {
         let led_name_text = if is_default {
             "default"
         } else {
-            xkb_atom_text(&keymap.ctx.atom_table, info.leds[idx as usize].led.name)
+            atom_text(&keymap.ctx.atom_table, info.leds[idx as usize].led.name)
         };
         let mut i: u32;
         i = 0_u32;
@@ -3698,7 +3696,7 @@ fn MapEntryTxt(
 }
 #[inline]
 fn TypeTxt<'a>(ki: &'a xkb_keymap_info<'_>, type_0: &KeyTypeInfo) -> &'a str {
-    xkb_atom_text(&ki.ctx().atom_table, type_0.name)
+    atom_text(&ki.ctx().atom_table, type_0.name)
 }
 #[inline]
 fn ReportTypeShouldBeArray(ki: &xkb_keymap_info<'_>, type_0: &KeyTypeInfo, field: &str) -> bool {
@@ -3754,7 +3752,7 @@ fn AddKeyType(
                 log::warn!("[XKB-{:03}] Multiple definitions of the {} key type; Earlier definition ignored\n",
                     XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS
                         as i32,
-                    xkb_atom_text(&ki.ctx().atom_table, new.name));
+                    atom_text(&ki.ctx().atom_table, new.name));
             }
             ClearKeyTypeInfo(&mut info.types[idx]);
             info.types[idx] = new.clone();
@@ -3766,7 +3764,7 @@ fn AddKeyType(
             log::warn!(
                 "[XKB-{:03}] Multiple definitions of the {} key type; Later definition ignored\n",
                 XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS as i32,
-                xkb_atom_text(&ki.ctx().atom_table, new.name)
+                atom_text(&ki.ctx().atom_table, new.name)
             );
         }
         ClearKeyTypeInfo(new);
@@ -3869,7 +3867,7 @@ fn SetModifiers(
     if type_0.defined & TYPE_FIELD_MASK != 0 {
         log::warn!(
             "Multiple modifier mask definitions for key type {}; Using {}, ignoring {}\n",
-            xkb_atom_text(&ki.ctx().atom_table, type_0.name),
+            atom_text(&ki.ctx().atom_table, type_0.name),
             ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, type_0.mods),
             ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, mods)
         );
@@ -4103,8 +4101,8 @@ fn AddLevelName(
             return true;
         }
         if type_0.level_names[level_idx] != XKB_ATOM_NONE {
-            let old: &str = xkb_atom_text(&ki.ctx().atom_table, type_0.level_names[level_idx]);
-            let new: &str = xkb_atom_text(&ki.ctx().atom_table, name);
+            let old: &str = atom_text(&ki.ctx().atom_table, type_0.level_names[level_idx]);
+            let new: &str = atom_text(&ki.ctx().atom_table, name);
             log::warn!(
                 "[XKB-{:03}] Multiple names for level {} of key type {}; Using {}, ignoring {}\n",
                 XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES as i32,
@@ -4146,7 +4144,7 @@ fn SetLevelName(
         log::error!("[XKB-{:03}] Non-string name for level {} in key type {}; Ignoring illegal level name definition\n",
             XKB_ERROR_WRONG_FIELD_TYPE as i32,
             level.wrapping_add(1_u32),
-            xkb_atom_text(&ki.ctx().atom_table, type_0.name));
+            atom_text(&ki.ctx().atom_table, type_0.name));
         return false;
     }
     AddLevelName(ki, info, type_0, level, level_name, true)
@@ -4200,8 +4198,8 @@ fn HandleKeyTypeBody(
         if !ExprResolveLhs(name_ref, &mut elem_atom, &mut field_atom, &mut arrayNdx) {
             ok = false;
         } else {
-            let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-            let field = xkb_atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+            let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
+            let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
             if !elem.is_empty() {
                 if elem.eq_ignore_ascii_case("type") {
                     log::error!("[XKB-{:03}] Support for changing the default type has been removed; Statement \"{}.{}\" ignored.\n",
@@ -4234,8 +4232,8 @@ fn HandleTypeGlobalVar(ki: &xkb_keymap_info<'_>, _info: &mut KeyTypesInfo, stmt:
     if !ExprResolveLhs(name_ref, &mut elem_atom, &mut field_atom, &mut arrayNdx) {
         return false;
     }
-    let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom);
-    let field = xkb_atom_text(&ki.ctx().atom_table, field_atom);
+    let elem = atom_text(&ki.ctx().atom_table, elem_atom);
+    let field = atom_text(&ki.ctx().atom_table, field_atom);
     if !elem.is_empty() && elem.eq_ignore_ascii_case("type") {
         log::error!("[XKB-{:03}] Support for changing the default type has been removed; Statement ignored\n",
             XKB_ERROR_WRONG_STATEMENT_TYPE as i32);
@@ -4342,7 +4340,7 @@ fn CopyKeyTypesToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo) -
     let mut types_vec: Vec<xkb_key_type> = Vec::with_capacity(num_types as usize);
     if info.types.is_empty() {
         let type_0 = xkb_key_type {
-            name: xkb_atom_intern_bytes(&mut keymap.ctx, b"ONE_LEVEL"),
+            name: atom_intern(&mut keymap.ctx.atom_table, b"ONE_LEVEL", true),
             mods: xkb_mods { mods: 0, mask: 0 },
             required: true,
             num_levels: 1,
@@ -4352,10 +4350,10 @@ fn CopyKeyTypesToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo) -
         types_vec.push(type_0);
     } else {
         let canonical_types: [u32; 4] = [
-            xkb_atom_intern_bytes(&mut keymap.ctx, b"ONE_LEVEL"),
-            xkb_atom_intern_bytes(&mut keymap.ctx, b"TWO_LEVEL"),
-            xkb_atom_intern_bytes(&mut keymap.ctx, b"ALPHABETIC"),
-            xkb_atom_intern_bytes(&mut keymap.ctx, b"KEYPAD"),
+            atom_intern(&mut keymap.ctx.atom_table, b"ONE_LEVEL", true),
+            atom_intern(&mut keymap.ctx.atom_table, b"TWO_LEVEL", true),
+            atom_intern(&mut keymap.ctx.atom_table, b"ALPHABETIC", true),
+            atom_intern(&mut keymap.ctx.atom_table, b"KEYPAD", true),
         ];
         for def in info.types.iter_mut() {
             let level_names = std::mem::take(&mut def.level_names);
@@ -4451,7 +4449,7 @@ pub fn MergeModSets(
             };
             log::warn!(
                 "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
-                xkb_atom_text(&ctx.atom_table, mod_0.name),
+                atom_text(&ctx.atom_table, mod_0.name),
                 ModMaskText(ctx, MOD_REAL, from, use_0),
                 ModMaskText(ctx, MOD_REAL, from, ignore)
             );
@@ -4467,7 +4465,7 @@ pub fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModD
         if !ExprResolveModMask(ctx, value_ref, MOD_REAL, mods, &mut mapping) {
             log::error!(
                 "Declaration of {} ignored\n",
-                xkb_atom_text(&ctx.atom_table, stmt.name)
+                atom_text(&ctx.atom_table, stmt.name)
             );
             return false;
         }
@@ -4476,7 +4474,7 @@ pub fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModD
         if mods.mods[vmod].name == stmt.name {
             if mods.mods[vmod].type_0 != MOD_VIRT {
                 log::error!("Can't add a virtual modifier named \"{}\"; there is already a non-virtual modifier with this name! Ignored\n",
-                    xkb_atom_text(&ctx.atom_table, mods.mods[vmod].name));
+                    atom_text(&ctx.atom_table, mods.mods[vmod].name));
                 return false;
             }
             let mask: u32 = 1_u32 << vmod;
@@ -4498,7 +4496,7 @@ pub fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModD
                 };
                 log::warn!(
                     "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
-                    xkb_atom_text(&ctx.atom_table, stmt.name),
+                    atom_text(&ctx.atom_table, stmt.name),
                     ModMaskText(ctx, MOD_REAL, mods, use_0),
                     ModMaskText(ctx, MOD_REAL, mods, ignore)
                 );
@@ -4511,7 +4509,7 @@ pub fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModD
     if mods.num_mods >= XKB_MAX_MODS {
         log::error!(
             "Cannot define virtual modifier {}: too many modifiers defined (maximum {})\n",
-            xkb_atom_text(&ctx.atom_table, stmt.name),
+            atom_text(&ctx.atom_table, stmt.name),
             (std::mem::size_of::<u32>()).wrapping_mul(8_usize) as u32
         );
         return false;
@@ -4822,7 +4820,7 @@ fn AddLedName(
             if report {
                 log::warn!(
                     "Multiple indicators named \"{}\"; Identical definitions ignored\n",
-                    xkb_atom_text(&ki.ctx().atom_table, new.name)
+                    atom_text(&ki.ctx().atom_table, new.name)
                 );
             }
             return true;
@@ -4840,7 +4838,7 @@ fn AddLedName(
             };
             log::warn!(
                 "Multiple indicators named {}; Using {}, ignoring {}\n",
-                xkb_atom_text(&ki.ctx().atom_table, new.name),
+                atom_text(&ki.ctx().atom_table, new.name),
                 use_0,
                 ignore
             );
@@ -4869,8 +4867,8 @@ fn AddLedName(
             log::warn!(
                 "Multiple names for indicator {}; Using {}, ignoring {}\n",
                 new_idx.wrapping_add(1_u32),
-                xkb_atom_text(&ki.ctx().atom_table, use_1),
-                xkb_atom_text(&ki.ctx().atom_table, ignore_0)
+                atom_text(&ki.ctx().atom_table, use_1),
+                atom_text(&ki.ctx().atom_table, ignore_0)
             );
         }
         if replace {
@@ -4918,7 +4916,7 @@ fn AddKeyName(
             if report {
                 log::warn!("[XKB-{:03}] Key name <{}> already assigned to an alias; Using {}, ignoring {}\n",
                         XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                        xkb_atom_text(&ki.ctx().atom_table, name),
+                        atom_text(&ki.ctx().atom_table, name),
                         if clobber { "key" } else { "alias" },
                         if clobber { "alias" } else { "key" });
             }
@@ -4944,7 +4942,7 @@ fn AddKeyName(
                     let ignore: u32 = if clobber as i32 != 0 { old_kc } else { kc };
                     log::warn!("[XKB-{:03}] Key name <{}> assigned to multiple keys; Using {}, ignoring {}\n",
                             XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                        xkb_atom_text(&ki.ctx().atom_table, name),
+                        atom_text(&ki.ctx().atom_table, name),
                             use_0,
                             ignore);
                 }
@@ -4970,15 +4968,15 @@ fn AddKeyName(
         if old_name == name {
             if report {
                 log::warn!("Multiple identical key name definitions; Later occurrences of \"<{}> = {}\" ignored\n",
-                        xkb_atom_text(&ki.ctx().atom_table, old_name),
+                        atom_text(&ki.ctx().atom_table, old_name),
                         kc);
             }
             return true;
         }
         let clobber_0: bool = merge != MERGE_AUGMENT;
         if report {
-            let kname: &str = xkb_atom_text(&ki.ctx().atom_table, name);
-            let old_kname: &str = xkb_atom_text(&ki.ctx().atom_table, old_name);
+            let kname: &str = atom_text(&ki.ctx().atom_table, name);
+            let old_kname: &str = atom_text(&ki.ctx().atom_table, old_name);
             let use_1: &str = if clobber_0 { kname } else { old_kname };
             let ignore_0: &str = if clobber_0 { old_kname } else { kname };
             log::warn!(
@@ -5159,8 +5157,8 @@ fn HandleAliasDef(
                 if report {
                     log::warn!("[XKB-{:03}] Alias of <{}> for <{}> declared more than once; First definition ignored\n",
                         XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                         xkb_atom_text(&ki.ctx().atom_table, def.alias),
-                         xkb_atom_text(&ki.ctx().atom_table, def.real));
+                         atom_text(&ki.ctx().atom_table, def.alias),
+                         atom_text(&ki.ctx().atom_table, def.real));
                 }
             } else {
                 let use_0: u32 = if clobber as i32 != 0 {
@@ -5176,9 +5174,9 @@ fn HandleAliasDef(
                 if report {
                     log::warn!("[XKB-{:03}] Multiple definitions for alias <{}>; Using <{}>, ignoring <{}>\n",
                         XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                         xkb_atom_text(&ki.ctx().atom_table, def.alias),
-                        xkb_atom_text(&ki.ctx().atom_table, use_0),
-                        xkb_atom_text(&ki.ctx().atom_table, ignore));
+                         atom_text(&ki.ctx().atom_table, def.alias),
+                        atom_text(&ki.ctx().atom_table, use_0),
+                        atom_text(&ki.ctx().atom_table, ignore));
                 }
                 {
                     info.keycodes.names[def.alias as usize].index = use_0;
@@ -5189,7 +5187,7 @@ fn HandleAliasDef(
             if report {
                 log::warn!("[XKB-{:03}] Alias name <{}> already assigned to a real key; Using {}, ignoring {}\n",
                     XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                    xkb_atom_text(&ki.ctx().atom_table, def.alias),
+                    atom_text(&ki.ctx().atom_table, def.alias),
                     if clobber { "alias" } else { "key" },
                     if clobber { "key" } else { "alias" });
             }
@@ -5210,8 +5208,8 @@ fn HandleKeyNameVar(_info: &mut KeyNamesInfo, ki: &mut xkb_keymap_info<'_>, stmt
     if !ExprResolveLhs(name_ref, &mut elem_atom, &mut field_atom, &mut arrayNdx) {
         return false;
     }
-    let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom);
-    let field = xkb_atom_text(&ki.ctx().atom_table, field_atom);
+    let elem = atom_text(&ki.ctx().atom_table, elem_atom);
+    let field = atom_text(&ki.ctx().atom_table, field_atom);
     if !elem.is_empty() {
         log::error!("[XKB-{:03}] Cannot set global defaults for \"{}\" element; Assignment to \"{}.{}\" ignored\n",
             XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
@@ -5402,8 +5400,8 @@ fn CopyKeycodeNameLUT(keymap: &mut xkb_keymap, keycodes: &mut KeycodeStore) -> b
                         if !match_real.found {
                             log::warn!("[XKB-{:03}] Attempt to alias <{}> to non-existent key <{}>; Ignored\n",
                                 XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                                xkb_atom_text(&keymap.ctx.atom_table, name),
-                                xkb_atom_text(
+                                atom_text(&keymap.ctx.atom_table, name),
+                                atom_text(
                                     &keymap.ctx.atom_table,
                                     entry.index
                                 ));
@@ -5412,8 +5410,8 @@ fn CopyKeycodeNameLUT(keymap: &mut xkb_keymap, keycodes: &mut KeycodeStore) -> b
                             log::warn!(
                                 "[XKB-{:03}] Attempt to alias <{}> to alias <{}>; Ignored\n",
                                 XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                                xkb_atom_text(&keymap.ctx.atom_table, name),
-                                xkb_atom_text(&keymap.ctx.atom_table, entry.index)
+                                atom_text(&keymap.ctx.atom_table, name),
+                                atom_text(&keymap.ctx.atom_table, entry.index)
                             );
                             keycodes.names[name as usize].found = false;
                         }
@@ -5529,7 +5527,7 @@ fn simple_lookup(ctx: &xkb_context, entries: &[LookupEntry], field: u32) -> Opti
     if field == XKB_ATOM_NONE {
         return None;
     }
-    let s: &str = xkb_atom_text(&ctx.atom_table, field);
+    let s: &str = atom_text(&ctx.atom_table, field);
     for entry in entries {
         if entry.name.is_empty() {
             break;
@@ -5550,7 +5548,7 @@ fn named_integer_pattern_lookup(
     if field == XKB_ATOM_NONE {
         return None;
     }
-    let str_bytes: &str = xkb_atom_text(&ctx.atom_table, field);
+    let str_bytes: &str = atom_text(&ctx.atom_table, field);
     let prefix = pattern.prefix;
     let count: i32 = if str_bytes
         .as_bytes()
@@ -5602,7 +5600,7 @@ fn named_integer_pattern_lookup(
 }
 
 fn lookup_mod_mask(ctx: &xkb_context, priv_0: &LookupModMaskPriv, field: u32) -> Option<u32> {
-    let s: &str = xkb_atom_text(&ctx.atom_table, field);
+    let s: &str = atom_text(&ctx.atom_table, field);
     if s.is_empty() {
         return None;
     }
@@ -5716,7 +5714,7 @@ pub fn ExprResolveBoolean(ctx: &xkb_context, expr: &ExprDef, set_rtrn: &mut bool
             let ExprKind::Ident(ident_atom) = &expr.kind else {
                 unreachable!()
             };
-            ident = xkb_atom_text(&ctx.atom_table, *ident_atom);
+            ident = atom_text(&ctx.atom_table, *ident_atom);
             if !ident.is_empty() {
                 if ident.eq_ignore_ascii_case("true")
                     || ident.eq_ignore_ascii_case("yes")
@@ -5746,8 +5744,8 @@ pub fn ExprResolveBoolean(ctx: &xkb_context, expr: &ExprDef, set_rtrn: &mut bool
             log::error!(
                 "[XKB-{:03}] Default \"{}.{}\" of type boolean is unknown\n",
                 XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                xkb_atom_text(&ctx.atom_table, *element),
-                xkb_atom_text(&ctx.atom_table, *field)
+                atom_text(&ctx.atom_table, *element),
+                atom_text(&ctx.atom_table, *field)
             );
             return false;
         }
@@ -5824,7 +5822,7 @@ fn ExprResolveIntegerLookup(
                 log::error!(
                     "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    xkb_atom_text(&ctx.atom_table, *ident_atom)
+                    atom_text(&ctx.atom_table, *ident_atom)
                 );
             }
             if let Some(p) = pending {
@@ -5842,8 +5840,8 @@ fn ExprResolveIntegerLookup(
             log::error!(
                 "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
                 XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                xkb_atom_text(&ctx.atom_table, *element),
-                xkb_atom_text(&ctx.atom_table, *field)
+                atom_text(&ctx.atom_table, *element),
+                atom_text(&ctx.atom_table, *field)
             );
             return false;
         }
@@ -6077,7 +6075,7 @@ pub fn ExprResolveString(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut u32) 
             log::error!(
                 "[XKB-{:03}] Identifier \"{}\" of type string not found\n",
                 XKB_ERROR_INVALID_IDENTIFIER as i32,
-                xkb_atom_text(&ctx.atom_table, {
+                atom_text(&ctx.atom_table, {
                     let ExprKind::Ident(id) = &expr.kind else {
                         unreachable!()
                     };
@@ -6093,8 +6091,8 @@ pub fn ExprResolveString(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut u32) 
             log::error!(
                 "[XKB-{:03}] Default \"{}.{}\" of type string not found\n",
                 XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                xkb_atom_text(&ctx.atom_table, *element),
-                xkb_atom_text(&ctx.atom_table, *field)
+                atom_text(&ctx.atom_table, *element),
+                atom_text(&ctx.atom_table, *field)
             );
             return false;
         }
@@ -6141,7 +6139,7 @@ pub fn ExprResolveEnum(
     log::error!(
         "[XKB-{:03}] Illegal identifier {}; expected one of:\n",
         XKB_ERROR_INVALID_IDENTIFIER as i32,
-        xkb_atom_text(&ctx.atom_table, *ident_atom)
+        atom_text(&ctx.atom_table, *ident_atom)
     );
     for entry in values {
         if entry.name.is_empty() {
@@ -6214,7 +6212,7 @@ fn ExprResolveMaskLookup(
                 log::error!(
                     "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
                     XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    xkb_atom_text(&ctx.atom_table, *ident_atom)
+                    atom_text(&ctx.atom_table, *ident_atom)
                 );
             }
             if let Some(p) = pending {
@@ -6232,8 +6230,8 @@ fn ExprResolveMaskLookup(
             log::error!(
                 "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
                 XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                xkb_atom_text(&ctx.atom_table, *element),
-                xkb_atom_text(&ctx.atom_table, *field)
+                atom_text(&ctx.atom_table, *element),
+                atom_text(&ctx.atom_table, *field)
             );
             return false;
         }
@@ -6391,7 +6389,7 @@ pub fn ExprResolveMod(
         log::error!(
             "[XKB-{:03}] Cannot resolve virtual modifier: \"{}\" was not previously declared\n",
             XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER as i32,
-            xkb_atom_text(&ctx.atom_table, name)
+            atom_text(&ctx.atom_table, name)
         );
         return false;
     }
@@ -6833,7 +6831,7 @@ fn CheckModifierField(
         } else {
             unreachable!()
         };
-        let valStr: &str = xkb_atom_text(&ctx.atom_table, ident);
+        let valStr: &str = atom_text(&ctx.atom_table, ident);
         if !valStr.is_empty()
             && (valStr.eq_ignore_ascii_case("usemodmapmods")
                 || valStr.eq_ignore_ascii_case("modmapmods"))
@@ -7521,7 +7519,7 @@ fn HandleRedirectKey(
             } else {
                 unreachable!()
             };
-            let valStr: &str = xkb_atom_text(&keymap_info.keymap_ref().ctx.atom_table, ident);
+            let valStr: &str = atom_text(&keymap_info.keymap_ref().ctx.atom_table, ident);
             if !valStr.is_empty() && valStr.eq_ignore_ascii_case("auto") {
                 act.keycode = keymap_info.keymap_ref().redirect_key_auto;
                 return PARSER_SUCCESS;
@@ -7549,7 +7547,7 @@ fn HandleRedirectKey(
             log::error!(
                 "RedirectKey field {} cannot resolve <{}> to a valid key\n",
                 fieldText(field),
-                xkb_atom_text(&keymap_info.keymap_ref().ctx.atom_table, key_name_val)
+                atom_text(&keymap_info.keymap_ref().ctx.atom_table, key_name_val)
             );
             return (if keymap_info.strict & PARSER_NO_FIELD_VALUE_MISMATCH != 0 {
                 PARSER_FATAL_ERROR as i32
@@ -7663,7 +7661,7 @@ fn HandlePrivate(
                     keymap_info.strict,
                 );
             }
-            let str_bytes: &str = xkb_atom_text(&ctx.atom_table, val);
+            let str_bytes: &str = atom_text(&ctx.atom_table, val);
             let len: usize = str_bytes.len();
             if len < 1_usize || len > std::mem::size_of::<[u8; 7]>() {
                 log::warn!(
@@ -7974,7 +7972,7 @@ pub fn HandleActionDef(
     } else {
         unreachable!()
     };
-    let action_name: &str = xkb_atom_text(&keymap_info.keymap.ctx.atom_table, action_name_atom);
+    let action_name: &str = atom_text(&keymap_info.keymap.ctx.atom_table, action_name_atom);
     let mut handler_type: u32 = ACTION_TYPE_NONE;
     if !stringToActionType(action_name, &mut handler_type) {
         log::error!(
@@ -8042,8 +8040,8 @@ pub fn HandleActionDef(
         ) {
             return PARSER_FATAL_ERROR;
         }
-        let elemRtrn = xkb_atom_text(&keymap_info.keymap.ctx.atom_table, elemRtrn_atom);
-        let fieldRtrn = xkb_atom_text(&keymap_info.keymap.ctx.atom_table, fieldRtrn_atom);
+        let elemRtrn = atom_text(&keymap_info.keymap.ctx.atom_table, elemRtrn_atom);
+        let fieldRtrn = atom_text(&keymap_info.keymap.ctx.atom_table, fieldRtrn_atom);
         if !elemRtrn.is_empty() {
             log::error!("[XKB-{:03}] Cannot change defaults in an action definition; Ignoring attempt to change \"{}.{}\".\n",
                 XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,

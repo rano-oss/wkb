@@ -13,11 +13,11 @@ pub use crate::modifiers::{level_index, KeyDirection, ALTGR, CAPS_LOCK, NUM_LOCK
 
 // Re-export compose parsing utilities needed by compose tests.
 pub mod compose_parse {
-    pub use crate::xkb::load_compose_from_path;
-    pub use crate::xkb::xkb_backend::keymap::{
+    pub use crate::xkb::keymap::{
         keysym_name_to_char, parse_compose_file, resolve_compose_file, ComposeEntry,
     };
-    pub use crate::xkb::xkb_backend::keysym::keysym_to_char;
+    pub use crate::xkb::keysym::keysym_to_char;
+    pub use crate::xkb::load_compose_from_path;
 }
 
 /// Feed a token to a composer (wraps the `pub(crate)` method for tests).
@@ -32,7 +32,7 @@ pub fn keysym_to_named_key(keysym: u32) -> NamedKey {
 
 /// Get all available layout variants for a given locale (test utility).
 pub fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
-    use crate::xkb::xkb_backend::keymap::RxkbContext;
+    use crate::xkb::keymap::RxkbContext;
 
     let mut ctx = match RxkbContext::new() {
         Some(ctx) => ctx,
@@ -95,15 +95,15 @@ impl WKBTestExt for WKB {
     }
 
     fn level2_code(&self) -> Option<(u32, Option<u8>)> {
-        xkb::level2_code(&self.modifiers)
+        xkb::level_code(&self.modifiers, ModType::Level2)
     }
 
     fn level3_code(&self) -> Option<(u32, Option<u8>)> {
-        xkb::level3_code(&self.modifiers)
+        xkb::level_code(&self.modifiers, ModType::Level3)
     }
 
     fn level5_code(&self) -> Option<(u32, Option<u8>)> {
-        xkb::level5_code(&self.modifiers)
+        xkb::level_code(&self.modifiers, ModType::Level5)
     }
 
     fn update_key(&mut self, evdev_code: u32, key_direction: crate::KeyDirection) -> bool {

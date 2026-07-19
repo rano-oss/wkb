@@ -3,7 +3,6 @@
 #![allow(dead_code)]
 
 use self::parser_h::*;
-use super::super::keymap::xkb_atom_intern;
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use super::super::keysym::utf32_to_keysym;
@@ -1654,37 +1653,41 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Atom(yyvs[sp].as_atom());
         }
         130 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"action"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"action", true));
         }
         131 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"interpret"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"interpret", true));
         }
         132 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"type"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"type", true));
         }
         133 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"key"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"key", true));
         }
         134 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"group"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"group", true));
         }
         135 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"modifier_map"));
+            *yyval = YYValue::Atom(atom_intern(
+                &mut param.ctx.atom_table,
+                b"modifier_map",
+                true,
+            ));
         }
         136 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"indicator"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"indicator", true));
         }
         137 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"shape"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"shape", true));
         }
         138 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"row"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"row", true));
         }
         139 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"section"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"section", true));
         }
         140 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"text"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"text", true));
         }
         // MergeMode rules 141-147
         141 => {
@@ -2196,17 +2199,21 @@ fn execute_reduction<'a>(
         // Ident 214
         214 => {
             let sval = yyvs[sp].as_sval();
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, sval.as_bytes()));
+            *yyval = YYValue::Atom(atom_intern(
+                &mut param.ctx.atom_table,
+                sval.as_bytes(),
+                true,
+            ));
         }
         215 => {
             // Ident: DEFAULT
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"default"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"default", true));
         }
         // String 216
         216 => {
             // String: STRING → intern as atom
             let s = yyvs[sp].take_str();
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, s.as_bytes()));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, s.as_bytes(), true));
         }
         // OptMapName / MapName 217-219
         217 => {
@@ -3641,7 +3648,7 @@ pub fn _xkbcommon_lex<'a>(
         let keyname_bytes: Vec<u8> = s
             .input_slice(s.token_pos + 1, s.token_pos + 1 + len)
             .to_vec();
-        *yylval = YYValue::Atom(xkb_atom_intern(ctx, &keyname_bytes));
+        *yylval = YYValue::Atom(atom_intern(&mut ctx.atom_table, &keyname_bytes, true));
         return KEYNAME;
     }
     if s.chr(b';' as i8) {
@@ -4230,7 +4237,7 @@ fn FindInterpForKey(
                                     KeysymText(syms[s as usize]),
                                     level.wrapping_add(1_u32),
                                     group.wrapping_add(1_u32),
-                                    xkb_atom_text(&keymap.ctx.atom_table, key_name));
+                                    atom_text(&keymap.ctx.atom_table, key_name));
                             use_default = true;
                             break 's_26;
                         }
@@ -4301,7 +4308,7 @@ fn ApplyInterpsToKey(keymap: &mut xkb_keymap, key_idx: usize) -> bool {
                     }
                     if (actions.len() as u32 != 0) as i64 > MAX_ACTIONS_PER_LEVEL as i64 {
                         log::warn!("Could not append interpret actions to key <{}>: maximum is {}, got: {}. Dropping excessive actions\n",
-                            xkb_atom_text(&keymap.ctx.atom_table, key_name),
+                            atom_text(&keymap.ctx.atom_table, key_name),
                             65535_i32,
                             actions.len() as u32);
                         actions.truncate(MAX_ACTIONS_PER_LEVEL as usize);
@@ -4378,7 +4385,7 @@ fn CheckMultipleActionsCategories(keymap: &mut xkb_keymap, key_idx: usize) {
                                 log::error!("Cannot use multiple {} actions in the same level. Action #{} for key <{}> in group {}/level {} ignored.\n",
                                     type_0,
                                     j as i32 + 1_i32,
-                                    xkb_atom_text(&keymap.ctx.atom_table, key_name),
+                                    atom_text(&keymap.ctx.atom_table, key_name),
                                     g.wrapping_add(1_u32),
                                     l.wrapping_add(1_u32));
                                 level.actions[j as usize].set_none();

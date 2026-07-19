@@ -513,7 +513,7 @@ pub fn xkb_keymap_new(
         XKB_MOD_NAME_MOD5,
     ];
     for (i, name) in BUILTIN_MODS.iter().enumerate() {
-        keymap.mods.mods[i].name = xkb_atom_intern_bytes(&mut keymap.ctx, name.as_bytes());
+        keymap.mods.mods[i].name = atom_intern(&mut keymap.ctx.atom_table, name.as_bytes(), true);
         keymap.mods.mods[i].type_0 = MOD_REAL;
         keymap.mods.mods[i].mapping = 1_u32 << i;
     }
@@ -1007,19 +1007,6 @@ pub fn xkb_context_failed_include_path_get(ctx: &mut xkb_context, idx: u32) -> S
         return "".to_string();
     }
     ctx.failed_includes.get(idx as usize).unwrap().clone()
-}
-
-pub fn xkb_atom_intern_bytes(ctx: &mut xkb_context, bytes: &[u8]) -> u32 {
-    atom_intern(&mut ctx.atom_table, bytes, true)
-}
-pub fn xkb_atom_intern(ctx: &mut xkb_context, bytes: &[u8]) -> u32 {
-    atom_intern(&mut ctx.atom_table, bytes, true)
-}
-pub fn xkb_atom_intern_ref(ctx: &mut xkb_context, bytes: &[u8]) -> u32 {
-    atom_intern(&mut ctx.atom_table, bytes, true)
-}
-pub fn xkb_atom_text(atom_table: &atom_table, atom: u32) -> &str {
-    atom_text(atom_table, atom)
 }
 
 pub fn xkb_context_sanitize_rule_names(ctx: &xkb_context, rmlvo: &mut xkb_rule_names) -> RMLVO {
@@ -1578,7 +1565,7 @@ pub fn ModIndexText<'a>(ctx: &'a xkb_context, mods: &xkb_mod_set, ndx: u32) -> &
     if ndx >= mods.num_mods {
         return "";
     }
-    xkb_atom_text(&ctx.atom_table, mods.mods[ndx as usize].name)
+    atom_text(&ctx.atom_table, mods.mods[ndx as usize].name)
 }
 pub fn ActionTypeText(type_0: u32) -> &'static str {
     let name: &'static str = LookupValue(&actionTypeNames, type_0);
@@ -1616,7 +1603,7 @@ pub fn ModMaskText(ctx: &xkb_context, type_0: u32, mods: &xkb_mod_set, mask: u32
             if !result.is_empty() {
                 result.push('+');
             }
-            result.push_str(xkb_atom_text(&ctx.atom_table, mods.mods[i].name));
+            result.push_str(atom_text(&ctx.atom_table, mods.mods[i].name));
         }
         remaining >>= 1_i32;
     }

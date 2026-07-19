@@ -7,7 +7,6 @@ pub mod parser;
 pub mod symbols;
 // ── Prelude: shared imports used by xkbcomp modules ──
 
-pub use super::keymap::xkb_atom_text;
 pub use super::keymap::xkb_escape_map_name;
 
 pub use super::shared_types::XkbFile;
