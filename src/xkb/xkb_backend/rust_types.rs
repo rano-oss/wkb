@@ -178,7 +178,7 @@ impl Context {
     /// Create a new XKB context
     pub fn new() -> Option<Self> {
         use super::shared_types::XKB_CONTEXT_NO_FLAGS;
-        let ctx = super::context::xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+        let ctx = super::keymap::xkb_context_new(XKB_CONTEXT_NO_FLAGS);
         Some(Context { entity: ctx })
     }
 

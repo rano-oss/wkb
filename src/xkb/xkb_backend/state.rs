@@ -1,4 +1,4 @@
-use super::context::xkb_context_new;
+use super::keymap::xkb_context_new;
 use std::rc::Rc;
 
 #[derive(Copy, Clone)]

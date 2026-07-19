@@ -1,14 +1,15 @@
-use super::super::context::xkb_atom_intern_bytes;
-use super::super::context::xkb_atom_intern_ref;
-pub use super::super::keymap::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
-use super::super::keysym::xkb_keysym_is_keypad;
-use super::super::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
-use super::super::text::{
+use super::super::keymap::xkb_atom_intern_bytes;
+use super::super::keymap::xkb_atom_intern_ref;
+use super::super::keymap::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
     useModMapValueNames, LookupString, ModMaskText, SIMatchText,
 };
+pub use super::super::keymap::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
+use super::super::keysym::xkb_keysym_is_keypad;
+use super::super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 use super::*;
 
+use super::super::keymap::ModIndexText;
 pub use super::super::shared_ast_types::{
     InterpDef, KeyAliasDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ReportBadField,
     ReportNotArray, ReportShouldBeArray, SymbolsDef,
@@ -16,7 +17,6 @@ pub use super::super::shared_ast_types::{
 pub use super::super::shared_types::{
     MAX_ACTIONS_PER_LEVEL, MOD_REAL_MASK_ALL, XKB_MAX_LEDS, XKB_MOD_NONE, XKB_OVERLAY_INVALID,
 };
-use super::super::text::ModIndexText;
 
 pub struct SymbolsInfo {
     pub name: Option<String>,
@@ -2412,8 +2412,8 @@ pub fn CompileSymbols(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_i
     ClearSymbolsInfo(&mut info);
     false
 }
-use super::super::context::xkb_context_get_log_verbosity;
-use super::super::keysym_case_mappings::xkb_keysym_to_upper;
+use super::super::keymap::xkb_context_get_log_verbosity;
+use super::super::keysym::xkb_keysym_to_upper;
 use super::super::shared_types::*;
 pub struct CompatInfo {
     pub name: Option<String>,
@@ -5494,7 +5494,7 @@ pub fn CompileKeycodes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_
     ClearKeyNamesInfo(&mut info);
     false
 }
-use super::super::text::{actionTypeNames, buttonNames, LookupValue, GROUP_LAST_INDEX_NAME};
+use super::super::keymap::{actionTypeNames, buttonNames, LookupValue, GROUP_LAST_INDEX_NAME};
 
 pub use super::super::keymap::action_equal;
 pub use super::super::shared_ast_types::stmt_type_to_operator_char;

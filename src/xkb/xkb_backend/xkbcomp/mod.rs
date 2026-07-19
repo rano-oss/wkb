@@ -7,7 +7,7 @@ pub mod parser;
 pub mod symbols;
 // ── Prelude: shared imports used by xkbcomp modules ──
 
-pub use super::context::xkb_atom_text;
+pub use super::keymap::xkb_atom_text;
 pub use super::keymap::xkb_escape_map_name;
 
 pub use super::shared_ast_types::{
@@ -31,7 +31,7 @@ pub use super::shared_ast_types::{
 
 pub use super::shared_types::xkb_keymap;
 
-pub use super::text::{ActionTypeText, KeysymText, LookupEntry};
+pub use super::keymap::{ActionTypeText, KeysymText, LookupEntry};
 
 pub use self::parser::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 

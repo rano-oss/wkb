@@ -23,8 +23,8 @@ pub struct ComposeEntry {
 /// Resolve an XKB keysym name to its Unicode character using our existing
 /// keysym database.
 pub fn keysym_name_to_char(name: &str) -> Option<char> {
+    use super::keysym::keysym_to_utf32;
     use super::keysym::xkb_keysym_from_name;
-    use super::keysym_utf::keysym_to_utf32;
     use super::shared_types::{XKB_KEY_NoSymbol, XKB_KEYSYM_NO_FLAGS};
 
     let ks = xkb_keysym_from_name(name.as_bytes(), XKB_KEYSYM_NO_FLAGS);

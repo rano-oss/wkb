@@ -4,9 +4,9 @@
 //! (a c2rust artifact). This module provides canonical definitions so that all modules
 //! can share the same Rust types.
 
+use super::keymap::LookupEntry;
 use super::shared_types::{xkb_context, xkb_keymap, xkb_overlay_index_t};
 use super::shared_types::{XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_WRONG_FIELD_TYPE};
-use super::text::LookupEntry;
 
 // message_code types needed by Report* inline functions
 pub type xkb_message_code = u32;

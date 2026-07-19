@@ -3,11 +3,11 @@
 #![allow(dead_code)]
 
 use self::parser_h::*;
-use super::super::context::xkb_atom_intern;
+use super::super::keymap::xkb_atom_intern;
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
+use super::super::keysym::utf32_to_keysym;
 use super::super::keysym::{xkb_keysym_from_name, xkb_keysym_is_deprecated};
-use super::super::keysym_utf::utf32_to_keysym;
 use super::super::shared_types::*;
 use super::super::utils::{
     parse_dec_u32, parse_dec_u64, parse_hex_u32, parse_hex_u64, utf8_next_code_point_safe,
@@ -34,8 +34,8 @@ use super::messages::{
 };
 
 pub use self::parser_h::{YYerror, END_OF_FILE, YYEMPTY, YYUNDEF};
+use super::super::keymap::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
 pub use super::super::state::mod_mask_get_effective;
-use super::super::text::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
 pub use super::symbols::CompileCompatMap;
 pub use super::symbols::CompileKeyTypes;
 pub use super::symbols::CompileKeycodes;
@@ -3770,11 +3770,11 @@ pub fn XkbParseString(
 
 // ── Include file processing (merged from include.rs) ──
 
-use super::super::context::{
+use super::super::keymap::{
     xkb_context_failed_include_path_get, xkb_context_getenv, xkb_context_num_failed_include_paths,
 };
-use super::super::context::{xkb_context_include_path_get, xkb_context_num_include_paths};
-use super::super::context::{
+use super::super::keymap::{xkb_context_include_path_get, xkb_context_num_include_paths};
+use super::super::keymap::{
     xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
 };
 

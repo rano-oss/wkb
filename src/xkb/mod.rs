@@ -327,7 +327,7 @@ fn build_wkb_from_keymap(
                     if sym != 0 {
                         named_key_map.set(layout_idx, lvl, evdev, keysym_to_named_key(sym));
                     }
-                    if let Some(ch) = xkb_backend::keysym_utf::keysym_to_char(sym) {
+                    if let Some(ch) = xkb_backend::keysym::keysym_to_char(sym) {
                         level_exceptions_keymap.set(layout_idx, lvl, evdev, ch);
                     }
                 }
@@ -342,12 +342,12 @@ fn build_wkb_from_keymap(
      -> Option<char> {
         let sym = state.key_get_one_sym(kc);
         if sym != 0 {
-            xkb_backend::keysym_utf::keysym_to_char(sym)
+            xkb_backend::keysym::keysym_to_char(sym)
         } else {
             keymap
                 .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
                 .first()
-                .and_then(|&s| xkb_backend::keysym_utf::keysym_to_char(s))
+                .and_then(|&s| xkb_backend::keysym::keysym_to_char(s))
         }
     };
 
