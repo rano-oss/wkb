@@ -3077,87 +3077,86 @@ pub(crate) fn isvaleq(s1: sval, s2: sval) -> bool {
     s1.data.len() == s2.data.len() && s1.data.eq_ignore_ascii_case(s2.data)
 }
 
+pub(crate) const ALTERNATE_GROUP: i32 = 77;
+pub(crate) const FUNCTION_KEYS: i32 = 76;
+pub(crate) const KEYPAD_KEYS: i32 = 75;
+pub(crate) const MODIFIER_KEYS: i32 = 74;
+pub(crate) const ALPHANUMERIC_KEYS: i32 = 73;
+pub(crate) const HIDDEN: i32 = 72;
+pub(crate) const DEFAULT: i32 = 71;
+pub(crate) const PARTIAL: i32 = 70;
+pub(crate) const KEYNAME: i32 = 65;
+pub(crate) const IDENT: i32 = 64;
+pub(crate) const FLOAT: i32 = 63;
+pub(crate) const INTEGER: i32 = 62;
+pub(crate) const DECIMAL_DIGIT: i32 = 61;
+pub(crate) const STRING: i32 = 60;
+pub(crate) const INVERT: i32 = 55;
+pub(crate) const EXCLAM: i32 = 54;
+pub(crate) const SEMI: i32 = 53;
+pub(crate) const COMMA: i32 = 52;
+pub(crate) const DOT: i32 = 51;
+pub(crate) const CBRACKET: i32 = 50;
+pub(crate) const OBRACKET: i32 = 49;
+pub(crate) const CPAREN: i32 = 48;
+pub(crate) const OPAREN: i32 = 47;
+pub(crate) const CBRACE: i32 = 46;
+pub(crate) const OBRACE: i32 = 45;
+pub(crate) const TIMES: i32 = 44;
+pub(crate) const DIVIDE: i32 = 43;
+pub(crate) const MINUS: i32 = 42;
+pub(crate) const PLUS: i32 = 41;
+pub(crate) const EQUALS: i32 = 40;
+pub(crate) const VIRTUAL: i32 = 38;
+pub(crate) const LOGO: i32 = 37;
+pub(crate) const SOLID: i32 = 36;
+pub(crate) const OUTLINE: i32 = 35;
+pub(crate) const TEXT: i32 = 34;
+pub(crate) const OVERLAY: i32 = 33;
+pub(crate) const SECTION: i32 = 32;
+pub(crate) const ROW: i32 = 31;
+pub(crate) const KEYS: i32 = 30;
+pub(crate) const SHAPE: i32 = 29;
+pub(crate) const INDICATOR: i32 = 28;
+pub(crate) const MODIFIER_MAP: i32 = 27;
+pub(crate) const GROUP: i32 = 26;
+pub(crate) const ALIAS: i32 = 25;
+pub(crate) const KEY: i32 = 24;
+pub(crate) const ACTION_TOK: i32 = 23;
+pub(crate) const INTERPRET: i32 = 22;
+pub(crate) const TYPE: i32 = 21;
+pub(crate) const VIRTUAL_MODS: i32 = 20;
+pub(crate) const ALTERNATE: i32 = 14;
+pub(crate) const REPLACE: i32 = 13;
+pub(crate) const AUGMENT: i32 = 12;
+pub(crate) const OVERRIDE: i32 = 11;
+pub(crate) const INCLUDE: i32 = 10;
+pub(crate) const XKB_LAYOUT: i32 = 8;
+pub(crate) const XKB_SEMANTICS: i32 = 7;
+pub(crate) const XKB_GEOMETRY: i32 = 6;
+pub(crate) const XKB_COMPATMAP: i32 = 5;
+pub(crate) const XKB_SYMBOLS: i32 = 4;
+pub(crate) const XKB_TYPES: i32 = 3;
+pub(crate) const XKB_KEYCODES: i32 = 2;
+pub(crate) const XKB_KEYMAP: i32 = 1;
+pub(crate) const ERROR_TOK: i32 = 255;
+pub(crate) const YYUNDEF: i32 = 257;
+pub(crate) const YYerror: i32 = 256;
+pub(crate) const END_OF_FILE: i32 = 0;
+pub(crate) const YYEMPTY: i32 = -2;
 
-    pub(crate) const ALTERNATE_GROUP: i32 = 77;
-    pub(crate) const FUNCTION_KEYS: i32 = 76;
-    pub(crate) const KEYPAD_KEYS: i32 = 75;
-    pub(crate) const MODIFIER_KEYS: i32 = 74;
-    pub(crate) const ALPHANUMERIC_KEYS: i32 = 73;
-    pub(crate) const HIDDEN: i32 = 72;
-    pub(crate) const DEFAULT: i32 = 71;
-    pub(crate) const PARTIAL: i32 = 70;
-    pub(crate) const KEYNAME: i32 = 65;
-    pub(crate) const IDENT: i32 = 64;
-    pub(crate) const FLOAT: i32 = 63;
-    pub(crate) const INTEGER: i32 = 62;
-    pub(crate) const DECIMAL_DIGIT: i32 = 61;
-    pub(crate) const STRING: i32 = 60;
-    pub(crate) const INVERT: i32 = 55;
-    pub(crate) const EXCLAM: i32 = 54;
-    pub(crate) const SEMI: i32 = 53;
-    pub(crate) const COMMA: i32 = 52;
-    pub(crate) const DOT: i32 = 51;
-    pub(crate) const CBRACKET: i32 = 50;
-    pub(crate) const OBRACKET: i32 = 49;
-    pub(crate) const CPAREN: i32 = 48;
-    pub(crate) const OPAREN: i32 = 47;
-    pub(crate) const CBRACE: i32 = 46;
-    pub(crate) const OBRACE: i32 = 45;
-    pub(crate) const TIMES: i32 = 44;
-    pub(crate) const DIVIDE: i32 = 43;
-    pub(crate) const MINUS: i32 = 42;
-    pub(crate) const PLUS: i32 = 41;
-    pub(crate) const EQUALS: i32 = 40;
-    pub(crate) const VIRTUAL: i32 = 38;
-    pub(crate) const LOGO: i32 = 37;
-    pub(crate) const SOLID: i32 = 36;
-    pub(crate) const OUTLINE: i32 = 35;
-    pub(crate) const TEXT: i32 = 34;
-    pub(crate) const OVERLAY: i32 = 33;
-    pub(crate) const SECTION: i32 = 32;
-    pub(crate) const ROW: i32 = 31;
-    pub(crate) const KEYS: i32 = 30;
-    pub(crate) const SHAPE: i32 = 29;
-    pub(crate) const INDICATOR: i32 = 28;
-    pub(crate) const MODIFIER_MAP: i32 = 27;
-    pub(crate) const GROUP: i32 = 26;
-    pub(crate) const ALIAS: i32 = 25;
-    pub(crate) const KEY: i32 = 24;
-    pub(crate) const ACTION_TOK: i32 = 23;
-    pub(crate) const INTERPRET: i32 = 22;
-    pub(crate) const TYPE: i32 = 21;
-    pub(crate) const VIRTUAL_MODS: i32 = 20;
-    pub(crate) const ALTERNATE: i32 = 14;
-    pub(crate) const REPLACE: i32 = 13;
-    pub(crate) const AUGMENT: i32 = 12;
-    pub(crate) const OVERRIDE: i32 = 11;
-    pub(crate) const INCLUDE: i32 = 10;
-    pub(crate) const XKB_LAYOUT: i32 = 8;
-    pub(crate) const XKB_SEMANTICS: i32 = 7;
-    pub(crate) const XKB_GEOMETRY: i32 = 6;
-    pub(crate) const XKB_COMPATMAP: i32 = 5;
-    pub(crate) const XKB_SYMBOLS: i32 = 4;
-    pub(crate) const XKB_TYPES: i32 = 3;
-    pub(crate) const XKB_KEYCODES: i32 = 2;
-    pub(crate) const XKB_KEYMAP: i32 = 1;
-    pub(crate) const ERROR_TOK: i32 = 255;
-    pub(crate) const YYUNDEF: i32 = 257;
-    pub(crate) const YYerror: i32 = 256;
-    pub(crate) const END_OF_FILE: i32 = 0;
-    pub(crate) const YYEMPTY: i32 = -2;
-
-    /// Native Rust UTF-32 to UTF-8 conversion (replaces C FFI)
-    ///
-    /// Encode a Unicode code point to UTF-8 into the given buffer.
-    /// Returns the number of bytes written (NOT including null terminator), or 0 on failure.
-    #[inline]
-    pub(crate) fn utf32_to_utf8_safe(unichar: u32, buffer: &mut [u8]) -> usize {
-        let Some(ch) = char::from_u32(unichar) else {
-            return 0;
-        };
-        let encoded = ch.encode_utf8(&mut buffer[..]);
-        encoded.len()
-    }
+/// Native Rust UTF-32 to UTF-8 conversion (replaces C FFI)
+///
+/// Encode a Unicode code point to UTF-8 into the given buffer.
+/// Returns the number of bytes written (NOT including null terminator), or 0 on failure.
+#[inline]
+pub(crate) fn utf32_to_utf8_safe(unichar: u32, buffer: &mut [u8]) -> usize {
+    let Some(ch) = char::from_u32(unichar) else {
+        return 0;
+    };
+    let encoded = ch.encode_utf8(&mut buffer[..]);
+    encoded.len()
+}
 // ── Keyword lookup (gperf-generated) ──
 
 pub(crate) const MAX_HASH_VALUE: u32 = 72;
