@@ -181,13 +181,6 @@ pub const LAYOUT_INDEX_FIRST: layout_index_ranges = 4294967292;
 pub const LAYOUT_INDEX_SINGLE: layout_index_ranges = 4294967291;
 pub const LAYOUT_INDEX_ANY: layout_index_ranges = 4294967294;
 pub const LAYOUT_INDEX_LATER: layout_index_ranges = 4294967293;
-#[derive(Copy, Clone)]
-
-pub struct LayoutIndexName {
-    pub name: *const i8,
-    pub length: i32,
-    pub range: layout_index_ranges,
-}
 pub type layout_index_ranges = u32;
 
 impl Default for rule {

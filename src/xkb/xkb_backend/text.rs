@@ -227,20 +227,6 @@ pub static groupComponentMaskNames: [LookupEntry; 7] = [
         value: 0_u32,
     },
 ];
-pub static groupMaskNames: [LookupEntry; 3] = [
-    LookupEntry {
-        name: "none",
-        value: 0_u32,
-    },
-    LookupEntry {
-        name: "all",
-        value: XKB_ALL_GROUPS as u32,
-    },
-    LookupEntry {
-        name: "",
-        value: 0_u32,
-    },
-];
 pub static buttonNames: [LookupEntry; 7] = [
     LookupEntry {
         name: "Button1",

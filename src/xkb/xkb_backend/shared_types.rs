@@ -1124,15 +1124,6 @@ pub fn format_max_groups(format: u32) -> u32 {
 }
 
 #[inline]
-pub fn format_boolean_controls(format: u32) -> xkb_action_controls {
-    (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
-        CONTROL_ALL_BOOLEAN_V1 as i32
-    } else {
-        CONTROL_ALL_BOOLEAN as i32
-    }) as xkb_action_controls
-}
-
-#[inline]
 pub fn isModsUnLockOnPressSupported(format: u32) -> bool {
     format >= XKB_KEYMAP_FORMAT_TEXT_V2
 }

@@ -173,11 +173,6 @@ fn InitGroupInfo(groupi: &mut GroupInfo) {
 fn ClearGroupInfo(groupi: &mut GroupInfo) {
     groupi.levels.clear();
 }
-fn CopyGroupInfo(to: &mut GroupInfo, from: &GroupInfo) {
-    to.defined = from.defined;
-    to.type_0 = from.type_0;
-    to.levels = from.levels.clone();
-}
 fn InitKeyInfo_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
     *keyi = KeyInfo {
         name: star_atom,

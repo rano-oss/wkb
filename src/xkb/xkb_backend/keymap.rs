@@ -415,24 +415,3 @@ pub fn xkb_keymap_led_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
             .map_or(XKB_LED_INVALID, |i| i as u32)
     }
 }
-
-pub fn xkb_keymap_key_get_actions_by_level<'a>(
-    keymap: &'a xkb_keymap,
-    key: &'a xkb_key,
-    layout: u32,
-    level: u32,
-) -> &'a [xkb_action] {
-    let wrapped_layout = XkbWrapGroupIntoRange(
-        layout as i32,
-        key.num_groups,
-        key.out_of_range_group_policy,
-        key.out_of_range_group_number,
-    );
-    if wrapped_layout != XKB_LAYOUT_INVALID && level < keymap.key_num_levels(key, wrapped_layout) {
-        let actions = &key.groups[wrapped_layout as usize].levels[level as usize].actions;
-        if !actions.is_empty() {
-            return actions.as_slice();
-        }
-    }
-    &[]
-}

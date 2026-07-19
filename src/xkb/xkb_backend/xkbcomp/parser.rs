@@ -1,5 +1,6 @@
 // Safe parser.rs
 // LALR(1) parser for XKB, converted from bison-generated C via c2rust
+#![allow(dead_code)]
 
 use super::super::context::xkb_atom_intern;
 use super::super::keysym::{xkb_keysym_from_name, xkb_keysym_is_deprecated};
