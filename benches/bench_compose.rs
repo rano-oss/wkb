@@ -18,7 +18,7 @@ fn bench_compose_feed(c: &mut Criterion) {
 
     for seq in COMPOSE_SEQUENCES {
         {
-            let resolved = xkb_core::compose::resolve_compose_file(COMPOSE_LOCALE);
+            let resolved = wkb::testing::compose_parse::resolve_compose_file(COMPOSE_LOCALE);
             let path = resolved.map(|s| {
                 std::path::Path::new("/usr/share/X11/locale")
                     .join(&s)
@@ -33,7 +33,8 @@ fn bench_compose_feed(c: &mut Criterion) {
                         if ks == XKB_KEY_MULTI_KEY {
                             Some(wkb::testing::Token::Compose)
                         } else {
-                            xkb_core::keysym_utf::keysym_to_char(ks).map(wkb::testing::Token::Char)
+                            wkb::testing::compose_parse::keysym_to_char(ks)
+                                .map(wkb::testing::Token::Char)
                         }
                     })
                     .collect();
