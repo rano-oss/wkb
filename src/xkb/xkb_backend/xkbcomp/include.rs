@@ -11,12 +11,12 @@ pub const MERGE_OVERRIDE_PREFIX: i32 = '+' as i32;
 pub const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
 pub const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
 
+pub use super::super::shared_ast_types::{
+    xkb_file_type_to_string, IncludeStmt, XkbFile, MAP_IS_DEFAULT,
+};
 pub use super::messages::{
     XKB_ERROR_INCLUDED_FILE_NOT_FOUND, XKB_ERROR_INSUFFICIENT_BUFFER_SIZE,
     XKB_ERROR_INVALID_INCLUDED_FILE, XKB_ERROR_INVALID_PATH, XKB_ERROR_RECURSIVE_INCLUDE,
-};
-pub use super::super::shared_ast_types::{
-    xkb_file_type_to_string, IncludeStmt, XkbFile, MAP_IS_DEFAULT,
 };
 use super::scanner::XkbParseString;
 

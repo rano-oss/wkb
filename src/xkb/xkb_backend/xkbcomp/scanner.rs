@@ -96,16 +96,16 @@ pub use self::parser_h::{
     EXCLAM, FLOAT, IDENT, INTEGER, INVERT, KEYNAME, MINUS, OBRACE, OBRACKET, OPAREN, PLUS, SEMI,
     STRING, TIMES,
 };
-pub use super::messages::{
-    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_MALFORMED_NUMBER_LITERAL,
-    XKB_WARNING_INVALID_ESCAPE_SEQUENCE, XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE,
-    XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
-};
 pub use super::super::scanner_utils::{scanner, sval};
 pub use super::super::shared_ast_types::{
     merge_mode, xkb_map_flags, ExprDef, GroupCompatDef, InterpDef, KeyAliasDef, KeyTypeDef,
     KeycodeDef, LedMapDef, LedNameDef, ModMapDef, Statement, SymbolsDef, UnknownStatement, VModDef,
     VarDef, XkbFile, MERGE_DEFAULT,
+};
+pub use super::messages::{
+    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_MALFORMED_NUMBER_LITERAL,
+    XKB_WARNING_INVALID_ESCAPE_SEQUENCE, XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE,
+    XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE,
 };
 
 // ── YYValue: safe replacement for the YYSTYPE union ──

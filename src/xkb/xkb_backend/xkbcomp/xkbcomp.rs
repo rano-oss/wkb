@@ -9,10 +9,10 @@ pub fn xkb_components_from_rules_names(
     super::rules::xkb_components_from_rules_names(ctx, rmlvo, out, explicit_layouts)
 }
 
-pub use super::messages::XKB_ERROR_KEYMAP_COMPILATION_FAILED;
 pub use super::super::shared_ast_types::{xkb_file_type_to_string, XkbFile, FILE_TYPE_KEYMAP};
 use super::ast_build::XkbFileFromComponents;
 use super::keymap::CompileKeymap;
+pub use super::messages::XKB_ERROR_KEYMAP_COMPILATION_FAILED;
 use super::scanner::XkbParseString;
 
 pub use super::super::shared_types::{format_max_groups, xkb_keymap};

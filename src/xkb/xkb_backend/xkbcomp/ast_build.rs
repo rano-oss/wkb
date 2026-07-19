@@ -1,7 +1,4 @@
 pub use super::super::keymap::XkbEscapeMapName;
-pub use super::messages::{
-    XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_INCLUDE_STATEMENT,
-};
 pub use super::super::scanner_utils::scanner;
 pub use super::super::shared_ast_types::{
     merge_mode, stmt_type, xkb_map_flags, ExprDef, ExprKind, GroupCompatDef, IncludeStmt,
@@ -11,6 +8,7 @@ pub use super::super::shared_ast_types::{
     MERGE_REPLACE, _STMT_NUM_VALUES,
 };
 pub use super::super::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
+pub use super::messages::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_INCLUDE_STATEMENT};
 
 pub fn expr_create(kind: ExprKind) -> Box<ExprDef> {
     Box::new(ExprDef { kind })
