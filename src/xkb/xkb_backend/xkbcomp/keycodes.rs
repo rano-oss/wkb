@@ -1,7 +1,7 @@
 pub use super::super::shared_ast_types::{KeyAliasDef, KeycodeDef, LedNameDef, ReportNotArray};
 pub use super::super::shared_types::{XKB_KEYCODE_MAX_CONTIGUOUS, XKB_MAX_LEDS};
 use super::expr::ExprResolveInteger;
-use super::prelude::*;
+use super::*;
 pub struct KeyNamesInfo {
     pub name: Option<String>,
     pub errorCount: i32,

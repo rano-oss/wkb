@@ -17,7 +17,6 @@ pub(crate) mod shared_ast_types;
 pub(crate) mod shared_types;
 pub(crate) mod state;
 pub(crate) mod text;
-pub(crate) mod utf8_decoding;
 pub(crate) mod utils;
 pub(crate) mod xkbcomp;
 

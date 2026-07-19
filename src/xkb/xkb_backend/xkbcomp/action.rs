@@ -1,7 +1,7 @@
 pub use super::super::keymap::action_equal;
 use super::super::text::{actionTypeNames, ctrlMaskNames, LookupString, LookupValue};
 pub use super::expr::{ExprResolveButton, ExprResolveInteger, ExprResolveMask};
-use super::prelude::*;
+use super::*;
 #[derive(Copy, Clone)]
 pub struct ActionsInfo {
     pub actions: [xkb_action; 21],

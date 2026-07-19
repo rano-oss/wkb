@@ -6,7 +6,7 @@ use super::super::text::{
 };
 pub use super::action::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
 use super::expr::{ExprResolveGroupMask, ExprResolveMask, ExprResolveMod};
-use super::prelude::*;
+use super::*;
 pub struct CompatInfo {
     pub name: Option<String>,
     pub errorCount: i32,

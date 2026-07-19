@@ -2,7 +2,7 @@ use super::super::context::xkb_atom_intern_ref;
 pub use super::super::keymap::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
 use super::super::keysym::xkb_keysym_is_keypad;
 use super::super::keysym_case_mappings::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
-use super::prelude::*;
+use super::*;
 
 pub use super::super::shared_ast_types::{ModMapDef, SymbolsDef};
 pub use super::super::shared_types::{XKB_MOD_NONE, XKB_OVERLAY_INVALID};

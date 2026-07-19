@@ -259,25 +259,6 @@ pub fn xkb_escape_map_name(name: &mut String) {
         .collect();
 }
 
-pub fn XkbEscapeMapName(name: &mut String) {
-    static LEGAL: [u8; 32] = [
-        0, 0, 0, 0, 0, 0xa7, 0xff, 0x83, 0xfe, 0xff, 0xff, 0x87, 0xfe, 0xff, 0xff, 0x7, 0, 0, 0, 0,
-        0, 0, 0, 0, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0x7f, 0xff,
-    ];
-    *name = name
-        .bytes()
-        .map(|b| {
-            if LEGAL[(b as usize) / 8] & (1u8 << (b % 8)) == 0 {
-                b'_'
-            } else {
-                b
-            }
-        })
-        .collect::<Vec<u8>>()
-        .into_iter()
-        .map(|b| b as char)
-        .collect();
-}
 pub fn XkbModNameToIndex(mods: &xkb_mod_set, name: u32, type_0: u32) -> u32 {
     for (i, mod_0) in mods.mods[..mods.num_mods as usize].iter().enumerate() {
         if mod_0.type_0 & type_0 != 0 && name == mod_0.name {

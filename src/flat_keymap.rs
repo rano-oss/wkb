@@ -1,83 +1,65 @@
 use crate::named_keys::NamedKey;
 
-/// Maximum number of shift levels.
 pub(crate) const MAX_LEVELS: usize = 8;
 
-/// Flat keymap: `num_layouts * MAX_LEVELS` planes of `num_keys` slots.
-/// Index: `(layout * MAX_LEVELS + level) * num_keys + evdev_code`.
+pub(crate) trait FlatMapValue: Copy {
+    fn empty() -> Self;
+}
+
+impl FlatMapValue for Option<char> {
+    fn empty() -> Self {
+        None
+    }
+}
+
+impl FlatMapValue for NamedKey {
+    fn empty() -> Self {
+        NamedKey::Unnamed
+    }
+}
+
 #[derive(Debug, Clone)]
-pub(crate) struct FlatKeymap {
-    pub(crate) data: Vec<Option<char>>,
+pub(crate) struct FlatMap<T: FlatMapValue> {
+    pub(crate) data: Vec<T>,
     pub(crate) num_keys: usize,
     pub(crate) num_layouts: usize,
 }
 
-impl FlatKeymap {
+impl<T: FlatMapValue> FlatMap<T> {
     pub(crate) fn new(num_keys: usize, num_layouts: usize) -> Self {
         Self {
-            data: vec![None; num_layouts * MAX_LEVELS * num_keys],
+            data: vec![T::empty(); num_layouts * MAX_LEVELS * num_keys],
             num_keys,
             num_layouts,
         }
     }
 
     #[inline(always)]
-    pub(crate) fn get(&self, layout: usize, level: usize, evdev_code: u32) -> Option<char> {
+    pub(crate) fn get(&self, layout: usize, level: usize, evdev_code: u32) -> T {
         let k = evdev_code as usize;
         if k < self.num_keys && layout < self.num_layouts {
             let idx = (layout * MAX_LEVELS + level) * self.num_keys + k;
             self.data[idx]
         } else {
-            None
+            T::empty()
         }
     }
 
     #[inline]
-    pub(crate) fn set(&mut self, layout: usize, level: usize, evdev_code: u32, ch: char) {
+    pub(crate) fn set(
+        &mut self,
+        layout: usize,
+        level: usize,
+        evdev_code: u32,
+        value: impl Into<T>,
+    ) {
         let k = evdev_code as usize;
         if k < self.num_keys && layout < self.num_layouts {
             let idx = (layout * MAX_LEVELS + level) * self.num_keys + k;
-            self.data[idx] = Some(ch);
+            self.data[idx] = value.into();
         }
     }
 }
 
-/// Flat named-key map: same layout as `FlatKeymap` but stores [`NamedKey`] values.
-/// Index: `(layout * MAX_LEVELS + level) * num_keys + evdev_code`.
-/// [`NamedKey::Unnamed`] means no named key is mapped.
-#[derive(Debug, Clone)]
-pub(crate) struct FlatNamedKeyMap {
-    pub(crate) data: Vec<NamedKey>,
-    pub(crate) num_keys: usize,
-    pub(crate) num_layouts: usize,
-}
-
-impl FlatNamedKeyMap {
-    pub(crate) fn new(num_keys: usize, num_layouts: usize) -> Self {
-        Self {
-            data: vec![NamedKey::Unnamed; num_layouts * MAX_LEVELS * num_keys],
-            num_keys,
-            num_layouts,
-        }
-    }
-
-    #[inline(always)]
-    pub(crate) fn get(&self, layout: usize, level: usize, evdev_code: u32) -> NamedKey {
-        let k = evdev_code as usize;
-        if k < self.num_keys && layout < self.num_layouts {
-            let idx = (layout * MAX_LEVELS + level) * self.num_keys + k;
-            self.data[idx]
-        } else {
-            NamedKey::Unnamed
-        }
-    }
-
-    #[inline]
-    pub(crate) fn set(&mut self, layout: usize, level: usize, evdev_code: u32, key: NamedKey) {
-        let k = evdev_code as usize;
-        if k < self.num_keys && layout < self.num_layouts {
-            let idx = (layout * MAX_LEVELS + level) * self.num_keys + k;
-            self.data[idx] = key;
-        }
-    }
-}
+pub(crate) type FlatKeymap = FlatMap<Option<char>>;
+pub(crate) type FlatNamedKeyMap = FlatMap<NamedKey>;

@@ -7,7 +7,7 @@ pub use super::super::shared_types::{
 use super::super::shared_types::{MOD_REAL_MASK_ALL, XKB_KEYMAP_FORMAT_TEXT_V1};
 pub use super::super::state::mod_mask_get_effective;
 use super::super::text::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
-use super::prelude::*;
+use super::*;
 
 pub use super::compat::CompileCompatMap;
 use super::expr::ExprResolveGroupMask;

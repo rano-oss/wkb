@@ -1,4 +1,4 @@
-use super::prelude::*;
+use super::*;
 
 pub use super::super::shared_ast_types::ReportShouldBeArray;
 use super::super::text::ModMaskText;

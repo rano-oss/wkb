@@ -1,4 +1,4 @@
-pub use super::super::keymap::XkbEscapeMapName;
+pub use super::super::keymap::xkb_escape_map_name;
 pub use super::super::scanner_utils::scanner;
 pub use super::super::shared_ast_types::{
     merge_mode, stmt_type, xkb_map_flags, ExprDef, ExprKind, GroupCompatDef, IncludeStmt,
@@ -7,7 +7,7 @@ pub use super::super::shared_ast_types::{
     FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE,
     MERGE_REPLACE, _STMT_NUM_VALUES,
 };
-pub use super::super::utf8_decoding::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
+pub use super::super::utils::{utf8_next_code_point_safe, INVALID_UTF8_CODE_POINT};
 pub use super::messages::{XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_INCLUDE_STATEMENT};
 
 pub fn expr_create(kind: ExprKind) -> Box<ExprDef> {
@@ -298,7 +298,7 @@ pub fn XkbFileCreate(
     flags: xkb_map_flags,
 ) -> Box<XkbFile> {
     let mut name_str = name.unwrap_or_default();
-    XkbEscapeMapName(&mut name_str);
+    xkb_escape_map_name(&mut name_str);
     Box::new(XkbFile {
         file_type: type_0,
         name: name_str,

@@ -1,6 +1,6 @@
 use super::super::shared_types::*;
 use super::super::text::{buttonNames, GROUP_LAST_INDEX_NAME};
-use super::prelude::*;
+use super::*;
 
 pub use super::super::keymap::XkbModNameToIndex;
 pub use super::super::shared_ast_types::stmt_type_to_operator_char;
