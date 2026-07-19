@@ -119,10 +119,10 @@ const LOCALE_DIR: &str = "/usr/share/X11/locale";
 
 /// A parsed Compose file entry.
 pub struct ComposeEntry {
-    pub(crate) keys: Vec<char>,
-    pub(crate) keysym_names: Vec<String>,
-    pub(crate) multi_key_index: Option<usize>,
-    pub(crate) output: char,
+    pub keys: Vec<char>,
+    pub keysym_names: Vec<String>,
+    pub multi_key_index: Option<usize>,
+    pub output: char,
 }
 
 /// Resolve an XKB keysym name to its Unicode character using our existing
