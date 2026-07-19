@@ -1,11 +1,9 @@
 // XKB compiler modules from libxkbcommon
 
-pub mod expr;
 pub mod messages {
     pub use super::super::shared_types::*;
 }
 pub mod parser;
-pub mod rules;
 pub mod symbols;
 // ── Prelude: shared imports used by xkbcomp modules ──
 
@@ -35,7 +33,7 @@ pub use super::shared_types::xkb_keymap;
 
 pub use super::text::{ActionTypeText, KeysymText, LookupEntry};
 
-pub use self::expr::{
+pub use self::symbols::{
     ExprResolveBoolean, ExprResolveEnum, ExprResolveGroup, ExprResolveLhs, ExprResolveModMask,
     ExprResolveString,
 };
@@ -52,7 +50,7 @@ pub fn xkb_components_from_rules_names(
     out: &mut xkb_component_names,
     explicit_layouts: &mut u32,
 ) -> bool {
-    self::rules::xkb_components_from_rules_names(ctx, rmlvo, out, explicit_layouts)
+    self::parser::xkb_components_from_rules_names(ctx, rmlvo, out, explicit_layouts)
 }
 
 pub use self::messages::XKB_ERROR_KEYMAP_COMPILATION_FAILED;
