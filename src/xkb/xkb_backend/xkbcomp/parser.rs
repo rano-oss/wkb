@@ -5842,8 +5842,15 @@ fn matcher_mapping_set_kccgst(m: &mut matcher, s: &mut scanner, ident: sval) {
         (m.mapping.defined_kccgst_mask as i32 | (1_u32 as u8 as i32) << kccgst as u32) as u8;
     m.mapping.num_kccgst = m.mapping.num_kccgst.wrapping_add(1);
 }
+fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
+    match idx {
+        4294967291 => rmlvo_len <= 1,
+        4294967292..=4294967294 => true,
+        _ => rmlvo_len >= 2 && (idx as usize) < rmlvo_len,
+    }
+}
+
 fn matcher_mapping_verify(m: &mut matcher, s: &mut scanner) -> bool {
-    let mut c2rust_current_block: u64;
     if m.mapping.num_mlvo as i32 == 0_i32 {
         let loc: scanner_loc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the left hand side; ignoring rule set\n",
@@ -5865,122 +5872,24 @@ fn matcher_mapping_verify(m: &mut matcher, s: &mut scanner) -> bool {
             } else {
                 0
             };
-            match single_layout_idx {
-                4294967291 => {
-                    c2rust_current_block = 4840043166261277618;
-                    match c2rust_current_block {
-                        14825033830842003582 => {
-                            if m.rmlvo.layouts.len() < 2
-                                || single_layout_idx >= m.rmlvo.layouts.len() as u32
-                            {
-                                c2rust_current_block = 436805222042109220;
-                            } else {
-                                c2rust_current_block = 8831408221741692167;
-                            }
-                        }
-                        _ => {
-                            if m.rmlvo.layouts.len() > 1 {
-                                c2rust_current_block = 436805222042109220;
-                            } else {
-                                c2rust_current_block = 8831408221741692167;
-                            }
-                        }
-                    }
-                }
-                4294967292..=4294967294 => {
-                    c2rust_current_block = 8831408221741692167;
-                }
-                _ => {
-                    c2rust_current_block = 14825033830842003582;
-                    match c2rust_current_block {
-                        14825033830842003582 => {
-                            if m.rmlvo.layouts.len() < 2
-                                || single_layout_idx >= m.rmlvo.layouts.len() as u32
-                            {
-                                c2rust_current_block = 436805222042109220;
-                            } else {
-                                c2rust_current_block = 8831408221741692167;
-                            }
-                        }
-                        _ => {
-                            if m.rmlvo.layouts.len() > 1 {
-                                c2rust_current_block = 436805222042109220;
-                            } else {
-                                c2rust_current_block = 8831408221741692167;
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            c2rust_current_block = 8831408221741692167;
-        }
-        match c2rust_current_block {
-            436805222042109220 => {}
-            _ => {
-                if is_mlvo_mask_defined(m, MLVO_VARIANT) {
-                    let single_variant_idx =
-                        if let LayoutIdx::Single { variant_idx, .. } = m.mapping.layout {
-                            variant_idx
-                        } else {
-                            0
-                        };
-                    match single_variant_idx {
-                        4294967291 => {
-                            c2rust_current_block = 13345507216710712890;
-                            match c2rust_current_block {
-                                10338831042980687939 => {
-                                    if m.rmlvo.variants.len() < 2
-                                        || single_variant_idx >= m.rmlvo.variants.len() as u32
-                                    {
-                                        c2rust_current_block = 436805222042109220;
-                                    } else {
-                                        c2rust_current_block = 10652014663920648156;
-                                    }
-                                }
-                                _ => {
-                                    if m.rmlvo.variants.len() > 1 {
-                                        c2rust_current_block = 436805222042109220;
-                                    } else {
-                                        c2rust_current_block = 10652014663920648156;
-                                    }
-                                }
-                            }
-                        }
-                        4294967292..=4294967294 => {
-                            c2rust_current_block = 10652014663920648156;
-                        }
-                        _ => {
-                            c2rust_current_block = 10338831042980687939;
-                            match c2rust_current_block {
-                                10338831042980687939 => {
-                                    if m.rmlvo.variants.len() < 2
-                                        || single_variant_idx >= m.rmlvo.variants.len() as u32
-                                    {
-                                        c2rust_current_block = 436805222042109220;
-                                    } else {
-                                        c2rust_current_block = 10652014663920648156;
-                                    }
-                                }
-                                _ => {
-                                    if m.rmlvo.variants.len() > 1 {
-                                        c2rust_current_block = 436805222042109220;
-                                    } else {
-                                        c2rust_current_block = 10652014663920648156;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    c2rust_current_block = 10652014663920648156;
-                }
-                match c2rust_current_block {
-                    436805222042109220 => {}
-                    _ => return true,
-                }
+            if !fn_layout_or_variant_valid(m.rmlvo.layouts.len(), single_layout_idx) {
+                m.mapping.active_or_candidates_mask = 0_u32;
+                return false;
             }
         }
+        if is_mlvo_mask_defined(m, MLVO_VARIANT) {
+            let single_variant_idx = if let LayoutIdx::Single { variant_idx, .. } = m.mapping.layout
+            {
+                variant_idx
+            } else {
+                0
+            };
+            if !fn_layout_or_variant_valid(m.rmlvo.variants.len(), single_variant_idx) {
+                m.mapping.active_or_candidates_mask = 0_u32;
+                return false;
+            }
+        }
+        return true;
     }
     m.mapping.active_or_candidates_mask = 0_u32;
     false
@@ -6397,14 +6306,13 @@ fn expand_kccgst_value(
     layout_idx: u32,
 ) -> Option<Vec<i8>> {
     let bytes = value.as_bytes();
-    let c2rust_current_block: u64;
     let mut expanded: Vec<i8> = Vec::new();
     let mut last_item_idx: u32 = 0;
     let mut has_separator: bool = false;
+    let mut invalid = false;
     let mut i: usize = 0_usize;
     loop {
         if i >= value.len() {
-            c2rust_current_block = 10758786907990354186;
             break;
         }
         match bytes[i] {
@@ -6428,7 +6336,7 @@ fn expand_kccgst_value(
                 if i >= value.len()
                     || !expand_rmlvo_in_kccgst_value(m, s, value, layout_idx, &mut expanded, &mut i)
                 {
-                    c2rust_current_block = 1032266188497003083;
+                    invalid = true;
                     break;
                 }
             }
@@ -6449,9 +6357,10 @@ fn expand_kccgst_value(
             }
         }
     }
-    match c2rust_current_block {
-        1032266188497003083 => None,
-        _ => Some(expanded),
+    if invalid {
+        None
+    } else {
+        Some(expanded)
     }
 }
 fn matcher_append_pending_kccgst(m: &mut matcher) -> bool {
@@ -6689,7 +6598,7 @@ fn gettok(m: &mut matcher, s: &mut scanner) -> rules_token {
     lex(s, &mut m.val)
 }
 fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_name: &str) -> bool {
-    let c2rust_current_block: u64;
+    let mut eof_ok = false;
     let mut tok: rules_token;
 
     '_initial: loop {
@@ -6700,11 +6609,10 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                 continue;
             }
             0 => {
-                c2rust_current_block = 13194772801876125100;
+                eof_ok = true;
                 break;
             }
             _ => {
-                c2rust_current_block = 2196083827608010402;
                 break;
             }
         }
@@ -6719,7 +6627,6 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                             break;
                         }
                         _ => {
-                            c2rust_current_block = 2196083827608010402;
                             break '_initial;
                         }
                     }
@@ -6729,7 +6636,6 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                     match tok as u32 {
                         2 => {}
                         _ => {
-                            c2rust_current_block = 2196083827608010402;
                             break '_initial;
                         }
                     }
@@ -6740,7 +6646,6 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                             continue '_initial;
                         }
                         _ => {
-                            c2rust_current_block = 2196083827608010402;
                             break '_initial;
                         }
                     }
@@ -6756,7 +6661,6 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                                 break;
                             }
                             _ => {
-                                c2rust_current_block = 2196083827608010402;
                                 break '_initial;
                             }
                         }
@@ -6772,7 +6676,6 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                                 break;
                             }
                             _ => {
-                                c2rust_current_block = 2196083827608010402;
                                 break '_initial;
                             }
                         }
@@ -6799,7 +6702,7 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                             1 => {}
                             0 => {
                                 matcher_append_pending_kccgst(m);
-                                c2rust_current_block = 13194772801876125100;
+                                eof_ok = true;
                                 break '_initial;
                             }
                             _ => {
@@ -6866,7 +6769,6 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                                             break;
                                         }
                                         _ => {
-                                            c2rust_current_block = 2196083827608010402;
                                             break '_initial;
                                         }
                                     }
@@ -6880,7 +6782,6 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                                             break;
                                         }
                                         _ => {
-                                            c2rust_current_block = 2196083827608010402;
                                             break '_initial;
                                         }
                                     }
@@ -6899,7 +6800,6 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                     }
                 }
                 _ => {
-                    c2rust_current_block = 2196083827608010402;
                     break '_initial;
                 }
             }
@@ -6912,31 +6812,29 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                     break;
                 }
                 _ => {
-                    c2rust_current_block = 2196083827608010402;
                     break '_initial;
                 }
             }
             matcher_group_add_element(m, s, m.val.string.to_sval(s.s).data);
         }
     }
-    match c2rust_current_block {
-        13194772801876125100 => true,
-        _ => {
-            match tok as u32 {
-                11 => {}
-                _ => {
-                    let loc: scanner_loc = s.token_location();
-                    log::error!(
-                        "[XKB-{:03}] {}:{}:{}: unexpected token\n",
-                        XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                        &s.file_name,
-                        loc.line,
-                        loc.column
-                    );
-                }
+    if eof_ok {
+        true
+    } else {
+        match tok as u32 {
+            11 => {}
+            _ => {
+                let loc: scanner_loc = s.token_location();
+                log::error!(
+                    "[XKB-{:03}] {}:{}:{}: unexpected token\n",
+                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
+                    &s.file_name,
+                    loc.line,
+                    loc.column
+                );
             }
-            false
         }
+        false
     }
 }
 fn read_rules_file(
