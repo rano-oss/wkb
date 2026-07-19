@@ -6438,7 +6438,7 @@ pub(crate) fn ExprResolveGroupMask(
 }
 #[derive(Copy, Clone)]
 pub(crate) struct ActionsInfo {
-    pub(crate) actions: [xkb_action; 8],
+    pub(crate) actions: [xkb_action; 21],
 }
 
 pub(crate) const ACTION_FIELD_LATCH_ON_PRESS: u32 = 25;

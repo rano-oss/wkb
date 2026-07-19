@@ -1358,11 +1358,8 @@ pub(crate) static useModMapValueNames: [LookupEntry; 5] = [
         value: 0_u32,
     },
 ];
-<<<<<<< HEAD
-pub(crate) static actionTypeNames: [LookupEntry; 8] = [
-=======
+
 pub static actionTypeNames: [LookupEntry; 43] = [
->>>>>>> parent of fc807ab (Remove more LOC)
     LookupEntry {
         name: "NoAction",
         value: ACTION_TYPE_NONE,

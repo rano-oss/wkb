@@ -642,11 +642,11 @@ pub(crate) struct xkb_mods {
     pub(crate) mask: u32,
 }
 
-pub(crate) const MATCH_EXACTLY: u32 = 4;
-pub(crate) const MATCH_ALL: u32 = 3;
-pub(crate) const MATCH_ANY: u32 = 2;
-pub(crate) const MATCH_ANY_OR_NONE: u32 = 1;
-pub(crate) const MATCH_NONE: u32 = 0;
+pub const MATCH_EXACTLY: u32 = 4;
+pub const MATCH_ALL: u32 = 3;
+pub const MATCH_ANY: u32 = 2;
+pub const MATCH_ANY_OR_NONE: u32 = 1;
+pub const MATCH_NONE: u32 = 0;
 
 #[derive(Clone)]
 pub(crate) struct xkb_key_type {
@@ -970,7 +970,7 @@ pub(crate) const DEFAULT_INTERPRET_VMOD: u32 = 4294967295;
 pub(crate) const DEFAULT_KEY_VMODMAP: u32 = 0;
 
 pub(crate) const XKB_MOD_ALL: u32 = 4294967295;
-pub(crate) const XKB_MOD_NONE: u32 = 0xffffffff;
+pub const XKB_MOD_NONE: u32 = 0xffffffff;
 pub(crate) const XKB_MOD_INDEX_SHIFT: real_mod_index = 0;
 pub(crate) const XKB_MOD_INDEX_CAPS: real_mod_index = 1;
 pub(crate) const XKB_MOD_INDEX_CTRL: real_mod_index = 2;
@@ -1179,7 +1179,7 @@ pub(crate) const XKB_EVENT_TYPE_VALUES: u32 = 30;
 pub(crate) const XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES: u32 = 3;
 pub(crate) const XKB_KEYMAP_SERIALIZE_FLAGS_VALUES: u32 = 7;
 pub(crate) const XKB_KEYMAP_FORMAT_VALUES: u32 = 6;
-pub(crate) const XKB_KEYMAP_COMPILE_FLAGS_VALUES: u32 = 1;
+pub const XKB_KEYMAP_COMPILE_FLAGS_VALUES: u32 = 1;
 pub(crate) const XKB_CONTEXT_FLAGS_VALUES: u32 = 7;
 pub(crate) const XKB_KEYSYM_FLAGS_VALUES: u32 = 1;
 pub(crate) const XKB_RMLVO_BUILDER_FLAGS_VALUES: u32 = 0;
@@ -1197,7 +1197,7 @@ pub(crate) const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 
 // ── Message codes (from messages.rs) ─────────────────────────────────────
 
-pub(crate) const XKB_LOG_VERBOSITY_DEFAULT: i32 = 0;
+pub const XKB_LOG_VERBOSITY_DEFAULT: i32 = 0;
 
 pub(crate) const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
 pub(crate) const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;
@@ -1250,7 +1250,7 @@ pub(crate) const XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX: u32 = 588;
 pub(crate) const XKB_ERROR_CANNOT_RESOLVE_RMLVO: u32 = 595;
 pub(crate) const XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE: u32 = 607;
 pub(crate) const XKB_ERROR_INVALID_REAL_MODIFIER: u32 = 623;
-pub(crate) const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: u32 = 632;
+pub const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: u32 = 632;
 pub(crate) const XKB_ERROR_UNKNOWN_DEFAULT_FIELD: u32 = 639;
 pub(crate) const XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE: u32 = 645;
 pub(crate) const XKB_ERROR_INVALID_INCLUDED_FILE: u32 = 661;
