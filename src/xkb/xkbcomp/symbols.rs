@@ -1983,7 +1983,7 @@ fn FindKeyForSymbol(keymap: &mut xkb_keymap, sym: u32) -> Option<&mut xkb_key> {
 }
 fn FindAutomaticType(ctx: &mut xkb_context, groupi: &GroupInfo) -> u32 {
     let width: u32 = groupi.levels.len() as u32;
-    if width == 1_u32 || width <= 0_u32 {
+    if width == 1_u32 || width == 0_u32 {
         return atom_intern(&mut ctx.atom_table, b"ONE_LEVEL", true);
     }
     let sym0: u32 = if groupi.levels[0].syms.is_empty() {
@@ -2129,7 +2129,7 @@ fn CopySymbolsDefToKeymap(
         }
     }
 
-    if keymap.keys[key_idx].num_groups <= 0 {
+    if keymap.keys[key_idx].num_groups == 0 {
         // A key with no group may still have other fields defined
         if keyi.defined as i32 != 0 {
             // goto key_fields

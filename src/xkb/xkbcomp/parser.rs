@@ -4801,9 +4801,7 @@ pub(crate) fn CompileKeymap(file: &mut XkbFile, keymap: &mut xkb_keymap) -> bool
     let mut file_indices: [Option<usize>; 4] = [None; 4];
     for (idx, stmt) in file.defs.iter().enumerate() {
         if let Statement::XkbFile(ref sub_file) = stmt {
-            if sub_file.file_type < FIRST_KEYMAP_FILE_TYPE
-                || sub_file.file_type > LAST_KEYMAP_FILE_TYPE
-            {
+            if sub_file.file_type > LAST_KEYMAP_FILE_TYPE {
                 if sub_file.file_type == FILE_TYPE_GEOMETRY {
                     log::warn!(
                         "[XKB-{:03}] Geometry sections are not supported; ignoring\n",
