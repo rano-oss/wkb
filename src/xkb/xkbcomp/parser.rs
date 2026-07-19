@@ -26,21 +26,15 @@ use super::super::shared_types::{
     STMT_UNKNOWN_DECLARATION, _STMT_NUM_VALUES,
 };
 
-use super::messages::{
-    XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_XKB_SYNTAX,
-    XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_MISSING_DEFAULT_SECTION,
-    XKB_WARNING_NUMERIC_KEYSYM, XKB_WARNING_UNRECOGNIZED_KEYSYM,
-};
-
 pub use self::parser_h::{YYerror, END_OF_FILE, YYEMPTY, YYUNDEF};
 pub use super::super::keymap::mod_mask_get_effective;
 use super::super::keymap::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
+use super::super::keymap::{ActionTypeText, KeysymText};
 pub use super::symbols::CompileCompatMap;
 pub use super::symbols::CompileKeyTypes;
 pub use super::symbols::CompileKeycodes;
 pub use super::symbols::CompileSymbols;
 use super::symbols::{ExprResolveGroup, ExprResolveGroupMask};
-use super::*;
 
 pub const XKB_KEY_VoidSymbol: i32 = 0xffffff_i32;
 pub const XKB_KEY_0: i32 = 0x30_i32;
@@ -4953,11 +4947,6 @@ pub fn CompileKeymap(file: &mut XkbFile, keymap: &mut xkb_keymap) -> bool {
     ok_0
 }
 pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
-
-use super::messages::{
-    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_INVALID_FILE_ENCODING,
-    XKB_ERROR_INVALID_RULES_SYNTAX, XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION,
-};
 
 /// Appends bytes from `src` to the Vec<i8>.
 #[inline]

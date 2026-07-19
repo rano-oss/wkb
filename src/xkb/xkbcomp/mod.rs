@@ -1,40 +1,16 @@
 // XKB compiler modules from libxkbcommon
 
-pub mod messages {
-    pub use super::super::shared_types::*;
-}
 pub mod parser;
 pub mod symbols;
-// ── Prelude: shared imports used by xkbcomp modules ──
 
-pub use super::keymap::xkb_escape_map_name;
-
-pub use super::shared_types::XkbFile;
-
-pub use super::shared_types::xkb_keymap;
-
-pub use super::keymap::{ActionTypeText, KeysymText};
-
-pub use self::parser::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
-
-use super::shared_types::xkb_context;
-use super::shared_types::{xkb_component_names, xkb_rule_names};
-pub fn xkb_components_from_rules_names(
-    ctx: &mut xkb_context,
-    rmlvo: &xkb_rule_names,
-    out: &mut xkb_component_names,
-    explicit_layouts: &mut u32,
-) -> bool {
-    self::parser::xkb_components_from_rules_names(ctx, rmlvo, out, explicit_layouts)
-}
-
-pub use self::messages::XKB_ERROR_KEYMAP_COMPILATION_FAILED;
 use self::parser::CompileKeymap;
 use self::parser::XkbFileFromComponents;
 use self::parser::XkbParseString;
-pub use super::shared_types::{xkb_file_type_to_string, FILE_TYPE_KEYMAP};
-
-pub use super::shared_types::format_max_groups;
+use super::shared_types::XKB_ERROR_KEYMAP_COMPILATION_FAILED;
+use super::shared_types::{
+    format_max_groups, xkb_component_names, xkb_file_type_to_string, xkb_keymap, xkb_rule_names,
+    XkbFile, FILE_TYPE_KEYMAP,
+};
 
 fn compile_keymap_file(keymap: &mut xkb_keymap, file: &mut XkbFile) -> bool {
     if file.file_type != FILE_TYPE_KEYMAP {
@@ -66,7 +42,7 @@ pub fn text_v1_keymap_new_from_names(keymap: &mut xkb_keymap, rmlvo: &xkb_rule_n
         rmlvo.variant.to_str().unwrap_or(""),
         rmlvo.options.to_str().unwrap_or("")
     );
-    ok = xkb_components_from_rules_names(
+    ok = self::parser::xkb_components_from_rules_names(
         &mut keymap.ctx,
         rmlvo,
         &mut kccgst,
