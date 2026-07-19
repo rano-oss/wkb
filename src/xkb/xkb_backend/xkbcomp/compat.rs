@@ -4,7 +4,7 @@ use super::super::text::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
     useModMapValueNames, LookupString, ModMaskText, SIMatchText,
 };
-pub use super::action::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
+pub use super::expr::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
 use super::expr::{ExprResolveGroupMask, ExprResolveMask, ExprResolveMod};
 use super::*;
 pub struct CompatInfo {

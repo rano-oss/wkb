@@ -9,7 +9,7 @@ pub use super::messages::{
 };
 pub use super::scanner::{scanner, scanner_loc, sval, svaleq};
 
-pub use super::include::{
+pub use super::scanner::{
     expand_path_str, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
 };

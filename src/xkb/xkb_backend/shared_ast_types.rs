@@ -169,7 +169,7 @@ impl ExprDef {
 }
 
 // Re-export ast_build functions used by consumers via ast_h
-pub use super::xkbcomp::ast_build::{
+pub use super::xkbcomp::parser::{
     stmt_type_to_operator_char, stmt_type_to_string, xkb_file_type_to_string,
 };
 

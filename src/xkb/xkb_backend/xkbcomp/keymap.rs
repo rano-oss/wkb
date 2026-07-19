@@ -11,9 +11,9 @@ use super::*;
 
 pub use super::compat::CompileCompatMap;
 use super::expr::ExprResolveGroupMask;
-pub use super::keycodes::CompileKeycodes;
 pub use super::symbols::CompileSymbols;
 pub use super::types::CompileKeyTypes;
+pub use super::types::CompileKeycodes;
 
 pub const GROUP_MASK_NAME_LAST: u32 = 3;
 pub const GROUP_INDEX_NAME_LAST: u32 = 1;

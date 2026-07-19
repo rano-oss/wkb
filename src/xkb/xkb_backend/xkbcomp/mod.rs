@@ -1,11 +1,7 @@
 // XKB compiler modules from libxkbcommon
 
-pub mod action;
-pub mod ast_build;
 pub mod compat;
 pub mod expr;
-pub mod include;
-pub mod keycodes;
 pub mod keymap;
 pub mod messages {
     pub use super::super::shared_types::*;
@@ -48,7 +44,7 @@ pub use self::expr::{
     ExprResolveString,
 };
 
-pub use self::include::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
+pub use self::scanner::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 
 pub use self::types::{HandleVModDef, InitVMods, MergeModSets};
 
@@ -63,9 +59,9 @@ pub fn xkb_components_from_rules_names(
     self::rules::xkb_components_from_rules_names(ctx, rmlvo, out, explicit_layouts)
 }
 
-use self::ast_build::XkbFileFromComponents;
 use self::keymap::CompileKeymap;
 pub use self::messages::XKB_ERROR_KEYMAP_COMPILATION_FAILED;
+use self::parser::XkbFileFromComponents;
 use self::scanner::XkbParseString;
 pub use super::shared_ast_types::{xkb_file_type_to_string, FILE_TYPE_KEYMAP};
 

@@ -8,7 +8,7 @@ pub use super::super::shared_ast_types::{ModMapDef, SymbolsDef};
 pub use super::super::shared_types::{XKB_MOD_NONE, XKB_OVERLAY_INVALID};
 use super::super::text::ModIndexText;
 
-pub use super::action::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
+pub use super::expr::{ActionsInfo, HandleActionDef, InitActionsInfo, SetDefaultActionField};
 
 pub struct SymbolsInfo {
     pub name: Option<String>,
