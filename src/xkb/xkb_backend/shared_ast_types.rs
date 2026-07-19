@@ -5,12 +5,11 @@
 //! can share the same Rust types.
 
 use super::shared_types::{xkb_context, xkb_keymap, xkb_overlay_index_t};
+use super::shared_types::{XKB_ERROR_EXPECTED_ARRAY_ENTRY, XKB_ERROR_WRONG_FIELD_TYPE};
 use super::text::LookupEntry;
 
 // message_code types needed by Report* inline functions
 pub type xkb_message_code = u32;
-pub const XKB_ERROR_WRONG_FIELD_TYPE: xkb_message_code = 578;
-pub const XKB_ERROR_EXPECTED_ARRAY_ENTRY: xkb_message_code = 77;
 pub type xkb_log_verbosity = i32;
 pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
 pub const XKB_LOG_LEVEL_ERROR: u32 = 20;

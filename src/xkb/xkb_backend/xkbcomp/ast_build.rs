@@ -1,5 +1,5 @@
 pub use super::super::keymap::XkbEscapeMapName;
-pub use super::super::messages::{
+pub use super::messages::{
     XKB_ERROR_INVALID_FILE_ENCODING, XKB_ERROR_INVALID_INCLUDE_STATEMENT,
 };
 pub use super::super::scanner_utils::scanner;

@@ -10,7 +10,7 @@ pub use super::super::context::xkb_atom_text;
 pub use super::super::keymap::xkb_escape_map_name;
 
 // messages
-pub use super::super::messages::{
+pub use super::messages::{
     XKB_ERROR_ALLOCATION_ERROR, XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY,
     XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE, XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT,
     XKB_ERROR_INTEGER_OVERFLOW, XKB_ERROR_INVALID_ACTION_FIELD, XKB_ERROR_INVALID_EXPRESSION_TYPE,

@@ -1,4 +1,4 @@
-use super::messages::XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH;
+use super::shared_types::XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH;
 
 pub type rxkb_log_level = u32;
 pub const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;

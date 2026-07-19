@@ -9,7 +9,6 @@ pub(crate) mod keymap;
 pub(crate) mod keysym;
 pub(crate) mod keysym_case_mappings;
 pub(crate) mod keysym_utf;
-pub(crate) mod messages;
 pub(crate) mod registry;
 pub(crate) mod rust_types;
 pub(crate) mod scanner_utils;
@@ -22,4 +21,6 @@ pub(crate) mod utf8_decoding;
 pub(crate) mod utils;
 pub(crate) mod xkbcomp;
 
+// Re-export message codes from shared_types for xkbcomp
+pub use shared_types::*;
 pub use shared_types::{XKB_KEY_DOWN, XKB_KEY_UP};

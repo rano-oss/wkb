@@ -262,7 +262,7 @@ impl<'a> scanner<'a> {
 
     #[inline]
     pub fn check_supported_char_encoding(&mut self) -> bool {
-        use super::messages::XKB_ERROR_INVALID_FILE_ENCODING;
+        use super::shared_types::XKB_ERROR_INVALID_FILE_ENCODING;
 
         if self.str_match(b"\xEF\xBB\xBF") || self.s.len() < 2 {
             return true;

@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 #![allow(non_upper_case_globals)]
-#![allow(dead_code)]
 
 mod atom;
 mod compose;
@@ -10,7 +9,6 @@ mod keymap;
 mod keysym;
 mod keysym_case_mappings;
 mod keysym_utf;
-mod messages;
 mod registry;
 mod rust_types;
 pub mod rust_types;

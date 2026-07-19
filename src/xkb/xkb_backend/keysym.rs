@@ -1,12 +1,6 @@
 use super::keysym_utf::utf32_to_keysym;
-pub const XKB_KEY_Mode_switch: i32 = 0xff7e_i32;
-pub const XKB_KEY_Num_Lock: i32 = 0xff7f_i32;
 pub const XKB_KEY_KP_Space: i32 = 0xff80_i32;
 pub const XKB_KEY_KP_Equal: i32 = 0xffbd_i32;
-pub const XKB_KEY_Shift_L: i32 = 0xffe1_i32;
-pub const XKB_KEY_Hyper_R: i32 = 0xffee_i32;
-pub const XKB_KEY_ISO_Lock: i32 = 0xfe01_i32;
-pub const XKB_KEY_ISO_Level5_Lock: i32 = 0xfe13_i32;
 use super::shared_types::*;
 pub mod keysym_names_h {
     #[derive(Copy, Clone)]

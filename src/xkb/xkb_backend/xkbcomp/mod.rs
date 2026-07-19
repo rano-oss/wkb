@@ -11,6 +11,9 @@ pub mod include;
 pub mod keycodes;
 pub mod keymap;
 pub mod keywords;
+pub mod messages {
+    pub use super::super::shared_types::*;
+}
 pub mod parser;
 pub mod rules;
 pub mod scanner;
