@@ -4182,12 +4182,12 @@ fn FindInterpForKey(
     let num_syms = syms.len() as i32;
     let mut s: i32 = 0_i32;
     while s < num_syms {
-        let mut c2rust_current_block_34: u64;
         let mut found: bool = false;
+        let mut use_default: bool = false;
         let mut i: u32 = 0_u32;
         's_26: loop {
             if i >= keymap.sym_interprets.len() as u32 {
-                c2rust_current_block_34 = 7659304154607701039;
+                use_default = true;
                 break;
             }
             let interp = &keymap.sym_interprets[i as usize];
@@ -4231,7 +4231,7 @@ fn FindInterpForKey(
                                     level.wrapping_add(1_u32),
                                     group.wrapping_add(1_u32),
                                     xkb_atom_text(&keymap.ctx.atom_table, key_name));
-                            c2rust_current_block_34 = 2209838995503123840;
+                            use_default = true;
                             break 's_26;
                         }
                     }
@@ -4239,20 +4239,12 @@ fn FindInterpForKey(
                 if found {
                     interp_indices.push(i as usize);
                     keymap.sym_interprets[i as usize].required = true;
-                    c2rust_current_block_34 = 7659304154607701039;
                     break;
                 }
             }
             i = i.wrapping_add(1);
         }
-        if c2rust_current_block_34 == 7659304154607701039 {
-            if !found {
-                c2rust_current_block_34 = 2209838995503123840;
-            } else {
-                c2rust_current_block_34 = 2989495919056355252;
-            }
-        }
-        if c2rust_current_block_34 == 2209838995503123840 {
+        if use_default {
             // usize::MAX signals "use default interpret"
             interp_indices.push(usize::MAX);
         }
@@ -5760,7 +5752,7 @@ fn matcher_mapping_set_layout_bounds(m: &mut matcher) {
     } else {
         0 // should not happen, layout is Single at this point
     };
-    let c2rust_current_block_17: u64;
+    let mut is_index_case: bool = false;
     match idx {
         XKB_LAYOUT_INVALID => {
             m.mapping.layout = LayoutIdx::Index {
@@ -5768,7 +5760,6 @@ fn matcher_mapping_set_layout_bounds(m: &mut matcher) {
                 layout_idx_max: XKB_LAYOUT_INVALID,
             };
             m.mapping.active_or_candidates_mask = 0x1_u32;
-            c2rust_current_block_17 = 13056961889198038528;
         }
         4294967293 => {
             let layout_idx_max = (if (32) < m.rmlvo.layouts.len() {
@@ -5782,7 +5773,6 @@ fn matcher_mapping_set_layout_bounds(m: &mut matcher) {
             };
             m.mapping.active_or_candidates_mask =
                 ((1_u64 << layout_idx_max).wrapping_sub(1_u64) as u32 as u64 & !1_u64) as u32;
-            c2rust_current_block_17 = 13056961889198038528;
         }
         4294967294 => {
             let layout_idx_max = (if (32) < m.rmlvo.layouts.len() {
@@ -5796,17 +5786,16 @@ fn matcher_mapping_set_layout_bounds(m: &mut matcher) {
             };
             m.mapping.active_or_candidates_mask =
                 ((1_u64 << layout_idx_max) as u32 as u64).wrapping_sub(1_u64) as u32;
-            c2rust_current_block_17 = 13056961889198038528;
         }
         4294967291 | 4294967292 => {
             idx = 0_u32;
-            c2rust_current_block_17 = 9641388756612255828;
+            is_index_case = true;
         }
         _ => {
-            c2rust_current_block_17 = 9641388756612255828;
+            is_index_case = true;
         }
     }
-    if c2rust_current_block_17 == 9641388756612255828 {
+    if is_index_case {
         m.mapping.layout = LayoutIdx::Index {
             layout_idx_min: idx,
             layout_idx_max: idx.wrapping_add(1_u32),

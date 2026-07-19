@@ -1049,7 +1049,6 @@ fn AddActionsToKey(
     let mut level: u32 = 0_u32;
     let mut nonEmptyLevels: u32 = 0_u32;
     for action_node in action_nodes {
-        let c2rust_current_block_102: u64;
         let ExprKind::ActionList {
             actions: action_vec,
         } = &mut action_node.kind
@@ -1070,9 +1069,10 @@ fn AddActionsToKey(
         }
         let mut actions: Vec<xkb_action> = Vec::new();
         let mut action_iter = action_vec.iter_mut();
+        let mut no_more_actions: bool = false;
         loop {
             let Some(act_expr) = action_iter.next() else {
-                c2rust_current_block_102 = 1134115459065347084;
+                no_more_actions = true;
                 break;
             };
             let mut toAct: xkb_action = xkb_action::None;
@@ -1099,14 +1099,13 @@ fn AddActionsToKey(
             if toAct.action_type() != ACTION_TYPE_NONE {
                 if (num_actions == 1_u32) as i64 != 0 {
                     keyi.groups[ndx as usize].levels[level as usize].actions = vec![toAct];
-                    c2rust_current_block_102 = 1829140360157350833;
                     break;
                 } else {
                     actions.push(toAct);
                 }
             }
         }
-        if c2rust_current_block_102 == 1134115459065347084 {
+        if no_more_actions {
             let leveli = &mut keyi.groups[ndx as usize].levels[level as usize];
             if actions.is_empty() {
                 leveli.actions = Vec::new();
@@ -1852,33 +1851,30 @@ fn HandleModMapDef(
     ok = true;
     tmp.modifier = ndx;
     tmp.merge = def.merge;
-    let mut c2rust_current_block_19: u64;
     for key in def.keys.iter() {
+        let mut add_entry = false;
         if key.stmt_type() == STMT_EXPR_KEYNAME_LITERAL {
             tmp.haveSymbol = false;
             let ExprKind::KeyName(kn) = key.kind else {
                 unreachable!()
             };
             tmp.u = kn;
-            c2rust_current_block_19 = 5601891728916014340;
+            add_entry = true;
         } else if key.stmt_type() == STMT_EXPR_KEYSYM_LITERAL {
             let ExprKind::KeySym(ks) = key.kind else {
                 unreachable!()
             };
-            if ks == XKB_KEY_NoSymbol as u32 {
-                c2rust_current_block_19 = 13536709405535804910;
-            } else {
+            if ks != XKB_KEY_NoSymbol as u32 {
                 tmp.haveSymbol = true;
                 tmp.u = ks;
-                c2rust_current_block_19 = 5601891728916014340;
+                add_entry = true;
             }
         } else {
             log::error!("[XKB-{:03}] Modmap entries may contain only key names or keysyms; Illegal definition for {} modifier ignored\n",
                 XKB_ERROR_INVALID_MODMAP_ENTRY as i32,
                 ModIndexText(ki.ctx(), &info.mods, tmp.modifier));
-            c2rust_current_block_19 = 13536709405535804910;
         }
-        if c2rust_current_block_19 == 5601891728916014340 {
+        if add_entry {
             ok = AddModMapEntry(ki, info, &tmp) as i32 != 0 && ok as i32 != 0;
         }
     }
@@ -3538,7 +3534,6 @@ fn CopyInterps(info: &CompatInfo, needSymbol: bool, pred: u32, collect: &mut col
 }
 fn CopyLedMapDefsToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) {
     let keymap = ki.keymap_mut();
-    let mut c2rust_current_block_11: u64;
     let mut idx: u32 = 0_u32;
     while idx < info.num_leds {
         let ledi_led = info.leds[idx as usize].led;
@@ -3559,6 +3554,7 @@ fn CopyLedMapDefsToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) {
             }
             i = i.wrapping_add(1);
         }
+        let mut assign_led = false;
         if i >= keymap.num_leds {
             log::debug!("Indicator name \"{}\" was not declared in the keycodes section; Adding new indicator\n",
                 led_name_text);
@@ -3576,19 +3572,18 @@ fn CopyLedMapDefsToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) {
                         (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8_usize) as u32,
                         led_name_text
                     );
-                    c2rust_current_block_11 = 792017965103506125;
                 } else {
                     i = keymap.num_leds;
                     keymap.num_leds = keymap.num_leds.wrapping_add(1);
-                    c2rust_current_block_11 = 17860125682698302841;
+                    assign_led = true;
                 }
             } else {
-                c2rust_current_block_11 = 17860125682698302841;
+                assign_led = true;
             }
         } else {
-            c2rust_current_block_11 = 17860125682698302841;
+            assign_led = true;
         }
-        if c2rust_current_block_11 == 17860125682698302841 {
+        if assign_led {
             keymap.leds[i as usize] = ledi_led;
             let led = &mut keymap.leds[i as usize];
             if led.which_groups as i32 == 0_i32
@@ -6173,7 +6168,7 @@ fn ExprResolveMaskLookup(
     let mut r: u32 = 0_u32;
     let mut v: i64 = 0_i64;
     let mut bogus: Option<&str> = None;
-    let c2rust_current_block_47: u64;
+    let mut already_logged_error = false;
     match expr.stmt_type() {
         5 => {
             let ExprKind::Integer(ival) = &expr.kind else {
@@ -6244,11 +6239,8 @@ fn ExprResolveMaskLookup(
         }
         13 => {
             bogus = Some("array reference");
-            c2rust_current_block_47 = 6716998617863641615;
         }
-        11 => {
-            c2rust_current_block_47 = 6716998617863641615;
-        }
+        11 => {}
         17..=20 => {
             let ExprKind::Binary {
                 left: bleft,
@@ -6293,7 +6285,7 @@ fn ExprResolveMaskLookup(
                 "[XKB-{:03}] Assignment operator not implemented yet\n",
                 XKB_ERROR_INVALID_OPERATION as i32
             );
-            c2rust_current_block_47 = 11626999923138678822;
+            already_logged_error = true;
         }
         24 => {
             let ExprKind::Unary { child, .. } = &expr.kind else {
@@ -6336,22 +6328,19 @@ fn ExprResolveMaskLookup(
                 XKB_ERROR_UNKNOWN_OPERATOR as i32,
                 { expr.stmt_type() }
             );
-            c2rust_current_block_47 = 11626999923138678822;
+            already_logged_error = true;
         }
     }
-    match c2rust_current_block_47 {
-        11626999923138678822 => {}
-        _ => {
-            if bogus.is_none() {
-                bogus = Some("function use");
-            }
-            log::error!(
-                "[XKB-{:03}] Unexpected {} in mask expression; Expression Ignored\n",
-                XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                bogus.unwrap_or("unknown")
-            );
-            return false;
+    if !already_logged_error {
+        if bogus.is_none() {
+            bogus = Some("function use");
         }
+        log::error!(
+            "[XKB-{:03}] Unexpected {} in mask expression; Expression Ignored\n",
+            XKB_ERROR_WRONG_FIELD_TYPE as i32,
+            bogus.unwrap_or("unknown")
+        );
+        return false;
     }
     false
 }
