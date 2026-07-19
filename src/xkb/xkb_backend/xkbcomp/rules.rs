@@ -7,9 +7,9 @@ pub use super::messages::{
     XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_INVALID_FILE_ENCODING,
     XKB_ERROR_INVALID_RULES_SYNTAX, XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION,
 };
-pub use super::scanner::{scanner, scanner_loc, sval, svaleq};
+pub use super::parser::{scanner, scanner_loc, sval, svaleq};
 
-pub use super::scanner::{
+pub use super::parser::{
     expand_path_str, FindFileInXkbPath, MERGE_AUGMENT_PREFIX, MERGE_OVERRIDE_PREFIX,
     MERGE_REPLACE_PREFIX,
 };

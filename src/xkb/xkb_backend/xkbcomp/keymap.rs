@@ -9,8 +9,8 @@ pub use super::super::state::mod_mask_get_effective;
 use super::super::text::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
 use super::*;
 
-pub use super::compat::CompileCompatMap;
 use super::expr::ExprResolveGroupMask;
+pub use super::symbols::CompileCompatMap;
 pub use super::symbols::CompileSymbols;
 pub use super::types::CompileKeyTypes;
 pub use super::types::CompileKeycodes;
