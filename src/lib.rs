@@ -274,7 +274,7 @@ impl WKB {
         let nk = self.named_key_map.num_keys;
         let level5 = level5 && self.named_key_map.data.len() > 4 * nk;
         let level3 = level3 && self.named_key_map.data.len() > 2 * nk;
-        let level2 = level2 && self.named_key_map.data.len() > 1 * nk;
+        let level2 = level2 && self.named_key_map.data.len() > nk;
         let level = level_index(level5, level3, level2);
         self.named_key_map
             .get(self.current_layout_idx, level, evdev_code)
@@ -312,7 +312,7 @@ impl WKB {
         let nk = self.state_keymap.num_keys;
         let level5 = level5 && self.state_keymap.data.len() > 4 * nk;
         let level3 = level3 && self.state_keymap.data.len() > 2 * nk;
-        let level2 = level2 && self.state_keymap.data.len() > 1 * nk;
+        let level2 = level2 && self.state_keymap.data.len() > nk;
         let base_level = level_index(level5, level3, level2);
         let layout_index = self.current_layout_idx;
         if self.modifiers.num_locked() {

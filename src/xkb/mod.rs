@@ -456,7 +456,7 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
                 let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
                 load_compose_from_path(&path)
             })
-            .unwrap_or_else(Composer::new)
+            .unwrap_or_default()
     };
 
     #[cfg(not(feature = "compose"))]
@@ -808,6 +808,7 @@ pub(crate) fn named_key_to_keysym(key: NamedKey) -> u32 {
 }
 
 #[cfg(test)]
+#[allow(clippy::items_after_test_module)]
 mod wrapper_tests {
     use super::keymap::{Context, RuleNames};
 

@@ -1,3 +1,4 @@
+#![allow(clippy::zero_prefixed_literal)]
 //! Keymap tests: XKB string export comparison and string-based construction.
 //!
 //! # Known KP/ISO collapse
@@ -83,12 +84,12 @@ fn compare_keymaps_functionally(wkb_string: &str, xkb_string: &str, layout_name:
                 // set is accepted (see module-level doc).
                 let syms_wkb: Vec<_> = km_wkb
                     .key_get_syms_by_level(kc, layout, level)
-                    .into_iter()
+                    .iter()
                     .map(|s| keysym_to_named_key(s.raw()))
                     .collect();
                 let syms_xkb: Vec<_> = km_xkb
                     .key_get_syms_by_level(kc, layout, level)
-                    .into_iter()
+                    .iter()
                     .map(|s| keysym_to_named_key(s.raw()))
                     .collect();
 
@@ -279,12 +280,12 @@ fn export_all_variants_match_xkbcommon(locale: &str) {
                     // set is accepted (see module-level doc).
                     let syms_wkb: Vec<_> = km_from_wkb
                         .key_get_syms_by_level(kc, layout, level)
-                        .into_iter()
+                        .iter()
                         .map(|s| keysym_to_named_key(s.raw()))
                         .collect();
                     let syms_rmlvo: Vec<_> = km_from_rmlvo
                         .key_get_syms_by_level(kc, layout, level)
-                        .into_iter()
+                        .iter()
                         .map(|s| keysym_to_named_key(s.raw()))
                         .collect();
 

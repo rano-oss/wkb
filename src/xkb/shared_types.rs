@@ -1,3 +1,4 @@
+#![allow(non_camel_case_types, non_snake_case, non_upper_case_globals, dead_code, clippy::incompatible_msrv, clippy::upper_case_acronyms)]
 //! Shared type definitions used across multiple modules.
 
 use std::cell::RefCell;

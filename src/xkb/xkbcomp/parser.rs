@@ -1,4 +1,5 @@
 // Safe parser.rs
+#![allow(non_upper_case_globals, dead_code, non_snake_case, non_camel_case_types, clippy::vec_box, clippy::wrong_self_convention, clippy::too_many_arguments, clippy::type_complexity, unused_assignments)]
 // LALR(1) parser for XKB, converted from bison-generated C via c2rust
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
@@ -1005,7 +1006,7 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
 /// Execute a reduction rule. Returns true on success, false on error (YYERROR).
 fn execute_reduction<'a>(
     yyn: i32,
-    yyvs: &mut Vec<YYValue<'a>>,
+    yyvs: &mut [YYValue<'a>],
     sp: usize,
     yyval: &mut YYValue<'a>,
     param: &mut parser_param<'a>,
@@ -1134,9 +1135,8 @@ fn execute_reduction<'a>(
             // DeclList: DeclList Decl
             let stmt = std::mem::replace(&mut yyvs[sp], YYValue::None);
             let mut list = yyvs[sp - 1].take_stmt_list();
-            match stmt {
-                YYValue::Stmt(s) => list.push(s),
-                _ => {} // null/none → skip
+            if let YYValue::Stmt(s) = stmt {
+                list.push(s);
             }
             *yyval = YYValue::StmtList(list);
         }
@@ -2279,8 +2279,7 @@ pub(crate) fn parse<'a>(
         break;
     }
 
-    if first.is_some() {
-        let first_ref = first.as_ref().unwrap();
+    if let Some(first_ref) = first.as_ref() {
         log::debug!(
             "[XKB-{:03}] No map in include statement, but \"{}\" contains several; Using first defined map, \"{}\"\n",
             XKB_WARNING_MISSING_DEFAULT_SECTION as i32,
@@ -3020,8 +3019,7 @@ impl<'a> scanner<'a> {
     }
 
     pub(crate) fn token_location(&mut self) -> scanner_loc {
-        let mut line: usize;
-        let column: usize;
+        let mut line = self.cached_loc.line;
         let mut line_pos: usize = 0;
 
         if self.cached_pos > self.token_pos {
@@ -3030,28 +3028,22 @@ impl<'a> scanner<'a> {
             self.cached_loc.line = 1;
         }
 
-        line = self.cached_loc.line;
         let input = self.s;
         let start = self.cached_pos;
         let end = self.token_pos;
 
         let mut search_from = start;
-        loop {
-            match input[search_from..end].iter().position(|&b| b == b'\n') {
-                Some(i) => {
-                    line += 1;
-                    search_from = search_from + i + 1;
-                    line_pos = search_from;
-                }
-                None => break,
-            }
+        while let Some(i) = input[search_from..end].iter().position(|&b| b == b'\n') {
+            line += 1;
+            search_from = search_from + i + 1;
+            line_pos = search_from;
         }
 
-        if line == self.cached_loc.line {
-            column = self.cached_loc.column + (self.token_pos - self.cached_pos);
+        let column = if line == self.cached_loc.line {
+            self.cached_loc.column + (self.token_pos - self.cached_pos)
         } else {
-            column = self.token_pos - line_pos + 1;
-        }
+            self.token_pos - line_pos + 1    
+        };
 
         let loc = scanner_loc { line, column };
         self.cached_pos = self.token_pos;

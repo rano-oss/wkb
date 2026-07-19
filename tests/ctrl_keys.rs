@@ -1,3 +1,4 @@
+#![allow(clippy::zero_prefixed_literal)]
 //! Test CTRL key combinations that should return empty/no character
 //!
 //! This test suite verifies that wkb correctly returns None for

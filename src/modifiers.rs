@@ -182,14 +182,14 @@ impl Modifier {
     fn for_each(&self, mut f: impl FnMut(&ModKind)) {
         match self {
             Modifier::Single(mk) => f(mk),
-            Modifier::Leveled(map) => map.values().for_each(|mk| f(mk)),
+            Modifier::Leveled(map) => map.values().for_each(f),
         }
     }
 
     fn for_each_mut(&mut self, mut f: impl FnMut(&mut ModKind)) {
         match self {
             Modifier::Single(mk) => f(mk),
-            Modifier::Leveled(map) => map.values_mut().for_each(|mk| f(mk)),
+            Modifier::Leveled(map) => map.values_mut().for_each(f),
         }
     }
 }

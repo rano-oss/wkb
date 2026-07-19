@@ -1,3 +1,4 @@
+#![allow(non_upper_case_globals, non_camel_case_types, dead_code)]
 pub(crate) const XKB_KEY_KP_Space: i32 = 0xff80_i32;
 pub(crate) const XKB_KEY_KP_Equal: i32 = 0xffbd_i32;
 use super::shared_types::*;
@@ -20849,7 +20850,7 @@ pub(crate) fn xkb_keysym_get_name(ks: u32) -> String {
         let name_bytes = get_name_bytes(&keysym_to_name[index as usize]);
         return std::str::from_utf8(name_bytes).unwrap_or("").to_string();
     }
-    if ks >= XKB_KEYSYM_UNICODE_MIN as u32 && ks <= XKB_KEYSYM_UNICODE_MAX as u32 {
+    if (XKB_KEYSYM_UNICODE_MIN..=XKB_KEYSYM_UNICODE_MAX).contains(&ks) {
         return get_unicode_name(ks);
     }
     format!("0x{:08x}", ks)
@@ -30580,7 +30581,7 @@ pub(crate) fn xkb_keysym_to_upper(mut ks: u32) -> u32 {
         } else {
             ks
         }
-    } else if XKB_KEYSYM_UNICODE_MIN <= ks && ks <= 0x101f189_u32 {
+    } else if (XKB_KEYSYM_UNICODE_MIN..=0x101f189_u32).contains(&ks) {
         let m = get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET));
         if m.upper {
             ks = ks.wrapping_sub(m.offset as u32);
@@ -30600,7 +30601,7 @@ pub(crate) fn xkb_keysym_is_lower(ks: u32) -> bool {
     if ks <= 0x13be_u32 {
         let m = get_legacy_keysym_entry(ks);
         m.upper as i32 != 0 && !m.lower
-    } else if XKB_KEYSYM_UNICODE_MIN <= ks && ks <= 0x101f189_u32 {
+    } else if (XKB_KEYSYM_UNICODE_MIN..=0x101f189_u32).contains(&ks) {
         let m = get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET));
         m.upper as i32 != 0 && !m.lower
     } else {
@@ -30610,7 +30611,7 @@ pub(crate) fn xkb_keysym_is_lower(ks: u32) -> bool {
 pub(crate) fn xkb_keysym_is_upper_or_title(ks: u32) -> bool {
     if ks <= 0x13be_u32 {
         get_legacy_keysym_entry(ks).lower
-    } else if XKB_KEYSYM_UNICODE_MIN <= ks && ks <= 0x101f189_u32 {
+    } else if (XKB_KEYSYM_UNICODE_MIN..=0x101f189_u32).contains(&ks) {
         get_unicode_entry(ks.wrapping_sub(XKB_KEYSYM_UNICODE_OFFSET)).lower
     } else {
         false

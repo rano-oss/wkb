@@ -1,3 +1,4 @@
+#![allow(dead_code, clippy::incompatible_msrv, clippy::type_complexity)]
 use std::rc::Rc;
 
 pub use super::shared_types::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
@@ -246,6 +247,7 @@ fn parse_rule_line(line: &str) -> Option<ComposeEntry> {
     })
 }
 
+#[allow(clippy::manual_strip)]
 /// Parse the RHS value: `"string" [keysym]` or bare `keysym_name`
 fn parse_rhs_value(rhs: &str) -> Option<char> {
     let rhs = rhs.trim();
@@ -434,12 +436,12 @@ pub(crate) fn xkb_keymap_mod_get_index_ref(keymap: &xkb_keymap, name: &str) -> u
     }
 }
 
-pub(crate) fn xkb_keymap_key_get_syms_by_level_ref<'a>(
-    keymap: &'a xkb_keymap,
+pub(crate) fn xkb_keymap_key_get_syms_by_level_ref(
+    keymap: &xkb_keymap,
     kc: u32,
     layout: u32,
     level: u32,
-) -> &'a [u32] {
+) -> &[u32] {
     keymap
         .get_key(kc)
         .and_then(|k| k.groups.get(layout as usize))
@@ -661,7 +663,7 @@ pub(crate) fn XkbWrapGroupIntoRange(
     }
 }
 pub(crate) fn xkb_keymap_num_layouts_for_key(keymap: &xkb_keymap, kc: u32) -> u32 {
-    keymap.get_key(kc).map(|k| k.num_groups as u32).unwrap_or(0)
+    keymap.get_key(kc).map(|k| k.num_groups).unwrap_or(0)
 }
 
 pub(crate) fn xkb_keymap_num_leds(keymap: &xkb_keymap) -> u32 {

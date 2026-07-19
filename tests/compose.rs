@@ -1,3 +1,4 @@
+#![allow(clippy::zero_prefixed_literal)]
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::Path;
@@ -67,11 +68,8 @@ fn wkb_compose_sequence(
     let mut result = None;
     for (i, &ch) in chars.iter().enumerate() {
         if let Some(idx) = multi_key_index {
-            if idx == i {
-                match composer_feed(&mut c, Token::Compose) {
-                    ComposeState::Cancelled => return None,
-                    _ => {}
-                }
+            if idx == i && composer_feed(&mut c, Token::Compose) == ComposeState::Cancelled {
+                return None;
             }
         }
         match composer_feed(&mut c, Token::Char(ch)) {

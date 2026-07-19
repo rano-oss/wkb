@@ -1,3 +1,4 @@
+#![allow(non_snake_case, non_camel_case_types, dead_code, clippy::too_many_arguments, clippy::needless_range_loop, clippy::if_same_then_else, clippy::unnecessary_unwrap)]
 use super::super::keymap::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
     useModMapValueNames, LookupString, ModMaskText, SIMatchText,
@@ -1749,7 +1750,7 @@ fn HandleSymbolsBody(
             );
             ok = false;
         }
-        if !ok || !SetSymbolsField(ki, info, keyi, &field, arrayNdx_opt, &mut def.value) {
+        if !ok || !SetSymbolsField(ki, info, keyi, field, arrayNdx_opt, &mut def.value) {
             all_valid_entries = false;
         }
     }
