@@ -40,7 +40,7 @@ pub use super::symbols::CompileCompatMap;
 pub use super::symbols::CompileKeyTypes;
 pub use super::symbols::CompileKeycodes;
 pub use super::symbols::CompileSymbols;
-use super::symbols::ExprResolveGroupMask;
+use super::symbols::{ExprResolveGroup, ExprResolveGroupMask};
 use super::*;
 
 pub const XKB_KEY_VoidSymbol: i32 = 0xffffff_i32;

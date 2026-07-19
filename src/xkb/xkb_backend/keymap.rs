@@ -4,9 +4,9 @@ use super::context::{xkb_atom_intern_bytes, xkb_context_sanitize_rule_names};
 pub use super::shared_types::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
 use super::shared_types::{atom_lookup_ref, atom_text};
 pub use super::shared_types::{
-    xkb_action, xkb_context, xkb_key, xkb_keymap, xkb_led, xkb_level, xkb_mod_set, xkb_rule_names,
-    MOD_BOTH, MOD_REAL, MOD_REAL_MASK_ALL, XKB_ATOM_NONE, XKB_KEYCODE_INVALID,
-    XKB_KEYMAP_FORMAT_TEXT_V2, XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID,
+    xkb_action, xkb_context, xkb_keymap, xkb_led, xkb_level, xkb_mod_set, xkb_rule_names, MOD_BOTH,
+    MOD_REAL, MOD_REAL_MASK_ALL, XKB_ATOM_NONE, XKB_KEYCODE_INVALID, XKB_KEYMAP_FORMAT_TEXT_V2,
+    XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID,
 };
 
 pub fn xkb_keymap_new_from_names(

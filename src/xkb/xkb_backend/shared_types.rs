@@ -156,13 +156,6 @@ pub fn read_file_cached(path: &str) -> Option<Arc<Vec<u8>>> {
         })
 }
 
-/// Clear the thread-local file cache.
-pub fn clear_file_cache() {
-    FILE_CACHE.with(|cache| {
-        cache.borrow_mut().clear();
-    });
-}
-
 // ── keymap_h types (from keymap_priv.rs) ────────────────────────────
 
 pub struct xkb_keymap {
