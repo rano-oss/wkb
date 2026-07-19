@@ -6,11 +6,11 @@
 //! number of distinct keysym levels per key.
 
 use crate::flat_keymap::{FlatKeymap, FlatNamedKeyMap, MAX_LEVELS};
-use crate::keysyms::keysym_get_name;
 use crate::modifiers::{ModKind, ModType, Modifier, Modifiers};
 use crate::named_keys::NamedKey;
 
 use super::named_key_to_keysym;
+use super::xkb_backend::keysym::keysym_get_name;
 use crate::WKB;
 
 // ── Standard evdev → XKB key name table ──

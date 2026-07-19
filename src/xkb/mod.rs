@@ -697,88 +697,89 @@ fn build_modifiers_from_keymap(
 /// Returns `0` (NoSymbol) for [`NamedKey::Unnamed`] and for character keys
 /// that don't have a canonical keysym.
 pub(crate) fn named_key_to_keysym(key: NamedKey) -> u32 {
-    use crate::keysyms as ks;
+    use crate::xkb::xkb_backend::keysym::xkb_keysym_from_name;
+    use crate::xkb::xkb_backend::shared_types::XKB_KEYSYM_NO_FLAGS;
     match key {
         NamedKey::Unnamed => 0,
 
         // Navigation and editing
-        NamedKey::Space => ks::space,
-        NamedKey::Enter => ks::Return,
-        NamedKey::Tab => ks::Tab,
-        NamedKey::Backspace => ks::BackSpace,
-        NamedKey::Escape => ks::Escape,
-        NamedKey::Delete => ks::Delete,
-        NamedKey::Insert => ks::Insert,
-        NamedKey::ArrowLeft => ks::Left,
-        NamedKey::ArrowRight => ks::Right,
-        NamedKey::ArrowUp => ks::Up,
-        NamedKey::ArrowDown => ks::Down,
-        NamedKey::Home => ks::Home,
-        NamedKey::End => ks::End,
-        NamedKey::PageUp => ks::Prior,
-        NamedKey::PageDown => ks::Next,
+        NamedKey::Space => xkb_keysym_from_name(b"space", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::Enter => xkb_keysym_from_name(b"Return", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::Tab => xkb_keysym_from_name(b"Tab", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::Backspace => xkb_keysym_from_name(b"BackSpace", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::Escape => xkb_keysym_from_name(b"Escape", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::Delete => xkb_keysym_from_name(b"Delete", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::Insert => xkb_keysym_from_name(b"Insert", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::ArrowLeft => xkb_keysym_from_name(b"Left", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::ArrowRight => xkb_keysym_from_name(b"Right", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::ArrowUp => xkb_keysym_from_name(b"Up", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::ArrowDown => xkb_keysym_from_name(b"Down", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::Home => xkb_keysym_from_name(b"Home", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::End => xkb_keysym_from_name(b"End", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::PageUp => xkb_keysym_from_name(b"Prior", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::PageDown => xkb_keysym_from_name(b"Next", XKB_KEYSYM_NO_FLAGS),
 
         // Function keys
-        NamedKey::F1 => ks::F1,
-        NamedKey::F2 => ks::F2,
-        NamedKey::F3 => ks::F3,
-        NamedKey::F4 => ks::F4,
-        NamedKey::F5 => ks::F5,
-        NamedKey::F6 => ks::F6,
-        NamedKey::F7 => ks::F7,
-        NamedKey::F8 => ks::F8,
-        NamedKey::F9 => ks::F9,
-        NamedKey::F10 => ks::F10,
-        NamedKey::F11 => ks::F11,
-        NamedKey::F12 => ks::F12,
-        NamedKey::F13 => ks::F13,
-        NamedKey::F14 => ks::F14,
-        NamedKey::F15 => ks::F15,
-        NamedKey::F16 => ks::F16,
-        NamedKey::F17 => ks::F17,
-        NamedKey::F18 => ks::F18,
-        NamedKey::F19 => ks::F19,
-        NamedKey::F20 => ks::F20,
-        NamedKey::F21 => ks::F21,
-        NamedKey::F22 => ks::F22,
-        NamedKey::F23 => ks::F23,
-        NamedKey::F24 => ks::F24,
-        NamedKey::F25 => ks::F25,
-        NamedKey::F26 => ks::F26,
-        NamedKey::F27 => ks::F27,
-        NamedKey::F28 => ks::F28,
-        NamedKey::F29 => ks::F29,
-        NamedKey::F30 => ks::F30,
-        NamedKey::F31 => ks::F31,
-        NamedKey::F32 => ks::F32,
-        NamedKey::F33 => ks::F33,
-        NamedKey::F34 => ks::F34,
-        NamedKey::F35 => ks::F35,
+        NamedKey::F1 => xkb_keysym_from_name(b"F1", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F2 => xkb_keysym_from_name(b"F2", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F3 => xkb_keysym_from_name(b"F3", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F4 => xkb_keysym_from_name(b"F4", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F5 => xkb_keysym_from_name(b"F5", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F6 => xkb_keysym_from_name(b"F6", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F7 => xkb_keysym_from_name(b"F7", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F8 => xkb_keysym_from_name(b"F8", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F9 => xkb_keysym_from_name(b"F9", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F10 => xkb_keysym_from_name(b"F10", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F11 => xkb_keysym_from_name(b"F11", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F12 => xkb_keysym_from_name(b"F12", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F13 => xkb_keysym_from_name(b"F13", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F14 => xkb_keysym_from_name(b"F14", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F15 => xkb_keysym_from_name(b"F15", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F16 => xkb_keysym_from_name(b"F16", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F17 => xkb_keysym_from_name(b"F17", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F18 => xkb_keysym_from_name(b"F18", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F19 => xkb_keysym_from_name(b"F19", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F20 => xkb_keysym_from_name(b"F20", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F21 => xkb_keysym_from_name(b"F21", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F22 => xkb_keysym_from_name(b"F22", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F23 => xkb_keysym_from_name(b"F23", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F24 => xkb_keysym_from_name(b"F24", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F25 => xkb_keysym_from_name(b"F25", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F26 => xkb_keysym_from_name(b"F26", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F27 => xkb_keysym_from_name(b"F27", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F28 => xkb_keysym_from_name(b"F28", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F29 => xkb_keysym_from_name(b"F29", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F30 => xkb_keysym_from_name(b"F30", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F31 => xkb_keysym_from_name(b"F31", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F32 => xkb_keysym_from_name(b"F32", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F33 => xkb_keysym_from_name(b"F33", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F34 => xkb_keysym_from_name(b"F34", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F35 => xkb_keysym_from_name(b"F35", XKB_KEYSYM_NO_FLAGS),
 
         // Modifiers
-        NamedKey::LeftShift => ks::Shift_L,
-        NamedKey::RightShift => ks::Shift_R,
-        NamedKey::LeftControl => ks::Control_L,
-        NamedKey::RightControl => ks::Control_R,
-        NamedKey::LeftAlt => ks::Alt_L,
-        NamedKey::RightAlt => ks::Alt_R,
-        NamedKey::LeftMeta => ks::Meta_L,
-        NamedKey::RightMeta => ks::Meta_R,
-        NamedKey::LeftSuper => ks::Super_L,
-        NamedKey::RightSuper => ks::Super_R,
-        NamedKey::LeftHyper => ks::Hyper_L,
-        NamedKey::RightHyper => ks::Hyper_R,
+        NamedKey::LeftShift => xkb_keysym_from_name(b"Shift_L", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::RightShift => xkb_keysym_from_name(b"Shift_R", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::LeftControl => xkb_keysym_from_name(b"Control_L", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::RightControl => xkb_keysym_from_name(b"Control_R", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::LeftAlt => xkb_keysym_from_name(b"Alt_L", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::RightAlt => xkb_keysym_from_name(b"Alt_R", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::LeftMeta => xkb_keysym_from_name(b"Meta_L", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::RightMeta => xkb_keysym_from_name(b"Meta_R", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::LeftSuper => xkb_keysym_from_name(b"Super_L", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::RightSuper => xkb_keysym_from_name(b"Super_R", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::LeftHyper => xkb_keysym_from_name(b"Hyper_L", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::RightHyper => xkb_keysym_from_name(b"Hyper_R", XKB_KEYSYM_NO_FLAGS),
 
         // Locks
-        NamedKey::CapsLock => ks::Caps_Lock,
-        NamedKey::NumLock => ks::Num_Lock,
-        NamedKey::ScrollLock => ks::Scroll_Lock,
+        NamedKey::CapsLock => xkb_keysym_from_name(b"Caps_Lock", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::NumLock => xkb_keysym_from_name(b"Num_Lock", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::ScrollLock => xkb_keysym_from_name(b"Scroll_Lock", XKB_KEYSYM_NO_FLAGS),
 
         // System
-        NamedKey::PrintScreen => ks::Print,
-        NamedKey::Pause => ks::Pause,
-        NamedKey::SysReq => ks::Sys_Req,
-        NamedKey::ContextMenu => ks::Menu,
+        NamedKey::PrintScreen => xkb_keysym_from_name(b"Print", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::Pause => xkb_keysym_from_name(b"Pause", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::SysReq => xkb_keysym_from_name(b"Sys_Req", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::ContextMenu => xkb_keysym_from_name(b"Menu", XKB_KEYSYM_NO_FLAGS),
 
         // Power (XF86)
         NamedKey::Power => 0x1008ff21,
@@ -816,12 +817,12 @@ pub(crate) fn named_key_to_keysym(key: NamedKey) -> u32 {
         NamedKey::KeyboardBrightnessDown => 0x1008ff06,
 
         // Japanese input
-        NamedKey::KanjiMode => ks::Kanji,
-        NamedKey::Hiragana => ks::Hiragana,
+        NamedKey::KanjiMode => xkb_keysym_from_name(b"Kanji", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::Hiragana => xkb_keysym_from_name(b"Hiragana", XKB_KEYSYM_NO_FLAGS),
         NamedKey::Katakana => 0xff26,
-        NamedKey::Romaji => ks::Romaji,
-        NamedKey::ZenkakuHankaku => ks::Zenkaku_Hankaku,
-        NamedKey::EisuToggle => ks::Eisu_toggle,
+        NamedKey::Romaji => xkb_keysym_from_name(b"Romaji", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::ZenkakuHankaku => xkb_keysym_from_name(b"Zenkaku_Hankaku", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::EisuToggle => xkb_keysym_from_name(b"Eisu_toggle", XKB_KEYSYM_NO_FLAGS),
 
         // Korean input
         NamedKey::HangulHanja => 0xff34,
@@ -1071,31 +1072,31 @@ mod wrapper_tests {
 
     #[test]
     fn test_keysym_get_name() {
+        use crate::xkb::xkb_backend::keysym::{keysym_get_name, xkb_keysym_from_name};
+        use crate::xkb::xkb_backend::shared_types::XKB_KEYSYM_NO_FLAGS;
+
         assert_eq!(
-            crate::keysyms::keysym_get_name(crate::keysyms::a),
+            keysym_get_name(xkb_keysym_from_name(b"a", XKB_KEYSYM_NO_FLAGS)),
             Some("a")
         );
         assert_eq!(
-            crate::keysyms::keysym_get_name(crate::keysyms::BackSpace),
+            keysym_get_name(xkb_keysym_from_name(b"BackSpace", XKB_KEYSYM_NO_FLAGS)),
             Some("BackSpace")
         );
         assert_eq!(
-            crate::keysyms::keysym_get_name(crate::keysyms::Return),
+            keysym_get_name(xkb_keysym_from_name(b"Return", XKB_KEYSYM_NO_FLAGS)),
             Some("Return")
         );
-        assert_eq!(crate::keysyms::keysym_get_name(0xDEADBEEF), None);
+        assert_eq!(keysym_get_name(0xDEADBEEF), None);
     }
 
     #[test]
     fn test_vt_switch() {
-        assert_eq!(
-            crate::keysyms::vt_switch(crate::keysyms::XF86Switch_VT_1),
-            Some(1)
-        );
-        assert_eq!(
-            crate::keysyms::vt_switch(crate::keysyms::XF86Switch_VT_12),
-            Some(12)
-        );
-        assert_eq!(crate::keysyms::vt_switch(crate::keysyms::a), None);
+        use crate::xkb::xkb_backend::keysym::vt_switch;
+
+        // XF86Switch_VT_1 = 0x1008FF80, XF86Switch_VT_12 = 0x1008FF8B
+        assert_eq!(vt_switch(0x1008FF80), Some(1));
+        assert_eq!(vt_switch(0x1008FF8B), Some(12));
+        assert_eq!(vt_switch(0x61), None); // 'a'
     }
 }

@@ -17,7 +17,7 @@ pub mod compose_parse {
     pub use crate::xkb::xkb_backend::compose::{
         keysym_name_to_char, parse_compose_file, resolve_compose_file, ComposeEntry,
     };
-    pub use crate::xkb::xkb_backend::keysym_utf::keysym_to_char;
+    pub use crate::xkb::xkb_backend::keysym::keysym_to_char;
 }
 
 /// Feed a token to a composer (wraps the `pub(crate)` method for tests).

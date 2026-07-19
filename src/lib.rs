@@ -48,7 +48,6 @@ mod bitset;
 pub(crate) use bitset::KeyBitSet;
 mod flat_keymap;
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
-pub mod keysyms;
 mod named_keys;
 /// Test-only utilities. Not part of the public API.
 #[cfg(feature = "testing")]

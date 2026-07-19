@@ -21828,6 +21828,31 @@ pub fn xkb_keysym_get_name(ks: u32) -> String {
     format!("0x{:08x}", ks)
 }
 
+/// Get keysym name as static string (for serialization).
+/// Returns `None` if keysym is not found.
+pub fn keysym_get_name(ks: u32) -> Option<&'static str> {
+    if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
+        return None;
+    }
+    let index: isize = find_keysym_index(ks);
+    if index != -1_i32 as isize {
+        let name_bytes = get_name_bytes(&keysym_to_name[index as usize]);
+        return std::str::from_utf8(name_bytes).ok();
+    }
+    None
+}
+
+/// Check if a keysym is a VT-switch keysym (XF86Switch_VT_1..=XF86Switch_VT_12).
+/// Returns the VT number (1-12) if it is, otherwise None.
+pub fn vt_switch(ks: u32) -> Option<u32> {
+    // XF86Switch_VT_1 = 0x1008FF80, XF86Switch_VT_12 = 0x1008FF8B
+    if (0x1008FF80..=0x1008FF8B).contains(&ks) {
+        Some(ks - 0x1008FF80 + 1)
+    } else {
+        None
+    }
+}
+
 fn parse_keysym_hex(s: &[u8], out: &mut u32) -> bool {
     let slice = if s.len() > 8 { &s[..8] } else { s };
     let (val, count) = super::utils::parse_hex_u32(slice);
@@ -21926,4 +21951,9 @@ pub fn xkb_keysym_is_keypad(keysym: u32) -> bool {
 pub fn xkb_keysym_is_deprecated(_keysym: u32, _name: &[u8]) -> Option<&'static str> {
     // Stub: For Wayland-only usage, we don't need to track deprecated keysym names
     None
+}
+
+/// Convert keysym to char (delegates to keysym_utf for proper Unicode handling)
+pub fn keysym_to_char(keysym: u32) -> Option<char> {
+    super::keysym_utf::keysym_to_char(keysym)
 }
