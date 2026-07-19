@@ -61,8 +61,58 @@ impl Default for xkb_rule_names {
 
 // ── Opaque types ────────────────────────────────────────────────────
 
-// atom_table is defined in atom.rs — re-export it here for unified access
-pub use crate::atom::atom_table;
+/// Atom table - string interning system
+pub struct atom_table {
+    /// Hash index for O(1) lookups (open addressing, linear probing)
+    index: Vec<u32>,
+    /// Interned strings. Index 0 is None (XKB_ATOM_NONE).
+    strings: Vec<Option<String>>,
+}
+
+impl Clone for atom_table {
+    fn clone(&self) -> Self {
+        Self {
+            index: self.index.clone(),
+            strings: self.strings.clone(),
+        }
+    }
+}
+
+impl std::fmt::Debug for atom_table {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("atom_table").finish()
+    }
+}
+
+/// FNV-1a hash function for byte slices
+fn hash_buf(bytes: &[u8]) -> u32 {
+    let len = bytes.len();
+    let mut hash: u32 = 2166136261;
+    for i in 0..len.div_ceil(2) {
+        hash ^= bytes[i] as u32;
+        hash = hash.wrapping_mul(0x1000193);
+        hash ^= bytes[len - 1 - i] as u32;
+        hash = hash.wrapping_mul(0x1000193);
+    }
+    hash
+}
+
+/// Create new atom table with pre-allocated capacity
+pub fn atom_table_new() -> atom_table {
+    atom_table {
+        index: vec![0; 1024],
+        strings: {
+            let mut v = Vec::with_capacity(512);
+            v.push(None);
+            v
+        },
+    }
+}
+
+/// Get number of atoms in table
+pub fn atom_table_size(table: &atom_table) -> u32 {
+    table.strings.len() as u32
+}
 
 // ── xkb_context ─────────────────────────────────────────────────────
 
@@ -104,13 +154,6 @@ pub fn read_file_cached(path: &str) -> Option<Arc<Vec<u8>>> {
             });
             Some(arc)
         })
-}
-
-/// Clear the thread-local file cache.
-pub fn clear_file_cache() {
-    FILE_CACHE.with(|cache| {
-        cache.borrow_mut().clear();
-    });
 }
 
 // ── keymap_h types (from keymap_priv.rs) ────────────────────────────
@@ -809,6 +852,108 @@ pub struct xkb_state_update {
 
 pub const XKB_ATOM_NONE: u32 = 0;
 
+/// Get text for an atom as a string slice.
+pub fn atom_text(table: &atom_table, atom: u32) -> &str {
+    if (atom as usize) >= table.strings.len() {
+        return "";
+    }
+    match &table.strings[atom as usize] {
+        Some(s) => s.as_str(),
+        None => "",
+    }
+}
+
+/// Look up an existing atom without mutating the table.
+pub fn atom_lookup_ref(table: &atom_table, input_bytes: &[u8]) -> u32 {
+    let hash = hash_buf(input_bytes);
+    for i in 0..table.index.len() {
+        let index_pos = ((hash as usize) + i) & (table.index.len() - 1);
+        if index_pos == 0 {
+            continue;
+        }
+        let existing_atom = table.index[index_pos];
+        if existing_atom == XKB_ATOM_NONE {
+            return XKB_ATOM_NONE;
+        }
+        if let Some(ref existing) = table.strings[existing_atom as usize] {
+            if existing.as_bytes() == input_bytes {
+                return existing_atom;
+            }
+        }
+    }
+    XKB_ATOM_NONE
+}
+
+/// Intern a string or look up existing atom
+pub fn atom_intern(table: &mut atom_table, input_bytes: &[u8], add: bool) -> u32 {
+    let t = table;
+
+    // Resize hash table if load factor > 0.8
+    if t.strings.len() > t.index.len() * 4 / 5 {
+        let new_size = t.index.len() * 2;
+        t.index = vec![0; new_size];
+
+        // Rehash all strings (skip index 0)
+        for j in 1..t.strings.len() {
+            if let Some(ref s) = t.strings[j] {
+                let s_bytes = s.as_bytes();
+                let hash = hash_buf(s_bytes);
+
+                for i in 0..t.index.len() {
+                    let index_pos = ((hash as usize) + i) & (t.index.len() - 1);
+                    if index_pos == 0 {
+                        continue;
+                    }
+                    if t.index[index_pos] == XKB_ATOM_NONE {
+                        t.index[index_pos] = j as u32;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // Look up or insert string
+    let hash = hash_buf(input_bytes);
+
+    for i in 0..t.index.len() {
+        let index_pos = ((hash as usize) + i) & (t.index.len() - 1);
+        if index_pos == 0 {
+            continue;
+        }
+
+        let existing_atom = t.index[index_pos];
+
+        // Empty slot - not found
+        if existing_atom == XKB_ATOM_NONE {
+            if add {
+                let new_atom = t.strings.len() as u32;
+
+                let new_string = String::from_utf8(input_bytes.to_vec())
+                    .expect("atom string is not valid UTF-8");
+                t.strings.push(Some(new_string));
+
+                // Update hash table
+                t.index[index_pos] = new_atom;
+
+                return new_atom;
+            } else {
+                return XKB_ATOM_NONE;
+            }
+        }
+
+        // Check if existing string matches
+        if let Some(ref existing) = t.strings[existing_atom as usize] {
+            if existing.as_bytes() == input_bytes {
+                return existing_atom;
+            }
+        }
+    }
+
+    // Should never reach here - hash table is kept sparse enough
+    panic!("couldn't find an empty slot during probing");
+}
+
 // ── keymap_h types & constants (moved from duplicated pub mod keymap_h blocks) ─
 
 pub type real_mod_index = u32;
@@ -972,15 +1117,6 @@ pub fn format_max_groups(format: u32) -> u32 {
 }
 
 #[inline]
-pub fn format_boolean_controls(format: u32) -> xkb_action_controls {
-    (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
-        CONTROL_ALL_BOOLEAN_V1 as i32
-    } else {
-        CONTROL_ALL_BOOLEAN as i32
-    }) as xkb_action_controls
-}
-
-#[inline]
 pub fn isModsUnLockOnPressSupported(format: u32) -> bool {
     format >= XKB_KEYMAP_FORMAT_TEXT_V2
 }
@@ -1002,17 +1138,9 @@ pub fn areOverlappingOverlaysSupported(format: u32) -> bool {
 
 // Error codes (from xkbcommon_errors_h)
 pub type xkb_error_code = i32;
-pub const XKB_ERROR_ABI_BACKWARD_COMPAT: xkb_error_code = 914;
-pub const XKB_ERROR_ABI_FORWARD_COMPAT: xkb_error_code = 876;
-pub const XKB_ERROR_ABI_INVALID_STRUCT_SIZE: xkb_error_code = 450;
-pub const XKB_ERROR_UNSUPPORTED_A11Y_FLAGS: xkb_error_code = 371;
 pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX: xkb_error_code = 237;
-pub const XKB_ERROR_UNSUPPORTED_LAYOUT_OUT_OF_RANGE_POLICY: xkb_error_code = 214;
 pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: xkb_error_code = 60;
 pub const XKB_KEY_NoSymbol: i32 = 0;
-
-pub const XKB_SUCCESS: xkb_error_code = 0;
-pub const XKB_ERROR_INVALID: xkb_error_code = -1;
 
 // ── errno_base_h ──────────────────────────────────────────────────────
 pub const ENOMEM: i32 = 12;
@@ -1063,3 +1191,806 @@ pub const RMLVO_RULES: RMLVO = 1;
 
 // ── rules_h ───────────────────────────────────────────────────────────
 pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
+
+// ── Message codes (from messages.rs) ─────────────────────────────────────
+
+pub const XKB_LOG_VERBOSITY_DEFAULT: i32 = 0;
+
+pub const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
+pub const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;
+
+pub const XKB_ERROR_MALFORMED_NUMBER_LITERAL: u32 = 34;
+pub const XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES: u32 = 43;
+pub const XKB_ERROR_INTEGER_OVERFLOW: u32 = 52;
+pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_: u32 = 60;
+pub const XKB_ERROR_EXPECTED_ARRAY_ENTRY: u32 = 77;
+pub const XKB_ERROR_INVALID_NUMERIC_KEYSYM: u32 = 82;
+pub const XKB_WARNING_UNRECOGNIZED_KEYSYM: u32 = 107;
+pub const XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER: u32 = 123;
+pub const XKB_ERROR_INSUFFICIENT_BUFFER_SIZE: u32 = 134;
+pub const XKB_ERROR_WRONG_STATEMENT_TYPE: u32 = 150;
+pub const XKB_ERROR_INVALID_PATH: u32 = 161;
+pub const XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION: u32 = 172;
+pub const XKB_WARNING_CANNOT_INFER_KEY_TYPE: u32 = 183;
+pub const XKB_WARNING_INVALID_ESCAPE_SEQUENCE: u32 = 193;
+pub const XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT: u32 = 195;
+pub const XKB_ERROR_INVALID_INCLUDE_STATEMENT: u32 = 203;
+pub const XKB_ERROR_INVALID_MODMAP_ENTRY: u32 = 206;
+pub const XKB_ERROR_UNKNOWN_STATEMENT: u32 = 222;
+pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: u32 = 237;
+pub const XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES: u32 = 239;
+pub const XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT: u32 = 254;
+pub const XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY: u32 = 266;
+pub const XKB_WARNING_UNDEFINED_KEY_TYPE: u32 = 286;
+pub const XKB_WARNING_DEPRECATED_KEYSYM_NAME: u32 = 302;
+pub const XKB_WARNING_NON_BASE_GROUP_NAME: u32 = 305;
+pub const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: u32 = 312;
+pub const XKB_ERROR_INCLUDED_FILE_NOT_FOUND: u32 = 338;
+pub const XKB_ERROR_UNKNOWN_OPERATOR: u32 = 345;
+pub const XKB_ERROR_OVERLAPPING_OVERLAY: u32 = 355;
+pub const XKB_WARNING_UNSUPPORTED_LEGACY_ACTION: u32 = 362;
+pub const XKB_WARNING_DUPLICATE_ENTRY: u32 = 378;
+pub const XKB_ERROR_RECURSIVE_INCLUDE: u32 = 386;
+pub const XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS: u32 = 407;
+pub const XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE: u32 = 428;
+pub const XKB_WARNING_MISSING_DEFAULT_SECTION: u32 = 433;
+pub const XKB_WARNING_CONFLICTING_KEY_SYMBOL: u32 = 461;
+pub const XKB_ERROR_INVALID_OPERATION: u32 = 478;
+pub const XKB_WARNING_NUMERIC_KEYSYM: u32 = 489;
+pub const XKB_WARNING_EXTRA_SYMBOLS_IGNORED: u32 = 516;
+pub const XKB_WARNING_CONFLICTING_KEY_NAME: u32 = 523;
+pub const XKB_ERROR_INVALID_FILE_ENCODING: u32 = 542;
+pub const XKB_ERROR_ALLOCATION_ERROR: u32 = 550;
+pub const XKB_ERROR_INVALID_ACTION_FIELD: u32 = 563;
+pub const XKB_ERROR_WRONG_FIELD_TYPE: u32 = 578;
+pub const XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX: u32 = 588;
+pub const XKB_ERROR_CANNOT_RESOLVE_RMLVO: u32 = 595;
+pub const XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE: u32 = 607;
+pub const XKB_ERROR_INVALID_REAL_MODIFIER: u32 = 623;
+pub const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: u32 = 632;
+pub const XKB_ERROR_UNKNOWN_DEFAULT_FIELD: u32 = 639;
+pub const XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE: u32 = 645;
+pub const XKB_ERROR_INVALID_INCLUDED_FILE: u32 = 661;
+pub const XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE: u32 = 700;
+pub const XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD: u32 = 711;
+pub const XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT: u32 = 742;
+pub const XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION: u32 = 762;
+pub const XKB_ERROR_INVALID_XKB_SYNTAX: u32 = 769;
+pub const XKB_WARNING_UNDEFINED_KEYCODE: u32 = 770;
+pub const XKB_ERROR_INVALID_EXPRESSION_TYPE: u32 = 784;
+pub const XKB_ERROR_INVALID_VALUE: u32 = 796;
+pub const XKB_WARNING_CONFLICTING_MODMAP: u32 = 800;
+pub const XKB_ERROR_UNKNOWN_FIELD: u32 = 812;
+pub const XKB_ERROR_KEYMAP_COMPILATION_FAILED: u32 = 822;
+pub const XKB_ERROR_UNKNOWN_ACTION_TYPE: u32 = 844;
+pub const XKB_WARNING_CONFLICTING_KEY_ACTION: u32 = 883;
+pub const XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS: u32 = 893;
+pub const XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY: u32 = 901;
+pub const XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX: u32 = 903;
+pub const XKB_WARNING_CONFLICTING_KEY_FIELDS: u32 = 935;
+pub const XKB_ERROR_INVALID_IDENTIFIER: u32 = 949;
+pub const XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL: u32 = 965;
+pub const XKB_ERROR_INVALID_RULES_SYNTAX: u32 = 967;
+pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: u32 = 971;
+
+// ── LookupEntry (moved from keymap.rs) ────────────────────────────
+
+#[derive(Copy, Clone)]
+pub struct LookupEntry {
+    pub name: &'static str,
+    pub value: u32,
+}
+
+// ── Shared AST type definitions (merged from shared_ast_types.rs) ──
+
+pub type xkb_message_code = u32;
+pub type xkb_log_verbosity = i32;
+pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
+
+// ── File type enum ──────────────────────────────────────────────────
+
+pub const FILE_TYPE_INVALID: u32 = 7;
+pub const _FILE_TYPE_NUM_ENTRIES: u32 = 7;
+pub const FILE_TYPE_RULES: u32 = 6;
+pub const FILE_TYPE_KEYMAP: u32 = 5;
+pub const FILE_TYPE_GEOMETRY: u32 = 4;
+pub const LAST_KEYMAP_FILE_TYPE: u32 = 3;
+pub const FIRST_KEYMAP_FILE_TYPE: u32 = 0;
+pub const FILE_TYPE_SYMBOLS: u32 = 3;
+pub const FILE_TYPE_COMPAT: u32 = 2;
+pub const FILE_TYPE_TYPES: u32 = 1;
+pub const FILE_TYPE_KEYCODES: u32 = 0;
+
+// ── Statement type enum ─────────────────────────────────────────────
+
+pub type stmt_type = u32;
+pub const _STMT_NUM_VALUES: stmt_type = 37;
+pub const STMT_UNKNOWN_COMPOUND: stmt_type = 36;
+pub const STMT_UNKNOWN_DECLARATION: stmt_type = 35;
+pub const STMT_LED_NAME: stmt_type = 34;
+pub const STMT_LED_MAP: stmt_type = 33;
+pub const STMT_GROUP_COMPAT: stmt_type = 32;
+pub const STMT_MODMAP: stmt_type = 31;
+pub const STMT_SYMBOLS: stmt_type = 30;
+pub const STMT_VMOD: stmt_type = 29;
+pub const STMT_INTERP: stmt_type = 28;
+pub const STMT_TYPE: stmt_type = 27;
+pub const STMT_VAR: stmt_type = 26;
+pub const STMT_EXPR_UNARY_PLUS: stmt_type = 25;
+pub const STMT_EXPR_INVERT: stmt_type = 24;
+pub const STMT_EXPR_NEGATE: stmt_type = 23;
+pub const STMT_EXPR_NOT: stmt_type = 22;
+pub const STMT_EXPR_ASSIGN: stmt_type = 21;
+pub const STMT_EXPR_DIVIDE: stmt_type = 20;
+pub const STMT_EXPR_MULTIPLY: stmt_type = 19;
+pub const STMT_EXPR_SUBTRACT: stmt_type = 18;
+pub const STMT_EXPR_ADD: stmt_type = 17;
+pub const STMT_EXPR_ACTION_LIST: stmt_type = 16;
+pub const STMT_EXPR_KEYSYM_LIST: stmt_type = 15;
+pub const STMT_EXPR_EMPTY_LIST: stmt_type = 14;
+pub const STMT_EXPR_ARRAY_REF: stmt_type = 13;
+pub const STMT_EXPR_FIELD_REF: stmt_type = 12;
+pub const STMT_EXPR_ACTION_DECL: stmt_type = 11;
+pub const STMT_EXPR_IDENT: stmt_type = 10;
+pub const STMT_EXPR_KEYSYM_LITERAL: stmt_type = 9;
+pub const STMT_EXPR_KEYNAME_LITERAL: stmt_type = 8;
+pub const STMT_EXPR_BOOLEAN_LITERAL: stmt_type = 7;
+pub const STMT_EXPR_FLOAT_LITERAL: stmt_type = 6;
+pub const STMT_EXPR_INTEGER_LITERAL: stmt_type = 5;
+pub const STMT_EXPR_STRING_LITERAL: stmt_type = 4;
+pub const STMT_ALIAS: stmt_type = 3;
+pub const STMT_KEYCODE: stmt_type = 2;
+pub const STMT_INCLUDE: stmt_type = 1;
+pub const STMT_UNKNOWN: stmt_type = 0;
+
+// ── Merge mode enum ─────────────────────────────────────────────────
+
+pub type merge_mode = u32;
+pub const _MERGE_MODE_NUM_ENTRIES: merge_mode = 4;
+pub const MERGE_REPLACE: merge_mode = 3;
+pub const MERGE_OVERRIDE: merge_mode = 2;
+pub const MERGE_AUGMENT: merge_mode = 1;
+pub const MERGE_DEFAULT: merge_mode = 0;
+
+// ── Core AST node types ─────────────────────────────────────────────
+
+#[derive(Clone)]
+
+pub struct _IncludeStmt {
+    pub merge: merge_mode,
+    pub stmt: String,
+    pub file: String,
+    pub map: String,
+    pub modifier: String,
+    pub next_incl: Option<Box<_IncludeStmt>>,
+}
+pub type IncludeStmt = _IncludeStmt;
+
+// ── Expression types ────────────────────────────────────────────────
+
+/// Expression AST node.
+pub struct ExprDef {
+    pub kind: ExprKind,
+}
+
+/// The discriminated payload of an expression node.
+pub enum ExprKind {
+    String(u32),
+    Integer(i64),
+    Float,
+    Boolean(bool),
+    KeyName(u32),
+    KeySym(u32),
+    Ident(u32),
+    FieldRef {
+        element: u32,
+        field: u32,
+    },
+    ArrayRef {
+        element: u32,
+        field: u32,
+        entry: Option<Box<ExprDef>>,
+    },
+    Action {
+        name: u32,
+        args: Vec<ExprDef>,
+    },
+    ActionList {
+        actions: Vec<ExprDef>,
+    },
+    KeysymList {
+        syms: Vec<u32>,
+    },
+    EmptyList,
+    Binary {
+        op: stmt_type,
+        left: Option<Box<ExprDef>>,
+        right: Option<Box<ExprDef>>,
+    },
+    Unary {
+        op: stmt_type,
+        child: Option<Box<ExprDef>>,
+    },
+}
+
+impl ExprDef {
+    pub fn stmt_type(&self) -> stmt_type {
+        Self::stmt_type_for_kind(&self.kind)
+    }
+
+    pub fn stmt_type_for_kind(kind: &ExprKind) -> stmt_type {
+        match kind {
+            ExprKind::String(_) => STMT_EXPR_STRING_LITERAL,
+            ExprKind::Integer(_) => STMT_EXPR_INTEGER_LITERAL,
+            ExprKind::Float => STMT_EXPR_FLOAT_LITERAL,
+            ExprKind::Boolean(_) => STMT_EXPR_BOOLEAN_LITERAL,
+            ExprKind::KeyName(_) => STMT_EXPR_KEYNAME_LITERAL,
+            ExprKind::KeySym(_) => STMT_EXPR_KEYSYM_LITERAL,
+            ExprKind::Ident(_) => STMT_EXPR_IDENT,
+            ExprKind::FieldRef { .. } => STMT_EXPR_FIELD_REF,
+            ExprKind::ArrayRef { .. } => STMT_EXPR_ARRAY_REF,
+            ExprKind::Action { .. } => STMT_EXPR_ACTION_DECL,
+            ExprKind::ActionList { .. } => STMT_EXPR_ACTION_LIST,
+            ExprKind::KeysymList { .. } => STMT_EXPR_KEYSYM_LIST,
+            ExprKind::EmptyList => STMT_EXPR_EMPTY_LIST,
+            ExprKind::Binary { op, .. } => *op,
+            ExprKind::Unary { op, .. } => *op,
+        }
+    }
+}
+
+// Re-export ast_build functions used by consumers via ast_h
+pub use super::xkbcomp::parser::{
+    stmt_type_to_operator_char, stmt_type_to_string, xkb_file_type_to_string,
+};
+
+// ── Statement definition types ──────────────────────────────────────
+
+pub struct VarDef {
+    pub merge: merge_mode,
+    pub name: Option<Box<ExprDef>>,
+    pub value: Option<Box<ExprDef>>,
+}
+
+pub struct VModDef {
+    pub merge: merge_mode,
+    pub name: u32,
+    pub value: Option<Box<ExprDef>>,
+}
+
+#[derive(Copy, Clone)]
+
+pub struct KeycodeDef {
+    pub merge: merge_mode,
+    pub name: u32,
+    pub value: i64,
+}
+
+#[derive(Copy, Clone)]
+
+pub struct KeyAliasDef {
+    pub merge: merge_mode,
+    pub alias: u32,
+    pub real: u32,
+}
+
+pub struct KeyTypeDef {
+    pub merge: merge_mode,
+    pub name: u32,
+    pub body: Vec<VarDef>,
+}
+
+pub struct SymbolsDef {
+    pub merge: merge_mode,
+    pub keyName: u32,
+    pub symbols: Vec<VarDef>,
+}
+
+pub struct ModMapDef {
+    pub merge: merge_mode,
+    pub modifier: u32,
+    pub keys: Vec<ExprDef>,
+}
+
+pub struct GroupCompatDef {
+    pub merge: merge_mode,
+    pub group: i64,
+    pub def: Option<Box<ExprDef>>,
+}
+
+pub struct InterpDef {
+    pub merge: merge_mode,
+    pub sym: u32,
+    pub match_0: Option<Box<ExprDef>>,
+    pub def: Vec<VarDef>,
+}
+
+pub struct LedNameDef {
+    pub merge: merge_mode,
+    pub virtual_0: bool,
+    pub ndx: i64,
+    pub name: Option<Box<ExprDef>>,
+}
+
+pub struct LedMapDef {
+    pub merge: merge_mode,
+    pub name: u32,
+    pub body: Vec<VarDef>,
+}
+
+#[derive(Clone)]
+
+pub struct UnknownStatement {
+    pub stmt_type: stmt_type,
+    pub name: String,
+}
+
+// ── Map flags and XkbFile ───────────────────────────────────────────
+
+pub type xkb_map_flags = u32;
+pub const MAP_IS_ALTGR: xkb_map_flags = 128;
+pub const MAP_HAS_FN: xkb_map_flags = 64;
+pub const MAP_HAS_KEYPAD: xkb_map_flags = 32;
+pub const MAP_HAS_MODIFIER: xkb_map_flags = 16;
+pub const MAP_HAS_ALPHANUMERIC: xkb_map_flags = 8;
+pub const MAP_IS_HIDDEN: xkb_map_flags = 4;
+pub const MAP_IS_PARTIAL: xkb_map_flags = 2;
+pub const MAP_IS_DEFAULT: xkb_map_flags = 1;
+
+pub enum Statement {
+    Include(Box<IncludeStmt>),
+    Keycode(Box<KeycodeDef>),
+    KeyAlias(Box<KeyAliasDef>),
+    Expr(Box<ExprDef>),
+    Var(Box<VarDef>),
+    KeyType(Box<KeyTypeDef>),
+    Interp(Box<InterpDef>),
+    VMod(Box<VModDef>),
+    Symbols(Box<SymbolsDef>),
+    ModMap(Box<ModMapDef>),
+    GroupCompat(Box<GroupCompatDef>),
+    LedMap(Box<LedMapDef>),
+    LedName(Box<LedNameDef>),
+    Unknown(Box<UnknownStatement>),
+    XkbFile(Box<XkbFile>),
+}
+
+impl Statement {
+    pub fn merge(&self) -> merge_mode {
+        match self {
+            Statement::Include(s) => s.merge,
+            Statement::Keycode(s) => s.merge,
+            Statement::KeyAlias(s) => s.merge,
+            Statement::Var(s) => s.merge,
+            Statement::KeyType(s) => s.merge,
+            Statement::Interp(s) => s.merge,
+            Statement::VMod(s) => s.merge,
+            Statement::Symbols(s) => s.merge,
+            Statement::ModMap(s) => s.merge,
+            Statement::GroupCompat(s) => s.merge,
+            Statement::LedMap(s) => s.merge,
+            Statement::LedName(s) => s.merge,
+            Statement::Unknown(_) | Statement::Expr(_) | Statement::XkbFile(_) => 0,
+        }
+    }
+
+    pub fn stmt_type(&self) -> stmt_type {
+        match self {
+            Statement::Include(_) => STMT_INCLUDE,
+            Statement::Keycode(_) => STMT_KEYCODE,
+            Statement::KeyAlias(_) => STMT_ALIAS,
+            Statement::Expr(e) => e.stmt_type(),
+            Statement::Var(_) => STMT_VAR,
+            Statement::KeyType(_) => STMT_TYPE,
+            Statement::Interp(_) => STMT_INTERP,
+            Statement::VMod(_) => STMT_VMOD,
+            Statement::Symbols(_) => STMT_SYMBOLS,
+            Statement::ModMap(_) => STMT_MODMAP,
+            Statement::GroupCompat(_) => STMT_GROUP_COMPAT,
+            Statement::LedMap(_) => STMT_LED_MAP,
+            Statement::LedName(_) => STMT_LED_NAME,
+            Statement::Unknown(_) => STMT_UNKNOWN,
+            Statement::XkbFile(_) => 0,
+        }
+    }
+}
+
+pub struct XkbFile {
+    pub name: String,
+    pub defs: Vec<Statement>,
+    pub file_type: u32,
+    pub flags: xkb_map_flags,
+}
+
+// ── xkbcomp_priv types (parser/keymap info) ─────────────────────────
+
+pub const PARSER_FATAL_ERROR: u32 = 2;
+pub const PARSER_RECOVERABLE_ERROR: u32 = 1;
+pub const PARSER_SUCCESS: u32 = 0;
+
+pub const PARSER_V2_LAX_FLAGS: u32 = 0;
+pub const PARSER_V2_STRICT_FLAGS: u32 = 16383;
+pub const PARSER_V1_LAX_FLAGS: u32 = 16379;
+pub const PARSER_V1_STRICT_FLAGS: u32 = 16383;
+pub const PARSER_NO_ILLEGAL_ACTION_FIELDS: u32 = 8192;
+pub const PARSER_NO_UNKNOWN_ACTION_FIELDS: u32 = 4096;
+pub const PARSER_NO_UNKNOWN_ACTION: u32 = 2048;
+pub const PARSER_NO_UNKNOWN_KEY_FIELDS: u32 = 1024;
+pub const PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS: u32 = 512;
+pub const PARSER_NO_UNKNOWN_LED_FIELDS: u32 = 256;
+pub const PARSER_NO_UNKNOWN_INTERPRET_FIELDS: u32 = 128;
+pub const PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS: u32 = 64;
+pub const PARSER_NO_UNKNOWN_TYPE_FIELDS: u32 = 32;
+pub const PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS: u32 = 16;
+pub const PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS: u32 = 8;
+pub const PARSER_NO_FIELD_VALUE_MISMATCH: u32 = 4;
+pub const PARSER_NO_FIELD_TYPE_MISMATCH: u32 = 2;
+pub const PARSER_NO_UNKNOWN_STATEMENTS: u32 = 1;
+pub const PARSER_NO_STRICT_FLAGS: u32 = 0;
+
+pub struct pending_computation {
+    pub expr: Option<Box<ExprDef>>,
+    pub computed: bool,
+    pub value: u32,
+}
+
+pub struct xkb_keymap_info<'a> {
+    pub keymap: &'a mut xkb_keymap,
+    pub strict: u32,
+    pub features: XkbcompFeatures,
+    pub lookup: XkbcompLookup,
+    pub pending_computations: Vec<pending_computation>,
+}
+
+impl<'a> xkb_keymap_info<'a> {
+    pub fn keymap_ref(&self) -> &xkb_keymap {
+        &*self.keymap
+    }
+
+    pub fn keymap_mut(&mut self) -> &mut xkb_keymap {
+        &mut *self.keymap
+    }
+
+    pub fn ctx(&self) -> &xkb_context {
+        &self.keymap.ctx
+    }
+
+    pub fn ctx_mut(&mut self) -> &mut xkb_context {
+        &mut self.keymap.ctx
+    }
+}
+
+#[derive(Copy, Clone)]
+
+pub struct XkbcompLookup {
+    pub groupIndexNames: [LookupEntry; 3],
+    pub groupMaskNames: [LookupEntry; 5],
+}
+
+#[derive(Copy, Clone)]
+
+pub struct XkbcompFeatures {
+    pub max_groups: u32,
+    pub max_overlays: xkb_overlay_index_t,
+    pub controls_name_offset: u8,
+    pub group_lock_on_release: bool,
+    pub mods_unlock_on_press: bool,
+    pub mods_latch_on_press: bool,
+    pub overlapping_overlays: bool,
+}
+
+// ── Inline helper functions (were duplicated in every xkbcomp_priv_h module) ──
+
+pub const false_0: i32 = 0;
+
+#[inline]
+pub fn safe_map_name(file: &XkbFile) -> &str {
+    if file.name.is_empty() {
+        "(unnamed map)"
+    } else {
+        &file.name
+    }
+}
+
+#[inline]
+pub fn ReportNotArray(type_0: &str, field: &str, name: &str) -> bool {
+    log::error!(
+        "[XKB-{:03}] The {} {} field is not an array; Ignoring illegal assignment in {}\n",
+        XKB_ERROR_WRONG_FIELD_TYPE as i32,
+        type_0,
+        field,
+        name
+    );
+    false
+}
+
+#[inline]
+pub fn ReportBadType(
+    code: xkb_message_code,
+    type_0: &str,
+    field: &str,
+    name: &str,
+    wanted: &str,
+) -> bool {
+    log::error!(
+        "[XKB-{:03}] The {} {} field must be a {}; Ignoring illegal assignment in {}\n",
+        { code },
+        type_0,
+        field,
+        wanted,
+        name
+    );
+    false
+}
+
+#[inline]
+pub fn ReportBadField(type_0: &str, field: &str, name: &str) -> bool {
+    log::error!(
+        "Unknown {} field \"{}\" in {}; Ignoring assignment to unknown field in {}\n",
+        type_0,
+        field,
+        name,
+        name
+    );
+    false
+}
+
+#[inline]
+pub fn ReportShouldBeArray(type_0: &str, field: &str, name: &str) -> bool {
+    log::error!(
+        "[XKB-{:03}] Missing subscript for {} {}; Ignoring illegal assignment in {}\n",
+        XKB_ERROR_EXPECTED_ARRAY_ENTRY as i32,
+        type_0,
+        field,
+        name
+    );
+    false
+}
+
+// ── Utility functions (merged from utils.rs) ──
+
+/// Case-insensitive comparison of two byte slices (like C `strcasecmp`).
+/// Returns <0, 0, or >0.
+#[inline]
+pub fn istrcmp(a: &[u8], b: &[u8]) -> i32 {
+    let n = a.len().min(b.len());
+    for i in 0..n {
+        let al = a[i].to_ascii_lowercase();
+        let bl = b[i].to_ascii_lowercase();
+        if al != bl {
+            return al as i32 - bl as i32;
+        }
+    }
+    (a.len() as i32) - (b.len() as i32)
+}
+
+/// Stack buffer writer implementing `core::fmt::Write`.
+pub struct LogBuf<'a> {
+    buf: &'a mut [u8],
+    pub pos: usize,
+    pub truncated: bool,
+}
+
+impl<'a> LogBuf<'a> {
+    #[inline]
+    pub fn new(buf: &'a mut [u8]) -> Self {
+        Self {
+            buf,
+            pos: 0,
+            truncated: false,
+        }
+    }
+}
+
+impl<'a> core::fmt::Write for LogBuf<'a> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        let bytes = s.as_bytes();
+        let space = self.buf.len() - self.pos;
+        let n = bytes.len().min(space);
+        if n < bytes.len() {
+            self.truncated = true;
+        }
+        self.buf[self.pos..self.pos + n].copy_from_slice(&bytes[..n]);
+        self.pos += n;
+        Ok(())
+    }
+}
+
+/// Parse decimal digits from a byte slice into u32.
+pub fn parse_dec_u32(s: &[u8]) -> (u32, i32) {
+    let mut result: u32 = 0;
+    let mut i: usize = 0;
+    while i < s.len() {
+        let d = s[i].wrapping_sub(b'0');
+        if d >= 10 {
+            break;
+        }
+        if result > u32::MAX / 10 || result * 10 > u32::MAX - d as u32 {
+            return (result, -1);
+        }
+        result = result * 10 + d as u32;
+        i += 1;
+    }
+    if i < s.len() && s[i].wrapping_sub(b'0') < 10 {
+        return (result, -1);
+    }
+    (result, i as i32)
+}
+
+/// Parse decimal digits from a byte slice into u64.
+pub fn parse_dec_u64(s: &[u8]) -> (u64, i32) {
+    let mut result: u64 = 0;
+    let mut i: usize = 0;
+    while i < s.len() {
+        let d = s[i].wrapping_sub(b'0');
+        if d >= 10 {
+            break;
+        }
+        if result > u64::MAX / 10 || result * 10 > u64::MAX - d as u64 {
+            return (result, -1);
+        }
+        result = result * 10 + d as u64;
+        i += 1;
+    }
+    if i < s.len() && s[i].wrapping_sub(b'0') < 10 {
+        return (result, -1);
+    }
+    (result, i as i32)
+}
+
+// ── UTF-8 decoding (migrated from utf8_decoding.rs) ──
+
+/// Invalid UTF-8 code point marker
+pub const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
+
+/// Decode next UTF-8 code point from byte slice.
+pub fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
+    if bytes.is_empty() {
+        return (INVALID_UTF8_CODE_POINT, 0);
+    }
+    let b0 = bytes[0];
+    let (len, mut cp) = match b0 {
+        0x00..=0x7F => return (b0 as u32, 1),
+        0xC2..=0xDF => (2, (b0 as u32) & 0x1F),
+        0xE0..=0xEF => (3, (b0 as u32) & 0x0F),
+        0xF0..=0xF4 => (4, (b0 as u32) & 0x07),
+        _ => return (INVALID_UTF8_CODE_POINT, 0),
+    };
+    if len > bytes.len() {
+        return (INVALID_UTF8_CODE_POINT, 0);
+    }
+    for &byte in bytes.iter().take(len).skip(1) {
+        if (byte & 0xC0) != 0x80 {
+            return (INVALID_UTF8_CODE_POINT, 0);
+        }
+        cp = (cp << 6) | ((byte as u32) & 0x3F);
+    }
+    if (len == 2 && cp < 0x80)
+        || (len == 3 && cp < 0x800)
+        || (len == 4 && cp < 0x10000)
+        || (0xD800..=0xDFFF).contains(&cp)
+        || cp > 0x10FFFF
+    {
+        return (INVALID_UTF8_CODE_POINT, 0);
+    }
+    (cp, len)
+}
+
+/// Convert a hex digit byte to its numeric value (0-15), or 0xff if invalid.
+#[inline]
+fn hex_val(b: u8) -> u8 {
+    match b {
+        b'0'..=b'9' => b - b'0',
+        b'A'..=b'F' => b - b'A' + 10,
+        b'a'..=b'f' => b - b'a' + 10,
+        _ => 0xff,
+    }
+}
+
+/// Parse hex digits from a byte slice into u32.
+pub fn parse_hex_u32(s: &[u8]) -> (u32, i32) {
+    let mut result: u32 = 0;
+    let mut i: usize = 0;
+    while i < s.len() {
+        let d = hex_val(s[i]);
+        if d >= 16 {
+            break;
+        }
+        if result > u32::MAX >> 4 {
+            return (result, -1);
+        }
+        result = result * 16 + d as u32;
+        i += 1;
+    }
+    if i < s.len() && hex_val(s[i]) < 16 {
+        return (result, -1);
+    }
+    (result, i as i32)
+}
+
+/// Parse hex digits from a byte slice into u64.
+pub fn parse_hex_u64(s: &[u8]) -> (u64, i32) {
+    let mut result: u64 = 0;
+    let mut i: usize = 0;
+    while i < s.len() {
+        let d = hex_val(s[i]);
+        if d >= 16 {
+            break;
+        }
+        if result > u64::MAX >> 4 {
+            return (result, -1);
+        }
+        result = result * 16 + d as u64;
+        i += 1;
+    }
+    if i < s.len() && hex_val(s[i]) < 16 {
+        return (result, -1);
+    }
+    (result, i as i32)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_atom_table_basic() {
+        let mut table = atom_table_new();
+
+        // Initially should have 1 atom (NONE at index 0)
+        assert_eq!(atom_table_size(&table), 1);
+
+        // Intern a string
+        let atom1 = atom_intern(&mut table, b"hello", true);
+        assert_ne!(atom1, XKB_ATOM_NONE);
+        assert_eq!(atom_table_size(&table), 2);
+
+        // Look up same string again
+        let atom2 = atom_intern(&mut table, b"hello", false);
+        assert_eq!(atom1, atom2);
+        assert_eq!(atom_table_size(&table), 2); // No new atom
+
+        // Intern different string
+        let atom3 = atom_intern(&mut table, b"world", true);
+        assert_ne!(atom3, atom1);
+        assert_eq!(atom_table_size(&table), 3);
+
+        // Get text back
+        assert_eq!(atom_text(&table, atom1), "hello");
+    }
+
+    #[test]
+    fn test_atom_not_found() {
+        let mut table = atom_table_new();
+        let atom = atom_intern(&mut table, b"test", false);
+        assert_eq!(atom, XKB_ATOM_NONE);
+    }
+
+    #[test]
+    fn test_utf8_next_code_point_ascii() {
+        let (cp, len) = utf8_next_code_point_safe(b"ABC");
+        assert_eq!((cp, len), (b'A' as u32, 1));
+    }
+
+    #[test]
+    fn test_utf8_next_code_point_multibyte() {
+        assert_eq!(utf8_next_code_point_safe(&[0xE2, 0x82, 0xAC]), (0x20AC, 3));
+        assert_eq!(
+            utf8_next_code_point_safe(&[0xF0, 0x9F, 0x98, 0x80]),
+            (0x1F600, 4)
+        );
+    }
+
+    #[test]
+    fn test_utf8_next_code_point_invalid() {
+        assert_eq!(
+            utf8_next_code_point_safe(&[0xE2, 0xFF, 0xAC]),
+            (INVALID_UTF8_CODE_POINT, 0)
+        );
+        assert_eq!(
+            utf8_next_code_point_safe(&[0xE2, 0x82]),
+            (INVALID_UTF8_CODE_POINT, 0)
+        );
+        assert_eq!(utf8_next_code_point_safe(&[]), (INVALID_UTF8_CODE_POINT, 0));
+    }
+}

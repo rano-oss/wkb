@@ -1,21 +1,41 @@
-use crate::shared_types::xkb_context;
-use crate::shared_types::{xkb_component_names, xkb_rule_names};
+// XKB compiler modules from libxkbcommon
+
+pub mod messages {
+    pub use super::super::shared_types::*;
+}
+pub mod parser;
+pub mod symbols;
+// ── Prelude: shared imports used by xkbcomp modules ──
+
+pub use super::keymap::xkb_atom_text;
+pub use super::keymap::xkb_escape_map_name;
+
+pub use super::shared_types::XkbFile;
+
+pub use super::shared_types::xkb_keymap;
+
+pub use super::keymap::{ActionTypeText, KeysymText};
+
+pub use self::parser::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
+
+use super::shared_types::xkb_context;
+use super::shared_types::{xkb_component_names, xkb_rule_names};
 pub fn xkb_components_from_rules_names(
     ctx: &mut xkb_context,
     rmlvo: &xkb_rule_names,
     out: &mut xkb_component_names,
     explicit_layouts: &mut u32,
 ) -> bool {
-    crate::xkbcomp::rules::xkb_components_from_rules_names(ctx, rmlvo, out, explicit_layouts)
+    self::parser::xkb_components_from_rules_names(ctx, rmlvo, out, explicit_layouts)
 }
 
-pub use crate::messages::XKB_ERROR_KEYMAP_COMPILATION_FAILED;
-pub use crate::shared_ast_types::{xkb_file_type_to_string, XkbFile, FILE_TYPE_KEYMAP};
-use crate::xkbcomp::ast_build::XkbFileFromComponents;
-use crate::xkbcomp::keymap::CompileKeymap;
-use crate::xkbcomp::scanner::XkbParseString;
+pub use self::messages::XKB_ERROR_KEYMAP_COMPILATION_FAILED;
+use self::parser::CompileKeymap;
+use self::parser::XkbFileFromComponents;
+use self::parser::XkbParseString;
+pub use super::shared_types::{xkb_file_type_to_string, FILE_TYPE_KEYMAP};
 
-pub use crate::shared_types::{format_max_groups, xkb_keymap};
+pub use super::shared_types::format_max_groups;
 
 fn compile_keymap_file(keymap: &mut xkb_keymap, file: &mut XkbFile) -> bool {
     if file.file_type != FILE_TYPE_KEYMAP {

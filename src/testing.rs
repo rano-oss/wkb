@@ -14,9 +14,10 @@ pub use crate::modifiers::{level_index, KeyDirection, ALTGR, CAPS_LOCK, NUM_LOCK
 // Re-export compose parsing utilities needed by compose tests.
 pub mod compose_parse {
     pub use crate::xkb::load_compose_from_path;
-    pub use xkb_core::compose::{
+    pub use crate::xkb::xkb_backend::keymap::{
         keysym_name_to_char, parse_compose_file, resolve_compose_file, ComposeEntry,
     };
+    pub use crate::xkb::xkb_backend::keysym::keysym_to_char;
 }
 
 /// Feed a token to a composer (wraps the `pub(crate)` method for tests).
@@ -31,7 +32,7 @@ pub fn keysym_to_named_key(keysym: u32) -> NamedKey {
 
 /// Get all available layout variants for a given locale (test utility).
 pub fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
-    use xkb_core::rust_types::RxkbContext;
+    use crate::xkb::xkb_backend::keymap::RxkbContext;
 
     let mut ctx = match RxkbContext::new() {
         Some(ctx) => ctx,

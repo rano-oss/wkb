@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "xkb-core", "xkbcommon-compat"]
+members = ["."]
 
 [package]
 name = "wayland-keyboard"
@@ -24,12 +24,13 @@ name = "wkb"
 
 [features]
 default = ["xkb", "compose"]
-xkb = ["xkb-core"]
+xkb = []
 compose = []
 testing = ["xkb"]
 
 [dependencies]
-xkb-core = { version = "0.2.0", path = "xkb-core", optional = true }
+log = "0.4.29"
+xmloxide = "0.4"
 arrayvec = "0.7"
 serde = { version = "1", features = ["derive"] }
 
@@ -38,7 +39,6 @@ wkb = { package = "wayland-keyboard", path = ".", features = ["testing"] }
 test-case = "3.3.1"
 xkbcommon = "0.9.0"
 xkbcommon-dl = "0.4.2"
-xkbcommon-compat = { path = "xkbcommon-compat" }
 criterion = { version = "0.5", features = ["html_reports"] }
 
 [[bench]]
@@ -60,10 +60,7 @@ name = "bench_memory"
 name = "bench_size_wkb"
 
 [[example]]
-name = "bench_size_xkbcommon"
-
-[[example]]
 name = "bench_size_xkbcommon_dl"
 
 [[example]]
-name = "bench_size_xkbcommon_compat"
+name = "bench_size_xkbcommon"
