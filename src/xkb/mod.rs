@@ -4,12 +4,12 @@
 mod serialize;
 pub(crate) mod xkb_backend;
 
-use crate::bitset::KeyBitSet;
 use crate::composer::Token;
 use crate::flat_keymap::{FlatKeymap, FlatNamedKeyMap, MAX_LEVELS};
 use crate::modifiers::*;
 use crate::named_keys::NamedKey;
 use crate::Composer;
+use crate::KeyBitSet;
 use crate::WKB;
 
 // ── Error type ──

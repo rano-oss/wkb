@@ -6,12 +6,14 @@
 use std::ffi::CString;
 use std::rc::Rc;
 
-use super::atom::atom_lookup_ref;
 use super::keymap::{
     xkb_keymap_layout_get_index_ref, xkb_keymap_led_get_index_ref, xkb_keymap_mod_get_index_ref,
 };
+use super::shared_types::atom_lookup_ref;
 use super::shared_types::xkb_context;
-use super::shared_types::{XKB_ATOM_NONE, XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID};
+use super::shared_types::{
+    XKB_ATOM_NONE, XKB_KEYCODE_INVALID, XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID,
+};
 
 /// Rust-native version of xkb_rule_names
 #[derive(Debug, Clone, Default)]
@@ -354,30 +356,12 @@ impl Keymap {
 
     /// Get keycode by key name (safe via atom_lookup_ref)
     pub fn key_by_name(&self, name: &str) -> Option<u32> {
-        let km = &*self.inner;
-        let mut atom = atom_lookup_ref(&km.ctx.atom_table, name.as_bytes());
-        if atom != XKB_ATOM_NONE {
-            for alias in km.key_aliases.iter() {
-                if alias.alias == atom {
-                    atom = alias.real;
-                }
-            }
-        }
-        if atom == XKB_ATOM_NONE {
-            return None;
-        }
-        let start_idx = if km.num_keys_low == 0 {
-            0
+        let kc = super::keymap::xkb_keymap_key_by_name(&self.inner, name);
+        if kc == XKB_KEYCODE_INVALID {
+            None
         } else {
-            km.min_key_code
-        };
-        for ki in start_idx..km.num_keys {
-            let key = &km.keys[ki as usize];
-            if key.name == atom {
-                return Some(key.keycode);
-            }
+            Some(kc)
         }
-        None
     }
 
     /// Get number of layouts for a specific key

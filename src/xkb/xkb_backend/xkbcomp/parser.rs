@@ -3,9 +3,9 @@
 
 use super::super::context::xkb_atom_intern;
 use super::super::keysym::{xkb_keysym_from_name, xkb_keysym_is_deprecated};
-use super::super::scanner_utils::{scanner, scanner_loc, sval};
 use super::super::shared_types::*;
 use super::scanner::YYValue;
+use super::scanner::{scanner, scanner_loc, sval};
 
 use super::super::shared_ast_types::{
     safe_map_name, ExprDef, ExprKind, Statement, XkbFile, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,

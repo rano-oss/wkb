@@ -61,8 +61,58 @@ impl Default for xkb_rule_names {
 
 // ── Opaque types ────────────────────────────────────────────────────
 
-// atom_table is defined in atom.rs — re-export it here for unified access
-pub use super::atom::atom_table;
+/// Atom table - string interning system
+pub struct atom_table {
+    /// Hash index for O(1) lookups (open addressing, linear probing)
+    index: Vec<u32>,
+    /// Interned strings. Index 0 is None (XKB_ATOM_NONE).
+    strings: Vec<Option<String>>,
+}
+
+impl Clone for atom_table {
+    fn clone(&self) -> Self {
+        Self {
+            index: self.index.clone(),
+            strings: self.strings.clone(),
+        }
+    }
+}
+
+impl std::fmt::Debug for atom_table {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("atom_table").finish()
+    }
+}
+
+/// FNV-1a hash function for byte slices
+fn hash_buf(bytes: &[u8]) -> u32 {
+    let len = bytes.len();
+    let mut hash: u32 = 2166136261;
+    for i in 0..len.div_ceil(2) {
+        hash ^= bytes[i] as u32;
+        hash = hash.wrapping_mul(0x1000193);
+        hash ^= bytes[len - 1 - i] as u32;
+        hash = hash.wrapping_mul(0x1000193);
+    }
+    hash
+}
+
+/// Create new atom table with pre-allocated capacity
+pub fn atom_table_new() -> atom_table {
+    atom_table {
+        index: vec![0; 1024],
+        strings: {
+            let mut v = Vec::with_capacity(512);
+            v.push(None);
+            v
+        },
+    }
+}
+
+/// Get number of atoms in table
+pub fn atom_table_size(table: &atom_table) -> u32 {
+    table.strings.len() as u32
+}
 
 // ── xkb_context ─────────────────────────────────────────────────────
 
@@ -809,6 +859,108 @@ pub struct xkb_state_update {
 
 pub const XKB_ATOM_NONE: u32 = 0;
 
+/// Get text for an atom as a string slice.
+pub fn atom_text(table: &atom_table, atom: u32) -> &str {
+    if (atom as usize) >= table.strings.len() {
+        return "";
+    }
+    match &table.strings[atom as usize] {
+        Some(s) => s.as_str(),
+        None => "",
+    }
+}
+
+/// Look up an existing atom without mutating the table.
+pub fn atom_lookup_ref(table: &atom_table, input_bytes: &[u8]) -> u32 {
+    let hash = hash_buf(input_bytes);
+    for i in 0..table.index.len() {
+        let index_pos = ((hash as usize) + i) & (table.index.len() - 1);
+        if index_pos == 0 {
+            continue;
+        }
+        let existing_atom = table.index[index_pos];
+        if existing_atom == XKB_ATOM_NONE {
+            return XKB_ATOM_NONE;
+        }
+        if let Some(ref existing) = table.strings[existing_atom as usize] {
+            if existing.as_bytes() == input_bytes {
+                return existing_atom;
+            }
+        }
+    }
+    XKB_ATOM_NONE
+}
+
+/// Intern a string or look up existing atom
+pub fn atom_intern(table: &mut atom_table, input_bytes: &[u8], add: bool) -> u32 {
+    let t = table;
+
+    // Resize hash table if load factor > 0.8
+    if t.strings.len() > t.index.len() * 4 / 5 {
+        let new_size = t.index.len() * 2;
+        t.index = vec![0; new_size];
+
+        // Rehash all strings (skip index 0)
+        for j in 1..t.strings.len() {
+            if let Some(ref s) = t.strings[j] {
+                let s_bytes = s.as_bytes();
+                let hash = hash_buf(s_bytes);
+
+                for i in 0..t.index.len() {
+                    let index_pos = ((hash as usize) + i) & (t.index.len() - 1);
+                    if index_pos == 0 {
+                        continue;
+                    }
+                    if t.index[index_pos] == XKB_ATOM_NONE {
+                        t.index[index_pos] = j as u32;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    // Look up or insert string
+    let hash = hash_buf(input_bytes);
+
+    for i in 0..t.index.len() {
+        let index_pos = ((hash as usize) + i) & (t.index.len() - 1);
+        if index_pos == 0 {
+            continue;
+        }
+
+        let existing_atom = t.index[index_pos];
+
+        // Empty slot - not found
+        if existing_atom == XKB_ATOM_NONE {
+            if add {
+                let new_atom = t.strings.len() as u32;
+
+                let new_string = String::from_utf8(input_bytes.to_vec())
+                    .expect("atom string is not valid UTF-8");
+                t.strings.push(Some(new_string));
+
+                // Update hash table
+                t.index[index_pos] = new_atom;
+
+                return new_atom;
+            } else {
+                return XKB_ATOM_NONE;
+            }
+        }
+
+        // Check if existing string matches
+        if let Some(ref existing) = t.strings[existing_atom as usize] {
+            if existing.as_bytes() == input_bytes {
+                return existing_atom;
+            }
+        }
+    }
+
+    // Should never reach here - hash table is kept sparse enough
+    panic!("couldn't find an empty slot during probing");
+}
+
 // ── keymap_h types & constants (moved from duplicated pub mod keymap_h blocks) ─
 
 pub type real_mod_index = u32;
@@ -1136,3 +1288,41 @@ pub const XKB_ERROR_INVALID_IDENTIFIER: u32 = 949;
 pub const XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL: u32 = 965;
 pub const XKB_ERROR_INVALID_RULES_SYNTAX: u32 = 967;
 pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: u32 = 971;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_atom_table_basic() {
+        let mut table = atom_table_new();
+
+        // Initially should have 1 atom (NONE at index 0)
+        assert_eq!(atom_table_size(&table), 1);
+
+        // Intern a string
+        let atom1 = atom_intern(&mut table, b"hello", true);
+        assert_ne!(atom1, XKB_ATOM_NONE);
+        assert_eq!(atom_table_size(&table), 2);
+
+        // Look up same string again
+        let atom2 = atom_intern(&mut table, b"hello", false);
+        assert_eq!(atom1, atom2);
+        assert_eq!(atom_table_size(&table), 2); // No new atom
+
+        // Intern different string
+        let atom3 = atom_intern(&mut table, b"world", true);
+        assert_ne!(atom3, atom1);
+        assert_eq!(atom_table_size(&table), 3);
+
+        // Get text back
+        assert_eq!(atom_text(&table, atom1), "hello");
+    }
+
+    #[test]
+    fn test_atom_not_found() {
+        let mut table = atom_table_new();
+        let atom = atom_intern(&mut table, b"test", false);
+        assert_eq!(atom, XKB_ATOM_NONE);
+    }
+}

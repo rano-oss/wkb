@@ -44,8 +44,6 @@ mod composer;
 mod modifiers;
 use modifiers::{level_index, KeyDirection, ModType, Modifiers};
 pub use modifiers::{LedState, RawModifiers};
-mod bitset;
-pub(crate) use bitset::KeyBitSet;
 mod flat_keymap;
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
 mod named_keys;
@@ -56,6 +54,50 @@ pub mod testing;
 mod xkb;
 #[cfg(feature = "xkb")]
 pub use xkb::XkbError;
+
+pub(crate) const BITSET_WORDS: usize = 12;
+
+pub(crate) struct KeyBitSet {
+    bits: [u64; BITSET_WORDS],
+}
+
+impl Clone for KeyBitSet {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl Copy for KeyBitSet {}
+
+impl std::fmt::Debug for KeyBitSet {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("KeyBitSet").finish()
+    }
+}
+
+impl KeyBitSet {
+    pub(crate) const fn new() -> Self {
+        Self {
+            bits: [0; BITSET_WORDS],
+        }
+    }
+
+    pub(crate) fn contains(&self, key: u32) -> bool {
+        let k = key as usize;
+        if k < BITSET_WORDS * 64 {
+            self.bits[k >> 6] & (1u64 << (k & 63)) != 0
+        } else {
+            false
+        }
+    }
+
+    pub(crate) fn insert(&mut self, key: u32) {
+        let k = key as usize;
+        if k < BITSET_WORDS * 64 {
+            self.bits[k >> 6] |= 1u64 << (k & 63);
+        }
+    }
+}
 
 use crate::named_keys::NamedKey;
 

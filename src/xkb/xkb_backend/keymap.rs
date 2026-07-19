@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
-use super::atom::{atom_lookup_ref, atom_text};
 use super::context::{xkb_atom_intern_bytes, xkb_context_sanitize_rule_names};
 pub use super::shared_types::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
+use super::shared_types::{atom_lookup_ref, atom_text};
 pub use super::shared_types::{
     xkb_action, xkb_context, xkb_key, xkb_keymap, xkb_led, xkb_level, xkb_mod_set, xkb_rule_names,
     MOD_BOTH, MOD_REAL, MOD_REAL_MASK_ALL, XKB_ATOM_NONE, XKB_KEYCODE_INVALID,
@@ -27,7 +27,7 @@ pub fn xkb_keymap_new_from_names(
     };
     xkb_context_sanitize_rule_names(&ctx, &mut rmlvo);
     let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_names2", format, flags)?;
-    if !super::xkbcomp::xkbcomp::text_v1_keymap_new_from_names(&mut keymap, &rmlvo) {
+    if !super::xkbcomp::text_v1_keymap_new_from_names(&mut keymap, &rmlvo) {
         return None;
     }
     Some(Rc::new(*keymap))
@@ -49,7 +49,7 @@ pub fn xkb_keymap_new_from_string(
     if length > 0 && bytes[length - 1] == 0 {
         length -= 1;
     }
-    if !super::xkbcomp::xkbcomp::text_v1_keymap_new_from_string(&mut keymap, &bytes[..length]) {
+    if !super::xkbcomp::text_v1_keymap_new_from_string(&mut keymap, &bytes[..length]) {
         return None;
     }
     Some(Rc::new(*keymap))

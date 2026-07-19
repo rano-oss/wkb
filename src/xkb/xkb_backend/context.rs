@@ -1,6 +1,6 @@
 use std::env::VarError;
 
-use super::atom::{atom_intern, atom_table_new, atom_text};
+use super::shared_types::{atom_intern, atom_table_new, atom_text};
 
 use super::shared_types::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
