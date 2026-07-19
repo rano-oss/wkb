@@ -1066,22 +1066,3 @@ pub fn XkbParseString(
     }
     parse(ctx, &mut sc, map)
 }
-pub fn XkbParseFile(
-    ctx: &mut xkb_context,
-    file: &std::fs::File,
-    file_name: &str,
-    map: &str,
-) -> Option<Box<XkbFile>> {
-    use super::super::utils::MappedFile;
-
-    // Map the file
-    let mapped = match MappedFile::new(file) {
-        Ok(m) => m,
-        Err(e) => {
-            log::error!("Couldn't read XKB file {}: {}\n", file_name, e);
-            return None;
-        }
-    };
-
-    XkbParseString(ctx, mapped.as_bytes(), file_name, map)
-}

@@ -75,7 +75,7 @@ pub use super::shared_types::{
     ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_SET,
     ACTION_TYPE_REDIRECT_KEY, ACTION_UNLOCK_ON_PRESS, CONTROL_STICKY_KEYS,
     INTERNAL_BREAKS_GROUP_LATCH, INTERNAL_BREAKS_MOD_LATCH, MOD_REAL_MASK_ALL, XKB_MOD_ALL,
-    XKB_MOD_INDEX_CAPS, XKB_MOD_INDEX_CTRL, _ACTION_TYPE_NUM_ENTRIES, _XKB_MOD_INDEX_NUM_ENTRIES,
+    XKB_MOD_INDEX_CAPS, _XKB_MOD_INDEX_NUM_ENTRIES,
 };
 
 fn vec_resize_zero<T: Default>(v: &mut Vec<T>, new_len: usize) {
@@ -1186,10 +1186,6 @@ pub fn xkb_state_new(keymap: Rc<xkb_keymap>) -> Box<xkb_state> {
     xkb_state_update_derived(&mut state);
     state
 }
-pub fn xkb_state_get_keymap(state: &xkb_state) -> &xkb_keymap {
-    &state.keymap
-}
-
 fn xkb_state_led_update_all(state: &mut xkb_state) {
     let keymap = &*state.keymap;
     state.components.leds = 0 as xkb_led_mask_t;
@@ -1519,14 +1515,6 @@ fn should_do_caps_transformation(state: &xkb_state, kc: u32) -> bool {
         && xkb_state_mod_index_is_consumed(state, kc, XKB_MOD_INDEX_CAPS as i32 as u32) == 0_i32
 }
 
-fn should_do_ctrl_transformation(state: &xkb_state, kc: u32) -> bool {
-    xkb_state_mod_index_is_active(
-        state,
-        XKB_MOD_INDEX_CTRL as i32 as u32,
-        XKB_STATE_MODS_EFFECTIVE,
-    ) > 0_i32
-        && xkb_state_mod_index_is_consumed(state, kc, XKB_MOD_INDEX_CTRL as i32 as u32) == 0_i32
-}
 pub fn xkb_state_key_get_syms(state: &xkb_state, kc: u32) -> &[u32] {
     let layout: u32 = xkb_state_key_get_layout(state, kc);
     if layout != XKB_LAYOUT_INVALID {
@@ -1567,87 +1555,6 @@ pub fn xkb_state_key_get_one_sym(state: &xkb_state, kc: u32) -> u32 {
     }
 }
 
-fn get_one_sym_for_string(state: &xkb_state, kc: u32) -> u32 {
-    let layout = xkb_state_key_get_layout(state, kc);
-    let keymap = state.keymap();
-    let num_layouts = xkb_keymap_num_layouts_for_key(keymap, kc);
-    let mut level = xkb_state_key_get_level(state, kc, layout);
-    if layout == XKB_LAYOUT_INVALID || num_layouts == 0_u32 || level == XKB_LEVEL_INVALID {
-        return XKB_KEY_NoSymbol as u32;
-    }
-    let syms = xkb_keymap_key_get_syms_by_level_ref(keymap, kc, layout, level);
-    if syms.len() != 1 {
-        return XKB_KEY_NoSymbol as u32;
-    }
-    let mut sym = syms[0];
-    if should_do_ctrl_transformation(state, kc) && sym > 127_u32 {
-        for i in 0..num_layouts {
-            level = xkb_state_key_get_level(state, kc, i);
-            if level != XKB_LEVEL_INVALID {
-                let syms_i = xkb_keymap_key_get_syms_by_level_ref(keymap, kc, i, level);
-                if syms_i.len() == 1 && syms_i[0] <= 127_u32 {
-                    sym = syms_i[0];
-                    break;
-                }
-            }
-        }
-    }
-    if should_do_caps_transformation(state, kc) {
-        sym = xkb_keysym_to_upper(sym);
-    }
-    sym
-}
-
-pub fn xkb_state_key_get_utf8(state: &xkb_state, kc: u32) -> String {
-    let syms: &[u32];
-    let sym: u32 = get_one_sym_for_string(state, kc);
-    let sym_slice: [u32; 1];
-    if sym != XKB_KEY_NoSymbol as u32 {
-        sym_slice = [sym];
-        syms = &sym_slice;
-    } else {
-        syms = xkb_state_key_get_syms(state, kc);
-    }
-    let mut result = Vec::new();
-    let mut tmp = [0u8; 5];
-    for &s in syms {
-        let ret = keysym_to_utf8(s, &mut tmp);
-        if ret <= 0 {
-            return String::new();
-        }
-        let len = (ret - 1) as usize;
-        for &byte in tmp.iter().take(len) {
-            result.push(byte);
-        }
-    }
-    // Validate UTF-8
-    if let Ok(s) = std::str::from_utf8(&result) {
-        let mut s = s.to_string();
-        if s.len() == 1 && s.as_bytes()[0] <= 127 && should_do_ctrl_transformation(state, kc) {
-            let c = s.as_bytes()[0] as i8;
-            let ctrl = if c as i32 >= '@' as i32 && (c as i32) < '\u{7f}' as i32
-                || c as i32 == ' ' as i32
-            {
-                (c as i32 & 0x1f_i32) as u8
-            } else if c as i32 == '2' as i32 {
-                0u8
-            } else if c as i32 >= '3' as i32 && c as i32 <= '7' as i32 {
-                (c as i32 - ('3' as i32 - '\u{1b}' as i32)) as u8
-            } else if c as i32 == '8' as i32 {
-                0x7f_u8
-            } else if c as i32 == '/' as i32 {
-                ('_' as i32 & 0x1f_i32) as u8
-            } else {
-                c as u8
-            };
-            s = String::from(ctrl as char);
-        }
-        s
-    } else {
-        String::new()
-    }
-}
-
 #[inline]
 fn serialize_mods(components: &state_components, type_0: u32) -> u32 {
     let mut ret: u32 = 0_u32;
@@ -1665,28 +1572,9 @@ fn serialize_mods(components: &state_components, type_0: u32) -> u32 {
     }
     ret
 }
+
 pub fn xkb_state_serialize_mods(state: &xkb_state, type_0: u32) -> u32 {
     serialize_mods(&state.components, type_0)
-}
-#[inline]
-fn serialize_layout(components: &state_components, type_0: u32) -> u32 {
-    let mut ret: u32 = 0_u32;
-    if type_0 & XKB_STATE_LAYOUT_EFFECTIVE != 0 {
-        return components.group;
-    }
-    if type_0 & XKB_STATE_LAYOUT_DEPRESSED != 0 {
-        ret = ret.wrapping_add(components.base_group as u32);
-    }
-    if type_0 & XKB_STATE_LAYOUT_LATCHED != 0 {
-        ret = ret.wrapping_add(components.latched_group as u32);
-    }
-    if type_0 & XKB_STATE_LAYOUT_LOCKED != 0 {
-        ret = ret.wrapping_add(components.locked_group as u32);
-    }
-    ret
-}
-pub fn xkb_state_serialize_layout(state: &xkb_state, type_0: u32) -> u32 {
-    serialize_layout(&state.components, type_0)
 }
 
 pub fn mod_mask_get_effective(keymap: &xkb_keymap, mods: u32) -> u32 {
@@ -1719,50 +1607,6 @@ pub fn xkb_state_mod_name_is_active(state: &xkb_state, name: &str, type_0: u32) 
         return -1_i32;
     }
     xkb_state_mod_index_is_active(state, idx, type_0)
-}
-
-pub fn xkb_state_layout_index_is_active(state: &xkb_state, idx: u32, type_0: u32) -> i32 {
-    if idx >= state.keymap().num_groups {
-        return -1_i32;
-    }
-    let mut ret: i32 = 0_i32;
-    if type_0 & XKB_STATE_LAYOUT_EFFECTIVE != 0 {
-        ret |= (state.components.group == idx) as i32;
-    }
-    if type_0 & XKB_STATE_LAYOUT_DEPRESSED != 0 {
-        ret |= (state.components.base_group == idx as i32) as i32;
-    }
-    if type_0 & XKB_STATE_LAYOUT_LATCHED != 0 {
-        ret |= (state.components.latched_group == idx as i32) as i32;
-    }
-    if type_0 & XKB_STATE_LAYOUT_LOCKED != 0 {
-        ret |= (state.components.locked_group == idx as i32) as i32;
-    }
-    ret
-}
-
-pub fn xkb_state_layout_name_is_active(state: &xkb_state, name: &str, type_0: u32) -> i32 {
-    let idx = xkb_keymap_layout_get_index_ref(state.keymap(), name);
-    if idx == XKB_LAYOUT_INVALID {
-        return -1_i32;
-    }
-    xkb_state_layout_index_is_active(state, idx, type_0)
-}
-
-pub fn xkb_state_led_index_is_active(state: &xkb_state, idx: u32) -> i32 {
-    let keymap = state.keymap();
-    if idx >= keymap.num_leds || keymap.leds[idx as usize].name == XKB_ATOM_NONE {
-        return -1_i32;
-    }
-    (state.components.leds & (1 as xkb_led_mask_t) << idx != 0) as i32
-}
-
-pub fn xkb_state_led_name_is_active(state: &xkb_state, name: &str) -> i32 {
-    let idx = xkb_keymap_led_get_index_ref(state.keymap(), name);
-    if idx == XKB_LED_INVALID {
-        return -1_i32;
-    }
-    xkb_state_led_index_is_active(state, idx)
 }
 
 fn key_get_consumed(state: &xkb_state, key: &xkb_key, mode: xkb_consumed_mode) -> u32 {
@@ -1833,11 +1677,5 @@ pub fn xkb_state_mod_index_is_consumed(state: &xkb_state, kc: u32, idx: u32) -> 
     xkb_state_mod_index_is_consumed2(state, kc, idx, XKB_CONSUMED_MODE_XKB)
 }
 
-use super::keymap::{
-    xkb_keymap_key_get_syms_by_level_ref, xkb_keymap_layout_get_index_ref,
-    xkb_keymap_led_get_index_ref, xkb_keymap_mod_get_index_ref, xkb_keymap_num_layouts_for_key,
-    xkb_keymap_num_mods,
-};
-use super::keysym_case_mappings::xkb_keysym_to_upper;
-use super::keysym_utf::keysym_to_utf8;
+use super::keymap::{xkb_keymap_mod_get_index_ref, xkb_keymap_num_mods};
 use super::shared_types::*;

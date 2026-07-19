@@ -16,45 +16,6 @@ pub fn istrcmp(a: &[u8], b: &[u8]) -> i32 {
 
 // New Rust file utilities
 
-/// Returns the last OS error number (replacement for `*__errno_location()`).
-pub fn last_errno() -> i32 {
-    std::io::Error::last_os_error().raw_os_error().unwrap_or(0)
-}
-
-use std::fs::File;
-use std::io;
-use std::io::Read;
-
-/// File contents loaded into memory
-pub struct MappedFile {
-    data: Vec<u8>,
-}
-
-impl MappedFile {
-    /// Read the entire file into memory
-    pub fn new(file: &File) -> io::Result<Self> {
-        let mut data = Vec::new();
-        let mut file = file;
-        file.read_to_end(&mut data)?;
-        Ok(MappedFile { data })
-    }
-
-    /// Get the data as a byte slice
-    pub fn as_bytes(&self) -> &[u8] {
-        &self.data
-    }
-
-    /// Get the size of the file
-    pub fn len(&self) -> usize {
-        self.data.len()
-    }
-
-    /// Check if the file is empty
-    pub fn is_empty(&self) -> bool {
-        self.data.is_empty()
-    }
-}
-
 // --- libc replacement helpers ---
 
 /// Stack buffer writer implementing `core::fmt::Write`.
@@ -88,21 +49,6 @@ impl<'a> core::fmt::Write for LogBuf<'a> {
         self.pos += n;
         Ok(())
     }
-}
-
-/// Safe wrapper around C `strerror`. Returns a display-able error message.
-pub struct StrerrorDisplay(pub i32);
-
-impl core::fmt::Display for StrerrorDisplay {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", std::io::Error::from_raw_os_error(self.0))
-    }
-}
-
-// ── utils_h functions (moved from duplicated pub mod utils_h blocks) ─
-
-pub fn is_absolute_path_bytes(path: &[u8]) -> bool {
-    path.first() == Some(&b'/')
 }
 
 // === Number parsing utilities ===

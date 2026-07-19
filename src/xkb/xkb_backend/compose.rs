@@ -1,7 +1,5 @@
 //! Compose table support: iteration, parsing, and layout-to-locale mapping.
 
-use super::shared_types::{XKB_KEY_NoSymbol, XKB_KEYSYM_NO_FLAGS};
-
 // --- Compose file resolution (from compose_parse.rs) ---
 
 use std::{

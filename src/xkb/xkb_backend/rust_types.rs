@@ -9,10 +9,9 @@ use std::rc::Rc;
 use super::keymap::{
     xkb_keymap_layout_get_index_ref, xkb_keymap_led_get_index_ref, xkb_keymap_mod_get_index_ref,
 };
-use super::shared_types::atom_lookup_ref;
 use super::shared_types::xkb_context;
 use super::shared_types::{
-    XKB_ATOM_NONE, XKB_KEYCODE_INVALID, XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID,
+    XKB_KEYCODE_INVALID, XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID,
 };
 
 /// Rust-native version of xkb_rule_names
@@ -228,11 +227,6 @@ impl std::fmt::Debug for Keymap {
 }
 
 impl Keymap {
-    /// Get raw pointer (for FFI calls)
-    pub fn as_ptr(&self) -> *const super::shared_types::xkb_keymap {
-        &*self.inner as *const _
-    }
-
     /// Get minimum keycode
     pub fn min_keycode(&self) -> u32 {
         super::keymap::xkb_keymap_min_keycode(&self.inner)
@@ -402,11 +396,6 @@ impl Keymap {
             .filter_map(|idx| self.led_get_name(idx))
             .collect()
     }
-
-    /// Serialize the keymap to XKB v1 text format.
-    pub fn as_xkb_string(&self) -> String {
-        super::serialize::xkb_keymap_get_as_string(&self.inner)
-    }
 }
 
 /// Iterator over keycode ranges in a keymap
@@ -457,29 +446,9 @@ impl std::fmt::Debug for State {
 }
 
 impl State {
-    /// Get raw pointer (for FFI calls that still require it)
-    pub fn as_ptr(&self) -> *mut super::state::xkb_state {
-        &*self.inner as *const _ as *mut _
-    }
-
     /// Update key state (press or release)
     pub fn update_key(&mut self, keycode: u32, direction: super::shared_types::xkb_key_direction) {
         super::state::xkb_state_update_key(&mut self.inner, keycode, direction);
-    }
-
-    /// Get UTF-8 string for a key
-    pub fn key_get_utf8(&self, keycode: u32) -> String {
-        super::state::xkb_state_key_get_utf8(&self.inner, keycode)
-    }
-
-    /// Press a key (convenience wrapper for update_key with KEY_DOWN)
-    pub fn key_down(&mut self, keycode: u32) {
-        self.update_key(keycode, super::shared_types::XKB_KEY_DOWN);
-    }
-
-    /// Release a key (convenience wrapper for update_key with KEY_UP)
-    pub fn key_up(&mut self, keycode: u32) {
-        self.update_key(keycode, super::shared_types::XKB_KEY_UP);
     }
 
     /// Get keysym for a key in the current state
@@ -492,16 +461,6 @@ impl State {
         super::state::xkb_state_key_get_syms(&self.inner, keycode)
     }
 
-    /// Get active layout index
-    pub fn serialize_layout(&self, component: u32) -> u32 {
-        super::state::xkb_state_serialize_layout(&self.inner, component)
-    }
-
-    /// Get active modifiers mask
-    pub fn serialize_mods(&self, component: u32) -> u32 {
-        super::state::xkb_state_serialize_mods(&self.inner, component)
-    }
-
     /// Check if a modifier is active
     pub fn mod_name_is_active(&self, name: &str, state_type: u32) -> bool {
         super::state::xkb_state_mod_name_is_active(&self.inner, name, state_type) > 0
@@ -510,26 +469,6 @@ impl State {
     /// Check if a modifier index is active
     pub fn mod_index_is_active(&self, idx: u32, state_type: u32) -> bool {
         super::state::xkb_state_mod_index_is_active(&self.inner, idx, state_type) > 0
-    }
-
-    /// Check if a layout is active
-    pub fn layout_name_is_active(&self, name: &str, state_type: u32) -> bool {
-        super::state::xkb_state_layout_name_is_active(&self.inner, name, state_type) > 0
-    }
-
-    /// Check if a layout index is active
-    pub fn layout_index_is_active(&self, idx: u32, state_type: u32) -> bool {
-        super::state::xkb_state_layout_index_is_active(&self.inner, idx, state_type) > 0
-    }
-
-    /// Check if a LED is active
-    pub fn led_name_is_active(&self, name: &str) -> bool {
-        super::state::xkb_state_led_name_is_active(&self.inner, name) > 0
-    }
-
-    /// Check if a LED index is active
-    pub fn led_index_is_active(&self, idx: u32) -> bool {
-        super::state::xkb_state_led_index_is_active(&self.inner, idx) > 0
     }
 
     /// Get keysyms for a key at a specific layout and level (delegates to keymap)
