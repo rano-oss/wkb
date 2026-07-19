@@ -9,7 +9,7 @@ use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use super::super::keysym::utf32_to_keysym;
 use super::super::keysym::{xkb_keysym_from_name, xkb_keysym_is_deprecated};
 use super::super::shared_types::*;
-use super::super::utils::{
+use super::super::shared_types::{
     parse_dec_u32, parse_dec_u64, parse_hex_u32, parse_hex_u64, utf8_next_code_point_safe,
     INVALID_UTF8_CODE_POINT,
 };

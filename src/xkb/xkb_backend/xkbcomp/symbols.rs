@@ -1188,7 +1188,7 @@ fn ExprResolveOverlayEntry(
     let len: usize = suffix.len();
     #[allow(unused_assignments)]
     let mut raw_overlay: i64 = XKB_OVERLAY_INVALID as i64;
-    let (val_parsed, parse_count) = super::super::utils::parse_dec_u64(suffix.as_bytes());
+    let (val_parsed, parse_count) = super::super::shared_types::parse_dec_u64(suffix.as_bytes());
     raw_overlay = val_parsed as i64;
     if parse_count != len as i32
         || raw_overlay < 1_i64
@@ -5266,7 +5266,7 @@ fn HandleLedNameDef(
     if !ExprResolveString(ki.ctx(), name_expr, &mut name) {
         let mut buf: [u8; 20] = [0; 20];
         let buf_len = {
-            let mut w = super::super::utils::LogBuf::new(&mut buf[..19]);
+            let mut w = super::super::shared_types::LogBuf::new(&mut buf[..19]);
             let _ = core::fmt::Write::write_fmt(&mut w, format_args!("{}", def.ndx));
             w.pos
         };
@@ -5558,7 +5558,7 @@ fn named_integer_pattern_lookup(
         .is_some_and(|s| s.eq_ignore_ascii_case(prefix.as_bytes()))
     {
         let suffix = &str_bytes.as_bytes()[prefix.len()..];
-        let (val_parsed, c) = super::super::utils::parse_dec_u32(suffix);
+        let (val_parsed, c) = super::super::shared_types::parse_dec_u32(suffix);
         // Return parsed value via count mechanism
         let _ = val_parsed;
         c
@@ -5569,7 +5569,7 @@ fn named_integer_pattern_lookup(
     if count > 0_i32 && prefix.len() + count as usize == str_bytes.len() {
         // Re-parse to get the value
         let suffix = &str_bytes.as_bytes()[prefix.len()..];
-        let (val, _) = super::super::utils::parse_dec_u32(suffix);
+        let (val, _) = super::super::shared_types::parse_dec_u32(suffix);
         if val < pattern.min || val > pattern.max {
             log::error!(
                 "[XKB-{:03}] {} index {} is out of range ({}..{})\n",

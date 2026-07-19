@@ -117,7 +117,7 @@ pub fn load_compose_from_path(path: &std::path::Path) -> Composer {
     let mut regular = Composer::new();
     let mut seen: std::collections::HashSet<Vec<u32>> = std::collections::HashSet::new();
 
-    let entries = xkb_backend::compose::parse_compose_file(path);
+    let entries = xkb_backend::keymap::parse_compose_file(path);
 
     for entry in entries {
         let mut tokens: Vec<Token> = Vec::new();
@@ -284,13 +284,28 @@ pub(crate) fn keysym_to_named_key(keysym: u32) -> NamedKey {
     }
 }
 
+/// Remove entries from `fk` that are identical to `state_keymap` (keep only diffs).
+fn dedup_against_state(fk: &mut FlatKeymap, state_keymap: &FlatKeymap, num_layouts: usize) {
+    for layout_idx in 0..num_layouts {
+        for lvl in 0..MAX_LEVELS {
+            for k in 0..fk.num_keys as u32 {
+                if let Some(v) = fk.get(layout_idx, lvl, k) {
+                    if state_keymap.get(layout_idx, lvl, k) == Some(v) {
+                        let idx = (layout_idx * MAX_LEVELS + lvl) * fk.num_keys + k as usize;
+                        fk.data[idx] = None;
+                    }
+                }
+            }
+        }
+    }
+}
+
 /// Build WKB instance from an XKB keymap, extracting all layouts.
 fn build_wkb_from_keymap(
     keymap: &xkb_backend::keymap::Keymap,
     locale: Option<&str>,
     store_keymap: bool,
 ) -> WKB {
-    const XKB_MAX_LEVELS: usize = 8;
     const EVDEV_OFFSET: u32 = 8;
 
     let (min_keycode, max_keycode) = (keymap.min_keycode(), keymap.max_keycode());
@@ -318,7 +333,7 @@ fn build_wkb_from_keymap(
     let mut level_exceptions_keymap = FlatKeymap::new(num_keys, num_layouts);
     let mut named_key_map = FlatNamedKeyMap::new(num_keys, num_layouts);
     for layout_idx in 0..num_layouts {
-        for lvl in 0..XKB_MAX_LEVELS {
+        for lvl in 0..MAX_LEVELS {
             for kc in min_keycode..=max_keycode {
                 let syms = keymap.key_get_syms_by_level(kc, layout_idx as u32, lvl as u32);
                 if let Some(&sym) = syms.first() {
@@ -352,7 +367,7 @@ fn build_wkb_from_keymap(
 
     let mut state_keymap = FlatKeymap::new(num_keys, num_layouts);
     for layout_idx in 0..num_layouts {
-        for lvl in 0..XKB_MAX_LEVELS {
+        for lvl in 0..MAX_LEVELS {
             if let Some(mut st) = keymap.new_state() {
                 // Set the layout group on the state before querying.
                 if layout_idx > 0 {
@@ -375,7 +390,7 @@ fn build_wkb_from_keymap(
         let mut fk = FlatKeymap::new(num_keys, num_layouts);
         if let Some(lkc) = lock_kc {
             for layout_idx in 0..num_layouts {
-                for lvl in 0..XKB_MAX_LEVELS {
+                for lvl in 0..MAX_LEVELS {
                     if let Some(mut st) = keymap.new_state() {
                         if layout_idx > 0 {
                             st.update_mask(0, 0, 0, 0, 0, layout_idx as u32);
@@ -409,37 +424,14 @@ fn build_wkb_from_keymap(
     let caps_lock_keymap = {
         let caps_kc = level_code(&modifiers, ModType::Caps).map(|(c, _)| c + EVDEV_OFFSET);
         let mut fk = populate_lock(caps_kc, false, level_keys);
-        // Remove entries identical to state_keymap (only keep diffs)
-        for layout_idx in 0..num_layouts {
-            for lvl in 0..XKB_MAX_LEVELS {
-                for k in 0..fk.num_keys as u32 {
-                    if let Some(v) = fk.get(layout_idx, lvl, k) {
-                        if state_keymap.get(layout_idx, lvl, k) == Some(v) {
-                            let idx = (layout_idx * MAX_LEVELS + lvl) * fk.num_keys + k as usize;
-                            fk.data[idx] = None;
-                        }
-                    }
-                }
-            }
-        }
+        dedup_against_state(&mut fk, &state_keymap, num_layouts);
         fk
     };
 
     let num_lock_keys = {
         let num_kc = level_code(&modifiers, ModType::Num).map(|(c, _)| c + EVDEV_OFFSET);
         let mut fk = populate_lock(num_kc, true, level_keys);
-        for layout_idx in 0..num_layouts {
-            for lvl in 0..XKB_MAX_LEVELS {
-                for k in 0..fk.num_keys as u32 {
-                    if let Some(v) = fk.get(layout_idx, lvl, k) {
-                        if state_keymap.get(layout_idx, lvl, k) == Some(v) {
-                            let idx = (layout_idx * MAX_LEVELS + lvl) * fk.num_keys + k as usize;
-                            fk.data[idx] = None;
-                        }
-                    }
-                }
-            }
-        }
+        dedup_against_state(&mut fk, &state_keymap, num_layouts);
         fk
     };
 
@@ -472,7 +464,7 @@ fn build_wkb_from_keymap(
             .ok();
         let compose_locale = env_locale.as_deref().or(locale);
         compose_locale
-            .and_then(xkb_backend::compose::resolve_compose_file)
+            .and_then(xkb_backend::keymap::resolve_compose_file)
             .map(|subpath| {
                 let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
                 load_compose_from_path(&path)

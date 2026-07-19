@@ -20825,7 +20825,7 @@ pub const XKB_KEYSYM_UNICODE_SURROGATE_MAX: u32 = 0x100dfff;
 pub use self::keysym_names_h::{
     keysym_name_perfect_hash, keysym_names, keysym_to_name, name_keysym, name_to_keysym,
 };
-use super::utils::istrcmp;
+use super::shared_types::istrcmp;
 fn find_keysym_index(ks: u32) -> isize {
     if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
         return -1_i32 as isize;
@@ -20897,7 +20897,7 @@ pub fn vt_switch(ks: u32) -> Option<u32> {
 
 fn parse_keysym_hex(s: &[u8], out: &mut u32) -> bool {
     let slice = if s.len() > 8 { &s[..8] } else { s };
-    let (val, count) = super::utils::parse_hex_u32(slice);
+    let (val, count) = super::shared_types::parse_hex_u32(slice);
     *out = val;
     count > 0 && s.get(count as usize).copied() == Some(0)
 }

@@ -14,7 +14,7 @@ pub use crate::modifiers::{level_index, KeyDirection, ALTGR, CAPS_LOCK, NUM_LOCK
 // Re-export compose parsing utilities needed by compose tests.
 pub mod compose_parse {
     pub use crate::xkb::load_compose_from_path;
-    pub use crate::xkb::xkb_backend::compose::{
+    pub use crate::xkb::xkb_backend::keymap::{
         keysym_name_to_char, parse_compose_file, resolve_compose_file, ComposeEntry,
     };
     pub use crate::xkb::xkb_backend::keysym::keysym_to_char;
