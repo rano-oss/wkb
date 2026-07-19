@@ -14,7 +14,7 @@ use super::super::utils::{
     INVALID_UTF8_CODE_POINT,
 };
 
-use super::super::shared_ast_types::{
+use super::super::shared_types::{
     merge_mode, safe_map_name, stmt_type, xkb_map_flags, ExprDef, ExprKind, GroupCompatDef,
     IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef,
     Statement, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, FILE_TYPE_COMPAT,
@@ -34,8 +34,8 @@ use super::messages::{
 };
 
 pub use self::parser_h::{YYerror, END_OF_FILE, YYEMPTY, YYUNDEF};
+pub use super::super::keymap::mod_mask_get_effective;
 use super::super::keymap::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
-pub use super::super::state::mod_mask_get_effective;
 pub use super::symbols::CompileCompatMap;
 pub use super::symbols::CompileKeyTypes;
 pub use super::symbols::CompileKeycodes;

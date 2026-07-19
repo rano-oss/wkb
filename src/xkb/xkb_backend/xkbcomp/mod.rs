@@ -10,7 +10,7 @@ pub mod symbols;
 pub use super::keymap::xkb_atom_text;
 pub use super::keymap::xkb_escape_map_name;
 
-pub use super::shared_ast_types::{
+pub use super::shared_types::{
     merge_mode, pending_computation, safe_map_name, stmt_type_to_string, xkb_keymap_info, ExprDef,
     IncludeStmt, ReportBadType, Statement, VModDef, VarDef, XkbFile, XkbcompFeatures,
     XkbcompLookup, FILE_TYPE_COMPAT, FILE_TYPE_KEYCODES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
@@ -31,7 +31,8 @@ pub use super::shared_ast_types::{
 
 pub use super::shared_types::xkb_keymap;
 
-pub use super::keymap::{ActionTypeText, KeysymText, LookupEntry};
+pub use super::keymap::{ActionTypeText, KeysymText};
+pub use super::shared_types::LookupEntry;
 
 pub use self::parser::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 
@@ -50,7 +51,7 @@ pub use self::messages::XKB_ERROR_KEYMAP_COMPILATION_FAILED;
 use self::parser::CompileKeymap;
 use self::parser::XkbFileFromComponents;
 use self::parser::XkbParseString;
-pub use super::shared_ast_types::{xkb_file_type_to_string, FILE_TYPE_KEYMAP};
+pub use super::shared_types::{xkb_file_type_to_string, FILE_TYPE_KEYMAP};
 
 pub use super::shared_types::format_max_groups;
 

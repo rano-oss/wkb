@@ -10,7 +10,7 @@ use super::super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 use super::*;
 
 use super::super::keymap::ModIndexText;
-pub use super::super::shared_ast_types::{
+pub use super::super::shared_types::{
     InterpDef, KeyAliasDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ReportBadField,
     ReportNotArray, ReportShouldBeArray, SymbolsDef,
 };
@@ -5497,8 +5497,8 @@ pub fn CompileKeycodes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_
 use super::super::keymap::{actionTypeNames, buttonNames, LookupValue, GROUP_LAST_INDEX_NAME};
 
 pub use super::super::keymap::action_equal;
-pub use super::super::shared_ast_types::stmt_type_to_operator_char;
-use super::super::shared_ast_types::ExprKind;
+pub use super::super::shared_types::stmt_type_to_operator_char;
+use super::super::shared_types::ExprKind;
 
 pub struct LookupModMaskPriv<'a> {
     pub mods: &'a xkb_mod_set,

@@ -4,11 +4,7 @@
 pub(crate) mod compose;
 pub(crate) mod keymap;
 pub(crate) mod keysym;
-pub(crate) mod registry;
-pub(crate) mod rust_types;
-pub(crate) mod shared_ast_types;
 pub(crate) mod shared_types;
-pub(crate) mod state;
 pub(crate) mod utils;
 pub(crate) mod xkbcomp;
 
