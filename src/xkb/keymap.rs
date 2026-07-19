@@ -1,13 +1,13 @@
 use std::rc::Rc;
 
 use super::shared_types::{atom_lookup_ref, atom_text};
-pub use super::shared_types::{
+pub(crate) use super::shared_types::{
     xkb_action, xkb_context, xkb_keymap, xkb_led, xkb_level, xkb_mod_set, xkb_rule_names, MOD_BOTH,
     MOD_REAL, MOD_REAL_MASK_ALL, XKB_ATOM_NONE, XKB_KEYCODE_INVALID, XKB_KEYMAP_FORMAT_TEXT_V2,
     XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID,
 };
 
-pub fn xkb_keymap_new_from_names(
+pub(crate) fn xkb_keymap_new_from_names(
     ctx: xkb_context,
     rmlvo_in: Option<&xkb_rule_names>,
     flags: u32,
@@ -30,7 +30,7 @@ pub fn xkb_keymap_new_from_names(
     }
     Some(Rc::new(*keymap))
 }
-pub fn xkb_keymap_new_from_string(
+pub(crate) fn xkb_keymap_new_from_string(
     ctx: xkb_context,
     string: &std::ffi::CStr,
     format: u32,
@@ -53,10 +53,10 @@ pub fn xkb_keymap_new_from_string(
     Some(Rc::new(*keymap))
 }
 
-pub fn xkb_keymap_num_mods(keymap: &xkb_keymap) -> u32 {
+pub(crate) fn xkb_keymap_num_mods(keymap: &xkb_keymap) -> u32 {
     keymap.mods.num_mods
 }
-pub fn xkb_keymap_mod_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
+pub(crate) fn xkb_keymap_mod_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
     if idx >= keymap.mods.num_mods {
         return None;
     }
@@ -67,10 +67,10 @@ pub fn xkb_keymap_mod_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
         Some(s)
     }
 }
-pub fn xkb_keymap_num_layouts(keymap: &xkb_keymap) -> u32 {
+pub(crate) fn xkb_keymap_num_layouts(keymap: &xkb_keymap) -> u32 {
     keymap.num_groups
 }
-pub fn xkb_keymap_layout_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
+pub(crate) fn xkb_keymap_layout_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
     if idx as usize >= keymap.group_names.len() {
         return None;
     }
@@ -81,7 +81,7 @@ pub fn xkb_keymap_layout_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str>
         Some(s)
     }
 }
-pub fn xkb_keymap_key_by_name(keymap: &xkb_keymap, name: &str) -> u32 {
+pub(crate) fn xkb_keymap_key_by_name(keymap: &xkb_keymap, name: &str) -> u32 {
     let mut atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
     if atom != 0 {
         for alias in keymap.key_aliases.iter() {
@@ -119,10 +119,10 @@ const LOCALE_DIR: &str = "/usr/share/X11/locale";
 
 /// A parsed Compose file entry.
 pub struct ComposeEntry {
-    pub keys: Vec<char>,
-    pub keysym_names: Vec<String>,
-    pub multi_key_index: Option<usize>,
-    pub output: char,
+    pub(crate) keys: Vec<char>,
+    pub(crate) keysym_names: Vec<String>,
+    pub(crate) multi_key_index: Option<usize>,
+    pub(crate) output: char,
 }
 
 /// Resolve an XKB keysym name to its Unicode character using our existing
@@ -392,7 +392,7 @@ static XKB_COMPOSE_MAP: LazyLock<BTreeMap<&'static str, &'static str>> = LazyLoc
     ]
     .into()
 });
-pub fn xkb_keymap_key_get_name(keymap: &xkb_keymap, kc: u32) -> Option<&str> {
+pub(crate) fn xkb_keymap_key_get_name(keymap: &xkb_keymap, kc: u32) -> Option<&str> {
     let key = keymap.get_key(kc)?;
     let s = atom_text(&keymap.ctx.atom_table, key.name);
     if s.is_empty() {
@@ -401,22 +401,22 @@ pub fn xkb_keymap_key_get_name(keymap: &xkb_keymap, kc: u32) -> Option<&str> {
         Some(s)
     }
 }
-pub fn xkb_keymap_key_repeats(keymap: &xkb_keymap, kc: u32) -> i32 {
+pub(crate) fn xkb_keymap_key_repeats(keymap: &xkb_keymap, kc: u32) -> i32 {
     match keymap.get_key(kc) {
         Some(key) => key.repeats as i32,
         None => 0_i32,
     }
 }
 
-pub fn xkb_keymap_min_keycode(keymap: &xkb_keymap) -> u32 {
+pub(crate) fn xkb_keymap_min_keycode(keymap: &xkb_keymap) -> u32 {
     keymap.min_key_code
 }
 
-pub fn xkb_keymap_max_keycode(keymap: &xkb_keymap) -> u32 {
+pub(crate) fn xkb_keymap_max_keycode(keymap: &xkb_keymap) -> u32 {
     keymap.max_key_code
 }
 
-pub fn xkb_keymap_num_levels_for_key(keymap: &xkb_keymap, keycode: u32, layout: u32) -> u32 {
+pub(crate) fn xkb_keymap_num_levels_for_key(keymap: &xkb_keymap, keycode: u32, layout: u32) -> u32 {
     keymap
         .get_key(keycode)
         .and_then(|k| k.groups.get(layout as usize))
@@ -424,7 +424,7 @@ pub fn xkb_keymap_num_levels_for_key(keymap: &xkb_keymap, keycode: u32, layout: 
         .unwrap_or(0)
 }
 
-pub fn xkb_keymap_mod_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
+pub(crate) fn xkb_keymap_mod_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
     let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
     if atom == XKB_ATOM_NONE {
         XKB_MOD_INVALID
@@ -433,7 +433,7 @@ pub fn xkb_keymap_mod_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
     }
 }
 
-pub fn xkb_keymap_key_get_syms_by_level_ref<'a>(
+pub(crate) fn xkb_keymap_key_get_syms_by_level_ref<'a>(
     keymap: &'a xkb_keymap,
     kc: u32,
     layout: u32,
@@ -449,16 +449,16 @@ pub fn xkb_keymap_key_get_syms_by_level_ref<'a>(
 
 // --- Merged from keymap_priv.rs ---
 
-pub const XKB_MOD_NAME_SHIFT: &str = "Shift";
-pub const XKB_MOD_NAME_CAPS: &str = "Lock";
-pub const XKB_MOD_NAME_CTRL: &str = "Control";
-pub const XKB_MOD_NAME_MOD1: &str = "Mod1";
-pub const XKB_MOD_NAME_MOD2: &str = "Mod2";
-pub const XKB_MOD_NAME_MOD3: &str = "Mod3";
-pub const XKB_MOD_NAME_MOD4: &str = "Mod4";
-pub const XKB_MOD_NAME_MOD5: &str = "Mod5";
+pub(crate) const XKB_MOD_NAME_SHIFT: &str = "Shift";
+pub(crate) const XKB_MOD_NAME_CAPS: &str = "Lock";
+pub(crate) const XKB_MOD_NAME_CTRL: &str = "Control";
+pub(crate) const XKB_MOD_NAME_MOD1: &str = "Mod1";
+pub(crate) const XKB_MOD_NAME_MOD2: &str = "Mod2";
+pub(crate) const XKB_MOD_NAME_MOD3: &str = "Mod3";
+pub(crate) const XKB_MOD_NAME_MOD4: &str = "Mod4";
+pub(crate) const XKB_MOD_NAME_MOD5: &str = "Mod5";
 
-pub fn xkb_keymap_new(
+pub(crate) fn xkb_keymap_new(
     ctx: xkb_context,
     func: &str,
     format: u32,
@@ -521,7 +521,7 @@ pub fn xkb_keymap_new(
     Some(keymap)
 }
 
-pub fn xkb_escape_map_name(name: &mut String) {
+pub(crate) fn xkb_escape_map_name(name: &mut String) {
     static LEGAL: [u8; 32] = [
         0, 0, 0, 0, 0, 0xa7, 0xff, 0x83, 0xfe, 0xff, 0xff, 0x87, 0xfe, 0xff, 0xff, 0x7, 0, 0, 0, 0,
         0, 0, 0, 0, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0x7f, 0xff,
@@ -543,7 +543,7 @@ pub fn xkb_escape_map_name(name: &mut String) {
         .collect();
 }
 
-pub fn XkbModNameToIndex(mods: &xkb_mod_set, name: u32, type_0: u32) -> u32 {
+pub(crate) fn XkbModNameToIndex(mods: &xkb_mod_set, name: u32, type_0: u32) -> u32 {
     for (i, mod_0) in mods.mods[..mods.num_mods as usize].iter().enumerate() {
         if mod_0.type_0 & type_0 != 0 && name == mod_0.name {
             return i as u32;
@@ -551,10 +551,10 @@ pub fn XkbModNameToIndex(mods: &xkb_mod_set, name: u32, type_0: u32) -> u32 {
     }
     XKB_MOD_INVALID
 }
-pub fn XkbLevelsSameSyms(a: &xkb_level, b: &xkb_level) -> bool {
+pub(crate) fn XkbLevelsSameSyms(a: &xkb_level, b: &xkb_level) -> bool {
     a.syms == b.syms
 }
-pub fn action_equal(a: &xkb_action, b: &xkb_action) -> bool {
+pub(crate) fn action_equal(a: &xkb_action, b: &xkb_action) -> bool {
     if a.action_type() != b.action_type() {
         return false;
     }
@@ -573,7 +573,7 @@ pub fn action_equal(a: &xkb_action, b: &xkb_action) -> bool {
         _ => false,
     }
 }
-pub fn XkbLevelsSameActions(a: &xkb_level, b: &xkb_level) -> bool {
+pub(crate) fn XkbLevelsSameActions(a: &xkb_level, b: &xkb_level) -> bool {
     if a.actions.len() != b.actions.len() {
         return false;
     }
@@ -584,7 +584,7 @@ pub fn XkbLevelsSameActions(a: &xkb_level, b: &xkb_level) -> bool {
     }
     true
 }
-pub fn XkbWrapGroupIntoRange(
+pub(crate) fn XkbWrapGroupIntoRange(
     group: i32,
     num_groups: u32,
     out_of_range_group_policy: u32,
@@ -620,22 +620,22 @@ pub fn XkbWrapGroupIntoRange(
         }
     }
 }
-pub fn xkb_keymap_num_layouts_for_key(keymap: &xkb_keymap, kc: u32) -> u32 {
+pub(crate) fn xkb_keymap_num_layouts_for_key(keymap: &xkb_keymap, kc: u32) -> u32 {
     keymap.get_key(kc).map(|k| k.num_groups as u32).unwrap_or(0)
 }
 
-pub fn xkb_keymap_num_leds(keymap: &xkb_keymap) -> u32 {
+pub(crate) fn xkb_keymap_num_leds(keymap: &xkb_keymap) -> u32 {
     keymap.leds.len() as u32
 }
 
-pub fn xkb_keymap_led_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
+pub(crate) fn xkb_keymap_led_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
     keymap
         .leds
         .get(idx as usize)
         .map(|l| atom_text(&keymap.ctx.atom_table, l.name))
 }
 
-pub fn xkb_keymap_layout_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
+pub(crate) fn xkb_keymap_layout_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
     let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
     if atom == XKB_ATOM_NONE {
         XKB_LAYOUT_INVALID
@@ -648,7 +648,7 @@ pub fn xkb_keymap_layout_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
     }
 }
 
-pub fn xkb_keymap_led_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
+pub(crate) fn xkb_keymap_led_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
     let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
     if atom == XKB_ATOM_NONE {
         XKB_LED_INVALID
@@ -668,7 +668,7 @@ use super::shared_types::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
     DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
 };
-pub use super::shared_types::{
+pub(crate) use super::shared_types::{
     RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
 fn context_include_path_append(ctx: &mut xkb_context, path: &str) -> i32 {
@@ -685,21 +685,21 @@ fn context_include_path_append(ctx: &mut xkb_context, path: &str) -> i32 {
     0_i32
 }
 
-pub fn xkb_context_include_path_get_extra_path() -> String {
+pub(crate) fn xkb_context_include_path_get_extra_path() -> String {
     match xkb_context_getenv("XKB_CONFIG_EXTRA_PATH") {
         Ok(extra) => extra,
         Err(_) => DFLT_XKB_CONFIG_EXTRA_PATH.to_string(),
     }
 }
 
-pub fn xkb_context_include_path_get_unversioned_extensions_path() -> String {
+pub(crate) fn xkb_context_include_path_get_unversioned_extensions_path() -> String {
     match xkb_context_getenv("XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH") {
         Ok(ext) => ext,
         Err(_) => DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH.to_string(),
     }
 }
 
-pub fn xkb_context_include_path_get_versioned_extensions_path() -> String {
+pub(crate) fn xkb_context_include_path_get_versioned_extensions_path() -> String {
     match xkb_context_getenv("XKB_CONFIG_VERSIONED_EXTENSIONS_PATH") {
         Ok(ext) => ext,
         Err(_) => DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH.to_string(),
@@ -768,14 +768,14 @@ fn add_direct_subdirectories(
     ret
 }
 
-pub fn xkb_context_include_path_get_system_path() -> String {
+pub(crate) fn xkb_context_include_path_get_system_path() -> String {
     match xkb_context_getenv("XKB_CONFIG_ROOT") {
         Ok(root) => root,
         Err(_) => DFLT_XKB_CONFIG_ROOT.to_string(),
     }
 }
 
-pub fn xkb_context_include_path_append_default(ctx: &mut xkb_context) -> i32 {
+pub(crate) fn xkb_context_include_path_append_default(ctx: &mut xkb_context) -> i32 {
     {
         let mut ret: i32 = 0_i32;
         let home = xkb_context_getenv("HOME");
@@ -824,14 +824,14 @@ pub fn xkb_context_include_path_append_default(ctx: &mut xkb_context) -> i32 {
     }
 }
 
-pub fn xkb_context_num_include_paths(ctx: &mut xkb_context) -> u32 {
+pub(crate) fn xkb_context_num_include_paths(ctx: &mut xkb_context) -> u32 {
     if xkb_context_init_includes(ctx) {
         ctx.includes.len() as u32
     } else {
         0_u32
     }
 }
-pub fn xkb_context_include_path_get(ctx: &mut xkb_context, idx: u32) -> String {
+pub(crate) fn xkb_context_include_path_get(ctx: &mut xkb_context, idx: u32) -> String {
     if idx >= xkb_context_num_include_paths(ctx) {
         return "".to_string();
     }
@@ -885,7 +885,7 @@ fn log_verbosity_from_str(verbosity: &str) -> i32 {
     }
     XKB_LOG_VERBOSITY_DEFAULT
 }
-pub fn xkb_context_new(flags: xkb_context_flags) -> xkb_context {
+pub(crate) fn xkb_context_new(flags: xkb_context_flags) -> xkb_context {
     let mut ctx = xkb_context {
         refcnt: 1,
         log_level: XKB_LOG_LEVEL_ERROR,
@@ -927,16 +927,16 @@ pub fn xkb_context_new(flags: xkb_context_flags) -> xkb_context {
     ctx
 }
 
-pub fn xkb_context_get_log_verbosity(ctx: &xkb_context) -> i32 {
+pub(crate) fn xkb_context_get_log_verbosity(ctx: &xkb_context) -> i32 {
     ctx.log_verbosity
 }
 
 // --- Merged from context_priv.rs ---
 
-pub fn xkb_context_getenv(name: &str) -> Result<String, VarError> {
+pub(crate) fn xkb_context_getenv(name: &str) -> Result<String, VarError> {
     std::env::var(name)
 }
-pub fn xkb_context_init_includes(ctx: &mut xkb_context) -> bool {
+pub(crate) fn xkb_context_init_includes(ctx: &mut xkb_context) -> bool {
     if ctx.pending_default_includes {
         if ctx.failed_includes.is_empty() {
             if xkb_context_include_path_append_default(ctx) == 0 {
@@ -954,21 +954,24 @@ pub fn xkb_context_init_includes(ctx: &mut xkb_context) -> bool {
     }
     true
 }
-pub fn xkb_context_num_failed_include_paths(ctx: &mut xkb_context) -> u32 {
+pub(crate) fn xkb_context_num_failed_include_paths(ctx: &mut xkb_context) -> u32 {
     if xkb_context_init_includes(ctx) {
         ctx.failed_includes.len() as u32
     } else {
         0_u32
     }
 }
-pub fn xkb_context_failed_include_path_get(ctx: &mut xkb_context, idx: u32) -> String {
+pub(crate) fn xkb_context_failed_include_path_get(ctx: &mut xkb_context, idx: u32) -> String {
     if idx >= xkb_context_num_failed_include_paths(ctx) {
         return "".to_string();
     }
     ctx.failed_includes.get(idx as usize).unwrap().clone()
 }
 
-pub fn xkb_context_sanitize_rule_names(ctx: &xkb_context, rmlvo: &mut xkb_rule_names) -> RMLVO {
+pub(crate) fn xkb_context_sanitize_rule_names(
+    ctx: &xkb_context,
+    rmlvo: &mut xkb_rule_names,
+) -> RMLVO {
     let mut modified: RMLVO = 0 as RMLVO;
     if rmlvo.rules.as_bytes().is_empty() {
         let env = if ctx.use_environment_names {
@@ -1042,11 +1045,11 @@ pub fn xkb_context_sanitize_rule_names(ctx: &xkb_context, rmlvo: &mut xkb_rule_n
 }
 
 use super::shared_types::*;
-pub const CONTROL_NAMES_MIN_V2_INDEX: u32 = 0;
-pub const CONTROL_NAMES_MIN_V1_INDEX: u32 = 7;
-pub const GROUP_LAST_INDEX_NAME: &str = "last";
+pub(crate) const CONTROL_NAMES_MIN_V2_INDEX: u32 = 0;
+pub(crate) const CONTROL_NAMES_MIN_V1_INDEX: u32 = 7;
+pub(crate) const GROUP_LAST_INDEX_NAME: &str = "last";
 #[inline]
-pub fn format_control_names_offset(format: u32) -> u8 {
+pub(crate) fn format_control_names_offset(format: u32) -> u8 {
     (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
         CONTROL_NAMES_MIN_V1_INDEX as i32
     } else {
@@ -1055,9 +1058,9 @@ pub fn format_control_names_offset(format: u32) -> u8 {
 }
 use super::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
 
-pub const XKB_KEYSYM_NAME_MAX_SIZE: i32 = 31;
+pub(crate) const XKB_KEYSYM_NAME_MAX_SIZE: i32 = 31;
 
-pub use super::shared_types::{
+pub(crate) use super::shared_types::{
     ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_MOD_LATCH,
     ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, CONTROL_ALL_BOOLEAN,
     CONTROL_ALL_BOOLEAN_V1, CONTROL_AX, CONTROL_AX_FEEDBACK, CONTROL_AX_TIMEOUT, CONTROL_BELL,
@@ -1067,7 +1070,7 @@ pub use super::shared_types::{
     CONTROL_STICKY_KEYS, MATCH_ALL, MATCH_ANY, MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE,
     XKB_MOD_NONE,
 };
-pub fn LookupString(tab: &[LookupEntry], string: &str, value_rtrn: &mut u32) -> bool {
+pub(crate) fn LookupString(tab: &[LookupEntry], string: &str, value_rtrn: &mut u32) -> bool {
     if string.is_empty() {
         return false;
     }
@@ -1082,7 +1085,7 @@ pub fn LookupString(tab: &[LookupEntry], string: &str, value_rtrn: &mut u32) -> 
     }
     false
 }
-pub fn LookupValue(tab: &[LookupEntry], value: u32) -> &'static str {
+pub(crate) fn LookupValue(tab: &[LookupEntry], value: u32) -> &'static str {
     for entry in tab {
         if entry.name.is_empty() {
             break;
@@ -1093,7 +1096,7 @@ pub fn LookupValue(tab: &[LookupEntry], value: u32) -> &'static str {
     }
     ""
 }
-pub static ctrlMaskNames: [LookupEntry; 25] = [
+pub(crate) static ctrlMaskNames: [LookupEntry; 25] = [
     LookupEntry {
         name: "Overlay3",
         value: CONTROL_OVERLAY3,
@@ -1195,7 +1198,7 @@ pub static ctrlMaskNames: [LookupEntry; 25] = [
         value: 0_u32,
     },
 ];
-pub static modComponentMaskNames: [LookupEntry; 8] = [
+pub(crate) static modComponentMaskNames: [LookupEntry; 8] = [
     LookupEntry {
         name: "base",
         value: XKB_STATE_MODS_DEPRESSED,
@@ -1229,7 +1232,7 @@ pub static modComponentMaskNames: [LookupEntry; 8] = [
         value: 0_u32,
     },
 ];
-pub static groupComponentMaskNames: [LookupEntry; 7] = [
+pub(crate) static groupComponentMaskNames: [LookupEntry; 7] = [
     LookupEntry {
         name: "base",
         value: XKB_STATE_LAYOUT_DEPRESSED,
@@ -1259,7 +1262,7 @@ pub static groupComponentMaskNames: [LookupEntry; 7] = [
         value: 0_u32,
     },
 ];
-pub static buttonNames: [LookupEntry; 7] = [
+pub(crate) static buttonNames: [LookupEntry; 7] = [
     LookupEntry {
         name: "Button1",
         value: 1_u32,
@@ -1289,7 +1292,7 @@ pub static buttonNames: [LookupEntry; 7] = [
         value: 0_u32,
     },
 ];
-pub static useModMapValueNames: [LookupEntry; 5] = [
+pub(crate) static useModMapValueNames: [LookupEntry; 5] = [
     LookupEntry {
         name: "LevelOne",
         value: 1_u32,
@@ -1311,7 +1314,7 @@ pub static useModMapValueNames: [LookupEntry; 5] = [
         value: 0_u32,
     },
 ];
-pub static actionTypeNames: [LookupEntry; 8] = [
+pub(crate) static actionTypeNames: [LookupEntry; 8] = [
     LookupEntry {
         name: "NoAction",
         value: ACTION_TYPE_NONE,
@@ -1345,7 +1348,7 @@ pub static actionTypeNames: [LookupEntry; 8] = [
         value: 0_u32,
     },
 ];
-pub static symInterpretMatchMaskNames: [LookupEntry; 6] = [
+pub(crate) static symInterpretMatchMaskNames: [LookupEntry; 6] = [
     LookupEntry {
         name: "NoneOf",
         value: MATCH_NONE,
@@ -1371,7 +1374,7 @@ pub static symInterpretMatchMaskNames: [LookupEntry; 6] = [
         value: 0_u32,
     },
 ];
-pub fn ModIndexText<'a>(ctx: &'a xkb_context, mods: &xkb_mod_set, ndx: u32) -> &'a str {
+pub(crate) fn ModIndexText<'a>(ctx: &'a xkb_context, mods: &xkb_mod_set, ndx: u32) -> &'a str {
     if ndx == XKB_MOD_INVALID {
         return "none";
     }
@@ -1383,7 +1386,7 @@ pub fn ModIndexText<'a>(ctx: &'a xkb_context, mods: &xkb_mod_set, ndx: u32) -> &
     }
     atom_text(&ctx.atom_table, mods.mods[ndx as usize].name)
 }
-pub fn ActionTypeText(type_0: u32) -> &'static str {
+pub(crate) fn ActionTypeText(type_0: u32) -> &'static str {
     let name: &'static str = LookupValue(&actionTypeNames, type_0);
     if !name.is_empty() {
         name
@@ -1391,13 +1394,13 @@ pub fn ActionTypeText(type_0: u32) -> &'static str {
         "Private"
     }
 }
-pub fn KeysymText(sym: u32) -> String {
+pub(crate) fn KeysymText(sym: u32) -> String {
     xkb_keysym_get_name(sym)
 }
-pub fn SIMatchText(type_0: u32) -> &'static str {
+pub(crate) fn SIMatchText(type_0: u32) -> &'static str {
     LookupValue(&symInterpretMatchMaskNames, type_0)
 }
-pub fn ModMaskText(ctx: &xkb_context, type_0: u32, mods: &xkb_mod_set, mask: u32) -> String {
+pub(crate) fn ModMaskText(ctx: &xkb_context, type_0: u32, mods: &xkb_mod_set, mask: u32) -> String {
     if mask == 0_u32 {
         return "none".to_string();
     }
@@ -1436,17 +1439,17 @@ use std::ffi::CString;
 
 /// Rust-native version of xkb_rule_names
 #[derive(Debug, Clone, Default)]
-pub struct RuleNames {
-    pub rules: String,
-    pub model: String,
-    pub layout: String,
-    pub variant: String,
-    pub options: String,
+pub(crate) struct RuleNames {
+    pub(crate) rules: String,
+    pub(crate) model: String,
+    pub(crate) layout: String,
+    pub(crate) variant: String,
+    pub(crate) options: String,
 }
 
 impl RuleNames {
     /// Create new RuleNames with all fields set to given values
-    pub fn new(
+    pub(crate) fn new(
         rules: String,
         model: String,
         layout: String,
@@ -1463,7 +1466,7 @@ impl RuleNames {
     }
 
     /// Create RuleNames for evdev with given layout and variant
-    pub fn evdev(layout: String, variant: Option<String>) -> Self {
+    pub(crate) fn evdev(layout: String, variant: Option<String>) -> Self {
         Self {
             rules: "evdev".to_string(),
             model: "".to_string(),
@@ -1474,7 +1477,7 @@ impl RuleNames {
     }
 
     /// Convert to xkb_rule_names structure
-    pub fn to_c_keymap(&self) -> super::shared_types::xkb_rule_names {
+    pub(crate) fn to_c_keymap(&self) -> super::shared_types::xkb_rule_names {
         use std::ffi::CString;
         super::shared_types::xkb_rule_names {
             rules: CString::new(self.rules.as_str()).unwrap(),
@@ -1590,20 +1593,20 @@ fn preprocess_unicode_keysyms(input: &str) -> std::borrow::Cow<'_, str> {
 
 /// Safe wrapper around xkb_context with automatic cleanup
 #[derive(Clone)]
-pub struct Context {
+pub(crate) struct Context {
     entity: xkb_context,
 }
 
 impl Context {
     /// Create a new XKB context
-    pub fn new() -> Option<Self> {
+    pub(crate) fn new() -> Option<Self> {
         use super::shared_types::XKB_CONTEXT_NO_FLAGS;
         let ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
         Some(Context { entity: ctx })
     }
 
     /// Create a keymap from RMLVO names. Consumes the context.
-    pub fn keymap_from_names(self, rules: &RuleNames) -> Option<Keymap> {
+    pub(crate) fn keymap_from_names(self, rules: &RuleNames) -> Option<Keymap> {
         use super::shared_types::XKB_KEYMAP_COMPILE_NO_FLAGS;
 
         let rmlvo_c = rules.to_c_keymap();
@@ -1613,7 +1616,7 @@ impl Context {
     }
 
     /// Create a keymap from a keymap string. Consumes the context.
-    pub fn keymap_from_string(self, keymap_str: &str) -> Option<Keymap> {
+    pub(crate) fn keymap_from_string(self, keymap_str: &str) -> Option<Keymap> {
         use super::shared_types::{XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1};
 
         let processed = preprocess_unicode_keysyms(keymap_str);
@@ -1630,7 +1633,7 @@ impl Context {
 
 /// Safe wrapper around xkb_keymap with automatic cleanup
 #[derive(Clone)]
-pub struct Keymap {
+pub(crate) struct Keymap {
     inner: Rc<super::shared_types::xkb_keymap>,
 }
 
@@ -1645,22 +1648,22 @@ impl std::fmt::Debug for Keymap {
 
 impl Keymap {
     /// Get minimum keycode
-    pub fn min_keycode(&self) -> u32 {
+    pub(crate) fn min_keycode(&self) -> u32 {
         xkb_keymap_min_keycode(&self.inner)
     }
 
     /// Get maximum keycode
-    pub fn max_keycode(&self) -> u32 {
+    pub(crate) fn max_keycode(&self) -> u32 {
         xkb_keymap_max_keycode(&self.inner)
     }
 
     /// Get number of levels for a key
-    pub fn num_levels_for_key(&self, keycode: u32, layout: u32) -> u32 {
+    pub(crate) fn num_levels_for_key(&self, keycode: u32, layout: u32) -> u32 {
         xkb_keymap_num_levels_for_key(&self.inner, keycode, layout)
     }
 
     /// Get keysyms for a key at a specific level (safe via get_key_level)
-    pub fn key_get_syms_by_level(&self, keycode: u32, layout: u32, level: u32) -> &[u32] {
+    pub(crate) fn key_get_syms_by_level(&self, keycode: u32, layout: u32, level: u32) -> &[u32] {
         if let Some(key) = self.inner.get_key(keycode) {
             if let Some(leveli) = self.inner.get_key_level(key, layout, level) {
                 if !leveli.syms.is_empty() {
@@ -1672,17 +1675,17 @@ impl Keymap {
     }
 
     /// Get number of modifiers in the keymap
-    pub fn num_mods(&self) -> u32 {
+    pub(crate) fn num_mods(&self) -> u32 {
         xkb_keymap_num_mods(&self.inner)
     }
 
     /// Get modifier name by index
-    pub fn mod_get_name(&self, idx: u32) -> Option<String> {
+    pub(crate) fn mod_get_name(&self, idx: u32) -> Option<String> {
         xkb_keymap_mod_get_name(&self.inner, idx).map(|s| s.to_string())
     }
 
     /// Get modifier mask by name (safe via atom_lookup_ref)
-    pub fn mod_get_mask(&self, name: &str) -> u32 {
+    pub(crate) fn mod_get_mask(&self, name: &str) -> u32 {
         let idx = xkb_keymap_mod_get_index_ref(&self.inner, name);
         if idx >= self.inner.mods.num_mods {
             0_u32
@@ -1692,12 +1695,12 @@ impl Keymap {
     }
 
     /// Check if a key can repeat
-    pub fn key_repeats(&self, keycode: u32) -> bool {
+    pub(crate) fn key_repeats(&self, keycode: u32) -> bool {
         xkb_keymap_key_repeats(&self.inner, keycode) != 0
     }
 
     /// Get modifier maps for a key (returns (modmap, vmodmap) or None if key doesn't exist)
-    pub fn key_get_mods(&self, keycode: u32) -> Option<(u32, u32)> {
+    pub(crate) fn key_get_mods(&self, keycode: u32) -> Option<(u32, u32)> {
         let key = self.inner.get_key(keycode)?;
         Some((key.modmap, key.vmodmap))
     }
@@ -1706,7 +1709,7 @@ impl Keymap {
     ///
     /// Returns an iterator that yields (keycode, evdev_code) pairs.
     /// evdev_code is keycode - 8 (the standard offset for evdev)
-    pub fn keycodes(&self) -> KeycodeIter {
+    pub(crate) fn keycodes(&self) -> KeycodeIter {
         KeycodeIter {
             current: self.min_keycode(),
             max: self.max_keycode(),
@@ -1715,23 +1718,23 @@ impl Keymap {
     }
 
     /// Create a new state for this keymap
-    pub fn new_state(&self) -> Option<State> {
+    pub(crate) fn new_state(&self) -> Option<State> {
         let state = xkb_state_new(self.inner.clone());
         Some(State { inner: state })
     }
 
     /// Get number of layouts in the keymap
-    pub fn num_layouts(&self) -> u32 {
+    pub(crate) fn num_layouts(&self) -> u32 {
         xkb_keymap_num_layouts(&self.inner)
     }
 
     /// Get layout name by index
-    pub fn layout_get_name(&self, idx: u32) -> Option<String> {
+    pub(crate) fn layout_get_name(&self, idx: u32) -> Option<String> {
         xkb_keymap_layout_get_name(&self.inner, idx).map(|s| s.to_string())
     }
 
     /// Get layout index by name (safe via atom_lookup_ref)
-    pub fn layout_get_index(&self, name: &str) -> Option<u32> {
+    pub(crate) fn layout_get_index(&self, name: &str) -> Option<u32> {
         let idx = xkb_keymap_layout_get_index_ref(&self.inner, name);
         if idx == XKB_LAYOUT_INVALID {
             None
@@ -1741,17 +1744,17 @@ impl Keymap {
     }
 
     /// Get number of LEDs in the keymap
-    pub fn num_leds(&self) -> u32 {
+    pub(crate) fn num_leds(&self) -> u32 {
         xkb_keymap_num_leds(&self.inner)
     }
 
     /// Get LED name by index
-    pub fn led_get_name(&self, idx: u32) -> Option<String> {
+    pub(crate) fn led_get_name(&self, idx: u32) -> Option<String> {
         xkb_keymap_led_get_name(&self.inner, idx).map(|s| s.to_string())
     }
 
     /// Get LED index by name (safe via atom_lookup_ref)
-    pub fn led_get_index(&self, name: &str) -> Option<u32> {
+    pub(crate) fn led_get_index(&self, name: &str) -> Option<u32> {
         let idx = xkb_keymap_led_get_index_ref(&self.inner, name);
         if idx == XKB_LED_INVALID {
             None
@@ -1761,12 +1764,12 @@ impl Keymap {
     }
 
     /// Get key name by keycode
-    pub fn key_get_name(&self, keycode: u32) -> Option<String> {
+    pub(crate) fn key_get_name(&self, keycode: u32) -> Option<String> {
         xkb_keymap_key_get_name(&self.inner, keycode).map(|s| s.to_string())
     }
 
     /// Get keycode by key name (safe via atom_lookup_ref)
-    pub fn key_by_name(&self, name: &str) -> Option<u32> {
+    pub(crate) fn key_by_name(&self, name: &str) -> Option<u32> {
         let kc = xkb_keymap_key_by_name(&self.inner, name);
         if kc == XKB_KEYCODE_INVALID {
             None
@@ -1776,12 +1779,12 @@ impl Keymap {
     }
 
     /// Get number of layouts for a specific key
-    pub fn num_layouts_for_key(&self, keycode: u32) -> u32 {
+    pub(crate) fn num_layouts_for_key(&self, keycode: u32) -> u32 {
         xkb_keymap_num_layouts_for_key(&self.inner, keycode)
     }
 
     /// Get modifier index by name (safe via atom_lookup_ref)
-    pub fn mod_get_index(&self, name: &str) -> Option<u32> {
+    pub(crate) fn mod_get_index(&self, name: &str) -> Option<u32> {
         let idx = xkb_keymap_mod_get_index_ref(&self.inner, name);
         if idx == XKB_MOD_INVALID {
             None
@@ -1791,7 +1794,7 @@ impl Keymap {
     }
 
     /// Get all layout names as a Vec
-    pub fn get_all_layouts(&self) -> Vec<String> {
+    pub(crate) fn get_all_layouts(&self) -> Vec<String> {
         let num_layouts = self.num_layouts();
         (0..num_layouts)
             .filter_map(|idx| self.layout_get_name(idx))
@@ -1799,7 +1802,7 @@ impl Keymap {
     }
 
     /// Get all modifier names as a Vec
-    pub fn get_all_mods(&self) -> Vec<String> {
+    pub(crate) fn get_all_mods(&self) -> Vec<String> {
         let num_mods = self.num_mods();
         (0..num_mods)
             .filter_map(|idx| self.mod_get_name(idx))
@@ -1807,7 +1810,7 @@ impl Keymap {
     }
 
     /// Get all LED names as a Vec
-    pub fn get_all_leds(&self) -> Vec<String> {
+    pub(crate) fn get_all_leds(&self) -> Vec<String> {
         let num_leds = self.num_leds();
         (0..num_leds)
             .filter_map(|idx| self.led_get_name(idx))
@@ -1816,7 +1819,7 @@ impl Keymap {
 }
 
 /// Iterator over keycode ranges in a keymap
-pub struct KeycodeIter {
+pub(crate) struct KeycodeIter {
     current: u32,
     max: u32,
     evdev_offset: u32,
@@ -1852,7 +1855,7 @@ impl ExactSizeIterator for KeycodeIter {
 /// Owns the xkb_state via Box. The state was originally allocated by
 /// `xkb_state_new` (which uses `Box::into_raw`), and we reclaim it
 /// via `Box::from_raw` in `Keymap::new_state`.
-pub struct State {
+pub(crate) struct State {
     inner: Box<xkb_state>,
 }
 
@@ -1864,32 +1867,36 @@ impl std::fmt::Debug for State {
 
 impl State {
     /// Update key state (press or release)
-    pub fn update_key(&mut self, keycode: u32, direction: super::shared_types::xkb_key_direction) {
+    pub(crate) fn update_key(
+        &mut self,
+        keycode: u32,
+        direction: super::shared_types::xkb_key_direction,
+    ) {
         xkb_state_update_key(&mut self.inner, keycode, direction);
     }
 
     /// Get keysym for a key in the current state
-    pub fn key_get_one_sym(&self, keycode: u32) -> u32 {
+    pub(crate) fn key_get_one_sym(&self, keycode: u32) -> u32 {
         xkb_state_key_get_one_sym(&self.inner, keycode)
     }
 
     /// Get all keysyms for a key in the current state
-    pub fn key_get_syms(&self, keycode: u32) -> &[u32] {
+    pub(crate) fn key_get_syms(&self, keycode: u32) -> &[u32] {
         xkb_state_key_get_syms(&self.inner, keycode)
     }
 
     /// Check if a modifier is active
-    pub fn mod_name_is_active(&self, name: &str, state_type: u32) -> bool {
+    pub(crate) fn mod_name_is_active(&self, name: &str, state_type: u32) -> bool {
         xkb_state_mod_name_is_active(&self.inner, name, state_type) > 0
     }
 
     /// Check if a modifier index is active
-    pub fn mod_index_is_active(&self, idx: u32, state_type: u32) -> bool {
+    pub(crate) fn mod_index_is_active(&self, idx: u32, state_type: u32) -> bool {
         xkb_state_mod_index_is_active(&self.inner, idx, state_type) > 0
     }
 
     /// Get keysyms for a key at a specific layout and level (delegates to keymap)
-    pub fn key_get_syms_by_level(&self, keycode: u32, layout: u32, level: u32) -> &[u32] {
+    pub(crate) fn key_get_syms_by_level(&self, keycode: u32, layout: u32, level: u32) -> &[u32] {
         let keymap = self.inner.keymap();
         if let Some(key) = keymap.get_key(keycode) {
             if let Some(leveli) = keymap.get_key_level(key, layout, level) {
@@ -1904,7 +1911,7 @@ impl State {
     /// Get the number of layouts in the underlying keymap
 
     /// Update state from modifier/layout masks (e.g., from Wayland compositor)
-    pub fn update_mask(
+    pub(crate) fn update_mask(
         &mut self,
         depressed_mods: u32,
         latched_mods: u32,
@@ -1937,29 +1944,29 @@ impl Drop for State {
 // ============================================================================
 
 /// Safe wrapper around rxkb_context for keyboard layout registry
-pub struct RxkbContext {
+pub(crate) struct RxkbContext {
     inner: Box<rxkb_context>,
 }
 
 impl RxkbContext {
     /// Create a new registry context
-    pub fn new() -> Option<Self> {
+    pub(crate) fn new() -> Option<Self> {
         let inner = rxkb_context::new(RXKB_CONTEXT_NO_FLAGS)?;
         Some(RxkbContext { inner })
     }
 
     /// Load default registry paths
-    pub fn include_path_append_default(&mut self) {
+    pub(crate) fn include_path_append_default(&mut self) {
         self.inner.include_path_append_default();
     }
 
     /// Parse the registry for the given ruleset (typically "evdev")
-    pub fn parse(&mut self, ruleset: &str) -> bool {
+    pub(crate) fn parse(&mut self, ruleset: &str) -> bool {
         self.inner.parse(ruleset)
     }
 
     /// Iterate over all layouts in the registry
-    pub fn layouts(&self) -> impl Iterator<Item = &rxkb_layout> {
+    pub(crate) fn layouts(&self) -> impl Iterator<Item = &rxkb_layout> {
         self.inner.layouts().iter()
     }
 }
@@ -2017,63 +2024,63 @@ mod tests {
 
 #[derive(Copy, Clone)]
 
-pub struct xkb_event {
-    pub type_0: xkb_event_type,
-    pub data: xkb_event_data,
+pub(crate) struct xkb_event {
+    pub(crate) type_0: xkb_event_type,
+    pub(crate) data: xkb_event_data,
 }
 #[derive(Copy, Clone)]
 
-pub enum xkb_event_data {
+pub(crate) enum xkb_event_data {
     Keycode(u32),
     Components(xkb_event_components),
 }
 #[derive(Copy, Clone)]
 
-pub struct xkb_event_components {
-    pub components: state_components,
-    pub changed: u32,
+pub(crate) struct xkb_event_components {
+    pub(crate) components: state_components,
+    pub(crate) changed: u32,
 }
 #[derive(Copy, Clone)]
 
-pub struct state_components {
-    pub base_group: i32,
-    pub latched_group: i32,
-    pub locked_group: i32,
-    pub group: u32,
-    pub base_mods: u32,
-    pub latched_mods: u32,
-    pub locked_mods: u32,
-    pub mods: u32,
-    pub leds: xkb_led_mask_t,
-    pub controls: xkb_action_controls,
+pub(crate) struct state_components {
+    pub(crate) base_group: i32,
+    pub(crate) latched_group: i32,
+    pub(crate) locked_group: i32,
+    pub(crate) group: u32,
+    pub(crate) base_mods: u32,
+    pub(crate) latched_mods: u32,
+    pub(crate) locked_mods: u32,
+    pub(crate) mods: u32,
+    pub(crate) leds: xkb_led_mask_t,
+    pub(crate) controls: xkb_action_controls,
 }
 #[derive(Copy, Clone)]
 
-pub struct xkb_state_update_v1 {
-    pub size: usize,
-    pub components: *const xkb_state_components_update_v1,
-    pub layout_policy: *const xkb_layout_policy_update_v1,
+pub(crate) struct xkb_state_update_v1 {
+    pub(crate) size: usize,
+    pub(crate) components: *const xkb_state_components_update_v1,
+    pub(crate) layout_policy: *const xkb_layout_policy_update_v1,
 }
 #[derive(Copy, Clone)]
 
-pub struct xkb_layout_policy_update_v1 {
-    pub size: usize,
-    pub policy: u32,
-    pub redirect: u32,
+pub(crate) struct xkb_layout_policy_update_v1 {
+    pub(crate) size: usize,
+    pub(crate) policy: u32,
+    pub(crate) redirect: u32,
 }
 #[derive(Copy, Clone)]
 
-pub struct xkb_state_components_update_v1 {
-    pub size: usize,
-    pub components: u32,
-    pub affect_latched_mods: u32,
-    pub latched_mods: u32,
-    pub affect_locked_mods: u32,
-    pub locked_mods: u32,
-    pub latched_layout: i32,
-    pub locked_layout: i32,
-    pub affect_controls: xkb_keyboard_control_flags,
-    pub controls: xkb_keyboard_control_flags,
+pub(crate) struct xkb_state_components_update_v1 {
+    pub(crate) size: usize,
+    pub(crate) components: u32,
+    pub(crate) affect_latched_mods: u32,
+    pub(crate) latched_mods: u32,
+    pub(crate) affect_locked_mods: u32,
+    pub(crate) locked_mods: u32,
+    pub(crate) latched_layout: i32,
+    pub(crate) locked_layout: i32,
+    pub(crate) affect_controls: xkb_keyboard_control_flags,
+    pub(crate) controls: xkb_keyboard_control_flags,
 }
 use super::shared_types::{
     xkb_action_controls, xkb_event_type, xkb_keyboard_control_flags, xkb_led_mask_t,
@@ -2085,36 +2092,36 @@ fn vec_resize_zero<T: Default>(v: &mut Vec<T>, new_len: usize) {
 
 #[derive(Clone)]
 
-pub struct xkb_state {
-    pub components: state_components,
-    pub controls: machine_controls,
-    pub set_mods: u32,
-    pub clear_mods: u32,
-    pub mod_key_count: [i16; 32],
-    pub flags: xkb_a11y_flags,
-    pub refcnt: i32,
-    pub filters: Vec<xkb_filter>,
-    pub keymap: Rc<xkb_keymap>,
+pub(crate) struct xkb_state {
+    pub(crate) components: state_components,
+    pub(crate) controls: machine_controls,
+    pub(crate) set_mods: u32,
+    pub(crate) clear_mods: u32,
+    pub(crate) mod_key_count: [i16; 32],
+    pub(crate) flags: xkb_a11y_flags,
+    pub(crate) refcnt: i32,
+    pub(crate) filters: Vec<xkb_filter>,
+    pub(crate) keymap: Rc<xkb_keymap>,
 }
 
 impl xkb_state {
     /// Safe accessor for the keymap reference.
     #[inline]
-    pub fn keymap(&self) -> &xkb_keymap {
+    pub(crate) fn keymap(&self) -> &xkb_keymap {
         &self.keymap
     }
 }
 // C2Rust_Unnamed_15 removed: replaced by Vec<xkb_filter>
 #[derive(Copy, Clone)]
 
-pub struct xkb_filter {
-    pub action: xkb_action,
-    pub key: *const xkb_key,
-    pub func: Option<
+pub(crate) struct xkb_filter {
+    pub(crate) action: xkb_action,
+    pub(crate) key: *const xkb_key,
+    pub(crate) func: Option<
         fn(&mut xkb_state, &mut xkb_events, &mut xkb_filter, &xkb_key, xkb_key_direction) -> bool,
     >,
-    pub priv_0: u64,
-    pub refcnt: i32,
+    pub(crate) priv_0: u64,
+    pub(crate) refcnt: i32,
 }
 impl Default for xkb_filter {
     fn default() -> Self {
@@ -2129,10 +2136,10 @@ impl Default for xkb_filter {
 }
 #[derive(Clone)]
 
-pub struct xkb_events {
-    pub next: u32,
-    pub queue: Vec<xkb_event>,
-    pub ctx: xkb_context,
+pub(crate) struct xkb_events {
+    pub(crate) next: u32,
+    pub(crate) queue: Vec<xkb_event>,
+    pub(crate) ctx: xkb_context,
 }
 impl xkb_events {
     fn dummy() -> Self {
@@ -2146,23 +2153,23 @@ impl xkb_events {
 // C2Rust_Unnamed_16 removed: replaced by Vec<xkb_event>
 #[derive(Copy, Clone)]
 
-pub struct machine_controls {
-    pub out_of_range_group_policy: u32,
-    pub out_of_range_redirect_group: u32,
+pub(crate) struct machine_controls {
+    pub(crate) out_of_range_group_policy: u32,
+    pub(crate) out_of_range_redirect_group: u32,
 }
 
 #[derive(Copy, Clone)]
 
-pub struct FilterActionFuncs {
-    pub new: Option<fn(&mut xkb_state, &mut xkb_events, &mut xkb_filter) -> ()>,
-    pub func: Option<
+pub(crate) struct FilterActionFuncs {
+    pub(crate) new: Option<fn(&mut xkb_state, &mut xkb_events, &mut xkb_filter) -> ()>,
+    pub(crate) func: Option<
         fn(&mut xkb_state, &mut xkb_events, &mut xkb_filter, &xkb_key, xkb_key_direction) -> bool,
     >,
 }
 
-pub const XKB_FILTER_CONSUME: xkb_filter_result = 0;
+pub(crate) const XKB_FILTER_CONSUME: xkb_filter_result = 0;
 
-pub const XKB_FILTER_CONTINUE: xkb_filter_result = 1;
+pub(crate) const XKB_FILTER_CONTINUE: xkb_filter_result = 1;
 
 /// Pack latch state and group delta into a u64 (replacing the old union group_latch_priv).
 #[inline]
@@ -2182,19 +2189,19 @@ fn unpack_group_delta(packed: u64) -> i32 {
     (packed >> 32) as u32 as i32
 }
 
-pub type xkb_key_latch_state = u32;
+pub(crate) type xkb_key_latch_state = u32;
 
-pub const _KEY_LATCH_STATE_NUM_ENTRIES: xkb_key_latch_state = 3;
+pub(crate) const _KEY_LATCH_STATE_NUM_ENTRIES: xkb_key_latch_state = 3;
 
-pub const LATCH_PENDING: xkb_key_latch_state = 2;
+pub(crate) const LATCH_PENDING: xkb_key_latch_state = 2;
 
-pub const LATCH_KEY_DOWN: xkb_key_latch_state = 1;
+pub(crate) const LATCH_KEY_DOWN: xkb_key_latch_state = 1;
 
-pub const NO_LATCH: xkb_key_latch_state = 0;
+pub(crate) const NO_LATCH: xkb_key_latch_state = 0;
 
-pub const XKB_STATE_MATCH_FLAGS: u32 = 65539;
+pub(crate) const XKB_STATE_MATCH_FLAGS: u32 = 65539;
 
-pub type xkb_filter_result = u32;
+pub(crate) type xkb_filter_result = u32;
 
 use std::sync::LazyLock;
 
@@ -2256,7 +2263,7 @@ fn state_key_get_level(state: &xkb_state, key: &xkb_key, layout: u32) -> u32 {
     }
 }
 
-pub fn xkb_state_key_get_level(state: &xkb_state, kc: u32, layout: u32) -> u32 {
+pub(crate) fn xkb_state_key_get_level(state: &xkb_state, kc: u32, layout: u32) -> u32 {
     match state.keymap().get_key(kc) {
         Some(key) => state_key_get_level(state, key, layout),
         None => XKB_LEVEL_INVALID,
@@ -2272,7 +2279,7 @@ fn state_key_get_layout(state: &xkb_state, key: &xkb_key) -> u32 {
     )
 }
 
-pub fn xkb_state_key_get_layout(state: &xkb_state, kc: u32) -> u32 {
+pub(crate) fn xkb_state_key_get_layout(state: &xkb_state, kc: u32) -> u32 {
     match state.keymap().get_key(kc) {
         Some(key) => state_key_get_layout(state, key),
         None => XKB_LAYOUT_INVALID,
@@ -2911,7 +2918,7 @@ fn xkb_filter_apply_all(
         k = k.wrapping_add(1);
     }
 }
-pub fn xkb_state_new(keymap: Rc<xkb_keymap>) -> Box<xkb_state> {
+pub(crate) fn xkb_state_new(keymap: Rc<xkb_keymap>) -> Box<xkb_state> {
     let mut state = Box::new(xkb_state {
         components: state_components {
             base_group: 0,
@@ -3046,7 +3053,11 @@ fn xkb_state_update_derived(state: &mut xkb_state) {
     };
     xkb_state_led_update_all(state);
 }
-pub fn xkb_state_update_key(state: &mut xkb_state, kc: u32, direction: xkb_key_direction) -> u32 {
+pub(crate) fn xkb_state_update_key(
+    state: &mut xkb_state,
+    kc: u32,
+    direction: xkb_key_direction,
+) -> u32 {
     let keymap_rc = Rc::clone(&state.keymap);
     let keymap = &*keymap_rc;
     let key_ref = match keymap.get_key(kc) {
@@ -3237,7 +3248,7 @@ fn clear_all_latches_and_locks(state: &mut xkb_state, events: &mut xkb_events) {
     state_update_latched_locked(state, &update, events);
 }
 
-pub fn xkb_state_update_mask(
+pub(crate) fn xkb_state_update_mask(
     state: &mut xkb_state,
     base_mods: u32,
     latched_mods: u32,
@@ -3270,7 +3281,7 @@ fn should_do_caps_transformation(state: &xkb_state, kc: u32) -> bool {
         && xkb_state_mod_index_is_consumed(state, kc, XKB_MOD_INDEX_CAPS as i32 as u32) == 0_i32
 }
 
-pub fn xkb_state_key_get_syms(state: &xkb_state, kc: u32) -> &[u32] {
+pub(crate) fn xkb_state_key_get_syms(state: &xkb_state, kc: u32) -> &[u32] {
     let layout: u32 = xkb_state_key_get_layout(state, kc);
     if layout != XKB_LAYOUT_INVALID {
         let level = xkb_state_key_get_level(state, kc, layout);
@@ -3301,7 +3312,7 @@ pub fn xkb_state_key_get_syms(state: &xkb_state, kc: u32) -> &[u32] {
     &[]
 }
 
-pub fn xkb_state_key_get_one_sym(state: &xkb_state, kc: u32) -> u32 {
+pub(crate) fn xkb_state_key_get_one_sym(state: &xkb_state, kc: u32) -> u32 {
     let syms = xkb_state_key_get_syms(state, kc);
     if syms.len() != 1 {
         XKB_KEY_NoSymbol as u32
@@ -3328,11 +3339,11 @@ fn serialize_mods(components: &state_components, type_0: u32) -> u32 {
     ret
 }
 
-pub fn xkb_state_serialize_mods(state: &xkb_state, type_0: u32) -> u32 {
+pub(crate) fn xkb_state_serialize_mods(state: &xkb_state, type_0: u32) -> u32 {
     serialize_mods(&state.components, type_0)
 }
 
-pub fn mod_mask_get_effective(keymap: &xkb_keymap, mods: u32) -> u32 {
+pub(crate) fn mod_mask_get_effective(keymap: &xkb_keymap, mods: u32) -> u32 {
     let mut mask: u32 = mods & MOD_REAL_MASK_ALL;
     let mut i: u32 = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
     while i < keymap.mods.num_mods {
@@ -3344,7 +3355,7 @@ pub fn mod_mask_get_effective(keymap: &xkb_keymap, mods: u32) -> u32 {
     mask
 }
 
-pub fn xkb_state_mod_index_is_active(state: &xkb_state, idx: u32, type_0: u32) -> i32 {
+pub(crate) fn xkb_state_mod_index_is_active(state: &xkb_state, idx: u32, type_0: u32) -> i32 {
     let keymap = state.keymap();
     if (idx >= xkb_keymap_num_mods(keymap)) as i64 != 0 {
         return -1_i32;
@@ -3356,7 +3367,7 @@ pub fn xkb_state_mod_index_is_active(state: &xkb_state, idx: u32, type_0: u32) -
     (xkb_state_serialize_mods(state, type_0) & mapping == mapping) as i32
 }
 
-pub fn xkb_state_mod_name_is_active(state: &xkb_state, name: &str, type_0: u32) -> i32 {
+pub(crate) fn xkb_state_mod_name_is_active(state: &xkb_state, name: &str, type_0: u32) -> i32 {
     let idx = xkb_keymap_mod_get_index_ref(state.keymap(), name);
     if idx == XKB_MOD_INVALID {
         return -1_i32;
@@ -3407,7 +3418,7 @@ fn key_get_consumed(state: &xkb_state, key: &xkb_key, mode: xkb_consumed_mode) -
     consumed & !preserve
 }
 
-pub fn xkb_state_mod_index_is_consumed2(
+pub(crate) fn xkb_state_mod_index_is_consumed2(
     state: &xkb_state,
     kc: u32,
     idx: u32,
@@ -3428,84 +3439,84 @@ pub fn xkb_state_mod_index_is_consumed2(
     (mapping & key_get_consumed(state, key, mode) == mapping) as i32
 }
 
-pub fn xkb_state_mod_index_is_consumed(state: &xkb_state, kc: u32, idx: u32) -> i32 {
+pub(crate) fn xkb_state_mod_index_is_consumed(state: &xkb_state, kc: u32, idx: u32) -> i32 {
     xkb_state_mod_index_is_consumed2(state, kc, idx, XKB_CONSUMED_MODE_XKB)
 }
 
-pub type rxkb_log_level = u32;
-pub const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;
-pub const RXKB_LOG_LEVEL_INFO: rxkb_log_level = 40;
-pub const RXKB_LOG_LEVEL_WARNING: rxkb_log_level = 30;
-pub const RXKB_LOG_LEVEL_ERROR: rxkb_log_level = 20;
-pub const RXKB_LOG_LEVEL_CRITICAL: rxkb_log_level = 10;
-pub type rxkb_popularity = u32;
-pub const RXKB_POPULARITY_EXOTIC: rxkb_popularity = 2;
-pub const RXKB_POPULARITY_STANDARD: rxkb_popularity = 1;
-pub type rxkb_context_flags = u32;
-pub const RXKB_CONTEXT_NO_SECURE_GETENV: rxkb_context_flags = 4;
-pub const RXKB_CONTEXT_LOAD_EXOTIC_RULES: rxkb_context_flags = 2;
-pub const RXKB_CONTEXT_NO_DEFAULT_INCLUDES: rxkb_context_flags = 1;
-pub const RXKB_CONTEXT_NO_FLAGS: rxkb_context_flags = 0;
+pub(crate) type rxkb_log_level = u32;
+pub(crate) const RXKB_LOG_LEVEL_DEBUG: rxkb_log_level = 50;
+pub(crate) const RXKB_LOG_LEVEL_INFO: rxkb_log_level = 40;
+pub(crate) const RXKB_LOG_LEVEL_WARNING: rxkb_log_level = 30;
+pub(crate) const RXKB_LOG_LEVEL_ERROR: rxkb_log_level = 20;
+pub(crate) const RXKB_LOG_LEVEL_CRITICAL: rxkb_log_level = 10;
+pub(crate) type rxkb_popularity = u32;
+pub(crate) const RXKB_POPULARITY_EXOTIC: rxkb_popularity = 2;
+pub(crate) const RXKB_POPULARITY_STANDARD: rxkb_popularity = 1;
+pub(crate) type rxkb_context_flags = u32;
+pub(crate) const RXKB_CONTEXT_NO_SECURE_GETENV: rxkb_context_flags = 4;
+pub(crate) const RXKB_CONTEXT_LOAD_EXOTIC_RULES: rxkb_context_flags = 2;
+pub(crate) const RXKB_CONTEXT_NO_DEFAULT_INCLUDES: rxkb_context_flags = 1;
+pub(crate) const RXKB_CONTEXT_NO_FLAGS: rxkb_context_flags = 0;
 
-pub type context_state = u32;
-pub const CONTEXT_FAILED: context_state = 2;
-pub const CONTEXT_PARSED: context_state = 1;
-pub const CONTEXT_NEW: context_state = 0;
+pub(crate) type context_state = u32;
+pub(crate) const CONTEXT_FAILED: context_state = 2;
+pub(crate) const CONTEXT_PARSED: context_state = 1;
+pub(crate) const CONTEXT_NEW: context_state = 0;
 
-pub struct rxkb_context {
-    pub context_state: context_state,
-    pub load_extra_rules_files: bool,
-    pub models: Vec<rxkb_model>,
-    pub layouts: Vec<rxkb_layout>,
-    pub option_groups: Vec<rxkb_option_group>,
-    pub includes: Vec<String>,
-    pub log_fn: Option<fn(&rxkb_context, rxkb_log_level, &str)>,
-    pub log_level: rxkb_log_level,
+pub(crate) struct rxkb_context {
+    pub(crate) context_state: context_state,
+    pub(crate) load_extra_rules_files: bool,
+    pub(crate) models: Vec<rxkb_model>,
+    pub(crate) layouts: Vec<rxkb_layout>,
+    pub(crate) option_groups: Vec<rxkb_option_group>,
+    pub(crate) includes: Vec<String>,
+    pub(crate) log_fn: Option<fn(&rxkb_context, rxkb_log_level, &str)>,
+    pub(crate) log_level: rxkb_log_level,
 }
 
 #[derive(Clone)]
-pub struct rxkb_model {
-    pub name: String,
-    pub vendor: String,
-    pub description: String,
-    pub popularity: rxkb_popularity,
+pub(crate) struct rxkb_model {
+    pub(crate) name: String,
+    pub(crate) vendor: String,
+    pub(crate) description: String,
+    pub(crate) popularity: rxkb_popularity,
 }
 
-pub struct rxkb_layout {
-    pub name: String,
-    pub brief: String,
-    pub description: String,
-    pub variant: String,
-    pub popularity: rxkb_popularity,
-    pub iso639s: Vec<String>,
-    pub iso3166s: Vec<String>,
+pub(crate) struct rxkb_layout {
+    pub(crate) name: String,
+    pub(crate) brief: String,
+    pub(crate) description: String,
+    pub(crate) variant: String,
+    pub(crate) popularity: rxkb_popularity,
+    pub(crate) iso639s: Vec<String>,
+    pub(crate) iso3166s: Vec<String>,
 }
 
-pub struct rxkb_option_group {
-    pub allow_multiple: bool,
-    pub options: Vec<rxkb_option>,
-    pub name: String,
-    pub description: String,
-    pub popularity: rxkb_popularity,
-}
-
-#[derive(Clone)]
-pub struct rxkb_option {
-    pub name: String,
-    pub brief: String,
-    pub description: String,
-    pub popularity: rxkb_popularity,
-    pub layout_specific: bool,
+pub(crate) struct rxkb_option_group {
+    pub(crate) allow_multiple: bool,
+    pub(crate) options: Vec<rxkb_option>,
+    pub(crate) name: String,
+    pub(crate) description: String,
+    pub(crate) popularity: rxkb_popularity,
 }
 
 #[derive(Clone)]
-pub struct config_item {
-    pub name: String,
-    pub description: String,
-    pub brief: String,
-    pub vendor: String,
-    pub popularity: rxkb_popularity,
-    pub layout_specific: bool,
+pub(crate) struct rxkb_option {
+    pub(crate) name: String,
+    pub(crate) brief: String,
+    pub(crate) description: String,
+    pub(crate) popularity: rxkb_popularity,
+    pub(crate) layout_specific: bool,
+}
+
+#[derive(Clone)]
+pub(crate) struct config_item {
+    pub(crate) name: String,
+    pub(crate) description: String,
+    pub(crate) brief: String,
+    pub(crate) vendor: String,
+    pub(crate) popularity: rxkb_popularity,
+    pub(crate) layout_specific: bool,
 }
 
 // ---------------------------------------------------------------------------
@@ -3513,59 +3524,59 @@ pub struct config_item {
 // ---------------------------------------------------------------------------
 
 impl rxkb_layout {
-    pub fn name(&self) -> &str {
+    pub(crate) fn name(&self) -> &str {
         &self.name
     }
-    pub fn brief(&self) -> &str {
+    pub(crate) fn brief(&self) -> &str {
         &self.brief
     }
-    pub fn description(&self) -> &str {
+    pub(crate) fn description(&self) -> &str {
         &self.description
     }
-    pub fn variant(&self) -> &str {
+    pub(crate) fn variant(&self) -> &str {
         &self.variant
     }
-    pub fn iso639s(&self) -> &[String] {
+    pub(crate) fn iso639s(&self) -> &[String] {
         &self.iso639s
     }
-    pub fn iso3166s(&self) -> &[String] {
+    pub(crate) fn iso3166s(&self) -> &[String] {
         &self.iso3166s
     }
 }
 
 impl rxkb_model {
-    pub fn name(&self) -> &str {
+    pub(crate) fn name(&self) -> &str {
         &self.name
     }
-    pub fn vendor(&self) -> &str {
+    pub(crate) fn vendor(&self) -> &str {
         &self.vendor
     }
-    pub fn description(&self) -> &str {
+    pub(crate) fn description(&self) -> &str {
         &self.description
     }
 }
 
 impl rxkb_option_group {
-    pub fn name(&self) -> &str {
+    pub(crate) fn name(&self) -> &str {
         &self.name
     }
-    pub fn description(&self) -> &str {
+    pub(crate) fn description(&self) -> &str {
         &self.description
     }
 
-    pub fn options(&self) -> &[rxkb_option] {
+    pub(crate) fn options(&self) -> &[rxkb_option] {
         &self.options
     }
 }
 
 impl rxkb_option {
-    pub fn name(&self) -> &str {
+    pub(crate) fn name(&self) -> &str {
         &self.name
     }
-    pub fn brief(&self) -> &str {
+    pub(crate) fn brief(&self) -> &str {
         &self.brief
     }
-    pub fn description(&self) -> &str {
+    pub(crate) fn description(&self) -> &str {
         &self.description
     }
 }
@@ -3609,11 +3620,11 @@ fn default_log_fn(_ctx: &rxkb_context, level: rxkb_log_level, msg: &str) {
 }
 
 // ---------------------------------------------------------------------------
-// Context construction & public API
+// Context construction & pub(cratelic API
 // ---------------------------------------------------------------------------
 
 impl rxkb_context {
-    pub fn new(flags: rxkb_context_flags) -> Option<Box<rxkb_context>> {
+    pub(crate) fn new(flags: rxkb_context_flags) -> Option<Box<rxkb_context>> {
         let valid_flags: rxkb_context_flags = RXKB_CONTEXT_NO_DEFAULT_INCLUDES
             | RXKB_CONTEXT_LOAD_EXOTIC_RULES
             | RXKB_CONTEXT_NO_SECURE_GETENV;
@@ -3658,7 +3669,7 @@ impl rxkb_context {
         Some(ctx)
     }
 
-    pub fn include_path_append(&mut self, path: &str) {
+    pub(crate) fn include_path_append(&mut self, path: &str) {
         if self.context_state != CONTEXT_NEW {
             rxkb_logf!(
                 self,
@@ -3697,7 +3708,7 @@ impl rxkb_context {
         }
     }
 
-    pub fn include_path_append_default(&mut self) -> bool {
+    pub(crate) fn include_path_append_default(&mut self) -> bool {
         if self.context_state != CONTEXT_NEW {
             rxkb_logf!(
                 self,
@@ -3831,7 +3842,7 @@ impl rxkb_context {
         }
     }
 
-    pub fn parse(&mut self, ruleset: &str) -> bool {
+    pub(crate) fn parse(&mut self, ruleset: &str) -> bool {
         let mut success = false;
         if self.context_state != CONTEXT_NEW {
             rxkb_logf!(
@@ -3872,15 +3883,15 @@ impl rxkb_context {
         success
     }
 
-    pub fn layouts(&self) -> &[rxkb_layout] {
+    pub(crate) fn layouts(&self) -> &[rxkb_layout] {
         &self.layouts
     }
 
-    pub fn models(&self) -> &[rxkb_model] {
+    pub(crate) fn models(&self) -> &[rxkb_model] {
         &self.models
     }
 
-    pub fn option_groups(&self) -> &[rxkb_option_group] {
+    pub(crate) fn option_groups(&self) -> &[rxkb_option_group] {
         &self.option_groups
     }
 }

@@ -1,8 +1,5 @@
 // Safe parser.rs
 // LALR(1) parser for XKB, converted from bison-generated C via c2rust
-#![allow(dead_code)]
-
-use self::parser_h::*;
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use super::super::keysym::utf32_to_keysym;
@@ -26,188 +23,187 @@ use super::super::shared_types::{
     STMT_UNKNOWN_DECLARATION, _STMT_NUM_VALUES,
 };
 
-pub use self::parser_h::{YYerror, END_OF_FILE, YYEMPTY, YYUNDEF};
-pub use super::super::keymap::mod_mask_get_effective;
+pub(crate) use super::super::keymap::mod_mask_get_effective;
 use super::super::keymap::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
 use super::super::keymap::{ActionTypeText, KeysymText};
-pub use super::symbols::CompileCompatMap;
-pub use super::symbols::CompileKeyTypes;
-pub use super::symbols::CompileKeycodes;
-pub use super::symbols::CompileSymbols;
+pub(crate) use super::symbols::CompileCompatMap;
+pub(crate) use super::symbols::CompileKeyTypes;
+pub(crate) use super::symbols::CompileKeycodes;
+pub(crate) use super::symbols::CompileSymbols;
 use super::symbols::{ExprResolveGroup, ExprResolveGroupMask};
 
-pub const XKB_KEY_VoidSymbol: i32 = 0xffffff_i32;
-pub const XKB_KEY_0: i32 = 0x30_i32;
-pub const XKB_KEY_section: i32 = 0xa7_i32;
-pub const XKB_KEYSYM_MIN: i32 = 0;
+pub(crate) const XKB_KEY_VoidSymbol: i32 = 0xffffff_i32;
+pub(crate) const XKB_KEY_0: i32 = 0x30_i32;
+pub(crate) const XKB_KEY_section: i32 = 0xa7_i32;
+pub(crate) const XKB_KEYSYM_MIN: i32 = 0;
 
 // ── YYSYMBOL constants ──────────────────────────────────────────────
-pub const YYSYMBOL_MapName: i32 = 148;
-pub const YYSYMBOL_OptMapName: i32 = 147;
-pub const YYSYMBOL_String: i32 = 146;
-pub const YYSYMBOL_Ident: i32 = 145;
-pub const YYSYMBOL_KeyCode: i32 = 144;
-pub const YYSYMBOL_Integer: i32 = 143;
-pub const YYSYMBOL_Float: i32 = 142;
-pub const YYSYMBOL_Number: i32 = 141;
-pub const YYSYMBOL_SignedNumber: i32 = 140;
-pub const YYSYMBOL_KeySymLit: i32 = 139;
-pub const YYSYMBOL_KeySym: i32 = 138;
-pub const YYSYMBOL_KeySyms: i32 = 137;
-pub const YYSYMBOL_NonEmptyKeySyms: i32 = 136;
-pub const YYSYMBOL_KeySymList: i32 = 135;
-pub const YYSYMBOL_MultiKeySymList: i32 = 134;
-pub const YYSYMBOL_Terminal: i32 = 133;
-pub const YYSYMBOL_OptTerminal: i32 = 132;
-pub const YYSYMBOL_Lhs: i32 = 131;
-pub const YYSYMBOL_Action: i32 = 130;
-pub const YYSYMBOL_Actions: i32 = 129;
-pub const YYSYMBOL_NonEmptyActions: i32 = 128;
-pub const YYSYMBOL_ActionList: i32 = 127;
-pub const YYSYMBOL_MultiActionList: i32 = 126;
-pub const YYSYMBOL_Term: i32 = 125;
-pub const YYSYMBOL_Expr: i32 = 124;
-pub const YYSYMBOL_ExprList: i32 = 123;
-pub const YYSYMBOL_MergeMode: i32 = 122;
-pub const YYSYMBOL_OptMergeMode: i32 = 121;
-pub const YYSYMBOL_Element: i32 = 120;
-pub const YYSYMBOL_FieldSpec: i32 = 119;
-pub const YYSYMBOL_DoodadType: i32 = 118;
-pub const YYSYMBOL_DoodadDecl: i32 = 117;
-pub const YYSYMBOL_Coord: i32 = 116;
-pub const YYSYMBOL_CoordList: i32 = 115;
-pub const YYSYMBOL_OutlineInList: i32 = 114;
-pub const YYSYMBOL_OutlineList: i32 = 113;
-pub const YYSYMBOL_OverlayKey: i32 = 112;
-pub const YYSYMBOL_OverlayKeyList: i32 = 111;
-pub const YYSYMBOL_OverlayDecl: i32 = 110;
-pub const YYSYMBOL_Key: i32 = 109;
-pub const YYSYMBOL_Keys: i32 = 108;
-pub const YYSYMBOL_RowBodyItem: i32 = 107;
-pub const YYSYMBOL_RowBody: i32 = 106;
-pub const YYSYMBOL_SectionBodyItem: i32 = 105;
-pub const YYSYMBOL_SectionBody: i32 = 104;
-pub const YYSYMBOL_SectionDecl: i32 = 103;
-pub const YYSYMBOL_ShapeDecl: i32 = 102;
-pub const YYSYMBOL_UnknownCompoundStatementDecl: i32 = 101;
-pub const YYSYMBOL_UnknownDecl: i32 = 100;
-pub const YYSYMBOL_LedNameDecl: i32 = 99;
-pub const YYSYMBOL_LedMapDecl: i32 = 98;
-pub const YYSYMBOL_KeyOrKeySym: i32 = 97;
-pub const YYSYMBOL_KeyOrKeySymList: i32 = 96;
-pub const YYSYMBOL_ModMapDecl: i32 = 95;
-pub const YYSYMBOL_GroupCompatDecl: i32 = 94;
-pub const YYSYMBOL_NoSymbolOrActionList: i32 = 93;
-pub const YYSYMBOL_MultiKeySymOrActionList: i32 = 92;
-pub const YYSYMBOL_SymbolsVarDecl: i32 = 91;
-pub const YYSYMBOL_SymbolsBody: i32 = 90;
-pub const YYSYMBOL_OptSymbolsBody: i32 = 89;
-pub const YYSYMBOL_SymbolsDecl: i32 = 88;
-pub const YYSYMBOL_KeyTypeDecl: i32 = 87;
-pub const YYSYMBOL_VarDeclList: i32 = 86;
-pub const YYSYMBOL_InterpretMatch: i32 = 85;
-pub const YYSYMBOL_InterpretDecl: i32 = 84;
-pub const YYSYMBOL_VModDef: i32 = 83;
-pub const YYSYMBOL_VModDefList: i32 = 82;
-pub const YYSYMBOL_VModDecl: i32 = 81;
-pub const YYSYMBOL_KeyAliasDecl: i32 = 80;
-pub const YYSYMBOL_KeyNameDecl: i32 = 79;
-pub const YYSYMBOL_VarDecl: i32 = 78;
-pub const YYSYMBOL_Decl: i32 = 77;
-pub const YYSYMBOL_DeclList: i32 = 76;
-pub const YYSYMBOL_Flag: i32 = 75;
-pub const YYSYMBOL_Flags: i32 = 74;
-pub const YYSYMBOL_OptFlags: i32 = 73;
-pub const YYSYMBOL_FileType: i32 = 72;
-pub const YYSYMBOL_XkbMapConfig: i32 = 71;
-pub const YYSYMBOL_XkbMapConfigList: i32 = 70;
-pub const YYSYMBOL_XkbCompositeType: i32 = 69;
-pub const YYSYMBOL_XkbCompositeMap: i32 = 68;
-pub const YYSYMBOL_XkbFile: i32 = 67;
-pub const YYSYMBOL_YYACCEPT: i32 = 66;
-pub const YYSYMBOL_ALTERNATE_GROUP: i32 = 65;
-pub const YYSYMBOL_FUNCTION_KEYS: i32 = 64;
-pub const YYSYMBOL_KEYPAD_KEYS: i32 = 63;
-pub const YYSYMBOL_MODIFIER_KEYS: i32 = 62;
-pub const YYSYMBOL_ALPHANUMERIC_KEYS: i32 = 61;
-pub const YYSYMBOL_HIDDEN: i32 = 60;
-pub const YYSYMBOL_DEFAULT: i32 = 59;
-pub const YYSYMBOL_PARTIAL: i32 = 58;
-pub const YYSYMBOL_KEYNAME: i32 = 57;
-pub const YYSYMBOL_IDENT: i32 = 56;
-pub const YYSYMBOL_FLOAT: i32 = 55;
-pub const YYSYMBOL_INTEGER: i32 = 54;
-pub const YYSYMBOL_DECIMAL_DIGIT: i32 = 53;
-pub const YYSYMBOL_STRING: i32 = 52;
-pub const YYSYMBOL_INVERT: i32 = 51;
-pub const YYSYMBOL_EXCLAM: i32 = 50;
-pub const YYSYMBOL_SEMI: i32 = 49;
-pub const YYSYMBOL_COMMA: i32 = 48;
-pub const YYSYMBOL_DOT: i32 = 47;
-pub const YYSYMBOL_CBRACKET: i32 = 46;
-pub const YYSYMBOL_OBRACKET: i32 = 45;
-pub const YYSYMBOL_CPAREN: i32 = 44;
-pub const YYSYMBOL_OPAREN: i32 = 43;
-pub const YYSYMBOL_CBRACE: i32 = 42;
-pub const YYSYMBOL_OBRACE: i32 = 41;
-pub const YYSYMBOL_TIMES: i32 = 40;
-pub const YYSYMBOL_DIVIDE: i32 = 39;
-pub const YYSYMBOL_MINUS: i32 = 38;
-pub const YYSYMBOL_PLUS: i32 = 37;
-pub const YYSYMBOL_EQUALS: i32 = 36;
-pub const YYSYMBOL_VIRTUAL: i32 = 35;
-pub const YYSYMBOL_LOGO: i32 = 34;
-pub const YYSYMBOL_SOLID: i32 = 33;
-pub const YYSYMBOL_OUTLINE: i32 = 32;
-pub const YYSYMBOL_TEXT: i32 = 31;
-pub const YYSYMBOL_OVERLAY: i32 = 30;
-pub const YYSYMBOL_SECTION: i32 = 29;
-pub const YYSYMBOL_ROW: i32 = 28;
-pub const YYSYMBOL_KEYS: i32 = 27;
-pub const YYSYMBOL_SHAPE: i32 = 26;
-pub const YYSYMBOL_INDICATOR: i32 = 25;
-pub const YYSYMBOL_MODIFIER_MAP: i32 = 24;
-pub const YYSYMBOL_GROUP: i32 = 23;
-pub const YYSYMBOL_ALIAS: i32 = 22;
-pub const YYSYMBOL_KEY: i32 = 21;
-pub const YYSYMBOL_ACTION_TOK: i32 = 20;
-pub const YYSYMBOL_INTERPRET: i32 = 19;
-pub const YYSYMBOL_TYPE: i32 = 18;
-pub const YYSYMBOL_VIRTUAL_MODS: i32 = 17;
-pub const YYSYMBOL_ALTERNATE: i32 = 16;
-pub const YYSYMBOL_REPLACE: i32 = 15;
-pub const YYSYMBOL_AUGMENT: i32 = 14;
-pub const YYSYMBOL_OVERRIDE: i32 = 13;
-pub const YYSYMBOL_INCLUDE: i32 = 12;
-pub const YYSYMBOL_XKB_LAYOUT: i32 = 11;
-pub const YYSYMBOL_XKB_SEMANTICS: i32 = 10;
-pub const YYSYMBOL_XKB_GEOMETRY: i32 = 9;
-pub const YYSYMBOL_XKB_COMPATMAP: i32 = 8;
-pub const YYSYMBOL_XKB_SYMBOLS: i32 = 7;
-pub const YYSYMBOL_XKB_TYPES: i32 = 6;
-pub const YYSYMBOL_XKB_KEYCODES: i32 = 5;
-pub const YYSYMBOL_XKB_KEYMAP: i32 = 4;
-pub const YYSYMBOL_ERROR_TOK: i32 = 3;
-pub const YYSYMBOL_YYUNDEF: i32 = 2;
-pub const YYSYMBOL_YYerror: i32 = 1;
-pub const YYSYMBOL_YYEOF: i32 = 0;
-pub const YYSYMBOL_YYEMPTY: i32 = -2;
+pub(crate) const YYSYMBOL_MapName: i32 = 148;
+pub(crate) const YYSYMBOL_OptMapName: i32 = 147;
+pub(crate) const YYSYMBOL_String: i32 = 146;
+pub(crate) const YYSYMBOL_Ident: i32 = 145;
+pub(crate) const YYSYMBOL_KeyCode: i32 = 144;
+pub(crate) const YYSYMBOL_Integer: i32 = 143;
+pub(crate) const YYSYMBOL_Float: i32 = 142;
+pub(crate) const YYSYMBOL_Number: i32 = 141;
+pub(crate) const YYSYMBOL_SignedNumber: i32 = 140;
+pub(crate) const YYSYMBOL_KeySymLit: i32 = 139;
+pub(crate) const YYSYMBOL_KeySym: i32 = 138;
+pub(crate) const YYSYMBOL_KeySyms: i32 = 137;
+pub(crate) const YYSYMBOL_NonEmptyKeySyms: i32 = 136;
+pub(crate) const YYSYMBOL_KeySymList: i32 = 135;
+pub(crate) const YYSYMBOL_MultiKeySymList: i32 = 134;
+pub(crate) const YYSYMBOL_Terminal: i32 = 133;
+pub(crate) const YYSYMBOL_OptTerminal: i32 = 132;
+pub(crate) const YYSYMBOL_Lhs: i32 = 131;
+pub(crate) const YYSYMBOL_Action: i32 = 130;
+pub(crate) const YYSYMBOL_Actions: i32 = 129;
+pub(crate) const YYSYMBOL_NonEmptyActions: i32 = 128;
+pub(crate) const YYSYMBOL_ActionList: i32 = 127;
+pub(crate) const YYSYMBOL_MultiActionList: i32 = 126;
+pub(crate) const YYSYMBOL_Term: i32 = 125;
+pub(crate) const YYSYMBOL_Expr: i32 = 124;
+pub(crate) const YYSYMBOL_ExprList: i32 = 123;
+pub(crate) const YYSYMBOL_MergeMode: i32 = 122;
+pub(crate) const YYSYMBOL_OptMergeMode: i32 = 121;
+pub(crate) const YYSYMBOL_Element: i32 = 120;
+pub(crate) const YYSYMBOL_FieldSpec: i32 = 119;
+pub(crate) const YYSYMBOL_DoodadType: i32 = 118;
+pub(crate) const YYSYMBOL_DoodadDecl: i32 = 117;
+pub(crate) const YYSYMBOL_Coord: i32 = 116;
+pub(crate) const YYSYMBOL_CoordList: i32 = 115;
+pub(crate) const YYSYMBOL_OutlineInList: i32 = 114;
+pub(crate) const YYSYMBOL_OutlineList: i32 = 113;
+pub(crate) const YYSYMBOL_OverlayKey: i32 = 112;
+pub(crate) const YYSYMBOL_OverlayKeyList: i32 = 111;
+pub(crate) const YYSYMBOL_OverlayDecl: i32 = 110;
+pub(crate) const YYSYMBOL_Key: i32 = 109;
+pub(crate) const YYSYMBOL_Keys: i32 = 108;
+pub(crate) const YYSYMBOL_RowBodyItem: i32 = 107;
+pub(crate) const YYSYMBOL_RowBody: i32 = 106;
+pub(crate) const YYSYMBOL_SectionBodyItem: i32 = 105;
+pub(crate) const YYSYMBOL_SectionBody: i32 = 104;
+pub(crate) const YYSYMBOL_SectionDecl: i32 = 103;
+pub(crate) const YYSYMBOL_ShapeDecl: i32 = 102;
+pub(crate) const YYSYMBOL_UnknownCompoundStatementDecl: i32 = 101;
+pub(crate) const YYSYMBOL_UnknownDecl: i32 = 100;
+pub(crate) const YYSYMBOL_LedNameDecl: i32 = 99;
+pub(crate) const YYSYMBOL_LedMapDecl: i32 = 98;
+pub(crate) const YYSYMBOL_KeyOrKeySym: i32 = 97;
+pub(crate) const YYSYMBOL_KeyOrKeySymList: i32 = 96;
+pub(crate) const YYSYMBOL_ModMapDecl: i32 = 95;
+pub(crate) const YYSYMBOL_GroupCompatDecl: i32 = 94;
+pub(crate) const YYSYMBOL_NoSymbolOrActionList: i32 = 93;
+pub(crate) const YYSYMBOL_MultiKeySymOrActionList: i32 = 92;
+pub(crate) const YYSYMBOL_SymbolsVarDecl: i32 = 91;
+pub(crate) const YYSYMBOL_SymbolsBody: i32 = 90;
+pub(crate) const YYSYMBOL_OptSymbolsBody: i32 = 89;
+pub(crate) const YYSYMBOL_SymbolsDecl: i32 = 88;
+pub(crate) const YYSYMBOL_KeyTypeDecl: i32 = 87;
+pub(crate) const YYSYMBOL_VarDeclList: i32 = 86;
+pub(crate) const YYSYMBOL_InterpretMatch: i32 = 85;
+pub(crate) const YYSYMBOL_InterpretDecl: i32 = 84;
+pub(crate) const YYSYMBOL_VModDef: i32 = 83;
+pub(crate) const YYSYMBOL_VModDefList: i32 = 82;
+pub(crate) const YYSYMBOL_VModDecl: i32 = 81;
+pub(crate) const YYSYMBOL_KeyAliasDecl: i32 = 80;
+pub(crate) const YYSYMBOL_KeyNameDecl: i32 = 79;
+pub(crate) const YYSYMBOL_VarDecl: i32 = 78;
+pub(crate) const YYSYMBOL_Decl: i32 = 77;
+pub(crate) const YYSYMBOL_DeclList: i32 = 76;
+pub(crate) const YYSYMBOL_Flag: i32 = 75;
+pub(crate) const YYSYMBOL_Flags: i32 = 74;
+pub(crate) const YYSYMBOL_OptFlags: i32 = 73;
+pub(crate) const YYSYMBOL_FileType: i32 = 72;
+pub(crate) const YYSYMBOL_XkbMapConfig: i32 = 71;
+pub(crate) const YYSYMBOL_XkbMapConfigList: i32 = 70;
+pub(crate) const YYSYMBOL_XkbCompositeType: i32 = 69;
+pub(crate) const YYSYMBOL_XkbCompositeMap: i32 = 68;
+pub(crate) const YYSYMBOL_XkbFile: i32 = 67;
+pub(crate) const YYSYMBOL_YYACCEPT: i32 = 66;
+pub(crate) const YYSYMBOL_ALTERNATE_GROUP: i32 = 65;
+pub(crate) const YYSYMBOL_FUNCTION_KEYS: i32 = 64;
+pub(crate) const YYSYMBOL_KEYPAD_KEYS: i32 = 63;
+pub(crate) const YYSYMBOL_MODIFIER_KEYS: i32 = 62;
+pub(crate) const YYSYMBOL_ALPHANUMERIC_KEYS: i32 = 61;
+pub(crate) const YYSYMBOL_HIDDEN: i32 = 60;
+pub(crate) const YYSYMBOL_DEFAULT: i32 = 59;
+pub(crate) const YYSYMBOL_PARTIAL: i32 = 58;
+pub(crate) const YYSYMBOL_KEYNAME: i32 = 57;
+pub(crate) const YYSYMBOL_IDENT: i32 = 56;
+pub(crate) const YYSYMBOL_FLOAT: i32 = 55;
+pub(crate) const YYSYMBOL_INTEGER: i32 = 54;
+pub(crate) const YYSYMBOL_DECIMAL_DIGIT: i32 = 53;
+pub(crate) const YYSYMBOL_STRING: i32 = 52;
+pub(crate) const YYSYMBOL_INVERT: i32 = 51;
+pub(crate) const YYSYMBOL_EXCLAM: i32 = 50;
+pub(crate) const YYSYMBOL_SEMI: i32 = 49;
+pub(crate) const YYSYMBOL_COMMA: i32 = 48;
+pub(crate) const YYSYMBOL_DOT: i32 = 47;
+pub(crate) const YYSYMBOL_CBRACKET: i32 = 46;
+pub(crate) const YYSYMBOL_OBRACKET: i32 = 45;
+pub(crate) const YYSYMBOL_CPAREN: i32 = 44;
+pub(crate) const YYSYMBOL_OPAREN: i32 = 43;
+pub(crate) const YYSYMBOL_CBRACE: i32 = 42;
+pub(crate) const YYSYMBOL_OBRACE: i32 = 41;
+pub(crate) const YYSYMBOL_TIMES: i32 = 40;
+pub(crate) const YYSYMBOL_DIVIDE: i32 = 39;
+pub(crate) const YYSYMBOL_MINUS: i32 = 38;
+pub(crate) const YYSYMBOL_PLUS: i32 = 37;
+pub(crate) const YYSYMBOL_EQUALS: i32 = 36;
+pub(crate) const YYSYMBOL_VIRTUAL: i32 = 35;
+pub(crate) const YYSYMBOL_LOGO: i32 = 34;
+pub(crate) const YYSYMBOL_SOLID: i32 = 33;
+pub(crate) const YYSYMBOL_OUTLINE: i32 = 32;
+pub(crate) const YYSYMBOL_TEXT: i32 = 31;
+pub(crate) const YYSYMBOL_OVERLAY: i32 = 30;
+pub(crate) const YYSYMBOL_SECTION: i32 = 29;
+pub(crate) const YYSYMBOL_ROW: i32 = 28;
+pub(crate) const YYSYMBOL_KEYS: i32 = 27;
+pub(crate) const YYSYMBOL_SHAPE: i32 = 26;
+pub(crate) const YYSYMBOL_INDICATOR: i32 = 25;
+pub(crate) const YYSYMBOL_MODIFIER_MAP: i32 = 24;
+pub(crate) const YYSYMBOL_GROUP: i32 = 23;
+pub(crate) const YYSYMBOL_ALIAS: i32 = 22;
+pub(crate) const YYSYMBOL_KEY: i32 = 21;
+pub(crate) const YYSYMBOL_ACTION_TOK: i32 = 20;
+pub(crate) const YYSYMBOL_INTERPRET: i32 = 19;
+pub(crate) const YYSYMBOL_TYPE: i32 = 18;
+pub(crate) const YYSYMBOL_VIRTUAL_MODS: i32 = 17;
+pub(crate) const YYSYMBOL_ALTERNATE: i32 = 16;
+pub(crate) const YYSYMBOL_REPLACE: i32 = 15;
+pub(crate) const YYSYMBOL_AUGMENT: i32 = 14;
+pub(crate) const YYSYMBOL_OVERRIDE: i32 = 13;
+pub(crate) const YYSYMBOL_INCLUDE: i32 = 12;
+pub(crate) const YYSYMBOL_XKB_LAYOUT: i32 = 11;
+pub(crate) const YYSYMBOL_XKB_SEMANTICS: i32 = 10;
+pub(crate) const YYSYMBOL_XKB_GEOMETRY: i32 = 9;
+pub(crate) const YYSYMBOL_XKB_COMPATMAP: i32 = 8;
+pub(crate) const YYSYMBOL_XKB_SYMBOLS: i32 = 7;
+pub(crate) const YYSYMBOL_XKB_TYPES: i32 = 6;
+pub(crate) const YYSYMBOL_XKB_KEYCODES: i32 = 5;
+pub(crate) const YYSYMBOL_XKB_KEYMAP: i32 = 4;
+pub(crate) const YYSYMBOL_ERROR_TOK: i32 = 3;
+pub(crate) const YYSYMBOL_YYUNDEF: i32 = 2;
+pub(crate) const YYSYMBOL_YYerror: i32 = 1;
+pub(crate) const YYSYMBOL_YYEOF: i32 = 0;
+pub(crate) const YYSYMBOL_YYEMPTY: i32 = -2;
 
-pub const YYARGS_MAX: u32 = 5;
-pub const YYFINAL: i32 = 16;
-pub const YYLAST: i32 = 928;
-pub const YYNTOKENS: i32 = 66;
-pub const YYMAXUTOK: i32 = 257;
-pub const YYINITDEPTH: usize = 200;
-pub const YYMAXDEPTH: usize = 10000;
-pub const YYPACT_NINF: i32 = -280;
-pub const YYENOMEM: i32 = -2;
+pub(crate) const YYARGS_MAX: u32 = 5;
+pub(crate) const YYFINAL: i32 = 16;
+pub(crate) const YYLAST: i32 = 928;
+pub(crate) const YYNTOKENS: i32 = 66;
+pub(crate) const YYMAXUTOK: i32 = 257;
+pub(crate) const YYINITDEPTH: usize = 200;
+pub(crate) const YYMAXDEPTH: usize = 10000;
+pub(crate) const YYPACT_NINF: i32 = -280;
+pub(crate) const YYENOMEM: i32 = -2;
 
-pub struct parser_param<'a> {
-    pub ctx: &'a mut xkb_context,
-    pub scanner: &'a mut scanner<'a>,
-    pub rtrn: Option<Box<XkbFile>>,
-    pub more_maps: bool,
+pub(crate) struct parser_param<'a> {
+    pub(crate) ctx: &'a mut xkb_context,
+    pub(crate) scanner: &'a mut scanner<'a>,
+    pub(crate) rtrn: Option<Box<XkbFile>>,
+    pub(crate) more_maps: bool,
 }
 
 static YYTRANSLATE: [i8; 258] = [
@@ -548,8 +544,8 @@ static YYR2: [yytype_int8; 220] = [
     1, 1, 3, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
 ];
 
-pub type yytype_uint8 = u8;
-pub type yytype_int8 = i8;
+pub(crate) type yytype_uint8 = u8;
+pub(crate) type yytype_int8 = i8;
 
 // ── Helper functions ────────────────────────────────────────────────
 
@@ -683,7 +679,7 @@ fn ensure_capacity_i16(v: &mut Vec<i16>, idx: usize) {
 
 // ── Main parser function ────────────────────────────────────────────
 
-pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
+pub(crate) fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
     let mut yychar: i32;
     let mut yylval: YYValue<'a> = YYValue::None;
     let mut _xkbcommon_nerrs: i32 = 0;
@@ -2233,7 +2229,7 @@ fn execute_reduction<'a>(
 
 // ── Public API ──────────────────────────────────────────────────────
 
-pub fn parse<'a>(
+pub(crate) fn parse<'a>(
     mut ctx: &'a mut xkb_context,
     mut scanner: &'a mut scanner<'a>,
     map: &str,
@@ -2295,7 +2291,7 @@ pub fn parse<'a>(
     first
 }
 
-pub fn parse_next<'a>(
+pub(crate) fn parse_next<'a>(
     ctx: &'a mut xkb_context,
     scanner: &'a mut scanner<'a>,
     xkb_file: &mut Option<Box<XkbFile>>,
@@ -2319,11 +2315,11 @@ pub fn parse_next<'a>(
 
 // ── AST builder functions (merged from ast_build.rs) ──
 
-pub fn expr_create(kind: ExprKind) -> Box<ExprDef> {
+pub(crate) fn expr_create(kind: ExprKind) -> Box<ExprDef> {
     Box::new(ExprDef { kind })
 }
 
-pub fn ExprCreateKeySymList(sym: u32) -> Box<ExprDef> {
+pub(crate) fn ExprCreateKeySymList(sym: u32) -> Box<ExprDef> {
     let mut syms = Vec::new();
     if sym != XKB_KEY_NoSymbol as u32 {
         syms.push(sym);
@@ -2331,7 +2327,7 @@ pub fn ExprCreateKeySymList(sym: u32) -> Box<ExprDef> {
     expr_create(ExprKind::KeysymList { syms })
 }
 
-pub fn ExprAppendKeySymList(mut expr: Box<ExprDef>, sym: u32) -> Box<ExprDef> {
+pub(crate) fn ExprAppendKeySymList(mut expr: Box<ExprDef>, sym: u32) -> Box<ExprDef> {
     if sym != XKB_KEY_NoSymbol as u32 {
         if let ExprKind::KeysymList { ref mut syms } = expr.kind {
             syms.push(sym);
@@ -2340,7 +2336,7 @@ pub fn ExprAppendKeySymList(mut expr: Box<ExprDef>, sym: u32) -> Box<ExprDef> {
     expr
 }
 
-pub fn ExprKeySymListAppendString(
+pub(crate) fn ExprKeySymListAppendString(
     scanner: &mut scanner,
     mut expr: Box<ExprDef>,
     string: &str,
@@ -2385,7 +2381,7 @@ pub fn ExprKeySymListAppendString(
     }
 }
 
-pub fn KeysymParseString(scanner: &mut scanner, string: &str) -> u32 {
+pub(crate) fn KeysymParseString(scanner: &mut scanner, string: &str) -> u32 {
     let bytes = string.as_bytes();
     let len = bytes.len();
     if len == 0 {
@@ -2429,7 +2425,7 @@ pub fn KeysymParseString(scanner: &mut scanner, string: &str) -> u32 {
     sym
 }
 
-pub fn KeycodeCreate(name: u32, value: i64) -> Box<KeycodeDef> {
+pub(crate) fn KeycodeCreate(name: u32, value: i64) -> Box<KeycodeDef> {
     Box::new(KeycodeDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2437,7 +2433,7 @@ pub fn KeycodeCreate(name: u32, value: i64) -> Box<KeycodeDef> {
     })
 }
 
-pub fn KeyAliasCreate(alias: u32, real: u32) -> Box<KeyAliasDef> {
+pub(crate) fn KeyAliasCreate(alias: u32, real: u32) -> Box<KeyAliasDef> {
     Box::new(KeyAliasDef {
         merge: MERGE_DEFAULT,
         alias,
@@ -2445,7 +2441,7 @@ pub fn KeyAliasCreate(alias: u32, real: u32) -> Box<KeyAliasDef> {
     })
 }
 
-pub fn VModCreate(name: u32, value: Option<Box<ExprDef>>) -> Box<VModDef> {
+pub(crate) fn VModCreate(name: u32, value: Option<Box<ExprDef>>) -> Box<VModDef> {
     Box::new(VModDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2453,7 +2449,7 @@ pub fn VModCreate(name: u32, value: Option<Box<ExprDef>>) -> Box<VModDef> {
     })
 }
 
-pub fn VarCreate(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>) -> Box<VarDef> {
+pub(crate) fn VarCreate(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>) -> Box<VarDef> {
     Box::new(VarDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2461,7 +2457,7 @@ pub fn VarCreate(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>) -> Box
     })
 }
 
-pub fn BoolVarCreate(ident: u32, set: bool) -> Box<VarDef> {
+pub(crate) fn BoolVarCreate(ident: u32, set: bool) -> Box<VarDef> {
     Box::new(VarDef {
         merge: MERGE_DEFAULT,
         name: Some(Box::new(ExprDef {
@@ -2473,7 +2469,7 @@ pub fn BoolVarCreate(ident: u32, set: bool) -> Box<VarDef> {
     })
 }
 
-pub fn InterpCreate(sym: u32, match_0: Option<Box<ExprDef>>) -> Box<InterpDef> {
+pub(crate) fn InterpCreate(sym: u32, match_0: Option<Box<ExprDef>>) -> Box<InterpDef> {
     Box::new(InterpDef {
         merge: MERGE_DEFAULT,
         sym,
@@ -2482,7 +2478,7 @@ pub fn InterpCreate(sym: u32, match_0: Option<Box<ExprDef>>) -> Box<InterpDef> {
     })
 }
 
-pub fn KeyTypeCreate(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
+pub(crate) fn KeyTypeCreate(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
     Box::new(KeyTypeDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2490,7 +2486,7 @@ pub fn KeyTypeCreate(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
     })
 }
 
-pub fn SymbolsCreate(keyName: u32, symbols: Vec<VarDef>) -> Box<SymbolsDef> {
+pub(crate) fn SymbolsCreate(keyName: u32, symbols: Vec<VarDef>) -> Box<SymbolsDef> {
     Box::new(SymbolsDef {
         merge: MERGE_DEFAULT,
         keyName,
@@ -2498,7 +2494,7 @@ pub fn SymbolsCreate(keyName: u32, symbols: Vec<VarDef>) -> Box<SymbolsDef> {
     })
 }
 
-pub fn GroupCompatCreate(group: i64, val: Option<Box<ExprDef>>) -> Box<GroupCompatDef> {
+pub(crate) fn GroupCompatCreate(group: i64, val: Option<Box<ExprDef>>) -> Box<GroupCompatDef> {
     Box::new(GroupCompatDef {
         merge: MERGE_DEFAULT,
         group,
@@ -2506,7 +2502,7 @@ pub fn GroupCompatCreate(group: i64, val: Option<Box<ExprDef>>) -> Box<GroupComp
     })
 }
 
-pub fn ModMapCreate(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef> {
+pub(crate) fn ModMapCreate(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef> {
     Box::new(ModMapDef {
         merge: MERGE_DEFAULT,
         modifier,
@@ -2514,7 +2510,7 @@ pub fn ModMapCreate(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef> {
     })
 }
 
-pub fn LedMapCreate(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
+pub(crate) fn LedMapCreate(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
     Box::new(LedMapDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2522,7 +2518,11 @@ pub fn LedMapCreate(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
     })
 }
 
-pub fn LedNameCreate(ndx: i64, name: Option<Box<ExprDef>>, virtual_0: bool) -> Box<LedNameDef> {
+pub(crate) fn LedNameCreate(
+    ndx: i64,
+    name: Option<Box<ExprDef>>,
+    virtual_0: bool,
+) -> Box<LedNameDef> {
     Box::new(LedNameDef {
         merge: MERGE_DEFAULT,
         ndx,
@@ -2531,14 +2531,14 @@ pub fn LedNameCreate(ndx: i64, name: Option<Box<ExprDef>>, virtual_0: bool) -> B
     })
 }
 
-pub fn UnknownStatementCreate(type_0: stmt_type, name: &str) -> Box<UnknownStatement> {
+pub(crate) fn UnknownStatementCreate(type_0: stmt_type, name: &str) -> Box<UnknownStatement> {
     Box::new(UnknownStatement {
         stmt_type: type_0,
         name: name.to_string(),
     })
 }
 
-pub fn IncludeCreate(
+pub(crate) fn IncludeCreate(
     _ctx: &mut xkb_context,
     stmt_str: &str,
     mut merge: merge_mode,
@@ -2600,7 +2600,7 @@ pub fn IncludeCreate(
     first
 }
 
-pub fn XkbFileCreate(
+pub(crate) fn XkbFileCreate(
     type_0: u32,
     name: Option<String>,
     defs: Vec<Statement>,
@@ -2616,7 +2616,7 @@ pub fn XkbFileCreate(
     })
 }
 
-pub fn XkbFileFromComponents(
+pub(crate) fn XkbFileFromComponents(
     ctx: &mut xkb_context,
     kkctgs: &xkb_component_names,
 ) -> Option<Box<XkbFile>> {
@@ -2657,7 +2657,7 @@ static XKB_FILE_TYPE_STRINGS: [&str; 7] = [
     "rules",
 ];
 
-pub fn xkb_file_type_to_string(type_0: u32) -> &'static str {
+pub(crate) fn xkb_file_type_to_string(type_0: u32) -> &'static str {
     if type_0 as usize >= XKB_FILE_TYPE_STRINGS.len() {
         "unknown"
     } else {
@@ -2704,14 +2704,14 @@ static STMT_TYPE_STRINGS: [&str; 37] = [
     "unknown compound statement",
 ];
 
-pub fn stmt_type_to_string(type_0: u32) -> &'static str {
+pub(crate) fn stmt_type_to_string(type_0: u32) -> &'static str {
     if type_0 >= _STMT_NUM_VALUES {
         return "unknown";
     }
     STMT_TYPE_STRINGS[type_0 as usize]
 }
 
-pub fn stmt_type_to_operator_char(type_0: u32) -> char {
+pub(crate) fn stmt_type_to_operator_char(type_0: u32) -> char {
     match type_0 {
         17 => '+',
         18 => '-',
@@ -2727,58 +2727,58 @@ pub fn stmt_type_to_operator_char(type_0: u32) -> char {
 // ── Scanner types (migrated from scanner_utils.rs) ──
 
 #[derive(Copy, Clone, Default)]
-pub struct sval<'a> {
-    pub data: &'a [u8],
+pub(crate) struct sval<'a> {
+    pub(crate) data: &'a [u8],
 }
 
 impl<'a> sval<'a> {
-    pub const EMPTY: sval<'static> = sval { data: &[] };
+    pub(crate) const EMPTY: sval<'static> = sval { data: &[] };
 
     #[inline]
-    pub fn as_bytes(&self) -> &[u8] {
+    pub(crate) fn as_bytes(&self) -> &[u8] {
         self.data
     }
 
     #[inline]
-    pub fn as_str(&self) -> &str {
+    pub(crate) fn as_str(&self) -> &str {
         std::str::from_utf8(self.data).unwrap_or("")
     }
 
     #[inline]
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.data.len()
     }
 
     #[inline]
-    pub fn start_ptr(&self) -> *const i8 {
+    pub(crate) fn start_ptr(&self) -> *const i8 {
         self.data.as_ptr() as *const i8
     }
 
     #[inline]
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
 }
 
 #[derive(Copy, Clone)]
-pub struct scanner_loc {
-    pub line: usize,
-    pub column: usize,
+pub(crate) struct scanner_loc {
+    pub(crate) line: usize,
+    pub(crate) column: usize,
 }
 
-pub struct scanner<'a> {
-    pub pos: usize,
-    pub s: &'a [u8],
-    pub buf: [u8; 1024],
-    pub buf_pos: usize,
-    pub token_pos: usize,
-    pub cached_pos: usize,
-    pub cached_loc: scanner_loc,
-    pub file_name: String,
+pub(crate) struct scanner<'a> {
+    pub(crate) pos: usize,
+    pub(crate) s: &'a [u8],
+    pub(crate) buf: [u8; 1024],
+    pub(crate) buf_pos: usize,
+    pub(crate) token_pos: usize,
+    pub(crate) cached_pos: usize,
+    pub(crate) cached_loc: scanner_loc,
+    pub(crate) file_name: String,
 }
 
 impl<'a> scanner<'a> {
-    pub fn new(s: &'a [u8], file_name: &str) -> Self {
+    pub(crate) fn new(s: &'a [u8], file_name: &str) -> Self {
         scanner {
             pos: 0,
             s,
@@ -2792,7 +2792,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.s.len()
     }
 
@@ -2802,7 +2802,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn peek(&self) -> i8 {
+    pub(crate) fn peek(&self) -> i8 {
         if self.pos >= self.s.len() {
             return 0;
         }
@@ -2810,17 +2810,17 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn eof(&self) -> bool {
+    pub(crate) fn eof(&self) -> bool {
         self.pos >= self.s.len()
     }
 
     #[inline]
-    pub fn eol(&self) -> bool {
+    pub(crate) fn eol(&self) -> bool {
         self.peek() == b'\n' as i8
     }
 
     #[inline]
-    pub fn skip_to_eol(&mut self) {
+    pub(crate) fn skip_to_eol(&mut self) {
         let rem = self.remaining_bytes();
         match rem.iter().position(|&b| b == b'\n') {
             Some(i) => self.pos += i,
@@ -2829,7 +2829,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn next_byte(&mut self) -> i8 {
+    pub(crate) fn next_byte(&mut self) -> i8 {
         if self.pos >= self.s.len() {
             return 0;
         }
@@ -2839,7 +2839,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn chr(&mut self, ch: i8) -> bool {
+    pub(crate) fn chr(&mut self, ch: i8) -> bool {
         if self.peek() != ch {
             return false;
         }
@@ -2848,7 +2848,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn str_match(&mut self, string: &[u8]) -> bool {
+    pub(crate) fn str_match(&mut self, string: &[u8]) -> bool {
         let len = string.len();
         if self.s.len() - self.pos < len {
             return false;
@@ -2861,7 +2861,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn buf_append(&mut self, ch: u8) -> bool {
+    pub(crate) fn buf_append(&mut self, ch: u8) -> bool {
         if self.buf_pos + 1 >= self.buf.len() {
             return false;
         }
@@ -2871,7 +2871,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn buf_appends(&mut self, s: &[u8]) -> bool {
+    pub(crate) fn buf_appends(&mut self, s: &[u8]) -> bool {
         for &b in s {
             if b == 0 {
                 break;
@@ -2883,7 +2883,7 @@ impl<'a> scanner<'a> {
         true
     }
 
-    pub fn buf_appends_str(&mut self, s: &str) -> bool {
+    pub(crate) fn buf_appends_str(&mut self, s: &str) -> bool {
         for &b in s.as_bytes() {
             if !self.buf_append(b) {
                 return false;
@@ -2893,11 +2893,11 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn buf_appends_code_point(&mut self, c: u32) -> bool {
+    pub(crate) fn buf_appends_code_point(&mut self, c: u32) -> bool {
         if self.buf_pos + 4 <= self.buf.len() {
-            let mut count = utf8_h::utf32_to_utf8_safe(c, &mut self.buf[self.buf_pos..]);
+            let mut count = utf32_to_utf8_safe(c, &mut self.buf[self.buf_pos..]);
             if count == 0 {
-                count = utf8_h::utf32_to_utf8_safe(0xfffd, &mut self.buf[self.buf_pos..]);
+                count = utf32_to_utf8_safe(0xfffd, &mut self.buf[self.buf_pos..]);
             }
             if count == 0 {
                 return false;
@@ -2910,7 +2910,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn oct(&mut self, out: &mut u8) -> bool {
+    pub(crate) fn oct(&mut self, out: &mut u8) -> bool {
         let mut i: u8 = 0;
         let mut c: u8 = 0;
         while self.peek() as u8 >= b'0' && self.peek() as u8 <= b'7' && (i as i32) < 4 {
@@ -2928,7 +2928,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn dec_int64(&mut self, out: &mut i64) -> i32 {
+    pub(crate) fn dec_int64(&mut self, out: &mut i64) -> i32 {
         let remaining = self.remaining_bytes();
         let (val, count) = parse_dec_u64(remaining);
         if count > 0 {
@@ -2942,7 +2942,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn hex_int64(&mut self, out: &mut i64) -> i32 {
+    pub(crate) fn hex_int64(&mut self, out: &mut i64) -> i32 {
         let remaining = self.remaining_bytes();
         let (val, count) = parse_hex_u64(remaining);
         if count > 0 {
@@ -2956,7 +2956,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn unicode_code_point(&mut self, out: &mut u32) -> bool {
+    pub(crate) fn unicode_code_point(&mut self, out: &mut u32) -> bool {
         if !self.chr(b'{' as i8) {
             return false;
         }
@@ -2978,7 +2978,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn check_supported_char_encoding(&mut self) -> bool {
+    pub(crate) fn check_supported_char_encoding(&mut self) -> bool {
         use super::super::shared_types::XKB_ERROR_INVALID_FILE_ENCODING;
         if self.str_match(b"\xEF\xBB\xBF") || self.s.len() < 2 {
             return true;
@@ -3010,16 +3010,16 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn input_at(&self, pos: usize) -> *const i8 {
+    pub(crate) fn input_at(&self, pos: usize) -> *const i8 {
         self.s[pos..].as_ptr() as *const i8
     }
 
     #[inline]
-    pub fn input_slice(&self, start: usize, end: usize) -> &[u8] {
+    pub(crate) fn input_slice(&self, start: usize, end: usize) -> &[u8] {
         &self.s[start..end]
     }
 
-    pub fn token_location(&mut self) -> scanner_loc {
+    pub(crate) fn token_location(&mut self) -> scanner_loc {
         let mut line: usize;
         let column: usize;
         let mut line_pos: usize = 0;
@@ -3063,112 +3063,108 @@ impl<'a> scanner<'a> {
 // ── sval comparison functions (migrated from scanner_utils.rs) ──
 
 #[inline]
-pub fn svaleq(s1: sval, s2: sval) -> bool {
+pub(crate) fn svaleq(s1: sval, s2: sval) -> bool {
     s1.data == s2.data
 }
 
 #[inline]
-pub fn svaleq_prefix(s1: sval, s2: sval) -> bool {
+pub(crate) fn svaleq_prefix(s1: sval, s2: sval) -> bool {
     s1.data.len() <= s2.data.len() && s1.data == &s2.data[..s1.data.len()]
 }
 
 #[inline]
-pub fn isvaleq(s1: sval, s2: sval) -> bool {
+pub(crate) fn isvaleq(s1: sval, s2: sval) -> bool {
     s1.data.len() == s2.data.len() && s1.data.eq_ignore_ascii_case(s2.data)
 }
 
-pub mod parser_h {
-    pub const ALTERNATE_GROUP: i32 = 77;
-    pub const FUNCTION_KEYS: i32 = 76;
-    pub const KEYPAD_KEYS: i32 = 75;
-    pub const MODIFIER_KEYS: i32 = 74;
-    pub const ALPHANUMERIC_KEYS: i32 = 73;
-    pub const HIDDEN: i32 = 72;
-    pub const DEFAULT: i32 = 71;
-    pub const PARTIAL: i32 = 70;
-    pub const KEYNAME: i32 = 65;
-    pub const IDENT: i32 = 64;
-    pub const FLOAT: i32 = 63;
-    pub const INTEGER: i32 = 62;
-    pub const DECIMAL_DIGIT: i32 = 61;
-    pub const STRING: i32 = 60;
-    pub const INVERT: i32 = 55;
-    pub const EXCLAM: i32 = 54;
-    pub const SEMI: i32 = 53;
-    pub const COMMA: i32 = 52;
-    pub const DOT: i32 = 51;
-    pub const CBRACKET: i32 = 50;
-    pub const OBRACKET: i32 = 49;
-    pub const CPAREN: i32 = 48;
-    pub const OPAREN: i32 = 47;
-    pub const CBRACE: i32 = 46;
-    pub const OBRACE: i32 = 45;
-    pub const TIMES: i32 = 44;
-    pub const DIVIDE: i32 = 43;
-    pub const MINUS: i32 = 42;
-    pub const PLUS: i32 = 41;
-    pub const EQUALS: i32 = 40;
-    pub const VIRTUAL: i32 = 38;
-    pub const LOGO: i32 = 37;
-    pub const SOLID: i32 = 36;
-    pub const OUTLINE: i32 = 35;
-    pub const TEXT: i32 = 34;
-    pub const OVERLAY: i32 = 33;
-    pub const SECTION: i32 = 32;
-    pub const ROW: i32 = 31;
-    pub const KEYS: i32 = 30;
-    pub const SHAPE: i32 = 29;
-    pub const INDICATOR: i32 = 28;
-    pub const MODIFIER_MAP: i32 = 27;
-    pub const GROUP: i32 = 26;
-    pub const ALIAS: i32 = 25;
-    pub const KEY: i32 = 24;
-    pub const ACTION_TOK: i32 = 23;
-    pub const INTERPRET: i32 = 22;
-    pub const TYPE: i32 = 21;
-    pub const VIRTUAL_MODS: i32 = 20;
-    pub const ALTERNATE: i32 = 14;
-    pub const REPLACE: i32 = 13;
-    pub const AUGMENT: i32 = 12;
-    pub const OVERRIDE: i32 = 11;
-    pub const INCLUDE: i32 = 10;
-    pub const XKB_LAYOUT: i32 = 8;
-    pub const XKB_SEMANTICS: i32 = 7;
-    pub const XKB_GEOMETRY: i32 = 6;
-    pub const XKB_COMPATMAP: i32 = 5;
-    pub const XKB_SYMBOLS: i32 = 4;
-    pub const XKB_TYPES: i32 = 3;
-    pub const XKB_KEYCODES: i32 = 2;
-    pub const XKB_KEYMAP: i32 = 1;
-    pub const ERROR_TOK: i32 = 255;
-    pub const YYUNDEF: i32 = 257;
-    pub const YYerror: i32 = 256;
-    pub const END_OF_FILE: i32 = 0;
-    pub const YYEMPTY: i32 = -2;
-}
-pub mod utf8_h {
+
+    pub(crate) const ALTERNATE_GROUP: i32 = 77;
+    pub(crate) const FUNCTION_KEYS: i32 = 76;
+    pub(crate) const KEYPAD_KEYS: i32 = 75;
+    pub(crate) const MODIFIER_KEYS: i32 = 74;
+    pub(crate) const ALPHANUMERIC_KEYS: i32 = 73;
+    pub(crate) const HIDDEN: i32 = 72;
+    pub(crate) const DEFAULT: i32 = 71;
+    pub(crate) const PARTIAL: i32 = 70;
+    pub(crate) const KEYNAME: i32 = 65;
+    pub(crate) const IDENT: i32 = 64;
+    pub(crate) const FLOAT: i32 = 63;
+    pub(crate) const INTEGER: i32 = 62;
+    pub(crate) const DECIMAL_DIGIT: i32 = 61;
+    pub(crate) const STRING: i32 = 60;
+    pub(crate) const INVERT: i32 = 55;
+    pub(crate) const EXCLAM: i32 = 54;
+    pub(crate) const SEMI: i32 = 53;
+    pub(crate) const COMMA: i32 = 52;
+    pub(crate) const DOT: i32 = 51;
+    pub(crate) const CBRACKET: i32 = 50;
+    pub(crate) const OBRACKET: i32 = 49;
+    pub(crate) const CPAREN: i32 = 48;
+    pub(crate) const OPAREN: i32 = 47;
+    pub(crate) const CBRACE: i32 = 46;
+    pub(crate) const OBRACE: i32 = 45;
+    pub(crate) const TIMES: i32 = 44;
+    pub(crate) const DIVIDE: i32 = 43;
+    pub(crate) const MINUS: i32 = 42;
+    pub(crate) const PLUS: i32 = 41;
+    pub(crate) const EQUALS: i32 = 40;
+    pub(crate) const VIRTUAL: i32 = 38;
+    pub(crate) const LOGO: i32 = 37;
+    pub(crate) const SOLID: i32 = 36;
+    pub(crate) const OUTLINE: i32 = 35;
+    pub(crate) const TEXT: i32 = 34;
+    pub(crate) const OVERLAY: i32 = 33;
+    pub(crate) const SECTION: i32 = 32;
+    pub(crate) const ROW: i32 = 31;
+    pub(crate) const KEYS: i32 = 30;
+    pub(crate) const SHAPE: i32 = 29;
+    pub(crate) const INDICATOR: i32 = 28;
+    pub(crate) const MODIFIER_MAP: i32 = 27;
+    pub(crate) const GROUP: i32 = 26;
+    pub(crate) const ALIAS: i32 = 25;
+    pub(crate) const KEY: i32 = 24;
+    pub(crate) const ACTION_TOK: i32 = 23;
+    pub(crate) const INTERPRET: i32 = 22;
+    pub(crate) const TYPE: i32 = 21;
+    pub(crate) const VIRTUAL_MODS: i32 = 20;
+    pub(crate) const ALTERNATE: i32 = 14;
+    pub(crate) const REPLACE: i32 = 13;
+    pub(crate) const AUGMENT: i32 = 12;
+    pub(crate) const OVERRIDE: i32 = 11;
+    pub(crate) const INCLUDE: i32 = 10;
+    pub(crate) const XKB_LAYOUT: i32 = 8;
+    pub(crate) const XKB_SEMANTICS: i32 = 7;
+    pub(crate) const XKB_GEOMETRY: i32 = 6;
+    pub(crate) const XKB_COMPATMAP: i32 = 5;
+    pub(crate) const XKB_SYMBOLS: i32 = 4;
+    pub(crate) const XKB_TYPES: i32 = 3;
+    pub(crate) const XKB_KEYCODES: i32 = 2;
+    pub(crate) const XKB_KEYMAP: i32 = 1;
+    pub(crate) const ERROR_TOK: i32 = 255;
+    pub(crate) const YYUNDEF: i32 = 257;
+    pub(crate) const YYerror: i32 = 256;
+    pub(crate) const END_OF_FILE: i32 = 0;
+    pub(crate) const YYEMPTY: i32 = -2;
 
     /// Native Rust UTF-32 to UTF-8 conversion (replaces C FFI)
     ///
     /// Encode a Unicode code point to UTF-8 into the given buffer.
     /// Returns the number of bytes written (NOT including null terminator), or 0 on failure.
     #[inline]
-    pub fn utf32_to_utf8_safe(unichar: u32, buffer: &mut [u8]) -> usize {
+    pub(crate) fn utf32_to_utf8_safe(unichar: u32, buffer: &mut [u8]) -> usize {
         let Some(ch) = char::from_u32(unichar) else {
             return 0;
         };
         let encoded = ch.encode_utf8(&mut buffer[..]);
         encoded.len()
     }
-}
-
 // ── Keyword lookup (gperf-generated) ──
 
-pub const MAX_HASH_VALUE: u32 = 72;
-pub const MIN_WORD_LENGTH: u32 = 3;
-pub const MAX_WORD_LENGTH: u32 = 21;
-pub const MIN_HASH_VALUE: u32 = 3;
-pub const TOTAL_KEYWORDS: u32 = 45;
+pub(crate) const MAX_HASH_VALUE: u32 = 72;
+pub(crate) const MIN_WORD_LENGTH: u32 = 3;
+pub(crate) const MAX_WORD_LENGTH: u32 = 21;
+pub(crate) const MIN_HASH_VALUE: u32 = 3;
+pub(crate) const TOTAL_KEYWORDS: u32 = 45;
 
 static GPERF_DOWNCASE: [u8; 256] = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
@@ -3302,7 +3298,7 @@ fn keyword_gperf_hash(s: &[u8]) -> u32 {
 }
 
 /// Look up a keyword token from a byte slice. Returns -1 if not found.
-pub fn keyword_to_token(string: &[u8]) -> i32 {
+pub(crate) fn keyword_to_token(string: &[u8]) -> i32 {
     let len = string.len();
     if len > MAX_WORD_LENGTH as usize || len < MIN_WORD_LENGTH as usize {
         return -1;
@@ -3324,7 +3320,7 @@ pub fn keyword_to_token(string: &[u8]) -> i32 {
 /// Safe parser value stack type, replacing the old YYSTYPE union.
 /// Each variant owns its data. `Default` produces `None`.
 #[derive(Default)]
-pub enum YYValue<'a> {
+pub(crate) enum YYValue<'a> {
     #[default]
     None,
     Num(i64),
@@ -3360,113 +3356,113 @@ pub enum YYValue<'a> {
 
 // Helper to take a value out and replace with None
 impl<'a> YYValue<'a> {
-    pub fn take(&mut self) -> YYValue<'a> {
+    pub(crate) fn take(&mut self) -> YYValue<'a> {
         std::mem::take(self)
     }
 
-    pub fn take_expr(&mut self) -> Option<Box<ExprDef>> {
+    pub(crate) fn take_expr(&mut self) -> Option<Box<ExprDef>> {
         match std::mem::take(self) {
             YYValue::Expr(e) => Some(e),
             _ => Option::None,
         }
     }
-    pub fn take_expr_list(&mut self) -> Vec<Box<ExprDef>> {
+    pub(crate) fn take_expr_list(&mut self) -> Vec<Box<ExprDef>> {
         match std::mem::take(self) {
             YYValue::ExprList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub fn take_var(&mut self) -> Option<Box<VarDef>> {
+    pub(crate) fn take_var(&mut self) -> Option<Box<VarDef>> {
         match std::mem::take(self) {
             YYValue::Var(v) => Some(v),
             _ => Option::None,
         }
     }
-    pub fn take_var_list(&mut self) -> Vec<Box<VarDef>> {
+    pub(crate) fn take_var_list(&mut self) -> Vec<Box<VarDef>> {
         match std::mem::take(self) {
             YYValue::VarList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub fn take_vmod(&mut self) -> Option<Box<VModDef>> {
+    pub(crate) fn take_vmod(&mut self) -> Option<Box<VModDef>> {
         match std::mem::take(self) {
             YYValue::VMod(v) => Some(v),
             _ => Option::None,
         }
     }
-    pub fn take_vmod_list(&mut self) -> Vec<Box<VModDef>> {
+    pub(crate) fn take_vmod_list(&mut self) -> Vec<Box<VModDef>> {
         match std::mem::take(self) {
             YYValue::VModList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub fn take_file(&mut self) -> Option<Box<XkbFile>> {
+    pub(crate) fn take_file(&mut self) -> Option<Box<XkbFile>> {
         match std::mem::take(self) {
             YYValue::File(f) => Some(f),
             _ => Option::None,
         }
     }
-    pub fn take_file_list(&mut self) -> Vec<Box<XkbFile>> {
+    pub(crate) fn take_file_list(&mut self) -> Vec<Box<XkbFile>> {
         match std::mem::take(self) {
             YYValue::FileList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub fn take_stmt_list(&mut self) -> Vec<Statement> {
+    pub(crate) fn take_stmt_list(&mut self) -> Vec<Statement> {
         match std::mem::take(self) {
             YYValue::StmtList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub fn as_num(&self) -> i64 {
+    pub(crate) fn as_num(&self) -> i64 {
         match self {
             YYValue::Num(n) => *n,
             _ => 0,
         }
     }
-    pub fn as_atom(&self) -> u32 {
+    pub(crate) fn as_atom(&self) -> u32 {
         match self {
             YYValue::Atom(a) => *a,
             _ => 0,
         }
     }
-    pub fn as_merge(&self) -> merge_mode {
+    pub(crate) fn as_merge(&self) -> merge_mode {
         match self {
             YYValue::Merge(m) => *m,
             _ => MERGE_DEFAULT,
         }
     }
-    pub fn as_map_flags(&self) -> xkb_map_flags {
+    pub(crate) fn as_map_flags(&self) -> xkb_map_flags {
         match self {
             YYValue::MapFlags(f) => *f,
             _ => 0,
         }
     }
-    pub fn as_file_type(&self) -> u32 {
+    pub(crate) fn as_file_type(&self) -> u32 {
         match self {
             YYValue::FileType(f) => *f,
             _ => 0,
         }
     }
-    pub fn as_keysym(&self) -> u32 {
+    pub(crate) fn as_keysym(&self) -> u32 {
         match self {
             YYValue::Keysym(k) => *k,
             _ => 0,
         }
     }
-    pub fn as_no_sym_or_action_list(&self) -> u32 {
+    pub(crate) fn as_no_sym_or_action_list(&self) -> u32 {
         match self {
             YYValue::NoSymbolOrActionList(n) => *n,
             _ => 0,
         }
     }
-    pub fn as_sval(&self) -> sval<'a> {
+    pub(crate) fn as_sval(&self) -> sval<'a> {
         match self {
             YYValue::Sval(s) => *s,
             _ => sval::EMPTY,
         }
     }
-    pub fn take_str(&mut self) -> String {
+    pub(crate) fn take_str(&mut self) -> String {
         match std::mem::take(self) {
             YYValue::Str(s) => s,
             _ => String::new(),
@@ -3480,7 +3476,7 @@ impl<'a> YYValue<'a> {
 fn is_space(ch: i8) -> bool {
     matches!(ch as u8, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
 }
-pub static DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
+pub(crate) static DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
 fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
     if s.str_match(b"0x") {
         match s.hex_int64(out) {
@@ -3524,7 +3520,7 @@ fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
 }
 
 /// Lex one token and write the semantic value into `yylval`.
-pub fn _xkbcommon_lex<'a>(
+pub(crate) fn _xkbcommon_lex<'a>(
     yylval: &mut YYValue<'a>,
     s: &mut scanner<'a>,
     ctx: &mut xkb_context,
@@ -3732,7 +3728,7 @@ pub fn _xkbcommon_lex<'a>(
     );
     ERROR_TOK
 }
-pub fn XkbParseStringInit<'a>(
+pub(crate) fn XkbParseStringInit<'a>(
     sc: &mut scanner<'a>,
     input: &'a [u8],
     file_name: &str,
@@ -3756,7 +3752,7 @@ pub fn XkbParseStringInit<'a>(
     }
     true
 }
-pub fn XkbParseString(
+pub(crate) fn XkbParseString(
     ctx: &mut xkb_context,
     input: &[u8],
     file_name: &str,
@@ -3779,22 +3775,22 @@ use super::super::keymap::{
     xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
 };
 
-pub const INCLUDE_MAX_DEPTH: i32 = 15_i32;
-pub const MERGE_OVERRIDE_PREFIX: i32 = '+' as i32;
-pub const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
-pub const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
+pub(crate) const INCLUDE_MAX_DEPTH: i32 = 15_i32;
+pub(crate) const MERGE_OVERRIDE_PREFIX: i32 = '+' as i32;
+pub(crate) const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
+pub(crate) const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
 
 /// Parsed result from one segment of an include statement.
-pub struct ParsedIncludeMap {
-    pub file: String,
-    pub map: String,
-    pub extra_data: String,
-    pub nextop: char,
+pub(crate) struct ParsedIncludeMap {
+    pub(crate) file: String,
+    pub(crate) map: String,
+    pub(crate) extra_data: String,
+    pub(crate) nextop: char,
 }
 
 /// Parse one include map segment from `input`, returning the parsed result
 /// and the remaining input (if any). Returns None on parse error.
-pub fn ParseIncludeMap(input: &str) -> Option<(ParsedIncludeMap, Option<&str>)> {
+pub(crate) fn ParseIncludeMap(input: &str) -> Option<(ParsedIncludeMap, Option<&str>)> {
     // Split at merge-mode prefix (+, |, ^)
     let (segment, nextop, rest) = if let Some(pos) = input.find(&['+', '|', '^'][..]) {
         let op = input.as_bytes()[pos] as char;
@@ -3953,7 +3949,7 @@ fn expand_percent(parent_file_name: &str, type_dir: &str, name: &str) -> Option<
 /// - `Ok(None)` if no `%` found (no expansion needed)
 /// - `Ok(Some(expanded))` if expansion succeeded
 /// - `Err(())` on error
-pub fn expand_path_str(
+pub(crate) fn expand_path_str(
     parent_file_name: &str,
     name: &str,
     file_type: u32,
@@ -3976,7 +3972,7 @@ pub fn expand_path_str(
         None => Err(()),
     }
 }
-pub fn FindFileInXkbPath(
+pub(crate) fn FindFileInXkbPath(
     ctx: &mut xkb_context,
     _parent_file_name: &str,
     name: &str,
@@ -4017,7 +4013,7 @@ pub fn FindFileInXkbPath(
     }
     None
 }
-pub fn ExceedsIncludeMaxDepth(include_depth: u32) -> bool {
+pub(crate) fn ExceedsIncludeMaxDepth(include_depth: u32) -> bool {
     if include_depth >= INCLUDE_MAX_DEPTH as u32 {
         log::error!(
             "[XKB-{:03}] Exceeded include depth threshold ({})",
@@ -4029,7 +4025,7 @@ pub fn ExceedsIncludeMaxDepth(include_depth: u32) -> bool {
         false
     }
 }
-pub fn ProcessIncludeFile(
+pub(crate) fn ProcessIncludeFile(
     ctx: &mut xkb_context,
     stmt: &IncludeStmt,
     file_type: u32,
@@ -4113,9 +4109,9 @@ pub fn ProcessIncludeFile(
     xkb_file
 }
 
-pub const GROUP_MASK_NAME_LAST: u32 = 3;
-pub const GROUP_INDEX_NAME_LAST: u32 = 1;
-pub type compile_file_fn =
+pub(crate) const GROUP_MASK_NAME_LAST: u32 = 3;
+pub(crate) const GROUP_INDEX_NAME_LAST: u32 = 1;
+pub(crate) type compile_file_fn =
     Option<for<'a> fn(Option<&mut XkbFile>, &mut xkb_keymap_info<'a>) -> bool>;
 #[inline]
 fn ComputeEffectiveMask(keymap: &xkb_keymap, mods: &mut xkb_mods) {
@@ -4736,7 +4732,7 @@ fn pending_computations_array_free(p: &mut Vec<pending_computation>) {
     }
     p.clear();
 }
-pub fn CompileKeymap(file: &mut XkbFile, keymap: &mut xkb_keymap) -> bool {
+pub(crate) fn CompileKeymap(file: &mut XkbFile, keymap: &mut xkb_keymap) -> bool {
     let mut file_indices: [Option<usize>; 4] = [None; 4];
     for (idx, stmt) in file.defs.iter().enumerate() {
         if let Statement::XkbFile(ref sub_file) = stmt {
@@ -4880,7 +4876,7 @@ pub fn CompileKeymap(file: &mut XkbFile, keymap: &mut xkb_keymap) -> bool {
     pending_computations_array_free(&mut info.pending_computations);
     ok_0
 }
-pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
+pub(crate) const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 
 /// Appends bytes from `src` to the Vec<i8>.
 #[inline]
@@ -4891,7 +4887,7 @@ fn vec_append_nul_terminated(v: &mut Vec<i8>, src: &[u8]) {
 /// Index-based sval for scanner input. Used in lvalue/rule to avoid
 /// lifetime issues across include boundaries. Reconstruct sval via to_sval().
 #[derive(Copy, Clone, Default)]
-pub struct SvalIdx {
+pub(crate) struct SvalIdx {
     start: usize,
     end: usize,
 }
@@ -4913,65 +4909,65 @@ impl SvalIdx {
     }
 }
 
-pub struct matcher<'a> {
-    pub ctx: &'a mut xkb_context,
-    pub rmlvo: rule_names<'a>,
-    pub val: lvalue,
-    pub groups: Vec<group>,
-    pub mapping: mapping,
-    pub rule: rule,
-    pub pending_kccgst: kccgst_buffer,
-    pub kccgst: [Vec<i8>; 5],
+pub(crate) struct matcher<'a> {
+    pub(crate) ctx: &'a mut xkb_context,
+    pub(crate) rmlvo: rule_names<'a>,
+    pub(crate) val: lvalue,
+    pub(crate) groups: Vec<group>,
+    pub(crate) mapping: mapping,
+    pub(crate) rule: rule,
+    pub(crate) pending_kccgst: kccgst_buffer,
+    pub(crate) kccgst: [Vec<i8>; 5],
 }
 #[derive(Clone, Default)]
-pub struct kccgst_buffer {
-    pub buffer: Vec<i8>,
-    pub slices: Vec<kccgst_buffer_slice>,
+pub(crate) struct kccgst_buffer {
+    pub(crate) buffer: Vec<i8>,
+    pub(crate) slices: Vec<kccgst_buffer_slice>,
 }
 #[derive(Copy, Clone)]
-pub struct kccgst_buffer_slice {
-    pub length: u32,
-    pub kccgst: rules_kccgst,
-    pub layout: u32,
+pub(crate) struct kccgst_buffer_slice {
+    pub(crate) length: u32,
+    pub(crate) kccgst: rules_kccgst,
+    pub(crate) layout: u32,
 }
-pub type rules_kccgst = u32;
-pub const _KCCGST_NUM_ENTRIES: rules_kccgst = 5;
-pub const KCCGST_GEOMETRY: rules_kccgst = 4;
-pub const KCCGST_SYMBOLS: rules_kccgst = 3;
-pub const KCCGST_COMPAT: rules_kccgst = 2;
-pub const KCCGST_TYPES: rules_kccgst = 1;
-pub const KCCGST_KEYCODES: rules_kccgst = 0;
+pub(crate) type rules_kccgst = u32;
+pub(crate) const _KCCGST_NUM_ENTRIES: rules_kccgst = 5;
+pub(crate) const KCCGST_GEOMETRY: rules_kccgst = 4;
+pub(crate) const KCCGST_SYMBOLS: rules_kccgst = 3;
+pub(crate) const KCCGST_COMPAT: rules_kccgst = 2;
+pub(crate) const KCCGST_TYPES: rules_kccgst = 1;
+pub(crate) const KCCGST_KEYCODES: rules_kccgst = 0;
 #[derive(Copy, Clone)]
-pub struct rule {
-    pub mlvo_value_at_pos: [SvalIdx; 4],
-    pub match_type_at_pos: [mlvo_match_type; 4],
-    pub kccgst_value_at_pos: [SvalIdx; 5],
-    pub num_mlvo_values: mlvo_index_t,
-    pub num_kccgst_values: kccgst_index_t,
-    pub skip: bool,
+pub(crate) struct rule {
+    pub(crate) mlvo_value_at_pos: [SvalIdx; 4],
+    pub(crate) match_type_at_pos: [mlvo_match_type; 4],
+    pub(crate) kccgst_value_at_pos: [SvalIdx; 5],
+    pub(crate) num_mlvo_values: mlvo_index_t,
+    pub(crate) num_kccgst_values: kccgst_index_t,
+    pub(crate) skip: bool,
 }
-pub type kccgst_index_t = u8;
-pub type mlvo_index_t = u8;
-pub type mlvo_match_type = u32;
-pub const MLVO_MATCH_GROUP: mlvo_match_type = 5;
-pub const MLVO_MATCH_WILDCARD_ANY: mlvo_match_type = 4;
-pub const MLVO_MATCH_WILDCARD_SOME: mlvo_match_type = 3;
-pub const MLVO_MATCH_WILDCARD_NONE: mlvo_match_type = 2;
-pub const MLVO_MATCH_WILDCARD_LEGACY: mlvo_match_type = 1;
-pub const MLVO_MATCH_NORMAL: mlvo_match_type = 0;
+pub(crate) type kccgst_index_t = u8;
+pub(crate) type mlvo_index_t = u8;
+pub(crate) type mlvo_match_type = u32;
+pub(crate) const MLVO_MATCH_GROUP: mlvo_match_type = 5;
+pub(crate) const MLVO_MATCH_WILDCARD_ANY: mlvo_match_type = 4;
+pub(crate) const MLVO_MATCH_WILDCARD_SOME: mlvo_match_type = 3;
+pub(crate) const MLVO_MATCH_WILDCARD_NONE: mlvo_match_type = 2;
+pub(crate) const MLVO_MATCH_WILDCARD_LEGACY: mlvo_match_type = 1;
+pub(crate) const MLVO_MATCH_NORMAL: mlvo_match_type = 0;
 #[derive(Copy, Clone, Default)]
-pub struct mapping {
-    pub mlvo_at_pos: [rules_mlvo; 4],
-    pub num_mlvo: mlvo_index_t,
-    pub defined_mlvo_mask: mlvo_mask_t,
-    pub layout: LayoutIdx,
-    pub active_or_candidates_mask: u32,
-    pub kccgst_at_pos: [rules_kccgst; 5],
-    pub num_kccgst: kccgst_index_t,
-    pub defined_kccgst_mask: u8,
+pub(crate) struct mapping {
+    pub(crate) mlvo_at_pos: [rules_mlvo; 4],
+    pub(crate) num_mlvo: mlvo_index_t,
+    pub(crate) defined_mlvo_mask: mlvo_mask_t,
+    pub(crate) layout: LayoutIdx,
+    pub(crate) active_or_candidates_mask: u32,
+    pub(crate) kccgst_at_pos: [rules_kccgst; 5],
+    pub(crate) num_kccgst: kccgst_index_t,
+    pub(crate) defined_kccgst_mask: u8,
 }
 #[derive(Copy, Clone)]
-pub enum LayoutIdx {
+pub(crate) enum LayoutIdx {
     Single {
         layout_idx: u32,
         variant_idx: u32,
@@ -5003,53 +4999,53 @@ impl LayoutIdx {
         }
     }
 }
-pub type mlvo_mask_t = u8;
-pub type rules_mlvo = u32;
-pub const _MLVO_NUM_ENTRIES: rules_mlvo = 4;
-pub const MLVO_OPTION: rules_mlvo = 3;
-pub const MLVO_VARIANT: rules_mlvo = 2;
-pub const MLVO_LAYOUT: rules_mlvo = 1;
-pub const MLVO_MODEL: rules_mlvo = 0;
+pub(crate) type mlvo_mask_t = u8;
+pub(crate) type rules_mlvo = u32;
+pub(crate) const _MLVO_NUM_ENTRIES: rules_mlvo = 4;
+pub(crate) const MLVO_OPTION: rules_mlvo = 3;
+pub(crate) const MLVO_VARIANT: rules_mlvo = 2;
+pub(crate) const MLVO_LAYOUT: rules_mlvo = 1;
+pub(crate) const MLVO_MODEL: rules_mlvo = 0;
 #[derive(Clone)]
-pub struct group {
-    pub name: Vec<u8>,
-    pub elements: Vec<Vec<u8>>,
+pub(crate) struct group {
+    pub(crate) name: Vec<u8>,
+    pub(crate) elements: Vec<Vec<u8>>,
 }
 #[derive(Copy, Clone)]
-pub struct lvalue {
-    pub string: SvalIdx,
+pub(crate) struct lvalue {
+    pub(crate) string: SvalIdx,
 }
 #[derive(Clone, Default)]
-pub struct rule_names<'a> {
-    pub model: matched_sval<'a>,
-    pub layouts: Vec<matched_sval<'a>>,
-    pub variants: Vec<matched_sval<'a>>,
-    pub options: Vec<matched_sval<'a>>,
+pub(crate) struct rule_names<'a> {
+    pub(crate) model: matched_sval<'a>,
+    pub(crate) layouts: Vec<matched_sval<'a>>,
+    pub(crate) variants: Vec<matched_sval<'a>>,
+    pub(crate) options: Vec<matched_sval<'a>>,
 }
 #[derive(Copy, Clone, Default)]
-pub struct matched_sval<'a> {
-    pub sval: sval<'a>,
-    pub matched: bool,
-    pub layout: u32,
+pub(crate) struct matched_sval<'a> {
+    pub(crate) sval: sval<'a>,
+    pub(crate) matched: bool,
+    pub(crate) layout: u32,
 }
-pub const TOK_ERROR: rules_token = 11;
-pub type rules_token = u32;
-pub const TOK_INCLUDE: rules_token = 10;
-pub const TOK_WILD_CARD_ANY: rules_token = 9;
-pub const TOK_WILD_CARD_SOME: rules_token = 8;
-pub const TOK_WILD_CARD_NONE: rules_token = 7;
-pub const TOK_WILD_CARD_STAR: rules_token = 6;
-pub const TOK_EQUALS: rules_token = 5;
-pub const TOK_BANG: rules_token = 4;
-pub const TOK_GROUP_NAME: rules_token = 3;
-pub const TOK_IDENTIFIER: rules_token = 2;
-pub const TOK_END_OF_LINE: rules_token = 1;
-pub const TOK_END_OF_FILE: rules_token = 0;
-pub const LAYOUT_INDEX_FIRST: layout_index_ranges = 4294967292;
-pub const LAYOUT_INDEX_SINGLE: layout_index_ranges = 4294967291;
-pub const LAYOUT_INDEX_ANY: layout_index_ranges = 4294967294;
-pub const LAYOUT_INDEX_LATER: layout_index_ranges = 4294967293;
-pub type layout_index_ranges = u32;
+pub(crate) const TOK_ERROR: rules_token = 11;
+pub(crate) type rules_token = u32;
+pub(crate) const TOK_INCLUDE: rules_token = 10;
+pub(crate) const TOK_WILD_CARD_ANY: rules_token = 9;
+pub(crate) const TOK_WILD_CARD_SOME: rules_token = 8;
+pub(crate) const TOK_WILD_CARD_NONE: rules_token = 7;
+pub(crate) const TOK_WILD_CARD_STAR: rules_token = 6;
+pub(crate) const TOK_EQUALS: rules_token = 5;
+pub(crate) const TOK_BANG: rules_token = 4;
+pub(crate) const TOK_GROUP_NAME: rules_token = 3;
+pub(crate) const TOK_IDENTIFIER: rules_token = 2;
+pub(crate) const TOK_END_OF_LINE: rules_token = 1;
+pub(crate) const TOK_END_OF_FILE: rules_token = 0;
+pub(crate) const LAYOUT_INDEX_FIRST: layout_index_ranges = 4294967292;
+pub(crate) const LAYOUT_INDEX_SINGLE: layout_index_ranges = 4294967291;
+pub(crate) const LAYOUT_INDEX_ANY: layout_index_ranges = 4294967294;
+pub(crate) const LAYOUT_INDEX_LATER: layout_index_ranges = 4294967293;
+pub(crate) type layout_index_ranges = u32;
 
 impl Default for rule {
     fn default() -> Self {
@@ -5084,10 +5080,10 @@ impl<'a> matcher<'a> {
         }
     }
 }
-pub type wildcard_match_type = u32;
-pub const WILDCARD_MATCH_ALL: wildcard_match_type = 1;
-pub const WILDCARD_MATCH_NONEMPTY: wildcard_match_type = 0;
-pub const MAX_INCLUDE_DEPTH: i32 = 5_i32;
+pub(crate) type wildcard_match_type = u32;
+pub(crate) const WILDCARD_MATCH_ALL: wildcard_match_type = 1;
+pub(crate) const WILDCARD_MATCH_NONEMPTY: wildcard_match_type = 0;
+pub(crate) const MAX_INCLUDE_DEPTH: i32 = 5_i32;
 #[inline]
 fn is_ident(ch: i8) -> bool {
     (ch as u8).is_ascii_graphic() && ch as i32 != '\\' as i32
@@ -5194,7 +5190,7 @@ fn lex(s: &mut scanner, val: &mut lvalue) -> rules_token {
 }
 static RULES_MLVO_SVALS: [&[u8]; 4] = [b"model", b"layout", b"variant", b"option"];
 static RULES_KCCGST_SVALS: [&[u8]; 5] = [b"keycodes", b"types", b"compat", b"symbols", b"geometry"];
-pub const OPTIONS_MATCH_ALL_GROUPS: i32 = XKB_MAX_GROUPS;
+pub(crate) const OPTIONS_MATCH_ALL_GROUPS: i32 = XKB_MAX_GROUPS;
 fn strip_spaces<'a>(v: sval<'a>) -> sval<'a> {
     let bytes = v.data;
     let start_trim = bytes
@@ -6983,7 +6979,7 @@ fn xkb_resolve_rules(
     }
     ret
 }
-pub fn xkb_components_from_rules_names(
+pub(crate) fn xkb_components_from_rules_names(
     ctx: &mut xkb_context,
     rmlvo: &xkb_rule_names,
     out: &mut xkb_component_names,

@@ -3,84 +3,84 @@ use super::super::keymap::{
     useModMapValueNames, LookupString, ModMaskText, SIMatchText,
 };
 use super::super::keymap::{xkb_escape_map_name, ActionTypeText, KeysymText};
-pub use super::super::keymap::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
+pub(crate) use super::super::keymap::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
 use super::super::keysym::xkb_keysym_is_keypad;
 use super::super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 use super::parser::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 
 use super::super::keymap::ModIndexText;
-pub use super::super::shared_types::{
+pub(crate) use super::super::shared_types::{
     InterpDef, KeyAliasDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ReportBadField,
     ReportNotArray, ReportShouldBeArray, SymbolsDef,
 };
-pub use super::super::shared_types::{
+pub(crate) use super::super::shared_types::{
     MAX_ACTIONS_PER_LEVEL, MOD_REAL_MASK_ALL, XKB_MAX_LEDS, XKB_MOD_NONE, XKB_OVERLAY_INVALID,
 };
 
-pub struct SymbolsInfo {
-    pub name: Option<String>,
-    pub errorCount: i32,
-    pub include_depth: u32,
-    pub explicit_group: u32,
-    pub max_groups: u32,
-    pub keys: Vec<KeyInfo>,
-    pub default_key: KeyInfo,
-    pub default_actions: ActionsInfo,
-    pub group_names: Vec<u32>,
-    pub modmaps: Vec<ModMapEntry>,
-    pub mods: xkb_mod_set,
-    pub star_atom: u32,
+pub(crate) struct SymbolsInfo {
+    pub(crate) name: Option<String>,
+    pub(crate) errorCount: i32,
+    pub(crate) include_depth: u32,
+    pub(crate) explicit_group: u32,
+    pub(crate) max_groups: u32,
+    pub(crate) keys: Vec<KeyInfo>,
+    pub(crate) default_key: KeyInfo,
+    pub(crate) default_actions: ActionsInfo,
+    pub(crate) group_names: Vec<u32>,
+    pub(crate) modmaps: Vec<ModMapEntry>,
+    pub(crate) mods: xkb_mod_set,
+    pub(crate) star_atom: u32,
 }
 #[derive(Copy, Clone)]
-pub struct ModMapEntry {
-    pub merge: merge_mode,
-    pub haveSymbol: bool,
-    pub modifier: u32,
+pub(crate) struct ModMapEntry {
+    pub(crate) merge: merge_mode,
+    pub(crate) haveSymbol: bool,
+    pub(crate) modifier: u32,
     /// keyName (atom) when !haveSymbol, keySym when haveSymbol
-    pub u: u32,
+    pub(crate) u: u32,
 }
 #[derive(Clone)]
-pub struct KeyInfo {
-    pub name: u32,
-    pub vmodmap: u32,
-    pub default_type: u32,
-    pub out_of_range_group_number: u32,
-    pub groups: Vec<GroupInfo>,
-    pub out_of_range_group_policy: u32,
-    pub defined: key_field,
-    pub merge: merge_mode,
-    pub repeat: key_repeat,
-    pub out_of_range_pending_group: bool,
-    pub overlays_clear: bool,
-    pub overlays: xkb_overlay_mask_t,
-    pub overlay_keys: Vec<u32>,
+pub(crate) struct KeyInfo {
+    pub(crate) name: u32,
+    pub(crate) vmodmap: u32,
+    pub(crate) default_type: u32,
+    pub(crate) out_of_range_group_number: u32,
+    pub(crate) groups: Vec<GroupInfo>,
+    pub(crate) out_of_range_group_policy: u32,
+    pub(crate) defined: key_field,
+    pub(crate) merge: merge_mode,
+    pub(crate) repeat: key_repeat,
+    pub(crate) out_of_range_pending_group: bool,
+    pub(crate) overlays_clear: bool,
+    pub(crate) overlays: xkb_overlay_mask_t,
+    pub(crate) overlay_keys: Vec<u32>,
 }
-pub type key_repeat = u32;
-pub const _KEY_REPEAT_NUM_ENTRIES: key_repeat = 3;
-pub const KEY_REPEAT_NO: key_repeat = 2;
-pub const KEY_REPEAT_YES: key_repeat = 1;
-pub const KEY_REPEAT_UNDEFINED: key_repeat = 0;
-pub type key_field = u32;
-pub const KEY_FIELD_ALL: key_field = 31;
-pub const KEY_FIELD_OVERLAY: key_field = 16;
-pub const KEY_FIELD_VMODMAP: key_field = 8;
-pub const KEY_FIELD_GROUPINFO: key_field = 4;
-pub const KEY_FIELD_DEFAULT_TYPE: key_field = 2;
-pub const KEY_FIELD_REPEAT: key_field = 1;
+pub(crate) type key_repeat = u32;
+pub(crate) const _KEY_REPEAT_NUM_ENTRIES: key_repeat = 3;
+pub(crate) const KEY_REPEAT_NO: key_repeat = 2;
+pub(crate) const KEY_REPEAT_YES: key_repeat = 1;
+pub(crate) const KEY_REPEAT_UNDEFINED: key_repeat = 0;
+pub(crate) type key_field = u32;
+pub(crate) const KEY_FIELD_ALL: key_field = 31;
+pub(crate) const KEY_FIELD_OVERLAY: key_field = 16;
+pub(crate) const KEY_FIELD_VMODMAP: key_field = 8;
+pub(crate) const KEY_FIELD_GROUPINFO: key_field = 4;
+pub(crate) const KEY_FIELD_DEFAULT_TYPE: key_field = 2;
+pub(crate) const KEY_FIELD_REPEAT: key_field = 1;
 #[derive(Clone, Default)]
-pub struct GroupInfo {
-    pub levels: Vec<xkb_level>,
-    pub defined: group_field,
-    pub type_0: u32,
+pub(crate) struct GroupInfo {
+    pub(crate) levels: Vec<xkb_level>,
+    pub(crate) defined: group_field,
+    pub(crate) type_0: u32,
 }
 
-pub type group_field = u32;
-pub const GROUP_FIELD_TYPE: group_field = 4;
-pub const GROUP_FIELD_ACTS: group_field = 2;
-pub const GROUP_FIELD_SYMS: group_field = 1;
+pub(crate) type group_field = u32;
+pub(crate) const GROUP_FIELD_TYPE: group_field = 4;
+pub(crate) const GROUP_FIELD_ACTS: group_field = 2;
+pub(crate) const GROUP_FIELD_SYMS: group_field = 1;
 
 impl KeyInfo {
-    pub fn new_zeroed() -> Self {
+    pub(crate) fn new_zeroed() -> Self {
         Self {
             name: 0,
             vmodmap: 0,
@@ -100,7 +100,7 @@ impl KeyInfo {
 }
 
 impl SymbolsInfo {
-    pub fn new(ki: &mut xkb_keymap_info<'_>) -> Self {
+    pub(crate) fn new(ki: &mut xkb_keymap_info<'_>) -> Self {
         let star_atom = atom_intern(&mut ki.keymap_mut().ctx.atom_table, b"*", true);
         Self {
             name: None,
@@ -2397,7 +2397,10 @@ fn CopySymbolsToKeymap(keymap: &mut xkb_keymap, info: &mut SymbolsInfo) -> bool 
     }
     true
 }
-pub fn CompileSymbols(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
+pub(crate) fn CompileSymbols(
+    file: Option<&mut XkbFile>,
+    keymap_info: &mut xkb_keymap_info<'_>,
+) -> bool {
     let mods = keymap_info.keymap_ref().mods;
     let mut info = SymbolsInfo::new(keymap_info);
     InitSymbolsInfo(&mut info, keymap_info, 0_u32, &mods);
@@ -2414,17 +2417,17 @@ pub fn CompileSymbols(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_i
 use super::super::keymap::xkb_context_get_log_verbosity;
 use super::super::keysym::xkb_keysym_to_upper;
 use super::super::shared_types::*;
-pub struct CompatInfo {
-    pub name: Option<String>,
-    pub errorCount: i32,
-    pub include_depth: u32,
-    pub default_interp: SymInterpInfo,
-    pub interps: Vec<SymInterpInfo>,
-    pub default_led: LedInfo,
-    pub leds: [LedInfo; 32],
-    pub num_leds: u32,
-    pub default_actions: ActionsInfo,
-    pub mods: xkb_mod_set,
+pub(crate) struct CompatInfo {
+    pub(crate) name: Option<String>,
+    pub(crate) errorCount: i32,
+    pub(crate) include_depth: u32,
+    pub(crate) default_interp: SymInterpInfo,
+    pub(crate) interps: Vec<SymInterpInfo>,
+    pub(crate) default_led: LedInfo,
+    pub(crate) leds: [LedInfo; 32],
+    pub(crate) num_leds: u32,
+    pub(crate) default_actions: ActionsInfo,
+    pub(crate) mods: xkb_mod_set,
 }
 impl Default for CompatInfo {
     fn default() -> Self {
@@ -2433,7 +2436,7 @@ impl Default for CompatInfo {
 }
 
 impl CompatInfo {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         let zeroed_led = LedInfo {
             defined: 0 as led_field,
             merge: MERGE_DEFAULT,
@@ -2487,30 +2490,30 @@ impl CompatInfo {
     }
 }
 #[derive(Copy, Clone)]
-pub struct LedInfo {
-    pub defined: led_field,
-    pub merge: merge_mode,
-    pub led: xkb_led,
+pub(crate) struct LedInfo {
+    pub(crate) defined: led_field,
+    pub(crate) merge: merge_mode,
+    pub(crate) led: xkb_led,
 }
-pub type led_field = u32;
-pub const LED_FIELD_CTRLS: led_field = 4;
-pub const LED_FIELD_GROUPS: led_field = 2;
-pub const LED_FIELD_MODS: led_field = 1;
+pub(crate) type led_field = u32;
+pub(crate) const LED_FIELD_CTRLS: led_field = 4;
+pub(crate) const LED_FIELD_GROUPS: led_field = 2;
+pub(crate) const LED_FIELD_MODS: led_field = 1;
 // C2Rust_Unnamed_18 removed: replaced by Vec<SymInterpInfo>
 #[derive(Clone)]
-pub struct SymInterpInfo {
-    pub defined: si_field,
-    pub merge: merge_mode,
-    pub interp: xkb_sym_interpret,
+pub(crate) struct SymInterpInfo {
+    pub(crate) defined: si_field,
+    pub(crate) merge: merge_mode,
+    pub(crate) interp: xkb_sym_interpret,
 }
-pub type si_field = u32;
-pub const SI_FIELD_LEVEL_ONE_ONLY: si_field = 8;
-pub const SI_FIELD_AUTO_REPEAT: si_field = 4;
-pub const SI_FIELD_ACTION: si_field = 2;
-pub const SI_FIELD_VIRTUAL_MOD: si_field = 1;
+pub(crate) type si_field = u32;
+pub(crate) const SI_FIELD_LEVEL_ONE_ONLY: si_field = 8;
+pub(crate) const SI_FIELD_AUTO_REPEAT: si_field = 4;
+pub(crate) const SI_FIELD_ACTION: si_field = 2;
+pub(crate) const SI_FIELD_VIRTUAL_MOD: si_field = 1;
 // C2Rust_Unnamed_19 removed: replaced by Vec<xkb_sym_interpret>
-pub struct collect {
-    pub sym_interprets: Vec<xkb_sym_interpret>,
+pub(crate) struct collect {
+    pub(crate) sym_interprets: Vec<xkb_sym_interpret>,
 }
 // C2Rust_Unnamed_20 removed: replaced by Vec<xkb_action>
 fn siText(si: &SymInterpInfo, info: &mut CompatInfo, ki: &xkb_keymap_info<'_>) -> String {
@@ -3634,7 +3637,7 @@ fn CopyCompatToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) -> bo
     CopyLedMapDefsToKeymap(ki, info);
     true
 }
-pub fn CompileCompatMap(file: Option<&mut XkbFile>, ki: &mut xkb_keymap_info<'_>) -> bool {
+pub(crate) fn CompileCompatMap(file: Option<&mut XkbFile>, ki: &mut xkb_keymap_info<'_>) -> bool {
     let mods = ki.keymap_ref().mods;
     let mut info = CompatInfo::new();
     InitCompatInfo(ki, &mut info, 0_u32, &mods);
@@ -3648,12 +3651,12 @@ pub fn CompileCompatMap(file: Option<&mut XkbFile>, ki: &mut xkb_keymap_info<'_>
     ClearCompatInfo(&mut info);
     false
 }
-pub struct KeyTypesInfo {
-    pub name: Option<String>,
-    pub errorCount: i32,
-    pub include_depth: u32,
-    pub types: Vec<KeyTypeInfo>,
-    pub mods: xkb_mod_set,
+pub(crate) struct KeyTypesInfo {
+    pub(crate) name: Option<String>,
+    pub(crate) errorCount: i32,
+    pub(crate) include_depth: u32,
+    pub(crate) types: Vec<KeyTypeInfo>,
+    pub(crate) mods: xkb_mod_set,
 }
 impl Default for KeyTypesInfo {
     fn default() -> Self {
@@ -3662,7 +3665,7 @@ impl Default for KeyTypesInfo {
 }
 
 impl KeyTypesInfo {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             name: None,
             errorCount: 0,
@@ -3673,20 +3676,20 @@ impl KeyTypesInfo {
     }
 }
 #[derive(Clone)]
-pub struct KeyTypeInfo {
-    pub defined: type_field,
-    pub merge: merge_mode,
-    pub name: u32,
-    pub mods: u32,
-    pub num_levels: u32,
-    pub entries: Vec<xkb_key_type_entry>,
-    pub level_names: Vec<u32>,
+pub(crate) struct KeyTypeInfo {
+    pub(crate) defined: type_field,
+    pub(crate) merge: merge_mode,
+    pub(crate) name: u32,
+    pub(crate) mods: u32,
+    pub(crate) num_levels: u32,
+    pub(crate) entries: Vec<xkb_key_type_entry>,
+    pub(crate) level_names: Vec<u32>,
 }
-pub type type_field = u32;
-pub const TYPE_FIELD_LEVEL_NAME: type_field = 8;
-pub const TYPE_FIELD_PRESERVE: type_field = 4;
-pub const TYPE_FIELD_MAP: type_field = 2;
-pub const TYPE_FIELD_MASK: type_field = 1;
+pub(crate) type type_field = u32;
+pub(crate) const TYPE_FIELD_LEVEL_NAME: type_field = 8;
+pub(crate) const TYPE_FIELD_PRESERVE: type_field = 4;
+pub(crate) const TYPE_FIELD_MAP: type_field = 2;
+pub(crate) const TYPE_FIELD_MASK: type_field = 1;
 #[inline]
 fn MapEntryTxt(
     ki: &xkb_keymap_info<'_>,
@@ -4390,7 +4393,10 @@ fn CopyKeyTypesToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo) -
     keymap.mods = info.mods;
     true
 }
-pub fn CompileKeyTypes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
+pub(crate) fn CompileKeyTypes(
+    file: Option<&mut XkbFile>,
+    keymap_info: &mut xkb_keymap_info<'_>,
+) -> bool {
     let mods = keymap_info.keymap_ref().mods;
     let mut info = KeyTypesInfo::new();
     InitKeyTypesInfo(&mut info, 0_u32, &mods);
@@ -4407,7 +4413,7 @@ pub fn CompileKeyTypes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_
 
 // ── Virtual modifier functions (migrated from vmod.rs) ──
 
-pub fn InitVMods(info: &mut xkb_mod_set, mods: &xkb_mod_set, reset: bool) {
+pub(crate) fn InitVMods(info: &mut xkb_mod_set, mods: &xkb_mod_set, reset: bool) {
     *info = *mods;
     if !reset {
         return;
@@ -4417,7 +4423,7 @@ pub fn InitVMods(info: &mut xkb_mod_set, mods: &xkb_mod_set, reset: bool) {
     }
     info.explicit_vmods = 0_u32;
 }
-pub fn MergeModSets(
+pub(crate) fn MergeModSets(
     ctx: &mut xkb_context,
     into: &mut xkb_mod_set,
     from: &xkb_mod_set,
@@ -4459,7 +4465,7 @@ pub fn MergeModSets(
     }
     into.num_mods = from.num_mods;
 }
-pub fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModDef) -> bool {
+pub(crate) fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModDef) -> bool {
     let mut mapping: u32 = 0_u32;
     if stmt.value.is_some() {
         let value_ref = stmt.value.as_deref().unwrap();
@@ -4525,13 +4531,13 @@ pub fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModD
     mods.num_mods = mods.num_mods.wrapping_add(1);
     true
 }
-pub struct KeyNamesInfo {
-    pub name: Option<String>,
-    pub errorCount: i32,
-    pub include_depth: u32,
-    pub keycodes: KeycodeStore,
-    pub led_names: [LedNameInfo; 32],
-    pub num_led_names: u32,
+pub(crate) struct KeyNamesInfo {
+    pub(crate) name: Option<String>,
+    pub(crate) errorCount: i32,
+    pub(crate) include_depth: u32,
+    pub(crate) keycodes: KeycodeStore,
+    pub(crate) led_names: [LedNameInfo; 32],
+    pub(crate) num_led_names: u32,
 }
 impl Default for KeyNamesInfo {
     fn default() -> Self {
@@ -4540,7 +4546,7 @@ impl Default for KeyNamesInfo {
 }
 
 impl KeyNamesInfo {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             name: None,
             errorCount: 0,
@@ -4560,21 +4566,21 @@ impl KeyNamesInfo {
     }
 }
 #[derive(Copy, Clone)]
-pub struct LedNameInfo {
-    pub merge: merge_mode,
-    pub name: u32,
+pub(crate) struct LedNameInfo {
+    pub(crate) merge: merge_mode,
+    pub(crate) name: u32,
 }
 #[derive(Clone)]
-pub struct KeycodeStore {
-    pub min: u32,
-    pub low: Vec<u32>,
-    pub high: Vec<HighKeycodeEntry>,
-    pub names: Vec<KeycodeMatch>,
+pub(crate) struct KeycodeStore {
+    pub(crate) min: u32,
+    pub(crate) low: Vec<u32>,
+    pub(crate) high: Vec<HighKeycodeEntry>,
+    pub(crate) names: Vec<KeycodeMatch>,
 }
 #[derive(Copy, Clone, Default)]
-pub struct HighKeycodeEntry {
-    pub keycode: u32,
-    pub name: u32,
+pub(crate) struct HighKeycodeEntry {
+    pub(crate) keycode: u32,
+    pub(crate) name: u32,
 }
 fn vec_resize_zero<T: Default>(v: &mut Vec<T>, new_len: usize) {
     if new_len > v.len() {
@@ -5480,7 +5486,10 @@ fn CopyKeyNamesInfoToKeymap(info: &mut KeyNamesInfo, ki: &mut xkb_keymap_info<'_
     xkb_escape_map_name(&mut keymap.keycodes_section_name);
     true
 }
-pub fn CompileKeycodes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
+pub(crate) fn CompileKeycodes(
+    file: Option<&mut XkbFile>,
+    keymap_info: &mut xkb_keymap_info<'_>,
+) -> bool {
     let mut info = KeyNamesInfo::new();
     InitKeyNamesInfo(&mut info, 0_u32);
     if let Some(file) = file {
@@ -5495,31 +5504,31 @@ pub fn CompileKeycodes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_
 }
 use super::super::keymap::{actionTypeNames, buttonNames, LookupValue, GROUP_LAST_INDEX_NAME};
 
-pub use super::super::keymap::action_equal;
-pub use super::super::shared_types::stmt_type_to_operator_char;
+pub(crate) use super::super::keymap::action_equal;
+pub(crate) use super::super::shared_types::stmt_type_to_operator_char;
 use super::super::shared_types::ExprKind;
 
-pub struct LookupModMaskPriv<'a> {
-    pub mods: &'a xkb_mod_set,
-    pub mod_type: u32,
+pub(crate) struct LookupModMaskPriv<'a> {
+    pub(crate) mods: &'a xkb_mod_set,
+    pub(crate) mod_type: u32,
 }
 
 /// Safe replacement for the IdentLookupFunc + *const c_void pair.
-pub enum IdentLookup<'a> {
+pub(crate) enum IdentLookup<'a> {
     None,
     Simple(&'a [LookupEntry]),
     NamedPattern(&'a NamedIntegerPattern<'a>),
     ModMask(&'a LookupModMaskPriv<'a>),
 }
 
-pub struct NamedIntegerPattern<'a> {
-    pub prefix: &'static str,
-    pub min: u32,
-    pub max: u32,
-    pub entries: &'a [LookupEntry],
-    pub pending_entries: &'a [LookupEntry],
-    pub is_mask: bool,
-    pub error_id: u32,
+pub(crate) struct NamedIntegerPattern<'a> {
+    pub(crate) prefix: &'static str,
+    pub(crate) min: u32,
+    pub(crate) max: u32,
+    pub(crate) entries: &'a [LookupEntry],
+    pub(crate) pending_entries: &'a [LookupEntry],
+    pub(crate) is_mask: bool,
+    pub(crate) error_id: u32,
 }
 
 static LEVEL_NAME_PATTERN_ENTRIES: [LookupEntry; 1] = [LookupEntry { name: "", value: 0 }];
@@ -5636,7 +5645,7 @@ fn ident_lookup(
     }
 }
 
-pub fn ExprResolveLhs<'a>(
+pub(crate) fn ExprResolveLhs<'a>(
     expr: &'a ExprDef,
     elem_rtrn: &mut u32,
     field_rtrn: &mut u32,
@@ -5691,7 +5700,7 @@ pub fn ExprResolveLhs<'a>(
     false
 }
 
-pub fn ExprResolveBoolean(ctx: &xkb_context, expr: &ExprDef, set_rtrn: &mut bool) -> bool {
+pub(crate) fn ExprResolveBoolean(ctx: &xkb_context, expr: &ExprDef, set_rtrn: &mut bool) -> bool {
     let ok: bool;
     #[allow(unused_assignments)]
     let mut ident: &str = "";
@@ -5964,11 +5973,11 @@ fn ExprResolveIntegerLookup(
     false
 }
 
-pub fn ExprResolveInteger(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut i64) -> bool {
+pub(crate) fn ExprResolveInteger(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut i64) -> bool {
     ExprResolveIntegerLookup(ctx, expr, val_rtrn, None, &IdentLookup::None)
 }
 
-pub fn ExprResolveGroup(
+pub(crate) fn ExprResolveGroup(
     keymap_info: &mut xkb_keymap_info<'_>,
     expr: &ExprDef,
     absolute: bool,
@@ -6022,7 +6031,7 @@ pub fn ExprResolveGroup(
     PARSER_SUCCESS
 }
 
-pub fn ExprResolveLevel(ctx: &xkb_context, expr: &ExprDef, level_rtrn: &mut u32) -> bool {
+pub(crate) fn ExprResolveLevel(ctx: &xkb_context, expr: &ExprDef, level_rtrn: &mut u32) -> bool {
     let pattern = NamedIntegerPattern {
         prefix: "Level",
         min: 1_u32,
@@ -6050,12 +6059,12 @@ pub fn ExprResolveLevel(ctx: &xkb_context, expr: &ExprDef, level_rtrn: &mut u32)
     true
 }
 
-pub fn ExprResolveButton(ctx: &xkb_context, expr: &ExprDef, btn_rtrn: &mut i64) -> bool {
+pub(crate) fn ExprResolveButton(ctx: &xkb_context, expr: &ExprDef, btn_rtrn: &mut i64) -> bool {
     let lookup = IdentLookup::Simple(&buttonNames);
     ExprResolveIntegerLookup(ctx, expr, btn_rtrn, None, &lookup)
 }
 
-pub fn ExprResolveString(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut u32) -> bool {
+pub(crate) fn ExprResolveString(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut u32) -> bool {
     match expr.stmt_type() {
         4 => {
             let ExprKind::String(s) = &expr.kind else {
@@ -6116,7 +6125,7 @@ pub fn ExprResolveString(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut u32) 
     false
 }
 
-pub fn ExprResolveEnum(
+pub(crate) fn ExprResolveEnum(
     ctx: &xkb_context,
     expr: &ExprDef,
     val_rtrn: &mut u32,
@@ -6344,7 +6353,7 @@ fn ExprResolveMaskLookup(
     false
 }
 
-pub fn ExprResolveMask(
+pub(crate) fn ExprResolveMask(
     ctx: &xkb_context,
     expr: &ExprDef,
     mask_rtrn: &mut u32,
@@ -6354,7 +6363,7 @@ pub fn ExprResolveMask(
     ExprResolveMaskLookup(ctx, expr, mask_rtrn, None, &lookup)
 }
 
-pub fn ExprResolveModMask(
+pub(crate) fn ExprResolveModMask(
     ctx: &xkb_context,
     expr: &ExprDef,
     mod_type: u32,
@@ -6366,7 +6375,7 @@ pub fn ExprResolveModMask(
     ExprResolveMaskLookup(ctx, expr, mask_rtrn, None, &lookup)
 }
 
-pub fn ExprResolveMod(
+pub(crate) fn ExprResolveMod(
     ctx: &xkb_context,
     def: &ExprDef,
     mod_type: u32,
@@ -6398,7 +6407,7 @@ pub fn ExprResolveMod(
     true
 }
 
-pub fn ExprResolveGroupMask(
+pub(crate) fn ExprResolveGroupMask(
     keymap_info: &mut xkb_keymap_info<'_>,
     expr: &ExprDef,
     group_rtrn: &mut u32,
@@ -6428,39 +6437,39 @@ pub fn ExprResolveGroupMask(
     ExprResolveMaskLookup(ctx, expr, group_rtrn, Some(pending_rtrn), &lookup)
 }
 #[derive(Copy, Clone)]
-pub struct ActionsInfo {
-    pub actions: [xkb_action; 8],
+pub(crate) struct ActionsInfo {
+    pub(crate) actions: [xkb_action; 8],
 }
 
-pub const ACTION_FIELD_LATCH_ON_PRESS: u32 = 25;
-pub const ACTION_FIELD_UNLOCK_ON_PRESS: u32 = 24;
-pub const ACTION_FIELD_LOCK_ON_RELEASE: u32 = 23;
-pub const ACTION_FIELD_MODS_TO_CLEAR: u32 = 22;
-pub const ACTION_FIELD_KEYCODE: u32 = 21;
-pub const ACTION_FIELD_DEVICE: u32 = 20;
-pub const ACTION_FIELD_DATA: u32 = 19;
-pub const ACTION_FIELD_SAME: u32 = 18;
-pub const ACTION_FIELD_SCREEN: u32 = 17;
-pub const ACTION_FIELD_COUNT: u32 = 16;
-pub const ACTION_FIELD_TYPE: u32 = 15;
-pub const ACTION_FIELD_CONTROLS: u32 = 14;
-pub const ACTION_FIELD_VALUE: u32 = 13;
-pub const ACTION_FIELD_BUTTON: u32 = 12;
-pub const ACTION_FIELD_ACCEL: u32 = 11;
-pub const ACTION_FIELD_Y: u32 = 10;
-pub const ACTION_FIELD_X: u32 = 9;
-pub const ACTION_FIELD_GROUP: u32 = 8;
-pub const ACTION_FIELD_MODIFIERS: u32 = 7;
-pub const ACTION_FIELD_INCREMENT: u32 = 6;
-pub const ACTION_FIELD_AFFECT: u32 = 5;
-pub const ACTION_FIELD_DEFAULT: u32 = 4;
-pub const ACTION_FIELD_REPORT: u32 = 3;
-pub const ACTION_FIELD_GEN_KEY_EVENT: u32 = 2;
-pub const ACTION_FIELD_LATCH_TO_LOCK: u32 = 1;
-pub const ACTION_FIELD_CLEAR_LOCKS: u32 = 0;
+pub(crate) const ACTION_FIELD_LATCH_ON_PRESS: u32 = 25;
+pub(crate) const ACTION_FIELD_UNLOCK_ON_PRESS: u32 = 24;
+pub(crate) const ACTION_FIELD_LOCK_ON_RELEASE: u32 = 23;
+pub(crate) const ACTION_FIELD_MODS_TO_CLEAR: u32 = 22;
+pub(crate) const ACTION_FIELD_KEYCODE: u32 = 21;
+pub(crate) const ACTION_FIELD_DEVICE: u32 = 20;
+pub(crate) const ACTION_FIELD_DATA: u32 = 19;
+pub(crate) const ACTION_FIELD_SAME: u32 = 18;
+pub(crate) const ACTION_FIELD_SCREEN: u32 = 17;
+pub(crate) const ACTION_FIELD_COUNT: u32 = 16;
+pub(crate) const ACTION_FIELD_TYPE: u32 = 15;
+pub(crate) const ACTION_FIELD_CONTROLS: u32 = 14;
+pub(crate) const ACTION_FIELD_VALUE: u32 = 13;
+pub(crate) const ACTION_FIELD_BUTTON: u32 = 12;
+pub(crate) const ACTION_FIELD_ACCEL: u32 = 11;
+pub(crate) const ACTION_FIELD_Y: u32 = 10;
+pub(crate) const ACTION_FIELD_X: u32 = 9;
+pub(crate) const ACTION_FIELD_GROUP: u32 = 8;
+pub(crate) const ACTION_FIELD_MODIFIERS: u32 = 7;
+pub(crate) const ACTION_FIELD_INCREMENT: u32 = 6;
+pub(crate) const ACTION_FIELD_AFFECT: u32 = 5;
+pub(crate) const ACTION_FIELD_DEFAULT: u32 = 4;
+pub(crate) const ACTION_FIELD_REPORT: u32 = 3;
+pub(crate) const ACTION_FIELD_GEN_KEY_EVENT: u32 = 2;
+pub(crate) const ACTION_FIELD_LATCH_TO_LOCK: u32 = 1;
+pub(crate) const ACTION_FIELD_CLEAR_LOCKS: u32 = 0;
 /// A value passed to an action handler.  Combines what used to be two separate
 /// parameters (`value: &ExprDef` and `value_ptr: Option<&mut Option<Box<ExprDef>>>`).
-pub enum ActionValue<'v> {
+pub(crate) enum ActionValue<'v> {
     /// A borrowed reference to a constant or non-ownable ExprDef (e.g. const_true).
     Borrowed(&'v ExprDef),
     /// A mutable reference to an owned ExprDef that can be `.take()`-en.
@@ -6470,7 +6479,7 @@ pub enum ActionValue<'v> {
 impl<'v> ActionValue<'v> {
     /// Get a shared reference to the underlying ExprDef.
     #[inline]
-    pub fn get(&self) -> &ExprDef {
+    pub(crate) fn get(&self) -> &ExprDef {
         match self {
             ActionValue::Borrowed(e) => e,
             ActionValue::Owned(opt) => opt.as_deref().unwrap(),
@@ -6478,7 +6487,7 @@ impl<'v> ActionValue<'v> {
     }
     /// Take ownership of the ExprDef (only possible for Owned variant).
     #[inline]
-    pub fn take(&mut self) -> Option<Box<ExprDef>> {
+    pub(crate) fn take(&mut self) -> Option<Box<ExprDef>> {
         match self {
             ActionValue::Borrowed(_) => None,
             ActionValue::Owned(opt) => opt.take(),
@@ -6486,7 +6495,7 @@ impl<'v> ActionValue<'v> {
     }
     /// Rebind to a child slot (for Owned variant navigating into Unary child).
     #[inline]
-    pub fn rebind_to_child(self) -> ActionValue<'v> {
+    pub(crate) fn rebind_to_child(self) -> ActionValue<'v> {
         match self {
             ActionValue::Owned(opt) => {
                 if let ExprKind::Unary { ref mut child, .. } = opt.as_mut().unwrap().kind {
@@ -6500,7 +6509,7 @@ impl<'v> ActionValue<'v> {
     }
 }
 
-pub type actionHandler = Option<
+pub(crate) type actionHandler = Option<
     for<'a> fn(
         &mut xkb_keymap_info<'a>,
         &xkb_mod_set,
@@ -6521,7 +6530,7 @@ fn const_false_expr() -> ExprDef {
         kind: ExprKind::Boolean(false),
     }
 }
-pub fn InitActionsInfo(keymap: &xkb_keymap, info: &mut ActionsInfo) {
+pub(crate) fn InitActionsInfo(keymap: &xkb_keymap, info: &mut ActionsInfo) {
     let mut type_0: u32 = ACTION_TYPE_NONE;
     while type_0 < _ACTION_TYPE_NUM_ENTRIES {
         info.actions[type_0 as usize] = xkb_action::from_type(type_0);
@@ -7209,7 +7218,7 @@ static HANDLE_ACTION: [actionHandler; 8] = {
         ),
     ]
 };
-pub fn HandleActionDef(
+pub(crate) fn HandleActionDef(
     keymap_info: &mut xkb_keymap_info<'_>,
     info: &mut ActionsInfo,
     mods: &xkb_mod_set,
@@ -7330,7 +7339,7 @@ pub fn HandleActionDef(
     }
     ret
 }
-pub fn SetDefaultActionField(
+pub(crate) fn SetDefaultActionField(
     keymap_info: &mut xkb_keymap_info<'_>,
     info: &mut ActionsInfo,
     mods: &mut xkb_mod_set,

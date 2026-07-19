@@ -476,7 +476,7 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
 }
 
 /// Create a new WKB instance from RMLVO names.
-pub fn new_from_names(
+pub(crate) fn new_from_names(
     rules: &str,
     model: &str,
     layout: &str,
@@ -502,7 +502,7 @@ pub fn new_from_names(
 }
 
 /// Create a new WKB instance from a keymap string.
-pub fn new_from_string(string: &str) -> Result<WKB, XkbError> {
+pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
     use keymap::Context;
 
     let ctx = Context::new().ok_or(XkbError::ContextCreation)?;
@@ -1395,7 +1395,7 @@ impl WKB {
     /// This produces a minimal but fully valid keymap that Wayland clients
     /// can parse.
     #[cfg(feature = "xkb")]
-    pub fn generate_xkb_string(&self) -> String {
+    pub(crate) fn generate_xkb_string(&self) -> String {
         let num_layouts = self.named_key_map.num_layouts;
         let num_keys = self.named_key_map.num_keys;
         // XKB keycodes max at 255; evdev = xkb - 8, so max evdev = 247

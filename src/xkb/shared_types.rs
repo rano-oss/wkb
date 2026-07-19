@@ -6,45 +6,45 @@ use std::sync::Arc;
 
 // ── xkbcommon public types ───────────────────────────────────────────
 
-pub const XKB_LOG_LEVEL_DEBUG: u32 = 50;
-pub const XKB_LOG_LEVEL_INFO: u32 = 40;
-pub const XKB_LOG_LEVEL_WARNING: u32 = 30;
-pub const XKB_LOG_LEVEL_ERROR: u32 = 20;
-pub const XKB_LOG_LEVEL_CRITICAL: u32 = 10;
+pub(crate) const XKB_LOG_LEVEL_DEBUG: u32 = 50;
+pub(crate) const XKB_LOG_LEVEL_INFO: u32 = 40;
+pub(crate) const XKB_LOG_LEVEL_WARNING: u32 = 30;
+pub(crate) const XKB_LOG_LEVEL_ERROR: u32 = 20;
+pub(crate) const XKB_LOG_LEVEL_CRITICAL: u32 = 10;
 
-pub const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: u32 = 2;
-pub const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: u32 = 1;
-pub const XKB_LAYOUT_OUT_OF_RANGE_WRAP: u32 = 0;
+pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: u32 = 2;
+pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: u32 = 1;
+pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_WRAP: u32 = 0;
 
-pub const XKB_STATE_CONTROLS: u32 = 512;
-pub const XKB_STATE_LEDS: u32 = 256;
-pub const XKB_STATE_LAYOUT_EFFECTIVE: u32 = 128;
-pub const XKB_STATE_LAYOUT_LOCKED: u32 = 64;
-pub const XKB_STATE_LAYOUT_LATCHED: u32 = 32;
-pub const XKB_STATE_LAYOUT_DEPRESSED: u32 = 16;
-pub const XKB_STATE_MODS_EFFECTIVE: u32 = 8;
-pub const XKB_STATE_MODS_LOCKED: u32 = 4;
-pub const XKB_STATE_MODS_LATCHED: u32 = 2;
-pub const XKB_STATE_MODS_DEPRESSED: u32 = 1;
+pub(crate) const XKB_STATE_CONTROLS: u32 = 512;
+pub(crate) const XKB_STATE_LEDS: u32 = 256;
+pub(crate) const XKB_STATE_LAYOUT_EFFECTIVE: u32 = 128;
+pub(crate) const XKB_STATE_LAYOUT_LOCKED: u32 = 64;
+pub(crate) const XKB_STATE_LAYOUT_LATCHED: u32 = 32;
+pub(crate) const XKB_STATE_LAYOUT_DEPRESSED: u32 = 16;
+pub(crate) const XKB_STATE_MODS_EFFECTIVE: u32 = 8;
+pub(crate) const XKB_STATE_MODS_LOCKED: u32 = 4;
+pub(crate) const XKB_STATE_MODS_LATCHED: u32 = 2;
+pub(crate) const XKB_STATE_MODS_DEPRESSED: u32 = 1;
 
-pub const XKB_KEYMAP_FORMAT_TEXT_V2: u32 = 2;
-pub const XKB_KEYMAP_FORMAT_TEXT_V1: u32 = 1;
+pub(crate) const XKB_KEYMAP_FORMAT_TEXT_V2: u32 = 2;
+pub(crate) const XKB_KEYMAP_FORMAT_TEXT_V1: u32 = 1;
 
-pub const XKB_KEYMAP_COMPILE_STRICT_MODE: u32 = 1;
-pub const XKB_KEYMAP_COMPILE_NO_FLAGS: u32 = 0;
+pub(crate) const XKB_KEYMAP_COMPILE_STRICT_MODE: u32 = 1;
+pub(crate) const XKB_KEYMAP_COMPILE_NO_FLAGS: u32 = 0;
 
-pub const XKB_LAYOUT_INVALID: u32 = 0xffffffff;
-pub const XKB_MOD_INVALID: u32 = 0xffffffff;
+pub(crate) const XKB_LAYOUT_INVALID: u32 = 0xffffffff;
+pub(crate) const XKB_MOD_INVALID: u32 = 0xffffffff;
 
 // ── xkb_rule_names ──────────────────────────────────────────────────
 
 #[derive(Clone, Debug)]
-pub struct xkb_rule_names {
-    pub rules: std::ffi::CString,
-    pub model: std::ffi::CString,
-    pub layout: std::ffi::CString,
-    pub variant: std::ffi::CString,
-    pub options: std::ffi::CString,
+pub(crate) struct xkb_rule_names {
+    pub(crate) rules: std::ffi::CString,
+    pub(crate) model: std::ffi::CString,
+    pub(crate) layout: std::ffi::CString,
+    pub(crate) variant: std::ffi::CString,
+    pub(crate) options: std::ffi::CString,
 }
 
 impl Default for xkb_rule_names {
@@ -62,7 +62,7 @@ impl Default for xkb_rule_names {
 // ── Opaque types ────────────────────────────────────────────────────
 
 /// Atom table - string interning system
-pub struct atom_table {
+pub(crate) struct atom_table {
     /// Hash index for O(1) lookups (open addressing, linear probing)
     index: Vec<u32>,
     /// Interned strings. Index 0 is None (XKB_ATOM_NONE).
@@ -98,7 +98,7 @@ fn hash_buf(bytes: &[u8]) -> u32 {
 }
 
 /// Create new atom table with pre-allocated capacity
-pub fn atom_table_new() -> atom_table {
+pub(crate) fn atom_table_new() -> atom_table {
     atom_table {
         index: vec![0; 1024],
         strings: {
@@ -110,24 +110,24 @@ pub fn atom_table_new() -> atom_table {
 }
 
 /// Get number of atoms in table
-pub fn atom_table_size(table: &atom_table) -> u32 {
+pub(crate) fn atom_table_size(table: &atom_table) -> u32 {
     table.strings.len() as u32
 }
 
 // ── xkb_context ─────────────────────────────────────────────────────
 
 #[derive(Clone, Debug)]
-pub struct xkb_context {
-    pub refcnt: i32,
-    pub log_level: u32,
-    pub log_verbosity: i32,
-    pub names_dflt: xkb_rule_names,
-    pub includes: Vec<String>,
-    pub failed_includes: Vec<String>,
-    pub atom_table: atom_table,
-    pub use_environment_names: bool,
-    pub use_secure_getenv: bool,
-    pub pending_default_includes: bool,
+pub(crate) struct xkb_context {
+    pub(crate) refcnt: i32,
+    pub(crate) log_level: u32,
+    pub(crate) log_verbosity: i32,
+    pub(crate) names_dflt: xkb_rule_names,
+    pub(crate) includes: Vec<String>,
+    pub(crate) failed_includes: Vec<String>,
+    pub(crate) atom_table: atom_table,
+    pub(crate) use_environment_names: bool,
+    pub(crate) use_secure_getenv: bool,
+    pub(crate) pending_default_includes: bool,
 }
 
 thread_local! {
@@ -137,7 +137,7 @@ thread_local! {
 }
 
 /// Read a file from the thread-local cache, or read from disk and cache it.
-pub fn read_file_cached(path: &str) -> Option<Arc<Vec<u8>>> {
+pub(crate) fn read_file_cached(path: &str) -> Option<Arc<Vec<u8>>> {
     FILE_CACHE
         .with(|cache| {
             let cache = cache.borrow();
@@ -158,66 +158,66 @@ pub fn read_file_cached(path: &str) -> Option<Arc<Vec<u8>>> {
 
 // ── keymap_h types (from keymap_priv.rs) ────────────────────────────
 
-pub struct xkb_keymap {
-    pub ctx: xkb_context,
-    pub flags: u32,
-    pub format: u32,
-    pub num_leds: u32,
-    pub leds: [xkb_led; 32],
-    pub min_key_code: u32,
-    pub max_key_code: u32,
-    pub num_keys: u32,
-    pub num_keys_low: u32,
-    pub keys: Vec<xkb_key>,
-    pub key_names: Vec<KeycodeMatch>,
-    pub key_aliases: Vec<xkb_key_alias>,
-    pub types: Vec<xkb_key_type>,
-    pub sym_interprets: Vec<xkb_sym_interpret>,
-    pub mods: xkb_mod_set,
-    pub canonical_state_mask: u32,
-    pub redirect_key_auto: u32,
-    pub num_groups: u32,
-    pub group_names: Vec<u32>,
-    pub keycodes_section_name: String,
-    pub symbols_section_name: String,
-    pub types_section_name: String,
-    pub compat_section_name: String,
+pub(crate) struct xkb_keymap {
+    pub(crate) ctx: xkb_context,
+    pub(crate) flags: u32,
+    pub(crate) format: u32,
+    pub(crate) num_leds: u32,
+    pub(crate) leds: [xkb_led; 32],
+    pub(crate) min_key_code: u32,
+    pub(crate) max_key_code: u32,
+    pub(crate) num_keys: u32,
+    pub(crate) num_keys_low: u32,
+    pub(crate) keys: Vec<xkb_key>,
+    pub(crate) key_names: Vec<KeycodeMatch>,
+    pub(crate) key_aliases: Vec<xkb_key_alias>,
+    pub(crate) types: Vec<xkb_key_type>,
+    pub(crate) sym_interprets: Vec<xkb_sym_interpret>,
+    pub(crate) mods: xkb_mod_set,
+    pub(crate) canonical_state_mask: u32,
+    pub(crate) redirect_key_auto: u32,
+    pub(crate) num_groups: u32,
+    pub(crate) group_names: Vec<u32>,
+    pub(crate) keycodes_section_name: String,
+    pub(crate) symbols_section_name: String,
+    pub(crate) types_section_name: String,
+    pub(crate) compat_section_name: String,
 }
 
 #[derive(Copy, Clone, Default)]
-pub struct xkb_mod_set {
-    pub mods: [xkb_mod; 32],
-    pub num_mods: u32,
-    pub explicit_vmods: u32,
+pub(crate) struct xkb_mod_set {
+    pub(crate) mods: [xkb_mod; 32],
+    pub(crate) num_mods: u32,
+    pub(crate) explicit_vmods: u32,
 }
 
 #[derive(Copy, Clone, Default)]
-pub struct xkb_mod {
-    pub name: u32,
-    pub type_0: u32,
-    pub mapping: u32,
+pub(crate) struct xkb_mod {
+    pub(crate) name: u32,
+    pub(crate) type_0: u32,
+    pub(crate) mapping: u32,
 }
 
-pub const MOD_BOTH: u32 = 3;
-pub const MOD_VIRT: u32 = 2;
-pub const MOD_REAL: u32 = 1;
+pub(crate) const MOD_BOTH: u32 = 3;
+pub(crate) const MOD_VIRT: u32 = 2;
+pub(crate) const MOD_REAL: u32 = 1;
 
 #[derive(Clone)]
-pub struct xkb_sym_interpret {
-    pub sym: u32,
-    pub match_0: u32,
-    pub mods: u32,
-    pub virtual_mod: u32,
-    pub level_one_only: bool,
-    pub repeat: bool,
-    pub required: bool,
-    pub num_actions: u16,
-    pub action: xkb_action,
-    pub actions: Vec<xkb_action>,
+pub(crate) struct xkb_sym_interpret {
+    pub(crate) sym: u32,
+    pub(crate) match_0: u32,
+    pub(crate) mods: u32,
+    pub(crate) virtual_mod: u32,
+    pub(crate) level_one_only: bool,
+    pub(crate) repeat: bool,
+    pub(crate) required: bool,
+    pub(crate) num_actions: u16,
+    pub(crate) action: xkb_action,
+    pub(crate) actions: Vec<xkb_action>,
 }
 
 #[derive(Copy, Clone, Default)]
-pub enum xkb_action {
+pub(crate) enum xkb_action {
     #[default]
     None,
     ModSet(xkb_mod_action),
@@ -229,7 +229,7 @@ pub enum xkb_action {
 }
 
 impl xkb_action {
-    pub fn action_type(&self) -> u32 {
+    pub(crate) fn action_type(&self) -> u32 {
         match self {
             xkb_action::None => ACTION_TYPE_NONE,
             xkb_action::ModSet(_) => ACTION_TYPE_MOD_SET,
@@ -241,7 +241,7 @@ impl xkb_action {
         }
     }
 
-    pub fn from_type(t: u32) -> Self {
+    pub(crate) fn from_type(t: u32) -> Self {
         match t {
             ACTION_TYPE_NONE => xkb_action::None,
             ACTION_TYPE_MOD_SET => xkb_action::ModSet(xkb_mod_action {
@@ -272,37 +272,37 @@ impl xkb_action {
         }
     }
 
-    pub fn set_none(&mut self) {
+    pub(crate) fn set_none(&mut self) {
         *self = xkb_action::None;
     }
 
-    pub fn as_mods(&self) -> &xkb_mod_action {
+    pub(crate) fn as_mods(&self) -> &xkb_mod_action {
         match self {
             xkb_action::ModSet(m) | xkb_action::ModLatch(m) | xkb_action::ModLock(m) => m,
             _ => panic!("not a mod action"),
         }
     }
-    pub fn as_mods_mut(&mut self) -> &mut xkb_mod_action {
+    pub(crate) fn as_mods_mut(&mut self) -> &mut xkb_mod_action {
         match self {
             xkb_action::ModSet(m) | xkb_action::ModLatch(m) | xkb_action::ModLock(m) => m,
             _ => panic!("not a mod action"),
         }
     }
 
-    pub fn as_group(&self) -> &xkb_group_action {
+    pub(crate) fn as_group(&self) -> &xkb_group_action {
         match self {
             xkb_action::GroupSet(g) | xkb_action::GroupLatch(g) | xkb_action::GroupLock(g) => g,
             _ => panic!("not a group action"),
         }
     }
-    pub fn as_group_mut(&mut self) -> &mut xkb_group_action {
+    pub(crate) fn as_group_mut(&mut self) -> &mut xkb_group_action {
         match self {
             xkb_action::GroupSet(g) | xkb_action::GroupLatch(g) | xkb_action::GroupLock(g) => g,
             _ => panic!("not a group action"),
         }
     }
 
-    pub fn flags(&self) -> xkb_action_flags {
+    pub(crate) fn flags(&self) -> xkb_action_flags {
         match self {
             xkb_action::ModSet(m) | xkb_action::ModLatch(m) | xkb_action::ModLock(m) => m.flags,
             xkb_action::GroupSet(g) | xkb_action::GroupLatch(g) | xkb_action::GroupLock(g) => {
@@ -313,283 +313,285 @@ impl xkb_action {
     }
 }
 
-pub const _ACTION_TYPE_NUM_ENTRIES: u32 = 8;
-pub const ACTION_TYPE_GROUP_LOCK: u32 = 7;
-pub const ACTION_TYPE_GROUP_LATCH: u32 = 6;
-pub const ACTION_TYPE_GROUP_SET: u32 = 5;
-pub const ACTION_TYPE_MOD_LOCK: u32 = 4;
-pub const ACTION_TYPE_MOD_LATCH: u32 = 3;
-pub const ACTION_TYPE_MOD_SET: u32 = 2;
-pub const ACTION_TYPE_NONE: u32 = 0;
+pub(crate) const _ACTION_TYPE_NUM_ENTRIES: u32 = 8;
+pub(crate) const ACTION_TYPE_GROUP_LOCK: u32 = 7;
+pub(crate) const ACTION_TYPE_GROUP_LATCH: u32 = 6;
+pub(crate) const ACTION_TYPE_GROUP_SET: u32 = 5;
+pub(crate) const ACTION_TYPE_MOD_LOCK: u32 = 4;
+pub(crate) const ACTION_TYPE_MOD_LATCH: u32 = 3;
+pub(crate) const ACTION_TYPE_MOD_SET: u32 = 2;
+pub(crate) const ACTION_TYPE_NONE: u32 = 0;
 
-pub type xkb_action_flags = u32;
-pub const ACTION_LATCH_ON_PRESS: xkb_action_flags = 4096;
-pub const ACTION_UNLOCK_ON_PRESS: xkb_action_flags = 2048;
-pub const ACTION_LOCK_ON_RELEASE: xkb_action_flags = 1024;
-pub const ACTION_ABSOLUTE_SWITCH: xkb_action_flags = 32;
-pub const ACTION_LOCK_NO_UNLOCK: xkb_action_flags = 8;
-pub const ACTION_LOCK_NO_LOCK: xkb_action_flags = 4;
-pub const ACTION_LATCH_TO_LOCK: xkb_action_flags = 2;
-pub const ACTION_LOCK_CLEAR: xkb_action_flags = 1;
+pub(crate) type xkb_action_flags = u32;
+pub(crate) const ACTION_LATCH_ON_PRESS: xkb_action_flags = 4096;
+pub(crate) const ACTION_UNLOCK_ON_PRESS: xkb_action_flags = 2048;
+pub(crate) const ACTION_LOCK_ON_RELEASE: xkb_action_flags = 1024;
+pub(crate) const ACTION_ABSOLUTE_SWITCH: xkb_action_flags = 32;
+pub(crate) const ACTION_LOCK_NO_UNLOCK: xkb_action_flags = 8;
+pub(crate) const ACTION_LOCK_NO_LOCK: xkb_action_flags = 4;
+pub(crate) const ACTION_LATCH_TO_LOCK: xkb_action_flags = 2;
+pub(crate) const ACTION_LOCK_CLEAR: xkb_action_flags = 1;
 
-pub type xkb_action_controls = u32;
-pub const CONTROL_ALL_BOOLEAN: xkb_action_controls = 2088447;
-pub const CONTROL_ALL_BOOLEAN_V1: xkb_action_controls = 2087943;
-pub const CONTROL_ALL: xkb_action_controls = 2088959;
-pub const CONTROL_ALL_V1: xkb_action_controls = 2088455;
-pub const CONTROL_IGNORE_GROUP_LOCK: xkb_action_controls = 1048576;
-pub const CONTROL_BELL: xkb_action_controls = 524288;
-pub const CONTROL_AX_FEEDBACK: xkb_action_controls = 262144;
-pub const CONTROL_AX_TIMEOUT: xkb_action_controls = 131072;
-pub const CONTROL_AX: xkb_action_controls = 65536;
-pub const CONTROL_MOUSE_KEYS_ACCEL: xkb_action_controls = 32768;
-pub const CONTROL_MOUSE_KEYS: xkb_action_controls = 16384;
-pub const CONTROL_DEBOUNCE: xkb_action_controls = 4096;
-pub const CONTROL_SLOW: xkb_action_controls = 2048;
-pub const CONTROL_REPEAT: xkb_action_controls = 1024;
-pub const CONTROL_GROUPS_WRAP: xkb_action_controls = 512;
-pub const CONTROL_OVERLAY8: xkb_action_controls = 256;
-pub const CONTROL_OVERLAY7: xkb_action_controls = 128;
-pub const CONTROL_OVERLAY6: xkb_action_controls = 64;
-pub const CONTROL_OVERLAY5: xkb_action_controls = 32;
-pub const CONTROL_OVERLAY4: xkb_action_controls = 16;
-pub const CONTROL_OVERLAY3: xkb_action_controls = 8;
-pub const CONTROL_OVERLAY2: xkb_action_controls = 4;
-pub const CONTROL_OVERLAY1: xkb_action_controls = 2;
-pub const CONTROL_STICKY_KEYS: xkb_action_controls = 1;
+pub(crate) type xkb_action_controls = u32;
+pub(crate) const CONTROL_ALL_BOOLEAN: xkb_action_controls = 2088447;
+pub(crate) const CONTROL_ALL_BOOLEAN_V1: xkb_action_controls = 2087943;
+pub(crate) const CONTROL_ALL: xkb_action_controls = 2088959;
+pub(crate) const CONTROL_ALL_V1: xkb_action_controls = 2088455;
+pub(crate) const CONTROL_IGNORE_GROUP_LOCK: xkb_action_controls = 1048576;
+pub(crate) const CONTROL_BELL: xkb_action_controls = 524288;
+pub(crate) const CONTROL_AX_FEEDBACK: xkb_action_controls = 262144;
+pub(crate) const CONTROL_AX_TIMEOUT: xkb_action_controls = 131072;
+pub(crate) const CONTROL_AX: xkb_action_controls = 65536;
+pub(crate) const CONTROL_MOUSE_KEYS_ACCEL: xkb_action_controls = 32768;
+pub(crate) const CONTROL_MOUSE_KEYS: xkb_action_controls = 16384;
+pub(crate) const CONTROL_DEBOUNCE: xkb_action_controls = 4096;
+pub(crate) const CONTROL_SLOW: xkb_action_controls = 2048;
+pub(crate) const CONTROL_REPEAT: xkb_action_controls = 1024;
+pub(crate) const CONTROL_GROUPS_WRAP: xkb_action_controls = 512;
+pub(crate) const CONTROL_OVERLAY8: xkb_action_controls = 256;
+pub(crate) const CONTROL_OVERLAY7: xkb_action_controls = 128;
+pub(crate) const CONTROL_OVERLAY6: xkb_action_controls = 64;
+pub(crate) const CONTROL_OVERLAY5: xkb_action_controls = 32;
+pub(crate) const CONTROL_OVERLAY4: xkb_action_controls = 16;
+pub(crate) const CONTROL_OVERLAY3: xkb_action_controls = 8;
+pub(crate) const CONTROL_OVERLAY2: xkb_action_controls = 4;
+pub(crate) const CONTROL_OVERLAY1: xkb_action_controls = 2;
+pub(crate) const CONTROL_STICKY_KEYS: xkb_action_controls = 1;
 
 #[derive(Copy, Clone, Default)]
-pub struct xkb_group_action {
-    pub type_0: u32,
-    pub flags: xkb_action_flags,
-    pub group: i32,
+pub(crate) struct xkb_group_action {
+    pub(crate) type_0: u32,
+    pub(crate) flags: xkb_action_flags,
+    pub(crate) group: i32,
 }
 
 #[derive(Copy, Clone, Default)]
-pub struct xkb_mod_action {
-    pub type_0: u32,
-    pub flags: xkb_action_flags,
-    pub mods: xkb_mods,
+pub(crate) struct xkb_mod_action {
+    pub(crate) type_0: u32,
+    pub(crate) flags: xkb_action_flags,
+    pub(crate) mods: xkb_mods,
 }
 
 #[derive(Copy, Clone, Default)]
-pub struct xkb_mods {
-    pub mods: u32,
-    pub mask: u32,
+pub(crate) struct xkb_mods {
+    pub(crate) mods: u32,
+    pub(crate) mask: u32,
 }
 
-pub const MATCH_EXACTLY: u32 = 4;
-pub const MATCH_ALL: u32 = 3;
-pub const MATCH_ANY: u32 = 2;
-pub const MATCH_ANY_OR_NONE: u32 = 1;
-pub const MATCH_NONE: u32 = 0;
+pub(crate) const MATCH_EXACTLY: u32 = 4;
+pub(crate) const MATCH_ALL: u32 = 3;
+pub(crate) const MATCH_ANY: u32 = 2;
+pub(crate) const MATCH_ANY_OR_NONE: u32 = 1;
+pub(crate) const MATCH_NONE: u32 = 0;
 
 #[derive(Clone)]
-pub struct xkb_key_type {
-    pub name: u32,
-    pub mods: xkb_mods,
-    pub required: bool,
-    pub num_levels: u32,
-    pub level_names: Vec<u32>,
-    pub entries: Vec<xkb_key_type_entry>,
+pub(crate) struct xkb_key_type {
+    pub(crate) name: u32,
+    pub(crate) mods: xkb_mods,
+    pub(crate) required: bool,
+    pub(crate) num_levels: u32,
+    pub(crate) level_names: Vec<u32>,
+    pub(crate) entries: Vec<xkb_key_type_entry>,
 }
 
 #[derive(Copy, Clone)]
-pub struct xkb_key_type_entry {
-    pub level: u32,
-    pub mods: xkb_mods,
-    pub preserve: xkb_mods,
+pub(crate) struct xkb_key_type_entry {
+    pub(crate) level: u32,
+    pub(crate) mods: xkb_mods,
+    pub(crate) preserve: xkb_mods,
 }
 
 #[derive(Copy, Clone)]
-pub struct xkb_key_alias {
-    pub real: u32,
-    pub alias: u32,
+pub(crate) struct xkb_key_alias {
+    pub(crate) real: u32,
+    pub(crate) alias: u32,
 }
 
 #[derive(Copy, Clone, Default)]
-pub struct KeycodeMatch {
-    pub found: bool,
-    pub low: bool,
-    pub is_alias: bool,
-    pub index: u32,
+pub(crate) struct KeycodeMatch {
+    pub(crate) found: bool,
+    pub(crate) low: bool,
+    pub(crate) is_alias: bool,
+    pub(crate) index: u32,
 }
 
 #[derive(Clone, Default)]
-pub struct xkb_key {
-    pub keycode: u32,
-    pub name: u32,
-    pub explicit: xkb_explicit_components,
-    pub modmap: u32,
-    pub vmodmap: u32,
-    pub overlays: xkb_overlay_mask_t,
-    pub repeats: bool,
-    pub implicit_actions: bool,
-    pub out_of_range_pending_group: bool,
-    pub out_of_range_group_policy: u32,
-    pub out_of_range_group_number: u32,
-    pub num_groups: u32,
-    pub groups: Vec<xkb_group>,
-    pub overlay_keys: Vec<u32>,
+pub(crate) struct xkb_key {
+    pub(crate) keycode: u32,
+    pub(crate) name: u32,
+    pub(crate) explicit: xkb_explicit_components,
+    pub(crate) modmap: u32,
+    pub(crate) vmodmap: u32,
+    pub(crate) overlays: xkb_overlay_mask_t,
+    pub(crate) repeats: bool,
+    pub(crate) implicit_actions: bool,
+    pub(crate) out_of_range_pending_group: bool,
+    pub(crate) out_of_range_group_policy: u32,
+    pub(crate) out_of_range_group_number: u32,
+    pub(crate) num_groups: u32,
+    pub(crate) groups: Vec<xkb_group>,
+    pub(crate) overlay_keys: Vec<u32>,
 }
 
 #[derive(Clone, Default)]
-pub struct xkb_group {
-    pub explicit_symbols: bool,
-    pub explicit_actions: bool,
-    pub implicit_actions: bool,
-    pub explicit_type: bool,
-    pub type_idx: u32,
-    pub levels: Vec<xkb_level>,
+pub(crate) struct xkb_group {
+    pub(crate) explicit_symbols: bool,
+    pub(crate) explicit_actions: bool,
+    pub(crate) implicit_actions: bool,
+    pub(crate) explicit_type: bool,
+    pub(crate) type_idx: u32,
+    pub(crate) levels: Vec<xkb_level>,
 }
 
 #[derive(Clone, Default)]
-pub struct xkb_level {
-    pub upper: u32,
-    pub has_upper: bool,
-    pub syms: Vec<u32>,
-    pub actions: Vec<xkb_action>,
+pub(crate) struct xkb_level {
+    pub(crate) upper: u32,
+    pub(crate) has_upper: bool,
+    pub(crate) syms: Vec<u32>,
+    pub(crate) actions: Vec<xkb_action>,
 }
 
-pub type xkb_keysym_count_t = u16;
-pub type xkb_overlay_mask_t = u8;
-pub type xkb_overlay_index_t = u8;
+pub(crate) type xkb_keysym_count_t = u16;
+pub(crate) type xkb_overlay_mask_t = u8;
+pub(crate) type xkb_overlay_index_t = u8;
 
-pub type xkb_explicit_components = u32;
-pub const EXPLICIT_OVERLAY: xkb_explicit_components = 32;
-pub const EXPLICIT_REPEAT: xkb_explicit_components = 16;
-pub const EXPLICIT_VMODMAP: xkb_explicit_components = 8;
-pub const EXPLICIT_TYPES: xkb_explicit_components = 4;
-pub const EXPLICIT_INTERP: xkb_explicit_components = 2;
-pub const EXPLICIT_SYMBOLS: xkb_explicit_components = 1;
+pub(crate) type xkb_explicit_components = u32;
+pub(crate) const EXPLICIT_OVERLAY: xkb_explicit_components = 32;
+pub(crate) const EXPLICIT_REPEAT: xkb_explicit_components = 16;
+pub(crate) const EXPLICIT_VMODMAP: xkb_explicit_components = 8;
+pub(crate) const EXPLICIT_TYPES: xkb_explicit_components = 4;
+pub(crate) const EXPLICIT_INTERP: xkb_explicit_components = 2;
+pub(crate) const EXPLICIT_SYMBOLS: xkb_explicit_components = 1;
 
 #[derive(Copy, Clone, Default)]
-pub struct xkb_led {
-    pub name: u32,
-    pub which_groups: u32,
-    pub pending_groups: bool,
-    pub groups: u32,
-    pub which_mods: u32,
-    pub mods: xkb_mods,
-    pub ctrls: xkb_action_controls,
+pub(crate) struct xkb_led {
+    pub(crate) name: u32,
+    pub(crate) which_groups: u32,
+    pub(crate) pending_groups: bool,
+    pub(crate) groups: u32,
+    pub(crate) which_mods: u32,
+    pub(crate) mods: xkb_mods,
+    pub(crate) ctrls: xkb_action_controls,
 }
 
-pub const XKB_MAX_GROUPS: i32 = 32_i32;
-pub const MOD_REAL_MASK_ALL: u32 = 0xff_i32 as u32;
+pub(crate) const XKB_MAX_GROUPS: i32 = 32_i32;
+pub(crate) const MOD_REAL_MASK_ALL: u32 = 0xff_i32 as u32;
 
 // ── Additional xkbcommon types ──────────────────────────────────────
 
-pub type xkb_keymap_serialize_flags = u32;
-pub const XKB_KEYMAP_SERIALIZE_NO_FLAGS: xkb_keymap_serialize_flags = 0;
+pub(crate) type xkb_keymap_serialize_flags = u32;
+pub(crate) const XKB_KEYMAP_SERIALIZE_NO_FLAGS: xkb_keymap_serialize_flags = 0;
 
-pub type xkb_led_mask_t = u32;
+pub(crate) type xkb_led_mask_t = u32;
 
 // ── C constants ─────────────────────────────────────────────────────
 
-pub const CHAR_BIT: i32 = 8;
-pub const UINT16_MAX: i32 = 65535;
+pub(crate) const CHAR_BIT: i32 = 8;
+pub(crate) const UINT16_MAX: i32 = 65535;
 
-pub const XKB_MAX_LEDS: u32 =
+pub(crate) const XKB_MAX_LEDS: u32 =
     (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(CHAR_BIT as usize) as u32;
-pub const MAX_ACTIONS_PER_LEVEL: i32 = UINT16_MAX;
+pub(crate) const MAX_ACTIONS_PER_LEVEL: i32 = UINT16_MAX;
 
 // ── config_h constants ──────────────────────────────────────────────
 
-pub const DEFAULT_XKB_RULES: &str = "evdev";
+pub(crate) const DEFAULT_XKB_RULES: &str = "evdev";
 
-pub const DFLT_XKB_CONFIG_EXTRA_PATH: &str = "/usr/local/etc/xkb";
-pub const DFLT_XKB_CONFIG_ROOT: &str = "/usr/share/xkeyboard-config-2";
-pub const DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH: &str = "/usr/share/xkeyboard-config.d";
-pub const DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH: &str = "/usr/share/xkeyboard-config-2.d";
-pub const DFLT_XKB_LEGACY_ROOT: &str = "/usr/share/X11/xkb";
+pub(crate) const DFLT_XKB_CONFIG_EXTRA_PATH: &str = "/usr/local/etc/xkb";
+pub(crate) const DFLT_XKB_CONFIG_ROOT: &str = "/usr/share/xkeyboard-config-2";
+pub(crate) const DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH: &str =
+    "/usr/share/xkeyboard-config.d";
+pub(crate) const DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH: &str =
+    "/usr/share/xkeyboard-config-2.d";
+pub(crate) const DFLT_XKB_LEGACY_ROOT: &str = "/usr/share/X11/xkb";
 
-// ── xkbcommon_h types (moved from duplicated pub mod xkbcommon_h blocks) ─
+// ── xkbcommon_h types (moved from duplicated pub(crate) mod xkbcommon_h blocks) ─
 
-pub type xkb_context_flags = u32;
-pub const XKB_CONTEXT_NO_FLAGS: xkb_context_flags = 0;
-pub const XKB_CONTEXT_NO_DEFAULT_INCLUDES: xkb_context_flags = 1;
-pub const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: xkb_context_flags = 2;
-pub const XKB_CONTEXT_NO_SECURE_GETENV: xkb_context_flags = 4;
+pub(crate) type xkb_context_flags = u32;
+pub(crate) const XKB_CONTEXT_NO_FLAGS: xkb_context_flags = 0;
+pub(crate) const XKB_CONTEXT_NO_DEFAULT_INCLUDES: xkb_context_flags = 1;
+pub(crate) const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: xkb_context_flags = 2;
+pub(crate) const XKB_CONTEXT_NO_SECURE_GETENV: xkb_context_flags = 4;
 
-pub type xkb_key_direction = u32;
-pub const XKB_KEY_UP: xkb_key_direction = 0;
-pub const XKB_KEY_DOWN: xkb_key_direction = 1;
-pub const XKB_KEY_REPEATED: xkb_key_direction = 2;
+pub(crate) type xkb_key_direction = u32;
+pub(crate) const XKB_KEY_UP: xkb_key_direction = 0;
+pub(crate) const XKB_KEY_DOWN: xkb_key_direction = 1;
+pub(crate) const XKB_KEY_REPEATED: xkb_key_direction = 2;
 
-pub type xkb_event_type = u32;
-pub const XKB_EVENT_TYPE_KEY_DOWN: xkb_event_type = 1;
-pub const XKB_EVENT_TYPE_KEY_REPEATED: xkb_event_type = 2;
-pub const XKB_EVENT_TYPE_KEY_UP: xkb_event_type = 3;
-pub const XKB_EVENT_TYPE_COMPONENTS_CHANGE: xkb_event_type = 4;
+pub(crate) type xkb_event_type = u32;
+pub(crate) const XKB_EVENT_TYPE_KEY_DOWN: xkb_event_type = 1;
+pub(crate) const XKB_EVENT_TYPE_KEY_REPEATED: xkb_event_type = 2;
+pub(crate) const XKB_EVENT_TYPE_KEY_UP: xkb_event_type = 3;
+pub(crate) const XKB_EVENT_TYPE_COMPONENTS_CHANGE: xkb_event_type = 4;
 
-pub type xkb_consumed_mode = u32;
-pub const XKB_CONSUMED_MODE_XKB: xkb_consumed_mode = 0;
+pub(crate) type xkb_consumed_mode = u32;
+pub(crate) const XKB_CONSUMED_MODE_XKB: xkb_consumed_mode = 0;
 
-pub type xkb_keysym_flags = u32;
-pub const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
-pub const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
+pub(crate) type xkb_keysym_flags = u32;
+pub(crate) const XKB_KEYSYM_NO_FLAGS: xkb_keysym_flags = 0;
+pub(crate) const XKB_KEYSYM_CASE_INSENSITIVE: xkb_keysym_flags = 1;
 
-pub type xkb_state_match = u32;
-pub const XKB_STATE_MATCH_ANY: xkb_state_match = 1;
-pub const XKB_STATE_MATCH_NON_EXCLUSIVE: xkb_state_match = 65536;
+pub(crate) type xkb_state_match = u32;
+pub(crate) const XKB_STATE_MATCH_ANY: xkb_state_match = 1;
+pub(crate) const XKB_STATE_MATCH_NON_EXCLUSIVE: xkb_state_match = 65536;
 
-pub type xkb_a11y_flags = u32;
-pub const XKB_A11Y_NO_FLAGS: xkb_a11y_flags = 0;
-pub const XKB_A11Y_LATCH_TO_LOCK: xkb_a11y_flags = 1;
-pub const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: xkb_a11y_flags = 2;
+pub(crate) type xkb_a11y_flags = u32;
+pub(crate) const XKB_A11Y_NO_FLAGS: xkb_a11y_flags = 0;
+pub(crate) const XKB_A11Y_LATCH_TO_LOCK: xkb_a11y_flags = 1;
+pub(crate) const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: xkb_a11y_flags = 2;
 
-pub type xkb_keyboard_control_flags = u32;
-pub const XKB_KEYBOARD_CONTROL_NO_FLAGS: xkb_keyboard_control_flags = 0;
+pub(crate) type xkb_keyboard_control_flags = u32;
+pub(crate) const XKB_KEYBOARD_CONTROL_NO_FLAGS: xkb_keyboard_control_flags = 0;
 
-pub const XKB_KEYCODE_INVALID: u32 = 0xffffffff;
-pub const XKB_KEYCODE_MAX: u32 = 0xffffffff_u32.wrapping_sub(1);
-pub const XKB_LED_INVALID: u32 = 0xffffffff;
-pub const XKB_LEVEL_INVALID: u32 = 0xffffffff;
-pub const XKB_KEYMAP_USE_ORIGINAL_FORMAT: u32 = 0xffffffff;
+pub(crate) const XKB_KEYCODE_INVALID: u32 = 0xffffffff;
+pub(crate) const XKB_KEYCODE_MAX: u32 = 0xffffffff_u32.wrapping_sub(1);
+pub(crate) const XKB_LED_INVALID: u32 = 0xffffffff;
+pub(crate) const XKB_LEVEL_INVALID: u32 = 0xffffffff;
+pub(crate) const XKB_KEYMAP_USE_ORIGINAL_FORMAT: u32 = 0xffffffff;
 
-pub const XKB_KEYSYM_MAX: i32 = 0x1fffffff;
+pub(crate) const XKB_KEYSYM_MAX: i32 = 0x1fffffff;
 
 #[derive(Clone, Default)]
-pub struct xkb_component_names {
-    pub keycodes: Vec<i8>,
-    pub compatibility: Vec<i8>,
-    pub geometry: Vec<i8>,
-    pub symbols: Vec<i8>,
-    pub types: Vec<i8>,
+pub(crate) struct xkb_component_names {
+    pub(crate) keycodes: Vec<i8>,
+    pub(crate) compatibility: Vec<i8>,
+    pub(crate) geometry: Vec<i8>,
+    pub(crate) symbols: Vec<i8>,
+    pub(crate) types: Vec<i8>,
 }
 
 #[derive(Copy, Clone)]
-pub struct xkb_state_components_update {
-    pub size: usize,
-    pub components: u32,
-    pub affect_latched_mods: u32,
-    pub latched_mods: u32,
-    pub affect_locked_mods: u32,
-    pub locked_mods: u32,
-    pub latched_layout: i32,
-    pub locked_layout: i32,
-    pub affect_controls: xkb_keyboard_control_flags,
-    pub controls: xkb_keyboard_control_flags,
+pub(crate) struct xkb_state_components_update {
+    pub(crate) size: usize,
+    pub(crate) components: u32,
+    pub(crate) affect_latched_mods: u32,
+    pub(crate) latched_mods: u32,
+    pub(crate) affect_locked_mods: u32,
+    pub(crate) locked_mods: u32,
+    pub(crate) latched_layout: i32,
+    pub(crate) locked_layout: i32,
+    pub(crate) affect_controls: xkb_keyboard_control_flags,
+    pub(crate) controls: xkb_keyboard_control_flags,
 }
 
 #[derive(Copy, Clone)]
-pub struct xkb_layout_policy_update {
-    pub size: usize,
-    pub policy: u32,
-    pub redirect: u32,
+pub(crate) struct xkb_layout_policy_update {
+    pub(crate) size: usize,
+    pub(crate) policy: u32,
+    pub(crate) redirect: u32,
 }
 
 #[derive(Copy, Clone)]
-pub struct xkb_state_update {
-    pub size: usize,
-    pub components: *const xkb_state_components_update,
-    pub layout_policy: *const xkb_layout_policy_update,
+pub(crate) struct xkb_state_update {
+    pub(crate) size: usize,
+    pub(crate) components: *const xkb_state_components_update,
+    pub(crate) layout_policy: *const xkb_layout_policy_update,
 }
 
-pub const XKB_ATOM_NONE: u32 = 0;
+pub(crate) const XKB_ATOM_NONE: u32 = 0;
 
 /// Get text for an atom as a string slice.
-pub fn atom_text(table: &atom_table, atom: u32) -> &str {
+pub(crate) fn atom_text(table: &atom_table, atom: u32) -> &str {
     if (atom as usize) >= table.strings.len() {
         return "";
     }
@@ -600,7 +602,7 @@ pub fn atom_text(table: &atom_table, atom: u32) -> &str {
 }
 
 /// Look up an existing atom without mutating the table.
-pub fn atom_lookup_ref(table: &atom_table, input_bytes: &[u8]) -> u32 {
+pub(crate) fn atom_lookup_ref(table: &atom_table, input_bytes: &[u8]) -> u32 {
     let hash = hash_buf(input_bytes);
     for i in 0..table.index.len() {
         let index_pos = ((hash as usize) + i) & (table.index.len() - 1);
@@ -621,7 +623,7 @@ pub fn atom_lookup_ref(table: &atom_table, input_bytes: &[u8]) -> u32 {
 }
 
 /// Intern a string or look up existing atom
-pub fn atom_intern(table: &mut atom_table, input_bytes: &[u8], add: bool) -> u32 {
+pub(crate) fn atom_intern(table: &mut atom_table, input_bytes: &[u8], add: bool) -> u32 {
     let t = table;
 
     // Resize hash table if load factor > 0.8
@@ -690,50 +692,51 @@ pub fn atom_intern(table: &mut atom_table, input_bytes: &[u8], add: bool) -> u32
     panic!("couldn't find an empty slot during probing");
 }
 
-// ── keymap_h types & constants (moved from duplicated pub mod keymap_h blocks) ─
+// ── keymap_h types & constants (moved from duplicated pub(crate) mod keymap_h blocks) ─
 
-pub type real_mod_index = u32;
+pub(crate) type real_mod_index = u32;
 
-pub const FALLBACK_INTERPRET_KEY_REPEAT: u32 = 0;
-pub const DEFAULT_INTERPRET_KEY_REPEAT: u32 = 1;
-pub const DEFAULT_KEY_REPEAT: u32 = 0;
+pub(crate) const FALLBACK_INTERPRET_KEY_REPEAT: u32 = 0;
+pub(crate) const DEFAULT_INTERPRET_KEY_REPEAT: u32 = 1;
+pub(crate) const DEFAULT_KEY_REPEAT: u32 = 0;
 
-pub const FALLBACK_INTERPRET_VMODMAP: u32 = 0;
-pub const DEFAULT_INTERPRET_VMODMAP: u32 = 0;
-pub const DEFAULT_INTERPRET_VMOD: u32 = 4294967295;
-pub const DEFAULT_KEY_VMODMAP: u32 = 0;
+pub(crate) const FALLBACK_INTERPRET_VMODMAP: u32 = 0;
+pub(crate) const DEFAULT_INTERPRET_VMODMAP: u32 = 0;
+pub(crate) const DEFAULT_INTERPRET_VMOD: u32 = 4294967295;
+pub(crate) const DEFAULT_KEY_VMODMAP: u32 = 0;
 
-pub const XKB_MOD_ALL: u32 = 4294967295;
-pub const XKB_MOD_NONE: u32 = 0xffffffff;
-pub const XKB_MOD_INDEX_SHIFT: real_mod_index = 0;
-pub const XKB_MOD_INDEX_CAPS: real_mod_index = 1;
-pub const XKB_MOD_INDEX_CTRL: real_mod_index = 2;
-pub const XKB_MOD_INDEX_MOD1: real_mod_index = 3;
-pub const XKB_MOD_INDEX_MOD2: real_mod_index = 4;
-pub const XKB_MOD_INDEX_MOD3: real_mod_index = 5;
-pub const XKB_MOD_INDEX_MOD4: real_mod_index = 6;
-pub const XKB_MOD_INDEX_MOD5: real_mod_index = 7;
-pub const _XKB_MOD_INDEX_NUM_ENTRIES: real_mod_index = 8;
+pub(crate) const XKB_MOD_ALL: u32 = 4294967295;
+pub(crate) const XKB_MOD_NONE: u32 = 0xffffffff;
+pub(crate) const XKB_MOD_INDEX_SHIFT: real_mod_index = 0;
+pub(crate) const XKB_MOD_INDEX_CAPS: real_mod_index = 1;
+pub(crate) const XKB_MOD_INDEX_CTRL: real_mod_index = 2;
+pub(crate) const XKB_MOD_INDEX_MOD1: real_mod_index = 3;
+pub(crate) const XKB_MOD_INDEX_MOD2: real_mod_index = 4;
+pub(crate) const XKB_MOD_INDEX_MOD3: real_mod_index = 5;
+pub(crate) const XKB_MOD_INDEX_MOD4: real_mod_index = 6;
+pub(crate) const XKB_MOD_INDEX_MOD5: real_mod_index = 7;
+pub(crate) const _XKB_MOD_INDEX_NUM_ENTRIES: real_mod_index = 8;
 
-pub const XKB_MAX_GROUPS_X11: i32 = 4;
-pub const XKB_ALL_GROUPS: u64 = ((1u64) << XKB_MAX_GROUPS).wrapping_sub(1u64);
+pub(crate) const XKB_MAX_GROUPS_X11: i32 = 4;
+pub(crate) const XKB_ALL_GROUPS: u64 = ((1u64) << XKB_MAX_GROUPS).wrapping_sub(1u64);
 
-pub const XKB_OVERLAY_MAX_X11: i32 = 2;
-pub const XKB_OVERLAY_MAX: u64 =
+pub(crate) const XKB_OVERLAY_MAX_X11: i32 = 2;
+pub(crate) const XKB_OVERLAY_MAX: u64 =
     (std::mem::size_of::<xkb_overlay_mask_t>() as u64).wrapping_mul(CHAR_BIT as u64);
-pub const XKB_OVERLAY1_CONTROLS_OFFSET: i32 = 1;
-pub const XKB_OVERLAY_INVALID: i32 = 255;
+pub(crate) const XKB_OVERLAY1_CONTROLS_OFFSET: i32 = 1;
+pub(crate) const XKB_OVERLAY_INVALID: i32 = 255;
 
-pub const XKB_KEYCODE_MAX_CONTIGUOUS: i32 = 0xfff;
-pub const XKB_LEVEL_MAX_IMPL: i32 = 2048;
-pub const XKB_MAX_MODS: u32 = (std::mem::size_of::<u32>()).wrapping_mul(CHAR_BIT as usize) as u32;
+pub(crate) const XKB_KEYCODE_MAX_CONTIGUOUS: i32 = 0xfff;
+pub(crate) const XKB_LEVEL_MAX_IMPL: i32 = 2048;
+pub(crate) const XKB_MAX_MODS: u32 =
+    (std::mem::size_of::<u32>()).wrapping_mul(CHAR_BIT as usize) as u32;
 
 // ── Safe methods on xkb_keymap ──────────────────────────────────────
 
 impl xkb_keymap {
     /// Look up a key by keycode. Safe wrapper around the old `XkbKey` function.
     #[inline]
-    pub fn get_key(&self, kc: u32) -> Option<&xkb_key> {
+    pub(crate) fn get_key(&self, kc: u32) -> Option<&xkb_key> {
         if kc < self.min_key_code || kc > self.max_key_code {
             None
         } else if kc < self.num_keys_low {
@@ -763,14 +766,14 @@ impl xkb_keymap {
 
     /// Safe wrapper around `XkbKeyNumLevels`.
     #[inline]
-    pub fn key_num_levels(&self, key: &xkb_key, layout: u32) -> u32 {
+    pub(crate) fn key_num_levels(&self, key: &xkb_key, layout: u32) -> u32 {
         let group = &key.groups[layout as usize];
         self.types[group.type_idx as usize].num_levels
     }
 
     /// Safe wrapper around `XkbKeyByName`. Looks up a key by atom name using the key_names table.
     #[inline]
-    pub fn key_by_name(&self, name: u32, use_aliases: bool) -> Option<&xkb_key> {
+    pub(crate) fn key_by_name(&self, name: u32, use_aliases: bool) -> Option<&xkb_key> {
         if (name as usize) < self.key_names.len() {
             let match_0 = self.key_names[name as usize];
             if match_0.found {
@@ -787,7 +790,7 @@ impl xkb_keymap {
 
     /// Mutable version of `key_by_name`.
     #[inline]
-    pub fn key_by_name_mut(&mut self, name: u32, use_aliases: bool) -> Option<&mut xkb_key> {
+    pub(crate) fn key_by_name_mut(&mut self, name: u32, use_aliases: bool) -> Option<&mut xkb_key> {
         if (name as usize) < self.key_names.len() {
             let match_0 = self.key_names[name as usize];
             if match_0.found {
@@ -805,7 +808,7 @@ impl xkb_keymap {
     /// Safe wrapper: look up a key by keycode and resolve the level for a given layout+level index.
     /// Returns `None` if the key doesn't exist, layout is invalid, or level is out of range.
     #[inline]
-    pub fn get_key_level<'a>(
+    pub(crate) fn get_key_level<'a>(
         &'a self,
         key: &'a xkb_key,
         layout: u32,
@@ -830,12 +833,12 @@ impl xkb_keymap {
 // ── Inline helpers ──────────────────────────────────────────────────
 
 #[inline]
-pub fn entry_is_active(entry: &xkb_key_type_entry) -> bool {
+pub(crate) fn entry_is_active(entry: &xkb_key_type_entry) -> bool {
     entry.mods.mods == 0_u32 || entry.mods.mask != 0_u32
 }
 
 #[inline]
-pub fn format_max_overlays(format: u32) -> xkb_overlay_index_t {
+pub(crate) fn format_max_overlays(format: u32) -> xkb_overlay_index_t {
     (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
         XKB_OVERLAY_MAX_X11 as usize
     } else {
@@ -844,7 +847,7 @@ pub fn format_max_overlays(format: u32) -> xkb_overlay_index_t {
 }
 
 #[inline]
-pub fn format_max_groups(format: u32) -> u32 {
+pub(crate) fn format_max_groups(format: u32) -> u32 {
     (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
         XKB_MAX_GROUPS_X11
     } else {
@@ -853,264 +856,264 @@ pub fn format_max_groups(format: u32) -> u32 {
 }
 
 #[inline]
-pub fn isModsUnLockOnPressSupported(format: u32) -> bool {
+pub(crate) fn isModsUnLockOnPressSupported(format: u32) -> bool {
     format >= XKB_KEYMAP_FORMAT_TEXT_V2
 }
 
 #[inline]
-pub fn isGroupLockOnReleaseSupported(format: u32) -> bool {
+pub(crate) fn isGroupLockOnReleaseSupported(format: u32) -> bool {
     format >= XKB_KEYMAP_FORMAT_TEXT_V2
 }
 
 #[inline]
-pub fn isModsLatchOnPressSupported(format: u32) -> bool {
+pub(crate) fn isModsLatchOnPressSupported(format: u32) -> bool {
     format >= XKB_KEYMAP_FORMAT_TEXT_V2
 }
 
 #[inline]
-pub fn areOverlappingOverlaysSupported(format: u32) -> bool {
+pub(crate) fn areOverlappingOverlaysSupported(format: u32) -> bool {
     format >= XKB_KEYMAP_FORMAT_TEXT_V2
 }
 
 // Error codes (from xkbcommon_errors_h)
-pub type xkb_error_code = i32;
-pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX: xkb_error_code = 237;
-pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: xkb_error_code = 60;
-pub const XKB_KEY_NoSymbol: i32 = 0;
+pub(crate) type xkb_error_code = i32;
+pub(crate) const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX: xkb_error_code = 237;
+pub(crate) const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: xkb_error_code = 60;
+pub(crate) const XKB_KEY_NoSymbol: i32 = 0;
 
 // ── errno_base_h ──────────────────────────────────────────────────────
-pub const ENOMEM: i32 = 12;
-pub const EACCES: i32 = 13;
-pub const ENOTDIR: i32 = 20;
+pub(crate) const ENOMEM: i32 = 12;
+pub(crate) const EACCES: i32 = 13;
+pub(crate) const ENOTDIR: i32 = 20;
 
 // ── locale_h ──────────────────────────────────────────────────────────
-pub const __LC_CTYPE: i32 = 0;
-pub const __LC_ALL: i32 = 6;
+pub(crate) const __LC_CTYPE: i32 = 0;
+pub(crate) const __LC_ALL: i32 = 6;
 
 // ── unistd_h ──────────────────────────────────────────────────────────
-pub const R_OK: i32 = 4;
-pub const X_OK: i32 = 1;
+pub(crate) const R_OK: i32 = 4;
+pub(crate) const X_OK: i32 = 1;
 
 // NOTE: DIR type alias and __dirstream extern type are in utils.rs
 // (because __dirstream is an extern type that must be declared alongside its extern block)
 
 // ── enums_h ───────────────────────────────────────────────────────────
-pub const XKB_COMPOSE_FEED_RESULT_VALUES: u32 = 3;
-pub const XKB_COMPOSE_STATUS_VALUES: u32 = 15;
-pub const XKB_COMPOSE_STATE_FLAGS_VALUES: u32 = 0;
-pub const XKB_COMPOSE_FORMAT_VALUES: u32 = 2;
-pub const XKB_COMPOSE_COMPILE_FLAGS_VALUES: u32 = 0;
-pub const XKB_CONSUMED_MODE_VALUES: u32 = 3;
-pub const XKB_STATE_MATCH_VALUES: u32 = 65539;
-pub const XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES: u32 = 7;
-pub const XKB_KEY_DIRECTION_VALUES: u32 = 7;
-pub const XKB_A11Y_FLAGS_VALUES: u32 = 3;
-pub const XKB_EVENTS_FLAGS_VALUES: u32 = 0;
-pub const XKB_KEYBOARD_CONTROL_FLAGS_VALUES: u32 = 511;
-pub const XKB_STATE_COMPONENT_VALUES: u32 = 1023;
-pub const XKB_EVENT_TYPE_VALUES: u32 = 30;
-pub const XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES: u32 = 3;
-pub const XKB_KEYMAP_SERIALIZE_FLAGS_VALUES: u32 = 7;
-pub const XKB_KEYMAP_FORMAT_VALUES: u32 = 6;
-pub const XKB_KEYMAP_COMPILE_FLAGS_VALUES: u32 = 1;
-pub const XKB_CONTEXT_FLAGS_VALUES: u32 = 7;
-pub const XKB_KEYSYM_FLAGS_VALUES: u32 = 1;
-pub const XKB_RMLVO_BUILDER_FLAGS_VALUES: u32 = 0;
+pub(crate) const XKB_COMPOSE_FEED_RESULT_VALUES: u32 = 3;
+pub(crate) const XKB_COMPOSE_STATUS_VALUES: u32 = 15;
+pub(crate) const XKB_COMPOSE_STATE_FLAGS_VALUES: u32 = 0;
+pub(crate) const XKB_COMPOSE_FORMAT_VALUES: u32 = 2;
+pub(crate) const XKB_COMPOSE_COMPILE_FLAGS_VALUES: u32 = 0;
+pub(crate) const XKB_CONSUMED_MODE_VALUES: u32 = 3;
+pub(crate) const XKB_STATE_MATCH_VALUES: u32 = 65539;
+pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_POLICY_VALUES: u32 = 7;
+pub(crate) const XKB_KEY_DIRECTION_VALUES: u32 = 7;
+pub(crate) const XKB_A11Y_FLAGS_VALUES: u32 = 3;
+pub(crate) const XKB_EVENTS_FLAGS_VALUES: u32 = 0;
+pub(crate) const XKB_KEYBOARD_CONTROL_FLAGS_VALUES: u32 = 511;
+pub(crate) const XKB_STATE_COMPONENT_VALUES: u32 = 1023;
+pub(crate) const XKB_EVENT_TYPE_VALUES: u32 = 30;
+pub(crate) const XKB_KEYMAP_KEY_ITERATOR_FLAGS_VALUES: u32 = 3;
+pub(crate) const XKB_KEYMAP_SERIALIZE_FLAGS_VALUES: u32 = 7;
+pub(crate) const XKB_KEYMAP_FORMAT_VALUES: u32 = 6;
+pub(crate) const XKB_KEYMAP_COMPILE_FLAGS_VALUES: u32 = 1;
+pub(crate) const XKB_CONTEXT_FLAGS_VALUES: u32 = 7;
+pub(crate) const XKB_KEYSYM_FLAGS_VALUES: u32 = 1;
+pub(crate) const XKB_RMLVO_BUILDER_FLAGS_VALUES: u32 = 0;
 
 // ── rmlvo_h (RMLVO enum) ─────────────────────────────────────────────
-pub type RMLVO = u32;
-pub const RMLVO_OPTIONS: RMLVO = 16;
-pub const RMLVO_VARIANT: RMLVO = 8;
-pub const RMLVO_LAYOUT: RMLVO = 4;
-pub const RMLVO_MODEL: RMLVO = 2;
-pub const RMLVO_RULES: RMLVO = 1;
+pub(crate) type RMLVO = u32;
+pub(crate) const RMLVO_OPTIONS: RMLVO = 16;
+pub(crate) const RMLVO_VARIANT: RMLVO = 8;
+pub(crate) const RMLVO_LAYOUT: RMLVO = 4;
+pub(crate) const RMLVO_MODEL: RMLVO = 2;
+pub(crate) const RMLVO_RULES: RMLVO = 1;
 
 // ── rules_h ───────────────────────────────────────────────────────────
-pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
+pub(crate) const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 
 // ── Message codes (from messages.rs) ─────────────────────────────────────
 
-pub const XKB_LOG_VERBOSITY_DEFAULT: i32 = 0;
+pub(crate) const XKB_LOG_VERBOSITY_DEFAULT: i32 = 0;
 
-pub const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
-pub const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;
+pub(crate) const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
+pub(crate) const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;
 
-pub const XKB_ERROR_MALFORMED_NUMBER_LITERAL: u32 = 34;
-pub const XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES: u32 = 43;
-pub const XKB_ERROR_INTEGER_OVERFLOW: u32 = 52;
-pub const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_: u32 = 60;
-pub const XKB_ERROR_EXPECTED_ARRAY_ENTRY: u32 = 77;
-pub const XKB_ERROR_INVALID_NUMERIC_KEYSYM: u32 = 82;
-pub const XKB_WARNING_UNRECOGNIZED_KEYSYM: u32 = 107;
-pub const XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER: u32 = 123;
-pub const XKB_ERROR_INSUFFICIENT_BUFFER_SIZE: u32 = 134;
-pub const XKB_ERROR_WRONG_STATEMENT_TYPE: u32 = 150;
-pub const XKB_ERROR_INVALID_PATH: u32 = 161;
-pub const XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION: u32 = 172;
-pub const XKB_WARNING_CANNOT_INFER_KEY_TYPE: u32 = 183;
-pub const XKB_WARNING_INVALID_ESCAPE_SEQUENCE: u32 = 193;
-pub const XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT: u32 = 195;
-pub const XKB_ERROR_INVALID_INCLUDE_STATEMENT: u32 = 203;
-pub const XKB_ERROR_INVALID_MODMAP_ENTRY: u32 = 206;
-pub const XKB_ERROR_UNKNOWN_STATEMENT: u32 = 222;
-pub const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: u32 = 237;
-pub const XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES: u32 = 239;
-pub const XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT: u32 = 254;
-pub const XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY: u32 = 266;
-pub const XKB_WARNING_UNDEFINED_KEY_TYPE: u32 = 286;
-pub const XKB_WARNING_DEPRECATED_KEYSYM_NAME: u32 = 302;
-pub const XKB_WARNING_NON_BASE_GROUP_NAME: u32 = 305;
-pub const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: u32 = 312;
-pub const XKB_ERROR_INCLUDED_FILE_NOT_FOUND: u32 = 338;
-pub const XKB_ERROR_UNKNOWN_OPERATOR: u32 = 345;
-pub const XKB_ERROR_OVERLAPPING_OVERLAY: u32 = 355;
-pub const XKB_WARNING_UNSUPPORTED_LEGACY_ACTION: u32 = 362;
-pub const XKB_WARNING_DUPLICATE_ENTRY: u32 = 378;
-pub const XKB_ERROR_RECURSIVE_INCLUDE: u32 = 386;
-pub const XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS: u32 = 407;
-pub const XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE: u32 = 428;
-pub const XKB_WARNING_MISSING_DEFAULT_SECTION: u32 = 433;
-pub const XKB_WARNING_CONFLICTING_KEY_SYMBOL: u32 = 461;
-pub const XKB_ERROR_INVALID_OPERATION: u32 = 478;
-pub const XKB_WARNING_NUMERIC_KEYSYM: u32 = 489;
-pub const XKB_WARNING_EXTRA_SYMBOLS_IGNORED: u32 = 516;
-pub const XKB_WARNING_CONFLICTING_KEY_NAME: u32 = 523;
-pub const XKB_ERROR_INVALID_FILE_ENCODING: u32 = 542;
-pub const XKB_ERROR_ALLOCATION_ERROR: u32 = 550;
-pub const XKB_ERROR_INVALID_ACTION_FIELD: u32 = 563;
-pub const XKB_ERROR_WRONG_FIELD_TYPE: u32 = 578;
-pub const XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX: u32 = 588;
-pub const XKB_ERROR_CANNOT_RESOLVE_RMLVO: u32 = 595;
-pub const XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE: u32 = 607;
-pub const XKB_ERROR_INVALID_REAL_MODIFIER: u32 = 623;
-pub const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: u32 = 632;
-pub const XKB_ERROR_UNKNOWN_DEFAULT_FIELD: u32 = 639;
-pub const XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE: u32 = 645;
-pub const XKB_ERROR_INVALID_INCLUDED_FILE: u32 = 661;
-pub const XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE: u32 = 700;
-pub const XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD: u32 = 711;
-pub const XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT: u32 = 742;
-pub const XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION: u32 = 762;
-pub const XKB_ERROR_INVALID_XKB_SYNTAX: u32 = 769;
-pub const XKB_WARNING_UNDEFINED_KEYCODE: u32 = 770;
-pub const XKB_ERROR_INVALID_EXPRESSION_TYPE: u32 = 784;
-pub const XKB_ERROR_INVALID_VALUE: u32 = 796;
-pub const XKB_WARNING_CONFLICTING_MODMAP: u32 = 800;
-pub const XKB_ERROR_UNKNOWN_FIELD: u32 = 812;
-pub const XKB_ERROR_KEYMAP_COMPILATION_FAILED: u32 = 822;
-pub const XKB_ERROR_UNKNOWN_ACTION_TYPE: u32 = 844;
-pub const XKB_WARNING_CONFLICTING_KEY_ACTION: u32 = 883;
-pub const XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS: u32 = 893;
-pub const XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY: u32 = 901;
-pub const XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX: u32 = 903;
-pub const XKB_WARNING_CONFLICTING_KEY_FIELDS: u32 = 935;
-pub const XKB_ERROR_INVALID_IDENTIFIER: u32 = 949;
-pub const XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL: u32 = 965;
-pub const XKB_ERROR_INVALID_RULES_SYNTAX: u32 = 967;
-pub const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: u32 = 971;
+pub(crate) const XKB_ERROR_MALFORMED_NUMBER_LITERAL: u32 = 34;
+pub(crate) const XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES: u32 = 43;
+pub(crate) const XKB_ERROR_INTEGER_OVERFLOW: u32 = 52;
+pub(crate) const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_: u32 = 60;
+pub(crate) const XKB_ERROR_EXPECTED_ARRAY_ENTRY: u32 = 77;
+pub(crate) const XKB_ERROR_INVALID_NUMERIC_KEYSYM: u32 = 82;
+pub(crate) const XKB_WARNING_UNRECOGNIZED_KEYSYM: u32 = 107;
+pub(crate) const XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER: u32 = 123;
+pub(crate) const XKB_ERROR_INSUFFICIENT_BUFFER_SIZE: u32 = 134;
+pub(crate) const XKB_ERROR_WRONG_STATEMENT_TYPE: u32 = 150;
+pub(crate) const XKB_ERROR_INVALID_PATH: u32 = 161;
+pub(crate) const XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION: u32 = 172;
+pub(crate) const XKB_WARNING_CANNOT_INFER_KEY_TYPE: u32 = 183;
+pub(crate) const XKB_WARNING_INVALID_ESCAPE_SEQUENCE: u32 = 193;
+pub(crate) const XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT: u32 = 195;
+pub(crate) const XKB_ERROR_INVALID_INCLUDE_STATEMENT: u32 = 203;
+pub(crate) const XKB_ERROR_INVALID_MODMAP_ENTRY: u32 = 206;
+pub(crate) const XKB_ERROR_UNKNOWN_STATEMENT: u32 = 222;
+pub(crate) const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: u32 = 237;
+pub(crate) const XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES: u32 = 239;
+pub(crate) const XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT: u32 = 254;
+pub(crate) const XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY: u32 = 266;
+pub(crate) const XKB_WARNING_UNDEFINED_KEY_TYPE: u32 = 286;
+pub(crate) const XKB_WARNING_DEPRECATED_KEYSYM_NAME: u32 = 302;
+pub(crate) const XKB_WARNING_NON_BASE_GROUP_NAME: u32 = 305;
+pub(crate) const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: u32 = 312;
+pub(crate) const XKB_ERROR_INCLUDED_FILE_NOT_FOUND: u32 = 338;
+pub(crate) const XKB_ERROR_UNKNOWN_OPERATOR: u32 = 345;
+pub(crate) const XKB_ERROR_OVERLAPPING_OVERLAY: u32 = 355;
+pub(crate) const XKB_WARNING_UNSUPPORTED_LEGACY_ACTION: u32 = 362;
+pub(crate) const XKB_WARNING_DUPLICATE_ENTRY: u32 = 378;
+pub(crate) const XKB_ERROR_RECURSIVE_INCLUDE: u32 = 386;
+pub(crate) const XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS: u32 = 407;
+pub(crate) const XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE: u32 = 428;
+pub(crate) const XKB_WARNING_MISSING_DEFAULT_SECTION: u32 = 433;
+pub(crate) const XKB_WARNING_CONFLICTING_KEY_SYMBOL: u32 = 461;
+pub(crate) const XKB_ERROR_INVALID_OPERATION: u32 = 478;
+pub(crate) const XKB_WARNING_NUMERIC_KEYSYM: u32 = 489;
+pub(crate) const XKB_WARNING_EXTRA_SYMBOLS_IGNORED: u32 = 516;
+pub(crate) const XKB_WARNING_CONFLICTING_KEY_NAME: u32 = 523;
+pub(crate) const XKB_ERROR_INVALID_FILE_ENCODING: u32 = 542;
+pub(crate) const XKB_ERROR_ALLOCATION_ERROR: u32 = 550;
+pub(crate) const XKB_ERROR_INVALID_ACTION_FIELD: u32 = 563;
+pub(crate) const XKB_ERROR_WRONG_FIELD_TYPE: u32 = 578;
+pub(crate) const XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX: u32 = 588;
+pub(crate) const XKB_ERROR_CANNOT_RESOLVE_RMLVO: u32 = 595;
+pub(crate) const XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE: u32 = 607;
+pub(crate) const XKB_ERROR_INVALID_REAL_MODIFIER: u32 = 623;
+pub(crate) const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: u32 = 632;
+pub(crate) const XKB_ERROR_UNKNOWN_DEFAULT_FIELD: u32 = 639;
+pub(crate) const XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE: u32 = 645;
+pub(crate) const XKB_ERROR_INVALID_INCLUDED_FILE: u32 = 661;
+pub(crate) const XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE: u32 = 700;
+pub(crate) const XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD: u32 = 711;
+pub(crate) const XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT: u32 = 742;
+pub(crate) const XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION: u32 = 762;
+pub(crate) const XKB_ERROR_INVALID_XKB_SYNTAX: u32 = 769;
+pub(crate) const XKB_WARNING_UNDEFINED_KEYCODE: u32 = 770;
+pub(crate) const XKB_ERROR_INVALID_EXPRESSION_TYPE: u32 = 784;
+pub(crate) const XKB_ERROR_INVALID_VALUE: u32 = 796;
+pub(crate) const XKB_WARNING_CONFLICTING_MODMAP: u32 = 800;
+pub(crate) const XKB_ERROR_UNKNOWN_FIELD: u32 = 812;
+pub(crate) const XKB_ERROR_KEYMAP_COMPILATION_FAILED: u32 = 822;
+pub(crate) const XKB_ERROR_UNKNOWN_ACTION_TYPE: u32 = 844;
+pub(crate) const XKB_WARNING_CONFLICTING_KEY_ACTION: u32 = 883;
+pub(crate) const XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS: u32 = 893;
+pub(crate) const XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY: u32 = 901;
+pub(crate) const XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX: u32 = 903;
+pub(crate) const XKB_WARNING_CONFLICTING_KEY_FIELDS: u32 = 935;
+pub(crate) const XKB_ERROR_INVALID_IDENTIFIER: u32 = 949;
+pub(crate) const XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL: u32 = 965;
+pub(crate) const XKB_ERROR_INVALID_RULES_SYNTAX: u32 = 967;
+pub(crate) const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: u32 = 971;
 
 // ── LookupEntry (moved from keymap.rs) ────────────────────────────
 
 #[derive(Copy, Clone)]
-pub struct LookupEntry {
-    pub name: &'static str,
-    pub value: u32,
+pub(crate) struct LookupEntry {
+    pub(crate) name: &'static str,
+    pub(crate) value: u32,
 }
 
 // ── Shared AST type definitions (merged from shared_ast_types.rs) ──
 
-pub type xkb_message_code = u32;
-pub type xkb_log_verbosity = i32;
-pub const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
+pub(crate) type xkb_message_code = u32;
+pub(crate) type xkb_log_verbosity = i32;
+pub(crate) const XKB_LOG_VERBOSITY_MINIMAL: xkb_log_verbosity = 0;
 
 // ── File type enum ──────────────────────────────────────────────────
 
-pub const FILE_TYPE_INVALID: u32 = 7;
-pub const _FILE_TYPE_NUM_ENTRIES: u32 = 7;
-pub const FILE_TYPE_RULES: u32 = 6;
-pub const FILE_TYPE_KEYMAP: u32 = 5;
-pub const FILE_TYPE_GEOMETRY: u32 = 4;
-pub const LAST_KEYMAP_FILE_TYPE: u32 = 3;
-pub const FIRST_KEYMAP_FILE_TYPE: u32 = 0;
-pub const FILE_TYPE_SYMBOLS: u32 = 3;
-pub const FILE_TYPE_COMPAT: u32 = 2;
-pub const FILE_TYPE_TYPES: u32 = 1;
-pub const FILE_TYPE_KEYCODES: u32 = 0;
+pub(crate) const FILE_TYPE_INVALID: u32 = 7;
+pub(crate) const _FILE_TYPE_NUM_ENTRIES: u32 = 7;
+pub(crate) const FILE_TYPE_RULES: u32 = 6;
+pub(crate) const FILE_TYPE_KEYMAP: u32 = 5;
+pub(crate) const FILE_TYPE_GEOMETRY: u32 = 4;
+pub(crate) const LAST_KEYMAP_FILE_TYPE: u32 = 3;
+pub(crate) const FIRST_KEYMAP_FILE_TYPE: u32 = 0;
+pub(crate) const FILE_TYPE_SYMBOLS: u32 = 3;
+pub(crate) const FILE_TYPE_COMPAT: u32 = 2;
+pub(crate) const FILE_TYPE_TYPES: u32 = 1;
+pub(crate) const FILE_TYPE_KEYCODES: u32 = 0;
 
 // ── Statement type enum ─────────────────────────────────────────────
 
-pub type stmt_type = u32;
-pub const _STMT_NUM_VALUES: stmt_type = 37;
-pub const STMT_UNKNOWN_COMPOUND: stmt_type = 36;
-pub const STMT_UNKNOWN_DECLARATION: stmt_type = 35;
-pub const STMT_LED_NAME: stmt_type = 34;
-pub const STMT_LED_MAP: stmt_type = 33;
-pub const STMT_GROUP_COMPAT: stmt_type = 32;
-pub const STMT_MODMAP: stmt_type = 31;
-pub const STMT_SYMBOLS: stmt_type = 30;
-pub const STMT_VMOD: stmt_type = 29;
-pub const STMT_INTERP: stmt_type = 28;
-pub const STMT_TYPE: stmt_type = 27;
-pub const STMT_VAR: stmt_type = 26;
-pub const STMT_EXPR_UNARY_PLUS: stmt_type = 25;
-pub const STMT_EXPR_INVERT: stmt_type = 24;
-pub const STMT_EXPR_NEGATE: stmt_type = 23;
-pub const STMT_EXPR_NOT: stmt_type = 22;
-pub const STMT_EXPR_ASSIGN: stmt_type = 21;
-pub const STMT_EXPR_DIVIDE: stmt_type = 20;
-pub const STMT_EXPR_MULTIPLY: stmt_type = 19;
-pub const STMT_EXPR_SUBTRACT: stmt_type = 18;
-pub const STMT_EXPR_ADD: stmt_type = 17;
-pub const STMT_EXPR_ACTION_LIST: stmt_type = 16;
-pub const STMT_EXPR_KEYSYM_LIST: stmt_type = 15;
-pub const STMT_EXPR_EMPTY_LIST: stmt_type = 14;
-pub const STMT_EXPR_ARRAY_REF: stmt_type = 13;
-pub const STMT_EXPR_FIELD_REF: stmt_type = 12;
-pub const STMT_EXPR_ACTION_DECL: stmt_type = 11;
-pub const STMT_EXPR_IDENT: stmt_type = 10;
-pub const STMT_EXPR_KEYSYM_LITERAL: stmt_type = 9;
-pub const STMT_EXPR_KEYNAME_LITERAL: stmt_type = 8;
-pub const STMT_EXPR_BOOLEAN_LITERAL: stmt_type = 7;
-pub const STMT_EXPR_FLOAT_LITERAL: stmt_type = 6;
-pub const STMT_EXPR_INTEGER_LITERAL: stmt_type = 5;
-pub const STMT_EXPR_STRING_LITERAL: stmt_type = 4;
-pub const STMT_ALIAS: stmt_type = 3;
-pub const STMT_KEYCODE: stmt_type = 2;
-pub const STMT_INCLUDE: stmt_type = 1;
-pub const STMT_UNKNOWN: stmt_type = 0;
+pub(crate) type stmt_type = u32;
+pub(crate) const _STMT_NUM_VALUES: stmt_type = 37;
+pub(crate) const STMT_UNKNOWN_COMPOUND: stmt_type = 36;
+pub(crate) const STMT_UNKNOWN_DECLARATION: stmt_type = 35;
+pub(crate) const STMT_LED_NAME: stmt_type = 34;
+pub(crate) const STMT_LED_MAP: stmt_type = 33;
+pub(crate) const STMT_GROUP_COMPAT: stmt_type = 32;
+pub(crate) const STMT_MODMAP: stmt_type = 31;
+pub(crate) const STMT_SYMBOLS: stmt_type = 30;
+pub(crate) const STMT_VMOD: stmt_type = 29;
+pub(crate) const STMT_INTERP: stmt_type = 28;
+pub(crate) const STMT_TYPE: stmt_type = 27;
+pub(crate) const STMT_VAR: stmt_type = 26;
+pub(crate) const STMT_EXPR_UNARY_PLUS: stmt_type = 25;
+pub(crate) const STMT_EXPR_INVERT: stmt_type = 24;
+pub(crate) const STMT_EXPR_NEGATE: stmt_type = 23;
+pub(crate) const STMT_EXPR_NOT: stmt_type = 22;
+pub(crate) const STMT_EXPR_ASSIGN: stmt_type = 21;
+pub(crate) const STMT_EXPR_DIVIDE: stmt_type = 20;
+pub(crate) const STMT_EXPR_MULTIPLY: stmt_type = 19;
+pub(crate) const STMT_EXPR_SUBTRACT: stmt_type = 18;
+pub(crate) const STMT_EXPR_ADD: stmt_type = 17;
+pub(crate) const STMT_EXPR_ACTION_LIST: stmt_type = 16;
+pub(crate) const STMT_EXPR_KEYSYM_LIST: stmt_type = 15;
+pub(crate) const STMT_EXPR_EMPTY_LIST: stmt_type = 14;
+pub(crate) const STMT_EXPR_ARRAY_REF: stmt_type = 13;
+pub(crate) const STMT_EXPR_FIELD_REF: stmt_type = 12;
+pub(crate) const STMT_EXPR_ACTION_DECL: stmt_type = 11;
+pub(crate) const STMT_EXPR_IDENT: stmt_type = 10;
+pub(crate) const STMT_EXPR_KEYSYM_LITERAL: stmt_type = 9;
+pub(crate) const STMT_EXPR_KEYNAME_LITERAL: stmt_type = 8;
+pub(crate) const STMT_EXPR_BOOLEAN_LITERAL: stmt_type = 7;
+pub(crate) const STMT_EXPR_FLOAT_LITERAL: stmt_type = 6;
+pub(crate) const STMT_EXPR_INTEGER_LITERAL: stmt_type = 5;
+pub(crate) const STMT_EXPR_STRING_LITERAL: stmt_type = 4;
+pub(crate) const STMT_ALIAS: stmt_type = 3;
+pub(crate) const STMT_KEYCODE: stmt_type = 2;
+pub(crate) const STMT_INCLUDE: stmt_type = 1;
+pub(crate) const STMT_UNKNOWN: stmt_type = 0;
 
 // ── Merge mode enum ─────────────────────────────────────────────────
 
-pub type merge_mode = u32;
-pub const _MERGE_MODE_NUM_ENTRIES: merge_mode = 4;
-pub const MERGE_REPLACE: merge_mode = 3;
-pub const MERGE_OVERRIDE: merge_mode = 2;
-pub const MERGE_AUGMENT: merge_mode = 1;
-pub const MERGE_DEFAULT: merge_mode = 0;
+pub(crate) type merge_mode = u32;
+pub(crate) const _MERGE_MODE_NUM_ENTRIES: merge_mode = 4;
+pub(crate) const MERGE_REPLACE: merge_mode = 3;
+pub(crate) const MERGE_OVERRIDE: merge_mode = 2;
+pub(crate) const MERGE_AUGMENT: merge_mode = 1;
+pub(crate) const MERGE_DEFAULT: merge_mode = 0;
 
 // ── Core AST node types ─────────────────────────────────────────────
 
 #[derive(Clone)]
 
-pub struct _IncludeStmt {
-    pub merge: merge_mode,
-    pub stmt: String,
-    pub file: String,
-    pub map: String,
-    pub modifier: String,
-    pub next_incl: Option<Box<_IncludeStmt>>,
+pub(crate) struct _IncludeStmt {
+    pub(crate) merge: merge_mode,
+    pub(crate) stmt: String,
+    pub(crate) file: String,
+    pub(crate) map: String,
+    pub(crate) modifier: String,
+    pub(crate) next_incl: Option<Box<_IncludeStmt>>,
 }
-pub type IncludeStmt = _IncludeStmt;
+pub(crate) type IncludeStmt = _IncludeStmt;
 
 // ── Expression types ────────────────────────────────────────────────
 
 /// Expression AST node.
-pub struct ExprDef {
-    pub kind: ExprKind,
+pub(crate) struct ExprDef {
+    pub(crate) kind: ExprKind,
 }
 
 /// The discriminated payload of an expression node.
-pub enum ExprKind {
+pub(crate) enum ExprKind {
     String(u32),
     Integer(i64),
     Float,
@@ -1150,11 +1153,11 @@ pub enum ExprKind {
 }
 
 impl ExprDef {
-    pub fn stmt_type(&self) -> stmt_type {
+    pub(crate) fn stmt_type(&self) -> stmt_type {
         Self::stmt_type_for_kind(&self.kind)
     }
 
-    pub fn stmt_type_for_kind(kind: &ExprKind) -> stmt_type {
+    pub(crate) fn stmt_type_for_kind(kind: &ExprKind) -> stmt_type {
         match kind {
             ExprKind::String(_) => STMT_EXPR_STRING_LITERAL,
             ExprKind::Integer(_) => STMT_EXPR_INTEGER_LITERAL,
@@ -1176,104 +1179,104 @@ impl ExprDef {
 }
 
 // Re-export ast_build functions used by consumers via ast_h
-pub use super::xkbcomp::parser::{
+pub(crate) use super::xkbcomp::parser::{
     stmt_type_to_operator_char, stmt_type_to_string, xkb_file_type_to_string,
 };
 
 // ── Statement definition types ──────────────────────────────────────
 
-pub struct VarDef {
-    pub merge: merge_mode,
-    pub name: Option<Box<ExprDef>>,
-    pub value: Option<Box<ExprDef>>,
+pub(crate) struct VarDef {
+    pub(crate) merge: merge_mode,
+    pub(crate) name: Option<Box<ExprDef>>,
+    pub(crate) value: Option<Box<ExprDef>>,
 }
 
-pub struct VModDef {
-    pub merge: merge_mode,
-    pub name: u32,
-    pub value: Option<Box<ExprDef>>,
-}
-
-#[derive(Copy, Clone)]
-
-pub struct KeycodeDef {
-    pub merge: merge_mode,
-    pub name: u32,
-    pub value: i64,
+pub(crate) struct VModDef {
+    pub(crate) merge: merge_mode,
+    pub(crate) name: u32,
+    pub(crate) value: Option<Box<ExprDef>>,
 }
 
 #[derive(Copy, Clone)]
 
-pub struct KeyAliasDef {
-    pub merge: merge_mode,
-    pub alias: u32,
-    pub real: u32,
+pub(crate) struct KeycodeDef {
+    pub(crate) merge: merge_mode,
+    pub(crate) name: u32,
+    pub(crate) value: i64,
 }
 
-pub struct KeyTypeDef {
-    pub merge: merge_mode,
-    pub name: u32,
-    pub body: Vec<VarDef>,
+#[derive(Copy, Clone)]
+
+pub(crate) struct KeyAliasDef {
+    pub(crate) merge: merge_mode,
+    pub(crate) alias: u32,
+    pub(crate) real: u32,
 }
 
-pub struct SymbolsDef {
-    pub merge: merge_mode,
-    pub keyName: u32,
-    pub symbols: Vec<VarDef>,
+pub(crate) struct KeyTypeDef {
+    pub(crate) merge: merge_mode,
+    pub(crate) name: u32,
+    pub(crate) body: Vec<VarDef>,
 }
 
-pub struct ModMapDef {
-    pub merge: merge_mode,
-    pub modifier: u32,
-    pub keys: Vec<ExprDef>,
+pub(crate) struct SymbolsDef {
+    pub(crate) merge: merge_mode,
+    pub(crate) keyName: u32,
+    pub(crate) symbols: Vec<VarDef>,
 }
 
-pub struct GroupCompatDef {
-    pub merge: merge_mode,
-    pub group: i64,
-    pub def: Option<Box<ExprDef>>,
+pub(crate) struct ModMapDef {
+    pub(crate) merge: merge_mode,
+    pub(crate) modifier: u32,
+    pub(crate) keys: Vec<ExprDef>,
 }
 
-pub struct InterpDef {
-    pub merge: merge_mode,
-    pub sym: u32,
-    pub match_0: Option<Box<ExprDef>>,
-    pub def: Vec<VarDef>,
+pub(crate) struct GroupCompatDef {
+    pub(crate) merge: merge_mode,
+    pub(crate) group: i64,
+    pub(crate) def: Option<Box<ExprDef>>,
 }
 
-pub struct LedNameDef {
-    pub merge: merge_mode,
-    pub virtual_0: bool,
-    pub ndx: i64,
-    pub name: Option<Box<ExprDef>>,
+pub(crate) struct InterpDef {
+    pub(crate) merge: merge_mode,
+    pub(crate) sym: u32,
+    pub(crate) match_0: Option<Box<ExprDef>>,
+    pub(crate) def: Vec<VarDef>,
 }
 
-pub struct LedMapDef {
-    pub merge: merge_mode,
-    pub name: u32,
-    pub body: Vec<VarDef>,
+pub(crate) struct LedNameDef {
+    pub(crate) merge: merge_mode,
+    pub(crate) virtual_0: bool,
+    pub(crate) ndx: i64,
+    pub(crate) name: Option<Box<ExprDef>>,
+}
+
+pub(crate) struct LedMapDef {
+    pub(crate) merge: merge_mode,
+    pub(crate) name: u32,
+    pub(crate) body: Vec<VarDef>,
 }
 
 #[derive(Clone)]
 
-pub struct UnknownStatement {
-    pub stmt_type: stmt_type,
-    pub name: String,
+pub(crate) struct UnknownStatement {
+    pub(crate) stmt_type: stmt_type,
+    pub(crate) name: String,
 }
 
 // ── Map flags and XkbFile ───────────────────────────────────────────
 
-pub type xkb_map_flags = u32;
-pub const MAP_IS_ALTGR: xkb_map_flags = 128;
-pub const MAP_HAS_FN: xkb_map_flags = 64;
-pub const MAP_HAS_KEYPAD: xkb_map_flags = 32;
-pub const MAP_HAS_MODIFIER: xkb_map_flags = 16;
-pub const MAP_HAS_ALPHANUMERIC: xkb_map_flags = 8;
-pub const MAP_IS_HIDDEN: xkb_map_flags = 4;
-pub const MAP_IS_PARTIAL: xkb_map_flags = 2;
-pub const MAP_IS_DEFAULT: xkb_map_flags = 1;
+pub(crate) type xkb_map_flags = u32;
+pub(crate) const MAP_IS_ALTGR: xkb_map_flags = 128;
+pub(crate) const MAP_HAS_FN: xkb_map_flags = 64;
+pub(crate) const MAP_HAS_KEYPAD: xkb_map_flags = 32;
+pub(crate) const MAP_HAS_MODIFIER: xkb_map_flags = 16;
+pub(crate) const MAP_HAS_ALPHANUMERIC: xkb_map_flags = 8;
+pub(crate) const MAP_IS_HIDDEN: xkb_map_flags = 4;
+pub(crate) const MAP_IS_PARTIAL: xkb_map_flags = 2;
+pub(crate) const MAP_IS_DEFAULT: xkb_map_flags = 1;
 
-pub enum Statement {
+pub(crate) enum Statement {
     Include(Box<IncludeStmt>),
     Keycode(Box<KeycodeDef>),
     KeyAlias(Box<KeyAliasDef>),
@@ -1292,7 +1295,7 @@ pub enum Statement {
 }
 
 impl Statement {
-    pub fn merge(&self) -> merge_mode {
+    pub(crate) fn merge(&self) -> merge_mode {
         match self {
             Statement::Include(s) => s.merge,
             Statement::Keycode(s) => s.merge,
@@ -1310,7 +1313,7 @@ impl Statement {
         }
     }
 
-    pub fn stmt_type(&self) -> stmt_type {
+    pub(crate) fn stmt_type(&self) -> stmt_type {
         match self {
             Statement::Include(_) => STMT_INCLUDE,
             Statement::Keycode(_) => STMT_KEYCODE,
@@ -1331,96 +1334,96 @@ impl Statement {
     }
 }
 
-pub struct XkbFile {
-    pub name: String,
-    pub defs: Vec<Statement>,
-    pub file_type: u32,
-    pub flags: xkb_map_flags,
+pub(crate) struct XkbFile {
+    pub(crate) name: String,
+    pub(crate) defs: Vec<Statement>,
+    pub(crate) file_type: u32,
+    pub(crate) flags: xkb_map_flags,
 }
 
 // ── xkbcomp_priv types (parser/keymap info) ─────────────────────────
 
-pub const PARSER_FATAL_ERROR: u32 = 2;
-pub const PARSER_RECOVERABLE_ERROR: u32 = 1;
-pub const PARSER_SUCCESS: u32 = 0;
+pub(crate) const PARSER_FATAL_ERROR: u32 = 2;
+pub(crate) const PARSER_RECOVERABLE_ERROR: u32 = 1;
+pub(crate) const PARSER_SUCCESS: u32 = 0;
 
-pub const PARSER_V2_LAX_FLAGS: u32 = 0;
-pub const PARSER_V2_STRICT_FLAGS: u32 = 16383;
-pub const PARSER_V1_LAX_FLAGS: u32 = 16379;
-pub const PARSER_V1_STRICT_FLAGS: u32 = 16383;
-pub const PARSER_NO_ILLEGAL_ACTION_FIELDS: u32 = 8192;
-pub const PARSER_NO_UNKNOWN_ACTION_FIELDS: u32 = 4096;
-pub const PARSER_NO_UNKNOWN_ACTION: u32 = 2048;
-pub const PARSER_NO_UNKNOWN_KEY_FIELDS: u32 = 1024;
-pub const PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS: u32 = 512;
-pub const PARSER_NO_UNKNOWN_LED_FIELDS: u32 = 256;
-pub const PARSER_NO_UNKNOWN_INTERPRET_FIELDS: u32 = 128;
-pub const PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS: u32 = 64;
-pub const PARSER_NO_UNKNOWN_TYPE_FIELDS: u32 = 32;
-pub const PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS: u32 = 16;
-pub const PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS: u32 = 8;
-pub const PARSER_NO_FIELD_VALUE_MISMATCH: u32 = 4;
-pub const PARSER_NO_FIELD_TYPE_MISMATCH: u32 = 2;
-pub const PARSER_NO_UNKNOWN_STATEMENTS: u32 = 1;
-pub const PARSER_NO_STRICT_FLAGS: u32 = 0;
+pub(crate) const PARSER_V2_LAX_FLAGS: u32 = 0;
+pub(crate) const PARSER_V2_STRICT_FLAGS: u32 = 16383;
+pub(crate) const PARSER_V1_LAX_FLAGS: u32 = 16379;
+pub(crate) const PARSER_V1_STRICT_FLAGS: u32 = 16383;
+pub(crate) const PARSER_NO_ILLEGAL_ACTION_FIELDS: u32 = 8192;
+pub(crate) const PARSER_NO_UNKNOWN_ACTION_FIELDS: u32 = 4096;
+pub(crate) const PARSER_NO_UNKNOWN_ACTION: u32 = 2048;
+pub(crate) const PARSER_NO_UNKNOWN_KEY_FIELDS: u32 = 1024;
+pub(crate) const PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS: u32 = 512;
+pub(crate) const PARSER_NO_UNKNOWN_LED_FIELDS: u32 = 256;
+pub(crate) const PARSER_NO_UNKNOWN_INTERPRET_FIELDS: u32 = 128;
+pub(crate) const PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS: u32 = 64;
+pub(crate) const PARSER_NO_UNKNOWN_TYPE_FIELDS: u32 = 32;
+pub(crate) const PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS: u32 = 16;
+pub(crate) const PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS: u32 = 8;
+pub(crate) const PARSER_NO_FIELD_VALUE_MISMATCH: u32 = 4;
+pub(crate) const PARSER_NO_FIELD_TYPE_MISMATCH: u32 = 2;
+pub(crate) const PARSER_NO_UNKNOWN_STATEMENTS: u32 = 1;
+pub(crate) const PARSER_NO_STRICT_FLAGS: u32 = 0;
 
-pub struct pending_computation {
-    pub expr: Option<Box<ExprDef>>,
-    pub computed: bool,
-    pub value: u32,
+pub(crate) struct pending_computation {
+    pub(crate) expr: Option<Box<ExprDef>>,
+    pub(crate) computed: bool,
+    pub(crate) value: u32,
 }
 
-pub struct xkb_keymap_info<'a> {
-    pub keymap: &'a mut xkb_keymap,
-    pub strict: u32,
-    pub features: XkbcompFeatures,
-    pub lookup: XkbcompLookup,
-    pub pending_computations: Vec<pending_computation>,
+pub(crate) struct xkb_keymap_info<'a> {
+    pub(crate) keymap: &'a mut xkb_keymap,
+    pub(crate) strict: u32,
+    pub(crate) features: XkbcompFeatures,
+    pub(crate) lookup: XkbcompLookup,
+    pub(crate) pending_computations: Vec<pending_computation>,
 }
 
 impl<'a> xkb_keymap_info<'a> {
-    pub fn keymap_ref(&self) -> &xkb_keymap {
+    pub(crate) fn keymap_ref(&self) -> &xkb_keymap {
         &*self.keymap
     }
 
-    pub fn keymap_mut(&mut self) -> &mut xkb_keymap {
+    pub(crate) fn keymap_mut(&mut self) -> &mut xkb_keymap {
         &mut *self.keymap
     }
 
-    pub fn ctx(&self) -> &xkb_context {
+    pub(crate) fn ctx(&self) -> &xkb_context {
         &self.keymap.ctx
     }
 
-    pub fn ctx_mut(&mut self) -> &mut xkb_context {
+    pub(crate) fn ctx_mut(&mut self) -> &mut xkb_context {
         &mut self.keymap.ctx
     }
 }
 
 #[derive(Copy, Clone)]
 
-pub struct XkbcompLookup {
-    pub groupIndexNames: [LookupEntry; 3],
-    pub groupMaskNames: [LookupEntry; 5],
+pub(crate) struct XkbcompLookup {
+    pub(crate) groupIndexNames: [LookupEntry; 3],
+    pub(crate) groupMaskNames: [LookupEntry; 5],
 }
 
 #[derive(Copy, Clone)]
 
-pub struct XkbcompFeatures {
-    pub max_groups: u32,
-    pub max_overlays: xkb_overlay_index_t,
-    pub controls_name_offset: u8,
-    pub group_lock_on_release: bool,
-    pub mods_unlock_on_press: bool,
-    pub mods_latch_on_press: bool,
-    pub overlapping_overlays: bool,
+pub(crate) struct XkbcompFeatures {
+    pub(crate) max_groups: u32,
+    pub(crate) max_overlays: xkb_overlay_index_t,
+    pub(crate) controls_name_offset: u8,
+    pub(crate) group_lock_on_release: bool,
+    pub(crate) mods_unlock_on_press: bool,
+    pub(crate) mods_latch_on_press: bool,
+    pub(crate) overlapping_overlays: bool,
 }
 
 // ── Inline helper functions (were duplicated in every xkbcomp_priv_h module) ──
 
-pub const false_0: i32 = 0;
+pub(crate) const false_0: i32 = 0;
 
 #[inline]
-pub fn safe_map_name(file: &XkbFile) -> &str {
+pub(crate) fn safe_map_name(file: &XkbFile) -> &str {
     if file.name.is_empty() {
         "(unnamed map)"
     } else {
@@ -1429,7 +1432,7 @@ pub fn safe_map_name(file: &XkbFile) -> &str {
 }
 
 #[inline]
-pub fn ReportNotArray(type_0: &str, field: &str, name: &str) -> bool {
+pub(crate) fn ReportNotArray(type_0: &str, field: &str, name: &str) -> bool {
     log::error!(
         "[XKB-{:03}] The {} {} field is not an array; Ignoring illegal assignment in {}\n",
         XKB_ERROR_WRONG_FIELD_TYPE as i32,
@@ -1441,7 +1444,7 @@ pub fn ReportNotArray(type_0: &str, field: &str, name: &str) -> bool {
 }
 
 #[inline]
-pub fn ReportBadType(
+pub(crate) fn ReportBadType(
     code: xkb_message_code,
     type_0: &str,
     field: &str,
@@ -1460,7 +1463,7 @@ pub fn ReportBadType(
 }
 
 #[inline]
-pub fn ReportBadField(type_0: &str, field: &str, name: &str) -> bool {
+pub(crate) fn ReportBadField(type_0: &str, field: &str, name: &str) -> bool {
     log::error!(
         "Unknown {} field \"{}\" in {}; Ignoring assignment to unknown field in {}\n",
         type_0,
@@ -1472,7 +1475,7 @@ pub fn ReportBadField(type_0: &str, field: &str, name: &str) -> bool {
 }
 
 #[inline]
-pub fn ReportShouldBeArray(type_0: &str, field: &str, name: &str) -> bool {
+pub(crate) fn ReportShouldBeArray(type_0: &str, field: &str, name: &str) -> bool {
     log::error!(
         "[XKB-{:03}] Missing subscript for {} {}; Ignoring illegal assignment in {}\n",
         XKB_ERROR_EXPECTED_ARRAY_ENTRY as i32,
@@ -1488,7 +1491,7 @@ pub fn ReportShouldBeArray(type_0: &str, field: &str, name: &str) -> bool {
 /// Case-insensitive comparison of two byte slices (like C `strcasecmp`).
 /// Returns <0, 0, or >0.
 #[inline]
-pub fn istrcmp(a: &[u8], b: &[u8]) -> i32 {
+pub(crate) fn istrcmp(a: &[u8], b: &[u8]) -> i32 {
     let n = a.len().min(b.len());
     for i in 0..n {
         let al = a[i].to_ascii_lowercase();
@@ -1501,15 +1504,15 @@ pub fn istrcmp(a: &[u8], b: &[u8]) -> i32 {
 }
 
 /// Stack buffer writer implementing `core::fmt::Write`.
-pub struct LogBuf<'a> {
+pub(crate) struct LogBuf<'a> {
     buf: &'a mut [u8],
-    pub pos: usize,
-    pub truncated: bool,
+    pub(crate) pos: usize,
+    pub(crate) truncated: bool,
 }
 
 impl<'a> LogBuf<'a> {
     #[inline]
-    pub fn new(buf: &'a mut [u8]) -> Self {
+    pub(crate) fn new(buf: &'a mut [u8]) -> Self {
         Self {
             buf,
             pos: 0,
@@ -1533,7 +1536,7 @@ impl<'a> core::fmt::Write for LogBuf<'a> {
 }
 
 /// Parse decimal digits from a byte slice into u32.
-pub fn parse_dec_u32(s: &[u8]) -> (u32, i32) {
+pub(crate) fn parse_dec_u32(s: &[u8]) -> (u32, i32) {
     let mut result: u32 = 0;
     let mut i: usize = 0;
     while i < s.len() {
@@ -1554,7 +1557,7 @@ pub fn parse_dec_u32(s: &[u8]) -> (u32, i32) {
 }
 
 /// Parse decimal digits from a byte slice into u64.
-pub fn parse_dec_u64(s: &[u8]) -> (u64, i32) {
+pub(crate) fn parse_dec_u64(s: &[u8]) -> (u64, i32) {
     let mut result: u64 = 0;
     let mut i: usize = 0;
     while i < s.len() {
@@ -1577,10 +1580,10 @@ pub fn parse_dec_u64(s: &[u8]) -> (u64, i32) {
 // ── UTF-8 decoding (migrated from utf8_decoding.rs) ──
 
 /// Invalid UTF-8 code point marker
-pub const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
+pub(crate) const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
 
 /// Decode next UTF-8 code point from byte slice.
-pub fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
+pub(crate) fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
     if bytes.is_empty() {
         return (INVALID_UTF8_CODE_POINT, 0);
     }
@@ -1624,7 +1627,7 @@ fn hex_val(b: u8) -> u8 {
 }
 
 /// Parse hex digits from a byte slice into u32.
-pub fn parse_hex_u32(s: &[u8]) -> (u32, i32) {
+pub(crate) fn parse_hex_u32(s: &[u8]) -> (u32, i32) {
     let mut result: u32 = 0;
     let mut i: usize = 0;
     while i < s.len() {
@@ -1645,7 +1648,7 @@ pub fn parse_hex_u32(s: &[u8]) -> (u32, i32) {
 }
 
 /// Parse hex digits from a byte slice into u64.
-pub fn parse_hex_u64(s: &[u8]) -> (u64, i32) {
+pub(crate) fn parse_hex_u64(s: &[u8]) -> (u64, i32) {
     let mut result: u64 = 0;
     let mut i: usize = 0;
     while i < s.len() {

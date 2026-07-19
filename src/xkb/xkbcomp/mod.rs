@@ -1,7 +1,7 @@
 // XKB compiler modules from libxkbcommon
 
-pub mod parser;
-pub mod symbols;
+pub(crate) mod parser;
+pub(crate) mod symbols;
 
 use self::parser::CompileKeymap;
 use self::parser::XkbFileFromComponents;
@@ -30,7 +30,10 @@ fn compile_keymap_file(keymap: &mut xkb_keymap, file: &mut XkbFile) -> bool {
     }
     true
 }
-pub fn text_v1_keymap_new_from_names(keymap: &mut xkb_keymap, rmlvo: &xkb_rule_names) -> bool {
+pub(crate) fn text_v1_keymap_new_from_names(
+    keymap: &mut xkb_keymap,
+    rmlvo: &xkb_rule_names,
+) -> bool {
     let mut ok: bool;
     let mut kccgst: xkb_component_names = xkb_component_names::default();
 
@@ -86,7 +89,7 @@ pub fn text_v1_keymap_new_from_names(keymap: &mut xkb_keymap, rmlvo: &xkb_rule_n
     ok = compile_keymap_file(keymap, &mut file);
     ok
 }
-pub fn text_v1_keymap_new_from_string(keymap: &mut xkb_keymap, input: &[u8]) -> bool {
+pub(crate) fn text_v1_keymap_new_from_string(keymap: &mut xkb_keymap, input: &[u8]) -> bool {
     let Some(mut xkb_file) = XkbParseString(&mut keymap.ctx, input, "(input string)", "") else {
         log::error!(
             "[XKB-{:03}] Failed to parse input xkb string\n",
