@@ -241,7 +241,7 @@ fn merge_groups(
         } else {
             let use_0: u32 = if clobber { from.type_0 } else { into.type_0 };
             let _ignore: u32 = if clobber { into.type_0 } else { from.type_0 };
-            if report {}
+
             into.type_0 = use_0;
         }
     }
@@ -279,7 +279,6 @@ fn merge_groups(
                 from_actions_count = from_actions_count.wrapping_add(1);
             } else {
                 if !xkb_levels_same_syms(from_level, into_level) {
-                    if report && !(into_has_no_keysym || from_has_no_keysym) {}
                     if !from_has_no_keysym {
                         if clobber {
                             if !from_level.syms.is_empty() {
@@ -629,7 +628,6 @@ fn merge_keys(
     if !merge_overlays(ki, into, from, clobber, report, &mut collide) {
         return false;
     }
-    if collide as u64 != 0 {}
     clear_key_info(from);
     init_key_info_with_atom(from, info.star_atom);
     true
@@ -689,9 +687,7 @@ fn add_mod_map_entry(ki: &XkbKeymapInfo<'_>, info: &mut SymbolsInfo, new: &ModMa
         } else {
             new.modifier
         };
-        if new.have_symbol {
-        } else {
-        }
+
         old.modifier = use_0;
         return true;
     }
@@ -1321,7 +1317,7 @@ fn set_group_name(
     };
     let mut group: u32 = 0_u32;
     let mut pending_dummy: bool = false;
-    if { expr_resolve_group(ki, array_ndx, false, &mut group, &mut pending_dummy) } as u32
+    if { expr_resolve_group(ki, array_ndx, false, &mut group, &mut pending_dummy) }
         != PARSER_SUCCESS
     {
         return false;
@@ -1485,7 +1481,6 @@ fn handle_symbols_body(
     all_valid_entries
 }
 fn set_explicit_group(_ki: &XkbKeymapInfo<'_>, info: &SymbolsInfo, keyi: &mut KeyInfo) -> bool {
-    let mut warn: bool = false;
     if info.explicit_group == XKB_LAYOUT_INVALID {
         return true;
     }
@@ -1493,14 +1488,13 @@ fn set_explicit_group(_ki: &XkbKeymapInfo<'_>, info: &SymbolsInfo, keyi: &mut Ke
         let mut i: u32 = 1_u32;
         while i < keyi.groups.len() as u32 {
             if keyi.groups[i as usize].defined as u64 != 0 {
-                warn = true;
                 clear_group_inf(&mut keyi.groups[i as usize]);
                 init_group_info(&mut keyi.groups[i as usize]);
             }
             i = i.wrapping_add(1);
         }
     }
-    if warn {}
+
     keyi.groups.resize_with(
         (info.explicit_group as usize).wrapping_add(1),
         Default::default,
@@ -1588,7 +1582,6 @@ fn handle_mod_map_def(
                 tmp.u = ks;
                 add_entry = true;
             }
-        } else {
         }
         if add_entry {
             ok = add_mod_map_entry(ki, info, &tmp) as i32 != 0 && ok as i32 != 0;
@@ -2049,8 +2042,6 @@ fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) -> boo
         };
         let mut ki: u32 = start_idx;
         while ki < keymap.num_keys {
-            let key = &keymap.keys[ki as usize];
-            if (key.name != XKB_ATOM_NONE) && (key.num_groups as i32) < 1_i32 {}
             ki = ki.wrapping_add(1);
         }
     }
@@ -2102,7 +2093,7 @@ impl Default for CompatInfo {
 impl CompatInfo {
     pub(crate) fn new() -> Self {
         let zeroed_led = LedInfo {
-            defined: 0 as u32,
+            defined: 0_u32,
             merge: MERGE_DEFAULT,
             led: XkbLed {
                 name: 0,
@@ -2119,7 +2110,7 @@ impl CompatInfo {
             error_count: 0,
             include_depth: 0,
             default_interp: SymInterpInfo {
-                defined: 0 as u32,
+                defined: 0_u32,
                 merge: MERGE_DEFAULT,
                 interp: XkbSymInterpret {
                     sym: 0,
@@ -2284,7 +2275,7 @@ fn use_new_interp_field(
     }
     if new & field != 0 {
         if report {
-            *collide = (*collide | field) as u32;
+            *collide |= field;
         }
         return clobber;
     }
@@ -2300,9 +2291,8 @@ fn merge_interp(
     let clobber: bool = new.merge != MERGE_AUGMENT;
     let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
     let report: bool = same_file as i32 != 0 && verbosity > 0_i32 || verbosity > 9_i32;
-    let mut collide: u32 = 0 as u32;
+    let mut collide: u32 = 0_u32;
     if new.merge == MERGE_REPLACE {
-        if report {}
         *old = new.clone();
         return true;
     }
@@ -2315,7 +2305,7 @@ fn merge_interp(
         &mut collide,
     ) {
         old.interp.virtual_mod = new.interp.virtual_mod;
-        old.defined = (old.defined | SI_FIELD_VIRTUAL_MOD) as u32;
+        old.defined |= SI_FIELD_VIRTUAL_MOD;
     }
     if use_new_interp_field(
         SI_FIELD_ACTION,
@@ -2336,7 +2326,7 @@ fn merge_interp(
         } else {
             old.interp.action = new.interp.action;
         }
-        old.defined = (old.defined | SI_FIELD_ACTION) as u32;
+        old.defined |= SI_FIELD_ACTION;
     }
     if use_new_interp_field(
         SI_FIELD_AUTO_REPEAT,
@@ -2347,7 +2337,7 @@ fn merge_interp(
         &mut collide,
     ) {
         old.interp.repeat = new.interp.repeat;
-        old.defined = (old.defined | SI_FIELD_AUTO_REPEAT) as u32;
+        old.defined |= SI_FIELD_AUTO_REPEAT;
     }
     if use_new_interp_field(
         SI_FIELD_LEVEL_ONE_ONLY,
@@ -2358,9 +2348,8 @@ fn merge_interp(
         &mut collide,
     ) {
         old.interp.level_one_only = new.interp.level_one_only;
-        old.defined = (old.defined | SI_FIELD_LEVEL_ONE_ONLY) as u32;
+        old.defined |= SI_FIELD_LEVEL_ONE_ONLY;
     }
-    if collide as u64 != 0 {}
     true
 }
 fn add_interp(
@@ -2450,7 +2439,7 @@ fn use_new_ledfield(
     }
     if new & field != 0 {
         if report {
-            *collide = (*collide | field) as u32;
+            *collide |= field;
         }
         return clobber;
     }
@@ -2474,15 +2463,14 @@ fn merge_led_map(
         && old.led.which_mods == new.led.which_mods
         && old.led.which_groups as i32 == new.led.which_groups as i32
     {
-        old.defined = (old.defined | new.defined) as u32;
+        old.defined |= new.defined;
         return true;
     }
     if new.merge == MERGE_REPLACE {
-        if report {}
         *old = *new;
         return true;
     }
-    collide = 0 as u32;
+    collide = 0_u32;
     if use_new_ledfield(
         LED_FIELD_MODS,
         old.defined,
@@ -2493,7 +2481,7 @@ fn merge_led_map(
     ) {
         old.led.which_mods = new.led.which_mods;
         old.led.mods = new.led.mods;
-        old.defined = (old.defined | LED_FIELD_MODS) as u32;
+        old.defined |= LED_FIELD_MODS;
     }
     if use_new_ledfield(
         LED_FIELD_GROUPS,
@@ -2506,7 +2494,7 @@ fn merge_led_map(
         old.led.which_groups = new.led.which_groups;
         old.led.groups = new.led.groups;
         old.led.pending_groups = new.led.pending_groups;
-        old.defined = (old.defined | LED_FIELD_GROUPS) as u32;
+        old.defined |= LED_FIELD_GROUPS;
     }
     if use_new_ledfield(
         LED_FIELD_CTRLS,
@@ -2517,9 +2505,8 @@ fn merge_led_map(
         &mut collide,
     ) {
         old.led.ctrls = new.led.ctrls;
-        old.defined = (old.defined | LED_FIELD_CTRLS) as u32;
+        old.defined |= LED_FIELD_CTRLS;
     }
-    if collide as u64 != 0 {}
     true
 }
 fn add_led_map(
@@ -2720,7 +2707,7 @@ fn set_interp_field(
                 }
             }
         }
-        si.defined = (si.defined | SI_FIELD_ACTION) as u32;
+        si.defined |= SI_FIELD_ACTION;
     } else if field.eq_ignore_ascii_case("virtualmodifier")
         || field.eq_ignore_ascii_case("virtualmod")
     {
@@ -2732,7 +2719,7 @@ fn set_interp_field(
             return report_sibad_type(info, ki, si, field, "virtual modifier");
         }
         si.interp.virtual_mod = ndx;
-        si.defined = (si.defined | SI_FIELD_VIRTUAL_MOD) as u32;
+        si.defined |= SI_FIELD_VIRTUAL_MOD;
     } else if field.eq_ignore_ascii_case("repeat") {
         let mut set: bool = false;
         if array_ndx.is_some() {
@@ -2742,7 +2729,7 @@ fn set_interp_field(
             return report_sibad_type(info, ki, si, field, "boolean");
         }
         si.interp.repeat = set;
-        si.defined = (si.defined | SI_FIELD_AUTO_REPEAT) as u32;
+        si.defined |= SI_FIELD_AUTO_REPEAT;
     } else if field.eq_ignore_ascii_case("locking") {
     } else if field.eq_ignore_ascii_case("usemodmap") || field.eq_ignore_ascii_case("usemodmapmods")
     {
@@ -2754,7 +2741,7 @@ fn set_interp_field(
             return report_sibad_type(info, ki, si, field, "level specification");
         }
         si.interp.level_one_only = val != 0;
-        si.defined = (si.defined | SI_FIELD_LEVEL_ONE_ONLY) as u32;
+        si.defined |= SI_FIELD_LEVEL_ONE_ONLY;
     } else {
         report_bad_field("symbol interpretation", field, &si_text(si, info, ki));
         return ki.strict & PARSER_NO_UNKNOWN_INTERPRET_FIELDS == 0;
@@ -2783,7 +2770,7 @@ fn set_led_map_field(
         ) {
             return report_led_bad_type(info, ki, ledi, field, "modifier mask");
         }
-        ledi.defined = (ledi.defined | LED_FIELD_MODS) as u32;
+        ledi.defined |= LED_FIELD_MODS;
     } else if field.eq_ignore_ascii_case("groups") {
         let mut mask: u32 = 0_u32;
         if array_ndx.is_some() {
@@ -2807,7 +2794,7 @@ fn set_led_map_field(
             ledi.led.pending_groups = false;
         }
         ledi.led.groups = mask;
-        ledi.defined = (ledi.defined | LED_FIELD_GROUPS) as u32;
+        ledi.defined |= LED_FIELD_GROUPS;
     } else if field.eq_ignore_ascii_case("controls") || field.eq_ignore_ascii_case("ctrls") {
         let mut mask_0: u32 = 0_u32;
         if array_ndx.is_some() {
@@ -2823,7 +2810,7 @@ fn set_led_map_field(
             return report_led_bad_type(info, ki, ledi, field, "controls mask");
         }
         ledi.led.ctrls = mask_0 as XkbActionControls;
-        ledi.defined = (ledi.defined | LED_FIELD_CTRLS) as u32;
+        ledi.defined |= LED_FIELD_CTRLS;
     } else if field.eq_ignore_ascii_case("allowexplicit") {
     } else if field.eq_ignore_ascii_case("whichmodstate")
         || field.eq_ignore_ascii_case("whichmodifierstate")
@@ -2879,7 +2866,7 @@ fn handle_compat_global_var(
         let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
         if !elem.is_empty() && elem.eq_ignore_ascii_case("interpret") {
             let mut temp: SymInterpInfo = SymInterpInfo {
-                defined: 0 as u32,
+                defined: 0_u32,
                 merge: MERGE_DEFAULT,
                 interp: XkbSymInterpret {
                     sym: 0,
@@ -2910,7 +2897,7 @@ fn handle_compat_global_var(
             }
         } else if !elem.is_empty() && elem.eq_ignore_ascii_case("indicator") {
             let mut temp_0: LedInfo = LedInfo {
-                defined: 0 as u32,
+                defined: 0_u32,
                 merge: MERGE_DEFAULT,
                 led: XkbLed {
                     name: 0,
@@ -3290,9 +3277,9 @@ fn add_key_type(
     ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     new: &mut KeyTypeInfo,
-    same_file: bool,
+    _same_file: bool,
 ) -> bool {
-    let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
+    let _verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
     // FindMatchingKeyType inlined
     let mut old_idx: Option<usize> = None;
     for (i, type_0) in info.types.iter().enumerate() {
@@ -3303,14 +3290,13 @@ fn add_key_type(
     }
     if let Some(idx) = old_idx {
         if new.merge != MERGE_AUGMENT {
-            if same_file as i32 != 0 && verbosity > 0_i32 || verbosity > 9_i32 {}
             clear_key_type_info(&mut info.types[idx]);
             info.types[idx] = new.clone();
             new.entries = Vec::new();
             new.level_names = Vec::new();
             return true;
         }
-        if same_file {}
+
         clear_key_type_info(new);
         return true;
     }
@@ -4208,7 +4194,6 @@ fn add_led_name(
     }
     if let Some(old_idx) = found_old {
         if old_idx == new_idx {
-            if report {}
             return true;
         }
         if report {
@@ -4287,7 +4272,6 @@ fn add_key_name(
     if match_name.found {
         let clobber: bool = merge != MERGE_AUGMENT;
         if match_name.is_alias {
-            if report {}
             if clobber {
                 keycode_store_delete_name(&mut info.keycodes, name);
                 // dead store removed: match_name.found = false;
@@ -4329,7 +4313,6 @@ fn add_key_name(
     };
     if old_name != XKB_ATOM_NONE {
         if old_name == name {
-            if report {}
             return true;
         }
         let clobber_0: bool = merge != MERGE_AUGMENT;
@@ -4511,19 +4494,16 @@ fn handle_alias_def(
                 } else {
                     def.real
                 };
-                if report {}
+
                 {
                     info.keycodes.names[def.alias as usize].index = use_0;
                 }
             }
             return true;
+        } else if clobber {
+            keycode_store_delete_key(&mut info.keycodes, match_name);
         } else {
-            if report {}
-            if clobber {
-                keycode_store_delete_key(&mut info.keycodes, match_name);
-            } else {
-                return true;
-            }
+            return true;
         }
     }
     keycode_store_insert_alias(&mut info.keycodes, def.alias, def.real)
@@ -5063,7 +5043,7 @@ fn expr_resolve_integer_lookup(
                 *val_rtrn = u as i64;
                 ok = true;
             }
-            if !ok {}
+
             if let Some(p) = pending {
                 *p = pending_local;
                 if pending_local {
@@ -5332,7 +5312,7 @@ fn expr_resolve_mask_lookup(
             } else {
                 ok = false;
             }
-            if !ok {}
+
             if let Some(p) = pending {
                 *p = pending_local;
                 if pending_local {

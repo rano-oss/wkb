@@ -884,7 +884,6 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
                 (_, _, _) => std::ffi::CString::new("").unwrap(),
             }
         };
-        if !rmlvo.variant.as_bytes().is_empty() {}
         rmlvo.variant = variant;
         modified = (modified as u32 | RMLVO_VARIANT) as Rmlvo;
     }

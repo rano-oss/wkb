@@ -3326,7 +3326,6 @@ fn log_include_paths(ctx: &mut XkbContext) {
     let num = xkb_context_num_include_paths(ctx);
     if num > 0_u32 {
         for _i in 0..num {}
-    } else {
     }
     let num_failed = xkb_context_num_failed_include_paths(ctx);
     if num_failed > 0_u32 {
@@ -3434,11 +3433,7 @@ pub(crate) fn find_file_in_xkb_path(
     None
 }
 pub(crate) fn exceeds_include_max_depth(include_depth: u32) -> bool {
-    if include_depth >= INCLUDE_MAX_DEPTH as u32 {
-        true
-    } else {
-        false
-    }
+    include_depth >= INCLUDE_MAX_DEPTH as u32
 }
 pub(crate) fn process_include_file(
     ctx: &mut XkbContext,
@@ -3500,11 +3495,7 @@ pub(crate) fn process_include_file(
     }
     // else: candidate drops automatically
 
-    if xkb_file.is_none() {
-        if !stmt.map.is_empty() {
-        } else {
-        }
-    }
+    if xkb_file.is_none() && !stmt.map.is_empty() {}
     xkb_file
 }
 
@@ -4177,9 +4168,7 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
     for (idx, stmt) in file.defs.iter().enumerate() {
         if let Statement::XkbFile(ref sub_file) = stmt {
             if sub_file.file_type > LAST_KEYMAP_FILE_TYPE {
-                if sub_file.file_type == FILE_TYPE_GEOMETRY {
-                } else {
-                }
+                if sub_file.file_type == FILE_TYPE_GEOMETRY {}
             } else if file_indices[sub_file.file_type as usize].is_some() {
             } else {
                 file_indices[sub_file.file_type as usize] = Some(idx);
@@ -4707,7 +4696,6 @@ fn matcher_new_from_names<'a>(
         },
     );
     if m.rmlvo.layouts.len() > m.rmlvo.variants.len() {
-        if !rmlvo_ref.variant.as_bytes().is_empty() {}
         vec_resize_zero_matched_sval(&mut m.rmlvo.variants, m.rmlvo.layouts.len());
     } else if m.rmlvo.layouts.len() < m.rmlvo.variants.len() {
         m.rmlvo.variants.truncate(m.rmlvo.layouts.len());
@@ -4783,12 +4771,12 @@ fn matcher_include(
     }
 }
 fn matcher_mapping_start_new(m: &mut Matcher) {
-    let mut i: u8 = 0 as u8;
+    let mut i: u8 = 0_u8;
     while (i as i32) < _MLVO_NUM_ENTRIES as i32 as u8 as i32 {
         m.mapping.mlvo_at_pos[i as usize] = _MLVO_NUM_ENTRIES;
         i = i.wrapping_add(1);
     }
-    let mut i_0: u8 = 0 as u8;
+    let mut i_0: u8 = 0_u8;
     while (i_0 as i32) < _KCCGST_NUM_ENTRIES as i32 as u8 as i32 {
         m.mapping.kccgst_at_pos[i_0 as usize] = _KCCGST_NUM_ENTRIES;
         i_0 = i_0.wrapping_add(1);
@@ -4797,9 +4785,9 @@ fn matcher_mapping_start_new(m: &mut Matcher) {
         layout_idx: XKB_LAYOUT_INVALID,
         variant_idx: XKB_LAYOUT_INVALID,
     };
-    m.mapping.num_kccgst = 0 as u8;
-    m.mapping.num_mlvo = m.mapping.num_kccgst as u8;
-    m.mapping.defined_mlvo_mask = 0 as u8;
+    m.mapping.num_kccgst = 0_u8;
+    m.mapping.num_mlvo = m.mapping.num_kccgst;
+    m.mapping.defined_mlvo_mask = 0_u8;
     m.mapping.defined_kccgst_mask = 0_u8;
     m.mapping.active_or_candidates_mask = 1_u32;
 }
@@ -4877,14 +4865,14 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
     let ident_bytes = ident.as_bytes();
     let mut mlvo: u32 = MLVO_MODEL;
     let mut mlvo_bytes: &[u8] = b"";
-    while (mlvo as u32) < _MLVO_NUM_ENTRIES {
+    while mlvo < _MLVO_NUM_ENTRIES {
         mlvo_bytes = RULES_MLVO_SVALS[mlvo as usize];
         if mlvo_bytes.len() <= ident_bytes.len() && &ident_bytes[..mlvo_bytes.len()] == mlvo_bytes {
             break;
         }
         mlvo += 1;
     }
-    if mlvo as u32 >= _MLVO_NUM_ENTRIES {
+    if mlvo >= _MLVO_NUM_ENTRIES {
         let _loc: ScannerLoc = s.token_location();
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
@@ -4905,14 +4893,14 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
             m.mapping.active_or_candidates_mask = 0_u32;
             return;
         }
-        if mlvo as u32 == MLVO_LAYOUT {
+        if mlvo == MLVO_LAYOUT {
             if let LayoutIdx::Single {
                 ref mut layout_idx, ..
             } = m.mapping.layout
             {
                 *layout_idx = idx;
             }
-        } else if mlvo as u32 == MLVO_VARIANT {
+        } else if mlvo == MLVO_VARIANT {
             if let LayoutIdx::Single {
                 ref mut variant_idx,
                 ..
@@ -4926,14 +4914,14 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
             m.mapping.active_or_candidates_mask = 0_u32;
             return;
         }
-    } else if mlvo as u32 == MLVO_LAYOUT {
+    } else if mlvo == MLVO_LAYOUT {
         if let LayoutIdx::Single {
             ref mut layout_idx, ..
         } = m.mapping.layout
         {
             *layout_idx = LAYOUT_INDEX_SINGLE;
         }
-    } else if mlvo as u32 == MLVO_VARIANT {
+    } else if mlvo == MLVO_VARIANT {
         if let LayoutIdx::Single {
             ref mut variant_idx,
             ..
@@ -4942,8 +4930,8 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
             *variant_idx = LAYOUT_INDEX_SINGLE;
         }
     }
-    if (mlvo as u32 == MLVO_LAYOUT && is_mlvo_mask_defined(m, MLVO_VARIANT) as i32 != 0
-        || mlvo as u32 == MLVO_VARIANT && is_mlvo_mask_defined(m, MLVO_LAYOUT) as i32 != 0)
+    if (mlvo == MLVO_LAYOUT && is_mlvo_mask_defined(m, MLVO_VARIANT) as i32 != 0
+        || mlvo == MLVO_VARIANT && is_mlvo_mask_defined(m, MLVO_LAYOUT) as i32 != 0)
         && {
             if let LayoutIdx::Single {
                 layout_idx,
@@ -4962,7 +4950,7 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
     }
     m.mapping.mlvo_at_pos[m.mapping.num_mlvo as usize] = mlvo;
     m.mapping.defined_mlvo_mask =
-        (m.mapping.defined_mlvo_mask as i32 | (1_u32 as u8 as i32) << mlvo as u32) as u8;
+        (m.mapping.defined_mlvo_mask as i32 | (1_u32 as u8 as i32) << mlvo) as u8;
     m.mapping.num_mlvo = m.mapping.num_mlvo.wrapping_add(1);
 }
 fn matcher_mapping_set_layout_bounds(m: &mut Matcher) {
@@ -5032,19 +5020,19 @@ fn matcher_mapping_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
     let ident_bytes = ident.as_bytes();
     let mut kccgst: u32 = KCCGST_KEYCODES;
     let mut kccgst_bytes: &[u8] = b"";
-    while (kccgst as u32) < _KCCGST_NUM_ENTRIES {
+    while kccgst < _KCCGST_NUM_ENTRIES {
         kccgst_bytes = RULES_KCCGST_SVALS[kccgst as usize];
         if kccgst_bytes == ident_bytes {
             break;
         }
         kccgst += 1;
     }
-    if kccgst as u32 >= _KCCGST_NUM_ENTRIES {
+    if kccgst >= _KCCGST_NUM_ENTRIES {
         let _loc: ScannerLoc = s.token_location();
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
-    if m.mapping.defined_kccgst_mask as u32 & 1_u32 << kccgst as u32 != 0 {
+    if m.mapping.defined_kccgst_mask as u32 & 1_u32 << kccgst != 0 {
         let _loc_0: ScannerLoc = s.token_location();
         let _kccgst_str = std::str::from_utf8(kccgst_bytes).unwrap_or("");
         m.mapping.active_or_candidates_mask = 0_u32;
@@ -5052,7 +5040,7 @@ fn matcher_mapping_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
     }
     m.mapping.kccgst_at_pos[m.mapping.num_kccgst as usize] = kccgst;
     m.mapping.defined_kccgst_mask =
-        (m.mapping.defined_kccgst_mask as i32 | (1_u32 as u8 as i32) << kccgst as u32) as u8;
+        (m.mapping.defined_kccgst_mask as i32 | (1_u32 as u8 as i32) << kccgst) as u8;
     m.mapping.num_kccgst = m.mapping.num_kccgst.wrapping_add(1);
 }
 fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
@@ -5229,7 +5217,7 @@ fn expand_rmlvo_in_kccgst_value(
         let mut idx: u32 = XKB_LAYOUT_INVALID;
         let mut expanded_index: bool = false;
         if *i < value.len() && bytes[*i] == b'[' {
-            if mlv as u32 != MLVO_LAYOUT && mlv as u32 != MLVO_VARIANT {
+            if mlv != MLVO_LAYOUT && mlv != MLVO_VARIANT {
                 let _loc_0: ScannerLoc = s.token_location();
                 let _loc_1: ScannerLoc = s.token_location();
                 return false;
@@ -5268,7 +5256,7 @@ fn expand_rmlvo_in_kccgst_value(
         }
         let ev_ref: Option<RmlvoRef>;
 
-        if mlv as u32 == MLVO_LAYOUT {
+        if mlv == MLVO_LAYOUT {
             if idx == XKB_LAYOUT_INVALID {
                 if m.rmlvo.layouts.len() == 1 {
                     ev_ref = Some(RmlvoRef::Layout(0));
@@ -5282,7 +5270,7 @@ fn expand_rmlvo_in_kccgst_value(
             } else {
                 ev_ref = None;
             }
-        } else if mlv as u32 == MLVO_VARIANT {
+        } else if mlv == MLVO_VARIANT {
             if idx == XKB_LAYOUT_INVALID {
                 if m.rmlvo.variants.len() == 1 {
                     ev_ref = Some(RmlvoRef::Variant(0));
@@ -5296,7 +5284,7 @@ fn expand_rmlvo_in_kccgst_value(
             } else {
                 ev_ref = None;
             }
-        } else if mlv as u32 == MLVO_MODEL {
+        } else if mlv == MLVO_MODEL {
             ev_ref = Some(RmlvoRef::Model);
         } else {
             ev_ref = None;
@@ -5493,7 +5481,7 @@ fn matcher_append_pending_kccgst(m: &mut Matcher) -> bool {
     } else {
         unreachable!()
     };
-    let mut i: u8 = 0 as u8;
+    let mut i: u8 = 0_u8;
     while (i as i32) < m.mapping.num_kccgst as i32 {
         let kccgst: u32 = m.mapping.kccgst_at_pos[i as usize];
         let mut layout: u32 = range_min;
@@ -5504,8 +5492,7 @@ fn matcher_append_pending_kccgst(m: &mut Matcher) -> bool {
                 let slice_len = m.pending_kccgst.slices[k as usize].length;
                 let slice_kccgst = m.pending_kccgst.slices[k as usize].kccgst;
                 let slice_layout = m.pending_kccgst.slices[k as usize].layout;
-                if slice_kccgst == kccgst as u32 && slice_layout == layout && slice_len as i32 != 0
-                {
+                if slice_kccgst == kccgst && slice_layout == layout && slice_len as i32 != 0 {
                     let from: Vec<i8> =
                         m.pending_kccgst.buffer[offset..offset + slice_len as usize].to_vec();
                     concat_kccgst(&mut m.kccgst[kccgst as usize], &from);
@@ -5531,13 +5518,13 @@ fn matcher_rule_verify(m: &mut Matcher, s: &mut Scanner) {
 fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
     let mut candidate_layouts: u32 = m.mapping.active_or_candidates_mask;
     let mut idx: u32;
-    let mut i: u8 = 0 as u8;
+    let mut i: u8 = 0_u8;
     while (i as i32) < m.mapping.num_mlvo as i32 {
         let mlvo: u32 = m.mapping.mlvo_at_pos[i as usize];
         let value: Sval = m.rule.mlvo_value_at_pos[i as usize].to_sval(s.s);
         let match_type: u32 = m.rule.match_type_at_pos[i as usize];
         let mut matched: bool = false;
-        if mlvo as u32 == MLVO_MODEL {
+        if mlvo == MLVO_MODEL {
             matched = match_value_and_mark(
                 &m.groups,
                 value,
@@ -5554,7 +5541,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
             while idx < layout_idx_max && candidate_layouts != 0 {
                 let mask: u32 = 1_u32 << idx;
                 if candidate_layouts & mask != 0 {
-                    match mlvo as u32 {
+                    match mlvo {
                         1 => {
                             if match_value_and_mark(
                                 &m.groups,
@@ -5612,7 +5599,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
             }
         } else {
             let li = m.mapping.layout.layout_idx_min() as usize;
-            match mlvo as u32 {
+            match mlvo {
                 1 => {
                     matched = match_value_and_mark(
                         &m.groups,
@@ -5666,7 +5653,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
         idx = layout_idx_min;
         while idx < layout_idx_max {
             if candidate_layouts & 1_u32 << idx != 0 {
-                let mut i_0: u8 = 0 as u8;
+                let mut i_0: u8 = 0_u8;
                 while (i_0 as i32) < m.mapping.num_kccgst as i32 {
                     let kccgst: u32 = m.mapping.kccgst_at_pos[i_0 as usize];
                     let value_0: Sval = m.rule.kccgst_value_at_pos[i_0 as usize].to_sval(s.s);
@@ -5690,7 +5677,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
             idx = idx.wrapping_add(1);
         }
     } else if let LayoutIdx::Index { layout_idx_min, .. } = m.mapping.layout {
-        let mut i_1: u8 = 0 as u8;
+        let mut i_1: u8 = 0_u8;
         while (i_1 as i32) < m.mapping.num_kccgst as i32 {
             let kccgst_0: u32 = m.mapping.kccgst_at_pos[i_1 as usize];
             let value_1: Sval = m.rule.kccgst_value_at_pos[i_1 as usize].to_sval(s.s);
@@ -5715,7 +5702,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
 
     '_initial: loop {
         tok = gettok(m, s);
-        match tok as u32 {
+        match tok {
             4 => {}
             1 => {
                 continue;
@@ -5730,11 +5717,11 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
         }
         loop {
             tok = gettok(m, s);
-            match tok as u32 {
+            match tok {
                 3 => {
                     matcher_group_start_new(m, m.val.string.to_sval(s.s).data);
                     tok = gettok(m, s);
-                    match tok as u32 {
+                    match tok {
                         5 => {
                             break;
                         }
@@ -5745,7 +5732,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                 }
                 10 => {
                     tok = gettok(m, s);
-                    match tok as u32 {
+                    match tok {
                         2 => {}
                         _ => {
                             break '_initial;
@@ -5753,7 +5740,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                     }
                     matcher_include(m, s, include_depth, m.val.string.to_sval(s.s));
                     tok = gettok(m, s);
-                    match tok as u32 {
+                    match tok {
                         1 => {
                             continue '_initial;
                         }
@@ -5767,7 +5754,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                     matcher_mapping_set_mlvo(m, s, m.val.string.to_sval(s.s));
                     loop {
                         tok = gettok(m, s);
-                        match tok as u32 {
+                        match tok {
                             2 => {}
                             5 => {
                                 break;
@@ -5782,7 +5769,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                     }
                     loop {
                         tok = gettok(m, s);
-                        match tok as u32 {
+                        match tok {
                             2 => {}
                             1 => {
                                 break;
@@ -5806,7 +5793,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                     }
                     loop {
                         tok = gettok(m, s);
-                        match tok as u32 {
+                        match tok {
                             4 => {
                                 matcher_append_pending_kccgst(m);
                                 break;
@@ -5820,7 +5807,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                             _ => {
                                 matcher_rule_start_new(m);
                                 loop {
-                                    match tok as u32 {
+                                    match tok {
                                         2 => {
                                             if !m.rule.skip {
                                                 if m.val.string.len() == 1
@@ -5888,7 +5875,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                                 }
                                 loop {
                                     tok = gettok(m, s);
-                                    match tok as u32 {
+                                    match tok {
                                         2 => {}
                                         1 => {
                                             break;
@@ -5918,7 +5905,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
         }
         loop {
             tok = gettok(m, s);
-            match tok as u32 {
+            match tok {
                 2 => {}
                 1 => {
                     break;
@@ -5933,7 +5920,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
     if eof_ok {
         true
     } else {
-        match tok as u32 {
+        match tok {
             11 => {}
             _ => {
                 let _loc: ScannerLoc = s.token_location();
@@ -6044,7 +6031,6 @@ fn xkb_resolve_rules(
                         v.push(0);
                         out.geometry = v;
                     }
-                    if !matcher.rmlvo.model.matched && !matcher.rmlvo.model.sval.is_empty() {}
                     for mval in matcher.rmlvo.layouts.iter() {
                         if !mval.matched && !mval.sval.is_empty() {}
                     }
