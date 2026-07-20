@@ -1,10 +1,3 @@
-// Safe parser.rs
-#![allow(
-    clippy::vec_box,
-    clippy::wrong_self_convention,
-    clippy::too_many_arguments,
-    clippy::type_complexity
-)]
 // LALR(1) parser for XKB, converted from bison-generated C via c2rust
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
@@ -405,7 +398,7 @@ static YYR2: [i8; 220] = [
 // ── Helper functions ────────────────────────────────────────────────
 
 fn _xkbcommon_error(param: &mut ParserParam, msg: &str) {
-    let loc: scanner_loc = param.scanner.token_location();
+    let loc: ScannerLoc = param.scanner.token_location();
     log::error!(
         "[XKB-{:03}] {}:{}:{}: {}\n",
         XKB_ERROR_INVALID_XKB_SYNTAX as i32,
@@ -416,7 +409,7 @@ fn _xkbcommon_error(param: &mut ParserParam, msg: &str) {
     );
 }
 
-fn resolve_keysym(param: &mut ParserParam, name: sval) -> Option<u32> {
+fn resolve_keysym(param: &mut ParserParam, name: Sval) -> Option<u32> {
     let name_bytes = name.as_bytes();
     let name_str = name.as_str();
 
@@ -441,7 +434,7 @@ fn resolve_keysym(param: &mut ParserParam, name: sval) -> Option<u32> {
     if sym != XKB_KEY_NO_SYMBOL as u32 {
         if param.ctx.log_verbosity >= 2 {
             if let Some(ref_name) = xkb_keysym_is_deprecated(sym, buf_slice) {
-                let loc: scanner_loc = param.scanner.token_location();
+                let loc: ScannerLoc = param.scanner.token_location();
                 log::warn!(
                     "[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{}\"; please use \"{}\" instead.\n",
                     XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
@@ -2540,12 +2533,12 @@ pub(crate) fn stmt_type_to_operator_char(type_0: u32) -> char {
 // ── Scanner types (migrated from scanner_utils.rs) ──
 
 #[derive(Copy, Clone, Default)]
-pub(crate) struct sval<'a> {
+pub(crate) struct Sval<'a> {
     pub(crate) data: &'a [u8],
 }
 
-impl<'a> sval<'a> {
-    pub(crate) const EMPTY: sval<'static> = sval { data: &[] };
+impl<'a> Sval<'a> {
+    pub(crate) const EMPTY: Sval<'static> = Sval { data: &[] };
 
     #[inline]
     pub(crate) fn as_bytes(&self) -> &[u8] {
@@ -2569,7 +2562,7 @@ impl<'a> sval<'a> {
 }
 
 #[derive(Copy, Clone)]
-pub(crate) struct scanner_loc {
+pub(crate) struct ScannerLoc {
     pub(crate) line: usize,
     pub(crate) column: usize,
 }
@@ -2581,7 +2574,7 @@ pub(crate) struct Scanner<'a> {
     pub(crate) buf_pos: usize,
     pub(crate) token_pos: usize,
     pub(crate) cached_pos: usize,
-    pub(crate) cached_loc: scanner_loc,
+    pub(crate) cached_loc: ScannerLoc,
     pub(crate) file_name: String,
 }
 
@@ -2594,7 +2587,7 @@ impl<'a> Scanner<'a> {
             buf_pos: 0,
             token_pos: 0,
             cached_pos: 0,
-            cached_loc: scanner_loc { line: 1, column: 1 },
+            cached_loc: ScannerLoc { line: 1, column: 1 },
             file_name: file_name.to_string(),
         }
     }
@@ -2795,7 +2788,7 @@ impl<'a> Scanner<'a> {
         &self.s[start..end]
     }
 
-    pub(crate) fn token_location(&mut self) -> scanner_loc {
+    pub(crate) fn token_location(&mut self) -> ScannerLoc {
         let mut line = self.cached_loc.line;
         let mut line_pos: usize = 0;
 
@@ -2822,7 +2815,7 @@ impl<'a> Scanner<'a> {
             self.token_pos - line_pos + 1
         };
 
-        let loc = scanner_loc { line, column };
+        let loc = ScannerLoc { line, column };
         self.cached_pos = self.token_pos;
         self.cached_loc = loc;
         loc
@@ -2832,7 +2825,7 @@ impl<'a> Scanner<'a> {
 // ── sval comparison functions (migrated from scanner_utils.rs) ──
 
 #[inline]
-pub(crate) fn svaleq(s1: sval, s2: sval) -> bool {
+pub(crate) fn svaleq(s1: Sval, s2: Sval) -> bool {
     s1.data == s2.data
 }
 
@@ -3082,7 +3075,7 @@ pub(crate) enum YYValue<'a> {
     Num(i64),
     FileType(u32),
     Str(String),
-    Sval(sval<'a>),
+    Sval(Sval<'a>),
     Atom(u32),
     Merge(MergeMode),
     MapFlags(XkbMapFlags),
@@ -3208,10 +3201,10 @@ impl<'a> YYValue<'a> {
             _ => 0,
         }
     }
-    pub(crate) fn as_sval(&self) -> sval<'a> {
+    pub(crate) fn as_sval(&self) -> Sval<'a> {
         match self {
             YYValue::Sval(s) => *s,
-            _ => sval::EMPTY,
+            _ => Sval::EMPTY,
         }
     }
     pub(crate) fn take_str(&mut self) -> String {
@@ -3450,7 +3443,7 @@ pub(crate) fn _xkbcommon_lex<'a>(
         if tok >= 0 {
             return tok;
         }
-        *yylval = YYValue::Sval(sval {
+        *yylval = YYValue::Sval(Sval {
             data: &s.s[s.token_pos..s.pos],
         });
         return IDENT;
@@ -4703,11 +4696,11 @@ pub(crate) struct SvalIdx {
 impl SvalIdx {
     const EMPTY: SvalIdx = SvalIdx { start: 0, end: 0 };
     #[inline]
-    fn to_sval<'a>(&self, input: &'a [u8]) -> sval<'a> {
+    fn to_sval<'a>(&self, input: &'a [u8]) -> Sval<'a> {
         if self.start >= self.end || self.start >= input.len() {
-            sval::EMPTY
+            Sval::EMPTY
         } else {
-            sval {
+            Sval {
                 data: &input[self.start..self.end.min(input.len())],
             }
         }
@@ -4736,43 +4729,39 @@ pub(crate) struct kccgst_buffer {
 #[derive(Copy, Clone)]
 pub(crate) struct kccgst_buffer_slice {
     pub(crate) length: u32,
-    pub(crate) kccgst: rules_kccgst,
+    pub(crate) kccgst: u32,
     pub(crate) layout: u32,
 }
-pub(crate) type rules_kccgst = u32;
-pub(crate) const _KCCGST_NUM_ENTRIES: rules_kccgst = 5;
-pub(crate) const KCCGST_GEOMETRY: rules_kccgst = 4;
-pub(crate) const KCCGST_SYMBOLS: rules_kccgst = 3;
-pub(crate) const KCCGST_COMPAT: rules_kccgst = 2;
-pub(crate) const KCCGST_TYPES: rules_kccgst = 1;
-pub(crate) const KCCGST_KEYCODES: rules_kccgst = 0;
+pub(crate) const _KCCGST_NUM_ENTRIES: u32 = 5;
+pub(crate) const KCCGST_GEOMETRY: u32 = 4;
+pub(crate) const KCCGST_SYMBOLS: u32 = 3;
+pub(crate) const KCCGST_COMPAT: u32 = 2;
+pub(crate) const KCCGST_TYPES: u32 = 1;
+pub(crate) const KCCGST_KEYCODES: u32 = 0;
 #[derive(Copy, Clone)]
 pub(crate) struct rule {
     pub(crate) mlvo_value_at_pos: [SvalIdx; 4],
-    pub(crate) match_type_at_pos: [mlvo_match_type; 4],
+    pub(crate) match_type_at_pos: [u32; 4],
     pub(crate) kccgst_value_at_pos: [SvalIdx; 5],
-    pub(crate) num_mlvo_values: mlvo_index_t,
-    pub(crate) num_kccgst_values: kccgst_index_t,
+    pub(crate) num_mlvo_values: u8,
+    pub(crate) num_kccgst_values: u8,
     pub(crate) skip: bool,
 }
-pub(crate) type kccgst_index_t = u8;
-pub(crate) type mlvo_index_t = u8;
-pub(crate) type mlvo_match_type = u32;
-pub(crate) const MLVO_MATCH_GROUP: mlvo_match_type = 5;
-pub(crate) const MLVO_MATCH_WILDCARD_ANY: mlvo_match_type = 4;
-pub(crate) const MLVO_MATCH_WILDCARD_SOME: mlvo_match_type = 3;
-pub(crate) const MLVO_MATCH_WILDCARD_NONE: mlvo_match_type = 2;
-pub(crate) const MLVO_MATCH_WILDCARD_LEGACY: mlvo_match_type = 1;
-pub(crate) const MLVO_MATCH_NORMAL: mlvo_match_type = 0;
+pub(crate) const MLVO_MATCH_GROUP: u32 = 5;
+pub(crate) const MLVO_MATCH_WILDCARD_ANY: u32 = 4;
+pub(crate) const MLVO_MATCH_WILDCARD_SOME: u32 = 3;
+pub(crate) const MLVO_MATCH_WILDCARD_NONE: u32 = 2;
+pub(crate) const MLVO_MATCH_WILDCARD_LEGACY: u32 = 1;
+pub(crate) const MLVO_MATCH_NORMAL: u32 = 0;
 #[derive(Copy, Clone, Default)]
 pub(crate) struct mapping {
-    pub(crate) mlvo_at_pos: [rules_mlvo; 4],
-    pub(crate) num_mlvo: mlvo_index_t,
-    pub(crate) defined_mlvo_mask: mlvo_mask_t,
+    pub(crate) mlvo_at_pos: [u32; 4],
+    pub(crate) num_mlvo: u8,
+    pub(crate) defined_mlvo_mask: u8,
     pub(crate) layout: LayoutIdx,
     pub(crate) active_or_candidates_mask: u32,
-    pub(crate) kccgst_at_pos: [rules_kccgst; 5],
-    pub(crate) num_kccgst: kccgst_index_t,
+    pub(crate) kccgst_at_pos: [u32; 5],
+    pub(crate) num_kccgst: u8,
     pub(crate) defined_kccgst_mask: u8,
 }
 #[derive(Copy, Clone)]
@@ -4807,13 +4796,11 @@ impl LayoutIdx {
         }
     }
 }
-pub(crate) type mlvo_mask_t = u8;
-pub(crate) type rules_mlvo = u32;
-pub(crate) const _MLVO_NUM_ENTRIES: rules_mlvo = 4;
-pub(crate) const MLVO_OPTION: rules_mlvo = 3;
-pub(crate) const MLVO_VARIANT: rules_mlvo = 2;
-pub(crate) const MLVO_LAYOUT: rules_mlvo = 1;
-pub(crate) const MLVO_MODEL: rules_mlvo = 0;
+pub(crate) const _MLVO_NUM_ENTRIES: u32 = 4;
+pub(crate) const MLVO_OPTION: u32 = 3;
+pub(crate) const MLVO_VARIANT: u32 = 2;
+pub(crate) const MLVO_LAYOUT: u32 = 1;
+pub(crate) const MLVO_MODEL: u32 = 0;
 #[derive(Clone)]
 pub(crate) struct group {
     pub(crate) name: Vec<u8>,
@@ -4832,28 +4819,26 @@ pub(crate) struct rule_names<'a> {
 }
 #[derive(Copy, Clone, Default)]
 pub(crate) struct matched_sval<'a> {
-    pub(crate) sval: sval<'a>,
+    pub(crate) sval: Sval<'a>,
     pub(crate) matched: bool,
     pub(crate) layout: u32,
 }
-pub(crate) const TOK_ERROR: rules_token = 11;
-pub(crate) type rules_token = u32;
-pub(crate) const TOK_INCLUDE: rules_token = 10;
-pub(crate) const TOK_WILD_CARD_ANY: rules_token = 9;
-pub(crate) const TOK_WILD_CARD_SOME: rules_token = 8;
-pub(crate) const TOK_WILD_CARD_NONE: rules_token = 7;
-pub(crate) const TOK_WILD_CARD_STAR: rules_token = 6;
-pub(crate) const TOK_EQUALS: rules_token = 5;
-pub(crate) const TOK_BANG: rules_token = 4;
-pub(crate) const TOK_GROUP_NAME: rules_token = 3;
-pub(crate) const TOK_IDENTIFIER: rules_token = 2;
-pub(crate) const TOK_END_OF_LINE: rules_token = 1;
-pub(crate) const TOK_END_OF_FILE: rules_token = 0;
-pub(crate) const LAYOUT_INDEX_FIRST: layout_index_ranges = 4294967292;
-pub(crate) const LAYOUT_INDEX_SINGLE: layout_index_ranges = 4294967291;
-pub(crate) const LAYOUT_INDEX_ANY: layout_index_ranges = 4294967294;
-pub(crate) const LAYOUT_INDEX_LATER: layout_index_ranges = 4294967293;
-pub(crate) type layout_index_ranges = u32;
+pub(crate) const TOK_ERROR: u32 = 11;
+pub(crate) const TOK_INCLUDE: u32 = 10;
+pub(crate) const TOK_WILD_CARD_ANY: u32 = 9;
+pub(crate) const TOK_WILD_CARD_SOME: u32 = 8;
+pub(crate) const TOK_WILD_CARD_NONE: u32 = 7;
+pub(crate) const TOK_WILD_CARD_STAR: u32 = 6;
+pub(crate) const TOK_EQUALS: u32 = 5;
+pub(crate) const TOK_BANG: u32 = 4;
+pub(crate) const TOK_GROUP_NAME: u32 = 3;
+pub(crate) const TOK_IDENTIFIER: u32 = 2;
+pub(crate) const TOK_END_OF_LINE: u32 = 1;
+pub(crate) const TOK_END_OF_FILE: u32 = 0;
+pub(crate) const LAYOUT_INDEX_FIRST: u32 = 4294967292;
+pub(crate) const LAYOUT_INDEX_SINGLE: u32 = 4294967291;
+pub(crate) const LAYOUT_INDEX_ANY: u32 = 4294967294;
+pub(crate) const LAYOUT_INDEX_LATER: u32 = 4294967293;
 
 impl Default for rule {
     fn default() -> Self {
@@ -4888,15 +4873,14 @@ impl<'a> matcher<'a> {
         }
     }
 }
-pub(crate) type wildcard_match_type = u32;
-pub(crate) const WILDCARD_MATCH_ALL: wildcard_match_type = 1;
-pub(crate) const WILDCARD_MATCH_NONEMPTY: wildcard_match_type = 0;
+pub(crate) const WILDCARD_MATCH_ALL: u32 = 1;
+pub(crate) const WILDCARD_MATCH_NONEMPTY: u32 = 0;
 pub(crate) const MAX_INCLUDE_DEPTH: i32 = 5_i32;
 #[inline]
 fn is_ident(ch: i8) -> bool {
     (ch as u8).is_ascii_graphic() && ch as i32 != '\\' as i32
 }
-fn lex(s: &mut Scanner, val: &mut lvalue) -> rules_token {
+fn lex(s: &mut Scanner, val: &mut lvalue) -> u32 {
     loop {
         while s.chr(' ' as i32 as i8) as i32 != 0
             || s.chr('\t' as i32 as i8) as i32 != 0
@@ -4916,7 +4900,7 @@ fn lex(s: &mut Scanner, val: &mut lvalue) -> rules_token {
         }
         s.chr('\r' as i32 as i8);
         if !s.eol() {
-            let loc: scanner_loc = s.token_location();
+            let loc: ScannerLoc = s.token_location();
             log::error!(
                 "[XKB-{:03}] {}:{}:{}: illegal new line escape; must appear at end of line\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -4960,7 +4944,7 @@ fn lex(s: &mut Scanner, val: &mut lvalue) -> rules_token {
             val.string.end += 1;
         }
         if val.string.len() == 0 {
-            let loc_0: scanner_loc = s.token_location();
+            let loc_0: ScannerLoc = s.token_location();
             log::error!(
                 "[XKB-{:03}] {}:{}:{}: unexpected character after '$'; expected name\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -4986,7 +4970,7 @@ fn lex(s: &mut Scanner, val: &mut lvalue) -> rules_token {
         }
         return TOK_IDENTIFIER;
     }
-    let loc_1: scanner_loc = s.token_location();
+    let loc_1: ScannerLoc = s.token_location();
     log::error!(
         "[XKB-{:03}] {}:{}:{}: unrecognized token\n",
         XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -4999,7 +4983,7 @@ fn lex(s: &mut Scanner, val: &mut lvalue) -> rules_token {
 static RULES_MLVO_SVALS: [&[u8]; 4] = [b"model", b"layout", b"variant", b"option"];
 static RULES_KCCGST_SVALS: [&[u8]; 5] = [b"keycodes", b"types", b"compat", b"symbols", b"geometry"];
 pub(crate) const OPTIONS_MATCH_ALL_GROUPS: i32 = XKB_MAX_GROUPS;
-fn strip_spaces<'a>(v: sval<'a>) -> sval<'a> {
+fn strip_spaces<'a>(v: Sval<'a>) -> Sval<'a> {
     let bytes = v.data;
     let start_trim = bytes
         .iter()
@@ -5011,9 +4995,9 @@ fn strip_spaces<'a>(v: sval<'a>) -> sval<'a> {
         .map(|i| i + 1)
         .unwrap_or(start_trim);
     if start_trim >= end_trim {
-        sval::EMPTY
+        Sval::EMPTY
     } else {
-        sval {
+        Sval {
             data: &bytes[start_trim..end_trim],
         }
     }
@@ -5028,7 +5012,7 @@ fn vec_resize_zero_matched_sval(v: &mut Vec<matched_sval<'_>>, new_len: usize) {
     }
 }
 
-fn split_comma_separated_mlvo<'a>(mlvo: rules_mlvo, s: Option<&'a [u8]>) -> Vec<matched_sval<'a>> {
+fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<matched_sval<'a>> {
     let mut arr: Vec<matched_sval<'a>> = Vec::new();
     let Some(bytes) = s else {
         arr.push(matched_sval::default());
@@ -5045,7 +5029,7 @@ fn split_comma_separated_mlvo<'a>(mlvo: rules_mlvo, s: Option<&'a [u8]>) -> Vec<
         let mut val_0 = matched_sval {
             matched: false,
             layout: OPTIONS_MATCH_ALL_GROUPS as u32,
-            sval: sval {
+            sval: Sval {
                 data: &bytes[start..start],
             },
         };
@@ -5056,7 +5040,7 @@ fn split_comma_separated_mlvo<'a>(mlvo: rules_mlvo, s: Option<&'a [u8]>) -> Vec<
             pos += 1;
             end += 1;
         }
-        val_0.sval = sval {
+        val_0.sval = Sval {
             data: &bytes[start..end],
         };
         val_0.sval = strip_spaces(val_0.sval);
@@ -5115,7 +5099,7 @@ fn matcher_new_from_names<'a>(
 ) -> Box<matcher<'a>> {
     let mut m = Box::new(matcher::new(ctx));
     let rmlvo_ref = rmlvo;
-    m.rmlvo.model.sval = sval {
+    m.rmlvo.model.sval = Sval {
         data: rmlvo_ref.model.as_bytes(),
     };
     m.rmlvo.model.layout = OPTIONS_MATCH_ALL_GROUPS as u32;
@@ -5193,10 +5177,10 @@ fn matcher_include(
     m: &mut matcher<'_>,
     parent_scanner: &mut Scanner,
     include_depth: u32,
-    inc: sval,
+    inc: Sval,
 ) {
     if include_depth >= MAX_INCLUDE_DEPTH as u32 {
-        let loc: scanner_loc = parent_scanner.token_location();
+        let loc: ScannerLoc = parent_scanner.token_location();
         log::error!(
             "{}:{}:{}: maximum include depth ({}) exceeded; maybe there is an include loop?\n",
             &parent_scanner.file_name,
@@ -5259,13 +5243,13 @@ fn matcher_include(
     log::error!("Failed to open included XKB rules \"{}\"\n", &stmt_file);
 }
 fn matcher_mapping_start_new(m: &mut matcher) {
-    let mut i: mlvo_index_t = 0 as mlvo_index_t;
-    while (i as i32) < _MLVO_NUM_ENTRIES as i32 as mlvo_index_t as i32 {
+    let mut i: u8 = 0 as u8;
+    while (i as i32) < _MLVO_NUM_ENTRIES as i32 as u8 as i32 {
         m.mapping.mlvo_at_pos[i as usize] = _MLVO_NUM_ENTRIES;
         i = i.wrapping_add(1);
     }
-    let mut i_0: kccgst_index_t = 0 as kccgst_index_t;
-    while (i_0 as i32) < _KCCGST_NUM_ENTRIES as i32 as kccgst_index_t as i32 {
+    let mut i_0: u8 = 0 as u8;
+    while (i_0 as i32) < _KCCGST_NUM_ENTRIES as i32 as u8 as i32 {
         m.mapping.kccgst_at_pos[i_0 as usize] = _KCCGST_NUM_ENTRIES;
         i_0 = i_0.wrapping_add(1);
     }
@@ -5273,9 +5257,9 @@ fn matcher_mapping_start_new(m: &mut matcher) {
         layout_idx: XKB_LAYOUT_INVALID,
         variant_idx: XKB_LAYOUT_INVALID,
     };
-    m.mapping.num_kccgst = 0 as kccgst_index_t;
-    m.mapping.num_mlvo = m.mapping.num_kccgst as mlvo_index_t;
-    m.mapping.defined_mlvo_mask = 0 as mlvo_mask_t;
+    m.mapping.num_kccgst = 0 as u8;
+    m.mapping.num_mlvo = m.mapping.num_kccgst as u8;
+    m.mapping.defined_mlvo_mask = 0 as u8;
     m.mapping.defined_kccgst_mask = 0_u8;
     m.mapping.active_or_candidates_mask = 1_u32;
 }
@@ -5311,7 +5295,7 @@ fn extract_layout_index(s: &[u8], out: &mut u32) -> i32 {
 fn extract_mapping_layout_index(s: &[u8], out: &mut u32) -> i32 {
     struct LayoutIndexEntry {
         name: &'static [u8],
-        range: layout_index_ranges,
+        range: u32,
     }
     static NAMES: [LayoutIndexEntry; 4] = [
         LayoutIndexEntry {
@@ -5346,12 +5330,12 @@ fn extract_mapping_layout_index(s: &[u8], out: &mut u32) -> i32 {
     parse_layout_int_index(s, out)
 }
 #[inline]
-fn is_mlvo_mask_defined(m: &mut matcher, mlvo: rules_mlvo) -> bool {
+fn is_mlvo_mask_defined(m: &mut matcher, mlvo: u32) -> bool {
     m.mapping.defined_mlvo_mask as u32 & 1_u32 << mlvo != 0
 }
-fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut Scanner, ident: sval) {
+fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut Scanner, ident: Sval) {
     let ident_bytes = ident.as_bytes();
-    let mut mlvo: rules_mlvo = MLVO_MODEL;
+    let mut mlvo: u32 = MLVO_MODEL;
     let mut mlvo_bytes: &[u8] = b"";
     while (mlvo as u32) < _MLVO_NUM_ENTRIES {
         mlvo_bytes = RULES_MLVO_SVALS[mlvo as usize];
@@ -5361,7 +5345,7 @@ fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut Scanner, ident: sval) {
         mlvo += 1;
     }
     if mlvo as u32 >= _MLVO_NUM_ENTRIES {
-        let loc: scanner_loc = s.token_location();
+        let loc: ScannerLoc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
             &s.file_name,
@@ -5372,7 +5356,7 @@ fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut Scanner, ident: sval) {
         return;
     }
     if is_mlvo_mask_defined(m, mlvo) {
-        let loc_0: scanner_loc = s.token_location();
+        let loc_0: ScannerLoc = s.token_location();
         let mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
         log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -5388,7 +5372,7 @@ fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut Scanner, ident: sval) {
         let remaining = &ident_bytes[mlvo_bytes.len()..];
         let consumed: i32 = extract_mapping_layout_index(remaining, &mut idx);
         if remaining.len() as i32 != consumed {
-            let loc_1: scanner_loc = s.token_location();
+            let loc_1: ScannerLoc = s.token_location();
             let mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
             log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" may only be followed by a valid group index; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -5415,7 +5399,7 @@ fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut Scanner, ident: sval) {
                 *variant_idx = idx;
             }
         } else {
-            let loc_2: scanner_loc = s.token_location();
+            let loc_2: ScannerLoc = s.token_location();
             let mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
             log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" cannot be followed by a group index; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -5456,7 +5440,7 @@ fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut Scanner, ident: sval) {
             }
         }
     {
-        let loc_3: scanner_loc = s.token_location();
+        let loc_3: ScannerLoc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"layout\" index must be the same as the \"variant\" index\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
             &s.file_name,
@@ -5467,8 +5451,8 @@ fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut Scanner, ident: sval) {
     }
     m.mapping.mlvo_at_pos[m.mapping.num_mlvo as usize] = mlvo;
     m.mapping.defined_mlvo_mask = (m.mapping.defined_mlvo_mask as i32
-        | (1_u32 as mlvo_mask_t as i32) << mlvo as u32)
-        as mlvo_mask_t;
+        | (1_u32 as u8 as i32) << mlvo as u32)
+        as u8;
     m.mapping.num_mlvo = m.mapping.num_mlvo.wrapping_add(1);
 }
 fn matcher_mapping_set_layout_bounds(m: &mut matcher) {
@@ -5534,9 +5518,9 @@ fn matcher_mapping_set_layout_bounds(m: &mut matcher) {
         m.mapping.active_or_candidates_mask = 1_u32 << idx;
     };
 }
-fn matcher_mapping_set_kccgst(m: &mut matcher, s: &mut Scanner, ident: sval) {
+fn matcher_mapping_set_kccgst(m: &mut matcher, s: &mut Scanner, ident: Sval) {
     let ident_bytes = ident.as_bytes();
-    let mut kccgst: rules_kccgst = KCCGST_KEYCODES;
+    let mut kccgst: u32 = KCCGST_KEYCODES;
     let mut kccgst_bytes: &[u8] = b"";
     while (kccgst as u32) < _KCCGST_NUM_ENTRIES {
         kccgst_bytes = RULES_KCCGST_SVALS[kccgst as usize];
@@ -5546,7 +5530,7 @@ fn matcher_mapping_set_kccgst(m: &mut matcher, s: &mut Scanner, ident: sval) {
         kccgst += 1;
     }
     if kccgst as u32 >= _KCCGST_NUM_ENTRIES {
-        let loc: scanner_loc = s.token_location();
+        let loc: ScannerLoc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
             &s.file_name,
@@ -5557,7 +5541,7 @@ fn matcher_mapping_set_kccgst(m: &mut matcher, s: &mut Scanner, ident: sval) {
         return;
     }
     if m.mapping.defined_kccgst_mask as u32 & 1_u32 << kccgst as u32 != 0 {
-        let loc_0: scanner_loc = s.token_location();
+        let loc_0: ScannerLoc = s.token_location();
         let kccgst_str = std::str::from_utf8(kccgst_bytes).unwrap_or("");
         log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -5583,14 +5567,14 @@ fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
 
 fn matcher_mapping_verify(m: &mut matcher, s: &mut Scanner) -> bool {
     if m.mapping.num_mlvo as i32 == 0_i32 {
-        let loc: scanner_loc = s.token_location();
+        let loc: ScannerLoc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the left hand side; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 &s.file_name,
                 loc.line,
                 loc.column);
     } else if m.mapping.num_kccgst as i32 == 0_i32 {
-        let loc_0: scanner_loc = s.token_location();
+        let loc_0: ScannerLoc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the right hand side; ignoring rule set\n",
                 XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                 &s.file_name,
@@ -5633,10 +5617,10 @@ fn matcher_rule_set_mlvo_common(
     m: &mut matcher,
     s: &mut Scanner,
     ident: SvalIdx,
-    match_type: mlvo_match_type,
+    match_type: u32,
 ) {
     if m.rule.num_mlvo_values as i32 >= m.mapping.num_mlvo as i32 {
-        let loc: scanner_loc = s.token_location();
+        let loc: ScannerLoc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
             &s.file_name,
@@ -5649,7 +5633,7 @@ fn matcher_rule_set_mlvo_common(
     m.rule.mlvo_value_at_pos[m.rule.num_mlvo_values as usize] = ident;
     m.rule.num_mlvo_values = m.rule.num_mlvo_values.wrapping_add(1);
 }
-fn matcher_rule_set_mlvo_wildcard(m: &mut matcher, s: &mut Scanner, match_type: mlvo_match_type) {
+fn matcher_rule_set_mlvo_wildcard(m: &mut matcher, s: &mut Scanner, match_type: u32) {
     let dummy = SvalIdx::EMPTY;
     matcher_rule_set_mlvo_common(m, s, dummy, match_type);
 }
@@ -5661,7 +5645,7 @@ fn matcher_rule_set_mlvo(m: &mut matcher, s: &mut Scanner, ident: SvalIdx) {
 }
 fn matcher_rule_set_kccgst(m: &mut matcher, s: &mut Scanner, ident: SvalIdx) {
     if m.rule.num_kccgst_values as i32 >= m.mapping.num_kccgst as i32 {
-        let loc: scanner_loc = s.token_location();
+        let loc: ScannerLoc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
             &s.file_name,
@@ -5673,7 +5657,7 @@ fn matcher_rule_set_kccgst(m: &mut matcher, s: &mut Scanner, ident: SvalIdx) {
     m.rule.kccgst_value_at_pos[m.rule.num_kccgst_values as usize] = ident;
     m.rule.num_kccgst_values = m.rule.num_kccgst_values.wrapping_add(1);
 }
-fn match_group(groups: &[group], group_name: sval, to: sval) -> bool {
+fn match_group(groups: &[group], group_name: Sval, to: Sval) -> bool {
     let found_group = groups.iter().find(|g| g.name.as_slice() == group_name.data);
     match found_group {
         None => false,
@@ -5689,10 +5673,10 @@ fn match_group(groups: &[group], group_name: sval, to: sval) -> bool {
 }
 fn match_value(
     groups: &[group],
-    val: sval,
-    to: sval,
-    match_type: mlvo_match_type,
-    wildcard_type: wildcard_match_type,
+    val: Sval,
+    to: Sval,
+    match_type: u32,
+    wildcard_type: u32,
 ) -> bool {
     match match_type {
         1 => wildcard_type == WILDCARD_MATCH_ALL || !to.is_empty(),
@@ -5705,10 +5689,10 @@ fn match_value(
 }
 fn match_value_and_mark(
     groups: &[group],
-    val: sval,
+    val: Sval,
     to: &mut matched_sval,
-    match_type: mlvo_match_type,
-    wildcard_type: wildcard_match_type,
+    match_type: u32,
+    wildcard_type: u32,
 ) -> bool {
     let matched: bool = match_value(groups, val, to.sval, match_type, wildcard_type);
     if matched {
@@ -5719,7 +5703,7 @@ fn match_value_and_mark(
 fn expand_rmlvo_in_kccgst_value(
     m: &mut matcher,
     s: &mut Scanner,
-    value: sval,
+    value: Sval,
     layout_idx: u32,
     expanded: &mut Vec<i8>,
     i: &mut usize,
@@ -5733,7 +5717,7 @@ fn expand_rmlvo_in_kccgst_value(
                 || bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_REPLACE_PREFIX))
     {
         if layout_idx == XKB_LAYOUT_INVALID {
-            let loc: scanner_loc = s.token_location();
+            let loc: ScannerLoc = s.token_location();
             log::error!("[XKB-{:03}] {}:{}:{}: Invalid %i in %-expansion: there is no corresponding layout nor variant in the MLVO fields of the rules header.\n",
                 XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION as i32,
                 &s.file_name,
@@ -5763,7 +5747,7 @@ fn expand_rmlvo_in_kccgst_value(
             *i = (*i).wrapping_add(1);
             if *i >= value.len() {
                 // fall through to error
-                let loc_1: scanner_loc = s.token_location();
+                let loc_1: ScannerLoc = s.token_location();
                 log::error!(
                     "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -5777,12 +5761,12 @@ fn expand_rmlvo_in_kccgst_value(
 
         let c2rust_fresh7 = *i;
         *i = (*i).wrapping_add(1);
-        let mlv: rules_mlvo = match bytes[c2rust_fresh7] {
+        let mlv: u32 = match bytes[c2rust_fresh7] {
             b'm' => MLVO_MODEL,
             b'l' => MLVO_LAYOUT,
             b'v' => MLVO_VARIANT,
             _ => {
-                let loc_1: scanner_loc = s.token_location();
+                let loc_1: ScannerLoc = s.token_location();
                 log::error!(
                     "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -5798,13 +5782,13 @@ fn expand_rmlvo_in_kccgst_value(
         let mut expanded_index: bool = false;
         if *i < value.len() && bytes[*i] == b'[' {
             if mlv as u32 != MLVO_LAYOUT && mlv as u32 != MLVO_VARIANT {
-                let loc_0: scanner_loc = s.token_location();
+                let loc_0: ScannerLoc = s.token_location();
                 log::error!("[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
                     &s.file_name,
                     loc_0.line,
                     loc_0.column);
-                let loc_1: scanner_loc = s.token_location();
+                let loc_1: ScannerLoc = s.token_location();
                 log::error!(
                     "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -5816,7 +5800,7 @@ fn expand_rmlvo_in_kccgst_value(
             }
             let consumed: i32 = extract_layout_index(&bytes[*i..], &mut idx);
             if consumed == -1_i32 {
-                let loc_1: scanner_loc = s.token_location();
+                let loc_1: ScannerLoc = s.token_location();
                 log::error!(
                     "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -5835,7 +5819,7 @@ fn expand_rmlvo_in_kccgst_value(
 
         if sfx as i32 != 0_i32 {
             if *i >= value.len() {
-                let loc_1: scanner_loc = s.token_location();
+                let loc_1: ScannerLoc = s.token_location();
                 log::error!(
                     "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -5848,7 +5832,7 @@ fn expand_rmlvo_in_kccgst_value(
             let c2rust_fresh8 = *i;
             *i = (*i).wrapping_add(1);
             if bytes[c2rust_fresh8] as i8 != sfx {
-                let loc_1: scanner_loc = s.token_location();
+                let loc_1: ScannerLoc = s.token_location();
                 log::error!(
                     "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -5908,7 +5892,7 @@ fn expand_rmlvo_in_kccgst_value(
             Some(RmlvoRef::Model) => m.rmlvo.model.sval,
             Some(RmlvoRef::Layout(idx)) => m.rmlvo.layouts[*idx].sval,
             Some(RmlvoRef::Variant(idx)) => m.rmlvo.variants[*idx].sval,
-            None => sval::EMPTY,
+            None => Sval::EMPTY,
         };
 
         if ev_ref.is_none() || ev_sval.is_empty() {
@@ -5933,7 +5917,7 @@ fn expand_rmlvo_in_kccgst_value(
         return true;
     }
 
-    let loc_1: scanner_loc = s.token_location();
+    let loc_1: ScannerLoc = s.token_location();
     log::error!(
         "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
         XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -5946,7 +5930,7 @@ fn expand_rmlvo_in_kccgst_value(
 fn expand_qualifier_in_kccgst_value(
     m: &mut matcher,
     s: &mut Scanner,
-    value: sval,
+    value: Sval,
     expanded: &mut Vec<i8>,
     has_layout_idx_range: bool,
     has_separator: bool,
@@ -5964,7 +5948,7 @@ fn expand_qualifier_in_kccgst_value(
         && bytes[(*i).wrapping_add(2_usize)] == b'l'
     {
         if has_layout_idx_range {
-            let loc: scanner_loc = s.token_location();
+            let loc: ScannerLoc = s.token_location();
             log::warn!(
                 "{}:{}:{}: Using :all qualifier with indices range is not recommended.\n",
                 &s.file_name,
@@ -6033,7 +6017,7 @@ fn concat_kccgst(into: &mut Vec<i8>, from: &[i8]) {
 fn expand_kccgst_value(
     m: &mut matcher,
     s: &mut Scanner,
-    value: sval,
+    value: Sval,
     layout_idx: u32,
 ) -> Option<Vec<i8>> {
     let bytes = value.as_bytes();
@@ -6107,9 +6091,9 @@ fn matcher_append_pending_kccgst(m: &mut matcher) -> bool {
     } else {
         unreachable!()
     };
-    let mut i: kccgst_index_t = 0 as kccgst_index_t;
+    let mut i: u8 = 0 as u8;
     while (i as i32) < m.mapping.num_kccgst as i32 {
-        let kccgst: rules_kccgst = m.mapping.kccgst_at_pos[i as usize];
+        let kccgst: u32 = m.mapping.kccgst_at_pos[i as usize];
         let mut layout: u32 = range_min;
         while layout < range_max {
             let mut offset: usize = 0_usize;
@@ -6138,7 +6122,7 @@ fn matcher_rule_verify(m: &mut matcher, s: &mut Scanner) {
     if m.rule.num_mlvo_values as i32 != m.mapping.num_mlvo as i32
         || m.rule.num_kccgst_values as i32 != m.mapping.num_kccgst as i32
     {
-        let loc: scanner_loc = s.token_location();
+        let loc: ScannerLoc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: must have same number of values as mapping line; ignoring rule\n",
             XKB_ERROR_INVALID_RULES_SYNTAX as i32,
             &s.file_name,
@@ -6150,11 +6134,11 @@ fn matcher_rule_verify(m: &mut matcher, s: &mut Scanner) {
 fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut Scanner) {
     let mut candidate_layouts: u32 = m.mapping.active_or_candidates_mask;
     let mut idx: u32;
-    let mut i: mlvo_index_t = 0 as mlvo_index_t;
+    let mut i: u8 = 0 as u8;
     while (i as i32) < m.mapping.num_mlvo as i32 {
-        let mlvo: rules_mlvo = m.mapping.mlvo_at_pos[i as usize];
-        let value: sval = m.rule.mlvo_value_at_pos[i as usize].to_sval(s.s);
-        let match_type: mlvo_match_type = m.rule.match_type_at_pos[i as usize];
+        let mlvo: u32 = m.mapping.mlvo_at_pos[i as usize];
+        let value: Sval = m.rule.mlvo_value_at_pos[i as usize].to_sval(s.s);
+        let match_type: u32 = m.rule.match_type_at_pos[i as usize];
         let mut matched: bool = false;
         if mlvo as u32 == MLVO_MODEL {
             matched = match_value_and_mark(
@@ -6285,10 +6269,10 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut Scanner) {
         idx = layout_idx_min;
         while idx < layout_idx_max {
             if candidate_layouts & 1_u32 << idx != 0 {
-                let mut i_0: kccgst_index_t = 0 as kccgst_index_t;
+                let mut i_0: u8 = 0 as u8;
                 while (i_0 as i32) < m.mapping.num_kccgst as i32 {
-                    let kccgst: rules_kccgst = m.mapping.kccgst_at_pos[i_0 as usize];
-                    let value_0: sval = m.rule.kccgst_value_at_pos[i_0 as usize].to_sval(s.s);
+                    let kccgst: u32 = m.mapping.kccgst_at_pos[i_0 as usize];
+                    let value_0: Sval = m.rule.kccgst_value_at_pos[i_0 as usize].to_sval(s.s);
                     let prev_buffer_length: u32 = m.pending_kccgst.buffer.len() as u32;
                     if let Some(expanded) = expand_kccgst_value(m, s, value_0, idx) {
                         if !expanded.is_empty() {
@@ -6309,10 +6293,10 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut Scanner) {
             idx = idx.wrapping_add(1);
         }
     } else if let LayoutIdx::Index { layout_idx_min, .. } = m.mapping.layout {
-        let mut i_1: kccgst_index_t = 0 as kccgst_index_t;
+        let mut i_1: u8 = 0 as u8;
         while (i_1 as i32) < m.mapping.num_kccgst as i32 {
-            let kccgst_0: rules_kccgst = m.mapping.kccgst_at_pos[i_1 as usize];
-            let value_1: sval = m.rule.kccgst_value_at_pos[i_1 as usize].to_sval(s.s);
+            let kccgst_0: u32 = m.mapping.kccgst_at_pos[i_1 as usize];
+            let value_1: Sval = m.rule.kccgst_value_at_pos[i_1 as usize].to_sval(s.s);
             if let Some(expanded) = expand_kccgst_value(m, s, value_1, layout_idx_min) {
                 if !expanded.is_empty() {
                     concat_kccgst(&mut m.kccgst[kccgst_0 as usize], &expanded);
@@ -6325,12 +6309,12 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut Scanner) {
         m.mapping.active_or_candidates_mask &= !candidate_layouts;
     }
 }
-fn gettok(m: &mut matcher, s: &mut Scanner) -> rules_token {
+fn gettok(m: &mut matcher, s: &mut Scanner) -> u32 {
     lex(s, &mut m.val)
 }
 fn matcher_match(m: &mut matcher, s: &mut Scanner, include_depth: u32, _file_name: &str) -> bool {
     let mut eof_ok = false;
-    let mut tok: rules_token;
+    let mut tok: u32;
 
     '_initial: loop {
         tok = gettok(m, s);
@@ -6555,7 +6539,7 @@ fn matcher_match(m: &mut matcher, s: &mut Scanner, include_depth: u32, _file_nam
         match tok as u32 {
             11 => {}
             _ => {
-                let loc: scanner_loc = s.token_location();
+                let loc: ScannerLoc = s.token_location();
                 log::error!(
                     "[XKB-{:03}] {}:{}:{}: unexpected token\n",
                     XKB_ERROR_INVALID_RULES_SYNTAX as i32,
@@ -6576,13 +6560,13 @@ fn read_rules_file(
 ) -> bool {
     let mut scanner = Scanner::new(file_data, path);
     if !scanner.check_supported_char_encoding() {
-        let loc: scanner_loc = scanner.token_location();
+        let loc: ScannerLoc = scanner.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
                 &scanner.file_name,
                 loc.line,
                 loc.column);
-        let loc_0: scanner_loc = scanner.token_location();
+        let loc_0: ScannerLoc = scanner.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
                 XKB_ERROR_INVALID_FILE_ENCODING as i32,
                 &scanner.file_name,
@@ -6789,7 +6773,5 @@ pub(crate) fn xkb_components_from_rules_names(
 ) -> bool {
     let mut matcher = matcher_new_from_names(ctx, rmlvo);
     let rules_str = rmlvo.rules.to_str().unwrap_or("");
-    let ret: bool = xkb_resolve_rules(rules_str, &mut matcher, out, explicit_layouts);
-    drop(matcher);
-    ret
+    xkb_resolve_rules(rules_str, &mut matcher, out, explicit_layouts)
 }

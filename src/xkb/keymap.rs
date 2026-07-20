@@ -1,4 +1,3 @@
-#![allow(clippy::incompatible_msrv, clippy::type_complexity)]
 use std::rc::Rc;
 
 pub use super::shared_types::XKB_KEYMAP_COMPILE_FLAGS_VALUES;

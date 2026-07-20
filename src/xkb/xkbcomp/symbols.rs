@@ -1,10 +1,3 @@
-#![allow(
-    dead_code,
-    clippy::too_many_arguments,
-    clippy::needless_range_loop,
-    clippy::if_same_then_else,
-    clippy::unnecessary_unwrap
-)]
 use super::super::keymap::{action_type_text, keysym_text, xkb_escape_map_name};
 use super::super::keymap::{
     lookup_string, mod_mask_text, simatch_text, CTRL_MASK_NAMES, GROUP_COMPONENT_MASK_NAMES,
@@ -68,7 +61,6 @@ pub(crate) const _KEY_REPEAT_NUM_ENTRIES: u32 = 3;
 pub(crate) const KEY_REPEAT_NO: u32 = 2;
 pub(crate) const KEY_REPEAT_YES: u32 = 1;
 pub(crate) const KEY_REPEAT_UNDEFINED: u32 = 0;
-pub(crate) const KEY_FIELD_ALL: u32 = 31;
 pub(crate) const KEY_FIELD_OVERLAY: u32 = 16;
 pub(crate) const KEY_FIELD_VMODMAP: u32 = 8;
 pub(crate) const KEY_FIELD_GROUPINFO: u32 = 4;
@@ -2428,7 +2420,7 @@ impl Default for CompatInfo {
 impl CompatInfo {
     pub(crate) fn new() -> Self {
         let zeroed_led = LedInfo {
-            defined: 0 as led_field,
+            defined: 0 as u32,
             merge: MERGE_DEFAULT,
             led: XkbLed {
                 name: 0,
@@ -2445,7 +2437,7 @@ impl CompatInfo {
             errorCount: 0,
             include_depth: 0,
             default_interp: SymInterpInfo {
-                defined: 0 as si_field,
+                defined: 0 as u32,
                 merge: MERGE_DEFAULT,
                 interp: XkbSymInterpret {
                     sym: 0,
@@ -2481,26 +2473,24 @@ impl CompatInfo {
 }
 #[derive(Copy, Clone)]
 pub(crate) struct LedInfo {
-    pub(crate) defined: led_field,
+    pub(crate) defined: u32,
     pub(crate) merge: MergeMode,
     pub(crate) led: XkbLed,
 }
-pub(crate) type led_field = u32;
-pub(crate) const LED_FIELD_CTRLS: led_field = 4;
-pub(crate) const LED_FIELD_GROUPS: led_field = 2;
-pub(crate) const LED_FIELD_MODS: led_field = 1;
+pub(crate) const LED_FIELD_CTRLS: u32 = 4;
+pub(crate) const LED_FIELD_GROUPS: u32 = 2;
+pub(crate) const LED_FIELD_MODS: u32 = 1;
 // C2Rust_Unnamed_18 removed: replaced by Vec<SymInterpInfo>
 #[derive(Clone)]
 pub(crate) struct SymInterpInfo {
-    pub(crate) defined: si_field,
+    pub(crate) defined: u32,
     pub(crate) merge: MergeMode,
     pub(crate) interp: XkbSymInterpret,
 }
-pub(crate) type si_field = u32;
-pub(crate) const SI_FIELD_LEVEL_ONE_ONLY: si_field = 8;
-pub(crate) const SI_FIELD_AUTO_REPEAT: si_field = 4;
-pub(crate) const SI_FIELD_ACTION: si_field = 2;
-pub(crate) const SI_FIELD_VIRTUAL_MOD: si_field = 1;
+pub(crate) const SI_FIELD_LEVEL_ONE_ONLY: u32 = 8;
+pub(crate) const SI_FIELD_AUTO_REPEAT: u32 = 4;
+pub(crate) const SI_FIELD_ACTION: u32 = 2;
+pub(crate) const SI_FIELD_VIRTUAL_MOD: u32 = 1;
 // C2Rust_Unnamed_19 removed: replaced by Vec<XkbSymInterpret>
 pub(crate) struct collect {
     pub(crate) sym_interprets: Vec<XkbSymInterpret>,
@@ -2600,19 +2590,19 @@ fn ClearCompatInfo(info: &mut CompatInfo) {
     info.interps.clear();
 }
 fn UseNewInterpField(
-    field: si_field,
-    old: si_field,
-    new: si_field,
+    field: u32,
+    old: u32,
+    new: u32,
     clobber: bool,
     report: bool,
-    collide: &mut si_field,
+    collide: &mut u32,
 ) -> bool {
     if old & field == 0 {
         return new & field != 0;
     }
     if new & field != 0 {
         if report {
-            *collide = (*collide | field) as si_field;
+            *collide = (*collide | field) as u32;
         }
         return clobber;
     }
@@ -2628,7 +2618,7 @@ fn MergeInterp(
     let clobber: bool = new.merge != MERGE_AUGMENT;
     let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
     let report: bool = same_file as i32 != 0 && verbosity > 0_i32 || verbosity > 9_i32;
-    let mut collide: si_field = 0 as si_field;
+    let mut collide: u32 = 0 as u32;
     if new.merge == MERGE_REPLACE {
         if report {
             log::warn!(
@@ -2648,7 +2638,7 @@ fn MergeInterp(
         &mut collide,
     ) {
         old.interp.virtual_mod = new.interp.virtual_mod;
-        old.defined = (old.defined | SI_FIELD_VIRTUAL_MOD) as si_field;
+        old.defined = (old.defined | SI_FIELD_VIRTUAL_MOD) as u32;
     }
     if UseNewInterpField(
         SI_FIELD_ACTION,
@@ -2669,7 +2659,7 @@ fn MergeInterp(
         } else {
             old.interp.action = new.interp.action;
         }
-        old.defined = (old.defined | SI_FIELD_ACTION) as si_field;
+        old.defined = (old.defined | SI_FIELD_ACTION) as u32;
     }
     if UseNewInterpField(
         SI_FIELD_AUTO_REPEAT,
@@ -2680,7 +2670,7 @@ fn MergeInterp(
         &mut collide,
     ) {
         old.interp.repeat = new.interp.repeat;
-        old.defined = (old.defined | SI_FIELD_AUTO_REPEAT) as si_field;
+        old.defined = (old.defined | SI_FIELD_AUTO_REPEAT) as u32;
     }
     if UseNewInterpField(
         SI_FIELD_LEVEL_ONE_ONLY,
@@ -2691,7 +2681,7 @@ fn MergeInterp(
         &mut collide,
     ) {
         old.interp.level_one_only = new.interp.level_one_only;
-        old.defined = (old.defined | SI_FIELD_LEVEL_ONE_ONLY) as si_field;
+        old.defined = (old.defined | SI_FIELD_LEVEL_ONE_ONLY) as u32;
     }
     if collide as u64 != 0 {
         log::warn!(
@@ -2778,19 +2768,19 @@ fn ResolveStateAndPredicate(
     ExprResolveModMask(ki.ctx(), resolve_expr, MOD_REAL, &info.mods, mods_rtrn)
 }
 fn UseNewLEDField(
-    field: led_field,
-    old: led_field,
-    new: led_field,
+    field: u32,
+    old: u32,
+    new: u32,
     clobber: bool,
     report: bool,
-    collide: &mut led_field,
+    collide: &mut u32,
 ) -> bool {
     if old & field == 0 {
         return new & field != 0;
     }
     if new & field != 0 {
         if report {
-            *collide = (*collide | field) as led_field;
+            *collide = (*collide | field) as u32;
         }
         return clobber;
     }
@@ -2803,7 +2793,7 @@ fn MergeLedMap(
     new: &mut LedInfo,
     same_file: bool,
 ) -> bool {
-    let mut collide: led_field;
+    let mut collide: u32;
     let clobber: bool = new.merge != MERGE_AUGMENT;
     let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
     let report: bool = same_file as i32 != 0 && verbosity > 0_i32 || verbosity > 9_i32;
@@ -2814,7 +2804,7 @@ fn MergeLedMap(
         && old.led.which_mods == new.led.which_mods
         && old.led.which_groups as i32 == new.led.which_groups as i32
     {
-        old.defined = (old.defined | new.defined) as led_field;
+        old.defined = (old.defined | new.defined) as u32;
         return true;
     }
     if new.merge == MERGE_REPLACE {
@@ -2827,7 +2817,7 @@ fn MergeLedMap(
         *old = *new;
         return true;
     }
-    collide = 0 as led_field;
+    collide = 0 as u32;
     if UseNewLEDField(
         LED_FIELD_MODS,
         old.defined,
@@ -2838,7 +2828,7 @@ fn MergeLedMap(
     ) {
         old.led.which_mods = new.led.which_mods;
         old.led.mods = new.led.mods;
-        old.defined = (old.defined | LED_FIELD_MODS) as led_field;
+        old.defined = (old.defined | LED_FIELD_MODS) as u32;
     }
     if UseNewLEDField(
         LED_FIELD_GROUPS,
@@ -2851,7 +2841,7 @@ fn MergeLedMap(
         old.led.which_groups = new.led.which_groups;
         old.led.groups = new.led.groups;
         old.led.pending_groups = new.led.pending_groups;
-        old.defined = (old.defined | LED_FIELD_GROUPS) as led_field;
+        old.defined = (old.defined | LED_FIELD_GROUPS) as u32;
     }
     if UseNewLEDField(
         LED_FIELD_CTRLS,
@@ -2862,7 +2852,7 @@ fn MergeLedMap(
         &mut collide,
     ) {
         old.led.ctrls = new.led.ctrls;
-        old.defined = (old.defined | LED_FIELD_CTRLS) as led_field;
+        old.defined = (old.defined | LED_FIELD_CTRLS) as u32;
     }
     if collide as u64 != 0 {
         log::warn!(
@@ -3081,7 +3071,7 @@ fn SetInterpField(
                 }
             }
         }
-        si.defined = (si.defined | SI_FIELD_ACTION) as si_field;
+        si.defined = (si.defined | SI_FIELD_ACTION) as u32;
     } else if field.eq_ignore_ascii_case("virtualmodifier")
         || field.eq_ignore_ascii_case("virtualmod")
     {
@@ -3093,7 +3083,7 @@ fn SetInterpField(
             return ReportSIBadType(info, ki, si, field, "virtual modifier");
         }
         si.interp.virtual_mod = ndx;
-        si.defined = (si.defined | SI_FIELD_VIRTUAL_MOD) as si_field;
+        si.defined = (si.defined | SI_FIELD_VIRTUAL_MOD) as u32;
     } else if field.eq_ignore_ascii_case("repeat") {
         let mut set: bool = false;
         if arrayNdx.is_some() {
@@ -3103,7 +3093,7 @@ fn SetInterpField(
             return ReportSIBadType(info, ki, si, field, "boolean");
         }
         si.interp.repeat = set;
-        si.defined = (si.defined | SI_FIELD_AUTO_REPEAT) as si_field;
+        si.defined = (si.defined | SI_FIELD_AUTO_REPEAT) as u32;
     } else if field.eq_ignore_ascii_case("locking") {
         log::debug!("The \"locking\" field in symbol interpretation is unsupported; Ignored\n");
     } else if field.eq_ignore_ascii_case("usemodmap") || field.eq_ignore_ascii_case("usemodmapmods")
@@ -3116,7 +3106,7 @@ fn SetInterpField(
             return ReportSIBadType(info, ki, si, field, "level specification");
         }
         si.interp.level_one_only = val != 0;
-        si.defined = (si.defined | SI_FIELD_LEVEL_ONE_ONLY) as si_field;
+        si.defined = (si.defined | SI_FIELD_LEVEL_ONE_ONLY) as u32;
     } else {
         report_bad_field("symbol interpretation", field, &siText(si, info, ki));
         return ki.strict & PARSER_NO_UNKNOWN_INTERPRET_FIELDS == 0;
@@ -3145,7 +3135,7 @@ fn SetLedMapField(
         ) {
             return ReportLedBadType(info, ki, ledi, field, "modifier mask");
         }
-        ledi.defined = (ledi.defined | LED_FIELD_MODS) as led_field;
+        ledi.defined = (ledi.defined | LED_FIELD_MODS) as u32;
     } else if field.eq_ignore_ascii_case("groups") {
         let mut mask: u32 = 0_u32;
         if arrayNdx.is_some() {
@@ -3169,7 +3159,7 @@ fn SetLedMapField(
             ledi.led.pending_groups = false;
         }
         ledi.led.groups = mask;
-        ledi.defined = (ledi.defined | LED_FIELD_GROUPS) as led_field;
+        ledi.defined = (ledi.defined | LED_FIELD_GROUPS) as u32;
     } else if field.eq_ignore_ascii_case("controls") || field.eq_ignore_ascii_case("ctrls") {
         let mut mask_0: u32 = 0_u32;
         if arrayNdx.is_some() {
@@ -3185,7 +3175,7 @@ fn SetLedMapField(
             return ReportLedBadType(info, ki, ledi, field, "controls mask");
         }
         ledi.led.ctrls = mask_0 as XkbActionControls;
-        ledi.defined = (ledi.defined | LED_FIELD_CTRLS) as led_field;
+        ledi.defined = (ledi.defined | LED_FIELD_CTRLS) as u32;
     } else if field.eq_ignore_ascii_case("allowexplicit") {
         log::debug!(
             "The \"allowExplicit\" field in indicator statements is unsupported; Ignored\n"
@@ -3254,7 +3244,7 @@ fn HandleCompatGlobalVar(
         let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
         if !elem.is_empty() && elem.eq_ignore_ascii_case("interpret") {
             let mut temp: SymInterpInfo = SymInterpInfo {
-                defined: 0 as si_field,
+                defined: 0 as u32,
                 merge: MERGE_DEFAULT,
                 interp: XkbSymInterpret {
                     sym: 0,
@@ -3285,7 +3275,7 @@ fn HandleCompatGlobalVar(
             }
         } else if !elem.is_empty() && elem.eq_ignore_ascii_case("indicator") {
             let mut temp_0: LedInfo = LedInfo {
-                defined: 0 as led_field,
+                defined: 0 as u32,
                 merge: MERGE_DEFAULT,
                 led: XkbLed {
                     name: 0,
@@ -3378,7 +3368,7 @@ fn HandleInterpDef(info: &mut CompatInfo, ki: &mut XkbKeymapInfo<'_>, def: &mut 
     let mut pred: u32 = MATCH_NONE;
     let mut mods: u32 = 0;
     let mut si: SymInterpInfo = SymInterpInfo {
-        defined: 0 as si_field,
+        defined: 0 as u32,
         merge: MERGE_DEFAULT,
         interp: XkbSymInterpret {
             sym: 0,

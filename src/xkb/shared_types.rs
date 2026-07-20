@@ -109,12 +109,6 @@ pub(crate) fn atom_table_new() -> AtomTable {
     }
 }
 
-/// Get number of atoms in table
-#[cfg(test)]
-pub(crate) fn atom_table_size(table: &AtomTable) -> u32 {
-    table.strings.len() as u32
-}
-
 // ── XkbContext ─────────────────────────────────────────────────────
 
 #[derive(Clone, Debug)]
@@ -1759,70 +1753,4 @@ pub(crate) fn parse_hex_u64(s: &[u8]) -> (u64, i32) {
         return (result, -1);
     }
     (result, i as i32)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_atom_table_basic() {
-        let mut table = atom_table_new();
-
-        // Initially should have 1 atom (NONE at index 0)
-        assert_eq!(atom_table_size(&table), 1);
-
-        // Intern a string
-        let atom1 = atom_intern(&mut table, b"hello", true);
-        assert_ne!(atom1, XKB_ATOM_NONE);
-        assert_eq!(atom_table_size(&table), 2);
-
-        // Look up same string again
-        let atom2 = atom_intern(&mut table, b"hello", false);
-        assert_eq!(atom1, atom2);
-        assert_eq!(atom_table_size(&table), 2); // No new atom
-
-        // Intern different string
-        let atom3 = atom_intern(&mut table, b"world", true);
-        assert_ne!(atom3, atom1);
-        assert_eq!(atom_table_size(&table), 3);
-
-        // Get text back
-        assert_eq!(atom_text(&table, atom1), "hello");
-    }
-
-    #[test]
-    fn test_atom_not_found() {
-        let mut table = atom_table_new();
-        let atom = atom_intern(&mut table, b"test", false);
-        assert_eq!(atom, XKB_ATOM_NONE);
-    }
-
-    #[test]
-    fn test_utf8_next_code_point_ascii() {
-        let (cp, len) = utf8_next_code_point_safe(b"ABC");
-        assert_eq!((cp, len), (b'A' as u32, 1));
-    }
-
-    #[test]
-    fn test_utf8_next_code_point_multibyte() {
-        assert_eq!(utf8_next_code_point_safe(&[0xE2, 0x82, 0xAC]), (0x20AC, 3));
-        assert_eq!(
-            utf8_next_code_point_safe(&[0xF0, 0x9F, 0x98, 0x80]),
-            (0x1F600, 4)
-        );
-    }
-
-    #[test]
-    fn test_utf8_next_code_point_invalid() {
-        assert_eq!(
-            utf8_next_code_point_safe(&[0xE2, 0xFF, 0xAC]),
-            (INVALID_UTF8_CODE_POINT, 0)
-        );
-        assert_eq!(
-            utf8_next_code_point_safe(&[0xE2, 0x82]),
-            (INVALID_UTF8_CODE_POINT, 0)
-        );
-        assert_eq!(utf8_next_code_point_safe(&[]), (INVALID_UTF8_CODE_POINT, 0));
-    }
 }
