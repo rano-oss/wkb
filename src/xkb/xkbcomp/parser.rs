@@ -2217,10 +2217,7 @@ pub(crate) fn led_name_create(ndx: i64, name: Option<Box<ExprDef>>) -> Box<LedNa
 }
 
 pub(crate) fn unknown_statement_create(type_0: StmtType, name: &str) -> Box<UnknownStatement> {
-    Box::new(UnknownStatement {
-        _stmt_type: type_0,
-        _name: name.to_string(),
-    })
+    Box::new(UnknownStatement { _stmt_type: type_0, _name: name.to_string() })
 }
 
 pub(crate) fn include_create(
@@ -2886,112 +2883,58 @@ pub(crate) enum YYValue<'a> {
 // Helper to take a value out and replace with None
 impl<'a> YYValue<'a> {
     pub(crate) fn take_expr(&mut self) -> Option<Box<ExprDef>> {
-        match std::mem::take(self) {
-            YYValue::Expr(e) => Some(e),
-            _ => Option::None,
-        }
+        match std::mem::take(self) { YYValue::Expr(e) => Some(e), _ => None }
     }
     pub(crate) fn take_expr_list(&mut self) -> Vec<Box<ExprDef>> {
-        match std::mem::take(self) {
-            YYValue::ExprList(v) => v,
-            _ => Vec::new(),
-        }
+        match std::mem::take(self) { YYValue::ExprList(v) => v, _ => Vec::new() }
     }
     pub(crate) fn take_var(&mut self) -> Option<Box<VarDef>> {
-        match std::mem::take(self) {
-            YYValue::Var(v) => Some(v),
-            _ => Option::None,
-        }
+        match std::mem::take(self) { YYValue::Var(v) => Some(v), _ => None }
     }
     pub(crate) fn take_var_list(&mut self) -> Vec<Box<VarDef>> {
-        match std::mem::take(self) {
-            YYValue::VarList(v) => v,
-            _ => Vec::new(),
-        }
+        match std::mem::take(self) { YYValue::VarList(v) => v, _ => Vec::new() }
     }
     pub(crate) fn take_vmod(&mut self) -> Option<Box<VModDef>> {
-        match std::mem::take(self) {
-            YYValue::VMod(v) => Some(v),
-            _ => Option::None,
-        }
+        match std::mem::take(self) { YYValue::VMod(v) => Some(v), _ => None }
     }
     pub(crate) fn take_vmod_list(&mut self) -> Vec<Box<VModDef>> {
-        match std::mem::take(self) {
-            YYValue::VModList(v) => v,
-            _ => Vec::new(),
-        }
+        match std::mem::take(self) { YYValue::VModList(v) => v, _ => Vec::new() }
     }
     pub(crate) fn take_file(&mut self) -> Option<Box<XkbFile>> {
-        match std::mem::take(self) {
-            YYValue::File(f) => Some(f),
-            _ => Option::None,
-        }
+        match std::mem::take(self) { YYValue::File(f) => Some(f), _ => None }
     }
     pub(crate) fn take_file_list(&mut self) -> Vec<Box<XkbFile>> {
-        match std::mem::take(self) {
-            YYValue::FileList(v) => v,
-            _ => Vec::new(),
-        }
+        match std::mem::take(self) { YYValue::FileList(v) => v, _ => Vec::new() }
     }
     pub(crate) fn take_stmt_list(&mut self) -> Vec<Statement> {
-        match std::mem::take(self) {
-            YYValue::StmtList(v) => v,
-            _ => Vec::new(),
-        }
+        match std::mem::take(self) { YYValue::StmtList(v) => v, _ => Vec::new() }
     }
     pub(crate) fn as_num(&self) -> i64 {
-        match self {
-            YYValue::Num(n) => *n,
-            _ => 0,
-        }
+        match self { YYValue::Num(n) => *n, _ => 0 }
     }
     pub(crate) fn as_atom(&self) -> u32 {
-        match self {
-            YYValue::Atom(a) => *a,
-            _ => 0,
-        }
+        match self { YYValue::Atom(a) => *a, _ => 0 }
     }
     pub(crate) fn as_merge(&self) -> MergeMode {
-        match self {
-            YYValue::Merge(m) => *m,
-            _ => MERGE_DEFAULT,
-        }
+        match self { YYValue::Merge(m) => *m, _ => MERGE_DEFAULT }
     }
     pub(crate) fn as_map_flags(&self) -> XkbMapFlags {
-        match self {
-            YYValue::MapFlags(f) => *f,
-            _ => 0,
-        }
+        match self { YYValue::MapFlags(f) => *f, _ => 0 }
     }
     pub(crate) fn as_file_type(&self) -> u32 {
-        match self {
-            YYValue::FileType(f) => *f,
-            _ => 0,
-        }
+        match self { YYValue::FileType(f) => *f, _ => 0 }
     }
     pub(crate) fn as_keysym(&self) -> u32 {
-        match self {
-            YYValue::Keysym(k) => *k,
-            _ => 0,
-        }
+        match self { YYValue::Keysym(k) => *k, _ => 0 }
     }
     pub(crate) fn as_no_sym_or_action_list(&self) -> u32 {
-        match self {
-            YYValue::NoSymbolOrActionList(n) => *n,
-            _ => 0,
-        }
+        match self { YYValue::NoSymbolOrActionList(n) => *n, _ => 0 }
     }
     pub(crate) fn as_sval(&self) -> Sval<'a> {
-        match self {
-            YYValue::Sval(s) => *s,
-            _ => Sval::EMPTY,
-        }
+        match self { YYValue::Sval(s) => *s, _ => Sval::EMPTY }
     }
     pub(crate) fn take_str(&mut self) -> String {
-        match std::mem::take(self) {
-            YYValue::Str(s) => s,
-            _ => String::new(),
-        }
+        match std::mem::take(self) { YYValue::Str(s) => s, _ => String::new() }
     }
 }
 
@@ -3907,14 +3850,8 @@ fn update_derived_keymap_fields(info: &mut XkbKeymapInfo<'_>) -> bool {
         } else {
             1_u32
         };
-        info.lookup.group_index_names[GROUP_INDEX_NAME_LAST as usize] = LookupEntry {
-            name: GROUP_LAST_INDEX_NAME,
-            value: num_groups,
-        };
-        info.lookup.group_mask_names[GROUP_MASK_NAME_LAST as usize] = LookupEntry {
-            name: GROUP_LAST_INDEX_NAME,
-            value: 1_u32 << num_groups.wrapping_sub(1_u32),
-        };
+        info.lookup.group_index_names[GROUP_INDEX_NAME_LAST as usize] = LookupEntry { name: GROUP_LAST_INDEX_NAME, value: num_groups };
+        info.lookup.group_mask_names[GROUP_MASK_NAME_LAST as usize] = LookupEntry { name: GROUP_LAST_INDEX_NAME, value: 1_u32 << num_groups.wrapping_sub(1_u32) };
         let mut i: u32 = 0_u32;
         while (i as usize) < info.keymap.sym_interprets.len() {
             let num_actions = info.keymap.sym_interprets[i as usize].num_actions;
@@ -4194,10 +4131,7 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
         },
         lookup: XkbcompLookup {
             group_index_names: [
-                LookupEntry {
-                    name: "first",
-                    value: 1_u32,
-                },
+                LookupEntry { name: "first", value: 1_u32 },
                 LookupEntry {
                     name: if km_num_groups != 0 {
                         GROUP_LAST_INDEX_NAME
@@ -4206,24 +4140,12 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
                     },
                     value: km_num_groups,
                 },
-                LookupEntry {
-                    name: "",
-                    value: 0_u32,
-                },
+                LookupEntry { name: "", value: 0_u32 },
             ],
             group_mask_names: [
-                LookupEntry {
-                    name: "none",
-                    value: 0_u32,
-                },
-                LookupEntry {
-                    name: "first",
-                    value: 0x1_u32,
-                },
-                LookupEntry {
-                    name: "all",
-                    value: XKB_ALL_GROUPS as u32,
-                },
+                LookupEntry { name: "none", value: 0_u32 },
+                LookupEntry { name: "first", value: 0x1_u32 },
+                LookupEntry { name: "all", value: XKB_ALL_GROUPS as u32 },
                 LookupEntry {
                     name: if km_num_groups != 0 {
                         GROUP_LAST_INDEX_NAME
@@ -4236,10 +4158,7 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
                         0_u32
                     },
                 },
-                LookupEntry {
-                    name: "",
-                    value: 0_u32,
-                },
+                LookupEntry { name: "", value: 0_u32 },
             ],
         },
         pending_computations: Vec::new(),
@@ -4286,10 +4205,7 @@ fn vec_append_nul_terminated(v: &mut Vec<i8>, src: &[u8]) {
 /// Index-based sval for scanner input. Used in Lvalue/rule to avoid
 /// lifetime issues across include boundaries. Reconstruct sval via to_sval().
 #[derive(Copy, Clone, Default)]
-pub(crate) struct SvalIdx {
-    start: usize,
-    end: usize,
-}
+pub(crate) struct SvalIdx { start: usize, end: usize }
 impl SvalIdx {
     const EMPTY: SvalIdx = SvalIdx { start: 0, end: 0 };
     #[inline]
@@ -4363,24 +4279,13 @@ pub(crate) struct Mapping {
 }
 #[derive(Copy, Clone)]
 pub(crate) enum LayoutIdx {
-    Single {
-        layout_idx: u32,
-        variant_idx: u32,
-    },
-    Range {
-        layout_idx_min: u32,
-        layout_idx_max: u32,
-    },
-    Index {
-        layout_idx_min: u32,
-    },
+    Single { layout_idx: u32, variant_idx: u32 },
+    Range { layout_idx_min: u32, layout_idx_max: u32 },
+    Index { layout_idx_min: u32 },
 }
 impl Default for LayoutIdx {
     fn default() -> Self {
-        LayoutIdx::Single {
-            layout_idx: 0,
-            variant_idx: 0,
-        }
+        LayoutIdx::Single { layout_idx: 0, variant_idx: 0 }
     }
 }
 impl LayoutIdx {
@@ -4439,14 +4344,7 @@ pub(crate) const LAYOUT_INDEX_LATER: u32 = 4294967293;
 
 impl Default for Rule {
     fn default() -> Self {
-        Rule {
-            mlvo_value_at_pos: [SvalIdx::EMPTY; 4],
-            match_type_at_pos: [0; 4],
-            kccgst_value_at_pos: [SvalIdx::EMPTY; 5],
-            num_mlvo_values: 0,
-            num_kccgst_values: 0,
-            skip: false,
-        }
+        Rule { mlvo_value_at_pos: [SvalIdx::EMPTY; 4], match_type_at_pos: [0; 4], kccgst_value_at_pos: [SvalIdx::EMPTY; 5], num_mlvo_values: 0, num_kccgst_values: 0, skip: false }
     }
 }
 impl Default for Lvalue {
@@ -4525,10 +4423,7 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         return TOK_WILD_CARD_ANY;
     }
     if s.chr('$' as i32 as i8) {
-        val.string = SvalIdx {
-            start: s.pos,
-            end: s.pos,
-        };
+        val.string = SvalIdx { start: s.pos, end: s.pos };
         while is_ident(s.peek()) {
             s.next_byte();
             val.string.end += 1;
@@ -4543,10 +4438,7 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         return TOK_INCLUDE;
     }
     if is_ident(s.peek()) {
-        val.string = SvalIdx {
-            start: s.pos,
-            end: s.pos,
-        };
+        val.string = SvalIdx { start: s.pos, end: s.pos };
         while is_ident(s.peek()) {
             s.next_byte();
             val.string.end += 1;
@@ -4605,9 +4497,7 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
         let mut val_0 = MatchedSval {
             matched: false,
             layout: OPTIONS_MATCH_ALL_GROUPS as u32,
-            sval: Sval {
-                data: &bytes[start..start],
-            },
+            sval: Sval { data: &bytes[start..start] },
         };
         while pos < bytes.len()
             && bytes[pos] != b','
@@ -4695,10 +4585,7 @@ fn matcher_new_from_names<'a>(
     m
 }
 fn matcher_group_start_new(m: &mut Matcher, name: &[u8]) {
-    let group: Group = Group {
-        name: name.to_vec(),
-        elements: Vec::new(),
-    };
+    let group: Group = Group { name: name.to_vec(), elements: Vec::new() };
     m.groups.push(group);
 }
 fn matcher_group_add_element(m: &mut Matcher, _s: &mut Scanner, element: &[u8]) {
@@ -4773,10 +4660,7 @@ fn matcher_mapping_start_new(m: &mut Matcher) {
         m.mapping.kccgst_at_pos[i_0 as usize] = _KCCGST_NUM_ENTRIES;
         i_0 = i_0.wrapping_add(1);
     }
-    m.mapping.layout = LayoutIdx::Single {
-        layout_idx: XKB_LAYOUT_INVALID,
-        variant_idx: XKB_LAYOUT_INVALID,
-    };
+    m.mapping.layout = LayoutIdx::Single { layout_idx: XKB_LAYOUT_INVALID, variant_idx: XKB_LAYOUT_INVALID };
     m.mapping.num_kccgst = 0_u8;
     m.mapping.num_mlvo = m.mapping.num_kccgst;
     m.mapping.defined_mlvo_mask = 0_u8;
@@ -4813,27 +4697,12 @@ fn extract_layout_index(s: &[u8], out: &mut u32) -> i32 {
     parse_layout_int_index(s, out)
 }
 fn extract_mapping_layout_index(s: &[u8], out: &mut u32) -> i32 {
-    struct LayoutIndexEntry {
-        name: &'static [u8],
-        range: u32,
-    }
+    struct LayoutIndexEntry { name: &'static [u8], range: u32 }
     static NAMES: [LayoutIndexEntry; 4] = [
-        LayoutIndexEntry {
-            name: b"single]",
-            range: LAYOUT_INDEX_SINGLE,
-        },
-        LayoutIndexEntry {
-            name: b"first]",
-            range: LAYOUT_INDEX_FIRST,
-        },
-        LayoutIndexEntry {
-            name: b"later]",
-            range: LAYOUT_INDEX_LATER,
-        },
-        LayoutIndexEntry {
-            name: b"any]",
-            range: LAYOUT_INDEX_ANY,
-        },
+        LayoutIndexEntry { name: b"single]", range: LAYOUT_INDEX_SINGLE },
+        LayoutIndexEntry { name: b"first]", range: LAYOUT_INDEX_FIRST },
+        LayoutIndexEntry { name: b"later]", range: LAYOUT_INDEX_LATER },
+        LayoutIndexEntry { name: b"any]", range: LAYOUT_INDEX_ANY },
     ];
     if s.len() < 3 || s[0] != b'[' {
         *out = XKB_LAYOUT_INVALID;

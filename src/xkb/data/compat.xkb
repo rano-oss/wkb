@@ -1,0 +1,51 @@
+xkb_compat "wkb" {
+	virtual_modifiers NumLock,Alt,LevelThree,LevelFive;
+
+	interpret Any+AnyOf(all) {
+		action= SetMods(modifiers=modMapMods,clearLocks);
+	};
+	interpret Shift_L+AnyOf(all) {
+		action= SetMods(modifiers=Shift,clearLocks);
+	};
+	interpret Shift_R+AnyOf(all) {
+		action= SetMods(modifiers=Shift,clearLocks);
+	};
+	interpret Caps_Lock+AnyOf(all) {
+		action= LockMods(modifiers=Lock);
+	};
+	interpret Num_Lock+AnyOf(all) {
+		action= LockMods(modifiers=NumLock);
+	};
+	interpret Control_L+AnyOf(all) {
+		action= SetMods(modifiers=Control,clearLocks);
+	};
+	interpret Control_R+AnyOf(all) {
+		action= SetMods(modifiers=Control,clearLocks);
+	};
+	interpret Alt_L+AnyOf(all) {
+		action= SetMods(modifiers=Alt,clearLocks);
+	};
+	interpret Super_L+AnyOf(all) {
+		action= SetMods(modifiers=Mod4,clearLocks);
+	};
+	interpret Super_R+AnyOf(all) {
+		action= SetMods(modifiers=Mod4,clearLocks);
+	};
+	interpret ISO_Level3_Shift+AnyOf(all) {
+		action= SetMods(modifiers=LevelThree,clearLocks);
+	};
+	interpret Scroll_Lock+AnyOf(all) {
+		action= LockMods(modifiers=Mod3);
+	};
+
+	indicator "Caps Lock" {
+		modifiers= Lock;
+	};
+	indicator "Num Lock" {
+		modifiers= NumLock;
+	};
+	indicator "Scroll Lock" {
+		modifiers= Mod3;
+	};
+};
+
