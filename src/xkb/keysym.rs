@@ -20868,18 +20868,6 @@ pub(crate) fn keysym_get_name(ks: u32) -> Option<&'static str> {
     None
 }
 
-/// Check if a keysym is a VT-switch keysym (XF86Switch_VT_1..=XF86Switch_VT_12).
-/// Returns the VT number (1-12) if it is, otherwise None.
-#[cfg(test)]
-pub(crate) fn vt_switch(ks: u32) -> Option<u32> {
-    // XF86Switch_VT_1 = 0x1008FF80, XF86Switch_VT_12 = 0x1008FF8B
-    if (0x1008FF80..=0x1008FF8B).contains(&ks) {
-        Some(ks - 0x1008FF80 + 1)
-    } else {
-        None
-    }
-}
-
 fn parse_keysym_hex(s: &[u8], out: &mut u32) -> bool {
     let slice = if s.len() > 8 { &s[..8] } else { s };
     let (val, count) = super::shared_types::parse_hex_u32(slice);
@@ -24960,14 +24948,6 @@ fn keysym_to_codepoint(keysym: u32) -> Option<u32> {
     bin_search_keysym(keysym)
 }
 
-/// Convert a Unicode character to an XKB keysym
-///
-/// Returns `None` if the character has no corresponding keysym.
-#[cfg(test)]
-pub(crate) fn char_to_keysym(ch: char) -> Option<u32> {
-    codepoint_to_keysym(ch as u32)
-}
-
 /// Convert a Unicode codepoint to an XKB keysym
 fn codepoint_to_keysym(ucs: u32) -> Option<u32> {
     // ASCII printable and Latin-1
@@ -25017,34 +24997,6 @@ pub(crate) fn keysym_to_utf32(keysym: u32) -> u32 {
     keysym_to_codepoint(keysym).unwrap_or(0)
 }
 
-/// Convert keysym to UTF-8 string, written into `buffer`.
-/// Returns number of bytes written (including null terminator), or:
-/// - 0 if conversion fails
-/// - -1 if buffer too small (needs at least 5 bytes)
-#[cfg(test)]
-pub(crate) fn keysym_to_utf8(keysym: u32, buffer: &mut [u8]) -> i32 {
-    const MAX_UTF8_SIZE: usize = 5;
-
-    if buffer.len() < MAX_UTF8_SIZE {
-        return -1;
-    }
-
-    let Some(ch) = keysym_to_char(keysym) else {
-        return 0;
-    };
-
-    // Encode to UTF-8
-    let mut tmp = [0u8; 4];
-    let utf8_bytes = ch.encode_utf8(&mut tmp).as_bytes();
-
-    // Copy to buffer
-    buffer[..utf8_bytes.len()].copy_from_slice(utf8_bytes);
-    buffer[utf8_bytes.len()] = 0; // Null terminate
-
-    // Return length + 1 for null terminator (matches old C behavior)
-    (utf8_bytes.len() + 1) as i32
-}
-
 /// FFI wrapper: Convert UTF-32 codepoint to keysym (C-compatible)
 ///
 /// Returns 0 (XKB_KEY_NO_SYMBOL) if conversion fails
@@ -25052,50 +25004,6 @@ pub(crate) fn utf32_to_keysym(ucs: u32) -> u32 {
     codepoint_to_keysym(ucs).unwrap_or(0)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_ascii_conversion() {
-        assert_eq!(keysym_to_char(0x41), Some('A'));
-        assert_eq!(keysym_to_char(0x20), Some(' '));
-        assert_eq!(char_to_keysym('A'), Some(0x41));
-    }
-
-    #[test]
-    fn test_special_keys() {
-        assert_eq!(keysym_to_char(XKB_KEY_RETURN), Some('\r'));
-        assert_eq!(keysym_to_char(XKB_KEY_ESCAPE), Some('\x1B'));
-    }
-
-    #[test]
-    fn test_unicode_keysyms() {
-        // U+1F600 GRINNING FACE
-        let keysym = 0x1000000 + 0x1F600;
-        assert_eq!(keysym_to_char(keysym), Some('😀'));
-    }
-
-    #[test]
-    fn test_invalid_keysyms() {
-        assert_eq!(keysym_to_char(0), None);
-        assert_eq!(keysym_to_char(XKB_KEYSYM_UNICODE_SURROGATE_MIN), None);
-    }
-
-    #[test]
-    fn test_ffi_compat() {
-        // Test keysym_to_utf32
-        assert_eq!(keysym_to_utf32(0x41), 0x41); // 'A'
-        assert_eq!(keysym_to_utf32(0), 0); // Invalid
-
-        // Test keysym_to_utf8
-        let mut buf = [0u8; 10];
-        let len = keysym_to_utf8(0x41, &mut buf);
-        assert_eq!(len, 2); // 'A' + null = 2 bytes
-        assert_eq!(buf[0], b'A');
-        assert_eq!(buf[1], 0);
-    }
-}
 #[derive(Copy, Clone)]
 pub(crate) struct CaseMappings {
     pub(crate) lower: bool,

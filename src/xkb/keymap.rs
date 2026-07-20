@@ -31,7 +31,6 @@ pub(crate) fn xkb_keymap_new_from_string(
     let bytes = string.to_bytes();
     let mut length = bytes.len();
     if bytes.is_empty() {
-        log::error!("{}: no buffer specified\n", "xkb_keymap_new_from_buffer");
         return None;
     }
     let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_buffer", format, flags)?;
@@ -361,17 +360,12 @@ pub(crate) const XKB_MOD_NAME_MOD5: &str = "Mod5";
 
 pub(crate) fn xkb_keymap_new(
     ctx: XkbContext,
-    func: &str,
+    _func: &str,
     format: u32,
     flags: u32,
 ) -> Option<Box<XkbKeymap>> {
     static XKB_KEYMAP_COMPILE_FLAGS: u32 = XKB_KEYMAP_COMPILE_FLAGS_VALUES;
     if flags & !XKB_KEYMAP_COMPILE_FLAGS != 0 {
-        log::error!(
-            "{}: unrecognized keymap compilation flags: 0x{:x}\n",
-            func,
-            flags & !XKB_KEYMAP_COMPILE_FLAGS
-        );
         return None;
     }
     let mut keymap = Box::new(XkbKeymap {
@@ -576,14 +570,12 @@ pub use super::shared_types::{XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_LOG_V
 fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> i32 {
     let is_dir = std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false);
     if is_dir {
-        log::info!("Include path added: {}\n", path);
         ctx.includes.push(path.to_string());
         return 1_i32;
     }
     if !path.is_empty() {
         ctx.failed_includes.push(path.to_string());
     }
-    log::info!("Include path failed: \"{}\"\n", path);
     0_i32
 }
 
@@ -617,8 +609,7 @@ fn add_direct_subdirectories(
 ) -> i32 {
     let dir = match std::fs::read_dir(path) {
         Ok(d) => d,
-        Err(e) => {
-            log::debug!("Include extensions path failed: {} ({})\n", path, e);
+        Err(_e) => {
             return 0_i32;
         }
     };
@@ -717,9 +708,6 @@ pub(crate) fn xkb_context_include_path_append_default(ctx: &mut XkbContext) -> i
         ret |= has_root as i32;
         if !has_root && !root.is_empty() {
             let legacy = DFLT_XKB_LEGACY_ROOT.to_string();
-            log::warn!("Root include path failed; fallback to \"{}\". The setup is probably misconfigured. Please ensure that \"{}\" is available in the environment.\n",
-                "/usr/share/X11/xkb",
-                root);
             ret |= context_include_path_append(ctx, &legacy);
         }
         ret
@@ -803,10 +791,6 @@ pub(crate) fn xkb_context_new(flags: XkbContextFlags) -> XkbContext {
         | XKB_CONTEXT_NO_SECURE_GETENV as i32)
         as XkbContextFlags;
     if flags & !XKB_CONTEXT_ALL_FLAGS != 0 {
-        log::error!(
-            "Invalid context flags: 0x{:x}\n",
-            flags & !XKB_CONTEXT_ALL_FLAGS
-        );
         return ctx;
     }
     ctx.use_environment_names = flags & XKB_CONTEXT_NO_ENVIRONMENT_NAMES == 0;
@@ -834,11 +818,6 @@ pub(crate) fn xkb_context_init_includes(ctx: &mut XkbContext) -> bool {
     if ctx.pending_default_includes {
         if ctx.failed_includes.is_empty() {
             if xkb_context_include_path_append_default(ctx) == 0 {
-                log::error!(
-                    "[XKB-{:03}] Failed to add any default include path (system path: {})\n",
-                    XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH as i32,
-                    xkb_context_include_path_get_system_path()
-                );
                 return false;
             }
             ctx.pending_default_includes = false;
@@ -854,12 +833,6 @@ pub(crate) fn xkb_context_num_failed_include_paths(ctx: &mut XkbContext) -> u32 
     } else {
         0_u32
     }
-}
-pub(crate) fn xkb_context_failed_include_path_get(ctx: &mut XkbContext, idx: u32) -> String {
-    if idx >= xkb_context_num_failed_include_paths(ctx) {
-        return "".to_string();
-    }
-    ctx.failed_includes.get(idx as usize).unwrap().clone()
 }
 
 pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbRuleNames) -> Rmlvo {
@@ -911,12 +884,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
                 (_, _, _) => std::ffi::CString::new("").unwrap(),
             }
         };
-        if !rmlvo.variant.as_bytes().is_empty() {
-            log::warn!("Layout not provided, but variant set to \"{}\": ignoring variant and using defaults for both: layout=\"{}\", variant=\"{}\".\n",
-                    rmlvo.variant.to_str().unwrap_or(""),
-                    rmlvo.layout.to_str().unwrap_or(""),
-                    variant.to_str().unwrap_or(""));
-        }
+        if !rmlvo.variant.as_bytes().is_empty() {}
         rmlvo.variant = variant;
         modified = (modified as u32 | RMLVO_VARIANT) as Rmlvo;
     }
@@ -960,7 +928,6 @@ pub use super::shared_types::{
     CONTROL_OVERLAY1, CONTROL_OVERLAY2, CONTROL_OVERLAY3, CONTROL_OVERLAY4, CONTROL_OVERLAY5,
     CONTROL_OVERLAY6, CONTROL_OVERLAY7, CONTROL_OVERLAY8, CONTROL_REPEAT, CONTROL_SLOW,
     CONTROL_STICKY_KEYS, MATCH_ALL, MATCH_ANY, MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE,
-    XKB_MOD_NONE,
 };
 pub(crate) fn lookup_string(tab: &[LookupEntry], string: &str, value_rtrn: &mut u32) -> bool {
     if string.is_empty() {
@@ -1407,18 +1374,7 @@ pub(crate) static SYM_INTERPRET_MATCH_MASK_NAMES: [LookupEntry; 6] = [
         value: 0_u32,
     },
 ];
-pub(crate) fn mod_index_text<'a>(ctx: &'a XkbContext, mods: &XkbModSet, ndx: u32) -> &'a str {
-    if ndx == XKB_MOD_INVALID {
-        return "none";
-    }
-    if ndx == XKB_MOD_NONE {
-        return "None";
-    }
-    if ndx >= mods.num_mods {
-        return "";
-    }
-    atom_text(&ctx.atom_table, mods.mods[ndx as usize].name)
-}
+
 pub(crate) fn action_type_text(type_0: u32) -> &'static str {
     let name: &'static str = lookup_value(&ACTION_TYPE_NAMES, type_0);
     if !name.is_empty() {

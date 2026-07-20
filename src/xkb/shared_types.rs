@@ -1050,9 +1050,6 @@ pub(crate) fn are_overlapping_overlays_supported(format: u32) -> bool {
 }
 
 // Error codes (from xkbcommon_errors_h)
-pub(crate) type XkbErrorCode = i32;
-pub(crate) const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX: XkbErrorCode = 237;
-pub(crate) const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK: XkbErrorCode = 60;
 pub(crate) const XKB_KEY_NO_SYMBOL: i32 = 0;
 
 // ── errno_base_h ──────────────────────────────────────────────────────
@@ -1072,80 +1069,11 @@ pub const XKB_LOG_VERBOSITY_DEFAULT: i32 = 0;
 
 pub(crate) const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
 pub(crate) const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;
-
-pub(crate) const XKB_ERROR_MALFORMED_NUMBER_LITERAL: u32 = 34;
-pub(crate) const XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES: u32 = 43;
-pub(crate) const XKB_ERROR_INTEGER_OVERFLOW: u32 = 52;
 pub(crate) const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_: u32 = 60;
-pub(crate) const XKB_ERROR_EXPECTED_ARRAY_ENTRY: u32 = 77;
-pub(crate) const XKB_ERROR_INVALID_NUMERIC_KEYSYM: u32 = 82;
-pub(crate) const XKB_WARNING_UNRECOGNIZED_KEYSYM: u32 = 107;
-pub(crate) const XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER: u32 = 123;
-pub(crate) const XKB_ERROR_INSUFFICIENT_BUFFER_SIZE: u32 = 134;
-pub(crate) const XKB_ERROR_WRONG_STATEMENT_TYPE: u32 = 150;
-pub(crate) const XKB_ERROR_INVALID_PATH: u32 = 161;
-pub(crate) const XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION: u32 = 172;
-pub(crate) const XKB_WARNING_CANNOT_INFER_KEY_TYPE: u32 = 183;
-pub(crate) const XKB_WARNING_INVALID_ESCAPE_SEQUENCE: u32 = 193;
-pub(crate) const XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT: u32 = 195;
-pub(crate) const XKB_ERROR_INVALID_INCLUDE_STATEMENT: u32 = 203;
-pub(crate) const XKB_ERROR_INVALID_MODMAP_ENTRY: u32 = 206;
-pub(crate) const XKB_ERROR_UNKNOWN_STATEMENT: u32 = 222;
 pub(crate) const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: u32 = 237;
-pub(crate) const XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES: u32 = 239;
-pub(crate) const XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT: u32 = 254;
-pub(crate) const XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY: u32 = 266;
-pub(crate) const XKB_WARNING_UNDEFINED_KEY_TYPE: u32 = 286;
-pub(crate) const XKB_WARNING_DEPRECATED_KEYSYM_NAME: u32 = 302;
-pub(crate) const XKB_WARNING_NON_BASE_GROUP_NAME: u32 = 305;
 pub(crate) const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: u32 = 312;
-pub(crate) const XKB_ERROR_INCLUDED_FILE_NOT_FOUND: u32 = 338;
-pub(crate) const XKB_ERROR_UNKNOWN_OPERATOR: u32 = 345;
-pub(crate) const XKB_ERROR_OVERLAPPING_OVERLAY: u32 = 355;
-pub(crate) const XKB_WARNING_UNSUPPORTED_LEGACY_ACTION: u32 = 362;
-pub(crate) const XKB_WARNING_DUPLICATE_ENTRY: u32 = 378;
-pub(crate) const XKB_ERROR_RECURSIVE_INCLUDE: u32 = 386;
-pub(crate) const XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS: u32 = 407;
-pub(crate) const XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE: u32 = 428;
-pub(crate) const XKB_WARNING_MISSING_DEFAULT_SECTION: u32 = 433;
-pub(crate) const XKB_WARNING_CONFLICTING_KEY_SYMBOL: u32 = 461;
-pub(crate) const XKB_ERROR_INVALID_OPERATION: u32 = 478;
-pub(crate) const XKB_WARNING_NUMERIC_KEYSYM: u32 = 489;
-pub(crate) const XKB_WARNING_EXTRA_SYMBOLS_IGNORED: u32 = 516;
-pub(crate) const XKB_WARNING_CONFLICTING_KEY_NAME: u32 = 523;
-pub(crate) const XKB_ERROR_INVALID_FILE_ENCODING: u32 = 542;
-pub(crate) const XKB_ERROR_ALLOCATION_ERROR: u32 = 550;
-pub(crate) const XKB_ERROR_INVALID_ACTION_FIELD: u32 = 563;
 pub(crate) const XKB_ERROR_WRONG_FIELD_TYPE: u32 = 578;
-pub(crate) const XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX: u32 = 588;
-pub(crate) const XKB_ERROR_CANNOT_RESOLVE_RMLVO: u32 = 595;
-pub(crate) const XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE: u32 = 607;
-pub(crate) const XKB_ERROR_INVALID_REAL_MODIFIER: u32 = 623;
 pub const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: u32 = 632;
-pub(crate) const XKB_ERROR_UNKNOWN_DEFAULT_FIELD: u32 = 639;
-pub(crate) const XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE: u32 = 645;
-pub(crate) const XKB_ERROR_INVALID_INCLUDED_FILE: u32 = 661;
-pub(crate) const XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE: u32 = 700;
-pub(crate) const XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD: u32 = 711;
-pub(crate) const XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT: u32 = 742;
-pub(crate) const XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION: u32 = 762;
-pub(crate) const XKB_ERROR_INVALID_XKB_SYNTAX: u32 = 769;
-pub(crate) const XKB_WARNING_UNDEFINED_KEYCODE: u32 = 770;
-pub(crate) const XKB_ERROR_INVALID_EXPRESSION_TYPE: u32 = 784;
-pub(crate) const XKB_ERROR_INVALID_VALUE: u32 = 796;
-pub(crate) const XKB_WARNING_CONFLICTING_MODMAP: u32 = 800;
-pub(crate) const XKB_ERROR_UNKNOWN_FIELD: u32 = 812;
-pub(crate) const XKB_ERROR_KEYMAP_COMPILATION_FAILED: u32 = 822;
-pub(crate) const XKB_ERROR_UNKNOWN_ACTION_TYPE: u32 = 844;
-pub(crate) const XKB_WARNING_CONFLICTING_KEY_ACTION: u32 = 883;
-pub(crate) const XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS: u32 = 893;
-pub(crate) const XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY: u32 = 901;
-pub(crate) const XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX: u32 = 903;
-pub(crate) const XKB_WARNING_CONFLICTING_KEY_FIELDS: u32 = 935;
-pub(crate) const XKB_ERROR_INVALID_IDENTIFIER: u32 = 949;
-pub(crate) const XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL: u32 = 965;
-pub(crate) const XKB_ERROR_INVALID_RULES_SYNTAX: u32 = 967;
-pub(crate) const XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE: u32 = 971;
 
 // ── LookupEntry (moved from keymap.rs) ────────────────────────────
 
@@ -1177,15 +1105,6 @@ pub(crate) type StmtType = u32;
 pub(crate) const _STMT_NUM_VALUES: StmtType = 37;
 pub(crate) const STMT_UNKNOWN_COMPOUND: StmtType = 36;
 pub(crate) const STMT_UNKNOWN_DECLARATION: StmtType = 35;
-pub(crate) const STMT_LED_NAME: StmtType = 34;
-pub(crate) const STMT_LED_MAP: StmtType = 33;
-pub(crate) const STMT_GROUP_COMPAT: StmtType = 32;
-pub(crate) const STMT_MODMAP: StmtType = 31;
-pub(crate) const STMT_SYMBOLS: StmtType = 30;
-pub(crate) const STMT_VMOD: StmtType = 29;
-pub(crate) const STMT_INTERP: StmtType = 28;
-pub(crate) const STMT_TYPE: StmtType = 27;
-pub(crate) const STMT_VAR: StmtType = 26;
 pub(crate) const STMT_EXPR_UNARY_PLUS: StmtType = 25;
 pub(crate) const STMT_EXPR_INVERT: StmtType = 24;
 pub(crate) const STMT_EXPR_NEGATE: StmtType = 23;
@@ -1208,10 +1127,6 @@ pub(crate) const STMT_EXPR_BOOLEAN_LITERAL: StmtType = 7;
 pub(crate) const STMT_EXPR_FLOAT_LITERAL: StmtType = 6;
 pub(crate) const STMT_EXPR_INTEGER_LITERAL: StmtType = 5;
 pub(crate) const STMT_EXPR_STRING_LITERAL: StmtType = 4;
-pub(crate) const STMT_ALIAS: StmtType = 3;
-pub(crate) const STMT_KEYCODE: StmtType = 2;
-pub(crate) const STMT_INCLUDE: StmtType = 1;
-pub(crate) const STMT_UNKNOWN: StmtType = 0;
 
 // ── Merge mode enum ─────────────────────────────────────────────────
 
@@ -1309,11 +1224,6 @@ impl ExprDef {
     }
 }
 
-// Re-export ast_build functions used by consumers via ast_h
-pub(crate) use super::xkbcomp::parser::{
-    stmt_type_to_operator_char, stmt_type_to_string, xkb_file_type_to_string,
-};
-
 // ── Statement definition types ──────────────────────────────────────
 
 pub(crate) struct VarDef {
@@ -1381,10 +1291,9 @@ pub(crate) struct LedMapDef {
 }
 
 #[derive(Clone)]
-
 pub(crate) struct UnknownStatement {
-    pub(crate) stmt_type: StmtType,
-    pub(crate) name: String,
+    pub(crate) _stmt_type: StmtType,
+    pub(crate) _name: String,
 }
 
 // ── Map flags and XkbFile ───────────────────────────────────────────
@@ -1414,27 +1323,6 @@ pub(crate) enum Statement {
     LedName(Box<LedNameDef>),
     Unknown(Box<UnknownStatement>),
     XkbFile(Box<XkbFile>),
-}
-
-impl Statement {
-    pub(crate) fn stmt_type(&self) -> StmtType {
-        match self {
-            Statement::Include(_) => STMT_INCLUDE,
-            Statement::Keycode(_) => STMT_KEYCODE,
-            Statement::KeyAlias(_) => STMT_ALIAS,
-            Statement::Var(_) => STMT_VAR,
-            Statement::KeyType(_) => STMT_TYPE,
-            Statement::Interp(_) => STMT_INTERP,
-            Statement::VMod(_) => STMT_VMOD,
-            Statement::Symbols(_) => STMT_SYMBOLS,
-            Statement::ModMap(_) => STMT_MODMAP,
-            Statement::GroupCompat(_) => STMT_GROUP_COMPAT,
-            Statement::LedMap(_) => STMT_LED_MAP,
-            Statement::LedName(_) => STMT_LED_NAME,
-            Statement::Unknown(_) => STMT_UNKNOWN,
-            Statement::XkbFile(_) => 0,
-        }
-    }
 }
 
 pub(crate) struct XkbFile {
@@ -1531,57 +1419,28 @@ pub(crate) fn safe_map_name(file: &XkbFile) -> &str {
 }
 
 #[inline]
-pub(crate) fn report_not_array(type_0: &str, field: &str, name: &str) -> bool {
-    log::error!(
-        "[XKB-{:03}] The {} {} field is not an array; Ignoring illegal assignment in {}\n",
-        XKB_ERROR_WRONG_FIELD_TYPE as i32,
-        type_0,
-        field,
-        name
-    );
+pub(crate) fn report_not_array(_type_0: &str, _field: &str, _name: &str) -> bool {
     false
 }
 
 #[inline]
 pub(crate) fn report_bad_type(
-    code: XkbMessageCode,
-    type_0: &str,
-    field: &str,
-    name: &str,
-    wanted: &str,
+    _code: XkbMessageCode,
+    _type_0: &str,
+    _field: &str,
+    _name: &str,
+    _wanted: &str,
 ) -> bool {
-    log::error!(
-        "[XKB-{:03}] The {} {} field must be a {}; Ignoring illegal assignment in {}\n",
-        { code },
-        type_0,
-        field,
-        wanted,
-        name
-    );
     false
 }
 
 #[inline]
-pub(crate) fn report_bad_field(type_0: &str, field: &str, name: &str) -> bool {
-    log::error!(
-        "Unknown {} field \"{}\" in {}; Ignoring assignment to unknown field in {}\n",
-        type_0,
-        field,
-        name,
-        name
-    );
+pub(crate) fn report_bad_field(_type_0: &str, _field: &str, _name: &str) -> bool {
     false
 }
 
 #[inline]
-pub(crate) fn report_should_be_array(type_0: &str, field: &str, name: &str) -> bool {
-    log::error!(
-        "[XKB-{:03}] Missing subscript for {} {}; Ignoring illegal assignment in {}\n",
-        XKB_ERROR_EXPECTED_ARRAY_ENTRY as i32,
-        type_0,
-        field,
-        name
-    );
+pub(crate) fn report_should_be_array(_type_0: &str, _field: &str, _name: &str) -> bool {
     false
 }
 

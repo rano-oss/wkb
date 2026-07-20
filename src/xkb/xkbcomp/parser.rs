@@ -19,11 +19,10 @@ use super::super::shared_types::{
     MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_EXPR_ADD, STMT_EXPR_ASSIGN,
     STMT_EXPR_DIVIDE, STMT_EXPR_INVERT, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
     STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
-    _STMT_NUM_VALUES,
 };
 
+use super::super::keymap::action_type_text;
 pub(crate) use super::super::keymap::mod_mask_get_effective;
-use super::super::keymap::{action_type_text, keysym_text};
 use super::super::keymap::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
 pub(crate) use super::symbols::compile_compat_map;
 pub(crate) use super::symbols::compile_key_types;
@@ -397,16 +396,8 @@ static YYR2: [i8; 220] = [
 ];
 // ── Helper functions ────────────────────────────────────────────────
 
-fn _xkbcommon_error(param: &mut ParserParam, msg: &str) {
-    let loc: ScannerLoc = param.scanner.token_location();
-    log::error!(
-        "[XKB-{:03}] {}:{}:{}: {}\n",
-        XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-        &param.scanner.file_name,
-        loc.line,
-        loc.column,
-        msg
-    );
+fn _xkbcommon_error(param: &mut ParserParam, _msg: &str) {
+    let _loc: ScannerLoc = param.scanner.token_location();
 }
 
 fn resolve_keysym(param: &mut ParserParam, name: Sval) -> Option<u32> {
@@ -433,17 +424,8 @@ fn resolve_keysym(param: &mut ParserParam, name: Sval) -> Option<u32> {
     let sym: u32 = xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS);
     if sym != XKB_KEY_NO_SYMBOL as u32 {
         if param.ctx.log_verbosity >= 2 {
-            if let Some(ref_name) = xkb_keysym_is_deprecated(sym, buf_slice) {
-                let loc: ScannerLoc = param.scanner.token_location();
-                log::warn!(
-                    "[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{}\"; please use \"{}\" instead.\n",
-                    XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
-                    &param.scanner.file_name,
-                    loc.line,
-                    loc.column,
-                    name_str,
-                    ref_name
-                );
+            if let Some(_ref_name) = xkb_keysym_is_deprecated(sym, buf_slice) {
+                let _loc: ScannerLoc = param.scanner.token_location();
             }
         }
         return Some(sym);
@@ -1541,13 +1523,7 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Merge(MERGE_REPLACE);
         }
         147 => {
-            let loc = param.scanner.token_location();
-            log::warn!(
-                "{}:{}:{}: ignored unsupported legacy merge mode \"alternate\"\n",
-                &param.scanner.file_name,
-                loc.line,
-                loc.column
-            );
+            let _loc = param.scanner.token_location();
             *yyval = YYValue::Merge(MERGE_DEFAULT);
         }
         // ExprList rules 148-150
@@ -1933,15 +1909,7 @@ fn execute_reduction<'a>(
                     *yyval = YYValue::Keysym(sym);
                 }
                 None => {
-                    let loc = param.scanner.token_location();
-                    log::warn!(
-                        "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{}\"\n",
-                        XKB_WARNING_UNRECOGNIZED_KEYSYM as i32,
-                        &param.scanner.file_name,
-                        loc.line,
-                        loc.column,
-                        sval.as_str()
-                    );
+                    let _loc = param.scanner.token_location();
                     *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL as u32);
                 }
             }
@@ -1959,58 +1927,22 @@ fn execute_reduction<'a>(
             // KeySym: INTEGER (numeric keysym)
             let num = yyvs[sp].as_num();
             if num < XKB_KEYSYM_MIN as i64 {
-                let loc = param.scanner.token_location();
-                log::warn!(
-                    "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"-{:#06x}\" ({})\n",
-                    XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
-                    &param.scanner.file_name,
-                    loc.line,
-                    loc.column,
-                    -num,
-                    num
-                );
+                let _loc = param.scanner.token_location();
                 *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL as u32);
             } else {
                 if num <= XKB_KEYSYM_MAX as i64 {
                     let keysym = num as u32;
                     if param.ctx.log_verbosity >= 2 {
-                        if let Some(ref_name) = xkb_keysym_is_deprecated(keysym, &[]) {
-                            let loc = param.scanner.token_location();
-                            log::debug!(
-                                "[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{:#06x}\"; please use \"{}\" instead.\n",
-                                XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
-                                &param.scanner.file_name,
-                                loc.line,
-                                loc.column,
-                                keysym,
-                                ref_name
-                            );
+                        if let Some(_ref_name) = xkb_keysym_is_deprecated(keysym, &[]) {
+                            let _loc = param.scanner.token_location();
                         }
                     }
                     *yyval = YYValue::Keysym(keysym);
                 } else {
-                    let loc = param.scanner.token_location();
-                    log::warn!(
-                        "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{:#06x}\" ({})\n",
-                        XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
-                        &param.scanner.file_name,
-                        loc.line,
-                        loc.column,
-                        num,
-                        num
-                    );
+                    let _loc = param.scanner.token_location();
                     *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL as u32);
                 }
-                let loc = param.scanner.token_location();
-                log::debug!(
-                    "[XKB-{:03}] {}:{}:{}: numeric keysym \"{:#06x}\" ({})\n",
-                    XKB_WARNING_NUMERIC_KEYSYM as i32,
-                    &param.scanner.file_name,
-                    loc.line,
-                    loc.column,
-                    num,
-                    num
-                );
+                let _loc = param.scanner.token_location();
             }
         }
         // SignedNumber / Number rules 204-208
@@ -2121,14 +2053,7 @@ pub(crate) fn parse<'a>(
         break;
     }
 
-    if let Some(first_ref) = first.as_ref() {
-        log::debug!(
-            "[XKB-{:03}] No map in include statement, but \"{}\" contains several; Using first defined map, \"{}\"\n",
-            XKB_WARNING_MISSING_DEFAULT_SECTION as i32,
-            &scanner.file_name,
-            safe_map_name(first_ref)
-        );
-    }
+    if let Some(_first_ref) = first.as_ref() {}
     first
 }
 
@@ -2163,40 +2088,24 @@ pub(crate) fn expr_key_sym_list_append_string(
     let bytes = string.as_bytes();
     let len = bytes.len();
     let mut idx: usize = 0;
-    let mut idx_cp: usize = 1;
     loop {
         if idx >= len {
             return Some(expr);
         }
         let (cp, cp_len) = utf8_next_code_point_safe(&bytes[idx..]);
         if cp == INVALID_UTF8_CODE_POINT {
-            let loc = scanner.token_location();
-            log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to keysyms: Invalid UTF-8 encoding starting at byte position {} (code point position: {}).\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                &scanner.file_name,
-                loc.line,
-                loc.column,
-                idx + 1,
-                idx_cp);
+            let _loc = scanner.token_location();
             return None;
         }
         let sym = utf32_to_keysym(cp);
         if sym == XKB_KEY_NO_SYMBOL as u32 {
-            let loc = scanner.token_location();
-            log::error!("{}:{}:{}: Cannot convert string to keysyms: Unicode code point U+04{:X} has no keysym equivalent(byte position: {}, code point position: {}).\n",
-                &scanner.file_name,
-                loc.line,
-                loc.column,
-                cp,
-                idx + 1,
-                idx_cp);
+            let _loc = scanner.token_location();
             return None;
         }
         if let ExprKind::KeysymList { ref mut syms } = expr.kind {
             syms.push(sym);
         }
         idx += cp_len;
-        idx_cp += 1;
     }
 }
 
@@ -2204,42 +2113,20 @@ pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> u32 {
     let bytes = string.as_bytes();
     let len = bytes.len();
     if len == 0 {
-        let loc = scanner.token_location();
-        log::error!(
-            "{}:{}:{}: Cannot convert string to single keysym: empty string.\n",
-            &scanner.file_name,
-            loc.line,
-            loc.column
-        );
+        let _loc = scanner.token_location();
         return XKB_KEY_NO_SYMBOL as u32;
     }
     let (cp, cp_len) = utf8_next_code_point_safe(bytes);
     if cp == INVALID_UTF8_CODE_POINT {
-        let loc = scanner.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to single keysym: Invalid UTF-8 encoding.\n",
-            XKB_ERROR_INVALID_FILE_ENCODING as i32,
-            &scanner.file_name,
-            loc.line,
-            loc.column);
+        let _loc = scanner.token_location();
         return XKB_KEY_NO_SYMBOL as u32;
     } else if cp_len != len {
-        let loc = scanner.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to single keysym: Expected a single Unicode code point, got: \"{}\".\n",
-            XKB_ERROR_INVALID_FILE_ENCODING as i32,
-            &scanner.file_name,
-            loc.line,
-            loc.column,
-            string);
+        let _loc = scanner.token_location();
         return XKB_KEY_NO_SYMBOL as u32;
     }
     let sym = utf32_to_keysym(cp);
     if sym == XKB_KEY_NO_SYMBOL as u32 {
-        let loc = scanner.token_location();
-        log::error!("{}:{}:{}: Cannot convert string to single keysym: Unicode code point U+{:04X} has no keysym equivalent.\n",
-            &scanner.file_name,
-            loc.line,
-            loc.column,
-            cp);
+        let _loc = scanner.token_location();
     }
     sym
 }
@@ -2339,8 +2226,8 @@ pub(crate) fn led_name_create(ndx: i64, name: Option<Box<ExprDef>>) -> Box<LedNa
 
 pub(crate) fn unknown_statement_create(type_0: StmtType, name: &str) -> Box<UnknownStatement> {
     Box::new(UnknownStatement {
-        stmt_type: type_0,
-        name: name.to_string(),
+        _stmt_type: type_0,
+        _name: name.to_string(),
     })
 }
 
@@ -2361,11 +2248,6 @@ pub(crate) fn include_create(
         let (parsed, rest) = match parse_include_map(input) {
             Some(r) => r,
             None => {
-                log::error!(
-                    "[XKB-{:03}] Illegal include statement \"{}\"; Ignored\n",
-                    XKB_ERROR_INVALID_INCLUDE_STATEMENT as i32,
-                    stmt_str
-                );
                 return None;
             }
         };
@@ -2453,83 +2335,6 @@ pub(crate) fn xkb_file_from_components(
     Some(xkb_file_create(FILE_TYPE_KEYMAP, None, file_stmts, 0))
 }
 
-static XKB_FILE_TYPE_STRINGS: [&str; 7] = [
-    "xkb_keycodes",
-    "xkb_types",
-    "xkb_compatibility",
-    "xkb_symbols",
-    "xkb_geometry",
-    "xkb_keymap",
-    "rules",
-];
-
-pub(crate) fn xkb_file_type_to_string(type_0: u32) -> &'static str {
-    if type_0 as usize >= XKB_FILE_TYPE_STRINGS.len() {
-        "unknown"
-    } else {
-        XKB_FILE_TYPE_STRINGS[type_0 as usize]
-    }
-}
-static STMT_TYPE_STRINGS: [&str; 37] = [
-    "unknown statement",
-    "include statement",
-    "key name definition",
-    "key alias definition",
-    "string literal expression",
-    "integer literal expression",
-    "float literal expression",
-    "boolean literal expression",
-    "key name expression",
-    "keysym expression",
-    "identifier expression",
-    "action declaration expression",
-    "field reference expression",
-    "array reference expression",
-    "empty list expression",
-    "keysym list expression",
-    "action list expression",
-    "addition expression",
-    "substraction expression",
-    "multiplication expression",
-    "division expression",
-    "assignment expression",
-    "logical negation expression",
-    "arithmetic negation expression",
-    "bitwise inversion expression",
-    "unary plus expression",
-    "variable definition",
-    "key type definition",
-    "symbol interpretation definition",
-    "virtual modifiers definition",
-    "key symbols definition",
-    "modifier map declaration",
-    "group declaration",
-    "indicator map declaration",
-    "indicator name declaration",
-    "unknown declaration statement",
-    "unknown compound statement",
-];
-
-pub(crate) fn stmt_type_to_string(type_0: u32) -> &'static str {
-    if type_0 >= _STMT_NUM_VALUES {
-        return "unknown";
-    }
-    STMT_TYPE_STRINGS[type_0 as usize]
-}
-
-pub(crate) fn stmt_type_to_operator_char(type_0: u32) -> char {
-    match type_0 {
-        17 => '+',
-        18 => '-',
-        19 => '*',
-        20 => '/',
-        22 => '!',
-        23 => '-',
-        24 => '~',
-        25 => '+',
-        _ => '\0',
-    }
-}
 // ── Scanner types (migrated from scanner_utils.rs) ──
 
 #[derive(Copy, Clone, Default)]
@@ -2753,31 +2558,14 @@ impl<'a> Scanner<'a> {
 
     #[inline]
     pub(crate) fn check_supported_char_encoding(&mut self) -> bool {
-        use super::super::shared_types::XKB_ERROR_INVALID_FILE_ENCODING;
         if self.str_match(b"\xEF\xBB\xBF") || self.s.len() < 2 {
             return true;
         }
         let input = self.s;
         if input[0] == 0 || input[1] == 0 {
-            let loc = self.token_location();
-            log::error!(
-                "[XKB-{:03}] {}:{}:{}: unexpected NULL character.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                &self.file_name,
-                loc.line,
-                loc.column
-            );
             return false;
         }
         if !input[0].is_ascii() {
-            let loc = self.token_location();
-            log::error!(
-                "[XKB-{:03}] {}:{}:{}: unexpected non-ASCII character.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                &self.file_name,
-                loc.line,
-                loc.column
-            );
             return false;
         }
         true
@@ -3315,34 +3103,14 @@ pub(crate) fn _xkbcommon_lex<'a>(
                     if s.unicode_code_point(&mut cp) && cp != 0 {
                         s.buf_appends_code_point(cp);
                     } else {
-                        let loc = s.token_location();
-                        log::warn!("[XKB-{:03}] {}:{}:{}: invalid Unicode escape sequence \"{}\" in string literal\n",
-                            XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE
-                                as i32,
-                            &s.file_name,
-                            loc.line,
-                            loc.column,
-                            std::str::from_utf8(s.input_slice(start_pos.wrapping_sub(1), s.pos)).unwrap_or(""));
+                        let _loc = s.token_location();
                     }
                 } else if s.oct(&mut o) && o != 0 {
                     s.buf_append(o);
                 } else if s.pos > start_pos {
-                    let loc_0 = s.token_location();
-                    log::warn!("[XKB-{:03}] {}:{}:{}: invalid octal escape sequence \"{}\" in string literal\n",
-                        XKB_WARNING_INVALID_ESCAPE_SEQUENCE as i32,
-                        &s.file_name,
-                        loc_0.line,
-                        loc_0.column,
-                        std::str::from_utf8(s.input_slice(start_pos.wrapping_sub(1), s.pos)).unwrap_or(""));
+                    let _loc_0 = s.token_location();
                 } else {
-                    let loc_1 = s.token_location();
-                    log::warn!("[XKB-{:03}] {}:{}:{}: unknown escape sequence \"\\{}\" in string literal\n",
-                        XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE
-                            as i32,
-                        &s.file_name,
-                        loc_1.line,
-                        loc_1.column,
-                        (s.peek() as u8 as char));
+                    let _loc_1 = s.token_location();
                 }
             } else {
                 let c = s.next_byte();
@@ -3350,13 +3118,7 @@ pub(crate) fn _xkbcommon_lex<'a>(
             }
         }
         if !s.buf_append(0) || !s.chr(b'"' as i8) {
-            let loc_2 = s.token_location();
-            log::error!(
-                "{}:{}:{}: unterminated string literal\n",
-                &s.file_name,
-                loc_2.line,
-                loc_2.column
-            );
+            let _loc_2 = s.token_location();
             return ERROR_TOK;
         }
         // Convert buffer to String (exclude null terminator)
@@ -3370,13 +3132,7 @@ pub(crate) fn _xkbcommon_lex<'a>(
             s.next_byte();
         }
         if !s.chr(b'>' as i8) {
-            let loc_3 = s.token_location();
-            log::error!(
-                "{}:{}:{}: unterminated key name literal\n",
-                &s.file_name,
-                loc_3.line,
-                loc_3.column
-            );
+            let _loc_3 = s.token_location();
             return ERROR_TOK;
         }
         let len: usize = s.pos - s.token_pos - 2;
@@ -3452,25 +3208,12 @@ pub(crate) fn _xkbcommon_lex<'a>(
     if number(s, &mut num_val, &mut tok) {
         *yylval = YYValue::Num(num_val);
         if tok == ERROR_TOK {
-            let loc_4 = s.token_location();
-            log::error!(
-                "[XKB-{:03}] {}:{}:{}: malformed number literal\n",
-                XKB_ERROR_MALFORMED_NUMBER_LITERAL as i32,
-                &s.file_name,
-                loc_4.line,
-                loc_4.column
-            );
+            let _loc_4 = s.token_location();
             return ERROR_TOK;
         }
         return tok;
     }
-    let loc_5 = s.token_location();
-    log::error!(
-        "{}:{}:{}: unrecognized token\n",
-        &s.file_name,
-        loc_5.line,
-        loc_5.column
-    );
+    let _loc_5 = s.token_location();
     ERROR_TOK
 }
 pub(crate) fn xkb_parse_string_init<'a>(
@@ -3481,18 +3224,8 @@ pub(crate) fn xkb_parse_string_init<'a>(
 ) -> bool {
     *sc = Scanner::new(input, file_name);
     if !sc.check_supported_char_encoding() {
-        let loc = sc.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
-            XKB_ERROR_INVALID_FILE_ENCODING as i32,
-            &sc.file_name,
-            loc.line,
-            loc.column);
-        let loc_0 = sc.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
-            XKB_ERROR_INVALID_FILE_ENCODING as i32,
-            &sc.file_name,
-            loc_0.line,
-            loc_0.column);
+        let _loc = sc.token_location();
+        let _loc_0 = sc.token_location();
         return false;
     }
     true
@@ -3512,9 +3245,7 @@ pub(crate) fn xkb_parse_string(
 
 // ── Include file processing (merged from include.rs) ──
 
-use super::super::keymap::{
-    xkb_context_failed_include_path_get, xkb_context_getenv, xkb_context_num_failed_include_paths,
-};
+use super::super::keymap::{xkb_context_getenv, xkb_context_num_failed_include_paths};
 use super::super::keymap::{xkb_context_include_path_get, xkb_context_num_include_paths};
 use super::super::keymap::{
     xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
@@ -3594,43 +3325,17 @@ fn directory_for_include(type_0: u32) -> &'static str {
 fn log_include_paths(ctx: &mut XkbContext) {
     let num = xkb_context_num_include_paths(ctx);
     if num > 0_u32 {
-        log::error!(
-            "[XKB-{:03}] {} include paths searched:\n",
-            XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-            num
-        );
-        for i in 0..num {
-            log::error!(
-                "[XKB-{:03}] \t{}\n",
-                XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                xkb_context_include_path_get(ctx, i)
-            );
-        }
+        for _i in 0..num {}
     } else {
-        log::error!(
-            "[XKB-{:03}] There are no include paths to search\n",
-            XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32
-        );
     }
     let num_failed = xkb_context_num_failed_include_paths(ctx);
     if num_failed > 0_u32 {
-        log::error!(
-            "[XKB-{:03}] {} include paths could not be added:\n",
-            XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-            num_failed
-        );
-        for i in 0..num_failed {
-            log::error!(
-                "[XKB-{:03}] \t{}\n",
-                XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                xkb_context_failed_include_path_get(ctx, i)
-            );
-        }
+        for _i in 0..num_failed {}
     }
 }
 /// Expand `%H`, `%S`, `%E`, `%%` in the given name string.
 /// Returns `Some(expanded)` on success, `None` on error.
-fn expand_percent(parent_file_name: &str, type_dir: &str, name: &str) -> Option<String> {
+fn expand_percent(_parent_file_name: &str, type_dir: &str, name: &str) -> Option<String> {
     let max_len = 4096usize;
     let mut result = String::new();
     let mut chars = name.chars().peekable();
@@ -3641,8 +3346,6 @@ fn expand_percent(parent_file_name: &str, type_dir: &str, name: &str) -> Option<
                 Some('H') => match xkb_context_getenv("HOME") {
                     Ok(home) => result.push_str(&home),
                     Err(_) => {
-                        log::error!("{}: %H was used in an include statement, but the HOME environment variable is not set\n",
-                                parent_file_name);
                         return None;
                     }
                 },
@@ -3658,21 +3361,10 @@ fn expand_percent(parent_file_name: &str, type_dir: &str, name: &str) -> Option<
                     result.push('/');
                     result.push_str(type_dir);
                 }
-                Some(other) => {
-                    log::error!(
-                        "[XKB-{:03}] {}: unknown % format ({}) in include statement\n",
-                        XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                        parent_file_name,
-                        other
-                    );
+                Some(_other) => {
                     return None;
                 }
                 None => {
-                    log::error!(
-                        "[XKB-{:03}] {}: trailing %% in include statement\n",
-                        XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                        parent_file_name
-                    );
                     return None;
                 }
             }
@@ -3680,11 +3372,6 @@ fn expand_percent(parent_file_name: &str, type_dir: &str, name: &str) -> Option<
             result.push(c);
         }
         if result.len() > max_len {
-            log::error!(
-                "[XKB-{:03}] {}: include path after expansion is too long\n",
-                XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                parent_file_name
-            );
             return None;
         }
     }
@@ -3735,12 +3422,6 @@ pub(crate) fn find_file_in_xkb_path(
             name
         );
         if path.len() >= 4096 {
-            log::error!(
-                "[XKB-{:03}] Path is too long: expected max length of {}, got: {}\n",
-                XKB_ERROR_INVALID_PATH as i32,
-                4096,
-                &path
-            );
         } else if let Some(data) = super::super::shared_types::read_file_cached(&path) {
             *offset = i;
             return Some((data, path));
@@ -3748,23 +3429,12 @@ pub(crate) fn find_file_in_xkb_path(
         i += 1;
     }
     if required && *offset == 0 {
-        log::error!(
-            "[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
-            XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-            type_dir,
-            name
-        );
         log_include_paths(ctx);
     }
     None
 }
 pub(crate) fn exceeds_include_max_depth(include_depth: u32) -> bool {
     if include_depth >= INCLUDE_MAX_DEPTH as u32 {
-        log::error!(
-            "[XKB-{:03}] Exceeded include depth threshold ({})",
-            XKB_ERROR_RECURSIVE_INCLUDE as i32,
-            15_i32
-        );
         true
     } else {
         false
@@ -3805,11 +3475,6 @@ pub(crate) fn process_include_file(
             let _ = file_and_path.take();
 
             if parsed.file_type != file_type {
-                log::error!("[XKB-{:03}] Include file of wrong type (expected {}, got {}); Include file \"{}\" ignored\n",
-                    XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                    xkb_file_type_to_string(file_type),
-                    xkb_file_type_to_string(parsed.file_type),
-                    &stmt.file);
                 // parsed drops automatically
             } else if !stmt.map.is_empty() || parsed.flags != 0 && MAP_IS_DEFAULT as i32 != 0 {
                 xkb_file = Some(parsed);
@@ -3837,18 +3502,7 @@ pub(crate) fn process_include_file(
 
     if xkb_file.is_none() {
         if !stmt.map.is_empty() {
-            log::error!(
-                "[XKB-{:03}] Couldn't process include statement for '{}({})'\n",
-                XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                &stmt.file,
-                &stmt.map
-            );
         } else {
-            log::error!(
-                "[XKB-{:03}] Couldn't process include statement for '{}'\n",
-                XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                &stmt.file
-            );
         }
     }
     xkb_file
@@ -3920,7 +3574,7 @@ fn find_interp_for_key(
     syms_buf[..num_syms].copy_from_slice(&syms_ref[..num_syms]);
     let syms = &syms_buf[..num_syms];
     let key_modmap = keymap.keys[key_idx].modmap;
-    let key_name = keymap.keys[key_idx].name;
+    let _key_name = keymap.keys[key_idx].name;
     let num_syms = syms.len() as i32;
     let mut s: i32 = 0_i32;
     while s < num_syms {
@@ -3965,12 +3619,6 @@ fn find_interp_for_key(
                 {
                     for &prev_idx in interp_indices.iter() {
                         if prev_idx == i as usize {
-                            log::warn!("Repeated interpretation ignored for keysym #{} \"{}\" at level {}/group {} on key <{}>.\n",
-                                    s + 1_i32,
-                                    keysym_text(syms[s as usize]),
-                                    level.wrapping_add(1_u32),
-                                    group.wrapping_add(1_u32),
-                                    atom_text(&keymap.ctx.atom_table, key_name));
                             use_default = true;
                             break 's_26;
                         }
@@ -4010,7 +3658,7 @@ fn apply_interps_to_key(keymap: &mut XkbKeymap, key_idx: usize) -> bool {
                 if found {
                     let default_interp = default_interpret();
                     let key_explicit = keymap.keys[key_idx].explicit;
-                    let key_name = keymap.keys[key_idx].name;
+                    let _key_name = keymap.keys[key_idx].name;
                     for &idx in interp_indices.iter() {
                         let interp = if idx == usize::MAX {
                             &default_interp
@@ -4040,10 +3688,6 @@ fn apply_interps_to_key(keymap: &mut XkbKeymap, key_idx: usize) -> bool {
                         }
                     }
                     if (actions.len() as u32 != 0) as i64 > MAX_ACTIONS_PER_LEVEL as i64 {
-                        log::warn!("Could not append interpret actions to key <{}>: maximum is {}, got: {}. Dropping excessive actions\n",
-                            atom_text(&keymap.ctx.atom_table, key_name),
-                            65535_i32,
-                            actions.len() as u32);
                         actions.truncate(MAX_ACTIONS_PER_LEVEL as usize);
                     }
                     keymap.keys[key_idx].groups[group as usize].levels[level as usize].actions =
@@ -4082,7 +3726,7 @@ fn is_group_action(action: &XkbAction) -> bool {
 }
 fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
     let num_groups = keymap.keys[key_idx].num_groups;
-    let key_name = keymap.keys[key_idx].name;
+    let _key_name = keymap.keys[key_idx].name;
     let mut g: u32 = 0_u32;
     while g < num_groups {
         let num_levels = keymap.key_num_levels(&keymap.keys[key_idx], g);
@@ -4108,19 +3752,13 @@ fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
                                 || group_action as i32 != 0
                                     && is_group_action(&level.actions[j as usize]) as i32 != 0
                             {
-                                let type_0: &str = if mod_action as i32 != 0 {
+                                let _type_0: &str = if mod_action as i32 != 0 {
                                     "modifiers"
                                 } else if group_action as i32 != 0 {
                                     "group"
                                 } else {
                                     action_type_text(action1_type)
                                 };
-                                log::error!("Cannot use multiple {} actions in the same level. Action #{} for key <{}> in group {}/level {} ignored.\n",
-                                    type_0,
-                                    j as i32 + 1_i32,
-                                    atom_text(&keymap.ctx.atom_table, key_name),
-                                    g.wrapping_add(1_u32),
-                                    l.wrapping_add(1_u32));
                                 level.actions[j as usize].set_none();
                             }
                             j = j.wrapping_add(1);
@@ -4161,9 +3799,6 @@ fn update_pending_key_fields(info: &mut XkbKeymapInfo<'_>, key_idx: usize) -> bo
                     info.pending_computations[idx].value = group.wrapping_sub(1_u32);
                 }
                 2 => {
-                    log::error!("[XKB-{:03}] Invalid key redirect group index\n", {
-                        XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX
-                    });
                     return info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0;
                 }
                 _ => {}
@@ -4198,9 +3833,6 @@ fn update_pending_action_fields(
                     info.pending_computations[pc_idx].expr = Some(expr_box);
                     match resolve_ret {
                         2 => {
-                            log::error!("[XKB-{:03}] Invalid action group index\n", {
-                                XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX
-                            });
                             return false;
                         }
                         1 => {}
@@ -4510,9 +4142,6 @@ fn update_derived_keymap_fields(info: &mut XkbKeymapInfo<'_>) -> bool {
                         expr_resolve_group_mask(info, &expr_box, &mut mask, &mut pending_dummy);
                     info.pending_computations[groups_idx].expr = Some(expr_box);
                     if !resolved {
-                        log::error!("[XKB-{:03}] Invalid LED group mask\n", {
-                            XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX
-                        });
                         return false;
                     }
                     info.pending_computations[groups_idx].computed = true;
@@ -4549,19 +4178,9 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
         if let Statement::XkbFile(ref sub_file) = stmt {
             if sub_file.file_type > LAST_KEYMAP_FILE_TYPE {
                 if sub_file.file_type == FILE_TYPE_GEOMETRY {
-                    log::warn!(
-                        "[XKB-{:03}] Geometry sections are not supported; ignoring\n",
-                        XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION as i32
-                    );
                 } else {
-                    log::error!(
-                        "Cannot define {} in a keymap file\n",
-                        xkb_file_type_to_string(sub_file.file_type)
-                    );
                 }
             } else if file_indices[sub_file.file_type as usize].is_some() {
-                log::error!("More than one {} section in keymap file; All sections after the first ignored\n",
-                    xkb_file_type_to_string(sub_file.file_type));
             } else {
                 file_indices[sub_file.file_type as usize] = Some(idx);
             }
@@ -4647,22 +4266,13 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
     let mut type_0: u32 = FIRST_KEYMAP_FILE_TYPE;
     while type_0 <= LAST_KEYMAP_FILE_TYPE {
         if file_indices[type_0 as usize].is_none() {
-            log::debug!(
-                "Component {} not provided in keymap\n",
-                xkb_file_type_to_string(type_0)
-            );
         } else {
             let idx = file_indices[type_0 as usize].unwrap();
-            let sub_name = if let Statement::XkbFile(ref sub_file) = file.defs[idx] {
+            let _sub_name = if let Statement::XkbFile(ref sub_file) = file.defs[idx] {
                 safe_map_name(sub_file)
             } else {
                 ""
             };
-            log::debug!(
-                "Compiling {} \"{}\"\n",
-                xkb_file_type_to_string(type_0),
-                sub_name
-            );
         }
         let file_arg: Option<&mut XkbFile> = file_indices[type_0 as usize].map(|idx| {
             if let Statement::XkbFile(ref mut sub_file) = file.defs[idx] {
@@ -4675,7 +4285,6 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
             file_arg, &mut info,
         ) as bool;
         if !ok {
-            log::error!("Failed to compile {}\n", xkb_file_type_to_string(type_0));
             pending_computations_array_free(&mut info.pending_computations);
             return false;
         }
@@ -4907,14 +4516,7 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         }
         s.chr('\r' as i32 as i8);
         if !s.eol() {
-            let loc: ScannerLoc = s.token_location();
-            log::error!(
-                "[XKB-{:03}] {}:{}:{}: illegal new line escape; must appear at end of line\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                &s.file_name,
-                loc.line,
-                loc.column
-            );
+            let _loc: ScannerLoc = s.token_location();
             return TOK_ERROR;
         }
         s.next_byte();
@@ -4951,14 +4553,7 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
             val.string.end += 1;
         }
         if val.string.len() == 0 {
-            let loc_0: ScannerLoc = s.token_location();
-            log::error!(
-                "[XKB-{:03}] {}:{}:{}: unexpected character after '$'; expected name\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                &s.file_name,
-                loc_0.line,
-                loc_0.column
-            );
+            let _loc_0: ScannerLoc = s.token_location();
             return TOK_ERROR;
         }
         return TOK_GROUP_NAME;
@@ -4977,14 +4572,7 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         }
         return TOK_IDENTIFIER;
     }
-    let loc_1: ScannerLoc = s.token_location();
-    log::error!(
-        "[XKB-{:03}] {}:{}:{}: unrecognized token\n",
-        XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-        &s.file_name,
-        loc_1.line,
-        loc_1.column
-    );
+    let _loc_1: ScannerLoc = s.token_location();
     TOK_ERROR
 }
 static RULES_MLVO_SVALS: [&[u8]; 4] = [b"model", b"layout", b"variant", b"option"];
@@ -5060,18 +4648,7 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
             if count > 0 {
                 pos += count;
                 if layout == 0 || layout > XKB_MAX_GROUPS as u32 {
-                    log::error!(
-                        "[XKB-{:03}] Invalid layout index {} for the RMVLO component: \"{}\"\n",
-                        { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                        layout,
-                        val_0.sval.as_str()
-                    );
                 } else if mlvo != MLVO_OPTION {
-                    log::warn!(
-                        "Layout index {} is not supported for the RMLVO component: \"{}\"\n",
-                        layout,
-                        val_0.sval.as_str()
-                    );
                 } else {
                     val_0.layout = layout.wrapping_sub(1);
                 }
@@ -5081,11 +4658,7 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
                 pos += 1;
             }
             if count == 0 || layout_index_end != pos {
-                let layout_spec = std::str::from_utf8(&bytes[layout_start..pos]).unwrap_or("");
-                log::error!("[XKB-{:03}] Invalid layout index \"{}\" for the RMLVO component \"{}\"; discarding specifier.\n",
-                    { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                    layout_spec,
-                    val_0.sval.as_str());
+                let _layout_spec = std::str::from_utf8(&bytes[layout_start..pos]).unwrap_or("");
                 val_0.layout = OPTIONS_MATCH_ALL_GROUPS as u32;
             }
         }
@@ -5134,36 +4707,9 @@ fn matcher_new_from_names<'a>(
         },
     );
     if m.rmlvo.layouts.len() > m.rmlvo.variants.len() {
-        if !rmlvo_ref.variant.as_bytes().is_empty() {
-            log::warn!(
-                "More layouts than variants: \"{}\" vs. \"{}\".\n",
-                if !rmlvo_ref.layout.as_bytes().is_empty() {
-                    rmlvo_ref.layout.to_str().unwrap_or("")
-                } else {
-                    "(none)"
-                },
-                if !rmlvo_ref.variant.as_bytes().is_empty() {
-                    rmlvo_ref.variant.to_str().unwrap_or("")
-                } else {
-                    "(none)"
-                }
-            );
-        }
+        if !rmlvo_ref.variant.as_bytes().is_empty() {}
         vec_resize_zero_matched_sval(&mut m.rmlvo.variants, m.rmlvo.layouts.len());
     } else if m.rmlvo.layouts.len() < m.rmlvo.variants.len() {
-        log::error!(
-            "Less layouts than variants: \"{}\" vs. \"{}\".\n",
-            if !rmlvo_ref.layout.as_bytes().is_empty() {
-                rmlvo_ref.layout.to_str().unwrap_or("")
-            } else {
-                "(none)"
-            },
-            if !rmlvo_ref.variant.as_bytes().is_empty() {
-                rmlvo_ref.variant.to_str().unwrap_or("")
-            } else {
-                "(none)"
-            }
-        );
         m.rmlvo.variants.truncate(m.rmlvo.layouts.len());
     }
     m
@@ -5186,14 +4732,7 @@ fn matcher_include(
     inc: Sval,
 ) {
     if include_depth >= MAX_INCLUDE_DEPTH as u32 {
-        let loc: ScannerLoc = parent_scanner.token_location();
-        log::error!(
-            "{}:{}:{}: maximum include depth ({}) exceeded; maybe there is an include loop?\n",
-            &parent_scanner.file_name,
-            loc.line,
-            loc.column,
-            MAX_INCLUDE_DEPTH
-        );
+        let _loc: ScannerLoc = parent_scanner.token_location();
         return;
     }
     let inc_str = inc.as_str();
@@ -5224,15 +4763,11 @@ fn matcher_include(
 
     while let Some((ref file_data, ref path)) = file_and_path {
         let ret: bool = read_rules_file(m, include_depth.wrapping_add(1_u32), file_data, path);
-        let path_str = path.clone();
+        let _path_str = path.clone();
         let _ = file_and_path.take();
         if ret {
             return;
         }
-        log::error!(
-            "No components returned from included XKB rules \"{}\"\n",
-            &path_str
-        );
         if absolute_path {
             break;
         }
@@ -5246,7 +4781,6 @@ fn matcher_include(
             true,
         );
     }
-    log::error!("Failed to open included XKB rules \"{}\"\n", &stmt_file);
 }
 fn matcher_mapping_start_new(m: &mut Matcher) {
     let mut i: u8 = 0 as u8;
@@ -5351,25 +4885,13 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
         mlvo += 1;
     }
     if mlvo as u32 >= _MLVO_NUM_ENTRIES {
-        let loc: ScannerLoc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc.line,
-            loc.column,
-            ident.as_str());
+        let _loc: ScannerLoc = s.token_location();
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
     if is_mlvo_mask_defined(m, mlvo) {
-        let loc_0: ScannerLoc = s.token_location();
-        let mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc_0.line,
-            loc_0.column,
-            mlvo_str);
+        let _loc_0: ScannerLoc = s.token_location();
+        let _mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
@@ -5378,14 +4900,8 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
         let remaining = &ident_bytes[mlvo_bytes.len()..];
         let consumed: i32 = extract_mapping_layout_index(remaining, &mut idx);
         if remaining.len() as i32 != consumed {
-            let loc_1: ScannerLoc = s.token_location();
-            let mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
-            log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" may only be followed by a valid group index; ignoring rule set\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                &s.file_name,
-                loc_1.line,
-                loc_1.column,
-                mlvo_str);
+            let _loc_1: ScannerLoc = s.token_location();
+            let _mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
             m.mapping.active_or_candidates_mask = 0_u32;
             return;
         }
@@ -5405,14 +4921,8 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
                 *variant_idx = idx;
             }
         } else {
-            let loc_2: ScannerLoc = s.token_location();
-            let mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
-            log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" cannot be followed by a group index; ignoring rule set\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                &s.file_name,
-                loc_2.line,
-                loc_2.column,
-                mlvo_str);
+            let _loc_2: ScannerLoc = s.token_location();
+            let _mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
             m.mapping.active_or_candidates_mask = 0_u32;
             return;
         }
@@ -5446,12 +4956,7 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
             }
         }
     {
-        let loc_3: ScannerLoc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"layout\" index must be the same as the \"variant\" index\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc_3.line,
-            loc_3.column);
+        let _loc_3: ScannerLoc = s.token_location();
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
@@ -5535,25 +5040,13 @@ fn matcher_mapping_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
         kccgst += 1;
     }
     if kccgst as u32 >= _KCCGST_NUM_ENTRIES {
-        let loc: ScannerLoc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc.line,
-            loc.column,
-            ident.as_str());
+        let _loc: ScannerLoc = s.token_location();
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
     if m.mapping.defined_kccgst_mask as u32 & 1_u32 << kccgst as u32 != 0 {
-        let loc_0: ScannerLoc = s.token_location();
-        let kccgst_str = std::str::from_utf8(kccgst_bytes).unwrap_or("");
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc_0.line,
-            loc_0.column,
-            kccgst_str);
+        let _loc_0: ScannerLoc = s.token_location();
+        let _kccgst_str = std::str::from_utf8(kccgst_bytes).unwrap_or("");
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
@@ -5572,19 +5065,9 @@ fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
 
 fn matcher_mapping_verify(m: &mut Matcher, s: &mut Scanner) -> bool {
     if m.mapping.num_mlvo as i32 == 0_i32 {
-        let loc: ScannerLoc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the left hand side; ignoring rule set\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                &s.file_name,
-                loc.line,
-                loc.column);
+        let _loc: ScannerLoc = s.token_location();
     } else if m.mapping.num_kccgst as i32 == 0_i32 {
-        let loc_0: ScannerLoc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the right hand side; ignoring rule set\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                &s.file_name,
-                loc_0.line,
-                loc_0.column);
+        let _loc_0: ScannerLoc = s.token_location();
     } else {
         if is_mlvo_mask_defined(m, MLVO_LAYOUT) {
             let single_layout_idx = if let LayoutIdx::Single { layout_idx, .. } = m.mapping.layout {
@@ -5620,12 +5103,7 @@ fn matcher_rule_start_new(m: &mut Matcher) {
 }
 fn matcher_rule_set_mlvo_common(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx, match_type: u32) {
     if m.rule.num_mlvo_values as i32 >= m.mapping.num_mlvo as i32 {
-        let loc: ScannerLoc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc.line,
-            loc.column);
+        let _loc: ScannerLoc = s.token_location();
         m.rule.skip = true;
         return;
     }
@@ -5645,12 +5123,7 @@ fn matcher_rule_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
 }
 fn matcher_rule_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
     if m.rule.num_kccgst_values as i32 >= m.mapping.num_kccgst as i32 {
-        let loc: ScannerLoc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc.line,
-            loc.column);
+        let _loc: ScannerLoc = s.token_location();
         m.rule.skip = true;
         return;
     }
@@ -5711,12 +5184,7 @@ fn expand_rmlvo_in_kccgst_value(
                 || bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_REPLACE_PREFIX))
     {
         if layout_idx == XKB_LAYOUT_INVALID {
-            let loc: ScannerLoc = s.token_location();
-            log::error!("[XKB-{:03}] {}:{}:{}: Invalid %i in %-expansion: there is no corresponding layout nor variant in the MLVO fields of the rules header.\n",
-                XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION as i32,
-                &s.file_name,
-                loc.line,
-                loc.column);
+            let _loc: ScannerLoc = s.token_location();
         } else {
             *i = (*i).wrapping_add(1);
             let idx_str = format!("{}", layout_idx.wrapping_add(1_u32));
@@ -5741,14 +5209,7 @@ fn expand_rmlvo_in_kccgst_value(
             *i = (*i).wrapping_add(1);
             if *i >= value.len() {
                 // fall through to error
-                let loc_1: ScannerLoc = s.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc_1.line,
-                    loc_1.column
-                );
+                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
         }
@@ -5760,14 +5221,7 @@ fn expand_rmlvo_in_kccgst_value(
             b'l' => MLVO_LAYOUT,
             b'v' => MLVO_VARIANT,
             _ => {
-                let loc_1: ScannerLoc = s.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc_1.line,
-                    loc_1.column
-                );
+                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
         };
@@ -5776,32 +5230,13 @@ fn expand_rmlvo_in_kccgst_value(
         let mut expanded_index: bool = false;
         if *i < value.len() && bytes[*i] == b'[' {
             if mlv as u32 != MLVO_LAYOUT && mlv as u32 != MLVO_VARIANT {
-                let loc_0: ScannerLoc = s.token_location();
-                log::error!("[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc_0.line,
-                    loc_0.column);
-                let loc_1: ScannerLoc = s.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc_1.line,
-                    loc_1.column
-                );
+                let _loc_0: ScannerLoc = s.token_location();
+                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
             let consumed: i32 = extract_layout_index(&bytes[*i..], &mut idx);
             if consumed == -1_i32 {
-                let loc_1: ScannerLoc = s.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc_1.line,
-                    loc_1.column
-                );
+                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
             if idx == XKB_LAYOUT_INVALID {
@@ -5813,27 +5248,13 @@ fn expand_rmlvo_in_kccgst_value(
 
         if sfx as i32 != 0_i32 {
             if *i >= value.len() {
-                let loc_1: ScannerLoc = s.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc_1.line,
-                    loc_1.column
-                );
+                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
             let c2rust_fresh8 = *i;
             *i = (*i).wrapping_add(1);
             if bytes[c2rust_fresh8] as i8 != sfx {
-                let loc_1: ScannerLoc = s.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc_1.line,
-                    loc_1.column
-                );
+                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
         }
@@ -5911,14 +5332,7 @@ fn expand_rmlvo_in_kccgst_value(
         return true;
     }
 
-    let loc_1: ScannerLoc = s.token_location();
-    log::error!(
-        "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-        XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-        &s.file_name,
-        loc_1.line,
-        loc_1.column
-    );
+    let _loc_1: ScannerLoc = s.token_location();
     false
 }
 fn expand_qualifier_in_kccgst_value(
@@ -5942,13 +5356,7 @@ fn expand_qualifier_in_kccgst_value(
         && bytes[(*i).wrapping_add(2_usize)] == b'l'
     {
         if has_layout_idx_range {
-            let loc: ScannerLoc = s.token_location();
-            log::warn!(
-                "{}:{}:{}: Using :all qualifier with indices range is not recommended.\n",
-                &s.file_name,
-                loc.line,
-                loc.column
-            );
+            let _loc: ScannerLoc = s.token_location();
         }
         vec_append_nul_terminated(expanded, b"1");
         if m.rmlvo.layouts.len() > 1 {
@@ -6116,12 +5524,7 @@ fn matcher_rule_verify(m: &mut Matcher, s: &mut Scanner) {
     if m.rule.num_mlvo_values as i32 != m.mapping.num_mlvo as i32
         || m.rule.num_kccgst_values as i32 != m.mapping.num_kccgst as i32
     {
-        let loc: ScannerLoc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: must have same number of values as mapping line; ignoring rule\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc.line,
-            loc.column);
+        let _loc: ScannerLoc = s.token_location();
         m.rule.skip = true;
     }
 }
@@ -6533,14 +5936,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
         match tok as u32 {
             11 => {}
             _ => {
-                let loc: ScannerLoc = s.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: unexpected token\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc.line,
-                    loc.column
-                );
+                let _loc: ScannerLoc = s.token_location();
             }
         }
         false
@@ -6554,18 +5950,8 @@ fn read_rules_file(
 ) -> bool {
     let mut scanner = Scanner::new(file_data, path);
     if !scanner.check_supported_char_encoding() {
-        let loc: ScannerLoc = scanner.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                &scanner.file_name,
-                loc.line,
-                loc.column);
-        let loc_0: ScannerLoc = scanner.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                &scanner.file_name,
-                loc_0.line,
-                loc_0.column);
+        let _loc: ScannerLoc = scanner.token_location();
+        let _loc_0: ScannerLoc = scanner.token_location();
         return false;
     }
     let ret: bool = matcher_match(matcher, &mut scanner, include_depth, path);
@@ -6574,12 +5960,6 @@ fn read_rules_file(
 fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_>) -> bool {
     let partial_rules = format!("{}{}", rules, suffix);
     if partial_rules.len() >= 60 {
-        log::error!(
-            "[XKB-{:03}] Cannot load XKB rules \"{}{}\"\n",
-            XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-            rules,
-            suffix
-        );
         return false;
     }
     let mut offset: u32 = 0;
@@ -6598,11 +5978,6 @@ fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_
         let ok: bool = read_rules_file(matcher, 0, &file_data, &path);
         drop(file_data);
         if !ok {
-            log::error!(
-                "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
-                XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                &path
-            );
             return false;
         }
         offset += 1;
@@ -6627,22 +6002,12 @@ fn xkb_resolve_rules(
         true,
     );
     let Some((file_data, path)) = found else {
-        log::error!(
-            "[XKB-{:03}] Cannot load XKB rules \"{}\"\n",
-            XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-            rules_str
-        );
         return false;
     };
     ret = xkb_resolve_partial_rules(rules_str, ".pre", matcher);
     if ret {
         ret = read_rules_file(matcher, 0, &file_data, &path);
         if !ret {
-            log::error!(
-                "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
-                XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                &path
-            );
         } else {
             ret = xkb_resolve_partial_rules(rules_str, ".post", matcher);
             if ret {
@@ -6651,11 +6016,6 @@ fn xkb_resolve_rules(
                     || matcher.kccgst[KCCGST_COMPAT as usize].is_empty()
                     || matcher.kccgst[KCCGST_SYMBOLS as usize].is_empty()
                 {
-                    log::error!(
-                        "[XKB-{:03}] No components returned from XKB rules \"{}\"\n",
-                        XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                        rules_str
-                    );
                     ret = false;
                 } else {
                     // Transfer ownership of Vec data directly.
@@ -6684,39 +6044,15 @@ fn xkb_resolve_rules(
                         v.push(0);
                         out.geometry = v;
                     }
-                    if !matcher.rmlvo.model.matched && !matcher.rmlvo.model.sval.is_empty() {
-                        log::error!(
-                            "[XKB-{:03}] Unrecognized RMLVO model \"{}\" was ignored\n",
-                            XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                            matcher.rmlvo.model.sval.as_str()
-                        );
-                    }
+                    if !matcher.rmlvo.model.matched && !matcher.rmlvo.model.sval.is_empty() {}
                     for mval in matcher.rmlvo.layouts.iter() {
-                        if !mval.matched && !mval.sval.is_empty() {
-                            log::error!(
-                                "[XKB-{:03}] Unrecognized RMLVO layout \"{}\" was ignored\n",
-                                XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                mval.sval.as_str()
-                            );
-                        }
+                        if !mval.matched && !mval.sval.is_empty() {}
                     }
                     for mval in matcher.rmlvo.variants.iter() {
-                        if !mval.matched && !mval.sval.is_empty() {
-                            log::error!(
-                                "[XKB-{:03}] Unrecognized RMLVO variant \"{}\" was ignored\n",
-                                XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                mval.sval.as_str()
-                            );
-                        }
+                        if !mval.matched && !mval.sval.is_empty() {}
                     }
                     for mval in matcher.rmlvo.options.iter() {
-                        if !mval.matched && !mval.sval.is_empty() {
-                            log::error!(
-                                "[XKB-{:03}] Unrecognized RMLVO option \"{}\" was ignored\n",
-                                XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                mval.sval.as_str()
-                            );
-                        }
+                        if !mval.matched && !mval.sval.is_empty() {}
                     }
                     if !out.symbols.is_empty() {
                         *explicit_layouts = 1_u32;
