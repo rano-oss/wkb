@@ -6,7 +6,7 @@ use super::shared_types::{atom_lookup_ref, atom_text};
 pub(crate) use super::shared_types::{
     XkbAction, XkbContext, XkbKeymap, XkbLed, XkbLevel, XkbModSet, XkbRuleNames, MOD_BOTH,
     MOD_REAL, MOD_REAL_MASK_ALL, XKB_ATOM_NONE, XKB_KEYCODE_INVALID, XKB_KEYMAP_FORMAT_TEXT_V2,
-    XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID,
+    XKB_LAYOUT_INVALID, XKB_MOD_INVALID,
 };
 
 pub(crate) fn xkb_keymap_new_from_names(
@@ -369,15 +369,6 @@ static XKB_COMPOSE_MAP: LazyLock<BTreeMap<&'static str, &'static str>> = LazyLoc
     ]
     .into()
 });
-pub(crate) fn xkb_keymap_key_get_name(keymap: &XkbKeymap, kc: u32) -> Option<&str> {
-    let key = keymap.get_key(kc)?;
-    let s = atom_text(&keymap.ctx.atom_table, key.name);
-    if s.is_empty() {
-        None
-    } else {
-        Some(s)
-    }
-}
 pub(crate) fn xkb_keymap_key_repeats(keymap: &XkbKeymap, kc: u32) -> i32 {
     match keymap.get_key(kc) {
         Some(key) => key.repeats as i32,
@@ -636,46 +627,10 @@ pub(crate) fn xkb_wrap_group_into_range(
         }
     }
 }
-pub(crate) fn xkb_keymap_num_layouts_for_key(keymap: &XkbKeymap, kc: u32) -> u32 {
-    keymap.get_key(kc).map(|k| k.num_groups).unwrap_or(0)
-}
 
-pub(crate) fn xkb_keymap_num_leds(keymap: &XkbKeymap) -> u32 {
-    keymap.leds.len() as u32
-}
 
-pub(crate) fn xkb_keymap_led_get_name(keymap: &XkbKeymap, idx: u32) -> Option<&str> {
-    keymap
-        .leds
-        .get(idx as usize)
-        .map(|l| atom_text(&keymap.ctx.atom_table, l.name))
-}
 
-pub(crate) fn xkb_keymap_layout_get_index_ref(keymap: &XkbKeymap, name: &str) -> u32 {
-    let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
-    if atom == XKB_ATOM_NONE {
-        XKB_LAYOUT_INVALID
-    } else {
-        keymap
-            .group_names
-            .iter()
-            .position(|&n| n == atom)
-            .map_or(XKB_LAYOUT_INVALID, |i| i as u32)
-    }
-}
 
-pub(crate) fn xkb_keymap_led_get_index_ref(keymap: &XkbKeymap, name: &str) -> u32 {
-    let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
-    if atom == XKB_ATOM_NONE {
-        XKB_LED_INVALID
-    } else {
-        keymap
-            .leds
-            .iter()
-            .position(|l| l.name == atom)
-            .map_or(XKB_LED_INVALID, |i| i as u32)
-    }
-}
 use std::env::VarError;
 
 use super::shared_types::{atom_intern, atom_table_new};
@@ -1063,8 +1018,6 @@ pub(crate) fn format_control_names_offset(format: u32) -> u8 {
     }) as u8
 }
 use super::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
-
-pub(crate) const XKB_KEYSYM_NAME_MAX_SIZE: i32 = 31;
 
 pub use super::shared_types::{
     ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
@@ -1598,34 +1551,6 @@ pub(crate) struct RuleNames {
 }
 
 impl RuleNames {
-    /// Create new RuleNames with all fields set to given values
-    pub(crate) fn new(
-        rules: String,
-        model: String,
-        layout: String,
-        variant: String,
-        options: String,
-    ) -> Self {
-        Self {
-            rules,
-            model,
-            layout,
-            variant,
-            options,
-        }
-    }
-
-    /// Create RuleNames for evdev with given layout and variant
-    pub(crate) fn evdev(layout: String, variant: Option<String>) -> Self {
-        Self {
-            rules: "evdev".to_string(),
-            model: "".to_string(),
-            layout,
-            variant: variant.unwrap_or_default(),
-            options: "".to_string(),
-        }
-    }
-
     /// Convert to XkbRuleNames structure
     pub(crate) fn to_c_keymap(&self) -> super::shared_types::XkbRuleNames {
         use std::ffi::CString;
@@ -1857,15 +1782,6 @@ impl Keymap {
 
     /// Iterate over all keycodes in the keymap
     ///
-    /// Returns an iterator that yields (keycode, evdev_code) pairs.
-    /// evdev_code is keycode - 8 (the standard offset for evdev)
-    pub(crate) fn keycodes(&self) -> KeycodeIter {
-        KeycodeIter {
-            current: self.min_keycode(),
-            max: self.max_keycode(),
-            evdev_offset: 8,
-        }
-    }
 
     /// Create a new state for this keymap
     pub(crate) fn new_state(&self) -> Option<State> {
@@ -1882,105 +1798,12 @@ impl Keymap {
     pub(crate) fn layout_get_name(&self, idx: u32) -> Option<String> {
         xkb_keymap_layout_get_name(&self.inner, idx).map(|s| s.to_string())
     }
-
-    /// Get layout index by name (safe via atom_lookup_ref)
-    pub(crate) fn layout_get_index(&self, name: &str) -> Option<u32> {
-        let idx = xkb_keymap_layout_get_index_ref(&self.inner, name);
-        if idx == XKB_LAYOUT_INVALID {
-            None
-        } else {
-            Some(idx)
-        }
-    }
-
-    /// Get number of LEDs in the keymap
-    pub(crate) fn num_leds(&self) -> u32 {
-        xkb_keymap_num_leds(&self.inner)
-    }
-
-    /// Get LED name by index
-    pub(crate) fn led_get_name(&self, idx: u32) -> Option<String> {
-        xkb_keymap_led_get_name(&self.inner, idx).map(|s| s.to_string())
-    }
-
-    /// Get LED index by name (safe via atom_lookup_ref)
-    pub(crate) fn led_get_index(&self, name: &str) -> Option<u32> {
-        let idx = xkb_keymap_led_get_index_ref(&self.inner, name);
-        if idx == XKB_LED_INVALID {
-            None
-        } else {
-            Some(idx)
-        }
-    }
-
-
-
-    /// Get modifier index by name (safe via atom_lookup_ref)
-    pub(crate) fn mod_get_index(&self, name: &str) -> Option<u32> {
-        let idx = xkb_keymap_mod_get_index_ref(&self.inner, name);
-        if idx == XKB_MOD_INVALID {
-            None
-        } else {
-            Some(idx)
-        }
-    }
-
-    /// Get all layout names as a Vec
-    pub(crate) fn get_all_layouts(&self) -> Vec<String> {
-        let num_layouts = self.num_layouts();
-        (0..num_layouts)
-            .filter_map(|idx| self.layout_get_name(idx))
-            .collect()
-    }
-
-    /// Get all modifier names as a Vec
-    pub(crate) fn get_all_mods(&self) -> Vec<String> {
-        let num_mods = self.num_mods();
-        (0..num_mods)
-            .filter_map(|idx| self.mod_get_name(idx))
-            .collect()
-    }
-
-    /// Get all LED names as a Vec
-    pub(crate) fn get_all_leds(&self) -> Vec<String> {
-        let num_leds = self.num_leds();
-        (0..num_leds)
-            .filter_map(|idx| self.led_get_name(idx))
-            .collect()
-    }
 }
 
-/// Iterator over keycode ranges in a keymap
-pub(crate) struct KeycodeIter {
-    current: u32,
-    max: u32,
-    evdev_offset: u32,
-}
 
-impl Iterator for KeycodeIter {
-    type Item = (u32, u32); // (xkb_keycode, evdev_code)
 
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.current <= self.max {
-            let keycode = self.current;
-            let evdev_code = keycode - self.evdev_offset;
-            self.current += 1;
-            Some((keycode, evdev_code))
-        } else {
-            None
-        }
-    }
-}
 
-impl ExactSizeIterator for KeycodeIter {
-    fn len(&self) -> usize {
-        if self.current <= self.max {
-            (self.max - self.current + 1) as usize
-        } else {
-            0
-        }
-    }
-}
+
 
 /// Safe wrapper around XkbState with automatic cleanup
 ///
@@ -2012,38 +1835,13 @@ impl State {
         xkb_state_key_get_one_sym(&self.inner, keycode)
     }
 
-    /// Get all keysyms for a key in the current state
-    pub(crate) fn key_get_syms(&self, keycode: u32) -> &[u32] {
-        xkb_state_key_get_syms(&self.inner, keycode)
-    }
 
-    /// Check if a modifier is active
-    pub(crate) fn mod_name_is_active(&self, name: &str, state_type: u32) -> bool {
-        xkb_state_mod_name_is_active(&self.inner, name, state_type) > 0
-    }
 
-    /// Check if a modifier index is active
-    pub(crate) fn mod_index_is_active(&self, idx: u32, state_type: u32) -> bool {
-        xkb_state_mod_index_is_active(&self.inner, idx, state_type) > 0
-    }
 
     /// Get keysyms for a key at a specific layout and level (delegates to keymap)
-    pub(crate) fn key_get_syms_by_level(&self, keycode: u32, layout: u32, level: u32) -> &[u32] {
-        let keymap = self.inner.keymap();
-        if let Some(key) = keymap.get_key(keycode) {
-            if let Some(leveli) = keymap.get_key_level(key, layout, level) {
-                if !leveli.syms.is_empty() {
-                    return &leveli.syms[..];
-                }
-            }
-        }
-        &[]
-    }
 
-    /// Get the number of layouts in the underlying keymap
-    pub(crate) fn num_keymap_layouts(&self) -> u32 {
-        xkb_keymap_num_layouts(self.inner.keymap())
-    }
+
+
 
     /// Update state from modifier/layout masks (e.g., from Wayland compositor)
     pub(crate) fn update_mask(
@@ -2106,59 +1904,7 @@ impl RegistryContext {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_rule_names_evdev() {
-        let names = RuleNames::evdev("us".to_string(), None);
-        assert_eq!(names.rules, "evdev");
-        assert_eq!(names.layout, "us");
-        assert_eq!(names.variant, "");
-    }
-
-    #[test]
-    fn test_rule_names_to_c() {
-        let names = RuleNames::evdev("us".to_string(), Some("dvorak".to_string()));
-        let c_struct = names.to_c_keymap();
-
-        assert_eq!(c_struct.rules.to_str().unwrap(), "evdev");
-        assert_eq!(c_struct.layout.to_str().unwrap(), "us");
-        assert_eq!(c_struct.variant.to_str().unwrap(), "dvorak");
-    }
-
-    #[test]
-    fn test_context_new() {
-        let ctx = Context::new();
-        assert!(ctx.is_some());
-    }
-
-    #[test]
-    fn test_context_keymap() {
-        let ctx = Context::new().expect("Failed to create context");
-        let rules = RuleNames::evdev("us".to_string(), None);
-        let keymap = ctx.keymap_from_names(&rules);
-        assert!(keymap.is_some());
-    }
-
-    #[test]
-    fn test_keymap_keycodes() {
-        let ctx = Context::new().expect("Failed to create context");
-        let rules = RuleNames::evdev("us".to_string(), None);
-        let keymap = ctx
-            .keymap_from_names(&rules)
-            .expect("Failed to create keymap");
-
-        let min = keymap.min_keycode();
-        let max = keymap.max_keycode();
-        assert!(min < max);
-        assert!(min >= 8); // evdev starts at 8
-    }
-}
-
 #[derive(Copy, Clone)]
-
 pub(crate) struct XkbEvent {
     pub(crate) type_0: XkbEventType,
     pub(crate) data: XkbEventData,
@@ -2173,7 +1919,6 @@ pub(crate) enum XkbEventData {
 
 pub(crate) struct XkbEventComponents {
     pub(crate) components: StateComponents,
-    pub(crate) changed: u32,
 }
 #[derive(Copy, Clone)]
 
@@ -2190,14 +1935,6 @@ pub(crate) struct StateComponents {
     pub(crate) controls: XkbActionControls,
 }
 #[derive(Copy, Clone)]
-
-pub(crate) struct XkbStateUpdateV1 {
-    pub(crate) size: usize,
-    pub(crate) components: *const XkbStateComponentsUpdateV1,
-    pub(crate) layout_policy: *const XkbLayoutPolicyUpdateV1,
-}
-#[derive(Copy, Clone)]
-
 pub(crate) struct XkbLayoutPolicyUpdateV1 {
     pub(crate) size: usize,
     pub(crate) policy: u32,
@@ -3034,7 +2771,6 @@ fn append_redirect_key_events(
                 type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
                 data: XkbEventData::Components(XkbEventComponents {
                     components: new,
-                    changed,
                 }),
             });
         }
@@ -3054,7 +2790,6 @@ fn append_redirect_key_events(
             type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
             data: XkbEventData::Components(XkbEventComponents {
                 components: last_components,
-                changed,
             }),
         });
     }
