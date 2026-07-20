@@ -566,7 +566,7 @@ use super::shared_types::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
     DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
 };
-pub use super::shared_types::{XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_LOG_VERBOSITY_DEFAULT};
+pub use super::shared_types::XKB_LOG_VERBOSITY_DEFAULT;
 fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> i32 {
     let is_dir = std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false);
     if is_dir {
@@ -728,53 +728,38 @@ pub(crate) fn xkb_context_include_path_get(ctx: &mut XkbContext, idx: u32) -> St
     ctx.includes.get(idx as usize).unwrap().clone()
 }
 
-fn log_level_from_str(level: &str) -> u32 {
-    let bytes = level.as_bytes();
-    // Try parsing as integer first
-    if let Ok(val) = level.trim().parse::<i64>() {
-        return val as u32;
-    }
-    if bytes
-        .get(..4)
-        .is_some_and(|s| s.eq_ignore_ascii_case(b"crit"))
-    {
-        return XKB_LOG_LEVEL_CRITICAL;
-    }
-    if bytes
-        .get(..3)
-        .is_some_and(|s| s.eq_ignore_ascii_case(b"err"))
-    {
-        return XKB_LOG_LEVEL_ERROR;
-    }
-    if bytes
-        .get(..4)
-        .is_some_and(|s| s.eq_ignore_ascii_case(b"warn"))
-    {
-        return XKB_LOG_LEVEL_WARNING;
-    }
-    if bytes
-        .get(..4)
-        .is_some_and(|s| s.eq_ignore_ascii_case(b"info"))
-    {
-        return XKB_LOG_LEVEL_INFO;
-    }
-    if bytes
-        .get(..5)
-        .is_some_and(|s| s.eq_ignore_ascii_case(b"debug"))
-        || bytes
-            .get(..3)
-            .is_some_and(|s| s.eq_ignore_ascii_case(b"dbg"))
-    {
-        return XKB_LOG_LEVEL_DEBUG;
-    }
-    XKB_LOG_LEVEL_ERROR
-}
 fn log_verbosity_from_str(verbosity: &str) -> i32 {
     if let Ok(val) = verbosity.trim().parse::<i64>() {
         return val as i32;
     }
     XKB_LOG_VERBOSITY_DEFAULT
 }
+
+fn log_level_from_str(level: &str) -> u32 {
+    if let Ok(val) = level.trim().parse::<i64>() {
+        return val as u32;
+    }
+    let bytes = level.as_bytes();
+    if bytes.get(..4).is_some_and(|s| s.eq_ignore_ascii_case(b"crit")) {
+        return XKB_LOG_LEVEL_CRITICAL;
+    }
+    if bytes.get(..3).is_some_and(|s| s.eq_ignore_ascii_case(b"err")) {
+        return XKB_LOG_LEVEL_ERROR;
+    }
+    if bytes.get(..4).is_some_and(|s| s.eq_ignore_ascii_case(b"warn")) {
+        return XKB_LOG_LEVEL_WARNING;
+    }
+    if bytes.get(..4).is_some_and(|s| s.eq_ignore_ascii_case(b"info")) {
+        return XKB_LOG_LEVEL_INFO;
+    }
+    if bytes.get(..5).is_some_and(|s| s.eq_ignore_ascii_case(b"debug"))
+        || bytes.get(..3).is_some_and(|s| s.eq_ignore_ascii_case(b"dbg"))
+    {
+        return XKB_LOG_LEVEL_DEBUG;
+    }
+    XKB_LOG_LEVEL_ERROR
+}
+
 pub(crate) fn xkb_context_new(flags: XkbContextFlags) -> XkbContext {
     let mut ctx = XkbContext {
         log_level: XKB_LOG_LEVEL_ERROR,
@@ -955,423 +940,120 @@ pub(crate) fn lookup_value(tab: &[LookupEntry], value: u32) -> &'static str {
     ""
 }
 pub(crate) static CTRL_MASK_NAMES: [LookupEntry; 25] = [
-    LookupEntry {
-        name: "Overlay3",
-        value: CONTROL_OVERLAY3,
-    },
-    LookupEntry {
-        name: "Overlay4",
-        value: CONTROL_OVERLAY4,
-    },
-    LookupEntry {
-        name: "Overlay5",
-        value: CONTROL_OVERLAY5,
-    },
-    LookupEntry {
-        name: "Overlay6",
-        value: CONTROL_OVERLAY6,
-    },
-    LookupEntry {
-        name: "Overlay7",
-        value: CONTROL_OVERLAY7,
-    },
-    LookupEntry {
-        name: "Overlay8",
-        value: CONTROL_OVERLAY8,
-    },
-    LookupEntry {
-        name: "all",
-        value: CONTROL_ALL_BOOLEAN,
-    },
-    LookupEntry {
-        name: "RepeatKeys",
-        value: CONTROL_REPEAT,
-    },
-    LookupEntry {
-        name: "Repeat",
-        value: CONTROL_REPEAT,
-    },
-    LookupEntry {
-        name: "AutoRepeat",
-        value: CONTROL_REPEAT,
-    },
-    LookupEntry {
-        name: "SlowKeys",
-        value: CONTROL_SLOW,
-    },
-    LookupEntry {
-        name: "BounceKeys",
-        value: CONTROL_DEBOUNCE,
-    },
-    LookupEntry {
-        name: "StickyKeys",
-        value: CONTROL_STICKY_KEYS,
-    },
-    LookupEntry {
-        name: "MouseKeys",
-        value: CONTROL_MOUSE_KEYS,
-    },
-    LookupEntry {
-        name: "MouseKeysAccel",
-        value: CONTROL_MOUSE_KEYS_ACCEL,
-    },
-    LookupEntry {
-        name: "AccessXKeys",
-        value: CONTROL_AX,
-    },
-    LookupEntry {
-        name: "AccessXTimeout",
-        value: CONTROL_AX_TIMEOUT,
-    },
-    LookupEntry {
-        name: "AccessXFeedback",
-        value: CONTROL_AX_FEEDBACK,
-    },
-    LookupEntry {
-        name: "AudibleBell",
-        value: CONTROL_BELL,
-    },
-    LookupEntry {
-        name: "IgnoreGroupLock",
-        value: CONTROL_IGNORE_GROUP_LOCK,
-    },
-    LookupEntry {
-        name: "Overlay1",
-        value: CONTROL_OVERLAY1,
-    },
-    LookupEntry {
-        name: "Overlay2",
-        value: CONTROL_OVERLAY2,
-    },
-    LookupEntry {
-        name: "all",
-        value: CONTROL_ALL_BOOLEAN_V1,
-    },
-    LookupEntry {
-        name: "none",
-        value: 0_u32,
-    },
-    LookupEntry {
-        name: "",
-        value: 0_u32,
-    },
+    LookupEntry { name: "Overlay3", value: CONTROL_OVERLAY3 },
+    LookupEntry { name: "Overlay4", value: CONTROL_OVERLAY4 },
+    LookupEntry { name: "Overlay5", value: CONTROL_OVERLAY5 },
+    LookupEntry { name: "Overlay6", value: CONTROL_OVERLAY6 },
+    LookupEntry { name: "Overlay7", value: CONTROL_OVERLAY7 },
+    LookupEntry { name: "Overlay8", value: CONTROL_OVERLAY8 },
+    LookupEntry { name: "all", value: CONTROL_ALL_BOOLEAN },
+    LookupEntry { name: "RepeatKeys", value: CONTROL_REPEAT },
+    LookupEntry { name: "Repeat", value: CONTROL_REPEAT },
+    LookupEntry { name: "AutoRepeat", value: CONTROL_REPEAT },
+    LookupEntry { name: "SlowKeys", value: CONTROL_SLOW },
+    LookupEntry { name: "BounceKeys", value: CONTROL_DEBOUNCE },
+    LookupEntry { name: "StickyKeys", value: CONTROL_STICKY_KEYS },
+    LookupEntry { name: "MouseKeys", value: CONTROL_MOUSE_KEYS },
+    LookupEntry { name: "MouseKeysAccel", value: CONTROL_MOUSE_KEYS_ACCEL },
+    LookupEntry { name: "AccessXKeys", value: CONTROL_AX },
+    LookupEntry { name: "AccessXTimeout", value: CONTROL_AX_TIMEOUT },
+    LookupEntry { name: "AccessXFeedback", value: CONTROL_AX_FEEDBACK },
+    LookupEntry { name: "AudibleBell", value: CONTROL_BELL },
+    LookupEntry { name: "IgnoreGroupLock", value: CONTROL_IGNORE_GROUP_LOCK },
+    LookupEntry { name: "Overlay1", value: CONTROL_OVERLAY1 },
+    LookupEntry { name: "Overlay2", value: CONTROL_OVERLAY2 },
+    LookupEntry { name: "all", value: CONTROL_ALL_BOOLEAN_V1 },
+    LookupEntry { name: "none", value: 0_u32 },
+    LookupEntry { name: "", value: 0_u32 },
 ];
 pub(crate) static MOD_COMPONENT_MASK_NAMES: [LookupEntry; 8] = [
-    LookupEntry {
-        name: "base",
-        value: XKB_STATE_MODS_DEPRESSED,
-    },
-    LookupEntry {
-        name: "latched",
-        value: XKB_STATE_MODS_LATCHED,
-    },
-    LookupEntry {
-        name: "locked",
-        value: XKB_STATE_MODS_LOCKED,
-    },
-    LookupEntry {
-        name: "effective",
-        value: XKB_STATE_MODS_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "compat",
-        value: XKB_STATE_MODS_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "any",
-        value: XKB_STATE_MODS_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "none",
-        value: 0_u32,
-    },
-    LookupEntry {
-        name: "",
-        value: 0_u32,
-    },
+    LookupEntry { name: "base", value: XKB_STATE_MODS_DEPRESSED },
+    LookupEntry { name: "latched", value: XKB_STATE_MODS_LATCHED },
+    LookupEntry { name: "locked", value: XKB_STATE_MODS_LOCKED },
+    LookupEntry { name: "effective", value: XKB_STATE_MODS_EFFECTIVE },
+    LookupEntry { name: "compat", value: XKB_STATE_MODS_EFFECTIVE },
+    LookupEntry { name: "any", value: XKB_STATE_MODS_EFFECTIVE },
+    LookupEntry { name: "none", value: 0_u32 },
+    LookupEntry { name: "", value: 0_u32 },
 ];
 pub(crate) static GROUP_COMPONENT_MASK_NAMES: [LookupEntry; 7] = [
-    LookupEntry {
-        name: "base",
-        value: XKB_STATE_LAYOUT_DEPRESSED,
-    },
-    LookupEntry {
-        name: "latched",
-        value: XKB_STATE_LAYOUT_LATCHED,
-    },
-    LookupEntry {
-        name: "locked",
-        value: XKB_STATE_LAYOUT_LOCKED,
-    },
-    LookupEntry {
-        name: "effective",
-        value: XKB_STATE_LAYOUT_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "any",
-        value: XKB_STATE_LAYOUT_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "none",
-        value: 0_u32,
-    },
-    LookupEntry {
-        name: "",
-        value: 0_u32,
-    },
+    LookupEntry { name: "base", value: XKB_STATE_LAYOUT_DEPRESSED },
+    LookupEntry { name: "latched", value: XKB_STATE_LAYOUT_LATCHED },
+    LookupEntry { name: "locked", value: XKB_STATE_LAYOUT_LOCKED },
+    LookupEntry { name: "effective", value: XKB_STATE_LAYOUT_EFFECTIVE },
+    LookupEntry { name: "any", value: XKB_STATE_LAYOUT_EFFECTIVE },
+    LookupEntry { name: "none", value: 0_u32 },
+    LookupEntry { name: "", value: 0_u32 },
 ];
 pub(crate) static BUTTON_NAMES: [LookupEntry; 7] = [
-    LookupEntry {
-        name: "Button1",
-        value: 1_u32,
-    },
-    LookupEntry {
-        name: "Button2",
-        value: 2_u32,
-    },
-    LookupEntry {
-        name: "Button3",
-        value: 3_u32,
-    },
-    LookupEntry {
-        name: "Button4",
-        value: 4_u32,
-    },
-    LookupEntry {
-        name: "Button5",
-        value: 5_u32,
-    },
-    LookupEntry {
-        name: "default",
-        value: 0_u32,
-    },
-    LookupEntry {
-        name: "",
-        value: 0_u32,
-    },
+    LookupEntry { name: "Button1", value: 1_u32 },
+    LookupEntry { name: "Button2", value: 2_u32 },
+    LookupEntry { name: "Button3", value: 3_u32 },
+    LookupEntry { name: "Button4", value: 4_u32 },
+    LookupEntry { name: "Button5", value: 5_u32 },
+    LookupEntry { name: "default", value: 0_u32 },
+    LookupEntry { name: "", value: 0_u32 },
 ];
 pub(crate) static USE_MOD_MAP_VALUE_NAMES: [LookupEntry; 5] = [
-    LookupEntry {
-        name: "LevelOne",
-        value: 1_u32,
-    },
-    LookupEntry {
-        name: "Level1",
-        value: 1_u32,
-    },
-    LookupEntry {
-        name: "AnyLevel",
-        value: 0_u32,
-    },
-    LookupEntry {
-        name: "any",
-        value: 0_u32,
-    },
-    LookupEntry {
-        name: "",
-        value: 0_u32,
-    },
+    LookupEntry { name: "LevelOne", value: 1_u32 },
+    LookupEntry { name: "Level1", value: 1_u32 },
+    LookupEntry { name: "AnyLevel", value: 0_u32 },
+    LookupEntry { name: "any", value: 0_u32 },
+    LookupEntry { name: "", value: 0_u32 },
 ];
 
 pub static ACTION_TYPE_NAMES: [LookupEntry; 43] = [
-    LookupEntry {
-        name: "NoAction",
-        value: ACTION_TYPE_NONE,
-    },
-    LookupEntry {
-        name: "VoidAction",
-        value: ACTION_TYPE_VOID,
-    },
-    LookupEntry {
-        name: "SetMods",
-        value: ACTION_TYPE_MOD_SET,
-    },
-    LookupEntry {
-        name: "LatchMods",
-        value: ACTION_TYPE_MOD_LATCH,
-    },
-    LookupEntry {
-        name: "LockMods",
-        value: ACTION_TYPE_MOD_LOCK,
-    },
-    LookupEntry {
-        name: "SetGroup",
-        value: ACTION_TYPE_GROUP_SET,
-    },
-    LookupEntry {
-        name: "LatchGroup",
-        value: ACTION_TYPE_GROUP_LATCH,
-    },
-    LookupEntry {
-        name: "LockGroup",
-        value: ACTION_TYPE_GROUP_LOCK,
-    },
-    LookupEntry {
-        name: "MovePtr",
-        value: ACTION_TYPE_PTR_MOVE,
-    },
-    LookupEntry {
-        name: "MovePointer",
-        value: ACTION_TYPE_PTR_MOVE,
-    },
-    LookupEntry {
-        name: "PtrBtn",
-        value: ACTION_TYPE_PTR_BUTTON,
-    },
-    LookupEntry {
-        name: "PointerButton",
-        value: ACTION_TYPE_PTR_BUTTON,
-    },
-    LookupEntry {
-        name: "LockPtrBtn",
-        value: ACTION_TYPE_PTR_LOCK,
-    },
-    LookupEntry {
-        name: "LockPtrButton",
-        value: ACTION_TYPE_PTR_LOCK,
-    },
-    LookupEntry {
-        name: "LockPointerButton",
-        value: ACTION_TYPE_PTR_LOCK,
-    },
-    LookupEntry {
-        name: "LockPointerBtn",
-        value: ACTION_TYPE_PTR_LOCK,
-    },
-    LookupEntry {
-        name: "SetPtrDflt",
-        value: ACTION_TYPE_PTR_DEFAULT,
-    },
-    LookupEntry {
-        name: "SetPointerDefault",
-        value: ACTION_TYPE_PTR_DEFAULT,
-    },
-    LookupEntry {
-        name: "Terminate",
-        value: ACTION_TYPE_TERMINATE,
-    },
-    LookupEntry {
-        name: "TerminateServer",
-        value: ACTION_TYPE_TERMINATE,
-    },
-    LookupEntry {
-        name: "SwitchScreen",
-        value: ACTION_TYPE_SWITCH_VT,
-    },
-    LookupEntry {
-        name: "SetControls",
-        value: ACTION_TYPE_CTRL_SET,
-    },
-    LookupEntry {
-        name: "LockControls",
-        value: ACTION_TYPE_CTRL_LOCK,
-    },
-    LookupEntry {
-        name: "RedirectKey",
-        value: ACTION_TYPE_REDIRECT_KEY,
-    },
-    LookupEntry {
-        name: "Redirect",
-        value: ACTION_TYPE_REDIRECT_KEY,
-    },
-    LookupEntry {
-        name: "Private",
-        value: ACTION_TYPE_PRIVATE,
-    },
-    LookupEntry {
-        name: "ISOLock",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "ActionMessage",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "MessageAction",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "Message",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DeviceBtn",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DevBtn",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DevButton",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DeviceButton",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "LockDeviceBtn",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "LockDevBtn",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "LockDevButton",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "LockDeviceButton",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DeviceValuator",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DevVal",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DeviceVal",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DevValuator",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "",
-        value: 0_u32,
-    },
+    LookupEntry { name: "NoAction", value: ACTION_TYPE_NONE },
+    LookupEntry { name: "VoidAction", value: ACTION_TYPE_VOID },
+    LookupEntry { name: "SetMods", value: ACTION_TYPE_MOD_SET },
+    LookupEntry { name: "LatchMods", value: ACTION_TYPE_MOD_LATCH },
+    LookupEntry { name: "LockMods", value: ACTION_TYPE_MOD_LOCK },
+    LookupEntry { name: "SetGroup", value: ACTION_TYPE_GROUP_SET },
+    LookupEntry { name: "LatchGroup", value: ACTION_TYPE_GROUP_LATCH },
+    LookupEntry { name: "LockGroup", value: ACTION_TYPE_GROUP_LOCK },
+    LookupEntry { name: "MovePtr", value: ACTION_TYPE_PTR_MOVE },
+    LookupEntry { name: "MovePointer", value: ACTION_TYPE_PTR_MOVE },
+    LookupEntry { name: "PtrBtn", value: ACTION_TYPE_PTR_BUTTON },
+    LookupEntry { name: "PointerButton", value: ACTION_TYPE_PTR_BUTTON },
+    LookupEntry { name: "LockPtrBtn", value: ACTION_TYPE_PTR_LOCK },
+    LookupEntry { name: "LockPtrButton", value: ACTION_TYPE_PTR_LOCK },
+    LookupEntry { name: "LockPointerButton", value: ACTION_TYPE_PTR_LOCK },
+    LookupEntry { name: "LockPointerBtn", value: ACTION_TYPE_PTR_LOCK },
+    LookupEntry { name: "SetPtrDflt", value: ACTION_TYPE_PTR_DEFAULT },
+    LookupEntry { name: "SetPointerDefault", value: ACTION_TYPE_PTR_DEFAULT },
+    LookupEntry { name: "Terminate", value: ACTION_TYPE_TERMINATE },
+    LookupEntry { name: "TerminateServer", value: ACTION_TYPE_TERMINATE },
+    LookupEntry { name: "SwitchScreen", value: ACTION_TYPE_SWITCH_VT },
+    LookupEntry { name: "SetControls", value: ACTION_TYPE_CTRL_SET },
+    LookupEntry { name: "LockControls", value: ACTION_TYPE_CTRL_LOCK },
+    LookupEntry { name: "RedirectKey", value: ACTION_TYPE_REDIRECT_KEY },
+    LookupEntry { name: "Redirect", value: ACTION_TYPE_REDIRECT_KEY },
+    LookupEntry { name: "Private", value: ACTION_TYPE_PRIVATE },
+    LookupEntry { name: "ISOLock", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "ActionMessage", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "MessageAction", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "Message", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "DeviceBtn", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "DevBtn", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "DevButton", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "DeviceButton", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "LockDeviceBtn", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "LockDevBtn", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "LockDevButton", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "LockDeviceButton", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "DeviceValuator", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "DevVal", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "DeviceVal", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "DevValuator", value: ACTION_TYPE_UNSUPPORTED_LEGACY },
+    LookupEntry { name: "", value: 0_u32 },
 ];
 pub(crate) static SYM_INTERPRET_MATCH_MASK_NAMES: [LookupEntry; 6] = [
-    LookupEntry {
-        name: "NoneOf",
-        value: MATCH_NONE,
-    },
-    LookupEntry {
-        name: "AnyOfOrNone",
-        value: MATCH_ANY_OR_NONE,
-    },
-    LookupEntry {
-        name: "AnyOf",
-        value: MATCH_ANY,
-    },
-    LookupEntry {
-        name: "AllOf",
-        value: MATCH_ALL,
-    },
-    LookupEntry {
-        name: "Exactly",
-        value: MATCH_EXACTLY,
-    },
-    LookupEntry {
-        name: "",
-        value: 0_u32,
-    },
+    LookupEntry { name: "NoneOf", value: MATCH_NONE },
+    LookupEntry { name: "AnyOfOrNone", value: MATCH_ANY_OR_NONE },
+    LookupEntry { name: "AnyOf", value: MATCH_ANY },
+    LookupEntry { name: "AllOf", value: MATCH_ALL },
+    LookupEntry { name: "Exactly", value: MATCH_EXACTLY },
+    LookupEntry { name: "", value: 0_u32 },
 ];
 
 pub(crate) fn action_type_text(type_0: u32) -> &'static str {
@@ -2642,90 +2324,27 @@ fn xkb_filter_redirect_key_func(
 
 static FILTER_ACTION_FUNCS: [FilterActionFuncs; 21] = {
     [
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_mod_set_new),
-            func: Some(xkb_filter_mod_set_func),
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_mod_latch_new),
-            func: Some(xkb_filter_mod_latch_func),
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_mod_lock_new),
-            func: Some(xkb_filter_mod_lock_func),
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_group_set_new),
-            func: Some(xkb_filter_group_set_func),
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_group_latch_new),
-            func: Some(xkb_filter_group_latch_func),
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_group_lock_new),
-            func: Some(xkb_filter_group_lock_func),
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_ctrls_new),
-            func: Some(xkb_filter_ctrls_func),
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_ctrls_new),
-            func: Some(xkb_filter_ctrls_func),
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_redirect_key_new),
-            func: Some(xkb_filter_redirect_key_func),
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
+        FilterActionFuncs { new: None, func: None },
+        FilterActionFuncs { new: None, func: None },
+        FilterActionFuncs { new: Some(xkb_filter_mod_set_new), func: Some(xkb_filter_mod_set_func) },
+        FilterActionFuncs { new: Some(xkb_filter_mod_latch_new), func: Some(xkb_filter_mod_latch_func) },
+        FilterActionFuncs { new: Some(xkb_filter_mod_lock_new), func: Some(xkb_filter_mod_lock_func) },
+        FilterActionFuncs { new: Some(xkb_filter_group_set_new), func: Some(xkb_filter_group_set_func) },
+        FilterActionFuncs { new: Some(xkb_filter_group_latch_new), func: Some(xkb_filter_group_latch_func) },
+        FilterActionFuncs { new: Some(xkb_filter_group_lock_new), func: Some(xkb_filter_group_lock_func) },
+        FilterActionFuncs { new: None, func: None },
+        FilterActionFuncs { new: None, func: None },
+        FilterActionFuncs { new: None, func: None },
+        FilterActionFuncs { new: None, func: None },
+        FilterActionFuncs { new: None, func: None },
+        FilterActionFuncs { new: None, func: None },
+        FilterActionFuncs { new: Some(xkb_filter_ctrls_new), func: Some(xkb_filter_ctrls_func) },
+        FilterActionFuncs { new: Some(xkb_filter_ctrls_new), func: Some(xkb_filter_ctrls_func) },
+        FilterActionFuncs { new: Some(xkb_filter_redirect_key_new), func: Some(xkb_filter_redirect_key_func) },
+        FilterActionFuncs { new: None, func: None },
+        FilterActionFuncs { new: None, func: None },
+        FilterActionFuncs { new: None, func: None },
+        FilterActionFuncs { new: None, func: None },
     ]
 };
 
@@ -2820,10 +2439,7 @@ pub(crate) fn xkb_state_new(keymap: Rc<XkbKeymap>) -> Box<XkbState> {
             leds: 0,
             controls: 0,
         },
-        controls: MachineControls {
-            out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
-            out_of_range_redirect_group: 0,
-        },
+        controls: MachineControls { out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP, out_of_range_redirect_group: 0 },
         set_mods: 0,
         clear_mods: 0,
         mod_key_count: [0; 32],
@@ -3047,10 +2663,7 @@ fn update_latch_modifiers(state: &mut XkbState, events: &mut XkbEvents, mask: u3
     let latch_mods: XkbAction = XkbAction::ModLatch(XkbModAction {
         type_0: ACTION_TYPE_MOD_LATCH,
         flags: 0 as XkbActionFlags,
-        mods: XkbMods {
-            mods: 0,
-            mask: mask & latches,
-        },
+        mods: XkbMods { mods: 0, mask: mask & latches },
     });
     let idx = xkb_filter_new(state);
     state.filters[idx].key = key;
@@ -3319,11 +2932,6 @@ pub(crate) fn xkb_state_mod_index_is_consumed(state: &XkbState, kc: u32, idx: u3
     xkb_state_mod_index_is_consumed2(state, kc, idx, XKB_CONSUMED_MODE_XKB)
 }
 
-pub(crate) type RxkbLogLevel = u32;
-pub(crate) const RXKB_LOG_LEVEL_DEBUG: RxkbLogLevel = 50;
-pub(crate) const RXKB_LOG_LEVEL_INFO: RxkbLogLevel = 40;
-pub(crate) const RXKB_LOG_LEVEL_WARNING: RxkbLogLevel = 30;
-pub(crate) const RXKB_LOG_LEVEL_ERROR: RxkbLogLevel = 20;
 pub(crate) type RxkbPopularity = u32;
 pub(crate) const RXKB_POPULARITY_EXOTIC: RxkbPopularity = 2;
 pub(crate) const RXKB_POPULARITY_STANDARD: RxkbPopularity = 1;
@@ -3345,8 +2953,6 @@ pub(crate) struct RxkbContext {
     pub(crate) layouts: Vec<RxkbLayout>,
     pub(crate) option_groups: Vec<RxkbOptionGroup>,
     pub(crate) includes: Vec<String>,
-    pub(crate) log_fn: Option<fn(&RxkbContext, RxkbLogLevel, &str)>,
-    pub(crate) log_level: RxkbLogLevel,
 }
 
 #[derive(Clone)]
@@ -3397,45 +3003,9 @@ impl RxkbLayout {
 }
 
 // ---------------------------------------------------------------------------
-// Logging
-// ---------------------------------------------------------------------------
-
-macro_rules! rxkb_logf {
-    ($ctx:expr, $level:expr, $($arg:tt)*) => {{
-        rxkb_log($ctx, $level, &format!($($arg)*));
-    }};
-}
-
-fn rxkb_log(ctx: &RxkbContext, level: RxkbLogLevel, msg: &str) {
-    if ctx.log_level < level {
-        return;
-    }
-    if let Some(f) = ctx.log_fn {
-        f(ctx, level, msg);
-    }
-}
-
-fn log_level_to_prefix(level: RxkbLogLevel) -> &'static str {
-    match level {
-        50 => "xkbregistry: DEBUG: ",
-        40 => "xkbregistry: INFO: ",
-        30 => "xkbregistry: WARNING: ",
-        20 => "xkbregistry: ERROR: ",
-        10 => "xkbregistry: CRITICAL: ",
-        _ => "",
-    }
-}
-
-fn default_log_fn(_ctx: &RxkbContext, level: RxkbLogLevel, msg: &str) {
-    let prefix = log_level_to_prefix(level);
-    if !prefix.is_empty() {
-        eprint!("{}", prefix);
-    }
-    eprint!("{}", msg);
-}
 
 // ---------------------------------------------------------------------------
-// Context construction & pub(cratelic API
+// Context construction & public API
 // ---------------------------------------------------------------------------
 
 impl RxkbContext {
@@ -3451,33 +3021,13 @@ impl RxkbContext {
             layouts: Vec::new(),
             option_groups: Vec::new(),
             includes: Vec::new(),
-            log_fn: Some(default_log_fn as fn(&RxkbContext, RxkbLogLevel, &str)),
-            log_level: RXKB_LOG_LEVEL_ERROR,
         });
 
-        if let Ok(env) = std::env::var("RXKB_LOG_LEVEL") {
-            ctx.log_level = log_level_from_str(&env);
-        }
-
         if flags & !valid_flags != 0 {
-            rxkb_logf!(
-                &*ctx,
-                RXKB_LOG_LEVEL_ERROR,
-                "{}: Invalid context flags: 0x{:x}\n",
-                "RxkbContext_new",
-                flags & !valid_flags,
-            );
             return None;
         }
 
         if flags & RXKB_CONTEXT_NO_DEFAULT_INCLUDES == 0 && !ctx.include_path_append_default() {
-            rxkb_logf!(
-                &*ctx,
-                RXKB_LOG_LEVEL_ERROR,
-                "[XKB-{:03}] Failed to add any default include path (default system path: {})\n",
-                XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH as i32,
-                "/usr/share/xkeyboard-config-2",
-            );
             return None;
         }
 
@@ -3486,50 +3036,16 @@ impl RxkbContext {
 
     pub(crate) fn include_path_append(&mut self, path: &str) {
         if self.context_state != CONTEXT_NEW {
-            rxkb_logf!(
-                self,
-                RXKB_LOG_LEVEL_ERROR,
-                "include paths can only be appended to a new context\n",
-            );
             return;
         }
 
-        match std::fs::metadata(path) {
-            Err(e) => {
-                rxkb_logf!(
-                    self,
-                    RXKB_LOG_LEVEL_INFO,
-                    "Include path failed: \"{}\" ({})\n",
-                    path,
-                    e,
-                );
-            }
-            Ok(m) if !m.is_dir() => {
-                rxkb_logf!(
-                    self,
-                    RXKB_LOG_LEVEL_INFO,
-                    "Include path failed: \"{}\" (Not a directory)\n",
-                    path,
-                );
-            }
-            Ok(_) => {
-                // Validate that rules/evdev.xml exists beneath this path
-                let rules_path = format!("{}/rules/evdev.xml", path);
-                // We don't actually check the file here — the original just checked the dir.
-                let _ = rules_path;
-                self.includes.push(path.to_string());
-                rxkb_logf!(self, RXKB_LOG_LEVEL_INFO, "Include path added: {}\n", path,);
-            }
+        if std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false) {
+            self.includes.push(path.to_string());
         }
     }
 
     pub(crate) fn include_path_append_default(&mut self) -> bool {
         if self.context_state != CONTEXT_NEW {
-            rxkb_logf!(
-                self,
-                RXKB_LOG_LEVEL_ERROR,
-                "include paths can only be appended to a new context\n",
-            );
             return false;
         }
 
@@ -3593,13 +3109,6 @@ impl RxkbContext {
         }
 
         if !has_root && !root_path.is_empty() {
-            rxkb_logf!(
-                self,
-                RXKB_LOG_LEVEL_WARNING,
-                "Root include path failed; fallback to \"{}\". The setup is probably misconfigured. Please ensure that \"{}\" is available in the environment.\n",
-                "/usr/share/X11/xkb",
-                root_path,
-            );
             let prev_len2 = self.includes.len();
             self.include_path_append(DFLT_XKB_LEGACY_ROOT_STR);
             if self.includes.len() > prev_len2 {
@@ -3660,11 +3169,6 @@ impl RxkbContext {
     pub(crate) fn parse(&mut self, ruleset: &str) -> bool {
         let mut success = false;
         if self.context_state != CONTEXT_NEW {
-            rxkb_logf!(
-                self,
-                RXKB_LOG_LEVEL_ERROR,
-                "parse must only be called on a new context\n",
-            );
             return false;
         }
 
@@ -3676,14 +3180,12 @@ impl RxkbContext {
             let path_str = &includes[idx];
 
             let rules_path = format!("{}/rules/{}.xml", path_str, ruleset);
-            rxkb_logf!(self, RXKB_LOG_LEVEL_DEBUG, "Parsing {}\n", rules_path);
             if parse_xml_file(self, &rules_path, RXKB_POPULARITY_STANDARD) {
                 success = true;
             }
 
             if self.load_extra_rules_files {
                 let extras_path = format!("{}/rules/{}.extras.xml", path_str, ruleset);
-                rxkb_logf!(self, RXKB_LOG_LEVEL_DEBUG, "Parsing {}\n", extras_path);
                 if parse_xml_file(self, &extras_path, RXKB_POPULARITY_EXOTIC) {
                     success = true;
                 }
@@ -3746,7 +3248,6 @@ fn extract_text(doc: &xmloxide::Document, node: xmloxide::tree::NodeId) -> Strin
 }
 
 fn parse_config_item(
-    ctx: &RxkbContext,
     doc: &xmloxide::Document,
     parent: xmloxide::tree::NodeId,
     config: &mut ConfigItem,
@@ -3759,12 +3260,6 @@ fn parse_config_item(
                 } else if raw_popularity == "exotic" {
                     config.popularity = RXKB_POPULARITY_EXOTIC;
                 } else {
-                    rxkb_logf!(
-                        ctx,
-                        RXKB_LOG_LEVEL_ERROR,
-                        "xml: invalid popularity attribute: expected 'standard' or 'exotic', got: '{}'\n",
-                        raw_popularity,
-                    );
                 }
             }
             if let Some(raw_layout_specific) = get_attr(doc, ci, "layout-specific") {
@@ -3784,11 +3279,6 @@ fn parse_config_item(
                 }
             }
             if config.name.is_empty() {
-                rxkb_logf!(
-                    ctx,
-                    RXKB_LOG_LEVEL_ERROR,
-                    "xml: missing required element 'name'\n",
-                );
                 return false;
             }
             return true;
@@ -3811,7 +3301,7 @@ fn parse_model(
         popularity,
         layout_specific: false,
     };
-    if parse_config_item(ctx, doc, model, &mut config) {
+    if parse_config_item(doc, model, &mut config) {
         // Check for duplicate
         if ctx.models.iter().any(|m| m.name == config.name) {
             return;
@@ -3867,7 +3357,7 @@ fn parse_variant(
         popularity,
         layout_specific: false,
     };
-    if !parse_config_item(ctx, doc, variant, &mut config) {
+    if !parse_config_item(doc, variant, &mut config) {
         return;
     }
 
@@ -3939,7 +3429,7 @@ fn parse_layout(
         popularity,
         layout_specific: false,
     };
-    if !parse_config_item(ctx, doc, layout, &mut config) {
+    if !parse_config_item(doc, layout, &mut config) {
         return;
     }
 
@@ -4001,7 +3491,7 @@ fn parse_option(
         popularity,
         layout_specific: false,
     };
-    if parse_config_item(ctx, doc, option, &mut config) {
+    if parse_config_item(doc, option, &mut config) {
         // Check for duplicate
         if ctx.option_groups[group_idx]
             .options
@@ -4030,7 +3520,7 @@ fn parse_group(
         popularity,
         layout_specific: false,
     };
-    if !parse_config_item(ctx, doc, group, &mut config) {
+    if !parse_config_item(doc, group, &mut config) {
         return;
     }
 
@@ -4109,18 +3599,11 @@ fn parse_xml_file(ctx: &mut RxkbContext, path: &str, popularity: RxkbPopularity)
         let dtd = match xmloxide::validation::dtd::parse_dtd(XKBCONFIG_DTD) {
             Ok(dtd) => dtd,
             Err(_) => {
-                rxkb_logf!(ctx, RXKB_LOG_LEVEL_ERROR, "Failed to load DTD\n");
                 return false;
             }
         };
         let result = xmloxide::validation::dtd::validate(&mut doc, &dtd);
         if !result.is_valid {
-            rxkb_logf!(
-                ctx,
-                RXKB_LOG_LEVEL_ERROR,
-                "XML error: failed to validate document at {}\n",
-                path,
-            );
             return false;
         }
     }

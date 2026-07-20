@@ -105,9 +105,7 @@ impl SymbolsInfo {
             max_groups: 0,
             keys: Vec::with_capacity(256),
             default_key: KeyInfo::new_zeroed(),
-            default_actions: ActionsInfo {
-                actions: [XkbAction::None; 21],
-            },
+            default_actions: ActionsInfo { actions: [XkbAction::None; 21] },
             group_names: Vec::new(),
             modmaps: Vec::new(),
             mods: XkbModSet {
@@ -350,7 +348,7 @@ fn merge_groups(
     }
     true
 }
-fn use_new_key_field(
+fn use_new_field(
     field: u32,
     old: u32,
     new: u32,
@@ -578,7 +576,7 @@ fn merge_keys(
         into.groups.push(group_val);
         i = i.wrapping_add(1);
     }
-    if use_new_key_field(
+    if use_new_field(
         KEY_FIELD_VMODMAP,
         into.defined,
         from.defined,
@@ -589,7 +587,7 @@ fn merge_keys(
         into.vmodmap = from.vmodmap;
         into.defined |= KEY_FIELD_VMODMAP as i32 as u32;
     }
-    if use_new_key_field(
+    if use_new_field(
         KEY_FIELD_REPEAT,
         into.defined,
         from.defined,
@@ -600,7 +598,7 @@ fn merge_keys(
         into.repeat = from.repeat;
         into.defined |= KEY_FIELD_REPEAT as i32 as u32;
     }
-    if use_new_key_field(
+    if use_new_field(
         KEY_FIELD_DEFAULT_TYPE,
         into.defined,
         from.defined,
@@ -611,7 +609,7 @@ fn merge_keys(
         into.default_type = from.default_type;
         into.defined |= KEY_FIELD_DEFAULT_TYPE as i32 as u32;
     }
-    if use_new_key_field(
+    if use_new_field(
         KEY_FIELD_GROUPINFO,
         into.defined,
         from.defined,
@@ -1018,38 +1016,14 @@ fn add_actions_to_key(
     true
 }
 static REPEAT_ENTRIES: [LookupEntry; 8] = [
-    LookupEntry {
-        name: "true",
-        value: KEY_REPEAT_YES,
-    },
-    LookupEntry {
-        name: "yes",
-        value: KEY_REPEAT_YES,
-    },
-    LookupEntry {
-        name: "on",
-        value: KEY_REPEAT_YES,
-    },
-    LookupEntry {
-        name: "false",
-        value: KEY_REPEAT_NO,
-    },
-    LookupEntry {
-        name: "no",
-        value: KEY_REPEAT_NO,
-    },
-    LookupEntry {
-        name: "off",
-        value: KEY_REPEAT_NO,
-    },
-    LookupEntry {
-        name: "default",
-        value: KEY_REPEAT_UNDEFINED,
-    },
-    LookupEntry {
-        name: "",
-        value: 0_u32,
-    },
+    LookupEntry { name: "true", value: KEY_REPEAT_YES },
+    LookupEntry { name: "yes", value: KEY_REPEAT_YES },
+    LookupEntry { name: "on", value: KEY_REPEAT_YES },
+    LookupEntry { name: "false", value: KEY_REPEAT_NO },
+    LookupEntry { name: "no", value: KEY_REPEAT_NO },
+    LookupEntry { name: "off", value: KEY_REPEAT_NO },
+    LookupEntry { name: "default", value: KEY_REPEAT_UNDEFINED },
+    LookupEntry { name: "", value: 0_u32 },
 ];
 fn expr_resolve_overlay_entry(
     keymap_info: &XkbKeymapInfo<'_>,
@@ -2128,9 +2102,7 @@ impl CompatInfo {
             default_led: zeroed_led,
             leds: [zeroed_led; 32],
             num_leds: 0,
-            default_actions: ActionsInfo {
-                actions: [XkbAction::None; 21],
-            },
+            default_actions: ActionsInfo { actions: [XkbAction::None; 21] },
             mods: XkbModSet {
                 mods: [XkbMod {
                     name: 0,
@@ -2193,25 +2165,7 @@ fn clear_compat_info(info: &mut CompatInfo) {
     info.name = None;
     info.interps.clear();
 }
-fn use_new_interp_field(
-    field: u32,
-    old: u32,
-    new: u32,
-    clobber: bool,
-    report: bool,
-    collide: &mut u32,
-) -> bool {
-    if old & field == 0 {
-        return new & field != 0;
-    }
-    if new & field != 0 {
-        if report {
-            *collide |= field;
-        }
-        return clobber;
-    }
-    false
-}
+
 fn merge_interp(
     _info: &mut CompatInfo,
     ki: &XkbKeymapInfo<'_>,
@@ -2227,7 +2181,7 @@ fn merge_interp(
         *old = new.clone();
         return true;
     }
-    if use_new_interp_field(
+    if use_new_field(
         SI_FIELD_VIRTUAL_MOD,
         old.defined,
         new.defined,
@@ -2238,7 +2192,7 @@ fn merge_interp(
         old.interp.virtual_mod = new.interp.virtual_mod;
         old.defined |= SI_FIELD_VIRTUAL_MOD;
     }
-    if use_new_interp_field(
+    if use_new_field(
         SI_FIELD_ACTION,
         old.defined,
         new.defined,
@@ -2259,7 +2213,7 @@ fn merge_interp(
         }
         old.defined |= SI_FIELD_ACTION;
     }
-    if use_new_interp_field(
+    if use_new_field(
         SI_FIELD_AUTO_REPEAT,
         old.defined,
         new.defined,
@@ -2270,7 +2224,7 @@ fn merge_interp(
         old.interp.repeat = new.interp.repeat;
         old.defined |= SI_FIELD_AUTO_REPEAT;
     }
-    if use_new_interp_field(
+    if use_new_field(
         SI_FIELD_LEVEL_ONE_ONLY,
         old.defined,
         new.defined,
@@ -2357,25 +2311,7 @@ fn resolve_state_and_predicate(
     }
     expr_resolve_mod_mask(ki.ctx(), resolve_expr, MOD_REAL, &info.mods, mods_rtrn)
 }
-fn use_new_ledfield(
-    field: u32,
-    old: u32,
-    new: u32,
-    clobber: bool,
-    report: bool,
-    collide: &mut u32,
-) -> bool {
-    if old & field == 0 {
-        return new & field != 0;
-    }
-    if new & field != 0 {
-        if report {
-            *collide |= field;
-        }
-        return clobber;
-    }
-    false
-}
+
 fn merge_led_map(
     _info: &mut CompatInfo,
     ki: &XkbKeymapInfo<'_>,
@@ -2402,7 +2338,7 @@ fn merge_led_map(
         return true;
     }
     collide = 0_u32;
-    if use_new_ledfield(
+    if use_new_field(
         LED_FIELD_MODS,
         old.defined,
         new.defined,
@@ -2414,7 +2350,7 @@ fn merge_led_map(
         old.led.mods = new.led.mods;
         old.defined |= LED_FIELD_MODS;
     }
-    if use_new_ledfield(
+    if use_new_field(
         LED_FIELD_GROUPS,
         old.defined,
         new.defined,
@@ -2427,7 +2363,7 @@ fn merge_led_map(
         old.led.pending_groups = new.led.pending_groups;
         old.defined |= LED_FIELD_GROUPS;
     }
-    if use_new_ledfield(
+    if use_new_field(
         LED_FIELD_CTRLS,
         old.defined,
         new.defined,
@@ -3400,10 +3336,7 @@ fn add_preserve(
     let new = XkbKeyTypeEntry {
         level: 0_u32,
         mods: XkbMods { mods, mask: 0 },
-        preserve: XkbMods {
-            mods: preserve_mods,
-            mask: 0,
-        },
+        preserve: XkbMods { mods: preserve_mods, mask: 0 },
     };
     type_0.entries.push(new);
     true
@@ -3655,10 +3588,7 @@ fn copy_key_types_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo)
             }
             types_vec.push(XkbKeyType {
                 name: def.name,
-                mods: XkbMods {
-                    mods: def.mods,
-                    mask: 0,
-                },
+                mods: XkbMods { mods: def.mods, mask: 0 },
                 required,
                 num_levels: def.num_levels,
                 entries,
@@ -3809,12 +3739,7 @@ impl KeyNamesInfo {
             name: None,
             error_count: 0,
             include_depth: 0,
-            keycodes: KeycodeStore {
-                min: XKB_KEYCODE_INVALID,
-                low: Vec::new(),
-                high: Vec::new(),
-                names: Vec::new(),
-            },
+            keycodes: KeycodeStore { min: XKB_KEYCODE_INVALID, low: Vec::new(), high: Vec::new(), names: Vec::new() },
             led_names: [LedNameInfo {
                 merge: MERGE_DEFAULT,
                 name: 0,
@@ -4232,12 +4157,7 @@ fn merge_keycode_stores(
     {
         into.keycodes = std::mem::replace(
             &mut from.keycodes,
-            KeycodeStore {
-                min: XKB_KEYCODE_INVALID,
-                low: Vec::new(),
-                high: Vec::new(),
-                names: Vec::new(),
-            },
+            KeycodeStore { min: XKB_KEYCODE_INVALID, low: Vec::new(), high: Vec::new(), names: Vec::new() },
         );
     } else {
         let mut kc: u32 = from.keycodes.min;
@@ -5019,14 +4939,8 @@ pub(crate) fn expr_resolve_group(
     pending: &mut bool,
 ) -> u32 {
     static PENDING_GROUP_INDEX_NAMES: [LookupEntry; 2] = [
-        LookupEntry {
-            name: GROUP_LAST_INDEX_NAME,
-            value: 0_u32,
-        },
-        LookupEntry {
-            name: "",
-            value: 0_u32,
-        },
+        LookupEntry { name: GROUP_LAST_INDEX_NAME, value: 0_u32 },
+        LookupEntry { name: "", value: 0_u32 },
     ];
     let group_name_pattern = NamedIntegerPattern {
         prefix: "Group",
@@ -5041,18 +4955,10 @@ pub(crate) fn expr_resolve_group(
     let ctx = keymap_info.ctx();
     let mut result: i64 = 0_i64;
     if !expr_resolve_integer_lookup(ctx, expr, &mut result, Some(pending), &lookup) {
-        return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-            PARSER_FATAL_ERROR as i32
-        } else {
-            PARSER_RECOVERABLE_ERROR as i32
-        }) as u32;
+        return report_mismatch(keymap_info.strict);
     }
     if result < absolute as i64 || result > keymap_info.features.max_groups as i64 {
-        return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-            PARSER_FATAL_ERROR as i32
-        } else {
-            PARSER_RECOVERABLE_ERROR as i32
-        }) as u32;
+        return report_mismatch(keymap_info.strict);
     }
     *group_rtrn = result as u32;
     PARSER_SUCCESS
@@ -5315,14 +5221,8 @@ pub(crate) fn expr_resolve_group_mask(
     pending_rtrn: &mut bool,
 ) -> bool {
     static PENDING_GROUP_MASK_NAMES: [LookupEntry; 2] = [
-        LookupEntry {
-            name: GROUP_LAST_INDEX_NAME,
-            value: 0_u32,
-        },
-        LookupEntry {
-            name: "",
-            value: 0_u32,
-        },
+        LookupEntry { name: GROUP_LAST_INDEX_NAME, value: 0_u32 },
+        LookupEntry { name: "", value: 0_u32 },
     ];
     let group_name_pattern = NamedIntegerPattern {
         prefix: "Group",
@@ -5410,16 +5310,14 @@ impl<'v> ActionValue<'v> {
     }
 }
 
-pub(crate) type ActionHandler = Option<
-    for<'a> fn(
-        &mut XkbKeymapInfo<'a>,
-        &XkbModSet,
-        &mut XkbAction,
-        u32,
-        Option<&ExprDef>,
-        ActionValue<'_>,
-    ) -> u32,
->;
+pub(crate) type ActionHandler = fn(
+    &mut XkbKeymapInfo<'_>,
+    &XkbModSet,
+    &mut XkbAction,
+    u32,
+    Option<&ExprDef>,
+    ActionValue<'_>,
+) -> u32;
 // Constant true/false ExprDef values used in handle_action_def
 fn const_true_expr() -> ExprDef {
     ExprDef {
@@ -5454,154 +5352,43 @@ pub(crate) fn init_actions_info(keymap: &XkbKeymap, info: &mut ActionsInfo) {
         .keycode = keymap.redirect_key_auto;
 }
 static FIELD_STRINGS: [LookupEntry; 37] = [
-    LookupEntry {
-        name: "clearLocks",
-        value: ACTION_FIELD_CLEAR_LOCKS,
-    },
-    LookupEntry {
-        name: "latchToLock",
-        value: ACTION_FIELD_LATCH_TO_LOCK,
-    },
-    LookupEntry {
-        name: "genKeyEvent",
-        value: ACTION_FIELD_GEN_KEY_EVENT,
-    },
-    LookupEntry {
-        name: "generateKeyEvent",
-        value: ACTION_FIELD_GEN_KEY_EVENT,
-    },
-    LookupEntry {
-        name: "report",
-        value: ACTION_FIELD_REPORT,
-    },
-    LookupEntry {
-        name: "default",
-        value: ACTION_FIELD_DEFAULT,
-    },
-    LookupEntry {
-        name: "affect",
-        value: ACTION_FIELD_AFFECT,
-    },
-    LookupEntry {
-        name: "increment",
-        value: ACTION_FIELD_INCREMENT,
-    },
-    LookupEntry {
-        name: "modifiers",
-        value: ACTION_FIELD_MODIFIERS,
-    },
-    LookupEntry {
-        name: "mods",
-        value: ACTION_FIELD_MODIFIERS,
-    },
-    LookupEntry {
-        name: "group",
-        value: ACTION_FIELD_GROUP,
-    },
-    LookupEntry {
-        name: "x",
-        value: ACTION_FIELD_X,
-    },
-    LookupEntry {
-        name: "y",
-        value: ACTION_FIELD_Y,
-    },
-    LookupEntry {
-        name: "accel",
-        value: ACTION_FIELD_ACCEL,
-    },
-    LookupEntry {
-        name: "accelerate",
-        value: ACTION_FIELD_ACCEL,
-    },
-    LookupEntry {
-        name: "repeat",
-        value: ACTION_FIELD_ACCEL,
-    },
-    LookupEntry {
-        name: "button",
-        value: ACTION_FIELD_BUTTON,
-    },
-    LookupEntry {
-        name: "value",
-        value: ACTION_FIELD_VALUE,
-    },
-    LookupEntry {
-        name: "controls",
-        value: ACTION_FIELD_CONTROLS,
-    },
-    LookupEntry {
-        name: "ctrls",
-        value: ACTION_FIELD_CONTROLS,
-    },
-    LookupEntry {
-        name: "type",
-        value: ACTION_FIELD_TYPE,
-    },
-    LookupEntry {
-        name: "count",
-        value: ACTION_FIELD_COUNT,
-    },
-    LookupEntry {
-        name: "screen",
-        value: ACTION_FIELD_SCREEN,
-    },
-    LookupEntry {
-        name: "same",
-        value: ACTION_FIELD_SAME,
-    },
-    LookupEntry {
-        name: "sameServer",
-        value: ACTION_FIELD_SAME,
-    },
-    LookupEntry {
-        name: "data",
-        value: ACTION_FIELD_DATA,
-    },
-    LookupEntry {
-        name: "device",
-        value: ACTION_FIELD_DEVICE,
-    },
-    LookupEntry {
-        name: "dev",
-        value: ACTION_FIELD_DEVICE,
-    },
-    LookupEntry {
-        name: "key",
-        value: ACTION_FIELD_KEYCODE,
-    },
-    LookupEntry {
-        name: "keycode",
-        value: ACTION_FIELD_KEYCODE,
-    },
-    LookupEntry {
-        name: "kc",
-        value: ACTION_FIELD_KEYCODE,
-    },
-    LookupEntry {
-        name: "clearmods",
-        value: ACTION_FIELD_MODS_TO_CLEAR,
-    },
-    LookupEntry {
-        name: "clearmodifiers",
-        value: ACTION_FIELD_MODS_TO_CLEAR,
-    },
-    LookupEntry {
-        name: "lockOnRelease",
-        value: ACTION_FIELD_LOCK_ON_RELEASE,
-    },
-    LookupEntry {
-        name: "unlockOnPress",
-        value: ACTION_FIELD_UNLOCK_ON_PRESS,
-    },
-    LookupEntry {
-        name: "latchOnPress",
-        value: ACTION_FIELD_LATCH_ON_PRESS,
-    },
-    LookupEntry {
-        name: "",
-        value: 0_u32,
-    },
+    LookupEntry { name: "clearLocks", value: ACTION_FIELD_CLEAR_LOCKS },
+    LookupEntry { name: "latchToLock", value: ACTION_FIELD_LATCH_TO_LOCK },
+    LookupEntry { name: "genKeyEvent", value: ACTION_FIELD_GEN_KEY_EVENT },
+    LookupEntry { name: "generateKeyEvent", value: ACTION_FIELD_GEN_KEY_EVENT },
+    LookupEntry { name: "report", value: ACTION_FIELD_REPORT },
+    LookupEntry { name: "default", value: ACTION_FIELD_DEFAULT },
+    LookupEntry { name: "affect", value: ACTION_FIELD_AFFECT },
+    LookupEntry { name: "increment", value: ACTION_FIELD_INCREMENT },
+    LookupEntry { name: "modifiers", value: ACTION_FIELD_MODIFIERS },
+    LookupEntry { name: "mods", value: ACTION_FIELD_MODIFIERS },
+    LookupEntry { name: "group", value: ACTION_FIELD_GROUP },
+    LookupEntry { name: "x", value: ACTION_FIELD_X },
+    LookupEntry { name: "y", value: ACTION_FIELD_Y },
+    LookupEntry { name: "accel", value: ACTION_FIELD_ACCEL },
+    LookupEntry { name: "accelerate", value: ACTION_FIELD_ACCEL },
+    LookupEntry { name: "repeat", value: ACTION_FIELD_ACCEL },
+    LookupEntry { name: "button", value: ACTION_FIELD_BUTTON },
+    LookupEntry { name: "value", value: ACTION_FIELD_VALUE },
+    LookupEntry { name: "controls", value: ACTION_FIELD_CONTROLS },
+    LookupEntry { name: "ctrls", value: ACTION_FIELD_CONTROLS },
+    LookupEntry { name: "type", value: ACTION_FIELD_TYPE },
+    LookupEntry { name: "count", value: ACTION_FIELD_COUNT },
+    LookupEntry { name: "screen", value: ACTION_FIELD_SCREEN },
+    LookupEntry { name: "same", value: ACTION_FIELD_SAME },
+    LookupEntry { name: "sameServer", value: ACTION_FIELD_SAME },
+    LookupEntry { name: "data", value: ACTION_FIELD_DATA },
+    LookupEntry { name: "device", value: ACTION_FIELD_DEVICE },
+    LookupEntry { name: "dev", value: ACTION_FIELD_DEVICE },
+    LookupEntry { name: "key", value: ACTION_FIELD_KEYCODE },
+    LookupEntry { name: "keycode", value: ACTION_FIELD_KEYCODE },
+    LookupEntry { name: "kc", value: ACTION_FIELD_KEYCODE },
+    LookupEntry { name: "clearmods", value: ACTION_FIELD_MODS_TO_CLEAR },
+    LookupEntry { name: "clearmodifiers", value: ACTION_FIELD_MODS_TO_CLEAR },
+    LookupEntry { name: "lockOnRelease", value: ACTION_FIELD_LOCK_ON_RELEASE },
+    LookupEntry { name: "unlockOnPress", value: ACTION_FIELD_UNLOCK_ON_PRESS },
+    LookupEntry { name: "latchOnPress", value: ACTION_FIELD_LATCH_ON_PRESS },
+    LookupEntry { name: "", value: 0_u32 },
 ];
 fn string_to_action_type(str: &str, type_rtrn: &mut u32) -> bool {
     let mut type_0: u32 = 0_u32;
@@ -5711,26 +5498,11 @@ fn check_modifier_field(
     PARSER_SUCCESS
 }
 static LOCK_WHICH: [LookupEntry; 5] = [
-    LookupEntry {
-        name: "both",
-        value: 0_u32,
-    },
-    LookupEntry {
-        name: "lock",
-        value: ACTION_LOCK_NO_UNLOCK,
-    },
-    LookupEntry {
-        name: "neither",
-        value: (ACTION_LOCK_NO_LOCK as i32 | ACTION_LOCK_NO_UNLOCK as i32) as u32,
-    },
-    LookupEntry {
-        name: "unlock",
-        value: ACTION_LOCK_NO_LOCK,
-    },
-    LookupEntry {
-        name: "",
-        value: 0_u32,
-    },
+    LookupEntry { name: "both", value: 0_u32 },
+    LookupEntry { name: "lock", value: ACTION_LOCK_NO_UNLOCK },
+    LookupEntry { name: "neither", value: (ACTION_LOCK_NO_LOCK as i32 | ACTION_LOCK_NO_UNLOCK as i32) as u32 },
+    LookupEntry { name: "unlock", value: ACTION_LOCK_NO_LOCK },
+    LookupEntry { name: "", value: 0_u32 },
 ];
 fn check_affect_field(
     ctx: &XkbContext,
@@ -5975,11 +5747,7 @@ fn handle_move_ptr(
             return report_mismatch(keymap_info.strict);
         }
         if val < i16::MIN as i64 || val > i16::MAX as i64 {
-            return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-                PARSER_FATAL_ERROR as i32
-            } else {
-                PARSER_RECOVERABLE_ERROR as i32
-            }) as u32;
+            return report_mismatch(keymap_info.strict);
         }
         if field == ACTION_FIELD_X {
             if absolute {
@@ -6026,11 +5794,7 @@ fn handle_ptr_btn(
             return report_mismatch(keymap_info.strict);
         }
         if !(0_i64..=5_i64).contains(&btn) {
-            return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-                PARSER_FATAL_ERROR as i32
-            } else {
-                PARSER_RECOVERABLE_ERROR as i32
-            }) as u32;
+            return report_mismatch(keymap_info.strict);
         }
         act.button = btn as u8;
         return PARSER_SUCCESS;
@@ -6051,11 +5815,7 @@ fn handle_ptr_btn(
             return report_mismatch(keymap_info.strict);
         }
         if !(0_i64..=255_i64).contains(&val) {
-            return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-                PARSER_FATAL_ERROR as i32
-            } else {
-                PARSER_RECOVERABLE_ERROR as i32
-            }) as u32;
+            return report_mismatch(keymap_info.strict);
         }
         act.count = val as u8;
         return PARSER_SUCCESS;
@@ -6063,22 +5823,10 @@ fn handle_ptr_btn(
     report_illegal(keymap_info.strict)
 }
 static PTR_DFLTS: [LookupEntry; 4] = [
-    LookupEntry {
-        name: "dfltbtn",
-        value: 1_u32,
-    },
-    LookupEntry {
-        name: "defaultbutton",
-        value: 1_u32,
-    },
-    LookupEntry {
-        name: "button",
-        value: 1_u32,
-    },
-    LookupEntry {
-        name: "",
-        value: 0_u32,
-    },
+    LookupEntry { name: "dfltbtn", value: 1_u32 },
+    LookupEntry { name: "defaultbutton", value: 1_u32 },
+    LookupEntry { name: "button", value: 1_u32 },
+    LookupEntry { name: "", value: 0_u32 },
 ];
 fn handle_set_ptr_dflt(
     keymap_info: &mut XkbKeymapInfo<'_>,
@@ -6121,18 +5869,10 @@ fn handle_set_ptr_dflt(
             return report_mismatch(keymap_info.strict);
         }
         if !(0_i64..=5_i64).contains(&btn) {
-            return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-                PARSER_FATAL_ERROR as i32
-            } else {
-                PARSER_RECOVERABLE_ERROR as i32
-            }) as u32;
+            return report_mismatch(keymap_info.strict);
         }
         if btn == 0_i64 {
-            return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-                PARSER_FATAL_ERROR as i32
-            } else {
-                PARSER_RECOVERABLE_ERROR as i32
-            }) as u32;
+            return report_mismatch(keymap_info.strict);
         }
         act.value = (if value.stmt_type() == STMT_EXPR_NEGATE {
             -btn
@@ -6180,11 +5920,7 @@ fn handle_switch_screen(
             val
         };
         if val < i8::MIN as i64 || val > i8::MAX as i64 {
-            return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-                PARSER_FATAL_ERROR as i32
-            } else {
-                PARSER_RECOVERABLE_ERROR as i32
-            }) as u32;
+            return report_mismatch(keymap_info.strict);
         }
         act.screen = val as i8;
         return PARSER_SUCCESS;
@@ -6339,11 +6075,7 @@ fn handle_private(
             return report_mismatch(keymap_info.strict);
         }
         if !(0_i64..=255_i64).contains(&type_0) {
-            return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-                PARSER_FATAL_ERROR as i32
-            } else {
-                PARSER_RECOVERABLE_ERROR as i32
-            }) as u32;
+            return report_mismatch(keymap_info.strict);
         }
         if type_0 < ACTION_TYPE_PRIVATE as i64 {
             act.type_0 = ACTION_TYPE_NONE;
@@ -6360,11 +6092,7 @@ fn handle_private(
             let str_bytes: &str = atom_text(&ctx.atom_table, val);
             let len: usize = str_bytes.len();
             if len < 1_usize || len > std::mem::size_of::<[u8; 7]>() {
-                return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-                    PARSER_FATAL_ERROR as i32
-                } else {
-                    PARSER_RECOVERABLE_ERROR as i32
-                }) as u32;
+                return report_mismatch(keymap_info.strict);
             }
             act.data = [0u8; 7];
             act.data[..len].copy_from_slice(&str_bytes.as_bytes()[..len]);
@@ -6374,28 +6102,16 @@ fn handle_private(
             let mut ndx: i64 = 0_i64;
             let mut datum: i64 = 0_i64;
             if !expr_resolve_integer(ctx, array_ndx, &mut ndx) {
-                return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-                    PARSER_FATAL_ERROR as i32
-                } else {
-                    PARSER_RECOVERABLE_ERROR as i32
-                }) as u32;
+                return report_mismatch(keymap_info.strict);
             }
             if ndx < 0_i64 || ndx as usize >= std::mem::size_of::<[u8; 7]>() {
-                return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-                    PARSER_FATAL_ERROR as i32
-                } else {
-                    PARSER_RECOVERABLE_ERROR as i32
-                }) as u32;
+                return report_mismatch(keymap_info.strict);
             }
             if !expr_resolve_integer(ctx, value, &mut datum) {
                 return report_mismatch(keymap_info.strict);
             }
             if !(0_i64..=255_i64).contains(&datum) {
-                return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-                    PARSER_FATAL_ERROR as i32
-                } else {
-                    PARSER_RECOVERABLE_ERROR as i32
-                }) as u32;
+                return report_mismatch(keymap_info.strict);
             }
             act.data[ndx as usize] = datum as u8;
             return PARSER_SUCCESS;
@@ -6403,231 +6119,30 @@ fn handle_private(
     }
     report_illegal(keymap_info.strict)
 }
-static HANDLE_ACTION: [ActionHandler; 21] = {
-    [
-        Some(
-            handle_no_action
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_no_action
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_latch_lock_mods
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_latch_lock_mods
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_latch_lock_mods
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_latch_lock_group
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_latch_lock_group
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_latch_lock_group
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_move_ptr
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_ptr_btn
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_ptr_btn
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_ptr_dflt
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_no_action
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_switch_screen
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_lock_controls
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_lock_controls
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_redirect_key
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_unsupported
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_unsupported
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_private
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        None,
-    ]
-};
+static HANDLE_ACTION: [Option<ActionHandler>; 21] = [
+    Some(handle_no_action),
+    Some(handle_no_action),
+    Some(handle_set_latch_lock_mods),
+    Some(handle_set_latch_lock_mods),
+    Some(handle_set_latch_lock_mods),
+    Some(handle_set_latch_lock_group),
+    Some(handle_set_latch_lock_group),
+    Some(handle_set_latch_lock_group),
+    Some(handle_move_ptr),
+    Some(handle_ptr_btn),
+    Some(handle_ptr_btn),
+    Some(handle_set_ptr_dflt),
+    Some(handle_no_action),
+    Some(handle_switch_screen),
+    Some(handle_set_lock_controls),
+    Some(handle_set_lock_controls),
+    Some(handle_redirect_key),
+    Some(handle_unsupported),
+    Some(handle_unsupported),
+    Some(handle_private),
+    None,
+];
+
 pub(crate) fn handle_action_def(
     keymap_info: &mut XkbKeymapInfo<'_>,
     info: &mut ActionsInfo,

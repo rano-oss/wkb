@@ -960,7 +960,6 @@ pub(crate) const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
 pub(crate) const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;
 pub(crate) const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: u32 = 237;
 pub(crate) const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: u32 = 312;
-pub const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: u32 = 632;
 
 // ── LookupEntry (moved from keymap.rs) ────────────────────────────
 
@@ -1053,35 +1052,14 @@ pub(crate) enum ExprKind {
     KeyName(u32),
     KeySym(u32),
     Ident(u32),
-    FieldRef {
-        element: u32,
-        field: u32,
-    },
-    ArrayRef {
-        element: u32,
-        field: u32,
-        entry: Option<Box<ExprDef>>,
-    },
-    Action {
-        name: u32,
-        args: Vec<ExprDef>,
-    },
-    ActionList {
-        actions: Vec<ExprDef>,
-    },
-    KeysymList {
-        syms: Vec<u32>,
-    },
+    FieldRef { element: u32, field: u32 },
+    ArrayRef { element: u32, field: u32, entry: Option<Box<ExprDef>> },
+    Action { name: u32, args: Vec<ExprDef> },
+    ActionList { actions: Vec<ExprDef> },
+    KeysymList { syms: Vec<u32> },
     EmptyList,
-    Binary {
-        op: StmtType,
-        left: Option<Box<ExprDef>>,
-        right: Option<Box<ExprDef>>,
-    },
-    Unary {
-        op: StmtType,
-        child: Option<Box<ExprDef>>,
-    },
+    Binary { op: StmtType, left: Option<Box<ExprDef>>, right: Option<Box<ExprDef>> },
+    Unary { op: StmtType, child: Option<Box<ExprDef>> },
 }
 
 impl ExprDef {
@@ -1321,47 +1299,68 @@ pub(crate) fn istrcmp(a: &[u8], b: &[u8]) -> i32 {
     (a.len() as i32) - (b.len() as i32)
 }
 
-/// Parse decimal digits from a byte slice into u32.
-pub(crate) fn parse_dec_u32(s: &[u8]) -> (u32, i32) {
-    let mut result: u32 = 0;
-    let mut i: usize = 0;
-    while i < s.len() {
-        let d = s[i].wrapping_sub(b'0');
-        if d >= 10 {
-            break;
+macro_rules! impl_parse_dec {
+    ($name:ident, $t:ty) => {
+        pub(crate) fn $name(s: &[u8]) -> ($t, i32) {
+            let mut result: $t = 0;
+            let mut i: usize = 0;
+            while i < s.len() {
+                let d = s[i].wrapping_sub(b'0');
+                if d >= 10 {
+                    break;
+                }
+                if result > <$t>::MAX / 10 || result * 10 > <$t>::MAX - d as $t {
+                    return (result, -1);
+                }
+                result = result * 10 + d as $t;
+                i += 1;
+            }
+            if i < s.len() && s[i].wrapping_sub(b'0') < 10 {
+                return (result, -1);
+            }
+            (result, i as i32)
         }
-        if result > u32::MAX / 10 || result * 10 > u32::MAX - d as u32 {
-            return (result, -1);
-        }
-        result = result * 10 + d as u32;
-        i += 1;
+    };
+}
+impl_parse_dec!(parse_dec_u32, u32);
+impl_parse_dec!(parse_dec_u64, u64);
+
+/// Convert a hex digit byte to its numeric value (0-15), or 0xff if invalid.
+#[inline]
+fn hex_val(b: u8) -> u8 {
+    match b {
+        b'0'..=b'9' => b - b'0',
+        b'A'..=b'F' => b - b'A' + 10,
+        b'a'..=b'f' => b - b'a' + 10,
+        _ => 0xff,
     }
-    if i < s.len() && s[i].wrapping_sub(b'0') < 10 {
-        return (result, -1);
-    }
-    (result, i as i32)
 }
 
-/// Parse decimal digits from a byte slice into u64.
-pub(crate) fn parse_dec_u64(s: &[u8]) -> (u64, i32) {
-    let mut result: u64 = 0;
-    let mut i: usize = 0;
-    while i < s.len() {
-        let d = s[i].wrapping_sub(b'0');
-        if d >= 10 {
-            break;
+macro_rules! impl_parse_hex {
+    ($name:ident, $t:ty) => {
+        pub(crate) fn $name(s: &[u8]) -> ($t, i32) {
+            let mut result: $t = 0;
+            let mut i: usize = 0;
+            while i < s.len() {
+                let d = hex_val(s[i]);
+                if d >= 16 {
+                    break;
+                }
+                if result > <$t>::MAX >> 4 {
+                    return (result, -1);
+                }
+                result = result * 16 + d as $t;
+                i += 1;
+            }
+            if i < s.len() && hex_val(s[i]) < 16 {
+                return (result, -1);
+            }
+            (result, i as i32)
         }
-        if result > u64::MAX / 10 || result * 10 > u64::MAX - d as u64 {
-            return (result, -1);
-        }
-        result = result * 10 + d as u64;
-        i += 1;
-    }
-    if i < s.len() && s[i].wrapping_sub(b'0') < 10 {
-        return (result, -1);
-    }
-    (result, i as i32)
+    };
 }
+impl_parse_hex!(parse_hex_u32, u32);
+impl_parse_hex!(parse_hex_u64, u64);
 
 // ── UTF-8 decoding (migrated from utf8_decoding.rs) ──
 
@@ -1399,57 +1398,4 @@ pub(crate) fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
         return (INVALID_UTF8_CODE_POINT, 0);
     }
     (cp, len)
-}
-
-/// Convert a hex digit byte to its numeric value (0-15), or 0xff if invalid.
-#[inline]
-fn hex_val(b: u8) -> u8 {
-    match b {
-        b'0'..=b'9' => b - b'0',
-        b'A'..=b'F' => b - b'A' + 10,
-        b'a'..=b'f' => b - b'a' + 10,
-        _ => 0xff,
-    }
-}
-
-/// Parse hex digits from a byte slice into u32.
-pub(crate) fn parse_hex_u32(s: &[u8]) -> (u32, i32) {
-    let mut result: u32 = 0;
-    let mut i: usize = 0;
-    while i < s.len() {
-        let d = hex_val(s[i]);
-        if d >= 16 {
-            break;
-        }
-        if result > u32::MAX >> 4 {
-            return (result, -1);
-        }
-        result = result * 16 + d as u32;
-        i += 1;
-    }
-    if i < s.len() && hex_val(s[i]) < 16 {
-        return (result, -1);
-    }
-    (result, i as i32)
-}
-
-/// Parse hex digits from a byte slice into u64.
-pub(crate) fn parse_hex_u64(s: &[u8]) -> (u64, i32) {
-    let mut result: u64 = 0;
-    let mut i: usize = 0;
-    while i < s.len() {
-        let d = hex_val(s[i]);
-        if d >= 16 {
-            break;
-        }
-        if result > u64::MAX >> 4 {
-            return (result, -1);
-        }
-        result = result * 16 + d as u64;
-        i += 1;
-    }
-    if i < s.len() && hex_val(s[i]) < 16 {
-        return (result, -1);
-    }
-    (result, i as i32)
 }
