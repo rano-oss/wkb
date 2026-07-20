@@ -49,12 +49,24 @@ pub(crate) struct XkbRuleNames {
 
 impl Default for XkbRuleNames {
     fn default() -> Self {
+        Self::from_strs("", "", "", "", "")
+    }
+}
+
+impl XkbRuleNames {
+    pub(crate) fn from_strs(
+        rules: &str,
+        model: &str,
+        layout: &str,
+        variant: &str,
+        options: &str,
+    ) -> Self {
         Self {
-            rules: std::ffi::CString::new("").unwrap(),
-            model: std::ffi::CString::new("").unwrap(),
-            layout: std::ffi::CString::new("").unwrap(),
-            variant: std::ffi::CString::new("").unwrap(),
-            options: std::ffi::CString::new("").unwrap(),
+            rules: std::ffi::CString::new(rules).unwrap(),
+            model: std::ffi::CString::new(model).unwrap(),
+            layout: std::ffi::CString::new(layout).unwrap(),
+            variant: std::ffi::CString::new(variant).unwrap(),
+            options: std::ffi::CString::new(options).unwrap(),
         }
     }
 }

@@ -480,19 +480,14 @@ pub(crate) fn new_from_names(
     variant: &str,
     options: Option<&str>,
 ) -> Result<WKB, XkbError> {
-    use keymap::{Context, RuleNames};
+    use keymap::Context;
+    use shared_types::XkbRuleNames;
 
     let ctx = Context::new().ok_or(XkbError::ContextCreation)?;
-    let rule_names = RuleNames {
-        rules: rules.to_string(),
-        model: model.to_string(),
-        layout: layout.to_string(),
-        variant: variant.to_string(),
-        options: options.unwrap_or("").to_string(),
-    };
+    let rmlvo = XkbRuleNames::from_strs(rules, model, layout, variant, options.unwrap_or(""));
 
     let keymap = ctx
-        .keymap_from_names(&rule_names)
+        .keymap_from_names(&rmlvo)
         .ok_or(XkbError::KeymapCompilation)?;
 
     Ok(build_wkb_from_keymap(&keymap, None, true))

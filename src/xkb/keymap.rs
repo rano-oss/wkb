@@ -10,20 +10,11 @@ pub(crate) use super::shared_types::{
 
 pub(crate) fn xkb_keymap_new_from_names(
     ctx: XkbContext,
-    rmlvo_in: Option<&XkbRuleNames>,
+    rmlvo: &XkbRuleNames,
     flags: u32,
 ) -> Option<Rc<XkbKeymap>> {
     let format = XKB_KEYMAP_FORMAT_TEXT_V2;
-    let mut rmlvo: XkbRuleNames = match rmlvo_in {
-        Some(r) => r.clone(),
-        None => XkbRuleNames {
-            rules: std::ffi::CString::new("").unwrap(),
-            model: std::ffi::CString::new("").unwrap(),
-            layout: std::ffi::CString::new("").unwrap(),
-            variant: std::ffi::CString::new("").unwrap(),
-            options: std::ffi::CString::new("").unwrap(),
-        },
-    };
+    let mut rmlvo = rmlvo.clone();
     xkb_context_sanitize_rule_names(&ctx, &mut rmlvo);
     let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_names2", format, flags)?;
     if !super::xkbcomp::text_v1_keymap_new_from_names(&mut keymap, &rmlvo) {
@@ -44,7 +35,6 @@ pub(crate) fn xkb_keymap_new_from_string(
         return None;
     }
     let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_buffer", format, flags)?;
-    let _ptr = string.as_ptr();
     if length > 0 && bytes[length - 1] == 0 {
         length -= 1;
     }
@@ -57,30 +47,8 @@ pub(crate) fn xkb_keymap_new_from_string(
 pub(crate) fn xkb_keymap_num_mods(keymap: &XkbKeymap) -> u32 {
     keymap.mods.num_mods
 }
-pub(crate) fn xkb_keymap_mod_get_name(keymap: &XkbKeymap, idx: u32) -> Option<&str> {
-    if idx >= keymap.mods.num_mods {
-        return None;
-    }
-    let s = atom_text(&keymap.ctx.atom_table, keymap.mods.mods[idx as usize].name);
-    if s.is_empty() {
-        None
-    } else {
-        Some(s)
-    }
-}
 pub(crate) fn xkb_keymap_num_layouts(keymap: &XkbKeymap) -> u32 {
     keymap.num_groups
-}
-pub(crate) fn xkb_keymap_layout_get_name(keymap: &XkbKeymap, idx: u32) -> Option<&str> {
-    if idx as usize >= keymap.group_names.len() {
-        return None;
-    }
-    let s = atom_text(&keymap.ctx.atom_table, keymap.group_names[idx as usize]);
-    if s.is_empty() {
-        None
-    } else {
-        Some(s)
-    }
 }
 // ── Compose table support (merged from compose.rs) ──
 
@@ -368,38 +336,6 @@ static XKB_COMPOSE_MAP: LazyLock<BTreeMap<&'static str, &'static str>> = LazyLoc
     ]
     .into()
 });
-pub(crate) fn xkb_keymap_key_repeats(keymap: &XkbKeymap, kc: u32) -> i32 {
-    match keymap.get_key(kc) {
-        Some(key) => key.repeats as i32,
-        None => 0_i32,
-    }
-}
-
-pub(crate) fn xkb_keymap_min_keycode(keymap: &XkbKeymap) -> u32 {
-    keymap.min_key_code
-}
-
-pub(crate) fn xkb_keymap_max_keycode(keymap: &XkbKeymap) -> u32 {
-    keymap.max_key_code
-}
-
-pub(crate) fn xkb_keymap_num_levels_for_key(keymap: &XkbKeymap, keycode: u32, layout: u32) -> u32 {
-    keymap
-        .get_key(keycode)
-        .and_then(|k| k.groups.get(layout as usize))
-        .map(|g| g.levels.len() as u32)
-        .unwrap_or(0)
-}
-
-pub(crate) fn xkb_keymap_mod_get_index_ref(keymap: &XkbKeymap, name: &str) -> u32 {
-    let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
-    if atom == XKB_ATOM_NONE {
-        XKB_MOD_INVALID
-    } else {
-        xkb_mod_name_to_index(&keymap.mods, atom, MOD_BOTH)
-    }
-}
-
 pub(crate) fn xkb_keymap_key_get_syms_by_level_ref(
     keymap: &XkbKeymap,
     kc: u32,
@@ -1536,30 +1472,6 @@ use super::keysym::xkb_keysym_get_name;
 
 use std::ffi::CString;
 
-/// Rust-native version of XkbRuleNames
-#[derive(Debug, Clone, Default)]
-pub(crate) struct RuleNames {
-    pub(crate) rules: String,
-    pub(crate) model: String,
-    pub(crate) layout: String,
-    pub(crate) variant: String,
-    pub(crate) options: String,
-}
-
-impl RuleNames {
-    /// Convert to XkbRuleNames structure
-    pub(crate) fn to_c_keymap(&self) -> super::shared_types::XkbRuleNames {
-        use std::ffi::CString;
-        super::shared_types::XkbRuleNames {
-            rules: CString::new(self.rules.as_str()).unwrap(),
-            model: CString::new(self.model.as_str()).unwrap(),
-            layout: CString::new(self.layout.as_str()).unwrap(),
-            variant: CString::new(self.variant.as_str()).unwrap(),
-            options: CString::new(self.options.as_str()).unwrap(),
-        }
-    }
-}
-
 // ============================================================================
 // Unicode Preprocessing
 // ============================================================================
@@ -1677,12 +1589,10 @@ impl Context {
     }
 
     /// Create a keymap from RMLVO names. Consumes the context.
-    pub(crate) fn keymap_from_names(self, rules: &RuleNames) -> Option<Keymap> {
+    pub(crate) fn keymap_from_names(self, rmlvo: &XkbRuleNames) -> Option<Keymap> {
         use super::shared_types::XKB_KEYMAP_COMPILE_NO_FLAGS;
 
-        let rmlvo_c = rules.to_c_keymap();
-        let keymap =
-            xkb_keymap_new_from_names(self.entity, Some(&rmlvo_c), XKB_KEYMAP_COMPILE_NO_FLAGS)?;
+        let keymap = xkb_keymap_new_from_names(self.entity, rmlvo, XKB_KEYMAP_COMPILE_NO_FLAGS)?;
         Some(Keymap { inner: keymap })
     }
 
@@ -1720,17 +1630,21 @@ impl std::fmt::Debug for Keymap {
 impl Keymap {
     /// Get minimum keycode
     pub(crate) fn min_keycode(&self) -> u32 {
-        xkb_keymap_min_keycode(&self.inner)
+        self.inner.min_key_code
     }
 
     /// Get maximum keycode
     pub(crate) fn max_keycode(&self) -> u32 {
-        xkb_keymap_max_keycode(&self.inner)
+        self.inner.max_key_code
     }
 
     /// Get number of levels for a key
     pub(crate) fn num_levels_for_key(&self, keycode: u32, layout: u32) -> u32 {
-        xkb_keymap_num_levels_for_key(&self.inner, keycode, layout)
+        self.inner
+            .get_key(keycode)
+            .and_then(|k| k.groups.get(layout as usize))
+            .map(|g| g.levels.len() as u32)
+            .unwrap_or(0)
     }
 
     /// Get keysyms for a key at a specific level (safe via get_key_level)
@@ -1752,12 +1666,28 @@ impl Keymap {
 
     /// Get modifier name by index
     pub(crate) fn mod_get_name(&self, idx: u32) -> Option<String> {
-        xkb_keymap_mod_get_name(&self.inner, idx).map(|s| s.to_string())
+        if idx >= self.inner.mods.num_mods {
+            return None;
+        }
+        let s = atom_text(
+            &self.inner.ctx.atom_table,
+            self.inner.mods.mods[idx as usize].name,
+        );
+        if s.is_empty() {
+            None
+        } else {
+            Some(s.to_string())
+        }
     }
 
     /// Get modifier mask by name (safe via atom_lookup_ref)
     pub(crate) fn mod_get_mask(&self, name: &str) -> u32 {
-        let idx = xkb_keymap_mod_get_index_ref(&self.inner, name);
+        let atom = atom_lookup_ref(&self.inner.ctx.atom_table, name.as_bytes());
+        let idx = if atom == XKB_ATOM_NONE {
+            XKB_MOD_INVALID
+        } else {
+            xkb_mod_name_to_index(&self.inner.mods, atom, MOD_BOTH)
+        };
         if idx >= self.inner.mods.num_mods {
             0_u32
         } else {
@@ -1767,7 +1697,10 @@ impl Keymap {
 
     /// Check if a key can repeat
     pub(crate) fn key_repeats(&self, keycode: u32) -> bool {
-        xkb_keymap_key_repeats(&self.inner, keycode) != 0
+        match self.inner.get_key(keycode) {
+            Some(key) => key.repeats,
+            None => false,
+        }
     }
 
     /// Get modifier maps for a key (returns (modmap, vmodmap) or None if key doesn't exist)
@@ -1775,9 +1708,6 @@ impl Keymap {
         let key = self.inner.get_key(keycode)?;
         Some((key.modmap, key.vmodmap))
     }
-
-    /// Iterate over all keycodes in the keymap
-    ///
 
     /// Create a new state for this keymap
     pub(crate) fn new_state(&self) -> Option<State> {
@@ -1792,7 +1722,18 @@ impl Keymap {
 
     /// Get layout name by index
     pub(crate) fn layout_get_name(&self, idx: u32) -> Option<String> {
-        xkb_keymap_layout_get_name(&self.inner, idx).map(|s| s.to_string())
+        if idx as usize >= self.inner.group_names.len() {
+            return None;
+        }
+        let s = atom_text(
+            &self.inner.ctx.atom_table,
+            self.inner.group_names[idx as usize],
+        );
+        if s.is_empty() {
+            None
+        } else {
+            Some(s.to_string())
+        }
     }
 }
 
