@@ -1,4 +1,3 @@
-#![allow(clippy::zero_prefixed_literal)]
 //! Test layout enumeration
 //!
 //! This test suite verifies that the layouts() function returns a valid list

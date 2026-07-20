@@ -1,4 +1,3 @@
-#![allow(clippy::zero_prefixed_literal)]
 //! Keymap tests: XKB string export comparison and string-based construction.
 //!
 //! # Known KP/ISO collapse

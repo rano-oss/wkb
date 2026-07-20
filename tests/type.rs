@@ -1,4 +1,3 @@
-#![allow(clippy::zero_prefixed_literal)]
 //! kbvm type-test runner: parse map.xkb, replay key events, compare WKB vs xkbcommon.
 //!
 //! Test data from https://github.com/mahkoh/kbvm (MIT licensed).

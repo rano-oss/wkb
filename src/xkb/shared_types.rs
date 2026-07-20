@@ -988,7 +988,7 @@ impl XkbKeymap {
         layout: u32,
         level: u32,
     ) -> Option<&'a XkbLevel> {
-        let layout = super::keymap::XkbWrapGroupIntoRange(
+        let layout = super::keymap::xkb_wrap_group_into_range(
             layout as i32,
             key.num_groups,
             key.out_of_range_group_policy,

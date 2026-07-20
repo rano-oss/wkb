@@ -1,4 +1,3 @@
-#![allow(clippy::zero_prefixed_literal)]
 use test_case::test_matrix;
 use wkb::testing::{KeyDirection, WKBTestExt, CAPS_LOCK};
 use xkbcommon::xkb::{self as xkbcmn, Keycode};

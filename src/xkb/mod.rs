@@ -1,9 +1,6 @@
 //! XKB module — keymap construction from RMLVO names and XKB strings,
 //! plus XKB v1 text serialization.
 
-#[allow(non_snake_case)]
-#[allow(non_camel_case_types)]
-#[allow(non_upper_case_globals)]
 pub(crate) mod keymap;
 pub(crate) mod keysym;
 pub(crate) mod shared_types;

@@ -1,4 +1,3 @@
-#![allow(clippy::zero_prefixed_literal)]
 use test_case::test_matrix;
 use wkb::testing::keysym_to_named_key;
 use xkbcommon::xkb::{self, Keycode};

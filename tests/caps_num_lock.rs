@@ -1,4 +1,3 @@
-#![allow(clippy::zero_prefixed_literal)]
 //! Test caps lock + num lock combinations across all locales and layouts
 //!
 //! This test suite verifies that wkb handles the combination of caps lock

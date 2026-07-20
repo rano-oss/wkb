@@ -1,14 +1,10 @@
 // Safe parser.rs
 #![allow(
-    non_upper_case_globals,
     dead_code,
-    non_snake_case,
-    non_camel_case_types,
     clippy::vec_box,
     clippy::wrong_self_convention,
     clippy::too_many_arguments,
     clippy::type_complexity,
-    unused_assignments
 )]
 // LALR(1) parser for XKB, converted from bison-generated C via c2rust
 use super::super::keymap::xkb_escape_map_name;
@@ -35,15 +31,15 @@ use super::super::shared_types::{
 };
 
 pub(crate) use super::super::keymap::mod_mask_get_effective;
+use super::super::keymap::{action_type_text, keysym_text};
 use super::super::keymap::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
-use super::super::keymap::{ActionTypeText, KeysymText};
 pub(crate) use super::symbols::CompileCompatMap;
 pub(crate) use super::symbols::CompileKeyTypes;
 pub(crate) use super::symbols::CompileKeycodes;
 pub(crate) use super::symbols::CompileSymbols;
 use super::symbols::{ExprResolveGroup, ExprResolveGroupMask};
 
-pub(crate) const XKB_KEY_VoidSymbol: i32 = 0xffffff_i32;
+pub(crate) const XKB_KEY_VOID_SYMBOL: i32 = 0xffffff_i32;
 pub(crate) const XKB_KEY_0: i32 = 0x30_i32;
 pub(crate) const XKB_KEY_section: i32 = 0xa7_i32;
 pub(crate) const XKB_KEYSYM_MIN: i32 = 0;
@@ -580,7 +576,7 @@ fn resolve_keysym(param: &mut parser_param, name: sval) -> Option<u32> {
         return Some(XKB_KEY_NO_SYMBOL as u32);
     }
     if name_str.eq_ignore_ascii_case("none") || name_str.eq_ignore_ascii_case("voidsymbol") {
-        return Some(XKB_KEY_VoidSymbol as u32);
+        return Some(XKB_KEY_VOID_SYMBOL as u32);
     }
 
     if name.len() >= 30 {
@@ -4211,7 +4207,7 @@ fn FindInterpForKey(
                             found = false;
                             log::warn!("Repeated interpretation ignored for keysym #{} \"{}\" at level {}/group {} on key <{}>.\n",
                                     s + 1_i32,
-                                    KeysymText(syms[s as usize]),
+                                    keysym_text(syms[s as usize]),
                                     level.wrapping_add(1_u32),
                                     group.wrapping_add(1_u32),
                                     atom_text(&keymap.ctx.atom_table, key_name));
@@ -4357,7 +4353,7 @@ fn CheckMultipleActionsCategories(keymap: &mut XkbKeymap, key_idx: usize) {
                                 } else if group_action as i32 != 0 {
                                     "group"
                                 } else {
-                                    ActionTypeText(action1_type)
+                                    action_type_text(action1_type)
                                 };
                                 log::error!("Cannot use multiple {} actions in the same level. Action #{} for key <{}> in group {}/level {} ignored.\n",
                                     type_0,
@@ -5304,7 +5300,6 @@ fn split_comma_separated_mlvo<'a>(mlvo: rules_mlvo, s: Option<&'a [u8]>) -> Vec<
         if pos < bytes.len() && bytes[pos] as i32 == OPTIONS_GROUP_SPECIFIER_PREFIX {
             pos += 1;
             let layout_start = pos;
-            #[allow(unused_assignments)]
             let mut layout: u32 = XKB_LAYOUT_INVALID;
             let (val_parsed, count) = parse_dec_u32(&bytes[pos..]);
             layout = val_parsed;
@@ -6818,7 +6813,6 @@ fn read_rules_file(
     file_data: &[u8],
     path: &str,
 ) -> bool {
-    #[allow(unused_assignments)]
     let mut scanner: scanner = scanner::new(&[], "");
 
     scanner = scanner::new(file_data, path);

@@ -1,4 +1,3 @@
-#![allow(clippy::zero_prefixed_literal)]
 //! kbvm compile-test runner: parse input.xkb with xkbcommon, verify compilation,
 //! test round-trip serialization via WKB's `as_xkb_string()`.
 //!

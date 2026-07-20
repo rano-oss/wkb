@@ -1,4 +1,3 @@
-#![allow(clippy::zero_prefixed_literal)]
 //! Test for Unicode keysym support, particularly for keysyms > U+FFFF and
 //! multi-byte Unicode characters in XKB symbol definitions.
 

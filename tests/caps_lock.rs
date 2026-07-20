@@ -1,4 +1,3 @@
-#![allow(clippy::zero_prefixed_literal)]
 use test_case::test_matrix;
 use wkb::{
     testing::{level_index, KeyDirection, WKBTestExt, ALTGR, CAPS_LOCK},

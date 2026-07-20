@@ -1,4 +1,3 @@
-#![allow(clippy::zero_prefixed_literal)]
 use test_case::test_matrix;
 use xkbcommon::{
     self,
@@ -31,13 +30,8 @@ fn xkb_new_keymap_from_names(locale: String, layout: Option<String>) -> xkb::Key
 ], 0..8)]
 fn level_keys(locale: &str, level: usize) {
     for layout in wkb::testing::get_all_layouts_for_locale(locale) {
-        // println!("{:?}", layout);
         let xkb = xkb_new_keymap_from_names(locale.to_string(), Some(layout.to_owned()));
         let wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        // if wkb.state_keymap.len() <= level {
-        //     assert!(true);
-        //     continue;
-        // }
         for i in 0..701 {
             let k1 = wkb.level_key_char(i as u32, 0, level);
             let mut k2 = xkb

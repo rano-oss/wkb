@@ -1,4 +1,3 @@
-#![allow(clippy::zero_prefixed_literal)]
 //! Test LED state functions (Caps Lock, Num Lock, Scroll Lock)
 //!
 //! This test suite verifies that wkb reports LED states that match
