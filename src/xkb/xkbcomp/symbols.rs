@@ -5310,16 +5310,14 @@ impl<'v> ActionValue<'v> {
     }
 }
 
-pub(crate) type ActionHandler = Option<
-    for<'a> fn(
-        &mut XkbKeymapInfo<'a>,
-        &XkbModSet,
-        &mut XkbAction,
-        u32,
-        Option<&ExprDef>,
-        ActionValue<'_>,
-    ) -> u32,
->;
+pub(crate) type ActionHandler = fn(
+    &mut XkbKeymapInfo<'_>,
+    &XkbModSet,
+    &mut XkbAction,
+    u32,
+    Option<&ExprDef>,
+    ActionValue<'_>,
+) -> u32;
 // Constant true/false ExprDef values used in handle_action_def
 fn const_true_expr() -> ExprDef {
     ExprDef {
@@ -6121,231 +6119,30 @@ fn handle_private(
     }
     report_illegal(keymap_info.strict)
 }
-static HANDLE_ACTION: [ActionHandler; 21] = {
-    [
-        Some(
-            handle_no_action
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_no_action
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_latch_lock_mods
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_latch_lock_mods
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_latch_lock_mods
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_latch_lock_group
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_latch_lock_group
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_latch_lock_group
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_move_ptr
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_ptr_btn
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_ptr_btn
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_ptr_dflt
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_no_action
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_switch_screen
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_lock_controls
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_set_lock_controls
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_redirect_key
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_unsupported
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_unsupported
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        Some(
-            handle_private
-                as fn(
-                    &mut XkbKeymapInfo<'_>,
-                    &XkbModSet,
-                    &mut XkbAction,
-                    u32,
-                    Option<&ExprDef>,
-                    ActionValue<'_>,
-                ) -> u32,
-        ),
-        None,
-    ]
-};
+static HANDLE_ACTION: [Option<ActionHandler>; 21] = [
+    Some(handle_no_action),
+    Some(handle_no_action),
+    Some(handle_set_latch_lock_mods),
+    Some(handle_set_latch_lock_mods),
+    Some(handle_set_latch_lock_mods),
+    Some(handle_set_latch_lock_group),
+    Some(handle_set_latch_lock_group),
+    Some(handle_set_latch_lock_group),
+    Some(handle_move_ptr),
+    Some(handle_ptr_btn),
+    Some(handle_ptr_btn),
+    Some(handle_set_ptr_dflt),
+    Some(handle_no_action),
+    Some(handle_switch_screen),
+    Some(handle_set_lock_controls),
+    Some(handle_set_lock_controls),
+    Some(handle_redirect_key),
+    Some(handle_unsupported),
+    Some(handle_unsupported),
+    Some(handle_private),
+    None,
+];
+
 pub(crate) fn handle_action_def(
     keymap_info: &mut XkbKeymapInfo<'_>,
     info: &mut ActionsInfo,

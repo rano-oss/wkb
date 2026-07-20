@@ -566,7 +566,7 @@ use super::shared_types::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
     DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
 };
-pub use super::shared_types::{XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_LOG_VERBOSITY_DEFAULT};
+pub use super::shared_types::XKB_LOG_VERBOSITY_DEFAULT;
 fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> i32 {
     let is_dir = std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false);
     if is_dir {
@@ -3004,12 +3004,6 @@ impl RxkbLayout {
 
 // ---------------------------------------------------------------------------
 
-macro_rules! rxkb_logf {
-    ($ctx:expr, $level:expr, $($arg:tt)*) => {{
-        rxkb_log($ctx, $level, &format!($($arg)*));
-    }};
-}
-
 // ---------------------------------------------------------------------------
 // Context construction & public API
 // ---------------------------------------------------------------------------
@@ -3254,7 +3248,6 @@ fn extract_text(doc: &xmloxide::Document, node: xmloxide::tree::NodeId) -> Strin
 }
 
 fn parse_config_item(
-    ctx: &RxkbContext,
     doc: &xmloxide::Document,
     parent: xmloxide::tree::NodeId,
     config: &mut ConfigItem,
@@ -3308,7 +3301,7 @@ fn parse_model(
         popularity,
         layout_specific: false,
     };
-    if parse_config_item(ctx, doc, model, &mut config) {
+    if parse_config_item(doc, model, &mut config) {
         // Check for duplicate
         if ctx.models.iter().any(|m| m.name == config.name) {
             return;
@@ -3364,7 +3357,7 @@ fn parse_variant(
         popularity,
         layout_specific: false,
     };
-    if !parse_config_item(ctx, doc, variant, &mut config) {
+    if !parse_config_item(doc, variant, &mut config) {
         return;
     }
 
@@ -3436,7 +3429,7 @@ fn parse_layout(
         popularity,
         layout_specific: false,
     };
-    if !parse_config_item(ctx, doc, layout, &mut config) {
+    if !parse_config_item(doc, layout, &mut config) {
         return;
     }
 
@@ -3498,7 +3491,7 @@ fn parse_option(
         popularity,
         layout_specific: false,
     };
-    if parse_config_item(ctx, doc, option, &mut config) {
+    if parse_config_item(doc, option, &mut config) {
         // Check for duplicate
         if ctx.option_groups[group_idx]
             .options
@@ -3527,7 +3520,7 @@ fn parse_group(
         popularity,
         layout_specific: false,
     };
-    if !parse_config_item(ctx, doc, group, &mut config) {
+    if !parse_config_item(doc, group, &mut config) {
         return;
     }
 

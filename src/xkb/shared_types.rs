@@ -960,7 +960,6 @@ pub(crate) const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
 pub(crate) const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;
 pub(crate) const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: u32 = 237;
 pub(crate) const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: u32 = 312;
-pub const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: u32 = 632;
 
 // ── LookupEntry (moved from keymap.rs) ────────────────────────────
 
@@ -1400,4 +1399,3 @@ pub(crate) fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
     }
     (cp, len)
 }
-
