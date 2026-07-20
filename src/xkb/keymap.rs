@@ -4,20 +4,20 @@ use std::rc::Rc;
 pub use super::shared_types::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
 use super::shared_types::{atom_lookup_ref, atom_text};
 pub(crate) use super::shared_types::{
-    xkb_action, xkb_context, xkb_keymap, xkb_led, xkb_level, xkb_mod_set, xkb_rule_names, MOD_BOTH,
+    XkbAction, XkbContext, XkbKeymap, XkbLed, XkbLevel, XkbModSet, XkbRuleNames, MOD_BOTH,
     MOD_REAL, MOD_REAL_MASK_ALL, XKB_ATOM_NONE, XKB_KEYCODE_INVALID, XKB_KEYMAP_FORMAT_TEXT_V2,
     XKB_LAYOUT_INVALID, XKB_LED_INVALID, XKB_MOD_INVALID,
 };
 
 pub(crate) fn xkb_keymap_new_from_names(
-    ctx: xkb_context,
-    rmlvo_in: Option<&xkb_rule_names>,
+    ctx: XkbContext,
+    rmlvo_in: Option<&XkbRuleNames>,
     flags: u32,
-) -> Option<Rc<xkb_keymap>> {
+) -> Option<Rc<XkbKeymap>> {
     let format = XKB_KEYMAP_FORMAT_TEXT_V2;
-    let mut rmlvo: xkb_rule_names = match rmlvo_in {
+    let mut rmlvo: XkbRuleNames = match rmlvo_in {
         Some(r) => r.clone(),
-        None => xkb_rule_names {
+        None => XkbRuleNames {
             rules: std::ffi::CString::new("").unwrap(),
             model: std::ffi::CString::new("").unwrap(),
             layout: std::ffi::CString::new("").unwrap(),
@@ -33,11 +33,11 @@ pub(crate) fn xkb_keymap_new_from_names(
     Some(Rc::new(*keymap))
 }
 pub(crate) fn xkb_keymap_new_from_string(
-    ctx: xkb_context,
+    ctx: XkbContext,
     string: &std::ffi::CStr,
     format: u32,
     flags: u32,
-) -> Option<Rc<xkb_keymap>> {
+) -> Option<Rc<XkbKeymap>> {
     let bytes = string.to_bytes();
     let mut length = bytes.len();
     if bytes.is_empty() {
@@ -55,10 +55,10 @@ pub(crate) fn xkb_keymap_new_from_string(
     Some(Rc::new(*keymap))
 }
 
-pub(crate) fn xkb_keymap_num_mods(keymap: &xkb_keymap) -> u32 {
+pub(crate) fn xkb_keymap_num_mods(keymap: &XkbKeymap) -> u32 {
     keymap.mods.num_mods
 }
-pub(crate) fn xkb_keymap_mod_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
+pub(crate) fn xkb_keymap_mod_get_name(keymap: &XkbKeymap, idx: u32) -> Option<&str> {
     if idx >= keymap.mods.num_mods {
         return None;
     }
@@ -69,10 +69,10 @@ pub(crate) fn xkb_keymap_mod_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&
         Some(s)
     }
 }
-pub(crate) fn xkb_keymap_num_layouts(keymap: &xkb_keymap) -> u32 {
+pub(crate) fn xkb_keymap_num_layouts(keymap: &XkbKeymap) -> u32 {
     keymap.num_groups
 }
-pub(crate) fn xkb_keymap_layout_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
+pub(crate) fn xkb_keymap_layout_get_name(keymap: &XkbKeymap, idx: u32) -> Option<&str> {
     if idx as usize >= keymap.group_names.len() {
         return None;
     }
@@ -83,7 +83,7 @@ pub(crate) fn xkb_keymap_layout_get_name(keymap: &xkb_keymap, idx: u32) -> Optio
         Some(s)
     }
 }
-pub(crate) fn xkb_keymap_key_by_name(keymap: &xkb_keymap, name: &str) -> u32 {
+pub(crate) fn xkb_keymap_key_by_name(keymap: &XkbKeymap, name: &str) -> u32 {
     let mut atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
     if atom != 0 {
         for alias in keymap.key_aliases.iter() {
@@ -132,10 +132,10 @@ pub struct ComposeEntry {
 pub fn keysym_name_to_char(name: &str) -> Option<char> {
     use super::keysym::keysym_to_utf32;
     use super::keysym::xkb_keysym_from_name;
-    use super::shared_types::{XKB_KEY_NoSymbol, XKB_KEYSYM_NO_FLAGS};
+    use super::shared_types::{XKB_KEYSYM_NO_FLAGS, XKB_KEY_NO_SYMBOL};
 
     let ks = xkb_keysym_from_name(name.as_bytes(), XKB_KEYSYM_NO_FLAGS);
-    if ks == XKB_KEY_NoSymbol as u32 {
+    if ks == XKB_KEY_NO_SYMBOL as u32 {
         if let Some(hex) = name.strip_prefix('U') {
             if !hex.is_empty() && hex.len() <= 6 && hex.chars().all(|c| c.is_ascii_hexdigit()) {
                 return u32::from_str_radix(hex, 16).ok().and_then(char::from_u32);
@@ -395,7 +395,7 @@ static XKB_COMPOSE_MAP: LazyLock<BTreeMap<&'static str, &'static str>> = LazyLoc
     ]
     .into()
 });
-pub(crate) fn xkb_keymap_key_get_name(keymap: &xkb_keymap, kc: u32) -> Option<&str> {
+pub(crate) fn xkb_keymap_key_get_name(keymap: &XkbKeymap, kc: u32) -> Option<&str> {
     let key = keymap.get_key(kc)?;
     let s = atom_text(&keymap.ctx.atom_table, key.name);
     if s.is_empty() {
@@ -404,22 +404,22 @@ pub(crate) fn xkb_keymap_key_get_name(keymap: &xkb_keymap, kc: u32) -> Option<&s
         Some(s)
     }
 }
-pub(crate) fn xkb_keymap_key_repeats(keymap: &xkb_keymap, kc: u32) -> i32 {
+pub(crate) fn xkb_keymap_key_repeats(keymap: &XkbKeymap, kc: u32) -> i32 {
     match keymap.get_key(kc) {
         Some(key) => key.repeats as i32,
         None => 0_i32,
     }
 }
 
-pub(crate) fn xkb_keymap_min_keycode(keymap: &xkb_keymap) -> u32 {
+pub(crate) fn xkb_keymap_min_keycode(keymap: &XkbKeymap) -> u32 {
     keymap.min_key_code
 }
 
-pub(crate) fn xkb_keymap_max_keycode(keymap: &xkb_keymap) -> u32 {
+pub(crate) fn xkb_keymap_max_keycode(keymap: &XkbKeymap) -> u32 {
     keymap.max_key_code
 }
 
-pub(crate) fn xkb_keymap_num_levels_for_key(keymap: &xkb_keymap, keycode: u32, layout: u32) -> u32 {
+pub(crate) fn xkb_keymap_num_levels_for_key(keymap: &XkbKeymap, keycode: u32, layout: u32) -> u32 {
     keymap
         .get_key(keycode)
         .and_then(|k| k.groups.get(layout as usize))
@@ -427,7 +427,7 @@ pub(crate) fn xkb_keymap_num_levels_for_key(keymap: &xkb_keymap, keycode: u32, l
         .unwrap_or(0)
 }
 
-pub(crate) fn xkb_keymap_mod_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
+pub(crate) fn xkb_keymap_mod_get_index_ref(keymap: &XkbKeymap, name: &str) -> u32 {
     let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
     if atom == XKB_ATOM_NONE {
         XKB_MOD_INVALID
@@ -437,7 +437,7 @@ pub(crate) fn xkb_keymap_mod_get_index_ref(keymap: &xkb_keymap, name: &str) -> u
 }
 
 pub(crate) fn xkb_keymap_key_get_syms_by_level_ref(
-    keymap: &xkb_keymap,
+    keymap: &XkbKeymap,
     kc: u32,
     layout: u32,
     level: u32,
@@ -462,11 +462,11 @@ pub(crate) const XKB_MOD_NAME_MOD4: &str = "Mod4";
 pub(crate) const XKB_MOD_NAME_MOD5: &str = "Mod5";
 
 pub(crate) fn xkb_keymap_new(
-    ctx: xkb_context,
+    ctx: XkbContext,
     func: &str,
     format: u32,
     flags: u32,
-) -> Option<Box<xkb_keymap>> {
+) -> Option<Box<XkbKeymap>> {
     static XKB_KEYMAP_COMPILE_FLAGS: u32 = XKB_KEYMAP_COMPILE_FLAGS_VALUES;
     if flags & !XKB_KEYMAP_COMPILE_FLAGS != 0 {
         log::error!(
@@ -476,12 +476,12 @@ pub(crate) fn xkb_keymap_new(
         );
         return None;
     }
-    let mut keymap = Box::new(xkb_keymap {
+    let mut keymap = Box::new(XkbKeymap {
         ctx,
         flags: 0,
         format: 0,
         num_leds: 0,
-        leds: [xkb_led::default(); 32],
+        leds: [XkbLed::default(); 32],
         min_key_code: 0,
         max_key_code: 0,
         num_keys: 0,
@@ -491,7 +491,7 @@ pub(crate) fn xkb_keymap_new(
         key_aliases: Vec::new(),
         types: Vec::new(),
         sym_interprets: Vec::new(),
-        mods: xkb_mod_set::default(),
+        mods: XkbModSet::default(),
         canonical_state_mask: 0,
         redirect_key_auto: 0,
         num_groups: 0,
@@ -546,7 +546,7 @@ pub(crate) fn xkb_escape_map_name(name: &mut String) {
         .collect();
 }
 
-pub(crate) fn XkbModNameToIndex(mods: &xkb_mod_set, name: u32, type_0: u32) -> u32 {
+pub(crate) fn XkbModNameToIndex(mods: &XkbModSet, name: u32, type_0: u32) -> u32 {
     for (i, mod_0) in mods.mods[..mods.num_mods as usize].iter().enumerate() {
         if mod_0.type_0 & type_0 != 0 && name == mod_0.name {
             return i as u32;
@@ -554,10 +554,10 @@ pub(crate) fn XkbModNameToIndex(mods: &xkb_mod_set, name: u32, type_0: u32) -> u
     }
     XKB_MOD_INVALID
 }
-pub(crate) fn XkbLevelsSameSyms(a: &xkb_level, b: &xkb_level) -> bool {
+pub(crate) fn XkbLevelsSameSyms(a: &XkbLevel, b: &XkbLevel) -> bool {
     a.syms == b.syms
 }
-pub(crate) fn action_equal(a: &xkb_action, b: &xkb_action) -> bool {
+pub(crate) fn action_equal(a: &XkbAction, b: &XkbAction) -> bool {
     if a.action_type() != b.action_type() {
         return false;
     }
@@ -615,7 +615,7 @@ pub(crate) fn action_equal(a: &xkb_action, b: &xkb_action) -> bool {
         _ => a.as_priv().data == b.as_priv().data,
     }
 }
-pub(crate) fn XkbLevelsSameActions(a: &xkb_level, b: &xkb_level) -> bool {
+pub(crate) fn XkbLevelsSameActions(a: &XkbLevel, b: &XkbLevel) -> bool {
     if a.actions.len() != b.actions.len() {
         return false;
     }
@@ -662,22 +662,22 @@ pub(crate) fn XkbWrapGroupIntoRange(
         }
     }
 }
-pub(crate) fn xkb_keymap_num_layouts_for_key(keymap: &xkb_keymap, kc: u32) -> u32 {
+pub(crate) fn xkb_keymap_num_layouts_for_key(keymap: &XkbKeymap, kc: u32) -> u32 {
     keymap.get_key(kc).map(|k| k.num_groups).unwrap_or(0)
 }
 
-pub(crate) fn xkb_keymap_num_leds(keymap: &xkb_keymap) -> u32 {
+pub(crate) fn xkb_keymap_num_leds(keymap: &XkbKeymap) -> u32 {
     keymap.leds.len() as u32
 }
 
-pub(crate) fn xkb_keymap_led_get_name(keymap: &xkb_keymap, idx: u32) -> Option<&str> {
+pub(crate) fn xkb_keymap_led_get_name(keymap: &XkbKeymap, idx: u32) -> Option<&str> {
     keymap
         .leds
         .get(idx as usize)
         .map(|l| atom_text(&keymap.ctx.atom_table, l.name))
 }
 
-pub(crate) fn xkb_keymap_layout_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
+pub(crate) fn xkb_keymap_layout_get_index_ref(keymap: &XkbKeymap, name: &str) -> u32 {
     let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
     if atom == XKB_ATOM_NONE {
         XKB_LAYOUT_INVALID
@@ -690,7 +690,7 @@ pub(crate) fn xkb_keymap_layout_get_index_ref(keymap: &xkb_keymap, name: &str) -
     }
 }
 
-pub(crate) fn xkb_keymap_led_get_index_ref(keymap: &xkb_keymap, name: &str) -> u32 {
+pub(crate) fn xkb_keymap_led_get_index_ref(keymap: &XkbKeymap, name: &str) -> u32 {
     let atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
     if atom == XKB_ATOM_NONE {
         XKB_LED_INVALID
@@ -706,15 +706,15 @@ use std::env::VarError;
 
 use super::shared_types::{atom_intern, atom_table_new};
 
+pub(crate) use super::shared_types::{
+    Rmlvo, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
+};
 use super::shared_types::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
     DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
 };
-pub(crate) use super::shared_types::{
-    RMLVO, RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
-};
 pub use super::shared_types::{XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH, XKB_LOG_VERBOSITY_DEFAULT};
-fn context_include_path_append(ctx: &mut xkb_context, path: &str) -> i32 {
+fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> i32 {
     let is_dir = std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false);
     if is_dir {
         log::info!("Include path added: {}\n", path);
@@ -750,7 +750,7 @@ pub(crate) fn xkb_context_include_path_get_versioned_extensions_path() -> String
 }
 /// Convert a null-terminated `[i8]` constant to a Rust `String`.
 fn add_direct_subdirectories(
-    ctx: &mut xkb_context,
+    ctx: &mut XkbContext,
     path: &str,
     extensions: &mut Vec<String>,
     versioned_count: usize,
@@ -818,7 +818,7 @@ pub(crate) fn xkb_context_include_path_get_system_path() -> String {
     }
 }
 
-pub(crate) fn xkb_context_include_path_append_default(ctx: &mut xkb_context) -> i32 {
+pub(crate) fn xkb_context_include_path_append_default(ctx: &mut XkbContext) -> i32 {
     {
         let mut ret: i32 = 0_i32;
         let home = xkb_context_getenv("HOME");
@@ -867,14 +867,14 @@ pub(crate) fn xkb_context_include_path_append_default(ctx: &mut xkb_context) -> 
     }
 }
 
-pub(crate) fn xkb_context_num_include_paths(ctx: &mut xkb_context) -> u32 {
+pub(crate) fn xkb_context_num_include_paths(ctx: &mut XkbContext) -> u32 {
     if xkb_context_init_includes(ctx) {
         ctx.includes.len() as u32
     } else {
         0_u32
     }
 }
-pub(crate) fn xkb_context_include_path_get(ctx: &mut xkb_context, idx: u32) -> String {
+pub(crate) fn xkb_context_include_path_get(ctx: &mut XkbContext, idx: u32) -> String {
     if idx >= xkb_context_num_include_paths(ctx) {
         return "".to_string();
     }
@@ -928,18 +928,10 @@ fn log_verbosity_from_str(verbosity: &str) -> i32 {
     }
     XKB_LOG_VERBOSITY_DEFAULT
 }
-pub(crate) fn xkb_context_new(flags: xkb_context_flags) -> xkb_context {
-    let mut ctx = xkb_context {
-        refcnt: 1,
+pub(crate) fn xkb_context_new(flags: XkbContextFlags) -> XkbContext {
+    let mut ctx = XkbContext {
         log_level: XKB_LOG_LEVEL_ERROR,
         log_verbosity: XKB_LOG_VERBOSITY_DEFAULT,
-        names_dflt: xkb_rule_names {
-            rules: std::ffi::CString::new("").unwrap(),
-            model: std::ffi::CString::new("").unwrap(),
-            layout: std::ffi::CString::new("").unwrap(),
-            variant: std::ffi::CString::new("").unwrap(),
-            options: std::ffi::CString::new("").unwrap(),
-        },
         includes: Vec::new(),
         failed_includes: Vec::new(),
         atom_table: atom_table_new(),
@@ -947,10 +939,10 @@ pub(crate) fn xkb_context_new(flags: xkb_context_flags) -> xkb_context {
         use_secure_getenv: false,
         pending_default_includes: false,
     };
-    const XKB_CONTEXT_ALL_FLAGS: xkb_context_flags = (XKB_CONTEXT_NO_DEFAULT_INCLUDES as i32
+    const XKB_CONTEXT_ALL_FLAGS: XkbContextFlags = (XKB_CONTEXT_NO_DEFAULT_INCLUDES as i32
         | XKB_CONTEXT_NO_ENVIRONMENT_NAMES as i32
         | XKB_CONTEXT_NO_SECURE_GETENV as i32)
-        as xkb_context_flags;
+        as XkbContextFlags;
     if flags & !XKB_CONTEXT_ALL_FLAGS != 0 {
         log::error!(
             "Invalid context flags: 0x{:x}\n",
@@ -970,7 +962,7 @@ pub(crate) fn xkb_context_new(flags: xkb_context_flags) -> xkb_context {
     ctx
 }
 
-pub(crate) fn xkb_context_get_log_verbosity(ctx: &xkb_context) -> i32 {
+pub(crate) fn xkb_context_get_log_verbosity(ctx: &XkbContext) -> i32 {
     ctx.log_verbosity
 }
 
@@ -979,7 +971,7 @@ pub(crate) fn xkb_context_get_log_verbosity(ctx: &xkb_context) -> i32 {
 pub(crate) fn xkb_context_getenv(name: &str) -> Result<String, VarError> {
     std::env::var(name)
 }
-pub(crate) fn xkb_context_init_includes(ctx: &mut xkb_context) -> bool {
+pub(crate) fn xkb_context_init_includes(ctx: &mut XkbContext) -> bool {
     if ctx.pending_default_includes {
         if ctx.failed_includes.is_empty() {
             if xkb_context_include_path_append_default(ctx) == 0 {
@@ -997,25 +989,22 @@ pub(crate) fn xkb_context_init_includes(ctx: &mut xkb_context) -> bool {
     }
     true
 }
-pub(crate) fn xkb_context_num_failed_include_paths(ctx: &mut xkb_context) -> u32 {
+pub(crate) fn xkb_context_num_failed_include_paths(ctx: &mut XkbContext) -> u32 {
     if xkb_context_init_includes(ctx) {
         ctx.failed_includes.len() as u32
     } else {
         0_u32
     }
 }
-pub(crate) fn xkb_context_failed_include_path_get(ctx: &mut xkb_context, idx: u32) -> String {
+pub(crate) fn xkb_context_failed_include_path_get(ctx: &mut XkbContext, idx: u32) -> String {
     if idx >= xkb_context_num_failed_include_paths(ctx) {
         return "".to_string();
     }
     ctx.failed_includes.get(idx as usize).unwrap().clone()
 }
 
-pub(crate) fn xkb_context_sanitize_rule_names(
-    ctx: &xkb_context,
-    rmlvo: &mut xkb_rule_names,
-) -> RMLVO {
-    let mut modified: RMLVO = 0 as RMLVO;
+pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbRuleNames) -> Rmlvo {
+    let mut modified: Rmlvo = 0 as Rmlvo;
     if rmlvo.rules.as_bytes().is_empty() {
         let env = if ctx.use_environment_names {
             xkb_context_getenv("XKB_DEFAULT_RULES")
@@ -1026,7 +1015,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(
             Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
             Err(_) => std::ffi::CString::new("evdev").unwrap(),
         };
-        modified = (modified as u32 | RMLVO_RULES) as RMLVO;
+        modified = (modified as u32 | RMLVO_RULES) as Rmlvo;
     }
     if rmlvo.model.as_bytes().is_empty() {
         let env = if ctx.use_environment_names {
@@ -1038,7 +1027,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(
             Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
             Err(_) => std::ffi::CString::new("pc105").unwrap(),
         };
-        modified = (modified as u32 | RMLVO_MODEL) as RMLVO;
+        modified = (modified as u32 | RMLVO_MODEL) as Rmlvo;
     }
     if rmlvo.layout.as_bytes().is_empty() {
         {
@@ -1052,7 +1041,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(
                 Err(_) => std::ffi::CString::new("us").unwrap(),
             };
         }
-        modified = (modified as u32 | RMLVO_LAYOUT) as RMLVO;
+        modified = (modified as u32 | RMLVO_LAYOUT) as Rmlvo;
         let variant: std::ffi::CString = {
             let layout = xkb_context_getenv("XKB_DEFAULT_LAYOUT");
             let default_variant = xkb_context_getenv("XKB_DEFAULT_VARIANT");
@@ -1070,7 +1059,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(
                     variant.to_str().unwrap_or(""));
         }
         rmlvo.variant = variant;
-        modified = (modified as u32 | RMLVO_VARIANT) as RMLVO;
+        modified = (modified as u32 | RMLVO_VARIANT) as Rmlvo;
     }
     if rmlvo.options.as_bytes().is_empty() {
         if ctx.use_environment_names {
@@ -1082,7 +1071,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(
         } else {
             rmlvo.options = std::ffi::CString::new("").unwrap();
         };
-        modified = (modified as u32 | RMLVO_OPTIONS) as RMLVO;
+        modified = (modified as u32 | RMLVO_OPTIONS) as Rmlvo;
     }
     modified
 }
@@ -1561,7 +1550,7 @@ pub(crate) static symInterpretMatchMaskNames: [LookupEntry; 6] = [
         value: 0_u32,
     },
 ];
-pub(crate) fn ModIndexText<'a>(ctx: &'a xkb_context, mods: &xkb_mod_set, ndx: u32) -> &'a str {
+pub(crate) fn ModIndexText<'a>(ctx: &'a XkbContext, mods: &XkbModSet, ndx: u32) -> &'a str {
     if ndx == XKB_MOD_INVALID {
         return "none";
     }
@@ -1587,7 +1576,7 @@ pub(crate) fn KeysymText(sym: u32) -> String {
 pub(crate) fn SIMatchText(type_0: u32) -> &'static str {
     LookupValue(&symInterpretMatchMaskNames, type_0)
 }
-pub(crate) fn ModMaskText(ctx: &xkb_context, type_0: u32, mods: &xkb_mod_set, mask: u32) -> String {
+pub(crate) fn ModMaskText(ctx: &XkbContext, type_0: u32, mods: &XkbModSet, mask: u32) -> String {
     if mask == 0_u32 {
         return "none".to_string();
     }
@@ -1624,7 +1613,7 @@ use super::keysym::xkb_keysym_get_name;
 
 use std::ffi::CString;
 
-/// Rust-native version of xkb_rule_names
+/// Rust-native version of XkbRuleNames
 #[derive(Debug, Clone, Default)]
 pub(crate) struct RuleNames {
     pub(crate) rules: String,
@@ -1663,10 +1652,10 @@ impl RuleNames {
         }
     }
 
-    /// Convert to xkb_rule_names structure
-    pub(crate) fn to_c_keymap(&self) -> super::shared_types::xkb_rule_names {
+    /// Convert to XkbRuleNames structure
+    pub(crate) fn to_c_keymap(&self) -> super::shared_types::XkbRuleNames {
         use std::ffi::CString;
-        super::shared_types::xkb_rule_names {
+        super::shared_types::XkbRuleNames {
             rules: CString::new(self.rules.as_str()).unwrap(),
             model: CString::new(self.model.as_str()).unwrap(),
             layout: CString::new(self.layout.as_str()).unwrap(),
@@ -1778,10 +1767,10 @@ fn preprocess_unicode_keysyms(input: &str) -> std::borrow::Cow<'_, str> {
 // Safe RAII Wrappers for XKB FFI Types
 // ============================================================================
 
-/// Safe wrapper around xkb_context with automatic cleanup
+/// Safe wrapper around XkbContext with automatic cleanup
 #[derive(Clone)]
 pub(crate) struct Context {
-    entity: xkb_context,
+    entity: XkbContext,
 }
 
 impl Context {
@@ -1818,10 +1807,10 @@ impl Context {
     }
 }
 
-/// Safe wrapper around xkb_keymap with automatic cleanup
+/// Safe wrapper around XkbKeymap with automatic cleanup
 #[derive(Clone)]
 pub(crate) struct Keymap {
-    inner: Rc<super::shared_types::xkb_keymap>,
+    inner: Rc<super::shared_types::XkbKeymap>,
 }
 
 impl std::fmt::Debug for Keymap {
@@ -2057,7 +2046,7 @@ impl State {
     pub(crate) fn update_key(
         &mut self,
         keycode: u32,
-        direction: super::shared_types::xkb_key_direction,
+        direction: super::shared_types::XkbKeyDirection,
     ) {
         xkb_state_update_key(&mut self.inner, keycode, direction);
     }
@@ -2124,7 +2113,7 @@ impl State {
 
 impl Drop for State {
     fn drop(&mut self) {
-        // Rc<xkb_keymap> inside the state drops automatically.
+        // Rc<XkbKeymap> inside the state drops automatically.
         // Nothing else to clean up — Box<xkb_state> handles deallocation.
     }
 }
@@ -2215,7 +2204,7 @@ mod tests {
 #[derive(Copy, Clone)]
 
 pub(crate) struct xkb_event {
-    pub(crate) type_0: xkb_event_type,
+    pub(crate) type_0: XkbEventType,
     pub(crate) data: xkb_event_data,
 }
 #[derive(Copy, Clone)]
@@ -2241,8 +2230,8 @@ pub(crate) struct state_components {
     pub(crate) latched_mods: u32,
     pub(crate) locked_mods: u32,
     pub(crate) mods: u32,
-    pub(crate) leds: xkb_led_mask_t,
-    pub(crate) controls: xkb_action_controls,
+    pub(crate) leds: XkbLedMaskT,
+    pub(crate) controls: XkbActionControls,
 }
 #[derive(Copy, Clone)]
 
@@ -2269,12 +2258,10 @@ pub(crate) struct xkb_state_components_update_v1 {
     pub(crate) locked_mods: u32,
     pub(crate) latched_layout: i32,
     pub(crate) locked_layout: i32,
-    pub(crate) affect_controls: xkb_keyboard_control_flags,
-    pub(crate) controls: xkb_keyboard_control_flags,
+    pub(crate) affect_controls: XkbKeyboardControlFlags,
+    pub(crate) controls: XkbKeyboardControlFlags,
 }
-use super::shared_types::{
-    xkb_action_controls, xkb_event_type, xkb_keyboard_control_flags, xkb_led_mask_t,
-};
+use super::shared_types::{XkbActionControls, XkbEventType, XkbKeyboardControlFlags, XkbLedMaskT};
 
 fn vec_resize_zero<T: Default>(v: &mut Vec<T>, new_len: usize) {
     v.resize_with(new_len, Default::default);
@@ -2288,16 +2275,16 @@ pub(crate) struct xkb_state {
     pub(crate) set_mods: u32,
     pub(crate) clear_mods: u32,
     pub(crate) mod_key_count: [i16; 32],
-    pub(crate) flags: xkb_a11y_flags,
+    pub(crate) flags: XkbA11yFlags,
     pub(crate) refcnt: i32,
     pub(crate) filters: Vec<xkb_filter>,
-    pub(crate) keymap: Rc<xkb_keymap>,
+    pub(crate) keymap: Rc<XkbKeymap>,
 }
 
 impl xkb_state {
     /// Safe accessor for the keymap reference.
     #[inline]
-    pub(crate) fn keymap(&self) -> &xkb_keymap {
+    pub(crate) fn keymap(&self) -> &XkbKeymap {
         &self.keymap
     }
 }
@@ -2305,10 +2292,10 @@ impl xkb_state {
 #[derive(Copy, Clone)]
 
 pub(crate) struct xkb_filter {
-    pub(crate) action: xkb_action,
-    pub(crate) key: *const xkb_key,
+    pub(crate) action: XkbAction,
+    pub(crate) key: *const XkbKey,
     pub(crate) func: Option<
-        fn(&mut xkb_state, &mut xkb_events, &mut xkb_filter, &xkb_key, xkb_key_direction) -> bool,
+        fn(&mut xkb_state, &mut xkb_events, &mut xkb_filter, &XkbKey, XkbKeyDirection) -> bool,
     >,
     pub(crate) priv_0: u64,
     pub(crate) refcnt: i32,
@@ -2316,7 +2303,7 @@ pub(crate) struct xkb_filter {
 impl Default for xkb_filter {
     fn default() -> Self {
         Self {
-            action: xkb_action::default(),
+            action: XkbAction::default(),
             key: std::ptr::null(),
             func: None,
             priv_0: 0u64,
@@ -2329,7 +2316,7 @@ impl Default for xkb_filter {
 pub(crate) struct xkb_events {
     pub(crate) next: u32,
     pub(crate) queue: Vec<xkb_event>,
-    pub(crate) ctx: xkb_context,
+    pub(crate) ctx: XkbContext,
 }
 impl xkb_events {
     fn dummy() -> Self {
@@ -2353,7 +2340,7 @@ pub(crate) struct machine_controls {
 pub(crate) struct FilterActionFuncs {
     pub(crate) new: Option<fn(&mut xkb_state, &mut xkb_events, &mut xkb_filter) -> ()>,
     pub(crate) func: Option<
-        fn(&mut xkb_state, &mut xkb_events, &mut xkb_filter, &xkb_key, xkb_key_direction) -> bool,
+        fn(&mut xkb_state, &mut xkb_events, &mut xkb_filter, &XkbKey, XkbKeyDirection) -> bool,
     >,
 }
 
@@ -2395,10 +2382,10 @@ pub(crate) type xkb_filter_result = u32;
 
 use std::sync::LazyLock;
 
-static SYNTHETIC_KEY_BREAK_GROUP_LATCH: LazyLock<xkb_key> = LazyLock::new(|| xkb_key {
+static SYNTHETIC_KEY_BREAK_GROUP_LATCH: LazyLock<XkbKey> = LazyLock::new(|| XkbKey {
     keycode: 0,
     name: 0,
-    explicit: 0 as xkb_explicit_components,
+    explicit: 0 as XkbExplicitComponents,
     modmap: 0,
     vmodmap: 0,
     overlays: 0,
@@ -2408,18 +2395,17 @@ static SYNTHETIC_KEY_BREAK_GROUP_LATCH: LazyLock<xkb_key> = LazyLock::new(|| xkb
     out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
     out_of_range_group_number: 0,
     num_groups: 1,
-    groups: vec![xkb_group {
+    groups: vec![XkbGroup {
         explicit_symbols: false,
         explicit_actions: false,
         implicit_actions: false,
         explicit_type: false,
         type_idx: 0,
-        levels: vec![xkb_level {
-            upper: XKB_KEY_NoSymbol as u32,
+        levels: vec![XkbLevel {
+            upper: XKB_KEY_NO_SYMBOL as u32,
             has_upper: false,
             syms: Vec::new(),
-            actions: vec![xkb_action::Internal(xkb_internal_action {
-                type_0: ACTION_TYPE_INTERNAL,
+            actions: vec![XkbAction::Internal(XkbInternalAction {
                 flags: INTERNAL_BREAKS_GROUP_LATCH,
                 clear_latched_mods: 0,
             })],
@@ -2428,7 +2414,7 @@ static SYNTHETIC_KEY_BREAK_GROUP_LATCH: LazyLock<xkb_key> = LazyLock::new(|| xkb
     overlay_keys: Vec::new(),
 });
 
-fn get_entry_for_mods(type_0: &xkb_key_type, mods: u32) -> Option<&xkb_key_type_entry> {
+fn get_entry_for_mods(type_0: &XkbKeyType, mods: u32) -> Option<&XkbKeyTypeEntry> {
     type_0
         .entries
         .iter()
@@ -2438,16 +2424,16 @@ fn get_entry_for_mods(type_0: &xkb_key_type, mods: u32) -> Option<&xkb_key_type_
 
 fn get_entry_for_key_state<'a>(
     state: &'a xkb_state,
-    key: &xkb_key,
+    key: &XkbKey,
     group: u32,
-) -> Option<&'a xkb_key_type_entry> {
+) -> Option<&'a XkbKeyTypeEntry> {
     let keymap = state.keymap();
     let type_0 = &keymap.types[key.groups[group as usize].type_idx as usize];
     let active_mods: u32 = state.components.mods & type_0.mods.mask;
     get_entry_for_mods(type_0, active_mods)
 }
 #[inline]
-fn state_key_get_level(state: &xkb_state, key: &xkb_key, layout: u32) -> u32 {
+fn state_key_get_level(state: &xkb_state, key: &XkbKey, layout: u32) -> u32 {
     if layout >= key.num_groups {
         return XKB_LEVEL_INVALID;
     }
@@ -2464,7 +2450,7 @@ pub(crate) fn xkb_state_key_get_level(state: &xkb_state, kc: u32, layout: u32) -
     }
 }
 #[inline]
-fn state_key_get_layout(state: &xkb_state, key: &xkb_key) -> u32 {
+fn state_key_get_layout(state: &xkb_state, key: &XkbKey) -> u32 {
     XkbWrapGroupIntoRange(
         state.components.group as i32,
         key.num_groups,
@@ -2480,9 +2466,9 @@ pub(crate) fn xkb_state_key_get_layout(state: &xkb_state, kc: u32) -> u32 {
     }
 }
 
-static DUMMY_ACTION: xkb_action = xkb_action::None;
+static DUMMY_ACTION: XkbAction = XkbAction::None;
 
-fn xkb_key_get_actions<'a>(state: &'a xkb_state, key: &'a xkb_key) -> &'a [xkb_action] {
+fn xkb_key_get_actions<'a>(state: &'a xkb_state, key: &'a XkbKey) -> &'a [XkbAction] {
     let layout: u32 = state_key_get_layout(state, key);
     let level: u32 = state_key_get_level(state, key, layout);
     if level != XKB_LEVEL_INVALID {
@@ -2537,13 +2523,12 @@ fn xkb_filter_group_set_func(
     state: &mut xkb_state,
     _events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: &xkb_key,
-    direction: xkb_key_direction,
+    key: &XkbKey,
+    direction: XkbKeyDirection,
 ) -> bool {
     if !std::ptr::eq(key, filter.key) {
-        filter.action.as_group_mut().flags = (filter.action.as_group().flags
-            & !(ACTION_LOCK_CLEAR as i32) as u32)
-            as xkb_action_flags;
+        filter.action.as_group_mut().flags =
+            (filter.action.as_group().flags & !(ACTION_LOCK_CLEAR as i32) as u32) as XkbActionFlags;
         return XKB_FILTER_CONTINUE as i32 != 0;
     }
     's_38: {
@@ -2622,15 +2607,15 @@ fn xkb_filter_group_lock_func(
     state: &mut xkb_state,
     _events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: &xkb_key,
-    direction: xkb_key_direction,
+    key: &XkbKey,
+    direction: XkbKeyDirection,
 ) -> bool {
     if !std::ptr::eq(key, filter.key) {
         if filter.action.as_group().flags & ACTION_LOCK_ON_RELEASE != 0 && direction == XKB_KEY_DOWN
         {
             filter.action.as_group_mut().flags = (filter.action.as_group().flags
                 & !(ACTION_LOCK_ON_RELEASE as i32) as u32)
-                as xkb_action_flags;
+                as XkbActionFlags;
         }
         return XKB_FILTER_CONTINUE as i32 != 0;
     }
@@ -2661,7 +2646,7 @@ fn xkb_filter_group_lock_func(
     XKB_FILTER_CONTINUE as i32 != 0
 }
 
-fn xkb_action_breaks_latch(action: &xkb_action, flag: u32, mask: u32) -> bool {
+fn xkb_action_breaks_latch(action: &XkbAction, flag: u32, mask: u32) -> bool {
     match action.action_type() {
         0 | 1 | 9 | 10 | 14 | 15 | 13 | 12 | 16 => true,
         20 => {
@@ -2694,8 +2679,8 @@ fn xkb_filter_group_latch_func(
     state: &mut xkb_state,
     events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: &xkb_key,
-    direction: xkb_key_direction,
+    key: &XkbKey,
+    direction: XkbKeyDirection,
 ) -> bool {
     let group_delta = unpack_group_delta(filter.priv_0);
     let mut latch: xkb_key_latch_state =
@@ -2722,9 +2707,9 @@ fn xkb_filter_group_latch_func(
             }
         } else if latch as u32 == LATCH_PENDING {
             let sticky_keys: bool = state.components.controls & CONTROL_STICKY_KEYS != 0;
-            let flags: xkb_action_flags = (filter.action.as_group().flags
+            let flags: XkbActionFlags = (filter.action.as_group().flags
                 & !(ACTION_LATCH_TO_LOCK as i32) as u32)
-                as xkb_action_flags;
+                as XkbActionFlags;
             let mut k_0: u16 = 0_u16;
             while (k_0 as usize) < actions.len() {
                 if actions[k_0 as usize].action_type() as u32 == ACTION_TYPE_GROUP_LATCH
@@ -2739,7 +2724,7 @@ fn xkb_filter_group_latch_func(
                         && filter.action.as_group().group != 0_i32
                     {
                         let group_data = *filter.action.as_group();
-                        filter.action = xkb_action::GroupLock(group_data);
+                        filter.action = XkbAction::GroupLock(group_data);
                         filter.func = Some(xkb_filter_group_lock_func);
                         xkb_filter_group_lock_new(state, events, filter);
                         state.components.latched_group -= group_delta;
@@ -2789,8 +2774,8 @@ fn xkb_filter_mod_set_new(
     _events: &mut xkb_events,
     filter: &mut xkb_filter,
 ) {
-    let unlock: xkb_action_flags =
-        (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as xkb_action_flags;
+    let unlock: XkbActionFlags =
+        (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as XkbActionFlags;
     if filter.action.as_mods().flags & unlock as u32 == unlock as u32 {
         filter.priv_0 = (filter.action.as_mods().mods.mask & !state.components.locked_mods) as u64;
         state.components.locked_mods &= !filter.action.as_mods().mods.mask;
@@ -2804,13 +2789,12 @@ fn xkb_filter_mod_set_func(
     state: &mut xkb_state,
     _events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: &xkb_key,
-    direction: xkb_key_direction,
+    key: &XkbKey,
+    direction: XkbKeyDirection,
 ) -> bool {
     if !std::ptr::eq(key, filter.key) {
-        filter.action.as_mods_mut().flags = (filter.action.as_mods().flags
-            & !(ACTION_LOCK_CLEAR as i32) as u32)
-            as xkb_action_flags;
+        filter.action.as_mods_mut().flags =
+            (filter.action.as_mods().flags & !(ACTION_LOCK_CLEAR as i32) as u32) as XkbActionFlags;
         return XKB_FILTER_CONTINUE as i32 != 0;
     }
     's_38: {
@@ -2830,8 +2814,8 @@ fn xkb_filter_mod_set_func(
         return XKB_FILTER_CONSUME as i32 != 0;
     }
     state.clear_mods |= filter.priv_0 as u32;
-    let unlock: xkb_action_flags =
-        (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as xkb_action_flags;
+    let unlock: XkbActionFlags =
+        (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as XkbActionFlags;
     if filter.action.as_mods().flags & unlock as u32 == ACTION_LOCK_CLEAR {
         state.components.locked_mods &= !filter.action.as_mods().mods.mask;
     }
@@ -2862,8 +2846,8 @@ fn xkb_filter_mod_lock_func(
     state: &mut xkb_state,
     _events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: &xkb_key,
-    direction: xkb_key_direction,
+    key: &XkbKey,
+    direction: XkbKeyDirection,
 ) -> bool {
     if !std::ptr::eq(key, filter.key) {
         return XKB_FILTER_CONTINUE as i32 != 0;
@@ -2897,8 +2881,8 @@ fn xkb_filter_mod_latch_new(
     _events: &mut xkb_events,
     filter: &mut xkb_filter,
 ) {
-    let unlockOnPress: xkb_action_flags =
-        (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LATCH_ON_PRESS as i32) as xkb_action_flags;
+    let unlockOnPress: XkbActionFlags =
+        (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LATCH_ON_PRESS as i32) as XkbActionFlags;
     if filter.action.as_mods().flags & ACTION_LOCK_CLEAR != 0
         && filter.action.as_mods().flags & unlockOnPress as u32 != 0
         && state.components.locked_mods & filter.action.as_mods().mods.mask
@@ -2919,8 +2903,8 @@ fn xkb_filter_mod_latch_func(
     state: &mut xkb_state,
     events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: &xkb_key,
-    direction: xkb_key_direction,
+    key: &XkbKey,
+    direction: XkbKeyDirection,
 ) -> bool {
     let mut latch: xkb_key_latch_state = filter.priv_0 as xkb_key_latch_state;
     if direction == XKB_KEY_DOWN {
@@ -2945,9 +2929,9 @@ fn xkb_filter_mod_latch_func(
             }
         } else if latch as u32 == LATCH_PENDING {
             let sticky_keys: bool = state.components.controls & CONTROL_STICKY_KEYS != 0;
-            let flags: xkb_action_flags = (filter.action.as_mods().flags
+            let flags: XkbActionFlags = (filter.action.as_mods().flags
                 & !(ACTION_LATCH_TO_LOCK as i32) as u32)
-                as xkb_action_flags;
+                as XkbActionFlags;
             let mut k_0: u16 = 0_u16;
             while (k_0 as usize) < actions.len() {
                 if (actions[k_0 as usize].action_type() as u32 == ACTION_TYPE_MOD_LATCH
@@ -2961,12 +2945,12 @@ fn xkb_filter_mod_latch_func(
                 {
                     if filter.action.as_mods().flags & ACTION_LATCH_TO_LOCK != 0 {
                         let mods_data = *filter.action.as_mods();
-                        filter.action = xkb_action::ModLock(mods_data);
+                        filter.action = XkbAction::ModLock(mods_data);
                         filter.func = Some(xkb_filter_mod_lock_func);
                         xkb_filter_mod_lock_new(state, events, filter);
                     } else {
                         let mods_data = *filter.action.as_mods();
-                        filter.action = xkb_action::ModSet(mods_data);
+                        filter.action = XkbAction::ModSet(mods_data);
                         filter.func = Some(xkb_filter_mod_set_func);
                         xkb_filter_mod_set_new(state, events, filter);
                     }
@@ -2989,8 +2973,8 @@ fn xkb_filter_mod_latch_func(
         if direction == XKB_KEY_REPEATED {
             return XKB_FILTER_CONSUME as i32 != 0;
         } else {
-            let unlockOnPress: xkb_action_flags =
-                (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LATCH_ON_PRESS as i32) as xkb_action_flags;
+            let unlockOnPress: XkbActionFlags =
+                (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LATCH_ON_PRESS as i32) as XkbActionFlags;
             if filter.action.as_mods().flags & ACTION_LOCK_CLEAR != 0
                 && filter.action.as_mods().flags & unlockOnPress as u32 == 0
                 && state.components.locked_mods & filter.action.as_mods().mods.mask
@@ -3027,7 +3011,7 @@ fn xkb_filter_ctrls_new(state: &mut xkb_state, _events: &mut xkb_events, filter:
         || filter.action.as_ctrls().flags & ACTION_LOCK_NO_LOCK == 0
     {
         state.components.controls =
-            (state.components.controls | filter.action.as_ctrls().ctrls) as xkb_action_controls;
+            (state.components.controls | filter.action.as_ctrls().ctrls) as XkbActionControls;
     }
 }
 
@@ -3035,8 +3019,8 @@ fn xkb_filter_ctrls_func(
     state: &mut xkb_state,
     events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: &xkb_key,
-    direction: xkb_key_direction,
+    key: &XkbKey,
+    direction: XkbKeyDirection,
 ) -> bool {
     if !std::ptr::eq(key, filter.key) {
         return XKB_FILTER_CONTINUE as i32 != 0;
@@ -3060,10 +3044,10 @@ fn xkb_filter_ctrls_func(
     if filter.action.action_type() == ACTION_TYPE_CTRL_SET
         || filter.action.as_ctrls().flags & ACTION_LOCK_NO_UNLOCK == 0
     {
-        let old: xkb_action_controls = state.components.controls;
+        let old: XkbActionControls = state.components.controls;
         state.components.controls = (state.components.controls
-            & !(filter.priv_0 as xkb_action_controls))
-            as xkb_action_controls;
+            & !(filter.priv_0 as XkbActionControls))
+            as XkbActionControls;
         if old as u32 & CONTROL_STICKY_KEYS != 0
             && state.components.controls & CONTROL_STICKY_KEYS == 0
         {
@@ -3077,8 +3061,8 @@ fn xkb_filter_ctrls_func(
 fn append_redirect_key_events(
     state: &mut xkb_state,
     events: &mut xkb_events,
-    redirect: &xkb_redirect_key_action,
-    direction: xkb_key_direction,
+    redirect: &XkbRedirectKeyAction,
+    direction: XkbKeyDirection,
 ) -> bool {
     let mut changed: u32 = 0_u32;
     let mask: u32 = redirect.affect;
@@ -3125,7 +3109,7 @@ fn append_redirect_key_events(
             XKB_EVENT_TYPE_KEY_REPEATED as i32
         } else {
             XKB_EVENT_TYPE_KEY_DOWN as i32
-        }) as xkb_event_type,
+        }) as XkbEventType,
         data: xkb_event_data::Keycode(redirect.keycode),
     });
     if mask != 0 && changed != 0 {
@@ -3156,8 +3140,8 @@ fn xkb_filter_redirect_key_func(
     state: &mut xkb_state,
     events: &mut xkb_events,
     filter: &mut xkb_filter,
-    key: &xkb_key,
-    direction: xkb_key_direction,
+    key: &XkbKey,
+    direction: XkbKeyDirection,
 ) -> bool {
     if !std::ptr::eq(key, filter.key) {
         return XKB_FILTER_CONTINUE as i32 != 0;
@@ -3276,8 +3260,8 @@ static FILTER_ACTION_FUNCS: [FilterActionFuncs; 21] = {
 fn xkb_filter_apply_all(
     state: &mut xkb_state,
     events: &mut xkb_events,
-    key: &xkb_key,
-    direction: xkb_key_direction,
+    key: &XkbKey,
+    direction: XkbKeyDirection,
 ) {
     let mut consumed: bool = false;
     // Phase 1: run existing filters' func callbacks
@@ -3300,7 +3284,7 @@ fn xkb_filter_apply_all(
     }
     // Phase 2: create new filters for key-down actions
     let actions = xkb_key_get_actions(state, key);
-    let actions: Vec<xkb_action> = actions.to_vec();
+    let actions: Vec<XkbAction> = actions.to_vec();
     let mut k: u16 = 0_u16;
     while (k as usize) < actions.len() {
         if ((actions[k as usize].action_type() as u32) < _ACTION_TYPE_NUM_ENTRIES)
@@ -3314,19 +3298,19 @@ fn xkb_filter_apply_all(
             if state.components.controls & CONTROL_STICKY_KEYS != 0 {
                 if state.filters[idx].action.action_type() == ACTION_TYPE_MOD_SET {
                     let mods_data = *state.filters[idx].action.as_mods();
-                    state.filters[idx].action = xkb_action::ModLatch(mods_data);
+                    state.filters[idx].action = XkbAction::ModLatch(mods_data);
                     if state.flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
                         state.filters[idx].action.as_mods_mut().flags =
                             (state.filters[idx].action.as_mods().flags | ACTION_LATCH_TO_LOCK)
-                                as xkb_action_flags;
+                                as XkbActionFlags;
                     }
                 } else if state.filters[idx].action.action_type() == ACTION_TYPE_GROUP_SET {
                     let group_data = *state.filters[idx].action.as_group();
-                    state.filters[idx].action = xkb_action::GroupLatch(group_data);
+                    state.filters[idx].action = XkbAction::GroupLatch(group_data);
                     if state.flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
                         state.filters[idx].action.as_group_mut().flags =
                             (state.filters[idx].action.as_group().flags | ACTION_LATCH_TO_LOCK)
-                                as xkb_action_flags;
+                                as XkbActionFlags;
                     }
                 }
             }
@@ -3350,7 +3334,7 @@ fn xkb_filter_apply_all(
         k = k.wrapping_add(1);
     }
 }
-pub(crate) fn xkb_state_new(keymap: Rc<xkb_keymap>) -> Box<xkb_state> {
+pub(crate) fn xkb_state_new(keymap: Rc<XkbKeymap>) -> Box<xkb_state> {
     let mut state = Box::new(xkb_state {
         components: state_components {
             base_group: 0,
@@ -3379,14 +3363,14 @@ pub(crate) fn xkb_state_new(keymap: Rc<xkb_keymap>) -> Box<xkb_state> {
     if keymap.format != XKB_KEYMAP_FORMAT_TEXT_V1
         && XKB_A11Y_NO_FLAGS & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS == 0
     {
-        state.flags = (state.flags | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS) as xkb_a11y_flags;
+        state.flags = (state.flags | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS) as XkbA11yFlags;
     }
     xkb_state_update_derived(&mut state);
     state
 }
 fn xkb_state_led_update_all(state: &mut xkb_state) {
     let keymap = &*state.keymap;
-    state.components.leds = 0 as xkb_led_mask_t;
+    state.components.leds = 0 as XkbLedMaskT;
     let mut idx: u32 = 0_u32;
     while idx < keymap.num_leds {
         let led = &keymap.leds[idx as usize];
@@ -3406,7 +3390,7 @@ fn xkb_state_led_update_all(state: &mut xkb_state) {
                 mod_mask |= state.components.locked_mods;
             }
             if led.mods.mask & mod_mask != 0 {
-                state.components.leds = (state.components.leds | 1_u32 << idx) as xkb_led_mask_t;
+                state.components.leds = (state.components.leds | 1_u32 << idx) as XkbLedMaskT;
                 set_led = true;
             }
         }
@@ -3432,7 +3416,7 @@ fn xkb_state_led_update_all(state: &mut xkb_state) {
                     }
                     if led.groups & group_mask != 0 {
                         state.components.leds =
-                            (state.components.leds | 1_u32 << idx) as xkb_led_mask_t;
+                            (state.components.leds | 1_u32 << idx) as XkbLedMaskT;
                         set_led = true;
                     }
                 } else if led.which_groups as i32 & XKB_STATE_LAYOUT_DEPRESSED as i32 != 0
@@ -3440,13 +3424,12 @@ fn xkb_state_led_update_all(state: &mut xkb_state) {
                     || led.which_groups as i32 & XKB_STATE_LAYOUT_LATCHED as i32 != 0
                         && state.components.latched_group == 0_i32
                 {
-                    state.components.leds =
-                        (state.components.leds | 1_u32 << idx) as xkb_led_mask_t;
+                    state.components.leds = (state.components.leds | 1_u32 << idx) as XkbLedMaskT;
                     set_led = true;
                 }
             }
             if !set_led && led.ctrls & state.components.controls != 0 {
-                state.components.leds = (state.components.leds | 1_u32 << idx) as xkb_led_mask_t;
+                state.components.leds = (state.components.leds | 1_u32 << idx) as XkbLedMaskT;
             }
         }
         idx = idx.wrapping_add(1);
@@ -3488,7 +3471,7 @@ fn xkb_state_update_derived(state: &mut xkb_state) {
 pub(crate) fn xkb_state_update_key(
     state: &mut xkb_state,
     kc: u32,
-    direction: xkb_key_direction,
+    direction: XkbKeyDirection,
 ) -> u32 {
     let keymap_rc = Rc::clone(&state.keymap);
     let keymap = &*keymap_rc;
@@ -3535,10 +3518,10 @@ pub(crate) fn xkb_state_update_key(
     get_state_component_changes(&prev_components, &state.components)
 }
 
-static SYNTHETIC_KEY: LazyLock<xkb_key> = LazyLock::new(|| xkb_key {
+static SYNTHETIC_KEY: LazyLock<XkbKey> = LazyLock::new(|| XkbKey {
     keycode: 0_u32,
     name: 0,
-    explicit: 0 as xkb_explicit_components,
+    explicit: 0 as XkbExplicitComponents,
     modmap: 0,
     vmodmap: 0,
     overlays: 0,
@@ -3555,17 +3538,16 @@ static SYNTHETIC_KEY: LazyLock<xkb_key> = LazyLock::new(|| xkb_key {
 fn update_latch_modifiers(state: &mut xkb_state, events: &mut xkb_events, mask: u32, latches: u32) {
     let clear: u32 = mask & !latches;
     state.components.latched_mods &= !clear;
-    let synthetic_key_level_break_mod_latch: xkb_level = xkb_level {
-        upper: XKB_KEY_NoSymbol as u32,
+    let synthetic_key_level_break_mod_latch: XkbLevel = XkbLevel {
+        upper: XKB_KEY_NO_SYMBOL as u32,
         has_upper: false,
         syms: Vec::new(),
-        actions: vec![xkb_action::Internal(xkb_internal_action {
-            type_0: ACTION_TYPE_INTERNAL,
+        actions: vec![XkbAction::Internal(XkbInternalAction {
             flags: INTERNAL_BREAKS_MOD_LATCH,
             clear_latched_mods: clear,
         })],
     };
-    let synthetic_key_group_break_mod_latch: xkb_group = xkb_group {
+    let synthetic_key_group_break_mod_latch: XkbGroup = XkbGroup {
         explicit_symbols: false,
         explicit_actions: false,
         implicit_actions: false,
@@ -3573,10 +3555,10 @@ fn update_latch_modifiers(state: &mut xkb_state, events: &mut xkb_events, mask: 
         type_idx: 0,
         levels: vec![synthetic_key_level_break_mod_latch],
     };
-    let synthetic_key_break_mod_latch = xkb_key {
+    let synthetic_key_break_mod_latch = XkbKey {
         keycode: 0,
         name: 0,
-        explicit: 0 as xkb_explicit_components,
+        explicit: 0 as XkbExplicitComponents,
         modmap: 0,
         vmodmap: 0,
         overlays: 0,
@@ -3590,11 +3572,11 @@ fn update_latch_modifiers(state: &mut xkb_state, events: &mut xkb_events, mask: 
         overlay_keys: Vec::new(),
     };
     xkb_filter_apply_all(state, events, &synthetic_key_break_mod_latch, XKB_KEY_DOWN);
-    let key: &xkb_key = &SYNTHETIC_KEY;
-    let latch_mods: xkb_action = xkb_action::ModLatch(xkb_mod_action {
+    let key: &XkbKey = &SYNTHETIC_KEY;
+    let latch_mods: XkbAction = XkbAction::ModLatch(XkbModAction {
         type_0: ACTION_TYPE_MOD_LATCH,
-        flags: 0 as xkb_action_flags,
-        mods: xkb_mods {
+        flags: 0 as XkbActionFlags,
+        mods: XkbMods {
             mods: 0,
             mask: mask & latches,
         },
@@ -3617,9 +3599,8 @@ fn update_latch_group(state: &mut xkb_state, events: &mut xkb_events, group: i32
         &SYNTHETIC_KEY_BREAK_GROUP_LATCH,
         XKB_KEY_DOWN,
     );
-    let key: &xkb_key = &SYNTHETIC_KEY;
-    let latch_group: xkb_action = xkb_action::GroupLatch(xkb_group_action {
-        type_0: ACTION_TYPE_GROUP_LATCH,
+    let key: &XkbKey = &SYNTHETIC_KEY;
+    let latch_group: XkbAction = XkbAction::GroupLatch(XkbGroupAction {
         flags: ACTION_ABSOLUTE_SWITCH,
         group,
     });
@@ -3633,14 +3614,14 @@ fn update_latch_group(state: &mut xkb_state, events: &mut xkb_events, group: i32
     state.filters[idx] = filter;
 }
 #[inline]
-fn resolve_to_canonical_mods(keymap: &xkb_keymap, mods: u32) -> u32 {
+fn resolve_to_canonical_mods(keymap: &XkbKeymap, mods: u32) -> u32 {
     mods & keymap.canonical_state_mask
         | mod_mask_get_effective(keymap, mods & !keymap.canonical_state_mask)
 }
 
 fn state_update_latched_locked(
     state: &mut xkb_state,
-    update: &xkb_state_components_update,
+    update: &XkbStateComponentsUpdate,
     events: &mut xkb_events,
 ) {
     let keymap = Rc::clone(&state.keymap);
@@ -3669,8 +3650,7 @@ fn clear_all_latches_and_locks(state: &mut xkb_state, events: &mut xkb_events) {
         | XKB_STATE_MODS_LOCKED as i32
         | XKB_STATE_LAYOUT_LATCHED as i32
         | XKB_STATE_LAYOUT_LOCKED as i32) as u32;
-    let update: xkb_state_components_update = xkb_state_components_update {
-        size: std::mem::size_of::<xkb_state_components_update>(),
+    let update: XkbStateComponentsUpdate = XkbStateComponentsUpdate {
         components: COMPONENTS,
         affect_latched_mods: XKB_MOD_ALL,
         latched_mods: 0_u32,
@@ -3678,8 +3658,6 @@ fn clear_all_latches_and_locks(state: &mut xkb_state, events: &mut xkb_events) {
         locked_mods: 0_u32,
         latched_layout: 0_i32,
         locked_layout: 0_i32,
-        affect_controls: XKB_KEYBOARD_CONTROL_NO_FLAGS,
-        controls: XKB_KEYBOARD_CONTROL_NO_FLAGS,
     };
     state_update_latched_locked(state, &update, events);
 }
@@ -3751,7 +3729,7 @@ pub(crate) fn xkb_state_key_get_syms(state: &xkb_state, kc: u32) -> &[u32] {
 pub(crate) fn xkb_state_key_get_one_sym(state: &xkb_state, kc: u32) -> u32 {
     let syms = xkb_state_key_get_syms(state, kc);
     if syms.len() != 1 {
-        XKB_KEY_NoSymbol as u32
+        XKB_KEY_NO_SYMBOL as u32
     } else {
         syms[0]
     }
@@ -3779,7 +3757,7 @@ pub(crate) fn xkb_state_serialize_mods(state: &xkb_state, type_0: u32) -> u32 {
     serialize_mods(&state.components, type_0)
 }
 
-pub(crate) fn mod_mask_get_effective(keymap: &xkb_keymap, mods: u32) -> u32 {
+pub(crate) fn mod_mask_get_effective(keymap: &XkbKeymap, mods: u32) -> u32 {
     let mut mask: u32 = mods & MOD_REAL_MASK_ALL;
     let mut i: u32 = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
     while i < keymap.mods.num_mods {
@@ -3811,7 +3789,7 @@ pub(crate) fn xkb_state_mod_name_is_active(state: &xkb_state, name: &str, type_0
     xkb_state_mod_index_is_active(state, idx, type_0)
 }
 
-fn key_get_consumed(state: &xkb_state, key: &xkb_key, mode: xkb_consumed_mode) -> u32 {
+fn key_get_consumed(state: &xkb_state, key: &XkbKey, mode: XkbConsumedMode) -> u32 {
     let group: u32 = xkb_state_key_get_layout(state, key.keycode);
     if group == XKB_LAYOUT_INVALID {
         return 0_u32;
@@ -3834,12 +3812,11 @@ fn key_get_consumed(state: &xkb_state, key: &xkb_key, mode: xkb_consumed_mode) -
                 Some(e) => e.level,
                 None => 0_u32,
             };
-            let no_mods_level: &xkb_level =
+            let no_mods_level: &XkbLevel =
                 &key.groups[group as usize].levels[no_mods_leveli as usize];
             for entry in &type_0.entries {
                 if entry_is_active(entry) {
-                    let level: &xkb_level =
-                        &key.groups[group as usize].levels[entry.level as usize];
+                    let level: &XkbLevel = &key.groups[group as usize].levels[entry.level as usize];
                     if !XkbLevelsSameSyms(level, no_mods_level)
                         && (matching_entry.is_some_and(|m| std::ptr::eq(entry, m))
                             || (entry.mods.mask != 0 && entry.mods.mask.is_power_of_two()))
@@ -3858,7 +3835,7 @@ pub(crate) fn xkb_state_mod_index_is_consumed2(
     state: &xkb_state,
     kc: u32,
     idx: u32,
-    mode: xkb_consumed_mode,
+    mode: XkbConsumedMode,
 ) -> i32 {
     let keymap = state.keymap();
     let key = match keymap.get_key(kc) {

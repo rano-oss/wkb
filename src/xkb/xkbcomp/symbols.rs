@@ -1,4 +1,12 @@
-#![allow(non_snake_case, non_camel_case_types, dead_code, clippy::too_many_arguments, clippy::needless_range_loop, clippy::if_same_then_else, clippy::unnecessary_unwrap)]
+#![allow(
+    non_snake_case,
+    non_camel_case_types,
+    dead_code,
+    clippy::too_many_arguments,
+    clippy::needless_range_loop,
+    clippy::if_same_then_else,
+    clippy::unnecessary_unwrap
+)]
 use super::super::keymap::{
     ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
     useModMapValueNames, LookupString, ModMaskText, SIMatchText,
@@ -11,8 +19,8 @@ use super::parser::{ExceedsIncludeMaxDepth, ProcessIncludeFile};
 
 use super::super::keymap::ModIndexText;
 pub(crate) use super::super::shared_types::{
-    InterpDef, KeyAliasDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ReportBadField,
-    ReportNotArray, ReportShouldBeArray, SymbolsDef,
+    report_bad_field, report_bad_type, report_not_array, report_should_be_array, InterpDef,
+    KeyAliasDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, SymbolsDef,
 };
 pub(crate) use super::super::shared_types::{
     MAX_ACTIONS_PER_LEVEL, MOD_REAL_MASK_ALL, XKB_MAX_LEDS, XKB_MOD_NONE, XKB_OVERLAY_INVALID,
@@ -29,12 +37,12 @@ pub(crate) struct SymbolsInfo {
     pub(crate) default_actions: ActionsInfo,
     pub(crate) group_names: Vec<u32>,
     pub(crate) modmaps: Vec<ModMapEntry>,
-    pub(crate) mods: xkb_mod_set,
+    pub(crate) mods: XkbModSet,
     pub(crate) star_atom: u32,
 }
 #[derive(Copy, Clone)]
 pub(crate) struct ModMapEntry {
-    pub(crate) merge: merge_mode,
+    pub(crate) merge: MergeMode,
     pub(crate) haveSymbol: bool,
     pub(crate) modifier: u32,
     /// keyName (atom) when !haveSymbol, keySym when haveSymbol
@@ -49,11 +57,11 @@ pub(crate) struct KeyInfo {
     pub(crate) groups: Vec<GroupInfo>,
     pub(crate) out_of_range_group_policy: u32,
     pub(crate) defined: key_field,
-    pub(crate) merge: merge_mode,
+    pub(crate) merge: MergeMode,
     pub(crate) repeat: key_repeat,
     pub(crate) out_of_range_pending_group: bool,
     pub(crate) overlays_clear: bool,
-    pub(crate) overlays: xkb_overlay_mask_t,
+    pub(crate) overlays: XkbOverlayMaskT,
     pub(crate) overlay_keys: Vec<u32>,
 }
 pub(crate) type key_repeat = u32;
@@ -70,7 +78,7 @@ pub(crate) const KEY_FIELD_DEFAULT_TYPE: key_field = 2;
 pub(crate) const KEY_FIELD_REPEAT: key_field = 1;
 #[derive(Clone, Default)]
 pub(crate) struct GroupInfo {
-    pub(crate) levels: Vec<xkb_level>,
+    pub(crate) levels: Vec<XkbLevel>,
     pub(crate) defined: group_field,
     pub(crate) type_0: u32,
 }
@@ -101,7 +109,7 @@ impl KeyInfo {
 }
 
 impl SymbolsInfo {
-    pub(crate) fn new(ki: &mut xkb_keymap_info<'_>) -> Self {
+    pub(crate) fn new(ki: &mut XkbKeymapInfo<'_>) -> Self {
         let star_atom = atom_intern(&mut ki.keymap_mut().ctx.atom_table, b"*", true);
         Self {
             name: None,
@@ -112,12 +120,12 @@ impl SymbolsInfo {
             keys: Vec::with_capacity(256),
             default_key: KeyInfo::new_zeroed(),
             default_actions: ActionsInfo {
-                actions: [xkb_action::None; 21],
+                actions: [XkbAction::None; 21],
             },
             group_names: Vec::new(),
             modmaps: Vec::new(),
-            mods: xkb_mod_set {
-                mods: [xkb_mod {
+            mods: XkbModSet {
+                mods: [XkbMod {
                     name: 0,
                     type_0: 0_u32,
                     mapping: 0,
@@ -198,7 +206,7 @@ fn InitKeyInfo_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
         overlay_keys: Vec::new(),
     };
 }
-fn InitKeyInfo(ctx: &mut xkb_context, keyi: &mut KeyInfo) {
+fn InitKeyInfo(ctx: &mut XkbContext, keyi: &mut KeyInfo) {
     InitKeyInfo_with_atom(keyi, atom_intern(&mut ctx.atom_table, b"*", true));
 }
 fn ClearKeyInfo(keyi: &mut KeyInfo) {
@@ -210,9 +218,9 @@ fn ClearKeyInfo(keyi: &mut KeyInfo) {
 }
 fn InitSymbolsInfo(
     info: &mut SymbolsInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     include_depth: u32,
-    mods: &xkb_mod_set,
+    mods: &XkbModSet,
 ) {
     info.include_depth = include_depth;
     info.explicit_group = XKB_LAYOUT_INVALID;
@@ -231,11 +239,11 @@ fn ClearSymbolsInfo(info: &mut SymbolsInfo) {
     info.modmaps.clear();
     ClearKeyInfo(&mut info.default_key);
 }
-fn KeyInfoText<'a>(ctx: &'a xkb_context, keyi: &KeyInfo) -> &'a str {
+fn KeyInfoText<'a>(ctx: &'a XkbContext, keyi: &KeyInfo) -> &'a str {
     atom_text(&ctx.atom_table, keyi.name)
 }
 fn MergeGroups(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     into: &mut GroupInfo,
     from: &mut GroupInfo,
     clobber: bool,
@@ -327,12 +335,12 @@ fn MergeGroups(
                                 atom_text(&ki.ctx().atom_table, key_name),
                                 if clobber { "Using from, ignoring to" } else { "Using to, ignoring from" });
                         } else {
-                            let use_action: &xkb_action = if clobber {
+                            let use_action: &XkbAction = if clobber {
                                 &fromLevel.actions[0]
                             } else {
                                 &intoLevel.actions[0]
                             };
-                            let ignore_action: &xkb_action = if clobber {
+                            let ignore_action: &XkbAction = if clobber {
                                 &intoLevel.actions[0]
                             } else {
                                 &fromLevel.actions[0]
@@ -407,37 +415,35 @@ fn UseNewKeyField(
     }
     false
 }
-fn overlays_get(info: &KeyInfo, bit: xkb_overlay_index_t, key_out: Option<&mut u32>) -> bool {
+fn overlays_get(info: &KeyInfo, bit: XkbOverlayIndexT, key_out: Option<&mut u32>) -> bool {
     if bit as i32
-        >= (std::mem::size_of::<xkb_overlay_mask_t>()).wrapping_mul(8_usize) as xkb_overlay_index_t
-            as i32
+        >= (std::mem::size_of::<XkbOverlayMaskT>()).wrapping_mul(8_usize) as XkbOverlayIndexT as i32
     {
         return false;
     }
-    let mask: xkb_overlay_mask_t = (1_u32 << bit as i32) as xkb_overlay_mask_t;
+    let mask: XkbOverlayMaskT = (1_u32 << bit as i32) as XkbOverlayMaskT;
     if info.overlays as i32 & mask as i32 == 0 {
         return false;
     }
     if let Some(key_out) = key_out {
-        let low: xkb_overlay_mask_t =
-            (info.overlays as u32 & (mask as u32).wrapping_sub(1_u32)) as xkb_overlay_mask_t;
+        let low: XkbOverlayMaskT =
+            (info.overlays as u32 & (mask as u32).wrapping_sub(1_u32)) as XkbOverlayMaskT;
         let index: usize = (low as u32).count_ones() as usize;
         *key_out = info.overlay_keys[index];
     }
     true
 }
-fn overlays_insert(keyi: &mut KeyInfo, bit: xkb_overlay_index_t, key: u32) -> bool {
+fn overlays_insert(keyi: &mut KeyInfo, bit: XkbOverlayIndexT, key: u32) -> bool {
     if bit as i32
-        >= (std::mem::size_of::<xkb_overlay_mask_t>()).wrapping_mul(8_usize) as xkb_overlay_index_t
-            as i32
+        >= (std::mem::size_of::<XkbOverlayMaskT>()).wrapping_mul(8_usize) as XkbOverlayIndexT as i32
     {
         return false;
     }
-    let mask: xkb_overlay_mask_t = (1_u32 << bit as i32) as xkb_overlay_mask_t;
+    let mask: XkbOverlayMaskT = (1_u32 << bit as i32) as XkbOverlayMaskT;
     if keyi.overlays as i32 & mask as i32 != 0 && !keyi.overlays_clear {
         // Bit already set — update existing entry
-        let low: xkb_overlay_mask_t =
-            (keyi.overlays as u32 & (mask as u32).wrapping_sub(1_u32)) as xkb_overlay_mask_t;
+        let low: XkbOverlayMaskT =
+            (keyi.overlays as u32 & (mask as u32).wrapping_sub(1_u32)) as XkbOverlayMaskT;
         let index: usize = (low as u32).count_ones() as usize;
         keyi.overlay_keys[index] = key;
         if key == XKB_KEYCODE_INVALID && keyi.overlay_keys.len() == 1 {
@@ -446,10 +452,9 @@ fn overlays_insert(keyi: &mut KeyInfo, bit: xkb_overlay_index_t, key: u32) -> bo
         return true;
     }
     // New bit
-    let new_overlays: xkb_overlay_mask_t =
-        (keyi.overlays as i32 | mask as i32) as xkb_overlay_mask_t;
-    let low: xkb_overlay_mask_t =
-        (new_overlays as u32 & (mask as u32).wrapping_sub(1_u32)) as xkb_overlay_mask_t;
+    let new_overlays: XkbOverlayMaskT = (keyi.overlays as i32 | mask as i32) as XkbOverlayMaskT;
+    let low: XkbOverlayMaskT =
+        (new_overlays as u32 & (mask as u32).wrapping_sub(1_u32)) as XkbOverlayMaskT;
     let index: usize = (low as u32).count_ones() as usize;
 
     if keyi.overlays == 0 || keyi.overlays_clear as i32 != 0 && key == XKB_KEYCODE_INVALID {
@@ -467,7 +472,7 @@ fn overlays_insert(keyi: &mut KeyInfo, bit: xkb_overlay_index_t, key: u32) -> bo
     true
 }
 fn merge_overlays(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     into: &mut KeyInfo,
     from: &mut KeyInfo,
     mut clobber: bool,
@@ -481,13 +486,12 @@ fn merge_overlays(
             into.overlay_keys = std::mem::take(&mut from.overlay_keys);
             into.defined |= KEY_FIELD_OVERLAY as i32 as key_field;
         } else if into.overlays_clear as i32 != 0 && from.overlays_clear as i32 != 0 {
-            into.overlays = (into.overlays as i32 | from.overlays as i32) as xkb_overlay_mask_t;
+            into.overlays = (into.overlays as i32 | from.overlays as i32) as XkbOverlayMaskT;
         } else if ki.features.overlapping_overlays {
             // Complex merge with overlapping overlays
-            let result_mask: xkb_overlay_mask_t =
-                (into.overlays as i32 | from.overlays as i32) as xkb_overlay_mask_t;
-            let count: xkb_overlay_index_t =
-                (result_mask as u32).count_ones() as xkb_overlay_index_t;
+            let result_mask: XkbOverlayMaskT =
+                (into.overlays as i32 | from.overlays as i32) as XkbOverlayMaskT;
+            let count: XkbOverlayIndexT = (result_mask as u32).count_ones() as XkbOverlayIndexT;
             if count as i32 == 0_i32 {
                 eprintln!(
                     "Critical Error: Reached unreachable line in ../src/xkbcomp/symbols.c at {}",
@@ -502,15 +506,15 @@ fn merge_overlays(
                 clobber = !clobber;
             }
             // Now `into` is dest and `from` is src
-            let mut remaining: xkb_overlay_mask_t = from.overlays;
+            let mut remaining: XkbOverlayMaskT = from.overlays;
             let mut src_idx: usize = 0;
             while remaining != 0 {
-                let lsb: xkb_overlay_mask_t = (remaining as i32
-                    & (!(remaining as i32) as u32).wrapping_add(1_u32) as xkb_overlay_mask_t as i32)
-                    as xkb_overlay_mask_t;
-                let bit: xkb_overlay_index_t =
-                    ((lsb as u32).wrapping_sub(1_u32).count_ones()) as xkb_overlay_index_t;
-                remaining = (remaining as i32 & !(lsb as i32)) as xkb_overlay_mask_t;
+                let lsb: XkbOverlayMaskT = (remaining as i32
+                    & (!(remaining as i32) as u32).wrapping_add(1_u32) as XkbOverlayMaskT as i32)
+                    as XkbOverlayMaskT;
+                let bit: XkbOverlayIndexT =
+                    ((lsb as u32).wrapping_sub(1_u32).count_ones()) as XkbOverlayIndexT;
+                remaining = (remaining as i32 & !(lsb as i32)) as XkbOverlayMaskT;
                 let src_key: u32 = if from.overlays_clear || src_idx >= from.overlay_keys.len() {
                     XKB_KEYCODE_INVALID
                 } else {
@@ -578,7 +582,7 @@ fn merge_overlays(
     true
 }
 fn MergeKeys(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     info: &SymbolsInfo,
     into: &mut KeyInfo,
     from: &mut KeyInfo,
@@ -680,7 +684,7 @@ fn MergeKeys(
     true
 }
 fn AddKeySymbols(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     keyi: &mut KeyInfo,
     same_file: bool,
@@ -710,7 +714,7 @@ fn AddKeySymbols(
     InitKeyInfo_with_atom(keyi, info.star_atom);
     true
 }
-fn AddModMapEntry(ki: &xkb_keymap_info<'_>, info: &mut SymbolsInfo, new: &ModMapEntry) -> bool {
+fn AddModMapEntry(ki: &XkbKeymapInfo<'_>, info: &mut SymbolsInfo, new: &ModMapEntry) -> bool {
     let clobber: bool = new.merge != MERGE_AUGMENT;
     let ctx = ki.ctx();
     let mods = &info.mods;
@@ -754,10 +758,10 @@ fn AddModMapEntry(ki: &xkb_keymap_info<'_>, info: &mut SymbolsInfo, new: &ModMap
     true
 }
 fn MergeIncludedSymbols(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     into: &mut SymbolsInfo,
     from: &mut SymbolsInfo,
-    merge: merge_mode,
+    merge: MergeMode,
 ) {
     if from.errorCount > 0_i32 {
         into.errorCount += from.errorCount;
@@ -790,7 +794,7 @@ fn MergeIncludedSymbols(
         std::mem::swap(&mut into.keys, &mut from.keys);
     } else {
         for keyi in from.keys.iter_mut() {
-            keyi.merge = merge as merge_mode;
+            keyi.merge = merge as MergeMode;
             if !AddKeySymbols(ki, into, keyi, false) {
                 into.errorCount += 1;
             }
@@ -808,7 +812,7 @@ fn MergeIncludedSymbols(
     };
 }
 fn HandleIncludeSymbols(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     include: &mut IncludeStmt,
 ) -> bool {
@@ -869,7 +873,7 @@ fn HandleIncludeSymbols(
     info.errorCount == 0_i32
 }
 fn GetGroupIndex(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     info: &SymbolsInfo,
     keyi: &mut KeyInfo,
     arrayNdx: Option<&ExprDef>,
@@ -924,7 +928,7 @@ fn GetGroupIndex(
     true
 }
 fn AddSymbolsToKey(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     info: &SymbolsInfo,
     keyi: &mut KeyInfo,
     arrayNdx: Option<&ExprDef>,
@@ -1005,7 +1009,7 @@ fn AddSymbolsToKey(
     true
 }
 fn AddActionsToKey(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     keyi: &mut KeyInfo,
     arrayNdx: Option<&ExprDef>,
@@ -1067,7 +1071,7 @@ fn AddActionsToKey(
             );
             return false;
         }
-        let mut actions: Vec<xkb_action> = Vec::new();
+        let mut actions: Vec<XkbAction> = Vec::new();
         let mut action_iter = action_vec.iter_mut();
         let mut no_more_actions: bool = false;
         loop {
@@ -1075,7 +1079,7 @@ fn AddActionsToKey(
                 no_more_actions = true;
                 break;
             };
-            let mut toAct: xkb_action = xkb_action::None;
+            let mut toAct: XkbAction = XkbAction::None;
             let r: u32 = HandleActionDef(
                 ki,
                 &mut info.default_actions,
@@ -1166,12 +1170,12 @@ static REPEAT_ENTRIES: [LookupEntry; 8] = [
     },
 ];
 fn ExprResolveOverlayEntry(
-    keymap_info: &xkb_keymap_info<'_>,
+    keymap_info: &XkbKeymapInfo<'_>,
     field: &str,
     arrayNdx: Option<&ExprDef>,
     expr: &ExprDef,
     keyi: &KeyInfo,
-    overlay_rtrn: &mut xkb_overlay_index_t,
+    overlay_rtrn: &mut XkbOverlayIndexT,
     key_rtrn: &mut u32,
 ) -> bool {
     if arrayNdx.is_some() {
@@ -1202,7 +1206,7 @@ fn ExprResolveOverlayEntry(
             raw_overlay);
         return false;
     }
-    *overlay_rtrn = (raw_overlay as xkb_overlay_index_t as i32 - 1_i32) as xkb_overlay_index_t;
+    *overlay_rtrn = (raw_overlay as XkbOverlayIndexT as i32 - 1_i32) as XkbOverlayIndexT;
     match expr.stmt_type() {
         8 => {
             let ExprKind::KeyName(key_name_val) = expr.kind else {
@@ -1235,7 +1239,7 @@ fn ExprResolveOverlayEntry(
                 return true;
             } else if !id.is_empty() && id.eq_ignore_ascii_case("any") {
                 *key_rtrn = XKB_KEYCODE_INVALID;
-                *overlay_rtrn = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
+                *overlay_rtrn = XKB_OVERLAY_INVALID as XkbOverlayIndexT;
                 return true;
             }
             log::error!(
@@ -1261,7 +1265,7 @@ fn ExprResolveOverlayEntry(
     }
 }
 fn SetSymbolsField(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     keyi: &mut KeyInfo,
     field: &str,
@@ -1347,7 +1351,7 @@ fn SetSymbolsField(
         .get(..7)
         .is_some_and(|s| s.eq_ignore_ascii_case("overlay"))
     {
-        let mut overlay: xkb_overlay_index_t = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
+        let mut overlay: XkbOverlayIndexT = XKB_OVERLAY_INVALID as XkbOverlayIndexT;
         let mut key: u32 = XKB_KEYCODE_INVALID;
         if !ExprResolveOverlayEntry(
             ki,
@@ -1396,15 +1400,14 @@ fn SetSymbolsField(
                 }
                 keyi.defined |= KEY_FIELD_OVERLAY as i32 as key_field;
             } else {
-                let mask_0: xkb_overlay_mask_t = (1_u32 << overlay as i32) as xkb_overlay_mask_t;
+                let mask_0: XkbOverlayMaskT = (1_u32 << overlay as i32) as XkbOverlayMaskT;
                 if keyi.overlays == 0 || keyi.overlays_clear as i32 != 0 {
                     if key != XKB_KEYCODE_INVALID {
                         keyi.overlays = mask_0;
                         keyi.overlays_clear = false;
                         keyi.overlay_keys = vec![key];
                     } else {
-                        keyi.overlays =
-                            (keyi.overlays as i32 | mask_0 as i32) as xkb_overlay_mask_t;
+                        keyi.overlays = (keyi.overlays as i32 | mask_0 as i32) as XkbOverlayMaskT;
                         keyi.overlays_clear = true;
                         keyi.overlay_keys = vec![XKB_KEYCODE_INVALID];
                     }
@@ -1504,7 +1507,7 @@ fn SetSymbolsField(
         if pending {
             keyi.out_of_range_pending_group = true;
             let pending_index: u32 = ki.pending_computations.len() as u32;
-            ki.pending_computations.push(pending_computation {
+            ki.pending_computations.push(PendingComputation {
                 expr: value_opt.take(),
                 computed: false,
                 value: 0_u32,
@@ -1527,11 +1530,11 @@ fn SetSymbolsField(
     true
 }
 fn SetGroupName(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     arrayNdx: Option<&ExprDef>,
     value: &ExprDef,
-    merge: merge_mode,
+    merge: MergeMode,
 ) -> bool {
     let arrayNdx = match arrayNdx {
         Some(a) => a,
@@ -1594,11 +1597,7 @@ fn SetGroupName(
     info.group_names[group_to_use as usize] = name;
     true
 }
-fn HandleGlobalVar(
-    ki: &mut xkb_keymap_info<'_>,
-    info: &mut SymbolsInfo,
-    stmt: &mut VarDef,
-) -> bool {
+fn HandleGlobalVar(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, stmt: &mut VarDef) -> bool {
     let mut elem_atom: u32 = 0;
     let mut field_atom: u32 = 0;
     let mut arrayNdx_opt: Option<&ExprDef> = None;
@@ -1630,7 +1629,7 @@ fn HandleGlobalVar(
         temp.merge = if temp.merge == MERGE_REPLACE {
             MERGE_OVERRIDE
         } else {
-            stmt.merge as merge_mode
+            stmt.merge as MergeMode
         };
         ret = SetSymbolsField(ki, info, &mut temp, field, arrayNdx_opt, &mut stmt.value);
         let mut dk = std::mem::replace(&mut info.default_key, KeyInfo::new_zeroed());
@@ -1704,7 +1703,7 @@ fn HandleGlobalVar(
     ret
 }
 fn HandleSymbolsBody(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     defs: &mut [VarDef],
     keyi: &mut KeyInfo,
@@ -1756,7 +1755,7 @@ fn HandleSymbolsBody(
     }
     all_valid_entries
 }
-fn SetExplicitGroup(ki: &xkb_keymap_info<'_>, info: &SymbolsInfo, keyi: &mut KeyInfo) -> bool {
+fn SetExplicitGroup(ki: &XkbKeymapInfo<'_>, info: &SymbolsInfo, keyi: &mut KeyInfo) -> bool {
     let mut warn: bool = false;
     if info.explicit_group == XKB_LAYOUT_INVALID {
         return true;
@@ -1790,7 +1789,7 @@ fn SetExplicitGroup(ki: &xkb_keymap_info<'_>, info: &SymbolsInfo, keyi: &mut Key
     true
 }
 fn HandleSymbolsDef(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     stmt: &mut SymbolsDef,
 ) -> bool {
@@ -1811,8 +1810,8 @@ fn HandleSymbolsDef(
         overlays: dk.overlays,
         overlay_keys: dk.overlay_keys.clone(),
     };
-    keyi.merge = stmt.merge as merge_mode;
-    keyi.name = stmt.keyName;
+    keyi.merge = stmt.merge as MergeMode;
+    keyi.name = stmt.key_name;
     if HandleSymbolsBody(ki, info, &mut stmt.symbols, &mut keyi) as i32 != 0
         && SetExplicitGroup(ki, info, &mut keyi) as i32 != 0
         && AddKeySymbols(ki, info, &mut keyi, true) as i32 != 0
@@ -1824,7 +1823,7 @@ fn HandleSymbolsDef(
     false
 }
 fn HandleModMapDef(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     def: &mut ModMapDef,
 ) -> bool {
@@ -1864,7 +1863,7 @@ fn HandleModMapDef(
             let ExprKind::KeySym(ks) = key.kind else {
                 unreachable!()
             };
-            if ks != XKB_KEY_NoSymbol as u32 {
+            if ks != XKB_KEY_NO_SYMBOL as u32 {
                 tmp.haveSymbol = true;
                 tmp.u = ks;
                 add_entry = true;
@@ -1880,7 +1879,7 @@ fn HandleModMapDef(
     }
     ok
 }
-fn HandleSymbolsFile(ki: &mut xkb_keymap_info<'_>, info: &mut SymbolsInfo, file: &mut XkbFile) {
+fn HandleSymbolsFile(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, file: &mut XkbFile) {
     {
         let mut ok: bool;
         info.name = if file.name.is_empty() {
@@ -1941,7 +1940,7 @@ fn HandleSymbolsFile(ki: &mut xkb_keymap_info<'_>, info: &mut SymbolsInfo, file:
         }
     }
 }
-fn FindKeyForSymbol(keymap: &mut xkb_keymap, sym: u32) -> Option<&mut xkb_key> {
+fn FindKeyForSymbol(keymap: &mut XkbKeymap, sym: u32) -> Option<&mut XkbKey> {
     let mut got_one_group: bool;
     let mut group: u32 = 0_u32;
     loop {
@@ -1982,18 +1981,18 @@ fn FindKeyForSymbol(keymap: &mut xkb_keymap, sym: u32) -> Option<&mut xkb_key> {
     }
     None
 }
-fn FindAutomaticType(ctx: &mut xkb_context, groupi: &GroupInfo) -> u32 {
+fn FindAutomaticType(ctx: &mut XkbContext, groupi: &GroupInfo) -> u32 {
     let width: u32 = groupi.levels.len() as u32;
     if width == 1_u32 || width == 0_u32 {
         return atom_intern(&mut ctx.atom_table, b"ONE_LEVEL", true);
     }
     let sym0: u32 = if groupi.levels[0].syms.is_empty() {
-        XKB_KEY_NoSymbol as u32
+        XKB_KEY_NO_SYMBOL as u32
     } else {
         groupi.levels[0].syms[0]
     };
     let sym1: u32 = if groupi.levels[1].syms.is_empty() {
-        XKB_KEY_NoSymbol as u32
+        XKB_KEY_NO_SYMBOL as u32
     } else {
         groupi.levels[1].syms[0]
     };
@@ -2009,18 +2008,18 @@ fn FindAutomaticType(ctx: &mut xkb_context, groupi: &GroupInfo) -> u32 {
     if width <= 4_u32 {
         if xkb_keysym_is_lower(sym0) as i32 != 0 && xkb_keysym_is_upper_or_title(sym1) as i32 != 0 {
             let sym2: u32 = if groupi.levels[2].syms.is_empty() {
-                XKB_KEY_NoSymbol as u32
+                XKB_KEY_NO_SYMBOL as u32
             } else {
                 groupi.levels[2].syms[0]
             };
             let sym3: u32 = if width == 4_u32 {
                 if groupi.levels[3].syms.is_empty() {
-                    XKB_KEY_NoSymbol as u32
+                    XKB_KEY_NO_SYMBOL as u32
                 } else {
                     groupi.levels[3].syms[0]
                 }
             } else {
-                XKB_KEY_NoSymbol as u32
+                XKB_KEY_NO_SYMBOL as u32
             };
             if xkb_keysym_is_lower(sym2) as i32 != 0
                 && xkb_keysym_is_upper_or_title(sym3) as i32 != 0
@@ -2037,7 +2036,7 @@ fn FindAutomaticType(ctx: &mut xkb_context, groupi: &GroupInfo) -> u32 {
     XKB_ATOM_NONE
 }
 fn FindTypeForGroup(
-    keymap: &mut xkb_keymap,
+    keymap: &mut XkbKeymap,
     keyi: &mut KeyInfo,
     group: u32,
     explicit_type: &mut bool,
@@ -2083,11 +2082,7 @@ fn FindTypeForGroup(
     keymap.types[0].required = true;
     0
 }
-fn CopySymbolsDefToKeymap(
-    keymap: &mut xkb_keymap,
-    _info: &SymbolsInfo,
-    keyi: &mut KeyInfo,
-) -> bool {
+fn CopySymbolsDefToKeymap(keymap: &mut XkbKeymap, _info: &SymbolsInfo, keyi: &mut KeyInfo) -> bool {
     let mut i: u32;
 
     // The name is guaranteed to be real and not an alias, so 'false' is safe here
@@ -2125,7 +2120,7 @@ fn CopySymbolsDefToKeymap(
             }
             if has_explicit_type {
                 keymap.keys[key_idx].explicit =
-                    (keymap.keys[key_idx].explicit | EXPLICIT_TYPES) as xkb_explicit_components;
+                    (keymap.keys[key_idx].explicit | EXPLICIT_TYPES) as XkbExplicitComponents;
             }
         }
     }
@@ -2156,7 +2151,7 @@ fn CopySymbolsDefToKeymap(
         }
 
         keymap.keys[key_idx].groups = (0..keymap.keys[key_idx].num_groups)
-            .map(|_| xkb_group {
+            .map(|_| XkbGroup {
                 explicit_symbols: false,
                 explicit_actions: false,
                 implicit_actions: false,
@@ -2215,7 +2210,7 @@ fn CopySymbolsDefToKeymap(
                     let leveli = &mut groupi.levels[li];
                     match leveli.syms.len() {
                         0 => {
-                            leveli.upper = XKB_KEY_NoSymbol as u32;
+                            leveli.upper = XKB_KEY_NO_SYMBOL as u32;
                         }
                         1 => {
                             leveli.upper = xkb_keysym_to_upper(leveli.syms[0]);
@@ -2259,19 +2254,17 @@ fn CopySymbolsDefToKeymap(
                         .is_empty()
                 {
                     keymap.keys[key_idx].groups[i as usize].explicit_symbols = true;
-                    keymap.keys[key_idx].explicit = (keymap.keys[key_idx].explicit
-                        | EXPLICIT_SYMBOLS)
-                        as xkb_explicit_components;
+                    keymap.keys[key_idx].explicit =
+                        (keymap.keys[key_idx].explicit | EXPLICIT_SYMBOLS) as XkbExplicitComponents;
                 }
                 if groupi.defined & GROUP_FIELD_ACTS != 0 {
                     keymap.keys[key_idx].groups[i as usize].explicit_actions = true;
-                    keymap.keys[key_idx].explicit = (keymap.keys[key_idx].explicit
-                        | EXPLICIT_INTERP)
-                        as xkb_explicit_components;
+                    keymap.keys[key_idx].explicit =
+                        (keymap.keys[key_idx].explicit | EXPLICIT_INTERP) as XkbExplicitComponents;
                 }
                 if keymap.keys[key_idx].groups[i as usize].explicit_type {
                     keymap.keys[key_idx].explicit =
-                        (keymap.keys[key_idx].explicit | EXPLICIT_TYPES) as xkb_explicit_components;
+                        (keymap.keys[key_idx].explicit | EXPLICIT_TYPES) as XkbExplicitComponents;
                 }
 
                 i = i.wrapping_add(1);
@@ -2287,13 +2280,13 @@ fn CopySymbolsDefToKeymap(
     if keyi.defined as i32 & KEY_FIELD_VMODMAP as i32 != 0 {
         keymap.keys[key_idx].vmodmap = keyi.vmodmap;
         keymap.keys[key_idx].explicit =
-            (keymap.keys[key_idx].explicit | EXPLICIT_VMODMAP) as xkb_explicit_components;
+            (keymap.keys[key_idx].explicit | EXPLICIT_VMODMAP) as XkbExplicitComponents;
     }
 
     if keyi.repeat != KEY_REPEAT_UNDEFINED as key_repeat {
         keymap.keys[key_idx].repeats = keyi.repeat == KEY_REPEAT_YES as key_repeat;
         keymap.keys[key_idx].explicit =
-            (keymap.keys[key_idx].explicit | EXPLICIT_REPEAT) as xkb_explicit_components;
+            (keymap.keys[key_idx].explicit | EXPLICIT_REPEAT) as XkbExplicitComponents;
     }
 
     if (keyi.defined as i32 & KEY_FIELD_OVERLAY as i32 != 0)
@@ -2301,12 +2294,12 @@ fn CopySymbolsDefToKeymap(
         && !keyi.overlays_clear
     {
         // Remove null entries from overlay_keys and clear corresponding bits
-        let mut clean_overlays: xkb_overlay_mask_t = 0;
+        let mut clean_overlays: XkbOverlayMaskT = 0;
         let mut clean_keys: Vec<u32> = Vec::new();
-        let mut remaining: xkb_overlay_mask_t = keyi.overlays;
+        let mut remaining: XkbOverlayMaskT = keyi.overlays;
         let mut idx: usize = 0;
         while remaining != 0 {
-            let lsb: xkb_overlay_mask_t = remaining & (!remaining).wrapping_add(1);
+            let lsb: XkbOverlayMaskT = remaining & (!remaining).wrapping_add(1);
             remaining &= !lsb;
             let k = if idx < keyi.overlay_keys.len() {
                 keyi.overlay_keys[idx]
@@ -2324,14 +2317,14 @@ fn CopySymbolsDefToKeymap(
             keymap.keys[key_idx].overlays = clean_overlays;
             keymap.keys[key_idx].overlay_keys = clean_keys;
             keymap.keys[key_idx].explicit =
-                (keymap.keys[key_idx].explicit | EXPLICIT_OVERLAY) as xkb_explicit_components;
+                (keymap.keys[key_idx].explicit | EXPLICIT_OVERLAY) as XkbExplicitComponents;
         }
     }
 
     true
 }
 
-fn CopyModMapDefToKeymap(keymap: &mut xkb_keymap, info: &SymbolsInfo, entry: &ModMapEntry) -> bool {
+fn CopyModMapDefToKeymap(keymap: &mut XkbKeymap, info: &SymbolsInfo, entry: &ModMapEntry) -> bool {
     if !entry.haveSymbol {
         if let Some(key) = keymap.key_by_name_mut(entry.u, true) {
             if entry.modifier != XKB_MOD_NONE {
@@ -2358,7 +2351,7 @@ fn CopyModMapDefToKeymap(keymap: &mut xkb_keymap, info: &SymbolsInfo, entry: &Mo
         false
     }
 }
-fn CopySymbolsToKeymap(keymap: &mut xkb_keymap, info: &mut SymbolsInfo) -> bool {
+fn CopySymbolsToKeymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) -> bool {
     keymap.symbols_section_name = match &info.name {
         Some(s) => s.clone(),
         None => String::new(),
@@ -2400,7 +2393,7 @@ fn CopySymbolsToKeymap(keymap: &mut xkb_keymap, info: &mut SymbolsInfo) -> bool 
 }
 pub(crate) fn CompileSymbols(
     file: Option<&mut XkbFile>,
-    keymap_info: &mut xkb_keymap_info<'_>,
+    keymap_info: &mut XkbKeymapInfo<'_>,
 ) -> bool {
     let mods = keymap_info.keymap_ref().mods;
     let mut info = SymbolsInfo::new(keymap_info);
@@ -2428,7 +2421,7 @@ pub(crate) struct CompatInfo {
     pub(crate) leds: [LedInfo; 32],
     pub(crate) num_leds: u32,
     pub(crate) default_actions: ActionsInfo,
-    pub(crate) mods: xkb_mod_set,
+    pub(crate) mods: XkbModSet,
 }
 impl Default for CompatInfo {
     fn default() -> Self {
@@ -2441,14 +2434,14 @@ impl CompatInfo {
         let zeroed_led = LedInfo {
             defined: 0 as led_field,
             merge: MERGE_DEFAULT,
-            led: xkb_led {
+            led: XkbLed {
                 name: 0,
                 which_groups: 0,
                 pending_groups: false,
                 groups: 0,
                 which_mods: 0_u32,
-                mods: xkb_mods { mods: 0, mask: 0 },
-                ctrls: 0 as xkb_action_controls,
+                mods: XkbMods { mods: 0, mask: 0 },
+                ctrls: 0 as XkbActionControls,
             },
         };
         Self {
@@ -2458,7 +2451,7 @@ impl CompatInfo {
             default_interp: SymInterpInfo {
                 defined: 0 as si_field,
                 merge: MERGE_DEFAULT,
-                interp: xkb_sym_interpret {
+                interp: XkbSymInterpret {
                     sym: 0,
                     match_0: MATCH_NONE,
                     mods: 0,
@@ -2467,7 +2460,7 @@ impl CompatInfo {
                     repeat: false,
                     required: false,
                     num_actions: 0,
-                    action: xkb_action::None,
+                    action: XkbAction::None,
                     actions: Vec::new(),
                 },
             },
@@ -2476,10 +2469,10 @@ impl CompatInfo {
             leds: [zeroed_led; 32],
             num_leds: 0,
             default_actions: ActionsInfo {
-                actions: [xkb_action::None; 21],
+                actions: [XkbAction::None; 21],
             },
-            mods: xkb_mod_set {
-                mods: [xkb_mod {
+            mods: XkbModSet {
+                mods: [XkbMod {
                     name: 0,
                     type_0: 0_u32,
                     mapping: 0,
@@ -2493,8 +2486,8 @@ impl CompatInfo {
 #[derive(Copy, Clone)]
 pub(crate) struct LedInfo {
     pub(crate) defined: led_field,
-    pub(crate) merge: merge_mode,
-    pub(crate) led: xkb_led,
+    pub(crate) merge: MergeMode,
+    pub(crate) led: XkbLed,
 }
 pub(crate) type led_field = u32;
 pub(crate) const LED_FIELD_CTRLS: led_field = 4;
@@ -2504,20 +2497,20 @@ pub(crate) const LED_FIELD_MODS: led_field = 1;
 #[derive(Clone)]
 pub(crate) struct SymInterpInfo {
     pub(crate) defined: si_field,
-    pub(crate) merge: merge_mode,
-    pub(crate) interp: xkb_sym_interpret,
+    pub(crate) merge: MergeMode,
+    pub(crate) interp: XkbSymInterpret,
 }
 pub(crate) type si_field = u32;
 pub(crate) const SI_FIELD_LEVEL_ONE_ONLY: si_field = 8;
 pub(crate) const SI_FIELD_AUTO_REPEAT: si_field = 4;
 pub(crate) const SI_FIELD_ACTION: si_field = 2;
 pub(crate) const SI_FIELD_VIRTUAL_MOD: si_field = 1;
-// C2Rust_Unnamed_19 removed: replaced by Vec<xkb_sym_interpret>
+// C2Rust_Unnamed_19 removed: replaced by Vec<XkbSymInterpret>
 pub(crate) struct collect {
-    pub(crate) sym_interprets: Vec<xkb_sym_interpret>,
+    pub(crate) sym_interprets: Vec<XkbSymInterpret>,
 }
-// C2Rust_Unnamed_20 removed: replaced by Vec<xkb_action>
-fn siText(si: &SymInterpInfo, info: &mut CompatInfo, ki: &xkb_keymap_info<'_>) -> String {
+// C2Rust_Unnamed_20 removed: replaced by Vec<XkbAction>
+fn siText(si: &SymInterpInfo, info: &mut CompatInfo, ki: &XkbKeymapInfo<'_>) -> String {
     if std::ptr::eq(si, &info.default_interp) {
         return "default".to_string();
     }
@@ -2531,21 +2524,21 @@ fn siText(si: &SymInterpInfo, info: &mut CompatInfo, ki: &xkb_keymap_info<'_>) -
 #[inline]
 fn ReportSINotArray(
     info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     si: &SymInterpInfo,
     field: &str,
 ) -> bool {
-    ReportNotArray("symbol interpretation", field, &siText(si, info, ki))
+    report_not_array("symbol interpretation", field, &siText(si, info, ki))
 }
 #[inline]
 fn ReportSIBadType(
     info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     si: &SymInterpInfo,
     field: &str,
     wanted: &str,
 ) -> bool {
-    ReportBadType(
+    report_bad_type(
         XKB_ERROR_WRONG_FIELD_TYPE,
         "symbol interpretation",
         field,
@@ -2553,7 +2546,7 @@ fn ReportSIBadType(
         wanted,
     )
 }
-fn LEDText<'a>(info: &'a CompatInfo, ki: &'a xkb_keymap_info<'_>, ledi: &LedInfo) -> &'a str {
+fn LEDText<'a>(info: &'a CompatInfo, ki: &'a XkbKeymapInfo<'_>, ledi: &LedInfo) -> &'a str {
     if std::ptr::eq(ledi, &info.default_led) {
         "default"
     } else {
@@ -2563,12 +2556,12 @@ fn LEDText<'a>(info: &'a CompatInfo, ki: &'a xkb_keymap_info<'_>, ledi: &LedInfo
 #[inline]
 fn ReportLedBadType(
     info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     ledi: &LedInfo,
     field: &str,
     wanted: &str,
 ) -> bool {
-    ReportBadType(
+    report_bad_type(
         XKB_ERROR_WRONG_FIELD_TYPE,
         "indicator map",
         field,
@@ -2579,11 +2572,11 @@ fn ReportLedBadType(
 #[inline]
 fn ReportLedNotArray(
     info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     ledi: &LedInfo,
     field: &str,
 ) -> bool {
-    ReportNotArray("indicator map", field, LEDText(info, ki, ledi))
+    report_not_array("indicator map", field, LEDText(info, ki, ledi))
 }
 #[inline]
 fn InitInterp(info: &mut SymInterpInfo) {
@@ -2595,10 +2588,10 @@ fn InitLED(info: &mut LedInfo) {
     info.merge = MERGE_DEFAULT;
 }
 fn InitCompatInfo(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     info: &mut CompatInfo,
     include_depth: u32,
-    mods: &xkb_mod_set,
+    mods: &XkbModSet,
 ) {
     info.include_depth = include_depth;
     InitActionsInfo(ki.keymap_ref(), &mut info.default_actions);
@@ -2631,7 +2624,7 @@ fn UseNewInterpField(
 }
 fn MergeInterp(
     info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     old: &mut SymInterpInfo,
     new: &mut SymInterpInfo,
     same_file: bool,
@@ -2675,7 +2668,7 @@ fn MergeInterp(
         old.interp.num_actions = new.interp.num_actions;
         if new.interp.num_actions as i32 > 1_i32 {
             old.interp.actions = std::mem::take(&mut new.interp.actions);
-            new.interp.action = xkb_action::None;
+            new.interp.action = XkbAction::None;
             new.interp.num_actions = 0_u16;
         } else {
             old.interp.action = new.interp.action;
@@ -2715,7 +2708,7 @@ fn MergeInterp(
 }
 fn AddInterp(
     info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     new: &mut SymInterpInfo,
     same_file: bool,
 ) -> bool {
@@ -2745,7 +2738,7 @@ fn ResolveStateAndPredicate(
     pred_rtrn: &mut u32,
     mods_rtrn: &mut u32,
     info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
 ) -> bool {
     let expr = match expr {
         None => {
@@ -2809,7 +2802,7 @@ fn UseNewLEDField(
 }
 fn MergeLedMap(
     info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     old: &mut LedInfo,
     new: &mut LedInfo,
     same_file: bool,
@@ -2886,7 +2879,7 @@ fn MergeLedMap(
 }
 fn AddLedMap(
     info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     new: &mut LedInfo,
     same_file: bool,
 ) -> bool {
@@ -2905,7 +2898,7 @@ fn AddLedMap(
     if info.num_leds >= XKB_MAX_LEDS {
         log::error!(
             "Too many LEDs defined (maximum {})\n",
-            (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8_usize) as u32
+            (std::mem::size_of::<XkbLedMaskT>()).wrapping_mul(8_usize) as u32
         );
         return false;
     }
@@ -2915,10 +2908,10 @@ fn AddLedMap(
     true
 }
 fn MergeIncludedCompatMaps(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     into: &mut CompatInfo,
     from: &mut CompatInfo,
-    merge: merge_mode,
+    merge: MergeMode,
 ) {
     if from.errorCount > 0_i32 {
         into.errorCount += from.errorCount;
@@ -2955,7 +2948,7 @@ fn MergeIncludedCompatMaps(
     };
 }
 fn HandleIncludeCompatMap(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut CompatInfo,
     include: &mut IncludeStmt,
 ) -> bool {
@@ -3005,7 +2998,7 @@ fn HandleIncludeCompatMap(
 }
 fn SetInterpField(
     info: &mut CompatInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     si: &mut SymInterpInfo,
     field: &str,
     arrayNdx: Option<&ExprDef>,
@@ -3034,9 +3027,9 @@ fn SetInterpField(
             }
             si.interp.num_actions = 0_u16;
             si.interp.action.set_none();
-            let mut actions: Vec<xkb_action> = Vec::new();
+            let mut actions: Vec<XkbAction> = Vec::new();
             for act_expr in action_vec.iter_mut() {
-                let mut toAct: xkb_action = xkb_action::None;
+                let mut toAct: XkbAction = XkbAction::None;
                 match HandleActionDef(
                     ki,
                     &mut info.default_actions,
@@ -3129,14 +3122,14 @@ fn SetInterpField(
         si.interp.level_one_only = val != 0;
         si.defined = (si.defined | SI_FIELD_LEVEL_ONE_ONLY) as si_field;
     } else {
-        ReportBadField("symbol interpretation", field, &siText(si, info, ki));
+        report_bad_field("symbol interpretation", field, &siText(si, info, ki));
         return ki.strict & PARSER_NO_UNKNOWN_INTERPRET_FIELDS == 0;
     }
     true
 }
 fn SetLedMapField(
     info: &mut CompatInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     ledi: &mut LedInfo,
     field: &str,
     arrayNdx: Option<&ExprDef>,
@@ -3167,7 +3160,7 @@ fn SetLedMapField(
             if pending {
                 ledi.led.pending_groups = true;
                 let pending_index: u32 = ki.pending_computations.len() as u32;
-                ki.pending_computations.push(pending_computation {
+                ki.pending_computations.push(PendingComputation {
                     expr: value_opt.take(),
                     computed: false,
                     value: 0_u32,
@@ -3195,7 +3188,7 @@ fn SetLedMapField(
         ) {
             return ReportLedBadType(info, ki, ledi, field, "controls mask");
         }
-        ledi.led.ctrls = mask_0 as xkb_action_controls;
+        ledi.led.ctrls = mask_0 as XkbActionControls;
         ledi.defined = (ledi.defined | LED_FIELD_CTRLS) as led_field;
     } else if field.eq_ignore_ascii_case("allowexplicit") {
         log::debug!(
@@ -3246,7 +3239,7 @@ fn SetLedMapField(
 }
 fn HandleCompatGlobalVar(
     info: &mut CompatInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     stmt: &mut VarDef,
 ) -> bool {
     let mut elem_atom: u32 = 0;
@@ -3267,7 +3260,7 @@ fn HandleCompatGlobalVar(
             let mut temp: SymInterpInfo = SymInterpInfo {
                 defined: 0 as si_field,
                 merge: MERGE_DEFAULT,
-                interp: xkb_sym_interpret {
+                interp: XkbSymInterpret {
                     sym: 0,
                     match_0: MATCH_NONE,
                     mods: 0,
@@ -3276,7 +3269,7 @@ fn HandleCompatGlobalVar(
                     repeat: false,
                     required: false,
                     num_actions: 0,
-                    action: xkb_action::None,
+                    action: XkbAction::None,
                     actions: Vec::new(),
                 },
             };
@@ -3285,7 +3278,7 @@ fn HandleCompatGlobalVar(
                 MERGE_OVERRIDE
             } else {
                 stmt.merge
-            }) as merge_mode;
+            }) as MergeMode;
             // ndx borrows from stmt.name, value_ref borrows from stmt.value — disjoint fields
             let value_ref = stmt.value.as_deref_mut().unwrap();
             ret = SetInterpField(info, ki, &mut temp, &field, ndx, value_ref);
@@ -3298,14 +3291,14 @@ fn HandleCompatGlobalVar(
             let mut temp_0: LedInfo = LedInfo {
                 defined: 0 as led_field,
                 merge: MERGE_DEFAULT,
-                led: xkb_led {
+                led: XkbLed {
                     name: 0,
                     which_groups: 0,
                     pending_groups: false,
                     groups: 0,
                     which_mods: 0_u32,
-                    mods: xkb_mods { mods: 0, mask: 0 },
-                    ctrls: 0 as xkb_action_controls,
+                    mods: XkbMods { mods: 0, mask: 0 },
+                    ctrls: 0 as XkbActionControls,
                 },
             };
             InitLED(&mut temp_0);
@@ -3313,7 +3306,7 @@ fn HandleCompatGlobalVar(
                 MERGE_OVERRIDE
             } else {
                 stmt.merge
-            }) as merge_mode;
+            }) as MergeMode;
             // ndx borrows from stmt.name, field/value borrow from different fields — disjoint
             ret = SetLedMapField(info, ki, &mut temp_0, &field, ndx, &mut stmt.value);
             if ret {
@@ -3350,7 +3343,7 @@ fn HandleCompatGlobalVar(
 }
 fn HandleInterpBody(
     info: &mut CompatInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     defs: &mut [VarDef],
     si: &mut SymInterpInfo,
 ) -> bool {
@@ -3385,18 +3378,14 @@ fn HandleInterpBody(
     }
     ok
 }
-fn HandleInterpDef(
-    info: &mut CompatInfo,
-    ki: &mut xkb_keymap_info<'_>,
-    def: &mut InterpDef,
-) -> bool {
+fn HandleInterpDef(info: &mut CompatInfo, ki: &mut XkbKeymapInfo<'_>, def: &mut InterpDef) -> bool {
     let mut pred: u32 = MATCH_NONE;
     let mut mods: u32 = 0;
     #[allow(unused_assignments)]
     let mut si: SymInterpInfo = SymInterpInfo {
         defined: 0 as si_field,
         merge: MERGE_DEFAULT,
-        interp: xkb_sym_interpret {
+        interp: XkbSymInterpret {
             sym: 0,
             match_0: MATCH_NONE,
             mods: 0,
@@ -3405,7 +3394,7 @@ fn HandleInterpDef(
             repeat: false,
             required: false,
             num_actions: 0,
-            action: xkb_action::None,
+            action: XkbAction::None,
             actions: Vec::new(),
         },
     };
@@ -3428,11 +3417,7 @@ fn HandleInterpDef(
     }
     true
 }
-fn HandleLedMapDef(
-    info: &mut CompatInfo,
-    ki: &mut xkb_keymap_info<'_>,
-    def: &mut LedMapDef,
-) -> bool {
+fn HandleLedMapDef(info: &mut CompatInfo, ki: &mut XkbKeymapInfo<'_>, def: &mut LedMapDef) -> bool {
     let mut ledi: LedInfo = info.default_led;
     ledi.merge = def.merge;
     ledi.led.name = def.name;
@@ -3465,7 +3450,7 @@ fn HandleLedMapDef(
     }
     ok && AddLedMap(info, ki, &mut ledi, true)
 }
-fn HandleCompatMapFile(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo, file: &mut XkbFile) {
+fn HandleCompatMapFile(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo, file: &mut XkbFile) {
     {
         let mut ok: bool;
         info.name = if file.name.is_empty() {
@@ -3529,13 +3514,13 @@ fn CopyInterps(info: &CompatInfo, needSymbol: bool, pred: u32, collect: &mut col
     for i in 0..info.interps.len() {
         let si = &info.interps[i];
         if si.interp.match_0 == pred
-            && (si.interp.sym != XKB_KEY_NoSymbol as u32) as i32 == needSymbol as i32
+            && (si.interp.sym != XKB_KEY_NO_SYMBOL as u32) as i32 == needSymbol as i32
         {
             collect.sym_interprets.push(si.interp.clone());
         }
     }
 }
-fn CopyLedMapDefsToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) {
+fn CopyLedMapDefsToKeymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) {
     let keymap = ki.keymap_mut();
     let mut idx: u32 = 0_u32;
     while idx < info.num_leds {
@@ -3572,7 +3557,7 @@ fn CopyLedMapDefsToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) {
                 if i >= XKB_MAX_LEDS {
                     log::error!(
                         "Too many indicators (maximum is {}); Indicator name \"{}\" ignored\n",
-                        (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8_usize) as u32,
+                        (std::mem::size_of::<XkbLedMaskT>()).wrapping_mul(8_usize) as u32,
                         led_name_text
                     );
                 } else {
@@ -3601,7 +3586,7 @@ fn CopyLedMapDefsToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) {
         idx = idx.wrapping_add(1);
     }
 }
-fn CopyCompatToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) -> bool {
+fn CopyCompatToKeymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) -> bool {
     // Collect sym_interprets first (doesn't need keymap)
     let sym_interprets = if !info.interps.is_empty() {
         let mut collect: collect = collect {
@@ -3638,7 +3623,7 @@ fn CopyCompatToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) -> bo
     CopyLedMapDefsToKeymap(ki, info);
     true
 }
-pub(crate) fn CompileCompatMap(file: Option<&mut XkbFile>, ki: &mut xkb_keymap_info<'_>) -> bool {
+pub(crate) fn CompileCompatMap(file: Option<&mut XkbFile>, ki: &mut XkbKeymapInfo<'_>) -> bool {
     let mods = ki.keymap_ref().mods;
     let mut info = CompatInfo::new();
     InitCompatInfo(ki, &mut info, 0_u32, &mods);
@@ -3657,7 +3642,7 @@ pub(crate) struct KeyTypesInfo {
     pub(crate) errorCount: i32,
     pub(crate) include_depth: u32,
     pub(crate) types: Vec<KeyTypeInfo>,
-    pub(crate) mods: xkb_mod_set,
+    pub(crate) mods: XkbModSet,
 }
 impl Default for KeyTypesInfo {
     fn default() -> Self {
@@ -3679,11 +3664,11 @@ impl KeyTypesInfo {
 #[derive(Clone)]
 pub(crate) struct KeyTypeInfo {
     pub(crate) defined: type_field,
-    pub(crate) merge: merge_mode,
+    pub(crate) merge: MergeMode,
     pub(crate) name: u32,
     pub(crate) mods: u32,
     pub(crate) num_levels: u32,
-    pub(crate) entries: Vec<xkb_key_type_entry>,
+    pub(crate) entries: Vec<XkbKeyTypeEntry>,
     pub(crate) level_names: Vec<u32>,
 }
 pub(crate) type type_field = u32;
@@ -3692,32 +3677,28 @@ pub(crate) const TYPE_FIELD_PRESERVE: type_field = 4;
 pub(crate) const TYPE_FIELD_MAP: type_field = 2;
 pub(crate) const TYPE_FIELD_MASK: type_field = 1;
 #[inline]
-fn MapEntryTxt(
-    ki: &xkb_keymap_info<'_>,
-    info: &KeyTypesInfo,
-    entry: &xkb_key_type_entry,
-) -> String {
+fn MapEntryTxt(ki: &XkbKeymapInfo<'_>, info: &KeyTypesInfo, entry: &XkbKeyTypeEntry) -> String {
     ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, entry.mods.mods)
 }
 #[inline]
-fn TypeTxt<'a>(ki: &'a xkb_keymap_info<'_>, type_0: &KeyTypeInfo) -> &'a str {
+fn TypeTxt<'a>(ki: &'a XkbKeymapInfo<'_>, type_0: &KeyTypeInfo) -> &'a str {
     atom_text(&ki.ctx().atom_table, type_0.name)
 }
 #[inline]
-fn ReportTypeShouldBeArray(ki: &xkb_keymap_info<'_>, type_0: &KeyTypeInfo, field: &str) -> bool {
-    ReportShouldBeArray("key type", field, TypeTxt(ki, type_0))
+fn ReportTypeShouldBeArray(ki: &XkbKeymapInfo<'_>, type_0: &KeyTypeInfo, field: &str) -> bool {
+    report_should_be_array("key type", field, TypeTxt(ki, type_0))
 }
 #[inline]
 fn ReportTypeBadType(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     code: u32,
     type_0: &KeyTypeInfo,
     field: &str,
     wanted: &str,
 ) -> bool {
-    ReportBadType(code, "key type", field, TypeTxt(ki, type_0), wanted)
+    report_bad_type(code, "key type", field, TypeTxt(ki, type_0), wanted)
 }
-fn InitKeyTypesInfo(info: &mut KeyTypesInfo, include_depth: u32, mods: &xkb_mod_set) {
+fn InitKeyTypesInfo(info: &mut KeyTypesInfo, include_depth: u32, mods: &XkbModSet) {
     info.name = None;
     info.errorCount = 0;
     info.include_depth = include_depth;
@@ -3737,7 +3718,7 @@ fn ClearKeyTypesInfo(info: &mut KeyTypesInfo) {
     info.types.clear();
 }
 fn AddKeyType(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     new: &mut KeyTypeInfo,
     same_file: bool,
@@ -3779,10 +3760,10 @@ fn AddKeyType(
     true
 }
 fn MergeIncludedKeyTypes(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     into: &mut KeyTypesInfo,
     from: &mut KeyTypesInfo,
-    merge: merge_mode,
+    merge: MergeMode,
 ) {
     if from.errorCount > 0_i32 {
         into.errorCount += from.errorCount;
@@ -3806,7 +3787,7 @@ fn MergeIncludedKeyTypes(
     }
 }
 fn HandleIncludeKeyTypes(
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     include: &mut IncludeStmt,
 ) -> bool {
@@ -3851,7 +3832,7 @@ fn HandleIncludeKeyTypes(
     info.errorCount == 0_i32
 }
 fn SetModifiers(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
     arrayNdx: Option<&ExprDef>,
@@ -3882,10 +3863,10 @@ fn SetModifiers(
     true
 }
 fn AddMapEntry(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
-    new: &xkb_key_type_entry,
+    new: &XkbKeyTypeEntry,
     clobber: bool,
     report: bool,
 ) -> bool {
@@ -3933,16 +3914,16 @@ fn AddMapEntry(
     true
 }
 fn SetMapEntry(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
     arrayNdx: Option<&ExprDef>,
     value: &ExprDef,
 ) -> bool {
-    let mut entry: xkb_key_type_entry = xkb_key_type_entry {
+    let mut entry: XkbKeyTypeEntry = XkbKeyTypeEntry {
         level: 0,
-        mods: xkb_mods { mods: 0, mask: 0 },
-        preserve: xkb_mods { mods: 0, mask: 0 },
+        mods: XkbMods { mods: 0, mask: 0 },
+        preserve: XkbMods { mods: 0, mask: 0 },
     };
     if arrayNdx.is_none() {
         return ReportTypeShouldBeArray(ki, type_0, "map entry");
@@ -3986,7 +3967,7 @@ fn SetMapEntry(
     AddMapEntry(ki, info, type_0, &entry, true, true)
 }
 fn AddPreserve(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
     mods: u32,
@@ -4020,10 +4001,10 @@ fn AddPreserve(
         type_0.entries[idx].preserve.mods = preserve_mods;
         return true;
     }
-    let new = xkb_key_type_entry {
+    let new = XkbKeyTypeEntry {
         level: 0_u32,
-        mods: xkb_mods { mods, mask: 0 },
-        preserve: xkb_mods {
+        mods: XkbMods { mods, mask: 0 },
+        preserve: XkbMods {
             mods: preserve_mods,
             mask: 0,
         },
@@ -4032,7 +4013,7 @@ fn AddPreserve(
     true
 }
 fn SetPreserve(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
     arrayNdx: Option<&ExprDef>,
@@ -4085,7 +4066,7 @@ fn SetPreserve(
     AddPreserve(ki, info, type_0, mods, preserve_mods)
 }
 fn AddLevelName(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     _info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
     level: u32,
@@ -4125,7 +4106,7 @@ fn AddLevelName(
     true
 }
 fn SetLevelName(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
     arrayNdx: Option<&ExprDef>,
@@ -4155,7 +4136,7 @@ fn SetLevelName(
     AddLevelName(ki, info, type_0, level, level_name, true)
 }
 fn SetKeyTypeField(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
     field: &str,
@@ -4189,7 +4170,7 @@ fn SetKeyTypeField(
     ok
 }
 fn HandleKeyTypeBody(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     defs: &[VarDef],
     type_0: &mut KeyTypeInfo,
@@ -4229,7 +4210,7 @@ fn HandleKeyTypeBody(
     }
     ok
 }
-fn HandleTypeGlobalVar(ki: &xkb_keymap_info<'_>, _info: &mut KeyTypesInfo, stmt: &VarDef) -> bool {
+fn HandleTypeGlobalVar(ki: &XkbKeymapInfo<'_>, _info: &mut KeyTypesInfo, stmt: &VarDef) -> bool {
     let mut elem_atom: u32 = 0;
     let mut field_atom: u32 = 0;
     let mut arrayNdx: Option<&ExprDef> = None;
@@ -4260,7 +4241,7 @@ fn HandleTypeGlobalVar(ki: &xkb_keymap_info<'_>, _info: &mut KeyTypesInfo, stmt:
     }
     false
 }
-fn HandleKeyTypesFile(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo, file: &mut XkbFile) {
+fn HandleKeyTypesFile(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, file: &mut XkbFile) {
     {
         let mut ok: bool;
         info.name = if file.name.is_empty() {
@@ -4335,21 +4316,20 @@ fn HandleKeyTypesFile(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo, fil
         }
     }
 }
-fn CopyKeyTypesToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo) -> bool {
+fn CopyKeyTypesToKeymap(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo) -> bool {
     let keymap = ki.keymap_mut();
     let num_types: u32 = if info.types.is_empty() {
         1_u32
     } else {
         info.types.len() as u32
     };
-    let mut types_vec: Vec<xkb_key_type> = Vec::with_capacity(num_types as usize);
+    let mut types_vec: Vec<XkbKeyType> = Vec::with_capacity(num_types as usize);
     if info.types.is_empty() {
-        let type_0 = xkb_key_type {
+        let type_0 = XkbKeyType {
             name: atom_intern(&mut keymap.ctx.atom_table, b"ONE_LEVEL", true),
-            mods: xkb_mods { mods: 0, mask: 0 },
+            mods: XkbMods { mods: 0, mask: 0 },
             required: true,
             num_levels: 1,
-            level_names: Vec::new(),
             entries: Vec::new(),
         };
         types_vec.push(type_0);
@@ -4361,7 +4341,6 @@ fn CopyKeyTypesToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo) -
             atom_intern(&mut keymap.ctx.atom_table, b"KEYPAD", true),
         ];
         for def in info.types.iter_mut() {
-            let level_names = std::mem::take(&mut def.level_names);
             let entries = std::mem::take(&mut def.entries);
             let mut required = false;
             if def.num_levels <= 2 {
@@ -4372,15 +4351,14 @@ fn CopyKeyTypesToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo) -
                     }
                 }
             }
-            types_vec.push(xkb_key_type {
+            types_vec.push(XkbKeyType {
                 name: def.name,
-                mods: xkb_mods {
+                mods: XkbMods {
                     mods: def.mods,
                     mask: 0,
                 },
                 required,
                 num_levels: def.num_levels,
-                level_names,
                 entries,
             });
         }
@@ -4396,7 +4374,7 @@ fn CopyKeyTypesToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo) -
 }
 pub(crate) fn CompileKeyTypes(
     file: Option<&mut XkbFile>,
-    keymap_info: &mut xkb_keymap_info<'_>,
+    keymap_info: &mut XkbKeymapInfo<'_>,
 ) -> bool {
     let mods = keymap_info.keymap_ref().mods;
     let mut info = KeyTypesInfo::new();
@@ -4414,7 +4392,7 @@ pub(crate) fn CompileKeyTypes(
 
 // ── Virtual modifier functions (migrated from vmod.rs) ──
 
-pub(crate) fn InitVMods(info: &mut xkb_mod_set, mods: &xkb_mod_set, reset: bool) {
+pub(crate) fn InitVMods(info: &mut XkbModSet, mods: &XkbModSet, reset: bool) {
     *info = *mods;
     if !reset {
         return;
@@ -4425,10 +4403,10 @@ pub(crate) fn InitVMods(info: &mut xkb_mod_set, mods: &xkb_mod_set, reset: bool)
     info.explicit_vmods = 0_u32;
 }
 pub(crate) fn MergeModSets(
-    ctx: &mut xkb_context,
-    into: &mut xkb_mod_set,
-    from: &xkb_mod_set,
-    merge: merge_mode,
+    ctx: &mut XkbContext,
+    into: &mut XkbModSet,
+    from: &XkbModSet,
+    merge: MergeMode,
 ) {
     let clobber: bool = merge != MERGE_AUGMENT;
     for vmod in 0..from.num_mods as usize {
@@ -4466,7 +4444,7 @@ pub(crate) fn MergeModSets(
     }
     into.num_mods = from.num_mods;
 }
-pub(crate) fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModDef) -> bool {
+pub(crate) fn HandleVModDef(ctx: &mut XkbContext, mods: &mut XkbModSet, stmt: &VModDef) -> bool {
     let mut mapping: u32 = 0_u32;
     if stmt.value.is_some() {
         let value_ref = stmt.value.as_deref().unwrap();
@@ -4568,7 +4546,7 @@ impl KeyNamesInfo {
 }
 #[derive(Copy, Clone)]
 pub(crate) struct LedNameInfo {
-    pub(crate) merge: merge_mode,
+    pub(crate) merge: MergeMode,
     pub(crate) name: u32,
 }
 #[derive(Clone)]
@@ -4804,7 +4782,7 @@ fn keycode_store_lookup_name(store: &KeycodeStore, name: u32) -> KeycodeMatch {
 }
 fn AddLedName(
     info: &mut KeyNamesInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     _same_file: bool,
     new: &LedNameInfo,
     new_idx: u32,
@@ -4911,10 +4889,10 @@ fn InitKeyNamesInfo(info: &mut KeyNamesInfo, include_depth: u32) {
 }
 fn AddKeyName(
     info: &mut KeyNamesInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     kc: u32,
     name: u32,
-    merge: merge_mode,
+    merge: MergeMode,
     report: bool,
 ) -> bool {
     let match_name: KeycodeMatch = keycode_store_lookup_name(&info.keycodes, name);
@@ -5010,8 +4988,8 @@ fn AddKeyName(
 fn MergeKeycodeStores(
     into: &mut KeyNamesInfo,
     from: &mut KeyNamesInfo,
-    ki: &mut xkb_keymap_info<'_>,
-    merge: merge_mode,
+    ki: &mut XkbKeymapInfo<'_>,
+    merge: MergeMode,
     report: bool,
 ) {
     if into.keycodes.low.is_empty()
@@ -5064,8 +5042,8 @@ fn MergeKeycodeStores(
 fn MergeIncludedKeycodes(
     into: &mut KeyNamesInfo,
     from: &mut KeyNamesInfo,
-    ki: &mut xkb_keymap_info<'_>,
-    merge: merge_mode,
+    ki: &mut XkbKeymapInfo<'_>,
+    merge: MergeMode,
     report: bool,
 ) {
     if from.errorCount > 0_i32 {
@@ -5099,7 +5077,7 @@ fn MergeIncludedKeycodes(
 fn HandleIncludeKeycodes(
     info: &mut KeyNamesInfo,
     include: &mut IncludeStmt,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     report: bool,
 ) -> bool {
     let mut included = KeyNamesInfo::new();
@@ -5136,7 +5114,7 @@ fn HandleIncludeKeycodes(
 }
 fn HandleKeycodeDef(
     info: &mut KeyNamesInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     stmt: &KeycodeDef,
     report: bool,
 ) -> bool {
@@ -5152,7 +5130,7 @@ fn HandleKeycodeDef(
 }
 fn HandleAliasDef(
     info: &mut KeyNamesInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     def: &KeyAliasDef,
     report: bool,
 ) -> bool {
@@ -5208,7 +5186,7 @@ fn HandleAliasDef(
     }
     keycode_store_insert_alias(&mut info.keycodes, def.alias, def.real)
 }
-fn HandleKeyNameVar(_info: &mut KeyNamesInfo, ki: &mut xkb_keymap_info<'_>, stmt: &VarDef) -> bool {
+fn HandleKeyNameVar(_info: &mut KeyNamesInfo, ki: &mut XkbKeymapInfo<'_>, stmt: &VarDef) -> bool {
     let mut elem_atom: u32 = 0;
     let mut field_atom: u32 = 0;
     let mut arrayNdx: Option<&ExprDef> = None;
@@ -5235,13 +5213,13 @@ fn HandleKeyNameVar(_info: &mut KeyNamesInfo, ki: &mut xkb_keymap_info<'_>, stmt
         return ki.strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
     }
     if arrayNdx.is_some() {
-        ReportNotArray("keycodes", field, "defaults");
+        report_not_array("keycodes", field, "defaults");
         return ki.strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
     }
     let mut val: i64 = 0_i64;
     let value_ref = stmt.value.as_deref().unwrap();
     if !ExprResolveInteger(ki.ctx(), value_ref, &mut val) || val < 0_i64 || val > u32::MAX as i64 {
-        ReportBadType(
+        report_bad_type(
             XKB_ERROR_WRONG_FIELD_TYPE,
             "keycodes",
             field,
@@ -5254,7 +5232,7 @@ fn HandleKeyNameVar(_info: &mut KeyNamesInfo, ki: &mut xkb_keymap_info<'_>, stmt
 }
 fn HandleLedNameDef(
     info: &mut KeyNamesInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     def: &LedNameDef,
     report: bool,
 ) -> bool {
@@ -5263,7 +5241,7 @@ fn HandleLedNameDef(
         log::error!(
             "Illegal indicator index ({}) specified; must be between 1 .. {}; Ignored\n",
             def.ndx,
-            (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8_usize) as u32
+            (std::mem::size_of::<XkbLedMaskT>()).wrapping_mul(8_usize) as u32
         );
         return false;
     }
@@ -5277,7 +5255,7 @@ fn HandleLedNameDef(
             w.pos
         };
         info.errorCount += 1;
-        return ReportBadType(
+        return report_bad_type(
             XKB_ERROR_WRONG_FIELD_TYPE,
             "indicator",
             "name",
@@ -5298,7 +5276,7 @@ fn HandleLedNameDef(
         report,
     )
 }
-fn HandleKeycodesFile(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut xkb_keymap_info<'_>) {
+fn HandleKeycodesFile(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut XkbKeymapInfo<'_>) {
     {
         let mut ok: bool;
         let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
@@ -5357,7 +5335,7 @@ fn HandleKeycodesFile(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut xkb_
         }
     }
 }
-fn CopyKeyNamesToKeymap(keymap: &mut xkb_keymap, keycodes: &KeycodeStore) -> bool {
+fn CopyKeyNamesToKeymap(keymap: &mut XkbKeymap, keycodes: &KeycodeStore) -> bool {
     if keycodes.low.is_empty() && keycodes.high.is_empty() {
         keymap.min_key_code = 8_u32;
         keymap.max_key_code = 255_u32;
@@ -5373,8 +5351,8 @@ fn CopyKeyNamesToKeymap(keymap: &mut xkb_keymap, keycodes: &KeycodeStore) -> boo
         keymap.num_keys_low = keycodes.low.len() as u32;
         keymap.num_keys = keymap.num_keys_low.wrapping_add(keycodes.high.len() as u32);
     }
-    let mut keys: Vec<xkb_key> = (0..keymap.num_keys as usize)
-        .map(|_| xkb_key::default())
+    let mut keys: Vec<XkbKey> = (0..keymap.num_keys as usize)
+        .map(|_| XkbKey::default())
         .collect();
     let mut kc: u32 = keymap.min_key_code;
     while kc < keymap.num_keys_low {
@@ -5395,7 +5373,7 @@ fn CopyKeyNamesToKeymap(keymap: &mut xkb_keymap, keycodes: &KeycodeStore) -> boo
     keymap.keys = keys;
     true
 }
-fn CopyKeycodeNameLUT(keymap: &mut xkb_keymap, keycodes: &mut KeycodeStore) -> bool {
+fn CopyKeycodeNameLUT(keymap: &mut XkbKeymap, keycodes: &mut KeycodeStore) -> bool {
     let names_len = keycodes.names.len();
     {
         if names_len > 0 {
@@ -5439,7 +5417,7 @@ fn CopyKeycodeNameLUT(keymap: &mut xkb_keymap, keycodes: &mut KeycodeStore) -> b
     true
 }
 fn CopyLedNamesToKeymap(
-    keymap: &mut xkb_keymap,
+    keymap: &mut XkbKeymap,
     led_names: &[LedNameInfo; 32],
     num_led_names: u32,
 ) -> bool {
@@ -5454,7 +5432,7 @@ fn CopyLedNamesToKeymap(
     }
     true
 }
-fn CopyKeyNamesInfoToKeymap(info: &mut KeyNamesInfo, ki: &mut xkb_keymap_info<'_>) -> bool {
+fn CopyKeyNamesInfoToKeymap(info: &mut KeyNamesInfo, ki: &mut XkbKeymapInfo<'_>) -> bool {
     let keymap = ki.keymap_mut();
     if !CopyKeyNamesToKeymap(keymap, &info.keycodes)
         || !CopyKeycodeNameLUT(keymap, &mut info.keycodes)
@@ -5489,7 +5467,7 @@ fn CopyKeyNamesInfoToKeymap(info: &mut KeyNamesInfo, ki: &mut xkb_keymap_info<'_
 }
 pub(crate) fn CompileKeycodes(
     file: Option<&mut XkbFile>,
-    keymap_info: &mut xkb_keymap_info<'_>,
+    keymap_info: &mut XkbKeymapInfo<'_>,
 ) -> bool {
     let mut info = KeyNamesInfo::new();
     InitKeyNamesInfo(&mut info, 0_u32);
@@ -5510,7 +5488,7 @@ pub(crate) use super::super::shared_types::stmt_type_to_operator_char;
 use super::super::shared_types::ExprKind;
 
 pub(crate) struct LookupModMaskPriv<'a> {
-    pub(crate) mods: &'a xkb_mod_set,
+    pub(crate) mods: &'a XkbModSet,
     pub(crate) mod_type: u32,
 }
 
@@ -5534,7 +5512,7 @@ pub(crate) struct NamedIntegerPattern<'a> {
 
 static LEVEL_NAME_PATTERN_ENTRIES: [LookupEntry; 1] = [LookupEntry { name: "", value: 0 }];
 
-fn simple_lookup(ctx: &xkb_context, entries: &[LookupEntry], field: u32) -> Option<u32> {
+fn simple_lookup(ctx: &XkbContext, entries: &[LookupEntry], field: u32) -> Option<u32> {
     if field == XKB_ATOM_NONE {
         return None;
     }
@@ -5551,7 +5529,7 @@ fn simple_lookup(ctx: &xkb_context, entries: &[LookupEntry], field: u32) -> Opti
 }
 
 fn named_integer_pattern_lookup(
-    ctx: &xkb_context,
+    ctx: &XkbContext,
     pattern: &NamedIntegerPattern,
     field: u32,
     pending_rtrn: Option<&mut bool>,
@@ -5610,7 +5588,7 @@ fn named_integer_pattern_lookup(
     }
 }
 
-fn lookup_mod_mask(ctx: &xkb_context, priv_0: &LookupModMaskPriv, field: u32) -> Option<u32> {
+fn lookup_mod_mask(ctx: &XkbContext, priv_0: &LookupModMaskPriv, field: u32) -> Option<u32> {
     let s: &str = atom_text(&ctx.atom_table, field);
     if s.is_empty() {
         return None;
@@ -5631,7 +5609,7 @@ fn lookup_mod_mask(ctx: &xkb_context, priv_0: &LookupModMaskPriv, field: u32) ->
 /// Dispatch a lookup based on the IdentLookup variant.
 /// Returns Some(value) on success. Sets `pending` to true if applicable.
 fn ident_lookup(
-    ctx: &xkb_context,
+    ctx: &XkbContext,
     lookup: &IdentLookup,
     field: u32,
     pending: Option<&mut bool>,
@@ -5701,7 +5679,7 @@ pub(crate) fn ExprResolveLhs<'a>(
     false
 }
 
-pub(crate) fn ExprResolveBoolean(ctx: &xkb_context, expr: &ExprDef, set_rtrn: &mut bool) -> bool {
+pub(crate) fn ExprResolveBoolean(ctx: &XkbContext, expr: &ExprDef, set_rtrn: &mut bool) -> bool {
     let ok: bool;
     #[allow(unused_assignments)]
     let mut ident: &str = "";
@@ -5790,7 +5768,7 @@ pub(crate) fn ExprResolveBoolean(ctx: &xkb_context, expr: &ExprDef, set_rtrn: &m
 }
 
 fn ExprResolveIntegerLookup(
-    ctx: &xkb_context,
+    ctx: &XkbContext,
     expr: &ExprDef,
     val_rtrn: &mut i64,
     pending: Option<&mut bool>,
@@ -5974,12 +5952,12 @@ fn ExprResolveIntegerLookup(
     false
 }
 
-pub(crate) fn ExprResolveInteger(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut i64) -> bool {
+pub(crate) fn ExprResolveInteger(ctx: &XkbContext, expr: &ExprDef, val_rtrn: &mut i64) -> bool {
     ExprResolveIntegerLookup(ctx, expr, val_rtrn, None, &IdentLookup::None)
 }
 
 pub(crate) fn ExprResolveGroup(
-    keymap_info: &mut xkb_keymap_info<'_>,
+    keymap_info: &mut XkbKeymapInfo<'_>,
     expr: &ExprDef,
     absolute: bool,
     group_rtrn: &mut u32,
@@ -5999,7 +5977,7 @@ pub(crate) fn ExprResolveGroup(
         prefix: "Group",
         min: 1_u32,
         max: keymap_info.features.max_groups,
-        entries: &keymap_info.lookup.groupIndexNames,
+        entries: &keymap_info.lookup.group_index_names,
         pending_entries: &PENDING_GROUP_INDEX_NAMES,
         is_mask: false,
         error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
@@ -6032,7 +6010,7 @@ pub(crate) fn ExprResolveGroup(
     PARSER_SUCCESS
 }
 
-pub(crate) fn ExprResolveLevel(ctx: &xkb_context, expr: &ExprDef, level_rtrn: &mut u32) -> bool {
+pub(crate) fn ExprResolveLevel(ctx: &XkbContext, expr: &ExprDef, level_rtrn: &mut u32) -> bool {
     let pattern = NamedIntegerPattern {
         prefix: "Level",
         min: 1_u32,
@@ -6060,12 +6038,12 @@ pub(crate) fn ExprResolveLevel(ctx: &xkb_context, expr: &ExprDef, level_rtrn: &m
     true
 }
 
-pub(crate) fn ExprResolveButton(ctx: &xkb_context, expr: &ExprDef, btn_rtrn: &mut i64) -> bool {
+pub(crate) fn ExprResolveButton(ctx: &XkbContext, expr: &ExprDef, btn_rtrn: &mut i64) -> bool {
     let lookup = IdentLookup::Simple(&buttonNames);
     ExprResolveIntegerLookup(ctx, expr, btn_rtrn, None, &lookup)
 }
 
-pub(crate) fn ExprResolveString(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut u32) -> bool {
+pub(crate) fn ExprResolveString(ctx: &XkbContext, expr: &ExprDef, val_rtrn: &mut u32) -> bool {
     match expr.stmt_type() {
         4 => {
             let ExprKind::String(s) = &expr.kind else {
@@ -6127,7 +6105,7 @@ pub(crate) fn ExprResolveString(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mu
 }
 
 pub(crate) fn ExprResolveEnum(
-    ctx: &xkb_context,
+    ctx: &XkbContext,
     expr: &ExprDef,
     val_rtrn: &mut u32,
     values: &[LookupEntry],
@@ -6166,7 +6144,7 @@ pub(crate) fn ExprResolveEnum(
 }
 
 fn ExprResolveMaskLookup(
-    ctx: &xkb_context,
+    ctx: &XkbContext,
     expr: &ExprDef,
     val_rtrn: &mut u32,
     pending: Option<&mut bool>,
@@ -6355,7 +6333,7 @@ fn ExprResolveMaskLookup(
 }
 
 pub(crate) fn ExprResolveMask(
-    ctx: &xkb_context,
+    ctx: &XkbContext,
     expr: &ExprDef,
     mask_rtrn: &mut u32,
     values: &[LookupEntry],
@@ -6365,10 +6343,10 @@ pub(crate) fn ExprResolveMask(
 }
 
 pub(crate) fn ExprResolveModMask(
-    ctx: &xkb_context,
+    ctx: &XkbContext,
     expr: &ExprDef,
     mod_type: u32,
-    mods: &xkb_mod_set,
+    mods: &XkbModSet,
     mask_rtrn: &mut u32,
 ) -> bool {
     let priv_0 = LookupModMaskPriv { mods, mod_type };
@@ -6377,10 +6355,10 @@ pub(crate) fn ExprResolveModMask(
 }
 
 pub(crate) fn ExprResolveMod(
-    ctx: &xkb_context,
+    ctx: &XkbContext,
     def: &ExprDef,
     mod_type: u32,
-    mods: &xkb_mod_set,
+    mods: &XkbModSet,
     ndx_rtrn: &mut u32,
 ) -> bool {
     if def.stmt_type() != STMT_EXPR_IDENT {
@@ -6409,7 +6387,7 @@ pub(crate) fn ExprResolveMod(
 }
 
 pub(crate) fn ExprResolveGroupMask(
-    keymap_info: &mut xkb_keymap_info<'_>,
+    keymap_info: &mut XkbKeymapInfo<'_>,
     expr: &ExprDef,
     group_rtrn: &mut u32,
     pending_rtrn: &mut bool,
@@ -6428,7 +6406,7 @@ pub(crate) fn ExprResolveGroupMask(
         prefix: "Group",
         min: 1_u32,
         max: keymap_info.features.max_groups,
-        entries: &keymap_info.lookup.groupMaskNames,
+        entries: &keymap_info.lookup.group_mask_names,
         pending_entries: &PENDING_GROUP_MASK_NAMES,
         is_mask: true,
         error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
@@ -6439,7 +6417,7 @@ pub(crate) fn ExprResolveGroupMask(
 }
 #[derive(Copy, Clone)]
 pub(crate) struct ActionsInfo {
-    pub(crate) actions: [xkb_action; 21],
+    pub(crate) actions: [XkbAction; 21],
 }
 
 pub(crate) const ACTION_FIELD_LATCH_ON_PRESS: u32 = 25;
@@ -6512,9 +6490,9 @@ impl<'v> ActionValue<'v> {
 
 pub(crate) type actionHandler = Option<
     for<'a> fn(
-        &mut xkb_keymap_info<'a>,
-        &xkb_mod_set,
-        &mut xkb_action,
+        &mut XkbKeymapInfo<'a>,
+        &XkbModSet,
+        &mut XkbAction,
         u32,
         Option<&ExprDef>,
         ActionValue<'_>,
@@ -6531,10 +6509,10 @@ fn const_false_expr() -> ExprDef {
         kind: ExprKind::Boolean(false),
     }
 }
-pub(crate) fn InitActionsInfo(keymap: &xkb_keymap, info: &mut ActionsInfo) {
+pub(crate) fn InitActionsInfo(keymap: &XkbKeymap, info: &mut ActionsInfo) {
     let mut type_0: u32 = ACTION_TYPE_NONE;
     while type_0 < _ACTION_TYPE_NUM_ENTRIES {
-        info.actions[type_0 as usize] = xkb_action::from_type(type_0);
+        info.actions[type_0 as usize] = XkbAction::from_type(type_0);
         type_0 += 1;
     }
     info.actions[ACTION_TYPE_PTR_DEFAULT as usize]
@@ -6782,9 +6760,9 @@ fn ReportActionNotArray(action: u32, field: u32, strict: u32) -> u32 {
     }) as u32
 }
 fn HandleNoAction(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     _array_ndx: Option<&ExprDef>,
     _value: ActionValue<'_>,
@@ -6800,14 +6778,14 @@ fn HandleNoAction(
     }) as u32
 }
 fn CheckBooleanFlag(
-    ctx: &xkb_context,
+    ctx: &XkbContext,
     strict: u32,
     action: u32,
     field: u32,
-    flag: xkb_action_flags,
+    flag: XkbActionFlags,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    flags_inout: &mut xkb_action_flags,
+    flags_inout: &mut XkbActionFlags,
 ) -> u32 {
     let mut set: bool = false;
     if array_ndx.is_some() {
@@ -6817,20 +6795,20 @@ fn CheckBooleanFlag(
         return ReportMismatch(XKB_ERROR_WRONG_FIELD_TYPE, action, field, "boolean", strict);
     }
     if set {
-        *flags_inout = (*flags_inout | flag) as xkb_action_flags;
+        *flags_inout = (*flags_inout | flag) as XkbActionFlags;
     } else {
-        *flags_inout = (*flags_inout & !flag) as xkb_action_flags;
+        *flags_inout = (*flags_inout & !flag) as XkbActionFlags;
     }
     PARSER_SUCCESS
 }
 fn CheckModifierField(
-    ctx: &xkb_context,
+    ctx: &XkbContext,
     strict: u32,
-    mods: &xkb_mod_set,
+    mods: &XkbModSet,
     action: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    flags_inout: &mut xkb_action_flags,
+    flags_inout: &mut XkbActionFlags,
     mods_rtrn: &mut u32,
 ) -> u32 {
     if array_ndx.is_some() {
@@ -6848,7 +6826,7 @@ fn CheckModifierField(
                 || valStr.eq_ignore_ascii_case("modmapmods"))
         {
             *mods_rtrn = 0_u32;
-            *flags_inout = (*flags_inout | ACTION_MODS_LOOKUP_MODMAP) as xkb_action_flags;
+            *flags_inout = (*flags_inout | ACTION_MODS_LOOKUP_MODMAP) as XkbActionFlags;
             return PARSER_SUCCESS;
         }
     }
@@ -6861,7 +6839,7 @@ fn CheckModifierField(
             strict,
         );
     }
-    *flags_inout = (*flags_inout & !(ACTION_MODS_LOOKUP_MODMAP as i32) as u32) as xkb_action_flags;
+    *flags_inout = (*flags_inout & !(ACTION_MODS_LOOKUP_MODMAP as i32) as u32) as XkbActionFlags;
     PARSER_SUCCESS
 }
 static LOCK_WHICH: [LookupEntry; 5] = [
@@ -6887,12 +6865,12 @@ static LOCK_WHICH: [LookupEntry; 5] = [
     },
 ];
 fn CheckAffectField(
-    ctx: &xkb_context,
+    ctx: &XkbContext,
     strict: u32,
     action: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    flags_inout: &mut xkb_action_flags,
+    flags_inout: &mut XkbActionFlags,
 ) -> u32 {
     if array_ndx.is_some() {
         return ReportActionNotArray(action, ACTION_FIELD_AFFECT, strict);
@@ -6909,20 +6887,20 @@ fn CheckAffectField(
     }
     *flags_inout = (*flags_inout
         & !(ACTION_LOCK_NO_LOCK as i32 | ACTION_LOCK_NO_UNLOCK as i32) as u32)
-        as xkb_action_flags;
-    *flags_inout = (*flags_inout | flags as xkb_action_flags) as xkb_action_flags;
+        as XkbActionFlags;
+    *flags_inout = (*flags_inout | flags as XkbActionFlags) as XkbActionFlags;
     PARSER_SUCCESS
 }
 fn HandleSetLatchLockMods(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    mods: &xkb_mod_set,
-    action: &mut xkb_action,
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &xkb_context = keymap_info.ctx();
+    let ctx: &XkbContext = keymap_info.ctx();
     let act = action.as_mods_mut();
     let type_0: u32 = act.type_0;
     if field == ACTION_FIELD_MODIFIERS {
@@ -7022,15 +7000,15 @@ fn HandleSetLatchLockMods(
     ReportIllegal(type_0, field, keymap_info.strict)
 }
 fn CheckGroupField(
-    keymap_info: &mut xkb_keymap_info<'_>,
+    keymap_info: &mut XkbKeymapInfo<'_>,
     action: u32,
     array_ndx: Option<&ExprDef>,
     mut value: ActionValue<'_>,
-    flags_inout: &mut xkb_action_flags,
+    flags_inout: &mut XkbActionFlags,
     group_rtrn: &mut i32,
 ) -> u32 {
     let mut idx: u32 = 0_u32;
-    let mut flags: xkb_action_flags = *flags_inout;
+    let mut flags: XkbActionFlags = *flags_inout;
     if array_ndx.is_some() {
         return ReportActionNotArray(action, ACTION_FIELD_GROUP, keymap_info.strict);
     }
@@ -7038,12 +7016,12 @@ fn CheckGroupField(
     let is_negate = value.get().stmt_type() == STMT_EXPR_NEGATE;
     let is_unary = is_negate || value.get().stmt_type() == STMT_EXPR_UNARY_PLUS;
     if is_unary {
-        flags = (flags as u32 & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
+        flags = (flags as u32 & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as XkbActionFlags;
         // Rebind value to the child field inside the unary expr
         // (for ownership transfer to pending_computations if needed)
         value = value.rebind_to_child();
     } else {
-        flags = (flags as u32 | ACTION_ABSOLUTE_SWITCH) as xkb_action_flags;
+        flags = (flags as u32 | ACTION_ABSOLUTE_SWITCH) as XkbActionFlags;
     }
     let spec_holder = value.get();
     let absolute: bool = flags as u32 & ACTION_ABSOLUTE_SWITCH != 0;
@@ -7061,16 +7039,16 @@ fn CheckGroupField(
         return ret;
     }
     if pending {
-        flags = (flags as u32 | ACTION_PENDING_COMPUTATION) as xkb_action_flags;
+        flags = (flags as u32 | ACTION_PENDING_COMPUTATION) as XkbActionFlags;
         let pending_index: u32 = keymap_info.pending_computations.len() as u32;
-        keymap_info.pending_computations.push(pending_computation {
+        keymap_info.pending_computations.push(PendingComputation {
             expr: value.take(),
             computed: false,
             value: 0_u32,
         });
         *group_rtrn = pending_index as i32;
     } else {
-        flags = (flags as u32 & !(ACTION_PENDING_COMPUTATION as i32) as u32) as xkb_action_flags;
+        flags = (flags as u32 & !(ACTION_PENDING_COMPUTATION as i32) as u32) as XkbActionFlags;
         if flags as u32 & ACTION_ABSOLUTE_SWITCH == 0 {
             *group_rtrn = idx as i32;
             if is_negate {
@@ -7084,14 +7062,14 @@ fn CheckGroupField(
     PARSER_SUCCESS
 }
 fn HandleSetLatchLockGroup(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
-    let ctx: &xkb_context = keymap_info.ctx();
+    let ctx: &XkbContext = keymap_info.ctx();
     let type_0: u32 = action.action_type();
     if field == ACTION_FIELD_GROUP {
         let act = action.as_group_mut();
@@ -7157,15 +7135,15 @@ fn HandleSetLatchLockGroup(
     ReportIllegal(type_0, field, keymap_info.strict)
 }
 fn HandleMovePtr(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &xkb_context = keymap_info.ctx();
+    let ctx: &XkbContext = keymap_info.ctx();
     let type_0 = action.action_type();
     let act = action.as_ptr_mut();
     if field == ACTION_FIELD_X || field == ACTION_FIELD_Y {
@@ -7199,12 +7177,12 @@ fn HandleMovePtr(
         }
         if field == ACTION_FIELD_X {
             if absolute {
-                act.flags = (act.flags | ACTION_ABSOLUTE_X) as xkb_action_flags;
+                act.flags = (act.flags | ACTION_ABSOLUTE_X) as XkbActionFlags;
             }
             act.x = val as i16;
         } else {
             if absolute {
-                act.flags = (act.flags | ACTION_ABSOLUTE_Y) as xkb_action_flags;
+                act.flags = (act.flags | ACTION_ABSOLUTE_Y) as XkbActionFlags;
             }
             act.y = val as i16;
         }
@@ -7224,15 +7202,15 @@ fn HandleMovePtr(
     ReportIllegal(type_0, field, keymap_info.strict)
 }
 fn HandlePtrBtn(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &xkb_context = keymap_info.ctx();
+    let ctx: &XkbContext = keymap_info.ctx();
     let type_0 = action.action_type();
     let act = action.as_btn_mut();
     if field == ACTION_FIELD_BUTTON {
@@ -7318,15 +7296,15 @@ static PTR_DFLTS: [LookupEntry; 4] = [
     },
 ];
 fn HandleSetPtrDflt(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &xkb_context = keymap_info.ctx();
+    let ctx: &XkbContext = keymap_info.ctx();
     let type_0 = action.action_type();
     let act = action.as_dflt_mut();
     if field == ACTION_FIELD_AFFECT {
@@ -7351,14 +7329,14 @@ fn HandleSetPtrDflt(
             return ReportActionNotArray(type_0, field, keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
-            act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
+            act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as XkbActionFlags;
             button = if let ExprKind::Unary { child, .. } = &value.kind {
                 child.as_deref().unwrap()
             } else {
                 unreachable!()
             };
         } else {
-            act.flags = (act.flags | ACTION_ABSOLUTE_SWITCH) as xkb_action_flags;
+            act.flags = (act.flags | ACTION_ABSOLUTE_SWITCH) as XkbActionFlags;
             button = value;
         }
         if !ExprResolveButton(ctx, button, &mut btn) {
@@ -7397,15 +7375,15 @@ fn HandleSetPtrDflt(
     ReportIllegal(type_0, field, keymap_info.strict)
 }
 fn HandleSwitchScreen(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &xkb_context = keymap_info.ctx();
+    let ctx: &XkbContext = keymap_info.ctx();
     let type_0 = action.action_type();
     let act = action.as_screen_mut();
     if field == ACTION_FIELD_SCREEN {
@@ -7415,14 +7393,14 @@ fn HandleSwitchScreen(
             return ReportActionNotArray(type_0, field, keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
-            act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
+            act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as XkbActionFlags;
             scrn = if let ExprKind::Unary { child, .. } = &value.kind {
                 child.as_deref().unwrap()
             } else {
                 unreachable!()
             };
         } else {
-            act.flags = (act.flags | ACTION_ABSOLUTE_SWITCH) as xkb_action_flags;
+            act.flags = (act.flags | ACTION_ABSOLUTE_SWITCH) as XkbActionFlags;
             scrn = value;
         }
         if !ExprResolveInteger(ctx, scrn, &mut val) {
@@ -7469,15 +7447,15 @@ fn HandleSwitchScreen(
     ReportIllegal(type_0, field, keymap_info.strict)
 }
 fn HandleSetLockControls(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &xkb_context = keymap_info.ctx();
+    let ctx: &XkbContext = keymap_info.ctx();
     let type_0 = action.action_type();
     let act = action.as_ctrls_mut();
     if field == ACTION_FIELD_CONTROLS {
@@ -7495,7 +7473,7 @@ fn HandleSetLockControls(
                 keymap_info.strict,
             );
         }
-        act.ctrls = mask as xkb_action_controls;
+        act.ctrls = mask as XkbActionControls;
         return PARSER_SUCCESS;
     } else if field == ACTION_FIELD_AFFECT && type_0 == ACTION_TYPE_CTRL_LOCK {
         return CheckAffectField(
@@ -7510,9 +7488,9 @@ fn HandleSetLockControls(
     ReportIllegal(type_0, field, keymap_info.strict)
 }
 fn HandleRedirectKey(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    mods: &xkb_mod_set,
-    action: &mut xkb_action,
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
@@ -7568,9 +7546,9 @@ fn HandleRedirectKey(
         }
     }
     if field == ACTION_FIELD_MODIFIERS || field == ACTION_FIELD_MODS_TO_CLEAR {
-        let mut flags: xkb_action_flags = 0 as xkb_action_flags;
+        let mut flags: XkbActionFlags = 0 as XkbActionFlags;
         let mut m: u32 = 0_u32;
-        let ctx: &xkb_context = keymap_info.ctx();
+        let ctx: &XkbContext = keymap_info.ctx();
         let r: u32 = CheckModifierField(
             ctx,
             keymap_info.strict,
@@ -7604,9 +7582,9 @@ fn HandleRedirectKey(
     ReportIllegal(type_0, field, keymap_info.strict)
 }
 fn HandleUnsupported(
-    _keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    _action: &mut xkb_action,
+    _keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    _action: &mut XkbAction,
     _field: u32,
     _array_ndx: Option<&ExprDef>,
     _value: ActionValue<'_>,
@@ -7614,15 +7592,15 @@ fn HandleUnsupported(
     PARSER_SUCCESS
 }
 fn HandlePrivate(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &xkb_context = keymap_info.ctx();
+    let ctx: &XkbContext = keymap_info.ctx();
     let type_0 = action.action_type();
     let act = action.as_priv_mut();
     if field == ACTION_FIELD_TYPE {
@@ -7742,9 +7720,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleNoAction
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7753,9 +7731,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleNoAction
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7764,9 +7742,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLatchLockMods
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7775,9 +7753,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLatchLockMods
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7786,9 +7764,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLatchLockMods
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7797,9 +7775,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLatchLockGroup
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7808,9 +7786,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLatchLockGroup
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7819,9 +7797,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLatchLockGroup
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7830,9 +7808,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleMovePtr
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7841,9 +7819,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandlePtrBtn
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7852,9 +7830,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandlePtrBtn
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7863,9 +7841,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetPtrDflt
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7874,9 +7852,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleNoAction
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7885,9 +7863,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSwitchScreen
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7896,9 +7874,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLockControls
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7907,9 +7885,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleSetLockControls
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7918,9 +7896,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleRedirectKey
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7929,9 +7907,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleUnsupported
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7940,9 +7918,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandleUnsupported
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7951,9 +7929,9 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         Some(
             HandlePrivate
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7963,11 +7941,11 @@ static HANDLE_ACTION: [actionHandler; 21] = {
     ]
 };
 pub(crate) fn HandleActionDef(
-    keymap_info: &mut xkb_keymap_info<'_>,
+    keymap_info: &mut XkbKeymapInfo<'_>,
     info: &mut ActionsInfo,
-    mods: &xkb_mod_set,
+    mods: &XkbModSet,
     def: &mut ExprDef,
-    action: &mut xkb_action,
+    action: &mut XkbAction,
 ) -> u32 {
     if def.stmt_type() != STMT_EXPR_ACTION_DECL {
         log::error!(
@@ -8095,14 +8073,14 @@ pub(crate) fn HandleActionDef(
     }
 }
 pub(crate) fn SetDefaultActionField(
-    keymap_info: &mut xkb_keymap_info<'_>,
+    keymap_info: &mut XkbKeymapInfo<'_>,
     info: &mut ActionsInfo,
-    mods: &mut xkb_mod_set,
+    mods: &mut XkbModSet,
     elem: &str,
     field: &str,
     array_ndx: Option<&ExprDef>,
     value_rtrn: &mut Option<Box<ExprDef>>,
-    merge: merge_mode,
+    merge: MergeMode,
 ) -> u32 {
     let av = ActionValue::Owned(value_rtrn);
     let mut action: u32 = ACTION_TYPE_NONE;
@@ -8131,8 +8109,8 @@ pub(crate) fn SetDefaultActionField(
             PARSER_RECOVERABLE_ERROR as i32
         }) as u32;
     }
-    let into: &mut xkb_action = &mut info.actions[action as usize];
-    let mut from: xkb_action = *into;
+    let into: &mut XkbAction = &mut info.actions[action as usize];
+    let mut from: XkbAction = *into;
     let ret: u32 = HANDLE_ACTION[action as usize].expect("non-null function pointer")(
         keymap_info,
         mods,

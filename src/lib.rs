@@ -135,7 +135,7 @@ pub struct WKB {
 }
 
 // WKB is Send + Sync: all fields are owned, no Rc/RefCell.
-// The Rc<xkb_keymap> from xkb-core is only used during construction and not stored.
+// The Rc<XkbKeymap> from xkb-core is only used during construction and not stored.
 unsafe impl Send for WKB {}
 unsafe impl Sync for WKB {}
 

@@ -8,11 +8,11 @@ use self::parser::XkbFileFromComponents;
 use self::parser::XkbParseString;
 use super::shared_types::XKB_ERROR_KEYMAP_COMPILATION_FAILED;
 use super::shared_types::{
-    format_max_groups, xkb_component_names, xkb_file_type_to_string, xkb_keymap, xkb_rule_names,
-    XkbFile, FILE_TYPE_KEYMAP,
+    format_max_groups, xkb_file_type_to_string, XkbComponentNames, XkbFile, XkbKeymap,
+    XkbRuleNames, FILE_TYPE_KEYMAP,
 };
 
-fn compile_keymap_file(keymap: &mut xkb_keymap, file: &mut XkbFile) -> bool {
+fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
     if file.file_type != FILE_TYPE_KEYMAP {
         log::error!(
             "[XKB-{:03}] Cannot compile a {} file alone into a keymap\n",
@@ -30,12 +30,9 @@ fn compile_keymap_file(keymap: &mut xkb_keymap, file: &mut XkbFile) -> bool {
     }
     true
 }
-pub(crate) fn text_v1_keymap_new_from_names(
-    keymap: &mut xkb_keymap,
-    rmlvo: &xkb_rule_names,
-) -> bool {
+pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbRuleNames) -> bool {
     let mut ok: bool;
-    let mut kccgst: xkb_component_names = xkb_component_names::default();
+    let mut kccgst: XkbComponentNames = XkbComponentNames::default();
 
     log::debug!(
         "Compiling from RMLVO: rules '{}', model '{}', layout '{}', variant '{}', options '{}'\n",
@@ -89,7 +86,7 @@ pub(crate) fn text_v1_keymap_new_from_names(
     ok = compile_keymap_file(keymap, &mut file);
     ok
 }
-pub(crate) fn text_v1_keymap_new_from_string(keymap: &mut xkb_keymap, input: &[u8]) -> bool {
+pub(crate) fn text_v1_keymap_new_from_string(keymap: &mut XkbKeymap, input: &[u8]) -> bool {
     let Some(mut xkb_file) = XkbParseString(&mut keymap.ctx, input, "(input string)", "") else {
         log::error!(
             "[XKB-{:03}] Failed to parse input xkb string\n",

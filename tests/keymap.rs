@@ -126,7 +126,7 @@ fn get_wkb_string(locale: &str, variant: Option<&str>) -> String {
     let layout = variant.map(String::from);
     let wkb = WKB::new_from_names("", "", locale, layout.as_deref().unwrap_or(""), None).unwrap();
     wkb.as_xkb_string()
-        .expect("WKB should have xkb_keymap stored")
+        .expect("WKB should have XkbKeymap stored")
         .to_string()
 }
 
@@ -324,7 +324,7 @@ fn export_all_variants_match_xkbcommon(locale: &str) {
 fn keymap_string_from_export(locale: &str, variant: Option<&str>) -> String {
     let wkb = WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
     wkb.as_xkb_string()
-        .expect("WKB should have xkb_keymap stored")
+        .expect("WKB should have XkbKeymap stored")
         .to_string()
 }
 
