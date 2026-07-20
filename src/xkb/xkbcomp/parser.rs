@@ -1467,41 +1467,37 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Atom(yyvs[sp].as_atom());
         }
         130 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"action", true));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"action"));
         }
         131 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"interpret", true));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"interpret"));
         }
         132 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"type", true));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"type"));
         }
         133 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"key", true));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"key"));
         }
         134 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"group", true));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"group"));
         }
         135 => {
-            *yyval = YYValue::Atom(atom_intern(
-                &mut param.ctx.atom_table,
-                b"modifier_map",
-                true,
-            ));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"modifier_map"));
         }
         136 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"indicator", true));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"indicator"));
         }
         137 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"shape", true));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"shape"));
         }
         138 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"row", true));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"row"));
         }
         139 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"section", true));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"section"));
         }
         140 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"text", true));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"text"));
         }
         // MergeMode rules 141-147
         141 => {
@@ -1963,21 +1959,17 @@ fn execute_reduction<'a>(
         // Ident 214
         214 => {
             let sval = yyvs[sp].as_sval();
-            *yyval = YYValue::Atom(atom_intern(
-                &mut param.ctx.atom_table,
-                sval.as_bytes(),
-                true,
-            ));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, sval.as_bytes()));
         }
         215 => {
             // Ident: DEFAULT
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"default", true));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"default"));
         }
         // String 216
         216 => {
             // String: STRING → intern as atom
             let s = yyvs[sp].take_str();
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, s.as_bytes(), true));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, s.as_bytes()));
         }
         // OptMapName / MapName 217-219
         217 => {
@@ -3139,7 +3131,7 @@ pub(crate) fn _xkbcommon_lex<'a>(
         let keyname_bytes: Vec<u8> = s
             .input_slice(s.token_pos + 1, s.token_pos + 1 + len)
             .to_vec();
-        *yylval = YYValue::Atom(atom_intern(&mut ctx.atom_table, &keyname_bytes, true));
+        *yylval = YYValue::Atom(atom_intern(&mut ctx.atom_table, &keyname_bytes));
         return KEYNAME;
     }
     if s.chr(b';' as i8) {

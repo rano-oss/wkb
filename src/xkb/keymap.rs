@@ -407,7 +407,7 @@ pub(crate) fn xkb_keymap_new(
         XKB_MOD_NAME_MOD5,
     ];
     for (i, name) in BUILTIN_MODS.iter().enumerate() {
-        keymap.mods.mods[i].name = atom_intern(&mut keymap.ctx.atom_table, name.as_bytes(), true);
+        keymap.mods.mods[i].name = atom_intern(&mut keymap.ctx.atom_table, name.as_bytes());
         keymap.mods.mods[i].type_0 = MOD_REAL;
         keymap.mods.mods[i].mapping = 1_u32 << i;
     }

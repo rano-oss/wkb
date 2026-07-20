@@ -4,6 +4,8 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use lasso::Key as _;
+
 // ── xkbcommon public types ───────────────────────────────────────────
 
 pub(crate) const XKB_LOG_LEVEL_DEBUG: u32 = 50;
@@ -73,19 +75,16 @@ impl XkbRuleNames {
 
 // ── Opaque types ────────────────────────────────────────────────────
 
-/// Atom table - string interning system
+/// Atom table — thin wrapper around `lasso::Rodeo` for string interning.
+/// Atoms are `u32` keys where `0` is reserved as `XKB_ATOM_NONE`.
 pub(crate) struct AtomTable {
-    /// Hash index for O(1) lookups (open addressing, linear probing)
-    index: Vec<u32>,
-    /// Interned strings. Index 0 is None (XKB_ATOM_NONE).
-    strings: Vec<Option<String>>,
+    inner: lasso::Rodeo,
 }
 
 impl Clone for AtomTable {
     fn clone(&self) -> Self {
         Self {
-            index: self.index.clone(),
-            strings: self.strings.clone(),
+            inner: self.inner.clone(),
         }
     }
 }
@@ -96,28 +95,10 @@ impl std::fmt::Debug for AtomTable {
     }
 }
 
-/// FNV-1a hash function for byte slices
-fn hash_buf(bytes: &[u8]) -> u32 {
-    let len = bytes.len();
-    let mut hash: u32 = 2166136261;
-    for i in 0..(len + 1) / 2 {
-        hash ^= bytes[i] as u32;
-        hash = hash.wrapping_mul(0x1000193);
-        hash ^= bytes[len - 1 - i] as u32;
-        hash = hash.wrapping_mul(0x1000193);
-    }
-    hash
-}
-
-/// Create new atom table with pre-allocated capacity
+/// Create new atom table
 pub(crate) fn atom_table_new() -> AtomTable {
     AtomTable {
-        index: vec![0; 1024],
-        strings: {
-            let mut v = Vec::with_capacity(512);
-            v.push(None);
-            v
-        },
+        inner: lasso::Rodeo::new(),
     }
 }
 
@@ -756,104 +737,36 @@ pub(crate) const XKB_ATOM_NONE: u32 = 0;
 
 /// Get text for an atom as a string slice.
 pub(crate) fn atom_text(table: &AtomTable, atom: u32) -> &str {
-    if (atom as usize) >= table.strings.len() {
+    if atom == 0 {
         return "";
     }
-    match &table.strings[atom as usize] {
-        Some(s) => s.as_str(),
-        None => "",
-    }
+    // +1 offset: external atoms start at 1 (0=XKB_ATOM_NONE), lasso Spur keys start at 0
+    let key = lasso::Key::try_from_usize((atom - 1) as usize).expect("invalid atom key");
+    table.inner.try_resolve(&key).unwrap_or("")
 }
 
 /// Look up an existing atom without mutating the table.
 pub(crate) fn atom_lookup_ref(table: &AtomTable, input_bytes: &[u8]) -> u32 {
-    let hash = hash_buf(input_bytes);
-    for i in 0..table.index.len() {
-        let index_pos = ((hash as usize) + i) & (table.index.len() - 1);
-        if index_pos == 0 {
-            continue;
-        }
-        let existing_atom = table.index[index_pos];
-        if existing_atom == XKB_ATOM_NONE {
-            return XKB_ATOM_NONE;
-        }
-        if let Some(ref existing) = table.strings[existing_atom as usize] {
-            if existing.as_bytes() == input_bytes {
-                return existing_atom;
-            }
-        }
-    }
-    XKB_ATOM_NONE
+    let s = match std::str::from_utf8(input_bytes) {
+        Ok(s) => s,
+        Err(_) => return XKB_ATOM_NONE,
+    };
+    // +1 offset: external atoms start at 1 (0=XKB_ATOM_NONE)
+    table
+        .inner
+        .get(s)
+        .map(|k| k.into_usize() as u32 + 1)
+        .unwrap_or(XKB_ATOM_NONE)
 }
 
-/// Intern a string or look up existing atom
-pub(crate) fn atom_intern(table: &mut AtomTable, input_bytes: &[u8], add: bool) -> u32 {
-    let t = table;
-
-    // Resize hash table if load factor > 0.8
-    if t.strings.len() > t.index.len() * 4 / 5 {
-        let new_size = t.index.len() * 2;
-        t.index = vec![0; new_size];
-
-        // Rehash all strings (skip index 0)
-        for j in 1..t.strings.len() {
-            if let Some(ref s) = t.strings[j] {
-                let s_bytes = s.as_bytes();
-                let hash = hash_buf(s_bytes);
-
-                for i in 0..t.index.len() {
-                    let index_pos = ((hash as usize) + i) & (t.index.len() - 1);
-                    if index_pos == 0 {
-                        continue;
-                    }
-                    if t.index[index_pos] == XKB_ATOM_NONE {
-                        t.index[index_pos] = j as u32;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    // Look up or insert string
-    let hash = hash_buf(input_bytes);
-
-    for i in 0..t.index.len() {
-        let index_pos = ((hash as usize) + i) & (t.index.len() - 1);
-        if index_pos == 0 {
-            continue;
-        }
-
-        let existing_atom = t.index[index_pos];
-
-        // Empty slot - not found
-        if existing_atom == XKB_ATOM_NONE {
-            if add {
-                let new_atom = t.strings.len() as u32;
-
-                let new_string = String::from_utf8(input_bytes.to_vec())
-                    .expect("atom string is not valid UTF-8");
-                t.strings.push(Some(new_string));
-
-                // Update hash table
-                t.index[index_pos] = new_atom;
-
-                return new_atom;
-            } else {
-                return XKB_ATOM_NONE;
-            }
-        }
-
-        // Check if existing string matches
-        if let Some(ref existing) = t.strings[existing_atom as usize] {
-            if existing.as_bytes() == input_bytes {
-                return existing_atom;
-            }
-        }
-    }
-
-    // Should never reach here - hash table is kept sparse enough
-    panic!("couldn't find an empty slot during probing");
+/// Intern a string into the atom table, returning its u32 key.
+pub(crate) fn atom_intern(table: &mut AtomTable, input_bytes: &[u8]) -> u32 {
+    let s = match std::str::from_utf8(input_bytes) {
+        Ok(s) => s,
+        Err(_) => panic!("atom string is not valid UTF-8"),
+    };
+    // +1 offset: external atoms start at 1 (0=XKB_ATOM_NONE)
+    table.inner.get_or_intern(s).into_usize() as u32 + 1
 }
 
 // ── keymap_h types & constants (moved from duplicated pub(crate) mod keymap_h blocks) ─
@@ -1047,7 +960,6 @@ pub(crate) const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
 pub(crate) const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;
 pub(crate) const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: u32 = 237;
 pub(crate) const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: u32 = 312;
-pub(crate) const XKB_ERROR_WRONG_FIELD_TYPE: u32 = 578;
 pub const XKB_ERROR_NO_VALID_DEFAULT_INCLUDE_PATH: u32 = 632;
 
 // ── LookupEntry (moved from keymap.rs) ────────────────────────────

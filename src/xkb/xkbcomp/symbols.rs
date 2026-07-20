@@ -96,7 +96,7 @@ impl KeyInfo {
 
 impl SymbolsInfo {
     pub(crate) fn new(ki: &mut XkbKeymapInfo<'_>) -> Self {
-        let star_atom = atom_intern(&mut ki.keymap_mut().ctx.atom_table, b"*", true);
+        let star_atom = atom_intern(&mut ki.keymap_mut().ctx.atom_table, b"*");
         Self {
             name: None,
             error_count: 0,
@@ -193,7 +193,7 @@ fn init_key_info_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
     };
 }
 fn init_key_info(ctx: &mut XkbContext, keyi: &mut KeyInfo) {
-    init_key_info_with_atom(keyi, atom_intern(&mut ctx.atom_table, b"*", true));
+    init_key_info_with_atom(keyi, atom_intern(&mut ctx.atom_table, b"*"));
 }
 fn clear_key_info(keyi: &mut KeyInfo) {
     for groupi in keyi.groups.iter_mut() {
@@ -1673,7 +1673,7 @@ fn find_key_for_symbol(keymap: &mut XkbKeymap, sym: u32) -> Option<&mut XkbKey> 
 fn find_automatic_type(ctx: &mut XkbContext, groupi: &GroupInfo) -> u32 {
     let width: u32 = groupi.levels.len() as u32;
     if width == 1_u32 || width == 0_u32 {
-        return atom_intern(&mut ctx.atom_table, b"ONE_LEVEL", true);
+        return atom_intern(&mut ctx.atom_table, b"ONE_LEVEL");
     }
     let sym0: u32 = if groupi.levels[0].syms.is_empty() {
         XKB_KEY_NO_SYMBOL as u32
@@ -1687,12 +1687,12 @@ fn find_automatic_type(ctx: &mut XkbContext, groupi: &GroupInfo) -> u32 {
     };
     if width == 2_u32 {
         if xkb_keysym_is_lower(sym0) as i32 != 0 && xkb_keysym_is_upper_or_title(sym1) as i32 != 0 {
-            return atom_intern(&mut ctx.atom_table, b"ALPHABETIC", true);
+            return atom_intern(&mut ctx.atom_table, b"ALPHABETIC");
         }
         if xkb_keysym_is_keypad(sym0) as i32 != 0 || xkb_keysym_is_keypad(sym1) as i32 != 0 {
-            return atom_intern(&mut ctx.atom_table, b"KEYPAD", true);
+            return atom_intern(&mut ctx.atom_table, b"KEYPAD");
         }
-        return atom_intern(&mut ctx.atom_table, b"TWO_LEVEL", true);
+        return atom_intern(&mut ctx.atom_table, b"TWO_LEVEL");
     }
     if width <= 4_u32 {
         if xkb_keysym_is_lower(sym0) as i32 != 0 && xkb_keysym_is_upper_or_title(sym1) as i32 != 0 {
@@ -1713,14 +1713,14 @@ fn find_automatic_type(ctx: &mut XkbContext, groupi: &GroupInfo) -> u32 {
             if xkb_keysym_is_lower(sym2) as i32 != 0
                 && xkb_keysym_is_upper_or_title(sym3) as i32 != 0
             {
-                return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL_ALPHABETIC", true);
+                return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL_ALPHABETIC");
             }
-            return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL_SEMIALPHABETIC", true);
+            return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL_SEMIALPHABETIC");
         }
         if xkb_keysym_is_keypad(sym0) as i32 != 0 || xkb_keysym_is_keypad(sym1) as i32 != 0 {
-            return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL_KEYPAD", true);
+            return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL_KEYPAD");
         }
-        return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL", true);
+        return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL");
     }
     XKB_ATOM_NONE
 }
@@ -3628,7 +3628,7 @@ fn copy_key_types_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo)
     let mut types_vec: Vec<XkbKeyType> = Vec::with_capacity(num_types as usize);
     if info.types.is_empty() {
         let type_0 = XkbKeyType {
-            name: atom_intern(&mut keymap.ctx.atom_table, b"ONE_LEVEL", true),
+            name: atom_intern(&mut keymap.ctx.atom_table, b"ONE_LEVEL"),
             mods: XkbMods { mods: 0, mask: 0 },
             required: true,
             num_levels: 1,
@@ -3637,10 +3637,10 @@ fn copy_key_types_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo)
         types_vec.push(type_0);
     } else {
         let canonical_types: [u32; 4] = [
-            atom_intern(&mut keymap.ctx.atom_table, b"ONE_LEVEL", true),
-            atom_intern(&mut keymap.ctx.atom_table, b"TWO_LEVEL", true),
-            atom_intern(&mut keymap.ctx.atom_table, b"ALPHABETIC", true),
-            atom_intern(&mut keymap.ctx.atom_table, b"KEYPAD", true),
+            atom_intern(&mut keymap.ctx.atom_table, b"ONE_LEVEL"),
+            atom_intern(&mut keymap.ctx.atom_table, b"TWO_LEVEL"),
+            atom_intern(&mut keymap.ctx.atom_table, b"ALPHABETIC"),
+            atom_intern(&mut keymap.ctx.atom_table, b"KEYPAD"),
         ];
         for def in info.types.iter_mut() {
             let entries = std::mem::take(&mut def.entries);
@@ -5616,12 +5616,12 @@ fn string_to_field(str: &str, field_rtrn: &mut u32) -> bool {
     ret
 }
 #[inline]
-fn report_mismatch(_code: u32, _action: u32, _field: u32, _type_0: &str, strict: u32) -> u32 {
-    (if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-        PARSER_FATAL_ERROR as i32
+fn report_mismatch(strict: u32) -> u32 {
+    if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
+        PARSER_FATAL_ERROR
     } else {
-        PARSER_RECOVERABLE_ERROR as i32
-    }) as u32
+        PARSER_RECOVERABLE_ERROR
+    }
 }
 #[inline]
 fn report_format_version_mismatch(
@@ -5682,7 +5682,7 @@ fn check_boolean_flag(
         return report_action_not_array(action, field, strict);
     }
     if !expr_resolve_boolean(ctx, value, &mut set) {
-        return report_mismatch(XKB_ERROR_WRONG_FIELD_TYPE, action, field, "boolean", strict);
+        return report_mismatch(strict);
     }
     if set {
         *flags_inout = (*flags_inout | flag) as XkbActionFlags;
@@ -5721,13 +5721,7 @@ fn check_modifier_field(
         }
     }
     if !expr_resolve_mod_mask(ctx, value, MOD_BOTH, mods, mods_rtrn) {
-        return report_mismatch(
-            XKB_ERROR_WRONG_FIELD_TYPE,
-            action,
-            ACTION_FIELD_MODIFIERS,
-            "modifier mask",
-            strict,
-        );
+        return report_mismatch(strict);
     }
     *flags_inout = (*flags_inout & !(ACTION_MODS_LOOKUP_MODMAP as i32) as u32) as XkbActionFlags;
     PARSER_SUCCESS
@@ -5767,13 +5761,7 @@ fn check_affect_field(
     }
     let mut flags: u32 = 0_u32;
     if !expr_resolve_enum(ctx, value, &mut flags, &LOCK_WHICH) {
-        return report_mismatch(
-            XKB_ERROR_WRONG_FIELD_TYPE,
-            action,
-            ACTION_FIELD_AFFECT,
-            "lock, unlock, both, neither",
-            strict,
-        );
+        return report_mismatch(strict);
     }
     *flags_inout = (*flags_inout
         & !(ACTION_LOCK_NO_LOCK as i32 | ACTION_LOCK_NO_UNLOCK as i32) as u32)
@@ -5919,13 +5907,7 @@ fn check_group_field(
     let ret: u32 =
         expr_resolve_group(keymap_info, spec_holder, absolute, &mut idx, &mut pending) as u32;
     if ret as u32 != PARSER_SUCCESS && !pending {
-        report_mismatch(
-            XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
-            action,
-            ACTION_FIELD_GROUP,
-            "integer",
-            keymap_info.strict,
-        );
+        report_mismatch(keymap_info.strict);
         return ret;
     }
     if pending {
@@ -6044,13 +6026,7 @@ fn handle_move_ptr(
             return report_action_not_array(type_0, field, keymap_info.strict);
         }
         if !expr_resolve_integer(ctx, value, &mut val) {
-            return report_mismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "integer",
-                keymap_info.strict,
-            );
+            return report_mismatch(keymap_info.strict);
         }
         if val < i16::MIN as i64 || val > i16::MAX as i64 {
             return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
@@ -6103,13 +6079,7 @@ fn handle_ptr_btn(
             return report_action_not_array(type_0, field, keymap_info.strict);
         }
         if !expr_resolve_button(ctx, value, &mut btn) {
-            return report_mismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "integer (range 1..5)",
-                keymap_info.strict,
-            );
+            return report_mismatch(keymap_info.strict);
         }
         if !(0_i64..=5_i64).contains(&btn) {
             return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
@@ -6135,13 +6105,7 @@ fn handle_ptr_btn(
             return report_action_not_array(type_0, field, keymap_info.strict);
         }
         if !expr_resolve_integer(ctx, value, &mut val) {
-            return report_mismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "integer",
-                keymap_info.strict,
-            );
+            return report_mismatch(keymap_info.strict);
         }
         if !(0_i64..=255_i64).contains(&val) {
             return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
@@ -6191,13 +6155,7 @@ fn handle_set_ptr_dflt(
             return report_action_not_array(type_0, field, keymap_info.strict);
         }
         if !expr_resolve_enum(ctx, value, &mut val, &PTR_DFLTS) {
-            return report_mismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "pointer component",
-                keymap_info.strict,
-            );
+            return report_mismatch(keymap_info.strict);
         }
         return PARSER_SUCCESS;
     } else if field == ACTION_FIELD_BUTTON || field == ACTION_FIELD_VALUE {
@@ -6218,13 +6176,7 @@ fn handle_set_ptr_dflt(
             button = value;
         }
         if !expr_resolve_button(ctx, button, &mut btn) {
-            return report_mismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "integer (range 1..5)",
-                keymap_info.strict,
-            );
+            return report_mismatch(keymap_info.strict);
         }
         if !(0_i64..=5_i64).contains(&btn) {
             return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
@@ -6279,13 +6231,7 @@ fn handle_switch_screen(
             scrn = value;
         }
         if !expr_resolve_integer(ctx, scrn, &mut val) {
-            return report_mismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "integer (-128..127)",
-                keymap_info.strict,
-            );
+            return report_mismatch(keymap_info.strict);
         }
         val = if value.stmt_type() == STMT_EXPR_NEGATE {
             -val
@@ -6334,13 +6280,7 @@ fn handle_set_lock_controls(
         let mut mask: u32 = 0_u32;
         let offset: u8 = keymap_info.features.controls_name_offset;
         if !expr_resolve_mask(ctx, value, &mut mask, &CTRL_MASK_NAMES[offset as usize..]) {
-            return report_mismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "controls mask",
-                keymap_info.strict,
-            );
+            return report_mismatch(keymap_info.strict);
         }
         act.ctrls = mask as XkbActionControls;
         return PARSER_SUCCESS;
@@ -6384,13 +6324,7 @@ fn handle_redirect_key(
             }
         }
         if value.stmt_type() != STMT_EXPR_KEYNAME_LITERAL {
-            return report_mismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "key name",
-                keymap_info.strict,
-            );
+            return report_mismatch(keymap_info.strict);
         }
         let key_name_val = if let ExprKind::KeyName(kn) = &value.kind {
             *kn
@@ -6427,13 +6361,7 @@ fn handle_redirect_key(
             return r;
         }
         if flags as u64 != 0 {
-            return report_mismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "modifier mask",
-                keymap_info.strict,
-            );
+            return report_mismatch(keymap_info.strict);
         }
         act.affect |= m;
         if field == ACTION_FIELD_MODIFIERS {
@@ -6473,13 +6401,7 @@ fn handle_private(
             return report_action_not_array(ACTION_TYPE_PRIVATE, field, keymap_info.strict);
         }
         if !expr_resolve_integer(ctx, value, &mut type_0) {
-            return report_mismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                ACTION_TYPE_PRIVATE,
-                field,
-                "integer",
-                keymap_info.strict,
-            );
+            return report_mismatch(keymap_info.strict);
         }
         if !(0_i64..=255_i64).contains(&type_0) {
             return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
@@ -6498,13 +6420,7 @@ fn handle_private(
         if array_ndx.is_none() {
             let mut val: u32 = XKB_ATOM_NONE;
             if !expr_resolve_string(ctx, value, &mut val) {
-                return report_mismatch(
-                    XKB_ERROR_WRONG_FIELD_TYPE,
-                    act.type_0,
-                    field,
-                    "string",
-                    keymap_info.strict,
-                );
+                return report_mismatch(keymap_info.strict);
             }
             let str_bytes: &str = atom_text(&ctx.atom_table, val);
             let len: usize = str_bytes.len();
@@ -6537,13 +6453,7 @@ fn handle_private(
                 }) as u32;
             }
             if !expr_resolve_integer(ctx, value, &mut datum) {
-                return report_mismatch(
-                    XKB_ERROR_WRONG_FIELD_TYPE,
-                    act.type_0,
-                    field,
-                    "integer",
-                    keymap_info.strict,
-                );
+                return report_mismatch(keymap_info.strict);
             }
             if !(0_i64..=255_i64).contains(&datum) {
                 return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
