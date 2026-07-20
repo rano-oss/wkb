@@ -738,7 +738,6 @@ pub(crate) type XkbKeysymFlags = u32;
 pub(crate) const XKB_KEYSYM_NO_FLAGS: XkbKeysymFlags = 0;
 pub(crate) const XKB_KEYSYM_CASE_INSENSITIVE: XkbKeysymFlags = 1;
 
-
 pub const XKB_KEYMAP_COMPILE_FLAGS_VALUES: u32 = 1;
 
 pub(crate) type XkbA11yFlags = u32;

@@ -4017,7 +4017,13 @@ fn SetPreserve(
         return ReportTypeShouldBeArray(ki, type_0, "preserve entry");
     }
     let mut mods: u32 = 0_u32;
-    if !ExprResolveModMask(ki.ctx(), array_ndx.unwrap(), MOD_BOTH, &info.mods, &mut mods) {
+    if !ExprResolveModMask(
+        ki.ctx(),
+        array_ndx.unwrap(),
+        MOD_BOTH,
+        &info.mods,
+        &mut mods,
+    ) {
         return report_type_bad_type(
             ki,
             XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_,

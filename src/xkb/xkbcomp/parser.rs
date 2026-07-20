@@ -3,7 +3,7 @@
     clippy::vec_box,
     clippy::wrong_self_convention,
     clippy::too_many_arguments,
-    clippy::type_complexity,
+    clippy::type_complexity
 )]
 // LALR(1) parser for XKB, converted from bison-generated C via c2rust
 use super::super::keymap::xkb_escape_map_name;
@@ -17,16 +17,16 @@ use super::super::shared_types::{
 };
 
 use super::super::shared_types::{
-    safe_map_name, ExprDef, ExprKind,IncludeStmt, InterpDef, KeyAliasDef,
-    KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, MergeMode, ModMapDef, Statement, StmtType,
-    SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, XkbMapFlags, FILE_TYPE_COMPAT,
-    FILE_TYPE_GEOMETRY, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
-    FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
-    MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
-    MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_EXPR_ADD,
-    STMT_EXPR_ASSIGN, STMT_EXPR_DIVIDE, STMT_EXPR_INVERT, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE,
-    STMT_EXPR_NOT, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_UNKNOWN_COMPOUND,
-    STMT_UNKNOWN_DECLARATION, _STMT_NUM_VALUES,
+    safe_map_name, ExprDef, ExprKind, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
+    LedMapDef, LedNameDef, MergeMode, ModMapDef, Statement, StmtType, SymbolsDef, UnknownStatement,
+    VModDef, VarDef, XkbFile, XkbMapFlags, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
+    FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
+    FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN,
+    MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL,
+    MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_EXPR_ADD, STMT_EXPR_ASSIGN,
+    STMT_EXPR_DIVIDE, STMT_EXPR_INVERT, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
+    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
+    _STMT_NUM_VALUES,
 };
 
 pub(crate) use super::super::keymap::mod_mask_get_effective;
@@ -2139,8 +2139,6 @@ pub(crate) fn parse<'a>(
     first
 }
 
-
-
 // ── AST builder functions (merged from ast_build.rs) ──
 
 pub(crate) fn expr_create(kind: ExprKind) -> Box<ExprDef> {
@@ -2321,7 +2319,6 @@ pub(crate) fn SymbolsCreate(key_name: u32, symbols: Vec<VarDef>) -> Box<SymbolsD
         symbols,
     })
 }
-
 
 pub(crate) fn ModMapCreate(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef> {
     Box::new(ModMapDef {
@@ -2602,8 +2599,6 @@ impl<'a> Scanner<'a> {
         }
     }
 
-
-
     #[inline]
     fn remaining_bytes(&self) -> &[u8] {
         &self.s[self.pos..]
@@ -2795,8 +2790,6 @@ impl<'a> Scanner<'a> {
         true
     }
 
-
-
     #[inline]
     pub(crate) fn input_slice(&self, start: usize, end: usize) -> &[u8] {
         &self.s[start..end]
@@ -2842,8 +2835,6 @@ impl<'a> Scanner<'a> {
 pub(crate) fn svaleq(s1: sval, s2: sval) -> bool {
     s1.data == s2.data
 }
-
-
 
 pub(crate) const ALTERNATE_GROUP: i32 = 77;
 pub(crate) const FUNCTION_KEYS: i32 = 76;
@@ -3121,7 +3112,6 @@ pub(crate) enum YYValue<'a> {
 
 // Helper to take a value out and replace with None
 impl<'a> YYValue<'a> {
-
     pub(crate) fn take_expr(&mut self) -> Option<Box<ExprDef>> {
         match std::mem::take(self) {
             YYValue::Expr(e) => Some(e),

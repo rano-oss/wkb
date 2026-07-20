@@ -628,9 +628,6 @@ pub(crate) fn xkb_wrap_group_into_range(
     }
 }
 
-
-
-
 use std::env::VarError;
 
 use super::shared_types::{atom_intern, atom_table_new};
@@ -1800,11 +1797,6 @@ impl Keymap {
     }
 }
 
-
-
-
-
-
 /// Safe wrapper around XkbState with automatic cleanup
 ///
 /// Owns the XkbState via Box. The state was originally allocated by
@@ -1835,13 +1827,7 @@ impl State {
         xkb_state_key_get_one_sym(&self.inner, keycode)
     }
 
-
-
-
     /// Get keysyms for a key at a specific layout and level (delegates to keymap)
-
-
-
 
     /// Update state from modifier/layout masks (e.g., from Wayland compositor)
     pub(crate) fn update_mask(
@@ -1935,7 +1921,6 @@ pub(crate) struct StateComponents {
     pub(crate) controls: XkbActionControls,
 }
 
-
 use super::shared_types::{XkbActionControls, XkbEventType, XkbLedMaskT};
 
 fn vec_resize_zero<T: Default>(v: &mut Vec<T>, new_len: usize) {
@@ -1991,9 +1976,7 @@ pub(crate) struct XkbEvents {
 }
 impl XkbEvents {
     fn dummy() -> Self {
-        Self {
-            queue: Vec::new(),
-        }
+        Self { queue: Vec::new() }
     }
 }
 // C2Rust_Unnamed_16 removed: replaced by Vec<XkbEvent>
@@ -2043,7 +2026,6 @@ pub(crate) const LATCH_PENDING: XkbKeyLatchState = 2;
 pub(crate) const LATCH_KEY_DOWN: XkbKeyLatchState = 1;
 
 pub(crate) const NO_LATCH: XkbKeyLatchState = 0;
-
 
 pub(crate) type XkbFilterResult = u32;
 
@@ -2745,9 +2727,7 @@ fn append_redirect_key_events(
         if changed as u64 != 0 {
             events.queue.push(XkbEvent {
                 type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
-                data: XkbEventData::Components(XkbEventComponents {
-                    components: new,
-                }),
+                data: XkbEventData::Components(XkbEventComponents { components: new }),
             });
         }
     }
@@ -3428,8 +3408,6 @@ pub(crate) fn xkb_state_mod_index_is_active(state: &XkbState, idx: u32, type_0: 
     (xkb_state_serialize_mods(state, type_0) & mapping == mapping) as i32
 }
 
-
-
 fn key_get_consumed(state: &XkbState, key: &XkbKey, mode: XkbConsumedMode) -> u32 {
     let group: u32 = xkb_state_key_get_layout(state, key.keycode);
     if group == XKB_LAYOUT_INVALID {
@@ -3573,7 +3551,6 @@ impl RxkbLayout {
         &self.variant
     }
 }
-
 
 // ---------------------------------------------------------------------------
 // Logging
@@ -3880,7 +3857,6 @@ impl RxkbContext {
     pub(crate) fn layouts(&self) -> &[RxkbLayout] {
         &self.layouts
     }
-
 }
 
 // ---------------------------------------------------------------------------
@@ -3997,7 +3973,7 @@ fn parse_model(
             return;
         }
         ctx.models.push(RxkbModel {
-            name: std::mem::take(&mut config.name)
+            name: std::mem::take(&mut config.name),
         });
     }
 }
@@ -4191,7 +4167,7 @@ fn parse_option(
             return;
         }
         ctx.option_groups[group_idx].options.push(RxkbOption {
-            name: std::mem::take(&mut config.name)
+            name: std::mem::take(&mut config.name),
         });
     }
 }
