@@ -5624,35 +5624,22 @@ fn report_mismatch(strict: u32) -> u32 {
     }
 }
 #[inline]
-fn report_format_version_mismatch(
-    _action: u32,
-    _field: u32,
-    _format: u32,
-    _versions: &str,
-    strict: u32,
-) -> u32 {
-    (if strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
-        PARSER_FATAL_ERROR as i32
+fn report_format_version_mismatch(strict: u32) -> u32 {
+    if strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
+        PARSER_FATAL_ERROR
     } else {
-        PARSER_SUCCESS as i32
-    }) as u32
+        PARSER_SUCCESS
+    }
 }
 #[inline]
-fn report_illegal(_action: u32, _field: u32, strict: u32) -> u32 {
-    (if strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
-        PARSER_FATAL_ERROR as i32
+fn report_illegal(strict: u32) -> u32 {
+    if strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
+        PARSER_FATAL_ERROR
     } else {
-        PARSER_SUCCESS as i32
-    }) as u32
+        PARSER_SUCCESS
+    }
 }
-#[inline]
-fn report_action_not_array(_action: u32, _field: u32, strict: u32) -> u32 {
-    (if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-        PARSER_FATAL_ERROR as i32
-    } else {
-        PARSER_RECOVERABLE_ERROR as i32
-    }) as u32
-}
+
 fn handle_no_action(
     keymap_info: &mut XkbKeymapInfo<'_>,
     _mods: &XkbModSet,
@@ -5670,8 +5657,6 @@ fn handle_no_action(
 fn check_boolean_flag(
     ctx: &XkbContext,
     strict: u32,
-    action: u32,
-    field: u32,
     flag: XkbActionFlags,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
@@ -5679,7 +5664,7 @@ fn check_boolean_flag(
 ) -> u32 {
     let mut set: bool = false;
     if array_ndx.is_some() {
-        return report_action_not_array(action, field, strict);
+        return report_mismatch(strict);
     }
     if !expr_resolve_boolean(ctx, value, &mut set) {
         return report_mismatch(strict);
@@ -5695,14 +5680,13 @@ fn check_modifier_field(
     ctx: &XkbContext,
     strict: u32,
     mods: &XkbModSet,
-    action: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
     flags_inout: &mut XkbActionFlags,
     mods_rtrn: &mut u32,
 ) -> u32 {
     if array_ndx.is_some() {
-        return report_action_not_array(action, ACTION_FIELD_MODIFIERS, strict);
+        return report_mismatch(strict);
     }
     if value.stmt_type() == STMT_EXPR_IDENT {
         let ident = if let ExprKind::Ident(id) = &value.kind {
@@ -5751,13 +5735,12 @@ static LOCK_WHICH: [LookupEntry; 5] = [
 fn check_affect_field(
     ctx: &XkbContext,
     strict: u32,
-    action: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
     flags_inout: &mut XkbActionFlags,
 ) -> u32 {
     if array_ndx.is_some() {
-        return report_action_not_array(action, ACTION_FIELD_AFFECT, strict);
+        return report_mismatch(strict);
     }
     let mut flags: u32 = 0_u32;
     if !expr_resolve_enum(ctx, value, &mut flags, &LOCK_WHICH) {
@@ -5786,7 +5769,6 @@ fn handle_set_latch_lock_mods(
             ctx,
             keymap_info.strict,
             mods,
-            type_0,
             array_ndx,
             value,
             &mut act.flags,
@@ -5798,21 +5780,13 @@ fn handle_set_latch_lock_mods(
             return check_boolean_flag(
                 ctx,
                 keymap_info.strict,
-                type_0,
-                field,
                 ACTION_UNLOCK_ON_PRESS,
                 array_ndx,
                 value,
                 &mut act.flags,
             );
         } else {
-            return report_format_version_mismatch(
-                type_0,
-                field,
-                keymap_info.keymap_ref().format,
-                ">= 2",
-                keymap_info.strict,
-            );
+            return report_format_version_mismatch(keymap_info.strict);
         }
     }
     if (type_0 == ACTION_TYPE_MOD_SET || type_0 == ACTION_TYPE_MOD_LATCH)
@@ -5821,8 +5795,6 @@ fn handle_set_latch_lock_mods(
         return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            type_0,
-            field,
             ACTION_LOCK_CLEAR,
             array_ndx,
             value,
@@ -5834,8 +5806,6 @@ fn handle_set_latch_lock_mods(
             return check_boolean_flag(
                 ctx,
                 keymap_info.strict,
-                type_0,
-                field,
                 ACTION_LATCH_TO_LOCK,
                 array_ndx,
                 value,
@@ -5847,21 +5817,13 @@ fn handle_set_latch_lock_mods(
                 return check_boolean_flag(
                     ctx,
                     keymap_info.strict,
-                    type_0,
-                    field,
                     ACTION_LATCH_ON_PRESS,
                     array_ndx,
                     value,
                     &mut act.flags,
                 );
             } else {
-                return report_format_version_mismatch(
-                    type_0,
-                    field,
-                    keymap_info.keymap_ref().format,
-                    ">= 2",
-                    keymap_info.strict,
-                );
+                return report_format_version_mismatch(keymap_info.strict);
             }
         }
     }
@@ -5869,17 +5831,15 @@ fn handle_set_latch_lock_mods(
         return check_affect_field(
             ctx,
             keymap_info.strict,
-            type_0,
             array_ndx,
             value,
             &mut act.flags,
         );
     }
-    report_illegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
 fn check_group_field(
     keymap_info: &mut XkbKeymapInfo<'_>,
-    action: u32,
     array_ndx: Option<&ExprDef>,
     mut value: ActionValue<'_>,
     flags_inout: &mut XkbActionFlags,
@@ -5888,7 +5848,7 @@ fn check_group_field(
     let mut idx: u32 = 0_u32;
     let mut flags: XkbActionFlags = *flags_inout;
     if array_ndx.is_some() {
-        return report_action_not_array(action, ACTION_FIELD_GROUP, keymap_info.strict);
+        return report_mismatch(keymap_info.strict);
     }
     // If the value is a unary negate/plus, rebind to child and record negate.
     let is_negate = value.get().stmt_type() == STMT_EXPR_NEGATE;
@@ -5947,7 +5907,6 @@ fn handle_set_latch_lock_group(
         let act = action.as_group_mut();
         return check_group_field(
             keymap_info,
-            type_0,
             array_ndx,
             value,
             &mut act.flags,
@@ -5962,8 +5921,6 @@ fn handle_set_latch_lock_group(
         return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            type_0,
-            field,
             ACTION_LOCK_CLEAR,
             array_ndx,
             value,
@@ -5974,8 +5931,6 @@ fn handle_set_latch_lock_group(
         return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            type_0,
-            field,
             ACTION_LATCH_TO_LOCK,
             array_ndx,
             value,
@@ -5987,24 +5942,16 @@ fn handle_set_latch_lock_group(
             return check_boolean_flag(
                 ctx,
                 keymap_info.strict,
-                type_0,
-                field,
                 ACTION_LOCK_ON_RELEASE,
                 array_ndx,
                 value,
                 &mut act.flags,
             );
         } else {
-            return report_format_version_mismatch(
-                type_0,
-                field,
-                keymap_info.keymap_ref().format,
-                ">= v2",
-                keymap_info.strict,
-            );
+            return report_format_version_mismatch(keymap_info.strict);
         }
     }
-    report_illegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
 fn handle_move_ptr(
     keymap_info: &mut XkbKeymapInfo<'_>,
@@ -6016,14 +5963,13 @@ fn handle_move_ptr(
 ) -> u32 {
     let value = value.get();
     let ctx: &XkbContext = keymap_info.ctx();
-    let type_0 = action.action_type();
     let act = action.as_ptr_mut();
     if field == ACTION_FIELD_X || field == ACTION_FIELD_Y {
         let mut val: i64 = 0_i64;
         let absolute: bool =
             value.stmt_type() != STMT_EXPR_NEGATE && value.stmt_type() != STMT_EXPR_UNARY_PLUS;
         if array_ndx.is_some() {
-            return report_action_not_array(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
         if !expr_resolve_integer(ctx, value, &mut val) {
             return report_mismatch(keymap_info.strict);
@@ -6051,15 +5997,13 @@ fn handle_move_ptr(
         return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            type_0,
-            field,
             ACTION_ACCEL,
             array_ndx,
             value,
             &mut act.flags,
         );
     }
-    report_illegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
 fn handle_ptr_btn(
     keymap_info: &mut XkbKeymapInfo<'_>,
@@ -6076,7 +6020,7 @@ fn handle_ptr_btn(
     if field == ACTION_FIELD_BUTTON {
         let mut btn: i64 = 0_i64;
         if array_ndx.is_some() {
-            return report_action_not_array(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
         if !expr_resolve_button(ctx, value, &mut btn) {
             return report_mismatch(keymap_info.strict);
@@ -6094,7 +6038,6 @@ fn handle_ptr_btn(
         return check_affect_field(
             ctx,
             keymap_info.strict,
-            type_0,
             array_ndx,
             value,
             &mut act.flags,
@@ -6102,7 +6045,7 @@ fn handle_ptr_btn(
     } else if field == ACTION_FIELD_COUNT {
         let mut val: i64 = 0_i64;
         if array_ndx.is_some() {
-            return report_action_not_array(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
         if !expr_resolve_integer(ctx, value, &mut val) {
             return report_mismatch(keymap_info.strict);
@@ -6117,7 +6060,7 @@ fn handle_ptr_btn(
         act.count = val as u8;
         return PARSER_SUCCESS;
     }
-    report_illegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
 static PTR_DFLTS: [LookupEntry; 4] = [
     LookupEntry {
@@ -6147,12 +6090,11 @@ fn handle_set_ptr_dflt(
 ) -> u32 {
     let value = value.get();
     let ctx: &XkbContext = keymap_info.ctx();
-    let type_0 = action.action_type();
     let act = action.as_dflt_mut();
     if field == ACTION_FIELD_AFFECT {
         let mut val: u32 = 0_u32;
         if array_ndx.is_some() {
-            return report_action_not_array(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
         if !expr_resolve_enum(ctx, value, &mut val, &PTR_DFLTS) {
             return report_mismatch(keymap_info.strict);
@@ -6162,7 +6104,7 @@ fn handle_set_ptr_dflt(
         let button: &ExprDef;
         let mut btn: i64 = 0_i64;
         if array_ndx.is_some() {
-            return report_action_not_array(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
             act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as XkbActionFlags;
@@ -6199,7 +6141,7 @@ fn handle_set_ptr_dflt(
         }) as i8;
         return PARSER_SUCCESS;
     }
-    report_illegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
 fn handle_switch_screen(
     keymap_info: &mut XkbKeymapInfo<'_>,
@@ -6211,13 +6153,12 @@ fn handle_switch_screen(
 ) -> u32 {
     let value = value.get();
     let ctx: &XkbContext = keymap_info.ctx();
-    let type_0 = action.action_type();
     let act = action.as_screen_mut();
     if field == ACTION_FIELD_SCREEN {
         let scrn: &ExprDef;
         let mut val: i64 = 0_i64;
         if array_ndx.is_some() {
-            return report_action_not_array(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
             act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as XkbActionFlags;
@@ -6251,15 +6192,13 @@ fn handle_switch_screen(
         return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            type_0,
-            field,
             ACTION_SAME_SCREEN,
             array_ndx,
             value,
             &mut act.flags,
         );
     }
-    report_illegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
 fn handle_set_lock_controls(
     keymap_info: &mut XkbKeymapInfo<'_>,
@@ -6275,7 +6214,7 @@ fn handle_set_lock_controls(
     let act = action.as_ctrls_mut();
     if field == ACTION_FIELD_CONTROLS {
         if array_ndx.is_some() {
-            return report_action_not_array(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
         let mut mask: u32 = 0_u32;
         let offset: u8 = keymap_info.features.controls_name_offset;
@@ -6288,13 +6227,12 @@ fn handle_set_lock_controls(
         return check_affect_field(
             ctx,
             keymap_info.strict,
-            type_0,
             array_ndx,
             value,
             &mut act.flags,
         );
     }
-    report_illegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
 fn handle_redirect_key(
     keymap_info: &mut XkbKeymapInfo<'_>,
@@ -6305,11 +6243,10 @@ fn handle_redirect_key(
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let type_0 = action.action_type();
     let act = action.as_redirect_mut();
     if field == ACTION_FIELD_KEYCODE {
         if array_ndx.is_some() {
-            return report_action_not_array(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_IDENT {
             let ident = if let ExprKind::Ident(id) = &value.kind {
@@ -6351,7 +6288,6 @@ fn handle_redirect_key(
             ctx,
             keymap_info.strict,
             mods,
-            type_0,
             array_ndx,
             value,
             &mut flags,
@@ -6371,7 +6307,7 @@ fn handle_redirect_key(
         }
         return PARSER_SUCCESS;
     }
-    report_illegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
 fn handle_unsupported(
     _keymap_info: &mut XkbKeymapInfo<'_>,
@@ -6393,12 +6329,11 @@ fn handle_private(
 ) -> u32 {
     let value = value.get();
     let ctx: &XkbContext = keymap_info.ctx();
-    let type_0 = action.action_type();
     let act = action.as_priv_mut();
     if field == ACTION_FIELD_TYPE {
         let mut type_0: i64 = 0_i64;
         if array_ndx.is_some() {
-            return report_action_not_array(ACTION_TYPE_PRIVATE, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
         if !expr_resolve_integer(ctx, value, &mut type_0) {
             return report_mismatch(keymap_info.strict);
@@ -6466,7 +6401,7 @@ fn handle_private(
             return PARSER_SUCCESS;
         }
     }
-    report_illegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
 static HANDLE_ACTION: [ActionHandler; 21] = {
     [
