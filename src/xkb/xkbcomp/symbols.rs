@@ -265,7 +265,7 @@ fn merge_groups(
             into.type_0 = use_0;
         }
     }
-    into.defined = (into.defined | from.defined & GROUP_FIELD_TYPE) as u32;
+    into.defined |= from.defined & GROUP_FIELD_TYPE;
     if from.levels.is_empty() {
         *from = GroupInfo::default();
         return true;
@@ -381,15 +381,15 @@ fn merge_groups(
     }
     if fromKeysymsCount != 0 {
         if fromKeysymsCount == into.levels.len() as u32 {
-            into.defined = (into.defined & !(GROUP_FIELD_SYMS as i32) as u32) as u32;
+            into.defined &= !(GROUP_FIELD_SYMS as i32) as u32;
         }
-        into.defined = (into.defined | from.defined & GROUP_FIELD_SYMS) as u32;
+        into.defined |= from.defined & GROUP_FIELD_SYMS;
     }
     if fromActionsCount != 0 {
         if fromActionsCount == into.levels.len() as u32 {
-            into.defined = (into.defined & !(GROUP_FIELD_ACTS as i32) as u32) as u32;
+            into.defined &= !(GROUP_FIELD_ACTS as i32) as u32;
         }
-        into.defined = (into.defined | from.defined & GROUP_FIELD_ACTS) as u32;
+        into.defined |= from.defined & GROUP_FIELD_ACTS;
     }
     true
 }
@@ -406,7 +406,7 @@ fn UseNewKeyField(
     }
     if new & field != 0 {
         if report {
-            *collide = (*collide | field) as u32;
+            *collide |= field;
         }
         return clobber;
     }
@@ -526,7 +526,7 @@ fn merge_overlays(
                         continue;
                     }
                     if report {
-                        *collide = (*collide | KEY_FIELD_OVERLAY) as u32;
+                        *collide |= KEY_FIELD_OVERLAY;
                     }
                 }
                 if (!conflict || clobber as i32 != 0) && !overlays_insert(into, bit, src_key) {
@@ -567,7 +567,7 @@ fn merge_overlays(
                 }
             }
             if report {
-                *collide = (*collide | KEY_FIELD_OVERLAY) as u32;
+                *collide |= KEY_FIELD_OVERLAY;
             }
             if clobber {
                 into.overlays = from.overlays;
@@ -587,7 +587,7 @@ fn MergeKeys(
 ) -> bool {
     let mut i: u32;
 
-    let mut collide: u32 = 0 as u32;
+    let mut collide: u32 = 0_u32;
     let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
     let clobber: bool = from.merge as i32 != MERGE_AUGMENT as i32;
     let report: bool = same_file as i32 != 0 && verbosity > 0_i32 || verbosity > 9_i32;
@@ -937,7 +937,7 @@ fn AddSymbolsToKey(
     }
     let groupi = &mut keyi.groups[ndx as usize];
     if value.stmt_type() == STMT_EXPR_EMPTY_LIST {
-        groupi.defined = (groupi.defined | GROUP_FIELD_SYMS) as u32;
+        groupi.defined |= GROUP_FIELD_SYMS;
         return true;
     }
     if value.stmt_type() != STMT_EXPR_KEYSYM_LIST && value.stmt_type() != STMT_EXPR_ACTION_LIST {
@@ -976,7 +976,7 @@ fn AddSymbolsToKey(
             .levels
             .resize_with(nLevels as usize, Default::default);
     }
-    groupi.defined = (groupi.defined | GROUP_FIELD_SYMS) as u32;
+    groupi.defined |= GROUP_FIELD_SYMS;
     for (level, node) in keysym_nodes.iter().enumerate() {
         if level as u32 >= nLevels {
             break;
@@ -1018,7 +1018,7 @@ fn AddActionsToKey(
     }
     let groupi = &mut keyi.groups[ndx as usize];
     if value.stmt_type() == STMT_EXPR_EMPTY_LIST {
-        groupi.defined = (groupi.defined | GROUP_FIELD_ACTS) as u32;
+        groupi.defined |= GROUP_FIELD_ACTS;
         return true;
     }
     if value.stmt_type() != STMT_EXPR_ACTION_LIST {
@@ -1046,7 +1046,7 @@ fn AddActionsToKey(
             .levels
             .resize_with(nLevels as usize, Default::default);
     }
-    groupi.defined = (groupi.defined | GROUP_FIELD_ACTS) as u32;
+    groupi.defined |= GROUP_FIELD_ACTS;
     let mut level: u32 = 0_u32;
     let mut nonEmptyLevels: u32 = 0_u32;
     for action_node in action_nodes {
@@ -1295,7 +1295,7 @@ fn SetSymbolsField(
             }
             keyi.groups[ndx as usize].type_0 = val;
             let c2rust_fresh8 = &mut keyi.groups[ndx as usize].defined;
-            *c2rust_fresh8 = (*c2rust_fresh8 | GROUP_FIELD_TYPE) as u32;
+            *c2rust_fresh8 |= GROUP_FIELD_TYPE;
         }
     } else if field.eq_ignore_ascii_case("symbols") {
         return AddSymbolsToKey(ki, info, keyi, arrayNdx, value_opt.as_deref().unwrap());
@@ -1614,7 +1614,7 @@ fn HandleGlobalVar(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, stmt: &mu
         let mut temp: KeyInfo = {
             let mut init = KeyInfo::new_zeroed();
             init.out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
-            init.defined = 0 as u32;
+            init.defined = 0_u32;
             init.merge = MERGE_DEFAULT;
             init.repeat = KEY_REPEAT_UNDEFINED;
             init.out_of_range_pending_group = false;
@@ -4138,7 +4138,7 @@ fn SetKeyTypeField(
     value: &ExprDef,
 ) -> bool {
     let ok: bool;
-    let mut u32: u32 = 0 as u32;
+    let mut u32: u32 = 0_u32;
     if field.eq_ignore_ascii_case("modifiers") {
         u32 = TYPE_FIELD_MASK;
         ok = SetModifiers(ki, info, type_0, arrayNdx, value);
@@ -4160,7 +4160,7 @@ fn SetKeyTypeField(
         );
         ok = ki.strict & PARSER_NO_UNKNOWN_TYPE_FIELDS == 0;
     }
-    type_0.defined = (type_0.defined | u32 as u32) as u32;
+    type_0.defined |= u32;
     ok
 }
 fn HandleKeyTypeBody(
@@ -4250,7 +4250,7 @@ fn HandleKeyTypesFile(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, file:
                 }
                 Statement::KeyType(def) => {
                     let mut type_0: KeyTypeInfo = KeyTypeInfo {
-                        defined: 0 as u32,
+                        defined: 0_u32,
                         merge: def.merge,
                         name: def.name,
                         mods: 0_u32,
