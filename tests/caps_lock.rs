@@ -182,13 +182,9 @@ fn caps_lock(locale: &str, level: usize) {
     for layout in wkb::testing::get_all_layouts_for_locale(locale) {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-
         set_modifier_level(&mut wkb, &mut xkb, level);
-
-        // Activate caps lock
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
         wkb.update_key(CAPS_LOCK, wkb::testing::KeyDirection::Down);
-
         test_all_keys_locale(wkb, xkb, layout, locale);
     }
 }
