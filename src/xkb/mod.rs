@@ -880,27 +880,6 @@ mod wrapper_tests {
         }
     }
 
-
-    #[test]
-    fn test_keymap_num_layouts_for_key() {
-        let context = Context::new().expect("Failed to create context");
-        let rules = RuleNames {
-            rules: String::new(),
-            model: String::new(),
-            layout: "us,fr".to_string(),
-            variant: String::new(),
-            options: String::new(),
-        };
-        let keymap = context
-            .keymap_from_names(&rules)
-            .expect("Failed to create keymap");
-
-        let min_keycode = keymap.min_keycode();
-        let num_layouts = keymap.num_layouts_for_key(min_keycode);
-        assert!(num_layouts > 0);
-        assert!(num_layouts <= keymap.num_layouts());
-    }
-
     #[test]
     fn test_state_modifier_queries() {
         let context = Context::new().expect("Failed to create context");

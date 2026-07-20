@@ -83,32 +83,6 @@ pub(crate) fn xkb_keymap_layout_get_name(keymap: &XkbKeymap, idx: u32) -> Option
         Some(s)
     }
 }
-pub(crate) fn xkb_keymap_key_by_name(keymap: &XkbKeymap, name: &str) -> u32 {
-    let mut atom = atom_lookup_ref(&keymap.ctx.atom_table, name.as_bytes());
-    if atom != 0 {
-        for alias in keymap.key_aliases.iter() {
-            if alias.alias == atom {
-                atom = alias.real;
-            }
-        }
-    }
-    if atom == 0 {
-        return XKB_KEYCODE_INVALID;
-    }
-    let start_idx = if keymap.num_keys_low == 0_u32 {
-        0_u32
-    } else {
-        keymap.min_key_code
-    };
-    for ki in start_idx..keymap.num_keys {
-        let key = &keymap.keys[ki as usize];
-        if key.name == atom {
-            return key.keycode;
-        }
-    }
-    XKB_KEYCODE_INVALID
-}
-
 // ── Compose table support (merged from compose.rs) ──
 
 use std::{
@@ -1939,17 +1913,7 @@ impl Keymap {
         }
     }
 
-    /// Get key name by keycode
-    pub(crate) fn key_get_name(&self, keycode: u32) -> Option<String> {
-        xkb_keymap_key_get_name(&self.inner, keycode).map(|s| s.to_string())
-    }
-    /// Get keycode by key name (safe via atom_lookup_ref)
 
-
-    /// Get number of layouts for a specific key
-    pub(crate) fn num_layouts_for_key(&self, keycode: u32) -> u32 {
-        xkb_keymap_num_layouts_for_key(&self.inner, keycode)
-    }
 
     /// Get modifier index by name (safe via atom_lookup_ref)
     pub(crate) fn mod_get_index(&self, name: &str) -> Option<u32> {
