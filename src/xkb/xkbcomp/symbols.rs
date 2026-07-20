@@ -3634,7 +3634,7 @@ pub(crate) fn CompileCompatMap(file: Option<&mut XkbFile>, ki: &mut XkbKeymapInf
 }
 pub(crate) struct KeyTypesInfo {
     pub(crate) name: Option<String>,
-    pub(crate) errorCount: i32,
+    pub(crate) error_count: i32,
     pub(crate) include_depth: u32,
     pub(crate) types: Vec<KeyTypeInfo>,
     pub(crate) mods: XkbModSet,
@@ -3649,7 +3649,7 @@ impl KeyTypesInfo {
     pub(crate) fn new() -> Self {
         Self {
             name: None,
-            errorCount: 0,
+            error_count: 0,
             include_depth: 0,
             types: Vec::new(),
             mods: Default::default(),
@@ -3658,7 +3658,7 @@ impl KeyTypesInfo {
 }
 #[derive(Clone)]
 pub(crate) struct KeyTypeInfo {
-    pub(crate) defined: type_field,
+    pub(crate) defined: u32,
     pub(crate) merge: MergeMode,
     pub(crate) name: u32,
     pub(crate) mods: u32,
@@ -3666,11 +3666,10 @@ pub(crate) struct KeyTypeInfo {
     pub(crate) entries: Vec<XkbKeyTypeEntry>,
     pub(crate) level_names: Vec<u32>,
 }
-pub(crate) type type_field = u32;
-pub(crate) const TYPE_FIELD_LEVEL_NAME: type_field = 8;
-pub(crate) const TYPE_FIELD_PRESERVE: type_field = 4;
-pub(crate) const TYPE_FIELD_MAP: type_field = 2;
-pub(crate) const TYPE_FIELD_MASK: type_field = 1;
+pub(crate) const TYPE_FIELD_LEVEL_NAME: u32 = 8;
+pub(crate) const TYPE_FIELD_PRESERVE: u32 = 4;
+pub(crate) const TYPE_FIELD_MAP: u32 = 2;
+pub(crate) const TYPE_FIELD_MASK: u32 = 1;
 #[inline]
 fn MapEntryTxt(ki: &XkbKeymapInfo<'_>, info: &KeyTypesInfo, entry: &XkbKeyTypeEntry) -> String {
     mod_mask_text(ki.ctx(), MOD_BOTH, &info.mods, entry.mods.mods)
@@ -3684,7 +3683,7 @@ fn ReportTypeShouldBeArray(ki: &XkbKeymapInfo<'_>, type_0: &KeyTypeInfo, field: 
     report_should_be_array("key type", field, TypeTxt(ki, type_0))
 }
 #[inline]
-fn ReportTypeBadType(
+fn report_type_bad_type(
     ki: &XkbKeymapInfo<'_>,
     code: u32,
     type_0: &KeyTypeInfo,
@@ -3693,26 +3692,26 @@ fn ReportTypeBadType(
 ) -> bool {
     report_bad_type(code, "key type", field, TypeTxt(ki, type_0), wanted)
 }
-fn InitKeyTypesInfo(info: &mut KeyTypesInfo, include_depth: u32, mods: &XkbModSet) {
+fn init_key_types_info(info: &mut KeyTypesInfo, include_depth: u32, mods: &XkbModSet) {
     info.name = None;
-    info.errorCount = 0;
+    info.error_count = 0;
     info.include_depth = include_depth;
     info.types = Vec::new();
     info.mods = Default::default();
     InitVMods(&mut info.mods, mods, include_depth > 0_u32);
 }
-fn ClearKeyTypeInfo(type_0: &mut KeyTypeInfo) {
+fn clear_key_type_info(type_0: &mut KeyTypeInfo) {
     type_0.entries.clear();
     type_0.level_names.clear();
 }
-fn ClearKeyTypesInfo(info: &mut KeyTypesInfo) {
+fn clear_key_types_info(info: &mut KeyTypesInfo) {
     info.name = None;
     for type_0 in info.types.iter_mut() {
-        ClearKeyTypeInfo(type_0);
+        clear_key_type_info(type_0);
     }
     info.types.clear();
 }
-fn AddKeyType(
+fn add_key_type(
     ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     new: &mut KeyTypeInfo,
@@ -3735,7 +3734,7 @@ fn AddKeyType(
                         as i32,
                     atom_text(&ki.ctx().atom_table, new.name));
             }
-            ClearKeyTypeInfo(&mut info.types[idx]);
+            clear_key_type_info(&mut info.types[idx]);
             info.types[idx] = new.clone();
             new.entries = Vec::new();
             new.level_names = Vec::new();
@@ -3748,20 +3747,20 @@ fn AddKeyType(
                 atom_text(&ki.ctx().atom_table, new.name)
             );
         }
-        ClearKeyTypeInfo(new);
+        clear_key_type_info(new);
         return true;
     }
     info.types.push(new.clone());
     true
 }
-fn MergeIncludedKeyTypes(
+fn merge_included_key_types(
     ki: &mut XkbKeymapInfo<'_>,
     into: &mut KeyTypesInfo,
     from: &mut KeyTypesInfo,
     merge: MergeMode,
 ) {
-    if from.errorCount > 0_i32 {
-        into.errorCount += from.errorCount;
+    if from.error_count > 0_i32 {
+        into.error_count += from.error_count;
         return;
     }
     MergeModSets(ki.ctx_mut(), &mut into.mods, &from.mods, merge);
@@ -3774,8 +3773,8 @@ fn MergeIncludedKeyTypes(
         for i in 0..from.types.len() {
             from.types[i].merge = merge;
             let mut type_clone = from.types[i].clone();
-            if !AddKeyType(ki, into, &mut type_clone, false) {
-                into.errorCount += 1;
+            if !add_key_type(ki, into, &mut type_clone, false) {
+                into.error_count += 1;
             }
         }
         from.types.clear();
@@ -3788,10 +3787,10 @@ fn HandleIncludeKeyTypes(
 ) -> bool {
     let mut included = KeyTypesInfo::new();
     if ExceedsIncludeMaxDepth(info.include_depth) {
-        info.errorCount += 10_i32;
+        info.error_count += 10_i32;
         return false;
     }
-    InitKeyTypesInfo(
+    init_key_types_info(
         &mut included,
         info.include_depth.wrapping_add(1_u32),
         &info.mods,
@@ -3807,34 +3806,34 @@ fn HandleIncludeKeyTypes(
 
         let file: Option<Box<XkbFile>> = ProcessIncludeFile(ki.ctx_mut(), stmt, FILE_TYPE_TYPES);
         let Some(mut file) = file else {
-            info.errorCount += 10_i32;
-            ClearKeyTypesInfo(&mut included);
+            info.error_count += 10_i32;
+            clear_key_types_info(&mut included);
             return false;
         };
-        InitKeyTypesInfo(
+        init_key_types_info(
             &mut next_incl,
             info.include_depth.wrapping_add(1_u32),
             &included.mods,
         );
         HandleKeyTypesFile(ki, &mut next_incl, &mut file);
-        MergeIncludedKeyTypes(ki, &mut included, &mut next_incl, stmt.merge);
-        ClearKeyTypesInfo(&mut next_incl);
+        merge_included_key_types(ki, &mut included, &mut next_incl, stmt.merge);
+        clear_key_types_info(&mut next_incl);
         drop(file);
         current = stmt.next_incl.as_deref();
     }
-    MergeIncludedKeyTypes(ki, info, &mut included, include.merge);
-    ClearKeyTypesInfo(&mut included);
-    info.errorCount == 0_i32
+    merge_included_key_types(ki, info, &mut included, include.merge);
+    clear_key_types_info(&mut included);
+    info.error_count == 0_i32
 }
 fn SetModifiers(
     ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value: &ExprDef,
 ) -> bool {
     let mut mods: u32 = 0_u32;
-    if arrayNdx.is_some() {
+    if array_ndx.is_some() {
         log::error!(
             "The modifiers field of a key type is not an array; Illegal array subscript ignored\n"
         );
@@ -3912,7 +3911,7 @@ fn SetMapEntry(
     ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value: &ExprDef,
 ) -> bool {
     let mut entry: XkbKeyTypeEntry = XkbKeyTypeEntry {
@@ -3920,17 +3919,17 @@ fn SetMapEntry(
         mods: XkbMods { mods: 0, mask: 0 },
         preserve: XkbMods { mods: 0, mask: 0 },
     };
-    if arrayNdx.is_none() {
+    if array_ndx.is_none() {
         return ReportTypeShouldBeArray(ki, type_0, "map entry");
     }
     if !ExprResolveModMask(
         ki.ctx(),
-        arrayNdx.unwrap(),
+        array_ndx.unwrap(),
         MOD_BOTH,
         &info.mods,
         &mut entry.mods.mods,
     ) {
-        return ReportTypeBadType(
+        return report_type_bad_type(
             ki,
             XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_,
             type_0,
@@ -4011,15 +4010,15 @@ fn SetPreserve(
     ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value: &ExprDef,
 ) -> bool {
-    if arrayNdx.is_none() {
+    if array_ndx.is_none() {
         return ReportTypeShouldBeArray(ki, type_0, "preserve entry");
     }
     let mut mods: u32 = 0_u32;
-    if !ExprResolveModMask(ki.ctx(), arrayNdx.unwrap(), MOD_BOTH, &info.mods, &mut mods) {
-        return ReportTypeBadType(
+    if !ExprResolveModMask(ki.ctx(), array_ndx.unwrap(), MOD_BOTH, &info.mods, &mut mods) {
+        return report_type_bad_type(
             ki,
             XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_,
             type_0,
@@ -4100,19 +4099,19 @@ fn AddLevelName(
     type_0.level_names[level_idx] = name;
     true
 }
-fn SetLevelName(
+fn set_level_name(
     ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value: &ExprDef,
 ) -> bool {
-    if arrayNdx.is_none() {
+    if array_ndx.is_none() {
         return ReportTypeShouldBeArray(ki, type_0, "level name");
     }
     let mut level: u32 = 0_u32;
-    if !ExprResolveLevel(ki.ctx(), arrayNdx.unwrap(), &mut level) {
-        return ReportTypeBadType(
+    if !ExprResolveLevel(ki.ctx(), array_ndx.unwrap(), &mut level) {
+        return report_type_bad_type(
             ki,
             XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL,
             type_0,
@@ -4139,19 +4138,19 @@ fn SetKeyTypeField(
     value: &ExprDef,
 ) -> bool {
     let ok: bool;
-    let mut type_field: type_field = 0 as type_field;
+    let mut u32: u32 = 0 as u32;
     if field.eq_ignore_ascii_case("modifiers") {
-        type_field = TYPE_FIELD_MASK;
+        u32 = TYPE_FIELD_MASK;
         ok = SetModifiers(ki, info, type_0, arrayNdx, value);
     } else if field.eq_ignore_ascii_case("map") {
-        type_field = TYPE_FIELD_MAP;
+        u32 = TYPE_FIELD_MAP;
         ok = SetMapEntry(ki, info, type_0, arrayNdx, value);
     } else if field.eq_ignore_ascii_case("preserve") {
-        type_field = TYPE_FIELD_PRESERVE;
+        u32 = TYPE_FIELD_PRESERVE;
         ok = SetPreserve(ki, info, type_0, arrayNdx, value);
     } else if field.eq_ignore_ascii_case("levelname") || field.eq_ignore_ascii_case("level_name") {
-        type_field = TYPE_FIELD_LEVEL_NAME;
-        ok = SetLevelName(ki, info, type_0, arrayNdx, value);
+        u32 = TYPE_FIELD_LEVEL_NAME;
+        ok = set_level_name(ki, info, type_0, arrayNdx, value);
     } else {
         log::error!(
             "[XKB-{:03}] Unknown field \"{}\" in key type \"{}\"; Definition ignored\n",
@@ -4161,7 +4160,7 @@ fn SetKeyTypeField(
         );
         ok = ki.strict & PARSER_NO_UNKNOWN_TYPE_FIELDS == 0;
     }
-    type_0.defined = (type_0.defined | type_field as u32) as type_field;
+    type_0.defined = (type_0.defined | u32 as u32) as u32;
     ok
 }
 fn HandleKeyTypeBody(
@@ -4251,7 +4250,7 @@ fn HandleKeyTypesFile(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, file:
                 }
                 Statement::KeyType(def) => {
                     let mut type_0: KeyTypeInfo = KeyTypeInfo {
-                        defined: 0 as type_field,
+                        defined: 0 as u32,
                         merge: def.merge,
                         name: def.name,
                         mods: 0_u32,
@@ -4260,10 +4259,10 @@ fn HandleKeyTypesFile(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, file:
                         level_names: Vec::new(),
                     };
                     if !HandleKeyTypeBody(ki, info, &def.body, &mut type_0)
-                        || !AddKeyType(ki, info, &mut type_0, true)
+                        || !add_key_type(ki, info, &mut type_0, true)
                     {
-                        info.errorCount += 1;
-                        ClearKeyTypeInfo(&mut type_0);
+                        info.error_count += 1;
+                        clear_key_type_info(&mut type_0);
                         ok = false;
                     } else {
                         ok = true;
@@ -4298,9 +4297,9 @@ fn HandleKeyTypesFile(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, file:
                 }
             }
             if !ok {
-                info.errorCount += 1;
+                info.error_count += 1;
             }
-            if info.errorCount > 10_i32 {
+            if info.error_count > 10_i32 {
                 log::error!(
                     "[XKB-{:03}] Abandoning keytypes file \"{}\"\n",
                     XKB_ERROR_INVALID_XKB_SYNTAX as i32,
@@ -4373,15 +4372,15 @@ pub(crate) fn CompileKeyTypes(
 ) -> bool {
     let mods = keymap_info.keymap_ref().mods;
     let mut info = KeyTypesInfo::new();
-    InitKeyTypesInfo(&mut info, 0_u32, &mods);
+    init_key_types_info(&mut info, 0_u32, &mods);
     if let Some(file) = file {
         HandleKeyTypesFile(keymap_info, &mut info, file);
     }
-    if (info.errorCount == 0_i32) && CopyKeyTypesToKeymap(keymap_info, &mut info) {
-        ClearKeyTypesInfo(&mut info);
+    if (info.error_count == 0_i32) && CopyKeyTypesToKeymap(keymap_info, &mut info) {
+        clear_key_types_info(&mut info);
         return true;
     }
-    ClearKeyTypesInfo(&mut info);
+    clear_key_types_info(&mut info);
     false
 }
 

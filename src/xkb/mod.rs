@@ -880,24 +880,6 @@ mod wrapper_tests {
         }
     }
 
-    #[test]
-    fn test_keymap_key_methods() {
-        let context = Context::new().expect("Failed to create context");
-        let rules = RuleNames::default();
-        let keymap = context
-            .keymap_from_names(&rules)
-            .expect("Failed to create keymap");
-
-        for (xkb_keycode, _evdev_code) in keymap.keycodes() {
-            if let Some(name) = keymap.key_get_name(xkb_keycode) {
-                assert_eq!(keymap.key_by_name(&name), Some(xkb_keycode));
-            }
-        }
-
-        if let Some(keycode) = keymap.key_by_name("SPCE") {
-            assert_eq!(keymap.key_get_name(keycode), Some("SPCE".to_string()));
-        }
-    }
 
     #[test]
     fn test_keymap_num_layouts_for_key() {

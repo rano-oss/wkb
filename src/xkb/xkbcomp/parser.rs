@@ -1,6 +1,5 @@
 // Safe parser.rs
 #![allow(
-    dead_code,
     clippy::vec_box,
     clippy::wrong_self_convention,
     clippy::too_many_arguments,

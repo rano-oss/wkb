@@ -361,98 +361,98 @@ impl XkbAction {
         }
     }
 
-    pub fn as_ctrls(&self) -> &XkbControlsAction {
+    pub(crate) fn as_ctrls(&self) -> &XkbControlsAction {
         match self {
             XkbAction::CtrlSet(c) | XkbAction::CtrlLock(c) => c,
             _ => panic!("not a ctrls action"),
         }
     }
-    pub fn as_ctrls_mut(&mut self) -> &mut XkbControlsAction {
+    pub(crate) fn as_ctrls_mut(&mut self) -> &mut XkbControlsAction {
         match self {
             XkbAction::CtrlSet(c) | XkbAction::CtrlLock(c) => c,
             _ => panic!("not a ctrls action"),
         }
     }
 
-    pub fn as_ptr(&self) -> &XkbPointerAction {
+    pub(crate) fn as_ptr(&self) -> &XkbPointerAction {
         match self {
             XkbAction::PtrMove(p) => p,
             _ => panic!("not a ptr action"),
         }
     }
-    pub fn as_ptr_mut(&mut self) -> &mut XkbPointerAction {
+    pub(crate) fn as_ptr_mut(&mut self) -> &mut XkbPointerAction {
         match self {
             XkbAction::PtrMove(p) => p,
             _ => panic!("not a ptr action"),
         }
     }
 
-    pub fn as_btn(&self) -> &XkbPointerButtonAction {
+    pub(crate) fn as_btn(&self) -> &XkbPointerButtonAction {
         match self {
             XkbAction::PtrButton(b) | XkbAction::PtrLock(b) => b,
             _ => panic!("not a btn action"),
         }
     }
-    pub fn as_btn_mut(&mut self) -> &mut XkbPointerButtonAction {
+    pub(crate) fn as_btn_mut(&mut self) -> &mut XkbPointerButtonAction {
         match self {
             XkbAction::PtrButton(b) | XkbAction::PtrLock(b) => b,
             _ => panic!("not a btn action"),
         }
     }
 
-    pub fn as_dflt(&self) -> &XkbPointerDefaultAction {
+    pub(crate) fn as_dflt(&self) -> &XkbPointerDefaultAction {
         match self {
             XkbAction::PtrDefault(d) => d,
             _ => panic!("not a dflt action"),
         }
     }
-    pub fn as_dflt_mut(&mut self) -> &mut XkbPointerDefaultAction {
+    pub(crate) fn as_dflt_mut(&mut self) -> &mut XkbPointerDefaultAction {
         match self {
             XkbAction::PtrDefault(d) => d,
             _ => panic!("not a dflt action"),
         }
     }
 
-    pub fn as_screen(&self) -> &XkbSwitchScreenAction {
+    pub(crate) fn as_screen(&self) -> &XkbSwitchScreenAction {
         match self {
             XkbAction::SwitchVt(s) => s,
             _ => panic!("not a screen action"),
         }
     }
-    pub fn as_screen_mut(&mut self) -> &mut XkbSwitchScreenAction {
+    pub(crate) fn as_screen_mut(&mut self) -> &mut XkbSwitchScreenAction {
         match self {
             XkbAction::SwitchVt(s) => s,
             _ => panic!("not a screen action"),
         }
     }
 
-    pub fn as_redirect(&self) -> &XkbRedirectKeyAction {
+    pub(crate) fn as_redirect(&self) -> &XkbRedirectKeyAction {
         match self {
             XkbAction::RedirectKey(r) => r,
             _ => panic!("not a redirect action"),
         }
     }
-    pub fn as_redirect_mut(&mut self) -> &mut XkbRedirectKeyAction {
+    pub(crate) fn as_redirect_mut(&mut self) -> &mut XkbRedirectKeyAction {
         match self {
             XkbAction::RedirectKey(r) => r,
             _ => panic!("not a redirect action"),
         }
     }
 
-    pub fn as_priv(&self) -> &XkbPrivateAction {
+    pub(crate) fn as_priv(&self) -> &XkbPrivateAction {
         match self {
             XkbAction::Private(p) => p,
             _ => panic!("not a priv action"),
         }
     }
-    pub fn as_priv_mut(&mut self) -> &mut XkbPrivateAction {
+    pub(crate) fn as_priv_mut(&mut self) -> &mut XkbPrivateAction {
         match self {
             XkbAction::Private(p) => p,
             _ => panic!("not a priv action"),
         }
     }
 
-    pub fn as_internal(&self) -> &XkbInternalAction {
+    pub(crate) fn as_internal(&self) -> &XkbInternalAction {
         match self {
             XkbAction::Internal(i) => i,
             _ => panic!("not an internal action"),

@@ -1,4 +1,4 @@
-#![allow(dead_code, clippy::incompatible_msrv, clippy::type_complexity)]
+#![allow(clippy::incompatible_msrv, clippy::type_complexity)]
 use std::rc::Rc;
 
 pub use super::shared_types::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
@@ -1943,16 +1943,8 @@ impl Keymap {
     pub(crate) fn key_get_name(&self, keycode: u32) -> Option<String> {
         xkb_keymap_key_get_name(&self.inner, keycode).map(|s| s.to_string())
     }
-
     /// Get keycode by key name (safe via atom_lookup_ref)
-    pub(crate) fn key_by_name(&self, name: &str) -> Option<u32> {
-        let kc = xkb_keymap_key_by_name(&self.inner, name);
-        if kc == XKB_KEYCODE_INVALID {
-            None
-        } else {
-            Some(kc)
-        }
-    }
+
 
     /// Get number of layouts for a specific key
     pub(crate) fn num_layouts_for_key(&self, keycode: u32) -> u32 {
@@ -2085,7 +2077,7 @@ impl State {
     }
 
     /// Get the number of layouts in the underlying keymap
-    pub fn num_keymap_layouts(&self) -> u32 {
+    pub(crate) fn num_keymap_layouts(&self) -> u32 {
         xkb_keymap_num_layouts(self.inner.keymap())
     }
 
@@ -3957,10 +3949,10 @@ impl RxkbOptionGroup {
     pub(crate) fn description(&self) -> &str {
         &self.description
     }
-    pub fn allows_multiple(&self) -> bool {
+    pub(crate) fn allows_multiple(&self) -> bool {
         self.allow_multiple
     }
-    pub fn options(&self) -> &[RxkbOption] {
+    pub(crate) fn options(&self) -> &[RxkbOption] {
         &self.options
     }
 }
@@ -3975,7 +3967,7 @@ impl RxkbOption {
     pub(crate) fn description(&self) -> &str {
         &self.description
     }
-    pub fn is_layout_specific(&self) -> bool {
+    pub(crate) fn is_layout_specific(&self) -> bool {
         self.layout_specific
     }
 }
