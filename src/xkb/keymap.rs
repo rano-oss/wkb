@@ -47,9 +47,7 @@ pub(crate) fn xkb_keymap_new_from_string(
 pub(crate) fn xkb_keymap_num_mods(keymap: &XkbKeymap) -> u32 {
     keymap.mods.num_mods
 }
-pub(crate) fn xkb_keymap_num_layouts(keymap: &XkbKeymap) -> u32 {
-    keymap.num_groups
-}
+
 // ── Compose table support (merged from compose.rs) ──
 
 use std::{
@@ -1717,7 +1715,7 @@ impl Keymap {
 
     /// Get number of layouts in the keymap
     pub(crate) fn num_layouts(&self) -> u32 {
-        xkb_keymap_num_layouts(&self.inner)
+        self.inner.num_groups
     }
 
     /// Get layout name by index
@@ -1767,8 +1765,6 @@ impl State {
         xkb_state_key_get_one_sym(&self.inner, keycode)
     }
 
-    /// Get keysyms for a key at a specific layout and level (delegates to keymap)
-
     /// Update state from modifier/layout masks (e.g., from Wayland compositor)
     pub(crate) fn update_mask(
         &mut self,
@@ -1788,13 +1784,6 @@ impl State {
             latched_layout,
             locked_layout,
         )
-    }
-}
-
-impl Drop for State {
-    fn drop(&mut self) {
-        // Rc<XkbKeymap> inside the state drops automatically.
-        // Nothing else to clean up — Box<XkbState> handles deallocation.
     }
 }
 
