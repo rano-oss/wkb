@@ -68,26 +68,19 @@ pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u3
 }
 
 /// Press the appropriate level modifier keys on `state` for the given level index.
-fn press_level_modifiers(
+/// Unified helper: consolidates bit-shift logic.
+fn apply_level_modifiers(
     state: &mut keymap::State,
     level: usize,
-    level2: Option<u32>,
-    level3: Option<u32>,
-    level5: Option<u32>,
+    level_keys: (Option<u32>, Option<u32>, Option<u32>),
 ) {
-    if level & 4 != 0 {
-        if let Some(kc) = level5 {
-            state.update_key(kc, shared_types::XKB_KEY_DOWN);
-        }
-    }
-    if level & 2 != 0 {
-        if let Some(kc) = level3 {
-            state.update_key(kc, shared_types::XKB_KEY_DOWN);
-        }
-    }
-    if level & 1 != 0 {
-        if let Some(kc) = level2 {
-            state.update_key(kc, shared_types::XKB_KEY_DOWN);
+    // Map: (bit_position, keycode)
+    let modifiers = [(4, level_keys.2), (2, level_keys.1), (1, level_keys.0)];
+    for (bit, key_opt) in &modifiers {
+        if level & bit != 0 {
+            if let Some(kc) = key_opt {
+                state.update_key(*kc, shared_types::XKB_KEY_DOWN);
+            }
         }
     }
 }
@@ -123,13 +116,9 @@ pub fn load_compose_from_path(path: &std::path::Path) -> Composer {
     regular
 }
 
-/// Map an XKB keysym value to a [`NamedKey`].
-///
-/// KP variants collapse to their main key equivalents (KP_Enter → Enter).
-/// ISO_Left_Tab → Tab, ISO_Enter → Enter.
-/// Dead keys and character-producing keys map to `Unnamed`.
-pub(crate) fn keysym_to_named_key(keysym: u32) -> NamedKey {
-    const TABLE: &[(u32, NamedKey)] = &[
+// ── Bidirectional keysym lookup table (consolidated) ──
+// These constants are shared between keysym_to_named_key and named_key_to_keysym.
+const KEYSYM_NAMED_KEY_TABLE: &[(u32, NamedKey)] = &[
     (0x0020, NamedKey::Space),
     (0xff09, NamedKey::Tab),
     (0xff08, NamedKey::Backspace),
@@ -246,17 +235,35 @@ pub(crate) fn keysym_to_named_key(keysym: u32) -> NamedKey {
     (0xff98, NamedKey::ArrowRight),
     (0xfe20, NamedKey::Tab),
     (0xfe34, NamedKey::Enter),
-    ];
+];
+
+/// Map an XKB keysym value to a [`NamedKey`].
+///
+/// KP variants collapse to their main key equivalents (KP_Enter → Enter).
+/// ISO_Left_Tab → Tab, ISO_Enter → Enter.
+/// Dead keys and character-producing keys map to `Unnamed`.
+pub(crate) fn keysym_to_named_key(keysym: u32) -> NamedKey {
     if (0xfe50..=0xfe8d).contains(&keysym) {
         return NamedKey::Unnamed;
     }
-    TABLE
+    KEYSYM_NAMED_KEY_TABLE
         .iter()
         .find(|(ks, _)| *ks == keysym)
         .map(|(_, nk)| *nk)
         .unwrap_or(NamedKey::Unnamed)
 }
 
+/// Map a [`NamedKey`] back to its XKB keysym value.
+///
+/// Returns `0` (NoSymbol) for [`NamedKey::Unnamed`] and for character keys
+/// that don't have a canonical keysym.
+pub(crate) fn named_key_to_keysym(key: NamedKey) -> u32 {
+    KEYSYM_NAMED_KEY_TABLE
+        .iter()
+        .find(|(_, nk)| *nk == key)
+        .map(|(ks, _)| *ks)
+        .unwrap_or(0)
+}
 
 /// Remove entries from `fk` that are identical to `state_keymap` (keep only diffs).
 fn dedup_against_state(fk: &mut FlatKeymap, state_keymap: &FlatKeymap, num_layouts: usize) {
@@ -274,8 +281,49 @@ fn dedup_against_state(fk: &mut FlatKeymap, state_keymap: &FlatKeymap, num_layou
     }
 }
 
+/// Build a lock keymap (Caps Lock or Num Lock) with the given configuration.
+/// Extracted helper to eliminate duplication between caps_lock_keymap and num_lock_keys.
+fn build_lock_keymap(
+    keymap: &keymap::Keymap,
+    lock_kc: Option<u32>,
+    is_toggle: bool,
+    level_keys: (Option<u32>, Option<u32>, Option<u32>),
+    num_keys: usize,
+    num_layouts: usize,
+    min_keycode: u32,
+    max_keycode: u32,
+    get_char: impl Fn(u32, &keymap::State, usize, usize) -> Option<char>,
+) -> FlatKeymap {
+    let mut fk = FlatKeymap::new(num_keys, num_layouts);
+    if let Some(lkc) = lock_kc {
+        for layout_idx in 0..num_layouts {
+            for lvl in 0..MAX_LEVELS {
+                if let Some(mut st) = keymap.new_state() {
+                    if layout_idx > 0 {
+                        st.update_mask(0, 0, 0, 0, 0, layout_idx as u32);
+                    }
+                    if is_toggle {
+                        st.update_key(lkc, shared_types::XKB_KEY_DOWN);
+                        st.update_key(lkc, shared_types::XKB_KEY_UP);
+                    }
+                    apply_level_modifiers(&mut st, lvl, level_keys);
+                    if !is_toggle {
+                        st.update_key(lkc, shared_types::XKB_KEY_DOWN);
+                    }
+                    for kc in min_keycode..=max_keycode {
+                        if let Some(ch) = get_char(kc, &st, layout_idx, lvl) {
+                            fk.set(layout_idx, lvl, kc - 8, ch);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    fk
+}
+
 /// Build WKB instance from an XKB keymap, extracting all layouts.
-fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_keymap: bool) -> WKB {
+fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, _store_keymap: bool) -> WKB {
     const EVDEV_OFFSET: u32 = 8;
 
     let (min_keycode, max_keycode) = (keymap.min_keycode(), keymap.max_keycode());
@@ -299,7 +347,6 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
     // ── Build flat keymaps for ALL layouts ──
 
     // Build level_exceptions_keymap and named_key_map in a single pass
-    // (both use key_get_syms_by_level, no state needed)
     let mut level_exceptions_keymap = FlatKeymap::new(num_keys, num_layouts);
     let mut named_key_map = FlatNamedKeyMap::new(num_keys, num_layouts);
     for layout_idx in 0..num_layouts {
@@ -319,28 +366,26 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
         }
     }
 
-    let get_char =
-        |kc: u32, state: &keymap::State, layout_idx: usize, lvl: usize| -> Option<char> {
-            let sym = state.key_get_one_sym(kc);
-            if sym != 0 {
-                keysym::keysym_to_char(sym)
-            } else {
-                keymap
-                    .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
-                    .first()
-                    .and_then(|&s| keysym::keysym_to_char(s))
-            }
-        };
+    let get_char = |kc: u32, state: &keymap::State, layout_idx: usize, lvl: usize| -> Option<char> {
+        let sym = state.key_get_one_sym(kc);
+        if sym != 0 {
+            keysym::keysym_to_char(sym)
+        } else {
+            keymap
+                .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
+                .first()
+                .and_then(|&s| keysym::keysym_to_char(s))
+        }
+    };
 
     let mut state_keymap = FlatKeymap::new(num_keys, num_layouts);
     for layout_idx in 0..num_layouts {
         for lvl in 0..MAX_LEVELS {
             if let Some(mut st) = keymap.new_state() {
-                // Set the layout group on the state before querying.
                 if layout_idx > 0 {
                     st.update_mask(0, 0, 0, 0, 0, layout_idx as u32);
                 }
-                press_level_modifiers(&mut st, lvl, level_keys.0, level_keys.1, level_keys.2);
+                apply_level_modifiers(&mut st, lvl, level_keys);
                 for kc in min_keycode..=max_keycode {
                     if let Some(ch) = get_char(kc, &st, layout_idx, lvl) {
                         state_keymap.set(layout_idx, lvl, kc - EVDEV_OFFSET, ch);
@@ -350,54 +395,20 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
         }
     }
 
-    let populate_lock = |lock_kc: Option<u32>,
-                         toggle: bool,
-                         level_keys: (Option<u32>, Option<u32>, Option<u32>)|
-     -> FlatKeymap {
-        let mut fk = FlatKeymap::new(num_keys, num_layouts);
-        if let Some(lkc) = lock_kc {
-            for layout_idx in 0..num_layouts {
-                for lvl in 0..MAX_LEVELS {
-                    if let Some(mut st) = keymap.new_state() {
-                        if layout_idx > 0 {
-                            st.update_mask(0, 0, 0, 0, 0, layout_idx as u32);
-                        }
-                        if toggle {
-                            st.update_key(lkc, shared_types::XKB_KEY_DOWN);
-                            st.update_key(lkc, shared_types::XKB_KEY_UP);
-                        }
-                        press_level_modifiers(
-                            &mut st,
-                            lvl,
-                            level_keys.0,
-                            level_keys.1,
-                            level_keys.2,
-                        );
-                        if !toggle {
-                            st.update_key(lkc, shared_types::XKB_KEY_DOWN);
-                        }
-                        for kc in min_keycode..=max_keycode {
-                            if let Some(ch) = get_char(kc, &st, layout_idx, lvl) {
-                                fk.set(layout_idx, lvl, kc - EVDEV_OFFSET, ch);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        fk
-    };
-
     let caps_lock_keymap = {
         let caps_kc = level_code(&modifiers, ModType::Caps).map(|(c, _)| c + EVDEV_OFFSET);
-        let mut fk = populate_lock(caps_kc, false, level_keys);
+        let mut fk = build_lock_keymap(
+            keymap, caps_kc, false, level_keys, num_keys, num_layouts, min_keycode, max_keycode, &get_char,
+        );
         dedup_against_state(&mut fk, &state_keymap, num_layouts);
         fk
     };
 
     let num_lock_keys = {
         let num_kc = level_code(&modifiers, ModType::Num).map(|(c, _)| c + EVDEV_OFFSET);
-        let mut fk = populate_lock(num_kc, true, level_keys);
+        let mut fk = build_lock_keymap(
+            keymap, num_kc, true, level_keys, num_keys, num_layouts, min_keycode, max_keycode, &get_char,
+        );
         dedup_against_state(&mut fk, &state_keymap, num_layouts);
         fk
     };
@@ -418,13 +429,8 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
         })
         .collect();
 
-    // Cache XKB string for Wayland client sharing
-    let _ = store_keymap; // no longer cached; generated on demand
-
     #[cfg(feature = "compose")]
     let composer = {
-        // Resolve compose locale from environment (LC_ALL > LC_CTYPE > LANG),
-        // falling back to the explicit locale hint (e.g. layout name).
         let env_locale = std::env::var("LC_ALL")
             .or_else(|_| std::env::var("LC_CTYPE"))
             .or_else(|_| std::env::var("LANG"))
@@ -441,6 +447,7 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
 
     #[cfg(not(feature = "compose"))]
     let composer = Composer::new();
+
     WKB {
         current_layout_idx: 0,
         layout_names,
@@ -489,32 +496,41 @@ pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
     Ok(build_wkb_from_keymap(&keymap, None, true))
 }
 
-/// Build Modifiers struct from XKB keymap
-fn build_modifiers_from_keymap(
+/// Extract keysym-to-modtype mapping from keysym (helper for build_modifiers_from_keymap).
+fn keysym_to_modtype(ks: u32) -> Option<ModType> {
+    match ks {
+        0xfe03 | 0xfe04 | 0xfe05 | 0xfe0d => Some(ModType::Level3),
+        0xfe11..=0xfe13 => Some(ModType::Level5),
+        _ => None,
+    }
+}
+
+/// Extract ModKind from keysym and ModType (helper for build_modifiers_from_keymap).
+fn keysym_to_modkind(ks: u32, mt: ModType) -> ModKind {
+    match ks {
+        0xffe6 | 0xfe05 | 0xfe0d | 0xfe13 => ModKind::Lock {
+            pressed: false,
+            locked: 0,
+            mod_type: mt,
+        },
+        0xfe04 | 0xfe12 => ModKind::Latch {
+            pressed: false,
+            latched: false,
+            mod_type: mt,
+        },
+        _ => ModKind::Pressed {
+            pressed: false,
+            mod_type: mt,
+        },
+    }
+}
+
+/// Build the mod_name → ModType mapping from keymap (helper for build_modifiers_from_keymap).
+fn build_modtype_name_map(
     keymap: &keymap::Keymap,
-    min_keycode: u32,
-    max_keycode: u32,
-) -> Modifiers {
-    let mut modifiers = Modifiers::new();
-    let num_mods = keymap.num_mods();
-
-    let keysym_to_modtype = |ks: u32| -> Option<ModType> {
-        match ks {
-            0xfe03 | 0xfe04 | 0xfe05 | 0xfe0d => Some(ModType::Level3),
-            0xfe11..=0xfe13 => Some(ModType::Level5),
-            _ => None,
-        }
-    };
-
-    let keysym_to_modkind = |ks: u32, mt: ModType| -> ModKind {
-        match ks {
-            0xffe6 | 0xfe05 | 0xfe0d | 0xfe13 => ModKind::Lock { pressed: false, locked: 0, mod_type: mt },
-            0xfe04 | 0xfe12 => ModKind::Latch { pressed: false, latched: false, mod_type: mt },
-            _ => ModKind::Pressed { pressed: false, mod_type: mt },
-        }
-    };
-
-    let mod_name_to_type: std::collections::HashMap<String, ModType> = (0..num_mods)
+    num_mods: u32,
+) -> std::collections::HashMap<String, ModType> {
+    (0..num_mods)
         .filter_map(|i| {
             keymap.mod_get_name(i).and_then(|n| {
                 Some((
@@ -533,7 +549,18 @@ fn build_modifiers_from_keymap(
                 ))
             })
         })
-        .collect();
+        .collect()
+}
+
+/// Build Modifiers struct from XKB keymap.
+fn build_modifiers_from_keymap(
+    keymap: &keymap::Keymap,
+    min_keycode: u32,
+    max_keycode: u32,
+) -> Modifiers {
+    let mut modifiers = Modifiers::new();
+    let num_mods = keymap.num_mods();
+    let mod_name_to_type = build_modtype_name_map(keymap, num_mods);
 
     const EVDEV_OFFSET: u32 = 8;
     for keycode in min_keycode.max(EVDEV_OFFSET)..=max_keycode {
@@ -541,10 +568,13 @@ fn build_modifiers_from_keymap(
         let syms = keymap.key_get_syms_by_level(keycode, 0, 0);
         let num_levels = keymap.num_levels_for_key(keycode, 0);
 
+        // Quick check: if single keysym, see if it's a level modifier
         if num_levels == 1 && syms.len() == 1 {
             if let Some(mt) = keysym_to_modtype(syms[0]) {
-                modifiers
-                    .set_modifier(evdev_code, Modifier::Single(keysym_to_modkind(syms[0], mt)));
+                modifiers.set_modifier(
+                    evdev_code,
+                    Modifier::Single(keysym_to_modkind(syms[0], mt)),
+                );
                 continue;
             }
         }
@@ -634,129 +664,11 @@ fn build_modifiers_from_keymap(
     modifiers
 }
 
-/// Map a [`NamedKey`] back to its XKB keysym value.
-///
-/// Returns `0` (NoSymbol) for [`NamedKey::Unnamed`] and for character keys
-/// that don't have a canonical keysym.
-pub(crate) fn named_key_to_keysym(key: NamedKey) -> u32 {
-    const TABLE: &[(NamedKey, u32)] = &[
-    (NamedKey::Space, 0x0020),
-    (NamedKey::Enter, 0xff0d),
-    (NamedKey::Tab, 0xff09),
-    (NamedKey::Backspace, 0xff08),
-    (NamedKey::Escape, 0xff1b),
-    (NamedKey::Delete, 0xffff),
-    (NamedKey::Insert, 0xff63),
-    (NamedKey::ArrowLeft, 0xff51),
-    (NamedKey::ArrowRight, 0xff53),
-    (NamedKey::ArrowUp, 0xff52),
-    (NamedKey::ArrowDown, 0xff54),
-    (NamedKey::Home, 0xff50),
-    (NamedKey::End, 0xff57),
-    (NamedKey::PageUp, 0xff55),
-    (NamedKey::PageDown, 0xff56),
-    (NamedKey::F1, 0xffbe),
-    (NamedKey::F2, 0xffbf),
-    (NamedKey::F3, 0xffc0),
-    (NamedKey::F4, 0xffc1),
-    (NamedKey::F5, 0xffc2),
-    (NamedKey::F6, 0xffc3),
-    (NamedKey::F7, 0xffc4),
-    (NamedKey::F8, 0xffc5),
-    (NamedKey::F9, 0xffc6),
-    (NamedKey::F10, 0xffc7),
-    (NamedKey::F11, 0xffc8),
-    (NamedKey::F12, 0xffc9),
-    (NamedKey::F13, 0xffca),
-    (NamedKey::F14, 0xffcb),
-    (NamedKey::F15, 0xffcc),
-    (NamedKey::F16, 0xffcd),
-    (NamedKey::F17, 0xffce),
-    (NamedKey::F18, 0xffcf),
-    (NamedKey::F19, 0xffd0),
-    (NamedKey::F20, 0xffd1),
-    (NamedKey::F21, 0xffd2),
-    (NamedKey::F22, 0xffd3),
-    (NamedKey::F23, 0xffd4),
-    (NamedKey::F24, 0xffd5),
-    (NamedKey::F25, 0xffd6),
-    (NamedKey::F26, 0xffd7),
-    (NamedKey::F27, 0xffd8),
-    (NamedKey::F28, 0xffd9),
-    (NamedKey::F29, 0xffda),
-    (NamedKey::F30, 0xffdb),
-    (NamedKey::F31, 0xffdc),
-    (NamedKey::F32, 0xffdd),
-    (NamedKey::F33, 0xffde),
-    (NamedKey::F34, 0xffdf),
-    (NamedKey::F35, 0xffe0),
-    (NamedKey::LeftShift, 0xffe1),
-    (NamedKey::RightShift, 0xffe2),
-    (NamedKey::LeftControl, 0xffe3),
-    (NamedKey::RightControl, 0xffe4),
-    (NamedKey::LeftAlt, 0xffe9),
-    (NamedKey::RightAlt, 0xffea),
-    (NamedKey::LeftMeta, 0xffe7),
-    (NamedKey::RightMeta, 0xffe8),
-    (NamedKey::LeftSuper, 0xffeb),
-    (NamedKey::RightSuper, 0xffec),
-    (NamedKey::LeftHyper, 0xffed),
-    (NamedKey::RightHyper, 0xffee),
-    (NamedKey::CapsLock, 0xffe5),
-    (NamedKey::NumLock, 0xff7f),
-    (NamedKey::ScrollLock, 0xff14),
-    (NamedKey::PrintScreen, 0xff61),
-    (NamedKey::Pause, 0xff13),
-    (NamedKey::SysReq, 0xff15),
-    (NamedKey::ContextMenu, 0xff67),
-    (NamedKey::Power, 0x1008ff21),
-    (NamedKey::PowerOff, 0x1008ff2a),
-    (NamedKey::Sleep, 0x1008ff2f),
-    (NamedKey::WakeUp, 0x1008ff2b),
-    (NamedKey::Suspend, 0x1008ffa7),
-    (NamedKey::Hibernate, 0x1008ffa8),
-    (NamedKey::MediaPlay, 0x1008ff14),
-    (NamedKey::MediaPause, 0x1008ff31),
-    (NamedKey::MediaStop, 0x1008ff15),
-    (NamedKey::MediaNextTrack, 0x1008ff17),
-    (NamedKey::MediaPreviousTrack, 0x1008ff16),
-    (NamedKey::VolumeUp, 0x1008ff13),
-    (NamedKey::VolumeDown, 0x1008ff11),
-    (NamedKey::VolumeMute, 0x1008ff12),
-    (NamedKey::BrowserBack, 0x1008ff26),
-    (NamedKey::BrowserForward, 0x1008ff27),
-    (NamedKey::BrowserRefresh, 0x1008ff29),
-    (NamedKey::BrowserHome, 0x1008ff18),
-    (NamedKey::LaunchMail, 0x1008ff19),
-    (NamedKey::LaunchCalculator, 0x1008ff1d),
-    (NamedKey::LaunchTerminal, 0x1008ff80),
-    (NamedKey::BrightnessUp, 0x1008ff02),
-    (NamedKey::BrightnessDown, 0x1008ff03),
-    (NamedKey::KeyboardBrightnessUp, 0x1008ff05),
-    (NamedKey::KeyboardBrightnessDown, 0x1008ff06),
-    (NamedKey::KanjiMode, 0xff21),
-    (NamedKey::Hiragana, 0xff25),
-    (NamedKey::Katakana, 0xff26),
-    (NamedKey::Romaji, 0xff24),
-    (NamedKey::ZenkakuHankaku, 0xff2a),
-    (NamedKey::EisuToggle, 0xff30),
-    (NamedKey::HangulHanja, 0xff34),
-    ];
-    TABLE
-        .iter()
-        .find(|(nk, _)| *nk == key)
-        .map(|(_, ks)| *ks)
-        .unwrap_or(0)
-}
-
-
 // Generate XKB v1 text format from WKB's flat keysym tables.
 
 use self::keysym::keysym_get_name;
 
 // ── Standard evdev → XKB key name table ──
-// Indexed by evdev code (0-based). `None` entries use fallback `I{evdev+8:03}`.
-
 const EVDEV_KEYNAMES: &[(u32, &str)] = &[
     (1, "ESC"),
     (2, "AE01"),
@@ -907,7 +819,6 @@ const EVDEV_KEYNAMES: &[(u32, &str)] = &[
     (197, "META"),
     (198, "SUPR"),
     (199, "HYPR"),
-    // Well-known multimedia / generic keys
     (114, "VOLD"),
     (115, "VOLU"),
     (163, "NEXS"),
@@ -926,19 +837,15 @@ const EVDEV_KEYNAMES: &[(u32, &str)] = &[
 
 /// Get the XKB key name for an evdev code.
 fn evdev_to_keyname(evdev: u32) -> String {
-    // Binary search or linear — table is small
     for &(code, name) in EVDEV_KEYNAMES {
         if code == evdev {
             return name.to_string();
         }
     }
-    // Fallback: generic I{xkb_keycode} format
     format!("I{:03}", evdev + 8)
 }
 
 /// Determine how many levels a key actually uses across all groups.
-/// Checks `named_key_map`, `level_exceptions_keymap`, and the modifier map
-/// (modifier keys must be included even if they produce no named key or character).
 fn key_max_level(
     named_key_map: &FlatNamedKeyMap,
     level_exceptions: &FlatKeymap,
@@ -959,8 +866,6 @@ fn key_max_level(
             }
         }
     }
-    // Modifier keys must always be included even if named_key is Unnamed
-    // and they produce no character (e.g. ISO_Level3_Shift).
     if max_level == 0 && modifiers.get(evdev).is_some() {
         max_level = 1;
     }
@@ -968,9 +873,6 @@ fn key_max_level(
 }
 
 /// Resolve the keysym for a modifier key from the modifier map.
-///
-/// Maps each `ModType` to its canonical keysym so the re-parsed keymap
-/// gets the correct modifier interpretation.
 fn modifier_keysym(modifiers: &Modifiers, evdev: u32) -> Option<u32> {
     let modifier = modifiers.get(evdev)?;
     match modifier {
@@ -1037,23 +939,13 @@ fn type_for_levels(num_levels: usize) -> &'static str {
 }
 
 /// Format a keysym as its XKB name, or Unicode/hex fallback.
-///
-/// Legacy Latin-1 keysyms (0x20-0x7E, 0xA0-0xFF) are emitted as raw hex
-/// Unicode keysyms (`0x10000XX`) to match C xkbcommon's serializer output.
-/// This ensures round-tripping through xkbcommon produces identical keysym
-/// values.
 fn sym_name(sym: u32) -> String {
     if sym == 0 {
         return "NoSymbol".to_string();
     }
-    // Unicode keysyms (0x01000000+): always emit as raw hex literal.
-    // C xkbcommon's serializer does the same — e.g. 0x010000d7 for ×.
-    // Using a named keysym (e.g. "multiply") would re-parse to the legacy
-    // value (0xd7), causing a round-trip mismatch.
     if (0x0100_0000..=0x0110_ffff).contains(&sym) {
         return format!("{:#010x}", sym);
     }
-    // Named keysyms (legacy Latin-1, function keys, etc.): use the name.
     if let Some(name) = keysym_get_name(sym) {
         name.to_string()
     } else {
@@ -1061,59 +953,114 @@ fn sym_name(sym: u32) -> String {
     }
 }
 
+/// Write key symbols for single group layout.
+fn write_key_symbols_single_group(
+    out: &mut String,
+    name: &str,
+    type_name: &str,
+    max_level: usize,
+    wkb: &WKB,
+    evdev: u32,
+) {
+    use std::fmt::Write;
+    write!(out, "\tkey <{}> {{ type= \"{}",", name, type_name).unwrap();
+    out.push_str(" [ ");
+    for level in 0..max_level {
+        if level > 0 {
+            out.push_str(", ");
+        }
+        out.push_str(&sym_name(wkb.resolve_keysym(0, level, evdev)));
+    }
+    out.push_str(" ]");
+    if wkb.repeat_keys.contains(evdev) {
+        out.push_str(", repeat=Yes");
+    }
+    out.push_str(" };\n");
+}
+
+/// Write key symbols for multi-group (multi-layout) format.
+fn write_key_symbols_multi_group(
+    out: &mut String,
+    name: &str,
+    max_level: usize,
+    num_layouts: usize,
+    wkb: &WKB,
+    evdev: u32,
+) {
+    use std::fmt::Write;
+    out.push_str("\tkey <");
+    out.push_str(name);
+    out.push_str("> {\n");
+
+    // Per-group types
+    for g in 0..num_layouts {
+        let mut glevel = 0;
+        for level in (0..MAX_LEVELS).rev() {
+            if wkb.named_key_map.get(g, level, evdev) != NamedKey::Unnamed {
+                glevel = level + 1;
+                break;
+            }
+        }
+        let gt = if glevel.max(max_level) == 2 && is_alphabetic(&wkb.state_keymap, evdev, num_layouts) {
+            "ALPHABETIC"
+        } else {
+            type_for_levels(glevel.max(max_level))
+        };
+        writeln!(out, "\t\ttype[group{}]= \"{}",", g + 1, gt).unwrap();
+    }
+
+    // Per-group symbols
+    for g in 0..num_layouts {
+        write!(out, "\t\tsymbols[{}]= [ ", g + 1).unwrap();
+        for level in 0..max_level {
+            if level > 0 {
+                out.push_str(", ");
+            }
+            out.push_str(&sym_name(wkb.resolve_keysym(g, level, evdev)));
+        }
+        if g < num_layouts - 1 {
+            out.push_str(" ],\n");
+        } else {
+            out.push_str(" ]");
+        }
+    }
+    if wkb.repeat_keys.contains(evdev) {
+        out.push_str(",\n\t\trepeat=Yes");
+    }
+    out.push_str("\n\t};\n");
+}
+
 impl WKB {
     /// Generate XKB v1 text format string from flat keysym tables.
-    ///
-    /// This produces a minimal but fully valid keymap that Wayland clients
-    /// can parse.
     #[cfg(feature = "xkb")]
     pub(crate) fn generate_xkb_string(&self) -> String {
         let num_layouts = self.named_key_map.num_layouts;
         let num_keys = self.named_key_map.num_keys;
-        // XKB keycodes max at 255; evdev = xkb - 8, so max evdev = 247
         let max_evdev = num_keys.min(248) as u32;
-        // Estimate capacity: ~40KB for a typical keymap
         let mut out = String::with_capacity(40 * 1024);
 
         out.push_str("xkb_keymap {\n");
-
-        // ── xkb_keycodes ──
         self.write_keycodes(&mut out, max_evdev);
-
-        // ── xkb_types ──
         write_types(&mut out);
-
-        // ── xkb_compat ──
         write_compat(&mut out);
-
-        // ── xkb_symbols ──
         self.write_symbols(&mut out, max_evdev, num_layouts);
-
         out.push_str("};\n");
         out
     }
 
     /// Resolve the keysym for a (layout, level, evdev) triple.
-    ///
-    /// For named keys, returns the canonical keysym via `named_key_to_keysym`.
-    /// For character keys (`NamedKey::Unnamed`), falls back to the character
-    /// keymaps (`level_exceptions_keymap` then `state_keymap`) and emits a
-    /// Unicode keysym so that the serialized string preserves character data.
     fn resolve_keysym(&self, layout: usize, level: usize, evdev: u32) -> u32 {
         let nk = self.named_key_map.get(layout, level, evdev);
         let sym = named_key_to_keysym(nk);
         if sym != 0 {
             return sym;
         }
-        // Unnamed key — recover from character keymaps.
         if let Some(ch) = self.level_exceptions_keymap.get(layout, level, evdev) {
             return 0x0100_0000 | ch as u32;
         }
         if let Some(ch) = self.state_keymap.get(layout, level, evdev) {
             return 0x0100_0000 | ch as u32;
         }
-        // Modifier key — derive keysym from the modifier map so that the
-        // re-parsed keymap retains the correct modifier associations.
         if level == 0 {
             if let Some(ks) = modifier_keysym(&self.modifiers, evdev) {
                 return ks;
@@ -1130,7 +1077,6 @@ impl WKB {
         writeln!(out, "\tmaximum = {};", max_evdev + 8 - 1).unwrap();
 
         for evdev in 0..max_evdev {
-            // Only emit keys that have at least one keysym
             if key_max_level(
                 &self.named_key_map,
                 &self.level_exceptions_keymap,
@@ -1144,7 +1090,6 @@ impl WKB {
             }
         }
 
-        // LED indicators
         out.push_str("\tindicator 1 = \"Caps Lock\";\n");
         out.push_str("\tindicator 2 = \"Num Lock\";\n");
         out.push_str("\tindicator 3 = \"Scroll Lock\";\n");
@@ -1156,13 +1101,11 @@ impl WKB {
 
         out.push_str("xkb_symbols \"wkb\" {\n");
 
-        // Group names
         for (i, name) in self.layout_names.iter().enumerate() {
             writeln!(out, "\tname[{}]= \"{}\";", i + 1, name).unwrap();
         }
         out.push('\n');
 
-        // Per-key symbols
         for evdev in 0..max_evdev {
             let max_level = key_max_level(
                 &self.named_key_map,
@@ -1175,77 +1118,19 @@ impl WKB {
                 continue;
             }
             let name = evdev_to_keyname(evdev);
-            let type_name =
-                if max_level == 2 && is_alphabetic(&self.state_keymap, evdev, num_layouts) {
-                    "ALPHABETIC"
-                } else {
-                    type_for_levels(max_level)
-                };
+            let type_name = if max_level == 2 && is_alphabetic(&self.state_keymap, evdev, num_layouts) {
+                "ALPHABETIC"
+            } else {
+                type_for_levels(max_level)
+            };
 
             if num_layouts == 1 {
-                // Single-group format
-                write!(out, "\tkey <{}> {{ type= \"{}\",", name, type_name).unwrap();
-                out.push_str(" [ ");
-                for level in 0..max_level {
-                    if level > 0 {
-                        out.push_str(", ");
-                    }
-                    out.push_str(&sym_name(self.resolve_keysym(0, level, evdev)));
-                }
-                out.push_str(" ]");
-                // repeat
-                if self.repeat_keys.contains(evdev) {
-                    out.push_str(", repeat=Yes");
-                }
-                out.push_str(" };\n");
+                write_key_symbols_single_group(out, &name, type_name, max_level, self, evdev);
             } else {
-                // Multi-group format
-                out.push_str("\tkey <");
-                out.push_str(&name);
-                out.push_str("> {\n");
-                // Per-group types
-                for g in 0..num_layouts {
-                    // Compute per-group level count
-                    let mut glevel = 0;
-                    for level in (0..MAX_LEVELS).rev() {
-                        if self.named_key_map.get(g, level, evdev) != NamedKey::Unnamed {
-                            glevel = level + 1;
-                            break;
-                        }
-                    }
-                    let gt = if glevel.max(max_level) == 2
-                        && is_alphabetic(&self.state_keymap, evdev, num_layouts)
-                    {
-                        "ALPHABETIC"
-                    } else {
-                        type_for_levels(glevel.max(max_level))
-                    };
-                    writeln!(out, "\t\ttype[group{}]= \"{}\",", g + 1, gt).unwrap();
-                }
-                // Per-group symbols
-                for g in 0..num_layouts {
-                    write!(out, "\t\tsymbols[{}]= [ ", g + 1).unwrap();
-                    for level in 0..max_level {
-                        if level > 0 {
-                            out.push_str(", ");
-                        }
-                        out.push_str(&sym_name(self.resolve_keysym(g, level, evdev)));
-                    }
-                    if g < num_layouts - 1 {
-                        out.push_str(" ],\n");
-                    } else {
-                        out.push_str(" ]");
-                    }
-                }
-                if self.repeat_keys.contains(evdev) {
-                    out.push_str(",\n\t\trepeat=Yes");
-                }
-                out.push('\n');
-                out.push_str("\t};\n");
+                write_key_symbols_multi_group(out, &name, max_level, num_layouts, self, evdev);
             }
         }
 
-        // modifier_map entries
         out.push_str("\tmodifier_map Shift { <LFSH> };\n");
         out.push_str("\tmodifier_map Shift { <RTSH> };\n");
         out.push_str("\tmodifier_map Lock { <CAPS> };\n");
@@ -1264,9 +1149,7 @@ fn write_types(out: &mut String) {
     out.push_str(include_str!("data/types.xkb"));
 }
 
-
 /// Write a minimal but valid xkb_compat section.
 fn write_compat(out: &mut String) {
     out.push_str(include_str!("data/compat.xkb"));
 }
-
