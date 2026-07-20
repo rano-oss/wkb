@@ -3,9 +3,9 @@
 pub(crate) mod parser;
 pub(crate) mod symbols;
 
-use self::parser::CompileKeymap;
-use self::parser::XkbFileFromComponents;
-use self::parser::XkbParseString;
+use self::parser::compile_keymap;
+use self::parser::xkb_file_from_components;
+use self::parser::xkb_parse_string;
 use super::shared_types::XKB_ERROR_KEYMAP_COMPILATION_FAILED;
 use super::shared_types::{
     format_max_groups, xkb_file_type_to_string, XkbComponentNames, XkbFile, XkbKeymap,
@@ -21,7 +21,7 @@ fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
         );
         return false;
     }
-    if !CompileKeymap(file, keymap) {
+    if !compile_keymap(file, keymap) {
         log::error!(
             "[XKB-{:03}] Failed to compile keymap\n",
             XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32
@@ -74,7 +74,7 @@ pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbR
         vec_i8_to_str(&kccgst.compatibility),
         vec_i8_to_str(&kccgst.symbols),
     );
-    let file_opt: Option<Box<XkbFile>> = XkbFileFromComponents(&mut keymap.ctx, &kccgst);
+    let file_opt: Option<Box<XkbFile>> = xkb_file_from_components(&mut keymap.ctx, &kccgst);
     drop(kccgst);
     let Some(mut file) = file_opt else {
         log::error!(
@@ -87,7 +87,7 @@ pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbR
     ok
 }
 pub(crate) fn text_v1_keymap_new_from_string(keymap: &mut XkbKeymap, input: &[u8]) -> bool {
-    let Some(mut xkb_file) = XkbParseString(&mut keymap.ctx, input, "(input string)", "") else {
+    let Some(mut xkb_file) = xkb_parse_string(&mut keymap.ctx, input, "(input string)", "") else {
         log::error!(
             "[XKB-{:03}] Failed to parse input xkb string\n",
             XKB_ERROR_KEYMAP_COMPILATION_FAILED as i32

@@ -25,11 +25,11 @@ use super::super::shared_types::{
 pub(crate) use super::super::keymap::mod_mask_get_effective;
 use super::super::keymap::{action_type_text, keysym_text};
 use super::super::keymap::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
-pub(crate) use super::symbols::CompileCompatMap;
-pub(crate) use super::symbols::CompileKeyTypes;
-pub(crate) use super::symbols::CompileKeycodes;
-pub(crate) use super::symbols::CompileSymbols;
-use super::symbols::{ExprResolveGroup, ExprResolveGroupMask};
+pub(crate) use super::symbols::compile_compat_map;
+pub(crate) use super::symbols::compile_key_types;
+pub(crate) use super::symbols::compile_keycodes;
+pub(crate) use super::symbols::compile_symbols;
+use super::symbols::{expr_resolve_group, expr_resolve_group_mask};
 
 pub(crate) const XKB_KEY_VOID_SYMBOL: i32 = 0xffffff_i32;
 pub(crate) const XKB_KEY_0: i32 = 0x30_i32;
@@ -884,7 +884,7 @@ fn execute_reduction<'a>(
             let files = yyvs[sp - 2].take_file_list();
             let flags = yyvs[sp - 6].as_map_flags();
             let defs: Vec<Statement> = files.into_iter().map(Statement::XkbFile).collect();
-            *yyval = YYValue::File(XkbFileCreate(
+            *yyval = YYValue::File(xkb_file_create(
                 file_type,
                 if name.is_empty() { None } else { Some(name) },
                 defs,
@@ -919,7 +919,7 @@ fn execute_reduction<'a>(
             let name = yyvs[sp - 4].take_str();
             let stmts = yyvs[sp - 2].take_stmt_list();
             let flags = yyvs[sp - 6].as_map_flags();
-            *yyval = YYValue::File(XkbFileCreate(
+            *yyval = YYValue::File(xkb_file_create(
                 file_type,
                 if name.is_empty() { None } else { Some(name) },
                 stmts,
@@ -1125,7 +1125,7 @@ fn execute_reduction<'a>(
             // Decl: MergeMode STRING
             let merge = yyvs[sp - 1].as_merge();
             let s = yyvs[sp].take_str();
-            if let Some(inc) = IncludeCreate(param.ctx, &s, merge) {
+            if let Some(inc) = include_create(param.ctx, &s, merge) {
                 *yyval = YYValue::Stmt(Statement::Include(inc));
             } else {
                 *yyval = YYValue::None;
@@ -1135,29 +1135,29 @@ fn execute_reduction<'a>(
             // VarDecl: Lhs EQUALS Expr SEMI
             let lhs = yyvs[sp - 3].take_expr();
             let val = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::Var(VarCreate(lhs, val));
+            *yyval = YYValue::Var(var_create(lhs, val));
         }
         49 => {
             // VarDecl: Ident SEMI
             let atom = yyvs[sp - 1].as_atom();
-            *yyval = YYValue::Var(BoolVarCreate(atom, true));
+            *yyval = YYValue::Var(bool_var_create(atom, true));
         }
         50 => {
             // VarDecl: EXCLAM Ident SEMI
             let atom = yyvs[sp - 1].as_atom();
-            *yyval = YYValue::Var(BoolVarCreate(atom, false));
+            *yyval = YYValue::Var(bool_var_create(atom, false));
         }
         51 => {
             // KeyNameDecl: KEYNAME EQUALS KeyCode SEMI
             let atom = yyvs[sp - 3].as_atom();
             let num = yyvs[sp - 1].as_num();
-            *yyval = YYValue::Keycode(KeycodeCreate(atom, num));
+            *yyval = YYValue::Keycode(keycode_create(atom, num));
         }
         52 => {
             // KeyAliasDecl: ALIAS KEYNAME EQUALS KEYNAME SEMI
             let alias = yyvs[sp - 3].as_atom();
             let real = yyvs[sp - 1].as_atom();
-            *yyval = YYValue::KeyAlias(KeyAliasCreate(alias, real));
+            *yyval = YYValue::KeyAlias(key_alias_create(alias, real));
         }
         53 => {
             // VModDecl: VIRTUAL_MODS VModDefList SEMI
@@ -1185,13 +1185,13 @@ fn execute_reduction<'a>(
         56 => {
             // VModDef: Ident
             let atom = yyvs[sp].as_atom();
-            *yyval = YYValue::VMod(VModCreate(atom, None));
+            *yyval = YYValue::VMod(vmod_create(atom, None));
         }
         57 => {
             // VModDef: Ident EQUALS Expr
             let atom = yyvs[sp - 2].as_atom();
             let expr = yyvs[sp].take_expr();
-            *yyval = YYValue::VMod(VModCreate(atom, expr));
+            *yyval = YYValue::VMod(vmod_create(atom, expr));
         }
         58 => {
             // InterpretDecl: INTERPRET InterpretMatch OBRACE VarDeclList CBRACE SEMI
@@ -1208,12 +1208,12 @@ fn execute_reduction<'a>(
             // InterpretMatch: KeySym PLUS Expr
             let keysym = yyvs[sp - 2].as_keysym();
             let expr = yyvs[sp].take_expr();
-            *yyval = YYValue::Interp(InterpCreate(keysym, expr));
+            *yyval = YYValue::Interp(interp_create(keysym, expr));
         }
         60 => {
             // InterpretMatch: KeySym
             let keysym = yyvs[sp].as_keysym();
-            *yyval = YYValue::Interp(InterpCreate(keysym, None));
+            *yyval = YYValue::Interp(interp_create(keysym, None));
         }
         61 => {
             // VarDeclList: VarDeclList VarDecl
@@ -1232,7 +1232,7 @@ fn execute_reduction<'a>(
             // KeyTypeDecl: TYPE String OBRACE VarDeclList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let vardefs = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::KeyType(KeyTypeCreate(
+            *yyval = YYValue::KeyType(key_type_create(
                 atom,
                 vardefs.into_iter().map(|b| *b).collect(),
             ));
@@ -1241,7 +1241,7 @@ fn execute_reduction<'a>(
             // SymbolsDecl: KEY KEYNAME OBRACE OptSymbolsBody CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let vardefs = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::Symbols(SymbolsCreate(
+            *yyval = YYValue::Symbols(symbols_create(
                 atom,
                 vardefs.into_iter().map(|b| *b).collect(),
             ));
@@ -1277,29 +1277,29 @@ fn execute_reduction<'a>(
             // SymbolsVarDecl: Lhs EQUALS Expr
             let lhs = yyvs[sp - 2].take_expr();
             let val = yyvs[sp].take_expr();
-            *yyval = YYValue::Var(VarCreate(lhs, val));
+            *yyval = YYValue::Var(var_create(lhs, val));
         }
         70 => {
             // SymbolsVarDecl: Lhs EQUALS MultiKeySymOrActionList
             let lhs = yyvs[sp - 2].take_expr();
             // MultiKeySymOrActionList is an ExprList or Expr
             let val = yyvs[sp].take_expr();
-            *yyval = YYValue::Var(VarCreate(lhs, val));
+            *yyval = YYValue::Var(var_create(lhs, val));
         }
         71 => {
             // SymbolsVarDecl: Ident
             let atom = yyvs[sp].as_atom();
-            *yyval = YYValue::Var(BoolVarCreate(atom, true));
+            *yyval = YYValue::Var(bool_var_create(atom, true));
         }
         72 => {
             // SymbolsVarDecl: EXCLAM Ident
             let atom = yyvs[sp].as_atom();
-            *yyval = YYValue::Var(BoolVarCreate(atom, false));
+            *yyval = YYValue::Var(bool_var_create(atom, false));
         }
         73 => {
             // SymbolsVarDecl: Expr
             let val = yyvs[sp].take_expr();
-            *yyval = YYValue::Var(VarCreate(None, val));
+            *yyval = YYValue::Var(var_create(None, val));
         }
         74 => {
             // MultiKeySymOrActionList: OBRACKET MultiKeySymList CBRACKET (yylen=3)
@@ -1314,7 +1314,7 @@ fn execute_reduction<'a>(
                                                                  // Prepend 'count' NoSymbol keysym lists
             let mut prepended: Vec<Box<ExprDef>> = Vec::new();
             for _ in 0..count {
-                prepended.push(ExprCreateKeySymList(XKB_KEY_NO_SYMBOL as u32));
+                prepended.push(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL as u32));
             }
             prepended.append(&mut list);
             let exprs: Vec<ExprDef> = prepended.into_iter().map(|b| *b).collect();
@@ -1365,7 +1365,7 @@ fn execute_reduction<'a>(
             // ModMapDecl: MODIFIER_MAP Ident OBRACE KeyOrKeySymList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let list = yyvs[sp - 2].take_expr_list();
-            *yyval = YYValue::ModMask(ModMapCreate(atom, list.into_iter().map(|b| *b).collect()));
+            *yyval = YYValue::ModMask(mod_map_create(atom, list.into_iter().map(|b| *b).collect()));
         }
         84 => {
             // KeyOrKeySymList: KeyOrKeySymList COMMA KeyOrKeySym
@@ -1399,7 +1399,7 @@ fn execute_reduction<'a>(
             // LedMapDecl: INDICATOR String OBRACE VarDeclList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let vardefs = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::LedMap(LedMapCreate(
+            *yyval = YYValue::LedMap(led_map_create(
                 atom,
                 vardefs.into_iter().map(|b| *b).collect(),
             ));
@@ -1408,13 +1408,13 @@ fn execute_reduction<'a>(
             // LedNameDecl: INDICATOR Integer EQUALS Expr SEMI
             let num = yyvs[sp - 3].as_num();
             let expr = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::LedName(LedNameCreate(num, expr));
+            *yyval = YYValue::LedName(led_name_create(num, expr));
         }
         90 => {
             // LedNameDecl: VIRTUAL INDICATOR Integer EQUALS Expr SEMI
             let num = yyvs[sp - 3].as_num();
             let expr = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::LedName(LedNameCreate(num, expr));
+            *yyval = YYValue::LedName(led_name_create(num, expr));
         }
         91 => {
             // UnknownDecl: Ident Lhs EQUALS Expr SEMI
@@ -1423,7 +1423,7 @@ fn execute_reduction<'a>(
             let _ = yyvs[sp - 1].take_expr();
             let sval = yyvs[sp - 4].as_sval();
             let name_str = sval.as_str();
-            *yyval = YYValue::Unknown(UnknownStatementCreate(STMT_UNKNOWN_DECLARATION, name_str));
+            *yyval = YYValue::Unknown(unknown_statement_create(STMT_UNKNOWN_DECLARATION, name_str));
         }
         92 => {
             // UnknownCompoundStatementDecl: Ident Lhs OBRACE VarDeclList CBRACE SEMI
@@ -1431,7 +1431,7 @@ fn execute_reduction<'a>(
             let _ = yyvs[sp - 2].take_var_list();
             let sval = yyvs[sp - 5].as_sval();
             let name_str = sval.as_str();
-            *yyval = YYValue::Unknown(UnknownStatementCreate(STMT_UNKNOWN_COMPOUND, name_str));
+            *yyval = YYValue::Unknown(unknown_statement_create(STMT_UNKNOWN_COMPOUND, name_str));
         }
         // Rules 93-123: Geometry rules → all produce None (geometry not supported)
         93 | 94 | 95 | 96 | 97 | 98 | 100 | 102 | 103 | 104 | 105 | 107 | 108 | 109 | 111 | 112
@@ -1819,7 +1819,7 @@ fn execute_reduction<'a>(
         186 => {
             // MultiKeySymList: MultiKeySymList COMMA KeySymList
             let keysym = yyvs[sp].as_keysym();
-            let expr = ExprCreateKeySymList(keysym);
+            let expr = expr_create_key_sym_list(keysym);
             let mut list = yyvs[sp - 2].take_expr_list();
             list.push(expr);
             *yyval = YYValue::ExprList(list);
@@ -1836,7 +1836,7 @@ fn execute_reduction<'a>(
         188 => {
             // MultiKeySymList: KeySymList (keysym)
             let keysym = yyvs[sp].as_keysym();
-            let expr = ExprCreateKeySymList(keysym);
+            let expr = expr_create_key_sym_list(keysym);
             *yyval = YYValue::ExprList(vec![expr]);
         }
         189 => {
@@ -1853,13 +1853,13 @@ fn execute_reduction<'a>(
             // NonEmptyKeySyms: NonEmptyKeySyms COMMA KeySym
             let expr = yyvs[sp - 2].take_expr().unwrap();
             let keysym = yyvs[sp].as_keysym();
-            *yyval = YYValue::Expr(ExprAppendKeySymList(expr, keysym));
+            *yyval = YYValue::Expr(expr_append_key_sym_list(expr, keysym));
         }
         191 => {
             // NonEmptyKeySyms: NonEmptyKeySyms COMMA STRING
             let expr = yyvs[sp - 2].take_expr().unwrap();
             let s = yyvs[sp].take_str();
-            match ExprKeySymListAppendString(param.scanner, expr, &s) {
+            match expr_key_sym_list_append_string(param.scanner, expr, &s) {
                 Some(e) => {
                     *yyval = YYValue::Expr(e);
                 }
@@ -1871,13 +1871,13 @@ fn execute_reduction<'a>(
         192 => {
             // KeySyms: KeySym
             let keysym = yyvs[sp].as_keysym();
-            *yyval = YYValue::Expr(ExprCreateKeySymList(keysym));
+            *yyval = YYValue::Expr(expr_create_key_sym_list(keysym));
         }
         193 => {
             // KeySyms: STRING (single string keysym)
             let s = yyvs[sp].take_str();
-            let expr = ExprCreateKeySymList(XKB_KEY_NO_SYMBOL as u32);
-            match ExprKeySymListAppendString(param.scanner, expr, &s) {
+            let expr = expr_create_key_sym_list(XKB_KEY_NO_SYMBOL as u32);
+            match expr_key_sym_list_append_string(param.scanner, expr, &s) {
                 Some(e) => {
                     *yyval = YYValue::Expr(e);
                 }
@@ -1893,8 +1893,8 @@ fn execute_reduction<'a>(
         195 => {
             // KeySymList: STRING (produces keysym list from string)
             let s = yyvs[sp].take_str();
-            let expr = ExprCreateKeySymList(XKB_KEY_NO_SYMBOL as u32);
-            match ExprKeySymListAppendString(param.scanner, expr, &s) {
+            let expr = expr_create_key_sym_list(XKB_KEY_NO_SYMBOL as u32);
+            match expr_key_sym_list_append_string(param.scanner, expr, &s) {
                 Some(e) => {
                     *yyval = YYValue::Expr(e);
                 }
@@ -1909,7 +1909,7 @@ fn execute_reduction<'a>(
         }
         197 => {
             // KeySymList: empty → NoSymbol
-            *yyval = YYValue::Expr(ExprCreateKeySymList(XKB_KEY_NO_SYMBOL as u32));
+            *yyval = YYValue::Expr(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL as u32));
         }
         // KeySym rules 198-203
         198 => {
@@ -1919,7 +1919,7 @@ fn execute_reduction<'a>(
         199 => {
             // KeySym: STRING → parse string as keysym
             let s = yyvs[sp].take_str();
-            let keysym = KeysymParseString(param.scanner, &s);
+            let keysym = keysym_parse_string(param.scanner, &s);
             if keysym == XKB_KEY_NO_SYMBOL as u32 {
                 return false;
             }
@@ -2138,7 +2138,7 @@ pub(crate) fn expr_create(kind: ExprKind) -> Box<ExprDef> {
     Box::new(ExprDef { kind })
 }
 
-pub(crate) fn ExprCreateKeySymList(sym: u32) -> Box<ExprDef> {
+pub(crate) fn expr_create_key_sym_list(sym: u32) -> Box<ExprDef> {
     let mut syms = Vec::new();
     if sym != XKB_KEY_NO_SYMBOL as u32 {
         syms.push(sym);
@@ -2146,7 +2146,7 @@ pub(crate) fn ExprCreateKeySymList(sym: u32) -> Box<ExprDef> {
     expr_create(ExprKind::KeysymList { syms })
 }
 
-pub(crate) fn ExprAppendKeySymList(mut expr: Box<ExprDef>, sym: u32) -> Box<ExprDef> {
+pub(crate) fn expr_append_key_sym_list(mut expr: Box<ExprDef>, sym: u32) -> Box<ExprDef> {
     if sym != XKB_KEY_NO_SYMBOL as u32 {
         if let ExprKind::KeysymList { ref mut syms } = expr.kind {
             syms.push(sym);
@@ -2155,7 +2155,7 @@ pub(crate) fn ExprAppendKeySymList(mut expr: Box<ExprDef>, sym: u32) -> Box<Expr
     expr
 }
 
-pub(crate) fn ExprKeySymListAppendString(
+pub(crate) fn expr_key_sym_list_append_string(
     scanner: &mut Scanner,
     mut expr: Box<ExprDef>,
     string: &str,
@@ -2200,7 +2200,7 @@ pub(crate) fn ExprKeySymListAppendString(
     }
 }
 
-pub(crate) fn KeysymParseString(scanner: &mut Scanner, string: &str) -> u32 {
+pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> u32 {
     let bytes = string.as_bytes();
     let len = bytes.len();
     if len == 0 {
@@ -2244,7 +2244,7 @@ pub(crate) fn KeysymParseString(scanner: &mut Scanner, string: &str) -> u32 {
     sym
 }
 
-pub(crate) fn KeycodeCreate(name: u32, value: i64) -> Box<KeycodeDef> {
+pub(crate) fn keycode_create(name: u32, value: i64) -> Box<KeycodeDef> {
     Box::new(KeycodeDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2252,7 +2252,7 @@ pub(crate) fn KeycodeCreate(name: u32, value: i64) -> Box<KeycodeDef> {
     })
 }
 
-pub(crate) fn KeyAliasCreate(alias: u32, real: u32) -> Box<KeyAliasDef> {
+pub(crate) fn key_alias_create(alias: u32, real: u32) -> Box<KeyAliasDef> {
     Box::new(KeyAliasDef {
         merge: MERGE_DEFAULT,
         alias,
@@ -2260,7 +2260,7 @@ pub(crate) fn KeyAliasCreate(alias: u32, real: u32) -> Box<KeyAliasDef> {
     })
 }
 
-pub(crate) fn VModCreate(name: u32, value: Option<Box<ExprDef>>) -> Box<VModDef> {
+pub(crate) fn vmod_create(name: u32, value: Option<Box<ExprDef>>) -> Box<VModDef> {
     Box::new(VModDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2268,7 +2268,7 @@ pub(crate) fn VModCreate(name: u32, value: Option<Box<ExprDef>>) -> Box<VModDef>
     })
 }
 
-pub(crate) fn VarCreate(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>) -> Box<VarDef> {
+pub(crate) fn var_create(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>) -> Box<VarDef> {
     Box::new(VarDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2276,7 +2276,7 @@ pub(crate) fn VarCreate(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>)
     })
 }
 
-pub(crate) fn BoolVarCreate(ident: u32, set: bool) -> Box<VarDef> {
+pub(crate) fn bool_var_create(ident: u32, set: bool) -> Box<VarDef> {
     Box::new(VarDef {
         merge: MERGE_DEFAULT,
         name: Some(Box::new(ExprDef {
@@ -2288,7 +2288,7 @@ pub(crate) fn BoolVarCreate(ident: u32, set: bool) -> Box<VarDef> {
     })
 }
 
-pub(crate) fn InterpCreate(sym: u32, match_0: Option<Box<ExprDef>>) -> Box<InterpDef> {
+pub(crate) fn interp_create(sym: u32, match_0: Option<Box<ExprDef>>) -> Box<InterpDef> {
     Box::new(InterpDef {
         merge: MERGE_DEFAULT,
         sym,
@@ -2297,7 +2297,7 @@ pub(crate) fn InterpCreate(sym: u32, match_0: Option<Box<ExprDef>>) -> Box<Inter
     })
 }
 
-pub(crate) fn KeyTypeCreate(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
+pub(crate) fn key_type_create(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
     Box::new(KeyTypeDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2305,7 +2305,7 @@ pub(crate) fn KeyTypeCreate(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
     })
 }
 
-pub(crate) fn SymbolsCreate(key_name: u32, symbols: Vec<VarDef>) -> Box<SymbolsDef> {
+pub(crate) fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> Box<SymbolsDef> {
     Box::new(SymbolsDef {
         merge: MERGE_DEFAULT,
         key_name,
@@ -2313,7 +2313,7 @@ pub(crate) fn SymbolsCreate(key_name: u32, symbols: Vec<VarDef>) -> Box<SymbolsD
     })
 }
 
-pub(crate) fn ModMapCreate(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef> {
+pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef> {
     Box::new(ModMapDef {
         merge: MERGE_DEFAULT,
         modifier,
@@ -2321,7 +2321,7 @@ pub(crate) fn ModMapCreate(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef> 
     })
 }
 
-pub(crate) fn LedMapCreate(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
+pub(crate) fn led_map_create(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
     Box::new(LedMapDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2329,7 +2329,7 @@ pub(crate) fn LedMapCreate(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
     })
 }
 
-pub(crate) fn LedNameCreate(ndx: i64, name: Option<Box<ExprDef>>) -> Box<LedNameDef> {
+pub(crate) fn led_name_create(ndx: i64, name: Option<Box<ExprDef>>) -> Box<LedNameDef> {
     Box::new(LedNameDef {
         merge: MERGE_DEFAULT,
         ndx,
@@ -2337,14 +2337,14 @@ pub(crate) fn LedNameCreate(ndx: i64, name: Option<Box<ExprDef>>) -> Box<LedName
     })
 }
 
-pub(crate) fn UnknownStatementCreate(type_0: StmtType, name: &str) -> Box<UnknownStatement> {
+pub(crate) fn unknown_statement_create(type_0: StmtType, name: &str) -> Box<UnknownStatement> {
     Box::new(UnknownStatement {
         stmt_type: type_0,
         name: name.to_string(),
     })
 }
 
-pub(crate) fn IncludeCreate(
+pub(crate) fn include_create(
     _ctx: &mut XkbContext,
     stmt_str: &str,
     mut merge: MergeMode,
@@ -2358,7 +2358,7 @@ pub(crate) fn IncludeCreate(
             _ => break,
         };
 
-        let (parsed, rest) = match ParseIncludeMap(input) {
+        let (parsed, rest) = match parse_include_map(input) {
             Some(r) => r,
             None => {
                 log::error!(
@@ -2406,7 +2406,7 @@ pub(crate) fn IncludeCreate(
     first
 }
 
-pub(crate) fn XkbFileCreate(
+pub(crate) fn xkb_file_create(
     type_0: u32,
     name: Option<String>,
     defs: Vec<Statement>,
@@ -2422,7 +2422,7 @@ pub(crate) fn XkbFileCreate(
     })
 }
 
-pub(crate) fn XkbFileFromComponents(
+pub(crate) fn xkb_file_from_components(
     ctx: &mut XkbContext,
     kkctgs: &XkbComponentNames,
 ) -> Option<Box<XkbFile>> {
@@ -2444,13 +2444,13 @@ pub(crate) fn XkbFileFromComponents(
             .position(|&b| b == 0)
             .unwrap_or(component_bytes.len());
         let component_str = std::str::from_utf8(&component_bytes[..end]).unwrap_or("");
-        let include = IncludeCreate(ctx, component_str, MERGE_DEFAULT)?;
+        let include = include_create(ctx, component_str, MERGE_DEFAULT)?;
         let defs = vec![Statement::Include(include)];
-        let file = XkbFileCreate(type_0, None, defs, 0);
+        let file = xkb_file_create(type_0, None, defs, 0);
         file_stmts.push(Statement::XkbFile(file));
         type_0 += 1;
     }
-    Some(XkbFileCreate(FILE_TYPE_KEYMAP, None, file_stmts, 0))
+    Some(xkb_file_create(FILE_TYPE_KEYMAP, None, file_stmts, 0))
 }
 
 static XKB_FILE_TYPE_STRINGS: [&str; 7] = [
@@ -3473,7 +3473,7 @@ pub(crate) fn _xkbcommon_lex<'a>(
     );
     ERROR_TOK
 }
-pub(crate) fn XkbParseStringInit<'a>(
+pub(crate) fn xkb_parse_string_init<'a>(
     sc: &mut Scanner<'a>,
     input: &'a [u8],
     file_name: &str,
@@ -3497,14 +3497,14 @@ pub(crate) fn XkbParseStringInit<'a>(
     }
     true
 }
-pub(crate) fn XkbParseString(
+pub(crate) fn xkb_parse_string(
     ctx: &mut XkbContext,
     input: &[u8],
     file_name: &str,
     map: &str,
 ) -> Option<Box<XkbFile>> {
     let mut sc = Scanner::new(&[], "");
-    if !XkbParseStringInit(&mut sc, input, file_name, map) {
+    if !xkb_parse_string_init(&mut sc, input, file_name, map) {
         return None;
     }
     parse(ctx, &mut sc, map)
@@ -3535,7 +3535,7 @@ pub(crate) struct ParsedIncludeMap {
 
 /// Parse one include map segment from `input`, returning the parsed result
 /// and the remaining input (if any). Returns None on parse error.
-pub(crate) fn ParseIncludeMap(input: &str) -> Option<(ParsedIncludeMap, Option<&str>)> {
+pub(crate) fn parse_include_map(input: &str) -> Option<(ParsedIncludeMap, Option<&str>)> {
     // Split at merge-mode prefix (+, |, ^)
     let (segment, nextop, rest) = if let Some(pos) = input.find(&['+', '|', '^'][..]) {
         let op = input.as_bytes()[pos] as char;
@@ -3584,14 +3584,14 @@ pub(crate) fn ParseIncludeMap(input: &str) -> Option<(ParsedIncludeMap, Option<&
 static XKB_FILE_TYPE_INCLUDE_DIRS: [&str; 7] = [
     "keycodes", "types", "compat", "symbols", "geometry", "keymap", "rules",
 ];
-fn DirectoryForInclude(type_0: u32) -> &'static str {
+fn directory_for_include(type_0: u32) -> &'static str {
     if type_0 as usize >= XKB_FILE_TYPE_INCLUDE_DIRS.len() {
         ""
     } else {
         XKB_FILE_TYPE_INCLUDE_DIRS[type_0 as usize]
     }
 }
-fn LogIncludePaths(ctx: &mut XkbContext) {
+fn log_include_paths(ctx: &mut XkbContext) {
     let num = xkb_context_num_include_paths(ctx);
     if num > 0_u32 {
         log::error!(
@@ -3704,7 +3704,7 @@ pub(crate) fn expand_path_str(
         Some(pos) => pos,
         None => return Ok(None),
     };
-    let type_dir = DirectoryForInclude(file_type);
+    let type_dir = directory_for_include(file_type);
     let prefix = &name[..k];
     let rest = &name[k..];
     match expand_percent(parent_file_name, type_dir, rest) {
@@ -3717,7 +3717,7 @@ pub(crate) fn expand_path_str(
         None => Err(()),
     }
 }
-pub(crate) fn FindFileInXkbPath(
+pub(crate) fn find_file_in_xkb_path(
     ctx: &mut XkbContext,
     _parent_file_name: &str,
     name: &str,
@@ -3725,7 +3725,7 @@ pub(crate) fn FindFileInXkbPath(
     offset: &mut u32,
     required: bool,
 ) -> Option<(std::sync::Arc<Vec<u8>>, String)> {
-    let type_dir = DirectoryForInclude(type_0);
+    let type_dir = directory_for_include(type_0);
     let mut i: u32 = *offset;
     while i < xkb_context_num_include_paths(ctx) {
         let path = format!(
@@ -3754,11 +3754,11 @@ pub(crate) fn FindFileInXkbPath(
             type_dir,
             name
         );
-        LogIncludePaths(ctx);
+        log_include_paths(ctx);
     }
     None
 }
-pub(crate) fn ExceedsIncludeMaxDepth(include_depth: u32) -> bool {
+pub(crate) fn exceeds_include_max_depth(include_depth: u32) -> bool {
     if include_depth >= INCLUDE_MAX_DEPTH as u32 {
         log::error!(
             "[XKB-{:03}] Exceeded include depth threshold ({})",
@@ -3770,7 +3770,7 @@ pub(crate) fn ExceedsIncludeMaxDepth(include_depth: u32) -> bool {
         false
     }
 }
-pub(crate) fn ProcessIncludeFile(
+pub(crate) fn process_include_file(
     ctx: &mut XkbContext,
     stmt: &IncludeStmt,
     file_type: u32,
@@ -3797,11 +3797,11 @@ pub(crate) fn ProcessIncludeFile(
         // Expanded but not absolute — don't search include paths
         None
     } else {
-        FindFileInXkbPath(ctx, "(unknown)", &stmt_file, file_type, &mut offset, true)
+        find_file_in_xkb_path(ctx, "(unknown)", &stmt_file, file_type, &mut offset, true)
     };
 
     while let Some((ref file_data, ref _path)) = file_and_path {
-        if let Some(parsed) = XkbParseString(ctx, file_data, &stmt.file, map_str) {
+        if let Some(parsed) = xkb_parse_string(ctx, file_data, &stmt.file, map_str) {
             let _ = file_and_path.take();
 
             if parsed.file_type != file_type {
@@ -3827,7 +3827,7 @@ pub(crate) fn ProcessIncludeFile(
         }
         offset += 1;
         file_and_path =
-            FindFileInXkbPath(ctx, "(unknown)", &stmt_file, file_type, &mut offset, true);
+            find_file_in_xkb_path(ctx, "(unknown)", &stmt_file, file_type, &mut offset, true);
     }
 
     if xkb_file.is_none() {
@@ -3856,10 +3856,10 @@ pub(crate) fn ProcessIncludeFile(
 
 pub(crate) const GROUP_MASK_NAME_LAST: u32 = 3;
 pub(crate) const GROUP_INDEX_NAME_LAST: u32 = 1;
-pub(crate) type compile_file_fn =
+pub(crate) type CompileFileFn =
     Option<for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool>;
 #[inline]
-fn ComputeEffectiveMask(keymap: &XkbKeymap, mods: &mut XkbMods) {
+fn compute_effective_mask(keymap: &XkbKeymap, mods: &mut XkbMods) {
     let unknown_mods: u32 = !((1_u64 << keymap.mods.num_mods).wrapping_sub(1_u64) as u32);
     mods.mask = mod_mask_get_effective(keymap, mods.mods) | mods.mods & unknown_mods;
 }
@@ -3878,12 +3878,12 @@ fn compute_effective_mask_with(mod_set: &XkbModSet, mods: &mut XkbMods) {
     }
     mods.mask = mask | mods.mods & unknown_mods;
 }
-fn UpdateActionMods(keymap: &XkbKeymap, act: &mut XkbAction, modmap: u32) {
+fn update_action_mods(keymap: &XkbKeymap, act: &mut XkbAction, modmap: u32) {
     if let 2..=4 = act.action_type() {
         if act.as_mods().flags & ACTION_MODS_LOOKUP_MODMAP != 0 {
             act.as_mods_mut().mods.mods = modmap;
         }
-        ComputeEffectiveMask(keymap, &mut act.as_mods_mut().mods);
+        compute_effective_mask(keymap, &mut act.as_mods_mut().mods);
     };
 }
 fn default_interpret() -> XkbSymInterpret {
@@ -3901,7 +3901,7 @@ fn default_interpret() -> XkbSymInterpret {
     }
 }
 /// Returns interp indices into `keymap.sym_interprets`, or `usize::MAX` for default interprets.
-fn FindInterpForKey(
+fn find_interp_for_key(
     keymap: &mut XkbKeymap,
     key_idx: usize,
     group: u32,
@@ -3992,7 +3992,7 @@ fn FindInterpForKey(
     }
     true
 }
-fn ApplyInterpsToKey(keymap: &mut XkbKeymap, key_idx: usize) -> bool {
+fn apply_interps_to_key(keymap: &mut XkbKeymap, key_idx: usize) -> bool {
     let mut vmodmap: u32 = 0_u32;
     let mut level: u32;
     let mut interp_indices: Vec<usize> = Vec::with_capacity(4);
@@ -4006,7 +4006,7 @@ fn ApplyInterpsToKey(keymap: &mut XkbKeymap, key_idx: usize) -> bool {
             while level < num_levels {
                 interp_indices.clear();
                 let found: bool =
-                    FindInterpForKey(keymap, key_idx, group, level, &mut interp_indices);
+                    find_interp_for_key(keymap, key_idx, group, level, &mut interp_indices);
                 if found {
                     let default_interp = default_interpret();
                     let key_explicit = keymap.keys[key_idx].explicit;
@@ -4080,7 +4080,7 @@ fn is_group_action(action: &XkbAction) -> bool {
         || action.action_type() == ACTION_TYPE_GROUP_LATCH
         || action.action_type() == ACTION_TYPE_GROUP_LOCK
 }
-fn CheckMultipleActionsCategories(keymap: &mut XkbKeymap, key_idx: usize) {
+fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
     let num_groups = keymap.keys[key_idx].num_groups;
     let key_name = keymap.keys[key_idx].name;
     let mut g: u32 = 0_u32;
@@ -4153,7 +4153,7 @@ fn update_pending_key_fields(info: &mut XkbKeymapInfo<'_>, key_idx: usize) -> bo
             let mut group: u32 = 0_u32;
             let mut pending_dummy = false;
             let resolve_ret =
-                ExprResolveGroup(info, &expr_box, true, &mut group, &mut pending_dummy);
+                expr_resolve_group(info, &expr_box, true, &mut group, &mut pending_dummy);
             info.pending_computations[idx].expr = Some(expr_box);
             match resolve_ret {
                 0 => {
@@ -4188,8 +4188,13 @@ fn update_pending_action_fields(
                     let absolute: bool = act.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0;
                     let mut pending_dummy = false;
                     let expr_box = info.pending_computations[pc_idx].expr.take().unwrap();
-                    let resolve_ret =
-                        ExprResolveGroup(info, &expr_box, absolute, &mut group, &mut pending_dummy);
+                    let resolve_ret = expr_resolve_group(
+                        info,
+                        &expr_box,
+                        absolute,
+                        &mut group,
+                        &mut pending_dummy,
+                    );
                     info.pending_computations[pc_idx].expr = Some(expr_box);
                     match resolve_ret {
                         2 => {
@@ -4239,7 +4244,7 @@ fn update_pending_action_fields(
         _ => true,
     }
 }
-fn UpdateDerivedKeymapFields(info: &mut XkbKeymapInfo<'_>) -> bool {
+fn update_derived_keymap_fields(info: &mut XkbKeymapInfo<'_>) -> bool {
     let keymap: &mut XkbKeymap = &mut *info.keymap;
     let mut num_key_aliases: u32 = 0_u32;
     let mut min_alias: u32 = 0_u32;
@@ -4328,10 +4333,10 @@ fn UpdateDerivedKeymapFields(info: &mut XkbKeymapInfo<'_>) -> bool {
         };
         let mut ki: u32 = start_idx;
         while ki < keymap.num_keys {
-            if !ApplyInterpsToKey(keymap, ki as usize) {
+            if !apply_interps_to_key(keymap, ki as usize) {
                 return false;
             }
-            CheckMultipleActionsCategories(keymap, ki as usize);
+            check_multiple_actions_categories(keymap, ki as usize);
             ki = ki.wrapping_add(1);
         }
     }
@@ -4449,7 +4454,7 @@ fn UpdateDerivedKeymapFields(info: &mut XkbKeymapInfo<'_>) -> bool {
                             let mut act = info.keymap.keys[ki as usize].groups[i_1 as usize].levels
                                 [j_0 as usize]
                                 .actions[0];
-                            UpdateActionMods(&*info.keymap, &mut act, key_modmap);
+                            update_action_mods(&*info.keymap, &mut act, key_modmap);
                             if (pending_computations as i32 != 0
                                 || act.action_type() == ACTION_TYPE_REDIRECT_KEY)
                                 && !update_pending_action_fields(info, key_keycode, &mut act)
@@ -4466,7 +4471,7 @@ fn UpdateDerivedKeymapFields(info: &mut XkbKeymapInfo<'_>) -> bool {
                             let mut act = info.keymap.keys[ki as usize].groups[i_1 as usize].levels
                                 [j_0 as usize]
                                 .actions[k as usize];
-                            UpdateActionMods(&*info.keymap, &mut act, key_modmap);
+                            update_action_mods(&*info.keymap, &mut act, key_modmap);
                             if (pending_computations as i32 != 0
                                 || act.action_type() == ACTION_TYPE_REDIRECT_KEY)
                                 && !update_pending_action_fields(info, key_keycode, &mut act)
@@ -4502,7 +4507,7 @@ fn UpdateDerivedKeymapFields(info: &mut XkbKeymapInfo<'_>) -> bool {
                     let mut mask: u32 = 0_u32;
                     let mut pending_dummy = false;
                     let resolved =
-                        ExprResolveGroupMask(info, &expr_box, &mut mask, &mut pending_dummy);
+                        expr_resolve_group_mask(info, &expr_box, &mut mask, &mut pending_dummy);
                     info.pending_computations[groups_idx].expr = Some(expr_box);
                     if !resolved {
                         log::error!("[XKB-{:03}] Invalid LED group mask\n", {
@@ -4522,12 +4527,14 @@ fn UpdateDerivedKeymapFields(info: &mut XkbKeymapInfo<'_>) -> bool {
     }
     true
 }
-static COMPILE_FILE_FNS: [compile_file_fn; 4] = {
+static COMPILE_FILE_FNS: [CompileFileFn; 4] = {
     [
-        Some(CompileKeycodes as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
-        Some(CompileKeyTypes as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
-        Some(CompileCompatMap as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
-        Some(CompileSymbols as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
+        Some(compile_keycodes as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
+        Some(compile_key_types as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
+        Some(
+            compile_compat_map as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool,
+        ),
+        Some(compile_symbols as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
     ]
 };
 fn pending_computations_array_free(p: &mut Vec<PendingComputation>) {
@@ -4536,7 +4543,7 @@ fn pending_computations_array_free(p: &mut Vec<PendingComputation>) {
     }
     p.clear();
 }
-pub(crate) fn CompileKeymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool {
+pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool {
     let mut file_indices: [Option<usize>; 4] = [None; 4];
     for (idx, stmt) in file.defs.iter().enumerate() {
         if let Statement::XkbFile(ref sub_file) = stmt {
@@ -4674,7 +4681,7 @@ pub(crate) fn CompileKeymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool 
         }
         type_0 += 1;
     }
-    let ok_0: bool = UpdateDerivedKeymapFields(&mut info) as bool;
+    let ok_0: bool = update_derived_keymap_fields(&mut info) as bool;
     pending_computations_array_free(&mut info.pending_computations);
     ok_0
 }
@@ -4686,7 +4693,7 @@ fn vec_append_nul_terminated(v: &mut Vec<i8>, src: &[u8]) {
     v.extend(src.iter().map(|&b| b as i8));
 }
 
-/// Index-based sval for scanner input. Used in lvalue/rule to avoid
+/// Index-based sval for scanner input. Used in Lvalue/rule to avoid
 /// lifetime issues across include boundaries. Reconstruct sval via to_sval().
 #[derive(Copy, Clone, Default)]
 pub(crate) struct SvalIdx {
@@ -4711,23 +4718,23 @@ impl SvalIdx {
     }
 }
 
-pub(crate) struct matcher<'a> {
+pub(crate) struct Matcher<'a> {
     pub(crate) ctx: &'a mut XkbContext,
-    pub(crate) rmlvo: rule_names<'a>,
-    pub(crate) val: lvalue,
-    pub(crate) groups: Vec<group>,
-    pub(crate) mapping: mapping,
-    pub(crate) rule: rule,
-    pub(crate) pending_kccgst: kccgst_buffer,
+    pub(crate) rmlvo: RuleNames<'a>,
+    pub(crate) val: Lvalue,
+    pub(crate) groups: Vec<Group>,
+    pub(crate) mapping: Mapping,
+    pub(crate) rule: Rule,
+    pub(crate) pending_kccgst: KccgstBuffer,
     pub(crate) kccgst: [Vec<i8>; 5],
 }
 #[derive(Clone, Default)]
-pub(crate) struct kccgst_buffer {
+pub(crate) struct KccgstBuffer {
     pub(crate) buffer: Vec<i8>,
-    pub(crate) slices: Vec<kccgst_buffer_slice>,
+    pub(crate) slices: Vec<KccgstBufferSlice>,
 }
 #[derive(Copy, Clone)]
-pub(crate) struct kccgst_buffer_slice {
+pub(crate) struct KccgstBufferSlice {
     pub(crate) length: u32,
     pub(crate) kccgst: u32,
     pub(crate) layout: u32,
@@ -4739,7 +4746,7 @@ pub(crate) const KCCGST_COMPAT: u32 = 2;
 pub(crate) const KCCGST_TYPES: u32 = 1;
 pub(crate) const KCCGST_KEYCODES: u32 = 0;
 #[derive(Copy, Clone)]
-pub(crate) struct rule {
+pub(crate) struct Rule {
     pub(crate) mlvo_value_at_pos: [SvalIdx; 4],
     pub(crate) match_type_at_pos: [u32; 4],
     pub(crate) kccgst_value_at_pos: [SvalIdx; 5],
@@ -4754,7 +4761,7 @@ pub(crate) const MLVO_MATCH_WILDCARD_NONE: u32 = 2;
 pub(crate) const MLVO_MATCH_WILDCARD_LEGACY: u32 = 1;
 pub(crate) const MLVO_MATCH_NORMAL: u32 = 0;
 #[derive(Copy, Clone, Default)]
-pub(crate) struct mapping {
+pub(crate) struct Mapping {
     pub(crate) mlvo_at_pos: [u32; 4],
     pub(crate) num_mlvo: u8,
     pub(crate) defined_mlvo_mask: u8,
@@ -4802,23 +4809,23 @@ pub(crate) const MLVO_VARIANT: u32 = 2;
 pub(crate) const MLVO_LAYOUT: u32 = 1;
 pub(crate) const MLVO_MODEL: u32 = 0;
 #[derive(Clone)]
-pub(crate) struct group {
+pub(crate) struct Group {
     pub(crate) name: Vec<u8>,
     pub(crate) elements: Vec<Vec<u8>>,
 }
 #[derive(Copy, Clone)]
-pub(crate) struct lvalue {
+pub(crate) struct Lvalue {
     pub(crate) string: SvalIdx,
 }
 #[derive(Clone, Default)]
-pub(crate) struct rule_names<'a> {
-    pub(crate) model: matched_sval<'a>,
-    pub(crate) layouts: Vec<matched_sval<'a>>,
-    pub(crate) variants: Vec<matched_sval<'a>>,
-    pub(crate) options: Vec<matched_sval<'a>>,
+pub(crate) struct RuleNames<'a> {
+    pub(crate) model: MatchedSval<'a>,
+    pub(crate) layouts: Vec<MatchedSval<'a>>,
+    pub(crate) variants: Vec<MatchedSval<'a>>,
+    pub(crate) options: Vec<MatchedSval<'a>>,
 }
 #[derive(Copy, Clone, Default)]
-pub(crate) struct matched_sval<'a> {
+pub(crate) struct MatchedSval<'a> {
     pub(crate) sval: Sval<'a>,
     pub(crate) matched: bool,
     pub(crate) layout: u32,
@@ -4840,9 +4847,9 @@ pub(crate) const LAYOUT_INDEX_SINGLE: u32 = 4294967291;
 pub(crate) const LAYOUT_INDEX_ANY: u32 = 4294967294;
 pub(crate) const LAYOUT_INDEX_LATER: u32 = 4294967293;
 
-impl Default for rule {
+impl Default for Rule {
     fn default() -> Self {
-        rule {
+        Rule {
             mlvo_value_at_pos: [SvalIdx::EMPTY; 4],
             match_type_at_pos: [0; 4],
             kccgst_value_at_pos: [SvalIdx::EMPTY; 5],
@@ -4852,23 +4859,23 @@ impl Default for rule {
         }
     }
 }
-impl Default for lvalue {
+impl Default for Lvalue {
     fn default() -> Self {
-        lvalue {
+        Lvalue {
             string: SvalIdx::EMPTY,
         }
     }
 }
-impl<'a> matcher<'a> {
+impl<'a> Matcher<'a> {
     fn new(ctx: &'a mut XkbContext) -> Self {
-        matcher {
+        Matcher {
             ctx,
-            rmlvo: rule_names::default(),
-            val: lvalue::default(),
+            rmlvo: RuleNames::default(),
+            val: Lvalue::default(),
             groups: Vec::new(),
-            mapping: mapping::default(),
-            rule: rule::default(),
-            pending_kccgst: kccgst_buffer::default(),
+            mapping: Mapping::default(),
+            rule: Rule::default(),
+            pending_kccgst: KccgstBuffer::default(),
             kccgst: std::array::from_fn(|_| Vec::new()),
         }
     }
@@ -4880,7 +4887,7 @@ pub(crate) const MAX_INCLUDE_DEPTH: i32 = 5_i32;
 fn is_ident(ch: i8) -> bool {
     (ch as u8).is_ascii_graphic() && ch as i32 != '\\' as i32
 }
-fn lex(s: &mut Scanner, val: &mut lvalue) -> u32 {
+fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
     loop {
         while s.chr(' ' as i32 as i8) as i32 != 0
             || s.chr('\t' as i32 as i8) as i32 != 0
@@ -5003,30 +5010,30 @@ fn strip_spaces<'a>(v: Sval<'a>) -> Sval<'a> {
     }
 }
 
-/// Resize a Vec<matched_sval>, zero-filling new elements.
-fn vec_resize_zero_matched_sval(v: &mut Vec<matched_sval<'_>>, new_len: usize) {
+/// Resize a Vec<MatchedSval>, zero-filling new elements.
+fn vec_resize_zero_matched_sval(v: &mut Vec<MatchedSval<'_>>, new_len: usize) {
     if new_len > v.len() {
-        v.resize(new_len, matched_sval::default());
+        v.resize(new_len, MatchedSval::default());
     } else {
         v.truncate(new_len);
     }
 }
 
-fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<matched_sval<'a>> {
-    let mut arr: Vec<matched_sval<'a>> = Vec::new();
+fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<MatchedSval<'a>> {
+    let mut arr: Vec<MatchedSval<'a>> = Vec::new();
     let Some(bytes) = s else {
-        arr.push(matched_sval::default());
+        arr.push(MatchedSval::default());
         return arr;
     };
     if bytes.is_empty() {
-        arr.push(matched_sval::default());
+        arr.push(MatchedSval::default());
         return arr;
     }
     let mut pos: usize = 0;
     loop {
         let start = pos;
         let mut end = pos;
-        let mut val_0 = matched_sval {
+        let mut val_0 = MatchedSval {
             matched: false,
             layout: OPTIONS_MATCH_ALL_GROUPS as u32,
             sval: Sval {
@@ -5096,8 +5103,8 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<matched
 fn matcher_new_from_names<'a>(
     ctx: &'a mut XkbContext,
     rmlvo: &'a XkbRuleNames,
-) -> Box<matcher<'a>> {
-    let mut m = Box::new(matcher::new(ctx));
+) -> Box<Matcher<'a>> {
+    let mut m = Box::new(Matcher::new(ctx));
     let rmlvo_ref = rmlvo;
     m.rmlvo.model.sval = Sval {
         data: rmlvo_ref.model.as_bytes(),
@@ -5162,19 +5169,19 @@ fn matcher_new_from_names<'a>(
     }
     m
 }
-fn matcher_group_start_new(m: &mut matcher, name: &[u8]) {
-    let group: group = group {
+fn matcher_group_start_new(m: &mut Matcher, name: &[u8]) {
+    let group: Group = Group {
         name: name.to_vec(),
         elements: Vec::new(),
     };
     m.groups.push(group);
 }
-fn matcher_group_add_element(m: &mut matcher, _s: &mut Scanner, element: &[u8]) {
+fn matcher_group_add_element(m: &mut Matcher, _s: &mut Scanner, element: &[u8]) {
     let last_group = m.groups.last_mut().unwrap();
     last_group.elements.push(element.to_vec());
 }
 fn matcher_include(
-    m: &mut matcher<'_>,
+    m: &mut Matcher<'_>,
     parent_scanner: &mut Scanner,
     include_depth: u32,
     inc: Sval,
@@ -5206,7 +5213,7 @@ fn matcher_include(
     } else if expanded {
         None
     } else {
-        FindFileInXkbPath(
+        find_file_in_xkb_path(
             &mut *m.ctx,
             &parent_scanner.file_name,
             &stmt_file,
@@ -5231,7 +5238,7 @@ fn matcher_include(
             break;
         }
         offset += 1;
-        file_and_path = FindFileInXkbPath(
+        file_and_path = find_file_in_xkb_path(
             &mut *m.ctx,
             &parent_scanner.file_name,
             &stmt_file,
@@ -5242,7 +5249,7 @@ fn matcher_include(
     }
     log::error!("Failed to open included XKB rules \"{}\"\n", &stmt_file);
 }
-fn matcher_mapping_start_new(m: &mut matcher) {
+fn matcher_mapping_start_new(m: &mut Matcher) {
     let mut i: u8 = 0 as u8;
     while (i as i32) < _MLVO_NUM_ENTRIES as i32 as u8 as i32 {
         m.mapping.mlvo_at_pos[i as usize] = _MLVO_NUM_ENTRIES;
@@ -5330,10 +5337,10 @@ fn extract_mapping_layout_index(s: &[u8], out: &mut u32) -> i32 {
     parse_layout_int_index(s, out)
 }
 #[inline]
-fn is_mlvo_mask_defined(m: &mut matcher, mlvo: u32) -> bool {
+fn is_mlvo_mask_defined(m: &mut Matcher, mlvo: u32) -> bool {
     m.mapping.defined_mlvo_mask as u32 & 1_u32 << mlvo != 0
 }
-fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut Scanner, ident: Sval) {
+fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
     let ident_bytes = ident.as_bytes();
     let mut mlvo: u32 = MLVO_MODEL;
     let mut mlvo_bytes: &[u8] = b"";
@@ -5450,12 +5457,11 @@ fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut Scanner, ident: Sval) {
         return;
     }
     m.mapping.mlvo_at_pos[m.mapping.num_mlvo as usize] = mlvo;
-    m.mapping.defined_mlvo_mask = (m.mapping.defined_mlvo_mask as i32
-        | (1_u32 as u8 as i32) << mlvo as u32)
-        as u8;
+    m.mapping.defined_mlvo_mask =
+        (m.mapping.defined_mlvo_mask as i32 | (1_u32 as u8 as i32) << mlvo as u32) as u8;
     m.mapping.num_mlvo = m.mapping.num_mlvo.wrapping_add(1);
 }
-fn matcher_mapping_set_layout_bounds(m: &mut matcher) {
+fn matcher_mapping_set_layout_bounds(m: &mut Matcher) {
     let mut idx: u32 = if let LayoutIdx::Single {
         layout_idx,
         variant_idx,
@@ -5518,7 +5524,7 @@ fn matcher_mapping_set_layout_bounds(m: &mut matcher) {
         m.mapping.active_or_candidates_mask = 1_u32 << idx;
     };
 }
-fn matcher_mapping_set_kccgst(m: &mut matcher, s: &mut Scanner, ident: Sval) {
+fn matcher_mapping_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
     let ident_bytes = ident.as_bytes();
     let mut kccgst: u32 = KCCGST_KEYCODES;
     let mut kccgst_bytes: &[u8] = b"";
@@ -5565,7 +5571,7 @@ fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
     }
 }
 
-fn matcher_mapping_verify(m: &mut matcher, s: &mut Scanner) -> bool {
+fn matcher_mapping_verify(m: &mut Matcher, s: &mut Scanner) -> bool {
     if m.mapping.num_mlvo as i32 == 0_i32 {
         let loc: ScannerLoc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the left hand side; ignoring rule set\n",
@@ -5609,16 +5615,11 @@ fn matcher_mapping_verify(m: &mut matcher, s: &mut Scanner) -> bool {
     m.mapping.active_or_candidates_mask = 0_u32;
     false
 }
-fn matcher_rule_start_new(m: &mut matcher) {
-    m.rule = rule::default();
+fn matcher_rule_start_new(m: &mut Matcher) {
+    m.rule = Rule::default();
     m.rule.skip = m.mapping.active_or_candidates_mask == 0;
 }
-fn matcher_rule_set_mlvo_common(
-    m: &mut matcher,
-    s: &mut Scanner,
-    ident: SvalIdx,
-    match_type: u32,
-) {
+fn matcher_rule_set_mlvo_common(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx, match_type: u32) {
     if m.rule.num_mlvo_values as i32 >= m.mapping.num_mlvo as i32 {
         let loc: ScannerLoc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
@@ -5633,17 +5634,17 @@ fn matcher_rule_set_mlvo_common(
     m.rule.mlvo_value_at_pos[m.rule.num_mlvo_values as usize] = ident;
     m.rule.num_mlvo_values = m.rule.num_mlvo_values.wrapping_add(1);
 }
-fn matcher_rule_set_mlvo_wildcard(m: &mut matcher, s: &mut Scanner, match_type: u32) {
+fn matcher_rule_set_mlvo_wildcard(m: &mut Matcher, s: &mut Scanner, match_type: u32) {
     let dummy = SvalIdx::EMPTY;
     matcher_rule_set_mlvo_common(m, s, dummy, match_type);
 }
-fn matcher_rule_set_mlvo_group(m: &mut matcher, s: &mut Scanner, ident: SvalIdx) {
+fn matcher_rule_set_mlvo_group(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
     matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_GROUP);
 }
-fn matcher_rule_set_mlvo(m: &mut matcher, s: &mut Scanner, ident: SvalIdx) {
+fn matcher_rule_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
     matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_NORMAL);
 }
-fn matcher_rule_set_kccgst(m: &mut matcher, s: &mut Scanner, ident: SvalIdx) {
+fn matcher_rule_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
     if m.rule.num_kccgst_values as i32 >= m.mapping.num_kccgst as i32 {
         let loc: ScannerLoc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
@@ -5657,7 +5658,7 @@ fn matcher_rule_set_kccgst(m: &mut matcher, s: &mut Scanner, ident: SvalIdx) {
     m.rule.kccgst_value_at_pos[m.rule.num_kccgst_values as usize] = ident;
     m.rule.num_kccgst_values = m.rule.num_kccgst_values.wrapping_add(1);
 }
-fn match_group(groups: &[group], group_name: Sval, to: Sval) -> bool {
+fn match_group(groups: &[Group], group_name: Sval, to: Sval) -> bool {
     let found_group = groups.iter().find(|g| g.name.as_slice() == group_name.data);
     match found_group {
         None => false,
@@ -5671,13 +5672,7 @@ fn match_group(groups: &[group], group_name: Sval, to: Sval) -> bool {
         }
     }
 }
-fn match_value(
-    groups: &[group],
-    val: Sval,
-    to: Sval,
-    match_type: u32,
-    wildcard_type: u32,
-) -> bool {
+fn match_value(groups: &[Group], val: Sval, to: Sval, match_type: u32, wildcard_type: u32) -> bool {
     match match_type {
         1 => wildcard_type == WILDCARD_MATCH_ALL || !to.is_empty(),
         2 => to.is_empty(),
@@ -5688,9 +5683,9 @@ fn match_value(
     }
 }
 fn match_value_and_mark(
-    groups: &[group],
+    groups: &[Group],
     val: Sval,
-    to: &mut matched_sval,
+    to: &mut MatchedSval,
     match_type: u32,
     wildcard_type: u32,
 ) -> bool {
@@ -5701,7 +5696,7 @@ fn match_value_and_mark(
     matched
 }
 fn expand_rmlvo_in_kccgst_value(
-    m: &mut matcher,
+    m: &mut Matcher,
     s: &mut Scanner,
     value: Sval,
     layout_idx: u32,
@@ -5928,7 +5923,7 @@ fn expand_rmlvo_in_kccgst_value(
     false
 }
 fn expand_qualifier_in_kccgst_value(
-    m: &mut matcher,
+    m: &mut Matcher,
     s: &mut Scanner,
     value: Sval,
     expanded: &mut Vec<i8>,
@@ -6015,7 +6010,7 @@ fn concat_kccgst(into: &mut Vec<i8>, from: &[i8]) {
     }
 }
 fn expand_kccgst_value(
-    m: &mut matcher,
+    m: &mut Matcher,
     s: &mut Scanner,
     value: Sval,
     layout_idx: u32,
@@ -6078,7 +6073,7 @@ fn expand_kccgst_value(
         Some(expanded)
     }
 }
-fn matcher_append_pending_kccgst(m: &mut matcher) -> bool {
+fn matcher_append_pending_kccgst(m: &mut Matcher) -> bool {
     if !matches!(m.mapping.layout, LayoutIdx::Range { .. }) {
         return true;
     }
@@ -6118,7 +6113,7 @@ fn matcher_append_pending_kccgst(m: &mut matcher) -> bool {
     m.mapping.layout = LayoutIdx::default();
     true
 }
-fn matcher_rule_verify(m: &mut matcher, s: &mut Scanner) {
+fn matcher_rule_verify(m: &mut Matcher, s: &mut Scanner) {
     if m.rule.num_mlvo_values as i32 != m.mapping.num_mlvo as i32
         || m.rule.num_kccgst_values as i32 != m.mapping.num_kccgst as i32
     {
@@ -6131,7 +6126,7 @@ fn matcher_rule_verify(m: &mut matcher, s: &mut Scanner) {
         m.rule.skip = true;
     }
 }
-fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut Scanner) {
+fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
     let mut candidate_layouts: u32 = m.mapping.active_or_candidates_mask;
     let mut idx: u32;
     let mut i: u8 = 0 as u8;
@@ -6280,7 +6275,7 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut Scanner) {
                         }
                         let length: u32 =
                             (m.pending_kccgst.buffer.len() as u32).wrapping_sub(prev_buffer_length);
-                        let slice = kccgst_buffer_slice {
+                        let slice = KccgstBufferSlice {
                             length,
                             kccgst,
                             layout: idx,
@@ -6309,10 +6304,10 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut Scanner) {
         m.mapping.active_or_candidates_mask &= !candidate_layouts;
     }
 }
-fn gettok(m: &mut matcher, s: &mut Scanner) -> u32 {
+fn gettok(m: &mut Matcher, s: &mut Scanner) -> u32 {
     lex(s, &mut m.val)
 }
-fn matcher_match(m: &mut matcher, s: &mut Scanner, include_depth: u32, _file_name: &str) -> bool {
+fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_name: &str) -> bool {
     let mut eof_ok = false;
     let mut tok: u32;
 
@@ -6553,7 +6548,7 @@ fn matcher_match(m: &mut matcher, s: &mut Scanner, include_depth: u32, _file_nam
     }
 }
 fn read_rules_file(
-    matcher: &mut matcher<'_>,
+    matcher: &mut Matcher<'_>,
     include_depth: u32,
     file_data: &[u8],
     path: &str,
@@ -6577,7 +6572,7 @@ fn read_rules_file(
     let ret: bool = matcher_match(matcher, &mut scanner, include_depth, path);
     ret
 }
-fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut matcher<'_>) -> bool {
+fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_>) -> bool {
     let partial_rules = format!("{}{}", rules, suffix);
     if partial_rules.len() >= 60 {
         log::error!(
@@ -6590,7 +6585,7 @@ fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut matcher<'_
     }
     let mut offset: u32 = 0;
     loop {
-        let found = FindFileInXkbPath(
+        let found = find_file_in_xkb_path(
             &mut *matcher.ctx,
             "(unknown)",
             &partial_rules,
@@ -6617,14 +6612,14 @@ fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut matcher<'_
 }
 fn xkb_resolve_rules(
     rules: &str,
-    matcher: &mut matcher<'_>,
+    matcher: &mut Matcher<'_>,
     out: &mut XkbComponentNames,
     explicit_layouts: &mut u32,
 ) -> bool {
     let mut ret: bool;
     let mut offset: u32 = 0;
     let rules_str = rules;
-    let found = FindFileInXkbPath(
+    let found = find_file_in_xkb_path(
         &mut *matcher.ctx,
         "(unknown)",
         rules_str,
