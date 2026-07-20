@@ -33,6 +33,7 @@ log = "0.4.29"
 xmloxide = "0.4"
 arrayvec = "0.7"
 serde = { version = "1", features = ["derive"] }
+thiserror = "1"
 
 [dev-dependencies]
 wkb = { package = "wayland-keyboard", path = ".", features = ["testing"] }

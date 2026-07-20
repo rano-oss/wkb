@@ -290,49 +290,25 @@ impl XkbAction {
                 type_0: t,
                 ..Default::default()
             }),
-            ACTION_TYPE_GROUP_SET => XkbAction::GroupSet(XkbGroupAction {
-                ..Default::default()
-            }),
-            ACTION_TYPE_GROUP_LATCH => XkbAction::GroupLatch(XkbGroupAction {
-                ..Default::default()
-            }),
-            ACTION_TYPE_GROUP_LOCK => XkbAction::GroupLock(XkbGroupAction {
-                ..Default::default()
-            }),
-            ACTION_TYPE_PTR_MOVE => XkbAction::PtrMove(XkbPointerAction {
-                ..Default::default()
-            }),
-            ACTION_TYPE_PTR_BUTTON => XkbAction::PtrButton(XkbPointerButtonAction {
-                ..Default::default()
-            }),
-            ACTION_TYPE_PTR_LOCK => XkbAction::PtrLock(XkbPointerButtonAction {
-                ..Default::default()
-            }),
-            ACTION_TYPE_PTR_DEFAULT => XkbAction::PtrDefault(XkbPointerDefaultAction {
-                ..Default::default()
-            }),
+            ACTION_TYPE_GROUP_SET => XkbAction::GroupSet(XkbGroupAction::default()),
+            ACTION_TYPE_GROUP_LATCH => XkbAction::GroupLatch(XkbGroupAction::default()),
+            ACTION_TYPE_GROUP_LOCK => XkbAction::GroupLock(XkbGroupAction::default()),
+            ACTION_TYPE_PTR_MOVE => XkbAction::PtrMove(XkbPointerAction::default()),
+            ACTION_TYPE_PTR_BUTTON => XkbAction::PtrButton(XkbPointerButtonAction::default()),
+            ACTION_TYPE_PTR_LOCK => XkbAction::PtrLock(XkbPointerButtonAction::default()),
+            ACTION_TYPE_PTR_DEFAULT => XkbAction::PtrDefault(XkbPointerDefaultAction::default()),
             ACTION_TYPE_TERMINATE => XkbAction::Terminate,
-            ACTION_TYPE_SWITCH_VT => XkbAction::SwitchVt(XkbSwitchScreenAction {
-                ..Default::default()
-            }),
-            ACTION_TYPE_CTRL_SET => XkbAction::CtrlSet(XkbControlsAction {
-                ..Default::default()
-            }),
-            ACTION_TYPE_CTRL_LOCK => XkbAction::CtrlLock(XkbControlsAction {
-                ..Default::default()
-            }),
-            ACTION_TYPE_REDIRECT_KEY => XkbAction::RedirectKey(XkbRedirectKeyAction {
-                ..Default::default()
-            }),
+            ACTION_TYPE_SWITCH_VT => XkbAction::SwitchVt(XkbSwitchScreenAction::default()),
+            ACTION_TYPE_CTRL_SET => XkbAction::CtrlSet(XkbControlsAction::default()),
+            ACTION_TYPE_CTRL_LOCK => XkbAction::CtrlLock(XkbControlsAction::default()),
+            ACTION_TYPE_REDIRECT_KEY => XkbAction::RedirectKey(XkbRedirectKeyAction::default()),
             ACTION_TYPE_UNSUPPORTED_LEGACY => XkbAction::UnsupportedLegacy,
             ACTION_TYPE_UNKNOWN => XkbAction::Unknown,
             ACTION_TYPE_PRIVATE => XkbAction::Private(XkbPrivateAction {
                 type_0: t,
                 ..Default::default()
             }),
-            ACTION_TYPE_INTERNAL => XkbAction::Internal(XkbInternalAction {
-                ..Default::default()
-            }),
+            ACTION_TYPE_INTERNAL => XkbAction::Internal(XkbInternalAction::default()),
             _ => XkbAction::None,
         }
     }
@@ -1069,7 +1045,6 @@ pub const XKB_LOG_VERBOSITY_DEFAULT: i32 = 0;
 
 pub(crate) const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
 pub(crate) const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;
-pub(crate) const XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_: u32 = 60;
 pub(crate) const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: u32 = 237;
 pub(crate) const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: u32 = 312;
 pub(crate) const XKB_ERROR_WRONG_FIELD_TYPE: u32 = 578;
@@ -1085,7 +1060,6 @@ pub(crate) struct LookupEntry {
 
 // ── Shared AST type definitions (merged from shared_ast_types.rs) ──
 
-pub(crate) type XkbMessageCode = u32;
 // ── File type enum ──────────────────────────────────────────────────
 
 pub(crate) const _FILE_TYPE_NUM_ENTRIES: u32 = 7;
@@ -1418,32 +1392,6 @@ pub(crate) fn safe_map_name(file: &XkbFile) -> &str {
     }
 }
 
-#[inline]
-pub(crate) fn report_not_array(_type_0: &str, _field: &str, _name: &str) -> bool {
-    false
-}
-
-#[inline]
-pub(crate) fn report_bad_type(
-    _code: XkbMessageCode,
-    _type_0: &str,
-    _field: &str,
-    _name: &str,
-    _wanted: &str,
-) -> bool {
-    false
-}
-
-#[inline]
-pub(crate) fn report_bad_field(_type_0: &str, _field: &str, _name: &str) -> bool {
-    false
-}
-
-#[inline]
-pub(crate) fn report_should_be_array(_type_0: &str, _field: &str, _name: &str) -> bool {
-    false
-}
-
 // ── Utility functions (merged from utils.rs) ──
 
 /// Case-insensitive comparison of two byte slices (like C `strcasecmp`).
@@ -1459,38 +1407,6 @@ pub(crate) fn istrcmp(a: &[u8], b: &[u8]) -> i32 {
         }
     }
     (a.len() as i32) - (b.len() as i32)
-}
-
-/// Stack buffer writer implementing `core::fmt::Write`.
-pub(crate) struct LogBuf<'a> {
-    buf: &'a mut [u8],
-    pub(crate) pos: usize,
-    pub(crate) truncated: bool,
-}
-
-impl<'a> LogBuf<'a> {
-    #[inline]
-    pub(crate) fn new(buf: &'a mut [u8]) -> Self {
-        Self {
-            buf,
-            pos: 0,
-            truncated: false,
-        }
-    }
-}
-
-impl<'a> core::fmt::Write for LogBuf<'a> {
-    fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        let bytes = s.as_bytes();
-        let space = self.buf.len() - self.pos;
-        let n = bytes.len().min(space);
-        if n < bytes.len() {
-            self.truncated = true;
-        }
-        self.buf[self.pos..self.pos + n].copy_from_slice(&bytes[..n]);
-        self.pos += n;
-        Ok(())
-    }
 }
 
 /// Parse decimal digits from a byte slice into u32.

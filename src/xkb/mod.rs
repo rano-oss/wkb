@@ -17,27 +17,18 @@ use crate::WKB;
 // ── Error type ──
 
 /// Errors returned by XKB keymap construction.
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum XkbError {
     /// Failed to create an XKB context.
+    #[error("Failed to create XKB context")]
     ContextCreation,
     /// Failed to compile keymap from RMLVO names.
+    #[error("Failed to compile keymap")]
     KeymapCompilation,
     /// Failed to parse keymap from string.
+    #[error("Failed to parse keymap string")]
     KeymapParsing,
 }
-
-impl std::fmt::Display for XkbError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            XkbError::ContextCreation => write!(f, "Failed to create XKB context"),
-            XkbError::KeymapCompilation => write!(f, "Failed to compile keymap"),
-            XkbError::KeymapParsing => write!(f, "Failed to parse keymap string"),
-        }
-    }
-}
-
-impl std::error::Error for XkbError {}
 
 /// Get the keycode (and optional level) for a specific modifier type.
 pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Option<u8>)> {

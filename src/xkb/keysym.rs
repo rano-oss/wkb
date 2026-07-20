@@ -20835,24 +20835,6 @@ fn get_name_bytes(entry: &NameKeysym) -> &'static [u8] {
     let end = rest.iter().position(|&b| b == 0).unwrap_or(rest.len());
     &rest[..end]
 }
-#[inline]
-fn get_unicode_name(ks: u32) -> String {
-    format!("U{:04X}", ks & 0xffffff)
-}
-pub(crate) fn xkb_keysym_get_name(ks: u32) -> String {
-    if ks > XKB_KEYSYM_MAX as u32 {
-        return "Invalid".to_string();
-    }
-    let index: isize = find_keysym_index(ks);
-    if index != -1_i32 as isize {
-        let name_bytes = get_name_bytes(&KEYSYM_TO_NAME[index as usize]);
-        return std::str::from_utf8(name_bytes).unwrap_or("").to_string();
-    }
-    if (XKB_KEYSYM_UNICODE_MIN..=XKB_KEYSYM_UNICODE_MAX).contains(&ks) {
-        return get_unicode_name(ks);
-    }
-    format!("0x{:08x}", ks)
-}
 
 /// Get keysym name as static string (for serialization).
 /// Returns `None` if keysym is not found.

@@ -36,8 +36,6 @@
 //! - **`compose`** (default) — Compose-key / dead-key sequence support.
 //! - **`testing`** — Exposes internal helpers for integration tests. Not part of the public API.
 
-use std::fmt;
-
 pub use composer::{ComposeState, ComposeString};
 use composer::{Composer, Token};
 mod composer;
@@ -102,21 +100,12 @@ impl KeyBitSet {
 use crate::named_keys::NamedKey;
 
 /// Errors from WKB operations (not related to XKB parsing/compilation).
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum WkbError {
     /// Layout index out of range.
+    #[error("Invalid layout index: {0}")]
     InvalidLayout(usize),
 }
-
-impl fmt::Display for WkbError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            WkbError::InvalidLayout(idx) => write!(f, "Invalid layout index: {}", idx),
-        }
-    }
-}
-
-impl std::error::Error for WkbError {}
 
 /// Core keyboard state machine. Tracks modifier state, key presses, and compose sequences.
 #[derive(Debug, Clone)]

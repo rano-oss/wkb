@@ -1,7 +1,7 @@
-use super::super::keymap::{keysym_text, xkb_escape_map_name};
+use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::{
-    lookup_string, mod_mask_text, simatch_text, CTRL_MASK_NAMES, GROUP_COMPONENT_MASK_NAMES,
-    MOD_COMPONENT_MASK_NAMES, SYM_INTERPRET_MATCH_MASK_NAMES, USE_MOD_MAP_VALUE_NAMES,
+    lookup_string, CTRL_MASK_NAMES, GROUP_COMPONENT_MASK_NAMES, MOD_COMPONENT_MASK_NAMES,
+    SYM_INTERPRET_MATCH_MASK_NAMES, USE_MOD_MAP_VALUE_NAMES,
 };
 pub(crate) use super::super::keymap::{
     xkb_levels_same_actions, xkb_levels_same_syms, xkb_mod_name_to_index,
@@ -9,8 +9,7 @@ pub(crate) use super::super::keymap::{
 use super::super::keysym::xkb_keysym_is_keypad;
 use super::super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 pub(crate) use super::super::shared_types::{
-    report_bad_field, report_bad_type, report_not_array, report_should_be_array, InterpDef,
-    KeyAliasDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, SymbolsDef,
+    InterpDef, KeyAliasDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, SymbolsDef,
 };
 pub(crate) use super::super::shared_types::{
     MAX_ACTIONS_PER_LEVEL, MOD_REAL_MASK_ALL, XKB_MAX_LEDS, XKB_MOD_NONE, XKB_OVERLAY_INVALID,
@@ -2169,74 +2168,6 @@ pub(crate) struct Collect {
     pub(crate) sym_interprets: Vec<XkbSymInterpret>,
 }
 // C2Rust_Unnamed_20 removed: replaced by Vec<XkbAction>
-fn si_text(si: &SymInterpInfo, info: &mut CompatInfo, ki: &XkbKeymapInfo<'_>) -> String {
-    if std::ptr::eq(si, &info.default_interp) {
-        return "default".to_string();
-    }
-    format!(
-        "{}+{}({})",
-        keysym_text(si.interp.sym),
-        simatch_text(si.interp.match_0),
-        mod_mask_text(ki.ctx(), MOD_BOTH, &info.mods, si.interp.mods),
-    )
-}
-#[inline]
-fn report_sinot_array(
-    info: &mut CompatInfo,
-    ki: &XkbKeymapInfo<'_>,
-    si: &SymInterpInfo,
-    field: &str,
-) -> bool {
-    report_not_array("symbol interpretation", field, &si_text(si, info, ki))
-}
-#[inline]
-fn report_sibad_type(
-    info: &mut CompatInfo,
-    ki: &XkbKeymapInfo<'_>,
-    si: &SymInterpInfo,
-    field: &str,
-    wanted: &str,
-) -> bool {
-    report_bad_type(
-        XKB_ERROR_WRONG_FIELD_TYPE,
-        "symbol interpretation",
-        field,
-        &si_text(si, info, ki),
-        wanted,
-    )
-}
-fn ledtext<'a>(info: &'a CompatInfo, ki: &'a XkbKeymapInfo<'_>, ledi: &LedInfo) -> &'a str {
-    if std::ptr::eq(ledi, &info.default_led) {
-        "default"
-    } else {
-        atom_text(&ki.ctx().atom_table, ledi.led.name)
-    }
-}
-#[inline]
-fn report_led_bad_type(
-    info: &mut CompatInfo,
-    ki: &XkbKeymapInfo<'_>,
-    ledi: &LedInfo,
-    field: &str,
-    wanted: &str,
-) -> bool {
-    report_bad_type(
-        XKB_ERROR_WRONG_FIELD_TYPE,
-        "indicator map",
-        field,
-        ledtext(info, ki, ledi),
-        wanted,
-    )
-}
-#[inline]
-fn report_led_not_array(
-    info: &mut CompatInfo,
-    ki: &XkbKeymapInfo<'_>,
-    ledi: &LedInfo,
-    field: &str,
-) -> bool {
-    report_not_array("indicator map", field, ledtext(info, ki, ledi))
-}
 #[inline]
 fn init_interp(info: &mut SymInterpInfo) {
     info.merge = MERGE_DEFAULT;
@@ -2634,7 +2565,7 @@ fn set_interp_field(
 ) -> bool {
     if field.eq_ignore_ascii_case("action") {
         if array_ndx.is_some() {
-            return report_sinot_array(info, ki, si, field);
+            return false;
         }
         if value.stmt_type() == STMT_EXPR_ACTION_LIST {
             let ExprKind::ActionList {
@@ -2712,21 +2643,21 @@ fn set_interp_field(
         || field.eq_ignore_ascii_case("virtualmod")
     {
         if array_ndx.is_some() {
-            return report_sinot_array(info, ki, si, field);
+            return false;
         }
         let mut ndx: u32 = 0_u32;
         if !expr_resolve_mod(ki.ctx(), value, MOD_VIRT, &info.mods, &mut ndx) {
-            return report_sibad_type(info, ki, si, field, "virtual modifier");
+            return false;
         }
         si.interp.virtual_mod = ndx;
         si.defined |= SI_FIELD_VIRTUAL_MOD;
     } else if field.eq_ignore_ascii_case("repeat") {
         let mut set: bool = false;
         if array_ndx.is_some() {
-            return report_sinot_array(info, ki, si, field);
+            return false;
         }
         if !expr_resolve_boolean(ki.ctx(), value, &mut set) {
-            return report_sibad_type(info, ki, si, field, "boolean");
+            return false;
         }
         si.interp.repeat = set;
         si.defined |= SI_FIELD_AUTO_REPEAT;
@@ -2735,15 +2666,14 @@ fn set_interp_field(
     {
         let mut val: u32 = 0_u32;
         if array_ndx.is_some() {
-            return report_sinot_array(info, ki, si, field);
+            return false;
         }
         if !expr_resolve_enum(ki.ctx(), value, &mut val, &USE_MOD_MAP_VALUE_NAMES) {
-            return report_sibad_type(info, ki, si, field, "level specification");
+            return false;
         }
         si.interp.level_one_only = val != 0;
         si.defined |= SI_FIELD_LEVEL_ONE_ONLY;
     } else {
-        report_bad_field("symbol interpretation", field, &si_text(si, info, ki));
         return ki.strict & PARSER_NO_UNKNOWN_INTERPRET_FIELDS == 0;
     }
     true
@@ -2759,7 +2689,7 @@ fn set_led_map_field(
     let value: &ExprDef = value_opt.as_deref().unwrap();
     if field.eq_ignore_ascii_case("modifiers") || field.eq_ignore_ascii_case("mods") {
         if array_ndx.is_some() {
-            return report_led_not_array(info, ki, ledi, field);
+            return false;
         }
         if !expr_resolve_mod_mask(
             ki.ctx(),
@@ -2768,13 +2698,13 @@ fn set_led_map_field(
             &info.mods,
             &mut ledi.led.mods.mods,
         ) {
-            return report_led_bad_type(info, ki, ledi, field, "modifier mask");
+            return false;
         }
         ledi.defined |= LED_FIELD_MODS;
     } else if field.eq_ignore_ascii_case("groups") {
         let mut mask: u32 = 0_u32;
         if array_ndx.is_some() {
-            return report_led_not_array(info, ki, ledi, field);
+            return false;
         }
         let mut pending: bool = false;
         if !expr_resolve_group_mask(ki, value, &mut mask, &mut pending) {
@@ -2788,7 +2718,7 @@ fn set_led_map_field(
                 });
                 mask = pending_index;
             } else {
-                return report_led_bad_type(info, ki, ledi, field, "group mask");
+                return false;
             }
         } else {
             ledi.led.pending_groups = false;
@@ -2798,7 +2728,7 @@ fn set_led_map_field(
     } else if field.eq_ignore_ascii_case("controls") || field.eq_ignore_ascii_case("ctrls") {
         let mut mask_0: u32 = 0_u32;
         if array_ndx.is_some() {
-            return report_led_not_array(info, ki, ledi, field);
+            return false;
         }
         let offset: u8 = ki.features.controls_name_offset;
         if !expr_resolve_mask(
@@ -2807,7 +2737,7 @@ fn set_led_map_field(
             &mut mask_0,
             &CTRL_MASK_NAMES[offset as usize..],
         ) {
-            return report_led_bad_type(info, ki, ledi, field, "controls mask");
+            return false;
         }
         ledi.led.ctrls = mask_0 as XkbActionControls;
         ledi.defined |= LED_FIELD_CTRLS;
@@ -2817,19 +2747,19 @@ fn set_led_map_field(
     {
         let mut mask_1: u32 = 0_u32;
         if array_ndx.is_some() {
-            return report_led_not_array(info, ki, ledi, field);
+            return false;
         }
         if !expr_resolve_mask(ki.ctx(), value, &mut mask_1, &MOD_COMPONENT_MASK_NAMES) {
-            return report_led_bad_type(info, ki, ledi, field, "mask of modifier state components");
+            return false;
         }
         ledi.led.which_mods = mask_1;
     } else if field.eq_ignore_ascii_case("whichgroupstate") {
         let mut mask_2: u32 = 0_u32;
         if array_ndx.is_some() {
-            return report_led_not_array(info, ki, ledi, field);
+            return false;
         }
         if !expr_resolve_mask(ki.ctx(), value, &mut mask_2, &GROUP_COMPONENT_MASK_NAMES) {
-            return report_led_bad_type(info, ki, ledi, field, "mask of group state components");
+            return false;
         }
         ledi.led.which_groups = mask_2;
     } else if field.eq_ignore_ascii_case("driveskbd")
@@ -3236,24 +3166,6 @@ pub(crate) const TYPE_FIELD_LEVEL_NAME: u32 = 8;
 pub(crate) const TYPE_FIELD_PRESERVE: u32 = 4;
 pub(crate) const TYPE_FIELD_MAP: u32 = 2;
 pub(crate) const TYPE_FIELD_MASK: u32 = 1;
-#[inline]
-fn type_txt<'a>(ki: &'a XkbKeymapInfo<'_>, type_0: &KeyTypeInfo) -> &'a str {
-    atom_text(&ki.ctx().atom_table, type_0.name)
-}
-#[inline]
-fn report_type_should_be_array(ki: &XkbKeymapInfo<'_>, type_0: &KeyTypeInfo, field: &str) -> bool {
-    report_should_be_array("key type", field, type_txt(ki, type_0))
-}
-#[inline]
-fn report_type_bad_type(
-    ki: &XkbKeymapInfo<'_>,
-    code: u32,
-    type_0: &KeyTypeInfo,
-    field: &str,
-    wanted: &str,
-) -> bool {
-    report_bad_type(code, "key type", field, type_txt(ki, type_0), wanted)
-}
 fn init_key_types_info(info: &mut KeyTypesInfo, include_depth: u32, mods: &XkbModSet) {
     info.name = None;
     info.error_count = 0;
@@ -3444,7 +3356,7 @@ fn set_map_entry(
         preserve: XkbMods { mods: 0, mask: 0 },
     };
     if array_ndx.is_none() {
-        return report_type_should_be_array(ki, type_0, "map entry");
+        return false;
     }
     if !expr_resolve_mod_mask(
         ki.ctx(),
@@ -3453,13 +3365,7 @@ fn set_map_entry(
         &info.mods,
         &mut entry.mods.mods,
     ) {
-        return report_type_bad_type(
-            ki,
-            XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_,
-            type_0,
-            "map entry",
-            "modifier mask",
-        );
+        return false;
     }
     if entry.mods.mods & !type_0.mods != 0 {
         entry.mods.mods &= type_0.mods;
@@ -3510,7 +3416,7 @@ fn set_preserve(
     value: &ExprDef,
 ) -> bool {
     if array_ndx.is_none() {
-        return report_type_should_be_array(ki, type_0, "preserve entry");
+        return false;
     }
     let mut mods: u32 = 0_u32;
     if !expr_resolve_mod_mask(
@@ -3520,32 +3426,22 @@ fn set_preserve(
         &info.mods,
         &mut mods,
     ) {
-        return report_type_bad_type(
-            ki,
-            XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_,
-            type_0,
-            "preserve entry",
-            "modifier mask",
-        );
+        return false;
     }
     if mods & !type_0.mods != 0 {
-        let _before: String = mod_mask_text(ki.ctx(), MOD_BOTH, &info.mods, mods);
         mods &= type_0.mods;
-        let _after: String = mod_mask_text(ki.ctx(), MOD_BOTH, &info.mods, mods);
     }
     let mut preserve_mods: u32 = 0_u32;
     if !expr_resolve_mod_mask(ki.ctx(), value, MOD_BOTH, &info.mods, &mut preserve_mods) {
         return false;
     }
     if preserve_mods & !mods != 0 {
-        let _before_0: String = mod_mask_text(ki.ctx(), MOD_BOTH, &info.mods, preserve_mods);
         preserve_mods &= mods;
-        let _after_0: String = mod_mask_text(ki.ctx(), MOD_BOTH, &info.mods, preserve_mods);
     }
     add_preserve(ki, info, type_0, mods, preserve_mods)
 }
 fn add_level_name(
-    ki: &XkbKeymapInfo<'_>,
+    _ki: &XkbKeymapInfo<'_>,
     _info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
     level: u32,
@@ -3560,8 +3456,6 @@ fn add_level_name(
             return true;
         }
         if type_0.level_names[level_idx] != XKB_ATOM_NONE {
-            let _old: &str = atom_text(&ki.ctx().atom_table, type_0.level_names[level_idx]);
-            let _new: &str = atom_text(&ki.ctx().atom_table, name);
             if !clobber {
                 return true;
             }
@@ -3578,17 +3472,11 @@ fn set_level_name(
     value: &ExprDef,
 ) -> bool {
     if array_ndx.is_none() {
-        return report_type_should_be_array(ki, type_0, "level name");
+        return false;
     }
     let mut level: u32 = 0_u32;
     if !expr_resolve_level(ki.ctx(), array_ndx.unwrap(), &mut level) {
-        return report_type_bad_type(
-            ki,
-            XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL,
-            type_0,
-            "level name",
-            "integer",
-        );
+        return false;
     }
     let mut level_name: u32 = XKB_ATOM_NONE;
     if !expr_resolve_string(ki.ctx(), value, &mut level_name) {
@@ -4529,20 +4417,12 @@ fn handle_key_name_var(
         return ki.strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
     }
     if array_ndx.is_some() {
-        report_not_array("keycodes", field, "defaults");
         return ki.strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
     }
     let mut val: i64 = 0_i64;
     let value_ref = stmt.value.as_deref().unwrap();
     if !expr_resolve_integer(ki.ctx(), value_ref, &mut val) || val < 0_i64 || val > u32::MAX as i64
     {
-        report_bad_type(
-            XKB_ERROR_WRONG_FIELD_TYPE,
-            "keycodes",
-            field,
-            "defaults",
-            "integer 0..0xfffffffe",
-        );
         return ki.strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
     }
     true
@@ -4560,20 +4440,8 @@ fn handle_led_name_def(
     let mut name: u32 = XKB_ATOM_NONE;
     let name_expr = def.name.as_deref().unwrap();
     if !expr_resolve_string(ki.ctx(), name_expr, &mut name) {
-        let mut buf: [u8; 20] = [0; 20];
-        let buf_len = {
-            let mut w = super::super::shared_types::LogBuf::new(&mut buf[..19]);
-            let _ = core::fmt::Write::write_fmt(&mut w, format_args!("{}", def.ndx));
-            w.pos
-        };
         info.error_count += 1;
-        return report_bad_type(
-            XKB_ERROR_WRONG_FIELD_TYPE,
-            "indicator",
-            "name",
-            std::str::from_utf8(&buf[..buf_len]).unwrap_or("?"),
-            "string",
-        );
+        return false;
     }
     let ledi: LedNameInfo = LedNameInfo {
         merge: def.merge,

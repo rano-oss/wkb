@@ -1382,46 +1382,6 @@ pub(crate) fn action_type_text(type_0: u32) -> &'static str {
         "Private"
     }
 }
-pub(crate) fn keysym_text(sym: u32) -> String {
-    xkb_keysym_get_name(sym)
-}
-pub(crate) fn simatch_text(type_0: u32) -> &'static str {
-    lookup_value(&SYM_INTERPRET_MATCH_MASK_NAMES, type_0)
-}
-pub(crate) fn mod_mask_text(ctx: &XkbContext, type_0: u32, mods: &XkbModSet, mask: u32) -> String {
-    if mask == 0_u32 {
-        return "none".to_string();
-    }
-    if mask == MOD_REAL_MASK_ALL {
-        return "all".to_string();
-    }
-    if type_0 == MOD_REAL && mask & !MOD_REAL_MASK_ALL != 0
-        || (mask as u64 & !(1_u64 << mods.num_mods).wrapping_sub(1_u64) != 0) as i32 as i64 != 0
-    {
-        return format!("{:#x}", mask);
-    }
-    let mut result = String::new();
-    let mut remaining = mask;
-    for i in 0..mods.num_mods as usize {
-        if remaining == 0 {
-            break;
-        }
-        if remaining & 0x1_u32 != 0 {
-            if !result.is_empty() {
-                result.push('+');
-            }
-            result.push_str(atom_text(&ctx.atom_table, mods.mods[i].name));
-        }
-        remaining >>= 1_i32;
-    }
-    result
-}
-
-use super::keysym::xkb_keysym_get_name;
-// Rust-native wrapper types for XKB FFI structures
-//
-// These types use String instead of *const c_char for safer, more idiomatic Rust code.
-// They provide conversion methods to/from the C FFI types.
 
 use std::ffi::CString;
 
