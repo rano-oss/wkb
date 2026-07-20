@@ -1180,9 +1180,8 @@ fn expr_resolve_overlay_entry(
     let prefix: usize = (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1_usize);
     let suffix = &field[prefix..];
     let len: usize = suffix.len();
-    let mut raw_overlay: i64 = XKB_OVERLAY_INVALID as i64;
     let (val_parsed, parse_count) = super::super::shared_types::parse_dec_u64(suffix.as_bytes());
-    raw_overlay = val_parsed as i64;
+    let raw_overlay: i64 = val_parsed as i64;
     if parse_count != len as i32
         || raw_overlay < 1_i64
         || raw_overlay > keymap_info.features.max_overlays as i64
@@ -3384,27 +3383,11 @@ fn handle_interp_def(
 ) -> bool {
     let mut pred: u32 = MATCH_NONE;
     let mut mods: u32 = 0;
-    let mut si: SymInterpInfo = SymInterpInfo {
-        defined: 0 as u32,
-        merge: MERGE_DEFAULT,
-        interp: XkbSymInterpret {
-            sym: 0,
-            match_0: MATCH_NONE,
-            mods: 0,
-            virtual_mod: 0,
-            level_one_only: false,
-            repeat: false,
-            required: false,
-            num_actions: 0,
-            action: XkbAction::None,
-            actions: Vec::new(),
-        },
-    };
     if !resolve_state_and_predicate(def.match_0.as_deref(), &mut pred, &mut mods, info, ki) {
         log::error!("Couldn't determine matching modifiers; Symbol interpretation ignored\n");
         return false;
     }
-    si = info.default_interp.clone();
+    let mut si: SymInterpInfo = info.default_interp.clone();
     si.merge = def.merge;
     si.interp.sym = def.sym;
     si.interp.match_0 = pred;
@@ -5698,7 +5681,6 @@ pub(crate) fn expr_resolve_lhs<'a>(
 
 pub(crate) fn expr_resolve_boolean(ctx: &XkbContext, expr: &ExprDef, set_rtrn: &mut bool) -> bool {
     let ok: bool;
-    let mut ident: &str = "";
     match expr.stmt_type() {
         7 => {
             let ExprKind::Boolean(set) = &expr.kind else {
@@ -5719,7 +5701,7 @@ pub(crate) fn expr_resolve_boolean(ctx: &XkbContext, expr: &ExprDef, set_rtrn: &
             let ExprKind::Ident(ident_atom) = &expr.kind else {
                 unreachable!()
             };
-            ident = atom_text(&ctx.atom_table, *ident_atom);
+            let ident = atom_text(&ctx.atom_table, *ident_atom);
             if !ident.is_empty() {
                 if ident.eq_ignore_ascii_case("true")
                     || ident.eq_ignore_ascii_case("yes")

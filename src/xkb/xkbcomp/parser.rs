@@ -5054,9 +5054,8 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
         if pos < bytes.len() && bytes[pos] as i32 == OPTIONS_GROUP_SPECIFIER_PREFIX {
             pos += 1;
             let layout_start = pos;
-            let mut layout: u32 = XKB_LAYOUT_INVALID;
             let (val_parsed, count) = parse_dec_u32(&bytes[pos..]);
-            layout = val_parsed;
+            let layout: u32 = val_parsed;
             let count = count as usize;
             if count > 0 {
                 pos += count;
