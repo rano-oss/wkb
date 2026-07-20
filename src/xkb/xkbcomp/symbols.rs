@@ -8031,8 +8031,8 @@ pub(crate) fn HandleActionDef(
                 fieldRtrn);
             return PARSER_FATAL_ERROR;
         }
-        let mut fieldNdx: u32 = ACTION_FIELD_CLEAR_LOCKS;
-        if !stringToField(fieldRtrn, &mut fieldNdx) {
+        let mut field_ndx: u32 = ACTION_FIELD_CLEAR_LOCKS;
+        if !stringToField(fieldRtrn, &mut field_ndx) {
             log::error!(
                 "[XKB-{:03}] Unknown field name {} for action {} discarded\n",
                 XKB_ERROR_INVALID_ACTION_FIELD as i32,
@@ -8047,7 +8047,7 @@ pub(crate) fn HandleActionDef(
                 keymap_info,
                 mods,
                 action,
-                fieldNdx,
+                field_ndx,
                 arrayRtrn_opt,
                 av,
             ) {

@@ -17,7 +17,7 @@ use super::super::shared_types::{
 };
 
 use super::super::shared_types::{
-    safe_map_name, ExprDef, ExprKind, GroupCompatDef, IncludeStmt, InterpDef, KeyAliasDef,
+    safe_map_name, ExprDef, ExprKind,IncludeStmt, InterpDef, KeyAliasDef,
     KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, MergeMode, ModMapDef, Statement, StmtType,
     SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, XkbMapFlags, FILE_TYPE_COMPAT,
     FILE_TYPE_GEOMETRY, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
@@ -58,9 +58,9 @@ pub(crate) const YYMAXDEPTH: usize = 10000;
 pub(crate) const YYPACT_NINF: i32 = -280;
 pub(crate) const YYENOMEM: i32 = -2;
 
-pub(crate) struct parser_param<'a> {
+pub(crate) struct ParserParam<'a> {
     pub(crate) ctx: &'a mut XkbContext,
-    pub(crate) scanner: &'a mut scanner<'a>,
+    pub(crate) scanner: &'a mut Scanner<'a>,
     pub(crate) rtrn: Option<Box<XkbFile>>,
     pub(crate) more_maps: bool,
 }
@@ -404,7 +404,7 @@ static YYR2: [i8; 220] = [
 ];
 // ── Helper functions ────────────────────────────────────────────────
 
-fn _xkbcommon_error(param: &mut parser_param, msg: &str) {
+fn _xkbcommon_error(param: &mut ParserParam, msg: &str) {
     let loc: scanner_loc = param.scanner.token_location();
     log::error!(
         "[XKB-{:03}] {}:{}:{}: {}\n",
@@ -416,7 +416,7 @@ fn _xkbcommon_error(param: &mut parser_param, msg: &str) {
     );
 }
 
-fn resolve_keysym(param: &mut parser_param, name: sval) -> Option<u32> {
+fn resolve_keysym(param: &mut ParserParam, name: sval) -> Option<u32> {
     let name_bytes = name.as_bytes();
     let name_str = name.as_str();
 
@@ -534,7 +534,7 @@ fn ensure_capacity_i16(v: &mut Vec<i16>, idx: usize) {
 
 // ── Main parser function ────────────────────────────────────────────
 
-pub(crate) fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
+pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
     let mut yychar: i32;
     let mut yylval: YYValue<'a> = YYValue::None;
     let mut _xkbcommon_nerrs: i32 = 0;
@@ -589,7 +589,7 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
             if yychar <= END_OF_FILE {
                 yychar = END_OF_FILE;
                 yytoken = YYSYMBOL_YYEOF;
-            } else if yychar == YYerror {
+            } else if yychar == YYERROR {
                 yychar = YYUNDEF;
                 // goto yyerrlab1
                 yyerrstatus = 3;
@@ -863,7 +863,7 @@ fn execute_reduction<'a>(
     yyvs: &mut [YYValue<'a>],
     sp: usize,
     yyval: &mut YYValue<'a>,
-    param: &mut parser_param<'a>,
+    param: &mut ParserParam<'a>,
 ) -> bool {
     match yyn {
         2 => {
@@ -2080,13 +2080,13 @@ fn execute_reduction<'a>(
 
 pub(crate) fn parse<'a>(
     mut ctx: &'a mut XkbContext,
-    mut scanner: &'a mut scanner<'a>,
+    mut scanner: &'a mut Scanner<'a>,
     map: &str,
 ) -> Option<Box<XkbFile>> {
     let mut first: Option<Box<XkbFile>> = None;
 
     loop {
-        let mut param = parser_param {
+        let mut param = ParserParam {
             ctx,
             scanner,
             rtrn: None,
@@ -2165,7 +2165,7 @@ pub(crate) fn ExprAppendKeySymList(mut expr: Box<ExprDef>, sym: u32) -> Box<Expr
 }
 
 pub(crate) fn ExprKeySymListAppendString(
-    scanner: &mut scanner,
+    scanner: &mut Scanner,
     mut expr: Box<ExprDef>,
     string: &str,
 ) -> Option<Box<ExprDef>> {
@@ -2209,7 +2209,7 @@ pub(crate) fn ExprKeySymListAppendString(
     }
 }
 
-pub(crate) fn KeysymParseString(scanner: &mut scanner, string: &str) -> u32 {
+pub(crate) fn KeysymParseString(scanner: &mut Scanner, string: &str) -> u32 {
     let bytes = string.as_bytes();
     let len = bytes.len();
     if len == 0 {
@@ -2322,9 +2322,6 @@ pub(crate) fn SymbolsCreate(key_name: u32, symbols: Vec<VarDef>) -> Box<SymbolsD
     })
 }
 
-pub(crate) fn GroupCompatCreate() -> Box<GroupCompatDef> {
-    Box::new(GroupCompatDef {})
-}
 
 pub(crate) fn ModMapCreate(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef> {
     Box::new(ModMapDef {
@@ -2580,7 +2577,7 @@ pub(crate) struct scanner_loc {
     pub(crate) column: usize,
 }
 
-pub(crate) struct scanner<'a> {
+pub(crate) struct Scanner<'a> {
     pub(crate) pos: usize,
     pub(crate) s: &'a [u8],
     pub(crate) buf: [u8; 1024],
@@ -2591,9 +2588,9 @@ pub(crate) struct scanner<'a> {
     pub(crate) file_name: String,
 }
 
-impl<'a> scanner<'a> {
+impl<'a> Scanner<'a> {
     pub(crate) fn new(s: &'a [u8], file_name: &str) -> Self {
-        scanner {
+        Scanner {
             pos: 0,
             s,
             buf: [0; 1024],
@@ -2912,7 +2909,7 @@ pub(crate) const XKB_KEYCODES: i32 = 2;
 pub(crate) const XKB_KEYMAP: i32 = 1;
 pub(crate) const ERROR_TOK: i32 = 255;
 pub(crate) const YYUNDEF: i32 = 257;
-pub(crate) const YYerror: i32 = 256;
+pub(crate) const YYERROR: i32 = 256;
 pub(crate) const END_OF_FILE: i32 = 0;
 pub(crate) const YYEMPTY: i32 = -2;
 
@@ -3124,9 +3121,6 @@ pub(crate) enum YYValue<'a> {
 
 // Helper to take a value out and replace with None
 impl<'a> YYValue<'a> {
-    pub(crate) fn take(&mut self) -> YYValue<'a> {
-        std::mem::take(self)
-    }
 
     pub(crate) fn take_expr(&mut self) -> Option<Box<ExprDef>> {
         match std::mem::take(self) {
@@ -3245,7 +3239,7 @@ fn is_space(ch: i8) -> bool {
     matches!(ch as u8, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
 }
 pub(crate) static DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
-fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
+fn number(s: &mut Scanner, out: &mut i64, out_tok: &mut i32) -> bool {
     if s.str_match(b"0x") {
         match s.hex_int64(out) {
             -1 => {
@@ -3290,7 +3284,7 @@ fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
 /// Lex one token and write the semantic value into `yylval`.
 pub(crate) fn _xkbcommon_lex<'a>(
     yylval: &mut YYValue<'a>,
-    s: &mut scanner<'a>,
+    s: &mut Scanner<'a>,
     ctx: &mut XkbContext,
 ) -> i32 {
     loop {
@@ -3497,12 +3491,12 @@ pub(crate) fn _xkbcommon_lex<'a>(
     ERROR_TOK
 }
 pub(crate) fn XkbParseStringInit<'a>(
-    sc: &mut scanner<'a>,
+    sc: &mut Scanner<'a>,
     input: &'a [u8],
     file_name: &str,
     _map: &str,
 ) -> bool {
-    *sc = scanner::new(input, file_name);
+    *sc = Scanner::new(input, file_name);
     if !sc.check_supported_char_encoding() {
         let loc = sc.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
@@ -3526,7 +3520,7 @@ pub(crate) fn XkbParseString(
     file_name: &str,
     map: &str,
 ) -> Option<Box<XkbFile>> {
-    let mut sc = scanner::new(&[], "");
+    let mut sc = Scanner::new(&[], "");
     if !XkbParseStringInit(&mut sc, input, file_name, map) {
         return None;
     }
@@ -4912,7 +4906,7 @@ pub(crate) const MAX_INCLUDE_DEPTH: i32 = 5_i32;
 fn is_ident(ch: i8) -> bool {
     (ch as u8).is_ascii_graphic() && ch as i32 != '\\' as i32
 }
-fn lex(s: &mut scanner, val: &mut lvalue) -> rules_token {
+fn lex(s: &mut Scanner, val: &mut lvalue) -> rules_token {
     loop {
         while s.chr(' ' as i32 as i8) as i32 != 0
             || s.chr('\t' as i32 as i8) as i32 != 0
@@ -5201,13 +5195,13 @@ fn matcher_group_start_new(m: &mut matcher, name: &[u8]) {
     };
     m.groups.push(group);
 }
-fn matcher_group_add_element(m: &mut matcher, _s: &mut scanner, element: &[u8]) {
+fn matcher_group_add_element(m: &mut matcher, _s: &mut Scanner, element: &[u8]) {
     let last_group = m.groups.last_mut().unwrap();
     last_group.elements.push(element.to_vec());
 }
 fn matcher_include(
     m: &mut matcher<'_>,
-    parent_scanner: &mut scanner,
+    parent_scanner: &mut Scanner,
     include_depth: u32,
     inc: sval,
 ) {
@@ -5365,7 +5359,7 @@ fn extract_mapping_layout_index(s: &[u8], out: &mut u32) -> i32 {
 fn is_mlvo_mask_defined(m: &mut matcher, mlvo: rules_mlvo) -> bool {
     m.mapping.defined_mlvo_mask as u32 & 1_u32 << mlvo != 0
 }
-fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut scanner, ident: sval) {
+fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut Scanner, ident: sval) {
     let ident_bytes = ident.as_bytes();
     let mut mlvo: rules_mlvo = MLVO_MODEL;
     let mut mlvo_bytes: &[u8] = b"";
@@ -5550,7 +5544,7 @@ fn matcher_mapping_set_layout_bounds(m: &mut matcher) {
         m.mapping.active_or_candidates_mask = 1_u32 << idx;
     };
 }
-fn matcher_mapping_set_kccgst(m: &mut matcher, s: &mut scanner, ident: sval) {
+fn matcher_mapping_set_kccgst(m: &mut matcher, s: &mut Scanner, ident: sval) {
     let ident_bytes = ident.as_bytes();
     let mut kccgst: rules_kccgst = KCCGST_KEYCODES;
     let mut kccgst_bytes: &[u8] = b"";
@@ -5597,7 +5591,7 @@ fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
     }
 }
 
-fn matcher_mapping_verify(m: &mut matcher, s: &mut scanner) -> bool {
+fn matcher_mapping_verify(m: &mut matcher, s: &mut Scanner) -> bool {
     if m.mapping.num_mlvo as i32 == 0_i32 {
         let loc: scanner_loc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the left hand side; ignoring rule set\n",
@@ -5647,7 +5641,7 @@ fn matcher_rule_start_new(m: &mut matcher) {
 }
 fn matcher_rule_set_mlvo_common(
     m: &mut matcher,
-    s: &mut scanner,
+    s: &mut Scanner,
     ident: SvalIdx,
     match_type: mlvo_match_type,
 ) {
@@ -5665,17 +5659,17 @@ fn matcher_rule_set_mlvo_common(
     m.rule.mlvo_value_at_pos[m.rule.num_mlvo_values as usize] = ident;
     m.rule.num_mlvo_values = m.rule.num_mlvo_values.wrapping_add(1);
 }
-fn matcher_rule_set_mlvo_wildcard(m: &mut matcher, s: &mut scanner, match_type: mlvo_match_type) {
+fn matcher_rule_set_mlvo_wildcard(m: &mut matcher, s: &mut Scanner, match_type: mlvo_match_type) {
     let dummy = SvalIdx::EMPTY;
     matcher_rule_set_mlvo_common(m, s, dummy, match_type);
 }
-fn matcher_rule_set_mlvo_group(m: &mut matcher, s: &mut scanner, ident: SvalIdx) {
+fn matcher_rule_set_mlvo_group(m: &mut matcher, s: &mut Scanner, ident: SvalIdx) {
     matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_GROUP);
 }
-fn matcher_rule_set_mlvo(m: &mut matcher, s: &mut scanner, ident: SvalIdx) {
+fn matcher_rule_set_mlvo(m: &mut matcher, s: &mut Scanner, ident: SvalIdx) {
     matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_NORMAL);
 }
-fn matcher_rule_set_kccgst(m: &mut matcher, s: &mut scanner, ident: SvalIdx) {
+fn matcher_rule_set_kccgst(m: &mut matcher, s: &mut Scanner, ident: SvalIdx) {
     if m.rule.num_kccgst_values as i32 >= m.mapping.num_kccgst as i32 {
         let loc: scanner_loc = s.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
@@ -5734,7 +5728,7 @@ fn match_value_and_mark(
 }
 fn expand_rmlvo_in_kccgst_value(
     m: &mut matcher,
-    s: &mut scanner,
+    s: &mut Scanner,
     value: sval,
     layout_idx: u32,
     expanded: &mut Vec<i8>,
@@ -5961,7 +5955,7 @@ fn expand_rmlvo_in_kccgst_value(
 }
 fn expand_qualifier_in_kccgst_value(
     m: &mut matcher,
-    s: &mut scanner,
+    s: &mut Scanner,
     value: sval,
     expanded: &mut Vec<i8>,
     has_layout_idx_range: bool,
@@ -6048,7 +6042,7 @@ fn concat_kccgst(into: &mut Vec<i8>, from: &[i8]) {
 }
 fn expand_kccgst_value(
     m: &mut matcher,
-    s: &mut scanner,
+    s: &mut Scanner,
     value: sval,
     layout_idx: u32,
 ) -> Option<Vec<i8>> {
@@ -6150,7 +6144,7 @@ fn matcher_append_pending_kccgst(m: &mut matcher) -> bool {
     m.mapping.layout = LayoutIdx::default();
     true
 }
-fn matcher_rule_verify(m: &mut matcher, s: &mut scanner) {
+fn matcher_rule_verify(m: &mut matcher, s: &mut Scanner) {
     if m.rule.num_mlvo_values as i32 != m.mapping.num_mlvo as i32
         || m.rule.num_kccgst_values as i32 != m.mapping.num_kccgst as i32
     {
@@ -6163,7 +6157,7 @@ fn matcher_rule_verify(m: &mut matcher, s: &mut scanner) {
         m.rule.skip = true;
     }
 }
-fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut scanner) {
+fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut Scanner) {
     let mut candidate_layouts: u32 = m.mapping.active_or_candidates_mask;
     let mut idx: u32;
     let mut i: mlvo_index_t = 0 as mlvo_index_t;
@@ -6341,10 +6335,10 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut scanner) {
         m.mapping.active_or_candidates_mask &= !candidate_layouts;
     }
 }
-fn gettok(m: &mut matcher, s: &mut scanner) -> rules_token {
+fn gettok(m: &mut matcher, s: &mut Scanner) -> rules_token {
     lex(s, &mut m.val)
 }
-fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_name: &str) -> bool {
+fn matcher_match(m: &mut matcher, s: &mut Scanner, include_depth: u32, _file_name: &str) -> bool {
     let mut eof_ok = false;
     let mut tok: rules_token;
 
@@ -6590,7 +6584,7 @@ fn read_rules_file(
     file_data: &[u8],
     path: &str,
 ) -> bool {
-    let mut scanner = scanner::new(file_data, path);
+    let mut scanner = Scanner::new(file_data, path);
     if !scanner.check_supported_char_encoding() {
         let loc: scanner_loc = scanner.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",

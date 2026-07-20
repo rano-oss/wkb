@@ -1356,9 +1356,6 @@ pub(crate) struct ModMapDef {
     pub(crate) modifier: u32,
     pub(crate) keys: Vec<ExprDef>,
 }
-
-pub(crate) struct GroupCompatDef {}
-
 pub(crate) struct InterpDef {
     pub(crate) merge: MergeMode,
     pub(crate) sym: u32,
