@@ -83,12 +83,12 @@ fn compare_keymaps_functionally(wkb_string: &str, xkb_string: &str, layout_name:
                 // set is accepted (see module-level doc).
                 let syms_wkb: Vec<_> = km_wkb
                     .key_get_syms_by_level(kc, layout, level)
-                    .into_iter()
+                    .iter()
                     .map(|s| keysym_to_named_key(s.raw()))
                     .collect();
                 let syms_xkb: Vec<_> = km_xkb
                     .key_get_syms_by_level(kc, layout, level)
-                    .into_iter()
+                    .iter()
                     .map(|s| keysym_to_named_key(s.raw()))
                     .collect();
 
@@ -125,7 +125,7 @@ fn get_wkb_string(locale: &str, variant: Option<&str>) -> String {
     let layout = variant.map(String::from);
     let wkb = WKB::new_from_names("", "", locale, layout.as_deref().unwrap_or(""), None).unwrap();
     wkb.as_xkb_string()
-        .expect("WKB should have xkb_keymap stored")
+        .expect("WKB should have XkbKeymap stored")
         .to_string()
 }
 
@@ -279,12 +279,12 @@ fn export_all_variants_match_xkbcommon(locale: &str) {
                     // set is accepted (see module-level doc).
                     let syms_wkb: Vec<_> = km_from_wkb
                         .key_get_syms_by_level(kc, layout, level)
-                        .into_iter()
+                        .iter()
                         .map(|s| keysym_to_named_key(s.raw()))
                         .collect();
                     let syms_rmlvo: Vec<_> = km_from_rmlvo
                         .key_get_syms_by_level(kc, layout, level)
-                        .into_iter()
+                        .iter()
                         .map(|s| keysym_to_named_key(s.raw()))
                         .collect();
 
@@ -323,7 +323,7 @@ fn export_all_variants_match_xkbcommon(locale: &str) {
 fn keymap_string_from_export(locale: &str, variant: Option<&str>) -> String {
     let wkb = WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
     wkb.as_xkb_string()
-        .expect("WKB should have xkb_keymap stored")
+        .expect("WKB should have XkbKeymap stored")
         .to_string()
 }
 

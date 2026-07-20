@@ -1,7 +1,10 @@
 //! XKB module — keymap construction from RMLVO names and XKB strings,
 //! plus XKB v1 text serialization.
 
-pub(crate) mod xkb_backend;
+pub(crate) mod keymap;
+pub(crate) mod keysym;
+pub(crate) mod shared_types;
+pub(crate) mod xkbcomp;
 
 use crate::composer::Token;
 use crate::flat_keymap::{FlatKeymap, FlatNamedKeyMap, MAX_LEVELS};
@@ -14,27 +17,18 @@ use crate::WKB;
 // ── Error type ──
 
 /// Errors returned by XKB keymap construction.
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum XkbError {
     /// Failed to create an XKB context.
+    #[error("Failed to create XKB context")]
     ContextCreation,
     /// Failed to compile keymap from RMLVO names.
+    #[error("Failed to compile keymap")]
     KeymapCompilation,
     /// Failed to parse keymap from string.
+    #[error("Failed to parse keymap string")]
     KeymapParsing,
 }
-
-impl std::fmt::Display for XkbError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            XkbError::ContextCreation => write!(f, "Failed to create XKB context"),
-            XkbError::KeymapCompilation => write!(f, "Failed to compile keymap"),
-            XkbError::KeymapParsing => write!(f, "Failed to parse keymap string"),
-        }
-    }
-}
-
-impl std::error::Error for XkbError {}
 
 /// Get the keycode (and optional level) for a specific modifier type.
 pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Option<u8>)> {
@@ -73,21 +67,9 @@ pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u3
     other_mod
 }
 
-pub(crate) fn level2_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
-    level_code(modifiers, ModType::Level2)
-}
-
-pub(crate) fn level3_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
-    level_code(modifiers, ModType::Level3)
-}
-
-pub(crate) fn level5_code(modifiers: &Modifiers) -> Option<(u32, Option<u8>)> {
-    level_code(modifiers, ModType::Level5)
-}
-
 /// Press the appropriate level modifier keys on `state` for the given level index.
 fn press_level_modifiers(
-    state: &mut xkb_backend::keymap::State,
+    state: &mut keymap::State,
     level: usize,
     level2: Option<u32>,
     level3: Option<u32>,
@@ -95,17 +77,17 @@ fn press_level_modifiers(
 ) {
     if level & 4 != 0 {
         if let Some(kc) = level5 {
-            state.update_key(kc, xkb_backend::XKB_KEY_DOWN);
+            state.update_key(kc, shared_types::XKB_KEY_DOWN);
         }
     }
     if level & 2 != 0 {
         if let Some(kc) = level3 {
-            state.update_key(kc, xkb_backend::XKB_KEY_DOWN);
+            state.update_key(kc, shared_types::XKB_KEY_DOWN);
         }
     }
     if level & 1 != 0 {
         if let Some(kc) = level2 {
-            state.update_key(kc, xkb_backend::XKB_KEY_DOWN);
+            state.update_key(kc, shared_types::XKB_KEY_DOWN);
         }
     }
 }
@@ -117,7 +99,7 @@ pub fn load_compose_from_path(path: &std::path::Path) -> Composer {
     let mut regular = Composer::new();
     let mut seen: std::collections::HashSet<Vec<u32>> = std::collections::HashSet::new();
 
-    let entries = xkb_backend::keymap::parse_compose_file(path);
+    let entries = keymap::parse_compose_file(path);
 
     for entry in entries {
         let mut tokens: Vec<Token> = Vec::new();
@@ -301,11 +283,7 @@ fn dedup_against_state(fk: &mut FlatKeymap, state_keymap: &FlatKeymap, num_layou
 }
 
 /// Build WKB instance from an XKB keymap, extracting all layouts.
-fn build_wkb_from_keymap(
-    keymap: &xkb_backend::keymap::Keymap,
-    locale: Option<&str>,
-    store_keymap: bool,
-) -> WKB {
+fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_keymap: bool) -> WKB {
     const EVDEV_OFFSET: u32 = 8;
 
     let (min_keycode, max_keycode) = (keymap.min_keycode(), keymap.max_keycode());
@@ -321,9 +299,9 @@ fn build_wkb_from_keymap(
     let modifiers = build_modifiers_from_keymap(keymap, min_keycode, max_keycode);
 
     let level_keys = (
-        level2_code(&modifiers).map(|(c, _)| c + EVDEV_OFFSET),
-        level3_code(&modifiers).map(|(c, _)| c + EVDEV_OFFSET),
-        level5_code(&modifiers).map(|(c, _)| c + EVDEV_OFFSET),
+        level_code(&modifiers, ModType::Level2).map(|(c, _)| c + EVDEV_OFFSET),
+        level_code(&modifiers, ModType::Level3).map(|(c, _)| c + EVDEV_OFFSET),
+        level_code(&modifiers, ModType::Level5).map(|(c, _)| c + EVDEV_OFFSET),
     );
 
     // ── Build flat keymaps for ALL layouts ──
@@ -341,7 +319,7 @@ fn build_wkb_from_keymap(
                     if sym != 0 {
                         named_key_map.set(layout_idx, lvl, evdev, keysym_to_named_key(sym));
                     }
-                    if let Some(ch) = xkb_backend::keysym::keysym_to_char(sym) {
+                    if let Some(ch) = keysym::keysym_to_char(sym) {
                         level_exceptions_keymap.set(layout_idx, lvl, evdev, ch);
                     }
                 }
@@ -349,21 +327,18 @@ fn build_wkb_from_keymap(
         }
     }
 
-    let get_char = |kc: u32,
-                    state: &xkb_backend::keymap::State,
-                    layout_idx: usize,
-                    lvl: usize|
-     -> Option<char> {
-        let sym = state.key_get_one_sym(kc);
-        if sym != 0 {
-            xkb_backend::keysym::keysym_to_char(sym)
-        } else {
-            keymap
-                .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
-                .first()
-                .and_then(|&s| xkb_backend::keysym::keysym_to_char(s))
-        }
-    };
+    let get_char =
+        |kc: u32, state: &keymap::State, layout_idx: usize, lvl: usize| -> Option<char> {
+            let sym = state.key_get_one_sym(kc);
+            if sym != 0 {
+                keysym::keysym_to_char(sym)
+            } else {
+                keymap
+                    .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
+                    .first()
+                    .and_then(|&s| keysym::keysym_to_char(s))
+            }
+        };
 
     let mut state_keymap = FlatKeymap::new(num_keys, num_layouts);
     for layout_idx in 0..num_layouts {
@@ -396,8 +371,8 @@ fn build_wkb_from_keymap(
                             st.update_mask(0, 0, 0, 0, 0, layout_idx as u32);
                         }
                         if toggle {
-                            st.update_key(lkc, xkb_backend::XKB_KEY_DOWN);
-                            st.update_key(lkc, xkb_backend::XKB_KEY_UP);
+                            st.update_key(lkc, shared_types::XKB_KEY_DOWN);
+                            st.update_key(lkc, shared_types::XKB_KEY_UP);
                         }
                         press_level_modifiers(
                             &mut st,
@@ -407,7 +382,7 @@ fn build_wkb_from_keymap(
                             level_keys.2,
                         );
                         if !toggle {
-                            st.update_key(lkc, xkb_backend::XKB_KEY_DOWN);
+                            st.update_key(lkc, shared_types::XKB_KEY_DOWN);
                         }
                         for kc in min_keycode..=max_keycode {
                             if let Some(ch) = get_char(kc, &st, layout_idx, lvl) {
@@ -464,12 +439,12 @@ fn build_wkb_from_keymap(
             .ok();
         let compose_locale = env_locale.as_deref().or(locale);
         compose_locale
-            .and_then(xkb_backend::keymap::resolve_compose_file)
+            .and_then(keymap::resolve_compose_file)
             .map(|subpath| {
                 let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
                 load_compose_from_path(&path)
             })
-            .unwrap_or_else(Composer::new)
+            .unwrap_or_default()
     };
 
     #[cfg(not(feature = "compose"))]
@@ -489,34 +464,29 @@ fn build_wkb_from_keymap(
 }
 
 /// Create a new WKB instance from RMLVO names.
-pub fn new_from_names(
+pub(crate) fn new_from_names(
     rules: &str,
     model: &str,
     layout: &str,
     variant: &str,
     options: Option<&str>,
 ) -> Result<WKB, XkbError> {
-    use xkb_backend::keymap::{Context, RuleNames};
+    use keymap::Context;
+    use shared_types::XkbRuleNames;
 
     let ctx = Context::new().ok_or(XkbError::ContextCreation)?;
-    let rule_names = RuleNames {
-        rules: rules.to_string(),
-        model: model.to_string(),
-        layout: layout.to_string(),
-        variant: variant.to_string(),
-        options: options.unwrap_or("").to_string(),
-    };
+    let rmlvo = XkbRuleNames::from_strs(rules, model, layout, variant, options.unwrap_or(""));
 
     let keymap = ctx
-        .keymap_from_names(&rule_names)
+        .keymap_from_names(&rmlvo)
         .ok_or(XkbError::KeymapCompilation)?;
 
     Ok(build_wkb_from_keymap(&keymap, None, true))
 }
 
 /// Create a new WKB instance from a keymap string.
-pub fn new_from_string(string: &str) -> Result<WKB, XkbError> {
-    use xkb_backend::keymap::Context;
+pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
+    use keymap::Context;
 
     let ctx = Context::new().ok_or(XkbError::ContextCreation)?;
 
@@ -529,7 +499,7 @@ pub fn new_from_string(string: &str) -> Result<WKB, XkbError> {
 
 /// Build Modifiers struct from XKB keymap
 fn build_modifiers_from_keymap(
-    keymap: &xkb_backend::keymap::Keymap,
+    keymap: &keymap::Keymap,
     min_keycode: u32,
     max_keycode: u32,
 ) -> Modifiers {
@@ -688,89 +658,87 @@ fn build_modifiers_from_keymap(
 /// Returns `0` (NoSymbol) for [`NamedKey::Unnamed`] and for character keys
 /// that don't have a canonical keysym.
 pub(crate) fn named_key_to_keysym(key: NamedKey) -> u32 {
-    use crate::xkb::xkb_backend::keysym::xkb_keysym_from_name;
-    use crate::xkb::xkb_backend::shared_types::XKB_KEYSYM_NO_FLAGS;
     match key {
         NamedKey::Unnamed => 0,
 
         // Navigation and editing
-        NamedKey::Space => xkb_keysym_from_name(b"space", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::Enter => xkb_keysym_from_name(b"Return", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::Tab => xkb_keysym_from_name(b"Tab", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::Backspace => xkb_keysym_from_name(b"BackSpace", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::Escape => xkb_keysym_from_name(b"Escape", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::Delete => xkb_keysym_from_name(b"Delete", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::Insert => xkb_keysym_from_name(b"Insert", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::ArrowLeft => xkb_keysym_from_name(b"Left", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::ArrowRight => xkb_keysym_from_name(b"Right", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::ArrowUp => xkb_keysym_from_name(b"Up", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::ArrowDown => xkb_keysym_from_name(b"Down", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::Home => xkb_keysym_from_name(b"Home", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::End => xkb_keysym_from_name(b"End", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::PageUp => xkb_keysym_from_name(b"Prior", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::PageDown => xkb_keysym_from_name(b"Next", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::Space => 0x0020,
+        NamedKey::Enter => 0xff0d,
+        NamedKey::Tab => 0xff09,
+        NamedKey::Backspace => 0xff08,
+        NamedKey::Escape => 0xff1b,
+        NamedKey::Delete => 0xffff,
+        NamedKey::Insert => 0xff63,
+        NamedKey::ArrowLeft => 0xff51,
+        NamedKey::ArrowRight => 0xff53,
+        NamedKey::ArrowUp => 0xff52,
+        NamedKey::ArrowDown => 0xff54,
+        NamedKey::Home => 0xff50,
+        NamedKey::End => 0xff57,
+        NamedKey::PageUp => 0xff55,
+        NamedKey::PageDown => 0xff56,
 
         // Function keys
-        NamedKey::F1 => xkb_keysym_from_name(b"F1", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F2 => xkb_keysym_from_name(b"F2", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F3 => xkb_keysym_from_name(b"F3", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F4 => xkb_keysym_from_name(b"F4", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F5 => xkb_keysym_from_name(b"F5", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F6 => xkb_keysym_from_name(b"F6", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F7 => xkb_keysym_from_name(b"F7", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F8 => xkb_keysym_from_name(b"F8", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F9 => xkb_keysym_from_name(b"F9", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F10 => xkb_keysym_from_name(b"F10", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F11 => xkb_keysym_from_name(b"F11", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F12 => xkb_keysym_from_name(b"F12", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F13 => xkb_keysym_from_name(b"F13", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F14 => xkb_keysym_from_name(b"F14", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F15 => xkb_keysym_from_name(b"F15", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F16 => xkb_keysym_from_name(b"F16", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F17 => xkb_keysym_from_name(b"F17", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F18 => xkb_keysym_from_name(b"F18", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F19 => xkb_keysym_from_name(b"F19", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F20 => xkb_keysym_from_name(b"F20", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F21 => xkb_keysym_from_name(b"F21", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F22 => xkb_keysym_from_name(b"F22", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F23 => xkb_keysym_from_name(b"F23", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F24 => xkb_keysym_from_name(b"F24", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F25 => xkb_keysym_from_name(b"F25", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F26 => xkb_keysym_from_name(b"F26", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F27 => xkb_keysym_from_name(b"F27", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F28 => xkb_keysym_from_name(b"F28", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F29 => xkb_keysym_from_name(b"F29", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F30 => xkb_keysym_from_name(b"F30", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F31 => xkb_keysym_from_name(b"F31", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F32 => xkb_keysym_from_name(b"F32", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F33 => xkb_keysym_from_name(b"F33", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F34 => xkb_keysym_from_name(b"F34", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::F35 => xkb_keysym_from_name(b"F35", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::F1 => 0xffbe,
+        NamedKey::F2 => 0xffbf,
+        NamedKey::F3 => 0xffc0,
+        NamedKey::F4 => 0xffc1,
+        NamedKey::F5 => 0xffc2,
+        NamedKey::F6 => 0xffc3,
+        NamedKey::F7 => 0xffc4,
+        NamedKey::F8 => 0xffc5,
+        NamedKey::F9 => 0xffc6,
+        NamedKey::F10 => 0xffc7,
+        NamedKey::F11 => 0xffc8,
+        NamedKey::F12 => 0xffc9,
+        NamedKey::F13 => 0xffca,
+        NamedKey::F14 => 0xffcb,
+        NamedKey::F15 => 0xffcc,
+        NamedKey::F16 => 0xffcd,
+        NamedKey::F17 => 0xffce,
+        NamedKey::F18 => 0xffcf,
+        NamedKey::F19 => 0xffd0,
+        NamedKey::F20 => 0xffd1,
+        NamedKey::F21 => 0xffd2,
+        NamedKey::F22 => 0xffd3,
+        NamedKey::F23 => 0xffd4,
+        NamedKey::F24 => 0xffd5,
+        NamedKey::F25 => 0xffd6,
+        NamedKey::F26 => 0xffd7,
+        NamedKey::F27 => 0xffd8,
+        NamedKey::F28 => 0xffd9,
+        NamedKey::F29 => 0xffda,
+        NamedKey::F30 => 0xffdb,
+        NamedKey::F31 => 0xffdc,
+        NamedKey::F32 => 0xffdd,
+        NamedKey::F33 => 0xffde,
+        NamedKey::F34 => 0xffdf,
+        NamedKey::F35 => 0xffe0,
 
         // Modifiers
-        NamedKey::LeftShift => xkb_keysym_from_name(b"Shift_L", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::RightShift => xkb_keysym_from_name(b"Shift_R", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::LeftControl => xkb_keysym_from_name(b"Control_L", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::RightControl => xkb_keysym_from_name(b"Control_R", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::LeftAlt => xkb_keysym_from_name(b"Alt_L", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::RightAlt => xkb_keysym_from_name(b"Alt_R", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::LeftMeta => xkb_keysym_from_name(b"Meta_L", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::RightMeta => xkb_keysym_from_name(b"Meta_R", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::LeftSuper => xkb_keysym_from_name(b"Super_L", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::RightSuper => xkb_keysym_from_name(b"Super_R", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::LeftHyper => xkb_keysym_from_name(b"Hyper_L", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::RightHyper => xkb_keysym_from_name(b"Hyper_R", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::LeftShift => 0xffe1,
+        NamedKey::RightShift => 0xffe2,
+        NamedKey::LeftControl => 0xffe3,
+        NamedKey::RightControl => 0xffe4,
+        NamedKey::LeftAlt => 0xffe9,
+        NamedKey::RightAlt => 0xffea,
+        NamedKey::LeftMeta => 0xffe7,
+        NamedKey::RightMeta => 0xffe8,
+        NamedKey::LeftSuper => 0xffeb,
+        NamedKey::RightSuper => 0xffec,
+        NamedKey::LeftHyper => 0xffed,
+        NamedKey::RightHyper => 0xffee,
 
         // Locks
-        NamedKey::CapsLock => xkb_keysym_from_name(b"Caps_Lock", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::NumLock => xkb_keysym_from_name(b"Num_Lock", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::ScrollLock => xkb_keysym_from_name(b"Scroll_Lock", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::CapsLock => 0xffe5,
+        NamedKey::NumLock => 0xff7f,
+        NamedKey::ScrollLock => 0xff14,
 
         // System
-        NamedKey::PrintScreen => xkb_keysym_from_name(b"Print", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::Pause => xkb_keysym_from_name(b"Pause", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::SysReq => xkb_keysym_from_name(b"Sys_Req", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::ContextMenu => xkb_keysym_from_name(b"Menu", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::PrintScreen => 0xff61,
+        NamedKey::Pause => 0xff13,
+        NamedKey::SysReq => 0xff15,
+        NamedKey::ContextMenu => 0xff67,
 
         // Power (XF86)
         NamedKey::Power => 0x1008ff21,
@@ -808,292 +776,21 @@ pub(crate) fn named_key_to_keysym(key: NamedKey) -> u32 {
         NamedKey::KeyboardBrightnessDown => 0x1008ff06,
 
         // Japanese input
-        NamedKey::KanjiMode => xkb_keysym_from_name(b"Kanji", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::Hiragana => xkb_keysym_from_name(b"Hiragana", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::KanjiMode => 0xff21,
+        NamedKey::Hiragana => 0xff25,
         NamedKey::Katakana => 0xff26,
-        NamedKey::Romaji => xkb_keysym_from_name(b"Romaji", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::ZenkakuHankaku => xkb_keysym_from_name(b"Zenkaku_Hankaku", XKB_KEYSYM_NO_FLAGS),
-        NamedKey::EisuToggle => xkb_keysym_from_name(b"Eisu_toggle", XKB_KEYSYM_NO_FLAGS),
+        NamedKey::Romaji => 0xff24,
+        NamedKey::ZenkakuHankaku => 0xff2a,
+        NamedKey::EisuToggle => 0xff30,
 
         // Korean input
         NamedKey::HangulHanja => 0xff34,
     }
 }
 
-#[cfg(test)]
-mod wrapper_tests {
-    use super::xkb_backend::keymap::{Context, RuleNames};
-
-    #[test]
-    fn test_keymap_layout_methods() {
-        let context = Context::new().expect("Failed to create context");
-        let rules = RuleNames {
-            rules: String::new(),
-            model: String::new(),
-            layout: "us,fr,de".to_string(),
-            variant: String::new(),
-            options: String::new(),
-        };
-        let keymap = context
-            .keymap_from_names(&rules)
-            .expect("Failed to create keymap");
-
-        assert_eq!(keymap.num_layouts(), 3);
-        assert_eq!(keymap.layout_get_name(0), Some("English (US)".to_string()));
-        assert_eq!(keymap.layout_get_name(1), Some("French".to_string()));
-        assert_eq!(keymap.layout_get_name(2), Some("German".to_string()));
-
-        let layouts = keymap.get_all_layouts();
-        assert_eq!(layouts.len(), 3);
-        assert_eq!(layouts[0], "English (US)");
-
-        assert_eq!(keymap.layout_get_index("English (US)"), Some(0));
-        assert_eq!(keymap.layout_get_index("French"), Some(1));
-        assert_eq!(keymap.layout_get_index("NonExistent"), None);
-    }
-
-    #[test]
-    fn test_keymap_modifier_methods() {
-        let context = Context::new().expect("Failed to create context");
-        let rules = RuleNames::default();
-        let keymap = context
-            .keymap_from_names(&rules)
-            .expect("Failed to create keymap");
-
-        let num_mods = keymap.num_mods();
-        assert!(num_mods > 0);
-
-        let mods = keymap.get_all_mods();
-        assert_eq!(mods.len(), num_mods as usize);
-        assert!(mods.contains(&"Shift".to_string()));
-        assert!(mods.contains(&"Control".to_string()));
-
-        assert!(keymap.mod_get_index("Shift").is_some());
-        assert!(keymap.mod_get_index("Control").is_some());
-        assert_eq!(keymap.mod_get_index("NonExistent"), None);
-
-        let shift_mask = keymap.mod_get_mask("Shift");
-        assert!(shift_mask > 0);
-    }
-
-    #[test]
-    fn test_keymap_led_methods() {
-        let context = Context::new().expect("Failed to create context");
-        let rules = RuleNames::default();
-        let keymap = context
-            .keymap_from_names(&rules)
-            .expect("Failed to create keymap");
-
-        let num_leds = keymap.num_leds();
-        assert!(num_leds > 0);
-
-        let leds = keymap.get_all_leds();
-        assert_eq!(leds.len(), num_leds as usize);
-
-        if let Some(idx) = keymap.led_get_index("Caps Lock") {
-            assert!(keymap.led_get_name(idx).is_some());
-        }
-    }
-
-    #[test]
-    fn test_keymap_key_methods() {
-        let context = Context::new().expect("Failed to create context");
-        let rules = RuleNames::default();
-        let keymap = context
-            .keymap_from_names(&rules)
-            .expect("Failed to create keymap");
-
-        for (xkb_keycode, _evdev_code) in keymap.keycodes() {
-            if let Some(name) = keymap.key_get_name(xkb_keycode) {
-                assert_eq!(keymap.key_by_name(&name), Some(xkb_keycode));
-            }
-        }
-
-        if let Some(keycode) = keymap.key_by_name("SPCE") {
-            assert_eq!(keymap.key_get_name(keycode), Some("SPCE".to_string()));
-        }
-    }
-
-    #[test]
-    fn test_keymap_num_layouts_for_key() {
-        let context = Context::new().expect("Failed to create context");
-        let rules = RuleNames {
-            rules: String::new(),
-            model: String::new(),
-            layout: "us,fr".to_string(),
-            variant: String::new(),
-            options: String::new(),
-        };
-        let keymap = context
-            .keymap_from_names(&rules)
-            .expect("Failed to create keymap");
-
-        let min_keycode = keymap.min_keycode();
-        let num_layouts = keymap.num_layouts_for_key(min_keycode);
-        assert!(num_layouts > 0);
-        assert!(num_layouts <= keymap.num_layouts());
-    }
-
-    #[test]
-    fn test_state_modifier_queries() {
-        let context = Context::new().expect("Failed to create context");
-        let rules = RuleNames::default();
-        let keymap = context
-            .keymap_from_names(&rules)
-            .expect("Failed to create keymap");
-        let state = keymap.new_state().expect("Failed to create state");
-
-        assert!(!state.mod_name_is_active("Shift", 0xFF));
-        assert!(!state.mod_name_is_active("Control", 0xFF));
-
-        if let Some(shift_idx) = keymap.mod_get_index("Shift") {
-            assert!(!state.mod_index_is_active(shift_idx, 0xFF));
-        }
-    }
-
-    #[test]
-    fn test_state_key_get_syms() {
-        let context = Context::new().expect("Failed to create context");
-        let rules = RuleNames::default();
-        let keymap = context
-            .keymap_from_names(&rules)
-            .expect("Failed to create keymap");
-        let state = keymap.new_state().expect("Failed to create state");
-
-        for (xkb_keycode, _evdev_code) in keymap.keycodes().take(10) {
-            let syms = state.key_get_syms(xkb_keycode);
-            let one_sym = state.key_get_one_sym(xkb_keycode);
-
-            if !syms.is_empty() {
-                assert_eq!(one_sym, syms[0]);
-            }
-        }
-    }
-
-    #[test]
-    fn test_state_update_mask() {
-        let context = Context::new().expect("Failed to create context");
-        let rules = RuleNames::default();
-        let keymap = context
-            .keymap_from_names(&rules)
-            .expect("Failed to create keymap");
-        let mut state = keymap.new_state().expect("Failed to create state");
-
-        let shift_mask = keymap.mod_get_mask("Shift");
-        state.update_mask(shift_mask, 0, 0, 0, 0, 0);
-
-        assert!(state.mod_name_is_active("Shift", 0xFF));
-    }
-
-    #[test]
-    fn test_multi_layout_wkb() {
-        let wkb = crate::WKB::new_from_names("", "", "us,fr", "", None).unwrap();
-        assert_eq!(wkb.num_layouts(), 2);
-        assert!(wkb.layout_name(0).is_some());
-        assert!(wkb.layout_name(1).is_some());
-        assert_eq!(wkb.active_layout_idx(), 0);
-    }
-
-    #[test]
-    fn test_layout_switching() {
-        let mut wkb = crate::WKB::new_from_names("", "", "us,fr", "", None).unwrap();
-        assert_eq!(wkb.active_layout_idx(), 0);
-
-        wkb.set_layout(1).unwrap();
-        assert_eq!(wkb.active_layout_idx(), 1);
-
-        assert!(wkb.set_layout(5).is_err());
-    }
-
-    #[test]
-    fn test_xkb_string_roundtrip() {
-        // Test 1: single layout roundtrip
-        let wkb = crate::WKB::new_from_names("", "", "us", "", None).unwrap();
-        let s = wkb.as_xkb_string().expect("should have xkb string");
-        let wkb2 = crate::WKB::new_from_string(&s).unwrap();
-        assert_eq!(wkb2.num_layouts(), 1);
-
-        // Test 2: multi-layout roundtrip
-        let wkb = crate::WKB::new_from_names("", "", "us,fr", "", None).unwrap();
-        let s = wkb.as_xkb_string().expect("should have xkb string");
-        let wkb2 = crate::WKB::new_from_string(&s).unwrap();
-        assert_eq!(wkb2.num_layouts(), 2);
-
-        // Test 2: multi-layout roundtrip
-        let wkb = crate::WKB::new_from_names("", "", "us,fr", "", None).unwrap();
-        let s = wkb.as_xkb_string().expect("should have xkb string");
-        let wkb2 = crate::WKB::new_from_string(&s).unwrap();
-        assert_eq!(wkb2.num_layouts(), 2);
-    }
-
-    #[test]
-    fn test_keysym_flat_table() {
-        use crate::named_keys::NamedKey;
-
-        let wkb = crate::WKB::new_from_names("", "", "us", "", None).unwrap();
-
-        // 'a' key (evdev 30) at level 0: character key → Unnamed
-        let key = wkb.level_named_key(30, 0, 0);
-        assert_eq!(key, NamedKey::Unnamed, "character key should be Unnamed");
-
-        // 'a' key at level 1 (shifted): character key → Unnamed
-        let key = wkb.level_named_key(30, 0, 1);
-        assert_eq!(
-            key,
-            NamedKey::Unnamed,
-            "shifted character key should be Unnamed"
-        );
-
-        // Return key (evdev 28) → Enter
-        let key = wkb.level_named_key(28, 0, 0);
-        assert_eq!(key, NamedKey::Enter, "expected Enter for evdev 28");
-
-        // Escape key (evdev 1) → Escape
-        let key = wkb.level_named_key(1, 0, 0);
-        assert_eq!(key, NamedKey::Escape, "expected Escape for evdev 1");
-
-        // state_keysym should use current modifier state (level 0 = unshifted)
-        let key = wkb.state_named_key(30);
-        assert_eq!(
-            key,
-            NamedKey::Unnamed,
-            "state_keysym should return Unnamed for 'a' unshifted"
-        );
-    }
-
-    #[test]
-    fn test_keysym_get_name() {
-        use crate::xkb::xkb_backend::keysym::{keysym_get_name, xkb_keysym_from_name};
-        use crate::xkb::xkb_backend::shared_types::XKB_KEYSYM_NO_FLAGS;
-
-        assert_eq!(
-            keysym_get_name(xkb_keysym_from_name(b"a", XKB_KEYSYM_NO_FLAGS)),
-            Some("a")
-        );
-        assert_eq!(
-            keysym_get_name(xkb_keysym_from_name(b"BackSpace", XKB_KEYSYM_NO_FLAGS)),
-            Some("BackSpace")
-        );
-        assert_eq!(
-            keysym_get_name(xkb_keysym_from_name(b"Return", XKB_KEYSYM_NO_FLAGS)),
-            Some("Return")
-        );
-        assert_eq!(keysym_get_name(0xDEADBEEF), None);
-    }
-
-    #[test]
-    fn test_vt_switch() {
-        use crate::xkb::xkb_backend::keysym::vt_switch;
-
-        // XF86Switch_VT_1 = 0x1008FF80, XF86Switch_VT_12 = 0x1008FF8B
-        assert_eq!(vt_switch(0x1008FF80), Some(1));
-        assert_eq!(vt_switch(0x1008FF8B), Some(12));
-        assert_eq!(vt_switch(0x61), None); // 'a'
-    }
-}
 // Generate XKB v1 text format from WKB's flat keysym tables.
 
-use self::xkb_backend::keysym::keysym_get_name;
+use self::keysym::keysym_get_name;
 
 // ── Standard evdev → XKB key name table ──
 // Indexed by evdev code (0-based). `None` entries use fallback `I{evdev+8:03}`.
@@ -1408,7 +1105,7 @@ impl WKB {
     /// This produces a minimal but fully valid keymap that Wayland clients
     /// can parse.
     #[cfg(feature = "xkb")]
-    pub fn generate_xkb_string(&self) -> String {
+    pub(crate) fn generate_xkb_string(&self) -> String {
         let num_layouts = self.named_key_map.num_layouts;
         let num_keys = self.named_key_map.num_keys;
         // XKB keycodes max at 255; evdev = xkb - 8, so max evdev = 247

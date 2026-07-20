@@ -179,15 +179,7 @@ fn num_lock(locale: &str, level: usize) {
     for layout in wkb::testing::get_all_layouts_for_locale(locale) {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-
-        if wkb.num_levels() <= level {
-            continue;
-        }
-
-        if !set_modifier_level(&mut wkb, &mut xkb, level) {
-            continue;
-        }
-
+        set_modifier_level(&mut wkb, &mut xkb, level);
         // Activate num lock
         xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Down);
         wkb.update_key(NUM_LOCK, wkb::testing::KeyDirection::Down);

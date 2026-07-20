@@ -1,11 +1,11 @@
 mod common;
 
 use common::*;
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use std::ffi::CString;
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::os::raw::c_char;
 use std::ptr;
 use std::time::Duration;
+use std::{ffi::CString, hint::black_box};
 use wkb::testing::{KeyDirection, WKBTestExt};
 
 fn cfg() -> Criterion {

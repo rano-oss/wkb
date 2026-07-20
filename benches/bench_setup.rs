@@ -1,8 +1,9 @@
 mod common;
 
 use common::*;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use std::ffi::CString;
+use std::hint::black_box;
 use std::ptr;
 use std::time::Duration;
 
@@ -30,11 +31,11 @@ fn bench_setup_no_compose(c: &mut Criterion) {
         });
         if let Some(v) = saved {
             unsafe {
-            std::env::set_var("LC_ALL", v);
+                std::env::set_var("LC_ALL", v);
             }
         } else {
             unsafe {
-            std::env::remove_var("LC_ALL");
+                std::env::remove_var("LC_ALL");
             }
         }
     });
@@ -98,7 +99,7 @@ fn bench_setup_with_compose(c: &mut Criterion) {
     group.bench_function("wkb", |b| {
         // Ensure compose locale resolves
         unsafe {
-        std::env::set_var("LC_ALL", COMPOSE_LOCALE);
+            std::env::set_var("LC_ALL", COMPOSE_LOCALE);
         }
         b.iter(|| {
             let wkb: wkb::WKB =

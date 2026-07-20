@@ -1,87 +1,81 @@
-use super::super::keymap::xkb_atom_intern_bytes;
-use super::super::keymap::xkb_atom_intern_ref;
+use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::{
-    ctrlMaskNames, groupComponentMaskNames, modComponentMaskNames, symInterpretMatchMaskNames,
-    useModMapValueNames, LookupString, ModMaskText, SIMatchText,
+    lookup_string, CTRL_MASK_NAMES, GROUP_COMPONENT_MASK_NAMES, MOD_COMPONENT_MASK_NAMES,
+    SYM_INTERPRET_MATCH_MASK_NAMES, USE_MOD_MAP_VALUE_NAMES,
 };
-pub use super::super::keymap::{XkbLevelsSameActions, XkbLevelsSameSyms, XkbModNameToIndex};
+pub(crate) use super::super::keymap::{
+    xkb_levels_same_actions, xkb_levels_same_syms, xkb_mod_name_to_index,
+};
 use super::super::keysym::xkb_keysym_is_keypad;
 use super::super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
-use super::*;
-
-use super::super::keymap::ModIndexText;
-pub use super::super::shared_types::{
-    InterpDef, KeyAliasDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, ReportBadField,
-    ReportNotArray, ReportShouldBeArray, SymbolsDef,
+pub(crate) use super::super::shared_types::{
+    InterpDef, KeyAliasDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, SymbolsDef,
 };
-pub use super::super::shared_types::{
+pub(crate) use super::super::shared_types::{
     MAX_ACTIONS_PER_LEVEL, MOD_REAL_MASK_ALL, XKB_MAX_LEDS, XKB_MOD_NONE, XKB_OVERLAY_INVALID,
 };
+use super::parser::{exceeds_include_max_depth, process_include_file};
 
-pub struct SymbolsInfo {
-    pub name: Option<String>,
-    pub errorCount: i32,
-    pub include_depth: u32,
-    pub explicit_group: u32,
-    pub max_groups: u32,
-    pub keys: Vec<KeyInfo>,
-    pub default_key: KeyInfo,
-    pub default_actions: ActionsInfo,
-    pub group_names: Vec<u32>,
-    pub modmaps: Vec<ModMapEntry>,
-    pub mods: xkb_mod_set,
-    pub star_atom: u32,
+pub(crate) struct SymbolsInfo {
+    pub(crate) name: Option<String>,
+    pub(crate) error_count: i32,
+    pub(crate) include_depth: u32,
+    pub(crate) explicit_group: u32,
+    pub(crate) max_groups: u32,
+    pub(crate) keys: Vec<KeyInfo>,
+    pub(crate) default_key: KeyInfo,
+    pub(crate) default_actions: ActionsInfo,
+    pub(crate) group_names: Vec<u32>,
+    pub(crate) modmaps: Vec<ModMapEntry>,
+    pub(crate) mods: XkbModSet,
+    pub(crate) star_atom: u32,
 }
 #[derive(Copy, Clone)]
-pub struct ModMapEntry {
-    pub merge: merge_mode,
-    pub haveSymbol: bool,
-    pub modifier: u32,
+pub(crate) struct ModMapEntry {
+    pub(crate) merge: MergeMode,
+    pub(crate) have_symbol: bool,
+    pub(crate) modifier: u32,
     /// keyName (atom) when !haveSymbol, keySym when haveSymbol
-    pub u: u32,
+    pub(crate) u: u32,
 }
 #[derive(Clone)]
-pub struct KeyInfo {
-    pub name: u32,
-    pub vmodmap: u32,
-    pub default_type: u32,
-    pub out_of_range_group_number: u32,
-    pub groups: Vec<GroupInfo>,
-    pub out_of_range_group_policy: u32,
-    pub defined: key_field,
-    pub merge: merge_mode,
-    pub repeat: key_repeat,
-    pub out_of_range_pending_group: bool,
-    pub overlays_clear: bool,
-    pub overlays: xkb_overlay_mask_t,
-    pub overlay_keys: Vec<u32>,
+pub(crate) struct KeyInfo {
+    pub(crate) name: u32,
+    pub(crate) vmodmap: u32,
+    pub(crate) default_type: u32,
+    pub(crate) out_of_range_group_number: u32,
+    pub(crate) groups: Vec<GroupInfo>,
+    pub(crate) out_of_range_group_policy: u32,
+    pub(crate) defined: u32,
+    pub(crate) merge: MergeMode,
+    pub(crate) repeat: u32,
+    pub(crate) out_of_range_pending_group: bool,
+    pub(crate) overlays_clear: bool,
+    pub(crate) overlays: XkbOverlayMaskT,
+    pub(crate) overlay_keys: Vec<u32>,
 }
-pub type key_repeat = u32;
-pub const _KEY_REPEAT_NUM_ENTRIES: key_repeat = 3;
-pub const KEY_REPEAT_NO: key_repeat = 2;
-pub const KEY_REPEAT_YES: key_repeat = 1;
-pub const KEY_REPEAT_UNDEFINED: key_repeat = 0;
-pub type key_field = u32;
-pub const KEY_FIELD_ALL: key_field = 31;
-pub const KEY_FIELD_OVERLAY: key_field = 16;
-pub const KEY_FIELD_VMODMAP: key_field = 8;
-pub const KEY_FIELD_GROUPINFO: key_field = 4;
-pub const KEY_FIELD_DEFAULT_TYPE: key_field = 2;
-pub const KEY_FIELD_REPEAT: key_field = 1;
+pub(crate) const _KEY_REPEAT_NUM_ENTRIES: u32 = 3;
+pub(crate) const KEY_REPEAT_NO: u32 = 2;
+pub(crate) const KEY_REPEAT_YES: u32 = 1;
+pub(crate) const KEY_REPEAT_UNDEFINED: u32 = 0;
+pub(crate) const KEY_FIELD_OVERLAY: u32 = 16;
+pub(crate) const KEY_FIELD_VMODMAP: u32 = 8;
+pub(crate) const KEY_FIELD_GROUPINFO: u32 = 4;
+pub(crate) const KEY_FIELD_DEFAULT_TYPE: u32 = 2;
+pub(crate) const KEY_FIELD_REPEAT: u32 = 1;
 #[derive(Clone, Default)]
-pub struct GroupInfo {
-    pub levels: Vec<xkb_level>,
-    pub defined: group_field,
-    pub type_0: u32,
+pub(crate) struct GroupInfo {
+    pub(crate) levels: Vec<XkbLevel>,
+    pub(crate) defined: u32,
+    pub(crate) type_0: u32,
 }
 
-pub type group_field = u32;
-pub const GROUP_FIELD_TYPE: group_field = 4;
-pub const GROUP_FIELD_ACTS: group_field = 2;
-pub const GROUP_FIELD_SYMS: group_field = 1;
+pub(crate) const GROUP_FIELD_TYPE: u32 = 4;
+pub(crate) const GROUP_FIELD_ACTS: u32 = 2;
+pub(crate) const GROUP_FIELD_SYMS: u32 = 1;
 
 impl KeyInfo {
-    pub fn new_zeroed() -> Self {
+    pub(crate) fn new_zeroed() -> Self {
         Self {
             name: 0,
             vmodmap: 0,
@@ -101,23 +95,23 @@ impl KeyInfo {
 }
 
 impl SymbolsInfo {
-    pub fn new(ki: &mut xkb_keymap_info<'_>) -> Self {
-        let star_atom = xkb_atom_intern_ref(&mut ki.keymap_mut().ctx, b"*");
+    pub(crate) fn new(ki: &mut XkbKeymapInfo<'_>) -> Self {
+        let star_atom = atom_intern(&mut ki.keymap_mut().ctx.atom_table, b"*");
         Self {
             name: None,
-            errorCount: 0,
+            error_count: 0,
             include_depth: 0,
             explicit_group: 0,
             max_groups: 0,
             keys: Vec::with_capacity(256),
             default_key: KeyInfo::new_zeroed(),
             default_actions: ActionsInfo {
-                actions: [xkb_action::None; 21],
+                actions: [XkbAction::None; 21],
             },
             group_names: Vec::new(),
             modmaps: Vec::new(),
-            mods: xkb_mod_set {
-                mods: [xkb_mod {
+            mods: XkbModSet {
+                mods: [XkbMod {
                     name: 0,
                     type_0: 0_u32,
                     mapping: 0,
@@ -175,13 +169,13 @@ fn collect_expr_list_mut(container: &mut ExprDef) -> &mut [ExprDef] {
     }
 }
 
-fn InitGroupInfo(groupi: &mut GroupInfo) {
+fn init_group_info(groupi: &mut GroupInfo) {
     *groupi = GroupInfo::default();
 }
-fn ClearGroupInfo(groupi: &mut GroupInfo) {
+fn clear_group_inf(groupi: &mut GroupInfo) {
     groupi.levels.clear();
 }
-fn InitKeyInfo_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
+fn init_key_info_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
     *keyi = KeyInfo {
         name: star_atom,
         vmodmap: 0,
@@ -198,69 +192,59 @@ fn InitKeyInfo_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
         overlay_keys: Vec::new(),
     };
 }
-fn InitKeyInfo(ctx: &mut xkb_context, keyi: &mut KeyInfo) {
-    InitKeyInfo_with_atom(keyi, xkb_atom_intern_ref(ctx, b"*"));
+fn init_key_info(ctx: &mut XkbContext, keyi: &mut KeyInfo) {
+    init_key_info_with_atom(keyi, atom_intern(&mut ctx.atom_table, b"*"));
 }
-fn ClearKeyInfo(keyi: &mut KeyInfo) {
+fn clear_key_info(keyi: &mut KeyInfo) {
     for groupi in keyi.groups.iter_mut() {
-        ClearGroupInfo(groupi);
+        clear_group_inf(groupi);
     }
     keyi.groups.clear();
     keyi.overlay_keys.clear();
 }
-fn InitSymbolsInfo(
+fn init_symbols_info(
     info: &mut SymbolsInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     include_depth: u32,
-    mods: &xkb_mod_set,
+    mods: &XkbModSet,
 ) {
     info.include_depth = include_depth;
     info.explicit_group = XKB_LAYOUT_INVALID;
     info.max_groups = ki.features.max_groups;
-    InitKeyInfo(ki.ctx_mut(), &mut info.default_key);
-    InitActionsInfo(ki.keymap_ref(), &mut info.default_actions);
-    InitVMods(&mut info.mods, mods, include_depth > 0_u32);
+    init_key_info(ki.ctx_mut(), &mut info.default_key);
+    init_actions_info(ki.keymap_ref(), &mut info.default_actions);
+    init_vmods(&mut info.mods, mods, include_depth > 0_u32);
 }
-fn ClearSymbolsInfo(info: &mut SymbolsInfo) {
+fn clear_symbols_info(info: &mut SymbolsInfo) {
     info.name = None;
     for keyi in info.keys.iter_mut() {
-        ClearKeyInfo(keyi);
+        clear_key_info(keyi);
     }
     info.keys.clear();
     info.group_names.clear();
     info.modmaps.clear();
-    ClearKeyInfo(&mut info.default_key);
+    clear_key_info(&mut info.default_key);
 }
-fn KeyInfoText<'a>(ctx: &'a xkb_context, keyi: &KeyInfo) -> &'a str {
-    xkb_atom_text(&ctx.atom_table, keyi.name)
-}
-fn MergeGroups(
-    ki: &xkb_keymap_info<'_>,
+fn merge_groups(
+    _ki: &XkbKeymapInfo<'_>,
     into: &mut GroupInfo,
     from: &mut GroupInfo,
     clobber: bool,
     report: bool,
-    group: u32,
-    key_name: u32,
+    _group: u32,
+    _key_name: u32,
 ) -> bool {
     if into.type_0 != from.type_0 && (from.type_0 != XKB_ATOM_NONE) {
         if into.type_0 == XKB_ATOM_NONE {
             into.type_0 = from.type_0;
         } else {
             let use_0: u32 = if clobber { from.type_0 } else { into.type_0 };
-            let ignore: u32 = if clobber { into.type_0 } else { from.type_0 };
-            if report {
-                log::warn!("[XKB-{:03}] Multiple definitions for group {} type of key <{}>; Using {}, ignoring {}\n",
-                        XKB_WARNING_CONFLICTING_KEY_TYPE_MERGING_GROUPS as i32,
-                        group.wrapping_add(1_u32),
-                        xkb_atom_text(&ki.ctx().atom_table, key_name),
-                        xkb_atom_text(&ki.ctx().atom_table, use_0),
-                        xkb_atom_text(&ki.ctx().atom_table, ignore));
-            }
+            let _ignore: u32 = if clobber { into.type_0 } else { from.type_0 };
+
             into.type_0 = use_0;
         }
     }
-    into.defined = (into.defined | from.defined & GROUP_FIELD_TYPE) as group_field;
+    into.defined |= from.defined & GROUP_FIELD_TYPE;
     if from.levels.is_empty() {
         *from = GroupInfo::default();
         return true;
@@ -275,88 +259,66 @@ fn MergeGroups(
     } else {
         from.levels.len()
     } as u32;
-    let mut fromKeysymsCount: u32 = 0_u32;
-    let mut fromActionsCount: u32 = 0_u32;
+    let mut from_keysyms_count: u32 = 0_u32;
+    let mut from_actions_count: u32 = 0_u32;
     let mut i: u32 = 0_u32;
     while i < levels_in_both {
-        let intoLevel = &mut into.levels[i as usize];
-        let fromLevel = &mut from.levels[i as usize];
-        let fromHasNoKeysym: bool = fromLevel.syms.is_empty();
-        let fromHasNoAction: bool = fromLevel.actions.is_empty();
-        if !(fromHasNoKeysym && fromHasNoAction) {
-            let intoHasNoKeysym: bool = intoLevel.syms.is_empty();
-            let intoHasNoAction: bool = intoLevel.actions.is_empty();
-            if intoHasNoKeysym && intoHasNoAction {
+        let into_level = &mut into.levels[i as usize];
+        let from_level = &mut from.levels[i as usize];
+        let from_has_no_keysym: bool = from_level.syms.is_empty();
+        let from_has_no_action: bool = from_level.actions.is_empty();
+        if !(from_has_no_keysym && from_has_no_action) {
+            let into_has_no_keysym: bool = into_level.syms.is_empty();
+            let into_has_no_action: bool = into_level.actions.is_empty();
+            if into_has_no_keysym && into_has_no_action {
                 // StealLevelInfo inlined
-                intoLevel.syms = std::mem::take(&mut fromLevel.syms);
-                intoLevel.actions = std::mem::take(&mut fromLevel.actions);
-                fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
-                fromActionsCount = fromActionsCount.wrapping_add(1);
+                into_level.syms = std::mem::take(&mut from_level.syms);
+                into_level.actions = std::mem::take(&mut from_level.actions);
+                from_keysyms_count = from_keysyms_count.wrapping_add(1);
+                from_actions_count = from_actions_count.wrapping_add(1);
             } else {
-                if !XkbLevelsSameSyms(fromLevel, intoLevel) {
-                    if report && !(intoHasNoKeysym || fromHasNoKeysym) {
-                        log::warn!("[XKB-{:03}] Multiple symbols for level {}/group {} on key <{}>; Using {}, ignoring {}\n",
-                            XKB_WARNING_CONFLICTING_KEY_SYMBOL as i32,
-                            i.wrapping_add(1_u32),
-                            group.wrapping_add(1_u32),
-                            xkb_atom_text(&ki.ctx().atom_table, key_name),
-                            if clobber { "from" } else { "to" },
-                            if clobber { "to" } else { "from" });
-                    }
-                    if !fromHasNoKeysym {
+                if !xkb_levels_same_syms(from_level, into_level) {
+                    if !from_has_no_keysym {
                         if clobber {
-                            if !fromLevel.syms.is_empty() {
-                                intoLevel.syms = std::mem::take(&mut fromLevel.syms);
-                                fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
+                            if !from_level.syms.is_empty() {
+                                into_level.syms = std::mem::take(&mut from_level.syms);
+                                from_keysyms_count = from_keysyms_count.wrapping_add(1);
                             }
-                        } else if intoLevel.syms.is_empty() {
-                            if !fromLevel.syms.is_empty() {
-                                intoLevel.syms = std::mem::take(&mut fromLevel.syms);
+                        } else if into_level.syms.is_empty() {
+                            if !from_level.syms.is_empty() {
+                                into_level.syms = std::mem::take(&mut from_level.syms);
                             }
-                            fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
+                            from_keysyms_count = from_keysyms_count.wrapping_add(1);
                         }
                     }
                 }
-                if !XkbLevelsSameActions(intoLevel, fromLevel) {
-                    if report && !(intoHasNoAction || fromHasNoAction) {
-                        if intoLevel.actions.len() > 1 || fromLevel.actions.len() > 1 {
-                            log::warn!("[XKB-{:03}] Multiple actions for level {}/group {} on key <{}>; {}\n",
-                                XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
-                                i.wrapping_add(1_u32),
-                                group.wrapping_add(1_u32),
-                                xkb_atom_text(&ki.ctx().atom_table, key_name),
-                                if clobber { "Using from, ignoring to" } else { "Using to, ignoring from" });
+                if !xkb_levels_same_actions(into_level, from_level) {
+                    if report && !(into_has_no_action || from_has_no_action) {
+                        if into_level.actions.len() > 1 || from_level.actions.len() > 1 {
                         } else {
-                            let use_action: &xkb_action = if clobber {
-                                &fromLevel.actions[0]
+                            let _use_action: &XkbAction = if clobber {
+                                &from_level.actions[0]
                             } else {
-                                &intoLevel.actions[0]
+                                &into_level.actions[0]
                             };
-                            let ignore_action: &xkb_action = if clobber {
-                                &intoLevel.actions[0]
+                            let _ignore_action: &XkbAction = if clobber {
+                                &into_level.actions[0]
                             } else {
-                                &fromLevel.actions[0]
+                                &from_level.actions[0]
                             };
-                            log::warn!("[XKB-{:03}] Multiple actions for level {}/group {} on key <{}>; Using {}, ignoring {}\n",
-                                XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
-                                i.wrapping_add(1_u32),
-                                group.wrapping_add(1_u32),
-                                xkb_atom_text(&ki.ctx().atom_table, key_name),
-                                ActionTypeText(use_action.action_type()),
-                                ActionTypeText(ignore_action.action_type()));
                         }
                     }
-                    if !fromHasNoAction {
+                    if !from_has_no_action {
                         if clobber {
-                            if !fromLevel.actions.is_empty() {
-                                intoLevel.actions = std::mem::take(&mut fromLevel.actions);
-                                fromActionsCount = fromActionsCount.wrapping_add(1);
+                            if !from_level.actions.is_empty() {
+                                into_level.actions = std::mem::take(&mut from_level.actions);
+                                from_actions_count = from_actions_count.wrapping_add(1);
                             }
-                        } else if intoLevel.actions.is_empty() {
-                            if !fromLevel.actions.is_empty() {
-                                intoLevel.actions = std::mem::take(&mut fromLevel.actions);
+                        } else if into_level.actions.is_empty() {
+                            if !from_level.actions.is_empty() {
+                                into_level.actions = std::mem::take(&mut from_level.actions);
                             }
-                            fromActionsCount = fromActionsCount.wrapping_add(1);
+                            from_actions_count = from_actions_count.wrapping_add(1);
                         }
                     }
                 }
@@ -370,74 +332,72 @@ fn MergeGroups(
         into.levels.push(level_val);
         from.levels[level_idx as usize].syms.clear();
         from.levels[level_idx as usize].actions.clear();
-        fromKeysymsCount = fromKeysymsCount.wrapping_add(1);
-        fromActionsCount = fromActionsCount.wrapping_add(1);
+        from_keysyms_count = from_keysyms_count.wrapping_add(1);
+        from_actions_count = from_actions_count.wrapping_add(1);
         level_idx = level_idx.wrapping_add(1);
     }
-    if fromKeysymsCount != 0 {
-        if fromKeysymsCount == into.levels.len() as u32 {
-            into.defined = (into.defined & !(GROUP_FIELD_SYMS as i32) as u32) as group_field;
+    if from_keysyms_count != 0 {
+        if from_keysyms_count == into.levels.len() as u32 {
+            into.defined &= !(GROUP_FIELD_SYMS as i32) as u32;
         }
-        into.defined = (into.defined | from.defined & GROUP_FIELD_SYMS) as group_field;
+        into.defined |= from.defined & GROUP_FIELD_SYMS;
     }
-    if fromActionsCount != 0 {
-        if fromActionsCount == into.levels.len() as u32 {
-            into.defined = (into.defined & !(GROUP_FIELD_ACTS as i32) as u32) as group_field;
+    if from_actions_count != 0 {
+        if from_actions_count == into.levels.len() as u32 {
+            into.defined &= !(GROUP_FIELD_ACTS as i32) as u32;
         }
-        into.defined = (into.defined | from.defined & GROUP_FIELD_ACTS) as group_field;
+        into.defined |= from.defined & GROUP_FIELD_ACTS;
     }
     true
 }
-fn UseNewKeyField(
-    field: key_field,
-    old: key_field,
-    new: key_field,
+fn use_new_key_field(
+    field: u32,
+    old: u32,
+    new: u32,
     clobber: bool,
     report: bool,
-    collide: &mut key_field,
+    collide: &mut u32,
 ) -> bool {
     if old & field == 0 {
         return new & field != 0;
     }
     if new & field != 0 {
         if report {
-            *collide = (*collide | field) as key_field;
+            *collide |= field;
         }
         return clobber;
     }
     false
 }
-fn overlays_get(info: &KeyInfo, bit: xkb_overlay_index_t, key_out: Option<&mut u32>) -> bool {
+fn overlays_get(info: &KeyInfo, bit: XkbOverlayIndexT, key_out: Option<&mut u32>) -> bool {
     if bit as i32
-        >= (std::mem::size_of::<xkb_overlay_mask_t>()).wrapping_mul(8_usize) as xkb_overlay_index_t
-            as i32
+        >= (std::mem::size_of::<XkbOverlayMaskT>()).wrapping_mul(8_usize) as XkbOverlayIndexT as i32
     {
         return false;
     }
-    let mask: xkb_overlay_mask_t = (1_u32 << bit as i32) as xkb_overlay_mask_t;
+    let mask: XkbOverlayMaskT = (1_u32 << bit as i32) as XkbOverlayMaskT;
     if info.overlays as i32 & mask as i32 == 0 {
         return false;
     }
     if let Some(key_out) = key_out {
-        let low: xkb_overlay_mask_t =
-            (info.overlays as u32 & (mask as u32).wrapping_sub(1_u32)) as xkb_overlay_mask_t;
+        let low: XkbOverlayMaskT =
+            (info.overlays as u32 & (mask as u32).wrapping_sub(1_u32)) as XkbOverlayMaskT;
         let index: usize = (low as u32).count_ones() as usize;
         *key_out = info.overlay_keys[index];
     }
     true
 }
-fn overlays_insert(keyi: &mut KeyInfo, bit: xkb_overlay_index_t, key: u32) -> bool {
+fn overlays_insert(keyi: &mut KeyInfo, bit: XkbOverlayIndexT, key: u32) -> bool {
     if bit as i32
-        >= (std::mem::size_of::<xkb_overlay_mask_t>()).wrapping_mul(8_usize) as xkb_overlay_index_t
-            as i32
+        >= (std::mem::size_of::<XkbOverlayMaskT>()).wrapping_mul(8_usize) as XkbOverlayIndexT as i32
     {
         return false;
     }
-    let mask: xkb_overlay_mask_t = (1_u32 << bit as i32) as xkb_overlay_mask_t;
+    let mask: XkbOverlayMaskT = (1_u32 << bit as i32) as XkbOverlayMaskT;
     if keyi.overlays as i32 & mask as i32 != 0 && !keyi.overlays_clear {
         // Bit already set — update existing entry
-        let low: xkb_overlay_mask_t =
-            (keyi.overlays as u32 & (mask as u32).wrapping_sub(1_u32)) as xkb_overlay_mask_t;
+        let low: XkbOverlayMaskT =
+            (keyi.overlays as u32 & (mask as u32).wrapping_sub(1_u32)) as XkbOverlayMaskT;
         let index: usize = (low as u32).count_ones() as usize;
         keyi.overlay_keys[index] = key;
         if key == XKB_KEYCODE_INVALID && keyi.overlay_keys.len() == 1 {
@@ -446,10 +406,9 @@ fn overlays_insert(keyi: &mut KeyInfo, bit: xkb_overlay_index_t, key: u32) -> bo
         return true;
     }
     // New bit
-    let new_overlays: xkb_overlay_mask_t =
-        (keyi.overlays as i32 | mask as i32) as xkb_overlay_mask_t;
-    let low: xkb_overlay_mask_t =
-        (new_overlays as u32 & (mask as u32).wrapping_sub(1_u32)) as xkb_overlay_mask_t;
+    let new_overlays: XkbOverlayMaskT = (keyi.overlays as i32 | mask as i32) as XkbOverlayMaskT;
+    let low: XkbOverlayMaskT =
+        (new_overlays as u32 & (mask as u32).wrapping_sub(1_u32)) as XkbOverlayMaskT;
     let index: usize = (low as u32).count_ones() as usize;
 
     if keyi.overlays == 0 || keyi.overlays_clear as i32 != 0 && key == XKB_KEYCODE_INVALID {
@@ -467,27 +426,26 @@ fn overlays_insert(keyi: &mut KeyInfo, bit: xkb_overlay_index_t, key: u32) -> bo
     true
 }
 fn merge_overlays(
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     into: &mut KeyInfo,
     from: &mut KeyInfo,
     mut clobber: bool,
     report: bool,
-    collide: &mut key_field,
+    collide: &mut u32,
 ) -> bool {
     if from.defined as i32 & KEY_FIELD_OVERLAY as i32 != 0 {
         if into.defined as i32 & KEY_FIELD_OVERLAY as i32 == 0 {
             // into has no overlays, take from's
             into.overlays = from.overlays;
             into.overlay_keys = std::mem::take(&mut from.overlay_keys);
-            into.defined |= KEY_FIELD_OVERLAY as i32 as key_field;
+            into.defined |= KEY_FIELD_OVERLAY as i32 as u32;
         } else if into.overlays_clear as i32 != 0 && from.overlays_clear as i32 != 0 {
-            into.overlays = (into.overlays as i32 | from.overlays as i32) as xkb_overlay_mask_t;
+            into.overlays = (into.overlays as i32 | from.overlays as i32) as XkbOverlayMaskT;
         } else if ki.features.overlapping_overlays {
             // Complex merge with overlapping overlays
-            let result_mask: xkb_overlay_mask_t =
-                (into.overlays as i32 | from.overlays as i32) as xkb_overlay_mask_t;
-            let count: xkb_overlay_index_t =
-                (result_mask as u32).count_ones() as xkb_overlay_index_t;
+            let result_mask: XkbOverlayMaskT =
+                (into.overlays as i32 | from.overlays as i32) as XkbOverlayMaskT;
+            let count: XkbOverlayIndexT = (result_mask as u32).count_ones() as XkbOverlayIndexT;
             if count as i32 == 0_i32 {
                 eprintln!(
                     "Critical Error: Reached unreachable line in ../src/xkbcomp/symbols.c at {}",
@@ -502,15 +460,15 @@ fn merge_overlays(
                 clobber = !clobber;
             }
             // Now `into` is dest and `from` is src
-            let mut remaining: xkb_overlay_mask_t = from.overlays;
+            let mut remaining: XkbOverlayMaskT = from.overlays;
             let mut src_idx: usize = 0;
             while remaining != 0 {
-                let lsb: xkb_overlay_mask_t = (remaining as i32
-                    & (!(remaining as i32) as u32).wrapping_add(1_u32) as xkb_overlay_mask_t as i32)
-                    as xkb_overlay_mask_t;
-                let bit: xkb_overlay_index_t =
-                    ((lsb as u32).wrapping_sub(1_u32).count_ones()) as xkb_overlay_index_t;
-                remaining = (remaining as i32 & !(lsb as i32)) as xkb_overlay_mask_t;
+                let lsb: XkbOverlayMaskT = (remaining as i32
+                    & (!(remaining as i32) as u32).wrapping_add(1_u32) as XkbOverlayMaskT as i32)
+                    as XkbOverlayMaskT;
+                let bit: XkbOverlayIndexT =
+                    ((lsb as u32).wrapping_sub(1_u32).count_ones()) as XkbOverlayIndexT;
+                remaining = (remaining as i32 & !(lsb as i32)) as XkbOverlayMaskT;
                 let src_key: u32 = if from.overlays_clear || src_idx >= from.overlay_keys.len() {
                     XKB_KEYCODE_INVALID
                 } else {
@@ -525,7 +483,7 @@ fn merge_overlays(
                         continue;
                     }
                     if report {
-                        *collide = (*collide | KEY_FIELD_OVERLAY) as key_field;
+                        *collide |= KEY_FIELD_OVERLAY;
                     }
                 }
                 if (!conflict || clobber as i32 != 0) && !overlays_insert(into, bit, src_key) {
@@ -566,7 +524,7 @@ fn merge_overlays(
                 }
             }
             if report {
-                *collide = (*collide | KEY_FIELD_OVERLAY) as key_field;
+                *collide |= KEY_FIELD_OVERLAY;
             }
             if clobber {
                 into.overlays = from.overlays;
@@ -577,8 +535,8 @@ fn merge_overlays(
     }
     true
 }
-fn MergeKeys(
-    ki: &xkb_keymap_info<'_>,
+fn merge_keys(
+    ki: &XkbKeymapInfo<'_>,
     info: &SymbolsInfo,
     into: &mut KeyInfo,
     from: &mut KeyInfo,
@@ -586,14 +544,14 @@ fn MergeKeys(
 ) -> bool {
     let mut i: u32;
 
-    let mut collide: key_field = 0 as key_field;
+    let mut collide: u32 = 0_u32;
     let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
     let clobber: bool = from.merge as i32 != MERGE_AUGMENT as i32;
     let report: bool = same_file as i32 != 0 && verbosity > 0_i32 || verbosity > 9_i32;
     if from.merge as i32 == MERGE_REPLACE as i32 {
-        ClearKeyInfo(into);
+        clear_key_info(into);
         std::mem::swap(into, from);
-        InitKeyInfo_with_atom(from, info.star_atom);
+        init_key_info_with_atom(from, info.star_atom);
         return true;
     }
     let groups_in_both: u32 = (if into.groups.len() < from.groups.len() {
@@ -603,7 +561,7 @@ fn MergeKeys(
     }) as u32;
     i = 0_u32;
     while i < groups_in_both {
-        MergeGroups(
+        merge_groups(
             ki,
             &mut into.groups[i as usize],
             &mut from.groups[i as usize],
@@ -620,7 +578,7 @@ fn MergeKeys(
         into.groups.push(group_val);
         i = i.wrapping_add(1);
     }
-    if UseNewKeyField(
+    if use_new_key_field(
         KEY_FIELD_VMODMAP,
         into.defined,
         from.defined,
@@ -629,9 +587,9 @@ fn MergeKeys(
         &mut collide,
     ) {
         into.vmodmap = from.vmodmap;
-        into.defined |= KEY_FIELD_VMODMAP as i32 as key_field;
+        into.defined |= KEY_FIELD_VMODMAP as i32 as u32;
     }
-    if UseNewKeyField(
+    if use_new_key_field(
         KEY_FIELD_REPEAT,
         into.defined,
         from.defined,
@@ -640,9 +598,9 @@ fn MergeKeys(
         &mut collide,
     ) {
         into.repeat = from.repeat;
-        into.defined |= KEY_FIELD_REPEAT as i32 as key_field;
+        into.defined |= KEY_FIELD_REPEAT as i32 as u32;
     }
-    if UseNewKeyField(
+    if use_new_key_field(
         KEY_FIELD_DEFAULT_TYPE,
         into.defined,
         from.defined,
@@ -651,9 +609,9 @@ fn MergeKeys(
         &mut collide,
     ) {
         into.default_type = from.default_type;
-        into.defined |= KEY_FIELD_DEFAULT_TYPE as i32 as key_field;
+        into.defined |= KEY_FIELD_DEFAULT_TYPE as i32 as u32;
     }
-    if UseNewKeyField(
+    if use_new_key_field(
         KEY_FIELD_GROUPINFO,
         into.defined,
         from.defined,
@@ -664,23 +622,17 @@ fn MergeKeys(
         into.out_of_range_pending_group = from.out_of_range_pending_group;
         into.out_of_range_group_policy = from.out_of_range_group_policy;
         into.out_of_range_group_number = from.out_of_range_group_number;
-        into.defined |= KEY_FIELD_GROUPINFO as i32 as key_field;
+        into.defined |= KEY_FIELD_GROUPINFO as i32 as u32;
     }
     if !merge_overlays(ki, into, from, clobber, report, &mut collide) {
         return false;
     }
-    if collide as u64 != 0 {
-        log::warn!("[XKB-{:03}] Symbol map for key <{}> redefined; Using {} definition for conflicting fields\n",
-            XKB_WARNING_CONFLICTING_KEY_FIELDS as i32,
-            xkb_atom_text(&ki.ctx().atom_table, into.name),
-            if clobber { "first" } else { "last" });
-    }
-    ClearKeyInfo(from);
-    InitKeyInfo_with_atom(from, info.star_atom);
+    clear_key_info(from);
+    init_key_info_with_atom(from, info.star_atom);
     true
 }
-fn AddKeySymbols(
-    ki: &mut xkb_keymap_info<'_>,
+fn add_key_symbols(
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     keyi: &mut KeyInfo,
     same_file: bool,
@@ -699,7 +651,7 @@ fn AddKeySymbols(
     for i in 0..info.keys.len() {
         if info.keys[i].name == keyi.name {
             let mut existing = std::mem::replace(&mut info.keys[i], KeyInfo::new_zeroed());
-            let result = MergeKeys(ki, info, &mut existing, keyi, same_file);
+            let result = merge_keys(ki, info, &mut existing, keyi, same_file);
             info.keys[i] = existing;
             return result;
         }
@@ -707,17 +659,17 @@ fn AddKeySymbols(
     // Move keyi's data into the keys vec
     let moved = std::mem::replace(keyi, KeyInfo::new_zeroed());
     info.keys.push(moved);
-    InitKeyInfo_with_atom(keyi, info.star_atom);
+    init_key_info_with_atom(keyi, info.star_atom);
     true
 }
-fn AddModMapEntry(ki: &xkb_keymap_info<'_>, info: &mut SymbolsInfo, new: &ModMapEntry) -> bool {
+fn add_mod_map_entry(ki: &XkbKeymapInfo<'_>, info: &mut SymbolsInfo, new: &ModMapEntry) -> bool {
     let clobber: bool = new.merge != MERGE_AUGMENT;
-    let ctx = ki.ctx();
-    let mods = &info.mods;
+    let _ctx = ki.ctx();
+    let _mods = &info.mods;
     for old in info.modmaps.iter_mut() {
-        if new.haveSymbol as i32 != old.haveSymbol as i32
-            || new.haveSymbol as i32 != 0 && new.u != old.u
-            || !new.haveSymbol && new.u != old.u
+        if new.have_symbol as i32 != old.have_symbol as i32
+            || new.have_symbol as i32 != 0 && new.u != old.u
+            || !new.have_symbol && new.u != old.u
         {
             continue;
         }
@@ -729,41 +681,29 @@ fn AddModMapEntry(ki: &xkb_keymap_info<'_>, info: &mut SymbolsInfo, new: &ModMap
         } else {
             old.modifier
         };
-        let ignore: u32 = if clobber as i32 != 0 {
+        let _ignore: u32 = if clobber as i32 != 0 {
             old.modifier
         } else {
             new.modifier
         };
-        if new.haveSymbol {
-            log::warn!("[XKB-{:03}] Symbol \"{}\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
-                XKB_WARNING_CONFLICTING_MODMAP as i32,
-                KeysymText(new.u),
-                ModIndexText(ctx, mods, use_0),
-                ModIndexText(ctx, mods, ignore));
-        } else {
-            log::warn!("[XKB-{:03}] Key \"<{}>\" added to modifier map for multiple modifiers; Using {}, ignoring {}\n",
-                XKB_WARNING_CONFLICTING_MODMAP as i32,
-                xkb_atom_text(&ctx.atom_table, new.u),
-                ModIndexText(ctx, mods, use_0),
-                ModIndexText(ctx, mods, ignore));
-        }
+
         old.modifier = use_0;
         return true;
     }
     info.modmaps.push(*new);
     true
 }
-fn MergeIncludedSymbols(
-    ki: &mut xkb_keymap_info<'_>,
+fn merge_included_symbols(
+    ki: &mut XkbKeymapInfo<'_>,
     into: &mut SymbolsInfo,
     from: &mut SymbolsInfo,
-    merge: merge_mode,
+    merge: MergeMode,
 ) {
-    if from.errorCount > 0_i32 {
-        into.errorCount += from.errorCount;
+    if from.error_count > 0_i32 {
+        into.error_count += from.error_count;
         return;
     }
-    MergeModSets(ki.ctx_mut(), &mut into.mods, &from.mods, merge);
+    merge_mod_sets(ki.ctx_mut(), &mut into.mods, &from.mods, merge);
     if into.name.is_none() {
         into.name = from.name.take();
     }
@@ -790,9 +730,9 @@ fn MergeIncludedSymbols(
         std::mem::swap(&mut into.keys, &mut from.keys);
     } else {
         for keyi in from.keys.iter_mut() {
-            keyi.merge = merge as merge_mode;
-            if !AddKeySymbols(ki, into, keyi, false) {
-                into.errorCount += 1;
+            keyi.merge = merge as MergeMode;
+            if !add_key_symbols(ki, into, keyi, false) {
+                into.error_count += 1;
             }
         }
     }
@@ -801,23 +741,23 @@ fn MergeIncludedSymbols(
     } else {
         for mm in from.modmaps.iter_mut() {
             mm.merge = merge;
-            if !AddModMapEntry(ki, into, mm) {
-                into.errorCount += 1;
+            if !add_mod_map_entry(ki, into, mm) {
+                into.error_count += 1;
             }
         }
     };
 }
-fn HandleIncludeSymbols(
-    ki: &mut xkb_keymap_info<'_>,
+fn handle_include_symbols(
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     include: &mut IncludeStmt,
 ) -> bool {
     let mut included = SymbolsInfo::new(ki);
-    if ExceedsIncludeMaxDepth(info.include_depth) {
-        info.errorCount += 10_i32;
+    if exceeds_include_max_depth(info.include_depth) {
+        info.error_count += 10_i32;
         return false;
     }
-    InitSymbolsInfo(
+    init_symbols_info(
         &mut included,
         ki,
         info.include_depth.wrapping_add(1_u32),
@@ -832,13 +772,14 @@ fn HandleIncludeSymbols(
     while let Some(stmt) = current {
         let mut next_incl = SymbolsInfo::new(ki);
 
-        let file: Option<Box<XkbFile>> = ProcessIncludeFile(ki.ctx_mut(), stmt, FILE_TYPE_SYMBOLS);
+        let file: Option<Box<XkbFile>> =
+            process_include_file(ki.ctx_mut(), stmt, FILE_TYPE_SYMBOLS);
         let Some(mut file) = file else {
-            info.errorCount += 10_i32;
-            ClearSymbolsInfo(&mut included);
+            info.error_count += 10_i32;
+            clear_symbols_info(&mut included);
             return false;
         };
-        InitSymbolsInfo(
+        init_symbols_info(
             &mut next_incl,
             ki,
             info.include_depth.wrapping_add(1_u32),
@@ -847,10 +788,6 @@ fn HandleIncludeSymbols(
         if !stmt.modifier.is_empty() {
             next_incl.explicit_group = (stmt.modifier.parse::<i32>().unwrap_or(0) - 1_i32) as u32;
             if next_incl.explicit_group >= info.max_groups {
-                log::error!("[XKB-{:03}] Cannot set explicit group to {} - must be between 1..{}; Ignoring group number\n",
-                    { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                    next_incl.explicit_group.wrapping_add(1_u32),
-                    info.max_groups);
                 next_incl.explicit_group = info.explicit_group;
             }
         } else if ki.keymap.num_groups != 0_u32 && next_incl.include_depth == 1_u32 {
@@ -858,30 +795,30 @@ fn HandleIncludeSymbols(
         } else {
             next_incl.explicit_group = info.explicit_group;
         }
-        HandleSymbolsFile(ki, &mut next_incl, &mut file);
-        MergeIncludedSymbols(ki, &mut included, &mut next_incl, stmt.merge);
-        ClearSymbolsInfo(&mut next_incl);
+        handle_symbols_file(ki, &mut next_incl, &mut file);
+        merge_included_symbols(ki, &mut included, &mut next_incl, stmt.merge);
+        clear_symbols_info(&mut next_incl);
         drop(file);
         current = stmt.next_incl.as_deref();
     }
-    MergeIncludedSymbols(ki, info, &mut included, include.merge);
-    ClearSymbolsInfo(&mut included);
-    info.errorCount == 0_i32
+    merge_included_symbols(ki, info, &mut included, include.merge);
+    clear_symbols_info(&mut included);
+    info.error_count == 0_i32
 }
-fn GetGroupIndex(
-    ki: &mut xkb_keymap_info<'_>,
+fn get_group_index(
+    ki: &mut XkbKeymapInfo<'_>,
     info: &SymbolsInfo,
     keyi: &mut KeyInfo,
-    arrayNdx: Option<&ExprDef>,
-    field: group_field,
+    array_ndx: Option<&ExprDef>,
+    field: u32,
     ndx_rtrn: &mut u32,
 ) -> bool {
-    let name: &str = if field == GROUP_FIELD_SYMS {
+    let _name: &str = if field == GROUP_FIELD_SYMS {
         "symbols"
     } else {
         "actions"
     };
-    if arrayNdx.is_none() {
+    if array_ndx.is_none() {
         let mut i: u32 = 0_u32;
         if !keyi.groups.is_empty() {
             i = 0_u32;
@@ -894,12 +831,6 @@ fn GetGroupIndex(
             }
         }
         if i >= info.max_groups {
-            log::error!("[XKB-{:03}] Too many groups of {} for key <{}> (max {}); Ignoring {} defined for extra groups\n",
-                { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                name,
-                KeyInfoText(ki.ctx(), keyi),
-                info.max_groups,
-                name);
             return false;
         }
         let new_len = keyi.groups.len().wrapping_add(1);
@@ -908,13 +839,9 @@ fn GetGroupIndex(
         return true;
     }
     let mut pending_dummy = false;
-    if ExprResolveGroup(ki, arrayNdx.unwrap(), false, ndx_rtrn, &mut pending_dummy)
+    if expr_resolve_group(ki, array_ndx.unwrap(), false, ndx_rtrn, &mut pending_dummy)
         != PARSER_SUCCESS
     {
-        log::error!("[XKB-{:03}] Illegal group index for {} of key <{}>\nDefinition with non-integer array index ignored\n",
-            { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-            name,
-            KeyInfoText(ki.ctx(), keyi));
         return false;
     }
     *ndx_rtrn = ndx_rtrn.wrapping_sub(1);
@@ -923,61 +850,52 @@ fn GetGroupIndex(
     }
     true
 }
-fn AddSymbolsToKey(
-    ki: &mut xkb_keymap_info<'_>,
+fn add_symbols_to_key(
+    ki: &mut XkbKeymapInfo<'_>,
     info: &SymbolsInfo,
     keyi: &mut KeyInfo,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value: &ExprDef,
 ) -> bool {
     let mut ndx: u32 = 0_u32;
-    if !GetGroupIndex(ki, info, keyi, arrayNdx, GROUP_FIELD_SYMS, &mut ndx) {
+    if !get_group_index(ki, info, keyi, array_ndx, GROUP_FIELD_SYMS, &mut ndx) {
         return false;
     }
     let groupi = &mut keyi.groups[ndx as usize];
     if value.stmt_type() == STMT_EXPR_EMPTY_LIST {
-        groupi.defined = (groupi.defined | GROUP_FIELD_SYMS) as group_field;
+        groupi.defined |= GROUP_FIELD_SYMS;
         return true;
     }
     if value.stmt_type() != STMT_EXPR_KEYSYM_LIST && value.stmt_type() != STMT_EXPR_ACTION_LIST {
-        log::error!("[XKB-{:03}] Expected a list of symbols, found {}; Ignoring symbols for group {} of <{}>\n",
-            XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            stmt_type_to_string(value.stmt_type()),
-            ndx.wrapping_add(1_u32),
-            KeyInfoText(ki.ctx(), keyi));
         return false;
     }
     if groupi.defined & GROUP_FIELD_SYMS != 0 {
-        log::error!("[XKB-{:03}] Symbols for key <{}>, group {} already defined; Ignoring duplicate definition\n",
-            XKB_ERROR_CONFLICTING_KEY_SYMBOLS_ENTRY as i32,
-            KeyInfoText(ki.ctx(), keyi),
-            ndx.wrapping_add(1_u32));
         return false;
     }
-    let mut nLevels: u32 = 0_u32;
-    let mut nonEmptyLevels: u32 = 0_u32;
+    let mut n_levels: u32 = 0_u32;
+    let mut non_empty_levels: u32 = 0_u32;
     let keysym_nodes = collect_expr_list(value);
     for node in keysym_nodes {
-        nLevels = nLevels.wrapping_add(1);
+        n_levels = n_levels.wrapping_add(1);
         let ExprKind::KeysymList { ref syms } = node.kind else {
             unreachable!()
         };
         if syms.len() as u32 > 0_u32 {
-            nonEmptyLevels = nLevels;
+            non_empty_levels = n_levels;
         }
     }
-    if nonEmptyLevels < nLevels {
-        nLevels = nonEmptyLevels;
+    if non_empty_levels < n_levels {
+        n_levels = non_empty_levels;
     }
     let groupi = &mut keyi.groups[ndx as usize];
-    if (groupi.levels.len() as u32) < nLevels {
+    if (groupi.levels.len() as u32) < n_levels {
         groupi
             .levels
-            .resize_with(nLevels as usize, Default::default);
+            .resize_with(n_levels as usize, Default::default);
     }
-    groupi.defined = (groupi.defined | GROUP_FIELD_SYMS) as group_field;
+    groupi.defined |= GROUP_FIELD_SYMS;
     for (level, node) in keysym_nodes.iter().enumerate() {
-        if level as u32 >= nLevels {
+        if level as u32 >= n_levels {
             break;
         }
         let leveli = &mut keyi.groups[ndx as usize].levels[level];
@@ -986,14 +904,6 @@ fn AddSymbolsToKey(
         };
         let syms_len = syms.len() as u32;
         if (syms_len > 65535_u32) as i64 != 0 {
-            log::error!(
-                "Key <{}> has too many keysyms for group {}, level {}; expected max {}, got: {}\n",
-                KeyInfoText(ki.ctx(), keyi),
-                ndx.wrapping_add(1_u32),
-                (level as u32).wrapping_add(1_u32),
-                65535_i32,
-                syms_len
-            );
             return false;
         }
         leveli.syms = if syms_len == 0 {
@@ -1004,50 +914,39 @@ fn AddSymbolsToKey(
     }
     true
 }
-fn AddActionsToKey(
-    ki: &mut xkb_keymap_info<'_>,
+fn add_actions_to_key(
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     keyi: &mut KeyInfo,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value: &mut ExprDef,
 ) -> bool {
     let mut ndx: u32 = 0_u32;
-    if !GetGroupIndex(ki, info, keyi, arrayNdx, GROUP_FIELD_ACTS, &mut ndx) {
+    if !get_group_index(ki, info, keyi, array_ndx, GROUP_FIELD_ACTS, &mut ndx) {
         return false;
     }
     let groupi = &mut keyi.groups[ndx as usize];
     if value.stmt_type() == STMT_EXPR_EMPTY_LIST {
-        groupi.defined = (groupi.defined | GROUP_FIELD_ACTS) as group_field;
+        groupi.defined |= GROUP_FIELD_ACTS;
         return true;
     }
     if value.stmt_type() != STMT_EXPR_ACTION_LIST {
-        log::error!("[XKB-{:03}] Bad expression type ({}) for action list value; Ignoring actions for group {} of <{}>\n",
-            XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-            value.stmt_type(),
-            ndx,
-            KeyInfoText(ki.ctx(), keyi));
         return false;
     }
     if groupi.defined & GROUP_FIELD_ACTS != 0 {
-        log::error!(
-            "[XKB-{:03}] Actions for key <{}>, group {} already defined\n",
-            XKB_WARNING_CONFLICTING_KEY_ACTION as i32,
-            KeyInfoText(ki.ctx(), keyi),
-            ndx
-        );
         return false;
     }
     let action_nodes = collect_expr_list_mut(value);
-    let nLevels: u32 = action_nodes.len() as u32;
+    let n_levels: u32 = action_nodes.len() as u32;
     let groupi = &mut keyi.groups[ndx as usize];
-    if (groupi.levels.len() as u32) < nLevels {
+    if (groupi.levels.len() as u32) < n_levels {
         groupi
             .levels
-            .resize_with(nLevels as usize, Default::default);
+            .resize_with(n_levels as usize, Default::default);
     }
-    groupi.defined = (groupi.defined | GROUP_FIELD_ACTS) as group_field;
+    groupi.defined |= GROUP_FIELD_ACTS;
     let mut level: u32 = 0_u32;
-    let mut nonEmptyLevels: u32 = 0_u32;
+    let mut non_empty_levels: u32 = 0_u32;
     for action_node in action_nodes {
         let ExprKind::ActionList {
             actions: action_vec,
@@ -1057,17 +956,9 @@ fn AddActionsToKey(
         };
         let num_actions: u32 = action_vec.len() as u32;
         if (num_actions > 65535_u32) as i64 != 0 {
-            log::error!(
-                "Key <{}> has too many actions for group {}, level {}; expected max {}, got: {}\n",
-                KeyInfoText(ki.ctx(), keyi),
-                ndx.wrapping_add(1_u32),
-                level.wrapping_add(1_u32),
-                65535_i32,
-                num_actions
-            );
             return false;
         }
-        let mut actions: Vec<xkb_action> = Vec::new();
+        let mut actions: Vec<XkbAction> = Vec::new();
         let mut action_iter = action_vec.iter_mut();
         let mut no_more_actions: bool = false;
         loop {
@@ -1075,33 +966,28 @@ fn AddActionsToKey(
                 no_more_actions = true;
                 break;
             };
-            let mut toAct: xkb_action = xkb_action::None;
-            let r: u32 = HandleActionDef(
+            let mut to_act: XkbAction = XkbAction::None;
+            let r: u32 = handle_action_def(
                 ki,
                 &mut info.default_actions,
                 &info.mods,
                 act_expr,
-                &mut toAct,
+                &mut to_act,
             );
             if r != PARSER_SUCCESS {
-                log::error!("[XKB-{:03}] Illegal action definition for <{}>; Action for group {}/level {} ignored\n",
-                    XKB_ERROR_INVALID_VALUE as i32,
-                    KeyInfoText(ki.ctx(), keyi),
-                    ndx.wrapping_add(1_u32),
-                    level.wrapping_add(1_u32));
                 if r == PARSER_FATAL_ERROR {
                     drop(actions);
                     return false;
                 } else {
-                    toAct.set_none();
+                    to_act.set_none();
                 }
             }
-            if toAct.action_type() != ACTION_TYPE_NONE {
+            if to_act.action_type() != ACTION_TYPE_NONE {
                 if (num_actions == 1_u32) as i64 != 0 {
-                    keyi.groups[ndx as usize].levels[level as usize].actions = vec![toAct];
+                    keyi.groups[ndx as usize].levels[level as usize].actions = vec![to_act];
                     break;
                 } else {
-                    actions.push(toAct);
+                    actions.push(to_act);
                 }
             }
         }
@@ -1116,15 +1002,15 @@ fn AddActionsToKey(
         {
             let leveli = &keyi.groups[ndx as usize].levels[level as usize];
             if !leveli.actions.is_empty() || !leveli.syms.is_empty() {
-                nonEmptyLevels = level.wrapping_add(1_u32);
+                non_empty_levels = level.wrapping_add(1_u32);
             }
         }
         level = level.wrapping_add(1);
     }
     let groupi = &mut keyi.groups[ndx as usize];
-    if nonEmptyLevels < nLevels {
-        if nonEmptyLevels > 0_u32 {
-            groupi.levels.truncate(nonEmptyLevels as usize);
+    if non_empty_levels < n_levels {
+        if non_empty_levels > 0_u32 {
+            groupi.levels.truncate(non_empty_levels as usize);
         } else {
             groupi.levels.clear();
         }
@@ -1165,44 +1051,30 @@ static REPEAT_ENTRIES: [LookupEntry; 8] = [
         value: 0_u32,
     },
 ];
-fn ExprResolveOverlayEntry(
-    keymap_info: &xkb_keymap_info<'_>,
+fn expr_resolve_overlay_entry(
+    keymap_info: &XkbKeymapInfo<'_>,
     field: &str,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     expr: &ExprDef,
-    keyi: &KeyInfo,
-    overlay_rtrn: &mut xkb_overlay_index_t,
+    _keyi: &KeyInfo,
+    overlay_rtrn: &mut XkbOverlayIndexT,
     key_rtrn: &mut u32,
 ) -> bool {
-    if arrayNdx.is_some() {
-        log::error!(
-            "[XKB-{:03}] Overlay field \"{}\" in <{}> does not support array index; ignored\n",
-            XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            field,
-            xkb_atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name)
-        );
+    if array_ndx.is_some() {
         return false;
     }
     let prefix: usize = (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1_usize);
     let suffix = &field[prefix..];
     let len: usize = suffix.len();
-    #[allow(unused_assignments)]
-    let mut raw_overlay: i64 = XKB_OVERLAY_INVALID as i64;
     let (val_parsed, parse_count) = super::super::shared_types::parse_dec_u64(suffix.as_bytes());
-    raw_overlay = val_parsed as i64;
+    let raw_overlay: i64 = val_parsed as i64;
     if parse_count != len as i32
         || raw_overlay < 1_i64
         || raw_overlay > keymap_info.features.max_overlays as i64
     {
-        log::error!("[XKB-{:03}] Unsupported overlay index \"{}\" field for <{}>: expected 1..{}, got: {}; ignored\n",
-            XKB_ERROR_UNSUPPORTED_OVERLAY_INDEX as i32,
-            field,
-            xkb_atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name),
-            keymap_info.features.max_overlays as i32,
-            raw_overlay);
         return false;
     }
-    *overlay_rtrn = (raw_overlay as xkb_overlay_index_t as i32 - 1_i32) as xkb_overlay_index_t;
+    *overlay_rtrn = (raw_overlay as XkbOverlayIndexT as i32 - 1_i32) as XkbOverlayIndexT;
     match expr.stmt_type() {
         8 => {
             let ExprKind::KeyName(key_name_val) = expr.kind else {
@@ -1214,13 +1086,6 @@ fn ExprResolveOverlayEntry(
                 .map(|k| k.keycode);
             *key_rtrn = key_kc.unwrap_or(XKB_KEYCODE_INVALID);
             if *key_rtrn == XKB_KEYCODE_INVALID {
-                log::error!(
-                    "[XKB-{:03}] Unknown key \"{}\" for field {} in <{}>\n",
-                    XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                    xkb_atom_text(&keymap_info.keymap.ctx.atom_table, key_name_val),
-                    field,
-                    xkb_atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name)
-                );
                 return false;
             }
             true
@@ -1229,64 +1094,42 @@ fn ExprResolveOverlayEntry(
             let ExprKind::Ident(ident_val) = expr.kind else {
                 unreachable!()
             };
-            let id: &str = xkb_atom_text(&keymap_info.keymap.ctx.atom_table, ident_val);
+            let id: &str = atom_text(&keymap_info.keymap.ctx.atom_table, ident_val);
             if !id.is_empty() && id.eq_ignore_ascii_case("none") {
                 *key_rtrn = XKB_KEYCODE_INVALID;
                 return true;
             } else if !id.is_empty() && id.eq_ignore_ascii_case("any") {
                 *key_rtrn = XKB_KEYCODE_INVALID;
-                *overlay_rtrn = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
+                *overlay_rtrn = XKB_OVERLAY_INVALID as XkbOverlayIndexT;
                 return true;
             }
-            log::error!(
-                "[XKB-{:03}] Unsupported overlay value \"{}\" for field {} in <{}>\n",
-                XKB_ERROR_INVALID_VALUE as i32,
-                id,
-                field,
-                xkb_atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name)
-            );
             false
         }
-        _ => {
-            log::error!(
-                "[XKB-{:03}] Expected {} for field \"{}\" in <{}>, got: {}\n",
-                XKB_ERROR_INVALID_VALUE as i32,
-                stmt_type_to_string(STMT_EXPR_KEYNAME_LITERAL),
-                field,
-                xkb_atom_text(&keymap_info.keymap.ctx.atom_table, keyi.name),
-                stmt_type_to_string(expr.stmt_type())
-            );
-            false
-        }
+        _ => false,
     }
 }
-fn SetSymbolsField(
-    ki: &mut xkb_keymap_info<'_>,
+fn set_symbols_field(
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     keyi: &mut KeyInfo,
     field: &str,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value_opt: &mut Option<Box<ExprDef>>,
 ) -> bool {
     if field.eq_ignore_ascii_case("type") {
         let mut ndx: u32 = 0_u32;
         let mut val: u32 = XKB_ATOM_NONE;
-        if !ExprResolveString(ki.ctx(), value_opt.as_deref().unwrap(), &mut val) {
-            log::error!("[XKB-{:03}] The type field of a key symbol map must be a string; Ignoring illegal type definition\n",
-                XKB_ERROR_WRONG_FIELD_TYPE as i32);
+        if !expr_resolve_string(ki.ctx(), value_opt.as_deref().unwrap(), &mut val) {
             return false;
         }
-        if arrayNdx.is_none() {
+        if array_ndx.is_none() {
             keyi.default_type = val;
-            keyi.defined |= KEY_FIELD_DEFAULT_TYPE as i32 as key_field;
+            keyi.defined |= KEY_FIELD_DEFAULT_TYPE as i32 as u32;
         } else if {
             let mut pending_dummy = false;
-            ExprResolveGroup(ki, arrayNdx.unwrap(), false, &mut ndx, &mut pending_dummy)
+            expr_resolve_group(ki, array_ndx.unwrap(), false, &mut ndx, &mut pending_dummy)
         } != PARSER_SUCCESS
         {
-            log::error!("[XKB-{:03}] Illegal group index for type of key <{}>; Definition with non-integer array index ignored\n",
-                { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                KeyInfoText(ki.ctx(), keyi));
             return false;
         } else {
             ndx = ndx.wrapping_sub(1);
@@ -1295,16 +1138,16 @@ fn SetSymbolsField(
             }
             keyi.groups[ndx as usize].type_0 = val;
             let c2rust_fresh8 = &mut keyi.groups[ndx as usize].defined;
-            *c2rust_fresh8 = (*c2rust_fresh8 | GROUP_FIELD_TYPE) as group_field;
+            *c2rust_fresh8 |= GROUP_FIELD_TYPE;
         }
     } else if field.eq_ignore_ascii_case("symbols") {
-        return AddSymbolsToKey(ki, info, keyi, arrayNdx, value_opt.as_deref().unwrap());
+        return add_symbols_to_key(ki, info, keyi, array_ndx, value_opt.as_deref().unwrap());
     } else if field.eq_ignore_ascii_case("actions") {
-        return AddActionsToKey(
+        return add_actions_to_key(
             ki,
             info,
             keyi,
-            arrayNdx,
+            array_ndx,
             value_opt.as_mut().map(|b| &mut **b).unwrap(),
         );
     } else if field.eq_ignore_ascii_case("vmods")
@@ -1313,46 +1156,33 @@ fn SetSymbolsField(
     {
         let mut mask: u32 = 0_u32;
         let val = value_opt.as_deref().unwrap();
-        if !ExprResolveModMask(ki.ctx(), val, MOD_VIRT, &info.mods, &mut mask) {
-            log::error!("[XKB-{:03}] Expected a virtual modifier mask, found {}; Ignoring virtual modifiers definition for key <{}>\n",
-                { XKB_ERROR_UNSUPPORTED_MODIFIER_MASK },
-                stmt_type_to_string(val.stmt_type()),
-                KeyInfoText(ki.ctx(), keyi));
+        if !expr_resolve_mod_mask(ki.ctx(), val, MOD_VIRT, &info.mods, &mut mask) {
             return false;
         }
         keyi.vmodmap = mask;
-        keyi.defined |= KEY_FIELD_VMODMAP as i32 as key_field;
+        keyi.defined |= KEY_FIELD_VMODMAP as i32 as u32;
     } else if field.eq_ignore_ascii_case("locking")
         || field.eq_ignore_ascii_case("lock")
         || field.eq_ignore_ascii_case("locks")
     {
-        log::warn!("[XKB-{:03}] Key behaviors not supported; Ignoring locking specification for key <{}>\n",
-            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
-            KeyInfoText(ki.ctx(), keyi));
     } else if field.eq_ignore_ascii_case("radiogroup")
         || field.eq_ignore_ascii_case("permanentradiogroup")
         || field.eq_ignore_ascii_case("allownone")
     {
-        log::warn!("[XKB-{:03}] Radio groups not supported; Ignoring radio group specification for key <{}>\n",
-            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
-            KeyInfoText(ki.ctx(), keyi));
     } else if field
         .get(..16)
         .is_some_and(|s| s.eq_ignore_ascii_case("permanentoverlay"))
     {
-        log::warn!("[XKB-{:03}] Permanent overlays not supported; Ignoring overlay specification for key <{}>\n",
-            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32,
-            KeyInfoText(ki.ctx(), keyi));
     } else if field
         .get(..7)
         .is_some_and(|s| s.eq_ignore_ascii_case("overlay"))
     {
-        let mut overlay: xkb_overlay_index_t = XKB_OVERLAY_INVALID as xkb_overlay_index_t;
+        let mut overlay: XkbOverlayIndexT = XKB_OVERLAY_INVALID as XkbOverlayIndexT;
         let mut key: u32 = XKB_KEYCODE_INVALID;
-        if !ExprResolveOverlayEntry(
+        if !expr_resolve_overlay_entry(
             ki,
             field,
-            arrayNdx,
+            array_ndx,
             value_opt.as_deref().unwrap(),
             keyi,
             &mut overlay,
@@ -1365,66 +1195,34 @@ fn SetSymbolsField(
         } else if key != XKB_KEYCODE_INVALID && {
             ki.keymap.get_key(key).is_some_and(|k| k.name == keyi.name)
         } {
-            log::warn!(
-                "Cannot overlay a key to itself; Ignoring overlay {} specification for key <{}>\n",
-                overlay as i32 + 1_i32,
-                KeyInfoText(ki.ctx(), keyi)
-            );
         } else {
             let mut prev: u32 = XKB_KEYCODE_INVALID;
             if overlays_get(keyi, overlay, Some(&mut prev)) {
-                if key != prev {
-                    log::warn!("[XKB-{:03}] Conflicting overlays defined in key <{}>; use overlay{}=<{}>, ignore overlay{}=<{}>\n",
-                        XKB_WARNING_CONFLICTING_KEY_FIELDS as i32,
-                        KeyInfoText(ki.ctx(), keyi),
-                        overlay as i32 + 1_i32,
-                        if prev != XKB_KEYCODE_INVALID {
-                            xkb_atom_text(&ki.ctx().atom_table, ki.keymap.get_key(prev).map(|k| k.name).unwrap_or(0))
-                        } else {
-                            "none"
-                        },
-                        overlay as i32 + 1_i32,
-                        if key != XKB_KEYCODE_INVALID {
-                            xkb_atom_text(&ki.ctx().atom_table, ki.keymap.get_key(key).map(|k| k.name).unwrap_or(0))
-                        } else {
-                            "none"
-                        });
-                }
+                if key != prev {}
             } else if ki.features.overlapping_overlays {
                 if !overlays_insert(keyi, overlay, key) {
                     return false;
                 }
-                keyi.defined |= KEY_FIELD_OVERLAY as i32 as key_field;
+                keyi.defined |= KEY_FIELD_OVERLAY as i32 as u32;
             } else {
-                let mask_0: xkb_overlay_mask_t = (1_u32 << overlay as i32) as xkb_overlay_mask_t;
+                let mask_0: XkbOverlayMaskT = (1_u32 << overlay as i32) as XkbOverlayMaskT;
                 if keyi.overlays == 0 || keyi.overlays_clear as i32 != 0 {
                     if key != XKB_KEYCODE_INVALID {
                         keyi.overlays = mask_0;
                         keyi.overlays_clear = false;
                         keyi.overlay_keys = vec![key];
                     } else {
-                        keyi.overlays =
-                            (keyi.overlays as i32 | mask_0 as i32) as xkb_overlay_mask_t;
+                        keyi.overlays = (keyi.overlays as i32 | mask_0 as i32) as XkbOverlayMaskT;
                         keyi.overlays_clear = true;
                         keyi.overlay_keys = vec![XKB_KEYCODE_INVALID];
                     }
-                    keyi.defined |= KEY_FIELD_OVERLAY as i32 as key_field;
+                    keyi.defined |= KEY_FIELD_OVERLAY as i32 as u32;
                 } else if keyi.overlays != 0 && key != XKB_KEYCODE_INVALID {
-                    let existing_key = keyi
+                    let _existing_key = keyi
                         .overlay_keys
                         .first()
                         .copied()
                         .unwrap_or(XKB_KEYCODE_INVALID);
-                    log::error!("[XKB-{:03}] Overlapping overlays are not allowed in <{}>; use overlay{}=<{}>, ignore overlay{}=<{}>\n",
-                            XKB_ERROR_OVERLAPPING_OVERLAY as i32,
-                            KeyInfoText(ki.ctx(), keyi),
-                            keyi.overlays as i32,
-                            xkb_atom_text(
-                                &ki.ctx().atom_table,
-                                if existing_key == XKB_KEYCODE_INVALID { 0 } else { ki.keymap.get_key(existing_key).map(|k| k.name).unwrap_or(0) },
-                            ),
-                            overlay as i32 + 1_i32,
-                            xkb_atom_text(&ki.ctx().atom_table, ki.keymap.get_key(key).map(|k| k.name).unwrap_or(0)));
                     return ki.strict & PARSER_NO_FIELD_VALUE_MISMATCH == 0;
                 }
             }
@@ -1434,29 +1232,19 @@ fn SetSymbolsField(
         || field.eq_ignore_ascii_case("repeat")
     {
         let mut val_0: u32 = 0_u32;
-        if !ExprResolveEnum(
+        if !expr_resolve_enum(
             ki.ctx(),
             value_opt.as_deref().unwrap(),
             &mut val_0,
             &REPEAT_ENTRIES,
         ) {
-            log::error!(
-                "[XKB-{:03}] Illegal repeat setting for <{}>; Non-boolean repeat setting ignored\n",
-                XKB_ERROR_INVALID_VALUE as i32,
-                KeyInfoText(ki.ctx(), keyi)
-            );
             return false;
         }
-        keyi.repeat = val_0 as key_repeat as key_repeat;
-        keyi.defined |= KEY_FIELD_REPEAT as i32 as key_field;
+        keyi.repeat = val_0;
+        keyi.defined |= KEY_FIELD_REPEAT as i32 as u32;
     } else if field.eq_ignore_ascii_case("groupswrap") || field.eq_ignore_ascii_case("wrapgroups") {
         let mut set: bool = false;
-        if !ExprResolveBoolean(ki.ctx(), value_opt.as_deref().unwrap(), &mut set) {
-            log::error!(
-                "[XKB-{:03}] Illegal groupsWrap setting for <{}>; Non-boolean value ignored\n",
-                XKB_ERROR_INVALID_VALUE as i32,
-                KeyInfoText(ki.ctx(), keyi)
-            );
+        if !expr_resolve_boolean(ki.ctx(), value_opt.as_deref().unwrap(), &mut set) {
             return false;
         }
         keyi.out_of_range_group_policy = if set {
@@ -1464,16 +1252,11 @@ fn SetSymbolsField(
         } else {
             XKB_LAYOUT_OUT_OF_RANGE_CLAMP
         };
-        keyi.defined |= KEY_FIELD_GROUPINFO as i32 as key_field;
+        keyi.defined |= KEY_FIELD_GROUPINFO as i32 as u32;
     } else if field.eq_ignore_ascii_case("groupsclamp") || field.eq_ignore_ascii_case("clampgroups")
     {
         let mut set_0: bool = false;
-        if !ExprResolveBoolean(ki.ctx(), value_opt.as_deref().unwrap(), &mut set_0) {
-            log::error!(
-                "[XKB-{:03}] Illegal groupsClamp setting for <{}>; Non-boolean value ignored\n",
-                XKB_ERROR_INVALID_VALUE as i32,
-                KeyInfoText(ki.ctx(), keyi)
-            );
+        if !expr_resolve_boolean(ki.ctx(), value_opt.as_deref().unwrap(), &mut set_0) {
             return false;
         }
         keyi.out_of_range_group_policy = if set_0 {
@@ -1481,13 +1264,13 @@ fn SetSymbolsField(
         } else {
             XKB_LAYOUT_OUT_OF_RANGE_WRAP
         };
-        keyi.defined |= KEY_FIELD_GROUPINFO as i32 as key_field;
+        keyi.defined |= KEY_FIELD_GROUPINFO as i32 as u32;
     } else if field.eq_ignore_ascii_case("groupsredirect")
         || field.eq_ignore_ascii_case("redirectgroups")
     {
         let mut grp: u32 = 0_u32;
         let mut pending: bool = false;
-        if ExprResolveGroup(
+        if expr_resolve_group(
             ki,
             value_opt.as_deref().unwrap(),
             false,
@@ -1496,15 +1279,12 @@ fn SetSymbolsField(
         ) != PARSER_SUCCESS
             && !pending
         {
-            log::error!("[XKB-{:03}] Illegal group index for redirect of key <{}>; Definition with non-integer group ignored\n",
-                { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                KeyInfoText(ki.ctx(), keyi));
             return false;
         }
         if pending {
             keyi.out_of_range_pending_group = true;
             let pending_index: u32 = ki.pending_computations.len() as u32;
-            ki.pending_computations.push(pending_computation {
+            ki.pending_computations.push(PendingComputation {
                 expr: value_opt.take(),
                 computed: false,
                 value: 0_u32,
@@ -1515,48 +1295,34 @@ fn SetSymbolsField(
             keyi.out_of_range_group_number = grp.wrapping_sub(1_u32);
         }
         keyi.out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_REDIRECT;
-        keyi.defined |= KEY_FIELD_GROUPINFO as i32 as key_field;
+        keyi.defined |= KEY_FIELD_GROUPINFO as i32 as u32;
     } else {
-        log::error!(
-            "[XKB-{:03}] Unknown field \"{}\" in a key; definition ignored\n",
-            XKB_ERROR_UNKNOWN_FIELD as i32,
-            field
-        );
         return ki.strict & PARSER_NO_UNKNOWN_KEY_FIELDS == 0;
     }
     true
 }
-fn SetGroupName(
-    ki: &mut xkb_keymap_info<'_>,
+fn set_group_name(
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    merge: merge_mode,
+    merge: MergeMode,
 ) -> bool {
-    let arrayNdx = match arrayNdx {
+    let array_ndx = match array_ndx {
         Some(a) => a,
         None => {
-            log::warn!("[XKB-{:03}] You must specify an index when specifying a group name; Group name definition without array subscript ignored\n",
-                XKB_WARNING_MISSING_SYMBOLS_GROUP_NAME_INDEX as i32);
             return false;
         }
     };
     let mut group: u32 = 0_u32;
     let mut pending_dummy: bool = false;
-    if { ExprResolveGroup(ki, arrayNdx, false, &mut group, &mut pending_dummy) } as u32
+    if { expr_resolve_group(ki, array_ndx, false, &mut group, &mut pending_dummy) }
         != PARSER_SUCCESS
     {
-        log::error!("[XKB-{:03}] Illegal index in group name definition; Definition with non-integer array index ignored\n",
-            { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX });
         return false;
     }
     let mut name: u32 = XKB_ATOM_NONE;
-    if !ExprResolveString(ki.ctx(), value, &mut name) {
-        log::error!(
-            "[XKB-{:03}] Group name must be a string; Illegal name for group {} ignored\n",
-            XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            group
-        );
+    if !expr_resolve_string(ki.ctx(), value, &mut name) {
         return false;
     }
     let group_to_use: u32;
@@ -1565,11 +1331,6 @@ fn SetGroupName(
     } else if group.wrapping_sub(1_u32) == 0_u32 {
         group_to_use = info.explicit_group;
     } else {
-        log::warn!("[XKB-{:03}] An explicit group was specified for the '{}' map, but it provides a name for a group other than Group1 ({}); Ignoring group name '{}'\n",
-            XKB_WARNING_NON_BASE_GROUP_NAME as i32,
-            info.name.as_deref().unwrap_or(""),
-            group,
-            xkb_atom_text(&ki.ctx().atom_table, name));
         return false;
     }
     if group_to_use >= info.group_names.len() as u32 {
@@ -1580,131 +1341,103 @@ fn SetGroupName(
         if old_name != XKB_ATOM_NONE && old_name != name {
             let replace: bool = merge != MERGE_AUGMENT;
             let use_0: u32 = if replace as i32 != 0 { name } else { old_name };
-            let ignore: u32 = if replace as i32 != 0 { old_name } else { name };
-            log::warn!(
-                "Multiple definitions of group {} name in map '{}'; Using '{}', ignoring '{}'\n",
-                group_to_use,
-                info.name.as_deref().unwrap_or(""),
-                xkb_atom_text(&ki.ctx().atom_table, use_0),
-                xkb_atom_text(&ki.ctx().atom_table, ignore)
-            );
+            let _ignore: u32 = if replace as i32 != 0 { old_name } else { name };
             name = use_0;
         }
     }
     info.group_names[group_to_use as usize] = name;
     true
 }
-fn HandleGlobalVar(
-    ki: &mut xkb_keymap_info<'_>,
+fn handle_global_var(
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     stmt: &mut VarDef,
 ) -> bool {
     let mut elem_atom: u32 = 0;
     let mut field_atom: u32 = 0;
-    let mut arrayNdx_opt: Option<&ExprDef> = None;
+    let mut array_ndx_opt: Option<&ExprDef> = None;
     let ret: bool;
-    if !ExprResolveLhs(
+    if !expr_resolve_lhs(
         stmt.name.as_deref().unwrap(),
         &mut elem_atom,
         &mut field_atom,
-        &mut arrayNdx_opt,
+        &mut array_ndx_opt,
     ) {
         return false;
     }
-    let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-    let field = xkb_atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+    let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
+    let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
     let elem: &str = &elem;
     let field: &str = &field;
     if !elem.is_empty() && elem.eq_ignore_ascii_case("key") {
         let mut temp: KeyInfo = {
             let mut init = KeyInfo::new_zeroed();
             init.out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_WRAP;
-            init.defined = 0 as key_field;
+            init.defined = 0_u32;
             init.merge = MERGE_DEFAULT;
             init.repeat = KEY_REPEAT_UNDEFINED;
             init.out_of_range_pending_group = false;
             init.overlays_clear = false;
             init
         };
-        InitKeyInfo(ki.ctx_mut(), &mut temp);
+        init_key_info(ki.ctx_mut(), &mut temp);
         temp.merge = if temp.merge == MERGE_REPLACE {
             MERGE_OVERRIDE
         } else {
-            stmt.merge as merge_mode
+            stmt.merge as MergeMode
         };
-        ret = SetSymbolsField(ki, info, &mut temp, field, arrayNdx_opt, &mut stmt.value);
+        ret = set_symbols_field(ki, info, &mut temp, field, array_ndx_opt, &mut stmt.value);
         let mut dk = std::mem::replace(&mut info.default_key, KeyInfo::new_zeroed());
-        MergeKeys(ki, info, &mut dk, &mut temp, true);
+        merge_keys(ki, info, &mut dk, &mut temp, true);
         info.default_key = dk;
     } else if elem.is_empty()
         && (field.eq_ignore_ascii_case("name") || field.eq_ignore_ascii_case("groupname"))
     {
-        ret = SetGroupName(
+        ret = set_group_name(
             ki,
             info,
-            arrayNdx_opt,
+            array_ndx_opt,
             stmt.value.as_deref().unwrap(),
             stmt.merge,
         );
     } else if elem.is_empty()
         && (field.eq_ignore_ascii_case("groupswrap") || field.eq_ignore_ascii_case("wrapgroups"))
     {
-        log::error!(
-            "[XKB-{:03}] Global \"groupswrap\" not supported; Ignored\n",
-            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32
-        );
         ret = true;
     } else if elem.is_empty()
         && (field.eq_ignore_ascii_case("groupsclamp") || field.eq_ignore_ascii_case("clampgroups"))
     {
-        log::error!(
-            "[XKB-{:03}] Global \"groupsclamp\" not supported; Ignored\n",
-            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32
-        );
         ret = true;
     } else if elem.is_empty()
         && (field.eq_ignore_ascii_case("groupsredirect")
             || field.eq_ignore_ascii_case("redirectgroups"))
     {
-        log::error!(
-            "[XKB-{:03}] Global \"groupsredirect\" not supported; Ignored\n",
-            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32
-        );
         ret = true;
     } else if elem.is_empty() && field.eq_ignore_ascii_case("allownone") {
-        log::error!(
-            "[XKB-{:03}] Radio groups not supported; Ignoring \"allownone\" specification\n",
-            XKB_WARNING_UNSUPPORTED_SYMBOLS_FIELD as i32
-        );
         ret = true;
     } else if !elem.is_empty() {
         let elem_owned = elem.to_owned();
         let field_owned = field.to_owned();
         ret = {
-            SetDefaultActionField(
+            set_default_action_field(
                 ki,
                 &mut info.default_actions,
                 &mut info.mods,
                 &elem_owned,
                 &field_owned,
-                arrayNdx_opt,
+                array_ndx_opt,
                 &mut stmt.value,
                 stmt.merge,
             ) as u32
                 != PARSER_FATAL_ERROR
         };
     } else {
-        log::error!(
-            "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
-            XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-            field
-        );
         return ki.strict & PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS == 0;
     }
     ret
 }
-fn HandleSymbolsBody(
-    ki: &mut xkb_keymap_info<'_>,
+fn handle_symbols_body(
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     defs: &mut [VarDef],
     keyi: &mut KeyInfo,
@@ -1713,7 +1446,7 @@ fn HandleSymbolsBody(
     for def in defs.iter_mut() {
         let field_owned: String;
         let field: &str;
-        let mut arrayNdx_opt: Option<&ExprDef> = None;
+        let mut array_ndx_opt: Option<&ExprDef> = None;
         let mut ok: bool = true;
         if def.name.is_none() {
             if def.value.is_none() || !is_action_list_value(def.value.as_ref().unwrap()) {
@@ -1724,40 +1457,29 @@ fn HandleSymbolsBody(
         } else {
             let mut elem_atom: u32 = 0;
             let mut field_atom: u32 = 0;
-            ok = ExprResolveLhs(
+            ok = expr_resolve_lhs(
                 def.name.as_deref().unwrap(),
                 &mut elem_atom,
                 &mut field_atom,
-                &mut arrayNdx_opt,
+                &mut array_ndx_opt,
             );
-            let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom);
-            field_owned = xkb_atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+            let elem = atom_text(&ki.ctx().atom_table, elem_atom);
+            field_owned = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
             field = &field_owned;
             if ok as i32 != 0 && !elem.is_empty() {
-                log::error!("[XKB-{:03}] Cannot set global defaults for \"{}\" element within a key statement: move statements to the global file scope. Assignment to \"{}.{}\" ignored.\n",
-                    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                    elem,
-                    elem,
-                    field);
                 ok = false;
             }
         }
         if def.value.is_none() {
-            log::error!(
-                "[XKB-{:03}] Could not allocate the value of field \"{}\". Statement ignored.\n",
-                XKB_ERROR_ALLOCATION_ERROR as i32,
-                field
-            );
             ok = false;
         }
-        if !ok || !SetSymbolsField(ki, info, keyi, &field, arrayNdx_opt, &mut def.value) {
+        if !ok || !set_symbols_field(ki, info, keyi, field, array_ndx_opt, &mut def.value) {
             all_valid_entries = false;
         }
     }
     all_valid_entries
 }
-fn SetExplicitGroup(ki: &xkb_keymap_info<'_>, info: &SymbolsInfo, keyi: &mut KeyInfo) -> bool {
-    let mut warn: bool = false;
+fn set_explicit_group(_ki: &XkbKeymapInfo<'_>, info: &SymbolsInfo, keyi: &mut KeyInfo) -> bool {
     if info.explicit_group == XKB_LAYOUT_INVALID {
         return true;
     }
@@ -1765,20 +1487,13 @@ fn SetExplicitGroup(ki: &xkb_keymap_info<'_>, info: &SymbolsInfo, keyi: &mut Key
         let mut i: u32 = 1_u32;
         while i < keyi.groups.len() as u32 {
             if keyi.groups[i as usize].defined as u64 != 0 {
-                warn = true;
-                ClearGroupInfo(&mut keyi.groups[i as usize]);
-                InitGroupInfo(&mut keyi.groups[i as usize]);
+                clear_group_inf(&mut keyi.groups[i as usize]);
+                init_group_info(&mut keyi.groups[i as usize]);
             }
             i = i.wrapping_add(1);
         }
     }
-    if warn {
-        log::warn!("[XKB-{:03}] For the map {} the explicit group {} is specified, but key <{}> has more than one group defined; All groups except first one will be ignored\n",
-            XKB_WARNING_MULTIPLE_GROUPS_AT_ONCE as i32,
-            info.name.as_deref().unwrap_or(""),
-            info.explicit_group.wrapping_add(1_u32),
-            KeyInfoText(ki.ctx(), keyi));
-    }
+
     keyi.groups.resize_with(
         (info.explicit_group as usize).wrapping_add(1),
         Default::default,
@@ -1789,8 +1504,8 @@ fn SetExplicitGroup(ki: &xkb_keymap_info<'_>, info: &SymbolsInfo, keyi: &mut Key
     }
     true
 }
-fn HandleSymbolsDef(
-    ki: &mut xkb_keymap_info<'_>,
+fn handle_symbols_def(
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     stmt: &mut SymbolsDef,
 ) -> bool {
@@ -1811,40 +1526,37 @@ fn HandleSymbolsDef(
         overlays: dk.overlays,
         overlay_keys: dk.overlay_keys.clone(),
     };
-    keyi.merge = stmt.merge as merge_mode;
-    keyi.name = stmt.keyName;
-    if HandleSymbolsBody(ki, info, &mut stmt.symbols, &mut keyi) as i32 != 0
-        && SetExplicitGroup(ki, info, &mut keyi) as i32 != 0
-        && AddKeySymbols(ki, info, &mut keyi, true) as i32 != 0
+    keyi.merge = stmt.merge as MergeMode;
+    keyi.name = stmt.key_name;
+    if handle_symbols_body(ki, info, &mut stmt.symbols, &mut keyi) as i32 != 0
+        && set_explicit_group(ki, info, &mut keyi) as i32 != 0
+        && add_key_symbols(ki, info, &mut keyi, true) as i32 != 0
     {
         return true;
     }
-    ClearKeyInfo(&mut keyi);
-    info.errorCount += 1;
+    clear_key_info(&mut keyi);
+    info.error_count += 1;
     false
 }
-fn HandleModMapDef(
-    ki: &mut xkb_keymap_info<'_>,
+fn handle_mod_map_def(
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     def: &mut ModMapDef,
 ) -> bool {
     let mut tmp: ModMapEntry = ModMapEntry {
         merge: MERGE_DEFAULT,
-        haveSymbol: false,
+        have_symbol: false,
         modifier: 0,
         u: 0,
     };
     let ndx: u32;
     let mut ok: bool;
-    let modifier_name: &str = xkb_atom_text(&ki.ctx().atom_table, def.modifier);
+    let modifier_name: &str = atom_text(&ki.ctx().atom_table, def.modifier);
     if modifier_name.eq_ignore_ascii_case("none") {
         ndx = XKB_MOD_NONE;
     } else {
-        ndx = XkbModNameToIndex(&info.mods, def.modifier, MOD_REAL);
+        ndx = xkb_mod_name_to_index(&info.mods, def.modifier, MOD_REAL);
         if ndx == XKB_MOD_INVALID {
-            log::error!("[XKB-{:03}] Illegal modifier map definition; Ignoring map for non-modifier \"{}\"\n",
-                XKB_ERROR_INVALID_REAL_MODIFIER as i32,
-                xkb_atom_text(&ki.ctx().atom_table, def.modifier));
             return false;
         }
     }
@@ -1854,7 +1566,7 @@ fn HandleModMapDef(
     for key in def.keys.iter() {
         let mut add_entry = false;
         if key.stmt_type() == STMT_EXPR_KEYNAME_LITERAL {
-            tmp.haveSymbol = false;
+            tmp.have_symbol = false;
             let ExprKind::KeyName(kn) = key.kind else {
                 unreachable!()
             };
@@ -1864,23 +1576,19 @@ fn HandleModMapDef(
             let ExprKind::KeySym(ks) = key.kind else {
                 unreachable!()
             };
-            if ks != XKB_KEY_NoSymbol as u32 {
-                tmp.haveSymbol = true;
+            if ks != XKB_KEY_NO_SYMBOL as u32 {
+                tmp.have_symbol = true;
                 tmp.u = ks;
                 add_entry = true;
             }
-        } else {
-            log::error!("[XKB-{:03}] Modmap entries may contain only key names or keysyms; Illegal definition for {} modifier ignored\n",
-                XKB_ERROR_INVALID_MODMAP_ENTRY as i32,
-                ModIndexText(ki.ctx(), &info.mods, tmp.modifier));
         }
         if add_entry {
-            ok = AddModMapEntry(ki, info, &tmp) as i32 != 0 && ok as i32 != 0;
+            ok = add_mod_map_entry(ki, info, &tmp) as i32 != 0 && ok as i32 != 0;
         }
     }
     ok
 }
-fn HandleSymbolsFile(ki: &mut xkb_keymap_info<'_>, info: &mut SymbolsInfo, file: &mut XkbFile) {
+fn handle_symbols_file(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, file: &mut XkbFile) {
     {
         let mut ok: bool;
         info.name = if file.name.is_empty() {
@@ -1891,57 +1599,37 @@ fn HandleSymbolsFile(ki: &mut xkb_keymap_info<'_>, info: &mut SymbolsInfo, file:
         for stmt in file.defs.iter_mut() {
             match stmt {
                 Statement::Include(incl) => {
-                    ok = HandleIncludeSymbols(ki, info, incl);
+                    ok = handle_include_symbols(ki, info, incl);
                 }
                 Statement::Symbols(sym) => {
-                    ok = HandleSymbolsDef(ki, info, sym);
+                    ok = handle_symbols_def(ki, info, sym);
                 }
                 Statement::Var(var) => {
-                    ok = HandleGlobalVar(ki, info, var);
+                    ok = handle_global_var(ki, info, var);
                 }
                 Statement::VMod(vmod) => {
-                    ok = HandleVModDef(ki.ctx_mut(), &mut info.mods, vmod);
+                    ok = handle_vmod_def(ki.ctx_mut(), &mut info.mods, vmod);
                 }
                 Statement::ModMap(mm) => {
-                    ok = HandleModMapDef(ki, info, mm);
+                    ok = handle_mod_map_def(ki, info, mm);
                 }
-                Statement::Unknown(unk) => {
-                    log::error!(
-                        "[XKB-{:03}] Unsupported symbols {} statement \"{}\"; Ignoring\n",
-                        XKB_ERROR_UNKNOWN_STATEMENT as i32,
-                        if unk.stmt_type == STMT_UNKNOWN_COMPOUND {
-                            "compound"
-                        } else {
-                            "declaration"
-                        },
-                        &unk.name
-                    );
+                Statement::Unknown(_unk) => {
                     ok = ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {
-                    log::error!(
-                        "[XKB-{:03}] Symbols files may not include other types; Ignoring {}\n",
-                        XKB_ERROR_WRONG_STATEMENT_TYPE as i32,
-                        stmt_type_to_string(stmt.stmt_type())
-                    );
                     ok = false;
                 }
             }
             if !ok {
-                info.errorCount += 1;
+                info.error_count += 1;
             }
-            if info.errorCount > 10_i32 {
-                log::error!(
-                    "[XKB-{:03}] Abandoning symbols file \"{}\"\n",
-                    XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-                    safe_map_name(file)
-                );
+            if info.error_count > 10_i32 {
                 break;
             }
         }
     }
 }
-fn FindKeyForSymbol(keymap: &mut xkb_keymap, sym: u32) -> Option<&mut xkb_key> {
+fn find_key_for_symbol(keymap: &mut XkbKeymap, sym: u32) -> Option<&mut XkbKey> {
     let mut got_one_group: bool;
     let mut group: u32 = 0_u32;
     loop {
@@ -1982,62 +1670,62 @@ fn FindKeyForSymbol(keymap: &mut xkb_keymap, sym: u32) -> Option<&mut xkb_key> {
     }
     None
 }
-fn FindAutomaticType(ctx: &mut xkb_context, groupi: &GroupInfo) -> u32 {
+fn find_automatic_type(ctx: &mut XkbContext, groupi: &GroupInfo) -> u32 {
     let width: u32 = groupi.levels.len() as u32;
-    if width == 1_u32 || width <= 0_u32 {
-        return xkb_atom_intern_ref(ctx, b"ONE_LEVEL");
+    if width == 1_u32 || width == 0_u32 {
+        return atom_intern(&mut ctx.atom_table, b"ONE_LEVEL");
     }
     let sym0: u32 = if groupi.levels[0].syms.is_empty() {
-        XKB_KEY_NoSymbol as u32
+        XKB_KEY_NO_SYMBOL as u32
     } else {
         groupi.levels[0].syms[0]
     };
     let sym1: u32 = if groupi.levels[1].syms.is_empty() {
-        XKB_KEY_NoSymbol as u32
+        XKB_KEY_NO_SYMBOL as u32
     } else {
         groupi.levels[1].syms[0]
     };
     if width == 2_u32 {
         if xkb_keysym_is_lower(sym0) as i32 != 0 && xkb_keysym_is_upper_or_title(sym1) as i32 != 0 {
-            return xkb_atom_intern_ref(ctx, b"ALPHABETIC");
+            return atom_intern(&mut ctx.atom_table, b"ALPHABETIC");
         }
         if xkb_keysym_is_keypad(sym0) as i32 != 0 || xkb_keysym_is_keypad(sym1) as i32 != 0 {
-            return xkb_atom_intern_ref(ctx, b"KEYPAD");
+            return atom_intern(&mut ctx.atom_table, b"KEYPAD");
         }
-        return xkb_atom_intern_ref(ctx, b"TWO_LEVEL");
+        return atom_intern(&mut ctx.atom_table, b"TWO_LEVEL");
     }
     if width <= 4_u32 {
         if xkb_keysym_is_lower(sym0) as i32 != 0 && xkb_keysym_is_upper_or_title(sym1) as i32 != 0 {
             let sym2: u32 = if groupi.levels[2].syms.is_empty() {
-                XKB_KEY_NoSymbol as u32
+                XKB_KEY_NO_SYMBOL as u32
             } else {
                 groupi.levels[2].syms[0]
             };
             let sym3: u32 = if width == 4_u32 {
                 if groupi.levels[3].syms.is_empty() {
-                    XKB_KEY_NoSymbol as u32
+                    XKB_KEY_NO_SYMBOL as u32
                 } else {
                     groupi.levels[3].syms[0]
                 }
             } else {
-                XKB_KEY_NoSymbol as u32
+                XKB_KEY_NO_SYMBOL as u32
             };
             if xkb_keysym_is_lower(sym2) as i32 != 0
                 && xkb_keysym_is_upper_or_title(sym3) as i32 != 0
             {
-                return xkb_atom_intern_ref(ctx, b"FOUR_LEVEL_ALPHABETIC");
+                return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL_ALPHABETIC");
             }
-            return xkb_atom_intern_ref(ctx, b"FOUR_LEVEL_SEMIALPHABETIC");
+            return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL_SEMIALPHABETIC");
         }
         if xkb_keysym_is_keypad(sym0) as i32 != 0 || xkb_keysym_is_keypad(sym1) as i32 != 0 {
-            return xkb_atom_intern_ref(ctx, b"FOUR_LEVEL_KEYPAD");
+            return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL_KEYPAD");
         }
-        return xkb_atom_intern_ref(ctx, b"FOUR_LEVEL");
+        return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL");
     }
     XKB_ATOM_NONE
 }
-fn FindTypeForGroup(
-    keymap: &mut xkb_keymap,
+fn find_type_for_group(
+    keymap: &mut XkbKeymap,
     keyi: &mut KeyInfo,
     group: u32,
     explicit_type: &mut bool,
@@ -2049,18 +1737,13 @@ fn FindTypeForGroup(
         if keyi.default_type != XKB_ATOM_NONE {
             type_name = keyi.default_type;
         } else {
-            type_name = FindAutomaticType(&mut keymap.ctx, groupi);
+            type_name = find_automatic_type(&mut keymap.ctx, groupi);
             if type_name != XKB_ATOM_NONE {
                 *explicit_type = false;
             }
         }
     }
     if type_name == XKB_ATOM_NONE {
-        log::warn!("[XKB-{:03}] Couldn't find an automatic type for key '<{}>' group {} with {} levels; Using the default type\n",
-            XKB_WARNING_CANNOT_INFER_KEY_TYPE as i32,
-            xkb_atom_text(&keymap.ctx.atom_table, keyi.name),
-            group.wrapping_add(1_u32),
-            keyi.groups[group as usize].levels.len());
     } else {
         let mut i: u32 = 0_u32;
         while (i as usize) < keymap.types.len() {
@@ -2070,11 +1753,6 @@ fn FindTypeForGroup(
             i = i.wrapping_add(1);
         }
         if i as usize >= keymap.types.len() {
-            log::warn!("[XKB-{:03}] The type \"{}\" for key '<{}>' group {} was not previously defined; Using the default type\n",
-                XKB_WARNING_UNDEFINED_KEY_TYPE as i32,
-                xkb_atom_text(&keymap.ctx.atom_table, type_name),
-                xkb_atom_text(&keymap.ctx.atom_table, keyi.name),
-                group.wrapping_add(1_u32));
         } else {
             keymap.types[i as usize].required = true;
             return i;
@@ -2083,8 +1761,8 @@ fn FindTypeForGroup(
     keymap.types[0].required = true;
     0
 }
-fn CopySymbolsDefToKeymap(
-    keymap: &mut xkb_keymap,
+fn copy_symbols_def_to_keymap(
+    keymap: &mut XkbKeymap,
     _info: &SymbolsInfo,
     keyi: &mut KeyInfo,
 ) -> bool {
@@ -2105,11 +1783,6 @@ fn CopySymbolsDefToKeymap(
     let key_idx = match key_idx {
         Some(idx) => idx,
         None => {
-            log::warn!(
-                "[XKB-{:03}] Key <{}> not found in keycodes; Symbols ignored\n",
-                XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                KeyInfoText(&keymap.ctx, keyi)
-            );
             return false;
         }
     };
@@ -2125,12 +1798,12 @@ fn CopySymbolsDefToKeymap(
             }
             if has_explicit_type {
                 keymap.keys[key_idx].explicit =
-                    (keymap.keys[key_idx].explicit | EXPLICIT_TYPES) as xkb_explicit_components;
+                    (keymap.keys[key_idx].explicit | EXPLICIT_TYPES) as XkbExplicitComponents;
             }
         }
     }
 
-    if keymap.keys[key_idx].num_groups <= 0 {
+    if keymap.keys[key_idx].num_groups == 0 {
         // A key with no group may still have other fields defined
         if keyi.defined as i32 != 0 {
             // goto key_fields
@@ -2156,7 +1829,7 @@ fn CopySymbolsDefToKeymap(
         }
 
         keymap.keys[key_idx].groups = (0..keymap.keys[key_idx].num_groups)
-            .map(|_| xkb_group {
+            .map(|_| XkbGroup {
                 explicit_symbols: false,
                 explicit_actions: false,
                 implicit_actions: false,
@@ -2171,19 +1844,12 @@ fn CopySymbolsDefToKeymap(
             i = 0;
             while i < keyi.groups.len() as u32 {
                 let mut explicit_type = false;
-                let type_idx: u32 = FindTypeForGroup(keymap, keyi, i, &mut explicit_type);
+                let type_idx: u32 = find_type_for_group(keymap, keyi, i, &mut explicit_type);
 
                 // Always have as many levels as the type specifies
                 if keymap.types[type_idx as usize].num_levels
                     < keyi.groups[i as usize].levels.len() as u32
                 {
-                    log::warn!("[XKB-{:03}] Type \"{}\" has {} levels, but <{}> has {} levels; Ignoring extra symbols\n",
-                        XKB_WARNING_EXTRA_SYMBOLS_IGNORED as i32,
-                        xkb_atom_text(&keymap.ctx.atom_table, keymap.types[type_idx as usize].name),
-                        keymap.types[type_idx as usize].num_levels,
-                        KeyInfoText(&keymap.ctx, keyi),
-                        keyi.groups[i as usize].levels.len());
-
                     for lvl_idx in keymap.types[type_idx as usize].num_levels as usize
                         ..keyi.groups[i as usize].levels.len()
                     {
@@ -2215,7 +1881,7 @@ fn CopySymbolsDefToKeymap(
                     let leveli = &mut groupi.levels[li];
                     match leveli.syms.len() {
                         0 => {
-                            leveli.upper = XKB_KEY_NoSymbol as u32;
+                            leveli.upper = XKB_KEY_NO_SYMBOL as u32;
                         }
                         1 => {
                             leveli.upper = xkb_keysym_to_upper(leveli.syms[0]);
@@ -2259,19 +1925,17 @@ fn CopySymbolsDefToKeymap(
                         .is_empty()
                 {
                     keymap.keys[key_idx].groups[i as usize].explicit_symbols = true;
-                    keymap.keys[key_idx].explicit = (keymap.keys[key_idx].explicit
-                        | EXPLICIT_SYMBOLS)
-                        as xkb_explicit_components;
+                    keymap.keys[key_idx].explicit =
+                        (keymap.keys[key_idx].explicit | EXPLICIT_SYMBOLS) as XkbExplicitComponents;
                 }
                 if groupi.defined & GROUP_FIELD_ACTS != 0 {
                     keymap.keys[key_idx].groups[i as usize].explicit_actions = true;
-                    keymap.keys[key_idx].explicit = (keymap.keys[key_idx].explicit
-                        | EXPLICIT_INTERP)
-                        as xkb_explicit_components;
+                    keymap.keys[key_idx].explicit =
+                        (keymap.keys[key_idx].explicit | EXPLICIT_INTERP) as XkbExplicitComponents;
                 }
                 if keymap.keys[key_idx].groups[i as usize].explicit_type {
                     keymap.keys[key_idx].explicit =
-                        (keymap.keys[key_idx].explicit | EXPLICIT_TYPES) as xkb_explicit_components;
+                        (keymap.keys[key_idx].explicit | EXPLICIT_TYPES) as XkbExplicitComponents;
                 }
 
                 i = i.wrapping_add(1);
@@ -2287,13 +1951,13 @@ fn CopySymbolsDefToKeymap(
     if keyi.defined as i32 & KEY_FIELD_VMODMAP as i32 != 0 {
         keymap.keys[key_idx].vmodmap = keyi.vmodmap;
         keymap.keys[key_idx].explicit =
-            (keymap.keys[key_idx].explicit | EXPLICIT_VMODMAP) as xkb_explicit_components;
+            (keymap.keys[key_idx].explicit | EXPLICIT_VMODMAP) as XkbExplicitComponents;
     }
 
-    if keyi.repeat != KEY_REPEAT_UNDEFINED as key_repeat {
-        keymap.keys[key_idx].repeats = keyi.repeat == KEY_REPEAT_YES as key_repeat;
+    if keyi.repeat != KEY_REPEAT_UNDEFINED {
+        keymap.keys[key_idx].repeats = keyi.repeat == KEY_REPEAT_YES;
         keymap.keys[key_idx].explicit =
-            (keymap.keys[key_idx].explicit | EXPLICIT_REPEAT) as xkb_explicit_components;
+            (keymap.keys[key_idx].explicit | EXPLICIT_REPEAT) as XkbExplicitComponents;
     }
 
     if (keyi.defined as i32 & KEY_FIELD_OVERLAY as i32 != 0)
@@ -2301,12 +1965,12 @@ fn CopySymbolsDefToKeymap(
         && !keyi.overlays_clear
     {
         // Remove null entries from overlay_keys and clear corresponding bits
-        let mut clean_overlays: xkb_overlay_mask_t = 0;
+        let mut clean_overlays: XkbOverlayMaskT = 0;
         let mut clean_keys: Vec<u32> = Vec::new();
-        let mut remaining: xkb_overlay_mask_t = keyi.overlays;
+        let mut remaining: XkbOverlayMaskT = keyi.overlays;
         let mut idx: usize = 0;
         while remaining != 0 {
-            let lsb: xkb_overlay_mask_t = remaining & (!remaining).wrapping_add(1);
+            let lsb: XkbOverlayMaskT = remaining & (!remaining).wrapping_add(1);
             remaining &= !lsb;
             let k = if idx < keyi.overlay_keys.len() {
                 keyi.overlay_keys[idx]
@@ -2324,41 +1988,37 @@ fn CopySymbolsDefToKeymap(
             keymap.keys[key_idx].overlays = clean_overlays;
             keymap.keys[key_idx].overlay_keys = clean_keys;
             keymap.keys[key_idx].explicit =
-                (keymap.keys[key_idx].explicit | EXPLICIT_OVERLAY) as xkb_explicit_components;
+                (keymap.keys[key_idx].explicit | EXPLICIT_OVERLAY) as XkbExplicitComponents;
         }
     }
 
     true
 }
 
-fn CopyModMapDefToKeymap(keymap: &mut xkb_keymap, info: &SymbolsInfo, entry: &ModMapEntry) -> bool {
-    if !entry.haveSymbol {
+fn copy_mod_map_def_to_keymap(
+    keymap: &mut XkbKeymap,
+    _info: &SymbolsInfo,
+    entry: &ModMapEntry,
+) -> bool {
+    if !entry.have_symbol {
         if let Some(key) = keymap.key_by_name_mut(entry.u, true) {
             if entry.modifier != XKB_MOD_NONE {
                 key.modmap |= 1_u32 << entry.modifier;
             }
             true
         } else {
-            log::warn!("[XKB-{:03}] Key <{}> not found in keycodes; Modifier map entry for {} not updated\n",
-                XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                xkb_atom_text(&keymap.ctx.atom_table, entry.u),
-                ModIndexText(&keymap.ctx, &info.mods, entry.modifier));
             false
         }
-    } else if let Some(key) = FindKeyForSymbol(keymap, entry.u) {
+    } else if let Some(key) = find_key_for_symbol(keymap, entry.u) {
         if entry.modifier != XKB_MOD_NONE {
             key.modmap |= 1_u32 << entry.modifier;
         }
         true
     } else {
-        log::warn!("[XKB-{:03}] Key \"{}\" not found in symbol map; Modifier map entry for {} not updated\n",
-            XKB_WARNING_UNRESOLVED_KEYMAP_SYMBOL as i32,
-            KeysymText(entry.u),
-            ModIndexText(&keymap.ctx, &info.mods, entry.modifier));
         false
     }
 }
-fn CopySymbolsToKeymap(keymap: &mut xkb_keymap, info: &mut SymbolsInfo) -> bool {
+fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) -> bool {
     keymap.symbols_section_name = match &info.name {
         Some(s) => s.clone(),
         None => String::new(),
@@ -2368,8 +2028,8 @@ fn CopySymbolsToKeymap(keymap: &mut xkb_keymap, info: &mut SymbolsInfo) -> bool 
     keymap.group_names = std::mem::take(&mut info.group_names);
     let mut keys = std::mem::take(&mut info.keys);
     for keyi in keys.iter_mut() {
-        if !CopySymbolsDefToKeymap(keymap, info, keyi) {
-            info.errorCount += 1;
+        if !copy_symbols_def_to_keymap(keymap, info, keyi) {
+            info.error_count += 1;
         }
     }
     info.keys = keys;
@@ -2381,51 +2041,47 @@ fn CopySymbolsToKeymap(keymap: &mut xkb_keymap, info: &mut SymbolsInfo) -> bool 
         };
         let mut ki: u32 = start_idx;
         while ki < keymap.num_keys {
-            let key = &keymap.keys[ki as usize];
-            if (key.name != XKB_ATOM_NONE) && (key.num_groups as i32) < 1_i32 {
-                log::info!(
-                    "No symbols defined for <{}>\n",
-                    xkb_atom_text(&keymap.ctx.atom_table, key.name)
-                );
-            }
             ki = ki.wrapping_add(1);
         }
     }
     for i in 0..info.modmaps.len() {
-        if !CopyModMapDefToKeymap(keymap, info, &info.modmaps[i]) {
-            info.errorCount += 1;
+        if !copy_mod_map_def_to_keymap(keymap, info, &info.modmaps[i]) {
+            info.error_count += 1;
         }
     }
     true
 }
-pub fn CompileSymbols(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
+pub(crate) fn compile_symbols(
+    file: Option<&mut XkbFile>,
+    keymap_info: &mut XkbKeymapInfo<'_>,
+) -> bool {
     let mods = keymap_info.keymap_ref().mods;
     let mut info = SymbolsInfo::new(keymap_info);
-    InitSymbolsInfo(&mut info, keymap_info, 0_u32, &mods);
+    init_symbols_info(&mut info, keymap_info, 0_u32, &mods);
     if let Some(file) = file {
-        HandleSymbolsFile(keymap_info, &mut info, file);
+        handle_symbols_file(keymap_info, &mut info, file);
     }
-    if (info.errorCount == 0_i32) && CopySymbolsToKeymap(keymap_info.keymap_mut(), &mut info) {
-        ClearSymbolsInfo(&mut info);
+    if (info.error_count == 0_i32) && copy_symbols_to_keymap(keymap_info.keymap_mut(), &mut info) {
+        clear_symbols_info(&mut info);
         return true;
     }
-    ClearSymbolsInfo(&mut info);
+    clear_symbols_info(&mut info);
     false
 }
 use super::super::keymap::xkb_context_get_log_verbosity;
 use super::super::keysym::xkb_keysym_to_upper;
 use super::super::shared_types::*;
-pub struct CompatInfo {
-    pub name: Option<String>,
-    pub errorCount: i32,
-    pub include_depth: u32,
-    pub default_interp: SymInterpInfo,
-    pub interps: Vec<SymInterpInfo>,
-    pub default_led: LedInfo,
-    pub leds: [LedInfo; 32],
-    pub num_leds: u32,
-    pub default_actions: ActionsInfo,
-    pub mods: xkb_mod_set,
+pub(crate) struct CompatInfo {
+    pub(crate) name: Option<String>,
+    pub(crate) error_count: i32,
+    pub(crate) include_depth: u32,
+    pub(crate) default_interp: SymInterpInfo,
+    pub(crate) interps: Vec<SymInterpInfo>,
+    pub(crate) default_led: LedInfo,
+    pub(crate) leds: [LedInfo; 32],
+    pub(crate) num_leds: u32,
+    pub(crate) default_actions: ActionsInfo,
+    pub(crate) mods: XkbModSet,
 }
 impl Default for CompatInfo {
     fn default() -> Self {
@@ -2434,28 +2090,28 @@ impl Default for CompatInfo {
 }
 
 impl CompatInfo {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         let zeroed_led = LedInfo {
-            defined: 0 as led_field,
+            defined: 0_u32,
             merge: MERGE_DEFAULT,
-            led: xkb_led {
+            led: XkbLed {
                 name: 0,
                 which_groups: 0,
                 pending_groups: false,
                 groups: 0,
                 which_mods: 0_u32,
-                mods: xkb_mods { mods: 0, mask: 0 },
-                ctrls: 0 as xkb_action_controls,
+                mods: XkbMods { mods: 0, mask: 0 },
+                ctrls: 0 as XkbActionControls,
             },
         };
         Self {
             name: None,
-            errorCount: 0,
+            error_count: 0,
             include_depth: 0,
             default_interp: SymInterpInfo {
-                defined: 0 as si_field,
+                defined: 0_u32,
                 merge: MERGE_DEFAULT,
-                interp: xkb_sym_interpret {
+                interp: XkbSymInterpret {
                     sym: 0,
                     match_0: MATCH_NONE,
                     mods: 0,
@@ -2464,7 +2120,7 @@ impl CompatInfo {
                     repeat: false,
                     required: false,
                     num_actions: 0,
-                    action: xkb_action::None,
+                    action: XkbAction::None,
                     actions: Vec::new(),
                 },
             },
@@ -2473,10 +2129,10 @@ impl CompatInfo {
             leds: [zeroed_led; 32],
             num_leds: 0,
             default_actions: ActionsInfo {
-                actions: [xkb_action::None; 21],
+                actions: [XkbAction::None; 21],
             },
-            mods: xkb_mod_set {
-                mods: [xkb_mod {
+            mods: XkbModSet {
+                mods: [XkbMod {
                     name: 0,
                     type_0: 0_u32,
                     mapping: 0,
@@ -2488,147 +2144,77 @@ impl CompatInfo {
     }
 }
 #[derive(Copy, Clone)]
-pub struct LedInfo {
-    pub defined: led_field,
-    pub merge: merge_mode,
-    pub led: xkb_led,
+pub(crate) struct LedInfo {
+    pub(crate) defined: u32,
+    pub(crate) merge: MergeMode,
+    pub(crate) led: XkbLed,
 }
-pub type led_field = u32;
-pub const LED_FIELD_CTRLS: led_field = 4;
-pub const LED_FIELD_GROUPS: led_field = 2;
-pub const LED_FIELD_MODS: led_field = 1;
+pub(crate) const LED_FIELD_CTRLS: u32 = 4;
+pub(crate) const LED_FIELD_GROUPS: u32 = 2;
+pub(crate) const LED_FIELD_MODS: u32 = 1;
 // C2Rust_Unnamed_18 removed: replaced by Vec<SymInterpInfo>
 #[derive(Clone)]
-pub struct SymInterpInfo {
-    pub defined: si_field,
-    pub merge: merge_mode,
-    pub interp: xkb_sym_interpret,
+pub(crate) struct SymInterpInfo {
+    pub(crate) defined: u32,
+    pub(crate) merge: MergeMode,
+    pub(crate) interp: XkbSymInterpret,
 }
-pub type si_field = u32;
-pub const SI_FIELD_LEVEL_ONE_ONLY: si_field = 8;
-pub const SI_FIELD_AUTO_REPEAT: si_field = 4;
-pub const SI_FIELD_ACTION: si_field = 2;
-pub const SI_FIELD_VIRTUAL_MOD: si_field = 1;
-// C2Rust_Unnamed_19 removed: replaced by Vec<xkb_sym_interpret>
-pub struct collect {
-    pub sym_interprets: Vec<xkb_sym_interpret>,
+pub(crate) const SI_FIELD_LEVEL_ONE_ONLY: u32 = 8;
+pub(crate) const SI_FIELD_AUTO_REPEAT: u32 = 4;
+pub(crate) const SI_FIELD_ACTION: u32 = 2;
+pub(crate) const SI_FIELD_VIRTUAL_MOD: u32 = 1;
+// C2Rust_Unnamed_19 removed: replaced by Vec<XkbSymInterpret>
+pub(crate) struct Collect {
+    pub(crate) sym_interprets: Vec<XkbSymInterpret>,
 }
-// C2Rust_Unnamed_20 removed: replaced by Vec<xkb_action>
-fn siText(si: &SymInterpInfo, info: &mut CompatInfo, ki: &xkb_keymap_info<'_>) -> String {
-    if std::ptr::eq(si, &info.default_interp) {
-        return "default".to_string();
-    }
-    format!(
-        "{}+{}({})",
-        KeysymText(si.interp.sym),
-        SIMatchText(si.interp.match_0),
-        ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, si.interp.mods),
-    )
-}
+// C2Rust_Unnamed_20 removed: replaced by Vec<XkbAction>
 #[inline]
-fn ReportSINotArray(
-    info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
-    si: &SymInterpInfo,
-    field: &str,
-) -> bool {
-    ReportNotArray("symbol interpretation", field, &siText(si, info, ki))
-}
-#[inline]
-fn ReportSIBadType(
-    info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
-    si: &SymInterpInfo,
-    field: &str,
-    wanted: &str,
-) -> bool {
-    ReportBadType(
-        XKB_ERROR_WRONG_FIELD_TYPE,
-        "symbol interpretation",
-        field,
-        &siText(si, info, ki),
-        wanted,
-    )
-}
-fn LEDText<'a>(info: &'a CompatInfo, ki: &'a xkb_keymap_info<'_>, ledi: &LedInfo) -> &'a str {
-    if std::ptr::eq(ledi, &info.default_led) {
-        "default"
-    } else {
-        xkb_atom_text(&ki.ctx().atom_table, ledi.led.name)
-    }
-}
-#[inline]
-fn ReportLedBadType(
-    info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
-    ledi: &LedInfo,
-    field: &str,
-    wanted: &str,
-) -> bool {
-    ReportBadType(
-        XKB_ERROR_WRONG_FIELD_TYPE,
-        "indicator map",
-        field,
-        LEDText(info, ki, ledi),
-        wanted,
-    )
-}
-#[inline]
-fn ReportLedNotArray(
-    info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
-    ledi: &LedInfo,
-    field: &str,
-) -> bool {
-    ReportNotArray("indicator map", field, LEDText(info, ki, ledi))
-}
-#[inline]
-fn InitInterp(info: &mut SymInterpInfo) {
+fn init_interp(info: &mut SymInterpInfo) {
     info.merge = MERGE_DEFAULT;
     info.interp.virtual_mod = XKB_MOD_INVALID;
 }
 #[inline]
-fn InitLED(info: &mut LedInfo) {
+fn init_led(info: &mut LedInfo) {
     info.merge = MERGE_DEFAULT;
 }
-fn InitCompatInfo(
-    ki: &xkb_keymap_info<'_>,
+fn init_compat_info(
+    ki: &XkbKeymapInfo<'_>,
     info: &mut CompatInfo,
     include_depth: u32,
-    mods: &xkb_mod_set,
+    mods: &XkbModSet,
 ) {
     info.include_depth = include_depth;
-    InitActionsInfo(ki.keymap_ref(), &mut info.default_actions);
-    InitVMods(&mut info.mods, mods, include_depth > 0_u32);
-    InitInterp(&mut info.default_interp);
-    InitLED(&mut info.default_led);
+    init_actions_info(ki.keymap_ref(), &mut info.default_actions);
+    init_vmods(&mut info.mods, mods, include_depth > 0_u32);
+    init_interp(&mut info.default_interp);
+    init_led(&mut info.default_led);
 }
-fn ClearCompatInfo(info: &mut CompatInfo) {
+fn clear_compat_info(info: &mut CompatInfo) {
     info.name = None;
     info.interps.clear();
 }
-fn UseNewInterpField(
-    field: si_field,
-    old: si_field,
-    new: si_field,
+fn use_new_interp_field(
+    field: u32,
+    old: u32,
+    new: u32,
     clobber: bool,
     report: bool,
-    collide: &mut si_field,
+    collide: &mut u32,
 ) -> bool {
     if old & field == 0 {
         return new & field != 0;
     }
     if new & field != 0 {
         if report {
-            *collide = (*collide | field) as si_field;
+            *collide |= field;
         }
         return clobber;
     }
     false
 }
-fn MergeInterp(
-    info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
+fn merge_interp(
+    _info: &mut CompatInfo,
+    ki: &XkbKeymapInfo<'_>,
     old: &mut SymInterpInfo,
     new: &mut SymInterpInfo,
     same_file: bool,
@@ -2636,18 +2222,12 @@ fn MergeInterp(
     let clobber: bool = new.merge != MERGE_AUGMENT;
     let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
     let report: bool = same_file as i32 != 0 && verbosity > 0_i32 || verbosity > 9_i32;
-    let mut collide: si_field = 0 as si_field;
+    let mut collide: u32 = 0_u32;
     if new.merge == MERGE_REPLACE {
-        if report {
-            log::warn!(
-                "Multiple definitions for \"{}\"; Earlier interpretation ignored\n",
-                siText(new, info, ki)
-            );
-        }
         *old = new.clone();
         return true;
     }
-    if UseNewInterpField(
+    if use_new_interp_field(
         SI_FIELD_VIRTUAL_MOD,
         old.defined,
         new.defined,
@@ -2656,9 +2236,9 @@ fn MergeInterp(
         &mut collide,
     ) {
         old.interp.virtual_mod = new.interp.virtual_mod;
-        old.defined = (old.defined | SI_FIELD_VIRTUAL_MOD) as si_field;
+        old.defined |= SI_FIELD_VIRTUAL_MOD;
     }
-    if UseNewInterpField(
+    if use_new_interp_field(
         SI_FIELD_ACTION,
         old.defined,
         new.defined,
@@ -2672,14 +2252,14 @@ fn MergeInterp(
         old.interp.num_actions = new.interp.num_actions;
         if new.interp.num_actions as i32 > 1_i32 {
             old.interp.actions = std::mem::take(&mut new.interp.actions);
-            new.interp.action = xkb_action::None;
+            new.interp.action = XkbAction::None;
             new.interp.num_actions = 0_u16;
         } else {
             old.interp.action = new.interp.action;
         }
-        old.defined = (old.defined | SI_FIELD_ACTION) as si_field;
+        old.defined |= SI_FIELD_ACTION;
     }
-    if UseNewInterpField(
+    if use_new_interp_field(
         SI_FIELD_AUTO_REPEAT,
         old.defined,
         new.defined,
@@ -2688,9 +2268,9 @@ fn MergeInterp(
         &mut collide,
     ) {
         old.interp.repeat = new.interp.repeat;
-        old.defined = (old.defined | SI_FIELD_AUTO_REPEAT) as si_field;
+        old.defined |= SI_FIELD_AUTO_REPEAT;
     }
-    if UseNewInterpField(
+    if use_new_interp_field(
         SI_FIELD_LEVEL_ONE_ONLY,
         old.defined,
         new.defined,
@@ -2699,20 +2279,13 @@ fn MergeInterp(
         &mut collide,
     ) {
         old.interp.level_one_only = new.interp.level_one_only;
-        old.defined = (old.defined | SI_FIELD_LEVEL_ONE_ONLY) as si_field;
-    }
-    if collide as u64 != 0 {
-        log::warn!(
-            "Multiple interpretations of \"{}\"; Using {} definition for duplicate fields\n",
-            siText(old, info, ki),
-            if clobber { "last" } else { "first" }
-        );
+        old.defined |= SI_FIELD_LEVEL_ONE_ONLY;
     }
     true
 }
-fn AddInterp(
+fn add_interp(
     info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     new: &mut SymInterpInfo,
     same_file: bool,
 ) -> bool {
@@ -2730,19 +2303,19 @@ fn AddInterp(
     if let Some(idx) = old_idx {
         // Clone the old element out to avoid borrow conflict with info
         let mut old = info.interps[idx].clone();
-        let result = MergeInterp(info, ki, &mut old, new, same_file);
+        let result = merge_interp(info, ki, &mut old, new, same_file);
         info.interps[idx] = old;
         return result;
     }
     info.interps.push(new.clone());
     true
 }
-fn ResolveStateAndPredicate(
+fn resolve_state_and_predicate(
     expr: Option<&ExprDef>,
     pred_rtrn: &mut u32,
     mods_rtrn: &mut u32,
     info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
 ) -> bool {
     let expr = match expr {
         None => {
@@ -2758,13 +2331,12 @@ fn ResolveStateAndPredicate(
         let ExprKind::Action { name, args } = &expr.kind else {
             unreachable!()
         };
-        let pred_txt: &str = xkb_atom_text(&ki.ctx().atom_table, *name);
+        let pred_txt: &str = atom_text(&ki.ctx().atom_table, *name);
         let mut pred: u32 = 0_u32;
-        if !LookupString(&symInterpretMatchMaskNames, pred_txt, &mut pred)
+        if !lookup_string(&SYM_INTERPRET_MATCH_MASK_NAMES, pred_txt, &mut pred)
             || args.is_empty()
             || args.len() != 1
         {
-            log::error!("Illegal modifier predicate \"{}\"; Ignored\n", pred_txt);
             return false;
         }
         *pred_rtrn = pred;
@@ -2773,7 +2345,7 @@ fn ResolveStateAndPredicate(
         let ExprKind::Ident(ident_val) = &expr.kind else {
             unreachable!()
         };
-        let pred_txt_0: &str = xkb_atom_text(&ki.ctx().atom_table, *ident_val);
+        let pred_txt_0: &str = atom_text(&ki.ctx().atom_table, *ident_val);
         if !pred_txt_0.is_empty() && pred_txt_0.eq_ignore_ascii_case("any") {
             *pred_rtrn = MATCH_ANY;
             *mods_rtrn = MOD_REAL_MASK_ALL;
@@ -2783,35 +2355,35 @@ fn ResolveStateAndPredicate(
     } else {
         resolve_expr = expr;
     }
-    ExprResolveModMask(ki.ctx(), resolve_expr, MOD_REAL, &info.mods, mods_rtrn)
+    expr_resolve_mod_mask(ki.ctx(), resolve_expr, MOD_REAL, &info.mods, mods_rtrn)
 }
-fn UseNewLEDField(
-    field: led_field,
-    old: led_field,
-    new: led_field,
+fn use_new_ledfield(
+    field: u32,
+    old: u32,
+    new: u32,
     clobber: bool,
     report: bool,
-    collide: &mut led_field,
+    collide: &mut u32,
 ) -> bool {
     if old & field == 0 {
         return new & field != 0;
     }
     if new & field != 0 {
         if report {
-            *collide = (*collide | field) as led_field;
+            *collide |= field;
         }
         return clobber;
     }
     false
 }
-fn MergeLedMap(
-    info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
+fn merge_led_map(
+    _info: &mut CompatInfo,
+    ki: &XkbKeymapInfo<'_>,
     old: &mut LedInfo,
     new: &mut LedInfo,
     same_file: bool,
 ) -> bool {
-    let mut collide: led_field;
+    let mut collide: u32;
     let clobber: bool = new.merge != MERGE_AUGMENT;
     let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
     let report: bool = same_file as i32 != 0 && verbosity > 0_i32 || verbosity > 9_i32;
@@ -2822,21 +2394,15 @@ fn MergeLedMap(
         && old.led.which_mods == new.led.which_mods
         && old.led.which_groups as i32 == new.led.which_groups as i32
     {
-        old.defined = (old.defined | new.defined) as led_field;
+        old.defined |= new.defined;
         return true;
     }
     if new.merge == MERGE_REPLACE {
-        if report {
-            log::warn!(
-                "Map for indicator {} redefined; Earlier definition ignored\n",
-                LEDText(info, ki, old)
-            );
-        }
         *old = *new;
         return true;
     }
-    collide = 0 as led_field;
-    if UseNewLEDField(
+    collide = 0_u32;
+    if use_new_ledfield(
         LED_FIELD_MODS,
         old.defined,
         new.defined,
@@ -2846,9 +2412,9 @@ fn MergeLedMap(
     ) {
         old.led.which_mods = new.led.which_mods;
         old.led.mods = new.led.mods;
-        old.defined = (old.defined | LED_FIELD_MODS) as led_field;
+        old.defined |= LED_FIELD_MODS;
     }
-    if UseNewLEDField(
+    if use_new_ledfield(
         LED_FIELD_GROUPS,
         old.defined,
         new.defined,
@@ -2859,9 +2425,9 @@ fn MergeLedMap(
         old.led.which_groups = new.led.which_groups;
         old.led.groups = new.led.groups;
         old.led.pending_groups = new.led.pending_groups;
-        old.defined = (old.defined | LED_FIELD_GROUPS) as led_field;
+        old.defined |= LED_FIELD_GROUPS;
     }
-    if UseNewLEDField(
+    if use_new_ledfield(
         LED_FIELD_CTRLS,
         old.defined,
         new.defined,
@@ -2870,20 +2436,13 @@ fn MergeLedMap(
         &mut collide,
     ) {
         old.led.ctrls = new.led.ctrls;
-        old.defined = (old.defined | LED_FIELD_CTRLS) as led_field;
-    }
-    if collide as u64 != 0 {
-        log::warn!(
-            "Map for indicator {} redefined; Using {} definition for duplicate fields\n",
-            LEDText(info, ki, old),
-            if clobber { "last" } else { "first" }
-        );
+        old.defined |= LED_FIELD_CTRLS;
     }
     true
 }
-fn AddLedMap(
+fn add_led_map(
     info: &mut CompatInfo,
-    ki: &xkb_keymap_info<'_>,
+    ki: &XkbKeymapInfo<'_>,
     new: &mut LedInfo,
     same_file: bool,
 ) -> bool {
@@ -2894,16 +2453,12 @@ fn AddLedMap(
         } else {
             // Clone the old element out to avoid borrow conflict with info
             let mut old = info.leds[i as usize];
-            let result = MergeLedMap(info, ki, &mut old, new, same_file);
+            let result = merge_led_map(info, ki, &mut old, new, same_file);
             info.leds[i as usize] = old;
             return result;
         }
     }
     if info.num_leds >= XKB_MAX_LEDS {
-        log::error!(
-            "Too many LEDs defined (maximum {})\n",
-            (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8_usize) as u32
-        );
         return false;
     }
     let c2rust_fresh1 = info.num_leds;
@@ -2911,17 +2466,17 @@ fn AddLedMap(
     info.leds[c2rust_fresh1 as usize] = *new;
     true
 }
-fn MergeIncludedCompatMaps(
-    ki: &mut xkb_keymap_info<'_>,
+fn merge_included_compat_maps(
+    ki: &mut XkbKeymapInfo<'_>,
     into: &mut CompatInfo,
     from: &mut CompatInfo,
-    merge: merge_mode,
+    merge: MergeMode,
 ) {
-    if from.errorCount > 0_i32 {
-        into.errorCount += from.errorCount;
+    if from.error_count > 0_i32 {
+        into.error_count += from.error_count;
         return;
     }
-    MergeModSets(ki.ctx_mut(), &mut into.mods, &from.mods, merge);
+    merge_mod_sets(ki.ctx_mut(), &mut into.mods, &from.mods, merge);
     if into.name.is_none() {
         into.name = from.name.take();
     }
@@ -2931,8 +2486,8 @@ fn MergeIncludedCompatMaps(
         for i in 0..from.interps.len() {
             (&mut from.interps)[i].merge = merge;
             let si = &mut from.interps[i];
-            if !AddInterp(into, ki, si, false) {
-                into.errorCount += 1;
+            if !add_interp(into, ki, si, false) {
+                into.error_count += 1;
             }
         }
     }
@@ -2945,23 +2500,23 @@ fn MergeIncludedCompatMaps(
         for i in 0..from.num_leds as usize {
             from.leds[i].merge = merge;
             let ledi = &mut from.leds[i];
-            if !AddLedMap(into, ki, ledi, false) {
-                into.errorCount += 1;
+            if !add_led_map(into, ki, ledi, false) {
+                into.error_count += 1;
             }
         }
     };
 }
-fn HandleIncludeCompatMap(
-    ki: &mut xkb_keymap_info<'_>,
+fn handle_include_compat_map(
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut CompatInfo,
     include: &mut IncludeStmt,
 ) -> bool {
     let mut included = CompatInfo::new();
-    if ExceedsIncludeMaxDepth(info.include_depth) {
-        info.errorCount += 10_i32;
+    if exceeds_include_max_depth(info.include_depth) {
+        info.error_count += 10_i32;
         return false;
     }
-    InitCompatInfo(
+    init_compat_info(
         ki,
         &mut included,
         info.include_depth.wrapping_add(1_u32),
@@ -2976,13 +2531,13 @@ fn HandleIncludeCompatMap(
     while let Some(stmt) = current {
         let mut next_incl = CompatInfo::new();
 
-        let file: Option<Box<XkbFile>> = ProcessIncludeFile(ki.ctx_mut(), stmt, FILE_TYPE_COMPAT);
+        let file: Option<Box<XkbFile>> = process_include_file(ki.ctx_mut(), stmt, FILE_TYPE_COMPAT);
         let Some(mut file) = file else {
-            info.errorCount += 10_i32;
-            ClearCompatInfo(&mut included);
+            info.error_count += 10_i32;
+            clear_compat_info(&mut included);
             return false;
         };
-        InitCompatInfo(
+        init_compat_info(
             ki,
             &mut next_incl,
             info.include_depth.wrapping_add(1_u32),
@@ -2990,27 +2545,27 @@ fn HandleIncludeCompatMap(
         );
         next_incl.default_interp = info.default_interp.clone();
         next_incl.default_led = info.default_led;
-        HandleCompatMapFile(ki, &mut next_incl, &mut file);
-        MergeIncludedCompatMaps(ki, &mut included, &mut next_incl, stmt.merge);
-        ClearCompatInfo(&mut next_incl);
+        handle_compat_map_file(ki, &mut next_incl, &mut file);
+        merge_included_compat_maps(ki, &mut included, &mut next_incl, stmt.merge);
+        clear_compat_info(&mut next_incl);
         drop(file);
         current = stmt.next_incl.as_deref();
     }
-    MergeIncludedCompatMaps(ki, info, &mut included, include.merge);
-    ClearCompatInfo(&mut included);
-    info.errorCount == 0_i32
+    merge_included_compat_maps(ki, info, &mut included, include.merge);
+    clear_compat_info(&mut included);
+    info.error_count == 0_i32
 }
-fn SetInterpField(
+fn set_interp_field(
     info: &mut CompatInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     si: &mut SymInterpInfo,
     field: &str,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value: &mut ExprDef,
 ) -> bool {
     if field.eq_ignore_ascii_case("action") {
-        if arrayNdx.is_some() {
-            return ReportSINotArray(info, ki, si, field);
+        if array_ndx.is_some() {
+            return false;
         }
         if value.stmt_type() == STMT_EXPR_ACTION_LIST {
             let ExprKind::ActionList {
@@ -3021,28 +2576,22 @@ fn SetInterpField(
             };
             let num_actions: u32 = action_vec.len() as u32;
             if num_actions > MAX_ACTIONS_PER_LEVEL as u32 {
-                log::error!(
-                    "Interpret {} has too many actions; expected max {}, got: {}\n",
-                    &siText(si, info, ki),
-                    65535_i32,
-                    num_actions
-                );
                 return false;
             }
             si.interp.num_actions = 0_u16;
             si.interp.action.set_none();
-            let mut actions: Vec<xkb_action> = Vec::new();
+            let mut actions: Vec<XkbAction> = Vec::new();
             for act_expr in action_vec.iter_mut() {
-                let mut toAct: xkb_action = xkb_action::None;
-                match HandleActionDef(
+                let mut to_act: XkbAction = XkbAction::None;
+                match handle_action_def(
                     ki,
                     &mut info.default_actions,
                     &info.mods,
                     act_expr,
-                    &mut toAct,
+                    &mut to_act,
                 ) {
                     1 => {
-                        toAct.set_none();
+                        to_act.set_none();
                     }
                     2 => {
                         drop(actions);
@@ -3050,12 +2599,12 @@ fn SetInterpField(
                     }
                     _ => {}
                 }
-                if toAct.action_type() != ACTION_TYPE_NONE {
+                if to_act.action_type() != ACTION_TYPE_NONE {
                     if (num_actions == 1_u32) as i64 != 0 {
                         si.interp.num_actions = 1_u16;
-                        si.interp.action = toAct;
+                        si.interp.action = to_act;
                     } else {
-                        actions.push(toAct);
+                        actions.push(to_act);
                     }
                 }
             }
@@ -3071,7 +2620,7 @@ fn SetInterpField(
                 }
             }
         } else {
-            match HandleActionDef(
+            match handle_action_def(
                 ki,
                 &mut info.default_actions,
                 &info.mods,
@@ -3089,133 +2638,128 @@ fn SetInterpField(
                 }
             }
         }
-        si.defined = (si.defined | SI_FIELD_ACTION) as si_field;
+        si.defined |= SI_FIELD_ACTION;
     } else if field.eq_ignore_ascii_case("virtualmodifier")
         || field.eq_ignore_ascii_case("virtualmod")
     {
-        if arrayNdx.is_some() {
-            return ReportSINotArray(info, ki, si, field);
+        if array_ndx.is_some() {
+            return false;
         }
         let mut ndx: u32 = 0_u32;
-        if !ExprResolveMod(ki.ctx(), value, MOD_VIRT, &info.mods, &mut ndx) {
-            return ReportSIBadType(info, ki, si, field, "virtual modifier");
+        if !expr_resolve_mod(ki.ctx(), value, MOD_VIRT, &info.mods, &mut ndx) {
+            return false;
         }
         si.interp.virtual_mod = ndx;
-        si.defined = (si.defined | SI_FIELD_VIRTUAL_MOD) as si_field;
+        si.defined |= SI_FIELD_VIRTUAL_MOD;
     } else if field.eq_ignore_ascii_case("repeat") {
         let mut set: bool = false;
-        if arrayNdx.is_some() {
-            return ReportSINotArray(info, ki, si, field);
+        if array_ndx.is_some() {
+            return false;
         }
-        if !ExprResolveBoolean(ki.ctx(), value, &mut set) {
-            return ReportSIBadType(info, ki, si, field, "boolean");
+        if !expr_resolve_boolean(ki.ctx(), value, &mut set) {
+            return false;
         }
         si.interp.repeat = set;
-        si.defined = (si.defined | SI_FIELD_AUTO_REPEAT) as si_field;
+        si.defined |= SI_FIELD_AUTO_REPEAT;
     } else if field.eq_ignore_ascii_case("locking") {
-        log::debug!("The \"locking\" field in symbol interpretation is unsupported; Ignored\n");
     } else if field.eq_ignore_ascii_case("usemodmap") || field.eq_ignore_ascii_case("usemodmapmods")
     {
         let mut val: u32 = 0_u32;
-        if arrayNdx.is_some() {
-            return ReportSINotArray(info, ki, si, field);
+        if array_ndx.is_some() {
+            return false;
         }
-        if !ExprResolveEnum(ki.ctx(), value, &mut val, &useModMapValueNames) {
-            return ReportSIBadType(info, ki, si, field, "level specification");
+        if !expr_resolve_enum(ki.ctx(), value, &mut val, &USE_MOD_MAP_VALUE_NAMES) {
+            return false;
         }
         si.interp.level_one_only = val != 0;
-        si.defined = (si.defined | SI_FIELD_LEVEL_ONE_ONLY) as si_field;
+        si.defined |= SI_FIELD_LEVEL_ONE_ONLY;
     } else {
-        ReportBadField("symbol interpretation", field, &siText(si, info, ki));
         return ki.strict & PARSER_NO_UNKNOWN_INTERPRET_FIELDS == 0;
     }
     true
 }
-fn SetLedMapField(
+fn set_led_map_field(
     info: &mut CompatInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     ledi: &mut LedInfo,
     field: &str,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value_opt: &mut Option<Box<ExprDef>>,
 ) -> bool {
     let value: &ExprDef = value_opt.as_deref().unwrap();
     if field.eq_ignore_ascii_case("modifiers") || field.eq_ignore_ascii_case("mods") {
-        if arrayNdx.is_some() {
-            return ReportLedNotArray(info, ki, ledi, field);
+        if array_ndx.is_some() {
+            return false;
         }
-        if !ExprResolveModMask(
+        if !expr_resolve_mod_mask(
             ki.ctx(),
             value,
             MOD_BOTH,
             &info.mods,
             &mut ledi.led.mods.mods,
         ) {
-            return ReportLedBadType(info, ki, ledi, field, "modifier mask");
+            return false;
         }
-        ledi.defined = (ledi.defined | LED_FIELD_MODS) as led_field;
+        ledi.defined |= LED_FIELD_MODS;
     } else if field.eq_ignore_ascii_case("groups") {
         let mut mask: u32 = 0_u32;
-        if arrayNdx.is_some() {
-            return ReportLedNotArray(info, ki, ledi, field);
+        if array_ndx.is_some() {
+            return false;
         }
         let mut pending: bool = false;
-        if !ExprResolveGroupMask(ki, value, &mut mask, &mut pending) {
+        if !expr_resolve_group_mask(ki, value, &mut mask, &mut pending) {
             if pending {
                 ledi.led.pending_groups = true;
                 let pending_index: u32 = ki.pending_computations.len() as u32;
-                ki.pending_computations.push(pending_computation {
+                ki.pending_computations.push(PendingComputation {
                     expr: value_opt.take(),
                     computed: false,
                     value: 0_u32,
                 });
                 mask = pending_index;
             } else {
-                return ReportLedBadType(info, ki, ledi, field, "group mask");
+                return false;
             }
         } else {
             ledi.led.pending_groups = false;
         }
         ledi.led.groups = mask;
-        ledi.defined = (ledi.defined | LED_FIELD_GROUPS) as led_field;
+        ledi.defined |= LED_FIELD_GROUPS;
     } else if field.eq_ignore_ascii_case("controls") || field.eq_ignore_ascii_case("ctrls") {
         let mut mask_0: u32 = 0_u32;
-        if arrayNdx.is_some() {
-            return ReportLedNotArray(info, ki, ledi, field);
+        if array_ndx.is_some() {
+            return false;
         }
         let offset: u8 = ki.features.controls_name_offset;
-        if !ExprResolveMask(
+        if !expr_resolve_mask(
             ki.ctx(),
             value,
             &mut mask_0,
-            &ctrlMaskNames[offset as usize..],
+            &CTRL_MASK_NAMES[offset as usize..],
         ) {
-            return ReportLedBadType(info, ki, ledi, field, "controls mask");
+            return false;
         }
-        ledi.led.ctrls = mask_0 as xkb_action_controls;
-        ledi.defined = (ledi.defined | LED_FIELD_CTRLS) as led_field;
+        ledi.led.ctrls = mask_0 as XkbActionControls;
+        ledi.defined |= LED_FIELD_CTRLS;
     } else if field.eq_ignore_ascii_case("allowexplicit") {
-        log::debug!(
-            "The \"allowExplicit\" field in indicator statements is unsupported; Ignored\n"
-        );
     } else if field.eq_ignore_ascii_case("whichmodstate")
         || field.eq_ignore_ascii_case("whichmodifierstate")
     {
         let mut mask_1: u32 = 0_u32;
-        if arrayNdx.is_some() {
-            return ReportLedNotArray(info, ki, ledi, field);
+        if array_ndx.is_some() {
+            return false;
         }
-        if !ExprResolveMask(ki.ctx(), value, &mut mask_1, &modComponentMaskNames) {
-            return ReportLedBadType(info, ki, ledi, field, "mask of modifier state components");
+        if !expr_resolve_mask(ki.ctx(), value, &mut mask_1, &MOD_COMPONENT_MASK_NAMES) {
+            return false;
         }
         ledi.led.which_mods = mask_1;
     } else if field.eq_ignore_ascii_case("whichgroupstate") {
         let mut mask_2: u32 = 0_u32;
-        if arrayNdx.is_some() {
-            return ReportLedNotArray(info, ki, ledi, field);
+        if array_ndx.is_some() {
+            return false;
         }
-        if !ExprResolveMask(ki.ctx(), value, &mut mask_2, &groupComponentMaskNames) {
-            return ReportLedBadType(info, ki, ledi, field, "mask of group state components");
+        if !expr_resolve_mask(ki.ctx(), value, &mut mask_2, &GROUP_COMPONENT_MASK_NAMES) {
+            return false;
         }
         ledi.led.which_groups = mask_2;
     } else if field.eq_ignore_ascii_case("driveskbd")
@@ -3225,32 +2769,22 @@ fn SetLedMapField(
         || field.eq_ignore_ascii_case("indicatordriveskbd")
         || field.eq_ignore_ascii_case("indicatordriveskeyboard")
     {
-        log::debug!(
-            "The \"{}\" field in indicator statements is unsupported; Ignored\n",
-            field
-        );
     } else if field.eq_ignore_ascii_case("index") {
-        log::error!("The \"index\" field in indicator statements is unsupported; Ignored\n");
     } else {
-        log::error!(
-            "Unknown field \"{}\" in map for {} indicator; Definition ignored\n",
-            field,
-            LEDText(info, ki, ledi)
-        );
         return ki.strict & PARSER_NO_UNKNOWN_LED_FIELDS == 0;
     }
     true
 }
-fn HandleCompatGlobalVar(
+fn handle_compat_global_var(
     info: &mut CompatInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     stmt: &mut VarDef,
 ) -> bool {
     let mut elem_atom: u32 = 0;
     let mut field_atom: u32 = 0;
     let mut ndx: Option<&ExprDef> = None;
     let ret: bool;
-    if !ExprResolveLhs(
+    if !expr_resolve_lhs(
         stmt.name.as_deref().unwrap(),
         &mut elem_atom,
         &mut field_atom,
@@ -3258,13 +2792,13 @@ fn HandleCompatGlobalVar(
     ) {
         ret = false;
     } else {
-        let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-        let field = xkb_atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+        let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
+        let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
         if !elem.is_empty() && elem.eq_ignore_ascii_case("interpret") {
             let mut temp: SymInterpInfo = SymInterpInfo {
-                defined: 0 as si_field,
+                defined: 0_u32,
                 merge: MERGE_DEFAULT,
-                interp: xkb_sym_interpret {
+                interp: XkbSymInterpret {
                     sym: 0,
                     match_0: MATCH_NONE,
                     mods: 0,
@@ -3273,56 +2807,56 @@ fn HandleCompatGlobalVar(
                     repeat: false,
                     required: false,
                     num_actions: 0,
-                    action: xkb_action::None,
+                    action: XkbAction::None,
                     actions: Vec::new(),
                 },
             };
-            InitInterp(&mut temp);
+            init_interp(&mut temp);
             temp.merge = (if temp.merge == MERGE_REPLACE {
                 MERGE_OVERRIDE
             } else {
                 stmt.merge
-            }) as merge_mode;
+            }) as MergeMode;
             // ndx borrows from stmt.name, value_ref borrows from stmt.value — disjoint fields
             let value_ref = stmt.value.as_deref_mut().unwrap();
-            ret = SetInterpField(info, ki, &mut temp, &field, ndx, value_ref);
+            ret = set_interp_field(info, ki, &mut temp, &field, ndx, value_ref);
             if ret {
                 let mut default = info.default_interp.clone();
-                MergeInterp(info, ki, &mut default, &mut temp, true);
+                merge_interp(info, ki, &mut default, &mut temp, true);
                 info.default_interp = default;
             }
         } else if !elem.is_empty() && elem.eq_ignore_ascii_case("indicator") {
             let mut temp_0: LedInfo = LedInfo {
-                defined: 0 as led_field,
+                defined: 0_u32,
                 merge: MERGE_DEFAULT,
-                led: xkb_led {
+                led: XkbLed {
                     name: 0,
                     which_groups: 0,
                     pending_groups: false,
                     groups: 0,
                     which_mods: 0_u32,
-                    mods: xkb_mods { mods: 0, mask: 0 },
-                    ctrls: 0 as xkb_action_controls,
+                    mods: XkbMods { mods: 0, mask: 0 },
+                    ctrls: 0 as XkbActionControls,
                 },
             };
-            InitLED(&mut temp_0);
+            init_led(&mut temp_0);
             temp_0.merge = (if temp_0.merge == MERGE_REPLACE {
                 MERGE_OVERRIDE
             } else {
                 stmt.merge
-            }) as merge_mode;
+            }) as MergeMode;
             // ndx borrows from stmt.name, field/value borrow from different fields — disjoint
-            ret = SetLedMapField(info, ki, &mut temp_0, &field, ndx, &mut stmt.value);
+            ret = set_led_map_field(info, ki, &mut temp_0, &field, ndx, &mut stmt.value);
             if ret {
                 let mut default = info.default_led;
-                MergeLedMap(info, ki, &mut default, &mut temp_0, true);
+                merge_led_map(info, ki, &mut default, &mut temp_0, true);
                 info.default_led = default;
             }
         } else if !elem.is_empty() {
             ret = {
                 let ndx_ref2 = ndx;
 
-                SetDefaultActionField(
+                set_default_action_field(
                     ki,
                     &mut info.default_actions,
                     &mut info.mods,
@@ -3335,19 +2869,14 @@ fn HandleCompatGlobalVar(
                     != PARSER_FATAL_ERROR
             };
         } else {
-            log::error!(
-                "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
-                XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-                field
-            );
             return ki.strict & PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS == 0;
         }
-    } // close else from ExprResolveLhs
+    } // close else from expr_resolve_lhs
     ret
 }
-fn HandleInterpBody(
+fn handle_interp_body(
     info: &mut CompatInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     defs: &mut [VarDef],
     si: &mut SymInterpInfo,
 ) -> bool {
@@ -3355,26 +2884,22 @@ fn HandleInterpBody(
     for def in defs {
         let mut elem_atom: u32 = 0;
         let mut field_atom: u32 = 0;
-        let mut arrayNdx: Option<&ExprDef> = None;
-        if !ExprResolveLhs(
+        let mut array_ndx: Option<&ExprDef> = None;
+        if !expr_resolve_lhs(
             def.name.as_deref().unwrap(),
             &mut elem_atom,
             &mut field_atom,
-            &mut arrayNdx,
+            &mut array_ndx,
         ) {
             ok = false;
         } else {
-            let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-            let field = xkb_atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+            let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
+            let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
             if !elem.is_empty() {
-                log::error!("Cannot set a global default value for \"{}\" element from within an interpret statement; Move assignment to \"{}.{}\" to the global file scope\n",
-                    elem,
-                    elem,
-                    field);
                 ok = false;
             } else {
                 let value_ref = def.value.as_deref_mut().unwrap();
-                if !SetInterpField(info, ki, si, &field, arrayNdx, value_ref) {
+                if !set_interp_field(info, ki, si, &field, array_ndx, value_ref) {
                     ok = false;
                 }
             }
@@ -3382,52 +2907,34 @@ fn HandleInterpBody(
     }
     ok
 }
-fn HandleInterpDef(
+fn handle_interp_def(
     info: &mut CompatInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     def: &mut InterpDef,
 ) -> bool {
     let mut pred: u32 = MATCH_NONE;
     let mut mods: u32 = 0;
-    #[allow(unused_assignments)]
-    let mut si: SymInterpInfo = SymInterpInfo {
-        defined: 0 as si_field,
-        merge: MERGE_DEFAULT,
-        interp: xkb_sym_interpret {
-            sym: 0,
-            match_0: MATCH_NONE,
-            mods: 0,
-            virtual_mod: 0,
-            level_one_only: false,
-            repeat: false,
-            required: false,
-            num_actions: 0,
-            action: xkb_action::None,
-            actions: Vec::new(),
-        },
-    };
-    if !ResolveStateAndPredicate(def.match_0.as_deref(), &mut pred, &mut mods, info, ki) {
-        log::error!("Couldn't determine matching modifiers; Symbol interpretation ignored\n");
+    if !resolve_state_and_predicate(def.match_0.as_deref(), &mut pred, &mut mods, info, ki) {
         return false;
     }
-    si = info.default_interp.clone();
+    let mut si: SymInterpInfo = info.default_interp.clone();
     si.merge = def.merge;
     si.interp.sym = def.sym;
     si.interp.match_0 = pred;
     si.interp.mods = mods;
-    if !HandleInterpBody(info, ki, &mut def.def, &mut si) {
-        info.errorCount += 1;
+    if !handle_interp_body(info, ki, &mut def.def, &mut si) {
+        info.error_count += 1;
         return false;
     }
-    if !AddInterp(info, ki, &mut si, true) {
-        info.errorCount += 1;
+    if !add_interp(info, ki, &mut si, true) {
+        info.error_count += 1;
         return false;
     }
     true
 }
-fn HandleLedMapDef(
+fn handle_led_map_def(
     info: &mut CompatInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     def: &mut LedMapDef,
 ) -> bool {
     let mut ledi: LedInfo = info.default_led;
@@ -3437,32 +2944,27 @@ fn HandleLedMapDef(
     for var in def.body.iter_mut() {
         let mut elem_atom: u32 = 0;
         let mut field_atom: u32 = 0;
-        let mut arrayNdx: Option<&ExprDef> = None;
-        if !ExprResolveLhs(
+        let mut array_ndx: Option<&ExprDef> = None;
+        if !expr_resolve_lhs(
             var.name.as_deref().unwrap(),
             &mut elem_atom,
             &mut field_atom,
-            &mut arrayNdx,
+            &mut array_ndx,
         ) {
             ok = false;
         } else {
-            let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-            let field = xkb_atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+            let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
+            let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
             if !elem.is_empty() {
-                log::error!("[XKB-{:03}] Cannot set defaults for \"{}\" element in indicator map; Assignment to {}.{} ignored\n",
-                    XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                    elem,
-                    elem,
-                    field);
                 ok = false;
-            } else if !SetLedMapField(info, ki, &mut ledi, &field, arrayNdx, &mut var.value) {
+            } else if !set_led_map_field(info, ki, &mut ledi, &field, array_ndx, &mut var.value) {
                 ok = false;
             }
         }
     }
-    ok && AddLedMap(info, ki, &mut ledi, true)
+    ok && add_led_map(info, ki, &mut ledi, true)
 }
-fn HandleCompatMapFile(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo, file: &mut XkbFile) {
+fn handle_compat_map_file(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo, file: &mut XkbFile) {
     {
         let mut ok: bool;
         info.name = if file.name.is_empty() {
@@ -3473,66 +2975,50 @@ fn HandleCompatMapFile(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo, file
         for stmt in file.defs.iter_mut() {
             match stmt {
                 Statement::Include(incl) => {
-                    ok = HandleIncludeCompatMap(ki, info, incl);
+                    ok = handle_include_compat_map(ki, info, incl);
                 }
                 Statement::Interp(ip) => {
-                    ok = HandleInterpDef(info, ki, ip);
+                    ok = handle_interp_def(info, ki, ip);
                 }
                 Statement::GroupCompat(_) => {
-                    log::debug!("The \"group\" statement in compat is unsupported; Ignored\n");
                     ok = true;
                 }
                 Statement::LedMap(lm) => {
-                    ok = HandleLedMapDef(info, ki, lm);
+                    ok = handle_led_map_def(info, ki, lm);
                 }
                 Statement::Var(var) => {
-                    ok = HandleCompatGlobalVar(info, ki, var);
+                    ok = handle_compat_global_var(info, ki, var);
                 }
                 Statement::VMod(vmod) => {
-                    ok = HandleVModDef(ki.ctx_mut(), &mut info.mods, vmod);
+                    ok = handle_vmod_def(ki.ctx_mut(), &mut info.mods, vmod);
                 }
-                Statement::Unknown(unk) => {
-                    log::error!(
-                        "[XKB-{:03}] Unsupported compatibility {} statement \"{}\"; Ignoring\n",
-                        XKB_ERROR_UNKNOWN_STATEMENT as i32,
-                        if unk.stmt_type == STMT_UNKNOWN_COMPOUND {
-                            "compound"
-                        } else {
-                            "declaration"
-                        },
-                        &unk.name
-                    );
+                Statement::Unknown(_unk) => {
                     ok = ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {
-                    log::error!(
-                        "Compat files may not include other types; Ignoring {}\n",
-                        stmt_type_to_string(stmt.stmt_type())
-                    );
                     ok = false;
                 }
             }
             if !ok {
-                info.errorCount += 1;
+                info.error_count += 1;
             }
-            if info.errorCount > 10_i32 {
-                log::error!("Abandoning compatibility map \"{}\"\n", safe_map_name(file));
+            if info.error_count > 10_i32 {
                 break;
             }
         }
     }
 }
-fn CopyInterps(info: &CompatInfo, needSymbol: bool, pred: u32, collect: &mut collect) {
+fn copy_interps(info: &CompatInfo, need_symbol: bool, pred: u32, collect: &mut Collect) {
     for i in 0..info.interps.len() {
         let si = &info.interps[i];
         if si.interp.match_0 == pred
-            && (si.interp.sym != XKB_KEY_NoSymbol as u32) as i32 == needSymbol as i32
+            && (si.interp.sym != XKB_KEY_NO_SYMBOL as u32) as i32 == need_symbol as i32
         {
             collect.sym_interprets.push(si.interp.clone());
         }
     }
 }
-fn CopyLedMapDefsToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) {
+fn copy_led_map_defs_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) {
     let keymap = ki.keymap_mut();
     let mut idx: u32 = 0_u32;
     while idx < info.num_leds {
@@ -3541,10 +3027,10 @@ fn CopyLedMapDefsToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) {
             &info.leds[idx as usize] as *const LedInfo,
             &info.default_led as *const LedInfo,
         );
-        let led_name_text = if is_default {
+        let _led_name_text = if is_default {
             "default"
         } else {
-            xkb_atom_text(&keymap.ctx.atom_table, info.leds[idx as usize].led.name)
+            atom_text(&keymap.ctx.atom_table, info.leds[idx as usize].led.name)
         };
         let mut i: u32;
         i = 0_u32;
@@ -3556,8 +3042,6 @@ fn CopyLedMapDefsToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) {
         }
         let mut assign_led = false;
         if i >= keymap.num_leds {
-            log::debug!("Indicator name \"{}\" was not declared in the keycodes section; Adding new indicator\n",
-                led_name_text);
             i = 0_u32;
             while i < keymap.num_leds {
                 if keymap.leds[i as usize].name == XKB_ATOM_NONE {
@@ -3567,11 +3051,6 @@ fn CopyLedMapDefsToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) {
             }
             if i >= keymap.num_leds {
                 if i >= XKB_MAX_LEDS {
-                    log::error!(
-                        "Too many indicators (maximum is {}); Indicator name \"{}\" ignored\n",
-                        (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8_usize) as u32,
-                        led_name_text
-                    );
                 } else {
                     i = keymap.num_leds;
                     keymap.num_leds = keymap.num_leds.wrapping_add(1);
@@ -3598,22 +3077,22 @@ fn CopyLedMapDefsToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) {
         idx = idx.wrapping_add(1);
     }
 }
-fn CopyCompatToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) -> bool {
+fn copy_compat_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) -> bool {
     // Collect sym_interprets first (doesn't need keymap)
     let sym_interprets = if !info.interps.is_empty() {
-        let mut collect: collect = collect {
+        let mut collect: Collect = Collect {
             sym_interprets: Vec::with_capacity(info.interps.len()),
         };
-        CopyInterps(info, true, MATCH_EXACTLY, &mut collect);
-        CopyInterps(info, true, MATCH_ALL, &mut collect);
-        CopyInterps(info, true, MATCH_NONE, &mut collect);
-        CopyInterps(info, true, MATCH_ANY, &mut collect);
-        CopyInterps(info, true, MATCH_ANY_OR_NONE, &mut collect);
-        CopyInterps(info, false, MATCH_EXACTLY, &mut collect);
-        CopyInterps(info, false, MATCH_ALL, &mut collect);
-        CopyInterps(info, false, MATCH_NONE, &mut collect);
-        CopyInterps(info, false, MATCH_ANY, &mut collect);
-        CopyInterps(info, false, MATCH_ANY_OR_NONE, &mut collect);
+        copy_interps(info, true, MATCH_EXACTLY, &mut collect);
+        copy_interps(info, true, MATCH_ALL, &mut collect);
+        copy_interps(info, true, MATCH_NONE, &mut collect);
+        copy_interps(info, true, MATCH_ANY, &mut collect);
+        copy_interps(info, true, MATCH_ANY_OR_NONE, &mut collect);
+        copy_interps(info, false, MATCH_EXACTLY, &mut collect);
+        copy_interps(info, false, MATCH_ALL, &mut collect);
+        copy_interps(info, false, MATCH_NONE, &mut collect);
+        copy_interps(info, false, MATCH_ANY, &mut collect);
+        copy_interps(info, false, MATCH_ANY_OR_NONE, &mut collect);
         Some(collect.sym_interprets)
     } else {
         None
@@ -3631,30 +3110,30 @@ fn CopyCompatToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut CompatInfo) -> bo
             keymap.sym_interprets = interps;
         }
     }
-    // CopyLedMapDefsToKeymap needs keymap borrow ended; scope block ensures this
-    CopyLedMapDefsToKeymap(ki, info);
+    // copy_led_map_defs_to_keymap needs keymap borrow ended; scope block ensures this
+    copy_led_map_defs_to_keymap(ki, info);
     true
 }
-pub fn CompileCompatMap(file: Option<&mut XkbFile>, ki: &mut xkb_keymap_info<'_>) -> bool {
+pub(crate) fn compile_compat_map(file: Option<&mut XkbFile>, ki: &mut XkbKeymapInfo<'_>) -> bool {
     let mods = ki.keymap_ref().mods;
     let mut info = CompatInfo::new();
-    InitCompatInfo(ki, &mut info, 0_u32, &mods);
+    init_compat_info(ki, &mut info, 0_u32, &mods);
     if let Some(file) = file {
-        HandleCompatMapFile(ki, &mut info, file);
+        handle_compat_map_file(ki, &mut info, file);
     }
-    if (info.errorCount == 0_i32) && CopyCompatToKeymap(ki, &mut info) {
-        ClearCompatInfo(&mut info);
+    if (info.error_count == 0_i32) && copy_compat_to_keymap(ki, &mut info) {
+        clear_compat_info(&mut info);
         return true;
     }
-    ClearCompatInfo(&mut info);
+    clear_compat_info(&mut info);
     false
 }
-pub struct KeyTypesInfo {
-    pub name: Option<String>,
-    pub errorCount: i32,
-    pub include_depth: u32,
-    pub types: Vec<KeyTypeInfo>,
-    pub mods: xkb_mod_set,
+pub(crate) struct KeyTypesInfo {
+    pub(crate) name: Option<String>,
+    pub(crate) error_count: i32,
+    pub(crate) include_depth: u32,
+    pub(crate) types: Vec<KeyTypeInfo>,
+    pub(crate) mods: XkbModSet,
 }
 impl Default for KeyTypesInfo {
     fn default() -> Self {
@@ -3663,10 +3142,10 @@ impl Default for KeyTypesInfo {
 }
 
 impl KeyTypesInfo {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             name: None,
-            errorCount: 0,
+            error_count: 0,
             include_depth: 0,
             types: Vec::new(),
             mods: Default::default(),
@@ -3674,72 +3153,45 @@ impl KeyTypesInfo {
     }
 }
 #[derive(Clone)]
-pub struct KeyTypeInfo {
-    pub defined: type_field,
-    pub merge: merge_mode,
-    pub name: u32,
-    pub mods: u32,
-    pub num_levels: u32,
-    pub entries: Vec<xkb_key_type_entry>,
-    pub level_names: Vec<u32>,
+pub(crate) struct KeyTypeInfo {
+    pub(crate) defined: u32,
+    pub(crate) merge: MergeMode,
+    pub(crate) name: u32,
+    pub(crate) mods: u32,
+    pub(crate) num_levels: u32,
+    pub(crate) entries: Vec<XkbKeyTypeEntry>,
+    pub(crate) level_names: Vec<u32>,
 }
-pub type type_field = u32;
-pub const TYPE_FIELD_LEVEL_NAME: type_field = 8;
-pub const TYPE_FIELD_PRESERVE: type_field = 4;
-pub const TYPE_FIELD_MAP: type_field = 2;
-pub const TYPE_FIELD_MASK: type_field = 1;
-#[inline]
-fn MapEntryTxt(
-    ki: &xkb_keymap_info<'_>,
-    info: &KeyTypesInfo,
-    entry: &xkb_key_type_entry,
-) -> String {
-    ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, entry.mods.mods)
-}
-#[inline]
-fn TypeTxt<'a>(ki: &'a xkb_keymap_info<'_>, type_0: &KeyTypeInfo) -> &'a str {
-    xkb_atom_text(&ki.ctx().atom_table, type_0.name)
-}
-#[inline]
-fn ReportTypeShouldBeArray(ki: &xkb_keymap_info<'_>, type_0: &KeyTypeInfo, field: &str) -> bool {
-    ReportShouldBeArray("key type", field, TypeTxt(ki, type_0))
-}
-#[inline]
-fn ReportTypeBadType(
-    ki: &xkb_keymap_info<'_>,
-    code: u32,
-    type_0: &KeyTypeInfo,
-    field: &str,
-    wanted: &str,
-) -> bool {
-    ReportBadType(code, "key type", field, TypeTxt(ki, type_0), wanted)
-}
-fn InitKeyTypesInfo(info: &mut KeyTypesInfo, include_depth: u32, mods: &xkb_mod_set) {
+pub(crate) const TYPE_FIELD_LEVEL_NAME: u32 = 8;
+pub(crate) const TYPE_FIELD_PRESERVE: u32 = 4;
+pub(crate) const TYPE_FIELD_MAP: u32 = 2;
+pub(crate) const TYPE_FIELD_MASK: u32 = 1;
+fn init_key_types_info(info: &mut KeyTypesInfo, include_depth: u32, mods: &XkbModSet) {
     info.name = None;
-    info.errorCount = 0;
+    info.error_count = 0;
     info.include_depth = include_depth;
     info.types = Vec::new();
     info.mods = Default::default();
-    InitVMods(&mut info.mods, mods, include_depth > 0_u32);
+    init_vmods(&mut info.mods, mods, include_depth > 0_u32);
 }
-fn ClearKeyTypeInfo(type_0: &mut KeyTypeInfo) {
+fn clear_key_type_info(type_0: &mut KeyTypeInfo) {
     type_0.entries.clear();
     type_0.level_names.clear();
 }
-fn ClearKeyTypesInfo(info: &mut KeyTypesInfo) {
+fn clear_key_types_info(info: &mut KeyTypesInfo) {
     info.name = None;
     for type_0 in info.types.iter_mut() {
-        ClearKeyTypeInfo(type_0);
+        clear_key_type_info(type_0);
     }
     info.types.clear();
 }
-fn AddKeyType(
-    ki: &xkb_keymap_info<'_>,
+fn add_key_type(
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     new: &mut KeyTypeInfo,
-    same_file: bool,
+    _same_file: bool,
 ) -> bool {
-    let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
+    let _verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
     // FindMatchingKeyType inlined
     let mut old_idx: Option<usize> = None;
     for (i, type_0) in info.types.iter().enumerate() {
@@ -3750,42 +3202,30 @@ fn AddKeyType(
     }
     if let Some(idx) = old_idx {
         if new.merge != MERGE_AUGMENT {
-            if same_file as i32 != 0 && verbosity > 0_i32 || verbosity > 9_i32 {
-                log::warn!("[XKB-{:03}] Multiple definitions of the {} key type; Earlier definition ignored\n",
-                    XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS
-                        as i32,
-                    xkb_atom_text(&ki.ctx().atom_table, new.name));
-            }
-            ClearKeyTypeInfo(&mut info.types[idx]);
+            clear_key_type_info(&mut info.types[idx]);
             info.types[idx] = new.clone();
             new.entries = Vec::new();
             new.level_names = Vec::new();
             return true;
         }
-        if same_file {
-            log::warn!(
-                "[XKB-{:03}] Multiple definitions of the {} key type; Later definition ignored\n",
-                XKB_WARNING_CONFLICTING_KEY_TYPE_DEFINITIONS as i32,
-                xkb_atom_text(&ki.ctx().atom_table, new.name)
-            );
-        }
-        ClearKeyTypeInfo(new);
+
+        clear_key_type_info(new);
         return true;
     }
     info.types.push(new.clone());
     true
 }
-fn MergeIncludedKeyTypes(
-    ki: &mut xkb_keymap_info<'_>,
+fn merge_included_key_types(
+    ki: &mut XkbKeymapInfo<'_>,
     into: &mut KeyTypesInfo,
     from: &mut KeyTypesInfo,
-    merge: merge_mode,
+    merge: MergeMode,
 ) {
-    if from.errorCount > 0_i32 {
-        into.errorCount += from.errorCount;
+    if from.error_count > 0_i32 {
+        into.error_count += from.error_count;
         return;
     }
-    MergeModSets(ki.ctx_mut(), &mut into.mods, &from.mods, merge);
+    merge_mod_sets(ki.ctx_mut(), &mut into.mods, &from.mods, merge);
     if into.name.is_none() {
         into.name = from.name.take();
     }
@@ -3795,24 +3235,24 @@ fn MergeIncludedKeyTypes(
         for i in 0..from.types.len() {
             from.types[i].merge = merge;
             let mut type_clone = from.types[i].clone();
-            if !AddKeyType(ki, into, &mut type_clone, false) {
-                into.errorCount += 1;
+            if !add_key_type(ki, into, &mut type_clone, false) {
+                into.error_count += 1;
             }
         }
         from.types.clear();
     }
 }
-fn HandleIncludeKeyTypes(
-    ki: &mut xkb_keymap_info<'_>,
+fn handle_include_key_types(
+    ki: &mut XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     include: &mut IncludeStmt,
 ) -> bool {
     let mut included = KeyTypesInfo::new();
-    if ExceedsIncludeMaxDepth(info.include_depth) {
-        info.errorCount += 10_i32;
+    if exceeds_include_max_depth(info.include_depth) {
+        info.error_count += 10_i32;
         return false;
     }
-    InitKeyTypesInfo(
+    init_key_types_info(
         &mut included,
         info.include_depth.wrapping_add(1_u32),
         &info.mods,
@@ -3826,63 +3266,52 @@ fn HandleIncludeKeyTypes(
     while let Some(stmt) = current {
         let mut next_incl = KeyTypesInfo::new();
 
-        let file: Option<Box<XkbFile>> = ProcessIncludeFile(ki.ctx_mut(), stmt, FILE_TYPE_TYPES);
+        let file: Option<Box<XkbFile>> = process_include_file(ki.ctx_mut(), stmt, FILE_TYPE_TYPES);
         let Some(mut file) = file else {
-            info.errorCount += 10_i32;
-            ClearKeyTypesInfo(&mut included);
+            info.error_count += 10_i32;
+            clear_key_types_info(&mut included);
             return false;
         };
-        InitKeyTypesInfo(
+        init_key_types_info(
             &mut next_incl,
             info.include_depth.wrapping_add(1_u32),
             &included.mods,
         );
-        HandleKeyTypesFile(ki, &mut next_incl, &mut file);
-        MergeIncludedKeyTypes(ki, &mut included, &mut next_incl, stmt.merge);
-        ClearKeyTypesInfo(&mut next_incl);
+        handle_key_types_file(ki, &mut next_incl, &mut file);
+        merge_included_key_types(ki, &mut included, &mut next_incl, stmt.merge);
+        clear_key_types_info(&mut next_incl);
         drop(file);
         current = stmt.next_incl.as_deref();
     }
-    MergeIncludedKeyTypes(ki, info, &mut included, include.merge);
-    ClearKeyTypesInfo(&mut included);
-    info.errorCount == 0_i32
+    merge_included_key_types(ki, info, &mut included, include.merge);
+    clear_key_types_info(&mut included);
+    info.error_count == 0_i32
 }
-fn SetModifiers(
-    ki: &xkb_keymap_info<'_>,
+fn set_modifiers(
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value: &ExprDef,
 ) -> bool {
     let mut mods: u32 = 0_u32;
-    if arrayNdx.is_some() {
-        log::error!(
-            "The modifiers field of a key type is not an array; Illegal array subscript ignored\n"
-        );
+    if array_ndx.is_some() {
         return false;
     }
-    if !ExprResolveModMask(ki.ctx(), value, MOD_BOTH, &info.mods, &mut mods) {
-        log::error!("[XKB-{:03}] Key type mask field must be a modifier mask; Key type definition ignored\n",
-            { XKB_ERROR_UNSUPPORTED_MODIFIER_MASK });
+    if !expr_resolve_mod_mask(ki.ctx(), value, MOD_BOTH, &info.mods, &mut mods) {
         return false;
     }
     if type_0.defined & TYPE_FIELD_MASK != 0 {
-        log::warn!(
-            "Multiple modifier mask definitions for key type {}; Using {}, ignoring {}\n",
-            xkb_atom_text(&ki.ctx().atom_table, type_0.name),
-            ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, type_0.mods),
-            ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, mods)
-        );
         return false;
     }
     type_0.mods = mods;
     true
 }
-fn AddMapEntry(
-    ki: &xkb_keymap_info<'_>,
-    info: &mut KeyTypesInfo,
+fn add_map_entry(
+    _ki: &XkbKeymapInfo<'_>,
+    _info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
-    new: &xkb_key_type_entry,
+    new: &XkbKeyTypeEntry,
     clobber: bool,
     report: bool,
 ) -> bool {
@@ -3897,22 +3326,7 @@ fn AddMapEntry(
     if let Some(idx) = old_idx {
         let old = &type_0.entries[idx];
         if report && old.level != new.level {
-            log::warn!(
-                "[XKB-{:03}] Multiple map entries for {} in {}; Using {}, ignoring {}\n",
-                XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY as i32,
-                MapEntryTxt(ki, info, new),
-                TypeTxt(ki, type_0),
-                (if clobber { new.level } else { old.level }).wrapping_add(1_u32),
-                (if clobber { old.level } else { new.level }).wrapping_add(1_u32)
-            );
         } else {
-            log::warn!(
-                "[XKB-{:03}] Multiple occurrences of map[{}]= {} in {}; Ignored\n",
-                XKB_WARNING_CONFLICTING_KEY_TYPE_MAP_ENTRY as i32,
-                MapEntryTxt(ki, info, new),
-                new.level.wrapping_add(1_u32),
-                TypeTxt(ki, type_0)
-            );
             return true;
         }
         if clobber {
@@ -3929,62 +3343,42 @@ fn AddMapEntry(
     type_0.entries.push(*new);
     true
 }
-fn SetMapEntry(
-    ki: &xkb_keymap_info<'_>,
+fn set_map_entry(
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value: &ExprDef,
 ) -> bool {
-    let mut entry: xkb_key_type_entry = xkb_key_type_entry {
+    let mut entry: XkbKeyTypeEntry = XkbKeyTypeEntry {
         level: 0,
-        mods: xkb_mods { mods: 0, mask: 0 },
-        preserve: xkb_mods { mods: 0, mask: 0 },
+        mods: XkbMods { mods: 0, mask: 0 },
+        preserve: XkbMods { mods: 0, mask: 0 },
     };
-    if arrayNdx.is_none() {
-        return ReportTypeShouldBeArray(ki, type_0, "map entry");
+    if array_ndx.is_none() {
+        return false;
     }
-    if !ExprResolveModMask(
+    if !expr_resolve_mod_mask(
         ki.ctx(),
-        arrayNdx.unwrap(),
+        array_ndx.unwrap(),
         MOD_BOTH,
         &info.mods,
         &mut entry.mods.mods,
     ) {
-        return ReportTypeBadType(
-            ki,
-            XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_,
-            type_0,
-            "map entry",
-            "modifier mask",
-        );
+        return false;
     }
     if entry.mods.mods & !type_0.mods != 0 {
-        log::warn!(
-            "[XKB-{:03}] Map entry for modifiers not used by type {}; Using {} instead of {}\n",
-            XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE as i32,
-            TypeTxt(ki, type_0),
-            ModMaskText(
-                ki.ctx(),
-                MOD_BOTH,
-                &info.mods,
-                entry.mods.mods & type_0.mods,
-            ),
-            MapEntryTxt(ki, info, &entry)
-        );
         entry.mods.mods &= type_0.mods;
     }
-    if !ExprResolveLevel(ki.ctx(), value, &mut entry.level) {
-        log::error!("[XKB-{:03}] Level specifications in a key type must be integer; Ignoring malformed level specification\n",
-            XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL as i32);
+    if !expr_resolve_level(ki.ctx(), value, &mut entry.level) {
         return false;
     }
     entry.preserve.mods = 0_u32;
-    AddMapEntry(ki, info, type_0, &entry, true, true)
+    add_map_entry(ki, info, type_0, &entry, true, true)
 }
-fn AddPreserve(
-    ki: &xkb_keymap_info<'_>,
-    info: &mut KeyTypesInfo,
+fn add_preserve(
+    _ki: &XkbKeymapInfo<'_>,
+    _info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
     mods: u32,
     preserve_mods: u32,
@@ -3998,29 +3392,15 @@ fn AddPreserve(
             return true;
         }
         if old_preserve == preserve_mods {
-            log::warn!(
-                "[XKB-{:03}] Identical definitions for preserve[{}] in {}; Ignored\n",
-                XKB_WARNING_DUPLICATE_ENTRY as i32,
-                ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, mods),
-                TypeTxt(ki, type_0)
-            );
             return true;
         }
-        log::warn!(
-            "[XKB-{:03}] Multiple definitions for preserve[{}] in {}; Using {}, ignoring {}\n",
-            XKB_WARNING_CONFLICTING_KEY_TYPE_PRESERVE_ENTRIES as i32,
-            ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, mods),
-            TypeTxt(ki, type_0),
-            ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, preserve_mods,),
-            ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, old_preserve,)
-        );
         type_0.entries[idx].preserve.mods = preserve_mods;
         return true;
     }
-    let new = xkb_key_type_entry {
+    let new = XkbKeyTypeEntry {
         level: 0_u32,
-        mods: xkb_mods { mods, mask: 0 },
-        preserve: xkb_mods {
+        mods: XkbMods { mods, mask: 0 },
+        preserve: XkbMods {
             mods: preserve_mods,
             mask: 0,
         },
@@ -4028,61 +3408,40 @@ fn AddPreserve(
     type_0.entries.push(new);
     true
 }
-fn SetPreserve(
-    ki: &xkb_keymap_info<'_>,
+fn set_preserve(
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value: &ExprDef,
 ) -> bool {
-    if arrayNdx.is_none() {
-        return ReportTypeShouldBeArray(ki, type_0, "preserve entry");
+    if array_ndx.is_none() {
+        return false;
     }
     let mut mods: u32 = 0_u32;
-    if !ExprResolveModMask(ki.ctx(), arrayNdx.unwrap(), MOD_BOTH, &info.mods, &mut mods) {
-        return ReportTypeBadType(
-            ki,
-            XKB_ERROR_UNSUPPORTED_MODIFIER_MASK_,
-            type_0,
-            "preserve entry",
-            "modifier mask",
-        );
+    if !expr_resolve_mod_mask(
+        ki.ctx(),
+        array_ndx.unwrap(),
+        MOD_BOTH,
+        &info.mods,
+        &mut mods,
+    ) {
+        return false;
     }
     if mods & !type_0.mods != 0 {
-        let before: String = ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, mods);
         mods &= type_0.mods;
-        let after: String = ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, mods);
-        log::warn!("[XKB-{:03}] Preserve entry for modifiers not used by the {} type; Index {} converted to {}\n",
-            XKB_WARNING_UNDECLARED_MODIFIERS_IN_KEY_TYPE as i32,
-            TypeTxt(ki, type_0),
-            before,
-            after);
     }
     let mut preserve_mods: u32 = 0_u32;
-    if !ExprResolveModMask(ki.ctx(), value, MOD_BOTH, &info.mods, &mut preserve_mods) {
-        log::error!("[XKB-{:03}] Preserve value in a key type is not a modifier mask; Ignoring preserve[{}] in type {}\n",
-            { XKB_ERROR_UNSUPPORTED_MODIFIER_MASK },
-            ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, mods),
-            TypeTxt(ki, type_0));
+    if !expr_resolve_mod_mask(ki.ctx(), value, MOD_BOTH, &info.mods, &mut preserve_mods) {
         return false;
     }
     if preserve_mods & !mods != 0 {
-        let before_0: String = ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, preserve_mods);
         preserve_mods &= mods;
-        let after_0: String = ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, preserve_mods);
-        log::warn!(
-            "[XKB-{:03}] Illegal value for preserve[{}] in type {}; Converted {} to {}\n",
-            XKB_WARNING_ILLEGAL_KEY_TYPE_PRESERVE_RESULT as i32,
-            ModMaskText(ki.ctx(), MOD_BOTH, &info.mods, mods),
-            TypeTxt(ki, type_0),
-            before_0,
-            after_0
-        );
     }
-    AddPreserve(ki, info, type_0, mods, preserve_mods)
+    add_preserve(ki, info, type_0, mods, preserve_mods)
 }
-fn AddLevelName(
-    ki: &xkb_keymap_info<'_>,
+fn add_level_name(
+    _ki: &XkbKeymapInfo<'_>,
     _info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
     level: u32,
@@ -4094,25 +3453,9 @@ fn AddLevelName(
         vec_resize_zero(&mut type_0.level_names, level_idx.wrapping_add(1));
     } else {
         if type_0.level_names[level_idx] == name {
-            log::warn!(
-                "[XKB-{:03}] Duplicate names for level {} of key type {}; Ignored\n",
-                XKB_WARNING_DUPLICATE_ENTRY as i32,
-                level.wrapping_add(1_u32),
-                TypeTxt(ki, type_0)
-            );
             return true;
         }
         if type_0.level_names[level_idx] != XKB_ATOM_NONE {
-            let old: &str = xkb_atom_text(&ki.ctx().atom_table, type_0.level_names[level_idx]);
-            let new: &str = xkb_atom_text(&ki.ctx().atom_table, name);
-            log::warn!(
-                "[XKB-{:03}] Multiple names for level {} of key type {}; Using {}, ignoring {}\n",
-                XKB_WARNING_CONFLICTING_KEY_TYPE_LEVEL_NAMES as i32,
-                level.wrapping_add(1_u32),
-                TypeTxt(ki, type_0),
-                if clobber { new } else { old },
-                if clobber { old } else { new }
-            );
             if !clobber {
                 return true;
             }
@@ -4121,72 +3464,56 @@ fn AddLevelName(
     type_0.level_names[level_idx] = name;
     true
 }
-fn SetLevelName(
-    ki: &xkb_keymap_info<'_>,
+fn set_level_name(
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value: &ExprDef,
 ) -> bool {
-    if arrayNdx.is_none() {
-        return ReportTypeShouldBeArray(ki, type_0, "level name");
-    }
-    let mut level: u32 = 0_u32;
-    if !ExprResolveLevel(ki.ctx(), arrayNdx.unwrap(), &mut level) {
-        return ReportTypeBadType(
-            ki,
-            XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL,
-            type_0,
-            "level name",
-            "integer",
-        );
-    }
-    let mut level_name: u32 = XKB_ATOM_NONE;
-    if !ExprResolveString(ki.ctx(), value, &mut level_name) {
-        log::error!("[XKB-{:03}] Non-string name for level {} in key type {}; Ignoring illegal level name definition\n",
-            XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            level.wrapping_add(1_u32),
-            xkb_atom_text(&ki.ctx().atom_table, type_0.name));
+    if array_ndx.is_none() {
         return false;
     }
-    AddLevelName(ki, info, type_0, level, level_name, true)
+    let mut level: u32 = 0_u32;
+    if !expr_resolve_level(ki.ctx(), array_ndx.unwrap(), &mut level) {
+        return false;
+    }
+    let mut level_name: u32 = XKB_ATOM_NONE;
+    if !expr_resolve_string(ki.ctx(), value, &mut level_name) {
+        return false;
+    }
+    add_level_name(ki, info, type_0, level, level_name, true)
 }
-fn SetKeyTypeField(
-    ki: &xkb_keymap_info<'_>,
+fn set_key_type_field(
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
     field: &str,
-    arrayNdx: Option<&ExprDef>,
+    array_ndx: Option<&ExprDef>,
     value: &ExprDef,
 ) -> bool {
     let ok: bool;
-    let mut type_field: type_field = 0 as type_field;
+    let mut u32: u32 = 0_u32;
     if field.eq_ignore_ascii_case("modifiers") {
-        type_field = TYPE_FIELD_MASK;
-        ok = SetModifiers(ki, info, type_0, arrayNdx, value);
+        u32 = TYPE_FIELD_MASK;
+        ok = set_modifiers(ki, info, type_0, array_ndx, value);
     } else if field.eq_ignore_ascii_case("map") {
-        type_field = TYPE_FIELD_MAP;
-        ok = SetMapEntry(ki, info, type_0, arrayNdx, value);
+        u32 = TYPE_FIELD_MAP;
+        ok = set_map_entry(ki, info, type_0, array_ndx, value);
     } else if field.eq_ignore_ascii_case("preserve") {
-        type_field = TYPE_FIELD_PRESERVE;
-        ok = SetPreserve(ki, info, type_0, arrayNdx, value);
+        u32 = TYPE_FIELD_PRESERVE;
+        ok = set_preserve(ki, info, type_0, array_ndx, value);
     } else if field.eq_ignore_ascii_case("levelname") || field.eq_ignore_ascii_case("level_name") {
-        type_field = TYPE_FIELD_LEVEL_NAME;
-        ok = SetLevelName(ki, info, type_0, arrayNdx, value);
+        u32 = TYPE_FIELD_LEVEL_NAME;
+        ok = set_level_name(ki, info, type_0, array_ndx, value);
     } else {
-        log::error!(
-            "[XKB-{:03}] Unknown field \"{}\" in key type \"{}\"; Definition ignored\n",
-            XKB_ERROR_UNKNOWN_FIELD as i32,
-            field,
-            TypeTxt(ki, type_0)
-        );
         ok = ki.strict & PARSER_NO_UNKNOWN_TYPE_FIELDS == 0;
     }
-    type_0.defined = (type_0.defined | type_field as u32) as type_field;
+    type_0.defined |= u32;
     ok
 }
-fn HandleKeyTypeBody(
-    ki: &xkb_keymap_info<'_>,
+fn handle_key_type_body(
+    ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     defs: &[VarDef],
     type_0: &mut KeyTypeInfo,
@@ -4195,30 +3522,21 @@ fn HandleKeyTypeBody(
     for def in defs {
         let mut elem_atom: u32 = 0;
         let mut field_atom: u32 = 0;
-        let mut arrayNdx: Option<&ExprDef> = None;
+        let mut array_ndx: Option<&ExprDef> = None;
         let name_ref = def.name.as_deref().unwrap();
-        if !ExprResolveLhs(name_ref, &mut elem_atom, &mut field_atom, &mut arrayNdx) {
+        if !expr_resolve_lhs(name_ref, &mut elem_atom, &mut field_atom, &mut array_ndx) {
             ok = false;
         } else {
-            let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-            let field = xkb_atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+            let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
+            let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
             if !elem.is_empty() {
                 if elem.eq_ignore_ascii_case("type") {
-                    log::error!("[XKB-{:03}] Support for changing the default type has been removed; Statement \"{}.{}\" ignored.\n",
-                        XKB_ERROR_INVALID_SET_DEFAULT_STATEMENT as i32,
-                        elem,
-                        field);
                 } else {
-                    log::error!("[XKB-{:03}] Cannot set global defaults for \"{}\" element within a key type statement: move statements to the global file scope. Assignment to \"{}.{}\" ignored.\n",
-                        XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                        elem,
-                        elem,
-                        field);
                     ok = false;
                 }
             } else {
                 let value_ref = def.value.as_deref().unwrap();
-                if !SetKeyTypeField(ki, info, type_0, &field, arrayNdx, value_ref) {
+                if !set_key_type_field(ki, info, type_0, &field, array_ndx, value_ref) {
                     ok = false;
                 }
             }
@@ -4226,38 +3544,26 @@ fn HandleKeyTypeBody(
     }
     ok
 }
-fn HandleTypeGlobalVar(ki: &xkb_keymap_info<'_>, _info: &mut KeyTypesInfo, stmt: &VarDef) -> bool {
+fn handle_type_global_var(ki: &XkbKeymapInfo<'_>, _info: &mut KeyTypesInfo, stmt: &VarDef) -> bool {
     let mut elem_atom: u32 = 0;
     let mut field_atom: u32 = 0;
-    let mut arrayNdx: Option<&ExprDef> = None;
+    let mut array_ndx: Option<&ExprDef> = None;
     let name_ref = stmt.name.as_deref().unwrap();
-    if !ExprResolveLhs(name_ref, &mut elem_atom, &mut field_atom, &mut arrayNdx) {
+    if !expr_resolve_lhs(name_ref, &mut elem_atom, &mut field_atom, &mut array_ndx) {
         return false;
     }
-    let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom);
-    let field = xkb_atom_text(&ki.ctx().atom_table, field_atom);
+    let elem = atom_text(&ki.ctx().atom_table, elem_atom);
+    let field = atom_text(&ki.ctx().atom_table, field_atom);
     if !elem.is_empty() && elem.eq_ignore_ascii_case("type") {
-        log::error!("[XKB-{:03}] Support for changing the default type has been removed; Statement ignored\n",
-            XKB_ERROR_WRONG_STATEMENT_TYPE as i32);
         return true;
     } else if !elem.is_empty() {
-        log::error!("[XKB-{:03}] Default defined for unknown element \"{}\"; Value for field \"{}.{}\" ignored\n",
-            XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-            elem,
-            elem,
-            field);
         return ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
     } else if !field.is_empty() {
-        log::error!(
-            "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
-            XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-            field
-        );
         return ki.strict & PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS == 0;
     }
     false
 }
-fn HandleKeyTypesFile(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo, file: &mut XkbFile) {
+fn handle_key_types_file(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, file: &mut XkbFile) {
     {
         let mut ok: bool;
         info.name = if file.name.is_empty() {
@@ -4268,11 +3574,11 @@ fn HandleKeyTypesFile(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo, fil
         for stmt in file.defs.iter_mut() {
             match stmt {
                 Statement::Include(incl) => {
-                    ok = HandleIncludeKeyTypes(ki, info, incl);
+                    ok = handle_include_key_types(ki, info, incl);
                 }
                 Statement::KeyType(def) => {
                     let mut type_0: KeyTypeInfo = KeyTypeInfo {
-                        defined: 0 as type_field,
+                        defined: 0_u32,
                         merge: def.merge,
                         name: def.name,
                         mods: 0_u32,
@@ -4280,85 +3586,63 @@ fn HandleKeyTypesFile(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo, fil
                         entries: Vec::new(),
                         level_names: Vec::new(),
                     };
-                    if !HandleKeyTypeBody(ki, info, &def.body, &mut type_0)
-                        || !AddKeyType(ki, info, &mut type_0, true)
+                    if !handle_key_type_body(ki, info, &def.body, &mut type_0)
+                        || !add_key_type(ki, info, &mut type_0, true)
                     {
-                        info.errorCount += 1;
-                        ClearKeyTypeInfo(&mut type_0);
+                        info.error_count += 1;
+                        clear_key_type_info(&mut type_0);
                         ok = false;
                     } else {
                         ok = true;
                     }
                 }
                 Statement::Var(var) => {
-                    ok = HandleTypeGlobalVar(ki, info, var);
+                    ok = handle_type_global_var(ki, info, var);
                 }
                 Statement::VMod(vmod) => {
-                    ok = HandleVModDef(ki.ctx_mut(), &mut info.mods, vmod);
+                    ok = handle_vmod_def(ki.ctx_mut(), &mut info.mods, vmod);
                 }
-                Statement::Unknown(unk) => {
-                    log::error!(
-                        "[XKB-{:03}] Unsupported types {} statement \"{}\"; Ignoring\n",
-                        XKB_ERROR_UNKNOWN_STATEMENT as i32,
-                        if unk.stmt_type == STMT_UNKNOWN_COMPOUND {
-                            "compound"
-                        } else {
-                            "declaration"
-                        },
-                        &unk.name
-                    );
+                Statement::Unknown(_unk) => {
                     ok = ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {
-                    log::error!(
-                        "[XKB-{:03}] Key type files may not include other declarations; Ignoring {}\n",
-                        XKB_ERROR_WRONG_STATEMENT_TYPE as i32,
-                        stmt_type_to_string(stmt.stmt_type()),
-                    );
                     ok = false;
                 }
             }
             if !ok {
-                info.errorCount += 1;
+                info.error_count += 1;
             }
-            if info.errorCount > 10_i32 {
-                log::error!(
-                    "[XKB-{:03}] Abandoning keytypes file \"{}\"\n",
-                    XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-                    safe_map_name(file)
-                );
+            if info.error_count > 10_i32 {
                 break;
             }
         }
     }
 }
-fn CopyKeyTypesToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo) -> bool {
+fn copy_key_types_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo) -> bool {
     let keymap = ki.keymap_mut();
     let num_types: u32 = if info.types.is_empty() {
         1_u32
     } else {
         info.types.len() as u32
     };
-    let mut types_vec: Vec<xkb_key_type> = Vec::with_capacity(num_types as usize);
+    let mut types_vec: Vec<XkbKeyType> = Vec::with_capacity(num_types as usize);
     if info.types.is_empty() {
-        let type_0 = xkb_key_type {
-            name: xkb_atom_intern_bytes(&mut keymap.ctx, b"ONE_LEVEL"),
-            mods: xkb_mods { mods: 0, mask: 0 },
+        let type_0 = XkbKeyType {
+            name: atom_intern(&mut keymap.ctx.atom_table, b"ONE_LEVEL"),
+            mods: XkbMods { mods: 0, mask: 0 },
             required: true,
             num_levels: 1,
-            level_names: Vec::new(),
             entries: Vec::new(),
         };
         types_vec.push(type_0);
     } else {
         let canonical_types: [u32; 4] = [
-            xkb_atom_intern_bytes(&mut keymap.ctx, b"ONE_LEVEL"),
-            xkb_atom_intern_bytes(&mut keymap.ctx, b"TWO_LEVEL"),
-            xkb_atom_intern_bytes(&mut keymap.ctx, b"ALPHABETIC"),
-            xkb_atom_intern_bytes(&mut keymap.ctx, b"KEYPAD"),
+            atom_intern(&mut keymap.ctx.atom_table, b"ONE_LEVEL"),
+            atom_intern(&mut keymap.ctx.atom_table, b"TWO_LEVEL"),
+            atom_intern(&mut keymap.ctx.atom_table, b"ALPHABETIC"),
+            atom_intern(&mut keymap.ctx.atom_table, b"KEYPAD"),
         ];
         for def in info.types.iter_mut() {
-            let level_names = std::mem::take(&mut def.level_names);
             let entries = std::mem::take(&mut def.entries);
             let mut required = false;
             if def.num_levels <= 2 {
@@ -4369,15 +3653,14 @@ fn CopyKeyTypesToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo) -
                     }
                 }
             }
-            types_vec.push(xkb_key_type {
+            types_vec.push(XkbKeyType {
                 name: def.name,
-                mods: xkb_mods {
+                mods: XkbMods {
                     mods: def.mods,
                     mask: 0,
                 },
                 required,
                 num_levels: def.num_levels,
-                level_names,
                 entries,
             });
         }
@@ -4391,24 +3674,27 @@ fn CopyKeyTypesToKeymap(ki: &mut xkb_keymap_info<'_>, info: &mut KeyTypesInfo) -
     keymap.mods = info.mods;
     true
 }
-pub fn CompileKeyTypes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
+pub(crate) fn compile_key_types(
+    file: Option<&mut XkbFile>,
+    keymap_info: &mut XkbKeymapInfo<'_>,
+) -> bool {
     let mods = keymap_info.keymap_ref().mods;
     let mut info = KeyTypesInfo::new();
-    InitKeyTypesInfo(&mut info, 0_u32, &mods);
+    init_key_types_info(&mut info, 0_u32, &mods);
     if let Some(file) = file {
-        HandleKeyTypesFile(keymap_info, &mut info, file);
+        handle_key_types_file(keymap_info, &mut info, file);
     }
-    if (info.errorCount == 0_i32) && CopyKeyTypesToKeymap(keymap_info, &mut info) {
-        ClearKeyTypesInfo(&mut info);
+    if (info.error_count == 0_i32) && copy_key_types_to_keymap(keymap_info, &mut info) {
+        clear_key_types_info(&mut info);
         return true;
     }
-    ClearKeyTypesInfo(&mut info);
+    clear_key_types_info(&mut info);
     false
 }
 
 // ── Virtual modifier functions (migrated from vmod.rs) ──
 
-pub fn InitVMods(info: &mut xkb_mod_set, mods: &xkb_mod_set, reset: bool) {
+pub(crate) fn init_vmods(info: &mut XkbModSet, mods: &XkbModSet, reset: bool) {
     *info = *mods;
     if !reset {
         return;
@@ -4418,11 +3704,11 @@ pub fn InitVMods(info: &mut xkb_mod_set, mods: &xkb_mod_set, reset: bool) {
     }
     info.explicit_vmods = 0_u32;
 }
-pub fn MergeModSets(
-    ctx: &mut xkb_context,
-    into: &mut xkb_mod_set,
-    from: &xkb_mod_set,
-    merge: merge_mode,
+pub(crate) fn merge_mod_sets(
+    _ctx: &mut XkbContext,
+    into: &mut XkbModSet,
+    from: &XkbModSet,
+    merge: MergeMode,
 ) {
     let clobber: bool = merge != MERGE_AUGMENT;
     for vmod in 0..from.num_mods as usize {
@@ -4444,39 +3730,27 @@ pub fn MergeModSets(
             } else {
                 into.mods[vmod].mapping
             };
-            let ignore: u32 = if clobber {
+            let _ignore: u32 = if clobber {
                 into.mods[vmod].mapping
             } else {
                 mod_0.mapping
             };
-            log::warn!(
-                "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
-                xkb_atom_text(&ctx.atom_table, mod_0.name),
-                ModMaskText(ctx, MOD_REAL, from, use_0),
-                ModMaskText(ctx, MOD_REAL, from, ignore)
-            );
             into.mods[vmod].mapping = use_0;
         }
     }
     into.num_mods = from.num_mods;
 }
-pub fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModDef) -> bool {
+pub(crate) fn handle_vmod_def(ctx: &mut XkbContext, mods: &mut XkbModSet, stmt: &VModDef) -> bool {
     let mut mapping: u32 = 0_u32;
     if stmt.value.is_some() {
         let value_ref = stmt.value.as_deref().unwrap();
-        if !ExprResolveModMask(ctx, value_ref, MOD_REAL, mods, &mut mapping) {
-            log::error!(
-                "Declaration of {} ignored\n",
-                xkb_atom_text(&ctx.atom_table, stmt.name)
-            );
+        if !expr_resolve_mod_mask(ctx, value_ref, MOD_REAL, mods, &mut mapping) {
             return false;
         }
     }
     for vmod in 0..mods.num_mods as usize {
         if mods.mods[vmod].name == stmt.name {
             if mods.mods[vmod].type_0 != MOD_VIRT {
-                log::error!("Can't add a virtual modifier named \"{}\"; there is already a non-virtual modifier with this name! Ignored\n",
-                    xkb_atom_text(&ctx.atom_table, mods.mods[vmod].name));
                 return false;
             }
             let mask: u32 = 1_u32 << vmod;
@@ -4491,17 +3765,11 @@ pub fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModD
                 } else {
                     mods.mods[vmod].mapping
                 };
-                let ignore: u32 = if clobber {
+                let _ignore: u32 = if clobber {
                     mods.mods[vmod].mapping
                 } else {
                     mapping
                 };
-                log::warn!(
-                    "Virtual modifier {} mapping defined multiple times; Using {}, ignoring {}\n",
-                    xkb_atom_text(&ctx.atom_table, stmt.name),
-                    ModMaskText(ctx, MOD_REAL, mods, use_0),
-                    ModMaskText(ctx, MOD_REAL, mods, ignore)
-                );
                 mods.mods[vmod].mapping = use_0;
             }
             mods.explicit_vmods |= mask;
@@ -4509,11 +3777,6 @@ pub fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModD
         }
     }
     if mods.num_mods >= XKB_MAX_MODS {
-        log::error!(
-            "Cannot define virtual modifier {}: too many modifiers defined (maximum {})\n",
-            xkb_atom_text(&ctx.atom_table, stmt.name),
-            (std::mem::size_of::<u32>()).wrapping_mul(8_usize) as u32
-        );
         return false;
     }
     mods.mods[mods.num_mods as usize].name = stmt.name;
@@ -4526,13 +3789,13 @@ pub fn HandleVModDef(ctx: &mut xkb_context, mods: &mut xkb_mod_set, stmt: &VModD
     mods.num_mods = mods.num_mods.wrapping_add(1);
     true
 }
-pub struct KeyNamesInfo {
-    pub name: Option<String>,
-    pub errorCount: i32,
-    pub include_depth: u32,
-    pub keycodes: KeycodeStore,
-    pub led_names: [LedNameInfo; 32],
-    pub num_led_names: u32,
+pub(crate) struct KeyNamesInfo {
+    pub(crate) name: Option<String>,
+    pub(crate) error_count: i32,
+    pub(crate) include_depth: u32,
+    pub(crate) keycodes: KeycodeStore,
+    pub(crate) led_names: [LedNameInfo; 32],
+    pub(crate) num_led_names: u32,
 }
 impl Default for KeyNamesInfo {
     fn default() -> Self {
@@ -4541,10 +3804,10 @@ impl Default for KeyNamesInfo {
 }
 
 impl KeyNamesInfo {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             name: None,
-            errorCount: 0,
+            error_count: 0,
             include_depth: 0,
             keycodes: KeycodeStore {
                 min: XKB_KEYCODE_INVALID,
@@ -4561,21 +3824,21 @@ impl KeyNamesInfo {
     }
 }
 #[derive(Copy, Clone)]
-pub struct LedNameInfo {
-    pub merge: merge_mode,
-    pub name: u32,
+pub(crate) struct LedNameInfo {
+    pub(crate) merge: MergeMode,
+    pub(crate) name: u32,
 }
 #[derive(Clone)]
-pub struct KeycodeStore {
-    pub min: u32,
-    pub low: Vec<u32>,
-    pub high: Vec<HighKeycodeEntry>,
-    pub names: Vec<KeycodeMatch>,
+pub(crate) struct KeycodeStore {
+    pub(crate) min: u32,
+    pub(crate) low: Vec<u32>,
+    pub(crate) high: Vec<HighKeycodeEntry>,
+    pub(crate) names: Vec<KeycodeMatch>,
 }
 #[derive(Copy, Clone, Default)]
-pub struct HighKeycodeEntry {
-    pub keycode: u32,
-    pub name: u32,
+pub(crate) struct HighKeycodeEntry {
+    pub(crate) keycode: u32,
+    pub(crate) name: u32,
 }
 fn vec_resize_zero<T: Default>(v: &mut Vec<T>, new_len: usize) {
     if new_len > v.len() {
@@ -4796,9 +4059,9 @@ fn keycode_store_lookup_name(store: &KeycodeStore, name: u32) -> KeycodeMatch {
         store.names[name as usize]
     }
 }
-fn AddLedName(
+fn add_led_name(
     info: &mut KeyNamesInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    _ki: &mut XkbKeymapInfo<'_>,
     _same_file: bool,
     new: &LedNameInfo,
     new_idx: u32,
@@ -4819,31 +4082,19 @@ fn AddLedName(
     }
     if let Some(old_idx) = found_old {
         if old_idx == new_idx {
-            if report {
-                log::warn!(
-                    "Multiple indicators named \"{}\"; Identical definitions ignored\n",
-                    xkb_atom_text(&ki.ctx().atom_table, new.name)
-                );
-            }
             return true;
         }
         if report {
-            let use_0: u32 = if replace as i32 != 0 {
+            let _use_0: u32 = if replace as i32 != 0 {
                 new_idx.wrapping_add(1_u32)
             } else {
                 old_idx.wrapping_add(1_u32)
             };
-            let ignore: u32 = if replace as i32 != 0 {
+            let _ignore: u32 = if replace as i32 != 0 {
                 old_idx.wrapping_add(1_u32)
             } else {
                 new_idx.wrapping_add(1_u32)
             };
-            log::warn!(
-                "Multiple indicators named {}; Using {}, ignoring {}\n",
-                xkb_atom_text(&ki.ctx().atom_table, new.name),
-                use_0,
-                ignore
-            );
         }
         if replace {
             info.led_names[old_idx as usize].name = XKB_ATOM_NONE;
@@ -4856,22 +4107,16 @@ fn AddLedName(
     }
     if info.led_names[new_idx as usize].name != XKB_ATOM_NONE {
         if report {
-            let use_1: u32 = if replace as i32 != 0 {
+            let _use_1: u32 = if replace as i32 != 0 {
                 new.name
             } else {
                 info.led_names[new_idx as usize].name
             };
-            let ignore_0: u32 = if replace as i32 != 0 {
+            let _ignore_0: u32 = if replace as i32 != 0 {
                 info.led_names[new_idx as usize].name
             } else {
                 new.name
             };
-            log::warn!(
-                "Multiple names for indicator {}; Using {}, ignoring {}\n",
-                new_idx.wrapping_add(1_u32),
-                xkb_atom_text(&ki.ctx().atom_table, use_1),
-                xkb_atom_text(&ki.ctx().atom_table, ignore_0)
-            );
         }
         if replace {
             info.led_names[new_idx as usize] = *new;
@@ -4881,15 +4126,15 @@ fn AddLedName(
     info.led_names[new_idx as usize] = *new;
     true
 }
-fn ClearKeyNamesInfo(info: &mut KeyNamesInfo) {
+fn clear_key_names_info(info: &mut KeyNamesInfo) {
     info.name = None;
     let store = &mut info.keycodes;
     store.high.clear();
     store.names.clear();
 }
-fn InitKeyNamesInfo(info: &mut KeyNamesInfo, include_depth: u32) {
+fn init_key_names_info(info: &mut KeyNamesInfo, include_depth: u32) {
     info.name = None;
-    info.errorCount = 0;
+    info.error_count = 0;
     info.include_depth = include_depth;
     info.keycodes = KeycodeStore {
         min: XKB_KEYCODE_INVALID,
@@ -4903,25 +4148,18 @@ fn InitKeyNamesInfo(info: &mut KeyNamesInfo, include_depth: u32) {
     }; 32];
     info.num_led_names = 0;
 }
-fn AddKeyName(
+fn add_key_name(
     info: &mut KeyNamesInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     kc: u32,
     name: u32,
-    merge: merge_mode,
+    merge: MergeMode,
     report: bool,
 ) -> bool {
     let match_name: KeycodeMatch = keycode_store_lookup_name(&info.keycodes, name);
     if match_name.found {
         let clobber: bool = merge != MERGE_AUGMENT;
         if match_name.is_alias {
-            if report {
-                log::warn!("[XKB-{:03}] Key name <{}> already assigned to an alias; Using {}, ignoring {}\n",
-                        XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                        xkb_atom_text(&ki.ctx().atom_table, name),
-                        if clobber { "key" } else { "alias" },
-                        if clobber { "alias" } else { "key" });
-            }
             if clobber {
                 keycode_store_delete_name(&mut info.keycodes, name);
                 // dead store removed: match_name.found = false;
@@ -4940,13 +4178,8 @@ fn AddKeyName(
             };
             if old_kc != kc {
                 if report {
-                    let use_0: u32 = if clobber as i32 != 0 { kc } else { old_kc };
-                    let ignore: u32 = if clobber as i32 != 0 { old_kc } else { kc };
-                    log::warn!("[XKB-{:03}] Key name <{}> assigned to multiple keys; Using {}, ignoring {}\n",
-                            XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                        xkb_atom_text(&ki.ctx().atom_table, name),
-                            use_0,
-                            ignore);
+                    let _use_0: u32 = if clobber as i32 != 0 { kc } else { old_kc };
+                    let _ignore: u32 = if clobber as i32 != 0 { old_kc } else { kc };
                 }
                 if clobber {
                     keycode_store_delete_key(&mut info.keycodes, match_name);
@@ -4968,44 +4201,29 @@ fn AddKeyName(
     };
     if old_name != XKB_ATOM_NONE {
         if old_name == name {
-            if report {
-                log::warn!("Multiple identical key name definitions; Later occurrences of \"<{}> = {}\" ignored\n",
-                        xkb_atom_text(&ki.ctx().atom_table, old_name),
-                        kc);
-            }
             return true;
         }
         let clobber_0: bool = merge != MERGE_AUGMENT;
         if report {
-            let kname: &str = xkb_atom_text(&ki.ctx().atom_table, name);
-            let old_kname: &str = xkb_atom_text(&ki.ctx().atom_table, old_name);
-            let use_1: &str = if clobber_0 { kname } else { old_kname };
-            let ignore_0: &str = if clobber_0 { old_kname } else { kname };
-            log::warn!(
-                "Multiple names for keycode {}; Using <{}>, ignoring <{}>\n",
-                kc,
-                use_1,
-                ignore_0
-            );
+            let kname: &str = atom_text(&ki.ctx().atom_table, name);
+            let old_kname: &str = atom_text(&ki.ctx().atom_table, old_name);
+            let _use_1: &str = if clobber_0 { kname } else { old_kname };
+            let _ignore_0: &str = if clobber_0 { old_kname } else { kname };
         }
         if clobber_0 {
             keycode_store_delete_name(&mut info.keycodes, old_name);
             keycode_store_update_key(&mut info.keycodes, match_kc, name);
         }
     } else if !keycode_store_insert_key(&mut info.keycodes, kc, name) {
-        log::error!(
-            "[XKB-{:03}] Cannot add keycode\n",
-            XKB_ERROR_ALLOCATION_ERROR as i32
-        );
         return false;
     }
     true
 }
-fn MergeKeycodeStores(
+fn merge_keycode_stores(
     into: &mut KeyNamesInfo,
     from: &mut KeyNamesInfo,
-    ki: &mut xkb_keymap_info<'_>,
-    merge: merge_mode,
+    ki: &mut XkbKeymapInfo<'_>,
+    merge: MergeMode,
     report: bool,
 ) {
     if into.keycodes.low.is_empty()
@@ -5025,14 +4243,14 @@ fn MergeKeycodeStores(
         let mut kc: u32 = from.keycodes.min;
         while kc < from.keycodes.low.len() as u32 {
             let name: u32 = (&from.keycodes.low)[kc as usize];
-            if (name != XKB_ATOM_NONE) && !AddKeyName(into, ki, kc, name, merge, report) {
-                into.errorCount += 1;
+            if (name != XKB_ATOM_NONE) && !add_key_name(into, ki, kc, name, merge, report) {
+                into.error_count += 1;
             }
             kc = kc.wrapping_add(1);
         }
         for entry in from.keycodes.high.iter() {
-            if !AddKeyName(into, ki, entry.keycode, entry.name, merge, report) {
-                into.errorCount += 1;
+            if !add_key_name(into, ki, entry.keycode, entry.name, merge, report) {
+                into.error_count += 1;
             }
         }
         {
@@ -5046,8 +4264,8 @@ fn MergeKeycodeStores(
                             alias,
                             real: match_0.index,
                         };
-                        if !HandleAliasDef(into, ki, &def, report) {
-                            into.errorCount += 1;
+                        if !handle_alias_def(into, ki, &def, report) {
+                            into.error_count += 1;
                         }
                     }
                 }
@@ -5055,21 +4273,21 @@ fn MergeKeycodeStores(
         }
     };
 }
-fn MergeIncludedKeycodes(
+fn merge_included_keycodes(
     into: &mut KeyNamesInfo,
     from: &mut KeyNamesInfo,
-    ki: &mut xkb_keymap_info<'_>,
-    merge: merge_mode,
+    ki: &mut XkbKeymapInfo<'_>,
+    merge: MergeMode,
     report: bool,
 ) {
-    if from.errorCount > 0_i32 {
-        into.errorCount += from.errorCount;
+    if from.error_count > 0_i32 {
+        into.error_count += from.error_count;
         return;
     }
     if into.name.is_none() {
         into.name = from.name.take();
     }
-    MergeKeycodeStores(into, from, ki, merge, report);
+    merge_keycode_stores(into, from, ki, merge, report);
     if into.num_led_names == 0_u32 {
         into.led_names[..from.num_led_names as usize]
             .copy_from_slice(&from.led_names[..from.num_led_names as usize]);
@@ -5082,26 +4300,26 @@ fn MergeIncludedKeycodes(
             if ledi.name != XKB_ATOM_NONE {
                 let mut ledi = ledi;
                 ledi.merge = merge;
-                if !AddLedName(into, ki, false, &ledi, idx, report) {
-                    into.errorCount += 1;
+                if !add_led_name(into, ki, false, &ledi, idx, report) {
+                    into.error_count += 1;
                 }
             }
             idx = idx.wrapping_add(1);
         }
     };
 }
-fn HandleIncludeKeycodes(
+fn handle_include_keycodes(
     info: &mut KeyNamesInfo,
     include: &mut IncludeStmt,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     report: bool,
 ) -> bool {
     let mut included = KeyNamesInfo::new();
-    if ExceedsIncludeMaxDepth(info.include_depth) {
-        info.errorCount += 10_i32;
+    if exceeds_include_max_depth(info.include_depth) {
+        info.error_count += 10_i32;
         return false;
     }
-    InitKeyNamesInfo(&mut included, 0_u32);
+    init_key_names_info(&mut included, 0_u32);
     included.name = if include.stmt.is_empty() {
         None
     } else {
@@ -5111,42 +4329,38 @@ fn HandleIncludeKeycodes(
     while let Some(stmt) = current {
         let mut next_incl = KeyNamesInfo::new();
 
-        let file: Option<Box<XkbFile>> = ProcessIncludeFile(ki.ctx_mut(), stmt, FILE_TYPE_KEYCODES);
+        let file: Option<Box<XkbFile>> =
+            process_include_file(ki.ctx_mut(), stmt, FILE_TYPE_KEYCODES);
         let Some(mut file) = file else {
-            info.errorCount += 10_i32;
-            ClearKeyNamesInfo(&mut included);
+            info.error_count += 10_i32;
+            clear_key_names_info(&mut included);
             return false;
         };
-        InitKeyNamesInfo(&mut next_incl, info.include_depth.wrapping_add(1_u32));
-        HandleKeycodesFile(&mut next_incl, &mut file, ki);
-        MergeIncludedKeycodes(&mut included, &mut next_incl, ki, stmt.merge, report);
-        ClearKeyNamesInfo(&mut next_incl);
+        init_key_names_info(&mut next_incl, info.include_depth.wrapping_add(1_u32));
+        handle_keycodes_file(&mut next_incl, &mut file, ki);
+        merge_included_keycodes(&mut included, &mut next_incl, ki, stmt.merge, report);
+        clear_key_names_info(&mut next_incl);
         drop(file);
         current = stmt.next_incl.as_deref();
     }
-    MergeIncludedKeycodes(info, &mut included, ki, include.merge, report);
-    ClearKeyNamesInfo(&mut included);
-    info.errorCount == 0_i32
+    merge_included_keycodes(info, &mut included, ki, include.merge, report);
+    clear_key_names_info(&mut included);
+    info.error_count == 0_i32
 }
-fn HandleKeycodeDef(
+fn handle_keycode_def(
     info: &mut KeyNamesInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     stmt: &KeycodeDef,
     report: bool,
 ) -> bool {
     if stmt.value < 0_i64 || stmt.value > XKB_KEYCODE_MAX as i64 {
-        log::error!(
-            "Illegal keycode {}: must be between 0..{}; Key ignored\n",
-            stmt.value,
-            0xffffffff_u32.wrapping_sub(1_u32)
-        );
         return false;
     }
-    AddKeyName(info, ki, stmt.value as u32, stmt.name, stmt.merge, report)
+    add_key_name(info, ki, stmt.value as u32, stmt.name, stmt.merge, report)
 }
-fn HandleAliasDef(
+fn handle_alias_def(
     info: &mut KeyNamesInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    _ki: &mut XkbKeymapInfo<'_>,
     def: &KeyAliasDef,
     report: bool,
 ) -> bool {
@@ -5156,134 +4370,84 @@ fn HandleAliasDef(
         let clobber: bool = def.merge != MERGE_AUGMENT;
         if match_name.is_alias {
             if def.real == match_name.index {
-                if report {
-                    log::warn!("[XKB-{:03}] Alias of <{}> for <{}> declared more than once; First definition ignored\n",
-                        XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                         xkb_atom_text(&ki.ctx().atom_table, def.alias),
-                         xkb_atom_text(&ki.ctx().atom_table, def.real));
-                }
+                if report {}
             } else {
                 let use_0: u32 = if clobber as i32 != 0 {
                     def.real
                 } else {
                     match_name.index
                 };
-                let ignore: u32 = if clobber as i32 != 0 {
+                let _ignore: u32 = if clobber as i32 != 0 {
                     match_name.index
                 } else {
                     def.real
                 };
-                if report {
-                    log::warn!("[XKB-{:03}] Multiple definitions for alias <{}>; Using <{}>, ignoring <{}>\n",
-                        XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                         xkb_atom_text(&ki.ctx().atom_table, def.alias),
-                        xkb_atom_text(&ki.ctx().atom_table, use_0),
-                        xkb_atom_text(&ki.ctx().atom_table, ignore));
-                }
+
                 {
                     info.keycodes.names[def.alias as usize].index = use_0;
                 }
             }
             return true;
+        } else if clobber {
+            keycode_store_delete_key(&mut info.keycodes, match_name);
         } else {
-            if report {
-                log::warn!("[XKB-{:03}] Alias name <{}> already assigned to a real key; Using {}, ignoring {}\n",
-                    XKB_WARNING_CONFLICTING_KEY_NAME as i32,
-                    xkb_atom_text(&ki.ctx().atom_table, def.alias),
-                    if clobber { "alias" } else { "key" },
-                    if clobber { "key" } else { "alias" });
-            }
-            if clobber {
-                keycode_store_delete_key(&mut info.keycodes, match_name);
-            } else {
-                return true;
-            }
+            return true;
         }
     }
     keycode_store_insert_alias(&mut info.keycodes, def.alias, def.real)
 }
-fn HandleKeyNameVar(_info: &mut KeyNamesInfo, ki: &mut xkb_keymap_info<'_>, stmt: &VarDef) -> bool {
+fn handle_key_name_var(
+    _info: &mut KeyNamesInfo,
+    ki: &mut XkbKeymapInfo<'_>,
+    stmt: &VarDef,
+) -> bool {
     let mut elem_atom: u32 = 0;
     let mut field_atom: u32 = 0;
-    let mut arrayNdx: Option<&ExprDef> = None;
+    let mut array_ndx: Option<&ExprDef> = None;
     let name_ref = stmt.name.as_deref().unwrap();
-    if !ExprResolveLhs(name_ref, &mut elem_atom, &mut field_atom, &mut arrayNdx) {
+    if !expr_resolve_lhs(name_ref, &mut elem_atom, &mut field_atom, &mut array_ndx) {
         return false;
     }
-    let elem = xkb_atom_text(&ki.ctx().atom_table, elem_atom);
-    let field = xkb_atom_text(&ki.ctx().atom_table, field_atom);
+    let elem = atom_text(&ki.ctx().atom_table, elem_atom);
+    let field = atom_text(&ki.ctx().atom_table, field_atom);
     if !elem.is_empty() {
-        log::error!("[XKB-{:03}] Cannot set global defaults for \"{}\" element; Assignment to \"{}.{}\" ignored\n",
-            XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-            elem,
-            elem,
-            field);
         return ki.strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
     }
     if !field.eq_ignore_ascii_case("minimum") && !field.eq_ignore_ascii_case("maximum") {
-        log::error!(
-            "[XKB-{:03}] Default defined for unknown field \"{}\"; Ignored\n",
-            XKB_ERROR_UNKNOWN_DEFAULT_FIELD as i32,
-            field
-        );
         return ki.strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
     }
-    if arrayNdx.is_some() {
-        ReportNotArray("keycodes", field, "defaults");
+    if array_ndx.is_some() {
         return ki.strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
     }
     let mut val: i64 = 0_i64;
     let value_ref = stmt.value.as_deref().unwrap();
-    if !ExprResolveInteger(ki.ctx(), value_ref, &mut val) || val < 0_i64 || val > u32::MAX as i64 {
-        ReportBadType(
-            XKB_ERROR_WRONG_FIELD_TYPE,
-            "keycodes",
-            field,
-            "defaults",
-            "integer 0..0xfffffffe",
-        );
+    if !expr_resolve_integer(ki.ctx(), value_ref, &mut val) || val < 0_i64 || val > u32::MAX as i64
+    {
         return ki.strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
     }
     true
 }
-fn HandleLedNameDef(
+fn handle_led_name_def(
     info: &mut KeyNamesInfo,
-    ki: &mut xkb_keymap_info<'_>,
+    ki: &mut XkbKeymapInfo<'_>,
     def: &LedNameDef,
     report: bool,
 ) -> bool {
     if def.ndx < 1_i64 || def.ndx > XKB_MAX_LEDS as i64 {
-        info.errorCount += 1;
-        log::error!(
-            "Illegal indicator index ({}) specified; must be between 1 .. {}; Ignored\n",
-            def.ndx,
-            (std::mem::size_of::<xkb_led_mask_t>()).wrapping_mul(8_usize) as u32
-        );
+        info.error_count += 1;
         return false;
     }
     let mut name: u32 = XKB_ATOM_NONE;
     let name_expr = def.name.as_deref().unwrap();
-    if !ExprResolveString(ki.ctx(), name_expr, &mut name) {
-        let mut buf: [u8; 20] = [0; 20];
-        let buf_len = {
-            let mut w = super::super::shared_types::LogBuf::new(&mut buf[..19]);
-            let _ = core::fmt::Write::write_fmt(&mut w, format_args!("{}", def.ndx));
-            w.pos
-        };
-        info.errorCount += 1;
-        return ReportBadType(
-            XKB_ERROR_WRONG_FIELD_TYPE,
-            "indicator",
-            "name",
-            std::str::from_utf8(&buf[..buf_len]).unwrap_or("?"),
-            "string",
-        );
+    if !expr_resolve_string(ki.ctx(), name_expr, &mut name) {
+        info.error_count += 1;
+        return false;
     }
     let ledi: LedNameInfo = LedNameInfo {
         merge: def.merge,
         name,
     };
-    AddLedName(
+    add_led_name(
         info,
         ki,
         true,
@@ -5292,7 +4456,7 @@ fn HandleLedNameDef(
         report,
     )
 }
-fn HandleKeycodesFile(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut xkb_keymap_info<'_>) {
+fn handle_keycodes_file(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut XkbKeymapInfo<'_>) {
     {
         let mut ok: bool;
         let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
@@ -5306,52 +4470,37 @@ fn HandleKeycodesFile(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut xkb_
         for stmt in file.defs.iter_mut() {
             match stmt {
                 Statement::Include(incl) => {
-                    ok = HandleIncludeKeycodes(info, incl, ki, report_include);
+                    ok = handle_include_keycodes(info, incl, ki, report_include);
                 }
                 Statement::Keycode(kc) => {
-                    ok = HandleKeycodeDef(info, ki, kc, report_same_file);
+                    ok = handle_keycode_def(info, ki, kc, report_same_file);
                 }
                 Statement::KeyAlias(ka) => {
-                    ok = HandleAliasDef(info, ki, ka, report_same_file);
+                    ok = handle_alias_def(info, ki, ka, report_same_file);
                 }
                 Statement::Var(var) => {
-                    ok = HandleKeyNameVar(info, ki, var);
+                    ok = handle_key_name_var(info, ki, var);
                 }
                 Statement::LedName(ln) => {
-                    ok = HandleLedNameDef(info, ki, ln, report_same_file);
+                    ok = handle_led_name_def(info, ki, ln, report_same_file);
                 }
-                Statement::Unknown(unk) => {
-                    log::error!(
-                        "[XKB-{:03}] Unsupported keycodes {} statement \"{}\"; Ignoring\n",
-                        XKB_ERROR_UNKNOWN_STATEMENT as i32,
-                        if unk.stmt_type == STMT_UNKNOWN_COMPOUND {
-                            "compound"
-                        } else {
-                            "declaration"
-                        },
-                        &unk.name
-                    );
+                Statement::Unknown(_unk) => {
                     ok = ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {
-                    log::error!(
-                        "Keycode files may define key and indicator names only; Ignoring {}\n",
-                        stmt_type_to_string(stmt.stmt_type())
-                    );
                     ok = false;
                 }
             }
             if !ok {
-                info.errorCount += 1;
+                info.error_count += 1;
             }
-            if info.errorCount > 10_i32 {
-                log::error!("Abandoning keycodes file \"{}\"\n", safe_map_name(file));
+            if info.error_count > 10_i32 {
                 break;
             }
         }
     }
 }
-fn CopyKeyNamesToKeymap(keymap: &mut xkb_keymap, keycodes: &KeycodeStore) -> bool {
+fn copy_key_names_to_keymap(keymap: &mut XkbKeymap, keycodes: &KeycodeStore) -> bool {
     if keycodes.low.is_empty() && keycodes.high.is_empty() {
         keymap.min_key_code = 8_u32;
         keymap.max_key_code = 255_u32;
@@ -5367,8 +4516,8 @@ fn CopyKeyNamesToKeymap(keymap: &mut xkb_keymap, keycodes: &KeycodeStore) -> boo
         keymap.num_keys_low = keycodes.low.len() as u32;
         keymap.num_keys = keymap.num_keys_low.wrapping_add(keycodes.high.len() as u32);
     }
-    let mut keys: Vec<xkb_key> = (0..keymap.num_keys as usize)
-        .map(|_| xkb_key::default())
+    let mut keys: Vec<XkbKey> = (0..keymap.num_keys as usize)
+        .map(|_| XkbKey::default())
         .collect();
     let mut kc: u32 = keymap.min_key_code;
     while kc < keymap.num_keys_low {
@@ -5389,7 +4538,7 @@ fn CopyKeyNamesToKeymap(keymap: &mut xkb_keymap, keycodes: &KeycodeStore) -> boo
     keymap.keys = keys;
     true
 }
-fn CopyKeycodeNameLUT(keymap: &mut xkb_keymap, keycodes: &mut KeycodeStore) -> bool {
+fn copy_keycode_name_lut(keymap: &mut XkbKeymap, keycodes: &mut KeycodeStore) -> bool {
     let names_len = keycodes.names.len();
     {
         if names_len > 0 {
@@ -5400,21 +4549,8 @@ fn CopyKeycodeNameLUT(keymap: &mut xkb_keymap, keycodes: &mut KeycodeStore) -> b
                         let match_real: KeycodeMatch =
                             keycode_store_lookup_name(keycodes, entry.index);
                         if !match_real.found {
-                            log::warn!("[XKB-{:03}] Attempt to alias <{}> to non-existent key <{}>; Ignored\n",
-                                XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                                xkb_atom_text(&keymap.ctx.atom_table, name),
-                                xkb_atom_text(
-                                    &keymap.ctx.atom_table,
-                                    entry.index
-                                ));
                             keycodes.names[name as usize].found = false;
                         } else if match_real.is_alias {
-                            log::warn!(
-                                "[XKB-{:03}] Attempt to alias <{}> to alias <{}>; Ignored\n",
-                                XKB_WARNING_UNDEFINED_KEYCODE as i32,
-                                xkb_atom_text(&keymap.ctx.atom_table, name),
-                                xkb_atom_text(&keymap.ctx.atom_table, entry.index)
-                            );
                             keycodes.names[name as usize].found = false;
                         }
                     } else if !entry.low {
@@ -5432,8 +4568,8 @@ fn CopyKeycodeNameLUT(keymap: &mut xkb_keymap, keycodes: &mut KeycodeStore) -> b
     }
     true
 }
-fn CopyLedNamesToKeymap(
-    keymap: &mut xkb_keymap,
+fn copy_led_names_to_keymap(
+    keymap: &mut XkbKeymap,
     led_names: &[LedNameInfo; 32],
     num_led_names: u32,
 ) -> bool {
@@ -5448,11 +4584,11 @@ fn CopyLedNamesToKeymap(
     }
     true
 }
-fn CopyKeyNamesInfoToKeymap(info: &mut KeyNamesInfo, ki: &mut xkb_keymap_info<'_>) -> bool {
+fn copy_key_names_info_to_keymap(info: &mut KeyNamesInfo, ki: &mut XkbKeymapInfo<'_>) -> bool {
     let keymap = ki.keymap_mut();
-    if !CopyKeyNamesToKeymap(keymap, &info.keycodes)
-        || !CopyKeycodeNameLUT(keymap, &mut info.keycodes)
-        || !CopyLedNamesToKeymap(keymap, &info.led_names, info.num_led_names)
+    if !copy_key_names_to_keymap(keymap, &info.keycodes)
+        || !copy_keycode_name_lut(keymap, &mut info.keycodes)
+        || !copy_led_names_to_keymap(keymap, &info.led_names, info.num_led_names)
     {
         return false;
     }
@@ -5481,55 +4617,58 @@ fn CopyKeyNamesInfoToKeymap(info: &mut KeyNamesInfo, ki: &mut xkb_keymap_info<'_
     xkb_escape_map_name(&mut keymap.keycodes_section_name);
     true
 }
-pub fn CompileKeycodes(file: Option<&mut XkbFile>, keymap_info: &mut xkb_keymap_info<'_>) -> bool {
+pub(crate) fn compile_keycodes(
+    file: Option<&mut XkbFile>,
+    keymap_info: &mut XkbKeymapInfo<'_>,
+) -> bool {
     let mut info = KeyNamesInfo::new();
-    InitKeyNamesInfo(&mut info, 0_u32);
+    init_key_names_info(&mut info, 0_u32);
     if let Some(file) = file {
-        HandleKeycodesFile(&mut info, file, keymap_info);
+        handle_keycodes_file(&mut info, file, keymap_info);
     }
-    if (info.errorCount == 0_i32) && CopyKeyNamesInfoToKeymap(&mut info, keymap_info) {
-        ClearKeyNamesInfo(&mut info);
+    if (info.error_count == 0_i32) && copy_key_names_info_to_keymap(&mut info, keymap_info) {
+        clear_key_names_info(&mut info);
         return true;
     }
-    ClearKeyNamesInfo(&mut info);
+    clear_key_names_info(&mut info);
     false
 }
-use super::super::keymap::{actionTypeNames, buttonNames, LookupValue, GROUP_LAST_INDEX_NAME};
+use super::super::keymap::{ACTION_TYPE_NAMES, BUTTON_NAMES, GROUP_LAST_INDEX_NAME};
 
-pub use super::super::keymap::action_equal;
-pub use super::super::shared_types::stmt_type_to_operator_char;
+pub(crate) use super::super::keymap::action_equal;
+
 use super::super::shared_types::ExprKind;
 
-pub struct LookupModMaskPriv<'a> {
-    pub mods: &'a xkb_mod_set,
-    pub mod_type: u32,
+pub(crate) struct LookupModMaskPriv<'a> {
+    pub(crate) mods: &'a XkbModSet,
+    pub(crate) mod_type: u32,
 }
 
 /// Safe replacement for the IdentLookupFunc + *const c_void pair.
-pub enum IdentLookup<'a> {
+pub(crate) enum IdentLookup<'a> {
     None,
     Simple(&'a [LookupEntry]),
     NamedPattern(&'a NamedIntegerPattern<'a>),
     ModMask(&'a LookupModMaskPriv<'a>),
 }
 
-pub struct NamedIntegerPattern<'a> {
-    pub prefix: &'static str,
-    pub min: u32,
-    pub max: u32,
-    pub entries: &'a [LookupEntry],
-    pub pending_entries: &'a [LookupEntry],
-    pub is_mask: bool,
-    pub error_id: u32,
+pub(crate) struct NamedIntegerPattern<'a> {
+    pub(crate) prefix: &'static str,
+    pub(crate) min: u32,
+    pub(crate) max: u32,
+    pub(crate) entries: &'a [LookupEntry],
+    pub(crate) pending_entries: &'a [LookupEntry],
+    pub(crate) is_mask: bool,
+    pub(crate) _error_id: u32,
 }
 
 static LEVEL_NAME_PATTERN_ENTRIES: [LookupEntry; 1] = [LookupEntry { name: "", value: 0 }];
 
-fn simple_lookup(ctx: &xkb_context, entries: &[LookupEntry], field: u32) -> Option<u32> {
+fn simple_lookup(ctx: &XkbContext, entries: &[LookupEntry], field: u32) -> Option<u32> {
     if field == XKB_ATOM_NONE {
         return None;
     }
-    let s: &str = xkb_atom_text(&ctx.atom_table, field);
+    let s: &str = atom_text(&ctx.atom_table, field);
     for entry in entries {
         if entry.name.is_empty() {
             break;
@@ -5542,7 +4681,7 @@ fn simple_lookup(ctx: &xkb_context, entries: &[LookupEntry], field: u32) -> Opti
 }
 
 fn named_integer_pattern_lookup(
-    ctx: &xkb_context,
+    ctx: &XkbContext,
     pattern: &NamedIntegerPattern,
     field: u32,
     pending_rtrn: Option<&mut bool>,
@@ -5550,7 +4689,7 @@ fn named_integer_pattern_lookup(
     if field == XKB_ATOM_NONE {
         return None;
     }
-    let str_bytes: &str = xkb_atom_text(&ctx.atom_table, field);
+    let str_bytes: &str = atom_text(&ctx.atom_table, field);
     let prefix = pattern.prefix;
     let count: i32 = if str_bytes
         .as_bytes()
@@ -5571,14 +4710,6 @@ fn named_integer_pattern_lookup(
         let suffix = &str_bytes.as_bytes()[prefix.len()..];
         let (val, _) = super::super::shared_types::parse_dec_u32(suffix);
         if val < pattern.min || val > pattern.max {
-            log::error!(
-                "[XKB-{:03}] {} index {} is out of range ({}..{})\n",
-                { pattern.error_id },
-                pattern.prefix,
-                val,
-                pattern.min,
-                pattern.max
-            );
             return None;
         }
         let result = if pattern.is_mask {
@@ -5601,8 +4732,8 @@ fn named_integer_pattern_lookup(
     }
 }
 
-fn lookup_mod_mask(ctx: &xkb_context, priv_0: &LookupModMaskPriv, field: u32) -> Option<u32> {
-    let s: &str = xkb_atom_text(&ctx.atom_table, field);
+fn lookup_mod_mask(ctx: &XkbContext, priv_0: &LookupModMaskPriv, field: u32) -> Option<u32> {
+    let s: &str = atom_text(&ctx.atom_table, field);
     if s.is_empty() {
         return None;
     }
@@ -5612,7 +4743,7 @@ fn lookup_mod_mask(ctx: &xkb_context, priv_0: &LookupModMaskPriv, field: u32) ->
     if s.eq_ignore_ascii_case("none") {
         return Some(0_u32);
     }
-    let ndx: u32 = XkbModNameToIndex(priv_0.mods, field, priv_0.mod_type);
+    let ndx: u32 = xkb_mod_name_to_index(priv_0.mods, field, priv_0.mod_type);
     if ndx == XKB_MOD_INVALID {
         return None;
     }
@@ -5622,7 +4753,7 @@ fn lookup_mod_mask(ctx: &xkb_context, priv_0: &LookupModMaskPriv, field: u32) ->
 /// Dispatch a lookup based on the IdentLookup variant.
 /// Returns Some(value) on success. Sets `pending` to true if applicable.
 fn ident_lookup(
-    ctx: &xkb_context,
+    ctx: &XkbContext,
     lookup: &IdentLookup,
     field: u32,
     pending: Option<&mut bool>,
@@ -5637,7 +4768,7 @@ fn ident_lookup(
     }
 }
 
-pub fn ExprResolveLhs<'a>(
+pub(crate) fn expr_resolve_lhs<'a>(
     expr: &'a ExprDef,
     elem_rtrn: &mut u32,
     field_rtrn: &mut u32,
@@ -5684,18 +4815,11 @@ pub fn ExprResolveLhs<'a>(
         }
         _ => {}
     }
-    log::error!(
-        "[XKB-{:03}] Unexpected operator {} in ResolveLhs\n",
-        XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-        { expr.stmt_type() }
-    );
     false
 }
 
-pub fn ExprResolveBoolean(ctx: &xkb_context, expr: &ExprDef, set_rtrn: &mut bool) -> bool {
+pub(crate) fn expr_resolve_boolean(ctx: &XkbContext, expr: &ExprDef, set_rtrn: &mut bool) -> bool {
     let ok: bool;
-    #[allow(unused_assignments)]
-    let mut ident: &str = "";
     match expr.stmt_type() {
         7 => {
             let ExprKind::Boolean(set) = &expr.kind else {
@@ -5705,18 +4829,13 @@ pub fn ExprResolveBoolean(ctx: &xkb_context, expr: &ExprDef, set_rtrn: &mut bool
             return true;
         }
         4 | 5 | 6 | 8 | 9 => {
-            log::error!(
-                "[XKB-{:03}] Found {} where boolean was expected\n",
-                XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                stmt_type_to_string(expr.stmt_type())
-            );
             return false;
         }
         10 => {
             let ExprKind::Ident(ident_atom) = &expr.kind else {
                 unreachable!()
             };
-            ident = xkb_atom_text(&ctx.atom_table, *ident_atom);
+            let ident = atom_text(&ctx.atom_table, *ident_atom);
             if !ident.is_empty() {
                 if ident.eq_ignore_ascii_case("true")
                     || ident.eq_ignore_ascii_case("yes")
@@ -5732,23 +4851,12 @@ pub fn ExprResolveBoolean(ctx: &xkb_context, expr: &ExprDef, set_rtrn: &mut bool
                     return true;
                 }
             }
-            log::error!(
-                "[XKB-{:03}] Identifier \"{}\" of type boolean is unknown\n",
-                XKB_ERROR_INVALID_IDENTIFIER as i32,
-                ident
-            );
             return false;
         }
         12 => {
-            let ExprKind::FieldRef { element, field } = &expr.kind else {
+            let ExprKind::FieldRef { .. } = &expr.kind else {
                 unreachable!()
             };
-            log::error!(
-                "[XKB-{:03}] Default \"{}.{}\" of type boolean is unknown\n",
-                XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                xkb_atom_text(&ctx.atom_table, *element),
-                xkb_atom_text(&ctx.atom_table, *field)
-            );
             return false;
         }
         24 | 22 => {
@@ -5756,32 +4864,20 @@ pub fn ExprResolveBoolean(ctx: &xkb_context, expr: &ExprDef, set_rtrn: &mut bool
                 unreachable!()
             };
             let child_ref = child.as_deref().unwrap();
-            ok = ExprResolveBoolean(ctx, child_ref, set_rtrn);
+            ok = expr_resolve_boolean(ctx, child_ref, set_rtrn);
             if ok {
                 *set_rtrn = !*set_rtrn;
             }
             return ok;
         }
-        17 | 18 | 19 | 20 | 21 | 23 | 25 | 14 | 11 | 16 | 15 => {
-            log::error!(
-                "[XKB-{:03}] {} of boolean values not permitted\n",
-                XKB_ERROR_INVALID_OPERATION as i32,
-                stmt_type_to_string(expr.stmt_type())
-            );
-        }
-        _ => {
-            log::error!(
-                "[XKB-{:03}] Unknown operator {} in ResolveBoolean\n",
-                XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                { expr.stmt_type() }
-            );
-        }
+        17 | 18 | 19 | 20 | 21 | 23 | 25 | 14 | 11 | 16 | 15 => {}
+        _ => {}
     }
     false
 }
 
-fn ExprResolveIntegerLookup(
-    ctx: &xkb_context,
+fn expr_resolve_integer_lookup(
+    ctx: &XkbContext,
     expr: &ExprDef,
     val_rtrn: &mut i64,
     pending: Option<&mut bool>,
@@ -5799,11 +4895,6 @@ fn ExprResolveIntegerLookup(
             return true;
         }
         4 | 6 | 7 | 8 | 9 => {
-            log::error!(
-                "[XKB-{:03}] Found {} where an int was expected\n",
-                XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                stmt_type_to_string(expr.stmt_type())
-            );
             return false;
         }
         10 => {
@@ -5820,13 +4911,7 @@ fn ExprResolveIntegerLookup(
                 *val_rtrn = u as i64;
                 ok = true;
             }
-            if !ok {
-                log::error!(
-                    "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
-                    XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    xkb_atom_text(&ctx.atom_table, *ident_atom)
-                );
-            }
+
             if let Some(p) = pending {
                 *p = pending_local;
                 if pending_local {
@@ -5836,15 +4921,9 @@ fn ExprResolveIntegerLookup(
             return ok;
         }
         12 => {
-            let ExprKind::FieldRef { element, field } = &expr.kind else {
+            let ExprKind::FieldRef { .. } = &expr.kind else {
                 unreachable!()
             };
-            log::error!(
-                "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
-                XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                xkb_atom_text(&ctx.atom_table, *element),
-                xkb_atom_text(&ctx.atom_table, *field)
-            );
             return false;
         }
         17..=20 => {
@@ -5858,8 +4937,8 @@ fn ExprResolveIntegerLookup(
             };
             let left = bleft.as_deref().unwrap();
             let right = bright.as_deref().unwrap();
-            if !ExprResolveIntegerLookup(ctx, left, &mut l, None, lookup)
-                || !ExprResolveIntegerLookup(ctx, right, &mut r, None, lookup)
+            if !expr_resolve_integer_lookup(ctx, left, &mut l, None, lookup)
+                || !expr_resolve_integer_lookup(ctx, right, &mut r, None, lookup)
             {
                 return false;
             }
@@ -5868,13 +4947,6 @@ fn ExprResolveIntegerLookup(
                     let (v, overflow) = l.overflowing_add(r);
                     *val_rtrn = v;
                     if overflow {
-                        log::error!(
-                            "[XKB-{:03}] Addition {} + {} has an invalid mathematical result: {}\n",
-                            XKB_ERROR_INTEGER_OVERFLOW as i32,
-                            l,
-                            r,
-                            *val_rtrn
-                        );
                         return false;
                     }
                 }
@@ -5882,8 +4954,6 @@ fn ExprResolveIntegerLookup(
                     let (v, overflow) = l.overflowing_sub(r);
                     *val_rtrn = v;
                     if overflow {
-                        log::error!("[XKB-{:03}] Substraction {} - {} has an invalid mathematical result: {}\n",
-                            XKB_ERROR_INTEGER_OVERFLOW as i32, l, r, *val_rtrn);
                         return false;
                     }
                 }
@@ -5891,45 +4961,23 @@ fn ExprResolveIntegerLookup(
                     let (v, overflow) = l.overflowing_mul(r);
                     *val_rtrn = v;
                     if overflow {
-                        log::error!("[XKB-{:03}] Multiplication {} * {} has an invalid mathematical result: {}\n",
-                            XKB_ERROR_INTEGER_OVERFLOW as i32, l, r, *val_rtrn);
                         return false;
                     }
                 }
                 20 => {
                     if r == 0_i64 {
-                        log::error!(
-                            "[XKB-{:03}] Cannot divide by zero: {} / {}\n",
-                            XKB_ERROR_INVALID_OPERATION as i32,
-                            l,
-                            r
-                        );
                         return false;
                     }
                     *val_rtrn = l / r;
                 }
                 _ => {
-                    log::error!(
-                        "[XKB-{:03}] {} of integers not permitted\n",
-                        XKB_ERROR_INVALID_OPERATION as i32,
-                        stmt_type_to_string(expr.stmt_type())
-                    );
                     return false;
                 }
             }
             return true;
         }
-        21 => {
-            log::error!(
-                "[XKB-{:03}] Assignment operator not implemented yet\n",
-                XKB_ERROR_INVALID_OPERATION as i32
-            );
-        }
+        21 => {}
         22 => {
-            log::error!(
-                "[XKB-{:03}] The ! operator cannot be applied to an integer\n",
-                XKB_ERROR_INVALID_OPERATION as i32
-            );
             return false;
         }
         24 | 23 => {
@@ -5937,7 +4985,7 @@ fn ExprResolveIntegerLookup(
                 unreachable!()
             };
             let left = child.as_deref().unwrap();
-            if !ExprResolveIntegerLookup(ctx, left, &mut l, None, lookup) {
+            if !expr_resolve_integer_lookup(ctx, left, &mut l, None, lookup) {
                 return false;
             }
             *val_rtrn = if expr.stmt_type() == STMT_EXPR_NEGATE {
@@ -5952,25 +5000,19 @@ fn ExprResolveIntegerLookup(
                 unreachable!()
             };
             let left = child.as_deref().unwrap();
-            return ExprResolveIntegerLookup(ctx, left, val_rtrn, None, lookup);
+            return expr_resolve_integer_lookup(ctx, left, val_rtrn, None, lookup);
         }
-        _ => {
-            log::error!(
-                "[XKB-{:03}] Unknown operator {} in ResolveInteger\n",
-                XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                { expr.stmt_type() }
-            );
-        }
+        _ => {}
     }
     false
 }
 
-pub fn ExprResolveInteger(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut i64) -> bool {
-    ExprResolveIntegerLookup(ctx, expr, val_rtrn, None, &IdentLookup::None)
+pub(crate) fn expr_resolve_integer(ctx: &XkbContext, expr: &ExprDef, val_rtrn: &mut i64) -> bool {
+    expr_resolve_integer_lookup(ctx, expr, val_rtrn, None, &IdentLookup::None)
 }
 
-pub fn ExprResolveGroup(
-    keymap_info: &mut xkb_keymap_info<'_>,
+pub(crate) fn expr_resolve_group(
+    keymap_info: &mut XkbKeymapInfo<'_>,
     expr: &ExprDef,
     absolute: bool,
     group_rtrn: &mut u32,
@@ -5990,15 +5032,15 @@ pub fn ExprResolveGroup(
         prefix: "Group",
         min: 1_u32,
         max: keymap_info.features.max_groups,
-        entries: &keymap_info.lookup.groupIndexNames,
+        entries: &keymap_info.lookup.group_index_names,
         pending_entries: &PENDING_GROUP_INDEX_NAMES,
         is_mask: false,
-        error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
+        _error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
     };
     let lookup = IdentLookup::NamedPattern(&group_name_pattern);
     let ctx = keymap_info.ctx();
     let mut result: i64 = 0_i64;
-    if !ExprResolveIntegerLookup(ctx, expr, &mut result, Some(pending), &lookup) {
+    if !expr_resolve_integer_lookup(ctx, expr, &mut result, Some(pending), &lookup) {
         return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
             PARSER_FATAL_ERROR as i32
         } else {
@@ -6006,13 +5048,6 @@ pub fn ExprResolveGroup(
         }) as u32;
     }
     if result < absolute as i64 || result > keymap_info.features.max_groups as i64 {
-        log::error!(
-            "[XKB-{:03}] Group index {} is out of range ({}..{})\n",
-            { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-            result,
-            absolute as i32,
-            keymap_info.features.max_groups
-        );
         return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
             PARSER_FATAL_ERROR as i32
         } else {
@@ -6023,7 +5058,7 @@ pub fn ExprResolveGroup(
     PARSER_SUCCESS
 }
 
-pub fn ExprResolveLevel(ctx: &xkb_context, expr: &ExprDef, level_rtrn: &mut u32) -> bool {
+pub(crate) fn expr_resolve_level(ctx: &XkbContext, expr: &ExprDef, level_rtrn: &mut u32) -> bool {
     let pattern = NamedIntegerPattern {
         prefix: "Level",
         min: 1_u32,
@@ -6031,32 +5066,26 @@ pub fn ExprResolveLevel(ctx: &xkb_context, expr: &ExprDef, level_rtrn: &mut u32)
         entries: &LEVEL_NAME_PATTERN_ENTRIES,
         pending_entries: &LEVEL_NAME_PATTERN_ENTRIES,
         is_mask: false,
-        error_id: XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL,
+        _error_id: XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL,
     };
     let lookup = IdentLookup::NamedPattern(&pattern);
     let mut result: i64 = 0_i64;
-    if !ExprResolveIntegerLookup(ctx, expr, &mut result, None, &lookup) {
+    if !expr_resolve_integer_lookup(ctx, expr, &mut result, None, &lookup) {
         return false;
     }
     if result < 1_i64 || result > XKB_LEVEL_MAX_IMPL as i64 {
-        log::error!(
-            "[XKB-{:03}] Shift level {} is out of range (1..{})\n",
-            XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL as i32,
-            result,
-            2048_i32
-        );
         return false;
     }
     *level_rtrn = (result - 1_i64) as u32;
     true
 }
 
-pub fn ExprResolveButton(ctx: &xkb_context, expr: &ExprDef, btn_rtrn: &mut i64) -> bool {
-    let lookup = IdentLookup::Simple(&buttonNames);
-    ExprResolveIntegerLookup(ctx, expr, btn_rtrn, None, &lookup)
+pub(crate) fn expr_resolve_button(ctx: &XkbContext, expr: &ExprDef, btn_rtrn: &mut i64) -> bool {
+    let lookup = IdentLookup::Simple(&BUTTON_NAMES);
+    expr_resolve_integer_lookup(ctx, expr, btn_rtrn, None, &lookup)
 }
 
-pub fn ExprResolveString(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut u32) -> bool {
+pub(crate) fn expr_resolve_string(_ctx: &XkbContext, expr: &ExprDef, val_rtrn: &mut u32) -> bool {
     match expr.stmt_type() {
         4 => {
             let ExprKind::String(s) = &expr.kind else {
@@ -6066,69 +5095,32 @@ pub fn ExprResolveString(ctx: &xkb_context, expr: &ExprDef, val_rtrn: &mut u32) 
             return true;
         }
         5..=9 => {
-            log::error!(
-                "[XKB-{:03}] Found {}, expected a string\n",
-                XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                stmt_type_to_string(expr.stmt_type())
-            );
             return false;
         }
         10 => {
-            log::error!(
-                "[XKB-{:03}] Identifier \"{}\" of type string not found\n",
-                XKB_ERROR_INVALID_IDENTIFIER as i32,
-                xkb_atom_text(&ctx.atom_table, {
-                    let ExprKind::Ident(id) = &expr.kind else {
-                        unreachable!()
-                    };
-                    *id
-                })
-            );
             return false;
         }
         12 => {
-            let ExprKind::FieldRef { element, field } = &expr.kind else {
+            let ExprKind::FieldRef { .. } = &expr.kind else {
                 unreachable!()
             };
-            log::error!(
-                "[XKB-{:03}] Default \"{}.{}\" of type string not found\n",
-                XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                xkb_atom_text(&ctx.atom_table, *element),
-                xkb_atom_text(&ctx.atom_table, *field)
-            );
             return false;
         }
         17 | 18 | 19 | 20 | 21 | 23 | 24 | 22 | 25 | 14 | 11 | 16 | 15 => {
-            log::error!(
-                "[XKB-{:03}] {} of strings not permitted\n",
-                XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-                stmt_type_to_string(expr.stmt_type())
-            );
             return false;
         }
-        _ => {
-            log::error!(
-                "[XKB-{:03}] Unknown operator {} in ResolveString\n",
-                XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                { expr.stmt_type() }
-            );
-        }
+        _ => {}
     }
     false
 }
 
-pub fn ExprResolveEnum(
-    ctx: &xkb_context,
+pub(crate) fn expr_resolve_enum(
+    ctx: &XkbContext,
     expr: &ExprDef,
     val_rtrn: &mut u32,
     values: &[LookupEntry],
 ) -> bool {
     if expr.stmt_type() != STMT_EXPR_IDENT {
-        log::error!(
-            "[XKB-{:03}] Found a {} where an enumerated value was expected\n",
-            XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            stmt_type_to_string(expr.stmt_type())
-        );
         return false;
     }
     let ExprKind::Ident(ident_atom) = &expr.kind else {
@@ -6138,26 +5130,16 @@ pub fn ExprResolveEnum(
         *val_rtrn = val;
         return true;
     }
-    log::error!(
-        "[XKB-{:03}] Illegal identifier {}; expected one of:\n",
-        XKB_ERROR_INVALID_IDENTIFIER as i32,
-        xkb_atom_text(&ctx.atom_table, *ident_atom)
-    );
     for entry in values {
         if entry.name.is_empty() {
             break;
         }
-        log::error!(
-            "[XKB-{:03}] \t{}\n",
-            XKB_ERROR_INVALID_IDENTIFIER as i32,
-            entry.name
-        );
     }
     false
 }
 
-fn ExprResolveMaskLookup(
-    ctx: &xkb_context,
+fn expr_resolve_mask_lookup(
+    ctx: &XkbContext,
     expr: &ExprDef,
     val_rtrn: &mut u32,
     pending: Option<&mut bool>,
@@ -6167,7 +5149,6 @@ fn ExprResolveMaskLookup(
     let mut l: u32 = 0_u32;
     let mut r: u32 = 0_u32;
     let mut v: i64 = 0_i64;
-    let mut bogus: Option<&str> = None;
     let mut already_logged_error = false;
     match expr.stmt_type() {
         5 => {
@@ -6175,23 +5156,12 @@ fn ExprResolveMaskLookup(
                 unreachable!()
             };
             if *ival < 0_i64 || *ival > u32::MAX as i64 {
-                log::error!(
-                    "Mask {}{:#x} is out of range (0..{:#x})\n",
-                    if *ival < 0_i64 { "-" } else { "" },
-                    ival.abs(),
-                    4294967295_u32
-                );
                 return false;
             }
             *val_rtrn = *ival as u32;
             return true;
         }
         4 | 6 | 7 | 8 | 9 => {
-            log::error!(
-                "[XKB-{:03}] Found {} where a mask was expected\n",
-                XKB_ERROR_WRONG_FIELD_TYPE as i32,
-                stmt_type_to_string(expr.stmt_type())
-            );
             return false;
         }
         10 => {
@@ -6210,13 +5180,7 @@ fn ExprResolveMaskLookup(
             } else {
                 ok = false;
             }
-            if !ok {
-                log::error!(
-                    "[XKB-{:03}] Identifier \"{}\" of type int is unknown\n",
-                    XKB_ERROR_INVALID_IDENTIFIER as i32,
-                    xkb_atom_text(&ctx.atom_table, *ident_atom)
-                );
-            }
+
             if let Some(p) = pending {
                 *p = pending_local;
                 if pending_local {
@@ -6226,20 +5190,12 @@ fn ExprResolveMaskLookup(
             return ok;
         }
         12 => {
-            let ExprKind::FieldRef { element, field } = &expr.kind else {
+            let ExprKind::FieldRef { .. } = &expr.kind else {
                 unreachable!()
             };
-            log::error!(
-                "[XKB-{:03}] Default \"{}.{}\" of type int is unknown\n",
-                XKB_ERROR_INVALID_EXPRESSION_TYPE as i32,
-                xkb_atom_text(&ctx.atom_table, *element),
-                xkb_atom_text(&ctx.atom_table, *field)
-            );
             return false;
         }
-        13 => {
-            bogus = Some("array reference");
-        }
+        13 => {}
         11 => {}
         17..=20 => {
             let ExprKind::Binary {
@@ -6252,8 +5208,8 @@ fn ExprResolveMaskLookup(
             };
             let left = bleft.as_deref().unwrap();
             let right = bright.as_deref().unwrap();
-            if !ExprResolveMaskLookup(ctx, left, &mut l, None, lookup)
-                || !ExprResolveMaskLookup(ctx, right, &mut r, None, lookup)
+            if !expr_resolve_mask_lookup(ctx, left, &mut l, None, lookup)
+                || !expr_resolve_mask_lookup(ctx, right, &mut r, None, lookup)
             {
                 return false;
             }
@@ -6265,15 +5221,6 @@ fn ExprResolveMaskLookup(
                     *val_rtrn = l & !r;
                 }
                 19 | 20 => {
-                    log::error!(
-                        "[XKB-{:03}] Cannot {} masks; Illegal operation ignored\n",
-                        XKB_ERROR_INVALID_OPERATION as i32,
-                        if expr.stmt_type() == STMT_EXPR_DIVIDE {
-                            "divide"
-                        } else {
-                            "multiply"
-                        }
-                    );
                     return false;
                 }
                 _ => {}
@@ -6281,10 +5228,6 @@ fn ExprResolveMaskLookup(
             return true;
         }
         21 => {
-            log::error!(
-                "[XKB-{:03}] Assignment operator not implemented yet\n",
-                XKB_ERROR_INVALID_OPERATION as i32
-            );
             already_logged_error = true;
         }
         24 => {
@@ -6292,16 +5235,10 @@ fn ExprResolveMaskLookup(
                 unreachable!()
             };
             let left = child.as_deref().unwrap();
-            if !ExprResolveIntegerLookup(ctx, left, &mut v, None, lookup) {
+            if !expr_resolve_integer_lookup(ctx, left, &mut v, None, lookup) {
                 return false;
             }
             if v < 0_i64 || v > u32::MAX as i64 {
-                log::error!(
-                    "Mask {}{:#x} is out of range (0..{:#x})\n",
-                    if v < 0_i64 { "-" } else { "" },
-                    v.abs(),
-                    4294967295_u32
-                );
                 return false;
             }
             *val_rtrn = !(v as u32);
@@ -6312,95 +5249,67 @@ fn ExprResolveMaskLookup(
                 unreachable!()
             };
             let left = child.as_deref().unwrap();
-            if !ExprResolveIntegerLookup(ctx, left, &mut v, None, lookup) {
+            if !expr_resolve_integer_lookup(ctx, left, &mut v, None, lookup) {
                 return false;
             }
-            log::error!(
-                "[XKB-{:03}] The '{}' unary operator cannot be used with a mask\n",
-                XKB_ERROR_INVALID_OPERATION as i32,
-                (stmt_type_to_operator_char(expr.stmt_type()) as u8 as char)
-            );
             return false;
         }
         _ => {
-            log::error!(
-                "[XKB-{:03}] Unknown operator type {} in ResolveMask\n",
-                XKB_ERROR_UNKNOWN_OPERATOR as i32,
-                { expr.stmt_type() }
-            );
             already_logged_error = true;
         }
     }
     if !already_logged_error {
-        if bogus.is_none() {
-            bogus = Some("function use");
-        }
-        log::error!(
-            "[XKB-{:03}] Unexpected {} in mask expression; Expression Ignored\n",
-            XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            bogus.unwrap_or("unknown")
-        );
         return false;
     }
     false
 }
 
-pub fn ExprResolveMask(
-    ctx: &xkb_context,
+pub(crate) fn expr_resolve_mask(
+    ctx: &XkbContext,
     expr: &ExprDef,
     mask_rtrn: &mut u32,
     values: &[LookupEntry],
 ) -> bool {
     let lookup = IdentLookup::Simple(values);
-    ExprResolveMaskLookup(ctx, expr, mask_rtrn, None, &lookup)
+    expr_resolve_mask_lookup(ctx, expr, mask_rtrn, None, &lookup)
 }
 
-pub fn ExprResolveModMask(
-    ctx: &xkb_context,
+pub(crate) fn expr_resolve_mod_mask(
+    ctx: &XkbContext,
     expr: &ExprDef,
     mod_type: u32,
-    mods: &xkb_mod_set,
+    mods: &XkbModSet,
     mask_rtrn: &mut u32,
 ) -> bool {
     let priv_0 = LookupModMaskPriv { mods, mod_type };
     let lookup = IdentLookup::ModMask(&priv_0);
-    ExprResolveMaskLookup(ctx, expr, mask_rtrn, None, &lookup)
+    expr_resolve_mask_lookup(ctx, expr, mask_rtrn, None, &lookup)
 }
 
-pub fn ExprResolveMod(
-    ctx: &xkb_context,
+pub(crate) fn expr_resolve_mod(
+    _ctx: &XkbContext,
     def: &ExprDef,
     mod_type: u32,
-    mods: &xkb_mod_set,
+    mods: &XkbModSet,
     ndx_rtrn: &mut u32,
 ) -> bool {
     if def.stmt_type() != STMT_EXPR_IDENT {
-        log::error!(
-            "[XKB-{:03}] Cannot resolve virtual modifier: found {} where a virtual modifier name was expected\n",
-            XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            stmt_type_to_string(def.stmt_type())
-        );
         return false;
     }
     let ExprKind::Ident(ident_atom) = &def.kind else {
         unreachable!()
     };
     let name: u32 = *ident_atom;
-    let ndx: u32 = XkbModNameToIndex(mods, name, mod_type);
+    let ndx: u32 = xkb_mod_name_to_index(mods, name, mod_type);
     if ndx == XKB_MOD_INVALID {
-        log::error!(
-            "[XKB-{:03}] Cannot resolve virtual modifier: \"{}\" was not previously declared\n",
-            XKB_ERROR_UNDECLARED_VIRTUAL_MODIFIER as i32,
-            xkb_atom_text(&ctx.atom_table, name)
-        );
         return false;
     }
     *ndx_rtrn = ndx;
     true
 }
 
-pub fn ExprResolveGroupMask(
-    keymap_info: &mut xkb_keymap_info<'_>,
+pub(crate) fn expr_resolve_group_mask(
+    keymap_info: &mut XkbKeymapInfo<'_>,
     expr: &ExprDef,
     group_rtrn: &mut u32,
     pending_rtrn: &mut bool,
@@ -6419,49 +5328,49 @@ pub fn ExprResolveGroupMask(
         prefix: "Group",
         min: 1_u32,
         max: keymap_info.features.max_groups,
-        entries: &keymap_info.lookup.groupMaskNames,
+        entries: &keymap_info.lookup.group_mask_names,
         pending_entries: &PENDING_GROUP_MASK_NAMES,
         is_mask: true,
-        error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
+        _error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
     };
     let lookup = IdentLookup::NamedPattern(&group_name_pattern);
     let ctx = keymap_info.ctx();
-    ExprResolveMaskLookup(ctx, expr, group_rtrn, Some(pending_rtrn), &lookup)
+    expr_resolve_mask_lookup(ctx, expr, group_rtrn, Some(pending_rtrn), &lookup)
 }
 #[derive(Copy, Clone)]
-pub struct ActionsInfo {
-    pub actions: [xkb_action; 21],
+pub(crate) struct ActionsInfo {
+    pub(crate) actions: [XkbAction; 21],
 }
 
-pub const ACTION_FIELD_LATCH_ON_PRESS: u32 = 25;
-pub const ACTION_FIELD_UNLOCK_ON_PRESS: u32 = 24;
-pub const ACTION_FIELD_LOCK_ON_RELEASE: u32 = 23;
-pub const ACTION_FIELD_MODS_TO_CLEAR: u32 = 22;
-pub const ACTION_FIELD_KEYCODE: u32 = 21;
-pub const ACTION_FIELD_DEVICE: u32 = 20;
-pub const ACTION_FIELD_DATA: u32 = 19;
-pub const ACTION_FIELD_SAME: u32 = 18;
-pub const ACTION_FIELD_SCREEN: u32 = 17;
-pub const ACTION_FIELD_COUNT: u32 = 16;
-pub const ACTION_FIELD_TYPE: u32 = 15;
-pub const ACTION_FIELD_CONTROLS: u32 = 14;
-pub const ACTION_FIELD_VALUE: u32 = 13;
-pub const ACTION_FIELD_BUTTON: u32 = 12;
-pub const ACTION_FIELD_ACCEL: u32 = 11;
-pub const ACTION_FIELD_Y: u32 = 10;
-pub const ACTION_FIELD_X: u32 = 9;
-pub const ACTION_FIELD_GROUP: u32 = 8;
-pub const ACTION_FIELD_MODIFIERS: u32 = 7;
-pub const ACTION_FIELD_INCREMENT: u32 = 6;
-pub const ACTION_FIELD_AFFECT: u32 = 5;
-pub const ACTION_FIELD_DEFAULT: u32 = 4;
-pub const ACTION_FIELD_REPORT: u32 = 3;
-pub const ACTION_FIELD_GEN_KEY_EVENT: u32 = 2;
-pub const ACTION_FIELD_LATCH_TO_LOCK: u32 = 1;
-pub const ACTION_FIELD_CLEAR_LOCKS: u32 = 0;
+pub(crate) const ACTION_FIELD_LATCH_ON_PRESS: u32 = 25;
+pub(crate) const ACTION_FIELD_UNLOCK_ON_PRESS: u32 = 24;
+pub(crate) const ACTION_FIELD_LOCK_ON_RELEASE: u32 = 23;
+pub(crate) const ACTION_FIELD_MODS_TO_CLEAR: u32 = 22;
+pub(crate) const ACTION_FIELD_KEYCODE: u32 = 21;
+pub(crate) const ACTION_FIELD_DEVICE: u32 = 20;
+pub(crate) const ACTION_FIELD_DATA: u32 = 19;
+pub(crate) const ACTION_FIELD_SAME: u32 = 18;
+pub(crate) const ACTION_FIELD_SCREEN: u32 = 17;
+pub(crate) const ACTION_FIELD_COUNT: u32 = 16;
+pub(crate) const ACTION_FIELD_TYPE: u32 = 15;
+pub(crate) const ACTION_FIELD_CONTROLS: u32 = 14;
+pub(crate) const ACTION_FIELD_VALUE: u32 = 13;
+pub(crate) const ACTION_FIELD_BUTTON: u32 = 12;
+pub(crate) const ACTION_FIELD_ACCEL: u32 = 11;
+pub(crate) const ACTION_FIELD_Y: u32 = 10;
+pub(crate) const ACTION_FIELD_X: u32 = 9;
+pub(crate) const ACTION_FIELD_GROUP: u32 = 8;
+pub(crate) const ACTION_FIELD_MODIFIERS: u32 = 7;
+pub(crate) const ACTION_FIELD_INCREMENT: u32 = 6;
+pub(crate) const ACTION_FIELD_AFFECT: u32 = 5;
+pub(crate) const ACTION_FIELD_DEFAULT: u32 = 4;
+pub(crate) const ACTION_FIELD_REPORT: u32 = 3;
+pub(crate) const ACTION_FIELD_GEN_KEY_EVENT: u32 = 2;
+pub(crate) const ACTION_FIELD_LATCH_TO_LOCK: u32 = 1;
+pub(crate) const ACTION_FIELD_CLEAR_LOCKS: u32 = 0;
 /// A value passed to an action handler.  Combines what used to be two separate
 /// parameters (`value: &ExprDef` and `value_ptr: Option<&mut Option<Box<ExprDef>>>`).
-pub enum ActionValue<'v> {
+pub(crate) enum ActionValue<'v> {
     /// A borrowed reference to a constant or non-ownable ExprDef (e.g. const_true).
     Borrowed(&'v ExprDef),
     /// A mutable reference to an owned ExprDef that can be `.take()`-en.
@@ -6471,7 +5380,7 @@ pub enum ActionValue<'v> {
 impl<'v> ActionValue<'v> {
     /// Get a shared reference to the underlying ExprDef.
     #[inline]
-    pub fn get(&self) -> &ExprDef {
+    pub(crate) fn get(&self) -> &ExprDef {
         match self {
             ActionValue::Borrowed(e) => e,
             ActionValue::Owned(opt) => opt.as_deref().unwrap(),
@@ -6479,7 +5388,7 @@ impl<'v> ActionValue<'v> {
     }
     /// Take ownership of the ExprDef (only possible for Owned variant).
     #[inline]
-    pub fn take(&mut self) -> Option<Box<ExprDef>> {
+    pub(crate) fn take(&mut self) -> Option<Box<ExprDef>> {
         match self {
             ActionValue::Borrowed(_) => None,
             ActionValue::Owned(opt) => opt.take(),
@@ -6487,7 +5396,7 @@ impl<'v> ActionValue<'v> {
     }
     /// Rebind to a child slot (for Owned variant navigating into Unary child).
     #[inline]
-    pub fn rebind_to_child(self) -> ActionValue<'v> {
+    pub(crate) fn rebind_to_child(self) -> ActionValue<'v> {
         match self {
             ActionValue::Owned(opt) => {
                 if let ExprKind::Unary { ref mut child, .. } = opt.as_mut().unwrap().kind {
@@ -6501,17 +5410,17 @@ impl<'v> ActionValue<'v> {
     }
 }
 
-pub type actionHandler = Option<
+pub(crate) type ActionHandler = Option<
     for<'a> fn(
-        &mut xkb_keymap_info<'a>,
-        &xkb_mod_set,
-        &mut xkb_action,
+        &mut XkbKeymapInfo<'a>,
+        &XkbModSet,
+        &mut XkbAction,
         u32,
         Option<&ExprDef>,
         ActionValue<'_>,
     ) -> u32,
 >;
-// Constant true/false ExprDef values used in HandleActionDef
+// Constant true/false ExprDef values used in handle_action_def
 fn const_true_expr() -> ExprDef {
     ExprDef {
         kind: ExprKind::Boolean(true),
@@ -6522,10 +5431,10 @@ fn const_false_expr() -> ExprDef {
         kind: ExprKind::Boolean(false),
     }
 }
-pub fn InitActionsInfo(keymap: &xkb_keymap, info: &mut ActionsInfo) {
+pub(crate) fn init_actions_info(keymap: &XkbKeymap, info: &mut ActionsInfo) {
     let mut type_0: u32 = ACTION_TYPE_NONE;
     while type_0 < _ACTION_TYPE_NUM_ENTRIES {
-        info.actions[type_0 as usize] = xkb_action::from_type(type_0);
+        info.actions[type_0 as usize] = XkbAction::from_type(type_0);
         type_0 += 1;
     }
     info.actions[ACTION_TYPE_PTR_DEFAULT as usize]
@@ -6694,138 +5603,90 @@ static FIELD_STRINGS: [LookupEntry; 37] = [
         value: 0_u32,
     },
 ];
-fn stringToActionType(str: &str, type_rtrn: &mut u32) -> bool {
+fn string_to_action_type(str: &str, type_rtrn: &mut u32) -> bool {
     let mut type_0: u32 = 0_u32;
-    let ret: bool = LookupString(&actionTypeNames, str, &mut type_0);
+    let ret: bool = lookup_string(&ACTION_TYPE_NAMES, str, &mut type_0);
     *type_rtrn = type_0;
     ret
 }
-fn stringToField(str: &str, field_rtrn: &mut u32) -> bool {
+fn string_to_field(str: &str, field_rtrn: &mut u32) -> bool {
     let mut field: u32 = 0_u32;
-    let ret: bool = LookupString(&FIELD_STRINGS, str, &mut field);
+    let ret: bool = lookup_string(&FIELD_STRINGS, str, &mut field);
     *field_rtrn = field;
     ret
 }
-fn fieldText(field: u32) -> &'static str {
-    LookupValue(&FIELD_STRINGS, field)
+#[inline]
+fn report_mismatch(strict: u32) -> u32 {
+    if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
+        PARSER_FATAL_ERROR
+    } else {
+        PARSER_RECOVERABLE_ERROR
+    }
 }
 #[inline]
-fn ReportMismatch(code: u32, action: u32, field: u32, type_0: &str, strict: u32) -> u32 {
-    log::error!(
-        "[XKB-{:03}] Value of {} field must be of type {}; Action {} definition ignored\n",
-        { code },
-        fieldText(field),
-        type_0,
-        ActionTypeText(action)
-    );
-    (if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-        PARSER_FATAL_ERROR as i32
+fn report_format_version_mismatch(strict: u32) -> u32 {
+    if strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
+        PARSER_FATAL_ERROR
     } else {
-        PARSER_RECOVERABLE_ERROR as i32
-    }) as u32
+        PARSER_SUCCESS
+    }
 }
 #[inline]
-fn ReportFormatVersionMismatch(
-    action: u32,
-    field: u32,
-    format: u32,
-    versions: &str,
-    strict: u32,
-) -> u32 {
-    log::error!("[XKB-{:03}] Field {} for an action of type {} requires keymap text format {},  but got: {}; Action definition ignored\n",
-        XKB_ERROR_INCOMPATIBLE_KEYMAP_TEXT_FORMAT as i32,
-        fieldText(field),
-        ActionTypeText(action),
-        versions,
-        { format });
-    (if strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
-        PARSER_FATAL_ERROR as i32
+fn report_illegal(strict: u32) -> u32 {
+    if strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
+        PARSER_FATAL_ERROR
     } else {
-        PARSER_SUCCESS as i32
-    }) as u32
+        PARSER_SUCCESS
+    }
 }
-#[inline]
-fn ReportIllegal(action: u32, field: u32, strict: u32) -> u32 {
-    log::error!(
-        "[XKB-{:03}] Field {} is not defined for an action of type {}; Action definition ignored\n",
-        XKB_ERROR_INVALID_ACTION_FIELD as i32,
-        fieldText(field),
-        ActionTypeText(action)
-    );
-    (if strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
-        PARSER_FATAL_ERROR as i32
-    } else {
-        PARSER_SUCCESS as i32
-    }) as u32
-}
-#[inline]
-fn ReportActionNotArray(action: u32, field: u32, strict: u32) -> u32 {
-    log::error!(
-        "[XKB-{:03}] The {} field in the {} action is not an array; Action definition ignored\n",
-        XKB_ERROR_WRONG_FIELD_TYPE as i32,
-        fieldText(field),
-        ActionTypeText(action)
-    );
-    (if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
-        PARSER_FATAL_ERROR as i32
-    } else {
-        PARSER_RECOVERABLE_ERROR as i32
-    }) as u32
-}
-fn HandleNoAction(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
-    field: u32,
+
+fn handle_no_action(
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    _action: &mut XkbAction,
+    _field: u32,
     _array_ndx: Option<&ExprDef>,
     _value: ActionValue<'_>,
 ) -> u32 {
-    log::error!("[XKB-{:03}] The \"{}\" action takes no argument, but got \"{}\" field; Action definition ignored\n",
-        XKB_ERROR_INVALID_ACTION_FIELD as i32,
-        ActionTypeText(action.action_type()),
-        fieldText(field));
     (if keymap_info.strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
         PARSER_FATAL_ERROR as i32
     } else {
         PARSER_SUCCESS as i32
     }) as u32
 }
-fn CheckBooleanFlag(
-    ctx: &xkb_context,
+fn check_boolean_flag(
+    ctx: &XkbContext,
     strict: u32,
-    action: u32,
-    field: u32,
-    flag: xkb_action_flags,
+    flag: XkbActionFlags,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    flags_inout: &mut xkb_action_flags,
+    flags_inout: &mut XkbActionFlags,
 ) -> u32 {
     let mut set: bool = false;
     if array_ndx.is_some() {
-        return ReportActionNotArray(action, field, strict);
+        return report_mismatch(strict);
     }
-    if !ExprResolveBoolean(ctx, value, &mut set) {
-        return ReportMismatch(XKB_ERROR_WRONG_FIELD_TYPE, action, field, "boolean", strict);
+    if !expr_resolve_boolean(ctx, value, &mut set) {
+        return report_mismatch(strict);
     }
     if set {
-        *flags_inout = (*flags_inout | flag) as xkb_action_flags;
+        *flags_inout = (*flags_inout | flag) as XkbActionFlags;
     } else {
-        *flags_inout = (*flags_inout & !flag) as xkb_action_flags;
+        *flags_inout = (*flags_inout & !flag) as XkbActionFlags;
     }
     PARSER_SUCCESS
 }
-fn CheckModifierField(
-    ctx: &xkb_context,
+fn check_modifier_field(
+    ctx: &XkbContext,
     strict: u32,
-    mods: &xkb_mod_set,
-    action: u32,
+    mods: &XkbModSet,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    flags_inout: &mut xkb_action_flags,
+    flags_inout: &mut XkbActionFlags,
     mods_rtrn: &mut u32,
 ) -> u32 {
     if array_ndx.is_some() {
-        return ReportActionNotArray(action, ACTION_FIELD_MODIFIERS, strict);
+        return report_mismatch(strict);
     }
     if value.stmt_type() == STMT_EXPR_IDENT {
         let ident = if let ExprKind::Ident(id) = &value.kind {
@@ -6833,26 +5694,20 @@ fn CheckModifierField(
         } else {
             unreachable!()
         };
-        let valStr: &str = xkb_atom_text(&ctx.atom_table, ident);
-        if !valStr.is_empty()
-            && (valStr.eq_ignore_ascii_case("usemodmapmods")
-                || valStr.eq_ignore_ascii_case("modmapmods"))
+        let val_str: &str = atom_text(&ctx.atom_table, ident);
+        if !val_str.is_empty()
+            && (val_str.eq_ignore_ascii_case("usemodmapmods")
+                || val_str.eq_ignore_ascii_case("modmapmods"))
         {
             *mods_rtrn = 0_u32;
-            *flags_inout = (*flags_inout | ACTION_MODS_LOOKUP_MODMAP) as xkb_action_flags;
+            *flags_inout = (*flags_inout | ACTION_MODS_LOOKUP_MODMAP) as XkbActionFlags;
             return PARSER_SUCCESS;
         }
     }
-    if !ExprResolveModMask(ctx, value, MOD_BOTH, mods, mods_rtrn) {
-        return ReportMismatch(
-            XKB_ERROR_WRONG_FIELD_TYPE,
-            action,
-            ACTION_FIELD_MODIFIERS,
-            "modifier mask",
-            strict,
-        );
+    if !expr_resolve_mod_mask(ctx, value, MOD_BOTH, mods, mods_rtrn) {
+        return report_mismatch(strict);
     }
-    *flags_inout = (*flags_inout & !(ACTION_MODS_LOOKUP_MODMAP as i32) as u32) as xkb_action_flags;
+    *flags_inout = (*flags_inout & !(ACTION_MODS_LOOKUP_MODMAP as i32) as u32) as XkbActionFlags;
     PARSER_SUCCESS
 }
 static LOCK_WHICH: [LookupEntry; 5] = [
@@ -6877,51 +5732,43 @@ static LOCK_WHICH: [LookupEntry; 5] = [
         value: 0_u32,
     },
 ];
-fn CheckAffectField(
-    ctx: &xkb_context,
+fn check_affect_field(
+    ctx: &XkbContext,
     strict: u32,
-    action: u32,
     array_ndx: Option<&ExprDef>,
     value: &ExprDef,
-    flags_inout: &mut xkb_action_flags,
+    flags_inout: &mut XkbActionFlags,
 ) -> u32 {
     if array_ndx.is_some() {
-        return ReportActionNotArray(action, ACTION_FIELD_AFFECT, strict);
+        return report_mismatch(strict);
     }
     let mut flags: u32 = 0_u32;
-    if !ExprResolveEnum(ctx, value, &mut flags, &LOCK_WHICH) {
-        return ReportMismatch(
-            XKB_ERROR_WRONG_FIELD_TYPE,
-            action,
-            ACTION_FIELD_AFFECT,
-            "lock, unlock, both, neither",
-            strict,
-        );
+    if !expr_resolve_enum(ctx, value, &mut flags, &LOCK_WHICH) {
+        return report_mismatch(strict);
     }
     *flags_inout = (*flags_inout
         & !(ACTION_LOCK_NO_LOCK as i32 | ACTION_LOCK_NO_UNLOCK as i32) as u32)
-        as xkb_action_flags;
-    *flags_inout = (*flags_inout | flags as xkb_action_flags) as xkb_action_flags;
+        as XkbActionFlags;
+    *flags_inout = (*flags_inout | flags as XkbActionFlags) as XkbActionFlags;
     PARSER_SUCCESS
 }
-fn HandleSetLatchLockMods(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    mods: &xkb_mod_set,
-    action: &mut xkb_action,
+fn handle_set_latch_lock_mods(
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &xkb_context = keymap_info.ctx();
+    let ctx: &XkbContext = keymap_info.ctx();
     let act = action.as_mods_mut();
     let type_0: u32 = act.type_0;
     if field == ACTION_FIELD_MODIFIERS {
-        return CheckModifierField(
+        return check_modifier_field(
             ctx,
             keymap_info.strict,
             mods,
-            type_0,
             array_ndx,
             value,
             &mut act.flags,
@@ -6930,34 +5777,24 @@ fn HandleSetLatchLockMods(
     }
     if field == ACTION_FIELD_UNLOCK_ON_PRESS {
         if keymap_info.features.mods_unlock_on_press {
-            return CheckBooleanFlag(
+            return check_boolean_flag(
                 ctx,
                 keymap_info.strict,
-                type_0,
-                field,
                 ACTION_UNLOCK_ON_PRESS,
                 array_ndx,
                 value,
                 &mut act.flags,
             );
         } else {
-            return ReportFormatVersionMismatch(
-                type_0,
-                field,
-                keymap_info.keymap_ref().format,
-                ">= 2",
-                keymap_info.strict,
-            );
+            return report_format_version_mismatch(keymap_info.strict);
         }
     }
     if (type_0 == ACTION_TYPE_MOD_SET || type_0 == ACTION_TYPE_MOD_LATCH)
         && field == ACTION_FIELD_CLEAR_LOCKS
     {
-        return CheckBooleanFlag(
+        return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            type_0,
-            field,
             ACTION_LOCK_CLEAR,
             array_ndx,
             value,
@@ -6966,11 +5803,9 @@ fn HandleSetLatchLockMods(
     }
     if type_0 == ACTION_TYPE_MOD_LATCH {
         if field == ACTION_FIELD_LATCH_TO_LOCK {
-            return CheckBooleanFlag(
+            return check_boolean_flag(
                 ctx,
                 keymap_info.strict,
-                type_0,
-                field,
                 ACTION_LATCH_TO_LOCK,
                 array_ndx,
                 value,
@@ -6979,89 +5814,73 @@ fn HandleSetLatchLockMods(
         }
         if field == ACTION_FIELD_LATCH_ON_PRESS {
             if keymap_info.features.mods_latch_on_press {
-                return CheckBooleanFlag(
+                return check_boolean_flag(
                     ctx,
                     keymap_info.strict,
-                    type_0,
-                    field,
                     ACTION_LATCH_ON_PRESS,
                     array_ndx,
                     value,
                     &mut act.flags,
                 );
             } else {
-                return ReportFormatVersionMismatch(
-                    type_0,
-                    field,
-                    keymap_info.keymap_ref().format,
-                    ">= 2",
-                    keymap_info.strict,
-                );
+                return report_format_version_mismatch(keymap_info.strict);
             }
         }
     }
     if type_0 == ACTION_TYPE_MOD_LOCK && field == ACTION_FIELD_AFFECT {
-        return CheckAffectField(
+        return check_affect_field(
             ctx,
             keymap_info.strict,
-            type_0,
             array_ndx,
             value,
             &mut act.flags,
         );
     }
-    ReportIllegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
-fn CheckGroupField(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    action: u32,
+fn check_group_field(
+    keymap_info: &mut XkbKeymapInfo<'_>,
     array_ndx: Option<&ExprDef>,
     mut value: ActionValue<'_>,
-    flags_inout: &mut xkb_action_flags,
+    flags_inout: &mut XkbActionFlags,
     group_rtrn: &mut i32,
 ) -> u32 {
     let mut idx: u32 = 0_u32;
-    let mut flags: xkb_action_flags = *flags_inout;
+    let mut flags: XkbActionFlags = *flags_inout;
     if array_ndx.is_some() {
-        return ReportActionNotArray(action, ACTION_FIELD_GROUP, keymap_info.strict);
+        return report_mismatch(keymap_info.strict);
     }
     // If the value is a unary negate/plus, rebind to child and record negate.
     let is_negate = value.get().stmt_type() == STMT_EXPR_NEGATE;
     let is_unary = is_negate || value.get().stmt_type() == STMT_EXPR_UNARY_PLUS;
     if is_unary {
-        flags = (flags as u32 & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
+        flags = (flags as u32 & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as XkbActionFlags;
         // Rebind value to the child field inside the unary expr
         // (for ownership transfer to pending_computations if needed)
         value = value.rebind_to_child();
     } else {
-        flags = (flags as u32 | ACTION_ABSOLUTE_SWITCH) as xkb_action_flags;
+        flags = (flags as u32 | ACTION_ABSOLUTE_SWITCH) as XkbActionFlags;
     }
     let spec_holder = value.get();
     let absolute: bool = flags as u32 & ACTION_ABSOLUTE_SWITCH != 0;
     let mut pending: bool = false;
     let ret: u32 =
-        ExprResolveGroup(keymap_info, spec_holder, absolute, &mut idx, &mut pending) as u32;
+        expr_resolve_group(keymap_info, spec_holder, absolute, &mut idx, &mut pending) as u32;
     if ret as u32 != PARSER_SUCCESS && !pending {
-        ReportMismatch(
-            XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
-            action,
-            ACTION_FIELD_GROUP,
-            "integer",
-            keymap_info.strict,
-        );
+        report_mismatch(keymap_info.strict);
         return ret;
     }
     if pending {
-        flags = (flags as u32 | ACTION_PENDING_COMPUTATION) as xkb_action_flags;
+        flags = (flags as u32 | ACTION_PENDING_COMPUTATION) as XkbActionFlags;
         let pending_index: u32 = keymap_info.pending_computations.len() as u32;
-        keymap_info.pending_computations.push(pending_computation {
+        keymap_info.pending_computations.push(PendingComputation {
             expr: value.take(),
             computed: false,
             value: 0_u32,
         });
         *group_rtrn = pending_index as i32;
     } else {
-        flags = (flags as u32 & !(ACTION_PENDING_COMPUTATION as i32) as u32) as xkb_action_flags;
+        flags = (flags as u32 & !(ACTION_PENDING_COMPUTATION as i32) as u32) as XkbActionFlags;
         if flags as u32 & ACTION_ABSOLUTE_SWITCH == 0 {
             *group_rtrn = idx as i32;
             if is_negate {
@@ -7074,21 +5893,20 @@ fn CheckGroupField(
     *flags_inout = flags;
     PARSER_SUCCESS
 }
-fn HandleSetLatchLockGroup(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+fn handle_set_latch_lock_group(
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
-    let ctx: &xkb_context = keymap_info.ctx();
+    let ctx: &XkbContext = keymap_info.ctx();
     let type_0: u32 = action.action_type();
     if field == ACTION_FIELD_GROUP {
         let act = action.as_group_mut();
-        return CheckGroupField(
+        return check_group_field(
             keymap_info,
-            type_0,
             array_ndx,
             value,
             &mut act.flags,
@@ -7100,11 +5918,9 @@ fn HandleSetLatchLockGroup(
     if (type_0 == ACTION_TYPE_GROUP_SET || type_0 == ACTION_TYPE_GROUP_LATCH)
         && field == ACTION_FIELD_CLEAR_LOCKS
     {
-        return CheckBooleanFlag(
+        return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            type_0,
-            field,
             ACTION_LOCK_CLEAR,
             array_ndx,
             value,
@@ -7112,11 +5928,9 @@ fn HandleSetLatchLockGroup(
         );
     }
     if type_0 == ACTION_TYPE_GROUP_LATCH && field == ACTION_FIELD_LATCH_TO_LOCK {
-        return CheckBooleanFlag(
+        return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            type_0,
-            field,
             ACTION_LATCH_TO_LOCK,
             array_ndx,
             value,
@@ -7125,63 +5939,42 @@ fn HandleSetLatchLockGroup(
     }
     if type_0 == ACTION_TYPE_GROUP_LOCK && field == ACTION_FIELD_LOCK_ON_RELEASE {
         if keymap_info.features.group_lock_on_release {
-            return CheckBooleanFlag(
+            return check_boolean_flag(
                 ctx,
                 keymap_info.strict,
-                type_0,
-                field,
                 ACTION_LOCK_ON_RELEASE,
                 array_ndx,
                 value,
                 &mut act.flags,
             );
         } else {
-            return ReportFormatVersionMismatch(
-                type_0,
-                field,
-                keymap_info.keymap_ref().format,
-                ">= v2",
-                keymap_info.strict,
-            );
+            return report_format_version_mismatch(keymap_info.strict);
         }
     }
-    ReportIllegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
-fn HandleMovePtr(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+fn handle_move_ptr(
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &xkb_context = keymap_info.ctx();
-    let type_0 = action.action_type();
+    let ctx: &XkbContext = keymap_info.ctx();
     let act = action.as_ptr_mut();
     if field == ACTION_FIELD_X || field == ACTION_FIELD_Y {
         let mut val: i64 = 0_i64;
         let absolute: bool =
             value.stmt_type() != STMT_EXPR_NEGATE && value.stmt_type() != STMT_EXPR_UNARY_PLUS;
         if array_ndx.is_some() {
-            return ReportActionNotArray(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
-        if !ExprResolveInteger(ctx, value, &mut val) {
-            return ReportMismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "integer",
-                keymap_info.strict,
-            );
+        if !expr_resolve_integer(ctx, value, &mut val) {
+            return report_mismatch(keymap_info.strict);
         }
         if val < i16::MIN as i64 || val > i16::MAX as i64 {
-            log::error!("The {} field in the {} action must be in range {}..{}, but got {}. Action definition ignored\n",
-                fieldText(field),
-                ActionTypeText(type_0),
-                -32767_i32 - 1_i32,
-                32767_i32,
-                val);
             return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                 PARSER_FATAL_ERROR as i32
             } else {
@@ -7190,59 +5983,49 @@ fn HandleMovePtr(
         }
         if field == ACTION_FIELD_X {
             if absolute {
-                act.flags = (act.flags | ACTION_ABSOLUTE_X) as xkb_action_flags;
+                act.flags = (act.flags | ACTION_ABSOLUTE_X) as XkbActionFlags;
             }
             act.x = val as i16;
         } else {
             if absolute {
-                act.flags = (act.flags | ACTION_ABSOLUTE_Y) as xkb_action_flags;
+                act.flags = (act.flags | ACTION_ABSOLUTE_Y) as XkbActionFlags;
             }
             act.y = val as i16;
         }
         return PARSER_SUCCESS;
     } else if field == ACTION_FIELD_ACCEL {
-        return CheckBooleanFlag(
+        return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            type_0,
-            field,
             ACTION_ACCEL,
             array_ndx,
             value,
             &mut act.flags,
         );
     }
-    ReportIllegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
-fn HandlePtrBtn(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+fn handle_ptr_btn(
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &xkb_context = keymap_info.ctx();
+    let ctx: &XkbContext = keymap_info.ctx();
     let type_0 = action.action_type();
     let act = action.as_btn_mut();
     if field == ACTION_FIELD_BUTTON {
         let mut btn: i64 = 0_i64;
         if array_ndx.is_some() {
-            return ReportActionNotArray(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
-        if !ExprResolveButton(ctx, value, &mut btn) {
-            return ReportMismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "integer (range 1..5)",
-                keymap_info.strict,
-            );
+        if !expr_resolve_button(ctx, value, &mut btn) {
+            return report_mismatch(keymap_info.strict);
         }
         if !(0_i64..=5_i64).contains(&btn) {
-            log::error!("Button must specify default or be in the range 1..5; Illegal button value {} ignored\n",
-                btn);
             return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                 PARSER_FATAL_ERROR as i32
             } else {
@@ -7252,10 +6035,9 @@ fn HandlePtrBtn(
         act.button = btn as u8;
         return PARSER_SUCCESS;
     } else if type_0 == ACTION_TYPE_PTR_LOCK && field == ACTION_FIELD_AFFECT {
-        return CheckAffectField(
+        return check_affect_field(
             ctx,
             keymap_info.strict,
-            type_0,
             array_ndx,
             value,
             &mut act.flags,
@@ -7263,22 +6045,12 @@ fn HandlePtrBtn(
     } else if field == ACTION_FIELD_COUNT {
         let mut val: i64 = 0_i64;
         if array_ndx.is_some() {
-            return ReportActionNotArray(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
-        if !ExprResolveInteger(ctx, value, &mut val) {
-            return ReportMismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "integer",
-                keymap_info.strict,
-            );
+        if !expr_resolve_integer(ctx, value, &mut val) {
+            return report_mismatch(keymap_info.strict);
         }
         if !(0_i64..=255_i64).contains(&val) {
-            log::error!(
-                "The count field must have a value in the range 0..255; Illegal count {} ignored\n",
-                val
-            );
             return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                 PARSER_FATAL_ERROR as i32
             } else {
@@ -7288,7 +6060,7 @@ fn HandlePtrBtn(
         act.count = val as u8;
         return PARSER_SUCCESS;
     }
-    ReportIllegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
 static PTR_DFLTS: [LookupEntry; 4] = [
     LookupEntry {
@@ -7308,62 +6080,47 @@ static PTR_DFLTS: [LookupEntry; 4] = [
         value: 0_u32,
     },
 ];
-fn HandleSetPtrDflt(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+fn handle_set_ptr_dflt(
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &xkb_context = keymap_info.ctx();
-    let type_0 = action.action_type();
+    let ctx: &XkbContext = keymap_info.ctx();
     let act = action.as_dflt_mut();
     if field == ACTION_FIELD_AFFECT {
         let mut val: u32 = 0_u32;
         if array_ndx.is_some() {
-            return ReportActionNotArray(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
-        if !ExprResolveEnum(ctx, value, &mut val, &PTR_DFLTS) {
-            return ReportMismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "pointer component",
-                keymap_info.strict,
-            );
+        if !expr_resolve_enum(ctx, value, &mut val, &PTR_DFLTS) {
+            return report_mismatch(keymap_info.strict);
         }
         return PARSER_SUCCESS;
     } else if field == ACTION_FIELD_BUTTON || field == ACTION_FIELD_VALUE {
         let button: &ExprDef;
         let mut btn: i64 = 0_i64;
         if array_ndx.is_some() {
-            return ReportActionNotArray(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
-            act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
+            act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as XkbActionFlags;
             button = if let ExprKind::Unary { child, .. } = &value.kind {
                 child.as_deref().unwrap()
             } else {
                 unreachable!()
             };
         } else {
-            act.flags = (act.flags | ACTION_ABSOLUTE_SWITCH) as xkb_action_flags;
+            act.flags = (act.flags | ACTION_ABSOLUTE_SWITCH) as XkbActionFlags;
             button = value;
         }
-        if !ExprResolveButton(ctx, button, &mut btn) {
-            return ReportMismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "integer (range 1..5)",
-                keymap_info.strict,
-            );
+        if !expr_resolve_button(ctx, button, &mut btn) {
+            return report_mismatch(keymap_info.strict);
         }
         if !(0_i64..=5_i64).contains(&btn) {
-            log::error!("New default button value must be in the range 1..5; Illegal default button value {} ignored\n",
-                btn);
             return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                 PARSER_FATAL_ERROR as i32
             } else {
@@ -7371,7 +6128,6 @@ fn HandleSetPtrDflt(
             }) as u32;
         }
         if btn == 0_i64 {
-            log::error!("Cannot set default pointer button to \"default\"; Illegal default button setting ignored\n");
             return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                 PARSER_FATAL_ERROR as i32
             } else {
@@ -7385,45 +6141,38 @@ fn HandleSetPtrDflt(
         }) as i8;
         return PARSER_SUCCESS;
     }
-    ReportIllegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
-fn HandleSwitchScreen(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+fn handle_switch_screen(
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &xkb_context = keymap_info.ctx();
-    let type_0 = action.action_type();
+    let ctx: &XkbContext = keymap_info.ctx();
     let act = action.as_screen_mut();
     if field == ACTION_FIELD_SCREEN {
         let scrn: &ExprDef;
         let mut val: i64 = 0_i64;
         if array_ndx.is_some() {
-            return ReportActionNotArray(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
-            act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as xkb_action_flags;
+            act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as XkbActionFlags;
             scrn = if let ExprKind::Unary { child, .. } = &value.kind {
                 child.as_deref().unwrap()
             } else {
                 unreachable!()
             };
         } else {
-            act.flags = (act.flags | ACTION_ABSOLUTE_SWITCH) as xkb_action_flags;
+            act.flags = (act.flags | ACTION_ABSOLUTE_SWITCH) as XkbActionFlags;
             scrn = value;
         }
-        if !ExprResolveInteger(ctx, scrn, &mut val) {
-            return ReportMismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "integer (-128..127)",
-                keymap_info.strict,
-            );
+        if !expr_resolve_integer(ctx, scrn, &mut val) {
+            return report_mismatch(keymap_info.strict);
         }
         val = if value.stmt_type() == STMT_EXPR_NEGATE {
             -val
@@ -7431,12 +6180,6 @@ fn HandleSwitchScreen(
             val
         };
         if val < i8::MIN as i64 || val > i8::MAX as i64 {
-            log::error!(
-                "Screen index must be in the range {}..{}; Illegal screen value {} ignored\n",
-                -128_i32,
-                127_i32,
-                val
-            );
             return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                 PARSER_FATAL_ERROR as i32
             } else {
@@ -7446,74 +6189,64 @@ fn HandleSwitchScreen(
         act.screen = val as i8;
         return PARSER_SUCCESS;
     } else if field == ACTION_FIELD_SAME {
-        return CheckBooleanFlag(
+        return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            type_0,
-            field,
             ACTION_SAME_SCREEN,
             array_ndx,
             value,
             &mut act.flags,
         );
     }
-    ReportIllegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
-fn HandleSetLockControls(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+fn handle_set_lock_controls(
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &xkb_context = keymap_info.ctx();
+    let ctx: &XkbContext = keymap_info.ctx();
     let type_0 = action.action_type();
     let act = action.as_ctrls_mut();
     if field == ACTION_FIELD_CONTROLS {
         if array_ndx.is_some() {
-            return ReportActionNotArray(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
         let mut mask: u32 = 0_u32;
         let offset: u8 = keymap_info.features.controls_name_offset;
-        if !ExprResolveMask(ctx, value, &mut mask, &ctrlMaskNames[offset as usize..]) {
-            return ReportMismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "controls mask",
-                keymap_info.strict,
-            );
+        if !expr_resolve_mask(ctx, value, &mut mask, &CTRL_MASK_NAMES[offset as usize..]) {
+            return report_mismatch(keymap_info.strict);
         }
-        act.ctrls = mask as xkb_action_controls;
+        act.ctrls = mask as XkbActionControls;
         return PARSER_SUCCESS;
     } else if field == ACTION_FIELD_AFFECT && type_0 == ACTION_TYPE_CTRL_LOCK {
-        return CheckAffectField(
+        return check_affect_field(
             ctx,
             keymap_info.strict,
-            type_0,
             array_ndx,
             value,
             &mut act.flags,
         );
     }
-    ReportIllegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
-fn HandleRedirectKey(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    mods: &xkb_mod_set,
-    action: &mut xkb_action,
+fn handle_redirect_key(
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let type_0 = action.action_type();
     let act = action.as_redirect_mut();
     if field == ACTION_FIELD_KEYCODE {
         if array_ndx.is_some() {
-            return ReportActionNotArray(type_0, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_IDENT {
             let ident = if let ExprKind::Ident(id) = &value.kind {
@@ -7521,20 +6254,14 @@ fn HandleRedirectKey(
             } else {
                 unreachable!()
             };
-            let valStr: &str = xkb_atom_text(&keymap_info.keymap_ref().ctx.atom_table, ident);
-            if !valStr.is_empty() && valStr.eq_ignore_ascii_case("auto") {
+            let val_str: &str = atom_text(&keymap_info.keymap_ref().ctx.atom_table, ident);
+            if !val_str.is_empty() && val_str.eq_ignore_ascii_case("auto") {
                 act.keycode = keymap_info.keymap_ref().redirect_key_auto;
                 return PARSER_SUCCESS;
             }
         }
         if value.stmt_type() != STMT_EXPR_KEYNAME_LITERAL {
-            return ReportMismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "key name",
-                keymap_info.strict,
-            );
+            return report_mismatch(keymap_info.strict);
         }
         let key_name_val = if let ExprKind::KeyName(kn) = &value.kind {
             *kn
@@ -7546,11 +6273,6 @@ fn HandleRedirectKey(
             act.keycode = key.keycode;
             return PARSER_SUCCESS;
         } else {
-            log::error!(
-                "RedirectKey field {} cannot resolve <{}> to a valid key\n",
-                fieldText(field),
-                xkb_atom_text(&keymap_info.keymap_ref().ctx.atom_table, key_name_val)
-            );
             return (if keymap_info.strict & PARSER_NO_FIELD_VALUE_MISMATCH != 0 {
                 PARSER_FATAL_ERROR as i32
             } else {
@@ -7559,14 +6281,13 @@ fn HandleRedirectKey(
         }
     }
     if field == ACTION_FIELD_MODIFIERS || field == ACTION_FIELD_MODS_TO_CLEAR {
-        let mut flags: xkb_action_flags = 0 as xkb_action_flags;
+        let mut flags: XkbActionFlags = 0 as XkbActionFlags;
         let mut m: u32 = 0_u32;
-        let ctx: &xkb_context = keymap_info.ctx();
-        let r: u32 = CheckModifierField(
+        let ctx: &XkbContext = keymap_info.ctx();
+        let r: u32 = check_modifier_field(
             ctx,
             keymap_info.strict,
             mods,
-            type_0,
             array_ndx,
             value,
             &mut flags,
@@ -7576,13 +6297,7 @@ fn HandleRedirectKey(
             return r;
         }
         if flags as u64 != 0 {
-            return ReportMismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                type_0,
-                field,
-                "modifier mask",
-                keymap_info.strict,
-            );
+            return report_mismatch(keymap_info.strict);
         }
         act.affect |= m;
         if field == ACTION_FIELD_MODIFIERS {
@@ -7592,49 +6307,38 @@ fn HandleRedirectKey(
         }
         return PARSER_SUCCESS;
     }
-    ReportIllegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
-fn HandleUnsupported(
-    _keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    _action: &mut xkb_action,
+fn handle_unsupported(
+    _keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    _action: &mut XkbAction,
     _field: u32,
     _array_ndx: Option<&ExprDef>,
     _value: ActionValue<'_>,
 ) -> u32 {
     PARSER_SUCCESS
 }
-fn HandlePrivate(
-    keymap_info: &mut xkb_keymap_info<'_>,
-    _mods: &xkb_mod_set,
-    action: &mut xkb_action,
+fn handle_private(
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    _mods: &XkbModSet,
+    action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprDef>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &xkb_context = keymap_info.ctx();
-    let type_0 = action.action_type();
+    let ctx: &XkbContext = keymap_info.ctx();
     let act = action.as_priv_mut();
     if field == ACTION_FIELD_TYPE {
         let mut type_0: i64 = 0_i64;
         if array_ndx.is_some() {
-            return ReportActionNotArray(ACTION_TYPE_PRIVATE, field, keymap_info.strict);
+            return report_mismatch(keymap_info.strict);
         }
-        if !ExprResolveInteger(ctx, value, &mut type_0) {
-            return ReportMismatch(
-                XKB_ERROR_WRONG_FIELD_TYPE,
-                ACTION_TYPE_PRIVATE,
-                field,
-                "integer",
-                keymap_info.strict,
-            );
+        if !expr_resolve_integer(ctx, value, &mut type_0) {
+            return report_mismatch(keymap_info.strict);
         }
         if !(0_i64..=255_i64).contains(&type_0) {
-            log::error!(
-                "Private action type must be in the range 0..255; Illegal type {} ignored\n",
-                type_0
-            );
             return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                 PARSER_FATAL_ERROR as i32
             } else {
@@ -7642,10 +6346,6 @@ fn HandlePrivate(
             }) as u32;
         }
         if type_0 < ACTION_TYPE_PRIVATE as i64 {
-            log::info!(
-                "Private actions of type {} are not supported; Ignored\n",
-                ActionTypeText(type_0 as u32)
-            );
             act.type_0 = ACTION_TYPE_NONE;
         } else {
             act.type_0 = type_0 as u32;
@@ -7654,23 +6354,12 @@ fn HandlePrivate(
     } else if field == ACTION_FIELD_DATA {
         if array_ndx.is_none() {
             let mut val: u32 = XKB_ATOM_NONE;
-            if !ExprResolveString(ctx, value, &mut val) {
-                return ReportMismatch(
-                    XKB_ERROR_WRONG_FIELD_TYPE,
-                    act.type_0,
-                    field,
-                    "string",
-                    keymap_info.strict,
-                );
+            if !expr_resolve_string(ctx, value, &mut val) {
+                return report_mismatch(keymap_info.strict);
             }
-            let str_bytes: &str = xkb_atom_text(&ctx.atom_table, val);
+            let str_bytes: &str = atom_text(&ctx.atom_table, val);
             let len: usize = str_bytes.len();
             if len < 1_usize || len > std::mem::size_of::<[u8; 7]>() {
-                log::warn!(
-                    "A private action has {} data bytes, but got: {}; Illegal data ignored\n",
-                    std::mem::size_of::<[u8; 7]>(),
-                    len
-                );
                 return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                     PARSER_FATAL_ERROR as i32
                 } else {
@@ -7684,8 +6373,7 @@ fn HandlePrivate(
             let array_ndx = array_ndx.unwrap();
             let mut ndx: i64 = 0_i64;
             let mut datum: i64 = 0_i64;
-            if !ExprResolveInteger(ctx, array_ndx, &mut ndx) {
-                log::error!("Array subscript must be integer; Illegal subscript ignored\n");
+            if !expr_resolve_integer(ctx, array_ndx, &mut ndx) {
                 return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                     PARSER_FATAL_ERROR as i32
                 } else {
@@ -7693,29 +6381,16 @@ fn HandlePrivate(
                 }) as u32;
             }
             if ndx < 0_i64 || ndx as usize >= std::mem::size_of::<[u8; 7]>() {
-                log::error!("The data for a private action is {} bytes long; Attempt to use data[{}] ignored\n",
-                    std::mem::size_of::<[u8; 7]>(),
-                    ndx);
                 return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                     PARSER_FATAL_ERROR as i32
                 } else {
                     PARSER_RECOVERABLE_ERROR as i32
                 }) as u32;
             }
-            if !ExprResolveInteger(ctx, value, &mut datum) {
-                return ReportMismatch(
-                    XKB_ERROR_WRONG_FIELD_TYPE,
-                    act.type_0,
-                    field,
-                    "integer",
-                    keymap_info.strict,
-                );
+            if !expr_resolve_integer(ctx, value, &mut datum) {
+                return report_mismatch(keymap_info.strict);
             }
             if !(0_i64..=255_i64).contains(&datum) {
-                log::error!(
-                    "All data for a private action must be 0..255; Illegal datum {} ignored\n",
-                    datum
-                );
                 return (if keymap_info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
                     PARSER_FATAL_ERROR as i32
                 } else {
@@ -7726,225 +6401,225 @@ fn HandlePrivate(
             return PARSER_SUCCESS;
         }
     }
-    ReportIllegal(type_0, field, keymap_info.strict)
+    report_illegal(keymap_info.strict)
 }
-static HANDLE_ACTION: [actionHandler; 21] = {
+static HANDLE_ACTION: [ActionHandler; 21] = {
     [
         Some(
-            HandleNoAction
+            handle_no_action
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleNoAction
+            handle_no_action
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleSetLatchLockMods
+            handle_set_latch_lock_mods
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleSetLatchLockMods
+            handle_set_latch_lock_mods
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleSetLatchLockMods
+            handle_set_latch_lock_mods
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleSetLatchLockGroup
+            handle_set_latch_lock_group
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleSetLatchLockGroup
+            handle_set_latch_lock_group
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleSetLatchLockGroup
+            handle_set_latch_lock_group
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleMovePtr
+            handle_move_ptr
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandlePtrBtn
+            handle_ptr_btn
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandlePtrBtn
+            handle_ptr_btn
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleSetPtrDflt
+            handle_set_ptr_dflt
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleNoAction
+            handle_no_action
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleSwitchScreen
+            handle_switch_screen
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleSetLockControls
+            handle_set_lock_controls
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleSetLockControls
+            handle_set_lock_controls
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleRedirectKey
+            handle_redirect_key
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleUnsupported
+            handle_unsupported
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandleUnsupported
+            handle_unsupported
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
                 ) -> u32,
         ),
         Some(
-            HandlePrivate
+            handle_private
                 as fn(
-                    &mut xkb_keymap_info<'_>,
-                    &xkb_mod_set,
-                    &mut xkb_action,
+                    &mut XkbKeymapInfo<'_>,
+                    &XkbModSet,
+                    &mut XkbAction,
                     u32,
                     Option<&ExprDef>,
                     ActionValue<'_>,
@@ -7953,19 +6628,14 @@ static HANDLE_ACTION: [actionHandler; 21] = {
         None,
     ]
 };
-pub fn HandleActionDef(
-    keymap_info: &mut xkb_keymap_info<'_>,
+pub(crate) fn handle_action_def(
+    keymap_info: &mut XkbKeymapInfo<'_>,
     info: &mut ActionsInfo,
-    mods: &xkb_mod_set,
+    mods: &XkbModSet,
     def: &mut ExprDef,
-    action: &mut xkb_action,
+    action: &mut XkbAction,
 ) -> u32 {
     if def.stmt_type() != STMT_EXPR_ACTION_DECL {
-        log::error!(
-            "[XKB-{:03}] Expected an action definition, found {}\n",
-            XKB_ERROR_WRONG_FIELD_TYPE as i32,
-            stmt_type_to_string(def.stmt_type())
-        );
         return PARSER_FATAL_ERROR;
     }
     // Extract action name atom (Copy type, no borrow held)
@@ -7974,14 +6644,9 @@ pub fn HandleActionDef(
     } else {
         unreachable!()
     };
-    let action_name: &str = xkb_atom_text(&keymap_info.keymap.ctx.atom_table, action_name_atom);
+    let action_name: &str = atom_text(&keymap_info.keymap.ctx.atom_table, action_name_atom);
     let mut handler_type: u32 = ACTION_TYPE_NONE;
-    if !stringToActionType(action_name, &mut handler_type) {
-        log::error!(
-            "[XKB-{:03}] Unknown action \"{}\"\n",
-            XKB_ERROR_UNKNOWN_ACTION_TYPE as i32,
-            action_name
-        );
+    if !string_to_action_type(action_name, &mut handler_type) {
         handler_type = ACTION_TYPE_UNKNOWN;
         if keymap_info.strict & PARSER_NO_UNKNOWN_ACTION != 0 {
             return PARSER_FATAL_ERROR;
@@ -7989,11 +6654,6 @@ pub fn HandleActionDef(
     }
     *action = info.actions[handler_type as usize];
     if handler_type == ACTION_TYPE_UNSUPPORTED_LEGACY {
-        log::warn!(
-            "[XKB-{:03}] Unsupported legacy action type \"{}\".\n",
-            XKB_WARNING_UNSUPPORTED_LEGACY_ACTION as i32,
-            action_name
-        );
         action.set_none();
     }
     let mut ret: u32 = PARSER_SUCCESS;
@@ -8008,9 +6668,9 @@ pub fn HandleActionDef(
     for arg in args.iter_mut() {
         let av: ActionValue<'_>;
         let field_ref: &ExprDef;
-        let mut arrayRtrn_opt: Option<&ExprDef> = None;
-        let mut elemRtrn_atom: u32 = 0;
-        let mut fieldRtrn_atom: u32 = 0;
+        let mut array_rtrn_opt: Option<&ExprDef> = None;
+        let mut elem_rtrn_atom: u32 = 0;
+        let mut field_rtrn_atom: u32 = 0;
         if arg.stmt_type() == STMT_EXPR_ASSIGN {
             if let ExprKind::Binary {
                 ref left,
@@ -8034,31 +6694,21 @@ pub fn HandleActionDef(
             field_ref = &*arg;
             av = ActionValue::Borrowed(&const_true);
         }
-        if !ExprResolveLhs(
+        if !expr_resolve_lhs(
             field_ref,
-            &mut elemRtrn_atom,
-            &mut fieldRtrn_atom,
-            &mut arrayRtrn_opt,
+            &mut elem_rtrn_atom,
+            &mut field_rtrn_atom,
+            &mut array_rtrn_opt,
         ) {
             return PARSER_FATAL_ERROR;
         }
-        let elemRtrn = xkb_atom_text(&keymap_info.keymap.ctx.atom_table, elemRtrn_atom);
-        let fieldRtrn = xkb_atom_text(&keymap_info.keymap.ctx.atom_table, fieldRtrn_atom);
-        if !elemRtrn.is_empty() {
-            log::error!("[XKB-{:03}] Cannot change defaults in an action definition; Ignoring attempt to change \"{}.{}\".\n",
-                XKB_ERROR_GLOBAL_DEFAULTS_WRONG_SCOPE as i32,
-                elemRtrn,
-                fieldRtrn);
+        let elem_rtrn = atom_text(&keymap_info.keymap.ctx.atom_table, elem_rtrn_atom);
+        let field_rtrn = atom_text(&keymap_info.keymap.ctx.atom_table, field_rtrn_atom);
+        if !elem_rtrn.is_empty() {
             return PARSER_FATAL_ERROR;
         }
-        let mut fieldNdx: u32 = ACTION_FIELD_CLEAR_LOCKS;
-        if !stringToField(fieldRtrn, &mut fieldNdx) {
-            log::error!(
-                "[XKB-{:03}] Unknown field name {} for action {} discarded\n",
-                XKB_ERROR_INVALID_ACTION_FIELD as i32,
-                fieldRtrn,
-                ActionTypeText(action.action_type())
-            );
+        let mut field_ndx: u32 = ACTION_FIELD_CLEAR_LOCKS;
+        if !string_to_field(field_rtrn, &mut field_ndx) {
             if keymap_info.strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
                 return PARSER_FATAL_ERROR;
             }
@@ -8067,8 +6717,8 @@ pub fn HandleActionDef(
                 keymap_info,
                 mods,
                 action,
-                fieldNdx,
-                arrayRtrn_opt,
+                field_ndx,
+                array_rtrn_opt,
                 av,
             ) {
                 2 => return PARSER_FATAL_ERROR,
@@ -8085,24 +6735,19 @@ pub fn HandleActionDef(
         ret
     }
 }
-pub fn SetDefaultActionField(
-    keymap_info: &mut xkb_keymap_info<'_>,
+pub(crate) fn set_default_action_field(
+    keymap_info: &mut XkbKeymapInfo<'_>,
     info: &mut ActionsInfo,
-    mods: &mut xkb_mod_set,
+    mods: &mut XkbModSet,
     elem: &str,
     field: &str,
     array_ndx: Option<&ExprDef>,
     value_rtrn: &mut Option<Box<ExprDef>>,
-    merge: merge_mode,
+    merge: MergeMode,
 ) -> u32 {
     let av = ActionValue::Owned(value_rtrn);
     let mut action: u32 = ACTION_TYPE_NONE;
-    if !stringToActionType(elem, &mut action) {
-        log::error!(
-            "[XKB-{:03}] Unknown action \"{}\"\n",
-            XKB_ERROR_UNKNOWN_ACTION_TYPE as i32,
-            elem
-        );
+    if !string_to_action_type(elem, &mut action) {
         return (if keymap_info.strict & PARSER_NO_UNKNOWN_ACTION != 0 {
             PARSER_FATAL_ERROR as i32
         } else {
@@ -8110,20 +6755,15 @@ pub fn SetDefaultActionField(
         }) as u32;
     }
     let mut action_field: u32 = ACTION_FIELD_CLEAR_LOCKS;
-    if !stringToField(field, &mut action_field) {
-        log::error!(
-            "[XKB-{:03}] Unknown action field \"{}\"\n",
-            XKB_ERROR_INVALID_ACTION_FIELD as i32,
-            field
-        );
+    if !string_to_field(field, &mut action_field) {
         return (if keymap_info.strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
             PARSER_FATAL_ERROR as i32
         } else {
             PARSER_RECOVERABLE_ERROR as i32
         }) as u32;
     }
-    let into: &mut xkb_action = &mut info.actions[action as usize];
-    let mut from: xkb_action = *into;
+    let into: &mut XkbAction = &mut info.actions[action as usize];
+    let mut from: XkbAction = *into;
     let ret: u32 = HANDLE_ACTION[action as usize].expect("non-null function pointer")(
         keymap_info,
         mods,
@@ -8137,13 +6777,6 @@ pub fn SetDefaultActionField(
     }
     if !action_equal(into, &from) {
         let replace: bool = merge != MERGE_AUGMENT;
-        log::warn!(
-            "Conflicting field \"{}\" for default action \"{}\"; Using {}, ignore {}\n",
-            fieldText(action_field),
-            ActionTypeText(action),
-            if replace { "from" } else { "into" },
-            if replace { "into" } else { "from" }
-        );
         if replace {
             *into = from;
         }

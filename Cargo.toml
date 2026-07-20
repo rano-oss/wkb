@@ -33,13 +33,15 @@ log = "0.4.29"
 xmloxide = "0.4"
 arrayvec = "0.7"
 serde = { version = "1", features = ["derive"] }
+thiserror = "1"
+lasso = "0.7"
 
 [dev-dependencies]
 wkb = { package = "wayland-keyboard", path = ".", features = ["testing"] }
 test-case = "3.3.1"
 xkbcommon = "0.9.0"
 xkbcommon-dl = "0.4.2"
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.8", features = ["html_reports"] }
 
 [[bench]]
 name = "bench_setup"

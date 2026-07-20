@@ -1,9 +1,4 @@
-// Safe parser.rs
 // LALR(1) parser for XKB, converted from bison-generated C via c2rust
-#![allow(dead_code)]
-
-use self::parser_h::*;
-use super::super::keymap::xkb_atom_intern;
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use super::super::keysym::utf32_to_keysym;
@@ -15,206 +10,51 @@ use super::super::shared_types::{
 };
 
 use super::super::shared_types::{
-    merge_mode, safe_map_name, stmt_type, xkb_map_flags, ExprDef, ExprKind, GroupCompatDef,
-    IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef,
-    Statement, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, FILE_TYPE_COMPAT,
-    FILE_TYPE_GEOMETRY, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
-    FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
-    MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
-    MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_EXPR_ADD,
-    STMT_EXPR_ASSIGN, STMT_EXPR_DIVIDE, STMT_EXPR_INVERT, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE,
-    STMT_EXPR_NOT, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_UNKNOWN_COMPOUND,
-    STMT_UNKNOWN_DECLARATION, _STMT_NUM_VALUES,
+    safe_map_name, ExprDef, ExprKind, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
+    LedMapDef, LedNameDef, MergeMode, ModMapDef, Statement, StmtType, SymbolsDef, UnknownStatement,
+    VModDef, VarDef, XkbFile, XkbMapFlags, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
+    FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
+    FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN,
+    MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL,
+    MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_EXPR_ADD, STMT_EXPR_ASSIGN,
+    STMT_EXPR_DIVIDE, STMT_EXPR_INVERT, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
+    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
 };
 
-use super::messages::{
-    XKB_ERROR_INVALID_NUMERIC_KEYSYM, XKB_ERROR_INVALID_XKB_SYNTAX,
-    XKB_WARNING_DEPRECATED_KEYSYM_NAME, XKB_WARNING_MISSING_DEFAULT_SECTION,
-    XKB_WARNING_NUMERIC_KEYSYM, XKB_WARNING_UNRECOGNIZED_KEYSYM,
-};
-
-pub use self::parser_h::{YYerror, END_OF_FILE, YYEMPTY, YYUNDEF};
-pub use super::super::keymap::mod_mask_get_effective;
+use super::super::keymap::action_type_text;
+pub(crate) use super::super::keymap::mod_mask_get_effective;
 use super::super::keymap::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
-pub use super::symbols::CompileCompatMap;
-pub use super::symbols::CompileKeyTypes;
-pub use super::symbols::CompileKeycodes;
-pub use super::symbols::CompileSymbols;
-use super::symbols::{ExprResolveGroup, ExprResolveGroupMask};
-use super::*;
+pub(crate) use super::symbols::compile_compat_map;
+pub(crate) use super::symbols::compile_key_types;
+pub(crate) use super::symbols::compile_keycodes;
+pub(crate) use super::symbols::compile_symbols;
+use super::symbols::{expr_resolve_group, expr_resolve_group_mask};
 
-pub const XKB_KEY_VoidSymbol: i32 = 0xffffff_i32;
-pub const XKB_KEY_0: i32 = 0x30_i32;
-pub const XKB_KEY_section: i32 = 0xa7_i32;
-pub const XKB_KEYSYM_MIN: i32 = 0;
+pub(crate) const XKB_KEY_VOID_SYMBOL: i32 = 0xffffff_i32;
+pub(crate) const XKB_KEY_0: i32 = 0x30_i32;
+pub(crate) const XKB_KEY_SECTION: i32 = 0xa7_i32;
+pub(crate) const XKB_KEYSYM_MIN: i32 = 0;
 
 // ── YYSYMBOL constants ──────────────────────────────────────────────
-pub const YYSYMBOL_MapName: i32 = 148;
-pub const YYSYMBOL_OptMapName: i32 = 147;
-pub const YYSYMBOL_String: i32 = 146;
-pub const YYSYMBOL_Ident: i32 = 145;
-pub const YYSYMBOL_KeyCode: i32 = 144;
-pub const YYSYMBOL_Integer: i32 = 143;
-pub const YYSYMBOL_Float: i32 = 142;
-pub const YYSYMBOL_Number: i32 = 141;
-pub const YYSYMBOL_SignedNumber: i32 = 140;
-pub const YYSYMBOL_KeySymLit: i32 = 139;
-pub const YYSYMBOL_KeySym: i32 = 138;
-pub const YYSYMBOL_KeySyms: i32 = 137;
-pub const YYSYMBOL_NonEmptyKeySyms: i32 = 136;
-pub const YYSYMBOL_KeySymList: i32 = 135;
-pub const YYSYMBOL_MultiKeySymList: i32 = 134;
-pub const YYSYMBOL_Terminal: i32 = 133;
-pub const YYSYMBOL_OptTerminal: i32 = 132;
-pub const YYSYMBOL_Lhs: i32 = 131;
-pub const YYSYMBOL_Action: i32 = 130;
-pub const YYSYMBOL_Actions: i32 = 129;
-pub const YYSYMBOL_NonEmptyActions: i32 = 128;
-pub const YYSYMBOL_ActionList: i32 = 127;
-pub const YYSYMBOL_MultiActionList: i32 = 126;
-pub const YYSYMBOL_Term: i32 = 125;
-pub const YYSYMBOL_Expr: i32 = 124;
-pub const YYSYMBOL_ExprList: i32 = 123;
-pub const YYSYMBOL_MergeMode: i32 = 122;
-pub const YYSYMBOL_OptMergeMode: i32 = 121;
-pub const YYSYMBOL_Element: i32 = 120;
-pub const YYSYMBOL_FieldSpec: i32 = 119;
-pub const YYSYMBOL_DoodadType: i32 = 118;
-pub const YYSYMBOL_DoodadDecl: i32 = 117;
-pub const YYSYMBOL_Coord: i32 = 116;
-pub const YYSYMBOL_CoordList: i32 = 115;
-pub const YYSYMBOL_OutlineInList: i32 = 114;
-pub const YYSYMBOL_OutlineList: i32 = 113;
-pub const YYSYMBOL_OverlayKey: i32 = 112;
-pub const YYSYMBOL_OverlayKeyList: i32 = 111;
-pub const YYSYMBOL_OverlayDecl: i32 = 110;
-pub const YYSYMBOL_Key: i32 = 109;
-pub const YYSYMBOL_Keys: i32 = 108;
-pub const YYSYMBOL_RowBodyItem: i32 = 107;
-pub const YYSYMBOL_RowBody: i32 = 106;
-pub const YYSYMBOL_SectionBodyItem: i32 = 105;
-pub const YYSYMBOL_SectionBody: i32 = 104;
-pub const YYSYMBOL_SectionDecl: i32 = 103;
-pub const YYSYMBOL_ShapeDecl: i32 = 102;
-pub const YYSYMBOL_UnknownCompoundStatementDecl: i32 = 101;
-pub const YYSYMBOL_UnknownDecl: i32 = 100;
-pub const YYSYMBOL_LedNameDecl: i32 = 99;
-pub const YYSYMBOL_LedMapDecl: i32 = 98;
-pub const YYSYMBOL_KeyOrKeySym: i32 = 97;
-pub const YYSYMBOL_KeyOrKeySymList: i32 = 96;
-pub const YYSYMBOL_ModMapDecl: i32 = 95;
-pub const YYSYMBOL_GroupCompatDecl: i32 = 94;
-pub const YYSYMBOL_NoSymbolOrActionList: i32 = 93;
-pub const YYSYMBOL_MultiKeySymOrActionList: i32 = 92;
-pub const YYSYMBOL_SymbolsVarDecl: i32 = 91;
-pub const YYSYMBOL_SymbolsBody: i32 = 90;
-pub const YYSYMBOL_OptSymbolsBody: i32 = 89;
-pub const YYSYMBOL_SymbolsDecl: i32 = 88;
-pub const YYSYMBOL_KeyTypeDecl: i32 = 87;
-pub const YYSYMBOL_VarDeclList: i32 = 86;
-pub const YYSYMBOL_InterpretMatch: i32 = 85;
-pub const YYSYMBOL_InterpretDecl: i32 = 84;
-pub const YYSYMBOL_VModDef: i32 = 83;
-pub const YYSYMBOL_VModDefList: i32 = 82;
-pub const YYSYMBOL_VModDecl: i32 = 81;
-pub const YYSYMBOL_KeyAliasDecl: i32 = 80;
-pub const YYSYMBOL_KeyNameDecl: i32 = 79;
-pub const YYSYMBOL_VarDecl: i32 = 78;
-pub const YYSYMBOL_Decl: i32 = 77;
-pub const YYSYMBOL_DeclList: i32 = 76;
-pub const YYSYMBOL_Flag: i32 = 75;
-pub const YYSYMBOL_Flags: i32 = 74;
-pub const YYSYMBOL_OptFlags: i32 = 73;
-pub const YYSYMBOL_FileType: i32 = 72;
-pub const YYSYMBOL_XkbMapConfig: i32 = 71;
-pub const YYSYMBOL_XkbMapConfigList: i32 = 70;
-pub const YYSYMBOL_XkbCompositeType: i32 = 69;
-pub const YYSYMBOL_XkbCompositeMap: i32 = 68;
-pub const YYSYMBOL_XkbFile: i32 = 67;
-pub const YYSYMBOL_YYACCEPT: i32 = 66;
-pub const YYSYMBOL_ALTERNATE_GROUP: i32 = 65;
-pub const YYSYMBOL_FUNCTION_KEYS: i32 = 64;
-pub const YYSYMBOL_KEYPAD_KEYS: i32 = 63;
-pub const YYSYMBOL_MODIFIER_KEYS: i32 = 62;
-pub const YYSYMBOL_ALPHANUMERIC_KEYS: i32 = 61;
-pub const YYSYMBOL_HIDDEN: i32 = 60;
-pub const YYSYMBOL_DEFAULT: i32 = 59;
-pub const YYSYMBOL_PARTIAL: i32 = 58;
-pub const YYSYMBOL_KEYNAME: i32 = 57;
-pub const YYSYMBOL_IDENT: i32 = 56;
-pub const YYSYMBOL_FLOAT: i32 = 55;
-pub const YYSYMBOL_INTEGER: i32 = 54;
-pub const YYSYMBOL_DECIMAL_DIGIT: i32 = 53;
-pub const YYSYMBOL_STRING: i32 = 52;
-pub const YYSYMBOL_INVERT: i32 = 51;
-pub const YYSYMBOL_EXCLAM: i32 = 50;
-pub const YYSYMBOL_SEMI: i32 = 49;
-pub const YYSYMBOL_COMMA: i32 = 48;
-pub const YYSYMBOL_DOT: i32 = 47;
-pub const YYSYMBOL_CBRACKET: i32 = 46;
-pub const YYSYMBOL_OBRACKET: i32 = 45;
-pub const YYSYMBOL_CPAREN: i32 = 44;
-pub const YYSYMBOL_OPAREN: i32 = 43;
-pub const YYSYMBOL_CBRACE: i32 = 42;
-pub const YYSYMBOL_OBRACE: i32 = 41;
-pub const YYSYMBOL_TIMES: i32 = 40;
-pub const YYSYMBOL_DIVIDE: i32 = 39;
-pub const YYSYMBOL_MINUS: i32 = 38;
-pub const YYSYMBOL_PLUS: i32 = 37;
-pub const YYSYMBOL_EQUALS: i32 = 36;
-pub const YYSYMBOL_VIRTUAL: i32 = 35;
-pub const YYSYMBOL_LOGO: i32 = 34;
-pub const YYSYMBOL_SOLID: i32 = 33;
-pub const YYSYMBOL_OUTLINE: i32 = 32;
-pub const YYSYMBOL_TEXT: i32 = 31;
-pub const YYSYMBOL_OVERLAY: i32 = 30;
-pub const YYSYMBOL_SECTION: i32 = 29;
-pub const YYSYMBOL_ROW: i32 = 28;
-pub const YYSYMBOL_KEYS: i32 = 27;
-pub const YYSYMBOL_SHAPE: i32 = 26;
-pub const YYSYMBOL_INDICATOR: i32 = 25;
-pub const YYSYMBOL_MODIFIER_MAP: i32 = 24;
-pub const YYSYMBOL_GROUP: i32 = 23;
-pub const YYSYMBOL_ALIAS: i32 = 22;
-pub const YYSYMBOL_KEY: i32 = 21;
-pub const YYSYMBOL_ACTION_TOK: i32 = 20;
-pub const YYSYMBOL_INTERPRET: i32 = 19;
-pub const YYSYMBOL_TYPE: i32 = 18;
-pub const YYSYMBOL_VIRTUAL_MODS: i32 = 17;
-pub const YYSYMBOL_ALTERNATE: i32 = 16;
-pub const YYSYMBOL_REPLACE: i32 = 15;
-pub const YYSYMBOL_AUGMENT: i32 = 14;
-pub const YYSYMBOL_OVERRIDE: i32 = 13;
-pub const YYSYMBOL_INCLUDE: i32 = 12;
-pub const YYSYMBOL_XKB_LAYOUT: i32 = 11;
-pub const YYSYMBOL_XKB_SEMANTICS: i32 = 10;
-pub const YYSYMBOL_XKB_GEOMETRY: i32 = 9;
-pub const YYSYMBOL_XKB_COMPATMAP: i32 = 8;
-pub const YYSYMBOL_XKB_SYMBOLS: i32 = 7;
-pub const YYSYMBOL_XKB_TYPES: i32 = 6;
-pub const YYSYMBOL_XKB_KEYCODES: i32 = 5;
-pub const YYSYMBOL_XKB_KEYMAP: i32 = 4;
-pub const YYSYMBOL_ERROR_TOK: i32 = 3;
-pub const YYSYMBOL_YYUNDEF: i32 = 2;
-pub const YYSYMBOL_YYerror: i32 = 1;
-pub const YYSYMBOL_YYEOF: i32 = 0;
-pub const YYSYMBOL_YYEMPTY: i32 = -2;
+pub(crate) const YYSYMBOL_YYUNDEF: i32 = 2;
+pub(crate) const YYSYMBOL_YYERROR: i32 = 1;
+pub(crate) const YYSYMBOL_YYEOF: i32 = 0;
+pub(crate) const YYSYMBOL_YYEMPTY: i32 = -2;
 
-pub const YYARGS_MAX: u32 = 5;
-pub const YYFINAL: i32 = 16;
-pub const YYLAST: i32 = 928;
-pub const YYNTOKENS: i32 = 66;
-pub const YYMAXUTOK: i32 = 257;
-pub const YYINITDEPTH: usize = 200;
-pub const YYMAXDEPTH: usize = 10000;
-pub const YYPACT_NINF: i32 = -280;
-pub const YYENOMEM: i32 = -2;
+pub(crate) const YYFINAL: i32 = 16;
+pub(crate) const YYLAST: i32 = 928;
+pub(crate) const YYNTOKENS: i32 = 66;
+pub(crate) const YYMAXUTOK: i32 = 257;
+pub(crate) const YYINITDEPTH: usize = 200;
+pub(crate) const YYMAXDEPTH: usize = 10000;
+pub(crate) const YYPACT_NINF: i32 = -280;
+pub(crate) const YYENOMEM: i32 = -2;
 
-pub struct parser_param<'a> {
-    pub ctx: &'a mut xkb_context,
-    pub scanner: &'a mut scanner<'a>,
-    pub rtrn: Option<Box<XkbFile>>,
-    pub more_maps: bool,
+pub(crate) struct ParserParam<'a> {
+    pub(crate) ctx: &'a mut XkbContext,
+    pub(crate) scanner: &'a mut Scanner<'a>,
+    pub(crate) rtrn: Option<Box<XkbFile>>,
+    pub(crate) more_maps: bool,
 }
 
 static YYTRANSLATE: [i8; 258] = [
@@ -532,7 +372,7 @@ static YYCHECK: [i16; 929] = [
     31, 56, -1, -1, 59, 58, 59, 60, 61, 62, 63, 64, 65, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, 56, -1, -1, 59,
 ];
-static YYR1: [yytype_uint8; 220] = [
+static YYR1: [u8; 220] = [
     0, 66, 67, 67, 67, 68, 69, 69, 69, 70, 70, 71, 72, 72, 72, 72, 72, 73, 73, 74, 74, 75, 75, 75,
     75, 75, 75, 75, 75, 76, 76, 76, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77,
     78, 78, 78, 79, 80, 81, 82, 82, 83, 83, 84, 85, 85, 86, 86, 87, 88, 89, 89, 90, 90, 91, 91, 91,
@@ -545,7 +385,7 @@ static YYR1: [yytype_uint8; 220] = [
     135, 135, 135, 135, 136, 136, 137, 137, 138, 138, 139, 139, 139, 139, 140, 140, 141, 141, 141,
     142, 143, 143, 144, 144, 145, 145, 146, 147, 147, 148,
 ];
-static YYR2: [yytype_int8; 220] = [
+static YYR2: [i8; 220] = [
     0, 2, 1, 1, 1, 7, 1, 1, 1, 2, 0, 7, 1, 1, 1, 1, 1, 1, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 0,
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 2, 3, 4, 5, 3, 3, 1, 1, 3, 6, 3, 1, 2, 0, 6,
     6, 1, 0, 3, 1, 3, 3, 1, 2, 1, 3, 5, 3, 5, 3, 4, 2, 0, 5, 6, 3, 1, 1, 1, 6, 5, 6, 5, 6, 6, 6, 6,
@@ -554,33 +394,21 @@ static YYR2: [yytype_int8; 220] = [
     2, 1, 4, 1, 1, 3, 3, 3, 1, 1, 3, 1, 3, 1, 2, 4, 1, 3, 4, 6, 1, 0, 1, 1, 1, 1, 3, 3, 1, 1, 3, 3,
     1, 1, 3, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
 ];
-
-pub type yytype_uint8 = u8;
-pub type yytype_int8 = i8;
-
 // ── Helper functions ────────────────────────────────────────────────
 
-fn _xkbcommon_error(param: &mut parser_param, msg: &str) {
-    let loc: scanner_loc = param.scanner.token_location();
-    log::error!(
-        "[XKB-{:03}] {}:{}:{}: {}\n",
-        XKB_ERROR_INVALID_XKB_SYNTAX as i32,
-        &param.scanner.file_name,
-        loc.line,
-        loc.column,
-        msg
-    );
+fn _xkbcommon_error(param: &mut ParserParam, _msg: &str) {
+    let _loc: ScannerLoc = param.scanner.token_location();
 }
 
-fn resolve_keysym(param: &mut parser_param, name: sval) -> Option<u32> {
+fn resolve_keysym(param: &mut ParserParam, name: Sval) -> Option<u32> {
     let name_bytes = name.as_bytes();
     let name_str = name.as_str();
 
     if name_str.eq_ignore_ascii_case("any") || name_str.eq_ignore_ascii_case("nosymbol") {
-        return Some(XKB_KEY_NoSymbol as u32);
+        return Some(XKB_KEY_NO_SYMBOL as u32);
     }
     if name_str.eq_ignore_ascii_case("none") || name_str.eq_ignore_ascii_case("voidsymbol") {
-        return Some(XKB_KEY_VoidSymbol as u32);
+        return Some(XKB_KEY_VOID_SYMBOL as u32);
     }
 
     if name.len() >= 30 {
@@ -594,19 +422,10 @@ fn resolve_keysym(param: &mut parser_param, name: sval) -> Option<u32> {
     let buf_slice = &buf[..name.len() + 1];
 
     let sym: u32 = xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS);
-    if sym != XKB_KEY_NoSymbol as u32 {
+    if sym != XKB_KEY_NO_SYMBOL as u32 {
         if param.ctx.log_verbosity >= 2 {
-            if let Some(ref_name) = xkb_keysym_is_deprecated(sym, buf_slice) {
-                let loc: scanner_loc = param.scanner.token_location();
-                log::warn!(
-                    "[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{}\"; please use \"{}\" instead.\n",
-                    XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
-                    &param.scanner.file_name,
-                    loc.line,
-                    loc.column,
-                    name_str,
-                    ref_name
-                );
+            if let Some(_ref_name) = xkb_keysym_is_deprecated(sym, buf_slice) {
+                let _loc: ScannerLoc = param.scanner.token_location();
             }
         }
         return Some(sym);
@@ -627,7 +446,7 @@ fn yypcontext_expected_tokens(yyssp: &[i16], ssp: usize, yyarg: &mut [i32], yyar
         };
         let mut yyx = yyxbegin;
         while yyx < yyxend {
-            if YYCHECK[(yyx + yyn) as usize] as i32 == yyx && yyx != YYSYMBOL_YYerror {
+            if YYCHECK[(yyx + yyn) as usize] as i32 == yyx && yyx != YYSYMBOL_YYERROR {
                 if yyargn == 0 {
                     yycount += 1;
                 } else if (yycount as usize) == yyargn {
@@ -690,7 +509,7 @@ fn ensure_capacity_i16(v: &mut Vec<i16>, idx: usize) {
 
 // ── Main parser function ────────────────────────────────────────────
 
-pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
+pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
     let mut yychar: i32;
     let mut yylval: YYValue<'a> = YYValue::None;
     let mut _xkbcommon_nerrs: i32 = 0;
@@ -745,7 +564,7 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
             if yychar <= END_OF_FILE {
                 yychar = END_OF_FILE;
                 yytoken = YYSYMBOL_YYEOF;
-            } else if yychar == YYerror {
+            } else if yychar == YYERROR {
                 yychar = YYUNDEF;
                 // goto yyerrlab1
                 yyerrstatus = 3;
@@ -753,9 +572,9 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
                 loop {
                     yyn = YYPACT[yystate as usize] as i32;
                     if yyn != YYPACT_NINF {
-                        yyn += YYSYMBOL_YYerror;
+                        yyn += YYSYMBOL_YYERROR;
                         if (0..=YYLAST).contains(&yyn)
-                            && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYerror
+                            && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
                         {
                             yyn = YYTABLE[yyn as usize] as i32;
                             if yyn > 0 {
@@ -812,9 +631,9 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
                         loop {
                             yyn = YYPACT[yystate as usize] as i32;
                             if yyn != YYPACT_NINF {
-                                yyn += YYSYMBOL_YYerror;
+                                yyn += YYSYMBOL_YYERROR;
                                 if (0..=YYLAST).contains(&yyn)
-                                    && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYerror
+                                    && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
                                 {
                                     yyn = YYTABLE[yyn as usize] as i32;
                                     if yyn > 0 {
@@ -916,9 +735,9 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
             loop {
                 yyn = YYPACT[yystate as usize] as i32;
                 if yyn != YYPACT_NINF {
-                    yyn += YYSYMBOL_YYerror;
+                    yyn += YYSYMBOL_YYERROR;
                     if (0..=YYLAST).contains(&yyn)
-                        && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYerror
+                        && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
                     {
                         yyn = YYTABLE[yyn as usize] as i32;
                         if yyn > 0 {
@@ -958,9 +777,9 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
             loop {
                 yyn = YYPACT[yystate as usize] as i32;
                 if yyn != YYPACT_NINF {
-                    yyn += YYSYMBOL_YYerror;
+                    yyn += YYSYMBOL_YYERROR;
                     if (0..=YYLAST).contains(&yyn)
-                        && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYerror
+                        && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
                     {
                         yyn = YYTABLE[yyn as usize] as i32;
                         if yyn > 0 {
@@ -1016,10 +835,10 @@ pub fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
 /// Execute a reduction rule. Returns true on success, false on error (YYERROR).
 fn execute_reduction<'a>(
     yyn: i32,
-    yyvs: &mut Vec<YYValue<'a>>,
+    yyvs: &mut [YYValue<'a>],
     sp: usize,
     yyval: &mut YYValue<'a>,
-    param: &mut parser_param<'a>,
+    param: &mut ParserParam<'a>,
 ) -> bool {
     match yyn {
         2 => {
@@ -1047,7 +866,7 @@ fn execute_reduction<'a>(
             let files = yyvs[sp - 2].take_file_list();
             let flags = yyvs[sp - 6].as_map_flags();
             let defs: Vec<Statement> = files.into_iter().map(Statement::XkbFile).collect();
-            *yyval = YYValue::File(XkbFileCreate(
+            *yyval = YYValue::File(xkb_file_create(
                 file_type,
                 if name.is_empty() { None } else { Some(name) },
                 defs,
@@ -1082,7 +901,7 @@ fn execute_reduction<'a>(
             let name = yyvs[sp - 4].take_str();
             let stmts = yyvs[sp - 2].take_stmt_list();
             let flags = yyvs[sp - 6].as_map_flags();
-            *yyval = YYValue::File(XkbFileCreate(
+            *yyval = YYValue::File(xkb_file_create(
                 file_type,
                 if name.is_empty() { None } else { Some(name) },
                 stmts,
@@ -1145,9 +964,8 @@ fn execute_reduction<'a>(
             // DeclList: DeclList Decl
             let stmt = std::mem::replace(&mut yyvs[sp], YYValue::None);
             let mut list = yyvs[sp - 1].take_stmt_list();
-            match stmt {
-                YYValue::Stmt(s) => list.push(s),
-                _ => {} // null/none → skip
+            if let YYValue::Stmt(s) = stmt {
+                list.push(s);
             }
             *yyval = YYValue::StmtList(list);
         }
@@ -1239,11 +1057,8 @@ fn execute_reduction<'a>(
             }
         }
         39 => {
-            // Decl: OptMergeMode GroupCompatDecl
-            let merge = yyvs[sp - 1].as_merge();
-            if let YYValue::GroupCompat(mut gc) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                gc.merge = merge;
-                *yyval = YYValue::Stmt(Statement::GroupCompat(gc));
+            if let YYValue::GroupCompat = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                *yyval = YYValue::Stmt(Statement::GroupCompat(()));
             } else {
                 *yyval = YYValue::None;
             }
@@ -1292,7 +1107,7 @@ fn execute_reduction<'a>(
             // Decl: MergeMode STRING
             let merge = yyvs[sp - 1].as_merge();
             let s = yyvs[sp].take_str();
-            if let Some(inc) = IncludeCreate(param.ctx, &s, merge) {
+            if let Some(inc) = include_create(param.ctx, &s, merge) {
                 *yyval = YYValue::Stmt(Statement::Include(inc));
             } else {
                 *yyval = YYValue::None;
@@ -1302,29 +1117,29 @@ fn execute_reduction<'a>(
             // VarDecl: Lhs EQUALS Expr SEMI
             let lhs = yyvs[sp - 3].take_expr();
             let val = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::Var(VarCreate(lhs, val));
+            *yyval = YYValue::Var(var_create(lhs, val));
         }
         49 => {
             // VarDecl: Ident SEMI
             let atom = yyvs[sp - 1].as_atom();
-            *yyval = YYValue::Var(BoolVarCreate(atom, true));
+            *yyval = YYValue::Var(bool_var_create(atom, true));
         }
         50 => {
             // VarDecl: EXCLAM Ident SEMI
             let atom = yyvs[sp - 1].as_atom();
-            *yyval = YYValue::Var(BoolVarCreate(atom, false));
+            *yyval = YYValue::Var(bool_var_create(atom, false));
         }
         51 => {
             // KeyNameDecl: KEYNAME EQUALS KeyCode SEMI
             let atom = yyvs[sp - 3].as_atom();
             let num = yyvs[sp - 1].as_num();
-            *yyval = YYValue::Keycode(KeycodeCreate(atom, num));
+            *yyval = YYValue::Keycode(keycode_create(atom, num));
         }
         52 => {
             // KeyAliasDecl: ALIAS KEYNAME EQUALS KEYNAME SEMI
             let alias = yyvs[sp - 3].as_atom();
             let real = yyvs[sp - 1].as_atom();
-            *yyval = YYValue::KeyAlias(KeyAliasCreate(alias, real));
+            *yyval = YYValue::KeyAlias(key_alias_create(alias, real));
         }
         53 => {
             // VModDecl: VIRTUAL_MODS VModDefList SEMI
@@ -1352,13 +1167,13 @@ fn execute_reduction<'a>(
         56 => {
             // VModDef: Ident
             let atom = yyvs[sp].as_atom();
-            *yyval = YYValue::VMod(VModCreate(atom, None));
+            *yyval = YYValue::VMod(vmod_create(atom, None));
         }
         57 => {
             // VModDef: Ident EQUALS Expr
             let atom = yyvs[sp - 2].as_atom();
             let expr = yyvs[sp].take_expr();
-            *yyval = YYValue::VMod(VModCreate(atom, expr));
+            *yyval = YYValue::VMod(vmod_create(atom, expr));
         }
         58 => {
             // InterpretDecl: INTERPRET InterpretMatch OBRACE VarDeclList CBRACE SEMI
@@ -1375,12 +1190,12 @@ fn execute_reduction<'a>(
             // InterpretMatch: KeySym PLUS Expr
             let keysym = yyvs[sp - 2].as_keysym();
             let expr = yyvs[sp].take_expr();
-            *yyval = YYValue::Interp(InterpCreate(keysym, expr));
+            *yyval = YYValue::Interp(interp_create(keysym, expr));
         }
         60 => {
             // InterpretMatch: KeySym
             let keysym = yyvs[sp].as_keysym();
-            *yyval = YYValue::Interp(InterpCreate(keysym, None));
+            *yyval = YYValue::Interp(interp_create(keysym, None));
         }
         61 => {
             // VarDeclList: VarDeclList VarDecl
@@ -1399,7 +1214,7 @@ fn execute_reduction<'a>(
             // KeyTypeDecl: TYPE String OBRACE VarDeclList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let vardefs = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::KeyType(KeyTypeCreate(
+            *yyval = YYValue::KeyType(key_type_create(
                 atom,
                 vardefs.into_iter().map(|b| *b).collect(),
             ));
@@ -1408,7 +1223,7 @@ fn execute_reduction<'a>(
             // SymbolsDecl: KEY KEYNAME OBRACE OptSymbolsBody CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let vardefs = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::Symbols(SymbolsCreate(
+            *yyval = YYValue::Symbols(symbols_create(
                 atom,
                 vardefs.into_iter().map(|b| *b).collect(),
             ));
@@ -1444,29 +1259,29 @@ fn execute_reduction<'a>(
             // SymbolsVarDecl: Lhs EQUALS Expr
             let lhs = yyvs[sp - 2].take_expr();
             let val = yyvs[sp].take_expr();
-            *yyval = YYValue::Var(VarCreate(lhs, val));
+            *yyval = YYValue::Var(var_create(lhs, val));
         }
         70 => {
             // SymbolsVarDecl: Lhs EQUALS MultiKeySymOrActionList
             let lhs = yyvs[sp - 2].take_expr();
             // MultiKeySymOrActionList is an ExprList or Expr
             let val = yyvs[sp].take_expr();
-            *yyval = YYValue::Var(VarCreate(lhs, val));
+            *yyval = YYValue::Var(var_create(lhs, val));
         }
         71 => {
             // SymbolsVarDecl: Ident
             let atom = yyvs[sp].as_atom();
-            *yyval = YYValue::Var(BoolVarCreate(atom, true));
+            *yyval = YYValue::Var(bool_var_create(atom, true));
         }
         72 => {
             // SymbolsVarDecl: EXCLAM Ident
             let atom = yyvs[sp].as_atom();
-            *yyval = YYValue::Var(BoolVarCreate(atom, false));
+            *yyval = YYValue::Var(bool_var_create(atom, false));
         }
         73 => {
             // SymbolsVarDecl: Expr
             let val = yyvs[sp].take_expr();
-            *yyval = YYValue::Var(VarCreate(None, val));
+            *yyval = YYValue::Var(var_create(None, val));
         }
         74 => {
             // MultiKeySymOrActionList: OBRACKET MultiKeySymList CBRACKET (yylen=3)
@@ -1481,7 +1296,7 @@ fn execute_reduction<'a>(
                                                                  // Prepend 'count' NoSymbol keysym lists
             let mut prepended: Vec<Box<ExprDef>> = Vec::new();
             for _ in 0..count {
-                prepended.push(ExprCreateKeySymList(XKB_KEY_NoSymbol as u32));
+                prepended.push(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL as u32));
             }
             prepended.append(&mut list);
             let exprs: Vec<ExprDef> = prepended.into_iter().map(|b| *b).collect();
@@ -1526,15 +1341,13 @@ fn execute_reduction<'a>(
         }
         82 => {
             // GroupCompatDecl: GROUP Integer EQUALS Expr SEMI
-            let num = yyvs[sp - 3].as_num();
-            let expr = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::GroupCompat(GroupCompatCreate(num, expr));
+            *yyval = YYValue::GroupCompat;
         }
         83 => {
             // ModMapDecl: MODIFIER_MAP Ident OBRACE KeyOrKeySymList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let list = yyvs[sp - 2].take_expr_list();
-            *yyval = YYValue::ModMask(ModMapCreate(atom, list.into_iter().map(|b| *b).collect()));
+            *yyval = YYValue::ModMask(mod_map_create(atom, list.into_iter().map(|b| *b).collect()));
         }
         84 => {
             // KeyOrKeySymList: KeyOrKeySymList COMMA KeyOrKeySym
@@ -1568,7 +1381,7 @@ fn execute_reduction<'a>(
             // LedMapDecl: INDICATOR String OBRACE VarDeclList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let vardefs = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::LedMap(LedMapCreate(
+            *yyval = YYValue::LedMap(led_map_create(
                 atom,
                 vardefs.into_iter().map(|b| *b).collect(),
             ));
@@ -1577,13 +1390,13 @@ fn execute_reduction<'a>(
             // LedNameDecl: INDICATOR Integer EQUALS Expr SEMI
             let num = yyvs[sp - 3].as_num();
             let expr = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::LedName(LedNameCreate(num, expr, false));
+            *yyval = YYValue::LedName(led_name_create(num, expr));
         }
         90 => {
             // LedNameDecl: VIRTUAL INDICATOR Integer EQUALS Expr SEMI
             let num = yyvs[sp - 3].as_num();
             let expr = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::LedName(LedNameCreate(num, expr, true));
+            *yyval = YYValue::LedName(led_name_create(num, expr));
         }
         91 => {
             // UnknownDecl: Ident Lhs EQUALS Expr SEMI
@@ -1592,7 +1405,7 @@ fn execute_reduction<'a>(
             let _ = yyvs[sp - 1].take_expr();
             let sval = yyvs[sp - 4].as_sval();
             let name_str = sval.as_str();
-            *yyval = YYValue::Unknown(UnknownStatementCreate(STMT_UNKNOWN_DECLARATION, name_str));
+            *yyval = YYValue::Unknown(unknown_statement_create(STMT_UNKNOWN_DECLARATION, name_str));
         }
         92 => {
             // UnknownCompoundStatementDecl: Ident Lhs OBRACE VarDeclList CBRACE SEMI
@@ -1600,7 +1413,7 @@ fn execute_reduction<'a>(
             let _ = yyvs[sp - 2].take_var_list();
             let sval = yyvs[sp - 5].as_sval();
             let name_str = sval.as_str();
-            *yyval = YYValue::Unknown(UnknownStatementCreate(STMT_UNKNOWN_COMPOUND, name_str));
+            *yyval = YYValue::Unknown(unknown_statement_create(STMT_UNKNOWN_COMPOUND, name_str));
         }
         // Rules 93-123: Geometry rules → all produce None (geometry not supported)
         93 | 94 | 95 | 96 | 97 | 98 | 100 | 102 | 103 | 104 | 105 | 107 | 108 | 109 | 111 | 112
@@ -1654,37 +1467,37 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Atom(yyvs[sp].as_atom());
         }
         130 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"action"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"action"));
         }
         131 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"interpret"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"interpret"));
         }
         132 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"type"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"type"));
         }
         133 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"key"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"key"));
         }
         134 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"group"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"group"));
         }
         135 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"modifier_map"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"modifier_map"));
         }
         136 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"indicator"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"indicator"));
         }
         137 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"shape"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"shape"));
         }
         138 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"row"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"row"));
         }
         139 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"section"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"section"));
         }
         140 => {
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"text"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"text"));
         }
         // MergeMode rules 141-147
         141 => {
@@ -1706,13 +1519,7 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Merge(MERGE_REPLACE);
         }
         147 => {
-            let loc = param.scanner.token_location();
-            log::warn!(
-                "{}:{}:{}: ignored unsupported legacy merge mode \"alternate\"\n",
-                &param.scanner.file_name,
-                loc.line,
-                loc.column
-            );
+            let _loc = param.scanner.token_location();
             *yyval = YYValue::Merge(MERGE_DEFAULT);
         }
         // ExprList rules 148-150
@@ -1984,7 +1791,7 @@ fn execute_reduction<'a>(
         186 => {
             // MultiKeySymList: MultiKeySymList COMMA KeySymList
             let keysym = yyvs[sp].as_keysym();
-            let expr = ExprCreateKeySymList(keysym);
+            let expr = expr_create_key_sym_list(keysym);
             let mut list = yyvs[sp - 2].take_expr_list();
             list.push(expr);
             *yyval = YYValue::ExprList(list);
@@ -2001,7 +1808,7 @@ fn execute_reduction<'a>(
         188 => {
             // MultiKeySymList: KeySymList (keysym)
             let keysym = yyvs[sp].as_keysym();
-            let expr = ExprCreateKeySymList(keysym);
+            let expr = expr_create_key_sym_list(keysym);
             *yyval = YYValue::ExprList(vec![expr]);
         }
         189 => {
@@ -2018,13 +1825,13 @@ fn execute_reduction<'a>(
             // NonEmptyKeySyms: NonEmptyKeySyms COMMA KeySym
             let expr = yyvs[sp - 2].take_expr().unwrap();
             let keysym = yyvs[sp].as_keysym();
-            *yyval = YYValue::Expr(ExprAppendKeySymList(expr, keysym));
+            *yyval = YYValue::Expr(expr_append_key_sym_list(expr, keysym));
         }
         191 => {
             // NonEmptyKeySyms: NonEmptyKeySyms COMMA STRING
             let expr = yyvs[sp - 2].take_expr().unwrap();
             let s = yyvs[sp].take_str();
-            match ExprKeySymListAppendString(param.scanner, expr, &s) {
+            match expr_key_sym_list_append_string(param.scanner, expr, &s) {
                 Some(e) => {
                     *yyval = YYValue::Expr(e);
                 }
@@ -2036,13 +1843,13 @@ fn execute_reduction<'a>(
         192 => {
             // KeySyms: KeySym
             let keysym = yyvs[sp].as_keysym();
-            *yyval = YYValue::Expr(ExprCreateKeySymList(keysym));
+            *yyval = YYValue::Expr(expr_create_key_sym_list(keysym));
         }
         193 => {
             // KeySyms: STRING (single string keysym)
             let s = yyvs[sp].take_str();
-            let expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
-            match ExprKeySymListAppendString(param.scanner, expr, &s) {
+            let expr = expr_create_key_sym_list(XKB_KEY_NO_SYMBOL as u32);
+            match expr_key_sym_list_append_string(param.scanner, expr, &s) {
                 Some(e) => {
                     *yyval = YYValue::Expr(e);
                 }
@@ -2058,8 +1865,8 @@ fn execute_reduction<'a>(
         195 => {
             // KeySymList: STRING (produces keysym list from string)
             let s = yyvs[sp].take_str();
-            let expr = ExprCreateKeySymList(XKB_KEY_NoSymbol as u32);
-            match ExprKeySymListAppendString(param.scanner, expr, &s) {
+            let expr = expr_create_key_sym_list(XKB_KEY_NO_SYMBOL as u32);
+            match expr_key_sym_list_append_string(param.scanner, expr, &s) {
                 Some(e) => {
                     *yyval = YYValue::Expr(e);
                 }
@@ -2074,7 +1881,7 @@ fn execute_reduction<'a>(
         }
         197 => {
             // KeySymList: empty → NoSymbol
-            *yyval = YYValue::Expr(ExprCreateKeySymList(XKB_KEY_NoSymbol as u32));
+            *yyval = YYValue::Expr(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL as u32));
         }
         // KeySym rules 198-203
         198 => {
@@ -2084,8 +1891,8 @@ fn execute_reduction<'a>(
         199 => {
             // KeySym: STRING → parse string as keysym
             let s = yyvs[sp].take_str();
-            let keysym = KeysymParseString(param.scanner, &s);
-            if keysym == XKB_KEY_NoSymbol as u32 {
+            let keysym = keysym_parse_string(param.scanner, &s);
+            if keysym == XKB_KEY_NO_SYMBOL as u32 {
                 return false;
             }
             *yyval = YYValue::Keysym(keysym);
@@ -2098,22 +1905,14 @@ fn execute_reduction<'a>(
                     *yyval = YYValue::Keysym(sym);
                 }
                 None => {
-                    let loc = param.scanner.token_location();
-                    log::warn!(
-                        "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{}\"\n",
-                        XKB_WARNING_UNRECOGNIZED_KEYSYM as i32,
-                        &param.scanner.file_name,
-                        loc.line,
-                        loc.column,
-                        sval.as_str()
-                    );
-                    *yyval = YYValue::Keysym(XKB_KEY_NoSymbol as u32);
+                    let _loc = param.scanner.token_location();
+                    *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL as u32);
                 }
             }
         }
         201 => {
             // KeySym: SECTION
-            *yyval = YYValue::Keysym(XKB_KEY_section as u32);
+            *yyval = YYValue::Keysym(XKB_KEY_SECTION as u32);
         }
         202 => {
             // KeySym: DECIMAL_DIGIT
@@ -2124,58 +1923,22 @@ fn execute_reduction<'a>(
             // KeySym: INTEGER (numeric keysym)
             let num = yyvs[sp].as_num();
             if num < XKB_KEYSYM_MIN as i64 {
-                let loc = param.scanner.token_location();
-                log::warn!(
-                    "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"-{:#06x}\" ({})\n",
-                    XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
-                    &param.scanner.file_name,
-                    loc.line,
-                    loc.column,
-                    -num,
-                    num
-                );
-                *yyval = YYValue::Keysym(XKB_KEY_NoSymbol as u32);
+                let _loc = param.scanner.token_location();
+                *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL as u32);
             } else {
                 if num <= XKB_KEYSYM_MAX as i64 {
                     let keysym = num as u32;
                     if param.ctx.log_verbosity >= 2 {
-                        if let Some(ref_name) = xkb_keysym_is_deprecated(keysym, &[]) {
-                            let loc = param.scanner.token_location();
-                            log::debug!(
-                                "[XKB-{:03}] {}:{}:{}: deprecated keysym name \"{:#06x}\"; please use \"{}\" instead.\n",
-                                XKB_WARNING_DEPRECATED_KEYSYM_NAME as i32,
-                                &param.scanner.file_name,
-                                loc.line,
-                                loc.column,
-                                keysym,
-                                ref_name
-                            );
+                        if let Some(_ref_name) = xkb_keysym_is_deprecated(keysym, &[]) {
+                            let _loc = param.scanner.token_location();
                         }
                     }
                     *yyval = YYValue::Keysym(keysym);
                 } else {
-                    let loc = param.scanner.token_location();
-                    log::warn!(
-                        "[XKB-{:03}] {}:{}:{}: unrecognized keysym \"{:#06x}\" ({})\n",
-                        XKB_ERROR_INVALID_NUMERIC_KEYSYM as i32,
-                        &param.scanner.file_name,
-                        loc.line,
-                        loc.column,
-                        num,
-                        num
-                    );
-                    *yyval = YYValue::Keysym(XKB_KEY_NoSymbol as u32);
+                    let _loc = param.scanner.token_location();
+                    *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL as u32);
                 }
-                let loc = param.scanner.token_location();
-                log::debug!(
-                    "[XKB-{:03}] {}:{}:{}: numeric keysym \"{:#06x}\" ({})\n",
-                    XKB_WARNING_NUMERIC_KEYSYM as i32,
-                    &param.scanner.file_name,
-                    loc.line,
-                    loc.column,
-                    num,
-                    num
-                );
+                let _loc = param.scanner.token_location();
             }
         }
         // SignedNumber / Number rules 204-208
@@ -2196,17 +1959,17 @@ fn execute_reduction<'a>(
         // Ident 214
         214 => {
             let sval = yyvs[sp].as_sval();
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, sval.as_bytes()));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, sval.as_bytes()));
         }
         215 => {
             // Ident: DEFAULT
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, b"default"));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"default"));
         }
         // String 216
         216 => {
             // String: STRING → intern as atom
             let s = yyvs[sp].take_str();
-            *yyval = YYValue::Atom(xkb_atom_intern(param.ctx, s.as_bytes()));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, s.as_bytes()));
         }
         // OptMapName / MapName 217-219
         217 => {
@@ -2232,15 +1995,15 @@ fn execute_reduction<'a>(
 
 // ── Public API ──────────────────────────────────────────────────────
 
-pub fn parse<'a>(
-    mut ctx: &'a mut xkb_context,
-    mut scanner: &'a mut scanner<'a>,
+pub(crate) fn parse<'a>(
+    mut ctx: &'a mut XkbContext,
+    mut scanner: &'a mut Scanner<'a>,
     map: &str,
 ) -> Option<Box<XkbFile>> {
     let mut first: Option<Box<XkbFile>> = None;
 
     loop {
-        let mut param = parser_param {
+        let mut param = ParserParam {
             ctx,
             scanner,
             rtrn: None,
@@ -2282,56 +2045,26 @@ pub fn parse<'a>(
         break;
     }
 
-    if first.is_some() {
-        let first_ref = first.as_ref().unwrap();
-        log::debug!(
-            "[XKB-{:03}] No map in include statement, but \"{}\" contains several; Using first defined map, \"{}\"\n",
-            XKB_WARNING_MISSING_DEFAULT_SECTION as i32,
-            &scanner.file_name,
-            safe_map_name(first_ref)
-        );
-    }
+    if let Some(_first_ref) = first.as_ref() {}
     first
-}
-
-pub fn parse_next<'a>(
-    ctx: &'a mut xkb_context,
-    scanner: &'a mut scanner<'a>,
-    xkb_file: &mut Option<Box<XkbFile>>,
-) -> bool {
-    let mut param = parser_param {
-        ctx,
-        scanner,
-        rtrn: None,
-        more_maps: false,
-    };
-
-    let ret = _xkbcommon_parse(&mut param);
-    if ret == 0 && param.more_maps {
-        *xkb_file = param.rtrn;
-        true
-    } else {
-        *xkb_file = None;
-        ret == 0
-    }
 }
 
 // ── AST builder functions (merged from ast_build.rs) ──
 
-pub fn expr_create(kind: ExprKind) -> Box<ExprDef> {
+pub(crate) fn expr_create(kind: ExprKind) -> Box<ExprDef> {
     Box::new(ExprDef { kind })
 }
 
-pub fn ExprCreateKeySymList(sym: u32) -> Box<ExprDef> {
+pub(crate) fn expr_create_key_sym_list(sym: u32) -> Box<ExprDef> {
     let mut syms = Vec::new();
-    if sym != XKB_KEY_NoSymbol as u32 {
+    if sym != XKB_KEY_NO_SYMBOL as u32 {
         syms.push(sym);
     }
     expr_create(ExprKind::KeysymList { syms })
 }
 
-pub fn ExprAppendKeySymList(mut expr: Box<ExprDef>, sym: u32) -> Box<ExprDef> {
-    if sym != XKB_KEY_NoSymbol as u32 {
+pub(crate) fn expr_append_key_sym_list(mut expr: Box<ExprDef>, sym: u32) -> Box<ExprDef> {
+    if sym != XKB_KEY_NO_SYMBOL as u32 {
         if let ExprKind::KeysymList { ref mut syms } = expr.kind {
             syms.push(sym);
         }
@@ -2339,96 +2072,58 @@ pub fn ExprAppendKeySymList(mut expr: Box<ExprDef>, sym: u32) -> Box<ExprDef> {
     expr
 }
 
-pub fn ExprKeySymListAppendString(
-    scanner: &mut scanner,
+pub(crate) fn expr_key_sym_list_append_string(
+    scanner: &mut Scanner,
     mut expr: Box<ExprDef>,
     string: &str,
 ) -> Option<Box<ExprDef>> {
     let bytes = string.as_bytes();
     let len = bytes.len();
     let mut idx: usize = 0;
-    let mut idx_cp: usize = 1;
     loop {
         if idx >= len {
             return Some(expr);
         }
         let (cp, cp_len) = utf8_next_code_point_safe(&bytes[idx..]);
         if cp == INVALID_UTF8_CODE_POINT {
-            let loc = scanner.token_location();
-            log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to keysyms: Invalid UTF-8 encoding starting at byte position {} (code point position: {}).\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                &scanner.file_name,
-                loc.line,
-                loc.column,
-                idx + 1,
-                idx_cp);
+            let _loc = scanner.token_location();
             return None;
         }
         let sym = utf32_to_keysym(cp);
-        if sym == XKB_KEY_NoSymbol as u32 {
-            let loc = scanner.token_location();
-            log::error!("{}:{}:{}: Cannot convert string to keysyms: Unicode code point U+04{:X} has no keysym equivalent(byte position: {}, code point position: {}).\n",
-                &scanner.file_name,
-                loc.line,
-                loc.column,
-                cp,
-                idx + 1,
-                idx_cp);
+        if sym == XKB_KEY_NO_SYMBOL as u32 {
+            let _loc = scanner.token_location();
             return None;
         }
         if let ExprKind::KeysymList { ref mut syms } = expr.kind {
             syms.push(sym);
         }
         idx += cp_len;
-        idx_cp += 1;
     }
 }
 
-pub fn KeysymParseString(scanner: &mut scanner, string: &str) -> u32 {
+pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> u32 {
     let bytes = string.as_bytes();
     let len = bytes.len();
     if len == 0 {
-        let loc = scanner.token_location();
-        log::error!(
-            "{}:{}:{}: Cannot convert string to single keysym: empty string.\n",
-            &scanner.file_name,
-            loc.line,
-            loc.column
-        );
-        return XKB_KEY_NoSymbol as u32;
+        let _loc = scanner.token_location();
+        return XKB_KEY_NO_SYMBOL as u32;
     }
     let (cp, cp_len) = utf8_next_code_point_safe(bytes);
     if cp == INVALID_UTF8_CODE_POINT {
-        let loc = scanner.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to single keysym: Invalid UTF-8 encoding.\n",
-            XKB_ERROR_INVALID_FILE_ENCODING as i32,
-            &scanner.file_name,
-            loc.line,
-            loc.column);
-        return XKB_KEY_NoSymbol as u32;
+        let _loc = scanner.token_location();
+        return XKB_KEY_NO_SYMBOL as u32;
     } else if cp_len != len {
-        let loc = scanner.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: Cannot convert string to single keysym: Expected a single Unicode code point, got: \"{}\".\n",
-            XKB_ERROR_INVALID_FILE_ENCODING as i32,
-            &scanner.file_name,
-            loc.line,
-            loc.column,
-            string);
-        return XKB_KEY_NoSymbol as u32;
+        let _loc = scanner.token_location();
+        return XKB_KEY_NO_SYMBOL as u32;
     }
     let sym = utf32_to_keysym(cp);
-    if sym == XKB_KEY_NoSymbol as u32 {
-        let loc = scanner.token_location();
-        log::error!("{}:{}:{}: Cannot convert string to single keysym: Unicode code point U+{:04X} has no keysym equivalent.\n",
-            &scanner.file_name,
-            loc.line,
-            loc.column,
-            cp);
+    if sym == XKB_KEY_NO_SYMBOL as u32 {
+        let _loc = scanner.token_location();
     }
     sym
 }
 
-pub fn KeycodeCreate(name: u32, value: i64) -> Box<KeycodeDef> {
+pub(crate) fn keycode_create(name: u32, value: i64) -> Box<KeycodeDef> {
     Box::new(KeycodeDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2436,7 +2131,7 @@ pub fn KeycodeCreate(name: u32, value: i64) -> Box<KeycodeDef> {
     })
 }
 
-pub fn KeyAliasCreate(alias: u32, real: u32) -> Box<KeyAliasDef> {
+pub(crate) fn key_alias_create(alias: u32, real: u32) -> Box<KeyAliasDef> {
     Box::new(KeyAliasDef {
         merge: MERGE_DEFAULT,
         alias,
@@ -2444,7 +2139,7 @@ pub fn KeyAliasCreate(alias: u32, real: u32) -> Box<KeyAliasDef> {
     })
 }
 
-pub fn VModCreate(name: u32, value: Option<Box<ExprDef>>) -> Box<VModDef> {
+pub(crate) fn vmod_create(name: u32, value: Option<Box<ExprDef>>) -> Box<VModDef> {
     Box::new(VModDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2452,7 +2147,7 @@ pub fn VModCreate(name: u32, value: Option<Box<ExprDef>>) -> Box<VModDef> {
     })
 }
 
-pub fn VarCreate(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>) -> Box<VarDef> {
+pub(crate) fn var_create(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>) -> Box<VarDef> {
     Box::new(VarDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2460,7 +2155,7 @@ pub fn VarCreate(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>) -> Box
     })
 }
 
-pub fn BoolVarCreate(ident: u32, set: bool) -> Box<VarDef> {
+pub(crate) fn bool_var_create(ident: u32, set: bool) -> Box<VarDef> {
     Box::new(VarDef {
         merge: MERGE_DEFAULT,
         name: Some(Box::new(ExprDef {
@@ -2472,7 +2167,7 @@ pub fn BoolVarCreate(ident: u32, set: bool) -> Box<VarDef> {
     })
 }
 
-pub fn InterpCreate(sym: u32, match_0: Option<Box<ExprDef>>) -> Box<InterpDef> {
+pub(crate) fn interp_create(sym: u32, match_0: Option<Box<ExprDef>>) -> Box<InterpDef> {
     Box::new(InterpDef {
         merge: MERGE_DEFAULT,
         sym,
@@ -2481,7 +2176,7 @@ pub fn InterpCreate(sym: u32, match_0: Option<Box<ExprDef>>) -> Box<InterpDef> {
     })
 }
 
-pub fn KeyTypeCreate(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
+pub(crate) fn key_type_create(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
     Box::new(KeyTypeDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2489,23 +2184,15 @@ pub fn KeyTypeCreate(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
     })
 }
 
-pub fn SymbolsCreate(keyName: u32, symbols: Vec<VarDef>) -> Box<SymbolsDef> {
+pub(crate) fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> Box<SymbolsDef> {
     Box::new(SymbolsDef {
         merge: MERGE_DEFAULT,
-        keyName,
+        key_name,
         symbols,
     })
 }
 
-pub fn GroupCompatCreate(group: i64, val: Option<Box<ExprDef>>) -> Box<GroupCompatDef> {
-    Box::new(GroupCompatDef {
-        merge: MERGE_DEFAULT,
-        group,
-        def: val,
-    })
-}
-
-pub fn ModMapCreate(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef> {
+pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef> {
     Box::new(ModMapDef {
         merge: MERGE_DEFAULT,
         modifier,
@@ -2513,7 +2200,7 @@ pub fn ModMapCreate(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef> {
     })
 }
 
-pub fn LedMapCreate(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
+pub(crate) fn led_map_create(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
     Box::new(LedMapDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2521,26 +2208,25 @@ pub fn LedMapCreate(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
     })
 }
 
-pub fn LedNameCreate(ndx: i64, name: Option<Box<ExprDef>>, virtual_0: bool) -> Box<LedNameDef> {
+pub(crate) fn led_name_create(ndx: i64, name: Option<Box<ExprDef>>) -> Box<LedNameDef> {
     Box::new(LedNameDef {
         merge: MERGE_DEFAULT,
         ndx,
-        virtual_0,
         name,
     })
 }
 
-pub fn UnknownStatementCreate(type_0: stmt_type, name: &str) -> Box<UnknownStatement> {
+pub(crate) fn unknown_statement_create(type_0: StmtType, name: &str) -> Box<UnknownStatement> {
     Box::new(UnknownStatement {
-        stmt_type: type_0,
-        name: name.to_string(),
+        _stmt_type: type_0,
+        _name: name.to_string(),
     })
 }
 
-pub fn IncludeCreate(
-    _ctx: &mut xkb_context,
+pub(crate) fn include_create(
+    _ctx: &mut XkbContext,
     stmt_str: &str,
-    mut merge: merge_mode,
+    mut merge: MergeMode,
 ) -> Option<Box<IncludeStmt>> {
     let mut items: Vec<Box<IncludeStmt>> = Vec::new();
     let mut remaining: Option<&str> = Some(stmt_str);
@@ -2551,14 +2237,9 @@ pub fn IncludeCreate(
             _ => break,
         };
 
-        let (parsed, rest) = match ParseIncludeMap(input) {
+        let (parsed, rest) = match parse_include_map(input) {
             Some(r) => r,
             None => {
-                log::error!(
-                    "[XKB-{:03}] Illegal include statement \"{}\"; Ignored\n",
-                    XKB_ERROR_INVALID_INCLUDE_STATEMENT as i32,
-                    stmt_str
-                );
                 return None;
             }
         };
@@ -2599,11 +2280,11 @@ pub fn IncludeCreate(
     first
 }
 
-pub fn XkbFileCreate(
+pub(crate) fn xkb_file_create(
     type_0: u32,
     name: Option<String>,
     defs: Vec<Statement>,
-    flags: xkb_map_flags,
+    flags: XkbMapFlags,
 ) -> Box<XkbFile> {
     let mut name_str = name.unwrap_or_default();
     xkb_escape_map_name(&mut name_str);
@@ -2615,9 +2296,9 @@ pub fn XkbFileCreate(
     })
 }
 
-pub fn XkbFileFromComponents(
-    ctx: &mut xkb_context,
-    kkctgs: &xkb_component_names,
+pub(crate) fn xkb_file_from_components(
+    ctx: &mut XkbContext,
+    kkctgs: &XkbComponentNames,
 ) -> Option<Box<XkbFile>> {
     let components = [
         &kkctgs.keycodes,
@@ -2637,162 +2318,75 @@ pub fn XkbFileFromComponents(
             .position(|&b| b == 0)
             .unwrap_or(component_bytes.len());
         let component_str = std::str::from_utf8(&component_bytes[..end]).unwrap_or("");
-        let include = IncludeCreate(ctx, component_str, MERGE_DEFAULT)?;
+        let include = include_create(ctx, component_str, MERGE_DEFAULT)?;
         let defs = vec![Statement::Include(include)];
-        let file = XkbFileCreate(type_0, None, defs, 0);
+        let file = xkb_file_create(type_0, None, defs, 0);
         file_stmts.push(Statement::XkbFile(file));
         type_0 += 1;
     }
-    Some(XkbFileCreate(FILE_TYPE_KEYMAP, None, file_stmts, 0))
+    Some(xkb_file_create(FILE_TYPE_KEYMAP, None, file_stmts, 0))
 }
 
-static XKB_FILE_TYPE_STRINGS: [&str; 7] = [
-    "xkb_keycodes",
-    "xkb_types",
-    "xkb_compatibility",
-    "xkb_symbols",
-    "xkb_geometry",
-    "xkb_keymap",
-    "rules",
-];
-
-pub fn xkb_file_type_to_string(type_0: u32) -> &'static str {
-    if type_0 as usize >= XKB_FILE_TYPE_STRINGS.len() {
-        "unknown"
-    } else {
-        XKB_FILE_TYPE_STRINGS[type_0 as usize]
-    }
-}
-static STMT_TYPE_STRINGS: [&str; 37] = [
-    "unknown statement",
-    "include statement",
-    "key name definition",
-    "key alias definition",
-    "string literal expression",
-    "integer literal expression",
-    "float literal expression",
-    "boolean literal expression",
-    "key name expression",
-    "keysym expression",
-    "identifier expression",
-    "action declaration expression",
-    "field reference expression",
-    "array reference expression",
-    "empty list expression",
-    "keysym list expression",
-    "action list expression",
-    "addition expression",
-    "substraction expression",
-    "multiplication expression",
-    "division expression",
-    "assignment expression",
-    "logical negation expression",
-    "arithmetic negation expression",
-    "bitwise inversion expression",
-    "unary plus expression",
-    "variable definition",
-    "key type definition",
-    "symbol interpretation definition",
-    "virtual modifiers definition",
-    "key symbols definition",
-    "modifier map declaration",
-    "group declaration",
-    "indicator map declaration",
-    "indicator name declaration",
-    "unknown declaration statement",
-    "unknown compound statement",
-];
-
-pub fn stmt_type_to_string(type_0: u32) -> &'static str {
-    if type_0 >= _STMT_NUM_VALUES {
-        return "unknown";
-    }
-    STMT_TYPE_STRINGS[type_0 as usize]
-}
-
-pub fn stmt_type_to_operator_char(type_0: u32) -> char {
-    match type_0 {
-        17 => '+',
-        18 => '-',
-        19 => '*',
-        20 => '/',
-        22 => '!',
-        23 => '-',
-        24 => '~',
-        25 => '+',
-        _ => '\0',
-    }
-}
 // ── Scanner types (migrated from scanner_utils.rs) ──
 
 #[derive(Copy, Clone, Default)]
-pub struct sval<'a> {
-    pub data: &'a [u8],
+pub(crate) struct Sval<'a> {
+    pub(crate) data: &'a [u8],
 }
 
-impl<'a> sval<'a> {
-    pub const EMPTY: sval<'static> = sval { data: &[] };
+impl<'a> Sval<'a> {
+    pub(crate) const EMPTY: Sval<'static> = Sval { data: &[] };
 
     #[inline]
-    pub fn as_bytes(&self) -> &[u8] {
+    pub(crate) fn as_bytes(&self) -> &[u8] {
         self.data
     }
 
     #[inline]
-    pub fn as_str(&self) -> &str {
+    pub(crate) fn as_str(&self) -> &str {
         std::str::from_utf8(self.data).unwrap_or("")
     }
 
     #[inline]
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.data.len()
     }
 
     #[inline]
-    pub fn start_ptr(&self) -> *const i8 {
-        self.data.as_ptr() as *const i8
-    }
-
-    #[inline]
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
 }
 
 #[derive(Copy, Clone)]
-pub struct scanner_loc {
-    pub line: usize,
-    pub column: usize,
+pub(crate) struct ScannerLoc {
+    pub(crate) line: usize,
+    pub(crate) column: usize,
 }
 
-pub struct scanner<'a> {
-    pub pos: usize,
-    pub s: &'a [u8],
-    pub buf: [u8; 1024],
-    pub buf_pos: usize,
-    pub token_pos: usize,
-    pub cached_pos: usize,
-    pub cached_loc: scanner_loc,
-    pub file_name: String,
+pub(crate) struct Scanner<'a> {
+    pub(crate) pos: usize,
+    pub(crate) s: &'a [u8],
+    pub(crate) buf: [u8; 1024],
+    pub(crate) buf_pos: usize,
+    pub(crate) token_pos: usize,
+    pub(crate) cached_pos: usize,
+    pub(crate) cached_loc: ScannerLoc,
+    pub(crate) file_name: String,
 }
 
-impl<'a> scanner<'a> {
-    pub fn new(s: &'a [u8], file_name: &str) -> Self {
-        scanner {
+impl<'a> Scanner<'a> {
+    pub(crate) fn new(s: &'a [u8], file_name: &str) -> Self {
+        Scanner {
             pos: 0,
             s,
             buf: [0; 1024],
             buf_pos: 0,
             token_pos: 0,
             cached_pos: 0,
-            cached_loc: scanner_loc { line: 1, column: 1 },
+            cached_loc: ScannerLoc { line: 1, column: 1 },
             file_name: file_name.to_string(),
         }
-    }
-
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.s.len()
     }
 
     #[inline]
@@ -2801,7 +2395,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn peek(&self) -> i8 {
+    pub(crate) fn peek(&self) -> i8 {
         if self.pos >= self.s.len() {
             return 0;
         }
@@ -2809,17 +2403,17 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn eof(&self) -> bool {
+    pub(crate) fn eof(&self) -> bool {
         self.pos >= self.s.len()
     }
 
     #[inline]
-    pub fn eol(&self) -> bool {
+    pub(crate) fn eol(&self) -> bool {
         self.peek() == b'\n' as i8
     }
 
     #[inline]
-    pub fn skip_to_eol(&mut self) {
+    pub(crate) fn skip_to_eol(&mut self) {
         let rem = self.remaining_bytes();
         match rem.iter().position(|&b| b == b'\n') {
             Some(i) => self.pos += i,
@@ -2828,7 +2422,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn next_byte(&mut self) -> i8 {
+    pub(crate) fn next_byte(&mut self) -> i8 {
         if self.pos >= self.s.len() {
             return 0;
         }
@@ -2838,7 +2432,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn chr(&mut self, ch: i8) -> bool {
+    pub(crate) fn chr(&mut self, ch: i8) -> bool {
         if self.peek() != ch {
             return false;
         }
@@ -2847,7 +2441,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn str_match(&mut self, string: &[u8]) -> bool {
+    pub(crate) fn str_match(&mut self, string: &[u8]) -> bool {
         let len = string.len();
         if self.s.len() - self.pos < len {
             return false;
@@ -2860,7 +2454,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn buf_append(&mut self, ch: u8) -> bool {
+    pub(crate) fn buf_append(&mut self, ch: u8) -> bool {
         if self.buf_pos + 1 >= self.buf.len() {
             return false;
         }
@@ -2870,33 +2464,11 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn buf_appends(&mut self, s: &[u8]) -> bool {
-        for &b in s {
-            if b == 0 {
-                break;
-            }
-            if !self.buf_append(b) {
-                return false;
-            }
-        }
-        true
-    }
-
-    pub fn buf_appends_str(&mut self, s: &str) -> bool {
-        for &b in s.as_bytes() {
-            if !self.buf_append(b) {
-                return false;
-            }
-        }
-        true
-    }
-
-    #[inline]
-    pub fn buf_appends_code_point(&mut self, c: u32) -> bool {
+    pub(crate) fn buf_appends_code_point(&mut self, c: u32) -> bool {
         if self.buf_pos + 4 <= self.buf.len() {
-            let mut count = utf8_h::utf32_to_utf8_safe(c, &mut self.buf[self.buf_pos..]);
+            let mut count = utf32_to_utf8_safe(c, &mut self.buf[self.buf_pos..]);
             if count == 0 {
-                count = utf8_h::utf32_to_utf8_safe(0xfffd, &mut self.buf[self.buf_pos..]);
+                count = utf32_to_utf8_safe(0xfffd, &mut self.buf[self.buf_pos..]);
             }
             if count == 0 {
                 return false;
@@ -2909,7 +2481,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn oct(&mut self, out: &mut u8) -> bool {
+    pub(crate) fn oct(&mut self, out: &mut u8) -> bool {
         let mut i: u8 = 0;
         let mut c: u8 = 0;
         while self.peek() as u8 >= b'0' && self.peek() as u8 <= b'7' && (i as i32) < 4 {
@@ -2927,7 +2499,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn dec_int64(&mut self, out: &mut i64) -> i32 {
+    pub(crate) fn dec_int64(&mut self, out: &mut i64) -> i32 {
         let remaining = self.remaining_bytes();
         let (val, count) = parse_dec_u64(remaining);
         if count > 0 {
@@ -2941,7 +2513,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn hex_int64(&mut self, out: &mut i64) -> i32 {
+    pub(crate) fn hex_int64(&mut self, out: &mut i64) -> i32 {
         let remaining = self.remaining_bytes();
         let (val, count) = parse_hex_u64(remaining);
         if count > 0 {
@@ -2955,7 +2527,7 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn unicode_code_point(&mut self, out: &mut u32) -> bool {
+    pub(crate) fn unicode_code_point(&mut self, out: &mut u32) -> bool {
         if !self.chr(b'{' as i8) {
             return false;
         }
@@ -2977,50 +2549,27 @@ impl<'a> scanner<'a> {
     }
 
     #[inline]
-    pub fn check_supported_char_encoding(&mut self) -> bool {
-        use super::super::shared_types::XKB_ERROR_INVALID_FILE_ENCODING;
+    pub(crate) fn check_supported_char_encoding(&mut self) -> bool {
         if self.str_match(b"\xEF\xBB\xBF") || self.s.len() < 2 {
             return true;
         }
         let input = self.s;
         if input[0] == 0 || input[1] == 0 {
-            let loc = self.token_location();
-            log::error!(
-                "[XKB-{:03}] {}:{}:{}: unexpected NULL character.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                &self.file_name,
-                loc.line,
-                loc.column
-            );
             return false;
         }
         if !input[0].is_ascii() {
-            let loc = self.token_location();
-            log::error!(
-                "[XKB-{:03}] {}:{}:{}: unexpected non-ASCII character.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                &self.file_name,
-                loc.line,
-                loc.column
-            );
             return false;
         }
         true
     }
 
     #[inline]
-    pub fn input_at(&self, pos: usize) -> *const i8 {
-        self.s[pos..].as_ptr() as *const i8
-    }
-
-    #[inline]
-    pub fn input_slice(&self, start: usize, end: usize) -> &[u8] {
+    pub(crate) fn input_slice(&self, start: usize, end: usize) -> &[u8] {
         &self.s[start..end]
     }
 
-    pub fn token_location(&mut self) -> scanner_loc {
-        let mut line: usize;
-        let column: usize;
+    pub(crate) fn token_location(&mut self) -> ScannerLoc {
+        let mut line = self.cached_loc.line;
         let mut line_pos: usize = 0;
 
         if self.cached_pos > self.token_pos {
@@ -3029,30 +2578,24 @@ impl<'a> scanner<'a> {
             self.cached_loc.line = 1;
         }
 
-        line = self.cached_loc.line;
         let input = self.s;
         let start = self.cached_pos;
         let end = self.token_pos;
 
         let mut search_from = start;
-        loop {
-            match input[search_from..end].iter().position(|&b| b == b'\n') {
-                Some(i) => {
-                    line += 1;
-                    search_from = search_from + i + 1;
-                    line_pos = search_from;
-                }
-                None => break,
-            }
+        while let Some(i) = input[search_from..end].iter().position(|&b| b == b'\n') {
+            line += 1;
+            search_from = search_from + i + 1;
+            line_pos = search_from;
         }
 
-        if line == self.cached_loc.line {
-            column = self.cached_loc.column + (self.token_pos - self.cached_pos);
+        let column = if line == self.cached_loc.line {
+            self.cached_loc.column + (self.token_pos - self.cached_pos)
         } else {
-            column = self.token_pos - line_pos + 1;
-        }
+            self.token_pos - line_pos + 1
+        };
 
-        let loc = scanner_loc { line, column };
+        let loc = ScannerLoc { line, column };
         self.cached_pos = self.token_pos;
         self.cached_loc = loc;
         loc
@@ -3062,112 +2605,95 @@ impl<'a> scanner<'a> {
 // ── sval comparison functions (migrated from scanner_utils.rs) ──
 
 #[inline]
-pub fn svaleq(s1: sval, s2: sval) -> bool {
+pub(crate) fn svaleq(s1: Sval, s2: Sval) -> bool {
     s1.data == s2.data
 }
 
+pub(crate) const ALTERNATE_GROUP: i32 = 77;
+pub(crate) const FUNCTION_KEYS: i32 = 76;
+pub(crate) const KEYPAD_KEYS: i32 = 75;
+pub(crate) const MODIFIER_KEYS: i32 = 74;
+pub(crate) const ALPHANUMERIC_KEYS: i32 = 73;
+pub(crate) const HIDDEN: i32 = 72;
+pub(crate) const DEFAULT: i32 = 71;
+pub(crate) const PARTIAL: i32 = 70;
+pub(crate) const KEYNAME: i32 = 65;
+pub(crate) const IDENT: i32 = 64;
+pub(crate) const FLOAT: i32 = 63;
+pub(crate) const INTEGER: i32 = 62;
+pub(crate) const DECIMAL_DIGIT: i32 = 61;
+pub(crate) const STRING: i32 = 60;
+pub(crate) const INVERT: i32 = 55;
+pub(crate) const EXCLAM: i32 = 54;
+pub(crate) const SEMI: i32 = 53;
+pub(crate) const COMMA: i32 = 52;
+pub(crate) const DOT: i32 = 51;
+pub(crate) const CBRACKET: i32 = 50;
+pub(crate) const OBRACKET: i32 = 49;
+pub(crate) const CPAREN: i32 = 48;
+pub(crate) const OPAREN: i32 = 47;
+pub(crate) const CBRACE: i32 = 46;
+pub(crate) const OBRACE: i32 = 45;
+pub(crate) const TIMES: i32 = 44;
+pub(crate) const DIVIDE: i32 = 43;
+pub(crate) const MINUS: i32 = 42;
+pub(crate) const PLUS: i32 = 41;
+pub(crate) const EQUALS: i32 = 40;
+pub(crate) const VIRTUAL: i32 = 38;
+pub(crate) const LOGO: i32 = 37;
+pub(crate) const SOLID: i32 = 36;
+pub(crate) const OUTLINE: i32 = 35;
+pub(crate) const TEXT: i32 = 34;
+pub(crate) const OVERLAY: i32 = 33;
+pub(crate) const SECTION: i32 = 32;
+pub(crate) const ROW: i32 = 31;
+pub(crate) const KEYS: i32 = 30;
+pub(crate) const SHAPE: i32 = 29;
+pub(crate) const INDICATOR: i32 = 28;
+pub(crate) const MODIFIER_MAP: i32 = 27;
+pub(crate) const GROUP: i32 = 26;
+pub(crate) const ALIAS: i32 = 25;
+pub(crate) const KEY: i32 = 24;
+pub(crate) const ACTION_TOK: i32 = 23;
+pub(crate) const INTERPRET: i32 = 22;
+pub(crate) const TYPE: i32 = 21;
+pub(crate) const VIRTUAL_MODS: i32 = 20;
+pub(crate) const ALTERNATE: i32 = 14;
+pub(crate) const REPLACE: i32 = 13;
+pub(crate) const AUGMENT: i32 = 12;
+pub(crate) const OVERRIDE: i32 = 11;
+pub(crate) const INCLUDE: i32 = 10;
+pub(crate) const XKB_LAYOUT: i32 = 8;
+pub(crate) const XKB_SEMANTICS: i32 = 7;
+pub(crate) const XKB_GEOMETRY: i32 = 6;
+pub(crate) const XKB_COMPATMAP: i32 = 5;
+pub(crate) const XKB_SYMBOLS: i32 = 4;
+pub(crate) const XKB_TYPES: i32 = 3;
+pub(crate) const XKB_KEYCODES: i32 = 2;
+pub(crate) const XKB_KEYMAP: i32 = 1;
+pub(crate) const ERROR_TOK: i32 = 255;
+pub(crate) const YYUNDEF: i32 = 257;
+pub(crate) const YYERROR: i32 = 256;
+pub(crate) const END_OF_FILE: i32 = 0;
+pub(crate) const YYEMPTY: i32 = -2;
+
+/// Native Rust UTF-32 to UTF-8 conversion (replaces C FFI)
+///
+/// Encode a Unicode code point to UTF-8 into the given buffer.
+/// Returns the number of bytes written (NOT including null terminator), or 0 on failure.
 #[inline]
-pub fn svaleq_prefix(s1: sval, s2: sval) -> bool {
-    s1.data.len() <= s2.data.len() && s1.data == &s2.data[..s1.data.len()]
+pub(crate) fn utf32_to_utf8_safe(unichar: u32, buffer: &mut [u8]) -> usize {
+    let Some(ch) = char::from_u32(unichar) else {
+        return 0;
+    };
+    let encoded = ch.encode_utf8(&mut buffer[..]);
+    encoded.len()
 }
-
-#[inline]
-pub fn isvaleq(s1: sval, s2: sval) -> bool {
-    s1.data.len() == s2.data.len() && s1.data.eq_ignore_ascii_case(s2.data)
-}
-
-pub mod parser_h {
-    pub const ALTERNATE_GROUP: i32 = 77;
-    pub const FUNCTION_KEYS: i32 = 76;
-    pub const KEYPAD_KEYS: i32 = 75;
-    pub const MODIFIER_KEYS: i32 = 74;
-    pub const ALPHANUMERIC_KEYS: i32 = 73;
-    pub const HIDDEN: i32 = 72;
-    pub const DEFAULT: i32 = 71;
-    pub const PARTIAL: i32 = 70;
-    pub const KEYNAME: i32 = 65;
-    pub const IDENT: i32 = 64;
-    pub const FLOAT: i32 = 63;
-    pub const INTEGER: i32 = 62;
-    pub const DECIMAL_DIGIT: i32 = 61;
-    pub const STRING: i32 = 60;
-    pub const INVERT: i32 = 55;
-    pub const EXCLAM: i32 = 54;
-    pub const SEMI: i32 = 53;
-    pub const COMMA: i32 = 52;
-    pub const DOT: i32 = 51;
-    pub const CBRACKET: i32 = 50;
-    pub const OBRACKET: i32 = 49;
-    pub const CPAREN: i32 = 48;
-    pub const OPAREN: i32 = 47;
-    pub const CBRACE: i32 = 46;
-    pub const OBRACE: i32 = 45;
-    pub const TIMES: i32 = 44;
-    pub const DIVIDE: i32 = 43;
-    pub const MINUS: i32 = 42;
-    pub const PLUS: i32 = 41;
-    pub const EQUALS: i32 = 40;
-    pub const VIRTUAL: i32 = 38;
-    pub const LOGO: i32 = 37;
-    pub const SOLID: i32 = 36;
-    pub const OUTLINE: i32 = 35;
-    pub const TEXT: i32 = 34;
-    pub const OVERLAY: i32 = 33;
-    pub const SECTION: i32 = 32;
-    pub const ROW: i32 = 31;
-    pub const KEYS: i32 = 30;
-    pub const SHAPE: i32 = 29;
-    pub const INDICATOR: i32 = 28;
-    pub const MODIFIER_MAP: i32 = 27;
-    pub const GROUP: i32 = 26;
-    pub const ALIAS: i32 = 25;
-    pub const KEY: i32 = 24;
-    pub const ACTION_TOK: i32 = 23;
-    pub const INTERPRET: i32 = 22;
-    pub const TYPE: i32 = 21;
-    pub const VIRTUAL_MODS: i32 = 20;
-    pub const ALTERNATE: i32 = 14;
-    pub const REPLACE: i32 = 13;
-    pub const AUGMENT: i32 = 12;
-    pub const OVERRIDE: i32 = 11;
-    pub const INCLUDE: i32 = 10;
-    pub const XKB_LAYOUT: i32 = 8;
-    pub const XKB_SEMANTICS: i32 = 7;
-    pub const XKB_GEOMETRY: i32 = 6;
-    pub const XKB_COMPATMAP: i32 = 5;
-    pub const XKB_SYMBOLS: i32 = 4;
-    pub const XKB_TYPES: i32 = 3;
-    pub const XKB_KEYCODES: i32 = 2;
-    pub const XKB_KEYMAP: i32 = 1;
-    pub const ERROR_TOK: i32 = 255;
-    pub const YYUNDEF: i32 = 257;
-    pub const YYerror: i32 = 256;
-    pub const END_OF_FILE: i32 = 0;
-    pub const YYEMPTY: i32 = -2;
-}
-pub mod utf8_h {
-
-    /// Native Rust UTF-32 to UTF-8 conversion (replaces C FFI)
-    ///
-    /// Encode a Unicode code point to UTF-8 into the given buffer.
-    /// Returns the number of bytes written (NOT including null terminator), or 0 on failure.
-    #[inline]
-    pub fn utf32_to_utf8_safe(unichar: u32, buffer: &mut [u8]) -> usize {
-        let Some(ch) = char::from_u32(unichar) else {
-            return 0;
-        };
-        let encoded = ch.encode_utf8(&mut buffer[..]);
-        encoded.len()
-    }
-}
-
 // ── Keyword lookup (gperf-generated) ──
 
-pub const MAX_HASH_VALUE: u32 = 72;
-pub const MIN_WORD_LENGTH: u32 = 3;
-pub const MAX_WORD_LENGTH: u32 = 21;
-pub const MIN_HASH_VALUE: u32 = 3;
-pub const TOTAL_KEYWORDS: u32 = 45;
+pub(crate) const MAX_HASH_VALUE: u32 = 72;
+pub(crate) const MIN_WORD_LENGTH: u32 = 3;
+pub(crate) const MAX_WORD_LENGTH: u32 = 21;
 
 static GPERF_DOWNCASE: [u8; 256] = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
@@ -3301,7 +2827,7 @@ fn keyword_gperf_hash(s: &[u8]) -> u32 {
 }
 
 /// Look up a keyword token from a byte slice. Returns -1 if not found.
-pub fn keyword_to_token(string: &[u8]) -> i32 {
+pub(crate) fn keyword_to_token(string: &[u8]) -> i32 {
     let len = string.len();
     if len > MAX_WORD_LENGTH as usize || len < MIN_WORD_LENGTH as usize {
         return -1;
@@ -3323,16 +2849,16 @@ pub fn keyword_to_token(string: &[u8]) -> i32 {
 /// Safe parser value stack type, replacing the old YYSTYPE union.
 /// Each variant owns its data. `Default` produces `None`.
 #[derive(Default)]
-pub enum YYValue<'a> {
+pub(crate) enum YYValue<'a> {
     #[default]
     None,
     Num(i64),
     FileType(u32),
     Str(String),
-    Sval(sval<'a>),
+    Sval(Sval<'a>),
     Atom(u32),
-    Merge(merge_mode),
-    MapFlags(xkb_map_flags),
+    Merge(MergeMode),
+    MapFlags(XkbMapFlags),
     Keysym(u32),
     NoSymbolOrActionList(u32),
     Expr(Box<ExprDef>),
@@ -3345,7 +2871,7 @@ pub enum YYValue<'a> {
     KeyType(Box<KeyTypeDef>),
     Symbols(Box<SymbolsDef>),
     ModMask(Box<ModMapDef>),
-    GroupCompat(Box<GroupCompatDef>),
+    GroupCompat,
     LedMap(Box<LedMapDef>),
     LedName(Box<LedNameDef>),
     Keycode(Box<KeycodeDef>),
@@ -3359,113 +2885,109 @@ pub enum YYValue<'a> {
 
 // Helper to take a value out and replace with None
 impl<'a> YYValue<'a> {
-    pub fn take(&mut self) -> YYValue<'a> {
-        std::mem::take(self)
-    }
-
-    pub fn take_expr(&mut self) -> Option<Box<ExprDef>> {
+    pub(crate) fn take_expr(&mut self) -> Option<Box<ExprDef>> {
         match std::mem::take(self) {
             YYValue::Expr(e) => Some(e),
             _ => Option::None,
         }
     }
-    pub fn take_expr_list(&mut self) -> Vec<Box<ExprDef>> {
+    pub(crate) fn take_expr_list(&mut self) -> Vec<Box<ExprDef>> {
         match std::mem::take(self) {
             YYValue::ExprList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub fn take_var(&mut self) -> Option<Box<VarDef>> {
+    pub(crate) fn take_var(&mut self) -> Option<Box<VarDef>> {
         match std::mem::take(self) {
             YYValue::Var(v) => Some(v),
             _ => Option::None,
         }
     }
-    pub fn take_var_list(&mut self) -> Vec<Box<VarDef>> {
+    pub(crate) fn take_var_list(&mut self) -> Vec<Box<VarDef>> {
         match std::mem::take(self) {
             YYValue::VarList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub fn take_vmod(&mut self) -> Option<Box<VModDef>> {
+    pub(crate) fn take_vmod(&mut self) -> Option<Box<VModDef>> {
         match std::mem::take(self) {
             YYValue::VMod(v) => Some(v),
             _ => Option::None,
         }
     }
-    pub fn take_vmod_list(&mut self) -> Vec<Box<VModDef>> {
+    pub(crate) fn take_vmod_list(&mut self) -> Vec<Box<VModDef>> {
         match std::mem::take(self) {
             YYValue::VModList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub fn take_file(&mut self) -> Option<Box<XkbFile>> {
+    pub(crate) fn take_file(&mut self) -> Option<Box<XkbFile>> {
         match std::mem::take(self) {
             YYValue::File(f) => Some(f),
             _ => Option::None,
         }
     }
-    pub fn take_file_list(&mut self) -> Vec<Box<XkbFile>> {
+    pub(crate) fn take_file_list(&mut self) -> Vec<Box<XkbFile>> {
         match std::mem::take(self) {
             YYValue::FileList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub fn take_stmt_list(&mut self) -> Vec<Statement> {
+    pub(crate) fn take_stmt_list(&mut self) -> Vec<Statement> {
         match std::mem::take(self) {
             YYValue::StmtList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub fn as_num(&self) -> i64 {
+    pub(crate) fn as_num(&self) -> i64 {
         match self {
             YYValue::Num(n) => *n,
             _ => 0,
         }
     }
-    pub fn as_atom(&self) -> u32 {
+    pub(crate) fn as_atom(&self) -> u32 {
         match self {
             YYValue::Atom(a) => *a,
             _ => 0,
         }
     }
-    pub fn as_merge(&self) -> merge_mode {
+    pub(crate) fn as_merge(&self) -> MergeMode {
         match self {
             YYValue::Merge(m) => *m,
             _ => MERGE_DEFAULT,
         }
     }
-    pub fn as_map_flags(&self) -> xkb_map_flags {
+    pub(crate) fn as_map_flags(&self) -> XkbMapFlags {
         match self {
             YYValue::MapFlags(f) => *f,
             _ => 0,
         }
     }
-    pub fn as_file_type(&self) -> u32 {
+    pub(crate) fn as_file_type(&self) -> u32 {
         match self {
             YYValue::FileType(f) => *f,
             _ => 0,
         }
     }
-    pub fn as_keysym(&self) -> u32 {
+    pub(crate) fn as_keysym(&self) -> u32 {
         match self {
             YYValue::Keysym(k) => *k,
             _ => 0,
         }
     }
-    pub fn as_no_sym_or_action_list(&self) -> u32 {
+    pub(crate) fn as_no_sym_or_action_list(&self) -> u32 {
         match self {
             YYValue::NoSymbolOrActionList(n) => *n,
             _ => 0,
         }
     }
-    pub fn as_sval(&self) -> sval<'a> {
+    pub(crate) fn as_sval(&self) -> Sval<'a> {
         match self {
             YYValue::Sval(s) => *s,
-            _ => sval::EMPTY,
+            _ => Sval::EMPTY,
         }
     }
-    pub fn take_str(&mut self) -> String {
+    pub(crate) fn take_str(&mut self) -> String {
         match std::mem::take(self) {
             YYValue::Str(s) => s,
             _ => String::new(),
@@ -3479,8 +3001,8 @@ impl<'a> YYValue<'a> {
 fn is_space(ch: i8) -> bool {
     matches!(ch as u8, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
 }
-pub static DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
-fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
+pub(crate) static DECIMAL_SEPARATOR: i8 = '.' as i32 as i8;
+fn number(s: &mut Scanner, out: &mut i64, out_tok: &mut i32) -> bool {
     if s.str_match(b"0x") {
         match s.hex_int64(out) {
             -1 => {
@@ -3523,10 +3045,10 @@ fn number(s: &mut scanner, out: &mut i64, out_tok: &mut i32) -> bool {
 }
 
 /// Lex one token and write the semantic value into `yylval`.
-pub fn _xkbcommon_lex<'a>(
+pub(crate) fn _xkbcommon_lex<'a>(
     yylval: &mut YYValue<'a>,
-    s: &mut scanner<'a>,
-    ctx: &mut xkb_context,
+    s: &mut Scanner<'a>,
+    ctx: &mut XkbContext,
 ) -> i32 {
     loop {
         while is_space(s.peek()) {
@@ -3573,34 +3095,14 @@ pub fn _xkbcommon_lex<'a>(
                     if s.unicode_code_point(&mut cp) && cp != 0 {
                         s.buf_appends_code_point(cp);
                     } else {
-                        let loc = s.token_location();
-                        log::warn!("[XKB-{:03}] {}:{}:{}: invalid Unicode escape sequence \"{}\" in string literal\n",
-                            XKB_WARNING_INVALID_UNICODE_ESCAPE_SEQUENCE
-                                as i32,
-                            &s.file_name,
-                            loc.line,
-                            loc.column,
-                            std::str::from_utf8(s.input_slice(start_pos.wrapping_sub(1), s.pos)).unwrap_or(""));
+                        let _loc = s.token_location();
                     }
                 } else if s.oct(&mut o) && o != 0 {
                     s.buf_append(o);
                 } else if s.pos > start_pos {
-                    let loc_0 = s.token_location();
-                    log::warn!("[XKB-{:03}] {}:{}:{}: invalid octal escape sequence \"{}\" in string literal\n",
-                        XKB_WARNING_INVALID_ESCAPE_SEQUENCE as i32,
-                        &s.file_name,
-                        loc_0.line,
-                        loc_0.column,
-                        std::str::from_utf8(s.input_slice(start_pos.wrapping_sub(1), s.pos)).unwrap_or(""));
+                    let _loc_0 = s.token_location();
                 } else {
-                    let loc_1 = s.token_location();
-                    log::warn!("[XKB-{:03}] {}:{}:{}: unknown escape sequence \"\\{}\" in string literal\n",
-                        XKB_WARNING_UNKNOWN_CHAR_ESCAPE_SEQUENCE
-                            as i32,
-                        &s.file_name,
-                        loc_1.line,
-                        loc_1.column,
-                        (s.peek() as u8 as char));
+                    let _loc_1 = s.token_location();
                 }
             } else {
                 let c = s.next_byte();
@@ -3608,13 +3110,7 @@ pub fn _xkbcommon_lex<'a>(
             }
         }
         if !s.buf_append(0) || !s.chr(b'"' as i8) {
-            let loc_2 = s.token_location();
-            log::error!(
-                "{}:{}:{}: unterminated string literal\n",
-                &s.file_name,
-                loc_2.line,
-                loc_2.column
-            );
+            let _loc_2 = s.token_location();
             return ERROR_TOK;
         }
         // Convert buffer to String (exclude null terminator)
@@ -3628,20 +3124,14 @@ pub fn _xkbcommon_lex<'a>(
             s.next_byte();
         }
         if !s.chr(b'>' as i8) {
-            let loc_3 = s.token_location();
-            log::error!(
-                "{}:{}:{}: unterminated key name literal\n",
-                &s.file_name,
-                loc_3.line,
-                loc_3.column
-            );
+            let _loc_3 = s.token_location();
             return ERROR_TOK;
         }
         let len: usize = s.pos - s.token_pos - 2;
         let keyname_bytes: Vec<u8> = s
             .input_slice(s.token_pos + 1, s.token_pos + 1 + len)
             .to_vec();
-        *yylval = YYValue::Atom(xkb_atom_intern(ctx, &keyname_bytes));
+        *yylval = YYValue::Atom(atom_intern(&mut ctx.atom_table, &keyname_bytes));
         return KEYNAME;
     }
     if s.chr(b';' as i8) {
@@ -3701,7 +3191,7 @@ pub fn _xkbcommon_lex<'a>(
         if tok >= 0 {
             return tok;
         }
-        *yylval = YYValue::Sval(sval {
+        *yylval = YYValue::Sval(Sval {
             data: &s.s[s.token_pos..s.pos],
         });
         return IDENT;
@@ -3710,59 +3200,36 @@ pub fn _xkbcommon_lex<'a>(
     if number(s, &mut num_val, &mut tok) {
         *yylval = YYValue::Num(num_val);
         if tok == ERROR_TOK {
-            let loc_4 = s.token_location();
-            log::error!(
-                "[XKB-{:03}] {}:{}:{}: malformed number literal\n",
-                XKB_ERROR_MALFORMED_NUMBER_LITERAL as i32,
-                &s.file_name,
-                loc_4.line,
-                loc_4.column
-            );
+            let _loc_4 = s.token_location();
             return ERROR_TOK;
         }
         return tok;
     }
-    let loc_5 = s.token_location();
-    log::error!(
-        "{}:{}:{}: unrecognized token\n",
-        &s.file_name,
-        loc_5.line,
-        loc_5.column
-    );
+    let _loc_5 = s.token_location();
     ERROR_TOK
 }
-pub fn XkbParseStringInit<'a>(
-    sc: &mut scanner<'a>,
+pub(crate) fn xkb_parse_string_init<'a>(
+    sc: &mut Scanner<'a>,
     input: &'a [u8],
     file_name: &str,
     _map: &str,
 ) -> bool {
-    *sc = scanner::new(input, file_name);
+    *sc = Scanner::new(input, file_name);
     if !sc.check_supported_char_encoding() {
-        let loc = sc.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
-            XKB_ERROR_INVALID_FILE_ENCODING as i32,
-            &sc.file_name,
-            loc.line,
-            loc.column);
-        let loc_0 = sc.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
-            XKB_ERROR_INVALID_FILE_ENCODING as i32,
-            &sc.file_name,
-            loc_0.line,
-            loc_0.column);
+        let _loc = sc.token_location();
+        let _loc_0 = sc.token_location();
         return false;
     }
     true
 }
-pub fn XkbParseString(
-    ctx: &mut xkb_context,
+pub(crate) fn xkb_parse_string(
+    ctx: &mut XkbContext,
     input: &[u8],
     file_name: &str,
     map: &str,
 ) -> Option<Box<XkbFile>> {
-    let mut sc = scanner::new(&[], "");
-    if !XkbParseStringInit(&mut sc, input, file_name, map) {
+    let mut sc = Scanner::new(&[], "");
+    if !xkb_parse_string_init(&mut sc, input, file_name, map) {
         return None;
     }
     parse(ctx, &mut sc, map)
@@ -3770,30 +3237,28 @@ pub fn XkbParseString(
 
 // ── Include file processing (merged from include.rs) ──
 
-use super::super::keymap::{
-    xkb_context_failed_include_path_get, xkb_context_getenv, xkb_context_num_failed_include_paths,
-};
+use super::super::keymap::{xkb_context_getenv, xkb_context_num_failed_include_paths};
 use super::super::keymap::{xkb_context_include_path_get, xkb_context_num_include_paths};
 use super::super::keymap::{
     xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
 };
 
-pub const INCLUDE_MAX_DEPTH: i32 = 15_i32;
-pub const MERGE_OVERRIDE_PREFIX: i32 = '+' as i32;
-pub const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
-pub const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
+pub(crate) const INCLUDE_MAX_DEPTH: i32 = 15_i32;
+pub(crate) const MERGE_OVERRIDE_PREFIX: i32 = '+' as i32;
+pub(crate) const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
+pub(crate) const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
 
 /// Parsed result from one segment of an include statement.
-pub struct ParsedIncludeMap {
-    pub file: String,
-    pub map: String,
-    pub extra_data: String,
-    pub nextop: char,
+pub(crate) struct ParsedIncludeMap {
+    pub(crate) file: String,
+    pub(crate) map: String,
+    pub(crate) extra_data: String,
+    pub(crate) nextop: char,
 }
 
 /// Parse one include map segment from `input`, returning the parsed result
 /// and the remaining input (if any). Returns None on parse error.
-pub fn ParseIncludeMap(input: &str) -> Option<(ParsedIncludeMap, Option<&str>)> {
+pub(crate) fn parse_include_map(input: &str) -> Option<(ParsedIncludeMap, Option<&str>)> {
     // Split at merge-mode prefix (+, |, ^)
     let (segment, nextop, rest) = if let Some(pos) = input.find(&['+', '|', '^'][..]) {
         let op = input.as_bytes()[pos] as char;
@@ -3842,53 +3307,26 @@ pub fn ParseIncludeMap(input: &str) -> Option<(ParsedIncludeMap, Option<&str>)> 
 static XKB_FILE_TYPE_INCLUDE_DIRS: [&str; 7] = [
     "keycodes", "types", "compat", "symbols", "geometry", "keymap", "rules",
 ];
-fn DirectoryForInclude(type_0: u32) -> &'static str {
+fn directory_for_include(type_0: u32) -> &'static str {
     if type_0 as usize >= XKB_FILE_TYPE_INCLUDE_DIRS.len() {
         ""
     } else {
         XKB_FILE_TYPE_INCLUDE_DIRS[type_0 as usize]
     }
 }
-fn LogIncludePaths(ctx: &mut xkb_context) {
+fn log_include_paths(ctx: &mut XkbContext) {
     let num = xkb_context_num_include_paths(ctx);
     if num > 0_u32 {
-        log::error!(
-            "[XKB-{:03}] {} include paths searched:\n",
-            XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-            num
-        );
-        for i in 0..num {
-            log::error!(
-                "[XKB-{:03}] \t{}\n",
-                XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                xkb_context_include_path_get(ctx, i)
-            );
-        }
-    } else {
-        log::error!(
-            "[XKB-{:03}] There are no include paths to search\n",
-            XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32
-        );
+        for _i in 0..num {}
     }
     let num_failed = xkb_context_num_failed_include_paths(ctx);
     if num_failed > 0_u32 {
-        log::error!(
-            "[XKB-{:03}] {} include paths could not be added:\n",
-            XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-            num_failed
-        );
-        for i in 0..num_failed {
-            log::error!(
-                "[XKB-{:03}] \t{}\n",
-                XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-                xkb_context_failed_include_path_get(ctx, i)
-            );
-        }
+        for _i in 0..num_failed {}
     }
 }
 /// Expand `%H`, `%S`, `%E`, `%%` in the given name string.
 /// Returns `Some(expanded)` on success, `None` on error.
-fn expand_percent(parent_file_name: &str, type_dir: &str, name: &str) -> Option<String> {
+fn expand_percent(_parent_file_name: &str, type_dir: &str, name: &str) -> Option<String> {
     let max_len = 4096usize;
     let mut result = String::new();
     let mut chars = name.chars().peekable();
@@ -3899,8 +3337,6 @@ fn expand_percent(parent_file_name: &str, type_dir: &str, name: &str) -> Option<
                 Some('H') => match xkb_context_getenv("HOME") {
                     Ok(home) => result.push_str(&home),
                     Err(_) => {
-                        log::error!("{}: %H was used in an include statement, but the HOME environment variable is not set\n",
-                                parent_file_name);
                         return None;
                     }
                 },
@@ -3916,21 +3352,10 @@ fn expand_percent(parent_file_name: &str, type_dir: &str, name: &str) -> Option<
                     result.push('/');
                     result.push_str(type_dir);
                 }
-                Some(other) => {
-                    log::error!(
-                        "[XKB-{:03}] {}: unknown % format ({}) in include statement\n",
-                        XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                        parent_file_name,
-                        other
-                    );
+                Some(_other) => {
                     return None;
                 }
                 None => {
-                    log::error!(
-                        "[XKB-{:03}] {}: trailing %% in include statement\n",
-                        XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                        parent_file_name
-                    );
                     return None;
                 }
             }
@@ -3938,11 +3363,6 @@ fn expand_percent(parent_file_name: &str, type_dir: &str, name: &str) -> Option<
             result.push(c);
         }
         if result.len() > max_len {
-            log::error!(
-                "[XKB-{:03}] {}: include path after expansion is too long\n",
-                XKB_ERROR_INSUFFICIENT_BUFFER_SIZE as i32,
-                parent_file_name
-            );
             return None;
         }
     }
@@ -3952,7 +3372,7 @@ fn expand_percent(parent_file_name: &str, type_dir: &str, name: &str) -> Option<
 /// - `Ok(None)` if no `%` found (no expansion needed)
 /// - `Ok(Some(expanded))` if expansion succeeded
 /// - `Err(())` on error
-pub fn expand_path_str(
+pub(crate) fn expand_path_str(
     parent_file_name: &str,
     name: &str,
     file_type: u32,
@@ -3962,7 +3382,7 @@ pub fn expand_path_str(
         Some(pos) => pos,
         None => return Ok(None),
     };
-    let type_dir = DirectoryForInclude(file_type);
+    let type_dir = directory_for_include(file_type);
     let prefix = &name[..k];
     let rest = &name[k..];
     match expand_percent(parent_file_name, type_dir, rest) {
@@ -3975,15 +3395,15 @@ pub fn expand_path_str(
         None => Err(()),
     }
 }
-pub fn FindFileInXkbPath(
-    ctx: &mut xkb_context,
+pub(crate) fn find_file_in_xkb_path(
+    ctx: &mut XkbContext,
     _parent_file_name: &str,
     name: &str,
     type_0: u32,
     offset: &mut u32,
     required: bool,
 ) -> Option<(std::sync::Arc<Vec<u8>>, String)> {
-    let type_dir = DirectoryForInclude(type_0);
+    let type_dir = directory_for_include(type_0);
     let mut i: u32 = *offset;
     while i < xkb_context_num_include_paths(ctx) {
         let path = format!(
@@ -3993,12 +3413,6 @@ pub fn FindFileInXkbPath(
             name
         );
         if path.len() >= 4096 {
-            log::error!(
-                "[XKB-{:03}] Path is too long: expected max length of {}, got: {}\n",
-                XKB_ERROR_INVALID_PATH as i32,
-                4096,
-                &path
-            );
         } else if let Some(data) = super::super::shared_types::read_file_cached(&path) {
             *offset = i;
             return Some((data, path));
@@ -4006,30 +3420,15 @@ pub fn FindFileInXkbPath(
         i += 1;
     }
     if required && *offset == 0 {
-        log::error!(
-            "[XKB-{:03}] Couldn't find file \"{}/{}\" in include paths\n",
-            XKB_ERROR_INCLUDED_FILE_NOT_FOUND as i32,
-            type_dir,
-            name
-        );
-        LogIncludePaths(ctx);
+        log_include_paths(ctx);
     }
     None
 }
-pub fn ExceedsIncludeMaxDepth(include_depth: u32) -> bool {
-    if include_depth >= INCLUDE_MAX_DEPTH as u32 {
-        log::error!(
-            "[XKB-{:03}] Exceeded include depth threshold ({})",
-            XKB_ERROR_RECURSIVE_INCLUDE as i32,
-            15_i32
-        );
-        true
-    } else {
-        false
-    }
+pub(crate) fn exceeds_include_max_depth(include_depth: u32) -> bool {
+    include_depth >= INCLUDE_MAX_DEPTH as u32
 }
-pub fn ProcessIncludeFile(
-    ctx: &mut xkb_context,
+pub(crate) fn process_include_file(
+    ctx: &mut XkbContext,
     stmt: &IncludeStmt,
     file_type: u32,
 ) -> Option<Box<XkbFile>> {
@@ -4055,19 +3454,14 @@ pub fn ProcessIncludeFile(
         // Expanded but not absolute — don't search include paths
         None
     } else {
-        FindFileInXkbPath(ctx, "(unknown)", &stmt_file, file_type, &mut offset, true)
+        find_file_in_xkb_path(ctx, "(unknown)", &stmt_file, file_type, &mut offset, true)
     };
 
     while let Some((ref file_data, ref _path)) = file_and_path {
-        if let Some(parsed) = XkbParseString(ctx, file_data, &stmt.file, map_str) {
+        if let Some(parsed) = xkb_parse_string(ctx, file_data, &stmt.file, map_str) {
             let _ = file_and_path.take();
 
             if parsed.file_type != file_type {
-                log::error!("[XKB-{:03}] Include file of wrong type (expected {}, got {}); Include file \"{}\" ignored\n",
-                    XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                    xkb_file_type_to_string(file_type),
-                    xkb_file_type_to_string(parsed.file_type),
-                    &stmt.file);
                 // parsed drops automatically
             } else if !stmt.map.is_empty() || parsed.flags != 0 && MAP_IS_DEFAULT as i32 != 0 {
                 xkb_file = Some(parsed);
@@ -4085,7 +3479,7 @@ pub fn ProcessIncludeFile(
         }
         offset += 1;
         file_and_path =
-            FindFileInXkbPath(ctx, "(unknown)", &stmt_file, file_type, &mut offset, true);
+            find_file_in_xkb_path(ctx, "(unknown)", &stmt_file, file_type, &mut offset, true);
     }
 
     if xkb_file.is_none() {
@@ -4093,37 +3487,22 @@ pub fn ProcessIncludeFile(
     }
     // else: candidate drops automatically
 
-    if xkb_file.is_none() {
-        if !stmt.map.is_empty() {
-            log::error!(
-                "[XKB-{:03}] Couldn't process include statement for '{}({})'\n",
-                XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                &stmt.file,
-                &stmt.map
-            );
-        } else {
-            log::error!(
-                "[XKB-{:03}] Couldn't process include statement for '{}'\n",
-                XKB_ERROR_INVALID_INCLUDED_FILE as i32,
-                &stmt.file
-            );
-        }
-    }
+    if xkb_file.is_none() && !stmt.map.is_empty() {}
     xkb_file
 }
 
-pub const GROUP_MASK_NAME_LAST: u32 = 3;
-pub const GROUP_INDEX_NAME_LAST: u32 = 1;
-pub type compile_file_fn =
-    Option<for<'a> fn(Option<&mut XkbFile>, &mut xkb_keymap_info<'a>) -> bool>;
+pub(crate) const GROUP_MASK_NAME_LAST: u32 = 3;
+pub(crate) const GROUP_INDEX_NAME_LAST: u32 = 1;
+pub(crate) type CompileFileFn =
+    Option<for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool>;
 #[inline]
-fn ComputeEffectiveMask(keymap: &xkb_keymap, mods: &mut xkb_mods) {
+fn compute_effective_mask(keymap: &XkbKeymap, mods: &mut XkbMods) {
     let unknown_mods: u32 = !((1_u64 << keymap.mods.num_mods).wrapping_sub(1_u64) as u32);
     mods.mask = mod_mask_get_effective(keymap, mods.mods) | mods.mods & unknown_mods;
 }
 /// Version that takes the mod_set separately to allow calling on fields of keymap.
 #[inline]
-fn compute_effective_mask_with(mod_set: &xkb_mod_set, mods: &mut xkb_mods) {
+fn compute_effective_mask_with(mod_set: &XkbModSet, mods: &mut XkbMods) {
     let unknown_mods: u32 = !((1_u64 << mod_set.num_mods).wrapping_sub(1_u64) as u32);
     // Inline mod_mask_get_effective logic
     let mut mask: u32 = mods.mods & MOD_REAL_MASK_ALL;
@@ -4136,17 +3515,17 @@ fn compute_effective_mask_with(mod_set: &xkb_mod_set, mods: &mut xkb_mods) {
     }
     mods.mask = mask | mods.mods & unknown_mods;
 }
-fn UpdateActionMods(keymap: &xkb_keymap, act: &mut xkb_action, modmap: u32) {
+fn update_action_mods(keymap: &XkbKeymap, act: &mut XkbAction, modmap: u32) {
     if let 2..=4 = act.action_type() {
         if act.as_mods().flags & ACTION_MODS_LOOKUP_MODMAP != 0 {
             act.as_mods_mut().mods.mods = modmap;
         }
-        ComputeEffectiveMask(keymap, &mut act.as_mods_mut().mods);
+        compute_effective_mask(keymap, &mut act.as_mods_mut().mods);
     };
 }
-fn default_interpret() -> xkb_sym_interpret {
-    xkb_sym_interpret {
-        sym: XKB_KEY_NoSymbol as u32,
+fn default_interpret() -> XkbSymInterpret {
+    XkbSymInterpret {
+        sym: XKB_KEY_NO_SYMBOL as u32,
         match_0: MATCH_ANY_OR_NONE,
         mods: 0,
         virtual_mod: DEFAULT_INTERPRET_VMOD,
@@ -4154,13 +3533,13 @@ fn default_interpret() -> xkb_sym_interpret {
         repeat: DEFAULT_INTERPRET_KEY_REPEAT as i32 != 0,
         required: false,
         num_actions: 0,
-        action: xkb_action::None,
-        actions: Vec::new(), // Note: xkb_action is Copy, so Vec::new() is zero-alloc (no heap until push)
+        action: XkbAction::None,
+        actions: Vec::new(), // Note: XkbAction is Copy, so Vec::new() is zero-alloc (no heap until push)
     }
 }
 /// Returns interp indices into `keymap.sym_interprets`, or `usize::MAX` for default interprets.
-fn FindInterpForKey(
-    keymap: &mut xkb_keymap,
+fn find_interp_for_key(
+    keymap: &mut XkbKeymap,
     key_idx: usize,
     group: u32,
     level: u32,
@@ -4178,7 +3557,7 @@ fn FindInterpForKey(
     syms_buf[..num_syms].copy_from_slice(&syms_ref[..num_syms]);
     let syms = &syms_buf[..num_syms];
     let key_modmap = keymap.keys[key_idx].modmap;
-    let key_name = keymap.keys[key_idx].name;
+    let _key_name = keymap.keys[key_idx].name;
     let num_syms = syms.len() as i32;
     let mut s: i32 = 0_i32;
     while s < num_syms {
@@ -4192,8 +3571,7 @@ fn FindInterpForKey(
             }
             let interp = &keymap.sym_interprets[i as usize];
             let mods: u32;
-            found = false;
-            if !(interp.sym != syms[s as usize] && interp.sym != XKB_KEY_NoSymbol as u32) {
+            if !(interp.sym != syms[s as usize] && interp.sym != XKB_KEY_NO_SYMBOL as u32) {
                 if interp.level_one_only as i32 != 0 && level != 0_u32 {
                     mods = 0_u32;
                 } else {
@@ -4219,18 +3597,11 @@ fn FindInterpForKey(
                 }
                 if found as i32 != 0
                     && i > 0_u32
-                    && interp.sym == XKB_KEY_NoSymbol as u32
+                    && interp.sym == XKB_KEY_NO_SYMBOL as u32
                     && !interp_indices.is_empty()
                 {
                     for &prev_idx in interp_indices.iter() {
                         if prev_idx == i as usize {
-                            found = false;
-                            log::warn!("Repeated interpretation ignored for keysym #{} \"{}\" at level {}/group {} on key <{}>.\n",
-                                    s + 1_i32,
-                                    KeysymText(syms[s as usize]),
-                                    level.wrapping_add(1_u32),
-                                    group.wrapping_add(1_u32),
-                                    xkb_atom_text(&keymap.ctx.atom_table, key_name));
                             use_default = true;
                             break 's_26;
                         }
@@ -4252,11 +3623,11 @@ fn FindInterpForKey(
     }
     true
 }
-fn ApplyInterpsToKey(keymap: &mut xkb_keymap, key_idx: usize) -> bool {
+fn apply_interps_to_key(keymap: &mut XkbKeymap, key_idx: usize) -> bool {
     let mut vmodmap: u32 = 0_u32;
     let mut level: u32;
     let mut interp_indices: Vec<usize> = Vec::with_capacity(4);
-    let mut actions: Vec<xkb_action> = Vec::with_capacity(4);
+    let mut actions: Vec<XkbAction> = Vec::with_capacity(4);
     let num_groups = keymap.keys[key_idx].num_groups;
     let mut group: u32 = 0_u32;
     while group < num_groups {
@@ -4266,11 +3637,11 @@ fn ApplyInterpsToKey(keymap: &mut xkb_keymap, key_idx: usize) -> bool {
             while level < num_levels {
                 interp_indices.clear();
                 let found: bool =
-                    FindInterpForKey(keymap, key_idx, group, level, &mut interp_indices);
+                    find_interp_for_key(keymap, key_idx, group, level, &mut interp_indices);
                 if found {
                     let default_interp = default_interpret();
                     let key_explicit = keymap.keys[key_idx].explicit;
-                    let key_name = keymap.keys[key_idx].name;
+                    let _key_name = keymap.keys[key_idx].name;
                     for &idx in interp_indices.iter() {
                         let interp = if idx == usize::MAX {
                             &default_interp
@@ -4300,10 +3671,6 @@ fn ApplyInterpsToKey(keymap: &mut xkb_keymap, key_idx: usize) -> bool {
                         }
                     }
                     if (actions.len() as u32 != 0) as i64 > MAX_ACTIONS_PER_LEVEL as i64 {
-                        log::warn!("Could not append interpret actions to key <{}>: maximum is {}, got: {}. Dropping excessive actions\n",
-                            xkb_atom_text(&keymap.ctx.atom_table, key_name),
-                            65535_i32,
-                            actions.len() as u32);
                         actions.truncate(MAX_ACTIONS_PER_LEVEL as usize);
                     }
                     keymap.keys[key_idx].groups[group as usize].levels[level as usize].actions =
@@ -4329,26 +3696,26 @@ fn ApplyInterpsToKey(keymap: &mut xkb_keymap, key_idx: usize) -> bool {
     true
 }
 #[inline]
-fn is_mod_action(action: &xkb_action) -> bool {
+fn is_mod_action(action: &XkbAction) -> bool {
     action.action_type() == ACTION_TYPE_MOD_SET
         || action.action_type() == ACTION_TYPE_MOD_LATCH
         || action.action_type() == ACTION_TYPE_MOD_LOCK
 }
 #[inline]
-fn is_group_action(action: &xkb_action) -> bool {
+fn is_group_action(action: &XkbAction) -> bool {
     action.action_type() == ACTION_TYPE_GROUP_SET
         || action.action_type() == ACTION_TYPE_GROUP_LATCH
         || action.action_type() == ACTION_TYPE_GROUP_LOCK
 }
-fn CheckMultipleActionsCategories(keymap: &mut xkb_keymap, key_idx: usize) {
+fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
     let num_groups = keymap.keys[key_idx].num_groups;
-    let key_name = keymap.keys[key_idx].name;
+    let _key_name = keymap.keys[key_idx].name;
     let mut g: u32 = 0_u32;
     while g < num_groups {
         let num_levels = keymap.key_num_levels(&keymap.keys[key_idx], g);
         let mut l: u32 = 0_u32;
         while l < num_levels {
-            let level: &mut xkb_level =
+            let level: &mut XkbLevel =
                 &mut keymap.keys[key_idx].groups[g as usize].levels[l as usize];
             if level.actions.len() > 1 {
                 let mut i: u16 = 0_u16;
@@ -4368,19 +3735,13 @@ fn CheckMultipleActionsCategories(keymap: &mut xkb_keymap, key_idx: usize) {
                                 || group_action as i32 != 0
                                     && is_group_action(&level.actions[j as usize]) as i32 != 0
                             {
-                                let type_0: &str = if mod_action as i32 != 0 {
+                                let _type_0: &str = if mod_action as i32 != 0 {
                                     "modifiers"
                                 } else if group_action as i32 != 0 {
                                     "group"
                                 } else {
-                                    ActionTypeText(action1_type)
+                                    action_type_text(action1_type)
                                 };
-                                log::error!("Cannot use multiple {} actions in the same level. Action #{} for key <{}> in group {}/level {} ignored.\n",
-                                    type_0,
-                                    j as i32 + 1_i32,
-                                    xkb_atom_text(&keymap.ctx.atom_table, key_name),
-                                    g.wrapping_add(1_u32),
-                                    l.wrapping_add(1_u32));
                                 level.actions[j as usize].set_none();
                             }
                             j = j.wrapping_add(1);
@@ -4394,20 +3755,17 @@ fn CheckMultipleActionsCategories(keymap: &mut xkb_keymap, key_idx: usize) {
         g = g.wrapping_add(1);
     }
 }
-fn add_key_aliases(keymap: &xkb_keymap, min: u32, max: u32, aliases: &mut Vec<xkb_key_alias>) {
+fn add_key_aliases(keymap: &XkbKeymap, min: u32, max: u32, aliases: &mut Vec<XkbKeyAlias>) {
     let mut alias: u32 = min;
     while alias <= max {
         let entry: KeycodeMatch = keymap.key_names[alias as usize];
         if entry.is_alias as i32 != 0 && entry.found as i32 != 0 {
-            aliases.push(xkb_key_alias {
-                real: entry.index,
-                alias,
-            });
+            aliases.push(XkbKeyAlias {});
         }
         alias = alias.wrapping_add(1);
     }
 }
-fn update_pending_key_fields(info: &mut xkb_keymap_info<'_>, key_idx: usize) -> bool {
+fn update_pending_key_fields(info: &mut XkbKeymapInfo<'_>, key_idx: usize) -> bool {
     if info.keymap.keys[key_idx].out_of_range_pending_group {
         let idx = info.keymap.keys[key_idx].out_of_range_group_number as usize;
         if !info.pending_computations[idx].computed {
@@ -4416,7 +3774,7 @@ fn update_pending_key_fields(info: &mut xkb_keymap_info<'_>, key_idx: usize) -> 
             let mut group: u32 = 0_u32;
             let mut pending_dummy = false;
             let resolve_ret =
-                ExprResolveGroup(info, &expr_box, true, &mut group, &mut pending_dummy);
+                expr_resolve_group(info, &expr_box, true, &mut group, &mut pending_dummy);
             info.pending_computations[idx].expr = Some(expr_box);
             match resolve_ret {
                 0 => {
@@ -4424,9 +3782,6 @@ fn update_pending_key_fields(info: &mut xkb_keymap_info<'_>, key_idx: usize) -> 
                     info.pending_computations[idx].value = group.wrapping_sub(1_u32);
                 }
                 2 => {
-                    log::error!("[XKB-{:03}] Invalid key redirect group index\n", {
-                        XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX
-                    });
                     return info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0;
                 }
                 _ => {}
@@ -4438,9 +3793,9 @@ fn update_pending_key_fields(info: &mut xkb_keymap_info<'_>, key_idx: usize) -> 
     true
 }
 fn update_pending_action_fields(
-    info: &mut xkb_keymap_info<'_>,
+    info: &mut XkbKeymapInfo<'_>,
     keycode: u32,
-    act: &mut xkb_action,
+    act: &mut XkbAction,
 ) -> bool {
     match act.action_type() {
         5..=7 => {
@@ -4451,14 +3806,16 @@ fn update_pending_action_fields(
                     let absolute: bool = act.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0;
                     let mut pending_dummy = false;
                     let expr_box = info.pending_computations[pc_idx].expr.take().unwrap();
-                    let resolve_ret =
-                        ExprResolveGroup(info, &expr_box, absolute, &mut group, &mut pending_dummy);
+                    let resolve_ret = expr_resolve_group(
+                        info,
+                        &expr_box,
+                        absolute,
+                        &mut group,
+                        &mut pending_dummy,
+                    );
                     info.pending_computations[pc_idx].expr = Some(expr_box);
                     match resolve_ret {
                         2 => {
-                            log::error!("[XKB-{:03}] Invalid action group index\n", {
-                                XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX
-                            });
                             return false;
                         }
                         1 => {}
@@ -4485,7 +3842,7 @@ fn update_pending_action_fields(
                 act.as_group_mut().group = info.pending_computations[pc_idx].value as i32;
                 act.as_group_mut().flags = (act.as_group().flags
                     & !(ACTION_PENDING_COMPUTATION as i32) as u32)
-                    as xkb_action_flags;
+                    as XkbActionFlags;
             }
             true
         }
@@ -4502,8 +3859,8 @@ fn update_pending_action_fields(
         _ => true,
     }
 }
-fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info<'_>) -> bool {
-    let keymap: &mut xkb_keymap = &mut *info.keymap;
+fn update_derived_keymap_fields(info: &mut XkbKeymapInfo<'_>) -> bool {
+    let keymap: &mut XkbKeymap = &mut *info.keymap;
     let mut num_key_aliases: u32 = 0_u32;
     let mut min_alias: u32 = 0_u32;
     let mut max_alias: u32 = 0_u32;
@@ -4520,7 +3877,7 @@ fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info<'_>) -> bool {
         alias = alias.wrapping_add(1);
     }
     if num_key_aliases != 0 {
-        let mut aliases: Vec<xkb_key_alias> = Vec::with_capacity(num_key_aliases as usize);
+        let mut aliases: Vec<XkbKeyAlias> = Vec::with_capacity(num_key_aliases as usize);
         add_key_aliases(keymap, min_alias, max_alias, &mut aliases);
         keymap.key_aliases = aliases;
     }
@@ -4550,11 +3907,11 @@ fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info<'_>) -> bool {
         } else {
             1_u32
         };
-        info.lookup.groupIndexNames[GROUP_INDEX_NAME_LAST as usize] = LookupEntry {
+        info.lookup.group_index_names[GROUP_INDEX_NAME_LAST as usize] = LookupEntry {
             name: GROUP_LAST_INDEX_NAME,
             value: num_groups,
         };
-        info.lookup.groupMaskNames[GROUP_MASK_NAME_LAST as usize] = LookupEntry {
+        info.lookup.group_mask_names[GROUP_MASK_NAME_LAST as usize] = LookupEntry {
             name: GROUP_LAST_INDEX_NAME,
             value: 1_u32 << num_groups.wrapping_sub(1_u32),
         };
@@ -4591,10 +3948,10 @@ fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info<'_>) -> bool {
         };
         let mut ki: u32 = start_idx;
         while ki < keymap.num_keys {
-            if !ApplyInterpsToKey(keymap, ki as usize) {
+            if !apply_interps_to_key(keymap, ki as usize) {
                 return false;
             }
-            CheckMultipleActionsCategories(keymap, ki as usize);
+            check_multiple_actions_categories(keymap, ki as usize);
             ki = ki.wrapping_add(1);
         }
     }
@@ -4712,7 +4069,7 @@ fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info<'_>) -> bool {
                             let mut act = info.keymap.keys[ki as usize].groups[i_1 as usize].levels
                                 [j_0 as usize]
                                 .actions[0];
-                            UpdateActionMods(&*info.keymap, &mut act, key_modmap);
+                            update_action_mods(&*info.keymap, &mut act, key_modmap);
                             if (pending_computations as i32 != 0
                                 || act.action_type() == ACTION_TYPE_REDIRECT_KEY)
                                 && !update_pending_action_fields(info, key_keycode, &mut act)
@@ -4729,7 +4086,7 @@ fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info<'_>) -> bool {
                             let mut act = info.keymap.keys[ki as usize].groups[i_1 as usize].levels
                                 [j_0 as usize]
                                 .actions[k as usize];
-                            UpdateActionMods(&*info.keymap, &mut act, key_modmap);
+                            update_action_mods(&*info.keymap, &mut act, key_modmap);
                             if (pending_computations as i32 != 0
                                 || act.action_type() == ACTION_TYPE_REDIRECT_KEY)
                                 && !update_pending_action_fields(info, key_keycode, &mut act)
@@ -4765,12 +4122,9 @@ fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info<'_>) -> bool {
                     let mut mask: u32 = 0_u32;
                     let mut pending_dummy = false;
                     let resolved =
-                        ExprResolveGroupMask(info, &expr_box, &mut mask, &mut pending_dummy);
+                        expr_resolve_group_mask(info, &expr_box, &mut mask, &mut pending_dummy);
                     info.pending_computations[groups_idx].expr = Some(expr_box);
                     if !resolved {
-                        log::error!("[XKB-{:03}] Invalid LED group mask\n", {
-                            XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX
-                        });
                         return false;
                     }
                     info.pending_computations[groups_idx].computed = true;
@@ -4785,43 +4139,29 @@ fn UpdateDerivedKeymapFields(info: &mut xkb_keymap_info<'_>) -> bool {
     }
     true
 }
-static COMPILE_FILE_FNS: [compile_file_fn; 4] = {
+static COMPILE_FILE_FNS: [CompileFileFn; 4] = {
     [
-        Some(CompileKeycodes as for<'a> fn(Option<&mut XkbFile>, &mut xkb_keymap_info<'a>) -> bool),
-        Some(CompileKeyTypes as for<'a> fn(Option<&mut XkbFile>, &mut xkb_keymap_info<'a>) -> bool),
+        Some(compile_keycodes as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
+        Some(compile_key_types as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
         Some(
-            CompileCompatMap as for<'a> fn(Option<&mut XkbFile>, &mut xkb_keymap_info<'a>) -> bool,
+            compile_compat_map as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool,
         ),
-        Some(CompileSymbols as for<'a> fn(Option<&mut XkbFile>, &mut xkb_keymap_info<'a>) -> bool),
+        Some(compile_symbols as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
     ]
 };
-fn pending_computations_array_free(p: &mut Vec<pending_computation>) {
+fn pending_computations_array_free(p: &mut Vec<PendingComputation>) {
     for pc in p.iter_mut() {
         pc.expr.take(); // Drop handles cleanup
     }
     p.clear();
 }
-pub fn CompileKeymap(file: &mut XkbFile, keymap: &mut xkb_keymap) -> bool {
+pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool {
     let mut file_indices: [Option<usize>; 4] = [None; 4];
     for (idx, stmt) in file.defs.iter().enumerate() {
         if let Statement::XkbFile(ref sub_file) = stmt {
-            if sub_file.file_type < FIRST_KEYMAP_FILE_TYPE
-                || sub_file.file_type > LAST_KEYMAP_FILE_TYPE
-            {
-                if sub_file.file_type == FILE_TYPE_GEOMETRY {
-                    log::warn!(
-                        "[XKB-{:03}] Geometry sections are not supported; ignoring\n",
-                        XKB_WARNING_UNSUPPORTED_GEOMETRY_SECTION as i32
-                    );
-                } else {
-                    log::error!(
-                        "Cannot define {} in a keymap file\n",
-                        xkb_file_type_to_string(sub_file.file_type)
-                    );
-                }
+            if sub_file.file_type > LAST_KEYMAP_FILE_TYPE {
+                if sub_file.file_type == FILE_TYPE_GEOMETRY {}
             } else if file_indices[sub_file.file_type as usize].is_some() {
-                log::error!("More than one {} section in keymap file; All sections after the first ignored\n",
-                    xkb_file_type_to_string(sub_file.file_type));
             } else {
                 file_indices[sub_file.file_type as usize] = Some(idx);
             }
@@ -4830,7 +4170,7 @@ pub fn CompileKeymap(file: &mut XkbFile, keymap: &mut xkb_keymap) -> bool {
     let km_format = keymap.format;
     let km_flags = keymap.flags;
     let km_num_groups = keymap.num_groups;
-    let mut info = xkb_keymap_info {
+    let mut info = XkbKeymapInfo {
         keymap,
         strict: (if km_format == XKB_KEYMAP_FORMAT_TEXT_V1 {
             if km_flags & XKB_KEYMAP_COMPILE_STRICT_MODE != 0 {
@@ -4847,13 +4187,13 @@ pub fn CompileKeymap(file: &mut XkbFile, keymap: &mut xkb_keymap) -> bool {
             max_groups: format_max_groups(km_format),
             max_overlays: format_max_overlays(km_format),
             controls_name_offset: format_control_names_offset(km_format),
-            group_lock_on_release: isGroupLockOnReleaseSupported(km_format),
-            mods_unlock_on_press: isModsUnLockOnPressSupported(km_format),
-            mods_latch_on_press: isModsLatchOnPressSupported(km_format),
-            overlapping_overlays: areOverlappingOverlaysSupported(km_format),
+            group_lock_on_release: is_group_lock_on_release_supported(km_format),
+            mods_unlock_on_press: is_mods_un_lock_on_press_supported(km_format),
+            mods_latch_on_press: is_mods_latch_on_press_supported(km_format),
+            overlapping_overlays: are_overlapping_overlays_supported(km_format),
         },
         lookup: XkbcompLookup {
-            groupIndexNames: [
+            group_index_names: [
                 LookupEntry {
                     name: "first",
                     value: 1_u32,
@@ -4871,7 +4211,7 @@ pub fn CompileKeymap(file: &mut XkbFile, keymap: &mut xkb_keymap) -> bool {
                     value: 0_u32,
                 },
             ],
-            groupMaskNames: [
+            group_mask_names: [
                 LookupEntry {
                     name: "none",
                     value: 0_u32,
@@ -4907,22 +4247,13 @@ pub fn CompileKeymap(file: &mut XkbFile, keymap: &mut xkb_keymap) -> bool {
     let mut type_0: u32 = FIRST_KEYMAP_FILE_TYPE;
     while type_0 <= LAST_KEYMAP_FILE_TYPE {
         if file_indices[type_0 as usize].is_none() {
-            log::debug!(
-                "Component {} not provided in keymap\n",
-                xkb_file_type_to_string(type_0)
-            );
         } else {
             let idx = file_indices[type_0 as usize].unwrap();
-            let sub_name = if let Statement::XkbFile(ref sub_file) = file.defs[idx] {
+            let _sub_name = if let Statement::XkbFile(ref sub_file) = file.defs[idx] {
                 safe_map_name(sub_file)
             } else {
                 ""
             };
-            log::debug!(
-                "Compiling {} \"{}\"\n",
-                xkb_file_type_to_string(type_0),
-                sub_name
-            );
         }
         let file_arg: Option<&mut XkbFile> = file_indices[type_0 as usize].map(|idx| {
             if let Statement::XkbFile(ref mut sub_file) = file.defs[idx] {
@@ -4935,22 +4266,16 @@ pub fn CompileKeymap(file: &mut XkbFile, keymap: &mut xkb_keymap) -> bool {
             file_arg, &mut info,
         ) as bool;
         if !ok {
-            log::error!("Failed to compile {}\n", xkb_file_type_to_string(type_0));
             pending_computations_array_free(&mut info.pending_computations);
             return false;
         }
         type_0 += 1;
     }
-    let ok_0: bool = UpdateDerivedKeymapFields(&mut info) as bool;
+    let ok_0: bool = update_derived_keymap_fields(&mut info) as bool;
     pending_computations_array_free(&mut info.pending_computations);
     ok_0
 }
-pub const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
-
-use super::messages::{
-    XKB_ERROR_CANNOT_RESOLVE_RMLVO, XKB_ERROR_INVALID_FILE_ENCODING,
-    XKB_ERROR_INVALID_RULES_SYNTAX, XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION,
-};
+pub(crate) const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 
 /// Appends bytes from `src` to the Vec<i8>.
 #[inline]
@@ -4958,21 +4283,21 @@ fn vec_append_nul_terminated(v: &mut Vec<i8>, src: &[u8]) {
     v.extend(src.iter().map(|&b| b as i8));
 }
 
-/// Index-based sval for scanner input. Used in lvalue/rule to avoid
+/// Index-based sval for scanner input. Used in Lvalue/rule to avoid
 /// lifetime issues across include boundaries. Reconstruct sval via to_sval().
 #[derive(Copy, Clone, Default)]
-pub struct SvalIdx {
+pub(crate) struct SvalIdx {
     start: usize,
     end: usize,
 }
 impl SvalIdx {
     const EMPTY: SvalIdx = SvalIdx { start: 0, end: 0 };
     #[inline]
-    fn to_sval<'a>(&self, input: &'a [u8]) -> sval<'a> {
+    fn to_sval<'a>(&self, input: &'a [u8]) -> Sval<'a> {
         if self.start >= self.end || self.start >= input.len() {
-            sval::EMPTY
+            Sval::EMPTY
         } else {
-            sval {
+            Sval {
                 data: &input[self.start..self.end.min(input.len())],
             }
         }
@@ -4983,65 +4308,61 @@ impl SvalIdx {
     }
 }
 
-pub struct matcher<'a> {
-    pub ctx: &'a mut xkb_context,
-    pub rmlvo: rule_names<'a>,
-    pub val: lvalue,
-    pub groups: Vec<group>,
-    pub mapping: mapping,
-    pub rule: rule,
-    pub pending_kccgst: kccgst_buffer,
-    pub kccgst: [Vec<i8>; 5],
+pub(crate) struct Matcher<'a> {
+    pub(crate) ctx: &'a mut XkbContext,
+    pub(crate) rmlvo: RuleNames<'a>,
+    pub(crate) val: Lvalue,
+    pub(crate) groups: Vec<Group>,
+    pub(crate) mapping: Mapping,
+    pub(crate) rule: Rule,
+    pub(crate) pending_kccgst: KccgstBuffer,
+    pub(crate) kccgst: [Vec<i8>; 5],
 }
 #[derive(Clone, Default)]
-pub struct kccgst_buffer {
-    pub buffer: Vec<i8>,
-    pub slices: Vec<kccgst_buffer_slice>,
+pub(crate) struct KccgstBuffer {
+    pub(crate) buffer: Vec<i8>,
+    pub(crate) slices: Vec<KccgstBufferSlice>,
 }
 #[derive(Copy, Clone)]
-pub struct kccgst_buffer_slice {
-    pub length: u32,
-    pub kccgst: rules_kccgst,
-    pub layout: u32,
+pub(crate) struct KccgstBufferSlice {
+    pub(crate) length: u32,
+    pub(crate) kccgst: u32,
+    pub(crate) layout: u32,
 }
-pub type rules_kccgst = u32;
-pub const _KCCGST_NUM_ENTRIES: rules_kccgst = 5;
-pub const KCCGST_GEOMETRY: rules_kccgst = 4;
-pub const KCCGST_SYMBOLS: rules_kccgst = 3;
-pub const KCCGST_COMPAT: rules_kccgst = 2;
-pub const KCCGST_TYPES: rules_kccgst = 1;
-pub const KCCGST_KEYCODES: rules_kccgst = 0;
+pub(crate) const _KCCGST_NUM_ENTRIES: u32 = 5;
+pub(crate) const KCCGST_GEOMETRY: u32 = 4;
+pub(crate) const KCCGST_SYMBOLS: u32 = 3;
+pub(crate) const KCCGST_COMPAT: u32 = 2;
+pub(crate) const KCCGST_TYPES: u32 = 1;
+pub(crate) const KCCGST_KEYCODES: u32 = 0;
 #[derive(Copy, Clone)]
-pub struct rule {
-    pub mlvo_value_at_pos: [SvalIdx; 4],
-    pub match_type_at_pos: [mlvo_match_type; 4],
-    pub kccgst_value_at_pos: [SvalIdx; 5],
-    pub num_mlvo_values: mlvo_index_t,
-    pub num_kccgst_values: kccgst_index_t,
-    pub skip: bool,
+pub(crate) struct Rule {
+    pub(crate) mlvo_value_at_pos: [SvalIdx; 4],
+    pub(crate) match_type_at_pos: [u32; 4],
+    pub(crate) kccgst_value_at_pos: [SvalIdx; 5],
+    pub(crate) num_mlvo_values: u8,
+    pub(crate) num_kccgst_values: u8,
+    pub(crate) skip: bool,
 }
-pub type kccgst_index_t = u8;
-pub type mlvo_index_t = u8;
-pub type mlvo_match_type = u32;
-pub const MLVO_MATCH_GROUP: mlvo_match_type = 5;
-pub const MLVO_MATCH_WILDCARD_ANY: mlvo_match_type = 4;
-pub const MLVO_MATCH_WILDCARD_SOME: mlvo_match_type = 3;
-pub const MLVO_MATCH_WILDCARD_NONE: mlvo_match_type = 2;
-pub const MLVO_MATCH_WILDCARD_LEGACY: mlvo_match_type = 1;
-pub const MLVO_MATCH_NORMAL: mlvo_match_type = 0;
+pub(crate) const MLVO_MATCH_GROUP: u32 = 5;
+pub(crate) const MLVO_MATCH_WILDCARD_ANY: u32 = 4;
+pub(crate) const MLVO_MATCH_WILDCARD_SOME: u32 = 3;
+pub(crate) const MLVO_MATCH_WILDCARD_NONE: u32 = 2;
+pub(crate) const MLVO_MATCH_WILDCARD_LEGACY: u32 = 1;
+pub(crate) const MLVO_MATCH_NORMAL: u32 = 0;
 #[derive(Copy, Clone, Default)]
-pub struct mapping {
-    pub mlvo_at_pos: [rules_mlvo; 4],
-    pub num_mlvo: mlvo_index_t,
-    pub defined_mlvo_mask: mlvo_mask_t,
-    pub layout: LayoutIdx,
-    pub active_or_candidates_mask: u32,
-    pub kccgst_at_pos: [rules_kccgst; 5],
-    pub num_kccgst: kccgst_index_t,
-    pub defined_kccgst_mask: u8,
+pub(crate) struct Mapping {
+    pub(crate) mlvo_at_pos: [u32; 4],
+    pub(crate) num_mlvo: u8,
+    pub(crate) defined_mlvo_mask: u8,
+    pub(crate) layout: LayoutIdx,
+    pub(crate) active_or_candidates_mask: u32,
+    pub(crate) kccgst_at_pos: [u32; 5],
+    pub(crate) num_kccgst: u8,
+    pub(crate) defined_kccgst_mask: u8,
 }
 #[derive(Copy, Clone)]
-pub enum LayoutIdx {
+pub(crate) enum LayoutIdx {
     Single {
         layout_idx: u32,
         variant_idx: u32,
@@ -5052,7 +4373,6 @@ pub enum LayoutIdx {
     },
     Index {
         layout_idx_min: u32,
-        layout_idx_max: u32,
     },
 }
 impl Default for LayoutIdx {
@@ -5073,57 +4393,53 @@ impl LayoutIdx {
         }
     }
 }
-pub type mlvo_mask_t = u8;
-pub type rules_mlvo = u32;
-pub const _MLVO_NUM_ENTRIES: rules_mlvo = 4;
-pub const MLVO_OPTION: rules_mlvo = 3;
-pub const MLVO_VARIANT: rules_mlvo = 2;
-pub const MLVO_LAYOUT: rules_mlvo = 1;
-pub const MLVO_MODEL: rules_mlvo = 0;
+pub(crate) const _MLVO_NUM_ENTRIES: u32 = 4;
+pub(crate) const MLVO_OPTION: u32 = 3;
+pub(crate) const MLVO_VARIANT: u32 = 2;
+pub(crate) const MLVO_LAYOUT: u32 = 1;
+pub(crate) const MLVO_MODEL: u32 = 0;
 #[derive(Clone)]
-pub struct group {
-    pub name: Vec<u8>,
-    pub elements: Vec<Vec<u8>>,
+pub(crate) struct Group {
+    pub(crate) name: Vec<u8>,
+    pub(crate) elements: Vec<Vec<u8>>,
 }
 #[derive(Copy, Clone)]
-pub struct lvalue {
-    pub string: SvalIdx,
+pub(crate) struct Lvalue {
+    pub(crate) string: SvalIdx,
 }
 #[derive(Clone, Default)]
-pub struct rule_names<'a> {
-    pub model: matched_sval<'a>,
-    pub layouts: Vec<matched_sval<'a>>,
-    pub variants: Vec<matched_sval<'a>>,
-    pub options: Vec<matched_sval<'a>>,
+pub(crate) struct RuleNames<'a> {
+    pub(crate) model: MatchedSval<'a>,
+    pub(crate) layouts: Vec<MatchedSval<'a>>,
+    pub(crate) variants: Vec<MatchedSval<'a>>,
+    pub(crate) options: Vec<MatchedSval<'a>>,
 }
 #[derive(Copy, Clone, Default)]
-pub struct matched_sval<'a> {
-    pub sval: sval<'a>,
-    pub matched: bool,
-    pub layout: u32,
+pub(crate) struct MatchedSval<'a> {
+    pub(crate) sval: Sval<'a>,
+    pub(crate) matched: bool,
+    pub(crate) layout: u32,
 }
-pub const TOK_ERROR: rules_token = 11;
-pub type rules_token = u32;
-pub const TOK_INCLUDE: rules_token = 10;
-pub const TOK_WILD_CARD_ANY: rules_token = 9;
-pub const TOK_WILD_CARD_SOME: rules_token = 8;
-pub const TOK_WILD_CARD_NONE: rules_token = 7;
-pub const TOK_WILD_CARD_STAR: rules_token = 6;
-pub const TOK_EQUALS: rules_token = 5;
-pub const TOK_BANG: rules_token = 4;
-pub const TOK_GROUP_NAME: rules_token = 3;
-pub const TOK_IDENTIFIER: rules_token = 2;
-pub const TOK_END_OF_LINE: rules_token = 1;
-pub const TOK_END_OF_FILE: rules_token = 0;
-pub const LAYOUT_INDEX_FIRST: layout_index_ranges = 4294967292;
-pub const LAYOUT_INDEX_SINGLE: layout_index_ranges = 4294967291;
-pub const LAYOUT_INDEX_ANY: layout_index_ranges = 4294967294;
-pub const LAYOUT_INDEX_LATER: layout_index_ranges = 4294967293;
-pub type layout_index_ranges = u32;
+pub(crate) const TOK_ERROR: u32 = 11;
+pub(crate) const TOK_INCLUDE: u32 = 10;
+pub(crate) const TOK_WILD_CARD_ANY: u32 = 9;
+pub(crate) const TOK_WILD_CARD_SOME: u32 = 8;
+pub(crate) const TOK_WILD_CARD_NONE: u32 = 7;
+pub(crate) const TOK_WILD_CARD_STAR: u32 = 6;
+pub(crate) const TOK_EQUALS: u32 = 5;
+pub(crate) const TOK_BANG: u32 = 4;
+pub(crate) const TOK_GROUP_NAME: u32 = 3;
+pub(crate) const TOK_IDENTIFIER: u32 = 2;
+pub(crate) const TOK_END_OF_LINE: u32 = 1;
+pub(crate) const TOK_END_OF_FILE: u32 = 0;
+pub(crate) const LAYOUT_INDEX_FIRST: u32 = 4294967292;
+pub(crate) const LAYOUT_INDEX_SINGLE: u32 = 4294967291;
+pub(crate) const LAYOUT_INDEX_ANY: u32 = 4294967294;
+pub(crate) const LAYOUT_INDEX_LATER: u32 = 4294967293;
 
-impl Default for rule {
+impl Default for Rule {
     fn default() -> Self {
-        rule {
+        Rule {
             mlvo_value_at_pos: [SvalIdx::EMPTY; 4],
             match_type_at_pos: [0; 4],
             kccgst_value_at_pos: [SvalIdx::EMPTY; 5],
@@ -5133,36 +4449,35 @@ impl Default for rule {
         }
     }
 }
-impl Default for lvalue {
+impl Default for Lvalue {
     fn default() -> Self {
-        lvalue {
+        Lvalue {
             string: SvalIdx::EMPTY,
         }
     }
 }
-impl<'a> matcher<'a> {
-    fn new(ctx: &'a mut xkb_context) -> Self {
-        matcher {
+impl<'a> Matcher<'a> {
+    fn new(ctx: &'a mut XkbContext) -> Self {
+        Matcher {
             ctx,
-            rmlvo: rule_names::default(),
-            val: lvalue::default(),
+            rmlvo: RuleNames::default(),
+            val: Lvalue::default(),
             groups: Vec::new(),
-            mapping: mapping::default(),
-            rule: rule::default(),
-            pending_kccgst: kccgst_buffer::default(),
+            mapping: Mapping::default(),
+            rule: Rule::default(),
+            pending_kccgst: KccgstBuffer::default(),
             kccgst: std::array::from_fn(|_| Vec::new()),
         }
     }
 }
-pub type wildcard_match_type = u32;
-pub const WILDCARD_MATCH_ALL: wildcard_match_type = 1;
-pub const WILDCARD_MATCH_NONEMPTY: wildcard_match_type = 0;
-pub const MAX_INCLUDE_DEPTH: i32 = 5_i32;
+pub(crate) const WILDCARD_MATCH_ALL: u32 = 1;
+pub(crate) const WILDCARD_MATCH_NONEMPTY: u32 = 0;
+pub(crate) const MAX_INCLUDE_DEPTH: i32 = 5_i32;
 #[inline]
 fn is_ident(ch: i8) -> bool {
     (ch as u8).is_ascii_graphic() && ch as i32 != '\\' as i32
 }
-fn lex(s: &mut scanner, val: &mut lvalue) -> rules_token {
+fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
     loop {
         while s.chr(' ' as i32 as i8) as i32 != 0
             || s.chr('\t' as i32 as i8) as i32 != 0
@@ -5182,14 +4497,7 @@ fn lex(s: &mut scanner, val: &mut lvalue) -> rules_token {
         }
         s.chr('\r' as i32 as i8);
         if !s.eol() {
-            let loc: scanner_loc = s.token_location();
-            log::error!(
-                "[XKB-{:03}] {}:{}:{}: illegal new line escape; must appear at end of line\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                &s.file_name,
-                loc.line,
-                loc.column
-            );
+            let _loc: ScannerLoc = s.token_location();
             return TOK_ERROR;
         }
         s.next_byte();
@@ -5226,14 +4534,7 @@ fn lex(s: &mut scanner, val: &mut lvalue) -> rules_token {
             val.string.end += 1;
         }
         if val.string.len() == 0 {
-            let loc_0: scanner_loc = s.token_location();
-            log::error!(
-                "[XKB-{:03}] {}:{}:{}: unexpected character after '$'; expected name\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                &s.file_name,
-                loc_0.line,
-                loc_0.column
-            );
+            let _loc_0: ScannerLoc = s.token_location();
             return TOK_ERROR;
         }
         return TOK_GROUP_NAME;
@@ -5252,20 +4553,13 @@ fn lex(s: &mut scanner, val: &mut lvalue) -> rules_token {
         }
         return TOK_IDENTIFIER;
     }
-    let loc_1: scanner_loc = s.token_location();
-    log::error!(
-        "[XKB-{:03}] {}:{}:{}: unrecognized token\n",
-        XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-        &s.file_name,
-        loc_1.line,
-        loc_1.column
-    );
+    let _loc_1: ScannerLoc = s.token_location();
     TOK_ERROR
 }
 static RULES_MLVO_SVALS: [&[u8]; 4] = [b"model", b"layout", b"variant", b"option"];
 static RULES_KCCGST_SVALS: [&[u8]; 5] = [b"keycodes", b"types", b"compat", b"symbols", b"geometry"];
-pub const OPTIONS_MATCH_ALL_GROUPS: i32 = XKB_MAX_GROUPS;
-fn strip_spaces<'a>(v: sval<'a>) -> sval<'a> {
+pub(crate) const OPTIONS_MATCH_ALL_GROUPS: i32 = XKB_MAX_GROUPS;
+fn strip_spaces<'a>(v: Sval<'a>) -> Sval<'a> {
     let bytes = v.data;
     let start_trim = bytes
         .iter()
@@ -5277,41 +4571,41 @@ fn strip_spaces<'a>(v: sval<'a>) -> sval<'a> {
         .map(|i| i + 1)
         .unwrap_or(start_trim);
     if start_trim >= end_trim {
-        sval::EMPTY
+        Sval::EMPTY
     } else {
-        sval {
+        Sval {
             data: &bytes[start_trim..end_trim],
         }
     }
 }
 
-/// Resize a Vec<matched_sval>, zero-filling new elements.
-fn vec_resize_zero_matched_sval(v: &mut Vec<matched_sval<'_>>, new_len: usize) {
+/// Resize a Vec<MatchedSval>, zero-filling new elements.
+fn vec_resize_zero_matched_sval(v: &mut Vec<MatchedSval<'_>>, new_len: usize) {
     if new_len > v.len() {
-        v.resize(new_len, matched_sval::default());
+        v.resize(new_len, MatchedSval::default());
     } else {
         v.truncate(new_len);
     }
 }
 
-fn split_comma_separated_mlvo<'a>(mlvo: rules_mlvo, s: Option<&'a [u8]>) -> Vec<matched_sval<'a>> {
-    let mut arr: Vec<matched_sval<'a>> = Vec::new();
+fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<MatchedSval<'a>> {
+    let mut arr: Vec<MatchedSval<'a>> = Vec::new();
     let Some(bytes) = s else {
-        arr.push(matched_sval::default());
+        arr.push(MatchedSval::default());
         return arr;
     };
     if bytes.is_empty() {
-        arr.push(matched_sval::default());
+        arr.push(MatchedSval::default());
         return arr;
     }
     let mut pos: usize = 0;
     loop {
         let start = pos;
         let mut end = pos;
-        let mut val_0 = matched_sval {
+        let mut val_0 = MatchedSval {
             matched: false,
             layout: OPTIONS_MATCH_ALL_GROUPS as u32,
-            sval: sval {
+            sval: Sval {
                 data: &bytes[start..start],
             },
         };
@@ -5322,33 +4616,20 @@ fn split_comma_separated_mlvo<'a>(mlvo: rules_mlvo, s: Option<&'a [u8]>) -> Vec<
             pos += 1;
             end += 1;
         }
-        val_0.sval = sval {
+        val_0.sval = Sval {
             data: &bytes[start..end],
         };
         val_0.sval = strip_spaces(val_0.sval);
         if pos < bytes.len() && bytes[pos] as i32 == OPTIONS_GROUP_SPECIFIER_PREFIX {
             pos += 1;
             let layout_start = pos;
-            #[allow(unused_assignments)]
-            let mut layout: u32 = XKB_LAYOUT_INVALID;
             let (val_parsed, count) = parse_dec_u32(&bytes[pos..]);
-            layout = val_parsed;
+            let layout: u32 = val_parsed;
             let count = count as usize;
             if count > 0 {
                 pos += count;
                 if layout == 0 || layout > XKB_MAX_GROUPS as u32 {
-                    log::error!(
-                        "[XKB-{:03}] Invalid layout index {} for the RMVLO component: \"{}\"\n",
-                        { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                        layout,
-                        val_0.sval.as_str()
-                    );
                 } else if mlvo != MLVO_OPTION {
-                    log::warn!(
-                        "Layout index {} is not supported for the RMLVO component: \"{}\"\n",
-                        layout,
-                        val_0.sval.as_str()
-                    );
                 } else {
                     val_0.layout = layout.wrapping_sub(1);
                 }
@@ -5358,11 +4639,7 @@ fn split_comma_separated_mlvo<'a>(mlvo: rules_mlvo, s: Option<&'a [u8]>) -> Vec<
                 pos += 1;
             }
             if count == 0 || layout_index_end != pos {
-                let layout_spec = std::str::from_utf8(&bytes[layout_start..pos]).unwrap_or("");
-                log::error!("[XKB-{:03}] Invalid layout index \"{}\" for the RMLVO component \"{}\"; discarding specifier.\n",
-                    { XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX },
-                    layout_spec,
-                    val_0.sval.as_str());
+                let _layout_spec = std::str::from_utf8(&bytes[layout_start..pos]).unwrap_or("");
                 val_0.layout = OPTIONS_MATCH_ALL_GROUPS as u32;
             }
         }
@@ -5377,12 +4654,12 @@ fn split_comma_separated_mlvo<'a>(mlvo: rules_mlvo, s: Option<&'a [u8]>) -> Vec<
     arr
 }
 fn matcher_new_from_names<'a>(
-    ctx: &'a mut xkb_context,
-    rmlvo: &'a xkb_rule_names,
-) -> Box<matcher<'a>> {
-    let mut m = Box::new(matcher::new(ctx));
+    ctx: &'a mut XkbContext,
+    rmlvo: &'a XkbRuleNames,
+) -> Box<Matcher<'a>> {
+    let mut m = Box::new(Matcher::new(ctx));
     let rmlvo_ref = rmlvo;
-    m.rmlvo.model.sval = sval {
+    m.rmlvo.model.sval = Sval {
         data: rmlvo_ref.model.as_bytes(),
     };
     m.rmlvo.model.layout = OPTIONS_MATCH_ALL_GROUPS as u32;
@@ -5411,66 +4688,31 @@ fn matcher_new_from_names<'a>(
         },
     );
     if m.rmlvo.layouts.len() > m.rmlvo.variants.len() {
-        if !rmlvo_ref.variant.as_bytes().is_empty() {
-            log::warn!(
-                "More layouts than variants: \"{}\" vs. \"{}\".\n",
-                if !rmlvo_ref.layout.as_bytes().is_empty() {
-                    rmlvo_ref.layout.to_str().unwrap_or("")
-                } else {
-                    "(none)"
-                },
-                if !rmlvo_ref.variant.as_bytes().is_empty() {
-                    rmlvo_ref.variant.to_str().unwrap_or("")
-                } else {
-                    "(none)"
-                }
-            );
-        }
         vec_resize_zero_matched_sval(&mut m.rmlvo.variants, m.rmlvo.layouts.len());
     } else if m.rmlvo.layouts.len() < m.rmlvo.variants.len() {
-        log::error!(
-            "Less layouts than variants: \"{}\" vs. \"{}\".\n",
-            if !rmlvo_ref.layout.as_bytes().is_empty() {
-                rmlvo_ref.layout.to_str().unwrap_or("")
-            } else {
-                "(none)"
-            },
-            if !rmlvo_ref.variant.as_bytes().is_empty() {
-                rmlvo_ref.variant.to_str().unwrap_or("")
-            } else {
-                "(none)"
-            }
-        );
         m.rmlvo.variants.truncate(m.rmlvo.layouts.len());
     }
     m
 }
-fn matcher_group_start_new(m: &mut matcher, name: &[u8]) {
-    let group: group = group {
+fn matcher_group_start_new(m: &mut Matcher, name: &[u8]) {
+    let group: Group = Group {
         name: name.to_vec(),
         elements: Vec::new(),
     };
     m.groups.push(group);
 }
-fn matcher_group_add_element(m: &mut matcher, _s: &mut scanner, element: &[u8]) {
+fn matcher_group_add_element(m: &mut Matcher, _s: &mut Scanner, element: &[u8]) {
     let last_group = m.groups.last_mut().unwrap();
     last_group.elements.push(element.to_vec());
 }
 fn matcher_include(
-    m: &mut matcher<'_>,
-    parent_scanner: &mut scanner,
+    m: &mut Matcher<'_>,
+    parent_scanner: &mut Scanner,
     include_depth: u32,
-    inc: sval,
+    inc: Sval,
 ) {
     if include_depth >= MAX_INCLUDE_DEPTH as u32 {
-        let loc: scanner_loc = parent_scanner.token_location();
-        log::error!(
-            "{}:{}:{}: maximum include depth ({}) exceeded; maybe there is an include loop?\n",
-            &parent_scanner.file_name,
-            loc.line,
-            loc.column,
-            MAX_INCLUDE_DEPTH
-        );
+        let _loc: ScannerLoc = parent_scanner.token_location();
         return;
     }
     let inc_str = inc.as_str();
@@ -5489,7 +4731,7 @@ fn matcher_include(
     } else if expanded {
         None
     } else {
-        FindFileInXkbPath(
+        find_file_in_xkb_path(
             &mut *m.ctx,
             &parent_scanner.file_name,
             &stmt_file,
@@ -5501,20 +4743,16 @@ fn matcher_include(
 
     while let Some((ref file_data, ref path)) = file_and_path {
         let ret: bool = read_rules_file(m, include_depth.wrapping_add(1_u32), file_data, path);
-        let path_str = path.clone();
+        let _path_str = path.clone();
         let _ = file_and_path.take();
         if ret {
             return;
         }
-        log::error!(
-            "No components returned from included XKB rules \"{}\"\n",
-            &path_str
-        );
         if absolute_path {
             break;
         }
         offset += 1;
-        file_and_path = FindFileInXkbPath(
+        file_and_path = find_file_in_xkb_path(
             &mut *m.ctx,
             &parent_scanner.file_name,
             &stmt_file,
@@ -5523,16 +4761,15 @@ fn matcher_include(
             true,
         );
     }
-    log::error!("Failed to open included XKB rules \"{}\"\n", &stmt_file);
 }
-fn matcher_mapping_start_new(m: &mut matcher) {
-    let mut i: mlvo_index_t = 0 as mlvo_index_t;
-    while (i as i32) < _MLVO_NUM_ENTRIES as i32 as mlvo_index_t as i32 {
+fn matcher_mapping_start_new(m: &mut Matcher) {
+    let mut i: u8 = 0_u8;
+    while (i as i32) < _MLVO_NUM_ENTRIES as i32 as u8 as i32 {
         m.mapping.mlvo_at_pos[i as usize] = _MLVO_NUM_ENTRIES;
         i = i.wrapping_add(1);
     }
-    let mut i_0: kccgst_index_t = 0 as kccgst_index_t;
-    while (i_0 as i32) < _KCCGST_NUM_ENTRIES as i32 as kccgst_index_t as i32 {
+    let mut i_0: u8 = 0_u8;
+    while (i_0 as i32) < _KCCGST_NUM_ENTRIES as i32 as u8 as i32 {
         m.mapping.kccgst_at_pos[i_0 as usize] = _KCCGST_NUM_ENTRIES;
         i_0 = i_0.wrapping_add(1);
     }
@@ -5540,9 +4777,9 @@ fn matcher_mapping_start_new(m: &mut matcher) {
         layout_idx: XKB_LAYOUT_INVALID,
         variant_idx: XKB_LAYOUT_INVALID,
     };
-    m.mapping.num_kccgst = 0 as kccgst_index_t;
-    m.mapping.num_mlvo = m.mapping.num_kccgst as mlvo_index_t;
-    m.mapping.defined_mlvo_mask = 0 as mlvo_mask_t;
+    m.mapping.num_kccgst = 0_u8;
+    m.mapping.num_mlvo = m.mapping.num_kccgst;
+    m.mapping.defined_mlvo_mask = 0_u8;
     m.mapping.defined_kccgst_mask = 0_u8;
     m.mapping.active_or_candidates_mask = 1_u32;
 }
@@ -5578,7 +4815,7 @@ fn extract_layout_index(s: &[u8], out: &mut u32) -> i32 {
 fn extract_mapping_layout_index(s: &[u8], out: &mut u32) -> i32 {
     struct LayoutIndexEntry {
         name: &'static [u8],
-        range: layout_index_ranges,
+        range: u32,
     }
     static NAMES: [LayoutIndexEntry; 4] = [
         LayoutIndexEntry {
@@ -5613,40 +4850,28 @@ fn extract_mapping_layout_index(s: &[u8], out: &mut u32) -> i32 {
     parse_layout_int_index(s, out)
 }
 #[inline]
-fn is_mlvo_mask_defined(m: &mut matcher, mlvo: rules_mlvo) -> bool {
+fn is_mlvo_mask_defined(m: &mut Matcher, mlvo: u32) -> bool {
     m.mapping.defined_mlvo_mask as u32 & 1_u32 << mlvo != 0
 }
-fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut scanner, ident: sval) {
+fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
     let ident_bytes = ident.as_bytes();
-    let mut mlvo: rules_mlvo = MLVO_MODEL;
+    let mut mlvo: u32 = MLVO_MODEL;
     let mut mlvo_bytes: &[u8] = b"";
-    while (mlvo as u32) < _MLVO_NUM_ENTRIES {
+    while mlvo < _MLVO_NUM_ENTRIES {
         mlvo_bytes = RULES_MLVO_SVALS[mlvo as usize];
         if mlvo_bytes.len() <= ident_bytes.len() && &ident_bytes[..mlvo_bytes.len()] == mlvo_bytes {
             break;
         }
         mlvo += 1;
     }
-    if mlvo as u32 >= _MLVO_NUM_ENTRIES {
-        let loc: scanner_loc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc.line,
-            loc.column,
-            ident.as_str());
+    if mlvo >= _MLVO_NUM_ENTRIES {
+        let _loc: ScannerLoc = s.token_location();
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
     if is_mlvo_mask_defined(m, mlvo) {
-        let loc_0: scanner_loc = s.token_location();
-        let mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc_0.line,
-            loc_0.column,
-            mlvo_str);
+        let _loc_0: ScannerLoc = s.token_location();
+        let _mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
@@ -5655,25 +4880,19 @@ fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut scanner, ident: sval) {
         let remaining = &ident_bytes[mlvo_bytes.len()..];
         let consumed: i32 = extract_mapping_layout_index(remaining, &mut idx);
         if remaining.len() as i32 != consumed {
-            let loc_1: scanner_loc = s.token_location();
-            let mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
-            log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" may only be followed by a valid group index; ignoring rule set\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                &s.file_name,
-                loc_1.line,
-                loc_1.column,
-                mlvo_str);
+            let _loc_1: ScannerLoc = s.token_location();
+            let _mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
             m.mapping.active_or_candidates_mask = 0_u32;
             return;
         }
-        if mlvo as u32 == MLVO_LAYOUT {
+        if mlvo == MLVO_LAYOUT {
             if let LayoutIdx::Single {
                 ref mut layout_idx, ..
             } = m.mapping.layout
             {
                 *layout_idx = idx;
             }
-        } else if mlvo as u32 == MLVO_VARIANT {
+        } else if mlvo == MLVO_VARIANT {
             if let LayoutIdx::Single {
                 ref mut variant_idx,
                 ..
@@ -5682,25 +4901,19 @@ fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut scanner, ident: sval) {
                 *variant_idx = idx;
             }
         } else {
-            let loc_2: scanner_loc = s.token_location();
-            let mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
-            log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" cannot be followed by a group index; ignoring rule set\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                &s.file_name,
-                loc_2.line,
-                loc_2.column,
-                mlvo_str);
+            let _loc_2: ScannerLoc = s.token_location();
+            let _mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
             m.mapping.active_or_candidates_mask = 0_u32;
             return;
         }
-    } else if mlvo as u32 == MLVO_LAYOUT {
+    } else if mlvo == MLVO_LAYOUT {
         if let LayoutIdx::Single {
             ref mut layout_idx, ..
         } = m.mapping.layout
         {
             *layout_idx = LAYOUT_INDEX_SINGLE;
         }
-    } else if mlvo as u32 == MLVO_VARIANT {
+    } else if mlvo == MLVO_VARIANT {
         if let LayoutIdx::Single {
             ref mut variant_idx,
             ..
@@ -5709,8 +4922,8 @@ fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut scanner, ident: sval) {
             *variant_idx = LAYOUT_INDEX_SINGLE;
         }
     }
-    if (mlvo as u32 == MLVO_LAYOUT && is_mlvo_mask_defined(m, MLVO_VARIANT) as i32 != 0
-        || mlvo as u32 == MLVO_VARIANT && is_mlvo_mask_defined(m, MLVO_LAYOUT) as i32 != 0)
+    if (mlvo == MLVO_LAYOUT && is_mlvo_mask_defined(m, MLVO_VARIANT) as i32 != 0
+        || mlvo == MLVO_VARIANT && is_mlvo_mask_defined(m, MLVO_LAYOUT) as i32 != 0)
         && {
             if let LayoutIdx::Single {
                 layout_idx,
@@ -5723,22 +4936,16 @@ fn matcher_mapping_set_mlvo(m: &mut matcher, s: &mut scanner, ident: sval) {
             }
         }
     {
-        let loc_3: scanner_loc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"layout\" index must be the same as the \"variant\" index\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc_3.line,
-            loc_3.column);
+        let _loc_3: ScannerLoc = s.token_location();
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
     m.mapping.mlvo_at_pos[m.mapping.num_mlvo as usize] = mlvo;
-    m.mapping.defined_mlvo_mask = (m.mapping.defined_mlvo_mask as i32
-        | (1_u32 as mlvo_mask_t as i32) << mlvo as u32)
-        as mlvo_mask_t;
+    m.mapping.defined_mlvo_mask =
+        (m.mapping.defined_mlvo_mask as i32 | (1_u32 as u8 as i32) << mlvo) as u8;
     m.mapping.num_mlvo = m.mapping.num_mlvo.wrapping_add(1);
 }
-fn matcher_mapping_set_layout_bounds(m: &mut matcher) {
+fn matcher_mapping_set_layout_bounds(m: &mut Matcher) {
     let mut idx: u32 = if let LayoutIdx::Single {
         layout_idx,
         variant_idx,
@@ -5757,7 +4964,6 @@ fn matcher_mapping_set_layout_bounds(m: &mut matcher) {
         XKB_LAYOUT_INVALID => {
             m.mapping.layout = LayoutIdx::Index {
                 layout_idx_min: XKB_LAYOUT_INVALID,
-                layout_idx_max: XKB_LAYOUT_INVALID,
             };
             m.mapping.active_or_candidates_mask = 0x1_u32;
         }
@@ -5798,48 +5004,35 @@ fn matcher_mapping_set_layout_bounds(m: &mut matcher) {
     if is_index_case {
         m.mapping.layout = LayoutIdx::Index {
             layout_idx_min: idx,
-            layout_idx_max: idx.wrapping_add(1_u32),
         };
         m.mapping.active_or_candidates_mask = 1_u32 << idx;
     };
 }
-fn matcher_mapping_set_kccgst(m: &mut matcher, s: &mut scanner, ident: sval) {
+fn matcher_mapping_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
     let ident_bytes = ident.as_bytes();
-    let mut kccgst: rules_kccgst = KCCGST_KEYCODES;
+    let mut kccgst: u32 = KCCGST_KEYCODES;
     let mut kccgst_bytes: &[u8] = b"";
-    while (kccgst as u32) < _KCCGST_NUM_ENTRIES {
+    while kccgst < _KCCGST_NUM_ENTRIES {
         kccgst_bytes = RULES_KCCGST_SVALS[kccgst as usize];
         if kccgst_bytes == ident_bytes {
             break;
         }
         kccgst += 1;
     }
-    if kccgst as u32 >= _KCCGST_NUM_ENTRIES {
-        let loc: scanner_loc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" is not a valid value here; ignoring rule set\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc.line,
-            loc.column,
-            ident.as_str());
+    if kccgst >= _KCCGST_NUM_ENTRIES {
+        let _loc: ScannerLoc = s.token_location();
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
-    if m.mapping.defined_kccgst_mask as u32 & 1_u32 << kccgst as u32 != 0 {
-        let loc_0: scanner_loc = s.token_location();
-        let kccgst_str = std::str::from_utf8(kccgst_bytes).unwrap_or("");
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: \"{}\" appears twice on the same line; ignoring rule set\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc_0.line,
-            loc_0.column,
-            kccgst_str);
+    if m.mapping.defined_kccgst_mask as u32 & 1_u32 << kccgst != 0 {
+        let _loc_0: ScannerLoc = s.token_location();
+        let _kccgst_str = std::str::from_utf8(kccgst_bytes).unwrap_or("");
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
     m.mapping.kccgst_at_pos[m.mapping.num_kccgst as usize] = kccgst;
     m.mapping.defined_kccgst_mask =
-        (m.mapping.defined_kccgst_mask as i32 | (1_u32 as u8 as i32) << kccgst as u32) as u8;
+        (m.mapping.defined_kccgst_mask as i32 | (1_u32 as u8 as i32) << kccgst) as u8;
     m.mapping.num_kccgst = m.mapping.num_kccgst.wrapping_add(1);
 }
 fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
@@ -5850,21 +5043,11 @@ fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
     }
 }
 
-fn matcher_mapping_verify(m: &mut matcher, s: &mut scanner) -> bool {
+fn matcher_mapping_verify(m: &mut Matcher, s: &mut Scanner) -> bool {
     if m.mapping.num_mlvo as i32 == 0_i32 {
-        let loc: scanner_loc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the left hand side; ignoring rule set\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                &s.file_name,
-                loc.line,
-                loc.column);
+        let _loc: ScannerLoc = s.token_location();
     } else if m.mapping.num_kccgst as i32 == 0_i32 {
-        let loc_0: scanner_loc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid mapping: must have at least one value on the right hand side; ignoring rule set\n",
-                XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                &s.file_name,
-                loc_0.line,
-                loc_0.column);
+        let _loc_0: ScannerLoc = s.token_location();
     } else {
         if is_mlvo_mask_defined(m, MLVO_LAYOUT) {
             let single_layout_idx = if let LayoutIdx::Single { layout_idx, .. } = m.mapping.layout {
@@ -5894,23 +5077,13 @@ fn matcher_mapping_verify(m: &mut matcher, s: &mut scanner) -> bool {
     m.mapping.active_or_candidates_mask = 0_u32;
     false
 }
-fn matcher_rule_start_new(m: &mut matcher) {
-    m.rule = rule::default();
+fn matcher_rule_start_new(m: &mut Matcher) {
+    m.rule = Rule::default();
     m.rule.skip = m.mapping.active_or_candidates_mask == 0;
 }
-fn matcher_rule_set_mlvo_common(
-    m: &mut matcher,
-    s: &mut scanner,
-    ident: SvalIdx,
-    match_type: mlvo_match_type,
-) {
+fn matcher_rule_set_mlvo_common(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx, match_type: u32) {
     if m.rule.num_mlvo_values as i32 >= m.mapping.num_mlvo as i32 {
-        let loc: scanner_loc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc.line,
-            loc.column);
+        let _loc: ScannerLoc = s.token_location();
         m.rule.skip = true;
         return;
     }
@@ -5918,31 +5091,26 @@ fn matcher_rule_set_mlvo_common(
     m.rule.mlvo_value_at_pos[m.rule.num_mlvo_values as usize] = ident;
     m.rule.num_mlvo_values = m.rule.num_mlvo_values.wrapping_add(1);
 }
-fn matcher_rule_set_mlvo_wildcard(m: &mut matcher, s: &mut scanner, match_type: mlvo_match_type) {
+fn matcher_rule_set_mlvo_wildcard(m: &mut Matcher, s: &mut Scanner, match_type: u32) {
     let dummy = SvalIdx::EMPTY;
     matcher_rule_set_mlvo_common(m, s, dummy, match_type);
 }
-fn matcher_rule_set_mlvo_group(m: &mut matcher, s: &mut scanner, ident: SvalIdx) {
+fn matcher_rule_set_mlvo_group(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
     matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_GROUP);
 }
-fn matcher_rule_set_mlvo(m: &mut matcher, s: &mut scanner, ident: SvalIdx) {
+fn matcher_rule_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
     matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_NORMAL);
 }
-fn matcher_rule_set_kccgst(m: &mut matcher, s: &mut scanner, ident: SvalIdx) {
+fn matcher_rule_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
     if m.rule.num_kccgst_values as i32 >= m.mapping.num_kccgst as i32 {
-        let loc: scanner_loc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: has more values than the mapping line; ignoring rule\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc.line,
-            loc.column);
+        let _loc: ScannerLoc = s.token_location();
         m.rule.skip = true;
         return;
     }
     m.rule.kccgst_value_at_pos[m.rule.num_kccgst_values as usize] = ident;
     m.rule.num_kccgst_values = m.rule.num_kccgst_values.wrapping_add(1);
 }
-fn match_group(groups: &[group], group_name: sval, to: sval) -> bool {
+fn match_group(groups: &[Group], group_name: Sval, to: Sval) -> bool {
     let found_group = groups.iter().find(|g| g.name.as_slice() == group_name.data);
     match found_group {
         None => false,
@@ -5956,13 +5124,7 @@ fn match_group(groups: &[group], group_name: sval, to: sval) -> bool {
         }
     }
 }
-fn match_value(
-    groups: &[group],
-    val: sval,
-    to: sval,
-    match_type: mlvo_match_type,
-    wildcard_type: wildcard_match_type,
-) -> bool {
+fn match_value(groups: &[Group], val: Sval, to: Sval, match_type: u32, wildcard_type: u32) -> bool {
     match match_type {
         1 => wildcard_type == WILDCARD_MATCH_ALL || !to.is_empty(),
         2 => to.is_empty(),
@@ -5973,11 +5135,11 @@ fn match_value(
     }
 }
 fn match_value_and_mark(
-    groups: &[group],
-    val: sval,
-    to: &mut matched_sval,
-    match_type: mlvo_match_type,
-    wildcard_type: wildcard_match_type,
+    groups: &[Group],
+    val: Sval,
+    to: &mut MatchedSval,
+    match_type: u32,
+    wildcard_type: u32,
 ) -> bool {
     let matched: bool = match_value(groups, val, to.sval, match_type, wildcard_type);
     if matched {
@@ -5986,9 +5148,9 @@ fn match_value_and_mark(
     matched
 }
 fn expand_rmlvo_in_kccgst_value(
-    m: &mut matcher,
-    s: &mut scanner,
-    value: sval,
+    m: &mut Matcher,
+    s: &mut Scanner,
+    value: Sval,
     layout_idx: u32,
     expanded: &mut Vec<i8>,
     i: &mut usize,
@@ -6002,12 +5164,7 @@ fn expand_rmlvo_in_kccgst_value(
                 || bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_REPLACE_PREFIX))
     {
         if layout_idx == XKB_LAYOUT_INVALID {
-            let loc: scanner_loc = s.token_location();
-            log::error!("[XKB-{:03}] {}:{}:{}: Invalid %i in %-expansion: there is no corresponding layout nor variant in the MLVO fields of the rules header.\n",
-                XKB_ERROR_RULES_INVALID_LAYOUT_INDEX_PERCENT_EXPANSION as i32,
-                &s.file_name,
-                loc.line,
-                loc.column);
+            let _loc: ScannerLoc = s.token_location();
         } else {
             *i = (*i).wrapping_add(1);
             let idx_str = format!("{}", layout_idx.wrapping_add(1_u32));
@@ -6032,33 +5189,19 @@ fn expand_rmlvo_in_kccgst_value(
             *i = (*i).wrapping_add(1);
             if *i >= value.len() {
                 // fall through to error
-                let loc_1: scanner_loc = s.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc_1.line,
-                    loc_1.column
-                );
+                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
         }
 
         let c2rust_fresh7 = *i;
         *i = (*i).wrapping_add(1);
-        let mlv: rules_mlvo = match bytes[c2rust_fresh7] {
+        let mlv: u32 = match bytes[c2rust_fresh7] {
             b'm' => MLVO_MODEL,
             b'l' => MLVO_LAYOUT,
             b'v' => MLVO_VARIANT,
             _ => {
-                let loc_1: scanner_loc = s.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc_1.line,
-                    loc_1.column
-                );
+                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
         };
@@ -6066,33 +5209,14 @@ fn expand_rmlvo_in_kccgst_value(
         let mut idx: u32 = XKB_LAYOUT_INVALID;
         let mut expanded_index: bool = false;
         if *i < value.len() && bytes[*i] == b'[' {
-            if mlv as u32 != MLVO_LAYOUT && mlv as u32 != MLVO_VARIANT {
-                let loc_0: scanner_loc = s.token_location();
-                log::error!("[XKB-{:03}] {}:{}:{}: invalid index in %-expansion; may only index layout or variant\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc_0.line,
-                    loc_0.column);
-                let loc_1: scanner_loc = s.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc_1.line,
-                    loc_1.column
-                );
+            if mlv != MLVO_LAYOUT && mlv != MLVO_VARIANT {
+                let _loc_0: ScannerLoc = s.token_location();
+                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
             let consumed: i32 = extract_layout_index(&bytes[*i..], &mut idx);
             if consumed == -1_i32 {
-                let loc_1: scanner_loc = s.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc_1.line,
-                    loc_1.column
-                );
+                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
             if idx == XKB_LAYOUT_INVALID {
@@ -6104,27 +5228,13 @@ fn expand_rmlvo_in_kccgst_value(
 
         if sfx as i32 != 0_i32 {
             if *i >= value.len() {
-                let loc_1: scanner_loc = s.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc_1.line,
-                    loc_1.column
-                );
+                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
             let c2rust_fresh8 = *i;
             *i = (*i).wrapping_add(1);
             if bytes[c2rust_fresh8] as i8 != sfx {
-                let loc_1: scanner_loc = s.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc_1.line,
-                    loc_1.column
-                );
+                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
         }
@@ -6138,7 +5248,7 @@ fn expand_rmlvo_in_kccgst_value(
         }
         let ev_ref: Option<RmlvoRef>;
 
-        if mlv as u32 == MLVO_LAYOUT {
+        if mlv == MLVO_LAYOUT {
             if idx == XKB_LAYOUT_INVALID {
                 if m.rmlvo.layouts.len() == 1 {
                     ev_ref = Some(RmlvoRef::Layout(0));
@@ -6152,7 +5262,7 @@ fn expand_rmlvo_in_kccgst_value(
             } else {
                 ev_ref = None;
             }
-        } else if mlv as u32 == MLVO_VARIANT {
+        } else if mlv == MLVO_VARIANT {
             if idx == XKB_LAYOUT_INVALID {
                 if m.rmlvo.variants.len() == 1 {
                     ev_ref = Some(RmlvoRef::Variant(0));
@@ -6166,7 +5276,7 @@ fn expand_rmlvo_in_kccgst_value(
             } else {
                 ev_ref = None;
             }
-        } else if mlv as u32 == MLVO_MODEL {
+        } else if mlv == MLVO_MODEL {
             ev_ref = Some(RmlvoRef::Model);
         } else {
             ev_ref = None;
@@ -6177,7 +5287,7 @@ fn expand_rmlvo_in_kccgst_value(
             Some(RmlvoRef::Model) => m.rmlvo.model.sval,
             Some(RmlvoRef::Layout(idx)) => m.rmlvo.layouts[*idx].sval,
             Some(RmlvoRef::Variant(idx)) => m.rmlvo.variants[*idx].sval,
-            None => sval::EMPTY,
+            None => Sval::EMPTY,
         };
 
         if ev_ref.is_none() || ev_sval.is_empty() {
@@ -6202,20 +5312,13 @@ fn expand_rmlvo_in_kccgst_value(
         return true;
     }
 
-    let loc_1: scanner_loc = s.token_location();
-    log::error!(
-        "[XKB-{:03}] {}:{}:{}: invalid %-expansion in value; not used\n",
-        XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-        &s.file_name,
-        loc_1.line,
-        loc_1.column
-    );
+    let _loc_1: ScannerLoc = s.token_location();
     false
 }
 fn expand_qualifier_in_kccgst_value(
-    m: &mut matcher,
-    s: &mut scanner,
-    value: sval,
+    m: &mut Matcher,
+    s: &mut Scanner,
+    value: Sval,
     expanded: &mut Vec<i8>,
     has_layout_idx_range: bool,
     has_separator: bool,
@@ -6233,13 +5336,7 @@ fn expand_qualifier_in_kccgst_value(
         && bytes[(*i).wrapping_add(2_usize)] == b'l'
     {
         if has_layout_idx_range {
-            let loc: scanner_loc = s.token_location();
-            log::warn!(
-                "{}:{}:{}: Using :all qualifier with indices range is not recommended.\n",
-                &s.file_name,
-                loc.line,
-                loc.column
-            );
+            let _loc: ScannerLoc = s.token_location();
         }
         vec_append_nul_terminated(expanded, b"1");
         if m.rmlvo.layouts.len() > 1 {
@@ -6300,9 +5397,9 @@ fn concat_kccgst(into: &mut Vec<i8>, from: &[i8]) {
     }
 }
 fn expand_kccgst_value(
-    m: &mut matcher,
-    s: &mut scanner,
-    value: sval,
+    m: &mut Matcher,
+    s: &mut Scanner,
+    value: Sval,
     layout_idx: u32,
 ) -> Option<Vec<i8>> {
     let bytes = value.as_bytes();
@@ -6363,7 +5460,7 @@ fn expand_kccgst_value(
         Some(expanded)
     }
 }
-fn matcher_append_pending_kccgst(m: &mut matcher) -> bool {
+fn matcher_append_pending_kccgst(m: &mut Matcher) -> bool {
     if !matches!(m.mapping.layout, LayoutIdx::Range { .. }) {
         return true;
     }
@@ -6376,9 +5473,9 @@ fn matcher_append_pending_kccgst(m: &mut matcher) -> bool {
     } else {
         unreachable!()
     };
-    let mut i: kccgst_index_t = 0 as kccgst_index_t;
+    let mut i: u8 = 0_u8;
     while (i as i32) < m.mapping.num_kccgst as i32 {
-        let kccgst: rules_kccgst = m.mapping.kccgst_at_pos[i as usize];
+        let kccgst: u32 = m.mapping.kccgst_at_pos[i as usize];
         let mut layout: u32 = range_min;
         while layout < range_max {
             let mut offset: usize = 0_usize;
@@ -6387,8 +5484,7 @@ fn matcher_append_pending_kccgst(m: &mut matcher) -> bool {
                 let slice_len = m.pending_kccgst.slices[k as usize].length;
                 let slice_kccgst = m.pending_kccgst.slices[k as usize].kccgst;
                 let slice_layout = m.pending_kccgst.slices[k as usize].layout;
-                if slice_kccgst == kccgst as u32 && slice_layout == layout && slice_len as i32 != 0
-                {
+                if slice_kccgst == kccgst && slice_layout == layout && slice_len as i32 != 0 {
                     let from: Vec<i8> =
                         m.pending_kccgst.buffer[offset..offset + slice_len as usize].to_vec();
                     concat_kccgst(&mut m.kccgst[kccgst as usize], &from);
@@ -6403,29 +5499,24 @@ fn matcher_append_pending_kccgst(m: &mut matcher) -> bool {
     m.mapping.layout = LayoutIdx::default();
     true
 }
-fn matcher_rule_verify(m: &mut matcher, s: &mut scanner) {
+fn matcher_rule_verify(m: &mut Matcher, s: &mut Scanner) {
     if m.rule.num_mlvo_values as i32 != m.mapping.num_mlvo as i32
         || m.rule.num_kccgst_values as i32 != m.mapping.num_kccgst as i32
     {
-        let loc: scanner_loc = s.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: invalid rule: must have same number of values as mapping line; ignoring rule\n",
-            XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-            &s.file_name,
-            loc.line,
-            loc.column);
+        let _loc: ScannerLoc = s.token_location();
         m.rule.skip = true;
     }
 }
-fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut scanner) {
+fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
     let mut candidate_layouts: u32 = m.mapping.active_or_candidates_mask;
     let mut idx: u32;
-    let mut i: mlvo_index_t = 0 as mlvo_index_t;
+    let mut i: u8 = 0_u8;
     while (i as i32) < m.mapping.num_mlvo as i32 {
-        let mlvo: rules_mlvo = m.mapping.mlvo_at_pos[i as usize];
-        let value: sval = m.rule.mlvo_value_at_pos[i as usize].to_sval(s.s);
-        let match_type: mlvo_match_type = m.rule.match_type_at_pos[i as usize];
+        let mlvo: u32 = m.mapping.mlvo_at_pos[i as usize];
+        let value: Sval = m.rule.mlvo_value_at_pos[i as usize].to_sval(s.s);
+        let match_type: u32 = m.rule.match_type_at_pos[i as usize];
         let mut matched: bool = false;
-        if mlvo as u32 == MLVO_MODEL {
+        if mlvo == MLVO_MODEL {
             matched = match_value_and_mark(
                 &m.groups,
                 value,
@@ -6442,7 +5533,7 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut scanner) {
             while idx < layout_idx_max && candidate_layouts != 0 {
                 let mask: u32 = 1_u32 << idx;
                 if candidate_layouts & mask != 0 {
-                    match mlvo as u32 {
+                    match mlvo {
                         1 => {
                             if match_value_and_mark(
                                 &m.groups,
@@ -6500,7 +5591,7 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut scanner) {
             }
         } else {
             let li = m.mapping.layout.layout_idx_min() as usize;
-            match mlvo as u32 {
+            match mlvo {
                 1 => {
                     matched = match_value_and_mark(
                         &m.groups,
@@ -6554,10 +5645,10 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut scanner) {
         idx = layout_idx_min;
         while idx < layout_idx_max {
             if candidate_layouts & 1_u32 << idx != 0 {
-                let mut i_0: kccgst_index_t = 0 as kccgst_index_t;
+                let mut i_0: u8 = 0_u8;
                 while (i_0 as i32) < m.mapping.num_kccgst as i32 {
-                    let kccgst: rules_kccgst = m.mapping.kccgst_at_pos[i_0 as usize];
-                    let value_0: sval = m.rule.kccgst_value_at_pos[i_0 as usize].to_sval(s.s);
+                    let kccgst: u32 = m.mapping.kccgst_at_pos[i_0 as usize];
+                    let value_0: Sval = m.rule.kccgst_value_at_pos[i_0 as usize].to_sval(s.s);
                     let prev_buffer_length: u32 = m.pending_kccgst.buffer.len() as u32;
                     if let Some(expanded) = expand_kccgst_value(m, s, value_0, idx) {
                         if !expanded.is_empty() {
@@ -6565,7 +5656,7 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut scanner) {
                         }
                         let length: u32 =
                             (m.pending_kccgst.buffer.len() as u32).wrapping_sub(prev_buffer_length);
-                        let slice = kccgst_buffer_slice {
+                        let slice = KccgstBufferSlice {
                             length,
                             kccgst,
                             layout: idx,
@@ -6578,10 +5669,10 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut scanner) {
             idx = idx.wrapping_add(1);
         }
     } else if let LayoutIdx::Index { layout_idx_min, .. } = m.mapping.layout {
-        let mut i_1: kccgst_index_t = 0 as kccgst_index_t;
+        let mut i_1: u8 = 0_u8;
         while (i_1 as i32) < m.mapping.num_kccgst as i32 {
-            let kccgst_0: rules_kccgst = m.mapping.kccgst_at_pos[i_1 as usize];
-            let value_1: sval = m.rule.kccgst_value_at_pos[i_1 as usize].to_sval(s.s);
+            let kccgst_0: u32 = m.mapping.kccgst_at_pos[i_1 as usize];
+            let value_1: Sval = m.rule.kccgst_value_at_pos[i_1 as usize].to_sval(s.s);
             if let Some(expanded) = expand_kccgst_value(m, s, value_1, layout_idx_min) {
                 if !expanded.is_empty() {
                     concat_kccgst(&mut m.kccgst[kccgst_0 as usize], &expanded);
@@ -6594,16 +5685,16 @@ fn matcher_rule_apply_if_matches(m: &mut matcher, s: &mut scanner) {
         m.mapping.active_or_candidates_mask &= !candidate_layouts;
     }
 }
-fn gettok(m: &mut matcher, s: &mut scanner) -> rules_token {
+fn gettok(m: &mut Matcher, s: &mut Scanner) -> u32 {
     lex(s, &mut m.val)
 }
-fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_name: &str) -> bool {
+fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_name: &str) -> bool {
     let mut eof_ok = false;
-    let mut tok: rules_token;
+    let mut tok: u32;
 
     '_initial: loop {
         tok = gettok(m, s);
-        match tok as u32 {
+        match tok {
             4 => {}
             1 => {
                 continue;
@@ -6618,11 +5709,11 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
         }
         loop {
             tok = gettok(m, s);
-            match tok as u32 {
+            match tok {
                 3 => {
                     matcher_group_start_new(m, m.val.string.to_sval(s.s).data);
                     tok = gettok(m, s);
-                    match tok as u32 {
+                    match tok {
                         5 => {
                             break;
                         }
@@ -6633,7 +5724,7 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                 }
                 10 => {
                     tok = gettok(m, s);
-                    match tok as u32 {
+                    match tok {
                         2 => {}
                         _ => {
                             break '_initial;
@@ -6641,7 +5732,7 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                     }
                     matcher_include(m, s, include_depth, m.val.string.to_sval(s.s));
                     tok = gettok(m, s);
-                    match tok as u32 {
+                    match tok {
                         1 => {
                             continue '_initial;
                         }
@@ -6655,7 +5746,7 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                     matcher_mapping_set_mlvo(m, s, m.val.string.to_sval(s.s));
                     loop {
                         tok = gettok(m, s);
-                        match tok as u32 {
+                        match tok {
                             2 => {}
                             5 => {
                                 break;
@@ -6670,7 +5761,7 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                     }
                     loop {
                         tok = gettok(m, s);
-                        match tok as u32 {
+                        match tok {
                             2 => {}
                             1 => {
                                 break;
@@ -6694,7 +5785,7 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                     }
                     loop {
                         tok = gettok(m, s);
-                        match tok as u32 {
+                        match tok {
                             4 => {
                                 matcher_append_pending_kccgst(m);
                                 break;
@@ -6708,7 +5799,7 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                             _ => {
                                 matcher_rule_start_new(m);
                                 loop {
-                                    match tok as u32 {
+                                    match tok {
                                         2 => {
                                             if !m.rule.skip {
                                                 if m.val.string.len() == 1
@@ -6776,7 +5867,7 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
                                 }
                                 loop {
                                     tok = gettok(m, s);
-                                    match tok as u32 {
+                                    match tok {
                                         2 => {}
                                         1 => {
                                             break;
@@ -6806,7 +5897,7 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
         }
         loop {
             tok = gettok(m, s);
-            match tok as u32 {
+            match tok {
                 2 => {}
                 1 => {
                     break;
@@ -6821,64 +5912,38 @@ fn matcher_match(m: &mut matcher, s: &mut scanner, include_depth: u32, _file_nam
     if eof_ok {
         true
     } else {
-        match tok as u32 {
+        match tok {
             11 => {}
             _ => {
-                let loc: scanner_loc = s.token_location();
-                log::error!(
-                    "[XKB-{:03}] {}:{}:{}: unexpected token\n",
-                    XKB_ERROR_INVALID_RULES_SYNTAX as i32,
-                    &s.file_name,
-                    loc.line,
-                    loc.column
-                );
+                let _loc: ScannerLoc = s.token_location();
             }
         }
         false
     }
 }
 fn read_rules_file(
-    matcher: &mut matcher<'_>,
+    matcher: &mut Matcher<'_>,
     include_depth: u32,
     file_data: &[u8],
     path: &str,
 ) -> bool {
-    #[allow(unused_assignments)]
-    let mut scanner: scanner = scanner::new(&[], "");
-
-    scanner = scanner::new(file_data, path);
+    let mut scanner = Scanner::new(file_data, path);
     if !scanner.check_supported_char_encoding() {
-        let loc: scanner_loc = scanner.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                &scanner.file_name,
-                loc.line,
-                loc.column);
-        let loc_0: scanner_loc = scanner.token_location();
-        log::error!("[XKB-{:03}] {}:{}:{}: E.g. ISO/CEI 8859 and UTF-8 are supported but UTF-16, UTF-32 and CP1026 are not.\n",
-                XKB_ERROR_INVALID_FILE_ENCODING as i32,
-                &scanner.file_name,
-                loc_0.line,
-                loc_0.column);
+        let _loc: ScannerLoc = scanner.token_location();
+        let _loc_0: ScannerLoc = scanner.token_location();
         return false;
     }
     let ret: bool = matcher_match(matcher, &mut scanner, include_depth, path);
     ret
 }
-fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut matcher<'_>) -> bool {
+fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_>) -> bool {
     let partial_rules = format!("{}{}", rules, suffix);
     if partial_rules.len() >= 60 {
-        log::error!(
-            "[XKB-{:03}] Cannot load XKB rules \"{}{}\"\n",
-            XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-            rules,
-            suffix
-        );
         return false;
     }
     let mut offset: u32 = 0;
     loop {
-        let found = FindFileInXkbPath(
+        let found = find_file_in_xkb_path(
             &mut *matcher.ctx,
             "(unknown)",
             &partial_rules,
@@ -6892,11 +5957,6 @@ fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut matcher<'_
         let ok: bool = read_rules_file(matcher, 0, &file_data, &path);
         drop(file_data);
         if !ok {
-            log::error!(
-                "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
-                XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                &path
-            );
             return false;
         }
         offset += 1;
@@ -6905,14 +5965,14 @@ fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut matcher<'_
 }
 fn xkb_resolve_rules(
     rules: &str,
-    matcher: &mut matcher<'_>,
-    out: &mut xkb_component_names,
+    matcher: &mut Matcher<'_>,
+    out: &mut XkbComponentNames,
     explicit_layouts: &mut u32,
 ) -> bool {
     let mut ret: bool;
     let mut offset: u32 = 0;
     let rules_str = rules;
-    let found = FindFileInXkbPath(
+    let found = find_file_in_xkb_path(
         &mut *matcher.ctx,
         "(unknown)",
         rules_str,
@@ -6921,22 +5981,12 @@ fn xkb_resolve_rules(
         true,
     );
     let Some((file_data, path)) = found else {
-        log::error!(
-            "[XKB-{:03}] Cannot load XKB rules \"{}\"\n",
-            XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-            rules_str
-        );
         return false;
     };
     ret = xkb_resolve_partial_rules(rules_str, ".pre", matcher);
     if ret {
         ret = read_rules_file(matcher, 0, &file_data, &path);
         if !ret {
-            log::error!(
-                "[XKB-{:03}] Error while parsing XKB rules \"{}\"\n",
-                XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                &path
-            );
         } else {
             ret = xkb_resolve_partial_rules(rules_str, ".post", matcher);
             if ret {
@@ -6945,11 +5995,6 @@ fn xkb_resolve_rules(
                     || matcher.kccgst[KCCGST_COMPAT as usize].is_empty()
                     || matcher.kccgst[KCCGST_SYMBOLS as usize].is_empty()
                 {
-                    log::error!(
-                        "[XKB-{:03}] No components returned from XKB rules \"{}\"\n",
-                        XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                        rules_str
-                    );
                     ret = false;
                 } else {
                     // Transfer ownership of Vec data directly.
@@ -6978,39 +6023,14 @@ fn xkb_resolve_rules(
                         v.push(0);
                         out.geometry = v;
                     }
-                    if !matcher.rmlvo.model.matched && !matcher.rmlvo.model.sval.is_empty() {
-                        log::error!(
-                            "[XKB-{:03}] Unrecognized RMLVO model \"{}\" was ignored\n",
-                            XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                            matcher.rmlvo.model.sval.as_str()
-                        );
-                    }
                     for mval in matcher.rmlvo.layouts.iter() {
-                        if !mval.matched && !mval.sval.is_empty() {
-                            log::error!(
-                                "[XKB-{:03}] Unrecognized RMLVO layout \"{}\" was ignored\n",
-                                XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                mval.sval.as_str()
-                            );
-                        }
+                        if !mval.matched && !mval.sval.is_empty() {}
                     }
                     for mval in matcher.rmlvo.variants.iter() {
-                        if !mval.matched && !mval.sval.is_empty() {
-                            log::error!(
-                                "[XKB-{:03}] Unrecognized RMLVO variant \"{}\" was ignored\n",
-                                XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                mval.sval.as_str()
-                            );
-                        }
+                        if !mval.matched && !mval.sval.is_empty() {}
                     }
                     for mval in matcher.rmlvo.options.iter() {
-                        if !mval.matched && !mval.sval.is_empty() {
-                            log::error!(
-                                "[XKB-{:03}] Unrecognized RMLVO option \"{}\" was ignored\n",
-                                XKB_ERROR_CANNOT_RESOLVE_RMLVO as i32,
-                                mval.sval.as_str()
-                            );
-                        }
+                        if !mval.matched && !mval.sval.is_empty() {}
                     }
                     if !out.symbols.is_empty() {
                         *explicit_layouts = 1_u32;
@@ -7053,15 +6073,13 @@ fn xkb_resolve_rules(
     }
     ret
 }
-pub fn xkb_components_from_rules_names(
-    ctx: &mut xkb_context,
-    rmlvo: &xkb_rule_names,
-    out: &mut xkb_component_names,
+pub(crate) fn xkb_components_from_rules_names(
+    ctx: &mut XkbContext,
+    rmlvo: &XkbRuleNames,
+    out: &mut XkbComponentNames,
     explicit_layouts: &mut u32,
 ) -> bool {
     let mut matcher = matcher_new_from_names(ctx, rmlvo);
     let rules_str = rmlvo.rules.to_str().unwrap_or("");
-    let ret: bool = xkb_resolve_rules(rules_str, &mut matcher, out, explicit_layouts);
-    drop(matcher);
-    ret
+    xkb_resolve_rules(rules_str, &mut matcher, out, explicit_layouts)
 }

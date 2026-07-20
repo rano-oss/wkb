@@ -36,8 +36,6 @@
 //! - **`compose`** (default) — Compose-key / dead-key sequence support.
 //! - **`testing`** — Exposes internal helpers for integration tests. Not part of the public API.
 
-use std::fmt;
-
 pub use composer::{ComposeState, ComposeString};
 use composer::{Composer, Token};
 mod composer;
@@ -102,21 +100,12 @@ impl KeyBitSet {
 use crate::named_keys::NamedKey;
 
 /// Errors from WKB operations (not related to XKB parsing/compilation).
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum WkbError {
     /// Layout index out of range.
+    #[error("Invalid layout index: {0}")]
     InvalidLayout(usize),
 }
-
-impl fmt::Display for WkbError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            WkbError::InvalidLayout(idx) => write!(f, "Invalid layout index: {}", idx),
-        }
-    }
-}
-
-impl std::error::Error for WkbError {}
 
 /// Core keyboard state machine. Tracks modifier state, key presses, and compose sequences.
 #[derive(Debug, Clone)]
@@ -135,7 +124,7 @@ pub struct WKB {
 }
 
 // WKB is Send + Sync: all fields are owned, no Rc/RefCell.
-// The Rc<xkb_keymap> from xkb-core is only used during construction and not stored.
+// The Rc<XkbKeymap> from xkb-core is only used during construction and not stored.
 unsafe impl Send for WKB {}
 unsafe impl Sync for WKB {}
 
@@ -274,7 +263,7 @@ impl WKB {
         let nk = self.named_key_map.num_keys;
         let level5 = level5 && self.named_key_map.data.len() > 4 * nk;
         let level3 = level3 && self.named_key_map.data.len() > 2 * nk;
-        let level2 = level2 && self.named_key_map.data.len() > 1 * nk;
+        let level2 = level2 && self.named_key_map.data.len() > nk;
         let level = level_index(level5, level3, level2);
         self.named_key_map
             .get(self.current_layout_idx, level, evdev_code)
@@ -312,7 +301,7 @@ impl WKB {
         let nk = self.state_keymap.num_keys;
         let level5 = level5 && self.state_keymap.data.len() > 4 * nk;
         let level3 = level3 && self.state_keymap.data.len() > 2 * nk;
-        let level2 = level2 && self.state_keymap.data.len() > 1 * nk;
+        let level2 = level2 && self.state_keymap.data.len() > nk;
         let base_level = level_index(level5, level3, level2);
         let layout_index = self.current_layout_idx;
         if self.modifiers.num_locked() {

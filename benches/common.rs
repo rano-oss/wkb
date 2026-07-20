@@ -1,7 +1,6 @@
+#![allow(dead_code)]
 /// Shared constants and test matrix for all benchmarks.
-///
 /// Evdev keycodes used across benchmarks (all backends add +8 for XKB keycodes).
-
 // ── Locales & layouts ──────────────────────────────────────────────────
 /// Primary layout — used for all key cases.
 pub const PRIMARY_LAYOUT: (&str, Option<&str>) = ("us", None);
