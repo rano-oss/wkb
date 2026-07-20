@@ -807,7 +807,6 @@ pub(crate) fn named_key_to_keysym(key: NamedKey) -> u32 {
 #[cfg(test)]
 #[allow(clippy::items_after_test_module)]
 mod wrapper_tests {
-    use super::keymap::{Context, RuleNames};
 
     #[test]
     fn test_multi_layout_wkb() {

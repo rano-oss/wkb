@@ -618,10 +618,7 @@ pub(crate) struct XkbKeyTypeEntry {
 }
 
 #[derive(Copy, Clone)]
-pub(crate) struct XkbKeyAlias {
-    pub(crate) real: u32,
-    pub(crate) alias: u32,
-}
+pub(crate) struct XkbKeyAlias {}
 
 #[derive(Copy, Clone, Default)]
 pub(crate) struct KeycodeMatch {
@@ -741,7 +738,6 @@ pub(crate) type XkbKeysymFlags = u32;
 pub(crate) const XKB_KEYSYM_NO_FLAGS: XkbKeysymFlags = 0;
 pub(crate) const XKB_KEYSYM_CASE_INSENSITIVE: XkbKeysymFlags = 1;
 
-pub(crate) type XkbKeyboardControlFlags = u32;
 
 pub const XKB_KEYMAP_COMPILE_FLAGS_VALUES: u32 = 1;
 
@@ -752,7 +748,6 @@ pub(crate) const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: XkbA11yFlags = 2;
 
 pub(crate) const XKB_KEYCODE_INVALID: u32 = 0xffffffff;
 pub(crate) const XKB_KEYCODE_MAX: u32 = 0xffffffff_u32.wrapping_sub(1);
-pub(crate) const XKB_LED_INVALID: u32 = 0xffffffff;
 pub(crate) const XKB_LEVEL_INVALID: u32 = 0xffffffff;
 pub(crate) const XKB_KEYSYM_MAX: i32 = 0x1fffffff;
 

@@ -1912,7 +1912,7 @@ pub(crate) struct XkbEvent {
 #[derive(Copy, Clone)]
 
 pub(crate) enum XkbEventData {
-    Keycode(u32),
+    Keycode,
     Components(XkbEventComponents),
 }
 #[derive(Copy, Clone)]
@@ -1934,27 +1934,9 @@ pub(crate) struct StateComponents {
     pub(crate) leds: XkbLedMaskT,
     pub(crate) controls: XkbActionControls,
 }
-#[derive(Copy, Clone)]
-pub(crate) struct XkbLayoutPolicyUpdateV1 {
-    pub(crate) size: usize,
-    pub(crate) policy: u32,
-    pub(crate) redirect: u32,
-}
-#[derive(Copy, Clone)]
 
-pub(crate) struct XkbStateComponentsUpdateV1 {
-    pub(crate) size: usize,
-    pub(crate) components: u32,
-    pub(crate) affect_latched_mods: u32,
-    pub(crate) latched_mods: u32,
-    pub(crate) affect_locked_mods: u32,
-    pub(crate) locked_mods: u32,
-    pub(crate) latched_layout: i32,
-    pub(crate) locked_layout: i32,
-    pub(crate) affect_controls: XkbKeyboardControlFlags,
-    pub(crate) controls: XkbKeyboardControlFlags,
-}
-use super::shared_types::{XkbActionControls, XkbEventType, XkbKeyboardControlFlags, XkbLedMaskT};
+
+use super::shared_types::{XkbActionControls, XkbEventType, XkbLedMaskT};
 
 fn vec_resize_zero<T: Default>(v: &mut Vec<T>, new_len: usize) {
     v.resize_with(new_len, Default::default);
@@ -1969,7 +1951,6 @@ pub(crate) struct XkbState {
     pub(crate) clear_mods: u32,
     pub(crate) mod_key_count: [i16; 32],
     pub(crate) flags: XkbA11yFlags,
-    pub(crate) refcnt: i32,
     pub(crate) filters: Vec<XkbFilter>,
     pub(crate) keymap: Rc<XkbKeymap>,
 }
@@ -2006,16 +1987,12 @@ impl Default for XkbFilter {
 #[derive(Clone)]
 
 pub(crate) struct XkbEvents {
-    pub(crate) next: u32,
     pub(crate) queue: Vec<XkbEvent>,
-    pub(crate) ctx: XkbContext,
 }
 impl XkbEvents {
     fn dummy() -> Self {
         Self {
-            next: 0,
             queue: Vec::new(),
-            ctx: xkb_context_new(0),
         }
     }
 }
@@ -2067,7 +2044,6 @@ pub(crate) const LATCH_KEY_DOWN: XkbKeyLatchState = 1;
 
 pub(crate) const NO_LATCH: XkbKeyLatchState = 0;
 
-pub(crate) const XKB_STATE_MATCH_FLAGS: u32 = 65539;
 
 pub(crate) type XkbFilterResult = u32;
 
@@ -2783,7 +2759,7 @@ fn append_redirect_key_events(
         } else {
             XKB_EVENT_TYPE_KEY_DOWN as i32
         }) as XkbEventType,
-        data: XkbEventData::Keycode(redirect.keycode),
+        data: XkbEventData::Keycode,
     });
     if mask != 0 && changed != 0 {
         events.queue.push(XkbEvent {
@@ -3028,7 +3004,6 @@ pub(crate) fn xkb_state_new(keymap: Rc<XkbKeymap>) -> Box<XkbState> {
         clear_mods: 0,
         mod_key_count: [0; 32],
         flags: XKB_A11Y_NO_FLAGS,
-        refcnt: 1,
         filters: Vec::new(),
         keymap: keymap.clone(),
     });
@@ -3453,13 +3428,7 @@ pub(crate) fn xkb_state_mod_index_is_active(state: &XkbState, idx: u32, type_0: 
     (xkb_state_serialize_mods(state, type_0) & mapping == mapping) as i32
 }
 
-pub(crate) fn xkb_state_mod_name_is_active(state: &XkbState, name: &str, type_0: u32) -> i32 {
-    let idx = xkb_keymap_mod_get_index_ref(state.keymap(), name);
-    if idx == XKB_MOD_INVALID {
-        return -1_i32;
-    }
-    xkb_state_mod_index_is_active(state, idx, type_0)
-}
+
 
 fn key_get_consumed(state: &XkbState, key: &XkbKey, mode: XkbConsumedMode) -> u32 {
     let group: u32 = xkb_state_key_get_layout(state, key.keycode);
@@ -3533,7 +3502,6 @@ pub(crate) const RXKB_LOG_LEVEL_DEBUG: RxkbLogLevel = 50;
 pub(crate) const RXKB_LOG_LEVEL_INFO: RxkbLogLevel = 40;
 pub(crate) const RXKB_LOG_LEVEL_WARNING: RxkbLogLevel = 30;
 pub(crate) const RXKB_LOG_LEVEL_ERROR: RxkbLogLevel = 20;
-pub(crate) const RXKB_LOG_LEVEL_CRITICAL: RxkbLogLevel = 10;
 pub(crate) type RxkbPopularity = u32;
 pub(crate) const RXKB_POPULARITY_EXOTIC: RxkbPopularity = 2;
 pub(crate) const RXKB_POPULARITY_STANDARD: RxkbPopularity = 1;
@@ -3562,17 +3530,12 @@ pub(crate) struct RxkbContext {
 #[derive(Clone)]
 pub(crate) struct RxkbModel {
     pub(crate) name: String,
-    pub(crate) vendor: String,
-    pub(crate) description: String,
-    pub(crate) popularity: RxkbPopularity,
 }
 
 pub(crate) struct RxkbLayout {
     pub(crate) name: String,
     pub(crate) brief: String,
-    pub(crate) description: String,
     pub(crate) variant: String,
-    pub(crate) popularity: RxkbPopularity,
     pub(crate) iso639s: Vec<String>,
     pub(crate) iso3166s: Vec<String>,
 }
@@ -3581,17 +3544,11 @@ pub(crate) struct RxkbOptionGroup {
     pub(crate) allow_multiple: bool,
     pub(crate) options: Vec<RxkbOption>,
     pub(crate) name: String,
-    pub(crate) description: String,
-    pub(crate) popularity: RxkbPopularity,
 }
 
 #[derive(Clone)]
 pub(crate) struct RxkbOption {
     pub(crate) name: String,
-    pub(crate) brief: String,
-    pub(crate) description: String,
-    pub(crate) popularity: RxkbPopularity,
-    pub(crate) layout_specific: bool,
 }
 
 #[derive(Clone)]
@@ -3612,64 +3569,11 @@ impl RxkbLayout {
     pub(crate) fn name(&self) -> &str {
         &self.name
     }
-    pub(crate) fn brief(&self) -> &str {
-        &self.brief
-    }
-    pub(crate) fn description(&self) -> &str {
-        &self.description
-    }
     pub(crate) fn variant(&self) -> &str {
         &self.variant
     }
-    pub(crate) fn iso639s(&self) -> &[String] {
-        &self.iso639s
-    }
-    pub(crate) fn iso3166s(&self) -> &[String] {
-        &self.iso3166s
-    }
 }
 
-impl RxkbModel {
-    pub(crate) fn name(&self) -> &str {
-        &self.name
-    }
-    pub(crate) fn vendor(&self) -> &str {
-        &self.vendor
-    }
-    pub(crate) fn description(&self) -> &str {
-        &self.description
-    }
-}
-
-impl RxkbOptionGroup {
-    pub(crate) fn name(&self) -> &str {
-        &self.name
-    }
-    pub(crate) fn description(&self) -> &str {
-        &self.description
-    }
-    pub(crate) fn allows_multiple(&self) -> bool {
-        self.allow_multiple
-    }
-    pub(crate) fn options(&self) -> &[RxkbOption] {
-        &self.options
-    }
-}
-
-impl RxkbOption {
-    pub(crate) fn name(&self) -> &str {
-        &self.name
-    }
-    pub(crate) fn brief(&self) -> &str {
-        &self.brief
-    }
-    pub(crate) fn description(&self) -> &str {
-        &self.description
-    }
-    pub(crate) fn is_layout_specific(&self) -> bool {
-        self.layout_specific
-    }
-}
 
 // ---------------------------------------------------------------------------
 // Logging
@@ -3977,13 +3881,6 @@ impl RxkbContext {
         &self.layouts
     }
 
-    pub(crate) fn models(&self) -> &[RxkbModel] {
-        &self.models
-    }
-
-    pub(crate) fn option_groups(&self) -> &[RxkbOptionGroup] {
-        &self.option_groups
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -4100,10 +3997,7 @@ fn parse_model(
             return;
         }
         ctx.models.push(RxkbModel {
-            name: std::mem::take(&mut config.name),
-            description: std::mem::take(&mut config.description),
-            vendor: std::mem::take(&mut config.vendor),
-            popularity: config.popularity,
+            name: std::mem::take(&mut config.name)
         });
     }
 }
@@ -4178,9 +4072,7 @@ fn parse_variant(
     let mut new_layout = RxkbLayout {
         name: parent_name,
         variant: std::mem::take(&mut config.name),
-        description: std::mem::take(&mut config.description),
         brief,
-        popularity: config.popularity,
         iso639s: Vec::new(),
         iso3166s: Vec::new(),
     };
@@ -4245,9 +4137,7 @@ fn parse_layout(
         ctx.layouts.push(RxkbLayout {
             name: std::mem::take(&mut config.name),
             variant: String::new(),
-            description: std::mem::take(&mut config.description),
             brief: std::mem::take(&mut config.brief),
-            popularity: config.popularity,
             iso639s: Vec::new(),
             iso3166s: Vec::new(),
         });
@@ -4301,11 +4191,7 @@ fn parse_option(
             return;
         }
         ctx.option_groups[group_idx].options.push(RxkbOption {
-            name: std::mem::take(&mut config.name),
-            brief: String::new(),
-            description: std::mem::take(&mut config.description),
-            popularity: config.popularity,
-            layout_specific: config.layout_specific,
+            name: std::mem::take(&mut config.name)
         });
     }
 }
@@ -4341,8 +4227,6 @@ fn parse_group(
             allow_multiple: false,
             options: Vec::new(),
             name: std::mem::take(&mut config.name),
-            description: std::mem::take(&mut config.description),
-            popularity: config.popularity,
         };
         if let Some(multiple) = get_attr(doc, group, "allowMultipleSelection") {
             if multiple == "true" {

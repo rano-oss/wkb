@@ -40,162 +40,15 @@ use super::symbols::{ExprResolveGroup, ExprResolveGroupMask};
 
 pub(crate) const XKB_KEY_VOID_SYMBOL: i32 = 0xffffff_i32;
 pub(crate) const XKB_KEY_0: i32 = 0x30_i32;
-pub(crate) const XKB_KEY_section: i32 = 0xa7_i32;
+pub(crate) const XKB_KEY_SECTION: i32 = 0xa7_i32;
 pub(crate) const XKB_KEYSYM_MIN: i32 = 0;
 
 // ── YYSYMBOL constants ──────────────────────────────────────────────
-pub(crate) const YYSYMBOL_MapName: i32 = 148;
-pub(crate) const YYSYMBOL_OptMapName: i32 = 147;
-pub(crate) const YYSYMBOL_String: i32 = 146;
-pub(crate) const YYSYMBOL_Ident: i32 = 145;
-pub(crate) const YYSYMBOL_KeyCode: i32 = 144;
-pub(crate) const YYSYMBOL_Integer: i32 = 143;
-pub(crate) const YYSYMBOL_Float: i32 = 142;
-pub(crate) const YYSYMBOL_Number: i32 = 141;
-pub(crate) const YYSYMBOL_SignedNumber: i32 = 140;
-pub(crate) const YYSYMBOL_KeySymLit: i32 = 139;
-pub(crate) const YYSYMBOL_KeySym: i32 = 138;
-pub(crate) const YYSYMBOL_KeySyms: i32 = 137;
-pub(crate) const YYSYMBOL_NonEmptyKeySyms: i32 = 136;
-pub(crate) const YYSYMBOL_KeySymList: i32 = 135;
-pub(crate) const YYSYMBOL_MultiKeySymList: i32 = 134;
-pub(crate) const YYSYMBOL_Terminal: i32 = 133;
-pub(crate) const YYSYMBOL_OptTerminal: i32 = 132;
-pub(crate) const YYSYMBOL_Lhs: i32 = 131;
-pub(crate) const YYSYMBOL_Action: i32 = 130;
-pub(crate) const YYSYMBOL_Actions: i32 = 129;
-pub(crate) const YYSYMBOL_NonEmptyActions: i32 = 128;
-pub(crate) const YYSYMBOL_ActionList: i32 = 127;
-pub(crate) const YYSYMBOL_MultiActionList: i32 = 126;
-pub(crate) const YYSYMBOL_Term: i32 = 125;
-pub(crate) const YYSYMBOL_Expr: i32 = 124;
-pub(crate) const YYSYMBOL_ExprList: i32 = 123;
-pub(crate) const YYSYMBOL_MergeMode: i32 = 122;
-pub(crate) const YYSYMBOL_OptMergeMode: i32 = 121;
-pub(crate) const YYSYMBOL_Element: i32 = 120;
-pub(crate) const YYSYMBOL_FieldSpec: i32 = 119;
-pub(crate) const YYSYMBOL_DoodadType: i32 = 118;
-pub(crate) const YYSYMBOL_DoodadDecl: i32 = 117;
-pub(crate) const YYSYMBOL_Coord: i32 = 116;
-pub(crate) const YYSYMBOL_CoordList: i32 = 115;
-pub(crate) const YYSYMBOL_OutlineInList: i32 = 114;
-pub(crate) const YYSYMBOL_OutlineList: i32 = 113;
-pub(crate) const YYSYMBOL_OverlayKey: i32 = 112;
-pub(crate) const YYSYMBOL_OverlayKeyList: i32 = 111;
-pub(crate) const YYSYMBOL_OverlayDecl: i32 = 110;
-pub(crate) const YYSYMBOL_Key: i32 = 109;
-pub(crate) const YYSYMBOL_Keys: i32 = 108;
-pub(crate) const YYSYMBOL_RowBodyItem: i32 = 107;
-pub(crate) const YYSYMBOL_RowBody: i32 = 106;
-pub(crate) const YYSYMBOL_SectionBodyItem: i32 = 105;
-pub(crate) const YYSYMBOL_SectionBody: i32 = 104;
-pub(crate) const YYSYMBOL_SectionDecl: i32 = 103;
-pub(crate) const YYSYMBOL_ShapeDecl: i32 = 102;
-pub(crate) const YYSYMBOL_UnknownCompoundStatementDecl: i32 = 101;
-pub(crate) const YYSYMBOL_UnknownDecl: i32 = 100;
-pub(crate) const YYSYMBOL_LedNameDecl: i32 = 99;
-pub(crate) const YYSYMBOL_LedMapDecl: i32 = 98;
-pub(crate) const YYSYMBOL_KeyOrKeySym: i32 = 97;
-pub(crate) const YYSYMBOL_KeyOrKeySymList: i32 = 96;
-pub(crate) const YYSYMBOL_ModMapDecl: i32 = 95;
-pub(crate) const YYSYMBOL_GroupCompatDecl: i32 = 94;
-pub(crate) const YYSYMBOL_NoSymbolOrActionList: i32 = 93;
-pub(crate) const YYSYMBOL_MultiKeySymOrActionList: i32 = 92;
-pub(crate) const YYSYMBOL_SymbolsVarDecl: i32 = 91;
-pub(crate) const YYSYMBOL_SymbolsBody: i32 = 90;
-pub(crate) const YYSYMBOL_OptSymbolsBody: i32 = 89;
-pub(crate) const YYSYMBOL_SymbolsDecl: i32 = 88;
-pub(crate) const YYSYMBOL_KeyTypeDecl: i32 = 87;
-pub(crate) const YYSYMBOL_VarDeclList: i32 = 86;
-pub(crate) const YYSYMBOL_InterpretMatch: i32 = 85;
-pub(crate) const YYSYMBOL_InterpretDecl: i32 = 84;
-pub(crate) const YYSYMBOL_VModDef: i32 = 83;
-pub(crate) const YYSYMBOL_VModDefList: i32 = 82;
-pub(crate) const YYSYMBOL_VModDecl: i32 = 81;
-pub(crate) const YYSYMBOL_KeyAliasDecl: i32 = 80;
-pub(crate) const YYSYMBOL_KeyNameDecl: i32 = 79;
-pub(crate) const YYSYMBOL_VarDecl: i32 = 78;
-pub(crate) const YYSYMBOL_Decl: i32 = 77;
-pub(crate) const YYSYMBOL_DeclList: i32 = 76;
-pub(crate) const YYSYMBOL_Flag: i32 = 75;
-pub(crate) const YYSYMBOL_Flags: i32 = 74;
-pub(crate) const YYSYMBOL_OptFlags: i32 = 73;
-pub(crate) const YYSYMBOL_FileType: i32 = 72;
-pub(crate) const YYSYMBOL_XkbMapConfig: i32 = 71;
-pub(crate) const YYSYMBOL_XkbMapConfigList: i32 = 70;
-pub(crate) const YYSYMBOL_XkbCompositeType: i32 = 69;
-pub(crate) const YYSYMBOL_XkbCompositeMap: i32 = 68;
-pub(crate) const YYSYMBOL_XkbFile: i32 = 67;
-pub(crate) const YYSYMBOL_YYACCEPT: i32 = 66;
-pub(crate) const YYSYMBOL_ALTERNATE_GROUP: i32 = 65;
-pub(crate) const YYSYMBOL_FUNCTION_KEYS: i32 = 64;
-pub(crate) const YYSYMBOL_KEYPAD_KEYS: i32 = 63;
-pub(crate) const YYSYMBOL_MODIFIER_KEYS: i32 = 62;
-pub(crate) const YYSYMBOL_ALPHANUMERIC_KEYS: i32 = 61;
-pub(crate) const YYSYMBOL_HIDDEN: i32 = 60;
-pub(crate) const YYSYMBOL_DEFAULT: i32 = 59;
-pub(crate) const YYSYMBOL_PARTIAL: i32 = 58;
-pub(crate) const YYSYMBOL_KEYNAME: i32 = 57;
-pub(crate) const YYSYMBOL_IDENT: i32 = 56;
-pub(crate) const YYSYMBOL_FLOAT: i32 = 55;
-pub(crate) const YYSYMBOL_INTEGER: i32 = 54;
-pub(crate) const YYSYMBOL_DECIMAL_DIGIT: i32 = 53;
-pub(crate) const YYSYMBOL_STRING: i32 = 52;
-pub(crate) const YYSYMBOL_INVERT: i32 = 51;
-pub(crate) const YYSYMBOL_EXCLAM: i32 = 50;
-pub(crate) const YYSYMBOL_SEMI: i32 = 49;
-pub(crate) const YYSYMBOL_COMMA: i32 = 48;
-pub(crate) const YYSYMBOL_DOT: i32 = 47;
-pub(crate) const YYSYMBOL_CBRACKET: i32 = 46;
-pub(crate) const YYSYMBOL_OBRACKET: i32 = 45;
-pub(crate) const YYSYMBOL_CPAREN: i32 = 44;
-pub(crate) const YYSYMBOL_OPAREN: i32 = 43;
-pub(crate) const YYSYMBOL_CBRACE: i32 = 42;
-pub(crate) const YYSYMBOL_OBRACE: i32 = 41;
-pub(crate) const YYSYMBOL_TIMES: i32 = 40;
-pub(crate) const YYSYMBOL_DIVIDE: i32 = 39;
-pub(crate) const YYSYMBOL_MINUS: i32 = 38;
-pub(crate) const YYSYMBOL_PLUS: i32 = 37;
-pub(crate) const YYSYMBOL_EQUALS: i32 = 36;
-pub(crate) const YYSYMBOL_VIRTUAL: i32 = 35;
-pub(crate) const YYSYMBOL_LOGO: i32 = 34;
-pub(crate) const YYSYMBOL_SOLID: i32 = 33;
-pub(crate) const YYSYMBOL_OUTLINE: i32 = 32;
-pub(crate) const YYSYMBOL_TEXT: i32 = 31;
-pub(crate) const YYSYMBOL_OVERLAY: i32 = 30;
-pub(crate) const YYSYMBOL_SECTION: i32 = 29;
-pub(crate) const YYSYMBOL_ROW: i32 = 28;
-pub(crate) const YYSYMBOL_KEYS: i32 = 27;
-pub(crate) const YYSYMBOL_SHAPE: i32 = 26;
-pub(crate) const YYSYMBOL_INDICATOR: i32 = 25;
-pub(crate) const YYSYMBOL_MODIFIER_MAP: i32 = 24;
-pub(crate) const YYSYMBOL_GROUP: i32 = 23;
-pub(crate) const YYSYMBOL_ALIAS: i32 = 22;
-pub(crate) const YYSYMBOL_KEY: i32 = 21;
-pub(crate) const YYSYMBOL_ACTION_TOK: i32 = 20;
-pub(crate) const YYSYMBOL_INTERPRET: i32 = 19;
-pub(crate) const YYSYMBOL_TYPE: i32 = 18;
-pub(crate) const YYSYMBOL_VIRTUAL_MODS: i32 = 17;
-pub(crate) const YYSYMBOL_ALTERNATE: i32 = 16;
-pub(crate) const YYSYMBOL_REPLACE: i32 = 15;
-pub(crate) const YYSYMBOL_AUGMENT: i32 = 14;
-pub(crate) const YYSYMBOL_OVERRIDE: i32 = 13;
-pub(crate) const YYSYMBOL_INCLUDE: i32 = 12;
-pub(crate) const YYSYMBOL_XKB_LAYOUT: i32 = 11;
-pub(crate) const YYSYMBOL_XKB_SEMANTICS: i32 = 10;
-pub(crate) const YYSYMBOL_XKB_GEOMETRY: i32 = 9;
-pub(crate) const YYSYMBOL_XKB_COMPATMAP: i32 = 8;
-pub(crate) const YYSYMBOL_XKB_SYMBOLS: i32 = 7;
-pub(crate) const YYSYMBOL_XKB_TYPES: i32 = 6;
-pub(crate) const YYSYMBOL_XKB_KEYCODES: i32 = 5;
-pub(crate) const YYSYMBOL_XKB_KEYMAP: i32 = 4;
-pub(crate) const YYSYMBOL_ERROR_TOK: i32 = 3;
 pub(crate) const YYSYMBOL_YYUNDEF: i32 = 2;
-pub(crate) const YYSYMBOL_YYerror: i32 = 1;
+pub(crate) const YYSYMBOL_YYERROR: i32 = 1;
 pub(crate) const YYSYMBOL_YYEOF: i32 = 0;
 pub(crate) const YYSYMBOL_YYEMPTY: i32 = -2;
 
-pub(crate) const YYARGS_MAX: u32 = 5;
 pub(crate) const YYFINAL: i32 = 16;
 pub(crate) const YYLAST: i32 = 928;
 pub(crate) const YYNTOKENS: i32 = 66;
@@ -527,7 +380,7 @@ static YYCHECK: [i16; 929] = [
     31, 56, -1, -1, 59, 58, 59, 60, 61, 62, 63, 64, 65, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, 56, -1, -1, 59,
 ];
-static YYR1: [yytype_uint8; 220] = [
+static YYR1: [u8; 220] = [
     0, 66, 67, 67, 67, 68, 69, 69, 69, 70, 70, 71, 72, 72, 72, 72, 72, 73, 73, 74, 74, 75, 75, 75,
     75, 75, 75, 75, 75, 76, 76, 76, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77,
     78, 78, 78, 79, 80, 81, 82, 82, 83, 83, 84, 85, 85, 86, 86, 87, 88, 89, 89, 90, 90, 91, 91, 91,
@@ -540,7 +393,7 @@ static YYR1: [yytype_uint8; 220] = [
     135, 135, 135, 135, 136, 136, 137, 137, 138, 138, 139, 139, 139, 139, 140, 140, 141, 141, 141,
     142, 143, 143, 144, 144, 145, 145, 146, 147, 147, 148,
 ];
-static YYR2: [yytype_int8; 220] = [
+static YYR2: [i8; 220] = [
     0, 2, 1, 1, 1, 7, 1, 1, 1, 2, 0, 7, 1, 1, 1, 1, 1, 1, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 0,
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 2, 3, 4, 5, 3, 3, 1, 1, 3, 6, 3, 1, 2, 0, 6,
     6, 1, 0, 3, 1, 3, 3, 1, 2, 1, 3, 5, 3, 5, 3, 4, 2, 0, 5, 6, 3, 1, 1, 1, 6, 5, 6, 5, 6, 6, 6, 6,
@@ -549,10 +402,6 @@ static YYR2: [yytype_int8; 220] = [
     2, 1, 4, 1, 1, 3, 3, 3, 1, 1, 3, 1, 3, 1, 2, 4, 1, 3, 4, 6, 1, 0, 1, 1, 1, 1, 3, 3, 1, 1, 3, 3,
     1, 1, 3, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
 ];
-
-pub(crate) type yytype_uint8 = u8;
-pub(crate) type yytype_int8 = i8;
-
 // ── Helper functions ────────────────────────────────────────────────
 
 fn _xkbcommon_error(param: &mut parser_param, msg: &str) {
@@ -622,7 +471,7 @@ fn yypcontext_expected_tokens(yyssp: &[i16], ssp: usize, yyarg: &mut [i32], yyar
         };
         let mut yyx = yyxbegin;
         while yyx < yyxend {
-            if YYCHECK[(yyx + yyn) as usize] as i32 == yyx && yyx != YYSYMBOL_YYerror {
+            if YYCHECK[(yyx + yyn) as usize] as i32 == yyx && yyx != YYSYMBOL_YYERROR {
                 if yyargn == 0 {
                     yycount += 1;
                 } else if (yycount as usize) == yyargn {
@@ -748,9 +597,9 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
                 loop {
                     yyn = YYPACT[yystate as usize] as i32;
                     if yyn != YYPACT_NINF {
-                        yyn += YYSYMBOL_YYerror;
+                        yyn += YYSYMBOL_YYERROR;
                         if (0..=YYLAST).contains(&yyn)
-                            && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYerror
+                            && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
                         {
                             yyn = YYTABLE[yyn as usize] as i32;
                             if yyn > 0 {
@@ -807,9 +656,9 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
                         loop {
                             yyn = YYPACT[yystate as usize] as i32;
                             if yyn != YYPACT_NINF {
-                                yyn += YYSYMBOL_YYerror;
+                                yyn += YYSYMBOL_YYERROR;
                                 if (0..=YYLAST).contains(&yyn)
-                                    && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYerror
+                                    && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
                                 {
                                     yyn = YYTABLE[yyn as usize] as i32;
                                     if yyn > 0 {
@@ -911,9 +760,9 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
             loop {
                 yyn = YYPACT[yystate as usize] as i32;
                 if yyn != YYPACT_NINF {
-                    yyn += YYSYMBOL_YYerror;
+                    yyn += YYSYMBOL_YYERROR;
                     if (0..=YYLAST).contains(&yyn)
-                        && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYerror
+                        && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
                     {
                         yyn = YYTABLE[yyn as usize] as i32;
                         if yyn > 0 {
@@ -953,9 +802,9 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut parser_param<'a>) -> i32 {
             loop {
                 yyn = YYPACT[yystate as usize] as i32;
                 if yyn != YYPACT_NINF {
-                    yyn += YYSYMBOL_YYerror;
+                    yyn += YYSYMBOL_YYERROR;
                     if (0..=YYLAST).contains(&yyn)
-                        && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYerror
+                        && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
                     {
                         yyn = YYTABLE[yyn as usize] as i32;
                         if yyn > 0 {
@@ -1233,7 +1082,7 @@ fn execute_reduction<'a>(
             }
         }
         39 => {
-            if let YYValue::GroupCompat(_) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+            if let YYValue::GroupCompat = std::mem::replace(&mut yyvs[sp], YYValue::None) {
                 *yyval = YYValue::Stmt(Statement::GroupCompat(()));
             } else {
                 *yyval = YYValue::None;
@@ -1517,7 +1366,7 @@ fn execute_reduction<'a>(
         }
         82 => {
             // GroupCompatDecl: GROUP Integer EQUALS Expr SEMI
-            *yyval = YYValue::GroupCompat(GroupCompatCreate());
+            *yyval = YYValue::GroupCompat;
         }
         83 => {
             // ModMapDecl: MODIFIER_MAP Ident OBRACE KeyOrKeySymList CBRACE SEMI
@@ -2106,7 +1955,7 @@ fn execute_reduction<'a>(
         }
         201 => {
             // KeySym: SECTION
-            *yyval = YYValue::Keysym(XKB_KEY_section as u32);
+            *yyval = YYValue::Keysym(XKB_KEY_SECTION as u32);
         }
         202 => {
             // KeySym: DECIMAL_DIGIT
@@ -2290,27 +2139,7 @@ pub(crate) fn parse<'a>(
     first
 }
 
-pub(crate) fn parse_next<'a>(
-    ctx: &'a mut XkbContext,
-    scanner: &'a mut scanner<'a>,
-    xkb_file: &mut Option<Box<XkbFile>>,
-) -> bool {
-    let mut param = parser_param {
-        ctx,
-        scanner,
-        rtrn: None,
-        more_maps: false,
-    };
 
-    let ret = _xkbcommon_parse(&mut param);
-    if ret == 0 && param.more_maps {
-        *xkb_file = param.rtrn;
-        true
-    } else {
-        *xkb_file = None;
-        ret == 0
-    }
-}
 
 // ── AST builder functions (merged from ast_build.rs) ──
 
@@ -2740,11 +2569,6 @@ impl<'a> sval<'a> {
     }
 
     #[inline]
-    pub(crate) fn start_ptr(&self) -> *const i8 {
-        self.data.as_ptr() as *const i8
-    }
-
-    #[inline]
     pub(crate) fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
@@ -2781,10 +2605,7 @@ impl<'a> scanner<'a> {
         }
     }
 
-    #[inline]
-    pub(crate) fn len(&self) -> usize {
-        self.s.len()
-    }
+
 
     #[inline]
     fn remaining_bytes(&self) -> &[u8] {
@@ -2857,28 +2678,6 @@ impl<'a> scanner<'a> {
         }
         self.buf[self.buf_pos] = ch;
         self.buf_pos += 1;
-        true
-    }
-
-    #[inline]
-    pub(crate) fn buf_appends(&mut self, s: &[u8]) -> bool {
-        for &b in s {
-            if b == 0 {
-                break;
-            }
-            if !self.buf_append(b) {
-                return false;
-            }
-        }
-        true
-    }
-
-    pub(crate) fn buf_appends_str(&mut self, s: &str) -> bool {
-        for &b in s.as_bytes() {
-            if !self.buf_append(b) {
-                return false;
-            }
-        }
         true
     }
 
@@ -2999,10 +2798,7 @@ impl<'a> scanner<'a> {
         true
     }
 
-    #[inline]
-    pub(crate) fn input_at(&self, pos: usize) -> *const i8 {
-        self.s[pos..].as_ptr() as *const i8
-    }
+
 
     #[inline]
     pub(crate) fn input_slice(&self, start: usize, end: usize) -> &[u8] {
@@ -3050,15 +2846,7 @@ pub(crate) fn svaleq(s1: sval, s2: sval) -> bool {
     s1.data == s2.data
 }
 
-#[inline]
-pub(crate) fn svaleq_prefix(s1: sval, s2: sval) -> bool {
-    s1.data.len() <= s2.data.len() && s1.data == &s2.data[..s1.data.len()]
-}
 
-#[inline]
-pub(crate) fn isvaleq(s1: sval, s2: sval) -> bool {
-    s1.data.len() == s2.data.len() && s1.data.eq_ignore_ascii_case(s2.data)
-}
 
 pub(crate) const ALTERNATE_GROUP: i32 = 77;
 pub(crate) const FUNCTION_KEYS: i32 = 76;
@@ -3145,8 +2933,6 @@ pub(crate) fn utf32_to_utf8_safe(unichar: u32, buffer: &mut [u8]) -> usize {
 pub(crate) const MAX_HASH_VALUE: u32 = 72;
 pub(crate) const MIN_WORD_LENGTH: u32 = 3;
 pub(crate) const MAX_WORD_LENGTH: u32 = 21;
-pub(crate) const MIN_HASH_VALUE: u32 = 3;
-pub(crate) const TOTAL_KEYWORDS: u32 = 45;
 
 static GPERF_DOWNCASE: [u8; 256] = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
@@ -3324,7 +3110,7 @@ pub(crate) enum YYValue<'a> {
     KeyType(Box<KeyTypeDef>),
     Symbols(Box<SymbolsDef>),
     ModMask(Box<ModMapDef>),
-    GroupCompat(Box<GroupCompatDef>),
+    GroupCompat,
     LedMap(Box<LedMapDef>),
     LedName(Box<LedNameDef>),
     Keycode(Box<KeycodeDef>),
@@ -4171,7 +3957,6 @@ fn FindInterpForKey(
             }
             let interp = &keymap.sym_interprets[i as usize];
             let mods: u32;
-            found = false;
             if !(interp.sym != syms[s as usize] && interp.sym != XKB_KEY_NO_SYMBOL as u32) {
                 if interp.level_one_only as i32 != 0 && level != 0_u32 {
                     mods = 0_u32;
@@ -4203,7 +3988,6 @@ fn FindInterpForKey(
                 {
                     for &prev_idx in interp_indices.iter() {
                         if prev_idx == i as usize {
-                            found = false;
                             log::warn!("Repeated interpretation ignored for keysym #{} \"{}\" at level {}/group {} on key <{}>.\n",
                                     s + 1_i32,
                                     keysym_text(syms[s as usize]),
@@ -4378,10 +4162,7 @@ fn add_key_aliases(keymap: &XkbKeymap, min: u32, max: u32, aliases: &mut Vec<Xkb
     while alias <= max {
         let entry: KeycodeMatch = keymap.key_names[alias as usize];
         if entry.is_alias as i32 != 0 && entry.found as i32 != 0 {
-            aliases.push(XkbKeyAlias {
-                real: entry.index,
-                alias,
-            });
+            aliases.push(XkbKeyAlias {});
         }
         alias = alias.wrapping_add(1);
     }
@@ -5022,7 +4803,6 @@ pub(crate) enum LayoutIdx {
     },
     Index {
         layout_idx_min: u32,
-        layout_idx_max: u32,
     },
 }
 impl Default for LayoutIdx {
@@ -5726,7 +5506,6 @@ fn matcher_mapping_set_layout_bounds(m: &mut matcher) {
         XKB_LAYOUT_INVALID => {
             m.mapping.layout = LayoutIdx::Index {
                 layout_idx_min: XKB_LAYOUT_INVALID,
-                layout_idx_max: XKB_LAYOUT_INVALID,
             };
             m.mapping.active_or_candidates_mask = 0x1_u32;
         }
@@ -5767,7 +5546,6 @@ fn matcher_mapping_set_layout_bounds(m: &mut matcher) {
     if is_index_case {
         m.mapping.layout = LayoutIdx::Index {
             layout_idx_min: idx,
-            layout_idx_max: idx.wrapping_add(1_u32),
         };
         m.mapping.active_or_candidates_mask = 1_u32 << idx;
     };
@@ -6812,9 +6590,7 @@ fn read_rules_file(
     file_data: &[u8],
     path: &str,
 ) -> bool {
-    let mut scanner: scanner = scanner::new(&[], "");
-
-    scanner = scanner::new(file_data, path);
+    let mut scanner = scanner::new(file_data, path);
     if !scanner.check_supported_char_encoding() {
         let loc: scanner_loc = scanner.token_location();
         log::error!("[XKB-{:03}] {}:{}:{}: This could be a file encoding issue. Supported encodings must be backward compatible with ASCII.\n",
