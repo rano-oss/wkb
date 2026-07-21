@@ -123,10 +123,6 @@ impl SymbolsInfo {
     }
 }
 
-fn resize_groups_zero(v: &mut Vec<GroupInfo>, new_len: usize) {
-    v.resize_with(new_len, Default::default);
-}
-
 /// Check if an ActionList container actually holds action data (vs keysym data).
 /// In the old linked-list model, the head node's type distinguished these.
 /// Now both are wrapped in ActionList containers, so we check the first inner node.
@@ -818,8 +814,6 @@ fn get_group_index(
         if i >= info.max_groups {
             return false;
         }
-        let new_len = keyi.groups.len() + 1;
-        resize_groups_zero(&mut keyi.groups, new_len);
         *ndx_rtrn = (keyi.groups.len() - 1) as u32;
         return true;
     }
@@ -829,9 +823,7 @@ fn get_group_index(
         return false;
     }
     *ndx_rtrn -= 1;
-    if *ndx_rtrn >= keyi.groups.len() as u32 {
-        resize_groups_zero(&mut keyi.groups, (*ndx_rtrn + 1) as usize);
-    }
+
     true
 }
 fn add_symbols_to_key(
@@ -1185,9 +1177,7 @@ fn set_symbols_field(
                 return false;
             } else {
                 ndx -= 1;
-                if ndx >= keyi.groups.len() as u32 {
-                    resize_groups_zero(&mut keyi.groups, (ndx as usize) + 1);
-                }
+
                 keyi.groups[ndx as usize].type_0 = val;
                 keyi.groups[ndx as usize].defined |= GROUP_FIELD_TYPE;
             }
@@ -1821,10 +1811,6 @@ fn copy_symbols_def_to_keymap(
             return false;
         }
     } else {
-        // Resize groups array
-        let __need: usize = keymap.keys[key_idx].num_groups as usize;
-        resize_groups_zero(&mut keyi.groups, __need);
-
         // If there are empty groups between non-empty ones, fill them with data from the first group
         if !keyi.groups.is_empty() {
             let groups_len = keyi.groups.len();
