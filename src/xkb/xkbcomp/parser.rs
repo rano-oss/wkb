@@ -3746,9 +3746,7 @@ fn update_pending_action_fields(
                     }
                 }
                 act.as_group_mut().group = info.pending_computations[pc_idx].value as i32;
-                act.as_group_mut().flags = (act.as_group().flags
-                    & !(ACTION_PENDING_COMPUTATION as i32) as u32)
-                    as XkbActionFlags;
+                act.as_group_mut().flags = act.as_group().flags & !ACTION_PENDING_COMPUTATION;
             }
             true
         }

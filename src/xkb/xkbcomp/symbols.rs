@@ -1833,8 +1833,7 @@ fn copy_symbols_def_to_keymap(
                 keymap.keys[key_idx].num_groups = (idx as u32) + 1;
             }
             if has_explicit_type {
-                keymap.keys[key_idx].explicit =
-                    (keymap.keys[key_idx].explicit | EXPLICIT_TYPES) as XkbExplicitComponents;
+                keymap.keys[key_idx].explicit = (keymap.keys[key_idx].explicit | EXPLICIT_TYPES);
             }
         }
     }
@@ -1962,16 +1961,16 @@ fn copy_symbols_def_to_keymap(
                 {
                     keymap.keys[key_idx].groups[i as usize].explicit_symbols = true;
                     keymap.keys[key_idx].explicit =
-                        (keymap.keys[key_idx].explicit | EXPLICIT_SYMBOLS) as XkbExplicitComponents;
+                        (keymap.keys[key_idx].explicit | EXPLICIT_SYMBOLS);
                 }
                 if groupi.defined & GROUP_FIELD_ACTS != 0 {
                     keymap.keys[key_idx].groups[i as usize].explicit_actions = true;
                     keymap.keys[key_idx].explicit =
-                        (keymap.keys[key_idx].explicit | EXPLICIT_INTERP) as XkbExplicitComponents;
+                        (keymap.keys[key_idx].explicit | EXPLICIT_INTERP);
                 }
                 if keymap.keys[key_idx].groups[i as usize].explicit_type {
                     keymap.keys[key_idx].explicit =
-                        (keymap.keys[key_idx].explicit | EXPLICIT_TYPES) as XkbExplicitComponents;
+                        (keymap.keys[key_idx].explicit | EXPLICIT_TYPES);
                 }
 
                 i += 1;
@@ -1986,14 +1985,12 @@ fn copy_symbols_def_to_keymap(
     // key_fields:
     if (keyi.defined & KEY_FIELD_VMODMAP) != 0 {
         keymap.keys[key_idx].vmodmap = keyi.vmodmap;
-        keymap.keys[key_idx].explicit =
-            (keymap.keys[key_idx].explicit | EXPLICIT_VMODMAP) as XkbExplicitComponents;
+        keymap.keys[key_idx].explicit = (keymap.keys[key_idx].explicit | EXPLICIT_VMODMAP);
     }
 
     if keyi.repeat != KEY_REPEAT_UNDEFINED {
         keymap.keys[key_idx].repeats = keyi.repeat == KEY_REPEAT_YES;
-        keymap.keys[key_idx].explicit =
-            (keymap.keys[key_idx].explicit | EXPLICIT_REPEAT) as XkbExplicitComponents;
+        keymap.keys[key_idx].explicit = (keymap.keys[key_idx].explicit | EXPLICIT_REPEAT);
     }
 
     if ((keyi.defined & KEY_FIELD_OVERLAY) != 0) && keyi.overlays != 0 && !keyi.overlays_clear {
@@ -2020,8 +2017,7 @@ fn copy_symbols_def_to_keymap(
         if clean_overlays != 0 {
             keymap.keys[key_idx].overlays = clean_overlays;
             keymap.keys[key_idx].overlay_keys = clean_keys;
-            keymap.keys[key_idx].explicit =
-                (keymap.keys[key_idx].explicit | EXPLICIT_OVERLAY) as XkbExplicitComponents;
+            keymap.keys[key_idx].explicit = (keymap.keys[key_idx].explicit | EXPLICIT_OVERLAY);
         }
     }
 
@@ -2134,7 +2130,7 @@ impl CompatInfo {
                 groups: 0,
                 which_mods: 0_u32,
                 mods: XkbMods { mods: 0, mask: 0 },
-                ctrls: 0 as XkbActionControls,
+                ctrls: 0,
             },
         };
         Self {
@@ -2815,7 +2811,7 @@ fn set_led_map_field(
             ) {
                 return false;
             }
-            ledi.led.ctrls = mask_0 as XkbActionControls;
+            ledi.led.ctrls = mask_0;
             ledi.defined |= LED_FIELD_CTRLS;
         }
         LedMapField::AllowExplicit | LedMapField::Index => {}
@@ -2903,7 +2899,7 @@ fn handle_compat_global_var(
                     groups: 0,
                     which_mods: 0_u32,
                     mods: XkbMods { mods: 0, mask: 0 },
-                    ctrls: 0 as XkbActionControls,
+                    ctrls: 0,
                 },
             };
             init_led(&mut temp_0);
@@ -5679,9 +5675,9 @@ fn check_boolean_flag(
         return report_mismatch(strict);
     }
     if set {
-        *flags_inout = (*flags_inout | flag) as XkbActionFlags;
+        *flags_inout = (*flags_inout | flag);
     } else {
-        *flags_inout = (*flags_inout & !flag) as XkbActionFlags;
+        *flags_inout = (*flags_inout & !flag);
     }
     PARSER_SUCCESS
 }
@@ -5709,14 +5705,14 @@ fn check_modifier_field(
                 || val_str.eq_ignore_ascii_case("modmapmods"))
         {
             *mods_rtrn = 0;
-            *flags_inout = (*flags_inout | ACTION_MODS_LOOKUP_MODMAP) as XkbActionFlags;
+            *flags_inout = (*flags_inout | ACTION_MODS_LOOKUP_MODMAP);
             return PARSER_SUCCESS;
         }
     }
     if !expr_resolve_mod_mask(ctx, value, MOD_BOTH, mods, mods_rtrn) {
         return report_mismatch(strict);
     }
-    *flags_inout = (*flags_inout & !(ACTION_MODS_LOOKUP_MODMAP as i32) as u32) as XkbActionFlags;
+    *flags_inout = *flags_inout & !ACTION_MODS_LOOKUP_MODMAP;
     PARSER_SUCCESS
 }
 static LOCK_WHICH: [LookupEntry; 5] = [
@@ -5730,7 +5726,7 @@ static LOCK_WHICH: [LookupEntry; 5] = [
     },
     LookupEntry {
         name: "neither",
-        value: (ACTION_LOCK_NO_LOCK as i32 | ACTION_LOCK_NO_UNLOCK as i32) as u32,
+        value: ACTION_LOCK_NO_LOCK | ACTION_LOCK_NO_UNLOCK,
     },
     LookupEntry {
         name: "unlock",
@@ -5752,10 +5748,8 @@ fn check_affect_field(
     if !expr_resolve_enum(ctx, value, &mut flags, &LOCK_WHICH) {
         return report_mismatch(strict);
     }
-    *flags_inout = (*flags_inout
-        & !(ACTION_LOCK_NO_LOCK as i32 | ACTION_LOCK_NO_UNLOCK as i32) as u32)
-        as XkbActionFlags;
-    *flags_inout = (*flags_inout | flags as XkbActionFlags) as XkbActionFlags;
+    *flags_inout = *flags_inout & !(ACTION_LOCK_NO_LOCK | ACTION_LOCK_NO_UNLOCK);
+    *flags_inout = (*flags_inout | flags);
     PARSER_SUCCESS
 }
 fn handle_set_latch_lock_mods(
@@ -5854,12 +5848,12 @@ fn check_group_field(
     let is_negate = value.get().stmt_type() == STMT_EXPR_NEGATE;
     let is_unary = is_negate || value.get().stmt_type() == STMT_EXPR_UNARY_PLUS;
     if is_unary {
-        flags = (flags as u32 & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as XkbActionFlags;
+        flags = flags & !ACTION_ABSOLUTE_SWITCH;
         // Rebind value to the child field inside the unary expr
         // (for ownership transfer to pending_computations if needed)
         value = value.rebind_to_child();
     } else {
-        flags = (flags as u32 | ACTION_ABSOLUTE_SWITCH) as XkbActionFlags;
+        flags = (flags as u32 | ACTION_ABSOLUTE_SWITCH);
     }
     let spec_holder = value.get();
     let absolute: bool = flags as u32 & ACTION_ABSOLUTE_SWITCH != 0;
@@ -5871,7 +5865,7 @@ fn check_group_field(
         return ret;
     }
     if pending {
-        flags = (flags as u32 | ACTION_PENDING_COMPUTATION) as XkbActionFlags;
+        flags = (flags as u32 | ACTION_PENDING_COMPUTATION);
         let pending_index: u32 = keymap_info.pending_computations.len() as u32;
         keymap_info.pending_computations.push(PendingComputation {
             expr: value.take(),
@@ -5880,8 +5874,8 @@ fn check_group_field(
         });
         *group_rtrn = pending_index as i32;
     } else {
-        flags = (flags as u32 & !(ACTION_PENDING_COMPUTATION as i32) as u32) as XkbActionFlags;
-        if flags as u32 & ACTION_ABSOLUTE_SWITCH == 0 {
+        flags = flags & !ACTION_PENDING_COMPUTATION;
+        if flags & ACTION_ABSOLUTE_SWITCH == 0 {
             *group_rtrn = idx as i32;
             if is_negate {
                 *group_rtrn = -*group_rtrn;
@@ -5979,12 +5973,12 @@ fn handle_move_ptr(
         }
         if field == ACTION_FIELD_X {
             if absolute {
-                act.flags = (act.flags | ACTION_ABSOLUTE_X) as XkbActionFlags;
+                act.flags = (act.flags | ACTION_ABSOLUTE_X);
             }
             act.x = val as i16;
         } else {
             if absolute {
-                act.flags = (act.flags | ACTION_ABSOLUTE_Y) as XkbActionFlags;
+                act.flags = (act.flags | ACTION_ABSOLUTE_Y);
             }
             act.y = val as i16;
         }
@@ -6086,14 +6080,14 @@ fn handle_set_ptr_dflt(
             return report_mismatch(keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
-            act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as XkbActionFlags;
+            act.flags = act.flags & !ACTION_ABSOLUTE_SWITCH;
             button = if let ExprKind::Unary { child, .. } = &value.kind {
                 child.as_deref().unwrap()
             } else {
                 unreachable!()
             };
         } else {
-            act.flags = (act.flags | ACTION_ABSOLUTE_SWITCH) as XkbActionFlags;
+            act.flags = (act.flags | ACTION_ABSOLUTE_SWITCH);
             button = value;
         }
         if !expr_resolve_button(ctx, button, &mut btn) {
@@ -6132,14 +6126,14 @@ fn handle_switch_screen(
             return report_mismatch(keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
-            act.flags = (act.flags & !(ACTION_ABSOLUTE_SWITCH as i32) as u32) as XkbActionFlags;
+            act.flags = act.flags & !ACTION_ABSOLUTE_SWITCH;
             scrn = if let ExprKind::Unary { child, .. } = &value.kind {
                 child.as_deref().unwrap()
             } else {
                 unreachable!()
             };
         } else {
-            act.flags = (act.flags | ACTION_ABSOLUTE_SWITCH) as XkbActionFlags;
+            act.flags = (act.flags | ACTION_ABSOLUTE_SWITCH);
             scrn = value;
         }
         if !expr_resolve_integer(ctx, scrn, &mut val) {
@@ -6188,7 +6182,7 @@ fn handle_set_lock_controls(
         if !expr_resolve_mask(ctx, value, &mut mask, &CTRL_MASK_NAMES[offset as usize..]) {
             return report_mismatch(keymap_info.strict);
         }
-        act.ctrls = mask as XkbActionControls;
+        act.ctrls = mask;
         return PARSER_SUCCESS;
     } else if field == ACTION_FIELD_AFFECT && type_0 == ACTION_TYPE_CTRL_LOCK {
         return check_affect_field(ctx, keymap_info.strict, array_ndx, value, &mut act.flags);
@@ -6242,7 +6236,7 @@ fn handle_redirect_key(
         }
     }
     if field == ACTION_FIELD_MODIFIERS || field == ACTION_FIELD_MODS_TO_CLEAR {
-        let mut flags: XkbActionFlags = 0 as XkbActionFlags;
+        let mut flags: XkbActionFlags = 0;
         let mut m: u32 = 0;
         let ctx: &XkbContext = keymap_info.ctx();
         let r: u32 = check_modifier_field(

@@ -787,10 +787,9 @@ pub(crate) fn xkb_context_new(flags: XkbContextFlags) -> XkbContext {
         use_secure_getenv: false,
         pending_default_includes: false,
     };
-    const XKB_CONTEXT_ALL_FLAGS: XkbContextFlags = (XKB_CONTEXT_NO_DEFAULT_INCLUDES as i32
-        | XKB_CONTEXT_NO_ENVIRONMENT_NAMES as i32
-        | XKB_CONTEXT_NO_SECURE_GETENV as i32)
-        as XkbContextFlags;
+    const XKB_CONTEXT_ALL_FLAGS: XkbContextFlags = XKB_CONTEXT_NO_DEFAULT_INCLUDES
+        | XKB_CONTEXT_NO_ENVIRONMENT_NAMES
+        | XKB_CONTEXT_NO_SECURE_GETENV;
     if flags & !XKB_CONTEXT_ALL_FLAGS != 0 {
         return ctx;
     }
@@ -1889,7 +1888,7 @@ use std::sync::LazyLock;
 static SYNTHETIC_KEY_BREAK_GROUP_LATCH: LazyLock<XkbKey> = LazyLock::new(|| XkbKey {
     keycode: 0,
     name: 0,
-    explicit: 0 as XkbExplicitComponents,
+    explicit: 0,
     modmap: 0,
     vmodmap: 0,
     overlays: 0,
@@ -2027,8 +2026,7 @@ fn xkb_filter_group_set_func(
     direction: XkbKeyDirection,
 ) -> bool {
     if !std::ptr::eq(key, filter.key) {
-        filter.action.as_group_mut().flags =
-            (filter.action.as_group().flags & !(ACTION_LOCK_CLEAR as i32) as u32) as XkbActionFlags;
+        filter.action.as_group_mut().flags = filter.action.as_group().flags & !ACTION_LOCK_CLEAR;
         return true;
     }
     's_38: {
@@ -2113,9 +2111,8 @@ fn xkb_filter_group_lock_func(
     if !std::ptr::eq(key, filter.key) {
         if filter.action.as_group().flags & ACTION_LOCK_ON_RELEASE != 0 && direction == XKB_KEY_DOWN
         {
-            filter.action.as_group_mut().flags = (filter.action.as_group().flags
-                & !(ACTION_LOCK_ON_RELEASE as i32) as u32)
-                as XkbActionFlags;
+            filter.action.as_group_mut().flags =
+                filter.action.as_group().flags & !ACTION_LOCK_ON_RELEASE;
         }
         return true;
     }
@@ -2214,9 +2211,7 @@ fn xkb_filter_group_latch_func(
             }
         } else if latch as u32 == LATCH_PENDING {
             let sticky_keys: bool = state.components.controls & CONTROL_STICKY_KEYS != 0;
-            let flags: XkbActionFlags = (filter.action.as_group().flags
-                & !(ACTION_LATCH_TO_LOCK as i32) as u32)
-                as XkbActionFlags;
+            let flags: XkbActionFlags = filter.action.as_group().flags & !ACTION_LATCH_TO_LOCK;
             let mut k_0: u16 = 0_u16;
             while (k_0 as usize) < actions.len() {
                 let at = actions[k_0 as usize].action_type();
@@ -2276,9 +2271,8 @@ fn xkb_filter_group_latch_func(
 }
 
 fn xkb_filter_mod_set_new(state: &mut XkbState, _events: &mut XkbEvents, filter: &mut XkbFilter) {
-    let unlock: XkbActionFlags =
-        (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as XkbActionFlags;
-    if filter.action.as_mods().flags & unlock as u32 == unlock as u32 {
+    let unlock: XkbActionFlags = ACTION_UNLOCK_ON_PRESS | ACTION_LOCK_CLEAR;
+    if filter.action.as_mods().flags & unlock == unlock {
         filter.priv_0 = (filter.action.as_mods().mods.mask & !state.components.locked_mods) as u64;
         state.components.locked_mods &= !filter.action.as_mods().mods.mask;
     } else {
@@ -2295,8 +2289,7 @@ fn xkb_filter_mod_set_func(
     direction: XkbKeyDirection,
 ) -> bool {
     if !std::ptr::eq(key, filter.key) {
-        filter.action.as_mods_mut().flags =
-            (filter.action.as_mods().flags & !(ACTION_LOCK_CLEAR as i32) as u32) as XkbActionFlags;
+        filter.action.as_mods_mut().flags = filter.action.as_mods().flags & !ACTION_LOCK_CLEAR;
         return true;
     }
     's_38: {
@@ -2316,9 +2309,8 @@ fn xkb_filter_mod_set_func(
         return false;
     }
     state.clear_mods |= filter.priv_0 as u32;
-    let unlock: XkbActionFlags =
-        (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LOCK_CLEAR as i32) as XkbActionFlags;
-    if filter.action.as_mods().flags & unlock as u32 == ACTION_LOCK_CLEAR {
+    let unlock: XkbActionFlags = ACTION_UNLOCK_ON_PRESS | ACTION_LOCK_CLEAR;
+    if filter.action.as_mods().flags & unlock == ACTION_LOCK_CLEAR {
         state.components.locked_mods &= !filter.action.as_mods().mods.mask;
     }
     filter.func = None;
@@ -2375,10 +2367,9 @@ fn xkb_filter_mod_lock_func(
 }
 
 fn xkb_filter_mod_latch_new(state: &mut XkbState, _events: &mut XkbEvents, filter: &mut XkbFilter) {
-    let unlock_on_press: XkbActionFlags =
-        (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LATCH_ON_PRESS as i32) as XkbActionFlags;
+    let unlock_on_press: XkbActionFlags = ACTION_UNLOCK_ON_PRESS | ACTION_LATCH_ON_PRESS;
     if filter.action.as_mods().flags & ACTION_LOCK_CLEAR != 0
-        && filter.action.as_mods().flags & unlock_on_press as u32 != 0
+        && filter.action.as_mods().flags & unlock_on_press != 0
         && state.components.locked_mods & filter.action.as_mods().mods.mask
             == filter.action.as_mods().mods.mask
     {
@@ -2423,9 +2414,7 @@ fn xkb_filter_mod_latch_func(
             }
         } else if latch as u32 == LATCH_PENDING {
             let sticky_keys: bool = state.components.controls & CONTROL_STICKY_KEYS != 0;
-            let flags: XkbActionFlags = (filter.action.as_mods().flags
-                & !(ACTION_LATCH_TO_LOCK as i32) as u32)
-                as XkbActionFlags;
+            let flags: XkbActionFlags = filter.action.as_mods().flags & !ACTION_LATCH_TO_LOCK;
             let mut k_0: u16 = 0_u16;
             while (k_0 as usize) < actions.len() {
                 let at = actions[k_0 as usize].action_type();
@@ -2468,10 +2457,9 @@ fn xkb_filter_mod_latch_func(
         if direction == XKB_KEY_REPEATED {
             return false;
         } else {
-            let unlock_on_press: XkbActionFlags =
-                (ACTION_UNLOCK_ON_PRESS as i32 | ACTION_LATCH_ON_PRESS as i32) as XkbActionFlags;
+            let unlock_on_press: XkbActionFlags = ACTION_UNLOCK_ON_PRESS | ACTION_LATCH_ON_PRESS;
             if filter.action.as_mods().flags & ACTION_LOCK_CLEAR != 0
-                && filter.action.as_mods().flags & unlock_on_press as u32 == 0
+                && filter.action.as_mods().flags & unlock_on_press == 0
                 && state.components.locked_mods & filter.action.as_mods().mods.mask
                     == filter.action.as_mods().mods.mask
             {
@@ -2505,8 +2493,7 @@ fn xkb_filter_ctrls_new(state: &mut XkbState, _events: &mut XkbEvents, filter: &
     if filter.action.action_type() == ACTION_TYPE_CTRL_SET
         || filter.action.as_ctrls().flags & ACTION_LOCK_NO_LOCK == 0
     {
-        state.components.controls =
-            (state.components.controls | filter.action.as_ctrls().ctrls) as XkbActionControls;
+        state.components.controls = (state.components.controls | filter.action.as_ctrls().ctrls);
     }
 }
 
@@ -2540,9 +2527,7 @@ fn xkb_filter_ctrls_func(
         || filter.action.as_ctrls().flags & ACTION_LOCK_NO_UNLOCK == 0
     {
         let old: XkbActionControls = state.components.controls;
-        state.components.controls = (state.components.controls
-            & !(filter.priv_0 as XkbActionControls))
-            as XkbActionControls;
+        state.components.controls = state.components.controls & !(filter.priv_0 as u32);
         if old as u32 & CONTROL_STICKY_KEYS != 0
             && state.components.controls & CONTROL_STICKY_KEYS == 0
         {
@@ -2791,16 +2776,14 @@ fn xkb_filter_apply_all(
                     state.filters[idx].action = XkbAction::ModLatch(mods_data);
                     if state.flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
                         state.filters[idx].action.as_mods_mut().flags =
-                            (state.filters[idx].action.as_mods().flags | ACTION_LATCH_TO_LOCK)
-                                as XkbActionFlags;
+                            (state.filters[idx].action.as_mods().flags | ACTION_LATCH_TO_LOCK);
                     }
                 } else if state.filters[idx].action.action_type() == ACTION_TYPE_GROUP_SET {
                     let group_data = *state.filters[idx].action.as_group();
                     state.filters[idx].action = XkbAction::GroupLatch(group_data);
                     if state.flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
                         state.filters[idx].action.as_group_mut().flags =
-                            (state.filters[idx].action.as_group().flags | ACTION_LATCH_TO_LOCK)
-                                as XkbActionFlags;
+                            (state.filters[idx].action.as_group().flags | ACTION_LATCH_TO_LOCK);
                     }
                 }
             }
@@ -3010,7 +2993,7 @@ pub(crate) fn xkb_state_update_key(
 static SYNTHETIC_KEY: LazyLock<XkbKey> = LazyLock::new(|| XkbKey {
     keycode: 0_u32,
     name: 0,
-    explicit: 0 as XkbExplicitComponents,
+    explicit: 0,
     modmap: 0,
     vmodmap: 0,
     overlays: 0,
@@ -3047,7 +3030,7 @@ fn update_latch_modifiers(state: &mut XkbState, events: &mut XkbEvents, mask: u3
     let synthetic_key_break_mod_latch = XkbKey {
         keycode: 0,
         name: 0,
-        explicit: 0 as XkbExplicitComponents,
+        explicit: 0,
         modmap: 0,
         vmodmap: 0,
         overlays: 0,
@@ -3064,7 +3047,7 @@ fn update_latch_modifiers(state: &mut XkbState, events: &mut XkbEvents, mask: u3
     let key: &XkbKey = &SYNTHETIC_KEY;
     let latch_mods: XkbAction = XkbAction::ModLatch(XkbModAction {
         type_0: ACTION_TYPE_MOD_LATCH,
-        flags: 0 as XkbActionFlags,
+        flags: 0,
         mods: XkbMods {
             mods: 0,
             mask: mask & latches,
@@ -3135,10 +3118,10 @@ fn state_update_latched_locked(
 
 #[inline]
 fn clear_all_latches_and_locks(state: &mut XkbState, events: &mut XkbEvents) {
-    static COMPONENTS: u32 = (XKB_STATE_MODS_LATCHED as i32
-        | XKB_STATE_MODS_LOCKED as i32
-        | XKB_STATE_LAYOUT_LATCHED as i32
-        | XKB_STATE_LAYOUT_LOCKED as i32) as u32;
+    static COMPONENTS: u32 = XKB_STATE_MODS_LATCHED
+        | XKB_STATE_MODS_LOCKED
+        | XKB_STATE_LAYOUT_LATCHED
+        | XKB_STATE_LAYOUT_LOCKED;
     let update: XkbStateComponentsUpdate = XkbStateComponentsUpdate {
         components: COMPONENTS,
         affect_latched_mods: XKB_MOD_ALL,
@@ -3176,12 +3159,8 @@ pub(crate) fn xkb_state_update_mask(
 }
 
 fn should_do_caps_transformation(state: &XkbState, kc: u32) -> bool {
-    xkb_state_mod_index_is_active(
-        state,
-        XKB_MOD_INDEX_CAPS as i32 as u32,
-        XKB_STATE_MODS_EFFECTIVE,
-    ) > 0_i32
-        && xkb_state_mod_index_is_consumed(state, kc, XKB_MOD_INDEX_CAPS as i32 as u32) == 0_i32
+    xkb_state_mod_index_is_active(state, XKB_MOD_INDEX_CAPS, XKB_STATE_MODS_EFFECTIVE) > 0_i32
+        && xkb_state_mod_index_is_consumed(state, kc, XKB_MOD_INDEX_CAPS) == 0_i32
 }
 
 pub(crate) fn xkb_state_key_get_syms(state: &XkbState, kc: u32) -> &[u32] {
@@ -3248,7 +3227,7 @@ pub(crate) fn xkb_state_serialize_mods(state: &XkbState, type_0: u32) -> u32 {
 
 pub(crate) fn mod_mask_get_effective(keymap: &XkbKeymap, mods: u32) -> u32 {
     let mut mask: u32 = mods & MOD_REAL_MASK_ALL;
-    let mut i: u32 = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
+    let mut i: u32 = _XKB_MOD_INDEX_NUM_ENTRIES;
     while i < keymap.mods.num_mods {
         if mods & 1_u32 << i != 0 {
             mask |= keymap.mods.mods[i as usize].mapping;
