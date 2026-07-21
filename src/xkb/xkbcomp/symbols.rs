@@ -325,15 +325,13 @@ fn merge_groups(
         }
         i += 1;
     }
-    let mut level_idx: u32 = levels_in_both;
-    while level_idx < from.levels.len() as u32 {
-        let level_val = from.levels[level_idx as usize].clone();
+    for level in from.levels[levels_in_both as usize..].iter_mut() {
+        let level_val = level.clone();
         into.levels.push(level_val);
-        from.levels[level_idx as usize].syms.clear();
-        from.levels[level_idx as usize].actions.clear();
+        level.syms.clear();
+        level.actions.clear();
         from_keysyms_count += 1;
         from_actions_count += 1;
-        level_idx += 1;
     }
     if from_keysyms_count != 0 {
         if from_keysyms_count == into.levels.len() as u32 {
@@ -571,11 +569,8 @@ fn merge_keys(
         );
         i += 1;
     }
-    i = groups_in_both;
-    while i < from.groups.len() as u32 {
-        let group_val = std::mem::take(&mut from.groups[i as usize]);
-        into.groups.push(group_val);
-        i += 1;
+    for group in from.groups.drain(groups_in_both as usize..) {
+        into.groups.push(group);
     }
     if use_new_field(
         KEY_FIELD_VMODMAP,
@@ -1523,13 +1518,11 @@ fn set_explicit_group(_ki: &XkbKeymapInfo<'_>, info: &SymbolsInfo, keyi: &mut Ke
         return true;
     }
     if !keyi.groups.is_empty() {
-        let mut i: u32 = 1;
-        while i < keyi.groups.len() as u32 {
-            if keyi.groups[i as usize].defined as u64 != 0 {
-                clear_group_inf(&mut keyi.groups[i as usize]);
-                init_group_info(&mut keyi.groups[i as usize]);
+        for group in keyi.groups[1..].iter_mut() {
+            if group.defined as u64 != 0 {
+                clear_group_inf(group);
+                init_group_info(group);
             }
-            i += 1;
         }
     }
 
@@ -3910,22 +3903,10 @@ fn keycode_store_insert_key(store: &mut KeycodeStore, kc: u32, name: u32) -> boo
     } else {
         let idx: u32 = store.high.len() as u32;
         if idx != 0 && store.high[(idx.wrapping_sub(1_u32)) as usize].keycode > kc {
-            let mut lower: u32 = 0;
-            let mut upper: u32 = idx;
-            while lower < upper {
-                let mid: u32 = lower.wrapping_add(
-                    upper
-                        .wrapping_sub(1_u32)
-                        .wrapping_sub(lower)
-                        .wrapping_div(2_u32),
-                );
-                let entry: &HighKeycodeEntry = &store.high[mid as usize];
-                if entry.keycode < kc {
-                    lower = mid.wrapping_add(1_u32);
-                } else if entry.keycode > kc {
-                    upper = mid;
-                }
-            }
+            let lower =
+                match store.high[..idx as usize].binary_search_by(|entry| entry.keycode.cmp(&kc)) {
+                    Ok(i) | Err(i) => i as u32,
+                };
             for i in lower as usize..store.high.len() {
                 let name_idx = store.high[i].name;
                 store.names[name_idx as usize].index += 1;
@@ -4040,34 +4021,19 @@ fn keycode_store_lookup_keycode(store: &KeycodeStore, kc: u32) -> KeycodeMatch {
             index: 0,
         };
     }
-    let mut lower: u32 = 0;
-    let mut upper: u32 = store.high.len() as u32;
-    while lower < upper {
-        let mid: u32 = lower.wrapping_add(
-            upper
-                .wrapping_sub(1_u32)
-                .wrapping_sub(lower)
-                .wrapping_div(2_u32),
-        );
-        let entry: &HighKeycodeEntry = &store.high[mid as usize];
-        if entry.keycode < kc {
-            lower = mid.wrapping_add(1_u32);
-        } else if entry.keycode > kc {
-            upper = mid;
-        } else {
-            return KeycodeMatch {
-                found: true,
-                low: false,
-                is_alias: false,
-                index: mid,
-            };
-        }
-    }
-    KeycodeMatch {
-        found: false,
-        low: false,
-        is_alias: false,
-        index: 0,
+    match store.high.binary_search_by(|entry| entry.keycode.cmp(&kc)) {
+        Ok(mid) => KeycodeMatch {
+            found: true,
+            low: false,
+            is_alias: false,
+            index: mid as u32,
+        },
+        Err(_) => KeycodeMatch {
+            found: false,
+            low: false,
+            is_alias: false,
+            index: 0,
+        },
     }
 }
 fn keycode_store_lookup_name(store: &KeycodeStore, name: u32) -> KeycodeMatch {
