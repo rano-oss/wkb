@@ -173,13 +173,6 @@ fn init_key_info_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
         overlay_keys: Vec::new(),
     };
 }
-fn clear_key_info(keyi: &mut KeyInfo) {
-    for groupi in keyi.groups.iter_mut() {
-        groupi.levels.clear();
-    }
-    keyi.groups.clear();
-    keyi.overlay_keys.clear();
-}
 fn init_symbols_info(
     info: &mut SymbolsInfo,
     ki: &mut XkbKeymapInfo<'_>,
@@ -189,19 +182,12 @@ fn init_symbols_info(
     info.include_depth = include_depth;
     info.explicit_group = XKB_LAYOUT_INVALID;
     info.max_groups = ki.features.max_groups;
-    init_key_info_with_atom(&mut info.default_key, atom_intern(&mut ki.ctx_mut().atom_table, b"*"));
+    init_key_info_with_atom(
+        &mut info.default_key,
+        atom_intern(&mut ki.ctx_mut().atom_table, b"*"),
+    );
     init_actions_info(ki.keymap_ref(), &mut info.default_actions);
     init_vmods(&mut info.mods, mods, include_depth > 0);
-}
-fn clear_symbols_info(info: &mut SymbolsInfo) {
-    info.name = None;
-    for keyi in info.keys.iter_mut() {
-        clear_key_info(keyi);
-    }
-    info.keys.clear();
-    info.group_names.clear();
-    info.modmaps.clear();
-    clear_key_info(&mut info.default_key);
 }
 fn merge_groups(
     _ki: &XkbKeymapInfo<'_>,
@@ -524,7 +510,6 @@ fn merge_keys(
     let clobber: bool = from.merge != MERGE_AUGMENT;
     let report: bool = same_file && verbosity > 0 || verbosity > 9;
     if from.merge == MERGE_REPLACE {
-        clear_key_info(into);
         std::mem::swap(into, from);
         init_key_info_with_atom(from, info.star_atom);
         return true;
@@ -599,7 +584,6 @@ fn merge_keys(
     if !merge_overlays(ki, into, from, clobber, report, &mut collide) {
         return false;
     }
-    clear_key_info(from);
     init_key_info_with_atom(from, info.star_atom);
     true
 }
@@ -740,7 +724,6 @@ fn handle_include_symbols(
             process_include_file(ki.ctx_mut(), stmt, FILE_TYPE_SYMBOLS);
         let Some(mut file) = file else {
             info.error_count += 10;
-            clear_symbols_info(&mut included);
             return false;
         };
         init_symbols_info(
@@ -761,12 +744,10 @@ fn handle_include_symbols(
         }
         handle_symbols_file(ki, &mut next_incl, &mut file);
         merge_included_symbols(ki, &mut included, &mut next_incl, stmt.merge);
-        clear_symbols_info(&mut next_incl);
         drop(file);
         current = stmt.next_incl.as_deref();
     }
     merge_included_symbols(ki, info, &mut included, include.merge);
-    clear_symbols_info(&mut included);
     info.error_count == 0
 }
 fn get_group_index(
@@ -1531,7 +1512,6 @@ fn handle_symbols_def(
     {
         return true;
     }
-    clear_key_info(&mut keyi);
     info.error_count += 1;
     false
 }
@@ -1922,12 +1902,10 @@ fn copy_symbols_def_to_keymap(
                 }
                 if groupi.defined & GROUP_FIELD_ACTS != 0 {
                     keymap.keys[key_idx].groups[i as usize].explicit_actions = true;
-                    keymap.keys[key_idx].explicit =
-                        keymap.keys[key_idx].explicit | EXPLICIT_INTERP;
+                    keymap.keys[key_idx].explicit = keymap.keys[key_idx].explicit | EXPLICIT_INTERP;
                 }
                 if keymap.keys[key_idx].groups[i as usize].explicit_type {
-                    keymap.keys[key_idx].explicit =
-                        keymap.keys[key_idx].explicit | EXPLICIT_TYPES;
+                    keymap.keys[key_idx].explicit = keymap.keys[key_idx].explicit | EXPLICIT_TYPES;
                 }
 
                 i += 1;
@@ -2048,10 +2026,8 @@ pub(crate) fn compile_symbols(
         handle_symbols_file(keymap_info, &mut info, file);
     }
     if (info.error_count == 0) && copy_symbols_to_keymap(keymap_info.keymap_mut(), &mut info) {
-        clear_symbols_info(&mut info);
         return true;
     }
-    clear_symbols_info(&mut info);
     false
 }
 use super::super::keymap::xkb_context_get_log_verbosity;
@@ -2174,10 +2150,6 @@ fn init_compat_info(
     init_vmods(&mut info.mods, mods, include_depth > 0);
     init_interp(&mut info.default_interp);
     init_led(&mut info.default_led);
-}
-fn clear_compat_info(info: &mut CompatInfo) {
-    info.name = None;
-    info.interps.clear();
 }
 
 fn merge_interp(
@@ -2476,7 +2448,6 @@ fn handle_include_compat_map(
         let file: Option<Box<XkbFile>> = process_include_file(ki.ctx_mut(), stmt, FILE_TYPE_COMPAT);
         let Some(mut file) = file else {
             info.error_count += 10;
-            clear_compat_info(&mut included);
             return false;
         };
         init_compat_info(
@@ -2489,12 +2460,10 @@ fn handle_include_compat_map(
         next_incl.default_led = info.default_led;
         handle_compat_map_file(ki, &mut next_incl, &mut file);
         merge_included_compat_maps(ki, &mut included, &mut next_incl, stmt.merge);
-        clear_compat_info(&mut next_incl);
         drop(file);
         current = stmt.next_incl.as_deref();
     }
     merge_included_compat_maps(ki, info, &mut included, include.merge);
-    clear_compat_info(&mut included);
     info.error_count == 0
 }
 enum InterpField {
@@ -3131,10 +3100,8 @@ pub(crate) fn compile_compat_map(file: Option<&mut XkbFile>, ki: &mut XkbKeymapI
         handle_compat_map_file(ki, &mut info, file);
     }
     if (info.error_count == 0) && copy_compat_to_keymap(ki, &mut info) {
-        clear_compat_info(&mut info);
         return true;
     }
-    clear_compat_info(&mut info);
     false
 }
 pub(crate) struct KeyTypesInfo {
@@ -3183,17 +3150,6 @@ fn init_key_types_info(info: &mut KeyTypesInfo, include_depth: u32, mods: &XkbMo
     info.mods = Default::default();
     init_vmods(&mut info.mods, mods, include_depth > 0);
 }
-fn clear_key_type_info(type_0: &mut KeyTypeInfo) {
-    type_0.entries.clear();
-    type_0.level_names.clear();
-}
-fn clear_key_types_info(info: &mut KeyTypesInfo) {
-    info.name = None;
-    for type_0 in info.types.iter_mut() {
-        clear_key_type_info(type_0);
-    }
-    info.types.clear();
-}
 fn add_key_type(
     ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
@@ -3205,14 +3161,12 @@ fn add_key_type(
     let old_idx = info.types.iter().position(|t| t.name == new.name);
     if let Some(idx) = old_idx {
         if new.merge != MERGE_AUGMENT {
-            clear_key_type_info(&mut info.types[idx]);
             info.types[idx] = new.clone();
             new.entries = Vec::new();
             new.level_names = Vec::new();
             return true;
         }
 
-        clear_key_type_info(new);
         return true;
     }
     info.types.push(new.clone());
@@ -3272,7 +3226,6 @@ fn handle_include_key_types(
         let file: Option<Box<XkbFile>> = process_include_file(ki.ctx_mut(), stmt, FILE_TYPE_TYPES);
         let Some(mut file) = file else {
             info.error_count += 10;
-            clear_key_types_info(&mut included);
             return false;
         };
         init_key_types_info(
@@ -3282,12 +3235,10 @@ fn handle_include_key_types(
         );
         handle_key_types_file(ki, &mut next_incl, &mut file);
         merge_included_key_types(ki, &mut included, &mut next_incl, stmt.merge);
-        clear_key_types_info(&mut next_incl);
         drop(file);
         current = stmt.next_incl.as_deref();
     }
     merge_included_key_types(ki, info, &mut included, include.merge);
-    clear_key_types_info(&mut included);
     info.error_count == 0
 }
 fn set_modifiers(
@@ -3591,7 +3542,6 @@ fn handle_key_types_file(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, fi
                         || !add_key_type(ki, info, &mut type_0, true)
                     {
                         info.error_count += 1;
-                        clear_key_type_info(&mut type_0);
                         ok = false;
                     } else {
                         ok = true;
@@ -3686,10 +3636,8 @@ pub(crate) fn compile_key_types(
         handle_key_types_file(keymap_info, &mut info, file);
     }
     if (info.error_count == 0) && copy_key_types_to_keymap(keymap_info, &mut info) {
-        clear_key_types_info(&mut info);
         return true;
     }
-    clear_key_types_info(&mut info);
     false
 }
 
@@ -4089,12 +4037,6 @@ fn add_led_name(
     info.led_names[new_idx as usize] = *new;
     true
 }
-fn clear_key_names_info(info: &mut KeyNamesInfo) {
-    info.name = None;
-    let store = &mut info.keycodes;
-    store.high.clear();
-    store.names.clear();
-}
 fn init_key_names_info(info: &mut KeyNamesInfo, include_depth: u32) {
     info.name = None;
     info.error_count = 0;
@@ -4296,18 +4238,15 @@ fn handle_include_keycodes(
             process_include_file(ki.ctx_mut(), stmt, FILE_TYPE_KEYCODES);
         let Some(mut file) = file else {
             info.error_count += 10;
-            clear_key_names_info(&mut included);
             return false;
         };
         init_key_names_info(&mut next_incl, info.include_depth.wrapping_add(1));
         handle_keycodes_file(&mut next_incl, &mut file, ki);
         merge_included_keycodes(&mut included, &mut next_incl, ki, stmt.merge, report);
-        clear_key_names_info(&mut next_incl);
         drop(file);
         current = stmt.next_incl.as_deref();
     }
     merge_included_keycodes(info, &mut included, ki, include.merge, report);
-    clear_key_names_info(&mut included);
     info.error_count == 0
 }
 fn handle_keycode_def(
@@ -4582,10 +4521,8 @@ pub(crate) fn compile_keycodes(
         handle_keycodes_file(&mut info, file, keymap_info);
     }
     if (info.error_count == 0) && copy_key_names_info_to_keymap(&mut info, keymap_info) {
-        clear_key_names_info(&mut info);
         return true;
     }
-    clear_key_names_info(&mut info);
     false
 }
 use super::super::keymap::{ACTION_TYPE_NAMES, BUTTON_NAMES, GROUP_LAST_INDEX_NAME};
