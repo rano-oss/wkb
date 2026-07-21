@@ -1052,14 +1052,35 @@ pub(crate) enum ExprKind {
     KeyName(u32),
     KeySym(u32),
     Ident(u32),
-    FieldRef { element: u32, field: u32 },
-    ArrayRef { element: u32, field: u32, entry: Option<Box<ExprDef>> },
-    Action { name: u32, args: Vec<ExprDef> },
-    ActionList { actions: Vec<ExprDef> },
-    KeysymList { syms: Vec<u32> },
+    FieldRef {
+        element: u32,
+        field: u32,
+    },
+    ArrayRef {
+        element: u32,
+        field: u32,
+        entry: Option<Box<ExprDef>>,
+    },
+    Action {
+        name: u32,
+        args: Vec<ExprDef>,
+    },
+    ActionList {
+        actions: Vec<ExprDef>,
+    },
+    KeysymList {
+        syms: Vec<u32>,
+    },
     EmptyList,
-    Binary { op: StmtType, left: Option<Box<ExprDef>>, right: Option<Box<ExprDef>> },
-    Unary { op: StmtType, child: Option<Box<ExprDef>> },
+    Binary {
+        op: StmtType,
+        left: Option<Box<ExprDef>>,
+        right: Option<Box<ExprDef>>,
+    },
+    Unary {
+        op: StmtType,
+        child: Option<Box<ExprDef>>,
+    },
 }
 
 impl ExprDef {

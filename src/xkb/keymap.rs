@@ -2219,11 +2219,12 @@ fn xkb_filter_group_latch_func(
                 as XkbActionFlags;
             let mut k_0: u16 = 0_u16;
             while (k_0 as usize) < actions.len() {
-                if actions[k_0 as usize].action_type() == ACTION_TYPE_GROUP_LATCH
+                let at = actions[k_0 as usize].action_type();
+                if at == ACTION_TYPE_GROUP_LATCH
                     && actions[k_0 as usize].as_group().group == filter.action.as_group().group
                     && actions[k_0 as usize].as_group().flags as u32
                         == filter.action.as_group().flags
-                    || actions[k_0 as usize].action_type() == ACTION_TYPE_GROUP_SET
+                    || at == ACTION_TYPE_GROUP_SET
                         && sticky_keys
                         && actions[k_0 as usize].as_group().flags as u32 == flags as u32
                 {
@@ -2427,10 +2428,11 @@ fn xkb_filter_mod_latch_func(
                 as XkbActionFlags;
             let mut k_0: u16 = 0_u16;
             while (k_0 as usize) < actions.len() {
-                if (actions[k_0 as usize].action_type() == ACTION_TYPE_MOD_LATCH
+                let at = actions[k_0 as usize].action_type();
+                if (at == ACTION_TYPE_MOD_LATCH
                     && actions[k_0 as usize].as_mods().flags as u32
                         == filter.action.as_mods().flags
-                    || actions[k_0 as usize].action_type() == ACTION_TYPE_MOD_SET
+                    || at == ACTION_TYPE_MOD_SET
                         && sticky_keys
                         && actions[k_0 as usize].as_mods().flags as u32 == flags as u32)
                     && actions[k_0 as usize].as_mods().mods.mask
