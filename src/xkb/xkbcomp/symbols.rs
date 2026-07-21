@@ -50,7 +50,7 @@ pub(crate) struct KeyInfo {
     pub(crate) repeat: u32,
     pub(crate) out_of_range_pending_group: bool,
     pub(crate) overlays_clear: bool,
-    pub(crate) overlays: XkbOverlayMaskT,
+    pub(crate) overlays: u8,
     pub(crate) overlay_keys: Vec<u32>,
 }
 pub(crate) const _KEY_REPEAT_NUM_ENTRIES: u32 = 3;
@@ -330,35 +330,35 @@ fn use_new_field(
     }
     false
 }
-fn overlays_get(info: &KeyInfo, bit: XkbOverlayIndexT, key_out: Option<&mut u32>) -> bool {
+fn overlays_get(info: &KeyInfo, bit: u8, key_out: Option<&mut u32>) -> bool {
     if bit as i32
-        >= (std::mem::size_of::<XkbOverlayMaskT>()).wrapping_mul(8_usize) as XkbOverlayIndexT as i32
+        >= (std::mem::size_of::<u8>()).wrapping_mul(8_usize) as u8 as i32
     {
         return false;
     }
-    let mask: XkbOverlayMaskT = (1_u32 << bit as i32) as XkbOverlayMaskT;
+    let mask: u8 = (1_u32 << bit as i32) as u8;
     if (info.overlays & mask) == 0 {
         return false;
     }
     if let Some(key_out) = key_out {
-        let low: XkbOverlayMaskT =
-            (info.overlays as u32 & (mask as u32).wrapping_sub(1)) as XkbOverlayMaskT;
+        let low: u8 =
+            (info.overlays as u32 & (mask as u32).wrapping_sub(1)) as u8;
         let index: usize = (low as u32).count_ones() as usize;
         *key_out = info.overlay_keys[index];
     }
     true
 }
-fn overlays_insert(keyi: &mut KeyInfo, bit: XkbOverlayIndexT, key: u32) -> bool {
+fn overlays_insert(keyi: &mut KeyInfo, bit: u8, key: u32) -> bool {
     if bit as i32
-        >= (std::mem::size_of::<XkbOverlayMaskT>()).wrapping_mul(8_usize) as XkbOverlayIndexT as i32
+        >= (std::mem::size_of::<u8>()).wrapping_mul(8_usize) as u8 as i32
     {
         return false;
     }
-    let mask: XkbOverlayMaskT = (1_u32 << bit as i32) as XkbOverlayMaskT;
+    let mask: u8 = (1_u32 << bit as i32) as u8;
     if (keyi.overlays & mask) != 0 && !keyi.overlays_clear {
         // Bit already set — update existing entry
-        let low: XkbOverlayMaskT =
-            (keyi.overlays as u32 & (mask as u32).wrapping_sub(1)) as XkbOverlayMaskT;
+        let low: u8 =
+            (keyi.overlays as u32 & (mask as u32).wrapping_sub(1)) as u8;
         let index: usize = (low as u32).count_ones() as usize;
         keyi.overlay_keys[index] = key;
         if key == XKB_KEYCODE_INVALID && keyi.overlay_keys.len() == 1 {
@@ -367,9 +367,9 @@ fn overlays_insert(keyi: &mut KeyInfo, bit: XkbOverlayIndexT, key: u32) -> bool 
         return true;
     }
     // New bit
-    let new_overlays: XkbOverlayMaskT = keyi.overlays | mask;
-    let low: XkbOverlayMaskT =
-        (new_overlays as u32 & (mask as u32).wrapping_sub(1)) as XkbOverlayMaskT;
+    let new_overlays: u8 = keyi.overlays | mask;
+    let low: u8 =
+        (new_overlays as u32 & (mask as u32).wrapping_sub(1)) as u8;
     let index: usize = (low as u32).count_ones() as usize;
 
     if keyi.overlays == 0 || keyi.overlays_clear && key == XKB_KEYCODE_INVALID {
@@ -401,12 +401,12 @@ fn merge_overlays(
             into.overlay_keys = std::mem::take(&mut from.overlay_keys);
             into.defined |= KEY_FIELD_OVERLAY;
         } else if into.overlays_clear && from.overlays_clear {
-            into.overlays = (into.overlays as i32 | from.overlays as i32) as XkbOverlayMaskT;
+            into.overlays = (into.overlays as i32 | from.overlays as i32) as u8;
         } else if ki.features.overlapping_overlays {
             // Complex merge with overlapping overlays
-            let result_mask: XkbOverlayMaskT =
-                (into.overlays as i32 | from.overlays as i32) as XkbOverlayMaskT;
-            let count: XkbOverlayIndexT = (result_mask as u32).count_ones() as XkbOverlayIndexT;
+            let result_mask: u8 =
+                (into.overlays as i32 | from.overlays as i32) as u8;
+            let count: u8 = (result_mask as u32).count_ones() as u8;
             if count == 0 {
                 eprintln!(
                     "Critical Error: Reached unreachable line in ../src/xkbcomp/symbols.c at {}",
@@ -421,15 +421,15 @@ fn merge_overlays(
                 clobber = !clobber;
             }
             // Now `into` is dest and `from` is src
-            let mut remaining: XkbOverlayMaskT = from.overlays;
+            let mut remaining: u8 = from.overlays;
             let mut src_idx: usize = 0;
             while remaining != 0 {
-                let lsb: XkbOverlayMaskT = (remaining as i32
-                    & (!(remaining as i32) as u32).wrapping_add(1) as XkbOverlayMaskT as i32)
-                    as XkbOverlayMaskT;
-                let bit: XkbOverlayIndexT =
-                    ((lsb as u32).wrapping_sub(1).count_ones()) as XkbOverlayIndexT;
-                remaining = (remaining as i32 & !(lsb as i32)) as XkbOverlayMaskT;
+                let lsb: u8 = (remaining as i32
+                    & (!(remaining as i32) as u32).wrapping_add(1) as u8 as i32)
+                    as u8;
+                let bit: u8 =
+                    ((lsb as u32).wrapping_sub(1).count_ones()) as u8;
+                remaining = (remaining as i32 & !(lsb as i32)) as u8;
                 let src_key: u32 = if from.overlays_clear || src_idx >= from.overlay_keys.len() {
                     XKB_KEYCODE_INVALID
                 } else {
@@ -1002,7 +1002,7 @@ fn expr_resolve_overlay_entry(
     array_ndx: Option<&ExprDef>,
     expr: &ExprDef,
     _keyi: &KeyInfo,
-    overlay_rtrn: &mut XkbOverlayIndexT,
+    overlay_rtrn: &mut u8,
     key_rtrn: &mut u32,
 ) -> bool {
     if array_ndx.is_some() {
@@ -1019,7 +1019,7 @@ fn expr_resolve_overlay_entry(
     {
         return false;
     }
-    *overlay_rtrn = (raw_overlay as XkbOverlayIndexT as i32 - 1) as XkbOverlayIndexT;
+    *overlay_rtrn = (raw_overlay as u8 as i32 - 1) as u8;
     match expr.stmt_type() {
         8 => {
             let ExprKind::KeyName(key_name_val) = expr.kind else {
@@ -1045,7 +1045,7 @@ fn expr_resolve_overlay_entry(
                 return true;
             } else if !id.is_empty() && id.eq_ignore_ascii_case("any") {
                 *key_rtrn = XKB_KEYCODE_INVALID;
-                *overlay_rtrn = XKB_OVERLAY_INVALID as XkbOverlayIndexT;
+                *overlay_rtrn = XKB_OVERLAY_INVALID as u8;
                 return true;
             }
             false
@@ -1179,7 +1179,7 @@ fn set_symbols_field(
         }
         SymbolsField::Locking | SymbolsField::RadioGroup => {}
         SymbolsField::Overlay => {
-            let mut overlay: XkbOverlayIndexT = XKB_OVERLAY_INVALID as XkbOverlayIndexT;
+            let mut overlay: u8 = XKB_OVERLAY_INVALID as u8;
             let mut key: u32 = XKB_KEYCODE_INVALID;
             if !expr_resolve_overlay_entry(
                 ki,
@@ -1207,7 +1207,7 @@ fn set_symbols_field(
                     }
                     keyi.defined |= KEY_FIELD_OVERLAY;
                 } else {
-                    let mask_0: XkbOverlayMaskT = (1_u32 << overlay as i32) as XkbOverlayMaskT;
+                    let mask_0: u8 = (1_u32 << overlay as i32) as u8;
                     if keyi.overlays == 0 || keyi.overlays_clear {
                         if key != XKB_KEYCODE_INVALID {
                             keyi.overlays = mask_0;
@@ -1215,7 +1215,7 @@ fn set_symbols_field(
                             keyi.overlay_keys = vec![key];
                         } else {
                             keyi.overlays =
-                                (keyi.overlays as i32 | mask_0 as i32) as XkbOverlayMaskT;
+                                (keyi.overlays as i32 | mask_0 as i32) as u8;
                             keyi.overlays_clear = true;
                             keyi.overlay_keys = vec![XKB_KEYCODE_INVALID];
                         }
@@ -1930,12 +1930,12 @@ fn copy_symbols_def_to_keymap(
 
     if ((keyi.defined & KEY_FIELD_OVERLAY) != 0) && keyi.overlays != 0 && !keyi.overlays_clear {
         // Remove null entries from overlay_keys and clear corresponding bits
-        let mut clean_overlays: XkbOverlayMaskT = 0;
+        let mut clean_overlays: u8 = 0;
         let mut clean_keys: Vec<u32> = Vec::new();
-        let mut remaining: XkbOverlayMaskT = keyi.overlays;
+        let mut remaining: u8 = keyi.overlays;
         let mut idx: usize = 0;
         while remaining != 0 {
-            let lsb: XkbOverlayMaskT = remaining & (!remaining) + 1;
+            let lsb: u8 = remaining & (!remaining) + 1;
             remaining &= !lsb;
             let k = if idx < keyi.overlay_keys.len() {
                 keyi.overlay_keys[idx]

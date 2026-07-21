@@ -20847,8 +20847,8 @@ fn parse_keysym_hex(s: &[u8], out: &mut u32) -> bool {
     *out = val;
     count > 0 && s.get(count as usize).copied() == Some(0)
 }
-pub(crate) fn xkb_keysym_from_name(name: &[u8], flags: XkbKeysymFlags) -> u32 {
-    const XKB_KEYSYM_FLAGS: XkbKeysymFlags = XKB_KEYSYM_CASE_INSENSITIVE;
+pub(crate) fn xkb_keysym_from_name(name: &[u8], flags: u32) -> u32 {
+    const XKB_KEYSYM_FLAGS: u32 = XKB_KEYSYM_CASE_INSENSITIVE;
     if flags & !XKB_KEYSYM_FLAGS != 0 {
         return XKB_KEY_NO_SYMBOL as u32;
     }

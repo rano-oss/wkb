@@ -513,31 +513,30 @@ pub struct XkbPointerDefaultAction {
 #[derive(Copy, Clone, Default)]
 pub struct XkbControlsAction {
     pub flags: XkbActionFlags,
-    pub ctrls: XkbActionControls,
+    pub ctrls: u32,
 }
 
-pub type XkbActionControls = u32;
-pub const CONTROL_ALL_BOOLEAN: XkbActionControls = 2088447;
-pub const CONTROL_ALL_BOOLEAN_V1: XkbActionControls = 2087943;
-pub const CONTROL_IGNORE_GROUP_LOCK: XkbActionControls = 1048576;
-pub const CONTROL_BELL: XkbActionControls = 524288;
-pub const CONTROL_AX_FEEDBACK: XkbActionControls = 262144;
-pub const CONTROL_AX_TIMEOUT: XkbActionControls = 131072;
-pub const CONTROL_AX: XkbActionControls = 65536;
-pub const CONTROL_MOUSE_KEYS_ACCEL: XkbActionControls = 32768;
-pub const CONTROL_MOUSE_KEYS: XkbActionControls = 16384;
-pub const CONTROL_DEBOUNCE: XkbActionControls = 4096;
-pub const CONTROL_SLOW: XkbActionControls = 2048;
-pub const CONTROL_REPEAT: XkbActionControls = 1024;
-pub const CONTROL_OVERLAY8: XkbActionControls = 256;
-pub const CONTROL_OVERLAY7: XkbActionControls = 128;
-pub const CONTROL_OVERLAY6: XkbActionControls = 64;
-pub const CONTROL_OVERLAY5: XkbActionControls = 32;
-pub const CONTROL_OVERLAY4: XkbActionControls = 16;
-pub const CONTROL_OVERLAY3: XkbActionControls = 8;
-pub const CONTROL_OVERLAY2: XkbActionControls = 4;
-pub const CONTROL_OVERLAY1: XkbActionControls = 2;
-pub const CONTROL_STICKY_KEYS: XkbActionControls = 1;
+pub const CONTROL_ALL_BOOLEAN: u32 = 2088447;
+pub const CONTROL_ALL_BOOLEAN_V1: u32 = 2087943;
+pub const CONTROL_IGNORE_GROUP_LOCK: u32 = 1048576;
+pub const CONTROL_BELL: u32 = 524288;
+pub const CONTROL_AX_FEEDBACK: u32 = 262144;
+pub const CONTROL_AX_TIMEOUT: u32 = 131072;
+pub const CONTROL_AX: u32 = 65536;
+pub const CONTROL_MOUSE_KEYS_ACCEL: u32 = 32768;
+pub const CONTROL_MOUSE_KEYS: u32 = 16384;
+pub const CONTROL_DEBOUNCE: u32 = 4096;
+pub const CONTROL_SLOW: u32 = 2048;
+pub const CONTROL_REPEAT: u32 = 1024;
+pub const CONTROL_OVERLAY8: u32 = 256;
+pub const CONTROL_OVERLAY7: u32 = 128;
+pub const CONTROL_OVERLAY6: u32 = 64;
+pub const CONTROL_OVERLAY5: u32 = 32;
+pub const CONTROL_OVERLAY4: u32 = 16;
+pub const CONTROL_OVERLAY3: u32 = 8;
+pub const CONTROL_OVERLAY2: u32 = 4;
+pub const CONTROL_OVERLAY1: u32 = 2;
+pub const CONTROL_STICKY_KEYS: u32 = 1;
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbGroupAction {
@@ -595,10 +594,10 @@ pub(crate) struct KeycodeMatch {
 pub(crate) struct XkbKey {
     pub(crate) keycode: u32,
     pub(crate) name: u32,
-    pub(crate) explicit: XkbExplicitComponents,
+    pub(crate) explicit: u32,
     pub(crate) modmap: u32,
     pub(crate) vmodmap: u32,
-    pub(crate) overlays: XkbOverlayMaskT,
+    pub(crate) overlays: u8,
     pub(crate) repeats: bool,
     pub(crate) implicit_actions: bool,
     pub(crate) out_of_range_pending_group: bool,
@@ -627,16 +626,12 @@ pub(crate) struct XkbLevel {
     pub(crate) actions: Vec<XkbAction>,
 }
 
-pub(crate) type XkbOverlayMaskT = u8;
-pub(crate) type XkbOverlayIndexT = u8;
-
-pub(crate) type XkbExplicitComponents = u32;
-pub(crate) const EXPLICIT_OVERLAY: XkbExplicitComponents = 32;
-pub(crate) const EXPLICIT_REPEAT: XkbExplicitComponents = 16;
-pub(crate) const EXPLICIT_VMODMAP: XkbExplicitComponents = 8;
-pub(crate) const EXPLICIT_TYPES: XkbExplicitComponents = 4;
-pub(crate) const EXPLICIT_INTERP: XkbExplicitComponents = 2;
-pub(crate) const EXPLICIT_SYMBOLS: XkbExplicitComponents = 1;
+pub(crate) const EXPLICIT_OVERLAY: u32 = 32;
+pub(crate) const EXPLICIT_REPEAT: u32 = 16;
+pub(crate) const EXPLICIT_VMODMAP: u32 = 8;
+pub(crate) const EXPLICIT_TYPES: u32 = 4;
+pub(crate) const EXPLICIT_INTERP: u32 = 2;
+pub(crate) const EXPLICIT_SYMBOLS: u32 = 1;
 
 #[derive(Copy, Clone, Default)]
 pub(crate) struct XkbLed {
@@ -646,7 +641,7 @@ pub(crate) struct XkbLed {
     pub(crate) groups: u32,
     pub(crate) which_mods: u32,
     pub(crate) mods: XkbMods,
-    pub(crate) ctrls: XkbActionControls,
+    pub(crate) ctrls: u32,
 }
 
 pub(crate) const XKB_MAX_GROUPS: u32 = 32;
@@ -654,15 +649,14 @@ pub(crate) const MOD_REAL_MASK_ALL: u32 = 0xff_i32 as u32;
 
 // ── Additional xkbcommon types ──────────────────────────────────────
 
-pub(crate) type XkbLedMaskT = u32;
 
 // ── C constants ─────────────────────────────────────────────────────
 
-pub(crate) const CHAR_BIT: i32 = 8;
+pub(crate) const CHAR_BIT: usize = 8;
 pub(crate) const UINT16_MAX: i32 = 65535;
 
 pub(crate) const XKB_MAX_LEDS: u32 =
-    (std::mem::size_of::<XkbLedMaskT>()).wrapping_mul(CHAR_BIT as usize) as u32;
+    (std::mem::size_of::<u32>()).wrapping_mul(CHAR_BIT as usize) as u32;
 pub(crate) const MAX_ACTIONS_PER_LEVEL: i32 = UINT16_MAX;
 
 // ── config_h constants ──────────────────────────────────────────────
@@ -677,36 +671,30 @@ pub(crate) const DFLT_XKB_LEGACY_ROOT: &str = "/usr/share/X11/xkb";
 
 // ── xkbcommon_h types (moved from duplicated pub(crate) mod xkbcommon_h blocks) ─
 
-pub(crate) type XkbContextFlags = u32;
-pub(crate) const XKB_CONTEXT_NO_FLAGS: XkbContextFlags = 0;
-pub(crate) const XKB_CONTEXT_NO_DEFAULT_INCLUDES: XkbContextFlags = 1;
-pub(crate) const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: XkbContextFlags = 2;
-pub(crate) const XKB_CONTEXT_NO_SECURE_GETENV: XkbContextFlags = 4;
+pub(crate) const XKB_CONTEXT_NO_FLAGS: u32 = 0;
+pub(crate) const XKB_CONTEXT_NO_DEFAULT_INCLUDES: u32 = 1;
+pub(crate) const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: u32 = 2;
+pub(crate) const XKB_CONTEXT_NO_SECURE_GETENV: u32 = 4;
 
-pub(crate) type XkbKeyDirection = u32;
-pub(crate) const XKB_KEY_UP: XkbKeyDirection = 0;
-pub(crate) const XKB_KEY_DOWN: XkbKeyDirection = 1;
-pub(crate) const XKB_KEY_REPEATED: XkbKeyDirection = 2;
+pub(crate) const XKB_KEY_UP: u32 = 0;
+pub(crate) const XKB_KEY_DOWN: u32 = 1;
+pub(crate) const XKB_KEY_REPEATED: u32 = 2;
 
-pub(crate) type XkbEventType = u32;
-pub(crate) const XKB_EVENT_TYPE_KEY_DOWN: XkbEventType = 1;
-pub(crate) const XKB_EVENT_TYPE_KEY_REPEATED: XkbEventType = 2;
-pub(crate) const XKB_EVENT_TYPE_KEY_UP: XkbEventType = 3;
-pub(crate) const XKB_EVENT_TYPE_COMPONENTS_CHANGE: XkbEventType = 4;
+pub(crate) const XKB_EVENT_TYPE_KEY_DOWN: u32 = 1;
+pub(crate) const XKB_EVENT_TYPE_KEY_REPEATED: u32 = 2;
+pub(crate) const XKB_EVENT_TYPE_KEY_UP: u32 = 3;
+pub(crate) const XKB_EVENT_TYPE_COMPONENTS_CHANGE: u32 = 4;
 
-pub(crate) type XkbConsumedMode = u32;
-pub(crate) const XKB_CONSUMED_MODE_XKB: XkbConsumedMode = 0;
+pub(crate) const XKB_CONSUMED_MODE_XKB: u32 = 0;
 
-pub(crate) type XkbKeysymFlags = u32;
-pub(crate) const XKB_KEYSYM_NO_FLAGS: XkbKeysymFlags = 0;
-pub(crate) const XKB_KEYSYM_CASE_INSENSITIVE: XkbKeysymFlags = 1;
+pub(crate) const XKB_KEYSYM_NO_FLAGS: u32 = 0;
+pub(crate) const XKB_KEYSYM_CASE_INSENSITIVE: u32 = 1;
 
 pub const XKB_KEYMAP_COMPILE_FLAGS_VALUES: u32 = 1;
 
-pub(crate) type XkbA11yFlags = u32;
-pub(crate) const XKB_A11Y_NO_FLAGS: XkbA11yFlags = 0;
-pub(crate) const XKB_A11Y_LATCH_TO_LOCK: XkbA11yFlags = 1;
-pub(crate) const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: XkbA11yFlags = 2;
+pub(crate) const XKB_A11Y_NO_FLAGS: u32 = 0;
+pub(crate) const XKB_A11Y_LATCH_TO_LOCK: u32 = 1;
+pub(crate) const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: u32 = 2;
 
 pub(crate) const XKB_KEYCODE_INVALID: u32 = 0xffffffff;
 pub(crate) const XKB_KEYCODE_MAX: u32 = 0xffffffff_u32.wrapping_sub(1);
@@ -771,21 +759,18 @@ pub(crate) fn atom_intern(table: &mut AtomTable, input_bytes: &[u8]) -> u32 {
 
 // ── keymap_h types & constants (moved from duplicated pub(crate) mod keymap_h blocks) ─
 
-pub(crate) type RealModIndex = u32;
-
 pub(crate) const DEFAULT_INTERPRET_KEY_REPEAT: u32 = 1;
 pub(crate) const DEFAULT_INTERPRET_VMOD: u32 = 4294967295;
 
 pub(crate) const XKB_MOD_ALL: u32 = 4294967295;
 pub const XKB_MOD_NONE: u32 = 0xffffffff;
-pub(crate) const XKB_MOD_INDEX_CAPS: RealModIndex = 1;
-pub(crate) const _XKB_MOD_INDEX_NUM_ENTRIES: RealModIndex = 8;
+pub(crate) const XKB_MOD_INDEX_CAPS: u32 = 1;
+pub(crate) const _XKB_MOD_INDEX_NUM_ENTRIES: u32 = 8;
 
 pub(crate) const XKB_ALL_GROUPS: u64 = ((1u64) << XKB_MAX_GROUPS).wrapping_sub(1u64);
 
-pub(crate) const XKB_OVERLAY_MAX_X11: i32 = 2;
-pub(crate) const XKB_OVERLAY_MAX: u64 =
-    (std::mem::size_of::<XkbOverlayMaskT>() as u64).wrapping_mul(CHAR_BIT as u64);
+pub(crate) const XKB_OVERLAY_MAX: u8 =
+    std::mem::size_of::<u8>().wrapping_mul(CHAR_BIT as usize) as u8;
 pub(crate) const XKB_OVERLAY_INVALID: i32 = 255;
 
 pub(crate) const XKB_KEYCODE_MAX_CONTIGUOUS: i32 = 0xfff;
@@ -877,22 +862,10 @@ impl XkbKeymap {
     }
 }
 
-// ── Inline helpers ──────────────────────────────────────────────────
-
 #[inline]
 pub(crate) fn entry_is_active(entry: &XkbKeyTypeEntry) -> bool {
-    entry.mods.mods == 0_u32 || entry.mods.mask != 0_u32
+    entry.mods.mods == 0 || entry.mods.mask != 0
 }
-
-#[inline]
-pub(crate) fn format_max_overlays(format: u32) -> XkbOverlayIndexT {
-    (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
-        XKB_OVERLAY_MAX_X11 as usize
-    } else {
-        XKB_OVERLAY_MAX as usize
-    }) as XkbOverlayIndexT
-}
-
 
 #[inline]
 pub(crate) fn is_mods_un_lock_on_press_supported(format: u32) -> bool {
@@ -920,12 +893,11 @@ pub(crate) const XKB_KEY_NO_SYMBOL: i32 = 0;
 // ── errno_base_h ──────────────────────────────────────────────────────
 
 // ── rmlvo_h (RMLVO enum) ─────────────────────────────────────────────
-pub(crate) type Rmlvo = u32;
-pub(crate) const RMLVO_OPTIONS: Rmlvo = 16;
-pub(crate) const RMLVO_VARIANT: Rmlvo = 8;
-pub(crate) const RMLVO_LAYOUT: Rmlvo = 4;
-pub(crate) const RMLVO_MODEL: Rmlvo = 2;
-pub(crate) const RMLVO_RULES: Rmlvo = 1;
+pub(crate) const RMLVO_OPTIONS: u32 = 16;
+pub(crate) const RMLVO_VARIANT: u32 = 8;
+pub(crate) const RMLVO_LAYOUT: u32 = 4;
+pub(crate) const RMLVO_MODEL: u32 = 2;
+pub(crate) const RMLVO_RULES: u32 = 1;
 
 // ── rules_h ───────────────────────────────────────────────────────────
 // ── Message codes (from messages.rs) ─────────────────────────────────────
@@ -1260,7 +1232,7 @@ pub(crate) struct XkbcompLookup {
 
 pub(crate) struct XkbcompFeatures {
     pub(crate) max_groups: u32,
-    pub(crate) max_overlays: XkbOverlayIndexT,
+    pub(crate) max_overlays: u8,
     pub(crate) controls_name_offset: u8,
     pub(crate) group_lock_on_release: bool,
     pub(crate) mods_unlock_on_press: bool,

@@ -4093,7 +4093,7 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
         }) as u32,
         features: XkbcompFeatures {
             max_groups: XKB_MAX_GROUPS,
-            max_overlays: format_max_overlays(km_format),
+            max_overlays: XKB_OVERLAY_MAX,
             controls_name_offset: format_control_names_offset(km_format),
             group_lock_on_release: is_group_lock_on_release_supported(km_format),
             mods_unlock_on_press: is_mods_un_lock_on_press_supported(km_format),
