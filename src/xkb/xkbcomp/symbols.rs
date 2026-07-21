@@ -156,18 +156,6 @@ fn collect_expr_list(container: &ExprDef) -> &[ExprDef] {
     }
 }
 
-/// Extract child expressions from an ActionList container node as mutable slice.
-fn collect_expr_list_mut(container: &mut ExprDef) -> &mut [ExprDef] {
-    if matches!(container.kind, ExprKind::ActionList { .. }) {
-        if let ExprKind::ActionList { ref mut actions } = container.kind {
-            return actions.as_mut_slice();
-        }
-        unreachable!()
-    } else {
-        std::slice::from_mut(container)
-    }
-}
-
 fn init_key_info_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
     *keyi = KeyInfo {
         name: star_atom,
@@ -914,7 +902,11 @@ fn add_actions_to_key(
     if groupi.defined & GROUP_FIELD_ACTS != 0 {
         return false;
     }
-    let action_nodes = collect_expr_list_mut(value);
+    let action_nodes = if let ExprKind::ActionList { ref mut actions } = value.kind {
+        actions.as_mut_slice()
+    } else {
+        std::slice::from_mut(value)
+    };
     let n_levels: u32 = action_nodes.len() as u32;
     let groupi = &mut keyi.groups[ndx as usize];
     if (groupi.levels.len() as u32) < n_levels {
