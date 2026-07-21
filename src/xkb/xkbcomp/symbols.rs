@@ -173,9 +173,6 @@ fn init_key_info_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
         overlay_keys: Vec::new(),
     };
 }
-fn init_key_info(ctx: &mut XkbContext, keyi: &mut KeyInfo) {
-    init_key_info_with_atom(keyi, atom_intern(&mut ctx.atom_table, b"*"));
-}
 fn clear_key_info(keyi: &mut KeyInfo) {
     for groupi in keyi.groups.iter_mut() {
         groupi.levels.clear();
@@ -192,7 +189,7 @@ fn init_symbols_info(
     info.include_depth = include_depth;
     info.explicit_group = XKB_LAYOUT_INVALID;
     info.max_groups = ki.features.max_groups;
-    init_key_info(ki.ctx_mut(), &mut info.default_key);
+    init_key_info_with_atom(&mut info.default_key, atom_intern(&mut ki.ctx_mut().atom_table, b"*"));
     init_actions_info(ki.keymap_ref(), &mut info.default_actions);
     init_vmods(&mut info.mods, mods, include_depth > 0);
 }
@@ -1399,7 +1396,7 @@ fn handle_global_var(
             init.overlays_clear = false;
             init
         };
-        init_key_info(ki.ctx_mut(), &mut temp);
+        init_key_info_with_atom(&mut temp, atom_intern(&mut ki.ctx_mut().atom_table, b"*"));
         temp.merge = if temp.merge == MERGE_REPLACE {
             MERGE_OVERRIDE
         } else {
