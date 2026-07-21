@@ -168,12 +168,6 @@ fn collect_expr_list_mut(container: &mut ExprDef) -> &mut [ExprDef] {
     }
 }
 
-fn init_group_info(groupi: &mut GroupInfo) {
-    *groupi = GroupInfo::default();
-}
-fn clear_group_inf(groupi: &mut GroupInfo) {
-    groupi.levels.clear();
-}
 fn init_key_info_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
     *keyi = KeyInfo {
         name: star_atom,
@@ -196,7 +190,7 @@ fn init_key_info(ctx: &mut XkbContext, keyi: &mut KeyInfo) {
 }
 fn clear_key_info(keyi: &mut KeyInfo) {
     for groupi in keyi.groups.iter_mut() {
-        clear_group_inf(groupi);
+        groupi.levels.clear();
     }
     keyi.groups.clear();
     keyi.overlay_keys.clear();
@@ -1518,9 +1512,8 @@ fn set_explicit_group(_ki: &XkbKeymapInfo<'_>, info: &SymbolsInfo, keyi: &mut Ke
     }
     if !keyi.groups.is_empty() {
         for group in keyi.groups[1..].iter_mut() {
-            if group.defined as u64 != 0 {
-                clear_group_inf(group);
-                init_group_info(group);
+            if group.defined != 0 {
+                *group = GroupInfo::default();
             }
         }
     }
