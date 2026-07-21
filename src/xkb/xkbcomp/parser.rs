@@ -434,12 +434,12 @@ fn resolve_keysym(param: &mut ParserParam, name: Sval) -> Option<u32> {
 }
 
 fn yypcontext_expected_tokens(yyssp: &[i16], ssp: usize, yyarg: &mut [i32], yyargn: usize) -> i32 {
-    let mut yycount: i32 = 0;
-    let yyn: i32 = YYPACT[yyssp[ssp] as usize] as i32;
+    let mut yycount = 0;
+    let yyn = YYPACT[yyssp[ssp] as usize] as i32;
     if yyn != YYPACT_NINF {
-        let yyxbegin: i32 = if yyn < 0 { -yyn } else { 0 };
-        let yychecklim: i32 = YYLAST - yyn + 1;
-        let yyxend: i32 = if yychecklim < YYNTOKENS {
+        let yyxbegin = if yyn < 0 { -yyn } else { 0 };
+        let yychecklim = YYLAST - yyn + 1;
+        let yyxend = if yychecklim < YYNTOKENS {
             yychecklim
         } else {
             YYNTOKENS
@@ -495,18 +495,6 @@ fn yysyntax_error(yyssp: &[i16], ssp: usize, yytoken: i32) -> String {
     msg
 }
 
-fn ensure_capacity<'a>(v: &mut Vec<YYValue<'a>>, idx: usize) {
-    if idx >= v.len() {
-        v.resize_with(idx + 1, || YYValue::None);
-    }
-}
-
-fn ensure_capacity_i16(v: &mut Vec<i16>, idx: usize) {
-    if idx >= v.len() {
-        v.resize(idx + 1, 0);
-    }
-}
-
 // ── Main parser function ────────────────────────────────────────────
 
 pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
@@ -534,10 +522,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
     yychar = YYEMPTY;
 
     'main_loop: loop {
-        // Ensure stack capacity
-        ensure_capacity_i16(&mut yyss, ssp);
-        ensure_capacity(&mut yyvs, sp);
-
         yyss[ssp] = yystate as i16;
 
         // Check stack overflow
@@ -593,7 +577,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                     yystate = yyss[ssp] as i32;
                 }
                 sp += 1;
-                ensure_capacity(&mut yyvs, sp);
                 yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
                 yystate = yyn;
                 ssp += 1;
@@ -651,7 +634,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                             yystate = yyss[ssp] as i32;
                         }
                         sp += 1;
-                        ensure_capacity(&mut yyvs, sp);
                         yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
                         yystate = yyn;
                         ssp += 1;
@@ -668,7 +650,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                     ssp -= yylen as usize;
 
                     sp += 1;
-                    ensure_capacity(&mut yyvs, sp);
                     yyvs[sp] = yyval;
 
                     let yylhs: i32 = YYR1[yyn as usize] as i32 - YYNTOKENS;
@@ -690,7 +671,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                     }
                     yystate = yyn;
                     sp += 1;
-                    ensure_capacity(&mut yyvs, sp);
                     yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
                     yychar = YYEMPTY;
                     ssp += 1;
@@ -755,7 +735,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                 yystate = yyss[ssp] as i32;
             }
             sp += 1;
-            ensure_capacity(&mut yyvs, sp);
             yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
             yystate = yyn;
             ssp += 1;
@@ -797,7 +776,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                 yystate = yyss[ssp] as i32;
             }
             sp += 1;
-            ensure_capacity(&mut yyvs, sp);
             yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
             yystate = yyn;
             ssp += 1;
@@ -814,7 +792,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
         ssp -= yylen as usize;
 
         sp += 1;
-        ensure_capacity(&mut yyvs, sp);
         yyvs[sp] = yyval;
 
         let yylhs: i32 = YYR1[yyn as usize] as i32 - YYNTOKENS;

@@ -2493,7 +2493,7 @@ fn xkb_filter_ctrls_new(state: &mut XkbState, _events: &mut XkbEvents, filter: &
     if filter.action.action_type() == ACTION_TYPE_CTRL_SET
         || filter.action.as_ctrls().flags & ACTION_LOCK_NO_LOCK == 0
     {
-        state.components.controls = (state.components.controls | filter.action.as_ctrls().ctrls);
+        state.components.controls = state.components.controls | filter.action.as_ctrls().ctrls;
     }
 }
 
@@ -2776,14 +2776,14 @@ fn xkb_filter_apply_all(
                     state.filters[idx].action = XkbAction::ModLatch(mods_data);
                     if state.flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
                         state.filters[idx].action.as_mods_mut().flags =
-                            (state.filters[idx].action.as_mods().flags | ACTION_LATCH_TO_LOCK);
+                            state.filters[idx].action.as_mods().flags | ACTION_LATCH_TO_LOCK;
                     }
                 } else if state.filters[idx].action.action_type() == ACTION_TYPE_GROUP_SET {
                     let group_data = *state.filters[idx].action.as_group();
                     state.filters[idx].action = XkbAction::GroupLatch(group_data);
                     if state.flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
                         state.filters[idx].action.as_group_mut().flags =
-                            (state.filters[idx].action.as_group().flags | ACTION_LATCH_TO_LOCK);
+                            state.filters[idx].action.as_group().flags | ACTION_LATCH_TO_LOCK;
                     }
                 }
             }

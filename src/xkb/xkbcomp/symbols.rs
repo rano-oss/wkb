@@ -35,7 +35,6 @@ pub(crate) struct ModMapEntry {
     pub(crate) merge: MergeMode,
     pub(crate) have_symbol: bool,
     pub(crate) modifier: u32,
-    /// keyName (atom) when !haveSymbol, keySym when haveSymbol
     pub(crate) u: u32,
 }
 #[derive(Clone)]
@@ -1809,7 +1808,7 @@ fn copy_symbols_def_to_keymap(
                 keymap.keys[key_idx].num_groups = (idx as u32) + 1;
             }
             if has_explicit_type {
-                keymap.keys[key_idx].explicit = (keymap.keys[key_idx].explicit | EXPLICIT_TYPES);
+                keymap.keys[key_idx].explicit = keymap.keys[key_idx].explicit | EXPLICIT_TYPES;
             }
         }
     }
@@ -1937,16 +1936,16 @@ fn copy_symbols_def_to_keymap(
                 {
                     keymap.keys[key_idx].groups[i as usize].explicit_symbols = true;
                     keymap.keys[key_idx].explicit =
-                        (keymap.keys[key_idx].explicit | EXPLICIT_SYMBOLS);
+                        keymap.keys[key_idx].explicit | EXPLICIT_SYMBOLS;
                 }
                 if groupi.defined & GROUP_FIELD_ACTS != 0 {
                     keymap.keys[key_idx].groups[i as usize].explicit_actions = true;
                     keymap.keys[key_idx].explicit =
-                        (keymap.keys[key_idx].explicit | EXPLICIT_INTERP);
+                        keymap.keys[key_idx].explicit | EXPLICIT_INTERP;
                 }
                 if keymap.keys[key_idx].groups[i as usize].explicit_type {
                     keymap.keys[key_idx].explicit =
-                        (keymap.keys[key_idx].explicit | EXPLICIT_TYPES);
+                        keymap.keys[key_idx].explicit | EXPLICIT_TYPES;
                 }
 
                 i += 1;
@@ -1961,12 +1960,12 @@ fn copy_symbols_def_to_keymap(
     // key_fields:
     if (keyi.defined & KEY_FIELD_VMODMAP) != 0 {
         keymap.keys[key_idx].vmodmap = keyi.vmodmap;
-        keymap.keys[key_idx].explicit = (keymap.keys[key_idx].explicit | EXPLICIT_VMODMAP);
+        keymap.keys[key_idx].explicit = keymap.keys[key_idx].explicit | EXPLICIT_VMODMAP;
     }
 
     if keyi.repeat != KEY_REPEAT_UNDEFINED {
         keymap.keys[key_idx].repeats = keyi.repeat == KEY_REPEAT_YES;
-        keymap.keys[key_idx].explicit = (keymap.keys[key_idx].explicit | EXPLICIT_REPEAT);
+        keymap.keys[key_idx].explicit = keymap.keys[key_idx].explicit | EXPLICIT_REPEAT;
     }
 
     if ((keyi.defined & KEY_FIELD_OVERLAY) != 0) && keyi.overlays != 0 && !keyi.overlays_clear {
@@ -1993,7 +1992,7 @@ fn copy_symbols_def_to_keymap(
         if clean_overlays != 0 {
             keymap.keys[key_idx].overlays = clean_overlays;
             keymap.keys[key_idx].overlay_keys = clean_keys;
-            keymap.keys[key_idx].explicit = (keymap.keys[key_idx].explicit | EXPLICIT_OVERLAY);
+            keymap.keys[key_idx].explicit = keymap.keys[key_idx].explicit | EXPLICIT_OVERLAY;
         }
     }
 
@@ -5600,9 +5599,9 @@ fn check_boolean_flag(
         return report_mismatch(strict);
     }
     if set {
-        *flags_inout = (*flags_inout | flag);
+        *flags_inout = *flags_inout | flag;
     } else {
-        *flags_inout = (*flags_inout & !flag);
+        *flags_inout = *flags_inout & !flag;
     }
     PARSER_SUCCESS
 }
@@ -5630,7 +5629,7 @@ fn check_modifier_field(
                 || val_str.eq_ignore_ascii_case("modmapmods"))
         {
             *mods_rtrn = 0;
-            *flags_inout = (*flags_inout | ACTION_MODS_LOOKUP_MODMAP);
+            *flags_inout = *flags_inout | ACTION_MODS_LOOKUP_MODMAP;
             return PARSER_SUCCESS;
         }
     }
@@ -5674,7 +5673,7 @@ fn check_affect_field(
         return report_mismatch(strict);
     }
     *flags_inout = *flags_inout & !(ACTION_LOCK_NO_LOCK | ACTION_LOCK_NO_UNLOCK);
-    *flags_inout = (*flags_inout | flags);
+    *flags_inout = *flags_inout | flags;
     PARSER_SUCCESS
 }
 fn handle_set_latch_lock_mods(
@@ -5778,7 +5777,7 @@ fn check_group_field(
         // (for ownership transfer to pending_computations if needed)
         value = value.rebind_to_child();
     } else {
-        flags = (flags as u32 | ACTION_ABSOLUTE_SWITCH);
+        flags = flags as u32 | ACTION_ABSOLUTE_SWITCH;
     }
     let spec_holder = value.get();
     let absolute: bool = flags as u32 & ACTION_ABSOLUTE_SWITCH != 0;
@@ -5790,7 +5789,7 @@ fn check_group_field(
         return ret;
     }
     if pending {
-        flags = (flags as u32 | ACTION_PENDING_COMPUTATION);
+        flags = flags as u32 | ACTION_PENDING_COMPUTATION;
         let pending_index: u32 = keymap_info.pending_computations.len() as u32;
         keymap_info.pending_computations.push(PendingComputation {
             expr: value.take(),
@@ -5898,12 +5897,12 @@ fn handle_move_ptr(
         }
         if field == ACTION_FIELD_X {
             if absolute {
-                act.flags = (act.flags | ACTION_ABSOLUTE_X);
+                act.flags = act.flags | ACTION_ABSOLUTE_X;
             }
             act.x = val as i16;
         } else {
             if absolute {
-                act.flags = (act.flags | ACTION_ABSOLUTE_Y);
+                act.flags = act.flags | ACTION_ABSOLUTE_Y;
             }
             act.y = val as i16;
         }
@@ -6012,7 +6011,7 @@ fn handle_set_ptr_dflt(
                 unreachable!()
             };
         } else {
-            act.flags = (act.flags | ACTION_ABSOLUTE_SWITCH);
+            act.flags = act.flags | ACTION_ABSOLUTE_SWITCH;
             button = value;
         }
         if !expr_resolve_button(ctx, button, &mut btn) {
@@ -6058,7 +6057,7 @@ fn handle_switch_screen(
                 unreachable!()
             };
         } else {
-            act.flags = (act.flags | ACTION_ABSOLUTE_SWITCH);
+            act.flags = act.flags | ACTION_ABSOLUTE_SWITCH;
             scrn = value;
         }
         if !expr_resolve_integer(ctx, scrn, &mut val) {
