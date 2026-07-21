@@ -32,7 +32,7 @@ pub(crate) struct SymbolsInfo {
 }
 #[derive(Copy, Clone)]
 pub(crate) struct ModMapEntry {
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) have_symbol: bool,
     pub(crate) modifier: u32,
     pub(crate) u: u32,
@@ -46,7 +46,7 @@ pub(crate) struct KeyInfo {
     pub(crate) groups: Vec<GroupInfo>,
     pub(crate) out_of_range_group_policy: u32,
     pub(crate) defined: u32,
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) repeat: u32,
     pub(crate) out_of_range_pending_group: bool,
     pub(crate) overlays_clear: bool,
@@ -130,13 +130,13 @@ fn resize_groups_zero(v: &mut Vec<GroupInfo>, new_len: usize) {
 /// Check if an ActionList container actually holds action data (vs keysym data).
 /// In the old linked-list model, the head node's type distinguished these.
 /// Now both are wrapped in ActionList containers, so we check the first inner node.
-fn is_action_list_value(value: &ExprDef) -> bool {
-    if let ExprKind::ActionList { actions } = &value.kind {
+fn is_action_list_value(value: &ExprKind) -> bool {
+    if let ExprKind::ActionList { actions } = &value {
         if let Some(first) = actions.first() {
             // If the first inner node is an ActionList (actions for one level) or
             // Action (single action), it's action data. KeysymList means keysym data.
             matches!(
-                first.kind,
+                first,
                 ExprKind::ActionList { .. } | ExprKind::Action { .. }
             )
         } else {
@@ -149,8 +149,8 @@ fn is_action_list_value(value: &ExprDef) -> bool {
 }
 
 /// Extract child expressions from an ActionList container node, or return a single-element slice.
-fn collect_expr_list(container: &ExprDef) -> &[ExprDef] {
-    match &container.kind {
+fn collect_expr_list(container: &ExprKind) -> &[ExprKind] {
+    match &container {
         ExprKind::ActionList { actions } => actions.as_slice(),
         _ => std::slice::from_ref(container),
     }
@@ -645,7 +645,7 @@ fn merge_included_symbols(
     ki: &mut XkbKeymapInfo<'_>,
     into: &mut SymbolsInfo,
     from: &mut SymbolsInfo,
-    merge: MergeMode,
+    merge: u32,
 ) {
     if from.error_count > 0 {
         into.error_count += from.error_count;
@@ -678,7 +678,7 @@ fn merge_included_symbols(
         std::mem::swap(&mut into.keys, &mut from.keys);
     } else {
         for keyi in from.keys.iter_mut() {
-            keyi.merge = merge as MergeMode;
+            keyi.merge = merge as u32;
             if !add_key_symbols(ki, into, keyi, false) {
                 into.error_count += 1;
             }
@@ -698,7 +698,7 @@ fn merge_included_symbols(
 fn handle_include_symbols(
     ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
-    include: &mut IncludeStmt,
+    include: &mut _IncludeStmt,
 ) -> bool {
     let mut included = SymbolsInfo::new(ki);
     if exceeds_include_max_depth(info.include_depth) {
@@ -716,7 +716,7 @@ fn handle_include_symbols(
     } else {
         Some(std::mem::take(&mut include.stmt))
     };
-    let mut current: Option<&IncludeStmt> = Some(include);
+    let mut current: Option<&_IncludeStmt> = Some(include);
     while let Some(stmt) = current {
         let mut next_incl = SymbolsInfo::new(ki);
 
@@ -754,7 +754,7 @@ fn get_group_index(
     ki: &mut XkbKeymapInfo<'_>,
     info: &SymbolsInfo,
     keyi: &mut KeyInfo,
-    array_ndx: Option<&ExprDef>,
+    array_ndx: Option<&ExprKind>,
     field: u32,
     ndx_rtrn: &mut u32,
 ) -> bool {
@@ -798,8 +798,8 @@ fn add_symbols_to_key(
     ki: &mut XkbKeymapInfo<'_>,
     info: &SymbolsInfo,
     keyi: &mut KeyInfo,
-    array_ndx: Option<&ExprDef>,
-    value: &ExprDef,
+    array_ndx: Option<&ExprKind>,
+    value: &ExprKind,
 ) -> bool {
     let mut ndx: u32 = 0;
     if !get_group_index(ki, info, keyi, array_ndx, GROUP_FIELD_SYMS, &mut ndx) {
@@ -821,7 +821,7 @@ fn add_symbols_to_key(
     let keysym_nodes = collect_expr_list(value);
     for node in keysym_nodes {
         n_levels += 1;
-        let ExprKind::KeysymList { ref syms } = node.kind else {
+        let ExprKind::KeysymList { ref syms } = node else {
             unreachable!()
         };
         if syms.len() as u32 > 0 {
@@ -843,7 +843,7 @@ fn add_symbols_to_key(
             break;
         }
         let leveli = &mut keyi.groups[ndx as usize].levels[level];
-        let ExprKind::KeysymList { ref syms } = node.kind else {
+        let ExprKind::KeysymList { ref syms } = node else {
             unreachable!()
         };
         let syms_len = syms.len() as u32;
@@ -862,8 +862,8 @@ fn add_actions_to_key(
     ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
     keyi: &mut KeyInfo,
-    array_ndx: Option<&ExprDef>,
-    value: &mut ExprDef,
+    array_ndx: Option<&ExprKind>,
+    value: &mut ExprKind,
 ) -> bool {
     let mut ndx: u32 = 0;
     if !get_group_index(ki, info, keyi, array_ndx, GROUP_FIELD_ACTS, &mut ndx) {
@@ -880,7 +880,7 @@ fn add_actions_to_key(
     if groupi.defined & GROUP_FIELD_ACTS != 0 {
         return false;
     }
-    let action_nodes = if let ExprKind::ActionList { ref mut actions } = value.kind {
+    let action_nodes = if let ExprKind::ActionList { ref mut actions } = value {
         actions.as_mut_slice()
     } else {
         std::slice::from_mut(value)
@@ -898,7 +898,7 @@ fn add_actions_to_key(
     for action_node in action_nodes {
         let ExprKind::ActionList {
             actions: action_vec,
-        } = &mut action_node.kind
+        } = action_node
         else {
             unreachable!()
         };
@@ -999,8 +999,8 @@ static REPEAT_ENTRIES: [LookupEntry; 8] = [
 fn expr_resolve_overlay_entry(
     keymap_info: &XkbKeymapInfo<'_>,
     field: &str,
-    array_ndx: Option<&ExprDef>,
-    expr: &ExprDef,
+    array_ndx: Option<&ExprKind>,
+    expr: &ExprKind,
     _keyi: &KeyInfo,
     overlay_rtrn: &mut u8,
     key_rtrn: &mut u32,
@@ -1022,12 +1022,12 @@ fn expr_resolve_overlay_entry(
     *overlay_rtrn = (raw_overlay as u8 as i32 - 1) as u8;
     match expr.stmt_type() {
         8 => {
-            let ExprKind::KeyName(key_name_val) = expr.kind else {
+            let ExprKind::KeyName(key_name_val) = expr else {
                 unreachable!()
             };
             let key_kc = keymap_info
                 .keymap
-                .key_by_name(key_name_val, false)
+                .key_by_name(*key_name_val, false)
                 .map(|k| k.keycode);
             *key_rtrn = key_kc.unwrap_or(XKB_KEYCODE_INVALID);
             if *key_rtrn == XKB_KEYCODE_INVALID {
@@ -1036,10 +1036,10 @@ fn expr_resolve_overlay_entry(
             true
         }
         10 => {
-            let ExprKind::Ident(ident_val) = expr.kind else {
+            let ExprKind::Ident(ident_val) = expr else {
                 unreachable!()
             };
-            let id: &str = atom_text(&keymap_info.keymap.ctx.atom_table, ident_val);
+            let id: &str = atom_text(&keymap_info.keymap.ctx.atom_table, *ident_val);
             if !id.is_empty() && id.eq_ignore_ascii_case("none") {
                 *key_rtrn = XKB_KEYCODE_INVALID;
                 return true;
@@ -1123,8 +1123,8 @@ fn set_symbols_field(
     info: &mut SymbolsInfo,
     keyi: &mut KeyInfo,
     field: &str,
-    array_ndx: Option<&ExprDef>,
-    value_opt: &mut Option<Box<ExprDef>>,
+    array_ndx: Option<&ExprKind>,
+    value_opt: &mut Option<Box<ExprKind>>,
 ) -> bool {
     let mapped_field = match parse_symbols_field(field) {
         Some(f) => f,
@@ -1304,9 +1304,9 @@ fn set_symbols_field(
 fn set_group_name(
     ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
-    array_ndx: Option<&ExprDef>,
-    value: &ExprDef,
-    merge: MergeMode,
+    array_ndx: Option<&ExprKind>,
+    value: &ExprKind,
+    merge: u32,
 ) -> bool {
     let array_ndx = match array_ndx {
         Some(a) => a,
@@ -1352,7 +1352,7 @@ fn handle_global_var(
 ) -> bool {
     let mut elem_atom: u32 = 0;
     let mut field_atom: u32 = 0;
-    let mut array_ndx_opt: Option<&ExprDef> = None;
+    let mut array_ndx_opt: Option<&ExprKind> = None;
     let ret: bool;
     if !expr_resolve_lhs(
         stmt.name.as_deref().unwrap(),
@@ -1381,7 +1381,7 @@ fn handle_global_var(
         temp.merge = if temp.merge == MERGE_REPLACE {
             MERGE_OVERRIDE
         } else {
-            stmt.merge as MergeMode
+            stmt.merge as u32
         };
         ret = set_symbols_field(ki, info, &mut temp, field, array_ndx_opt, &mut stmt.value);
         let mut dk = std::mem::replace(&mut info.default_key, KeyInfo::new_zeroed());
@@ -1443,7 +1443,7 @@ fn handle_symbols_body(
     for def in defs.iter_mut() {
         let field_owned: String;
         let field: &str;
-        let mut array_ndx_opt: Option<&ExprDef> = None;
+        let mut array_ndx_opt: Option<&ExprKind> = None;
         let mut ok: bool = true;
         if def.name.is_none() {
             if def.value.is_none() || !is_action_list_value(def.value.as_ref().unwrap()) {
@@ -1504,7 +1504,7 @@ fn handle_symbols_def(
     // Clone scalar fields from default_key, deep-copy groups
     let dk = &info.default_key;
     let mut keyi = dk.clone();
-    keyi.merge = stmt.merge as MergeMode;
+    keyi.merge = stmt.merge as u32;
     keyi.name = stmt.key_name;
     if handle_symbols_body(ki, info, &mut stmt.symbols, &mut keyi)
         && set_explicit_group(ki, info, &mut keyi)
@@ -1544,18 +1544,18 @@ fn handle_mod_map_def(
         let mut add_entry = false;
         if key.stmt_type() == STMT_EXPR_KEYNAME_LITERAL {
             tmp.have_symbol = false;
-            let ExprKind::KeyName(kn) = key.kind else {
+            let ExprKind::KeyName(kn) = key else {
                 unreachable!()
             };
-            tmp.u = kn;
+            tmp.u = *kn;
             add_entry = true;
         } else if key.stmt_type() == STMT_EXPR_KEYSYM_LITERAL {
-            let ExprKind::KeySym(ks) = key.kind else {
+            let ExprKind::KeySym(ks) = key else {
                 unreachable!()
             };
-            if ks != XKB_KEY_NO_SYMBOL as u32 {
+            if *ks != XKB_KEY_NO_SYMBOL as u32 {
                 tmp.have_symbol = true;
-                tmp.u = ks;
+                tmp.u = *ks;
                 add_entry = true;
             }
         }
@@ -2108,7 +2108,7 @@ impl CompatInfo {
 #[derive(Copy, Clone)]
 pub(crate) struct LedInfo {
     pub(crate) defined: u32,
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) led: XkbLed,
 }
 pub(crate) const LED_FIELD_CTRLS: u32 = 4;
@@ -2118,7 +2118,7 @@ pub(crate) const LED_FIELD_MODS: u32 = 1;
 #[derive(Clone)]
 pub(crate) struct SymInterpInfo {
     pub(crate) defined: u32,
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) interp: XkbSymInterpret,
 }
 pub(crate) const SI_FIELD_LEVEL_ONE_ONLY: u32 = 8;
@@ -2246,7 +2246,7 @@ fn add_interp(
     true
 }
 fn resolve_state_and_predicate(
-    expr: Option<&ExprDef>,
+    expr: Option<&ExprKind>,
     pred_rtrn: &mut u32,
     mods_rtrn: &mut u32,
     info: &mut CompatInfo,
@@ -2261,9 +2261,9 @@ fn resolve_state_and_predicate(
         Some(e) => e,
     };
     *pred_rtrn = MATCH_EXACTLY;
-    let resolve_expr: &ExprDef;
+    let resolve_expr: &ExprKind;
     if expr.stmt_type() == STMT_EXPR_ACTION_DECL {
-        let ExprKind::Action { name, args } = &expr.kind else {
+        let ExprKind::Action { name, args } = &expr else {
             unreachable!()
         };
         let pred_txt: &str = atom_text(&ki.ctx().atom_table, *name);
@@ -2277,7 +2277,7 @@ fn resolve_state_and_predicate(
         *pred_rtrn = pred;
         resolve_expr = &args[0];
     } else if expr.stmt_type() == STMT_EXPR_IDENT {
-        let ExprKind::Ident(ident_val) = &expr.kind else {
+        let ExprKind::Ident(ident_val) = &expr else {
             unreachable!()
         };
         let pred_txt_0: &str = atom_text(&ki.ctx().atom_table, *ident_val);
@@ -2386,7 +2386,7 @@ fn merge_included_compat_maps(
     ki: &mut XkbKeymapInfo<'_>,
     into: &mut CompatInfo,
     from: &mut CompatInfo,
-    merge: MergeMode,
+    merge: u32,
 ) {
     if from.error_count > 0 {
         into.error_count += from.error_count;
@@ -2423,7 +2423,7 @@ fn merge_included_compat_maps(
 fn handle_include_compat_map(
     ki: &mut XkbKeymapInfo<'_>,
     info: &mut CompatInfo,
-    include: &mut IncludeStmt,
+    include: &mut _IncludeStmt,
 ) -> bool {
     let mut included = CompatInfo::new();
     if exceeds_include_max_depth(info.include_depth) {
@@ -2441,7 +2441,7 @@ fn handle_include_compat_map(
     } else {
         Some(include.stmt.clone())
     };
-    let mut current: Option<&IncludeStmt> = Some(include);
+    let mut current: Option<&_IncludeStmt> = Some(include);
     while let Some(stmt) = current {
         let mut next_incl = CompatInfo::new();
 
@@ -2498,8 +2498,8 @@ fn set_interp_field(
     ki: &mut XkbKeymapInfo<'_>,
     si: &mut SymInterpInfo,
     field: &str,
-    array_ndx: Option<&ExprDef>,
-    value: &mut ExprDef,
+    array_ndx: Option<&ExprKind>,
+    value: &mut ExprKind,
 ) -> bool {
     let mapped_field = match parse_interp_field(field) {
         Some(f) => f,
@@ -2514,7 +2514,7 @@ fn set_interp_field(
             if value.stmt_type() == STMT_EXPR_ACTION_LIST {
                 let ExprKind::ActionList {
                     actions: action_vec,
-                } = &mut value.kind
+                } = value
                 else {
                     unreachable!()
                 };
@@ -2666,10 +2666,10 @@ fn set_led_map_field(
     ki: &mut XkbKeymapInfo<'_>,
     ledi: &mut LedInfo,
     field: &str,
-    array_ndx: Option<&ExprDef>,
-    value_opt: &mut Option<Box<ExprDef>>,
+    array_ndx: Option<&ExprKind>,
+    value_opt: &mut Option<Box<ExprKind>>,
 ) -> bool {
-    let value: &ExprDef = value_opt.as_deref().unwrap();
+    let value: &ExprKind = value_opt.as_deref().unwrap();
     let mapped_field = match parse_led_map_field(field) {
         Some(f) => f,
         None => return ki.strict & PARSER_NO_UNKNOWN_LED_FIELDS == 0,
@@ -2764,7 +2764,7 @@ fn handle_compat_global_var(
 ) -> bool {
     let mut elem_atom: u32 = 0;
     let mut field_atom: u32 = 0;
-    let mut ndx: Option<&ExprDef> = None;
+    let mut ndx: Option<&ExprKind> = None;
     let ret: bool;
     if !expr_resolve_lhs(
         stmt.name.as_deref().unwrap(),
@@ -2798,7 +2798,7 @@ fn handle_compat_global_var(
                 MERGE_OVERRIDE
             } else {
                 stmt.merge
-            }) as MergeMode;
+            }) as u32;
             // ndx borrows from stmt.name, value_ref borrows from stmt.value — disjoint fields
             let value_ref = stmt.value.as_deref_mut().unwrap();
             ret = set_interp_field(info, ki, &mut temp, &field, ndx, value_ref);
@@ -2826,7 +2826,7 @@ fn handle_compat_global_var(
                 MERGE_OVERRIDE
             } else {
                 stmt.merge
-            }) as MergeMode;
+            }) as u32;
             // ndx borrows from stmt.name, field/value borrow from different fields — disjoint
             ret = set_led_map_field(info, ki, &mut temp_0, &field, ndx, &mut stmt.value);
             if ret {
@@ -2866,7 +2866,7 @@ fn handle_interp_body(
     for def in defs {
         let mut elem_atom: u32 = 0;
         let mut field_atom: u32 = 0;
-        let mut array_ndx: Option<&ExprDef> = None;
+        let mut array_ndx: Option<&ExprKind> = None;
         if !expr_resolve_lhs(
             def.name.as_deref().unwrap(),
             &mut elem_atom,
@@ -2926,7 +2926,7 @@ fn handle_led_map_def(
     for var in def.body.iter_mut() {
         let mut elem_atom: u32 = 0;
         let mut field_atom: u32 = 0;
-        let mut array_ndx: Option<&ExprDef> = None;
+        let mut array_ndx: Option<&ExprKind> = None;
         if !expr_resolve_lhs(
             var.name.as_deref().unwrap(),
             &mut elem_atom,
@@ -3131,7 +3131,7 @@ impl KeyTypesInfo {
 #[derive(Clone)]
 pub(crate) struct KeyTypeInfo {
     pub(crate) defined: u32,
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) name: u32,
     pub(crate) mods: u32,
     pub(crate) num_levels: u32,
@@ -3176,7 +3176,7 @@ fn merge_included_key_types(
     ki: &mut XkbKeymapInfo<'_>,
     into: &mut KeyTypesInfo,
     from: &mut KeyTypesInfo,
-    merge: MergeMode,
+    merge: u32,
 ) {
     if from.error_count > 0 {
         into.error_count += from.error_count;
@@ -3202,7 +3202,7 @@ fn merge_included_key_types(
 fn handle_include_key_types(
     ki: &mut XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
-    include: &mut IncludeStmt,
+    include: &mut _IncludeStmt,
 ) -> bool {
     let mut included = KeyTypesInfo::new();
     if exceeds_include_max_depth(info.include_depth) {
@@ -3219,7 +3219,7 @@ fn handle_include_key_types(
     } else {
         Some(std::mem::take(&mut include.stmt))
     };
-    let mut current: Option<&IncludeStmt> = Some(include);
+    let mut current: Option<&_IncludeStmt> = Some(include);
     while let Some(stmt) = current {
         let mut next_incl = KeyTypesInfo::new();
 
@@ -3245,8 +3245,8 @@ fn set_modifiers(
     ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
-    array_ndx: Option<&ExprDef>,
-    value: &ExprDef,
+    array_ndx: Option<&ExprKind>,
+    value: &ExprKind,
 ) -> bool {
     let mut mods: u32 = 0;
     if array_ndx.is_some() {
@@ -3300,8 +3300,8 @@ fn set_map_entry(
     ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
-    array_ndx: Option<&ExprDef>,
-    value: &ExprDef,
+    array_ndx: Option<&ExprKind>,
+    value: &ExprKind,
 ) -> bool {
     let mut entry: XkbKeyTypeEntry = XkbKeyTypeEntry {
         level: 0,
@@ -3365,8 +3365,8 @@ fn set_preserve(
     ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
-    array_ndx: Option<&ExprDef>,
-    value: &ExprDef,
+    array_ndx: Option<&ExprKind>,
+    value: &ExprKind,
 ) -> bool {
     if array_ndx.is_none() {
         return false;
@@ -3421,8 +3421,8 @@ fn set_level_name(
     ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
-    array_ndx: Option<&ExprDef>,
-    value: &ExprDef,
+    array_ndx: Option<&ExprKind>,
+    value: &ExprKind,
 ) -> bool {
     if array_ndx.is_none() {
         return false;
@@ -3442,8 +3442,8 @@ fn set_key_type_field(
     info: &mut KeyTypesInfo,
     type_0: &mut KeyTypeInfo,
     field: &str,
-    array_ndx: Option<&ExprDef>,
-    value: &ExprDef,
+    array_ndx: Option<&ExprKind>,
+    value: &ExprKind,
 ) -> bool {
     let ok: bool;
     let mut u32: u32 = 0;
@@ -3475,7 +3475,7 @@ fn handle_key_type_body(
     for def in defs {
         let mut elem_atom: u32 = 0;
         let mut field_atom: u32 = 0;
-        let mut array_ndx: Option<&ExprDef> = None;
+        let mut array_ndx: Option<&ExprKind> = None;
         let name_ref = def.name.as_deref().unwrap();
         if !expr_resolve_lhs(name_ref, &mut elem_atom, &mut field_atom, &mut array_ndx) {
             ok = false;
@@ -3499,7 +3499,7 @@ fn handle_key_type_body(
 fn handle_type_global_var(ki: &XkbKeymapInfo<'_>, _info: &mut KeyTypesInfo, stmt: &VarDef) -> bool {
     let mut elem_atom: u32 = 0;
     let mut field_atom: u32 = 0;
-    let mut array_ndx: Option<&ExprDef> = None;
+    let mut array_ndx: Option<&ExprKind> = None;
     let name_ref = stmt.name.as_deref().unwrap();
     if !expr_resolve_lhs(name_ref, &mut elem_atom, &mut field_atom, &mut array_ndx) {
         return false;
@@ -3657,7 +3657,7 @@ pub(crate) fn merge_mod_sets(
     _ctx: &mut XkbContext,
     into: &mut XkbModSet,
     from: &XkbModSet,
-    merge: MergeMode,
+    merge: u32,
 ) {
     let clobber: bool = merge != MERGE_AUGMENT;
     for vmod in 0..from.num_mods as usize {
@@ -3774,7 +3774,7 @@ impl KeyNamesInfo {
 }
 #[derive(Copy, Clone)]
 pub(crate) struct LedNameInfo {
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) name: u32,
 }
 #[derive(Clone)]
@@ -4058,7 +4058,7 @@ fn add_key_name(
     ki: &mut XkbKeymapInfo<'_>,
     kc: u32,
     name: u32,
-    merge: MergeMode,
+    merge: u32,
     report: bool,
 ) -> bool {
     let match_name: KeycodeMatch = keycode_store_lookup_name(&info.keycodes, name);
@@ -4128,7 +4128,7 @@ fn merge_keycode_stores(
     into: &mut KeyNamesInfo,
     from: &mut KeyNamesInfo,
     ki: &mut XkbKeymapInfo<'_>,
-    merge: MergeMode,
+    merge: u32,
     report: bool,
 ) {
     if into.keycodes.low.is_empty()
@@ -4182,7 +4182,7 @@ fn merge_included_keycodes(
     into: &mut KeyNamesInfo,
     from: &mut KeyNamesInfo,
     ki: &mut XkbKeymapInfo<'_>,
-    merge: MergeMode,
+    merge: u32,
     report: bool,
 ) {
     if from.error_count > 0 {
@@ -4215,7 +4215,7 @@ fn merge_included_keycodes(
 }
 fn handle_include_keycodes(
     info: &mut KeyNamesInfo,
-    include: &mut IncludeStmt,
+    include: &mut _IncludeStmt,
     ki: &mut XkbKeymapInfo<'_>,
     report: bool,
 ) -> bool {
@@ -4230,7 +4230,7 @@ fn handle_include_keycodes(
     } else {
         Some(std::mem::take(&mut include.stmt))
     };
-    let mut current: Option<&IncludeStmt> = Some(include);
+    let mut current: Option<&_IncludeStmt> = Some(include);
     while let Some(stmt) = current {
         let mut next_incl = KeyNamesInfo::new();
 
@@ -4297,7 +4297,7 @@ fn handle_key_name_var(
 ) -> bool {
     let mut elem_atom: u32 = 0;
     let mut field_atom: u32 = 0;
-    let mut array_ndx: Option<&ExprDef> = None;
+    let mut array_ndx: Option<&ExprKind> = None;
     let name_ref = stmt.name.as_deref().unwrap();
     if !expr_resolve_lhs(name_ref, &mut elem_atom, &mut field_atom, &mut array_ndx) {
         return false;
@@ -4661,14 +4661,14 @@ fn ident_lookup(
 }
 
 pub(crate) fn expr_resolve_lhs<'a>(
-    expr: &'a ExprDef,
+    expr: &'a ExprKind,
     elem_rtrn: &mut u32,
     field_rtrn: &mut u32,
-    index_rtrn: &mut Option<&'a ExprDef>,
+    index_rtrn: &mut Option<&'a ExprKind>,
 ) -> bool {
     match expr.stmt_type() {
         10 => {
-            let ExprKind::Ident(ident) = &expr.kind else {
+            let ExprKind::Ident(ident) = &expr else {
                 unreachable!()
             };
             *elem_rtrn = XKB_ATOM_NONE;
@@ -4677,7 +4677,7 @@ pub(crate) fn expr_resolve_lhs<'a>(
             return *field_rtrn != XKB_ATOM_NONE;
         }
         12 => {
-            let ExprKind::FieldRef { element, field } = &expr.kind else {
+            let ExprKind::FieldRef { element, field } = &expr else {
                 unreachable!()
             };
             *elem_rtrn = *element;
@@ -4690,7 +4690,7 @@ pub(crate) fn expr_resolve_lhs<'a>(
                 element,
                 field,
                 entry,
-            } = &expr.kind
+            } = &expr
             else {
                 unreachable!()
             };
@@ -4710,11 +4710,11 @@ pub(crate) fn expr_resolve_lhs<'a>(
     false
 }
 
-pub(crate) fn expr_resolve_boolean(ctx: &XkbContext, expr: &ExprDef, set_rtrn: &mut bool) -> bool {
+pub(crate) fn expr_resolve_boolean(ctx: &XkbContext, expr: &ExprKind, set_rtrn: &mut bool) -> bool {
     let ok: bool;
     match expr.stmt_type() {
         7 => {
-            let ExprKind::Boolean(set) = &expr.kind else {
+            let ExprKind::Boolean(set) = &expr else {
                 unreachable!()
             };
             *set_rtrn = *set;
@@ -4724,7 +4724,7 @@ pub(crate) fn expr_resolve_boolean(ctx: &XkbContext, expr: &ExprDef, set_rtrn: &
             return false;
         }
         10 => {
-            let ExprKind::Ident(ident_atom) = &expr.kind else {
+            let ExprKind::Ident(ident_atom) = &expr else {
                 unreachable!()
             };
             let ident = atom_text(&ctx.atom_table, *ident_atom);
@@ -4746,13 +4746,13 @@ pub(crate) fn expr_resolve_boolean(ctx: &XkbContext, expr: &ExprDef, set_rtrn: &
             return false;
         }
         12 => {
-            let ExprKind::FieldRef { .. } = &expr.kind else {
+            let ExprKind::FieldRef { .. } = &expr else {
                 unreachable!()
             };
             return false;
         }
         24 | 22 => {
-            let ExprKind::Unary { child, .. } = &expr.kind else {
+            let ExprKind::Unary { child, .. } = &expr else {
                 unreachable!()
             };
             let child_ref = child.as_deref().unwrap();
@@ -4770,7 +4770,7 @@ pub(crate) fn expr_resolve_boolean(ctx: &XkbContext, expr: &ExprDef, set_rtrn: &
 
 fn expr_resolve_integer_lookup(
     ctx: &XkbContext,
-    expr: &ExprDef,
+    expr: &ExprKind,
     val_rtrn: &mut i64,
     pending: Option<&mut bool>,
     lookup: &IdentLookup,
@@ -4780,7 +4780,7 @@ fn expr_resolve_integer_lookup(
     let mut r: i64 = 0_i64;
     match expr.stmt_type() {
         5 => {
-            let ExprKind::Integer(ival) = &expr.kind else {
+            let ExprKind::Integer(ival) = &expr else {
                 unreachable!()
             };
             *val_rtrn = *ival;
@@ -4790,7 +4790,7 @@ fn expr_resolve_integer_lookup(
             return false;
         }
         10 => {
-            let ExprKind::Ident(ident_atom) = &expr.kind else {
+            let ExprKind::Ident(ident_atom) = &expr else {
                 unreachable!()
             };
             let mut pending_local = false;
@@ -4813,7 +4813,7 @@ fn expr_resolve_integer_lookup(
             return ok;
         }
         12 => {
-            let ExprKind::FieldRef { .. } = &expr.kind else {
+            let ExprKind::FieldRef { .. } = &expr else {
                 unreachable!()
             };
             return false;
@@ -4823,7 +4823,7 @@ fn expr_resolve_integer_lookup(
                 left: bleft,
                 right: bright,
                 ..
-            } = &expr.kind
+            } = &expr
             else {
                 unreachable!()
             };
@@ -4873,7 +4873,7 @@ fn expr_resolve_integer_lookup(
             return false;
         }
         24 | 23 => {
-            let ExprKind::Unary { child, .. } = &expr.kind else {
+            let ExprKind::Unary { child, .. } = &expr else {
                 unreachable!()
             };
             let left = child.as_deref().unwrap();
@@ -4888,7 +4888,7 @@ fn expr_resolve_integer_lookup(
             return true;
         }
         25 => {
-            let ExprKind::Unary { child, .. } = &expr.kind else {
+            let ExprKind::Unary { child, .. } = &expr else {
                 unreachable!()
             };
             let left = child.as_deref().unwrap();
@@ -4899,13 +4899,13 @@ fn expr_resolve_integer_lookup(
     false
 }
 
-pub(crate) fn expr_resolve_integer(ctx: &XkbContext, expr: &ExprDef, val_rtrn: &mut i64) -> bool {
+pub(crate) fn expr_resolve_integer(ctx: &XkbContext, expr: &ExprKind, val_rtrn: &mut i64) -> bool {
     expr_resolve_integer_lookup(ctx, expr, val_rtrn, None, &IdentLookup::None)
 }
 
 pub(crate) fn expr_resolve_group(
     keymap_info: &mut XkbKeymapInfo<'_>,
-    expr: &ExprDef,
+    expr: &ExprKind,
     absolute: bool,
     group_rtrn: &mut u32,
     pending: &mut bool,
@@ -4939,7 +4939,7 @@ pub(crate) fn expr_resolve_group(
     PARSER_SUCCESS
 }
 
-pub(crate) fn expr_resolve_level(ctx: &XkbContext, expr: &ExprDef, level_rtrn: &mut u32) -> bool {
+pub(crate) fn expr_resolve_level(ctx: &XkbContext, expr: &ExprKind, level_rtrn: &mut u32) -> bool {
     let pattern = NamedIntegerPattern {
         prefix: "Level",
         min: 1_u32,
@@ -4961,15 +4961,15 @@ pub(crate) fn expr_resolve_level(ctx: &XkbContext, expr: &ExprDef, level_rtrn: &
     true
 }
 
-pub(crate) fn expr_resolve_button(ctx: &XkbContext, expr: &ExprDef, btn_rtrn: &mut i64) -> bool {
+pub(crate) fn expr_resolve_button(ctx: &XkbContext, expr: &ExprKind, btn_rtrn: &mut i64) -> bool {
     let lookup = IdentLookup::Simple(&BUTTON_NAMES);
     expr_resolve_integer_lookup(ctx, expr, btn_rtrn, None, &lookup)
 }
 
-pub(crate) fn expr_resolve_string(_ctx: &XkbContext, expr: &ExprDef, val_rtrn: &mut u32) -> bool {
+pub(crate) fn expr_resolve_string(_ctx: &XkbContext, expr: &ExprKind, val_rtrn: &mut u32) -> bool {
     match expr.stmt_type() {
         4 => {
-            let ExprKind::String(s) = &expr.kind else {
+            let ExprKind::String(s) = &expr else {
                 unreachable!()
             };
             *val_rtrn = *s;
@@ -4982,7 +4982,7 @@ pub(crate) fn expr_resolve_string(_ctx: &XkbContext, expr: &ExprDef, val_rtrn: &
             return false;
         }
         12 => {
-            let ExprKind::FieldRef { .. } = &expr.kind else {
+            let ExprKind::FieldRef { .. } = &expr else {
                 unreachable!()
             };
             return false;
@@ -4997,14 +4997,14 @@ pub(crate) fn expr_resolve_string(_ctx: &XkbContext, expr: &ExprDef, val_rtrn: &
 
 pub(crate) fn expr_resolve_enum(
     ctx: &XkbContext,
-    expr: &ExprDef,
+    expr: &ExprKind,
     val_rtrn: &mut u32,
     values: &[LookupEntry],
 ) -> bool {
     if expr.stmt_type() != STMT_EXPR_IDENT {
         return false;
     }
-    let ExprKind::Ident(ident_atom) = &expr.kind else {
+    let ExprKind::Ident(ident_atom) = &expr else {
         unreachable!()
     };
     if let Some(val) = simple_lookup(ctx, values, *ident_atom) {
@@ -5021,7 +5021,7 @@ pub(crate) fn expr_resolve_enum(
 
 fn expr_resolve_mask_lookup(
     ctx: &XkbContext,
-    expr: &ExprDef,
+    expr: &ExprKind,
     val_rtrn: &mut u32,
     pending: Option<&mut bool>,
     lookup: &IdentLookup,
@@ -5031,7 +5031,7 @@ fn expr_resolve_mask_lookup(
     let mut r: u32 = 0;
     let mut v: i64 = 0;
     let mut already_logged_error = false;
-    match &expr.kind {
+    match &expr {
         ExprKind::Integer(ival) => {
             if *ival < 0 || *ival > u32::MAX as i64 {
                 return false;
@@ -5122,7 +5122,7 @@ fn expr_resolve_mask_lookup(
 
 pub(crate) fn expr_resolve_mask(
     ctx: &XkbContext,
-    expr: &ExprDef,
+    expr: &ExprKind,
     mask_rtrn: &mut u32,
     values: &[LookupEntry],
 ) -> bool {
@@ -5132,7 +5132,7 @@ pub(crate) fn expr_resolve_mask(
 
 pub(crate) fn expr_resolve_mod_mask(
     ctx: &XkbContext,
-    expr: &ExprDef,
+    expr: &ExprKind,
     mod_type: u32,
     mods: &XkbModSet,
     mask_rtrn: &mut u32,
@@ -5144,7 +5144,7 @@ pub(crate) fn expr_resolve_mod_mask(
 
 pub(crate) fn expr_resolve_mod(
     _ctx: &XkbContext,
-    def: &ExprDef,
+    def: &ExprKind,
     mod_type: u32,
     mods: &XkbModSet,
     ndx_rtrn: &mut u32,
@@ -5152,7 +5152,7 @@ pub(crate) fn expr_resolve_mod(
     if def.stmt_type() != STMT_EXPR_IDENT {
         return false;
     }
-    let ExprKind::Ident(ident_atom) = &def.kind else {
+    let ExprKind::Ident(ident_atom) = &def else {
         unreachable!()
     };
     let name: u32 = *ident_atom;
@@ -5166,7 +5166,7 @@ pub(crate) fn expr_resolve_mod(
 
 pub(crate) fn expr_resolve_group_mask(
     keymap_info: &mut XkbKeymapInfo<'_>,
-    expr: &ExprDef,
+    expr: &ExprKind,
     group_rtrn: &mut u32,
     pending_rtrn: &mut bool,
 ) -> bool {
@@ -5225,15 +5225,15 @@ pub(crate) const ACTION_FIELD_CLEAR_LOCKS: u32 = 0;
 /// parameters (`value: &ExprDef` and `value_ptr: Option<&mut Option<Box<ExprDef>>>`).
 pub(crate) enum ActionValue<'v> {
     /// A borrowed reference to a constant or non-ownable ExprDef (e.g. const_true).
-    Borrowed(&'v ExprDef),
+    Borrowed(&'v ExprKind),
     /// A mutable reference to an owned ExprDef that can be `.take()`-en.
-    Owned(&'v mut Option<Box<ExprDef>>),
+    Owned(&'v mut Option<Box<ExprKind>>),
 }
 
 impl<'v> ActionValue<'v> {
     /// Get a shared reference to the underlying ExprDef.
     #[inline]
-    pub(crate) fn get(&self) -> &ExprDef {
+    pub(crate) fn get(&self) -> &ExprKind {
         match self {
             ActionValue::Borrowed(e) => e,
             ActionValue::Owned(opt) => opt.as_deref().unwrap(),
@@ -5241,24 +5241,10 @@ impl<'v> ActionValue<'v> {
     }
     /// Take ownership of the ExprDef (only possible for Owned variant).
     #[inline]
-    pub(crate) fn take(&mut self) -> Option<Box<ExprDef>> {
+    pub(crate) fn take(&mut self) -> Option<Box<ExprKind>> {
         match self {
             ActionValue::Borrowed(_) => None,
             ActionValue::Owned(opt) => opt.take(),
-        }
-    }
-    /// Rebind to a child slot (for Owned variant navigating into Unary child).
-    #[inline]
-    pub(crate) fn rebind_to_child(self) -> ActionValue<'v> {
-        match self {
-            ActionValue::Owned(opt) => {
-                if let ExprKind::Unary { ref mut child, .. } = opt.as_mut().unwrap().kind {
-                    ActionValue::Owned(child)
-                } else {
-                    unreachable!()
-                }
-            }
-            other => other,
         }
     }
 }
@@ -5268,19 +5254,15 @@ pub(crate) type ActionHandler = fn(
     &XkbModSet,
     &mut XkbAction,
     u32,
-    Option<&ExprDef>,
+    Option<&ExprKind>,
     ActionValue<'_>,
 ) -> u32;
 // Constant true/false ExprDef values used in handle_action_def
-fn const_true_expr() -> ExprDef {
-    ExprDef {
-        kind: ExprKind::Boolean(true),
-    }
+fn const_true_expr() -> ExprKind {
+ExprKind::Boolean(true)
 }
-fn const_false_expr() -> ExprDef {
-    ExprDef {
-        kind: ExprKind::Boolean(false),
-    }
+fn const_false_expr() -> ExprKind {
+    ExprKind::Boolean(false)
 }
 pub(crate) fn init_actions_info(keymap: &XkbKeymap, info: &mut ActionsInfo) {
     let mut type_0: u32 = ACTION_TYPE_NONE;
@@ -5493,7 +5475,7 @@ fn handle_no_action(
     _mods: &XkbModSet,
     _action: &mut XkbAction,
     _field: u32,
-    _array_ndx: Option<&ExprDef>,
+    _array_ndx: Option<&ExprKind>,
     _value: ActionValue<'_>,
 ) -> u32 {
     if keymap_info.strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
@@ -5506,8 +5488,8 @@ fn check_boolean_flag(
     ctx: &XkbContext,
     strict: u32,
     flag: XkbActionFlags,
-    array_ndx: Option<&ExprDef>,
-    value: &ExprDef,
+    array_ndx: Option<&ExprKind>,
+    value: &ExprKind,
     flags_inout: &mut XkbActionFlags,
 ) -> u32 {
     let mut set: bool = false;
@@ -5528,8 +5510,8 @@ fn check_modifier_field(
     ctx: &XkbContext,
     strict: u32,
     mods: &XkbModSet,
-    array_ndx: Option<&ExprDef>,
-    value: &ExprDef,
+    array_ndx: Option<&ExprKind>,
+    value: &ExprKind,
     flags_inout: &mut XkbActionFlags,
     mods_rtrn: &mut u32,
 ) -> u32 {
@@ -5537,7 +5519,7 @@ fn check_modifier_field(
         return report_mismatch(strict);
     }
     if value.stmt_type() == STMT_EXPR_IDENT {
-        let ident = if let ExprKind::Ident(id) = &value.kind {
+        let ident = if let ExprKind::Ident(id) = &value {
             *id
         } else {
             unreachable!()
@@ -5580,8 +5562,8 @@ static LOCK_WHICH: [LookupEntry; 5] = [
 fn check_affect_field(
     ctx: &XkbContext,
     strict: u32,
-    array_ndx: Option<&ExprDef>,
-    value: &ExprDef,
+    array_ndx: Option<&ExprKind>,
+    value: &ExprKind,
     flags_inout: &mut XkbActionFlags,
 ) -> u32 {
     if array_ndx.is_some() {
@@ -5600,7 +5582,7 @@ fn handle_set_latch_lock_mods(
     mods: &XkbModSet,
     action: &mut XkbAction,
     field: u32,
-    array_ndx: Option<&ExprDef>,
+    array_ndx: Option<&ExprKind>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
@@ -5677,7 +5659,7 @@ fn handle_set_latch_lock_mods(
 }
 fn check_group_field(
     keymap_info: &mut XkbKeymapInfo<'_>,
-    array_ndx: Option<&ExprDef>,
+    array_ndx: Option<&ExprKind>,
     mut value: ActionValue<'_>,
     flags_inout: &mut XkbActionFlags,
     group_rtrn: &mut i32,
@@ -5694,7 +5676,10 @@ fn check_group_field(
         flags = flags & !ACTION_ABSOLUTE_SWITCH;
         // Rebind value to the child field inside the unary expr
         // (for ownership transfer to pending_computations if needed)
-        value = value.rebind_to_child();
+        value = match value {
+            ActionValue::Owned(opt) => ActionValue::Owned(opt),
+            other => other,
+        };
     } else {
         flags = flags as u32 | ACTION_ABSOLUTE_SWITCH;
     }
@@ -5735,7 +5720,7 @@ fn handle_set_latch_lock_group(
     _mods: &XkbModSet,
     action: &mut XkbAction,
     field: u32,
-    array_ndx: Option<&ExprDef>,
+    array_ndx: Option<&ExprKind>,
     value: ActionValue<'_>,
 ) -> u32 {
     let ctx: &XkbContext = keymap_info.ctx();
@@ -5795,7 +5780,7 @@ fn handle_move_ptr(
     _mods: &XkbModSet,
     action: &mut XkbAction,
     field: u32,
-    array_ndx: Option<&ExprDef>,
+    array_ndx: Option<&ExprKind>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
@@ -5843,7 +5828,7 @@ fn handle_ptr_btn(
     _mods: &XkbModSet,
     action: &mut XkbAction,
     field: u32,
-    array_ndx: Option<&ExprDef>,
+    array_ndx: Option<&ExprKind>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
@@ -5901,7 +5886,7 @@ fn handle_set_ptr_dflt(
     _mods: &XkbModSet,
     action: &mut XkbAction,
     field: u32,
-    array_ndx: Option<&ExprDef>,
+    array_ndx: Option<&ExprKind>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
@@ -5917,14 +5902,14 @@ fn handle_set_ptr_dflt(
         }
         return PARSER_SUCCESS;
     } else if field == ACTION_FIELD_BUTTON || field == ACTION_FIELD_VALUE {
-        let button: &ExprDef;
+        let button: &ExprKind;
         let mut btn: i64 = 0_i64;
         if array_ndx.is_some() {
             return report_mismatch(keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
             act.flags = act.flags & !ACTION_ABSOLUTE_SWITCH;
-            button = if let ExprKind::Unary { child, .. } = &value.kind {
+            button = if let ExprKind::Unary { child, .. } = &value {
                 child.as_deref().unwrap()
             } else {
                 unreachable!()
@@ -5956,21 +5941,21 @@ fn handle_switch_screen(
     _mods: &XkbModSet,
     action: &mut XkbAction,
     field: u32,
-    array_ndx: Option<&ExprDef>,
+    array_ndx: Option<&ExprKind>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
     let ctx: &XkbContext = keymap_info.ctx();
     let act = action.as_screen_mut();
     if field == ACTION_FIELD_SCREEN {
-        let scrn: &ExprDef;
+        let scrn: &ExprKind;
         let mut val: i64 = 0_i64;
         if array_ndx.is_some() {
             return report_mismatch(keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
             act.flags = act.flags & !ACTION_ABSOLUTE_SWITCH;
-            scrn = if let ExprKind::Unary { child, .. } = &value.kind {
+            scrn = if let ExprKind::Unary { child, .. } = &value {
                 child.as_deref().unwrap()
             } else {
                 unreachable!()
@@ -6009,7 +5994,7 @@ fn handle_set_lock_controls(
     _mods: &XkbModSet,
     action: &mut XkbAction,
     field: u32,
-    array_ndx: Option<&ExprDef>,
+    array_ndx: Option<&ExprKind>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
@@ -6037,7 +6022,7 @@ fn handle_redirect_key(
     mods: &XkbModSet,
     action: &mut XkbAction,
     field: u32,
-    array_ndx: Option<&ExprDef>,
+    array_ndx: Option<&ExprKind>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
@@ -6047,7 +6032,7 @@ fn handle_redirect_key(
             return report_mismatch(keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_IDENT {
-            let ident = if let ExprKind::Ident(id) = &value.kind {
+            let ident = if let ExprKind::Ident(id) = &value {
                 *id
             } else {
                 unreachable!()
@@ -6061,7 +6046,7 @@ fn handle_redirect_key(
         if value.stmt_type() != STMT_EXPR_KEYNAME_LITERAL {
             return report_mismatch(keymap_info.strict);
         }
-        let key_name_val = if let ExprKind::KeyName(kn) = &value.kind {
+        let key_name_val = if let ExprKind::KeyName(kn) = &value {
             *kn
         } else {
             unreachable!()
@@ -6112,7 +6097,7 @@ fn handle_unsupported(
     _mods: &XkbModSet,
     _action: &mut XkbAction,
     _field: u32,
-    _array_ndx: Option<&ExprDef>,
+    _array_ndx: Option<&ExprKind>,
     _value: ActionValue<'_>,
 ) -> u32 {
     PARSER_SUCCESS
@@ -6122,7 +6107,7 @@ fn handle_private(
     _mods: &XkbModSet,
     action: &mut XkbAction,
     field: u32,
-    array_ndx: Option<&ExprDef>,
+    array_ndx: Option<&ExprKind>,
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
@@ -6209,14 +6194,14 @@ pub(crate) fn handle_action_def(
     keymap_info: &mut XkbKeymapInfo<'_>,
     info: &mut ActionsInfo,
     mods: &XkbModSet,
-    def: &mut ExprDef,
+    def: &mut ExprKind,
     action: &mut XkbAction,
 ) -> u32 {
     if def.stmt_type() != STMT_EXPR_ACTION_DECL {
         return PARSER_FATAL_ERROR;
     }
     // Extract action name atom (Copy type, no borrow held)
-    let action_name_atom = if let ExprKind::Action { name, .. } = &def.kind {
+    let action_name_atom = if let ExprKind::Action { name, .. } = &def {
         *name
     } else {
         unreachable!()
@@ -6237,15 +6222,15 @@ pub(crate) fn handle_action_def(
     let const_true = const_true_expr();
     let const_false = const_false_expr();
     // Get mutable access to the args Vec
-    let args = if let ExprKind::Action { ref mut args, .. } = def.kind {
+    let args = if let ExprKind::Action { ref mut args, .. } = def {
         args
     } else {
         unreachable!()
     };
     for arg in args.iter_mut() {
         let av: ActionValue<'_>;
-        let field_ref: &ExprDef;
-        let mut array_rtrn_opt: Option<&ExprDef> = None;
+        let field_ref: &ExprKind;
+        let mut array_rtrn_opt: Option<&ExprKind> = None;
         let mut elem_rtrn_atom: u32 = 0;
         let mut field_rtrn_atom: u32 = 0;
         if arg.stmt_type() == STMT_EXPR_ASSIGN {
@@ -6253,7 +6238,7 @@ pub(crate) fn handle_action_def(
                 ref left,
                 ref mut right,
                 ..
-            } = arg.kind
+            } = arg
             {
                 field_ref = left.as_deref().unwrap();
                 av = ActionValue::Owned(right);
@@ -6261,7 +6246,7 @@ pub(crate) fn handle_action_def(
                 unreachable!()
             }
         } else if arg.stmt_type() == STMT_EXPR_NOT || arg.stmt_type() == STMT_EXPR_INVERT {
-            field_ref = if let ExprKind::Unary { ref child, .. } = arg.kind {
+            field_ref = if let ExprKind::Unary { ref child, .. } = arg {
                 child.as_deref().unwrap()
             } else {
                 unreachable!()
@@ -6318,9 +6303,9 @@ pub(crate) fn set_default_action_field(
     mods: &mut XkbModSet,
     elem: &str,
     field: &str,
-    array_ndx: Option<&ExprDef>,
-    value_rtrn: &mut Option<Box<ExprDef>>,
-    merge: MergeMode,
+    array_ndx: Option<&ExprKind>,
+    value_rtrn: &mut Option<Box<ExprKind>>,
+    merge: u32,
 ) -> u32 {
     let av = ActionValue::Owned(value_rtrn);
     let mut action: u32 = ACTION_TYPE_NONE;

@@ -934,62 +934,56 @@ pub(crate) const FILE_TYPE_KEYCODES: u32 = 0;
 
 // ── Statement type enum ─────────────────────────────────────────────
 
-pub(crate) type StmtType = u32;
-pub(crate) const _STMT_NUM_VALUES: StmtType = 37;
-pub(crate) const STMT_UNKNOWN_COMPOUND: StmtType = 36;
-pub(crate) const STMT_UNKNOWN_DECLARATION: StmtType = 35;
-pub(crate) const STMT_EXPR_UNARY_PLUS: StmtType = 25;
-pub(crate) const STMT_EXPR_INVERT: StmtType = 24;
-pub(crate) const STMT_EXPR_NEGATE: StmtType = 23;
-pub(crate) const STMT_EXPR_NOT: StmtType = 22;
-pub(crate) const STMT_EXPR_ASSIGN: StmtType = 21;
-pub(crate) const STMT_EXPR_DIVIDE: StmtType = 20;
-pub(crate) const STMT_EXPR_MULTIPLY: StmtType = 19;
-pub(crate) const STMT_EXPR_SUBTRACT: StmtType = 18;
-pub(crate) const STMT_EXPR_ADD: StmtType = 17;
-pub(crate) const STMT_EXPR_ACTION_LIST: StmtType = 16;
-pub(crate) const STMT_EXPR_KEYSYM_LIST: StmtType = 15;
-pub(crate) const STMT_EXPR_EMPTY_LIST: StmtType = 14;
-pub(crate) const STMT_EXPR_ARRAY_REF: StmtType = 13;
-pub(crate) const STMT_EXPR_FIELD_REF: StmtType = 12;
-pub(crate) const STMT_EXPR_ACTION_DECL: StmtType = 11;
-pub(crate) const STMT_EXPR_IDENT: StmtType = 10;
-pub(crate) const STMT_EXPR_KEYSYM_LITERAL: StmtType = 9;
-pub(crate) const STMT_EXPR_KEYNAME_LITERAL: StmtType = 8;
-pub(crate) const STMT_EXPR_BOOLEAN_LITERAL: StmtType = 7;
-pub(crate) const STMT_EXPR_FLOAT_LITERAL: StmtType = 6;
-pub(crate) const STMT_EXPR_INTEGER_LITERAL: StmtType = 5;
-pub(crate) const STMT_EXPR_STRING_LITERAL: StmtType = 4;
+pub(crate) const _STMT_NUM_VALUES: u32 = 37;
+pub(crate) const STMT_UNKNOWN_COMPOUND: u32 = 36;
+pub(crate) const STMT_UNKNOWN_DECLARATION: u32 = 35;
+pub(crate) const STMT_EXPR_UNARY_PLUS: u32 = 25;
+pub(crate) const STMT_EXPR_INVERT: u32 = 24;
+pub(crate) const STMT_EXPR_NEGATE: u32 = 23;
+pub(crate) const STMT_EXPR_NOT: u32 = 22;
+pub(crate) const STMT_EXPR_ASSIGN: u32 = 21;
+pub(crate) const STMT_EXPR_DIVIDE: u32 = 20;
+pub(crate) const STMT_EXPR_MULTIPLY: u32 = 19;
+pub(crate) const STMT_EXPR_SUBTRACT: u32 = 18;
+pub(crate) const STMT_EXPR_ADD: u32 = 17;
+pub(crate) const STMT_EXPR_ACTION_LIST: u32 = 16;
+pub(crate) const STMT_EXPR_KEYSYM_LIST: u32 = 15;
+pub(crate) const STMT_EXPR_EMPTY_LIST: u32 = 14;
+pub(crate) const STMT_EXPR_ARRAY_REF: u32 = 13;
+pub(crate) const STMT_EXPR_FIELD_REF: u32 = 12;
+pub(crate) const STMT_EXPR_ACTION_DECL: u32 = 11;
+pub(crate) const STMT_EXPR_IDENT: u32 = 10;
+pub(crate) const STMT_EXPR_KEYSYM_LITERAL: u32 = 9;
+pub(crate) const STMT_EXPR_KEYNAME_LITERAL: u32 = 8;
+pub(crate) const STMT_EXPR_BOOLEAN_LITERAL: u32 = 7;
+pub(crate) const STMT_EXPR_FLOAT_LITERAL: u32 = 6;
+pub(crate) const STMT_EXPR_INTEGER_LITERAL: u32 = 5;
+pub(crate) const STMT_EXPR_STRING_LITERAL: u32 = 4;
 
 // ── Merge mode enum ─────────────────────────────────────────────────
 
-pub(crate) type MergeMode = u32;
-pub(crate) const _MERGE_MODE_NUM_ENTRIES: MergeMode = 4;
-pub(crate) const MERGE_REPLACE: MergeMode = 3;
-pub(crate) const MERGE_OVERRIDE: MergeMode = 2;
-pub(crate) const MERGE_AUGMENT: MergeMode = 1;
-pub(crate) const MERGE_DEFAULT: MergeMode = 0;
+pub(crate) const _MERGE_MODE_NUM_ENTRIES: u32 = 4;
+pub(crate) const MERGE_REPLACE: u32 = 3;
+pub(crate) const MERGE_OVERRIDE: u32 = 2;
+pub(crate) const MERGE_AUGMENT: u32 = 1;
+pub(crate) const MERGE_DEFAULT: u32 = 0;
 
 // ── Core AST node types ─────────────────────────────────────────────
 
 #[derive(Clone)]
 
 pub(crate) struct _IncludeStmt {
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) stmt: String,
     pub(crate) file: String,
     pub(crate) map: String,
     pub(crate) modifier: String,
     pub(crate) next_incl: Option<Box<_IncludeStmt>>,
 }
-pub(crate) type IncludeStmt = _IncludeStmt;
 
 // ── Expression types ────────────────────────────────────────────────
 
 /// Expression AST node.
-pub(crate) struct ExprDef {
-    pub(crate) kind: ExprKind,
-}
 
 /// The discriminated payload of an expression node.
 pub(crate) enum ExprKind {
@@ -1007,36 +1001,36 @@ pub(crate) enum ExprKind {
     ArrayRef {
         element: u32,
         field: u32,
-        entry: Option<Box<ExprDef>>,
+        entry: Option<Box<ExprKind>>,
     },
     Action {
         name: u32,
-        args: Vec<ExprDef>,
+        args: Vec<ExprKind>,
     },
     ActionList {
-        actions: Vec<ExprDef>,
+        actions: Vec<ExprKind>,
     },
     KeysymList {
         syms: Vec<u32>,
     },
     EmptyList,
     Binary {
-        op: StmtType,
-        left: Option<Box<ExprDef>>,
-        right: Option<Box<ExprDef>>,
+        op: u32,
+        left: Option<Box<ExprKind>>,
+        right: Option<Box<ExprKind>>,
     },
     Unary {
-        op: StmtType,
-        child: Option<Box<ExprDef>>,
+        op: u32,
+        child: Option<Box<ExprKind>>,
     },
 }
 
-impl ExprDef {
-    pub(crate) fn stmt_type(&self) -> StmtType {
-        Self::stmt_type_for_kind(&self.kind)
+impl ExprKind {
+    pub(crate) fn stmt_type(&self) -> u32 {
+        Self::stmt_type_for_kind(&self)
     }
 
-    pub(crate) fn stmt_type_for_kind(kind: &ExprKind) -> StmtType {
+    pub(crate) fn stmt_type_for_kind(kind: &ExprKind) -> u32 {
         match kind {
             ExprKind::String(_) => STMT_EXPR_STRING_LITERAL,
             ExprKind::Integer(_) => STMT_EXPR_INTEGER_LITERAL,
@@ -1060,21 +1054,21 @@ impl ExprDef {
 // ── Statement definition types ──────────────────────────────────────
 
 pub(crate) struct VarDef {
-    pub(crate) merge: MergeMode,
-    pub(crate) name: Option<Box<ExprDef>>,
-    pub(crate) value: Option<Box<ExprDef>>,
+    pub(crate) merge: u32,
+    pub(crate) name: Option<Box<ExprKind>>,
+    pub(crate) value: Option<Box<ExprKind>>,
 }
 
 pub(crate) struct VModDef {
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) name: u32,
-    pub(crate) value: Option<Box<ExprDef>>,
+    pub(crate) value: Option<Box<ExprKind>>,
 }
 
 #[derive(Copy, Clone)]
 
 pub(crate) struct KeycodeDef {
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) name: u32,
     pub(crate) value: i64,
 }
@@ -1082,50 +1076,50 @@ pub(crate) struct KeycodeDef {
 #[derive(Copy, Clone)]
 
 pub(crate) struct KeyAliasDef {
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) alias: u32,
     pub(crate) real: u32,
 }
 
 pub(crate) struct KeyTypeDef {
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) name: u32,
     pub(crate) body: Vec<VarDef>,
 }
 
 pub(crate) struct SymbolsDef {
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) key_name: u32,
     pub(crate) symbols: Vec<VarDef>,
 }
 
 pub(crate) struct ModMapDef {
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) modifier: u32,
-    pub(crate) keys: Vec<ExprDef>,
+    pub(crate) keys: Vec<ExprKind>,
 }
 pub(crate) struct InterpDef {
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) sym: u32,
-    pub(crate) match_0: Option<Box<ExprDef>>,
+    pub(crate) match_0: Option<Box<ExprKind>>,
     pub(crate) def: Vec<VarDef>,
 }
 
 pub(crate) struct LedNameDef {
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) ndx: i64,
-    pub(crate) name: Option<Box<ExprDef>>,
+    pub(crate) name: Option<Box<ExprKind>>,
 }
 
 pub(crate) struct LedMapDef {
-    pub(crate) merge: MergeMode,
+    pub(crate) merge: u32,
     pub(crate) name: u32,
     pub(crate) body: Vec<VarDef>,
 }
 
 #[derive(Clone)]
 pub(crate) struct UnknownStatement {
-    pub(crate) _stmt_type: StmtType,
+    pub(crate) _stmt_type: u32,
     pub(crate) _name: String,
 }
 
@@ -1142,7 +1136,7 @@ pub(crate) const MAP_IS_PARTIAL: XkbMapFlags = 2;
 pub(crate) const MAP_IS_DEFAULT: XkbMapFlags = 1;
 
 pub(crate) enum Statement {
-    Include(Box<IncludeStmt>),
+    Include(Box<_IncludeStmt>),
     Keycode(Box<KeycodeDef>),
     KeyAlias(Box<KeyAliasDef>),
     Var(Box<VarDef>),
@@ -1190,7 +1184,7 @@ pub(crate) const PARSER_NO_FIELD_VALUE_MISMATCH: u32 = 4;
 pub(crate) const PARSER_NO_FIELD_TYPE_MISMATCH: u32 = 2;
 pub(crate) const PARSER_NO_UNKNOWN_STATEMENTS: u32 = 1;
 pub(crate) struct PendingComputation {
-    pub(crate) expr: Option<Box<ExprDef>>,
+    pub(crate) expr: Option<Box<ExprKind>>,
     pub(crate) computed: bool,
     pub(crate) value: u32,
 }

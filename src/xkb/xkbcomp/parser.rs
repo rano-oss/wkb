@@ -10,8 +10,8 @@ use super::super::shared_types::{
 };
 
 use super::super::shared_types::{
-    safe_map_name, ExprDef, ExprKind, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
-    LedMapDef, LedNameDef, MergeMode, ModMapDef, Statement, StmtType, SymbolsDef, UnknownStatement,
+    safe_map_name, ExprKind, _IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
+    LedMapDef, LedNameDef, ModMapDef, Statement, SymbolsDef, UnknownStatement,
     VModDef, VarDef, XkbFile, XkbMapFlags, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
     FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
     FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN,
@@ -822,7 +822,7 @@ fn yy_atom<'a>(yyval: &mut YYValue<'a>, ctx: &mut &mut XkbContext, bytes: &[u8])
     *yyval = YYValue::Atom(atom_intern(&mut ctx.atom_table, bytes));
 }
 #[inline(always)]
-fn yy_merge<'a>(yyval: &mut YYValue<'a>, m: MergeMode) {
+fn yy_merge<'a>(yyval: &mut YYValue<'a>, m: u32) {
     *yyval = YYValue::Merge(m);
 }
 #[inline(always)]
@@ -1273,7 +1273,7 @@ fn execute_reduction<'a>(
         74 => {
             // MultiKeySymOrActionList: OBRACKET MultiKeySymList CBRACKET (yylen=3)
             let list = yyvs[sp - 1].take_expr_list();
-            let exprs: Vec<ExprDef> = list.into_iter().map(|b| *b).collect();
+            let exprs: Vec<ExprKind> = list.into_iter().map(|b| *b).collect();
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
         }
         75 => {
@@ -1281,32 +1281,32 @@ fn execute_reduction<'a>(
             let mut list = yyvs[sp - 1].take_expr_list(); // sp-1 = MultiKeySymList = offset(-1)
             let count = yyvs[sp - 3].as_no_sym_or_action_list(); // sp-3 = NoSymbolOrActionList = offset(-3)
                                                                  // Prepend 'count' NoSymbol keysym lists
-            let mut prepended: Vec<Box<ExprDef>> = Vec::new();
+            let mut prepended: Vec<Box<ExprKind>> = Vec::new();
             for _ in 0..count {
                 prepended.push(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL as u32));
             }
             prepended.append(&mut list);
-            let exprs: Vec<ExprDef> = prepended.into_iter().map(|b| *b).collect();
+            let exprs: Vec<ExprKind> = prepended.into_iter().map(|b| *b).collect();
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
         }
         76 => {
             // MultiKeySymOrActionList: OBRACKET MultiActionList CBRACKET (yylen=3)
             let list = yyvs[sp - 1].take_expr_list();
-            let exprs: Vec<ExprDef> = list.into_iter().map(|b| *b).collect();
+            let exprs: Vec<ExprKind> = list.into_iter().map(|b| *b).collect();
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
         }
         77 => {
             // MultiKeySymOrActionList: NoSymbolOrActionList OBRACKET MultiActionList CBRACKET COMMA (yylen=5)
             let mut list = yyvs[sp - 1].take_expr_list();
             let count = yyvs[sp - 3].as_no_sym_or_action_list();
-            let mut prepended: Vec<Box<ExprDef>> = Vec::new();
+            let mut prepended: Vec<Box<ExprKind>> = Vec::new();
             for _ in 0..count {
                 prepended.push(expr_create(ExprKind::ActionList {
                     actions: Vec::new(),
                 }));
             }
             prepended.append(&mut list);
-            let exprs: Vec<ExprDef> = prepended.into_iter().map(|b| *b).collect();
+            let exprs: Vec<ExprKind> = prepended.into_iter().map(|b| *b).collect();
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
         }
         78 => {
@@ -1575,7 +1575,7 @@ fn execute_reduction<'a>(
             // ActionList at sp produces an ExprList of actions
             // Create an ActionList expr wrapping those actions, then append to the list
             let actions_expr_list = yyvs[sp].take_expr_list();
-            let actions: Vec<ExprDef> = actions_expr_list.into_iter().map(|b| *b).collect();
+            let actions: Vec<ExprKind> = actions_expr_list.into_iter().map(|b| *b).collect();
             let action_list_expr = expr_create(ExprKind::ActionList { actions });
             let mut list = yyvs[sp - 2].take_expr_list();
             list.push(action_list_expr);
@@ -1593,7 +1593,7 @@ fn execute_reduction<'a>(
         168 => {
             // MultiActionList: ActionList (initial single element)
             let actions_expr_list = yyvs[sp].take_expr_list();
-            let actions: Vec<ExprDef> = actions_expr_list.into_iter().map(|b| *b).collect();
+            let actions: Vec<ExprKind> = actions_expr_list.into_iter().map(|b| *b).collect();
             let action_list_expr = expr_create(ExprKind::ActionList { actions });
             *yyval = YYValue::ExprList(vec![action_list_expr]);
         }
@@ -1947,11 +1947,11 @@ pub(crate) fn parse<'a>(
 
 // ── AST builder functions (merged from ast_build.rs) ──
 
-pub(crate) fn expr_create(kind: ExprKind) -> Box<ExprDef> {
-    Box::new(ExprDef { kind })
+pub(crate) fn expr_create(kind: ExprKind) -> Box<ExprKind> {
+    Box::new(kind)
 }
 
-pub(crate) fn expr_create_key_sym_list(sym: u32) -> Box<ExprDef> {
+pub(crate) fn expr_create_key_sym_list(sym: u32) -> Box<ExprKind> {
     let mut syms = Vec::new();
     if sym != XKB_KEY_NO_SYMBOL as u32 {
         syms.push(sym);
@@ -1959,9 +1959,9 @@ pub(crate) fn expr_create_key_sym_list(sym: u32) -> Box<ExprDef> {
     expr_create(ExprKind::KeysymList { syms })
 }
 
-pub(crate) fn expr_append_key_sym_list(mut expr: Box<ExprDef>, sym: u32) -> Box<ExprDef> {
+pub(crate) fn expr_append_key_sym_list(mut expr: Box<ExprKind>, sym: u32) -> Box<ExprKind> {
     if sym != XKB_KEY_NO_SYMBOL as u32 {
-        if let ExprKind::KeysymList { ref mut syms } = expr.kind {
+        if let ExprKind::KeysymList { ref mut syms } = *expr {
             syms.push(sym);
         }
     }
@@ -1970,9 +1970,9 @@ pub(crate) fn expr_append_key_sym_list(mut expr: Box<ExprDef>, sym: u32) -> Box<
 
 pub(crate) fn expr_key_sym_list_append_string(
     scanner: &mut Scanner,
-    mut expr: Box<ExprDef>,
+    mut expr: Box<ExprKind>,
     string: &str,
-) -> Option<Box<ExprDef>> {
+) -> Option<Box<ExprKind>> {
     let bytes = string.as_bytes();
     let len = bytes.len();
     let mut idx: usize = 0;
@@ -1990,7 +1990,7 @@ pub(crate) fn expr_key_sym_list_append_string(
             let _loc = scanner.token_location();
             return None;
         }
-        if let ExprKind::KeysymList { ref mut syms } = expr.kind {
+        if let ExprKind::KeysymList { ref mut syms } = *expr {
             syms.push(sym);
         }
         idx += cp_len;
@@ -2035,7 +2035,7 @@ pub(crate) fn key_alias_create(alias: u32, real: u32) -> Box<KeyAliasDef> {
     })
 }
 
-pub(crate) fn vmod_create(name: u32, value: Option<Box<ExprDef>>) -> Box<VModDef> {
+pub(crate) fn vmod_create(name: u32, value: Option<Box<ExprKind>>) -> Box<VModDef> {
     Box::new(VModDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2043,7 +2043,7 @@ pub(crate) fn vmod_create(name: u32, value: Option<Box<ExprDef>>) -> Box<VModDef
     })
 }
 
-pub(crate) fn var_create(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>) -> Box<VarDef> {
+pub(crate) fn var_create(name: Option<Box<ExprKind>>, value: Option<Box<ExprKind>>) -> Box<VarDef> {
     Box::new(VarDef {
         merge: MERGE_DEFAULT,
         name,
@@ -2054,16 +2054,12 @@ pub(crate) fn var_create(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>
 pub(crate) fn bool_var_create(ident: u32, set: bool) -> Box<VarDef> {
     Box::new(VarDef {
         merge: MERGE_DEFAULT,
-        name: Some(Box::new(ExprDef {
-            kind: ExprKind::Ident(ident),
-        })),
-        value: Some(Box::new(ExprDef {
-            kind: ExprKind::Boolean(set),
-        })),
+        name: Some(Box::new(ExprKind::Ident(ident))),
+        value: Some(Box::new(ExprKind::Boolean(set))),
     })
 }
 
-pub(crate) fn interp_create(sym: u32, match_0: Option<Box<ExprDef>>) -> Box<InterpDef> {
+pub(crate) fn interp_create(sym: u32, match_0: Option<Box<ExprKind>>) -> Box<InterpDef> {
     Box::new(InterpDef {
         merge: MERGE_DEFAULT,
         sym,
@@ -2088,7 +2084,7 @@ pub(crate) fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> Box<Symbols
     })
 }
 
-pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef> {
+pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> Box<ModMapDef> {
     Box::new(ModMapDef {
         merge: MERGE_DEFAULT,
         modifier,
@@ -2104,7 +2100,7 @@ pub(crate) fn led_map_create(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
     })
 }
 
-pub(crate) fn led_name_create(ndx: i64, name: Option<Box<ExprDef>>) -> Box<LedNameDef> {
+pub(crate) fn led_name_create(ndx: i64, name: Option<Box<ExprKind>>) -> Box<LedNameDef> {
     Box::new(LedNameDef {
         merge: MERGE_DEFAULT,
         ndx,
@@ -2112,7 +2108,7 @@ pub(crate) fn led_name_create(ndx: i64, name: Option<Box<ExprDef>>) -> Box<LedNa
     })
 }
 
-pub(crate) fn unknown_statement_create(type_0: StmtType, name: &str) -> Box<UnknownStatement> {
+pub(crate) fn unknown_statement_create(type_0: u32, name: &str) -> Box<UnknownStatement> {
     Box::new(UnknownStatement {
         _stmt_type: type_0,
         _name: name.to_string(),
@@ -2122,9 +2118,9 @@ pub(crate) fn unknown_statement_create(type_0: StmtType, name: &str) -> Box<Unkn
 pub(crate) fn include_create(
     _ctx: &mut XkbContext,
     stmt_str: &str,
-    mut merge: MergeMode,
-) -> Option<Box<IncludeStmt>> {
-    let mut items: Vec<Box<IncludeStmt>> = Vec::new();
+    mut merge: u32,
+) -> Option<Box<_IncludeStmt>> {
+    let mut items: Vec<Box<_IncludeStmt>> = Vec::new();
     let mut remaining: Option<&str> = Some(stmt_str);
 
     loop {
@@ -2145,7 +2141,7 @@ pub(crate) fn include_create(
             continue;
         }
 
-        items.push(Box::new(IncludeStmt {
+        items.push(Box::new(_IncludeStmt {
             merge,
             stmt: String::new(),
             file: parsed.file,
@@ -2164,7 +2160,7 @@ pub(crate) fn include_create(
     }
 
     // Build linked list in reverse
-    let mut first: Option<Box<IncludeStmt>> = None;
+    let mut first: Option<Box<_IncludeStmt>> = None;
     for mut item in items.into_iter().rev() {
         item.next_incl = first;
         first = Some(item);
@@ -2753,12 +2749,12 @@ pub(crate) enum YYValue<'a> {
     Str(String),
     Sval(Sval<'a>),
     Atom(u32),
-    Merge(MergeMode),
+    Merge(u32),
     MapFlags(XkbMapFlags),
     Keysym(u32),
     NoSymbolOrActionList(u32),
-    Expr(Box<ExprDef>),
-    ExprList(Vec<Box<ExprDef>>),
+    Expr(Box<ExprKind>),
+    ExprList(Vec<Box<ExprKind>>),
     Var(Box<VarDef>),
     VarList(Vec<Box<VarDef>>),
     VMod(Box<VModDef>),
@@ -2781,13 +2777,13 @@ pub(crate) enum YYValue<'a> {
 
 // Helper to take a value out and replace with None
 impl<'a> YYValue<'a> {
-    pub(crate) fn take_expr(&mut self) -> Option<Box<ExprDef>> {
+    pub(crate) fn take_expr(&mut self) -> Option<Box<ExprKind>> {
         match std::mem::take(self) {
             YYValue::Expr(e) => Some(e),
             _ => None,
         }
     }
-    pub(crate) fn take_expr_list(&mut self) -> Vec<Box<ExprDef>> {
+    pub(crate) fn take_expr_list(&mut self) -> Vec<Box<ExprKind>> {
         match std::mem::take(self) {
             YYValue::ExprList(v) => v,
             _ => Vec::new(),
@@ -2847,7 +2843,7 @@ impl<'a> YYValue<'a> {
             _ => 0,
         }
     }
-    pub(crate) fn as_merge(&self) -> MergeMode {
+    pub(crate) fn as_merge(&self) -> u32 {
         match self {
             YYValue::Merge(m) => *m,
             _ => MERGE_DEFAULT,
@@ -3325,7 +3321,7 @@ pub(crate) fn exceeds_include_max_depth(include_depth: u32) -> bool {
 }
 pub(crate) fn process_include_file(
     ctx: &mut XkbContext,
-    stmt: &IncludeStmt,
+    stmt: &_IncludeStmt,
     file_type: u32,
 ) -> Option<Box<XkbFile>> {
     let mut xkb_file: Option<Box<XkbFile>> = None;
