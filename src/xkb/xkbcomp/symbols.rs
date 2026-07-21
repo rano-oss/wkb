@@ -5190,26 +5190,24 @@ fn expr_resolve_mask_lookup(
     let ok: bool;
     let mut l: u32 = 0;
     let mut r: u32 = 0;
-    let mut v: i64 = 0_i64;
+    let mut v: i64 = 0;
     let mut already_logged_error = false;
-    match expr.stmt_type() {
-        5 => {
-            let ExprKind::Integer(ival) = &expr.kind else {
-                unreachable!()
-            };
-            if *ival < 0_i64 || *ival > u32::MAX as i64 {
+    match &expr.kind {
+        ExprKind::Integer(ival) => {
+            if *ival < 0 || *ival > u32::MAX as i64 {
                 return false;
             }
             *val_rtrn = *ival as u32;
             return true;
         }
-        4 | 6 | 7 | 8 | 9 => {
+        ExprKind::String(_)
+        | ExprKind::Float
+        | ExprKind::Boolean(_)
+        | ExprKind::KeyName(_)
+        | ExprKind::KeySym(_) => {
             return false;
         }
-        10 => {
-            let ExprKind::Ident(ident_atom) = &expr.kind else {
-                unreachable!()
-            };
+        ExprKind::Ident(ident_atom) => {
             let mut pending_local = false;
             let pending_ref = if pending.is_some() {
                 Some(&mut pending_local)
@@ -5231,23 +5229,13 @@ fn expr_resolve_mask_lookup(
             }
             return ok;
         }
-        12 => {
-            let ExprKind::FieldRef { .. } = &expr.kind else {
-                unreachable!()
-            };
-            return false;
-        }
-        13 => {}
-        11 => {}
-        17..=20 => {
-            let ExprKind::Binary {
-                left: bleft,
-                right: bright,
-                ..
-            } = &expr.kind
-            else {
-                unreachable!()
-            };
+        ExprKind::FieldRef { .. } | ExprKind::ArrayRef { .. } | ExprKind::Action { .. } => {}
+        ExprKind::Binary {
+            left: bleft,
+            right: bright,
+            op,
+            ..
+        } => {
             let left = bleft.as_deref().unwrap();
             let right = bright.as_deref().unwrap();
             if !expr_resolve_mask_lookup(ctx, left, &mut l, None, lookup)
@@ -5255,48 +5243,35 @@ fn expr_resolve_mask_lookup(
             {
                 return false;
             }
-            match expr.stmt_type() {
-                17 => {
+            match *op {
+                STMT_EXPR_ADD => {
                     *val_rtrn = l | r;
                 }
-                18 => {
+                STMT_EXPR_SUBTRACT => {
                     *val_rtrn = l & !r;
                 }
-                19 | 20 => {
+                STMT_EXPR_MULTIPLY | STMT_EXPR_DIVIDE => {
                     return false;
                 }
                 _ => {}
             }
             return true;
         }
-        21 => {
-            already_logged_error = true;
-        }
-        24 => {
-            let ExprKind::Unary { child, .. } = &expr.kind else {
-                unreachable!()
-            };
+        ExprKind::Unary { child, op } => {
             let left = child.as_deref().unwrap();
             if !expr_resolve_integer_lookup(ctx, left, &mut v, None, lookup) {
                 return false;
             }
-            if v < 0_i64 || v > u32::MAX as i64 {
-                return false;
-            }
-            *val_rtrn = !(v as u32);
-            return true;
-        }
-        25 | 23 | 22 => {
-            let ExprKind::Unary { child, .. } = &expr.kind else {
-                unreachable!()
-            };
-            let left = child.as_deref().unwrap();
-            if !expr_resolve_integer_lookup(ctx, left, &mut v, None, lookup) {
-                return false;
+            if *op == STMT_EXPR_INVERT {
+                if v < 0 || v > u32::MAX as i64 {
+                    return false;
+                }
+                *val_rtrn = !(v as u32);
+                return true;
             }
             return false;
         }
-        _ => {
+        ExprKind::ActionList { .. } | ExprKind::KeysymList { .. } | ExprKind::EmptyList => {
             already_logged_error = true;
         }
     }

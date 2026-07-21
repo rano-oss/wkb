@@ -3616,15 +3616,13 @@ fn apply_interps_to_key(keymap: &mut XkbKeymap, key_idx: usize) -> bool {
 }
 #[inline]
 fn is_mod_action(action: &XkbAction) -> bool {
-    action.action_type() == ACTION_TYPE_MOD_SET
-        || action.action_type() == ACTION_TYPE_MOD_LATCH
-        || action.action_type() == ACTION_TYPE_MOD_LOCK
+    let t = action.action_type();
+    t == ACTION_TYPE_MOD_SET || t == ACTION_TYPE_MOD_LATCH || t == ACTION_TYPE_MOD_LOCK
 }
 #[inline]
 fn is_group_action(action: &XkbAction) -> bool {
-    action.action_type() == ACTION_TYPE_GROUP_SET
-        || action.action_type() == ACTION_TYPE_GROUP_LATCH
-        || action.action_type() == ACTION_TYPE_GROUP_LOCK
+    let t = action.action_type();
+    t == ACTION_TYPE_GROUP_SET || t == ACTION_TYPE_GROUP_LATCH || t == ACTION_TYPE_GROUP_LOCK
 }
 fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
     let num_groups = keymap.keys[key_idx].num_groups;

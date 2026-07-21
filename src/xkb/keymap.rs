@@ -454,52 +454,52 @@ pub(crate) fn action_equal(a: &XkbAction, b: &XkbAction) -> bool {
         return false;
     }
     match a.action_type() {
-        0 | 1 => true,
-        2..=4 => {
+        ACTION_TYPE_NONE | ACTION_TYPE_VOID => true,
+        ACTION_TYPE_MOD_SET..=ACTION_TYPE_MOD_LOCK => {
             let am = a.as_mods();
             let bm = b.as_mods();
             am.flags == bm.flags && am.mods.mask == bm.mods.mask && am.mods.mods == bm.mods.mods
         }
-        5..=7 => {
+        ACTION_TYPE_GROUP_SET..=ACTION_TYPE_GROUP_LOCK => {
             let ag = a.as_group();
             let bg = b.as_group();
             ag.flags == bg.flags && ag.group == bg.group
         }
-        8 => {
+        ACTION_TYPE_PTR_MOVE => {
             let ap = a.as_ptr();
             let bp = b.as_ptr();
             ap.flags == bp.flags && ap.x as i32 == bp.x as i32 && ap.y as i32 == bp.y as i32
         }
-        9 | 10 => {
+        ACTION_TYPE_PTR_BUTTON | ACTION_TYPE_PTR_LOCK => {
             let ab = a.as_btn();
             let bb = b.as_btn();
             ab.flags == bb.flags
                 && ab.button as i32 == bb.button as i32
                 && ab.count as i32 == bb.count as i32
         }
-        11 => {
+        ACTION_TYPE_PTR_DEFAULT => {
             let ad = a.as_dflt();
             let bd = b.as_dflt();
             ad.flags == bd.flags && ad.value as i32 == bd.value as i32
         }
-        12 => true,
-        13 => {
+        ACTION_TYPE_TERMINATE => true,
+        ACTION_TYPE_SWITCH_VT => {
             let as_ = a.as_screen();
             let bs = b.as_screen();
             as_.flags == bs.flags && as_.screen as i32 == bs.screen as i32
         }
-        14 | 15 => {
+        ACTION_TYPE_CTRL_SET | ACTION_TYPE_CTRL_LOCK => {
             let ac = a.as_ctrls();
             let bc = b.as_ctrls();
             ac.flags == bc.flags && ac.ctrls == bc.ctrls
         }
-        16 => {
+        ACTION_TYPE_REDIRECT_KEY => {
             let ar = a.as_redirect();
             let br = b.as_redirect();
             ar.keycode == br.keycode && ar.affect == br.affect && ar.mods == br.mods
         }
-        17 | 18 => true,
-        20 => {
+        ACTION_TYPE_UNSUPPORTED_LEGACY | ACTION_TYPE_UNKNOWN => true,
+        ACTION_TYPE_INTERNAL => {
             let ai = a.as_internal();
             let bi = b.as_internal();
             ai.flags == bi.flags && ai.clear_latched_mods == bi.clear_latched_mods
@@ -1847,6 +1847,43 @@ pub(crate) const LATCH_KEY_DOWN: XkbKeyLatchState = 1;
 
 pub(crate) const NO_LATCH: XkbKeyLatchState = 0;
 
+/// Common key-release state transition for latch functions.
+/// Returns the new latch state. The caller must update `filter.priv_0` with the result.
+fn filter_latch_key_release(
+    filter: &mut XkbFilter,
+    mut latch: XkbKeyLatchState,
+    direction: XkbKeyDirection,
+    action_flags: u32,
+    should_clear_lock: impl FnOnce(u32, i32, u32) -> bool,
+    locked_val: &mut i32,
+    latched_val: &mut i32,
+    base_val: &mut i32,
+    clear_op: impl FnOnce(&mut i32, i32),
+    latch_op: impl FnOnce(&mut i32, &mut i32, i32),
+    delta: i32,
+    mask: u32,
+) -> XkbKeyLatchState {
+    if direction == XKB_KEY_REPEATED {
+        return latch;
+    }
+    if action_flags & ACTION_LOCK_CLEAR != 0 && should_clear_lock(action_flags, *locked_val, mask) {
+        if latch == LATCH_PENDING {
+            *latched_val -= delta;
+        } else {
+            clear_op(base_val, delta);
+        }
+        *locked_val = 0;
+        filter.func = None;
+    } else if latch == NO_LATCH {
+        clear_op(base_val, delta);
+        filter.func = None;
+    } else if action_flags & ACTION_LATCH_ON_PRESS == 0 {
+        latch = LATCH_PENDING;
+        latch_op(base_val, latched_val, delta);
+    }
+    latch
+}
+
 use std::sync::LazyLock;
 
 static SYNTHETIC_KEY_BREAK_GROUP_LATCH: LazyLock<XkbKey> = LazyLock::new(|| XkbKey {
@@ -2111,8 +2148,16 @@ fn xkb_filter_group_lock_func(
 
 fn xkb_action_breaks_latch(action: &XkbAction, flag: u32, mask: u32) -> bool {
     match action.action_type() {
-        0 | 1 | 9 | 10 | 14 | 15 | 13 | 12 | 16 => true,
-        20 => {
+        ACTION_TYPE_NONE
+        | ACTION_TYPE_VOID
+        | ACTION_TYPE_PTR_BUTTON
+        | ACTION_TYPE_PTR_LOCK
+        | ACTION_TYPE_CTRL_SET
+        | ACTION_TYPE_CTRL_LOCK
+        | ACTION_TYPE_SWITCH_VT
+        | ACTION_TYPE_TERMINATE
+        | ACTION_TYPE_REDIRECT_KEY => true,
+        ACTION_TYPE_INTERNAL => {
             action.as_internal().flags & flag != 0
                 && action.as_internal().clear_latched_mods & mask == mask
         }
@@ -2174,11 +2219,11 @@ fn xkb_filter_group_latch_func(
                 as XkbActionFlags;
             let mut k_0: u16 = 0_u16;
             while (k_0 as usize) < actions.len() {
-                if actions[k_0 as usize].action_type() as u32 == ACTION_TYPE_GROUP_LATCH
+                if actions[k_0 as usize].action_type() == ACTION_TYPE_GROUP_LATCH
                     && actions[k_0 as usize].as_group().group == filter.action.as_group().group
                     && actions[k_0 as usize].as_group().flags as u32
                         == filter.action.as_group().flags
-                    || actions[k_0 as usize].action_type() as u32 == ACTION_TYPE_GROUP_SET
+                    || actions[k_0 as usize].action_type() == ACTION_TYPE_GROUP_SET
                         && sticky_keys
                         && actions[k_0 as usize].as_group().flags as u32 == flags as u32
                 {
@@ -2206,26 +2251,24 @@ fn xkb_filter_group_latch_func(
             }
         }
     } else if std::ptr::eq(key, filter.key) {
-        if direction == XKB_KEY_REPEATED {
-            return false;
-        } else if filter.action.as_group().flags & ACTION_LOCK_CLEAR != 0
-            && state.components.locked_group != 0
-        {
-            if latch as u32 == LATCH_PENDING {
-                state.components.latched_group -= group_delta;
-            } else {
-                state.components.base_group -= group_delta;
-            }
-            state.components.locked_group = 0;
-            filter.func = None;
-        } else if latch as u32 == NO_LATCH {
-            state.components.base_group -= group_delta;
-            filter.func = None;
-        } else if latch as u32 == LATCH_KEY_DOWN {
-            latch = LATCH_PENDING;
-            state.components.base_group -= group_delta;
-            state.components.latched_group += group_delta;
-        }
+        let flags = filter.action.as_group().flags;
+        latch = filter_latch_key_release(
+            filter,
+            latch,
+            direction,
+            flags,
+            |_, locked, _| locked != 0,
+            &mut state.components.locked_group,
+            &mut state.components.latched_group,
+            &mut state.components.base_group,
+            |base, delta| *base -= delta,
+            |base, latched, delta| {
+                *base -= delta;
+                *latched += delta;
+            },
+            group_delta,
+            0,
+        );
     }
     filter.priv_0 = pack_group_latch(latch as u32, group_delta);
     true
@@ -2384,10 +2427,10 @@ fn xkb_filter_mod_latch_func(
                 as XkbActionFlags;
             let mut k_0: u16 = 0_u16;
             while (k_0 as usize) < actions.len() {
-                if (actions[k_0 as usize].action_type() as u32 == ACTION_TYPE_MOD_LATCH
+                if (actions[k_0 as usize].action_type() == ACTION_TYPE_MOD_LATCH
                     && actions[k_0 as usize].as_mods().flags as u32
                         == filter.action.as_mods().flags
-                    || actions[k_0 as usize].action_type() as u32 == ACTION_TYPE_MOD_SET
+                    || actions[k_0 as usize].action_type() == ACTION_TYPE_MOD_SET
                         && sticky_keys
                         && actions[k_0 as usize].as_mods().flags as u32 == flags as u32)
                     && actions[k_0 as usize].as_mods().mods.mask
@@ -2600,7 +2643,7 @@ fn xkb_filter_redirect_key_func(
         let actions = xkb_key_get_actions(state, key);
         let mut a: u16 = 0_u16;
         while (a as usize) < actions.len() {
-            if actions[a as usize].action_type() as u32 == ACTION_TYPE_REDIRECT_KEY
+            if actions[a as usize].action_type() == ACTION_TYPE_REDIRECT_KEY
                 && actions[a as usize].as_redirect().keycode != filter.action.as_redirect().keycode
             {
                 append_redirect_key_events(state, events, filter.action.as_redirect(), XKB_KEY_UP);
@@ -2732,7 +2775,7 @@ fn xkb_filter_apply_all(
     let actions: Vec<XkbAction> = actions.to_vec();
     let mut k: u16 = 0_u16;
     while (k as usize) < actions.len() {
-        if ((actions[k as usize].action_type() as u32) < _ACTION_TYPE_NUM_ENTRIES)
+        if actions[k as usize].action_type() < _ACTION_TYPE_NUM_ENTRIES
             && FILTER_ACTION_FUNCS[actions[k as usize].action_type() as usize]
                 .new
                 .is_some()
@@ -3324,12 +3367,9 @@ pub(crate) struct RxkbLayout {
     pub(crate) name: String,
     pub(crate) brief: String,
     pub(crate) variant: String,
-    pub(crate) iso639s: Vec<String>,
-    pub(crate) iso3166s: Vec<String>,
 }
 
 pub(crate) struct RxkbOptionGroup {
-    pub(crate) allow_multiple: bool,
     pub(crate) options: Vec<RxkbOption>,
     pub(crate) name: String,
 }
@@ -3339,14 +3379,11 @@ pub(crate) struct RxkbOption {
     pub(crate) name: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) struct ConfigItem {
     pub(crate) name: String,
-    pub(crate) description: String,
     pub(crate) brief: String,
-    pub(crate) vendor: String,
     pub(crate) popularity: RxkbPopularity,
-    pub(crate) layout_specific: bool,
 }
 
 // ---------------------------------------------------------------------------
@@ -3622,20 +3659,11 @@ fn parse_config_item(
                 } else {
                 }
             }
-            if let Some(raw_layout_specific) = get_attr(doc, ci, "layout-specific") {
-                if raw_layout_specific == "true" {
-                    config.layout_specific = true;
-                }
-            }
             for node in doc.children(ci) {
                 if is_node(doc, node, "name") {
                     config.name = extract_text(doc, node);
-                } else if is_node(doc, node, "description") {
-                    config.description = extract_text(doc, node);
                 } else if is_node(doc, node, "shortDescription") {
                     config.brief = extract_text(doc, node);
-                } else if is_node(doc, node, "vendor") {
-                    config.vendor = extract_text(doc, node);
                 }
             }
             if config.name.is_empty() {
@@ -3654,12 +3682,8 @@ fn parse_model(
     popularity: RxkbPopularity,
 ) {
     let mut config = ConfigItem {
-        name: String::new(),
-        description: String::new(),
-        brief: String::new(),
-        vendor: String::new(),
         popularity,
-        layout_specific: false,
+        ..ConfigItem::default()
     };
     if parse_config_item(doc, model, &mut config) {
         // Check for duplicate
@@ -3672,36 +3696,6 @@ fn parse_model(
     }
 }
 
-fn parse_language_list(
-    doc: &xmloxide::Document,
-    language_list: xmloxide::tree::NodeId,
-    iso639s: &mut Vec<String>,
-) {
-    for node in doc.children(language_list) {
-        if is_node(doc, node, "iso639Id") {
-            let s = extract_text(doc, node);
-            if !s.is_empty() && s.len() == 3 {
-                iso639s.push(s);
-            }
-        }
-    }
-}
-
-fn parse_country_list(
-    doc: &xmloxide::Document,
-    country_list: xmloxide::tree::NodeId,
-    iso3166s: &mut Vec<String>,
-) {
-    for node in doc.children(country_list) {
-        if is_node(doc, node, "iso3166Id") {
-            let s = extract_text(doc, node);
-            if !s.is_empty() && s.len() == 2 {
-                iso3166s.push(s);
-            }
-        }
-    }
-}
-
 fn parse_variant(
     ctx: &mut RxkbContext,
     parent_layout_idx: usize,
@@ -3710,12 +3704,8 @@ fn parse_variant(
     popularity: RxkbPopularity,
 ) {
     let mut config = ConfigItem {
-        name: String::new(),
-        description: String::new(),
-        brief: String::new(),
-        vendor: String::new(),
         popularity,
-        layout_specific: false,
+        ..ConfigItem::default()
     };
     if !parse_config_item(doc, variant, &mut config) {
         return;
@@ -3739,38 +3729,11 @@ fn parse_variant(
         std::mem::take(&mut config.brief)
     };
 
-    let mut new_layout = RxkbLayout {
+    let new_layout = RxkbLayout {
         name: parent_name,
         variant: std::mem::take(&mut config.name),
         brief,
-        iso639s: Vec::new(),
-        iso3166s: Vec::new(),
     };
-
-    // Parse language/country lists from variant's configItem
-    for ci in doc.children(variant) {
-        if is_node(doc, ci, "configItem") {
-            let mut found_language_list = false;
-            let mut found_country_list = false;
-            for node in doc.children(ci) {
-                if is_node(doc, node, "languageList") {
-                    parse_language_list(doc, node, &mut new_layout.iso639s);
-                    found_language_list = true;
-                }
-                if is_node(doc, node, "countryList") {
-                    parse_country_list(doc, node, &mut new_layout.iso3166s);
-                    found_country_list = true;
-                }
-            }
-            // Inherit from parent if not found
-            if !found_language_list {
-                new_layout.iso639s = ctx.layouts[parent_layout_idx].iso639s.clone();
-            }
-            if !found_country_list {
-                new_layout.iso3166s = ctx.layouts[parent_layout_idx].iso3166s.clone();
-            }
-        }
-    }
 
     ctx.layouts.push(new_layout);
 }
@@ -3782,12 +3745,8 @@ fn parse_layout(
     popularity: RxkbPopularity,
 ) {
     let mut config = ConfigItem {
-        name: String::new(),
-        description: String::new(),
-        brief: String::new(),
-        vendor: String::new(),
         popularity,
-        layout_specific: false,
+        ..ConfigItem::default()
     };
     if !parse_config_item(doc, layout, &mut config) {
         return;
@@ -3808,8 +3767,6 @@ fn parse_layout(
             name: std::mem::take(&mut config.name),
             variant: String::new(),
             brief: std::mem::take(&mut config.brief),
-            iso639s: Vec::new(),
-            iso3166s: Vec::new(),
         });
         layout_idx = ctx.layouts.len() - 1;
     }
@@ -3820,16 +3777,6 @@ fn parse_layout(
             for vnode in doc.children(node) {
                 if is_node(doc, vnode, "variant") {
                     parse_variant(ctx, layout_idx, doc, vnode, popularity);
-                }
-            }
-        }
-        if existing_idx.is_none() && is_node(doc, node, "configItem") {
-            for ll in doc.children(node) {
-                if is_node(doc, ll, "languageList") {
-                    parse_language_list(doc, ll, &mut ctx.layouts[layout_idx].iso639s);
-                }
-                if is_node(doc, ll, "countryList") {
-                    parse_country_list(doc, ll, &mut ctx.layouts[layout_idx].iso3166s);
                 }
             }
         }
@@ -3844,12 +3791,8 @@ fn parse_option(
     popularity: RxkbPopularity,
 ) {
     let mut config = ConfigItem {
-        name: String::new(),
-        description: String::new(),
-        brief: String::new(),
-        vendor: String::new(),
         popularity,
-        layout_specific: false,
+        ..ConfigItem::default()
     };
     if parse_config_item(doc, option, &mut config) {
         // Check for duplicate
@@ -3873,12 +3816,8 @@ fn parse_group(
     popularity: RxkbPopularity,
 ) {
     let mut config = ConfigItem {
-        name: String::new(),
-        description: String::new(),
-        brief: String::new(),
-        vendor: String::new(),
         popularity,
-        layout_specific: false,
+        ..ConfigItem::default()
     };
     if !parse_config_item(doc, group, &mut config) {
         return;
@@ -3893,16 +3832,10 @@ fn parse_group(
     if let Some(idx) = existing_idx {
         group_idx = idx;
     } else {
-        let mut og = RxkbOptionGroup {
-            allow_multiple: false,
+        let og = RxkbOptionGroup {
             options: Vec::new(),
             name: std::mem::take(&mut config.name),
         };
-        if let Some(multiple) = get_attr(doc, group, "allowMultipleSelection") {
-            if multiple == "true" {
-                og.allow_multiple = true;
-            }
-        }
         ctx.option_groups.push(og);
         group_idx = ctx.option_groups.len() - 1;
     }
