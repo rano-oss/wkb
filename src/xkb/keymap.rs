@@ -2868,7 +2868,7 @@ fn xkb_state_led_update_all(state: &mut XkbState) {
         }
         if !set_led {
             if led.which_groups != 0 {
-                if (led.groups != 0) as i64 != 0_i64 {
+                if led.groups != 0 {
                     let mut group_mask: u32 = 0;
                     if (led.which_groups & XKB_STATE_LAYOUT_EFFECTIVE) != 0 {
                         group_mask |= 1_u32 << state.components.group;
@@ -3239,7 +3239,7 @@ pub(crate) fn mod_mask_get_effective(keymap: &XkbKeymap, mods: u32) -> u32 {
 
 pub(crate) fn xkb_state_mod_index_is_active(state: &XkbState, idx: u32, type_0: u32) -> i32 {
     let keymap = state.keymap();
-    if (idx >= xkb_keymap_num_mods(keymap)) as i64 != 0 {
+    if idx >= xkb_keymap_num_mods(keymap) {
         return -1;
     }
     let mapping: u32 = keymap.mods.mods[idx as usize].mapping;
@@ -3302,7 +3302,7 @@ pub(crate) fn xkb_state_mod_index_is_consumed2(
         Some(k) => k,
         None => return -1_i32,
     };
-    if (idx >= xkb_keymap_num_mods(keymap)) as i64 != 0 {
+    if idx >= xkb_keymap_num_mods(keymap) {
         return -1;
     }
     let mapping: u32 = keymap.mods.mods[idx as usize].mapping;

@@ -805,25 +805,10 @@ impl XkbKeymap {
         } else if kc < self.num_keys_low {
             Some(&self.keys[kc as usize])
         } else {
-            let mut lower: u32 = self.num_keys_low;
-            let mut upper: u32 = self.num_keys;
-            while lower < upper {
-                let mid: u32 = lower.wrapping_add(
-                    upper
-                        .wrapping_sub(1_u32)
-                        .wrapping_sub(lower)
-                        .wrapping_div(2_u32),
-                );
-                let key = &self.keys[mid as usize];
-                if key.keycode < kc {
-                    lower = mid.wrapping_add(1_u32);
-                } else if key.keycode > kc {
-                    upper = mid;
-                } else {
-                    return Some(key);
-                }
-            }
-            None
+            self.keys[self.num_keys_low as usize..self.num_keys as usize]
+                .binary_search_by(|key| key.keycode.cmp(&kc))
+                .ok()
+                .map(|i| &self.keys[self.num_keys_low as usize + i])
         }
     }
 

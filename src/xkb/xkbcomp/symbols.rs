@@ -294,8 +294,7 @@ fn merge_groups(
                 }
                 if !xkb_levels_same_actions(into_level, from_level) {
                     if report && !(into_has_no_action || from_has_no_action) {
-                        if into_level.actions.len() > 1 || from_level.actions.len() > 1 {
-                        } else {
+                        if into_level.actions.len() <= 1 && from_level.actions.len() <= 1 {
                             let _use_action: &XkbAction = if clobber {
                                 &from_level.actions[0]
                             } else {
@@ -894,7 +893,7 @@ fn add_symbols_to_key(
             unreachable!()
         };
         let syms_len = syms.len() as u32;
-        if (syms_len > 65535_u32) as i64 != 0 {
+        if syms_len > 65535 {
             return false;
         }
         leveli.syms = if syms_len == 0 {
@@ -946,7 +945,7 @@ fn add_actions_to_key(
             unreachable!()
         };
         let num_actions: u32 = action_vec.len() as u32;
-        if (num_actions > 65535_u32) as i64 != 0 {
+        if num_actions > 65535 {
             return false;
         }
         let mut actions: Vec<XkbAction> = Vec::new();
@@ -1549,21 +1548,7 @@ fn handle_symbols_def(
 ) -> bool {
     // Clone scalar fields from default_key, deep-copy groups
     let dk = &info.default_key;
-    let mut keyi = KeyInfo {
-        name: dk.name,
-        vmodmap: dk.vmodmap,
-        default_type: dk.default_type,
-        out_of_range_group_number: dk.out_of_range_group_number,
-        groups: dk.groups.clone(), // deep clone via derive(Clone)
-        out_of_range_group_policy: dk.out_of_range_group_policy,
-        defined: dk.defined,
-        merge: dk.merge,
-        repeat: dk.repeat,
-        out_of_range_pending_group: dk.out_of_range_pending_group,
-        overlays_clear: dk.overlays_clear,
-        overlays: dk.overlays,
-        overlay_keys: dk.overlay_keys.clone(),
-    };
+    let mut keyi = dk.clone();
     keyi.merge = stmt.merge as MergeMode;
     keyi.name = stmt.key_name;
     if handle_symbols_body(ki, info, &mut stmt.symbols, &mut keyi)
@@ -1779,8 +1764,7 @@ fn find_type_for_group(
             }
         }
     }
-    if type_name == XKB_ATOM_NONE {
-    } else {
+    if type_name != XKB_ATOM_NONE {
         let mut i: u32 = 0;
         while (i as usize) < keymap.types.len() {
             if keymap.types[i as usize].name == type_name {
@@ -1788,8 +1772,7 @@ fn find_type_for_group(
             }
             i += 1;
         }
-        if i as usize >= keymap.types.len() {
-        } else {
+        if (i as usize) < keymap.types.len() {
             keymap.types[i as usize].required = true;
             return i;
         }
@@ -2073,8 +2056,8 @@ fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) -> boo
             ki += 1;
         }
     }
-    for i in 0..info.modmaps.len() {
-        if !copy_mod_map_def_to_keymap(keymap, info, &info.modmaps[i]) {
+    for modmap in &info.modmaps {
+        if !copy_mod_map_def_to_keymap(keymap, info, modmap) {
             info.error_count += 1;
         }
     }
@@ -2301,16 +2284,11 @@ fn add_interp(
     same_file: bool,
 ) -> bool {
     // FindMatchingInterp inlined
-    let mut old_idx: Option<usize> = None;
-    for i in 0..info.interps.len() {
-        if info.interps[i].interp.sym == new.interp.sym
-            && info.interps[i].interp.mods == new.interp.mods
-            && info.interps[i].interp.match_0 == new.interp.match_0
-        {
-            old_idx = Some(i);
-            break;
-        }
-    }
+    let old_idx = info.interps.iter().position(|i| {
+        i.interp.sym == new.interp.sym
+            && i.interp.mods == new.interp.mods
+            && i.interp.match_0 == new.interp.match_0
+    });
     if let Some(idx) = old_idx {
         // Clone the old element out to avoid borrow conflict with info
         let mut old = info.interps[idx].clone();
@@ -2475,10 +2453,9 @@ fn merge_included_compat_maps(
     if into.interps.is_empty() {
         into.interps = std::mem::take(&mut from.interps);
     } else {
-        for i in 0..from.interps.len() {
-            (&mut from.interps)[i].merge = merge;
-            let si = &mut from.interps[i];
-            if !add_interp(into, ki, si, false) {
+        for interp in from.interps.iter_mut() {
+            interp.merge = merge;
+            if !add_interp(into, ki, interp, false) {
                 into.error_count += 1;
             }
         }
@@ -2489,10 +2466,9 @@ fn merge_included_compat_maps(
         into.num_leds = from.num_leds;
         from.num_leds = 0;
     } else {
-        for i in 0..from.num_leds as usize {
-            from.leds[i].merge = merge;
-            let ledi = &mut from.leds[i];
-            if !add_led_map(into, ki, ledi, false) {
+        for led in from.leds[..from.num_leds as usize].iter_mut() {
+            led.merge = merge;
+            if !add_led_map(into, ki, led, false) {
                 into.error_count += 1;
             }
         }
@@ -3072,8 +3048,7 @@ fn handle_compat_map_file(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo, fil
     }
 }
 fn copy_interps(info: &CompatInfo, need_symbol: bool, pred: u32, collect: &mut Collect) {
-    for i in 0..info.interps.len() {
-        let si = &info.interps[i];
+    for si in &info.interps {
         if si.interp.match_0 == pred
             && (si.interp.sym != XKB_KEY_NO_SYMBOL as u32) as i32 == need_symbol as i32
         {
@@ -3113,8 +3088,7 @@ fn copy_led_map_defs_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo
                 i += 1;
             }
             if i >= keymap.num_leds {
-                if i >= XKB_MAX_LEDS {
-                } else {
+                if i < XKB_MAX_LEDS {
                     i = keymap.num_leds;
                     keymap.num_leds = keymap.num_leds + 1;
                     assign_led = true;
@@ -3254,13 +3228,7 @@ fn add_key_type(
 ) -> bool {
     let _verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
     // FindMatchingKeyType inlined
-    let mut old_idx: Option<usize> = None;
-    for (i, type_0) in info.types.iter().enumerate() {
-        if type_0.name == new.name {
-            old_idx = Some(i);
-            break;
-        }
-    }
+    let old_idx = info.types.iter().position(|t| t.name == new.name);
     if let Some(idx) = old_idx {
         if new.merge != MERGE_AUGMENT {
             clear_key_type_info(&mut info.types[idx]);
@@ -3293,9 +3261,9 @@ fn merge_included_key_types(
     if into.types.is_empty() {
         into.types = std::mem::take(&mut from.types);
     } else {
-        for i in 0..from.types.len() {
-            from.types[i].merge = merge;
-            let mut type_clone = from.types[i].clone();
+        for type_0 in from.types.iter_mut() {
+            type_0.merge = merge;
+            let mut type_clone = type_0.clone();
             if !add_key_type(ki, into, &mut type_clone, false) {
                 into.error_count += 1;
             }
@@ -3386,8 +3354,7 @@ fn add_map_entry(
     }
     if let Some(idx) = old_idx {
         let old = &type_0.entries[idx];
-        if report && old.level != new.level {
-        } else {
+        if !report || old.level == new.level {
             return true;
         }
         if clobber {
@@ -3591,8 +3558,7 @@ fn handle_key_type_body(
             let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
             let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
             if !elem.is_empty() {
-                if elem.eq_ignore_ascii_case("type") {
-                } else {
+                if !elem.eq_ignore_ascii_case("type") {
                     ok = false;
                 }
             } else {
@@ -4126,17 +4092,10 @@ fn add_led_name(
 ) -> bool {
     let replace: bool = new.merge != MERGE_AUGMENT;
     // FindLedByName inlined
-    let mut found_old: Option<u32> = None;
-    {
-        let mut idx: u32 = 0;
-        while idx < info.num_led_names {
-            if info.led_names[idx as usize].name == new.name {
-                found_old = Some(idx);
-                break;
-            }
-            idx += 1;
-        }
-    }
+    let found_old = info.led_names[..info.num_led_names as usize]
+        .iter()
+        .position(|l| l.name == new.name)
+        .map(|i| i as u32);
     if let Some(old_idx) = found_old {
         if old_idx == new_idx {
             return true;

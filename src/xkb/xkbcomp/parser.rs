@@ -4142,9 +4142,7 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
     };
     let mut type_0: u32 = FIRST_KEYMAP_FILE_TYPE;
     while type_0 <= LAST_KEYMAP_FILE_TYPE {
-        if file_indices[type_0 as usize].is_none() {
-        } else {
-            let idx = file_indices[type_0 as usize].unwrap();
+        if let Some(idx) = file_indices[type_0 as usize] {
             let _sub_name = if let Statement::XkbFile(ref sub_file) = file.defs[idx] {
                 safe_map_name(sub_file)
             } else {
@@ -5876,83 +5874,82 @@ fn xkb_resolve_rules(
     ret = xkb_resolve_partial_rules(rules_str, ".pre", matcher);
     if ret {
         ret = read_rules_file(matcher, 0, &file_data, &path);
-        if !ret {
-        } else {
-            ret = xkb_resolve_partial_rules(rules_str, ".post", matcher);
-            if ret {
-                if matcher.kccgst[KCCGST_KEYCODES as usize].is_empty()
-                    || matcher.kccgst[KCCGST_TYPES as usize].is_empty()
-                    || matcher.kccgst[KCCGST_COMPAT as usize].is_empty()
-                    || matcher.kccgst[KCCGST_SYMBOLS as usize].is_empty()
+    }
+    if ret {
+        ret = xkb_resolve_partial_rules(rules_str, ".post", matcher);
+        if ret {
+            if matcher.kccgst[KCCGST_KEYCODES as usize].is_empty()
+                || matcher.kccgst[KCCGST_TYPES as usize].is_empty()
+                || matcher.kccgst[KCCGST_COMPAT as usize].is_empty()
+                || matcher.kccgst[KCCGST_SYMBOLS as usize].is_empty()
+            {
+                ret = false;
+            } else {
+                // Transfer ownership of Vec data directly.
                 {
-                    ret = false;
-                } else {
-                    // Transfer ownership of Vec data directly.
-                    {
-                        let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_KEYCODES as usize]);
-                        v.push(0);
-                        out.keycodes = v;
-                    }
-                    {
-                        let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_TYPES as usize]);
-                        v.push(0);
-                        out.types = v;
-                    }
-                    {
-                        let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_COMPAT as usize]);
-                        v.push(0);
-                        out.compatibility = v;
-                    }
-                    {
-                        let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_SYMBOLS as usize]);
-                        v.push(0);
-                        out.symbols = v;
-                    }
-                    {
-                        let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_GEOMETRY as usize]);
-                        v.push(0);
-                        out.geometry = v;
-                    }
-                    for mval in matcher.rmlvo.layouts.iter() {
-                        if !mval.matched && !mval.sval.is_empty() {}
-                    }
-                    for mval in matcher.rmlvo.variants.iter() {
-                        if !mval.matched && !mval.sval.is_empty() {}
-                    }
-                    for mval in matcher.rmlvo.options.iter() {
-                        if !mval.matched && !mval.sval.is_empty() {}
-                    }
-                    if !out.symbols.is_empty() {
-                        *explicit_layouts = 1_u32;
-                        // Parse symbols string to find explicit layout count
-                        let sym_bytes: Vec<u8> = out.symbols.iter().map(|&b| b as u8).collect();
-                        let mut pos: usize = 0;
-                        loop {
-                            match sym_bytes[pos..].iter().position(|&b| b == b':') {
-                                None => break,
-                                Some(colon_off) => {
-                                    pos += colon_off + 1;
-                                    if pos >= sym_bytes.len() || sym_bytes[pos] == 0 {
-                                        break;
-                                    }
-                                    let (val_parsed, count) = parse_dec_u32(&sym_bytes[pos..]);
-                                    let group: u32 = val_parsed;
-                                    let count = count as usize;
-                                    if count > 0
-                                        && pos + count <= sym_bytes.len()
-                                        && (sym_bytes.get(pos + count).copied() == Some(0)
-                                            || sym_bytes.get(pos + count).map(|&b| b as i32)
-                                                == Some(MERGE_OVERRIDE_PREFIX)
-                                            || sym_bytes.get(pos + count).map(|&b| b as i32)
-                                                == Some(MERGE_AUGMENT_PREFIX)
-                                            || sym_bytes.get(pos + count).map(|&b| b as i32)
-                                                == Some(MERGE_REPLACE_PREFIX))
-                                        && group > 0
-                                        && group <= XKB_MAX_GROUPS as u32
-                                    {
-                                        *explicit_layouts = (*explicit_layouts).max(group);
-                                        pos += count;
-                                    }
+                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_KEYCODES as usize]);
+                    v.push(0);
+                    out.keycodes = v;
+                }
+                {
+                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_TYPES as usize]);
+                    v.push(0);
+                    out.types = v;
+                }
+                {
+                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_COMPAT as usize]);
+                    v.push(0);
+                    out.compatibility = v;
+                }
+                {
+                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_SYMBOLS as usize]);
+                    v.push(0);
+                    out.symbols = v;
+                }
+                {
+                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_GEOMETRY as usize]);
+                    v.push(0);
+                    out.geometry = v;
+                }
+                for mval in matcher.rmlvo.layouts.iter() {
+                    if !mval.matched && !mval.sval.is_empty() {}
+                }
+                for mval in matcher.rmlvo.variants.iter() {
+                    if !mval.matched && !mval.sval.is_empty() {}
+                }
+                for mval in matcher.rmlvo.options.iter() {
+                    if !mval.matched && !mval.sval.is_empty() {}
+                }
+                if !out.symbols.is_empty() {
+                    *explicit_layouts = 1_u32;
+                    // Parse symbols string to find explicit layout count
+                    let sym_bytes: Vec<u8> = out.symbols.iter().map(|&b| b as u8).collect();
+                    let mut pos: usize = 0;
+                    loop {
+                        match sym_bytes[pos..].iter().position(|&b| b == b':') {
+                            None => break,
+                            Some(colon_off) => {
+                                pos += colon_off + 1;
+                                if pos >= sym_bytes.len() || sym_bytes[pos] == 0 {
+                                    break;
+                                }
+                                let (val_parsed, count) = parse_dec_u32(&sym_bytes[pos..]);
+                                let group: u32 = val_parsed;
+                                let count = count as usize;
+                                if count > 0
+                                    && pos + count <= sym_bytes.len()
+                                    && (sym_bytes.get(pos + count).copied() == Some(0)
+                                        || sym_bytes.get(pos + count).map(|&b| b as i32)
+                                            == Some(MERGE_OVERRIDE_PREFIX)
+                                        || sym_bytes.get(pos + count).map(|&b| b as i32)
+                                            == Some(MERGE_AUGMENT_PREFIX)
+                                        || sym_bytes.get(pos + count).map(|&b| b as i32)
+                                            == Some(MERGE_REPLACE_PREFIX))
+                                    && group > 0
+                                    && group <= XKB_MAX_GROUPS as u32
+                                {
+                                    *explicit_layouts = (*explicit_layouts).max(group);
+                                    pos += count;
                                 }
                             }
                         }
