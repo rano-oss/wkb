@@ -4092,7 +4092,7 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
             PARSER_V2_LAX_FLAGS as i32
         }) as u32,
         features: XkbcompFeatures {
-            max_groups: format_max_groups(km_format),
+            max_groups: XKB_MAX_GROUPS,
             max_overlays: format_max_overlays(km_format),
             controls_name_offset: format_control_names_offset(km_format),
             group_lock_on_release: is_group_lock_on_release_supported(km_format),
@@ -4458,7 +4458,7 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
 }
 static RULES_MLVO_SVALS: [&[u8]; 4] = [b"model", b"layout", b"variant", b"option"];
 static RULES_KCCGST_SVALS: [&[u8]; 5] = [b"keycodes", b"types", b"compat", b"symbols", b"geometry"];
-pub(crate) const OPTIONS_MATCH_ALL_GROUPS: i32 = XKB_MAX_GROUPS;
+pub(crate) const OPTIONS_MATCH_ALL_GROUPS: u32 = XKB_MAX_GROUPS;
 fn strip_spaces<'a>(v: Sval<'a>) -> Sval<'a> {
     let bytes = v.data;
     let start_trim = bytes
@@ -5460,7 +5460,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
                             let mut found_option: bool = false;
                             for opt_idx in 0..m.rmlvo.options.len() {
                                 let opt = &m.rmlvo.options[opt_idx];
-                                if opt.layout as i32 != OPTIONS_MATCH_ALL_GROUPS
+                                if opt.layout != OPTIONS_MATCH_ALL_GROUPS
                                     && opt.layout != idx
                                 {
                                     continue;
@@ -5510,7 +5510,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
                     let layout_min = m.mapping.layout.layout_idx_min();
                     for opt_idx in 0..m.rmlvo.options.len() {
                         let opt = &m.rmlvo.options[opt_idx];
-                        if opt.layout as i32 != OPTIONS_MATCH_ALL_GROUPS && opt.layout != layout_min
+                        if opt.layout != OPTIONS_MATCH_ALL_GROUPS && opt.layout != layout_min
                         {
                             continue;
                         }

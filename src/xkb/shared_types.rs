@@ -649,7 +649,7 @@ pub(crate) struct XkbLed {
     pub(crate) ctrls: XkbActionControls,
 }
 
-pub(crate) const XKB_MAX_GROUPS: i32 = 32_i32;
+pub(crate) const XKB_MAX_GROUPS: u32 = 32;
 pub(crate) const MOD_REAL_MASK_ALL: u32 = 0xff_i32 as u32;
 
 // ── Additional xkbcommon types ──────────────────────────────────────
@@ -781,7 +781,6 @@ pub const XKB_MOD_NONE: u32 = 0xffffffff;
 pub(crate) const XKB_MOD_INDEX_CAPS: RealModIndex = 1;
 pub(crate) const _XKB_MOD_INDEX_NUM_ENTRIES: RealModIndex = 8;
 
-pub(crate) const XKB_MAX_GROUPS_X11: i32 = 4;
 pub(crate) const XKB_ALL_GROUPS: u64 = ((1u64) << XKB_MAX_GROUPS).wrapping_sub(1u64);
 
 pub(crate) const XKB_OVERLAY_MAX_X11: i32 = 2;
@@ -894,14 +893,6 @@ pub(crate) fn format_max_overlays(format: u32) -> XkbOverlayIndexT {
     }) as XkbOverlayIndexT
 }
 
-#[inline]
-pub(crate) fn format_max_groups(format: u32) -> u32 {
-    (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
-        XKB_MAX_GROUPS_X11
-    } else {
-        XKB_MAX_GROUPS
-    }) as u32
-}
 
 #[inline]
 pub(crate) fn is_mods_un_lock_on_press_supported(format: u32) -> bool {

@@ -3,11 +3,13 @@
 pub(crate) mod parser;
 pub(crate) mod symbols;
 
+use crate::xkb::shared_types::XKB_MAX_GROUPS;
+
 use self::parser::compile_keymap;
 use self::parser::xkb_file_from_components;
 use self::parser::xkb_parse_string;
 use super::shared_types::{
-    format_max_groups, XkbComponentNames, XkbFile, XkbKeymap, XkbRuleNames, FILE_TYPE_KEYMAP,
+    XkbComponentNames, XkbFile, XkbKeymap, XkbRuleNames, FILE_TYPE_KEYMAP,
 };
 
 fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
@@ -32,12 +34,11 @@ pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbR
     if !ok {
         return false;
     }
-    let max_groups: u32 = format_max_groups(keymap.format);
+    let max_groups: u32 = XKB_MAX_GROUPS;
     if keymap.num_groups > max_groups {
         keymap.num_groups = max_groups;
     }
     let file_opt: Option<Box<XkbFile>> = xkb_file_from_components(&mut keymap.ctx, &kccgst);
-    drop(kccgst);
     let Some(mut file) = file_opt else {
         return false;
     };
