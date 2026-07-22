@@ -135,10 +135,7 @@ fn is_action_list_value(value: &ExprKind) -> bool {
         if let Some(first) = actions.first() {
             // If the first inner node is an ActionList (actions for one level) or
             // Action (single action), it's action data. KeysymList means keysym data.
-            matches!(
-                first,
-                ExprKind::ActionList { .. } | ExprKind::Action { .. }
-            )
+            matches!(first, ExprKind::ActionList { .. } | ExprKind::Action { .. })
         } else {
             // Empty ActionList — treat as actions
             true
@@ -331,9 +328,7 @@ fn use_new_field(
     false
 }
 fn overlays_get(info: &KeyInfo, bit: u8, key_out: Option<&mut u32>) -> bool {
-    if bit as i32
-        >= (std::mem::size_of::<u8>()).wrapping_mul(8_usize) as u8 as i32
-    {
+    if bit as i32 >= (std::mem::size_of::<u8>()).wrapping_mul(8_usize) as u8 as i32 {
         return false;
     }
     let mask: u8 = (1_u32 << bit as i32) as u8;
@@ -341,24 +336,20 @@ fn overlays_get(info: &KeyInfo, bit: u8, key_out: Option<&mut u32>) -> bool {
         return false;
     }
     if let Some(key_out) = key_out {
-        let low: u8 =
-            (info.overlays as u32 & (mask as u32).wrapping_sub(1)) as u8;
+        let low: u8 = (info.overlays as u32 & (mask as u32).wrapping_sub(1)) as u8;
         let index: usize = (low as u32).count_ones() as usize;
         *key_out = info.overlay_keys[index];
     }
     true
 }
 fn overlays_insert(keyi: &mut KeyInfo, bit: u8, key: u32) -> bool {
-    if bit as i32
-        >= (std::mem::size_of::<u8>()).wrapping_mul(8_usize) as u8 as i32
-    {
+    if bit as i32 >= (std::mem::size_of::<u8>()).wrapping_mul(8_usize) as u8 as i32 {
         return false;
     }
     let mask: u8 = (1_u32 << bit as i32) as u8;
     if (keyi.overlays & mask) != 0 && !keyi.overlays_clear {
         // Bit already set — update existing entry
-        let low: u8 =
-            (keyi.overlays as u32 & (mask as u32).wrapping_sub(1)) as u8;
+        let low: u8 = (keyi.overlays as u32 & (mask as u32).wrapping_sub(1)) as u8;
         let index: usize = (low as u32).count_ones() as usize;
         keyi.overlay_keys[index] = key;
         if key == XKB_KEYCODE_INVALID && keyi.overlay_keys.len() == 1 {
@@ -368,8 +359,7 @@ fn overlays_insert(keyi: &mut KeyInfo, bit: u8, key: u32) -> bool {
     }
     // New bit
     let new_overlays: u8 = keyi.overlays | mask;
-    let low: u8 =
-        (new_overlays as u32 & (mask as u32).wrapping_sub(1)) as u8;
+    let low: u8 = (new_overlays as u32 & (mask as u32).wrapping_sub(1)) as u8;
     let index: usize = (low as u32).count_ones() as usize;
 
     if keyi.overlays == 0 || keyi.overlays_clear && key == XKB_KEYCODE_INVALID {
@@ -404,8 +394,7 @@ fn merge_overlays(
             into.overlays = (into.overlays as i32 | from.overlays as i32) as u8;
         } else if ki.features.overlapping_overlays {
             // Complex merge with overlapping overlays
-            let result_mask: u8 =
-                (into.overlays as i32 | from.overlays as i32) as u8;
+            let result_mask: u8 = (into.overlays as i32 | from.overlays as i32) as u8;
             let count: u8 = (result_mask as u32).count_ones() as u8;
             if count == 0 {
                 eprintln!(
@@ -427,8 +416,7 @@ fn merge_overlays(
                 let lsb: u8 = (remaining as i32
                     & (!(remaining as i32) as u32).wrapping_add(1) as u8 as i32)
                     as u8;
-                let bit: u8 =
-                    ((lsb as u32).wrapping_sub(1).count_ones()) as u8;
+                let bit: u8 = ((lsb as u32).wrapping_sub(1).count_ones()) as u8;
                 remaining = (remaining as i32 & !(lsb as i32)) as u8;
                 let src_key: u32 = if from.overlays_clear || src_idx >= from.overlay_keys.len() {
                     XKB_KEYCODE_INVALID
@@ -1214,8 +1202,7 @@ fn set_symbols_field(
                             keyi.overlays_clear = false;
                             keyi.overlay_keys = vec![key];
                         } else {
-                            keyi.overlays =
-                                (keyi.overlays as i32 | mask_0 as i32) as u8;
+                            keyi.overlays = (keyi.overlays as i32 | mask_0 as i32) as u8;
                             keyi.overlays_clear = true;
                             keyi.overlay_keys = vec![XKB_KEYCODE_INVALID];
                         }
@@ -2856,39 +2843,6 @@ fn handle_compat_global_var(
     } // close else from expr_resolve_lhs
     ret
 }
-fn handle_interp_body(
-    info: &mut CompatInfo,
-    ki: &mut XkbKeymapInfo<'_>,
-    defs: &mut [VarDef],
-    si: &mut SymInterpInfo,
-) -> bool {
-    let mut ok: bool = true;
-    for def in defs {
-        let mut elem_atom: u32 = 0;
-        let mut field_atom: u32 = 0;
-        let mut array_ndx: Option<&ExprKind> = None;
-        if !expr_resolve_lhs(
-            def.name.as_deref().unwrap(),
-            &mut elem_atom,
-            &mut field_atom,
-            &mut array_ndx,
-        ) {
-            ok = false;
-        } else {
-            let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-            let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
-            if !elem.is_empty() {
-                ok = false;
-            } else {
-                let value_ref = def.value.as_deref_mut().unwrap();
-                if !set_interp_field(info, ki, si, &field, array_ndx, value_ref) {
-                    ok = false;
-                }
-            }
-        }
-    }
-    ok
-}
 fn handle_interp_def(
     info: &mut CompatInfo,
     ki: &mut XkbKeymapInfo<'_>,
@@ -2904,9 +2858,30 @@ fn handle_interp_def(
     si.interp.sym = def.sym;
     si.interp.match_0 = pred;
     si.interp.mods = mods;
-    if !handle_interp_body(info, ki, &mut def.def, &mut si) {
-        info.error_count += 1;
-        return false;
+    for body_def in &mut def.def {
+        let mut elem_atom: u32 = 0;
+        let mut field_atom: u32 = 0;
+        let mut array_ndx: Option<&ExprKind> = None;
+        if !expr_resolve_lhs(
+            body_def.name.as_deref().unwrap(),
+            &mut elem_atom,
+            &mut field_atom,
+            &mut array_ndx,
+        ) {
+            info.error_count += 1;
+            return false;
+        }
+        let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
+        let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+        if !elem.is_empty() {
+            info.error_count += 1;
+            return false;
+        }
+        let value_ref = body_def.value.as_deref_mut().unwrap();
+        if !set_interp_field(info, ki, &mut si, &field, array_ndx, value_ref) {
+            info.error_count += 1;
+            return false;
+        }
     }
     if !add_interp(info, ki, &mut si, true) {
         info.error_count += 1;
@@ -4932,7 +4907,10 @@ pub(crate) fn expr_resolve_group(
     if !expr_resolve_integer_lookup(ctx, expr, &mut result, Some(pending), &lookup) {
         return report_mismatch(keymap_info.strict);
     }
-    if result < absolute as i64 || result > keymap_info.features.max_groups as i64 {
+    if result > keymap_info.features.max_groups as i64
+        || (absolute && result < 1)
+        || (!absolute && result < -(keymap_info.features.max_groups as i64))
+    {
         return report_mismatch(keymap_info.strict);
     }
     *group_rtrn = result as u32;
@@ -5259,7 +5237,7 @@ pub(crate) type ActionHandler = fn(
 ) -> u32;
 // Constant true/false ExprDef values used in handle_action_def
 fn const_true_expr() -> ExprKind {
-ExprKind::Boolean(true)
+    ExprKind::Boolean(true)
 }
 fn const_false_expr() -> ExprKind {
     ExprKind::Boolean(false)
@@ -5689,7 +5667,6 @@ fn check_group_field(
     let ret: u32 =
         expr_resolve_group(keymap_info, spec_holder, absolute, &mut idx, &mut pending) as u32;
     if ret as u32 != PARSER_SUCCESS && !pending {
-        report_mismatch(keymap_info.strict);
         return ret;
     }
     if pending {
