@@ -884,7 +884,6 @@ pub(crate) struct LookupEntry {
 
 // ── File type enum ──────────────────────────────────────────────────
 
-pub(crate) const _FILE_TYPE_NUM_ENTRIES: u32 = 7;
 pub(crate) const FILE_TYPE_RULES: u32 = 6;
 pub(crate) const FILE_TYPE_KEYMAP: u32 = 5;
 pub(crate) const FILE_TYPE_GEOMETRY: u32 = 4;
@@ -897,9 +896,6 @@ pub(crate) const FILE_TYPE_KEYCODES: u32 = 0;
 
 // ── Statement type enum ─────────────────────────────────────────────
 
-pub(crate) const _STMT_NUM_VALUES: u32 = 37;
-pub(crate) const STMT_UNKNOWN_COMPOUND: u32 = 36;
-pub(crate) const STMT_UNKNOWN_DECLARATION: u32 = 35;
 pub(crate) const STMT_EXPR_UNARY_PLUS: u32 = 25;
 pub(crate) const STMT_EXPR_INVERT: u32 = 24;
 pub(crate) const STMT_EXPR_NEGATE: u32 = 23;
@@ -925,7 +921,6 @@ pub(crate) const STMT_EXPR_STRING_LITERAL: u32 = 4;
 
 // ── Merge mode enum ─────────────────────────────────────────────────
 
-pub(crate) const _MERGE_MODE_NUM_ENTRIES: u32 = 4;
 pub(crate) const MERGE_REPLACE: u32 = 3;
 pub(crate) const MERGE_OVERRIDE: u32 = 2;
 pub(crate) const MERGE_AUGMENT: u32 = 1;
@@ -935,13 +930,13 @@ pub(crate) const MERGE_DEFAULT: u32 = 0;
 
 #[derive(Clone)]
 
-pub(crate) struct _IncludeStmt {
+pub(crate) struct IncludeStmt {
     pub(crate) merge: u32,
     pub(crate) stmt: String,
     pub(crate) file: String,
     pub(crate) map: String,
     pub(crate) modifier: String,
-    pub(crate) next_incl: Option<Box<_IncludeStmt>>,
+    pub(crate) next_incl: Option<Box<IncludeStmt>>,
 }
 
 // ── Expression types ────────────────────────────────────────────────
@@ -1080,8 +1075,6 @@ pub(crate) struct LedMapDef {
 
 #[derive(Clone)]
 pub(crate) struct UnknownStatement {
-    pub(crate) _stmt_type: u32,
-    pub(crate) _name: String,
 }
 
 // ── Map flags and XkbFile ───────────────────────────────────────────
@@ -1096,7 +1089,7 @@ pub(crate) const MAP_IS_PARTIAL: u32 = 2;
 pub(crate) const MAP_IS_DEFAULT: u32 = 1;
 
 pub(crate) enum Statement {
-    Include(Box<_IncludeStmt>),
+    Include(Box<IncludeStmt>),
     Keycode(Box<KeycodeDef>),
     KeyAlias(Box<KeyAliasDef>),
     Var(Box<VarDef>),

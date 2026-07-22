@@ -639,7 +639,7 @@ fn merge_included_symbols(
 fn handle_include_symbols(
     ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
-    include: &mut _IncludeStmt,
+    include: &mut IncludeStmt,
 ) -> bool {
     let mut included = SymbolsInfo::new(ki);
     if exceeds_include_max_depth(info.include_depth) {
@@ -657,7 +657,7 @@ fn handle_include_symbols(
     } else {
         Some(std::mem::take(&mut include.stmt))
     };
-    let mut current: Option<&_IncludeStmt> = Some(include);
+    let mut current: Option<&IncludeStmt> = Some(include);
     while let Some(stmt) = current {
         let mut next_incl = SymbolsInfo::new(ki);
 
@@ -2321,7 +2321,7 @@ fn merge_included_compat_maps(
 fn handle_include_compat_map(
     ki: &mut XkbKeymapInfo<'_>,
     info: &mut CompatInfo,
-    include: &mut _IncludeStmt,
+    include: &mut IncludeStmt,
 ) -> bool {
     let mut included = CompatInfo::new();
     if exceeds_include_max_depth(info.include_depth) {
@@ -2339,7 +2339,7 @@ fn handle_include_compat_map(
     } else {
         Some(include.stmt.clone())
     };
-    let mut current: Option<&_IncludeStmt> = Some(include);
+    let mut current: Option<&IncludeStmt> = Some(include);
     while let Some(stmt) = current {
         let mut next_incl = CompatInfo::new();
 
@@ -3083,7 +3083,7 @@ fn merge_included_key_types(
 fn handle_include_key_types(
     ki: &mut XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
-    include: &mut _IncludeStmt,
+    include: &mut IncludeStmt,
 ) -> bool {
     let mut included = KeyTypesInfo::new();
     if exceeds_include_max_depth(info.include_depth) {
@@ -3100,7 +3100,7 @@ fn handle_include_key_types(
     } else {
         Some(std::mem::take(&mut include.stmt))
     };
-    let mut current: Option<&_IncludeStmt> = Some(include);
+    let mut current: Option<&IncludeStmt> = Some(include);
     while let Some(stmt) = current {
         let mut next_incl = KeyTypesInfo::new();
 
@@ -3969,7 +3969,6 @@ fn add_key_name(
 fn merge_keycode_stores(
     into: &mut KeyNamesInfo,
     from: &mut KeyNamesInfo,
-    ki: &mut XkbKeymapInfo<'_>,
     merge: u32,
 ) {
     if into.keycodes.low.is_empty()
@@ -4010,7 +4009,7 @@ fn merge_keycode_stores(
                             alias,
                             real: match_0.index,
                         };
-                        if !handle_alias_def(into, ki, &def) {
+                        if !handle_alias_def(into, &def) {
                             into.error_count += 1;
                         }
                     }
@@ -4022,7 +4021,6 @@ fn merge_keycode_stores(
 fn merge_included_keycodes(
     into: &mut KeyNamesInfo,
     from: &mut KeyNamesInfo,
-    ki: &mut XkbKeymapInfo<'_>,
     merge: u32,
 ) {
     if from.error_count > 0 {
@@ -4032,7 +4030,7 @@ fn merge_included_keycodes(
     if into.name.is_none() {
         into.name = from.name.take();
     }
-    merge_keycode_stores(into, from, ki, merge);
+    merge_keycode_stores(into, from, merge);
     if into.num_led_names == 0 {
         into.led_names[..from.num_led_names as usize]
             .copy_from_slice(&from.led_names[..from.num_led_names as usize]);
@@ -4055,7 +4053,7 @@ fn merge_included_keycodes(
 }
 fn handle_include_keycodes(
     info: &mut KeyNamesInfo,
-    include: &mut _IncludeStmt,
+    include: &mut IncludeStmt,
     ki: &mut XkbKeymapInfo<'_>,
 ) -> bool {
     let mut included = KeyNamesInfo::new();
@@ -4069,7 +4067,7 @@ fn handle_include_keycodes(
     } else {
         Some(std::mem::take(&mut include.stmt))
     };
-    let mut current: Option<&_IncludeStmt> = Some(include);
+    let mut current: Option<&IncludeStmt> = Some(include);
     while let Some(stmt) = current {
         let mut next_incl = KeyNamesInfo::new();
 
@@ -4081,11 +4079,11 @@ fn handle_include_keycodes(
         };
         init_key_names_info(&mut next_incl, info.include_depth.wrapping_add(1));
         handle_keycodes_file(&mut next_incl, &mut file, ki);
-        merge_included_keycodes(&mut included, &mut next_incl, ki, stmt.merge);
+        merge_included_keycodes(&mut included, &mut next_incl, stmt.merge);
         drop(file);
         current = stmt.next_incl.as_deref();
     }
-    merge_included_keycodes(info, &mut included, ki, include.merge);
+    merge_included_keycodes(info, &mut included, include.merge);
     info.error_count == 0
 }
 fn handle_keycode_def(
@@ -4099,7 +4097,6 @@ fn handle_keycode_def(
 }
 fn handle_alias_def(
     info: &mut KeyNamesInfo,
-    _ki: &mut XkbKeymapInfo<'_>,
     def: &KeyAliasDef,
 ) -> bool {
     let match_name: KeycodeMatch =
@@ -4126,7 +4123,6 @@ fn handle_alias_def(
     keycode_store_insert_alias(&mut info.keycodes, def.alias, def.real)
 }
 fn handle_key_name_var(
-    _info: &mut KeyNamesInfo,
     ki: &mut XkbKeymapInfo<'_>,
     stmt: &VarDef,
 ) -> bool {
@@ -4197,10 +4193,10 @@ fn handle_keycodes_file(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut Xk
                     ok = handle_keycode_def(info, kc);
                 }
                 Statement::KeyAlias(ka) => {
-                    ok = handle_alias_def(info, ki, ka);
+                    ok = handle_alias_def(info, ka);
                 }
                 Statement::Var(var) => {
-                    ok = handle_key_name_var(info, ki, var);
+                    ok = handle_key_name_var(ki, var);
                 }
                 Statement::LedName(ln) => {
                     ok = handle_led_name_def(info, ln);
@@ -4282,7 +4278,6 @@ fn copy_keycode_name_lut(keymap: &mut XkbKeymap, keycodes: &mut KeycodeStore) ->
         }
     }
     if names_len > 0 {
-        // Move the Vec directly to keymap
         keymap.key_names = std::mem::take(&mut keycodes.names);
     } else {
         keymap.key_names = Vec::new();

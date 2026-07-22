@@ -10,7 +10,7 @@ use super::super::shared_types::{
 };
 
 use super::super::shared_types::{
-    ExprKind, _IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
+    ExprKind, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
     LedMapDef, LedNameDef, ModMapDef, Statement, SymbolsDef, UnknownStatement,
     VModDef, VarDef, XkbFile, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
     FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
@@ -18,7 +18,7 @@ use super::super::shared_types::{
     MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL,
     MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_EXPR_ADD, STMT_EXPR_ASSIGN,
     STMT_EXPR_DIVIDE, STMT_EXPR_INVERT, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
-    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
+    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS
 };
 
 use super::super::keymap::action_type_text;
@@ -1375,17 +1375,13 @@ fn execute_reduction<'a>(
             // Drop expr values (geometry not supported)
             let _ = yyvs[sp - 3].take_expr();
             let _ = yyvs[sp - 1].take_expr();
-            let sval = yyvs[sp - 4].as_sval();
-            let name_str = sval.as_str();
-            *yyval = YYValue::Unknown(unknown_statement_create(STMT_UNKNOWN_DECLARATION, name_str));
+            *yyval = YYValue::Unknown(unknown_statement_create());
         }
         92 => {
             // UnknownCompoundStatementDecl: Ident Lhs OBRACE VarDeclList CBRACE SEMI
             let _ = yyvs[sp - 4].take_expr();
             let _ = yyvs[sp - 2].take_var_list();
-            let sval = yyvs[sp - 5].as_sval();
-            let name_str = sval.as_str();
-            *yyval = YYValue::Unknown(unknown_statement_create(STMT_UNKNOWN_COMPOUND, name_str));
+            *yyval = YYValue::Unknown(unknown_statement_create());
         }
         // Rules 93-123: Geometry rules → all produce None (geometry not supported)
         93 | 94 | 95 | 96 | 97 | 98 | 100 | 102 | 103 | 104 | 105 | 107 | 108 | 109 | 111 | 112
@@ -2098,10 +2094,8 @@ pub(crate) fn led_name_create(ndx: i64, name: Option<Box<ExprKind>>) -> Box<LedN
     })
 }
 
-pub(crate) fn unknown_statement_create(type_0: u32, name: &str) -> Box<UnknownStatement> {
+pub(crate) fn unknown_statement_create() -> Box<UnknownStatement> {
     Box::new(UnknownStatement {
-        _stmt_type: type_0,
-        _name: name.to_string(),
     })
 }
 
@@ -2109,8 +2103,8 @@ pub(crate) fn include_create(
     _ctx: &mut XkbContext,
     stmt_str: &str,
     mut merge: u32,
-) -> Option<Box<_IncludeStmt>> {
-    let mut items: Vec<Box<_IncludeStmt>> = Vec::new();
+) -> Option<Box<IncludeStmt>> {
+    let mut items: Vec<Box<IncludeStmt>> = Vec::new();
     let mut remaining: Option<&str> = Some(stmt_str);
 
     loop {
@@ -2131,7 +2125,7 @@ pub(crate) fn include_create(
             continue;
         }
 
-        items.push(Box::new(_IncludeStmt {
+        items.push(Box::new(IncludeStmt {
             merge,
             stmt: String::new(),
             file: parsed.file,
@@ -2150,7 +2144,7 @@ pub(crate) fn include_create(
     }
 
     // Build linked list in reverse
-    let mut first: Option<Box<_IncludeStmt>> = None;
+    let mut first: Option<Box<IncludeStmt>> = None;
     for mut item in items.into_iter().rev() {
         item.next_incl = first;
         first = Some(item);
@@ -3311,7 +3305,7 @@ pub(crate) fn exceeds_include_max_depth(include_depth: u32) -> bool {
 }
 pub(crate) fn process_include_file(
     ctx: &mut XkbContext,
-    stmt: &_IncludeStmt,
+    stmt: &IncludeStmt,
     file_type: u32,
 ) -> Option<Box<XkbFile>> {
     let mut xkb_file: Option<Box<XkbFile>> = None;
