@@ -619,15 +619,15 @@ impl XkbKeymap {
         layout: u32,
         level: u32,
     ) -> Option<&'a XkbLevel> {
-        let layout = super::keymap::xkb_wrap_group_into_range(
+        let layout = match super::keymap::xkb_wrap_group_into_range(
             layout as i32,
             key.num_groups,
             key.out_of_range_group_policy,
             key.out_of_range_group_number,
-        );
-        if layout == XKB_LAYOUT_INVALID {
-            return None;
-        }
+        ) {
+            Some(l) => l,
+            None => return None,
+        };
         if level >= self.key_num_levels(key, layout) {
             return None;
         }

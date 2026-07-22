@@ -510,34 +510,36 @@ pub(crate) fn xkb_wrap_group_into_range(
     num_groups: u32,
     out_of_range_group_policy: u32,
     out_of_range_group_number: u32,
-) -> u32 {
+) -> Option<u32> {
     if num_groups == 0 {
-        return XKB_LAYOUT_INVALID;
+        return None;
     }
     if group >= 0_i32 && (group as u32) < num_groups {
-        return group as u32;
+        return Some(group as u32);
     }
     match out_of_range_group_policy {
         2 => {
             if out_of_range_group_number >= num_groups {
-                return 0;
+                return Some(0);
             }
-            out_of_range_group_number
+            Some(out_of_range_group_number)
         }
         1 => {
             if group < 0_i32 {
-                0_u32
+                Some(0_u32)
             } else {
-                num_groups.wrapping_sub(1)
+                Some(num_groups.wrapping_sub(1))
             }
         }
         _ => {
             let rem: i32 = group % num_groups as i32;
-            (if rem >= 0_i32 {
-                rem
-            } else {
-                rem + num_groups as i32
-            }) as u32
+            Some(
+                (if rem >= 0_i32 {
+                    rem
+                } else {
+                    rem + num_groups as i32
+                }) as u32,
+            )
         }
     }
 }
@@ -1837,7 +1839,7 @@ pub(crate) fn xkb_state_key_get_level(state: &XkbState, kc: u32, layout: u32) ->
     }
 }
 #[inline]
-fn state_key_get_layout(state: &XkbState, key: &XkbKey) -> u32 {
+fn state_key_get_layout(state: &XkbState, key: &XkbKey) -> Option<u32> {
     xkb_wrap_group_into_range(
         state.components.group as i32,
         key.num_groups,
@@ -1846,17 +1848,19 @@ fn state_key_get_layout(state: &XkbState, key: &XkbKey) -> u32 {
     )
 }
 
-pub(crate) fn xkb_state_key_get_layout(state: &XkbState, kc: u32) -> u32 {
-    match state.keymap().get_key(kc) {
-        Some(key) => state_key_get_layout(state, key),
-        None => XKB_LAYOUT_INVALID,
-    }
+pub(crate) fn xkb_state_key_get_layout(state: &XkbState, kc: u32) -> Option<u32> {
+    state
+        .keymap()
+        .get_key(kc)
+        .and_then(|key| state_key_get_layout(state, key))
 }
 
 static DUMMY_ACTION: XkbAction = XkbAction::None;
 
 fn xkb_key_get_actions<'a>(state: &'a XkbState, key: &'a XkbKey) -> &'a [XkbAction] {
-    let layout: u32 = state_key_get_layout(state, key);
+    let Some(layout) = state_key_get_layout(state, key) else {
+        return std::slice::from_ref(&DUMMY_ACTION);
+    };
     let level: u32 = state_key_get_level(state, key, layout);
     if level != XKB_LEVEL_INVALID {
         let wrapped_layout = xkb_wrap_group_into_range(
@@ -1865,7 +1869,7 @@ fn xkb_key_get_actions<'a>(state: &'a XkbState, key: &'a XkbKey) -> &'a [XkbActi
             key.out_of_range_group_policy,
             key.out_of_range_group_number,
         );
-        if wrapped_layout != XKB_LAYOUT_INVALID {
+        if let Some(wrapped_layout) = wrapped_layout {
             let keymap = state.keymap();
             if level < keymap.key_num_levels(key, wrapped_layout) {
                 let actions = &key.groups[wrapped_layout as usize].levels[level as usize].actions;
@@ -2626,12 +2630,9 @@ fn xkb_state_update_derived(state: &mut XkbState) {
         keymap.num_groups,
         state.controls.out_of_range_group_policy,
         state.controls.out_of_range_redirect_group,
-    );
-    state.components.locked_group = (if wrapped == XKB_LAYOUT_INVALID {
-        0_u32
-    } else {
-        wrapped
-    }) as i32;
+    )
+    .unwrap_or(0);
+    state.components.locked_group = wrapped as i32;
     wrapped = xkb_wrap_group_into_range(
         state.components.base_group
             + state.components.latched_group
@@ -2639,12 +2640,9 @@ fn xkb_state_update_derived(state: &mut XkbState) {
         keymap.num_groups,
         state.controls.out_of_range_group_policy,
         state.controls.out_of_range_redirect_group,
-    );
-    state.components.group = if wrapped == XKB_LAYOUT_INVALID {
-        0_u32
-    } else {
-        wrapped
-    };
+    )
+    .unwrap_or(0);
+    state.components.group = wrapped;
     xkb_state_led_update_all(state);
 }
 pub(crate) fn xkb_state_update_key(state: &mut XkbState, kc: u32, direction: u32) -> u32 {
@@ -2857,28 +2855,28 @@ fn should_do_caps_transformation(state: &XkbState, kc: u32) -> bool {
 }
 
 pub(crate) fn xkb_state_key_get_syms(state: &XkbState, kc: u32) -> &[u32] {
-    let layout: u32 = xkb_state_key_get_layout(state, kc);
-    if layout != XKB_LAYOUT_INVALID {
-        let level = xkb_state_key_get_level(state, kc, layout);
-        if level != XKB_LEVEL_INVALID {
-            let keymap = state.keymap();
-            if let Some(key) = keymap.get_key(kc) {
-                if let Some(leveli) = keymap.get_key_level(key, layout, level) {
-                    let num_syms = leveli.syms.len();
-                    if num_syms > 0 {
-                        if should_do_caps_transformation(state, kc) {
-                            if num_syms > 1 {
-                                return if leveli.has_upper {
-                                    &leveli.syms[num_syms..]
-                                } else {
-                                    &leveli.syms[..num_syms]
-                                };
+    let Some(layout) = xkb_state_key_get_layout(state, kc) else {
+        return &[];
+    };
+    let level = xkb_state_key_get_level(state, kc, layout);
+    if level != XKB_LEVEL_INVALID {
+        let keymap = state.keymap();
+        if let Some(key) = keymap.get_key(kc) {
+            if let Some(leveli) = keymap.get_key_level(key, layout, level) {
+                let num_syms = leveli.syms.len();
+                if num_syms > 0 {
+                    if should_do_caps_transformation(state, kc) {
+                        if num_syms > 1 {
+                            return if leveli.has_upper {
+                                &leveli.syms[num_syms..]
                             } else {
-                                return std::slice::from_ref(&leveli.upper);
-                            }
+                                &leveli.syms[..num_syms]
+                            };
                         } else {
-                            return &leveli.syms[..num_syms];
+                            return std::slice::from_ref(&leveli.upper);
                         }
+                    } else {
+                        return &leveli.syms[..num_syms];
                     }
                 }
             }
@@ -2943,10 +2941,9 @@ pub(crate) fn xkb_state_mod_index_is_active(state: &XkbState, idx: u32, type_0: 
 }
 
 fn key_get_consumed(state: &XkbState, key: &XkbKey, mode: u32) -> u32 {
-    let group: u32 = xkb_state_key_get_layout(state, key.keycode);
-    if group == XKB_LAYOUT_INVALID {
+    let Some(group) = xkb_state_key_get_layout(state, key.keycode) else {
         return 0;
-    }
+    };
     let mut preserve: u32 = 0;
     let mut consumed: u32 = 0;
     let matching_entry = get_entry_for_key_state(state, key, group);
