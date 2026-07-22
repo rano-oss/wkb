@@ -805,10 +805,6 @@ pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
     ctx
 }
 
-pub(crate) fn xkb_context_get_log_verbosity(ctx: &XkbContext) -> i32 {
-    ctx.log_verbosity
-}
-
 // --- Merged from context_priv.rs ---
 
 pub(crate) fn xkb_context_getenv(name: &str) -> Result<String, VarError> {

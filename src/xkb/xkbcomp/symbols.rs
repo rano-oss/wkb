@@ -181,7 +181,7 @@ fn init_symbols_info(
     info.max_groups = ki.features.max_groups;
     init_key_info_with_atom(
         &mut info.default_key,
-        atom_intern(&mut ki.ctx_mut().atom_table, b"*"),
+        atom_intern(&mut ki.keymap.ctx.atom_table, b"*"),
     );
     init_actions_info(&*ki.keymap, &mut info.default_actions);
     init_vmods(&mut info.mods, mods, include_depth > 0);
@@ -494,7 +494,7 @@ fn merge_keys(
     let mut i: u32;
 
     let mut collide: u32 = 0;
-    let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
+    let verbosity: i32 = ki.keymap.ctx.log_verbosity;
     let clobber: bool = from.merge != MERGE_AUGMENT;
     let report: bool = same_file && verbosity > 0 || verbosity > 9;
     if from.merge == MERGE_REPLACE {
@@ -637,7 +637,7 @@ fn merge_included_symbols(
         into.error_count += from.error_count;
         return;
     }
-    merge_mod_sets(ki.ctx_mut(), &mut into.mods, &from.mods, merge);
+    merge_mod_sets(&mut ki.keymap.ctx, &mut into.mods, &from.mods, merge);
     if into.name.is_none() {
         into.name = from.name.take();
     }
@@ -707,7 +707,7 @@ fn handle_include_symbols(
         let mut next_incl = SymbolsInfo::new(ki);
 
         let file: Option<Box<XkbFile>> =
-            process_include_file(ki.ctx_mut(), stmt, FILE_TYPE_SYMBOLS);
+            process_include_file(&mut ki.keymap.ctx, stmt, FILE_TYPE_SYMBOLS);
         let Some(mut file) = file else {
             info.error_count += 10;
             return false;
@@ -1121,7 +1121,7 @@ fn set_symbols_field(
         SymbolsField::Type => {
             let mut ndx: u32 = 0;
             let mut val: u32 = XKB_ATOM_NONE;
-            if !expr_resolve_string(ki.ctx(), value_opt.as_deref().unwrap(), &mut val) {
+            if !expr_resolve_string(value_opt.as_deref().unwrap(), &mut val) {
                 return false;
             }
             if array_ndx.is_none() {
@@ -1157,7 +1157,7 @@ fn set_symbols_field(
         SymbolsField::Vmods => {
             let mut mask: u32 = 0;
             let val = value_opt.as_deref().unwrap();
-            if !expr_resolve_mod_mask(ki.ctx(), val, MOD_VIRT, &info.mods, &mut mask) {
+            if !expr_resolve_mod_mask(&ki.keymap.ctx, val, MOD_VIRT, &info.mods, &mut mask) {
                 return false;
             }
             keyi.vmodmap = mask;
@@ -1219,7 +1219,7 @@ fn set_symbols_field(
         SymbolsField::Repeat => {
             let mut val_0: u32 = 0;
             if !expr_resolve_enum(
-                ki.ctx(),
+                &ki.keymap.ctx,
                 value_opt.as_deref().unwrap(),
                 &mut val_0,
                 &REPEAT_ENTRIES,
@@ -1231,7 +1231,7 @@ fn set_symbols_field(
         }
         SymbolsField::GroupsWrap => {
             let mut set: bool = false;
-            if !expr_resolve_boolean(ki.ctx(), value_opt.as_deref().unwrap(), &mut set) {
+            if !expr_resolve_boolean(&ki.keymap.ctx, value_opt.as_deref().unwrap(), &mut set) {
                 return false;
             }
             keyi.out_of_range_group_policy = if set {
@@ -1243,7 +1243,7 @@ fn set_symbols_field(
         }
         SymbolsField::GroupsClamp => {
             let mut set_0: bool = false;
-            if !expr_resolve_boolean(ki.ctx(), value_opt.as_deref().unwrap(), &mut set_0) {
+            if !expr_resolve_boolean(&ki.keymap.ctx, value_opt.as_deref().unwrap(), &mut set_0) {
                 return false;
             }
             keyi.out_of_range_group_policy = if set_0 {
@@ -1305,7 +1305,7 @@ fn set_group_name(
         return false;
     }
     let mut name: u32 = XKB_ATOM_NONE;
-    if !expr_resolve_string(ki.ctx(), value, &mut name) {
+    if !expr_resolve_string(value, &mut name) {
         return false;
     }
     let group_to_use: u32;
@@ -1347,8 +1347,8 @@ fn handle_global_var(
     ) {
         return false;
     }
-    let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-    let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+    let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom).to_owned();
+    let field = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
     let elem: &str = &elem;
     let field: &str = &field;
     if !elem.is_empty() && elem.eq_ignore_ascii_case("key") {
@@ -1362,7 +1362,7 @@ fn handle_global_var(
             init.overlays_clear = false;
             init
         };
-        init_key_info_with_atom(&mut temp, atom_intern(&mut ki.ctx_mut().atom_table, b"*"));
+        init_key_info_with_atom(&mut temp, atom_intern(&mut ki.keymap.ctx.atom_table, b"*"));
         temp.merge = if temp.merge == MERGE_REPLACE {
             MERGE_OVERRIDE
         } else {
@@ -1445,8 +1445,8 @@ fn handle_symbols_body(
                 &mut field_atom,
                 &mut array_ndx_opt,
             );
-            let elem = atom_text(&ki.ctx().atom_table, elem_atom);
-            field_owned = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+            let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom);
+            field_owned = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
             field = &field_owned;
             if ok && !elem.is_empty() {
                 ok = false;
@@ -1513,7 +1513,7 @@ fn handle_mod_map_def(
     };
     let ndx: u32;
     let mut ok: bool;
-    let modifier_name: &str = atom_text(&ki.ctx().atom_table, def.modifier);
+    let modifier_name: &str = atom_text(&ki.keymap.ctx.atom_table, def.modifier);
     if modifier_name.eq_ignore_ascii_case("none") {
         ndx = XKB_MOD_NONE;
     } else {
@@ -1570,7 +1570,7 @@ fn handle_symbols_file(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, file:
                     ok = handle_global_var(ki, info, var);
                 }
                 Statement::VMod(vmod) => {
-                    ok = handle_vmod_def(ki.ctx_mut(), &mut info.mods, vmod);
+                    ok = handle_vmod_def(&mut ki.keymap.ctx, &mut info.mods, vmod);
                 }
                 Statement::ModMap(mm) => {
                     ok = handle_mod_map_def(ki, info, mm);
@@ -1982,7 +1982,7 @@ fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) -> boo
         }
     }
     info.keys = keys;
-    if xkb_context_get_log_verbosity(&keymap.ctx) > 3_i32 {
+    if *&keymap.ctx.log_verbosity > 3 {
         let start_idx = if keymap.num_keys_low == 0 {
             0_u32
         } else {
@@ -2015,7 +2015,6 @@ pub(crate) fn compile_symbols(
     }
     false
 }
-use super::super::keymap::xkb_context_get_log_verbosity;
 use super::super::keysym::xkb_keysym_to_upper;
 use super::super::shared_types::*;
 pub(crate) struct CompatInfo {
@@ -2145,7 +2144,7 @@ fn merge_interp(
     same_file: bool,
 ) -> bool {
     let clobber: bool = new.merge != MERGE_AUGMENT;
-    let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
+    let verbosity: i32 = ki.keymap.ctx.log_verbosity;
     let report: bool = same_file && verbosity > 0 || verbosity > 9;
     let mut collide: u32 = 0;
     if new.merge == MERGE_REPLACE {
@@ -2251,7 +2250,7 @@ fn resolve_state_and_predicate(
         let ExprKind::Action { name, args } = &expr else {
             unreachable!()
         };
-        let pred_txt: &str = atom_text(&ki.ctx().atom_table, *name);
+        let pred_txt: &str = atom_text(&ki.keymap.ctx.atom_table, *name);
         let mut pred: u32 = 0;
         if !lookup_string(&SYM_INTERPRET_MATCH_MASK_NAMES, pred_txt, &mut pred)
             || args.is_empty()
@@ -2265,7 +2264,7 @@ fn resolve_state_and_predicate(
         let ExprKind::Ident(ident_val) = &expr else {
             unreachable!()
         };
-        let pred_txt_0: &str = atom_text(&ki.ctx().atom_table, *ident_val);
+        let pred_txt_0: &str = atom_text(&ki.keymap.ctx.atom_table, *ident_val);
         if !pred_txt_0.is_empty() && pred_txt_0.eq_ignore_ascii_case("any") {
             *pred_rtrn = MATCH_ANY;
             *mods_rtrn = MOD_REAL_MASK_ALL;
@@ -2275,7 +2274,7 @@ fn resolve_state_and_predicate(
     } else {
         resolve_expr = expr;
     }
-    expr_resolve_mod_mask(ki.ctx(), resolve_expr, MOD_REAL, &info.mods, mods_rtrn)
+    expr_resolve_mod_mask(&ki.keymap.ctx, resolve_expr, MOD_REAL, &info.mods, mods_rtrn)
 }
 
 fn merge_led_map(
@@ -2287,7 +2286,7 @@ fn merge_led_map(
 ) -> bool {
     let mut collide: u32;
     let clobber: bool = new.merge != MERGE_AUGMENT;
-    let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
+    let verbosity: i32 = ki.keymap.ctx.log_verbosity;
     let report: bool = same_file && verbosity > 0 || verbosity > 9;
     if old.led.mods.mods == new.led.mods.mods
         && old.led.pending_groups == new.led.pending_groups
@@ -2377,7 +2376,7 @@ fn merge_included_compat_maps(
         into.error_count += from.error_count;
         return;
     }
-    merge_mod_sets(ki.ctx_mut(), &mut into.mods, &from.mods, merge);
+    merge_mod_sets(&mut ki.keymap.ctx, &mut into.mods, &from.mods, merge);
     if into.name.is_none() {
         into.name = from.name.take();
     }
@@ -2430,7 +2429,7 @@ fn handle_include_compat_map(
     while let Some(stmt) = current {
         let mut next_incl = CompatInfo::new();
 
-        let file: Option<Box<XkbFile>> = process_include_file(ki.ctx_mut(), stmt, FILE_TYPE_COMPAT);
+        let file: Option<Box<XkbFile>> = process_include_file(&mut ki.keymap.ctx, stmt, FILE_TYPE_COMPAT);
         let Some(mut file) = file else {
             info.error_count += 10;
             return false;
@@ -2574,7 +2573,7 @@ fn set_interp_field(
                 return false;
             }
             let mut ndx: u32 = 0;
-            if !expr_resolve_mod(ki.ctx(), value, MOD_VIRT, &info.mods, &mut ndx) {
+            if !expr_resolve_mod(&ki.keymap.ctx, value, MOD_VIRT, &info.mods, &mut ndx) {
                 return false;
             }
             si.interp.virtual_mod = ndx;
@@ -2585,7 +2584,7 @@ fn set_interp_field(
             if array_ndx.is_some() {
                 return false;
             }
-            if !expr_resolve_boolean(ki.ctx(), value, &mut set) {
+            if !expr_resolve_boolean(&ki.keymap.ctx, value, &mut set) {
                 return false;
             }
             si.interp.repeat = set;
@@ -2597,7 +2596,7 @@ fn set_interp_field(
             if array_ndx.is_some() {
                 return false;
             }
-            if !expr_resolve_enum(ki.ctx(), value, &mut val, &USE_MOD_MAP_VALUE_NAMES) {
+            if !expr_resolve_enum(&ki.keymap.ctx, value, &mut val, &USE_MOD_MAP_VALUE_NAMES) {
                 return false;
             }
             si.interp.level_one_only = val != 0;
@@ -2666,7 +2665,7 @@ fn set_led_map_field(
                 return false;
             }
             if !expr_resolve_mod_mask(
-                ki.ctx(),
+                &ki.keymap.ctx,
                 value,
                 MOD_BOTH,
                 &info.mods,
@@ -2708,7 +2707,7 @@ fn set_led_map_field(
             }
             let offset: u8 = ki.features.controls_name_offset;
             if !expr_resolve_mask(
-                ki.ctx(),
+                &ki.keymap.ctx,
                 value,
                 &mut mask_0,
                 &CTRL_MASK_NAMES[offset as usize..],
@@ -2724,7 +2723,7 @@ fn set_led_map_field(
             if array_ndx.is_some() {
                 return false;
             }
-            if !expr_resolve_mask(ki.ctx(), value, &mut mask_1, &MOD_COMPONENT_MASK_NAMES) {
+            if !expr_resolve_mask(&ki.keymap.ctx, value, &mut mask_1, &MOD_COMPONENT_MASK_NAMES) {
                 return false;
             }
             ledi.led.which_mods = mask_1;
@@ -2734,7 +2733,7 @@ fn set_led_map_field(
             if array_ndx.is_some() {
                 return false;
             }
-            if !expr_resolve_mask(ki.ctx(), value, &mut mask_2, &GROUP_COMPONENT_MASK_NAMES) {
+            if !expr_resolve_mask(&ki.keymap.ctx, value, &mut mask_2, &GROUP_COMPONENT_MASK_NAMES) {
                 return false;
             }
             ledi.led.which_groups = mask_2;
@@ -2759,8 +2758,8 @@ fn handle_compat_global_var(
     ) {
         ret = false;
     } else {
-        let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-        let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+        let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom).to_owned();
+        let field = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
         if !elem.is_empty() && elem.eq_ignore_ascii_case("interpret") {
             let mut temp: SymInterpInfo = SymInterpInfo {
                 defined: 0_u32,
@@ -2869,8 +2868,8 @@ fn handle_interp_def(
             info.error_count += 1;
             return false;
         }
-        let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-        let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+        let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom).to_owned();
+        let field = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
         if !elem.is_empty() {
             info.error_count += 1;
             return false;
@@ -2908,8 +2907,8 @@ fn handle_led_map_def(
         ) {
             ok = false;
         } else {
-            let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-            let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+            let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom).to_owned();
+            let field = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
             if !elem.is_empty() {
                 ok = false;
             } else if !set_led_map_field(info, ki, &mut ledi, &field, array_ndx, &mut var.value) {
@@ -2945,7 +2944,7 @@ fn handle_compat_map_file(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo, fil
                     ok = handle_compat_global_var(info, ki, var);
                 }
                 Statement::VMod(vmod) => {
-                    ok = handle_vmod_def(ki.ctx_mut(), &mut info.mods, vmod);
+                    ok = handle_vmod_def(&mut ki.keymap.ctx, &mut info.mods, vmod);
                 }
                 Statement::Unknown(_unk) => {
                     ok = ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
@@ -3127,7 +3126,7 @@ fn add_key_type(
     new: &mut KeyTypeInfo,
     _same_file: bool,
 ) -> bool {
-    let _verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
+    let _verbosity: i32 = ki.keymap.ctx.log_verbosity;
     // FindMatchingKeyType inlined
     let old_idx = info.types.iter().position(|t| t.name == new.name);
     if let Some(idx) = old_idx {
@@ -3153,7 +3152,7 @@ fn merge_included_key_types(
         into.error_count += from.error_count;
         return;
     }
-    merge_mod_sets(ki.ctx_mut(), &mut into.mods, &from.mods, merge);
+    merge_mod_sets(&mut ki.keymap.ctx, &mut into.mods, &from.mods, merge);
     if into.name.is_none() {
         into.name = from.name.take();
     }
@@ -3194,7 +3193,7 @@ fn handle_include_key_types(
     while let Some(stmt) = current {
         let mut next_incl = KeyTypesInfo::new();
 
-        let file: Option<Box<XkbFile>> = process_include_file(ki.ctx_mut(), stmt, FILE_TYPE_TYPES);
+        let file: Option<Box<XkbFile>> = process_include_file(&mut ki.keymap.ctx, stmt, FILE_TYPE_TYPES);
         let Some(mut file) = file else {
             info.error_count += 10;
             return false;
@@ -3223,7 +3222,7 @@ fn set_modifiers(
     if array_ndx.is_some() {
         return false;
     }
-    if !expr_resolve_mod_mask(ki.ctx(), value, MOD_BOTH, &info.mods, &mut mods) {
+    if !expr_resolve_mod_mask(&ki.keymap.ctx, value, MOD_BOTH, &info.mods, &mut mods) {
         return false;
     }
     if type_0.defined & TYPE_FIELD_MASK != 0 {
@@ -3283,7 +3282,7 @@ fn set_map_entry(
         return false;
     }
     if !expr_resolve_mod_mask(
-        ki.ctx(),
+        &ki.keymap.ctx,
         array_ndx.unwrap(),
         MOD_BOTH,
         &info.mods,
@@ -3294,7 +3293,7 @@ fn set_map_entry(
     if entry.mods.mods & !type_0.mods != 0 {
         entry.mods.mods &= type_0.mods;
     }
-    if !expr_resolve_level(ki.ctx(), value, &mut entry.level) {
+    if !expr_resolve_level(&ki.keymap.ctx, value, &mut entry.level) {
         return false;
     }
     entry.preserve.mods = 0;
@@ -3344,7 +3343,7 @@ fn set_preserve(
     }
     let mut mods: u32 = 0;
     if !expr_resolve_mod_mask(
-        ki.ctx(),
+        &ki.keymap.ctx,
         array_ndx.unwrap(),
         MOD_BOTH,
         &info.mods,
@@ -3356,7 +3355,7 @@ fn set_preserve(
         mods &= type_0.mods;
     }
     let mut preserve_mods: u32 = 0;
-    if !expr_resolve_mod_mask(ki.ctx(), value, MOD_BOTH, &info.mods, &mut preserve_mods) {
+    if !expr_resolve_mod_mask(&ki.keymap.ctx, value, MOD_BOTH, &info.mods, &mut preserve_mods) {
         return false;
     }
     if preserve_mods & !mods != 0 {
@@ -3399,11 +3398,11 @@ fn set_level_name(
         return false;
     }
     let mut level: u32 = 0;
-    if !expr_resolve_level(ki.ctx(), array_ndx.unwrap(), &mut level) {
+    if !expr_resolve_level(&ki.keymap.ctx, array_ndx.unwrap(), &mut level) {
         return false;
     }
     let mut level_name: u32 = XKB_ATOM_NONE;
-    if !expr_resolve_string(ki.ctx(), value, &mut level_name) {
+    if !expr_resolve_string(value, &mut level_name) {
         return false;
     }
     add_level_name(ki, info, type_0, level, level_name, true)
@@ -3451,8 +3450,8 @@ fn handle_key_type_body(
         if !expr_resolve_lhs(name_ref, &mut elem_atom, &mut field_atom, &mut array_ndx) {
             ok = false;
         } else {
-            let elem = atom_text(&ki.ctx().atom_table, elem_atom).to_owned();
-            let field = atom_text(&ki.ctx().atom_table, field_atom).to_owned();
+            let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom).to_owned();
+            let field = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
             if !elem.is_empty() {
                 if !elem.eq_ignore_ascii_case("type") {
                     ok = false;
@@ -3475,8 +3474,8 @@ fn handle_type_global_var(ki: &XkbKeymapInfo<'_>, _info: &mut KeyTypesInfo, stmt
     if !expr_resolve_lhs(name_ref, &mut elem_atom, &mut field_atom, &mut array_ndx) {
         return false;
     }
-    let elem = atom_text(&ki.ctx().atom_table, elem_atom);
-    let field = atom_text(&ki.ctx().atom_table, field_atom);
+    let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom);
+    let field = atom_text(&ki.keymap.ctx.atom_table, field_atom);
     if !elem.is_empty() && elem.eq_ignore_ascii_case("type") {
         return true;
     } else if !elem.is_empty() {
@@ -3522,7 +3521,7 @@ fn handle_key_types_file(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, fi
                     ok = handle_type_global_var(ki, info, var);
                 }
                 Statement::VMod(vmod) => {
-                    ok = handle_vmod_def(ki.ctx_mut(), &mut info.mods, vmod);
+                    ok = handle_vmod_def(&mut ki.keymap.ctx, &mut info.mods, vmod);
                 }
                 Statement::Unknown(_unk) => {
                     ok = ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
@@ -4081,8 +4080,8 @@ fn add_key_name(
         }
         let clobber_0: bool = merge != MERGE_AUGMENT;
         if report {
-            let kname: &str = atom_text(&ki.ctx().atom_table, name);
-            let old_kname: &str = atom_text(&ki.ctx().atom_table, old_name);
+            let kname: &str = atom_text(&ki.keymap.ctx.atom_table, name);
+            let old_kname: &str = atom_text(&ki.keymap.ctx.atom_table, old_name);
             let _use_1: &str = if clobber_0 { kname } else { old_kname };
             let _ignore_0: &str = if clobber_0 { old_kname } else { kname };
         }
@@ -4206,7 +4205,7 @@ fn handle_include_keycodes(
         let mut next_incl = KeyNamesInfo::new();
 
         let file: Option<Box<XkbFile>> =
-            process_include_file(ki.ctx_mut(), stmt, FILE_TYPE_KEYCODES);
+            process_include_file(&mut ki.keymap.ctx, stmt, FILE_TYPE_KEYCODES);
         let Some(mut file) = file else {
             info.error_count += 10;
             return false;
@@ -4273,8 +4272,8 @@ fn handle_key_name_var(
     if !expr_resolve_lhs(name_ref, &mut elem_atom, &mut field_atom, &mut array_ndx) {
         return false;
     }
-    let elem = atom_text(&ki.ctx().atom_table, elem_atom);
-    let field = atom_text(&ki.ctx().atom_table, field_atom);
+    let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom);
+    let field = atom_text(&ki.keymap.ctx.atom_table, field_atom);
     if !elem.is_empty() {
         return ki.strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
     }
@@ -4286,7 +4285,7 @@ fn handle_key_name_var(
     }
     let mut val: i64 = 0_i64;
     let value_ref = stmt.value.as_deref().unwrap();
-    if !expr_resolve_integer(ki.ctx(), value_ref, &mut val) || val < 0_i64 || val > u32::MAX as i64
+    if !expr_resolve_integer(&ki.keymap.ctx, value_ref, &mut val) || val < 0_i64 || val > u32::MAX as i64
     {
         return ki.strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
     }
@@ -4304,7 +4303,7 @@ fn handle_led_name_def(
     }
     let mut name: u32 = XKB_ATOM_NONE;
     let name_expr = def.name.as_deref().unwrap();
-    if !expr_resolve_string(ki.ctx(), name_expr, &mut name) {
+    if !expr_resolve_string(name_expr, &mut name) {
         info.error_count += 1;
         return false;
     }
@@ -4324,7 +4323,7 @@ fn handle_led_name_def(
 fn handle_keycodes_file(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut XkbKeymapInfo<'_>) {
     {
         let mut ok: bool;
-        let verbosity: i32 = xkb_context_get_log_verbosity(ki.ctx());
+        let verbosity: i32 = ki.keymap.ctx.log_verbosity;
         let report_same_file: bool = verbosity > 0;
         let report_include: bool = verbosity > 2;
         info.name = if file.name.is_empty() {
@@ -4521,7 +4520,6 @@ pub(crate) struct NamedIntegerPattern<'a> {
     pub(crate) entries: &'a [LookupEntry],
     pub(crate) pending_entries: &'a [LookupEntry],
     pub(crate) is_mask: bool,
-    pub(crate) _error_id: u32,
 }
 
 static LEVEL_NAME_PATTERN_ENTRIES: [LookupEntry; 1] = [LookupEntry { name: "", value: 0 }];
@@ -4894,10 +4892,9 @@ pub(crate) fn expr_resolve_group(
         entries: &keymap_info.lookup.group_index_names,
         pending_entries: &PENDING_GROUP_INDEX_NAMES,
         is_mask: false,
-        _error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
     };
     let lookup = IdentLookup::NamedPattern(&group_name_pattern);
-    let ctx = keymap_info.ctx();
+    let ctx = &keymap_info.keymap.ctx;
     let mut result: i64 = 0_i64;
     if !expr_resolve_integer_lookup(ctx, expr, &mut result, Some(pending), &lookup) {
         return report_mismatch(keymap_info.strict);
@@ -4920,7 +4917,6 @@ pub(crate) fn expr_resolve_level(ctx: &XkbContext, expr: &ExprKind, level_rtrn: 
         entries: &LEVEL_NAME_PATTERN_ENTRIES,
         pending_entries: &LEVEL_NAME_PATTERN_ENTRIES,
         is_mask: false,
-        _error_id: XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL,
     };
     let lookup = IdentLookup::NamedPattern(&pattern);
     let mut result: i64 = 0_i64;
@@ -4939,7 +4935,7 @@ pub(crate) fn expr_resolve_button(ctx: &XkbContext, expr: &ExprKind, btn_rtrn: &
     expr_resolve_integer_lookup(ctx, expr, btn_rtrn, None, &lookup)
 }
 
-pub(crate) fn expr_resolve_string(_ctx: &XkbContext, expr: &ExprKind, val_rtrn: &mut u32) -> bool {
+pub(crate) fn expr_resolve_string(expr: &ExprKind, val_rtrn: &mut u32) -> bool {
     match expr.stmt_type() {
         4 => {
             let ExprKind::String(s) = &expr else {
@@ -5157,10 +5153,9 @@ pub(crate) fn expr_resolve_group_mask(
         entries: &keymap_info.lookup.group_mask_names,
         pending_entries: &PENDING_GROUP_MASK_NAMES,
         is_mask: true,
-        _error_id: XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_,
     };
     let lookup = IdentLookup::NamedPattern(&group_name_pattern);
-    let ctx = keymap_info.ctx();
+    let ctx = &keymap_info.keymap.ctx;
     expr_resolve_mask_lookup(ctx, expr, group_rtrn, Some(pending_rtrn), &lookup)
 }
 #[derive(Copy, Clone)]
@@ -5559,7 +5554,7 @@ fn handle_set_latch_lock_mods(
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &XkbContext = keymap_info.ctx();
+    let ctx: &XkbContext = &keymap_info.keymap.ctx;
     let act = action.as_mods_mut();
     let type_0: u32 = act.type_0;
     if field == ACTION_FIELD_MODIFIERS {
@@ -5695,7 +5690,7 @@ fn handle_set_latch_lock_group(
     array_ndx: Option<&ExprKind>,
     value: ActionValue<'_>,
 ) -> u32 {
-    let ctx: &XkbContext = keymap_info.ctx();
+    let ctx: &XkbContext = &keymap_info.keymap.ctx;
     let type_0: u32 = action.action_type();
     if field == ACTION_FIELD_GROUP {
         let act = action.as_group_mut();
@@ -5756,7 +5751,7 @@ fn handle_move_ptr(
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &XkbContext = keymap_info.ctx();
+    let ctx: &XkbContext = &keymap_info.keymap.ctx;
     let act = action.as_ptr_mut();
     if field == ACTION_FIELD_X || field == ACTION_FIELD_Y {
         let mut val: i64 = 0_i64;
@@ -5804,7 +5799,7 @@ fn handle_ptr_btn(
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &XkbContext = keymap_info.ctx();
+    let ctx: &XkbContext = &keymap_info.keymap.ctx;
     let type_0 = action.action_type();
     let act = action.as_btn_mut();
     if field == ACTION_FIELD_BUTTON {
@@ -5862,7 +5857,7 @@ fn handle_set_ptr_dflt(
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &XkbContext = keymap_info.ctx();
+    let ctx: &XkbContext = &keymap_info.keymap.ctx;
     let act = action.as_dflt_mut();
     if field == ACTION_FIELD_AFFECT {
         let mut val: u32 = 0;
@@ -5917,7 +5912,7 @@ fn handle_switch_screen(
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &XkbContext = keymap_info.ctx();
+    let ctx: &XkbContext = &keymap_info.keymap.ctx;
     let act = action.as_screen_mut();
     if field == ACTION_FIELD_SCREEN {
         let scrn: &ExprKind;
@@ -5970,7 +5965,7 @@ fn handle_set_lock_controls(
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &XkbContext = keymap_info.ctx();
+    let ctx: &XkbContext = &keymap_info.keymap.ctx;
     let type_0 = action.action_type();
     let act = action.as_ctrls_mut();
     if field == ACTION_FIELD_CONTROLS {
@@ -6038,7 +6033,7 @@ fn handle_redirect_key(
     if field == ACTION_FIELD_MODIFIERS || field == ACTION_FIELD_MODS_TO_CLEAR {
         let mut flags: XkbActionFlags = 0;
         let mut m: u32 = 0;
-        let ctx: &XkbContext = keymap_info.ctx();
+        let ctx: &XkbContext = &keymap_info.keymap.ctx;
         let r: u32 = check_modifier_field(
             ctx,
             keymap_info.strict,
@@ -6083,7 +6078,7 @@ fn handle_private(
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let ctx: &XkbContext = keymap_info.ctx();
+    let ctx: &XkbContext = &keymap_info.keymap.ctx;
     let act = action.as_priv_mut();
     if field == ACTION_FIELD_TYPE {
         let mut type_0: i64 = 0_i64;
@@ -6105,7 +6100,7 @@ fn handle_private(
     } else if field == ACTION_FIELD_DATA {
         if array_ndx.is_none() {
             let mut val: u32 = XKB_ATOM_NONE;
-            if !expr_resolve_string(ctx, value, &mut val) {
+            if !expr_resolve_string(value, &mut val) {
                 return report_mismatch(keymap_info.strict);
             }
             let str_bytes: &str = atom_text(&ctx.atom_table, val);

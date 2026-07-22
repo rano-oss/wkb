@@ -906,10 +906,6 @@ pub const XKB_LOG_VERBOSITY_DEFAULT: i32 = 0;
 
 pub(crate) const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
 pub(crate) const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;
-pub(crate) const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: u32 = 237;
-pub(crate) const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: u32 = 312;
-
-// ── LookupEntry (moved from keymap.rs) ────────────────────────────
 
 #[derive(Copy, Clone)]
 pub(crate) struct LookupEntry {
@@ -1066,7 +1062,6 @@ pub(crate) struct VModDef {
 }
 
 #[derive(Copy, Clone)]
-
 pub(crate) struct KeycodeDef {
     pub(crate) merge: u32,
     pub(crate) name: u32,
@@ -1074,7 +1069,6 @@ pub(crate) struct KeycodeDef {
 }
 
 #[derive(Copy, Clone)]
-
 pub(crate) struct KeyAliasDef {
     pub(crate) merge: u32,
     pub(crate) alias: u32,
@@ -1194,16 +1188,6 @@ pub(crate) struct XkbKeymapInfo<'a> {
     pub(crate) features: XkbcompFeatures,
     pub(crate) lookup: XkbcompLookup,
     pub(crate) pending_computations: Vec<PendingComputation>,
-}
-
-impl<'a> XkbKeymapInfo<'a> {
-    pub(crate) fn ctx(&self) -> &XkbContext {
-        &self.keymap.ctx
-    }
-
-    pub(crate) fn ctx_mut(&mut self) -> &mut XkbContext {
-        &mut self.keymap.ctx
-    }
 }
 
 #[derive(Copy, Clone)]
