@@ -438,73 +438,64 @@ pub(crate) fn xkb_escape_map_name(name: &mut String) {
         .collect();
 }
 
-pub(crate) fn xkb_mod_name_to_index(mods: &XkbModSet, name: u32, type_0: u32) -> u32 {
+pub(crate) fn xkb_mod_name_to_index(mods: &XkbModSet, name: u32, type_0: u32) -> Option<u32> {
     for (i, mod_0) in mods.mods[..mods.num_mods as usize].iter().enumerate() {
         if mod_0.type_0 & type_0 != 0 && name == mod_0.name {
-            return i as u32;
+            return Some(i as u32);
         }
     }
-    XKB_MOD_INVALID
+    None
 }
 pub(crate) fn xkb_levels_same_syms(a: &XkbLevel, b: &XkbLevel) -> bool {
     a.syms == b.syms
 }
 pub(crate) fn action_equal(a: &XkbAction, b: &XkbAction) -> bool {
-    if a.action_type() != b.action_type() {
-        return false;
-    }
-    match a.action_type() {
-        ACTION_TYPE_NONE | ACTION_TYPE_VOID => true,
-        ACTION_TYPE_MOD_SET..=ACTION_TYPE_MOD_LOCK => {
-            let am = a.as_mods();
-            let bm = b.as_mods();
-            am.flags == bm.flags && am.mods.mask == bm.mods.mask && am.mods.mods == bm.mods.mods
-        }
-        ACTION_TYPE_GROUP_SET..=ACTION_TYPE_GROUP_LOCK => {
-            let ag = a.as_group();
-            let bg = b.as_group();
-            ag.flags == bg.flags && ag.group == bg.group
-        }
-        ACTION_TYPE_PTR_MOVE => {
-            let ap = a.as_ptr();
-            let bp = b.as_ptr();
+    match (a, b) {
+        (XkbAction::None, XkbAction::None) | (XkbAction::Void, XkbAction::Void) => true,
+        (
+            XkbAction::ModSet(am) | XkbAction::ModLatch(am) | XkbAction::ModLock(am),
+            XkbAction::ModSet(bm) | XkbAction::ModLatch(bm) | XkbAction::ModLock(bm),
+        ) => am.flags == bm.flags && am.mods.mask == bm.mods.mask && am.mods.mods == bm.mods.mods,
+        (
+            XkbAction::GroupSet(ag) | XkbAction::GroupLatch(ag) | XkbAction::GroupLock(ag),
+            XkbAction::GroupSet(bg) | XkbAction::GroupLatch(bg) | XkbAction::GroupLock(bg),
+        ) => ag.flags == bg.flags && ag.group == bg.group,
+        (XkbAction::PtrMove(ap), XkbAction::PtrMove(bp)) => {
             ap.flags == bp.flags && ap.x as i32 == bp.x as i32 && ap.y as i32 == bp.y as i32
         }
-        ACTION_TYPE_PTR_BUTTON | ACTION_TYPE_PTR_LOCK => {
-            let ab = a.as_btn();
-            let bb = b.as_btn();
+        (
+            XkbAction::PtrButton(ab) | XkbAction::PtrLock(ab),
+            XkbAction::PtrButton(bb) | XkbAction::PtrLock(bb),
+        ) => {
             ab.flags == bb.flags
                 && ab.button as i32 == bb.button as i32
                 && ab.count as i32 == bb.count as i32
         }
-        ACTION_TYPE_PTR_DEFAULT => {
-            let ad = a.as_dflt();
-            let bd = b.as_dflt();
+        (XkbAction::PtrDefault(ad), XkbAction::PtrDefault(bd)) => {
             ad.flags == bd.flags && ad.value as i32 == bd.value as i32
         }
-        ACTION_TYPE_TERMINATE => true,
-        ACTION_TYPE_SWITCH_VT => {
-            let as_ = a.as_screen();
-            let bs = b.as_screen();
+        (XkbAction::Terminate, XkbAction::Terminate) => true,
+        (XkbAction::SwitchVt(as_), XkbAction::SwitchVt(bs)) => {
             as_.flags == bs.flags && as_.screen as i32 == bs.screen as i32
         }
-        ACTION_TYPE_CTRL_SET | ACTION_TYPE_CTRL_LOCK => {
+        (
+            XkbAction::CtrlSet(ac) | XkbAction::CtrlLock(ac),
+            XkbAction::CtrlSet(bc) | XkbAction::CtrlLock(bc),
+        ) => {
             let ac = a.as_ctrls();
             let bc = b.as_ctrls();
             ac.flags == bc.flags && ac.ctrls == bc.ctrls
         }
-        ACTION_TYPE_REDIRECT_KEY => {
-            let ar = a.as_redirect();
-            let br = b.as_redirect();
+        (XkbAction::RedirectKey(ar), XkbAction::RedirectKey(br)) => {
             ar.keycode == br.keycode && ar.affect == br.affect && ar.mods == br.mods
         }
-        ACTION_TYPE_UNSUPPORTED_LEGACY | ACTION_TYPE_UNKNOWN => true,
-        ACTION_TYPE_INTERNAL => {
-            let ai = a.as_internal();
-            let bi = b.as_internal();
+        (XkbAction::UnsupportedLegacy, XkbAction::UnsupportedLegacy)
+        | (XkbAction::Unknown, XkbAction::Unknown) => true,
+        (XkbAction::Internal(ai), XkbAction::Internal(bi)) => {
             ai.flags == bi.flags && ai.clear_latched_mods == bi.clear_latched_mods
         }
-        _ => a.as_priv().data == b.as_priv().data,
+        (XkbAction::Private(ap), XkbAction::Private(bp)) => ap.data == bp.data,
+        _ => false,
     }
 }
 pub(crate) fn xkb_levels_same_actions(a: &XkbLevel, b: &XkbLevel) -> bool {
@@ -1515,14 +1506,13 @@ impl Keymap {
     pub(crate) fn mod_get_mask(&self, name: &str) -> u32 {
         let atom = atom_lookup_ref(&self.inner.ctx.atom_table, name.as_bytes());
         let idx = if atom == XKB_ATOM_NONE {
-            XKB_MOD_INVALID
+            None
         } else {
             xkb_mod_name_to_index(&self.inner.mods, atom, MOD_BOTH)
         };
-        if idx >= self.inner.mods.num_mods {
-            0_u32
-        } else {
-            self.inner.mods.mods[idx as usize].mapping
+        match idx {
+            Some(i) if i < self.inner.mods.num_mods => self.inner.mods.mods[i as usize].mapping,
+            _ => 0_u32,
         }
     }
 
@@ -1893,10 +1883,10 @@ fn xkb_key_get_actions<'a>(state: &'a XkbState, key: &'a XkbKey) -> &'a [XkbActi
 }
 
 fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> XkbFilter {
-    match action.action_type() {
-        ACTION_TYPE_MOD_SET => {
-            let flags = action.as_mods().flags;
-            let mask = action.as_mods().mods.mask;
+    match action {
+        XkbAction::ModSet(m) => {
+            let flags = m.flags;
+            let mask = m.mods.mask;
             let unlock = ACTION_UNLOCK_ON_PRESS | ACTION_LOCK_CLEAR;
             let saved = if flags & unlock == unlock {
                 state.components.locked_mods &= !mask;
@@ -1913,9 +1903,9 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
                 mask,
             }
         }
-        ACTION_TYPE_MOD_LOCK => {
-            let flags = action.as_mods().flags;
-            let mask = action.as_mods().mods.mask;
+        XkbAction::ModLock(m) => {
+            let flags = m.flags;
+            let mask = m.mods.mask;
             let prev = state.components.locked_mods & mask;
             if prev != 0 && flags & ACTION_UNLOCK_ON_PRESS != 0 {
                 if flags & ACTION_LOCK_NO_UNLOCK == 0 {
@@ -1935,9 +1925,9 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
                 mask,
             }
         }
-        ACTION_TYPE_MOD_LATCH => {
-            let flags = action.as_mods().flags;
-            let mask = action.as_mods().mods.mask;
+        XkbAction::ModLatch(m) => {
+            let flags = m.flags;
+            let mask = m.mods.mask;
             let unlock = ACTION_UNLOCK_ON_PRESS | ACTION_LATCH_ON_PRESS;
             if flags & ACTION_LOCK_CLEAR != 0
                 && flags & unlock != 0
@@ -1960,9 +1950,9 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
                 mask,
             }
         }
-        ACTION_TYPE_GROUP_SET => {
-            let flags = action.as_group().flags;
-            let group = action.as_group().group;
+        XkbAction::GroupSet(g) => {
+            let flags = g.flags;
+            let group = g.group;
             let saved = state.components.base_group;
             if flags & ACTION_ABSOLUTE_SWITCH != 0 {
                 state.components.base_group = group;
@@ -1977,9 +1967,9 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
                 group,
             }
         }
-        ACTION_TYPE_GROUP_LOCK => {
-            let flags = action.as_group().flags;
-            let group = action.as_group().group;
+        XkbAction::GroupLock(g) => {
+            let flags = g.flags;
+            let group = g.group;
             if flags & ACTION_LOCK_ON_RELEASE == 0 {
                 if flags & ACTION_ABSOLUTE_SWITCH != 0 {
                     state.components.locked_group = group;
@@ -1994,9 +1984,9 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
                 group,
             }
         }
-        ACTION_TYPE_GROUP_LATCH => {
-            let flags = action.as_group().flags;
-            let group = action.as_group().group;
+        XkbAction::GroupLatch(g) => {
+            let flags = g.flags;
+            let group = g.group;
             let delta = if flags & ACTION_ABSOLUTE_SWITCH != 0 {
                 group - state.components.base_group
             } else {
@@ -2015,15 +2005,10 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
                 group,
             }
         }
-        ACTION_TYPE_CTRL_SET | ACTION_TYPE_CTRL_LOCK => {
-            let is_set = action.action_type() == ACTION_TYPE_CTRL_SET;
-            let ctrls = action.as_ctrls().ctrls;
-            let saved = if is_set {
-                !state.components.controls & ctrls
-            } else {
-                state.components.controls & ctrls
-            };
-            if is_set || action.as_ctrls().flags & ACTION_LOCK_NO_LOCK == 0 {
+        XkbAction::CtrlSet(c) => {
+            let ctrls = c.ctrls;
+            let saved = !state.components.controls & ctrls;
+            if c.flags & ACTION_LOCK_NO_LOCK == 0 {
                 state.components.controls |= ctrls;
             }
             XkbFilter::Controls {
@@ -2031,15 +2016,27 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
                 saved,
                 refcnt: 1,
                 ctrls,
-                is_set,
+                is_set: true,
             }
         }
-        ACTION_TYPE_REDIRECT_KEY if action.as_redirect().keycode != XKB_KEYCODE_INVALID => {
-            XkbFilter::RedirectKey {
+        XkbAction::CtrlLock(c) => {
+            let ctrls = c.ctrls;
+            let saved = state.components.controls & ctrls;
+            if c.flags & ACTION_LOCK_NO_LOCK == 0 {
+                state.components.controls |= ctrls;
+            }
+            XkbFilter::Controls {
                 key_id,
-                keycode: action.as_redirect().keycode,
+                saved,
+                refcnt: 1,
+                ctrls,
+                is_set: false,
             }
         }
+        XkbAction::RedirectKey(r) if r.keycode != XKB_KEYCODE_INVALID => XkbFilter::RedirectKey {
+            key_id,
+            keycode: r.keycode,
+        },
         _ => XkbFilter::Inactive,
     }
 }
@@ -2133,18 +2130,14 @@ impl XkbFilter {
                         let sticky = state.components.controls & CONTROL_STICKY_KEYS != 0;
                         let action_flags = *flags & !ACTION_LATCH_TO_LOCK;
                         for a in actions {
-                            let at = a.action_type();
-                            if a.as_mods().mods.mask == *mask
-                                && (at == ACTION_TYPE_MOD_LATCH
-                                    && a.as_mods().flags as u32 == *flags
-                                    || at == ACTION_TYPE_MOD_SET
-                                        && sticky
-                                        && a.as_mods().flags as u32 == action_flags)
+                            if matches!(a, XkbAction::ModLatch(m)
+                                if m.mods.mask == *mask && m.flags as u32 == *flags)
+                                || matches!(a, XkbAction::ModSet(m)
+                                    if m.mods.mask == *mask && sticky && m.flags as u32 == action_flags)
                             {
                                 state.components.latched_mods &= !*mask;
                                 let new_action = if *flags & ACTION_LATCH_TO_LOCK != 0 {
                                     XkbAction::ModLock(XkbModAction {
-                                        type_0: ACTION_TYPE_MOD_LOCK,
                                         flags: action_flags,
                                         mods: XkbMods {
                                             mods: 0,
@@ -2153,7 +2146,6 @@ impl XkbFilter {
                                     })
                                 } else {
                                     XkbAction::ModSet(XkbModAction {
-                                        type_0: ACTION_TYPE_MOD_SET,
                                         flags: action_flags,
                                         mods: XkbMods {
                                             mods: 0,
@@ -2296,13 +2288,10 @@ impl XkbFilter {
                         let sticky = state.components.controls & CONTROL_STICKY_KEYS != 0;
                         let action_flags = *flags & !ACTION_LATCH_TO_LOCK;
                         for a in actions {
-                            let at = a.action_type();
-                            if at == ACTION_TYPE_GROUP_LATCH
-                                && a.as_group().group == *group
-                                && a.as_group().flags as u32 == *flags
-                                || at == ACTION_TYPE_GROUP_SET
-                                    && sticky
-                                    && a.as_group().flags as u32 == action_flags as u32
+                            if matches!(a, XkbAction::GroupLatch(g)
+                                if g.group == *group && g.flags as u32 == *flags)
+                                || matches!(a, XkbAction::GroupSet(g)
+                                    if sticky && g.flags as u32 == action_flags as u32)
                             {
                                 if *flags & ACTION_LATCH_TO_LOCK != 0 && *group != 0 {
                                     state.components.latched_group -= *delta;
@@ -2396,10 +2385,9 @@ impl XkbFilter {
                     }
                     XKB_KEY_DOWN => {
                         let actions = xkb_key_get_actions(state, key);
-                        if actions.iter().any(|a| {
-                            a.action_type() == ACTION_TYPE_REDIRECT_KEY
-                                && a.as_redirect().keycode != *keycode
-                        }) {
+                        if actions.iter().any(
+                            |a| matches!(a, XkbAction::RedirectKey(r) if r.keycode != *keycode),
+                        ) {
                             *self = XkbFilter::Inactive;
                             false
                         } else {
@@ -2431,35 +2419,31 @@ fn xkb_filter_apply_all(state: &mut XkbState, key: &XkbKey, direction: u32) {
     }
     let actions = xkb_key_get_actions(state, key).to_vec();
     for action in &actions {
-        let at = action.action_type();
         let has_filter = matches!(
-            at,
-            ACTION_TYPE_MOD_SET
-                | ACTION_TYPE_MOD_LATCH
-                | ACTION_TYPE_MOD_LOCK
-                | ACTION_TYPE_GROUP_SET
-                | ACTION_TYPE_GROUP_LATCH
-                | ACTION_TYPE_GROUP_LOCK
-                | ACTION_TYPE_CTRL_SET
-                | ACTION_TYPE_CTRL_LOCK
-                | ACTION_TYPE_REDIRECT_KEY
+            action,
+            XkbAction::ModSet(_)
+                | XkbAction::ModLatch(_)
+                | XkbAction::ModLock(_)
+                | XkbAction::GroupSet(_)
+                | XkbAction::GroupLatch(_)
+                | XkbAction::GroupLock(_)
+                | XkbAction::CtrlSet(_)
+                | XkbAction::CtrlLock(_)
+                | XkbAction::RedirectKey(_)
         );
         if !has_filter {
             continue;
         }
         let mut action = *action;
         if state.components.controls & CONTROL_STICKY_KEYS != 0 {
-            match at {
-                ACTION_TYPE_MOD_SET => {
-                    let mut m = *action.as_mods();
-                    m.type_0 = ACTION_TYPE_MOD_LATCH;
+            match action {
+                XkbAction::ModSet(mut m) => {
                     if state.flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
                         m.flags |= ACTION_LATCH_TO_LOCK;
                     }
                     action = XkbAction::ModLatch(m);
                 }
-                ACTION_TYPE_GROUP_SET => {
-                    let mut g = *action.as_group();
+                XkbAction::GroupSet(mut g) => {
                     if state.flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
                         g.flags |= ACTION_LATCH_TO_LOCK;
                     }
@@ -2468,9 +2452,8 @@ fn xkb_filter_apply_all(state: &mut XkbState, key: &XkbKey, direction: u32) {
                 _ => {}
             }
         }
-        if action.action_type() == ACTION_TYPE_REDIRECT_KEY {
+        if let XkbAction::RedirectKey(mut r) = action {
             let km = Rc::clone(&state.keymap);
-            let mut r = *action.as_redirect();
             r.affect = mod_mask_get_effective(&km, r.affect);
             r.mods = mod_mask_get_effective(&km, r.mods);
             action = XkbAction::RedirectKey(r);
@@ -2521,20 +2504,17 @@ fn get_state_component_changes(a: &StateComponents, b: &StateComponents) -> u32 
 }
 
 fn xkb_action_breaks_latch(action: &XkbAction, flag: u32, mask: u32) -> bool {
-    match action.action_type() {
-        ACTION_TYPE_NONE
-        | ACTION_TYPE_VOID
-        | ACTION_TYPE_PTR_BUTTON
-        | ACTION_TYPE_PTR_LOCK
-        | ACTION_TYPE_CTRL_SET
-        | ACTION_TYPE_CTRL_LOCK
-        | ACTION_TYPE_SWITCH_VT
-        | ACTION_TYPE_TERMINATE
-        | ACTION_TYPE_REDIRECT_KEY => true,
-        ACTION_TYPE_INTERNAL => {
-            action.as_internal().flags & flag != 0
-                && action.as_internal().clear_latched_mods & mask == mask
-        }
+    match action {
+        XkbAction::None
+        | XkbAction::Void
+        | XkbAction::PtrButton(_)
+        | XkbAction::PtrLock(_)
+        | XkbAction::CtrlSet(_)
+        | XkbAction::CtrlLock(_)
+        | XkbAction::SwitchVt(_)
+        | XkbAction::Terminate
+        | XkbAction::RedirectKey(_) => true,
+        XkbAction::Internal(i) => i.flags & flag != 0 && i.clear_latched_mods & mask == mask,
         _ => false,
     }
 }
@@ -2772,7 +2752,6 @@ fn update_latch_modifiers(state: &mut XkbState, mask: u32, latches: u32) {
     xkb_filter_apply_all(state, &synthetic_key_break_mod_latch, XKB_KEY_DOWN);
     let key: &XkbKey = &SYNTHETIC_KEY;
     let latch_mods: XkbAction = XkbAction::ModLatch(XkbModAction {
-        type_0: ACTION_TYPE_MOD_LATCH,
         flags: 0,
         mods: XkbMods {
             mods: 0,

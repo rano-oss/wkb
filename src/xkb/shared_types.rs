@@ -250,18 +250,9 @@ impl XkbAction {
         match t {
             ACTION_TYPE_NONE => XkbAction::None,
             ACTION_TYPE_VOID => XkbAction::Void,
-            ACTION_TYPE_MOD_SET => XkbAction::ModSet(XkbModAction {
-                type_0: t,
-                ..Default::default()
-            }),
-            ACTION_TYPE_MOD_LATCH => XkbAction::ModLatch(XkbModAction {
-                type_0: t,
-                ..Default::default()
-            }),
-            ACTION_TYPE_MOD_LOCK => XkbAction::ModLock(XkbModAction {
-                type_0: t,
-                ..Default::default()
-            }),
+            ACTION_TYPE_MOD_SET => XkbAction::ModSet(XkbModAction::default()),
+            ACTION_TYPE_MOD_LATCH => XkbAction::ModLatch(XkbModAction::default()),
+            ACTION_TYPE_MOD_LOCK => XkbAction::ModLock(XkbModAction::default()),
             ACTION_TYPE_GROUP_SET => XkbAction::GroupSet(XkbGroupAction::default()),
             ACTION_TYPE_GROUP_LATCH => XkbAction::GroupLatch(XkbGroupAction::default()),
             ACTION_TYPE_GROUP_LOCK => XkbAction::GroupLock(XkbGroupAction::default()),
@@ -276,10 +267,7 @@ impl XkbAction {
             ACTION_TYPE_REDIRECT_KEY => XkbAction::RedirectKey(XkbRedirectKeyAction::default()),
             ACTION_TYPE_UNSUPPORTED_LEGACY => XkbAction::UnsupportedLegacy,
             ACTION_TYPE_UNKNOWN => XkbAction::Unknown,
-            ACTION_TYPE_PRIVATE => XkbAction::Private(XkbPrivateAction {
-                type_0: t,
-                ..Default::default()
-            }),
+            ACTION_TYPE_PRIVATE => XkbAction::Private(XkbPrivateAction::default()),
             ACTION_TYPE_INTERNAL => XkbAction::Internal(XkbInternalAction::default()),
             _ => XkbAction::None,
         }
@@ -447,7 +435,6 @@ pub const ACTION_TYPE_NONE: u32 = 0;
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbPrivateAction {
-    pub type_0: u32,
     pub data: [u8; 7],
 }
 
@@ -535,7 +522,6 @@ pub struct XkbGroupAction {
 
 #[derive(Copy, Clone, Default)]
 pub(crate) struct XkbModAction {
-    pub(crate) type_0: u32,
     pub(crate) flags: u32,
     pub(crate) mods: XkbMods,
 }
@@ -1068,8 +1054,7 @@ pub(crate) struct LedMapDef {
 }
 
 #[derive(Clone)]
-pub(crate) struct UnknownStatement {
-}
+pub(crate) struct UnknownStatement {}
 
 // ── Map flags and XkbFile ───────────────────────────────────────────
 

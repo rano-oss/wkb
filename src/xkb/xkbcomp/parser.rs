@@ -10,15 +10,14 @@ use super::super::shared_types::{
 };
 
 use super::super::shared_types::{
-    ExprKind, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
-    LedMapDef, LedNameDef, ModMapDef, Statement, SymbolsDef, UnknownStatement,
-    VModDef, VarDef, XkbFile, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
-    FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
-    FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN,
-    MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL,
-    MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_EXPR_ADD, STMT_EXPR_ASSIGN,
-    STMT_EXPR_DIVIDE, STMT_EXPR_INVERT, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
-    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS
+    ExprKind, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef,
+    ModMapDef, Statement, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, FILE_TYPE_COMPAT,
+    FILE_TYPE_GEOMETRY, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
+    FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
+    MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
+    MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_EXPR_ADD,
+    STMT_EXPR_ASSIGN, STMT_EXPR_DIVIDE, STMT_EXPR_INVERT, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE,
+    STMT_EXPR_NOT, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
 };
 
 use super::super::keymap::action_type_text;
@@ -2095,8 +2094,7 @@ pub(crate) fn led_name_create(ndx: i64, name: Option<Box<ExprKind>>) -> Box<LedN
 }
 
 pub(crate) fn unknown_statement_create() -> Box<UnknownStatement> {
-    Box::new(UnknownStatement {
-    })
+    Box::new(UnknownStatement {})
 }
 
 pub(crate) fn include_create(
@@ -3392,12 +3390,15 @@ fn compute_effective_mask_with(mod_set: &XkbModSet, mods: &mut XkbMods) {
     mods.mask = mask | mods.mods & unknown_mods;
 }
 fn update_action_mods(keymap: &XkbKeymap, act: &mut XkbAction, modmap: u32) {
-    if let 2..=4 = act.action_type() {
-        if act.as_mods().flags & ACTION_MODS_LOOKUP_MODMAP != 0 {
-            act.as_mods_mut().mods.mods = modmap;
+    match act {
+        XkbAction::ModSet(m) | XkbAction::ModLatch(m) | XkbAction::ModLock(m) => {
+            if m.flags & ACTION_MODS_LOOKUP_MODMAP != 0 {
+                m.mods.mods = modmap;
+            }
+            compute_effective_mask(keymap, &mut m.mods);
         }
-        compute_effective_mask(keymap, &mut act.as_mods_mut().mods);
-    };
+        _ => {}
+    }
 }
 fn default_interpret() -> XkbSymInterpret {
     XkbSymInterpret {
@@ -3573,13 +3574,17 @@ fn apply_interps_to_key(keymap: &mut XkbKeymap, key_idx: usize) -> bool {
 }
 #[inline]
 fn is_mod_action(action: &XkbAction) -> bool {
-    let t = action.action_type();
-    t == ACTION_TYPE_MOD_SET || t == ACTION_TYPE_MOD_LATCH || t == ACTION_TYPE_MOD_LOCK
+    matches!(
+        action,
+        XkbAction::ModSet(_) | XkbAction::ModLatch(_) | XkbAction::ModLock(_)
+    )
 }
 #[inline]
 fn is_group_action(action: &XkbAction) -> bool {
-    let t = action.action_type();
-    t == ACTION_TYPE_GROUP_SET || t == ACTION_TYPE_GROUP_LATCH || t == ACTION_TYPE_GROUP_LOCK
+    matches!(
+        action,
+        XkbAction::GroupSet(_) | XkbAction::GroupLatch(_) | XkbAction::GroupLock(_)
+    )
 }
 fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
     let num_groups = keymap.keys[key_idx].num_groups;
@@ -3596,11 +3601,14 @@ fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
                 while (i as usize) < level.actions.len() {
                     let mod_action: bool = is_mod_action(&level.actions[i as usize]);
                     let group_action: bool = is_group_action(&level.actions[i as usize]);
-                    let action1_type = level.actions[i as usize].action_type();
-                    if mod_action || group_action || action1_type == ACTION_TYPE_REDIRECT_KEY {
+                    let is_redirect =
+                        matches!(level.actions[i as usize], XkbAction::RedirectKey(_));
+                    if mod_action || group_action || is_redirect {
                         let mut j: u16 = (i as i32 + 1) as u16;
                         while (j as usize) < level.actions.len() {
-                            if action1_type == level.actions[j as usize].action_type()
+                            let same_action = std::mem::discriminant(&level.actions[i as usize])
+                                == std::mem::discriminant(&level.actions[j as usize]);
+                            if same_action
                                 || mod_action && is_mod_action(&level.actions[j as usize])
                                 || group_action && is_group_action(&level.actions[j as usize])
                             {
@@ -3609,7 +3617,7 @@ fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
                                 } else if group_action {
                                     "group"
                                 } else {
-                                    action_type_text(action1_type)
+                                    action_type_text(ACTION_TYPE_REDIRECT_KEY)
                                 };
                                 level.actions[j as usize].set_none();
                             }
@@ -3665,13 +3673,13 @@ fn update_pending_action_fields(
     keycode: u32,
     act: &mut XkbAction,
 ) -> bool {
-    match act.action_type() {
-        5..=7 => {
-            if act.as_group().flags & ACTION_PENDING_COMPUTATION != 0 {
-                let pc_idx = act.as_group().group as usize;
+    match act {
+        XkbAction::GroupSet(g) | XkbAction::GroupLatch(g) | XkbAction::GroupLock(g) => {
+            if g.flags & ACTION_PENDING_COMPUTATION != 0 {
+                let pc_idx = g.group as usize;
                 if !info.pending_computations[pc_idx].computed {
                     let mut group: u32 = 0;
-                    let absolute: bool = act.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0;
+                    let absolute: bool = g.flags & ACTION_ABSOLUTE_SWITCH != 0;
                     let mut _pending = false;
                     let expr_box = info.pending_computations[pc_idx].expr.take().unwrap();
                     let resolve_ret =
@@ -3702,18 +3710,16 @@ fn update_pending_action_fields(
                         }
                     }
                 }
-                act.as_group_mut().group = info.pending_computations[pc_idx].value as i32;
-                act.as_group_mut().flags = act.as_group().flags & !ACTION_PENDING_COMPUTATION;
+                g.group = info.pending_computations[pc_idx].value as i32;
+                g.flags = g.flags & !ACTION_PENDING_COMPUTATION;
             }
             true
         }
-        16 => {
-            if keycode == XKB_KEYCODE_INVALID
-                || act.as_redirect().keycode != info.keymap.redirect_key_auto
-            {
+        XkbAction::RedirectKey(r) => {
+            if keycode == XKB_KEYCODE_INVALID || r.keycode != info.keymap.redirect_key_auto {
                 return true;
             } else {
-                act.as_redirect_mut().keycode = keycode;
+                r.keycode = keycode;
             }
             true
         }
@@ -3959,7 +3965,7 @@ fn update_key_action_fields(
                             [j_0 as usize]
                             .actions[0];
                         update_action_mods(&*info.keymap, &mut act, key_modmap);
-                        if (pending_computations || act.action_type() == ACTION_TYPE_REDIRECT_KEY)
+                        if (pending_computations || matches!(act, XkbAction::RedirectKey(_)))
                             && !update_pending_action_fields(info, key_keycode, &mut act)
                         {
                             return Err(());
@@ -3974,7 +3980,7 @@ fn update_key_action_fields(
                             [j_0 as usize]
                             .actions[k as usize];
                         update_action_mods(&*info.keymap, &mut act, key_modmap);
-                        if (pending_computations || act.action_type() == ACTION_TYPE_REDIRECT_KEY)
+                        if (pending_computations || matches!(act, XkbAction::RedirectKey(_)))
                             && !update_pending_action_fields(info, key_keycode, &mut act)
                         {
                             return Err(());
@@ -5444,9 +5450,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
                             let mut found_option: bool = false;
                             for opt_idx in 0..m.rmlvo.options.len() {
                                 let opt = &m.rmlvo.options[opt_idx];
-                                if opt.layout != OPTIONS_MATCH_ALL_GROUPS
-                                    && opt.layout != idx
-                                {
+                                if opt.layout != OPTIONS_MATCH_ALL_GROUPS && opt.layout != idx {
                                     continue;
                                 }
                                 if match_value_and_mark(
@@ -5494,8 +5498,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
                     let layout_min = m.mapping.layout.layout_idx_min();
                     for opt_idx in 0..m.rmlvo.options.len() {
                         let opt = &m.rmlvo.options[opt_idx];
-                        if opt.layout != OPTIONS_MATCH_ALL_GROUPS && opt.layout != layout_min
-                        {
+                        if opt.layout != OPTIONS_MATCH_ALL_GROUPS && opt.layout != layout_min {
                             continue;
                         }
                         matched = match_value_and_mark(
