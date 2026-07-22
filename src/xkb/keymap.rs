@@ -559,12 +559,12 @@ use std::env::VarError;
 
 use super::shared_types::{atom_intern, atom_table_new};
 
-pub(crate) use super::shared_types::{
-    RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
-};
 use super::shared_types::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
     DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
+};
+pub(crate) use super::shared_types::{
+    RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
 fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> i32 {
     let is_dir = std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false);
@@ -1585,11 +1585,7 @@ impl std::fmt::Debug for State {
 
 impl State {
     /// Update key state (press or release)
-    pub(crate) fn update_key(
-        &mut self,
-        keycode: u32,
-        direction: u32,
-    ) {
+    pub(crate) fn update_key(&mut self, keycode: u32, direction: u32) {
         xkb_state_update_key(&mut self.inner, keycode, direction);
     }
 
@@ -1652,7 +1648,6 @@ impl RegistryContext {
     }
 }
 
-
 #[derive(Copy, Clone)]
 
 pub(crate) struct StateComponents {
@@ -1692,107 +1687,101 @@ impl XkbState {
         &self.keymap
     }
 }
-// C2Rust_Unnamed_15 removed: replaced by Vec<XkbFilter>
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) struct KeyId(std::ptr::NonNull<XkbKey>);
 
-pub(crate) struct XkbFilter {
-    pub(crate) action: XkbAction,
-    pub(crate) key: *const XkbKey,
-    pub(crate) func:
-        Option<fn(&mut XkbState, &mut XkbFilter, &XkbKey, u32) -> bool>,
-    pub(crate) priv_0: u64,
-    pub(crate) refcnt: i32,
-}
-impl Default for XkbFilter {
-    fn default() -> Self {
-        Self {
-            action: XkbAction::default(),
-            key: std::ptr::null(),
-            func: None,
-            priv_0: 0u64,
-            refcnt: 0,
-        }
+impl KeyId {
+    fn new(key: &XkbKey) -> Self {
+        Self(std::ptr::NonNull::from(key))
+    }
+    fn matches(&self, key: &XkbKey) -> bool {
+        self.0 == std::ptr::NonNull::from(key)
     }
 }
-#[derive(Clone)]
 
+#[derive(Clone)]
+pub(crate) enum XkbFilter {
+    Inactive,
+    ModSet {
+        key_id: KeyId,
+        saved: u32,
+        refcnt: i32,
+        flags: u32,
+        mask: u32,
+    },
+    ModLock {
+        key_id: KeyId,
+        prev: u32,
+        refcnt: i32,
+        flags: u32,
+        mask: u32,
+    },
+    ModLatch {
+        key_id: KeyId,
+        latch: u32,
+        refcnt: i32,
+        flags: u32,
+        mask: u32,
+    },
+    GroupSet {
+        key_id: KeyId,
+        saved: i32,
+        refcnt: i32,
+        flags: u32,
+        group: i32,
+    },
+    GroupLock {
+        key_id: KeyId,
+        refcnt: i32,
+        flags: u32,
+        group: i32,
+    },
+    GroupLatch {
+        key_id: KeyId,
+        latch: u32,
+        delta: i32,
+        refcnt: i32,
+        flags: u32,
+        group: i32,
+    },
+    Controls {
+        key_id: KeyId,
+        saved: u32,
+        refcnt: i32,
+        ctrls: u32,
+        is_set: bool,
+    },
+    RedirectKey {
+        key_id: KeyId,
+        keycode: u32,
+    },
+}
+
+impl Default for XkbFilter {
+    fn default() -> Self {
+        XkbFilter::Inactive
+    }
+}
+
+impl XkbFilter {
+    fn is_active(&self) -> bool {
+        !matches!(self, XkbFilter::Inactive)
+    }
+}
+
+#[derive(Clone)]
 pub(crate) struct MachineControls {
     pub(crate) out_of_range_group_policy: u32,
     pub(crate) out_of_range_redirect_group: u32,
 }
 
-#[derive(Copy, Clone)]
-
-pub(crate) struct FilterActionFuncs {
-    pub(crate) new: Option<fn(&mut XkbState, &mut XkbFilter) -> ()>,
-    pub(crate) func:
-        Option<fn(&mut XkbState, &mut XkbFilter, &XkbKey, u32) -> bool>,
-}
-
-/// Pack latch state and group delta into a u64 (replacing the old union group_latch_priv).
-#[inline]
-fn pack_group_latch(latch: u32, group_delta: i32) -> u64 {
-    (latch as u64) | ((group_delta as u32 as u64) << 32)
-}
-
-/// Unpack latch state from a u64.
-#[inline]
-fn unpack_group_latch_state(packed: u64) -> u32 {
-    packed as u32
-}
-
-/// Unpack group delta from a u64.
-#[inline]
-fn unpack_group_delta(packed: u64) -> i32 {
-    (packed >> 32) as u32 as i32
-}
-
 pub(crate) type XkbKeyLatchState = u32;
-
-pub(crate) const _KEY_LATCH_STATE_NUM_ENTRIES: XkbKeyLatchState = 3;
 
 pub(crate) const LATCH_PENDING: XkbKeyLatchState = 2;
 
 pub(crate) const LATCH_KEY_DOWN: XkbKeyLatchState = 1;
 
 pub(crate) const NO_LATCH: XkbKeyLatchState = 0;
-
-/// Common key-release state transition for latch functions.
-/// Returns the new latch state. The caller must update `filter.priv_0` with the result.
-fn filter_latch_key_release(
-    filter: &mut XkbFilter,
-    mut latch: XkbKeyLatchState,
-    direction: u32,
-    action_flags: u32,
-    should_clear_lock: impl FnOnce(u32, i32, u32) -> bool,
-    locked_val: &mut i32,
-    latched_val: &mut i32,
-    base_val: &mut i32,
-    clear_op: impl FnOnce(&mut i32, i32),
-    latch_op: impl FnOnce(&mut i32, &mut i32, i32),
-    delta: i32,
-    mask: u32,
-) -> XkbKeyLatchState {
-    if direction == XKB_KEY_REPEATED {
-        return latch;
-    }
-    if action_flags & ACTION_LOCK_CLEAR != 0 && should_clear_lock(action_flags, *locked_val, mask) {
-        if latch == LATCH_PENDING {
-            *latched_val -= delta;
-        } else {
-            clear_op(base_val, delta);
-        }
-        *locked_val = 0;
-        filter.func = None;
-    } else if latch == NO_LATCH {
-        clear_op(base_val, delta);
-        filter.func = None;
-    } else if action_flags & ACTION_LATCH_ON_PRESS == 0 {
-        latch = LATCH_PENDING;
-        latch_op(base_val, latched_val, delta);
-    }
-    latch
-}
 
 use std::sync::LazyLock;
 
@@ -1905,64 +1894,818 @@ fn xkb_key_get_actions<'a>(state: &'a XkbState, key: &'a XkbKey) -> &'a [XkbActi
     std::slice::from_ref(&DUMMY_ACTION)
 }
 
-fn xkb_filter_new(state: &mut XkbState) -> usize {
-    let filters = &mut state.filters;
-    for (i, filter) in filters.iter_mut().enumerate() {
-        if filter.func.is_none() {
-            filter.refcnt = 1;
-            return i;
-        }
-    }
-    let new_len = state.filters.len() + 1;
-    vec_resize_zero(&mut state.filters, new_len);
-    let last = state.filters.len() - 1;
-    state.filters[last].refcnt = 1;
-    last
-}
-
-fn xkb_filter_group_set_new(state: &mut XkbState, filter: &mut XkbFilter) {
-    filter.priv_0 = state.components.base_group as u32 as u64;
-    if filter.action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
-        state.components.base_group = filter.action.as_group().group;
-    } else {
-        state.components.base_group += filter.action.as_group().group;
-    };
-}
-
-fn xkb_filter_group_set_func(
-    state: &mut XkbState,
-    filter: &mut XkbFilter,
-    key: &XkbKey,
-    direction: u32,
-) -> bool {
-    if !std::ptr::eq(key, filter.key) {
-        filter.action.as_group_mut().flags = filter.action.as_group().flags & !ACTION_LOCK_CLEAR;
-        return true;
-    }
-    's_38: {
-        match direction {
-            1 => {
-                filter.refcnt += 1;
+fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> XkbFilter {
+    match action.action_type() {
+        ACTION_TYPE_MOD_SET => {
+            let flags = action.as_mods().flags;
+            let mask = action.as_mods().mods.mask;
+            let unlock = ACTION_UNLOCK_ON_PRESS | ACTION_LOCK_CLEAR;
+            let saved = if flags & unlock == unlock {
+                state.components.locked_mods &= !mask;
+                mask & !state.components.locked_mods
+            } else {
+                mask
+            };
+            state.set_mods |= saved;
+            XkbFilter::ModSet {
+                key_id,
+                saved,
+                refcnt: 1,
+                flags,
+                mask,
             }
-            2 => {}
-            _ => {
-                filter.refcnt -= 1;
-                if filter.refcnt > 0_i32 {
-                    return false;
+        }
+        ACTION_TYPE_MOD_LOCK => {
+            let flags = action.as_mods().flags;
+            let mask = action.as_mods().mods.mask;
+            let prev = state.components.locked_mods & mask;
+            if prev != 0 && flags & ACTION_UNLOCK_ON_PRESS != 0 {
+                if flags & ACTION_LOCK_NO_UNLOCK == 0 {
+                    state.components.locked_mods &= !mask;
                 }
-                break 's_38;
+                return XkbFilter::Inactive;
+            }
+            state.set_mods |= mask;
+            if flags & ACTION_LOCK_NO_LOCK == 0 {
+                state.components.locked_mods |= mask;
+            }
+            XkbFilter::ModLock {
+                key_id,
+                prev,
+                refcnt: 1,
+                flags,
+                mask,
             }
         }
-        return false;
+        ACTION_TYPE_MOD_LATCH => {
+            let flags = action.as_mods().flags;
+            let mask = action.as_mods().mods.mask;
+            let unlock = ACTION_UNLOCK_ON_PRESS | ACTION_LATCH_ON_PRESS;
+            if flags & ACTION_LOCK_CLEAR != 0
+                && flags & unlock != 0
+                && state.components.locked_mods & mask == mask
+            {
+                state.components.locked_mods &= !mask;
+                return XkbFilter::Inactive;
+            }
+            let latch = if flags & ACTION_LATCH_ON_PRESS != 0 {
+                state.components.latched_mods |= mask;
+                LATCH_PENDING
+            } else {
+                state.set_mods |= mask;
+                LATCH_KEY_DOWN
+            };
+            XkbFilter::ModLatch {
+                key_id,
+                latch: latch as u32,
+                refcnt: 1,
+                flags,
+                mask,
+            }
+        }
+        ACTION_TYPE_GROUP_SET => {
+            let flags = action.as_group().flags;
+            let group = action.as_group().group;
+            let saved = state.components.base_group;
+            if flags & ACTION_ABSOLUTE_SWITCH != 0 {
+                state.components.base_group = group;
+            } else {
+                state.components.base_group += group;
+            }
+            XkbFilter::GroupSet {
+                key_id,
+                saved,
+                refcnt: 1,
+                flags,
+                group,
+            }
+        }
+        ACTION_TYPE_GROUP_LOCK => {
+            let flags = action.as_group().flags;
+            let group = action.as_group().group;
+            if flags & ACTION_LOCK_ON_RELEASE == 0 {
+                if flags & ACTION_ABSOLUTE_SWITCH != 0 {
+                    state.components.locked_group = group;
+                } else {
+                    state.components.locked_group += group;
+                }
+            }
+            XkbFilter::GroupLock {
+                key_id,
+                refcnt: 1,
+                flags,
+                group,
+            }
+        }
+        ACTION_TYPE_GROUP_LATCH => {
+            let flags = action.as_group().flags;
+            let group = action.as_group().group;
+            let delta = if flags & ACTION_ABSOLUTE_SWITCH != 0 {
+                group - state.components.base_group
+            } else {
+                group
+            };
+            if flags & ACTION_ABSOLUTE_SWITCH != 0 {
+                state.components.base_group = group;
+            } else {
+                state.components.base_group += group;
+            }
+            XkbFilter::GroupLatch {
+                key_id,
+                latch: LATCH_KEY_DOWN as u32,
+                delta,
+                refcnt: 1,
+                flags,
+                group,
+            }
+        }
+        ACTION_TYPE_CTRL_SET | ACTION_TYPE_CTRL_LOCK => {
+            let is_set = action.action_type() == ACTION_TYPE_CTRL_SET;
+            let ctrls = action.as_ctrls().ctrls;
+            let saved = if is_set {
+                !state.components.controls & ctrls
+            } else {
+                state.components.controls & ctrls
+            };
+            if is_set || action.as_ctrls().flags & ACTION_LOCK_NO_LOCK == 0 {
+                state.components.controls |= ctrls;
+            }
+            XkbFilter::Controls {
+                key_id,
+                saved,
+                refcnt: 1,
+                ctrls,
+                is_set,
+            }
+        }
+        ACTION_TYPE_REDIRECT_KEY if action.as_redirect().keycode != XKB_KEYCODE_INVALID => {
+            XkbFilter::RedirectKey {
+                key_id,
+                keycode: action.as_redirect().keycode,
+            }
+        }
+        _ => XkbFilter::Inactive,
     }
-    state.components.base_group = filter.priv_0 as i32;
-    if filter.action.as_group().flags & ACTION_LOCK_CLEAR != 0 {
-        state.components.locked_group = 0;
-    }
-    filter.func = None;
-    true
 }
 
+impl XkbFilter {
+    fn on_event(self, state: &mut XkbState, key: &XkbKey, direction: u32) -> (bool, Self) {
+        match self {
+            XkbFilter::Inactive => (true, XkbFilter::Inactive),
+            XkbFilter::ModSet {
+                key_id,
+                saved,
+                refcnt: cnt,
+                mut flags,
+                mask,
+            } => {
+                if !key_id.matches(key) {
+                    flags &= !ACTION_LOCK_CLEAR;
+                    return (
+                        true,
+                        XkbFilter::ModSet {
+                            key_id,
+                            saved,
+                            refcnt: cnt,
+                            flags,
+                            mask,
+                        },
+                    );
+                }
+                match direction {
+                    XKB_KEY_DOWN => (
+                        false,
+                        XkbFilter::ModSet {
+                            key_id,
+                            saved,
+                            refcnt: cnt + 1,
+                            flags,
+                            mask,
+                        },
+                    ),
+                    XKB_KEY_REPEATED => (
+                        false,
+                        XkbFilter::ModSet {
+                            key_id,
+                            saved,
+                            refcnt: cnt,
+                            flags,
+                            mask,
+                        },
+                    ),
+                    _ if cnt > 1 => (
+                        false,
+                        XkbFilter::ModSet {
+                            key_id,
+                            saved,
+                            refcnt: cnt - 1,
+                            flags,
+                            mask,
+                        },
+                    ),
+                    _ => {
+                        state.clear_mods |= saved;
+                        if flags & (ACTION_UNLOCK_ON_PRESS | ACTION_LOCK_CLEAR) == ACTION_LOCK_CLEAR
+                        {
+                            state.components.locked_mods &= !mask;
+                        }
+                        (true, XkbFilter::Inactive)
+                    }
+                }
+            }
+            XkbFilter::ModLock {
+                key_id,
+                prev,
+                refcnt: cnt,
+                flags,
+                mask,
+            } => {
+                if !key_id.matches(key) {
+                    return (
+                        true,
+                        XkbFilter::ModLock {
+                            key_id,
+                            prev,
+                            refcnt: cnt,
+                            flags,
+                            mask,
+                        },
+                    );
+                }
+                match direction {
+                    XKB_KEY_DOWN => (
+                        false,
+                        XkbFilter::ModLock {
+                            key_id,
+                            prev,
+                            refcnt: cnt + 1,
+                            flags,
+                            mask,
+                        },
+                    ),
+                    XKB_KEY_REPEATED => (
+                        false,
+                        XkbFilter::ModLock {
+                            key_id,
+                            prev,
+                            refcnt: cnt,
+                            flags,
+                            mask,
+                        },
+                    ),
+                    _ if cnt > 1 => (
+                        false,
+                        XkbFilter::ModLock {
+                            key_id,
+                            prev,
+                            refcnt: cnt - 1,
+                            flags,
+                            mask,
+                        },
+                    ),
+                    _ => {
+                        state.clear_mods |= mask;
+                        if flags & ACTION_LOCK_NO_UNLOCK == 0 {
+                            state.components.locked_mods &= !prev;
+                        }
+                        (true, XkbFilter::Inactive)
+                    }
+                }
+            }
+            XkbFilter::ModLatch {
+                key_id,
+                mut latch,
+                refcnt: _,
+                flags,
+                mask,
+            } => {
+                if direction == XKB_KEY_DOWN {
+                    let actions = xkb_key_get_actions(state, key);
+                    if latch == LATCH_KEY_DOWN as u32 {
+                        if state.flags & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS != 0 {
+                            if actions.iter().any(|a| {
+                                xkb_action_breaks_latch(a, INTERNAL_BREAKS_MOD_LATCH, mask)
+                            }) {
+                                latch = NO_LATCH as u32;
+                            }
+                        } else {
+                            latch = NO_LATCH as u32;
+                        }
+                    } else if latch == LATCH_PENDING as u32 {
+                        let sticky = state.components.controls & CONTROL_STICKY_KEYS != 0;
+                        let action_flags = flags & !ACTION_LATCH_TO_LOCK;
+                        for a in actions {
+                            let at = a.action_type();
+                            if a.as_mods().mods.mask == mask
+                                && (at == ACTION_TYPE_MOD_LATCH
+                                    && a.as_mods().flags as u32 == flags
+                                    || at == ACTION_TYPE_MOD_SET
+                                        && sticky
+                                        && a.as_mods().flags as u32 == action_flags)
+                            {
+                                state.components.latched_mods &= !mask;
+                                let new_action = if flags & ACTION_LATCH_TO_LOCK != 0 {
+                                    XkbAction::ModLock(XkbModAction {
+                                        type_0: ACTION_TYPE_MOD_LOCK,
+                                        flags: action_flags,
+                                        mods: XkbMods { mods: 0, mask },
+                                    })
+                                } else {
+                                    XkbAction::ModSet(XkbModAction {
+                                        type_0: ACTION_TYPE_MOD_SET,
+                                        flags: action_flags,
+                                        mods: XkbMods { mods: 0, mask },
+                                    })
+                                };
+                                return (
+                                    false,
+                                    xkb_filter_create(new_action, KeyId::new(key), state),
+                                );
+                            } else if xkb_action_breaks_latch(a, INTERNAL_BREAKS_MOD_LATCH, mask) {
+                                state.components.latched_mods &= !mask;
+                                return (true, XkbFilter::Inactive);
+                            }
+                        }
+                    }
+                    return (
+                        false,
+                        XkbFilter::ModLatch {
+                            key_id,
+                            latch,
+                            refcnt: 1,
+                            flags,
+                            mask,
+                        },
+                    );
+                }
+                if !key_id.matches(key) {
+                    return (
+                        true,
+                        XkbFilter::ModLatch {
+                            key_id,
+                            latch,
+                            refcnt: 1,
+                            flags,
+                            mask,
+                        },
+                    );
+                }
+                if direction == XKB_KEY_REPEATED {
+                    return (
+                        false,
+                        XkbFilter::ModLatch {
+                            key_id,
+                            latch,
+                            refcnt: 1,
+                            flags,
+                            mask,
+                        },
+                    );
+                }
+                let unlock_press = ACTION_UNLOCK_ON_PRESS | ACTION_LATCH_ON_PRESS;
+                if flags & ACTION_LOCK_CLEAR != 0
+                    && flags & unlock_press == 0
+                    && state.components.locked_mods & mask == mask
+                {
+                    if latch == LATCH_PENDING as u32 {
+                        state.components.latched_mods &= !mask;
+                    } else {
+                        state.clear_mods |= mask;
+                    }
+                    state.components.locked_mods &= !mask;
+                    return (true, XkbFilter::Inactive);
+                }
+                if latch == NO_LATCH as u32 {
+                    state.clear_mods |= mask;
+                    return (true, XkbFilter::Inactive);
+                }
+                if flags & ACTION_LATCH_ON_PRESS == 0 {
+                    latch = LATCH_PENDING as u32;
+                    state.clear_mods |= mask;
+                    state.components.latched_mods |= mask;
+                }
+                (
+                    true,
+                    XkbFilter::ModLatch {
+                        key_id,
+                        latch,
+                        refcnt: 1,
+                        flags,
+                        mask,
+                    },
+                )
+            }
+            XkbFilter::GroupSet {
+                key_id,
+                saved,
+                refcnt: cnt,
+                mut flags,
+                group,
+            } => {
+                if !key_id.matches(key) {
+                    flags &= !ACTION_LOCK_CLEAR;
+                    return (
+                        true,
+                        XkbFilter::GroupSet {
+                            key_id,
+                            saved,
+                            refcnt: cnt,
+                            flags,
+                            group,
+                        },
+                    );
+                }
+                match direction {
+                    XKB_KEY_DOWN => (
+                        false,
+                        XkbFilter::GroupSet {
+                            key_id,
+                            saved,
+                            refcnt: cnt + 1,
+                            flags,
+                            group,
+                        },
+                    ),
+                    XKB_KEY_REPEATED => (
+                        false,
+                        XkbFilter::GroupSet {
+                            key_id,
+                            saved,
+                            refcnt: cnt,
+                            flags,
+                            group,
+                        },
+                    ),
+                    _ if cnt > 1 => (
+                        false,
+                        XkbFilter::GroupSet {
+                            key_id,
+                            saved,
+                            refcnt: cnt - 1,
+                            flags,
+                            group,
+                        },
+                    ),
+                    _ => {
+                        state.components.base_group = saved;
+                        if flags & ACTION_LOCK_CLEAR != 0 {
+                            state.components.locked_group = 0;
+                        }
+                        (true, XkbFilter::Inactive)
+                    }
+                }
+            }
+            XkbFilter::GroupLock {
+                key_id,
+                refcnt: cnt,
+                mut flags,
+                group,
+            } => {
+                if !key_id.matches(key) {
+                    flags &= !ACTION_LOCK_ON_RELEASE;
+                    return (
+                        true,
+                        XkbFilter::GroupLock {
+                            key_id,
+                            refcnt: cnt,
+                            flags,
+                            group,
+                        },
+                    );
+                }
+                match direction {
+                    XKB_KEY_DOWN if flags & ACTION_LOCK_ON_RELEASE != 0 => {
+                        flags &= !ACTION_LOCK_ON_RELEASE;
+                        (
+                            false,
+                            XkbFilter::GroupLock {
+                                key_id,
+                                refcnt: cnt,
+                                flags,
+                                group,
+                            },
+                        )
+                    }
+                    XKB_KEY_DOWN => (
+                        false,
+                        XkbFilter::GroupLock {
+                            key_id,
+                            refcnt: cnt + 1,
+                            flags,
+                            group,
+                        },
+                    ),
+                    XKB_KEY_REPEATED => (
+                        false,
+                        XkbFilter::GroupLock {
+                            key_id,
+                            refcnt: cnt,
+                            flags,
+                            group,
+                        },
+                    ),
+                    _ if cnt > 1 => (
+                        false,
+                        XkbFilter::GroupLock {
+                            key_id,
+                            refcnt: cnt - 1,
+                            flags,
+                            group,
+                        },
+                    ),
+                    _ => {
+                        if flags & ACTION_LOCK_ON_RELEASE != 0 {
+                            if flags & ACTION_ABSOLUTE_SWITCH != 0 {
+                                state.components.locked_group = group;
+                            } else {
+                                state.components.locked_group += group;
+                            }
+                        }
+                        (true, XkbFilter::Inactive)
+                    }
+                }
+            }
+            XkbFilter::GroupLatch {
+                key_id,
+                mut latch,
+                delta,
+                refcnt: _,
+                flags,
+                group,
+            } => {
+                if direction == XKB_KEY_DOWN {
+                    let actions = xkb_key_get_actions(state, key);
+                    if latch == LATCH_KEY_DOWN as u32 {
+                        if state.flags & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS != 0 {
+                            if actions
+                                .iter()
+                                .any(|a| xkb_action_breaks_latch(a, INTERNAL_BREAKS_GROUP_LATCH, 0))
+                            {
+                                latch = NO_LATCH as u32;
+                            }
+                        } else {
+                            latch = NO_LATCH as u32;
+                        }
+                    } else if latch == LATCH_PENDING as u32 {
+                        let sticky = state.components.controls & CONTROL_STICKY_KEYS != 0;
+                        let action_flags = flags & !ACTION_LATCH_TO_LOCK;
+                        for a in actions {
+                            let at = a.action_type();
+                            if at == ACTION_TYPE_GROUP_LATCH
+                                && a.as_group().group == group
+                                && a.as_group().flags as u32 == flags
+                                || at == ACTION_TYPE_GROUP_SET
+                                    && sticky
+                                    && a.as_group().flags as u32 == action_flags as u32
+                            {
+                                if flags & ACTION_LATCH_TO_LOCK != 0 && group != 0 {
+                                    state.components.latched_group -= delta;
+                                    let new_action = XkbAction::GroupLock(XkbGroupAction {
+                                        flags: action_flags,
+                                        group,
+                                    });
+                                    return (
+                                        false,
+                                        xkb_filter_create(new_action, KeyId::new(key), state),
+                                    );
+                                }
+                            } else if xkb_action_breaks_latch(a, INTERNAL_BREAKS_GROUP_LATCH, 0) {
+                                state.components.latched_group -= delta;
+                                return (true, XkbFilter::Inactive);
+                            }
+                        }
+                    }
+                    return (
+                        false,
+                        XkbFilter::GroupLatch {
+                            key_id,
+                            latch,
+                            delta,
+                            refcnt: 1,
+                            flags,
+                            group,
+                        },
+                    );
+                }
+                if !key_id.matches(key) {
+                    return (
+                        true,
+                        XkbFilter::GroupLatch {
+                            key_id,
+                            latch,
+                            delta,
+                            refcnt: 1,
+                            flags,
+                            group,
+                        },
+                    );
+                }
+                if direction == XKB_KEY_REPEATED {
+                    return (
+                        false,
+                        XkbFilter::GroupLatch {
+                            key_id,
+                            latch,
+                            delta,
+                            refcnt: 1,
+                            flags,
+                            group,
+                        },
+                    );
+                }
+                if flags & ACTION_LOCK_CLEAR != 0 && state.components.locked_group != 0 {
+                    if latch == LATCH_PENDING as u32 {
+                        state.components.latched_group -= delta;
+                    } else {
+                        state.components.base_group -= delta;
+                    }
+                    state.components.locked_group = 0;
+                    return (true, XkbFilter::Inactive);
+                }
+                if latch == NO_LATCH as u32 {
+                    state.components.base_group -= delta;
+                    return (true, XkbFilter::Inactive);
+                }
+                if flags & ACTION_LATCH_ON_PRESS == 0 {
+                    latch = LATCH_PENDING as u32;
+                    state.components.base_group -= delta;
+                    state.components.latched_group += delta;
+                }
+                (
+                    true,
+                    XkbFilter::GroupLatch {
+                        key_id,
+                        latch,
+                        delta,
+                        refcnt: 1,
+                        flags,
+                        group,
+                    },
+                )
+            }
+            XkbFilter::Controls {
+                key_id,
+                saved,
+                refcnt: cnt,
+                ctrls,
+                is_set,
+            } => {
+                if !key_id.matches(key) {
+                    return (
+                        true,
+                        XkbFilter::Controls {
+                            key_id,
+                            saved,
+                            refcnt: cnt,
+                            ctrls,
+                            is_set,
+                        },
+                    );
+                }
+                match direction {
+                    XKB_KEY_DOWN => (
+                        false,
+                        XkbFilter::Controls {
+                            key_id,
+                            saved,
+                            refcnt: cnt + 1,
+                            ctrls,
+                            is_set,
+                        },
+                    ),
+                    XKB_KEY_REPEATED => (
+                        false,
+                        XkbFilter::Controls {
+                            key_id,
+                            saved,
+                            refcnt: cnt,
+                            ctrls,
+                            is_set,
+                        },
+                    ),
+                    _ if cnt > 1 => (
+                        false,
+                        XkbFilter::Controls {
+                            key_id,
+                            saved,
+                            refcnt: cnt - 1,
+                            ctrls,
+                            is_set,
+                        },
+                    ),
+                    _ => {
+                        if is_set || true
+                        /* ctrl lock always restores */
+                        {
+                            let old = state.components.controls;
+                            state.components.controls &= !saved;
+                            if old & CONTROL_STICKY_KEYS != 0
+                                && state.components.controls & CONTROL_STICKY_KEYS == 0
+                            {
+                                clear_all_latches_and_locks(state);
+                            }
+                        }
+                        (true, XkbFilter::Inactive)
+                    }
+                }
+            }
+            XkbFilter::RedirectKey { key_id, keycode } => {
+                if !key_id.matches(key) {
+                    return (true, XkbFilter::RedirectKey { key_id, keycode });
+                }
+                match direction {
+                    XKB_KEY_UP => (false, XkbFilter::Inactive),
+                    XKB_KEY_DOWN => {
+                        let actions = xkb_key_get_actions(state, key);
+                        if actions.iter().any(|a| {
+                            a.action_type() == ACTION_TYPE_REDIRECT_KEY
+                                && a.as_redirect().keycode != keycode
+                        }) {
+                            (true, XkbFilter::Inactive)
+                        } else {
+                            (false, XkbFilter::RedirectKey { key_id, keycode })
+                        }
+                    }
+                    _ => (false, XkbFilter::RedirectKey { key_id, keycode }),
+                }
+            }
+        }
+    }
+}
+
+fn xkb_filter_apply_all(state: &mut XkbState, key: &XkbKey, direction: u32) {
+    let mut consumed = false;
+    let mut i = 0;
+    while i < state.filters.len() {
+        if state.filters[i].is_active() {
+            let filter = std::mem::take(&mut state.filters[i]);
+            let (c, new_filter) = filter.on_event(state, key, direction);
+            if !c {
+                consumed = true;
+            }
+            state.filters[i] = new_filter;
+        }
+        i += 1;
+    }
+    if consumed || direction == XKB_KEY_UP {
+        return;
+    }
+    let actions = xkb_key_get_actions(state, key).to_vec();
+    for action in &actions {
+        let at = action.action_type();
+        let has_filter = matches!(
+            at,
+            ACTION_TYPE_MOD_SET
+                | ACTION_TYPE_MOD_LATCH
+                | ACTION_TYPE_MOD_LOCK
+                | ACTION_TYPE_GROUP_SET
+                | ACTION_TYPE_GROUP_LATCH
+                | ACTION_TYPE_GROUP_LOCK
+                | ACTION_TYPE_CTRL_SET
+                | ACTION_TYPE_CTRL_LOCK
+                | ACTION_TYPE_REDIRECT_KEY
+        );
+        if !has_filter {
+            continue;
+        }
+        let mut action = *action;
+        if state.components.controls & CONTROL_STICKY_KEYS != 0 {
+            match at {
+                ACTION_TYPE_MOD_SET => {
+                    let mut m = *action.as_mods();
+                    m.type_0 = ACTION_TYPE_MOD_LATCH;
+                    if state.flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
+                        m.flags |= ACTION_LATCH_TO_LOCK;
+                    }
+                    action = XkbAction::ModLatch(m);
+                }
+                ACTION_TYPE_GROUP_SET => {
+                    let mut g = *action.as_group();
+                    if state.flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
+                        g.flags |= ACTION_LATCH_TO_LOCK;
+                    }
+                    action = XkbAction::GroupLatch(g);
+                }
+                _ => {}
+            }
+        }
+        if action.action_type() == ACTION_TYPE_REDIRECT_KEY {
+            let km = Rc::clone(&state.keymap);
+            let mut r = *action.as_redirect();
+            r.affect = mod_mask_get_effective(&km, r.affect);
+            r.mods = mod_mask_get_effective(&km, r.mods);
+            action = XkbAction::RedirectKey(r);
+        }
+        let filter = xkb_filter_create(action, KeyId::new(key), state);
+        if filter.is_active() {
+            if let Some(slot) = state.filters.iter_mut().find(|f| !f.is_active()) {
+                *slot = filter;
+            } else {
+                state.filters.push(filter);
+            }
+        }
+    }
+}
 fn get_state_component_changes(a: &StateComponents, b: &StateComponents) -> u32 {
     let mut mask: u32 = 0;
     if a.group != b.group {
@@ -1998,59 +2741,6 @@ fn get_state_component_changes(a: &StateComponents, b: &StateComponents) -> u32 
     mask
 }
 
-fn xkb_filter_group_lock_new(
-    state: &mut XkbState,
-    filter: &mut XkbFilter,
-) {
-    if filter.action.as_group().flags & ACTION_LOCK_ON_RELEASE != 0 {
-    } else if filter.action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
-        state.components.locked_group = filter.action.as_group().group;
-    } else {
-        state.components.locked_group += filter.action.as_group().group;
-    }
-}
-
-fn xkb_filter_group_lock_func(
-    state: &mut XkbState,
-    filter: &mut XkbFilter,
-    key: &XkbKey,
-    direction: u32,
-) -> bool {
-    if !std::ptr::eq(key, filter.key) {
-        if filter.action.as_group().flags & ACTION_LOCK_ON_RELEASE != 0 && direction == XKB_KEY_DOWN
-        {
-            filter.action.as_group_mut().flags =
-                filter.action.as_group().flags & !ACTION_LOCK_ON_RELEASE;
-        }
-        return true;
-    }
-    's_47: {
-        match direction {
-            1 => {
-                filter.refcnt += 1;
-            }
-            2 => {}
-            _ => {
-                filter.refcnt -= 1;
-                if filter.refcnt > 0_i32 {
-                    return false;
-                }
-                break 's_47;
-            }
-        }
-        return false;
-    }
-    if filter.action.as_group().flags & ACTION_LOCK_ON_RELEASE != 0 {
-        if filter.action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
-            state.components.locked_group = filter.action.as_group().group;
-        } else {
-            state.components.locked_group += filter.action.as_group().group;
-        }
-    }
-    filter.func = None;
-    true
-}
-
 fn xkb_action_breaks_latch(action: &XkbAction, flag: u32, mask: u32) -> bool {
     match action.action_type() {
         ACTION_TYPE_NONE
@@ -2070,577 +2760,6 @@ fn xkb_action_breaks_latch(action: &XkbAction, flag: u32, mask: u32) -> bool {
     }
 }
 
-fn xkb_filter_group_latch_new(
-    state: &mut XkbState,
-    filter: &mut XkbFilter,
-) {
-    let group_delta = if filter.action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
-        filter.action.as_group().group - state.components.base_group
-    } else {
-        filter.action.as_group().group
-    };
-    filter.priv_0 = pack_group_latch(LATCH_KEY_DOWN, group_delta);
-    if filter.action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
-        state.components.base_group = filter.action.as_group().group;
-    } else {
-        state.components.base_group += filter.action.as_group().group;
-    };
-}
-
-fn xkb_filter_group_latch_func(
-    state: &mut XkbState,
-    filter: &mut XkbFilter,
-    key: &XkbKey,
-    direction: u32,
-) -> bool {
-    let group_delta = unpack_group_delta(filter.priv_0);
-    let mut latch: XkbKeyLatchState = unpack_group_latch_state(filter.priv_0) as XkbKeyLatchState;
-    if direction == XKB_KEY_DOWN {
-        let actions = xkb_key_get_actions(state, key);
-        if latch as u32 == LATCH_KEY_DOWN {
-            if state.flags & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS != 0 {
-                let mut k: u16 = 0_u16;
-                while (k as usize) < actions.len() {
-                    if xkb_action_breaks_latch(
-                        &actions[k as usize],
-                        INTERNAL_BREAKS_GROUP_LATCH,
-                        0_u32,
-                    ) {
-                        latch = NO_LATCH;
-                        break;
-                    } else {
-                        k += 1;
-                    }
-                }
-            } else {
-                latch = NO_LATCH;
-            }
-        } else if latch as u32 == LATCH_PENDING {
-            let sticky_keys: bool = state.components.controls & CONTROL_STICKY_KEYS != 0;
-            let flags: u32 = filter.action.as_group().flags & !ACTION_LATCH_TO_LOCK;
-            let mut k_0: u16 = 0_u16;
-            while (k_0 as usize) < actions.len() {
-                let at = actions[k_0 as usize].action_type();
-                if at == ACTION_TYPE_GROUP_LATCH
-                    && actions[k_0 as usize].as_group().group == filter.action.as_group().group
-                    && actions[k_0 as usize].as_group().flags as u32
-                        == filter.action.as_group().flags
-                    || at == ACTION_TYPE_GROUP_SET
-                        && sticky_keys
-                        && actions[k_0 as usize].as_group().flags as u32 == flags as u32
-                {
-                    if filter.action.as_group().flags & ACTION_LATCH_TO_LOCK != 0
-                        && filter.action.as_group().group != 0_i32
-                    {
-                        let group_data = *filter.action.as_group();
-                        filter.action = XkbAction::GroupLock(group_data);
-                        filter.func = Some(xkb_filter_group_lock_func);
-                        xkb_filter_group_lock_new(state, filter);
-                        state.components.latched_group -= group_delta;
-                        filter.key = key;
-                        return false;
-                    }
-                } else if xkb_action_breaks_latch(
-                    &actions[k_0 as usize],
-                    INTERNAL_BREAKS_GROUP_LATCH,
-                    0_u32,
-                ) {
-                    state.components.latched_group -= group_delta;
-                    filter.func = None;
-                    return true;
-                }
-                k_0 += 1;
-            }
-        }
-    } else if std::ptr::eq(key, filter.key) {
-        let flags = filter.action.as_group().flags;
-        latch = filter_latch_key_release(
-            filter,
-            latch,
-            direction,
-            flags,
-            |_, locked, _| locked != 0,
-            &mut state.components.locked_group,
-            &mut state.components.latched_group,
-            &mut state.components.base_group,
-            |base, delta| *base -= delta,
-            |base, latched, delta| {
-                *base -= delta;
-                *latched += delta;
-            },
-            group_delta,
-            0,
-        );
-    }
-    filter.priv_0 = pack_group_latch(latch as u32, group_delta);
-    true
-}
-
-fn xkb_filter_mod_set_new(state: &mut XkbState, filter: &mut XkbFilter) {
-    let unlock: u32 = ACTION_UNLOCK_ON_PRESS | ACTION_LOCK_CLEAR;
-    if filter.action.as_mods().flags & unlock == unlock {
-        filter.priv_0 = (filter.action.as_mods().mods.mask & !state.components.locked_mods) as u64;
-        state.components.locked_mods &= !filter.action.as_mods().mods.mask;
-    } else {
-        filter.priv_0 = filter.action.as_mods().mods.mask as u64;
-    }
-    state.set_mods |= filter.priv_0 as u32;
-}
-
-fn xkb_filter_mod_set_func(
-    state: &mut XkbState,
-    filter: &mut XkbFilter,
-    key: &XkbKey,
-    direction: u32,
-) -> bool {
-    if !std::ptr::eq(key, filter.key) {
-        filter.action.as_mods_mut().flags = filter.action.as_mods().flags & !ACTION_LOCK_CLEAR;
-        return true;
-    }
-    's_38: {
-        match direction {
-            1 => {
-                filter.refcnt += 1;
-            }
-            2 => {}
-            _ => {
-                filter.refcnt -= 1;
-                if filter.refcnt > 0_i32 {
-                    return false;
-                }
-                break 's_38;
-            }
-        }
-        return false;
-    }
-    state.clear_mods |= filter.priv_0 as u32;
-    let unlock: u32 = ACTION_UNLOCK_ON_PRESS | ACTION_LOCK_CLEAR;
-    if filter.action.as_mods().flags & unlock == ACTION_LOCK_CLEAR {
-        state.components.locked_mods &= !filter.action.as_mods().mods.mask;
-    }
-    filter.func = None;
-    true
-}
-
-fn xkb_filter_mod_lock_new(state: &mut XkbState, filter: &mut XkbFilter) {
-    filter.priv_0 = (state.components.locked_mods & filter.action.as_mods().mods.mask) as u64;
-    if filter.priv_0 != 0 && filter.action.as_mods().flags & ACTION_UNLOCK_ON_PRESS != 0 {
-        if filter.action.as_mods().flags & ACTION_LOCK_NO_UNLOCK == 0 {
-            state.components.locked_mods &= !(filter.priv_0 as u32);
-        }
-        filter.func = None;
-    } else {
-        state.set_mods |= filter.action.as_mods().mods.mask;
-        if filter.action.as_mods().flags & ACTION_LOCK_NO_LOCK == 0 {
-            state.components.locked_mods |= filter.action.as_mods().mods.mask;
-        }
-    };
-}
-
-fn xkb_filter_mod_lock_func(
-    state: &mut XkbState,
-    filter: &mut XkbFilter,
-    key: &XkbKey,
-    direction: u32,
-) -> bool {
-    if !std::ptr::eq(key, filter.key) {
-        return true;
-    }
-    's_32: {
-        match direction {
-            1 => {
-                filter.refcnt += 1;
-            }
-            2 => {}
-            _ => {
-                filter.refcnt -= 1;
-                if filter.refcnt > 0_i32 {
-                    return false;
-                }
-                break 's_32;
-            }
-        }
-        return false;
-    }
-    state.clear_mods |= filter.action.as_mods().mods.mask;
-    if filter.action.as_mods().flags & ACTION_LOCK_NO_UNLOCK == 0 {
-        state.components.locked_mods &= !(filter.priv_0 as u32);
-    }
-    filter.func = None;
-    true
-}
-
-fn xkb_filter_mod_latch_new(state: &mut XkbState, filter: &mut XkbFilter) {
-    let unlock_on_press: u32 = ACTION_UNLOCK_ON_PRESS | ACTION_LATCH_ON_PRESS;
-    if filter.action.as_mods().flags & ACTION_LOCK_CLEAR != 0
-        && filter.action.as_mods().flags & unlock_on_press != 0
-        && state.components.locked_mods & filter.action.as_mods().mods.mask
-            == filter.action.as_mods().mods.mask
-    {
-        state.components.locked_mods &= !filter.action.as_mods().mods.mask;
-        filter.func = None;
-    } else if filter.action.as_mods().flags & ACTION_LATCH_ON_PRESS != 0 {
-        filter.priv_0 = LATCH_PENDING as u64;
-        state.components.latched_mods |= filter.action.as_mods().mods.mask;
-    } else {
-        filter.priv_0 = LATCH_KEY_DOWN as u64;
-        state.set_mods |= filter.action.as_mods().mods.mask;
-    };
-}
-
-fn xkb_filter_mod_latch_func(
-    state: &mut XkbState,
-    // events: &mut XkbEvents,
-    filter: &mut XkbFilter,
-    key: &XkbKey,
-    direction: u32,
-) -> bool {
-    let mut latch: XkbKeyLatchState = filter.priv_0 as XkbKeyLatchState;
-    if direction == XKB_KEY_DOWN {
-        let actions = xkb_key_get_actions(state, key);
-        if latch as u32 == LATCH_KEY_DOWN {
-            if state.flags & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS != 0 {
-                let mut k: u16 = 0_u16;
-                while (k as usize) < actions.len() {
-                    if xkb_action_breaks_latch(
-                        &actions[k as usize],
-                        INTERNAL_BREAKS_MOD_LATCH,
-                        filter.action.as_mods().mods.mask,
-                    ) {
-                        latch = NO_LATCH;
-                        break;
-                    } else {
-                        k += 1;
-                    }
-                }
-            } else {
-                latch = NO_LATCH;
-            }
-        } else if latch as u32 == LATCH_PENDING {
-            let sticky_keys: bool = state.components.controls & CONTROL_STICKY_KEYS != 0;
-            let flags: u32 = filter.action.as_mods().flags & !ACTION_LATCH_TO_LOCK;
-            let mut k_0: u16 = 0_u16;
-            while (k_0 as usize) < actions.len() {
-                let at = actions[k_0 as usize].action_type();
-                if (at == ACTION_TYPE_MOD_LATCH
-                    && actions[k_0 as usize].as_mods().flags as u32
-                        == filter.action.as_mods().flags
-                    || at == ACTION_TYPE_MOD_SET
-                        && sticky_keys
-                        && actions[k_0 as usize].as_mods().flags as u32 == flags as u32)
-                    && actions[k_0 as usize].as_mods().mods.mask
-                        == filter.action.as_mods().mods.mask
-                {
-                    if filter.action.as_mods().flags & ACTION_LATCH_TO_LOCK != 0 {
-                        let mods_data = *filter.action.as_mods();
-                        filter.action = XkbAction::ModLock(mods_data);
-                        filter.func = Some(xkb_filter_mod_lock_func);
-                        xkb_filter_mod_lock_new(state, filter);
-                    } else {
-                        let mods_data = *filter.action.as_mods();
-                        filter.action = XkbAction::ModSet(mods_data);
-                        filter.func = Some(xkb_filter_mod_set_func);
-                        xkb_filter_mod_set_new(state, filter);
-                    }
-                    filter.key = key;
-                    state.components.latched_mods &= !filter.action.as_mods().mods.mask;
-                    return false;
-                } else if xkb_action_breaks_latch(
-                    &actions[k_0 as usize],
-                    INTERNAL_BREAKS_MOD_LATCH,
-                    filter.action.as_mods().mods.mask,
-                ) {
-                    state.components.latched_mods &= !filter.action.as_mods().mods.mask;
-                    filter.func = None;
-                    return true;
-                }
-                k_0 += 1;
-            }
-        }
-    } else if std::ptr::eq(key, filter.key) {
-        if direction == XKB_KEY_REPEATED {
-            return false;
-        } else {
-            let unlock_on_press: u32 = ACTION_UNLOCK_ON_PRESS | ACTION_LATCH_ON_PRESS;
-            if filter.action.as_mods().flags & ACTION_LOCK_CLEAR != 0
-                && filter.action.as_mods().flags & unlock_on_press == 0
-                && state.components.locked_mods & filter.action.as_mods().mods.mask
-                    == filter.action.as_mods().mods.mask
-            {
-                if latch as u32 == LATCH_PENDING {
-                    state.components.latched_mods &= !filter.action.as_mods().mods.mask;
-                } else {
-                    state.clear_mods |= filter.action.as_mods().mods.mask;
-                }
-                state.components.locked_mods &= !filter.action.as_mods().mods.mask;
-                filter.func = None;
-            } else if latch as u32 == NO_LATCH {
-                state.clear_mods |= filter.action.as_mods().mods.mask;
-                filter.func = None;
-            } else if filter.action.as_mods().flags & ACTION_LATCH_ON_PRESS == 0 {
-                latch = LATCH_PENDING;
-                state.clear_mods |= filter.action.as_mods().mods.mask;
-                state.components.latched_mods |= filter.action.as_mods().mods.mask;
-            }
-        }
-    }
-    filter.priv_0 = latch as u64;
-    true
-}
-
-fn xkb_filter_ctrls_new(state: &mut XkbState, filter: &mut XkbFilter) {
-    if filter.action.action_type() == ACTION_TYPE_CTRL_SET {
-        filter.priv_0 = (!state.components.controls & filter.action.as_ctrls().ctrls) as u64;
-    } else {
-        filter.priv_0 = (state.components.controls & filter.action.as_ctrls().ctrls) as u64;
-    }
-    if filter.action.action_type() == ACTION_TYPE_CTRL_SET
-        || filter.action.as_ctrls().flags & ACTION_LOCK_NO_LOCK == 0
-    {
-        state.components.controls = state.components.controls | filter.action.as_ctrls().ctrls;
-    }
-}
-
-fn xkb_filter_ctrls_func(
-    state: &mut XkbState,
-    filter: &mut XkbFilter,
-    key: &XkbKey,
-    direction: u32,
-) -> bool {
-    if !std::ptr::eq(key, filter.key) {
-        return true;
-    }
-    's_32: {
-        match direction {
-            1 => {
-                filter.refcnt += 1;
-            }
-            2 => {}
-            _ => {
-                filter.refcnt -= 1;
-                if filter.refcnt > 0_i32 {
-                    return false;
-                }
-                break 's_32;
-            }
-        }
-        return false;
-    }
-    if filter.action.action_type() == ACTION_TYPE_CTRL_SET
-        || filter.action.as_ctrls().flags & ACTION_LOCK_NO_UNLOCK == 0
-    {
-        let old: u32 = state.components.controls;
-        state.components.controls = state.components.controls & !(filter.priv_0 as u32);
-        if old as u32 & CONTROL_STICKY_KEYS != 0
-            && state.components.controls & CONTROL_STICKY_KEYS == 0
-        {
-            clear_all_latches_and_locks(state);
-        }
-    }
-    filter.func = None;
-    true
-}
-
-fn xkb_filter_redirect_key_new(
-    state: &mut XkbState,
-    filter: &mut XkbFilter,
-) {
-    if filter.action.as_redirect().keycode == XKB_KEYCODE_INVALID {
-        filter.func = None;
-        return;
-    }
-}
-
-fn xkb_filter_redirect_key_func(
-    state: &mut XkbState,
-    filter: &mut XkbFilter,
-    key: &XkbKey,
-    direction: u32,
-) -> bool {
-    if !std::ptr::eq(key, filter.key) {
-        return true;
-    }
-    if direction == XKB_KEY_UP {
-        filter.func = None;
-        return false;
-    } else if direction == XKB_KEY_DOWN {
-        let actions = xkb_key_get_actions(state, key);
-        let mut a: u16 = 0_u16;
-        while (a as usize) < actions.len() {
-            if actions[a as usize].action_type() == ACTION_TYPE_REDIRECT_KEY
-                && actions[a as usize].as_redirect().keycode != filter.action.as_redirect().keycode
-            {
-                filter.func = None;
-                return true;
-            }
-            a += 1;
-        }
-    }
-    false
-}
-
-static FILTER_ACTION_FUNCS: [FilterActionFuncs; 21] = {
-    [
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_mod_set_new),
-            func: Some(xkb_filter_mod_set_func),
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_mod_latch_new),
-            func: Some(xkb_filter_mod_latch_func),
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_mod_lock_new),
-            func: Some(xkb_filter_mod_lock_func),
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_group_set_new),
-            func: Some(xkb_filter_group_set_func),
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_group_latch_new),
-            func: Some(xkb_filter_group_latch_func),
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_group_lock_new),
-            func: Some(xkb_filter_group_lock_func),
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_ctrls_new),
-            func: Some(xkb_filter_ctrls_func),
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_ctrls_new),
-            func: Some(xkb_filter_ctrls_func),
-        },
-        FilterActionFuncs {
-            new: Some(xkb_filter_redirect_key_new),
-            func: Some(xkb_filter_redirect_key_func),
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-        FilterActionFuncs {
-            new: None,
-            func: None,
-        },
-    ]
-};
-
-fn xkb_filter_apply_all(
-    state: &mut XkbState,
-    key: &XkbKey,
-    direction: u32,
-) {
-    let mut consumed: bool = false;
-    // Phase 1: run existing filters' func callbacks
-    let mut i = 0;
-    while i < state.filters.len() {
-        if state.filters[i].func.is_some() {
-            // Swap out the filter to avoid aliasing &mut state and &mut filter
-            let mut filter = std::mem::take(&mut state.filters[i]);
-            let func = filter.func.expect("non-null function pointer");
-            if !func(state, &mut filter, key, direction) {
-                consumed = true;
-            }
-            state.filters[i] = filter;
-        }
-        i += 1;
-    }
-    if consumed || direction == XKB_KEY_UP {
-        return;
-    }
-    // Phase 2: create new filters for key-down actions
-    let actions = xkb_key_get_actions(state, key);
-    let actions: Vec<XkbAction> = actions.to_vec();
-    let mut k: u16 = 0_u16;
-    while (k as usize) < actions.len() {
-        if actions[k as usize].action_type() < _ACTION_TYPE_NUM_ENTRIES
-            && FILTER_ACTION_FUNCS[actions[k as usize].action_type() as usize]
-                .new
-                .is_some()
-        {
-            let idx = xkb_filter_new(state);
-            state.filters[idx].key = key;
-            state.filters[idx].action = actions[k as usize];
-            if state.components.controls & CONTROL_STICKY_KEYS != 0 {
-                if state.filters[idx].action.action_type() == ACTION_TYPE_MOD_SET {
-                    let mods_data = *state.filters[idx].action.as_mods();
-                    state.filters[idx].action = XkbAction::ModLatch(mods_data);
-                    if state.flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
-                        state.filters[idx].action.as_mods_mut().flags =
-                            state.filters[idx].action.as_mods().flags | ACTION_LATCH_TO_LOCK;
-                    }
-                } else if state.filters[idx].action.action_type() == ACTION_TYPE_GROUP_SET {
-                    let group_data = *state.filters[idx].action.as_group();
-                    state.filters[idx].action = XkbAction::GroupLatch(group_data);
-                    if state.flags & XKB_A11Y_LATCH_TO_LOCK != 0 {
-                        state.filters[idx].action.as_group_mut().flags =
-                            state.filters[idx].action.as_group().flags | ACTION_LATCH_TO_LOCK;
-                    }
-                }
-            }
-            if state.filters[idx].action.action_type() == ACTION_TYPE_REDIRECT_KEY {
-                let km = Rc::clone(&state.keymap);
-                state.filters[idx].action.as_redirect_mut().affect =
-                    mod_mask_get_effective(&km, state.filters[idx].action.as_redirect().affect);
-                state.filters[idx].action.as_redirect_mut().mods =
-                    mod_mask_get_effective(&km, state.filters[idx].action.as_redirect().mods);
-            }
-            state.filters[idx].func =
-                FILTER_ACTION_FUNCS[state.filters[idx].action.action_type() as usize].func;
-            let new_fn = FILTER_ACTION_FUNCS[state.filters[idx].action.action_type() as usize]
-                .new
-                .expect("non-null function pointer");
-            // Swap out filter for the new callback
-            let mut filter = std::mem::take(&mut state.filters[idx]);
-            new_fn(state, &mut filter);
-            state.filters[idx] = filter;
-        }
-        k += 1;
-    }
-}
 pub(crate) fn xkb_state_new(keymap: Rc<XkbKeymap>) -> Box<XkbState> {
     let mut state = Box::new(XkbState {
         components: StateComponents {
@@ -2721,8 +2840,7 @@ fn xkb_state_led_update_all(state: &mut XkbState) {
                         group_mask |= led.groups;
                     }
                     if led.groups & group_mask != 0 {
-                        state.components.leds =
-                            (state.components.leds | 1_u32 << idx) as u32;
+                        state.components.leds = (state.components.leds | 1_u32 << idx) as u32;
                         set_led = true;
                     }
                 } else if (led.which_groups & XKB_STATE_LAYOUT_DEPRESSED) != 0
@@ -2774,11 +2892,7 @@ fn xkb_state_update_derived(state: &mut XkbState) {
     };
     xkb_state_led_update_all(state);
 }
-pub(crate) fn xkb_state_update_key(
-    state: &mut XkbState,
-    kc: u32,
-    direction: u32,
-) -> u32 {
+pub(crate) fn xkb_state_update_key(state: &mut XkbState, kc: u32, direction: u32) -> u32 {
     let keymap_rc = Rc::clone(&state.keymap);
     let keymap = &*keymap_rc;
     let key_ref = match keymap.get_key(kc) {
@@ -2876,7 +2990,7 @@ fn update_latch_modifiers(state: &mut XkbState, mask: u32, latches: u32) {
         groups: vec![synthetic_key_group_break_mod_latch],
         overlay_keys: Vec::new(),
     };
-    xkb_filter_apply_all(state,  &synthetic_key_break_mod_latch, XKB_KEY_DOWN);
+    xkb_filter_apply_all(state, &synthetic_key_break_mod_latch, XKB_KEY_DOWN);
     let key: &XkbKey = &SYNTHETIC_KEY;
     let latch_mods: XkbAction = XkbAction::ModLatch(XkbModAction {
         type_0: ACTION_TYPE_MOD_LATCH,
@@ -2886,36 +3000,33 @@ fn update_latch_modifiers(state: &mut XkbState, mask: u32, latches: u32) {
             mask: mask & latches,
         },
     });
-    let idx = xkb_filter_new(state);
-    state.filters[idx].key = key;
-    state.filters[idx].func = Some(xkb_filter_mod_latch_func);
-    state.filters[idx].action = latch_mods;
-    // Swap out for callbacks
-    let mut filter = std::mem::take(&mut state.filters[idx]);
-    xkb_filter_mod_latch_new(state, &mut filter);
-    xkb_filter_mod_latch_func(state, &mut filter, key, XKB_KEY_UP);
-    state.filters[idx] = filter;
+    let filter = xkb_filter_create(latch_mods, KeyId::new(key), state);
+    let (_, filter) = filter.on_event(state, key, XKB_KEY_UP);
+    if filter.is_active() {
+        if let Some(slot) = state.filters.iter_mut().find(|f| !f.is_active()) {
+            *slot = filter;
+        } else {
+            state.filters.push(filter);
+        }
+    }
 }
 
 fn update_latch_group(state: &mut XkbState, group: i32) {
-    xkb_filter_apply_all(
-        state,
-        &SYNTHETIC_KEY_BREAK_GROUP_LATCH,
-        XKB_KEY_DOWN,
-    );
+    xkb_filter_apply_all(state, &SYNTHETIC_KEY_BREAK_GROUP_LATCH, XKB_KEY_DOWN);
     let key: &XkbKey = &SYNTHETIC_KEY;
     let latch_group: XkbAction = XkbAction::GroupLatch(XkbGroupAction {
         flags: ACTION_ABSOLUTE_SWITCH,
         group,
     });
-    let idx = xkb_filter_new(state);
-    state.filters[idx].key = key;
-    state.filters[idx].func = Some(xkb_filter_group_latch_func);
-    state.filters[idx].action = latch_group;
-    let mut filter = std::mem::take(&mut state.filters[idx]);
-    xkb_filter_group_latch_new(state, &mut filter);
-    xkb_filter_group_latch_func(state, &mut filter, key, XKB_KEY_UP);
-    state.filters[idx] = filter;
+    let filter = xkb_filter_create(latch_group, KeyId::new(key), state);
+    let (_, filter) = filter.on_event(state, key, XKB_KEY_UP);
+    if filter.is_active() {
+        if let Some(slot) = state.filters.iter_mut().find(|f| !f.is_active()) {
+            *slot = filter;
+        } else {
+            state.filters.push(filter);
+        }
+    }
 }
 #[inline]
 fn resolve_to_canonical_mods(keymap: &XkbKeymap, mods: u32) -> u32 {
@@ -2923,10 +3034,7 @@ fn resolve_to_canonical_mods(keymap: &XkbKeymap, mods: u32) -> u32 {
         | mod_mask_get_effective(keymap, mods & !keymap.canonical_state_mask)
 }
 
-fn state_update_latched_locked(
-    state: &mut XkbState,
-    update: &XkbStateComponentsUpdate,
-) {
+fn state_update_latched_locked(state: &mut XkbState, update: &XkbStateComponentsUpdate) {
     let keymap = Rc::clone(&state.keymap);
     let affect_locked_mods: u32 = resolve_to_canonical_mods(&keymap, update.affect_locked_mods);
     if affect_locked_mods != 0 {
