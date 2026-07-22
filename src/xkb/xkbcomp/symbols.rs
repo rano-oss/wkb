@@ -5543,7 +5543,10 @@ fn handle_move_ptr(
 ) -> u32 {
     let value = value.get();
     let ctx: &XkbContext = &keymap_info.keymap.ctx;
-    let act = action.as_ptr_mut();
+    let act = match action {
+        XkbAction::PtrMove(ref mut p) => p,
+        _ => return report_illegal(keymap_info.strict),
+    };
     if field == ACTION_FIELD_X || field == ACTION_FIELD_Y {
         let mut val: i64 = 0_i64;
         let absolute: bool =
@@ -5652,7 +5655,10 @@ fn handle_set_ptr_dflt(
 ) -> u32 {
     let value = value.get();
     let ctx: &XkbContext = &keymap_info.keymap.ctx;
-    let act = action.as_dflt_mut();
+    let act = match action {
+        XkbAction::PtrDefault(ref mut d) => d,
+        _ => return report_illegal(keymap_info.strict),
+    };
     if field == ACTION_FIELD_AFFECT {
         let mut val: u32 = 0;
         if array_ndx.is_some() {
@@ -5707,7 +5713,10 @@ fn handle_switch_screen(
 ) -> u32 {
     let value = value.get();
     let ctx: &XkbContext = &keymap_info.keymap.ctx;
-    let act = action.as_screen_mut();
+    let act = match action {
+        XkbAction::SwitchVt(ref mut s) => s,
+        _ => return report_illegal(keymap_info.strict),
+    };
     if field == ACTION_FIELD_SCREEN {
         let scrn: &ExprKind;
         let mut val: i64 = 0_i64;
@@ -5790,7 +5799,10 @@ fn handle_redirect_key(
     value: ActionValue<'_>,
 ) -> u32 {
     let value = value.get();
-    let act = action.as_redirect_mut();
+    let act = match action {
+        XkbAction::RedirectKey(ref mut r) => r,
+        _ => return report_illegal(keymap_info.strict),
+    };
     if field == ACTION_FIELD_KEYCODE {
         if array_ndx.is_some() {
             return report_mismatch(keymap_info.strict);
@@ -5876,7 +5888,10 @@ fn handle_private(
 ) -> u32 {
     let value = value.get();
     let ctx: &XkbContext = &keymap_info.keymap.ctx;
-    let act = action.as_priv_mut();
+    let act = match action {
+        XkbAction::Private(ref mut p) => p,
+        _ => return report_illegal(keymap_info.strict),
+    };
     if field == ACTION_FIELD_TYPE {
         let mut type_0: i64 = 0_i64;
         if array_ndx.is_some() {

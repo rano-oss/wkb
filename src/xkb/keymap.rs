@@ -481,11 +481,7 @@ pub(crate) fn action_equal(a: &XkbAction, b: &XkbAction) -> bool {
         (
             XkbAction::CtrlSet(ac) | XkbAction::CtrlLock(ac),
             XkbAction::CtrlSet(bc) | XkbAction::CtrlLock(bc),
-        ) => {
-            let ac = a.as_ctrls();
-            let bc = b.as_ctrls();
-            ac.flags == bc.flags && ac.ctrls == bc.ctrls
-        }
+        ) => ac.flags == bc.flags && ac.ctrls == bc.ctrls,
         (XkbAction::RedirectKey(ar), XkbAction::RedirectKey(br)) => {
             ar.keycode == br.keycode && ar.affect == br.affect && ar.mods == br.mods
         }
