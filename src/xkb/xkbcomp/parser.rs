@@ -2,7 +2,7 @@
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use super::super::keysym::utf32_to_keysym;
-use super::super::keysym::{xkb_keysym_from_name, xkb_keysym_is_deprecated};
+use super::super::keysym::xkb_keysym_from_name;
 use super::super::shared_types::*;
 use super::super::shared_types::{
     parse_dec_u32, parse_dec_u64, parse_hex_u32, parse_hex_u64, utf8_next_code_point_safe,
@@ -400,7 +400,7 @@ fn _xkbcommon_error(param: &mut ParserParam, _msg: &str) {
     let _loc: ScannerLoc = param.scanner.token_location();
 }
 
-fn resolve_keysym(param: &mut ParserParam, name: Sval) -> Option<u32> {
+fn resolve_keysym(name: Sval) -> Option<u32> {
     let name_bytes = name.as_bytes();
     let name_str = name.as_str();
 
@@ -423,11 +423,6 @@ fn resolve_keysym(param: &mut ParserParam, name: Sval) -> Option<u32> {
 
     let sym: u32 = xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS);
     if sym != XKB_KEY_NO_SYMBOL as u32 {
-        if param.ctx.log_verbosity >= 2 {
-            if let Some(_ref_name) = xkb_keysym_is_deprecated(sym, buf_slice) {
-                let _loc: ScannerLoc = param.scanner.token_location();
-            }
-        }
         return Some(sym);
     }
     None
@@ -1796,7 +1791,7 @@ fn execute_reduction<'a>(
         200 => {
             // KeySym: IDENT → resolve keysym name
             let sval = yyvs[sp].as_sval();
-            match resolve_keysym(param, sval) {
+            match resolve_keysym(sval) {
                 Some(sym) => {
                     *yyval = YYValue::Keysym(sym);
                 }
@@ -1824,11 +1819,6 @@ fn execute_reduction<'a>(
             } else {
                 if num <= XKB_KEYSYM_MAX as i64 {
                     let keysym = num as u32;
-                    if param.ctx.log_verbosity >= 2 {
-                        if let Some(_ref_name) = xkb_keysym_is_deprecated(keysym, &[]) {
-                            let _loc = param.scanner.token_location();
-                        }
-                    }
                     *yyval = YYValue::Keysym(keysym);
                 } else {
                     let _loc = param.scanner.token_location();

@@ -7,13 +7,6 @@ use std::sync::Arc;
 use lasso::Key as _;
 
 // ── xkbcommon public types ───────────────────────────────────────────
-
-pub(crate) const XKB_LOG_LEVEL_DEBUG: u32 = 50;
-pub(crate) const XKB_LOG_LEVEL_INFO: u32 = 40;
-pub(crate) const XKB_LOG_LEVEL_WARNING: u32 = 30;
-pub(crate) const XKB_LOG_LEVEL_ERROR: u32 = 20;
-pub(crate) const XKB_LOG_LEVEL_CRITICAL: u32 = 10;
-
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: u32 = 2;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: u32 = 1;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_WRAP: u32 = 0;
@@ -106,8 +99,6 @@ pub(crate) fn atom_table_new() -> AtomTable {
 
 #[derive(Clone, Debug)]
 pub(crate) struct XkbContext {
-    pub(crate) log_level: u32,
-    pub(crate) log_verbosity: i32,
     pub(crate) includes: Vec<String>,
     pub(crate) failed_includes: Vec<String>,
     pub(crate) atom_table: AtomTable,
@@ -880,9 +871,6 @@ pub(crate) const RMLVO_RULES: u32 = 1;
 
 // ── rules_h ───────────────────────────────────────────────────────────
 // ── Message codes (from messages.rs) ─────────────────────────────────────
-
-pub const XKB_LOG_VERBOSITY_DEFAULT: i32 = 0;
-
 pub(crate) const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
 pub(crate) const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;
 

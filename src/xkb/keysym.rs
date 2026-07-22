@@ -20936,10 +20936,6 @@ pub(crate) fn xkb_keysym_is_keypad(keysym: u32) -> bool {
     (XKB_KEY_KP_SPACE..=XKB_KEY_KP_EQUAL).contains(&keysym)
 }
 
-pub(crate) fn xkb_keysym_is_deprecated(_keysym: u32, _name: &[u8]) -> Option<&'static str> {
-    // Stub: For Wayland-only usage, we don't need to track deprecated keysym names
-    None
-}
 // Native Rust keysym to UTF-8/UTF-32 conversion
 //
 // Converted from C FFI to idiomatic Rust.

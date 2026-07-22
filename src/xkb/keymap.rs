@@ -559,7 +559,6 @@ use std::env::VarError;
 
 use super::shared_types::{atom_intern, atom_table_new};
 
-pub use super::shared_types::XKB_LOG_VERBOSITY_DEFAULT;
 pub(crate) use super::shared_types::{
     RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
@@ -728,58 +727,8 @@ pub(crate) fn xkb_context_include_path_get(ctx: &mut XkbContext, idx: u32) -> St
     ctx.includes.get(idx as usize).unwrap().clone()
 }
 
-fn log_verbosity_from_str(verbosity: &str) -> i32 {
-    if let Ok(val) = verbosity.trim().parse::<i64>() {
-        return val as i32;
-    }
-    XKB_LOG_VERBOSITY_DEFAULT
-}
-
-fn log_level_from_str(level: &str) -> u32 {
-    if let Ok(val) = level.trim().parse::<i64>() {
-        return val as u32;
-    }
-    let bytes = level.as_bytes();
-    if bytes
-        .get(..4)
-        .is_some_and(|s| s.eq_ignore_ascii_case(b"crit"))
-    {
-        return XKB_LOG_LEVEL_CRITICAL;
-    }
-    if bytes
-        .get(..3)
-        .is_some_and(|s| s.eq_ignore_ascii_case(b"err"))
-    {
-        return XKB_LOG_LEVEL_ERROR;
-    }
-    if bytes
-        .get(..4)
-        .is_some_and(|s| s.eq_ignore_ascii_case(b"warn"))
-    {
-        return XKB_LOG_LEVEL_WARNING;
-    }
-    if bytes
-        .get(..4)
-        .is_some_and(|s| s.eq_ignore_ascii_case(b"info"))
-    {
-        return XKB_LOG_LEVEL_INFO;
-    }
-    if bytes
-        .get(..5)
-        .is_some_and(|s| s.eq_ignore_ascii_case(b"debug"))
-        || bytes
-            .get(..3)
-            .is_some_and(|s| s.eq_ignore_ascii_case(b"dbg"))
-    {
-        return XKB_LOG_LEVEL_DEBUG;
-    }
-    XKB_LOG_LEVEL_ERROR
-}
-
 pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
     let mut ctx = XkbContext {
-        log_level: XKB_LOG_LEVEL_ERROR,
-        log_verbosity: XKB_LOG_VERBOSITY_DEFAULT,
         includes: Vec::new(),
         failed_includes: Vec::new(),
         atom_table: atom_table_new(),
@@ -796,12 +745,6 @@ pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
     ctx.use_environment_names = flags & XKB_CONTEXT_NO_ENVIRONMENT_NAMES == 0;
     ctx.use_secure_getenv = flags & XKB_CONTEXT_NO_SECURE_GETENV == 0;
     ctx.pending_default_includes = flags & XKB_CONTEXT_NO_DEFAULT_INCLUDES == 0;
-    if let Ok(env) = xkb_context_getenv("XKB_LOG_LEVEL") {
-        ctx.log_level = log_level_from_str(&env);
-    }
-    if let Ok(env) = xkb_context_getenv("XKB_LOG_VERBOSITY") {
-        ctx.log_verbosity = log_verbosity_from_str(&env);
-    }
     ctx
 }
 
