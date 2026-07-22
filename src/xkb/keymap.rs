@@ -1652,22 +1652,7 @@ impl RegistryContext {
     }
 }
 
-#[derive(Copy, Clone)]
-pub(crate) struct XkbEvent {
-    pub(crate) type_0: u32,
-    pub(crate) data: XkbEventData,
-}
-#[derive(Copy, Clone)]
 
-pub(crate) enum XkbEventData {
-    Keycode,
-    Components(XkbEventComponents),
-}
-#[derive(Copy, Clone)]
-
-pub(crate) struct XkbEventComponents {
-    pub(crate) components: StateComponents,
-}
 #[derive(Copy, Clone)]
 
 pub(crate) struct StateComponents {
@@ -1730,17 +1715,6 @@ impl Default for XkbFilter {
     }
 }
 #[derive(Clone)]
-
-pub(crate) struct XkbEvents {
-    pub(crate) queue: Vec<XkbEvent>,
-}
-impl XkbEvents {
-    fn dummy() -> Self {
-        Self { queue: Vec::new() }
-    }
-}
-// C2Rust_Unnamed_16 removed: replaced by Vec<XkbEvent>
-#[derive(Copy, Clone)]
 
 pub(crate) struct MachineControls {
     pub(crate) out_of_range_group_policy: u32,
@@ -2467,25 +2441,6 @@ fn xkb_filter_ctrls_func(
     true
 }
 
-fn append_redirect_key_events(
-    state: &mut XkbState,
-    redirect: &XkbRedirectKeyAction,
-    direction: u32,
-) -> bool {
-    let mut changed: u32 = 0;
-    let mask: u32 = redirect.affect;
-    let mut last_components: StateComponents = state.components;
-    if mask != 0 {
-        let mut new: StateComponents = last_components;
-        new.base_mods = new.base_mods & !mask | redirect.mods;
-        new.latched_mods = new.latched_mods & !mask | redirect.mods;
-        new.locked_mods = new.locked_mods & !mask | redirect.mods;
-        new.mods = new.mods & !mask | redirect.mods;
-        changed = get_state_component_changes(&last_components, &new);
-    }
-    true
-}
-
 fn xkb_filter_redirect_key_new(
     state: &mut XkbState,
     filter: &mut XkbFilter,
@@ -2494,7 +2449,6 @@ fn xkb_filter_redirect_key_new(
         filter.func = None;
         return;
     }
-    append_redirect_key_events(state, filter.action.as_redirect(), XKB_KEY_DOWN);
 }
 
 fn xkb_filter_redirect_key_func(
@@ -2507,7 +2461,6 @@ fn xkb_filter_redirect_key_func(
         return true;
     }
     if direction == XKB_KEY_UP {
-        append_redirect_key_events(state, filter.action.as_redirect(), XKB_KEY_UP);
         filter.func = None;
         return false;
     } else if direction == XKB_KEY_DOWN {
@@ -2517,14 +2470,12 @@ fn xkb_filter_redirect_key_func(
             if actions[a as usize].action_type() == ACTION_TYPE_REDIRECT_KEY
                 && actions[a as usize].as_redirect().keycode != filter.action.as_redirect().keycode
             {
-                append_redirect_key_events(state, filter.action.as_redirect(), XKB_KEY_UP);
                 filter.func = None;
                 return true;
             }
             a += 1;
         }
     }
-    append_redirect_key_events(state, filter.action.as_redirect(), direction);
     false
 }
 

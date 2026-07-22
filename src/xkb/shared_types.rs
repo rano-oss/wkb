@@ -658,12 +658,6 @@ pub(crate) const XKB_CONTEXT_NO_SECURE_GETENV: u32 = 4;
 pub(crate) const XKB_KEY_UP: u32 = 0;
 pub(crate) const XKB_KEY_DOWN: u32 = 1;
 pub(crate) const XKB_KEY_REPEATED: u32 = 2;
-
-pub(crate) const XKB_EVENT_TYPE_KEY_DOWN: u32 = 1;
-pub(crate) const XKB_EVENT_TYPE_KEY_REPEATED: u32 = 2;
-pub(crate) const XKB_EVENT_TYPE_KEY_UP: u32 = 3;
-pub(crate) const XKB_EVENT_TYPE_COMPONENTS_CHANGE: u32 = 4;
-
 pub(crate) const XKB_CONSUMED_MODE_XKB: u32 = 0;
 
 pub(crate) const XKB_KEYSYM_NO_FLAGS: u32 = 0;
