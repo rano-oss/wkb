@@ -1714,7 +1714,7 @@ pub(crate) struct XkbFilter {
     pub(crate) action: XkbAction,
     pub(crate) key: *const XkbKey,
     pub(crate) func:
-        Option<fn(&mut XkbState, &mut XkbEvents, &mut XkbFilter, &XkbKey, u32) -> bool>,
+        Option<fn(&mut XkbState, &mut XkbFilter, &XkbKey, u32) -> bool>,
     pub(crate) priv_0: u64,
     pub(crate) refcnt: i32,
 }
@@ -1750,9 +1750,9 @@ pub(crate) struct MachineControls {
 #[derive(Copy, Clone)]
 
 pub(crate) struct FilterActionFuncs {
-    pub(crate) new: Option<fn(&mut XkbState, &mut XkbEvents, &mut XkbFilter) -> ()>,
+    pub(crate) new: Option<fn(&mut XkbState, &mut XkbFilter) -> ()>,
     pub(crate) func:
-        Option<fn(&mut XkbState, &mut XkbEvents, &mut XkbFilter, &XkbKey, u32) -> bool>,
+        Option<fn(&mut XkbState, &mut XkbFilter, &XkbKey, u32) -> bool>,
 }
 
 /// Pack latch state and group delta into a u64 (replacing the old union group_latch_priv).
@@ -1946,7 +1946,7 @@ fn xkb_filter_new(state: &mut XkbState) -> usize {
     last
 }
 
-fn xkb_filter_group_set_new(state: &mut XkbState, _events: &mut XkbEvents, filter: &mut XkbFilter) {
+fn xkb_filter_group_set_new(state: &mut XkbState, filter: &mut XkbFilter) {
     filter.priv_0 = state.components.base_group as u32 as u64;
     if filter.action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
         state.components.base_group = filter.action.as_group().group;
@@ -1957,7 +1957,6 @@ fn xkb_filter_group_set_new(state: &mut XkbState, _events: &mut XkbEvents, filte
 
 fn xkb_filter_group_set_func(
     state: &mut XkbState,
-    _events: &mut XkbEvents,
     filter: &mut XkbFilter,
     key: &XkbKey,
     direction: u32,
@@ -2027,7 +2026,6 @@ fn get_state_component_changes(a: &StateComponents, b: &StateComponents) -> u32 
 
 fn xkb_filter_group_lock_new(
     state: &mut XkbState,
-    _events: &mut XkbEvents,
     filter: &mut XkbFilter,
 ) {
     if filter.action.as_group().flags & ACTION_LOCK_ON_RELEASE != 0 {
@@ -2040,7 +2038,6 @@ fn xkb_filter_group_lock_new(
 
 fn xkb_filter_group_lock_func(
     state: &mut XkbState,
-    _events: &mut XkbEvents,
     filter: &mut XkbFilter,
     key: &XkbKey,
     direction: u32,
@@ -2101,7 +2098,6 @@ fn xkb_action_breaks_latch(action: &XkbAction, flag: u32, mask: u32) -> bool {
 
 fn xkb_filter_group_latch_new(
     state: &mut XkbState,
-    _events: &mut XkbEvents,
     filter: &mut XkbFilter,
 ) {
     let group_delta = if filter.action.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0 {
@@ -2119,7 +2115,6 @@ fn xkb_filter_group_latch_new(
 
 fn xkb_filter_group_latch_func(
     state: &mut XkbState,
-    events: &mut XkbEvents,
     filter: &mut XkbFilter,
     key: &XkbKey,
     direction: u32,
@@ -2166,7 +2161,7 @@ fn xkb_filter_group_latch_func(
                         let group_data = *filter.action.as_group();
                         filter.action = XkbAction::GroupLock(group_data);
                         filter.func = Some(xkb_filter_group_lock_func);
-                        xkb_filter_group_lock_new(state, events, filter);
+                        xkb_filter_group_lock_new(state, filter);
                         state.components.latched_group -= group_delta;
                         filter.key = key;
                         return false;
@@ -2207,7 +2202,7 @@ fn xkb_filter_group_latch_func(
     true
 }
 
-fn xkb_filter_mod_set_new(state: &mut XkbState, _events: &mut XkbEvents, filter: &mut XkbFilter) {
+fn xkb_filter_mod_set_new(state: &mut XkbState, filter: &mut XkbFilter) {
     let unlock: u32 = ACTION_UNLOCK_ON_PRESS | ACTION_LOCK_CLEAR;
     if filter.action.as_mods().flags & unlock == unlock {
         filter.priv_0 = (filter.action.as_mods().mods.mask & !state.components.locked_mods) as u64;
@@ -2220,7 +2215,6 @@ fn xkb_filter_mod_set_new(state: &mut XkbState, _events: &mut XkbEvents, filter:
 
 fn xkb_filter_mod_set_func(
     state: &mut XkbState,
-    _events: &mut XkbEvents,
     filter: &mut XkbFilter,
     key: &XkbKey,
     direction: u32,
@@ -2254,7 +2248,7 @@ fn xkb_filter_mod_set_func(
     true
 }
 
-fn xkb_filter_mod_lock_new(state: &mut XkbState, _events: &mut XkbEvents, filter: &mut XkbFilter) {
+fn xkb_filter_mod_lock_new(state: &mut XkbState, filter: &mut XkbFilter) {
     filter.priv_0 = (state.components.locked_mods & filter.action.as_mods().mods.mask) as u64;
     if filter.priv_0 != 0 && filter.action.as_mods().flags & ACTION_UNLOCK_ON_PRESS != 0 {
         if filter.action.as_mods().flags & ACTION_LOCK_NO_UNLOCK == 0 {
@@ -2271,7 +2265,6 @@ fn xkb_filter_mod_lock_new(state: &mut XkbState, _events: &mut XkbEvents, filter
 
 fn xkb_filter_mod_lock_func(
     state: &mut XkbState,
-    _events: &mut XkbEvents,
     filter: &mut XkbFilter,
     key: &XkbKey,
     direction: u32,
@@ -2303,7 +2296,7 @@ fn xkb_filter_mod_lock_func(
     true
 }
 
-fn xkb_filter_mod_latch_new(state: &mut XkbState, _events: &mut XkbEvents, filter: &mut XkbFilter) {
+fn xkb_filter_mod_latch_new(state: &mut XkbState, filter: &mut XkbFilter) {
     let unlock_on_press: u32 = ACTION_UNLOCK_ON_PRESS | ACTION_LATCH_ON_PRESS;
     if filter.action.as_mods().flags & ACTION_LOCK_CLEAR != 0
         && filter.action.as_mods().flags & unlock_on_press != 0
@@ -2323,7 +2316,7 @@ fn xkb_filter_mod_latch_new(state: &mut XkbState, _events: &mut XkbEvents, filte
 
 fn xkb_filter_mod_latch_func(
     state: &mut XkbState,
-    events: &mut XkbEvents,
+    // events: &mut XkbEvents,
     filter: &mut XkbFilter,
     key: &XkbKey,
     direction: u32,
@@ -2368,12 +2361,12 @@ fn xkb_filter_mod_latch_func(
                         let mods_data = *filter.action.as_mods();
                         filter.action = XkbAction::ModLock(mods_data);
                         filter.func = Some(xkb_filter_mod_lock_func);
-                        xkb_filter_mod_lock_new(state, events, filter);
+                        xkb_filter_mod_lock_new(state, filter);
                     } else {
                         let mods_data = *filter.action.as_mods();
                         filter.action = XkbAction::ModSet(mods_data);
                         filter.func = Some(xkb_filter_mod_set_func);
-                        xkb_filter_mod_set_new(state, events, filter);
+                        xkb_filter_mod_set_new(state, filter);
                     }
                     filter.key = key;
                     state.components.latched_mods &= !filter.action.as_mods().mods.mask;
@@ -2421,7 +2414,7 @@ fn xkb_filter_mod_latch_func(
     true
 }
 
-fn xkb_filter_ctrls_new(state: &mut XkbState, _events: &mut XkbEvents, filter: &mut XkbFilter) {
+fn xkb_filter_ctrls_new(state: &mut XkbState, filter: &mut XkbFilter) {
     if filter.action.action_type() == ACTION_TYPE_CTRL_SET {
         filter.priv_0 = (!state.components.controls & filter.action.as_ctrls().ctrls) as u64;
     } else {
@@ -2436,7 +2429,6 @@ fn xkb_filter_ctrls_new(state: &mut XkbState, _events: &mut XkbEvents, filter: &
 
 fn xkb_filter_ctrls_func(
     state: &mut XkbState,
-    events: &mut XkbEvents,
     filter: &mut XkbFilter,
     key: &XkbKey,
     direction: u32,
@@ -2468,7 +2460,7 @@ fn xkb_filter_ctrls_func(
         if old as u32 & CONTROL_STICKY_KEYS != 0
             && state.components.controls & CONTROL_STICKY_KEYS == 0
         {
-            clear_all_latches_and_locks(state, events);
+            clear_all_latches_and_locks(state);
         }
     }
     filter.func = None;
@@ -2477,31 +2469,12 @@ fn xkb_filter_ctrls_func(
 
 fn append_redirect_key_events(
     state: &mut XkbState,
-    events: &mut XkbEvents,
     redirect: &XkbRedirectKeyAction,
     direction: u32,
 ) -> bool {
     let mut changed: u32 = 0;
     let mask: u32 = redirect.affect;
     let mut last_components: StateComponents = state.components;
-    {
-        let queue = &events.queue;
-        if !queue.is_empty() {
-            let mut idx = queue.len() - 1;
-            loop {
-                if queue[idx].type_0 == XKB_EVENT_TYPE_COMPONENTS_CHANGE {
-                    if let XkbEventData::Components(comp) = &queue[idx].data {
-                        last_components = comp.components;
-                    }
-                    break;
-                }
-                if idx == 0 {
-                    break;
-                }
-                idx -= 1;
-            }
-        }
-    }
     if mask != 0 {
         let mut new: StateComponents = last_components;
         new.base_mods = new.base_mods & !mask | redirect.mods;
@@ -2509,49 +2482,23 @@ fn append_redirect_key_events(
         new.locked_mods = new.locked_mods & !mask | redirect.mods;
         new.mods = new.mods & !mask | redirect.mods;
         changed = get_state_component_changes(&last_components, &new);
-        if changed as u64 != 0 {
-            events.queue.push(XkbEvent {
-                type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
-                data: XkbEventData::Components(XkbEventComponents { components: new }),
-            });
-        }
-    }
-    events.queue.push(XkbEvent {
-        type_0: (if direction == XKB_KEY_UP {
-            XKB_EVENT_TYPE_KEY_UP as i32
-        } else if direction == XKB_KEY_REPEATED {
-            XKB_EVENT_TYPE_KEY_REPEATED as i32
-        } else {
-            XKB_EVENT_TYPE_KEY_DOWN as i32
-        }) as u32,
-        data: XkbEventData::Keycode,
-    });
-    if mask != 0 && changed != 0 {
-        events.queue.push(XkbEvent {
-            type_0: XKB_EVENT_TYPE_COMPONENTS_CHANGE,
-            data: XkbEventData::Components(XkbEventComponents {
-                components: last_components,
-            }),
-        });
     }
     true
 }
 
 fn xkb_filter_redirect_key_new(
     state: &mut XkbState,
-    events: &mut XkbEvents,
     filter: &mut XkbFilter,
 ) {
     if filter.action.as_redirect().keycode == XKB_KEYCODE_INVALID {
         filter.func = None;
         return;
     }
-    append_redirect_key_events(state, events, filter.action.as_redirect(), XKB_KEY_DOWN);
+    append_redirect_key_events(state, filter.action.as_redirect(), XKB_KEY_DOWN);
 }
 
 fn xkb_filter_redirect_key_func(
     state: &mut XkbState,
-    events: &mut XkbEvents,
     filter: &mut XkbFilter,
     key: &XkbKey,
     direction: u32,
@@ -2560,7 +2507,7 @@ fn xkb_filter_redirect_key_func(
         return true;
     }
     if direction == XKB_KEY_UP {
-        append_redirect_key_events(state, events, filter.action.as_redirect(), XKB_KEY_UP);
+        append_redirect_key_events(state, filter.action.as_redirect(), XKB_KEY_UP);
         filter.func = None;
         return false;
     } else if direction == XKB_KEY_DOWN {
@@ -2570,14 +2517,14 @@ fn xkb_filter_redirect_key_func(
             if actions[a as usize].action_type() == ACTION_TYPE_REDIRECT_KEY
                 && actions[a as usize].as_redirect().keycode != filter.action.as_redirect().keycode
             {
-                append_redirect_key_events(state, events, filter.action.as_redirect(), XKB_KEY_UP);
+                append_redirect_key_events(state, filter.action.as_redirect(), XKB_KEY_UP);
                 filter.func = None;
                 return true;
             }
             a += 1;
         }
     }
-    append_redirect_key_events(state, events, filter.action.as_redirect(), direction);
+    append_redirect_key_events(state, filter.action.as_redirect(), direction);
     false
 }
 
@@ -2672,7 +2619,6 @@ static FILTER_ACTION_FUNCS: [FilterActionFuncs; 21] = {
 
 fn xkb_filter_apply_all(
     state: &mut XkbState,
-    events: &mut XkbEvents,
     key: &XkbKey,
     direction: u32,
 ) {
@@ -2684,7 +2630,7 @@ fn xkb_filter_apply_all(
             // Swap out the filter to avoid aliasing &mut state and &mut filter
             let mut filter = std::mem::take(&mut state.filters[i]);
             let func = filter.func.expect("non-null function pointer");
-            if !func(state, events, &mut filter, key, direction) {
+            if !func(state, &mut filter, key, direction) {
                 consumed = true;
             }
             state.filters[i] = filter;
@@ -2738,7 +2684,7 @@ fn xkb_filter_apply_all(
                 .expect("non-null function pointer");
             // Swap out filter for the new callback
             let mut filter = std::mem::take(&mut state.filters[idx]);
-            new_fn(state, events, &mut filter);
+            new_fn(state, &mut filter);
             state.filters[idx] = filter;
         }
         k += 1;
@@ -2894,8 +2840,7 @@ pub(crate) fn xkb_state_update_key(
     let prev_components: StateComponents = state.components;
     state.set_mods = 0;
     state.clear_mods = 0;
-    let mut dummy_events = XkbEvents::dummy();
-    xkb_filter_apply_all(state, &mut dummy_events, key_ref, direction);
+    xkb_filter_apply_all(state, key_ref, direction);
     let mut i: u32;
     let mut bit: u32;
     i = 0;
@@ -2944,7 +2889,7 @@ static SYNTHETIC_KEY: LazyLock<XkbKey> = LazyLock::new(|| XkbKey {
     overlay_keys: Vec::new(),
 });
 
-fn update_latch_modifiers(state: &mut XkbState, events: &mut XkbEvents, mask: u32, latches: u32) {
+fn update_latch_modifiers(state: &mut XkbState, mask: u32, latches: u32) {
     let clear: u32 = mask & !latches;
     state.components.latched_mods &= !clear;
     let synthetic_key_level_break_mod_latch: XkbLevel = XkbLevel {
@@ -2980,7 +2925,7 @@ fn update_latch_modifiers(state: &mut XkbState, events: &mut XkbEvents, mask: u3
         groups: vec![synthetic_key_group_break_mod_latch],
         overlay_keys: Vec::new(),
     };
-    xkb_filter_apply_all(state, events, &synthetic_key_break_mod_latch, XKB_KEY_DOWN);
+    xkb_filter_apply_all(state,  &synthetic_key_break_mod_latch, XKB_KEY_DOWN);
     let key: &XkbKey = &SYNTHETIC_KEY;
     let latch_mods: XkbAction = XkbAction::ModLatch(XkbModAction {
         type_0: ACTION_TYPE_MOD_LATCH,
@@ -2996,15 +2941,14 @@ fn update_latch_modifiers(state: &mut XkbState, events: &mut XkbEvents, mask: u3
     state.filters[idx].action = latch_mods;
     // Swap out for callbacks
     let mut filter = std::mem::take(&mut state.filters[idx]);
-    xkb_filter_mod_latch_new(state, events, &mut filter);
-    xkb_filter_mod_latch_func(state, events, &mut filter, key, XKB_KEY_UP);
+    xkb_filter_mod_latch_new(state, &mut filter);
+    xkb_filter_mod_latch_func(state, &mut filter, key, XKB_KEY_UP);
     state.filters[idx] = filter;
 }
 
-fn update_latch_group(state: &mut XkbState, events: &mut XkbEvents, group: i32) {
+fn update_latch_group(state: &mut XkbState, group: i32) {
     xkb_filter_apply_all(
         state,
-        events,
         &SYNTHETIC_KEY_BREAK_GROUP_LATCH,
         XKB_KEY_DOWN,
     );
@@ -3018,8 +2962,8 @@ fn update_latch_group(state: &mut XkbState, events: &mut XkbEvents, group: i32) 
     state.filters[idx].func = Some(xkb_filter_group_latch_func);
     state.filters[idx].action = latch_group;
     let mut filter = std::mem::take(&mut state.filters[idx]);
-    xkb_filter_group_latch_new(state, events, &mut filter);
-    xkb_filter_group_latch_func(state, events, &mut filter, key, XKB_KEY_UP);
+    xkb_filter_group_latch_new(state, &mut filter);
+    xkb_filter_group_latch_func(state, &mut filter, key, XKB_KEY_UP);
     state.filters[idx] = filter;
 }
 #[inline]
@@ -3031,7 +2975,6 @@ fn resolve_to_canonical_mods(keymap: &XkbKeymap, mods: u32) -> u32 {
 fn state_update_latched_locked(
     state: &mut XkbState,
     update: &XkbStateComponentsUpdate,
-    events: &mut XkbEvents,
 ) {
     let keymap = Rc::clone(&state.keymap);
     let affect_locked_mods: u32 = resolve_to_canonical_mods(&keymap, update.affect_locked_mods);
@@ -3046,15 +2989,15 @@ fn state_update_latched_locked(
     let affect_latched_mods: u32 = resolve_to_canonical_mods(&keymap, update.affect_latched_mods);
     if affect_latched_mods != 0 {
         let latched_mods: u32 = resolve_to_canonical_mods(&keymap, update.latched_mods);
-        update_latch_modifiers(state, events, affect_latched_mods, latched_mods);
+        update_latch_modifiers(state, affect_latched_mods, latched_mods);
     }
     if update.components & XKB_STATE_LAYOUT_LATCHED != 0 {
-        update_latch_group(state, events, update.latched_layout);
+        update_latch_group(state, update.latched_layout);
     }
 }
 
 #[inline]
-fn clear_all_latches_and_locks(state: &mut XkbState, events: &mut XkbEvents) {
+fn clear_all_latches_and_locks(state: &mut XkbState) {
     static COMPONENTS: u32 = XKB_STATE_MODS_LATCHED
         | XKB_STATE_MODS_LOCKED
         | XKB_STATE_LAYOUT_LATCHED
@@ -3068,7 +3011,7 @@ fn clear_all_latches_and_locks(state: &mut XkbState, events: &mut XkbEvents) {
         latched_layout: 0_i32,
         locked_layout: 0_i32,
     };
-    state_update_latched_locked(state, &update, events);
+    state_update_latched_locked(state, &update);
 }
 
 pub(crate) fn xkb_state_update_mask(
