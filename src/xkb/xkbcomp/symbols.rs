@@ -95,7 +95,7 @@ impl KeyInfo {
 
 impl SymbolsInfo {
     pub(crate) fn new(ki: &mut XkbKeymapInfo<'_>) -> Self {
-        let star_atom = atom_intern(&mut ki.keymap_mut().ctx.atom_table, b"*");
+        let star_atom = atom_intern(&mut ki.keymap.ctx.atom_table, b"*");
         Self {
             name: None,
             error_count: 0,
@@ -183,7 +183,7 @@ fn init_symbols_info(
         &mut info.default_key,
         atom_intern(&mut ki.ctx_mut().atom_table, b"*"),
     );
-    init_actions_info(ki.keymap_ref(), &mut info.default_actions);
+    init_actions_info(&*ki.keymap, &mut info.default_actions);
     init_vmods(&mut info.mods, mods, include_depth > 0);
 }
 fn merge_groups(
@@ -583,7 +583,7 @@ fn add_key_symbols(
 ) -> bool {
     // XkbResolveKeyAlias inlined
     {
-        let keymap = ki.keymap_ref();
+        let keymap = &*ki.keymap;
         let name = keyi.name;
         if (name as usize) < keymap.key_names.len() {
             let match_0: KeycodeMatch = keymap.key_names[name as usize];
@@ -606,10 +606,8 @@ fn add_key_symbols(
     init_key_info_with_atom(keyi, info.star_atom);
     true
 }
-fn add_mod_map_entry(ki: &XkbKeymapInfo<'_>, info: &mut SymbolsInfo, new: &ModMapEntry) -> bool {
+fn add_mod_map_entry(info: &mut SymbolsInfo, new: &ModMapEntry) -> bool {
     let clobber: bool = new.merge != MERGE_AUGMENT;
-    let _ctx = ki.ctx();
-    let _mods = &info.mods;
     for old in info.modmaps.iter_mut() {
         if new.have_symbol != old.have_symbol
             || new.have_symbol && new.u != old.u
@@ -677,7 +675,7 @@ fn merge_included_symbols(
     } else {
         for mm in from.modmaps.iter_mut() {
             mm.merge = merge;
-            if !add_mod_map_entry(ki, into, mm) {
+            if !add_mod_map_entry(into, mm) {
                 into.error_count += 1;
             }
         }
@@ -1547,7 +1545,7 @@ fn handle_mod_map_def(
             }
         }
         if add_entry {
-            ok = add_mod_map_entry(ki, info, &tmp) && ok;
+            ok = add_mod_map_entry(info, &tmp) && ok;
         }
     }
     ok
@@ -2006,13 +2004,13 @@ pub(crate) fn compile_symbols(
     file: Option<&mut XkbFile>,
     keymap_info: &mut XkbKeymapInfo<'_>,
 ) -> bool {
-    let mods = keymap_info.keymap_ref().mods;
+    let mods = keymap_info.keymap.mods;
     let mut info = SymbolsInfo::new(keymap_info);
     init_symbols_info(&mut info, keymap_info, 0_u32, &mods);
     if let Some(file) = file {
         handle_symbols_file(keymap_info, &mut info, file);
     }
-    if (info.error_count == 0) && copy_symbols_to_keymap(keymap_info.keymap_mut(), &mut info) {
+    if (info.error_count == 0) && copy_symbols_to_keymap(keymap_info.keymap, &mut info) {
         return true;
     }
     false
@@ -2133,7 +2131,7 @@ fn init_compat_info(
     mods: &XkbModSet,
 ) {
     info.include_depth = include_depth;
-    init_actions_info(ki.keymap_ref(), &mut info.default_actions);
+    init_actions_info(&*ki.keymap, &mut info.default_actions);
     init_vmods(&mut info.mods, mods, include_depth > 0);
     init_interp(&mut info.default_interp);
     init_led(&mut info.default_led);
@@ -2975,7 +2973,6 @@ fn copy_interps(info: &CompatInfo, need_symbol: bool, pred: u32, collect: &mut C
     }
 }
 fn copy_led_map_defs_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) {
-    let keymap = ki.keymap_mut();
     let mut idx: u32 = 0;
     while idx < info.num_leds {
         let ledi_led = info.leds[idx as usize].led;
@@ -2986,29 +2983,29 @@ fn copy_led_map_defs_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo
         let _led_name_text = if is_default {
             "default"
         } else {
-            atom_text(&keymap.ctx.atom_table, info.leds[idx as usize].led.name)
+            atom_text(&ki.keymap.ctx.atom_table, info.leds[idx as usize].led.name)
         };
         let mut i: u32;
         i = 0;
-        while i < keymap.num_leds {
-            if keymap.leds[i as usize].name == ledi_led.name {
+        while i < ki.keymap.num_leds {
+            if ki.keymap.leds[i as usize].name == ledi_led.name {
                 break;
             }
             i += 1;
         }
         let mut assign_led = false;
-        if i >= keymap.num_leds {
+        if i >= ki.keymap.num_leds {
             i = 0;
-            while i < keymap.num_leds {
-                if keymap.leds[i as usize].name == XKB_ATOM_NONE {
+            while i < ki.keymap.num_leds {
+                if ki.keymap.leds[i as usize].name == XKB_ATOM_NONE {
                     break;
                 }
                 i += 1;
             }
-            if i >= keymap.num_leds {
+            if i >= ki.keymap.num_leds {
                 if i < XKB_MAX_LEDS {
-                    i = keymap.num_leds;
-                    keymap.num_leds = keymap.num_leds + 1;
+                    i = ki.keymap.num_leds;
+                    ki.keymap.num_leds += 1;
                     assign_led = true;
                 }
             } else {
@@ -3018,8 +3015,8 @@ fn copy_led_map_defs_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo
             assign_led = true;
         }
         if assign_led {
-            keymap.leds[i as usize] = ledi_led;
-            let led = &mut keymap.leds[i as usize];
+            ki.keymap.leds[i as usize] = ledi_led;
+            let led = &mut ki.keymap.leds[i as usize];
             if led.which_groups == 0 && (led.groups != 0 || led.pending_groups) {
                 led.which_groups = XKB_STATE_LAYOUT_EFFECTIVE;
             }
@@ -3052,15 +3049,14 @@ fn copy_compat_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) -> b
     };
     // Now get keymap and assign everything
     {
-        let keymap = ki.keymap_mut();
-        keymap.compat_section_name = match &info.name {
+        ki.keymap.compat_section_name = match &info.name {
             Some(s) => s.clone(),
             None => String::new(),
         };
-        xkb_escape_map_name(&mut keymap.compat_section_name);
-        keymap.mods = info.mods;
+        xkb_escape_map_name(&mut ki.keymap.compat_section_name);
+        ki.keymap.mods = info.mods;
         if let Some(interps) = sym_interprets {
-            keymap.sym_interprets = interps;
+            ki.keymap.sym_interprets = interps;
         }
     }
     // copy_led_map_defs_to_keymap needs keymap borrow ended; scope block ensures this
@@ -3068,7 +3064,7 @@ fn copy_compat_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) -> b
     true
 }
 pub(crate) fn compile_compat_map(file: Option<&mut XkbFile>, ki: &mut XkbKeymapInfo<'_>) -> bool {
-    let mods = ki.keymap_ref().mods;
+    let mods = ki.keymap.mods;
     let mut info = CompatInfo::new();
     init_compat_info(ki, &mut info, 0_u32, &mods);
     if let Some(file) = file {
@@ -3545,7 +3541,7 @@ fn handle_key_types_file(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, fi
     }
 }
 fn copy_key_types_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo) -> bool {
-    let keymap = ki.keymap_mut();
+    // let keymap = ki.keymap;
     let num_types: u32 = if info.types.is_empty() {
         1_u32
     } else {
@@ -3554,7 +3550,7 @@ fn copy_key_types_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo)
     let mut types_vec: Vec<XkbKeyType> = Vec::with_capacity(num_types as usize);
     if info.types.is_empty() {
         let type_0 = XkbKeyType {
-            name: atom_intern(&mut keymap.ctx.atom_table, b"ONE_LEVEL"),
+            name: atom_intern(&mut ki.keymap.ctx.atom_table, b"ONE_LEVEL"),
             mods: XkbMods { mods: 0, mask: 0 },
             required: true,
             num_levels: 1,
@@ -3563,10 +3559,10 @@ fn copy_key_types_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo)
         types_vec.push(type_0);
     } else {
         let canonical_types: [u32; 4] = [
-            atom_intern(&mut keymap.ctx.atom_table, b"ONE_LEVEL"),
-            atom_intern(&mut keymap.ctx.atom_table, b"TWO_LEVEL"),
-            atom_intern(&mut keymap.ctx.atom_table, b"ALPHABETIC"),
-            atom_intern(&mut keymap.ctx.atom_table, b"KEYPAD"),
+            atom_intern(&mut ki.keymap.ctx.atom_table, b"ONE_LEVEL"),
+            atom_intern(&mut ki.keymap.ctx.atom_table, b"TWO_LEVEL"),
+            atom_intern(&mut ki.keymap.ctx.atom_table, b"ALPHABETIC"),
+            atom_intern(&mut ki.keymap.ctx.atom_table, b"KEYPAD"),
         ];
         for def in info.types.iter_mut() {
             let entries = std::mem::take(&mut def.entries);
@@ -3591,20 +3587,20 @@ fn copy_key_types_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo)
             });
         }
     }
-    keymap.types_section_name = match &info.name {
+    ki.keymap.types_section_name = match &info.name {
         Some(s) => s.clone(),
         None => String::new(),
     };
-    xkb_escape_map_name(&mut keymap.types_section_name);
-    keymap.types = types_vec;
-    keymap.mods = info.mods;
+    xkb_escape_map_name(&mut ki.keymap.types_section_name);
+    ki.keymap.types = types_vec;
+    ki.keymap.mods = info.mods;
     true
 }
 pub(crate) fn compile_key_types(
     file: Option<&mut XkbFile>,
     keymap_info: &mut XkbKeymapInfo<'_>,
 ) -> bool {
-    let mods = keymap_info.keymap_ref().mods;
+    let mods = keymap_info.keymap.mods;
     let mut info = KeyTypesInfo::new();
     init_key_types_info(&mut info, 0_u32, &mods);
     if let Some(file) = file {
@@ -4454,36 +4450,35 @@ fn copy_led_names_to_keymap(
     true
 }
 fn copy_key_names_info_to_keymap(info: &mut KeyNamesInfo, ki: &mut XkbKeymapInfo<'_>) -> bool {
-    let keymap = ki.keymap_mut();
-    if !copy_key_names_to_keymap(keymap, &info.keycodes)
-        || !copy_keycode_name_lut(keymap, &mut info.keycodes)
-        || !copy_led_names_to_keymap(keymap, &info.led_names, info.num_led_names)
+    if !copy_key_names_to_keymap(ki.keymap, &info.keycodes)
+        || !copy_keycode_name_lut(ki.keymap, &mut info.keycodes)
+        || !copy_led_names_to_keymap(ki.keymap, &info.led_names, info.num_led_names)
     {
         return false;
     }
-    if keymap.num_keys == 0 || keymap.min_key_code > 0 {
-        keymap.redirect_key_auto = 0;
+    if ki.keymap.num_keys == 0 || ki.keymap.min_key_code > 0 {
+        ki.keymap.redirect_key_auto = 0;
     } else {
         let mut keycode: u32 = XKB_KEYCODE_INVALID.wrapping_sub(1_u32);
-        let mut k: u32 = keymap.num_keys;
+        let mut k: u32 = ki.keymap.num_keys;
         loop {
             let old_k = k;
             k -= 1;
-            if old_k <= keymap.num_keys_low {
+            if old_k <= ki.keymap.num_keys_low {
                 break;
             }
-            if keycode > (&keymap.keys)[k as usize].keycode {
+            if keycode > (&ki.keymap.keys)[k as usize].keycode {
                 break;
             }
-            keycode = (&keymap.keys)[k as usize].keycode.wrapping_sub(1_u32);
+            keycode = (&ki.keymap.keys)[k as usize].keycode.wrapping_sub(1_u32);
         }
-        keymap.redirect_key_auto = keycode;
+        ki.keymap.redirect_key_auto = keycode;
     }
-    keymap.keycodes_section_name = match &info.name {
+    ki.keymap.keycodes_section_name = match &info.name {
         Some(s) => s.clone(),
         None => String::new(),
     };
-    xkb_escape_map_name(&mut keymap.keycodes_section_name);
+    xkb_escape_map_name(&mut ki.keymap.keycodes_section_name);
     true
 }
 pub(crate) fn compile_keycodes(
@@ -6014,9 +6009,9 @@ fn handle_redirect_key(
             } else {
                 unreachable!()
             };
-            let val_str: &str = atom_text(&keymap_info.keymap_ref().ctx.atom_table, ident);
+            let val_str: &str = atom_text(&keymap_info.keymap.ctx.atom_table, ident);
             if !val_str.is_empty() && val_str.eq_ignore_ascii_case("auto") {
-                act.keycode = keymap_info.keymap_ref().redirect_key_auto;
+                act.keycode = keymap_info.keymap.redirect_key_auto;
                 return PARSER_SUCCESS;
             }
         }
@@ -6028,7 +6023,7 @@ fn handle_redirect_key(
         } else {
             unreachable!()
         };
-        let key = keymap_info.keymap_ref().key_by_name(key_name_val, true);
+        let key = keymap_info.keymap.key_by_name(key_name_val, true);
         if let Some(key) = key {
             act.keycode = key.keycode;
             return PARSER_SUCCESS;

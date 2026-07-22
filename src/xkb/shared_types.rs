@@ -1125,15 +1125,14 @@ pub(crate) struct UnknownStatement {
 
 // ── Map flags and XkbFile ───────────────────────────────────────────
 
-pub(crate) type XkbMapFlags = u32;
-pub(crate) const MAP_IS_ALTGR: XkbMapFlags = 128;
-pub(crate) const MAP_HAS_FN: XkbMapFlags = 64;
-pub(crate) const MAP_HAS_KEYPAD: XkbMapFlags = 32;
-pub(crate) const MAP_HAS_MODIFIER: XkbMapFlags = 16;
-pub(crate) const MAP_HAS_ALPHANUMERIC: XkbMapFlags = 8;
-pub(crate) const MAP_IS_HIDDEN: XkbMapFlags = 4;
-pub(crate) const MAP_IS_PARTIAL: XkbMapFlags = 2;
-pub(crate) const MAP_IS_DEFAULT: XkbMapFlags = 1;
+pub(crate) const MAP_IS_ALTGR: u32 = 128;
+pub(crate) const MAP_HAS_FN: u32 = 64;
+pub(crate) const MAP_HAS_KEYPAD: u32 = 32;
+pub(crate) const MAP_HAS_MODIFIER: u32 = 16;
+pub(crate) const MAP_HAS_ALPHANUMERIC: u32 = 8;
+pub(crate) const MAP_IS_HIDDEN: u32 = 4;
+pub(crate) const MAP_IS_PARTIAL: u32 = 2;
+pub(crate) const MAP_IS_DEFAULT: u32 = 1;
 
 pub(crate) enum Statement {
     Include(Box<_IncludeStmt>),
@@ -1156,7 +1155,7 @@ pub(crate) struct XkbFile {
     pub(crate) name: String,
     pub(crate) defs: Vec<Statement>,
     pub(crate) file_type: u32,
-    pub(crate) flags: XkbMapFlags,
+    pub(crate) flags: u32,
 }
 
 // ── xkbcomp_priv types (parser/keymap info) ─────────────────────────
@@ -1198,14 +1197,6 @@ pub(crate) struct XkbKeymapInfo<'a> {
 }
 
 impl<'a> XkbKeymapInfo<'a> {
-    pub(crate) fn keymap_ref(&self) -> &XkbKeymap {
-        &*self.keymap
-    }
-
-    pub(crate) fn keymap_mut(&mut self) -> &mut XkbKeymap {
-        &mut *self.keymap
-    }
-
     pub(crate) fn ctx(&self) -> &XkbContext {
         &self.keymap.ctx
     }
@@ -1233,19 +1224,6 @@ pub(crate) struct XkbcompFeatures {
     pub(crate) mods_latch_on_press: bool,
     pub(crate) overlapping_overlays: bool,
 }
-
-// ── Inline helper functions (were duplicated in every xkbcomp_priv_h module) ──
-
-#[inline]
-pub(crate) fn safe_map_name(file: &XkbFile) -> &str {
-    if file.name.is_empty() {
-        "(unnamed map)"
-    } else {
-        &file.name
-    }
-}
-
-// ── Utility functions (merged from utils.rs) ──
 
 /// Case-insensitive comparison of two byte slices (like C `strcasecmp`).
 /// Returns <0, 0, or >0.

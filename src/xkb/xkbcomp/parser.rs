@@ -10,9 +10,9 @@ use super::super::shared_types::{
 };
 
 use super::super::shared_types::{
-    safe_map_name, ExprKind, _IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
+    ExprKind, _IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
     LedMapDef, LedNameDef, ModMapDef, Statement, SymbolsDef, UnknownStatement,
-    VModDef, VarDef, XkbFile, XkbMapFlags, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
+    VModDef, VarDef, XkbFile, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
     FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
     FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN,
     MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL,
@@ -814,7 +814,7 @@ fn yy_file_type<'a>(yyval: &mut YYValue<'a>, ft: u32) {
     *yyval = YYValue::FileType(ft);
 }
 #[inline(always)]
-fn yy_flags<'a>(yyval: &mut YYValue<'a>, f: XkbMapFlags) {
+fn yy_flags<'a>(yyval: &mut YYValue<'a>, f: u32) {
     *yyval = YYValue::MapFlags(f);
 }
 #[inline(always)]
@@ -2176,7 +2176,7 @@ pub(crate) fn xkb_file_create(
     type_0: u32,
     name: Option<String>,
     defs: Vec<Statement>,
-    flags: XkbMapFlags,
+    flags: u32,
 ) -> Box<XkbFile> {
     let mut name_str = name.unwrap_or_default();
     xkb_escape_map_name(&mut name_str);
@@ -2750,7 +2750,7 @@ pub(crate) enum YYValue<'a> {
     Sval(Sval<'a>),
     Atom(u32),
     Merge(u32),
-    MapFlags(XkbMapFlags),
+    MapFlags(u32),
     Keysym(u32),
     NoSymbolOrActionList(u32),
     Expr(Box<ExprKind>),
@@ -2849,7 +2849,7 @@ impl<'a> YYValue<'a> {
             _ => MERGE_DEFAULT,
         }
     }
-    pub(crate) fn as_map_flags(&self) -> XkbMapFlags {
+    pub(crate) fn as_map_flags(&self) -> u32 {
         match self {
             YYValue::MapFlags(f) => *f,
             _ => 0,
@@ -4146,7 +4146,11 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
     while type_0 <= LAST_KEYMAP_FILE_TYPE {
         if let Some(idx) = file_indices[type_0 as usize] {
             let _sub_name = if let Statement::XkbFile(ref sub_file) = file.defs[idx] {
-                safe_map_name(sub_file)
+                if sub_file.name.is_empty() {
+                    "(unnamed map)"
+                } else {
+                    &sub_file.name
+                }
             } else {
                 ""
             };
