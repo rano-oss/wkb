@@ -1713,7 +1713,6 @@ pub(crate) enum XkbFilter {
         saved: i32,
         refcnt: i32,
         flags: u32,
-        group: i32,
     },
     GroupLock {
         key_id: KeyId,
@@ -1732,7 +1731,6 @@ pub(crate) enum XkbFilter {
         key_id: KeyId,
         saved: u32,
         refcnt: i32,
-        ctrls: u32,
         is_set: bool,
     },
     RedirectKey {
@@ -1962,7 +1960,6 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
                 saved,
                 refcnt: 1,
                 flags,
-                group,
             }
         }
         XkbAction::GroupLock(g) => {
@@ -2013,7 +2010,6 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
                 key_id,
                 saved,
                 refcnt: 1,
-                ctrls,
                 is_set: true,
             }
         }
@@ -2027,7 +2023,6 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
                 key_id,
                 saved,
                 refcnt: 1,
-                ctrls,
                 is_set: false,
             }
         }
@@ -2198,8 +2193,7 @@ impl XkbFilter {
                 key_id,
                 saved,
                 ref mut refcnt,
-                ref mut flags,
-                group,
+                ref mut flags
             } => {
                 if !key_id.matches(key) {
                     *flags &= !ACTION_LOCK_CLEAR;
@@ -2341,7 +2335,6 @@ impl XkbFilter {
                 key_id,
                 saved,
                 ref mut refcnt,
-                ctrls,
                 is_set,
             } => {
                 if !key_id.matches(key) {
