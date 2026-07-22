@@ -420,11 +420,7 @@ fn resolve_keysym(name: Sval) -> Option<u32> {
     buf[name.len()] = 0;
     let buf_slice = &buf[..name.len() + 1];
 
-    let sym: u32 = xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS);
-    if sym != XKB_KEY_NO_SYMBOL as u32 {
-        return Some(sym);
-    }
-    None
+    return xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS);
 }
 
 fn yypcontext_expected_tokens(yyssp: &[i16], ssp: usize, yyarg: &mut [i32], yyargn: usize) -> i32 {

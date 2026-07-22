@@ -5,7 +5,6 @@ use super::shared_types::{atom_lookup_ref, atom_text};
 pub(crate) use super::shared_types::{
     XkbAction, XkbContext, XkbKeymap, XkbLed, XkbLevel, XkbModSet, XkbRuleNames, MOD_BOTH,
     MOD_REAL, MOD_REAL_MASK_ALL, XKB_ATOM_NONE, XKB_KEYCODE_INVALID, XKB_KEYMAP_FORMAT_TEXT_V2,
-    XKB_LAYOUT_INVALID, XKB_MOD_INVALID,
 };
 
 pub(crate) fn xkb_keymap_new_from_names(
@@ -70,20 +69,22 @@ pub struct ComposeEntry {
 pub fn keysym_name_to_char(name: &str) -> Option<char> {
     use super::keysym::keysym_to_utf32;
     use super::keysym::xkb_keysym_from_name;
-    use super::shared_types::{XKB_KEYSYM_NO_FLAGS, XKB_KEY_NO_SYMBOL};
+    use super::shared_types::XKB_KEYSYM_NO_FLAGS;
 
-    let ks = xkb_keysym_from_name(name.as_bytes(), XKB_KEYSYM_NO_FLAGS);
-    if ks == XKB_KEY_NO_SYMBOL as u32 {
-        if let Some(hex) = name.strip_prefix('U') {
-            if !hex.is_empty() && hex.len() <= 6 && hex.chars().all(|c| c.is_ascii_hexdigit()) {
-                return u32::from_str_radix(hex, 16).ok().and_then(char::from_u32);
+    let ks = match xkb_keysym_from_name(name.as_bytes(), XKB_KEYSYM_NO_FLAGS) {
+        Some(ks) => ks,
+        None => {
+            if let Some(hex) = name.strip_prefix('U') {
+                if !hex.is_empty() && hex.len() <= 6 && hex.chars().all(|c| c.is_ascii_hexdigit()) {
+                    return u32::from_str_radix(hex, 16).ok().and_then(char::from_u32);
+                }
             }
+            if name.len() == 1 {
+                return name.chars().next();
+            }
+            return None;
         }
-        if name.len() == 1 {
-            return name.chars().next();
-        }
-        return None;
-    }
+    };
     let utf32 = keysym_to_utf32(ks);
     if utf32 == 0 {
         return None;
@@ -1651,9 +1652,6 @@ pub(crate) struct StateComponents {
     pub(crate) controls: u32,
 }
 
-fn vec_resize_zero<T: Default>(v: &mut Vec<T>, new_len: usize) {
-    v.resize_with(new_len, Default::default);
-}
 
 #[derive(Clone)]
 
