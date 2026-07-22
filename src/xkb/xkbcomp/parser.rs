@@ -1773,11 +1773,10 @@ fn execute_reduction<'a>(
         199 => {
             // KeySym: STRING → parse string as keysym
             let s = yyvs[sp].take_str();
-            let keysym = keysym_parse_string(param.scanner, &s);
-            if keysym == XKB_KEY_NO_SYMBOL as u32 {
-                return false;
+            match keysym_parse_string(param.scanner, &s) {
+                Some(keysym) => *yyval = YYValue::Keysym(keysym),
+                None => return false,
             }
-            *yyval = YYValue::Keysym(keysym);
         }
         200 => {
             // KeySym: IDENT → resolve keysym name
@@ -1978,26 +1977,26 @@ pub(crate) fn expr_key_sym_list_append_string(
     }
 }
 
-pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> u32 {
+pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> Option<u32> {
     let bytes = string.as_bytes();
     let len = bytes.len();
     if len == 0 {
         let _loc = scanner.token_location();
-        return XKB_KEY_NO_SYMBOL as u32;
+        return None;
     }
     let (cp, cp_len) = utf8_next_code_point_safe(bytes);
     if cp == INVALID_UTF8_CODE_POINT {
         let _loc = scanner.token_location();
-        return XKB_KEY_NO_SYMBOL as u32;
+        return None;
     } else if cp_len != len {
         let _loc = scanner.token_location();
-        return XKB_KEY_NO_SYMBOL as u32;
+        return None;
     }
     let sym = utf32_to_keysym(cp);
     if sym == XKB_KEY_NO_SYMBOL as u32 {
         let _loc = scanner.token_location();
     }
-    sym
+    Some(sym)
 }
 
 pub(crate) fn keycode_create(name: u32, value: i64) -> Box<KeycodeDef> {
@@ -3388,7 +3387,7 @@ fn compute_effective_mask_with(mod_set: &XkbModSet, mods: &mut XkbMods) {
 fn update_action_mods(keymap: &XkbKeymap, act: &mut XkbAction, modmap: u32) {
     match act {
         XkbAction::ModSet(m) | XkbAction::ModLatch(m) | XkbAction::ModLock(m) => {
-            if m.flags & ACTION_MODS_LOOKUP_MODMAP != 0 {
+            if m.flags.contains(ActionFlags::MODS_LOOKUP_MODMAP) {
                 m.mods.mods = modmap;
             }
             compute_effective_mask(keymap, &mut m.mods);
@@ -3671,11 +3670,11 @@ fn update_pending_action_fields(
 ) -> bool {
     match act {
         XkbAction::GroupSet(g) | XkbAction::GroupLatch(g) | XkbAction::GroupLock(g) => {
-            if g.flags & ACTION_PENDING_COMPUTATION != 0 {
+            if g.flags.contains(ActionFlags::PENDING_COMPUTATION) {
                 let pc_idx = g.group as usize;
                 if !info.pending_computations[pc_idx].computed {
                     let mut group: u32 = 0;
-                    let absolute: bool = g.flags & ACTION_ABSOLUTE_SWITCH != 0;
+                    let absolute: bool = g.flags.contains(ActionFlags::ABSOLUTE_SWITCH);
                     let mut _pending = false;
                     let expr_box = info.pending_computations[pc_idx].expr.take().unwrap();
                     let resolve_ret =
@@ -3707,7 +3706,7 @@ fn update_pending_action_fields(
                     }
                 }
                 g.group = info.pending_computations[pc_idx].value as i32;
-                g.flags = g.flags & !ACTION_PENDING_COMPUTATION;
+                g.flags = g.flags & !ActionFlags::PENDING_COMPUTATION;
             }
             true
         }

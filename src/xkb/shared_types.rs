@@ -270,82 +270,92 @@ pub struct XkbRedirectKeyAction {
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbPointerButtonAction {
-    pub flags: u32,
+    pub flags: ActionFlags,
     pub count: u8,
     pub button: u8,
 }
 
-pub const ACTION_PENDING_COMPUTATION: u32 = 8192;
-pub const ACTION_LATCH_ON_PRESS: u32 = 4096;
-pub const ACTION_UNLOCK_ON_PRESS: u32 = 2048;
-pub const ACTION_LOCK_ON_RELEASE: u32 = 1024;
-pub const ACTION_SAME_SCREEN: u32 = 512;
-pub const ACTION_ACCEL: u32 = 256;
-pub const ACTION_ABSOLUTE_Y: u32 = 128;
-pub const ACTION_ABSOLUTE_X: u32 = 64;
-pub const ACTION_ABSOLUTE_SWITCH: u32 = 32;
-pub const ACTION_MODS_LOOKUP_MODMAP: u32 = 16;
-pub const ACTION_LOCK_NO_UNLOCK: u32 = 8;
-pub const ACTION_LOCK_NO_LOCK: u32 = 4;
-pub const ACTION_LATCH_TO_LOCK: u32 = 2;
-pub const ACTION_LOCK_CLEAR: u32 = 1;
+bitflags::bitflags! {
+    #[derive(Copy, Clone, Default, PartialEq, Eq)]
+    pub struct ActionFlags: u32 {
+        const LOCK_CLEAR            = 1;
+        const LATCH_TO_LOCK         = 2;
+        const LOCK_NO_LOCK          = 4;
+        const LOCK_NO_UNLOCK        = 8;
+        const MODS_LOOKUP_MODMAP    = 16;
+        const ABSOLUTE_SWITCH       = 32;
+        const ABSOLUTE_X            = 64;
+        const ABSOLUTE_Y            = 128;
+        const ACCEL                 = 256;
+        const SAME_SCREEN           = 512;
+        const LOCK_ON_RELEASE       = 1024;
+        const UNLOCK_ON_PRESS       = 2048;
+        const LATCH_ON_PRESS        = 4096;
+        const PENDING_COMPUTATION   = 8192;
+    }
+}
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbPointerAction {
-    pub flags: u32,
+    pub flags: ActionFlags,
     pub x: i16,
     pub y: i16,
 }
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbSwitchScreenAction {
-    pub flags: u32,
+    pub flags: ActionFlags,
     pub screen: i8,
 }
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbPointerDefaultAction {
-    pub flags: u32,
+    pub flags: ActionFlags,
     pub value: i8,
+}
+
+bitflags::bitflags! {
+    #[derive(Copy, Clone, Default, PartialEq, Eq)]
+    pub(crate) struct ControlsFlags: u32 {
+        const STICKY_KEYS      = 1;
+        const OVERLAY1         = 2;
+        const OVERLAY2         = 4;
+        const OVERLAY3         = 8;
+        const OVERLAY4         = 16;
+        const OVERLAY5         = 32;
+        const OVERLAY6         = 64;
+        const OVERLAY7         = 128;
+        const OVERLAY8         = 256;
+        const REPEAT           = 1024;
+        const SLOW             = 2048;
+        const DEBOUNCE         = 4096;
+        const MOUSE_KEYS       = 16384;
+        const MOUSE_KEYS_ACCEL = 32768;
+        const AX               = 65536;
+        const AX_TIMEOUT       = 131072;
+        const AX_FEEDBACK      = 262144;
+        const BELL             = 524288;
+        const IGNORE_GROUP_LOCK = 1048576;
+        const ALL_BOOLEAN      = 2088447;
+        const ALL_BOOLEAN_V1   = 2087943;
+    }
 }
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbControlsAction {
-    pub flags: u32,
-    pub ctrls: u32,
+    pub flags: ActionFlags,
+    pub ctrls: ControlsFlags,
 }
-
-pub const CONTROL_ALL_BOOLEAN: u32 = 2088447;
-pub const CONTROL_ALL_BOOLEAN_V1: u32 = 2087943;
-pub const CONTROL_IGNORE_GROUP_LOCK: u32 = 1048576;
-pub const CONTROL_BELL: u32 = 524288;
-pub const CONTROL_AX_FEEDBACK: u32 = 262144;
-pub const CONTROL_AX_TIMEOUT: u32 = 131072;
-pub const CONTROL_AX: u32 = 65536;
-pub const CONTROL_MOUSE_KEYS_ACCEL: u32 = 32768;
-pub const CONTROL_MOUSE_KEYS: u32 = 16384;
-pub const CONTROL_DEBOUNCE: u32 = 4096;
-pub const CONTROL_SLOW: u32 = 2048;
-pub const CONTROL_REPEAT: u32 = 1024;
-pub const CONTROL_OVERLAY8: u32 = 256;
-pub const CONTROL_OVERLAY7: u32 = 128;
-pub const CONTROL_OVERLAY6: u32 = 64;
-pub const CONTROL_OVERLAY5: u32 = 32;
-pub const CONTROL_OVERLAY4: u32 = 16;
-pub const CONTROL_OVERLAY3: u32 = 8;
-pub const CONTROL_OVERLAY2: u32 = 4;
-pub const CONTROL_OVERLAY1: u32 = 2;
-pub const CONTROL_STICKY_KEYS: u32 = 1;
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbGroupAction {
-    pub flags: u32,
+    pub flags: ActionFlags,
     pub group: i32,
 }
 
 #[derive(Copy, Clone, Default)]
 pub(crate) struct XkbModAction {
-    pub(crate) flags: u32,
+    pub(crate) flags: ActionFlags,
     pub(crate) mods: XkbMods,
 }
 
@@ -439,7 +449,7 @@ pub(crate) struct XkbLed {
     pub(crate) groups: u32,
     pub(crate) which_mods: u32,
     pub(crate) mods: XkbMods,
-    pub(crate) ctrls: u32,
+    pub(crate) ctrls: ControlsFlags,
 }
 
 pub(crate) const XKB_MAX_GROUPS: u32 = 32;

@@ -35,6 +35,7 @@ arrayvec = "0.7"
 serde = { version = "1", features = ["derive"] }
 thiserror = "1"
 lasso = "0.7"
+bitflags = "2"
 
 [dev-dependencies]
 wkb = { package = "wayland-keyboard", path = ".", features = ["testing"] }

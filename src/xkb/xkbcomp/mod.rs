@@ -8,9 +8,7 @@ use crate::xkb::shared_types::XKB_MAX_GROUPS;
 use self::parser::compile_keymap;
 use self::parser::xkb_file_from_components;
 use self::parser::xkb_parse_string;
-use super::shared_types::{
-    XkbComponentNames, XkbFile, XkbKeymap, XkbRuleNames, FILE_TYPE_KEYMAP,
-};
+use super::shared_types::{XkbComponentNames, XkbFile, XkbKeymap, XkbRuleNames, FILE_TYPE_KEYMAP};
 
 fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
     if file.file_type != FILE_TYPE_KEYMAP {

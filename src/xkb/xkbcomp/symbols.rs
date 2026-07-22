@@ -20,7 +20,7 @@ pub(crate) struct SymbolsInfo {
     pub(crate) name: Option<String>,
     pub(crate) error_count: i32,
     pub(crate) include_depth: u32,
-    pub(crate) explicit_group: u32,
+    pub(crate) explicit_group: Option<u32>,
     pub(crate) max_groups: u32,
     pub(crate) keys: Vec<KeyInfo>,
     pub(crate) default_key: KeyInfo,
@@ -100,7 +100,7 @@ impl SymbolsInfo {
             name: None,
             error_count: 0,
             include_depth: 0,
-            explicit_group: 0,
+            explicit_group: None,
             max_groups: 0,
             keys: Vec::with_capacity(256),
             default_key: KeyInfo::new_zeroed(),
@@ -177,7 +177,7 @@ fn init_symbols_info(
     mods: &XkbModSet,
 ) {
     info.include_depth = include_depth;
-    info.explicit_group = XKB_LAYOUT_INVALID;
+    info.explicit_group = None;
     info.max_groups = ki.features.max_groups;
     init_key_info_with_atom(
         &mut info.default_key,
@@ -638,12 +638,14 @@ fn handle_include_symbols(
             &included.mods,
         );
         if !stmt.modifier.is_empty() {
-            next_incl.explicit_group = (stmt.modifier.parse::<i32>().unwrap_or(0) - 1) as u32;
-            if next_incl.explicit_group >= info.max_groups {
-                next_incl.explicit_group = info.explicit_group;
-            }
+            let eg = (stmt.modifier.parse::<i32>().unwrap_or(0) - 1) as u32;
+            next_incl.explicit_group = if eg >= info.max_groups {
+                info.explicit_group
+            } else {
+                Some(eg)
+            };
         } else if ki.keymap.num_groups != 0 && next_incl.include_depth == 1 {
-            next_incl.explicit_group = 0;
+            next_incl.explicit_group = Some(0);
         } else {
             next_incl.explicit_group = info.explicit_group;
         }
@@ -1228,10 +1230,10 @@ fn set_group_name(
         return false;
     }
     let group_to_use: u32;
-    if info.explicit_group == XKB_LAYOUT_INVALID {
+    if info.explicit_group.is_none() {
         group_to_use = group.wrapping_sub(1);
     } else if group.wrapping_sub(1) == 0 {
-        group_to_use = info.explicit_group;
+        group_to_use = info.explicit_group.unwrap();
     } else {
         return false;
     }
@@ -1381,9 +1383,10 @@ fn handle_symbols_body(
     all_valid_entries
 }
 fn set_explicit_group(_ki: &XkbKeymapInfo<'_>, info: &SymbolsInfo, keyi: &mut KeyInfo) -> bool {
-    if info.explicit_group == XKB_LAYOUT_INVALID {
-        return true;
-    }
+    let eg = match info.explicit_group {
+        None => return true,
+        Some(v) => v,
+    };
     if !keyi.groups.is_empty() {
         for group in keyi.groups[1..].iter_mut() {
             if group.defined != 0 {
@@ -1392,11 +1395,9 @@ fn set_explicit_group(_ki: &XkbKeymapInfo<'_>, info: &SymbolsInfo, keyi: &mut Ke
         }
     }
 
-    keyi.groups
-        .resize_with((info.explicit_group as usize) + 1, Default::default);
-    if info.explicit_group > 0 {
-        // Move groups[0] to groups[explicit_group], replace groups[0] with default
-        keyi.groups[info.explicit_group as usize] = std::mem::take(&mut keyi.groups[0]);
+    keyi.groups.resize_with((eg as usize) + 1, Default::default);
+    if eg > 0 {
+        keyi.groups[eg as usize] = std::mem::take(&mut keyi.groups[0]);
     }
     true
 }
@@ -1955,7 +1956,7 @@ impl CompatInfo {
                 groups: 0,
                 which_mods: 0_u32,
                 mods: XkbMods { mods: 0, mask: 0 },
-                ctrls: 0,
+                ctrls: ControlsFlags::empty(),
             },
         };
         Self {
@@ -2551,7 +2552,7 @@ fn set_led_map_field(
             ) {
                 return false;
             }
-            ledi.led.ctrls = mask_0;
+            ledi.led.ctrls = ControlsFlags::from_bits_retain(mask_0);
             ledi.defined |= LED_FIELD_CTRLS;
         }
         LedMapField::AllowExplicit | LedMapField::Index => {}
@@ -2649,7 +2650,7 @@ fn handle_compat_global_var(
                     groups: 0,
                     which_mods: 0_u32,
                     mods: XkbMods { mods: 0, mask: 0 },
-                    ctrls: 0,
+                    ctrls: ControlsFlags::empty(),
                 },
             };
             init_led(&mut temp_0);
@@ -5017,14 +5018,14 @@ pub(crate) fn init_actions_info(keymap: &XkbKeymap, info: &mut ActionsInfo) {
         type_0 += 1;
     }
     if let XkbAction::PtrDefault(ref mut d) = info.actions[ACTION_TYPE_PTR_DEFAULT as usize] {
-        d.flags = 0;
+        d.flags = ActionFlags::empty();
         d.value = 1_i8;
     }
     if let XkbAction::PtrMove(ref mut p) = info.actions[ACTION_TYPE_PTR_MOVE as usize] {
-        p.flags = ACTION_ACCEL;
+        p.flags = ActionFlags::ACCEL;
     }
     if let XkbAction::SwitchVt(ref mut s) = info.actions[ACTION_TYPE_SWITCH_VT as usize] {
-        s.flags = ACTION_SAME_SCREEN;
+        s.flags = ActionFlags::SAME_SCREEN;
     }
     if let XkbAction::RedirectKey(ref mut r) = info.actions[ACTION_TYPE_REDIRECT_KEY as usize] {
         r.keycode = keymap.redirect_key_auto;
@@ -5231,10 +5232,10 @@ fn handle_no_action(
 fn check_boolean_flag(
     ctx: &XkbContext,
     strict: u32,
-    flag: u32,
+    flag: ActionFlags,
     array_ndx: Option<&ExprKind>,
     value: &ExprKind,
-    flags_inout: &mut u32,
+    flags_inout: &mut ActionFlags,
 ) -> u32 {
     let mut set: bool = false;
     if array_ndx.is_some() {
@@ -5244,9 +5245,9 @@ fn check_boolean_flag(
         return report_mismatch(strict);
     }
     if set {
-        *flags_inout = *flags_inout | flag;
+        *flags_inout |= flag;
     } else {
-        *flags_inout = *flags_inout & !flag;
+        *flags_inout &= !flag;
     }
     PARSER_SUCCESS
 }
@@ -5274,14 +5275,14 @@ fn check_modifier_field(
                 || val_str.eq_ignore_ascii_case("modmapmods"))
         {
             *mods_rtrn = 0;
-            *flags_inout = *flags_inout | ACTION_MODS_LOOKUP_MODMAP;
+            *flags_inout |= ActionFlags::MODS_LOOKUP_MODMAP.bits();
             return PARSER_SUCCESS;
         }
     }
     if !expr_resolve_mod_mask(ctx, value, MOD_BOTH, mods, mods_rtrn) {
         return report_mismatch(strict);
     }
-    *flags_inout = *flags_inout & !ACTION_MODS_LOOKUP_MODMAP;
+    *flags_inout &= !ActionFlags::MODS_LOOKUP_MODMAP.bits();
     PARSER_SUCCESS
 }
 static LOCK_WHICH: [LookupEntry; 5] = [
@@ -5291,15 +5292,15 @@ static LOCK_WHICH: [LookupEntry; 5] = [
     },
     LookupEntry {
         name: "lock",
-        value: ACTION_LOCK_NO_UNLOCK,
+        value: ActionFlags::LOCK_NO_UNLOCK.bits(),
     },
     LookupEntry {
         name: "neither",
-        value: ACTION_LOCK_NO_LOCK | ACTION_LOCK_NO_UNLOCK,
+        value: ActionFlags::LOCK_NO_LOCK.bits() | ActionFlags::LOCK_NO_UNLOCK.bits(),
     },
     LookupEntry {
         name: "unlock",
-        value: ACTION_LOCK_NO_LOCK,
+        value: ActionFlags::LOCK_NO_LOCK.bits(),
     },
     LookupEntry { name: "", value: 0 },
 ];
@@ -5308,7 +5309,7 @@ fn check_affect_field(
     strict: u32,
     array_ndx: Option<&ExprKind>,
     value: &ExprKind,
-    flags_inout: &mut u32,
+    flags_inout: &mut ActionFlags,
 ) -> u32 {
     if array_ndx.is_some() {
         return report_mismatch(strict);
@@ -5317,8 +5318,8 @@ fn check_affect_field(
     if !expr_resolve_enum(ctx, value, &mut flags, &LOCK_WHICH) {
         return report_mismatch(strict);
     }
-    *flags_inout = *flags_inout & !(ACTION_LOCK_NO_LOCK | ACTION_LOCK_NO_UNLOCK);
-    *flags_inout = *flags_inout | flags;
+    *flags_inout &= !(ActionFlags::LOCK_NO_LOCK | ActionFlags::LOCK_NO_UNLOCK);
+    *flags_inout |= ActionFlags::from_bits_retain(flags);
     PARSER_SUCCESS
 }
 fn handle_set_latch_lock_mods(
@@ -5341,22 +5342,25 @@ fn handle_set_latch_lock_mods(
         _ => return report_illegal(keymap_info.strict),
     };
     if field == ACTION_FIELD_MODIFIERS {
-        return check_modifier_field(
+        let mut raw_flags = act.flags.bits();
+        let ret = check_modifier_field(
             ctx,
             keymap_info.strict,
             mods,
             array_ndx,
             value,
-            &mut act.flags,
+            &mut raw_flags,
             &mut act.mods.mods,
         );
+        act.flags = ActionFlags::from_bits_retain(raw_flags);
+        return ret;
     }
     if field == ACTION_FIELD_UNLOCK_ON_PRESS {
         if keymap_info.features.mods_unlock_on_press {
             return check_boolean_flag(
                 ctx,
                 keymap_info.strict,
-                ACTION_UNLOCK_ON_PRESS,
+                ActionFlags::UNLOCK_ON_PRESS,
                 array_ndx,
                 value,
                 &mut act.flags,
@@ -5369,7 +5373,7 @@ fn handle_set_latch_lock_mods(
         return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            ACTION_LOCK_CLEAR,
+            ActionFlags::LOCK_CLEAR,
             array_ndx,
             value,
             &mut act.flags,
@@ -5380,7 +5384,7 @@ fn handle_set_latch_lock_mods(
             return check_boolean_flag(
                 ctx,
                 keymap_info.strict,
-                ACTION_LATCH_TO_LOCK,
+                ActionFlags::LATCH_TO_LOCK,
                 array_ndx,
                 value,
                 &mut act.flags,
@@ -5391,7 +5395,7 @@ fn handle_set_latch_lock_mods(
                 return check_boolean_flag(
                     ctx,
                     keymap_info.strict,
-                    ACTION_LATCH_ON_PRESS,
+                    ActionFlags::LATCH_ON_PRESS,
                     array_ndx,
                     value,
                     &mut act.flags,
@@ -5422,7 +5426,7 @@ fn check_group_field(
     let is_negate = value.get().stmt_type() == STMT_EXPR_NEGATE;
     let is_unary = is_negate || value.get().stmt_type() == STMT_EXPR_UNARY_PLUS;
     if is_unary {
-        flags = flags & !ACTION_ABSOLUTE_SWITCH;
+        flags &= !ActionFlags::ABSOLUTE_SWITCH.bits();
         // Rebind value to the child field inside the unary expr
         // (for ownership transfer to pending_computations if needed)
         value = match value {
@@ -5430,10 +5434,10 @@ fn check_group_field(
             other => other,
         };
     } else {
-        flags = flags as u32 | ACTION_ABSOLUTE_SWITCH;
+        flags |= ActionFlags::ABSOLUTE_SWITCH.bits();
     }
     let spec_holder = value.get();
-    let absolute: bool = flags as u32 & ACTION_ABSOLUTE_SWITCH != 0;
+    let absolute: bool = flags & ActionFlags::ABSOLUTE_SWITCH.bits() != 0;
     let mut pending: bool = false;
     let ret: u32 =
         expr_resolve_group(keymap_info, spec_holder, absolute, &mut idx, &mut pending) as u32;
@@ -5441,7 +5445,7 @@ fn check_group_field(
         return ret;
     }
     if pending {
-        flags = flags as u32 | ACTION_PENDING_COMPUTATION;
+        flags |= ActionFlags::PENDING_COMPUTATION.bits();
         let pending_index: u32 = keymap_info.pending_computations.len() as u32;
         keymap_info.pending_computations.push(PendingComputation {
             expr: value.take(),
@@ -5450,8 +5454,8 @@ fn check_group_field(
         });
         *group_rtrn = pending_index as i32;
     } else {
-        flags = flags & !ACTION_PENDING_COMPUTATION;
-        if flags & ACTION_ABSOLUTE_SWITCH == 0 {
+        flags &= !ActionFlags::PENDING_COMPUTATION.bits();
+        if flags & ActionFlags::ABSOLUTE_SWITCH.bits() == 0 {
             *group_rtrn = idx as i32;
             if is_negate {
                 *group_rtrn = -*group_rtrn;
@@ -5479,13 +5483,16 @@ fn handle_set_latch_lock_group(
             | XkbAction::GroupLock(ref mut g) => g,
             _ => return report_illegal(keymap_info.strict),
         };
-        return check_group_field(
+        let mut raw_flags = act.flags.bits();
+        let ret = check_group_field(
             keymap_info,
             array_ndx,
             value,
-            &mut act.flags,
+            &mut raw_flags,
             &mut act.group,
         );
+        act.flags = ActionFlags::from_bits_retain(raw_flags);
+        return ret;
     }
     let value = value.get();
     let is_set_or_latch = matches!(action, XkbAction::GroupSet(_) | XkbAction::GroupLatch(_));
@@ -5501,7 +5508,7 @@ fn handle_set_latch_lock_group(
         return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            ACTION_LOCK_CLEAR,
+            ActionFlags::LOCK_CLEAR,
             array_ndx,
             value,
             &mut act.flags,
@@ -5511,7 +5518,7 @@ fn handle_set_latch_lock_group(
         return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            ACTION_LATCH_TO_LOCK,
+            ActionFlags::LATCH_TO_LOCK,
             array_ndx,
             value,
             &mut act.flags,
@@ -5522,7 +5529,7 @@ fn handle_set_latch_lock_group(
             return check_boolean_flag(
                 ctx,
                 keymap_info.strict,
-                ACTION_LOCK_ON_RELEASE,
+                ActionFlags::LOCK_ON_RELEASE,
                 array_ndx,
                 value,
                 &mut act.flags,
@@ -5562,12 +5569,12 @@ fn handle_move_ptr(
         }
         if field == ACTION_FIELD_X {
             if absolute {
-                act.flags = act.flags | ACTION_ABSOLUTE_X;
+                act.flags |= ActionFlags::ABSOLUTE_X;
             }
             act.x = val as i16;
         } else {
             if absolute {
-                act.flags = act.flags | ACTION_ABSOLUTE_Y;
+                act.flags |= ActionFlags::ABSOLUTE_Y;
             }
             act.y = val as i16;
         }
@@ -5576,7 +5583,7 @@ fn handle_move_ptr(
         return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            ACTION_ACCEL,
+            ActionFlags::ACCEL,
             array_ndx,
             value,
             &mut act.flags,
@@ -5675,14 +5682,14 @@ fn handle_set_ptr_dflt(
             return report_mismatch(keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
-            act.flags = act.flags & !ACTION_ABSOLUTE_SWITCH;
+            act.flags &= !ActionFlags::ABSOLUTE_SWITCH;
             button = if let ExprKind::Unary { child, .. } = &value {
                 child.as_deref().unwrap()
             } else {
                 unreachable!()
             };
         } else {
-            act.flags = act.flags | ACTION_ABSOLUTE_SWITCH;
+            act.flags |= ActionFlags::ABSOLUTE_SWITCH;
             button = value;
         }
         if !expr_resolve_button(ctx, button, &mut btn) {
@@ -5724,14 +5731,14 @@ fn handle_switch_screen(
             return report_mismatch(keymap_info.strict);
         }
         if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
-            act.flags = act.flags & !ACTION_ABSOLUTE_SWITCH;
+            act.flags &= !ActionFlags::ABSOLUTE_SWITCH;
             scrn = if let ExprKind::Unary { child, .. } = &value {
                 child.as_deref().unwrap()
             } else {
                 unreachable!()
             };
         } else {
-            act.flags = act.flags | ACTION_ABSOLUTE_SWITCH;
+            act.flags |= ActionFlags::ABSOLUTE_SWITCH;
             scrn = value;
         }
         if !expr_resolve_integer(ctx, scrn, &mut val) {
@@ -5751,7 +5758,7 @@ fn handle_switch_screen(
         return check_boolean_flag(
             ctx,
             keymap_info.strict,
-            ACTION_SAME_SCREEN,
+            ActionFlags::SAME_SCREEN,
             array_ndx,
             value,
             &mut act.flags,
@@ -5783,7 +5790,7 @@ fn handle_set_lock_controls(
         if !expr_resolve_mask(ctx, value, &mut mask, &CTRL_MASK_NAMES[offset as usize..]) {
             return report_mismatch(keymap_info.strict);
         }
-        act.ctrls = mask;
+        act.ctrls = ControlsFlags::from_bits_retain(mask);
         return PARSER_SUCCESS;
     } else if is_lock && field == ACTION_FIELD_AFFECT {
         return check_affect_field(ctx, keymap_info.strict, array_ndx, value, &mut act.flags);
