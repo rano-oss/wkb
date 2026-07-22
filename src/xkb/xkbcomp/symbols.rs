@@ -5455,10 +5455,10 @@ fn handle_no_action(
 fn check_boolean_flag(
     ctx: &XkbContext,
     strict: u32,
-    flag: XkbActionFlags,
+    flag: u32,
     array_ndx: Option<&ExprKind>,
     value: &ExprKind,
-    flags_inout: &mut XkbActionFlags,
+    flags_inout: &mut u32,
 ) -> u32 {
     let mut set: bool = false;
     if array_ndx.is_some() {
@@ -5480,7 +5480,7 @@ fn check_modifier_field(
     mods: &XkbModSet,
     array_ndx: Option<&ExprKind>,
     value: &ExprKind,
-    flags_inout: &mut XkbActionFlags,
+    flags_inout: &mut u32,
     mods_rtrn: &mut u32,
 ) -> u32 {
     if array_ndx.is_some() {
@@ -5532,7 +5532,7 @@ fn check_affect_field(
     strict: u32,
     array_ndx: Option<&ExprKind>,
     value: &ExprKind,
-    flags_inout: &mut XkbActionFlags,
+    flags_inout: &mut u32,
 ) -> u32 {
     if array_ndx.is_some() {
         return report_mismatch(strict);
@@ -5629,11 +5629,11 @@ fn check_group_field(
     keymap_info: &mut XkbKeymapInfo<'_>,
     array_ndx: Option<&ExprKind>,
     mut value: ActionValue<'_>,
-    flags_inout: &mut XkbActionFlags,
+    flags_inout: &mut u32,
     group_rtrn: &mut i32,
 ) -> u32 {
     let mut idx: u32 = 0;
-    let mut flags: XkbActionFlags = *flags_inout;
+    let mut flags: u32 = *flags_inout;
     if array_ndx.is_some() {
         return report_mismatch(keymap_info.strict);
     }
@@ -6031,7 +6031,7 @@ fn handle_redirect_key(
         }
     }
     if field == ACTION_FIELD_MODIFIERS || field == ACTION_FIELD_MODS_TO_CLEAR {
-        let mut flags: XkbActionFlags = 0;
+        let mut flags: u32 = 0;
         let mut m: u32 = 0;
         let ctx: &XkbContext = &keymap_info.keymap.ctx;
         let r: u32 = check_modifier_field(

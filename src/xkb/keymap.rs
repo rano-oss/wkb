@@ -2205,7 +2205,7 @@ fn xkb_filter_group_latch_func(
             }
         } else if latch as u32 == LATCH_PENDING {
             let sticky_keys: bool = state.components.controls & CONTROL_STICKY_KEYS != 0;
-            let flags: XkbActionFlags = filter.action.as_group().flags & !ACTION_LATCH_TO_LOCK;
+            let flags: u32 = filter.action.as_group().flags & !ACTION_LATCH_TO_LOCK;
             let mut k_0: u16 = 0_u16;
             while (k_0 as usize) < actions.len() {
                 let at = actions[k_0 as usize].action_type();
@@ -2265,7 +2265,7 @@ fn xkb_filter_group_latch_func(
 }
 
 fn xkb_filter_mod_set_new(state: &mut XkbState, _events: &mut XkbEvents, filter: &mut XkbFilter) {
-    let unlock: XkbActionFlags = ACTION_UNLOCK_ON_PRESS | ACTION_LOCK_CLEAR;
+    let unlock: u32 = ACTION_UNLOCK_ON_PRESS | ACTION_LOCK_CLEAR;
     if filter.action.as_mods().flags & unlock == unlock {
         filter.priv_0 = (filter.action.as_mods().mods.mask & !state.components.locked_mods) as u64;
         state.components.locked_mods &= !filter.action.as_mods().mods.mask;
@@ -2303,7 +2303,7 @@ fn xkb_filter_mod_set_func(
         return false;
     }
     state.clear_mods |= filter.priv_0 as u32;
-    let unlock: XkbActionFlags = ACTION_UNLOCK_ON_PRESS | ACTION_LOCK_CLEAR;
+    let unlock: u32 = ACTION_UNLOCK_ON_PRESS | ACTION_LOCK_CLEAR;
     if filter.action.as_mods().flags & unlock == ACTION_LOCK_CLEAR {
         state.components.locked_mods &= !filter.action.as_mods().mods.mask;
     }
@@ -2361,7 +2361,7 @@ fn xkb_filter_mod_lock_func(
 }
 
 fn xkb_filter_mod_latch_new(state: &mut XkbState, _events: &mut XkbEvents, filter: &mut XkbFilter) {
-    let unlock_on_press: XkbActionFlags = ACTION_UNLOCK_ON_PRESS | ACTION_LATCH_ON_PRESS;
+    let unlock_on_press: u32 = ACTION_UNLOCK_ON_PRESS | ACTION_LATCH_ON_PRESS;
     if filter.action.as_mods().flags & ACTION_LOCK_CLEAR != 0
         && filter.action.as_mods().flags & unlock_on_press != 0
         && state.components.locked_mods & filter.action.as_mods().mods.mask
@@ -2408,7 +2408,7 @@ fn xkb_filter_mod_latch_func(
             }
         } else if latch as u32 == LATCH_PENDING {
             let sticky_keys: bool = state.components.controls & CONTROL_STICKY_KEYS != 0;
-            let flags: XkbActionFlags = filter.action.as_mods().flags & !ACTION_LATCH_TO_LOCK;
+            let flags: u32 = filter.action.as_mods().flags & !ACTION_LATCH_TO_LOCK;
             let mut k_0: u16 = 0_u16;
             while (k_0 as usize) < actions.len() {
                 let at = actions[k_0 as usize].action_type();
@@ -2451,7 +2451,7 @@ fn xkb_filter_mod_latch_func(
         if direction == XKB_KEY_REPEATED {
             return false;
         } else {
-            let unlock_on_press: XkbActionFlags = ACTION_UNLOCK_ON_PRESS | ACTION_LATCH_ON_PRESS;
+            let unlock_on_press: u32 = ACTION_UNLOCK_ON_PRESS | ACTION_LATCH_ON_PRESS;
             if filter.action.as_mods().flags & ACTION_LOCK_CLEAR != 0
                 && filter.action.as_mods().flags & unlock_on_press == 0
                 && state.components.locked_mods & filter.action.as_mods().mods.mask

@@ -431,7 +431,6 @@ pub struct XkbInternalAction {
 
 pub const INTERNAL_BREAKS_MOD_LATCH: u32 = 2;
 pub const INTERNAL_BREAKS_GROUP_LATCH: u32 = 1;
-
 pub const _ACTION_TYPE_NUM_ENTRIES: u32 = 21;
 pub const ACTION_TYPE_INTERNAL: u32 = 20;
 pub const ACTION_TYPE_PRIVATE: u32 = 19;
@@ -470,49 +469,48 @@ pub struct XkbRedirectKeyAction {
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbPointerButtonAction {
-    pub flags: XkbActionFlags,
+    pub flags: u32,
     pub count: u8,
     pub button: u8,
 }
 
-pub type XkbActionFlags = u32;
-pub const ACTION_PENDING_COMPUTATION: XkbActionFlags = 8192;
-pub const ACTION_LATCH_ON_PRESS: XkbActionFlags = 4096;
-pub const ACTION_UNLOCK_ON_PRESS: XkbActionFlags = 2048;
-pub const ACTION_LOCK_ON_RELEASE: XkbActionFlags = 1024;
-pub const ACTION_SAME_SCREEN: XkbActionFlags = 512;
-pub const ACTION_ACCEL: XkbActionFlags = 256;
-pub const ACTION_ABSOLUTE_Y: XkbActionFlags = 128;
-pub const ACTION_ABSOLUTE_X: XkbActionFlags = 64;
-pub const ACTION_ABSOLUTE_SWITCH: XkbActionFlags = 32;
-pub const ACTION_MODS_LOOKUP_MODMAP: XkbActionFlags = 16;
-pub const ACTION_LOCK_NO_UNLOCK: XkbActionFlags = 8;
-pub const ACTION_LOCK_NO_LOCK: XkbActionFlags = 4;
-pub const ACTION_LATCH_TO_LOCK: XkbActionFlags = 2;
-pub const ACTION_LOCK_CLEAR: XkbActionFlags = 1;
+pub const ACTION_PENDING_COMPUTATION: u32 = 8192;
+pub const ACTION_LATCH_ON_PRESS: u32 = 4096;
+pub const ACTION_UNLOCK_ON_PRESS: u32 = 2048;
+pub const ACTION_LOCK_ON_RELEASE: u32 = 1024;
+pub const ACTION_SAME_SCREEN: u32 = 512;
+pub const ACTION_ACCEL: u32 = 256;
+pub const ACTION_ABSOLUTE_Y: u32 = 128;
+pub const ACTION_ABSOLUTE_X: u32 = 64;
+pub const ACTION_ABSOLUTE_SWITCH: u32 = 32;
+pub const ACTION_MODS_LOOKUP_MODMAP: u32 = 16;
+pub const ACTION_LOCK_NO_UNLOCK: u32 = 8;
+pub const ACTION_LOCK_NO_LOCK: u32 = 4;
+pub const ACTION_LATCH_TO_LOCK: u32 = 2;
+pub const ACTION_LOCK_CLEAR: u32 = 1;
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbPointerAction {
-    pub flags: XkbActionFlags,
+    pub flags: u32,
     pub x: i16,
     pub y: i16,
 }
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbSwitchScreenAction {
-    pub flags: XkbActionFlags,
+    pub flags: u32,
     pub screen: i8,
 }
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbPointerDefaultAction {
-    pub flags: XkbActionFlags,
+    pub flags: u32,
     pub value: i8,
 }
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbControlsAction {
-    pub flags: XkbActionFlags,
+    pub flags: u32,
     pub ctrls: u32,
 }
 
@@ -540,14 +538,14 @@ pub const CONTROL_STICKY_KEYS: u32 = 1;
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbGroupAction {
-    pub flags: XkbActionFlags,
+    pub flags: u32,
     pub group: i32,
 }
 
 #[derive(Copy, Clone, Default)]
 pub(crate) struct XkbModAction {
     pub(crate) type_0: u32,
-    pub(crate) flags: XkbActionFlags,
+    pub(crate) flags: u32,
     pub(crate) mods: XkbMods,
 }
 
@@ -648,18 +646,8 @@ pub(crate) const XKB_MAX_GROUPS: u32 = 32;
 pub(crate) const MOD_REAL_MASK_ALL: u32 = 0xff_i32 as u32;
 
 // ── Additional xkbcommon types ──────────────────────────────────────
-
-
-// ── C constants ─────────────────────────────────────────────────────
-
-pub(crate) const CHAR_BIT: usize = 8;
-pub(crate) const UINT16_MAX: i32 = 65535;
-
-pub(crate) const XKB_MAX_LEDS: u32 =
-    (std::mem::size_of::<u32>()).wrapping_mul(CHAR_BIT as usize) as u32;
-pub(crate) const MAX_ACTIONS_PER_LEVEL: i32 = UINT16_MAX;
-
-// ── config_h constants ──────────────────────────────────────────────
+pub(crate) const XKB_MAX_LEDS: u32 = 32;
+pub(crate) const MAX_ACTIONS_PER_LEVEL: i32 = 65535;
 
 pub(crate) const DFLT_XKB_CONFIG_EXTRA_PATH: &str = "/usr/local/etc/xkb";
 pub(crate) const DFLT_XKB_CONFIG_ROOT: &str = "/usr/share/xkeyboard-config-2";
@@ -757,27 +745,18 @@ pub(crate) fn atom_intern(table: &mut AtomTable, input_bytes: &[u8]) -> u32 {
     table.inner.get_or_intern(s).into_usize() as u32 + 1
 }
 
-// ── keymap_h types & constants (moved from duplicated pub(crate) mod keymap_h blocks) ─
-
 pub(crate) const DEFAULT_INTERPRET_KEY_REPEAT: u32 = 1;
 pub(crate) const DEFAULT_INTERPRET_VMOD: u32 = 4294967295;
-
 pub(crate) const XKB_MOD_ALL: u32 = 4294967295;
 pub const XKB_MOD_NONE: u32 = 0xffffffff;
 pub(crate) const XKB_MOD_INDEX_CAPS: u32 = 1;
 pub(crate) const _XKB_MOD_INDEX_NUM_ENTRIES: u32 = 8;
-
-pub(crate) const XKB_ALL_GROUPS: u64 = ((1u64) << XKB_MAX_GROUPS).wrapping_sub(1u64);
-
-pub(crate) const XKB_OVERLAY_MAX: u8 =
-    std::mem::size_of::<u8>().wrapping_mul(CHAR_BIT as usize) as u8;
+pub(crate) const XKB_ALL_GROUPS: u64 = 4294967295;
+pub(crate) const XKB_OVERLAY_MAX: u8 = 8;
 pub(crate) const XKB_OVERLAY_INVALID: i32 = 255;
-
 pub(crate) const XKB_KEYCODE_MAX_CONTIGUOUS: i32 = 0xfff;
 pub(crate) const XKB_LEVEL_MAX_IMPL: i32 = 2048;
-pub(crate) const XKB_MAX_MODS: u32 =
-    (std::mem::size_of::<u32>()).wrapping_mul(CHAR_BIT as usize) as u32;
-
+pub(crate) const XKB_MAX_MODS: u32 = 32;
 // ── Safe methods on XkbKeymap ──────────────────────────────────────
 
 impl XkbKeymap {
