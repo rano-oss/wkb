@@ -697,15 +697,17 @@ pub(crate) struct LookupEntry {
 
 // ── File type enum ──────────────────────────────────────────────────
 
-pub(crate) const FILE_TYPE_RULES: u32 = 6;
-pub(crate) const FILE_TYPE_KEYMAP: u32 = 5;
-pub(crate) const FILE_TYPE_GEOMETRY: u32 = 4;
-pub(crate) const LAST_KEYMAP_FILE_TYPE: u32 = 3;
-pub(crate) const FIRST_KEYMAP_FILE_TYPE: u32 = 0;
-pub(crate) const FILE_TYPE_SYMBOLS: u32 = 3;
-pub(crate) const FILE_TYPE_COMPAT: u32 = 2;
-pub(crate) const FILE_TYPE_TYPES: u32 = 1;
-pub(crate) const FILE_TYPE_KEYCODES: u32 = 0;
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[repr(u32)]
+pub(crate) enum FileType {
+    Keycodes = 0,
+    Types = 1,
+    Compat = 2,
+    Symbols = 3,
+    Geometry = 4,
+    Keymap = 5,
+    Rules = 6,
+}
 
 // ── Statement type enum ─────────────────────────────────────────────
 
@@ -734,22 +736,24 @@ pub(crate) const STMT_EXPR_STRING_LITERAL: u32 = 4;
 
 // ── Merge mode enum ─────────────────────────────────────────────────
 
-pub(crate) const MERGE_REPLACE: u32 = 3;
-pub(crate) const MERGE_OVERRIDE: u32 = 2;
-pub(crate) const MERGE_AUGMENT: u32 = 1;
-pub(crate) const MERGE_DEFAULT: u32 = 0;
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum MergeMode {
+    Default = 0,
+    Augment = 1,
+    Override = 2,
+    Replace = 3,
+}
 
 // ── Core AST node types ─────────────────────────────────────────────
 
 #[derive(Clone)]
 
 pub(crate) struct IncludeStmt {
-    pub(crate) merge: u32,
+    pub(crate) merge: MergeMode,
     pub(crate) stmt: String,
     pub(crate) file: String,
     pub(crate) map: String,
     pub(crate) modifier: String,
-    pub(crate) next_incl: Option<Box<IncludeStmt>>,
 }
 
 // ── Expression types ────────────────────────────────────────────────
@@ -825,63 +829,63 @@ impl ExprKind {
 // ── Statement definition types ──────────────────────────────────────
 
 pub(crate) struct VarDef {
-    pub(crate) merge: u32,
+    pub(crate) merge: MergeMode,
     pub(crate) name: Option<Box<ExprKind>>,
     pub(crate) value: Option<Box<ExprKind>>,
 }
 
 pub(crate) struct VModDef {
-    pub(crate) merge: u32,
+    pub(crate) merge: MergeMode,
     pub(crate) name: u32,
     pub(crate) value: Option<Box<ExprKind>>,
 }
 
 #[derive(Copy, Clone)]
 pub(crate) struct KeycodeDef {
-    pub(crate) merge: u32,
+    pub(crate) merge: MergeMode,
     pub(crate) name: u32,
     pub(crate) value: i64,
 }
 
 #[derive(Copy, Clone)]
 pub(crate) struct KeyAliasDef {
-    pub(crate) merge: u32,
+    pub(crate) merge: MergeMode,
     pub(crate) alias: u32,
     pub(crate) real: u32,
 }
 
 pub(crate) struct KeyTypeDef {
-    pub(crate) merge: u32,
+    pub(crate) merge: MergeMode,
     pub(crate) name: u32,
     pub(crate) body: Vec<VarDef>,
 }
 
 pub(crate) struct SymbolsDef {
-    pub(crate) merge: u32,
+    pub(crate) merge: MergeMode,
     pub(crate) key_name: u32,
     pub(crate) symbols: Vec<VarDef>,
 }
 
 pub(crate) struct ModMapDef {
-    pub(crate) merge: u32,
+    pub(crate) merge: MergeMode,
     pub(crate) modifier: u32,
     pub(crate) keys: Vec<ExprKind>,
 }
 pub(crate) struct InterpDef {
-    pub(crate) merge: u32,
+    pub(crate) merge: MergeMode,
     pub(crate) sym: u32,
     pub(crate) match_0: Option<Box<ExprKind>>,
     pub(crate) def: Vec<VarDef>,
 }
 
 pub(crate) struct LedNameDef {
-    pub(crate) merge: u32,
+    pub(crate) merge: MergeMode,
     pub(crate) ndx: i64,
     pub(crate) name: Option<Box<ExprKind>>,
 }
 
 pub(crate) struct LedMapDef {
-    pub(crate) merge: u32,
+    pub(crate) merge: MergeMode,
     pub(crate) name: u32,
     pub(crate) body: Vec<VarDef>,
 }
@@ -901,7 +905,7 @@ pub(crate) const MAP_IS_PARTIAL: u32 = 2;
 pub(crate) const MAP_IS_DEFAULT: u32 = 1;
 
 pub(crate) enum Statement {
-    Include(Box<IncludeStmt>),
+    Include(Vec<IncludeStmt>),
     Keycode(Box<KeycodeDef>),
     KeyAlias(Box<KeyAliasDef>),
     Var(Box<VarDef>),
@@ -920,15 +924,18 @@ pub(crate) enum Statement {
 pub(crate) struct XkbFile {
     pub(crate) name: String,
     pub(crate) defs: Vec<Statement>,
-    pub(crate) file_type: u32,
+    pub(crate) file_type: FileType,
     pub(crate) flags: u32,
 }
 
 // ── xkbcomp_priv types (parser/keymap info) ─────────────────────────
 
-pub(crate) const PARSER_FATAL_ERROR: u32 = 2;
-pub(crate) const PARSER_RECOVERABLE_ERROR: u32 = 1;
-pub(crate) const PARSER_SUCCESS: u32 = 0;
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum ParseStatus {
+    Success = 0,
+    Recoverable = 1,
+    Fatal = 2,
+}
 
 pub(crate) const PARSER_V2_LAX_FLAGS: u32 = 0;
 pub(crate) const PARSER_V2_STRICT_FLAGS: u32 = 16383;

@@ -10,14 +10,12 @@ use super::super::shared_types::{
 };
 
 use super::super::shared_types::{
-    ExprKind, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef, LedNameDef,
-    ModMapDef, Statement, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile, FILE_TYPE_COMPAT,
-    FILE_TYPE_GEOMETRY, FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS,
-    FILE_TYPE_TYPES, FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC,
-    MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN,
-    MAP_IS_PARTIAL, MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_EXPR_ADD,
-    STMT_EXPR_ASSIGN, STMT_EXPR_DIVIDE, STMT_EXPR_INVERT, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE,
-    STMT_EXPR_NOT, STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
+    ExprKind, FileType, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef,
+    LedNameDef, ModMapDef, Statement, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile,
+    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
+    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, STMT_EXPR_ADD, STMT_EXPR_ASSIGN,
+    STMT_EXPR_DIVIDE, STMT_EXPR_INVERT, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
+    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
 };
 
 use super::super::keymap::action_type_text;
@@ -800,7 +798,7 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
 }
 
 #[inline(always)]
-fn yy_file_type<'a>(yyval: &mut YYValue<'a>, ft: u32) {
+fn yy_file_type<'a>(yyval: &mut YYValue<'a>, ft: FileType) {
     *yyval = YYValue::FileType(ft);
 }
 #[inline(always)]
@@ -812,7 +810,7 @@ fn yy_atom<'a>(yyval: &mut YYValue<'a>, ctx: &mut &mut XkbContext, bytes: &[u8])
     *yyval = YYValue::Atom(atom_intern(&mut ctx.atom_table, bytes));
 }
 #[inline(always)]
-fn yy_merge<'a>(yyval: &mut YYValue<'a>, m: u32) {
+fn yy_merge<'a>(yyval: &mut YYValue<'a>, m: MergeMode) {
     *yyval = YYValue::Merge(m);
 }
 #[inline(always)]
@@ -899,13 +897,13 @@ fn execute_reduction<'a>(
             ));
         }
         6 => {
-            yy_file_type(yyval, FILE_TYPE_KEYMAP);
+            yy_file_type(yyval, FileType::Keymap);
         }
         7 => {
-            yy_file_type(yyval, FILE_TYPE_KEYMAP);
+            yy_file_type(yyval, FileType::Keymap);
         }
         8 => {
-            yy_file_type(yyval, FILE_TYPE_KEYMAP);
+            yy_file_type(yyval, FileType::Keymap);
         }
         9 => {
             // XkbMapConfigList: XkbMapConfigList XkbMapConfig
@@ -934,19 +932,19 @@ fn execute_reduction<'a>(
             ));
         }
         12 => {
-            yy_file_type(yyval, FILE_TYPE_KEYCODES);
+            yy_file_type(yyval, FileType::Keycodes);
         }
         13 => {
-            yy_file_type(yyval, FILE_TYPE_TYPES);
+            yy_file_type(yyval, FileType::Types);
         }
         14 => {
-            yy_file_type(yyval, FILE_TYPE_COMPAT);
+            yy_file_type(yyval, FileType::Compat);
         }
         15 => {
-            yy_file_type(yyval, FILE_TYPE_SYMBOLS);
+            yy_file_type(yyval, FileType::Symbols);
         }
         16 => {
-            yy_file_type(yyval, FILE_TYPE_GEOMETRY);
+            yy_file_type(yyval, FileType::Geometry);
         }
         17 => {
             *yyval = YYValue::MapFlags(yyvs[sp].as_map_flags());
@@ -1467,23 +1465,23 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Merge(yyvs[sp].as_merge());
         }
         142 => {
-            yy_merge(yyval, MERGE_DEFAULT);
+            yy_merge(yyval, MergeMode::Default);
         }
         143 => {
-            yy_merge(yyval, MERGE_DEFAULT);
+            yy_merge(yyval, MergeMode::Default);
         }
         144 => {
-            yy_merge(yyval, MERGE_AUGMENT);
+            yy_merge(yyval, MergeMode::Augment);
         }
         145 => {
-            yy_merge(yyval, MERGE_OVERRIDE);
+            yy_merge(yyval, MergeMode::Override);
         }
         146 => {
-            yy_merge(yyval, MERGE_REPLACE);
+            yy_merge(yyval, MergeMode::Replace);
         }
         147 => {
             let _loc = param.scanner.token_location();
-            yy_merge(yyval, MERGE_DEFAULT);
+            yy_merge(yyval, MergeMode::Default);
         }
         // ExprList rules 148-150
         148 => {
@@ -2001,7 +1999,7 @@ pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> Option
 
 pub(crate) fn keycode_create(name: u32, value: i64) -> Box<KeycodeDef> {
     Box::new(KeycodeDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         name,
         value,
     })
@@ -2009,7 +2007,7 @@ pub(crate) fn keycode_create(name: u32, value: i64) -> Box<KeycodeDef> {
 
 pub(crate) fn key_alias_create(alias: u32, real: u32) -> Box<KeyAliasDef> {
     Box::new(KeyAliasDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         alias,
         real,
     })
@@ -2017,7 +2015,7 @@ pub(crate) fn key_alias_create(alias: u32, real: u32) -> Box<KeyAliasDef> {
 
 pub(crate) fn vmod_create(name: u32, value: Option<Box<ExprKind>>) -> Box<VModDef> {
     Box::new(VModDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         name,
         value,
     })
@@ -2025,7 +2023,7 @@ pub(crate) fn vmod_create(name: u32, value: Option<Box<ExprKind>>) -> Box<VModDe
 
 pub(crate) fn var_create(name: Option<Box<ExprKind>>, value: Option<Box<ExprKind>>) -> Box<VarDef> {
     Box::new(VarDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         name,
         value,
     })
@@ -2033,7 +2031,7 @@ pub(crate) fn var_create(name: Option<Box<ExprKind>>, value: Option<Box<ExprKind
 
 pub(crate) fn bool_var_create(ident: u32, set: bool) -> Box<VarDef> {
     Box::new(VarDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         name: Some(Box::new(ExprKind::Ident(ident))),
         value: Some(Box::new(ExprKind::Boolean(set))),
     })
@@ -2041,7 +2039,7 @@ pub(crate) fn bool_var_create(ident: u32, set: bool) -> Box<VarDef> {
 
 pub(crate) fn interp_create(sym: u32, match_0: Option<Box<ExprKind>>) -> Box<InterpDef> {
     Box::new(InterpDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         sym,
         match_0,
         def: Vec::new(),
@@ -2050,7 +2048,7 @@ pub(crate) fn interp_create(sym: u32, match_0: Option<Box<ExprKind>>) -> Box<Int
 
 pub(crate) fn key_type_create(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
     Box::new(KeyTypeDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         name,
         body,
     })
@@ -2058,7 +2056,7 @@ pub(crate) fn key_type_create(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
 
 pub(crate) fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> Box<SymbolsDef> {
     Box::new(SymbolsDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         key_name,
         symbols,
     })
@@ -2066,7 +2064,7 @@ pub(crate) fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> Box<Symbols
 
 pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> Box<ModMapDef> {
     Box::new(ModMapDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         modifier,
         keys,
     })
@@ -2074,7 +2072,7 @@ pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> Box<ModMapDe
 
 pub(crate) fn led_map_create(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
     Box::new(LedMapDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         name,
         body,
     })
@@ -2082,7 +2080,7 @@ pub(crate) fn led_map_create(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
 
 pub(crate) fn led_name_create(ndx: i64, name: Option<Box<ExprKind>>) -> Box<LedNameDef> {
     Box::new(LedNameDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         ndx,
         name,
     })
@@ -2095,9 +2093,9 @@ pub(crate) fn unknown_statement_create() -> Box<UnknownStatement> {
 pub(crate) fn include_create(
     _ctx: &mut XkbContext,
     stmt_str: &str,
-    mut merge: u32,
-) -> Option<Box<IncludeStmt>> {
-    let mut items: Vec<Box<IncludeStmt>> = Vec::new();
+    mut merge: MergeMode,
+) -> Option<Vec<IncludeStmt>> {
+    let mut items: Vec<IncludeStmt> = Vec::new();
     let mut remaining: Option<&str> = Some(stmt_str);
 
     loop {
@@ -2118,39 +2116,33 @@ pub(crate) fn include_create(
             continue;
         }
 
-        items.push(Box::new(IncludeStmt {
+        items.push(IncludeStmt {
             merge,
             stmt: String::new(),
             file: parsed.file,
             map: parsed.map,
             modifier: parsed.extra_data,
-            next_incl: None,
-        }));
+        });
 
         match parsed.nextop {
-            '|' => merge = MERGE_AUGMENT,
-            '^' => merge = MERGE_REPLACE,
-            _ => merge = MERGE_OVERRIDE,
+            '|' => merge = MergeMode::Augment,
+            '^' => merge = MergeMode::Replace,
+            _ => merge = MergeMode::Override,
         }
 
         remaining = rest;
     }
 
-    // Build linked list in reverse
-    let mut first: Option<Box<IncludeStmt>> = None;
-    for mut item in items.into_iter().rev() {
-        item.next_incl = first;
-        first = Some(item);
+    if items.is_empty() {
+        return None;
     }
 
-    if let Some(ref mut f) = first {
-        f.stmt = stmt_str.to_string();
-    }
-    first
+    items[0].stmt = stmt_str.to_string();
+    Some(items)
 }
 
 pub(crate) fn xkb_file_create(
-    type_0: u32,
+    type_0: FileType,
     name: Option<String>,
     defs: Vec<Statement>,
     flags: u32,
@@ -2176,8 +2168,12 @@ pub(crate) fn xkb_file_from_components(
         &kkctgs.symbols,
     ];
     let mut file_stmts: Vec<Statement> = Vec::new();
-    let mut type_0 = FIRST_KEYMAP_FILE_TYPE;
-    while type_0 <= LAST_KEYMAP_FILE_TYPE {
+    for type_0 in [
+        FileType::Keycodes,
+        FileType::Types,
+        FileType::Compat,
+        FileType::Symbols,
+    ] {
         let component_bytes: Vec<u8> = components[type_0 as usize]
             .iter()
             .map(|&b| b as u8)
@@ -2187,13 +2183,15 @@ pub(crate) fn xkb_file_from_components(
             .position(|&b| b == 0)
             .unwrap_or(component_bytes.len());
         let component_str = std::str::from_utf8(&component_bytes[..end]).unwrap_or("");
-        let include = include_create(ctx, component_str, MERGE_DEFAULT)?;
-        let defs = vec![Statement::Include(include)];
+        let defs = vec![Statement::Include(include_create(
+            ctx,
+            component_str,
+            MergeMode::Default,
+        )?)];
         let file = xkb_file_create(type_0, None, defs, 0);
         file_stmts.push(Statement::XkbFile(file));
-        type_0 += 1;
     }
-    Some(xkb_file_create(FILE_TYPE_KEYMAP, None, file_stmts, 0))
+    Some(xkb_file_create(FileType::Keymap, None, file_stmts, 0))
 }
 
 // ── Scanner types (migrated from scanner_utils.rs) ──
@@ -2722,11 +2720,11 @@ pub(crate) enum YYValue<'a> {
     #[default]
     None,
     Num(i64),
-    FileType(u32),
+    FileType(FileType),
     Str(String),
     Sval(Sval<'a>),
     Atom(u32),
-    Merge(u32),
+    Merge(MergeMode),
     MapFlags(u32),
     Keysym(u32),
     NoSymbolOrActionList(u32),
@@ -2820,10 +2818,10 @@ impl<'a> YYValue<'a> {
             _ => 0,
         }
     }
-    pub(crate) fn as_merge(&self) -> u32 {
+    pub(crate) fn as_merge(&self) -> MergeMode {
         match self {
             YYValue::Merge(m) => *m,
-            _ => MERGE_DEFAULT,
+            _ => MergeMode::Default,
         }
     }
     pub(crate) fn as_map_flags(&self) -> u32 {
@@ -2832,10 +2830,10 @@ impl<'a> YYValue<'a> {
             _ => 0,
         }
     }
-    pub(crate) fn as_file_type(&self) -> u32 {
+    pub(crate) fn as_file_type(&self) -> FileType {
         match self {
             YYValue::FileType(f) => *f,
-            _ => 0,
+            _ => FileType::Keycodes,
         }
     }
     pub(crate) fn as_keysym(&self) -> u32 {
@@ -3176,7 +3174,7 @@ pub(crate) fn parse_include_map(input: &str) -> Option<(ParsedIncludeMap, Option
 static XKB_FILE_TYPE_INCLUDE_DIRS: [&str; 7] = [
     "keycodes", "types", "compat", "symbols", "geometry", "keymap", "rules",
 ];
-fn directory_for_include(type_0: u32) -> &'static str {
+fn directory_for_include(type_0: FileType) -> &'static str {
     if type_0 as usize >= XKB_FILE_TYPE_INCLUDE_DIRS.len() {
         ""
     } else {
@@ -3244,7 +3242,7 @@ fn expand_percent(_parent_file_name: &str, type_dir: &str, name: &str) -> Option
 pub(crate) fn expand_path_str(
     parent_file_name: &str,
     name: &str,
-    file_type: u32,
+    file_type: FileType,
 ) -> Result<Option<String>, ()> {
     // Find first '%'
     let k = match name.find('%') {
@@ -3268,7 +3266,7 @@ pub(crate) fn find_file_in_xkb_path(
     ctx: &mut XkbContext,
     _parent_file_name: &str,
     name: &str,
-    type_0: u32,
+    type_0: FileType,
     offset: &mut u32,
     required: bool,
 ) -> Option<(std::sync::Arc<Vec<u8>>, String)> {
@@ -3299,7 +3297,7 @@ pub(crate) fn exceeds_include_max_depth(include_depth: u32) -> bool {
 pub(crate) fn process_include_file(
     ctx: &mut XkbContext,
     stmt: &IncludeStmt,
-    file_type: u32,
+    file_type: FileType,
 ) -> Option<Box<XkbFile>> {
     let mut xkb_file: Option<Box<XkbFile>> = None;
     let mut candidate: Option<Box<XkbFile>> = None;
@@ -3648,11 +3646,11 @@ fn update_pending_key_fields(info: &mut XkbKeymapInfo<'_>, key_idx: usize) -> bo
             let resolve_ret = expr_resolve_group(info, &expr_box, true, &mut group, &mut _pending);
             info.pending_computations[idx].expr = Some(expr_box);
             match resolve_ret {
-                0 => {
+                ParseStatus::Success => {
                     info.pending_computations[idx].computed = true;
                     info.pending_computations[idx].value = group.wrapping_sub(1);
                 }
-                2 => {
+                ParseStatus::Fatal => {
                     return info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0;
                 }
                 _ => {}
@@ -3681,10 +3679,10 @@ fn update_pending_action_fields(
                         expr_resolve_group(info, &expr_box, absolute, &mut group, &mut _pending);
                     info.pending_computations[pc_idx].expr = Some(expr_box);
                     match resolve_ret {
-                        2 => {
+                        ParseStatus::Fatal => {
                             return false;
                         }
-                        1 => {}
+                        ParseStatus::Recoverable => {}
                         _ => {
                             info.pending_computations[pc_idx].computed = true;
                             if absolute {
@@ -4048,8 +4046,8 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
     let mut file_indices: [Option<usize>; 4] = [None; 4];
     for (idx, stmt) in file.defs.iter().enumerate() {
         if let Statement::XkbFile(ref sub_file) = stmt {
-            if sub_file.file_type > LAST_KEYMAP_FILE_TYPE {
-                if sub_file.file_type == FILE_TYPE_GEOMETRY {}
+            if sub_file.file_type as u32 > FileType::Symbols as u32 {
+                if sub_file.file_type == FileType::Geometry {}
             } else if file_indices[sub_file.file_type as usize].is_some() {
             } else {
                 file_indices[sub_file.file_type as usize] = Some(idx);
@@ -4127,8 +4125,8 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
         },
         pending_computations: Vec::new(),
     };
-    let mut type_0: u32 = FIRST_KEYMAP_FILE_TYPE;
-    while type_0 <= LAST_KEYMAP_FILE_TYPE {
+    let mut type_0: u32 = FileType::Keycodes as u32;
+    while type_0 <= FileType::Symbols as u32 {
         if let Some(idx) = file_indices[type_0 as usize] {
             let _sub_name = if let Statement::XkbFile(ref sub_file) = file.defs[idx] {
                 if sub_file.name.is_empty() {
@@ -4602,7 +4600,7 @@ fn matcher_include(
     }
     let inc_str = inc.as_str();
     let stmt_file: String =
-        match expand_path_str(&parent_scanner.file_name, inc_str, FILE_TYPE_RULES) {
+        match expand_path_str(&parent_scanner.file_name, inc_str, FileType::Rules) {
             Err(()) => return,
             Ok(Some(expanded)) => expanded,
             Ok(None) => inc_str.to_string(),
@@ -4620,7 +4618,7 @@ fn matcher_include(
             &mut *m.ctx,
             &parent_scanner.file_name,
             &stmt_file,
-            FILE_TYPE_RULES,
+            FileType::Rules,
             &mut offset,
             true,
         )
@@ -4641,7 +4639,7 @@ fn matcher_include(
             &mut *m.ctx,
             &parent_scanner.file_name,
             &stmt_file,
-            FILE_TYPE_RULES,
+            FileType::Rules,
             &mut offset,
             true,
         );
@@ -5823,7 +5821,7 @@ fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_
             &mut *matcher.ctx,
             "(unknown)",
             &partial_rules,
-            FILE_TYPE_RULES,
+            FileType::Rules,
             &mut offset,
             false,
         );
@@ -5852,7 +5850,7 @@ fn xkb_resolve_rules(
         &mut *matcher.ctx,
         "(unknown)",
         rules_str,
-        FILE_TYPE_RULES,
+        FileType::Rules,
         &mut offset,
         true,
     );
