@@ -204,16 +204,8 @@ pub(crate) enum XkbAction {
     GroupSet(XkbGroupAction),
     GroupLatch(XkbGroupAction),
     GroupLock(XkbGroupAction),
-    PtrMove(XkbPointerAction),
-    PtrButton(XkbPointerButtonAction),
-    PtrLock(XkbPointerButtonAction),
-    PtrDefault(XkbPointerDefaultAction),
-    Terminate,
-    SwitchVt(XkbSwitchScreenAction),
     CtrlSet(XkbControlsAction),
     CtrlLock(XkbControlsAction),
-    RedirectKey(XkbRedirectKeyAction),
-    UnsupportedLegacy,
     Unknown,
     Private(XkbPrivateAction),
     Internal(XkbInternalAction),
@@ -261,20 +253,6 @@ pub struct XkbPrivateAction {
     pub data: [u8; 7],
 }
 
-#[derive(Copy, Clone, Default)]
-pub struct XkbRedirectKeyAction {
-    pub keycode: u32,
-    pub affect: u32,
-    pub mods: u32,
-}
-
-#[derive(Copy, Clone, Default)]
-pub struct XkbPointerButtonAction {
-    pub flags: ActionFlags,
-    pub count: u8,
-    pub button: u8,
-}
-
 bitflags::bitflags! {
     #[derive(Copy, Clone, Default, PartialEq, Eq)]
     pub struct ActionFlags: u32 {
@@ -295,24 +273,10 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(Copy, Clone, Default)]
-pub struct XkbPointerAction {
-    pub flags: ActionFlags,
-    pub x: i16,
-    pub y: i16,
-}
 
-#[derive(Copy, Clone, Default)]
-pub struct XkbSwitchScreenAction {
-    pub flags: ActionFlags,
-    pub screen: i8,
-}
 
-#[derive(Copy, Clone, Default)]
-pub struct XkbPointerDefaultAction {
-    pub flags: ActionFlags,
-    pub value: i8,
-}
+
+
 
 bitflags::bitflags! {
     #[derive(Copy, Clone, Default, PartialEq, Eq)]
@@ -650,30 +614,8 @@ pub(crate) fn entry_is_active(entry: &XkbKeyTypeEntry) -> bool {
     entry.mods.mods == 0 || entry.mods.mask != 0
 }
 
-#[inline]
-pub(crate) fn is_mods_un_lock_on_press_supported(format: u32) -> bool {
-    format >= XKB_KEYMAP_FORMAT_TEXT_V2
-}
-
-#[inline]
-pub(crate) fn is_group_lock_on_release_supported(format: u32) -> bool {
-    format >= XKB_KEYMAP_FORMAT_TEXT_V2
-}
-
-#[inline]
-pub(crate) fn is_mods_latch_on_press_supported(format: u32) -> bool {
-    format >= XKB_KEYMAP_FORMAT_TEXT_V2
-}
-
-#[inline]
-pub(crate) fn are_overlapping_overlays_supported(format: u32) -> bool {
-    format >= XKB_KEYMAP_FORMAT_TEXT_V2
-}
-
 // Error codes (from xkbcommon_errors_h)
 pub(crate) const XKB_KEY_NO_SYMBOL: i32 = 0;
-
-// ── errno_base_h ──────────────────────────────────────────────────────
 
 // ── rmlvo_h (RMLVO enum) ─────────────────────────────────────────────
 pub(crate) const RMLVO_OPTIONS: u32 = 16;

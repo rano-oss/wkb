@@ -1,3 +1,6 @@
+use crate::xkb::keymap::CONTROL_NAMES_MIN_V1_INDEX;
+use crate::xkb::keymap::CONTROL_NAMES_MIN_V2_INDEX;
+
 // LALR(1) parser for XKB, converted from bison-generated C via c2rust
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
@@ -20,7 +23,7 @@ use super::super::shared_types::{
 
 use super::super::keymap::action_type_text;
 pub(crate) use super::super::keymap::mod_mask_get_effective;
-use super::super::keymap::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
+use super::super::keymap::GROUP_LAST_INDEX_NAME;
 pub(crate) use super::symbols::compile_compat_map;
 pub(crate) use super::symbols::compile_key_types;
 pub(crate) use super::symbols::compile_keycodes;
@@ -3594,9 +3597,7 @@ fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
                 while (i as usize) < level.actions.len() {
                     let mod_action: bool = is_mod_action(&level.actions[i as usize]);
                     let group_action: bool = is_group_action(&level.actions[i as usize]);
-                    let is_redirect =
-                        matches!(level.actions[i as usize], XkbAction::RedirectKey(_));
-                    if mod_action || group_action || is_redirect {
+                    if mod_action || group_action {
                         let mut j: u16 = (i as i32 + 1) as u16;
                         while (j as usize) < level.actions.len() {
                             let same_action = std::mem::discriminant(&level.actions[i as usize])
@@ -3705,14 +3706,6 @@ fn update_pending_action_fields(
                 }
                 g.group = info.pending_computations[pc_idx].value as i32;
                 g.flags = g.flags & !ActionFlags::PENDING_COMPUTATION;
-            }
-            true
-        }
-        XkbAction::RedirectKey(r) => {
-            if keycode == XKB_KEYCODE_INVALID || r.keycode != info.keymap.redirect_key_auto {
-                return true;
-            } else {
-                r.keycode = keycode;
             }
             true
         }
@@ -3958,7 +3951,7 @@ fn update_key_action_fields(
                             [j_0 as usize]
                             .actions[0];
                         update_action_mods(&*info.keymap, &mut act, key_modmap);
-                        if (pending_computations || matches!(act, XkbAction::RedirectKey(_)))
+                        if (pending_computations)
                             && !update_pending_action_fields(info, key_keycode, &mut act)
                         {
                             return Err(());
@@ -3973,7 +3966,7 @@ fn update_key_action_fields(
                             [j_0 as usize]
                             .actions[k as usize];
                         update_action_mods(&*info.keymap, &mut act, key_modmap);
-                        if (pending_computations || matches!(act, XkbAction::RedirectKey(_)))
+                        if (pending_computations)
                             && !update_pending_action_fields(info, key_keycode, &mut act)
                         {
                             return Err(());
@@ -4073,11 +4066,15 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
         features: XkbcompFeatures {
             max_groups: XKB_MAX_GROUPS,
             max_overlays: XKB_OVERLAY_MAX,
-            controls_name_offset: format_control_names_offset(km_format),
-            group_lock_on_release: is_group_lock_on_release_supported(km_format),
-            mods_unlock_on_press: is_mods_un_lock_on_press_supported(km_format),
-            mods_latch_on_press: is_mods_latch_on_press_supported(km_format),
-            overlapping_overlays: are_overlapping_overlays_supported(km_format),
+            controls_name_offset: (if km_format == XKB_KEYMAP_FORMAT_TEXT_V1 {
+                CONTROL_NAMES_MIN_V1_INDEX as u8
+            } else {
+                CONTROL_NAMES_MIN_V2_INDEX as u8
+            }),
+            group_lock_on_release: km_format >= XKB_KEYMAP_FORMAT_TEXT_V2,
+            mods_unlock_on_press: km_format >= XKB_KEYMAP_FORMAT_TEXT_V2,
+            mods_latch_on_press: km_format >= XKB_KEYMAP_FORMAT_TEXT_V2,
+            overlapping_overlays: km_format >= XKB_KEYMAP_FORMAT_TEXT_V2,
         },
         lookup: XkbcompLookup {
             group_index_names: [

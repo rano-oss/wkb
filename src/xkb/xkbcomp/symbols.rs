@@ -4255,7 +4255,7 @@ pub(crate) fn compile_keycodes(
     }
     false
 }
-use super::super::keymap::{ACTION_TYPE_NAMES, BUTTON_NAMES, GROUP_LAST_INDEX_NAME};
+use super::super::keymap::{ACTION_TYPE_NAMES, GROUP_LAST_INDEX_NAME};
 
 pub(crate) use super::super::keymap::action_equal;
 
@@ -4688,10 +4688,6 @@ pub(crate) fn expr_resolve_level(ctx: &XkbContext, expr: &ExprKind, level_rtrn: 
     true
 }
 
-pub(crate) fn expr_resolve_button(ctx: &XkbContext, expr: &ExprKind, btn_rtrn: &mut i64) -> bool {
-    let lookup = IdentLookup::Simple(&BUTTON_NAMES);
-    expr_resolve_integer_lookup(ctx, expr, btn_rtrn, None, &lookup)
-}
 
 pub(crate) fn expr_resolve_string(expr: &ExprKind, val_rtrn: &mut u32) -> bool {
     match expr.stmt_type() {
@@ -4949,6 +4945,7 @@ pub(crate) const ACTION_FIELD_LATCH_TO_LOCK: u32 = 1;
 pub(crate) const ACTION_FIELD_CLEAR_LOCKS: u32 = 0;
 /// A value passed to an action handler.  Combines what used to be two separate
 /// parameters (`value: &ExprDef` and `value_ptr: Option<&mut Option<Box<ExprDef>>>`).
+/// 
 pub(crate) enum ActionValue<'v> {
     /// A borrowed reference to a constant or non-ownable ExprDef (e.g. const_true).
     Borrowed(&'v ExprKind),
@@ -5002,35 +4999,14 @@ pub(crate) fn init_actions_info(keymap: &XkbKeymap, info: &mut ActionsInfo) {
             ACTION_TYPE_GROUP_SET => XkbAction::GroupSet(Default::default()),
             ACTION_TYPE_GROUP_LATCH => XkbAction::GroupLatch(Default::default()),
             ACTION_TYPE_GROUP_LOCK => XkbAction::GroupLock(Default::default()),
-            ACTION_TYPE_PTR_MOVE => XkbAction::PtrMove(Default::default()),
-            ACTION_TYPE_PTR_BUTTON => XkbAction::PtrButton(Default::default()),
-            ACTION_TYPE_PTR_LOCK => XkbAction::PtrLock(Default::default()),
-            ACTION_TYPE_PTR_DEFAULT => XkbAction::PtrDefault(Default::default()),
-            ACTION_TYPE_TERMINATE => XkbAction::Terminate,
-            ACTION_TYPE_SWITCH_VT => XkbAction::SwitchVt(Default::default()),
             ACTION_TYPE_CTRL_SET => XkbAction::CtrlSet(Default::default()),
             ACTION_TYPE_CTRL_LOCK => XkbAction::CtrlLock(Default::default()),
-            ACTION_TYPE_REDIRECT_KEY => XkbAction::RedirectKey(Default::default()),
-            ACTION_TYPE_UNSUPPORTED_LEGACY => XkbAction::UnsupportedLegacy,
             ACTION_TYPE_UNKNOWN => XkbAction::Unknown,
             ACTION_TYPE_PRIVATE => XkbAction::Private(Default::default()),
             ACTION_TYPE_INTERNAL => XkbAction::Internal(Default::default()),
             _ => XkbAction::None,
         };
         type_0 += 1;
-    }
-    if let XkbAction::PtrDefault(ref mut d) = info.actions[ACTION_TYPE_PTR_DEFAULT as usize] {
-        d.flags = ActionFlags::empty();
-        d.value = 1_i8;
-    }
-    if let XkbAction::PtrMove(ref mut p) = info.actions[ACTION_TYPE_PTR_MOVE as usize] {
-        p.flags = ActionFlags::ACCEL;
-    }
-    if let XkbAction::SwitchVt(ref mut s) = info.actions[ACTION_TYPE_SWITCH_VT as usize] {
-        s.flags = ActionFlags::SAME_SCREEN;
-    }
-    if let XkbAction::RedirectKey(ref mut r) = info.actions[ACTION_TYPE_REDIRECT_KEY as usize] {
-        r.keycode = keymap.redirect_key_auto;
     }
 }
 static FIELD_STRINGS: [LookupEntry; 37] = [
@@ -5219,17 +5195,19 @@ fn report_illegal(strict: u32) -> ParseStatus {
 
 fn handle_no_action(
     keymap_info: &mut XkbKeymapInfo<'_>,
-    _mods: &XkbModSet,
-    _action: &mut XkbAction,
-    _field: u32,
-    _array_ndx: Option<&ExprKind>,
-    _value: ActionValue<'_>,
+    mods: &XkbModSet,
+    action: &mut XkbAction,
+    field: u32,
+    array_ndx: Option<&ExprKind>,
+    value: ActionValue<'_>,
 ) -> ParseStatus {
-    if keymap_info.strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
-        ParseStatus::Fatal
-    } else {
-        ParseStatus::Success
-    }
+    action.set_none();
+    ParseStatus::Success
+    // if keymap_info.strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
+    //     ParseStatus::Fatal
+    // } else {
+    //     ParseStatus::Success
+    // }
 }
 fn check_boolean_flag(
     ctx: &XkbContext,
@@ -5541,232 +5519,9 @@ fn handle_set_latch_lock_group(
     }
     report_illegal(keymap_info.strict)
 }
-fn handle_move_ptr(
-    keymap_info: &mut XkbKeymapInfo<'_>,
-    _mods: &XkbModSet,
-    action: &mut XkbAction,
-    field: u32,
-    array_ndx: Option<&ExprKind>,
-    value: ActionValue<'_>,
-) -> ParseStatus {
-    let value = value.get();
-    let ctx: &XkbContext = &keymap_info.keymap.ctx;
-    let act = match action {
-        XkbAction::PtrMove(ref mut p) => p,
-        _ => return report_illegal(keymap_info.strict),
-    };
-    if field == ACTION_FIELD_X || field == ACTION_FIELD_Y {
-        let mut val: i64 = 0_i64;
-        let absolute: bool =
-            value.stmt_type() != STMT_EXPR_NEGATE && value.stmt_type() != STMT_EXPR_UNARY_PLUS;
-        if array_ndx.is_some() {
-            return report_mismatch(keymap_info.strict);
-        }
-        if !expr_resolve_integer(ctx, value, &mut val) {
-            return report_mismatch(keymap_info.strict);
-        }
-        if val < i16::MIN as i64 || val > i16::MAX as i64 {
-            return report_mismatch(keymap_info.strict);
-        }
-        if field == ACTION_FIELD_X {
-            if absolute {
-                act.flags |= ActionFlags::ABSOLUTE_X;
-            }
-            act.x = val as i16;
-        } else {
-            if absolute {
-                act.flags |= ActionFlags::ABSOLUTE_Y;
-            }
-            act.y = val as i16;
-        }
-        return ParseStatus::Success;
-    } else if field == ACTION_FIELD_ACCEL {
-        return check_boolean_flag(
-            ctx,
-            keymap_info.strict,
-            ActionFlags::ACCEL,
-            array_ndx,
-            value,
-            &mut act.flags,
-        );
-    }
-    report_illegal(keymap_info.strict)
-}
-fn handle_ptr_btn(
-    keymap_info: &mut XkbKeymapInfo<'_>,
-    _mods: &XkbModSet,
-    action: &mut XkbAction,
-    field: u32,
-    array_ndx: Option<&ExprKind>,
-    value: ActionValue<'_>,
-) -> ParseStatus {
-    let value = value.get();
-    let ctx: &XkbContext = &keymap_info.keymap.ctx;
-    let is_lock = matches!(action, XkbAction::PtrLock(_));
-    let act = match action {
-        XkbAction::PtrButton(ref mut b) | XkbAction::PtrLock(ref mut b) => b,
-        _ => return report_illegal(keymap_info.strict),
-    };
-    if field == ACTION_FIELD_BUTTON {
-        let mut btn: i64 = 0_i64;
-        if array_ndx.is_some() {
-            return report_mismatch(keymap_info.strict);
-        }
-        if !expr_resolve_button(ctx, value, &mut btn) {
-            return report_mismatch(keymap_info.strict);
-        }
-        if !(0_i64..=5_i64).contains(&btn) {
-            return report_mismatch(keymap_info.strict);
-        }
-        act.button = btn as u8;
-        return ParseStatus::Success;
-    } else if is_lock && field == ACTION_FIELD_AFFECT {
-        return check_affect_field(ctx, keymap_info.strict, array_ndx, value, &mut act.flags);
-    } else if field == ACTION_FIELD_COUNT {
-        let mut val: i64 = 0_i64;
-        if array_ndx.is_some() {
-            return report_mismatch(keymap_info.strict);
-        }
-        if !expr_resolve_integer(ctx, value, &mut val) {
-            return report_mismatch(keymap_info.strict);
-        }
-        if !(0_i64..=255_i64).contains(&val) {
-            return report_mismatch(keymap_info.strict);
-        }
-        act.count = val as u8;
-        return ParseStatus::Success;
-    }
-    report_illegal(keymap_info.strict)
-}
-static PTR_DFLTS: [LookupEntry; 4] = [
-    LookupEntry {
-        name: "dfltbtn",
-        value: 1,
-    },
-    LookupEntry {
-        name: "defaultbutton",
-        value: 1,
-    },
-    LookupEntry {
-        name: "button",
-        value: 1,
-    },
-    LookupEntry { name: "", value: 0 },
-];
-fn handle_set_ptr_dflt(
-    keymap_info: &mut XkbKeymapInfo<'_>,
-    _mods: &XkbModSet,
-    action: &mut XkbAction,
-    field: u32,
-    array_ndx: Option<&ExprKind>,
-    value: ActionValue<'_>,
-) -> ParseStatus {
-    let value = value.get();
-    let ctx: &XkbContext = &keymap_info.keymap.ctx;
-    let act = match action {
-        XkbAction::PtrDefault(ref mut d) => d,
-        _ => return report_illegal(keymap_info.strict),
-    };
-    if field == ACTION_FIELD_AFFECT {
-        let mut val: u32 = 0;
-        if array_ndx.is_some() {
-            return report_mismatch(keymap_info.strict);
-        }
-        if !expr_resolve_enum(ctx, value, &mut val, &PTR_DFLTS) {
-            return report_mismatch(keymap_info.strict);
-        }
-        return ParseStatus::Success;
-    } else if field == ACTION_FIELD_BUTTON || field == ACTION_FIELD_VALUE {
-        let button: &ExprKind;
-        let mut btn: i64 = 0_i64;
-        if array_ndx.is_some() {
-            return report_mismatch(keymap_info.strict);
-        }
-        if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
-            act.flags &= !ActionFlags::ABSOLUTE_SWITCH;
-            button = if let ExprKind::Unary { child, .. } = &value {
-                child.as_deref().unwrap()
-            } else {
-                unreachable!()
-            };
-        } else {
-            act.flags |= ActionFlags::ABSOLUTE_SWITCH;
-            button = value;
-        }
-        if !expr_resolve_button(ctx, button, &mut btn) {
-            return report_mismatch(keymap_info.strict);
-        }
-        if !(0_i64..=5_i64).contains(&btn) {
-            return report_mismatch(keymap_info.strict);
-        }
-        if btn == 0_i64 {
-            return report_mismatch(keymap_info.strict);
-        }
-        act.value = (if value.stmt_type() == STMT_EXPR_NEGATE {
-            -btn
-        } else {
-            btn
-        }) as i8;
-        return ParseStatus::Success;
-    }
-    report_illegal(keymap_info.strict)
-}
-fn handle_switch_screen(
-    keymap_info: &mut XkbKeymapInfo<'_>,
-    _mods: &XkbModSet,
-    action: &mut XkbAction,
-    field: u32,
-    array_ndx: Option<&ExprKind>,
-    value: ActionValue<'_>,
-) -> ParseStatus {
-    let value = value.get();
-    let ctx: &XkbContext = &keymap_info.keymap.ctx;
-    let act = match action {
-        XkbAction::SwitchVt(ref mut s) => s,
-        _ => return report_illegal(keymap_info.strict),
-    };
-    if field == ACTION_FIELD_SCREEN {
-        let scrn: &ExprKind;
-        let mut val: i64 = 0_i64;
-        if array_ndx.is_some() {
-            return report_mismatch(keymap_info.strict);
-        }
-        if value.stmt_type() == STMT_EXPR_NEGATE || value.stmt_type() == STMT_EXPR_UNARY_PLUS {
-            act.flags &= !ActionFlags::ABSOLUTE_SWITCH;
-            scrn = if let ExprKind::Unary { child, .. } = &value {
-                child.as_deref().unwrap()
-            } else {
-                unreachable!()
-            };
-        } else {
-            act.flags |= ActionFlags::ABSOLUTE_SWITCH;
-            scrn = value;
-        }
-        if !expr_resolve_integer(ctx, scrn, &mut val) {
-            return report_mismatch(keymap_info.strict);
-        }
-        val = if value.stmt_type() == STMT_EXPR_NEGATE {
-            -val
-        } else {
-            val
-        };
-        if val < i8::MIN as i64 || val > i8::MAX as i64 {
-            return report_mismatch(keymap_info.strict);
-        }
-        act.screen = val as i8;
-        return ParseStatus::Success;
-    } else if field == ACTION_FIELD_SAME {
-        return check_boolean_flag(
-            ctx,
-            keymap_info.strict,
-            ActionFlags::SAME_SCREEN,
-            array_ndx,
-            value,
-            &mut act.flags,
-        );
-    }
-    report_illegal(keymap_info.strict)
-}
+
+
+
 fn handle_set_lock_controls(
     keymap_info: &mut XkbKeymapInfo<'_>,
     _mods: &XkbModSet,
@@ -5798,84 +5553,7 @@ fn handle_set_lock_controls(
     }
     report_illegal(keymap_info.strict)
 }
-fn handle_redirect_key(
-    keymap_info: &mut XkbKeymapInfo<'_>,
-    mods: &XkbModSet,
-    action: &mut XkbAction,
-    field: u32,
-    array_ndx: Option<&ExprKind>,
-    value: ActionValue<'_>,
-) -> ParseStatus {
-    let value = value.get();
-    let act = match action {
-        XkbAction::RedirectKey(ref mut r) => r,
-        _ => return report_illegal(keymap_info.strict),
-    };
-    if field == ACTION_FIELD_KEYCODE {
-        if array_ndx.is_some() {
-            return report_mismatch(keymap_info.strict);
-        }
-        if value.stmt_type() == STMT_EXPR_IDENT {
-            let ident = if let ExprKind::Ident(id) = &value {
-                *id
-            } else {
-                unreachable!()
-            };
-            let val_str: &str = atom_text(&keymap_info.keymap.ctx.atom_table, ident);
-            if !val_str.is_empty() && val_str.eq_ignore_ascii_case("auto") {
-                act.keycode = keymap_info.keymap.redirect_key_auto;
-                return ParseStatus::Success;
-            }
-        }
-        if value.stmt_type() != STMT_EXPR_KEYNAME_LITERAL {
-            return report_mismatch(keymap_info.strict);
-        }
-        let key_name_val = if let ExprKind::KeyName(kn) = &value {
-            *kn
-        } else {
-            unreachable!()
-        };
-        let key = keymap_info.keymap.key_by_name(key_name_val, true);
-        if let Some(key) = key {
-            act.keycode = key.keycode;
-            return ParseStatus::Success;
-        } else {
-            return if keymap_info.strict & PARSER_NO_FIELD_VALUE_MISMATCH != 0 {
-                ParseStatus::Fatal
-            } else {
-                ParseStatus::Recoverable
-            };
-        }
-    }
-    if field == ACTION_FIELD_MODIFIERS || field == ACTION_FIELD_MODS_TO_CLEAR {
-        let mut flags: u32 = 0;
-        let mut m: u32 = 0;
-        let ctx: &XkbContext = &keymap_info.keymap.ctx;
-        let r = check_modifier_field(
-            ctx,
-            keymap_info.strict,
-            mods,
-            array_ndx,
-            value,
-            &mut flags,
-            &mut m,
-        );
-        if r != ParseStatus::Success {
-            return r;
-        }
-        if flags as u64 != 0 {
-            return report_mismatch(keymap_info.strict);
-        }
-        act.affect |= m;
-        if field == ACTION_FIELD_MODIFIERS {
-            act.mods |= m;
-        } else {
-            act.mods &= !m;
-        }
-        return ParseStatus::Success;
-    }
-    report_illegal(keymap_info.strict)
-}
+
 fn handle_unsupported(
     _keymap_info: &mut XkbKeymapInfo<'_>,
     _mods: &XkbModSet,
@@ -5957,15 +5635,15 @@ static HANDLE_ACTION: [ActionHandler; 21] = [
     handle_set_latch_lock_group,
     handle_set_latch_lock_group,
     handle_set_latch_lock_group,
-    handle_move_ptr,
-    handle_ptr_btn,
-    handle_ptr_btn,
-    handle_set_ptr_dflt,
     handle_no_action,
-    handle_switch_screen,
+    handle_no_action,
+    handle_no_action,
+    handle_no_action,
+    handle_no_action,
+    handle_no_action,
     handle_set_lock_controls,
     handle_set_lock_controls,
-    handle_redirect_key,
+    handle_no_action,
     handle_unsupported,
     handle_unsupported,
     handle_private,

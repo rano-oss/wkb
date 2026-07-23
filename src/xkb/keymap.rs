@@ -4,7 +4,7 @@ pub use super::shared_types::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
 use super::shared_types::{atom_lookup_ref, atom_text};
 pub(crate) use super::shared_types::{
     XkbAction, XkbContext, XkbKeymap, XkbLed, XkbLevel, XkbModSet, XkbRuleNames, MOD_BOTH,
-    MOD_REAL, MOD_REAL_MASK_ALL, XKB_ATOM_NONE, XKB_KEYCODE_INVALID, XKB_KEYMAP_FORMAT_TEXT_V2,
+    MOD_REAL, MOD_REAL_MASK_ALL, XKB_ATOM_NONE, XKB_KEYMAP_FORMAT_TEXT_V2,
 };
 
 pub(crate) fn xkb_keymap_new_from_names(
@@ -461,33 +461,10 @@ pub(crate) fn action_equal(a: &XkbAction, b: &XkbAction) -> bool {
             XkbAction::GroupSet(ag) | XkbAction::GroupLatch(ag) | XkbAction::GroupLock(ag),
             XkbAction::GroupSet(bg) | XkbAction::GroupLatch(bg) | XkbAction::GroupLock(bg),
         ) => ag.flags == bg.flags && ag.group == bg.group,
-        (XkbAction::PtrMove(ap), XkbAction::PtrMove(bp)) => {
-            ap.flags == bp.flags && ap.x as i32 == bp.x as i32 && ap.y as i32 == bp.y as i32
-        }
-        (
-            XkbAction::PtrButton(ab) | XkbAction::PtrLock(ab),
-            XkbAction::PtrButton(bb) | XkbAction::PtrLock(bb),
-        ) => {
-            ab.flags == bb.flags
-                && ab.button as i32 == bb.button as i32
-                && ab.count as i32 == bb.count as i32
-        }
-        (XkbAction::PtrDefault(ad), XkbAction::PtrDefault(bd)) => {
-            ad.flags == bd.flags && ad.value as i32 == bd.value as i32
-        }
-        (XkbAction::Terminate, XkbAction::Terminate) => true,
-        (XkbAction::SwitchVt(as_), XkbAction::SwitchVt(bs)) => {
-            as_.flags == bs.flags && as_.screen as i32 == bs.screen as i32
-        }
         (
             XkbAction::CtrlSet(ac) | XkbAction::CtrlLock(ac),
             XkbAction::CtrlSet(bc) | XkbAction::CtrlLock(bc),
         ) => ac.flags == bc.flags && ac.ctrls == bc.ctrls,
-        (XkbAction::RedirectKey(ar), XkbAction::RedirectKey(br)) => {
-            ar.keycode == br.keycode && ar.affect == br.affect && ar.mods == br.mods
-        }
-        (XkbAction::UnsupportedLegacy, XkbAction::UnsupportedLegacy)
-        | (XkbAction::Unknown, XkbAction::Unknown) => true,
         (XkbAction::Internal(ai), XkbAction::Internal(bi)) => {
             ai.flags == bi.flags && ai.clear_latched_mods == bi.clear_latched_mods
         }
@@ -835,14 +812,6 @@ use super::shared_types::*;
 pub(crate) const CONTROL_NAMES_MIN_V2_INDEX: u32 = 0;
 pub(crate) const CONTROL_NAMES_MIN_V1_INDEX: u32 = 7;
 pub(crate) const GROUP_LAST_INDEX_NAME: &str = "last";
-#[inline]
-pub(crate) fn format_control_names_offset(format: u32) -> u8 {
-    (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
-        CONTROL_NAMES_MIN_V1_INDEX as i32
-    } else {
-        CONTROL_NAMES_MIN_V2_INDEX as i32
-    }) as u8
-}
 use super::shared_types::XKB_KEYMAP_FORMAT_TEXT_V1;
 
 pub use super::shared_types::{
@@ -1036,33 +1005,7 @@ pub(crate) static GROUP_COMPONENT_MASK_NAMES: [LookupEntry; 7] = [
     },
     LookupEntry { name: "", value: 0 },
 ];
-pub(crate) static BUTTON_NAMES: [LookupEntry; 7] = [
-    LookupEntry {
-        name: "Button1",
-        value: 1,
-    },
-    LookupEntry {
-        name: "Button2",
-        value: 2_u32,
-    },
-    LookupEntry {
-        name: "Button3",
-        value: 3_u32,
-    },
-    LookupEntry {
-        name: "Button4",
-        value: 4_u32,
-    },
-    LookupEntry {
-        name: "Button5",
-        value: 5_u32,
-    },
-    LookupEntry {
-        name: "default",
-        value: 0,
-    },
-    LookupEntry { name: "", value: 0 },
-];
+
 pub(crate) static USE_MOD_MAP_VALUE_NAMES: [LookupEntry; 5] = [
     LookupEntry {
         name: "LevelOne",
@@ -1727,11 +1670,7 @@ pub(crate) enum XkbFilter {
         saved: ControlsFlags,
         refcnt: i32,
         is_set: bool,
-    },
-    RedirectKey {
-        key_id: KeyId,
-        keycode: u32,
-    },
+    }
 }
 
 impl Default for XkbFilter {
@@ -2021,10 +1960,6 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
                 is_set: false,
             }
         }
-        XkbAction::RedirectKey(r) if r.keycode != XKB_KEYCODE_INVALID => XkbFilter::RedirectKey {
-            key_id,
-            keycode: r.keycode,
-        },
         _ => XkbFilter::Inactive,
     }
 }
@@ -2369,29 +2304,6 @@ impl XkbFilter {
                     }
                 }
             }
-            XkbFilter::RedirectKey { key_id, keycode } => {
-                if !key_id.matches(key) {
-                    return false;
-                }
-                match direction {
-                    XKB_KEY_UP => {
-                        *self = XkbFilter::Inactive;
-                        true
-                    }
-                    XKB_KEY_DOWN => {
-                        let actions = xkb_key_get_actions(state, key);
-                        if actions.iter().any(
-                            |a| matches!(a, XkbAction::RedirectKey(r) if r.keycode != *keycode),
-                        ) {
-                            *self = XkbFilter::Inactive;
-                            false
-                        } else {
-                            true
-                        }
-                    }
-                    _ => true,
-                }
-            }
         }
     }
 }
@@ -2424,7 +2336,6 @@ fn xkb_filter_apply_all(state: &mut XkbState, key: &XkbKey, direction: u32) {
                 | XkbAction::GroupLock(_)
                 | XkbAction::CtrlSet(_)
                 | XkbAction::CtrlLock(_)
-                | XkbAction::RedirectKey(_)
         );
         if !has_filter {
             continue;
@@ -2450,12 +2361,6 @@ fn xkb_filter_apply_all(state: &mut XkbState, key: &XkbKey, direction: u32) {
                 }
                 _ => {}
             }
-        }
-        if let XkbAction::RedirectKey(mut r) = action {
-            let km = Rc::clone(&state.keymap);
-            r.affect = mod_mask_get_effective(&km, r.affect);
-            r.mods = mod_mask_get_effective(&km, r.mods);
-            action = XkbAction::RedirectKey(r);
         }
         let filter = xkb_filter_create(action, KeyId::new(key), state);
         if filter.is_active() {
@@ -2506,13 +2411,8 @@ fn xkb_action_breaks_latch(action: &XkbAction, flag: u32, mask: u32) -> bool {
     match action {
         XkbAction::None
         | XkbAction::Void
-        | XkbAction::PtrButton(_)
-        | XkbAction::PtrLock(_)
         | XkbAction::CtrlSet(_)
-        | XkbAction::CtrlLock(_)
-        | XkbAction::SwitchVt(_)
-        | XkbAction::Terminate
-        | XkbAction::RedirectKey(_) => true,
+        | XkbAction::CtrlLock(_) => true,
         XkbAction::Internal(i) => i.flags & flag != 0 && i.clear_latched_mods & mask == mask,
         _ => false,
     }
