@@ -18,7 +18,7 @@ pub(crate) use super::super::shared_types::{
     ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
     ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
     ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, MAX_ACTIONS_PER_LEVEL, MOD_REAL_MASK_ALL,
-    XKB_MAX_LEDS, XKB_MOD_NONE, XKB_OVERLAY_INVALID,
+    XKB_MAX_LEDS, XKB_MOD_NONE, XKB_OVERLAY_INVALID, _ACTION_TYPE_NUM_ENTRIES,
 };
 use super::parser::{exceeds_include_max_depth, process_include_file};
 
@@ -1371,8 +1371,7 @@ fn find_key_for_symbol(keymap: &mut XkbKeymap, sym: u32) -> Option<&mut XkbKey> 
             } else {
                 keymap.min_key_code
             };
-            let mut ki: u32 = start_idx;
-            while ki < keymap.num_keys {
+            for ki in start_idx..keymap.num_keys {
                 let key = &keymap.keys[ki as usize];
                 if group < key.num_groups
                     && level < keymap.types[key.groups[group as usize].type_idx as usize].num_levels
@@ -1384,7 +1383,6 @@ fn find_key_for_symbol(keymap: &mut XkbKeymap, sym: u32) -> Option<&mut XkbKey> 
                         return Some(&mut keymap.keys[ki as usize]);
                     }
                 }
-                ki += 1;
             }
             level += 1;
             if !got_one_level {
@@ -1946,15 +1944,11 @@ fn merge_led_map(old: &mut LedInfo, new: &mut LedInfo) -> bool {
     true
 }
 fn add_led_map(info: &mut CompatInfo, new: &mut LedInfo) -> bool {
-    let mut i: u32 = 0;
-    while i < info.num_leds {
-        if info.leds[i as usize].led.name != new.led.name {
-            i += 1;
-        } else {
-            // Clone the old element out to avoid borrow conflict with info
-            let mut old = info.leds[i as usize];
+    for i in 0..info.num_leds as usize {
+        if info.leds[i].led.name == new.led.name {
+            let mut old = info.leds[i];
             let result = merge_led_map(&mut old, new);
-            info.leds[i as usize] = old;
+            info.leds[i] = old;
             return result;
         }
     }
@@ -3656,13 +3650,11 @@ fn merge_keycode_stores(into: &mut KeyNamesInfo, from: &mut KeyNamesInfo, merge:
             },
         );
     } else {
-        let mut kc: u32 = from.keycodes.min;
-        while kc < from.keycodes.low.len() as u32 {
-            let name: u32 = (&from.keycodes.low)[kc as usize];
+        for kc in from.keycodes.min..from.keycodes.low.len() as u32 {
+            let name = from.keycodes.low[kc as usize];
             if (name != XKB_ATOM_NONE) && !add_key_name(into, kc, name, merge) {
                 into.error_count += 1;
             }
-            kc += 1;
         }
         for entry in from.keycodes.high.iter() {
             if !add_key_name(into, entry.keycode, entry.name, merge) {
@@ -3704,17 +3696,15 @@ fn merge_included_keycodes(into: &mut KeyNamesInfo, from: &mut KeyNamesInfo, mer
         into.num_led_names = from.num_led_names;
         from.num_led_names = 0;
     } else {
-        let mut idx: u32 = 0;
-        while idx < from.num_led_names {
-            let ledi = from.led_names[idx as usize];
+        for idx in 0..from.num_led_names as usize {
+            let ledi = from.led_names[idx];
             if ledi.name != XKB_ATOM_NONE {
                 let mut ledi = ledi;
                 ledi.merge = merge;
-                if !add_led_name(into, &ledi, idx) {
+                if !add_led_name(into, &ledi, idx as u32) {
                     into.error_count += 1;
                 }
             }
-            idx += 1;
         }
     };
 }
@@ -3885,15 +3875,11 @@ fn copy_key_names_to_keymap(keymap: &mut XkbKeymap, keycodes: &KeycodeStore) -> 
     let mut keys: Vec<XkbKey> = (0..keymap.num_keys as usize)
         .map(|_| XkbKey::default())
         .collect();
-    let mut kc: u32 = keymap.min_key_code;
-    while kc < keymap.num_keys_low {
+    for kc in keymap.min_key_code..keymap.num_keys_low {
         keys[kc as usize].keycode = kc;
-        kc += 1;
     }
-    let mut kc_0: u32 = keycodes.min;
-    while kc_0 < keycodes.low.len() as u32 {
-        keys[kc_0 as usize].name = (&keycodes.low)[kc_0 as usize];
-        kc_0 += 1;
+    for kc in keycodes.min..keycodes.low.len() as u32 {
+        keys[kc as usize].name = keycodes.low[kc as usize];
     }
     let mut idx: u32 = keymap.num_keys_low;
     for entry in keycodes.high.iter() {
@@ -3939,13 +3925,11 @@ fn copy_led_names_to_keymap(
     num_led_names: u32,
 ) -> bool {
     keymap.num_leds = num_led_names;
-    let mut idx: u32 = 0;
-    while idx < num_led_names {
-        let ledi = &led_names[idx as usize];
+    for idx in 0..num_led_names as usize {
+        let ledi = &led_names[idx];
         if ledi.name != XKB_ATOM_NONE {
-            keymap.leds[idx as usize].name = ledi.name;
+            keymap.leds[idx].name = ledi.name;
         }
-        idx += 1;
     }
     true
 }
@@ -4712,8 +4696,7 @@ impl<'v> ActionValue<'v> {
 }
 
 pub(crate) fn init_actions_info(info: &mut ActionsInfo) {
-    let mut type_0: u32 = ACTION_TYPE_NONE;
-    while type_0 < _ACTION_TYPE_NUM_ENTRIES {
+    for type_0 in ACTION_TYPE_NONE.._ACTION_TYPE_NUM_ENTRIES {
         info.actions[type_0 as usize] = match type_0 {
             ACTION_TYPE_NONE => XkbAction::None,
             ACTION_TYPE_VOID => XkbAction::Void,
@@ -4730,7 +4713,6 @@ pub(crate) fn init_actions_info(info: &mut ActionsInfo) {
             ACTION_TYPE_INTERNAL => XkbAction::Internal(Default::default()),
             _ => XkbAction::None,
         };
-        type_0 += 1;
     }
 }
 static FIELD_STRINGS: [LookupEntry; 37] = [
