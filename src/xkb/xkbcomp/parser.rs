@@ -1,8 +1,11 @@
+use crate::xkb::keymap::CONTROL_NAMES_MIN_V1_INDEX;
+use crate::xkb::keymap::CONTROL_NAMES_MIN_V2_INDEX;
+
 // LALR(1) parser for XKB, converted from bison-generated C via c2rust
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use super::super::keysym::utf32_to_keysym;
-use super::super::keysym::{xkb_keysym_from_name, xkb_keysym_is_deprecated};
+use super::super::keysym::xkb_keysym_from_name;
 use super::super::shared_types::*;
 use super::super::shared_types::{
     parse_dec_u32, parse_dec_u64, parse_hex_u32, parse_hex_u64, utf8_next_code_point_safe,
@@ -10,20 +13,17 @@ use super::super::shared_types::{
 };
 
 use super::super::shared_types::{
-    safe_map_name, ExprDef, ExprKind, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef,
-    LedMapDef, LedNameDef, MergeMode, ModMapDef, Statement, StmtType, SymbolsDef, UnknownStatement,
-    VModDef, VarDef, XkbFile, XkbMapFlags, FILE_TYPE_COMPAT, FILE_TYPE_GEOMETRY,
-    FILE_TYPE_KEYCODES, FILE_TYPE_KEYMAP, FILE_TYPE_RULES, FILE_TYPE_SYMBOLS, FILE_TYPE_TYPES,
-    FIRST_KEYMAP_FILE_TYPE, LAST_KEYMAP_FILE_TYPE, MAP_HAS_ALPHANUMERIC, MAP_HAS_FN,
-    MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR, MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL,
-    MERGE_AUGMENT, MERGE_DEFAULT, MERGE_OVERRIDE, MERGE_REPLACE, STMT_EXPR_ADD, STMT_EXPR_ASSIGN,
+    ExprKind, FileType, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef,
+    LedNameDef, ModMapDef, Statement, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile,
+    MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
+    MAP_IS_DEFAULT, MAP_IS_HIDDEN, MAP_IS_PARTIAL, STMT_EXPR_ADD, STMT_EXPR_ASSIGN,
     STMT_EXPR_DIVIDE, STMT_EXPR_INVERT, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
-    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS, STMT_UNKNOWN_COMPOUND, STMT_UNKNOWN_DECLARATION,
+    STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
 };
 
 use super::super::keymap::action_type_text;
 pub(crate) use super::super::keymap::mod_mask_get_effective;
-use super::super::keymap::{format_control_names_offset, GROUP_LAST_INDEX_NAME};
+use super::super::keymap::GROUP_LAST_INDEX_NAME;
 pub(crate) use super::symbols::compile_compat_map;
 pub(crate) use super::symbols::compile_key_types;
 pub(crate) use super::symbols::compile_keycodes;
@@ -31,7 +31,7 @@ pub(crate) use super::symbols::compile_symbols;
 use super::symbols::{expr_resolve_group, expr_resolve_group_mask};
 
 pub(crate) const XKB_KEY_VOID_SYMBOL: i32 = 0xffffff_i32;
-pub(crate) const XKB_KEY_0: i32 = 0x30_i32;
+pub(crate) const XKB_KEY_0: i32 = 0x30;
 pub(crate) const XKB_KEY_SECTION: i32 = 0xa7_i32;
 pub(crate) const XKB_KEYSYM_MIN: i32 = 0;
 
@@ -400,7 +400,7 @@ fn _xkbcommon_error(param: &mut ParserParam, _msg: &str) {
     let _loc: ScannerLoc = param.scanner.token_location();
 }
 
-fn resolve_keysym(param: &mut ParserParam, name: Sval) -> Option<u32> {
+fn resolve_keysym(name: Sval) -> Option<u32> {
     let name_bytes = name.as_bytes();
     let name_str = name.as_str();
 
@@ -421,25 +421,16 @@ fn resolve_keysym(param: &mut ParserParam, name: Sval) -> Option<u32> {
     buf[name.len()] = 0;
     let buf_slice = &buf[..name.len() + 1];
 
-    let sym: u32 = xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS);
-    if sym != XKB_KEY_NO_SYMBOL as u32 {
-        if param.ctx.log_verbosity >= 2 {
-            if let Some(_ref_name) = xkb_keysym_is_deprecated(sym, buf_slice) {
-                let _loc: ScannerLoc = param.scanner.token_location();
-            }
-        }
-        return Some(sym);
-    }
-    None
+    return xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS);
 }
 
 fn yypcontext_expected_tokens(yyssp: &[i16], ssp: usize, yyarg: &mut [i32], yyargn: usize) -> i32 {
-    let mut yycount: i32 = 0;
-    let yyn: i32 = YYPACT[yyssp[ssp] as usize] as i32;
+    let mut yycount = 0;
+    let yyn = YYPACT[yyssp[ssp] as usize] as i32;
     if yyn != YYPACT_NINF {
-        let yyxbegin: i32 = if yyn < 0 { -yyn } else { 0 };
-        let yychecklim: i32 = YYLAST - yyn + 1;
-        let yyxend: i32 = if yychecklim < YYNTOKENS {
+        let yyxbegin = if yyn < 0 { -yyn } else { 0 };
+        let yychecklim = YYLAST - yyn + 1;
+        let yyxend = if yychecklim < YYNTOKENS {
             yychecklim
         } else {
             YYNTOKENS
@@ -495,18 +486,6 @@ fn yysyntax_error(yyssp: &[i16], ssp: usize, yytoken: i32) -> String {
     msg
 }
 
-fn ensure_capacity<'a>(v: &mut Vec<YYValue<'a>>, idx: usize) {
-    if idx >= v.len() {
-        v.resize_with(idx + 1, || YYValue::None);
-    }
-}
-
-fn ensure_capacity_i16(v: &mut Vec<i16>, idx: usize) {
-    if idx >= v.len() {
-        v.resize(idx + 1, 0);
-    }
-}
-
 // ── Main parser function ────────────────────────────────────────────
 
 pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
@@ -534,10 +513,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
     yychar = YYEMPTY;
 
     'main_loop: loop {
-        // Ensure stack capacity
-        ensure_capacity_i16(&mut yyss, ssp);
-        ensure_capacity(&mut yyvs, sp);
-
         yyss[ssp] = yystate as i16;
 
         // Check stack overflow
@@ -593,7 +568,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                     yystate = yyss[ssp] as i32;
                 }
                 sp += 1;
-                ensure_capacity(&mut yyvs, sp);
                 yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
                 yystate = yyn;
                 ssp += 1;
@@ -651,7 +625,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                             yystate = yyss[ssp] as i32;
                         }
                         sp += 1;
-                        ensure_capacity(&mut yyvs, sp);
                         yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
                         yystate = yyn;
                         ssp += 1;
@@ -668,7 +641,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                     ssp -= yylen as usize;
 
                     sp += 1;
-                    ensure_capacity(&mut yyvs, sp);
                     yyvs[sp] = yyval;
 
                     let yylhs: i32 = YYR1[yyn as usize] as i32 - YYNTOKENS;
@@ -690,7 +662,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                     }
                     yystate = yyn;
                     sp += 1;
-                    ensure_capacity(&mut yyvs, sp);
                     yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
                     yychar = YYEMPTY;
                     ssp += 1;
@@ -755,7 +726,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                 yystate = yyss[ssp] as i32;
             }
             sp += 1;
-            ensure_capacity(&mut yyvs, sp);
             yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
             yystate = yyn;
             ssp += 1;
@@ -797,7 +767,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                 yystate = yyss[ssp] as i32;
             }
             sp += 1;
-            ensure_capacity(&mut yyvs, sp);
             yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
             yystate = yyn;
             ssp += 1;
@@ -814,7 +783,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
         ssp -= yylen as usize;
 
         sp += 1;
-        ensure_capacity(&mut yyvs, sp);
         yyvs[sp] = yyval;
 
         let yylhs: i32 = YYR1[yyn as usize] as i32 - YYNTOKENS;
@@ -830,6 +798,64 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
     }
 
     yyresult
+}
+
+#[inline(always)]
+fn yy_file_type<'a>(yyval: &mut YYValue<'a>, ft: FileType) {
+    *yyval = YYValue::FileType(ft);
+}
+#[inline(always)]
+fn yy_flags<'a>(yyval: &mut YYValue<'a>, f: u32) {
+    *yyval = YYValue::MapFlags(f);
+}
+#[inline(always)]
+fn yy_atom<'a>(yyval: &mut YYValue<'a>, ctx: &mut &mut XkbContext, bytes: &[u8]) {
+    *yyval = YYValue::Atom(atom_intern(&mut ctx.atom_table, bytes));
+}
+#[inline(always)]
+fn yy_merge<'a>(yyval: &mut YYValue<'a>, m: MergeMode) {
+    *yyval = YYValue::Merge(m);
+}
+#[inline(always)]
+fn yy_bin_expr<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize, op: u32) {
+    let left = yyvs[sp - 2].take_expr();
+    let right = yyvs[sp].take_expr();
+    *yyval = YYValue::Expr(expr_create(ExprKind::Binary { op, left, right }));
+}
+#[inline(always)]
+fn yy_unary_expr<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize, op: u32) {
+    let child = yyvs[sp].take_expr();
+    *yyval = YYValue::Expr(expr_create(ExprKind::Unary { op, child }));
+}
+#[inline(always)]
+fn yy_list_push<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize, sp_off: usize) {
+    let item = yyvs[sp].take_expr();
+    let mut list = yyvs[sp - sp_off].take_expr_list();
+    if let Some(e) = item {
+        list.push(e);
+    }
+    *yyval = YYValue::ExprList(list);
+}
+#[inline(always)]
+fn yy_list_single<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize) {
+    let item = yyvs[sp].take_expr();
+    let mut list = Vec::new();
+    if let Some(e) = item {
+        list.push(e);
+    }
+    *yyval = YYValue::ExprList(list);
+}
+
+macro_rules! yy_merge_decl {
+    ($yyval:expr, $yyvs:expr, $sp:expr, $variant:ident, $stmt_variant:ident) => {
+        let merge_mode = $yyvs[$sp - 1].as_merge();
+        if let YYValue::$variant(mut item) = std::mem::replace(&mut $yyvs[$sp], YYValue::None) {
+            item.merge = merge_mode;
+            *$yyval = YYValue::Stmt(Statement::$stmt_variant(item));
+        } else {
+            *$yyval = YYValue::None;
+        }
+    };
 }
 
 /// Execute a reduction rule. Returns true on success, false on error (YYERROR).
@@ -874,13 +900,13 @@ fn execute_reduction<'a>(
             ));
         }
         6 => {
-            *yyval = YYValue::FileType(FILE_TYPE_KEYMAP);
+            yy_file_type(yyval, FileType::Keymap);
         }
         7 => {
-            *yyval = YYValue::FileType(FILE_TYPE_KEYMAP);
+            yy_file_type(yyval, FileType::Keymap);
         }
         8 => {
-            *yyval = YYValue::FileType(FILE_TYPE_KEYMAP);
+            yy_file_type(yyval, FileType::Keymap);
         }
         9 => {
             // XkbMapConfigList: XkbMapConfigList XkbMapConfig
@@ -909,19 +935,19 @@ fn execute_reduction<'a>(
             ));
         }
         12 => {
-            *yyval = YYValue::FileType(FILE_TYPE_KEYCODES);
+            yy_file_type(yyval, FileType::Keycodes);
         }
         13 => {
-            *yyval = YYValue::FileType(FILE_TYPE_TYPES);
+            yy_file_type(yyval, FileType::Types);
         }
         14 => {
-            *yyval = YYValue::FileType(FILE_TYPE_COMPAT);
+            yy_file_type(yyval, FileType::Compat);
         }
         15 => {
-            *yyval = YYValue::FileType(FILE_TYPE_SYMBOLS);
+            yy_file_type(yyval, FileType::Symbols);
         }
         16 => {
-            *yyval = YYValue::FileType(FILE_TYPE_GEOMETRY);
+            yy_file_type(yyval, FileType::Geometry);
         }
         17 => {
             *yyval = YYValue::MapFlags(yyvs[sp].as_map_flags());
@@ -937,28 +963,28 @@ fn execute_reduction<'a>(
             *yyval = YYValue::MapFlags(yyvs[sp].as_map_flags());
         }
         21 => {
-            *yyval = YYValue::MapFlags(MAP_IS_PARTIAL);
+            yy_flags(yyval, MAP_IS_PARTIAL);
         }
         22 => {
-            *yyval = YYValue::MapFlags(MAP_IS_DEFAULT);
+            yy_flags(yyval, MAP_IS_DEFAULT);
         }
         23 => {
-            *yyval = YYValue::MapFlags(MAP_IS_HIDDEN);
+            yy_flags(yyval, MAP_IS_HIDDEN);
         }
         24 => {
-            *yyval = YYValue::MapFlags(MAP_HAS_ALPHANUMERIC);
+            yy_flags(yyval, MAP_HAS_ALPHANUMERIC);
         }
         25 => {
-            *yyval = YYValue::MapFlags(MAP_HAS_MODIFIER);
+            yy_flags(yyval, MAP_HAS_MODIFIER);
         }
         26 => {
-            *yyval = YYValue::MapFlags(MAP_HAS_KEYPAD);
+            yy_flags(yyval, MAP_HAS_KEYPAD);
         }
         27 => {
-            *yyval = YYValue::MapFlags(MAP_HAS_FN);
+            yy_flags(yyval, MAP_HAS_FN);
         }
         28 => {
-            *yyval = YYValue::MapFlags(MAP_IS_ALTGR);
+            yy_flags(yyval, MAP_IS_ALTGR);
         }
         29 => {
             // DeclList: DeclList Decl
@@ -998,63 +1024,27 @@ fn execute_reduction<'a>(
         }
         33 => {
             // Decl: OptMergeMode InterpretDecl
-            let merge = yyvs[sp - 1].as_merge();
-            if let YYValue::Interp(mut interp) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                interp.merge = merge;
-                *yyval = YYValue::Stmt(Statement::Interp(interp));
-            } else {
-                *yyval = YYValue::None;
-            }
+            yy_merge_decl!(yyval, yyvs, sp, Interp, Interp);
         }
         34 => {
             // Decl: OptMergeMode KeyNameDecl
-            let merge = yyvs[sp - 1].as_merge();
-            if let YYValue::Keycode(mut kc) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                kc.merge = merge;
-                *yyval = YYValue::Stmt(Statement::Keycode(kc));
-            } else {
-                *yyval = YYValue::None;
-            }
+            yy_merge_decl!(yyval, yyvs, sp, Keycode, Keycode);
         }
         35 => {
             // Decl: OptMergeMode KeyAliasDecl
-            let merge = yyvs[sp - 1].as_merge();
-            if let YYValue::KeyAlias(mut ka) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                ka.merge = merge;
-                *yyval = YYValue::Stmt(Statement::KeyAlias(ka));
-            } else {
-                *yyval = YYValue::None;
-            }
+            yy_merge_decl!(yyval, yyvs, sp, KeyAlias, KeyAlias);
         }
         36 => {
             // Decl: OptMergeMode KeyTypeDecl
-            let merge = yyvs[sp - 1].as_merge();
-            if let YYValue::KeyType(mut kt) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                kt.merge = merge;
-                *yyval = YYValue::Stmt(Statement::KeyType(kt));
-            } else {
-                *yyval = YYValue::None;
-            }
+            yy_merge_decl!(yyval, yyvs, sp, KeyType, KeyType);
         }
         37 => {
             // Decl: OptMergeMode SymbolsDecl
-            let merge = yyvs[sp - 1].as_merge();
-            if let YYValue::Symbols(mut sym) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                sym.merge = merge;
-                *yyval = YYValue::Stmt(Statement::Symbols(sym));
-            } else {
-                *yyval = YYValue::None;
-            }
+            yy_merge_decl!(yyval, yyvs, sp, Symbols, Symbols);
         }
         38 => {
             // Decl: OptMergeMode ModMapDecl
-            let merge = yyvs[sp - 1].as_merge();
-            if let YYValue::ModMask(mut mm) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                mm.merge = merge;
-                *yyval = YYValue::Stmt(Statement::ModMap(mm));
-            } else {
-                *yyval = YYValue::None;
-            }
+            yy_merge_decl!(yyval, yyvs, sp, ModMask, ModMap);
         }
         39 => {
             if let YYValue::GroupCompat = std::mem::replace(&mut yyvs[sp], YYValue::None) {
@@ -1065,23 +1055,11 @@ fn execute_reduction<'a>(
         }
         40 => {
             // Decl: OptMergeMode LedMapDecl
-            let merge = yyvs[sp - 1].as_merge();
-            if let YYValue::LedMap(mut lm) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                lm.merge = merge;
-                *yyval = YYValue::Stmt(Statement::LedMap(lm));
-            } else {
-                *yyval = YYValue::None;
-            }
+            yy_merge_decl!(yyval, yyvs, sp, LedMap, LedMap);
         }
         41 => {
             // Decl: OptMergeMode LedNameDecl
-            let merge = yyvs[sp - 1].as_merge();
-            if let YYValue::LedName(mut ln) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                ln.merge = merge;
-                *yyval = YYValue::Stmt(Statement::LedName(ln));
-            } else {
-                *yyval = YYValue::None;
-            }
+            yy_merge_decl!(yyval, yyvs, sp, LedName, LedName);
         }
         42..=44 => {
             // ShapeDecl, SectionDecl, DoodadDecl → geometry (ignored)
@@ -1286,7 +1264,7 @@ fn execute_reduction<'a>(
         74 => {
             // MultiKeySymOrActionList: OBRACKET MultiKeySymList CBRACKET (yylen=3)
             let list = yyvs[sp - 1].take_expr_list();
-            let exprs: Vec<ExprDef> = list.into_iter().map(|b| *b).collect();
+            let exprs: Vec<ExprKind> = list.into_iter().map(|b| *b).collect();
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
         }
         75 => {
@@ -1294,32 +1272,32 @@ fn execute_reduction<'a>(
             let mut list = yyvs[sp - 1].take_expr_list(); // sp-1 = MultiKeySymList = offset(-1)
             let count = yyvs[sp - 3].as_no_sym_or_action_list(); // sp-3 = NoSymbolOrActionList = offset(-3)
                                                                  // Prepend 'count' NoSymbol keysym lists
-            let mut prepended: Vec<Box<ExprDef>> = Vec::new();
+            let mut prepended: Vec<Box<ExprKind>> = Vec::new();
             for _ in 0..count {
                 prepended.push(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL as u32));
             }
             prepended.append(&mut list);
-            let exprs: Vec<ExprDef> = prepended.into_iter().map(|b| *b).collect();
+            let exprs: Vec<ExprKind> = prepended.into_iter().map(|b| *b).collect();
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
         }
         76 => {
             // MultiKeySymOrActionList: OBRACKET MultiActionList CBRACKET (yylen=3)
             let list = yyvs[sp - 1].take_expr_list();
-            let exprs: Vec<ExprDef> = list.into_iter().map(|b| *b).collect();
+            let exprs: Vec<ExprKind> = list.into_iter().map(|b| *b).collect();
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
         }
         77 => {
             // MultiKeySymOrActionList: NoSymbolOrActionList OBRACKET MultiActionList CBRACKET COMMA (yylen=5)
             let mut list = yyvs[sp - 1].take_expr_list();
             let count = yyvs[sp - 3].as_no_sym_or_action_list();
-            let mut prepended: Vec<Box<ExprDef>> = Vec::new();
+            let mut prepended: Vec<Box<ExprKind>> = Vec::new();
             for _ in 0..count {
                 prepended.push(expr_create(ExprKind::ActionList {
                     actions: Vec::new(),
                 }));
             }
             prepended.append(&mut list);
-            let exprs: Vec<ExprDef> = prepended.into_iter().map(|b| *b).collect();
+            let exprs: Vec<ExprKind> = prepended.into_iter().map(|b| *b).collect();
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
         }
         78 => {
@@ -1329,7 +1307,7 @@ fn execute_reduction<'a>(
         79 => {
             // NoSymbolOrActionList: NoSymbolOrActionList COMMA NoSymbol COMMA (yylen=4)
             let prev = yyvs[sp - 3].as_no_sym_or_action_list();
-            *yyval = YYValue::NoSymbolOrActionList(prev.wrapping_add(1));
+            *yyval = YYValue::NoSymbolOrActionList(prev + 1);
         }
         80 => {
             // NoSymbolOrActionList: ... (yylen=2)
@@ -1351,21 +1329,11 @@ fn execute_reduction<'a>(
         }
         84 => {
             // KeyOrKeySymList: KeyOrKeySymList COMMA KeyOrKeySym
-            let expr = yyvs[sp].take_expr();
-            let mut list = yyvs[sp - 2].take_expr_list();
-            if let Some(e) = expr {
-                list.push(e);
-            }
-            *yyval = YYValue::ExprList(list);
+            yy_list_push(yyval, yyvs, sp, 2);
         }
         85 => {
             // KeyOrKeySymList: KeyOrKeySym
-            let expr = yyvs[sp].take_expr();
-            let mut list = Vec::new();
-            if let Some(e) = expr {
-                list.push(e);
-            }
-            *yyval = YYValue::ExprList(list);
+            yy_list_single(yyval, yyvs, sp);
         }
         86 => {
             // KeyOrKeySym: KEYNAME
@@ -1403,17 +1371,13 @@ fn execute_reduction<'a>(
             // Drop expr values (geometry not supported)
             let _ = yyvs[sp - 3].take_expr();
             let _ = yyvs[sp - 1].take_expr();
-            let sval = yyvs[sp - 4].as_sval();
-            let name_str = sval.as_str();
-            *yyval = YYValue::Unknown(unknown_statement_create(STMT_UNKNOWN_DECLARATION, name_str));
+            *yyval = YYValue::Unknown(unknown_statement_create());
         }
         92 => {
             // UnknownCompoundStatementDecl: Ident Lhs OBRACE VarDeclList CBRACE SEMI
             let _ = yyvs[sp - 4].take_expr();
             let _ = yyvs[sp - 2].take_var_list();
-            let sval = yyvs[sp - 5].as_sval();
-            let name_str = sval.as_str();
-            *yyval = YYValue::Unknown(unknown_statement_create(STMT_UNKNOWN_COMPOUND, name_str));
+            *yyval = YYValue::Unknown(unknown_statement_create());
         }
         // Rules 93-123: Geometry rules → all produce None (geometry not supported)
         93 | 94 | 95 | 96 | 97 | 98 | 100 | 102 | 103 | 104 | 105 | 107 | 108 | 109 | 111 | 112
@@ -1467,79 +1431,69 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Atom(yyvs[sp].as_atom());
         }
         130 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"action"));
+            yy_atom(yyval, &mut param.ctx, b"action");
         }
         131 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"interpret"));
+            yy_atom(yyval, &mut param.ctx, b"interpret");
         }
         132 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"type"));
+            yy_atom(yyval, &mut param.ctx, b"type");
         }
         133 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"key"));
+            yy_atom(yyval, &mut param.ctx, b"key");
         }
         134 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"group"));
+            yy_atom(yyval, &mut param.ctx, b"group");
         }
         135 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"modifier_map"));
+            yy_atom(yyval, &mut param.ctx, b"modifier_map");
         }
         136 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"indicator"));
+            yy_atom(yyval, &mut param.ctx, b"indicator");
         }
         137 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"shape"));
+            yy_atom(yyval, &mut param.ctx, b"shape");
         }
         138 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"row"));
+            yy_atom(yyval, &mut param.ctx, b"row");
         }
         139 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"section"));
+            yy_atom(yyval, &mut param.ctx, b"section");
         }
         140 => {
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"text"));
+            yy_atom(yyval, &mut param.ctx, b"text");
         }
         // MergeMode rules 141-147
         141 => {
             *yyval = YYValue::Merge(yyvs[sp].as_merge());
         }
         142 => {
-            *yyval = YYValue::Merge(MERGE_DEFAULT);
+            yy_merge(yyval, MergeMode::Default);
         }
         143 => {
-            *yyval = YYValue::Merge(MERGE_DEFAULT);
+            yy_merge(yyval, MergeMode::Default);
         }
         144 => {
-            *yyval = YYValue::Merge(MERGE_AUGMENT);
+            yy_merge(yyval, MergeMode::Augment);
         }
         145 => {
-            *yyval = YYValue::Merge(MERGE_OVERRIDE);
+            yy_merge(yyval, MergeMode::Override);
         }
         146 => {
-            *yyval = YYValue::Merge(MERGE_REPLACE);
+            yy_merge(yyval, MergeMode::Replace);
         }
         147 => {
             let _loc = param.scanner.token_location();
-            *yyval = YYValue::Merge(MERGE_DEFAULT);
+            yy_merge(yyval, MergeMode::Default);
         }
         // ExprList rules 148-150
         148 => {
             // ExprList: ExprList COMMA Expr
-            let expr = yyvs[sp].take_expr();
-            let mut list = yyvs[sp - 2].take_expr_list();
-            if let Some(e) = expr {
-                list.push(e);
-            }
-            *yyval = YYValue::ExprList(list);
+            yy_list_push(yyval, yyvs, sp, 2);
         }
         149 => {
             // ExprList: Expr
-            let expr = yyvs[sp].take_expr();
-            let mut list = Vec::new();
-            if let Some(e) = expr {
-                list.push(e);
-            }
-            *yyval = YYValue::ExprList(list);
+            yy_list_single(yyval, yyvs, sp);
         }
         150 => {
             // ExprList: empty
@@ -1547,81 +1501,35 @@ fn execute_reduction<'a>(
         }
         // Expr rules 151-165
         151 => {
-            let left = yyvs[sp - 2].take_expr();
-            let right = yyvs[sp].take_expr();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Binary {
-                op: STMT_EXPR_DIVIDE,
-                left,
-                right,
-            }));
+            yy_bin_expr(yyval, yyvs, sp, STMT_EXPR_DIVIDE);
         }
         152 => {
-            let left = yyvs[sp - 2].take_expr();
-            let right = yyvs[sp].take_expr();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Binary {
-                op: STMT_EXPR_ADD,
-                left,
-                right,
-            }));
+            yy_bin_expr(yyval, yyvs, sp, STMT_EXPR_ADD);
         }
         153 => {
-            let left = yyvs[sp - 2].take_expr();
-            let right = yyvs[sp].take_expr();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Binary {
-                op: STMT_EXPR_SUBTRACT,
-                left,
-                right,
-            }));
+            yy_bin_expr(yyval, yyvs, sp, STMT_EXPR_SUBTRACT);
         }
         154 => {
-            let left = yyvs[sp - 2].take_expr();
-            let right = yyvs[sp].take_expr();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Binary {
-                op: STMT_EXPR_MULTIPLY,
-                left,
-                right,
-            }));
+            yy_bin_expr(yyval, yyvs, sp, STMT_EXPR_MULTIPLY);
         }
         155 => {
-            let left = yyvs[sp - 2].take_expr();
-            let right = yyvs[sp].take_expr();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Binary {
-                op: STMT_EXPR_ASSIGN,
-                left,
-                right,
-            }));
+            yy_bin_expr(yyval, yyvs, sp, STMT_EXPR_ASSIGN);
         }
         156 => {
             // Expr: Term
             *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
         }
         157 => {
-            let child = yyvs[sp].take_expr();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Unary {
-                op: STMT_EXPR_NEGATE,
-                child,
-            }));
+            yy_unary_expr(yyval, yyvs, sp, STMT_EXPR_NEGATE);
         }
         158 => {
-            let child = yyvs[sp].take_expr();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Unary {
-                op: STMT_EXPR_UNARY_PLUS,
-                child,
-            }));
+            yy_unary_expr(yyval, yyvs, sp, STMT_EXPR_UNARY_PLUS);
         }
         159 => {
-            let child = yyvs[sp].take_expr();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Unary {
-                op: STMT_EXPR_NOT,
-                child,
-            }));
+            yy_unary_expr(yyval, yyvs, sp, STMT_EXPR_NOT);
         }
         160 => {
-            let child = yyvs[sp].take_expr();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Unary {
-                op: STMT_EXPR_INVERT,
-                child,
-            }));
+            yy_unary_expr(yyval, yyvs, sp, STMT_EXPR_INVERT);
         }
         161 => {
             // Term: Lhs (passthrough)
@@ -1654,7 +1562,7 @@ fn execute_reduction<'a>(
             // ActionList at sp produces an ExprList of actions
             // Create an ActionList expr wrapping those actions, then append to the list
             let actions_expr_list = yyvs[sp].take_expr_list();
-            let actions: Vec<ExprDef> = actions_expr_list.into_iter().map(|b| *b).collect();
+            let actions: Vec<ExprKind> = actions_expr_list.into_iter().map(|b| *b).collect();
             let action_list_expr = expr_create(ExprKind::ActionList { actions });
             let mut list = yyvs[sp - 2].take_expr_list();
             list.push(action_list_expr);
@@ -1672,37 +1580,22 @@ fn execute_reduction<'a>(
         168 => {
             // MultiActionList: ActionList (initial single element)
             let actions_expr_list = yyvs[sp].take_expr_list();
-            let actions: Vec<ExprDef> = actions_expr_list.into_iter().map(|b| *b).collect();
+            let actions: Vec<ExprKind> = actions_expr_list.into_iter().map(|b| *b).collect();
             let action_list_expr = expr_create(ExprKind::ActionList { actions });
             *yyval = YYValue::ExprList(vec![action_list_expr]);
         }
         169 => {
             // MultiActionList: KeySymList (initial single element)
-            let expr = yyvs[sp].take_expr();
-            let mut list = Vec::new();
-            if let Some(e) = expr {
-                list.push(e);
-            }
-            *yyval = YYValue::ExprList(list);
+            yy_list_single(yyval, yyvs, sp);
         }
         // NonEmptyActions rules 170-171
         170 => {
             // NonEmptyActions: NonEmptyActions COMMA Action
-            let expr = yyvs[sp].take_expr();
-            let mut list = yyvs[sp - 2].take_expr_list();
-            if let Some(e) = expr {
-                list.push(e);
-            }
-            *yyval = YYValue::ExprList(list);
+            yy_list_push(yyval, yyvs, sp, 2);
         }
         171 => {
             // NonEmptyActions: Action
-            let expr = yyvs[sp].take_expr();
-            let mut list = Vec::new();
-            if let Some(e) = expr {
-                list.push(e);
-            }
-            *yyval = YYValue::ExprList(list);
+            yy_list_single(yyval, yyvs, sp);
         }
         // Actions / ActionList rules 172-175
         172 => {
@@ -1798,12 +1691,7 @@ fn execute_reduction<'a>(
         }
         187 => {
             // MultiKeySymList: MultiKeySymList COMMA KeySymList (expr variant)
-            let expr = yyvs[sp].take_expr();
-            let mut list = yyvs[sp - 2].take_expr_list();
-            if let Some(e) = expr {
-                list.push(e);
-            }
-            *yyval = YYValue::ExprList(list);
+            yy_list_push(yyval, yyvs, sp, 2);
         }
         188 => {
             // MultiKeySymList: KeySymList (keysym)
@@ -1813,12 +1701,7 @@ fn execute_reduction<'a>(
         }
         189 => {
             // MultiKeySymList: KeySymList (expr)
-            let expr = yyvs[sp].take_expr();
-            let mut list = Vec::new();
-            if let Some(e) = expr {
-                list.push(e);
-            }
-            *yyval = YYValue::ExprList(list);
+            yy_list_single(yyval, yyvs, sp);
         }
         // KeySymList rules 190-197
         190 => {
@@ -1891,16 +1774,15 @@ fn execute_reduction<'a>(
         199 => {
             // KeySym: STRING → parse string as keysym
             let s = yyvs[sp].take_str();
-            let keysym = keysym_parse_string(param.scanner, &s);
-            if keysym == XKB_KEY_NO_SYMBOL as u32 {
-                return false;
+            match keysym_parse_string(param.scanner, &s) {
+                Some(keysym) => *yyval = YYValue::Keysym(keysym),
+                None => return false,
             }
-            *yyval = YYValue::Keysym(keysym);
         }
         200 => {
             // KeySym: IDENT → resolve keysym name
             let sval = yyvs[sp].as_sval();
-            match resolve_keysym(param, sval) {
+            match resolve_keysym(sval) {
                 Some(sym) => {
                     *yyval = YYValue::Keysym(sym);
                 }
@@ -1928,11 +1810,6 @@ fn execute_reduction<'a>(
             } else {
                 if num <= XKB_KEYSYM_MAX as i64 {
                     let keysym = num as u32;
-                    if param.ctx.log_verbosity >= 2 {
-                        if let Some(_ref_name) = xkb_keysym_is_deprecated(keysym, &[]) {
-                            let _loc = param.scanner.token_location();
-                        }
-                    }
                     *yyval = YYValue::Keysym(keysym);
                 } else {
                     let _loc = param.scanner.token_location();
@@ -2051,11 +1928,11 @@ pub(crate) fn parse<'a>(
 
 // ── AST builder functions (merged from ast_build.rs) ──
 
-pub(crate) fn expr_create(kind: ExprKind) -> Box<ExprDef> {
-    Box::new(ExprDef { kind })
+pub(crate) fn expr_create(kind: ExprKind) -> Box<ExprKind> {
+    Box::new(kind)
 }
 
-pub(crate) fn expr_create_key_sym_list(sym: u32) -> Box<ExprDef> {
+pub(crate) fn expr_create_key_sym_list(sym: u32) -> Box<ExprKind> {
     let mut syms = Vec::new();
     if sym != XKB_KEY_NO_SYMBOL as u32 {
         syms.push(sym);
@@ -2063,9 +1940,9 @@ pub(crate) fn expr_create_key_sym_list(sym: u32) -> Box<ExprDef> {
     expr_create(ExprKind::KeysymList { syms })
 }
 
-pub(crate) fn expr_append_key_sym_list(mut expr: Box<ExprDef>, sym: u32) -> Box<ExprDef> {
+pub(crate) fn expr_append_key_sym_list(mut expr: Box<ExprKind>, sym: u32) -> Box<ExprKind> {
     if sym != XKB_KEY_NO_SYMBOL as u32 {
-        if let ExprKind::KeysymList { ref mut syms } = expr.kind {
+        if let ExprKind::KeysymList { ref mut syms } = *expr {
             syms.push(sym);
         }
     }
@@ -2074,9 +1951,9 @@ pub(crate) fn expr_append_key_sym_list(mut expr: Box<ExprDef>, sym: u32) -> Box<
 
 pub(crate) fn expr_key_sym_list_append_string(
     scanner: &mut Scanner,
-    mut expr: Box<ExprDef>,
+    mut expr: Box<ExprKind>,
     string: &str,
-) -> Option<Box<ExprDef>> {
+) -> Option<Box<ExprKind>> {
     let bytes = string.as_bytes();
     let len = bytes.len();
     let mut idx: usize = 0;
@@ -2094,38 +1971,38 @@ pub(crate) fn expr_key_sym_list_append_string(
             let _loc = scanner.token_location();
             return None;
         }
-        if let ExprKind::KeysymList { ref mut syms } = expr.kind {
+        if let ExprKind::KeysymList { ref mut syms } = *expr {
             syms.push(sym);
         }
         idx += cp_len;
     }
 }
 
-pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> u32 {
+pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> Option<u32> {
     let bytes = string.as_bytes();
     let len = bytes.len();
     if len == 0 {
         let _loc = scanner.token_location();
-        return XKB_KEY_NO_SYMBOL as u32;
+        return None;
     }
     let (cp, cp_len) = utf8_next_code_point_safe(bytes);
     if cp == INVALID_UTF8_CODE_POINT {
         let _loc = scanner.token_location();
-        return XKB_KEY_NO_SYMBOL as u32;
+        return None;
     } else if cp_len != len {
         let _loc = scanner.token_location();
-        return XKB_KEY_NO_SYMBOL as u32;
+        return None;
     }
     let sym = utf32_to_keysym(cp);
     if sym == XKB_KEY_NO_SYMBOL as u32 {
         let _loc = scanner.token_location();
     }
-    sym
+    Some(sym)
 }
 
 pub(crate) fn keycode_create(name: u32, value: i64) -> Box<KeycodeDef> {
     Box::new(KeycodeDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         name,
         value,
     })
@@ -2133,23 +2010,23 @@ pub(crate) fn keycode_create(name: u32, value: i64) -> Box<KeycodeDef> {
 
 pub(crate) fn key_alias_create(alias: u32, real: u32) -> Box<KeyAliasDef> {
     Box::new(KeyAliasDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         alias,
         real,
     })
 }
 
-pub(crate) fn vmod_create(name: u32, value: Option<Box<ExprDef>>) -> Box<VModDef> {
+pub(crate) fn vmod_create(name: u32, value: Option<Box<ExprKind>>) -> Box<VModDef> {
     Box::new(VModDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         name,
         value,
     })
 }
 
-pub(crate) fn var_create(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>) -> Box<VarDef> {
+pub(crate) fn var_create(name: Option<Box<ExprKind>>, value: Option<Box<ExprKind>>) -> Box<VarDef> {
     Box::new(VarDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         name,
         value,
     })
@@ -2157,19 +2034,15 @@ pub(crate) fn var_create(name: Option<Box<ExprDef>>, value: Option<Box<ExprDef>>
 
 pub(crate) fn bool_var_create(ident: u32, set: bool) -> Box<VarDef> {
     Box::new(VarDef {
-        merge: MERGE_DEFAULT,
-        name: Some(Box::new(ExprDef {
-            kind: ExprKind::Ident(ident),
-        })),
-        value: Some(Box::new(ExprDef {
-            kind: ExprKind::Boolean(set),
-        })),
+        merge: MergeMode::Default,
+        name: Some(Box::new(ExprKind::Ident(ident))),
+        value: Some(Box::new(ExprKind::Boolean(set))),
     })
 }
 
-pub(crate) fn interp_create(sym: u32, match_0: Option<Box<ExprDef>>) -> Box<InterpDef> {
+pub(crate) fn interp_create(sym: u32, match_0: Option<Box<ExprKind>>) -> Box<InterpDef> {
     Box::new(InterpDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         sym,
         match_0,
         def: Vec::new(),
@@ -2178,7 +2051,7 @@ pub(crate) fn interp_create(sym: u32, match_0: Option<Box<ExprDef>>) -> Box<Inte
 
 pub(crate) fn key_type_create(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
     Box::new(KeyTypeDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         name,
         body,
     })
@@ -2186,15 +2059,15 @@ pub(crate) fn key_type_create(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
 
 pub(crate) fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> Box<SymbolsDef> {
     Box::new(SymbolsDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         key_name,
         symbols,
     })
 }
 
-pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef> {
+pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> Box<ModMapDef> {
     Box::new(ModMapDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         modifier,
         keys,
     })
@@ -2202,30 +2075,30 @@ pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprDef>) -> Box<ModMapDef
 
 pub(crate) fn led_map_create(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
     Box::new(LedMapDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         name,
         body,
     })
 }
 
-pub(crate) fn led_name_create(ndx: i64, name: Option<Box<ExprDef>>) -> Box<LedNameDef> {
+pub(crate) fn led_name_create(ndx: i64, name: Option<Box<ExprKind>>) -> Box<LedNameDef> {
     Box::new(LedNameDef {
-        merge: MERGE_DEFAULT,
+        merge: MergeMode::Default,
         ndx,
         name,
     })
 }
 
-pub(crate) fn unknown_statement_create(type_0: StmtType, name: &str) -> Box<UnknownStatement> {
-    Box::new(UnknownStatement { _stmt_type: type_0, _name: name.to_string() })
+pub(crate) fn unknown_statement_create() -> Box<UnknownStatement> {
+    Box::new(UnknownStatement {})
 }
 
 pub(crate) fn include_create(
     _ctx: &mut XkbContext,
     stmt_str: &str,
     mut merge: MergeMode,
-) -> Option<Box<IncludeStmt>> {
-    let mut items: Vec<Box<IncludeStmt>> = Vec::new();
+) -> Option<Vec<IncludeStmt>> {
+    let mut items: Vec<IncludeStmt> = Vec::new();
     let mut remaining: Option<&str> = Some(stmt_str);
 
     loop {
@@ -2246,42 +2119,36 @@ pub(crate) fn include_create(
             continue;
         }
 
-        items.push(Box::new(IncludeStmt {
+        items.push(IncludeStmt {
             merge,
             stmt: String::new(),
             file: parsed.file,
             map: parsed.map,
             modifier: parsed.extra_data,
-            next_incl: None,
-        }));
+        });
 
         match parsed.nextop {
-            '|' => merge = MERGE_AUGMENT,
-            '^' => merge = MERGE_REPLACE,
-            _ => merge = MERGE_OVERRIDE,
+            '|' => merge = MergeMode::Augment,
+            '^' => merge = MergeMode::Replace,
+            _ => merge = MergeMode::Override,
         }
 
         remaining = rest;
     }
 
-    // Build linked list in reverse
-    let mut first: Option<Box<IncludeStmt>> = None;
-    for mut item in items.into_iter().rev() {
-        item.next_incl = first;
-        first = Some(item);
+    if items.is_empty() {
+        return None;
     }
 
-    if let Some(ref mut f) = first {
-        f.stmt = stmt_str.to_string();
-    }
-    first
+    items[0].stmt = stmt_str.to_string();
+    Some(items)
 }
 
 pub(crate) fn xkb_file_create(
-    type_0: u32,
+    type_0: FileType,
     name: Option<String>,
     defs: Vec<Statement>,
-    flags: XkbMapFlags,
+    flags: u32,
 ) -> Box<XkbFile> {
     let mut name_str = name.unwrap_or_default();
     xkb_escape_map_name(&mut name_str);
@@ -2304,8 +2171,12 @@ pub(crate) fn xkb_file_from_components(
         &kkctgs.symbols,
     ];
     let mut file_stmts: Vec<Statement> = Vec::new();
-    let mut type_0 = FIRST_KEYMAP_FILE_TYPE;
-    while type_0 <= LAST_KEYMAP_FILE_TYPE {
+    for type_0 in [
+        FileType::Keycodes,
+        FileType::Types,
+        FileType::Compat,
+        FileType::Symbols,
+    ] {
         let component_bytes: Vec<u8> = components[type_0 as usize]
             .iter()
             .map(|&b| b as u8)
@@ -2315,13 +2186,15 @@ pub(crate) fn xkb_file_from_components(
             .position(|&b| b == 0)
             .unwrap_or(component_bytes.len());
         let component_str = std::str::from_utf8(&component_bytes[..end]).unwrap_or("");
-        let include = include_create(ctx, component_str, MERGE_DEFAULT)?;
-        let defs = vec![Statement::Include(include)];
+        let defs = vec![Statement::Include(include_create(
+            ctx,
+            component_str,
+            MergeMode::Default,
+        )?)];
         let file = xkb_file_create(type_0, None, defs, 0);
         file_stmts.push(Statement::XkbFile(file));
-        type_0 += 1;
     }
-    Some(xkb_file_create(FILE_TYPE_KEYMAP, None, file_stmts, 0))
+    Some(xkb_file_create(FileType::Keymap, None, file_stmts, 0))
 }
 
 // ── Scanner types (migrated from scanner_utils.rs) ──
@@ -2850,16 +2723,16 @@ pub(crate) enum YYValue<'a> {
     #[default]
     None,
     Num(i64),
-    FileType(u32),
+    FileType(FileType),
     Str(String),
     Sval(Sval<'a>),
     Atom(u32),
     Merge(MergeMode),
-    MapFlags(XkbMapFlags),
+    MapFlags(u32),
     Keysym(u32),
     NoSymbolOrActionList(u32),
-    Expr(Box<ExprDef>),
-    ExprList(Vec<Box<ExprDef>>),
+    Expr(Box<ExprKind>),
+    ExprList(Vec<Box<ExprKind>>),
     Var(Box<VarDef>),
     VarList(Vec<Box<VarDef>>),
     VMod(Box<VModDef>),
@@ -2882,59 +2755,113 @@ pub(crate) enum YYValue<'a> {
 
 // Helper to take a value out and replace with None
 impl<'a> YYValue<'a> {
-    pub(crate) fn take_expr(&mut self) -> Option<Box<ExprDef>> {
-        match std::mem::take(self) { YYValue::Expr(e) => Some(e), _ => None }
+    pub(crate) fn take_expr(&mut self) -> Option<Box<ExprKind>> {
+        match std::mem::take(self) {
+            YYValue::Expr(e) => Some(e),
+            _ => None,
+        }
     }
-    pub(crate) fn take_expr_list(&mut self) -> Vec<Box<ExprDef>> {
-        match std::mem::take(self) { YYValue::ExprList(v) => v, _ => Vec::new() }
+    pub(crate) fn take_expr_list(&mut self) -> Vec<Box<ExprKind>> {
+        match std::mem::take(self) {
+            YYValue::ExprList(v) => v,
+            _ => Vec::new(),
+        }
     }
     pub(crate) fn take_var(&mut self) -> Option<Box<VarDef>> {
-        match std::mem::take(self) { YYValue::Var(v) => Some(v), _ => None }
+        match std::mem::take(self) {
+            YYValue::Var(v) => Some(v),
+            _ => None,
+        }
     }
     pub(crate) fn take_var_list(&mut self) -> Vec<Box<VarDef>> {
-        match std::mem::take(self) { YYValue::VarList(v) => v, _ => Vec::new() }
+        match std::mem::take(self) {
+            YYValue::VarList(v) => v,
+            _ => Vec::new(),
+        }
     }
     pub(crate) fn take_vmod(&mut self) -> Option<Box<VModDef>> {
-        match std::mem::take(self) { YYValue::VMod(v) => Some(v), _ => None }
+        match std::mem::take(self) {
+            YYValue::VMod(v) => Some(v),
+            _ => None,
+        }
     }
     pub(crate) fn take_vmod_list(&mut self) -> Vec<Box<VModDef>> {
-        match std::mem::take(self) { YYValue::VModList(v) => v, _ => Vec::new() }
+        match std::mem::take(self) {
+            YYValue::VModList(v) => v,
+            _ => Vec::new(),
+        }
     }
     pub(crate) fn take_file(&mut self) -> Option<Box<XkbFile>> {
-        match std::mem::take(self) { YYValue::File(f) => Some(f), _ => None }
+        match std::mem::take(self) {
+            YYValue::File(f) => Some(f),
+            _ => None,
+        }
     }
     pub(crate) fn take_file_list(&mut self) -> Vec<Box<XkbFile>> {
-        match std::mem::take(self) { YYValue::FileList(v) => v, _ => Vec::new() }
+        match std::mem::take(self) {
+            YYValue::FileList(v) => v,
+            _ => Vec::new(),
+        }
     }
     pub(crate) fn take_stmt_list(&mut self) -> Vec<Statement> {
-        match std::mem::take(self) { YYValue::StmtList(v) => v, _ => Vec::new() }
+        match std::mem::take(self) {
+            YYValue::StmtList(v) => v,
+            _ => Vec::new(),
+        }
     }
     pub(crate) fn as_num(&self) -> i64 {
-        match self { YYValue::Num(n) => *n, _ => 0 }
+        match self {
+            YYValue::Num(n) => *n,
+            _ => 0,
+        }
     }
     pub(crate) fn as_atom(&self) -> u32 {
-        match self { YYValue::Atom(a) => *a, _ => 0 }
+        match self {
+            YYValue::Atom(a) => *a,
+            _ => 0,
+        }
     }
     pub(crate) fn as_merge(&self) -> MergeMode {
-        match self { YYValue::Merge(m) => *m, _ => MERGE_DEFAULT }
+        match self {
+            YYValue::Merge(m) => *m,
+            _ => MergeMode::Default,
+        }
     }
-    pub(crate) fn as_map_flags(&self) -> XkbMapFlags {
-        match self { YYValue::MapFlags(f) => *f, _ => 0 }
+    pub(crate) fn as_map_flags(&self) -> u32 {
+        match self {
+            YYValue::MapFlags(f) => *f,
+            _ => 0,
+        }
     }
-    pub(crate) fn as_file_type(&self) -> u32 {
-        match self { YYValue::FileType(f) => *f, _ => 0 }
+    pub(crate) fn as_file_type(&self) -> FileType {
+        match self {
+            YYValue::FileType(f) => *f,
+            _ => FileType::Keycodes,
+        }
     }
     pub(crate) fn as_keysym(&self) -> u32 {
-        match self { YYValue::Keysym(k) => *k, _ => 0 }
+        match self {
+            YYValue::Keysym(k) => *k,
+            _ => 0,
+        }
     }
     pub(crate) fn as_no_sym_or_action_list(&self) -> u32 {
-        match self { YYValue::NoSymbolOrActionList(n) => *n, _ => 0 }
+        match self {
+            YYValue::NoSymbolOrActionList(n) => *n,
+            _ => 0,
+        }
     }
     pub(crate) fn as_sval(&self) -> Sval<'a> {
-        match self { YYValue::Sval(s) => *s, _ => Sval::EMPTY }
+        match self {
+            YYValue::Sval(s) => *s,
+            _ => Sval::EMPTY,
+        }
     }
     pub(crate) fn take_str(&mut self) -> String {
-        match std::mem::take(self) { YYValue::Str(s) => s, _ => String::new() }
+        match std::mem::take(self) {
+            YYValue::Str(s) => s,
+            _ => String::new(),
+        }
     }
 }
 
@@ -3250,7 +3177,7 @@ pub(crate) fn parse_include_map(input: &str) -> Option<(ParsedIncludeMap, Option
 static XKB_FILE_TYPE_INCLUDE_DIRS: [&str; 7] = [
     "keycodes", "types", "compat", "symbols", "geometry", "keymap", "rules",
 ];
-fn directory_for_include(type_0: u32) -> &'static str {
+fn directory_for_include(type_0: FileType) -> &'static str {
     if type_0 as usize >= XKB_FILE_TYPE_INCLUDE_DIRS.len() {
         ""
     } else {
@@ -3259,11 +3186,11 @@ fn directory_for_include(type_0: u32) -> &'static str {
 }
 fn log_include_paths(ctx: &mut XkbContext) {
     let num = xkb_context_num_include_paths(ctx);
-    if num > 0_u32 {
+    if num > 0 {
         for _i in 0..num {}
     }
     let num_failed = xkb_context_num_failed_include_paths(ctx);
-    if num_failed > 0_u32 {
+    if num_failed > 0 {
         for _i in 0..num_failed {}
     }
 }
@@ -3318,7 +3245,7 @@ fn expand_percent(_parent_file_name: &str, type_dir: &str, name: &str) -> Option
 pub(crate) fn expand_path_str(
     parent_file_name: &str,
     name: &str,
-    file_type: u32,
+    file_type: FileType,
 ) -> Result<Option<String>, ()> {
     // Find first '%'
     let k = match name.find('%') {
@@ -3342,7 +3269,7 @@ pub(crate) fn find_file_in_xkb_path(
     ctx: &mut XkbContext,
     _parent_file_name: &str,
     name: &str,
-    type_0: u32,
+    type_0: FileType,
     offset: &mut u32,
     required: bool,
 ) -> Option<(std::sync::Arc<Vec<u8>>, String)> {
@@ -3373,7 +3300,7 @@ pub(crate) fn exceeds_include_max_depth(include_depth: u32) -> bool {
 pub(crate) fn process_include_file(
     ctx: &mut XkbContext,
     stmt: &IncludeStmt,
-    file_type: u32,
+    file_type: FileType,
 ) -> Option<Box<XkbFile>> {
     let mut xkb_file: Option<Box<XkbFile>> = None;
     let mut candidate: Option<Box<XkbFile>> = None;
@@ -3406,7 +3333,7 @@ pub(crate) fn process_include_file(
 
             if parsed.file_type != file_type {
                 // parsed drops automatically
-            } else if !stmt.map.is_empty() || parsed.flags != 0 && MAP_IS_DEFAULT as i32 != 0 {
+            } else if !stmt.map.is_empty() || parsed.flags != 0 && MAP_IS_DEFAULT != 0 {
                 xkb_file = Some(parsed);
                 break;
             } else if candidate.is_none() {
@@ -3459,12 +3386,15 @@ fn compute_effective_mask_with(mod_set: &XkbModSet, mods: &mut XkbMods) {
     mods.mask = mask | mods.mods & unknown_mods;
 }
 fn update_action_mods(keymap: &XkbKeymap, act: &mut XkbAction, modmap: u32) {
-    if let 2..=4 = act.action_type() {
-        if act.as_mods().flags & ACTION_MODS_LOOKUP_MODMAP != 0 {
-            act.as_mods_mut().mods.mods = modmap;
+    match act {
+        XkbAction::ModSet(m) | XkbAction::ModLatch(m) | XkbAction::ModLock(m) => {
+            if m.flags.contains(ActionFlags::MODS_LOOKUP_MODMAP) {
+                m.mods.mods = modmap;
+            }
+            compute_effective_mask(keymap, &mut m.mods);
         }
-        compute_effective_mask(keymap, &mut act.as_mods_mut().mods);
-    };
+        _ => {}
+    }
 }
 fn default_interpret() -> XkbSymInterpret {
     XkbSymInterpret {
@@ -3473,7 +3403,7 @@ fn default_interpret() -> XkbSymInterpret {
         mods: 0,
         virtual_mod: DEFAULT_INTERPRET_VMOD,
         level_one_only: false,
-        repeat: DEFAULT_INTERPRET_KEY_REPEAT as i32 != 0,
+        repeat: DEFAULT_INTERPRET_KEY_REPEAT != 0,
         required: false,
         num_actions: 0,
         action: XkbAction::None,
@@ -3502,11 +3432,11 @@ fn find_interp_for_key(
     let key_modmap = keymap.keys[key_idx].modmap;
     let _key_name = keymap.keys[key_idx].name;
     let num_syms = syms.len() as i32;
-    let mut s: i32 = 0_i32;
+    let mut s: i32 = 0;
     while s < num_syms {
         let mut found: bool = false;
         let mut use_default: bool = false;
-        let mut i: u32 = 0_u32;
+        let mut i: u32 = 0;
         's_26: loop {
             if i >= keymap.sym_interprets.len() as u32 {
                 use_default = true;
@@ -3515,8 +3445,8 @@ fn find_interp_for_key(
             let interp = &keymap.sym_interprets[i as usize];
             let mods: u32;
             if !(interp.sym != syms[s as usize] && interp.sym != XKB_KEY_NO_SYMBOL as u32) {
-                if interp.level_one_only as i32 != 0 && level != 0_u32 {
-                    mods = 0_u32;
+                if interp.level_one_only && level != 0 {
+                    mods = 0;
                 } else {
                     mods = key_modmap;
                 }
@@ -3538,8 +3468,8 @@ fn find_interp_for_key(
                     }
                     _ => {}
                 }
-                if found as i32 != 0
-                    && i > 0_u32
+                if found
+                    && i > 0
                     && interp.sym == XKB_KEY_NO_SYMBOL as u32
                     && !interp_indices.is_empty()
                 {
@@ -3556,7 +3486,7 @@ fn find_interp_for_key(
                     break;
                 }
             }
-            i = i.wrapping_add(1);
+            i += 1;
         }
         if use_default {
             // usize::MAX signals "use default interpret"
@@ -3567,15 +3497,15 @@ fn find_interp_for_key(
     true
 }
 fn apply_interps_to_key(keymap: &mut XkbKeymap, key_idx: usize) -> bool {
-    let mut vmodmap: u32 = 0_u32;
+    let mut vmodmap: u32 = 0;
     let mut level: u32;
     let mut interp_indices: Vec<usize> = Vec::with_capacity(4);
     let mut actions: Vec<XkbAction> = Vec::with_capacity(4);
     let num_groups = keymap.keys[key_idx].num_groups;
-    let mut group: u32 = 0_u32;
+    let mut group: u32 = 0;
     while group < num_groups {
         if !keymap.keys[key_idx].groups[group as usize].explicit_actions {
-            level = 0_u32;
+            level = 0;
             let num_levels = keymap.key_num_levels(&keymap.keys[key_idx], group);
             while level < num_levels {
                 interp_indices.clear();
@@ -3591,17 +3521,17 @@ fn apply_interps_to_key(keymap: &mut XkbKeymap, key_idx: usize) -> bool {
                         } else {
                             &keymap.sym_interprets[idx]
                         };
-                        if group == 0_u32
-                            && level == 0_u32
+                        if group == 0
+                            && level == 0
                             && key_explicit & EXPLICIT_REPEAT == 0
                             && interp.repeat
                         {
                             keymap.keys[key_idx].repeats = true;
                         }
-                        if (group == 0_u32 && level == 0_u32 || !interp.level_one_only)
+                        if (group == 0 && level == 0 || !interp.level_one_only)
                             && interp.virtual_mod != XKB_MOD_INVALID
                         {
-                            vmodmap |= 1_u32 << interp.virtual_mod;
+                            vmodmap |= 1 << interp.virtual_mod;
                         }
                         match interp.num_actions as i32 {
                             0 => {}
@@ -3625,13 +3555,13 @@ fn apply_interps_to_key(keymap: &mut XkbKeymap, key_idx: usize) -> bool {
                         keymap.keys[key_idx].groups[group as usize].implicit_actions = true;
                     }
                 }
-                level = level.wrapping_add(1);
+                level += 1;
             }
             if keymap.keys[key_idx].groups[group as usize].implicit_actions {
                 keymap.keys[key_idx].implicit_actions = true;
             }
         }
-        group = group.wrapping_add(1);
+        group += 1;
     }
     if keymap.keys[key_idx].explicit & EXPLICIT_VMODMAP == 0 {
         keymap.keys[key_idx].vmodmap = vmodmap;
@@ -3640,23 +3570,25 @@ fn apply_interps_to_key(keymap: &mut XkbKeymap, key_idx: usize) -> bool {
 }
 #[inline]
 fn is_mod_action(action: &XkbAction) -> bool {
-    action.action_type() == ACTION_TYPE_MOD_SET
-        || action.action_type() == ACTION_TYPE_MOD_LATCH
-        || action.action_type() == ACTION_TYPE_MOD_LOCK
+    matches!(
+        action,
+        XkbAction::ModSet(_) | XkbAction::ModLatch(_) | XkbAction::ModLock(_)
+    )
 }
 #[inline]
 fn is_group_action(action: &XkbAction) -> bool {
-    action.action_type() == ACTION_TYPE_GROUP_SET
-        || action.action_type() == ACTION_TYPE_GROUP_LATCH
-        || action.action_type() == ACTION_TYPE_GROUP_LOCK
+    matches!(
+        action,
+        XkbAction::GroupSet(_) | XkbAction::GroupLatch(_) | XkbAction::GroupLock(_)
+    )
 }
 fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
     let num_groups = keymap.keys[key_idx].num_groups;
     let _key_name = keymap.keys[key_idx].name;
-    let mut g: u32 = 0_u32;
+    let mut g: u32 = 0;
     while g < num_groups {
         let num_levels = keymap.key_num_levels(&keymap.keys[key_idx], g);
-        let mut l: u32 = 0_u32;
+        let mut l: u32 = 0;
         while l < num_levels {
             let level: &mut XkbLevel =
                 &mut keymap.keys[key_idx].groups[g as usize].levels[l as usize];
@@ -3665,47 +3597,43 @@ fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
                 while (i as usize) < level.actions.len() {
                     let mod_action: bool = is_mod_action(&level.actions[i as usize]);
                     let group_action: bool = is_group_action(&level.actions[i as usize]);
-                    let action1_type = level.actions[i as usize].action_type();
-                    if mod_action as i32 != 0
-                        || group_action as i32 != 0
-                        || action1_type == ACTION_TYPE_REDIRECT_KEY
-                    {
-                        let mut j: u16 = (i as i32 + 1_i32) as u16;
+                    if mod_action || group_action {
+                        let mut j: u16 = (i as i32 + 1) as u16;
                         while (j as usize) < level.actions.len() {
-                            if action1_type == level.actions[j as usize].action_type()
-                                || mod_action as i32 != 0
-                                    && is_mod_action(&level.actions[j as usize]) as i32 != 0
-                                || group_action as i32 != 0
-                                    && is_group_action(&level.actions[j as usize]) as i32 != 0
+                            let same_action = std::mem::discriminant(&level.actions[i as usize])
+                                == std::mem::discriminant(&level.actions[j as usize]);
+                            if same_action
+                                || mod_action && is_mod_action(&level.actions[j as usize])
+                                || group_action && is_group_action(&level.actions[j as usize])
                             {
-                                let _type_0: &str = if mod_action as i32 != 0 {
+                                let _type_0: &str = if mod_action {
                                     "modifiers"
-                                } else if group_action as i32 != 0 {
+                                } else if group_action {
                                     "group"
                                 } else {
-                                    action_type_text(action1_type)
+                                    action_type_text(ACTION_TYPE_REDIRECT_KEY)
                                 };
                                 level.actions[j as usize].set_none();
                             }
-                            j = j.wrapping_add(1);
+                            j += 1;
                         }
                     }
-                    i = i.wrapping_add(1);
+                    i += 1;
                 }
             }
-            l = l.wrapping_add(1);
+            l += 1;
         }
-        g = g.wrapping_add(1);
+        g += 1;
     }
 }
 fn add_key_aliases(keymap: &XkbKeymap, min: u32, max: u32, aliases: &mut Vec<XkbKeyAlias>) {
     let mut alias: u32 = min;
     while alias <= max {
         let entry: KeycodeMatch = keymap.key_names[alias as usize];
-        if entry.is_alias as i32 != 0 && entry.found as i32 != 0 {
+        if entry.is_alias && entry.found {
             aliases.push(XkbKeyAlias {});
         }
-        alias = alias.wrapping_add(1);
+        alias += 1;
     }
 }
 fn update_pending_key_fields(info: &mut XkbKeymapInfo<'_>, key_idx: usize) -> bool {
@@ -3714,17 +3642,16 @@ fn update_pending_key_fields(info: &mut XkbKeymapInfo<'_>, key_idx: usize) -> bo
         if !info.pending_computations[idx].computed {
             // Temporarily take the expr out to avoid borrow conflict with info
             let expr_box = info.pending_computations[idx].expr.take().unwrap();
-            let mut group: u32 = 0_u32;
-            let mut pending_dummy = false;
-            let resolve_ret =
-                expr_resolve_group(info, &expr_box, true, &mut group, &mut pending_dummy);
+            let mut group: u32 = 0;
+            let mut _pending = false;
+            let resolve_ret = expr_resolve_group(info, &expr_box, true, &mut group, &mut _pending);
             info.pending_computations[idx].expr = Some(expr_box);
             match resolve_ret {
-                0 => {
+                ParseStatus::Success => {
                     info.pending_computations[idx].computed = true;
-                    info.pending_computations[idx].value = group.wrapping_sub(1_u32);
+                    info.pending_computations[idx].value = group.wrapping_sub(1);
                 }
-                2 => {
+                ParseStatus::Fatal => {
                     return info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0;
                 }
                 _ => {}
@@ -3737,35 +3664,29 @@ fn update_pending_key_fields(info: &mut XkbKeymapInfo<'_>, key_idx: usize) -> bo
 }
 fn update_pending_action_fields(
     info: &mut XkbKeymapInfo<'_>,
-    keycode: u32,
     act: &mut XkbAction,
 ) -> bool {
-    match act.action_type() {
-        5..=7 => {
-            if act.as_group().flags & ACTION_PENDING_COMPUTATION != 0 {
-                let pc_idx = act.as_group().group as usize;
+    match act {
+        XkbAction::GroupSet(g) | XkbAction::GroupLatch(g) | XkbAction::GroupLock(g) => {
+            if g.flags.contains(ActionFlags::PENDING_COMPUTATION) {
+                let pc_idx = g.group as usize;
                 if !info.pending_computations[pc_idx].computed {
-                    let mut group: u32 = 0_u32;
-                    let absolute: bool = act.as_group().flags & ACTION_ABSOLUTE_SWITCH != 0;
-                    let mut pending_dummy = false;
+                    let mut group: u32 = 0;
+                    let absolute: bool = g.flags.contains(ActionFlags::ABSOLUTE_SWITCH);
+                    let mut _pending = false;
                     let expr_box = info.pending_computations[pc_idx].expr.take().unwrap();
-                    let resolve_ret = expr_resolve_group(
-                        info,
-                        &expr_box,
-                        absolute,
-                        &mut group,
-                        &mut pending_dummy,
-                    );
+                    let resolve_ret =
+                        expr_resolve_group(info, &expr_box, absolute, &mut group, &mut _pending);
                     info.pending_computations[pc_idx].expr = Some(expr_box);
                     match resolve_ret {
-                        2 => {
+                        ParseStatus::Fatal => {
                             return false;
                         }
-                        1 => {}
+                        ParseStatus::Recoverable => {}
                         _ => {
                             info.pending_computations[pc_idx].computed = true;
                             if absolute {
-                                info.pending_computations[pc_idx].value = group.wrapping_sub(1_u32);
+                                info.pending_computations[pc_idx].value = group.wrapping_sub(1);
                             } else {
                                 info.pending_computations[pc_idx].value = group;
                                 if info.pending_computations[pc_idx]
@@ -3782,20 +3703,8 @@ fn update_pending_action_fields(
                         }
                     }
                 }
-                act.as_group_mut().group = info.pending_computations[pc_idx].value as i32;
-                act.as_group_mut().flags = (act.as_group().flags
-                    & !(ACTION_PENDING_COMPUTATION as i32) as u32)
-                    as XkbActionFlags;
-            }
-            true
-        }
-        16 => {
-            if keycode == XKB_KEYCODE_INVALID
-                || act.as_redirect().keycode != info.keymap.redirect_key_auto
-            {
-                return true;
-            } else {
-                act.as_redirect_mut().keycode = keycode;
+                g.group = info.pending_computations[pc_idx].value as i32;
+                g.flags = g.flags & !ActionFlags::PENDING_COMPUTATION;
             }
             true
         }
@@ -3804,277 +3713,309 @@ fn update_pending_action_fields(
 }
 fn update_derived_keymap_fields(info: &mut XkbKeymapInfo<'_>) -> bool {
     let keymap: &mut XkbKeymap = &mut *info.keymap;
-    let mut num_key_aliases: u32 = 0_u32;
-    let mut min_alias: u32 = 0_u32;
-    let mut max_alias: u32 = 0_u32;
-    let mut alias: u32 = 0_u32;
-    while (alias as usize) < keymap.key_names.len() {
-        let entry: KeycodeMatch = keymap.key_names[alias as usize];
-        if entry.is_alias as i32 != 0 && entry.found as i32 != 0 {
-            if num_key_aliases == 0 {
-                min_alias = alias;
-            }
-            max_alias = alias;
-            num_key_aliases = num_key_aliases.wrapping_add(1);
+    build_key_aliases(keymap);
+    compute_max_num_groups(keymap);
+    let pending_computations: bool = !info.pending_computations.is_empty();
+    if pending_computations {
+        update_group_lookup_entries(info);
+        if update_pending_sym_interpret_actions(info).is_err() {
+            return false;
         }
-        alias = alias.wrapping_add(1);
+    }
+    if apply_interps_and_check_actions(info).is_err() {
+        return false;
+    }
+    update_mod_mappings(info);
+    compute_type_entry_masks(info);
+    if update_key_action_fields(info, pending_computations).is_err() {
+        return false;
+    }
+    compute_led_effective_masks(info);
+    if pending_computations && resolve_pending_led_groups(info).is_err() {
+        return false;
+    }
+    true
+}
+
+fn build_key_aliases(keymap: &mut XkbKeymap) {
+    let mut num_key_aliases: u32 = 0;
+    let mut min_alias: u32 = 0;
+    let mut max_alias: u32 = 0;
+    for (alias, entry) in keymap.key_names.iter().enumerate() {
+        if entry.is_alias && entry.found {
+            if num_key_aliases == 0 {
+                min_alias = alias as u32;
+            }
+            max_alias = alias as u32;
+            num_key_aliases += 1;
+        }
     }
     if num_key_aliases != 0 {
         let mut aliases: Vec<XkbKeyAlias> = Vec::with_capacity(num_key_aliases as usize);
         add_key_aliases(keymap, min_alias, max_alias, &mut aliases);
         keymap.key_aliases = aliases;
     }
-    // key_names is no longer needed after compilation; drop it
     keymap.key_names = Vec::new();
-    {
-        let start_idx = if keymap.num_keys_low == 0_u32 {
-            0_u32
+}
+
+fn compute_max_num_groups(keymap: &mut XkbKeymap) {
+    let start_idx = if keymap.num_keys_low == 0 {
+        0_u32
+    } else {
+        keymap.min_key_code
+    };
+    let mut ki: u32 = start_idx;
+    while ki < keymap.num_keys {
+        let key_num_groups = keymap.keys[ki as usize].num_groups;
+        keymap.num_groups = if keymap.num_groups > key_num_groups {
+            keymap.num_groups
         } else {
-            keymap.min_key_code
+            key_num_groups
         };
-        let mut ki: u32 = start_idx;
-        while ki < keymap.num_keys {
-            let key_num_groups = keymap.keys[ki as usize].num_groups;
-            keymap.num_groups = if keymap.num_groups > key_num_groups {
-                keymap.num_groups
-            } else {
-                key_num_groups
-            };
-            ki = ki.wrapping_add(1);
-        }
+        ki += 1;
     }
-    let pending_computations: bool = !info.pending_computations.is_empty();
-    if pending_computations {
-        let num_groups: u32 = if info.keymap.num_groups != 0 {
-            info.keymap.num_groups
+}
+
+fn update_group_lookup_entries(info: &mut XkbKeymapInfo<'_>) {
+    let num_groups: u32 = if info.keymap.num_groups != 0 {
+        info.keymap.num_groups
+    } else {
+        1_u32
+    };
+    info.lookup.group_index_names[GROUP_INDEX_NAME_LAST as usize] = LookupEntry {
+        name: GROUP_LAST_INDEX_NAME,
+        value: num_groups,
+    };
+    info.lookup.group_mask_names[GROUP_MASK_NAME_LAST as usize] = LookupEntry {
+        name: GROUP_LAST_INDEX_NAME,
+        value: 1 << num_groups.wrapping_sub(1),
+    };
+}
+
+fn update_pending_sym_interpret_actions(info: &mut XkbKeymapInfo<'_>) -> Result<(), ()> {
+    let mut i: u32 = 0;
+    while (i as usize) < info.keymap.sym_interprets.len() {
+        let num_actions = info.keymap.sym_interprets[i as usize].num_actions;
+        if num_actions as i32 <= 1_i32 {
+            let mut action = info.keymap.sym_interprets[i as usize].action;
+            if !update_pending_action_fields(info, &mut action) {
+                return Err(());
+            }
+            info.keymap.sym_interprets[i as usize].action = action;
         } else {
-            1_u32
-        };
-        info.lookup.group_index_names[GROUP_INDEX_NAME_LAST as usize] = LookupEntry { name: GROUP_LAST_INDEX_NAME, value: num_groups };
-        info.lookup.group_mask_names[GROUP_MASK_NAME_LAST as usize] = LookupEntry { name: GROUP_LAST_INDEX_NAME, value: 1_u32 << num_groups.wrapping_sub(1_u32) };
-        let mut i: u32 = 0_u32;
-        while (i as usize) < info.keymap.sym_interprets.len() {
-            let num_actions = info.keymap.sym_interprets[i as usize].num_actions;
-            if num_actions as i32 <= 1_i32 {
-                // Extract action, update, write back
-                let mut action = info.keymap.sym_interprets[i as usize].action;
-                if !update_pending_action_fields(info, XKB_KEYCODE_INVALID, &mut action) {
-                    return false;
+            let mut a: u16 = 0_u16;
+            while (a as i32) < num_actions as i32 {
+                let mut action = info.keymap.sym_interprets[i as usize].actions[a as usize];
+                if !update_pending_action_fields(info, &mut action) {
+                    return Err(());
                 }
-                info.keymap.sym_interprets[i as usize].action = action;
-            } else {
-                let mut a: u16 = 0_u16;
-                while (a as i32) < num_actions as i32 {
-                    let mut action = info.keymap.sym_interprets[i as usize].actions[a as usize];
-                    if !update_pending_action_fields(info, XKB_KEYCODE_INVALID, &mut action) {
-                        return false;
-                    }
-                    info.keymap.sym_interprets[i as usize].actions[a as usize] = action;
-                    a = a.wrapping_add(1);
-                }
+                info.keymap.sym_interprets[i as usize].actions[a as usize] = action;
+                a += 1;
             }
-            i = i.wrapping_add(1);
         }
+        i += 1;
     }
-    {
-        let keymap = &mut *info.keymap;
-        let start_idx = if keymap.num_keys_low == 0_u32 {
-            0_u32
-        } else {
-            keymap.min_key_code
-        };
-        let mut ki: u32 = start_idx;
-        while ki < keymap.num_keys {
-            if !apply_interps_to_key(keymap, ki as usize) {
-                return false;
-            }
-            check_multiple_actions_categories(keymap, ki as usize);
-            ki = ki.wrapping_add(1);
-        }
-    }
-    {
-        let keymap = &mut *info.keymap;
-        let start_idx = if keymap.num_keys_low == 0_u32 {
-            0_u32
-        } else {
-            keymap.min_key_code
-        };
-        let mut ki: u32 = start_idx;
-        while ki < keymap.num_keys {
-            let key_vmodmap = keymap.keys[ki as usize].vmodmap;
-            let key_modmap = keymap.keys[ki as usize].modmap;
-            let mut idx: u32 = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
-            while idx < keymap.mods.num_mods {
-                if key_vmodmap & 1_u32 << idx != 0 {
-                    keymap.mods.mods[idx as usize].mapping |= key_modmap;
-                }
-                idx = idx.wrapping_add(1);
-            }
-            ki = ki.wrapping_add(1);
-        }
-    }
-    {
-        let keymap = &mut *info.keymap;
-        if keymap.format >= XKB_KEYMAP_FORMAT_TEXT_V2 {
-            let mut idx: u32 = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
-            while idx < keymap.mods.num_mods {
-                let mask: u32 = 1_u32 << idx;
-                if keymap.mods.mods[idx as usize].mapping == 0_u32
-                    && keymap.mods.explicit_vmods & mask == 0
-                {
-                    keymap.mods.mods[idx as usize].mapping = mask;
-                    keymap.mods.explicit_vmods |= mask;
-                }
-                idx = idx.wrapping_add(1);
-            }
-        }
-        let mut extra_canonical_mods: u32 = 0_u32;
-        {
-            let mut idx: u32 = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
-            while idx < keymap.mods.num_mods {
-                extra_canonical_mods |= keymap.mods.mods[idx as usize].mapping;
-                idx = idx.wrapping_add(1);
-            }
-        }
-        keymap.canonical_state_mask |= extra_canonical_mods;
-        let mut i_0: u32 = 0_u32;
-        while (i_0 as usize) < keymap.types.len() {
-            compute_effective_mask_with(&keymap.mods, &mut keymap.types[i_0 as usize].mods);
-            let mut j: u32 = 0_u32;
-            while j < keymap.types[i_0 as usize].entries.len() as u32 {
-                let res = {
-                    // has_unbound_vmods inlined
-                    let entry_mods = keymap.types[i_0 as usize].entries[j as usize].mods.mods;
-                    let mut unbound = false;
-                    let mut k: u32 = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
-                    while k < keymap.mods.num_mods {
-                        if entry_mods & 1_u32 << k != 0
-                            && keymap.mods.mods[k as usize].mapping == 0_u32
-                        {
-                            unbound = true;
-                            break;
-                        }
-                        k = k.wrapping_add(1);
-                    }
-                    unbound
-                };
-                if res {
-                    keymap.types[i_0 as usize].entries[j as usize].mods.mask = 0_u32;
-                } else {
-                    compute_effective_mask_with(
-                        &keymap.mods,
-                        &mut keymap.types[i_0 as usize].entries[j as usize].mods,
-                    );
-                    compute_effective_mask_with(
-                        &keymap.mods,
-                        &mut keymap.types[i_0 as usize].entries[j as usize].preserve,
-                    );
-                }
-                j = j.wrapping_add(1);
-            }
-            i_0 = i_0.wrapping_add(1);
-        }
-    }
-    {
-        let start_idx = if info.keymap.num_keys_low == 0_u32 {
-            0_u32
-        } else {
-            info.keymap.min_key_code
-        };
-        let mut ki: u32 = start_idx;
-        while ki < info.keymap.num_keys {
-            if !update_pending_key_fields(info, ki as usize) {
-                return false;
-            }
-            let key_num_groups = info.keymap.keys[ki as usize].num_groups;
-            let key_modmap = info.keymap.keys[ki as usize].modmap;
-            let key_keycode = info.keymap.keys[ki as usize].keycode;
-            let mut i_1: u32 = 0_u32;
-            while i_1 < key_num_groups {
-                let num_levels = {
-                    let key = &info.keymap.keys[ki as usize];
-                    info.keymap.types[key.groups[i_1 as usize].type_idx as usize].num_levels
-                };
-                let mut j_0: u32 = 0_u32;
-                while j_0 < num_levels {
-                    let num_actions = info.keymap.keys[ki as usize].groups[i_1 as usize].levels
-                        [j_0 as usize]
-                        .actions
-                        .len();
-                    if num_actions <= 1 {
-                        if num_actions == 1 {
-                            let mut act = info.keymap.keys[ki as usize].groups[i_1 as usize].levels
-                                [j_0 as usize]
-                                .actions[0];
-                            update_action_mods(&*info.keymap, &mut act, key_modmap);
-                            if (pending_computations as i32 != 0
-                                || act.action_type() == ACTION_TYPE_REDIRECT_KEY)
-                                && !update_pending_action_fields(info, key_keycode, &mut act)
-                            {
-                                return false;
-                            }
-                            info.keymap.keys[ki as usize].groups[i_1 as usize].levels
-                                [j_0 as usize]
-                                .actions[0] = act;
-                        }
-                    } else {
-                        let mut k: u16 = 0_u16;
-                        while (k as usize) < num_actions {
-                            let mut act = info.keymap.keys[ki as usize].groups[i_1 as usize].levels
-                                [j_0 as usize]
-                                .actions[k as usize];
-                            update_action_mods(&*info.keymap, &mut act, key_modmap);
-                            if (pending_computations as i32 != 0
-                                || act.action_type() == ACTION_TYPE_REDIRECT_KEY)
-                                && !update_pending_action_fields(info, key_keycode, &mut act)
-                            {
-                                return false;
-                            }
-                            info.keymap.keys[ki as usize].groups[i_1 as usize].levels
-                                [j_0 as usize]
-                                .actions[k as usize] = act;
-                            k = k.wrapping_add(1);
-                        }
-                    }
-                    j_0 = j_0.wrapping_add(1);
-                }
-                i_1 = i_1.wrapping_add(1);
-            }
-            ki = ki.wrapping_add(1);
-        }
-    }
+    Ok(())
+}
+
+fn apply_interps_and_check_actions(info: &mut XkbKeymapInfo<'_>) -> Result<(), ()> {
     let keymap = &mut *info.keymap;
-    let mut led_idx: u32 = 0_u32;
+    let start_idx = if keymap.num_keys_low == 0 {
+        0_u32
+    } else {
+        keymap.min_key_code
+    };
+    let mut ki: u32 = start_idx;
+    while ki < keymap.num_keys {
+        if !apply_interps_to_key(keymap, ki as usize) {
+            return Err(());
+        }
+        check_multiple_actions_categories(keymap, ki as usize);
+        ki += 1;
+    }
+    Ok(())
+}
+
+fn update_mod_mappings(info: &mut XkbKeymapInfo<'_>) {
+    let keymap = &mut *info.keymap;
+    let start_idx = if keymap.num_keys_low == 0 {
+        0_u32
+    } else {
+        keymap.min_key_code
+    };
+    let mut ki: u32 = start_idx;
+    while ki < keymap.num_keys {
+        let key_vmodmap = keymap.keys[ki as usize].vmodmap;
+        let key_modmap = keymap.keys[ki as usize].modmap;
+        let mut idx: u32 = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
+        while idx < keymap.mods.num_mods {
+            if key_vmodmap & 1 << idx != 0 {
+                keymap.mods.mods[idx as usize].mapping |= key_modmap;
+            }
+            idx += 1;
+        }
+        ki += 1;
+    }
+    if keymap.format >= XKB_KEYMAP_FORMAT_TEXT_V2 {
+        let mut idx: u32 = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
+        while idx < keymap.mods.num_mods {
+            let mask: u32 = 1 << idx;
+            if keymap.mods.mods[idx as usize].mapping == 0 && keymap.mods.explicit_vmods & mask == 0
+            {
+                keymap.mods.mods[idx as usize].mapping = mask;
+                keymap.mods.explicit_vmods |= mask;
+            }
+            idx += 1;
+        }
+    }
+    let mut extra_canonical_mods: u32 = 0;
+    {
+        let mut idx: u32 = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
+        while idx < keymap.mods.num_mods {
+            extra_canonical_mods |= keymap.mods.mods[idx as usize].mapping;
+            idx += 1;
+        }
+    }
+    keymap.canonical_state_mask |= extra_canonical_mods;
+}
+
+fn has_unbound_vmods(keymap: &XkbKeymap, mods: &XkbMods) -> bool {
+    let mut k: u32 = _XKB_MOD_INDEX_NUM_ENTRIES as i32 as u32;
+    while k < keymap.mods.num_mods {
+        if mods.mods & 1 << k != 0 && keymap.mods.mods[k as usize].mapping == 0 {
+            return true;
+        }
+        k += 1;
+    }
+    false
+}
+
+fn compute_type_entry_masks(info: &mut XkbKeymapInfo<'_>) {
+    let keymap = &mut *info.keymap;
+    let mut i_0: u32 = 0;
+    while (i_0 as usize) < keymap.types.len() {
+        compute_effective_mask_with(&keymap.mods, &mut keymap.types[i_0 as usize].mods);
+        let mut j: u32 = 0;
+        while j < keymap.types[i_0 as usize].entries.len() as u32 {
+            if has_unbound_vmods(keymap, &keymap.types[i_0 as usize].entries[j as usize].mods) {
+                keymap.types[i_0 as usize].entries[j as usize].mods.mask = 0_u32;
+            } else {
+                compute_effective_mask_with(
+                    &keymap.mods,
+                    &mut keymap.types[i_0 as usize].entries[j as usize].mods,
+                );
+                compute_effective_mask_with(
+                    &keymap.mods,
+                    &mut keymap.types[i_0 as usize].entries[j as usize].preserve,
+                );
+            }
+            j += 1;
+        }
+        i_0 += 1;
+    }
+}
+
+fn update_key_action_fields(
+    info: &mut XkbKeymapInfo<'_>,
+    pending_computations: bool,
+) -> Result<(), ()> {
+    let start_idx = if info.keymap.num_keys_low == 0 {
+        0_u32
+    } else {
+        info.keymap.min_key_code
+    };
+    let mut ki: u32 = start_idx;
+    while ki < info.keymap.num_keys {
+        if !update_pending_key_fields(info, ki as usize) {
+            return Err(());
+        }
+        let key_num_groups = info.keymap.keys[ki as usize].num_groups;
+        let key_modmap = info.keymap.keys[ki as usize].modmap;
+        let mut i_1: u32 = 0;
+        while i_1 < key_num_groups {
+            let num_levels = {
+                let key = &info.keymap.keys[ki as usize];
+                info.keymap.types[key.groups[i_1 as usize].type_idx as usize].num_levels
+            };
+            let mut j_0: u32 = 0;
+            while j_0 < num_levels {
+                let num_actions = info.keymap.keys[ki as usize].groups[i_1 as usize].levels
+                    [j_0 as usize]
+                    .actions
+                    .len();
+                if num_actions <= 1 {
+                    if num_actions == 1 {
+                        let mut act = info.keymap.keys[ki as usize].groups[i_1 as usize].levels
+                            [j_0 as usize]
+                            .actions[0];
+                        update_action_mods(&*info.keymap, &mut act, key_modmap);
+                        if (pending_computations)
+                            && !update_pending_action_fields(info, &mut act)
+                        {
+                            return Err(());
+                        }
+                        info.keymap.keys[ki as usize].groups[i_1 as usize].levels[j_0 as usize]
+                            .actions[0] = act;
+                    }
+                } else {
+                    let mut k: u16 = 0_u16;
+                    while (k as usize) < num_actions {
+                        let mut act = info.keymap.keys[ki as usize].groups[i_1 as usize].levels
+                            [j_0 as usize]
+                            .actions[k as usize];
+                        update_action_mods(&*info.keymap, &mut act, key_modmap);
+                        if (pending_computations)
+                            && !update_pending_action_fields(info, &mut act)
+                        {
+                            return Err(());
+                        }
+                        info.keymap.keys[ki as usize].groups[i_1 as usize].levels[j_0 as usize]
+                            .actions[k as usize] = act;
+                        k += 1;
+                    }
+                }
+                j_0 += 1;
+            }
+            i_1 += 1;
+        }
+        ki += 1;
+    }
+    Ok(())
+}
+
+fn compute_led_effective_masks(info: &mut XkbKeymapInfo<'_>) {
+    let keymap = &mut *info.keymap;
+    let mut led_idx: u32 = 0;
     while led_idx < keymap.num_leds {
         compute_effective_mask_with(&keymap.mods, &mut keymap.leds[led_idx as usize].mods);
-        led_idx = led_idx.wrapping_add(1);
+        led_idx += 1;
     }
-    if pending_computations {
-        let mut led_idx: u32 = 0_u32;
-        while led_idx < info.keymap.num_leds {
-            if info.keymap.leds[led_idx as usize].pending_groups {
-                let groups_idx = info.keymap.leds[led_idx as usize].groups as usize;
-                if !info.pending_computations[groups_idx].computed {
-                    let expr_box = info.pending_computations[groups_idx].expr.take().unwrap();
-                    let mut mask: u32 = 0_u32;
-                    let mut pending_dummy = false;
-                    let resolved =
-                        expr_resolve_group_mask(info, &expr_box, &mut mask, &mut pending_dummy);
-                    info.pending_computations[groups_idx].expr = Some(expr_box);
-                    if !resolved {
-                        return false;
-                    }
-                    info.pending_computations[groups_idx].computed = true;
-                    info.pending_computations[groups_idx].value = mask;
+}
+
+fn resolve_pending_led_groups(info: &mut XkbKeymapInfo<'_>) -> Result<(), ()> {
+    let mut led_idx: u32 = 0;
+    while led_idx < info.keymap.num_leds {
+        if info.keymap.leds[led_idx as usize].pending_groups {
+            let groups_idx = info.keymap.leds[led_idx as usize].groups as usize;
+            if !info.pending_computations[groups_idx].computed {
+                let expr_box = info.pending_computations[groups_idx].expr.take().unwrap();
+                let mut mask: u32 = 0;
+                let mut _pending = false;
+                let resolved = expr_resolve_group_mask(info, &expr_box, &mut mask, &mut _pending);
+                info.pending_computations[groups_idx].expr = Some(expr_box);
+                if !resolved {
+                    return Err(());
                 }
-                let value = info.pending_computations[groups_idx].value;
-                info.keymap.leds[led_idx as usize].pending_groups = false;
-                info.keymap.leds[led_idx as usize].groups = value;
+                info.pending_computations[groups_idx].computed = true;
+                info.pending_computations[groups_idx].value = mask;
             }
-            led_idx = led_idx.wrapping_add(1);
+            let value = info.pending_computations[groups_idx].value;
+            info.keymap.leds[led_idx as usize].pending_groups = false;
+            info.keymap.leds[led_idx as usize].groups = value;
         }
+        led_idx += 1;
     }
-    true
+    Ok(())
 }
 static COMPILE_FILE_FNS: [CompileFileFn; 4] = {
     [
@@ -4096,8 +4037,8 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
     let mut file_indices: [Option<usize>; 4] = [None; 4];
     for (idx, stmt) in file.defs.iter().enumerate() {
         if let Statement::XkbFile(ref sub_file) = stmt {
-            if sub_file.file_type > LAST_KEYMAP_FILE_TYPE {
-                if sub_file.file_type == FILE_TYPE_GEOMETRY {}
+            if sub_file.file_type as u32 > FileType::Symbols as u32 {
+                if sub_file.file_type == FileType::Geometry {}
             } else if file_indices[sub_file.file_type as usize].is_some() {
             } else {
                 file_indices[sub_file.file_type as usize] = Some(idx);
@@ -4121,17 +4062,24 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
             PARSER_V2_LAX_FLAGS as i32
         }) as u32,
         features: XkbcompFeatures {
-            max_groups: format_max_groups(km_format),
-            max_overlays: format_max_overlays(km_format),
-            controls_name_offset: format_control_names_offset(km_format),
-            group_lock_on_release: is_group_lock_on_release_supported(km_format),
-            mods_unlock_on_press: is_mods_un_lock_on_press_supported(km_format),
-            mods_latch_on_press: is_mods_latch_on_press_supported(km_format),
-            overlapping_overlays: are_overlapping_overlays_supported(km_format),
+            max_groups: XKB_MAX_GROUPS,
+            max_overlays: XKB_OVERLAY_MAX,
+            controls_name_offset: (if km_format == XKB_KEYMAP_FORMAT_TEXT_V1 {
+                CONTROL_NAMES_MIN_V1_INDEX as u8
+            } else {
+                CONTROL_NAMES_MIN_V2_INDEX as u8
+            }),
+            group_lock_on_release: km_format >= XKB_KEYMAP_FORMAT_TEXT_V2,
+            mods_unlock_on_press: km_format >= XKB_KEYMAP_FORMAT_TEXT_V2,
+            mods_latch_on_press: km_format >= XKB_KEYMAP_FORMAT_TEXT_V2,
+            overlapping_overlays: km_format >= XKB_KEYMAP_FORMAT_TEXT_V2,
         },
         lookup: XkbcompLookup {
             group_index_names: [
-                LookupEntry { name: "first", value: 1_u32 },
+                LookupEntry {
+                    name: "first",
+                    value: 1,
+                },
                 LookupEntry {
                     name: if km_num_groups != 0 {
                         GROUP_LAST_INDEX_NAME
@@ -4140,12 +4088,21 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
                     },
                     value: km_num_groups,
                 },
-                LookupEntry { name: "", value: 0_u32 },
+                LookupEntry { name: "", value: 0 },
             ],
             group_mask_names: [
-                LookupEntry { name: "none", value: 0_u32 },
-                LookupEntry { name: "first", value: 0x1_u32 },
-                LookupEntry { name: "all", value: XKB_ALL_GROUPS as u32 },
+                LookupEntry {
+                    name: "none",
+                    value: 0,
+                },
+                LookupEntry {
+                    name: "first",
+                    value: 0x1_u32,
+                },
+                LookupEntry {
+                    name: "all",
+                    value: XKB_ALL_GROUPS as u32,
+                },
                 LookupEntry {
                     name: if km_num_groups != 0 {
                         GROUP_LAST_INDEX_NAME
@@ -4153,23 +4110,25 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
                         ""
                     },
                     value: if km_num_groups != 0 && km_num_groups <= XKB_MAX_GROUPS as u32 {
-                        1_u32 << km_num_groups.wrapping_sub(1_u32)
+                        1 << km_num_groups.wrapping_sub(1_u32)
                     } else {
                         0_u32
                     },
                 },
-                LookupEntry { name: "", value: 0_u32 },
+                LookupEntry { name: "", value: 0 },
             ],
         },
         pending_computations: Vec::new(),
     };
-    let mut type_0: u32 = FIRST_KEYMAP_FILE_TYPE;
-    while type_0 <= LAST_KEYMAP_FILE_TYPE {
-        if file_indices[type_0 as usize].is_none() {
-        } else {
-            let idx = file_indices[type_0 as usize].unwrap();
+    let mut type_0: u32 = FileType::Keycodes as u32;
+    while type_0 <= FileType::Symbols as u32 {
+        if let Some(idx) = file_indices[type_0 as usize] {
             let _sub_name = if let Statement::XkbFile(ref sub_file) = file.defs[idx] {
-                safe_map_name(sub_file)
+                if sub_file.name.is_empty() {
+                    "(unnamed map)"
+                } else {
+                    &sub_file.name
+                }
             } else {
                 ""
             };
@@ -4205,7 +4164,10 @@ fn vec_append_nul_terminated(v: &mut Vec<i8>, src: &[u8]) {
 /// Index-based sval for scanner input. Used in Lvalue/rule to avoid
 /// lifetime issues across include boundaries. Reconstruct sval via to_sval().
 #[derive(Copy, Clone, Default)]
-pub(crate) struct SvalIdx { start: usize, end: usize }
+pub(crate) struct SvalIdx {
+    start: usize,
+    end: usize,
+}
 impl SvalIdx {
     const EMPTY: SvalIdx = SvalIdx { start: 0, end: 0 };
     #[inline]
@@ -4279,13 +4241,24 @@ pub(crate) struct Mapping {
 }
 #[derive(Copy, Clone)]
 pub(crate) enum LayoutIdx {
-    Single { layout_idx: u32, variant_idx: u32 },
-    Range { layout_idx_min: u32, layout_idx_max: u32 },
-    Index { layout_idx_min: u32 },
+    Single {
+        layout_idx: u32,
+        variant_idx: u32,
+    },
+    Range {
+        layout_idx_min: u32,
+        layout_idx_max: u32,
+    },
+    Index {
+        layout_idx_min: u32,
+    },
 }
 impl Default for LayoutIdx {
     fn default() -> Self {
-        LayoutIdx::Single { layout_idx: 0, variant_idx: 0 }
+        LayoutIdx::Single {
+            layout_idx: 0,
+            variant_idx: 0,
+        }
     }
 }
 impl LayoutIdx {
@@ -4344,7 +4317,14 @@ pub(crate) const LAYOUT_INDEX_LATER: u32 = 4294967293;
 
 impl Default for Rule {
     fn default() -> Self {
-        Rule { mlvo_value_at_pos: [SvalIdx::EMPTY; 4], match_type_at_pos: [0; 4], kccgst_value_at_pos: [SvalIdx::EMPTY; 5], num_mlvo_values: 0, num_kccgst_values: 0, skip: false }
+        Rule {
+            mlvo_value_at_pos: [SvalIdx::EMPTY; 4],
+            match_type_at_pos: [0; 4],
+            kccgst_value_at_pos: [SvalIdx::EMPTY; 5],
+            num_mlvo_values: 0,
+            num_kccgst_values: 0,
+            skip: false,
+        }
     }
 }
 impl Default for Lvalue {
@@ -4377,9 +4357,9 @@ fn is_ident(ch: i8) -> bool {
 }
 fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
     loop {
-        while s.chr(' ' as i32 as i8) as i32 != 0
-            || s.chr('\t' as i32 as i8) as i32 != 0
-            || s.chr('\r' as i32 as i8) as i32 != 0
+        while s.chr(b' ' as i8) as i32 != 0
+            || s.chr(b'\t' as i8) as i32 != 0
+            || s.chr(b'\r' as i8) as i32 != 0
         {}
         if s.str_match(b"//") {
             s.skip_to_eol();
@@ -4393,7 +4373,7 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         if !s.chr('\\' as i32 as i8) {
             break;
         }
-        s.chr('\r' as i32 as i8);
+        s.chr(b'\r' as i8);
         if !s.eol() {
             let _loc: ScannerLoc = s.token_location();
             return TOK_ERROR;
@@ -4423,7 +4403,10 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         return TOK_WILD_CARD_ANY;
     }
     if s.chr('$' as i32 as i8) {
-        val.string = SvalIdx { start: s.pos, end: s.pos };
+        val.string = SvalIdx {
+            start: s.pos,
+            end: s.pos,
+        };
         while is_ident(s.peek()) {
             s.next_byte();
             val.string.end += 1;
@@ -4438,7 +4421,10 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         return TOK_INCLUDE;
     }
     if is_ident(s.peek()) {
-        val.string = SvalIdx { start: s.pos, end: s.pos };
+        val.string = SvalIdx {
+            start: s.pos,
+            end: s.pos,
+        };
         while is_ident(s.peek()) {
             s.next_byte();
             val.string.end += 1;
@@ -4450,7 +4436,7 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
 }
 static RULES_MLVO_SVALS: [&[u8]; 4] = [b"model", b"layout", b"variant", b"option"];
 static RULES_KCCGST_SVALS: [&[u8]; 5] = [b"keycodes", b"types", b"compat", b"symbols", b"geometry"];
-pub(crate) const OPTIONS_MATCH_ALL_GROUPS: i32 = XKB_MAX_GROUPS;
+pub(crate) const OPTIONS_MATCH_ALL_GROUPS: u32 = XKB_MAX_GROUPS;
 fn strip_spaces<'a>(v: Sval<'a>) -> Sval<'a> {
     let bytes = v.data;
     let start_trim = bytes
@@ -4497,7 +4483,9 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
         let mut val_0 = MatchedSval {
             matched: false,
             layout: OPTIONS_MATCH_ALL_GROUPS as u32,
-            sval: Sval { data: &bytes[start..start] },
+            sval: Sval {
+                data: &bytes[start..start],
+            },
         };
         while pos < bytes.len()
             && bytes[pos] != b','
@@ -4521,7 +4509,7 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
                 if layout == 0 || layout > XKB_MAX_GROUPS as u32 {
                 } else if mlvo != MLVO_OPTION {
                 } else {
-                    val_0.layout = layout.wrapping_sub(1);
+                    val_0.layout -= 1;
                 }
             }
             let layout_index_end = pos;
@@ -4585,7 +4573,10 @@ fn matcher_new_from_names<'a>(
     m
 }
 fn matcher_group_start_new(m: &mut Matcher, name: &[u8]) {
-    let group: Group = Group { name: name.to_vec(), elements: Vec::new() };
+    let group: Group = Group {
+        name: name.to_vec(),
+        elements: Vec::new(),
+    };
     m.groups.push(group);
 }
 fn matcher_group_add_element(m: &mut Matcher, _s: &mut Scanner, element: &[u8]) {
@@ -4604,7 +4595,7 @@ fn matcher_include(
     }
     let inc_str = inc.as_str();
     let stmt_file: String =
-        match expand_path_str(&parent_scanner.file_name, inc_str, FILE_TYPE_RULES) {
+        match expand_path_str(&parent_scanner.file_name, inc_str, FileType::Rules) {
             Err(()) => return,
             Ok(Some(expanded)) => expanded,
             Ok(None) => inc_str.to_string(),
@@ -4622,7 +4613,7 @@ fn matcher_include(
             &mut *m.ctx,
             &parent_scanner.file_name,
             &stmt_file,
-            FILE_TYPE_RULES,
+            FileType::Rules,
             &mut offset,
             true,
         )
@@ -4643,7 +4634,7 @@ fn matcher_include(
             &mut *m.ctx,
             &parent_scanner.file_name,
             &stmt_file,
-            FILE_TYPE_RULES,
+            FileType::Rules,
             &mut offset,
             true,
         );
@@ -4653,14 +4644,17 @@ fn matcher_mapping_start_new(m: &mut Matcher) {
     let mut i: u8 = 0_u8;
     while (i as i32) < _MLVO_NUM_ENTRIES as i32 as u8 as i32 {
         m.mapping.mlvo_at_pos[i as usize] = _MLVO_NUM_ENTRIES;
-        i = i.wrapping_add(1);
+        i += 1;
     }
     let mut i_0: u8 = 0_u8;
     while (i_0 as i32) < _KCCGST_NUM_ENTRIES as i32 as u8 as i32 {
         m.mapping.kccgst_at_pos[i_0 as usize] = _KCCGST_NUM_ENTRIES;
-        i_0 = i_0.wrapping_add(1);
+        i_0 += 1;
     }
-    m.mapping.layout = LayoutIdx::Single { layout_idx: XKB_LAYOUT_INVALID, variant_idx: XKB_LAYOUT_INVALID };
+    m.mapping.layout = LayoutIdx::Single {
+        layout_idx: XKB_LAYOUT_INVALID,
+        variant_idx: XKB_LAYOUT_INVALID,
+    };
     m.mapping.num_kccgst = 0_u8;
     m.mapping.num_mlvo = m.mapping.num_kccgst;
     m.mapping.defined_mlvo_mask = 0_u8;
@@ -4697,12 +4691,27 @@ fn extract_layout_index(s: &[u8], out: &mut u32) -> i32 {
     parse_layout_int_index(s, out)
 }
 fn extract_mapping_layout_index(s: &[u8], out: &mut u32) -> i32 {
-    struct LayoutIndexEntry { name: &'static [u8], range: u32 }
+    struct LayoutIndexEntry {
+        name: &'static [u8],
+        range: u32,
+    }
     static NAMES: [LayoutIndexEntry; 4] = [
-        LayoutIndexEntry { name: b"single]", range: LAYOUT_INDEX_SINGLE },
-        LayoutIndexEntry { name: b"first]", range: LAYOUT_INDEX_FIRST },
-        LayoutIndexEntry { name: b"later]", range: LAYOUT_INDEX_LATER },
-        LayoutIndexEntry { name: b"any]", range: LAYOUT_INDEX_ANY },
+        LayoutIndexEntry {
+            name: b"single]",
+            range: LAYOUT_INDEX_SINGLE,
+        },
+        LayoutIndexEntry {
+            name: b"first]",
+            range: LAYOUT_INDEX_FIRST,
+        },
+        LayoutIndexEntry {
+            name: b"later]",
+            range: LAYOUT_INDEX_LATER,
+        },
+        LayoutIndexEntry {
+            name: b"any]",
+            range: LAYOUT_INDEX_ANY,
+        },
     ];
     if s.len() < 3 || s[0] != b'[' {
         *out = XKB_LAYOUT_INVALID;
@@ -4720,7 +4729,7 @@ fn extract_mapping_layout_index(s: &[u8], out: &mut u32) -> i32 {
 }
 #[inline]
 fn is_mlvo_mask_defined(m: &mut Matcher, mlvo: u32) -> bool {
-    m.mapping.defined_mlvo_mask as u32 & 1_u32 << mlvo != 0
+    m.mapping.defined_mlvo_mask as u32 & 1 << mlvo != 0
 }
 fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
     let ident_bytes = ident.as_bytes();
@@ -4791,8 +4800,8 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
             *variant_idx = LAYOUT_INDEX_SINGLE;
         }
     }
-    if (mlvo == MLVO_LAYOUT && is_mlvo_mask_defined(m, MLVO_VARIANT) as i32 != 0
-        || mlvo == MLVO_VARIANT && is_mlvo_mask_defined(m, MLVO_LAYOUT) as i32 != 0)
+    if (mlvo == MLVO_LAYOUT && is_mlvo_mask_defined(m, MLVO_VARIANT)
+        || mlvo == MLVO_VARIANT && is_mlvo_mask_defined(m, MLVO_LAYOUT))
         && {
             if let LayoutIdx::Single {
                 layout_idx,
@@ -4812,7 +4821,7 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
     m.mapping.mlvo_at_pos[m.mapping.num_mlvo as usize] = mlvo;
     m.mapping.defined_mlvo_mask =
         (m.mapping.defined_mlvo_mask as i32 | (1_u32 as u8 as i32) << mlvo) as u8;
-    m.mapping.num_mlvo = m.mapping.num_mlvo.wrapping_add(1);
+    m.mapping.num_mlvo = m.mapping.num_mlvo + 1;
 }
 fn matcher_mapping_set_layout_bounds(m: &mut Matcher) {
     let mut idx: u32 = if let LayoutIdx::Single {
@@ -4874,7 +4883,7 @@ fn matcher_mapping_set_layout_bounds(m: &mut Matcher) {
         m.mapping.layout = LayoutIdx::Index {
             layout_idx_min: idx,
         };
-        m.mapping.active_or_candidates_mask = 1_u32 << idx;
+        m.mapping.active_or_candidates_mask = 1 << idx;
     };
 }
 fn matcher_mapping_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
@@ -4893,7 +4902,7 @@ fn matcher_mapping_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
-    if m.mapping.defined_kccgst_mask as u32 & 1_u32 << kccgst != 0 {
+    if m.mapping.defined_kccgst_mask as u32 & 1 << kccgst != 0 {
         let _loc_0: ScannerLoc = s.token_location();
         let _kccgst_str = std::str::from_utf8(kccgst_bytes).unwrap_or("");
         m.mapping.active_or_candidates_mask = 0_u32;
@@ -4902,7 +4911,7 @@ fn matcher_mapping_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
     m.mapping.kccgst_at_pos[m.mapping.num_kccgst as usize] = kccgst;
     m.mapping.defined_kccgst_mask =
         (m.mapping.defined_kccgst_mask as i32 | (1_u32 as u8 as i32) << kccgst) as u8;
-    m.mapping.num_kccgst = m.mapping.num_kccgst.wrapping_add(1);
+    m.mapping.num_kccgst = m.mapping.num_kccgst + 1;
 }
 fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
     match idx {
@@ -4913,9 +4922,9 @@ fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
 }
 
 fn matcher_mapping_verify(m: &mut Matcher, s: &mut Scanner) -> bool {
-    if m.mapping.num_mlvo as i32 == 0_i32 {
+    if m.mapping.num_mlvo == 0 {
         let _loc: ScannerLoc = s.token_location();
-    } else if m.mapping.num_kccgst as i32 == 0_i32 {
+    } else if m.mapping.num_kccgst == 0 {
         let _loc_0: ScannerLoc = s.token_location();
     } else {
         if is_mlvo_mask_defined(m, MLVO_LAYOUT) {
@@ -4958,7 +4967,7 @@ fn matcher_rule_set_mlvo_common(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx
     }
     m.rule.match_type_at_pos[m.rule.num_mlvo_values as usize] = match_type;
     m.rule.mlvo_value_at_pos[m.rule.num_mlvo_values as usize] = ident;
-    m.rule.num_mlvo_values = m.rule.num_mlvo_values.wrapping_add(1);
+    m.rule.num_mlvo_values = m.rule.num_mlvo_values + 1;
 }
 fn matcher_rule_set_mlvo_wildcard(m: &mut Matcher, s: &mut Scanner, match_type: u32) {
     let dummy = SvalIdx::EMPTY;
@@ -4977,7 +4986,7 @@ fn matcher_rule_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
         return;
     }
     m.rule.kccgst_value_at_pos[m.rule.num_kccgst_values as usize] = ident;
-    m.rule.num_kccgst_values = m.rule.num_kccgst_values.wrapping_add(1);
+    m.rule.num_kccgst_values = m.rule.num_kccgst_values + 1;
 }
 fn match_group(groups: &[Group], group_name: Sval, to: Sval) -> bool {
     let found_group = groups.iter().find(|g| g.name.as_slice() == group_name.data);
@@ -5035,7 +5044,7 @@ fn expand_rmlvo_in_kccgst_value(
         if layout_idx == XKB_LAYOUT_INVALID {
             let _loc: ScannerLoc = s.token_location();
         } else {
-            *i = (*i).wrapping_add(1);
+            *i += 1;
             let idx_str = format!("{}", layout_idx.wrapping_add(1_u32));
             vec_append_nul_terminated(expanded, idx_str.as_bytes());
             return true;
@@ -5055,7 +5064,7 @@ fn expand_rmlvo_in_kccgst_value(
             if ch == b'(' {
                 sfx = b')' as i8;
             }
-            *i = (*i).wrapping_add(1);
+            *i += 1;
             if *i >= value.len() {
                 // fall through to error
                 let _loc_1: ScannerLoc = s.token_location();
@@ -5063,9 +5072,7 @@ fn expand_rmlvo_in_kccgst_value(
             }
         }
 
-        let c2rust_fresh7 = *i;
-        *i = (*i).wrapping_add(1);
-        let mlv: u32 = match bytes[c2rust_fresh7] {
+        let mlv: u32 = match bytes[*i] {
             b'm' => MLVO_MODEL,
             b'l' => MLVO_LAYOUT,
             b'v' => MLVO_VARIANT,
@@ -5074,6 +5081,7 @@ fn expand_rmlvo_in_kccgst_value(
                 return false;
             }
         };
+        *i += 1;
 
         let mut idx: u32 = XKB_LAYOUT_INVALID;
         let mut expanded_index: bool = false;
@@ -5095,14 +5103,14 @@ fn expand_rmlvo_in_kccgst_value(
             *i = (*i).wrapping_add(consumed as usize);
         }
 
-        if sfx as i32 != 0_i32 {
+        if sfx != 0 {
             if *i >= value.len() {
                 let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
-            let c2rust_fresh8 = *i;
-            *i = (*i).wrapping_add(1);
-            if bytes[c2rust_fresh8] as i8 != sfx {
+            let ch = bytes[*i] as i8;
+            *i += 1;
+            if ch != sfx {
                 let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
@@ -5163,11 +5171,11 @@ fn expand_rmlvo_in_kccgst_value(
             return true;
         }
 
-        if pfx as i32 != 0_i32 {
+        if pfx != 0 {
             vec_append_nul_terminated(expanded, &[pfx as u8]);
         }
         vec_append_nul_terminated(expanded, ev_sval.as_bytes());
-        if sfx as i32 != 0_i32 {
+        if sfx != 0 {
             vec_append_nul_terminated(expanded, &[sfx as u8]);
         }
 
@@ -5226,17 +5234,17 @@ fn expand_qualifier_in_kccgst_value(
                 }
                 {
                     let old_size = expanded.len();
-                    let new_size = old_size.wrapping_add(prefix_length).wrapping_add(1);
+                    let new_size = old_size.wrapping_add(prefix_length) + 1;
                     expanded.resize(new_size, 0);
                     expanded.copy_within(
                         prefix_idx as usize..prefix_idx as usize + prefix_length,
                         old_size,
                     );
-                    expanded.truncate(new_size.wrapping_sub(1));
+                    expanded.truncate(new_size - 1);
                 }
                 let idx_str = format!("{}", l.wrapping_add(1_u32));
                 vec_append_nul_terminated(expanded, idx_str.as_bytes());
-                l = l.wrapping_add(1);
+                l += 1;
             }
         }
         *i = (*i).wrapping_add(3_usize);
@@ -5283,9 +5291,8 @@ fn expand_kccgst_value(
         }
         match bytes[i] {
             b':' => {
-                let c2rust_fresh4 = i;
-                i = i.wrapping_add(1);
-                vec_append_nul_terminated(&mut expanded, &[bytes[c2rust_fresh4]]);
+                vec_append_nul_terminated(&mut expanded, &[bytes[i]]);
+                i += 1;
                 expand_qualifier_in_kccgst_value(
                     m,
                     s,
@@ -5298,7 +5305,7 @@ fn expand_kccgst_value(
                 );
             }
             b'%' => {
-                i = i.wrapping_add(1);
+                i += 1;
                 if i >= value.len()
                     || !expand_rmlvo_in_kccgst_value(m, s, value, layout_idx, &mut expanded, &mut i)
                 {
@@ -5310,16 +5317,14 @@ fn expand_kccgst_value(
                 || b as i32 == MERGE_AUGMENT_PREFIX
                 || b as i32 == MERGE_REPLACE_PREFIX =>
             {
-                let c2rust_fresh5 = i;
-                i = i.wrapping_add(1);
-                vec_append_nul_terminated(&mut expanded, &[bytes[c2rust_fresh5]]);
-                last_item_idx = expanded.len().wrapping_sub(1) as u32;
+                vec_append_nul_terminated(&mut expanded, &[bytes[i]]);
+                i += 1;
+                last_item_idx = (expanded.len() - 1) as u32;
                 has_separator = true;
             }
             _ => {
-                let c2rust_fresh6 = i;
-                i = i.wrapping_add(1);
-                vec_append_nul_terminated(&mut expanded, &[bytes[c2rust_fresh6]]);
+                vec_append_nul_terminated(&mut expanded, &[bytes[i]]);
+                i += 1;
             }
         }
     }
@@ -5353,17 +5358,17 @@ fn matcher_append_pending_kccgst(m: &mut Matcher) -> bool {
                 let slice_len = m.pending_kccgst.slices[k as usize].length;
                 let slice_kccgst = m.pending_kccgst.slices[k as usize].kccgst;
                 let slice_layout = m.pending_kccgst.slices[k as usize].layout;
-                if slice_kccgst == kccgst && slice_layout == layout && slice_len as i32 != 0 {
+                if slice_kccgst == kccgst && slice_layout == layout && slice_len != 0 {
                     let from: Vec<i8> =
                         m.pending_kccgst.buffer[offset..offset + slice_len as usize].to_vec();
                     concat_kccgst(&mut m.kccgst[kccgst as usize], &from);
                 }
                 offset = offset.wrapping_add(slice_len as usize);
-                k = k.wrapping_add(1);
+                k += 1;
             }
-            layout = layout.wrapping_add(1);
+            layout += 1;
         }
-        i = i.wrapping_add(1);
+        i += 1;
     }
     m.mapping.layout = LayoutIdx::default();
     true
@@ -5400,7 +5405,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
         {
             idx = layout_idx_min;
             while idx < layout_idx_max && candidate_layouts != 0 {
-                let mask: u32 = 1_u32 << idx;
+                let mask: u32 = 1 << idx;
                 if candidate_layouts & mask != 0 {
                     match mlvo {
                         1 => {
@@ -5433,9 +5438,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
                             let mut found_option: bool = false;
                             for opt_idx in 0..m.rmlvo.options.len() {
                                 let opt = &m.rmlvo.options[opt_idx];
-                                if opt.layout as i32 != OPTIONS_MATCH_ALL_GROUPS
-                                    && opt.layout != idx
-                                {
+                                if opt.layout != OPTIONS_MATCH_ALL_GROUPS && opt.layout != idx {
                                     continue;
                                 }
                                 if match_value_and_mark(
@@ -5456,7 +5459,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
                         }
                     }
                 }
-                idx = idx.wrapping_add(1);
+                idx += 1;
             }
         } else {
             let li = m.mapping.layout.layout_idx_min() as usize;
@@ -5483,8 +5486,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
                     let layout_min = m.mapping.layout.layout_idx_min();
                     for opt_idx in 0..m.rmlvo.options.len() {
                         let opt = &m.rmlvo.options[opt_idx];
-                        if opt.layout as i32 != OPTIONS_MATCH_ALL_GROUPS && opt.layout != layout_min
-                        {
+                        if opt.layout != OPTIONS_MATCH_ALL_GROUPS && opt.layout != layout_min {
                             continue;
                         }
                         matched = match_value_and_mark(
@@ -5504,7 +5506,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
         if !matched {
             return;
         }
-        i = i.wrapping_add(1);
+        i += 1;
     }
     if let LayoutIdx::Range {
         layout_idx_min,
@@ -5513,7 +5515,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
     {
         idx = layout_idx_min;
         while idx < layout_idx_max {
-            if candidate_layouts & 1_u32 << idx != 0 {
+            if candidate_layouts & 1 << idx != 0 {
                 let mut i_0: u8 = 0_u8;
                 while (i_0 as i32) < m.mapping.num_kccgst as i32 {
                     let kccgst: u32 = m.mapping.kccgst_at_pos[i_0 as usize];
@@ -5532,10 +5534,10 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
                         };
                         m.pending_kccgst.slices.push(slice);
                     }
-                    i_0 = i_0.wrapping_add(1);
+                    i_0 += 1;
                 }
             }
-            idx = idx.wrapping_add(1);
+            idx += 1;
         }
     } else if let LayoutIdx::Index { layout_idx_min, .. } = m.mapping.layout {
         let mut i_1: u8 = 0_u8;
@@ -5547,7 +5549,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
                     concat_kccgst(&mut m.kccgst[kccgst_0 as usize], &expanded);
                 }
             }
-            i_1 = i_1.wrapping_add(1);
+            i_1 += 1;
         }
     }
     if !is_mlvo_mask_defined(m, MLVO_OPTION) {
@@ -5643,9 +5645,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                             matcher_mapping_set_kccgst(m, s, m.val.string.to_sval(s.s));
                         }
                     }
-                    if m.mapping.active_or_candidates_mask != 0
-                        && matcher_mapping_verify(m, s) as i32 != 0
-                    {
+                    if m.mapping.active_or_candidates_mask != 0 && matcher_mapping_verify(m, s) {
                         matcher_mapping_set_layout_bounds(m);
                         if matches!(m.mapping.layout, LayoutIdx::Range { .. }) {
                             m.pending_kccgst.buffer.clear();
@@ -5816,7 +5816,7 @@ fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_
             &mut *matcher.ctx,
             "(unknown)",
             &partial_rules,
-            FILE_TYPE_RULES,
+            FileType::Rules,
             &mut offset,
             false,
         );
@@ -5845,7 +5845,7 @@ fn xkb_resolve_rules(
         &mut *matcher.ctx,
         "(unknown)",
         rules_str,
-        FILE_TYPE_RULES,
+        FileType::Rules,
         &mut offset,
         true,
     );
@@ -5855,83 +5855,82 @@ fn xkb_resolve_rules(
     ret = xkb_resolve_partial_rules(rules_str, ".pre", matcher);
     if ret {
         ret = read_rules_file(matcher, 0, &file_data, &path);
-        if !ret {
-        } else {
-            ret = xkb_resolve_partial_rules(rules_str, ".post", matcher);
-            if ret {
-                if matcher.kccgst[KCCGST_KEYCODES as usize].is_empty()
-                    || matcher.kccgst[KCCGST_TYPES as usize].is_empty()
-                    || matcher.kccgst[KCCGST_COMPAT as usize].is_empty()
-                    || matcher.kccgst[KCCGST_SYMBOLS as usize].is_empty()
+    }
+    if ret {
+        ret = xkb_resolve_partial_rules(rules_str, ".post", matcher);
+        if ret {
+            if matcher.kccgst[KCCGST_KEYCODES as usize].is_empty()
+                || matcher.kccgst[KCCGST_TYPES as usize].is_empty()
+                || matcher.kccgst[KCCGST_COMPAT as usize].is_empty()
+                || matcher.kccgst[KCCGST_SYMBOLS as usize].is_empty()
+            {
+                ret = false;
+            } else {
+                // Transfer ownership of Vec data directly.
                 {
-                    ret = false;
-                } else {
-                    // Transfer ownership of Vec data directly.
-                    {
-                        let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_KEYCODES as usize]);
-                        v.push(0);
-                        out.keycodes = v;
-                    }
-                    {
-                        let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_TYPES as usize]);
-                        v.push(0);
-                        out.types = v;
-                    }
-                    {
-                        let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_COMPAT as usize]);
-                        v.push(0);
-                        out.compatibility = v;
-                    }
-                    {
-                        let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_SYMBOLS as usize]);
-                        v.push(0);
-                        out.symbols = v;
-                    }
-                    {
-                        let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_GEOMETRY as usize]);
-                        v.push(0);
-                        out.geometry = v;
-                    }
-                    for mval in matcher.rmlvo.layouts.iter() {
-                        if !mval.matched && !mval.sval.is_empty() {}
-                    }
-                    for mval in matcher.rmlvo.variants.iter() {
-                        if !mval.matched && !mval.sval.is_empty() {}
-                    }
-                    for mval in matcher.rmlvo.options.iter() {
-                        if !mval.matched && !mval.sval.is_empty() {}
-                    }
-                    if !out.symbols.is_empty() {
-                        *explicit_layouts = 1_u32;
-                        // Parse symbols string to find explicit layout count
-                        let sym_bytes: Vec<u8> = out.symbols.iter().map(|&b| b as u8).collect();
-                        let mut pos: usize = 0;
-                        loop {
-                            match sym_bytes[pos..].iter().position(|&b| b == b':') {
-                                None => break,
-                                Some(colon_off) => {
-                                    pos += colon_off + 1;
-                                    if pos >= sym_bytes.len() || sym_bytes[pos] == 0 {
-                                        break;
-                                    }
-                                    let (val_parsed, count) = parse_dec_u32(&sym_bytes[pos..]);
-                                    let group: u32 = val_parsed;
-                                    let count = count as usize;
-                                    if count > 0
-                                        && pos + count <= sym_bytes.len()
-                                        && (sym_bytes.get(pos + count).copied() == Some(0)
-                                            || sym_bytes.get(pos + count).map(|&b| b as i32)
-                                                == Some(MERGE_OVERRIDE_PREFIX)
-                                            || sym_bytes.get(pos + count).map(|&b| b as i32)
-                                                == Some(MERGE_AUGMENT_PREFIX)
-                                            || sym_bytes.get(pos + count).map(|&b| b as i32)
-                                                == Some(MERGE_REPLACE_PREFIX))
-                                        && group > 0
-                                        && group <= XKB_MAX_GROUPS as u32
-                                    {
-                                        *explicit_layouts = (*explicit_layouts).max(group);
-                                        pos += count;
-                                    }
+                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_KEYCODES as usize]);
+                    v.push(0);
+                    out.keycodes = v;
+                }
+                {
+                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_TYPES as usize]);
+                    v.push(0);
+                    out.types = v;
+                }
+                {
+                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_COMPAT as usize]);
+                    v.push(0);
+                    out.compatibility = v;
+                }
+                {
+                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_SYMBOLS as usize]);
+                    v.push(0);
+                    out.symbols = v;
+                }
+                {
+                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_GEOMETRY as usize]);
+                    v.push(0);
+                    out.geometry = v;
+                }
+                for mval in matcher.rmlvo.layouts.iter() {
+                    if !mval.matched && !mval.sval.is_empty() {}
+                }
+                for mval in matcher.rmlvo.variants.iter() {
+                    if !mval.matched && !mval.sval.is_empty() {}
+                }
+                for mval in matcher.rmlvo.options.iter() {
+                    if !mval.matched && !mval.sval.is_empty() {}
+                }
+                if !out.symbols.is_empty() {
+                    *explicit_layouts = 1_u32;
+                    // Parse symbols string to find explicit layout count
+                    let sym_bytes: Vec<u8> = out.symbols.iter().map(|&b| b as u8).collect();
+                    let mut pos: usize = 0;
+                    loop {
+                        match sym_bytes[pos..].iter().position(|&b| b == b':') {
+                            None => break,
+                            Some(colon_off) => {
+                                pos += colon_off + 1;
+                                if pos >= sym_bytes.len() || sym_bytes[pos] == 0 {
+                                    break;
+                                }
+                                let (val_parsed, count) = parse_dec_u32(&sym_bytes[pos..]);
+                                let group: u32 = val_parsed;
+                                let count = count as usize;
+                                if count > 0
+                                    && pos + count <= sym_bytes.len()
+                                    && (sym_bytes.get(pos + count).copied() == Some(0)
+                                        || sym_bytes.get(pos + count).map(|&b| b as i32)
+                                            == Some(MERGE_OVERRIDE_PREFIX)
+                                        || sym_bytes.get(pos + count).map(|&b| b as i32)
+                                            == Some(MERGE_AUGMENT_PREFIX)
+                                        || sym_bytes.get(pos + count).map(|&b| b as i32)
+                                            == Some(MERGE_REPLACE_PREFIX))
+                                    && group > 0
+                                    && group <= XKB_MAX_GROUPS as u32
+                                {
+                                    *explicit_layouts = (*explicit_layouts).max(group);
+                                    pos += count;
                                 }
                             }
                         }

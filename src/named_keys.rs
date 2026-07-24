@@ -12,7 +12,7 @@
 //!
 //! KP variants (KP_Enter, KP_Delete, etc.) collapse to their main key equivalents.
 //! ISO_Left_Tab collapses to Tab, ISO_Enter collapses to Enter.
-//! Dead keys and character-producing keys map to `Unnamed`.
+//! Dead keys and character-producing keys mostly map to `Unnamed`.
 
 #[derive(
     Debug,

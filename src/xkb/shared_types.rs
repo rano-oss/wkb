@@ -7,13 +7,6 @@ use std::sync::Arc;
 use lasso::Key as _;
 
 // ── xkbcommon public types ───────────────────────────────────────────
-
-pub(crate) const XKB_LOG_LEVEL_DEBUG: u32 = 50;
-pub(crate) const XKB_LOG_LEVEL_INFO: u32 = 40;
-pub(crate) const XKB_LOG_LEVEL_WARNING: u32 = 30;
-pub(crate) const XKB_LOG_LEVEL_ERROR: u32 = 20;
-pub(crate) const XKB_LOG_LEVEL_CRITICAL: u32 = 10;
-
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: u32 = 2;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: u32 = 1;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_WRAP: u32 = 0;
@@ -106,8 +99,6 @@ pub(crate) fn atom_table_new() -> AtomTable {
 
 #[derive(Clone, Debug)]
 pub(crate) struct XkbContext {
-    pub(crate) log_level: u32,
-    pub(crate) log_verbosity: i32,
     pub(crate) includes: Vec<String>,
     pub(crate) failed_includes: Vec<String>,
     pub(crate) atom_table: AtomTable,
@@ -213,213 +204,16 @@ pub(crate) enum XkbAction {
     GroupSet(XkbGroupAction),
     GroupLatch(XkbGroupAction),
     GroupLock(XkbGroupAction),
-    PtrMove(XkbPointerAction),
-    PtrButton(XkbPointerButtonAction),
-    PtrLock(XkbPointerButtonAction),
-    PtrDefault(XkbPointerDefaultAction),
-    Terminate,
-    SwitchVt(XkbSwitchScreenAction),
     CtrlSet(XkbControlsAction),
     CtrlLock(XkbControlsAction),
-    RedirectKey(XkbRedirectKeyAction),
-    UnsupportedLegacy,
     Unknown,
     Private(XkbPrivateAction),
     Internal(XkbInternalAction),
 }
 
 impl XkbAction {
-    pub(crate) fn action_type(&self) -> u32 {
-        match self {
-            XkbAction::None => ACTION_TYPE_NONE,
-            XkbAction::Void => ACTION_TYPE_VOID,
-            XkbAction::ModSet(_) => ACTION_TYPE_MOD_SET,
-            XkbAction::ModLatch(_) => ACTION_TYPE_MOD_LATCH,
-            XkbAction::ModLock(_) => ACTION_TYPE_MOD_LOCK,
-            XkbAction::GroupSet(_) => ACTION_TYPE_GROUP_SET,
-            XkbAction::GroupLatch(_) => ACTION_TYPE_GROUP_LATCH,
-            XkbAction::GroupLock(_) => ACTION_TYPE_GROUP_LOCK,
-            XkbAction::PtrMove(_) => ACTION_TYPE_PTR_MOVE,
-            XkbAction::PtrButton(_) => ACTION_TYPE_PTR_BUTTON,
-            XkbAction::PtrLock(_) => ACTION_TYPE_PTR_LOCK,
-            XkbAction::PtrDefault(_) => ACTION_TYPE_PTR_DEFAULT,
-            XkbAction::Terminate => ACTION_TYPE_TERMINATE,
-            XkbAction::SwitchVt(_) => ACTION_TYPE_SWITCH_VT,
-            XkbAction::CtrlSet(_) => ACTION_TYPE_CTRL_SET,
-            XkbAction::CtrlLock(_) => ACTION_TYPE_CTRL_LOCK,
-            XkbAction::RedirectKey(_) => ACTION_TYPE_REDIRECT_KEY,
-            XkbAction::UnsupportedLegacy => ACTION_TYPE_UNSUPPORTED_LEGACY,
-            XkbAction::Unknown => ACTION_TYPE_UNKNOWN,
-            XkbAction::Private(_) => ACTION_TYPE_PRIVATE,
-            XkbAction::Internal(_) => ACTION_TYPE_INTERNAL,
-        }
-    }
-
-    pub(crate) fn from_type(t: u32) -> Self {
-        match t {
-            ACTION_TYPE_NONE => XkbAction::None,
-            ACTION_TYPE_VOID => XkbAction::Void,
-            ACTION_TYPE_MOD_SET => XkbAction::ModSet(XkbModAction {
-                type_0: t,
-                ..Default::default()
-            }),
-            ACTION_TYPE_MOD_LATCH => XkbAction::ModLatch(XkbModAction {
-                type_0: t,
-                ..Default::default()
-            }),
-            ACTION_TYPE_MOD_LOCK => XkbAction::ModLock(XkbModAction {
-                type_0: t,
-                ..Default::default()
-            }),
-            ACTION_TYPE_GROUP_SET => XkbAction::GroupSet(XkbGroupAction::default()),
-            ACTION_TYPE_GROUP_LATCH => XkbAction::GroupLatch(XkbGroupAction::default()),
-            ACTION_TYPE_GROUP_LOCK => XkbAction::GroupLock(XkbGroupAction::default()),
-            ACTION_TYPE_PTR_MOVE => XkbAction::PtrMove(XkbPointerAction::default()),
-            ACTION_TYPE_PTR_BUTTON => XkbAction::PtrButton(XkbPointerButtonAction::default()),
-            ACTION_TYPE_PTR_LOCK => XkbAction::PtrLock(XkbPointerButtonAction::default()),
-            ACTION_TYPE_PTR_DEFAULT => XkbAction::PtrDefault(XkbPointerDefaultAction::default()),
-            ACTION_TYPE_TERMINATE => XkbAction::Terminate,
-            ACTION_TYPE_SWITCH_VT => XkbAction::SwitchVt(XkbSwitchScreenAction::default()),
-            ACTION_TYPE_CTRL_SET => XkbAction::CtrlSet(XkbControlsAction::default()),
-            ACTION_TYPE_CTRL_LOCK => XkbAction::CtrlLock(XkbControlsAction::default()),
-            ACTION_TYPE_REDIRECT_KEY => XkbAction::RedirectKey(XkbRedirectKeyAction::default()),
-            ACTION_TYPE_UNSUPPORTED_LEGACY => XkbAction::UnsupportedLegacy,
-            ACTION_TYPE_UNKNOWN => XkbAction::Unknown,
-            ACTION_TYPE_PRIVATE => XkbAction::Private(XkbPrivateAction {
-                type_0: t,
-                ..Default::default()
-            }),
-            ACTION_TYPE_INTERNAL => XkbAction::Internal(XkbInternalAction::default()),
-            _ => XkbAction::None,
-        }
-    }
-
     pub(crate) fn set_none(&mut self) {
         *self = XkbAction::None;
-    }
-
-    pub(crate) fn as_mods(&self) -> &XkbModAction {
-        match self {
-            XkbAction::ModSet(m) | XkbAction::ModLatch(m) | XkbAction::ModLock(m) => m,
-            _ => panic!("not a mod action"),
-        }
-    }
-    pub(crate) fn as_mods_mut(&mut self) -> &mut XkbModAction {
-        match self {
-            XkbAction::ModSet(m) | XkbAction::ModLatch(m) | XkbAction::ModLock(m) => m,
-            _ => panic!("not a mod action"),
-        }
-    }
-
-    pub(crate) fn as_group(&self) -> &XkbGroupAction {
-        match self {
-            XkbAction::GroupSet(g) | XkbAction::GroupLatch(g) | XkbAction::GroupLock(g) => g,
-            _ => panic!("not a group action"),
-        }
-    }
-    pub(crate) fn as_group_mut(&mut self) -> &mut XkbGroupAction {
-        match self {
-            XkbAction::GroupSet(g) | XkbAction::GroupLatch(g) | XkbAction::GroupLock(g) => g,
-            _ => panic!("not a group action"),
-        }
-    }
-
-    pub(crate) fn as_ctrls(&self) -> &XkbControlsAction {
-        match self {
-            XkbAction::CtrlSet(c) | XkbAction::CtrlLock(c) => c,
-            _ => panic!("not a ctrls action"),
-        }
-    }
-    pub(crate) fn as_ctrls_mut(&mut self) -> &mut XkbControlsAction {
-        match self {
-            XkbAction::CtrlSet(c) | XkbAction::CtrlLock(c) => c,
-            _ => panic!("not a ctrls action"),
-        }
-    }
-
-    pub(crate) fn as_ptr(&self) -> &XkbPointerAction {
-        match self {
-            XkbAction::PtrMove(p) => p,
-            _ => panic!("not a ptr action"),
-        }
-    }
-    pub(crate) fn as_ptr_mut(&mut self) -> &mut XkbPointerAction {
-        match self {
-            XkbAction::PtrMove(p) => p,
-            _ => panic!("not a ptr action"),
-        }
-    }
-
-    pub(crate) fn as_btn(&self) -> &XkbPointerButtonAction {
-        match self {
-            XkbAction::PtrButton(b) | XkbAction::PtrLock(b) => b,
-            _ => panic!("not a btn action"),
-        }
-    }
-    pub(crate) fn as_btn_mut(&mut self) -> &mut XkbPointerButtonAction {
-        match self {
-            XkbAction::PtrButton(b) | XkbAction::PtrLock(b) => b,
-            _ => panic!("not a btn action"),
-        }
-    }
-
-    pub(crate) fn as_dflt(&self) -> &XkbPointerDefaultAction {
-        match self {
-            XkbAction::PtrDefault(d) => d,
-            _ => panic!("not a dflt action"),
-        }
-    }
-    pub(crate) fn as_dflt_mut(&mut self) -> &mut XkbPointerDefaultAction {
-        match self {
-            XkbAction::PtrDefault(d) => d,
-            _ => panic!("not a dflt action"),
-        }
-    }
-
-    pub(crate) fn as_screen(&self) -> &XkbSwitchScreenAction {
-        match self {
-            XkbAction::SwitchVt(s) => s,
-            _ => panic!("not a screen action"),
-        }
-    }
-    pub(crate) fn as_screen_mut(&mut self) -> &mut XkbSwitchScreenAction {
-        match self {
-            XkbAction::SwitchVt(s) => s,
-            _ => panic!("not a screen action"),
-        }
-    }
-
-    pub(crate) fn as_redirect(&self) -> &XkbRedirectKeyAction {
-        match self {
-            XkbAction::RedirectKey(r) => r,
-            _ => panic!("not a redirect action"),
-        }
-    }
-    pub(crate) fn as_redirect_mut(&mut self) -> &mut XkbRedirectKeyAction {
-        match self {
-            XkbAction::RedirectKey(r) => r,
-            _ => panic!("not a redirect action"),
-        }
-    }
-
-    pub(crate) fn as_priv(&self) -> &XkbPrivateAction {
-        match self {
-            XkbAction::Private(p) => p,
-            _ => panic!("not a priv action"),
-        }
-    }
-    pub(crate) fn as_priv_mut(&mut self) -> &mut XkbPrivateAction {
-        match self {
-            XkbAction::Private(p) => p,
-            _ => panic!("not a priv action"),
-        }
-    }
-
-    pub(crate) fn as_internal(&self) -> &XkbInternalAction {
-        match self {
-            XkbAction::Internal(i) => i,
-            _ => panic!("not an internal action"),
-        }
     }
 }
 
@@ -431,7 +225,6 @@ pub struct XkbInternalAction {
 
 pub const INTERNAL_BREAKS_MOD_LATCH: u32 = 2;
 pub const INTERNAL_BREAKS_GROUP_LATCH: u32 = 1;
-
 pub const _ACTION_TYPE_NUM_ENTRIES: u32 = 21;
 pub const ACTION_TYPE_INTERNAL: u32 = 20;
 pub const ACTION_TYPE_PRIVATE: u32 = 19;
@@ -457,98 +250,76 @@ pub const ACTION_TYPE_NONE: u32 = 0;
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbPrivateAction {
-    pub type_0: u32,
     pub data: [u8; 7],
 }
 
-#[derive(Copy, Clone, Default)]
-pub struct XkbRedirectKeyAction {
-    pub keycode: u32,
-    pub affect: u32,
-    pub mods: u32,
+bitflags::bitflags! {
+    #[derive(Copy, Clone, Default, PartialEq, Eq)]
+    pub struct ActionFlags: u32 {
+        const LOCK_CLEAR            = 1;
+        const LATCH_TO_LOCK         = 2;
+        const LOCK_NO_LOCK          = 4;
+        const LOCK_NO_UNLOCK        = 8;
+        const MODS_LOOKUP_MODMAP    = 16;
+        const ABSOLUTE_SWITCH       = 32;
+        const ABSOLUTE_X            = 64;
+        const ABSOLUTE_Y            = 128;
+        const ACCEL                 = 256;
+        const SAME_SCREEN           = 512;
+        const LOCK_ON_RELEASE       = 1024;
+        const UNLOCK_ON_PRESS       = 2048;
+        const LATCH_ON_PRESS        = 4096;
+        const PENDING_COMPUTATION   = 8192;
+    }
 }
 
-#[derive(Copy, Clone, Default)]
-pub struct XkbPointerButtonAction {
-    pub flags: XkbActionFlags,
-    pub count: u8,
-    pub button: u8,
-}
 
-pub type XkbActionFlags = u32;
-pub const ACTION_PENDING_COMPUTATION: XkbActionFlags = 8192;
-pub const ACTION_LATCH_ON_PRESS: XkbActionFlags = 4096;
-pub const ACTION_UNLOCK_ON_PRESS: XkbActionFlags = 2048;
-pub const ACTION_LOCK_ON_RELEASE: XkbActionFlags = 1024;
-pub const ACTION_SAME_SCREEN: XkbActionFlags = 512;
-pub const ACTION_ACCEL: XkbActionFlags = 256;
-pub const ACTION_ABSOLUTE_Y: XkbActionFlags = 128;
-pub const ACTION_ABSOLUTE_X: XkbActionFlags = 64;
-pub const ACTION_ABSOLUTE_SWITCH: XkbActionFlags = 32;
-pub const ACTION_MODS_LOOKUP_MODMAP: XkbActionFlags = 16;
-pub const ACTION_LOCK_NO_UNLOCK: XkbActionFlags = 8;
-pub const ACTION_LOCK_NO_LOCK: XkbActionFlags = 4;
-pub const ACTION_LATCH_TO_LOCK: XkbActionFlags = 2;
-pub const ACTION_LOCK_CLEAR: XkbActionFlags = 1;
 
-#[derive(Copy, Clone, Default)]
-pub struct XkbPointerAction {
-    pub flags: XkbActionFlags,
-    pub x: i16,
-    pub y: i16,
-}
 
-#[derive(Copy, Clone, Default)]
-pub struct XkbSwitchScreenAction {
-    pub flags: XkbActionFlags,
-    pub screen: i8,
-}
 
-#[derive(Copy, Clone, Default)]
-pub struct XkbPointerDefaultAction {
-    pub flags: XkbActionFlags,
-    pub value: i8,
+
+bitflags::bitflags! {
+    #[derive(Copy, Clone, Default, PartialEq, Eq)]
+    pub(crate) struct ControlsFlags: u32 {
+        const STICKY_KEYS      = 1;
+        const OVERLAY1         = 2;
+        const OVERLAY2         = 4;
+        const OVERLAY3         = 8;
+        const OVERLAY4         = 16;
+        const OVERLAY5         = 32;
+        const OVERLAY6         = 64;
+        const OVERLAY7         = 128;
+        const OVERLAY8         = 256;
+        const REPEAT           = 1024;
+        const SLOW             = 2048;
+        const DEBOUNCE         = 4096;
+        const MOUSE_KEYS       = 16384;
+        const MOUSE_KEYS_ACCEL = 32768;
+        const AX               = 65536;
+        const AX_TIMEOUT       = 131072;
+        const AX_FEEDBACK      = 262144;
+        const BELL             = 524288;
+        const IGNORE_GROUP_LOCK = 1048576;
+        const ALL_BOOLEAN      = 2088447;
+        const ALL_BOOLEAN_V1   = 2087943;
+    }
 }
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbControlsAction {
-    pub flags: XkbActionFlags,
-    pub ctrls: XkbActionControls,
+    pub flags: ActionFlags,
+    pub ctrls: ControlsFlags,
 }
-
-pub type XkbActionControls = u32;
-pub const CONTROL_ALL_BOOLEAN: XkbActionControls = 2088447;
-pub const CONTROL_ALL_BOOLEAN_V1: XkbActionControls = 2087943;
-pub const CONTROL_IGNORE_GROUP_LOCK: XkbActionControls = 1048576;
-pub const CONTROL_BELL: XkbActionControls = 524288;
-pub const CONTROL_AX_FEEDBACK: XkbActionControls = 262144;
-pub const CONTROL_AX_TIMEOUT: XkbActionControls = 131072;
-pub const CONTROL_AX: XkbActionControls = 65536;
-pub const CONTROL_MOUSE_KEYS_ACCEL: XkbActionControls = 32768;
-pub const CONTROL_MOUSE_KEYS: XkbActionControls = 16384;
-pub const CONTROL_DEBOUNCE: XkbActionControls = 4096;
-pub const CONTROL_SLOW: XkbActionControls = 2048;
-pub const CONTROL_REPEAT: XkbActionControls = 1024;
-pub const CONTROL_OVERLAY8: XkbActionControls = 256;
-pub const CONTROL_OVERLAY7: XkbActionControls = 128;
-pub const CONTROL_OVERLAY6: XkbActionControls = 64;
-pub const CONTROL_OVERLAY5: XkbActionControls = 32;
-pub const CONTROL_OVERLAY4: XkbActionControls = 16;
-pub const CONTROL_OVERLAY3: XkbActionControls = 8;
-pub const CONTROL_OVERLAY2: XkbActionControls = 4;
-pub const CONTROL_OVERLAY1: XkbActionControls = 2;
-pub const CONTROL_STICKY_KEYS: XkbActionControls = 1;
 
 #[derive(Copy, Clone, Default)]
 pub struct XkbGroupAction {
-    pub flags: XkbActionFlags,
+    pub flags: ActionFlags,
     pub group: i32,
 }
 
 #[derive(Copy, Clone, Default)]
 pub(crate) struct XkbModAction {
-    pub(crate) type_0: u32,
-    pub(crate) flags: XkbActionFlags,
+    pub(crate) flags: ActionFlags,
     pub(crate) mods: XkbMods,
 }
 
@@ -595,10 +366,10 @@ pub(crate) struct KeycodeMatch {
 pub(crate) struct XkbKey {
     pub(crate) keycode: u32,
     pub(crate) name: u32,
-    pub(crate) explicit: XkbExplicitComponents,
+    pub(crate) explicit: u32,
     pub(crate) modmap: u32,
     pub(crate) vmodmap: u32,
-    pub(crate) overlays: XkbOverlayMaskT,
+    pub(crate) overlays: u8,
     pub(crate) repeats: bool,
     pub(crate) implicit_actions: bool,
     pub(crate) out_of_range_pending_group: bool,
@@ -627,16 +398,12 @@ pub(crate) struct XkbLevel {
     pub(crate) actions: Vec<XkbAction>,
 }
 
-pub(crate) type XkbOverlayMaskT = u8;
-pub(crate) type XkbOverlayIndexT = u8;
-
-pub(crate) type XkbExplicitComponents = u32;
-pub(crate) const EXPLICIT_OVERLAY: XkbExplicitComponents = 32;
-pub(crate) const EXPLICIT_REPEAT: XkbExplicitComponents = 16;
-pub(crate) const EXPLICIT_VMODMAP: XkbExplicitComponents = 8;
-pub(crate) const EXPLICIT_TYPES: XkbExplicitComponents = 4;
-pub(crate) const EXPLICIT_INTERP: XkbExplicitComponents = 2;
-pub(crate) const EXPLICIT_SYMBOLS: XkbExplicitComponents = 1;
+pub(crate) const EXPLICIT_OVERLAY: u32 = 32;
+pub(crate) const EXPLICIT_REPEAT: u32 = 16;
+pub(crate) const EXPLICIT_VMODMAP: u32 = 8;
+pub(crate) const EXPLICIT_TYPES: u32 = 4;
+pub(crate) const EXPLICIT_INTERP: u32 = 2;
+pub(crate) const EXPLICIT_SYMBOLS: u32 = 1;
 
 #[derive(Copy, Clone, Default)]
 pub(crate) struct XkbLed {
@@ -646,26 +413,15 @@ pub(crate) struct XkbLed {
     pub(crate) groups: u32,
     pub(crate) which_mods: u32,
     pub(crate) mods: XkbMods,
-    pub(crate) ctrls: XkbActionControls,
+    pub(crate) ctrls: ControlsFlags,
 }
 
-pub(crate) const XKB_MAX_GROUPS: i32 = 32_i32;
+pub(crate) const XKB_MAX_GROUPS: u32 = 32;
 pub(crate) const MOD_REAL_MASK_ALL: u32 = 0xff_i32 as u32;
 
 // ── Additional xkbcommon types ──────────────────────────────────────
-
-pub(crate) type XkbLedMaskT = u32;
-
-// ── C constants ─────────────────────────────────────────────────────
-
-pub(crate) const CHAR_BIT: i32 = 8;
-pub(crate) const UINT16_MAX: i32 = 65535;
-
-pub(crate) const XKB_MAX_LEDS: u32 =
-    (std::mem::size_of::<XkbLedMaskT>()).wrapping_mul(CHAR_BIT as usize) as u32;
-pub(crate) const MAX_ACTIONS_PER_LEVEL: i32 = UINT16_MAX;
-
-// ── config_h constants ──────────────────────────────────────────────
+pub(crate) const XKB_MAX_LEDS: u32 = 32;
+pub(crate) const MAX_ACTIONS_PER_LEVEL: i32 = 65535;
 
 pub(crate) const DFLT_XKB_CONFIG_EXTRA_PATH: &str = "/usr/local/etc/xkb";
 pub(crate) const DFLT_XKB_CONFIG_ROOT: &str = "/usr/share/xkeyboard-config-2";
@@ -677,36 +433,24 @@ pub(crate) const DFLT_XKB_LEGACY_ROOT: &str = "/usr/share/X11/xkb";
 
 // ── xkbcommon_h types (moved from duplicated pub(crate) mod xkbcommon_h blocks) ─
 
-pub(crate) type XkbContextFlags = u32;
-pub(crate) const XKB_CONTEXT_NO_FLAGS: XkbContextFlags = 0;
-pub(crate) const XKB_CONTEXT_NO_DEFAULT_INCLUDES: XkbContextFlags = 1;
-pub(crate) const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: XkbContextFlags = 2;
-pub(crate) const XKB_CONTEXT_NO_SECURE_GETENV: XkbContextFlags = 4;
+pub(crate) const XKB_CONTEXT_NO_FLAGS: u32 = 0;
+pub(crate) const XKB_CONTEXT_NO_DEFAULT_INCLUDES: u32 = 1;
+pub(crate) const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: u32 = 2;
+pub(crate) const XKB_CONTEXT_NO_SECURE_GETENV: u32 = 4;
 
-pub(crate) type XkbKeyDirection = u32;
-pub(crate) const XKB_KEY_UP: XkbKeyDirection = 0;
-pub(crate) const XKB_KEY_DOWN: XkbKeyDirection = 1;
-pub(crate) const XKB_KEY_REPEATED: XkbKeyDirection = 2;
+pub(crate) const XKB_KEY_UP: u32 = 0;
+pub(crate) const XKB_KEY_DOWN: u32 = 1;
+pub(crate) const XKB_KEY_REPEATED: u32 = 2;
+pub(crate) const XKB_CONSUMED_MODE_XKB: u32 = 0;
 
-pub(crate) type XkbEventType = u32;
-pub(crate) const XKB_EVENT_TYPE_KEY_DOWN: XkbEventType = 1;
-pub(crate) const XKB_EVENT_TYPE_KEY_REPEATED: XkbEventType = 2;
-pub(crate) const XKB_EVENT_TYPE_KEY_UP: XkbEventType = 3;
-pub(crate) const XKB_EVENT_TYPE_COMPONENTS_CHANGE: XkbEventType = 4;
-
-pub(crate) type XkbConsumedMode = u32;
-pub(crate) const XKB_CONSUMED_MODE_XKB: XkbConsumedMode = 0;
-
-pub(crate) type XkbKeysymFlags = u32;
-pub(crate) const XKB_KEYSYM_NO_FLAGS: XkbKeysymFlags = 0;
-pub(crate) const XKB_KEYSYM_CASE_INSENSITIVE: XkbKeysymFlags = 1;
+pub(crate) const XKB_KEYSYM_NO_FLAGS: u32 = 0;
+pub(crate) const XKB_KEYSYM_CASE_INSENSITIVE: u32 = 1;
 
 pub const XKB_KEYMAP_COMPILE_FLAGS_VALUES: u32 = 1;
 
-pub(crate) type XkbA11yFlags = u32;
-pub(crate) const XKB_A11Y_NO_FLAGS: XkbA11yFlags = 0;
-pub(crate) const XKB_A11Y_LATCH_TO_LOCK: XkbA11yFlags = 1;
-pub(crate) const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: XkbA11yFlags = 2;
+pub(crate) const XKB_A11Y_NO_FLAGS: u32 = 0;
+pub(crate) const XKB_A11Y_LATCH_TO_LOCK: u32 = 1;
+pub(crate) const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: u32 = 2;
 
 pub(crate) const XKB_KEYCODE_INVALID: u32 = 0xffffffff;
 pub(crate) const XKB_KEYCODE_MAX: u32 = 0xffffffff_u32.wrapping_sub(1);
@@ -769,31 +513,18 @@ pub(crate) fn atom_intern(table: &mut AtomTable, input_bytes: &[u8]) -> u32 {
     table.inner.get_or_intern(s).into_usize() as u32 + 1
 }
 
-// ── keymap_h types & constants (moved from duplicated pub(crate) mod keymap_h blocks) ─
-
-pub(crate) type RealModIndex = u32;
-
 pub(crate) const DEFAULT_INTERPRET_KEY_REPEAT: u32 = 1;
 pub(crate) const DEFAULT_INTERPRET_VMOD: u32 = 4294967295;
-
 pub(crate) const XKB_MOD_ALL: u32 = 4294967295;
 pub const XKB_MOD_NONE: u32 = 0xffffffff;
-pub(crate) const XKB_MOD_INDEX_CAPS: RealModIndex = 1;
-pub(crate) const _XKB_MOD_INDEX_NUM_ENTRIES: RealModIndex = 8;
-
-pub(crate) const XKB_MAX_GROUPS_X11: i32 = 4;
-pub(crate) const XKB_ALL_GROUPS: u64 = ((1u64) << XKB_MAX_GROUPS).wrapping_sub(1u64);
-
-pub(crate) const XKB_OVERLAY_MAX_X11: i32 = 2;
-pub(crate) const XKB_OVERLAY_MAX: u64 =
-    (std::mem::size_of::<XkbOverlayMaskT>() as u64).wrapping_mul(CHAR_BIT as u64);
+pub(crate) const XKB_MOD_INDEX_CAPS: u32 = 1;
+pub(crate) const _XKB_MOD_INDEX_NUM_ENTRIES: u32 = 8;
+pub(crate) const XKB_ALL_GROUPS: u64 = 4294967295;
+pub(crate) const XKB_OVERLAY_MAX: u8 = 8;
 pub(crate) const XKB_OVERLAY_INVALID: i32 = 255;
-
 pub(crate) const XKB_KEYCODE_MAX_CONTIGUOUS: i32 = 0xfff;
 pub(crate) const XKB_LEVEL_MAX_IMPL: i32 = 2048;
-pub(crate) const XKB_MAX_MODS: u32 =
-    (std::mem::size_of::<u32>()).wrapping_mul(CHAR_BIT as usize) as u32;
-
+pub(crate) const XKB_MAX_MODS: u32 = 32;
 // ── Safe methods on XkbKeymap ──────────────────────────────────────
 
 impl XkbKeymap {
@@ -805,25 +536,10 @@ impl XkbKeymap {
         } else if kc < self.num_keys_low {
             Some(&self.keys[kc as usize])
         } else {
-            let mut lower: u32 = self.num_keys_low;
-            let mut upper: u32 = self.num_keys;
-            while lower < upper {
-                let mid: u32 = lower.wrapping_add(
-                    upper
-                        .wrapping_sub(1_u32)
-                        .wrapping_sub(lower)
-                        .wrapping_div(2_u32),
-                );
-                let key = &self.keys[mid as usize];
-                if key.keycode < kc {
-                    lower = mid.wrapping_add(1_u32);
-                } else if key.keycode > kc {
-                    upper = mid;
-                } else {
-                    return Some(key);
-                }
-            }
-            None
+            self.keys[self.num_keys_low as usize..self.num_keys as usize]
+                .binary_search_by(|key| key.keycode.cmp(&kc))
+                .ok()
+                .map(|i| &self.keys[self.num_keys_low as usize + i])
         }
     }
 
@@ -877,15 +593,15 @@ impl XkbKeymap {
         layout: u32,
         level: u32,
     ) -> Option<&'a XkbLevel> {
-        let layout = super::keymap::xkb_wrap_group_into_range(
+        let layout = match super::keymap::xkb_wrap_group_into_range(
             layout as i32,
             key.num_groups,
             key.out_of_range_group_policy,
             key.out_of_range_group_number,
-        );
-        if layout == XKB_LAYOUT_INVALID {
-            return None;
-        }
+        ) {
+            Some(l) => l,
+            None => return None,
+        };
         if level >= self.key_num_levels(key, layout) {
             return None;
         }
@@ -893,75 +609,25 @@ impl XkbKeymap {
     }
 }
 
-// ── Inline helpers ──────────────────────────────────────────────────
-
 #[inline]
 pub(crate) fn entry_is_active(entry: &XkbKeyTypeEntry) -> bool {
-    entry.mods.mods == 0_u32 || entry.mods.mask != 0_u32
-}
-
-#[inline]
-pub(crate) fn format_max_overlays(format: u32) -> XkbOverlayIndexT {
-    (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
-        XKB_OVERLAY_MAX_X11 as usize
-    } else {
-        XKB_OVERLAY_MAX as usize
-    }) as XkbOverlayIndexT
-}
-
-#[inline]
-pub(crate) fn format_max_groups(format: u32) -> u32 {
-    (if format == XKB_KEYMAP_FORMAT_TEXT_V1 {
-        XKB_MAX_GROUPS_X11
-    } else {
-        XKB_MAX_GROUPS
-    }) as u32
-}
-
-#[inline]
-pub(crate) fn is_mods_un_lock_on_press_supported(format: u32) -> bool {
-    format >= XKB_KEYMAP_FORMAT_TEXT_V2
-}
-
-#[inline]
-pub(crate) fn is_group_lock_on_release_supported(format: u32) -> bool {
-    format >= XKB_KEYMAP_FORMAT_TEXT_V2
-}
-
-#[inline]
-pub(crate) fn is_mods_latch_on_press_supported(format: u32) -> bool {
-    format >= XKB_KEYMAP_FORMAT_TEXT_V2
-}
-
-#[inline]
-pub(crate) fn are_overlapping_overlays_supported(format: u32) -> bool {
-    format >= XKB_KEYMAP_FORMAT_TEXT_V2
+    entry.mods.mods == 0 || entry.mods.mask != 0
 }
 
 // Error codes (from xkbcommon_errors_h)
 pub(crate) const XKB_KEY_NO_SYMBOL: i32 = 0;
 
-// ── errno_base_h ──────────────────────────────────────────────────────
-
 // ── rmlvo_h (RMLVO enum) ─────────────────────────────────────────────
-pub(crate) type Rmlvo = u32;
-pub(crate) const RMLVO_OPTIONS: Rmlvo = 16;
-pub(crate) const RMLVO_VARIANT: Rmlvo = 8;
-pub(crate) const RMLVO_LAYOUT: Rmlvo = 4;
-pub(crate) const RMLVO_MODEL: Rmlvo = 2;
-pub(crate) const RMLVO_RULES: Rmlvo = 1;
+pub(crate) const RMLVO_OPTIONS: u32 = 16;
+pub(crate) const RMLVO_VARIANT: u32 = 8;
+pub(crate) const RMLVO_LAYOUT: u32 = 4;
+pub(crate) const RMLVO_MODEL: u32 = 2;
+pub(crate) const RMLVO_RULES: u32 = 1;
 
 // ── rules_h ───────────────────────────────────────────────────────────
 // ── Message codes (from messages.rs) ─────────────────────────────────────
-
-pub const XKB_LOG_VERBOSITY_DEFAULT: i32 = 0;
-
 pub(crate) const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
 pub(crate) const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;
-pub(crate) const XKB_ERROR_UNSUPPORTED_LAYOUT_INDEX_: u32 = 237;
-pub(crate) const XKB_ERROR_UNSUPPORTED_SHIFT_LEVEL: u32 = 312;
-
-// ── LookupEntry (moved from keymap.rs) ────────────────────────────
 
 #[derive(Copy, Clone)]
 pub(crate) struct LookupEntry {
@@ -973,75 +639,68 @@ pub(crate) struct LookupEntry {
 
 // ── File type enum ──────────────────────────────────────────────────
 
-pub(crate) const _FILE_TYPE_NUM_ENTRIES: u32 = 7;
-pub(crate) const FILE_TYPE_RULES: u32 = 6;
-pub(crate) const FILE_TYPE_KEYMAP: u32 = 5;
-pub(crate) const FILE_TYPE_GEOMETRY: u32 = 4;
-pub(crate) const LAST_KEYMAP_FILE_TYPE: u32 = 3;
-pub(crate) const FIRST_KEYMAP_FILE_TYPE: u32 = 0;
-pub(crate) const FILE_TYPE_SYMBOLS: u32 = 3;
-pub(crate) const FILE_TYPE_COMPAT: u32 = 2;
-pub(crate) const FILE_TYPE_TYPES: u32 = 1;
-pub(crate) const FILE_TYPE_KEYCODES: u32 = 0;
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[repr(u32)]
+pub(crate) enum FileType {
+    Keycodes = 0,
+    Types = 1,
+    Compat = 2,
+    Symbols = 3,
+    Geometry = 4,
+    Keymap = 5,
+    Rules = 6,
+}
 
 // ── Statement type enum ─────────────────────────────────────────────
 
-pub(crate) type StmtType = u32;
-pub(crate) const _STMT_NUM_VALUES: StmtType = 37;
-pub(crate) const STMT_UNKNOWN_COMPOUND: StmtType = 36;
-pub(crate) const STMT_UNKNOWN_DECLARATION: StmtType = 35;
-pub(crate) const STMT_EXPR_UNARY_PLUS: StmtType = 25;
-pub(crate) const STMT_EXPR_INVERT: StmtType = 24;
-pub(crate) const STMT_EXPR_NEGATE: StmtType = 23;
-pub(crate) const STMT_EXPR_NOT: StmtType = 22;
-pub(crate) const STMT_EXPR_ASSIGN: StmtType = 21;
-pub(crate) const STMT_EXPR_DIVIDE: StmtType = 20;
-pub(crate) const STMT_EXPR_MULTIPLY: StmtType = 19;
-pub(crate) const STMT_EXPR_SUBTRACT: StmtType = 18;
-pub(crate) const STMT_EXPR_ADD: StmtType = 17;
-pub(crate) const STMT_EXPR_ACTION_LIST: StmtType = 16;
-pub(crate) const STMT_EXPR_KEYSYM_LIST: StmtType = 15;
-pub(crate) const STMT_EXPR_EMPTY_LIST: StmtType = 14;
-pub(crate) const STMT_EXPR_ARRAY_REF: StmtType = 13;
-pub(crate) const STMT_EXPR_FIELD_REF: StmtType = 12;
-pub(crate) const STMT_EXPR_ACTION_DECL: StmtType = 11;
-pub(crate) const STMT_EXPR_IDENT: StmtType = 10;
-pub(crate) const STMT_EXPR_KEYSYM_LITERAL: StmtType = 9;
-pub(crate) const STMT_EXPR_KEYNAME_LITERAL: StmtType = 8;
-pub(crate) const STMT_EXPR_BOOLEAN_LITERAL: StmtType = 7;
-pub(crate) const STMT_EXPR_FLOAT_LITERAL: StmtType = 6;
-pub(crate) const STMT_EXPR_INTEGER_LITERAL: StmtType = 5;
-pub(crate) const STMT_EXPR_STRING_LITERAL: StmtType = 4;
+pub(crate) const STMT_EXPR_UNARY_PLUS: u32 = 25;
+pub(crate) const STMT_EXPR_INVERT: u32 = 24;
+pub(crate) const STMT_EXPR_NEGATE: u32 = 23;
+pub(crate) const STMT_EXPR_NOT: u32 = 22;
+pub(crate) const STMT_EXPR_ASSIGN: u32 = 21;
+pub(crate) const STMT_EXPR_DIVIDE: u32 = 20;
+pub(crate) const STMT_EXPR_MULTIPLY: u32 = 19;
+pub(crate) const STMT_EXPR_SUBTRACT: u32 = 18;
+pub(crate) const STMT_EXPR_ADD: u32 = 17;
+pub(crate) const STMT_EXPR_ACTION_LIST: u32 = 16;
+pub(crate) const STMT_EXPR_KEYSYM_LIST: u32 = 15;
+pub(crate) const STMT_EXPR_EMPTY_LIST: u32 = 14;
+pub(crate) const STMT_EXPR_ARRAY_REF: u32 = 13;
+pub(crate) const STMT_EXPR_FIELD_REF: u32 = 12;
+pub(crate) const STMT_EXPR_ACTION_DECL: u32 = 11;
+pub(crate) const STMT_EXPR_IDENT: u32 = 10;
+pub(crate) const STMT_EXPR_KEYSYM_LITERAL: u32 = 9;
+pub(crate) const STMT_EXPR_KEYNAME_LITERAL: u32 = 8;
+pub(crate) const STMT_EXPR_BOOLEAN_LITERAL: u32 = 7;
+pub(crate) const STMT_EXPR_FLOAT_LITERAL: u32 = 6;
+pub(crate) const STMT_EXPR_INTEGER_LITERAL: u32 = 5;
+pub(crate) const STMT_EXPR_STRING_LITERAL: u32 = 4;
 
 // ── Merge mode enum ─────────────────────────────────────────────────
 
-pub(crate) type MergeMode = u32;
-pub(crate) const _MERGE_MODE_NUM_ENTRIES: MergeMode = 4;
-pub(crate) const MERGE_REPLACE: MergeMode = 3;
-pub(crate) const MERGE_OVERRIDE: MergeMode = 2;
-pub(crate) const MERGE_AUGMENT: MergeMode = 1;
-pub(crate) const MERGE_DEFAULT: MergeMode = 0;
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum MergeMode {
+    Default = 0,
+    Augment = 1,
+    Override = 2,
+    Replace = 3,
+}
 
 // ── Core AST node types ─────────────────────────────────────────────
 
 #[derive(Clone)]
 
-pub(crate) struct _IncludeStmt {
+pub(crate) struct IncludeStmt {
     pub(crate) merge: MergeMode,
     pub(crate) stmt: String,
     pub(crate) file: String,
     pub(crate) map: String,
     pub(crate) modifier: String,
-    pub(crate) next_incl: Option<Box<_IncludeStmt>>,
 }
-pub(crate) type IncludeStmt = _IncludeStmt;
 
 // ── Expression types ────────────────────────────────────────────────
 
 /// Expression AST node.
-pub(crate) struct ExprDef {
-    pub(crate) kind: ExprKind,
-}
 
 /// The discriminated payload of an expression node.
 pub(crate) enum ExprKind {
@@ -1052,22 +711,43 @@ pub(crate) enum ExprKind {
     KeyName(u32),
     KeySym(u32),
     Ident(u32),
-    FieldRef { element: u32, field: u32 },
-    ArrayRef { element: u32, field: u32, entry: Option<Box<ExprDef>> },
-    Action { name: u32, args: Vec<ExprDef> },
-    ActionList { actions: Vec<ExprDef> },
-    KeysymList { syms: Vec<u32> },
+    FieldRef {
+        element: u32,
+        field: u32,
+    },
+    ArrayRef {
+        element: u32,
+        field: u32,
+        entry: Option<Box<ExprKind>>,
+    },
+    Action {
+        name: u32,
+        args: Vec<ExprKind>,
+    },
+    ActionList {
+        actions: Vec<ExprKind>,
+    },
+    KeysymList {
+        syms: Vec<u32>,
+    },
     EmptyList,
-    Binary { op: StmtType, left: Option<Box<ExprDef>>, right: Option<Box<ExprDef>> },
-    Unary { op: StmtType, child: Option<Box<ExprDef>> },
+    Binary {
+        op: u32,
+        left: Option<Box<ExprKind>>,
+        right: Option<Box<ExprKind>>,
+    },
+    Unary {
+        op: u32,
+        child: Option<Box<ExprKind>>,
+    },
 }
 
-impl ExprDef {
-    pub(crate) fn stmt_type(&self) -> StmtType {
-        Self::stmt_type_for_kind(&self.kind)
+impl ExprKind {
+    pub(crate) fn stmt_type(&self) -> u32 {
+        Self::stmt_type_for_kind(&self)
     }
 
-    pub(crate) fn stmt_type_for_kind(kind: &ExprKind) -> StmtType {
+    pub(crate) fn stmt_type_for_kind(kind: &ExprKind) -> u32 {
         match kind {
             ExprKind::String(_) => STMT_EXPR_STRING_LITERAL,
             ExprKind::Integer(_) => STMT_EXPR_INTEGER_LITERAL,
@@ -1092,18 +772,17 @@ impl ExprDef {
 
 pub(crate) struct VarDef {
     pub(crate) merge: MergeMode,
-    pub(crate) name: Option<Box<ExprDef>>,
-    pub(crate) value: Option<Box<ExprDef>>,
+    pub(crate) name: Option<Box<ExprKind>>,
+    pub(crate) value: Option<Box<ExprKind>>,
 }
 
 pub(crate) struct VModDef {
     pub(crate) merge: MergeMode,
     pub(crate) name: u32,
-    pub(crate) value: Option<Box<ExprDef>>,
+    pub(crate) value: Option<Box<ExprKind>>,
 }
 
 #[derive(Copy, Clone)]
-
 pub(crate) struct KeycodeDef {
     pub(crate) merge: MergeMode,
     pub(crate) name: u32,
@@ -1111,7 +790,6 @@ pub(crate) struct KeycodeDef {
 }
 
 #[derive(Copy, Clone)]
-
 pub(crate) struct KeyAliasDef {
     pub(crate) merge: MergeMode,
     pub(crate) alias: u32,
@@ -1133,19 +811,19 @@ pub(crate) struct SymbolsDef {
 pub(crate) struct ModMapDef {
     pub(crate) merge: MergeMode,
     pub(crate) modifier: u32,
-    pub(crate) keys: Vec<ExprDef>,
+    pub(crate) keys: Vec<ExprKind>,
 }
 pub(crate) struct InterpDef {
     pub(crate) merge: MergeMode,
     pub(crate) sym: u32,
-    pub(crate) match_0: Option<Box<ExprDef>>,
+    pub(crate) match_0: Option<Box<ExprKind>>,
     pub(crate) def: Vec<VarDef>,
 }
 
 pub(crate) struct LedNameDef {
     pub(crate) merge: MergeMode,
     pub(crate) ndx: i64,
-    pub(crate) name: Option<Box<ExprDef>>,
+    pub(crate) name: Option<Box<ExprKind>>,
 }
 
 pub(crate) struct LedMapDef {
@@ -1155,25 +833,21 @@ pub(crate) struct LedMapDef {
 }
 
 #[derive(Clone)]
-pub(crate) struct UnknownStatement {
-    pub(crate) _stmt_type: StmtType,
-    pub(crate) _name: String,
-}
+pub(crate) struct UnknownStatement {}
 
 // ── Map flags and XkbFile ───────────────────────────────────────────
 
-pub(crate) type XkbMapFlags = u32;
-pub(crate) const MAP_IS_ALTGR: XkbMapFlags = 128;
-pub(crate) const MAP_HAS_FN: XkbMapFlags = 64;
-pub(crate) const MAP_HAS_KEYPAD: XkbMapFlags = 32;
-pub(crate) const MAP_HAS_MODIFIER: XkbMapFlags = 16;
-pub(crate) const MAP_HAS_ALPHANUMERIC: XkbMapFlags = 8;
-pub(crate) const MAP_IS_HIDDEN: XkbMapFlags = 4;
-pub(crate) const MAP_IS_PARTIAL: XkbMapFlags = 2;
-pub(crate) const MAP_IS_DEFAULT: XkbMapFlags = 1;
+pub(crate) const MAP_IS_ALTGR: u32 = 128;
+pub(crate) const MAP_HAS_FN: u32 = 64;
+pub(crate) const MAP_HAS_KEYPAD: u32 = 32;
+pub(crate) const MAP_HAS_MODIFIER: u32 = 16;
+pub(crate) const MAP_HAS_ALPHANUMERIC: u32 = 8;
+pub(crate) const MAP_IS_HIDDEN: u32 = 4;
+pub(crate) const MAP_IS_PARTIAL: u32 = 2;
+pub(crate) const MAP_IS_DEFAULT: u32 = 1;
 
 pub(crate) enum Statement {
-    Include(Box<IncludeStmt>),
+    Include(Vec<IncludeStmt>),
     Keycode(Box<KeycodeDef>),
     KeyAlias(Box<KeyAliasDef>),
     Var(Box<VarDef>),
@@ -1192,15 +866,18 @@ pub(crate) enum Statement {
 pub(crate) struct XkbFile {
     pub(crate) name: String,
     pub(crate) defs: Vec<Statement>,
-    pub(crate) file_type: u32,
-    pub(crate) flags: XkbMapFlags,
+    pub(crate) file_type: FileType,
+    pub(crate) flags: u32,
 }
 
 // ── xkbcomp_priv types (parser/keymap info) ─────────────────────────
 
-pub(crate) const PARSER_FATAL_ERROR: u32 = 2;
-pub(crate) const PARSER_RECOVERABLE_ERROR: u32 = 1;
-pub(crate) const PARSER_SUCCESS: u32 = 0;
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum ParseStatus {
+    Success = 0,
+    Recoverable = 1,
+    Fatal = 2,
+}
 
 pub(crate) const PARSER_V2_LAX_FLAGS: u32 = 0;
 pub(crate) const PARSER_V2_STRICT_FLAGS: u32 = 16383;
@@ -1221,7 +898,7 @@ pub(crate) const PARSER_NO_FIELD_VALUE_MISMATCH: u32 = 4;
 pub(crate) const PARSER_NO_FIELD_TYPE_MISMATCH: u32 = 2;
 pub(crate) const PARSER_NO_UNKNOWN_STATEMENTS: u32 = 1;
 pub(crate) struct PendingComputation {
-    pub(crate) expr: Option<Box<ExprDef>>,
+    pub(crate) expr: Option<Box<ExprKind>>,
     pub(crate) computed: bool,
     pub(crate) value: u32,
 }
@@ -1232,24 +909,6 @@ pub(crate) struct XkbKeymapInfo<'a> {
     pub(crate) features: XkbcompFeatures,
     pub(crate) lookup: XkbcompLookup,
     pub(crate) pending_computations: Vec<PendingComputation>,
-}
-
-impl<'a> XkbKeymapInfo<'a> {
-    pub(crate) fn keymap_ref(&self) -> &XkbKeymap {
-        &*self.keymap
-    }
-
-    pub(crate) fn keymap_mut(&mut self) -> &mut XkbKeymap {
-        &mut *self.keymap
-    }
-
-    pub(crate) fn ctx(&self) -> &XkbContext {
-        &self.keymap.ctx
-    }
-
-    pub(crate) fn ctx_mut(&mut self) -> &mut XkbContext {
-        &mut self.keymap.ctx
-    }
 }
 
 #[derive(Copy, Clone)]
@@ -1263,26 +922,13 @@ pub(crate) struct XkbcompLookup {
 
 pub(crate) struct XkbcompFeatures {
     pub(crate) max_groups: u32,
-    pub(crate) max_overlays: XkbOverlayIndexT,
+    pub(crate) max_overlays: u8,
     pub(crate) controls_name_offset: u8,
     pub(crate) group_lock_on_release: bool,
     pub(crate) mods_unlock_on_press: bool,
     pub(crate) mods_latch_on_press: bool,
     pub(crate) overlapping_overlays: bool,
 }
-
-// ── Inline helper functions (were duplicated in every xkbcomp_priv_h module) ──
-
-#[inline]
-pub(crate) fn safe_map_name(file: &XkbFile) -> &str {
-    if file.name.is_empty() {
-        "(unnamed map)"
-    } else {
-        &file.name
-    }
-}
-
-// ── Utility functions (merged from utils.rs) ──
 
 /// Case-insensitive comparison of two byte slices (like C `strcasecmp`).
 /// Returns <0, 0, or >0.
