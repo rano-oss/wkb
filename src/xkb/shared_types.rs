@@ -273,11 +273,6 @@ bitflags::bitflags! {
     }
 }
 
-
-
-
-
-
 bitflags::bitflags! {
     #[derive(Copy, Clone, Default, PartialEq, Eq)]
     pub(crate) struct ControlsFlags: u32 {
@@ -593,15 +588,12 @@ impl XkbKeymap {
         layout: u32,
         level: u32,
     ) -> Option<&'a XkbLevel> {
-        let layout = match super::keymap::xkb_wrap_group_into_range(
+        let layout = super::keymap::xkb_wrap_group_into_range(
             layout as i32,
             key.num_groups,
             key.out_of_range_group_policy,
             key.out_of_range_group_number,
-        ) {
-            Some(l) => l,
-            None => return None,
-        };
+        )?;
         if level >= self.key_num_levels(key, layout) {
             return None;
         }
@@ -744,7 +736,7 @@ pub(crate) enum ExprKind {
 
 impl ExprKind {
     pub(crate) fn stmt_type(&self) -> u32 {
-        Self::stmt_type_for_kind(&self)
+        Self::stmt_type_for_kind(self)
     }
 
     pub(crate) fn stmt_type_for_kind(kind: &ExprKind) -> u32 {
