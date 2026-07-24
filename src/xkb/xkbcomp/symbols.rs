@@ -203,20 +203,18 @@ fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) -> bo
         *into = std::mem::take(from);
         return true;
     }
-    let levels_in_both = into.levels.len().min(from.levels.len()) as u32;
+    let levels_in_both = into.levels.len().min(from.levels.len());
     let mut from_keysyms_count: u32 = 0;
     let mut from_actions_count: u32 = 0;
-    let mut i: u32 = 0;
-    while i < levels_in_both {
-        let into_level = &mut into.levels[i as usize];
-        let from_level = &mut from.levels[i as usize];
+    for i in 0..levels_in_both {
+        let into_level = &mut into.levels[i];
+        let from_level = &mut from.levels[i];
         let from_has_no_keysym: bool = from_level.syms.is_empty();
         let from_has_no_action: bool = from_level.actions.is_empty();
         if !(from_has_no_keysym && from_has_no_action) {
             let into_has_no_keysym: bool = into_level.syms.is_empty();
             let into_has_no_action: bool = into_level.actions.is_empty();
             if into_has_no_keysym && into_has_no_action {
-                // StealLevelInfo inlined
                 into_level.syms = std::mem::take(&mut from_level.syms);
                 into_level.actions = std::mem::take(&mut from_level.actions);
                 from_keysyms_count += 1;
@@ -250,9 +248,8 @@ fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) -> bo
                 }
             }
         }
-        i += 1;
     }
-    for level in from.levels[levels_in_both as usize..].iter_mut() {
+    for level in from.levels[levels_in_both..].iter_mut() {
         let level_val = level.clone();
         into.levels.push(level_val);
         level.syms.clear();
@@ -344,8 +341,6 @@ fn merge_keys(
     into: &mut KeyInfo,
     from: &mut KeyInfo,
 ) -> bool {
-    let mut i: u32;
-
     let clobber: bool = from.merge != MergeMode::Augment;
     if from.merge == MergeMode::Replace {
         std::mem::swap(into, from);
@@ -353,14 +348,8 @@ fn merge_keys(
         return true;
     }
     let groups_in_both = into.groups.len().min(from.groups.len()) as u32;
-    i = 0;
-    while i < groups_in_both {
-        merge_groups(
-            &mut into.groups[i as usize],
-            &mut from.groups[i as usize],
-            clobber,
-        );
-        i += 1;
+    for i in 0..groups_in_both as usize {
+        merge_groups(&mut into.groups[i], &mut from.groups[i], clobber);
     }
     for group in from.groups.drain(groups_in_both as usize..) {
         into.groups.push(group);
@@ -447,19 +436,15 @@ fn merge_included_symbols(
     if into.name.is_none() {
         into.name = from.name.take();
     }
-    let group_names_in_both = into.group_names.len().min(from.group_names.len()) as u32;
-    let mut i: u32 = 0;
-    while i < group_names_in_both {
-        if ((&from.group_names)[i as usize] != 0)
-            && !(merge == MergeMode::Augment && (&into.group_names)[i as usize] != 0)
-        {
-            (&mut into.group_names)[i as usize] = (&from.group_names)[i as usize];
+    let group_names_in_both = into.group_names.len().min(from.group_names.len());
+    for i in 0..group_names_in_both {
+        if from.group_names[i] != 0 && !(merge == MergeMode::Augment && into.group_names[i] != 0) {
+            into.group_names[i] = from.group_names[i];
         }
-        i += 1;
     }
-    if group_names_in_both < from.group_names.len() as u32 {
-        for gn_idx in group_names_in_both as usize..from.group_names.len() {
-            into.group_names.push((&from.group_names)[gn_idx]);
+    if group_names_in_both < from.group_names.len() {
+        for &gn in &from.group_names[group_names_in_both..] {
+            into.group_names.push(gn);
         }
     }
     if into.keys.is_empty() {
@@ -549,17 +534,13 @@ fn get_group_index(
     ndx_rtrn: &mut u32,
 ) -> bool {
     if array_ndx.is_none() {
-        let mut i: u32 = 0;
-        if !keyi.groups.is_empty() {
-            i = 0;
-            while (i as usize) < keyi.groups.len() {
-                if keyi.groups[i as usize].defined & field == 0 {
-                    *ndx_rtrn = i;
-                    return true;
-                }
-                i += 1;
+        for (i, group) in keyi.groups.iter().enumerate() {
+            if group.defined & field == 0 {
+                *ndx_rtrn = i as u32;
+                return true;
             }
         }
+        let i = keyi.groups.len() as u32;
         if i >= info.max_groups {
             return false;
         }
@@ -1489,16 +1470,11 @@ fn find_type_for_group(
         }
     }
     if type_name != XKB_ATOM_NONE {
-        let mut i: u32 = 0;
-        while (i as usize) < keymap.types.len() {
-            if keymap.types[i as usize].name == type_name {
-                break;
+        for (i, t) in keymap.types.iter_mut().enumerate() {
+            if t.name == type_name {
+                t.required = true;
+                return i as u32;
             }
-            i += 1;
-        }
-        if (i as usize) < keymap.types.len() {
-            keymap.types[i as usize].required = true;
-            return i;
         }
     }
     keymap.types[0].required = true;
