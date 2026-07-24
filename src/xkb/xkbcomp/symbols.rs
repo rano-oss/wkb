@@ -217,34 +217,30 @@ fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) -> bo
                 from_keysyms_count += 1;
                 from_actions_count += 1;
             } else {
-                if !xkb_levels_same_syms(from_level, into_level) {
-                    if !from_has_no_keysym {
-                        if clobber {
-                            if !from_level.syms.is_empty() {
-                                into_level.syms = std::mem::take(&mut from_level.syms);
-                                from_keysyms_count += 1;
-                            }
-                        } else if into_level.syms.is_empty() {
-                            if !from_level.syms.is_empty() {
-                                into_level.syms = std::mem::take(&mut from_level.syms);
-                            }
+                if !xkb_levels_same_syms(from_level, into_level) && !from_has_no_keysym {
+                    if clobber {
+                        if !from_level.syms.is_empty() {
+                            into_level.syms = std::mem::take(&mut from_level.syms);
                             from_keysyms_count += 1;
                         }
+                    } else if into_level.syms.is_empty() {
+                        if !from_level.syms.is_empty() {
+                            into_level.syms = std::mem::take(&mut from_level.syms);
+                        }
+                        from_keysyms_count += 1;
                     }
                 }
-                if !xkb_levels_same_actions(into_level, from_level) {
-                    if !from_has_no_action {
-                        if clobber {
-                            if !from_level.actions.is_empty() {
-                                into_level.actions = std::mem::take(&mut from_level.actions);
-                                from_actions_count += 1;
-                            }
-                        } else if into_level.actions.is_empty() {
-                            if !from_level.actions.is_empty() {
-                                into_level.actions = std::mem::take(&mut from_level.actions);
-                            }
+                if !xkb_levels_same_actions(into_level, from_level) && !from_has_no_action {
+                    if clobber {
+                        if !from_level.actions.is_empty() {
+                            into_level.actions = std::mem::take(&mut from_level.actions);
                             from_actions_count += 1;
                         }
+                    } else if into_level.actions.is_empty() {
+                        if !from_level.actions.is_empty() {
+                            into_level.actions = std::mem::take(&mut from_level.actions);
+                        }
+                        from_actions_count += 1;
                     }
                 }
             }
@@ -293,11 +289,7 @@ fn overlays_insert(keyi: &mut KeyInfo, bit: u8, key: u32) -> bool {
         false
     }
 }
-fn merge_overlays(
-    ki: &XkbKeymapInfo<'_>,
-    into: &mut KeyInfo,
-    from: &mut KeyInfo,
-) -> bool {
+fn merge_overlays(ki: &XkbKeymapInfo<'_>, into: &mut KeyInfo, from: &mut KeyInfo) -> bool {
     if (from.defined & KEY_FIELD_OVERLAY) != 0 {
         if (into.defined & KEY_FIELD_OVERLAY) == 0 {
             into.overlays = from.overlays;
@@ -3013,10 +3005,8 @@ fn add_level_name(
         if type_0.level_names[level_idx] == name {
             return true;
         }
-        if type_0.level_names[level_idx] != XKB_ATOM_NONE {
-            if !clobber {
-                return true;
-            }
+        if type_0.level_names[level_idx] != XKB_ATOM_NONE && !clobber {
+            return true;
         }
     }
     type_0.level_names[level_idx] = name;
@@ -3329,7 +3319,7 @@ pub(crate) fn handle_vmod_def(ctx: &mut XkbContext, mods: &mut XkbModSet, stmt: 
         let mask_0: u32 = 1_u32 << mods.num_mods;
         mods.explicit_vmods |= mask_0;
     }
-    mods.num_mods = mods.num_mods + 1;
+    mods.num_mods += 1;
     true
 }
 pub(crate) struct KeyNamesInfo {
@@ -5448,7 +5438,7 @@ pub(crate) fn handle_action_def(
             }
         } else {
             let parse_status = match handler_type {
-                2 | 3 | 4 => handle_set_latch_lock_mods(
+                2..=4 => handle_set_latch_lock_mods(
                     keymap_info,
                     mods,
                     action,
@@ -5456,7 +5446,7 @@ pub(crate) fn handle_action_def(
                     array_rtrn_opt,
                     av,
                 ),
-                5 | 6 | 7 => {
+                5..=7 => {
                     handle_set_latch_lock_group(keymap_info, action, field_ndx, array_rtrn_opt, av)
                 }
                 // Legacy actions ignored
@@ -5512,12 +5502,10 @@ pub(crate) fn set_default_action_field(
     let into: &mut XkbAction = &mut info.actions[action as usize];
     let mut from: XkbAction = *into;
     let ret = match action {
-        2 | 3 | 4 => {
+        2..=4 => {
             handle_set_latch_lock_mods(keymap_info, mods, &mut from, action_field, array_ndx, av)
         }
-        5 | 6 | 7 => {
-            handle_set_latch_lock_group(keymap_info, &mut from, action_field, array_ndx, av)
-        }
+        5..=7 => handle_set_latch_lock_group(keymap_info, &mut from, action_field, array_ndx, av),
         // Legacy actions ignored
         8 | 9 | 10 | 11 | 13 | 16 | 17 | 18 => ParseStatus::Success,
         14 | 15 => handle_set_lock_controls(keymap_info, &mut from, action_field, array_ndx, av),

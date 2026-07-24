@@ -742,7 +742,7 @@ pub(crate) fn xkb_context_num_failed_include_paths(ctx: &mut XkbContext) -> u32 
 }
 
 pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbRuleNames) -> u32 {
-    let mut modified: u32 = 0 as u32;
+    let mut modified: u32 = 0_u32;
     if rmlvo.rules.as_bytes().is_empty() {
         let env = if ctx.use_environment_names {
             xkb_context_getenv("XKB_DEFAULT_RULES")
@@ -753,7 +753,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
             Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
             Err(_) => std::ffi::CString::new("evdev").unwrap(),
         };
-        modified = (modified as u32 | RMLVO_RULES) as u32;
+        modified |= RMLVO_RULES;
     }
     if rmlvo.model.as_bytes().is_empty() {
         let env = if ctx.use_environment_names {
@@ -765,7 +765,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
             Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
             Err(_) => std::ffi::CString::new("pc105").unwrap(),
         };
-        modified = (modified as u32 | RMLVO_MODEL) as u32;
+        modified |= RMLVO_MODEL;
     }
     if rmlvo.layout.as_bytes().is_empty() {
         {
@@ -779,7 +779,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
                 Err(_) => std::ffi::CString::new("us").unwrap(),
             };
         }
-        modified = (modified as u32 | RMLVO_LAYOUT) as u32;
+        modified |= RMLVO_LAYOUT;
         let variant: std::ffi::CString = {
             let layout = xkb_context_getenv("XKB_DEFAULT_LAYOUT");
             let default_variant = xkb_context_getenv("XKB_DEFAULT_VARIANT");
@@ -791,7 +791,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
             }
         };
         rmlvo.variant = variant;
-        modified = (modified as u32 | RMLVO_VARIANT) as u32;
+        modified |= RMLVO_VARIANT;
     }
     if rmlvo.options.as_bytes().is_empty() {
         if ctx.use_environment_names {
@@ -803,7 +803,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
         } else {
             rmlvo.options = std::ffi::CString::new("").unwrap();
         };
-        modified = (modified as u32 | RMLVO_OPTIONS) as u32;
+        modified |= RMLVO_OPTIONS;
     }
     modified
 }
@@ -1623,8 +1623,9 @@ impl KeyId {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) enum XkbFilter {
+    #[default]
     Inactive,
     ModSet {
         key_id: KeyId,
@@ -1670,13 +1671,7 @@ pub(crate) enum XkbFilter {
         saved: ControlsFlags,
         refcnt: i32,
         is_set: bool,
-    }
-}
-
-impl Default for XkbFilter {
-    fn default() -> Self {
-        XkbFilter::Inactive
-    }
+    },
 }
 
 impl XkbFilter {
@@ -1875,7 +1870,7 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
             };
             XkbFilter::ModLatch {
                 key_id,
-                latch: latch as u32,
+                latch,
                 flags,
                 mask,
             }
@@ -1928,7 +1923,7 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
             }
             XkbFilter::GroupLatch {
                 key_id,
-                latch: LATCH_KEY_DOWN as u32,
+                latch: LATCH_KEY_DOWN,
                 delta,
                 flags,
                 group,
@@ -2039,17 +2034,17 @@ impl XkbFilter {
             } => {
                 if direction == XKB_KEY_DOWN {
                     let actions = xkb_key_get_actions(state, key);
-                    if *latch == LATCH_KEY_DOWN as u32 {
+                    if *latch == LATCH_KEY_DOWN {
                         if state.flags & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS != 0 {
                             if actions.iter().any(|a| {
                                 xkb_action_breaks_latch(a, INTERNAL_BREAKS_MOD_LATCH, *mask)
                             }) {
-                                *latch = NO_LATCH as u32;
+                                *latch = NO_LATCH;
                             }
                         } else {
-                            *latch = NO_LATCH as u32;
+                            *latch = NO_LATCH;
                         }
-                    } else if *latch == LATCH_PENDING as u32 {
+                    } else if *latch == LATCH_PENDING {
                         let sticky = state
                             .components
                             .controls
@@ -2101,7 +2096,7 @@ impl XkbFilter {
                     && !flags.intersects(unlock_press)
                     && state.components.locked_mods & *mask == *mask
                 {
-                    if *latch == LATCH_PENDING as u32 {
+                    if *latch == LATCH_PENDING {
                         state.components.latched_mods &= !*mask;
                     } else {
                         state.clear_mods |= *mask;
@@ -2110,13 +2105,13 @@ impl XkbFilter {
                     *self = XkbFilter::Inactive;
                     return false;
                 }
-                if *latch == NO_LATCH as u32 {
+                if *latch == NO_LATCH {
                     state.clear_mods |= *mask;
                     *self = XkbFilter::Inactive;
                     return false;
                 }
                 if !flags.contains(ActionFlags::LATCH_ON_PRESS) {
-                    *latch = LATCH_PENDING as u32;
+                    *latch = LATCH_PENDING;
                     state.clear_mods |= *mask;
                     state.components.latched_mods |= *mask;
                 }
@@ -2198,18 +2193,18 @@ impl XkbFilter {
             } => {
                 if direction == XKB_KEY_DOWN {
                     let actions = xkb_key_get_actions(state, key);
-                    if *latch == LATCH_KEY_DOWN as u32 {
+                    if *latch == LATCH_KEY_DOWN {
                         if state.flags & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS != 0 {
                             if actions
                                 .iter()
                                 .any(|a| xkb_action_breaks_latch(a, INTERNAL_BREAKS_GROUP_LATCH, 0))
                             {
-                                *latch = NO_LATCH as u32;
+                                *latch = NO_LATCH;
                             }
                         } else {
-                            *latch = NO_LATCH as u32;
+                            *latch = NO_LATCH;
                         }
-                    } else if *latch == LATCH_PENDING as u32 {
+                    } else if *latch == LATCH_PENDING {
                         let sticky = state
                             .components
                             .controls
@@ -2246,7 +2241,7 @@ impl XkbFilter {
                     return true;
                 }
                 if flags.contains(ActionFlags::LOCK_CLEAR) && state.components.locked_group != 0 {
-                    if *latch == LATCH_PENDING as u32 {
+                    if *latch == LATCH_PENDING {
                         state.components.latched_group -= *delta;
                     } else {
                         state.components.base_group -= *delta;
@@ -2255,13 +2250,13 @@ impl XkbFilter {
                     *self = XkbFilter::Inactive;
                     return false;
                 }
-                if *latch == NO_LATCH as u32 {
+                if *latch == NO_LATCH {
                     state.components.base_group -= *delta;
                     *self = XkbFilter::Inactive;
                     return false;
                 }
                 if !flags.contains(ActionFlags::LATCH_ON_PRESS) {
-                    *latch = LATCH_PENDING as u32;
+                    *latch = LATCH_PENDING;
                     state.components.base_group -= *delta;
                     state.components.latched_group += *delta;
                 }
@@ -2409,10 +2404,7 @@ fn get_state_component_changes(a: &StateComponents, b: &StateComponents) -> u32 
 
 fn xkb_action_breaks_latch(action: &XkbAction, flag: u32, mask: u32) -> bool {
     match action {
-        XkbAction::None
-        | XkbAction::Void
-        | XkbAction::CtrlSet(_)
-        | XkbAction::CtrlLock(_) => true,
+        XkbAction::None | XkbAction::Void | XkbAction::CtrlSet(_) | XkbAction::CtrlLock(_) => true,
         XkbAction::Internal(i) => i.flags & flag != 0 && i.clear_latched_mods & mask == mask,
         _ => false,
     }
@@ -2446,14 +2438,14 @@ pub(crate) fn xkb_state_new(keymap: Rc<XkbKeymap>) -> Box<XkbState> {
     if keymap.format != XKB_KEYMAP_FORMAT_TEXT_V1
         && XKB_A11Y_NO_FLAGS & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS == 0
     {
-        state.flags = (state.flags | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS) as u32;
+        state.flags |= XKB_A11Y_LATCH_SIMULTANEOUS_KEYS;
     }
     xkb_state_update_derived(&mut state);
     state
 }
 fn xkb_state_led_update_all(state: &mut XkbState) {
     let keymap = &*state.keymap;
-    state.components.leds = 0 as u32;
+    state.components.leds = 0_u32;
     let mut idx: u32 = 0;
     while idx < keymap.num_leds {
         let led = &keymap.leds[idx as usize];
@@ -2473,7 +2465,7 @@ fn xkb_state_led_update_all(state: &mut XkbState) {
                 mod_mask |= state.components.locked_mods;
             }
             if led.mods.mask & mod_mask != 0 {
-                state.components.leds = (state.components.leds | 1_u32 << idx) as u32;
+                state.components.leds |= 1_u32 << idx;
                 set_led = true;
             }
         }
@@ -2498,7 +2490,7 @@ fn xkb_state_led_update_all(state: &mut XkbState) {
                         group_mask |= led.groups;
                     }
                     if led.groups & group_mask != 0 {
-                        state.components.leds = (state.components.leds | 1_u32 << idx) as u32;
+                        state.components.leds |= 1_u32 << idx;
                         set_led = true;
                     }
                 } else if (led.which_groups & XKB_STATE_LAYOUT_DEPRESSED) != 0
@@ -2506,12 +2498,12 @@ fn xkb_state_led_update_all(state: &mut XkbState) {
                     || (led.which_groups & XKB_STATE_LAYOUT_LATCHED) != 0
                         && state.components.latched_group == 0_i32
                 {
-                    state.components.leds = (state.components.leds | 1_u32 << idx) as u32;
+                    state.components.leds |= 1_u32 << idx;
                     set_led = true;
                 }
             }
             if !set_led && led.ctrls.intersects(state.components.controls) {
-                state.components.leds = (state.components.leds | 1_u32 << idx) as u32;
+                state.components.leds |= 1_u32 << idx;
             }
         }
         idx += 1;
@@ -3226,7 +3218,6 @@ fn parse_config_item(
                     config.popularity = RXKB_POPULARITY_STANDARD;
                 } else if raw_popularity == "exotic" {
                     config.popularity = RXKB_POPULARITY_EXOTIC;
-                } else {
                 }
             }
             for node in doc.children(ci) {

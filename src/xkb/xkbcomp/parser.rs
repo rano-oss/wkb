@@ -1,7 +1,8 @@
-use crate::xkb::keymap::CONTROL_NAMES_MIN_V1_INDEX;
-use crate::xkb::keymap::CONTROL_NAMES_MIN_V2_INDEX;
+use super::super::keymap::action_type_text;
+pub(crate) use super::super::keymap::mod_mask_get_effective;
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
+use super::super::keymap::GROUP_LAST_INDEX_NAME;
 use super::super::keysym::utf32_to_keysym;
 use super::super::keysym::xkb_keysym_from_name;
 use super::super::shared_types::*;
@@ -17,14 +18,13 @@ use super::super::shared_types::{
     STMT_EXPR_DIVIDE, STMT_EXPR_INVERT, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
     STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
 };
-use super::super::keymap::action_type_text;
-pub(crate) use super::super::keymap::mod_mask_get_effective;
-use super::super::keymap::GROUP_LAST_INDEX_NAME;
 pub(crate) use super::symbols::compile_compat_map;
 pub(crate) use super::symbols::compile_key_types;
 pub(crate) use super::symbols::compile_keycodes;
 pub(crate) use super::symbols::compile_symbols;
 use super::symbols::{expr_resolve_group, expr_resolve_group_mask};
+use crate::xkb::keymap::CONTROL_NAMES_MIN_V1_INDEX;
+use crate::xkb::keymap::CONTROL_NAMES_MIN_V2_INDEX;
 
 pub(crate) const XKB_KEY_VOID_SYMBOL: i32 = 0xffffff_i32;
 pub(crate) const XKB_KEY_0: i32 = 0x30;
@@ -417,7 +417,7 @@ fn resolve_keysym(name: Sval) -> Option<u32> {
     buf[name.data.len()] = 0;
     let buf_slice = &buf[..name.data.len() + 1];
 
-    return xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS);
+    xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS)
 }
 
 fn yypcontext_expected_tokens(yyssp: &[i16], ssp: usize, yyarg: &mut [i32], yyargn: usize) -> i32 {
@@ -3320,7 +3320,9 @@ pub(crate) fn process_include_file(
     }
     // else: candidate drops automatically
 
-    if xkb_file.is_none() && !stmt.map.is_empty() {}
+    if xkb_file.is_none() {
+        stmt.map.is_empty();
+    }
     xkb_file
 }
 
@@ -3625,10 +3627,7 @@ fn update_pending_key_fields(info: &mut XkbKeymapInfo<'_>, key_idx: usize) -> bo
     }
     true
 }
-fn update_pending_action_fields(
-    info: &mut XkbKeymapInfo<'_>,
-    act: &mut XkbAction,
-) -> bool {
+fn update_pending_action_fields(info: &mut XkbKeymapInfo<'_>, act: &mut XkbAction) -> bool {
     match act {
         XkbAction::GroupSet(g) | XkbAction::GroupLatch(g) | XkbAction::GroupLock(g) => {
             if g.flags.contains(ActionFlags::PENDING_COMPUTATION) {
@@ -3667,7 +3666,7 @@ fn update_pending_action_fields(
                     }
                 }
                 g.group = info.pending_computations[pc_idx].value as i32;
-                g.flags = g.flags & !ActionFlags::PENDING_COMPUTATION;
+                g.flags &= !ActionFlags::PENDING_COMPUTATION;
             }
             true
         }
@@ -3912,9 +3911,7 @@ fn update_key_action_fields(
                             [j_0 as usize]
                             .actions[0];
                         update_action_mods(&*info.keymap, &mut act, key_modmap);
-                        if (pending_computations)
-                            && !update_pending_action_fields(info, &mut act)
-                        {
+                        if (pending_computations) && !update_pending_action_fields(info, &mut act) {
                             return Err(());
                         }
                         info.keymap.keys[ki as usize].groups[i_1 as usize].levels[j_0 as usize]
@@ -3927,9 +3924,7 @@ fn update_key_action_fields(
                             [j_0 as usize]
                             .actions[k as usize];
                         update_action_mods(&*info.keymap, &mut act, key_modmap);
-                        if (pending_computations)
-                            && !update_pending_action_fields(info, &mut act)
-                        {
+                        if (pending_computations) && !update_pending_action_fields(info, &mut act) {
                             return Err(());
                         }
                         info.keymap.keys[ki as usize].groups[i_1 as usize].levels[j_0 as usize]
@@ -4072,7 +4067,7 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
                     } else {
                         ""
                     },
-                    value: if km_num_groups != 0 && km_num_groups <= XKB_MAX_GROUPS as u32 {
+                    value: if km_num_groups != 0 && km_num_groups <= XKB_MAX_GROUPS {
                         1 << km_num_groups.wrapping_sub(1_u32)
                     } else {
                         0_u32
@@ -4105,14 +4100,14 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
         });
         let ok: bool = COMPILE_FILE_FNS[type_0 as usize].expect("non-null function pointer")(
             file_arg, &mut info,
-        ) as bool;
+        );
         if !ok {
             pending_computations_array_free(&mut info.pending_computations);
             return false;
         }
         type_0 += 1;
     }
-    let ok_0: bool = update_derived_keymap_fields(&mut info) as bool;
+    let ok_0: bool = update_derived_keymap_fields(&mut info);
     pending_computations_array_free(&mut info.pending_computations);
     ok_0
 }
@@ -4445,7 +4440,7 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
         let mut end = pos;
         let mut val_0 = MatchedSval {
             matched: false,
-            layout: OPTIONS_MATCH_ALL_GROUPS as u32,
+            layout: OPTIONS_MATCH_ALL_GROUPS,
             sval: Sval {
                 data: &bytes[start..start],
             },
@@ -4469,7 +4464,7 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
             let count = count as usize;
             if count > 0 {
                 pos += count;
-                if layout == 0 || layout > XKB_MAX_GROUPS as u32 {
+                if layout == 0 || layout > XKB_MAX_GROUPS {
                 } else if mlvo != MLVO_OPTION {
                 } else {
                     val_0.layout -= 1;
@@ -4481,7 +4476,7 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
             }
             if count == 0 || layout_index_end != pos {
                 let _layout_spec = std::str::from_utf8(&bytes[layout_start..pos]).unwrap_or("");
-                val_0.layout = OPTIONS_MATCH_ALL_GROUPS as u32;
+                val_0.layout = OPTIONS_MATCH_ALL_GROUPS;
             }
         }
         arr.push(val_0);
@@ -4503,7 +4498,7 @@ fn matcher_new_from_names<'a>(
     m.rmlvo.model.sval = Sval {
         data: rmlvo_ref.model.as_bytes(),
     };
-    m.rmlvo.model.layout = OPTIONS_MATCH_ALL_GROUPS as u32;
+    m.rmlvo.model.layout = OPTIONS_MATCH_ALL_GROUPS;
     m.rmlvo.layouts = split_comma_separated_mlvo(
         MLVO_LAYOUT,
         if rmlvo_ref.layout.as_bytes().is_empty() {
@@ -4636,7 +4631,7 @@ fn parse_layout_int_index(s: &[u8], out: &mut u32) -> i32 {
         || (1 + count as usize) >= s.len()
         || s[1 + count as usize] != b']'
         || val == 0_u32
-        || val > XKB_MAX_GROUPS as u32
+        || val > XKB_MAX_GROUPS
     {
         return -1_i32;
     }
@@ -4784,7 +4779,7 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
     m.mapping.mlvo_at_pos[m.mapping.num_mlvo as usize] = mlvo;
     m.mapping.defined_mlvo_mask =
         (m.mapping.defined_mlvo_mask as i32 | (1_u32 as u8 as i32) << mlvo) as u8;
-    m.mapping.num_mlvo = m.mapping.num_mlvo + 1;
+    m.mapping.num_mlvo += 1;
 }
 fn matcher_mapping_set_layout_bounds(m: &mut Matcher) {
     let mut idx: u32 = if let LayoutIdx::Single {
@@ -4874,7 +4869,7 @@ fn matcher_mapping_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
     m.mapping.kccgst_at_pos[m.mapping.num_kccgst as usize] = kccgst;
     m.mapping.defined_kccgst_mask =
         (m.mapping.defined_kccgst_mask as i32 | (1_u32 as u8 as i32) << kccgst) as u8;
-    m.mapping.num_kccgst = m.mapping.num_kccgst + 1;
+    m.mapping.num_kccgst += 1;
 }
 fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
     match idx {
@@ -4930,7 +4925,7 @@ fn matcher_rule_set_mlvo_common(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx
     }
     m.rule.match_type_at_pos[m.rule.num_mlvo_values as usize] = match_type;
     m.rule.mlvo_value_at_pos[m.rule.num_mlvo_values as usize] = ident;
-    m.rule.num_mlvo_values = m.rule.num_mlvo_values + 1;
+    m.rule.num_mlvo_values += 1;
 }
 fn matcher_rule_set_mlvo_wildcard(m: &mut Matcher, s: &mut Scanner, match_type: u32) {
     let dummy = SvalIdx::EMPTY;
@@ -4949,7 +4944,7 @@ fn matcher_rule_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
         return;
     }
     m.rule.kccgst_value_at_pos[m.rule.num_kccgst_values as usize] = ident;
-    m.rule.num_kccgst_values = m.rule.num_kccgst_values + 1;
+    m.rule.num_kccgst_values += 1;
 }
 fn match_group(groups: &[Group], group_name: Sval, to: Sval) -> bool {
     let found_group = groups.iter().find(|g| g.name.as_slice() == group_name.data);
@@ -5890,7 +5885,7 @@ fn xkb_resolve_rules(
                                         || sym_bytes.get(pos + count).map(|&b| b as i32)
                                             == Some(MERGE_REPLACE_PREFIX))
                                     && group > 0
-                                    && group <= XKB_MAX_GROUPS as u32
+                                    && group <= XKB_MAX_GROUPS
                                 {
                                     *explicit_layouts = (*explicit_layouts).max(group);
                                     pos += count;
