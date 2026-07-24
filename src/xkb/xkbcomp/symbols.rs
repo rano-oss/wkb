@@ -184,7 +184,7 @@ fn init_symbols_info(
         &mut info.default_key,
         atom_intern(&mut ki.keymap.ctx.atom_table, b"*"),
     );
-    init_actions_info(&*ki.keymap, &mut info.default_actions);
+    init_actions_info(&mut info.default_actions);
     init_vmods(&mut info.mods, mods, include_depth > 0);
 }
 fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) -> bool {
@@ -2036,13 +2036,12 @@ fn init_led(info: &mut LedInfo) {
     info.merge = MergeMode::Default;
 }
 fn init_compat_info(
-    ki: &XkbKeymapInfo<'_>,
     info: &mut CompatInfo,
     include_depth: u32,
     mods: &XkbModSet,
 ) {
     info.include_depth = include_depth;
-    init_actions_info(&*ki.keymap, &mut info.default_actions);
+    init_actions_info(&mut info.default_actions);
     init_vmods(&mut info.mods, mods, include_depth > 0);
     init_interp(&mut info.default_interp);
     init_led(&mut info.default_led);
@@ -2255,7 +2254,6 @@ fn handle_include_compat_map(
         return false;
     }
     init_compat_info(
-        ki,
         &mut included,
         info.include_depth.wrapping_add(1),
         &info.mods,
@@ -2275,7 +2273,6 @@ fn handle_include_compat_map(
             return false;
         };
         init_compat_info(
-            ki,
             &mut next_incl,
             info.include_depth.wrapping_add(1),
             &included.mods,
@@ -2915,7 +2912,7 @@ fn copy_compat_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) -> b
 pub(crate) fn compile_compat_map(file: Option<&mut XkbFile>, ki: &mut XkbKeymapInfo<'_>) -> bool {
     let mods = ki.keymap.mods;
     let mut info = CompatInfo::new();
-    init_compat_info(ki, &mut info, 0_u32, &mods);
+    init_compat_info(&mut info, 0_u32, &mods);
     if let Some(file) = file {
         handle_compat_map_file(ki, &mut info, file);
     }
@@ -4972,14 +4969,6 @@ impl<'v> ActionValue<'v> {
     }
 }
 
-pub(crate) type ActionHandler = fn(
-    &mut XkbKeymapInfo<'_>,
-    &XkbModSet,
-    &mut XkbAction,
-    u32,
-    Option<&ExprKind>,
-    ActionValue<'_>,
-) -> ParseStatus;
 // Constant true/false ExprDef values used in handle_action_def
 fn const_true_expr() -> ExprKind {
     ExprKind::Boolean(true)
@@ -4987,7 +4976,7 @@ fn const_true_expr() -> ExprKind {
 fn const_false_expr() -> ExprKind {
     ExprKind::Boolean(false)
 }
-pub(crate) fn init_actions_info(keymap: &XkbKeymap, info: &mut ActionsInfo) {
+pub(crate) fn init_actions_info(info: &mut ActionsInfo) {
     let mut type_0: u32 = ACTION_TYPE_NONE;
     while type_0 < _ACTION_TYPE_NUM_ENTRIES {
         info.actions[type_0 as usize] = match type_0 {
@@ -5195,19 +5184,12 @@ fn report_illegal(strict: u32) -> ParseStatus {
 
 fn handle_no_action(
     keymap_info: &mut XkbKeymapInfo<'_>,
-    mods: &XkbModSet,
-    action: &mut XkbAction,
-    field: u32,
-    array_ndx: Option<&ExprKind>,
-    value: ActionValue<'_>,
 ) -> ParseStatus {
-    action.set_none();
-    ParseStatus::Success
-    // if keymap_info.strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
-    //     ParseStatus::Fatal
-    // } else {
-    //     ParseStatus::Success
-    // }
+    if keymap_info.strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
+        ParseStatus::Fatal
+    } else {
+        ParseStatus::Success
+    }
 }
 fn check_boolean_flag(
     ctx: &XkbContext,
@@ -5626,29 +5608,6 @@ fn handle_private(
     }
     report_illegal(keymap_info.strict)
 }
-static HANDLE_ACTION: [ActionHandler; 21] = [
-    handle_no_action,
-    handle_no_action,
-    handle_set_latch_lock_mods,
-    handle_set_latch_lock_mods,
-    handle_set_latch_lock_mods,
-    handle_set_latch_lock_group,
-    handle_set_latch_lock_group,
-    handle_set_latch_lock_group,
-    handle_no_action,
-    handle_no_action,
-    handle_no_action,
-    handle_no_action,
-    handle_no_action,
-    handle_no_action,
-    handle_set_lock_controls,
-    handle_set_lock_controls,
-    handle_no_action,
-    handle_unsupported,
-    handle_unsupported,
-    handle_private,
-    handle_no_action,
-];
 
 pub(crate) fn handle_action_def(
     keymap_info: &mut XkbKeymapInfo<'_>,
@@ -5735,14 +5694,48 @@ pub(crate) fn handle_action_def(
                 return ParseStatus::Fatal;
             }
         } else {
-            match HANDLE_ACTION[handler_type as usize](
-                keymap_info,
-                mods,
-                action,
-                field_ndx,
-                array_rtrn_opt,
-                av,
-            ) {
+            let parse_status = match handler_type {
+                0 | 1 |12|20 => 
+                    handle_no_action(keymap_info),
+                2|3|4 => 
+                    handle_set_latch_lock_mods(keymap_info,
+                    mods,
+                    action,
+                    field_ndx,
+                    array_rtrn_opt,
+                    av),
+                5|6|7 => 
+                    handle_set_latch_lock_group(keymap_info,
+                    mods,
+                    action,
+                    field_ndx,
+                    array_rtrn_opt,
+                    av),
+                // Legacy actions ignored
+                8|9|10|11|13|16|17|18 =>
+                    handle_unsupported(keymap_info,
+                    mods,
+                    action,
+                    field_ndx,
+                    array_rtrn_opt,
+                    av),
+                14|15 => handle_set_lock_controls(keymap_info,
+                    mods,
+                    action,
+                    field_ndx,
+                    array_rtrn_opt,
+                    av),
+                19 => handle_private(keymap_info,
+                    mods,
+                    action,
+                    field_ndx,
+                    array_rtrn_opt,
+                    av),
+                _ => 
+                    handle_no_action(keymap_info,
+                    ),
+            };
+            match parse_status {
                 ParseStatus::Fatal => return ParseStatus::Fatal,
                 ParseStatus::Recoverable => {
                     ret = ParseStatus::Recoverable;
@@ -5786,8 +5779,21 @@ pub(crate) fn set_default_action_field(
     }
     let into: &mut XkbAction = &mut info.actions[action as usize];
     let mut from: XkbAction = *into;
-    let ret =
-        HANDLE_ACTION[action as usize](keymap_info, mods, &mut from, action_field, array_ndx, av);
+    let ret = match action {
+        0 | 1 |12|20 => 
+            handle_no_action(keymap_info),
+        2|3|4 => 
+            handle_set_latch_lock_mods(keymap_info, mods, &mut from, action_field, array_ndx, av),
+        5|6|7 => 
+            handle_set_latch_lock_group(keymap_info, mods, &mut from, action_field, array_ndx, av),
+        // Legacy actions ignored
+        8|9|10|11|13|16|17|18 =>
+            handle_unsupported(keymap_info, mods, &mut from, action_field, array_ndx, av),
+        14|15 => handle_set_lock_controls(keymap_info, mods, &mut from, action_field, array_ndx, av),
+        19 => handle_private(keymap_info, mods, &mut from, action_field, array_ndx, av),
+        _ => 
+            handle_no_action(keymap_info),
+    };
     if ret != ParseStatus::Success {
         return ret;
     }

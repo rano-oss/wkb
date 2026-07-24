@@ -3664,7 +3664,6 @@ fn update_pending_key_fields(info: &mut XkbKeymapInfo<'_>, key_idx: usize) -> bo
 }
 fn update_pending_action_fields(
     info: &mut XkbKeymapInfo<'_>,
-    keycode: u32,
     act: &mut XkbAction,
 ) -> bool {
     match act {
@@ -3799,7 +3798,7 @@ fn update_pending_sym_interpret_actions(info: &mut XkbKeymapInfo<'_>) -> Result<
         let num_actions = info.keymap.sym_interprets[i as usize].num_actions;
         if num_actions as i32 <= 1_i32 {
             let mut action = info.keymap.sym_interprets[i as usize].action;
-            if !update_pending_action_fields(info, XKB_KEYCODE_INVALID, &mut action) {
+            if !update_pending_action_fields(info, &mut action) {
                 return Err(());
             }
             info.keymap.sym_interprets[i as usize].action = action;
@@ -3807,7 +3806,7 @@ fn update_pending_sym_interpret_actions(info: &mut XkbKeymapInfo<'_>) -> Result<
             let mut a: u16 = 0_u16;
             while (a as i32) < num_actions as i32 {
                 let mut action = info.keymap.sym_interprets[i as usize].actions[a as usize];
-                if !update_pending_action_fields(info, XKB_KEYCODE_INVALID, &mut action) {
+                if !update_pending_action_fields(info, &mut action) {
                     return Err(());
                 }
                 info.keymap.sym_interprets[i as usize].actions[a as usize] = action;
@@ -3932,7 +3931,6 @@ fn update_key_action_fields(
         }
         let key_num_groups = info.keymap.keys[ki as usize].num_groups;
         let key_modmap = info.keymap.keys[ki as usize].modmap;
-        let key_keycode = info.keymap.keys[ki as usize].keycode;
         let mut i_1: u32 = 0;
         while i_1 < key_num_groups {
             let num_levels = {
@@ -3952,7 +3950,7 @@ fn update_key_action_fields(
                             .actions[0];
                         update_action_mods(&*info.keymap, &mut act, key_modmap);
                         if (pending_computations)
-                            && !update_pending_action_fields(info, key_keycode, &mut act)
+                            && !update_pending_action_fields(info, &mut act)
                         {
                             return Err(());
                         }
@@ -3967,7 +3965,7 @@ fn update_key_action_fields(
                             .actions[k as usize];
                         update_action_mods(&*info.keymap, &mut act, key_modmap);
                         if (pending_computations)
-                            && !update_pending_action_fields(info, key_keycode, &mut act)
+                            && !update_pending_action_fields(info, &mut act)
                         {
                             return Err(());
                         }
