@@ -1,7 +1,5 @@
 use crate::xkb::keymap::CONTROL_NAMES_MIN_V1_INDEX;
 use crate::xkb::keymap::CONTROL_NAMES_MIN_V2_INDEX;
-
-// LALR(1) parser for XKB, converted from bison-generated C via c2rust
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use super::super::keysym::utf32_to_keysym;
@@ -11,7 +9,6 @@ use super::super::shared_types::{
     parse_dec_u32, parse_dec_u64, parse_hex_u32, parse_hex_u64, utf8_next_code_point_safe,
     INVALID_UTF8_CODE_POINT,
 };
-
 use super::super::shared_types::{
     ExprKind, FileType, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef,
     LedNameDef, ModMapDef, Statement, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile,
@@ -20,7 +17,6 @@ use super::super::shared_types::{
     STMT_EXPR_DIVIDE, STMT_EXPR_INVERT, STMT_EXPR_MULTIPLY, STMT_EXPR_NEGATE, STMT_EXPR_NOT,
     STMT_EXPR_SUBTRACT, STMT_EXPR_UNARY_PLUS,
 };
-
 use super::super::keymap::action_type_text;
 pub(crate) use super::super::keymap::mod_mask_get_effective;
 use super::super::keymap::GROUP_LAST_INDEX_NAME;
@@ -401,8 +397,8 @@ fn _xkbcommon_error(param: &mut ParserParam, _msg: &str) {
 }
 
 fn resolve_keysym(name: Sval) -> Option<u32> {
-    let name_bytes = name.as_bytes();
-    let name_str = name.as_str();
+    let name_bytes = name.data;
+    let name_str = std::str::from_utf8(name.data).unwrap_or("");
 
     if name_str.eq_ignore_ascii_case("any") || name_str.eq_ignore_ascii_case("nosymbol") {
         return Some(XKB_KEY_NO_SYMBOL as u32);
@@ -411,15 +407,15 @@ fn resolve_keysym(name: Sval) -> Option<u32> {
         return Some(XKB_KEY_VOID_SYMBOL as u32);
     }
 
-    if name.len() >= 30 {
+    if name.data.len() >= 30 {
         return None;
     }
 
     // Build null-terminated buffer for xkb_keysym_from_name
     let mut buf = [0u8; 32];
-    buf[..name.len()].copy_from_slice(name_bytes);
-    buf[name.len()] = 0;
-    let buf_slice = &buf[..name.len() + 1];
+    buf[..name.data.len()].copy_from_slice(name_bytes);
+    buf[name.data.len()] = 0;
+    let buf_slice = &buf[..name.data.len() + 1];
 
     return xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS);
 }
@@ -1836,7 +1832,7 @@ fn execute_reduction<'a>(
         // Ident 214
         214 => {
             let sval = yyvs[sp].as_sval();
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, sval.as_bytes()));
+            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, sval.data));
         }
         215 => {
             // Ident: DEFAULT
@@ -2197,35 +2193,9 @@ pub(crate) fn xkb_file_from_components(
     Some(xkb_file_create(FileType::Keymap, None, file_stmts, 0))
 }
 
-// ── Scanner types (migrated from scanner_utils.rs) ──
-
 #[derive(Copy, Clone, Default)]
 pub(crate) struct Sval<'a> {
     pub(crate) data: &'a [u8],
-}
-
-impl<'a> Sval<'a> {
-    pub(crate) const EMPTY: Sval<'static> = Sval { data: &[] };
-
-    #[inline]
-    pub(crate) fn as_bytes(&self) -> &[u8] {
-        self.data
-    }
-
-    #[inline]
-    pub(crate) fn as_str(&self) -> &str {
-        std::str::from_utf8(self.data).unwrap_or("")
-    }
-
-    #[inline]
-    pub(crate) fn len(&self) -> usize {
-        self.data.len()
-    }
-
-    #[inline]
-    pub(crate) fn is_empty(&self) -> bool {
-        self.data.is_empty()
-    }
 }
 
 #[derive(Copy, Clone)]
@@ -2470,13 +2440,6 @@ impl<'a> Scanner<'a> {
         self.cached_loc = loc;
         loc
     }
-}
-
-// ── sval comparison functions (migrated from scanner_utils.rs) ──
-
-#[inline]
-pub(crate) fn svaleq(s1: Sval, s2: Sval) -> bool {
-    s1.data == s2.data
 }
 
 pub(crate) const ALTERNATE_GROUP: i32 = 77;
@@ -2854,7 +2817,7 @@ impl<'a> YYValue<'a> {
     pub(crate) fn as_sval(&self) -> Sval<'a> {
         match self {
             YYValue::Sval(s) => *s,
-            _ => Sval::EMPTY,
+            _ => Sval { data: &[] },
         }
     }
     pub(crate) fn take_str(&mut self) -> String {
@@ -4173,7 +4136,7 @@ impl SvalIdx {
     #[inline]
     fn to_sval<'a>(&self, input: &'a [u8]) -> Sval<'a> {
         if self.start >= self.end || self.start >= input.len() {
-            Sval::EMPTY
+            Sval { data: &[] }
         } else {
             Sval {
                 data: &input[self.start..self.end.min(input.len())],
@@ -4449,7 +4412,7 @@ fn strip_spaces<'a>(v: Sval<'a>) -> Sval<'a> {
         .map(|i| i + 1)
         .unwrap_or(start_trim);
     if start_trim >= end_trim {
-        Sval::EMPTY
+        Sval { data: &[] }
     } else {
         Sval {
             data: &bytes[start_trim..end_trim],
@@ -4593,7 +4556,7 @@ fn matcher_include(
         let _loc: ScannerLoc = parent_scanner.token_location();
         return;
     }
-    let inc_str = inc.as_str();
+    let inc_str = std::str::from_utf8(inc.data).unwrap_or("");
     let stmt_file: String =
         match expand_path_str(&parent_scanner.file_name, inc_str, FileType::Rules) {
             Err(()) => return,
@@ -4732,7 +4695,7 @@ fn is_mlvo_mask_defined(m: &mut Matcher, mlvo: u32) -> bool {
     m.mapping.defined_mlvo_mask as u32 & 1 << mlvo != 0
 }
 fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
-    let ident_bytes = ident.as_bytes();
+    let ident_bytes = ident.data;
     let mut mlvo: u32 = MLVO_MODEL;
     let mut mlvo_bytes: &[u8] = b"";
     while mlvo < _MLVO_NUM_ENTRIES {
@@ -4887,7 +4850,7 @@ fn matcher_mapping_set_layout_bounds(m: &mut Matcher) {
     };
 }
 fn matcher_mapping_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
-    let ident_bytes = ident.as_bytes();
+    let ident_bytes = ident.data;
     let mut kccgst: u32 = KCCGST_KEYCODES;
     let mut kccgst_bytes: &[u8] = b"";
     while kccgst < _KCCGST_NUM_ENTRIES {
@@ -5004,12 +4967,12 @@ fn match_group(groups: &[Group], group_name: Sval, to: Sval) -> bool {
 }
 fn match_value(groups: &[Group], val: Sval, to: Sval, match_type: u32, wildcard_type: u32) -> bool {
     match match_type {
-        1 => wildcard_type == WILDCARD_MATCH_ALL || !to.is_empty(),
-        2 => to.is_empty(),
-        3 => !to.is_empty(),
+        1 => wildcard_type == WILDCARD_MATCH_ALL || !to.data.is_empty(),
+        2 => to.data.is_empty(),
+        3 => !to.data.is_empty(),
         4 => true,
         5 => match_group(groups, val, to),
-        _ => svaleq(val, to),
+        _ => val.data == to.data,
     }
 }
 fn match_value_and_mark(
@@ -5033,10 +4996,10 @@ fn expand_rmlvo_in_kccgst_value(
     expanded: &mut Vec<i8>,
     i: &mut usize,
 ) -> bool {
-    let bytes = value.as_bytes();
+    let bytes = value.data;
     // Handle %i expansion
     if bytes[*i] == b'i'
-        && ((*i).wrapping_add(1_usize) == value.len()
+        && ((*i).wrapping_add(1_usize) == value.data.len()
             || (bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_OVERRIDE_PREFIX
                 || bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_AUGMENT_PREFIX
                 || bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_REPLACE_PREFIX))
@@ -5065,7 +5028,7 @@ fn expand_rmlvo_in_kccgst_value(
                 sfx = b')' as i8;
             }
             *i += 1;
-            if *i >= value.len() {
+            if *i >= value.data.len() {
                 // fall through to error
                 let _loc_1: ScannerLoc = s.token_location();
                 return false;
@@ -5085,7 +5048,7 @@ fn expand_rmlvo_in_kccgst_value(
 
         let mut idx: u32 = XKB_LAYOUT_INVALID;
         let mut expanded_index: bool = false;
-        if *i < value.len() && bytes[*i] == b'[' {
+        if *i < value.data.len() && bytes[*i] == b'[' {
             if mlv != MLVO_LAYOUT && mlv != MLVO_VARIANT {
                 let _loc_0: ScannerLoc = s.token_location();
                 let _loc_1: ScannerLoc = s.token_location();
@@ -5104,7 +5067,7 @@ fn expand_rmlvo_in_kccgst_value(
         }
 
         if sfx != 0 {
-            if *i >= value.len() {
+            if *i >= value.data.len() {
                 let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
@@ -5164,17 +5127,17 @@ fn expand_rmlvo_in_kccgst_value(
             Some(RmlvoRef::Model) => m.rmlvo.model.sval,
             Some(RmlvoRef::Layout(idx)) => m.rmlvo.layouts[*idx].sval,
             Some(RmlvoRef::Variant(idx)) => m.rmlvo.variants[*idx].sval,
-            None => Sval::EMPTY,
+            None => Sval { data: &[] },
         };
 
-        if ev_ref.is_none() || ev_sval.is_empty() {
+        if ev_ref.is_none() || ev_sval.data.is_empty() {
             return true;
         }
 
         if pfx != 0 {
             vec_append_nul_terminated(expanded, &[pfx as u8]);
         }
-        vec_append_nul_terminated(expanded, ev_sval.as_bytes());
+        vec_append_nul_terminated(expanded, ev_sval.data);
         if sfx != 0 {
             vec_append_nul_terminated(expanded, &[sfx as u8]);
         }
@@ -5202,9 +5165,9 @@ fn expand_qualifier_in_kccgst_value(
     prefix_idx: u32,
     i: &mut usize,
 ) {
-    let bytes = value.as_bytes();
-    if (*i).wrapping_add(3_usize) <= value.len()
-        && ((*i).wrapping_add(3_usize) == value.len()
+    let bytes = value.data;
+    if (*i).wrapping_add(3_usize) <= value.data.len()
+        && ((*i).wrapping_add(3_usize) == value.data.len()
             || bytes[(*i).wrapping_add(3_usize)] as i32 == MERGE_OVERRIDE_PREFIX
             || bytes[(*i).wrapping_add(3_usize)] as i32 == MERGE_AUGMENT_PREFIX
             || bytes[(*i).wrapping_add(3_usize)] as i32 == MERGE_REPLACE_PREFIX)
@@ -5279,14 +5242,14 @@ fn expand_kccgst_value(
     value: Sval,
     layout_idx: u32,
 ) -> Option<Vec<i8>> {
-    let bytes = value.as_bytes();
+    let bytes = value.data;
     let mut expanded: Vec<i8> = Vec::new();
     let mut last_item_idx: u32 = 0;
     let mut has_separator: bool = false;
     let mut invalid = false;
     let mut i: usize = 0_usize;
     loop {
-        if i >= value.len() {
+        if i >= value.data.len() {
             break;
         }
         match bytes[i] {
@@ -5306,7 +5269,7 @@ fn expand_kccgst_value(
             }
             b'%' => {
                 i += 1;
-                if i >= value.len()
+                if i >= value.data.len()
                     || !expand_rmlvo_in_kccgst_value(m, s, value, layout_idx, &mut expanded, &mut i)
                 {
                     invalid = true;
@@ -5893,13 +5856,13 @@ fn xkb_resolve_rules(
                     out.geometry = v;
                 }
                 for mval in matcher.rmlvo.layouts.iter() {
-                    if !mval.matched && !mval.sval.is_empty() {}
+                    if !mval.matched && !mval.sval.data.is_empty() {}
                 }
                 for mval in matcher.rmlvo.variants.iter() {
-                    if !mval.matched && !mval.sval.is_empty() {}
+                    if !mval.matched && !mval.sval.data.is_empty() {}
                 }
                 for mval in matcher.rmlvo.options.iter() {
-                    if !mval.matched && !mval.sval.is_empty() {}
+                    if !mval.matched && !mval.sval.data.is_empty() {}
                 }
                 if !out.symbols.is_empty() {
                     *explicit_layouts = 1_u32;

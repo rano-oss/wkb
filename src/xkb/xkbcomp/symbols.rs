@@ -124,10 +124,6 @@ impl SymbolsInfo {
     }
 }
 
-fn resize_groups_zero(v: &mut Vec<GroupInfo>, new_len: usize) {
-    v.resize_with(new_len, Default::default);
-}
-
 /// Check if an ActionList container actually holds action data (vs keysym data).
 /// In the old linked-list model, the head node's type distinguished these.
 /// Now both are wrapped in ActionList containers, so we check the first inner node.
@@ -192,10 +188,7 @@ fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) -> bo
         if into.type_0 == XKB_ATOM_NONE {
             into.type_0 = from.type_0;
         } else {
-            let use_0: u32 = if clobber { from.type_0 } else { into.type_0 };
-            let _ignore: u32 = if clobber { into.type_0 } else { from.type_0 };
-
-            into.type_0 = use_0;
+            into.type_0 = if clobber { from.type_0 } else { into.type_0 };
         }
     }
     into.defined |= from.defined & GROUP_FIELD_TYPE;
@@ -208,11 +201,7 @@ fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) -> bo
         *into = std::mem::take(from);
         return true;
     }
-    let levels_in_both: u32 = if into.levels.len() < from.levels.len() {
-        into.levels.len()
-    } else {
-        from.levels.len()
-    } as u32;
+    let levels_in_both = into.levels.len().min(from.levels.len()) as u32;
     let mut from_keysyms_count: u32 = 0;
     let mut from_actions_count: u32 = 0;
     let mut i: u32 = 0;
@@ -459,11 +448,7 @@ fn merge_keys(
         init_key_info_with_atom(from, info.star_atom);
         return true;
     }
-    let groups_in_both: u32 = (if into.groups.len() < from.groups.len() {
-        into.groups.len()
-    } else {
-        from.groups.len()
-    }) as u32;
+    let groups_in_both = into.groups.len().min(from.groups.len()) as u32;
     i = 0;
     while i < groups_in_both {
         merge_groups(
@@ -538,10 +523,7 @@ fn add_mod_map_entry(info: &mut SymbolsInfo, new: &ModMapEntry) -> bool {
         if new.modifier == old.modifier {
             return true;
         }
-        let use_0: u32 = if clobber { new.modifier } else { old.modifier };
-        let _ignore: u32 = if clobber { old.modifier } else { new.modifier };
-
-        old.modifier = use_0;
+        old.modifier = if clobber { new.modifier } else { old.modifier };
         return true;
     }
     info.modmaps.push(*new);
@@ -561,11 +543,7 @@ fn merge_included_symbols(
     if into.name.is_none() {
         into.name = from.name.take();
     }
-    let group_names_in_both: u32 = (if into.group_names.len() < from.group_names.len() {
-        into.group_names.len()
-    } else {
-        from.group_names.len()
-    }) as u32;
+    let group_names_in_both = into.group_names.len().min(from.group_names.len()) as u32;
     let mut i: u32 = 0;
     while i < group_names_in_both {
         if ((&from.group_names)[i as usize] != 0)
@@ -666,11 +644,6 @@ fn get_group_index(
     field: u32,
     ndx_rtrn: &mut u32,
 ) -> bool {
-    let _name: &str = if field == GROUP_FIELD_SYMS {
-        "symbols"
-    } else {
-        "actions"
-    };
     if array_ndx.is_none() {
         let mut i: u32 = 0;
         if !keyi.groups.is_empty() {
@@ -687,7 +660,7 @@ fn get_group_index(
             return false;
         }
         let new_len = keyi.groups.len() + 1;
-        resize_groups_zero(&mut keyi.groups, new_len);
+        keyi.groups.resize_with(new_len, Default::default);
         *ndx_rtrn = (keyi.groups.len() - 1) as u32;
         return true;
     }
@@ -699,7 +672,8 @@ fn get_group_index(
     }
     *ndx_rtrn -= 1;
     if *ndx_rtrn >= keyi.groups.len() as u32 {
-        resize_groups_zero(&mut keyi.groups, (*ndx_rtrn + 1) as usize);
+        keyi.groups
+            .resize_with((*ndx_rtrn + 1) as usize, Default::default);
     }
     true
 }
@@ -1059,7 +1033,8 @@ fn set_symbols_field(
             } else {
                 ndx -= 1;
                 if ndx >= keyi.groups.len() as u32 {
-                    resize_groups_zero(&mut keyi.groups, (ndx as usize) + 1);
+                    keyi.groups
+                        .resize_with((ndx as usize) + 1, Default::default);
                 }
                 keyi.groups[ndx as usize].type_0 = val;
                 keyi.groups[ndx as usize].defined |= GROUP_FIELD_TYPE;
@@ -1246,10 +1221,11 @@ fn set_group_name(
     } else {
         let old_name: u32 = info.group_names[group_to_use as usize];
         if old_name != XKB_ATOM_NONE && old_name != name {
-            let replace: bool = merge != MergeMode::Augment;
-            let use_0: u32 = if replace { name } else { old_name };
-            let _ignore: u32 = if replace { old_name } else { name };
-            name = use_0;
+            name = if merge != MergeMode::Augment {
+                name
+            } else {
+                old_name
+            };
         }
     }
     info.group_names[group_to_use as usize] = name;
@@ -1693,7 +1669,7 @@ fn copy_symbols_def_to_keymap(
     } else {
         // Resize groups array
         let __need: usize = keymap.keys[key_idx].num_groups as usize;
-        resize_groups_zero(&mut keyi.groups, __need);
+        keyi.groups.resize_with(__need, Default::default);
 
         // If there are empty groups between non-empty ones, fill them with data from the first group
         if !keyi.groups.is_empty() {
@@ -2035,11 +2011,7 @@ fn init_interp(info: &mut SymInterpInfo) {
 fn init_led(info: &mut LedInfo) {
     info.merge = MergeMode::Default;
 }
-fn init_compat_info(
-    info: &mut CompatInfo,
-    include_depth: u32,
-    mods: &XkbModSet,
-) {
+fn init_compat_info(info: &mut CompatInfo, include_depth: u32, mods: &XkbModSet) {
     info.include_depth = include_depth;
     init_actions_info(&mut info.default_actions);
     init_vmods(&mut info.mods, mods, include_depth > 0);
@@ -3492,17 +3464,11 @@ pub(crate) fn merge_mod_sets(
             into.mods[vmod].mapping = mod_0.mapping;
             into.explicit_vmods |= mask;
         } else if mod_0.mapping != into.mods[vmod].mapping {
-            let use_0: u32 = if clobber {
+            into.mods[vmod].mapping = if clobber {
                 mod_0.mapping
             } else {
                 into.mods[vmod].mapping
             };
-            let _ignore: u32 = if clobber {
-                into.mods[vmod].mapping
-            } else {
-                mod_0.mapping
-            };
-            into.mods[vmod].mapping = use_0;
         }
     }
     into.num_mods = from.num_mods;
@@ -3531,11 +3497,6 @@ pub(crate) fn handle_vmod_def(ctx: &mut XkbContext, mods: &mut XkbModSet, stmt: 
                     mapping
                 } else {
                     mods.mods[vmod].mapping
-                };
-                let _ignore: u32 = if clobber {
-                    mods.mods[vmod].mapping
-                } else {
-                    mapping
                 };
                 mods.mods[vmod].mapping = use_0;
             }
@@ -4020,12 +3981,8 @@ fn handle_alias_def(info: &mut KeyNamesInfo, def: &KeyAliasDef) -> bool {
         if match_name.is_alias {
             if def.real == match_name.index {
             } else {
-                let use_0: u32 = if clobber { def.real } else { match_name.index };
-                let _ignore: u32 = if clobber { match_name.index } else { def.real };
-
-                {
-                    info.keycodes.names[def.alias as usize].index = use_0;
-                }
+                info.keycodes.names[def.alias as usize].index =
+                    if clobber { def.real } else { match_name.index };
             }
             return true;
         } else if clobber {
@@ -4685,7 +4642,6 @@ pub(crate) fn expr_resolve_level(ctx: &XkbContext, expr: &ExprKind, level_rtrn: 
     true
 }
 
-
 pub(crate) fn expr_resolve_string(expr: &ExprKind, val_rtrn: &mut u32) -> bool {
     match expr.stmt_type() {
         4 => {
@@ -4942,7 +4898,7 @@ pub(crate) const ACTION_FIELD_LATCH_TO_LOCK: u32 = 1;
 pub(crate) const ACTION_FIELD_CLEAR_LOCKS: u32 = 0;
 /// A value passed to an action handler.  Combines what used to be two separate
 /// parameters (`value: &ExprDef` and `value_ptr: Option<&mut Option<Box<ExprDef>>>`).
-/// 
+///
 pub(crate) enum ActionValue<'v> {
     /// A borrowed reference to a constant or non-ownable ExprDef (e.g. const_true).
     Borrowed(&'v ExprKind),
@@ -4969,13 +4925,6 @@ impl<'v> ActionValue<'v> {
     }
 }
 
-// Constant true/false ExprDef values used in handle_action_def
-fn const_true_expr() -> ExprKind {
-    ExprKind::Boolean(true)
-}
-fn const_false_expr() -> ExprKind {
-    ExprKind::Boolean(false)
-}
 pub(crate) fn init_actions_info(info: &mut ActionsInfo) {
     let mut type_0: u32 = ACTION_TYPE_NONE;
     while type_0 < _ACTION_TYPE_NUM_ENTRIES {
@@ -5182,9 +5131,7 @@ fn report_illegal(strict: u32) -> ParseStatus {
     }
 }
 
-fn handle_no_action(
-    keymap_info: &mut XkbKeymapInfo<'_>,
-) -> ParseStatus {
+fn handle_no_action(keymap_info: &mut XkbKeymapInfo<'_>) -> ParseStatus {
     if keymap_info.strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
         ParseStatus::Fatal
     } else {
@@ -5212,6 +5159,21 @@ fn check_boolean_flag(
         *flags_inout &= !flag;
     }
     ParseStatus::Success
+}
+fn check_boolean_flag_feature(
+    ctx: &XkbContext,
+    strict: u32,
+    flag: ActionFlags,
+    array_ndx: Option<&ExprKind>,
+    value: &ExprKind,
+    flags_inout: &mut ActionFlags,
+    feature_enabled: bool,
+) -> ParseStatus {
+    if feature_enabled {
+        check_boolean_flag(ctx, strict, flag, array_ndx, value, flags_inout)
+    } else {
+        report_format_version_mismatch(strict)
+    }
 }
 fn check_modifier_field(
     ctx: &XkbContext,
@@ -5318,18 +5280,15 @@ fn handle_set_latch_lock_mods(
         return ret;
     }
     if field == ACTION_FIELD_UNLOCK_ON_PRESS {
-        if keymap_info.features.mods_unlock_on_press {
-            return check_boolean_flag(
-                ctx,
-                keymap_info.strict,
-                ActionFlags::UNLOCK_ON_PRESS,
-                array_ndx,
-                value,
-                &mut act.flags,
-            );
-        } else {
-            return report_format_version_mismatch(keymap_info.strict);
-        }
+        return check_boolean_flag_feature(
+            ctx,
+            keymap_info.strict,
+            ActionFlags::UNLOCK_ON_PRESS,
+            array_ndx,
+            value,
+            &mut act.flags,
+            keymap_info.features.mods_unlock_on_press,
+        );
     }
     if is_set_or_latch && field == ACTION_FIELD_CLEAR_LOCKS {
         return check_boolean_flag(
@@ -5353,18 +5312,15 @@ fn handle_set_latch_lock_mods(
             );
         }
         if field == ACTION_FIELD_LATCH_ON_PRESS {
-            if keymap_info.features.mods_latch_on_press {
-                return check_boolean_flag(
-                    ctx,
-                    keymap_info.strict,
-                    ActionFlags::LATCH_ON_PRESS,
-                    array_ndx,
-                    value,
-                    &mut act.flags,
-                );
-            } else {
-                return report_format_version_mismatch(keymap_info.strict);
-            }
+            return check_boolean_flag_feature(
+                ctx,
+                keymap_info.strict,
+                ActionFlags::LATCH_ON_PRESS,
+                array_ndx,
+                value,
+                &mut act.flags,
+                keymap_info.features.mods_latch_on_press,
+            );
         }
     }
     if is_lock && field == ACTION_FIELD_AFFECT {
@@ -5430,7 +5386,6 @@ fn check_group_field(
 }
 fn handle_set_latch_lock_group(
     keymap_info: &mut XkbKeymapInfo<'_>,
-    _mods: &XkbModSet,
     action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprKind>,
@@ -5486,27 +5441,21 @@ fn handle_set_latch_lock_group(
         );
     }
     if is_lock && field == ACTION_FIELD_LOCK_ON_RELEASE {
-        if keymap_info.features.group_lock_on_release {
-            return check_boolean_flag(
-                ctx,
-                keymap_info.strict,
-                ActionFlags::LOCK_ON_RELEASE,
-                array_ndx,
-                value,
-                &mut act.flags,
-            );
-        } else {
-            return report_format_version_mismatch(keymap_info.strict);
-        }
+        return check_boolean_flag_feature(
+            ctx,
+            keymap_info.strict,
+            ActionFlags::LOCK_ON_RELEASE,
+            array_ndx,
+            value,
+            &mut act.flags,
+            keymap_info.features.group_lock_on_release,
+        );
     }
     report_illegal(keymap_info.strict)
 }
 
-
-
 fn handle_set_lock_controls(
     keymap_info: &mut XkbKeymapInfo<'_>,
-    _mods: &XkbModSet,
     action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprKind>,
@@ -5536,19 +5485,8 @@ fn handle_set_lock_controls(
     report_illegal(keymap_info.strict)
 }
 
-fn handle_unsupported(
-    _keymap_info: &mut XkbKeymapInfo<'_>,
-    _mods: &XkbModSet,
-    _action: &mut XkbAction,
-    _field: u32,
-    _array_ndx: Option<&ExprKind>,
-    _value: ActionValue<'_>,
-) -> ParseStatus {
-    ParseStatus::Success
-}
 fn handle_private(
     keymap_info: &mut XkbKeymapInfo<'_>,
-    _mods: &XkbModSet,
     action: &mut XkbAction,
     field: u32,
     array_ndx: Option<&ExprKind>,
@@ -5638,8 +5576,8 @@ pub(crate) fn handle_action_def(
         action.set_none();
     }
     let mut ret: ParseStatus = ParseStatus::Success;
-    let const_true = const_true_expr();
-    let const_false = const_false_expr();
+    let const_true = ExprKind::Boolean(true);
+    let const_false = ExprKind::Boolean(false);
     // Get mutable access to the args Vec
     let args = if let ExprKind::Action { ref mut args, .. } = def {
         args
@@ -5695,45 +5633,24 @@ pub(crate) fn handle_action_def(
             }
         } else {
             let parse_status = match handler_type {
-                0 | 1 |12|20 => 
-                    handle_no_action(keymap_info),
-                2|3|4 => 
-                    handle_set_latch_lock_mods(keymap_info,
+                2 | 3 | 4 => handle_set_latch_lock_mods(
+                    keymap_info,
                     mods,
                     action,
                     field_ndx,
                     array_rtrn_opt,
-                    av),
-                5|6|7 => 
-                    handle_set_latch_lock_group(keymap_info,
-                    mods,
-                    action,
-                    field_ndx,
-                    array_rtrn_opt,
-                    av),
+                    av,
+                ),
+                5 | 6 | 7 => {
+                    handle_set_latch_lock_group(keymap_info, action, field_ndx, array_rtrn_opt, av)
+                }
                 // Legacy actions ignored
-                8|9|10|11|13|16|17|18 =>
-                    handle_unsupported(keymap_info,
-                    mods,
-                    action,
-                    field_ndx,
-                    array_rtrn_opt,
-                    av),
-                14|15 => handle_set_lock_controls(keymap_info,
-                    mods,
-                    action,
-                    field_ndx,
-                    array_rtrn_opt,
-                    av),
-                19 => handle_private(keymap_info,
-                    mods,
-                    action,
-                    field_ndx,
-                    array_rtrn_opt,
-                    av),
-                _ => 
-                    handle_no_action(keymap_info,
-                    ),
+                8 | 9 | 10 | 11 | 13 | 16 | 17 | 18 => ParseStatus::Success,
+                14 | 15 => {
+                    handle_set_lock_controls(keymap_info, action, field_ndx, array_rtrn_opt, av)
+                }
+                19 => handle_private(keymap_info, action, field_ndx, array_rtrn_opt, av),
+                0 | 1 | 12 | 20 | _ => handle_no_action(keymap_info),
             };
             match parse_status {
                 ParseStatus::Fatal => return ParseStatus::Fatal,
@@ -5780,19 +5697,17 @@ pub(crate) fn set_default_action_field(
     let into: &mut XkbAction = &mut info.actions[action as usize];
     let mut from: XkbAction = *into;
     let ret = match action {
-        0 | 1 |12|20 => 
-            handle_no_action(keymap_info),
-        2|3|4 => 
-            handle_set_latch_lock_mods(keymap_info, mods, &mut from, action_field, array_ndx, av),
-        5|6|7 => 
-            handle_set_latch_lock_group(keymap_info, mods, &mut from, action_field, array_ndx, av),
+        2 | 3 | 4 => {
+            handle_set_latch_lock_mods(keymap_info, mods, &mut from, action_field, array_ndx, av)
+        }
+        5 | 6 | 7 => {
+            handle_set_latch_lock_group(keymap_info, &mut from, action_field, array_ndx, av)
+        }
         // Legacy actions ignored
-        8|9|10|11|13|16|17|18 =>
-            handle_unsupported(keymap_info, mods, &mut from, action_field, array_ndx, av),
-        14|15 => handle_set_lock_controls(keymap_info, mods, &mut from, action_field, array_ndx, av),
-        19 => handle_private(keymap_info, mods, &mut from, action_field, array_ndx, av),
-        _ => 
-            handle_no_action(keymap_info),
+        8 | 9 | 10 | 11 | 13 | 16 | 17 | 18 => ParseStatus::Success,
+        14 | 15 => handle_set_lock_controls(keymap_info, &mut from, action_field, array_ndx, av),
+        19 => handle_private(keymap_info, &mut from, action_field, array_ndx, av),
+        0 | 1 | 12 | 20 | _ => handle_no_action(keymap_info),
     };
     if ret != ParseStatus::Success {
         return ret;
