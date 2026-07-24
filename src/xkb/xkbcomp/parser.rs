@@ -3318,11 +3318,6 @@ pub(crate) fn process_include_file(
     if xkb_file.is_none() {
         xkb_file = candidate;
     }
-    // else: candidate drops automatically
-
-    if xkb_file.is_none() {
-        stmt.map.is_empty();
-    }
     xkb_file
 }
 

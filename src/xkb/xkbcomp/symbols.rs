@@ -1,7 +1,12 @@
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::{
-    lookup_string, CTRL_MASK_NAMES, GROUP_COMPONENT_MASK_NAMES, MOD_COMPONENT_MASK_NAMES,
-    SYM_INTERPRET_MATCH_MASK_NAMES, USE_MOD_MAP_VALUE_NAMES,
+    lookup_string, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
+    ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
+    ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
+    ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT, ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE,
+    ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT, ACTION_TYPE_TERMINATE, ACTION_TYPE_UNKNOWN,
+    ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, CTRL_MASK_NAMES, GROUP_COMPONENT_MASK_NAMES,
+    MOD_COMPONENT_MASK_NAMES, SYM_INTERPRET_MATCH_MASK_NAMES, USE_MOD_MAP_VALUE_NAMES,
 };
 pub(crate) use super::super::keymap::{
     xkb_levels_same_actions, xkb_levels_same_syms, xkb_mod_name_to_index,
@@ -790,7 +795,7 @@ fn expr_resolve_overlay_entry(
     if array_ndx.is_some() {
         return false;
     }
-    let prefix: usize = (std::mem::size_of::<[i8; 8]>()).wrapping_sub(1_usize);
+    let prefix: usize = 7;
     let suffix = &field[prefix..];
     let len: usize = suffix.len();
     let (val_parsed, parse_count) = super::super::shared_types::parse_dec_u64(suffix.as_bytes());
@@ -5438,7 +5443,7 @@ pub(crate) fn handle_action_def(
             }
         } else {
             let parse_status = match handler_type {
-                2..=4 => handle_set_latch_lock_mods(
+                ACTION_TYPE_MOD_SET..=ACTION_TYPE_MOD_LOCK => handle_set_latch_lock_mods(
                     keymap_info,
                     mods,
                     action,
@@ -5446,16 +5451,29 @@ pub(crate) fn handle_action_def(
                     array_rtrn_opt,
                     av,
                 ),
-                5..=7 => {
+                ACTION_TYPE_GROUP_SET..=ACTION_TYPE_GROUP_LOCK => {
                     handle_set_latch_lock_group(keymap_info, action, field_ndx, array_rtrn_opt, av)
                 }
                 // Legacy actions ignored
-                8 | 9 | 10 | 11 | 13 | 16 | 17 | 18 => ParseStatus::Success,
-                14 | 15 => {
+                ACTION_TYPE_VOID
+                | ACTION_TYPE_PTR_MOVE
+                | ACTION_TYPE_PTR_BUTTON
+                | ACTION_TYPE_PTR_LOCK
+                | ACTION_TYPE_PTR_DEFAULT
+                | ACTION_TYPE_TERMINATE
+                | ACTION_TYPE_SWITCH_VT
+                | ACTION_TYPE_REDIRECT_KEY => ParseStatus::Success,
+                ACTION_TYPE_CTRL_SET | ACTION_TYPE_CTRL_LOCK => {
                     handle_set_lock_controls(keymap_info, action, field_ndx, array_rtrn_opt, av)
                 }
-                19 => handle_private(keymap_info, action, field_ndx, array_rtrn_opt, av),
-                0 | 1 | 12 | 20 | _ => handle_no_action(keymap_info),
+                ACTION_TYPE_PRIVATE => {
+                    handle_private(keymap_info, action, field_ndx, array_rtrn_opt, av)
+                }
+                ACTION_TYPE_NONE
+                | ACTION_TYPE_UNSUPPORTED_LEGACY
+                | ACTION_TYPE_UNKNOWN
+                | ACTION_TYPE_INTERNAL
+                | _ => handle_no_action(keymap_info),
             };
             match parse_status {
                 ParseStatus::Fatal => return ParseStatus::Fatal,
