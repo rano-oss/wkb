@@ -51,8 +51,7 @@ pub(crate) struct KeyInfo {
     pub(crate) repeat: u32,
     pub(crate) out_of_range_pending_group: bool,
     pub(crate) overlays_clear: bool,
-    pub(crate) overlays: u8,
-    pub(crate) overlay_keys: Vec<u32>,
+    pub(crate) overlays: [Option<u32>; 8],
 }
 pub(crate) const _KEY_REPEAT_NUM_ENTRIES: u32 = 3;
 pub(crate) const KEY_REPEAT_NO: u32 = 2;
@@ -88,8 +87,7 @@ impl KeyInfo {
             repeat: 0,
             out_of_range_pending_group: false,
             overlays_clear: false,
-            overlays: 0,
-            overlay_keys: Vec::new(),
+            overlays: [None; 8],
         }
     }
 }
@@ -163,8 +161,7 @@ fn init_key_info_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
         repeat: 0,
         out_of_range_pending_group: false,
         overlays_clear: false,
-        overlays: 0,
-        overlay_keys: Vec::new(),
+        overlays: [None; 8],
     };
 }
 fn init_symbols_info(
@@ -285,150 +282,60 @@ fn use_new_field(field: u32, old: u32, new: u32, clobber: bool) -> bool {
     }
     false
 }
-fn overlays_get(info: &KeyInfo, bit: u8, key_out: Option<&mut u32>) -> bool {
-    if bit as i32 >= (std::mem::size_of::<u8>()).wrapping_mul(8_usize) as u8 as i32 {
-        return false;
-    }
-    let mask: u8 = (1_u32 << bit as i32) as u8;
-    if (info.overlays & mask) == 0 {
-        return false;
-    }
-    if let Some(key_out) = key_out {
-        let low: u8 = (info.overlays as u32 & (mask as u32).wrapping_sub(1)) as u8;
-        let index: usize = (low as u32).count_ones() as usize;
-        *key_out = info.overlay_keys[index];
-    }
-    true
-}
 fn overlays_insert(keyi: &mut KeyInfo, bit: u8, key: u32) -> bool {
-    if bit as i32 >= (std::mem::size_of::<u8>()).wrapping_mul(8_usize) as u8 as i32 {
-        return false;
-    }
-    let mask: u8 = (1_u32 << bit as i32) as u8;
-    if (keyi.overlays & mask) != 0 && !keyi.overlays_clear {
-        // Bit already set — update existing entry
-        let low: u8 = (keyi.overlays as u32 & (mask as u32).wrapping_sub(1)) as u8;
-        let index: usize = (low as u32).count_ones() as usize;
-        keyi.overlay_keys[index] = key;
-        if key == XKB_KEYCODE_INVALID && keyi.overlay_keys.len() == 1 {
+    if let Some(entry) = keyi.overlays.get_mut(bit as usize) {
+        *entry = Some(key);
+        if key == XKB_KEYCODE_INVALID {
             keyi.overlays_clear = true;
         }
-        return true;
-    }
-    // New bit
-    let new_overlays: u8 = keyi.overlays | mask;
-    let low: u8 = (new_overlays as u32 & (mask as u32).wrapping_sub(1)) as u8;
-    let index: usize = (low as u32).count_ones() as usize;
-
-    if keyi.overlays == 0 || keyi.overlays_clear && key == XKB_KEYCODE_INVALID {
-        // First overlay or clearing
-        keyi.overlay_keys.clear();
-        keyi.overlay_keys.push(key);
-        keyi.overlays = new_overlays;
-        keyi.overlays_clear = key == XKB_KEYCODE_INVALID;
+        true
     } else {
-        // Insert at correct position in Vec
-        keyi.overlay_keys.insert(index, key);
-        keyi.overlays = new_overlays;
-        keyi.overlays_clear = false;
+        false
     }
-    true
 }
 fn merge_overlays(
     ki: &XkbKeymapInfo<'_>,
     into: &mut KeyInfo,
     from: &mut KeyInfo,
-    mut clobber: bool,
 ) -> bool {
     if (from.defined & KEY_FIELD_OVERLAY) != 0 {
         if (into.defined & KEY_FIELD_OVERLAY) == 0 {
-            // into has no overlays, take from's
             into.overlays = from.overlays;
-            into.overlay_keys = std::mem::take(&mut from.overlay_keys);
             into.defined |= KEY_FIELD_OVERLAY;
         } else if into.overlays_clear && from.overlays_clear {
-            into.overlays = (into.overlays as i32 | from.overlays as i32) as u8;
+            // Both cleared — keep both invalid entries
         } else if ki.features.overlapping_overlays {
-            // Complex merge with overlapping overlays
-            let result_mask: u8 = (into.overlays as i32 | from.overlays as i32) as u8;
-            let count: u8 = (result_mask as u32).count_ones() as u8;
-            if count == 0 {
-                eprintln!(
-                    "Critical Error: Reached unreachable line in ../src/xkbcomp/symbols.c at {}",
-                    696
-                );
-                std::process::abort();
-            }
-            // Determine which one is dest (larger capacity) and which is src
-            let swapped = from.overlay_keys.capacity() > into.overlay_keys.capacity();
-            if swapped {
-                std::mem::swap(into, from);
-                clobber = !clobber;
-            }
-            // Now `into` is dest and `from` is src
-            let mut remaining: u8 = from.overlays;
-            let mut src_idx: usize = 0;
-            while remaining != 0 {
-                let lsb: u8 = (remaining as i32
-                    & (!(remaining as i32) as u32).wrapping_add(1) as u8 as i32)
-                    as u8;
-                let bit: u8 = ((lsb as u32).wrapping_sub(1).count_ones()) as u8;
-                remaining = (remaining as i32 & !(lsb as i32)) as u8;
-                let src_key: u32 = if from.overlays_clear || src_idx >= from.overlay_keys.len() {
-                    XKB_KEYCODE_INVALID
-                } else {
-                    let k = from.overlay_keys[src_idx];
-                    src_idx += 1;
-                    k
-                };
-                let mut dest_key: u32 = XKB_KEYCODE_INVALID;
-                let conflict: bool = overlays_get(into, bit, Some(&mut dest_key)) as bool;
-                if conflict {
-                    if dest_key == src_key {
-                        continue;
+            for i in 0..8 {
+                if let Some(key) = from.overlays[i] {
+                    let dest_key = into.overlays[i];
+                    if dest_key.is_none() {
+                        into.overlays[i] = Some(key);
+                        into.overlays_clear = false;
                     }
                 }
-                if (!conflict || clobber) && !overlays_insert(into, bit, src_key) {
-                    return false;
-                }
-            }
-            if swapped {
-                // We swapped into/from, so move dest data back to into
-                std::mem::swap(into, from);
             }
         } else {
-            if into.overlays as i32 == from.overlays as i32
+            let into_has = into.overlays.iter().any(|o| o.is_some());
+            let from_has = from.overlays.iter().any(|o| o.is_some());
+            if into_has == from_has
+                && into.overlays == from.overlays
                 && into.overlays_clear == from.overlays_clear
             {
-                // Check if single overlay keys match
-                let into_key = into
-                    .overlay_keys
-                    .first()
-                    .copied()
-                    .unwrap_or(XKB_KEYCODE_INVALID);
-                let from_key = from
-                    .overlay_keys
-                    .first()
-                    .copied()
-                    .unwrap_or(XKB_KEYCODE_INVALID);
-                if into_key == from_key {
-                    return true;
-                }
+                return true;
             }
-            if (into.overlays & from.overlays) == 0 {
+            let no_overlap = into
+                .overlays
+                .iter()
+                .zip(from.overlays.iter())
+                .all(|(a, b)| a.is_none() || b.is_none());
+            if no_overlap {
                 if into.overlays_clear {
                     into.overlays = from.overlays;
                     into.overlays_clear = from.overlays_clear;
-                    into.overlay_keys = std::mem::take(&mut from.overlay_keys);
                     return true;
                 } else if from.overlays_clear {
                     return true;
                 }
-            }
-            if clobber {
-                into.overlays = from.overlays;
-                into.overlays_clear = from.overlays_clear;
-                into.overlay_keys = std::mem::take(&mut from.overlay_keys);
             }
         }
     }
@@ -479,7 +386,7 @@ fn merge_keys(
         into.out_of_range_group_number = from.out_of_range_group_number;
         into.defined |= KEY_FIELD_GROUPINFO;
     }
-    if !merge_overlays(ki, into, from, clobber) {
+    if !merge_overlays(ki, into, from) {
         return false;
     }
     init_key_info_with_atom(from, info.star_atom);
@@ -1081,36 +988,18 @@ fn set_symbols_field(
             } else if key != XKB_KEYCODE_INVALID && {
                 ki.keymap.get_key(key).is_some_and(|k| k.name == keyi.name)
             } {
-            } else {
-                let mut prev: u32 = XKB_KEYCODE_INVALID;
-                if overlays_get(keyi, overlay, Some(&mut prev)) {
-                    if key != prev {}
-                } else if ki.features.overlapping_overlays {
-                    if !overlays_insert(keyi, overlay, key) {
-                        return false;
-                    }
+            } else if ki.features.overlapping_overlays {
+                if overlays_insert(keyi, overlay, key) {
                     keyi.defined |= KEY_FIELD_OVERLAY;
-                } else {
-                    let mask_0: u8 = (1_u32 << overlay as i32) as u8;
-                    if keyi.overlays == 0 || keyi.overlays_clear {
-                        if key != XKB_KEYCODE_INVALID {
-                            keyi.overlays = mask_0;
-                            keyi.overlays_clear = false;
-                            keyi.overlay_keys = vec![key];
-                        } else {
-                            keyi.overlays = (keyi.overlays as i32 | mask_0 as i32) as u8;
-                            keyi.overlays_clear = true;
-                            keyi.overlay_keys = vec![XKB_KEYCODE_INVALID];
-                        }
-                        keyi.defined |= KEY_FIELD_OVERLAY;
-                    } else if keyi.overlays != 0 && key != XKB_KEYCODE_INVALID {
-                        let _existing_key = keyi
-                            .overlay_keys
-                            .first()
-                            .copied()
-                            .unwrap_or(XKB_KEYCODE_INVALID);
-                        return ki.strict & PARSER_NO_FIELD_VALUE_MISMATCH == 0;
-                    }
+                }
+            } else {
+                let has_none = keyi.overlays.iter().all(|o| o.is_none());
+                if has_none || keyi.overlays_clear {
+                    keyi.overlays[overlay as usize] = Some(key);
+                    keyi.overlays_clear = key == XKB_KEYCODE_INVALID;
+                    keyi.defined |= KEY_FIELD_OVERLAY;
+                } else if keyi.overlays[overlay as usize].is_none() && key != XKB_KEYCODE_INVALID {
+                    return ki.strict & PARSER_NO_FIELD_VALUE_MISMATCH == 0;
                 }
             }
         }
@@ -1623,10 +1512,6 @@ fn copy_symbols_def_to_keymap(
     _info: &SymbolsInfo,
     keyi: &mut KeyInfo,
 ) -> bool {
-    let mut i: u32;
-
-    // The name is guaranteed to be real and not an alias, so 'false' is safe here
-    // Look up key index to avoid holding a mutable borrow on keymap
     let key_idx = if (keyi.name as usize) < keymap.key_names.len() {
         let match_0 = keymap.key_names[keyi.name as usize];
         if match_0.found && !match_0.is_alias {
@@ -1639,12 +1524,9 @@ fn copy_symbols_def_to_keymap(
     };
     let key_idx = match key_idx {
         Some(idx) => idx,
-        None => {
-            return false;
-        }
+        None => return false,
     };
 
-    // Find the range of groups we need
     keymap.keys[key_idx].num_groups = 0;
     if !keyi.groups.is_empty() {
         for (idx, groupi) in keyi.groups.iter().enumerate() {
@@ -1654,145 +1536,87 @@ fn copy_symbols_def_to_keymap(
                 keymap.keys[key_idx].num_groups = (idx as u32) + 1;
             }
             if has_explicit_type {
-                keymap.keys[key_idx].explicit = keymap.keys[key_idx].explicit | EXPLICIT_TYPES;
+                keymap.keys[key_idx].explicit |= EXPLICIT_TYPES;
             }
         }
     }
 
     if keymap.keys[key_idx].num_groups == 0 {
-        // A key with no group may still have other fields defined
-        if keyi.defined != 0 {
-            // goto key_fields
-        } else {
+        if keyi.defined == 0 {
             return false;
         }
     } else {
-        // Resize groups array
-        let __need: usize = keymap.keys[key_idx].num_groups as usize;
-        keyi.groups.resize_with(__need, Default::default);
+        let num_groups = keymap.keys[key_idx].num_groups as usize;
+        keyi.groups.resize_with(num_groups, Default::default);
 
-        // If there are empty groups between non-empty ones, fill them with data from the first group
-        if !keyi.groups.is_empty() {
-            let groups_len = keyi.groups.len();
-            i = 1;
-            while i < groups_len as u32 {
-                if keyi.groups[i as usize].defined == 0 {
-                    let src = keyi.groups[0].clone();
-                    keyi.groups[i as usize] = src;
-                }
-                i += 1;
+        for i in 1..keyi.groups.len() {
+            if keyi.groups[i].defined == 0 {
+                keyi.groups[i] = keyi.groups[0].clone();
             }
         }
 
-        keymap.keys[key_idx].groups = (0..keymap.keys[key_idx].num_groups)
-            .map(|_| XkbGroup {
-                explicit_symbols: false,
-                explicit_actions: false,
-                implicit_actions: false,
-                explicit_type: false,
-                type_idx: 0,
-                levels: Vec::new(),
-            })
-            .collect();
+        keymap.keys[key_idx].groups = (0..num_groups).map(|_| XkbGroup::default()).collect();
 
-        // Find and assign the groups' types in the keymap
-        if !keyi.groups.is_empty() {
-            i = 0;
-            while i < keyi.groups.len() as u32 {
-                let mut explicit_type = false;
-                let type_idx: u32 = find_type_for_group(keymap, keyi, i, &mut explicit_type);
+        for i in 0..keyi.groups.len() as u32 {
+            let mut explicit_type = false;
+            let type_idx = find_type_for_group(keymap, keyi, i, &mut explicit_type);
 
-                // Always have as many levels as the type specifies
-                if keymap.types[type_idx as usize].num_levels
-                    < keyi.groups[i as usize].levels.len() as u32
+            if keymap.types[type_idx as usize].num_levels
+                < keyi.groups[i as usize].levels.len() as u32
+            {
+                for lvl_idx in keymap.types[type_idx as usize].num_levels as usize
+                    ..keyi.groups[i as usize].levels.len()
                 {
-                    for lvl_idx in keymap.types[type_idx as usize].num_levels as usize
-                        ..keyi.groups[i as usize].levels.len()
-                    {
-                        keyi.groups[i as usize].levels[lvl_idx].syms.clear();
-                        keyi.groups[i as usize].levels[lvl_idx].actions.clear();
-                    }
+                    keyi.groups[i as usize].levels[lvl_idx].syms.clear();
+                    keyi.groups[i as usize].levels[lvl_idx].actions.clear();
                 }
-
-                // Resize levels array to match type
-                let __need_levels: usize = keymap.types[type_idx as usize].num_levels as usize;
-                keyi.groups[i as usize]
-                    .levels
-                    .resize_with(__need_levels, Default::default);
-
-                keymap.keys[key_idx].groups[i as usize].explicit_type = explicit_type;
-                keymap.keys[key_idx].groups[i as usize].type_idx = type_idx;
-
-                i += 1;
             }
+
+            let need_levels = keymap.types[type_idx as usize].num_levels as usize;
+            keyi.groups[i as usize]
+                .levels
+                .resize_with(need_levels, Default::default);
+
+            keymap.keys[key_idx].groups[i as usize].explicit_type = explicit_type;
+            keymap.keys[key_idx].groups[i as usize].type_idx = type_idx;
         }
 
-        // Copy levels
-        if !keyi.groups.is_empty() {
-            i = 0;
-            while i < keyi.groups.len() as u32 {
-                let groupi = &mut keyi.groups[i as usize];
-                // Compute the capitalization transformation of the keysyms
-                for li in 0..groupi.levels.len() {
-                    let leveli = &mut groupi.levels[li];
-                    match leveli.syms.len() {
-                        0 => {
-                            leveli.upper = XKB_KEY_NO_SYMBOL as u32;
-                        }
-                        1 => {
-                            leveli.upper = xkb_keysym_to_upper(leveli.syms[0]);
-                        }
-                        _ => {
-                            // Multiple keysyms: check if there is any cased keysym
-                            leveli.has_upper = false;
-                            let num_syms = leveli.syms.len();
-                            for k in 0..num_syms {
-                                let upper: u32 = xkb_keysym_to_upper(leveli.syms[k]);
-                                if upper != leveli.syms[k] {
-                                    leveli.has_upper = true;
-                                    break;
-                                }
-                            }
-                            if leveli.has_upper {
-                                // Some cased keysyms: store the transformation result
-                                let num_syms = leveli.syms.len();
-                                leveli.syms.reserve(num_syms);
-                                for k in 0..num_syms {
-                                    let upper = xkb_keysym_to_upper(leveli.syms[k]);
-                                    leveli.syms.push(upper);
-                                }
-                            }
+        for i in 0..keyi.groups.len() {
+            let groupi = &mut keyi.groups[i];
+            for li in 0..groupi.levels.len() {
+                let leveli = &mut groupi.levels[li];
+                match leveli.syms.len() {
+                    0 => leveli.upper = XKB_KEY_NO_SYMBOL as u32,
+                    1 => leveli.upper = xkb_keysym_to_upper(leveli.syms[0]),
+                    _ => {
+                        let has_upper = leveli.syms.iter().any(|&s| xkb_keysym_to_upper(s) != s);
+                        if has_upper {
+                            let syms_copy: Vec<_> = leveli
+                                .syms
+                                .iter()
+                                .map(|&s| xkb_keysym_to_upper(s))
+                                .collect();
+                            leveli.syms.extend(syms_copy);
                         }
                     }
                 }
+            }
 
-                // Copy the level (steal from Vec)
-                if groupi.levels.is_empty() {
-                    keymap.keys[key_idx].groups[i as usize].levels = Vec::new();
-                } else {
-                    let stolen = std::mem::take(&mut groupi.levels);
-                    keymap.keys[key_idx].groups[i as usize].levels = stolen;
-                }
+            keymap.keys[key_idx].groups[i].levels = std::mem::take(&mut groupi.levels);
 
-                let type_idx = keymap.keys[key_idx].groups[i as usize].type_idx;
-                if keymap.types[type_idx as usize].num_levels > 1
-                    || !keymap.keys[key_idx].groups[i as usize].levels[0]
-                        .syms
-                        .is_empty()
-                {
-                    keymap.keys[key_idx].groups[i as usize].explicit_symbols = true;
-                    keymap.keys[key_idx].explicit =
-                        keymap.keys[key_idx].explicit | EXPLICIT_SYMBOLS;
-                }
-                if groupi.defined & GROUP_FIELD_ACTS != 0 {
-                    keymap.keys[key_idx].groups[i as usize].explicit_actions = true;
-                    keymap.keys[key_idx].explicit = keymap.keys[key_idx].explicit | EXPLICIT_INTERP;
-                }
-                if keymap.keys[key_idx].groups[i as usize].explicit_type {
-                    keymap.keys[key_idx].explicit = keymap.keys[key_idx].explicit | EXPLICIT_TYPES;
-                }
-
-                i += 1;
+            let type_idx = keymap.keys[key_idx].groups[i].type_idx;
+            if keymap.types[type_idx as usize].num_levels > 1
+                || !keymap.keys[key_idx].groups[i].levels[0].syms.is_empty()
+            {
+                keymap.keys[key_idx].groups[i].explicit_symbols = true;
+                keymap.keys[key_idx].explicit |= EXPLICIT_SYMBOLS;
+            }
+            if groupi.defined & GROUP_FIELD_ACTS != 0 {
+                keymap.keys[key_idx].groups[i].explicit_actions = true;
+                keymap.keys[key_idx].explicit |= EXPLICIT_INTERP;
+            }
+            if keymap.keys[key_idx].groups[i].explicit_type {
+                keymap.keys[key_idx].explicit |= EXPLICIT_TYPES;
             }
         }
 
@@ -1801,48 +1625,39 @@ fn copy_symbols_def_to_keymap(
         keymap.keys[key_idx].out_of_range_group_policy = keyi.out_of_range_group_policy;
     }
 
-    // key_fields:
     if (keyi.defined & KEY_FIELD_VMODMAP) != 0 {
         keymap.keys[key_idx].vmodmap = keyi.vmodmap;
-        keymap.keys[key_idx].explicit = keymap.keys[key_idx].explicit | EXPLICIT_VMODMAP;
+        keymap.keys[key_idx].explicit |= EXPLICIT_VMODMAP;
     }
 
     if keyi.repeat != KEY_REPEAT_UNDEFINED {
         keymap.keys[key_idx].repeats = keyi.repeat == KEY_REPEAT_YES;
-        keymap.keys[key_idx].explicit = keymap.keys[key_idx].explicit | EXPLICIT_REPEAT;
+        keymap.keys[key_idx].explicit |= EXPLICIT_REPEAT;
     }
 
-    if ((keyi.defined & KEY_FIELD_OVERLAY) != 0) && keyi.overlays != 0 && !keyi.overlays_clear {
-        // Remove null entries from overlay_keys and clear corresponding bits
+    if ((keyi.defined & KEY_FIELD_OVERLAY) != 0)
+        && keyi.overlays.iter().any(|o| o.is_some())
+        && !keyi.overlays_clear
+    {
         let mut clean_overlays: u8 = 0;
         let mut clean_keys: Vec<u32> = Vec::new();
-        let mut remaining: u8 = keyi.overlays;
-        let mut idx: usize = 0;
-        while remaining != 0 {
-            let lsb: u8 = remaining & (!remaining) + 1;
-            remaining &= !lsb;
-            let k = if idx < keyi.overlay_keys.len() {
-                keyi.overlay_keys[idx]
-            } else {
-                XKB_KEYCODE_INVALID
-            };
-            idx += 1;
-            if k != XKB_KEYCODE_INVALID {
-                clean_overlays |= lsb;
-                clean_keys.push(k);
+        for (i, &entry) in keyi.overlays.iter().enumerate() {
+            if let Some(k) = entry {
+                if k != XKB_KEYCODE_INVALID {
+                    clean_overlays |= 1 << i;
+                    clean_keys.push(k);
+                }
             }
         }
-
         if clean_overlays != 0 {
             keymap.keys[key_idx].overlays = clean_overlays;
             keymap.keys[key_idx].overlay_keys = clean_keys;
-            keymap.keys[key_idx].explicit = keymap.keys[key_idx].explicit | EXPLICIT_OVERLAY;
+            keymap.keys[key_idx].explicit |= EXPLICIT_OVERLAY;
         }
     }
 
     true
 }
-
 fn copy_mod_map_def_to_keymap(
     keymap: &mut XkbKeymap,
     _info: &SymbolsInfo,
