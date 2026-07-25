@@ -3435,6 +3435,9 @@ fn find_interp_for_key(
                 }
             }
         }
+        if !found {
+            use_default = true;
+        }
         if use_default {
             // usize::MAX signals "use default interpret"
             interp_indices.push(usize::MAX);

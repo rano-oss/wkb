@@ -692,9 +692,7 @@ pub(crate) struct IncludeStmt {
 
 // ── Expression types ────────────────────────────────────────────────
 
-/// Expression AST node.
-
-/// The discriminated payload of an expression node.
+/// Expression AST node — the discriminated payload.
 pub(crate) enum ExprKind {
     String(u32),
     Integer(i64),

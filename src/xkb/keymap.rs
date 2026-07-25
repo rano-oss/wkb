@@ -837,17 +837,6 @@ pub(crate) fn lookup_string(tab: &[LookupEntry], string: &str, value_rtrn: &mut 
     }
     false
 }
-pub(crate) fn lookup_value(tab: &[LookupEntry], value: u32) -> &'static str {
-    for entry in tab {
-        if entry.name.is_empty() {
-            break;
-        }
-        if entry.value == value {
-            return entry.name;
-        }
-    }
-    ""
-}
 pub(crate) static CTRL_MASK_NAMES: [LookupEntry; 25] = [
     LookupEntry {
         name: "Overlay3",
@@ -1220,15 +1209,6 @@ pub(crate) static SYM_INTERPRET_MATCH_MASK_NAMES: [LookupEntry; 6] = [
     },
     LookupEntry { name: "", value: 0 },
 ];
-
-pub(crate) fn action_type_text(type_0: u32) -> &'static str {
-    let name: &'static str = lookup_value(&ACTION_TYPE_NAMES, type_0);
-    if !name.is_empty() {
-        name
-    } else {
-        "Private"
-    }
-}
 
 use std::ffi::CString;
 
