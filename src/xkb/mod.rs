@@ -3,6 +3,8 @@
 
 pub(crate) mod keymap;
 pub(crate) mod keysym;
+#[cfg(feature = "testing")]
+pub(crate) mod rxkb;
 pub(crate) mod shared_types;
 pub(crate) mod xkbcomp;
 
@@ -131,20 +133,47 @@ pub fn load_compose_from_path(path: &std::path::Path) -> Composer {
 pub(crate) fn keysym_to_named_key(keysym: u32) -> NamedKey {
     const TABLE: &[(u32, NamedKey)] = &[
         (0x0020, NamedKey::Space),
-        (0xff09, NamedKey::Tab),
+        (0xfe20, NamedKey::Tab),
+        (0xfe34, NamedKey::Enter),
         (0xff08, NamedKey::Backspace),
+        (0xff09, NamedKey::Tab),
         (0xff0d, NamedKey::Enter),
+        (0xff13, NamedKey::Pause),
+        (0xff14, NamedKey::ScrollLock),
+        (0xff15, NamedKey::SysReq),
         (0xff1b, NamedKey::Escape),
-        (0xffff, NamedKey::Delete),
-        (0xff63, NamedKey::Insert),
-        (0xff51, NamedKey::ArrowLeft),
-        (0xff53, NamedKey::ArrowRight),
-        (0xff52, NamedKey::ArrowUp),
-        (0xff54, NamedKey::ArrowDown),
+        (0xff21, NamedKey::KanjiMode),
+        (0xff24, NamedKey::Romaji),
+        (0xff25, NamedKey::Hiragana),
+        (0xff26, NamedKey::Katakana),
+        (0xff2a, NamedKey::ZenkakuHankaku),
+        (0xff30, NamedKey::EisuToggle),
+        (0xff34, NamedKey::HangulHanja),
         (0xff50, NamedKey::Home),
-        (0xff57, NamedKey::End),
+        (0xff51, NamedKey::ArrowLeft),
+        (0xff52, NamedKey::ArrowUp),
+        (0xff53, NamedKey::ArrowRight),
+        (0xff54, NamedKey::ArrowDown),
         (0xff55, NamedKey::PageUp),
         (0xff56, NamedKey::PageDown),
+        (0xff57, NamedKey::End),
+        (0xff61, NamedKey::PrintScreen),
+        (0xff63, NamedKey::Insert),
+        (0xff67, NamedKey::ContextMenu),
+        (0xff7f, NamedKey::NumLock),
+        (0xff80, NamedKey::Space),
+        (0xff89, NamedKey::Tab),
+        (0xff8d, NamedKey::Enter),
+        (0xff95, NamedKey::Home),
+        (0xff96, NamedKey::ArrowLeft),
+        (0xff97, NamedKey::ArrowUp),
+        (0xff98, NamedKey::ArrowRight),
+        (0xff99, NamedKey::ArrowDown),
+        (0xff9a, NamedKey::PageUp),
+        (0xff9b, NamedKey::PageDown),
+        (0xff9c, NamedKey::End),
+        (0xff9e, NamedKey::Insert),
+        (0xff9f, NamedKey::Delete),
         (0xffbe, NamedKey::F1),
         (0xffbf, NamedKey::F2),
         (0xffc0, NamedKey::F3),
@@ -184,93 +213,156 @@ pub(crate) fn keysym_to_named_key(keysym: u32) -> NamedKey {
         (0xffe2, NamedKey::RightShift),
         (0xffe3, NamedKey::LeftControl),
         (0xffe4, NamedKey::RightControl),
-        (0xffe9, NamedKey::LeftAlt),
-        (0xffea, NamedKey::RightAlt),
+        (0xffe5, NamedKey::CapsLock),
         (0xffe7, NamedKey::LeftMeta),
         (0xffe8, NamedKey::RightMeta),
+        (0xffe9, NamedKey::LeftAlt),
+        (0xffea, NamedKey::RightAlt),
         (0xffeb, NamedKey::LeftSuper),
         (0xffec, NamedKey::RightSuper),
         (0xffed, NamedKey::LeftHyper),
         (0xffee, NamedKey::RightHyper),
-        (0xffe5, NamedKey::CapsLock),
-        (0xff7f, NamedKey::NumLock),
-        (0xff14, NamedKey::ScrollLock),
-        (0xff61, NamedKey::PrintScreen),
-        (0xff13, NamedKey::Pause),
-        (0xff15, NamedKey::SysReq),
-        (0xff67, NamedKey::ContextMenu),
-        (0x1008ff21, NamedKey::Power),
-        (0x1008ff2a, NamedKey::PowerOff),
-        (0x1008ff2f, NamedKey::Sleep),
-        (0x1008ff2b, NamedKey::WakeUp),
-        (0x1008ffa7, NamedKey::Suspend),
-        (0x1008ffa8, NamedKey::Hibernate),
-        (0x1008ff14, NamedKey::MediaPlay),
-        (0x1008ff31, NamedKey::MediaPause),
-        (0x1008ff15, NamedKey::MediaStop),
-        (0x1008ff17, NamedKey::MediaNextTrack),
-        (0x1008ff16, NamedKey::MediaPreviousTrack),
-        (0x1008ff13, NamedKey::VolumeUp),
-        (0x1008ff11, NamedKey::VolumeDown),
-        (0x1008ff12, NamedKey::VolumeMute),
-        (0x1008ff26, NamedKey::BrowserBack),
-        (0x1008ff27, NamedKey::BrowserForward),
-        (0x1008ff29, NamedKey::BrowserRefresh),
-        (0x1008ff18, NamedKey::BrowserHome),
-        (0x1008ff19, NamedKey::LaunchMail),
-        (0x1008ff1d, NamedKey::LaunchCalculator),
-        (0x1008ff80, NamedKey::LaunchTerminal),
+        (0xffff, NamedKey::Delete),
         (0x1008ff02, NamedKey::BrightnessUp),
         (0x1008ff03, NamedKey::BrightnessDown),
         (0x1008ff05, NamedKey::KeyboardBrightnessUp),
         (0x1008ff06, NamedKey::KeyboardBrightnessDown),
-        (0xff21, NamedKey::KanjiMode),
-        (0xff25, NamedKey::Hiragana),
-        (0xff26, NamedKey::Katakana),
-        (0xff24, NamedKey::Romaji),
-        (0xff2a, NamedKey::ZenkakuHankaku),
-        (0xff30, NamedKey::EisuToggle),
-        (0xff34, NamedKey::HangulHanja),
-        (0xff80, NamedKey::Space),
-        (0xff8d, NamedKey::Enter),
-        (0xff89, NamedKey::Tab),
-        (0xff9f, NamedKey::Delete),
-        (0xff9e, NamedKey::Insert),
-        (0xff95, NamedKey::Home),
-        (0xff9c, NamedKey::End),
-        (0xff9a, NamedKey::PageUp),
-        (0xff9b, NamedKey::PageDown),
-        (0xff97, NamedKey::ArrowUp),
-        (0xff99, NamedKey::ArrowDown),
-        (0xff96, NamedKey::ArrowLeft),
-        (0xff98, NamedKey::ArrowRight),
-        (0xfe20, NamedKey::Tab),
-        (0xfe34, NamedKey::Enter),
+        (0x1008ff11, NamedKey::VolumeDown),
+        (0x1008ff12, NamedKey::VolumeMute),
+        (0x1008ff13, NamedKey::VolumeUp),
+        (0x1008ff14, NamedKey::MediaPlay),
+        (0x1008ff15, NamedKey::MediaStop),
+        (0x1008ff16, NamedKey::MediaPreviousTrack),
+        (0x1008ff17, NamedKey::MediaNextTrack),
+        (0x1008ff18, NamedKey::BrowserHome),
+        (0x1008ff19, NamedKey::LaunchMail),
+        (0x1008ff1d, NamedKey::LaunchCalculator),
+        (0x1008ff21, NamedKey::Power),
+        (0x1008ff26, NamedKey::BrowserBack),
+        (0x1008ff27, NamedKey::BrowserForward),
+        (0x1008ff29, NamedKey::BrowserRefresh),
+        (0x1008ff2a, NamedKey::PowerOff),
+        (0x1008ff2b, NamedKey::WakeUp),
+        (0x1008ff2f, NamedKey::Sleep),
+        (0x1008ff31, NamedKey::MediaPause),
+        (0x1008ff80, NamedKey::LaunchTerminal),
+        (0x1008ffa7, NamedKey::Suspend),
+        (0x1008ffa8, NamedKey::Hibernate),
     ];
     if (0xfe50..=0xfe8d).contains(&keysym) {
         return NamedKey::Unnamed;
     }
     TABLE
-        .iter()
-        .find(|(ks, _)| *ks == keysym)
-        .map(|(_, nk)| *nk)
+        .binary_search_by_key(&keysym, |&(ks, _)| ks)
+        .ok()
+        .map(|i| TABLE[i].1)
         .unwrap_or(NamedKey::Unnamed)
 }
 
-/// Remove entries from `fk` that are identical to `state_keymap` (keep only diffs).
-fn dedup_against_state(fk: &mut FlatKeymap, state_keymap: &FlatKeymap, num_layouts: usize) {
+/// Check if a key could produce a different keysym when Caps modifier is active.
+/// Compares KEYSYMS across levels: if any level differs from level 0, the
+/// effective level under Caps will produce a different result.
+fn key_affected_by_caps(keymap: &keymap::Keymap, kc: u32, layout: usize) -> bool {
+    let n = keymap.num_levels_for_key(kc, layout as u32) as usize;
+    if n == 0 {
+        return false;
+    }
+    let l0 = keymap.key_get_syms_by_level(kc, layout as u32, 0);
+    let Some(&l0_sym) = l0.first() else {
+        return false;
+    };
+    for i in 1..n {
+        let syms = keymap.key_get_syms_by_level(kc, layout as u32, i as u32);
+        match syms.first() {
+            Some(&s) if s != l0_sym => return true,
+            None => return true,
+            _ => {}
+        }
+    }
+    // All levels same sym → check caps transformation (upper/lower case)
+    keysym::xkb_keysym_to_upper(l0_sym) != l0_sym
+}
+
+/// Check if Num modifier (Mod2) could affect a key's level resolution.
+/// Uses entry-level masks (not type-level aggregate) — matches xkbcommon's
+/// actual level-matching logic.
+fn key_affected_by_num(keymap: &keymap::Keymap, kc: u32, layout: usize) -> bool {
+    const MOD2_MASK: u32 = 1 << 4;
+    let key = match keymap.inner.get_key(kc) {
+        Some(k) => k,
+        None => return false,
+    };
+    let group = match key.groups.get(layout) {
+        Some(g) => g,
+        None => return false,
+    };
+    let Some(type_) = keymap.inner.types.get(group.type_idx as usize) else {
+        return false;
+    };
+    type_.entries.iter().any(|e| (e.mods.mask & MOD2_MASK) != 0)
+}
+
+/// Build a lock keymap: pre-fill from state_keymap, then recompute only
+/// cells where the lock modifier could change the result (filter-based).
+/// Non-affected cells retain the pre-filled state_keymap value. Inline dedup
+/// sets back to None when the computed result matches state_keymap, preventing
+/// runtime short-circuit in the multi-lock case.
+fn build_lock_keymap(
+    keymap: &keymap::Keymap,
+    state_keymap: &FlatKeymap,
+    lock_kc: u32,
+    toggle: bool,
+    affected_by: fn(&keymap::Keymap, u32, usize) -> bool,
+    num_keys: usize,
+    num_layouts: usize,
+    min_keycode: u32,
+    max_keycode: u32,
+    level_keys: (Option<u32>, Option<u32>, Option<u32>),
+) -> FlatKeymap {
+    const EVDEV_OFFSET: u32 = 8;
+    let mut fk = FlatKeymap::new(num_keys, num_layouts);
+    let stride = MAX_LEVELS * num_keys;
     for layout_idx in 0..num_layouts {
+        let layout_off = layout_idx * stride;
         for lvl in 0..MAX_LEVELS {
-            for k in 0..fk.num_keys as u32 {
-                if let Some(v) = fk.get(layout_idx, lvl, k) {
-                    if state_keymap.get(layout_idx, lvl, k) == Some(v) {
-                        let idx = (layout_idx * MAX_LEVELS + lvl) * fk.num_keys + k as usize;
-                        fk.data[idx] = None;
+            if let Some(mut st) = keymap.new_state() {
+                if layout_idx > 0 {
+                    st.update_mask(0, 0, 0, 0, 0, layout_idx as u32);
+                }
+                if toggle {
+                    st.update_key(lock_kc, shared_types::XKB_KEY_DOWN);
+                    st.update_key(lock_kc, shared_types::XKB_KEY_UP);
+                }
+                press_level_modifiers(&mut st, lvl, level_keys.0, level_keys.1, level_keys.2);
+                if !toggle {
+                    st.update_key(lock_kc, shared_types::XKB_KEY_DOWN);
+                }
+                let lvl_off = layout_off + lvl * num_keys;
+                for kc in min_keycode..=max_keycode {
+                    let evdev = (kc - EVDEV_OFFSET) as usize;
+                    if !affected_by(keymap, kc, layout_idx) {
+                        continue;
+                    }
+                    let idx = lvl_off + evdev;
+                    let ch = match st.key_get_one_sym(kc) {
+                        Some(sym) => keysym::keysym_to_char(sym),
+                        None => keymap
+                            .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
+                            .first()
+                            .and_then(|&s| keysym::keysym_to_char(s)),
+                    };
+                    if let Some(c) = ch {
+                        if state_keymap.data[idx] == Some(c) {
+                            fk.data[idx] = None;
+                        } else {
+                            fk.data[idx] = Some(c);
+                        }
                     }
                 }
             }
         }
     }
+    fk
 }
 
 /// Build WKB instance from an XKB keymap, extracting all layouts.
@@ -317,7 +409,6 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
             }
         }
     }
-
     let get_char =
         |kc: u32, state: &keymap::State, layout_idx: usize, lvl: usize| -> Option<char> {
             match state.key_get_one_sym(kc) {
@@ -329,76 +420,69 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
             }
         };
 
+    // Build state_keymap using state with level modifiers pressed.
+    // key_get_one_sym resolves the effective level per-key based on its type
+    // (e.g. ONE_LEVEL keys stay at level 0 when Shift is held), so we need
+    // the full state machinery — not just key_get_syms_by_level.
     let mut state_keymap = FlatKeymap::new(num_keys, num_layouts);
+    let stride = MAX_LEVELS * num_keys;
+    let mut state_states: Vec<keymap::State> =
+        (0..MAX_LEVELS).filter_map(|_| keymap.new_state()).collect();
     for layout_idx in 0..num_layouts {
-        for lvl in 0..MAX_LEVELS {
-            if let Some(mut st) = keymap.new_state() {
-                // Set the layout group on the state before querying.
-                if layout_idx > 0 {
-                    st.update_mask(0, 0, 0, 0, 0, layout_idx as u32);
+        let layout_off = layout_idx * stride;
+        for (lvl, st) in state_states.iter_mut().enumerate() {
+            if layout_idx > 0 {
+                if let Some(fresh) = keymap.new_state() {
+                    *st = fresh;
                 }
-                press_level_modifiers(&mut st, lvl, level_keys.0, level_keys.1, level_keys.2);
-                for kc in min_keycode..=max_keycode {
-                    if let Some(ch) = get_char(kc, &st, layout_idx, lvl) {
-                        state_keymap.set(layout_idx, lvl, kc - EVDEV_OFFSET, ch);
-                    }
+                st.update_mask(0, 0, 0, 0, 0, layout_idx as u32);
+            }
+            press_level_modifiers(st, lvl, level_keys.0, level_keys.1, level_keys.2);
+            let lvl_off = layout_off + lvl * num_keys;
+            for kc in min_keycode..=max_keycode {
+                let evdev = (kc - EVDEV_OFFSET) as usize;
+                if let Some(ch) = get_char(kc, st, layout_idx, lvl) {
+                    state_keymap.data[lvl_off + evdev] = Some(ch);
                 }
             }
         }
     }
-
-    let populate_lock = |lock_kc: Option<u32>,
-                         toggle: bool,
-                         level_keys: (Option<u32>, Option<u32>, Option<u32>)|
-     -> FlatKeymap {
-        let mut fk = FlatKeymap::new(num_keys, num_layouts);
-        if let Some(lkc) = lock_kc {
-            for layout_idx in 0..num_layouts {
-                for lvl in 0..MAX_LEVELS {
-                    if let Some(mut st) = keymap.new_state() {
-                        if layout_idx > 0 {
-                            st.update_mask(0, 0, 0, 0, 0, layout_idx as u32);
-                        }
-                        if toggle {
-                            st.update_key(lkc, shared_types::XKB_KEY_DOWN);
-                            st.update_key(lkc, shared_types::XKB_KEY_UP);
-                        }
-                        press_level_modifiers(
-                            &mut st,
-                            lvl,
-                            level_keys.0,
-                            level_keys.1,
-                            level_keys.2,
-                        );
-                        if !toggle {
-                            st.update_key(lkc, shared_types::XKB_KEY_DOWN);
-                        }
-                        for kc in min_keycode..=max_keycode {
-                            if let Some(ch) = get_char(kc, &st, layout_idx, lvl) {
-                                fk.set(layout_idx, lvl, kc - EVDEV_OFFSET, ch);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        fk
-    };
-
-    let caps_lock_keymap = {
-        let caps_kc = level_code(&modifiers, ModType::Caps).map(|(c, _)| c + EVDEV_OFFSET);
-        let mut fk = populate_lock(caps_kc, false, level_keys);
-        dedup_against_state(&mut fk, &state_keymap, num_layouts);
-        fk
-    };
-
-    let num_lock_keys = {
-        let num_kc = level_code(&modifiers, ModType::Num).map(|(c, _)| c + EVDEV_OFFSET);
-        let mut fk = populate_lock(num_kc, true, level_keys);
-        dedup_against_state(&mut fk, &state_keymap, num_layouts);
-        fk
-    };
-
+    let caps_kc = level_code(&modifiers, ModType::Caps).map(|(c, _)| c + EVDEV_OFFSET);
+    let caps_lock_keymap = caps_kc.map_or_else(
+        || FlatKeymap::new(num_keys, num_layouts),
+        |ckc| {
+            build_lock_keymap(
+                keymap,
+                &state_keymap,
+                ckc,
+                false,
+                key_affected_by_caps,
+                num_keys,
+                num_layouts,
+                min_keycode,
+                max_keycode,
+                level_keys,
+            )
+        },
+    );
+    let num_kc = level_code(&modifiers, ModType::Num).map(|(c, _)| c + EVDEV_OFFSET);
+    let num_lock_keys = num_kc.map_or_else(
+        || FlatKeymap::new(num_keys, num_layouts),
+        |nkc| {
+            build_lock_keymap(
+                keymap,
+                &state_keymap,
+                nkc,
+                true,
+                key_affected_by_num,
+                num_keys,
+                num_layouts,
+                min_keycode,
+                max_keycode,
+                level_keys,
+            )
+        },
+    );
     let mut repeat_keys = KeyBitSet::new();
     for kc in min_keycode..=max_keycode {
         if keymap.key_repeats(kc) {
@@ -414,7 +498,6 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
                 .unwrap_or_else(|| format!("Layout {}", i))
         })
         .collect();
-
     // Cache XKB string for Wayland client sharing
     let _ = store_keymap; // no longer cached; generated on demand
 
@@ -464,13 +547,15 @@ pub(crate) fn new_from_names(
     use shared_types::XkbRuleNames;
 
     let ctx = Context::new().ok_or(XkbError::ContextCreation)?;
+
     let rmlvo = XkbRuleNames::from_strs(rules, model, layout, variant, options.unwrap_or(""));
 
     let keymap = ctx
         .keymap_from_names(&rmlvo)
         .ok_or(XkbError::KeymapCompilation)?;
 
-    Ok(build_wkb_from_keymap(&keymap, None, true))
+    let result = build_wkb_from_keymap(&keymap, None, true);
+    Ok(result)
 }
 
 /// Create a new WKB instance from a keymap string.

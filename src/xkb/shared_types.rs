@@ -273,11 +273,6 @@ bitflags::bitflags! {
     }
 }
 
-
-
-
-
-
 bitflags::bitflags! {
     #[derive(Copy, Clone, Default, PartialEq, Eq)]
     pub(crate) struct ControlsFlags: u32 {
@@ -455,7 +450,7 @@ pub(crate) const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: u32 = 2;
 pub(crate) const XKB_KEYCODE_INVALID: u32 = 0xffffffff;
 pub(crate) const XKB_KEYCODE_MAX: u32 = 0xffffffff_u32.wrapping_sub(1);
 pub(crate) const XKB_LEVEL_INVALID: u32 = 0xffffffff;
-pub(crate) const XKB_KEYSYM_MAX: i32 = 0x1fffffff;
+pub(crate) const XKB_KEYSYM_MAX: u32 = 0x1fffffff;
 
 #[derive(Clone, Default)]
 pub(crate) struct XkbComponentNames {
@@ -521,9 +516,9 @@ pub(crate) const XKB_MOD_INDEX_CAPS: u32 = 1;
 pub(crate) const _XKB_MOD_INDEX_NUM_ENTRIES: u32 = 8;
 pub(crate) const XKB_ALL_GROUPS: u64 = 4294967295;
 pub(crate) const XKB_OVERLAY_MAX: u8 = 8;
-pub(crate) const XKB_OVERLAY_INVALID: i32 = 255;
-pub(crate) const XKB_KEYCODE_MAX_CONTIGUOUS: i32 = 0xfff;
-pub(crate) const XKB_LEVEL_MAX_IMPL: i32 = 2048;
+pub(crate) const XKB_OVERLAY_INVALID: u8 = 255;
+pub(crate) const XKB_KEYCODE_MAX_CONTIGUOUS: u32 = 0xfff;
+pub(crate) const XKB_LEVEL_MAX_IMPL: u32 = 2048;
 pub(crate) const XKB_MAX_MODS: u32 = 32;
 // ── Safe methods on XkbKeymap ──────────────────────────────────────
 
@@ -593,15 +588,12 @@ impl XkbKeymap {
         layout: u32,
         level: u32,
     ) -> Option<&'a XkbLevel> {
-        let layout = match super::keymap::xkb_wrap_group_into_range(
+        let layout = super::keymap::xkb_wrap_group_into_range(
             layout as i32,
             key.num_groups,
             key.out_of_range_group_policy,
             key.out_of_range_group_number,
-        ) {
-            Some(l) => l,
-            None => return None,
-        };
+        )?;
         if level >= self.key_num_levels(key, layout) {
             return None;
         }
@@ -615,7 +607,7 @@ pub(crate) fn entry_is_active(entry: &XkbKeyTypeEntry) -> bool {
 }
 
 // Error codes (from xkbcommon_errors_h)
-pub(crate) const XKB_KEY_NO_SYMBOL: i32 = 0;
+pub(crate) const XKB_KEY_NO_SYMBOL: u32 = 0;
 
 // ── rmlvo_h (RMLVO enum) ─────────────────────────────────────────────
 pub(crate) const RMLVO_OPTIONS: u32 = 16;
@@ -700,9 +692,7 @@ pub(crate) struct IncludeStmt {
 
 // ── Expression types ────────────────────────────────────────────────
 
-/// Expression AST node.
-
-/// The discriminated payload of an expression node.
+/// Expression AST node — the discriminated payload.
 pub(crate) enum ExprKind {
     String(u32),
     Integer(i64),
@@ -744,7 +734,7 @@ pub(crate) enum ExprKind {
 
 impl ExprKind {
     pub(crate) fn stmt_type(&self) -> u32 {
-        Self::stmt_type_for_kind(&self)
+        Self::stmt_type_for_kind(self)
     }
 
     pub(crate) fn stmt_type_for_kind(kind: &ExprKind) -> u32 {
@@ -950,8 +940,8 @@ macro_rules! impl_parse_dec {
         pub(crate) fn $name(s: &[u8]) -> ($t, i32) {
             let mut result: $t = 0;
             let mut i: usize = 0;
-            while i < s.len() {
-                let d = s[i].wrapping_sub(b'0');
+            for &b in s {
+                let d = b.wrapping_sub(b'0');
                 if d >= 10 {
                     break;
                 }
@@ -987,8 +977,8 @@ macro_rules! impl_parse_hex {
         pub(crate) fn $name(s: &[u8]) -> ($t, i32) {
             let mut result: $t = 0;
             let mut i: usize = 0;
-            while i < s.len() {
-                let d = hex_val(s[i]);
+            for &b in s {
+                let d = hex_val(b);
                 if d >= 16 {
                     break;
                 }

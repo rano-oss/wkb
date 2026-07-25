@@ -742,7 +742,7 @@ pub(crate) fn xkb_context_num_failed_include_paths(ctx: &mut XkbContext) -> u32 
 }
 
 pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbRuleNames) -> u32 {
-    let mut modified: u32 = 0 as u32;
+    let mut modified: u32 = 0_u32;
     if rmlvo.rules.as_bytes().is_empty() {
         let env = if ctx.use_environment_names {
             xkb_context_getenv("XKB_DEFAULT_RULES")
@@ -753,7 +753,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
             Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
             Err(_) => std::ffi::CString::new("evdev").unwrap(),
         };
-        modified = (modified as u32 | RMLVO_RULES) as u32;
+        modified |= RMLVO_RULES;
     }
     if rmlvo.model.as_bytes().is_empty() {
         let env = if ctx.use_environment_names {
@@ -765,7 +765,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
             Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
             Err(_) => std::ffi::CString::new("pc105").unwrap(),
         };
-        modified = (modified as u32 | RMLVO_MODEL) as u32;
+        modified |= RMLVO_MODEL;
     }
     if rmlvo.layout.as_bytes().is_empty() {
         {
@@ -779,7 +779,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
                 Err(_) => std::ffi::CString::new("us").unwrap(),
             };
         }
-        modified = (modified as u32 | RMLVO_LAYOUT) as u32;
+        modified |= RMLVO_LAYOUT;
         let variant: std::ffi::CString = {
             let layout = xkb_context_getenv("XKB_DEFAULT_LAYOUT");
             let default_variant = xkb_context_getenv("XKB_DEFAULT_VARIANT");
@@ -791,7 +791,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
             }
         };
         rmlvo.variant = variant;
-        modified = (modified as u32 | RMLVO_VARIANT) as u32;
+        modified |= RMLVO_VARIANT;
     }
     if rmlvo.options.as_bytes().is_empty() {
         if ctx.use_environment_names {
@@ -803,7 +803,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
         } else {
             rmlvo.options = std::ffi::CString::new("").unwrap();
         };
-        modified = (modified as u32 | RMLVO_OPTIONS) as u32;
+        modified |= RMLVO_OPTIONS;
     }
     modified
 }
@@ -836,17 +836,6 @@ pub(crate) fn lookup_string(tab: &[LookupEntry], string: &str, value_rtrn: &mut 
         }
     }
     false
-}
-pub(crate) fn lookup_value(tab: &[LookupEntry], value: u32) -> &'static str {
-    for entry in tab {
-        if entry.name.is_empty() {
-            break;
-        }
-        if entry.value == value {
-            return entry.name;
-        }
-    }
-    ""
 }
 pub(crate) static CTRL_MASK_NAMES: [LookupEntry; 25] = [
     LookupEntry {
@@ -1221,15 +1210,6 @@ pub(crate) static SYM_INTERPRET_MATCH_MASK_NAMES: [LookupEntry; 6] = [
     LookupEntry { name: "", value: 0 },
 ];
 
-pub(crate) fn action_type_text(type_0: u32) -> &'static str {
-    let name: &'static str = lookup_value(&ACTION_TYPE_NAMES, type_0);
-    if !name.is_empty() {
-        name
-    } else {
-        "Private"
-    }
-}
-
 use std::ffi::CString;
 
 // ============================================================================
@@ -1375,7 +1355,7 @@ impl Context {
 /// Safe wrapper around XkbKeymap with automatic cleanup
 #[derive(Clone)]
 pub(crate) struct Keymap {
-    inner: Rc<super::shared_types::XkbKeymap>,
+    pub(crate) inner: Rc<super::shared_types::XkbKeymap>,
 }
 
 impl std::fmt::Debug for Keymap {
@@ -1544,38 +1524,6 @@ impl State {
     }
 }
 
-// ============================================================================
-// Registry (rxkb) Wrappers for Layout Enumeration
-// ============================================================================
-
-/// Safe wrapper around RxkbContext for keyboard layout registry
-pub(crate) struct RegistryContext {
-    inner: Box<RxkbContext>,
-}
-
-impl RegistryContext {
-    /// Create a new registry context
-    pub(crate) fn new() -> Option<Self> {
-        let inner = RxkbContext::new(RXKB_CONTEXT_NO_FLAGS)?;
-        Some(RegistryContext { inner })
-    }
-
-    /// Load default registry paths
-    pub(crate) fn include_path_append_default(&mut self) {
-        self.inner.include_path_append_default();
-    }
-
-    /// Parse the registry for the given ruleset (typically "evdev")
-    pub(crate) fn parse(&mut self, ruleset: &str) -> bool {
-        self.inner.parse(ruleset)
-    }
-
-    /// Iterate over all layouts in the registry
-    pub(crate) fn layouts(&self) -> impl Iterator<Item = &RxkbLayout> {
-        self.inner.layouts().iter()
-    }
-}
-
 #[derive(Copy, Clone)]
 
 pub(crate) struct StateComponents {
@@ -1623,8 +1571,9 @@ impl KeyId {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) enum XkbFilter {
+    #[default]
     Inactive,
     ModSet {
         key_id: KeyId,
@@ -1670,13 +1619,7 @@ pub(crate) enum XkbFilter {
         saved: ControlsFlags,
         refcnt: i32,
         is_set: bool,
-    }
-}
-
-impl Default for XkbFilter {
-    fn default() -> Self {
-        XkbFilter::Inactive
-    }
+    },
 }
 
 impl XkbFilter {
@@ -1721,7 +1664,7 @@ static SYNTHETIC_KEY_BREAK_GROUP_LATCH: LazyLock<XkbKey> = LazyLock::new(|| XkbK
         explicit_type: false,
         type_idx: 0,
         levels: vec![XkbLevel {
-            upper: XKB_KEY_NO_SYMBOL as u32,
+            upper: XKB_KEY_NO_SYMBOL,
             has_upper: false,
             syms: Vec::new(),
             actions: vec![XkbAction::Internal(XkbInternalAction {
@@ -1875,7 +1818,7 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
             };
             XkbFilter::ModLatch {
                 key_id,
-                latch: latch as u32,
+                latch,
                 flags,
                 mask,
             }
@@ -1928,7 +1871,7 @@ fn xkb_filter_create(action: XkbAction, key_id: KeyId, state: &mut XkbState) -> 
             }
             XkbFilter::GroupLatch {
                 key_id,
-                latch: LATCH_KEY_DOWN as u32,
+                latch: LATCH_KEY_DOWN,
                 delta,
                 flags,
                 group,
@@ -2039,17 +1982,17 @@ impl XkbFilter {
             } => {
                 if direction == XKB_KEY_DOWN {
                     let actions = xkb_key_get_actions(state, key);
-                    if *latch == LATCH_KEY_DOWN as u32 {
+                    if *latch == LATCH_KEY_DOWN {
                         if state.flags & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS != 0 {
                             if actions.iter().any(|a| {
                                 xkb_action_breaks_latch(a, INTERNAL_BREAKS_MOD_LATCH, *mask)
                             }) {
-                                *latch = NO_LATCH as u32;
+                                *latch = NO_LATCH;
                             }
                         } else {
-                            *latch = NO_LATCH as u32;
+                            *latch = NO_LATCH;
                         }
-                    } else if *latch == LATCH_PENDING as u32 {
+                    } else if *latch == LATCH_PENDING {
                         let sticky = state
                             .components
                             .controls
@@ -2101,7 +2044,7 @@ impl XkbFilter {
                     && !flags.intersects(unlock_press)
                     && state.components.locked_mods & *mask == *mask
                 {
-                    if *latch == LATCH_PENDING as u32 {
+                    if *latch == LATCH_PENDING {
                         state.components.latched_mods &= !*mask;
                     } else {
                         state.clear_mods |= *mask;
@@ -2110,13 +2053,13 @@ impl XkbFilter {
                     *self = XkbFilter::Inactive;
                     return false;
                 }
-                if *latch == NO_LATCH as u32 {
+                if *latch == NO_LATCH {
                     state.clear_mods |= *mask;
                     *self = XkbFilter::Inactive;
                     return false;
                 }
                 if !flags.contains(ActionFlags::LATCH_ON_PRESS) {
-                    *latch = LATCH_PENDING as u32;
+                    *latch = LATCH_PENDING;
                     state.clear_mods |= *mask;
                     state.components.latched_mods |= *mask;
                 }
@@ -2198,18 +2141,18 @@ impl XkbFilter {
             } => {
                 if direction == XKB_KEY_DOWN {
                     let actions = xkb_key_get_actions(state, key);
-                    if *latch == LATCH_KEY_DOWN as u32 {
+                    if *latch == LATCH_KEY_DOWN {
                         if state.flags & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS != 0 {
                             if actions
                                 .iter()
                                 .any(|a| xkb_action_breaks_latch(a, INTERNAL_BREAKS_GROUP_LATCH, 0))
                             {
-                                *latch = NO_LATCH as u32;
+                                *latch = NO_LATCH;
                             }
                         } else {
-                            *latch = NO_LATCH as u32;
+                            *latch = NO_LATCH;
                         }
-                    } else if *latch == LATCH_PENDING as u32 {
+                    } else if *latch == LATCH_PENDING {
                         let sticky = state
                             .components
                             .controls
@@ -2246,7 +2189,7 @@ impl XkbFilter {
                     return true;
                 }
                 if flags.contains(ActionFlags::LOCK_CLEAR) && state.components.locked_group != 0 {
-                    if *latch == LATCH_PENDING as u32 {
+                    if *latch == LATCH_PENDING {
                         state.components.latched_group -= *delta;
                     } else {
                         state.components.base_group -= *delta;
@@ -2255,13 +2198,13 @@ impl XkbFilter {
                     *self = XkbFilter::Inactive;
                     return false;
                 }
-                if *latch == NO_LATCH as u32 {
+                if *latch == NO_LATCH {
                     state.components.base_group -= *delta;
                     *self = XkbFilter::Inactive;
                     return false;
                 }
                 if !flags.contains(ActionFlags::LATCH_ON_PRESS) {
-                    *latch = LATCH_PENDING as u32;
+                    *latch = LATCH_PENDING;
                     state.components.base_group -= *delta;
                     state.components.latched_group += *delta;
                 }
@@ -2310,8 +2253,7 @@ impl XkbFilter {
 
 fn xkb_filter_apply_all(state: &mut XkbState, key: &XkbKey, direction: u32) {
     let mut consumed = false;
-    let mut i = 0;
-    while i < state.filters.len() {
+    for i in 0..state.filters.len() {
         if state.filters[i].is_active() {
             let mut filter = std::mem::take(&mut state.filters[i]);
             if filter.on_event(state, key, direction) {
@@ -2319,7 +2261,6 @@ fn xkb_filter_apply_all(state: &mut XkbState, key: &XkbKey, direction: u32) {
             }
             state.filters[i] = filter;
         }
-        i += 1;
     }
     if consumed || direction == XKB_KEY_UP {
         return;
@@ -2409,10 +2350,7 @@ fn get_state_component_changes(a: &StateComponents, b: &StateComponents) -> u32 
 
 fn xkb_action_breaks_latch(action: &XkbAction, flag: u32, mask: u32) -> bool {
     match action {
-        XkbAction::None
-        | XkbAction::Void
-        | XkbAction::CtrlSet(_)
-        | XkbAction::CtrlLock(_) => true,
+        XkbAction::None | XkbAction::Void | XkbAction::CtrlSet(_) | XkbAction::CtrlLock(_) => true,
         XkbAction::Internal(i) => i.flags & flag != 0 && i.clear_latched_mods & mask == mask,
         _ => false,
     }
@@ -2446,16 +2384,15 @@ pub(crate) fn xkb_state_new(keymap: Rc<XkbKeymap>) -> Box<XkbState> {
     if keymap.format != XKB_KEYMAP_FORMAT_TEXT_V1
         && XKB_A11Y_NO_FLAGS & XKB_A11Y_LATCH_SIMULTANEOUS_KEYS == 0
     {
-        state.flags = (state.flags | XKB_A11Y_LATCH_SIMULTANEOUS_KEYS) as u32;
+        state.flags |= XKB_A11Y_LATCH_SIMULTANEOUS_KEYS;
     }
     xkb_state_update_derived(&mut state);
     state
 }
 fn xkb_state_led_update_all(state: &mut XkbState) {
     let keymap = &*state.keymap;
-    state.components.leds = 0 as u32;
-    let mut idx: u32 = 0;
-    while idx < keymap.num_leds {
+    state.components.leds = 0_u32;
+    for idx in 0..keymap.num_leds {
         let led = &keymap.leds[idx as usize];
         let mut set_led = false;
         if led.which_mods != 0_u32 && led.mods.mask != 0_u32 {
@@ -2473,7 +2410,7 @@ fn xkb_state_led_update_all(state: &mut XkbState) {
                 mod_mask |= state.components.locked_mods;
             }
             if led.mods.mask & mod_mask != 0 {
-                state.components.leds = (state.components.leds | 1_u32 << idx) as u32;
+                state.components.leds |= 1_u32 << idx;
                 set_led = true;
             }
         }
@@ -2498,7 +2435,7 @@ fn xkb_state_led_update_all(state: &mut XkbState) {
                         group_mask |= led.groups;
                     }
                     if led.groups & group_mask != 0 {
-                        state.components.leds = (state.components.leds | 1_u32 << idx) as u32;
+                        state.components.leds |= 1_u32 << idx;
                         set_led = true;
                     }
                 } else if (led.which_groups & XKB_STATE_LAYOUT_DEPRESSED) != 0
@@ -2506,19 +2443,18 @@ fn xkb_state_led_update_all(state: &mut XkbState) {
                     || (led.which_groups & XKB_STATE_LAYOUT_LATCHED) != 0
                         && state.components.latched_group == 0_i32
                 {
-                    state.components.leds = (state.components.leds | 1_u32 << idx) as u32;
+                    state.components.leds |= 1_u32 << idx;
                     set_led = true;
                 }
             }
             if !set_led && led.ctrls.intersects(state.components.controls) {
-                state.components.leds = (state.components.leds | 1_u32 << idx) as u32;
+                state.components.leds |= 1_u32 << idx;
             }
         }
-        idx += 1;
     }
 }
 
-fn xkb_state_update_derived(state: &mut XkbState) {
+pub(crate) fn xkb_state_update_derived(state: &mut XkbState) {
     let mut wrapped: u32;
     state.components.mods =
         state.components.base_mods | state.components.latched_mods | state.components.locked_mods;
@@ -2610,7 +2546,7 @@ fn update_latch_modifiers(state: &mut XkbState, mask: u32, latches: u32) {
     let clear: u32 = mask & !latches;
     state.components.latched_mods &= !clear;
     let synthetic_key_level_break_mod_latch: XkbLevel = XkbLevel {
-        upper: XKB_KEY_NO_SYMBOL as u32,
+        upper: XKB_KEY_NO_SYMBOL,
         has_upper: false,
         syms: Vec::new(),
         actions: vec![XkbAction::Internal(XkbInternalAction {
@@ -2817,12 +2753,10 @@ pub(crate) fn xkb_state_serialize_mods(state: &XkbState, type_0: u32) -> u32 {
 
 pub(crate) fn mod_mask_get_effective(keymap: &XkbKeymap, mods: u32) -> u32 {
     let mut mask: u32 = mods & MOD_REAL_MASK_ALL;
-    let mut i: u32 = _XKB_MOD_INDEX_NUM_ENTRIES;
-    while i < keymap.mods.num_mods {
-        if mods & 1_u32 << i != 0 {
+    for i in _XKB_MOD_INDEX_NUM_ENTRIES..keymap.mods.num_mods {
+        if mods & 1 << i != 0 {
             mask |= keymap.mods.mods[i as usize].mapping;
         }
-        i += 1;
     }
     mask
 }
@@ -2903,597 +2837,4 @@ pub(crate) fn xkb_state_mod_index_is_consumed2(
 
 pub(crate) fn xkb_state_mod_index_is_consumed(state: &XkbState, kc: u32, idx: u32) -> i32 {
     xkb_state_mod_index_is_consumed2(state, kc, idx, XKB_CONSUMED_MODE_XKB)
-}
-
-pub(crate) type RxkbPopularity = u32;
-pub(crate) const RXKB_POPULARITY_EXOTIC: RxkbPopularity = 2;
-pub(crate) const RXKB_POPULARITY_STANDARD: RxkbPopularity = 1;
-pub(crate) type RxkbContextFlags = u32;
-pub(crate) const RXKB_CONTEXT_NO_SECURE_GETENV: RxkbContextFlags = 4;
-pub(crate) const RXKB_CONTEXT_LOAD_EXOTIC_RULES: RxkbContextFlags = 2;
-pub(crate) const RXKB_CONTEXT_NO_DEFAULT_INCLUDES: RxkbContextFlags = 1;
-pub(crate) const RXKB_CONTEXT_NO_FLAGS: RxkbContextFlags = 0;
-
-pub(crate) type ContextState = u32;
-pub(crate) const CONTEXT_FAILED: ContextState = 2;
-pub(crate) const CONTEXT_PARSED: ContextState = 1;
-pub(crate) const CONTEXT_NEW: ContextState = 0;
-
-pub(crate) struct RxkbContext {
-    pub(crate) context_state: ContextState,
-    pub(crate) load_extra_rules_files: bool,
-    pub(crate) models: Vec<RxkbModel>,
-    pub(crate) layouts: Vec<RxkbLayout>,
-    pub(crate) option_groups: Vec<RxkbOptionGroup>,
-    pub(crate) includes: Vec<String>,
-}
-
-#[derive(Clone)]
-pub(crate) struct RxkbModel {
-    pub(crate) name: String,
-}
-
-pub(crate) struct RxkbLayout {
-    pub(crate) name: String,
-    pub(crate) brief: String,
-    pub(crate) variant: String,
-}
-
-pub(crate) struct RxkbOptionGroup {
-    pub(crate) options: Vec<RxkbOption>,
-    pub(crate) name: String,
-}
-
-#[derive(Clone)]
-pub(crate) struct RxkbOption {
-    pub(crate) name: String,
-}
-
-#[derive(Clone, Default)]
-pub(crate) struct ConfigItem {
-    pub(crate) name: String,
-    pub(crate) brief: String,
-    pub(crate) popularity: RxkbPopularity,
-}
-
-// ---------------------------------------------------------------------------
-// Accessors
-// ---------------------------------------------------------------------------
-
-impl RxkbLayout {
-    pub(crate) fn name(&self) -> &str {
-        &self.name
-    }
-    pub(crate) fn variant(&self) -> &str {
-        &self.variant
-    }
-}
-
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Context construction & public API
-// ---------------------------------------------------------------------------
-
-impl RxkbContext {
-    pub(crate) fn new(flags: RxkbContextFlags) -> Option<Box<RxkbContext>> {
-        let valid_flags: RxkbContextFlags = RXKB_CONTEXT_NO_DEFAULT_INCLUDES
-            | RXKB_CONTEXT_LOAD_EXOTIC_RULES
-            | RXKB_CONTEXT_NO_SECURE_GETENV;
-
-        let mut ctx = Box::new(RxkbContext {
-            context_state: CONTEXT_NEW,
-            load_extra_rules_files: flags & RXKB_CONTEXT_LOAD_EXOTIC_RULES != 0,
-            models: Vec::new(),
-            layouts: Vec::new(),
-            option_groups: Vec::new(),
-            includes: Vec::new(),
-        });
-
-        if flags & !valid_flags != 0 {
-            return None;
-        }
-
-        if flags & RXKB_CONTEXT_NO_DEFAULT_INCLUDES == 0 && !ctx.include_path_append_default() {
-            return None;
-        }
-
-        Some(ctx)
-    }
-
-    pub(crate) fn include_path_append(&mut self, path: &str) {
-        if self.context_state != CONTEXT_NEW {
-            return;
-        }
-
-        if std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false) {
-            self.includes.push(path.to_string());
-        }
-    }
-
-    pub(crate) fn include_path_append_default(&mut self) -> bool {
-        if self.context_state != CONTEXT_NEW {
-            return false;
-        }
-
-        let mut ret = false;
-
-        let home = std::env::var("HOME").ok();
-        let xdg = std::env::var("XDG_CONFIG_HOME").ok();
-
-        if let Some(ref xdg) = xdg {
-            let p = format!("{}/xkb", xdg);
-            self.include_path_append(&p);
-            if self.includes.last().map(|s| s.as_str()) == Some(&p) {
-                ret = true;
-            }
-        } else if let Some(ref home) = home {
-            let p = format!("{}/.config/xkb", home);
-            self.include_path_append(&p);
-            if self.includes.last().map(|s| s.as_str()) == Some(&p) {
-                ret = true;
-            }
-        }
-
-        if let Some(ref home) = home {
-            let p = format!("{}/.xkb", home);
-            self.include_path_append(&p);
-            if self.includes.last().map(|s| s.as_str()) == Some(&p) {
-                ret = true;
-            }
-        }
-
-        // Extra path
-        let extra = std::env::var("XKB_CONFIG_EXTRA_PATH").ok();
-        let extra_path = extra.as_deref().unwrap_or(DFLT_XKB_CONFIG_EXTRA_PATH_STR);
-        self.include_path_append(extra_path);
-        if self.includes.last().map(|s| s.as_str()) == Some(extra_path) {
-            ret = true;
-        }
-
-        // Versioned extensions
-        let versioned_ext = std::env::var("XKB_CONFIG_VERSIONED_EXTENSIONS_PATH").ok();
-        let versioned_path = versioned_ext
-            .as_deref()
-            .unwrap_or(DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH_STR);
-        self.add_direct_subdirectories(versioned_path);
-
-        // Unversioned extensions
-        let unversioned_ext = std::env::var("XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH").ok();
-        let unversioned_path = unversioned_ext
-            .as_deref()
-            .unwrap_or(DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH_STR);
-        self.add_direct_subdirectories(unversioned_path);
-
-        // Root path
-        let root_env = std::env::var("XKB_CONFIG_ROOT").ok();
-        let root_path = root_env.as_deref().unwrap_or(DFLT_XKB_CONFIG_ROOT_STR);
-        let prev_len = self.includes.len();
-        self.include_path_append(root_path);
-        let has_root = self.includes.len() > prev_len;
-        if has_root {
-            ret = true;
-        }
-
-        if !has_root && !root_path.is_empty() {
-            let prev_len2 = self.includes.len();
-            self.include_path_append(DFLT_XKB_LEGACY_ROOT_STR);
-            if self.includes.len() > prev_len2 {
-                ret = true;
-            }
-        }
-
-        ret
-    }
-
-    fn add_direct_subdirectories(&mut self, path: &str) {
-        let meta = match std::fs::metadata(path) {
-            Ok(m) => m,
-            Err(_) => return,
-        };
-        if !meta.is_dir() {
-            return;
-        }
-
-        let dir_entries = match std::fs::read_dir(path) {
-            Ok(d) => d,
-            Err(_) => return,
-        };
-
-        let mut subdirs: Vec<String> = Vec::new();
-        for entry in dir_entries {
-            let entry = match entry {
-                Ok(e) => e,
-                Err(_) => continue,
-            };
-            let name = entry.file_name();
-            let name_str = match name.to_str() {
-                Some(s) => s,
-                None => continue,
-            };
-            if name_str == "." || name_str == ".." {
-                continue;
-            }
-            let entry_path = entry.path();
-            let entry_meta = match std::fs::metadata(&entry_path) {
-                Ok(m) => m,
-                Err(_) => continue,
-            };
-            if !entry_meta.is_dir() {
-                continue;
-            }
-            if let Some(s) = entry_path.to_str() {
-                subdirs.push(s.to_string());
-            }
-        }
-
-        subdirs.sort();
-        for p in &subdirs {
-            self.include_path_append(p);
-        }
-    }
-
-    pub(crate) fn parse(&mut self, ruleset: &str) -> bool {
-        let mut success = false;
-        if self.context_state != CONTEXT_NEW {
-            return false;
-        }
-
-        // Iterate includes in reverse order (like the original)
-        let includes: Vec<String> = self.includes.clone();
-        let mut idx = includes.len();
-        while idx > 0 {
-            idx -= 1;
-            let path_str = &includes[idx];
-
-            let rules_path = format!("{}/rules/{}.xml", path_str, ruleset);
-            if parse_xml_file(self, &rules_path, RXKB_POPULARITY_STANDARD) {
-                success = true;
-            }
-
-            if self.load_extra_rules_files {
-                let extras_path = format!("{}/rules/{}.extras.xml", path_str, ruleset);
-                if parse_xml_file(self, &extras_path, RXKB_POPULARITY_EXOTIC) {
-                    success = true;
-                }
-            }
-        }
-
-        self.context_state = if success {
-            CONTEXT_PARSED
-        } else {
-            CONTEXT_FAILED
-        };
-        success
-    }
-
-    pub(crate) fn layouts(&self) -> &[RxkbLayout] {
-        &self.layouts
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Default paths (as &str)
-// ---------------------------------------------------------------------------
-
-const DFLT_XKB_CONFIG_EXTRA_PATH_STR: &str = "/etc/xkb";
-const DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH_STR: &str =
-    "/usr/share/xkeyboard-config-2/extensions";
-const DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH_STR: &str = "/usr/share/X11/xkb/extensions";
-const DFLT_XKB_CONFIG_ROOT_STR: &str = "/usr/share/xkeyboard-config-2";
-const DFLT_XKB_LEGACY_ROOT_STR: &str = "/usr/share/X11/xkb";
-
-// ---------------------------------------------------------------------------
-// XML parsing helpers (safe)
-// ---------------------------------------------------------------------------
-
-fn get_attr<'a>(
-    doc: &'a xmloxide::Document,
-    node: xmloxide::tree::NodeId,
-    name: &str,
-) -> Option<&'a str> {
-    doc.attributes(node)
-        .iter()
-        .find(|a| a.name == name)
-        .map(|a| a.value.as_str())
-}
-
-#[inline]
-fn is_node(doc: &xmloxide::Document, node: xmloxide::tree::NodeId, name: &str) -> bool {
-    doc.is_element(node) && doc.node_name(node) == Some(name)
-}
-
-fn extract_text(doc: &xmloxide::Document, node: xmloxide::tree::NodeId) -> String {
-    for child in doc.children(node) {
-        if let Some(text) = doc.node_text(child) {
-            if !text.is_empty() {
-                return text.to_string();
-            }
-        }
-    }
-    String::new()
-}
-
-fn parse_config_item(
-    doc: &xmloxide::Document,
-    parent: xmloxide::tree::NodeId,
-    config: &mut ConfigItem,
-) -> bool {
-    for ci in doc.children(parent) {
-        if is_node(doc, ci, "configItem") {
-            if let Some(raw_popularity) = get_attr(doc, ci, "popularity") {
-                if raw_popularity == "standard" {
-                    config.popularity = RXKB_POPULARITY_STANDARD;
-                } else if raw_popularity == "exotic" {
-                    config.popularity = RXKB_POPULARITY_EXOTIC;
-                } else {
-                }
-            }
-            for node in doc.children(ci) {
-                if is_node(doc, node, "name") {
-                    config.name = extract_text(doc, node);
-                } else if is_node(doc, node, "shortDescription") {
-                    config.brief = extract_text(doc, node);
-                }
-            }
-            if config.name.is_empty() {
-                return false;
-            }
-            return true;
-        }
-    }
-    false
-}
-
-fn parse_model(
-    ctx: &mut RxkbContext,
-    doc: &xmloxide::Document,
-    model: xmloxide::tree::NodeId,
-    popularity: RxkbPopularity,
-) {
-    let mut config = ConfigItem {
-        popularity,
-        ..ConfigItem::default()
-    };
-    if parse_config_item(doc, model, &mut config) {
-        // Check for duplicate
-        if ctx.models.iter().any(|m| m.name == config.name) {
-            return;
-        }
-        ctx.models.push(RxkbModel {
-            name: std::mem::take(&mut config.name),
-        });
-    }
-}
-
-fn parse_variant(
-    ctx: &mut RxkbContext,
-    parent_layout_idx: usize,
-    doc: &xmloxide::Document,
-    variant: xmloxide::tree::NodeId,
-    popularity: RxkbPopularity,
-) {
-    let mut config = ConfigItem {
-        popularity,
-        ..ConfigItem::default()
-    };
-    if !parse_config_item(doc, variant, &mut config) {
-        return;
-    }
-
-    let parent_name = ctx.layouts[parent_layout_idx].name.clone();
-
-    // Check for duplicate
-    let exists = ctx
-        .layouts
-        .iter()
-        .any(|v| v.variant == config.name && v.name == parent_name);
-    if exists {
-        return;
-    }
-
-    let parent_brief = ctx.layouts[parent_layout_idx].brief.clone();
-    let brief = if config.brief.is_empty() {
-        parent_brief
-    } else {
-        std::mem::take(&mut config.brief)
-    };
-
-    let new_layout = RxkbLayout {
-        name: parent_name,
-        variant: std::mem::take(&mut config.name),
-        brief,
-    };
-
-    ctx.layouts.push(new_layout);
-}
-
-fn parse_layout(
-    ctx: &mut RxkbContext,
-    doc: &xmloxide::Document,
-    layout: xmloxide::tree::NodeId,
-    popularity: RxkbPopularity,
-) {
-    let mut config = ConfigItem {
-        popularity,
-        ..ConfigItem::default()
-    };
-    if !parse_config_item(doc, layout, &mut config) {
-        return;
-    }
-
-    // Find existing layout with same name and empty variant
-    let existing_idx = ctx
-        .layouts
-        .iter()
-        .position(|el| el.name == config.name && el.variant.is_empty());
-    let layout_idx;
-
-    if let Some(idx) = existing_idx {
-        layout_idx = idx;
-        // Layout already exists, don't overwrite
-    } else {
-        ctx.layouts.push(RxkbLayout {
-            name: std::mem::take(&mut config.name),
-            variant: String::new(),
-            brief: std::mem::take(&mut config.brief),
-        });
-        layout_idx = ctx.layouts.len() - 1;
-    }
-
-    // Parse variants and language/country lists
-    for node in doc.children(layout) {
-        if is_node(doc, node, "variantList") {
-            for vnode in doc.children(node) {
-                if is_node(doc, vnode, "variant") {
-                    parse_variant(ctx, layout_idx, doc, vnode, popularity);
-                }
-            }
-        }
-    }
-}
-
-fn parse_option(
-    ctx: &mut RxkbContext,
-    group_idx: usize,
-    doc: &xmloxide::Document,
-    option: xmloxide::tree::NodeId,
-    popularity: RxkbPopularity,
-) {
-    let mut config = ConfigItem {
-        popularity,
-        ..ConfigItem::default()
-    };
-    if parse_config_item(doc, option, &mut config) {
-        // Check for duplicate
-        if ctx.option_groups[group_idx]
-            .options
-            .iter()
-            .any(|o| o.name == config.name)
-        {
-            return;
-        }
-        ctx.option_groups[group_idx].options.push(RxkbOption {
-            name: std::mem::take(&mut config.name),
-        });
-    }
-}
-
-fn parse_group(
-    ctx: &mut RxkbContext,
-    doc: &xmloxide::Document,
-    group: xmloxide::tree::NodeId,
-    popularity: RxkbPopularity,
-) {
-    let mut config = ConfigItem {
-        popularity,
-        ..ConfigItem::default()
-    };
-    if !parse_config_item(doc, group, &mut config) {
-        return;
-    }
-
-    let existing_idx = ctx
-        .option_groups
-        .iter()
-        .position(|el| el.name == config.name);
-    let group_idx;
-
-    if let Some(idx) = existing_idx {
-        group_idx = idx;
-    } else {
-        let og = RxkbOptionGroup {
-            options: Vec::new(),
-            name: std::mem::take(&mut config.name),
-        };
-        ctx.option_groups.push(og);
-        group_idx = ctx.option_groups.len() - 1;
-    }
-
-    for node in doc.children(group) {
-        if is_node(doc, node, "option") {
-            parse_option(ctx, group_idx, doc, node, popularity);
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// DTD
-// ---------------------------------------------------------------------------
-
-const XKBCONFIG_DTD: &str = "\
-<!ELEMENT xkbConfigRegistry (modelList?, layoutList?, optionList?)>\n\
-<!ATTLIST xkbConfigRegistry version CDATA \"1.1\">\n\
-<!ELEMENT modelList (model*)>\n\
-<!ELEMENT model (configItem)>\n\
-<!ELEMENT layoutList (layout*)>\n\
-<!ELEMENT layout (configItem,  variantList?)>\n\
-<!ELEMENT optionList (group*)>\n\
-<!ELEMENT variantList (variant*)>\n\
-<!ELEMENT variant (configItem)>\n\
-<!ELEMENT group (configItem, option*)>\n\
-<!ATTLIST group allowMultipleSelection (true|false) \"false\">\n\
-<!ELEMENT option (configItem)>\n\
-<!ELEMENT configItem (name, shortDescription?, description?, vendor?, countryList?, languageList?, hwList?)>\n\
-<!ATTLIST configItem layout-specific (true|false) \"false\">\n\
-<!ATTLIST configItem popularity (standard|exotic) #IMPLIED>\n\
-<!ELEMENT name (#PCDATA)>\n\
-<!ELEMENT shortDescription (#PCDATA)>\n\
-<!ELEMENT description (#PCDATA)>\n\
-<!ELEMENT vendor (#PCDATA)>\n\
-<!ELEMENT countryList (iso3166Id+)>\n\
-<!ELEMENT iso3166Id (#PCDATA)>\n\
-<!ELEMENT languageList (iso639Id+)>\n\
-<!ELEMENT iso639Id (#PCDATA)>\n\
-<!ELEMENT hwList (hwId+)>\n\
-<!ELEMENT hwId (#PCDATA)>";
-
-// ---------------------------------------------------------------------------
-// XML file parsing
-// ---------------------------------------------------------------------------
-
-fn parse_xml_file(ctx: &mut RxkbContext, path: &str, popularity: RxkbPopularity) -> bool {
-    let mut doc = match xmloxide::Document::parse_file(path) {
-        Ok(d) => d,
-        Err(_) => return false,
-    };
-    // Validate
-    {
-        let dtd = match xmloxide::validation::dtd::parse_dtd(XKBCONFIG_DTD) {
-            Ok(dtd) => dtd,
-            Err(_) => {
-                return false;
-            }
-        };
-        let result = xmloxide::validation::dtd::validate(&mut doc, &dtd);
-        if !result.is_valid {
-            return false;
-        }
-    }
-    let root = match doc.root_element() {
-        Some(r) => r,
-        None => return false,
-    };
-    for node in doc.children(root) {
-        if is_node(&doc, node, "modelList") {
-            for mnode in doc.children(node) {
-                if is_node(&doc, mnode, "model") {
-                    parse_model(ctx, &doc, mnode, popularity);
-                }
-            }
-        } else if is_node(&doc, node, "layoutList") {
-            for lnode in doc.children(node) {
-                if is_node(&doc, lnode, "layout") {
-                    parse_layout(ctx, &doc, lnode, popularity);
-                }
-            }
-        } else if is_node(&doc, node, "optionList") {
-            for onode in doc.children(node) {
-                if is_node(&doc, onode, "group") {
-                    parse_group(ctx, &doc, onode, popularity);
-                }
-            }
-        }
-    }
-    true
 }

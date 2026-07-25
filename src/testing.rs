@@ -32,7 +32,7 @@ pub fn keysym_to_named_key(keysym: u32) -> NamedKey {
 
 /// Get all available layout variants for a given locale (test utility).
 pub fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
-    use crate::xkb::keymap::RegistryContext;
+    use crate::xkb::rxkb::RegistryContext;
 
     let mut ctx = match RegistryContext::new() {
         Some(ctx) => ctx,
