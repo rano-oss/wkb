@@ -942,8 +942,8 @@ macro_rules! impl_parse_dec {
         pub(crate) fn $name(s: &[u8]) -> ($t, i32) {
             let mut result: $t = 0;
             let mut i: usize = 0;
-            while i < s.len() {
-                let d = s[i].wrapping_sub(b'0');
+            for &b in s {
+                let d = b.wrapping_sub(b'0');
                 if d >= 10 {
                     break;
                 }
@@ -979,8 +979,8 @@ macro_rules! impl_parse_hex {
         pub(crate) fn $name(s: &[u8]) -> ($t, i32) {
             let mut result: $t = 0;
             let mut i: usize = 0;
-            while i < s.len() {
-                let d = hex_val(s[i]);
+            for &b in s {
+                let d = hex_val(b);
                 if d >= 16 {
                     break;
                 }

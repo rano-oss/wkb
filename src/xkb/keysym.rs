@@ -20876,15 +20876,17 @@ pub(crate) fn xkb_keysym_from_name(name: &[u8], flags: u32) -> Option<u32> {
             } else if cmp < 0 {
                 hi = mid as i32 - 1;
             } else {
-                let last = NAME_TO_KEYSYM.len() - 1;
                 let mut idx = mid;
-                while idx < last
-                    && istrcmp(
-                        get_name_bytes(&NAME_TO_KEYSYM[idx + 1]),
+                for candidate in (mid + 1)..NAME_TO_KEYSYM.len() {
+                    if istrcmp(
+                        get_name_bytes(&NAME_TO_KEYSYM[candidate]),
                         get_name_bytes(&NAME_TO_KEYSYM[idx]),
                     ) == 0
-                {
-                    idx += 1;
+                    {
+                        idx = candidate;
+                    } else {
+                        break;
+                    }
                 }
                 return Some(NAME_TO_KEYSYM[idx].keysym);
             }

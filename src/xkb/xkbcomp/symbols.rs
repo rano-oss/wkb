@@ -2573,8 +2573,7 @@ fn copy_interps(info: &CompatInfo, need_symbol: bool, pred: u32, collect: &mut C
     }
 }
 fn copy_led_map_defs_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) {
-    let mut idx: u32 = 0;
-    while idx < info.num_leds {
+    for idx in 0..info.num_leds {
         let ledi_led = info.leds[idx as usize].led;
         let is_default = std::ptr::eq(
             &info.leds[idx as usize] as *const LedInfo,
@@ -2585,22 +2584,20 @@ fn copy_led_map_defs_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo
         } else {
             atom_text(&ki.keymap.ctx.atom_table, info.leds[idx as usize].led.name)
         };
-        let mut i: u32;
-        i = 0;
-        while i < ki.keymap.num_leds {
-            if ki.keymap.leds[i as usize].name == ledi_led.name {
+        let mut i = ki.keymap.num_leds;
+        for ii in 0..ki.keymap.num_leds {
+            if ki.keymap.leds[ii as usize].name == ledi_led.name {
+                i = ii;
                 break;
             }
-            i += 1;
         }
         let mut assign_led = false;
         if i >= ki.keymap.num_leds {
-            i = 0;
-            while i < ki.keymap.num_leds {
-                if ki.keymap.leds[i as usize].name == XKB_ATOM_NONE {
+            for ii in 0..ki.keymap.num_leds {
+                if ki.keymap.leds[ii as usize].name == XKB_ATOM_NONE {
+                    i = ii;
                     break;
                 }
-                i += 1;
             }
             if i >= ki.keymap.num_leds {
                 if i < XKB_MAX_LEDS {
@@ -2624,7 +2621,6 @@ fn copy_led_map_defs_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo
                 led.which_mods = XKB_STATE_MODS_EFFECTIVE;
             }
         }
-        idx += 1;
     }
 }
 fn copy_compat_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) -> bool {
@@ -3452,13 +3448,10 @@ fn keycode_store_delete_key(store: &mut KeycodeStore, match_0: KeycodeMatch) {
             if store.min == match_0.index {
                 store.low.clear();
             } else {
-                let mut idx: u32 = match_0.index;
-                while idx > 0 {
-                    if store.low[(idx.wrapping_sub(1_u32)) as usize] != XKB_ATOM_NONE {
+                for idx in (1..=match_0.index).rev() {
+                    if store.low[(idx - 1) as usize] != XKB_ATOM_NONE {
                         store.low.truncate(idx as usize);
                         break;
-                    } else {
-                        idx -= 1;
                     }
                 }
             }
@@ -3482,13 +3475,10 @@ fn keycode_store_delete_key(store: &mut KeycodeStore, match_0: KeycodeMatch) {
             store.high[0].keycode
         };
     } else {
-        let mut kc: u32 = store.min;
-        while kc < store.low.len() as u32 {
+        for kc in store.min..store.low.len() as u32 {
             if store.low[kc as usize] != XKB_ATOM_NONE {
                 store.min = kc;
                 break;
-            } else {
-                kc += 1;
             }
         }
     }

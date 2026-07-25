@@ -2305,8 +2305,7 @@ impl XkbFilter {
 
 fn xkb_filter_apply_all(state: &mut XkbState, key: &XkbKey, direction: u32) {
     let mut consumed = false;
-    let mut i = 0;
-    while i < state.filters.len() {
+    for i in 0..state.filters.len() {
         if state.filters[i].is_active() {
             let mut filter = std::mem::take(&mut state.filters[i]);
             if filter.on_event(state, key, direction) {
@@ -2314,7 +2313,6 @@ fn xkb_filter_apply_all(state: &mut XkbState, key: &XkbKey, direction: u32) {
             }
             state.filters[i] = filter;
         }
-        i += 1;
     }
     if consumed || direction == XKB_KEY_UP {
         return;
@@ -2446,8 +2444,7 @@ pub(crate) fn xkb_state_new(keymap: Rc<XkbKeymap>) -> Box<XkbState> {
 fn xkb_state_led_update_all(state: &mut XkbState) {
     let keymap = &*state.keymap;
     state.components.leds = 0_u32;
-    let mut idx: u32 = 0;
-    while idx < keymap.num_leds {
+    for idx in 0..keymap.num_leds {
         let led = &keymap.leds[idx as usize];
         let mut set_led = false;
         if led.which_mods != 0_u32 && led.mods.mask != 0_u32 {
@@ -2506,7 +2503,6 @@ fn xkb_state_led_update_all(state: &mut XkbState) {
                 state.components.leds |= 1_u32 << idx;
             }
         }
-        idx += 1;
     }
 }
 
@@ -2809,12 +2805,10 @@ pub(crate) fn xkb_state_serialize_mods(state: &XkbState, type_0: u32) -> u32 {
 
 pub(crate) fn mod_mask_get_effective(keymap: &XkbKeymap, mods: u32) -> u32 {
     let mut mask: u32 = mods & MOD_REAL_MASK_ALL;
-    let mut i: u32 = _XKB_MOD_INDEX_NUM_ENTRIES;
-    while i < keymap.mods.num_mods {
-        if mods & 1_u32 << i != 0 {
+    for i in _XKB_MOD_INDEX_NUM_ENTRIES..keymap.mods.num_mods {
+        if mods & 1 << i != 0 {
             mask |= keymap.mods.mods[i as usize].mapping;
         }
-        i += 1;
     }
     mask
 }
@@ -3133,9 +3127,7 @@ impl RxkbContext {
 
         // Iterate includes in reverse order (like the original)
         let includes: Vec<String> = self.includes.clone();
-        let mut idx = includes.len();
-        while idx > 0 {
-            idx -= 1;
+        for idx in (0..includes.len()).rev() {
             let path_str = &includes[idx];
 
             let rules_path = format!("{}/rules/{}.xml", path_str, ruleset);
