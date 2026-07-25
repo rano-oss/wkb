@@ -1355,7 +1355,7 @@ impl Context {
 /// Safe wrapper around XkbKeymap with automatic cleanup
 #[derive(Clone)]
 pub(crate) struct Keymap {
-    inner: Rc<super::shared_types::XkbKeymap>,
+    pub(crate) inner: Rc<super::shared_types::XkbKeymap>,
 }
 
 impl std::fmt::Debug for Keymap {
@@ -2454,7 +2454,7 @@ fn xkb_state_led_update_all(state: &mut XkbState) {
     }
 }
 
-fn xkb_state_update_derived(state: &mut XkbState) {
+pub(crate) fn xkb_state_update_derived(state: &mut XkbState) {
     let mut wrapped: u32;
     state.components.mods =
         state.components.base_mods | state.components.latched_mods | state.components.locked_mods;

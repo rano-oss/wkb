@@ -36,13 +36,13 @@
 //! - **`compose`** (default) — Compose-key / dead-key sequence support.
 //! - **`testing`** — Exposes internal helpers for integration tests. Not part of the public API.
 
+use crate::modifiers::*;
 pub use composer::{ComposeState, ComposeString};
 use composer::{Composer, Token};
 mod composer;
-mod modifiers;
-use modifiers::{level_index, KeyDirection, ModType, Modifiers};
-pub use modifiers::{LedState, RawModifiers};
 mod flat_keymap;
+mod modifiers;
+
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
 mod named_keys;
 /// Test-only utilities. Not part of the public API.

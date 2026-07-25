@@ -21,6 +21,7 @@ pub(crate) use super::super::shared_types::{
     XKB_MAX_LEDS, XKB_MOD_NONE, XKB_OVERLAY_INVALID, _ACTION_TYPE_NUM_ENTRIES,
 };
 use super::parser::{exceeds_include_max_depth, process_include_file};
+use std::collections::HashMap;
 
 pub(crate) struct SymbolsInfo {
     pub(crate) name: Option<String>,
@@ -1453,6 +1454,7 @@ fn find_type_for_group(
     keyi: &mut KeyInfo,
     group: u32,
     explicit_type: &mut bool,
+    type_map: &HashMap<u32, u32>,
 ) -> u32 {
     let groupi = &keyi.groups[group as usize];
     let mut type_name: u32 = groupi.type_0;
@@ -1468,11 +1470,9 @@ fn find_type_for_group(
         }
     }
     if type_name != XKB_ATOM_NONE {
-        for (i, t) in keymap.types.iter_mut().enumerate() {
-            if t.name == type_name {
-                t.required = true;
-                return i as u32;
-            }
+        if let Some(&idx) = type_map.get(&type_name) {
+            keymap.types[idx as usize].required = true;
+            return idx;
         }
     }
     keymap.types[0].required = true;
@@ -1482,6 +1482,7 @@ fn copy_symbols_def_to_keymap(
     keymap: &mut XkbKeymap,
     _info: &SymbolsInfo,
     keyi: &mut KeyInfo,
+    type_map: &HashMap<u32, u32>,
 ) -> bool {
     let key_idx = if (keyi.name as usize) < keymap.key_names.len() {
         let match_0 = keymap.key_names[keyi.name as usize];
@@ -1530,7 +1531,7 @@ fn copy_symbols_def_to_keymap(
 
         for i in 0..keyi.groups.len() as u32 {
             let mut explicit_type = false;
-            let type_idx = find_type_for_group(keymap, keyi, i, &mut explicit_type);
+            let type_idx = find_type_for_group(keymap, keyi, i, &mut explicit_type, type_map);
 
             if keymap.types[type_idx as usize].num_levels
                 < keyi.groups[i as usize].levels.len() as u32
@@ -1562,12 +1563,11 @@ fn copy_symbols_def_to_keymap(
                     _ => {
                         let has_upper = leveli.syms.iter().any(|&s| xkb_keysym_to_upper(s) != s);
                         if has_upper {
-                            let syms_copy: Vec<_> = leveli
-                                .syms
-                                .iter()
-                                .map(|&s| xkb_keysym_to_upper(s))
-                                .collect();
-                            leveli.syms.extend(syms_copy);
+                            let orig = leveli.syms.len();
+                            leveli.syms.reserve(orig);
+                            for i in 0..orig {
+                                leveli.syms.push(xkb_keysym_to_upper(leveli.syms[i]));
+                            }
                         }
                     }
                 }
@@ -1653,6 +1653,12 @@ fn copy_mod_map_def_to_keymap(
     }
 }
 fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) -> bool {
+    let type_map: HashMap<u32, u32> = keymap
+        .types
+        .iter()
+        .enumerate()
+        .map(|(i, t)| (t.name, i as u32))
+        .collect();
     keymap.symbols_section_name = match &info.name {
         Some(s) => s.clone(),
         None => String::new(),
@@ -1662,7 +1668,7 @@ fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) -> boo
     keymap.group_names = std::mem::take(&mut info.group_names);
     let mut keys = std::mem::take(&mut info.keys);
     for keyi in keys.iter_mut() {
-        if !copy_symbols_def_to_keymap(keymap, info, keyi) {
+        if !copy_symbols_def_to_keymap(keymap, info, keyi, &type_map) {
             info.error_count += 1;
         }
     }
@@ -2711,7 +2717,7 @@ fn init_key_types_info(info: &mut KeyTypesInfo, include_depth: u32, mods: &XkbMo
     info.name = None;
     info.error_count = 0;
     info.include_depth = include_depth;
-    info.types = Vec::new();
+    info.types.clear();
     info.mods = Default::default();
     init_vmods(&mut info.mods, mods, include_depth > 0);
 }
@@ -3044,8 +3050,8 @@ fn handle_key_type_body(
         if !expr_resolve_lhs(name_ref, &mut elem_atom, &mut field_atom, &mut array_ndx) {
             ok = false;
         } else {
-            let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom).to_owned();
-            let field = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
+            let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom);
+            let field = atom_text(&ki.keymap.ctx.atom_table, field_atom);
             if !elem.is_empty() {
                 if !elem.eq_ignore_ascii_case("type") {
                     ok = false;
