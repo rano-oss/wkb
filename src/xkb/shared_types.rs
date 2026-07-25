@@ -450,7 +450,7 @@ pub(crate) const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: u32 = 2;
 pub(crate) const XKB_KEYCODE_INVALID: u32 = 0xffffffff;
 pub(crate) const XKB_KEYCODE_MAX: u32 = 0xffffffff_u32.wrapping_sub(1);
 pub(crate) const XKB_LEVEL_INVALID: u32 = 0xffffffff;
-pub(crate) const XKB_KEYSYM_MAX: i32 = 0x1fffffff;
+pub(crate) const XKB_KEYSYM_MAX: u32 = 0x1fffffff;
 
 #[derive(Clone, Default)]
 pub(crate) struct XkbComponentNames {
@@ -516,9 +516,9 @@ pub(crate) const XKB_MOD_INDEX_CAPS: u32 = 1;
 pub(crate) const _XKB_MOD_INDEX_NUM_ENTRIES: u32 = 8;
 pub(crate) const XKB_ALL_GROUPS: u64 = 4294967295;
 pub(crate) const XKB_OVERLAY_MAX: u8 = 8;
-pub(crate) const XKB_OVERLAY_INVALID: i32 = 255;
-pub(crate) const XKB_KEYCODE_MAX_CONTIGUOUS: i32 = 0xfff;
-pub(crate) const XKB_LEVEL_MAX_IMPL: i32 = 2048;
+pub(crate) const XKB_OVERLAY_INVALID: u8 = 255;
+pub(crate) const XKB_KEYCODE_MAX_CONTIGUOUS: u32 = 0xfff;
+pub(crate) const XKB_LEVEL_MAX_IMPL: u32 = 2048;
 pub(crate) const XKB_MAX_MODS: u32 = 32;
 // ── Safe methods on XkbKeymap ──────────────────────────────────────
 
@@ -607,7 +607,7 @@ pub(crate) fn entry_is_active(entry: &XkbKeyTypeEntry) -> bool {
 }
 
 // Error codes (from xkbcommon_errors_h)
-pub(crate) const XKB_KEY_NO_SYMBOL: i32 = 0;
+pub(crate) const XKB_KEY_NO_SYMBOL: u32 = 0;
 
 // ── rmlvo_h (RMLVO enum) ─────────────────────────────────────────────
 pub(crate) const RMLVO_OPTIONS: u32 = 16;

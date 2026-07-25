@@ -813,7 +813,7 @@ fn expr_resolve_overlay_entry(
                 return true;
             } else if !id.is_empty() && id.eq_ignore_ascii_case("any") {
                 *key_rtrn = XKB_KEYCODE_INVALID;
-                *overlay_rtrn = XKB_OVERLAY_INVALID as u8;
+                *overlay_rtrn = XKB_OVERLAY_INVALID;
                 return true;
             }
             false
@@ -948,7 +948,7 @@ fn set_symbols_field(
         }
         SymbolsField::Locking | SymbolsField::RadioGroup => {}
         SymbolsField::Overlay => {
-            let mut overlay: u8 = XKB_OVERLAY_INVALID as u8;
+            let mut overlay: u8 = XKB_OVERLAY_INVALID;
             let mut key: u32 = XKB_KEYCODE_INVALID;
             if !expr_resolve_overlay_entry(
                 ki,
@@ -961,7 +961,7 @@ fn set_symbols_field(
             ) {
                 return false;
             }
-            if overlay as i32 == XKB_OVERLAY_INVALID {
+            if overlay == XKB_OVERLAY_INVALID {
                 return true;
             } else if key != XKB_KEYCODE_INVALID && {
                 ki.keymap.get_key(key).is_some_and(|k| k.name == keyi.name)
@@ -1304,7 +1304,7 @@ fn handle_mod_map_def(
             let ExprKind::KeySym(ks) = key else {
                 unreachable!()
             };
-            if *ks != XKB_KEY_NO_SYMBOL as u32 {
+            if *ks != XKB_KEY_NO_SYMBOL {
                 tmp.have_symbol = true;
                 tmp.u = *ks;
                 add_entry = true;
@@ -1402,12 +1402,12 @@ fn find_automatic_type(ctx: &mut XkbContext, groupi: &GroupInfo) -> u32 {
         return atom_intern(&mut ctx.atom_table, b"ONE_LEVEL");
     }
     let sym0: u32 = if groupi.levels[0].syms.is_empty() {
-        XKB_KEY_NO_SYMBOL as u32
+        XKB_KEY_NO_SYMBOL
     } else {
         groupi.levels[0].syms[0]
     };
     let sym1: u32 = if groupi.levels[1].syms.is_empty() {
-        XKB_KEY_NO_SYMBOL as u32
+        XKB_KEY_NO_SYMBOL
     } else {
         groupi.levels[1].syms[0]
     };
@@ -1423,18 +1423,18 @@ fn find_automatic_type(ctx: &mut XkbContext, groupi: &GroupInfo) -> u32 {
     if width <= 4_u32 {
         if xkb_keysym_is_lower(sym0) && xkb_keysym_is_upper_or_title(sym1) {
             let sym2: u32 = if groupi.levels[2].syms.is_empty() {
-                XKB_KEY_NO_SYMBOL as u32
+                XKB_KEY_NO_SYMBOL
             } else {
                 groupi.levels[2].syms[0]
             };
             let sym3: u32 = if width == 4_u32 {
                 if groupi.levels[3].syms.is_empty() {
-                    XKB_KEY_NO_SYMBOL as u32
+                    XKB_KEY_NO_SYMBOL
                 } else {
                     groupi.levels[3].syms[0]
                 }
             } else {
-                XKB_KEY_NO_SYMBOL as u32
+                XKB_KEY_NO_SYMBOL
             };
             if xkb_keysym_is_lower(sym2) && xkb_keysym_is_upper_or_title(sym3) {
                 return atom_intern(&mut ctx.atom_table, b"FOUR_LEVEL_ALPHABETIC");
@@ -1557,7 +1557,7 @@ fn copy_symbols_def_to_keymap(
             for li in 0..groupi.levels.len() {
                 let leveli = &mut groupi.levels[li];
                 match leveli.syms.len() {
-                    0 => leveli.upper = XKB_KEY_NO_SYMBOL as u32,
+                    0 => leveli.upper = XKB_KEY_NO_SYMBOL,
                     1 => leveli.upper = xkb_keysym_to_upper(leveli.syms[0]),
                     _ => {
                         let has_upper = leveli.syms.iter().any(|&s| xkb_keysym_to_upper(s) != s);
@@ -2565,9 +2565,7 @@ fn handle_compat_map_file(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo, fil
 }
 fn copy_interps(info: &CompatInfo, need_symbol: bool, pred: u32, collect: &mut Collect) {
     for si in &info.interps {
-        if si.interp.match_0 == pred
-            && (si.interp.sym != XKB_KEY_NO_SYMBOL as u32) as i32 == need_symbol as i32
-        {
+        if si.interp.match_0 == pred && (si.interp.sym != XKB_KEY_NO_SYMBOL) == need_symbol {
             collect.sym_interprets.push(si.interp.clone());
         }
     }
@@ -3370,7 +3368,7 @@ fn keycode_store_insert_key(store: &mut KeycodeStore, kc: u32, name: u32) -> boo
     if name >= store.names.len() as u32 {
         vec_resize_zero(&mut store.names, (name as usize) + 1);
     }
-    if kc <= XKB_KEYCODE_MAX_CONTIGUOUS as u32 {
+    if kc <= XKB_KEYCODE_MAX_CONTIGUOUS {
         if kc >= store.low.len() as u32 {
             vec_resize_zero(&mut store.low, (kc as usize) + 1);
         }
@@ -3491,7 +3489,7 @@ fn keycode_store_lookup_keycode(store: &KeycodeStore, kc: u32) -> KeycodeMatch {
             is_alias: false,
             index: kc,
         };
-    } else if kc <= XKB_KEYCODE_MAX_CONTIGUOUS as u32 {
+    } else if kc <= XKB_KEYCODE_MAX_CONTIGUOUS {
         return KeycodeMatch {
             found: false,
             low: false,
@@ -4385,7 +4383,7 @@ pub(crate) fn expr_resolve_level(ctx: &XkbContext, expr: &ExprKind, level_rtrn: 
     let pattern = NamedIntegerPattern {
         prefix: "Level",
         min: 1_u32,
-        max: XKB_LEVEL_MAX_IMPL as u32,
+        max: XKB_LEVEL_MAX_IMPL,
         entries: &LEVEL_NAME_PATTERN_ENTRIES,
         pending_entries: &LEVEL_NAME_PATTERN_ENTRIES,
         is_mask: false,

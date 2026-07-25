@@ -400,7 +400,7 @@ fn resolve_keysym(name: Sval) -> Option<u32> {
     let name_str = std::str::from_utf8(name.data).unwrap_or("");
 
     if name_str.eq_ignore_ascii_case("any") || name_str.eq_ignore_ascii_case("nosymbol") {
-        return Some(XKB_KEY_NO_SYMBOL as u32);
+        return Some(XKB_KEY_NO_SYMBOL);
     }
     if name_str.eq_ignore_ascii_case("none") || name_str.eq_ignore_ascii_case("voidsymbol") {
         return Some(XKB_KEY_VOID_SYMBOL as u32);
@@ -1269,7 +1269,7 @@ fn execute_reduction<'a>(
                                                                  // Prepend 'count' NoSymbol keysym lists
             let mut prepended: Vec<Box<ExprKind>> = Vec::new();
             for _ in 0..count {
-                prepended.push(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL as u32));
+                prepended.push(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL));
             }
             prepended.append(&mut list);
             let exprs: Vec<ExprKind> = prepended.into_iter().map(|b| *b).collect();
@@ -1726,7 +1726,7 @@ fn execute_reduction<'a>(
         193 => {
             // KeySyms: STRING (single string keysym)
             let s = yyvs[sp].take_str();
-            let expr = expr_create_key_sym_list(XKB_KEY_NO_SYMBOL as u32);
+            let expr = expr_create_key_sym_list(XKB_KEY_NO_SYMBOL);
             match expr_key_sym_list_append_string(param.scanner, expr, &s) {
                 Some(e) => {
                     *yyval = YYValue::Expr(e);
@@ -1743,7 +1743,7 @@ fn execute_reduction<'a>(
         195 => {
             // KeySymList: STRING (produces keysym list from string)
             let s = yyvs[sp].take_str();
-            let expr = expr_create_key_sym_list(XKB_KEY_NO_SYMBOL as u32);
+            let expr = expr_create_key_sym_list(XKB_KEY_NO_SYMBOL);
             match expr_key_sym_list_append_string(param.scanner, expr, &s) {
                 Some(e) => {
                     *yyval = YYValue::Expr(e);
@@ -1759,7 +1759,7 @@ fn execute_reduction<'a>(
         }
         197 => {
             // KeySymList: empty → NoSymbol
-            *yyval = YYValue::Expr(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL as u32));
+            *yyval = YYValue::Expr(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL));
         }
         // KeySym rules 198-203
         198 => {
@@ -1783,7 +1783,7 @@ fn execute_reduction<'a>(
                 }
                 None => {
                     let _loc = param.scanner.token_location();
-                    *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL as u32);
+                    *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL);
                 }
             }
         }
@@ -1801,14 +1801,14 @@ fn execute_reduction<'a>(
             let num = yyvs[sp].as_num();
             if num < XKB_KEYSYM_MIN as i64 {
                 let _loc = param.scanner.token_location();
-                *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL as u32);
+                *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL);
             } else {
                 if num <= XKB_KEYSYM_MAX as i64 {
                     let keysym = num as u32;
                     *yyval = YYValue::Keysym(keysym);
                 } else {
                     let _loc = param.scanner.token_location();
-                    *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL as u32);
+                    *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL);
                 }
                 let _loc = param.scanner.token_location();
             }
@@ -1929,14 +1929,14 @@ pub(crate) fn expr_create(kind: ExprKind) -> Box<ExprKind> {
 
 pub(crate) fn expr_create_key_sym_list(sym: u32) -> Box<ExprKind> {
     let mut syms = Vec::new();
-    if sym != XKB_KEY_NO_SYMBOL as u32 {
+    if sym != XKB_KEY_NO_SYMBOL {
         syms.push(sym);
     }
     expr_create(ExprKind::KeysymList { syms })
 }
 
 pub(crate) fn expr_append_key_sym_list(mut expr: Box<ExprKind>, sym: u32) -> Box<ExprKind> {
-    if sym != XKB_KEY_NO_SYMBOL as u32 {
+    if sym != XKB_KEY_NO_SYMBOL {
         if let ExprKind::KeysymList { ref mut syms } = *expr {
             syms.push(sym);
         }
@@ -1962,7 +1962,7 @@ pub(crate) fn expr_key_sym_list_append_string(
             return None;
         }
         let sym = utf32_to_keysym(cp);
-        if sym == XKB_KEY_NO_SYMBOL as u32 {
+        if sym == XKB_KEY_NO_SYMBOL {
             let _loc = scanner.token_location();
             return None;
         }
@@ -1989,7 +1989,7 @@ pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> Option
         return None;
     }
     let sym = utf32_to_keysym(cp);
-    if sym == XKB_KEY_NO_SYMBOL as u32 {
+    if sym == XKB_KEY_NO_SYMBOL {
         let _loc = scanner.token_location();
     }
     Some(sym)
@@ -2234,11 +2234,11 @@ impl<'a> Scanner<'a> {
     }
 
     #[inline]
-    pub(crate) fn peek(&self) -> i8 {
+    pub(crate) fn peek(&self) -> u8 {
         if self.pos >= self.s.len() {
             return 0;
         }
-        self.s[self.pos] as i8
+        self.s[self.pos]
     }
 
     #[inline]
@@ -2248,7 +2248,7 @@ impl<'a> Scanner<'a> {
 
     #[inline]
     pub(crate) fn eol(&self) -> bool {
-        self.peek() == b'\n' as i8
+        self.peek() == b'\n'
     }
 
     #[inline]
@@ -2261,17 +2261,17 @@ impl<'a> Scanner<'a> {
     }
 
     #[inline]
-    pub(crate) fn next_byte(&mut self) -> i8 {
+    pub(crate) fn next_byte(&mut self) -> u8 {
         if self.pos >= self.s.len() {
             return 0;
         }
-        let c = self.s[self.pos] as i8;
+        let c = self.s[self.pos];
         self.pos += 1;
         c
     }
 
     #[inline]
-    pub(crate) fn chr(&mut self, ch: i8) -> bool {
+    pub(crate) fn chr(&mut self, ch: u8) -> bool {
         if self.peek() != ch {
             return false;
         }
@@ -2323,7 +2323,7 @@ impl<'a> Scanner<'a> {
     pub(crate) fn oct(&mut self, out: &mut u8) -> bool {
         let mut i: u8 = 0;
         let mut c: u8 = 0;
-        while self.peek() as u8 >= b'0' && self.peek() as u8 <= b'7' && (i as i32) < 4 {
+        while self.peek() >= b'0' && self.peek() <= b'7' && (i as i32) < 4 {
             if (c as i32) < 0o40 {
                 c = (c as i32 * 8 + self.next_byte() as i32 - b'0' as i32) as u8;
             } else {
@@ -2367,7 +2367,7 @@ impl<'a> Scanner<'a> {
 
     #[inline]
     pub(crate) fn unicode_code_point(&mut self, out: &mut u32) -> bool {
-        if !self.chr(b'{' as i8) {
+        if !self.chr(b'{') {
             return false;
         }
         let remaining = self.remaining_bytes();
@@ -2376,10 +2376,10 @@ impl<'a> Scanner<'a> {
             self.pos += count as usize;
         }
         let last_valid = self.pos;
-        while !self.eof() && !self.eol() && self.peek() != b'"' as i8 && self.peek() != b'}' as i8 {
+        while !self.eof() && !self.eol() && self.peek() != b'"' && self.peek() != b'}' {
             self.next_byte();
         }
-        if self.chr(b'}' as i8) {
+        if self.chr(b'}') {
             *out = cp;
             return count > 0 && self.pos == last_valid + 1 && cp <= 0x10ffff;
         }
@@ -2830,10 +2830,10 @@ impl<'a> YYValue<'a> {
 /// Check if byte is whitespace (space, HT, LF, VT, FF, CR).
 /// Matches C `isspace()` for ASCII range.
 #[inline]
-fn is_space(ch: i8) -> bool {
-    matches!(ch as u8, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
+fn is_space(ch: u8) -> bool {
+    matches!(ch, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
 }
-pub(crate) static DECIMAL_SEPARATOR: i8 = b'.' as i8;
+pub(crate) static DECIMAL_SEPARATOR: u8 = b'.';
 fn number(s: &mut Scanner, out: &mut i64, out_tok: &mut i32) -> bool {
     if s.str_match(b"0x") {
         match s.hex_int64(out) {
@@ -2889,7 +2889,7 @@ pub(crate) fn _xkbcommon_lex<'a>(
         if s.str_match(b"\xE2\x80\x8E") || s.str_match(b"\xE2\x80\x8F") {
             continue;
         }
-        if !(s.str_match(b"//") || s.chr(b'#' as i8)) {
+        if !(s.str_match(b"//") || s.chr(b'#')) {
             break;
         }
         s.skip_to_eol();
@@ -2899,30 +2899,30 @@ pub(crate) fn _xkbcommon_lex<'a>(
     }
     s.token_pos = s.pos;
     s.buf_pos = 0;
-    if s.chr(b'"' as i8) {
-        while !s.eof() && !s.eol() && s.peek() != b'"' as i8 {
-            if s.chr(b'\\' as i8) {
+    if s.chr(b'"') {
+        while !s.eof() && !s.eol() && s.peek() != b'"' {
+            if s.chr(b'\\') {
                 let mut o: u8 = 0;
                 let start_pos: usize = s.pos;
-                if s.chr(b'\\' as i8) {
+                if s.chr(b'\\') {
                     s.buf_append(b'\\');
-                } else if s.chr(b'"' as i8) {
+                } else if s.chr(b'"') {
                     s.buf_append(b'"');
-                } else if s.chr(b'n' as i8) {
+                } else if s.chr(b'n') {
                     s.buf_append(b'\n');
-                } else if s.chr(b't' as i8) {
+                } else if s.chr(b't') {
                     s.buf_append(b'\t');
-                } else if s.chr(b'r' as i8) {
+                } else if s.chr(b'r') {
                     s.buf_append(b'\r');
-                } else if s.chr(b'b' as i8) {
+                } else if s.chr(b'b') {
                     s.buf_append(b'\x08');
-                } else if s.chr(b'f' as i8) {
+                } else if s.chr(b'f') {
                     s.buf_append(b'\x0c');
-                } else if s.chr(b'v' as i8) {
+                } else if s.chr(b'v') {
                     s.buf_append(b'\x0b');
-                } else if s.chr(b'e' as i8) {
+                } else if s.chr(b'e') {
                     s.buf_append(b'\x1b');
-                } else if s.chr(b'u' as i8) {
+                } else if s.chr(b'u') {
                     let mut cp: u32 = 0;
                     if s.unicode_code_point(&mut cp) && cp != 0 {
                         s.buf_appends_code_point(cp);
@@ -2938,10 +2938,10 @@ pub(crate) fn _xkbcommon_lex<'a>(
                 }
             } else {
                 let c = s.next_byte();
-                s.buf_append(c as u8);
+                s.buf_append(c);
             }
         }
-        if !s.buf_append(0) || !s.chr(b'"' as i8) {
+        if !s.buf_append(0) || !s.chr(b'"') {
             let _loc_2 = s.token_location();
             return ERROR_TOK;
         }
@@ -2951,11 +2951,11 @@ pub(crate) fn _xkbcommon_lex<'a>(
         *yylval = YYValue::Str(string);
         return STRING;
     }
-    if s.chr(b'<' as i8) {
-        while (s.peek() as u8).is_ascii_graphic() && s.peek() != b'>' as i8 {
+    if s.chr(b'<') {
+        while s.peek().is_ascii_graphic() && s.peek() != b'>' {
             s.next_byte();
         }
-        if !s.chr(b'>' as i8) {
+        if !s.chr(b'>') {
             let _loc_3 = s.token_location();
             return ERROR_TOK;
         }
@@ -2966,57 +2966,57 @@ pub(crate) fn _xkbcommon_lex<'a>(
         *yylval = YYValue::Atom(atom_intern(&mut ctx.atom_table, &keyname_bytes));
         return KEYNAME;
     }
-    if s.chr(b';' as i8) {
+    if s.chr(b';') {
         return SEMI;
     }
-    if s.chr(b'{' as i8) {
+    if s.chr(b'{') {
         return OBRACE;
     }
-    if s.chr(b'}' as i8) {
+    if s.chr(b'}') {
         return CBRACE;
     }
-    if s.chr(b'=' as i8) {
+    if s.chr(b'=') {
         return EQUALS;
     }
-    if s.chr(b'[' as i8) {
+    if s.chr(b'[') {
         return OBRACKET;
     }
-    if s.chr(b']' as i8) {
+    if s.chr(b']') {
         return CBRACKET;
     }
-    if s.chr(b'(' as i8) {
+    if s.chr(b'(') {
         return OPAREN;
     }
-    if s.chr(b')' as i8) {
+    if s.chr(b')') {
         return CPAREN;
     }
-    if s.chr(b'.' as i8) {
+    if s.chr(b'.') {
         return DOT;
     }
-    if s.chr(b',' as i8) {
+    if s.chr(b',') {
         return COMMA;
     }
-    if s.chr(b'+' as i8) {
+    if s.chr(b'+') {
         return PLUS;
     }
-    if s.chr(b'-' as i8) {
+    if s.chr(b'-') {
         return MINUS;
     }
-    if s.chr(b'*' as i8) {
+    if s.chr(b'*') {
         return TIMES;
     }
-    if s.chr(b'/' as i8) {
+    if s.chr(b'/') {
         return DIVIDE;
     }
-    if s.chr(b'!' as i8) {
+    if s.chr(b'!') {
         return EXCLAM;
     }
-    if s.chr(b'~' as i8) {
+    if s.chr(b'~') {
         return INVERT;
     }
     let mut tok: i32 = ERROR_TOK;
-    if (s.peek() as u8).is_ascii_alphabetic() || s.peek() == b'_' as i8 {
-        while (s.peek() as u8).is_ascii_alphanumeric() || s.peek() == b'_' as i8 {
+    if s.peek().is_ascii_alphabetic() || s.peek() == b'_' {
+        while s.peek().is_ascii_alphanumeric() || s.peek() == b'_' {
             s.next_byte();
         }
         tok = keyword_to_token(s.input_slice(s.token_pos, s.pos));
@@ -3353,7 +3353,7 @@ fn update_action_mods(keymap: &XkbKeymap, act: &mut XkbAction, modmap: u32) {
 }
 fn default_interpret() -> XkbSymInterpret {
     XkbSymInterpret {
-        sym: XKB_KEY_NO_SYMBOL as u32,
+        sym: XKB_KEY_NO_SYMBOL,
         match_0: MATCH_ANY_OR_NONE,
         mods: 0,
         virtual_mod: DEFAULT_INTERPRET_VMOD,
@@ -3392,7 +3392,7 @@ fn find_interp_for_key(
         's_26: for i in 0..keymap.sym_interprets.len() {
             let interp = &keymap.sym_interprets[i];
             let mods: u32;
-            if !(interp.sym != syms[s] && interp.sym != XKB_KEY_NO_SYMBOL as u32) {
+            if !(interp.sym != syms[s] && interp.sym != XKB_KEY_NO_SYMBOL) {
                 if interp.level_one_only && level != 0 {
                     mods = 0;
                 } else {
@@ -3416,11 +3416,7 @@ fn find_interp_for_key(
                     }
                     _ => {}
                 }
-                if found
-                    && i > 0
-                    && interp.sym == XKB_KEY_NO_SYMBOL as u32
-                    && !interp_indices.is_empty()
-                {
+                if found && i > 0 && interp.sym == XKB_KEY_NO_SYMBOL && !interp_indices.is_empty() {
                     for &prev_idx in interp_indices.iter() {
                         if prev_idx == i {
                             use_default = true;
@@ -4210,15 +4206,12 @@ pub(crate) const WILDCARD_MATCH_ALL: u32 = 1;
 pub(crate) const WILDCARD_MATCH_NONEMPTY: u32 = 0;
 pub(crate) const MAX_INCLUDE_DEPTH: i32 = 5_i32;
 #[inline]
-fn is_ident(ch: i8) -> bool {
-    (ch as u8).is_ascii_graphic() && ch as i32 != '\\' as i32
+fn is_ident(ch: u8) -> bool {
+    ch.is_ascii_graphic() && ch != b'\\'
 }
 fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
     loop {
-        while s.chr(b' ' as i8) as i32 != 0
-            || s.chr(b'\t' as i8) as i32 != 0
-            || s.chr(b'\r' as i8) as i32 != 0
-        {}
+        while s.chr(b' ') as i32 != 0 || s.chr(b'\t') as i32 != 0 || s.chr(b'\r') as i32 != 0 {}
         if s.str_match(b"//") {
             s.skip_to_eol();
         }
@@ -4228,10 +4221,10 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
             }
             return TOK_END_OF_LINE;
         }
-        if !s.chr(b'\\' as i8) {
+        if !s.chr(b'\\') {
             break;
         }
-        s.chr(b'\r' as i8);
+        s.chr(b'\r');
         if !s.eol() {
             let _loc: ScannerLoc = s.token_location();
             return TOK_ERROR;
@@ -4242,13 +4235,13 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         return TOK_END_OF_FILE;
     }
     s.token_pos = s.pos;
-    if s.chr(b'!' as i8) {
+    if s.chr(b'!') {
         return TOK_BANG;
     }
-    if s.chr(b'=' as i8) {
+    if s.chr(b'=') {
         return TOK_EQUALS;
     }
-    if s.chr(b'*' as i8) {
+    if s.chr(b'*') {
         return TOK_WILD_CARD_STAR;
     }
     if s.str_match(b"<none>") {
@@ -4260,7 +4253,7 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
     if s.str_match(b"<any>") {
         return TOK_WILD_CARD_ANY;
     }
-    if s.chr(b'$' as i8) {
+    if s.chr(b'$') {
         val.string = SvalIdx {
             start: s.pos,
             end: s.pos,
@@ -4299,11 +4292,11 @@ fn strip_spaces<'a>(v: Sval<'a>) -> Sval<'a> {
     let bytes = v.data;
     let start_trim = bytes
         .iter()
-        .position(|&b| !is_space(b as i8))
+        .position(|&b| !is_space(b))
         .unwrap_or(bytes.len());
     let end_trim = bytes
         .iter()
-        .rposition(|&b| !is_space(b as i8))
+        .rposition(|&b| !is_space(b))
         .map(|i| i + 1)
         .unwrap_or(start_trim);
     if start_trim >= end_trim {

@@ -20909,7 +20909,7 @@ pub(crate) fn xkb_keysym_from_name(name: &[u8], flags: u32) -> Option<u32> {
         && (name_bytes.get(1) == Some(&b'x') || (icase && name_bytes.get(1) == Some(&b'X')))
     {
         let rest = &name[2..];
-        if !parse_keysym_hex(rest, &mut val) || val > XKB_KEYSYM_MAX as u32 {
+        if !parse_keysym_hex(rest, &mut val) || val > XKB_KEYSYM_MAX {
             return None;
         }
         return Some(val);

@@ -3,6 +3,8 @@
 
 pub(crate) mod keymap;
 pub(crate) mod keysym;
+#[cfg(feature = "testing")]
+pub(crate) mod rxkb;
 pub(crate) mod shared_types;
 pub(crate) mod xkbcomp;
 
