@@ -397,7 +397,7 @@ fn layout_has_level5_activation(
     let is_modifier_key = |sym0: u32| -> bool { matches!(sym0, 0xFFE1 | 0xFFE2 | 0xFE03) };
     for kc in keymap.min_keycode()..=keymap.max_keycode() {
         if let Some(k) = keymap.inner.get_key(kc) {
-            if let Some(g) = k.groups.get(layout_idx) {
+            if k.groups.get(layout_idx).is_some() {
                 let num_levels = keymap.inner.key_num_levels(k, layout_idx as u32);
                 let level0_sym = keymap
                     .inner

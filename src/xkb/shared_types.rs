@@ -384,7 +384,6 @@ pub(crate) struct XkbGroup {
 #[derive(Clone, Default)]
 pub(crate) struct XkbLevel {
     pub(crate) upper: u32,
-    pub(crate) has_upper: bool,
     pub(crate) syms: Vec<u32>,
     pub(crate) actions: Vec<XkbAction>,
 }
