@@ -378,6 +378,67 @@ fn lock_activates(keymap: &keymap::Keymap, lock_kc: u32, mods_mask: u32, lock_ke
 /// each (layout, level) cell, adjusting modifier state based on whether the
 /// lock key would actually activate at each level.  Sets `None` when the result
 /// matches `state_keymap` (inline dedup).
+/// Whether the layout activates LevelFive when both LevelThree and Shift
+/// are held (via xkbcommon's compat interpret system).  True only when a
+/// MODIFIER key (Shift or Level3) produces ISO_Level5_Shift (0xfe11) or
+/// ISO_Level5_Latch (0xfe12) at a level reachable while the other modifier
+/// is active — e.g., the Shift key producing ISO_Level5_Latch at level 2
+/// (the LVL3-only level).  Regular typing keys like AC04 = F that happen to
+/// have ISO_Level5_Latch at level 2 do NOT count — they activate LevelFive
+/// per-key, not globally for every Shift+LVL3 keypress.
+fn layout_has_level5_activation(
+    keymap: &keymap::Keymap,
+    layout_idx: usize,
+    level5_mask: u32,
+) -> bool {
+    if level5_mask == 0 {
+        return false;
+    }
+    let is_modifier_key = |sym0: u32| -> bool { matches!(sym0, 0xFFE1 | 0xFFE2 | 0xFE03) };
+    for kc in keymap.min_keycode()..=keymap.max_keycode() {
+        if let Some(k) = keymap.inner.get_key(kc) {
+            if let Some(g) = k.groups.get(layout_idx) {
+                let num_levels = keymap.inner.key_num_levels(k, layout_idx as u32);
+                let level0_sym = keymap
+                    .inner
+                    .get_key_level(k, layout_idx as u32, 0)
+                    .and_then(|ld| ld.syms.first().copied())
+                    .unwrap_or(0);
+                if !is_modifier_key(level0_sym) {
+                    continue;
+                }
+                for level in 1..num_levels {
+                    if let Some(ld) = keymap.inner.get_key_level(k, layout_idx as u32, level) {
+                        if ld.syms.iter().any(|&sym| matches!(sym, 0xfe11 | 0xfe12)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    false
+}
+
+/// Apply xkbcommon's state-level transformation: on layouts where the
+/// interpret system activates LevelFive + consumes Shift when both
+/// LevelThree and Shift are held (see `layout_has_level5_activation`),
+/// transform the effective modifier mask to match what the state machine
+/// actually produces.
+fn level5_transform_mods(
+    mods_mask: u32,
+    layout_has_level5: bool,
+    level2_mask: u32,
+    level3_mask: u32,
+    level5_mask: u32,
+) -> u32 {
+    if layout_has_level5 && mods_mask & level2_mask != 0 && mods_mask & level3_mask != 0 {
+        (mods_mask | level5_mask) & !level2_mask
+    } else {
+        mods_mask
+    }
+}
+
 fn build_lock_keymap(
     keymap: &keymap::Keymap,
     state_keymap: &FlatKeymap,
@@ -391,19 +452,31 @@ fn build_lock_keymap(
     max_keycode: u32,
     level_masks: &[u32; 8],
     caps_mask: u32,
+    per_layout_level5: &[bool],
+    level2_mask: u32,
+    level3_mask: u32,
+    level5_mask: u32,
 ) -> FlatKeymap {
     const EVDEV_OFFSET: u32 = 8;
     let mut fk = FlatKeymap::new(num_keys, num_layouts);
     let stride = MAX_LEVELS * num_keys;
     for layout_idx in 0..num_layouts {
         let layout_off = layout_idx * stride;
+        let layout_level5 = per_layout_level5[layout_idx];
         for lvl in 0..MAX_LEVELS {
             let lock_active = lock_activates(keymap, lock_kc, level_masks[lvl], lock_keysym);
-            let mods_mask = if lock_active {
+            let raw_mods = if lock_active {
                 lock_mask | level_masks[lvl]
             } else {
                 level_masks[lvl]
             };
+            let mods_mask = level5_transform_mods(
+                raw_mods,
+                layout_level5,
+                level2_mask,
+                level3_mask,
+                level5_mask,
+            );
             let lvl_off = layout_off + lvl * num_keys;
             for kc in min_keycode..=max_keycode {
                 let evdev = (kc - EVDEV_OFFSET) as usize;
@@ -500,15 +573,29 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
         }
     }
 
-    // Build state_keymap using direct char resolution.
-    // resolve_char computes the effective level per-key based on its type
-    // and the modifier mask (e.g. ONE_LEVEL keys stay at level 0 when Shift is held).
+    // Compute per-layout LevelFive activation.  When true, xkbcommon's
+    // state machine transforms Shift+LVL3 → LevelFive+LVL3 (removing Shift).
+    let per_layout_level5: Vec<bool> = (0..num_layouts)
+        .map(|l| layout_has_level5_activation(keymap, l, level5_mask))
+        .collect();
+
+    // Build state_keymap using direct char resolution, applying the same
+    // state-level transformation that xkbcommon's interpret system performs
+    // (LevelFive activation on Shift+LVL3 for compatible layouts).
     let mut state_keymap = FlatKeymap::new(num_keys, num_layouts);
     let stride = MAX_LEVELS * num_keys;
     for layout_idx in 0..num_layouts {
         let layout_off = layout_idx * stride;
+        let layout_level5 = per_layout_level5[layout_idx];
         for lvl in 0..MAX_LEVELS {
-            let mods_mask = level_masks[lvl];
+            let raw_mods = level_masks[lvl];
+            let mods_mask = level5_transform_mods(
+                raw_mods,
+                layout_level5,
+                level2_mask,
+                level3_mask,
+                level5_mask,
+            );
             let lvl_off = layout_off + lvl * num_keys;
             for kc in min_keycode..=max_keycode {
                 let evdev = (kc - EVDEV_OFFSET) as usize;
@@ -533,6 +620,10 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
             max_keycode,
             &level_masks,
             caps_mask,
+            &per_layout_level5,
+            level2_mask,
+            level3_mask,
+            level5_mask,
         )
     } else {
         FlatKeymap::new(num_keys, num_layouts)
@@ -552,6 +643,10 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
             max_keycode,
             &level_masks,
             0,
+            &per_layout_level5,
+            level2_mask,
+            level3_mask,
+            level5_mask,
         )
     } else {
         FlatKeymap::new(num_keys, num_layouts)
