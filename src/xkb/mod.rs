@@ -69,29 +69,71 @@ pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u3
     other_mod
 }
 
-/// Press the appropriate level modifier keys on `state` for the given level index.
-fn press_level_modifiers(
-    state: &mut keymap::State,
-    level: usize,
-    level2: Option<u32>,
-    level3: Option<u32>,
-    level5: Option<u32>,
-) {
-    if level & 4 != 0 {
-        if let Some(kc) = level5 {
-            state.update_key(kc, shared_types::XKB_KEY_DOWN);
-        }
+/// Resolve the character for a key given a modifier mask, bypassing the state machine.
+fn resolve_char(
+    keymap: &keymap::Keymap,
+    kc: u32,
+    layout: u32,
+    mods_mask: u32,
+    caps_mask: u32,
+) -> Option<char> {
+    let key = keymap.inner.get_key(kc)?;
+    let group = key.groups.get(layout as usize)?;
+    let type_ = keymap.inner.types.get(group.type_idx as usize)?;
+
+    let level_mods = mods_mask & type_.mods.mask;
+    let level = type_
+        .entries
+        .iter()
+        .find(|e| shared_types::entry_is_active(e) && e.mods.mask == level_mods)
+        .map(|e| e.level)
+        .unwrap_or(0);
+
+    let level_data = keymap.inner.get_key_level(key, layout, level)?;
+    let raw_sym = *level_data.syms.first()?;
+
+    let sym = if mods_mask & caps_mask != 0
+        && !caps_is_consumed(keymap, kc, layout, mods_mask, caps_mask)
+    {
+        keysym::xkb_keysym_to_upper(raw_sym)
+    } else {
+        raw_sym
+    };
+    keysym::keysym_to_char(sym)
+}
+
+/// Check if the Caps modifier is consumed by a key's type at the given modifier state.
+fn caps_is_consumed(
+    keymap: &keymap::Keymap,
+    kc: u32,
+    layout: u32,
+    mods_mask: u32,
+    caps_mask: u32,
+) -> bool {
+    if caps_mask == 0 {
+        return true;
     }
-    if level & 2 != 0 {
-        if let Some(kc) = level3 {
-            state.update_key(kc, shared_types::XKB_KEY_DOWN);
-        }
-    }
-    if level & 1 != 0 {
-        if let Some(kc) = level2 {
-            state.update_key(kc, shared_types::XKB_KEY_DOWN);
-        }
-    }
+    let inner = &keymap.inner;
+    let key = match inner.get_key(kc) {
+        Some(k) => k,
+        None => return true,
+    };
+    let group = match key.groups.get(layout as usize) {
+        Some(g) => g,
+        None => return true,
+    };
+    let type_ = match inner.types.get(group.type_idx as usize) {
+        Some(t) => t,
+        None => return true,
+    };
+    let level_mods = mods_mask & type_.mods.mask;
+    let entry = type_
+        .entries
+        .iter()
+        .find(|e| shared_types::entry_is_active(e) && e.mods.mask == level_mods);
+    let preserve = entry.map(|e| e.preserve.mask).unwrap_or(0);
+    let consumed = type_.mods.mask & !preserve;
+    (consumed & caps_mask) != 0
 }
 
 /// Load compose entries from a file and build a ListComposer.
@@ -302,61 +344,151 @@ fn key_affected_by_num(keymap: &keymap::Keymap, kc: u32, layout: usize) -> bool 
     type_.entries.iter().any(|e| (e.mods.mask & MOD2_MASK) != 0)
 }
 
-/// Build a lock keymap: pre-fill from state_keymap, then recompute only
-/// cells where the lock modifier could change the result (filter-based).
-/// Non-affected cells retain the pre-filled state_keymap value. Inline dedup
-/// sets back to None when the computed result matches state_keymap, preventing
-/// runtime short-circuit in the multi-lock case.
+/// Check if the lock key produces the expected lock keysym at a given modifier state.
+/// The lock key may not always produce its lock keysym (e.g. Eisu_Toggle at level 0
+/// vs Caps_Lock at level 1 on jp locale).
+fn lock_activates(keymap: &keymap::Keymap, lock_kc: u32, mods_mask: u32, lock_keysym: u32) -> bool {
+    let key = match keymap.inner.get_key(lock_kc) {
+        Some(k) => k,
+        None => return false,
+    };
+    let group = match key.groups.first() {
+        Some(g) => g,
+        None => return false,
+    };
+    let type_ = match keymap.inner.types.get(group.type_idx as usize) {
+        Some(t) => t,
+        None => return false,
+    };
+    let level_mods = mods_mask & type_.mods.mask;
+    let level = type_
+        .entries
+        .iter()
+        .find(|e| shared_types::entry_is_active(e) && e.mods.mask == level_mods)
+        .map(|e| e.level)
+        .unwrap_or(0);
+    let level_data = match keymap.inner.get_key_level(key, 0, level) {
+        Some(l) => l,
+        None => return false,
+    };
+    level_data.syms.first() == Some(&lock_keysym)
+}
+
+/// Build a lock keymap using direct char resolution: compute the character for
+/// each (layout, level) cell, adjusting modifier state based on whether the
+/// lock key would actually activate at each level.  Sets `None` when the result
+/// matches `state_keymap` (inline dedup).
+/// Whether the layout activates LevelFive when both LevelThree and Shift
+/// are held (via xkbcommon's compat interpret system).  True only when a
+/// MODIFIER key (Shift or Level3) produces ISO_Level5_Shift (0xfe11) or
+/// ISO_Level5_Latch (0xfe12) at a level reachable while the other modifier
+/// is active — e.g., the Shift key producing ISO_Level5_Latch at level 2
+/// (the LVL3-only level).  Regular typing keys like AC04 = F that happen to
+/// have ISO_Level5_Latch at level 2 do NOT count — they activate LevelFive
+/// per-key, not globally for every Shift+LVL3 keypress.
+fn layout_has_level5_activation(
+    keymap: &keymap::Keymap,
+    layout_idx: usize,
+    level5_mask: u32,
+) -> bool {
+    if level5_mask == 0 {
+        return false;
+    }
+    let is_modifier_key = |sym0: u32| -> bool { matches!(sym0, 0xFFE1 | 0xFFE2 | 0xFE03) };
+    for kc in keymap.min_keycode()..=keymap.max_keycode() {
+        if let Some(k) = keymap.inner.get_key(kc) {
+            if let Some(g) = k.groups.get(layout_idx) {
+                let num_levels = keymap.inner.key_num_levels(k, layout_idx as u32);
+                let level0_sym = keymap
+                    .inner
+                    .get_key_level(k, layout_idx as u32, 0)
+                    .and_then(|ld| ld.syms.first().copied())
+                    .unwrap_or(0);
+                if !is_modifier_key(level0_sym) {
+                    continue;
+                }
+                for level in 1..num_levels {
+                    if let Some(ld) = keymap.inner.get_key_level(k, layout_idx as u32, level) {
+                        if ld.syms.iter().any(|&sym| matches!(sym, 0xfe11 | 0xfe12)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    false
+}
+
+/// Apply xkbcommon's state-level transformation: on layouts where the
+/// interpret system activates LevelFive + consumes Shift when both
+/// LevelThree and Shift are held (see `layout_has_level5_activation`),
+/// transform the effective modifier mask to match what the state machine
+/// actually produces.
+fn level5_transform_mods(
+    mods_mask: u32,
+    layout_has_level5: bool,
+    level2_mask: u32,
+    level3_mask: u32,
+    level5_mask: u32,
+) -> u32 {
+    if layout_has_level5 && mods_mask & level2_mask != 0 && mods_mask & level3_mask != 0 {
+        (mods_mask | level5_mask) & !level2_mask
+    } else {
+        mods_mask
+    }
+}
+
 fn build_lock_keymap(
     keymap: &keymap::Keymap,
     state_keymap: &FlatKeymap,
     lock_kc: u32,
-    toggle: bool,
+    lock_mask: u32,
+    lock_keysym: u32,
     affected_by: fn(&keymap::Keymap, u32, usize) -> bool,
     num_keys: usize,
     num_layouts: usize,
     min_keycode: u32,
     max_keycode: u32,
-    level_keys: (Option<u32>, Option<u32>, Option<u32>),
+    level_masks: &[u32; 8],
+    caps_mask: u32,
+    per_layout_level5: &[bool],
+    level2_mask: u32,
+    level3_mask: u32,
+    level5_mask: u32,
 ) -> FlatKeymap {
     const EVDEV_OFFSET: u32 = 8;
     let mut fk = FlatKeymap::new(num_keys, num_layouts);
     let stride = MAX_LEVELS * num_keys;
     for layout_idx in 0..num_layouts {
         let layout_off = layout_idx * stride;
+        let layout_level5 = per_layout_level5[layout_idx];
         for lvl in 0..MAX_LEVELS {
-            if let Some(mut st) = keymap.new_state() {
-                if layout_idx > 0 {
-                    st.update_mask(0, 0, 0, 0, 0, layout_idx as u32);
+            let lock_active = lock_activates(keymap, lock_kc, level_masks[lvl], lock_keysym);
+            let raw_mods = if lock_active {
+                lock_mask | level_masks[lvl]
+            } else {
+                level_masks[lvl]
+            };
+            let mods_mask = level5_transform_mods(
+                raw_mods,
+                layout_level5,
+                level2_mask,
+                level3_mask,
+                level5_mask,
+            );
+            let lvl_off = layout_off + lvl * num_keys;
+            for kc in min_keycode..=max_keycode {
+                let evdev = (kc - EVDEV_OFFSET) as usize;
+                if !affected_by(keymap, kc, layout_idx) {
+                    continue;
                 }
-                if toggle {
-                    st.update_key(lock_kc, shared_types::XKB_KEY_DOWN);
-                    st.update_key(lock_kc, shared_types::XKB_KEY_UP);
-                }
-                press_level_modifiers(&mut st, lvl, level_keys.0, level_keys.1, level_keys.2);
-                if !toggle {
-                    st.update_key(lock_kc, shared_types::XKB_KEY_DOWN);
-                }
-                let lvl_off = layout_off + lvl * num_keys;
-                for kc in min_keycode..=max_keycode {
-                    let evdev = (kc - EVDEV_OFFSET) as usize;
-                    if !affected_by(keymap, kc, layout_idx) {
-                        continue;
-                    }
-                    let idx = lvl_off + evdev;
-                    let ch = match st.key_get_one_sym(kc) {
-                        Some(sym) => keysym::keysym_to_char(sym),
-                        None => keymap
-                            .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
-                            .first()
-                            .and_then(|&s| keysym::keysym_to_char(s)),
-                    };
-                    if let Some(c) = ch {
-                        if state_keymap.data[idx] == Some(c) {
-                            fk.data[idx] = None;
-                        } else {
-                            fk.data[idx] = Some(c);
-                        }
+                if let Some(ch) = resolve_char(keymap, kc, layout_idx as u32, mods_mask, caps_mask)
+                {
+                    if state_keymap.data[lvl_off + evdev] == Some(ch) {
+                        fk.data[lvl_off + evdev] = None;
+                    } else {
+                        fk.data[lvl_off + evdev] = Some(ch);
                     }
                 }
             }
@@ -381,11 +513,42 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
     // Modifiers are global to the keymap (not per-layout), use layout 0.
     let modifiers = build_modifiers_from_keymap(keymap, min_keycode, max_keycode);
 
-    let level_keys = (
-        level_code(&modifiers, ModType::Level2).map(|(c, _)| c + EVDEV_OFFSET),
-        level_code(&modifiers, ModType::Level3).map(|(c, _)| c + EVDEV_OFFSET),
-        level_code(&modifiers, ModType::Level5).map(|(c, _)| c + EVDEV_OFFSET),
-    );
+    // Precompute modifier masks for direct level resolution.
+    // The name-to-modifier-type mapping mirrors build_modifiers_from_keymap.
+    let caps_mask = keymap.mod_get_mask("Lock");
+    let num_mask = keymap.mod_get_mask("Mod2");
+    let level2_mask = keymap.mod_get_mask("Shift");
+    let level3_mask = {
+        let m = keymap.mod_get_mask("ISO_Level3_Shift");
+        if m != 0 {
+            m
+        } else {
+            let m = keymap.mod_get_mask("Mode_switch");
+            if m != 0 {
+                m
+            } else {
+                keymap.mod_get_mask("Mod5")
+            }
+        }
+    };
+    let level5_mask = {
+        let m = keymap.mod_get_mask("ISO_Level5_Shift");
+        if m != 0 {
+            m
+        } else {
+            keymap.mod_get_mask("LevelFive")
+        }
+    };
+    let level_masks: [u32; 8] = [
+        0,
+        level2_mask,
+        level3_mask,
+        level2_mask | level3_mask,
+        level5_mask,
+        level2_mask | level5_mask,
+        level3_mask | level5_mask,
+        level2_mask | level3_mask | level5_mask,
+    ];
 
     // ── Build flat keymaps for ALL layouts ──
 
@@ -409,80 +572,85 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
             }
         }
     }
-    let get_char =
-        |kc: u32, state: &keymap::State, layout_idx: usize, lvl: usize| -> Option<char> {
-            match state.key_get_one_sym(kc) {
-                Some(sym) => keysym::keysym_to_char(sym),
-                None => keymap
-                    .key_get_syms_by_level(kc, layout_idx as u32, lvl as u32)
-                    .first()
-                    .and_then(|&s| keysym::keysym_to_char(s)),
-            }
-        };
 
-    // Build state_keymap using state with level modifiers pressed.
-    // key_get_one_sym resolves the effective level per-key based on its type
-    // (e.g. ONE_LEVEL keys stay at level 0 when Shift is held), so we need
-    // the full state machinery — not just key_get_syms_by_level.
+    // Compute per-layout LevelFive activation.  When true, xkbcommon's
+    // state machine transforms Shift+LVL3 → LevelFive+LVL3 (removing Shift).
+    let per_layout_level5: Vec<bool> = (0..num_layouts)
+        .map(|l| layout_has_level5_activation(keymap, l, level5_mask))
+        .collect();
+
+    // Build state_keymap using direct char resolution, applying the same
+    // state-level transformation that xkbcommon's interpret system performs
+    // (LevelFive activation on Shift+LVL3 for compatible layouts).
     let mut state_keymap = FlatKeymap::new(num_keys, num_layouts);
     let stride = MAX_LEVELS * num_keys;
-    let mut state_states: Vec<keymap::State> =
-        (0..MAX_LEVELS).filter_map(|_| keymap.new_state()).collect();
     for layout_idx in 0..num_layouts {
         let layout_off = layout_idx * stride;
-        for (lvl, st) in state_states.iter_mut().enumerate() {
-            if layout_idx > 0 {
-                if let Some(fresh) = keymap.new_state() {
-                    *st = fresh;
-                }
-                st.update_mask(0, 0, 0, 0, 0, layout_idx as u32);
-            }
-            press_level_modifiers(st, lvl, level_keys.0, level_keys.1, level_keys.2);
+        let layout_level5 = per_layout_level5[layout_idx];
+        for lvl in 0..MAX_LEVELS {
+            let raw_mods = level_masks[lvl];
+            let mods_mask = level5_transform_mods(
+                raw_mods,
+                layout_level5,
+                level2_mask,
+                level3_mask,
+                level5_mask,
+            );
             let lvl_off = layout_off + lvl * num_keys;
             for kc in min_keycode..=max_keycode {
                 let evdev = (kc - EVDEV_OFFSET) as usize;
-                if let Some(ch) = get_char(kc, st, layout_idx, lvl) {
+                if let Some(ch) = resolve_char(keymap, kc, layout_idx as u32, mods_mask, 0) {
                     state_keymap.data[lvl_off + evdev] = Some(ch);
                 }
             }
         }
     }
     let caps_kc = level_code(&modifiers, ModType::Caps).map(|(c, _)| c + EVDEV_OFFSET);
-    let caps_lock_keymap = caps_kc.map_or_else(
-        || FlatKeymap::new(num_keys, num_layouts),
-        |ckc| {
-            build_lock_keymap(
-                keymap,
-                &state_keymap,
-                ckc,
-                false,
-                key_affected_by_caps,
-                num_keys,
-                num_layouts,
-                min_keycode,
-                max_keycode,
-                level_keys,
-            )
-        },
-    );
+    let caps_lock_keymap = if let Some(lock_kc) = caps_kc {
+        build_lock_keymap(
+            keymap,
+            &state_keymap,
+            lock_kc,
+            caps_mask,
+            0xffe5,
+            key_affected_by_caps,
+            num_keys,
+            num_layouts,
+            min_keycode,
+            max_keycode,
+            &level_masks,
+            caps_mask,
+            &per_layout_level5,
+            level2_mask,
+            level3_mask,
+            level5_mask,
+        )
+    } else {
+        FlatKeymap::new(num_keys, num_layouts)
+    };
     let num_kc = level_code(&modifiers, ModType::Num).map(|(c, _)| c + EVDEV_OFFSET);
-    let num_lock_keys = num_kc.map_or_else(
-        || FlatKeymap::new(num_keys, num_layouts),
-        |nkc| {
-            build_lock_keymap(
-                keymap,
-                &state_keymap,
-                nkc,
-                true,
-                key_affected_by_num,
-                num_keys,
-                num_layouts,
-                min_keycode,
-                max_keycode,
-                level_keys,
-            )
-        },
-    );
+    let num_lock_keys = if let Some(lock_kc) = num_kc {
+        build_lock_keymap(
+            keymap,
+            &state_keymap,
+            lock_kc,
+            num_mask,
+            0xff7f,
+            key_affected_by_num,
+            num_keys,
+            num_layouts,
+            min_keycode,
+            max_keycode,
+            &level_masks,
+            0,
+            &per_layout_level5,
+            level2_mask,
+            level3_mask,
+            level5_mask,
+        )
+    } else {
+        FlatKeymap::new(num_keys, num_layouts)
+    };
     let mut repeat_keys = KeyBitSet::new();
     for kc in min_keycode..=max_keycode {
         if keymap.key_repeats(kc) {

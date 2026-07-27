@@ -11,8 +11,6 @@ pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: u32 = 2;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: u32 = 1;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_WRAP: u32 = 0;
 
-pub(crate) const XKB_STATE_CONTROLS: u32 = 512;
-pub(crate) const XKB_STATE_LEDS: u32 = 256;
 pub(crate) const XKB_STATE_LAYOUT_EFFECTIVE: u32 = 128;
 pub(crate) const XKB_STATE_LAYOUT_LOCKED: u32 = 64;
 pub(crate) const XKB_STATE_LAYOUT_LATCHED: u32 = 32;
@@ -223,8 +221,6 @@ pub struct XkbInternalAction {
     pub clear_latched_mods: u32,
 }
 
-pub const INTERNAL_BREAKS_MOD_LATCH: u32 = 2;
-pub const INTERNAL_BREAKS_GROUP_LATCH: u32 = 1;
 pub const _ACTION_TYPE_NUM_ENTRIES: u32 = 21;
 pub const ACTION_TYPE_INTERNAL: u32 = 20;
 pub const ACTION_TYPE_PRIVATE: u32 = 19;
@@ -433,23 +429,13 @@ pub(crate) const XKB_CONTEXT_NO_DEFAULT_INCLUDES: u32 = 1;
 pub(crate) const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: u32 = 2;
 pub(crate) const XKB_CONTEXT_NO_SECURE_GETENV: u32 = 4;
 
-pub(crate) const XKB_KEY_UP: u32 = 0;
-pub(crate) const XKB_KEY_DOWN: u32 = 1;
-pub(crate) const XKB_KEY_REPEATED: u32 = 2;
-pub(crate) const XKB_CONSUMED_MODE_XKB: u32 = 0;
-
 pub(crate) const XKB_KEYSYM_NO_FLAGS: u32 = 0;
 pub(crate) const XKB_KEYSYM_CASE_INSENSITIVE: u32 = 1;
 
 pub const XKB_KEYMAP_COMPILE_FLAGS_VALUES: u32 = 1;
 
-pub(crate) const XKB_A11Y_NO_FLAGS: u32 = 0;
-pub(crate) const XKB_A11Y_LATCH_TO_LOCK: u32 = 1;
-pub(crate) const XKB_A11Y_LATCH_SIMULTANEOUS_KEYS: u32 = 2;
-
 pub(crate) const XKB_KEYCODE_INVALID: u32 = 0xffffffff;
 pub(crate) const XKB_KEYCODE_MAX: u32 = 0xffffffff_u32.wrapping_sub(1);
-pub(crate) const XKB_LEVEL_INVALID: u32 = 0xffffffff;
 pub(crate) const XKB_KEYSYM_MAX: u32 = 0x1fffffff;
 
 #[derive(Clone, Default)]
@@ -459,17 +445,6 @@ pub(crate) struct XkbComponentNames {
     pub(crate) geometry: Vec<i8>,
     pub(crate) symbols: Vec<i8>,
     pub(crate) types: Vec<i8>,
-}
-
-#[derive(Copy, Clone)]
-pub(crate) struct XkbStateComponentsUpdate {
-    pub(crate) components: u32,
-    pub(crate) affect_latched_mods: u32,
-    pub(crate) latched_mods: u32,
-    pub(crate) affect_locked_mods: u32,
-    pub(crate) locked_mods: u32,
-    pub(crate) latched_layout: i32,
-    pub(crate) locked_layout: i32,
 }
 
 pub(crate) const XKB_ATOM_NONE: u32 = 0;
@@ -510,9 +485,7 @@ pub(crate) fn atom_intern(table: &mut AtomTable, input_bytes: &[u8]) -> u32 {
 
 pub(crate) const DEFAULT_INTERPRET_KEY_REPEAT: u32 = 1;
 pub(crate) const DEFAULT_INTERPRET_VMOD: u32 = 4294967295;
-pub(crate) const XKB_MOD_ALL: u32 = 4294967295;
 pub const XKB_MOD_NONE: u32 = 0xffffffff;
-pub(crate) const XKB_MOD_INDEX_CAPS: u32 = 1;
 pub(crate) const _XKB_MOD_INDEX_NUM_ENTRIES: u32 = 8;
 pub(crate) const XKB_ALL_GROUPS: u64 = 4294967295;
 pub(crate) const XKB_OVERLAY_MAX: u8 = 8;
