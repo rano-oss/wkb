@@ -9,7 +9,7 @@ use std::time::Duration;
 
 fn cfg() -> Criterion {
     Criterion::default()
-        .warm_up_time(Duration::from_millis(200))
+        .warm_up_time(Duration::from_millis(10))
         .measurement_time(Duration::from_secs(1))
         .sample_size(20)
 }
