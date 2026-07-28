@@ -6,7 +6,90 @@ use test_case::test_matrix;
 use wkb::testing::{composer_feed, Token, WKBTestExt};
 use xkbcommon::xkb::{self, compose};
 
-use wkb::testing::compose_parse::{keysym_name_to_char, parse_compose_file, ComposeEntry};
+use wkb::testing::compose_parse::{parse_compose_file, ComposeEntry};
+
+/// Parse a compose file and extract (keysym_names, multi_key_index, output) for each entry.
+/// Used as an alternative data source that avoids adding keysym_names to ComposeEntry.
+fn parse_compose_keysym_data(path: &Path) -> Vec<(Vec<String>, Option<usize>, char)> {
+    use std::io::Read;
+    let mut file = match std::fs::File::open(path) {
+        Ok(f) => f,
+        Err(_) => return Vec::new(),
+    };
+    let mut content = String::new();
+    if file.read_to_string(&mut content).is_err() {
+        return Vec::new();
+    }
+    let mut result = Vec::new();
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        if trimmed.starts_with("include") {
+            continue;
+        }
+        let colon_pos = match trimmed.find(':') {
+            Some(p) => p,
+            None => continue,
+        };
+        let lhs = &trimmed[..colon_pos];
+        let rhs = trimmed[colon_pos + 1..].trim();
+        let rhs = if let Some(hash) = rhs.find('#') {
+            rhs[..hash].trim()
+        } else {
+            rhs
+        };
+        let output = match parse_rhs_for_test(rhs) {
+            Some(c) => c,
+            None => continue,
+        };
+        let mut keysym_names = Vec::new();
+        let mut multi_key_index = None;
+        let mut pos = 0;
+        let lhs_bytes = lhs.as_bytes();
+        while pos < lhs_bytes.len() {
+            if lhs_bytes[pos] == b'<' {
+                let end = match lhs[pos..].find('>') {
+                    Some(e) => e + pos,
+                    None => break,
+                };
+                let name = &lhs[pos + 1..end];
+                if name.eq_ignore_ascii_case("Multi_key") {
+                    if multi_key_index.is_none() {
+                        multi_key_index = Some(keysym_names.len());
+                    }
+                } else {
+                    keysym_names.push(name.to_string());
+                }
+                pos = end + 1;
+            } else {
+                pos += 1;
+            }
+        }
+        if keysym_names.is_empty() {
+            continue;
+        }
+        result.push((keysym_names, multi_key_index, output));
+    }
+    result
+}
+
+fn parse_rhs_for_test(rhs: &str) -> Option<char> {
+    let rhs = rhs.trim();
+    if rhs.starts_with('"') {
+        let end_quote = rhs[1..].find('"')? + 1;
+        let s = &rhs[1..end_quote];
+        if !s.is_empty() && !s.starts_with('\\') {
+            if let Some(ch) = s.chars().next() {
+                if !ch.is_ascii_digit() {
+                    return Some(ch);
+                }
+            }
+        }
+    }
+    None
+}
 
 /// Guard for env-var mutations (LC_ALL) during WKB construction.
 /// `set_var` / `remove_var` are process-wide and not thread-safe,
@@ -86,13 +169,7 @@ fn wkb_compose_sequence(
 
 /// Resolve a compose entry's keysym names to chars for wkb.
 fn resolve_entry_chars(entry: &ComposeEntry) -> Vec<char> {
-    let mut chars = Vec::new();
-    for name in &entry.keysym_names {
-        if let Some(character) = keysym_name_to_char(name) {
-            chars.push(character);
-        }
-    }
-    chars
+    entry.keys.to_vec()
 }
 
 // ---------------------------------------------------------------------------
@@ -124,6 +201,31 @@ fn run_compose_test(
             compose_path.display()
         );
         return;
+    }
+
+    // Parse keysym names from the raw file for xkbcommon cross-checking
+    let keysym_data = parse_compose_keysym_data(compose_path);
+    // Build a lookup: (is_multi_key, keys_chars) -> (keysym_names, is_multi_key)
+    // for xkbcommon feeding
+    let mut entry_to_keysym: HashMap<(bool, Vec<char>), (Vec<String>, Option<usize>)> =
+        HashMap::new();
+    for (names, mk_idx, _output) in &keysym_data {
+        let mut chars = Vec::with_capacity(names.len() + mk_idx.map(|_| 0).unwrap_or(0));
+        for name in names {
+            if let Some(ch) = wkb::testing::compose_parse::keysym_name_to_char(name) {
+                chars.push(ch);
+            } else {
+                // If any name fails to resolve, skip this entry
+                chars.clear();
+                break;
+            }
+        }
+        if !chars.is_empty() {
+            let key = (mk_idx.is_some(), chars);
+            entry_to_keysym
+                .entry(key)
+                .or_insert_with(|| (names.clone(), *mk_idx));
+        }
     }
 
     // Filter to keyboard-reachable entries when producible set is provided
@@ -178,7 +280,7 @@ fn run_compose_test(
     // Detect prefix conflicts
     let all_char_seqs: Vec<(bool, Vec<char>)> = entries
         .iter()
-        .map(|e| (e.multi_key_index.is_some(), e.keys.clone()))
+        .map(|e| (e.multi_key_index.is_some(), e.keys.to_vec()))
         .collect();
     let mut prefix_conflict_seqs: std::collections::HashSet<(bool, Vec<char>)> = Default::default();
     for a in &all_char_seqs {
@@ -202,14 +304,21 @@ fn run_compose_test(
 
     for entry in &entries {
         let expected = entry.output;
+        let chars = resolve_entry_chars(entry);
+        let key = (entry.multi_key_index.is_some(), chars.clone());
+        let xkb_key_data = entry_to_keysym.get(&key);
 
         let xkb_result = xkb_state.as_mut().and_then(|state| {
-            xkb_compose_sequence(state, &entry.keysym_names, entry.multi_key_index.is_some())
+            if let Some((names, mk_idx)) = xkb_key_data {
+                xkb_compose_sequence(state, names, mk_idx.is_some())
+            } else {
+                None
+            }
         });
 
         let wkb_result = {
             let composer = regular;
-            wkb_compose_sequence(composer, &resolve_entry_chars(entry), entry.multi_key_index)
+            wkb_compose_sequence(composer, &chars, entry.multi_key_index)
         };
 
         if has_xkb {
@@ -225,15 +334,18 @@ fn run_compose_test(
                 if xkb_result == wkb_result {
                     both_match += 1;
                 } else {
+                    let names_str = xkb_key_data
+                        .map(|(n, _)| format!("{:?}", n))
+                        .unwrap_or_default();
                     let msg = format!(
-                        "  MISMATCH: {:?} [multi={}] -> xkb={:?} wkb={:?} expected={:?}",
-                        entry.keysym_names,
+                        "  MISMATCH: {} [multi={}] -> xkb={:?} wkb={:?} expected={:?}",
+                        names_str,
                         entry.multi_key_index.is_some(),
                         xkb_result,
                         wkb_result,
                         expected
                     );
-                    let key = (entry.multi_key_index.is_some(), entry.keys.clone());
+                    let key = (entry.multi_key_index.is_some(), entry.keys.to_vec());
                     let is_known =
                         collision_seqs.contains(&key) || prefix_conflict_seqs.contains(&key);
                     // If wkb matches expected but xkb doesn't, wkb is correct — not a mismatch
@@ -245,17 +357,23 @@ fn run_compose_test(
                     }
                 }
             } else if xkb_result.is_some() && wkb_result.is_none() {
+                let names_str = xkb_key_data
+                    .map(|(n, _)| format!("{:?}", n))
+                    .unwrap_or_default();
                 wkb_failures.push(format!(
-                    "  WKB_MISS: {:?} [multi={}] -> xkb={:?} expected={:?}",
-                    entry.keysym_names,
+                    "  WKB_MISS: {} [multi={}] -> xkb={:?} expected={:?}",
+                    names_str,
                     entry.multi_key_index.is_some(),
                     xkb_result,
                     expected
                 ));
             } else if xkb_result.is_none() && wkb_result.is_some() {
+                let names_str = xkb_key_data
+                    .map(|(n, _)| format!("{:?}", n))
+                    .unwrap_or_default();
                 xkb_failures.push(format!(
-                    "  XKB_MISS: {:?} [multi={}] -> wkb={:?} expected={:?}",
-                    entry.keysym_names,
+                    "  XKB_MISS: {} [multi={}] -> wkb={:?} expected={:?}",
+                    names_str,
                     entry.multi_key_index.is_some(),
                     wkb_result,
                     expected
@@ -265,18 +383,24 @@ fn run_compose_test(
             match wkb_result {
                 Some(c) if c == expected => wkb_only_ok += 1,
                 Some(c) => {
+                    let names_str = xkb_key_data
+                        .map(|(n, _)| format!("{:?}", n))
+                        .unwrap_or_default();
                     mismatches.push(format!(
-                        "  WKB_WRONG: {:?} [multi={}] -> wkb={:?} expected={:?}",
-                        entry.keysym_names,
+                        "  WKB_WRONG: {} [multi={}] -> wkb={:?} expected={:?}",
+                        names_str,
                         entry.multi_key_index.is_some(),
                         c,
                         expected
                     ));
                 }
                 None => {
+                    let names_str = xkb_key_data
+                        .map(|(n, _)| format!("{:?}", n))
+                        .unwrap_or_default();
                     wkb_failures.push(format!(
-                        "  WKB_MISS: {:?} [multi={}] -> expected={:?}",
-                        entry.keysym_names,
+                        "  WKB_MISS: {} [multi={}] -> expected={:?}",
+                        names_str,
                         entry.multi_key_index.is_some(),
                         expected
                     ));

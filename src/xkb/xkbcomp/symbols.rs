@@ -2725,15 +2725,23 @@ fn add_key_type(info: &mut KeyTypesInfo, new: &mut KeyTypeInfo) -> bool {
     let old_idx = info.types.iter().position(|t| t.name == new.name);
     if let Some(idx) = old_idx {
         if new.merge != MergeMode::Augment {
-            info.types[idx] = new.clone();
-            new.entries = Vec::new();
-            new.level_names = Vec::new();
+            std::mem::swap(&mut info.types[idx], new);
             return true;
         }
-
         return true;
     }
-    info.types.push(new.clone());
+    info.types.push(std::mem::replace(
+        new,
+        KeyTypeInfo {
+            defined: 0,
+            merge: MergeMode::Default,
+            name: 0,
+            mods: 0,
+            num_levels: 0,
+            entries: Vec::new(),
+            level_names: Vec::new(),
+        },
+    ));
     true
 }
 fn merge_included_key_types(
@@ -2753,14 +2761,12 @@ fn merge_included_key_types(
     if into.types.is_empty() {
         into.types = std::mem::take(&mut from.types);
     } else {
-        for type_0 in from.types.iter_mut() {
+        for mut type_0 in from.types.drain(..) {
             type_0.merge = merge;
-            let mut type_clone = type_0.clone();
-            if !add_key_type(into, &mut type_clone) {
+            if !add_key_type(into, &mut type_0) {
                 into.error_count += 1;
             }
         }
-        from.types.clear();
     }
 }
 fn handle_include_key_types(

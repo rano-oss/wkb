@@ -19,25 +19,29 @@ fn bench_setup_no_compose(c: &mut Criterion) {
     let locale = "us";
 
     group.bench_function("wkb", |b| {
-        // Temporarily unset locale env vars so compose is not loaded
-        let saved = std::env::var("LC_ALL").ok();
+        // Unset all locale env vars so compose loading is skipped entirely
+        let saved_lc_all = std::env::var("LC_ALL").ok();
+        let saved_lc_ctype = std::env::var("LC_CTYPE").ok();
+        let saved_lang = std::env::var("LANG").ok();
         unsafe {
-            std::env::set_var("LC_ALL", "C");
+            std::env::remove_var("LC_ALL");
+            std::env::remove_var("LC_CTYPE");
+            std::env::remove_var("LANG");
         }
         b.iter(|| {
             let wkb: wkb::WKB =
                 wkb::WKB::new_from_names("", "", black_box(locale), "", None).unwrap();
             black_box(wkb);
         });
-        if let Some(v) = saved {
-            unsafe {
-                std::env::set_var("LC_ALL", v);
+        let restore = |var: &str, saved: Option<String>| unsafe {
+            match saved {
+                Some(v) => std::env::set_var(var, v),
+                None => std::env::remove_var(var),
             }
-        } else {
-            unsafe {
-                std::env::remove_var("LC_ALL");
-            }
-        }
+        };
+        restore("LC_ALL", saved_lc_all);
+        restore("LC_CTYPE", saved_lc_ctype);
+        restore("LANG", saved_lang);
     });
 
     group.bench_function("xkbcommon", |b| {

@@ -2960,10 +2960,8 @@ pub(crate) fn _xkbcommon_lex<'a>(
             return ERROR_TOK;
         }
         let len: usize = s.pos - s.token_pos - 2;
-        let keyname_bytes: Vec<u8> = s
-            .input_slice(s.token_pos + 1, s.token_pos + 1 + len)
-            .to_vec();
-        *yylval = YYValue::Atom(atom_intern(&mut ctx.atom_table, &keyname_bytes));
+        let keyname_bytes = s.input_slice(s.token_pos + 1, s.token_pos + 1 + len);
+        *yylval = YYValue::Atom(atom_intern(&mut ctx.atom_table, keyname_bytes));
         return KEYNAME;
     }
     if s.chr(b';') {

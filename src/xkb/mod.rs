@@ -137,33 +137,26 @@ fn caps_is_consumed(
 }
 
 /// Load compose entries from a file and build a ListComposer.
-/// Uses first-wins semantics to match xkbcommon behavior: if multiple
-/// entries resolve to the same token sequence, only the first is kept.
 pub fn load_compose_from_path(path: &std::path::Path) -> Composer {
+    use arrayvec::ArrayVec;
+
     let mut regular = Composer::new();
-    let mut seen: std::collections::HashSet<Vec<u32>> = std::collections::HashSet::new();
 
-    let entries = keymap::parse_compose_file(path);
-
-    for entry in entries {
-        let mut tokens: Vec<Token> = Vec::new();
-        let mut key: Vec<u32> = Vec::new();
+    keymap::parse_compose_file_impl(path, &mut |entry| {
+        let mut tokens: ArrayVec<Token, 8> = ArrayVec::new();
         let mk_idx = entry.multi_key_index;
 
         for (i, ch) in entry.keys.iter().enumerate() {
             if let Some(idx) = mk_idx {
                 if idx == i {
                     tokens.push(Token::Compose);
-                    key.push(0);
                 }
             }
             tokens.push(Token::Char(*ch));
-            key.push(*ch as u32);
         }
-        if seen.insert(key) {
-            regular.insert(&tokens, entry.output);
-        }
-    }
+        regular.insert(&tokens, entry.output);
+    });
+
     regular
 }
 
@@ -445,7 +438,7 @@ fn build_lock_keymap(
     lock_kc: u32,
     lock_mask: u32,
     lock_keysym: u32,
-    affected_by: fn(&keymap::Keymap, u32, usize) -> bool,
+    affected: &[bool],
     num_keys: usize,
     num_layouts: usize,
     min_keycode: u32,
@@ -480,7 +473,7 @@ fn build_lock_keymap(
             let lvl_off = layout_off + lvl * num_keys;
             for kc in min_keycode..=max_keycode {
                 let evdev = (kc - EVDEV_OFFSET) as usize;
-                if !affected_by(keymap, kc, layout_idx) {
+                if !affected[(kc - min_keycode) as usize] {
                     continue;
                 }
                 if let Some(ch) = resolve_char(keymap, kc, layout_idx as u32, mods_mask, caps_mask)
@@ -592,6 +585,15 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
             }
         }
     }
+
+    // Pre-compute which keys are affected by Caps/Num lock for fast lookup
+    let caps_affected: Vec<bool> = (min_keycode..=max_keycode)
+        .map(|kc| key_affected_by_caps(keymap, kc, 0))
+        .collect();
+    let num_affected: Vec<bool> = (min_keycode..=max_keycode)
+        .map(|kc| key_affected_by_num(keymap, kc, 0))
+        .collect();
+
     let caps_kc = level_code(&modifiers, ModType::Caps).map(|(c, _)| c + EVDEV_OFFSET);
     let caps_lock_keymap = if let Some(lock_kc) = caps_kc {
         build_lock_keymap(
@@ -600,7 +602,7 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
             lock_kc,
             caps_mask,
             0xffe5,
-            key_affected_by_caps,
+            &caps_affected,
             num_keys,
             num_layouts,
             min_keycode,
@@ -623,7 +625,7 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
             lock_kc,
             num_mask,
             0xff7f,
-            key_affected_by_num,
+            &num_affected,
             num_keys,
             num_layouts,
             min_keycode,
@@ -665,13 +667,14 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
             .or_else(|_| std::env::var("LANG"))
             .ok();
         let compose_locale = env_locale.as_deref().or(locale);
-        compose_locale
+        let comp = compose_locale
             .and_then(keymap::resolve_compose_file)
             .map(|subpath| {
                 let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
                 load_compose_from_path(&path)
             })
-            .unwrap_or_default()
+            .unwrap_or_default();
+        comp
     };
 
     #[cfg(not(feature = "compose"))]
