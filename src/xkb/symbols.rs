@@ -1690,61 +1690,21 @@ impl Default for CompatInfo {
 
 impl CompatInfo {
     pub(crate) fn new() -> Self {
-        let zeroed_led = LedInfo {
-            defined: 0_u32,
-            merge: MergeMode::Default,
-            led: XkbLed {
-                name: 0,
-                which_groups: 0,
-                pending_groups: false,
-                groups: 0,
-                which_mods: 0_u32,
-                mods: XkbMods { mods: 0, mask: 0 },
-                ctrls: ControlsFlags::empty(),
-            },
-        };
         Self {
-            name: None,
-            error_count: 0,
-            include_depth: 0,
-            default_interp: SymInterpInfo {
-                defined: 0_u32,
-                merge: MergeMode::Default,
-                interp: XkbSymInterpret {
-                    sym: 0,
-                    match_0: MATCH_NONE,
-                    mods: 0,
-                    virtual_mod: 0,
-                    level_one_only: false,
-                    repeat: false,
-                    required: false,
-                    num_actions: 0,
-                    action: XkbAction::None,
-                    actions: Vec::new(),
-                },
-            },
+            default_interp: SymInterpInfo::default(),
             interps: Vec::new(),
             interp_index: HashMap::new(),
             led_index: HashMap::new(),
-            default_led: zeroed_led,
-            leds: [zeroed_led; 32],
+            default_led: LedInfo::default(),
+            leds: [LedInfo::default(); 32],
             num_leds: 0,
-            default_actions: ActionsInfo {
-                actions: [XkbAction::None; 21],
-            },
-            mods: XkbModSet {
-                mods: [XkbMod {
-                    name: 0,
-                    type_0: 0,
-                    mapping: 0,
-                }; 32],
-                num_mods: 0,
-                explicit_vmods: 0,
-            },
+            default_actions: ActionsInfo::default(),
+            mods: XkbModSet::default(),
+            ..Default::default()
         }
     }
 }
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub(crate) struct LedInfo {
     pub(crate) defined: u32,
     pub(crate) merge: MergeMode,
@@ -1754,7 +1714,7 @@ pub(crate) const LED_FIELD_CTRLS: u32 = 4;
 pub(crate) const LED_FIELD_GROUPS: u32 = 2;
 pub(crate) const LED_FIELD_MODS: u32 = 1;
 // C2Rust_Unnamed_18 removed: replaced by Vec<SymInterpInfo>
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) struct SymInterpInfo {
     pub(crate) defined: u32,
     pub(crate) merge: MergeMode,
@@ -1770,20 +1730,13 @@ pub(crate) struct Collect {
 }
 // C2Rust_Unnamed_20 removed: replaced by Vec<XkbAction>
 #[inline]
-fn init_interp(info: &mut SymInterpInfo) {
-    info.merge = MergeMode::Default;
-    info.interp.virtual_mod = XKB_MOD_INVALID;
-}
-#[inline]
-fn init_led(info: &mut LedInfo) {
-    info.merge = MergeMode::Default;
-}
 fn init_compat_info(info: &mut CompatInfo, include_depth: u32, mods: &XkbModSet) {
     info.include_depth = include_depth;
     init_actions_info(&mut info.default_actions);
     init_vmods(&mut info.mods, mods, include_depth > 0);
-    init_interp(&mut info.default_interp);
-    init_led(&mut info.default_led);
+    info.default_interp.merge = MergeMode::Default;
+    info.default_interp.interp.virtual_mod = XKB_MOD_INVALID;
+    info.default_led.merge = MergeMode::Default;
     info.interp_index.clear();
     info.led_index.clear();
 }
@@ -2342,23 +2295,7 @@ fn handle_compat_global_var(
         let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom).to_owned();
         let field = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
         if !elem.is_empty() && elem.eq_ignore_ascii_case("interpret") {
-            let mut temp: SymInterpInfo = SymInterpInfo {
-                defined: 0_u32,
-                merge: MergeMode::Default,
-                interp: XkbSymInterpret {
-                    sym: 0,
-                    match_0: MATCH_NONE,
-                    mods: 0,
-                    virtual_mod: 0,
-                    level_one_only: false,
-                    repeat: false,
-                    required: false,
-                    num_actions: 0,
-                    action: XkbAction::None,
-                    actions: Vec::new(),
-                },
-            };
-            init_interp(&mut temp);
+            let mut temp: SymInterpInfo = SymInterpInfo::default();
             temp.merge = if temp.merge == MergeMode::Replace {
                 MergeMode::Override
             } else {
@@ -2373,20 +2310,7 @@ fn handle_compat_global_var(
                 info.default_interp = default;
             }
         } else if !elem.is_empty() && elem.eq_ignore_ascii_case("indicator") {
-            let mut temp_0: LedInfo = LedInfo {
-                defined: 0_u32,
-                merge: MergeMode::Default,
-                led: XkbLed {
-                    name: 0,
-                    which_groups: 0,
-                    pending_groups: false,
-                    groups: 0,
-                    which_mods: 0_u32,
-                    mods: XkbMods { mods: 0, mask: 0 },
-                    ctrls: ControlsFlags::empty(),
-                },
-            };
-            init_led(&mut temp_0);
+            let mut temp_0: LedInfo = LedInfo::default();
             temp_0.merge = if temp_0.merge == MergeMode::Replace {
                 MergeMode::Override
             } else {
@@ -2675,7 +2599,7 @@ impl KeyTypesInfo {
         }
     }
 }
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) struct KeyTypeInfo {
     pub(crate) defined: u32,
     pub(crate) merge: MergeMode,
@@ -2707,18 +2631,7 @@ fn add_key_type(info: &mut KeyTypesInfo, new: &mut KeyTypeInfo) -> bool {
         return true;
     }
     info.type_index.insert(new.name, info.types.len());
-    info.types.push(std::mem::replace(
-        new,
-        KeyTypeInfo {
-            defined: 0,
-            merge: MergeMode::Default,
-            name: 0,
-            mods: 0,
-            num_levels: 0,
-            entries: Vec::new(),
-            level_names: Vec::new(),
-        },
-    ));
+    info.types.push(std::mem::take(new));
     true
 }
 fn merge_included_key_types(
@@ -3083,13 +2996,10 @@ fn handle_key_types_file(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, fi
                 }
                 Statement::KeyType(def) => {
                     let mut type_0: KeyTypeInfo = KeyTypeInfo {
-                        defined: 0_u32,
                         merge: def.merge,
                         name: def.name,
-                        mods: 0_u32,
                         num_levels: 1_u32,
-                        entries: Vec::new(),
-                        level_names: Vec::new(),
+                        ..Default::default()
                     };
                     if !handle_key_type_body(ki, info, &def.body, &mut type_0)
                         || !add_key_type(info, &mut type_0)
@@ -4615,7 +4525,7 @@ pub(crate) fn expr_resolve_group_mask(
     let ctx = &keymap_info.keymap.ctx;
     expr_resolve_mask_lookup(ctx, expr, group_rtrn, Some(pending_rtrn), &lookup)
 }
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub(crate) struct ActionsInfo {
     pub(crate) actions: [XkbAction; 21],
 }

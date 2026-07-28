@@ -6086,7 +6086,7 @@ pub(crate) const MOD_BOTH: u32 = 3;
 pub(crate) const MOD_VIRT: u32 = 2;
 pub(crate) const MOD_REAL: u32 = 1;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) struct XkbSymInterpret {
     pub(crate) sym: u32,
     pub(crate) match_0: u32,
@@ -6100,7 +6100,7 @@ pub(crate) struct XkbSymInterpret {
     pub(crate) actions: Vec<XkbAction>,
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Clone, Copy, Default)]
 pub(crate) enum XkbAction {
     #[default]
     None,
@@ -6217,7 +6217,7 @@ pub struct XkbGroupAction {
     pub group: i32,
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Clone, Default, Copy)]
 pub(crate) struct XkbModAction {
     pub(crate) flags: ActionFlags,
     pub(crate) mods: XkbMods,
@@ -6551,8 +6551,9 @@ pub(crate) const STMT_EXPR_STRING_LITERAL: u32 = 4;
 
 // ── Merge mode enum ─────────────────────────────────────────────────
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 pub(crate) enum MergeMode {
+    #[default]
     Default = 0,
     Augment = 1,
     Override = 2,
