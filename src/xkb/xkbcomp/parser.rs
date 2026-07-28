@@ -1,4 +1,6 @@
-pub(crate) use super::super::keymap::mod_mask_get_effective;
+use super::super::arena::with_arena;
+pub(crate) use super::super::arena::ArenaBox;
+use super::super::keymap::mod_mask_get_effective;
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use super::super::keymap::GROUP_LAST_INDEX_NAME;
@@ -48,7 +50,7 @@ pub(crate) const YYENOMEM: i32 = -2;
 pub(crate) struct ParserParam<'a> {
     pub(crate) ctx: &'a mut XkbContext,
     pub(crate) scanner: &'a mut Scanner<'a>,
-    pub(crate) rtrn: Option<Box<XkbFile>>,
+    pub(crate) rtrn: Option<ArenaBox<XkbFile>>,
     pub(crate) more_maps: bool,
 }
 
@@ -1153,7 +1155,10 @@ fn execute_reduction<'a>(
             if let YYValue::Interp(mut interp) = std::mem::replace(&mut yyvs[sp - 4], YYValue::None)
             {
                 let vardefs = yyvs[sp - 2].take_var_list();
-                interp.def = vardefs.into_iter().map(|b| *b).collect();
+                interp.def = vardefs
+                    .into_iter()
+                    .map(|b| ArenaBox::into_inner(b))
+                    .collect();
                 *yyval = YYValue::Interp(interp);
             } else {
                 *yyval = YYValue::None;
@@ -1189,7 +1194,10 @@ fn execute_reduction<'a>(
             let vardefs = yyvs[sp - 2].take_var_list();
             *yyval = YYValue::KeyType(key_type_create(
                 atom,
-                vardefs.into_iter().map(|b| *b).collect(),
+                vardefs
+                    .into_iter()
+                    .map(|b| ArenaBox::into_inner(b))
+                    .collect(),
             ));
         }
         64 => {
@@ -1198,7 +1206,10 @@ fn execute_reduction<'a>(
             let vardefs = yyvs[sp - 2].take_var_list();
             *yyval = YYValue::Symbols(symbols_create(
                 atom,
-                vardefs.into_iter().map(|b| *b).collect(),
+                vardefs
+                    .into_iter()
+                    .map(|b| ArenaBox::into_inner(b))
+                    .collect(),
             ));
         }
         65 => {
@@ -1259,7 +1270,7 @@ fn execute_reduction<'a>(
         74 => {
             // MultiKeySymOrActionList: OBRACKET MultiKeySymList CBRACKET (yylen=3)
             let list = yyvs[sp - 1].take_expr_list();
-            let exprs: Vec<ExprKind> = list.into_iter().map(|b| *b).collect();
+            let exprs: Vec<ExprKind> = list.into_iter().map(|b| ArenaBox::into_inner(b)).collect();
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
         }
         75 => {
@@ -1267,32 +1278,38 @@ fn execute_reduction<'a>(
             let mut list = yyvs[sp - 1].take_expr_list(); // sp-1 = MultiKeySymList = offset(-1)
             let count = yyvs[sp - 3].as_no_sym_or_action_list(); // sp-3 = NoSymbolOrActionList = offset(-3)
                                                                  // Prepend 'count' NoSymbol keysym lists
-            let mut prepended: Vec<Box<ExprKind>> = Vec::new();
+            let mut prepended: Vec<ArenaBox<ExprKind>> = Vec::new();
             for _ in 0..count {
                 prepended.push(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL));
             }
             prepended.append(&mut list);
-            let exprs: Vec<ExprKind> = prepended.into_iter().map(|b| *b).collect();
+            let exprs: Vec<ExprKind> = prepended
+                .into_iter()
+                .map(|b| ArenaBox::into_inner(b))
+                .collect();
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
         }
         76 => {
             // MultiKeySymOrActionList: OBRACKET MultiActionList CBRACKET (yylen=3)
             let list = yyvs[sp - 1].take_expr_list();
-            let exprs: Vec<ExprKind> = list.into_iter().map(|b| *b).collect();
+            let exprs: Vec<ExprKind> = list.into_iter().map(|b| ArenaBox::into_inner(b)).collect();
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
         }
         77 => {
             // MultiKeySymOrActionList: NoSymbolOrActionList OBRACKET MultiActionList CBRACKET COMMA (yylen=5)
             let mut list = yyvs[sp - 1].take_expr_list();
             let count = yyvs[sp - 3].as_no_sym_or_action_list();
-            let mut prepended: Vec<Box<ExprKind>> = Vec::new();
+            let mut prepended: Vec<ArenaBox<ExprKind>> = Vec::new();
             for _ in 0..count {
                 prepended.push(expr_create(ExprKind::ActionList {
                     actions: Vec::new(),
                 }));
             }
             prepended.append(&mut list);
-            let exprs: Vec<ExprKind> = prepended.into_iter().map(|b| *b).collect();
+            let exprs: Vec<ExprKind> = prepended
+                .into_iter()
+                .map(|b| ArenaBox::into_inner(b))
+                .collect();
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
         }
         78 => {
@@ -1320,7 +1337,10 @@ fn execute_reduction<'a>(
             // ModMapDecl: MODIFIER_MAP Ident OBRACE KeyOrKeySymList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let list = yyvs[sp - 2].take_expr_list();
-            *yyval = YYValue::ModMask(mod_map_create(atom, list.into_iter().map(|b| *b).collect()));
+            *yyval = YYValue::ModMask(mod_map_create(
+                atom,
+                list.into_iter().map(|b| ArenaBox::into_inner(b)).collect(),
+            ));
         }
         84 => {
             // KeyOrKeySymList: KeyOrKeySymList COMMA KeyOrKeySym
@@ -1346,7 +1366,10 @@ fn execute_reduction<'a>(
             let vardefs = yyvs[sp - 2].take_var_list();
             *yyval = YYValue::LedMap(led_map_create(
                 atom,
-                vardefs.into_iter().map(|b| *b).collect(),
+                vardefs
+                    .into_iter()
+                    .map(|b| ArenaBox::into_inner(b))
+                    .collect(),
             ));
         }
         89 => {
@@ -1536,7 +1559,7 @@ fn execute_reduction<'a>(
             let list = yyvs[sp - 1].take_expr_list();
             *yyval = YYValue::Expr(expr_create(ExprKind::Action {
                 name,
-                args: list.into_iter().map(|b| *b).collect(),
+                args: list.into_iter().map(|b| ArenaBox::into_inner(b)).collect(),
             }));
         }
         163 => {
@@ -1557,7 +1580,10 @@ fn execute_reduction<'a>(
             // ActionList at sp produces an ExprList of actions
             // Create an ActionList expr wrapping those actions, then append to the list
             let actions_expr_list = yyvs[sp].take_expr_list();
-            let actions: Vec<ExprKind> = actions_expr_list.into_iter().map(|b| *b).collect();
+            let actions: Vec<ExprKind> = actions_expr_list
+                .into_iter()
+                .map(|b| ArenaBox::into_inner(b))
+                .collect();
             let action_list_expr = expr_create(ExprKind::ActionList { actions });
             let mut list = yyvs[sp - 2].take_expr_list();
             list.push(action_list_expr);
@@ -1575,7 +1601,10 @@ fn execute_reduction<'a>(
         168 => {
             // MultiActionList: ActionList (initial single element)
             let actions_expr_list = yyvs[sp].take_expr_list();
-            let actions: Vec<ExprKind> = actions_expr_list.into_iter().map(|b| *b).collect();
+            let actions: Vec<ExprKind> = actions_expr_list
+                .into_iter()
+                .map(|b| ArenaBox::into_inner(b))
+                .collect();
             let action_list_expr = expr_create(ExprKind::ActionList { actions });
             *yyval = YYValue::ExprList(vec![action_list_expr]);
         }
@@ -1597,7 +1626,7 @@ fn execute_reduction<'a>(
             // Actions: OBRACE NonEmptyActions CBRACE
             let list = yyvs[sp - 1].take_expr_list();
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList {
-                actions: list.into_iter().map(|b| *b).collect(),
+                actions: list.into_iter().map(|b| ArenaBox::into_inner(b)).collect(),
             }));
         }
         173 => {
@@ -1616,7 +1645,7 @@ fn execute_reduction<'a>(
             let list = yyvs[sp - 1].take_expr_list();
             *yyval = YYValue::Expr(expr_create(ExprKind::Action {
                 name,
-                args: list.into_iter().map(|b| *b).collect(),
+                args: list.into_iter().map(|b| ArenaBox::into_inner(b)).collect(),
             }));
         }
         // Lhs rules 176-179
@@ -1871,8 +1900,8 @@ pub(crate) fn parse<'a>(
     mut ctx: &'a mut XkbContext,
     mut scanner: &'a mut Scanner<'a>,
     map: &str,
-) -> Option<Box<XkbFile>> {
-    let mut first: Option<Box<XkbFile>> = None;
+) -> Option<ArenaBox<XkbFile>> {
+    let mut first: Option<ArenaBox<XkbFile>> = None;
 
     loop {
         let mut param = ParserParam {
@@ -1923,11 +1952,11 @@ pub(crate) fn parse<'a>(
 
 // ── AST builder functions (merged from ast_build.rs) ──
 
-pub(crate) fn expr_create(kind: ExprKind) -> Box<ExprKind> {
-    Box::new(kind)
+pub(crate) fn expr_create(kind: ExprKind) -> ArenaBox<ExprKind> {
+    with_arena(|arena| arena.alloc(kind))
 }
 
-pub(crate) fn expr_create_key_sym_list(sym: u32) -> Box<ExprKind> {
+pub(crate) fn expr_create_key_sym_list(sym: u32) -> ArenaBox<ExprKind> {
     let mut syms = Vec::new();
     if sym != XKB_KEY_NO_SYMBOL {
         syms.push(sym);
@@ -1935,7 +1964,10 @@ pub(crate) fn expr_create_key_sym_list(sym: u32) -> Box<ExprKind> {
     expr_create(ExprKind::KeysymList { syms })
 }
 
-pub(crate) fn expr_append_key_sym_list(mut expr: Box<ExprKind>, sym: u32) -> Box<ExprKind> {
+pub(crate) fn expr_append_key_sym_list(
+    mut expr: ArenaBox<ExprKind>,
+    sym: u32,
+) -> ArenaBox<ExprKind> {
     if sym != XKB_KEY_NO_SYMBOL {
         if let ExprKind::KeysymList { ref mut syms } = *expr {
             syms.push(sym);
@@ -1946,9 +1978,9 @@ pub(crate) fn expr_append_key_sym_list(mut expr: Box<ExprKind>, sym: u32) -> Box
 
 pub(crate) fn expr_key_sym_list_append_string(
     scanner: &mut Scanner,
-    mut expr: Box<ExprKind>,
+    mut expr: ArenaBox<ExprKind>,
     string: &str,
-) -> Option<Box<ExprKind>> {
+) -> Option<ArenaBox<ExprKind>> {
     let bytes = string.as_bytes();
     let len = bytes.len();
     let mut idx: usize = 0;
@@ -1995,97 +2027,124 @@ pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> Option
     Some(sym)
 }
 
-pub(crate) fn keycode_create(name: u32, value: i64) -> Box<KeycodeDef> {
-    Box::new(KeycodeDef {
-        merge: MergeMode::Default,
-        name,
-        value,
+pub(crate) fn keycode_create(name: u32, value: i64) -> ArenaBox<KeycodeDef> {
+    with_arena(|arena| {
+        arena.alloc(KeycodeDef {
+            merge: MergeMode::Default,
+            name,
+            value,
+        })
     })
 }
 
-pub(crate) fn key_alias_create(alias: u32, real: u32) -> Box<KeyAliasDef> {
-    Box::new(KeyAliasDef {
-        merge: MergeMode::Default,
-        alias,
-        real,
+pub(crate) fn key_alias_create(alias: u32, real: u32) -> ArenaBox<KeyAliasDef> {
+    with_arena(|arena| {
+        arena.alloc(KeyAliasDef {
+            merge: MergeMode::Default,
+            alias,
+            real,
+        })
     })
 }
 
-pub(crate) fn vmod_create(name: u32, value: Option<Box<ExprKind>>) -> Box<VModDef> {
-    Box::new(VModDef {
-        merge: MergeMode::Default,
-        name,
-        value,
+pub(crate) fn vmod_create(name: u32, value: Option<ArenaBox<ExprKind>>) -> ArenaBox<VModDef> {
+    with_arena(|arena| {
+        arena.alloc(VModDef {
+            merge: MergeMode::Default,
+            name,
+            value,
+        })
     })
 }
 
-pub(crate) fn var_create(name: Option<Box<ExprKind>>, value: Option<Box<ExprKind>>) -> Box<VarDef> {
-    Box::new(VarDef {
-        merge: MergeMode::Default,
-        name,
-        value,
+pub(crate) fn var_create(
+    name: Option<ArenaBox<ExprKind>>,
+    value: Option<ArenaBox<ExprKind>>,
+) -> ArenaBox<VarDef> {
+    with_arena(|arena| {
+        arena.alloc(VarDef {
+            merge: MergeMode::Default,
+            name,
+            value,
+        })
     })
 }
 
-pub(crate) fn bool_var_create(ident: u32, set: bool) -> Box<VarDef> {
-    Box::new(VarDef {
-        merge: MergeMode::Default,
-        name: Some(Box::new(ExprKind::Ident(ident))),
-        value: Some(Box::new(ExprKind::Boolean(set))),
+pub(crate) fn bool_var_create(ident: u32, set: bool) -> ArenaBox<VarDef> {
+    with_arena(|arena| {
+        let name = arena.alloc(ExprKind::Ident(ident));
+        let value = arena.alloc(ExprKind::Boolean(set));
+        arena.alloc(VarDef {
+            merge: MergeMode::Default,
+            name: Some(name),
+            value: Some(value),
+        })
     })
 }
 
-pub(crate) fn interp_create(sym: u32, match_0: Option<Box<ExprKind>>) -> Box<InterpDef> {
-    Box::new(InterpDef {
-        merge: MergeMode::Default,
-        sym,
-        match_0,
-        def: Vec::new(),
+pub(crate) fn interp_create(sym: u32, match_0: Option<ArenaBox<ExprKind>>) -> ArenaBox<InterpDef> {
+    with_arena(|arena| {
+        arena.alloc(InterpDef {
+            merge: MergeMode::Default,
+            sym,
+            match_0,
+            def: Vec::new(),
+        })
     })
 }
 
-pub(crate) fn key_type_create(name: u32, body: Vec<VarDef>) -> Box<KeyTypeDef> {
-    Box::new(KeyTypeDef {
-        merge: MergeMode::Default,
-        name,
-        body,
+pub(crate) fn key_type_create(name: u32, body: Vec<VarDef>) -> ArenaBox<KeyTypeDef> {
+    with_arena(|arena| {
+        arena.alloc(KeyTypeDef {
+            merge: MergeMode::Default,
+            name,
+            body,
+        })
     })
 }
 
-pub(crate) fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> Box<SymbolsDef> {
-    Box::new(SymbolsDef {
-        merge: MergeMode::Default,
-        key_name,
-        symbols,
+pub(crate) fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> ArenaBox<SymbolsDef> {
+    with_arena(|arena| {
+        arena.alloc(SymbolsDef {
+            merge: MergeMode::Default,
+            key_name,
+            symbols,
+        })
     })
 }
 
-pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> Box<ModMapDef> {
-    Box::new(ModMapDef {
-        merge: MergeMode::Default,
-        modifier,
-        keys,
+pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> ArenaBox<ModMapDef> {
+    with_arena(|arena| {
+        arena.alloc(ModMapDef {
+            merge: MergeMode::Default,
+            modifier,
+            keys,
+        })
     })
 }
 
-pub(crate) fn led_map_create(name: u32, body: Vec<VarDef>) -> Box<LedMapDef> {
-    Box::new(LedMapDef {
-        merge: MergeMode::Default,
-        name,
-        body,
+pub(crate) fn led_map_create(name: u32, body: Vec<VarDef>) -> ArenaBox<LedMapDef> {
+    with_arena(|arena| {
+        arena.alloc(LedMapDef {
+            merge: MergeMode::Default,
+            name,
+            body,
+        })
     })
 }
 
-pub(crate) fn led_name_create(ndx: i64, name: Option<Box<ExprKind>>) -> Box<LedNameDef> {
-    Box::new(LedNameDef {
-        merge: MergeMode::Default,
-        ndx,
-        name,
+pub(crate) fn led_name_create(ndx: i64, name: Option<ArenaBox<ExprKind>>) -> ArenaBox<LedNameDef> {
+    with_arena(|arena| {
+        arena.alloc(LedNameDef {
+            merge: MergeMode::Default,
+            ndx,
+            name,
+        })
     })
 }
 
-pub(crate) fn unknown_statement_create() -> Box<UnknownStatement> {
-    Box::new(UnknownStatement {})
+pub(crate) fn unknown_statement_create() -> ArenaBox<UnknownStatement> {
+    with_arena(|arena| arena.alloc(UnknownStatement {}))
 }
 
 pub(crate) fn include_create(
@@ -2144,21 +2203,23 @@ pub(crate) fn xkb_file_create(
     name: Option<String>,
     defs: Vec<Statement>,
     flags: u32,
-) -> Box<XkbFile> {
+) -> ArenaBox<XkbFile> {
     let mut name_str = name.unwrap_or_default();
     xkb_escape_map_name(&mut name_str);
-    Box::new(XkbFile {
-        file_type: type_0,
-        name: name_str,
-        defs,
-        flags,
+    with_arena(|arena| {
+        arena.alloc(XkbFile {
+            file_type: type_0,
+            name: name_str,
+            defs,
+            flags,
+        })
     })
 }
 
 pub(crate) fn xkb_file_from_components(
     ctx: &mut XkbContext,
     kkctgs: &XkbComponentNames,
-) -> Option<Box<XkbFile>> {
+) -> Option<ArenaBox<XkbFile>> {
     let components = [
         &kkctgs.keycodes,
         &kkctgs.types,
@@ -2693,73 +2754,73 @@ pub(crate) enum YYValue<'a> {
     MapFlags(u32),
     Keysym(u32),
     NoSymbolOrActionList(u32),
-    Expr(Box<ExprKind>),
-    ExprList(Vec<Box<ExprKind>>),
-    Var(Box<VarDef>),
-    VarList(Vec<Box<VarDef>>),
-    VMod(Box<VModDef>),
-    VModList(Vec<Box<VModDef>>),
-    Interp(Box<InterpDef>),
-    KeyType(Box<KeyTypeDef>),
-    Symbols(Box<SymbolsDef>),
-    ModMask(Box<ModMapDef>),
+    Expr(ArenaBox<ExprKind>),
+    ExprList(Vec<ArenaBox<ExprKind>>),
+    Var(ArenaBox<VarDef>),
+    VarList(Vec<ArenaBox<VarDef>>),
+    VMod(ArenaBox<VModDef>),
+    VModList(Vec<ArenaBox<VModDef>>),
+    Interp(ArenaBox<InterpDef>),
+    KeyType(ArenaBox<KeyTypeDef>),
+    Symbols(ArenaBox<SymbolsDef>),
+    ModMask(ArenaBox<ModMapDef>),
     GroupCompat,
-    LedMap(Box<LedMapDef>),
-    LedName(Box<LedNameDef>),
-    Keycode(Box<KeycodeDef>),
-    KeyAlias(Box<KeyAliasDef>),
-    Unknown(Box<UnknownStatement>),
-    File(Box<XkbFile>),
-    FileList(Vec<Box<XkbFile>>),
+    LedMap(ArenaBox<LedMapDef>),
+    LedName(ArenaBox<LedNameDef>),
+    Keycode(ArenaBox<KeycodeDef>),
+    KeyAlias(ArenaBox<KeyAliasDef>),
+    Unknown(ArenaBox<UnknownStatement>),
+    File(ArenaBox<XkbFile>),
+    FileList(Vec<ArenaBox<XkbFile>>),
     Stmt(Statement),
     StmtList(Vec<Statement>),
 }
 
 // Helper to take a value out and replace with None
 impl<'a> YYValue<'a> {
-    pub(crate) fn take_expr(&mut self) -> Option<Box<ExprKind>> {
+    pub(crate) fn take_expr(&mut self) -> Option<ArenaBox<ExprKind>> {
         match std::mem::take(self) {
             YYValue::Expr(e) => Some(e),
             _ => None,
         }
     }
-    pub(crate) fn take_expr_list(&mut self) -> Vec<Box<ExprKind>> {
+    pub(crate) fn take_expr_list(&mut self) -> Vec<ArenaBox<ExprKind>> {
         match std::mem::take(self) {
             YYValue::ExprList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub(crate) fn take_var(&mut self) -> Option<Box<VarDef>> {
+    pub(crate) fn take_var(&mut self) -> Option<ArenaBox<VarDef>> {
         match std::mem::take(self) {
             YYValue::Var(v) => Some(v),
             _ => None,
         }
     }
-    pub(crate) fn take_var_list(&mut self) -> Vec<Box<VarDef>> {
+    pub(crate) fn take_var_list(&mut self) -> Vec<ArenaBox<VarDef>> {
         match std::mem::take(self) {
             YYValue::VarList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub(crate) fn take_vmod(&mut self) -> Option<Box<VModDef>> {
+    pub(crate) fn take_vmod(&mut self) -> Option<ArenaBox<VModDef>> {
         match std::mem::take(self) {
             YYValue::VMod(v) => Some(v),
             _ => None,
         }
     }
-    pub(crate) fn take_vmod_list(&mut self) -> Vec<Box<VModDef>> {
+    pub(crate) fn take_vmod_list(&mut self) -> Vec<ArenaBox<VModDef>> {
         match std::mem::take(self) {
             YYValue::VModList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub(crate) fn take_file(&mut self) -> Option<Box<XkbFile>> {
+    pub(crate) fn take_file(&mut self) -> Option<ArenaBox<XkbFile>> {
         match std::mem::take(self) {
             YYValue::File(f) => Some(f),
             _ => None,
         }
     }
-    pub(crate) fn take_file_list(&mut self) -> Vec<Box<XkbFile>> {
+    pub(crate) fn take_file_list(&mut self) -> Vec<ArenaBox<XkbFile>> {
         match std::mem::take(self) {
             YYValue::FileList(v) => v,
             _ => Vec::new(),
@@ -2960,10 +3021,8 @@ pub(crate) fn _xkbcommon_lex<'a>(
             return ERROR_TOK;
         }
         let len: usize = s.pos - s.token_pos - 2;
-        let keyname_bytes: Vec<u8> = s
-            .input_slice(s.token_pos + 1, s.token_pos + 1 + len)
-            .to_vec();
-        *yylval = YYValue::Atom(atom_intern(&mut ctx.atom_table, &keyname_bytes));
+        let keyname_bytes = s.input_slice(s.token_pos + 1, s.token_pos + 1 + len);
+        *yylval = YYValue::Atom(atom_intern(&mut ctx.atom_table, keyname_bytes));
         return KEYNAME;
     }
     if s.chr(b';') {
@@ -3059,7 +3118,7 @@ pub(crate) fn xkb_parse_string(
     input: &[u8],
     file_name: &str,
     map: &str,
-) -> Option<Box<XkbFile>> {
+) -> Option<ArenaBox<XkbFile>> {
     let mut sc = Scanner::new(&[], "");
     if !xkb_parse_string_init(&mut sc, input, file_name, map) {
         return None;
@@ -3261,9 +3320,9 @@ pub(crate) fn process_include_file(
     ctx: &mut XkbContext,
     stmt: &IncludeStmt,
     file_type: FileType,
-) -> Option<Box<XkbFile>> {
-    let mut xkb_file: Option<Box<XkbFile>> = None;
-    let mut candidate: Option<Box<XkbFile>> = None;
+) -> Option<ArenaBox<XkbFile>> {
+    let mut xkb_file: Option<ArenaBox<XkbFile>> = None;
+    let mut candidate: Option<ArenaBox<XkbFile>> = None;
 
     // Expand %-sequences in the file name
     let stmt_file: String = match expand_path_str("(unknown)", &stmt.file, file_type) {
@@ -3365,6 +3424,28 @@ fn default_interpret() -> XkbSymInterpret {
         actions: Vec::new(), // Note: XkbAction is Copy, so Vec::new() is zero-alloc (no heap until push)
     }
 }
+/// Pre-computed index mapping keysym → matching interpret indices (sorted).
+/// Speeds up find_interp_for_key by avoiding an O(N_interps) scan per key/group/level/sym.
+struct InterpIndex {
+    /// Indices of wildcard interprets (sym == XKB_KEY_NO_SYMBOL), sorted.
+    wildcards: Vec<usize>,
+    /// Indices grouped by exact sym match, each group sorted.
+    by_sym: std::collections::HashMap<u32, Vec<usize>>,
+}
+
+fn build_interp_index(interps: &[XkbSymInterpret]) -> InterpIndex {
+    let mut wildcards = Vec::new();
+    let mut by_sym: std::collections::HashMap<u32, Vec<usize>> = std::collections::HashMap::new();
+    for (i, interp) in interps.iter().enumerate() {
+        if interp.sym == XKB_KEY_NO_SYMBOL {
+            wildcards.push(i);
+        } else {
+            by_sym.entry(interp.sym).or_default().push(i);
+        }
+    }
+    InterpIndex { wildcards, by_sym }
+}
+
 /// Returns interp indices into `keymap.sym_interprets`, or `usize::MAX` for default interprets.
 fn find_interp_for_key(
     keymap: &mut XkbKeymap,
@@ -3372,6 +3453,7 @@ fn find_interp_for_key(
     group: u32,
     level: u32,
     interp_indices: &mut Vec<usize>,
+    interp_index: &InterpIndex,
 ) -> bool {
     let keycode = keymap.keys[key_idx].keycode;
     let syms_ref = xkb_keymap_key_get_syms_by_level_ref(keymap, keycode, group, level);
@@ -3387,48 +3469,73 @@ fn find_interp_for_key(
     let key_modmap = keymap.keys[key_idx].modmap;
     let num_syms = syms.len();
     for s in 0..num_syms {
-        let mut found: bool = false;
-        let mut use_default: bool = false;
-        's_26: for i in 0..keymap.sym_interprets.len() {
+        let cur_sym = syms[s];
+        let match_exact = interp_index.by_sym.get(&cur_sym);
+        let match_wild = &interp_index.wildcards;
+        let mut exact_idx = 0usize;
+        let mut wild_idx = 0usize;
+        let mut found = false;
+        let mut use_default = false;
+        loop {
+            let i = match (
+                exact_idx < match_exact.map_or(0, |v| v.len()),
+                wild_idx < match_wild.len(),
+            ) {
+                (true, true) => {
+                    let a = match_exact.as_ref().unwrap()[exact_idx];
+                    let b = match_wild[wild_idx];
+                    if a < b {
+                        exact_idx += 1;
+                        a
+                    } else {
+                        wild_idx += 1;
+                        b
+                    }
+                }
+                (true, false) => {
+                    let a = match_exact.as_ref().unwrap()[exact_idx];
+                    exact_idx += 1;
+                    a
+                }
+                (false, true) => {
+                    let b = match_wild[wild_idx];
+                    wild_idx += 1;
+                    b
+                }
+                (false, false) => break,
+            };
             let interp = &keymap.sym_interprets[i];
-            let mods: u32;
-            if !(interp.sym != syms[s] && interp.sym != XKB_KEY_NO_SYMBOL) {
-                if interp.level_one_only && level != 0 {
-                    mods = 0;
-                } else {
-                    mods = key_modmap;
-                }
-                match interp.match_0 {
-                    0 => {
-                        found = interp.mods & mods == 0;
-                    }
-                    1 => {
-                        found = mods == 0 || interp.mods & mods != 0;
-                    }
-                    2 => {
-                        found = interp.mods & mods != 0;
-                    }
-                    3 => {
-                        found = interp.mods & mods == interp.mods;
-                    }
-                    4 => {
-                        found = interp.mods == mods;
-                    }
-                    _ => {}
-                }
-                if found && i > 0 && interp.sym == XKB_KEY_NO_SYMBOL && !interp_indices.is_empty() {
+            let mods = if interp.level_one_only && level != 0 {
+                0
+            } else {
+                key_modmap
+            };
+            let matched = match interp.match_0 {
+                0 => interp.mods & mods == 0,
+                1 => mods == 0 || interp.mods & mods != 0,
+                2 => interp.mods & mods != 0,
+                3 => interp.mods & mods == interp.mods,
+                4 => interp.mods == mods,
+                _ => false,
+            };
+            if matched {
+                if interp.sym == XKB_KEY_NO_SYMBOL && !interp_indices.is_empty() {
+                    let mut already_used = false;
                     for &prev_idx in interp_indices.iter() {
                         if prev_idx == i {
-                            use_default = true;
-                            break 's_26;
+                            already_used = true;
+                            break;
                         }
                     }
+                    if already_used {
+                        use_default = true;
+                        break;
+                    }
                 }
-                if found {
-                    interp_indices.push(i);
-                    keymap.sym_interprets[i].required = true;
-                    break;
-                }
+                found = true;
+                interp_indices.push(i);
+                keymap.sym_interprets[i].required = true;
+                break;
             }
         }
         if !found {
@@ -3441,7 +3548,11 @@ fn find_interp_for_key(
     }
     true
 }
-fn apply_interps_to_key(keymap: &mut XkbKeymap, key_idx: usize) -> bool {
+fn apply_interps_to_key(
+    keymap: &mut XkbKeymap,
+    key_idx: usize,
+    interp_index: &InterpIndex,
+) -> bool {
     let mut vmodmap: u32 = 0;
     let mut interp_indices: Vec<usize> = Vec::with_capacity(4);
     let mut actions: Vec<XkbAction> = Vec::with_capacity(4);
@@ -3451,8 +3562,14 @@ fn apply_interps_to_key(keymap: &mut XkbKeymap, key_idx: usize) -> bool {
             let num_levels = keymap.key_num_levels(&keymap.keys[key_idx], group);
             for level in 0..num_levels {
                 interp_indices.clear();
-                let found: bool =
-                    find_interp_for_key(keymap, key_idx, group, level, &mut interp_indices);
+                let found: bool = find_interp_for_key(
+                    keymap,
+                    key_idx,
+                    group,
+                    level,
+                    &mut interp_indices,
+                    interp_index,
+                );
                 if found {
                     let default_interp = default_interpret();
                     let key_explicit = keymap.keys[key_idx].explicit;
@@ -3731,8 +3848,9 @@ fn update_pending_sym_interpret_actions(info: &mut XkbKeymapInfo<'_>) -> Result<
 
 fn apply_interps_and_check_actions(info: &mut XkbKeymapInfo<'_>) -> Result<(), ()> {
     let keymap = &mut *info.keymap;
+    let interp_index = build_interp_index(&keymap.sym_interprets);
     for ki in 0..keymap.num_keys as usize {
-        if !apply_interps_to_key(keymap, ki) {
+        if !apply_interps_to_key(keymap, ki, &interp_index) {
             return Err(());
         }
         check_multiple_actions_categories(keymap, ki);
@@ -4385,8 +4503,8 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
 fn matcher_new_from_names<'a>(
     ctx: &'a mut XkbContext,
     rmlvo: &'a XkbRuleNames,
-) -> Box<Matcher<'a>> {
-    let mut m = Box::new(Matcher::new(ctx));
+) -> ArenaBox<Matcher<'a>> {
+    let mut m = with_arena(|arena| arena.alloc(Matcher::new(ctx)));
     let rmlvo_ref = rmlvo;
     m.rmlvo.model.sval = Sval {
         data: rmlvo_ref.model.as_bytes(),
@@ -4416,10 +4534,11 @@ fn matcher_new_from_names<'a>(
             Some(rmlvo_ref.options.as_bytes())
         },
     );
-    if m.rmlvo.layouts.len() > m.rmlvo.variants.len() {
-        vec_resize_zero_matched_sval(&mut m.rmlvo.variants, m.rmlvo.layouts.len());
-    } else if m.rmlvo.layouts.len() < m.rmlvo.variants.len() {
-        m.rmlvo.variants.truncate(m.rmlvo.layouts.len());
+    let layouts_len = m.rmlvo.layouts.len();
+    if layouts_len > m.rmlvo.variants.len() {
+        vec_resize_zero_matched_sval(&mut m.rmlvo.variants, layouts_len);
+    } else if layouts_len < m.rmlvo.variants.len() {
+        m.rmlvo.variants.truncate(layouts_len);
     }
     m
 }

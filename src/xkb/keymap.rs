@@ -1,6 +1,8 @@
 use std::rc::Rc;
 use std::sync::LazyLock;
 
+use arrayvec::ArrayVec;
+
 pub use super::shared_types::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
 use super::shared_types::{atom_lookup_ref, atom_text};
 pub(crate) use super::shared_types::{
@@ -59,8 +61,7 @@ const LOCALE_DIR: &str = "/usr/share/X11/locale";
 
 /// A parsed Compose file entry.
 pub struct ComposeEntry {
-    pub keys: Vec<char>,
-    pub keysym_names: Vec<String>,
+    pub keys: ArrayVec<char, 8>,
     pub multi_key_index: Option<usize>,
     pub output: char,
 }
@@ -68,6 +69,14 @@ pub struct ComposeEntry {
 /// Resolve an XKB keysym name to its Unicode character using our existing
 /// keysym database.
 pub fn keysym_name_to_char(name: &str) -> Option<char> {
+    // Fast path: single ASCII alphanumeric maps to itself (most compose key names)
+    if name.len() == 1 {
+        let b = name.as_bytes()[0];
+        if b.is_ascii_alphanumeric() {
+            return Some(b as char);
+        }
+    }
+
     use super::keysym::keysym_to_utf32;
     use super::keysym::xkb_keysym_from_name;
     use super::shared_types::XKB_KEYSYM_NO_FLAGS;
@@ -93,12 +102,24 @@ pub fn keysym_name_to_char(name: &str) -> Option<char> {
 /// Parse a Compose file at the given path, recursively handling `include` directives.
 pub fn parse_compose_file(path: &Path) -> Vec<ComposeEntry> {
     let mut out = Vec::new();
-    parse_compose_file_impl(path, &mut out);
+    parse_compose_file_impl(path, &mut |entry| out.push(entry));
     out
 }
 
-fn parse_compose_file_impl(path: &Path, out: &mut Vec<ComposeEntry>) {
-    let content = match fs::read_to_string(path) {
+pub(crate) fn parse_compose_file_impl<F>(path: &Path, f: &mut F)
+where
+    F: FnMut(ComposeEntry),
+{
+    use super::shared_types::read_file_cached;
+
+    let path_str = match path.to_str() {
+        Some(s) => s,
+        None => return,
+    };
+    let Some(data) = read_file_cached(path_str) else {
+        return;
+    };
+    let content = match std::str::from_utf8(&data[..]) {
         Ok(s) => s,
         Err(_) => return,
     };
@@ -123,13 +144,13 @@ fn parse_compose_file_impl(path: &Path, out: &mut Vec<ComposeEntry>) {
                 } else {
                     include_path.to_path_buf()
                 };
-                parse_compose_file_impl(&resolved, out);
+                parse_compose_file_impl(&resolved, f);
             }
             continue;
         }
 
         if let Some(entry) = parse_rule_line(trimmed) {
-            out.push(entry);
+            f(entry);
         }
     }
 }
@@ -146,8 +167,7 @@ fn parse_rule_line(line: &str) -> Option<ComposeEntry> {
         rhs
     };
 
-    let mut keys = Vec::new();
-    let mut keysym_names = Vec::new();
+    let mut keys: ArrayVec<char, 8> = ArrayVec::new();
     let mut multi_key_index: Option<usize> = None;
     let mut pos = 0;
     let lhs_bytes = lhs.as_bytes();
@@ -162,7 +182,6 @@ fn parse_rule_line(line: &str) -> Option<ComposeEntry> {
             } else {
                 let ch = keysym_name_to_char(name)?;
                 keys.push(ch);
-                keysym_names.push(name.to_string());
             }
             pos = end + 1;
         } else {
@@ -178,7 +197,6 @@ fn parse_rule_line(line: &str) -> Option<ComposeEntry> {
 
     Some(ComposeEntry {
         keys,
-        keysym_names,
         multi_key_index,
         output,
     })
@@ -1437,12 +1455,6 @@ impl Keymap {
             Some(key) => key.repeats,
             None => false,
         }
-    }
-
-    /// Get modifier maps for a key (returns (modmap, vmodmap) or None if key doesn't exist)
-    pub(crate) fn key_get_mods(&self, keycode: u32) -> Option<(u32, u32)> {
-        let key = self.inner.get_key(keycode)?;
-        Some((key.modmap, key.vmodmap))
     }
 
     /// Get number of layouts in the keymap

@@ -6,6 +6,8 @@ use std::sync::Arc;
 
 use lasso::Key as _;
 
+use crate::xkb::arena::ArenaBox;
+
 // ── xkbcommon public types ───────────────────────────────────────────
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: u32 = 2;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: u32 = 1;
@@ -384,7 +386,6 @@ pub(crate) struct XkbGroup {
 #[derive(Clone, Default)]
 pub(crate) struct XkbLevel {
     pub(crate) upper: u32,
-    pub(crate) has_upper: bool,
     pub(crate) syms: Vec<u32>,
     pub(crate) actions: Vec<XkbAction>,
 }
@@ -681,7 +682,7 @@ pub(crate) enum ExprKind {
     ArrayRef {
         element: u32,
         field: u32,
-        entry: Option<Box<ExprKind>>,
+        entry: Option<ArenaBox<ExprKind>>,
     },
     Action {
         name: u32,
@@ -696,12 +697,12 @@ pub(crate) enum ExprKind {
     EmptyList,
     Binary {
         op: u32,
-        left: Option<Box<ExprKind>>,
-        right: Option<Box<ExprKind>>,
+        left: Option<ArenaBox<ExprKind>>,
+        right: Option<ArenaBox<ExprKind>>,
     },
     Unary {
         op: u32,
-        child: Option<Box<ExprKind>>,
+        child: Option<ArenaBox<ExprKind>>,
     },
 }
 
@@ -735,14 +736,14 @@ impl ExprKind {
 
 pub(crate) struct VarDef {
     pub(crate) merge: MergeMode,
-    pub(crate) name: Option<Box<ExprKind>>,
-    pub(crate) value: Option<Box<ExprKind>>,
+    pub(crate) name: Option<ArenaBox<ExprKind>>,
+    pub(crate) value: Option<ArenaBox<ExprKind>>,
 }
 
 pub(crate) struct VModDef {
     pub(crate) merge: MergeMode,
     pub(crate) name: u32,
-    pub(crate) value: Option<Box<ExprKind>>,
+    pub(crate) value: Option<ArenaBox<ExprKind>>,
 }
 
 #[derive(Copy, Clone)]
@@ -779,14 +780,14 @@ pub(crate) struct ModMapDef {
 pub(crate) struct InterpDef {
     pub(crate) merge: MergeMode,
     pub(crate) sym: u32,
-    pub(crate) match_0: Option<Box<ExprKind>>,
+    pub(crate) match_0: Option<ArenaBox<ExprKind>>,
     pub(crate) def: Vec<VarDef>,
 }
 
 pub(crate) struct LedNameDef {
     pub(crate) merge: MergeMode,
     pub(crate) ndx: i64,
-    pub(crate) name: Option<Box<ExprKind>>,
+    pub(crate) name: Option<ArenaBox<ExprKind>>,
 }
 
 pub(crate) struct LedMapDef {
@@ -811,19 +812,19 @@ pub(crate) const MAP_IS_DEFAULT: u32 = 1;
 
 pub(crate) enum Statement {
     Include(Vec<IncludeStmt>),
-    Keycode(Box<KeycodeDef>),
-    KeyAlias(Box<KeyAliasDef>),
-    Var(Box<VarDef>),
-    KeyType(Box<KeyTypeDef>),
-    Interp(Box<InterpDef>),
-    VMod(Box<VModDef>),
-    Symbols(Box<SymbolsDef>),
-    ModMap(Box<ModMapDef>),
+    Keycode(ArenaBox<KeycodeDef>),
+    KeyAlias(ArenaBox<KeyAliasDef>),
+    Var(ArenaBox<VarDef>),
+    KeyType(ArenaBox<KeyTypeDef>),
+    Interp(ArenaBox<InterpDef>),
+    VMod(ArenaBox<VModDef>),
+    Symbols(ArenaBox<SymbolsDef>),
+    ModMap(ArenaBox<ModMapDef>),
     GroupCompat(()),
-    LedMap(Box<LedMapDef>),
-    LedName(Box<LedNameDef>),
-    Unknown(Box<UnknownStatement>),
-    XkbFile(Box<XkbFile>),
+    LedMap(ArenaBox<LedMapDef>),
+    LedName(ArenaBox<LedNameDef>),
+    Unknown(ArenaBox<UnknownStatement>),
+    XkbFile(ArenaBox<XkbFile>),
 }
 
 pub(crate) struct XkbFile {
@@ -861,7 +862,7 @@ pub(crate) const PARSER_NO_FIELD_VALUE_MISMATCH: u32 = 4;
 pub(crate) const PARSER_NO_FIELD_TYPE_MISMATCH: u32 = 2;
 pub(crate) const PARSER_NO_UNKNOWN_STATEMENTS: u32 = 1;
 pub(crate) struct PendingComputation {
-    pub(crate) expr: Option<Box<ExprKind>>,
+    pub(crate) expr: Option<ArenaBox<ExprKind>>,
     pub(crate) computed: bool,
     pub(crate) value: u32,
 }

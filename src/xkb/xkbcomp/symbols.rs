@@ -1,3 +1,4 @@
+use super::super::arena::ArenaBox;
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::{
     lookup_string, CTRL_MASK_NAMES, GROUP_COMPONENT_MASK_NAMES, MOD_COMPONENT_MASK_NAMES,
@@ -59,7 +60,6 @@ pub(crate) struct KeyInfo {
     pub(crate) overlays_clear: bool,
     pub(crate) overlays: [Option<u32>; 8],
 }
-pub(crate) const _KEY_REPEAT_NUM_ENTRIES: u32 = 3;
 pub(crate) const KEY_REPEAT_NO: u32 = 2;
 pub(crate) const KEY_REPEAT_YES: u32 = 1;
 pub(crate) const KEY_REPEAT_UNDEFINED: u32 = 0;
@@ -493,7 +493,7 @@ fn handle_include_symbols(
     for stmt in includes.iter_mut() {
         let mut next_incl = SymbolsInfo::new(ki);
 
-        let file: Option<Box<XkbFile>> =
+        let file: Option<ArenaBox<XkbFile>> =
             process_include_file(&mut ki.keymap.ctx, stmt, FileType::Symbols);
         let Some(mut file) = file else {
             info.error_count += 10;
@@ -893,7 +893,7 @@ fn set_symbols_field(
     keyi: &mut KeyInfo,
     field: &str,
     array_ndx: Option<&ExprKind>,
-    value_opt: &mut Option<Box<ExprKind>>,
+    value_opt: &mut Option<ArenaBox<ExprKind>>,
 ) -> bool {
     let mapped_field = match parse_symbols_field(field) {
         Some(f) => f,
@@ -2026,7 +2026,7 @@ fn handle_include_compat_map(
     for stmt in includes.iter_mut() {
         let mut next_incl = CompatInfo::new();
 
-        let file: Option<Box<XkbFile>> =
+        let file: Option<ArenaBox<XkbFile>> =
             process_include_file(&mut ki.keymap.ctx, stmt, FileType::Compat);
         let Some(mut file) = file else {
             info.error_count += 10;
@@ -2249,7 +2249,7 @@ fn set_led_map_field(
     ledi: &mut LedInfo,
     field: &str,
     array_ndx: Option<&ExprKind>,
-    value_opt: &mut Option<Box<ExprKind>>,
+    value_opt: &mut Option<ArenaBox<ExprKind>>,
 ) -> bool {
     let value: &ExprKind = value_opt.as_deref().unwrap();
     let mapped_field = match parse_led_map_field(field) {
@@ -2726,15 +2726,23 @@ fn add_key_type(info: &mut KeyTypesInfo, new: &mut KeyTypeInfo) -> bool {
     let old_idx = info.types.iter().position(|t| t.name == new.name);
     if let Some(idx) = old_idx {
         if new.merge != MergeMode::Augment {
-            info.types[idx] = new.clone();
-            new.entries = Vec::new();
-            new.level_names = Vec::new();
+            std::mem::swap(&mut info.types[idx], new);
             return true;
         }
-
         return true;
     }
-    info.types.push(new.clone());
+    info.types.push(std::mem::replace(
+        new,
+        KeyTypeInfo {
+            defined: 0,
+            merge: MergeMode::Default,
+            name: 0,
+            mods: 0,
+            num_levels: 0,
+            entries: Vec::new(),
+            level_names: Vec::new(),
+        },
+    ));
     true
 }
 fn merge_included_key_types(
@@ -2754,14 +2762,12 @@ fn merge_included_key_types(
     if into.types.is_empty() {
         into.types = std::mem::take(&mut from.types);
     } else {
-        for type_0 in from.types.iter_mut() {
+        for mut type_0 in from.types.drain(..) {
             type_0.merge = merge;
-            let mut type_clone = type_0.clone();
-            if !add_key_type(into, &mut type_clone) {
+            if !add_key_type(into, &mut type_0) {
                 into.error_count += 1;
             }
         }
-        from.types.clear();
     }
 }
 fn handle_include_key_types(
@@ -2787,7 +2793,7 @@ fn handle_include_key_types(
     for stmt in includes.iter_mut() {
         let mut next_incl = KeyTypesInfo::new();
 
-        let file: Option<Box<XkbFile>> =
+        let file: Option<ArenaBox<XkbFile>> =
             process_include_file(&mut ki.keymap.ctx, stmt, FileType::Types);
         let Some(mut file) = file else {
             info.error_count += 10;
@@ -3721,7 +3727,7 @@ fn handle_include_keycodes(
     for stmt in includes.iter_mut() {
         let mut next_incl = KeyNamesInfo::new();
 
-        let file: Option<Box<XkbFile>> =
+        let file: Option<ArenaBox<XkbFile>> =
             process_include_file(&mut ki.keymap.ctx, stmt, FileType::Keycodes);
         let Some(mut file) = file else {
             info.error_count += 10;
@@ -4667,7 +4673,7 @@ pub(crate) enum ActionValue<'v> {
     /// A borrowed reference to a constant or non-ownable ExprDef (e.g. const_true).
     Borrowed(&'v ExprKind),
     /// A mutable reference to an owned ExprDef that can be `.take()`-en.
-    Owned(&'v mut Option<Box<ExprKind>>),
+    Owned(&'v mut Option<ArenaBox<ExprKind>>),
 }
 
 impl<'v> ActionValue<'v> {
@@ -4681,7 +4687,7 @@ impl<'v> ActionValue<'v> {
     }
     /// Take ownership of the ExprDef (only possible for Owned variant).
     #[inline]
-    pub(crate) fn take(&mut self) -> Option<Box<ExprKind>> {
+    pub(crate) fn take(&mut self) -> Option<ArenaBox<ExprKind>> {
         match self {
             ActionValue::Borrowed(_) => None,
             ActionValue::Owned(opt) => opt.take(),
@@ -5449,7 +5455,7 @@ pub(crate) fn set_default_action_field(
     elem: &str,
     field: &str,
     array_ndx: Option<&ExprKind>,
-    value_rtrn: &mut Option<Box<ExprKind>>,
+    value_rtrn: &mut Option<ArenaBox<ExprKind>>,
     merge: MergeMode,
 ) -> ParseStatus {
     let av = ActionValue::Owned(value_rtrn);

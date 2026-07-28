@@ -3,6 +3,7 @@
 pub(crate) mod parser;
 pub(crate) mod symbols;
 
+use crate::xkb::arena::{clear_arena, set_arena};
 use crate::xkb::shared_types::XKB_MAX_GROUPS;
 
 use self::parser::compile_keymap;
@@ -20,6 +21,9 @@ fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
     true
 }
 pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbRuleNames) -> bool {
+    let mut arena = crate::xkb::arena::Arena::new();
+    set_arena(&mut arena);
+
     let mut ok: bool;
     let mut kccgst: XkbComponentNames = XkbComponentNames::default();
 
@@ -30,23 +34,31 @@ pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbR
         &mut keymap.num_groups,
     );
     if !ok {
+        clear_arena();
         return false;
     }
     let max_groups: u32 = XKB_MAX_GROUPS;
     if keymap.num_groups > max_groups {
         keymap.num_groups = max_groups;
     }
-    let file_opt: Option<Box<XkbFile>> = xkb_file_from_components(&mut keymap.ctx, &kccgst);
+    let file_opt = xkb_file_from_components(&mut keymap.ctx, &kccgst);
     let Some(mut file) = file_opt else {
+        clear_arena();
         return false;
     };
-    ok = compile_keymap_file(keymap, &mut file);
+    ok = compile_keymap_file(keymap, &mut *file);
+    clear_arena();
     ok
 }
 pub(crate) fn text_v1_keymap_new_from_string(keymap: &mut XkbKeymap, input: &[u8]) -> bool {
+    let mut arena = crate::xkb::arena::Arena::new();
+    set_arena(&mut arena);
+
     let Some(mut xkb_file) = xkb_parse_string(&mut keymap.ctx, input, "(input string)", "") else {
+        clear_arena();
         return false;
     };
-    let ok: bool = compile_keymap_file(keymap, &mut xkb_file);
+    let ok: bool = compile_keymap_file(keymap, &mut *xkb_file);
+    clear_arena();
     ok
 }
