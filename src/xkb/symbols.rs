@@ -37,6 +37,8 @@ pub(crate) struct SymbolsInfo {
     pub(crate) modmaps: Vec<ModMapEntry>,
     pub(crate) mods: XkbModSet,
     pub(crate) star_atom: u32,
+    pub(crate) key_index: HashMap<u32, usize>,
+    pub(crate) modmap_index: HashMap<(bool, u32), usize>,
 }
 #[derive(Copy, Clone)]
 pub(crate) struct ModMapEntry {
@@ -114,6 +116,8 @@ impl SymbolsInfo {
             },
             group_names: Vec::new(),
             modmaps: Vec::new(),
+            key_index: HashMap::new(),
+            modmap_index: HashMap::new(),
             mods: XkbModSet {
                 mods: [XkbMod {
                     name: 0,
@@ -179,6 +183,8 @@ fn init_symbols_info(
     info.include_depth = include_depth;
     info.explicit_group = None;
     info.max_groups = ki.features.max_groups;
+    info.key_index.clear();
+    info.modmap_index.clear();
     init_key_info_with_atom(
         &mut info.default_key,
         atom_intern(&mut ki.keymap.ctx.atom_table, b"*"),
@@ -391,35 +397,31 @@ fn add_key_symbols(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, keyi: &mu
             }
         }
     }
-    for i in 0..info.keys.len() {
-        if info.keys[i].name == keyi.name {
-            let mut existing = std::mem::replace(&mut info.keys[i], KeyInfo::new_zeroed());
-            let result = merge_keys(ki, info, &mut existing, keyi);
-            info.keys[i] = existing;
-            return result;
-        }
+    if let Some(&i) = info.key_index.get(&keyi.name) {
+        let mut existing = std::mem::replace(&mut info.keys[i], KeyInfo::new_zeroed());
+        let result = merge_keys(ki, info, &mut existing, keyi);
+        info.keys[i] = existing;
+        return result;
     }
     // Move keyi's data into the keys vec
     let moved = std::mem::replace(keyi, KeyInfo::new_zeroed());
+    info.key_index.insert(moved.name, info.keys.len());
     info.keys.push(moved);
     init_key_info_with_atom(keyi, info.star_atom);
     true
 }
 fn add_mod_map_entry(info: &mut SymbolsInfo, new: &ModMapEntry) -> bool {
     let clobber: bool = new.merge != MergeMode::Augment;
-    for old in info.modmaps.iter_mut() {
-        if new.have_symbol != old.have_symbol
-            || new.have_symbol && new.u != old.u
-            || !new.have_symbol && new.u != old.u
-        {
-            continue;
-        }
+    let key = (new.have_symbol, new.u);
+    if let Some(&i) = info.modmap_index.get(&key) {
+        let old = &mut info.modmaps[i];
         if new.modifier == old.modifier {
             return true;
         }
         old.modifier = if clobber { new.modifier } else { old.modifier };
         return true;
     }
+    info.modmap_index.insert(key, info.modmaps.len());
     info.modmaps.push(*new);
     true
 }
@@ -450,6 +452,7 @@ fn merge_included_symbols(
     }
     if into.keys.is_empty() {
         std::mem::swap(&mut into.keys, &mut from.keys);
+        std::mem::swap(&mut into.key_index, &mut from.key_index);
     } else {
         for keyi in from.keys.iter_mut() {
             keyi.merge = merge;
@@ -460,6 +463,7 @@ fn merge_included_symbols(
     }
     if into.modmaps.is_empty() {
         std::mem::swap(&mut into.modmaps, &mut from.modmaps);
+        std::mem::swap(&mut into.modmap_index, &mut from.modmap_index);
     } else {
         for mm in from.modmaps.iter_mut() {
             mm.merge = merge;
@@ -1118,8 +1122,6 @@ fn handle_global_var(
     }
     let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom).to_owned();
     let field = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
-    let elem: &str = &elem;
-    let field: &str = &field;
     if !elem.is_empty() && elem.eq_ignore_ascii_case("key") {
         let mut temp: KeyInfo = {
             let mut init = KeyInfo::new_zeroed();
@@ -1137,7 +1139,7 @@ fn handle_global_var(
         } else {
             stmt.merge
         };
-        ret = set_symbols_field(ki, info, &mut temp, field, array_ndx_opt, &mut stmt.value);
+        ret = set_symbols_field(ki, info, &mut temp, &field, array_ndx_opt, &mut stmt.value);
         let mut dk = std::mem::replace(&mut info.default_key, KeyInfo::new_zeroed());
         merge_keys(ki, info, &mut dk, &mut temp);
         info.default_key = dk;
@@ -1167,15 +1169,13 @@ fn handle_global_var(
     } else if elem.is_empty() && field.eq_ignore_ascii_case("allownone") {
         ret = true;
     } else if !elem.is_empty() {
-        let elem_owned = elem.to_owned();
-        let field_owned = field.to_owned();
         ret = {
             set_default_action_field(
                 ki,
                 &mut info.default_actions,
                 &mut info.mods,
-                &elem_owned,
-                &field_owned,
+                &elem,
+                &field,
                 array_ndx_opt,
                 &mut stmt.value,
                 stmt.merge,
@@ -1357,45 +1357,6 @@ fn handle_symbols_file(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, file:
             }
         }
     }
-}
-fn find_key_for_symbol(keymap: &mut XkbKeymap, sym: u32) -> Option<&mut XkbKey> {
-    let mut got_one_group: bool;
-    let mut group: u32 = 0;
-    loop {
-        let mut level: u32 = 0;
-        got_one_group = false;
-        let mut got_one_level: bool;
-        loop {
-            got_one_level = false;
-            let start_idx = if keymap.num_keys_low == 0 {
-                0_u32
-            } else {
-                keymap.min_key_code
-            };
-            for ki in start_idx..keymap.num_keys {
-                let key = &keymap.keys[ki as usize];
-                if group < key.num_groups
-                    && level < keymap.types[key.groups[group as usize].type_idx as usize].num_levels
-                {
-                    got_one_level = true;
-                    got_one_group = got_one_level;
-                    let level_syms = &key.groups[group as usize].levels[level as usize].syms;
-                    if level_syms.contains(&sym) {
-                        return Some(&mut keymap.keys[ki as usize]);
-                    }
-                }
-            }
-            level += 1;
-            if !got_one_level {
-                break;
-            }
-        }
-        group += 1;
-        if !got_one_group {
-            break;
-        }
-    }
-    None
 }
 fn find_automatic_type(ctx: &mut XkbContext, groupi: &GroupInfo) -> u32 {
     let width: u32 = groupi.levels.len() as u32;
@@ -1631,7 +1592,7 @@ fn copy_symbols_def_to_keymap(
 }
 fn copy_mod_map_def_to_keymap(
     keymap: &mut XkbKeymap,
-    _info: &SymbolsInfo,
+    sym_to_key: &HashMap<u32, usize>,
     entry: &ModMapEntry,
 ) -> bool {
     if !entry.have_symbol {
@@ -1643,9 +1604,9 @@ fn copy_mod_map_def_to_keymap(
         } else {
             false
         }
-    } else if let Some(key) = find_key_for_symbol(keymap, entry.u) {
+    } else if let Some(&ki) = sym_to_key.get(&entry.u) {
         if entry.modifier != XKB_MOD_NONE {
-            key.modmap |= 1_u32 << entry.modifier;
+            keymap.keys[ki].modmap |= 1_u32 << entry.modifier;
         }
         true
     } else {
@@ -1673,8 +1634,43 @@ fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) -> boo
         }
     }
     info.keys = keys;
+    let start_idx = if keymap.num_keys_low == 0 {
+        0_u32
+    } else {
+        keymap.min_key_code
+    };
+    let mut sym_to_key: HashMap<u32, usize> = HashMap::new();
+    let mut group: u32 = 0;
+    loop {
+        let mut got_one_group = false;
+        let mut level: u32 = 0;
+        loop {
+            let mut got_one_level = false;
+            for ki in start_idx..keymap.num_keys {
+                let key = &keymap.keys[ki as usize];
+                if group < key.num_groups
+                    && level < keymap.types[key.groups[group as usize].type_idx as usize].num_levels
+                {
+                    got_one_level = true;
+                    got_one_group = true;
+                    let level_syms = &key.groups[group as usize].levels[level as usize].syms;
+                    for &sym in level_syms {
+                        sym_to_key.entry(sym).or_insert(ki as usize);
+                    }
+                }
+            }
+            level += 1;
+            if !got_one_level {
+                break;
+            }
+        }
+        group += 1;
+        if !got_one_group {
+            break;
+        }
+    }
     for modmap in &info.modmaps {
-        if !copy_mod_map_def_to_keymap(keymap, info, modmap) {
+        if !copy_mod_map_def_to_keymap(keymap, &sym_to_key, modmap) {
             info.error_count += 1;
         }
     }
@@ -1708,6 +1704,8 @@ pub(crate) struct CompatInfo {
     pub(crate) num_leds: u32,
     pub(crate) default_actions: ActionsInfo,
     pub(crate) mods: XkbModSet,
+    pub(crate) interp_index: HashMap<(u32, u32, u32), usize>,
+    pub(crate) led_index: HashMap<u32, u32>,
 }
 impl Default for CompatInfo {
     fn default() -> Self {
@@ -1751,6 +1749,8 @@ impl CompatInfo {
                 },
             },
             interps: Vec::new(),
+            interp_index: HashMap::new(),
+            led_index: HashMap::new(),
             default_led: zeroed_led,
             leds: [zeroed_led; 32],
             num_leds: 0,
@@ -1809,6 +1809,8 @@ fn init_compat_info(info: &mut CompatInfo, include_depth: u32, mods: &XkbModSet)
     init_vmods(&mut info.mods, mods, include_depth > 0);
     init_interp(&mut info.default_interp);
     init_led(&mut info.default_led);
+    info.interp_index.clear();
+    info.led_index.clear();
 }
 
 fn merge_interp(old: &mut SymInterpInfo, new: &mut SymInterpInfo) -> bool {
@@ -1846,19 +1848,14 @@ fn merge_interp(old: &mut SymInterpInfo, new: &mut SymInterpInfo) -> bool {
     true
 }
 fn add_interp(info: &mut CompatInfo, new: &mut SymInterpInfo) -> bool {
-    // FindMatchingInterp inlined
-    let old_idx = info.interps.iter().position(|i| {
-        i.interp.sym == new.interp.sym
-            && i.interp.mods == new.interp.mods
-            && i.interp.match_0 == new.interp.match_0
-    });
-    if let Some(idx) = old_idx {
-        // Clone the old element out to avoid borrow conflict with info
+    let key = (new.interp.sym, new.interp.mods, new.interp.match_0);
+    if let Some(&idx) = info.interp_index.get(&key) {
         let mut old = info.interps[idx].clone();
         let result = merge_interp(&mut old, new);
         info.interps[idx] = old;
         return result;
     }
+    info.interp_index.insert(key, info.interps.len());
     info.interps.push(new.clone());
     true
 }
@@ -1950,17 +1947,16 @@ fn merge_led_map(old: &mut LedInfo, new: &mut LedInfo) -> bool {
     true
 }
 fn add_led_map(info: &mut CompatInfo, new: &mut LedInfo) -> bool {
-    for i in 0..info.num_leds as usize {
-        if info.leds[i].led.name == new.led.name {
-            let mut old = info.leds[i];
-            let result = merge_led_map(&mut old, new);
-            info.leds[i] = old;
-            return result;
-        }
+    if let Some(&i) = info.led_index.get(&new.led.name) {
+        let mut old = info.leds[i as usize];
+        let result = merge_led_map(&mut old, new);
+        info.leds[i as usize] = old;
+        return result;
     }
     if info.num_leds >= XKB_MAX_LEDS {
         return false;
     }
+    info.led_index.insert(new.led.name, info.num_leds);
     info.leds[info.num_leds as usize] = *new;
     info.num_leds += 1;
     true
@@ -1981,6 +1977,7 @@ fn merge_included_compat_maps(
     }
     if into.interps.is_empty() {
         into.interps = std::mem::take(&mut from.interps);
+        into.interp_index = std::mem::take(&mut from.interp_index);
     } else {
         for interp in from.interps.iter_mut() {
             interp.merge = merge;
@@ -1994,6 +1991,7 @@ fn merge_included_compat_maps(
         into.leds[..n].copy_from_slice(&from.leds[..n]);
         into.num_leds = from.num_leds;
         from.num_leds = 0;
+        into.led_index = std::mem::take(&mut from.led_index);
     } else {
         for led in from.leds[..from.num_leds as usize].iter_mut() {
             led.merge = merge;
@@ -2680,8 +2678,10 @@ pub(crate) struct KeyTypesInfo {
     pub(crate) error_count: i32,
     pub(crate) include_depth: u32,
     pub(crate) types: Vec<KeyTypeInfo>,
+    pub(crate) type_index: HashMap<u32, usize>,
     pub(crate) mods: XkbModSet,
 }
+
 impl Default for KeyTypesInfo {
     fn default() -> Self {
         Self::new()
@@ -2695,6 +2695,7 @@ impl KeyTypesInfo {
             error_count: 0,
             include_depth: 0,
             types: Vec::new(),
+            type_index: HashMap::new(),
             mods: Default::default(),
         }
     }
@@ -2718,19 +2719,19 @@ fn init_key_types_info(info: &mut KeyTypesInfo, include_depth: u32, mods: &XkbMo
     info.error_count = 0;
     info.include_depth = include_depth;
     info.types.clear();
+    info.type_index.clear();
     info.mods = Default::default();
     init_vmods(&mut info.mods, mods, include_depth > 0);
 }
 fn add_key_type(info: &mut KeyTypesInfo, new: &mut KeyTypeInfo) -> bool {
-    // FindMatchingKeyType inlined
-    let old_idx = info.types.iter().position(|t| t.name == new.name);
-    if let Some(idx) = old_idx {
+    if let Some(&idx) = info.type_index.get(&new.name) {
         if new.merge != MergeMode::Augment {
             std::mem::swap(&mut info.types[idx], new);
             return true;
         }
         return true;
     }
+    info.type_index.insert(new.name, info.types.len());
     info.types.push(std::mem::replace(
         new,
         KeyTypeInfo {
@@ -2761,6 +2762,7 @@ fn merge_included_key_types(
     }
     if into.types.is_empty() {
         into.types = std::mem::take(&mut from.types);
+        into.type_index = std::mem::take(&mut from.type_index);
     } else {
         for mut type_0 in from.types.drain(..) {
             type_0.merge = merge;
@@ -3310,6 +3312,7 @@ pub(crate) struct KeyNamesInfo {
     pub(crate) keycodes: KeycodeStore,
     pub(crate) led_names: [LedNameInfo; 32],
     pub(crate) num_led_names: u32,
+    pub(crate) led_name_index: HashMap<u32, u32>,
 }
 impl Default for KeyNamesInfo {
     fn default() -> Self {
@@ -3334,6 +3337,7 @@ impl KeyNamesInfo {
                 name: 0,
             }; 32],
             num_led_names: 0,
+            led_name_index: HashMap::new(),
         }
     }
 }
@@ -3538,17 +3542,13 @@ fn keycode_store_lookup_name(store: &KeycodeStore, name: u32) -> KeycodeMatch {
 }
 fn add_led_name(info: &mut KeyNamesInfo, new: &LedNameInfo, new_idx: u32) -> bool {
     let replace: bool = new.merge != MergeMode::Augment;
-    // FindLedByName inlined
-    let found_old = info.led_names[..info.num_led_names as usize]
-        .iter()
-        .position(|l| l.name == new.name)
-        .map(|i| i as u32);
-    if let Some(old_idx) = found_old {
+    if let Some(&old_idx) = info.led_name_index.get(&new.name) {
         if old_idx == new_idx {
             return true;
         }
         if replace {
             info.led_names[old_idx as usize].name = XKB_ATOM_NONE;
+            info.led_name_index.remove(&new.name);
         } else {
             return true;
         }
@@ -3558,11 +3558,15 @@ fn add_led_name(info: &mut KeyNamesInfo, new: &LedNameInfo, new_idx: u32) -> boo
     }
     if info.led_names[new_idx as usize].name != XKB_ATOM_NONE {
         if replace {
+            info.led_name_index
+                .remove(&info.led_names[new_idx as usize].name);
             info.led_names[new_idx as usize] = *new;
+            info.led_name_index.insert(new.name, new_idx);
         }
         return true;
     }
     info.led_names[new_idx as usize] = *new;
+    info.led_name_index.insert(new.name, new_idx);
     true
 }
 fn init_key_names_info(info: &mut KeyNamesInfo, include_depth: u32) {
@@ -3580,6 +3584,7 @@ fn init_key_names_info(info: &mut KeyNamesInfo, include_depth: u32) {
         name: 0,
     }; 32];
     info.num_led_names = 0;
+    info.led_name_index.clear();
 }
 fn add_key_name(info: &mut KeyNamesInfo, kc: u32, name: u32, merge: MergeMode) -> bool {
     let match_name: KeycodeMatch = keycode_store_lookup_name(&info.keycodes, name);
@@ -3777,8 +3782,8 @@ fn handle_key_name_var(ki: &mut XkbKeymapInfo<'_>, stmt: &VarDef) -> bool {
     if !expr_resolve_lhs(name_ref, &mut elem_atom, &mut field_atom, &mut array_ndx) {
         return false;
     }
-    let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom);
-    let field = atom_text(&ki.keymap.ctx.atom_table, field_atom);
+    let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom).to_owned();
+    let field = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
     if !elem.is_empty() {
         return ki.strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
     }
