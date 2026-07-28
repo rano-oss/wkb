@@ -1439,12 +1439,6 @@ impl Keymap {
         }
     }
 
-    /// Get modifier maps for a key (returns (modmap, vmodmap) or None if key doesn't exist)
-    pub(crate) fn key_get_mods(&self, keycode: u32) -> Option<(u32, u32)> {
-        let key = self.inner.get_key(keycode)?;
-        Some((key.modmap, key.vmodmap))
-    }
-
     /// Get number of layouts in the keymap
     pub(crate) fn num_layouts(&self) -> u32 {
         self.inner.num_groups

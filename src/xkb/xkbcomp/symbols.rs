@@ -59,7 +59,6 @@ pub(crate) struct KeyInfo {
     pub(crate) overlays_clear: bool,
     pub(crate) overlays: [Option<u32>; 8],
 }
-pub(crate) const _KEY_REPEAT_NUM_ENTRIES: u32 = 3;
 pub(crate) const KEY_REPEAT_NO: u32 = 2;
 pub(crate) const KEY_REPEAT_YES: u32 = 1;
 pub(crate) const KEY_REPEAT_UNDEFINED: u32 = 0;

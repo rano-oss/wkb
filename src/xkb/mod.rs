@@ -550,43 +550,21 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
         level2_mask | level3_mask | level5_mask,
     ];
 
-    // ── Build flat keymaps for ALL layouts ──
-
-    // Build level_exceptions_keymap and named_key_map in a single pass
-    // (both use key_get_syms_by_level, no state needed)
-    let mut level_exceptions_keymap = FlatKeymap::new(num_keys, num_layouts);
-    let mut named_key_map = FlatNamedKeyMap::new(num_keys, num_layouts);
-    for layout_idx in 0..num_layouts {
-        for lvl in 0..MAX_LEVELS {
-            for kc in min_keycode..=max_keycode {
-                let syms = keymap.key_get_syms_by_level(kc, layout_idx as u32, lvl as u32);
-                if let Some(&sym) = syms.first() {
-                    let evdev = kc - EVDEV_OFFSET;
-                    if sym != 0 {
-                        named_key_map.set(layout_idx, lvl, evdev, keysym_to_named_key(sym));
-                    }
-                    if let Some(ch) = keysym::keysym_to_char(sym) {
-                        level_exceptions_keymap.set(layout_idx, lvl, evdev, ch);
-                    }
-                }
-            }
-        }
-    }
-
-    // Compute per-layout LevelFive activation.  When true, xkbcommon's
-    // state machine transforms Shift+LVL3 → LevelFive+LVL3 (removing Shift).
+    // Compute per-layout LevelFive activation before the merged flat-keymap pass.
     let per_layout_level5: Vec<bool> = (0..num_layouts)
         .map(|l| layout_has_level5_activation(keymap, l, level5_mask))
         .collect();
 
-    // Build state_keymap using direct char resolution, applying the same
-    // state-level transformation that xkbcommon's interpret system performs
-    // (LevelFive activation on Shift+LVL3 for compatible layouts).
+    // Single pass: build all flat keymaps for ALL layouts together.
+    // level_exceptions_keymap + named_key_map (raw syms per level) and
+    // state_keymap (resolved via mods_mask) share the same iteration space.
+    let mut level_exceptions_keymap = FlatKeymap::new(num_keys, num_layouts);
+    let mut named_key_map = FlatNamedKeyMap::new(num_keys, num_layouts);
     let mut state_keymap = FlatKeymap::new(num_keys, num_layouts);
     let stride = MAX_LEVELS * num_keys;
     for layout_idx in 0..num_layouts {
-        let layout_off = layout_idx * stride;
         let layout_level5 = per_layout_level5[layout_idx];
+        let layout_off = layout_idx * stride;
         for lvl in 0..MAX_LEVELS {
             let raw_mods = level_masks[lvl];
             let mods_mask = level5_transform_mods(
@@ -598,9 +576,18 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
             );
             let lvl_off = layout_off + lvl * num_keys;
             for kc in min_keycode..=max_keycode {
-                let evdev = (kc - EVDEV_OFFSET) as usize;
+                let evdev = kc - EVDEV_OFFSET;
+                let syms = keymap.key_get_syms_by_level(kc, layout_idx as u32, lvl as u32);
+                if let Some(&sym) = syms.first() {
+                    if sym != 0 {
+                        named_key_map.set(layout_idx, lvl, evdev, keysym_to_named_key(sym));
+                    }
+                    if let Some(ch) = keysym::keysym_to_char(sym) {
+                        level_exceptions_keymap.set(layout_idx, lvl, evdev, ch);
+                    }
+                }
                 if let Some(ch) = resolve_char(keymap, kc, layout_idx as u32, mods_mask, 0) {
-                    state_keymap.data[lvl_off + evdev] = Some(ch);
+                    state_keymap.data[lvl_off + evdev as usize] = Some(ch);
                 }
             }
         }
@@ -739,6 +726,20 @@ pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
     Ok(build_wkb_from_keymap(&keymap, None, true))
 }
 
+fn modtype_from_name(name: &str) -> Option<ModType> {
+    match name {
+        "Shift" => Some(ModType::Level2),
+        "ISO_Level3_Shift" | "Mode_switch" | "LevelThree" => Some(ModType::Level3),
+        "ISO_Level5_Shift" | "LevelFive" => Some(ModType::Level5),
+        "Lock" => Some(ModType::Caps),
+        "Mod2" => Some(ModType::Num),
+        "Mod5" => Some(ModType::Level3),
+        "Scroll_Lock" | "ScrollLock" => Some(ModType::Scroll),
+        "Control" => Some(ModType::None),
+        _ => None,
+    }
+}
+
 /// Build Modifiers struct from XKB keymap
 fn build_modifiers_from_keymap(
     keymap: &keymap::Keymap,
@@ -775,32 +776,17 @@ fn build_modifiers_from_keymap(
         }
     };
 
-    let mod_name_to_type: std::collections::HashMap<String, ModType> = (0..num_mods)
-        .filter_map(|i| {
-            keymap.mod_get_name(i).and_then(|n| {
-                Some((
-                    n.clone(),
-                    match n.as_str() {
-                        "Shift" => ModType::Level2,
-                        "ISO_Level3_Shift" | "Mode_switch" | "LevelThree" => ModType::Level3,
-                        "ISO_Level5_Shift" | "LevelFive" => ModType::Level5,
-                        "Lock" => ModType::Caps,
-                        "Mod2" => ModType::Num,
-                        "Mod5" => ModType::Level3,
-                        "Scroll_Lock" | "ScrollLock" => ModType::Scroll,
-                        "Control" => ModType::None,
-                        _ => return None,
-                    },
-                ))
-            })
-        })
-        .collect();
-
     const EVDEV_OFFSET: u32 = 8;
     for keycode in min_keycode.max(EVDEV_OFFSET)..=max_keycode {
         let evdev_code = keycode - EVDEV_OFFSET;
-        let syms = keymap.key_get_syms_by_level(keycode, 0, 0);
-        let num_levels = keymap.num_levels_for_key(keycode, 0);
+        let Some(key) = keymap.inner.get_key(keycode) else {
+            continue;
+        };
+        let Some(g0) = key.groups.first() else {
+            continue;
+        };
+        let syms = g0.levels.first().map(|l| l.syms.as_slice()).unwrap_or(&[]);
+        let num_levels = g0.levels.len() as u32;
 
         if num_levels == 1 && syms.len() == 1 {
             if let Some(mt) = keysym_to_modtype(syms[0]) {
@@ -810,11 +796,7 @@ fn build_modifiers_from_keymap(
             }
         }
 
-        let (modmap, vmodmap) = match keymap.key_get_mods(keycode) {
-            Some(m) => m,
-            None => continue,
-        };
-        if modmap == 0 && vmodmap == 0 {
+        if key.modmap == 0 && key.vmodmap == 0 {
             continue;
         }
 
@@ -824,24 +806,21 @@ fn build_modifiers_from_keymap(
                 None => continue,
             };
             let mod_mask = keymap.mod_get_mask(&mod_name);
-            if (modmap & mod_mask) == 0 && (vmodmap & mod_mask) == 0 {
+            if (key.modmap & mod_mask) == 0 && (key.vmodmap & mod_mask) == 0 {
                 continue;
             }
 
             let mod_type = if syms.len() == 1 {
-                keysym_to_modtype(syms[0]).or_else(|| mod_name_to_type.get(&mod_name).copied())
+                keysym_to_modtype(syms[0]).or_else(|| modtype_from_name(&mod_name))
             } else {
-                mod_name_to_type.get(&mod_name).copied()
+                modtype_from_name(&mod_name)
             };
-            let mod_type = match mod_type {
-                Some(mt) => mt,
-                None => continue,
-            };
+            let Some(mod_type) = mod_type else { continue };
 
             if mod_type == ModType::Caps {
                 let caps_levels: Vec<u32> = (0..num_levels)
                     .filter(|&lvl| {
-                        keymap.key_get_syms_by_level(keycode, 0, lvl).first() == Some(&0xffe5)
+                        g0.levels.get(lvl as usize).and_then(|l| l.syms.first()) == Some(&0xffe5)
                     })
                     .collect();
                 if caps_levels.is_empty() {
