@@ -1,16 +1,16 @@
-use super::super::arena::{alloc_arena, ArenaBox};
-use super::super::keymap::mod_mask_get_effective;
-use super::super::keymap::xkb_escape_map_name;
-use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
-use super::super::keymap::GROUP_LAST_INDEX_NAME;
-use super::super::keysym::utf32_to_keysym;
-use super::super::keysym::xkb_keysym_from_name;
-use super::super::shared_types::*;
-use super::super::shared_types::{
+use super::arena::{alloc_arena, ArenaBox};
+use super::keymap::mod_mask_get_effective;
+use super::keymap::xkb_escape_map_name;
+use super::keymap::xkb_keymap_key_get_syms_by_level_ref;
+use super::keymap::GROUP_LAST_INDEX_NAME;
+use super::keysym::utf32_to_keysym;
+use super::keysym::xkb_keysym_from_name;
+use super::shared_types::*;
+use super::shared_types::{
     parse_dec_u32, parse_dec_u64, parse_hex_u32, parse_hex_u64, utf8_next_code_point_safe,
     INVALID_UTF8_CODE_POINT,
 };
-use super::super::shared_types::{
+use super::shared_types::{
     ExprKind, FileType, IncludeStmt, InterpDef, KeyAliasDef, KeyTypeDef, KeycodeDef, LedMapDef,
     LedNameDef, ModMapDef, Statement, SymbolsDef, UnknownStatement, VModDef, VarDef, XkbFile,
     MAP_HAS_ALPHANUMERIC, MAP_HAS_FN, MAP_HAS_KEYPAD, MAP_HAS_MODIFIER, MAP_IS_ALTGR,
@@ -25,6 +25,55 @@ pub(crate) use super::symbols::compile_symbols;
 use super::symbols::{expr_resolve_group, expr_resolve_group_mask};
 use crate::xkb::keymap::CONTROL_NAMES_MIN_V1_INDEX;
 use crate::xkb::keymap::CONTROL_NAMES_MIN_V2_INDEX;
+
+// ── Compilation entry points (from xkbcomp/mod.rs) ──
+
+use super::shared_types::{XkbComponentNames, XkbKeymap, XkbRuleNames, XKB_MAX_GROUPS};
+use crate::xkb::arena::reset_arena;
+
+fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
+    if file.file_type != FileType::Keymap {
+        return false;
+    }
+    if !compile_keymap(file, keymap) {
+        return false;
+    }
+    true
+}
+
+pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbRuleNames) -> bool {
+    reset_arena();
+    let mut ok: bool;
+    let mut kccgst: XkbComponentNames = XkbComponentNames::default();
+    ok = xkb_components_from_rules_names(
+        &mut keymap.ctx,
+        rmlvo,
+        &mut kccgst,
+        &mut keymap.num_groups,
+    );
+    if !ok {
+        return false;
+    }
+    let max_groups: u32 = XKB_MAX_GROUPS;
+    if keymap.num_groups > max_groups {
+        keymap.num_groups = max_groups;
+    }
+    let file_opt = xkb_file_from_components(&mut keymap.ctx, &kccgst);
+    let Some(mut file) = file_opt else {
+        return false;
+    };
+    ok = compile_keymap_file(keymap, &mut *file);
+    ok
+}
+
+pub(crate) fn text_v1_keymap_new_from_string(keymap: &mut XkbKeymap, input: &[u8]) -> bool {
+    reset_arena();
+    let Some(mut xkb_file) = xkb_parse_string(&mut keymap.ctx, input, "(input string)", "") else {
+        return false;
+    };
+    let ok: bool = compile_keymap_file(keymap, &mut *xkb_file);
+    ok
+}
 
 pub(crate) const XKB_KEY_VOID_SYMBOL: i32 = 0xffffff_i32;
 pub(crate) const XKB_KEY_0: i32 = 0x30;
@@ -3103,9 +3152,9 @@ pub(crate) fn xkb_parse_string(
 
 // ── Include file processing (merged from include.rs) ──
 
-use super::super::keymap::{xkb_context_getenv, xkb_context_num_failed_include_paths};
-use super::super::keymap::{xkb_context_include_path_get, xkb_context_num_include_paths};
-use super::super::keymap::{
+use super::keymap::{xkb_context_getenv, xkb_context_num_failed_include_paths};
+use super::keymap::{xkb_context_include_path_get, xkb_context_num_include_paths};
+use super::keymap::{
     xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
 };
 
@@ -3278,7 +3327,7 @@ pub(crate) fn find_file_in_xkb_path(
             name
         );
         if path.len() >= 4096 {
-        } else if let Some(data) = super::super::shared_types::read_file_cached(&path) {
+        } else if let Some(data) = super::shared_types::read_file_cached(&path) {
             *offset = i;
             return Some((data, path));
         }
@@ -3312,8 +3361,7 @@ pub(crate) fn process_include_file(
     let absolute_path = stmt_file.starts_with('/');
     let mut offset: u32 = 0;
     let mut file_and_path: Option<(std::sync::Arc<Vec<u8>>, String)> = if absolute_path {
-        super::super::shared_types::read_file_cached(&stmt_file)
-            .map(|data| (data, stmt_file.clone()))
+        super::shared_types::read_file_cached(&stmt_file).map(|data| (data, stmt_file.clone()))
     } else if expanded {
         // Expanded but not absolute — don't search include paths
         None

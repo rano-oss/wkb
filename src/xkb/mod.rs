@@ -4,10 +4,11 @@
 pub(crate) mod arena;
 pub(crate) mod keymap;
 pub(crate) mod keysym;
+pub(crate) mod parser;
 #[cfg(feature = "testing")]
 pub(crate) mod rxkb;
 pub(crate) mod shared_types;
-pub(crate) mod xkbcomp;
+pub(crate) mod symbols;
 
 use crate::composer::Token;
 use crate::flat_keymap::{FlatKeymap, FlatNamedKeyMap, MAX_LEVELS};

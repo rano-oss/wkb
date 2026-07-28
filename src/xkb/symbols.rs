@@ -1,18 +1,19 @@
-use super::super::arena::ArenaBox;
-use super::super::keymap::xkb_escape_map_name;
-use super::super::keymap::{
+use super::arena::ArenaBox;
+use super::keymap::xkb_escape_map_name;
+use super::keymap::{
     lookup_string, CTRL_MASK_NAMES, GROUP_COMPONENT_MASK_NAMES, MOD_COMPONENT_MASK_NAMES,
     SYM_INTERPRET_MATCH_MASK_NAMES, USE_MOD_MAP_VALUE_NAMES,
 };
-pub(crate) use super::super::keymap::{
+pub(crate) use super::keymap::{
     xkb_levels_same_actions, xkb_levels_same_syms, xkb_mod_name_to_index,
 };
-use super::super::keysym::xkb_keysym_is_keypad;
-use super::super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
-pub(crate) use super::super::shared_types::{
+use super::keysym::xkb_keysym_is_keypad;
+use super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
+use super::parser::{exceeds_include_max_depth, process_include_file};
+pub(crate) use super::shared_types::{
     InterpDef, KeyAliasDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, SymbolsDef,
 };
-pub(crate) use super::super::shared_types::{
+pub(crate) use super::shared_types::{
     MergeMode, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
     ACTION_TYPE_GROUP_LOCK, ACTION_TYPE_GROUP_SET, ACTION_TYPE_INTERNAL, ACTION_TYPE_MOD_LATCH,
     ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET, ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE,
@@ -21,7 +22,6 @@ pub(crate) use super::super::shared_types::{
     ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, MAX_ACTIONS_PER_LEVEL, MOD_REAL_MASK_ALL,
     XKB_MAX_LEDS, XKB_MOD_NONE, XKB_OVERLAY_INVALID, _ACTION_TYPE_NUM_ENTRIES,
 };
-use super::parser::{exceeds_include_max_depth, process_include_file};
 use std::collections::HashMap;
 
 pub(crate) struct SymbolsInfo {
@@ -780,7 +780,7 @@ fn expr_resolve_overlay_entry(
     let prefix: usize = 7;
     let suffix = &field[prefix..];
     let len: usize = suffix.len();
-    let (val_parsed, parse_count) = super::super::shared_types::parse_dec_u64(suffix.as_bytes());
+    let (val_parsed, parse_count) = super::shared_types::parse_dec_u64(suffix.as_bytes());
     let raw_overlay: i64 = val_parsed as i64;
     if parse_count != len as i32
         || raw_overlay < 1_i64
@@ -1695,8 +1695,8 @@ pub(crate) fn compile_symbols(
     }
     false
 }
-use super::super::keysym::xkb_keysym_to_upper;
-use super::super::shared_types::*;
+use super::keysym::xkb_keysym_to_upper;
+use super::shared_types::*;
 pub(crate) struct CompatInfo {
     pub(crate) name: Option<String>,
     pub(crate) error_count: i32,
@@ -3979,11 +3979,11 @@ pub(crate) fn compile_keycodes(
     }
     false
 }
-use super::super::keymap::{ACTION_TYPE_NAMES, GROUP_LAST_INDEX_NAME};
+use super::keymap::{ACTION_TYPE_NAMES, GROUP_LAST_INDEX_NAME};
 
-pub(crate) use super::super::keymap::action_equal;
+pub(crate) use super::keymap::action_equal;
 
-use super::super::shared_types::ExprKind;
+use super::shared_types::ExprKind;
 
 pub(crate) struct LookupModMaskPriv<'a> {
     pub(crate) mods: &'a XkbModSet,
@@ -4042,7 +4042,7 @@ fn named_integer_pattern_lookup(
         .is_some_and(|s| s.eq_ignore_ascii_case(prefix.as_bytes()))
     {
         let suffix = &str_bytes.as_bytes()[prefix.len()..];
-        let (val_parsed, c) = super::super::shared_types::parse_dec_u32(suffix);
+        let (val_parsed, c) = super::shared_types::parse_dec_u32(suffix);
         // Return parsed value via count mechanism
         let _ = val_parsed;
         c
@@ -4053,7 +4053,7 @@ fn named_integer_pattern_lookup(
     if count > 0_i32 && prefix.len() + count as usize == str_bytes.len() {
         // Re-parse to get the value
         let suffix = &str_bytes.as_bytes()[prefix.len()..];
-        let (val, _) = super::super::shared_types::parse_dec_u32(suffix);
+        let (val, _) = super::shared_types::parse_dec_u32(suffix);
         if val < pattern.min || val > pattern.max {
             return None;
         }

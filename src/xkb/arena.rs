@@ -1,9 +1,7 @@
-use std::cell::Cell;
+use std::cell::RefCell;
 use std::ops::{Deref, DerefMut};
 use std::ptr::{self, NonNull};
 
-/// An owning pointer backed by arena memory.
-/// Runs `drop_in_place` on drop but does NOT deallocate.
 #[repr(transparent)]
 pub(crate) struct ArenaBox<T: ?Sized> {
     ptr: NonNull<T>,
@@ -39,31 +37,21 @@ impl<T> ArenaBox<T> {
 }
 
 thread_local! {
-    static BUMP: Cell<*mut bumpalo::Bump> = const { Cell::new(std::ptr::null_mut()) };
+    static BUMP: RefCell<bumpalo::Bump> = RefCell::new(bumpalo::Bump::new());
 }
 
 pub(crate) fn alloc_arena<T>(value: T) -> ArenaBox<T> {
-    with_arena(|bump| {
-        let ptr = bump.alloc(value) as *mut T;
+    BUMP.with(|b| {
+        let guard = b.borrow_mut();
+        let ptr = guard.alloc(value) as *mut T;
         ArenaBox {
             ptr: unsafe { NonNull::new_unchecked(ptr) },
         }
     })
 }
 
-pub(crate) fn with_arena<R>(f: impl FnOnce(&mut bumpalo::Bump) -> R) -> R {
-    BUMP.with(|cell| {
-        let ptr = cell.get();
-        assert!(!ptr.is_null(), "arena not initialized");
-        let bump = unsafe { &mut *ptr };
-        f(bump)
-    })
-}
-
-pub(crate) fn set_arena(bump: &mut bumpalo::Bump) {
-    BUMP.with(|cell| cell.set(bump));
-}
-
-pub(crate) fn clear_arena() {
-    BUMP.with(|cell| cell.set(std::ptr::null_mut()));
+pub(crate) fn reset_arena() {
+    BUMP.with(|b| {
+        b.replace(bumpalo::Bump::new());
+    });
 }
