@@ -1668,6 +1668,7 @@ pub(crate) fn compile_symbols(
 }
 use super::keysym::xkb_keysym_to_upper;
 use super::parser::*;
+#[derive(Clone, Default)]
 pub(crate) struct CompatInfo {
     pub(crate) name: Option<String>,
     pub(crate) error_count: i32,
@@ -1682,28 +1683,7 @@ pub(crate) struct CompatInfo {
     pub(crate) interp_index: HashMap<(u32, u32, u32), usize>,
     pub(crate) led_index: HashMap<u32, u32>,
 }
-impl Default for CompatInfo {
-    fn default() -> Self {
-        Self::new()
-    }
-}
 
-impl CompatInfo {
-    pub(crate) fn new() -> Self {
-        Self {
-            default_interp: SymInterpInfo::default(),
-            interps: Vec::new(),
-            interp_index: HashMap::new(),
-            led_index: HashMap::new(),
-            default_led: LedInfo::default(),
-            leds: [LedInfo::default(); 32],
-            num_leds: 0,
-            default_actions: ActionsInfo::default(),
-            mods: XkbModSet::default(),
-            ..Default::default()
-        }
-    }
-}
 #[derive(Copy, Clone, Default)]
 pub(crate) struct LedInfo {
     pub(crate) defined: u32,
@@ -1934,7 +1914,7 @@ fn handle_include_compat_map(
     info: &mut CompatInfo,
     includes: &mut [IncludeStmt],
 ) -> bool {
-    let mut included = CompatInfo::new();
+    let mut included = CompatInfo::default();
     if exceeds_include_max_depth(info.include_depth) {
         info.error_count += 10;
         return false;
@@ -1950,7 +1930,7 @@ fn handle_include_compat_map(
         Some(includes[0].stmt.clone())
     };
     for stmt in includes.iter_mut() {
-        let mut next_incl = CompatInfo::new();
+        let mut next_incl = CompatInfo::default();
 
         let file: Option<ArenaBox<XkbFile>> =
             process_include_file(&mut ki.keymap.ctx, stmt, FileType::Compat);
@@ -2562,7 +2542,7 @@ fn copy_compat_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) -> b
 }
 pub(crate) fn compile_compat_map(file: Option<&mut XkbFile>, ki: &mut XkbKeymapInfo<'_>) -> bool {
     let mods = ki.keymap.mods;
-    let mut info = CompatInfo::new();
+    let mut info = CompatInfo::default();
     init_compat_info(&mut info, 0_u32, &mods);
     if let Some(file) = file {
         handle_compat_map_file(ki, &mut info, file);
