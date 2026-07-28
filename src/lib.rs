@@ -119,6 +119,8 @@ pub struct WKB {
     pub(crate) current_layout_idx: usize,
     pub(crate) layout_names: Vec<String>,
     pub(crate) named_key_map: FlatNamedKeyMap,
+    #[cfg(feature = "xkb")]
+    pub(crate) level_exceptions_keymap: FlatKeymap,
 }
 
 // WKB is Send + Sync: all fields are owned, no Rc/RefCell.
@@ -278,6 +280,10 @@ impl WKB {
     /// Bypasses current modifier state.
     /// Does not consider caps lock or num lock overrides.
     pub fn level_key_char(&self, evdev_code: u32, layout: usize, level: usize) -> Option<char> {
+        #[cfg(feature = "xkb")]
+        if let Some(exception_char) = self.level_exceptions_keymap.get(layout, level, evdev_code) {
+            return Some(exception_char);
+        }
         self.state_keymap.get(layout, level, evdev_code)
     }
 

@@ -498,7 +498,7 @@ fn build_lock_keymap(
 }
 
 /// Build WKB instance from an XKB keymap, extracting all layouts.
-fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>) -> WKB {
+fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_keymap: bool) -> WKB {
     const EVDEV_OFFSET: u32 = 8;
 
     let (min_keycode, max_keycode) = (keymap.min_keycode(), keymap.max_keycode());
@@ -550,39 +550,61 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>) -> WKB {
         level2_mask | level3_mask | level5_mask,
     ];
 
-    // Compute per-layout LevelFive activation.
-    let per_layout_level5: Vec<bool> = (0..num_layouts)
-        .map(|l| layout_has_level5_activation(keymap, l, level5_mask))
-        .collect();
+    // ── Build flat keymaps for ALL layouts ──
 
-    // ── Build flat keymaps in a single pass ──
-    // Build state_keymap and named_key_map simultaneously.
-    // For standard types, the character at level[lvl] IS what the
-    // state machine resolves for modifier mask level_masks[lvl],
-    // so we build state_keymap directly from raw sym data.
-    let mut state_keymap = FlatKeymap::new(num_keys, num_layouts);
+    // Build level_exceptions_keymap and named_key_map in a single pass
+    // (both use key_get_syms_by_level, no state needed)
+    let mut level_exceptions_keymap = FlatKeymap::new(num_keys, num_layouts);
     let mut named_key_map = FlatNamedKeyMap::new(num_keys, num_layouts);
-    let stride = MAX_LEVELS * num_keys;
     for layout_idx in 0..num_layouts {
-        let layout_off = layout_idx * stride;
-        let lvl_off = layout_off;
         for lvl in 0..MAX_LEVELS {
             for kc in min_keycode..=max_keycode {
-                let evdev = (kc - EVDEV_OFFSET) as usize;
                 let syms = keymap.key_get_syms_by_level(kc, layout_idx as u32, lvl as u32);
                 if let Some(&sym) = syms.first() {
-                    let idx = lvl_off + lvl * num_keys + evdev;
+                    let evdev = kc - EVDEV_OFFSET;
                     if sym != 0 {
-                        named_key_map.data[idx] = keysym_to_named_key(sym);
+                        named_key_map.set(layout_idx, lvl, evdev, keysym_to_named_key(sym));
                     }
                     if let Some(ch) = keysym::keysym_to_char(sym) {
-                        state_keymap.data[idx] = Some(ch);
+                        level_exceptions_keymap.set(layout_idx, lvl, evdev, ch);
                     }
                 }
             }
         }
     }
 
+    // Compute per-layout LevelFive activation.  When true, xkbcommon's
+    // state machine transforms Shift+LVL3 → LevelFive+LVL3 (removing Shift).
+    let per_layout_level5: Vec<bool> = (0..num_layouts)
+        .map(|l| layout_has_level5_activation(keymap, l, level5_mask))
+        .collect();
+
+    // Build state_keymap using direct char resolution, applying the same
+    // state-level transformation that xkbcommon's interpret system performs
+    // (LevelFive activation on Shift+LVL3 for compatible layouts).
+    let mut state_keymap = FlatKeymap::new(num_keys, num_layouts);
+    let stride = MAX_LEVELS * num_keys;
+    for layout_idx in 0..num_layouts {
+        let layout_off = layout_idx * stride;
+        let layout_level5 = per_layout_level5[layout_idx];
+        for lvl in 0..MAX_LEVELS {
+            let raw_mods = level_masks[lvl];
+            let mods_mask = level5_transform_mods(
+                raw_mods,
+                layout_level5,
+                level2_mask,
+                level3_mask,
+                level5_mask,
+            );
+            let lvl_off = layout_off + lvl * num_keys;
+            for kc in min_keycode..=max_keycode {
+                let evdev = (kc - EVDEV_OFFSET) as usize;
+                if let Some(ch) = resolve_char(keymap, kc, layout_idx as u32, mods_mask, 0) {
+                    state_keymap.data[lvl_off + evdev] = Some(ch);
+                }
+            }
+        }
+    }
     let caps_kc = level_code(&modifiers, ModType::Caps).map(|(c, _)| c + EVDEV_OFFSET);
     let caps_lock_keymap = if let Some(lock_kc) = caps_kc {
         build_lock_keymap(
@@ -644,9 +666,13 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>) -> WKB {
                 .unwrap_or_else(|| format!("Layout {}", i))
         })
         .collect();
+    // Cache XKB string for Wayland client sharing
+    let _ = store_keymap; // no longer cached; generated on demand
 
     #[cfg(feature = "compose")]
     let composer = {
+        // Resolve compose locale from environment (LC_ALL > LC_CTYPE > LANG),
+        // falling back to the explicit locale hint (e.g. layout name).
         let env_locale = std::env::var("LC_ALL")
             .or_else(|_| std::env::var("LC_CTYPE"))
             .or_else(|_| std::env::var("LANG"))
@@ -672,6 +698,7 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>) -> WKB {
         state_keymap,
         num_lock_keys,
         caps_lock_keymap,
+        level_exceptions_keymap,
         named_key_map,
     }
 }
@@ -695,7 +722,7 @@ pub(crate) fn new_from_names(
         .keymap_from_names(&rmlvo)
         .ok_or(XkbError::KeymapCompilation)?;
 
-    let result = build_wkb_from_keymap(&keymap, None);
+    let result = build_wkb_from_keymap(&keymap, None, true);
     Ok(result)
 }
 
@@ -709,7 +736,7 @@ pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
         .keymap_from_string(string)
         .ok_or(XkbError::KeymapParsing)?;
 
-    Ok(build_wkb_from_keymap(&keymap, None))
+    Ok(build_wkb_from_keymap(&keymap, None, true))
 }
 
 /// Build Modifiers struct from XKB keymap
@@ -1170,9 +1197,11 @@ fn evdev_to_keyname(evdev: u32) -> String {
 }
 
 /// Determine how many levels a key actually uses across all groups.
+/// Checks `named_key_map`, `level_exceptions_keymap`, and the modifier map
+/// (modifier keys must be included even if they produce no named key or character).
 fn key_max_level(
     named_key_map: &FlatNamedKeyMap,
-    state_keymap: &FlatKeymap,
+    level_exceptions: &FlatKeymap,
     modifiers: &Modifiers,
     evdev: u32,
     num_layouts: usize,
@@ -1181,7 +1210,7 @@ fn key_max_level(
     for layout in 0..num_layouts {
         for level in (0..MAX_LEVELS).rev() {
             let has_named = named_key_map.get(layout, level, evdev) != NamedKey::Unnamed;
-            let has_char = state_keymap.get(layout, level, evdev).is_some();
+            let has_char = level_exceptions.get(layout, level, evdev).is_some();
             if has_named || has_char {
                 if level + 1 > max_level {
                     max_level = level + 1;
@@ -1328,7 +1357,7 @@ impl WKB {
     ///
     /// For named keys, returns the canonical keysym via `named_key_to_keysym`.
     /// For character keys (`NamedKey::Unnamed`), falls back to the character
-    /// keymap (`state_keymap`) and emits a
+    /// keymaps (`level_exceptions_keymap` then `state_keymap`) and emits a
     /// Unicode keysym so that the serialized string preserves character data.
     fn resolve_keysym(&self, layout: usize, level: usize, evdev: u32) -> u32 {
         let nk = self.named_key_map.get(layout, level, evdev);
@@ -1337,6 +1366,9 @@ impl WKB {
             return sym;
         }
         // Unnamed key — recover from character keymaps.
+        if let Some(ch) = self.level_exceptions_keymap.get(layout, level, evdev) {
+            return 0x0100_0000 | ch as u32;
+        }
         if let Some(ch) = self.state_keymap.get(layout, level, evdev) {
             return 0x0100_0000 | ch as u32;
         }
@@ -1361,7 +1393,7 @@ impl WKB {
             // Only emit keys that have at least one keysym
             if key_max_level(
                 &self.named_key_map,
-                &self.state_keymap,
+                &self.level_exceptions_keymap,
                 &self.modifiers,
                 evdev,
                 self.named_key_map.num_layouts,
@@ -1394,7 +1426,7 @@ impl WKB {
         for evdev in 0..max_evdev {
             let max_level = key_max_level(
                 &self.named_key_map,
-                &self.state_keymap,
+                &self.level_exceptions_keymap,
                 &self.modifiers,
                 evdev,
                 num_layouts,
