@@ -5,6 +5,8 @@ Toolchain: Rust 1.93.0, Criterion 0.8.2, tokei 14.0.0
 
 ## 1. What changed
 
+- Kept the `WKB` struct, its ownership model, runtime state, flat maps, and
+  public API unchanged. All new lookup data is temporary and XKB-side only.
 - Added a compact `CompiledType` table for all 256 combinations of XKB's eight
   real modifier bits. Each entry stores the selected level and consumed
   modifiers, so finalization no longer linearly searches type entries for every
@@ -101,5 +103,10 @@ because this package has only a library target and cargo-bloat requires a
 
 ## 9. Recommended next phase
 
-Proceed to Phase 2: separate immutable compiled keymap data from mutable keyboard
-state, preserving the final tables produced here and making them shareable.
+Proceed to the revised Phase 2: reduce the intermediate `XkbKeymap`
+compatibility/compiler representation by removing fields, indexes, wrappers,
+and unsupported X11-only structures that are unnecessary for compilation,
+conversion, serialization, or differential testing.
+
+`WKB` remains an unchanged runtime entity and must not retain compiler-only XKB
+structures.
