@@ -1,6 +1,7 @@
 //! XKB module — keymap construction from RMLVO names and XKB strings,
 //! plus XKB v1 text serialization.
 
+pub(crate) mod arena;
 pub(crate) mod keymap;
 pub(crate) mod keysym;
 #[cfg(feature = "testing")]
