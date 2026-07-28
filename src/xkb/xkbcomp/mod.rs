@@ -21,7 +21,7 @@ fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
     true
 }
 pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbRuleNames) -> bool {
-    let mut arena = crate::xkb::arena::Arena::new();
+    let mut arena = bumpalo::Bump::new();
     set_arena(&mut arena);
 
     let mut ok: bool;
@@ -51,7 +51,7 @@ pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbR
     ok
 }
 pub(crate) fn text_v1_keymap_new_from_string(keymap: &mut XkbKeymap, input: &[u8]) -> bool {
-    let mut arena = crate::xkb::arena::Arena::new();
+    let mut arena = bumpalo::Bump::new();
     set_arena(&mut arena);
 
     let Some(mut xkb_file) = xkb_parse_string(&mut keymap.ctx, input, "(input string)", "") else {

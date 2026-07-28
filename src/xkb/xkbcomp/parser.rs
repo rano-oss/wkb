@@ -1,5 +1,4 @@
-use super::super::arena::with_arena;
-pub(crate) use super::super::arena::ArenaBox;
+use super::super::arena::{alloc_arena, ArenaBox};
 use super::super::keymap::mod_mask_get_effective;
 use super::super::keymap::xkb_escape_map_name;
 use super::super::keymap::xkb_keymap_key_get_syms_by_level_ref;
@@ -1953,7 +1952,7 @@ pub(crate) fn parse<'a>(
 // ── AST builder functions (merged from ast_build.rs) ──
 
 pub(crate) fn expr_create(kind: ExprKind) -> ArenaBox<ExprKind> {
-    with_arena(|arena| arena.alloc(kind))
+    alloc_arena(kind)
 }
 
 pub(crate) fn expr_create_key_sym_list(sym: u32) -> ArenaBox<ExprKind> {
@@ -2028,32 +2027,26 @@ pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> Option
 }
 
 pub(crate) fn keycode_create(name: u32, value: i64) -> ArenaBox<KeycodeDef> {
-    with_arena(|arena| {
-        arena.alloc(KeycodeDef {
-            merge: MergeMode::Default,
-            name,
-            value,
-        })
+    alloc_arena(KeycodeDef {
+        merge: MergeMode::Default,
+        name,
+        value,
     })
 }
 
 pub(crate) fn key_alias_create(alias: u32, real: u32) -> ArenaBox<KeyAliasDef> {
-    with_arena(|arena| {
-        arena.alloc(KeyAliasDef {
-            merge: MergeMode::Default,
-            alias,
-            real,
-        })
+    alloc_arena(KeyAliasDef {
+        merge: MergeMode::Default,
+        alias,
+        real,
     })
 }
 
 pub(crate) fn vmod_create(name: u32, value: Option<ArenaBox<ExprKind>>) -> ArenaBox<VModDef> {
-    with_arena(|arena| {
-        arena.alloc(VModDef {
-            merge: MergeMode::Default,
-            name,
-            value,
-        })
+    alloc_arena(VModDef {
+        merge: MergeMode::Default,
+        name,
+        value,
     })
 }
 
@@ -2061,90 +2054,74 @@ pub(crate) fn var_create(
     name: Option<ArenaBox<ExprKind>>,
     value: Option<ArenaBox<ExprKind>>,
 ) -> ArenaBox<VarDef> {
-    with_arena(|arena| {
-        arena.alloc(VarDef {
-            merge: MergeMode::Default,
-            name,
-            value,
-        })
+    alloc_arena(VarDef {
+        merge: MergeMode::Default,
+        name,
+        value,
     })
 }
 
 pub(crate) fn bool_var_create(ident: u32, set: bool) -> ArenaBox<VarDef> {
-    with_arena(|arena| {
-        let name = arena.alloc(ExprKind::Ident(ident));
-        let value = arena.alloc(ExprKind::Boolean(set));
-        arena.alloc(VarDef {
-            merge: MergeMode::Default,
-            name: Some(name),
-            value: Some(value),
-        })
+    let name = alloc_arena(ExprKind::Ident(ident));
+    let value = alloc_arena(ExprKind::Boolean(set));
+    alloc_arena(VarDef {
+        merge: MergeMode::Default,
+        name: Some(name),
+        value: Some(value),
     })
 }
 
 pub(crate) fn interp_create(sym: u32, match_0: Option<ArenaBox<ExprKind>>) -> ArenaBox<InterpDef> {
-    with_arena(|arena| {
-        arena.alloc(InterpDef {
-            merge: MergeMode::Default,
-            sym,
-            match_0,
-            def: Vec::new(),
-        })
+    alloc_arena(InterpDef {
+        merge: MergeMode::Default,
+        sym,
+        match_0,
+        def: Vec::new(),
     })
 }
 
 pub(crate) fn key_type_create(name: u32, body: Vec<VarDef>) -> ArenaBox<KeyTypeDef> {
-    with_arena(|arena| {
-        arena.alloc(KeyTypeDef {
-            merge: MergeMode::Default,
-            name,
-            body,
-        })
+    alloc_arena(KeyTypeDef {
+        merge: MergeMode::Default,
+        name,
+        body,
     })
 }
 
 pub(crate) fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> ArenaBox<SymbolsDef> {
-    with_arena(|arena| {
-        arena.alloc(SymbolsDef {
-            merge: MergeMode::Default,
-            key_name,
-            symbols,
-        })
+    alloc_arena(SymbolsDef {
+        merge: MergeMode::Default,
+        key_name,
+        symbols,
     })
 }
 
 pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> ArenaBox<ModMapDef> {
-    with_arena(|arena| {
-        arena.alloc(ModMapDef {
-            merge: MergeMode::Default,
-            modifier,
-            keys,
-        })
+    alloc_arena(ModMapDef {
+        merge: MergeMode::Default,
+        modifier,
+        keys,
     })
 }
 
 pub(crate) fn led_map_create(name: u32, body: Vec<VarDef>) -> ArenaBox<LedMapDef> {
-    with_arena(|arena| {
-        arena.alloc(LedMapDef {
-            merge: MergeMode::Default,
-            name,
-            body,
-        })
+    alloc_arena(LedMapDef {
+        merge: MergeMode::Default,
+        name,
+        body,
     })
 }
 
 pub(crate) fn led_name_create(ndx: i64, name: Option<ArenaBox<ExprKind>>) -> ArenaBox<LedNameDef> {
-    with_arena(|arena| {
-        arena.alloc(LedNameDef {
-            merge: MergeMode::Default,
-            ndx,
-            name,
-        })
+    alloc_arena(LedNameDef {
+        merge: MergeMode::Default,
+        ndx,
+        name,
     })
 }
 
 pub(crate) fn unknown_statement_create() -> ArenaBox<UnknownStatement> {
-    with_arena(|arena| arena.alloc(UnknownStatement {}))
+    alloc_arena(UnknownStatement {})
 }
 
 pub(crate) fn include_create(
@@ -2206,13 +2183,11 @@ pub(crate) fn xkb_file_create(
 ) -> ArenaBox<XkbFile> {
     let mut name_str = name.unwrap_or_default();
     xkb_escape_map_name(&mut name_str);
-    with_arena(|arena| {
-        arena.alloc(XkbFile {
-            file_type: type_0,
-            name: name_str,
-            defs,
-            flags,
-        })
+    alloc_arena(XkbFile {
+        file_type: type_0,
+        name: name_str,
+        defs,
+        flags,
     })
 }
 
@@ -4504,7 +4479,7 @@ fn matcher_new_from_names<'a>(
     ctx: &'a mut XkbContext,
     rmlvo: &'a XkbRuleNames,
 ) -> ArenaBox<Matcher<'a>> {
-    let mut m = with_arena(|arena| arena.alloc(Matcher::new(ctx)));
+    let mut m = alloc_arena(Matcher::new(ctx));
     let rmlvo_ref = rmlvo;
     m.rmlvo.model.sval = Sval {
         data: rmlvo_ref.model.as_bytes(),
