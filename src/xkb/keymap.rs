@@ -45,10 +45,6 @@ pub(crate) fn xkb_keymap_new_from_string(
     Some(Rc::new(*keymap))
 }
 
-pub(crate) fn xkb_keymap_num_mods(keymap: &XkbKeymap) -> u32 {
-    keymap.mods.num_mods
-}
-
 // ── Compose table support (merged from compose.rs) ──
 
 use std::{
@@ -1393,48 +1389,6 @@ impl Keymap {
         self.inner.max_key_code
     }
 
-    /// Get number of levels for a key
-    pub(crate) fn num_levels_for_key(&self, keycode: u32, layout: u32) -> u32 {
-        self.inner
-            .get_key(keycode)
-            .and_then(|k| k.groups.get(layout as usize))
-            .map(|g| g.levels.len() as u32)
-            .unwrap_or(0)
-    }
-
-    /// Get keysyms for a key at a specific level (safe via get_key_level)
-    pub(crate) fn key_get_syms_by_level(&self, keycode: u32, layout: u32, level: u32) -> &[u32] {
-        if let Some(key) = self.inner.get_key(keycode) {
-            if let Some(leveli) = self.inner.get_key_level(key, layout, level) {
-                if !leveli.syms.is_empty() {
-                    return &leveli.syms[..];
-                }
-            }
-        }
-        &[]
-    }
-
-    /// Get number of modifiers in the keymap
-    pub(crate) fn num_mods(&self) -> u32 {
-        xkb_keymap_num_mods(&self.inner)
-    }
-
-    /// Get modifier name by index
-    pub(crate) fn mod_get_name(&self, idx: u32) -> Option<String> {
-        if idx >= self.inner.mods.num_mods {
-            return None;
-        }
-        let s = atom_text(
-            &self.inner.ctx.atom_table,
-            self.inner.mods.mods[idx as usize].name,
-        );
-        if s.is_empty() {
-            None
-        } else {
-            Some(s.to_string())
-        }
-    }
-
     /// Get modifier mask by name (safe via atom_lookup_ref)
     pub(crate) fn mod_get_mask(&self, name: &str) -> u32 {
         let atom = atom_lookup_ref(&self.inner.ctx.atom_table, name.as_bytes());
@@ -1446,14 +1400,6 @@ impl Keymap {
         match idx {
             Some(i) if i < self.inner.mods.num_mods => self.inner.mods.mods[i as usize].mapping,
             _ => 0_u32,
-        }
-    }
-
-    /// Check if a key can repeat
-    pub(crate) fn key_repeats(&self, keycode: u32) -> bool {
-        match self.inner.get_key(keycode) {
-            Some(key) => key.repeats,
-            None => false,
         }
     }
 

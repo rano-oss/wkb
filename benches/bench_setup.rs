@@ -14,34 +14,76 @@ fn cfg() -> Criterion {
         .sample_size(20)
 }
 
+fn without_compose<T>(f: impl FnOnce() -> T) -> T {
+    let saved = ["LC_ALL", "LC_CTYPE", "LANG"].map(|name| (name, std::env::var(name).ok()));
+    for (name, _) in &saved {
+        unsafe { std::env::remove_var(name) };
+    }
+    let result = f();
+    for (name, value) in saved {
+        unsafe {
+            match value {
+                Some(value) => std::env::set_var(name, value),
+                None => std::env::remove_var(name),
+            }
+        }
+    }
+    result
+}
+
 fn bench_setup_no_compose(c: &mut Criterion) {
     let mut group = c.benchmark_group("setup/no_compose");
     let locale = "us";
+    let multi_layout = "us,de,fr,ru";
 
     group.bench_function("wkb", |b| {
-        // Unset all locale env vars so compose loading is skipped entirely
-        let saved_lc_all = std::env::var("LC_ALL").ok();
-        let saved_lc_ctype = std::env::var("LC_CTYPE").ok();
-        let saved_lang = std::env::var("LANG").ok();
-        unsafe {
-            std::env::remove_var("LC_ALL");
-            std::env::remove_var("LC_CTYPE");
-            std::env::remove_var("LANG");
-        }
-        b.iter(|| {
-            let wkb: wkb::WKB =
-                wkb::WKB::new_from_names("", "", black_box(locale), "", None).unwrap();
-            black_box(wkb);
+        without_compose(|| {
+            b.iter(|| {
+                let wkb: wkb::WKB =
+                    wkb::WKB::new_from_names("", "", black_box(locale), "", None).unwrap();
+                black_box(wkb);
+            });
         });
-        let restore = |var: &str, saved: Option<String>| unsafe {
-            match saved {
-                Some(v) => std::env::set_var(var, v),
-                None => std::env::remove_var(var),
-            }
-        };
-        restore("LC_ALL", saved_lc_all);
-        restore("LC_CTYPE", saved_lc_ctype);
-        restore("LANG", saved_lang);
+    });
+
+    let keymap = without_compose(|| {
+        wkb::WKB::new_from_names("", "", locale, "", None)
+            .unwrap()
+            .as_xkb_string()
+            .unwrap()
+    });
+    group.bench_function("wkb_xkb_string", |b| {
+        without_compose(|| {
+            b.iter(|| {
+                let wkb = wkb::WKB::new_from_string(black_box(&keymap)).unwrap();
+                black_box(wkb);
+            });
+        });
+    });
+
+    group.bench_function("wkb_multilayout", |b| {
+        without_compose(|| {
+            b.iter(|| {
+                let wkb =
+                    wkb::WKB::new_from_names("", "", black_box(multi_layout), "", None).unwrap();
+                black_box(wkb);
+            });
+        });
+    });
+
+    let multi_keymap = without_compose(|| {
+        wkb::WKB::new_from_names("", "", multi_layout, "", None)
+            .unwrap()
+            .as_xkb_string()
+            .unwrap()
+    });
+    group.bench_function("wkb_multilayout_xkb_string", |b| {
+        without_compose(|| {
+            b.iter(|| {
+                let wkb = wkb::WKB::new_from_string(black_box(&multi_keymap)).unwrap();
+                black_box(wkb);
+            });
+        });
     });
 
     group.bench_function("xkbcommon", |b| {

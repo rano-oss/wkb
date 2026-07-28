@@ -69,71 +69,61 @@ pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u3
     other_mod
 }
 
-/// Resolve the character for a key given a modifier mask, bypassing the state machine.
+const REAL_MOD_STATES: usize = parser::MOD_REAL_MASK_ALL as usize + 1;
+
+#[derive(Clone, Copy, Default)]
+struct CompiledTypeState {
+    level: u32,
+    consumed_mods: u32,
+}
+
+struct CompiledType {
+    states: [CompiledTypeState; REAL_MOD_STATES],
+    num_lock_affected: bool,
+}
+
+impl CompiledType {
+    fn new(type_: &parser::XkbKeyType) -> Self {
+        let states = std::array::from_fn(|state| {
+            let level_mods = state as u32 & type_.mods.mask;
+            let entry = type_
+                .entries
+                .iter()
+                .find(|entry| parser::entry_is_active(entry) && entry.mods.mask == level_mods);
+            CompiledTypeState {
+                level: entry.map_or(0, |entry| entry.level),
+                consumed_mods: type_.mods.mask & !entry.map_or(0, |entry| entry.preserve.mask),
+            }
+        });
+        Self {
+            states,
+            num_lock_affected: type_
+                .entries
+                .iter()
+                .any(|entry| entry.mods.mask & (1 << 4) != 0),
+        }
+    }
+
+    #[inline]
+    fn state(&self, mods: u32) -> CompiledTypeState {
+        self.states[(mods & parser::MOD_REAL_MASK_ALL) as usize]
+    }
+}
+
 fn resolve_char(
-    keymap: &keymap::Keymap,
-    kc: u32,
-    layout: u32,
-    mods_mask: u32,
+    group: &parser::XkbGroup,
+    type_: &CompiledType,
+    mods: u32,
     caps_mask: u32,
 ) -> Option<char> {
-    let key = keymap.inner.get_key(kc)?;
-    let group = key.groups.get(layout as usize)?;
-    let type_ = keymap.inner.types.get(group.type_idx as usize)?;
-
-    let level_mods = mods_mask & type_.mods.mask;
-    let level = type_
-        .entries
-        .iter()
-        .find(|e| parser::entry_is_active(e) && e.mods.mask == level_mods)
-        .map(|e| e.level)
-        .unwrap_or(0);
-
-    let level_data = keymap.inner.get_key_level(key, layout, level)?;
-    let raw_sym = *level_data.syms.first()?;
-
-    let sym = if mods_mask & caps_mask != 0
-        && !caps_is_consumed(keymap, kc, layout, mods_mask, caps_mask)
-    {
+    let state = type_.state(mods);
+    let raw_sym = *group.levels.get(state.level as usize)?.syms.first()?;
+    let sym = if mods & caps_mask != 0 && state.consumed_mods & caps_mask == 0 {
         keysym::xkb_keysym_to_upper(raw_sym)
     } else {
         raw_sym
     };
     keysym::keysym_to_char(sym)
-}
-
-/// Check if the Caps modifier is consumed by a key's type at the given modifier state.
-fn caps_is_consumed(
-    keymap: &keymap::Keymap,
-    kc: u32,
-    layout: u32,
-    mods_mask: u32,
-    caps_mask: u32,
-) -> bool {
-    if caps_mask == 0 {
-        return true;
-    }
-    let inner = &keymap.inner;
-    let key = match inner.get_key(kc) {
-        Some(k) => k,
-        None => return true,
-    };
-    let group = match key.groups.get(layout as usize) {
-        Some(g) => g,
-        None => return true,
-    };
-    let type_ = match inner.types.get(group.type_idx as usize) {
-        Some(t) => t,
-        None => return true,
-    };
-    let level_mods = mods_mask & type_.mods.mask;
-    let entry = type_
-        .entries
-        .iter()
-        .find(|e| parser::entry_is_active(e) && e.mods.mask == level_mods);
-    let preserve = entry.map(|e| e.preserve.mask).unwrap_or(0);
-    let consumed = type_.mods.mask & !preserve;
-    (consumed & caps_mask) != 0
 }
 
 /// Load compose entries from a file and build a ListComposer.
@@ -297,80 +287,49 @@ pub(crate) fn keysym_to_named_key(keysym: u32) -> NamedKey {
 /// Check if a key could produce a different keysym when Caps modifier is active.
 /// Compares KEYSYMS across levels: if any level differs from level 0, the
 /// effective level under Caps will produce a different result.
-fn key_affected_by_caps(keymap: &keymap::Keymap, kc: u32, layout: usize) -> bool {
-    let n = keymap.num_levels_for_key(kc, layout as u32) as usize;
-    if n == 0 {
-        return false;
-    }
-    let l0 = keymap.key_get_syms_by_level(kc, layout as u32, 0);
-    let Some(&l0_sym) = l0.first() else {
+fn key_affected_by_caps(group: &parser::XkbGroup, num_levels: usize) -> bool {
+    let Some(&l0_sym) = group.levels.first().and_then(|level| level.syms.first()) else {
         return false;
     };
-    for i in 1..n {
-        let syms = keymap.key_get_syms_by_level(kc, layout as u32, i as u32);
-        match syms.first() {
-            Some(&s) if s != l0_sym => return true,
-            None => return true,
-            _ => {}
-        }
+    if group.levels.len() < num_levels
+        || group
+            .levels
+            .iter()
+            .take(num_levels)
+            .skip(1)
+            .any(|level| level.syms.first() != Some(&l0_sym))
+    {
+        return true;
     }
     // All levels same sym → check caps transformation (upper/lower case)
     keysym::xkb_keysym_to_upper(l0_sym) != l0_sym
 }
 
-/// Check if Num modifier (Mod2) could affect a key's level resolution.
-/// Uses entry-level masks (not type-level aggregate) — matches xkbcommon's
-/// actual level-matching logic.
-fn key_affected_by_num(keymap: &keymap::Keymap, kc: u32, layout: usize) -> bool {
-    const MOD2_MASK: u32 = 1 << 4;
-    let key = match keymap.inner.get_key(kc) {
-        Some(k) => k,
-        None => return false,
+fn lock_activation(
+    keymap: &keymap::Keymap,
+    types: &[CompiledType],
+    lock_kc: Option<u32>,
+    lock_keysym: u32,
+    level_masks: &[u32; MAX_LEVELS],
+) -> [bool; MAX_LEVELS] {
+    let Some(group) = lock_kc
+        .and_then(|kc| keymap.inner.get_key(kc))
+        .and_then(|key| key.groups.first())
+    else {
+        return [false; MAX_LEVELS];
     };
-    let group = match key.groups.get(layout) {
-        Some(g) => g,
-        None => return false,
+    let Some(type_) = types.get(group.type_idx as usize) else {
+        return [false; MAX_LEVELS];
     };
-    let Some(type_) = keymap.inner.types.get(group.type_idx as usize) else {
-        return false;
-    };
-    type_.entries.iter().any(|e| (e.mods.mask & MOD2_MASK) != 0)
+    std::array::from_fn(|level| {
+        group
+            .levels
+            .get(type_.state(level_masks[level]).level as usize)
+            .and_then(|data| data.syms.first())
+            == Some(&lock_keysym)
+    })
 }
 
-/// Check if the lock key produces the expected lock keysym at a given modifier state.
-/// The lock key may not always produce its lock keysym (e.g. Eisu_Toggle at level 0
-/// vs Caps_Lock at level 1 on jp locale).
-fn lock_activates(keymap: &keymap::Keymap, lock_kc: u32, mods_mask: u32, lock_keysym: u32) -> bool {
-    let key = match keymap.inner.get_key(lock_kc) {
-        Some(k) => k,
-        None => return false,
-    };
-    let group = match key.groups.first() {
-        Some(g) => g,
-        None => return false,
-    };
-    let type_ = match keymap.inner.types.get(group.type_idx as usize) {
-        Some(t) => t,
-        None => return false,
-    };
-    let level_mods = mods_mask & type_.mods.mask;
-    let level = type_
-        .entries
-        .iter()
-        .find(|e| parser::entry_is_active(e) && e.mods.mask == level_mods)
-        .map(|e| e.level)
-        .unwrap_or(0);
-    let level_data = match keymap.inner.get_key_level(key, 0, level) {
-        Some(l) => l,
-        None => return false,
-    };
-    level_data.syms.first() == Some(&lock_keysym)
-}
-
-/// Build a lock keymap using direct char resolution: compute the character for
-/// each (layout, level) cell, adjusting modifier state based on whether the
-/// lock key would actually activate at each level.  Sets `None` when the result
-/// matches `state_keymap` (inline dedup).
 /// Whether the layout activates LevelFive when both LevelThree and Shift
 /// are held (via xkbcommon's compat interpret system).  True only when a
 /// MODIFIER key (Shift or Level3) produces ISO_Level5_Shift (0xfe11) or
@@ -388,26 +347,23 @@ fn layout_has_level5_activation(
         return false;
     }
     let is_modifier_key = |sym0: u32| -> bool { matches!(sym0, 0xFFE1 | 0xFFE2 | 0xFE03) };
-    for kc in keymap.min_keycode()..=keymap.max_keycode() {
-        if let Some(k) = keymap.inner.get_key(kc) {
-            if k.groups.get(layout_idx).is_some() {
-                let num_levels = keymap.inner.key_num_levels(k, layout_idx as u32);
-                let level0_sym = keymap
-                    .inner
-                    .get_key_level(k, layout_idx as u32, 0)
-                    .and_then(|ld| ld.syms.first().copied())
-                    .unwrap_or(0);
-                if !is_modifier_key(level0_sym) {
-                    continue;
-                }
-                for level in 1..num_levels {
-                    if let Some(ld) = keymap.inner.get_key_level(k, layout_idx as u32, level) {
-                        if ld.syms.iter().any(|&sym| matches!(sym, 0xfe11 | 0xfe12)) {
-                            return true;
-                        }
-                    }
-                }
-            }
+    for key in &keymap.inner.keys {
+        let Some(group) = key.groups.get(layout_idx) else {
+            continue;
+        };
+        let level0_sym = group
+            .levels
+            .first()
+            .and_then(|level| level.syms.first().copied())
+            .unwrap_or(0);
+        if is_modifier_key(level0_sym)
+            && group
+                .levels
+                .iter()
+                .skip(1)
+                .any(|level| level.syms.iter().any(|&sym| matches!(sym, 0xfe11 | 0xfe12)))
+        {
+            return true;
         }
     }
     false
@@ -432,64 +388,6 @@ fn level5_transform_mods(
     }
 }
 
-fn build_lock_keymap(
-    keymap: &keymap::Keymap,
-    state_keymap: &FlatKeymap,
-    lock_kc: u32,
-    lock_mask: u32,
-    lock_keysym: u32,
-    affected: &[bool],
-    num_keys: usize,
-    num_layouts: usize,
-    min_keycode: u32,
-    max_keycode: u32,
-    level_masks: &[u32; 8],
-    caps_mask: u32,
-    per_layout_level5: &[bool],
-    level2_mask: u32,
-    level3_mask: u32,
-    level5_mask: u32,
-) -> FlatKeymap {
-    const EVDEV_OFFSET: u32 = 8;
-    let mut fk = FlatKeymap::new(num_keys, num_layouts);
-    let stride = MAX_LEVELS * num_keys;
-    for layout_idx in 0..num_layouts {
-        let layout_off = layout_idx * stride;
-        let layout_level5 = per_layout_level5[layout_idx];
-        for lvl in 0..MAX_LEVELS {
-            let lock_active = lock_activates(keymap, lock_kc, level_masks[lvl], lock_keysym);
-            let raw_mods = if lock_active {
-                lock_mask | level_masks[lvl]
-            } else {
-                level_masks[lvl]
-            };
-            let mods_mask = level5_transform_mods(
-                raw_mods,
-                layout_level5,
-                level2_mask,
-                level3_mask,
-                level5_mask,
-            );
-            let lvl_off = layout_off + lvl * num_keys;
-            for kc in min_keycode..=max_keycode {
-                let evdev = (kc - EVDEV_OFFSET) as usize;
-                if !affected[(kc - min_keycode) as usize] {
-                    continue;
-                }
-                if let Some(ch) = resolve_char(keymap, kc, layout_idx as u32, mods_mask, caps_mask)
-                {
-                    if state_keymap.data[lvl_off + evdev] == Some(ch) {
-                        fk.data[lvl_off + evdev] = None;
-                    } else {
-                        fk.data[lvl_off + evdev] = Some(ch);
-                    }
-                }
-            }
-        }
-    }
-    fk
-}
-
 /// Build WKB instance from an XKB keymap, extracting all layouts.
 fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_keymap: bool) -> WKB {
     const EVDEV_OFFSET: u32 = 8;
@@ -504,7 +402,8 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
     let num_layouts = (keymap.num_layouts() as usize).max(1);
 
     // Modifiers are global to the keymap (not per-layout), use layout 0.
-    let modifiers = build_modifiers_from_keymap(keymap, min_keycode, max_keycode);
+    let modifiers = build_modifiers_from_keymap(keymap);
+    let compiled_types: Vec<_> = keymap.inner.types.iter().map(CompiledType::new).collect();
 
     // Precompute modifier masks for direct level resolution.
     // The name-to-modifier-type mapping mirrors build_modifiers_from_keymap.
@@ -548,102 +447,110 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
         .map(|l| layout_has_level5_activation(keymap, l, level5_mask))
         .collect();
 
-    // Single pass: build all flat keymaps for ALL layouts together.
-    // level_exceptions_keymap + named_key_map (raw syms per level) and
-    // state_keymap (resolved via mods_mask) share the same iteration space.
+    let caps_kc = level_code(&modifiers, ModType::Caps).map(|(code, _)| code + EVDEV_OFFSET);
+    let num_kc = level_code(&modifiers, ModType::Num).map(|(code, _)| code + EVDEV_OFFSET);
+    let caps_active = lock_activation(keymap, &compiled_types, caps_kc, 0xffe5, &level_masks);
+    let num_active = lock_activation(keymap, &compiled_types, num_kc, 0xff7f, &level_masks);
+    let layout_states: Vec<([u32; MAX_LEVELS], [u32; MAX_LEVELS], [u32; MAX_LEVELS])> =
+        per_layout_level5
+            .iter()
+            .map(|&layout_level5| {
+                let transform = |mods| {
+                    level5_transform_mods(
+                        mods,
+                        layout_level5,
+                        level2_mask,
+                        level3_mask,
+                        level5_mask,
+                    )
+                };
+                (
+                    std::array::from_fn(|level| transform(level_masks[level])),
+                    std::array::from_fn(|level| {
+                        transform(level_masks[level] | (u32::from(caps_active[level]) * caps_mask))
+                    }),
+                    std::array::from_fn(|level| {
+                        transform(level_masks[level] | (u32::from(num_active[level]) * num_mask))
+                    }),
+                )
+            })
+            .collect();
+
     let mut level_exceptions_keymap = FlatKeymap::new(num_keys, num_layouts);
     let mut named_key_map = FlatNamedKeyMap::new(num_keys, num_layouts);
     let mut state_keymap = FlatKeymap::new(num_keys, num_layouts);
-    let stride = MAX_LEVELS * num_keys;
-    for layout_idx in 0..num_layouts {
-        let layout_level5 = per_layout_level5[layout_idx];
-        let layout_off = layout_idx * stride;
-        for lvl in 0..MAX_LEVELS {
-            let raw_mods = level_masks[lvl];
-            let mods_mask = level5_transform_mods(
-                raw_mods,
-                layout_level5,
-                level2_mask,
-                level3_mask,
-                level5_mask,
-            );
-            let lvl_off = layout_off + lvl * num_keys;
-            for kc in min_keycode..=max_keycode {
-                let evdev = kc - EVDEV_OFFSET;
-                let syms = keymap.key_get_syms_by_level(kc, layout_idx as u32, lvl as u32);
-                if let Some(&sym) = syms.first() {
+    let mut caps_lock_keymap = FlatKeymap::new(num_keys, num_layouts);
+    let mut num_lock_keys = FlatKeymap::new(num_keys, num_layouts);
+    let mut repeat_keys = KeyBitSet::new();
+
+    for key in &keymap.inner.keys {
+        let kc = key.keycode;
+        if kc < min_keycode || kc > max_keycode {
+            continue;
+        }
+        let evdev = (kc - EVDEV_OFFSET) as usize;
+        if key.repeats {
+            repeat_keys.insert(evdev as u32);
+        }
+        let (caps_affected, num_affected) = key
+            .groups
+            .first()
+            .and_then(|group| {
+                let type_ = keymap.inner.types.get(group.type_idx as usize)?;
+                let compiled = compiled_types.get(group.type_idx as usize)?;
+                Some((
+                    key_affected_by_caps(group, type_.num_levels as usize),
+                    compiled.num_lock_affected,
+                ))
+            })
+            .unwrap_or_default();
+
+        for (layout_idx, (base_states, caps_states, num_states)) in layout_states.iter().enumerate()
+        {
+            let raw_group = keymap::xkb_wrap_group_into_range(
+                layout_idx as i32,
+                key.num_groups,
+                key.out_of_range_group_policy,
+                key.out_of_range_group_number,
+            )
+            .and_then(|group| key.groups.get(group as usize));
+            let state_group = key.groups.get(layout_idx);
+            let state_type =
+                state_group.and_then(|group| compiled_types.get(group.type_idx as usize));
+
+            for level in 0..MAX_LEVELS {
+                let idx = (layout_idx * MAX_LEVELS + level) * num_keys + evdev;
+                if let Some(&sym) = raw_group
+                    .and_then(|group| group.levels.get(level))
+                    .and_then(|data| data.syms.first())
+                {
                     if sym != 0 {
-                        named_key_map.set(layout_idx, lvl, evdev, keysym_to_named_key(sym));
+                        named_key_map.data[idx] = keysym_to_named_key(sym);
                     }
                     if let Some(ch) = keysym::keysym_to_char(sym) {
-                        level_exceptions_keymap.set(layout_idx, lvl, evdev, ch);
+                        level_exceptions_keymap.data[idx] = Some(ch);
                     }
                 }
-                if let Some(ch) = resolve_char(keymap, kc, layout_idx as u32, mods_mask, 0) {
-                    state_keymap.data[lvl_off + evdev as usize] = Some(ch);
+                let (Some(group), Some(type_)) = (state_group, state_type) else {
+                    continue;
+                };
+                let base = resolve_char(group, type_, base_states[level], 0);
+                state_keymap.data[idx] = base;
+                if caps_affected {
+                    if let Some(ch) = resolve_char(group, type_, caps_states[level], caps_mask) {
+                        if Some(ch) != base {
+                            caps_lock_keymap.data[idx] = Some(ch);
+                        }
+                    }
+                }
+                if num_affected {
+                    if let Some(ch) = resolve_char(group, type_, num_states[level], 0) {
+                        if Some(ch) != base {
+                            num_lock_keys.data[idx] = Some(ch);
+                        }
+                    }
                 }
             }
-        }
-    }
-
-    // Pre-compute which keys are affected by Caps/Num lock for fast lookup
-    let caps_affected: Vec<bool> = (min_keycode..=max_keycode)
-        .map(|kc| key_affected_by_caps(keymap, kc, 0))
-        .collect();
-    let num_affected: Vec<bool> = (min_keycode..=max_keycode)
-        .map(|kc| key_affected_by_num(keymap, kc, 0))
-        .collect();
-
-    let caps_kc = level_code(&modifiers, ModType::Caps).map(|(c, _)| c + EVDEV_OFFSET);
-    let caps_lock_keymap = if let Some(lock_kc) = caps_kc {
-        build_lock_keymap(
-            keymap,
-            &state_keymap,
-            lock_kc,
-            caps_mask,
-            0xffe5,
-            &caps_affected,
-            num_keys,
-            num_layouts,
-            min_keycode,
-            max_keycode,
-            &level_masks,
-            caps_mask,
-            &per_layout_level5,
-            level2_mask,
-            level3_mask,
-            level5_mask,
-        )
-    } else {
-        FlatKeymap::new(num_keys, num_layouts)
-    };
-    let num_kc = level_code(&modifiers, ModType::Num).map(|(c, _)| c + EVDEV_OFFSET);
-    let num_lock_keys = if let Some(lock_kc) = num_kc {
-        build_lock_keymap(
-            keymap,
-            &state_keymap,
-            lock_kc,
-            num_mask,
-            0xff7f,
-            &num_affected,
-            num_keys,
-            num_layouts,
-            min_keycode,
-            max_keycode,
-            &level_masks,
-            0,
-            &per_layout_level5,
-            level2_mask,
-            level3_mask,
-            level5_mask,
-        )
-    } else {
-        FlatKeymap::new(num_keys, num_layouts)
-    };
-    let mut repeat_keys = KeyBitSet::new();
-    for kc in min_keycode..=max_keycode {
-        if keymap.key_repeats(kc) {
-            repeat_keys.insert(kc - EVDEV_OFFSET);
         }
     }
 
@@ -744,13 +651,24 @@ fn modtype_from_name(name: &str) -> Option<ModType> {
 }
 
 /// Build Modifiers struct from XKB keymap
-fn build_modifiers_from_keymap(
-    keymap: &keymap::Keymap,
-    min_keycode: u32,
-    max_keycode: u32,
-) -> Modifiers {
+fn build_modifiers_from_keymap(keymap: &keymap::Keymap) -> Modifiers {
     let mut modifiers = Modifiers::new();
-    let num_mods = keymap.num_mods();
+    let mod_defs: Vec<_> = keymap
+        .inner
+        .mods
+        .mods
+        .iter()
+        .take(keymap.inner.mods.num_mods as usize)
+        .map(|modifier| {
+            (
+                modifier.mapping,
+                modtype_from_name(parser::atom_text(
+                    &keymap.inner.ctx.atom_table,
+                    modifier.name,
+                )),
+            )
+        })
+        .collect();
 
     let keysym_to_modtype = |ks: u32| -> Option<ModType> {
         match ks {
@@ -780,11 +698,11 @@ fn build_modifiers_from_keymap(
     };
 
     const EVDEV_OFFSET: u32 = 8;
-    for keycode in min_keycode.max(EVDEV_OFFSET)..=max_keycode {
-        let evdev_code = keycode - EVDEV_OFFSET;
-        let Some(key) = keymap.inner.get_key(keycode) else {
+    for key in &keymap.inner.keys {
+        if key.keycode < EVDEV_OFFSET {
             continue;
-        };
+        }
+        let evdev_code = key.keycode - EVDEV_OFFSET;
         let Some(g0) = key.groups.first() else {
             continue;
         };
@@ -803,20 +721,15 @@ fn build_modifiers_from_keymap(
             continue;
         }
 
-        for mod_idx in 0..num_mods {
-            let mod_name = match keymap.mod_get_name(mod_idx) {
-                Some(n) => n,
-                None => continue,
-            };
-            let mod_mask = keymap.mod_get_mask(&mod_name);
+        for &(mod_mask, named_type) in &mod_defs {
             if (key.modmap & mod_mask) == 0 && (key.vmodmap & mod_mask) == 0 {
                 continue;
             }
 
             let mod_type = if syms.len() == 1 {
-                keysym_to_modtype(syms[0]).or_else(|| modtype_from_name(&mod_name))
+                keysym_to_modtype(syms[0]).or(named_type)
             } else {
-                modtype_from_name(&mod_name)
+                named_type
             };
             let Some(mod_type) = mod_type else { continue };
 

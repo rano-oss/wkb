@@ -45,21 +45,6 @@ impl<T: FlatMapValue> FlatMap<T> {
             T::empty()
         }
     }
-
-    #[inline]
-    pub(crate) fn set(
-        &mut self,
-        layout: usize,
-        level: usize,
-        evdev_code: u32,
-        value: impl Into<T>,
-    ) {
-        let k = evdev_code as usize;
-        if k < self.num_keys && layout < self.num_layouts {
-            let idx = (layout * MAX_LEVELS + level) * self.num_keys + k;
-            self.data[idx] = value.into();
-        }
-    }
 }
 
 /// Flat keymap: `num_layouts * MAX_LEVELS` planes of `num_keys` slots.
