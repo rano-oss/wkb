@@ -1,5 +1,5 @@
 // Auto-generated keysym data — naming follows X11 C headers
-use super::shared_types::*;
+use super::parser::*;
 
 #[derive(Copy, Clone)]
 pub(crate) struct NameKeysym {
@@ -20809,7 +20809,7 @@ pub(crate) const XKB_KEYSYM_UNICODE_MAX: u32 = 0x110ffff;
 pub(crate) const XKB_KEYSYM_UNICODE_SURROGATE_MIN: u32 = 0x100d800;
 pub(crate) const XKB_KEYSYM_UNICODE_SURROGATE_MAX: u32 = 0x100dfff;
 
-use super::shared_types::istrcmp;
+use super::parser::istrcmp;
 fn find_keysym_index(ks: u32) -> isize {
     if ks > XKB_KEYSYM_MAX_EXPLICIT as u32 {
         return -1_i32 as isize;
@@ -20843,7 +20843,7 @@ pub(crate) fn keysym_get_name(ks: u32) -> Option<&'static str> {
 
 fn parse_keysym_hex(s: &[u8], out: &mut u32) -> bool {
     let slice = if s.len() > 8 { &s[..8] } else { s };
-    let (val, count) = super::shared_types::parse_hex_u32(slice);
+    let (val, count) = super::parser::parse_hex_u32(slice);
     *out = val;
     count > 0 && s.get(count as usize).copied() == Some(0)
 }

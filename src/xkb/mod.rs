@@ -1,13 +1,11 @@
 //! XKB module — keymap construction from RMLVO names and XKB strings,
 //! plus XKB v1 text serialization.
 
-pub(crate) mod arena;
 pub(crate) mod keymap;
 pub(crate) mod keysym;
 pub(crate) mod parser;
 #[cfg(feature = "testing")]
 pub(crate) mod rxkb;
-pub(crate) mod shared_types;
 pub(crate) mod symbols;
 
 use crate::composer::Token;
@@ -87,7 +85,7 @@ fn resolve_char(
     let level = type_
         .entries
         .iter()
-        .find(|e| shared_types::entry_is_active(e) && e.mods.mask == level_mods)
+        .find(|e| parser::entry_is_active(e) && e.mods.mask == level_mods)
         .map(|e| e.level)
         .unwrap_or(0);
 
@@ -132,7 +130,7 @@ fn caps_is_consumed(
     let entry = type_
         .entries
         .iter()
-        .find(|e| shared_types::entry_is_active(e) && e.mods.mask == level_mods);
+        .find(|e| parser::entry_is_active(e) && e.mods.mask == level_mods);
     let preserve = entry.map(|e| e.preserve.mask).unwrap_or(0);
     let consumed = type_.mods.mask & !preserve;
     (consumed & caps_mask) != 0
@@ -359,7 +357,7 @@ fn lock_activates(keymap: &keymap::Keymap, lock_kc: u32, mods_mask: u32, lock_ke
     let level = type_
         .entries
         .iter()
-        .find(|e| shared_types::entry_is_active(e) && e.mods.mask == level_mods)
+        .find(|e| parser::entry_is_active(e) && e.mods.mask == level_mods)
         .map(|e| e.level)
         .unwrap_or(0);
     let level_data = match keymap.inner.get_key_level(key, 0, level) {
@@ -704,7 +702,7 @@ pub(crate) fn new_from_names(
     options: Option<&str>,
 ) -> Result<WKB, XkbError> {
     use keymap::Context;
-    use shared_types::XkbRuleNames;
+    use parser::XkbRuleNames;
 
     let ctx = Context::new().ok_or(XkbError::ContextCreation)?;
 
@@ -1505,10 +1503,14 @@ impl WKB {
 
 /// Write standard key types.
 fn write_types(out: &mut String) {
-    out.push_str(include_str!("data/types.xkb"));
+    out.push_str(TYPES_XKB);
 }
 
 /// Write a minimal but valid xkb_compat section.
 fn write_compat(out: &mut String) {
-    out.push_str(include_str!("data/compat.xkb"));
+    out.push_str(COMPAT_XKB);
 }
+
+const TYPES_XKB: &str = "xkb_types \"wkb\" {\n\tvirtual_modifiers NumLock,Alt,LevelThree,LevelFive;\n\n\ttype \"ONE_LEVEL\" {\n\t\tmodifiers= none;\n\t\tlevel_name[Level1]= \"Any\";\n\t};\n\ttype \"TWO_LEVEL\" {\n\t\tmodifiers= Shift;\n\t\tmap[Shift]= Level2;\n\t\tlevel_name[Level1]= \"Base\";\n\t\tlevel_name[Level2]= \"Shift\";\n\t};\n\ttype \"ALPHABETIC\" {\n\t\tmodifiers= Shift+Lock;\n\t\tmap[Shift]= Level2;\n\t\tmap[Lock]= Level2;\n\t\tlevel_name[Level1]= \"Base\";\n\t\tlevel_name[Level2]= \"Shift\";\n\t};\n\ttype \"FOUR_LEVEL\" {\n\t\tmodifiers= Shift+LevelThree;\n\t\tmap[Shift]= Level2;\n\t\tmap[LevelThree]= Level3;\n\t\tmap[Shift+LevelThree]= Level4;\n\t\tlevel_name[Level1]= \"Base\";\n\t\tlevel_name[Level2]= \"Shift\";\n\t\tlevel_name[Level3]= \"Alt Base\";\n\t\tlevel_name[Level4]= \"Shift Alt\";\n\t};\n\ttype \"FOUR_LEVEL_SEMIALPHABETIC\" {\n\t\tmodifiers= Shift+Lock+LevelThree;\n\t\tmap[Shift]= Level2;\n\t\tmap[Lock]= Level2;\n\t\tmap[LevelThree]= Level3;\n\t\tmap[Shift+LevelThree]= Level4;\n\t\tmap[Lock+LevelThree]= Level3;\n\t\tmap[Shift+Lock+LevelThree]= Level4;\n\t\tpreserve[Lock+LevelThree]= Lock;\n\t\tpreserve[Shift+Lock+LevelThree]= Lock;\n\t\tlevel_name[Level1]= \"Base\";\n\t\tlevel_name[Level2]= \"Shift\";\n\t\tlevel_name[Level3]= \"Alt Base\";\n\t\tlevel_name[Level4]= \"Shift Alt\";\n\t};\n\ttype \"EIGHT_LEVEL\" {\n\t\tmodifiers= Shift+LevelThree+LevelFive;\n\t\tmap[Shift]= Level2;\n\t\tmap[LevelThree]= Level3;\n\t\tmap[Shift+LevelThree]= Level4;\n\t\tmap[LevelFive]= Level5;\n\t\tmap[Shift+LevelFive]= Level6;\n\t\tmap[LevelThree+LevelFive]= Level7;\n\t\tmap[Shift+LevelThree+LevelFive]= Level8;\n\t\tlevel_name[Level1]= \"Base\";\n\t\tlevel_name[Level2]= \"Shift\";\n\t\tlevel_name[Level3]= \"Alt Base\";\n\t\tlevel_name[Level4]= \"Shift Alt\";\n\t\tlevel_name[Level5]= \"X1\";\n\t\tlevel_name[Level6]= \"X2\";\n\t\tlevel_name[Level7]= \"X3\";\n\t\tlevel_name[Level8]= \"X4\";\n\t};\n};\n";
+
+const COMPAT_XKB: &str = "xkb_compat \"wkb\" {\n\tvirtual_modifiers NumLock,Alt,LevelThree,LevelFive;\n\n\tinterpret Any+AnyOf(all) {\n\t\taction= SetMods(modifiers=modMapMods,clearLocks);\n\t};\n\tinterpret Shift_L+AnyOf(all) {\n\t\taction= SetMods(modifiers=Shift,clearLocks);\n\t};\n\tinterpret Shift_R+AnyOf(all) {\n\t\taction= SetMods(modifiers=Shift,clearLocks);\n\t};\n\tinterpret Caps_Lock+AnyOf(all) {\n\t\taction= LockMods(modifiers=Lock);\n\t};\n\tinterpret Num_Lock+AnyOf(all) {\n\t\taction= LockMods(modifiers=NumLock);\n\t};\n\tinterpret Control_L+AnyOf(all) {\n\t\taction= SetMods(modifiers=Control,clearLocks);\n\t};\n\tinterpret Control_R+AnyOf(all) {\n\t\taction= SetMods(modifiers=Control,clearLocks);\n\t};\n\tinterpret Alt_L+AnyOf(all) {\n\t\taction= SetMods(modifiers=Alt,clearLocks);\n\t};\n\tinterpret Super_L+AnyOf(all) {\n\t\taction= SetMods(modifiers=Mod4,clearLocks);\n\t};\n\tinterpret Super_R+AnyOf(all) {\n\t\taction= SetMods(modifiers=Mod4,clearLocks);\n\t};\n\tinterpret ISO_Level3_Shift+AnyOf(all) {\n\t\taction= SetMods(modifiers=LevelThree,clearLocks);\n\t};\n\tinterpret Scroll_Lock+AnyOf(all) {\n\t\taction= LockMods(modifiers=Mod3);\n\t};\n\n\tindicator \"Caps Lock\" {\n\t\tmodifiers= Lock;\n\t};\n\tindicator \"Num Lock\" {\n\t\tmodifiers= NumLock;\n\t};\n\tindicator \"Scroll Lock\" {\n\t\tmodifiers= Mod3;\n\t};\n};\n";

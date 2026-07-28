@@ -3,9 +3,9 @@ use std::sync::LazyLock;
 
 use arrayvec::ArrayVec;
 
-pub use super::shared_types::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
-use super::shared_types::{atom_lookup_ref, atom_text};
-pub(crate) use super::shared_types::{
+pub use super::parser::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
+use super::parser::{atom_lookup_ref, atom_text};
+pub(crate) use super::parser::{
     XkbAction, XkbContext, XkbKeymap, XkbLed, XkbLevel, XkbModSet, XkbRuleNames, MOD_BOTH,
     MOD_REAL, MOD_REAL_MASK_ALL, XKB_ATOM_NONE, XKB_KEYMAP_FORMAT_TEXT_V2,
 };
@@ -79,7 +79,7 @@ pub fn keysym_name_to_char(name: &str) -> Option<char> {
 
     use super::keysym::keysym_to_utf32;
     use super::keysym::xkb_keysym_from_name;
-    use super::shared_types::XKB_KEYSYM_NO_FLAGS;
+    use super::parser::XKB_KEYSYM_NO_FLAGS;
 
     let ks = match xkb_keysym_from_name(name.as_bytes(), XKB_KEYSYM_NO_FLAGS) {
         Some(ks) => ks,
@@ -110,7 +110,7 @@ pub(crate) fn parse_compose_file_impl<F>(path: &Path, f: &mut F)
 where
     F: FnMut(ComposeEntry),
 {
-    use super::shared_types::read_file_cached;
+    use super::parser::read_file_cached;
 
     let path_str = match path.to_str() {
         Some(s) => s,
@@ -540,13 +540,13 @@ pub(crate) fn xkb_wrap_group_into_range(
 
 use std::env::VarError;
 
-use super::shared_types::{atom_intern, atom_table_new};
+use super::parser::{atom_intern, atom_table_new};
 
-use super::shared_types::{
+use super::parser::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
     DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
 };
-pub(crate) use super::shared_types::{
+pub(crate) use super::parser::{
     RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
 fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> i32 {
@@ -824,12 +824,12 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
     modified
 }
 
-use super::shared_types::*;
+use super::parser::*;
 pub(crate) const CONTROL_NAMES_MIN_V2_INDEX: u32 = 0;
 pub(crate) const CONTROL_NAMES_MIN_V1_INDEX: u32 = 7;
 pub(crate) const GROUP_LAST_INDEX_NAME: &str = "last";
 
-pub use super::shared_types::{
+pub use super::parser::{
     ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
     ACTION_TYPE_GROUP_SET, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET,
     ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT,
@@ -1338,14 +1338,14 @@ pub(crate) struct Context {
 impl Context {
     /// Create a new XKB context
     pub(crate) fn new() -> Option<Self> {
-        use super::shared_types::XKB_CONTEXT_NO_FLAGS;
+        use super::parser::XKB_CONTEXT_NO_FLAGS;
         let ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
         Some(Context { entity: ctx })
     }
 
     /// Create a keymap from RMLVO names. Consumes the context.
     pub(crate) fn keymap_from_names(self, rmlvo: &XkbRuleNames) -> Option<Keymap> {
-        use super::shared_types::XKB_KEYMAP_COMPILE_NO_FLAGS;
+        use super::parser::XKB_KEYMAP_COMPILE_NO_FLAGS;
 
         let keymap = xkb_keymap_new_from_names(self.entity, rmlvo, XKB_KEYMAP_COMPILE_NO_FLAGS)?;
         Some(Keymap { inner: keymap })
@@ -1353,7 +1353,7 @@ impl Context {
 
     /// Create a keymap from a keymap string. Consumes the context.
     pub(crate) fn keymap_from_string(self, keymap_str: &str) -> Option<Keymap> {
-        use super::shared_types::{XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1};
+        use super::parser::{XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1};
 
         let processed = preprocess_unicode_keysyms(keymap_str);
         let keymap_cstr = CString::new(processed.as_ref()).ok()?;
@@ -1370,7 +1370,7 @@ impl Context {
 /// Safe wrapper around XkbKeymap with automatic cleanup
 #[derive(Clone)]
 pub(crate) struct Keymap {
-    pub(crate) inner: Rc<super::shared_types::XkbKeymap>,
+    pub(crate) inner: Rc<super::parser::XkbKeymap>,
 }
 
 impl std::fmt::Debug for Keymap {
