@@ -1590,29 +1590,6 @@ fn copy_symbols_def_to_keymap(
 
     true
 }
-fn copy_mod_map_def_to_keymap(
-    keymap: &mut XkbKeymap,
-    sym_to_key: &HashMap<u32, usize>,
-    entry: &ModMapEntry,
-) -> bool {
-    if !entry.have_symbol {
-        if let Some(key) = keymap.key_by_name_mut(entry.u, true) {
-            if entry.modifier != XKB_MOD_NONE {
-                key.modmap |= 1_u32 << entry.modifier;
-            }
-            true
-        } else {
-            false
-        }
-    } else if let Some(&ki) = sym_to_key.get(&entry.u) {
-        if entry.modifier != XKB_MOD_NONE {
-            keymap.keys[ki].modmap |= 1_u32 << entry.modifier;
-        }
-        true
-    } else {
-        false
-    }
-}
 fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) -> bool {
     let type_map: HashMap<u32, u32> = keymap
         .types
@@ -1634,43 +1611,41 @@ fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) -> boo
         }
     }
     info.keys = keys;
-    let start_idx = if keymap.num_keys_low == 0 {
-        0_u32
+    let start = if keymap.num_keys_low == 0 {
+        0_usize
     } else {
-        keymap.min_key_code
+        keymap.min_key_code as usize
     };
     let mut sym_to_key: HashMap<u32, usize> = HashMap::new();
-    let mut group: u32 = 0;
-    loop {
-        let mut got_one_group = false;
-        let mut level: u32 = 0;
-        loop {
-            let mut got_one_level = false;
-            for ki in start_idx..keymap.num_keys {
-                let key = &keymap.keys[ki as usize];
-                if group < key.num_groups
-                    && level < keymap.types[key.groups[group as usize].type_idx as usize].num_levels
-                {
-                    got_one_level = true;
-                    got_one_group = true;
-                    let level_syms = &key.groups[group as usize].levels[level as usize].syms;
-                    for &sym in level_syms {
-                        sym_to_key.entry(sym).or_insert(ki as usize);
-                    }
+    for ki in start..keymap.num_keys.min(keymap.keys.len() as u32) as usize {
+        let key = &keymap.keys[ki];
+        for gi in 0..key.num_groups.min(key.groups.len() as u32) {
+            let g = &key.groups[gi as usize];
+            let num_levels = keymap
+                .types
+                .get(g.type_idx as usize)
+                .map_or(0, |t| t.num_levels);
+            for li in 0..num_levels.min(g.levels.len() as u32) {
+                for &sym in &g.levels[li as usize].syms {
+                    sym_to_key.entry(sym).or_insert(ki);
                 }
             }
-            level += 1;
-            if !got_one_level {
-                break;
-            }
-        }
-        group += 1;
-        if !got_one_group {
-            break;
         }
     }
     for modmap in &info.modmaps {
-        if !copy_mod_map_def_to_keymap(keymap, &sym_to_key, modmap) {
+        if modmap.have_symbol {
+            if let Some(&ki) = sym_to_key.get(&modmap.u) {
+                if modmap.modifier != XKB_MOD_NONE {
+                    keymap.keys[ki].modmap |= 1_u32 << modmap.modifier;
+                }
+            } else {
+                info.error_count += 1;
+            }
+        } else if let Some(key) = keymap.key_by_name_mut(modmap.u, true) {
+            if modmap.modifier != XKB_MOD_NONE {
+                key.modmap |= 1_u32 << modmap.modifier;
+            }
+        } else {
             info.error_count += 1;
         }
     }
