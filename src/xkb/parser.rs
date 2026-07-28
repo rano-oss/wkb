@@ -6459,27 +6459,6 @@ impl XkbKeymap {
         }
         None
     }
-
-    /// Safe wrapper: look up a key by keycode and resolve the level for a given layout+level index.
-    /// Returns `None` if the key doesn't exist, layout is invalid, or level is out of range.
-    #[inline]
-    pub(crate) fn get_key_level<'a>(
-        &'a self,
-        key: &'a XkbKey,
-        layout: u32,
-        level: u32,
-    ) -> Option<&'a XkbLevel> {
-        let layout = super::keymap::xkb_wrap_group_into_range(
-            layout as i32,
-            key.num_groups,
-            key.out_of_range_group_policy,
-            key.out_of_range_group_number,
-        )?;
-        if level >= self.key_num_levels(key, layout) {
-            return None;
-        }
-        Some(&key.groups[layout as usize].levels[level as usize])
-    }
 }
 
 #[inline]
