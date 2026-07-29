@@ -1,4 +1,3 @@
-use super::keymap::xkb_escape_map_name;
 use super::keymap::{
     lookup_string, CTRL_MASK_NAMES, GROUP_COMPONENT_MASK_NAMES, MOD_COMPONENT_MASK_NAMES,
     SYM_INTERPRET_MATCH_MASK_NAMES, USE_MOD_MAP_VALUE_NAMES,
@@ -25,7 +24,6 @@ pub(crate) use super::parser::{
 use std::collections::HashMap;
 
 pub(crate) struct SymbolsInfo {
-    pub(crate) name: Option<String>,
     pub(crate) error_count: i32,
     pub(crate) include_depth: u32,
     pub(crate) explicit_group: Option<u32>,
@@ -104,7 +102,6 @@ impl SymbolsInfo {
     pub(crate) fn new(ki: &mut XkbKeymapInfo<'_>) -> Self {
         let star_atom = atom_intern(&mut ki.keymap.ctx.atom_table, b"*");
         Self {
-            name: None,
             error_count: 0,
             include_depth: 0,
             explicit_group: None,
@@ -436,9 +433,6 @@ fn merge_included_symbols(
         return;
     }
     merge_mod_sets(&mut ki.keymap.ctx, &mut into.mods, &from.mods, merge);
-    if into.name.is_none() {
-        into.name = from.name.take();
-    }
     let group_names_in_both = into.group_names.len().min(from.group_names.len());
     for i in 0..group_names_in_both {
         if from.group_names[i] != 0 && !(merge == MergeMode::Augment && into.group_names[i] != 0) {
@@ -489,11 +483,6 @@ fn handle_include_symbols(
         info.include_depth.wrapping_add(1),
         &info.mods,
     );
-    included.name = if includes.is_empty() || includes[0].stmt.is_empty() {
-        None
-    } else {
-        Some(std::mem::take(&mut includes[0].stmt))
-    };
     for stmt in includes.iter_mut() {
         let mut next_incl = SymbolsInfo::new(ki);
 
@@ -1320,11 +1309,6 @@ fn handle_mod_map_def(
 fn handle_symbols_file(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, file: &mut XkbFile) {
     {
         let mut ok: bool;
-        info.name = if file.name.is_empty() {
-            None
-        } else {
-            Some(file.name.clone())
-        };
         for stmt in file.defs.iter_mut() {
             match stmt {
                 Statement::Include(incl) => {
@@ -1414,29 +1398,22 @@ fn find_type_for_group(
     keymap: &mut XkbKeymap,
     keyi: &mut KeyInfo,
     group: u32,
-    explicit_type: &mut bool,
     type_map: &HashMap<u32, u32>,
 ) -> u32 {
     let groupi = &keyi.groups[group as usize];
     let mut type_name: u32 = groupi.type_0;
-    *explicit_type = true;
     if type_name == XKB_ATOM_NONE {
         if keyi.default_type != XKB_ATOM_NONE {
             type_name = keyi.default_type;
         } else {
             type_name = find_automatic_type(&mut keymap.ctx, groupi);
-            if type_name != XKB_ATOM_NONE {
-                *explicit_type = false;
-            }
         }
     }
     if type_name != XKB_ATOM_NONE {
         if let Some(&idx) = type_map.get(&type_name) {
-            keymap.types[idx as usize].required = true;
             return idx;
         }
     }
-    keymap.types[0].required = true;
     0
 }
 fn copy_symbols_def_to_keymap(
@@ -1468,9 +1445,6 @@ fn copy_symbols_def_to_keymap(
             if !groupi.levels.is_empty() || has_explicit_type {
                 keymap.keys[key_idx].num_groups = (idx as u32) + 1;
             }
-            if has_explicit_type {
-                keymap.keys[key_idx].explicit |= EXPLICIT_TYPES;
-            }
         }
     }
 
@@ -1491,8 +1465,7 @@ fn copy_symbols_def_to_keymap(
         keymap.keys[key_idx].groups = (0..num_groups).map(|_| XkbGroup::default()).collect();
 
         for i in 0..keyi.groups.len() as u32 {
-            let mut explicit_type = false;
-            let type_idx = find_type_for_group(keymap, keyi, i, &mut explicit_type, type_map);
+            let type_idx = find_type_for_group(keymap, keyi, i, type_map);
 
             if keymap.types[type_idx as usize].num_levels
                 < keyi.groups[i as usize].levels.len() as u32
@@ -1510,7 +1483,6 @@ fn copy_symbols_def_to_keymap(
                 .levels
                 .resize_with(need_levels, Default::default);
 
-            keymap.keys[key_idx].groups[i as usize].explicit_type = explicit_type;
             keymap.keys[key_idx].groups[i as usize].type_idx = type_idx;
         }
 
@@ -1518,17 +1490,13 @@ fn copy_symbols_def_to_keymap(
             let groupi = &mut keyi.groups[i];
             for li in 0..groupi.levels.len() {
                 let leveli = &mut groupi.levels[li];
-                match leveli.syms.len() {
-                    0 => leveli.upper = XKB_KEY_NO_SYMBOL,
-                    1 => leveli.upper = xkb_keysym_to_upper(leveli.syms[0]),
-                    _ => {
-                        let has_upper = leveli.syms.iter().any(|&s| xkb_keysym_to_upper(s) != s);
-                        if has_upper {
-                            let orig = leveli.syms.len();
-                            leveli.syms.reserve(orig);
-                            for i in 0..orig {
-                                leveli.syms.push(xkb_keysym_to_upper(leveli.syms[i]));
-                            }
+                if leveli.syms.len() > 1 {
+                    let has_upper = leveli.syms.iter().any(|&s| xkb_keysym_to_upper(s) != s);
+                    if has_upper {
+                        let orig = leveli.syms.len();
+                        leveli.syms.reserve(orig);
+                        for i in 0..orig {
+                            leveli.syms.push(xkb_keysym_to_upper(leveli.syms[i]));
                         }
                     }
                 }
@@ -1536,19 +1504,8 @@ fn copy_symbols_def_to_keymap(
 
             keymap.keys[key_idx].groups[i].levels = std::mem::take(&mut groupi.levels);
 
-            let type_idx = keymap.keys[key_idx].groups[i].type_idx;
-            if keymap.types[type_idx as usize].num_levels > 1
-                || !keymap.keys[key_idx].groups[i].levels[0].syms.is_empty()
-            {
-                keymap.keys[key_idx].groups[i].explicit_symbols = true;
-                keymap.keys[key_idx].explicit |= EXPLICIT_SYMBOLS;
-            }
             if groupi.defined & GROUP_FIELD_ACTS != 0 {
                 keymap.keys[key_idx].groups[i].explicit_actions = true;
-                keymap.keys[key_idx].explicit |= EXPLICIT_INTERP;
-            }
-            if keymap.keys[key_idx].groups[i].explicit_type {
-                keymap.keys[key_idx].explicit |= EXPLICIT_TYPES;
             }
         }
 
@@ -1559,33 +1516,12 @@ fn copy_symbols_def_to_keymap(
 
     if (keyi.defined & KEY_FIELD_VMODMAP) != 0 {
         keymap.keys[key_idx].vmodmap = keyi.vmodmap;
-        keymap.keys[key_idx].explicit |= EXPLICIT_VMODMAP;
+        keymap.keys[key_idx].explicit_vmodmap = true;
     }
 
     if keyi.repeat != KEY_REPEAT_UNDEFINED {
         keymap.keys[key_idx].repeats = keyi.repeat == KEY_REPEAT_YES;
-        keymap.keys[key_idx].explicit |= EXPLICIT_REPEAT;
-    }
-
-    if ((keyi.defined & KEY_FIELD_OVERLAY) != 0)
-        && keyi.overlays.iter().any(|o| o.is_some())
-        && !keyi.overlays_clear
-    {
-        let mut clean_overlays: u8 = 0;
-        let mut clean_keys: Vec<u32> = Vec::new();
-        for (i, &entry) in keyi.overlays.iter().enumerate() {
-            if let Some(k) = entry {
-                if k != XKB_KEYCODE_INVALID {
-                    clean_overlays |= 1 << i;
-                    clean_keys.push(k);
-                }
-            }
-        }
-        if clean_overlays != 0 {
-            keymap.keys[key_idx].overlays = clean_overlays;
-            keymap.keys[key_idx].overlay_keys = clean_keys;
-            keymap.keys[key_idx].explicit |= EXPLICIT_OVERLAY;
-        }
+        keymap.keys[key_idx].explicit_repeat = true;
     }
 
     true
@@ -1597,11 +1533,6 @@ fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) -> boo
         .enumerate()
         .map(|(i, t)| (t.name, i as u32))
         .collect();
-    keymap.symbols_section_name = match &info.name {
-        Some(s) => s.clone(),
-        None => String::new(),
-    };
-    xkb_escape_map_name(&mut keymap.symbols_section_name);
     keymap.mods = info.mods;
     keymap.group_names = std::mem::take(&mut info.group_names);
     let mut keys = std::mem::take(&mut info.keys);
@@ -1670,7 +1601,6 @@ use super::keysym::xkb_keysym_to_upper;
 use super::parser::*;
 #[derive(Clone, Default)]
 pub(crate) struct CompatInfo {
-    pub(crate) name: Option<String>,
     pub(crate) error_count: i32,
     pub(crate) include_depth: u32,
     pub(crate) default_interp: SymInterpInfo,
@@ -1880,9 +1810,6 @@ fn merge_included_compat_maps(
         return;
     }
     merge_mod_sets(&mut ki.keymap.ctx, &mut into.mods, &from.mods, merge);
-    if into.name.is_none() {
-        into.name = from.name.take();
-    }
     if into.interps.is_empty() {
         into.interps = std::mem::take(&mut from.interps);
         into.interp_index = std::mem::take(&mut from.interp_index);
@@ -1924,11 +1851,6 @@ fn handle_include_compat_map(
         info.include_depth.wrapping_add(1),
         &info.mods,
     );
-    included.name = if includes.is_empty() || includes[0].stmt.is_empty() {
-        None
-    } else {
-        Some(includes[0].stmt.clone())
-    };
     for stmt in includes.iter_mut() {
         let mut next_incl = CompatInfo::default();
 
@@ -2405,11 +2327,6 @@ fn handle_led_map_def(
 fn handle_compat_map_file(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo, file: &mut XkbFile) {
     {
         let mut ok: bool;
-        info.name = if file.name.is_empty() {
-            None
-        } else {
-            Some(file.name.clone())
-        };
         for stmt in file.defs.iter_mut() {
             match stmt {
                 Statement::Include(incl) => {
@@ -2524,19 +2441,10 @@ fn copy_compat_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) -> b
     } else {
         None
     };
-    // Now get keymap and assign everything
-    {
-        ki.keymap.compat_section_name = match &info.name {
-            Some(s) => s.clone(),
-            None => String::new(),
-        };
-        xkb_escape_map_name(&mut ki.keymap.compat_section_name);
-        ki.keymap.mods = info.mods;
-        if let Some(interps) = sym_interprets {
-            ki.keymap.sym_interprets = interps;
-        }
+    ki.keymap.mods = info.mods;
+    if let Some(interps) = sym_interprets {
+        ki.sym_interprets = interps;
     }
-    // copy_led_map_defs_to_keymap needs keymap borrow ended; scope block ensures this
     copy_led_map_defs_to_keymap(ki, info);
     true
 }
@@ -2553,7 +2461,6 @@ pub(crate) fn compile_compat_map(file: Option<&mut XkbFile>, ki: &mut XkbKeymapI
     false
 }
 pub(crate) struct KeyTypesInfo {
-    pub(crate) name: Option<String>,
     pub(crate) error_count: i32,
     pub(crate) include_depth: u32,
     pub(crate) types: Vec<KeyTypeInfo>,
@@ -2570,7 +2477,6 @@ impl Default for KeyTypesInfo {
 impl KeyTypesInfo {
     pub(crate) fn new() -> Self {
         Self {
-            name: None,
             error_count: 0,
             include_depth: 0,
             types: Vec::new(),
@@ -2594,7 +2500,6 @@ pub(crate) const TYPE_FIELD_PRESERVE: u32 = 4;
 pub(crate) const TYPE_FIELD_MAP: u32 = 2;
 pub(crate) const TYPE_FIELD_MASK: u32 = 1;
 fn init_key_types_info(info: &mut KeyTypesInfo, include_depth: u32, mods: &XkbModSet) {
-    info.name = None;
     info.error_count = 0;
     info.include_depth = include_depth;
     info.types.clear();
@@ -2625,9 +2530,6 @@ fn merge_included_key_types(
         return;
     }
     merge_mod_sets(&mut ki.keymap.ctx, &mut into.mods, &from.mods, merge);
-    if into.name.is_none() {
-        into.name = from.name.take();
-    }
     if into.types.is_empty() {
         into.types = std::mem::take(&mut from.types);
         into.type_index = std::mem::take(&mut from.type_index);
@@ -2655,11 +2557,6 @@ fn handle_include_key_types(
         info.include_depth.wrapping_add(1),
         &info.mods,
     );
-    included.name = if includes.is_empty() || includes[0].stmt.is_empty() {
-        None
-    } else {
-        Some(std::mem::take(&mut includes[0].stmt))
-    };
     for stmt in includes.iter_mut() {
         let mut next_incl = KeyTypesInfo::new();
 
@@ -2964,11 +2861,6 @@ fn handle_type_global_var(ki: &XkbKeymapInfo<'_>, _info: &mut KeyTypesInfo, stmt
 fn handle_key_types_file(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, file: &mut XkbFile) {
     {
         let mut ok: bool;
-        info.name = if file.name.is_empty() {
-            None
-        } else {
-            Some(file.name.clone())
-        };
         for stmt in file.defs.iter_mut() {
             match stmt {
                 Statement::Include(incl) => {
@@ -3024,46 +2916,24 @@ fn copy_key_types_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo)
         let type_0 = XkbKeyType {
             name: atom_intern(&mut ki.keymap.ctx.atom_table, b"ONE_LEVEL"),
             mods: XkbMods { mods: 0, mask: 0 },
-            required: true,
             num_levels: 1,
             entries: Vec::new(),
         };
         types_vec.push(type_0);
     } else {
-        let canonical_types: [u32; 4] = [
-            atom_intern(&mut ki.keymap.ctx.atom_table, b"ONE_LEVEL"),
-            atom_intern(&mut ki.keymap.ctx.atom_table, b"TWO_LEVEL"),
-            atom_intern(&mut ki.keymap.ctx.atom_table, b"ALPHABETIC"),
-            atom_intern(&mut ki.keymap.ctx.atom_table, b"KEYPAD"),
-        ];
         for def in info.types.iter_mut() {
             let entries = std::mem::take(&mut def.entries);
-            let mut required = false;
-            if def.num_levels <= 2 {
-                for t in 0..4 {
-                    if def.name == canonical_types[t] {
-                        required = true;
-                        break;
-                    }
-                }
-            }
             types_vec.push(XkbKeyType {
                 name: def.name,
                 mods: XkbMods {
                     mods: def.mods,
                     mask: 0,
                 },
-                required,
                 num_levels: def.num_levels,
                 entries,
             });
         }
     }
-    ki.keymap.types_section_name = match &info.name {
-        Some(s) => s.clone(),
-        None => String::new(),
-    };
-    xkb_escape_map_name(&mut ki.keymap.types_section_name);
     ki.keymap.types = types_vec;
     ki.keymap.mods = info.mods;
     true
@@ -3171,7 +3041,6 @@ pub(crate) fn handle_vmod_def(ctx: &mut XkbContext, mods: &mut XkbModSet, stmt: 
     true
 }
 pub(crate) struct KeyNamesInfo {
-    pub(crate) name: Option<String>,
     pub(crate) error_count: i32,
     pub(crate) include_depth: u32,
     pub(crate) keycodes: KeycodeStore,
@@ -3188,7 +3057,6 @@ impl Default for KeyNamesInfo {
 impl KeyNamesInfo {
     pub(crate) fn new() -> Self {
         Self {
-            name: None,
             error_count: 0,
             include_depth: 0,
             keycodes: KeycodeStore {
@@ -3435,7 +3303,6 @@ fn add_led_name(info: &mut KeyNamesInfo, new: &LedNameInfo, new_idx: u32) -> boo
     true
 }
 fn init_key_names_info(info: &mut KeyNamesInfo, include_depth: u32) {
-    info.name = None;
     info.error_count = 0;
     info.include_depth = include_depth;
     info.keycodes = KeycodeStore {
@@ -3556,9 +3423,6 @@ fn merge_included_keycodes(into: &mut KeyNamesInfo, from: &mut KeyNamesInfo, mer
         into.error_count += from.error_count;
         return;
     }
-    if into.name.is_none() {
-        into.name = from.name.take();
-    }
     merge_keycode_stores(into, from, merge);
     if into.num_led_names == 0 {
         into.led_names[..from.num_led_names as usize]
@@ -3589,11 +3453,6 @@ fn handle_include_keycodes(
         return false;
     }
     init_key_names_info(&mut included, 0_u32);
-    included.name = if includes.is_empty() || includes[0].stmt.is_empty() {
-        None
-    } else {
-        Some(std::mem::take(&mut includes[0].stmt))
-    };
     for stmt in includes.iter_mut() {
         let mut next_incl = KeyNamesInfo::new();
 
@@ -3688,11 +3547,6 @@ fn handle_led_name_def(info: &mut KeyNamesInfo, def: &LedNameDef) -> bool {
 fn handle_keycodes_file(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut XkbKeymapInfo<'_>) {
     {
         let mut ok: bool;
-        info.name = if file.name.is_empty() {
-            None
-        } else {
-            Some(file.name.clone())
-        };
         for stmt in file.defs.iter_mut() {
             match stmt {
                 Statement::Include(incl) => {
@@ -3810,29 +3664,6 @@ fn copy_key_names_info_to_keymap(info: &mut KeyNamesInfo, ki: &mut XkbKeymapInfo
     {
         return false;
     }
-    if ki.keymap.num_keys == 0 || ki.keymap.min_key_code > 0 {
-        ki.keymap.redirect_key_auto = 0;
-    } else {
-        let mut keycode: u32 = XKB_KEYCODE_INVALID.wrapping_sub(1_u32);
-        let mut k: u32 = ki.keymap.num_keys;
-        loop {
-            let old_k = k;
-            k -= 1;
-            if old_k <= ki.keymap.num_keys_low {
-                break;
-            }
-            if keycode > (&ki.keymap.keys)[k as usize].keycode {
-                break;
-            }
-            keycode = (&ki.keymap.keys)[k as usize].keycode.wrapping_sub(1_u32);
-        }
-        ki.keymap.redirect_key_auto = keycode;
-    }
-    ki.keymap.keycodes_section_name = match &info.name {
-        Some(s) => s.clone(),
-        None => String::new(),
-    };
-    xkb_escape_map_name(&mut ki.keymap.keycodes_section_name);
     true
 }
 pub(crate) fn compile_keycodes(

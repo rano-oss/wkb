@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::ffi::OsStr;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use test_case::test_matrix;
 use wkb::testing::{composer_feed, Token, WKBTestExt};
@@ -95,6 +96,114 @@ fn parse_rhs_for_test(rhs: &str) -> Option<char> {
 /// `set_var` / `remove_var` are process-wide and not thread-safe,
 /// so parallel tests must serialize around them.
 static ENV_LOCK: Mutex<()> = Mutex::new(());
+static NEXT_TEMP_COMPOSE: AtomicU64 = AtomicU64::new(0);
+
+struct TempComposeFile(PathBuf);
+
+impl TempComposeFile {
+    fn new(label: &str) -> Self {
+        let id = NEXT_TEMP_COMPOSE.fetch_add(1, Ordering::Relaxed);
+        Self(std::env::temp_dir().join(format!("wkb-compose-{label}-{}-{id}", std::process::id())))
+    }
+
+    fn write(&self, contents: &str) {
+        std::fs::write(&self.0, contents).unwrap();
+    }
+}
+
+impl Drop for TempComposeFile {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
+}
+
+#[test]
+fn cached_compose_table_is_reused_across_paths_and_threads() {
+    let file = TempComposeFile::new("shared");
+    let alias = TempComposeFile::new("alias");
+    file.write("<Multi_key> <a> <e> : \"æ\"\n");
+    std::os::unix::fs::symlink(&file.0, &alias.0).unwrap();
+
+    let mut first = wkb::testing::compose_parse::load_compose_from_path(&file.0);
+    file.write("<Multi_key> <a> <e> : \"ø\"\n");
+    let path = alias.0.clone();
+    let mut second =
+        std::thread::spawn(move || wkb::testing::compose_parse::load_compose_from_path(&path))
+            .join()
+            .unwrap();
+
+    for composer in [&mut first, &mut second] {
+        assert!(matches!(
+            composer_feed(composer, Token::Compose),
+            wkb::testing::ComposeState::Composing(_)
+        ));
+        assert!(matches!(
+            composer_feed(composer, Token::Char('a')),
+            wkb::testing::ComposeState::Composing(_)
+        ));
+        assert_eq!(
+            composer_feed(composer, Token::Char('e')),
+            wkb::testing::ComposeState::Finished('æ')
+        );
+    }
+}
+
+#[test]
+fn failed_compose_load_does_not_poison_cache() {
+    let file = TempComposeFile::new("retry");
+    let _failed = wkb::testing::compose_parse::load_compose_from_path(&file.0);
+
+    file.write("<Multi_key> <a> <e> : \"æ\"\n");
+    let mut first = wkb::testing::compose_parse::load_compose_from_path(&file.0);
+    file.write("<Multi_key> <a> <e> : \"ø\"\n");
+    let mut second = wkb::testing::compose_parse::load_compose_from_path(&file.0);
+
+    for composer in [&mut first, &mut second] {
+        assert!(matches!(
+            composer_feed(composer, Token::Compose),
+            wkb::testing::ComposeState::Composing(_)
+        ));
+        assert!(matches!(
+            composer_feed(composer, Token::Char('a')),
+            wkb::testing::ComposeState::Composing(_)
+        ));
+        assert_eq!(
+            composer_feed(composer, Token::Char('e')),
+            wkb::testing::ComposeState::Finished('æ')
+        );
+    }
+}
+
+#[test]
+fn cached_compose_table_keeps_wkb_progress_instance_local() {
+    let (mut first, mut second) = {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let saved_lc_all = std::env::var("LC_ALL").ok();
+        unsafe { std::env::set_var("LC_ALL", "en_US.UTF-8") };
+
+        let first = wkb::WKB::new_from_names("", "", "us", "", None).unwrap();
+        let second = wkb::WKB::new_from_names("", "", "us", "", None).unwrap();
+
+        match saved_lc_all {
+            Some(value) => unsafe { std::env::set_var("LC_ALL", value) },
+            None => unsafe { std::env::remove_var("LC_ALL") },
+        }
+        (first, second)
+    };
+
+    assert!(matches!(
+        first.feed(Token::Compose),
+        wkb::testing::ComposeState::Composing(_)
+    ));
+    assert_eq!(
+        second.feed(Token::Char('a')),
+        wkb::testing::ComposeState::Idle('a')
+    );
+    assert!(matches!(
+        first.feed(Token::Char('a')),
+        wkb::testing::ComposeState::Composing(_)
+    ));
+}
 
 // ---------------------------------------------------------------------------
 // Helpers: keysym / char resolution

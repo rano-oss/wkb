@@ -15,6 +15,8 @@ use crate::named_keys::NamedKey;
 use crate::Composer;
 use crate::KeyBitSet;
 use crate::WKB;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
 
 // ── Error type ──
 
@@ -126,14 +128,31 @@ fn resolve_char(
     keysym::keysym_to_char(sym)
 }
 
-/// Load compose entries from a file and build a ListComposer.
-pub fn load_compose_from_path(path: &std::path::Path) -> Composer {
+type ComposeTable = Arc<Composer>;
+type ComposeTableCache = Vec<(PathBuf, ComposeTable)>;
+
+static COMPOSE_TABLE_CACHE: OnceLock<Mutex<ComposeTableCache>> = OnceLock::new();
+
+fn compose_table_cache() -> MutexGuard<'static, ComposeTableCache> {
+    COMPOSE_TABLE_CACHE
+        .get_or_init(|| Mutex::new(Vec::new()))
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+fn cached_compose_table(cache: &ComposeTableCache, path: &Path) -> Option<ComposeTable> {
+    cache
+        .iter()
+        .find(|(cached_path, _)| cached_path == path)
+        .map(|(_, table)| table.clone())
+}
+
+fn parse_compose_table(path: &Path) -> (Composer, bool) {
     use arrayvec::ArrayVec;
 
-    let mut regular = Composer::new();
-
-    keymap::parse_compose_file_impl(path, &mut |entry| {
-        let mut tokens: ArrayVec<Token, 8> = ArrayVec::new();
+    let mut composer = Composer::new();
+    let complete = keymap::parse_compose_file_impl(path, &mut |entry| {
+        let mut tokens: ArrayVec<Token, 9> = ArrayVec::new();
         let mk_idx = entry.multi_key_index;
 
         for (i, ch) in entry.keys.iter().enumerate() {
@@ -144,10 +163,50 @@ pub fn load_compose_from_path(path: &std::path::Path) -> Composer {
             }
             tokens.push(Token::Char(*ch));
         }
-        regular.insert(&tokens, entry.output);
+        composer.insert(&tokens, entry.output);
     });
 
-    regular
+    (composer, complete)
+}
+
+/// Load a compose file, cloning an immutable compiled template cached by canonical path.
+pub fn load_compose_from_path(path: &Path) -> Composer {
+    let requested_path = path.to_path_buf();
+    if let Some(table) = cached_compose_table(&compose_table_cache(), path) {
+        return table.as_ref().clone();
+    }
+    let Ok(canonical_path) = std::fs::canonicalize(path) else {
+        return parse_compose_table(path).0;
+    };
+    if canonical_path != requested_path {
+        let mut cache = compose_table_cache();
+        if let Some(table) = cached_compose_table(&cache, &canonical_path) {
+            cache.push((requested_path, table.clone()));
+            return table.as_ref().clone();
+        }
+    }
+
+    let (composer, complete) = parse_compose_table(&canonical_path);
+    if !complete {
+        return composer;
+    }
+
+    let requested_is_alias = requested_path != canonical_path;
+    let parsed = Arc::new(composer);
+    let mut cache = compose_table_cache();
+    let table = cached_compose_table(&cache, &canonical_path).unwrap_or_else(|| {
+        cache.push((canonical_path, parsed.clone()));
+        parsed
+    });
+    if requested_is_alias && cached_compose_table(&cache, &requested_path).is_none() {
+        cache.push((requested_path, table.clone()));
+    }
+    table.as_ref().clone()
+}
+
+#[cfg(feature = "testing")]
+pub fn load_compose_from_path_uncached(path: &Path) -> Composer {
+    parse_compose_table(path).0
 }
 
 /// Map an XKB keysym value to a [`NamedKey`].
