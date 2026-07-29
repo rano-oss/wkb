@@ -146,9 +146,32 @@ fn bench_compose_feed(c: &mut Criterion) {
     group.finish();
 }
 
+fn bench_compose_load(c: &mut Criterion) {
+    let Some(subpath) = wkb::testing::compose_parse::resolve_compose_file(COMPOSE_LOCALE) else {
+        return;
+    };
+    let path = std::path::Path::new("/usr/share/X11/locale").join(subpath);
+    let mut group = c.benchmark_group("compose/load");
+    group.bench_function("cold_parse", |b| {
+        b.iter(|| {
+            black_box(
+                wkb::testing::compose_parse::load_compose_from_path_uncached(black_box(&path)),
+            );
+        });
+    });
+    group.bench_function("repeated_same_path", |b| {
+        b.iter(|| {
+            black_box(wkb::testing::compose_parse::load_compose_from_path(
+                black_box(&path),
+            ));
+        });
+    });
+    group.finish();
+}
+
 criterion_group! {
     name = benches;
     config = cfg();
-    targets = bench_compose_feed,
+    targets = bench_compose_feed, bench_compose_load,
 }
 criterion_main!(benches);

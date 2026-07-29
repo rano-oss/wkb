@@ -98,11 +98,11 @@ pub fn keysym_name_to_char(name: &str) -> Option<char> {
 /// Parse a Compose file at the given path, recursively handling `include` directives.
 pub fn parse_compose_file(path: &Path) -> Vec<ComposeEntry> {
     let mut out = Vec::new();
-    parse_compose_file_impl(path, &mut |entry| out.push(entry));
+    let _ = parse_compose_file_impl(path, &mut |entry| out.push(entry));
     out
 }
 
-pub(crate) fn parse_compose_file_impl<F>(path: &Path, f: &mut F)
+pub(crate) fn parse_compose_file_impl<F>(path: &Path, f: &mut F) -> bool
 where
     F: FnMut(ComposeEntry),
 {
@@ -110,16 +110,17 @@ where
 
     let path_str = match path.to_str() {
         Some(s) => s,
-        None => return,
+        None => return false,
     };
     let Some(data) = read_file_cached(path_str) else {
-        return;
+        return false;
     };
     let content = match std::str::from_utf8(&data[..]) {
         Ok(s) => s,
-        Err(_) => return,
+        Err(_) => return false,
     };
 
+    let mut complete = true;
     for line in content.lines() {
         let trimmed = line.trim();
         if trimmed.is_empty() || trimmed.starts_with('#') {
@@ -140,7 +141,7 @@ where
                 } else {
                     include_path.to_path_buf()
                 };
-                parse_compose_file_impl(&resolved, f);
+                complete &= parse_compose_file_impl(&resolved, f);
             }
             continue;
         }
@@ -149,6 +150,7 @@ where
             f(entry);
         }
     }
+    complete
 }
 
 /// Parse a single rule line like `<Multi_key> <a> <e> : "æ" ae`
