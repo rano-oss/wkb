@@ -393,18 +393,10 @@ pub(crate) fn xkb_keymap_new(
         num_keys_low: 0,
         keys: Vec::new(),
         key_names: Vec::new(),
-        key_aliases: Vec::new(),
         types: Vec::new(),
-        sym_interprets: Vec::new(),
         mods: XkbModSet::default(),
-        canonical_state_mask: 0,
-        redirect_key_auto: 0,
         num_groups: 0,
         group_names: Vec::new(),
-        keycodes_section_name: String::new(),
-        symbols_section_name: String::new(),
-        types_section_name: String::new(),
-        compat_section_name: String::new(),
     });
     keymap.flags = flags;
     keymap.format = format;
@@ -425,7 +417,6 @@ pub(crate) fn xkb_keymap_new(
         keymap.mods.mods[i].mapping = 1_u32 << i;
     }
     keymap.mods.num_mods = BUILTIN_MODS.len() as u32;
-    keymap.canonical_state_mask = MOD_REAL_MASK_ALL;
     Some(keymap)
 }
 

@@ -2240,10 +2240,7 @@ pub(crate) fn xkb_file_from_components(
         FileType::Compat,
         FileType::Symbols,
     ] {
-        let component_bytes: Vec<u8> = components[type_0 as usize]
-            .iter()
-            .map(|&b| b as u8)
-            .collect();
+        let component_bytes = components[type_0 as usize];
         let end = component_bytes
             .iter()
             .position(|&b| b == 0)
@@ -3424,7 +3421,6 @@ fn default_interpret() -> XkbSymInterpret {
         virtual_mod: DEFAULT_INTERPRET_VMOD,
         level_one_only: false,
         repeat: DEFAULT_INTERPRET_KEY_REPEAT != 0,
-        required: false,
         num_actions: 0,
         action: XkbAction::None,
         actions: Vec::new(), // Note: XkbAction is Copy, so Vec::new() is zero-alloc (no heap until push)
@@ -3452,9 +3448,10 @@ fn build_interp_index(interps: &[XkbSymInterpret]) -> InterpIndex {
     InterpIndex { wildcards, by_sym }
 }
 
-/// Returns interp indices into `keymap.sym_interprets`, or `usize::MAX` for default interprets.
+/// Returns indices into the compiler-local interpretations, or `usize::MAX` for defaults.
 fn find_interp_for_key(
     keymap: &mut XkbKeymap,
+    sym_interprets: &[XkbSymInterpret],
     key_idx: usize,
     group: u32,
     level: u32,
@@ -3510,7 +3507,7 @@ fn find_interp_for_key(
                 }
                 (false, false) => break,
             };
-            let interp = &keymap.sym_interprets[i];
+            let interp = &sym_interprets[i];
             let mods = if interp.level_one_only && level != 0 {
                 0
             } else {
@@ -3540,7 +3537,6 @@ fn find_interp_for_key(
                 }
                 found = true;
                 interp_indices.push(i);
-                keymap.sym_interprets[i].required = true;
                 break;
             }
         }
@@ -3556,6 +3552,7 @@ fn find_interp_for_key(
 }
 fn apply_interps_to_key(
     keymap: &mut XkbKeymap,
+    sym_interprets: &[XkbSymInterpret],
     key_idx: usize,
     interp_index: &InterpIndex,
 ) -> bool {
@@ -3570,6 +3567,7 @@ fn apply_interps_to_key(
                 interp_indices.clear();
                 let found: bool = find_interp_for_key(
                     keymap,
+                    sym_interprets,
                     key_idx,
                     group,
                     level,
@@ -3578,16 +3576,15 @@ fn apply_interps_to_key(
                 );
                 if found {
                     let default_interp = default_interpret();
-                    let key_explicit = keymap.keys[key_idx].explicit;
                     for &idx in interp_indices.iter() {
                         let interp = if idx == usize::MAX {
                             &default_interp
                         } else {
-                            &keymap.sym_interprets[idx]
+                            &sym_interprets[idx]
                         };
                         if group == 0
                             && level == 0
-                            && key_explicit & EXPLICIT_REPEAT == 0
+                            && !keymap.keys[key_idx].explicit_repeat
                             && interp.repeat
                         {
                             keymap.keys[key_idx].repeats = true;
@@ -3620,12 +3617,9 @@ fn apply_interps_to_key(
                     }
                 }
             }
-            if keymap.keys[key_idx].groups[group as usize].implicit_actions {
-                keymap.keys[key_idx].implicit_actions = true;
-            }
         }
     }
-    if keymap.keys[key_idx].explicit & EXPLICIT_VMODMAP == 0 {
+    if !keymap.keys[key_idx].explicit_vmodmap {
         keymap.keys[key_idx].vmodmap = vmodmap;
     }
     true
@@ -3668,14 +3662,6 @@ fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
                     }
                 }
             }
-        }
-    }
-}
-fn add_key_aliases(keymap: &XkbKeymap, min: u32, max: u32, aliases: &mut Vec<XkbKeyAlias>) {
-    for alias in min..=max {
-        let entry: KeycodeMatch = keymap.key_names[alias as usize];
-        if entry.is_alias && entry.found {
-            aliases.push(XkbKeyAlias {});
         }
     }
 }
@@ -3753,7 +3739,7 @@ fn update_pending_action_fields(info: &mut XkbKeymapInfo<'_>, act: &mut XkbActio
 }
 fn update_derived_keymap_fields(info: &mut XkbKeymapInfo<'_>) -> bool {
     let keymap: &mut XkbKeymap = &mut *info.keymap;
-    build_key_aliases(keymap);
+    keymap.key_names = Vec::new();
     compute_max_num_groups(keymap);
     let pending_computations: bool = !info.pending_computations.is_empty();
     if pending_computations {
@@ -3775,27 +3761,6 @@ fn update_derived_keymap_fields(info: &mut XkbKeymapInfo<'_>) -> bool {
         return false;
     }
     true
-}
-
-fn build_key_aliases(keymap: &mut XkbKeymap) {
-    let mut num_key_aliases: u32 = 0;
-    let mut min_alias: u32 = 0;
-    let mut max_alias: u32 = 0;
-    for (alias, entry) in keymap.key_names.iter().enumerate() {
-        if entry.is_alias && entry.found {
-            if num_key_aliases == 0 {
-                min_alias = alias as u32;
-            }
-            max_alias = alias as u32;
-            num_key_aliases += 1;
-        }
-    }
-    if num_key_aliases != 0 {
-        let mut aliases: Vec<XkbKeyAlias> = Vec::with_capacity(num_key_aliases as usize);
-        add_key_aliases(keymap, min_alias, max_alias, &mut aliases);
-        keymap.key_aliases = aliases;
-    }
-    keymap.key_names = Vec::new();
 }
 
 fn compute_max_num_groups(keymap: &mut XkbKeymap) {
@@ -3831,21 +3796,21 @@ fn update_group_lookup_entries(info: &mut XkbKeymapInfo<'_>) {
 }
 
 fn update_pending_sym_interpret_actions(info: &mut XkbKeymapInfo<'_>) -> Result<(), ()> {
-    for i in 0..info.keymap.sym_interprets.len() {
-        let num_actions = info.keymap.sym_interprets[i].num_actions;
+    for i in 0..info.sym_interprets.len() {
+        let num_actions = info.sym_interprets[i].num_actions;
         if num_actions as i32 <= 1_i32 {
-            let mut action = info.keymap.sym_interprets[i].action;
+            let mut action = info.sym_interprets[i].action;
             if !update_pending_action_fields(info, &mut action) {
                 return Err(());
             }
-            info.keymap.sym_interprets[i].action = action;
+            info.sym_interprets[i].action = action;
         } else {
             for a in 0..num_actions {
-                let mut action = info.keymap.sym_interprets[i].actions[a as usize];
+                let mut action = info.sym_interprets[i].actions[a as usize];
                 if !update_pending_action_fields(info, &mut action) {
                     return Err(());
                 }
-                info.keymap.sym_interprets[i].actions[a as usize] = action;
+                info.sym_interprets[i].actions[a as usize] = action;
             }
         }
     }
@@ -3854,9 +3819,9 @@ fn update_pending_sym_interpret_actions(info: &mut XkbKeymapInfo<'_>) -> Result<
 
 fn apply_interps_and_check_actions(info: &mut XkbKeymapInfo<'_>) -> Result<(), ()> {
     let keymap = &mut *info.keymap;
-    let interp_index = build_interp_index(&keymap.sym_interprets);
+    let interp_index = build_interp_index(&info.sym_interprets);
     for ki in 0..keymap.num_keys as usize {
-        if !apply_interps_to_key(keymap, ki, &interp_index) {
+        if !apply_interps_to_key(keymap, &info.sym_interprets, ki, &interp_index) {
             return Err(());
         }
         check_multiple_actions_categories(keymap, ki);
@@ -3889,11 +3854,6 @@ fn update_mod_mappings(info: &mut XkbKeymapInfo<'_>) {
             }
         }
     }
-    let mut extra_canonical_mods: u32 = 0;
-    for idx in _XKB_MOD_INDEX_NUM_ENTRIES as usize..keymap.mods.num_mods as usize {
-        extra_canonical_mods |= keymap.mods.mods[idx].mapping;
-    }
-    keymap.canonical_state_mask |= extra_canonical_mods;
 }
 
 fn has_unbound_vmods(keymap: &XkbKeymap, mods: &XkbMods) -> bool {
@@ -4110,6 +4070,7 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
             ],
         },
         pending_computations: Vec::new(),
+        sym_interprets: Vec::new(),
     };
     for type_0 in (FileType::Keycodes as u32)..=(FileType::Symbols as u32) {
         let file_arg: Option<&mut XkbFile> = file_indices[type_0 as usize].map(|idx| {
@@ -4128,16 +4089,19 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
         }
     }
     let ok_0: bool = update_derived_keymap_fields(&mut info);
+    if ok_0 {
+        for key in &mut info.keymap.keys {
+            for group in &mut key.groups {
+                for level in &mut group.levels {
+                    level.actions = Vec::new();
+                }
+            }
+        }
+    }
     pending_computations_array_free(&mut info.pending_computations);
     ok_0
 }
 pub(crate) const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
-
-/// Appends bytes from `src` to the Vec<i8>.
-#[inline]
-fn vec_append_nul_terminated(v: &mut Vec<i8>, src: &[u8]) {
-    v.extend(src.iter().map(|&b| b as i8));
-}
 
 /// Index-based sval for scanner input. Used in Lvalue/rule to avoid
 /// lifetime issues across include boundaries. Reconstruct sval via to_sval().
@@ -4172,11 +4136,11 @@ pub(crate) struct Matcher<'a> {
     pub(crate) mapping: Mapping,
     pub(crate) rule: Rule,
     pub(crate) pending_kccgst: KccgstBuffer,
-    pub(crate) kccgst: [Vec<i8>; 5],
+    pub(crate) kccgst: [Vec<u8>; 5],
 }
 #[derive(Clone, Default)]
 pub(crate) struct KccgstBuffer {
-    pub(crate) buffer: Vec<i8>,
+    pub(crate) buffer: Vec<u8>,
     pub(crate) slices: Vec<KccgstBufferSlice>,
 }
 #[derive(Copy, Clone)]
@@ -5000,7 +4964,7 @@ fn expand_rmlvo_in_kccgst_value(
     s: &mut Scanner,
     value: Sval,
     layout_idx: u32,
-    expanded: &mut Vec<i8>,
+    expanded: &mut Vec<u8>,
     i: &mut usize,
 ) -> bool {
     let bytes = value.data;
@@ -5016,12 +4980,12 @@ fn expand_rmlvo_in_kccgst_value(
         } else {
             *i += 1;
             let idx_str = format!("{}", layout_idx.wrapping_add(1_u32));
-            vec_append_nul_terminated(expanded, idx_str.as_bytes());
+            expanded.extend_from_slice(idx_str.as_bytes());
             return true;
         }
     } else {
-        let mut sfx: i8 = 0;
-        let mut pfx: i8 = 0;
+        let mut sfx = 0;
+        let mut pfx = 0;
         let ch = bytes[*i];
         if ch == b'('
             || ch as i32 == MERGE_OVERRIDE_PREFIX
@@ -5030,9 +4994,9 @@ fn expand_rmlvo_in_kccgst_value(
             || ch == b'_'
             || ch == b'-'
         {
-            pfx = ch as i8;
+            pfx = ch;
             if ch == b'(' {
-                sfx = b')' as i8;
+                sfx = b')';
             }
             *i += 1;
             if *i >= value.data.len() {
@@ -5078,7 +5042,7 @@ fn expand_rmlvo_in_kccgst_value(
                 let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
-            let ch = bytes[*i] as i8;
+            let ch = bytes[*i];
             *i += 1;
             if ch != sfx {
                 let _loc_1: ScannerLoc = s.token_location();
@@ -5142,11 +5106,11 @@ fn expand_rmlvo_in_kccgst_value(
         }
 
         if pfx != 0 {
-            vec_append_nul_terminated(expanded, &[pfx as u8]);
+            expanded.push(pfx);
         }
-        vec_append_nul_terminated(expanded, ev_sval.data);
+        expanded.extend_from_slice(ev_sval.data);
         if sfx != 0 {
-            vec_append_nul_terminated(expanded, &[sfx as u8]);
+            expanded.push(sfx);
         }
 
         // Set matched flag
@@ -5166,7 +5130,7 @@ fn expand_qualifier_in_kccgst_value(
     m: &mut Matcher,
     s: &mut Scanner,
     value: Sval,
-    expanded: &mut Vec<i8>,
+    expanded: &mut Vec<u8>,
     has_layout_idx_range: bool,
     has_separator: bool,
     prefix_idx: u32,
@@ -5185,7 +5149,7 @@ fn expand_qualifier_in_kccgst_value(
         if has_layout_idx_range {
             let _loc: ScannerLoc = s.token_location();
         }
-        vec_append_nul_terminated(expanded, b"1");
+        expanded.push(b'1');
         if m.rmlvo.layouts.len() > 1 {
             let prefix_length = expanded
                 .len()
@@ -5198,7 +5162,7 @@ fn expand_qualifier_in_kccgst_value(
             };
             for l in 1..max_l {
                 if !has_separator {
-                    expanded.push(b'+' as i8);
+                    expanded.push(b'+');
                 }
                 {
                     let old_size = expanded.len();
@@ -5211,14 +5175,14 @@ fn expand_qualifier_in_kccgst_value(
                     expanded.truncate(new_size - 1);
                 }
                 let idx_str = format!("{}", l.wrapping_add(1_u32));
-                vec_append_nul_terminated(expanded, idx_str.as_bytes());
+                expanded.extend_from_slice(idx_str.as_bytes());
             }
         }
         *i = (*i).wrapping_add(3_usize);
     }
 }
 #[inline]
-fn concat_kccgst(into: &mut Vec<i8>, from: &[i8]) {
+fn concat_kccgst(into: &mut Vec<u8>, from: &[u8]) {
     let from_plus = !from.is_empty()
         && (from[0] as i32 == MERGE_OVERRIDE_PREFIX
             || from[0] as i32 == MERGE_AUGMENT_PREFIX
@@ -5226,7 +5190,7 @@ fn concat_kccgst(into: &mut Vec<i8>, from: &[i8]) {
     if from_plus || into.is_empty() {
         into.extend_from_slice(from);
     } else {
-        let ch = if into.is_empty() { 0i8 } else { into[0] };
+        let ch = if into.is_empty() { 0 } else { into[0] };
         let into_plus = ch as i32 == MERGE_OVERRIDE_PREFIX
             || ch as i32 == MERGE_AUGMENT_PREFIX
             || ch as i32 == MERGE_REPLACE_PREFIX;
@@ -5245,9 +5209,9 @@ fn expand_kccgst_value(
     s: &mut Scanner,
     value: Sval,
     layout_idx: u32,
-) -> Option<Vec<i8>> {
+) -> Option<Vec<u8>> {
     let bytes = value.data;
-    let mut expanded: Vec<i8> = Vec::new();
+    let mut expanded = Vec::new();
     let mut last_item_idx: u32 = 0;
     let mut has_separator: bool = false;
     let mut invalid = false;
@@ -5258,7 +5222,7 @@ fn expand_kccgst_value(
         }
         match bytes[i] {
             b':' => {
-                vec_append_nul_terminated(&mut expanded, &[bytes[i]]);
+                expanded.push(bytes[i]);
                 i += 1;
                 expand_qualifier_in_kccgst_value(
                     m,
@@ -5284,13 +5248,13 @@ fn expand_kccgst_value(
                 || b as i32 == MERGE_AUGMENT_PREFIX
                 || b as i32 == MERGE_REPLACE_PREFIX =>
             {
-                vec_append_nul_terminated(&mut expanded, &[bytes[i]]);
+                expanded.push(bytes[i]);
                 i += 1;
                 last_item_idx = (expanded.len() - 1) as u32;
                 has_separator = true;
             }
             _ => {
-                vec_append_nul_terminated(&mut expanded, &[bytes[i]]);
+                expanded.push(bytes[i]);
                 i += 1;
             }
         }
@@ -5316,6 +5280,9 @@ fn matcher_append_pending_kccgst(m: &mut Matcher) -> bool {
     };
     for i in 0..m.mapping.num_kccgst as usize {
         let kccgst: u32 = m.mapping.kccgst_at_pos[i];
+        if kccgst == KCCGST_GEOMETRY {
+            continue;
+        }
         for layout in range_min..range_max {
             let mut offset: usize = 0_usize;
             for k in 0..m.pending_kccgst.slices.len() {
@@ -5323,7 +5290,7 @@ fn matcher_append_pending_kccgst(m: &mut Matcher) -> bool {
                 let slice_kccgst = m.pending_kccgst.slices[k].kccgst;
                 let slice_layout = m.pending_kccgst.slices[k].layout;
                 if slice_kccgst == kccgst && slice_layout == layout && slice_len != 0 {
-                    let from: Vec<i8> =
+                    let from: Vec<u8> =
                         m.pending_kccgst.buffer[offset..offset + slice_len as usize].to_vec();
                     concat_kccgst(&mut m.kccgst[kccgst as usize], &from);
                 }
@@ -5481,6 +5448,9 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
             if candidate_layouts & 1 << idx != 0 {
                 for i_0 in 0..m.mapping.num_kccgst as usize {
                     let kccgst: u32 = m.mapping.kccgst_at_pos[i_0];
+                    if kccgst == KCCGST_GEOMETRY {
+                        continue;
+                    }
                     let value_0: Sval = m.rule.kccgst_value_at_pos[i_0].to_sval(s.s);
                     let prev_buffer_length: u32 = m.pending_kccgst.buffer.len() as u32;
                     if let Some(expanded) = expand_kccgst_value(m, s, value_0, idx) {
@@ -5502,6 +5472,9 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
     } else if let LayoutIdx::Index { layout_idx_min, .. } = m.mapping.layout {
         for i_1 in 0..m.mapping.num_kccgst as usize {
             let kccgst_0: u32 = m.mapping.kccgst_at_pos[i_1];
+            if kccgst_0 == KCCGST_GEOMETRY {
+                continue;
+            }
             let value_1: Sval = m.rule.kccgst_value_at_pos[i_1].to_sval(s.s);
             if let Some(expanded) = expand_kccgst_value(m, s, value_1, layout_idx_min) {
                 if !expanded.is_empty() {
@@ -5845,11 +5818,6 @@ fn xkb_resolve_rules(
                     v.push(0);
                     out.symbols = v;
                 }
-                {
-                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_GEOMETRY as usize]);
-                    v.push(0);
-                    out.geometry = v;
-                }
                 for mval in matcher.rmlvo.layouts.iter() {
                     if !mval.matched && !mval.sval.data.is_empty() {}
                 }
@@ -5862,7 +5830,7 @@ fn xkb_resolve_rules(
                 if !out.symbols.is_empty() {
                     *explicit_layouts = 1_u32;
                     // Parse symbols string to find explicit layout count
-                    let sym_bytes: Vec<u8> = out.symbols.iter().map(|&b| b as u8).collect();
+                    let sym_bytes = &out.symbols;
                     let mut pos: usize = 0;
                     loop {
                         match sym_bytes[pos..].iter().position(|&b| b == b':') {
@@ -6054,18 +6022,10 @@ pub(crate) struct XkbKeymap {
     pub(crate) num_keys_low: u32,
     pub(crate) keys: Vec<XkbKey>,
     pub(crate) key_names: Vec<KeycodeMatch>,
-    pub(crate) key_aliases: Vec<XkbKeyAlias>,
     pub(crate) types: Vec<XkbKeyType>,
-    pub(crate) sym_interprets: Vec<XkbSymInterpret>,
     pub(crate) mods: XkbModSet,
-    pub(crate) canonical_state_mask: u32,
-    pub(crate) redirect_key_auto: u32,
     pub(crate) num_groups: u32,
     pub(crate) group_names: Vec<u32>,
-    pub(crate) keycodes_section_name: String,
-    pub(crate) symbols_section_name: String,
-    pub(crate) types_section_name: String,
-    pub(crate) compat_section_name: String,
 }
 
 #[derive(Copy, Clone, Default)]
@@ -6094,7 +6054,6 @@ pub(crate) struct XkbSymInterpret {
     pub(crate) virtual_mod: u32,
     pub(crate) level_one_only: bool,
     pub(crate) repeat: bool,
-    pub(crate) required: bool,
     pub(crate) num_actions: u16,
     pub(crate) action: XkbAction,
     pub(crate) actions: Vec<XkbAction>,
@@ -6239,7 +6198,6 @@ pub const MATCH_NONE: u32 = 0;
 pub(crate) struct XkbKeyType {
     pub(crate) name: u32,
     pub(crate) mods: XkbMods,
-    pub(crate) required: bool,
     pub(crate) num_levels: u32,
     pub(crate) entries: Vec<XkbKeyTypeEntry>,
 }
@@ -6250,9 +6208,6 @@ pub(crate) struct XkbKeyTypeEntry {
     pub(crate) mods: XkbMods,
     pub(crate) preserve: XkbMods,
 }
-
-#[derive(Copy, Clone)]
-pub(crate) struct XkbKeyAlias {}
 
 #[derive(Copy, Clone, Default)]
 pub(crate) struct KeycodeMatch {
@@ -6266,43 +6221,31 @@ pub(crate) struct KeycodeMatch {
 pub(crate) struct XkbKey {
     pub(crate) keycode: u32,
     pub(crate) name: u32,
-    pub(crate) explicit: u32,
+    pub(crate) explicit_repeat: bool,
+    pub(crate) explicit_vmodmap: bool,
     pub(crate) modmap: u32,
     pub(crate) vmodmap: u32,
-    pub(crate) overlays: u8,
     pub(crate) repeats: bool,
-    pub(crate) implicit_actions: bool,
     pub(crate) out_of_range_pending_group: bool,
     pub(crate) out_of_range_group_policy: u32,
     pub(crate) out_of_range_group_number: u32,
     pub(crate) num_groups: u32,
     pub(crate) groups: Vec<XkbGroup>,
-    pub(crate) overlay_keys: Vec<u32>,
 }
 
 #[derive(Clone, Default)]
 pub(crate) struct XkbGroup {
-    pub(crate) explicit_symbols: bool,
     pub(crate) explicit_actions: bool,
     pub(crate) implicit_actions: bool,
-    pub(crate) explicit_type: bool,
     pub(crate) type_idx: u32,
     pub(crate) levels: Vec<XkbLevel>,
 }
 
 #[derive(Clone, Default)]
 pub(crate) struct XkbLevel {
-    pub(crate) upper: u32,
     pub(crate) syms: Vec<u32>,
     pub(crate) actions: Vec<XkbAction>,
 }
-
-pub(crate) const EXPLICIT_OVERLAY: u32 = 32;
-pub(crate) const EXPLICIT_REPEAT: u32 = 16;
-pub(crate) const EXPLICIT_VMODMAP: u32 = 8;
-pub(crate) const EXPLICIT_TYPES: u32 = 4;
-pub(crate) const EXPLICIT_INTERP: u32 = 2;
-pub(crate) const EXPLICIT_SYMBOLS: u32 = 1;
 
 #[derive(Copy, Clone, Default)]
 pub(crate) struct XkbLed {
@@ -6348,11 +6291,10 @@ pub(crate) const XKB_KEYSYM_MAX: u32 = 0x1fffffff;
 
 #[derive(Clone, Default)]
 pub(crate) struct XkbComponentNames {
-    pub(crate) keycodes: Vec<i8>,
-    pub(crate) compatibility: Vec<i8>,
-    pub(crate) geometry: Vec<i8>,
-    pub(crate) symbols: Vec<i8>,
-    pub(crate) types: Vec<i8>,
+    pub(crate) keycodes: Vec<u8>,
+    pub(crate) compatibility: Vec<u8>,
+    pub(crate) symbols: Vec<u8>,
+    pub(crate) types: Vec<u8>,
 }
 
 pub(crate) const XKB_ATOM_NONE: u32 = 0;
@@ -6760,6 +6702,7 @@ pub(crate) struct XkbKeymapInfo<'a> {
     pub(crate) features: XkbcompFeatures,
     pub(crate) lookup: XkbcompLookup,
     pub(crate) pending_computations: Vec<PendingComputation>,
+    pub(crate) sym_interprets: Vec<XkbSymInterpret>,
 }
 
 #[derive(Copy, Clone)]
