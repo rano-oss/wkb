@@ -23,23 +23,21 @@ impl FlatMapValue for NamedKey {
 pub(crate) struct FlatMap<T: FlatMapValue> {
     pub(crate) data: Vec<T>,
     pub(crate) num_keys: usize,
-    pub(crate) num_layouts: usize,
 }
 
 impl<T: FlatMapValue> FlatMap<T> {
-    pub(crate) fn new(num_keys: usize, num_layouts: usize) -> Self {
+    pub(crate) fn new(num_keys: usize) -> Self {
         Self {
-            data: vec![T::empty(); num_layouts * MAX_LEVELS * num_keys],
+            data: vec![T::empty(); MAX_LEVELS * num_keys],
             num_keys,
-            num_layouts,
         }
     }
 
     #[inline(always)]
-    pub(crate) fn get(&self, layout: usize, level: usize, evdev_code: u32) -> T {
+    pub(crate) fn get(&self, level: usize, evdev_code: u32) -> T {
         let k = evdev_code as usize;
-        if k < self.num_keys && layout < self.num_layouts {
-            let idx = (layout * MAX_LEVELS + level) * self.num_keys + k;
+        if k < self.num_keys {
+            let idx = level * self.num_keys + k;
             self.data[idx]
         } else {
             T::empty()
@@ -47,10 +45,9 @@ impl<T: FlatMapValue> FlatMap<T> {
     }
 }
 
-/// Flat keymap: `num_layouts * MAX_LEVELS` planes of `num_keys` slots.
-/// Index: `(layout * MAX_LEVELS + level) * num_keys + evdev_code`.
+/// Flat keymap: `MAX_LEVELS` planes of `num_keys` slots.
+/// Index: `level * num_keys + evdev_code`.
 pub(crate) type FlatKeymap = FlatMap<Option<char>>;
-/// Flat named-key map: same layout as `FlatKeymap` but stores [`NamedKey`] values.
-/// Index: `(layout * MAX_LEVELS + level) * num_keys + evdev_code`.
+/// Flat named-key map: same shape as `FlatKeymap` but stores [`NamedKey`] values.
 /// [`NamedKey::Unnamed`] means no named key is mapped.
 pub(crate) type FlatNamedKeyMap = FlatMap<NamedKey>;
