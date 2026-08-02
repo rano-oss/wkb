@@ -10,11 +10,11 @@ pub(crate) mod symbols;
 
 use crate::composer::Token;
 use crate::flat_keymap::{FlatKeymap, FlatNamedKeyMap, MAX_LEVELS};
-use crate::{KBLayout, modifiers::*};
 use crate::named_keys::NamedKey;
 use crate::Composer;
 use crate::KeyBitSet;
 use crate::WKB;
+use crate::{modifiers::*, KBLayout};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
 
@@ -128,7 +128,13 @@ fn resolve_char(
     keysym::keysym_to_char(sym)
 }
 
-type ComposeTable = Arc<Vec<keymap::ComposeEntry>>;
+struct ComposeTableData {
+    entries: Vec<keymap::ComposeEntry>,
+    composer: Composer,
+    filtered: Mutex<Vec<(Vec<char>, Arc<Composer>)>>,
+}
+
+type ComposeTable = Arc<ComposeTableData>;
 type ComposeTableCache = Vec<(PathBuf, ComposeTable)>;
 
 static COMPOSE_TABLE_CACHE: OnceLock<Mutex<ComposeTableCache>> = OnceLock::new();
@@ -147,26 +153,27 @@ fn cached_compose_table(cache: &ComposeTableCache, path: &Path) -> Option<Compos
         .map(|(_, table)| table.clone())
 }
 
-fn parse_compose_table(path: &Path) -> (Vec<keymap::ComposeEntry>, bool) {
+fn parse_compose_table(path: &Path) -> (ComposeTableData, bool) {
     let mut entries = Vec::new();
     let complete = keymap::parse_compose_file_impl(path, &mut |entry| entries.push(entry));
-    (entries, complete)
+    let composer = build_composer(&entries, None);
+    (
+        ComposeTableData {
+            entries,
+            composer,
+            filtered: Mutex::new(Vec::new()),
+        },
+        complete,
+    )
 }
 
-fn build_composer(
-    entries: &[keymap::ComposeEntry],
-    reachable: Option<&[char]>,
-) -> Composer {
+fn build_composer(entries: &[keymap::ComposeEntry], reachable: Option<&[char]>) -> Composer {
     use arrayvec::ArrayVec;
 
     let mut composer = Composer::new();
     for entry in entries {
         if let Some(chars) = reachable {
-            if !entry
-                .keys
-                .iter()
-                .all(|ch| chars.binary_search(ch).is_ok())
-            {
+            if !entry.keys.iter().all(|ch| chars.binary_search(ch).is_ok()) {
                 continue;
             }
         }
@@ -184,6 +191,19 @@ fn build_composer(
         composer.insert(&tokens, entry.output);
     }
     composer
+}
+
+fn layout_composer(table: &ComposeTable, reachable: &[char]) -> Composer {
+    let mut cache = table
+        .filtered
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if let Some((_, composer)) = cache.iter().find(|(chars, _)| chars == reachable) {
+        return composer.as_ref().clone();
+    }
+    let composer = Arc::new(build_composer(&table.entries, Some(reachable)));
+    cache.push((reachable.to_vec(), composer.clone()));
+    composer.as_ref().clone()
 }
 
 fn load_compose_entries(path: &Path) -> ComposeTable {
@@ -222,12 +242,12 @@ fn load_compose_entries(path: &Path) -> ComposeTable {
 
 /// Load a compose file using parsed entries cached by canonical path.
 pub fn load_compose_from_path(path: &Path) -> Composer {
-    build_composer(&load_compose_entries(path), None)
+    load_compose_entries(path).composer.clone()
 }
 
 #[cfg(feature = "testing")]
 pub fn load_compose_from_path_uncached(path: &Path) -> Composer {
-    build_composer(&parse_compose_table(path).0, None)
+    parse_compose_table(path).0.composer
 }
 
 /// Map an XKB keysym value to a [`NamedKey`].
@@ -577,9 +597,7 @@ fn build_wkb_from_keymap(
         .ok();
 
     let mut layouts = Vec::with_capacity(num_layouts);
-    for (layout_idx, (base_states, caps_states, num_states)) in
-        layout_states.iter().enumerate()
-    {
+    for (layout_idx, (base_states, caps_states, num_states)) in layout_states.iter().enumerate() {
         let mut level_exceptions_keymap = FlatKeymap::new(num_keys);
         let mut named_key_map = FlatNamedKeyMap::new(num_keys);
         let mut state_keymap = FlatKeymap::new(num_keys);
@@ -669,13 +687,13 @@ fn build_wkb_from_keymap(
                 .filter(|locale| !locale.is_empty())
                 .or(env_locale.as_deref());
             compose_locale
-            .and_then(keymap::resolve_compose_file)
-            .map(|subpath| {
-                let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
-                let entries = load_compose_entries(&path);
-                build_composer(&entries, Some(&reachable))
-            })
-            .unwrap_or_default()
+                .and_then(keymap::resolve_compose_file)
+                .map(|subpath| {
+                    let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
+                    let table = load_compose_entries(&path);
+                    layout_composer(&table, &reachable)
+                })
+                .unwrap_or_default()
         };
 
         #[cfg(not(feature = "compose"))]
@@ -1390,8 +1408,7 @@ impl WKB {
                     &layout.modifiers,
                     evdev,
                 ) > 0
-            })
-            {
+            }) {
                 let name = evdev_to_keyname(evdev);
                 writeln!(out, "\t<{}> = {};", name, evdev + 8).unwrap();
             }
@@ -1434,17 +1451,16 @@ impl WKB {
                 continue;
             }
             let name = evdev_to_keyname(evdev);
-            let type_name =
-                if max_level == 2
-                    && self
-                        .layouts
-                        .iter()
-                        .any(|layout| is_alphabetic(&layout.state_keymap, evdev))
-                {
-                    "ALPHABETIC"
-                } else {
-                    type_for_levels(max_level)
-                };
+            let type_name = if max_level == 2
+                && self
+                    .layouts
+                    .iter()
+                    .any(|layout| is_alphabetic(&layout.state_keymap, evdev))
+            {
+                "ALPHABETIC"
+            } else {
+                type_for_levels(max_level)
+            };
 
             if num_layouts == 1 {
                 // Single-group format
@@ -1498,7 +1514,11 @@ impl WKB {
                         out.push_str(" ]");
                     }
                 }
-                if self.layouts.iter().any(|layout| layout.repeat_keys.contains(evdev)) {
+                if self
+                    .layouts
+                    .iter()
+                    .any(|layout| layout.repeat_keys.contains(evdev))
+                {
                     out.push_str(",\n\t\trepeat=Yes");
                 }
                 out.push('\n');

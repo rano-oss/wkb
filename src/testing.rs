@@ -84,7 +84,9 @@ pub trait WKBTestExt {
 
 impl WKBTestExt for WKB {
     fn active_mod_type(&self, mod_type: ModType) -> bool {
-        self.layouts[self.current_layout_idx].modifiers.active_mod_type(mod_type)
+        self.layouts[self.current_layout_idx]
+            .modifiers
+            .active_mod_type(mod_type)
     }
 
     fn modifiers(&self) -> &Modifiers {
@@ -96,15 +98,24 @@ impl WKBTestExt for WKB {
     }
 
     fn level2_code(&self) -> Option<(u32, Option<u8>)> {
-        xkb::level_code(&self.layouts[self.current_layout_idx].modifiers, ModType::Level2)
+        xkb::level_code(
+            &self.layouts[self.current_layout_idx].modifiers,
+            ModType::Level2,
+        )
     }
 
     fn level3_code(&self) -> Option<(u32, Option<u8>)> {
-        xkb::level_code(&self.layouts[self.current_layout_idx].modifiers, ModType::Level3)
+        xkb::level_code(
+            &self.layouts[self.current_layout_idx].modifiers,
+            ModType::Level3,
+        )
     }
 
     fn level5_code(&self) -> Option<(u32, Option<u8>)> {
-        xkb::level_code(&self.layouts[self.current_layout_idx].modifiers, ModType::Level5)
+        xkb::level_code(
+            &self.layouts[self.current_layout_idx].modifiers,
+            ModType::Level5,
+        )
     }
 
     fn update_key(&mut self, evdev_code: u32, key_direction: crate::KeyDirection) -> bool {

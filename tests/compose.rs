@@ -213,9 +213,7 @@ fn multi_layout_composers_use_layout_locale_and_reachable_inputs() {
     for layout in 0..wkb.num_layouts() {
         wkb.set_layout(layout).unwrap();
         let producible = wkb.producible_chars();
-        assert!(wkb
-            .composer_input_chars()
-            .is_subset(&producible));
+        assert!(wkb.composer_input_chars().is_subset(&producible));
     }
 
     wkb.set_layout(0).unwrap();

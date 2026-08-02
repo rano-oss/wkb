@@ -166,7 +166,9 @@ impl WKB {
     ///
     /// Returns depressed, latched, locked bitmasks and the active layout index.
     pub fn raw_modifiers(&self) -> RawModifiers {
-        self.layouts[self.current_layout_idx].modifiers.state(self.current_layout_idx)
+        self.layouts[self.current_layout_idx]
+            .modifiers
+            .state(self.current_layout_idx)
     }
 
     /// Return `true` if the Shift modifier is active.
@@ -213,7 +215,9 @@ impl WKB {
         if (group as usize) < self.num_layouts() {
             let _ = self.set_layout(group as usize);
         }
-        self.layouts[self.current_layout_idx].modifiers.update(depressed, latched, locked);
+        self.layouts[self.current_layout_idx]
+            .modifiers
+            .update(depressed, latched, locked);
     }
 
     /// Return the LED indicator state.
@@ -223,7 +227,9 @@ impl WKB {
 
     /// Return whether the given evdev keycode is a repeating key.
     pub fn key_repeats(&self, evdev_code: u32) -> bool {
-        self.layouts[self.current_layout_idx].repeat_keys.contains(evdev_code)
+        self.layouts[self.current_layout_idx]
+            .repeat_keys
+            .contains(evdev_code)
     }
 
     /// Return the number of layouts in this keymap.
@@ -272,8 +278,7 @@ impl WKB {
         let level3 = level3 && kb_layout.named_key_map.data.len() > 2 * nk;
         let level2 = level2 && kb_layout.named_key_map.data.len() > nk;
         let level = level_index(level5, level3, level2);
-        kb_layout.named_key_map
-            .get(level, evdev_code)
+        kb_layout.named_key_map.get(level, evdev_code)
     }
 
     /// Get the named key at a specific layout and level for an evdev keycode.
@@ -288,7 +293,10 @@ impl WKB {
     /// Does not consider caps lock or num lock overrides.
     pub fn level_key_char(&self, evdev_code: u32, layout: usize, level: usize) -> Option<char> {
         #[cfg(feature = "xkb")]
-        if let Some(exception_char) = self.layouts[layout].level_exceptions_keymap.get(level, evdev_code) {
+        if let Some(exception_char) = self.layouts[layout]
+            .level_exceptions_keymap
+            .get(level, evdev_code)
+        {
             return Some(exception_char);
         }
         self.layouts[layout].state_keymap.get(level, evdev_code)
@@ -317,10 +325,7 @@ impl WKB {
             }
         }
         if kb_layout.modifiers.caps_locked() {
-            if let Some(c) = kb_layout
-                .caps_lock_keymap
-                .get(base_level, evdev_code)
-            {
+            if let Some(c) = kb_layout.caps_lock_keymap.get(base_level, evdev_code) {
                 return Some(c);
             }
         }
@@ -353,8 +358,11 @@ impl WKB {
         let compose = if is_modifier && kb_layout.modifiers.active_mod_type(ModType::Compose) {
             Some(kb_layout.composer.feed(Token::Compose))
         } else if !is_modifier {
-            self.key_char(evdev_code)
-                .map(|c| self.layouts[self.current_layout_idx].composer.feed(Token::Char(c)))
+            self.key_char(evdev_code).map(|c| {
+                self.layouts[self.current_layout_idx]
+                    .composer
+                    .feed(Token::Char(c))
+            })
         } else {
             None
         };
@@ -394,9 +402,11 @@ impl WKB {
     pub fn repeat_key(&mut self, evdev_code: u32) -> KeyResult {
         let key = self.state_named_key(evdev_code);
         #[cfg(feature = "compose")]
-        let compose = self
-            .key_char(evdev_code)
-            .map(|c| self.layouts[self.current_layout_idx].composer.feed(Token::Char(c)));
+        let compose = self.key_char(evdev_code).map(|c| {
+            self.layouts[self.current_layout_idx]
+                .composer
+                .feed(Token::Char(c))
+        });
         #[cfg(not(feature = "compose"))]
         let compose = self.key_char(evdev_code).map(ComposeState::Idle);
         KeyResult {
