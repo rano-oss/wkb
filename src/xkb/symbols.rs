@@ -7,7 +7,6 @@ pub(crate) use super::keymap::{
 };
 use super::keysym::xkb_keysym_is_keypad;
 use super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
-use super::parser::ArenaBox;
 use super::parser::{exceeds_include_max_depth, process_include_file};
 pub(crate) use super::parser::{
     InterpDef, KeyAliasDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, SymbolsDef,
@@ -486,7 +485,7 @@ fn handle_include_symbols(
     for stmt in includes.iter_mut() {
         let mut next_incl = SymbolsInfo::new(ki);
 
-        let file: Option<ArenaBox<XkbFile>> =
+        let file: Option<Box<XkbFile>> =
             process_include_file(&mut ki.keymap.ctx, stmt, FileType::Symbols);
         let Some(mut file) = file else {
             info.error_count += 10;
@@ -568,11 +567,14 @@ fn add_symbols_to_key(
         return false;
     }
     let groupi = &mut keyi.groups[ndx as usize];
-    if value.stmt_type() == STMT_EXPR_EMPTY_LIST {
+    if matches!(value, ExprKind::EmptyList) {
         groupi.defined |= GROUP_FIELD_SYMS;
         return true;
     }
-    if value.stmt_type() != STMT_EXPR_KEYSYM_LIST && value.stmt_type() != STMT_EXPR_ACTION_LIST {
+    if !matches!(
+        value,
+        ExprKind::KeysymList { .. } | ExprKind::ActionList { .. }
+    ) {
         return false;
     }
     if groupi.defined & GROUP_FIELD_SYMS != 0 {
@@ -632,11 +634,11 @@ fn add_actions_to_key(
         return false;
     }
     let groupi = &mut keyi.groups[ndx as usize];
-    if value.stmt_type() == STMT_EXPR_EMPTY_LIST {
+    if matches!(value, ExprKind::EmptyList) {
         groupi.defined |= GROUP_FIELD_ACTS;
         return true;
     }
-    if value.stmt_type() != STMT_EXPR_ACTION_LIST {
+    if !matches!(value, ExprKind::ActionList { .. }) {
         return false;
     }
     if groupi.defined & GROUP_FIELD_ACTS != 0 {
@@ -655,9 +657,8 @@ fn add_actions_to_key(
             .resize_with(n_levels as usize, Default::default);
     }
     groupi.defined |= GROUP_FIELD_ACTS;
-    let mut level: u32 = 0;
     let mut non_empty_levels: u32 = 0;
-    for action_node in action_nodes {
+    for (level, action_node) in (0_u32..).zip(action_nodes.iter_mut()) {
         let ExprKind::ActionList {
             actions: action_vec,
         } = action_node
@@ -715,7 +716,6 @@ fn add_actions_to_key(
                 non_empty_levels = level.wrapping_add(1);
             }
         }
-        level += 1;
     }
     let groupi = &mut keyi.groups[ndx as usize];
     if non_empty_levels < n_levels {
@@ -782,11 +782,8 @@ fn expr_resolve_overlay_entry(
         return false;
     }
     *overlay_rtrn = (raw_overlay as u8 as i32 - 1) as u8;
-    match expr.stmt_type() {
-        8 => {
-            let ExprKind::KeyName(key_name_val) = expr else {
-                unreachable!()
-            };
+    match expr {
+        ExprKind::KeyName(key_name_val) => {
             let key_kc = keymap_info
                 .keymap
                 .key_by_name(*key_name_val, false)
@@ -797,10 +794,7 @@ fn expr_resolve_overlay_entry(
             }
             true
         }
-        10 => {
-            let ExprKind::Ident(ident_val) = expr else {
-                unreachable!()
-            };
+        ExprKind::Ident(ident_val) => {
             let id: &str = atom_text(&keymap_info.keymap.ctx.atom_table, *ident_val);
             if !id.is_empty() && id.eq_ignore_ascii_case("none") {
                 *key_rtrn = XKB_KEYCODE_INVALID;
@@ -886,7 +880,7 @@ fn set_symbols_field(
     keyi: &mut KeyInfo,
     field: &str,
     array_ndx: Option<&ExprKind>,
-    value_opt: &mut Option<ArenaBox<ExprKind>>,
+    value_opt: &mut Option<ExprKind>,
 ) -> bool {
     let mapped_field = match parse_symbols_field(field) {
         Some(f) => f,
@@ -896,20 +890,16 @@ fn set_symbols_field(
     match mapped_field {
         SymbolsField::Type => {
             let mut ndx: u32 = 0;
-            let mut val: u32 = XKB_ATOM_NONE;
-            if !expr_resolve_string(value_opt.as_deref().unwrap(), &mut val) {
+            let Some(val) = expr_resolve_string(value_opt.as_ref().unwrap()) else {
                 return false;
-            }
-            if array_ndx.is_none() {
-                keyi.default_type = val;
-                keyi.defined |= KEY_FIELD_DEFAULT_TYPE;
-            } else if {
+            };
+            if let Some(array_ndx) = array_ndx {
                 let mut _pending = false;
-                expr_resolve_group(ki, array_ndx.unwrap(), false, &mut ndx, &mut _pending)
-            } != ParseStatus::Success
-            {
-                return false;
-            } else {
+                if expr_resolve_group(ki, array_ndx, false, &mut ndx, &mut _pending)
+                    != ParseStatus::Success
+                {
+                    return false;
+                }
                 ndx -= 1;
                 if ndx >= keyi.groups.len() as u32 {
                     keyi.groups
@@ -917,26 +907,23 @@ fn set_symbols_field(
                 }
                 keyi.groups[ndx as usize].type_0 = val;
                 keyi.groups[ndx as usize].defined |= GROUP_FIELD_TYPE;
+            } else {
+                keyi.default_type = val;
+                keyi.defined |= KEY_FIELD_DEFAULT_TYPE;
             }
         }
         SymbolsField::Symbols => {
-            return add_symbols_to_key(ki, info, keyi, array_ndx, value_opt.as_deref().unwrap());
+            return add_symbols_to_key(ki, info, keyi, array_ndx, value_opt.as_ref().unwrap());
         }
         SymbolsField::Actions => {
-            return add_actions_to_key(
-                ki,
-                info,
-                keyi,
-                array_ndx,
-                value_opt.as_mut().map(|b| &mut **b).unwrap(),
-            );
+            return add_actions_to_key(ki, info, keyi, array_ndx, value_opt.as_mut().unwrap());
         }
         SymbolsField::Vmods => {
-            let mut mask: u32 = 0;
-            let val = value_opt.as_deref().unwrap();
-            if !expr_resolve_mod_mask(&ki.keymap.ctx, val, MOD_VIRT, &info.mods, &mut mask) {
+            let val = value_opt.as_ref().unwrap();
+            let Some(mask) = expr_resolve_mod_mask(&ki.keymap.ctx, val, MOD_VIRT, &info.mods)
+            else {
                 return false;
-            }
+            };
             keyi.vmodmap = mask;
             keyi.defined |= KEY_FIELD_VMODMAP;
         }
@@ -948,7 +935,7 @@ fn set_symbols_field(
                 ki,
                 field,
                 array_ndx,
-                value_opt.as_deref().unwrap(),
+                value_opt.as_ref().unwrap(),
                 keyi,
                 &mut overlay,
                 &mut key,
@@ -976,23 +963,19 @@ fn set_symbols_field(
             }
         }
         SymbolsField::Repeat => {
-            let mut val_0: u32 = 0;
-            if !expr_resolve_enum(
-                &ki.keymap.ctx,
-                value_opt.as_deref().unwrap(),
-                &mut val_0,
-                &REPEAT_ENTRIES,
-            ) {
+            let Some(val_0) =
+                expr_resolve_enum(&ki.keymap.ctx, value_opt.as_ref().unwrap(), &REPEAT_ENTRIES)
+            else {
                 return false;
-            }
+            };
             keyi.repeat = val_0;
             keyi.defined |= KEY_FIELD_REPEAT;
         }
         SymbolsField::GroupsWrap => {
-            let mut set: bool = false;
-            if !expr_resolve_boolean(&ki.keymap.ctx, value_opt.as_deref().unwrap(), &mut set) {
+            let Some(set) = expr_resolve_boolean(&ki.keymap.ctx, value_opt.as_ref().unwrap())
+            else {
                 return false;
-            }
+            };
             keyi.out_of_range_group_policy = if set {
                 XKB_LAYOUT_OUT_OF_RANGE_WRAP
             } else {
@@ -1001,10 +984,10 @@ fn set_symbols_field(
             keyi.defined |= KEY_FIELD_GROUPINFO;
         }
         SymbolsField::GroupsClamp => {
-            let mut set_0: bool = false;
-            if !expr_resolve_boolean(&ki.keymap.ctx, value_opt.as_deref().unwrap(), &mut set_0) {
+            let Some(set_0) = expr_resolve_boolean(&ki.keymap.ctx, value_opt.as_ref().unwrap())
+            else {
                 return false;
-            }
+            };
             keyi.out_of_range_group_policy = if set_0 {
                 XKB_LAYOUT_OUT_OF_RANGE_CLAMP
             } else {
@@ -1017,7 +1000,7 @@ fn set_symbols_field(
             let mut pending: bool = false;
             if expr_resolve_group(
                 ki,
-                value_opt.as_deref().unwrap(),
+                value_opt.as_ref().unwrap(),
                 false,
                 &mut grp,
                 &mut pending,
@@ -1065,18 +1048,14 @@ fn set_group_name(
     {
         return false;
     }
-    let mut name: u32 = XKB_ATOM_NONE;
-    if !expr_resolve_string(value, &mut name) {
+    let Some(mut name) = expr_resolve_string(value) else {
         return false;
-    }
-    let group_to_use: u32;
-    if info.explicit_group.is_none() {
-        group_to_use = group.wrapping_sub(1);
-    } else if group.wrapping_sub(1) == 0 {
-        group_to_use = info.explicit_group.unwrap();
-    } else {
-        return false;
-    }
+    };
+    let group_to_use = match info.explicit_group {
+        None => group.wrapping_sub(1),
+        Some(explicit_group) if group.wrapping_sub(1) == 0 => explicit_group,
+        Some(_) => return false,
+    };
     if group_to_use >= info.group_names.len() as u32 {
         info.group_names.resize((group_to_use as usize) + 1, 0_u32);
     } else {
@@ -1097,18 +1076,13 @@ fn handle_global_var(
     info: &mut SymbolsInfo,
     stmt: &mut VarDef,
 ) -> bool {
-    let mut elem_atom: u32 = 0;
-    let mut field_atom: u32 = 0;
-    let mut array_ndx_opt: Option<&ExprKind> = None;
     let ret: bool;
-    if !expr_resolve_lhs(
-        stmt.name.as_deref().unwrap(),
-        &mut elem_atom,
-        &mut field_atom,
-        &mut array_ndx_opt,
-    ) {
+    let Some(lhs) = expr_resolve_lhs(stmt.name.as_ref().unwrap()) else {
         return false;
-    }
+    };
+    let elem_atom = lhs.element;
+    let field_atom = lhs.field;
+    let array_ndx_opt = lhs.index;
     let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom).to_owned();
     let field = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
     if !elem.is_empty() && elem.eq_ignore_ascii_case("key") {
@@ -1139,23 +1113,22 @@ fn handle_global_var(
             ki,
             info,
             array_ndx_opt,
-            stmt.value.as_deref().unwrap(),
+            stmt.value.as_ref().unwrap(),
             stmt.merge,
         );
     } else if elem.is_empty()
-        && (field.eq_ignore_ascii_case("groupswrap") || field.eq_ignore_ascii_case("wrapgroups"))
+        && [
+            "groupswrap",
+            "wrapgroups",
+            "groupsclamp",
+            "clampgroups",
+            "groupsredirect",
+            "redirectgroups",
+            "allownone",
+        ]
+        .iter()
+        .any(|name| field.eq_ignore_ascii_case(name))
     {
-        ret = true;
-    } else if elem.is_empty()
-        && (field.eq_ignore_ascii_case("groupsclamp") || field.eq_ignore_ascii_case("clampgroups"))
-    {
-        ret = true;
-    } else if elem.is_empty()
-        && (field.eq_ignore_ascii_case("groupsredirect")
-            || field.eq_ignore_ascii_case("redirectgroups"))
-    {
-        ret = true;
-    } else if elem.is_empty() && field.eq_ignore_ascii_case("allownone") {
         ret = true;
     } else if !elem.is_empty() {
         ret = {
@@ -1187,27 +1160,24 @@ fn handle_symbols_body(
         let field: &str;
         let mut array_ndx_opt: Option<&ExprKind> = None;
         let mut ok: bool = true;
-        if def.name.is_none() {
-            if def.value.is_none() || !is_action_list_value(def.value.as_ref().unwrap()) {
-                field = "symbols";
+        if let Some(name) = def.name.as_ref() {
+            if let Some(lhs) = expr_resolve_lhs(name) {
+                array_ndx_opt = lhs.index;
+                let elem = atom_text(&ki.keymap.ctx.atom_table, lhs.element);
+                field_owned = atom_text(&ki.keymap.ctx.atom_table, lhs.field).to_owned();
+                field = &field_owned;
+                if !elem.is_empty() {
+                    ok = false;
+                }
             } else {
-                field = "actions";
-            }
-        } else {
-            let mut elem_atom: u32 = 0;
-            let mut field_atom: u32 = 0;
-            ok = expr_resolve_lhs(
-                def.name.as_deref().unwrap(),
-                &mut elem_atom,
-                &mut field_atom,
-                &mut array_ndx_opt,
-            );
-            let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom);
-            field_owned = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
-            field = &field_owned;
-            if ok && !elem.is_empty() {
+                field_owned = String::new();
+                field = &field_owned;
                 ok = false;
             }
+        } else if def.value.is_none() || !is_action_list_value(def.value.as_ref().unwrap()) {
+            field = "symbols";
+        } else {
+            field = "actions";
         }
         if def.value.is_none() {
             ok = false;
@@ -1267,33 +1237,26 @@ fn handle_mod_map_def(
         modifier: 0,
         u: 0,
     };
-    let ndx: u32;
     let mut ok: bool;
     let modifier_name: &str = atom_text(&ki.keymap.ctx.atom_table, def.modifier);
-    if modifier_name.eq_ignore_ascii_case("none") {
-        ndx = XKB_MOD_NONE;
+    let ndx = if modifier_name.eq_ignore_ascii_case("none") {
+        XKB_MOD_NONE
     } else {
-        ndx = match xkb_mod_name_to_index(&info.mods, def.modifier, MOD_REAL) {
+        match xkb_mod_name_to_index(&info.mods, def.modifier, MOD_REAL) {
             Some(n) => n,
             None => return false,
-        };
-    }
+        }
+    };
     ok = true;
     tmp.modifier = ndx;
     tmp.merge = def.merge;
     for key in def.keys.iter() {
         let mut add_entry = false;
-        if key.stmt_type() == STMT_EXPR_KEYNAME_LITERAL {
+        if let ExprKind::KeyName(kn) = key {
             tmp.have_symbol = false;
-            let ExprKind::KeyName(kn) = key else {
-                unreachable!()
-            };
             tmp.u = *kn;
             add_entry = true;
-        } else if key.stmt_type() == STMT_EXPR_KEYSYM_LITERAL {
-            let ExprKind::KeySym(ks) = key else {
-                unreachable!()
-            };
+        } else if let ExprKind::KeySym(ks) = key {
             if *ks != XKB_KEY_NO_SYMBOL {
                 tmp.have_symbol = true;
                 tmp.u = *ks;
@@ -1714,10 +1677,7 @@ fn resolve_state_and_predicate(
     };
     *pred_rtrn = MATCH_EXACTLY;
     let resolve_expr: &ExprKind;
-    if expr.stmt_type() == STMT_EXPR_ACTION_DECL {
-        let ExprKind::Action { name, args } = &expr else {
-            unreachable!()
-        };
+    if let ExprKind::Action { name, args } = expr {
         let pred_txt: &str = atom_text(&ki.keymap.ctx.atom_table, *name);
         let mut pred: u32 = 0;
         if !lookup_string(&SYM_INTERPRET_MATCH_MASK_NAMES, pred_txt, &mut pred)
@@ -1728,10 +1688,7 @@ fn resolve_state_and_predicate(
         }
         *pred_rtrn = pred;
         resolve_expr = &args[0];
-    } else if expr.stmt_type() == STMT_EXPR_IDENT {
-        let ExprKind::Ident(ident_val) = &expr else {
-            unreachable!()
-        };
+    } else if let ExprKind::Ident(ident_val) = expr {
         let pred_txt_0: &str = atom_text(&ki.keymap.ctx.atom_table, *ident_val);
         if !pred_txt_0.is_empty() && pred_txt_0.eq_ignore_ascii_case("any") {
             *pred_rtrn = MATCH_ANY;
@@ -1742,13 +1699,12 @@ fn resolve_state_and_predicate(
     } else {
         resolve_expr = expr;
     }
-    expr_resolve_mod_mask(
-        &ki.keymap.ctx,
-        resolve_expr,
-        MOD_REAL,
-        &info.mods,
-        mods_rtrn,
-    )
+    let Some(mods) = expr_resolve_mod_mask(&ki.keymap.ctx, resolve_expr, MOD_REAL, &info.mods)
+    else {
+        return false;
+    };
+    *mods_rtrn = mods;
+    true
 }
 
 fn merge_led_map(old: &mut LedInfo, new: &mut LedInfo) -> bool {
@@ -1854,7 +1810,7 @@ fn handle_include_compat_map(
     for stmt in includes.iter_mut() {
         let mut next_incl = CompatInfo::default();
 
-        let file: Option<ArenaBox<XkbFile>> =
+        let file: Option<Box<XkbFile>> =
             process_include_file(&mut ki.keymap.ctx, stmt, FileType::Compat);
         let Some(mut file) = file else {
             info.error_count += 10;
@@ -1921,7 +1877,7 @@ fn set_interp_field(
             if array_ndx.is_some() {
                 return false;
             }
-            if value.stmt_type() == STMT_EXPR_ACTION_LIST {
+            if matches!(value, ExprKind::ActionList { .. }) {
                 let ExprKind::ActionList {
                     actions: action_vec,
                 } = value
@@ -1998,33 +1954,31 @@ fn set_interp_field(
             if array_ndx.is_some() {
                 return false;
             }
-            let mut ndx: u32 = 0;
-            if !expr_resolve_mod(&ki.keymap.ctx, value, MOD_VIRT, &info.mods, &mut ndx) {
+            let Some(ndx) = expr_resolve_mod(&ki.keymap.ctx, value, MOD_VIRT, &info.mods) else {
                 return false;
-            }
+            };
             si.interp.virtual_mod = ndx;
             si.defined |= SI_FIELD_VIRTUAL_MOD;
         }
         InterpField::Repeat => {
-            let mut set: bool = false;
             if array_ndx.is_some() {
                 return false;
             }
-            if !expr_resolve_boolean(&ki.keymap.ctx, value, &mut set) {
+            let Some(set) = expr_resolve_boolean(&ki.keymap.ctx, value) else {
                 return false;
-            }
+            };
             si.interp.repeat = set;
             si.defined |= SI_FIELD_AUTO_REPEAT;
         }
         InterpField::Locking => {}
         InterpField::UseModMap => {
-            let mut val: u32 = 0;
             if array_ndx.is_some() {
                 return false;
             }
-            if !expr_resolve_enum(&ki.keymap.ctx, value, &mut val, &USE_MOD_MAP_VALUE_NAMES) {
+            let Some(val) = expr_resolve_enum(&ki.keymap.ctx, value, &USE_MOD_MAP_VALUE_NAMES)
+            else {
                 return false;
-            }
+            };
             si.interp.level_one_only = val != 0;
             si.defined |= SI_FIELD_LEVEL_ONE_ONLY;
         }
@@ -2077,9 +2031,9 @@ fn set_led_map_field(
     ledi: &mut LedInfo,
     field: &str,
     array_ndx: Option<&ExprKind>,
-    value_opt: &mut Option<ArenaBox<ExprKind>>,
+    value_opt: &mut Option<ExprKind>,
 ) -> bool {
-    let value: &ExprKind = value_opt.as_deref().unwrap();
+    let value: &ExprKind = value_opt.as_ref().unwrap();
     let mapped_field = match parse_led_map_field(field) {
         Some(f) => f,
         None => return ki.strict & PARSER_NO_UNKNOWN_LED_FIELDS == 0,
@@ -2090,15 +2044,11 @@ fn set_led_map_field(
             if array_ndx.is_some() {
                 return false;
             }
-            if !expr_resolve_mod_mask(
-                &ki.keymap.ctx,
-                value,
-                MOD_BOTH,
-                &info.mods,
-                &mut ledi.led.mods.mods,
-            ) {
+            let Some(mods) = expr_resolve_mod_mask(&ki.keymap.ctx, value, MOD_BOTH, &info.mods)
+            else {
                 return false;
-            }
+            };
+            ledi.led.mods.mods = mods;
             ledi.defined |= LED_FIELD_MODS;
         }
         LedMapField::Groups => {
@@ -2127,51 +2077,38 @@ fn set_led_map_field(
             ledi.defined |= LED_FIELD_GROUPS;
         }
         LedMapField::Controls => {
-            let mut mask_0: u32 = 0;
             if array_ndx.is_some() {
                 return false;
             }
             let offset: u8 = ki.features.controls_name_offset;
-            if !expr_resolve_mask(
-                &ki.keymap.ctx,
-                value,
-                &mut mask_0,
-                &CTRL_MASK_NAMES[offset as usize..],
-            ) {
+            let Some(mask_0) =
+                expr_resolve_mask(&ki.keymap.ctx, value, &CTRL_MASK_NAMES[offset as usize..])
+            else {
                 return false;
-            }
+            };
             ledi.led.ctrls = ControlsFlags::from_bits_retain(mask_0);
             ledi.defined |= LED_FIELD_CTRLS;
         }
         LedMapField::AllowExplicit | LedMapField::Index => {}
         LedMapField::WhichMods => {
-            let mut mask_1: u32 = 0;
             if array_ndx.is_some() {
                 return false;
             }
-            if !expr_resolve_mask(
-                &ki.keymap.ctx,
-                value,
-                &mut mask_1,
-                &MOD_COMPONENT_MASK_NAMES,
-            ) {
+            let Some(mask_1) = expr_resolve_mask(&ki.keymap.ctx, value, &MOD_COMPONENT_MASK_NAMES)
+            else {
                 return false;
-            }
+            };
             ledi.led.which_mods = mask_1;
         }
         LedMapField::WhichGroups => {
-            let mut mask_2: u32 = 0;
             if array_ndx.is_some() {
                 return false;
             }
-            if !expr_resolve_mask(
-                &ki.keymap.ctx,
-                value,
-                &mut mask_2,
-                &GROUP_COMPONENT_MASK_NAMES,
-            ) {
+            let Some(mask_2) =
+                expr_resolve_mask(&ki.keymap.ctx, value, &GROUP_COMPONENT_MASK_NAMES)
+            else {
                 return false;
-            }
+            };
             ledi.led.which_groups = mask_2;
         }
     }
@@ -2182,18 +2119,11 @@ fn handle_compat_global_var(
     ki: &mut XkbKeymapInfo<'_>,
     stmt: &mut VarDef,
 ) -> bool {
-    let mut elem_atom: u32 = 0;
-    let mut field_atom: u32 = 0;
-    let mut ndx: Option<&ExprKind> = None;
     let ret: bool;
-    if !expr_resolve_lhs(
-        stmt.name.as_deref().unwrap(),
-        &mut elem_atom,
-        &mut field_atom,
-        &mut ndx,
-    ) {
-        ret = false;
-    } else {
+    if let Some(lhs) = expr_resolve_lhs(stmt.name.as_ref().unwrap()) {
+        let elem_atom = lhs.element;
+        let field_atom = lhs.field;
+        let ndx = lhs.index;
         let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom).to_owned();
         let field = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
         if !elem.is_empty() && elem.eq_ignore_ascii_case("interpret") {
@@ -2203,8 +2133,7 @@ fn handle_compat_global_var(
             } else {
                 stmt.merge
             };
-            // ndx borrows from stmt.name, value_ref borrows from stmt.value — disjoint fields
-            let value_ref = stmt.value.as_deref_mut().unwrap();
+            let value_ref = stmt.value.as_mut().unwrap();
             ret = set_interp_field(info, ki, &mut temp, &field, ndx, value_ref);
             if ret {
                 let mut default = info.default_interp.clone();
@@ -2218,7 +2147,6 @@ fn handle_compat_global_var(
             } else {
                 stmt.merge
             };
-            // ndx borrows from stmt.name, field/value borrow from different fields — disjoint
             ret = set_led_map_field(info, ki, &mut temp_0, &field, ndx, &mut stmt.value);
             if ret {
                 let mut default = info.default_led;
@@ -2226,24 +2154,22 @@ fn handle_compat_global_var(
                 info.default_led = default;
             }
         } else if !elem.is_empty() {
-            ret = {
-                let ndx_ref2 = ndx;
-
-                set_default_action_field(
-                    ki,
-                    &mut info.default_actions,
-                    &mut info.mods,
-                    &elem,
-                    &field,
-                    ndx_ref2,
-                    &mut stmt.value,
-                    stmt.merge,
-                ) != ParseStatus::Fatal
-            };
+            ret = set_default_action_field(
+                ki,
+                &mut info.default_actions,
+                &mut info.mods,
+                &elem,
+                &field,
+                ndx,
+                &mut stmt.value,
+                stmt.merge,
+            ) != ParseStatus::Fatal;
         } else {
             return ki.strict & PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS == 0;
         }
-    } // close else from expr_resolve_lhs
+    } else {
+        ret = false;
+    }
     ret
 }
 fn handle_interp_def(
@@ -2253,7 +2179,7 @@ fn handle_interp_def(
 ) -> bool {
     let mut pred: u32 = MATCH_NONE;
     let mut mods: u32 = 0;
-    if !resolve_state_and_predicate(def.match_0.as_deref(), &mut pred, &mut mods, info, ki) {
+    if !resolve_state_and_predicate(def.match_0.as_ref(), &mut pred, &mut mods, info, ki) {
         return false;
     }
     let mut si: SymInterpInfo = info.default_interp.clone();
@@ -2262,26 +2188,18 @@ fn handle_interp_def(
     si.interp.match_0 = pred;
     si.interp.mods = mods;
     for body_def in &mut def.def {
-        let mut elem_atom: u32 = 0;
-        let mut field_atom: u32 = 0;
-        let mut array_ndx: Option<&ExprKind> = None;
-        if !expr_resolve_lhs(
-            body_def.name.as_deref().unwrap(),
-            &mut elem_atom,
-            &mut field_atom,
-            &mut array_ndx,
-        ) {
+        let Some(lhs) = expr_resolve_lhs(body_def.name.as_ref().unwrap()) else {
             info.error_count += 1;
             return false;
-        }
-        let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom).to_owned();
-        let field = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
+        };
+        let elem = atom_text(&ki.keymap.ctx.atom_table, lhs.element).to_owned();
+        let field = atom_text(&ki.keymap.ctx.atom_table, lhs.field).to_owned();
         if !elem.is_empty() {
             info.error_count += 1;
             return false;
         }
-        let value_ref = body_def.value.as_deref_mut().unwrap();
-        if !set_interp_field(info, ki, &mut si, &field, array_ndx, value_ref) {
+        let value_ref = body_def.value.as_mut().unwrap();
+        if !set_interp_field(info, ki, &mut si, &field, lhs.index, value_ref) {
             info.error_count += 1;
             return false;
         }
@@ -2302,24 +2220,16 @@ fn handle_led_map_def(
     ledi.led.name = def.name;
     let mut ok: bool = true;
     for var in def.body.iter_mut() {
-        let mut elem_atom: u32 = 0;
-        let mut field_atom: u32 = 0;
-        let mut array_ndx: Option<&ExprKind> = None;
-        if !expr_resolve_lhs(
-            var.name.as_deref().unwrap(),
-            &mut elem_atom,
-            &mut field_atom,
-            &mut array_ndx,
-        ) {
-            ok = false;
-        } else {
-            let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom).to_owned();
-            let field = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
-            if !elem.is_empty() {
-                ok = false;
-            } else if !set_led_map_field(info, ki, &mut ledi, &field, array_ndx, &mut var.value) {
+        if let Some(lhs) = expr_resolve_lhs(var.name.as_ref().unwrap()) {
+            let elem = atom_text(&ki.keymap.ctx.atom_table, lhs.element).to_owned();
+            let field = atom_text(&ki.keymap.ctx.atom_table, lhs.field).to_owned();
+            if !elem.is_empty()
+                || !set_led_map_field(info, ki, &mut ledi, &field, lhs.index, &mut var.value)
+            {
                 ok = false;
             }
+        } else {
+            ok = false;
         }
     }
     ok && add_led_map(info, &mut ledi)
@@ -2560,7 +2470,7 @@ fn handle_include_key_types(
     for stmt in includes.iter_mut() {
         let mut next_incl = KeyTypesInfo::new();
 
-        let file: Option<ArenaBox<XkbFile>> =
+        let file: Option<Box<XkbFile>> =
             process_include_file(&mut ki.keymap.ctx, stmt, FileType::Types);
         let Some(mut file) = file else {
             info.error_count += 10;
@@ -2587,13 +2497,12 @@ fn set_modifiers(
     array_ndx: Option<&ExprKind>,
     value: &ExprKind,
 ) -> bool {
-    let mut mods: u32 = 0;
     if array_ndx.is_some() {
         return false;
     }
-    if !expr_resolve_mod_mask(&ki.keymap.ctx, value, MOD_BOTH, &info.mods, &mut mods) {
+    let Some(mods) = expr_resolve_mod_mask(&ki.keymap.ctx, value, MOD_BOTH, &info.mods) else {
         return false;
-    }
+    };
     if type_0.defined & TYPE_FIELD_MASK != 0 {
         return false;
     }
@@ -2650,21 +2559,19 @@ fn set_map_entry(
     if array_ndx.is_none() {
         return false;
     }
-    if !expr_resolve_mod_mask(
-        &ki.keymap.ctx,
-        array_ndx.unwrap(),
-        MOD_BOTH,
-        &info.mods,
-        &mut entry.mods.mods,
-    ) {
+    let Some(mods) =
+        expr_resolve_mod_mask(&ki.keymap.ctx, array_ndx.unwrap(), MOD_BOTH, &info.mods)
+    else {
         return false;
-    }
+    };
+    entry.mods.mods = mods;
     if entry.mods.mods & !type_0.mods != 0 {
         entry.mods.mods &= type_0.mods;
     }
-    if !expr_resolve_level(&ki.keymap.ctx, value, &mut entry.level) {
+    let Some(level) = expr_resolve_level(&ki.keymap.ctx, value) else {
         return false;
-    }
+    };
+    entry.level = level;
     entry.preserve.mods = 0;
     add_map_entry(ki, info, type_0, &entry, true, true)
 }
@@ -2710,29 +2617,19 @@ fn set_preserve(
     if array_ndx.is_none() {
         return false;
     }
-    let mut mods: u32 = 0;
-    if !expr_resolve_mod_mask(
-        &ki.keymap.ctx,
-        array_ndx.unwrap(),
-        MOD_BOTH,
-        &info.mods,
-        &mut mods,
-    ) {
+    let Some(mut mods) =
+        expr_resolve_mod_mask(&ki.keymap.ctx, array_ndx.unwrap(), MOD_BOTH, &info.mods)
+    else {
         return false;
-    }
+    };
     if mods & !type_0.mods != 0 {
         mods &= type_0.mods;
     }
-    let mut preserve_mods: u32 = 0;
-    if !expr_resolve_mod_mask(
-        &ki.keymap.ctx,
-        value,
-        MOD_BOTH,
-        &info.mods,
-        &mut preserve_mods,
-    ) {
+    let Some(mut preserve_mods) =
+        expr_resolve_mod_mask(&ki.keymap.ctx, value, MOD_BOTH, &info.mods)
+    else {
         return false;
-    }
+    };
     if preserve_mods & !mods != 0 {
         preserve_mods &= mods;
     }
@@ -2770,14 +2667,12 @@ fn set_level_name(
     if array_ndx.is_none() {
         return false;
     }
-    let mut level: u32 = 0;
-    if !expr_resolve_level(&ki.keymap.ctx, array_ndx.unwrap(), &mut level) {
+    let Some(level) = expr_resolve_level(&ki.keymap.ctx, array_ndx.unwrap()) else {
         return false;
-    }
-    let mut level_name: u32 = XKB_ATOM_NONE;
-    if !expr_resolve_string(value, &mut level_name) {
+    };
+    let Some(level_name) = expr_resolve_string(value) else {
         return false;
-    }
+    };
     add_level_name(ki, info, type_0, level, level_name, true)
 }
 fn set_key_type_field(
@@ -2816,39 +2711,33 @@ fn handle_key_type_body(
 ) -> bool {
     let mut ok: bool = true;
     for def in defs {
-        let mut elem_atom: u32 = 0;
-        let mut field_atom: u32 = 0;
-        let mut array_ndx: Option<&ExprKind> = None;
-        let name_ref = def.name.as_deref().unwrap();
-        if !expr_resolve_lhs(name_ref, &mut elem_atom, &mut field_atom, &mut array_ndx) {
-            ok = false;
-        } else {
-            let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom);
-            let field = atom_text(&ki.keymap.ctx.atom_table, field_atom);
+        let name_ref = def.name.as_ref().unwrap();
+        if let Some(lhs) = expr_resolve_lhs(name_ref) {
+            let elem = atom_text(&ki.keymap.ctx.atom_table, lhs.element);
+            let field = atom_text(&ki.keymap.ctx.atom_table, lhs.field);
             if !elem.is_empty() {
                 if !elem.eq_ignore_ascii_case("type") {
                     ok = false;
                 }
             } else {
-                let value_ref = def.value.as_deref().unwrap();
-                if !set_key_type_field(ki, info, type_0, &field, array_ndx, value_ref) {
+                let value_ref = def.value.as_ref().unwrap();
+                if !set_key_type_field(ki, info, type_0, field, lhs.index, value_ref) {
                     ok = false;
                 }
             }
+        } else {
+            ok = false;
         }
     }
     ok
 }
 fn handle_type_global_var(ki: &XkbKeymapInfo<'_>, _info: &mut KeyTypesInfo, stmt: &VarDef) -> bool {
-    let mut elem_atom: u32 = 0;
-    let mut field_atom: u32 = 0;
-    let mut array_ndx: Option<&ExprKind> = None;
-    let name_ref = stmt.name.as_deref().unwrap();
-    if !expr_resolve_lhs(name_ref, &mut elem_atom, &mut field_atom, &mut array_ndx) {
+    let name_ref = stmt.name.as_ref().unwrap();
+    let Some(lhs) = expr_resolve_lhs(name_ref) else {
         return false;
-    }
-    let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom);
-    let field = atom_text(&ki.keymap.ctx.atom_table, field_atom);
+    };
+    let elem = atom_text(&ki.keymap.ctx.atom_table, lhs.element);
+    let field = atom_text(&ki.keymap.ctx.atom_table, lhs.field);
     if !elem.is_empty() && elem.eq_ignore_ascii_case("type") {
         return true;
     } else if !elem.is_empty() {
@@ -2998,11 +2887,11 @@ pub(crate) fn merge_mod_sets(
 }
 pub(crate) fn handle_vmod_def(ctx: &mut XkbContext, mods: &mut XkbModSet, stmt: &VModDef) -> bool {
     let mut mapping: u32 = 0;
-    if stmt.value.is_some() {
-        let value_ref = stmt.value.as_deref().unwrap();
-        if !expr_resolve_mod_mask(ctx, value_ref, MOD_REAL, mods, &mut mapping) {
+    if let Some(value_ref) = stmt.value.as_ref() {
+        let Some(value) = expr_resolve_mod_mask(ctx, value_ref, MOD_REAL, mods) else {
             return false;
-        }
+        };
+        mapping = value;
     }
     for vmod in 0..mods.num_mods as usize {
         if mods.mods[vmod].name == stmt.name {
@@ -3456,7 +3345,7 @@ fn handle_include_keycodes(
     for stmt in includes.iter_mut() {
         let mut next_incl = KeyNamesInfo::new();
 
-        let file: Option<ArenaBox<XkbFile>> =
+        let file: Option<Box<XkbFile>> =
             process_include_file(&mut ki.keymap.ctx, stmt, FileType::Keycodes);
         let Some(mut file) = file else {
             info.error_count += 10;
@@ -3499,30 +3388,26 @@ fn handle_alias_def(info: &mut KeyNamesInfo, def: &KeyAliasDef) -> bool {
     keycode_store_insert_alias(&mut info.keycodes, def.alias, def.real)
 }
 fn handle_key_name_var(ki: &mut XkbKeymapInfo<'_>, stmt: &VarDef) -> bool {
-    let mut elem_atom: u32 = 0;
-    let mut field_atom: u32 = 0;
-    let mut array_ndx: Option<&ExprKind> = None;
-    let name_ref = stmt.name.as_deref().unwrap();
-    if !expr_resolve_lhs(name_ref, &mut elem_atom, &mut field_atom, &mut array_ndx) {
+    let name_ref = stmt.name.as_ref().unwrap();
+    let Some(lhs) = expr_resolve_lhs(name_ref) else {
         return false;
-    }
-    let elem = atom_text(&ki.keymap.ctx.atom_table, elem_atom).to_owned();
-    let field = atom_text(&ki.keymap.ctx.atom_table, field_atom).to_owned();
+    };
+    let elem = atom_text(&ki.keymap.ctx.atom_table, lhs.element).to_owned();
+    let field = atom_text(&ki.keymap.ctx.atom_table, lhs.field).to_owned();
     if !elem.is_empty() {
         return ki.strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
     }
     if !field.eq_ignore_ascii_case("minimum") && !field.eq_ignore_ascii_case("maximum") {
         return ki.strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
     }
-    if array_ndx.is_some() {
+    if lhs.index.is_some() {
         return ki.strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
     }
-    let mut val: i64 = 0_i64;
-    let value_ref = stmt.value.as_deref().unwrap();
-    if !expr_resolve_integer(&ki.keymap.ctx, value_ref, &mut val)
-        || val < 0_i64
-        || val > u32::MAX as i64
-    {
+    let value_ref = stmt.value.as_ref().unwrap();
+    let Some(val) = expr_resolve_integer(&ki.keymap.ctx, value_ref) else {
+        return ki.strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
+    };
+    if val < 0_i64 || val > u32::MAX as i64 {
         return ki.strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
     }
     true
@@ -3532,12 +3417,11 @@ fn handle_led_name_def(info: &mut KeyNamesInfo, def: &LedNameDef) -> bool {
         info.error_count += 1;
         return false;
     }
-    let mut name: u32 = XKB_ATOM_NONE;
-    let name_expr = def.name.as_deref().unwrap();
-    if !expr_resolve_string(name_expr, &mut name) {
+    let name_expr = def.name.as_ref().unwrap();
+    let Some(name) = expr_resolve_string(name_expr) else {
         info.error_count += 1;
         return false;
-    }
+    };
     let ledi: LedNameInfo = LedNameInfo {
         merge: def.merge,
         name,
@@ -3624,9 +3508,7 @@ fn copy_keycode_name_lut(keymap: &mut XkbKeymap, keycodes: &mut KeycodeStore) ->
                     if entry.is_alias {
                         let match_real: KeycodeMatch =
                             keycode_store_lookup_name(keycodes, entry.index);
-                        if !match_real.found {
-                            keycodes.names[name as usize].found = false;
-                        } else if match_real.is_alias {
+                        if !match_real.found || match_real.is_alias {
                             keycodes.names[name as usize].found = false;
                         }
                     } else if !entry.low {
@@ -3649,8 +3531,7 @@ fn copy_led_names_to_keymap(
     num_led_names: u32,
 ) -> bool {
     keymap.num_leds = num_led_names;
-    for idx in 0..num_led_names as usize {
-        let ledi = &led_names[idx];
+    for (idx, ledi) in led_names.iter().enumerate().take(num_led_names as usize) {
         if ledi.name != XKB_ATOM_NONE {
             keymap.leds[idx].name = ledi.name;
         }
@@ -3811,247 +3692,122 @@ fn ident_lookup(
     }
 }
 
-pub(crate) fn expr_resolve_lhs<'a>(
-    expr: &'a ExprKind,
-    elem_rtrn: &mut u32,
-    field_rtrn: &mut u32,
-    index_rtrn: &mut Option<&'a ExprKind>,
-) -> bool {
-    match expr.stmt_type() {
-        10 => {
-            let ExprKind::Ident(ident) = &expr else {
-                unreachable!()
-            };
-            *elem_rtrn = XKB_ATOM_NONE;
-            *field_rtrn = *ident;
-            *index_rtrn = None;
-            return *field_rtrn != XKB_ATOM_NONE;
-        }
-        12 => {
-            let ExprKind::FieldRef { element, field } = &expr else {
-                unreachable!()
-            };
-            *elem_rtrn = *element;
-            *field_rtrn = *field;
-            *index_rtrn = None;
-            return *elem_rtrn != XKB_ATOM_NONE && *field_rtrn != XKB_ATOM_NONE;
-        }
-        13 => {
-            let ExprKind::ArrayRef {
-                element,
-                field,
-                entry,
-            } = &expr
-            else {
-                unreachable!()
-            };
-            *elem_rtrn = *element;
-            *field_rtrn = *field;
-            *index_rtrn = entry.as_ref().map(|b| &**b);
-            if *element != XKB_ATOM_NONE && *elem_rtrn == XKB_ATOM_NONE {
-                return false;
-            }
-            if *field_rtrn == XKB_ATOM_NONE {
-                return false;
-            }
-            return true;
-        }
-        _ => {}
-    }
-    false
+struct Lhs<'a> {
+    element: u32,
+    field: u32,
+    index: Option<&'a ExprKind>,
 }
 
-pub(crate) fn expr_resolve_boolean(ctx: &XkbContext, expr: &ExprKind, set_rtrn: &mut bool) -> bool {
-    let ok: bool;
-    match expr.stmt_type() {
-        7 => {
-            let ExprKind::Boolean(set) = &expr else {
-                unreachable!()
-            };
-            *set_rtrn = *set;
-            return true;
+fn expr_resolve_lhs(expr: &ExprKind) -> Option<Lhs<'_>> {
+    match expr {
+        ExprKind::Ident(field) if *field != XKB_ATOM_NONE => Some(Lhs {
+            element: XKB_ATOM_NONE,
+            field: *field,
+            index: None,
+        }),
+        ExprKind::FieldRef { element, field }
+            if *element != XKB_ATOM_NONE && *field != XKB_ATOM_NONE =>
+        {
+            Some(Lhs {
+                element: *element,
+                field: *field,
+                index: None,
+            })
         }
-        4 | 5 | 6 | 8 | 9 => {
-            return false;
-        }
-        10 => {
-            let ExprKind::Ident(ident_atom) = &expr else {
-                unreachable!()
-            };
-            let ident = atom_text(&ctx.atom_table, *ident_atom);
-            if !ident.is_empty() {
-                if ident.eq_ignore_ascii_case("true")
-                    || ident.eq_ignore_ascii_case("yes")
-                    || ident.eq_ignore_ascii_case("on")
-                {
-                    *set_rtrn = true;
-                    return true;
-                } else if ident.eq_ignore_ascii_case("false") {
-                    *set_rtrn = false;
-                    return true;
-                } else if ident.eq_ignore_ascii_case("no") || ident.eq_ignore_ascii_case("off") {
-                    *set_rtrn = false;
-                    return true;
-                }
-            }
-            return false;
-        }
-        12 => {
-            let ExprKind::FieldRef { .. } = &expr else {
-                unreachable!()
-            };
-            return false;
-        }
-        24 | 22 => {
-            let ExprKind::Unary { child, .. } = &expr else {
-                unreachable!()
-            };
-            let child_ref = child.as_deref().unwrap();
-            ok = expr_resolve_boolean(ctx, child_ref, set_rtrn);
-            if ok {
-                *set_rtrn = !*set_rtrn;
-            }
-            return ok;
-        }
-        17 | 18 | 19 | 20 | 21 | 23 | 25 | 14 | 11 | 16 | 15 => {}
-        _ => {}
+        ExprKind::ArrayRef {
+            element,
+            field,
+            entry,
+        } if *field != XKB_ATOM_NONE => Some(Lhs {
+            element: *element,
+            field: *field,
+            index: entry.as_deref(),
+        }),
+        _ => None,
     }
-    false
+}
+
+pub(crate) fn expr_resolve_boolean(ctx: &XkbContext, expr: &ExprKind) -> Option<bool> {
+    match expr {
+        ExprKind::Boolean(set) => Some(*set),
+        ExprKind::Ident(ident_atom) => {
+            let ident = atom_text(&ctx.atom_table, *ident_atom);
+            if ident.eq_ignore_ascii_case("true")
+                || ident.eq_ignore_ascii_case("yes")
+                || ident.eq_ignore_ascii_case("on")
+            {
+                Some(true)
+            } else if ident.eq_ignore_ascii_case("false")
+                || ident.eq_ignore_ascii_case("no")
+                || ident.eq_ignore_ascii_case("off")
+            {
+                Some(false)
+            } else {
+                None
+            }
+        }
+        ExprKind::Unary {
+            child,
+            op: UnaryOp::Not | UnaryOp::Invert,
+        } => expr_resolve_boolean(ctx, child.as_deref()?).map(|set| !set),
+        _ => None,
+    }
 }
 
 fn expr_resolve_integer_lookup(
     ctx: &XkbContext,
     expr: &ExprKind,
-    val_rtrn: &mut i64,
     pending: Option<&mut bool>,
     lookup: &IdentLookup,
-) -> bool {
-    let mut ok: bool = false;
-    let mut l: i64 = 0_i64;
-    let mut r: i64 = 0_i64;
-    match expr.stmt_type() {
-        5 => {
-            let ExprKind::Integer(ival) = &expr else {
-                unreachable!()
-            };
-            *val_rtrn = *ival;
-            return true;
-        }
-        4 | 6 | 7 | 8 | 9 => {
-            return false;
-        }
-        10 => {
-            let ExprKind::Ident(ident_atom) = &expr else {
-                unreachable!()
-            };
+) -> Option<i64> {
+    match expr {
+        ExprKind::Integer(value) => Some(*value),
+        ExprKind::Ident(ident_atom) => {
             let mut pending_local = false;
             let pending_ref = if pending.is_some() {
                 Some(&mut pending_local)
             } else {
                 None
             };
-            if let Some(u) = ident_lookup(ctx, lookup, *ident_atom, pending_ref) {
-                *val_rtrn = u as i64;
-                ok = true;
-            }
-
+            let value = ident_lookup(ctx, lookup, *ident_atom, pending_ref).map(i64::from);
             if let Some(p) = pending {
                 *p = pending_local;
                 if pending_local {
-                    return false;
+                    return None;
                 }
             }
-            return ok;
+            value
         }
-        12 => {
-            let ExprKind::FieldRef { .. } = &expr else {
-                unreachable!()
-            };
-            return false;
-        }
-        17..=20 => {
-            let ExprKind::Binary {
-                left: bleft,
-                right: bright,
-                ..
-            } = &expr
-            else {
-                unreachable!()
-            };
-            let left = bleft.as_deref().unwrap();
-            let right = bright.as_deref().unwrap();
-            if !expr_resolve_integer_lookup(ctx, left, &mut l, None, lookup)
-                || !expr_resolve_integer_lookup(ctx, right, &mut r, None, lookup)
-            {
-                return false;
+        ExprKind::Binary {
+            left,
+            right,
+            op: op @ (BinaryOp::Add | BinaryOp::Subtract | BinaryOp::Multiply | BinaryOp::Divide),
+        } => {
+            let left = expr_resolve_integer_lookup(ctx, left.as_deref()?, None, lookup)?;
+            let right = expr_resolve_integer_lookup(ctx, right.as_deref()?, None, lookup)?;
+            match op {
+                BinaryOp::Add => left.checked_add(right),
+                BinaryOp::Subtract => left.checked_sub(right),
+                BinaryOp::Multiply => left.checked_mul(right),
+                BinaryOp::Divide => left.checked_div(right),
+                BinaryOp::Assign => unreachable!(),
             }
-            match expr.stmt_type() {
-                17 => {
-                    let (v, overflow) = l.overflowing_add(r);
-                    *val_rtrn = v;
-                    if overflow {
-                        return false;
-                    }
-                }
-                18 => {
-                    let (v, overflow) = l.overflowing_sub(r);
-                    *val_rtrn = v;
-                    if overflow {
-                        return false;
-                    }
-                }
-                19 => {
-                    let (v, overflow) = l.overflowing_mul(r);
-                    *val_rtrn = v;
-                    if overflow {
-                        return false;
-                    }
-                }
-                20 => {
-                    if r == 0_i64 {
-                        return false;
-                    }
-                    *val_rtrn = l / r;
-                }
-                _ => {
-                    return false;
-                }
+        }
+        ExprKind::Unary { child, op } => {
+            let value = expr_resolve_integer_lookup(ctx, child.as_deref()?, None, lookup)?;
+            match op {
+                UnaryOp::Invert => Some(!value),
+                UnaryOp::Negate => value.checked_neg(),
+                UnaryOp::Plus => Some(value),
+                UnaryOp::Not => None,
             }
-            return true;
         }
-        21 => {}
-        22 => {
-            return false;
-        }
-        24 | 23 => {
-            let ExprKind::Unary { child, .. } = &expr else {
-                unreachable!()
-            };
-            let left = child.as_deref().unwrap();
-            if !expr_resolve_integer_lookup(ctx, left, &mut l, None, lookup) {
-                return false;
-            }
-            *val_rtrn = if expr.stmt_type() == STMT_EXPR_NEGATE {
-                -l
-            } else {
-                !l
-            };
-            return true;
-        }
-        25 => {
-            let ExprKind::Unary { child, .. } = &expr else {
-                unreachable!()
-            };
-            let left = child.as_deref().unwrap();
-            return expr_resolve_integer_lookup(ctx, left, val_rtrn, None, lookup);
-        }
-        _ => {}
+        _ => None,
     }
-    false
 }
 
-pub(crate) fn expr_resolve_integer(ctx: &XkbContext, expr: &ExprKind, val_rtrn: &mut i64) -> bool {
-    expr_resolve_integer_lookup(ctx, expr, val_rtrn, None, &IdentLookup::None)
+pub(crate) fn expr_resolve_integer(ctx: &XkbContext, expr: &ExprKind) -> Option<i64> {
+    expr_resolve_integer_lookup(ctx, expr, None, &IdentLookup::None)
 }
 
 pub(crate) fn expr_resolve_group(
@@ -4078,10 +3834,9 @@ pub(crate) fn expr_resolve_group(
     };
     let lookup = IdentLookup::NamedPattern(&group_name_pattern);
     let ctx = &keymap_info.keymap.ctx;
-    let mut result: i64 = 0_i64;
-    if !expr_resolve_integer_lookup(ctx, expr, &mut result, Some(pending), &lookup) {
+    let Some(result) = expr_resolve_integer_lookup(ctx, expr, Some(pending), &lookup) else {
         return report_mismatch(keymap_info.strict);
-    }
+    };
     if result > keymap_info.features.max_groups as i64
         || (absolute && result < 1)
         || (!absolute && result < -(keymap_info.features.max_groups as i64))
@@ -4092,7 +3847,7 @@ pub(crate) fn expr_resolve_group(
     ParseStatus::Success
 }
 
-pub(crate) fn expr_resolve_level(ctx: &XkbContext, expr: &ExprKind, level_rtrn: &mut u32) -> bool {
+pub(crate) fn expr_resolve_level(ctx: &XkbContext, expr: &ExprKind) -> Option<u32> {
     let pattern = NamedIntegerPattern {
         prefix: "Level",
         min: 1_u32,
@@ -4102,97 +3857,50 @@ pub(crate) fn expr_resolve_level(ctx: &XkbContext, expr: &ExprKind, level_rtrn: 
         is_mask: false,
     };
     let lookup = IdentLookup::NamedPattern(&pattern);
-    let mut result: i64 = 0_i64;
-    if !expr_resolve_integer_lookup(ctx, expr, &mut result, None, &lookup) {
-        return false;
-    }
+    let result = expr_resolve_integer_lookup(ctx, expr, None, &lookup)?;
     if result < 1_i64 || result > XKB_LEVEL_MAX_IMPL as i64 {
-        return false;
+        return None;
     }
-    *level_rtrn = (result - 1_i64) as u32;
-    true
+    Some((result - 1_i64) as u32)
 }
 
-pub(crate) fn expr_resolve_string(expr: &ExprKind, val_rtrn: &mut u32) -> bool {
-    match expr.stmt_type() {
-        4 => {
-            let ExprKind::String(s) = &expr else {
-                unreachable!()
-            };
-            *val_rtrn = *s;
-            return true;
-        }
-        5..=9 => {
-            return false;
-        }
-        10 => {
-            return false;
-        }
-        12 => {
-            let ExprKind::FieldRef { .. } = &expr else {
-                unreachable!()
-            };
-            return false;
-        }
-        17 | 18 | 19 | 20 | 21 | 23 | 24 | 22 | 25 | 14 | 11 | 16 | 15 => {
-            return false;
-        }
-        _ => {}
+pub(crate) fn expr_resolve_string(expr: &ExprKind) -> Option<u32> {
+    match expr {
+        ExprKind::String(value) => Some(*value),
+        _ => None,
     }
-    false
 }
 
 pub(crate) fn expr_resolve_enum(
     ctx: &XkbContext,
     expr: &ExprKind,
-    val_rtrn: &mut u32,
     values: &[LookupEntry],
-) -> bool {
-    if expr.stmt_type() != STMT_EXPR_IDENT {
-        return false;
-    }
-    let ExprKind::Ident(ident_atom) = &expr else {
-        unreachable!()
+) -> Option<u32> {
+    let ExprKind::Ident(ident_atom) = expr else {
+        return None;
     };
-    if let Some(val) = simple_lookup(ctx, values, *ident_atom) {
-        *val_rtrn = val;
-        return true;
-    }
-    for entry in values {
-        if entry.name.is_empty() {
-            break;
-        }
-    }
-    false
+    simple_lookup(ctx, values, *ident_atom)
 }
 
 fn expr_resolve_mask_lookup(
     ctx: &XkbContext,
     expr: &ExprKind,
-    val_rtrn: &mut u32,
     pending: Option<&mut bool>,
     lookup: &IdentLookup,
-) -> bool {
-    let ok: bool;
-    let mut l: u32 = 0;
-    let mut r: u32 = 0;
-    let mut v: i64 = 0;
-    let mut already_logged_error = false;
-    match &expr {
+) -> Option<u32> {
+    match expr {
         ExprKind::Integer(ival) => {
             if *ival < 0 || *ival > u32::MAX as i64 {
-                return false;
+                None
+            } else {
+                Some(*ival as u32)
             }
-            *val_rtrn = *ival as u32;
-            return true;
         }
         ExprKind::String(_)
         | ExprKind::Float
         | ExprKind::Boolean(_)
         | ExprKind::KeyName(_)
-        | ExprKind::KeySym(_) => {
-            return false;
-        }
+        | ExprKind::KeySym(_) => None,
         ExprKind::Ident(ident_atom) => {
             let mut pending_local = false;
             let pending_ref = if pending.is_some() {
@@ -4200,81 +3908,48 @@ fn expr_resolve_mask_lookup(
             } else {
                 None
             };
-            if let Some(val) = ident_lookup(ctx, lookup, *ident_atom, pending_ref) {
-                *val_rtrn = val;
-                ok = true;
-            } else {
-                ok = false;
-            }
-
+            let value = ident_lookup(ctx, lookup, *ident_atom, pending_ref);
             if let Some(p) = pending {
                 *p = pending_local;
                 if pending_local {
-                    return false;
+                    return None;
                 }
             }
-            return ok;
+            value
         }
-        ExprKind::FieldRef { .. } | ExprKind::ArrayRef { .. } | ExprKind::Action { .. } => {}
-        ExprKind::Binary {
-            left: bleft,
-            right: bright,
-            op,
-            ..
-        } => {
-            let left = bleft.as_deref().unwrap();
-            let right = bright.as_deref().unwrap();
-            if !expr_resolve_mask_lookup(ctx, left, &mut l, None, lookup)
-                || !expr_resolve_mask_lookup(ctx, right, &mut r, None, lookup)
-            {
-                return false;
+        ExprKind::FieldRef { .. } | ExprKind::ArrayRef { .. } | ExprKind::Action { .. } => None,
+        ExprKind::Binary { left, right, op } => {
+            let left = expr_resolve_mask_lookup(ctx, left.as_deref()?, None, lookup)?;
+            let right = expr_resolve_mask_lookup(ctx, right.as_deref()?, None, lookup)?;
+            match op {
+                BinaryOp::Add => Some(left | right),
+                BinaryOp::Subtract => Some(left & !right),
+                BinaryOp::Multiply | BinaryOp::Divide | BinaryOp::Assign => None,
             }
-            match *op {
-                STMT_EXPR_ADD => {
-                    *val_rtrn = l | r;
-                }
-                STMT_EXPR_SUBTRACT => {
-                    *val_rtrn = l & !r;
-                }
-                STMT_EXPR_MULTIPLY | STMT_EXPR_DIVIDE => {
-                    return false;
-                }
-                _ => {}
-            }
-            return true;
         }
         ExprKind::Unary { child, op } => {
-            let left = child.as_deref().unwrap();
-            if !expr_resolve_integer_lookup(ctx, left, &mut v, None, lookup) {
-                return false;
-            }
-            if *op == STMT_EXPR_INVERT {
-                if v < 0 || v > u32::MAX as i64 {
-                    return false;
+            if *op != UnaryOp::Invert {
+                None
+            } else {
+                let value = expr_resolve_integer_lookup(ctx, child.as_deref()?, None, lookup)?;
+                if value < 0 || value > u32::MAX as i64 {
+                    None
+                } else {
+                    Some(!(value as u32))
                 }
-                *val_rtrn = !(v as u32);
-                return true;
             }
-            return false;
         }
-        ExprKind::ActionList { .. } | ExprKind::KeysymList { .. } | ExprKind::EmptyList => {
-            already_logged_error = true;
-        }
+        ExprKind::ActionList { .. } | ExprKind::KeysymList { .. } | ExprKind::EmptyList => None,
     }
-    if !already_logged_error {
-        return false;
-    }
-    false
 }
 
 pub(crate) fn expr_resolve_mask(
     ctx: &XkbContext,
     expr: &ExprKind,
-    mask_rtrn: &mut u32,
     values: &[LookupEntry],
-) -> bool {
+) -> Option<u32> {
     let lookup = IdentLookup::Simple(values);
-    expr_resolve_mask_lookup(ctx, expr, mask_rtrn, None, &lookup)
+    expr_resolve_mask_lookup(ctx, expr, None, &lookup)
 }
 
 pub(crate) fn expr_resolve_mod_mask(
@@ -4282,11 +3957,10 @@ pub(crate) fn expr_resolve_mod_mask(
     expr: &ExprKind,
     mod_type: u32,
     mods: &XkbModSet,
-    mask_rtrn: &mut u32,
-) -> bool {
+) -> Option<u32> {
     let priv_0 = LookupModMaskPriv { mods, mod_type };
     let lookup = IdentLookup::ModMask(&priv_0);
-    expr_resolve_mask_lookup(ctx, expr, mask_rtrn, None, &lookup)
+    expr_resolve_mask_lookup(ctx, expr, None, &lookup)
 }
 
 pub(crate) fn expr_resolve_mod(
@@ -4294,21 +3968,11 @@ pub(crate) fn expr_resolve_mod(
     def: &ExprKind,
     mod_type: u32,
     mods: &XkbModSet,
-    ndx_rtrn: &mut u32,
-) -> bool {
-    if def.stmt_type() != STMT_EXPR_IDENT {
-        return false;
-    }
-    let ExprKind::Ident(ident_atom) = &def else {
-        unreachable!()
+) -> Option<u32> {
+    let ExprKind::Ident(ident_atom) = def else {
+        return None;
     };
-    let name: u32 = *ident_atom;
-    let ndx = match xkb_mod_name_to_index(mods, name, mod_type) {
-        Some(n) => n,
-        None => return false,
-    };
-    *ndx_rtrn = ndx;
-    true
+    xkb_mod_name_to_index(mods, *ident_atom, mod_type)
 }
 
 pub(crate) fn expr_resolve_group_mask(
@@ -4334,7 +3998,11 @@ pub(crate) fn expr_resolve_group_mask(
     };
     let lookup = IdentLookup::NamedPattern(&group_name_pattern);
     let ctx = &keymap_info.keymap.ctx;
-    expr_resolve_mask_lookup(ctx, expr, group_rtrn, Some(pending_rtrn), &lookup)
+    let Some(group) = expr_resolve_mask_lookup(ctx, expr, Some(pending_rtrn), &lookup) else {
+        return false;
+    };
+    *group_rtrn = group;
+    true
 }
 #[derive(Copy, Clone, Default)]
 pub(crate) struct ActionsInfo {
@@ -4374,7 +4042,9 @@ pub(crate) enum ActionValue<'v> {
     /// A borrowed reference to a constant or non-ownable ExprDef (e.g. const_true).
     Borrowed(&'v ExprKind),
     /// A mutable reference to an owned ExprDef that can be `.take()`-en.
-    Owned(&'v mut Option<ArenaBox<ExprKind>>),
+    Owned(&'v mut Option<ExprKind>),
+    /// An owned recursive expression edge.
+    Boxed(&'v mut Option<Box<ExprKind>>),
 }
 
 impl<'v> ActionValue<'v> {
@@ -4383,15 +4053,39 @@ impl<'v> ActionValue<'v> {
     pub(crate) fn get(&self) -> &ExprKind {
         match self {
             ActionValue::Borrowed(e) => e,
-            ActionValue::Owned(opt) => opt.as_deref().unwrap(),
+            ActionValue::Owned(opt) => opt.as_ref().unwrap(),
+            ActionValue::Boxed(opt) => opt.as_deref().unwrap(),
         }
     }
     /// Take ownership of the ExprDef (only possible for Owned variant).
     #[inline]
-    pub(crate) fn take(&mut self) -> Option<ArenaBox<ExprKind>> {
+    pub(crate) fn take(&mut self) -> Option<ExprKind> {
         match self {
             ActionValue::Borrowed(_) => None,
             ActionValue::Owned(opt) => opt.take(),
+            ActionValue::Boxed(opt) => opt.take().map(|expr| *expr),
+        }
+    }
+
+    fn unary_child(self) -> Option<(bool, ActionValue<'v>)> {
+        match self {
+            ActionValue::Borrowed(ExprKind::Unary { child, op }) => Some((
+                *op == UnaryOp::Negate,
+                ActionValue::Borrowed(child.as_deref()?),
+            )),
+            ActionValue::Owned(expr) => {
+                let ExprKind::Unary { child, op } = expr.as_mut()? else {
+                    return None;
+                };
+                Some((*op == UnaryOp::Negate, ActionValue::Boxed(child)))
+            }
+            ActionValue::Boxed(expr) => {
+                let ExprKind::Unary { child, op } = expr.as_deref_mut()? else {
+                    return None;
+                };
+                Some((*op == UnaryOp::Negate, ActionValue::Boxed(child)))
+            }
+            ActionValue::Borrowed(_) => None,
         }
     }
 }
@@ -4615,13 +4309,12 @@ fn check_boolean_flag(
     value: &ExprKind,
     flags_inout: &mut ActionFlags,
 ) -> ParseStatus {
-    let mut set: bool = false;
     if array_ndx.is_some() {
         return report_mismatch(strict);
     }
-    if !expr_resolve_boolean(ctx, value, &mut set) {
+    let Some(set) = expr_resolve_boolean(ctx, value) else {
         return report_mismatch(strict);
-    }
+    };
     if set {
         *flags_inout |= flag;
     } else {
@@ -4656,12 +4349,8 @@ fn check_modifier_field(
     if array_ndx.is_some() {
         return report_mismatch(strict);
     }
-    if value.stmt_type() == STMT_EXPR_IDENT {
-        let ident = if let ExprKind::Ident(id) = &value {
-            *id
-        } else {
-            unreachable!()
-        };
+    if let ExprKind::Ident(ident) = value {
+        let ident = *ident;
         let val_str: &str = atom_text(&ctx.atom_table, ident);
         if !val_str.is_empty()
             && (val_str.eq_ignore_ascii_case("usemodmapmods")
@@ -4672,9 +4361,10 @@ fn check_modifier_field(
             return ParseStatus::Success;
         }
     }
-    if !expr_resolve_mod_mask(ctx, value, MOD_BOTH, mods, mods_rtrn) {
+    let Some(resolved_mods) = expr_resolve_mod_mask(ctx, value, MOD_BOTH, mods) else {
         return report_mismatch(strict);
-    }
+    };
+    *mods_rtrn = resolved_mods;
     *flags_inout &= !ActionFlags::MODS_LOOKUP_MODMAP.bits();
     ParseStatus::Success
 }
@@ -4707,10 +4397,9 @@ fn check_affect_field(
     if array_ndx.is_some() {
         return report_mismatch(strict);
     }
-    let mut flags: u32 = 0;
-    if !expr_resolve_enum(ctx, value, &mut flags, &LOCK_WHICH) {
+    let Some(flags) = expr_resolve_enum(ctx, value, &LOCK_WHICH) else {
         return report_mismatch(strict);
-    }
+    };
     *flags_inout &= !(ActionFlags::LOCK_NO_LOCK | ActionFlags::LOCK_NO_UNLOCK);
     *flags_inout |= ActionFlags::from_bits_retain(flags);
     ParseStatus::Success
@@ -4809,20 +4498,22 @@ fn check_group_field(
     if array_ndx.is_some() {
         return report_mismatch(keymap_info.strict);
     }
-    // If the value is a unary negate/plus, rebind to child and record negate.
-    let is_negate = value.get().stmt_type() == STMT_EXPR_NEGATE;
-    let is_unary = is_negate || value.get().stmt_type() == STMT_EXPR_UNARY_PLUS;
-    if is_unary {
+    let is_unary = matches!(
+        value.get(),
+        ExprKind::Unary {
+            op: UnaryOp::Negate | UnaryOp::Plus,
+            ..
+        }
+    );
+    let is_negate = if is_unary {
         flags &= !ActionFlags::ABSOLUTE_SWITCH.bits();
-        // Rebind value to the child field inside the unary expr
-        // (for ownership transfer to pending_computations if needed)
-        value = match value {
-            ActionValue::Owned(opt) => ActionValue::Owned(opt),
-            other => other,
-        };
+        let (is_negate, child) = value.unary_child().unwrap();
+        value = child;
+        is_negate
     } else {
         flags |= ActionFlags::ABSOLUTE_SWITCH.bits();
-    }
+        false
+    };
     let spec_holder = value.get();
     let absolute: bool = flags & ActionFlags::ABSOLUTE_SWITCH.bits() != 0;
     let mut pending: bool = false;
@@ -4941,11 +4632,10 @@ fn handle_set_lock_controls(
         if array_ndx.is_some() {
             return report_mismatch(keymap_info.strict);
         }
-        let mut mask: u32 = 0;
         let offset: u8 = keymap_info.features.controls_name_offset;
-        if !expr_resolve_mask(ctx, value, &mut mask, &CTRL_MASK_NAMES[offset as usize..]) {
+        let Some(mask) = expr_resolve_mask(ctx, value, &CTRL_MASK_NAMES[offset as usize..]) else {
             return report_mismatch(keymap_info.strict);
-        }
+        };
         act.ctrls = ControlsFlags::from_bits_retain(mask);
         return ParseStatus::Success;
     } else if is_lock && field == ACTION_FIELD_AFFECT {
@@ -4968,23 +4658,36 @@ fn handle_private(
         _ => return report_illegal(keymap_info.strict),
     };
     if field == ACTION_FIELD_TYPE {
-        let mut type_0: i64 = 0_i64;
         if array_ndx.is_some() {
             return report_mismatch(keymap_info.strict);
         }
-        if !expr_resolve_integer(ctx, value, &mut type_0) {
+        let Some(type_0) = expr_resolve_integer(ctx, value) else {
             return report_mismatch(keymap_info.strict);
-        }
+        };
         if !(0_i64..=255_i64).contains(&type_0) {
             return report_mismatch(keymap_info.strict);
         }
         return ParseStatus::Success;
     } else if field == ACTION_FIELD_DATA {
-        if array_ndx.is_none() {
-            let mut val: u32 = XKB_ATOM_NONE;
-            if !expr_resolve_string(value, &mut val) {
+        if let Some(array_ndx) = array_ndx {
+            let Some(ndx) = expr_resolve_integer(ctx, array_ndx) else {
+                return report_mismatch(keymap_info.strict);
+            };
+            if ndx < 0_i64 || ndx as usize >= std::mem::size_of::<[u8; 7]>() {
                 return report_mismatch(keymap_info.strict);
             }
+            let Some(datum) = expr_resolve_integer(ctx, value) else {
+                return report_mismatch(keymap_info.strict);
+            };
+            if !(0_i64..=255_i64).contains(&datum) {
+                return report_mismatch(keymap_info.strict);
+            }
+            act.data[ndx as usize] = datum as u8;
+            return ParseStatus::Success;
+        } else {
+            let Some(val) = expr_resolve_string(value) else {
+                return report_mismatch(keymap_info.strict);
+            };
             let str_bytes: &str = atom_text(&ctx.atom_table, val);
             let len: usize = str_bytes.len();
             if len < 1_usize || len > std::mem::size_of::<[u8; 7]>() {
@@ -4992,24 +4695,6 @@ fn handle_private(
             }
             act.data = [0u8; 7];
             act.data[..len].copy_from_slice(&str_bytes.as_bytes()[..len]);
-            return ParseStatus::Success;
-        } else {
-            let array_ndx = array_ndx.unwrap();
-            let mut ndx: i64 = 0_i64;
-            let mut datum: i64 = 0_i64;
-            if !expr_resolve_integer(ctx, array_ndx, &mut ndx) {
-                return report_mismatch(keymap_info.strict);
-            }
-            if ndx < 0_i64 || ndx as usize >= std::mem::size_of::<[u8; 7]>() {
-                return report_mismatch(keymap_info.strict);
-            }
-            if !expr_resolve_integer(ctx, value, &mut datum) {
-                return report_mismatch(keymap_info.strict);
-            }
-            if !(0_i64..=255_i64).contains(&datum) {
-                return report_mismatch(keymap_info.strict);
-            }
-            act.data[ndx as usize] = datum as u8;
             return ParseStatus::Success;
         }
     }
@@ -5023,7 +4708,7 @@ pub(crate) fn handle_action_def(
     def: &mut ExprKind,
     action: &mut XkbAction,
 ) -> ParseStatus {
-    if def.stmt_type() != STMT_EXPR_ACTION_DECL {
+    if !matches!(def, ExprKind::Action { .. }) {
         return ParseStatus::Fatal;
     }
     // Extract action name atom (Copy type, no borrow held)
@@ -5056,42 +4741,30 @@ pub(crate) fn handle_action_def(
     for arg in args.iter_mut() {
         let av: ActionValue<'_>;
         let field_ref: &ExprKind;
-        let mut array_rtrn_opt: Option<&ExprKind> = None;
-        let mut elem_rtrn_atom: u32 = 0;
-        let mut field_rtrn_atom: u32 = 0;
-        if arg.stmt_type() == STMT_EXPR_ASSIGN {
-            if let ExprKind::Binary {
-                ref left,
-                ref mut right,
-                ..
-            } = arg
-            {
-                field_ref = left.as_deref().unwrap();
-                av = ActionValue::Owned(right);
-            } else {
-                unreachable!()
-            }
-        } else if arg.stmt_type() == STMT_EXPR_NOT || arg.stmt_type() == STMT_EXPR_INVERT {
-            field_ref = if let ExprKind::Unary { ref child, .. } = arg {
-                child.as_deref().unwrap()
-            } else {
-                unreachable!()
-            };
+        if let ExprKind::Binary {
+            op: BinaryOp::Assign,
+            left,
+            right,
+        } = arg
+        {
+            field_ref = left.as_deref().unwrap();
+            av = ActionValue::Boxed(right);
+        } else if let ExprKind::Unary {
+            op: UnaryOp::Not | UnaryOp::Invert,
+            child,
+        } = arg
+        {
+            field_ref = child.as_deref().unwrap();
             av = ActionValue::Borrowed(&const_false);
         } else {
             field_ref = &*arg;
             av = ActionValue::Borrowed(&const_true);
         }
-        if !expr_resolve_lhs(
-            field_ref,
-            &mut elem_rtrn_atom,
-            &mut field_rtrn_atom,
-            &mut array_rtrn_opt,
-        ) {
+        let Some(lhs) = expr_resolve_lhs(field_ref) else {
             return ParseStatus::Fatal;
-        }
-        let elem_rtrn = atom_text(&keymap_info.keymap.ctx.atom_table, elem_rtrn_atom);
-        let field_rtrn = atom_text(&keymap_info.keymap.ctx.atom_table, field_rtrn_atom);
+        };
+        let elem_rtrn = atom_text(&keymap_info.keymap.ctx.atom_table, lhs.element);
+        let field_rtrn = atom_text(&keymap_info.keymap.ctx.atom_table, lhs.field);
         if !elem_rtrn.is_empty() {
             return ParseStatus::Fatal;
         }
@@ -5102,16 +4775,11 @@ pub(crate) fn handle_action_def(
             }
         } else {
             let parse_status = match handler_type {
-                ACTION_TYPE_MOD_SET..=ACTION_TYPE_MOD_LOCK => handle_set_latch_lock_mods(
-                    keymap_info,
-                    mods,
-                    action,
-                    field_ndx,
-                    array_rtrn_opt,
-                    av,
-                ),
+                ACTION_TYPE_MOD_SET..=ACTION_TYPE_MOD_LOCK => {
+                    handle_set_latch_lock_mods(keymap_info, mods, action, field_ndx, lhs.index, av)
+                }
                 ACTION_TYPE_GROUP_SET..=ACTION_TYPE_GROUP_LOCK => {
-                    handle_set_latch_lock_group(keymap_info, action, field_ndx, array_rtrn_opt, av)
+                    handle_set_latch_lock_group(keymap_info, action, field_ndx, lhs.index, av)
                 }
                 // Legacy actions ignored
                 ACTION_TYPE_VOID
@@ -5123,16 +4791,12 @@ pub(crate) fn handle_action_def(
                 | ACTION_TYPE_SWITCH_VT
                 | ACTION_TYPE_REDIRECT_KEY => ParseStatus::Success,
                 ACTION_TYPE_CTRL_SET | ACTION_TYPE_CTRL_LOCK => {
-                    handle_set_lock_controls(keymap_info, action, field_ndx, array_rtrn_opt, av)
+                    handle_set_lock_controls(keymap_info, action, field_ndx, lhs.index, av)
                 }
                 ACTION_TYPE_PRIVATE => {
-                    handle_private(keymap_info, action, field_ndx, array_rtrn_opt, av)
+                    handle_private(keymap_info, action, field_ndx, lhs.index, av)
                 }
-                ACTION_TYPE_NONE
-                | ACTION_TYPE_UNSUPPORTED_LEGACY
-                | ACTION_TYPE_UNKNOWN
-                | ACTION_TYPE_INTERNAL
-                | _ => handle_no_action(keymap_info),
+                _ => handle_no_action(keymap_info),
             };
             match parse_status {
                 ParseStatus::Fatal => return ParseStatus::Fatal,
@@ -5149,6 +4813,7 @@ pub(crate) fn handle_action_def(
         ret
     }
 }
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn set_default_action_field(
     keymap_info: &mut XkbKeymapInfo<'_>,
     info: &mut ActionsInfo,
@@ -5156,7 +4821,7 @@ pub(crate) fn set_default_action_field(
     elem: &str,
     field: &str,
     array_ndx: Option<&ExprKind>,
-    value_rtrn: &mut Option<ArenaBox<ExprKind>>,
+    value_rtrn: &mut Option<ExprKind>,
     merge: MergeMode,
 ) -> ParseStatus {
     let av = ActionValue::Owned(value_rtrn);
@@ -5187,7 +4852,7 @@ pub(crate) fn set_default_action_field(
         8 | 9 | 10 | 11 | 13 | 16 | 17 | 18 => ParseStatus::Success,
         14 | 15 => handle_set_lock_controls(keymap_info, &mut from, action_field, array_ndx, av),
         19 => handle_private(keymap_info, &mut from, action_field, array_ndx, av),
-        0 | 1 | 12 | 20 | _ => handle_no_action(keymap_info),
+        _ => handle_no_action(keymap_info),
     };
     if ret != ParseStatus::Success {
         return ret;

@@ -25,7 +25,6 @@ fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
 }
 
 pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbRuleNames) -> bool {
-    reset_arena();
     let mut ok: bool;
     let mut kccgst: XkbComponentNames = XkbComponentNames::default();
     ok = xkb_components_from_rules_names(
@@ -45,16 +44,15 @@ pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbR
     let Some(mut file) = file_opt else {
         return false;
     };
-    ok = compile_keymap_file(keymap, &mut *file);
+    ok = compile_keymap_file(keymap, &mut file);
     ok
 }
 
 pub(crate) fn text_v1_keymap_new_from_string(keymap: &mut XkbKeymap, input: &[u8]) -> bool {
-    reset_arena();
     let Some(mut xkb_file) = xkb_parse_string(&mut keymap.ctx, input, "(input string)", "") else {
         return false;
     };
-    let ok: bool = compile_keymap_file(keymap, &mut *xkb_file);
+    let ok: bool = compile_keymap_file(keymap, &mut xkb_file);
     ok
 }
 
@@ -81,7 +79,7 @@ pub(crate) const YYENOMEM: i32 = -2;
 pub(crate) struct ParserParam<'a> {
     pub(crate) ctx: &'a mut XkbContext,
     pub(crate) scanner: &'a mut Scanner<'a>,
-    pub(crate) rtrn: Option<ArenaBox<XkbFile>>,
+    pub(crate) rtrn: Option<Box<XkbFile>>,
     pub(crate) more_maps: bool,
 }
 
@@ -845,15 +843,22 @@ fn yy_merge<'a>(yyval: &mut YYValue<'a>, m: MergeMode) {
     *yyval = YYValue::Merge(m);
 }
 #[inline(always)]
-fn yy_bin_expr<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize, op: u32) {
+fn yy_bin_expr<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize, op: BinaryOp) {
     let left = yyvs[sp - 2].take_expr();
     let right = yyvs[sp].take_expr();
-    *yyval = YYValue::Expr(expr_create(ExprKind::Binary { op, left, right }));
+    *yyval = YYValue::Expr(expr_create(ExprKind::Binary {
+        op,
+        left: left.map(Box::new),
+        right: right.map(Box::new),
+    }));
 }
 #[inline(always)]
-fn yy_unary_expr<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize, op: u32) {
+fn yy_unary_expr<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize, op: UnaryOp) {
     let child = yyvs[sp].take_expr();
-    *yyval = YYValue::Expr(expr_create(ExprKind::Unary { op, child }));
+    *yyval = YYValue::Expr(expr_create(ExprKind::Unary {
+        op,
+        child: child.map(Box::new),
+    }));
 }
 #[inline(always)]
 fn yy_list_push<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize, sp_off: usize) {
@@ -941,7 +946,7 @@ fn execute_reduction<'a>(
             let file = yyvs[sp].take_file();
             let mut list = yyvs[sp - 1].take_file_list();
             if let Some(f) = file {
-                list.push(f);
+                list.push(*f);
             }
             *yyval = YYValue::FileList(list);
         }
@@ -1186,10 +1191,7 @@ fn execute_reduction<'a>(
             if let YYValue::Interp(mut interp) = std::mem::replace(&mut yyvs[sp - 4], YYValue::None)
             {
                 let vardefs = yyvs[sp - 2].take_var_list();
-                interp.def = vardefs
-                    .into_iter()
-                    .map(|b| ArenaBox::into_inner(b))
-                    .collect();
+                interp.def = vardefs;
                 *yyval = YYValue::Interp(interp);
             } else {
                 *yyval = YYValue::None;
@@ -1223,25 +1225,13 @@ fn execute_reduction<'a>(
             // KeyTypeDecl: TYPE String OBRACE VarDeclList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let vardefs = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::KeyType(key_type_create(
-                atom,
-                vardefs
-                    .into_iter()
-                    .map(|b| ArenaBox::into_inner(b))
-                    .collect(),
-            ));
+            *yyval = YYValue::KeyType(key_type_create(atom, vardefs));
         }
         64 => {
             // SymbolsDecl: KEY KEYNAME OBRACE OptSymbolsBody CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let vardefs = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::Symbols(symbols_create(
-                atom,
-                vardefs
-                    .into_iter()
-                    .map(|b| ArenaBox::into_inner(b))
-                    .collect(),
-            ));
+            *yyval = YYValue::Symbols(symbols_create(atom, vardefs));
         }
         65 => {
             // OptSymbolsBody: SymbolsBody
@@ -1301,47 +1291,37 @@ fn execute_reduction<'a>(
         74 => {
             // MultiKeySymOrActionList: OBRACKET MultiKeySymList CBRACKET (yylen=3)
             let list = yyvs[sp - 1].take_expr_list();
-            let exprs: Vec<ExprKind> = list.into_iter().map(|b| ArenaBox::into_inner(b)).collect();
-            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
+            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: list }));
         }
         75 => {
             // MultiKeySymOrActionList: NoSymbolOrActionList OBRACKET MultiKeySymList CBRACKET COMMA (yylen=5)
             let mut list = yyvs[sp - 1].take_expr_list(); // sp-1 = MultiKeySymList = offset(-1)
             let count = yyvs[sp - 3].as_no_sym_or_action_list(); // sp-3 = NoSymbolOrActionList = offset(-3)
                                                                  // Prepend 'count' NoSymbol keysym lists
-            let mut prepended: Vec<ArenaBox<ExprKind>> = Vec::new();
+            let mut prepended: Vec<ExprKind> = Vec::new();
             for _ in 0..count {
                 prepended.push(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL));
             }
             prepended.append(&mut list);
-            let exprs: Vec<ExprKind> = prepended
-                .into_iter()
-                .map(|b| ArenaBox::into_inner(b))
-                .collect();
-            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
+            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: prepended }));
         }
         76 => {
             // MultiKeySymOrActionList: OBRACKET MultiActionList CBRACKET (yylen=3)
             let list = yyvs[sp - 1].take_expr_list();
-            let exprs: Vec<ExprKind> = list.into_iter().map(|b| ArenaBox::into_inner(b)).collect();
-            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
+            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: list }));
         }
         77 => {
             // MultiKeySymOrActionList: NoSymbolOrActionList OBRACKET MultiActionList CBRACKET COMMA (yylen=5)
             let mut list = yyvs[sp - 1].take_expr_list();
             let count = yyvs[sp - 3].as_no_sym_or_action_list();
-            let mut prepended: Vec<ArenaBox<ExprKind>> = Vec::new();
+            let mut prepended: Vec<ExprKind> = Vec::new();
             for _ in 0..count {
                 prepended.push(expr_create(ExprKind::ActionList {
                     actions: Vec::new(),
                 }));
             }
             prepended.append(&mut list);
-            let exprs: Vec<ExprKind> = prepended
-                .into_iter()
-                .map(|b| ArenaBox::into_inner(b))
-                .collect();
-            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: exprs }));
+            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: prepended }));
         }
         78 => {
             // NoSymbolOrActionList: NoSymbol (produces EmptyList expr)
@@ -1368,10 +1348,7 @@ fn execute_reduction<'a>(
             // ModMapDecl: MODIFIER_MAP Ident OBRACE KeyOrKeySymList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let list = yyvs[sp - 2].take_expr_list();
-            *yyval = YYValue::ModMask(mod_map_create(
-                atom,
-                list.into_iter().map(|b| ArenaBox::into_inner(b)).collect(),
-            ));
+            *yyval = YYValue::ModMask(mod_map_create(atom, list));
         }
         84 => {
             // KeyOrKeySymList: KeyOrKeySymList COMMA KeyOrKeySym
@@ -1395,13 +1372,7 @@ fn execute_reduction<'a>(
             // LedMapDecl: INDICATOR String OBRACE VarDeclList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let vardefs = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::LedMap(led_map_create(
-                atom,
-                vardefs
-                    .into_iter()
-                    .map(|b| ArenaBox::into_inner(b))
-                    .collect(),
-            ));
+            *yyval = YYValue::LedMap(led_map_create(atom, vardefs));
         }
         89 => {
             // LedNameDecl: INDICATOR Integer EQUALS Expr SEMI
@@ -1550,35 +1521,35 @@ fn execute_reduction<'a>(
         }
         // Expr rules 151-165
         151 => {
-            yy_bin_expr(yyval, yyvs, sp, STMT_EXPR_DIVIDE);
+            yy_bin_expr(yyval, yyvs, sp, BinaryOp::Divide);
         }
         152 => {
-            yy_bin_expr(yyval, yyvs, sp, STMT_EXPR_ADD);
+            yy_bin_expr(yyval, yyvs, sp, BinaryOp::Add);
         }
         153 => {
-            yy_bin_expr(yyval, yyvs, sp, STMT_EXPR_SUBTRACT);
+            yy_bin_expr(yyval, yyvs, sp, BinaryOp::Subtract);
         }
         154 => {
-            yy_bin_expr(yyval, yyvs, sp, STMT_EXPR_MULTIPLY);
+            yy_bin_expr(yyval, yyvs, sp, BinaryOp::Multiply);
         }
         155 => {
-            yy_bin_expr(yyval, yyvs, sp, STMT_EXPR_ASSIGN);
+            yy_bin_expr(yyval, yyvs, sp, BinaryOp::Assign);
         }
         156 => {
             // Expr: Term
             *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
         }
         157 => {
-            yy_unary_expr(yyval, yyvs, sp, STMT_EXPR_NEGATE);
+            yy_unary_expr(yyval, yyvs, sp, UnaryOp::Negate);
         }
         158 => {
-            yy_unary_expr(yyval, yyvs, sp, STMT_EXPR_UNARY_PLUS);
+            yy_unary_expr(yyval, yyvs, sp, UnaryOp::Plus);
         }
         159 => {
-            yy_unary_expr(yyval, yyvs, sp, STMT_EXPR_NOT);
+            yy_unary_expr(yyval, yyvs, sp, UnaryOp::Not);
         }
         160 => {
-            yy_unary_expr(yyval, yyvs, sp, STMT_EXPR_INVERT);
+            yy_unary_expr(yyval, yyvs, sp, UnaryOp::Invert);
         }
         161 => {
             // Term: Lhs (passthrough)
@@ -1588,10 +1559,7 @@ fn execute_reduction<'a>(
             // Term: Action OPAREN ExprList CPAREN
             let name = yyvs[sp - 3].as_atom();
             let list = yyvs[sp - 1].take_expr_list();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Action {
-                name,
-                args: list.into_iter().map(|b| ArenaBox::into_inner(b)).collect(),
-            }));
+            *yyval = YYValue::Expr(expr_create(ExprKind::Action { name, args: list }));
         }
         163 => {
             // Term: Terminal
@@ -1611,11 +1579,9 @@ fn execute_reduction<'a>(
             // ActionList at sp produces an ExprList of actions
             // Create an ActionList expr wrapping those actions, then append to the list
             let actions_expr_list = yyvs[sp].take_expr_list();
-            let actions: Vec<ExprKind> = actions_expr_list
-                .into_iter()
-                .map(|b| ArenaBox::into_inner(b))
-                .collect();
-            let action_list_expr = expr_create(ExprKind::ActionList { actions });
+            let action_list_expr = expr_create(ExprKind::ActionList {
+                actions: actions_expr_list,
+            });
             let mut list = yyvs[sp - 2].take_expr_list();
             list.push(action_list_expr);
             *yyval = YYValue::ExprList(list);
@@ -1632,11 +1598,9 @@ fn execute_reduction<'a>(
         168 => {
             // MultiActionList: ActionList (initial single element)
             let actions_expr_list = yyvs[sp].take_expr_list();
-            let actions: Vec<ExprKind> = actions_expr_list
-                .into_iter()
-                .map(|b| ArenaBox::into_inner(b))
-                .collect();
-            let action_list_expr = expr_create(ExprKind::ActionList { actions });
+            let action_list_expr = expr_create(ExprKind::ActionList {
+                actions: actions_expr_list,
+            });
             *yyval = YYValue::ExprList(vec![action_list_expr]);
         }
         169 => {
@@ -1656,9 +1620,7 @@ fn execute_reduction<'a>(
         172 => {
             // Actions: OBRACE NonEmptyActions CBRACE
             let list = yyvs[sp - 1].take_expr_list();
-            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList {
-                actions: list.into_iter().map(|b| ArenaBox::into_inner(b)).collect(),
-            }));
+            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: list }));
         }
         173 => {
             // ActionList: Action
@@ -1674,10 +1636,7 @@ fn execute_reduction<'a>(
             // Action: FieldSpec OPAREN ExprList CPAREN
             let name = yyvs[sp - 3].as_atom();
             let list = yyvs[sp - 1].take_expr_list();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Action {
-                name,
-                args: list.into_iter().map(|b| ArenaBox::into_inner(b)).collect(),
-            }));
+            *yyval = YYValue::Expr(expr_create(ExprKind::Action { name, args: list }));
         }
         // Lhs rules 176-179
         176 => {
@@ -1698,7 +1657,7 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Expr(expr_create(ExprKind::ArrayRef {
                 element: XKB_ATOM_NONE,
                 field,
-                entry,
+                entry: entry.map(Box::new),
             }));
         }
         179 => {
@@ -1709,7 +1668,7 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Expr(expr_create(ExprKind::ArrayRef {
                 element,
                 field,
-                entry,
+                entry: entry.map(Box::new),
             }));
         }
         // OptTerminal / Terminal 180-181
@@ -1931,8 +1890,8 @@ pub(crate) fn parse<'a>(
     mut ctx: &'a mut XkbContext,
     mut scanner: &'a mut Scanner<'a>,
     map: &str,
-) -> Option<ArenaBox<XkbFile>> {
-    let mut first: Option<ArenaBox<XkbFile>> = None;
+) -> Option<Box<XkbFile>> {
+    let mut first: Option<Box<XkbFile>> = None;
 
     loop {
         let mut param = ParserParam {
@@ -1983,11 +1942,11 @@ pub(crate) fn parse<'a>(
 
 // ── AST builder functions (merged from ast_build.rs) ──
 
-pub(crate) fn expr_create(kind: ExprKind) -> ArenaBox<ExprKind> {
-    alloc_arena(kind)
+pub(crate) fn expr_create(kind: ExprKind) -> ExprKind {
+    kind
 }
 
-pub(crate) fn expr_create_key_sym_list(sym: u32) -> ArenaBox<ExprKind> {
+pub(crate) fn expr_create_key_sym_list(sym: u32) -> ExprKind {
     let mut syms = Vec::new();
     if sym != XKB_KEY_NO_SYMBOL {
         syms.push(sym);
@@ -1995,12 +1954,9 @@ pub(crate) fn expr_create_key_sym_list(sym: u32) -> ArenaBox<ExprKind> {
     expr_create(ExprKind::KeysymList { syms })
 }
 
-pub(crate) fn expr_append_key_sym_list(
-    mut expr: ArenaBox<ExprKind>,
-    sym: u32,
-) -> ArenaBox<ExprKind> {
+pub(crate) fn expr_append_key_sym_list(mut expr: ExprKind, sym: u32) -> ExprKind {
     if sym != XKB_KEY_NO_SYMBOL {
-        if let ExprKind::KeysymList { ref mut syms } = *expr {
+        if let ExprKind::KeysymList { ref mut syms } = expr {
             syms.push(sym);
         }
     }
@@ -2009,9 +1965,9 @@ pub(crate) fn expr_append_key_sym_list(
 
 pub(crate) fn expr_key_sym_list_append_string(
     scanner: &mut Scanner,
-    mut expr: ArenaBox<ExprKind>,
+    mut expr: ExprKind,
     string: &str,
-) -> Option<ArenaBox<ExprKind>> {
+) -> Option<ExprKind> {
     let bytes = string.as_bytes();
     let len = bytes.len();
     let mut idx: usize = 0;
@@ -2029,7 +1985,7 @@ pub(crate) fn expr_key_sym_list_append_string(
             let _loc = scanner.token_location();
             return None;
         }
-        if let ExprKind::KeysymList { ref mut syms } = *expr {
+        if let ExprKind::KeysymList { ref mut syms } = expr {
             syms.push(sym);
         }
         idx += cp_len;
@@ -2044,10 +2000,7 @@ pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> Option
         return None;
     }
     let (cp, cp_len) = utf8_next_code_point_safe(bytes);
-    if cp == INVALID_UTF8_CODE_POINT {
-        let _loc = scanner.token_location();
-        return None;
-    } else if cp_len != len {
+    if cp == INVALID_UTF8_CODE_POINT || cp_len != len {
         let _loc = scanner.token_location();
         return None;
     }
@@ -2058,102 +2011,97 @@ pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> Option
     Some(sym)
 }
 
-pub(crate) fn keycode_create(name: u32, value: i64) -> ArenaBox<KeycodeDef> {
-    alloc_arena(KeycodeDef {
+pub(crate) fn keycode_create(name: u32, value: i64) -> KeycodeDef {
+    KeycodeDef {
         merge: MergeMode::Default,
         name,
         value,
-    })
+    }
 }
 
-pub(crate) fn key_alias_create(alias: u32, real: u32) -> ArenaBox<KeyAliasDef> {
-    alloc_arena(KeyAliasDef {
+pub(crate) fn key_alias_create(alias: u32, real: u32) -> KeyAliasDef {
+    KeyAliasDef {
         merge: MergeMode::Default,
         alias,
         real,
-    })
+    }
 }
 
-pub(crate) fn vmod_create(name: u32, value: Option<ArenaBox<ExprKind>>) -> ArenaBox<VModDef> {
-    alloc_arena(VModDef {
+pub(crate) fn vmod_create(name: u32, value: Option<ExprKind>) -> VModDef {
+    VModDef {
         merge: MergeMode::Default,
         name,
         value,
-    })
+    }
 }
 
-pub(crate) fn var_create(
-    name: Option<ArenaBox<ExprKind>>,
-    value: Option<ArenaBox<ExprKind>>,
-) -> ArenaBox<VarDef> {
-    alloc_arena(VarDef {
+pub(crate) fn var_create(name: Option<ExprKind>, value: Option<ExprKind>) -> VarDef {
+    VarDef {
         merge: MergeMode::Default,
         name,
         value,
-    })
+    }
 }
 
-pub(crate) fn bool_var_create(ident: u32, set: bool) -> ArenaBox<VarDef> {
-    let name = alloc_arena(ExprKind::Ident(ident));
-    let value = alloc_arena(ExprKind::Boolean(set));
-    alloc_arena(VarDef {
+pub(crate) fn bool_var_create(ident: u32, set: bool) -> VarDef {
+    VarDef {
         merge: MergeMode::Default,
-        name: Some(name),
-        value: Some(value),
-    })
+        name: Some(ExprKind::Ident(ident)),
+        value: Some(ExprKind::Boolean(set)),
+    }
 }
 
-pub(crate) fn interp_create(sym: u32, match_0: Option<ArenaBox<ExprKind>>) -> ArenaBox<InterpDef> {
-    alloc_arena(InterpDef {
+pub(crate) fn interp_create(sym: u32, match_0: Option<ExprKind>) -> InterpDef {
+    InterpDef {
         merge: MergeMode::Default,
         sym,
         match_0,
         def: Vec::new(),
-    })
+    }
 }
 
-pub(crate) fn key_type_create(name: u32, body: Vec<VarDef>) -> ArenaBox<KeyTypeDef> {
-    alloc_arena(KeyTypeDef {
+pub(crate) fn key_type_create(name: u32, body: Vec<VarDef>) -> KeyTypeDef {
+    KeyTypeDef {
         merge: MergeMode::Default,
         name,
         body,
-    })
+    }
 }
 
-pub(crate) fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> ArenaBox<SymbolsDef> {
-    alloc_arena(SymbolsDef {
+pub(crate) fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> SymbolsDef {
+    SymbolsDef {
         merge: MergeMode::Default,
         key_name,
         symbols,
-    })
+    }
 }
 
-pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> ArenaBox<ModMapDef> {
-    alloc_arena(ModMapDef {
+pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> ModMapDef {
+    ModMapDef {
         merge: MergeMode::Default,
         modifier,
         keys,
-    })
+    }
 }
 
-pub(crate) fn led_map_create(name: u32, body: Vec<VarDef>) -> ArenaBox<LedMapDef> {
-    alloc_arena(LedMapDef {
+pub(crate) fn led_map_create(name: u32, body: Vec<VarDef>) -> LedMapDef {
+    LedMapDef {
         merge: MergeMode::Default,
         name,
         body,
-    })
+    }
 }
 
-pub(crate) fn led_name_create(ndx: i64, name: Option<ArenaBox<ExprKind>>) -> ArenaBox<LedNameDef> {
-    alloc_arena(LedNameDef {
+pub(crate) fn led_name_create(ndx: i64, name: Option<ExprKind>) -> LedNameDef {
+    LedNameDef {
         merge: MergeMode::Default,
         ndx,
         name,
-    })
+    }
 }
 
-pub(crate) fn unknown_statement_create() -> ArenaBox<UnknownStatement> {
-    alloc_arena(UnknownStatement {})
+pub(crate) fn unknown_statement_create() -> UnknownStatement {
+    UnknownStatement {}
 }
 
 pub(crate) fn include_create(
@@ -2212,10 +2160,10 @@ pub(crate) fn xkb_file_create(
     name: Option<String>,
     defs: Vec<Statement>,
     flags: u32,
-) -> ArenaBox<XkbFile> {
+) -> Box<XkbFile> {
     let mut name_str = name.unwrap_or_default();
     xkb_escape_map_name(&mut name_str);
-    alloc_arena(XkbFile {
+    Box::new(XkbFile {
         file_type: type_0,
         name: name_str,
         defs,
@@ -2226,7 +2174,7 @@ pub(crate) fn xkb_file_create(
 pub(crate) fn xkb_file_from_components(
     ctx: &mut XkbContext,
     kkctgs: &XkbComponentNames,
-) -> Option<ArenaBox<XkbFile>> {
+) -> Option<Box<XkbFile>> {
     let components = [
         &kkctgs.keycodes,
         &kkctgs.types,
@@ -2252,7 +2200,7 @@ pub(crate) fn xkb_file_from_components(
             MergeMode::Default,
         )?)];
         let file = xkb_file_create(type_0, None, defs, 0);
-        file_stmts.push(Statement::XkbFile(file));
+        file_stmts.push(Statement::XkbFile(*file));
     }
     Some(xkb_file_create(FileType::Keymap, None, file_stmts, 0))
 }
@@ -2758,73 +2706,73 @@ pub(crate) enum YYValue<'a> {
     MapFlags(u32),
     Keysym(u32),
     NoSymbolOrActionList(u32),
-    Expr(ArenaBox<ExprKind>),
-    ExprList(Vec<ArenaBox<ExprKind>>),
-    Var(ArenaBox<VarDef>),
-    VarList(Vec<ArenaBox<VarDef>>),
-    VMod(ArenaBox<VModDef>),
-    VModList(Vec<ArenaBox<VModDef>>),
-    Interp(ArenaBox<InterpDef>),
-    KeyType(ArenaBox<KeyTypeDef>),
-    Symbols(ArenaBox<SymbolsDef>),
-    ModMask(ArenaBox<ModMapDef>),
+    Expr(ExprKind),
+    ExprList(Vec<ExprKind>),
+    Var(VarDef),
+    VarList(Vec<VarDef>),
+    VMod(VModDef),
+    VModList(Vec<VModDef>),
+    Interp(InterpDef),
+    KeyType(KeyTypeDef),
+    Symbols(SymbolsDef),
+    ModMask(ModMapDef),
     GroupCompat,
-    LedMap(ArenaBox<LedMapDef>),
-    LedName(ArenaBox<LedNameDef>),
-    Keycode(ArenaBox<KeycodeDef>),
-    KeyAlias(ArenaBox<KeyAliasDef>),
-    Unknown(ArenaBox<UnknownStatement>),
-    File(ArenaBox<XkbFile>),
-    FileList(Vec<ArenaBox<XkbFile>>),
+    LedMap(LedMapDef),
+    LedName(LedNameDef),
+    Keycode(KeycodeDef),
+    KeyAlias(KeyAliasDef),
+    Unknown(UnknownStatement),
+    File(Box<XkbFile>),
+    FileList(Vec<XkbFile>),
     Stmt(Statement),
     StmtList(Vec<Statement>),
 }
 
 // Helper to take a value out and replace with None
 impl<'a> YYValue<'a> {
-    pub(crate) fn take_expr(&mut self) -> Option<ArenaBox<ExprKind>> {
+    pub(crate) fn take_expr(&mut self) -> Option<ExprKind> {
         match std::mem::take(self) {
             YYValue::Expr(e) => Some(e),
             _ => None,
         }
     }
-    pub(crate) fn take_expr_list(&mut self) -> Vec<ArenaBox<ExprKind>> {
+    pub(crate) fn take_expr_list(&mut self) -> Vec<ExprKind> {
         match std::mem::take(self) {
             YYValue::ExprList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub(crate) fn take_var(&mut self) -> Option<ArenaBox<VarDef>> {
+    pub(crate) fn take_var(&mut self) -> Option<VarDef> {
         match std::mem::take(self) {
             YYValue::Var(v) => Some(v),
             _ => None,
         }
     }
-    pub(crate) fn take_var_list(&mut self) -> Vec<ArenaBox<VarDef>> {
+    pub(crate) fn take_var_list(&mut self) -> Vec<VarDef> {
         match std::mem::take(self) {
             YYValue::VarList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub(crate) fn take_vmod(&mut self) -> Option<ArenaBox<VModDef>> {
+    pub(crate) fn take_vmod(&mut self) -> Option<VModDef> {
         match std::mem::take(self) {
             YYValue::VMod(v) => Some(v),
             _ => None,
         }
     }
-    pub(crate) fn take_vmod_list(&mut self) -> Vec<ArenaBox<VModDef>> {
+    pub(crate) fn take_vmod_list(&mut self) -> Vec<VModDef> {
         match std::mem::take(self) {
             YYValue::VModList(v) => v,
             _ => Vec::new(),
         }
     }
-    pub(crate) fn take_file(&mut self) -> Option<ArenaBox<XkbFile>> {
+    pub(crate) fn take_file(&mut self) -> Option<Box<XkbFile>> {
         match std::mem::take(self) {
             YYValue::File(f) => Some(f),
             _ => None,
         }
     }
-    pub(crate) fn take_file_list(&mut self) -> Vec<ArenaBox<XkbFile>> {
+    pub(crate) fn take_file_list(&mut self) -> Vec<XkbFile> {
         match std::mem::take(self) {
             YYValue::FileList(v) => v,
             _ => Vec::new(),
@@ -2968,7 +2916,6 @@ pub(crate) fn _xkbcommon_lex<'a>(
         while !s.eof() && !s.eol() && s.peek() != b'"' {
             if s.chr(b'\\') {
                 let mut o: u8 = 0;
-                let start_pos: usize = s.pos;
                 if s.chr(b'\\') {
                     s.buf_append(b'\\');
                 } else if s.chr(b'"') {
@@ -2996,10 +2943,8 @@ pub(crate) fn _xkbcommon_lex<'a>(
                     }
                 } else if s.oct(&mut o) && o != 0 {
                     s.buf_append(o);
-                } else if s.pos > start_pos {
-                    let _loc_0 = s.token_location();
                 } else {
-                    let _loc_1 = s.token_location();
+                    let _loc = s.token_location();
                 }
             } else {
                 let c = s.next_byte();
@@ -3122,7 +3067,7 @@ pub(crate) fn xkb_parse_string(
     input: &[u8],
     file_name: &str,
     map: &str,
-) -> Option<ArenaBox<XkbFile>> {
+) -> Option<Box<XkbFile>> {
     let mut sc = Scanner::new(&[], "");
     if !xkb_parse_string_init(&mut sc, input, file_name, map) {
         return None;
@@ -3324,9 +3269,9 @@ pub(crate) fn process_include_file(
     ctx: &mut XkbContext,
     stmt: &IncludeStmt,
     file_type: FileType,
-) -> Option<ArenaBox<XkbFile>> {
-    let mut xkb_file: Option<ArenaBox<XkbFile>> = None;
-    let mut candidate: Option<ArenaBox<XkbFile>> = None;
+) -> Option<Box<XkbFile>> {
+    let mut xkb_file: Option<Box<XkbFile>> = None;
+    let mut candidate: Option<Box<XkbFile>> = None;
 
     // Expand %-sequences in the file name
     let stmt_file: String = match expand_path_str("(unknown)", &stmt.file, file_type) {
@@ -3470,9 +3415,7 @@ fn find_interp_for_key(
     syms_buf[..num_syms].copy_from_slice(&syms_ref[..num_syms]);
     let syms = &syms_buf[..num_syms];
     let key_modmap = keymap.keys[key_idx].modmap;
-    let num_syms = syms.len();
-    for s in 0..num_syms {
-        let cur_sym = syms[s];
+    for &cur_sym in syms {
         let match_exact = interp_index.by_sym.get(&cur_sym);
         let match_wild = &interp_index.wildcards;
         let mut exact_idx = 0usize;
@@ -3715,13 +3658,17 @@ fn update_pending_action_fields(info: &mut XkbKeymapInfo<'_>, act: &mut XkbActio
                                 info.pending_computations[pc_idx].value = group.wrapping_sub(1);
                             } else {
                                 info.pending_computations[pc_idx].value = group;
-                                if info.pending_computations[pc_idx]
-                                    .expr
-                                    .as_ref()
-                                    .unwrap()
-                                    .stmt_type()
-                                    == STMT_EXPR_NEGATE
-                                {
+                                if info.pending_computations[pc_idx].expr.as_ref().is_some_and(
+                                    |expr| {
+                                        matches!(
+                                            expr,
+                                            ExprKind::Unary {
+                                                op: UnaryOp::Negate,
+                                                ..
+                                            }
+                                        )
+                                    },
+                                ) {
                                     info.pending_computations[pc_idx].value =
                                         -(info.pending_computations[pc_idx].value as i32) as u32;
                                 }
@@ -4075,7 +4022,7 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
     for type_0 in (FileType::Keycodes as u32)..=(FileType::Symbols as u32) {
         let file_arg: Option<&mut XkbFile> = file_indices[type_0 as usize].map(|idx| {
             if let Statement::XkbFile(ref mut sub_file) = file.defs[idx] {
-                &mut **sub_file
+                sub_file
             } else {
                 unreachable!()
             }
@@ -4104,7 +4051,7 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
 pub(crate) const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
 
 /// Index-based sval for scanner input. Used in Lvalue/rule to avoid
-/// lifetime issues across include boundaries. Reconstruct sval via to_sval().
+/// lifetime issues across include boundaries. Reconstruct sval via as_sval().
 #[derive(Copy, Clone, Default)]
 pub(crate) struct SvalIdx {
     start: usize,
@@ -4113,7 +4060,7 @@ pub(crate) struct SvalIdx {
 impl SvalIdx {
     const EMPTY: SvalIdx = SvalIdx { start: 0, end: 0 };
     #[inline]
-    fn to_sval<'a>(&self, input: &'a [u8]) -> Sval<'a> {
+    fn as_sval<'a>(&self, input: &'a [u8]) -> Sval<'a> {
         if self.start >= self.end || self.start >= input.len() {
             Sval { data: &[] }
         } else {
@@ -4445,9 +4392,7 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
             let count = count as usize;
             if count > 0 {
                 pos += count;
-                if layout == 0 || layout > XKB_MAX_GROUPS {
-                } else if mlvo != MLVO_OPTION {
-                } else {
+                if (1..=XKB_MAX_GROUPS).contains(&layout) && mlvo == MLVO_OPTION {
                     val_0.layout -= 1;
                 }
             }
@@ -4470,11 +4415,8 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
     }
     arr
 }
-fn matcher_new_from_names<'a>(
-    ctx: &'a mut XkbContext,
-    rmlvo: &'a XkbRuleNames,
-) -> ArenaBox<Matcher<'a>> {
-    let mut m = alloc_arena(Matcher::new(ctx));
+fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) -> Matcher<'a> {
+    let mut m = Matcher::new(ctx);
     let rmlvo_ref = rmlvo;
     m.rmlvo.model.sval = Sval {
         data: rmlvo_ref.model.as_bytes(),
@@ -4856,10 +4798,8 @@ fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
 }
 
 fn matcher_mapping_verify(m: &mut Matcher, s: &mut Scanner) -> bool {
-    if m.mapping.num_mlvo == 0 {
+    if m.mapping.num_mlvo == 0 || m.mapping.num_kccgst == 0 {
         let _loc: ScannerLoc = s.token_location();
-    } else if m.mapping.num_kccgst == 0 {
-        let _loc_0: ScannerLoc = s.token_location();
     } else {
         if is_mlvo_mask_defined(m, MLVO_LAYOUT) {
             let single_layout_idx = if let LayoutIdx::Single { layout_idx, .. } = m.mapping.layout {
@@ -5126,6 +5066,7 @@ fn expand_rmlvo_in_kccgst_value(
     let _loc_1: ScannerLoc = s.token_location();
     false
 }
+#[allow(clippy::too_many_arguments)]
 fn expand_qualifier_in_kccgst_value(
     m: &mut Matcher,
     s: &mut Scanner,
@@ -5313,7 +5254,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
     let mut candidate_layouts: u32 = m.mapping.active_or_candidates_mask;
     for i in 0..m.mapping.num_mlvo as usize {
         let mlvo: u32 = m.mapping.mlvo_at_pos[i];
-        let value: Sval = m.rule.mlvo_value_at_pos[i].to_sval(s.s);
+        let value: Sval = m.rule.mlvo_value_at_pos[i].as_sval(s.s);
         let match_type: u32 = m.rule.match_type_at_pos[i];
         let mut matched: bool = false;
         if mlvo == MLVO_MODEL {
@@ -5451,7 +5392,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
                     if kccgst == KCCGST_GEOMETRY {
                         continue;
                     }
-                    let value_0: Sval = m.rule.kccgst_value_at_pos[i_0].to_sval(s.s);
+                    let value_0: Sval = m.rule.kccgst_value_at_pos[i_0].as_sval(s.s);
                     let prev_buffer_length: u32 = m.pending_kccgst.buffer.len() as u32;
                     if let Some(expanded) = expand_kccgst_value(m, s, value_0, idx) {
                         if !expanded.is_empty() {
@@ -5475,7 +5416,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
             if kccgst_0 == KCCGST_GEOMETRY {
                 continue;
             }
-            let value_1: Sval = m.rule.kccgst_value_at_pos[i_1].to_sval(s.s);
+            let value_1: Sval = m.rule.kccgst_value_at_pos[i_1].as_sval(s.s);
             if let Some(expanded) = expand_kccgst_value(m, s, value_1, layout_idx_min) {
                 if !expanded.is_empty() {
                     concat_kccgst(&mut m.kccgst[kccgst_0 as usize], &expanded);
@@ -5513,7 +5454,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
             tok = gettok(m, s);
             match tok {
                 3 => {
-                    matcher_group_start_new(m, m.val.string.to_sval(s.s).data);
+                    matcher_group_start_new(m, m.val.string.as_sval(s.s).data);
                     tok = gettok(m, s);
                     match tok {
                         5 => {
@@ -5532,7 +5473,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                             break '_initial;
                         }
                     }
-                    matcher_include(m, s, include_depth, m.val.string.to_sval(s.s));
+                    matcher_include(m, s, include_depth, m.val.string.as_sval(s.s));
                     tok = gettok(m, s);
                     match tok {
                         1 => {
@@ -5545,7 +5486,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                 }
                 2 => {
                     matcher_mapping_start_new(m);
-                    matcher_mapping_set_mlvo(m, s, m.val.string.to_sval(s.s));
+                    matcher_mapping_set_mlvo(m, s, m.val.string.as_sval(s.s));
                     loop {
                         tok = gettok(m, s);
                         match tok {
@@ -5558,7 +5499,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                             }
                         }
                         if m.mapping.active_or_candidates_mask != 0 {
-                            matcher_mapping_set_mlvo(m, s, m.val.string.to_sval(s.s));
+                            matcher_mapping_set_mlvo(m, s, m.val.string.as_sval(s.s));
                         }
                     }
                     loop {
@@ -5573,7 +5514,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                             }
                         }
                         if m.mapping.active_or_candidates_mask != 0 {
-                            matcher_mapping_set_kccgst(m, s, m.val.string.to_sval(s.s));
+                            matcher_mapping_set_kccgst(m, s, m.val.string.as_sval(s.s));
                         }
                     }
                     if m.mapping.active_or_candidates_mask != 0 && matcher_mapping_verify(m, s) {
@@ -5706,7 +5647,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                     break '_initial;
                 }
             }
-            matcher_group_add_element(m, s, m.val.string.to_sval(s.s).data);
+            matcher_group_add_element(m, s, m.val.string.as_sval(s.s).data);
         }
     }
     if eof_ok {
@@ -6445,31 +6386,6 @@ pub(crate) enum FileType {
     Rules = 6,
 }
 
-// ── Statement type enum ─────────────────────────────────────────────
-
-pub(crate) const STMT_EXPR_UNARY_PLUS: u32 = 25;
-pub(crate) const STMT_EXPR_INVERT: u32 = 24;
-pub(crate) const STMT_EXPR_NEGATE: u32 = 23;
-pub(crate) const STMT_EXPR_NOT: u32 = 22;
-pub(crate) const STMT_EXPR_ASSIGN: u32 = 21;
-pub(crate) const STMT_EXPR_DIVIDE: u32 = 20;
-pub(crate) const STMT_EXPR_MULTIPLY: u32 = 19;
-pub(crate) const STMT_EXPR_SUBTRACT: u32 = 18;
-pub(crate) const STMT_EXPR_ADD: u32 = 17;
-pub(crate) const STMT_EXPR_ACTION_LIST: u32 = 16;
-pub(crate) const STMT_EXPR_KEYSYM_LIST: u32 = 15;
-pub(crate) const STMT_EXPR_EMPTY_LIST: u32 = 14;
-pub(crate) const STMT_EXPR_ARRAY_REF: u32 = 13;
-pub(crate) const STMT_EXPR_FIELD_REF: u32 = 12;
-pub(crate) const STMT_EXPR_ACTION_DECL: u32 = 11;
-pub(crate) const STMT_EXPR_IDENT: u32 = 10;
-pub(crate) const STMT_EXPR_KEYSYM_LITERAL: u32 = 9;
-pub(crate) const STMT_EXPR_KEYNAME_LITERAL: u32 = 8;
-pub(crate) const STMT_EXPR_BOOLEAN_LITERAL: u32 = 7;
-pub(crate) const STMT_EXPR_FLOAT_LITERAL: u32 = 6;
-pub(crate) const STMT_EXPR_INTEGER_LITERAL: u32 = 5;
-pub(crate) const STMT_EXPR_STRING_LITERAL: u32 = 4;
-
 // ── Merge mode enum ─────────────────────────────────────────────────
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
@@ -6495,6 +6411,23 @@ pub(crate) struct IncludeStmt {
 
 // ── Expression types ────────────────────────────────────────────────
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum BinaryOp {
+    Assign,
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub(crate) enum UnaryOp {
+    Not,
+    Invert,
+    Negate,
+    Plus,
+}
+
 /// Expression AST node — the discriminated payload.
 pub(crate) enum ExprKind {
     String(u32),
@@ -6511,7 +6444,7 @@ pub(crate) enum ExprKind {
     ArrayRef {
         element: u32,
         field: u32,
-        entry: Option<ArenaBox<ExprKind>>,
+        entry: Option<Box<ExprKind>>,
     },
     Action {
         name: u32,
@@ -6525,54 +6458,28 @@ pub(crate) enum ExprKind {
     },
     EmptyList,
     Binary {
-        op: u32,
-        left: Option<ArenaBox<ExprKind>>,
-        right: Option<ArenaBox<ExprKind>>,
+        op: BinaryOp,
+        left: Option<Box<ExprKind>>,
+        right: Option<Box<ExprKind>>,
     },
     Unary {
-        op: u32,
-        child: Option<ArenaBox<ExprKind>>,
+        op: UnaryOp,
+        child: Option<Box<ExprKind>>,
     },
-}
-
-impl ExprKind {
-    pub(crate) fn stmt_type(&self) -> u32 {
-        Self::stmt_type_for_kind(self)
-    }
-
-    pub(crate) fn stmt_type_for_kind(kind: &ExprKind) -> u32 {
-        match kind {
-            ExprKind::String(_) => STMT_EXPR_STRING_LITERAL,
-            ExprKind::Integer(_) => STMT_EXPR_INTEGER_LITERAL,
-            ExprKind::Float => STMT_EXPR_FLOAT_LITERAL,
-            ExprKind::Boolean(_) => STMT_EXPR_BOOLEAN_LITERAL,
-            ExprKind::KeyName(_) => STMT_EXPR_KEYNAME_LITERAL,
-            ExprKind::KeySym(_) => STMT_EXPR_KEYSYM_LITERAL,
-            ExprKind::Ident(_) => STMT_EXPR_IDENT,
-            ExprKind::FieldRef { .. } => STMT_EXPR_FIELD_REF,
-            ExprKind::ArrayRef { .. } => STMT_EXPR_ARRAY_REF,
-            ExprKind::Action { .. } => STMT_EXPR_ACTION_DECL,
-            ExprKind::ActionList { .. } => STMT_EXPR_ACTION_LIST,
-            ExprKind::KeysymList { .. } => STMT_EXPR_KEYSYM_LIST,
-            ExprKind::EmptyList => STMT_EXPR_EMPTY_LIST,
-            ExprKind::Binary { op, .. } => *op,
-            ExprKind::Unary { op, .. } => *op,
-        }
-    }
 }
 
 // ── Statement definition types ──────────────────────────────────────
 
 pub(crate) struct VarDef {
     pub(crate) merge: MergeMode,
-    pub(crate) name: Option<ArenaBox<ExprKind>>,
-    pub(crate) value: Option<ArenaBox<ExprKind>>,
+    pub(crate) name: Option<ExprKind>,
+    pub(crate) value: Option<ExprKind>,
 }
 
 pub(crate) struct VModDef {
     pub(crate) merge: MergeMode,
     pub(crate) name: u32,
-    pub(crate) value: Option<ArenaBox<ExprKind>>,
+    pub(crate) value: Option<ExprKind>,
 }
 
 #[derive(Copy, Clone)]
@@ -6609,14 +6516,14 @@ pub(crate) struct ModMapDef {
 pub(crate) struct InterpDef {
     pub(crate) merge: MergeMode,
     pub(crate) sym: u32,
-    pub(crate) match_0: Option<ArenaBox<ExprKind>>,
+    pub(crate) match_0: Option<ExprKind>,
     pub(crate) def: Vec<VarDef>,
 }
 
 pub(crate) struct LedNameDef {
     pub(crate) merge: MergeMode,
     pub(crate) ndx: i64,
-    pub(crate) name: Option<ArenaBox<ExprKind>>,
+    pub(crate) name: Option<ExprKind>,
 }
 
 pub(crate) struct LedMapDef {
@@ -6641,19 +6548,19 @@ pub(crate) const MAP_IS_DEFAULT: u32 = 1;
 
 pub(crate) enum Statement {
     Include(Vec<IncludeStmt>),
-    Keycode(ArenaBox<KeycodeDef>),
-    KeyAlias(ArenaBox<KeyAliasDef>),
-    Var(ArenaBox<VarDef>),
-    KeyType(ArenaBox<KeyTypeDef>),
-    Interp(ArenaBox<InterpDef>),
-    VMod(ArenaBox<VModDef>),
-    Symbols(ArenaBox<SymbolsDef>),
-    ModMap(ArenaBox<ModMapDef>),
+    Keycode(KeycodeDef),
+    KeyAlias(KeyAliasDef),
+    Var(VarDef),
+    KeyType(KeyTypeDef),
+    Interp(InterpDef),
+    VMod(VModDef),
+    Symbols(SymbolsDef),
+    ModMap(ModMapDef),
     GroupCompat(()),
-    LedMap(ArenaBox<LedMapDef>),
-    LedName(ArenaBox<LedNameDef>),
-    Unknown(ArenaBox<UnknownStatement>),
-    XkbFile(ArenaBox<XkbFile>),
+    LedMap(LedMapDef),
+    LedName(LedNameDef),
+    Unknown(UnknownStatement),
+    XkbFile(XkbFile),
 }
 
 pub(crate) struct XkbFile {
@@ -6691,7 +6598,7 @@ pub(crate) const PARSER_NO_FIELD_VALUE_MISMATCH: u32 = 4;
 pub(crate) const PARSER_NO_FIELD_TYPE_MISMATCH: u32 = 2;
 pub(crate) const PARSER_NO_UNKNOWN_STATEMENTS: u32 = 1;
 pub(crate) struct PendingComputation {
-    pub(crate) expr: Option<ArenaBox<ExprKind>>,
+    pub(crate) expr: Option<ExprKind>,
     pub(crate) computed: bool,
     pub(crate) value: u32,
 }
@@ -6838,60 +6745,4 @@ pub(crate) fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
         return (INVALID_UTF8_CODE_POINT, 0);
     }
     (cp, len)
-}
-use std::ops::{Deref, DerefMut};
-use std::ptr::{self, NonNull};
-
-#[repr(transparent)]
-pub(crate) struct ArenaBox<T: ?Sized> {
-    ptr: NonNull<T>,
-}
-
-impl<T: ?Sized> Deref for ArenaBox<T> {
-    type Target = T;
-    fn deref(&self) -> &T {
-        unsafe { self.ptr.as_ref() }
-    }
-}
-
-impl<T: ?Sized> DerefMut for ArenaBox<T> {
-    fn deref_mut(&mut self) -> &mut T {
-        unsafe { self.ptr.as_mut() }
-    }
-}
-
-impl<T: ?Sized> Drop for ArenaBox<T> {
-    fn drop(&mut self) {
-        unsafe { ptr::drop_in_place(self.ptr.as_ptr()) }
-    }
-}
-
-impl<T> ArenaBox<T> {
-    pub(crate) fn into_inner(self) -> T {
-        unsafe {
-            let val = ptr::read(self.ptr.as_ptr());
-            std::mem::forget(self);
-            val
-        }
-    }
-}
-
-thread_local! {
-    static BUMP: RefCell<bumpalo::Bump> = RefCell::new(bumpalo::Bump::new());
-}
-
-pub(crate) fn alloc_arena<T>(value: T) -> ArenaBox<T> {
-    BUMP.with(|b| {
-        let guard = b.borrow_mut();
-        let ptr = guard.alloc(value) as *mut T;
-        ArenaBox {
-            ptr: unsafe { NonNull::new_unchecked(ptr) },
-        }
-    })
-}
-
-pub(crate) fn reset_arena() {
-    BUMP.with(|b| {
-        b.replace(bumpalo::Bump::new());
-    });
 }

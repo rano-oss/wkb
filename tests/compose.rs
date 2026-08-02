@@ -78,9 +78,9 @@ fn parse_compose_keysym_data(path: &Path) -> Vec<(Vec<String>, Option<usize>, ch
 
 fn parse_rhs_for_test(rhs: &str) -> Option<char> {
     let rhs = rhs.trim();
-    if rhs.starts_with('"') {
-        let end_quote = rhs[1..].find('"')? + 1;
-        let s = &rhs[1..end_quote];
+    if let Some(rhs) = rhs.strip_prefix('"') {
+        let end_quote = rhs.find('"')?;
+        let s = &rhs[..end_quote];
         if !s.is_empty() && !s.starts_with('\\') {
             if let Some(ch) = s.chars().next() {
                 if !ch.is_ascii_digit() {
@@ -316,8 +316,8 @@ fn run_compose_test(
     let keysym_data = parse_compose_keysym_data(compose_path);
     // Build a lookup: (is_multi_key, keys_chars) -> (keysym_names, is_multi_key)
     // for xkbcommon feeding
-    let mut entry_to_keysym: HashMap<(bool, Vec<char>), (Vec<String>, Option<usize>)> =
-        HashMap::new();
+    type EntryMap = HashMap<(bool, Vec<char>), (Vec<String>, Option<usize>)>;
+    let mut entry_to_keysym = EntryMap::new();
     for (names, mk_idx, _output) in &keysym_data {
         let mut chars = Vec::with_capacity(names.len() + mk_idx.map(|_| 0).unwrap_or(0));
         for name in names {

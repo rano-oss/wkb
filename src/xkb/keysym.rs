@@ -20877,12 +20877,8 @@ pub(crate) fn xkb_keysym_from_name(name: &[u8], flags: u32) -> Option<u32> {
                 hi = mid as i32 - 1;
             } else {
                 let mut idx = mid;
-                for candidate in (mid + 1)..NAME_TO_KEYSYM.len() {
-                    if istrcmp(
-                        get_name_bytes(&NAME_TO_KEYSYM[candidate]),
-                        get_name_bytes(&NAME_TO_KEYSYM[idx]),
-                    ) == 0
-                    {
+                for (candidate, entry) in NAME_TO_KEYSYM.iter().enumerate().skip(mid + 1) {
+                    if istrcmp(get_name_bytes(entry), get_name_bytes(&NAME_TO_KEYSYM[idx])) == 0 {
                         idx = candidate;
                     } else {
                         break;

@@ -24,7 +24,7 @@ fn xkb_new_keymap_from_names(locale: &str, layout: &str) -> xkb::Keymap {
     "lt", "lv", "ma", "md", "me", "mk", "ml", "mm", "mn", "mt", "mv", "my", "latam", "latin", "ng",
     "nl", "no", "np", "nz", "ph", "pk", "pl", "pt", "ro", "rs", "ru", "se", "tg", "th", "tj", "tm",
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
-], 0..8)]
+], [0usize, 1, 2, 3, 4, 5, 6, 7])]
 fn keysym(locale: &str, level: usize) {
     for layout in wkb::testing::get_all_layouts_for_locale(locale) {
         let xkb = xkb_new_keymap_from_names(locale, &layout);
