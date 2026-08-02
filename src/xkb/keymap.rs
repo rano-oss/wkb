@@ -56,6 +56,7 @@ use std::{
 const LOCALE_DIR: &str = "/usr/share/X11/locale";
 
 /// A parsed Compose file entry.
+#[derive(Clone)]
 pub struct ComposeEntry {
     pub keys: ArrayVec<char, 8>,
     pub multi_key_index: Option<usize>,

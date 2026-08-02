@@ -109,18 +109,24 @@ pub enum WkbError {
 
 /// Core keyboard state machine. Tracks modifier state, key presses, and compose sequences.
 #[derive(Debug, Clone)]
-pub struct WKB {
+pub struct KBLayout {
+    pub(crate) name: String,
     pub(crate) repeat_keys: KeyBitSet,
     pub(crate) composer: Composer,
     pub(crate) modifiers: Modifiers,
     pub(crate) state_keymap: FlatKeymap,
     pub(crate) num_lock_keys: FlatKeymap,
     pub(crate) caps_lock_keymap: FlatKeymap,
-    pub(crate) current_layout_idx: usize,
-    pub(crate) layout_names: Vec<String>,
     pub(crate) named_key_map: FlatNamedKeyMap,
     #[cfg(feature = "xkb")]
     pub(crate) level_exceptions_keymap: FlatKeymap,
+}
+
+/// Core keyboard state machine. Tracks modifier state, key presses, and compose sequences.
+#[derive(Debug, Clone)]
+pub struct WKB {
+    pub(crate) layouts: Vec<KBLayout>,
+    pub(crate) current_layout_idx: usize,
 }
 
 // WKB is Send + Sync: all fields are owned, no Rc/RefCell.
@@ -153,14 +159,16 @@ impl WKB {
     /// Reset all transient input state: compose sequence.
     /// Call on wl_keyboard.leave or when focus changes.
     pub fn reset_state(&mut self) {
-        self.composer.reset();
+        self.layouts[self.current_layout_idx].composer.reset();
     }
 
     /// Return the raw modifier bitmasks for `wl_keyboard.modifiers`.
     ///
     /// Returns depressed, latched, locked bitmasks and the active layout index.
     pub fn raw_modifiers(&self) -> RawModifiers {
-        self.modifiers.state(self.current_layout_idx)
+        self.layouts[self.current_layout_idx]
+            .modifiers
+            .state(self.current_layout_idx)
     }
 
     /// Return `true` if the Shift modifier is active.
@@ -207,22 +215,26 @@ impl WKB {
         if (group as usize) < self.num_layouts() {
             let _ = self.set_layout(group as usize);
         }
-        self.modifiers.update(depressed, latched, locked);
+        self.layouts[self.current_layout_idx]
+            .modifiers
+            .update(depressed, latched, locked);
     }
 
     /// Return the LED indicator state.
     pub fn leds_state(&self) -> LedState {
-        self.modifiers.leds_state()
+        self.layouts[self.current_layout_idx].modifiers.leds_state()
     }
 
     /// Return whether the given evdev keycode is a repeating key.
     pub fn key_repeats(&self, evdev_code: u32) -> bool {
-        self.repeat_keys.contains(evdev_code)
+        self.layouts[self.current_layout_idx]
+            .repeat_keys
+            .contains(evdev_code)
     }
 
     /// Return the number of layouts in this keymap.
     pub fn num_layouts(&self) -> usize {
-        self.layout_names.len()
+        self.layouts.len()
     }
 
     /// Return the index of the currently active layout.
@@ -232,7 +244,7 @@ impl WKB {
 
     /// Switch to a different layout by index.
     pub fn set_layout(&mut self, layout_idx: usize) -> Result<(), WkbError> {
-        if layout_idx >= self.layout_names.len() {
+        if layout_idx >= self.layouts.len() {
             return Err(WkbError::InvalidLayout(layout_idx));
         }
         self.current_layout_idx = layout_idx;
@@ -241,7 +253,7 @@ impl WKB {
 
     /// Return the name of the layout at the given index.
     pub fn layout_name(&self, layout_idx: usize) -> Option<&str> {
-        self.layout_names.get(layout_idx).map(|s| s.as_str())
+        self.layouts.get(layout_idx).map(|s| s.name.as_str())
     }
 
     /// Serialize the underlying XKB keymap to v1 text format.
@@ -256,24 +268,24 @@ impl WKB {
     /// Get the named key for an evdev keycode under the current modifier state.
     /// Returns [`NamedKey::Unnamed`] if no named key is mapped.
     pub fn state_named_key(&self, evdev_code: u32) -> NamedKey {
-        let (none_active, level2, level3, level5) = self.modifiers.active_none_and_levels();
+        let kb_layout = &self.layouts[self.current_layout_idx];
+        let (none_active, level2, level3, level5) = kb_layout.modifiers.active_none_and_levels();
         if none_active {
             return NamedKey::Unnamed;
         }
-        let nk = self.named_key_map.num_keys;
-        let level5 = level5 && self.named_key_map.data.len() > 4 * nk;
-        let level3 = level3 && self.named_key_map.data.len() > 2 * nk;
-        let level2 = level2 && self.named_key_map.data.len() > nk;
+        let nk = kb_layout.named_key_map.num_keys;
+        let level5 = level5 && kb_layout.named_key_map.data.len() > 4 * nk;
+        let level3 = level3 && kb_layout.named_key_map.data.len() > 2 * nk;
+        let level2 = level2 && kb_layout.named_key_map.data.len() > nk;
         let level = level_index(level5, level3, level2);
-        self.named_key_map
-            .get(self.current_layout_idx, level, evdev_code)
+        kb_layout.named_key_map.get(level, evdev_code)
     }
 
     /// Get the named key at a specific layout and level for an evdev keycode.
     /// Bypasses current modifier state.
     /// Returns [`NamedKey::Unnamed`] if no named key is mapped.
     pub fn level_named_key(&self, evdev_code: u32, layout: usize, level: usize) -> NamedKey {
-        self.named_key_map.get(layout, level, evdev_code)
+        self.layouts[layout].named_key_map.get(level, evdev_code)
     }
 
     /// Get the character at a specific layout and level for an evdev keycode.
@@ -281,10 +293,13 @@ impl WKB {
     /// Does not consider caps lock or num lock overrides.
     pub fn level_key_char(&self, evdev_code: u32, layout: usize, level: usize) -> Option<char> {
         #[cfg(feature = "xkb")]
-        if let Some(exception_char) = self.level_exceptions_keymap.get(layout, level, evdev_code) {
+        if let Some(exception_char) = self.layouts[layout]
+            .level_exceptions_keymap
+            .get(level, evdev_code)
+        {
             return Some(exception_char);
         }
-        self.state_keymap.get(layout, level, evdev_code)
+        self.layouts[layout].state_keymap.get(level, evdev_code)
     }
 
     /// Resolve the character for the given evdev keycode under the current modifier state.
@@ -294,37 +309,35 @@ impl WKB {
     /// - Re-resolving characters when modifiers change during key repeat
     #[inline]
     pub fn key_char(&self, evdev_code: u32) -> Option<char> {
-        let (none_active, level2, level3, level5) = self.modifiers.active_none_and_levels();
+        let kb_layout = &self.layouts[self.current_layout_idx];
+        let (none_active, level2, level3, level5) = kb_layout.modifiers.active_none_and_levels();
         if none_active {
             return None;
         }
-        let nk = self.state_keymap.num_keys;
-        let level5 = level5 && self.state_keymap.data.len() > 4 * nk;
-        let level3 = level3 && self.state_keymap.data.len() > 2 * nk;
-        let level2 = level2 && self.state_keymap.data.len() > nk;
+        let nk = kb_layout.state_keymap.num_keys;
+        let level5 = level5 && kb_layout.state_keymap.data.len() > 4 * nk;
+        let level3 = level3 && kb_layout.state_keymap.data.len() > 2 * nk;
+        let level2 = level2 && kb_layout.state_keymap.data.len() > nk;
         let base_level = level_index(level5, level3, level2);
-        let layout_index = self.current_layout_idx;
-        if self.modifiers.num_locked() {
-            if let Some(c) = self.num_lock_keys.get(layout_index, base_level, evdev_code) {
+        if kb_layout.modifiers.num_locked() {
+            if let Some(c) = kb_layout.num_lock_keys.get(base_level, evdev_code) {
                 return Some(c);
             }
         }
-        if self.modifiers.caps_locked() {
-            if let Some(c) = self
-                .caps_lock_keymap
-                .get(layout_index, base_level, evdev_code)
-            {
+        if kb_layout.modifiers.caps_locked() {
+            if let Some(c) = kb_layout.caps_lock_keymap.get(base_level, evdev_code) {
                 return Some(c);
             }
         }
-        self.state_keymap.get(layout_index, base_level, evdev_code)
+        kb_layout.state_keymap.get(base_level, evdev_code)
     }
 
     /// Update internal modifier state for a key event. Returns `true` if the key is a modifier.
     pub(crate) fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
-        let is_modifier = self.modifiers.set_state(evdev_code, key_direction);
+        let kb_layout = &mut self.layouts[self.current_layout_idx];
+        let is_modifier = kb_layout.modifiers.set_state(evdev_code, key_direction);
         if !is_modifier && key_direction == KeyDirection::Down {
-            self.modifiers.unlatch();
+            kb_layout.modifiers.unlatch();
         }
         is_modifier
     }
@@ -340,12 +353,16 @@ impl WKB {
     pub fn press_key(&mut self, evdev_code: u32) -> KeyResult {
         let is_modifier = self.update_key(evdev_code, KeyDirection::Down);
         let key = self.state_named_key(evdev_code);
+        let kb_layout = &mut self.layouts[self.current_layout_idx];
         #[cfg(feature = "compose")]
-        let compose = if is_modifier && self.modifiers.active_mod_type(ModType::Compose) {
-            Some(self.composer.feed(Token::Compose))
+        let compose = if is_modifier && kb_layout.modifiers.active_mod_type(ModType::Compose) {
+            Some(kb_layout.composer.feed(Token::Compose))
         } else if !is_modifier {
-            self.key_char(evdev_code)
-                .map(|c| self.composer.feed(Token::Char(c)))
+            self.key_char(evdev_code).map(|c| {
+                self.layouts[self.current_layout_idx]
+                    .composer
+                    .feed(Token::Char(c))
+            })
         } else {
             None
         };
@@ -385,9 +402,11 @@ impl WKB {
     pub fn repeat_key(&mut self, evdev_code: u32) -> KeyResult {
         let key = self.state_named_key(evdev_code);
         #[cfg(feature = "compose")]
-        let compose = self
-            .key_char(evdev_code)
-            .map(|c| self.composer.feed(Token::Char(c)));
+        let compose = self.key_char(evdev_code).map(|c| {
+            self.layouts[self.current_layout_idx]
+                .composer
+                .feed(Token::Char(c))
+        });
         #[cfg(not(feature = "compose"))]
         let compose = self.key_char(evdev_code).map(ComposeState::Idle);
         KeyResult {

@@ -205,6 +205,36 @@ fn cached_compose_table_keeps_wkb_progress_instance_local() {
     ));
 }
 
+#[test]
+fn multi_layout_composers_use_layout_locale_and_reachable_inputs() {
+    let mut wkb = wkb::WKB::new_from_names("", "", "us,gr", "", None).unwrap();
+    assert_eq!(wkb.num_layouts(), 2);
+
+    for layout in 0..wkb.num_layouts() {
+        wkb.set_layout(layout).unwrap();
+        let producible = wkb.producible_chars();
+        assert!(wkb.composer_input_chars().is_subset(&producible));
+    }
+
+    wkb.set_layout(0).unwrap();
+    assert!(!wkb.composer_input_chars().contains(&'α'));
+
+    wkb.set_layout(1).unwrap();
+    assert!(wkb.producible_chars().contains(&'α'));
+    assert!(matches!(
+        wkb.feed(Token::Compose),
+        wkb::testing::ComposeState::Composing(_)
+    ));
+    assert!(matches!(
+        wkb.feed(Token::Char('>')),
+        wkb::testing::ComposeState::Composing(_)
+    ));
+    assert_eq!(
+        wkb.feed(Token::Char('α')),
+        wkb::testing::ComposeState::Finished('ἀ')
+    );
+}
+
 // ---------------------------------------------------------------------------
 // Helpers: keysym / char resolution
 // ---------------------------------------------------------------------------

@@ -76,6 +76,7 @@ pub trait WKBTestExt {
     fn update_key(&mut self, evdev_code: u32, key_direction: crate::KeyDirection) -> bool;
     fn key_char(&self, evdev_code: u32) -> Option<char>;
     fn composer(&self) -> &Composer;
+    fn composer_input_chars(&self) -> std::collections::HashSet<char>;
     fn num_levels(&self) -> usize;
     fn producible_chars(&self) -> std::collections::HashSet<char>;
     fn feed(&mut self, token: Token) -> ComposeState;
@@ -83,27 +84,38 @@ pub trait WKBTestExt {
 
 impl WKBTestExt for WKB {
     fn active_mod_type(&self, mod_type: ModType) -> bool {
-        self.modifiers.active_mod_type(mod_type)
+        self.layouts[self.current_layout_idx]
+            .modifiers
+            .active_mod_type(mod_type)
     }
 
     fn modifiers(&self) -> &Modifiers {
-        &self.modifiers
+        &self.layouts[self.current_layout_idx].modifiers
     }
 
     fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
-        xkb::level_code(&self.modifiers, mod_type)
+        xkb::level_code(&self.layouts[self.current_layout_idx].modifiers, mod_type)
     }
 
     fn level2_code(&self) -> Option<(u32, Option<u8>)> {
-        xkb::level_code(&self.modifiers, ModType::Level2)
+        xkb::level_code(
+            &self.layouts[self.current_layout_idx].modifiers,
+            ModType::Level2,
+        )
     }
 
     fn level3_code(&self) -> Option<(u32, Option<u8>)> {
-        xkb::level_code(&self.modifiers, ModType::Level3)
+        xkb::level_code(
+            &self.layouts[self.current_layout_idx].modifiers,
+            ModType::Level3,
+        )
     }
 
     fn level5_code(&self) -> Option<(u32, Option<u8>)> {
-        xkb::level_code(&self.modifiers, ModType::Level5)
+        xkb::level_code(
+            &self.layouts[self.current_layout_idx].modifiers,
+            ModType::Level5,
+        )
     }
 
     fn update_key(&mut self, evdev_code: u32, key_direction: crate::KeyDirection) -> bool {
@@ -115,7 +127,18 @@ impl WKBTestExt for WKB {
     }
 
     fn composer(&self) -> &Composer {
-        &self.composer
+        &self.layouts[self.current_layout_idx].composer
+    }
+
+    fn composer_input_chars(&self) -> std::collections::HashSet<char> {
+        self.layouts[self.current_layout_idx]
+            .composer
+            .nodes
+            .iter()
+            .flat_map(|node| node.children.iter().map(|(token, _)| *token))
+            .filter(|token| *token != 0)
+            .filter_map(char::from_u32)
+            .collect()
     }
 
     fn num_levels(&self) -> usize {
@@ -124,11 +147,15 @@ impl WKBTestExt for WKB {
 
     fn producible_chars(&self) -> std::collections::HashSet<char> {
         let mut chars = std::collections::HashSet::new();
-        let num_layouts = self.layout_names.len();
-        for li in 0..num_layouts {
+        let layout = &self.layouts[self.current_layout_idx];
+        for keymap in [
+            &layout.state_keymap,
+            &layout.caps_lock_keymap,
+            &layout.num_lock_keys,
+        ] {
             for lvl in 0..MAX_LEVELS {
-                for k in 0..self.state_keymap.num_keys as u32 {
-                    if let Some(ch) = self.state_keymap.get(li, lvl, k) {
+                for key in 0..keymap.num_keys as u32 {
+                    if let Some(ch) = keymap.get(lvl, key) {
                         chars.insert(ch);
                     }
                 }
@@ -138,6 +165,6 @@ impl WKBTestExt for WKB {
     }
 
     fn feed(&mut self, token: Token) -> ComposeState {
-        self.composer.feed(token)
+        self.layouts[self.current_layout_idx].composer.feed(token)
     }
 }

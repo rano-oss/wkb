@@ -10,11 +10,11 @@ pub(crate) mod symbols;
 
 use crate::composer::Token;
 use crate::flat_keymap::{FlatKeymap, FlatNamedKeyMap, MAX_LEVELS};
-use crate::modifiers::*;
 use crate::named_keys::NamedKey;
 use crate::Composer;
 use crate::KeyBitSet;
 use crate::WKB;
+use crate::{modifiers::*, KBLayout};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
 
@@ -128,7 +128,13 @@ fn resolve_char(
     keysym::keysym_to_char(sym)
 }
 
-type ComposeTable = Arc<Composer>;
+struct ComposeTableData {
+    entries: Vec<keymap::ComposeEntry>,
+    composer: Composer,
+    filtered: Mutex<Vec<(Vec<char>, Arc<Composer>)>>,
+}
+
+type ComposeTable = Arc<ComposeTableData>;
 type ComposeTableCache = Vec<(PathBuf, ComposeTable)>;
 
 static COMPOSE_TABLE_CACHE: OnceLock<Mutex<ComposeTableCache>> = OnceLock::new();
@@ -147,11 +153,30 @@ fn cached_compose_table(cache: &ComposeTableCache, path: &Path) -> Option<Compos
         .map(|(_, table)| table.clone())
 }
 
-fn parse_compose_table(path: &Path) -> (Composer, bool) {
+fn parse_compose_table(path: &Path) -> (ComposeTableData, bool) {
+    let mut entries = Vec::new();
+    let complete = keymap::parse_compose_file_impl(path, &mut |entry| entries.push(entry));
+    let composer = build_composer(&entries, None);
+    (
+        ComposeTableData {
+            entries,
+            composer,
+            filtered: Mutex::new(Vec::new()),
+        },
+        complete,
+    )
+}
+
+fn build_composer(entries: &[keymap::ComposeEntry], reachable: Option<&[char]>) -> Composer {
     use arrayvec::ArrayVec;
 
     let mut composer = Composer::new();
-    let complete = keymap::parse_compose_file_impl(path, &mut |entry| {
+    for entry in entries {
+        if let Some(chars) = reachable {
+            if !entry.keys.iter().all(|ch| chars.binary_search(ch).is_ok()) {
+                continue;
+            }
+        }
         let mut tokens: ArrayVec<Token, 9> = ArrayVec::new();
         let mk_idx = entry.multi_key_index;
 
@@ -164,35 +189,46 @@ fn parse_compose_table(path: &Path) -> (Composer, bool) {
             tokens.push(Token::Char(*ch));
         }
         composer.insert(&tokens, entry.output);
-    });
-
-    (composer, complete)
+    }
+    composer
 }
 
-/// Load a compose file, cloning an immutable compiled template cached by canonical path.
-pub fn load_compose_from_path(path: &Path) -> Composer {
+fn layout_composer(table: &ComposeTable, reachable: &[char]) -> Composer {
+    let mut cache = table
+        .filtered
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if let Some((_, composer)) = cache.iter().find(|(chars, _)| chars == reachable) {
+        return composer.as_ref().clone();
+    }
+    let composer = Arc::new(build_composer(&table.entries, Some(reachable)));
+    cache.push((reachable.to_vec(), composer.clone()));
+    composer.as_ref().clone()
+}
+
+fn load_compose_entries(path: &Path) -> ComposeTable {
     let requested_path = path.to_path_buf();
     if let Some(table) = cached_compose_table(&compose_table_cache(), path) {
-        return table.as_ref().clone();
+        return table;
     }
     let Ok(canonical_path) = std::fs::canonicalize(path) else {
-        return parse_compose_table(path).0;
+        return Arc::new(parse_compose_table(path).0);
     };
     if canonical_path != requested_path {
         let mut cache = compose_table_cache();
         if let Some(table) = cached_compose_table(&cache, &canonical_path) {
             cache.push((requested_path, table.clone()));
-            return table.as_ref().clone();
+            return table;
         }
     }
 
-    let (composer, complete) = parse_compose_table(&canonical_path);
+    let (entries, complete) = parse_compose_table(&canonical_path);
     if !complete {
-        return composer;
+        return Arc::new(entries);
     }
 
     let requested_is_alias = requested_path != canonical_path;
-    let parsed = Arc::new(composer);
+    let parsed = Arc::new(entries);
     let mut cache = compose_table_cache();
     let table = cached_compose_table(&cache, &canonical_path).unwrap_or_else(|| {
         cache.push((canonical_path, parsed.clone()));
@@ -201,12 +237,17 @@ pub fn load_compose_from_path(path: &Path) -> Composer {
     if requested_is_alias && cached_compose_table(&cache, &requested_path).is_none() {
         cache.push((requested_path, table.clone()));
     }
-    table.as_ref().clone()
+    table
+}
+
+/// Load a compose file using parsed entries cached by canonical path.
+pub fn load_compose_from_path(path: &Path) -> Composer {
+    load_compose_entries(path).composer.clone()
 }
 
 #[cfg(feature = "testing")]
 pub fn load_compose_from_path_uncached(path: &Path) -> Composer {
-    parse_compose_table(path).0
+    parse_compose_table(path).0.composer
 }
 
 /// Map an XKB keysym value to a [`NamedKey`].
@@ -448,7 +489,11 @@ fn level5_transform_mods(
 }
 
 /// Build WKB instance from an XKB keymap, extracting all layouts.
-fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_keymap: bool) -> WKB {
+fn build_wkb_from_keymap(
+    keymap: &keymap::Keymap,
+    layout_locales: Option<&str>,
+    store_keymap: bool,
+) -> WKB {
     const EVDEV_OFFSET: u32 = 8;
 
     let (min_keycode, max_keycode) = (keymap.min_keycode(), keymap.max_keycode());
@@ -535,37 +580,40 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
             })
             .collect();
 
-    let mut level_exceptions_keymap = FlatKeymap::new(num_keys, num_layouts);
-    let mut named_key_map = FlatNamedKeyMap::new(num_keys, num_layouts);
-    let mut state_keymap = FlatKeymap::new(num_keys, num_layouts);
-    let mut caps_lock_keymap = FlatKeymap::new(num_keys, num_layouts);
-    let mut num_lock_keys = FlatKeymap::new(num_keys, num_layouts);
-    let mut repeat_keys = KeyBitSet::new();
+    let layout_names: Vec<String> = (0..num_layouts)
+        .map(|i| {
+            keymap
+                .layout_get_name(i as u32)
+                .unwrap_or_else(|| format!("Layout {}", i))
+        })
+        .collect();
+    let locale_hints: Vec<&str> = layout_locales
+        .map(|locales| locales.split(',').collect())
+        .unwrap_or_default();
+    #[cfg(feature = "compose")]
+    let env_locale = std::env::var("LC_ALL")
+        .or_else(|_| std::env::var("LC_CTYPE"))
+        .or_else(|_| std::env::var("LANG"))
+        .ok();
 
-    for key in &keymap.inner.keys {
-        let kc = key.keycode;
-        if kc < min_keycode || kc > max_keycode {
-            continue;
-        }
-        let evdev = (kc - EVDEV_OFFSET) as usize;
-        if key.repeats {
-            repeat_keys.insert(evdev as u32);
-        }
-        let (caps_affected, num_affected) = key
-            .groups
-            .first()
-            .and_then(|group| {
-                let type_ = keymap.inner.types.get(group.type_idx as usize)?;
-                let compiled = compiled_types.get(group.type_idx as usize)?;
-                Some((
-                    key_affected_by_caps(group, type_.num_levels as usize),
-                    compiled.num_lock_affected,
-                ))
-            })
-            .unwrap_or_default();
+    let mut layouts = Vec::with_capacity(num_layouts);
+    for (layout_idx, (base_states, caps_states, num_states)) in layout_states.iter().enumerate() {
+        let mut level_exceptions_keymap = FlatKeymap::new(num_keys);
+        let mut named_key_map = FlatNamedKeyMap::new(num_keys);
+        let mut state_keymap = FlatKeymap::new(num_keys);
+        let mut caps_lock_keymap = FlatKeymap::new(num_keys);
+        let mut num_lock_keys = FlatKeymap::new(num_keys);
+        let mut repeat_keys = KeyBitSet::new();
 
-        for (layout_idx, (base_states, caps_states, num_states)) in layout_states.iter().enumerate()
-        {
+        for key in &keymap.inner.keys {
+            let kc = key.keycode;
+            if kc < min_keycode || kc > max_keycode {
+                continue;
+            }
+            let evdev = (kc - EVDEV_OFFSET) as usize;
+            if key.repeats {
+                repeat_keys.insert(evdev as u32);
+            }
             let raw_group = keymap::xkb_wrap_group_into_range(
                 layout_idx as i32,
                 key.num_groups,
@@ -576,9 +624,19 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
             let state_group = key.groups.get(layout_idx);
             let state_type =
                 state_group.and_then(|group| compiled_types.get(group.type_idx as usize));
+            let (caps_affected, num_affected) = state_group
+                .and_then(|group| {
+                    let type_ = keymap.inner.types.get(group.type_idx as usize)?;
+                    let compiled = compiled_types.get(group.type_idx as usize)?;
+                    Some((
+                        key_affected_by_caps(group, type_.num_levels as usize),
+                        compiled.num_lock_affected,
+                    ))
+                })
+                .unwrap_or_default();
 
             for level in 0..MAX_LEVELS {
-                let idx = (layout_idx * MAX_LEVELS + level) * num_keys + evdev;
+                let idx = level * num_keys + evdev;
                 if let Some(&sym) = raw_group
                     .and_then(|group| group.levels.get(level))
                     .and_then(|data| data.syms.first())
@@ -611,51 +669,53 @@ fn build_wkb_from_keymap(keymap: &keymap::Keymap, locale: Option<&str>, store_ke
                 }
             }
         }
+
+        #[cfg(feature = "compose")]
+        let composer = {
+            let mut reachable: Vec<char> = state_keymap
+                .data
+                .iter()
+                .chain(&caps_lock_keymap.data)
+                .chain(&num_lock_keys.data)
+                .filter_map(|ch| *ch)
+                .collect();
+            reachable.sort_unstable();
+            reachable.dedup();
+            let compose_locale = locale_hints
+                .get(layout_idx)
+                .copied()
+                .filter(|locale| !locale.is_empty())
+                .or(env_locale.as_deref());
+            compose_locale
+                .and_then(keymap::resolve_compose_file)
+                .map(|subpath| {
+                    let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
+                    let table = load_compose_entries(&path);
+                    layout_composer(&table, &reachable)
+                })
+                .unwrap_or_default()
+        };
+
+        #[cfg(not(feature = "compose"))]
+        let composer = Composer::new();
+
+        layouts.push(KBLayout {
+            name: layout_names[layout_idx].clone(),
+            repeat_keys,
+            composer,
+            modifiers: modifiers.clone(),
+            state_keymap,
+            num_lock_keys,
+            caps_lock_keymap,
+            level_exceptions_keymap,
+            named_key_map,
+        });
     }
 
-    // Extract layout names from keymap
-    let layout_names: Vec<String> = (0..num_layouts)
-        .map(|i| {
-            keymap
-                .layout_get_name(i as u32)
-                .unwrap_or_else(|| format!("Layout {}", i))
-        })
-        .collect();
-    // Cache XKB string for Wayland client sharing
-    let _ = store_keymap; // no longer cached; generated on demand
-
-    #[cfg(feature = "compose")]
-    let composer = {
-        // Resolve compose locale from environment (LC_ALL > LC_CTYPE > LANG),
-        // falling back to the explicit locale hint (e.g. layout name).
-        let env_locale = std::env::var("LC_ALL")
-            .or_else(|_| std::env::var("LC_CTYPE"))
-            .or_else(|_| std::env::var("LANG"))
-            .ok();
-        let compose_locale = env_locale.as_deref().or(locale);
-        let comp = compose_locale
-            .and_then(keymap::resolve_compose_file)
-            .map(|subpath| {
-                let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
-                load_compose_from_path(&path)
-            })
-            .unwrap_or_default();
-        comp
-    };
-
-    #[cfg(not(feature = "compose"))]
-    let composer = Composer::new();
+    let _ = store_keymap;
     WKB {
         current_layout_idx: 0,
-        layout_names,
-        repeat_keys,
-        composer,
-        modifiers,
-        state_keymap,
-        num_lock_keys,
-        caps_lock_keymap,
-        level_exceptions_keymap,
-        named_key_map,
+        layouts,
     }
 }
 
@@ -678,7 +738,7 @@ pub(crate) fn new_from_names(
         .keymap_from_names(&rmlvo)
         .ok_or(XkbError::KeymapCompilation)?;
 
-    let result = build_wkb_from_keymap(&keymap, None, true);
+    let result = build_wkb_from_keymap(&keymap, Some(layout), true);
     Ok(result)
 }
 
@@ -1158,19 +1218,16 @@ fn key_max_level(
     level_exceptions: &FlatKeymap,
     modifiers: &Modifiers,
     evdev: u32,
-    num_layouts: usize,
 ) -> usize {
     let mut max_level = 0;
-    for layout in 0..num_layouts {
-        for level in (0..MAX_LEVELS).rev() {
-            let has_named = named_key_map.get(layout, level, evdev) != NamedKey::Unnamed;
-            let has_char = level_exceptions.get(layout, level, evdev).is_some();
-            if has_named || has_char {
-                if level + 1 > max_level {
-                    max_level = level + 1;
-                }
-                break;
+    for level in (0..MAX_LEVELS).rev() {
+        let has_named = named_key_map.get(level, evdev) != NamedKey::Unnamed;
+        let has_char = level_exceptions.get(level, evdev).is_some();
+        if has_named || has_char {
+            if level + 1 > max_level {
+                max_level = level + 1;
             }
+            break;
         }
     }
     // Modifier keys must always be included even if named_key is Unnamed
@@ -1225,19 +1282,14 @@ fn modkind_keysym(mk: &ModKind) -> Option<u32> {
 
 /// Check if a key is a letter key (has both lowercase and uppercase
 /// characters at levels 0 and 1). Used to select ALPHABETIC type.
-fn is_alphabetic(keymap: &FlatKeymap, evdev: u32, num_layouts: usize) -> bool {
-    for layout in 0..num_layouts {
-        if let (Some(ch0), Some(ch1)) = (keymap.get(layout, 0, evdev), keymap.get(layout, 1, evdev))
-        {
-            if ch0.is_ascii_lowercase()
-                && ch1.is_ascii_uppercase()
-                && ch1 == ch0.to_ascii_uppercase()
-            {
-                return true;
-            }
-        }
-    }
-    false
+fn is_alphabetic(keymap: &FlatKeymap, evdev: u32) -> bool {
+    matches!(
+        (keymap.get(0, evdev), keymap.get(1, evdev)),
+        (Some(lower), Some(upper))
+            if lower.is_ascii_lowercase()
+                && upper.is_ascii_uppercase()
+                && upper == lower.to_ascii_uppercase()
+    )
 }
 
 /// Pick a key type name based on the number of levels.
@@ -1282,8 +1334,11 @@ impl WKB {
     /// can parse.
     #[cfg(feature = "xkb")]
     pub(crate) fn generate_xkb_string(&self) -> String {
-        let num_layouts = self.named_key_map.num_layouts;
-        let num_keys = self.named_key_map.num_keys;
+        let num_layouts = self.layouts.len();
+        let num_keys = self
+            .layouts
+            .first()
+            .map_or(0, |layout| layout.named_key_map.num_keys);
         // XKB keycodes max at 255; evdev = xkb - 8, so max evdev = 247
         let max_evdev = num_keys.min(248) as u32;
         // Estimate capacity: ~40KB for a typical keymap
@@ -1314,22 +1369,23 @@ impl WKB {
     /// keymaps (`level_exceptions_keymap` then `state_keymap`) and emits a
     /// Unicode keysym so that the serialized string preserves character data.
     fn resolve_keysym(&self, layout: usize, level: usize, evdev: u32) -> u32 {
-        let nk = self.named_key_map.get(layout, level, evdev);
+        let layout = &self.layouts[layout];
+        let nk = layout.named_key_map.get(level, evdev);
         let sym = named_key_to_keysym(nk);
         if sym != 0 {
             return sym;
         }
         // Unnamed key — recover from character keymaps.
-        if let Some(ch) = self.level_exceptions_keymap.get(layout, level, evdev) {
+        if let Some(ch) = layout.level_exceptions_keymap.get(level, evdev) {
             return 0x0100_0000 | ch as u32;
         }
-        if let Some(ch) = self.state_keymap.get(layout, level, evdev) {
+        if let Some(ch) = layout.state_keymap.get(level, evdev) {
             return 0x0100_0000 | ch as u32;
         }
         // Modifier key — derive keysym from the modifier map so that the
         // re-parsed keymap retains the correct modifier associations.
         if level == 0 {
-            if let Some(ks) = modifier_keysym(&self.modifiers, evdev) {
+            if let Some(ks) = modifier_keysym(&layout.modifiers, evdev) {
                 return ks;
             }
         }
@@ -1345,14 +1401,14 @@ impl WKB {
 
         for evdev in 0..max_evdev {
             // Only emit keys that have at least one keysym
-            if key_max_level(
-                &self.named_key_map,
-                &self.level_exceptions_keymap,
-                &self.modifiers,
-                evdev,
-                self.named_key_map.num_layouts,
-            ) > 0
-            {
+            if self.layouts.iter().any(|layout| {
+                key_max_level(
+                    &layout.named_key_map,
+                    &layout.level_exceptions_keymap,
+                    &layout.modifiers,
+                    evdev,
+                ) > 0
+            }) {
                 let name = evdev_to_keyname(evdev);
                 writeln!(out, "\t<{}> = {};", name, evdev + 8).unwrap();
             }
@@ -1371,30 +1427,40 @@ impl WKB {
         out.push_str("xkb_symbols \"wkb\" {\n");
 
         // Group names
-        for (i, name) in self.layout_names.iter().enumerate() {
-            writeln!(out, "\tname[{}]= \"{}\";", i + 1, name).unwrap();
+        for (i, layout) in self.layouts.iter().enumerate() {
+            writeln!(out, "\tname[{}]= \"{}\";", i + 1, layout.name).unwrap();
         }
         out.push('\n');
 
         // Per-key symbols
         for evdev in 0..max_evdev {
-            let max_level = key_max_level(
-                &self.named_key_map,
-                &self.level_exceptions_keymap,
-                &self.modifiers,
-                evdev,
-                num_layouts,
-            );
+            let max_level = self
+                .layouts
+                .iter()
+                .map(|layout| {
+                    key_max_level(
+                        &layout.named_key_map,
+                        &layout.level_exceptions_keymap,
+                        &layout.modifiers,
+                        evdev,
+                    )
+                })
+                .max()
+                .unwrap_or(0);
             if max_level == 0 {
                 continue;
             }
             let name = evdev_to_keyname(evdev);
-            let type_name =
-                if max_level == 2 && is_alphabetic(&self.state_keymap, evdev, num_layouts) {
-                    "ALPHABETIC"
-                } else {
-                    type_for_levels(max_level)
-                };
+            let type_name = if max_level == 2
+                && self
+                    .layouts
+                    .iter()
+                    .any(|layout| is_alphabetic(&layout.state_keymap, evdev))
+            {
+                "ALPHABETIC"
+            } else {
+                type_for_levels(max_level)
+            };
 
             if num_layouts == 1 {
                 // Single-group format
@@ -1408,7 +1474,7 @@ impl WKB {
                 }
                 out.push_str(" ]");
                 // repeat
-                if self.repeat_keys.contains(evdev) {
+                if self.layouts[0].repeat_keys.contains(evdev) {
                     out.push_str(", repeat=Yes");
                 }
                 out.push_str(" };\n");
@@ -1419,20 +1485,17 @@ impl WKB {
                 out.push_str("> {\n");
                 // Per-group types
                 for g in 0..num_layouts {
-                    // Compute per-group level count
-                    let mut glevel = 0;
-                    for level in (0..MAX_LEVELS).rev() {
-                        if self.named_key_map.get(g, level, evdev) != NamedKey::Unnamed {
-                            glevel = level + 1;
-                            break;
-                        }
-                    }
-                    let gt = if glevel.max(max_level) == 2
-                        && is_alphabetic(&self.state_keymap, evdev, num_layouts)
-                    {
+                    let layout = &self.layouts[g];
+                    let glevel = key_max_level(
+                        &layout.named_key_map,
+                        &layout.level_exceptions_keymap,
+                        &layout.modifiers,
+                        evdev,
+                    );
+                    let gt = if glevel == 2 && is_alphabetic(&layout.state_keymap, evdev) {
                         "ALPHABETIC"
                     } else {
-                        type_for_levels(glevel.max(max_level))
+                        type_for_levels(glevel)
                     };
                     writeln!(out, "\t\ttype[group{}]= \"{}\",", g + 1, gt).unwrap();
                 }
@@ -1451,7 +1514,11 @@ impl WKB {
                         out.push_str(" ]");
                     }
                 }
-                if self.repeat_keys.contains(evdev) {
+                if self
+                    .layouts
+                    .iter()
+                    .any(|layout| layout.repeat_keys.contains(evdev))
+                {
                     out.push_str(",\n\t\trepeat=Yes");
                 }
                 out.push('\n');
