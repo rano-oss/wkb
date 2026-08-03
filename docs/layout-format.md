@@ -41,7 +41,6 @@ layouts without compiling XKB at runtime.
     keymap: {...},
     num_lock_keys: {...},
     caps_lock_keymap: {...},
-    level_exceptions_keymap: {...},
     keysym_map: {...},
     compose: [...],
 )
@@ -58,7 +57,6 @@ layouts without compiling XKB at runtime.
 | `keymap` | `Map<name, Map<level, Map<keycode, char>>>` | Resolved character per (level, keycode) under base modifiers. |
 | `num_lock_keys` | same shape | Character overrides while Num Lock is locked. |
 | `caps_lock_keymap` | same shape | Character overrides while Caps Lock is locked. |
-| `level_exceptions_keymap` | same shape | Raw keysym characters, fallback when level resolution fails. |
 | `keysym_map` | `Map<name, Map<level, Map<keycode, NamedKey>>>` | Named-key identities; `Unnamed` entries are omitted. |
 | `compose` | `Vec<(Vec<char>, char)>` | Compose sequences as `(keys, output)`. |
 
@@ -161,11 +159,12 @@ On load, the following are enforced (each maps to an `IrError` variant):
 ```
 
 Sections that would be empty (`num_lock_keys`, `caps_lock_keymap`,
-`level_exceptions_keymap`, `keysym_map`, `compose`) are omitted from the output.
+`keysym_map`, `compose`) are omitted from the output.
 
 ## Compatibility
 
 The format is the successor of the prototype RON files that previously lived in
 `ron_layouts/`. It preserves their section layout and value encodings, adds a
 `version` header, replaces raw keysym-name strings in `keysym_map` with the
-compiled `NamedKey` enum, and applies the ground rules above.
+compiled `NamedKey` enum, drops the xkb-only `level_exceptions_keymap` section,
+and applies the ground rules above. Unknown fields in older files are ignored.
