@@ -71,7 +71,7 @@ pub enum KeyDirection {
     Down,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ModType {
     None,
     Level2,

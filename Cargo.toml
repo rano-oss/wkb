@@ -29,6 +29,7 @@ compose = []
 testing = ["xkb"]
 
 [dependencies]
+ron = "0.8"
 log = "0.4.29"
 xmloxide = "0.4"
 arrayvec = "0.7"

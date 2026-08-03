@@ -44,6 +44,9 @@ mod flat_keymap;
 mod modifiers;
 
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
+pub use modifiers::ModType;
+/// Intermediate representation for persisted layout data files.
+pub mod ir;
 mod named_keys;
 /// Test-only utilities. Not part of the public API.
 #[cfg(feature = "testing")]
@@ -93,6 +96,13 @@ impl KeyBitSet {
         let k = key as usize;
         if k < BITSET_WORDS * 64 {
             self.bits[k >> 6] |= 1u64 << (k & 63);
+        }
+    }
+
+    pub(crate) fn remove(&mut self, key: u32) {
+        let k = key as usize;
+        if k < BITSET_WORDS * 64 {
+            self.bits[k >> 6] &= !(1u64 << (k & 63));
         }
     }
 }
@@ -414,6 +424,25 @@ impl WKB {
             compose,
             is_modifier: false,
         }
+    }
+
+    /// Export a layout as an [`ir::LayoutFile`] for persistence. This is the
+    /// generation path for wkb layout data files.
+    pub fn export_layout(&self, layout_idx: usize) -> Result<ir::LayoutFile, ir::IrError> {
+        let layout = self
+            .layouts
+            .get(layout_idx)
+            .ok_or(ir::IrError::InvalidLayoutIndex(layout_idx))?;
+        ir::LayoutFile::try_from(layout)
+    }
+
+    /// Rebuild a single-layout [`WKB`] from an [`ir::LayoutFile`]. This is the
+    /// loading path for standalone wkb without XKB compilation.
+    pub fn new_from_layout(file: ir::LayoutFile) -> Result<Self, ir::IrError> {
+        Ok(WKB {
+            current_layout_idx: 0,
+            layouts: vec![KBLayout::try_from(file)?],
+        })
     }
 }
 
