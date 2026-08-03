@@ -164,7 +164,7 @@ fn xkb_roundtrip_is_exact() {
     let parsed = LayoutFile::from_ron_str(&text).unwrap();
     assert_eq!(parsed, first);
 
-    let wkb2 = WKB::new_from_layout(parsed).unwrap();
+    let wkb2 = WKB::new_from_layouts(vec![parsed]).unwrap();
     let second = wkb2.export_layout(0).unwrap();
     assert_eq!(second, first);
 }
@@ -173,7 +173,7 @@ fn xkb_roundtrip_is_exact() {
 fn xkb_roundtrip_preserves_behavior() {
     let wkb = WKB::new_from_names("", "", "us", "", None).unwrap();
     let file = wkb.export_layout(0).unwrap();
-    let mut wkb2 = WKB::new_from_layout(file).unwrap();
+    let mut wkb2 = WKB::new_from_layouts(vec![file]).unwrap();
 
     // 'a' key (evdev 38) under plain state.
     assert_eq!(wkb2.key_char(38), wkb.key_char(38));
@@ -230,7 +230,7 @@ fn repeat_set_survives_roundtrip() {
     let file = wkb.export_layout(0).unwrap();
     assert!(!file.repeat_keys_add.is_empty());
 
-    let mut wkb2 = WKB::new_from_layout(file).unwrap();
+    let wkb2 = WKB::new_from_layouts(vec![file]).unwrap();
     for code in [38u32, 1, 57] {
         assert_eq!(wkb2.key_repeats(code), wkb.key_repeats(code));
     }
@@ -243,7 +243,46 @@ fn modifier_names_are_deterministic() {
     assert!(!file.modifiers.is_empty());
 
     let a = file.to_ron_string().unwrap();
-    let wkb2 = WKB::new_from_layout(file).unwrap();
+    let wkb2 = WKB::new_from_layouts(vec![file]).unwrap();
     let b = wkb2.export_layout(0).unwrap().to_ron_string().unwrap();
     assert_eq!(a, b);
+}
+
+#[test]
+fn new_from_layouts_supports_multiple_groups() {
+    let us = WKB::new_from_names("", "", "us", "", None).unwrap();
+    let de = WKB::new_from_names("", "", "de", "", None).unwrap();
+    let mut wkb = WKB::new_from_layouts(vec![
+        us.export_layout(0).unwrap(),
+        de.export_layout(0).unwrap(),
+    ])
+    .unwrap();
+
+    assert_eq!(wkb.num_layouts(), 2);
+    assert_eq!(wkb.layout_name(0), Some("English (US)"));
+    assert_eq!(wkb.layout_name(1), Some("German"));
+
+    // evdev 30 = KEY_A in both layouts.
+    assert_eq!(wkb.key_char(30), Some('a'));
+    // evdev 21 is 'y' on US.
+    assert_eq!(wkb.key_char(21), Some('y'));
+
+    // Switch to the German group and re-check.
+    wkb.set_layout(1).unwrap();
+    assert_eq!(wkb.active_layout_idx(), 1);
+    assert_eq!(wkb.key_char(30), Some('a'));
+    assert_eq!(wkb.key_char(21), Some('z')); // QWERTZ: the 'y' key produces 'z'
+}
+
+#[test]
+fn list_layouts_finds_the_registry() {
+    let layouts = wkb::list_layouts();
+    assert!(!layouts.is_empty(), "XKB registry should enumerate layouts");
+    assert!(layouts.iter().any(|(name, _)| name == "us"));
+    // Every pair is directly consumable by new_from_names.
+    let (name, variant) = layouts
+        .iter()
+        .find(|(name, _)| name == "us")
+        .expect("us layout present");
+    WKB::new_from_names("", "", name, variant, None).expect("us layout compiles");
 }

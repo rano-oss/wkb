@@ -9,7 +9,8 @@ read/written through the `wkb::ir` module.
 The runtime representation ([`KBLayout`]) is an in-memory, pre-compiled form of
 a keyboard layout. A layout file is the serialized version of one such layout.
 It is produced by `KBLayout -> LayoutFile` (`WKB::export_layout`) and consumed
-by `LayoutFile -> KBLayout` (`WKB::new_from_layout`), enabling wkb to load
+by `LayoutFile -> KBLayout` (`WKB::new_from_layouts`, which takes a list of
+files for multi-group layouts), enabling wkb to load
 layouts without compiling XKB at runtime.
 
 ## Ground rules

@@ -29,6 +29,15 @@ pub const FORMAT_VERSION: u32 = 1;
 /// compose sequence. Reserved: a literal U+00B7 key cannot be represented.
 pub const COMPOSE_KEY_CHAR: char = '\u{b7}';
 
+/// A per-layout section mapping layout name -> level -> keycode -> character.
+pub type CharSection = BTreeMap<String, BTreeMap<u8, BTreeMap<u32, char>>>;
+
+/// A per-layout section mapping layout name -> level -> keycode -> named key.
+pub type NamedSection = BTreeMap<String, BTreeMap<u8, BTreeMap<u32, NamedKey>>>;
+
+/// Modifier bindings: `(keycode, name, [(level, action)])`.
+pub type ModifierList = Vec<(u32, String, Vec<(u8, ModAction)>)>;
+
 /// Errors from validating, serializing, or converting layout files.
 #[derive(Debug, thiserror::Error)]
 pub enum IrError {
@@ -115,28 +124,28 @@ pub struct LayoutFile {
     pub repeat_keys_remove: Vec<u32>,
     /// Modifier bindings as `(keycode, name, [(level, action)])`, sorted by keycode.
     #[serde(default, skip_serializing_if = "is_empty_vec")]
-    pub modifiers: Vec<(u32, String, Vec<(u8, ModAction)>)>,
+    pub modifiers: ModifierList,
     /// Resolved character per (level, keycode) under base modifiers.
-    pub keymap: BTreeMap<String, BTreeMap<u8, BTreeMap<u32, char>>>,
+    pub keymap: CharSection,
     /// Character overrides active while Num Lock is locked.
     #[serde(default, skip_serializing_if = "is_empty_map")]
-    pub num_lock_keys: BTreeMap<String, BTreeMap<u8, BTreeMap<u32, char>>>,
+    pub num_lock_keys: CharSection,
     /// Character overrides active while Caps Lock is locked.
     #[serde(default, skip_serializing_if = "is_empty_map")]
-    pub caps_lock_keymap: BTreeMap<String, BTreeMap<u8, BTreeMap<u32, char>>>,
+    pub caps_lock_keymap: CharSection,
     /// Raw keysym characters used as a fallback when level resolution fails.
     #[serde(default, skip_serializing_if = "is_empty_map")]
-    pub level_exceptions_keymap: BTreeMap<String, BTreeMap<u8, BTreeMap<u32, char>>>,
+    pub level_exceptions_keymap: CharSection,
     /// Named-key identities per (level, keycode); `Unnamed` entries are omitted.
     #[serde(default, skip_serializing_if = "is_empty_map")]
-    pub keysym_map: BTreeMap<String, BTreeMap<u8, BTreeMap<u32, NamedKey>>>,
+    pub keysym_map: NamedSection,
     /// Compose sequences as `(keys, output)`. Only sequences whose keys are all
     /// reachable in this layout are stored.
     #[serde(default, skip_serializing_if = "is_empty_vec")]
     pub compose: Vec<(Vec<char>, char)>,
 }
 
-fn is_empty_vec<T>(v: &Vec<T>) -> bool {
+fn is_empty_vec<T>(v: &[T]) -> bool {
     v.is_empty()
 }
 
@@ -239,7 +248,7 @@ fn validate_section<T>(
             if *level >= MAX_LEVELS as u8 {
                 return Err(IrError::LevelOutOfRange(*level));
             }
-            for (keycode, _) in keys {
+            for keycode in keys.keys() {
                 if *keycode >= num_keys {
                     return Err(IrError::KeycodeOutOfRange(*keycode, num_keys));
                 }
@@ -279,12 +288,15 @@ impl TryFrom<&KBLayout> for LayoutFile {
             name.clone(),
             flat_to_levels(&layout.caps_lock_keymap, num_keys),
         );
+        #[cfg(feature = "xkb")]
         let mut level_exceptions_keymap = BTreeMap::new();
         #[cfg(feature = "xkb")]
         level_exceptions_keymap.insert(
             name.clone(),
             flat_to_levels(&layout.level_exceptions_keymap, num_keys),
         );
+        #[cfg(not(feature = "xkb"))]
+        let level_exceptions_keymap = BTreeMap::new();
         let mut keysym_map = BTreeMap::new();
         keysym_map.insert(
             name.clone(),
@@ -362,7 +374,7 @@ fn named_to_levels(flat: &FlatNamedKeyMap, num_keys: u32) -> BTreeMap<u8, BTreeM
     levels
 }
 
-fn modifiers_from_layout(modifiers: &Modifiers) -> Vec<(u32, String, Vec<(u8, ModAction)>)> {
+fn modifiers_from_layout(modifiers: &Modifiers) -> ModifierList {
     let mut out: Vec<_> = modifiers
         .iter()
         .map(|(keycode, modifier)| {

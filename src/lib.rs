@@ -54,7 +54,7 @@ pub mod testing;
 #[cfg(feature = "xkb")]
 mod xkb;
 #[cfg(feature = "xkb")]
-pub use xkb::XkbError;
+pub use xkb::{list_layouts, XkbError};
 
 pub(crate) const BITSET_WORDS: usize = 12;
 
@@ -436,12 +436,17 @@ impl WKB {
         ir::LayoutFile::try_from(layout)
     }
 
-    /// Rebuild a single-layout [`WKB`] from an [`ir::LayoutFile`]. This is the
-    /// loading path for standalone wkb without XKB compilation.
-    pub fn new_from_layout(file: ir::LayoutFile) -> Result<Self, ir::IrError> {
+    /// Rebuild a [`WKB`] from one or more [`ir::LayoutFile`]s. Each file
+    /// becomes one layout group, in order. This is the loading path for
+    /// standalone wkb without XKB compilation.
+    pub fn new_from_layouts(files: Vec<ir::LayoutFile>) -> Result<Self, ir::IrError> {
+        let mut layouts = Vec::with_capacity(files.len());
+        for file in files {
+            layouts.push(KBLayout::try_from(file)?);
+        }
         Ok(WKB {
             current_layout_idx: 0,
-            layouts: vec![KBLayout::try_from(file)?],
+            layouts,
         })
     }
 }
