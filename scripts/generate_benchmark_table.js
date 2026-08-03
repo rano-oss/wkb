@@ -150,15 +150,25 @@ function generateSizeTable(sizeOutput) {
     const lines = sizeOutput.trim().split('\n');
     const data = {};
     for (const line of lines) {
-        // Format from bench.sh: "  <name>  <orig> <unit>  <stripped> <unit>"
-        const m = line.match(/^\s*(\S+)\s+(\d+)\s+(\S+)\s+(\d+)\s+(\S+)/);
-        if (!m) continue;
-        const n = parseInt(m[4]);
-        let bytes = n;
-        if (m[5].includes('Mi')) bytes = n * 1024 * 1024;
-        else if (m[5].includes('Ki')) bytes = n * 1024;
-        else if (m[5].includes('Gi')) bytes = n * 1024 * 1024 * 1024;
-        data[SIZE_LABELS[m[1]] || m[1]] = bytes;
+        // bench.sh format: "  <name>  <orig> <unit>  <stripped> <unit>"
+        // CI format:       "<name> <bytes>"
+        let m = line.match(/^\s*(\S+)\s+(\d+)\s+(\S+)\s+(\d+)\s+(\S+)/);
+        let name;
+        let bytes;
+        if (m) {
+            name = m[1];
+            const n = parseInt(m[4]);
+            bytes = n;
+            if (m[5].includes('Mi')) bytes = n * 1024 * 1024;
+            else if (m[5].includes('Ki')) bytes = n * 1024;
+            else if (m[5].includes('Gi')) bytes = n * 1024 * 1024 * 1024;
+        } else {
+            m = line.match(/^\s*(\S+)\s+(\d+)/);
+            if (!m) continue;
+            name = m[1];
+            bytes = parseInt(m[2]);
+        }
+        data[SIZE_LABELS[name] || name] = bytes;
     }
     if (Object.keys(data).length === 0) return null;
 

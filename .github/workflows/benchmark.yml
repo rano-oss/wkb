@@ -21,6 +21,9 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
 
       - name: Set up Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -41,12 +44,13 @@ jobs:
 
       - name: Measure binary sizes
         run: |
-          cargo build --example bench_size_wkb --release
+          cargo build --example bench_size_wkb --release --no-default-features
+          cargo build --example bench_size_wkb_xkb --release
           cargo build --example bench_size_xkbcommon --release
           cargo build --example bench_size_xkbcommon_dl --release
-          strip target/release/examples/bench_size_wkb
-          strip target/release/examples/bench_size_xkbcommon
-          strip target/release/examples/bench_size_xkbcommon_dl
+          for bin in bench_size_wkb bench_size_wkb_xkb bench_size_xkbcommon bench_size_xkbcommon_dl; do
+            strip target/release/examples/$bin
+          done
           # Find libxkbcommon.so and get its stripped size (xkbcommon/xkbcommon-dl depend on it)
           LIBXKB=$(find /usr/lib64 /usr/lib -name 'libxkbcommon.so.0.*' 2>/dev/null | head -1)
           if [ -n "$LIBXKB" ]; then
@@ -55,21 +59,18 @@ jobs:
           else
             LIBXKB_SIZE=0
           fi
-          WKB_SIZE=$(stat -c%s target/release/examples/bench_size_wkb)
-          XKB_BIN=$(stat -c%s target/release/examples/bench_size_xkbcommon)
-          XKB_DL_BIN=$(stat -c%s target/release/examples/bench_size_xkbcommon_dl)
-          XKB_TOTAL=$((XKB_BIN + LIBXKB_SIZE))
-          XKB_DL_TOTAL=$((XKB_DL_BIN + LIBXKB_SIZE))
           {
-            echo "wkb ${WKB_SIZE}"
-            echo "xkbcommon ${XKB_TOTAL}"
-            echo "xkbcommon-dl ${XKB_DL_TOTAL}"
+            echo "bench_size_wkb $(stat -c%s target/release/examples/bench_size_wkb)"
+            echo "bench_size_wkb_xkb $(stat -c%s target/release/examples/bench_size_wkb_xkb)"
+            echo "bench_size_xkbcommon $(( $(stat -c%s target/release/examples/bench_size_xkbcommon) + LIBXKB_SIZE ))"
+            echo "bench_size_xkbcommon_dl $(( $(stat -c%s target/release/examples/bench_size_xkbcommon_dl) + LIBXKB_SIZE ))"
           } > /tmp/size_output.txt
 
       - name: Generate benchmark table
         run: node scripts/generate_benchmark_table.js --mem=/tmp/mem_output.txt --size=/tmp/size_output.txt --update-readme
 
       - name: Commit updated README
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config user.name "github-actions[bot]"
@@ -77,5 +78,7 @@ jobs:
           git diff --quiet README.md || {
             git add README.md
             git commit -m "docs: update benchmark results [skip ci]"
-            git push
+            git push origin "HEAD:${REF}"
           }
+        env:
+          REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
