@@ -1,14 +1,8 @@
 //! Intermediate representation (IR) for wkb layout data files.
 //!
-//! This module defines the canonical on-disk format wkb uses to persist
-//! pre-compiled keyboard layouts, plus conversions between this IR and the
-//! runtime [`KBLayout`] type. Files are serialized as RON text.
-//!
-//! The IR is bidirectional:
-//! - `LayoutFile::from_ron_str` / `LayoutFile::try_from(&KBLayout)` produce a
-//!   `LayoutFile` that can be written with [`LayoutFile::to_ron_string`].
-//! - `TryFrom<LayoutFile> for KBLayout` rebuilds a runtime layout from a file.
-//!
+//! [`LayoutFile`] is the canonical on-disk (RON) form of a [`KBLayout`]. It is
+//! bidirectional: [`LayoutFile::from_ron_str`] / `TryFrom<&KBLayout>` produce a
+//! serializable file, and `TryFrom<LayoutFile>` rebuilds the runtime layout.
 //! See `docs/layout-format.md` for the normative specification.
 
 use std::collections::BTreeMap;
@@ -16,7 +10,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
 use crate::composer::{Composer, Token};
-use crate::flat_keymap::MAX_LEVELS;
+use crate::flat_keymap::{FlatMap, FlatMapValue, MAX_LEVELS};
 use crate::modifiers::{ModKind, ModType, Modifier, Modifiers};
 use crate::named_keys::NamedKey;
 use crate::{FlatKeymap, FlatNamedKeyMap, KBLayout, KeyBitSet};
@@ -268,10 +262,10 @@ impl TryFrom<&KBLayout> for LayoutFile {
             }
         }
 
-        let keymap = char_section(&name, &layout.state_keymap, num_keys);
-        let num_lock_keys = char_section(&name, &layout.num_lock_keys, num_keys);
-        let caps_lock_keymap = char_section(&name, &layout.caps_lock_keymap, num_keys);
-        let keysym_map = named_section(&name, &layout.named_key_map, num_keys);
+        let keymap = char_section(&name, &layout.state_keymap);
+        let num_lock_keys = char_section(&name, &layout.num_lock_keys);
+        let caps_lock_keymap = char_section(&name, &layout.caps_lock_keymap);
+        let keysym_map = named_section(&name, &layout.named_key_map);
 
         let reachable = reachable_chars(layout);
         let compose = compose_from_composer(&layout.composer, &reachable);
@@ -310,13 +304,17 @@ fn reachable_chars(layout: &KBLayout) -> Vec<char> {
     reachable
 }
 
-fn flat_to_levels(flat: &FlatKeymap, num_keys: u32) -> BTreeMap<u8, BTreeMap<u32, char>> {
+/// Convert a flat keymap to a per-level map, keeping only populated slots.
+fn to_levels<T: FlatMapValue, V>(
+    flat: &FlatMap<T>,
+    project: impl Fn(T) -> Option<V>,
+) -> BTreeMap<u8, BTreeMap<u32, V>> {
     let mut levels = BTreeMap::new();
     for level in 0..MAX_LEVELS {
         let mut keys = BTreeMap::new();
-        for keycode in 0..num_keys {
-            if let Some(ch) = flat.get(level, keycode) {
-                keys.insert(keycode, ch);
+        for keycode in 0..flat.num_keys as u32 {
+            if let Some(value) = project(flat.get(level, keycode)) {
+                keys.insert(keycode, value);
             }
         }
         if !keys.is_empty() {
@@ -326,33 +324,15 @@ fn flat_to_levels(flat: &FlatKeymap, num_keys: u32) -> BTreeMap<u8, BTreeMap<u32
     levels
 }
 
-fn named_to_levels(flat: &FlatNamedKeyMap, num_keys: u32) -> BTreeMap<u8, BTreeMap<u32, NamedKey>> {
-    let mut levels = BTreeMap::new();
-    for level in 0..MAX_LEVELS {
-        let mut keys = BTreeMap::new();
-        for keycode in 0..num_keys {
-            let named = flat.get(level, keycode);
-            if named != NamedKey::Unnamed {
-                keys.insert(keycode, named);
-            }
-        }
-        if !keys.is_empty() {
-            levels.insert(level as u8, keys);
-        }
-    }
-    levels
+fn char_section(name: &str, flat: &FlatKeymap) -> CharSection {
+    BTreeMap::from([(name.to_string(), to_levels(flat, |value| value))])
 }
 
-fn char_section(name: &str, flat: &FlatKeymap, num_keys: u32) -> CharSection {
-    let mut section = BTreeMap::new();
-    section.insert(name.to_string(), flat_to_levels(flat, num_keys));
-    section
-}
-
-fn named_section(name: &str, flat: &FlatNamedKeyMap, num_keys: u32) -> NamedSection {
-    let mut section = BTreeMap::new();
-    section.insert(name.to_string(), named_to_levels(flat, num_keys));
-    section
+fn named_section(name: &str, flat: &FlatNamedKeyMap) -> NamedSection {
+    BTreeMap::from([(
+        name.to_string(),
+        to_levels(flat, |key| (key != NamedKey::Unnamed).then_some(key)),
+    )])
 }
 
 fn modifiers_from_layout(modifiers: &Modifiers) -> ModifierList {
@@ -392,43 +372,38 @@ fn modaction_from_modkind(kind: &ModKind) -> ModAction {
 /// Best-effort human-readable name for a modifier binding. The name is
 /// metadata only: it is ignored when loading.
 fn modifier_name(keycode: u32, modifier: &Modifier) -> String {
-    let mod_type = match modifier {
-        Modifier::Single(kind) => modkind_type(kind),
-        Modifier::Leveled(map) => map.values().next().and_then(modkind_type),
+    let fallback = |mod_type: Option<ModType>| match mod_type {
+        Some(ModType::Level2) => "Shift",
+        Some(ModType::Level3) => "Level3",
+        Some(ModType::Level5) => "Level5",
+        Some(ModType::Caps) => "CapsLock",
+        Some(ModType::Num) => "NumLock",
+        Some(ModType::Scroll) => "ScrollLock",
+        Some(ModType::Compose) => "Compose",
+        _ => "Modifier",
     };
-    let name = match keycode {
+    match keycode {
+        29 => "LeftControl",
         42 => "LeftShift",
         54 => "RightShift",
-        29 => "LeftControl",
-        97 => "RightControl",
         56 => "Alt",
+        58 if matches!(modifier, Modifier::Leveled(_)) => "Eisu_toggle",
+        58 => "CapsLock",
+        69 => "NumLock",
+        70 => "ScrollLock",
+        97 => "RightControl",
         100 => match modifier {
             Modifier::Single(ModKind::Latch { .. }) => "AltGrLatch",
             Modifier::Single(ModKind::Lock { .. }) => "AltGrLock",
             _ => "AltGr",
         },
-        58 => {
-            if matches!(modifier, Modifier::Leveled(_)) {
-                "Eisu_toggle"
-            } else {
-                "CapsLock"
-            }
-        }
-        69 => "NumLock",
-        70 => "ScrollLock",
         125 => "Super",
-        _ => match mod_type {
-            Some(ModType::Level2) => "Shift",
-            Some(ModType::Level3) => "Level3",
-            Some(ModType::Level5) => "Level5",
-            Some(ModType::Caps) => "CapsLock",
-            Some(ModType::Num) => "NumLock",
-            Some(ModType::Scroll) => "ScrollLock",
-            Some(ModType::Compose) => "Compose",
-            Some(ModType::None) | None => "Modifier",
-        },
-    };
-    name.to_string()
+        _ => fallback(modkind_type(match modifier {
+            Modifier::Single(kind) => kind,
+            Modifier::Leveled(map) => map.values().next().unwrap_or(&ModKind::None),
+        })),
+    }
+    .to_string()
 }
 
 fn modkind_type(kind: &ModKind) -> Option<ModType> {
@@ -513,10 +488,10 @@ impl TryFrom<LayoutFile> for KBLayout {
 
         let composer = composer_from_compose(&file.compose);
 
-        let state_keymap = levels_to_flat(file.keymap.get(&name), num_keys);
-        let num_lock_keys = levels_to_flat(file.num_lock_keys.get(&name), num_keys);
-        let caps_lock_keymap = levels_to_flat(file.caps_lock_keymap.get(&name), num_keys);
-        let named_key_map = levels_to_named(file.keysym_map.get(&name), num_keys);
+        let state_keymap = from_levels(file.keymap.get(&name), num_keys, Some);
+        let num_lock_keys = from_levels(file.num_lock_keys.get(&name), num_keys, Some);
+        let caps_lock_keymap = from_levels(file.caps_lock_keymap.get(&name), num_keys, Some);
+        let named_key_map = from_levels(file.keysym_map.get(&name), num_keys, |key| key);
 
         Ok(KBLayout {
             name,
@@ -533,32 +508,18 @@ impl TryFrom<LayoutFile> for KBLayout {
     }
 }
 
-fn levels_to_flat(
-    levels: Option<&BTreeMap<u8, BTreeMap<u32, char>>>,
+/// Un-flatten a per-level map back into a single `FlatMap`.
+fn from_levels<T: FlatMapValue, V: Copy>(
+    levels: Option<&BTreeMap<u8, BTreeMap<u32, V>>>,
     num_keys: usize,
-) -> FlatKeymap {
-    let mut flat = FlatKeymap::new(num_keys);
+    reconstruct: impl Fn(V) -> T,
+) -> FlatMap<T> {
+    let mut flat = FlatMap::new(num_keys);
     if let Some(levels) = levels {
         for (level, keys) in levels {
             let base = (*level as usize) * num_keys;
-            for (keycode, ch) in keys {
-                flat.data[base + *keycode as usize] = Some(*ch);
-            }
-        }
-    }
-    flat
-}
-
-fn levels_to_named(
-    levels: Option<&BTreeMap<u8, BTreeMap<u32, NamedKey>>>,
-    num_keys: usize,
-) -> FlatNamedKeyMap {
-    let mut flat = FlatNamedKeyMap::new(num_keys);
-    if let Some(levels) = levels {
-        for (level, keys) in levels {
-            let base = (*level as usize) * num_keys;
-            for (keycode, named) in keys {
-                flat.data[base + *keycode as usize] = *named;
+            for (keycode, value) in keys {
+                flat.data[base + *keycode as usize] = reconstruct(*value);
             }
         }
     }
