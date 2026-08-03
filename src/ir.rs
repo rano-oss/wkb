@@ -133,9 +133,6 @@ pub struct LayoutFile {
     /// Character overrides active while Caps Lock is locked.
     #[serde(default, skip_serializing_if = "is_empty_map")]
     pub caps_lock_keymap: CharSection,
-    /// Raw keysym characters used as a fallback when level resolution fails.
-    #[serde(default, skip_serializing_if = "is_empty_map")]
-    pub level_exceptions_keymap: CharSection,
     /// Named-key identities per (level, keycode); `Unnamed` entries are omitted.
     #[serde(default, skip_serializing_if = "is_empty_map")]
     pub keysym_map: NamedSection,
@@ -197,12 +194,7 @@ impl LayoutFile {
                 }
             }
         }
-        for section in [
-            &self.keymap,
-            &self.num_lock_keys,
-            &self.caps_lock_keymap,
-            &self.level_exceptions_keymap,
-        ] {
+        for section in [&self.keymap, &self.num_lock_keys, &self.caps_lock_keymap] {
             validate_section(section, name, self.num_keys)?;
         }
         validate_section(&self.keysym_map, name, self.num_keys)?;
@@ -276,32 +268,10 @@ impl TryFrom<&KBLayout> for LayoutFile {
             }
         }
 
-        let mut keymap = BTreeMap::new();
-        keymap.insert(name.clone(), flat_to_levels(&layout.state_keymap, num_keys));
-        let mut num_lock_keys = BTreeMap::new();
-        num_lock_keys.insert(
-            name.clone(),
-            flat_to_levels(&layout.num_lock_keys, num_keys),
-        );
-        let mut caps_lock_keymap = BTreeMap::new();
-        caps_lock_keymap.insert(
-            name.clone(),
-            flat_to_levels(&layout.caps_lock_keymap, num_keys),
-        );
-        #[cfg(feature = "xkb")]
-        let mut level_exceptions_keymap = BTreeMap::new();
-        #[cfg(feature = "xkb")]
-        level_exceptions_keymap.insert(
-            name.clone(),
-            flat_to_levels(&layout.level_exceptions_keymap, num_keys),
-        );
-        #[cfg(not(feature = "xkb"))]
-        let level_exceptions_keymap = BTreeMap::new();
-        let mut keysym_map = BTreeMap::new();
-        keysym_map.insert(
-            name.clone(),
-            named_to_levels(&layout.named_key_map, num_keys),
-        );
+        let keymap = char_section(&name, &layout.state_keymap, num_keys);
+        let num_lock_keys = char_section(&name, &layout.num_lock_keys, num_keys);
+        let caps_lock_keymap = char_section(&name, &layout.caps_lock_keymap, num_keys);
+        let keysym_map = named_section(&name, &layout.named_key_map, num_keys);
 
         let reachable = reachable_chars(layout);
         let compose = compose_from_composer(&layout.composer, &reachable);
@@ -316,7 +286,6 @@ impl TryFrom<&KBLayout> for LayoutFile {
             keymap,
             num_lock_keys,
             caps_lock_keymap,
-            level_exceptions_keymap,
             keysym_map,
             compose,
         };
@@ -372,6 +341,18 @@ fn named_to_levels(flat: &FlatNamedKeyMap, num_keys: u32) -> BTreeMap<u8, BTreeM
         }
     }
     levels
+}
+
+fn char_section(name: &str, flat: &FlatKeymap, num_keys: u32) -> CharSection {
+    let mut section = BTreeMap::new();
+    section.insert(name.to_string(), flat_to_levels(flat, num_keys));
+    section
+}
+
+fn named_section(name: &str, flat: &FlatNamedKeyMap, num_keys: u32) -> NamedSection {
+    let mut section = BTreeMap::new();
+    section.insert(name.to_string(), named_to_levels(flat, num_keys));
+    section
 }
 
 fn modifiers_from_layout(modifiers: &Modifiers) -> ModifierList {
@@ -535,9 +516,6 @@ impl TryFrom<LayoutFile> for KBLayout {
         let state_keymap = levels_to_flat(file.keymap.get(&name), num_keys);
         let num_lock_keys = levels_to_flat(file.num_lock_keys.get(&name), num_keys);
         let caps_lock_keymap = levels_to_flat(file.caps_lock_keymap.get(&name), num_keys);
-        #[cfg(feature = "xkb")]
-        let level_exceptions_keymap =
-            levels_to_flat(file.level_exceptions_keymap.get(&name), num_keys);
         let named_key_map = levels_to_named(file.keysym_map.get(&name), num_keys);
 
         Ok(KBLayout {
@@ -550,7 +528,7 @@ impl TryFrom<LayoutFile> for KBLayout {
             caps_lock_keymap,
             named_key_map,
             #[cfg(feature = "xkb")]
-            level_exceptions_keymap,
+            level_exceptions_keymap: FlatKeymap::new(num_keys),
         })
     }
 }
