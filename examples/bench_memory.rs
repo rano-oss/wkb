@@ -54,6 +54,11 @@ fn print_rss(label: &str) {
 fn run_workload_wkb_noxkb() -> u64 {
     let mut checksum: u64 = 0;
 
+    // Ensure precompiled RON fixtures exist (regenerate if gitignored).
+    for &(locale, variant) in LAYOUTS {
+        ensure_layout_file(locale, variant);
+    }
+
     print_rss("wkb-noxkb/before_setup");
 
     for &(locale, variant) in LAYOUTS {

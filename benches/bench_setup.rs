@@ -36,6 +36,12 @@ fn bench_setup_no_compose(c: &mut Criterion) {
     let locale = "us";
     let multi_layout = "us,de,fr,ru";
 
+    // Ensure precompiled RON fixtures exist (regenerate if gitignored)
+    // before any timed/registered benchmark runs.
+    for l in multi_layout.split(',') {
+        ensure_layout_file(l, None);
+    }
+
     group.bench_function("wkb", |b| {
         without_compose(|| {
             b.iter(|| {

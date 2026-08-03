@@ -25,6 +25,16 @@ fn wkb_noxkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB {
     wkb::WKB::new_from_layouts(vec![load_layout_file(locale, variant)]).unwrap()
 }
 
+/// Ensure the precompiled RON fixtures every `wkb_noxkb` bench uses exist
+/// (regenerated on demand — `ron_layouts/` is a gitignored artifact dir).
+fn ensure_noxkb_fixtures() {
+    let (pl, pv) = PRIMARY_LAYOUT;
+    ensure_layout_file(pl, pv);
+    for &(l, v) in EXTRA_LAYOUTS {
+        ensure_layout_file(l, v);
+    }
+}
+
 fn xkbcommon_setup(
     locale: &str,
     variant: Option<&str>,
@@ -188,6 +198,7 @@ macro_rules! bench_dl {
 
 fn bench_key_update(c: &mut Criterion) {
     let mut group = c.benchmark_group("key/update");
+    ensure_noxkb_fixtures();
 
     for case in KEY_CASES {
         for (lid, locale, variant) in layouts_for_case(case.name) {
@@ -250,6 +261,7 @@ fn bench_key_update(c: &mut Criterion) {
 
 fn bench_key_get_char(c: &mut Criterion) {
     let mut group = c.benchmark_group("key/get_char");
+    ensure_noxkb_fixtures();
 
     for case in KEY_CASES {
         for (lid, locale, variant) in layouts_for_case(case.name) {
@@ -340,6 +352,7 @@ fn bench_key_get_char(c: &mut Criterion) {
 
 fn bench_key_get_sym(c: &mut Criterion) {
     let mut group = c.benchmark_group("key/get_sym");
+    ensure_noxkb_fixtures();
 
     for case in KEY_CASES {
         for (lid, locale, variant) in layouts_for_case(case.name) {
