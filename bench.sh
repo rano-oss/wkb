@@ -118,9 +118,10 @@ echo ""
 # -- Speed summary: extract median times from Criterion output
 echo "  ── Speed (median from Criterion) ──"
 echo ""
-printf "  %-50s %18s %18s %18s %18s\n" "Benchmark" "wkb" "xkbcommon" "xkbcommon-dl" "xkbcommon-compat"
-printf "  %-50s %18s %18s %18s %18s\n" \
+printf "  %-50s %18s %18s %18s %18s %18s\n" "Benchmark" "wkb" "wkb-noxkb" "xkbcommon" "xkbcommon-dl" "xkbcommon-compat"
+printf "  %-50s %18s %18s %18s %18s %18s\n" \
     "$(printf '%0.s─' {1..50})" \
+    "$(printf '%0.s─' {1..18})" \
     "$(printf '%0.s─' {1..18})" \
     "$(printf '%0.s─' {1..18})" \
     "$(printf '%0.s─' {1..18})" \
@@ -156,10 +157,11 @@ for line in open('$RESULTS_DIR/speed.txt'):
 
 for group in sorted(results):
     wkb = results[group].get('wkb', '-')
+    noxkb = results[group].get('wkb_noxkb', '-')
     xkb = results[group].get('xkbcommon', '-')
     dl = results[group].get('xkbcommon-dl', '-')
     compat = results[group].get('xkbcommon-compat', '-')
-    print(f'  {group:<50s} {wkb:>18s} {xkb:>18s} {dl:>18s} {compat:>18s}')
+    print(f'  {group:<50s} {wkb:>18s} {noxkb:>18s} {xkb:>18s} {dl:>18s} {compat:>18s}')
 " 2>/dev/null || echo "  (could not parse speed results — check $RESULTS_DIR/speed.txt)"
 echo ""
 

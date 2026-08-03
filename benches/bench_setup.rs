@@ -46,6 +46,16 @@ fn bench_setup_no_compose(c: &mut Criterion) {
         });
     });
 
+    group.bench_function("wkb_noxkb", |b| {
+        without_compose(|| {
+            b.iter(|| {
+                let file = load_layout_file(black_box(locale), None);
+                let wkb = wkb::WKB::new_from_layouts(vec![file]).unwrap();
+                black_box(wkb);
+            });
+        });
+    });
+
     let keymap = without_compose(|| {
         wkb::WKB::new_from_names("", "", locale, "", None)
             .unwrap()
@@ -66,6 +76,19 @@ fn bench_setup_no_compose(c: &mut Criterion) {
             b.iter(|| {
                 let wkb =
                     wkb::WKB::new_from_names("", "", black_box(multi_layout), "", None).unwrap();
+                black_box(wkb);
+            });
+        });
+    });
+
+    group.bench_function("wkb_noxkb_multilayout", |b| {
+        without_compose(|| {
+            b.iter(|| {
+                let files = multi_layout
+                    .split(',')
+                    .map(|l| load_layout_file(l, None))
+                    .collect();
+                let wkb = wkb::WKB::new_from_layouts(files).unwrap();
                 black_box(wkb);
             });
         });

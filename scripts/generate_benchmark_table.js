@@ -9,8 +9,13 @@ const path = require('path');
 const CRITERION_DIR = path.join(__dirname, '..', 'target', 'criterion');
 const README = path.join(__dirname, '..', 'README.md');
 
-// Only compare these three implementations
-const IMPLS = ['wkb', 'xkbcommon', 'xkbcommon-dl'];
+// Implementations compared in the speed table.
+// Note: Criterion stores benchmark ids verbatim, so the no-XKB wkb variant
+// uses an underscore (`wkb_noxkb`) while the RSS labels use a hyphen.
+const SPEED_IMPLS = ['wkb', 'wkb_noxkb', 'xkbcommon', 'xkbcommon-dl'];
+
+// RSS rows shown in the memory table.
+const MEM_ROWS = ['wkb-noxkb', 'wkb-xkb', 'xkbcommon', 'xkbcommon-dl'];
 
 // Friendly labels for size-benchmark binaries.
 const SIZE_LABELS = {
@@ -85,7 +90,7 @@ function generateSpeedTable() {
 
         if (combine) {
             // Sum estimates from multiple benchmark groups
-            for (const impl_ of IMPLS) {
+            for (const impl_ of SPEED_IMPLS) {
                 let total = 0;
                 let found = false;
                 for (const subDir of combine) {
@@ -98,7 +103,7 @@ function generateSpeedTable() {
         } else {
             const gpath = path.join(CRITERION_DIR, dir);
             if (!fs.existsSync(gpath)) continue;
-            for (const impl_ of IMPLS) {
+            for (const impl_ of SPEED_IMPLS) {
                 vals[impl_] = readEstimates(gpath, impl_);
             }
         }
@@ -107,6 +112,7 @@ function generateSpeedTable() {
         const row = [
             label,
             vals['wkb'] ? fmt_ns(vals['wkb']) : '-',
+            vals['wkb_noxkb'] ? fmt_ns(vals['wkb_noxkb']) : '-',
             vals['xkbcommon'] ? fmt_ns(vals['xkbcommon']) : '-',
             vals['xkbcommon-dl'] ? fmt_ns(vals['xkbcommon-dl']) : '-',
             speedup(vals['wkb'], vals['xkbcommon']),
@@ -116,8 +122,8 @@ function generateSpeedTable() {
 
     if (rows.length === 0) return null;
 
-    let table = '| Benchmark | wkb | xkbcommon | xkbcommon-dl | vs xkbcommon |\n';
-    table += '|-----------|-----|-----------|--------------|-------------|\n';
+    let table = '| Benchmark | wkb | wkb-noxkb | xkbcommon | xkbcommon-dl | vs xkbcommon |\n';
+    table += '|-----------|-----|-----------|-----------|--------------|-------------|\n';
     for (const r of rows) {
         table += `| ${r.join(' | ')} |\n`;
     }
@@ -138,9 +144,9 @@ function generateMemoryTable(memOutput) {
 
     let table = '| Library | Peak RSS |\n';
     table += '|---------|----------|\n';
-    for (const impl_ of IMPLS) {
-        const v = data[impl_] || data[impl_.replace('-', '_')];
-        if (v) table += `| ${impl_} | ${(v / 1024).toFixed(1)} MB |\n`;
+    for (const label of MEM_ROWS) {
+        const v = data[label];
+        if (v) table += `| ${label} | ${(v / 1024).toFixed(1)} MB |\n`;
     }
     return table;
 }

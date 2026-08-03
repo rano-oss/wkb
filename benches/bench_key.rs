@@ -21,6 +21,10 @@ fn wkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB {
     wkb::WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap()
 }
 
+fn wkb_noxkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB {
+    wkb::WKB::new_from_layouts(vec![load_layout_file(locale, variant)]).unwrap()
+}
+
 fn xkbcommon_setup(
     locale: &str,
     variant: Option<&str>,
@@ -93,10 +97,30 @@ fn layouts_for_case(case_name: &str) -> Vec<(String, &'static str, Option<&'stat
 // ── Macros to reduce per-impl boilerplate ──────────────────────────────
 
 macro_rules! bench_wkb {
-    ($group:expr, $bid:expr, $locale:expr, $variant:expr, $case:expr, $body:expr) => {{
-        let mut wb = wkb_setup($locale, $variant);
+    ($group:expr, $bid:expr, $setup:expr, $case:expr, $body:expr) => {{
+        let mut wb = $setup;
         let case_keys = $case.keys;
         $group.bench_function(BenchmarkId::new("wkb", &$bid), |b| {
+            b.iter(|| {
+                for &(code, down) in case_keys {
+                    let dir = if down {
+                        KeyDirection::Down
+                    } else {
+                        KeyDirection::Up
+                    };
+                    #[allow(clippy::redundant_closure_call)]
+                    ($body)(&mut wb, code, down, dir);
+                }
+            });
+        });
+    }};
+}
+
+macro_rules! bench_wkb_noxkb {
+    ($group:expr, $bid:expr, $setup:expr, $case:expr, $body:expr) => {{
+        let mut wb = $setup;
+        let case_keys = $case.keys;
+        $group.bench_function(BenchmarkId::new("wkb_noxkb", &$bid), |b| {
             b.iter(|| {
                 for &(code, down) in case_keys {
                     let dir = if down {
@@ -172,8 +196,17 @@ fn bench_key_update(c: &mut Criterion) {
             bench_wkb!(
                 group,
                 bid,
-                locale,
-                variant,
+                wkb_setup(locale, variant),
+                case,
+                |wb: &mut wkb::WKB, code: u32, _down: bool, dir: KeyDirection| {
+                    black_box(wb.update_key(black_box(code), dir));
+                }
+            );
+
+            bench_wkb_noxkb!(
+                group,
+                bid,
+                wkb_noxkb_setup(locale, variant),
                 case,
                 |wb: &mut wkb::WKB, code: u32, _down: bool, dir: KeyDirection| {
                     black_box(wb.update_key(black_box(code), dir));
@@ -225,8 +258,20 @@ fn bench_key_get_char(c: &mut Criterion) {
             bench_wkb!(
                 group,
                 bid,
-                locale,
-                variant,
+                wkb_setup(locale, variant),
+                case,
+                |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
+                    wb.update_key(code, dir);
+                    if down {
+                        black_box(wb.key_char(black_box(code)));
+                    }
+                }
+            );
+
+            bench_wkb_noxkb!(
+                group,
+                bid,
+                wkb_noxkb_setup(locale, variant),
                 case,
                 |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
                     wb.update_key(code, dir);
@@ -303,8 +348,20 @@ fn bench_key_get_sym(c: &mut Criterion) {
             bench_wkb!(
                 group,
                 bid,
-                locale,
-                variant,
+                wkb_setup(locale, variant),
+                case,
+                |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
+                    wb.update_key(code, dir);
+                    if down {
+                        black_box(wb.state_named_key(black_box(code)));
+                    }
+                }
+            );
+
+            bench_wkb_noxkb!(
+                group,
+                bid,
+                wkb_noxkb_setup(locale, variant),
                 case,
                 |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
                     wb.update_key(code, dir);
