@@ -12,6 +12,15 @@ const README = path.join(__dirname, '..', 'README.md');
 // Only compare these three implementations
 const IMPLS = ['wkb', 'xkbcommon', 'xkbcommon-dl'];
 
+// Friendly labels for size-benchmark binaries.
+const SIZE_LABELS = {
+    bench_size_wkb: 'wkb (no XKB)',
+    bench_size_wkb_xkb: 'wkb (with XKB)',
+    bench_size_xkbcommon: 'xkbcommon',
+    bench_size_xkbcommon_dl: 'xkbcommon-dl',
+    bench_size_xkbcommon_compat: 'xkbcommon-compat',
+};
+
 function fmt_ns(ns) {
     if (ns >= 1e6) return (ns / 1e6).toFixed(2) + ' ms';
     if (ns >= 1e3) return (ns / 1e3).toFixed(1) + ' µs';
@@ -141,8 +150,15 @@ function generateSizeTable(sizeOutput) {
     const lines = sizeOutput.trim().split('\n');
     const data = {};
     for (const line of lines) {
-        const m = line.match(/^(\S+)\s+(\d+)/);
-        if (m) data[m[1]] = parseInt(m[2]);
+        // Format from bench.sh: "  <name>  <orig> <unit>  <stripped> <unit>"
+        const m = line.match(/^\s*(\S+)\s+(\d+)\s+(\S+)\s+(\d+)\s+(\S+)/);
+        if (!m) continue;
+        const n = parseInt(m[4]);
+        let bytes = n;
+        if (m[5].includes('Mi')) bytes = n * 1024 * 1024;
+        else if (m[5].includes('Ki')) bytes = n * 1024;
+        else if (m[5].includes('Gi')) bytes = n * 1024 * 1024 * 1024;
+        data[SIZE_LABELS[m[1]] || m[1]] = bytes;
     }
     if (Object.keys(data).length === 0) return null;
 

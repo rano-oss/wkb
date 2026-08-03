@@ -64,6 +64,9 @@ name = "bench_memory"
 name = "bench_size_wkb"
 
 [[example]]
+name = "bench_size_wkb_xkb"
+
+[[example]]
 name = "bench_size_xkbcommon_dl"
 
 [[example]]

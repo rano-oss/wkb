@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BINS="bench_size_wkb bench_size_xkbcommon bench_size_xkbcommon_dl bench_size_xkbcommon_compat"
+BINS="bench_size_wkb bench_size_wkb_xkb bench_size_xkbcommon bench_size_xkbcommon_dl bench_size_xkbcommon_compat"
 RESULTS_DIR="/tmp/wkb_bench_results"
 mkdir -p "$RESULTS_DIR"
 : > "$RESULTS_DIR/speed.txt"
@@ -53,7 +53,11 @@ echo "▶ [3/3] Binary size comparison"
 echo ""
 
 for bin in $BINS; do
-    cargo build --example "$bin" --release 2>/dev/null
+    if [ "$bin" = "bench_size_wkb" ]; then
+        cargo build --example "$bin" --release --no-default-features 2>/dev/null
+    else
+        cargo build --example "$bin" --release 2>/dev/null
+    fi
 done
 
 echo "  ── size(1) output ──"
