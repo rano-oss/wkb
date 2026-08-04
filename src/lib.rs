@@ -98,13 +98,6 @@ impl KeyBitSet {
             self.bits[k >> 6] |= 1u64 << (k & 63);
         }
     }
-
-    pub(crate) fn remove(&mut self, key: u32) {
-        let k = key as usize;
-        if k < BITSET_WORDS * 64 {
-            self.bits[k >> 6] &= !(1u64 << (k & 63));
-        }
-    }
 }
 
 use crate::named_keys::NamedKey;

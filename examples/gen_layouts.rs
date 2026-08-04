@@ -2,8 +2,8 @@
 //!
 //! Takes no arguments. Reads the XKB registry (`rules/evdev.xml`) to enumerate
 //! all `(layout, variant)` pairs, compiles each one, and writes the canonical
-//! `wkb::ir` RON format into `ron_layouts/`, mirroring the naming convention
-//! `<layout>.<variant>.ron` (base layout: `<layout>.ron`).
+//! `wkb::ir` KDL format into `kdl_layouts/`, mirroring the naming convention
+//! `<layout>.<variant>.kdl` (base layout: `<layout>.kdl`).
 //!
 //! ```sh
 //! cargo run --example gen_layouts
@@ -13,7 +13,7 @@ use std::path::PathBuf;
 
 use wkb::WKB;
 
-const OUT_DIR: &str = "ron_layouts";
+const OUT_DIR: &str = "kdl_layouts";
 
 fn main() {
     let layouts = wkb::testing::list_layouts();
@@ -47,13 +47,13 @@ fn main() {
 fn generate(layout: &str, variant: &str) -> Result<String, String> {
     let wkb = WKB::new_from_names("", "", layout, variant, None).map_err(|err| err.to_string())?;
     let file = wkb.export_layout(0).map_err(|err| err.to_string())?;
-    file.to_ron_string().map_err(|err| err.to_string())
+    file.to_kdl_string().map_err(|err| err.to_string())
 }
 
 fn file_name(layout: &str, variant: &str) -> String {
     if variant.is_empty() {
-        format!("{layout}.ron")
+        format!("{layout}.kdl")
     } else {
-        format!("{layout}.{variant}.ron")
+        format!("{layout}.{variant}.kdl")
     }
 }

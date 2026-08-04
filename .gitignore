@@ -6,6 +6,7 @@
 /.opencode
 TODO.md
 ron_layouts/
+kdl_layouts/
 count_keysyms.js
 /scripts
 .zed/

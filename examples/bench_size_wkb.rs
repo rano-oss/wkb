@@ -50,8 +50,7 @@ fn synthetic_layout() -> LayoutFile {
         version: wkb::ir::FORMAT_VERSION,
         layout_names: vec!["layout".to_string()],
         num_keys: 128,
-        repeat_keys_add: vec![30, 48],
-        repeat_keys_remove: Vec::new(),
+        repeat_keys: vec![30, 48],
         modifiers: vec![
             (
                 42,
@@ -99,8 +98,8 @@ fn synthetic_layout() -> LayoutFile {
 
 fn main() {
     let file = synthetic_layout();
-    let ron = file.to_ron_string().unwrap();
-    let loaded = wkb::ir::LayoutFile::from_ron_str(&ron).unwrap();
+    let kdl = file.to_kdl_string().unwrap();
+    let loaded = wkb::ir::LayoutFile::from_kdl_str(&kdl).unwrap();
     let mut wkb = WKB::new_from_layouts(vec![loaded]).unwrap();
 
     let mut checksum: u64 = 0;
