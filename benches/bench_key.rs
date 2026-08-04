@@ -25,7 +25,7 @@ fn wkb_noxkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB {
     wkb::WKB::new_from_layouts(vec![load_layout_file(locale, variant)]).unwrap()
 }
 
-/// Ensure the precompiled RON fixtures every `wkb_noxkb` bench uses exist
+/// Ensure the precompiled RON fixtures every `wkb-noxkb` bench uses exist
 /// (regenerated on demand — `ron_layouts/` is a gitignored artifact dir).
 fn ensure_noxkb_fixtures() {
     let (pl, pv) = PRIMARY_LAYOUT;
@@ -130,7 +130,7 @@ macro_rules! bench_wkb_noxkb {
     ($group:expr, $bid:expr, $setup:expr, $case:expr, $body:expr) => {{
         let mut wb = $setup;
         let case_keys = $case.keys;
-        $group.bench_function(BenchmarkId::new("wkb_noxkb", &$bid), |b| {
+        $group.bench_function(BenchmarkId::new("wkb-noxkb", &$bid), |b| {
             b.iter(|| {
                 for &(code, down) in case_keys {
                     let dir = if down {

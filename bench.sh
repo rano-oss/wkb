@@ -157,7 +157,7 @@ for line in open('$RESULTS_DIR/speed.txt'):
 
 for group in sorted(results):
     wkb = results[group].get('wkb', '-')
-    noxkb = results[group].get('wkb_noxkb', '-')
+    noxkb = results[group].get('wkb-noxkb', '-')
     xkb = results[group].get('xkbcommon', '-')
     dl = results[group].get('xkbcommon-dl', '-')
     compat = results[group].get('xkbcommon-compat', '-')

@@ -6,7 +6,7 @@
 //!   [`wkb::WKB::new_from_layouts`] and drives them through the public event
 //!   API. Run first, before any XKB compilation happens, so its RSS reflects
 //!   the no-XKB usage pattern (the XKB code paths are never exercised).
-//! - `wkb-xkb` — compiles layouts from the XKB registry via
+//! - `wkb` — compiles layouts from the XKB registry via
 //!   [`wkb::WKB::new_from_names`].
 //! - `xkbcommon`, `xkbcommon-dl`, `xkbcommon-compat` — the C backends.
 //!
@@ -89,7 +89,7 @@ fn run_workload_wkb_noxkb() -> u64 {
 fn run_workload_wkb_xkb() -> u64 {
     let mut checksum: u64 = 0;
 
-    print_rss("wkb-xkb/before_setup");
+    print_rss("wkb/before_setup");
 
     for &(locale, variant) in LAYOUTS {
         let mut wb = wkb::WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
@@ -128,7 +128,7 @@ fn run_workload_wkb_xkb() -> u64 {
         }
     }
 
-    print_rss("wkb-xkb/after_workload");
+    print_rss("wkb/after_workload");
     checksum
 }
 
@@ -366,7 +366,7 @@ fn main() {
     println!("  wkb-noxkb checksum: {c0}\n");
 
     let c1 = run_workload_wkb_xkb();
-    println!("  wkb-xkb checksum: {c1}\n");
+    println!("  wkb checksum: {c1}\n");
 
     let c2 = run_workload_xkbcommon();
     println!("  xkbcommon checksum: {c2}\n");

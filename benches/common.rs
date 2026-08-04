@@ -43,7 +43,7 @@ pub fn ensure_layout_file(locale: &str, variant: Option<&str>) {
 }
 
 /// Build a composer trie from a precompiled layout's serialized compose table,
-/// mirroring [`wkb::ir::composer_from_compose`]. Used by the `wkb_noxkb`
+/// mirroring [`wkb::ir::composer_from_compose`]. Used by the `wkb-noxkb`
 /// compose benches: the RON carries a compose table, so the no-XKB path can
 /// be measured for compose setup/feed without touching any XKB machinery.
 pub fn composer_from_layout_file(file: &wkb::ir::LayoutFile) -> Composer {

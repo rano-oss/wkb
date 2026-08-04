@@ -66,7 +66,7 @@ fn bench_compose_feed(c: &mut Criterion) {
                 })
                 .collect();
             group.bench_with_input(
-                BenchmarkId::new("wkb_noxkb", seq.name),
+                BenchmarkId::new("wkb-noxkb", seq.name),
                 &tokens,
                 |b, tokens| {
                     b.iter(|| {

@@ -52,7 +52,7 @@ fn bench_setup_no_compose(c: &mut Criterion) {
         });
     });
 
-    group.bench_function("wkb_noxkb", |b| {
+    group.bench_function("wkb-noxkb", |b| {
         without_compose(|| {
             b.iter(|| {
                 let file = load_layout_file(black_box(locale), None);
@@ -87,7 +87,7 @@ fn bench_setup_no_compose(c: &mut Criterion) {
         });
     });
 
-    group.bench_function("wkb_noxkb_multilayout", |b| {
+    group.bench_function("wkb-noxkb-multilayout", |b| {
         without_compose(|| {
             b.iter(|| {
                 let files = multi_layout
@@ -184,7 +184,7 @@ fn bench_setup_with_compose(c: &mut Criterion) {
     });
 
     ensure_layout_file(locale, None);
-    group.bench_function("wkb_noxkb", |b| {
+    group.bench_function("wkb-noxkb", |b| {
         // The RON layout already embeds its compose table, so "with compose"
         // setup for the no-XKB path is just the RON load — no XKB compose
         // file parse. Locale env is set for symmetry with `wkb`.
