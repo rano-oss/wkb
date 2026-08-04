@@ -183,6 +183,21 @@ fn bench_setup_with_compose(c: &mut Criterion) {
         });
     });
 
+    ensure_layout_file(locale, None);
+    group.bench_function("wkb_noxkb", |b| {
+        // The RON layout already embeds its compose table, so "with compose"
+        // setup for the no-XKB path is just the RON load — no XKB compose
+        // file parse. Locale env is set for symmetry with `wkb`.
+        unsafe {
+            std::env::set_var("LC_ALL", COMPOSE_LOCALE);
+        }
+        b.iter(|| {
+            let file = load_layout_file(black_box(locale), None);
+            let wkb = wkb::WKB::new_from_layouts(vec![file]).unwrap();
+            black_box(wkb);
+        });
+    });
+
     group.bench_function("xkbcommon", |b| {
         use xkbcommon::xkb;
         b.iter(|| {
