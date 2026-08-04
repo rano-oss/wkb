@@ -4,6 +4,7 @@
 pub(crate) mod keymap;
 pub(crate) mod keysym;
 pub(crate) mod parser;
+#[cfg(feature = "testing")]
 pub(crate) mod rxkb;
 pub(crate) mod symbols;
 
@@ -716,30 +717,6 @@ fn build_wkb_from_keymap(
         current_layout_idx: 0,
         layouts,
     }
-}
-
-/// List all available `(layout, variant)` pairs from the XKB registry.
-///
-/// Returns pairs suitable for [`crate::WKB::new_from_names`]. The base layout
-/// has an empty variant string. On failure (no registry available) the list is
-/// empty.
-pub fn list_layouts() -> Vec<(String, String)> {
-    use rxkb::RegistryContext;
-
-    let mut ctx = match RegistryContext::new() {
-        Some(ctx) => ctx,
-        None => return Vec::new(),
-    };
-
-    ctx.include_path_append_default();
-
-    if !ctx.parse("evdev") {
-        return Vec::new();
-    }
-
-    ctx.layouts()
-        .map(|layout| (layout.name().to_string(), layout.variant().to_string()))
-        .collect()
 }
 
 /// Create a new WKB instance from RMLVO names.

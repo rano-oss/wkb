@@ -16,7 +16,7 @@ use wkb::WKB;
 const OUT_DIR: &str = "ron_layouts";
 
 fn main() {
-    let layouts = wkb::list_layouts();
+    let layouts = wkb::testing::list_layouts();
     println!(
         "found {} layout(s)/variant(s) in the XKB registry",
         layouts.len()

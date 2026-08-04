@@ -275,7 +275,7 @@ fn new_from_layouts_supports_multiple_groups() {
 
 #[test]
 fn list_layouts_finds_the_registry() {
-    let layouts = wkb::list_layouts();
+    let layouts = wkb::testing::list_layouts();
     assert!(!layouts.is_empty(), "XKB registry should enumerate layouts");
     assert!(layouts.iter().any(|(name, _)| name == "us"));
     // Every pair is directly consumable by new_from_names.

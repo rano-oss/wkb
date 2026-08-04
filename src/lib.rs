@@ -54,7 +54,7 @@ pub mod testing;
 #[cfg(feature = "xkb")]
 mod xkb;
 #[cfg(feature = "xkb")]
-pub use xkb::{list_layouts, XkbError};
+pub use xkb::XkbError;
 
 pub(crate) const BITSET_WORDS: usize = 12;
 
