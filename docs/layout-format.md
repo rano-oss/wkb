@@ -1,7 +1,7 @@
 # wkb Layout File Format
 
 This is the normative specification for the on-disk format used by `wkb` to
-persist pre-compiled keyboard layouts. Files are serialized as **KDL** text and
+persist pre-compiled keyboard layouts. Files are serialized as **RON** text and
 read/written through the `wkb::ir` module.
 
 ## Purpose
@@ -10,87 +10,132 @@ The runtime representation ([`KBLayout`]) is an in-memory, pre-compiled form of
 a keyboard layout. A layout file is the serialized version of one such layout.
 It is produced by `KBLayout -> LayoutFile` (`WKB::export_layout`) and consumed
 by `LayoutFile -> KBLayout` (`WKB::new_from_layouts`, which takes a list of
-files for multi-group layouts), enabling wkb to load
-layouts without compiling XKB at runtime.
+files for multi-group layouts), enabling wkb to load layouts without compiling
+XKB at runtime.
 
 ## Ground rules
 
-1. **One layout per file.** `layout_names` holds exactly one name, and every
-   section map is keyed by exactly that name.
+1. **One layout per file.** A file holds exactly one layout, named by the
+   `layout` field. Multi-group instances are produced by loading several files.
 2. **Versioned schema.** Every file starts with `version`, which must equal the
    current `FORMAT_VERSION` (1). Files with any other version are rejected.
-3. **Canonical ordering.** All maps are sorted: by layout name, then by level
-   (ascending), then by evdev keycode (ascending). `repeat_keys` and
-   `modifiers` are sorted ascending. `compose` is sorted lexicographically.
-   Serializing the same logical file always yields byte-identical output.
-4. **Minimal redundancy.** Empty sections and empty level maps are omitted
-   entirely. `Unnamed` keysym entries and `None` entries are never stored.
-5. **Validation.** Loading (`LayoutFile::from_kdl_str`, `validate`, and both
+3. **Compile-time keycode count.** `NUM_KEYS` (701) is a code constant, not a
+   file field. Every keycode in a file is `< NUM_KEYS` and the runtime layout
+   is always sized to `NUM_KEYS` slots.
+4. **Canonical ordering.** All maps are sorted by level (ascending), then by
+   evdev keycode (ascending). `repeat_keys` and `modifiers` are sorted
+   ascending by keycode. `compose` is sorted lexicographically. Serializing the
+   same logical file always yields byte-identical output.
+5. **Minimal redundancy.** Empty sections are omitted entirely. `Unnamed`
+   keysym entries and `None` entries are never stored.
+6. **Validation.** Loading (`LayoutFile::from_ron_str`, `validate`, and both
    conversions) enforces every invariant listed under [Validation].
 
 ## Top-level structure
 
-```kdl
-// wkb keyboard layout (KDL format)
-version 1
-layout "English (US)"
-num_keys 701
-
-repeat_keys 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 \
-     21 22 23 24 25 26 27 28 30 31 32 33 34 35 36 37 38 39 40 \
-     ...
-
-modifier 29 "LeftControl" 0 "Pressed"
-modifier 42 "LeftShift" 0 "Pressed(Level2)"
-modifier 58 "CapsLock" 0 "Lock(Caps)"
-
-keymap {
-    level 0 "1"="\u{1b}" "2"="1" "3"="2" "16"="q" "17"="w" ...
-    level 1 "1"="\u{1b}" "2"="!" "16"="Q" "17"="W" ...
-}
-
-keysym_map {
-    level 0 "1"="Escape" "2"="1" "16"="q" ...
-}
-
-compose "·" "a" "e" "æ"
-compose "·" " " "(" "˘"
+```ron
+// wkb keyboard layout (RON format)
+(
+    version: 1,
+    layout: "English (US)",
+    repeat_keys: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+        21, 22, 23, 24, 25, 26, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
+        43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 55, 57],
+    modifiers: [
+        (29, "LeftControl", [(0, Pressed(None))]),
+        (42, "LeftShift", [(0, Pressed(Level2))]),
+        (58, "CapsLock", [(0, Lock(Caps))]),
+    ],
+    keymap: {
+        0: {
+            1: '\u{1b}', 2: '1', 3: '2', 4: '3', 5: '4', 6: '5', 7: '6', 8: '7',
+            9: '8', 10: '9', 11: '0', 12: '-', 13: '=', 14: '\u{7f}', 15: '\t',
+            16: 'q',
+        },
+        1: {
+            1: '\u{1b}', 2: '!', 3: '@', 4: '#', 5: '$', 6: '%', 7: '^', 8: '&',
+            9: '*', 10: '(', 11: ')', 12: '_', 13: '+', 14: '\u{7f}', 15: '\t',
+            16: 'Q',
+        },
+    },
+    keysym_map: {
+        0: {
+            1: Escape,
+            14: Backspace,
+            15: Tab,
+        },
+    },
+    compose: [
+        (['·', 'a', 'e'], 'æ'),
+        (['·', ' ', '(', 'x'], 'x'),
+    ],
+)
 ```
 
-A comment line `// wkb keyboard layout (KDL format)` begins the file. The top
-level is a sequence of nodes:
+A comment line `// wkb keyboard layout (RON format)` begins the file. The root
+is a RON struct with the following fields:
 
-| Node | Kind | Meaning |
-|------|------|---------|
-| `version` | `u32` argument | Schema version, must be `1`. |
-| `layout` | quoted string argument | The single layout name. |
-| `num_keys` | `u32` argument | Number of evdev keycode slots; every keycode is `< num_keys`. |
-| `repeat_keys` | `u32` arguments | Keycodes that repeat. Wrapped at 20 per line with a trailing `\` continuation. |
-| `modifier` | mixed arguments | Modifier binding; see [Modifiers]. |
-| `keymap` | node with children | Resolved character per (level, keycode) under base modifiers. |
-| `num_lock_keys` | node with children | Character overrides while Num Lock is locked. |
-| `caps_lock_keymap` | node with children | Character overrides while Caps Lock is locked. |
-| `keysym_map` | node with children | Named-key identities; `Unnamed` entries are omitted. |
-| `compose` | string arguments | One compose sequence per node; see [Compose sequences]. |
+| Field | Kind | Meaning |
+|-------|------|---------|
+| `version` | `u32` | Schema version, must be `1`. |
+| `layout` | string | The single layout name. |
+| `repeat_keys` | array of `u32` | Keycodes that repeat. Wrapped at 20 per line. |
+| `modifiers` | array of tuples | Modifier bindings; see [Modifiers]. |
+| `keymap` | nested maps | Resolved character per (level, keycode) under base modifiers. |
+| `num_lock_keys` | nested maps | Character overrides while Num Lock is locked. |
+| `caps_lock_keymap` | nested maps | Character overrides while Caps Lock is locked. |
+| `keysym_map` | nested maps | Named-key identities; `Unnamed` entries are omitted. |
+| `compose` | array of tuples | Compose sequences; see [Compose sequences]. |
 
-The `keymap`/`num_lock_keys`/`caps_lock_keymap`/`keysym_map` nodes each contain
-one `level <n>` child line per populated level. Entries on a level line are
-quoted property pairs `"keycode"="value"` — the numeric keycodes are always
-quoted, because bare numeric property keys are not valid KDL. Within a level
-line the keycode is the primary sort key, giving a canonical order. Empty
-sections (including a layout whose section has no populated levels) are omitted
-from the output entirely.
+Every section that would be empty is omitted from the output (and defaults to
+empty on load).
+
+## Sections
+
+`keymap`, `num_lock_keys`, `caps_lock_keymap`, and `keysym_map` share one
+shape: an outer map from level to an inner map from keycode to value. The
+char-keyed sections (`keymap`, `num_lock_keys`, `caps_lock_keymap`) start a new
+line when the keycode exceeds a multiple of 14 (so keys 1-14, 15-28, ... each
+share a line), while `keysym_map` puts one key per line:
+
+```ron
+keymap: {
+    0: {
+        1: '\u{1b}', 2: '1', 3: '2', 4: '3', 5: '4', 6: '5', 7: '6', 8: '7',
+        9: '8', 10: '9', 11: '0', 12: '-', 13: '=', 14: '\u{7f}',
+        15: '\t', 16: 'q',
+    },
+}
+
+keysym_map: {
+    0: {
+        1: Escape,
+        14: Backspace,
+        15: Tab,
+    },
+}
+```
+
+`keymap`/`num_lock_keys`/`caps_lock_keymap` values are single-character RON
+char literals; `keysym_map` values are `NamedKey` names written as bare
+identifiers (e.g. `Escape`, `ArrowUp`). Levels with no populated keycodes are
+omitted.
+
+`repeat_keys` is a single array of keycodes, wrapped at 20 per line:
+
+```ron
+repeat_keys: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    21, 22, 23, 24, 25, 26, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40],
+```
 
 ## Strings and escaping
 
-Quoted strings are used for the layout name, modifier names, character values,
-keysym names, and compose characters. The writer escapes characters that KDL
-forbids literally:
+Strings (the layout name and modifier names) and char literals (character and
+compose values) use RON's Rust-style escaping:
 
-- `\` and `"` are backslash-escaped (`\\`, `\"`).
-- `\n`, `\r`, `\t`, `\b`, `\f` use the short escapes.
-- All other control characters (e.g. `\u{1b}` for Escape) and Unicode bidi
-  direction controls (U+200E–200F, U+202A–202E, U+2066–2069) plus U+FEFF are
+- `\` and the delimiter (`"` for strings, `'` for chars) are backslash-escaped.
+- `\n`, `\r`, `\t` use the short escapes.
+- All other control characters (e.g. `\u{1b}` for Escape) and U+FEFF are
   written as `\u{hex}` escapes.
 
 The parser accepts the same set, so serialization and parsing round-trip
@@ -98,15 +143,17 @@ byte-for-byte (verified across all generated fixtures).
 
 ## Modifiers
 
-Each modifier binding is a `modifier` node with arguments
-`keycode name (level action)*`. `name` is human-readable metadata only — it is
-ignored when loading. `action` is the `ModAction` string:
+Modifier bindings are a list of tuples `(keycode, name, [(level, action)])`,
+one per line. `name` is human-readable metadata only — it is ignored when
+loading. `action` is the `ModAction`:
 
-```kdl
-modifier 42 "LeftShift" 0 "Pressed(Level2)"
-modifier 58 "CapsLock" 0 "Lock(Caps)"
-modifier 69 "NumLock" 0 "Lock(Num)"
-modifier 100 "AltGr" 0 "Pressed(Level3)"
+```ron
+modifiers: [
+    (42, "LeftShift", [(0, Pressed(Level2))]),
+    (58, "CapsLock", [(0, Lock(Caps))]),
+    (69, "NumLock", [(0, Lock(Num))]),
+    (100, "AltGr", [(0, Pressed(Level3))]),
+],
 ```
 
 `ModAction` mirrors the runtime modifier state machine:
@@ -128,15 +175,18 @@ becomes a leveled modifier.
 
 ## Compose sequences
 
-Each `compose` node is one sequence: the characters typed after pressing
-Compose, followed by the resulting character as the final argument.
+Compose sequences are a list of tuples `(keys, output)`, one per line. `keys`
+is a list of characters typed after pressing Compose; `output` is the resulting
+character.
 
 The Compose/Multi_key token is represented by the reserved character
 `U+00B7 MIDDLE DOT` (`·`). A literal `·` cannot be used as a compose input key.
 It is used exactly as the compose marker, matching X11 `<Multi_key>`.
 
-```kdl
-compose "·" "a" "e" "æ"
+```ron
+compose: [
+    (['·', 'a', 'e'], 'æ'),
+],
 ```
 
 Files store only **reachable** sequences: a sequence is kept iff every
@@ -149,12 +199,9 @@ composer filtering and keeps files free of redundant entries.
 On load, the following are enforced (each maps to an `IrError` variant):
 
 - `version` equals `FORMAT_VERSION`, else `UnsupportedVersion`.
-- `layout_names` is non-empty (`EmptyLayoutNames`), contains no duplicates
-  (`DuplicateLayoutName`), and has exactly one entry (`MultipleLayouts`).
-- Every section map key is declared in `layout_names`
-  (`UndeclaredLayout`).
-- `num_keys >= 1` (`InvalidNumKeys`).
-- Every keycode is `< num_keys` (`KeycodeOutOfRange`).
+- `layout` is non-empty (`EmptyLayoutName`).
+- Every keycode is `< NUM_KEYS` (`KeycodeOutOfRange`). Applies to
+  `repeat_keys`, modifier keycodes, and all section keycodes.
 - Every level is `< 8` (`LevelOutOfRange`).
 - Modifier names are non-empty (`EmptyModifierName`) and actions non-empty
   (`EmptyModifierActions`).
@@ -163,22 +210,33 @@ On load, the following are enforced (each maps to an `IrError` variant):
 
 ## Canonical example
 
-```kdl
-// wkb keyboard layout (KDL format)
-version 1
-layout "us"
-num_keys 701
-
-repeat_keys 1 2 3 \
-     4 5 6
-modifier 42 "LeftShift" 0 "Pressed(Level2)"
-
-keymap {
-    level 0 "16"="q" "17"="w" "30"="a" "31"="s"
-    level 1 "16"="Q" "17"="W" "30"="A" "31"="S"
-}
-
-compose "·" "a" "e" "æ"
+```ron
+// wkb keyboard layout (RON format)
+(
+    version: 1,
+    layout: "us",
+    repeat_keys: [1, 2, 3, 4, 5, 6],
+    modifiers: [
+        (42, "LeftShift", [(0, Pressed(Level2))]),
+    ],
+    keymap: {
+        0: {
+            16: 'q',
+            17: 'w',
+            30: 'a',
+            31: 's',
+        },
+        1: {
+            16: 'Q',
+            17: 'W',
+            30: 'A',
+            31: 'S',
+        },
+    },
+    compose: [
+        (['·', 'a', 'e'], 'æ'),
+    ],
+)
 ```
 
 Sections that would be empty (`num_lock_keys`, `caps_lock_keymap`,
@@ -186,11 +244,12 @@ Sections that would be empty (`num_lock_keys`, `caps_lock_keymap`,
 
 ## Compatibility
 
-The format is the successor of the RON files that previously lived in
-`ron_layouts/`. It preserves their section layout and value encodings, adds a
-`version` header, replaces raw keysym-name strings in `keysym_map` with the
-compiled `NamedKey` enum, drops the xkb-only `level_exceptions_keymap` section,
-and applies the ground rules above. KDL was chosen over RON for its compact,
-line-oriented serialization: the canonical `us.kdl` is roughly one third the
-size of its RON equivalent. Fixtures are regenerated into `kdl_layouts/` by the
-`gen_layouts` example and are gitignored.
+The format is the third revision of wkb's on-disk format. It follows the RON
+files of the original release and the second-revision KDL format, preserving
+their section layout and value encodings while applying the ground rules
+above. Compared to the KDL revision: `num_keys` was replaced by the `NUM_KEYS`
+compile-time constant, `layout_names` collapsed to a single `layout` name,
+`modifiers`/`compose` became plain lists instead of nested child blocks, and
+lists are emitted compactly (repeat keys on a few wrapped lines, one compose
+sequence per line) rather than one element per line. Fixtures are regenerated
+into `ron_layouts/` by the `gen_layouts` example and are gitignored.

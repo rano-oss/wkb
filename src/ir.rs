@@ -1,13 +1,18 @@
 //! Intermediate representation (IR) for wkb layout data files.
 //!
-//! [`LayoutFile`] is the canonical on-disk (KDL) form of a [`KBLayout`]. It is
-//! bidirectional: [`LayoutFile::from_kdl_str`] / `TryFrom<&KBLayout>` produce a
+//! [`LayoutFile`] is the canonical on-disk (RON) form of a [`KBLayout`]. It is
+//! bidirectional: [`LayoutFile::from_ron_str`] / `TryFrom<&KBLayout>` produce a
 //! serializable file, and `TryFrom<LayoutFile>` rebuilds the runtime layout.
 //! See `docs/layout-format.md` for the normative specification.
+//!
+//! The IR mirrors the serialized RON document one-to-one: `version`, a single
+//! `layout` name, `repeat_keys`, `modifiers`, per-level section maps
+//! (`keymap`, `num_lock_keys`, `caps_lock_keymap`, `keysym_map`), and a
+//! `compose` table.
 
 use std::collections::BTreeMap;
 
-use kdl::KdlDocument;
+use serde::Deserialize;
 
 use crate::composer::{Composer, Token};
 use crate::flat_keymap::{FlatMap, FlatMapValue, MAX_LEVELS};
@@ -19,21 +24,23 @@ use crate::{FlatKeymap, FlatNamedKeyMap, KBLayout, KeyBitSet};
 /// are rejected by [`LayoutFile::validate`].
 pub const FORMAT_VERSION: u32 = 1;
 
+/// Number of evdev keycode slots, fixed at compile time. Every keycode in a
+/// layout file is `< NUM_KEYS`.
+pub const NUM_KEYS: u32 = 701;
+
 /// Character used to represent the Compose/Multi_key token inside a serialized
 /// compose sequence. Reserved: a literal U+00B7 key cannot be represented.
 pub const COMPOSE_KEY_CHAR: char = '\u{b7}';
 
-/// A per-layout section mapping layout name -> level -> keycode -> character.
-pub type CharSection = BTreeMap<String, BTreeMap<u8, BTreeMap<u32, char>>>;
+/// A section: level -> keycode -> character (used by `keymap`,
+/// `num_lock_keys`, `caps_lock_keymap`).
+pub type CharSection = BTreeMap<u8, BTreeMap<u32, char>>;
 
-/// A per-layout section mapping layout name -> level -> keycode -> named key.
-pub type NamedSection = BTreeMap<String, BTreeMap<u8, BTreeMap<u32, NamedKey>>>;
+/// A section mapping level -> keycode -> named key (`keysym_map`).
+pub type NamedSection = BTreeMap<u8, BTreeMap<u32, NamedKey>>;
 
 /// Modifier bindings: `(keycode, name, [(level, action)])`.
 pub type ModifierList = Vec<(u32, String, Vec<(u8, ModAction)>)>;
-
-/// One parsed `modifier` node: `(keycode, name, [(level, action)])`.
-type ParsedModifier = (u32, String, Vec<(u8, ModAction)>);
 
 /// Errors from validating, serializing, or converting layout files.
 #[derive(Debug, thiserror::Error)]
@@ -41,25 +48,13 @@ pub enum IrError {
     /// The file has an unsupported [`FORMAT_VERSION`].
     #[error("unsupported format version {0}")]
     UnsupportedVersion(u32),
-    /// `layout_names` must contain at least one name.
-    #[error("layout_names must not be empty")]
-    EmptyLayoutNames,
-    /// A layout name appears more than once in `layout_names`.
-    #[error("duplicate layout name {0:?}")]
-    DuplicateLayoutName(String),
-    /// A requested layout index does not exist in the runtime instance.
+    /// `layout` is empty.
+    #[error("layout name must not be empty")]
+    EmptyLayoutName,
+    /// The requested layout index does not exist in the runtime instance.
     #[error("invalid layout index {0}")]
     InvalidLayoutIndex(usize),
-    /// The format holds exactly one layout per file.
-    #[error("expected exactly one layout, found {0}")]
-    MultipleLayouts(usize),
-    /// A section is keyed by a layout not declared in `layout_names`.
-    #[error("layout {0:?} not declared in layout_names")]
-    UndeclaredLayout(String),
-    /// `num_keys` must be at least 1.
-    #[error("invalid num_keys {0}")]
-    InvalidNumKeys(u32),
-    /// An evdev keycode is outside `0..num_keys`.
+    /// An evdev keycode is outside `0..NUM_KEYS`.
     #[error("keycode {0} out of range (num_keys={1})")]
     KeycodeOutOfRange(u32, u32),
     /// A level is at or above the maximum supported level.
@@ -80,10 +75,10 @@ pub enum IrError {
     /// A compose sequence contains the NUL character.
     #[error("compose sequence contains NUL")]
     NullComposeKey,
-    /// KDL serialization failed.
+    /// RON serialization failed.
     #[error("serialization error: {0}")]
     Serialize(String),
-    /// KDL deserialization failed.
+    /// RON deserialization failed.
     #[error("deserialization error: {0}")]
     Deserialize(String),
 }
@@ -91,7 +86,7 @@ pub enum IrError {
 /// One modifier action, mirroring the runtime [`ModKind`] in a serializable
 /// form. The `ModType` argument follows the surrounding XKB convention, e.g.
 /// `Pressed(Level2)`, `Lock(Caps)`, `Lock(Num)`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ModAction {
     Pressed(ModType),
     Lock(ModType),
@@ -99,67 +94,61 @@ pub enum ModAction {
     None,
 }
 
-/// A persisted keyboard layout.
+/// A persisted keyboard layout, mirroring the serialized RON document.
 ///
-/// Maps are keyed by layout name (always a single entry per file), then by
-/// level (`u8`, ascending), then by evdev keycode (`u32`, ascending). Using
-/// `BTreeMap` guarantees canonical, deterministic ordering.
-#[derive(Debug, Clone, PartialEq)]
+/// Maps are keyed by level (`u8`, ascending), then by evdev keycode (`u32`,
+/// ascending). Using `BTreeMap` guarantees canonical, deterministic ordering.
+/// Serialization is hand-rolled (`to_ron_string`) so empty sections are
+/// omitted and lists are wrapped readably; deserialization uses the `ron`
+/// crate, so fields that may be absent default to empty.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct LayoutFile {
     /// Schema version, must equal [`FORMAT_VERSION`].
     pub version: u32,
-    /// Declared layout names, exactly one entry.
-    pub layout_names: Vec<String>,
-    /// Number of evdev keycode slots. All keycodes are `< num_keys`.
-    pub num_keys: u32,
+    /// The single layout name.
+    pub layout: String,
     /// Keycodes that repeat.
+    #[serde(default)]
     pub repeat_keys: Vec<u32>,
     /// Modifier bindings as `(keycode, name, [(level, action)])`, sorted by keycode.
+    #[serde(default)]
     pub modifiers: ModifierList,
     /// Resolved character per (level, keycode) under base modifiers.
     pub keymap: CharSection,
     /// Character overrides active while Num Lock is locked.
+    #[serde(default)]
     pub num_lock_keys: CharSection,
     /// Character overrides active while Caps Lock is locked.
+    #[serde(default)]
     pub caps_lock_keymap: CharSection,
     /// Named-key identities per (level, keycode); `Unnamed` entries are omitted.
+    #[serde(default)]
     pub keysym_map: NamedSection,
     /// Compose sequences as `(keys, output)`. Only sequences whose keys are all
     /// reachable in this layout are stored.
+    #[serde(default)]
     pub compose: Vec<(Vec<char>, char)>,
 }
 
 impl LayoutFile {
     /// Validate all structural invariants. Called automatically by
-    /// [`LayoutFile::to_kdl_string`], [`LayoutFile::from_kdl_str`], and the
+    /// [`LayoutFile::to_ron_string`], [`LayoutFile::from_ron_str`], and the
     /// conversions to/from [`KBLayout`].
     pub fn validate(&self) -> Result<(), IrError> {
         if self.version != FORMAT_VERSION {
             return Err(IrError::UnsupportedVersion(self.version));
         }
-        if self.layout_names.is_empty() {
-            return Err(IrError::EmptyLayoutNames);
-        }
-        for (i, name) in self.layout_names.iter().enumerate() {
-            if self.layout_names[..i].contains(name) {
-                return Err(IrError::DuplicateLayoutName(name.clone()));
-            }
-        }
-        if self.layout_names.len() != 1 {
-            return Err(IrError::MultipleLayouts(self.layout_names.len()));
-        }
-        let name = &self.layout_names[0];
-        if self.num_keys == 0 {
-            return Err(IrError::InvalidNumKeys(self.num_keys));
+        if self.layout.is_empty() {
+            return Err(IrError::EmptyLayoutName);
         }
         for keycode in &self.repeat_keys {
-            if *keycode >= self.num_keys {
-                return Err(IrError::KeycodeOutOfRange(*keycode, self.num_keys));
+            if *keycode >= NUM_KEYS {
+                return Err(IrError::KeycodeOutOfRange(*keycode, NUM_KEYS));
             }
         }
         for (keycode, mod_name, actions) in &self.modifiers {
-            if *keycode >= self.num_keys {
-                return Err(IrError::KeycodeOutOfRange(*keycode, self.num_keys));
+            if *keycode >= NUM_KEYS {
+                return Err(IrError::KeycodeOutOfRange(*keycode, NUM_KEYS));
             }
             if mod_name.is_empty() {
                 return Err(IrError::EmptyModifierName(*keycode));
@@ -174,9 +163,9 @@ impl LayoutFile {
             }
         }
         for section in [&self.keymap, &self.num_lock_keys, &self.caps_lock_keymap] {
-            validate_section(section, name, self.num_keys)?;
+            validate_section(section)?;
         }
-        validate_section(&self.keysym_map, name, self.num_keys)?;
+        validate_section(&self.keysym_map)?;
         for (keys, output) in &self.compose {
             if keys.is_empty() {
                 return Err(IrError::EmptyComposeSequence);
@@ -191,99 +180,71 @@ impl LayoutFile {
         Ok(())
     }
 
-    /// Serialize to canonical KDL text. Fails on invalid input.
-    pub fn to_kdl_string(&self) -> Result<String, IrError> {
+    /// Serialize to canonical RON text. Fails on invalid input.
+    pub fn to_ron_string(&self) -> Result<String, IrError> {
         self.validate()?;
-        Ok(serialize_to_kdl(self))
+        Ok(serialize_to_ron(self))
     }
 
-    /// Deserialize from KDL text and validate.
-    pub fn from_kdl_str(s: &str) -> Result<Self, IrError> {
-        let doc: KdlDocument = s
-            .parse()
-            .map_err(|e: kdl::KdlError| IrError::Deserialize(e.to_string()))?;
-        let file = parse_kdl_document(&doc)?;
+    /// Deserialize from RON text and validate.
+    pub fn from_ron_str(s: &str) -> Result<Self, IrError> {
+        let file: Self = ron::from_str(s).map_err(|e| IrError::Deserialize(e.to_string()))?;
         file.validate()?;
         Ok(file)
     }
 }
 
 // ---------------------------------------------------------------------------
-// KDL serialization
+// RON serialization
 // ---------------------------------------------------------------------------
 
-/// Wrap a sequence of integer arguments across lines using KDL line
-/// continuation, keeping each line short enough to stay readable.
-const KDL_WRAP_WIDTH: usize = 20;
+/// How many repeat-key codes per wrapped line.
+const RON_WRAP_WIDTH: usize = 20;
 
-fn serialize_to_kdl(file: &LayoutFile) -> String {
-    let mut blocks: Vec<String> = Vec::new();
+/// How many keycodes per wrapped line in char-keyed sections; lines break when
+/// the keycode exceeds a multiple of this value.
+const RON_KEYS_PER_LINE: usize = 14;
 
-    let mut header = format!("version {}\n", file.version);
-    push_string_node(&mut header, "layout", &file.layout_names[0]);
-    header.push_str(&format!("num_keys {}", file.num_keys));
-    blocks.push(header);
+fn serialize_to_ron(file: &LayoutFile) -> String {
+    let mut out = String::new();
+    out.push_str("// wkb keyboard layout (RON format)\n(\n");
+    out.push_str("    version: ");
+    out.push_str(&file.version.to_string());
+    out.push_str(",\n");
+    out.push_str("    layout: ");
+    write_ron_string(&mut out, &file.layout);
+    out.push_str(",\n");
 
     if !file.repeat_keys.is_empty() {
-        blocks.push(integer_node_block("repeat_keys", &file.repeat_keys));
+        write_integer_list(&mut out, "repeat_keys", &file.repeat_keys);
     }
     if !file.modifiers.is_empty() {
-        blocks.push(modifier_block(&file.modifiers));
+        write_modifiers(&mut out, &file.modifiers);
     }
-    let name = &file.layout_names[0];
-    if section_has_content(&file.keymap, name) {
-        blocks.push(char_section_block("keymap", &file.keymap, name));
-    }
-    if section_has_content(&file.num_lock_keys, name) {
-        blocks.push(char_section_block(
-            "num_lock_keys",
-            &file.num_lock_keys,
-            name,
-        ));
-    }
-    if section_has_content(&file.caps_lock_keymap, name) {
-        blocks.push(char_section_block(
-            "caps_lock_keymap",
-            &file.caps_lock_keymap,
-            name,
-        ));
-    }
-    if section_has_content(&file.keysym_map, name) {
-        blocks.push(named_section_block("keysym_map", &file.keysym_map, name));
-    }
+    write_char_section(&mut out, "keymap", &file.keymap);
+    write_char_section(&mut out, "num_lock_keys", &file.num_lock_keys);
+    write_char_section(&mut out, "caps_lock_keymap", &file.caps_lock_keymap);
+    write_named_section(&mut out, "keysym_map", &file.keysym_map);
     if !file.compose.is_empty() {
-        blocks.push(compose_block(&file.compose));
+        write_compose(&mut out, &file.compose);
     }
 
-    let mut out = String::from("// wkb keyboard layout (KDL format)\n");
-    out.push_str(&blocks.join("\n\n"));
+    out.push(')');
     out.push('\n');
     out
 }
 
-fn push_string_node(out: &mut String, node: &str, value: &str) {
-    out.push_str(node);
-    out.push(' ');
-    write_kdl_string(out, value);
-    out.push('\n');
-}
-
-/// Write `s` as a KDL quoted string, escaping any character that would be
-/// ambiguous or invalid inside quotes.
-fn write_kdl_string(out: &mut String, s: &str) {
+/// Write `s` as a RON string literal.
+fn write_ron_string(out: &mut String, s: &str) {
     out.push('"');
     for c in s.chars() {
         match c {
-            '\\' | '"' => {
-                out.push('\\');
-                out.push(c);
-            }
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
             '\n' => out.push_str("\\n"),
             '\r' => out.push_str("\\r"),
             '\t' => out.push_str("\\t"),
-            '\u{08}' => out.push_str("\\b"),
-            '\u{0c}' => out.push_str("\\f"),
-            c if c.is_control() || is_kdl_disallowed(c) => {
+            c if c.is_control() || c == '\u{feff}' => {
                 use std::fmt::Write as _;
                 write!(out, "\\u{{{:x}}}", c as u32).unwrap();
             }
@@ -293,411 +254,176 @@ fn write_kdl_string(out: &mut String, s: &str) {
     out.push('"');
 }
 
-/// Code points KDL forbids in quoted strings unless escaped. Mirrors the
-/// `kdl` crate's `is_disallowed_unicode` (control chars, Unicode bidi
-/// direction controls, and the byte-order mark).
-fn is_kdl_disallowed(c: char) -> bool {
-    matches!(
-        c,
-        '\u{0000}'..='\u{0008}'
-            | '\u{000e}'..='\u{001f}'
-            | '\u{007f}'..='\u{009f}'
-            | '\u{200e}'..='\u{200f}'
-            | '\u{202a}'..='\u{202e}'
-            | '\u{2066}'..='\u{2069}'
-            | '\u{feff}'
-    )
+/// Write `c` as a RON char literal.
+fn write_ron_char(out: &mut String, c: char) {
+    match c {
+        '\'' => out.push_str("'\\''"),
+        '\\' => out.push_str("'\\\\'"),
+        '\n' => out.push_str("'\\n'"),
+        '\r' => out.push_str("'\\r'"),
+        '\t' => out.push_str("'\\t'"),
+        c if c.is_control() || c == '\u{feff}' => {
+            use std::fmt::Write as _;
+            write!(out, "'\\u{{{:x}}}'", c as u32).unwrap();
+        }
+        c => {
+            out.push('\'');
+            out.push(c);
+            out.push('\'');
+        }
+    }
 }
 
-fn integer_node_block(node: &str, values: &[u32]) -> String {
-    let mut out = String::new();
-    out.push_str(node);
+/// Write a `u32` list as one array, wrapping at [`RON_WRAP_WIDTH`] per line.
+fn write_integer_list(out: &mut String, name: &str, values: &[u32]) {
+    out.push_str("    ");
+    out.push_str(name);
+    out.push_str(": [");
     for (i, value) in values.iter().enumerate() {
-        if i > 0 && i % KDL_WRAP_WIDTH == 0 {
-            out.push_str(" \\\n    ");
+        if i > 0 {
+            out.push(',');
+            if i % RON_WRAP_WIDTH == 0 {
+                out.push_str("\n        ");
+            } else {
+                out.push(' ');
+            }
         }
-        out.push(' ');
         out.push_str(&value.to_string());
     }
-    out
+    out.push_str("],\n");
 }
 
-fn modifier_block(modifiers: &ModifierList) -> String {
-    let mut out = String::new();
+/// Write the modifier bindings as a one-per-line list of tuples.
+fn write_modifiers(out: &mut String, modifiers: &ModifierList) {
+    out.push_str("    modifiers: [\n");
     for (keycode, name, actions) in modifiers {
-        out.push_str("modifier ");
+        out.push_str("        (");
         out.push_str(&keycode.to_string());
-        out.push(' ');
-        write_kdl_string(&mut out, name);
-        for (level, action) in actions {
-            out.push(' ');
+        out.push_str(", ");
+        write_ron_string(out, name);
+        out.push_str(", [");
+        for (i, (level, action)) in actions.iter().enumerate() {
+            if i > 0 {
+                out.push_str(", ");
+            }
+            out.push('(');
             out.push_str(&level.to_string());
-            out.push(' ');
-            write_kdl_string(&mut out, &mod_action_str(*action));
+            out.push_str(", ");
+            write_mod_action(out, *action);
+            out.push(')');
         }
-        out.push('\n');
+        out.push_str("]),\n");
     }
-    out.pop();
-    out
+    out.push_str("    ],\n");
 }
 
-fn mod_action_str(action: ModAction) -> String {
+fn write_mod_action(out: &mut String, action: ModAction) {
     match action {
-        ModAction::Pressed(t) => action_str("Pressed", t),
-        ModAction::Lock(t) => action_str("Lock", t),
-        ModAction::Latch(t) => action_str("Latch", t),
-        ModAction::None => "None".to_string(),
+        ModAction::Pressed(mod_type) => write_action(out, "Pressed", mod_type),
+        ModAction::Lock(mod_type) => write_action(out, "Lock", mod_type),
+        ModAction::Latch(mod_type) => write_action(out, "Latch", mod_type),
+        ModAction::None => out.push_str("None"),
     }
 }
 
-fn action_str(variant: &str, mod_type: ModType) -> String {
-    if mod_type == ModType::None {
-        variant.to_string()
-    } else {
-        format!("{variant}({mod_type:?})")
-    }
+fn write_action(out: &mut String, variant: &str, mod_type: ModType) {
+    out.push_str(variant);
+    out.push('(');
+    out.push_str(&format!("{mod_type:?}"));
+    out.push(')');
 }
 
-fn char_section_block(node_name: &str, section: &CharSection, name: &str) -> String {
-    section_block(node_name, section, name, |out, value| {
-        write_kdl_string(out, &value.to_string());
-    })
+fn write_char_section(out: &mut String, name: &str, section: &CharSection) {
+    write_section(out, name, section, Some(RON_KEYS_PER_LINE), |out, value| {
+        write_ron_char(out, *value);
+    });
 }
 
-fn named_section_block(node_name: &str, section: &NamedSection, name: &str) -> String {
-    section_block(node_name, section, name, |out, value| {
-        write_kdl_string(out, &format!("{value:?}"));
-    })
+fn write_named_section(out: &mut String, name: &str, section: &NamedSection) {
+    write_section(out, name, section, None, |out, key| {
+        out.push_str(&format!("{key:?}"));
+    });
 }
 
-/// True if `section` has any keyed level data under `name`.
-fn section_has_content<T>(
-    section: &BTreeMap<String, BTreeMap<u8, BTreeMap<u32, T>>>,
+/// Write a level-keyed section as nested maps. Char-keyed sections break the
+/// line when a keycode exceeds a multiple of `keys_per_line`; named sections
+/// put one key per line.
+fn write_section<T>(
+    out: &mut String,
     name: &str,
-) -> bool {
-    section.get(name).is_some_and(|levels| !levels.is_empty())
-}
-
-fn section_block<T>(
-    node_name: &str,
-    section: &BTreeMap<String, BTreeMap<u8, BTreeMap<u32, T>>>,
-    name: &str,
+    section: &BTreeMap<u8, BTreeMap<u32, T>>,
+    keys_per_line: Option<usize>,
     write_value: impl Fn(&mut String, &T),
-) -> String {
-    let mut out = String::new();
-    out.push_str(node_name);
-    out.push_str(" {\n");
-    for (level, keys) in &section[name] {
-        out.push_str("    level ");
+) {
+    if section.is_empty() {
+        return;
+    }
+    out.push_str("    ");
+    out.push_str(name);
+    out.push_str(": {\n");
+    for (level, keys) in section {
+        out.push_str("        ");
         out.push_str(&level.to_string());
+        out.push_str(": {\n");
+        let indent = "            ";
+        let mut prev_keycode: Option<u32> = None;
         for (keycode, value) in keys {
-            out.push_str(" \"");
-            out.push_str(&keycode.to_string());
-            out.push_str("\"=");
-            write_value(&mut out, value);
-        }
-        out.push('\n');
-    }
-    out.push('}');
-    out
-}
-
-fn compose_block(compose: &[(Vec<char>, char)]) -> String {
-    let mut out = String::new();
-    for (keys, output) in compose {
-        out.push_str("compose");
-        for ch in keys {
-            out.push(' ');
-            write_kdl_string(&mut out, &ch.to_string());
-        }
-        out.push(' ');
-        write_kdl_string(&mut out, &output.to_string());
-        out.push('\n');
-    }
-    out.pop();
-    out
-}
-
-// ---------------------------------------------------------------------------
-// KDL parsing
-// ---------------------------------------------------------------------------
-
-fn kdl_err(msg: impl Into<String>) -> IrError {
-    IrError::Deserialize(msg.into())
-}
-
-fn kdl_u32(node: &kdl::KdlNode, node_name: &str) -> Result<u32, IrError> {
-    node.entries()
-        .first()
-        .and_then(|entry| entry.value().as_integer())
-        .and_then(|value| u32::try_from(value).ok())
-        .ok_or_else(|| kdl_err(format!("{node_name:?} requires a u32 argument")))
-}
-
-fn kdl_string<'a>(node: &'a kdl::KdlNode, node_name: &str) -> Result<&'a str, IrError> {
-    node.entries()
-        .first()
-        .and_then(|entry| entry.value().as_string())
-        .ok_or_else(|| kdl_err(format!("{node_name:?} requires a string argument")))
-}
-
-fn kdl_u32_list(node: &kdl::KdlNode, node_name: &str) -> Result<Vec<u32>, IrError> {
-    let mut out = Vec::new();
-    for entry in node.entries() {
-        let value = entry
-            .value()
-            .as_integer()
-            .and_then(|value| u32::try_from(value).ok())
-            .ok_or_else(|| kdl_err(format!("{node_name:?} requires u32 arguments")))?;
-        out.push(value);
-    }
-    Ok(out)
-}
-
-fn parse_kdl_modifier(node: &kdl::KdlNode) -> Result<ParsedModifier, IrError> {
-    let entries = node.entries();
-    if entries.len() < 4 || (entries.len() - 2) % 2 != 0 {
-        return Err(kdl_err(
-            "modifier expects keycode, name, then level/action pairs",
-        ));
-    }
-    let keycode = entries[0]
-        .value()
-        .as_integer()
-        .and_then(|value| u32::try_from(value).ok())
-        .ok_or_else(|| kdl_err("modifier keycode must be a u32"))?;
-    let name = entries[1]
-        .value()
-        .as_string()
-        .ok_or_else(|| kdl_err("modifier name must be a string"))?
-        .to_string();
-
-    let mut actions = Vec::with_capacity((entries.len() - 2) / 2);
-    let mut i = 2;
-    while i < entries.len() {
-        let level = entries[i]
-            .value()
-            .as_integer()
-            .and_then(|value| u8::try_from(value).ok())
-            .ok_or_else(|| kdl_err("modifier level must be a u8"))?;
-        let action = entries[i + 1]
-            .value()
-            .as_string()
-            .and_then(parse_kdl_mod_action)
-            .ok_or_else(|| kdl_err("modifier action must be a valid action string"))?;
-        actions.push((level, action));
-        i += 2;
-    }
-    Ok((keycode, name, actions))
-}
-
-fn parse_kdl_mod_action(s: &str) -> Option<ModAction> {
-    let (variant, mod_type) = match s.split_once('(') {
-        Some((variant, rest)) => {
-            let mod_type = parse_kdl_mod_type(rest.strip_suffix(')')?)?;
-            (variant, Some(mod_type))
-        }
-        None => (s, None),
-    };
-    match variant {
-        "Pressed" => Some(ModAction::Pressed(mod_type.unwrap_or(ModType::None))),
-        "Lock" => Some(ModAction::Lock(mod_type.unwrap_or(ModType::None))),
-        "Latch" => Some(ModAction::Latch(mod_type.unwrap_or(ModType::None))),
-        "None" => Some(ModAction::None),
-        _ => None,
-    }
-}
-
-fn parse_kdl_mod_type(s: &str) -> Option<ModType> {
-    match s {
-        "None" => Some(ModType::None),
-        "Level2" => Some(ModType::Level2),
-        "Level3" => Some(ModType::Level3),
-        "Level5" => Some(ModType::Level5),
-        "Compose" => Some(ModType::Compose),
-        "Caps" => Some(ModType::Caps),
-        "Num" => Some(ModType::Num),
-        "Scroll" => Some(ModType::Scroll),
-        _ => None,
-    }
-}
-
-fn parse_kdl_document(doc: &KdlDocument) -> Result<LayoutFile, IrError> {
-    let mut version = None;
-    let mut layout_names = Vec::new();
-    let mut num_keys = None;
-    let mut repeat_keys = Vec::new();
-    let mut modifiers = Vec::new();
-    let mut keymap: Option<BTreeMap<u8, BTreeMap<u32, char>>> = None;
-    let mut num_lock_keys: Option<BTreeMap<u8, BTreeMap<u32, char>>> = None;
-    let mut caps_lock_keymap: Option<BTreeMap<u8, BTreeMap<u32, char>>> = None;
-    let mut keysym_map: Option<BTreeMap<u8, BTreeMap<u32, NamedKey>>> = None;
-    let mut compose = Vec::new();
-
-    for node in doc.nodes() {
-        match node.name().value() {
-            "version" => version = Some(kdl_u32(node, "version")?),
-            "layout" => layout_names.push(kdl_string(node, "layout")?.to_string()),
-            "num_keys" => num_keys = Some(kdl_u32(node, "num_keys")?),
-            "repeat_keys" => repeat_keys = kdl_u32_list(node, "repeat_keys")?,
-            "modifier" => modifiers.push(parse_kdl_modifier(node)?),
-            "keymap" => keymap = Some(parse_kdl_levels(node, "keymap", parse_kdl_char)?),
-            "num_lock_keys" => {
-                num_lock_keys = Some(parse_kdl_levels(node, "num_lock_keys", parse_kdl_char)?)
-            }
-            "caps_lock_keymap" => {
-                caps_lock_keymap = Some(parse_kdl_levels(node, "caps_lock_keymap", parse_kdl_char)?)
-            }
-            "keysym_map" => {
-                keysym_map = Some(parse_kdl_levels(node, "keysym_map", parse_kdl_named_key)?)
-            }
-            "compose" => compose.push(parse_kdl_compose(node)?),
-            other => return Err(kdl_err(format!("unknown node {other:?}"))),
-        }
-    }
-
-    let name = layout_names
-        .first()
-        .ok_or_else(|| kdl_err("missing node \"layout\""))?;
-    let keymap = keymap
-        .filter(|levels| !levels.is_empty())
-        .map(|levels| CharSection::from([(name.clone(), levels)]))
-        .unwrap_or_default();
-    let num_lock_keys = num_lock_keys
-        .filter(|levels| !levels.is_empty())
-        .map(|levels| CharSection::from([(name.clone(), levels)]))
-        .unwrap_or_default();
-    let caps_lock_keymap = caps_lock_keymap
-        .filter(|levels| !levels.is_empty())
-        .map(|levels| CharSection::from([(name.clone(), levels)]))
-        .unwrap_or_default();
-    let keysym_map = keysym_map
-        .filter(|levels| !levels.is_empty())
-        .map(|levels| NamedSection::from([(name.clone(), levels)]))
-        .unwrap_or_default();
-
-    Ok(LayoutFile {
-        version: version.ok_or_else(|| kdl_err("missing node \"version\""))?,
-        layout_names,
-        num_keys: num_keys.ok_or_else(|| kdl_err("missing node \"num_keys\""))?,
-        repeat_keys,
-        modifiers,
-        keymap,
-        num_lock_keys,
-        caps_lock_keymap,
-        keysym_map,
-        compose,
-    })
-}
-
-fn parse_kdl_levels<T>(
-    node: &kdl::KdlNode,
-    node_name: &str,
-    parse_value: impl Fn(&kdl::KdlEntry) -> Result<T, IrError>,
-) -> Result<BTreeMap<u8, BTreeMap<u32, T>>, IrError> {
-    let children = node
-        .children()
-        .ok_or_else(|| kdl_err(format!("{node_name:?} requires a children block")))?;
-    let mut levels = BTreeMap::new();
-    for child in children.nodes() {
-        if child.name().value() != "level" {
-            return Err(kdl_err(format!(
-                "{node_name:?} children must be level nodes"
-            )));
-        }
-        let entries = child.entries();
-        let level = entries
-            .first()
-            .filter(|entry| entry.name().is_none())
-            .and_then(|entry| entry.value().as_integer())
-            .and_then(|value| u8::try_from(value).ok())
-            .ok_or_else(|| kdl_err(format!("{node_name:?} level node requires a level u8")))?;
-        let mut keys = BTreeMap::new();
-        for entry in &entries[1..] {
-            let keycode = entry
-                .name()
-                .and_then(|name| name.value().parse::<u32>().ok())
-                .ok_or_else(|| {
-                    kdl_err(format!("{node_name:?} level expects keycode properties"))
-                })?;
-            let value = parse_value(entry)?;
-            keys.insert(keycode, value);
-        }
-        levels.insert(level, keys);
-    }
-    Ok(levels)
-}
-
-fn parse_kdl_char(entry: &kdl::KdlEntry) -> Result<char, IrError> {
-    let s = entry
-        .value()
-        .as_string()
-        .ok_or_else(|| kdl_err("level value must be a single-character string"))?;
-    let mut chars = s.chars();
-    let ch = chars
-        .next()
-        .ok_or_else(|| kdl_err("level value must be a single char"))?;
-    if chars.next().is_some() {
-        return Err(kdl_err("level value must be a single char"));
-    }
-    Ok(ch)
-}
-
-fn parse_kdl_named_key(entry: &kdl::KdlEntry) -> Result<NamedKey, IrError> {
-    let s = entry
-        .value()
-        .as_string()
-        .ok_or_else(|| kdl_err("level value must be a named-key string"))?;
-    named_key_from_str(s).ok_or_else(|| kdl_err(format!("unknown named key {s:?}")))
-}
-
-fn parse_kdl_compose(node: &kdl::KdlNode) -> Result<(Vec<char>, char), IrError> {
-    let mut args = Vec::new();
-    for entry in node.entries() {
-        let s = entry
-            .value()
-            .as_string()
-            .ok_or_else(|| kdl_err("compose requires string arguments"))?;
-        let mut chars = s.chars();
-        let ch = chars
-            .next()
-            .ok_or_else(|| kdl_err("compose argument must be a single char"))?;
-        if chars.next().is_some() {
-            return Err(kdl_err("compose argument must be a single char"));
-        }
-        args.push(ch);
-    }
-    if args.len() < 2 {
-        return Err(kdl_err("compose requires at least one key and an output"));
-    }
-    let output = args.pop().expect("args has at least two entries");
-    Ok((args, output))
-}
-
-/// Parse a `NamedKey` from its canonical name (the serde variant name, e.g.
-/// `Escape`, `ArrowUp`).
-fn named_key_from_str(s: &str) -> Option<NamedKey> {
-    use serde::de::Deserialize as _;
-    NamedKey::deserialize(serde::de::value::StrDeserializer::<serde::de::value::Error>::new(s)).ok()
-}
-
-fn validate_section<T>(
-    section: &BTreeMap<String, BTreeMap<u8, BTreeMap<u32, T>>>,
-    name: &str,
-    num_keys: u32,
-) -> Result<(), IrError> {
-    for (layout, levels) in section {
-        if layout != name {
-            return Err(IrError::UndeclaredLayout(layout.clone()));
-        }
-        for (level, keys) in levels {
-            if *level >= MAX_LEVELS as u8 {
-                return Err(IrError::LevelOutOfRange(*level));
-            }
-            for keycode in keys.keys() {
-                if *keycode >= num_keys {
-                    return Err(IrError::KeycodeOutOfRange(*keycode, num_keys));
+            if let Some(prev) = prev_keycode {
+                out.push(',');
+                let newline = match keys_per_line {
+                    Some(n) => {
+                        let prev_block = prev.saturating_sub(1) as usize / n;
+                        let block = keycode.saturating_sub(1) as usize / n;
+                        block != prev_block
+                    }
+                    None => true,
+                };
+                if newline {
+                    out.push('\n');
+                    out.push_str(indent);
+                } else {
+                    out.push(' ');
                 }
+            } else {
+                out.push_str(indent);
+            }
+            prev_keycode = Some(*keycode);
+            out.push_str(&keycode.to_string());
+            out.push_str(": ");
+            write_value(out, value);
+        }
+        out.push_str(",\n");
+        out.push_str("        },\n");
+    }
+    out.push_str("    },\n");
+}
+
+/// Write compose sequences as one `(['key', ...], output)` tuple per line.
+fn write_compose(out: &mut String, compose: &[(Vec<char>, char)]) {
+    out.push_str("    compose: [\n");
+    for (keys, output) in compose {
+        out.push_str("        ([");
+        for (i, ch) in keys.iter().enumerate() {
+            if i > 0 {
+                out.push_str(", ");
+            }
+            write_ron_char(out, *ch);
+        }
+        out.push_str("], ");
+        write_ron_char(out, *output);
+        out.push_str("),\n");
+    }
+    out.push_str("    ],\n");
+}
+
+fn validate_section<T>(section: &BTreeMap<u8, BTreeMap<u32, T>>) -> Result<(), IrError> {
+    for (level, keys) in section {
+        if *level >= MAX_LEVELS as u8 {
+            return Err(IrError::LevelOutOfRange(*level));
+        }
+        for keycode in keys.keys() {
+            if *keycode >= NUM_KEYS {
+                return Err(IrError::KeycodeOutOfRange(*keycode, NUM_KEYS));
             }
         }
     }
@@ -722,18 +448,17 @@ impl TryFrom<&KBLayout> for LayoutFile {
             }
         }
 
-        let keymap = char_section(&name, &layout.state_keymap);
-        let num_lock_keys = char_section(&name, &layout.num_lock_keys);
-        let caps_lock_keymap = char_section(&name, &layout.caps_lock_keymap);
-        let keysym_map = named_section(&name, &layout.named_key_map);
+        let keymap = char_section(&layout.state_keymap);
+        let num_lock_keys = char_section(&layout.num_lock_keys);
+        let caps_lock_keymap = char_section(&layout.caps_lock_keymap);
+        let keysym_map = named_section(&layout.named_key_map);
 
         let reachable = reachable_chars(layout);
         let compose = compose_from_composer(&layout.composer, &reachable);
 
         let file = LayoutFile {
             version: FORMAT_VERSION,
-            layout_names: vec![name],
-            num_keys,
+            layout: name,
             repeat_keys,
             modifiers: modifiers_from_layout(&layout.modifiers),
             keymap,
@@ -783,15 +508,12 @@ fn to_levels<T: FlatMapValue, V>(
     levels
 }
 
-fn char_section(name: &str, flat: &FlatKeymap) -> CharSection {
-    BTreeMap::from([(name.to_string(), to_levels(flat, |value| value))])
+fn char_section(flat: &FlatKeymap) -> CharSection {
+    to_levels(flat, |value| value)
 }
 
-fn named_section(name: &str, flat: &FlatNamedKeyMap) -> NamedSection {
-    BTreeMap::from([(
-        name.to_string(),
-        to_levels(flat, |key| (key != NamedKey::Unnamed).then_some(key)),
-    )])
+fn named_section(flat: &FlatNamedKeyMap) -> NamedSection {
+    to_levels(flat, |key| (key != NamedKey::Unnamed).then_some(key))
 }
 
 fn modifiers_from_layout(modifiers: &Modifiers) -> ModifierList {
@@ -920,8 +642,8 @@ impl TryFrom<LayoutFile> for KBLayout {
 
     fn try_from(file: LayoutFile) -> Result<Self, IrError> {
         file.validate()?;
-        let num_keys = file.num_keys as usize;
-        let name = file.layout_names[0].clone();
+        let num_keys = NUM_KEYS as usize;
+        let name = file.layout;
 
         let mut repeat_keys = KeyBitSet::new();
         for keycode in &file.repeat_keys {
@@ -944,10 +666,10 @@ impl TryFrom<LayoutFile> for KBLayout {
 
         let composer = composer_from_compose(&file.compose);
 
-        let state_keymap = from_levels(file.keymap.get(&name), num_keys, Some);
-        let num_lock_keys = from_levels(file.num_lock_keys.get(&name), num_keys, Some);
-        let caps_lock_keymap = from_levels(file.caps_lock_keymap.get(&name), num_keys, Some);
-        let named_key_map = from_levels(file.keysym_map.get(&name), num_keys, |key| key);
+        let state_keymap = from_levels(&file.keymap, num_keys, Some);
+        let num_lock_keys = from_levels(&file.num_lock_keys, num_keys, Some);
+        let caps_lock_keymap = from_levels(&file.caps_lock_keymap, num_keys, Some);
+        let named_key_map = from_levels(&file.keysym_map, num_keys, |key| key);
 
         Ok(KBLayout {
             name,
@@ -966,17 +688,15 @@ impl TryFrom<LayoutFile> for KBLayout {
 
 /// Un-flatten a per-level map back into a single `FlatMap`.
 fn from_levels<T: FlatMapValue, V: Copy>(
-    levels: Option<&BTreeMap<u8, BTreeMap<u32, V>>>,
+    levels: &BTreeMap<u8, BTreeMap<u32, V>>,
     num_keys: usize,
     reconstruct: impl Fn(V) -> T,
 ) -> FlatMap<T> {
     let mut flat = FlatMap::new(num_keys);
-    if let Some(levels) = levels {
-        for (level, keys) in levels {
-            let base = (*level as usize) * num_keys;
-            for (keycode, value) in keys {
-                flat.data[base + *keycode as usize] = reconstruct(*value);
-            }
+    for (level, keys) in levels {
+        let base = (*level as usize) * num_keys;
+        for (keycode, value) in keys {
+            flat.data[base + *keycode as usize] = reconstruct(*value);
         }
     }
     flat

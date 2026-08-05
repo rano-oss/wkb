@@ -26,7 +26,7 @@ fn wkb_noxkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB {
 }
 
 /// Ensure the precompiled RON fixtures every `wkb-noxkb` bench uses exist
-/// (regenerated on demand — `kdl_layouts/` is a gitignored artifact dir).
+/// (regenerated on demand — `ron_layouts/` is a gitignored artifact dir).
 fn ensure_noxkb_fixtures() {
     let (pl, pv) = PRIMARY_LAYOUT;
     ensure_layout_file(pl, pv);

@@ -21,35 +21,28 @@ fn levels(entries: &[(u8, u32, char)]) -> BTreeMap<u8, BTreeMap<u32, char>> {
 }
 
 fn synthetic_layout() -> LayoutFile {
-    let mut keymap = BTreeMap::new();
-    keymap.insert(
-        "layout".to_string(),
-        levels(&[
-            (0, 2, '1'),
-            (0, 15, '\t'),
-            (0, 18, 'e'),
-            (0, 30, 'a'),
-            (0, 39, ';'),
-            (0, 44, 'z'),
-            (0, 48, 'b'),
-            (0, 57, ' '),
-            (0, 59, '\u{f000}'),
-            (0, 76, '5'),
-            (1, 2, '!'),
-            (1, 30, 'A'),
-            (1, 39, ':'),
-            (3, 18, '\u{20ac}'),
-        ]),
-    );
-    let mut num_lock_keys = BTreeMap::new();
-    num_lock_keys.insert("layout".to_string(), levels(&[(0, 76, '5')]));
-    let mut caps_lock_keymap = BTreeMap::new();
-    caps_lock_keymap.insert("layout".to_string(), levels(&[(0, 30, 'A')]));
+    let keymap = levels(&[
+        (0, 2, '1'),
+        (0, 15, '\t'),
+        (0, 18, 'e'),
+        (0, 30, 'a'),
+        (0, 39, ';'),
+        (0, 44, 'z'),
+        (0, 48, 'b'),
+        (0, 57, ' '),
+        (0, 59, '\u{f000}'),
+        (0, 76, '5'),
+        (1, 2, '!'),
+        (1, 30, 'A'),
+        (1, 39, ':'),
+        (3, 18, '\u{20ac}'),
+    ]);
+    let num_lock_keys = levels(&[(0, 76, '5')]);
+    let caps_lock_keymap = levels(&[(0, 30, 'A')]);
 
     LayoutFile {
         version: wkb::ir::FORMAT_VERSION,
-        layout_names: vec!["layout".to_string()],
-        num_keys: 128,
+        layout: "layout".to_string(),
         repeat_keys: vec![30, 48],
         modifiers: vec![
             (
@@ -98,8 +91,8 @@ fn synthetic_layout() -> LayoutFile {
 
 fn main() {
     let file = synthetic_layout();
-    let kdl = file.to_kdl_string().unwrap();
-    let loaded = wkb::ir::LayoutFile::from_kdl_str(&kdl).unwrap();
+    let ron = file.to_ron_string().unwrap();
+    let loaded = wkb::ir::LayoutFile::from_ron_str(&ron).unwrap();
     let mut wkb = WKB::new_from_layouts(vec![loaded]).unwrap();
 
     let mut checksum: u64 = 0;
