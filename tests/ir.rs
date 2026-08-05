@@ -129,7 +129,7 @@ fn rejects_empty_layout_name() {
 #[test]
 fn rejects_keycode_out_of_range() {
     let mut file = sample_file();
-    file.repeat_keys.push(ir::NUM_KEYS); // num_keys = 701, so 701 is out of range
+    file.repeat_keys.push(ir::NUM_KEYS); // 1024 is out of range
     assert!(matches!(
         file.validate(),
         Err(IrError::KeycodeOutOfRange(ir::NUM_KEYS, ir::NUM_KEYS))

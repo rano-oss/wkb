@@ -19,7 +19,7 @@ XKB at runtime.
    `layout` field. Multi-group instances are produced by loading several files.
 2. **Versioned schema.** Every file starts with `version`, which must equal the
    current `FORMAT_VERSION` (1). Files with any other version are rejected.
-3. **Compile-time keycode count.** `NUM_KEYS` (701) is a code constant, not a
+3. **Compile-time keycode count.** `NUM_KEYS` (1024) is a code constant, not a
    file field. Every keycode in a file is `< NUM_KEYS` and the runtime layout
    is always sized to `NUM_KEYS` slots.
 4. **Canonical ordering.** All maps are sorted by level (ascending), then by

@@ -26,8 +26,9 @@ use crate::{FlatKeymap, FlatNamedKeyMap, KBLayout, KeyBitSet};
 pub const FORMAT_VERSION: u32 = 1;
 
 /// Number of evdev keycode slots, fixed at compile time. Every keycode in a
-/// layout file is `< NUM_KEYS`.
-pub const NUM_KEYS: u32 = 701;
+/// layout file is `< NUM_KEYS`. Chosen well above the current maximum keycode
+/// in xkb-data registries (a few above 700) so newer registries validate too.
+pub const NUM_KEYS: u32 = 1024;
 
 /// Character used to represent the Compose/Multi_key token inside a serialized
 /// compose sequence. Reserved: a literal U+00B7 key cannot be represented.
