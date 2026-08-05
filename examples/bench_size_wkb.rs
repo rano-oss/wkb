@@ -45,41 +45,13 @@ fn synthetic_layout() -> LayoutFile {
         layout: "layout".to_string(),
         repeat_keys: vec![30, 48],
         modifiers: vec![
-            (
-                42,
-                "LeftShift".to_string(),
-                vec![(0, ModAction::Press(ModType::Level2))],
-            ),
-            (
-                54,
-                "RightShift".to_string(),
-                vec![(0, ModAction::Press(ModType::Level2))],
-            ),
-            (
-                58,
-                "CapsLock".to_string(),
-                vec![(0, ModAction::Lock(ModType::Caps))],
-            ),
-            (
-                100,
-                "AltGr".to_string(),
-                vec![(0, ModAction::Press(ModType::Level3))],
-            ),
-            (
-                69,
-                "NumLock".to_string(),
-                vec![(0, ModAction::Lock(ModType::Num))],
-            ),
-            (
-                29,
-                "LeftControl".to_string(),
-                vec![(0, ModAction::Press(ModType::None))],
-            ),
-            (
-                56,
-                "Alt".to_string(),
-                vec![(0, ModAction::Press(ModType::None))],
-            ),
+            (42, vec![(0, ModAction::Press(ModType::Level2))]),
+            (54, vec![(0, ModAction::Press(ModType::Level2))]),
+            (58, vec![(0, ModAction::Lock(ModType::Caps))]),
+            (100, vec![(0, ModAction::Press(ModType::Level3))]),
+            (69, vec![(0, ModAction::Lock(ModType::Num))]),
+            (29, vec![(0, ModAction::Press(ModType::None))]),
+            (56, vec![(0, ModAction::Press(ModType::None))]),
         ],
         keymap,
         num_lock_keys,

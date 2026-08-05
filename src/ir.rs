@@ -39,8 +39,8 @@ pub type CharSection = BTreeMap<u8, BTreeMap<u32, char>>;
 /// A section mapping level -> keycode -> named key (`keysym_map`).
 pub type NamedSection = BTreeMap<u8, BTreeMap<u32, NamedKey>>;
 
-/// Modifier bindings: `(keycode, name, [(level, action)])`.
-pub type ModifierList = Vec<(u32, String, Vec<(u8, ModAction)>)>;
+/// Modifier bindings: `(keycode, [(level, action)])`.
+pub type ModifierList = Vec<(u32, Vec<(u8, ModAction)>)>;
 
 /// Errors from validating, serializing, or converting layout files.
 #[derive(Debug, thiserror::Error)]
@@ -55,8 +55,6 @@ pub enum IrError {
     KeycodeOutOfRange(u32, u32),
     #[error("level {0} out of range (max 8)")]
     LevelOutOfRange(u8),
-    #[error("empty modifier name at keycode {0}")]
-    EmptyModifierName(u32),
     #[error("modifier at keycode {0} has no actions")]
     EmptyModifierActions(u32),
     #[error("empty compose sequence")]
@@ -98,7 +96,7 @@ pub struct LayoutFile {
     /// Keycodes that repeat.
     #[serde(default)]
     pub repeat_keys: Vec<u32>,
-    /// Modifier bindings as `(keycode, name, [(level, action)])`, sorted by keycode.
+    /// Modifier bindings as `(keycode, [(level, action)])`, sorted by keycode.
     #[serde(default)]
     pub modifiers: ModifierList,
     /// Resolved character per (level, keycode) under base modifiers.
@@ -134,12 +132,9 @@ impl LayoutFile {
                 return Err(IrError::KeycodeOutOfRange(*keycode, NUM_KEYS));
             }
         }
-        for (keycode, mod_name, actions) in &self.modifiers {
+        for (keycode, actions) in &self.modifiers {
             if *keycode >= NUM_KEYS {
                 return Err(IrError::KeycodeOutOfRange(*keycode, NUM_KEYS));
-            }
-            if mod_name.is_empty() {
-                return Err(IrError::EmptyModifierName(*keycode));
             }
             if actions.is_empty() {
                 return Err(IrError::EmptyModifierActions(*keycode));
@@ -351,11 +346,7 @@ impl TryFrom<&KBLayout> for LayoutFile {
             version: FORMAT_VERSION,
             layout: layout.name.clone(),
             repeat_keys,
-            modifiers: modifiers_from_layout(
-                &layout.modifiers,
-                &layout.named_key_map,
-                &layout.state_keymap,
-            ),
+            modifiers: modifiers_from_layout(&layout.modifiers),
             keymap,
             num_lock_keys,
             caps_lock_keymap,
@@ -410,22 +401,12 @@ fn named_section(flat: &FlatNamedKeyMap) -> NamedSection {
     to_levels(flat, |key| (key != NamedKey::Unnamed).then_some(key))
 }
 
-fn modifiers_from_layout(
-    modifiers: &Modifiers,
-    named: &FlatNamedKeyMap,
-    state: &FlatKeymap,
-) -> ModifierList {
+fn modifiers_from_layout(modifiers: &Modifiers) -> ModifierList {
     let mut out: Vec<_> = modifiers
         .iter()
-        .map(|(keycode, modifier)| {
-            (
-                *keycode,
-                modifier_name(*keycode, named, state),
-                actions_from_modifier(modifier),
-            )
-        })
+        .map(|(keycode, modifier)| (*keycode, actions_from_modifier(modifier)))
         .collect();
-    out.sort_by_key(|(keycode, _, _)| *keycode);
+    out.sort_by_key(|(keycode, _)| *keycode);
     out
 }
 
@@ -445,16 +426,6 @@ fn modaction_from_modkind(kind: &ModKind) -> ModAction {
         ModKind::Lock { mod_type, .. } => ModAction::Lock(*mod_type),
         ModKind::Latch { mod_type, .. } => ModAction::Latch(*mod_type),
         ModKind::None => ModAction::None,
-    }
-}
-
-/// Best-effort modifier name (metadata only; ignored when loading).
-fn modifier_name(keycode: u32, named: &FlatNamedKeyMap, state: &FlatKeymap) -> String {
-    match named.get(0, keycode) {
-        NamedKey::Unnamed => state
-            .get(0, keycode)
-            .map_or_else(|| "Modifier".to_string(), |ch| ch.to_string()),
-        name => format!("{name:?}"),
     }
 }
 
@@ -510,7 +481,7 @@ impl TryFrom<LayoutFile> for KBLayout {
         }
 
         let mut modifiers = Modifiers::new();
-        for (keycode, _, actions) in &file.modifiers {
+        for (keycode, actions) in &file.modifiers {
             let modifier = if actions.len() == 1 && actions[0].0 == 0 {
                 Modifier::Single(modkind_from_modaction(actions[0].1))
             } else {

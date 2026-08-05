@@ -19,11 +19,7 @@ fn sample_file() -> LayoutFile {
         version: ir::FORMAT_VERSION,
         layout: "us".to_string(),
         repeat_keys: vec![1, 2, 3],
-        modifiers: vec![(
-            42,
-            "LeftShift".to_string(),
-            vec![(0, ModAction::Press(ModType::Level2))],
-        )],
+        modifiers: vec![(42, vec![(0, ModAction::Press(ModType::Level2))])],
         keymap,
         num_lock_keys: BTreeMap::new(),
         caps_lock_keymap: BTreeMap::new(),
@@ -58,7 +54,7 @@ fn ron_output_matches_suggestion_shape() {
     assert!(!text.contains("num_keys"));
     assert!(text.contains("repeat_keys: [1, 2, 3],\n"));
     assert!(text.contains("modifiers: [\n"));
-    assert!(text.contains("        (42, \"LeftShift\", [(0, Press(Level2))]),\n"));
+    assert!(text.contains("        (42, [(0, Press(Level2))]),\n"));
     assert!(text.contains("    keymap: {\n"));
     assert!(text.contains("        0: {\n"));
     assert!(text.contains("            0: 'a', 1: 'b',\n"));
@@ -143,7 +139,7 @@ fn rejects_keycode_out_of_range() {
 #[test]
 fn rejects_level_out_of_range() {
     let mut file = sample_file();
-    file.modifiers[0].2.push((8, ModAction::None)); // MAX_LEVELS = 8
+    file.modifiers[0].1.push((8, ModAction::None)); // MAX_LEVELS = 8
     assert!(matches!(file.validate(), Err(IrError::LevelOutOfRange(8))));
 }
 
@@ -160,7 +156,7 @@ fn rejects_empty_compose_sequence() {
 #[test]
 fn rejects_empty_modifier_actions() {
     let mut file = sample_file();
-    file.modifiers[0].2.clear();
+    file.modifiers[0].1.clear();
     assert!(matches!(
         file.validate(),
         Err(IrError::EmptyModifierActions(42))
@@ -265,7 +261,7 @@ fn repeat_set_survives_roundtrip() {
 }
 
 #[test]
-fn modifier_names_are_deterministic() {
+fn modifiers_are_deterministic() {
     let wkb = WKB::new_from_names("", "", "us", "", None).unwrap();
     let file = wkb.export_layout(0).unwrap();
     assert!(!file.modifiers.is_empty());

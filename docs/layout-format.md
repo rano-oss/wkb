@@ -42,9 +42,9 @@ XKB at runtime.
         21, 22, 23, 24, 25, 26, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
         43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 55, 57],
     modifiers: [
-        (29, "LeftControl", [(0, Press(None))]),
-        (42, "LeftShift", [(0, Press(Level2))]),
-        (58, "CapsLock", [(0, Lock(Caps))]),
+        (29, [(0, Press(None))]),
+        (42, [(0, Press(Level2))]),
+        (58, [(0, Lock(Caps))]),
     ],
     keymap: {
         0: {
@@ -143,18 +143,16 @@ byte-for-byte (verified across all generated fixtures).
 
 ## Modifiers
 
-Modifier bindings are a list of tuples `(keycode, name, [(level, action)])`,
-one per line. `name` is human-readable metadata only — it is ignored when
-loading. Names come from the layout's named-key table (e.g. `LeftShift`,
-`CapsLock`), falling back to the key's base character, then to `Modifier`.
-`action` is the `ModAction`:
+Modifier bindings are a list of tuples `(keycode, [(level, action)])`, one per
+line. `keycode` is the evdev code of the modifier key. `action` is the
+`ModAction`:
 
 ```ron
 modifiers: [
-    (42, "LeftShift", [(0, Press(Level2))]),
-    (58, "CapsLock", [(0, Lock(Caps))]),
-    (69, "NumLock", [(0, Lock(Num))]),
-    (100, "Modifier", [(0, Press(Level3))]),
+    (42, [(0, Press(Level2))]),
+    (58, [(0, Lock(Caps))]),
+    (69, [(0, Lock(Num))]),
+    (100, [(0, Press(Level3))]),
 ],
 ```
 
@@ -171,6 +169,25 @@ pub enum ModAction {
 
 `ModType` is one of `None`, `Level2`, `Level3`, `Level5`, `Compose`, `Caps`,
 `Num`, `Scroll`.
+
+Common evdev modifier codes:
+
+| evdev | Name | Typical role |
+|-------|------|--------------|
+| 29 | LeftControl | Ctrl |
+| 42 | LeftShift | Shift / Level2 |
+| 54 | RightShift | Shift / Level2 |
+| 56 | Alt | Alt |
+| 58 | CapsLock | Lock(Caps) |
+| 69 | NumLock | Lock(Num) |
+| 70 | ScrollLock | Lock(Scroll) |
+| 97 | RightControl | Ctrl |
+| 100 | AltGr | Level3 |
+| 125 | Super | Super |
+
+ISO level-shift keys (e.g. `ISO_Level3_Shift` on evdev 84/92/100, or
+`ISO_Level5_Shift` on 195/223) are `Press(Level3)` / `Press(Level5)`
+respectively.
 
 A single `(0, action)` binding becomes a `Single` modifier; anything else
 becomes a leveled modifier.
@@ -219,7 +236,7 @@ On load, the following are enforced (each maps to an `IrError` variant):
     layout: "us",
     repeat_keys: [1, 2, 3, 4, 5, 6],
     modifiers: [
-        (42, "LeftShift", [(0, Press(Level2))]),
+        (42, [(0, Press(Level2))]),
     ],
     keymap: {
         0: {
