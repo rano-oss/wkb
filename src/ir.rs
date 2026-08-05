@@ -11,6 +11,7 @@
 //! `compose` table.
 
 use std::collections::BTreeMap;
+use std::fmt::Write as _;
 
 use serde::{Deserialize, Serialize};
 
@@ -192,7 +193,6 @@ fn ron_value<T: Serialize>(value: &T) -> String {
 }
 
 fn serialize_to_ron(file: &LayoutFile) -> String {
-    use std::fmt::Write as _;
     let mut out = String::new();
     let _ = writeln!(out, "// wkb keyboard layout (RON format)");
     let _ = writeln!(out, "(");
@@ -202,14 +202,14 @@ fn serialize_to_ron(file: &LayoutFile) -> String {
         write_integer_list(&mut out, "repeat_keys", &file.repeat_keys);
     }
     if !file.modifiers.is_empty() {
-        write_modifiers(&mut out, &file.modifiers);
+        write_entries(&mut out, "modifiers", &file.modifiers);
     }
     write_char_section(&mut out, "keymap", &file.keymap);
     write_char_section(&mut out, "num_lock_keys", &file.num_lock_keys);
     write_char_section(&mut out, "caps_lock_keymap", &file.caps_lock_keymap);
     write_named_section(&mut out, "keysym_map", &file.keysym_map);
     if !file.compose.is_empty() {
-        write_compose(&mut out, &file.compose);
+        write_entries(&mut out, "compose", &file.compose);
     }
     let _ = writeln!(out, ")");
     out
@@ -223,29 +223,26 @@ fn write_ron_char(out: &mut String, c: char) {
 
 /// Write a `u32` list as one array, wrapping at [`RON_WRAP_WIDTH`] per line.
 fn write_integer_list(out: &mut String, name: &str, values: &[u32]) {
-    use std::fmt::Write as _;
     let _ = write!(out, "    {name}: [");
-    for (i, value) in values.iter().enumerate() {
-        if i > 0 {
-            let _ = write!(
-                out,
-                "{}",
-                if i % RON_WRAP_WIDTH == 0 {
-                    ",\n        "
-                } else {
-                    ", "
-                }
-            );
-        }
-        let _ = write!(out, "{value}");
+    for (i, chunk) in values.chunks(RON_WRAP_WIDTH).enumerate() {
+        let _ = write!(
+            out,
+            "{}{}",
+            if i > 0 { ",\n        " } else { "" },
+            chunk
+                .iter()
+                .map(u32::to_string)
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
     }
     let _ = writeln!(out, "],");
 }
 
-fn write_modifiers(out: &mut String, modifiers: &ModifierList) {
-    use std::fmt::Write as _;
-    let _ = writeln!(out, "    modifiers: [");
-    for entry in modifiers {
+/// Write a slice of RON-serializable tuples, one per line.
+fn write_entries<T: Serialize>(out: &mut String, name: &str, entries: &[T]) {
+    let _ = writeln!(out, "    {name}: [");
+    for entry in entries {
         let _ = writeln!(out, "        {},", ron_value(entry));
     }
     let _ = writeln!(out, "    ],");
@@ -274,7 +271,6 @@ fn write_section<T>(
     if section.is_empty() {
         return;
     }
-    use std::fmt::Write as _;
     let _ = writeln!(out, "    {name}: {{");
     let indent = "            ";
     for (level, keys) in section {
@@ -300,15 +296,6 @@ fn write_section<T>(
     let _ = writeln!(out, "    }},");
 }
 
-fn write_compose(out: &mut String, compose: &[(Vec<char>, char)]) {
-    use std::fmt::Write as _;
-    let _ = writeln!(out, "    compose: [");
-    for (keys, output) in compose {
-        let _ = writeln!(out, "        {},", ron_value(&(keys, output)));
-    }
-    let _ = writeln!(out, "    ],");
-}
-
 fn validate_section<T>(section: &BTreeMap<u8, BTreeMap<u32, T>>) -> Result<(), IrError> {
     for (level, keys) in section {
         if *level >= MAX_LEVELS as u8 {
@@ -330,28 +317,18 @@ impl TryFrom<&KBLayout> for LayoutFile {
 
     fn try_from(layout: &KBLayout) -> Result<Self, IrError> {
         let num_keys = layout.state_keymap.num_keys as u32;
-        let repeat_keys = (0..num_keys)
-            .filter(|&k| layout.repeat_keys.contains(k))
-            .collect();
-
-        let keymap = char_section(&layout.state_keymap);
-        let num_lock_keys = char_section(&layout.num_lock_keys);
-        let caps_lock_keymap = char_section(&layout.caps_lock_keymap);
-        let keysym_map = named_section(&layout.named_key_map);
-
-        let reachable = reachable_chars(layout);
-        let compose = compose_from_composer(&layout.composer, &reachable);
-
         let file = LayoutFile {
             version: FORMAT_VERSION,
             layout: layout.name.clone(),
-            repeat_keys,
+            repeat_keys: (0..num_keys)
+                .filter(|&k| layout.repeat_keys.contains(k))
+                .collect(),
             modifiers: modifiers_from_layout(&layout.modifiers),
-            keymap,
-            num_lock_keys,
-            caps_lock_keymap,
-            keysym_map,
-            compose,
+            keymap: char_section(&layout.state_keymap),
+            num_lock_keys: char_section(&layout.num_lock_keys),
+            caps_lock_keymap: char_section(&layout.caps_lock_keymap),
+            keysym_map: named_section(&layout.named_key_map),
+            compose: compose_from_composer(&layout.composer, &reachable_chars(layout)),
         };
         file.validate()?;
         Ok(file)
@@ -378,19 +355,17 @@ fn to_levels<T: FlatMapValue, V>(
     flat: &FlatMap<T>,
     project: impl Fn(T) -> Option<V>,
 ) -> BTreeMap<u8, BTreeMap<u32, V>> {
-    let mut levels = BTreeMap::new();
-    for level in 0..MAX_LEVELS {
-        let base = level * flat.num_keys;
-        let keys: BTreeMap<_, _> = flat.data[base..base + flat.num_keys]
-            .iter()
-            .enumerate()
-            .filter_map(|(keycode, &value)| project(value).map(|v| (keycode as u32, v)))
-            .collect();
-        if !keys.is_empty() {
-            levels.insert(level as u8, keys);
-        }
-    }
-    levels
+    (0..MAX_LEVELS)
+        .filter_map(|level| {
+            let base = level * flat.num_keys;
+            let keys: BTreeMap<_, _> = flat.data[base..base + flat.num_keys]
+                .iter()
+                .enumerate()
+                .filter_map(|(keycode, &value)| project(value).map(|v| (keycode as u32, v)))
+                .collect();
+            (!keys.is_empty()).then_some((level as u8, keys))
+        })
+        .collect()
 }
 
 fn char_section(flat: &FlatKeymap) -> CharSection {
@@ -473,23 +448,20 @@ impl TryFrom<LayoutFile> for KBLayout {
     fn try_from(file: LayoutFile) -> Result<Self, IrError> {
         file.validate()?;
         let num_keys = NUM_KEYS as usize;
-        let name = file.layout;
 
         let mut repeat_keys = KeyBitSet::new();
-        for keycode in &file.repeat_keys {
-            repeat_keys.insert(*keycode);
-        }
+        file.repeat_keys.iter().for_each(|k| repeat_keys.insert(*k));
 
         let mut modifiers = Modifiers::new();
         for (keycode, actions) in &file.modifiers {
-            let modifier = if actions.len() == 1 && actions[0].0 == 0 {
-                Modifier::Single(modkind_from_modaction(actions[0].1))
-            } else {
-                let map: BTreeMap<u8, ModKind> = actions
-                    .iter()
-                    .map(|(level, action)| (*level, modkind_from_modaction(*action)))
-                    .collect();
-                Modifier::Leveled(map)
+            let modifier = match actions.as_slice() {
+                [(0, action)] => Modifier::Single(modkind_from_modaction(*action)),
+                _ => Modifier::Leveled(
+                    actions
+                        .iter()
+                        .map(|(level, action)| (*level, modkind_from_modaction(*action)))
+                        .collect(),
+                ),
             };
             modifiers.set_modifier(*keycode, modifier);
         }
@@ -502,7 +474,7 @@ impl TryFrom<LayoutFile> for KBLayout {
         let named_key_map = from_levels(&file.keysym_map, num_keys, |key| key);
 
         Ok(KBLayout {
-            name,
+            name: file.layout,
             repeat_keys,
             composer,
             modifiers,
