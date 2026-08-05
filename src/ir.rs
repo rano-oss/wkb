@@ -12,7 +12,7 @@
 
 use std::collections::BTreeMap;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::composer::{Composer, Token};
 use crate::flat_keymap::{FlatMap, FlatMapValue, MAX_LEVELS};
@@ -45,40 +45,28 @@ pub type ModifierList = Vec<(u32, String, Vec<(u8, ModAction)>)>;
 /// Errors from validating, serializing, or converting layout files.
 #[derive(Debug, thiserror::Error)]
 pub enum IrError {
-    /// The file has an unsupported [`FORMAT_VERSION`].
     #[error("unsupported format version {0}")]
     UnsupportedVersion(u32),
-    /// `layout` is empty.
     #[error("layout name must not be empty")]
     EmptyLayoutName,
-    /// The requested layout index does not exist in the runtime instance.
     #[error("invalid layout index {0}")]
     InvalidLayoutIndex(usize),
-    /// An evdev keycode is outside `0..NUM_KEYS`.
     #[error("keycode {0} out of range (num_keys={1})")]
     KeycodeOutOfRange(u32, u32),
-    /// A level is at or above the maximum supported level.
     #[error("level {0} out of range (max 8)")]
     LevelOutOfRange(u8),
-    /// A modifier binding has an empty name.
     #[error("empty modifier name at keycode {0}")]
     EmptyModifierName(u32),
-    /// A modifier binding has no actions.
     #[error("modifier at keycode {0} has no actions")]
     EmptyModifierActions(u32),
-    /// A compose sequence has no keys.
     #[error("empty compose sequence")]
     EmptyComposeSequence,
-    /// A compose output is the NUL character.
     #[error("compose output is NUL")]
     NullComposeOutput,
-    /// A compose sequence contains the NUL character.
     #[error("compose sequence contains NUL")]
     NullComposeKey,
-    /// RON serialization failed.
     #[error("serialization error: {0}")]
     Serialize(String),
-    /// RON deserialization failed.
     #[error("deserialization error: {0}")]
     Deserialize(String),
 }
@@ -194,27 +182,27 @@ impl LayoutFile {
     }
 }
 
-// ---------------------------------------------------------------------------
-// RON serialization
-// ---------------------------------------------------------------------------
+// --- RON serialization ---
 
 /// How many repeat-key codes per wrapped line.
 const RON_WRAP_WIDTH: usize = 20;
 
-/// How many keycodes per wrapped line in char-keyed sections; lines break when
-/// the keycode exceeds a multiple of this value.
+/// Keycodes per wrapped line in char-keyed sections; lines break when a keycode
+/// exceeds a multiple of this value.
 const RON_KEYS_PER_LINE: usize = 14;
 
-fn serialize_to_ron(file: &LayoutFile) -> String {
-    let mut out = String::new();
-    out.push_str("// wkb keyboard layout (RON format)\n(\n");
-    out.push_str("    version: ");
-    out.push_str(&file.version.to_string());
-    out.push_str(",\n");
-    out.push_str("    layout: ");
-    write_ron_string(&mut out, &file.layout);
-    out.push_str(",\n");
+/// Serialize a value in RON's compact spaced form (arrays inline).
+fn ron_value<T: Serialize>(value: &T) -> String {
+    ron::ser::to_string_pretty(value, ron::ser::PrettyConfig::new().compact_arrays(true)).unwrap()
+}
 
+fn serialize_to_ron(file: &LayoutFile) -> String {
+    use std::fmt::Write as _;
+    let mut out = String::new();
+    let _ = writeln!(out, "// wkb keyboard layout (RON format)");
+    let _ = writeln!(out, "(");
+    let _ = writeln!(out, "    version: {},", file.version);
+    let _ = writeln!(out, "    layout: {},", ron_value(&file.layout));
     if !file.repeat_keys.is_empty() {
         write_integer_list(&mut out, "repeat_keys", &file.repeat_keys);
     }
@@ -228,109 +216,44 @@ fn serialize_to_ron(file: &LayoutFile) -> String {
     if !file.compose.is_empty() {
         write_compose(&mut out, &file.compose);
     }
-
-    out.push(')');
-    out.push('\n');
+    let _ = writeln!(out, ")");
     out
 }
 
-/// Write `s` as a RON string literal.
-fn write_ron_string(out: &mut String, s: &str) {
-    out.push('"');
-    for c in s.chars() {
-        match c {
-            '"' => out.push_str("\\\""),
-            '\\' => out.push_str("\\\\"),
-            '\n' => out.push_str("\\n"),
-            '\r' => out.push_str("\\r"),
-            '\t' => out.push_str("\\t"),
-            c if c.is_control() || c == '\u{feff}' => {
-                use std::fmt::Write as _;
-                write!(out, "\\u{{{:x}}}", c as u32).unwrap();
-            }
-            c => out.push(c),
-        }
-    }
-    out.push('"');
-}
-
-/// Write `c` as a RON char literal.
 fn write_ron_char(out: &mut String, c: char) {
-    match c {
-        '\'' => out.push_str("'\\''"),
-        '\\' => out.push_str("'\\\\'"),
-        '\n' => out.push_str("'\\n'"),
-        '\r' => out.push_str("'\\r'"),
-        '\t' => out.push_str("'\\t'"),
-        c if c.is_control() || c == '\u{feff}' => {
-            use std::fmt::Write as _;
-            write!(out, "'\\u{{{:x}}}'", c as u32).unwrap();
-        }
-        c => {
-            out.push('\'');
-            out.push(c);
-            out.push('\'');
-        }
-    }
+    out.push('\'');
+    out.extend(c.escape_debug());
+    out.push('\'');
 }
 
 /// Write a `u32` list as one array, wrapping at [`RON_WRAP_WIDTH`] per line.
 fn write_integer_list(out: &mut String, name: &str, values: &[u32]) {
-    out.push_str("    ");
-    out.push_str(name);
-    out.push_str(": [");
+    use std::fmt::Write as _;
+    let _ = write!(out, "    {name}: [");
     for (i, value) in values.iter().enumerate() {
         if i > 0 {
-            out.push(',');
-            if i % RON_WRAP_WIDTH == 0 {
-                out.push_str("\n        ");
-            } else {
-                out.push(' ');
-            }
+            let _ = write!(
+                out,
+                "{}",
+                if i % RON_WRAP_WIDTH == 0 {
+                    ",\n        "
+                } else {
+                    ", "
+                }
+            );
         }
-        out.push_str(&value.to_string());
+        let _ = write!(out, "{value}");
     }
-    out.push_str("],\n");
+    let _ = writeln!(out, "],");
 }
 
-/// Write the modifier bindings as a one-per-line list of tuples.
 fn write_modifiers(out: &mut String, modifiers: &ModifierList) {
-    out.push_str("    modifiers: [\n");
-    for (keycode, name, actions) in modifiers {
-        out.push_str("        (");
-        out.push_str(&keycode.to_string());
-        out.push_str(", ");
-        write_ron_string(out, name);
-        out.push_str(", [");
-        for (i, (level, action)) in actions.iter().enumerate() {
-            if i > 0 {
-                out.push_str(", ");
-            }
-            out.push('(');
-            out.push_str(&level.to_string());
-            out.push_str(", ");
-            write_mod_action(out, *action);
-            out.push(')');
-        }
-        out.push_str("]),\n");
+    use std::fmt::Write as _;
+    let _ = writeln!(out, "    modifiers: [");
+    for entry in modifiers {
+        let _ = writeln!(out, "        {},", ron_value(entry));
     }
-    out.push_str("    ],\n");
-}
-
-fn write_mod_action(out: &mut String, action: ModAction) {
-    match action {
-        ModAction::Pressed(mod_type) => write_action(out, "Pressed", mod_type),
-        ModAction::Lock(mod_type) => write_action(out, "Lock", mod_type),
-        ModAction::Latch(mod_type) => write_action(out, "Latch", mod_type),
-        ModAction::None => out.push_str("None"),
-    }
-}
-
-fn write_action(out: &mut String, variant: &str, mod_type: ModType) {
-    out.push_str(variant);
-    out.push('(');
-    out.push_str(&format!("{mod_type:?}"));
-    out.push(')');
+    let _ = writeln!(out, "    ],");
 }
 
 fn write_char_section(out: &mut String, name: &str, section: &CharSection) {
@@ -341,13 +264,11 @@ fn write_char_section(out: &mut String, name: &str, section: &CharSection) {
 
 fn write_named_section(out: &mut String, name: &str, section: &NamedSection) {
     write_section(out, name, section, None, |out, key| {
-        out.push_str(&format!("{key:?}"));
+        out.push_str(&ron_value(key));
     });
 }
 
-/// Write a level-keyed section as nested maps. Char-keyed sections break the
-/// line when a keycode exceeds a multiple of `keys_per_line`; named sections
-/// put one key per line.
+/// Write a level-keyed section as nested maps, wrapping per `keys_per_line`.
 fn write_section<T>(
     out: &mut String,
     name: &str,
@@ -358,62 +279,39 @@ fn write_section<T>(
     if section.is_empty() {
         return;
     }
-    out.push_str("    ");
-    out.push_str(name);
-    out.push_str(": {\n");
+    use std::fmt::Write as _;
+    let _ = writeln!(out, "    {name}: {{");
+    let indent = "            ";
     for (level, keys) in section {
-        out.push_str("        ");
-        out.push_str(&level.to_string());
-        out.push_str(": {\n");
-        let indent = "            ";
-        let mut prev_keycode: Option<u32> = None;
+        let _ = writeln!(out, "        {level}: {{");
+        let mut prev: Option<u32> = None;
         for (keycode, value) in keys {
-            if let Some(prev) = prev_keycode {
+            if let Some(p) = prev {
                 out.push(',');
-                let newline = match keys_per_line {
-                    Some(n) => {
-                        let prev_block = prev.saturating_sub(1) as usize / n;
-                        let block = keycode.saturating_sub(1) as usize / n;
-                        block != prev_block
-                    }
-                    None => true,
-                };
-                if newline {
-                    out.push('\n');
-                    out.push_str(indent);
-                } else {
-                    out.push(' ');
-                }
+                let newline = keys_per_line.map_or(true, |n| {
+                    keycode.saturating_sub(1) as usize / n != p.saturating_sub(1) as usize / n
+                });
+                out.push_str(if newline { "\n            " } else { " " });
             } else {
                 out.push_str(indent);
             }
-            prev_keycode = Some(*keycode);
-            out.push_str(&keycode.to_string());
-            out.push_str(": ");
+            prev = Some(*keycode);
+            let _ = write!(out, "{keycode}: ");
             write_value(out, value);
         }
-        out.push_str(",\n");
-        out.push_str("        },\n");
+        let _ = writeln!(out, ",");
+        let _ = writeln!(out, "        }},");
     }
-    out.push_str("    },\n");
+    let _ = writeln!(out, "    }},");
 }
 
-/// Write compose sequences as one `(['key', ...], output)` tuple per line.
 fn write_compose(out: &mut String, compose: &[(Vec<char>, char)]) {
-    out.push_str("    compose: [\n");
+    use std::fmt::Write as _;
+    let _ = writeln!(out, "    compose: [");
     for (keys, output) in compose {
-        out.push_str("        ([");
-        for (i, ch) in keys.iter().enumerate() {
-            if i > 0 {
-                out.push_str(", ");
-            }
-            write_ron_char(out, *ch);
-        }
-        out.push_str("], ");
-        write_ron_char(out, *output);
-        out.push_str("),\n");
+        let _ = writeln!(out, "        {},", ron_value(&(keys, output)));
     }
-    out.push_str("    ],\n");
+    let _ = writeln!(out, "    ],");
 }
 
 fn validate_section<T>(section: &BTreeMap<u8, BTreeMap<u32, T>>) -> Result<(), IrError> {
@@ -430,23 +328,16 @@ fn validate_section<T>(section: &BTreeMap<u8, BTreeMap<u32, T>>) -> Result<(), I
     Ok(())
 }
 
-// ---------------------------------------------------------------------------
-// KBLayout -> LayoutFile (generation)
-// ---------------------------------------------------------------------------
+// --- KBLayout -> LayoutFile (generation) ---
 
 impl TryFrom<&KBLayout> for LayoutFile {
     type Error = IrError;
 
     fn try_from(layout: &KBLayout) -> Result<Self, IrError> {
         let num_keys = layout.state_keymap.num_keys as u32;
-        let name = layout.name.clone();
-
-        let mut repeat_keys = Vec::new();
-        for keycode in 0..num_keys {
-            if layout.repeat_keys.contains(keycode) {
-                repeat_keys.push(keycode);
-            }
-        }
+        let repeat_keys = (0..num_keys)
+            .filter(|&k| layout.repeat_keys.contains(k))
+            .collect();
 
         let keymap = char_section(&layout.state_keymap);
         let num_lock_keys = char_section(&layout.num_lock_keys);
@@ -458,7 +349,7 @@ impl TryFrom<&KBLayout> for LayoutFile {
 
         let file = LayoutFile {
             version: FORMAT_VERSION,
-            layout: name,
+            layout: layout.name.clone(),
             repeat_keys,
             modifiers: modifiers_from_layout(&layout.modifiers),
             keymap,
@@ -472,8 +363,7 @@ impl TryFrom<&KBLayout> for LayoutFile {
     }
 }
 
-/// The set of characters this layout can produce, used to filter the compose
-/// table so the file only keeps reachable (non-redundant) sequences.
+/// Characters this layout can produce, for filtering the compose table.
 fn reachable_chars(layout: &KBLayout) -> Vec<char> {
     let mut reachable: Vec<char> = layout
         .state_keymap
@@ -495,12 +385,12 @@ fn to_levels<T: FlatMapValue, V>(
 ) -> BTreeMap<u8, BTreeMap<u32, V>> {
     let mut levels = BTreeMap::new();
     for level in 0..MAX_LEVELS {
-        let mut keys = BTreeMap::new();
-        for keycode in 0..flat.num_keys as u32 {
-            if let Some(value) = project(flat.get(level, keycode)) {
-                keys.insert(keycode, value);
-            }
-        }
+        let base = level * flat.num_keys;
+        let keys: BTreeMap<_, _> = flat.data[base..base + flat.num_keys]
+            .iter()
+            .enumerate()
+            .filter_map(|(keycode, &value)| project(value).map(|v| (keycode as u32, v)))
+            .collect();
         if !keys.is_empty() {
             levels.insert(level as u8, keys);
         }
@@ -550,26 +440,17 @@ fn modaction_from_modkind(kind: &ModKind) -> ModAction {
     }
 }
 
-/// Best-effort human-readable name for a modifier binding. The name is
-/// metadata only: it is ignored when loading.
+/// Best-effort modifier name (metadata only; ignored when loading).
 fn modifier_name(keycode: u32, modifier: &Modifier) -> String {
-    let fallback = |mod_type: Option<ModType>| match mod_type {
-        Some(ModType::Level2) => "Shift",
-        Some(ModType::Level3) => "Level3",
-        Some(ModType::Level5) => "Level5",
-        Some(ModType::Caps) => "CapsLock",
-        Some(ModType::Num) => "NumLock",
-        Some(ModType::Scroll) => "ScrollLock",
-        Some(ModType::Compose) => "Compose",
-        _ => "Modifier",
+    let kind = match modifier {
+        Modifier::Single(kind) => kind,
+        Modifier::Leveled(map) => map.values().next().unwrap_or(&ModKind::None),
     };
-    match keycode {
+    let name = match keycode {
         29 => "LeftControl",
         42 => "LeftShift",
         54 => "RightShift",
         56 => "Alt",
-        58 if matches!(modifier, Modifier::Leveled(_)) => "Eisu_toggle",
-        58 => "CapsLock",
         69 => "NumLock",
         70 => "ScrollLock",
         97 => "RightControl",
@@ -579,12 +460,22 @@ fn modifier_name(keycode: u32, modifier: &Modifier) -> String {
             _ => "AltGr",
         },
         125 => "Super",
-        _ => fallback(modkind_type(match modifier {
-            Modifier::Single(kind) => kind,
-            Modifier::Leveled(map) => map.values().next().unwrap_or(&ModKind::None),
-        })),
-    }
-    .to_string()
+        58 => match modifier {
+            Modifier::Leveled(_) => "Eisu_toggle",
+            _ => "CapsLock",
+        },
+        _ => match modkind_type(kind) {
+            Some(ModType::Level2) => "Shift",
+            Some(ModType::Level3) => "Level3",
+            Some(ModType::Level5) => "Level5",
+            Some(ModType::Caps) => "CapsLock",
+            Some(ModType::Num) => "NumLock",
+            Some(ModType::Scroll) => "ScrollLock",
+            Some(ModType::Compose) => "Compose",
+            _ => "Modifier",
+        },
+    };
+    name.to_string()
 }
 
 fn modkind_type(kind: &ModKind) -> Option<ModType> {
@@ -596,8 +487,7 @@ fn modkind_type(kind: &ModKind) -> Option<ModType> {
     }
 }
 
-/// Depth-first walk of the composer trie emitting reachable sequences in
-/// canonical (sorted) order.
+/// Depth-first walk of the composer trie emitting reachable, sorted sequences.
 fn compose_from_composer(composer: &Composer, reachable: &[char]) -> Vec<(Vec<char>, char)> {
     let mut out = Vec::new();
     let mut path = Vec::new();
@@ -623,19 +513,17 @@ fn dfs_compose(
         }
     }
     for &(key, child) in &node.children {
-        if key == 0 {
-            path.push(COMPOSE_KEY_CHAR);
+        path.push(if key == 0 {
+            COMPOSE_KEY_CHAR
         } else {
-            path.push(char::from_u32(key).unwrap_or('\u{fffd}'));
-        }
+            char::from_u32(key).unwrap_or('\u{fffd}')
+        });
         dfs_compose(composer, child, path, out, reachable);
         path.pop();
     }
 }
 
-// ---------------------------------------------------------------------------
-// LayoutFile -> KBLayout (loading)
-// ---------------------------------------------------------------------------
+// --- LayoutFile -> KBLayout (loading) ---
 
 impl TryFrom<LayoutFile> for KBLayout {
     type Error = IrError;
@@ -702,38 +590,29 @@ fn from_levels<T: FlatMapValue, V: Copy>(
     flat
 }
 
+#[rustfmt::skip]
 fn modkind_from_modaction(action: ModAction) -> ModKind {
     match action {
-        ModAction::Pressed(mod_type) => ModKind::Pressed {
-            pressed: false,
-            mod_type,
-        },
-        ModAction::Lock(mod_type) => ModKind::Lock {
-            pressed: false,
-            locked: 0,
-            mod_type,
-        },
-        ModAction::Latch(mod_type) => ModKind::Latch {
-            pressed: false,
-            latched: false,
-            mod_type,
-        },
+        ModAction::Pressed(t) => ModKind::Pressed { pressed: false, mod_type: t },
+        ModAction::Lock(t) => ModKind::Lock { pressed: false, locked: 0, mod_type: t },
+        ModAction::Latch(t) => ModKind::Latch { pressed: false, latched: false, mod_type: t },
         ModAction::None => ModKind::None,
     }
 }
 
-/// Build a composer trie from serialized `(keys, output)` sequences.
 fn composer_from_compose(sequences: &[(Vec<char>, char)]) -> Composer {
     let mut composer = Composer::new();
     for (keys, output) in sequences {
-        let mut tokens: Vec<Token> = Vec::with_capacity(keys.len());
-        for ch in keys {
-            if *ch == COMPOSE_KEY_CHAR {
-                tokens.push(Token::Compose);
-            } else {
-                tokens.push(Token::Char(*ch));
-            }
-        }
+        let tokens: Vec<Token> = keys
+            .iter()
+            .map(|&ch| {
+                if ch == COMPOSE_KEY_CHAR {
+                    Token::Compose
+                } else {
+                    Token::Char(ch)
+                }
+            })
+            .collect();
         composer.insert(&tokens, *output);
     }
     composer
