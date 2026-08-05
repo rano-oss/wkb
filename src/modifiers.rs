@@ -71,7 +71,7 @@ pub enum KeyDirection {
     Down,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ModType {
     None,
     Level2,
@@ -85,7 +85,7 @@ pub enum ModType {
 
 #[derive(Debug, Clone)]
 pub enum ModKind {
-    Pressed {
+    Press {
         pressed: bool,
         mod_type: ModType,
     },
@@ -105,7 +105,7 @@ pub enum ModKind {
 impl ModKind {
     pub fn update(&mut self, key_direction: KeyDirection) {
         match self {
-            ModKind::Pressed {
+            ModKind::Press {
                 ref mut pressed,
                 mod_type: _,
             } => match key_direction {
@@ -164,7 +164,7 @@ impl ModKind {
 
     pub(crate) fn has_mod_type(&self, mod_type: ModType) -> bool {
         match self {
-            ModKind::Pressed { mod_type: m, .. }
+            ModKind::Press { mod_type: m, .. }
             | ModKind::Lock { mod_type: m, .. }
             | ModKind::Latch { mod_type: m, .. } => *m == mod_type,
             ModKind::None => false,
@@ -207,49 +207,49 @@ impl Default for Modifiers {
         let entries = vec![
             (
                 LEFT_CTRL,
-                Modifier::Single(ModKind::Pressed {
+                Modifier::Single(ModKind::Press {
                     pressed: false,
                     mod_type: ModType::None,
                 }),
             ),
             (
                 RIGHT_CTRL,
-                Modifier::Single(ModKind::Pressed {
+                Modifier::Single(ModKind::Press {
                     pressed: false,
                     mod_type: ModType::None,
                 }),
             ),
             (
                 LEFT_SHIFT,
-                Modifier::Single(ModKind::Pressed {
+                Modifier::Single(ModKind::Press {
                     pressed: false,
                     mod_type: ModType::Level2,
                 }),
             ),
             (
                 RIGHT_SHIFT,
-                Modifier::Single(ModKind::Pressed {
+                Modifier::Single(ModKind::Press {
                     pressed: false,
                     mod_type: ModType::Level2,
                 }),
             ),
             (
                 ALT,
-                Modifier::Single(ModKind::Pressed {
+                Modifier::Single(ModKind::Press {
                     pressed: false,
                     mod_type: ModType::None,
                 }),
             ),
             (
                 ALTGR,
-                Modifier::Single(ModKind::Pressed {
+                Modifier::Single(ModKind::Press {
                     pressed: false,
                     mod_type: ModType::None,
                 }),
             ),
             (
                 LOGO,
-                Modifier::Single(ModKind::Pressed {
+                Modifier::Single(ModKind::Press {
                     pressed: false,
                     mod_type: ModType::None,
                 }),
@@ -370,7 +370,7 @@ impl Modifiers {
     #[inline(always)]
     fn accumulate_state(mk: &ModKind, state: &mut u8) {
         let mod_type = match mk {
-            ModKind::Pressed {
+            ModKind::Press {
                 pressed: true,
                 mod_type,
             } => mod_type,
@@ -445,7 +445,7 @@ impl Modifiers {
         for (code, bit) in MODIFIER_MAPPING {
             if let Some(modifier) = self.get(code) {
                 modifier.for_each(|mk| match mk {
-                    ModKind::Pressed { pressed: true, .. } => depressed |= bit,
+                    ModKind::Press { pressed: true, .. } => depressed |= bit,
                     ModKind::Lock {
                         pressed: p,
                         locked: l,
@@ -490,7 +490,7 @@ impl Modifiers {
 
             if let Some(m) = self.get_mut(code) {
                 m.for_each_mut(|mk| match mk {
-                    ModKind::Pressed { pressed, .. } => *pressed = is_depressed,
+                    ModKind::Press { pressed, .. } => *pressed = is_depressed,
                     ModKind::Lock {
                         pressed, locked, ..
                     } => {

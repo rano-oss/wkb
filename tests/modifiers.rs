@@ -509,7 +509,7 @@ fn test_cm_modifier_type() {
     if let Some((code, level)) = wkb.level3_code() {
         eprintln!("cm/qwerty Level3 code: {} level: {:?}", code, level);
 
-        // Try to determine if it's Latch or Pressed
+        // Try to determine if it's Latch or Press
         eprintln!("Modifiers map: {:#?}", wkb.modifiers());
     }
 }

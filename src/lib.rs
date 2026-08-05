@@ -44,6 +44,9 @@ mod flat_keymap;
 mod modifiers;
 
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
+pub use modifiers::ModType;
+/// Intermediate representation for persisted layout data files.
+pub mod ir;
 mod named_keys;
 /// Test-only utilities. Not part of the public API.
 #[cfg(feature = "testing")]
@@ -414,6 +417,30 @@ impl WKB {
             compose,
             is_modifier: false,
         }
+    }
+
+    /// Export a layout as an [`ir::LayoutFile`] for persistence. This is the
+    /// generation path for wkb layout data files.
+    pub fn export_layout(&self, layout_idx: usize) -> Result<ir::LayoutFile, ir::IrError> {
+        let layout = self
+            .layouts
+            .get(layout_idx)
+            .ok_or(ir::IrError::InvalidLayoutIndex(layout_idx))?;
+        ir::LayoutFile::try_from(layout)
+    }
+
+    /// Rebuild a [`WKB`] from one or more [`ir::LayoutFile`]s. Each file
+    /// becomes one layout group, in order. This is the loading path for
+    /// standalone wkb without XKB compilation.
+    pub fn new_from_layouts(files: Vec<ir::LayoutFile>) -> Result<Self, ir::IrError> {
+        let mut layouts = Vec::with_capacity(files.len());
+        for file in files {
+            layouts.push(KBLayout::try_from(file)?);
+        }
+        Ok(WKB {
+            current_layout_idx: 0,
+            layouts,
+        })
     }
 }
 

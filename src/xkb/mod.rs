@@ -43,7 +43,7 @@ pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u3
             Modifier::Single(mod_kind) => {
                 if mod_kind.has_mod_type(mod_type) {
                     match mod_kind {
-                        ModKind::Pressed { .. } => return Some((*code, None)),
+                        ModKind::Press { .. } => return Some((*code, None)),
                         _ => {
                             if other_mod.is_none() {
                                 other_mod = Some((*code, None));
@@ -56,7 +56,7 @@ pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u3
                 for (level, mod_kind) in map {
                     if mod_kind.has_mod_type(mod_type) {
                         match mod_kind {
-                            ModKind::Pressed { .. } => return Some((*code, Some(*level))),
+                            ModKind::Press { .. } => return Some((*code, Some(*level))),
                             _ => {
                                 if other_mod.is_none() {
                                     other_mod = Some((*code, Some(*level)));
@@ -809,7 +809,7 @@ fn build_modifiers_from_keymap(keymap: &keymap::Keymap) -> Modifiers {
                 latched: false,
                 mod_type: mt,
             },
-            _ => ModKind::Pressed {
+            _ => ModKind::Press {
                 pressed: false,
                 mod_type: mt,
             },
@@ -897,7 +897,7 @@ fn build_modifiers_from_keymap(keymap: &keymap::Keymap) -> Modifiers {
                         locked: 0,
                         mod_type,
                     },
-                    _ => ModKind::Pressed {
+                    _ => ModKind::Press {
                         pressed: false,
                         mod_type,
                     },
@@ -1252,11 +1252,11 @@ fn modifier_keysym(modifiers: &Modifiers, evdev: u32) -> Option<u32> {
 
 fn modkind_keysym(mk: &ModKind) -> Option<u32> {
     match mk {
-        ModKind::Pressed {
+        ModKind::Press {
             mod_type: ModType::Level3,
             ..
         } => Some(0xfe03),
-        ModKind::Pressed {
+        ModKind::Press {
             mod_type: ModType::Level5,
             ..
         } => Some(0xfe11),

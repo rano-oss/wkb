@@ -9,8 +9,20 @@ const path = require('path');
 const CRITERION_DIR = path.join(__dirname, '..', 'target', 'criterion');
 const README = path.join(__dirname, '..', 'README.md');
 
-// Only compare these three implementations
-const IMPLS = ['wkb', 'xkbcommon', 'xkbcommon-dl'];
+// Implementations compared in both the speed and memory tables. The names are
+// the Criterion benchmark ids (stored verbatim as dirs under
+// target/criterion/) and the RSS labels in examples/bench_memory.rs, which
+// share one convention.
+const IMPLS = ['wkb', 'wkb-noxkb', 'xkbcommon', 'xkbcommon-dl'];
+
+// Friendly labels for size-benchmark binaries.
+const SIZE_LABELS = {
+    bench_size_wkb: 'wkb (no XKB)',
+    bench_size_wkb_xkb: 'wkb (with XKB)',
+    bench_size_xkbcommon: 'xkbcommon',
+    bench_size_xkbcommon_dl: 'xkbcommon-dl',
+    bench_size_xkbcommon_compat: 'xkbcommon-compat',
+};
 
 function fmt_ns(ns) {
     if (ns >= 1e6) return (ns / 1e6).toFixed(2) + ' ms';
@@ -98,6 +110,7 @@ function generateSpeedTable() {
         const row = [
             label,
             vals['wkb'] ? fmt_ns(vals['wkb']) : '-',
+            vals['wkb-noxkb'] ? fmt_ns(vals['wkb-noxkb']) : '-',
             vals['xkbcommon'] ? fmt_ns(vals['xkbcommon']) : '-',
             vals['xkbcommon-dl'] ? fmt_ns(vals['xkbcommon-dl']) : '-',
             speedup(vals['wkb'], vals['xkbcommon']),
@@ -107,8 +120,8 @@ function generateSpeedTable() {
 
     if (rows.length === 0) return null;
 
-    let table = '| Benchmark | wkb | xkbcommon | xkbcommon-dl | vs xkbcommon |\n';
-    table += '|-----------|-----|-----------|--------------|-------------|\n';
+    let table = '| Benchmark | wkb | wkb-noxkb | xkbcommon | xkbcommon-dl | vs xkbcommon |\n';
+    table += '|-----------|-----|-----------|-----------|--------------|-------------|\n';
     for (const r of rows) {
         table += `| ${r.join(' | ')} |\n`;
     }
@@ -129,9 +142,9 @@ function generateMemoryTable(memOutput) {
 
     let table = '| Library | Peak RSS |\n';
     table += '|---------|----------|\n';
-    for (const impl_ of IMPLS) {
-        const v = data[impl_] || data[impl_.replace('-', '_')];
-        if (v) table += `| ${impl_} | ${(v / 1024).toFixed(1)} MB |\n`;
+    for (const label of IMPLS) {
+        const v = data[label];
+        if (v) table += `| ${label} | ${(v / 1024).toFixed(1)} MB |\n`;
     }
     return table;
 }
@@ -141,8 +154,25 @@ function generateSizeTable(sizeOutput) {
     const lines = sizeOutput.trim().split('\n');
     const data = {};
     for (const line of lines) {
-        const m = line.match(/^(\S+)\s+(\d+)/);
-        if (m) data[m[1]] = parseInt(m[2]);
+        // bench.sh format: "  <name>  <orig> <unit>  <stripped> <unit>"
+        // CI format:       "<name> <bytes>"
+        let m = line.match(/^\s*(\S+)\s+(\d+)\s+(\S+)\s+(\d+)\s+(\S+)/);
+        let name;
+        let bytes;
+        if (m) {
+            name = m[1];
+            const n = parseInt(m[4]);
+            bytes = n;
+            if (m[5].includes('Mi')) bytes = n * 1024 * 1024;
+            else if (m[5].includes('Ki')) bytes = n * 1024;
+            else if (m[5].includes('Gi')) bytes = n * 1024 * 1024 * 1024;
+        } else {
+            m = line.match(/^\s*(\S+)\s+(\d+)/);
+            if (!m) continue;
+            name = m[1];
+            bytes = parseInt(m[2]);
+        }
+        data[SIZE_LABELS[name] || name] = bytes;
     }
     if (Object.keys(data).length === 0) return null;
 

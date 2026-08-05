@@ -1,4 +1,20 @@
-//! Memory benchmark — run under valgrind massif or just measure RSS.
+//! Memory benchmark — measure peak RSS per backend.
+//!
+//! Backends are distinguished by *construction path*, matching the size
+//! benchmarks:
+//! - `wkb-noxkb` — rebuilds layouts from precompiled RON files via
+//!   [`wkb::WKB::new_from_layouts`] and drives them through the public event
+//!   API. Run first, before any XKB compilation happens, so its RSS reflects
+//!   the no-XKB usage pattern (the XKB code paths are never exercised).
+//! - `wkb` — compiles layouts from the XKB registry via
+//!   [`wkb::WKB::new_from_names`].
+//! - `xkbcommon`, `xkbcommon-dl`, `xkbcommon-compat` — the C backends.
+//!
+//! Note: the `testing` dev-dependency forces the `xkb` feature on for every
+//! example in this crate, so the `wkb-noxkb` layout still carries the
+//! (empty) `level_exceptions` keymap. That is a small constant overhead
+//! (~4% of RSS); the dominant XKB cost is the compile machinery itself,
+//! which is never executed in the `wkb-noxkb` workload.
 //!
 //! Usage:
 //!   cargo build --example bench_memory --release
@@ -33,7 +49,44 @@ fn print_rss(label: &str) {
     }
 }
 
-fn run_workload_wkb() -> u64 {
+/// wkb without XKB: rebuild layouts from precompiled RON files and drive
+/// them through the public event API.
+fn run_workload_wkb_noxkb() -> u64 {
+    let mut checksum: u64 = 0;
+
+    // Ensure precompiled RON fixtures exist (regenerate if gitignored).
+    for &(locale, variant) in LAYOUTS {
+        ensure_layout_file(locale, variant);
+    }
+
+    print_rss("wkb-noxkb/before_setup");
+
+    for &(locale, variant) in LAYOUTS {
+        let mut wb = wkb::WKB::new_from_layouts(vec![load_layout_file(locale, variant)]).unwrap();
+
+        for case in KEY_CASES {
+            for _ in 0..HOT_PATH_ITERATIONS {
+                for &(code, down) in case.keys {
+                    if down {
+                        let result = wb.press_key(code);
+                        if let Some(ch) = wb.key_char(code) {
+                            checksum = checksum.wrapping_add(ch as u64);
+                        }
+                        black_box(result);
+                    } else {
+                        black_box(wb.release_key(code));
+                    }
+                }
+            }
+        }
+    }
+
+    print_rss("wkb-noxkb/after_workload");
+    checksum
+}
+
+/// wkb with XKB: compile layouts from the XKB registry.
+fn run_workload_wkb_xkb() -> u64 {
     let mut checksum: u64 = 0;
 
     print_rss("wkb/before_setup");
@@ -309,7 +362,10 @@ fn main() {
     print_rss("baseline");
     println!();
 
-    let c1 = run_workload_wkb();
+    let c0 = run_workload_wkb_noxkb();
+    println!("  wkb-noxkb checksum: {c0}\n");
+
+    let c1 = run_workload_wkb_xkb();
     println!("  wkb checksum: {c1}\n");
 
     let c2 = run_workload_xkbcommon();
@@ -321,7 +377,7 @@ fn main() {
     let c4 = run_workload_xkbcommon_compat();
     println!("  xkbcommon-compat checksum: {c4}\n");
 
-    black_box((c1, c2, c3, c4));
+    black_box((c0, c1, c2, c3, c4));
 
     println!("=== Done ===");
 }

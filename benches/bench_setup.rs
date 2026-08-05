@@ -36,11 +36,27 @@ fn bench_setup_no_compose(c: &mut Criterion) {
     let locale = "us";
     let multi_layout = "us,de,fr,ru";
 
+    // Ensure precompiled RON fixtures exist (regenerate if gitignored)
+    // before any timed/registered benchmark runs.
+    for l in multi_layout.split(',') {
+        ensure_layout_file(l, None);
+    }
+
     group.bench_function("wkb", |b| {
         without_compose(|| {
             b.iter(|| {
                 let wkb: wkb::WKB =
                     wkb::WKB::new_from_names("", "", black_box(locale), "", None).unwrap();
+                black_box(wkb);
+            });
+        });
+    });
+
+    group.bench_function("wkb-noxkb", |b| {
+        without_compose(|| {
+            b.iter(|| {
+                let file = load_layout_file(black_box(locale), None);
+                let wkb = wkb::WKB::new_from_layouts(vec![file]).unwrap();
                 black_box(wkb);
             });
         });
@@ -66,6 +82,19 @@ fn bench_setup_no_compose(c: &mut Criterion) {
             b.iter(|| {
                 let wkb =
                     wkb::WKB::new_from_names("", "", black_box(multi_layout), "", None).unwrap();
+                black_box(wkb);
+            });
+        });
+    });
+
+    group.bench_function("wkb-noxkb-multilayout", |b| {
+        without_compose(|| {
+            b.iter(|| {
+                let files = multi_layout
+                    .split(',')
+                    .map(|l| load_layout_file(l, None))
+                    .collect();
+                let wkb = wkb::WKB::new_from_layouts(files).unwrap();
                 black_box(wkb);
             });
         });
@@ -150,6 +179,21 @@ fn bench_setup_with_compose(c: &mut Criterion) {
         b.iter(|| {
             let wkb: wkb::WKB =
                 wkb::WKB::new_from_names("", "", black_box(locale), "", None).unwrap();
+            black_box(wkb);
+        });
+    });
+
+    ensure_layout_file(locale, None);
+    group.bench_function("wkb-noxkb", |b| {
+        // The RON layout already embeds its compose table, so "with compose"
+        // setup for the no-XKB path is just the RON load — no XKB compose
+        // file parse. Locale env is set for symmetry with `wkb`.
+        unsafe {
+            std::env::set_var("LC_ALL", COMPOSE_LOCALE);
+        }
+        b.iter(|| {
+            let file = load_layout_file(black_box(locale), None);
+            let wkb = wkb::WKB::new_from_layouts(vec![file]).unwrap();
             black_box(wkb);
         });
     });

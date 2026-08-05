@@ -30,20 +30,33 @@ pub fn keysym_to_named_key(keysym: u32) -> NamedKey {
     xkb::keysym_to_named_key(keysym)
 }
 
+/// Open and parse the XKB registry (`rules/evdev.xml`), if available.
+fn registry_ctx() -> Option<crate::xkb::rxkb::RegistryContext> {
+    let mut ctx = crate::xkb::rxkb::RegistryContext::new()?;
+    ctx.include_path_append_default();
+    ctx.parse("evdev").then_some(ctx)
+}
+
+/// List all available `(layout, variant)` pairs from the XKB registry.
+///
+/// Returns pairs suitable for [`WKB::new_from_names`]. The base layout has an
+/// empty variant string. On failure (no registry available) the list is empty.
+pub fn list_layouts() -> Vec<(String, String)> {
+    let ctx = match registry_ctx() {
+        Some(ctx) => ctx,
+        None => return Vec::new(),
+    };
+    ctx.layouts()
+        .map(|layout| (layout.name().to_string(), layout.variant().to_string()))
+        .collect()
+}
+
 /// Get all available layout variants for a given locale (test utility).
 pub fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
-    use crate::xkb::rxkb::RegistryContext;
-
-    let mut ctx = match RegistryContext::new() {
+    let ctx = match registry_ctx() {
         Some(ctx) => ctx,
         None => return vec![String::new()],
     };
-
-    ctx.include_path_append_default();
-
-    if !ctx.parse("evdev") {
-        return vec![String::new()];
-    }
 
     let mut layouts = Vec::new();
 

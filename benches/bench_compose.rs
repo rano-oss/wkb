@@ -50,6 +50,35 @@ fn bench_compose_feed(c: &mut Criterion) {
         }
 
         {
+            ensure_layout_file("us", None);
+            let file = load_layout_file("us", None);
+            let mut composer = composer_from_layout_file(&file);
+            let tokens: Vec<wkb::testing::Token> = seq
+                .keysyms
+                .iter()
+                .filter_map(|&ks| {
+                    if ks == XKB_KEY_MULTI_KEY {
+                        Some(wkb::testing::Token::Compose)
+                    } else {
+                        wkb::testing::compose_parse::keysym_to_char(ks)
+                            .map(wkb::testing::Token::Char)
+                    }
+                })
+                .collect();
+            group.bench_with_input(
+                BenchmarkId::new("wkb-noxkb", seq.name),
+                &tokens,
+                |b, tokens| {
+                    b.iter(|| {
+                        for token in tokens {
+                            black_box(composer_feed(&mut composer, *token));
+                        }
+                    });
+                },
+            );
+        }
+
+        {
             use xkbcommon::xkb;
             let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
             let locale_os = std::ffi::OsStr::new(COMPOSE_LOCALE);
