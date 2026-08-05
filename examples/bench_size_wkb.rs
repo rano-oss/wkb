@@ -48,12 +48,12 @@ fn synthetic_layout() -> LayoutFile {
             (
                 42,
                 "LeftShift".to_string(),
-                vec![(0, ModAction::Pressed(ModType::Level2))],
+                vec![(0, ModAction::Press(ModType::Level2))],
             ),
             (
                 54,
                 "RightShift".to_string(),
-                vec![(0, ModAction::Pressed(ModType::Level2))],
+                vec![(0, ModAction::Press(ModType::Level2))],
             ),
             (
                 58,
@@ -63,7 +63,7 @@ fn synthetic_layout() -> LayoutFile {
             (
                 100,
                 "AltGr".to_string(),
-                vec![(0, ModAction::Pressed(ModType::Level3))],
+                vec![(0, ModAction::Press(ModType::Level3))],
             ),
             (
                 69,
@@ -73,12 +73,12 @@ fn synthetic_layout() -> LayoutFile {
             (
                 29,
                 "LeftControl".to_string(),
-                vec![(0, ModAction::Pressed(ModType::None))],
+                vec![(0, ModAction::Press(ModType::None))],
             ),
             (
                 56,
                 "Alt".to_string(),
-                vec![(0, ModAction::Pressed(ModType::None))],
+                vec![(0, ModAction::Press(ModType::None))],
             ),
         ],
         keymap,

@@ -22,7 +22,7 @@ fn sample_file() -> LayoutFile {
         modifiers: vec![(
             42,
             "LeftShift".to_string(),
-            vec![(0, ModAction::Pressed(ModType::Level2))],
+            vec![(0, ModAction::Press(ModType::Level2))],
         )],
         keymap,
         num_lock_keys: BTreeMap::new(),
@@ -58,7 +58,7 @@ fn ron_output_matches_suggestion_shape() {
     assert!(!text.contains("num_keys"));
     assert!(text.contains("repeat_keys: [1, 2, 3],\n"));
     assert!(text.contains("modifiers: [\n"));
-    assert!(text.contains("        (42, \"LeftShift\", [(0, Pressed(Level2))]),\n"));
+    assert!(text.contains("        (42, \"LeftShift\", [(0, Press(Level2))]),\n"));
     assert!(text.contains("    keymap: {\n"));
     assert!(text.contains("        0: {\n"));
     assert!(text.contains("            0: 'a', 1: 'b',\n"));

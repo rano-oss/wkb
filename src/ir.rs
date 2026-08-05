@@ -73,10 +73,10 @@ pub enum IrError {
 
 /// One modifier action, mirroring the runtime [`ModKind`] in a serializable
 /// form. The `ModType` argument follows the surrounding XKB convention, e.g.
-/// `Pressed(Level2)`, `Lock(Caps)`, `Lock(Num)`.
+/// `Press(Level2)`, `Lock(Caps)`, `Lock(Num)`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ModAction {
-    Pressed(ModType),
+    Press(ModType),
     Lock(ModType),
     Latch(ModType),
     None,
@@ -351,7 +351,11 @@ impl TryFrom<&KBLayout> for LayoutFile {
             version: FORMAT_VERSION,
             layout: layout.name.clone(),
             repeat_keys,
-            modifiers: modifiers_from_layout(&layout.modifiers),
+            modifiers: modifiers_from_layout(
+                &layout.modifiers,
+                &layout.named_key_map,
+                &layout.state_keymap,
+            ),
             keymap,
             num_lock_keys,
             caps_lock_keymap,
@@ -406,13 +410,17 @@ fn named_section(flat: &FlatNamedKeyMap) -> NamedSection {
     to_levels(flat, |key| (key != NamedKey::Unnamed).then_some(key))
 }
 
-fn modifiers_from_layout(modifiers: &Modifiers) -> ModifierList {
+fn modifiers_from_layout(
+    modifiers: &Modifiers,
+    named: &FlatNamedKeyMap,
+    state: &FlatKeymap,
+) -> ModifierList {
     let mut out: Vec<_> = modifiers
         .iter()
         .map(|(keycode, modifier)| {
             (
                 *keycode,
-                modifier_name(*keycode, modifier),
+                modifier_name(*keycode, named, state),
                 actions_from_modifier(modifier),
             )
         })
@@ -433,7 +441,7 @@ fn actions_from_modifier(modifier: &Modifier) -> Vec<(u8, ModAction)> {
 
 fn modaction_from_modkind(kind: &ModKind) -> ModAction {
     match kind {
-        ModKind::Pressed { mod_type, .. } => ModAction::Pressed(*mod_type),
+        ModKind::Press { mod_type, .. } => ModAction::Press(*mod_type),
         ModKind::Lock { mod_type, .. } => ModAction::Lock(*mod_type),
         ModKind::Latch { mod_type, .. } => ModAction::Latch(*mod_type),
         ModKind::None => ModAction::None,
@@ -441,49 +449,12 @@ fn modaction_from_modkind(kind: &ModKind) -> ModAction {
 }
 
 /// Best-effort modifier name (metadata only; ignored when loading).
-fn modifier_name(keycode: u32, modifier: &Modifier) -> String {
-    let kind = match modifier {
-        Modifier::Single(kind) => kind,
-        Modifier::Leveled(map) => map.values().next().unwrap_or(&ModKind::None),
-    };
-    let name = match keycode {
-        29 => "LeftControl",
-        42 => "LeftShift",
-        54 => "RightShift",
-        56 => "Alt",
-        69 => "NumLock",
-        70 => "ScrollLock",
-        97 => "RightControl",
-        100 => match modifier {
-            Modifier::Single(ModKind::Latch { .. }) => "AltGrLatch",
-            Modifier::Single(ModKind::Lock { .. }) => "AltGrLock",
-            _ => "AltGr",
-        },
-        125 => "Super",
-        58 => match modifier {
-            Modifier::Leveled(_) => "Eisu_toggle",
-            _ => "CapsLock",
-        },
-        _ => match modkind_type(kind) {
-            Some(ModType::Level2) => "Shift",
-            Some(ModType::Level3) => "Level3",
-            Some(ModType::Level5) => "Level5",
-            Some(ModType::Caps) => "CapsLock",
-            Some(ModType::Num) => "NumLock",
-            Some(ModType::Scroll) => "ScrollLock",
-            Some(ModType::Compose) => "Compose",
-            _ => "Modifier",
-        },
-    };
-    name.to_string()
-}
-
-fn modkind_type(kind: &ModKind) -> Option<ModType> {
-    match kind {
-        ModKind::Pressed { mod_type, .. }
-        | ModKind::Lock { mod_type, .. }
-        | ModKind::Latch { mod_type, .. } => Some(*mod_type),
-        ModKind::None => None,
+fn modifier_name(keycode: u32, named: &FlatNamedKeyMap, state: &FlatKeymap) -> String {
+    match named.get(0, keycode) {
+        NamedKey::Unnamed => state
+            .get(0, keycode)
+            .map_or_else(|| "Modifier".to_string(), |ch| ch.to_string()),
+        name => format!("{name:?}"),
     }
 }
 
@@ -593,7 +564,7 @@ fn from_levels<T: FlatMapValue, V: Copy>(
 #[rustfmt::skip]
 fn modkind_from_modaction(action: ModAction) -> ModKind {
     match action {
-        ModAction::Pressed(t) => ModKind::Pressed { pressed: false, mod_type: t },
+        ModAction::Press(t) => ModKind::Press { pressed: false, mod_type: t },
         ModAction::Lock(t) => ModKind::Lock { pressed: false, locked: 0, mod_type: t },
         ModAction::Latch(t) => ModKind::Latch { pressed: false, latched: false, mod_type: t },
         ModAction::None => ModKind::None,

@@ -42,8 +42,8 @@ XKB at runtime.
         21, 22, 23, 24, 25, 26, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
         43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 55, 57],
     modifiers: [
-        (29, "LeftControl", [(0, Pressed(None))]),
-        (42, "LeftShift", [(0, Pressed(Level2))]),
+        (29, "LeftControl", [(0, Press(None))]),
+        (42, "LeftShift", [(0, Press(Level2))]),
         (58, "CapsLock", [(0, Lock(Caps))]),
     ],
     keymap: {
@@ -145,14 +145,16 @@ byte-for-byte (verified across all generated fixtures).
 
 Modifier bindings are a list of tuples `(keycode, name, [(level, action)])`,
 one per line. `name` is human-readable metadata only — it is ignored when
-loading. `action` is the `ModAction`:
+loading. Names come from the layout's named-key table (e.g. `LeftShift`,
+`CapsLock`), falling back to the key's base character, then to `Modifier`.
+`action` is the `ModAction`:
 
 ```ron
 modifiers: [
-    (42, "LeftShift", [(0, Pressed(Level2))]),
+    (42, "LeftShift", [(0, Press(Level2))]),
     (58, "CapsLock", [(0, Lock(Caps))]),
     (69, "NumLock", [(0, Lock(Num))]),
-    (100, "AltGr", [(0, Pressed(Level3))]),
+    (100, "Modifier", [(0, Press(Level3))]),
 ],
 ```
 
@@ -160,7 +162,7 @@ modifiers: [
 
 ```rust
 pub enum ModAction {
-    Pressed(ModType),  // held key selects a level
+    Press(ModType),  // held key selects a level
     Lock(ModType),     // toggles a lock (Caps, Num)
     Latch(ModType),    // one-shot latch
     None,
@@ -217,7 +219,7 @@ On load, the following are enforced (each maps to an `IrError` variant):
     layout: "us",
     repeat_keys: [1, 2, 3, 4, 5, 6],
     modifiers: [
-        (42, "LeftShift", [(0, Pressed(Level2))]),
+        (42, "LeftShift", [(0, Press(Level2))]),
     ],
     keymap: {
         0: {
