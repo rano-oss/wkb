@@ -32,11 +32,9 @@ fn xkb_new_keymap_from_names(locale: String, layout: Option<String>) -> xkb::Key
 ])]
 fn repeat_keys(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
-        println!("{}", layout);
         let xkb = xkb_new_keymap_from_names(locale.to_string(), Some(layout.to_owned()));
         let wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         for i in 0..701 {
-            println!("{i}");
             assert!(xkb.key_repeats(Keycode::new(i + 8)) == wkb.key_repeats(i));
         }
     }
