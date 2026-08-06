@@ -6723,7 +6723,7 @@ macro_rules! impl_parse_hex {
                 result = result * 16 + d as $t;
                 i += 1;
             }
-            if i < s.len() && hex_val(s[i].) < 16 {
+            if i < s.len() && hex_val(s[i]) < 16 {
                 return (result, -1);
             }
             (result, i as i32)
