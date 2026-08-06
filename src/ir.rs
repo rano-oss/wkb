@@ -23,7 +23,7 @@ use crate::{FlatKeymap, FlatNamedKeyMap, KBLayout, KeyBitSet};
 
 /// Current version of the layout file schema. Files with a different version
 /// are rejected by [`LayoutFile::validate`].
-pub const FORMAT_VERSION: u32 = 2;
+pub const FORMAT_VERSION: u32 = 1;
 
 /// Number of evdev keycode slots, fixed at compile time. Every keycode in a
 /// layout file is `< NUM_KEYS`. Chosen well above the current maximum keycode
