@@ -3,8 +3,7 @@
 use std::collections::BTreeMap;
 
 use wkb::ir::{self, IrError, LayoutFile, ModAction};
-use wkb::testing::NamedKey;
-use wkb::{ModType, WKB};
+use wkb::{ModType, NamedKey, WKB};
 
 const COMPOSE: char = ir::COMPOSE_KEY_CHAR;
 

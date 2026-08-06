@@ -32,7 +32,7 @@
 //! comparison helpers in this file must be updated.
 
 use test_case::test_matrix;
-use wkb::{KeyDirection, ModType, WKB, testing::keysym_to_named_key};
+use wkb::{keysym_to_named_key, KeyDirection, ModType, WKB};
 use xkbcommon::xkb;
 
 // ── Helpers ─────────────────────────────────────────────────────────────

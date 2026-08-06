@@ -48,11 +48,15 @@ pub use modifiers::{level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, NUM_LO
 /// Intermediate representation for persisted layout data files.
 pub mod ir;
 mod named_keys;
+pub use named_keys::NamedKey;
 /// Test-only utilities. Not part of the public API.
 #[cfg(feature = "testing")]
 pub mod testing;
 #[cfg(feature = "xkb")]
 mod xkb;
+#[cfg(feature = "xkb")]
+#[doc(hidden)]
+pub use xkb::keysym_to_named_key;
 #[cfg(feature = "xkb")]
 pub use xkb::XkbError;
 
@@ -99,8 +103,6 @@ impl KeyBitSet {
         }
     }
 }
-
-use crate::named_keys::NamedKey;
 
 /// Errors from WKB operations (not related to XKB parsing/compilation).
 #[derive(Debug, thiserror::Error)]

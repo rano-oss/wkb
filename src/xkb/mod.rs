@@ -253,7 +253,8 @@ pub fn load_compose_from_path_uncached(path: &Path) -> Composer {
 /// KP variants collapse to their main key equivalents (KP_Enter → Enter).
 /// ISO_Left_Tab → Tab, ISO_Enter → Enter.
 /// Dead keys and character-producing keys map to `Unnamed`.
-pub(crate) fn keysym_to_named_key(keysym: u32) -> NamedKey {
+#[doc(hidden)]
+pub fn keysym_to_named_key(keysym: u32) -> NamedKey {
     const TABLE: &[(u32, NamedKey)] = &[
         (0x0020, NamedKey::Space),
         (0xfe20, NamedKey::Tab),

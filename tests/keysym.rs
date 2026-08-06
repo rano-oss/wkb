@@ -1,5 +1,5 @@
 use test_case::test_matrix;
-use wkb::testing::keysym_to_named_key;
+use wkb::keysym_to_named_key;
 use xkbcommon::xkb::{self, Keycode};
 
 fn xkb_new_keymap_from_names(locale: &str, layout: &str) -> xkb::Keymap {
