@@ -711,8 +711,6 @@ pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
     ctx
 }
 
-// --- Merged from context_priv.rs ---
-
 pub(crate) fn xkb_context_getenv(name: &str) -> Result<String, VarError> {
     std::env::var(name)
 }

@@ -6406,10 +6406,7 @@ pub(crate) struct LookupEntry {
     pub(crate) value: u32,
 }
 
-// ── Shared AST type definitions (merged from shared_ast_types.rs) ──
-
 // ── File type enum ──────────────────────────────────────────────────
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[repr(u32)]
 pub(crate) enum FileType {
@@ -6423,7 +6420,6 @@ pub(crate) enum FileType {
 }
 
 // ── Merge mode enum ─────────────────────────────────────────────────
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 pub(crate) enum MergeMode {
     #[default]
@@ -6436,7 +6432,6 @@ pub(crate) enum MergeMode {
 // ── Core AST node types ─────────────────────────────────────────────
 
 #[derive(Clone)]
-
 pub(crate) struct IncludeStmt {
     pub(crate) merge: MergeMode,
     pub(crate) stmt: String,
@@ -6649,14 +6644,12 @@ pub(crate) struct XkbKeymapInfo<'a> {
 }
 
 #[derive(Copy, Clone)]
-
 pub(crate) struct XkbcompLookup {
     pub(crate) group_index_names: [LookupEntry; 3],
     pub(crate) group_mask_names: [LookupEntry; 5],
 }
 
 #[derive(Copy, Clone)]
-
 pub(crate) struct XkbcompFeatures {
     pub(crate) max_groups: u32,
     pub(crate) max_overlays: u8,
@@ -6676,10 +6669,10 @@ pub(crate) fn istrcmp(a: &[u8], b: &[u8]) -> i32 {
         let al = a[i].to_ascii_lowercase();
         let bl = b[i].to_ascii_lowercase();
         if al != bl {
-            return al as i32 - bl as i32;
+            return (al - bl) as i32;
         }
     }
-    (a.len() as i32) - (b.len() as i32)
+    (a.len() - b.len()) as i32
 }
 
 macro_rules! impl_parse_dec {
@@ -6711,12 +6704,7 @@ impl_parse_dec!(parse_dec_u64, u64);
 /// Convert a hex digit byte to its numeric value (0-15), or 0xff if invalid.
 #[inline]
 fn hex_val(b: u8) -> u8 {
-    match b {
-        b'0'..=b'9' => b - b'0',
-        b'A'..=b'F' => b - b'A' + 10,
-        b'a'..=b'f' => b - b'a' + 10,
-        _ => 0xff,
-    }
+    (b as char).to_digit(16).unwrap_or(0xff) as u8
 }
 
 macro_rules! impl_parse_hex {
@@ -6735,7 +6723,7 @@ macro_rules! impl_parse_hex {
                 result = result * 16 + d as $t;
                 i += 1;
             }
-            if i < s.len() && hex_val(s[i]) < 16 {
+            if i < s.len() && hex_val(s[i].) < 16 {
                 return (result, -1);
             }
             (result, i as i32)
