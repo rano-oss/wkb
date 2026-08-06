@@ -742,8 +742,8 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
             Err(VarError::NotPresent)
         };
         rmlvo.rules = match env {
-            Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
-            Err(_) => std::ffi::CString::new("evdev").unwrap(),
+            Ok(env) => env,
+            Err(_) => "evdev".to_string(),
         };
         modified |= RMLVO_RULES;
     }
@@ -754,8 +754,8 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
             Err(VarError::NotPresent)
         };
         rmlvo.model = match env {
-            Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
-            Err(_) => std::ffi::CString::new("pc105").unwrap(),
+            Ok(env) => env,
+            Err(_) => "pc105".to_string(),
         };
         modified |= RMLVO_MODEL;
     }
@@ -767,19 +767,19 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
                 Err(VarError::NotPresent)
             };
             rmlvo.layout = match env {
-                Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
-                Err(_) => std::ffi::CString::new("us").unwrap(),
+                Ok(env) => env,
+                Err(_) => "us".to_string(),
             };
         }
         modified |= RMLVO_LAYOUT;
-        let variant: std::ffi::CString = {
+        let variant: String = {
             let layout = xkb_context_getenv("XKB_DEFAULT_LAYOUT");
             let default_variant = xkb_context_getenv("XKB_DEFAULT_VARIANT");
             match (layout, ctx.use_environment_names, default_variant) {
                 (Ok(_), true, Ok(default_variant)) => {
-                    std::ffi::CString::new(default_variant).unwrap_or_default()
+                    default_variant
                 }
-                (_, _, _) => std::ffi::CString::new("").unwrap(),
+                (_, _, _) => "".to_string(),
             }
         };
         rmlvo.variant = variant;
@@ -789,11 +789,11 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
         if ctx.use_environment_names {
             let env = xkb_context_getenv("XKB_DEFAULT_OPTIONS");
             rmlvo.options = match env {
-                Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
-                Err(_) => std::ffi::CString::new("").unwrap(),
+                Ok(env) => env,
+                Err(_) => "".to_string(),
             };
         } else {
-            rmlvo.options = std::ffi::CString::new("").unwrap();
+            rmlvo.options = "".to_string();
         };
         modified |= RMLVO_OPTIONS;
     }

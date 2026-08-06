@@ -5814,8 +5814,7 @@ pub(crate) fn xkb_components_from_rules_names(
     explicit_layouts: &mut u32,
 ) -> bool {
     let mut matcher = matcher_new_from_names(ctx, rmlvo);
-    let rules_str = rmlvo.rules.to_str().unwrap_or("");
-    xkb_resolve_rules(rules_str, &mut matcher, out, explicit_layouts)
+    xkb_resolve_rules(&rmlvo.rules, &mut matcher, out, explicit_layouts)
 }
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -5850,11 +5849,11 @@ pub(crate) const XKB_MOD_INVALID: u32 = 0xffffffff;
 
 #[derive(Clone, Debug)]
 pub(crate) struct XkbRuleNames {
-    pub(crate) rules: std::ffi::CString,
-    pub(crate) model: std::ffi::CString,
-    pub(crate) layout: std::ffi::CString,
-    pub(crate) variant: std::ffi::CString,
-    pub(crate) options: std::ffi::CString,
+    pub(crate) rules: String,
+    pub(crate) model: String,
+    pub(crate) layout: String,
+    pub(crate) variant: String,
+    pub(crate) options: String,
 }
 
 impl Default for XkbRuleNames {
@@ -5872,11 +5871,11 @@ impl XkbRuleNames {
         options: &str,
     ) -> Self {
         Self {
-            rules: std::ffi::CString::new(rules).unwrap(),
-            model: std::ffi::CString::new(model).unwrap(),
-            layout: std::ffi::CString::new(layout).unwrap(),
-            variant: std::ffi::CString::new(variant).unwrap(),
-            options: std::ffi::CString::new(options).unwrap(),
+            rules: rules.to_string(),
+            model: model.to_string(),
+            layout: layout.to_string(),
+            variant: variant.to_string(),
+            options: options.to_string(),
         }
     }
 }
