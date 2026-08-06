@@ -1,9 +1,11 @@
 use test_case::test_matrix;
-use wkb::{ALTGR, KeyDirection, ModType, NUM_LOCK, WKB, level_index};
+use wkb::{level_index, KeyDirection, ModType, ALTGR, NUM_LOCK, WKB};
 use xkbcommon::{
     self,
     xkb::{self, Keycode},
 };
+
+include!("../test_data/layouts.rs");
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
     let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
@@ -113,7 +115,10 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
             }
         }
         3 => {
-            if let (Some((c3, l3)), Some((c2, l2))) = (wkb.level_code(ModType::Level3), wkb.level_code(ModType::Level2)) {
+            if let (Some((c3, l3)), Some((c2, l2))) = (
+                wkb.level_code(ModType::Level3),
+                wkb.level_code(ModType::Level2),
+            ) {
                 set_level(wkb, xkb, c3, l3);
                 set_level(wkb, xkb, c2, l2);
                 true
@@ -130,7 +135,10 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
             }
         }
         5 => {
-            if let (Some((c5, l5)), Some((c2, l2))) = (wkb.level_code(ModType::Level5), wkb.level_code(ModType::Level2)) {
+            if let (Some((c5, l5)), Some((c2, l2))) = (
+                wkb.level_code(ModType::Level5),
+                wkb.level_code(ModType::Level2),
+            ) {
                 set_level(wkb, xkb, c5, l5);
                 set_level(wkb, xkb, c2, l2);
                 true
@@ -139,7 +147,10 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
             }
         }
         6 => {
-            if let (Some((c5, l5)), Some((c3, l3))) = (wkb.level_code(ModType::Level5), wkb.level_code(ModType::Level3)) {
+            if let (Some((c5, l5)), Some((c3, l3))) = (
+                wkb.level_code(ModType::Level5),
+                wkb.level_code(ModType::Level3),
+            ) {
                 set_level(wkb, xkb, c5, l5);
                 set_level(wkb, xkb, c3, l3);
                 true
@@ -148,9 +159,11 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
             }
         }
         7 => {
-            if let (Some((c5, l5)), Some((c3, l3)), Some((c2, l2))) =
-                (wkb.level_code(ModType::Level5), wkb.level_code(ModType::Level3), wkb.level_code(ModType::Level2))
-            {
+            if let (Some((c5, l5)), Some((c3, l3)), Some((c2, l2))) = (
+                wkb.level_code(ModType::Level5),
+                wkb.level_code(ModType::Level3),
+                wkb.level_code(ModType::Level2),
+            ) {
                 set_level(wkb, xkb, c5, l5);
                 set_level(wkb, xkb, c3, l3);
                 set_level(wkb, xkb, c2, l2);
@@ -173,7 +186,7 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ], [0usize, 1, 2, 3, 4, 5, 6, 7])]
 fn num_lock(locale: &str, level: usize) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         set_modifier_level(&mut wkb, &mut xkb, level);

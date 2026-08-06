@@ -2,6 +2,8 @@ use test_case::test_matrix;
 use wkb::{ALTGR, KeyDirection, ModType, WKB, level_index};
 use xkbcommon::xkb::{self, Keycode};
 
+include!("../test_data/layouts.rs");
+
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
     let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
     let variant_str = layout.unwrap_or_default();
@@ -170,7 +172,7 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ], [0usize, 1, 2, 3, 4, 5, 6, 7])]
 fn state(locale: &str, level: usize) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         set_modifier_level(&mut wkb, &mut xkb, level);

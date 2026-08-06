@@ -2,6 +2,8 @@ use test_case::test_matrix;
 use wkb::{CAPS_LOCK, KeyDirection, ModType};
 use xkbcommon::xkb::{self as xkbcmn, Keycode};
 
+include!("../test_data/layouts.rs");
+
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkbcmn::State {
     let context = xkbcmn::Context::new(xkbcmn::CONTEXT_NO_FLAGS);
     let variant_str = layout.unwrap_or_default();
@@ -30,7 +32,7 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkbcmn::State {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn shift_lock_behavior(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
@@ -89,7 +91,7 @@ fn shift_lock_behavior(locale: &str) {
 /// Eisu_toggle switches between ASCII and Kana input modes
 #[test_matrix(["jp"])]
 fn eisu_toggle_japanese(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
@@ -129,7 +131,7 @@ fn eisu_toggle_japanese(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn caps_plus_shift_combination(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
@@ -191,7 +193,7 @@ fn caps_plus_shift_combination(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn altgr_combinations(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
@@ -269,7 +271,7 @@ fn altgr_combinations(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn level5_modifier(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
@@ -306,7 +308,7 @@ fn level5_modifier(locale: &str) {
 /// Test modifier state after multiple rapid presses/releases
 #[test_matrix(["us", "de", "fr", "jp", "ru", "gr"])]
 fn rapid_modifier_changes(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 

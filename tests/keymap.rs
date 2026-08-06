@@ -1,36 +1,7 @@
-//! Keymap tests: XKB string export comparison and string-based construction.
-//!
-//! # Known KP/ISO collapse
-//!
-//! WKB normalises several XKB keysyms into their canonical equivalents via
-//! `NamedKey`.  This means the exported XKB string intentionally differs from
-//! what libxkbcommon produces for keys that live on the keypad or have ISO
-//! prefixes.  The semantic comparison helpers below map both sides through
-//! `keysym_to_named_key` before comparing, so the tests accept the collapse.
-//!
-//! The full collapse set is:
-//!
-//! | Keysym          | Collapses to | Canonical keysym |
-//! |-----------------|-------------|-----------------|
-//! | KP_Space        | Space       | 0x0020          |
-//! | KP_Enter        | Enter       | 0xff0d          |
-//! | KP_Tab          | Tab         | 0xff09          |
-//! | KP_Delete       | Delete      | 0xffff          |
-//! | KP_Insert       | Insert      | 0xff63          |
-//! | KP_Home         | Home        | 0xff50          |
-//! | KP_End          | End         | 0xff57          |
-//! | KP_Page_Up      | PageUp      | 0xff55          |
-//! | KP_Page_Down    | PageDown    | 0xff56          |
-//! | KP_Up           | ArrowUp     | 0xff52          |
-//! | KP_Down         | ArrowDown   | 0xff54          |
-//! | KP_Left         | ArrowLeft   | 0xff51          |
-//! | KP_Right        | ArrowRight  | 0xff53          |
-//! | ISO_Left_Tab    | Tab         | 0xff09          |
-//! | ISO_Enter       | Enter       | 0xff0d          |
-//!
 //! If a key is added to `NamedKey` that changes the collapse set, the
 //! comparison helpers in this file must be updated.
 
+include!("../test_data/layouts.rs");
 use test_case::test_matrix;
 use wkb::{keysym_to_named_key, KeyDirection, ModType, WKB};
 use xkbcommon::xkb;
@@ -187,7 +158,7 @@ fn export_round_trip(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn export_all_variants_match_xkbcommon(locale: &str) {
-    let variants = wkb::testing::get_all_layouts_for_locale(locale);
+    let variants = get_all_layouts_for_locale(locale);
 
     let mut failures: Vec<String> = Vec::new();
 
