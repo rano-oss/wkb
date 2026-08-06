@@ -51,10 +51,10 @@ pub use named_keys::NamedKey;
 #[cfg(feature = "xkb")]
 mod xkb;
 #[cfg(feature = "xkb")]
-#[doc(hidden)]
-pub use xkb::keysym_to_named_key;
-#[cfg(feature = "xkb")]
 pub use xkb::XkbError;
+#[cfg(feature = "xkb")]
+#[doc(hidden)]
+pub use xkb::{keysym_to_named_key, load_compose_from_path, load_compose_from_path_uncached};
 
 pub(crate) const BITSET_WORDS: usize = 12;
 

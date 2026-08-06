@@ -174,9 +174,77 @@ fn bench_compose_feed(c: &mut Criterion) {
     group.finish();
 }
 
+fn bench_compose_load(c: &mut Criterion) {
+    let mut group = c.benchmark_group("compose/load");
+    let path = std::path::Path::new(COMPOSE_FILE);
+    if !path.exists() {
+        println!("SKIP: compose file not found: {COMPOSE_FILE}");
+        group.finish();
+        return;
+    }
+
+    // wkb: full parse into a composer trie, bypassing the canonical-path cache.
+    group.bench_function("wkb_cold_parse", |b| {
+        b.iter(|| {
+            black_box(wkb::load_compose_from_path_uncached(black_box(path)));
+        });
+    });
+
+    // wkb: cached by canonical path — only the first call parses.
+    group.bench_function("wkb_cached", |b| {
+        b.iter(|| {
+            black_box(wkb::load_compose_from_path(black_box(path)));
+        });
+    });
+
+    // xkbcommon: compose table from locale (fresh table each call).
+    {
+        use xkbcommon::xkb;
+        let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+        group.bench_function("xkbcommon", |b| {
+            b.iter(|| {
+                let table = xkb::compose::Table::new_from_locale(
+                    &ctx,
+                    std::ffi::OsStr::new(COMPOSE_LOCALE),
+                    xkb::compose::COMPILE_NO_FLAGS,
+                );
+                let _ = black_box(table);
+            });
+        });
+    }
+
+    // xkbcommon-dl: compose table from locale via the dynamic-loader FFI.
+    {
+        let xkb = xkbcommon_dl::xkbcommon_handle();
+        let xkb_compose = xkbcommon_dl::xkbcommon_compose_handle();
+        let ctx = unsafe {
+            (xkb.xkb_context_new)(xkbcommon_dl::xkb_context_flags::XKB_CONTEXT_NO_FLAGS)
+        };
+        let c_locale = CString::new(COMPOSE_LOCALE).unwrap();
+        group.bench_function("xkbcommon-dl", |b| {
+            b.iter(|| {
+                let table = unsafe {
+                    (xkb_compose.xkb_compose_table_new_from_locale)(
+                        ctx,
+                        c_locale.as_ptr(),
+                        xkbcommon_dl::xkb_compose_compile_flags::XKB_COMPOSE_COMPILE_NO_FLAGS,
+                    )
+                };
+                if !table.is_null() {
+                    unsafe { (xkb_compose.xkb_compose_table_unref)(table) };
+                }
+                black_box(table);
+            });
+        });
+        unsafe { (xkb.xkb_context_unref)(ctx) };
+    }
+
+    group.finish();
+}
+
 criterion_group! {
     name = benches;
     config = cfg();
-    targets = bench_compose_feed,
+    targets = bench_compose_feed, bench_compose_load,
 }
 criterion_main!(benches);

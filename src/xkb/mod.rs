@@ -128,6 +128,7 @@ fn resolve_char(
 
 struct ComposeTableData {
     entries: Vec<keymap::ComposeEntry>,
+    composer: Composer,
     filtered: Mutex<Vec<(Vec<char>, Arc<Composer>)>>,
 }
 
@@ -153,9 +154,11 @@ fn cached_compose_table(cache: &ComposeTableCache, path: &Path) -> Option<Compos
 fn parse_compose_table(path: &Path) -> (ComposeTableData, bool) {
     let mut entries = Vec::new();
     let complete = keymap::parse_compose_file_impl(path, &mut |entry| entries.push(entry));
+    let composer = build_composer(&entries, None);
     (
         ComposeTableData {
             entries,
+            composer,
             filtered: Mutex::new(Vec::new()),
         },
         complete,
@@ -233,6 +236,20 @@ fn load_compose_entries(path: &Path) -> ComposeTable {
         cache.push((requested_path, table.clone()));
     }
     table
+}
+
+/// Load a Compose file (via its parsed entries cached by canonical path) into
+/// a full composer trie. Bench-only helper, not part of the public API.
+#[doc(hidden)]
+pub fn load_compose_from_path(path: &Path) -> Composer {
+    load_compose_entries(path).composer.clone()
+}
+
+/// Parse a Compose file into a full composer trie without consulting the
+/// canonical-path cache. Bench-only helper, not part of the public API.
+#[doc(hidden)]
+pub fn load_compose_from_path_uncached(path: &Path) -> Composer {
+    parse_compose_table(path).0.composer
 }
 
 /// Map an XKB keysym value to a [`NamedKey`].

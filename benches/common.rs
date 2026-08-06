@@ -398,3 +398,6 @@ pub fn xkb_feed_compose(
 
 /// Fixed locale for compose benchmarks.
 pub const COMPOSE_LOCALE: &str = "en_US.UTF-8";
+
+/// Path to the Compose file for [`COMPOSE_LOCALE`] (as resolved by xkbcommon).
+pub const COMPOSE_FILE: &str = "/usr/share/X11/locale/en_US.UTF-8/Compose";
