@@ -94,12 +94,12 @@ let xkb_string = wkb.as_xkb_string().unwrap();
 
 | Benchmark | wkb | wkb-noxkb | xkbcommon | xkbcommon-dl | vs xkbcommon |
 |-----------|-----|-----------|-----------|--------------|-------------|
-| Setup (no compose) | 2.25 ms | 841.2 µs | 2.21 ms | 2.19 ms | ~same |
-| Setup (with compose) | 2.27 ms | 842.5 µs | 4.05 ms | 4.02 ms | **1.8x faster** |
-| Key update | 89 ns | 88 ns | 165 ns | 163 ns | **1.8x faster** |
-| Get char | 94 ns | 92 ns | 261 ns | 243 ns | **2.8x faster** |
-| Get keysym | 93 ns | 94 ns | 204 ns | 201 ns | **2.2x faster** |
-| Compose feed | 250 ns | 251 ns | 506 ns | 467 ns | **2.0x faster** |
+| Setup (no compose) | 2.25 ms | 915.5 µs | 2.20 ms | 2.21 ms | ~same |
+| Setup (with compose) | 2.28 ms | 919.4 µs | 4.06 ms | 4.03 ms | **1.8x faster** |
+| Key update | 90 ns | 90 ns | 167 ns | 168 ns | **1.9x faster** |
+| Get char | 94 ns | 94 ns | 296 ns | 274 ns | **3.1x faster** |
+| Get keysym | 96 ns | 96 ns | 209 ns | 207 ns | **2.2x faster** |
+| Compose feed | 272 ns | 272 ns | 539 ns | 495 ns | **2.0x faster** |
 
 ### Memory
 
