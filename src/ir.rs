@@ -311,8 +311,6 @@ fn validate_section<T>(section: &BTreeMap<u8, BTreeMap<u32, T>>) -> Result<(), I
     Ok(())
 }
 
-// --- KBLayout -> LayoutFile (generation) ---
-
 impl TryFrom<&KBLayout> for LayoutFile {
     type Error = IrError;
 
@@ -440,8 +438,6 @@ fn dfs_compose(
         path.pop();
     }
 }
-
-// --- LayoutFile -> KBLayout (loading) ---
 
 impl TryFrom<LayoutFile> for KBLayout {
     type Error = IrError;

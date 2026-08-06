@@ -4,8 +4,6 @@
 pub(crate) mod keymap;
 pub(crate) mod keysym;
 pub(crate) mod parser;
-#[cfg(feature = "testing")]
-pub(crate) mod rxkb;
 pub(crate) mod symbols;
 
 use crate::composer::Token;
