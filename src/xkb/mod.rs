@@ -910,6 +910,32 @@ fn build_modifiers_from_keymap(keymap: &keymap::Keymap) -> Modifiers {
             modifiers.set_modifier(evdev_code, Modifier::Single(mod_kind));
         }
     }
+
+    // xkbcommon assigns the Control modifier to the standard LCTL/RCTL keys
+    // via its default modifier map even when a layout remaps their symbols
+    // (br/thinkpad, kr/kr104) or repurposes them as a level switch (ca/multix).
+    // Ensure they suppress output like xkbcommon would.
+    for &code in &[LEFT_CTRL, RIGHT_CTRL] {
+        let already_control = modifiers.iter().any(|(c, m)| {
+            *c == code
+                && matches!(
+                    m,
+                    Modifier::Single(ModKind::Press {
+                        mod_type: ModType::None,
+                        ..
+                    }) | Modifier::Leveled(_)
+                )
+        });
+        if !already_control {
+            modifiers.set_modifier(
+                code,
+                Modifier::Single(ModKind::Press {
+                    pressed: false,
+                    mod_type: ModType::None,
+                }),
+            );
+        }
+    }
     modifiers
 }
 
