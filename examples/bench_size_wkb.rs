@@ -39,6 +39,7 @@ fn synthetic_layout() -> LayoutFile {
     ]);
     let num_lock_keys = levels(&[(0, 76, '5')]);
     let caps_lock_keymap = levels(&[(0, 30, 'A')]);
+    let caps_num_lock_keys = levels(&[(0, 30, 'A')]);
 
     LayoutFile {
         version: wkb::ir::FORMAT_VERSION,
@@ -58,6 +59,7 @@ fn synthetic_layout() -> LayoutFile {
         caps_lock_keymap,
         keysym_map: BTreeMap::new(),
         compose: Vec::new(),
+        caps_num_lock_keys
     }
 }
 

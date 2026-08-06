@@ -24,6 +24,7 @@ fn sample_file() -> LayoutFile {
         keymap,
         num_lock_keys: BTreeMap::new(),
         caps_lock_keymap: BTreeMap::new(),
+        caps_num_lock_keys: BTreeMap::new(),
         keysym_map: BTreeMap::new(),
         compose: vec![(vec![COMPOSE, 'a', 'e'], 'æ')],
     }

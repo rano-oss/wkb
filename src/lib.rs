@@ -118,6 +118,8 @@ pub struct KBLayout {
     pub(crate) state_keymap: FlatKeymap,
     pub(crate) num_lock_keys: FlatKeymap,
     pub(crate) caps_lock_keymap: FlatKeymap,
+    /// Overrides active while BOTH Num Lock and Caps Lock are locked.
+    pub(crate) caps_num_lock_keys: FlatKeymap,
     pub(crate) named_key_map: FlatNamedKeyMap,
     #[cfg(feature = "xkb")]
     pub(crate) level_exceptions_keymap: FlatKeymap,
@@ -320,6 +322,11 @@ impl WKB {
         let level3 = level3 && kb_layout.state_keymap.data.len() > 2 * nk;
         let level2 = level2 && kb_layout.state_keymap.data.len() > nk;
         let base_level = level_index(level5, level3, level2);
+        if kb_layout.modifiers.num_locked() && kb_layout.modifiers.caps_locked() {
+            if let Some(c) = kb_layout.caps_num_lock_keys.get(base_level, evdev_code) {
+                return Some(c);
+            }
+        }
         if kb_layout.modifiers.num_locked() {
             if let Some(c) = kb_layout.num_lock_keys.get(base_level, evdev_code) {
                 return Some(c);
