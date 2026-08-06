@@ -357,25 +357,40 @@ impl WKB {
     /// Return the keycode (and optional level) for the given modifier type.
     #[doc(hidden)]
     pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
-        xkb::level_code(&self.layouts[self.current_layout_idx].modifiers, mod_type)
-    }
-
-    /// Return the keycode (and optional level) for the Level2 (Shift) modifier.
-    #[doc(hidden)]
-    pub fn level2_code(&self) -> Option<(u32, Option<u8>)> {
-        self.level_code(ModType::Level2)
-    }
-
-    /// Return the keycode (and optional level) for the Level3 (AltGr) modifier.
-    #[doc(hidden)]
-    pub fn level3_code(&self) -> Option<(u32, Option<u8>)> {
-        self.level_code(ModType::Level3)
-    }
-
-    /// Return the keycode (and optional level) for the Level5 modifier.
-    #[doc(hidden)]
-    pub fn level5_code(&self) -> Option<(u32, Option<u8>)> {
-        self.level_code(ModType::Level5)
+        let modifiers = &self.layouts[self.current_layout_idx].modifiers;
+        let mut other_mod = None;
+    
+        for (code, modifier) in modifiers.iter() {
+            match modifier {
+                Modifier::Single(mod_kind) => {
+                    if mod_kind.has_mod_type(mod_type) {
+                        match mod_kind {
+                            ModKind::Press { .. } => return Some((*code, None)),
+                            _ => {
+                                if other_mod.is_none() {
+                                    other_mod = Some((*code, None));
+                                }
+                            }
+                        }
+                    }
+                }
+                Modifier::Leveled(map) => {
+                    for (level, mod_kind) in map {
+                        if mod_kind.has_mod_type(mod_type) {
+                            match mod_kind {
+                                ModKind::Press { .. } => return Some((*code, Some(*level))),
+                                _ => {
+                                    if other_mod.is_none() {
+                                        other_mod = Some((*code, Some(*level)));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        other_mod
     }
 
     /// Process a key press. Updates modifier state and advances compose sequences.

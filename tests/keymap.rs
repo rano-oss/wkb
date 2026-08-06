@@ -32,7 +32,7 @@
 //! comparison helpers in this file must be updated.
 
 use test_case::test_matrix;
-use wkb::{testing::keysym_to_named_key, KeyDirection, WKB};
+use wkb::{KeyDirection, ModType, WKB, testing::keysym_to_named_key};
 use xkbcommon::xkb;
 
 // ── Helpers ─────────────────────────────────────────────────────────────
@@ -341,7 +341,7 @@ fn string_us() {
         );
     }
 
-    if let Some((shift_code, _)) = wkb_from_string.level2_code() {
+    if let Some((shift_code, _)) = wkb_from_string.level_code(ModType::Level2) {
         wkb_from_string.update_key(shift_code, KeyDirection::Down);
         wkb_from_names.update_key(shift_code, KeyDirection::Down);
 
@@ -391,11 +391,11 @@ fn string_modifiers() {
     let wkb = WKB::new_from_string(&keymap_str).unwrap();
 
     assert!(
-        wkb.level2_code().is_some(),
+        wkb.level_code(ModType::Level2).is_some(),
         "Level2 (Shift) should be detected"
     );
     assert!(
-        wkb.level3_code().is_some(),
+        wkb.level_code(ModType::Level3).is_some(),
         "Level3 (AltGr) should be detected"
     );
 }
