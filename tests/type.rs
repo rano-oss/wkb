@@ -11,7 +11,6 @@
 use std::collections::HashMap;
 use std::fmt::Write;
 use std::path::{Path, PathBuf};
-use wkb::testing::WKBTestExt;
 use xkbcommon::xkb;
 
 const TEST_DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/test_files");
@@ -165,7 +164,7 @@ fn run_type_test(case_dir: &Path, key_names: &HashMap<String, u32>) -> Result<()
 
                     // Update both states
                     xkb_state.update_key(xkb_kc, xkb::KeyDirection::Down);
-                    wkb.update_key(evdev_code, wkb::testing::KeyDirection::Down);
+                    wkb.update_key(evdev_code, wkb::KeyDirection::Down);
 
                     // Compare modifier state
                     let xkb_mods = (
@@ -188,7 +187,7 @@ fn run_type_test(case_dir: &Path, key_names: &HashMap<String, u32>) -> Result<()
 
                 if do_up {
                     xkb_state.update_key(xkb_kc, xkb::KeyDirection::Up);
-                    wkb.update_key(evdev_code, wkb::testing::KeyDirection::Up);
+                    wkb.update_key(evdev_code, wkb::KeyDirection::Up);
 
                     let xkb_mods = (
                         xkb_state.serialize_mods(xkb::STATE_MODS_DEPRESSED),

@@ -4,8 +4,6 @@
 pub(crate) mod keymap;
 pub(crate) mod keysym;
 pub(crate) mod parser;
-#[cfg(feature = "testing")]
-pub(crate) mod rxkb;
 pub(crate) mod symbols;
 
 use crate::composer::Token;
@@ -240,12 +238,16 @@ fn load_compose_entries(path: &Path) -> ComposeTable {
     table
 }
 
-/// Load a compose file using parsed entries cached by canonical path.
+/// Load a Compose file (via its parsed entries cached by canonical path) into
+/// a full composer trie. Bench-only helper, not part of the public API.
+#[doc(hidden)]
 pub fn load_compose_from_path(path: &Path) -> Composer {
     load_compose_entries(path).composer.clone()
 }
 
-#[cfg(feature = "testing")]
+/// Parse a Compose file into a full composer trie without consulting the
+/// canonical-path cache. Bench-only helper, not part of the public API.
+#[doc(hidden)]
 pub fn load_compose_from_path_uncached(path: &Path) -> Composer {
     parse_compose_table(path).0.composer
 }
@@ -255,7 +257,8 @@ pub fn load_compose_from_path_uncached(path: &Path) -> Composer {
 /// KP variants collapse to their main key equivalents (KP_Enter → Enter).
 /// ISO_Left_Tab → Tab, ISO_Enter → Enter.
 /// Dead keys and character-producing keys map to `Unnamed`.
-pub(crate) fn keysym_to_named_key(keysym: u32) -> NamedKey {
+#[doc(hidden)]
+pub fn keysym_to_named_key(keysym: u32) -> NamedKey {
     const TABLE: &[(u32, NamedKey)] = &[
         (0x0020, NamedKey::Space),
         (0xfe20, NamedKey::Tab),
@@ -793,6 +796,7 @@ fn build_modifiers_from_keymap(keymap: &keymap::Keymap) -> Modifiers {
         match ks {
             0xfe03 | 0xfe04 | 0xfe05 | 0xfe0d => Some(ModType::Level3),
             0xfe11..=0xfe13 => Some(ModType::Level5),
+            0xff20 => Some(ModType::Compose),
             _ => None,
         }
     };

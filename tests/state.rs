@@ -1,9 +1,8 @@
 use test_case::test_matrix;
-use wkb::{
-    testing::{level_index, KeyDirection, WKBTestExt, ALTGR},
-    WKB,
-};
+use wkb::{ALTGR, KeyDirection, ModType, WKB, level_index};
 use xkbcommon::xkb::{self, Keycode};
+
+include!("../test_data/layouts.rs");
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
     let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
@@ -28,9 +27,9 @@ fn test_all_keys(wkb: WKB, xkb: xkb::State, layout: String) {
 
         if k1 != k2.chars().last() && !k2.is_empty() {
             let level = level_index(
-                wkb.active_mod_type(wkb::testing::ModType::Level5),
-                wkb.active_mod_type(wkb::testing::ModType::Level3),
-                wkb.active_mod_type(wkb::testing::ModType::Level2),
+                wkb.active_mod_type(wkb::ModType::Level5),
+                wkb.active_mod_type(wkb::ModType::Level3),
+                wkb.active_mod_type(wkb::ModType::Level2),
             );
             println!("layout={} key={} level={}", layout, i, level);
             println!("  wkb={:?} xkb={:?}", k1, k2.chars().last());
@@ -44,30 +43,30 @@ fn set_level(wkb: &mut WKB, xkb: &mut xkb::State, code: u32, level: Option<u8>) 
         let mut modifiers = Vec::new();
         match level {
             7 => {
-                modifiers.push(wkb.level5_code().unwrap().0);
-                modifiers.push(wkb.level3_code().unwrap().0);
-                modifiers.push(wkb.level2_code().unwrap().0);
+                modifiers.push(wkb.level_code(ModType::Level5).unwrap().0);
+                modifiers.push(wkb.level_code(ModType::Level3).unwrap().0);
+                modifiers.push(wkb.level_code(ModType::Level2).unwrap().0);
             }
             6 => {
-                modifiers.push(wkb.level5_code().unwrap().0);
-                modifiers.push(wkb.level3_code().unwrap().0);
+                modifiers.push(wkb.level_code(ModType::Level5).unwrap().0);
+                modifiers.push(wkb.level_code(ModType::Level3).unwrap().0);
             }
             5 => {
-                modifiers.push(wkb.level5_code().unwrap().0);
-                modifiers.push(wkb.level2_code().unwrap().0);
+                modifiers.push(wkb.level_code(ModType::Level5).unwrap().0);
+                modifiers.push(wkb.level_code(ModType::Level2).unwrap().0);
             }
             4 => {
-                modifiers.push(wkb.level5_code().unwrap().0);
+                modifiers.push(wkb.level_code(ModType::Level5).unwrap().0);
             }
             3 => {
-                modifiers.push(wkb.level2_code().unwrap().0);
-                modifiers.push(wkb.level3_code().unwrap_or((ALTGR, None)).0);
+                modifiers.push(wkb.level_code(ModType::Level2).unwrap().0);
+                modifiers.push(wkb.level_code(ModType::Level3).unwrap_or((ALTGR, None)).0);
             }
             2 => {
-                modifiers.push(wkb.level3_code().unwrap().0);
+                modifiers.push(wkb.level_code(ModType::Level3).unwrap().0);
             }
             1 => {
-                modifiers.push(wkb.level2_code().unwrap().0);
+                modifiers.push(wkb.level_code(ModType::Level2).unwrap().0);
             }
             _ => {}
         }
@@ -97,7 +96,7 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
     match level {
         0 => true,
         1 => {
-            if let Some((code, lvl)) = wkb.level2_code() {
+            if let Some((code, lvl)) = wkb.level_code(ModType::Level2) {
                 set_level(wkb, xkb, code, lvl);
                 true
             } else {
@@ -105,7 +104,7 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
             }
         }
         2 => {
-            if let Some((code, lvl)) = wkb.level3_code() {
+            if let Some((code, lvl)) = wkb.level_code(ModType::Level3) {
                 set_level(wkb, xkb, code, lvl);
                 true
             } else {
@@ -113,7 +112,7 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
             }
         }
         3 => {
-            if let (Some((c3, l3)), Some((c2, l2))) = (wkb.level3_code(), wkb.level2_code()) {
+            if let (Some((c3, l3)), Some((c2, l2))) = (wkb.level_code(ModType::Level3), wkb.level_code(ModType::Level2)) {
                 set_level(wkb, xkb, c3, l3);
                 set_level(wkb, xkb, c2, l2);
                 true
@@ -122,7 +121,7 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
             }
         }
         4 => {
-            if let Some((code, lvl)) = wkb.level5_code() {
+            if let Some((code, lvl)) = wkb.level_code(ModType::Level5) {
                 set_level(wkb, xkb, code, lvl);
                 true
             } else {
@@ -130,7 +129,7 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
             }
         }
         5 => {
-            if let (Some((c5, l5)), Some((c2, l2))) = (wkb.level5_code(), wkb.level2_code()) {
+            if let (Some((c5, l5)), Some((c2, l2))) = (wkb.level_code(ModType::Level5), wkb.level_code(ModType::Level2)) {
                 set_level(wkb, xkb, c5, l5);
                 set_level(wkb, xkb, c2, l2);
                 true
@@ -139,7 +138,7 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
             }
         }
         6 => {
-            if let (Some((c5, l5)), Some((c3, l3))) = (wkb.level5_code(), wkb.level3_code()) {
+            if let (Some((c5, l5)), Some((c3, l3))) = (wkb.level_code(ModType::Level5), wkb.level_code(ModType::Level3)) {
                 set_level(wkb, xkb, c5, l5);
                 set_level(wkb, xkb, c3, l3);
                 true
@@ -149,7 +148,7 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
         }
         7 => {
             if let (Some((c5, l5)), Some((c3, l3)), Some((c2, l2))) =
-                (wkb.level5_code(), wkb.level3_code(), wkb.level2_code())
+                (wkb.level_code(ModType::Level5), wkb.level_code(ModType::Level3), wkb.level_code(ModType::Level2))
             {
                 set_level(wkb, xkb, c5, l5);
                 set_level(wkb, xkb, c3, l3);
@@ -173,7 +172,7 @@ fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> bool
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ], [0usize, 1, 2, 3, 4, 5, 6, 7])]
 fn state(locale: &str, level: usize) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         set_modifier_level(&mut wkb, &mut xkb, level);

@@ -43,18 +43,28 @@ fn main() {
         }
     }
 
-    // Compose
+    // Compose workload through the keymap state + compose state.
     let locale_os = std::ffi::OsStr::new(COMPOSE_LOCALE);
     if let Ok(table) =
         xkb::compose::Table::new_from_locale(&ctx, locale_os, xkb::compose::COMPILE_NO_FLAGS)
     {
-        let mut state = xkb::compose::State::new(&table, xkb::compose::STATE_NO_FLAGS);
-        for seq in COMPOSE_SEQUENCES {
-            for &ks in seq.keysyms {
-                let _ = state.feed(xkb::Keysym::new(ks));
-                checksum = checksum.wrapping_add(state.status() as u64);
-            }
-            state.reset();
+        let km = xkb::Keymap::new_from_names(
+            &ctx,
+            "evdev",
+            "",
+            "us",
+            "",
+            None,
+            xkb::KEYMAP_COMPILE_NO_FLAGS,
+        )
+        .expect("keymap");
+        let mut state = xkb::State::new(&km);
+        let mut compose = xkb::compose::State::new(&table, xkb::compose::STATE_NO_FLAGS);
+        let compose_kc = xkb::Keycode::new(COMPOSE_KEY + EVDEV_OFFSET);
+        for case in COMPOSE_CASES {
+            let c = xkb_feed_compose(&mut state, &mut compose, case.keys, compose_kc);
+            checksum = checksum.wrapping_add(c.map_or(0, |c| c as u64));
+            compose.reset();
         }
     }
 

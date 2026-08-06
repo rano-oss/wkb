@@ -4,6 +4,8 @@ use xkbcommon::{
     xkb::{self, Keycode},
 };
 
+include!("../test_data/layouts.rs");
+
 fn xkb_new_keymap_from_names(locale: String, layout: Option<String>) -> xkb::Keymap {
     let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
     let variant_str = layout.unwrap_or_default();
@@ -29,7 +31,7 @@ fn xkb_new_keymap_from_names(locale: String, layout: Option<String>) -> xkb::Key
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn repeat_keys(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         println!("{}", layout);
         let xkb = xkb_new_keymap_from_names(locale.to_string(), Some(layout.to_owned()));
         let wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();

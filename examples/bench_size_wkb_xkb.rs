@@ -7,14 +7,13 @@
 mod common;
 use common::*;
 use std::hint::black_box;
-use wkb::testing::compose_parse::{keysym_to_char, load_compose_from_path, resolve_compose_file};
-use wkb::testing::composer_feed;
+use wkb::WKB;
 
 fn main() {
     let mut checksum: u64 = 0;
 
     for &(locale, variant) in LAYOUTS {
-        let mut wb = wkb::WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
+        let mut wb = WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
 
         for case in KEY_CASES {
             for &(code, down) in case.keys {
@@ -32,15 +31,20 @@ fn main() {
         }
     }
 
-    if let Some(subpath) = resolve_compose_file(COMPOSE_LOCALE) {
-        let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
-        let mut composer = load_compose_from_path(&path);
-        for seq in COMPOSE_SEQUENCES {
-            for &ks in seq.keysyms {
-                if let Some(ch) = keysym_to_char(ks) {
-                    let _ = composer_feed(&mut composer, wkb::testing::Token::Char(ch));
-                    checksum = checksum.wrapping_add(1);
+    // Compose workload through the same press_key pipeline.
+    unsafe { std::env::set_var("LC_ALL", COMPOSE_LOCALE) };
+    let mut wb = WKB::new_from_names("", "", "us", "", None).unwrap();
+    wb.set_compose_key(COMPOSE_KEY);
+    for case in COMPOSE_CASES {
+        for &(code, down) in case.keys {
+            if down {
+                let result = wb.press_key(code);
+                if let Some(wkb::ComposeState::Finished(c)) = &result.compose {
+                    checksum = checksum.wrapping_add(*c as u64);
                 }
+                black_box(result);
+            } else {
+                black_box(wb.release_key(code));
             }
         }
     }

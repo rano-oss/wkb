@@ -3,8 +3,9 @@
 use std::collections::BTreeMap;
 
 use wkb::ir::{self, IrError, LayoutFile, ModAction};
-use wkb::testing::NamedKey;
-use wkb::{ModType, WKB};
+use wkb::{ModType, NamedKey, WKB};
+
+include!("../test_data/layouts.rs");
 
 const COMPOSE: char = ir::COMPOSE_KEY_CHAR;
 
@@ -300,7 +301,7 @@ fn new_from_layouts_supports_multiple_groups() {
 
 #[test]
 fn list_layouts_finds_the_registry() {
-    let layouts = wkb::testing::list_layouts();
+    let layouts = list_layouts();
     assert!(!layouts.is_empty(), "XKB registry should enumerate layouts");
     assert!(layouts.iter().any(|(name, _)| name == "us"));
     // Every pair is directly consumable by new_from_names.

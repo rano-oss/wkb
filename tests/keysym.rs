@@ -1,6 +1,8 @@
 use test_case::test_matrix;
-use wkb::testing::keysym_to_named_key;
+use wkb::keysym_to_named_key;
 use xkbcommon::xkb::{self, Keycode};
+
+include!("../test_data/layouts.rs");
 
 fn xkb_new_keymap_from_names(locale: &str, layout: &str) -> xkb::Keymap {
     let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
@@ -26,7 +28,7 @@ fn xkb_new_keymap_from_names(locale: &str, layout: &str) -> xkb::Keymap {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ], [0usize, 1, 2, 3, 4, 5, 6, 7])]
 fn keysym(locale: &str, level: usize) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let xkb = xkb_new_keymap_from_names(locale, &layout);
         let wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
 

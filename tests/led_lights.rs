@@ -5,8 +5,10 @@
 //! The tests simply ensure both libraries agree on LED state.
 
 use test_case::test_matrix;
-use wkb::testing::{KeyDirection, WKBTestExt, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK};
+use wkb::{KeyDirection, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK};
 use xkbcommon::xkb::{self, Keycode};
+
+include!("../test_data/layouts.rs");
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
     let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
@@ -35,7 +37,7 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn caps_lock_led(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
@@ -101,7 +103,7 @@ fn caps_lock_led(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn num_lock_led(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
@@ -166,7 +168,7 @@ fn num_lock_led(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn scroll_lock_led(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
@@ -223,7 +225,7 @@ fn scroll_lock_led(locale: &str) {
 /// Test all three lock keys pressed
 #[test_matrix(["us", "de", "fr", "gb", "es", "it", "ru", "jp"])]
 fn all_locks_pressed(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 

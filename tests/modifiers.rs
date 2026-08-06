@@ -1,6 +1,8 @@
 use test_case::test_matrix;
-use wkb::testing::{KeyDirection, WKBTestExt, CAPS_LOCK};
+use wkb::{CAPS_LOCK, KeyDirection, ModType};
 use xkbcommon::xkb::{self as xkbcmn, Keycode};
+
+include!("../test_data/layouts.rs");
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkbcmn::State {
     let context = xkbcmn::Context::new(xkbcmn::CONTEXT_NO_FLAGS);
@@ -30,12 +32,12 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkbcmn::State {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn shift_lock_behavior(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
         // Get shift keycode
-        let shift_code = wkb.level2_code();
+        let shift_code = wkb.level_code(ModType::Level2);
         if shift_code.is_none() {
             continue;
         }
@@ -89,7 +91,7 @@ fn shift_lock_behavior(locale: &str) {
 /// Eisu_toggle switches between ASCII and Kana input modes
 #[test_matrix(["jp"])]
 fn eisu_toggle_japanese(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
@@ -129,11 +131,11 @@ fn eisu_toggle_japanese(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn caps_plus_shift_combination(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        let shift_code = wkb.level2_code();
+        let shift_code = wkb.level_code(ModType::Level2);
         if shift_code.is_none() {
             continue;
         }
@@ -191,11 +193,11 @@ fn caps_plus_shift_combination(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn altgr_combinations(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        let altgr_code = wkb.level3_code();
+        let altgr_code = wkb.level_code(ModType::Level3);
         if altgr_code.is_none() {
             continue;
         }
@@ -225,7 +227,7 @@ fn altgr_combinations(locale: &str) {
         xkb.update_key(Keycode::new(altgr_code + 8), xkbcmn::KeyDirection::Up);
 
         // Test AltGr + Shift combination
-        let shift_code = wkb.level2_code();
+        let shift_code = wkb.level_code(ModType::Level2);
         if let Some((shift_code, _)) = shift_code {
             wkb.update_key(shift_code, KeyDirection::Down);
             wkb.update_key(altgr_code, KeyDirection::Down);
@@ -269,11 +271,11 @@ fn altgr_combinations(locale: &str) {
     "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
 ])]
 fn level5_modifier(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        let level5_code = wkb.level5_code();
+        let level5_code = wkb.level_code(ModType::Level5);
         if level5_code.is_none() {
             continue;
         }
@@ -306,11 +308,11 @@ fn level5_modifier(locale: &str) {
 /// Test modifier state after multiple rapid presses/releases
 #[test_matrix(["us", "de", "fr", "jp", "ru", "gr"])]
 fn rapid_modifier_changes(locale: &str) {
-    for layout in wkb::testing::get_all_layouts_for_locale(locale) {
+    for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
 
-        let shift_code = wkb.level2_code();
+        let shift_code = wkb.level_code(ModType::Level2);
         if shift_code.is_none() {
             continue;
         }
@@ -435,7 +437,7 @@ fn test_mm_zawgyi_latch_sequence() {
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Down);
     eprintln!(
         "   WKB level3: {}",
-        wkb.active_mod_type(wkb::testing::ModType::Level3)
+        wkb.active_mod_type(wkb::ModType::Level3)
     );
     eprintln!(
         "   XKB Mod5: {}",
@@ -448,7 +450,7 @@ fn test_mm_zawgyi_latch_sequence() {
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Up);
     eprintln!(
         "   WKB level3: {}",
-        wkb.active_mod_type(wkb::testing::ModType::Level3)
+        wkb.active_mod_type(wkb::ModType::Level3)
     );
     eprintln!(
         "   XKB Mod5: {}",
@@ -462,7 +464,7 @@ fn test_mm_zawgyi_latch_sequence() {
     xkb_state.update_key(Keycode::new(shift_key + 8), xkbcmn::KeyDirection::Down);
     eprintln!(
         "   WKB level3: {}",
-        wkb.active_mod_type(wkb::testing::ModType::Level3)
+        wkb.active_mod_type(wkb::ModType::Level3)
     );
     eprintln!(
         "   XKB Mod5: {}",
@@ -475,7 +477,7 @@ fn test_mm_zawgyi_latch_sequence() {
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Down);
     eprintln!(
         "   WKB level3: {}",
-        wkb.active_mod_type(wkb::testing::ModType::Level3)
+        wkb.active_mod_type(wkb::ModType::Level3)
     );
     eprintln!(
         "   XKB Mod5: {}",
@@ -489,13 +491,13 @@ fn test_mm_zawgyi_latch_sequence() {
     eprintln!(
         "   WKB: {:?} (level2={} level3={})",
         key_2_wkb,
-        wkb.active_mod_type(wkb::testing::ModType::Level2),
-        wkb.active_mod_type(wkb::testing::ModType::Level3)
+        wkb.active_mod_type(wkb::ModType::Level2),
+        wkb.active_mod_type(wkb::ModType::Level3)
     );
     eprintln!("   XKB: {:?}", key_2_xkb);
 
     assert_eq!(
-        wkb.active_mod_type(wkb::testing::ModType::Level3),
+        wkb.active_mod_type(wkb::ModType::Level3),
         xkb_state.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE),
         "Level3 state should match XKB Mod5"
     );
@@ -506,11 +508,8 @@ fn test_mm_zawgyi_latch_sequence() {
 fn test_cm_modifier_type() {
     let wkb = wkb::WKB::new_from_names("", "", "cm", "qwerty", None).unwrap();
 
-    if let Some((code, level)) = wkb.level3_code() {
+    if let Some((code, level)) = wkb.level_code(ModType::Level3) {
         eprintln!("cm/qwerty Level3 code: {} level: {:?}", code, level);
-
-        // Try to determine if it's Latch or Press
-        eprintln!("Modifiers map: {:#?}", wkb.modifiers());
     }
 }
 
@@ -518,8 +517,7 @@ fn test_cm_modifier_type() {
 fn test_ie_ogam_shift_type() {
     let wkb = wkb::WKB::new_from_names("", "", "ie", "ogam_is434", None).unwrap();
 
-    if let Some((code, level)) = wkb.level2_code() {
+    if let Some((code, level)) = wkb.level_code(ModType::Level2) {
         eprintln!("ie/ogam_is434 Shift code: {} level: {:?}", code, level);
-        eprintln!("Modifiers: {:#?}", wkb.modifiers());
     }
 }

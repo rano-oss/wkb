@@ -34,7 +34,6 @@
 //!
 //! - **`xkb`** (default) — XKB keymap compilation via the `xkb-core` crate.
 //! - **`compose`** (default) — Compose-key / dead-key sequence support.
-//! - **`testing`** — Exposes internal helpers for integration tests. Not part of the public API.
 
 use crate::modifiers::*;
 pub use composer::{ComposeState, ComposeString};
@@ -44,17 +43,18 @@ mod flat_keymap;
 mod modifiers;
 
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
-pub use modifiers::ModType;
+pub use modifiers::{level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK};
 /// Intermediate representation for persisted layout data files.
 pub mod ir;
 mod named_keys;
-/// Test-only utilities. Not part of the public API.
-#[cfg(feature = "testing")]
-pub mod testing;
+pub use named_keys::NamedKey;
 #[cfg(feature = "xkb")]
 mod xkb;
 #[cfg(feature = "xkb")]
 pub use xkb::XkbError;
+#[cfg(feature = "xkb")]
+#[doc(hidden)]
+pub use xkb::{keysym_to_named_key, load_compose_from_path, load_compose_from_path_uncached};
 
 pub(crate) const BITSET_WORDS: usize = 12;
 
@@ -99,8 +99,6 @@ impl KeyBitSet {
         }
     }
 }
-
-use crate::named_keys::NamedKey;
 
 /// Errors from WKB operations (not related to XKB parsing/compilation).
 #[derive(Debug, thiserror::Error)]
@@ -336,13 +334,82 @@ impl WKB {
     }
 
     /// Update internal modifier state for a key event. Returns `true` if the key is a modifier.
-    pub(crate) fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
+    #[doc(hidden)]
+    pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let kb_layout = &mut self.layouts[self.current_layout_idx];
         let is_modifier = kb_layout.modifiers.set_state(evdev_code, key_direction);
         if !is_modifier && key_direction == KeyDirection::Down {
             kb_layout.modifiers.unlatch();
         }
         is_modifier
+    }
+
+    /// Return whether the given modifier type is currently active.
+    #[doc(hidden)]
+    pub fn active_mod_type(&self, mod_type: ModType) -> bool {
+        self.layouts[self.current_layout_idx]
+            .modifiers
+            .active_mod_type(mod_type)
+    }
+
+    /// Return the keycode (and optional level) for the given modifier type.
+    #[doc(hidden)]
+    pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
+        let modifiers = &self.layouts[self.current_layout_idx].modifiers;
+        let mut other_mod = None;
+
+        for (code, modifier) in modifiers.iter() {
+            match modifier {
+                Modifier::Single(mod_kind) => {
+                    if mod_kind.has_mod_type(mod_type) {
+                        match mod_kind {
+                            ModKind::Press { .. } => return Some((*code, None)),
+                            _ => {
+                                if other_mod.is_none() {
+                                    other_mod = Some((*code, None));
+                                }
+                            }
+                        }
+                    }
+                }
+                Modifier::Leveled(map) => {
+                    for (level, mod_kind) in map {
+                        if mod_kind.has_mod_type(mod_type) {
+                            match mod_kind {
+                                ModKind::Press { .. } => return Some((*code, Some(*level))),
+                                _ => {
+                                    if other_mod.is_none() {
+                                        other_mod = Some((*code, Some(*level)));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        other_mod
+    }
+
+    /// Designate an evdev keycode as the Compose (Multi_key) key.
+    ///
+    /// Keymaps compiled with an explicit `Multi_key` mapping detect the
+    /// compose key automatically. For keymaps without one, this lets the
+    /// caller designate a physical key — pressing it feeds the Compose token
+    /// into the compose sequence, matching the desktop `compose:XXX` option
+    /// behavior. Applies to all layouts; any existing modifier on the key is
+    /// replaced.
+    #[cfg(feature = "compose")]
+    pub fn set_compose_key(&mut self, evdev_code: u32) {
+        for layout in &mut self.layouts {
+            layout.modifiers.set_modifier(
+                evdev_code,
+                Modifier::Single(ModKind::Press {
+                    pressed: false,
+                    mod_type: ModType::Compose,
+                }),
+            );
+        }
     }
 
     /// Process a key press. Updates modifier state and advances compose sequences.

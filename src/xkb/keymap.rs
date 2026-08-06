@@ -96,13 +96,6 @@ pub fn keysym_name_to_char(name: &str) -> Option<char> {
     char::from_u32(utf32)
 }
 
-/// Parse a Compose file at the given path, recursively handling `include` directives.
-pub fn parse_compose_file(path: &Path) -> Vec<ComposeEntry> {
-    let mut out = Vec::new();
-    let _ = parse_compose_file_impl(path, &mut |entry| out.push(entry));
-    out
-}
-
 pub(crate) fn parse_compose_file_impl<F>(path: &Path, f: &mut F) -> bool
 where
     F: FnMut(ComposeEntry),

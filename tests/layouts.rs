@@ -6,6 +6,8 @@
 use test_case::test_matrix;
 use xkbcommon::xkb;
 
+include!("../test_data/layouts.rs");
+
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
     let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
     let variant_str = layout.unwrap_or_default();
@@ -37,7 +39,7 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
 ])]
 fn layouts_enumeration(locale: &str) {
     // Get wkb layouts (these are variant names like "dvorak", "colemak", etc.)
-    let layouts = wkb::testing::get_all_layouts_for_locale(locale);
+    let layouts = get_all_layouts_for_locale(locale);
 
     // Verify we have at least one layout variant
     assert!(

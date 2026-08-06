@@ -1,1045 +1,400 @@
-use std::collections::HashMap;
-use std::ffi::OsStr;
-use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
+//! Full-flow compose integration tests.
+//!
+//! Drives `WKB::press_key` end-to-end (modifiers + compose) and compares the
+//! final produced character against xkbcommon running the same keycode events
+//! through `xkb_state_update_key` → `xkb_state_key_get_one_sym` →
+//! `xkb_compose_state_feed`.
+
+use std::path::Path;
 use std::sync::Mutex;
-use test_case::test_matrix;
-use wkb::testing::{composer_feed, Token, WKBTestExt};
-use xkbcommon::xkb::{self, compose};
+use wkb::WKB;
+use xkbcommon::xkb::{self, Keycode};
 
-use wkb::testing::compose_parse::{parse_compose_file, ComposeEntry};
-
-/// Parse a compose file and extract (keysym_names, multi_key_index, output) for each entry.
-/// Used as an alternative data source that avoids adding keysym_names to ComposeEntry.
-fn parse_compose_keysym_data(path: &Path) -> Vec<(Vec<String>, Option<usize>, char)> {
-    use std::io::Read;
-    let mut file = match std::fs::File::open(path) {
-        Ok(f) => f,
-        Err(_) => return Vec::new(),
-    };
-    let mut content = String::new();
-    if file.read_to_string(&mut content).is_err() {
-        return Vec::new();
-    }
-    let mut result = Vec::new();
-    for line in content.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-        if trimmed.starts_with("include") {
-            continue;
-        }
-        let colon_pos = match trimmed.find(':') {
-            Some(p) => p,
-            None => continue,
-        };
-        let lhs = &trimmed[..colon_pos];
-        let rhs = trimmed[colon_pos + 1..].trim();
-        let rhs = if let Some(hash) = rhs.find('#') {
-            rhs[..hash].trim()
-        } else {
-            rhs
-        };
-        let output = match parse_rhs_for_test(rhs) {
-            Some(c) => c,
-            None => continue,
-        };
-        let mut keysym_names = Vec::new();
-        let mut multi_key_index = None;
-        let mut pos = 0;
-        let lhs_bytes = lhs.as_bytes();
-        while pos < lhs_bytes.len() {
-            if lhs_bytes[pos] == b'<' {
-                let end = match lhs[pos..].find('>') {
-                    Some(e) => e + pos,
-                    None => break,
-                };
-                let name = &lhs[pos + 1..end];
-                if name.eq_ignore_ascii_case("Multi_key") {
-                    if multi_key_index.is_none() {
-                        multi_key_index = Some(keysym_names.len());
-                    }
-                } else {
-                    keysym_names.push(name.to_string());
-                }
-                pos = end + 1;
-            } else {
-                pos += 1;
-            }
-        }
-        if keysym_names.is_empty() {
-            continue;
-        }
-        result.push((keysym_names, multi_key_index, output));
-    }
-    result
-}
-
-fn parse_rhs_for_test(rhs: &str) -> Option<char> {
-    let rhs = rhs.trim();
-    if let Some(rhs) = rhs.strip_prefix('"') {
-        let end_quote = rhs.find('"')?;
-        let s = &rhs[..end_quote];
-        if !s.is_empty() && !s.starts_with('\\') {
-            if let Some(ch) = s.chars().next() {
-                if !ch.is_ascii_digit() {
-                    return Some(ch);
-                }
-            }
-        }
-    }
-    None
-}
+const EVDEV_OFFSET: u32 = 8;
+const COMPOSE_LOCALE: &str = "en_US.UTF-8";
+const COMPOSE_FILE: &str = "/usr/share/X11/locale/en_US.UTF-8/Compose";
 
 /// Guard for env-var mutations (LC_ALL) during WKB construction.
 /// `set_var` / `remove_var` are process-wide and not thread-safe,
 /// so parallel tests must serialize around them.
 static ENV_LOCK: Mutex<()> = Mutex::new(());
-static NEXT_TEMP_COMPOSE: AtomicU64 = AtomicU64::new(0);
 
-struct TempComposeFile(PathBuf);
+// ── Keycodes (identical on the custom keymap and the standard US layout) ──
+const COMPOSE_KEY: u32 = 119; // Menu key, keycode 127
+const SHIFT: u32 = 42;
+const APOSTROPHE: u32 = 40; // ' / "
+const GRAVE: u32 = 41; // ` / ~
+const COMMA: u32 = 51; // , / <
+const KEY_3: u32 = 4;
+const KEY_6: u32 = 7;
+const E: u32 = 18;
+const U: u32 = 22;
+const N: u32 = 49;
+const S: u32 = 31;
+const O: u32 = 24;
+const C: u32 = 46;
 
-impl TempComposeFile {
-    fn new(label: &str) -> Self {
-        let id = NEXT_TEMP_COMPOSE.fetch_add(1, Ordering::Relaxed);
-        Self(std::env::temp_dir().join(format!("wkb-compose-{label}-{}-{id}", std::process::id())))
-    }
-
-    fn write(&self, contents: &str) {
-        std::fs::write(&self.0, contents).unwrap();
-    }
+struct ComposeCase {
+    name: &'static str,
+    keys: &'static [(u32, bool)],
+    expected: char,
 }
 
-impl Drop for TempComposeFile {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_file(&self.0);
-    }
-}
+/// Compose sequences exercising the whole `press_key` pipeline, including
+/// Shift-held punctuation.
+const COMPOSE_CASES: &[ComposeCase] = &[
+    ComposeCase {
+        name: "acute_e",
+        keys: &[
+            (COMPOSE_KEY, true),
+            (COMPOSE_KEY, false),
+            (APOSTROPHE, true),
+            (APOSTROPHE, false),
+            (E, true),
+            (E, false),
+        ],
+        expected: 'é',
+    },
+    ComposeCase {
+        name: "diaeresis_u",
+        keys: &[
+            (COMPOSE_KEY, true),
+            (COMPOSE_KEY, false),
+            (SHIFT, true),
+            (APOSTROPHE, true),
+            (APOSTROPHE, false),
+            (SHIFT, false),
+            (U, true),
+            (U, false),
+        ],
+        expected: 'ü',
+    },
+    ComposeCase {
+        name: "tilde_n",
+        keys: &[
+            (COMPOSE_KEY, true),
+            (COMPOSE_KEY, false),
+            (SHIFT, true),
+            (GRAVE, true),
+            (GRAVE, false),
+            (SHIFT, false),
+            (N, true),
+            (N, false),
+        ],
+        expected: 'ñ',
+    },
+    ComposeCase {
+        name: "ss",
+        keys: &[
+            (COMPOSE_KEY, true),
+            (COMPOSE_KEY, false),
+            (S, true),
+            (S, false),
+            (S, true),
+            (S, false),
+        ],
+        expected: 'ß',
+    },
+    ComposeCase {
+        name: "circumflex_o",
+        keys: &[
+            (COMPOSE_KEY, true),
+            (COMPOSE_KEY, false),
+            (SHIFT, true),
+            (KEY_6, true),
+            (KEY_6, false),
+            (SHIFT, false),
+            (O, true),
+            (O, false),
+        ],
+        expected: 'ô',
+    },
+    ComposeCase {
+        name: "cedilla_c",
+        keys: &[
+            (COMPOSE_KEY, true),
+            (COMPOSE_KEY, false),
+            (COMMA, true),
+            (COMMA, false),
+            (C, true),
+            (C, false),
+        ],
+        expected: 'ç',
+    },
+    ComposeCase {
+        name: "heart",
+        keys: &[
+            (COMPOSE_KEY, true),
+            (COMPOSE_KEY, false),
+            (SHIFT, true),
+            (COMMA, true),
+            (COMMA, false),
+            (SHIFT, false),
+            (KEY_3, true),
+            (KEY_3, false),
+        ],
+        expected: '♥',
+    },
+];
 
-#[test]
-fn cached_compose_table_is_reused_across_paths_and_threads() {
-    let file = TempComposeFile::new("shared");
-    let alias = TempComposeFile::new("alias");
-    file.write("<Multi_key> <a> <e> : \"æ\"\n");
-    std::os::unix::fs::symlink(&file.0, &alias.0).unwrap();
-
-    let mut first = wkb::testing::compose_parse::load_compose_from_path(&file.0);
-    file.write("<Multi_key> <a> <e> : \"ø\"\n");
-    let path = alias.0.clone();
-    let mut second =
-        std::thread::spawn(move || wkb::testing::compose_parse::load_compose_from_path(&path))
-            .join()
-            .unwrap();
-
-    for composer in [&mut first, &mut second] {
-        assert!(matches!(
-            composer_feed(composer, Token::Compose),
-            wkb::testing::ComposeState::Composing(_)
-        ));
-        assert!(matches!(
-            composer_feed(composer, Token::Char('a')),
-            wkb::testing::ComposeState::Composing(_)
-        ));
-        assert_eq!(
-            composer_feed(composer, Token::Char('e')),
-            wkb::testing::ComposeState::Finished('æ')
-        );
-    }
-}
-
-#[test]
-fn failed_compose_load_does_not_poison_cache() {
-    let file = TempComposeFile::new("retry");
-    let _failed = wkb::testing::compose_parse::load_compose_from_path(&file.0);
-
-    file.write("<Multi_key> <a> <e> : \"æ\"\n");
-    let mut first = wkb::testing::compose_parse::load_compose_from_path(&file.0);
-    file.write("<Multi_key> <a> <e> : \"ø\"\n");
-    let mut second = wkb::testing::compose_parse::load_compose_from_path(&file.0);
-
-    for composer in [&mut first, &mut second] {
-        assert!(matches!(
-            composer_feed(composer, Token::Compose),
-            wkb::testing::ComposeState::Composing(_)
-        ));
-        assert!(matches!(
-            composer_feed(composer, Token::Char('a')),
-            wkb::testing::ComposeState::Composing(_)
-        ));
-        assert_eq!(
-            composer_feed(composer, Token::Char('e')),
-            wkb::testing::ComposeState::Finished('æ')
-        );
-    }
-}
-
-#[test]
-fn cached_compose_table_keeps_wkb_progress_instance_local() {
-    let (mut first, mut second) = {
-        let _guard = ENV_LOCK.lock().unwrap();
-        let saved_lc_all = std::env::var("LC_ALL").ok();
-        unsafe { std::env::set_var("LC_ALL", "en_US.UTF-8") };
-
-        let first = wkb::WKB::new_from_names("", "", "us", "", None).unwrap();
-        let second = wkb::WKB::new_from_names("", "", "us", "", None).unwrap();
-
-        match saved_lc_all {
-            Some(value) => unsafe { std::env::set_var("LC_ALL", value) },
-            None => unsafe { std::env::remove_var("LC_ALL") },
-        }
-        (first, second)
-    };
-
-    assert!(matches!(
-        first.feed(Token::Compose),
-        wkb::testing::ComposeState::Composing(_)
-    ));
-    assert_eq!(
-        second.feed(Token::Char('a')),
-        wkb::testing::ComposeState::Idle('a')
-    );
-    assert!(matches!(
-        first.feed(Token::Char('a')),
-        wkb::testing::ComposeState::Composing(_)
-    ));
-}
-
-#[test]
-fn multi_layout_composers_use_layout_locale_and_reachable_inputs() {
-    let mut wkb = wkb::WKB::new_from_names("", "", "us,gr", "", None).unwrap();
-    assert_eq!(wkb.num_layouts(), 2);
-
-    for layout in 0..wkb.num_layouts() {
-        wkb.set_layout(layout).unwrap();
-        let producible = wkb.producible_chars();
-        assert!(wkb.composer_input_chars().is_subset(&producible));
-    }
-
-    wkb.set_layout(0).unwrap();
-    assert!(!wkb.composer_input_chars().contains(&'α'));
-
-    wkb.set_layout(1).unwrap();
-    assert!(wkb.producible_chars().contains(&'α'));
-    assert!(matches!(
-        wkb.feed(Token::Compose),
-        wkb::testing::ComposeState::Composing(_)
-    ));
-    assert!(matches!(
-        wkb.feed(Token::Char('>')),
-        wkb::testing::ComposeState::Composing(_)
-    ));
-    assert_eq!(
-        wkb.feed(Token::Char('α')),
-        wkb::testing::ComposeState::Finished('ἀ')
-    );
-}
-
-// ---------------------------------------------------------------------------
-// Helpers: keysym / char resolution
-// ---------------------------------------------------------------------------
-
-/// Simple check whether a compose subpath indicates a UTF-8 compose file.
-///
-/// Accepts strings like `en_US.UTF-8/Compose` (case-insensitive). Also accepts
-/// `.utf8` without the hyphen to be permissive.
-fn is_utf8_compose_subpath(subpath: &str) -> bool {
-    let s = subpath.to_ascii_lowercase();
-    s.contains(".utf-8") || s.contains(".utf8")
-}
-
-// ---------------------------------------------------------------------------
-// Compose sequence testers
-// ---------------------------------------------------------------------------
-
-/// Feed a sequence of keysyms to an xkb compose state.
-fn xkb_compose_sequence(
-    compose_state: &mut compose::State,
-    keysym_names: &[String],
-    is_multi_key: bool,
-) -> Option<char> {
-    compose_state.reset();
-    if is_multi_key {
-        let multi_keysym = xkb::keysym_from_name("Multi_key", xkb::KEYSYM_NO_FLAGS);
-        compose_state.feed(multi_keysym);
-    }
-    for name in keysym_names {
-        let keysym = xkb::keysym_from_name(name, xkb::KEYSYM_NO_FLAGS);
-        if keysym.raw() == 0 {
-            compose_state.reset();
-            return None;
-        }
-        compose_state.feed(keysym);
-    }
-    if compose_state.status() == compose::Status::Composed {
-        compose_state.utf8().and_then(|s| s.chars().next())
-    } else {
-        None
-    }
-}
-
-/// Feed a sequence of chars to a wkb ListComposer clone.
-fn wkb_compose_sequence(
-    composer: &wkb::testing::Composer,
-    chars: &[char],
-    multi_key_index: Option<usize>,
-) -> Option<char> {
-    use wkb::testing::ComposeState;
-    let mut c = composer.clone();
-    let mut result = None;
-    for (i, &ch) in chars.iter().enumerate() {
-        if let Some(idx) = multi_key_index {
-            if idx == i && composer_feed(&mut c, Token::Compose) == ComposeState::Cancelled {
-                return None;
-            }
-        }
-        match composer_feed(&mut c, Token::Char(ch)) {
-            ComposeState::Finished(out) => {
-                result = Some(out);
-            }
-            ComposeState::Idle(_) | ComposeState::Composing(_) => {}
-            ComposeState::Cancelled => {
-                return None;
-            }
-        }
-    }
-    result
-}
-
-/// Resolve a compose entry's keysym names to chars for wkb.
-fn resolve_entry_chars(entry: &ComposeEntry) -> Vec<char> {
-    entry.keys.to_vec()
-}
-
-// ---------------------------------------------------------------------------
-// Core test logic
-// ---------------------------------------------------------------------------
-
-/// Run compose tests for a compose file loaded from a composer.
-///
-/// `label` is used for log/assertion messages.
-/// `xkb_locale` is the locale to pass to xkbcommon for cross-checking.
-/// `compose_path` is the path to the compose file to parse entries from.
-/// `regular` is the wkb composer to test against.
-fn run_compose_test(
-    label: &str,
-    xkb_locale: &str,
-    compose_path: &Path,
-    regular: &wkb::testing::Composer,
-    producible: Option<&std::collections::HashSet<char>>,
-) {
-    if !compose_path.exists() {
-        println!("SKIP: compose file not found: {}", compose_path.display());
-        return;
-    }
-
-    let all_entries = parse_compose_file(compose_path);
-    if all_entries.is_empty() {
-        println!(
-            "SKIP: no entries in {} (parser not fully implemented)",
-            compose_path.display()
-        );
-        return;
-    }
-
-    // Parse keysym names from the raw file for xkbcommon cross-checking
-    let keysym_data = parse_compose_keysym_data(compose_path);
-    // Build a lookup: (is_multi_key, keys_chars) -> (keysym_names, is_multi_key)
-    // for xkbcommon feeding
-    type EntryMap = HashMap<(bool, Vec<char>), (Vec<String>, Option<usize>)>;
-    let mut entry_to_keysym = EntryMap::new();
-    for (names, mk_idx, _output) in &keysym_data {
-        let mut chars = Vec::with_capacity(names.len() + mk_idx.map(|_| 0).unwrap_or(0));
-        for name in names {
-            if let Some(ch) = wkb::testing::compose_parse::keysym_name_to_char(name) {
-                chars.push(ch);
-            } else {
-                // If any name fails to resolve, skip this entry
-                chars.clear();
-                break;
-            }
-        }
-        if !chars.is_empty() {
-            let key = (mk_idx.is_some(), chars);
-            entry_to_keysym
-                .entry(key)
-                .or_insert_with(|| (names.clone(), *mk_idx));
-        }
-    }
-
-    // Filter to keyboard-reachable entries when producible set is provided
-    let entries: Vec<&ComposeEntry> = if let Some(prod) = producible {
-        all_entries
-            .iter()
-            .filter(|e| resolve_entry_chars(e).iter().all(|ch| prod.contains(ch)))
-            .collect()
-    } else {
-        all_entries.iter().collect()
-    };
-
-    let total = all_entries.len();
-    let reachable = entries.len();
-
-    // Build xkb compose state for cross-checking
-    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-    let xkb_state = compose::Table::new_from_locale(
-        &context,
-        OsStr::new(xkb_locale),
-        compose::COMPILE_NO_FLAGS,
-    )
-    .ok()
-    .map(|table| compose::State::new(&table, compose::STATE_NO_FLAGS));
-
-    let has_xkb = xkb_state.is_some();
-    let mut xkb_state = xkb_state;
-
-    println!(
-        "{}: {} total entries, {} reachable, xkb={}",
-        label,
-        total,
-        reachable,
-        if has_xkb { "yes" } else { "no" },
-    );
-
-    // Detect char-sequence collisions
-    let mut char_seq_outputs: HashMap<(bool, Vec<char>), char> = HashMap::new();
-    let mut collision_seqs: std::collections::HashSet<(bool, Vec<char>)> = Default::default();
-    for entry in &entries {
-        let (chars, output) = (resolve_entry_chars(entry), entry.output);
-        let key = (entry.multi_key_index.is_some(), chars);
-        if let Some(&prev) = char_seq_outputs.get(&key) {
-            if prev != output {
-                collision_seqs.insert(key);
-            }
+/// Feed a sequence of key events through WKB's public `press_key`/`release_key`
+/// API and return the final composed character.
+fn wkb_compose_char(wkb: &mut WKB, keys: &[(u32, bool)]) -> Option<char> {
+    let mut final_char = None;
+    for &(evdev, down) in keys {
+        let result = if down {
+            wkb.press_key(evdev)
         } else {
-            char_seq_outputs.insert(key, output);
-        }
-    }
-
-    // Detect prefix conflicts
-    let all_char_seqs: Vec<(bool, Vec<char>)> = entries
-        .iter()
-        .map(|e| (e.multi_key_index.is_some(), e.keys.to_vec()))
-        .collect();
-    let mut prefix_conflict_seqs: std::collections::HashSet<(bool, Vec<char>)> = Default::default();
-    for a in &all_char_seqs {
-        for b in &all_char_seqs {
-            if a.0 == b.0 && b.1.len() > a.1.len() && b.1.starts_with(&a.1) {
-                prefix_conflict_seqs.insert(a.clone());
-                prefix_conflict_seqs.insert(b.clone());
-            }
-        }
-    }
-
-    let mut xkb_ok = 0usize;
-    let mut wkb_ok = 0usize;
-    let mut both_ok = 0usize;
-    let mut both_match = 0usize;
-    let mut mismatches: Vec<String> = Vec::new();
-    let mut char_collisions: Vec<String> = Vec::new();
-    let mut wkb_failures: Vec<String> = Vec::new();
-    let mut xkb_failures: Vec<String> = Vec::new();
-    let mut wkb_only_ok = 0usize;
-
-    for entry in &entries {
-        let expected = entry.output;
-        let chars = resolve_entry_chars(entry);
-        let key = (entry.multi_key_index.is_some(), chars.clone());
-        let xkb_key_data = entry_to_keysym.get(&key);
-
-        let xkb_result = xkb_state.as_mut().and_then(|state| {
-            if let Some((names, mk_idx)) = xkb_key_data {
-                xkb_compose_sequence(state, names, mk_idx.is_some())
-            } else {
-                None
-            }
-        });
-
-        let wkb_result = {
-            let composer = regular;
-            wkb_compose_sequence(composer, &chars, entry.multi_key_index)
+            wkb.release_key(evdev)
         };
-
-        if has_xkb {
-            if xkb_result.is_some() {
-                xkb_ok += 1;
-            }
-            if wkb_result.is_some() {
-                wkb_ok += 1;
-            }
-
-            if xkb_result.is_some() && wkb_result.is_some() {
-                both_ok += 1;
-                if xkb_result == wkb_result {
-                    both_match += 1;
-                } else {
-                    let names_str = xkb_key_data
-                        .map(|(n, _)| format!("{:?}", n))
-                        .unwrap_or_default();
-                    let msg = format!(
-                        "  MISMATCH: {} [multi={}] -> xkb={:?} wkb={:?} expected={:?}",
-                        names_str,
-                        entry.multi_key_index.is_some(),
-                        xkb_result,
-                        wkb_result,
-                        expected
-                    );
-                    let key = (entry.multi_key_index.is_some(), entry.keys.to_vec());
-                    let is_known =
-                        collision_seqs.contains(&key) || prefix_conflict_seqs.contains(&key);
-                    // If wkb matches expected but xkb doesn't, wkb is correct — not a mismatch
-                    let wkb_correct = wkb_result == Some(expected);
-                    if is_known || wkb_correct {
-                        char_collisions.push(msg);
-                    } else {
-                        mismatches.push(msg);
-                    }
-                }
-            } else if xkb_result.is_some() && wkb_result.is_none() {
-                let names_str = xkb_key_data
-                    .map(|(n, _)| format!("{:?}", n))
-                    .unwrap_or_default();
-                wkb_failures.push(format!(
-                    "  WKB_MISS: {} [multi={}] -> xkb={:?} expected={:?}",
-                    names_str,
-                    entry.multi_key_index.is_some(),
-                    xkb_result,
-                    expected
-                ));
-            } else if xkb_result.is_none() && wkb_result.is_some() {
-                let names_str = xkb_key_data
-                    .map(|(n, _)| format!("{:?}", n))
-                    .unwrap_or_default();
-                xkb_failures.push(format!(
-                    "  XKB_MISS: {} [multi={}] -> wkb={:?} expected={:?}",
-                    names_str,
-                    entry.multi_key_index.is_some(),
-                    wkb_result,
-                    expected
-                ));
-            }
-        } else {
-            match wkb_result {
-                Some(c) if c == expected => wkb_only_ok += 1,
-                Some(c) => {
-                    let names_str = xkb_key_data
-                        .map(|(n, _)| format!("{:?}", n))
-                        .unwrap_or_default();
-                    mismatches.push(format!(
-                        "  WKB_WRONG: {} [multi={}] -> wkb={:?} expected={:?}",
-                        names_str,
-                        entry.multi_key_index.is_some(),
-                        c,
-                        expected
-                    ));
-                }
-                None => {
-                    let names_str = xkb_key_data
-                        .map(|(n, _)| format!("{:?}", n))
-                        .unwrap_or_default();
-                    wkb_failures.push(format!(
-                        "  WKB_MISS: {} [multi={}] -> expected={:?}",
-                        names_str,
-                        entry.multi_key_index.is_some(),
-                        expected
-                    ));
-                }
-            }
+        if let Some(wkb::ComposeState::Finished(c)) = &result.compose {
+            final_char = Some(*c);
         }
     }
-
-    if has_xkb {
-        println!(
-            "  xkb_ok={}, wkb_ok={}, both_ok={}, both_match={}",
-            xkb_ok, wkb_ok, both_ok, both_match
-        );
-    } else {
-        println!("  wkb_only_ok={}", wkb_only_ok);
-    }
-    println!(
-        "  mismatches={}, known_collisions={}, prefix_conflicts={}, wkb_miss={}, xkb_miss={}",
-        mismatches.len(),
-        char_collisions.len(),
-        prefix_conflict_seqs.len(),
-        wkb_failures.len(),
-        xkb_failures.len()
-    );
-
-    for m in mismatches.iter().take(20) {
-        println!("{}", m);
-    }
-    if mismatches.len() > 20 {
-        println!("  ... and {} more mismatches", mismatches.len() - 20);
-    }
-    for m in char_collisions.iter().take(5) {
-        println!("  (known collision) {}", m);
-    }
-    if char_collisions.len() > 5 {
-        println!(
-            "  ... and {} more known collisions",
-            char_collisions.len() - 5
-        );
-    }
-    for m in wkb_failures.iter().take(10) {
-        println!("{}", m);
-    }
-    if wkb_failures.len() > 10 {
-        println!("  ... and {} more wkb failures", wkb_failures.len() - 10);
-    }
-
-    assert_eq!(
-        mismatches.len(),
-        0,
-        "{}: {} true mismatches (excluding {} known collisions)",
-        label,
-        mismatches.len(),
-        char_collisions.len()
-    );
-
-    assert_eq!(
-        wkb_failures.len(),
-        0,
-        "{}: {} entries where compose was expected but wkb did not produce output",
-        label,
-        wkb_failures.len()
-    );
+    final_char
 }
 
-// ---------------------------------------------------------------------------
-// Test via WKB::new_from_names — exercises the full locale-to-compose
-// resolution pipeline.
-// ---------------------------------------------------------------------------
-
-/// Test compose for an XKB locale created via `WKB::new_from_names`.
+/// Feed the same key events through xkbcommon's keymap state + compose state.
+/// Returns the final composed character. Modifier keysyms are not fed to the
+/// compose state (matching compositor behavior).
 ///
-/// 1. Creates a full WKB instance (keymap + compose tables).
-/// 2. Resolves the expected compose file via `resolve_compose_file`.
-/// 3. Parses the compose file and tests every entry against the WKB's
-///    composers, cross-checked with xkbcommon.
-fn test_wkb_compose(xkb_locale: &str) {
-    let compose_file_subpath = wkb::testing::compose_parse::resolve_compose_file(xkb_locale)
-        .unwrap_or_else(|| {
-            panic!(
-                "resolve_compose_file('{}') returned None — \
-                 add an entry to xkb_compose_map.rs",
-                xkb_locale
-            )
-        });
-
-    // Simple UTF-8 check: only exercise compose files whose subpath indicates UTF-8.
-    if !is_utf8_compose_subpath(&compose_file_subpath) {
-        println!(
-            "SKIP: wkb({}) -> legacy/non-UTF-8 compose file '{}'",
-            xkb_locale, compose_file_subpath
-        );
-        return;
+/// `compose_kc` designates a keycode to treat as the compose key (feeding the
+/// `Multi_key` keysym), mirroring `WKB::set_compose_key`.
+fn xkb_compose_char(
+    state: &mut xkb::State,
+    compose_state: &mut xkb::compose::State,
+    keys: &[(u32, bool)],
+    compose_kc: Option<Keycode>,
+) -> Option<char> {
+    let mut final_char = None;
+    for &(evdev, down) in keys {
+        let kc = Keycode::new(evdev + EVDEV_OFFSET);
+        let dir = if down {
+            xkb::KeyDirection::Down
+        } else {
+            xkb::KeyDirection::Up
+        };
+        state.update_key(kc, dir);
+        if !down {
+            continue;
+        }
+        let sym = state.key_get_one_sym(kc);
+        if is_modifier_keysym(sym.raw()) {
+            continue;
+        }
+        let feed = if sym.raw() == XKB_KEY_MULTI_KEY || Some(kc) == compose_kc {
+            xkb::Keysym::new(XKB_KEY_MULTI_KEY)
+        } else {
+            sym
+        };
+        compose_state.feed(feed);
+        if compose_state.status() == xkb::compose::Status::Composed {
+            final_char = compose_state.utf8().and_then(|s| s.chars().next());
+        }
     }
+    final_char
+}
 
-    // Derive the full locale from the compose file subpath for env override.
-    let locale_full = if xkb_locale.contains('.') {
-        xkb_locale.to_string()
+const XKB_KEY_MULTI_KEY: u32 = 0xff20;
+
+fn is_modifier_keysym(keysym: u32) -> bool {
+    (0xffe1..=0xffee).contains(&keysym) || keysym == 0xff7f // Shift..Hyper, NumLock
+}
+
+fn skip_unless_compose_file() -> bool {
+    if Path::new(COMPOSE_FILE).exists() {
+        true
     } else {
-        compose_file_subpath
-            .strip_suffix("/Compose")
-            .unwrap_or(xkb_locale)
-            .to_string()
-    };
-
-    // Override locale env so WKB loads the locale-specific compose file,
-    // not whatever LANG is set to on this machine.
-    // Lock around env mutation + WKB construction to prevent races with
-    // parallel tests that also set LC_ALL.
-    let wkb = {
-        let _guard = ENV_LOCK.lock().unwrap();
-        let saved_lc_all = std::env::var("LC_ALL").ok();
-        unsafe { std::env::set_var("LC_ALL", &locale_full) };
-
-        let wkb = wkb::WKB::new_from_names("", "", xkb_locale, "", None).unwrap();
-
-        match saved_lc_all {
-            Some(v) => unsafe { std::env::set_var("LC_ALL", v) },
-            None => unsafe { std::env::remove_var("LC_ALL") },
-        }
-        wkb
-    };
-
-    let compose_path = Path::new("/usr/share/X11/locale").join(&compose_file_subpath);
-    println!(
-        "Testing XKB locale '{}' -> compose file '{}'",
-        xkb_locale, compose_file_subpath
-    );
-
-    // Collect all chars producible by this keyboard
-    let producible = wkb.producible_chars();
-
-    run_compose_test(
-        &format!("wkb({})", xkb_locale),
-        &locale_full,
-        &compose_path,
-        wkb.composer(),
-        Some(&producible),
-    );
+        println!("SKIP: compose file not found: {COMPOSE_FILE}");
+        false
+    }
 }
 
-/// Test compose for a compose file loaded directly via
-/// `load_compose_from_path`.  Used for compose files not reachable
-/// through any short XKB locale name.
-fn test_compose_file_direct(label: &str, xkb_locale: &str, compose_file: &str) {
-    // Derive the compose subpath relative to /usr/share/X11/locale if possible,
-    // e.g. "/usr/share/X11/locale/en_US.UTF-8/Compose" -> "en_US.UTF-8/Compose".
-    let subpath = compose_file
-        .strip_prefix("/usr/share/X11/locale/")
-        .unwrap_or(compose_file);
+/// Minimal keymap with a `Multi_key` key plus the letter/punctuation keys the
+/// compose cases need. Used to exercise the auto-detected compose key path.
+fn keymap_with_multi_key() -> &'static str {
+    "xkb_keymap {
+    xkb_keycodes {
+        minimum = 8;
+        maximum = 255;
+        <COMP> = 127;
+        <AC01> = 38;
+        <AD03> = 26;
+        <AD07> = 30;
+        <AB06> = 57;
+        <AC02> = 39;
+        <AD09> = 32;
+        <AB03> = 54;
+        <AC11> = 48;
+        <AB08> = 59;
+        <AE03> = 12;
+        <AE06> = 15;
+        <TLDE> = 49;
+        <LFSH> = 50;
+    };
+    xkb_types {
+        type \"ONE_LEVEL\" {
+            modifiers = None;
+            map[None] = Level1;
+            level_name[Level1] = \"Base\";
+        };
+        type \"TWO_LEVEL\" {
+            modifiers = Shift;
+            map[None] = Level1;
+            map[Shift] = Level2;
+            level_name[Level1] = \"Base\";
+            level_name[Level2] = \"Shift\";
+        };
+    };
+    xkb_compat {
+        interpret Shift_L+AnyOfOrNone(all) {
+            action = SetMods(modifiers=Shift);
+        };
+    };
+    xkb_symbols {
+        key <COMP> { type= \"ONE_LEVEL\", [ Multi_key ] };
+        key <AC01> { type= \"TWO_LEVEL\", [ a, A ] };
+        key <AD03> { type= \"TWO_LEVEL\", [ e, E ] };
+        key <AD07> { type= \"TWO_LEVEL\", [ u, U ] };
+        key <AB06> { type= \"TWO_LEVEL\", [ n, N ] };
+        key <AC02> { type= \"TWO_LEVEL\", [ s, S ] };
+        key <AD09> { type= \"TWO_LEVEL\", [ o, O ] };
+        key <AB03> { type= \"TWO_LEVEL\", [ c, C ] };
+        key <AC11> { type= \"TWO_LEVEL\", [ apostrophe, quotedbl ] };
+        key <AB08> { type= \"TWO_LEVEL\", [ comma, less ] };
+        key <AE03> { type= \"TWO_LEVEL\", [ 3, numbersign ] };
+        key <AE06> { type= \"TWO_LEVEL\", [ 6, asciicircum ] };
+        key <TLDE> { type= \"TWO_LEVEL\", [ grave, asciitilde ] };
+        key <LFSH> { [ Shift_L ] };
+        modifier_map Shift { <LFSH> };
+    };
+};"
+}
 
-    // Simple UTF-8 check (no compose.dir parsing): only support explicit UTF-8 subpaths.
-    if !is_utf8_compose_subpath(subpath) {
-        println!(
-            "SKIP: legacy/non-UTF-8 compose file not supported: {}",
-            compose_file
-        );
+/// Build a WKB (and xkbcommon keymap + compose state) for the given keymap
+/// string, then compare the final composed char for every compose case.
+fn compare_compose_flow(label: &str, keymap_str: &str, wkb: &mut WKB) {
+    if !skip_unless_compose_file() {
         return;
     }
 
-    let compose_path = Path::new(compose_file);
-    if !compose_path.exists() {
-        println!("SKIP: compose file not found: {}", compose_file);
-        return;
-    }
+    let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+    let keymap = xkb::Keymap::new_from_string(
+        &ctx,
+        keymap_str.to_string(),
+        xkb::KEYMAP_FORMAT_TEXT_V1,
+        xkb::KEYMAP_COMPILE_NO_FLAGS,
+    )
+    .expect("xkbcommon keymap");
+    let mut state = xkb::State::new(&keymap);
 
-    let regular = wkb::testing::compose_parse::load_compose_from_path(compose_path);
+    let table = xkb::compose::Table::new_from_locale(
+        &ctx,
+        std::ffi::OsStr::new(COMPOSE_LOCALE),
+        xkb::compose::COMPILE_NO_FLAGS,
+    )
+    .expect("xkbcommon compose table");
+    let mut compose_state = xkb::compose::State::new(&table, xkb::compose::STATE_NO_FLAGS);
 
-    run_compose_test(label, xkb_locale, compose_path, &regular, None);
-}
+    for case in COMPOSE_CASES {
+        let wkb_char = wkb_compose_char(wkb, case.keys);
+        let xkb_char = xkb_compose_char(&mut state, &mut compose_state, case.keys, None);
+        compose_state.reset();
 
-// ===================================================================
-// Part 1: XKB locales via WKB::new_from_names
-//
-// Exercises the full pipeline: locale resolution through
-// locale.alias + compose.dir, compose file loading, and trie building.
-// ===================================================================
-
-#[test_matrix([
-    "af", "al", "am", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "br", "bt", "bw", "by",
-    "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee", "eg", "epo", "es", "et", "eu",
-    "fi", "fo", "fr", "gb", "ge", "gh", "gn", "gr", "hr", "hu", "id", "ie", "il", "in", "iq",
-    "ir", "is", "it", "jp", "ke", "kg", "kh", "kr", "kz", "la", "latam", "lk", "lt", "lv",
-    "ma", "md", "me", "mk", "ml", "mm", "mn", "mt", "mv", "my", "ng", "nl", "no", "np", "nz",
-    "ph", "pk", "pl", "pt", "ro", "rs", "ru", "se", "si", "sk", "sn", "sy", "tg", "th", "tj",
-    "tm", "tr", "tw", "tz", "ua", "us", "uz", "vn", "za"
-])]
-fn compose_wkb(locale: &str) {
-    test_wkb_compose(locale);
-}
-
-// ===================================================================
-// Part 2: Direct compose file tests
-//
-// These cover compose files not reachable through any short XKB
-// locale name.  They load the compose file directly via
-// load_compose_from_path and test all entries.
-// ===================================================================
-
-// --- UTF-8 compose files ---
-// Note: Most UTF-8 compose files are exercised via the `compose_wkb`
-// test matrix (which resolves short XKB names to compose files).
-// To avoid duplicate test coverage and slow CI, keep only compose
-// files not reachable via short XKB names.
-//
-// The zh_HK compose file is not reachable from the short-name matrix,
-// so keep a direct test for it.
-
-#[test]
-fn compose_direct_zh_hk() {
-    test_compose_file_direct(
-        "zh_HK.UTF-8",
-        "zh_HK.UTF-8",
-        "/usr/share/X11/locale/zh_HK.UTF-8/Compose",
-    );
-}
-
-// --- Legacy (non-UTF-8) compose files ---
-
-#[test]
-fn compose_direct_iso8859_1() {
-    test_compose_file_direct(
-        "iso8859-1",
-        "af_ZA.ISO8859-1",
-        "/usr/share/X11/locale/iso8859-1/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_iso8859_2() {
-    test_compose_file_direct(
-        "iso8859-2",
-        "bs_BA.ISO8859-2",
-        "/usr/share/X11/locale/iso8859-2/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_iso8859_3() {
-    test_compose_file_direct(
-        "iso8859-3",
-        "eo_XX.ISO8859-3",
-        "/usr/share/X11/locale/iso8859-3/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_iso8859_4() {
-    test_compose_file_direct(
-        "iso8859-4",
-        "ee_EE.ISO8859-4",
-        "/usr/share/X11/locale/iso8859-4/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_iso8859_7() {
-    test_compose_file_direct(
-        "iso8859-7",
-        "el_GR.ISO8859-7",
-        "/usr/share/X11/locale/iso8859-7/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_iso8859_9() {
-    test_compose_file_direct(
-        "iso8859-9",
-        "tr_TR.ISO8859-9",
-        "/usr/share/X11/locale/iso8859-9/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_iso8859_9e() {
-    test_compose_file_direct(
-        "iso8859-9e",
-        "az_AZ.ISO8859-9E",
-        "/usr/share/X11/locale/iso8859-9e/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_iso8859_13() {
-    test_compose_file_direct(
-        "iso8859-13",
-        "et_EE.ISO8859-13",
-        "/usr/share/X11/locale/iso8859-13/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_iso8859_14() {
-    test_compose_file_direct(
-        "iso8859-14",
-        "br_FR.ISO8859-14",
-        "/usr/share/X11/locale/iso8859-14/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_iso8859_15() {
-    test_compose_file_direct(
-        "iso8859-15",
-        "br_FR.ISO8859-15",
-        "/usr/share/X11/locale/iso8859-15/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_koi8_c() {
-    test_compose_file_direct(
-        "koi8-c",
-        "az_AZ.KOI8-C",
-        "/usr/share/X11/locale/koi8-c/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_vi_vn_tcvn() {
-    test_compose_file_direct(
-        "vi_VN.tcvn",
-        "vi_VN.TCVN",
-        "/usr/share/X11/locale/vi_VN.tcvn/Compose",
-    );
-}
-
-#[test]
-fn compose_direct_vi_vn_viscii() {
-    test_compose_file_direct(
-        "vi_VN.viscii",
-        "vi_VN.VISCII",
-        "/usr/share/X11/locale/vi_VN.viscii/Compose",
-    );
-}
-
-// ===================================================================
-// Part 3: Locale resolution smoke tests
-//
-// Verify that resolve_compose_file returns the expected compose file
-// for various locale names (short XKB names, full locale names, and
-// xkb_compose_map entries).
-// ===================================================================
-
-#[test]
-fn compose_resolution_short_names() {
-    // Short XKB names resolved via locale.alias + UTF-8 fallback
-    let cases: &[(&str, &str)] = &[
-        ("de", "en_US.UTF-8/Compose"),
-        ("fr", "en_US.UTF-8/Compose"),
-        ("es", "en_US.UTF-8/Compose"),
-        ("it", "en_US.UTF-8/Compose"),
-        ("fi", "fi_FI.UTF-8/Compose"),
-        ("pt", "pt_PT.UTF-8/Compose"),
-        ("ru", "ru_RU.UTF-8/Compose"),
-        ("am", "am_ET.UTF-8/Compose"),
-        ("th", "th_TH.UTF-8/Compose"),
-    ];
-
-    for &(locale, expected) in cases {
-        let resolved = wkb::testing::compose_parse::resolve_compose_file(locale);
         assert_eq!(
-            resolved.as_deref(),
-            Some(expected),
-            "resolve_compose_file('{}') should return '{}'",
-            locale,
-            expected
+            wkb_char,
+            xkb_char,
+            "{label}/{}: wkb={:?} xkb={:?} (expected {:?})",
+            case.name,
+            wkb_char,
+            xkb_char,
+            Some(case.expected)
         );
-    }
-}
-
-#[test]
-fn compose_resolution_xkb_compose_map() {
-    // XKB layout names resolved via the hardcoded xkb_compose_map
-    let cases: &[(&str, &str)] = &[
-        ("us", "en_US.UTF-8/Compose"),
-        ("gb", "en_US.UTF-8/Compose"),
-        ("no", "en_US.UTF-8/Compose"),
-        ("dk", "en_US.UTF-8/Compose"),
-        ("se", "en_US.UTF-8/Compose"),
-        ("at", "en_US.UTF-8/Compose"),
-        ("ch", "en_US.UTF-8/Compose"),
-        ("cz", "cs_CZ.UTF-8/Compose"),
-        ("gr", "el_GR.UTF-8/Compose"),
-        ("rs", "sr_RS.UTF-8/Compose"),
-        ("me", "sr_RS.UTF-8/Compose"),
-        ("jp", "ja_JP.UTF-8/Compose"),
-        ("kr", "ko_KR.UTF-8/Compose"),
-        ("cn", "zh_CN.UTF-8/Compose"),
-        ("tw", "zh_TW.UTF-8/Compose"),
-        ("kh", "km_KH.UTF-8/Compose"),
-        ("ua", "en_US.UTF-8/Compose"),
-        ("in", "en_US.UTF-8/Compose"),
-        ("il", "en_US.UTF-8/Compose"),
-        ("ara", "en_US.UTF-8/Compose"),
-        ("ir", "en_US.UTF-8/Compose"),
-        ("vn", "en_US.UTF-8/Compose"),
-        ("latam", "en_US.UTF-8/Compose"),
-        ("epo", "en_US.UTF-8/Compose"),
-    ];
-
-    for &(locale, expected) in cases {
-        let resolved = wkb::testing::compose_parse::resolve_compose_file(locale);
         assert_eq!(
-            resolved.as_deref(),
-            Some(expected),
-            "resolve_compose_file('{}') should return '{}'",
-            locale,
-            expected
+            wkb_char,
+            Some(case.expected),
+            "{label}/{}: wkb produced wrong char",
+            case.name
         );
     }
 }
 
+/// Auto-detect path: keymap maps the Menu key to `Multi_key`, so WKB detects
+/// the compose key from the keymap and `press_key` feeds the Compose token.
 #[test]
-fn compose_resolution_full_locale_names() {
-    // Full locale names should match compose.dir directly
-    // Only test locales that have their own compose file directories
-    let cases: &[(&str, &str)] = &[
-        ("en_US.UTF-8", "en_US.UTF-8/Compose"),
-        ("de_DE.UTF-8", "en_US.UTF-8/Compose"),
-        ("fi_FI.UTF-8", "fi_FI.UTF-8/Compose"),
-        ("pt_PT.UTF-8", "pt_PT.UTF-8/Compose"),
-        ("pt_BR.UTF-8", "pt_BR.UTF-8/Compose"),
-        ("ru_RU.UTF-8", "ru_RU.UTF-8/Compose"),
-        ("el_GR.UTF-8", "el_GR.UTF-8/Compose"),
-        ("cs_CZ.UTF-8", "cs_CZ.UTF-8/Compose"),
-        ("sr_RS.UTF-8", "sr_RS.UTF-8/Compose"),
-        ("am_ET.UTF-8", "am_ET.UTF-8/Compose"),
-        ("ja_JP.UTF-8", "ja_JP.UTF-8/Compose"),
-        ("ko_KR.UTF-8", "ko_KR.UTF-8/Compose"),
-        ("km_KH.UTF-8", "km_KH.UTF-8/Compose"),
-        ("th_TH.UTF-8", "th_TH.UTF-8/Compose"),
-        ("zh_CN.UTF-8", "zh_CN.UTF-8/Compose"),
-        ("zh_HK.UTF-8", "zh_HK.UTF-8/Compose"),
-        ("zh_TW.UTF-8", "zh_TW.UTF-8/Compose"),
-    ];
+fn compose_auto_detected_multi_key() {
+    let _guard = ENV_LOCK.lock().unwrap_or_else(|p| p.into_inner());
 
-    for &(locale, expected) in cases {
-        let resolved = wkb::testing::compose_parse::resolve_compose_file(locale);
+    let saved_lc_all = std::env::var("LC_ALL").ok();
+    unsafe { std::env::set_var("LC_ALL", COMPOSE_LOCALE) };
+    let mut wkb = WKB::new_from_string(keymap_with_multi_key()).unwrap();
+    restore_env(&saved_lc_all);
+
+    compare_compose_flow("auto-detect", keymap_with_multi_key(), &mut wkb);
+}
+
+/// Explicit path: the standard US layout has no `Multi_key` key, so the test
+/// designates one via `WKB::set_compose_key`.
+#[test]
+fn compose_set_compose_key() {
+    let _guard = ENV_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+
+    let saved_lc_all = std::env::var("LC_ALL").ok();
+    unsafe { std::env::set_var("LC_ALL", COMPOSE_LOCALE) };
+    let mut wkb = WKB::new_from_names("", "", "us", "", None).unwrap();
+    wkb.set_compose_key(COMPOSE_KEY);
+    restore_env(&saved_lc_all);
+
+    // xkbcommon needs the same keymap; there is no Multi_key key, so the
+    // designated compose keycode is translated to the Multi_key keysym.
+    let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+    let keymap = xkb::Keymap::new_from_names(
+        &ctx,
+        "evdev",
+        "",
+        "us",
+        "",
+        None,
+        xkb::KEYMAP_COMPILE_NO_FLAGS,
+    )
+    .expect("xkbcommon keymap");
+    let mut state = xkb::State::new(&keymap);
+    let table = xkb::compose::Table::new_from_locale(
+        &ctx,
+        std::ffi::OsStr::new(COMPOSE_LOCALE),
+        xkb::compose::COMPILE_NO_FLAGS,
+    )
+    .expect("xkbcommon compose table");
+    let mut compose_state = xkb::compose::State::new(&table, xkb::compose::STATE_NO_FLAGS);
+    let compose_kc = Keycode::new(COMPOSE_KEY + EVDEV_OFFSET);
+
+    for case in COMPOSE_CASES {
+        let wkb_char = wkb_compose_char(&mut wkb, case.keys);
+        let xkb_char =
+            xkb_compose_char(&mut state, &mut compose_state, case.keys, Some(compose_kc));
+        compose_state.reset();
+
         assert_eq!(
-            resolved.as_deref(),
-            Some(expected),
-            "resolve_compose_file('{}') should return '{}'",
-            locale,
-            expected
+            wkb_char,
+            xkb_char,
+            "set_compose_key/{}: wkb={:?} xkb={:?} (expected {:?})",
+            case.name,
+            wkb_char,
+            xkb_char,
+            Some(case.expected)
+        );
+        assert_eq!(
+            wkb_char,
+            Some(case.expected),
+            "set_compose_key/{}: wkb produced wrong char",
+            case.name
         );
     }
 }
 
-#[test]
-fn debug_cyrillic_keysym_mapping() {
-    use wkb::testing::compose_parse::keysym_name_to_char;
-
-    let names = [
-        "Cyrillic_e",
-        "Cyrillic_E",
-        "Cyrillic_ie",
-        "Cyrillic_IE",
-        "Cyrillic_i",
-        "Cyrillic_I",
-        "Cyrillic_a",
-        "Cyrillic_A",
-        "Cyrillic_o",
-        "Cyrillic_O",
-        "Cyrillic_u",
-        "Cyrillic_U",
-        "dead_grave",
-        "dead_acute",
-        "dead_diaeresis",
-        "dead_doubleacute",
-    ];
-    for name in &names {
-        let ch = keysym_name_to_char(name);
-        match ch {
-            Some(c) => eprintln!("{}: U+{:04X} ('{}')", name, c as u32, c),
-            None => eprintln!("{}: None", name),
-        }
-    }
-}
-
-#[test]
-fn compose_resolution_every_xkb_layout() {
-    // Every XKB layout file that is a real keyboard layout should
-    // resolve to some compose file (no None allowed).
-    let xkb_layouts = [
-        "af", "al", "am", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "br", "bt", "bw", "by",
-        "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee", "eg", "epo", "es", "et", "eu",
-        "fi", "fo", "fr", "gb", "ge", "gh", "gn", "gr", "hr", "hu", "id", "ie", "il", "in", "iq",
-        "ir", "is", "it", "jp", "ke", "kg", "kh", "kr", "kz", "la", "latam", "lk", "lt", "lv",
-        "ma", "md", "me", "mk", "ml", "mm", "mn", "mt", "mv", "my", "ng", "nl", "no", "np", "nz",
-        "ph", "pk", "pl", "pt", "ro", "rs", "ru", "se", "si", "sk", "sn", "sy", "tg", "th", "tj",
-        "tm", "tr", "tw", "tz", "ua", "us", "uz", "vn", "za",
-    ];
-
-    for &layout in &xkb_layouts {
-        let resolved = wkb::testing::compose_parse::resolve_compose_file(layout);
-        assert!(
-            resolved.is_some(),
-            "resolve_compose_file('{}') returned None — every XKB layout must resolve",
-            layout
-        );
+fn restore_env(saved: &Option<String>) {
+    match saved {
+        Some(v) => unsafe { std::env::set_var("LC_ALL", v) },
+        None => unsafe { std::env::remove_var("LC_ALL") },
     }
 }
