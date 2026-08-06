@@ -264,3 +264,69 @@ fn caps_then_num_lock_sequence(locale: &str) {
         );
     }
 }
+
+/// Test num lock effect on keypad keys with and without caps lock
+#[test_matrix([
+    "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "bqn",
+    "br", "brai", "bt", "bw", "by", "ca", "cd", "ch", "cm", "cn", "cz", "de", "dk", "dz", "ee",
+    "eg", "epo", "es", "et", "eu", "fi", "fo", "fr", "gb", "ge", "gh", "gn", "gr", "hr", "hu",
+    "id", "ie", "il", "in", "iq", "ir", "is", "it", "jp", "ke", "kg", "kh", "kr", "kz", "la", "lk",
+    "lt", "lv", "ma", "md", "me", "mk", "ml", "mm", "mn", "mt", "mv", "my", "latam", "latin", "ng",
+    "nl", "no", "np", "nz", "ph", "pk", "pl", "pt", "ro", "rs", "ru", "se", "tg", "th", "tj", "tm",
+    "tr", "tw", "tz", "ua", "us", "uz", "vn", "za", "si", "sk", "trans", "sn"
+])]
+fn keypad_with_locks(locale: &str) {
+    for layout in get_all_layouts_for_locale(locale) {
+        let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
+        let mut xkb = xkb_new_from_names(locale, &layout);
+
+        // Keypad keys (evdev keycodes): KP_0=82, KP_1=79, KP_2=80, etc.
+        let keypad_keys = vec![79, 80, 81, 75, 76, 77, 71, 72, 73, 82, 83, 86, 63, 106];
+
+        // Test keypad keys with num lock only
+        wkb.update_key(NUM_LOCK, KeyDirection::Down);
+        wkb.update_key(NUM_LOCK, KeyDirection::Up);
+        xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Up);
+
+        for &keycode in &keypad_keys {
+            let wkb_char = wkb.key_char(keycode);
+            let xkb_char = xkb.key_get_utf8(Keycode::new(keycode + 8)).chars().last();
+
+            if wkb_char != xkb_char && xkb_char.is_some() {
+                println!(
+                    "locale={} layout={} keypad={} num_only: wkb={:?} xkb={:?}",
+                    locale, layout, keycode, wkb_char, xkb_char
+                );
+            }
+
+            assert!(
+                wkb_char == xkb_char || xkb_char.is_none(),
+                "Keypad mismatch with num lock only"
+            );
+        }
+
+        // Add caps lock
+        wkb.update_key(CAPS_LOCK, KeyDirection::Down);
+        wkb.update_key(CAPS_LOCK, KeyDirection::Up);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
+        xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
+
+        for &keycode in &keypad_keys {
+            let wkb_char = wkb.key_char(keycode);
+            let xkb_char = xkb.key_get_utf8(Keycode::new(keycode + 8)).chars().last();
+
+            if wkb_char != xkb_char && xkb_char.is_some() {
+                println!(
+                    "locale={} layout={} keypad={} caps+num: wkb={:?} xkb={:?}",
+                    locale, layout, keycode, wkb_char, xkb_char
+                );
+            }
+
+            assert!(
+                wkb_char == xkb_char || xkb_char.is_none(),
+                "Keypad mismatch with caps+num lock"
+            );
+        }
+    }
+}
