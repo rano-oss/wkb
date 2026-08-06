@@ -3,6 +3,8 @@ use std::sync::LazyLock;
 
 use arrayvec::ArrayVec;
 
+use crate::xkb::keysym::keysym_to_codepoint;
+
 pub use super::parser::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
 pub(crate) use super::parser::{
     XkbAction, XkbContext, XkbKeymap, XkbLed, XkbLevel, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL, XKB_KEYMAP_FORMAT_TEXT_V2,
@@ -70,7 +72,6 @@ pub fn keysym_name_to_char(name: &str) -> Option<char> {
         }
     }
 
-    use super::keysym::keysym_to_utf32;
     use super::keysym::xkb_keysym_from_name;
     use super::parser::XKB_KEYSYM_NO_FLAGS;
 
@@ -85,7 +86,7 @@ pub fn keysym_name_to_char(name: &str) -> Option<char> {
             return None;
         }
     };
-    let utf32 = keysym_to_utf32(ks);
+    let utf32 = keysym_to_codepoint(ks).unwrap_or(0);
     if utf32 == 0 {
         return None;
     }

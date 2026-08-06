@@ -20899,7 +20899,7 @@ pub(crate) fn xkb_keysym_from_name(name: &[u8], flags: u32) -> Option<u32> {
         return Some(if val > 0xff_u32 && val <= 0x10ffff_u32 {
             XKB_KEYSYM_UNICODE_OFFSET.wrapping_add(val)
         } else {
-            utf32_to_keysym(val)
+            codepoint_to_keysym(val).unwrap_or(0)
         });
     } else if name_bytes.first() == Some(&b'0')
         && (name_bytes.get(1) == Some(&b'x') || (icase && name_bytes.get(1) == Some(&b'X')))
@@ -24804,7 +24804,7 @@ pub fn keysym_to_char(keysym: u32) -> Option<char> {
 /// Convert an XKB keysym to a Unicode codepoint (U+XXXX)
 ///
 /// Returns `None` if the keysym cannot be converted.
-fn keysym_to_codepoint(keysym: u32) -> Option<u32> {
+pub fn keysym_to_codepoint(keysym: u32) -> Option<u32> {
     // ASCII printable and Latin-1
     if (0x20..=0x7E).contains(&keysym) || (0xA0..=0xFF).contains(&keysym) {
         return Some(keysym);
@@ -24912,7 +24912,7 @@ fn keysym_to_codepoint(keysym: u32) -> Option<u32> {
 }
 
 /// Convert a Unicode codepoint to an XKB keysym
-fn codepoint_to_keysym(ucs: u32) -> Option<u32> {
+pub fn codepoint_to_keysym(ucs: u32) -> Option<u32> {
     // ASCII printable and Latin-1
     if (0x20..=0x7E).contains(&ucs) || (0xA0..=0xFF).contains(&ucs) {
         return Some(ucs);
@@ -24946,25 +24946,6 @@ fn codepoint_to_keysym(ucs: u32) -> Option<u32> {
 
     // Fallback: encode as Unicode keysym
     Some(ucs | XKB_KEYSYM_UNICODE_OFFSET)
-}
-
-// ====================================================================================
-// FFI compatibility layer for internal C code (state.rs, scanner.rs, etc.)
-// These wrappers maintain the old C API while using native Rust implementation
-// ====================================================================================
-
-/// FFI wrapper: Convert keysym to UTF-32 codepoint (C-compatible)
-///
-/// Returns 0 if conversion fails (matches old C behavior)
-pub(crate) fn keysym_to_utf32(keysym: u32) -> u32 {
-    keysym_to_codepoint(keysym).unwrap_or(0)
-}
-
-/// FFI wrapper: Convert UTF-32 codepoint to keysym (C-compatible)
-///
-/// Returns 0 (XKB_KEY_NO_SYMBOL) if conversion fails
-pub(crate) fn utf32_to_keysym(ucs: u32) -> u32 {
-    codepoint_to_keysym(ucs).unwrap_or(0)
 }
 
 #[derive(Copy, Clone)]

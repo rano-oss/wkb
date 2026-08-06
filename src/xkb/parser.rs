@@ -2,7 +2,6 @@ use super::keymap::mod_mask_get_effective;
 use super::keymap::xkb_escape_map_name;
 use super::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use super::keymap::GROUP_LAST_INDEX_NAME;
-use super::keysym::utf32_to_keysym;
 use super::keysym::xkb_keysym_from_name;
 pub(crate) use super::symbols::compile_compat_map;
 pub(crate) use super::symbols::compile_key_types;
@@ -12,6 +11,7 @@ use super::symbols::{expr_resolve_group, expr_resolve_group_mask};
 use crate::xkb::keymap::CONTROL_NAMES_MIN_V1_INDEX;
 use crate::xkb::keymap::CONTROL_NAMES_MIN_V2_INDEX;
 use crate::xkb::keymap::xkb_mod_name_to_index;
+use crate::xkb::keysym::codepoint_to_keysym;
 
 fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
     if file.file_type != FileType::Keymap {
@@ -1979,7 +1979,7 @@ pub(crate) fn expr_key_sym_list_append_string(
             let _loc = scanner.token_location();
             return None;
         }
-        let sym = utf32_to_keysym(cp);
+        let sym = codepoint_to_keysym(cp).unwrap_or(0);
         if sym == XKB_KEY_NO_SYMBOL {
             let _loc = scanner.token_location();
             return None;
@@ -2003,7 +2003,7 @@ pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> Option
         let _loc = scanner.token_location();
         return None;
     }
-    let sym = utf32_to_keysym(cp);
+    let sym = codepoint_to_keysym(cp).unwrap_or(0);
     if sym == XKB_KEY_NO_SYMBOL {
         let _loc = scanner.token_location();
     }
