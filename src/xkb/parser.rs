@@ -6740,33 +6740,27 @@ pub(crate) const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
 
 /// Decode next UTF-8 code point from byte slice.
 pub(crate) fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
-    if bytes.is_empty() {
+    let Some(&first) = bytes.first() else {
         return (INVALID_UTF8_CODE_POINT, 0);
-    }
-    let b0 = bytes[0];
-    let (len, mut cp) = match b0 {
-        0x00..=0x7F => return (b0 as u32, 1),
-        0xC2..=0xDF => (2, (b0 as u32) & 0x1F),
-        0xE0..=0xEF => (3, (b0 as u32) & 0x0F),
-        0xF0..=0xF4 => (4, (b0 as u32) & 0x07),
+    };
+
+    let len = match first {
+        0x00..=0x7f => 1,
+        0xc2..=0xdf => 2,
+        0xe0..=0xef => 3,
+        0xf0..=0xf4 => 4,
         _ => return (INVALID_UTF8_CODE_POINT, 0),
     };
-    if len > bytes.len() {
+
+    let Some(candidate) = bytes.get(..len) else {
         return (INVALID_UTF8_CODE_POINT, 0);
-    }
-    for &byte in bytes.iter().take(len).skip(1) {
-        if (byte & 0xC0) != 0x80 {
-            return (INVALID_UTF8_CODE_POINT, 0);
-        }
-        cp = (cp << 6) | ((byte as u32) & 0x3F);
-    }
-    if (len == 2 && cp < 0x80)
-        || (len == 3 && cp < 0x800)
-        || (len == 4 && cp < 0x10000)
-        || (0xD800..=0xDFFF).contains(&cp)
-        || cp > 0x10FFFF
+    };
+
+    match std::str::from_utf8(candidate)
+        .ok()
+        .and_then(|s| s.chars().next())
     {
-        return (INVALID_UTF8_CODE_POINT, 0);
+        Some(ch) => (ch as u32, len),
+        None => (INVALID_UTF8_CODE_POINT, 0),
     }
-    (cp, len)
 }

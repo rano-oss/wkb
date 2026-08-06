@@ -353,8 +353,6 @@ pub(crate) fn xkb_keymap_key_get_syms_by_level_ref(
         .unwrap_or(&[])
 }
 
-// --- Merged from keymap_priv.rs ---
-
 pub(crate) const XKB_MOD_NAME_SHIFT: &str = "Shift";
 pub(crate) const XKB_MOD_NAME_CAPS: &str = "Lock";
 pub(crate) const XKB_MOD_NAME_CTRL: &str = "Control";
