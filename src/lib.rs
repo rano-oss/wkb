@@ -34,7 +34,6 @@
 //!
 //! - **`xkb`** (default) — XKB keymap compilation via the `xkb-core` crate.
 //! - **`compose`** (default) — Compose-key / dead-key sequence support.
-//! - **`testing`** — Exposes internal helpers for integration tests. Not part of the public API.
 
 use crate::modifiers::*;
 pub use composer::{ComposeState, ComposeString};
@@ -49,9 +48,6 @@ pub use modifiers::{level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, NUM_LO
 pub mod ir;
 mod named_keys;
 pub use named_keys::NamedKey;
-/// Test-only utilities. Not part of the public API.
-#[cfg(feature = "testing")]
-pub mod testing;
 #[cfg(feature = "xkb")]
 mod xkb;
 #[cfg(feature = "xkb")]

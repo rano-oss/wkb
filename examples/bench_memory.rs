@@ -10,12 +10,6 @@
 //!   [`wkb::WKB::new_from_names`].
 //! - `xkbcommon`, `xkbcommon-dl`, `xkbcommon-compat` — the C backends.
 //!
-//! Note: the `testing` dev-dependency forces the `xkb` feature on for every
-//! example in this crate, so the `wkb-noxkb` layout still carries the
-//! (empty) `level_exceptions` keymap. That is a small constant overhead
-//! (~4% of RSS); the dominant XKB cost is the compile machinery itself,
-//! which is never executed in the `wkb-noxkb` workload.
-//!
 //! Usage:
 //!   cargo build --example bench_memory --release
 //!   valgrind --tool=massif --pages-as-heap=yes ./target/release/examples/bench_memory

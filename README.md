@@ -84,7 +84,6 @@ let xkb_string = wkb.as_xkb_string().unwrap();
 |------|---------|-------------|
 | `xkb` | yes | XKB keymap compilation via the `xkb-core` crate |
 | `compose` | yes | Compose-key / dead-key sequence support |
-| `testing` | no | Exposes internal helpers for integration tests (not public API) |
 
 ## Benchmarks
 
