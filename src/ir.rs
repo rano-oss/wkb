@@ -7,8 +7,8 @@
 //!
 //! The IR mirrors the serialized RON document one-to-one: `version`, a single
 //! `layout` name, `repeat_keys`, `modifiers`, per-level section maps
-//! (`keymap`, `num_lock_keys`, `caps_lock_keymap`, `keysym_map`), and a
-//! `compose` table.
+//! (`keymap`, `num_lock_keys`, `caps_lock_keymap`, `caps_num_lock_keys`,
+//! `keysym_map`), and a `compose` table.
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -109,6 +109,9 @@ pub struct LayoutFile {
     /// Character overrides active while Caps Lock is locked.
     #[serde(default)]
     pub caps_lock_keymap: CharSection,
+    /// Character overrides active while both Num Lock and Caps Lock are locked.
+    #[serde(default)]
+    pub caps_num_lock_keys: CharSection,
     /// Named-key identities per (level, keycode); `Unnamed` entries are omitted.
     #[serde(default)]
     pub keysym_map: NamedSection,
@@ -147,7 +150,12 @@ impl LayoutFile {
                 }
             }
         }
-        for section in [&self.keymap, &self.num_lock_keys, &self.caps_lock_keymap] {
+        for section in [
+            &self.keymap,
+            &self.num_lock_keys,
+            &self.caps_lock_keymap,
+            &self.caps_num_lock_keys,
+        ] {
             validate_section(section)?;
         }
         validate_section(&self.keysym_map)?;
@@ -208,6 +216,7 @@ fn serialize_to_ron(file: &LayoutFile) -> String {
     write_char_section(&mut out, "keymap", &file.keymap);
     write_char_section(&mut out, "num_lock_keys", &file.num_lock_keys);
     write_char_section(&mut out, "caps_lock_keymap", &file.caps_lock_keymap);
+    write_char_section(&mut out, "caps_num_lock_keys", &file.caps_num_lock_keys);
     write_named_section(&mut out, "keysym_map", &file.keysym_map);
     if !file.compose.is_empty() {
         write_entries(&mut out, "compose", &file.compose);
@@ -326,6 +335,7 @@ impl TryFrom<&KBLayout> for LayoutFile {
             keymap: char_section(&layout.state_keymap),
             num_lock_keys: char_section(&layout.num_lock_keys),
             caps_lock_keymap: char_section(&layout.caps_lock_keymap),
+            caps_num_lock_keys: char_section(&layout.caps_num_lock_keys),
             keysym_map: named_section(&layout.named_key_map),
             compose: compose_from_composer(&layout.composer, &reachable_chars(layout)),
         };
@@ -469,6 +479,7 @@ impl TryFrom<LayoutFile> for KBLayout {
         let num_lock_keys = from_levels(&file.num_lock_keys, num_keys, Some);
         let caps_lock_keymap = from_levels(&file.caps_lock_keymap, num_keys, Some);
         let named_key_map = from_levels(&file.keysym_map, num_keys, |key| key);
+        let caps_num_lock_keys = from_levels(&file.caps_num_lock_keys, num_keys, Some);
 
         Ok(KBLayout {
             name: file.layout,
@@ -481,6 +492,7 @@ impl TryFrom<LayoutFile> for KBLayout {
             named_key_map,
             #[cfg(feature = "xkb")]
             level_exceptions_keymap: FlatKeymap::new(num_keys),
+            caps_num_lock_keys
         })
     }
 }

@@ -558,30 +558,35 @@ fn build_wkb_from_keymap(
     let num_kc = level_code(&modifiers, ModType::Num).map(|(code, _)| code + EVDEV_OFFSET);
     let caps_active = lock_activation(keymap, &compiled_types, caps_kc, 0xffe5, &level_masks);
     let num_active = lock_activation(keymap, &compiled_types, num_kc, 0xff7f, &level_masks);
-    let layout_states: Vec<([u32; MAX_LEVELS], [u32; MAX_LEVELS], [u32; MAX_LEVELS])> =
-        per_layout_level5
-            .iter()
-            .map(|&layout_level5| {
-                let transform = |mods| {
-                    level5_transform_mods(
-                        mods,
-                        layout_level5,
-                        level2_mask,
-                        level3_mask,
-                        level5_mask,
+    let layout_states: Vec<(
+        [u32; MAX_LEVELS],
+        [u32; MAX_LEVELS],
+        [u32; MAX_LEVELS],
+        [u32; MAX_LEVELS],
+    )> = per_layout_level5
+        .iter()
+        .map(|&layout_level5| {
+            let transform = |mods| {
+                level5_transform_mods(mods, layout_level5, level2_mask, level3_mask, level5_mask)
+            };
+            (
+                std::array::from_fn(|level| transform(level_masks[level])),
+                std::array::from_fn(|level| {
+                    transform(level_masks[level] | (u32::from(caps_active[level]) * caps_mask))
+                }),
+                std::array::from_fn(|level| {
+                    transform(level_masks[level] | (u32::from(num_active[level]) * num_mask))
+                }),
+                std::array::from_fn(|level| {
+                    transform(
+                        level_masks[level]
+                            | (u32::from(caps_active[level]) * caps_mask)
+                            | (u32::from(num_active[level]) * num_mask),
                     )
-                };
-                (
-                    std::array::from_fn(|level| transform(level_masks[level])),
-                    std::array::from_fn(|level| {
-                        transform(level_masks[level] | (u32::from(caps_active[level]) * caps_mask))
-                    }),
-                    std::array::from_fn(|level| {
-                        transform(level_masks[level] | (u32::from(num_active[level]) * num_mask))
-                    }),
-                )
-            })
-            .collect();
+                }),
+            )
+        })
+        .collect();
 
     let layout_names: Vec<String> = (0..num_layouts)
         .map(|i| {
@@ -600,11 +605,14 @@ fn build_wkb_from_keymap(
         .ok();
 
     let mut layouts = Vec::with_capacity(num_layouts);
-    for (layout_idx, (base_states, caps_states, num_states)) in layout_states.iter().enumerate() {
+    for (layout_idx, (base_states, caps_states, num_states, combined_states)) in
+        layout_states.iter().enumerate()
+    {
         let mut level_exceptions_keymap = FlatKeymap::new(num_keys);
         let mut named_key_map = FlatNamedKeyMap::new(num_keys);
         let mut state_keymap = FlatKeymap::new(num_keys);
         let mut caps_lock_keymap = FlatKeymap::new(num_keys);
+        let mut caps_num_lock_keys = FlatKeymap::new(num_keys);
         let mut num_lock_keys = FlatKeymap::new(num_keys);
         let mut repeat_keys = KeyBitSet::new();
 
@@ -670,6 +678,18 @@ fn build_wkb_from_keymap(
                         }
                     }
                 }
+                if caps_affected || num_affected {
+                    if let Some(ch) = resolve_char(
+                        group,
+                        type_,
+                        combined_states[level],
+                        u32::from(caps_affected) * caps_mask,
+                    ) {
+                        if Some(ch) != base {
+                            caps_num_lock_keys.data[idx] = Some(ch);
+                        }
+                    }
+                }
             }
         }
 
@@ -680,6 +700,7 @@ fn build_wkb_from_keymap(
                 .iter()
                 .chain(&caps_lock_keymap.data)
                 .chain(&num_lock_keys.data)
+                .chain(&caps_num_lock_keys.data)
                 .filter_map(|ch| *ch)
                 .collect();
             reachable.sort_unstable();
@@ -710,6 +731,7 @@ fn build_wkb_from_keymap(
             state_keymap,
             num_lock_keys,
             caps_lock_keymap,
+            caps_num_lock_keys,
             level_exceptions_keymap,
             named_key_map,
         });
@@ -908,6 +930,32 @@ fn build_modifiers_from_keymap(keymap: &keymap::Keymap) -> Modifiers {
                 }
             };
             modifiers.set_modifier(evdev_code, Modifier::Single(mod_kind));
+        }
+    }
+
+    // xkbcommon assigns the Control modifier to the standard LCTL/RCTL keys
+    // via its default modifier map even when a layout remaps their symbols
+    // (br/thinkpad, kr/kr104) or repurposes them as a level switch (ca/multix).
+    // Ensure they suppress output like xkbcommon would.
+    for &code in &[LEFT_CTRL, RIGHT_CTRL] {
+        let already_control = modifiers.iter().any(|(c, m)| {
+            *c == code
+                && matches!(
+                    m,
+                    Modifier::Single(ModKind::Press {
+                        mod_type: ModType::None,
+                        ..
+                    }) | Modifier::Leveled(_)
+                )
+        });
+        if !already_control {
+            modifiers.set_modifier(
+                code,
+                Modifier::Single(ModKind::Press {
+                    pressed: false,
+                    mod_type: ModType::None,
+                }),
+            );
         }
     }
     modifiers
