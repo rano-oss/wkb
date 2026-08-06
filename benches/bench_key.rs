@@ -6,7 +6,7 @@ use std::os::raw::c_char;
 use std::ptr;
 use std::time::Duration;
 use std::{ffi::CString, hint::black_box};
-use wkb::testing::{KeyDirection, WKBTestExt};
+use wkb::KeyDirection;
 
 fn cfg() -> Criterion {
     Criterion::default()

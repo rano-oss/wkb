@@ -4,7 +4,7 @@
 //! and num lock modifiers the same way as xkbcommon for all keys.
 
 use test_case::test_matrix;
-use wkb::testing::{KeyDirection, WKBTestExt, CAPS_LOCK, NUM_LOCK};
+use wkb::{KeyDirection, CAPS_LOCK, NUM_LOCK};
 use xkbcommon::xkb::{self, Keycode};
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {

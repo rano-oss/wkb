@@ -656,65 +656,13 @@ pub fn get_all_layouts_for_locale(locale: &str) -> Vec<String> {
 }
 
 pub trait WKBTestExt {
-    fn active_mod_type(&self, mod_type: ModType) -> bool;
-    fn modifiers(&self) -> &Modifiers;
-    fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)>;
-    fn level2_code(&self) -> Option<(u32, Option<u8>)>;
-    fn level3_code(&self) -> Option<(u32, Option<u8>)>;
-    fn level5_code(&self) -> Option<(u32, Option<u8>)>;
-    fn update_key(&mut self, evdev_code: u32, key_direction: crate::KeyDirection) -> bool;
-    fn key_char(&self, evdev_code: u32) -> Option<char>;
     fn composer(&self) -> &Composer;
     fn composer_input_chars(&self) -> std::collections::HashSet<char>;
-    fn num_levels(&self) -> usize;
     fn producible_chars(&self) -> std::collections::HashSet<char>;
     fn feed(&mut self, token: Token) -> ComposeState;
 }
 
 impl WKBTestExt for WKB {
-    fn active_mod_type(&self, mod_type: ModType) -> bool {
-        self.layouts[self.current_layout_idx]
-            .modifiers
-            .active_mod_type(mod_type)
-    }
-
-    fn modifiers(&self) -> &Modifiers {
-        &self.layouts[self.current_layout_idx].modifiers
-    }
-
-    fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
-        xkb::level_code(&self.layouts[self.current_layout_idx].modifiers, mod_type)
-    }
-
-    fn level2_code(&self) -> Option<(u32, Option<u8>)> {
-        xkb::level_code(
-            &self.layouts[self.current_layout_idx].modifiers,
-            ModType::Level2,
-        )
-    }
-
-    fn level3_code(&self) -> Option<(u32, Option<u8>)> {
-        xkb::level_code(
-            &self.layouts[self.current_layout_idx].modifiers,
-            ModType::Level3,
-        )
-    }
-
-    fn level5_code(&self) -> Option<(u32, Option<u8>)> {
-        xkb::level_code(
-            &self.layouts[self.current_layout_idx].modifiers,
-            ModType::Level5,
-        )
-    }
-
-    fn update_key(&mut self, evdev_code: u32, key_direction: crate::KeyDirection) -> bool {
-        self.update_key(evdev_code, key_direction)
-    }
-
-    fn key_char(&self, evdev_code: u32) -> Option<char> {
-        self.key_char(evdev_code)
-    }
-
     fn composer(&self) -> &Composer {
         &self.layouts[self.current_layout_idx].composer
     }
@@ -728,10 +676,6 @@ impl WKBTestExt for WKB {
             .filter(|token| *token != 0)
             .filter_map(char::from_u32)
             .collect()
-    }
-
-    fn num_levels(&self) -> usize {
-        MAX_LEVELS
     }
 
     fn producible_chars(&self) -> std::collections::HashSet<char> {

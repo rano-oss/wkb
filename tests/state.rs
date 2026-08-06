@@ -1,8 +1,5 @@
 use test_case::test_matrix;
-use wkb::{
-    testing::{level_index, KeyDirection, WKBTestExt, ALTGR},
-    WKB,
-};
+use wkb::{level_index, KeyDirection, ALTGR, WKB};
 use xkbcommon::xkb::{self, Keycode};
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
@@ -28,9 +25,9 @@ fn test_all_keys(wkb: WKB, xkb: xkb::State, layout: String) {
 
         if k1 != k2.chars().last() && !k2.is_empty() {
             let level = level_index(
-                wkb.active_mod_type(wkb::testing::ModType::Level5),
-                wkb.active_mod_type(wkb::testing::ModType::Level3),
-                wkb.active_mod_type(wkb::testing::ModType::Level2),
+                wkb.active_mod_type(wkb::ModType::Level5),
+                wkb.active_mod_type(wkb::ModType::Level3),
+                wkb.active_mod_type(wkb::ModType::Level2),
             );
             println!("layout={} key={} level={}", layout, i, level);
             println!("  wkb={:?} xkb={:?}", k1, k2.chars().last());

@@ -44,7 +44,7 @@ mod flat_keymap;
 mod modifiers;
 
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
-pub use modifiers::ModType;
+pub use modifiers::{level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK};
 /// Intermediate representation for persisted layout data files.
 pub mod ir;
 mod named_keys;
@@ -336,13 +336,46 @@ impl WKB {
     }
 
     /// Update internal modifier state for a key event. Returns `true` if the key is a modifier.
-    pub(crate) fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
+    #[doc(hidden)]
+    pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let kb_layout = &mut self.layouts[self.current_layout_idx];
         let is_modifier = kb_layout.modifiers.set_state(evdev_code, key_direction);
         if !is_modifier && key_direction == KeyDirection::Down {
             kb_layout.modifiers.unlatch();
         }
         is_modifier
+    }
+
+    /// Return whether the given modifier type is currently active.
+    #[doc(hidden)]
+    pub fn active_mod_type(&self, mod_type: ModType) -> bool {
+        self.layouts[self.current_layout_idx]
+            .modifiers
+            .active_mod_type(mod_type)
+    }
+
+    /// Return the keycode (and optional level) for the given modifier type.
+    #[doc(hidden)]
+    pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
+        xkb::level_code(&self.layouts[self.current_layout_idx].modifiers, mod_type)
+    }
+
+    /// Return the keycode (and optional level) for the Level2 (Shift) modifier.
+    #[doc(hidden)]
+    pub fn level2_code(&self) -> Option<(u32, Option<u8>)> {
+        self.level_code(ModType::Level2)
+    }
+
+    /// Return the keycode (and optional level) for the Level3 (AltGr) modifier.
+    #[doc(hidden)]
+    pub fn level3_code(&self) -> Option<(u32, Option<u8>)> {
+        self.level_code(ModType::Level3)
+    }
+
+    /// Return the keycode (and optional level) for the Level5 modifier.
+    #[doc(hidden)]
+    pub fn level5_code(&self) -> Option<(u32, Option<u8>)> {
+        self.level_code(ModType::Level5)
     }
 
     /// Process a key press. Updates modifier state and advances compose sequences.

@@ -1,5 +1,5 @@
 use test_case::test_matrix;
-use wkb::testing::{KeyDirection, WKBTestExt, CAPS_LOCK};
+use wkb::{KeyDirection, CAPS_LOCK};
 use xkbcommon::xkb::{self as xkbcmn, Keycode};
 
 fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkbcmn::State {
@@ -435,7 +435,7 @@ fn test_mm_zawgyi_latch_sequence() {
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Down);
     eprintln!(
         "   WKB level3: {}",
-        wkb.active_mod_type(wkb::testing::ModType::Level3)
+        wkb.active_mod_type(wkb::ModType::Level3)
     );
     eprintln!(
         "   XKB Mod5: {}",
@@ -448,7 +448,7 @@ fn test_mm_zawgyi_latch_sequence() {
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Up);
     eprintln!(
         "   WKB level3: {}",
-        wkb.active_mod_type(wkb::testing::ModType::Level3)
+        wkb.active_mod_type(wkb::ModType::Level3)
     );
     eprintln!(
         "   XKB Mod5: {}",
@@ -462,7 +462,7 @@ fn test_mm_zawgyi_latch_sequence() {
     xkb_state.update_key(Keycode::new(shift_key + 8), xkbcmn::KeyDirection::Down);
     eprintln!(
         "   WKB level3: {}",
-        wkb.active_mod_type(wkb::testing::ModType::Level3)
+        wkb.active_mod_type(wkb::ModType::Level3)
     );
     eprintln!(
         "   XKB Mod5: {}",
@@ -475,7 +475,7 @@ fn test_mm_zawgyi_latch_sequence() {
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Down);
     eprintln!(
         "   WKB level3: {}",
-        wkb.active_mod_type(wkb::testing::ModType::Level3)
+        wkb.active_mod_type(wkb::ModType::Level3)
     );
     eprintln!(
         "   XKB Mod5: {}",
@@ -489,13 +489,13 @@ fn test_mm_zawgyi_latch_sequence() {
     eprintln!(
         "   WKB: {:?} (level2={} level3={})",
         key_2_wkb,
-        wkb.active_mod_type(wkb::testing::ModType::Level2),
-        wkb.active_mod_type(wkb::testing::ModType::Level3)
+        wkb.active_mod_type(wkb::ModType::Level2),
+        wkb.active_mod_type(wkb::ModType::Level3)
     );
     eprintln!("   XKB: {:?}", key_2_xkb);
 
     assert_eq!(
-        wkb.active_mod_type(wkb::testing::ModType::Level3),
+        wkb.active_mod_type(wkb::ModType::Level3),
         xkb_state.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE),
         "Level3 state should match XKB Mod5"
     );
@@ -508,9 +508,6 @@ fn test_cm_modifier_type() {
 
     if let Some((code, level)) = wkb.level3_code() {
         eprintln!("cm/qwerty Level3 code: {} level: {:?}", code, level);
-
-        // Try to determine if it's Latch or Press
-        eprintln!("Modifiers map: {:#?}", wkb.modifiers());
     }
 }
 
@@ -520,6 +517,5 @@ fn test_ie_ogam_shift_type() {
 
     if let Some((code, level)) = wkb.level2_code() {
         eprintln!("ie/ogam_is434 Shift code: {} level: {:?}", code, level);
-        eprintln!("Modifiers: {:#?}", wkb.modifiers());
     }
 }

@@ -1,8 +1,5 @@
 use test_case::test_matrix;
-use wkb::{
-    testing::{level_index, KeyDirection, WKBTestExt, ALTGR, CAPS_LOCK},
-    WKB,
-};
+use wkb::{level_index, KeyDirection, ALTGR, CAPS_LOCK, WKB};
 use xkbcommon::{
     self,
     xkb::{self, Keycode},
@@ -31,9 +28,9 @@ fn test_all_keys_locale(wkb: WKB, xkb: xkb::State, layout: String, locale: &str)
 
         if k1 != k2.chars().last() && !k2.is_empty() {
             let level = level_index(
-                wkb.active_mod_type(wkb::testing::ModType::Level5),
-                wkb.active_mod_type(wkb::testing::ModType::Level3),
-                wkb.active_mod_type(wkb::testing::ModType::Level2),
+                wkb.active_mod_type(wkb::ModType::Level5),
+                wkb.active_mod_type(wkb::ModType::Level3),
+                wkb.active_mod_type(wkb::ModType::Level2),
             );
             println!(
                 "locale={} layout={} key={} level={}",
@@ -184,7 +181,7 @@ fn caps_lock(locale: &str, level: usize) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         set_modifier_level(&mut wkb, &mut xkb, level);
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
-        wkb.update_key(CAPS_LOCK, wkb::testing::KeyDirection::Down);
+        wkb.update_key(CAPS_LOCK, KeyDirection::Down);
         test_all_keys_locale(wkb, xkb, layout, locale);
     }
 }
