@@ -10,21 +10,8 @@ use xkbcommon::xkb::{self, Keycode};
 
 include!("../test_data/layouts.rs");
 
-fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
-    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-    let variant_str = layout.unwrap_or_default();
-    let keymap = xkb::Keymap::new_from_names(
-        &context,
-        "evdev",
-        "pc105",
-        &locale,
-        &variant_str,
-        None,
-        xkb::KEYMAP_COMPILE_NO_FLAGS,
-    )
-    .unwrap();
-    xkb::State::new(&keymap)
-}
+mod common;
+use common::xkb_new_from_names;
 
 fn test_all_keys(wkb: WKB, xkb: xkb::State, layout: String, locale: &str) {
     for i in 0..701 {
@@ -205,7 +192,7 @@ fn activate_locks(wkb: &mut WKB, xkb: &mut xkb::State, locks: u8) {
 ], [0usize, 1, 2, 3, 4, 5, 6, 7], [0u8, 1, 2, 3])]
 fn locks(locale: &str, level: usize, locks: u8) {
     for layout in get_all_layouts_for_locale(locale) {
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.to_owned()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         set_modifier_level(&mut wkb, &mut xkb, level);
         activate_locks(&mut wkb, &mut xkb, locks);
@@ -226,7 +213,7 @@ fn locks(locale: &str, level: usize, locks: u8) {
 fn caps_then_num_lock_sequence(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         // Sample key to test (using 'a' key which is typically keycode 38 on evdev)
         let test_key = 38u32;

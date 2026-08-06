@@ -12,21 +12,8 @@ use xkbcommon::xkb::{self, Keycode};
 
 include!("../test_data/layouts.rs");
 
-fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
-    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-    let variant_str = layout.unwrap_or_default();
-    let keymap = xkb::Keymap::new_from_names(
-        &context,
-        "evdev",
-        "pc105",
-        &locale,
-        &variant_str,
-        None,
-        xkb::KEYMAP_COMPILE_NO_FLAGS,
-    )
-    .unwrap();
-    xkb::State::new(&keymap)
-}
+mod common;
+use common::xkb_new_from_names;
 
 /// Returns true if the character is a control character
 fn is_control_char(c: char) -> bool {
@@ -61,7 +48,7 @@ fn normalize_xkb_char(xkb_str: String) -> Option<char> {
 fn ctrl_letter_combinations(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         let left_ctrl = 29u32;
         let right_ctrl = 97u32;
@@ -115,7 +102,7 @@ fn ctrl_letter_combinations(locale: &str) {
 fn ctrl_alt_combinations(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         let ctrl_code = 29u32;
         let alt_code = 56u32;
@@ -162,7 +149,7 @@ fn ctrl_alt_combinations(locale: &str) {
 fn ctrl_shift_combinations(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         let ctrl_code = 29u32;
         let shift_code = 42u32;
@@ -209,7 +196,7 @@ fn ctrl_shift_combinations(locale: &str) {
 fn ctrl_suppresses_output(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         let ctrl_code = 29u32;
         let test_keys = vec![38, 39, 40]; // a, s, d
@@ -247,7 +234,7 @@ fn ctrl_suppresses_output(locale: &str) {
 fn ctrl_function_keys(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         let ctrl_code = 29u32;
 

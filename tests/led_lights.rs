@@ -10,21 +10,8 @@ use xkbcommon::xkb::{self, Keycode};
 
 include!("../test_data/layouts.rs");
 
-fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
-    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-    let variant_str = layout.unwrap_or_default();
-    let keymap = xkb::Keymap::new_from_names(
-        &context,
-        "evdev",
-        "pc105",
-        &locale,
-        &variant_str,
-        None,
-        xkb::KEYMAP_COMPILE_NO_FLAGS,
-    )
-    .unwrap();
-    xkb::State::new(&keymap)
-}
+mod common;
+use common::xkb_new_from_names;
 
 /// Test Caps Lock LED state
 #[test_matrix([
@@ -39,7 +26,7 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkb::State {
 fn caps_lock_led(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         // Get LED index for caps lock from xkbcommon
         let caps_led_name = "Caps Lock";
@@ -105,7 +92,7 @@ fn caps_lock_led(locale: &str) {
 fn num_lock_led(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         // Get LED index for num lock from xkbcommon
         let num_led_name = "Num Lock";
@@ -170,7 +157,7 @@ fn num_lock_led(locale: &str) {
 fn scroll_lock_led(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         // Get LED index for scroll lock from xkbcommon
         let scroll_led_name = "Scroll Lock";
@@ -227,7 +214,7 @@ fn scroll_lock_led(locale: &str) {
 fn all_locks_pressed(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         // Get LED indices
         let xkb_keymap = xkb.get_keymap();

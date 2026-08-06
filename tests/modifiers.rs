@@ -4,21 +4,8 @@ use xkbcommon::xkb::{self as xkbcmn, Keycode};
 
 include!("../test_data/layouts.rs");
 
-fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkbcmn::State {
-    let context = xkbcmn::Context::new(xkbcmn::CONTEXT_NO_FLAGS);
-    let variant_str = layout.unwrap_or_default();
-    let keymap = xkbcmn::Keymap::new_from_names(
-        &context,
-        "evdev",
-        "pc105",
-        &locale,
-        &variant_str,
-        None,
-        xkbcmn::KEYMAP_COMPILE_NO_FLAGS,
-    )
-    .unwrap();
-    xkbcmn::State::new(&keymap)
-}
+mod common;
+use common::xkb_new_from_names;
 
 /// Test Level2Lock modifier (locks shift level)
 /// This is used in some layouts where shift can be locked instead of just pressed
@@ -34,7 +21,7 @@ fn xkb_new_from_names(locale: String, layout: Option<String>) -> xkbcmn::State {
 fn shift_lock_behavior(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         // Get shift keycode
         let shift_code = wkb.level_code(ModType::Level2);
@@ -93,7 +80,7 @@ fn shift_lock_behavior(locale: &str) {
 fn eisu_toggle_japanese(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let xkb = xkb_new_from_names(locale, &layout);
 
         // Test all keys to ensure behavior matches
         for keycode in 0..701u32 {
@@ -133,7 +120,7 @@ fn eisu_toggle_japanese(locale: &str) {
 fn caps_plus_shift_combination(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         let shift_code = wkb.level_code(ModType::Level2);
         if shift_code.is_none() {
@@ -195,7 +182,7 @@ fn caps_plus_shift_combination(locale: &str) {
 fn altgr_combinations(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         let altgr_code = wkb.level_code(ModType::Level3);
         if altgr_code.is_none() {
@@ -273,7 +260,7 @@ fn altgr_combinations(locale: &str) {
 fn level5_modifier(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         let level5_code = wkb.level_code(ModType::Level5);
         if level5_code.is_none() {
@@ -310,7 +297,7 @@ fn level5_modifier(locale: &str) {
 fn rapid_modifier_changes(locale: &str) {
     for layout in get_all_layouts_for_locale(locale) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
-        let mut xkb = xkb_new_from_names(locale.to_string(), Some(layout.clone()));
+        let mut xkb = xkb_new_from_names(locale, &layout);
 
         let shift_code = wkb.level_code(ModType::Level2);
         if shift_code.is_none() {
@@ -379,7 +366,7 @@ fn update_both(
 #[test]
 fn modifiers_state_matches_xkbcommon() {
     let mut wkb = wkb::WKB::new_from_names("", "", "us", "", None).unwrap();
-    let mut xkb = xkb_new_from_names("us".to_string(), None);
+    let mut xkb = xkb_new_from_names("us", "");
 
     assert_same_modifiers_state(&wkb, &xkb, "initial state");
 

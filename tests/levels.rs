@@ -5,23 +5,12 @@
 
 use test_case::test_matrix;
 use wkb::keysym_to_named_key;
-use xkbcommon::xkb::{self, Keycode};
+use xkbcommon::xkb::Keycode;
 
 include!("../test_data/layouts.rs");
 
-fn xkb_new_keymap_from_names(locale: &str, layout: &str) -> xkb::Keymap {
-    let context = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-    xkb::Keymap::new_from_names(
-        &context,
-        "evdev",
-        "pc105",
-        locale,
-        layout,
-        None,
-        xkb::KEYMAP_COMPILE_NO_FLAGS,
-    )
-    .unwrap()
-}
+mod common;
+use common::xkb_new_keymap_from_names;
 
 #[test_matrix([
     "af", "al", "am", "ancient", "apl", "ara", "at", "au", "az", "ba", "bd", "be", "bg", "bqn",
