@@ -11,8 +11,7 @@ pub(crate) use super::symbols::compile_symbols;
 use super::symbols::{expr_resolve_group, expr_resolve_group_mask};
 use crate::xkb::keymap::CONTROL_NAMES_MIN_V1_INDEX;
 use crate::xkb::keymap::CONTROL_NAMES_MIN_V2_INDEX;
-
-// ── Compilation entry points (from xkbcomp/mod.rs) ──
+use crate::xkb::keymap::xkb_mod_name_to_index;
 
 fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
     if file.file_type != FileType::Keymap {
@@ -5950,7 +5949,7 @@ pub(crate) fn read_file_cached(path: &str) -> Option<Arc<Vec<u8>>> {
 }
 
 // ── keymap_h types (from keymap_priv.rs) ────────────────────────────
-
+#[derive(Clone)]
 pub(crate) struct XkbKeymap {
     pub(crate) ctx: XkbContext,
     pub(crate) flags: u32,
@@ -5967,6 +5966,43 @@ pub(crate) struct XkbKeymap {
     pub(crate) mods: XkbModSet,
     pub(crate) num_groups: u32,
     pub(crate) group_names: Vec<u32>,
+}
+
+impl XkbKeymap {
+    /// Get modifier mask by name (safe via atom_lookup_ref)
+    pub(crate) fn mod_get_mask(&self, name: &str) -> u32 {
+        let atom = atom_lookup_ref(&self.ctx.atom_table, name.as_bytes());
+        let idx = if atom == XKB_ATOM_NONE {
+            None
+        } else {
+            xkb_mod_name_to_index(&self.mods, atom, MOD_BOTH)
+        };
+        match idx {
+            Some(i) if i < self.mods.num_mods => self.mods.mods[i as usize].mapping,
+            _ => 0_u32,
+        }
+    }
+
+    /// Get number of layouts in the keymap
+    pub(crate) fn num_layouts(&self) -> u32 {
+        self.num_groups
+    }
+
+    /// Get layout name by index
+    pub(crate) fn layout_get_name(&self, idx: u32) -> Option<String> {
+        if idx as usize >= self.group_names.len() {
+            return None;
+        }
+        let s = atom_text(
+            &self.ctx.atom_table,
+            self.group_names[idx as usize],
+        );
+        if s.is_empty() {
+            None
+        } else {
+            Some(s.to_string())
+        }
+    }
 }
 
 #[derive(Copy, Clone, Default)]

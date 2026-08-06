@@ -12,7 +12,10 @@ use crate::named_keys::NamedKey;
 use crate::Composer;
 use crate::KeyBitSet;
 use crate::WKB;
+use crate::xkb::keymap::{preprocess_unicode_keysyms, xkb_context_new, xkb_keymap_new_from_names, xkb_keymap_new_from_string};
+use crate::xkb::parser::{XKB_CONTEXT_NO_FLAGS, XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1};
 use crate::{modifiers::*, KBLayout};
+use std::ffi::CString;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
 
@@ -409,14 +412,14 @@ fn key_affected_by_caps(group: &parser::XkbGroup, num_levels: usize) -> bool {
 }
 
 fn lock_activation(
-    keymap: &keymap::Keymap,
+    keymap: &keymap::XkbKeymap,
     types: &[CompiledType],
     lock_kc: Option<u32>,
     lock_keysym: u32,
     level_masks: &[u32; MAX_LEVELS],
 ) -> [bool; MAX_LEVELS] {
     let Some(group) = lock_kc
-        .and_then(|kc| keymap.inner.get_key(kc))
+        .and_then(|kc| keymap.get_key(kc))
         .and_then(|key| key.groups.first())
     else {
         return [false; MAX_LEVELS];
@@ -442,7 +445,7 @@ fn lock_activation(
 /// have ISO_Level5_Latch at level 2 do NOT count — they activate LevelFive
 /// per-key, not globally for every Shift+LVL3 keypress.
 fn layout_has_level5_activation(
-    keymap: &keymap::Keymap,
+    keymap: &keymap::XkbKeymap,
     layout_idx: usize,
     level5_mask: u32,
 ) -> bool {
@@ -450,7 +453,7 @@ fn layout_has_level5_activation(
         return false;
     }
     let is_modifier_key = |sym0: u32| -> bool { matches!(sym0, 0xFFE1 | 0xFFE2 | 0xFE03) };
-    for key in &keymap.inner.keys {
+    for key in &keymap.keys {
         let Some(group) = key.groups.get(layout_idx) else {
             continue;
         };
@@ -493,13 +496,13 @@ fn level5_transform_mods(
 
 /// Build WKB instance from an XKB keymap, extracting all layouts.
 fn build_wkb_from_keymap(
-    keymap: &keymap::Keymap,
+    keymap: &keymap::XkbKeymap,
     layout_locales: Option<&str>,
     store_keymap: bool,
 ) -> WKB {
     const EVDEV_OFFSET: u32 = 8;
 
-    let (min_keycode, max_keycode) = (keymap.min_keycode(), keymap.max_keycode());
+    let (min_keycode, max_keycode) = (keymap.min_key_code, keymap.max_key_code);
     let min_keycode = min_keycode.max(EVDEV_OFFSET);
     let num_keys = if max_keycode >= EVDEV_OFFSET {
         (max_keycode - EVDEV_OFFSET + 1) as usize
@@ -510,7 +513,7 @@ fn build_wkb_from_keymap(
 
     // Modifiers are global to the keymap (not per-layout), use layout 0.
     let modifiers = build_modifiers_from_keymap(keymap);
-    let compiled_types: Vec<_> = keymap.inner.types.iter().map(CompiledType::new).collect();
+    let compiled_types: Vec<_> = keymap.types.iter().map(CompiledType::new).collect();
 
     // Precompute modifier masks for direct level resolution.
     // The name-to-modifier-type mapping mirrors build_modifiers_from_keymap.
@@ -616,7 +619,7 @@ fn build_wkb_from_keymap(
         let mut num_lock_keys = FlatKeymap::new(num_keys);
         let mut repeat_keys = KeyBitSet::new();
 
-        for key in &keymap.inner.keys {
+        for key in &keymap.keys {
             let kc = key.keycode;
             if kc < min_keycode || kc > max_keycode {
                 continue;
@@ -637,7 +640,7 @@ fn build_wkb_from_keymap(
                 state_group.and_then(|group| compiled_types.get(group.type_idx as usize));
             let (caps_affected, num_affected) = state_group
                 .and_then(|group| {
-                    let type_ = keymap.inner.types.get(group.type_idx as usize)?;
+                    let type_ = keymap.types.get(group.type_idx as usize)?;
                     let compiled = compiled_types.get(group.type_idx as usize)?;
                     Some((
                         key_affected_by_caps(group, type_.num_levels as usize),
@@ -752,15 +755,13 @@ pub(crate) fn new_from_names(
     variant: &str,
     options: Option<&str>,
 ) -> Result<WKB, XkbError> {
-    use keymap::Context;
     use parser::XkbRuleNames;
 
-    let ctx = Context::new().ok_or(XkbError::ContextCreation)?;
+    let ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 
     let rmlvo = XkbRuleNames::from_strs(rules, model, layout, variant, options.unwrap_or(""));
 
-    let keymap = ctx
-        .keymap_from_names(&rmlvo)
+    let keymap = xkb_keymap_new_from_names(ctx, &rmlvo, XKB_KEYMAP_COMPILE_NO_FLAGS)
         .ok_or(XkbError::KeymapCompilation)?;
 
     let result = build_wkb_from_keymap(&keymap, Some(layout), true);
@@ -769,13 +770,17 @@ pub(crate) fn new_from_names(
 
 /// Create a new WKB instance from a keymap string.
 pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
-    use keymap::Context;
+    let ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 
-    let ctx = Context::new().ok_or(XkbError::ContextCreation)?;
-
-    let keymap = ctx
-        .keymap_from_string(string)
-        .ok_or(XkbError::KeymapParsing)?;
+    let processed = preprocess_unicode_keysyms(string);
+    let keymap_cstr = CString::new(processed.as_ref()).ok().ok_or(XkbError::KeymapParsing)?;
+    let keymap = xkb_keymap_new_from_string(
+        ctx,
+        &keymap_cstr,
+        XKB_KEYMAP_FORMAT_TEXT_V1,
+        XKB_KEYMAP_COMPILE_NO_FLAGS,
+    ).ok_or(XkbError::KeymapCompilation)?;
+    let keymap = keymap;
 
     Ok(build_wkb_from_keymap(&keymap, None, true))
 }
@@ -795,19 +800,18 @@ fn modtype_from_name(name: &str) -> Option<ModType> {
 }
 
 /// Build Modifiers struct from XKB keymap
-fn build_modifiers_from_keymap(keymap: &keymap::Keymap) -> Modifiers {
+fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
     let mut modifiers = Modifiers::new();
     let mod_defs: Vec<_> = keymap
-        .inner
         .mods
         .mods
         .iter()
-        .take(keymap.inner.mods.num_mods as usize)
+        .take(keymap.mods.num_mods as usize)
         .map(|modifier| {
             (
                 modifier.mapping,
                 modtype_from_name(parser::atom_text(
-                    &keymap.inner.ctx.atom_table,
+                    &keymap.ctx.atom_table,
                     modifier.name,
                 )),
             )
@@ -843,7 +847,7 @@ fn build_modifiers_from_keymap(keymap: &keymap::Keymap) -> Modifiers {
     };
 
     const EVDEV_OFFSET: u32 = 8;
-    for key in &keymap.inner.keys {
+    for key in &keymap.keys {
         if key.keycode < EVDEV_OFFSET {
             continue;
         }
