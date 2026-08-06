@@ -6,8 +6,8 @@ on:
   pull_request:
 
 jobs:
-  test-state:
-    name: test (state)
+  test-locks:
+    name: test (locks)
     runs-on: ubuntu-latest
     container:
       image: fedora:latest
@@ -25,7 +25,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run test target
-        run: cargo test --test state
+        run: cargo test --test locks
 
   test-unit-doc:
     name: test (lib + doc)
@@ -51,35 +51,6 @@ jobs:
       - name: Run doc tests
         run: cargo test --doc
 
-  test-dependent:
-    name: test (${{ matrix.test_target }})
-    needs: test-state
-    runs-on: ubuntu-latest
-    container:
-      image: fedora:latest
-    strategy:
-      fail-fast: false
-      matrix:
-        test_target:
-          - caps_lock
-          - num_lock
-          - caps_num_lock
-    steps:
-      - name: Install system dependencies
-        run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common
-
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache cargo registry and target
-        uses: Swatinem/rust-cache@v2
-
-      - name: Run test target
-        run: cargo test --test ${{ matrix.test_target }}
-
   test-independent:
     name: test (${{ matrix.test_target }})
     runs-on: ubuntu-latest
@@ -91,12 +62,12 @@ jobs:
         test_target:
           - compose
           - ctrl_keys
+          - ir
           - keymap
           - compile
           - type
-          - layouts
           - led_lights
-          - level
+          - levels
           - modifiers
           - repeat
           - unicode
