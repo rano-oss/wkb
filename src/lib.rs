@@ -359,7 +359,7 @@ impl WKB {
     pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
         let modifiers = &self.layouts[self.current_layout_idx].modifiers;
         let mut other_mod = None;
-    
+
         for (code, modifier) in modifiers.iter() {
             match modifier {
                 Modifier::Single(mod_kind) => {
@@ -391,6 +391,27 @@ impl WKB {
             }
         }
         other_mod
+    }
+
+    /// Designate an evdev keycode as the Compose (Multi_key) key.
+    ///
+    /// Keymaps compiled with an explicit `Multi_key` mapping detect the
+    /// compose key automatically. For keymaps without one, this lets the
+    /// caller designate a physical key — pressing it feeds the Compose token
+    /// into the compose sequence, matching the desktop `compose:XXX` option
+    /// behavior. Applies to all layouts; any existing modifier on the key is
+    /// replaced.
+    #[cfg(feature = "compose")]
+    pub fn set_compose_key(&mut self, evdev_code: u32) {
+        for layout in &mut self.layouts {
+            layout.modifiers.set_modifier(
+                evdev_code,
+                Modifier::Single(ModKind::Press {
+                    pressed: false,
+                    mod_type: ModType::Compose,
+                }),
+            );
+        }
     }
 
     /// Process a key press. Updates modifier state and advances compose sequences.
