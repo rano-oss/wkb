@@ -69,7 +69,7 @@ fn main() {
         }
     }
 
-    // Compose
+    // Compose workload through the keymap state + compose state (FFI).
     let xkb_compose = xkbcommon_dl::xkbcommon_compose_handle();
     let c_locale = CString::new(COMPOSE_LOCALE).unwrap();
     let table = unsafe {
@@ -80,23 +80,71 @@ fn main() {
         )
     };
     if !table.is_null() {
+        let c_layout = CString::new("us").unwrap();
+        let names = xkbcommon_dl::xkb_rule_names {
+            rules: c"evdev".as_ptr(),
+            model: ptr::null(),
+            layout: c_layout.as_ptr(),
+            variant: ptr::null(),
+            options: ptr::null(),
+        };
+        let km = unsafe {
+            (xkb.xkb_keymap_new_from_names)(
+                ctx,
+                &names,
+                xkbcommon_dl::xkb_keymap_compile_flags::XKB_KEYMAP_COMPILE_NO_FLAGS,
+            )
+        };
+        let st = unsafe { (xkb.xkb_state_new)(km) };
         let state = unsafe {
             (xkb_compose.xkb_compose_state_new)(
                 table,
                 xkbcommon_dl::xkb_compose_state_flags::XKB_COMPOSE_STATE_NO_FLAGS,
             )
         };
-        for seq in COMPOSE_SEQUENCES {
-            for &ks in seq.keysyms {
-                let _ = unsafe { (xkb_compose.xkb_compose_state_feed)(state, ks) };
+        let compose_kc = COMPOSE_KEY + EVDEV_OFFSET;
+        let mut utf8_buf = [0u8; 64];
+        for case in COMPOSE_CASES {
+            let mut out = None;
+            for &(evdev, down) in case.keys {
+                let kc = evdev + EVDEV_OFFSET;
+                let dir = if down {
+                    xkbcommon_dl::xkb_key_direction::XKB_KEY_DOWN
+                } else {
+                    xkbcommon_dl::xkb_key_direction::XKB_KEY_UP
+                };
+                unsafe { (xkb.xkb_state_update_key)(st, kc, dir) };
+                if !down {
+                    continue;
+                }
+                let sym = unsafe { (xkb.xkb_state_key_get_one_sym)(st, kc) };
+                if is_modifier_keysym(sym) {
+                    continue;
+                }
+                let feed = if kc == compose_kc { XKB_KEY_MULTI_KEY } else { sym };
+                unsafe { (xkb_compose.xkb_compose_state_feed)(state, feed) };
                 let status = unsafe { (xkb_compose.xkb_compose_state_get_status)(state) };
-                checksum = checksum.wrapping_add(status as u64);
+                if status == xkbcommon_dl::xkb_compose_status::XKB_COMPOSE_COMPOSED {
+                    let n = unsafe {
+                        (xkb_compose.xkb_compose_state_get_utf8)(
+                            state,
+                            utf8_buf.as_mut_ptr() as *mut c_char,
+                            utf8_buf.len(),
+                        )
+                    };
+                    out = std::str::from_utf8(&utf8_buf[..n as usize])
+                        .ok()
+                        .and_then(|s| s.chars().next());
+                }
             }
+            checksum = checksum.wrapping_add(out.map_or(0, |c| c as u64));
             unsafe { (xkb_compose.xkb_compose_state_reset)(state) };
         }
         unsafe {
             (xkb_compose.xkb_compose_state_unref)(state);
             (xkb_compose.xkb_compose_table_unref)(table);
+            (xkb.xkb_state_unref)(st);
+            (xkb.xkb_keymap_unref)(km);
         }
     }
 
