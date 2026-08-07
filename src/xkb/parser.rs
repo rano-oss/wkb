@@ -193,20 +193,8 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
     }
 }
 #[inline(always)]
-fn yy_file_type<'a>(yyval: &mut YYValue<'a>, ft: FileType) {
-    *yyval = YYValue::FileType(ft);
-}
-#[inline(always)]
-fn yy_flags<'a>(yyval: &mut YYValue<'a>, f: u32) {
-    *yyval = YYValue::MapFlags(f);
-}
-#[inline(always)]
 fn yy_atom<'a>(yyval: &mut YYValue<'a>, ctx: &mut &mut XkbContext, bytes: &[u8]) {
     *yyval = YYValue::Atom(atom_intern(&mut ctx.atom_table, bytes));
-}
-#[inline(always)]
-fn yy_merge<'a>(yyval: &mut YYValue<'a>, m: MergeMode) {
-    *yyval = YYValue::Merge(m);
 }
 #[inline(always)]
 fn yy_bin_expr<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize, op: BinaryOp) {
@@ -293,7 +281,7 @@ fn execute_reduction<'a>(
             ));
         }
         6..=8 => {
-            yy_file_type(yyval, FileType::Keymap);
+            *yyval = YYValue::FileType(FileType::Keymap);
         }
         9 => {
             // XkbMapConfigList: XkbMapConfigList XkbMapConfig
@@ -321,16 +309,17 @@ fn execute_reduction<'a>(
                 flags,
             ));
         }
-        12..=16 => yy_file_type(
-            yyval,
-            [
-                FileType::Keycodes,
-                FileType::Types,
-                FileType::Compat,
-                FileType::Symbols,
-                FileType::Geometry,
-            ][yyn as usize - 12],
-        ),
+        12..=16 => {
+            *yyval = YYValue::FileType(
+                [
+                    FileType::Keycodes,
+                    FileType::Types,
+                    FileType::Compat,
+                    FileType::Symbols,
+                    FileType::Geometry,
+                ][yyn as usize - 12],
+            )
+        }
         17 | 20 => {
             *yyval = YYValue::MapFlags(yyvs[sp].as_map_flags());
         }
@@ -341,19 +330,20 @@ fn execute_reduction<'a>(
             let f = yyvs[sp - 1].as_map_flags() | yyvs[sp].as_map_flags();
             *yyval = YYValue::MapFlags(f);
         }
-        21..=28 => yy_flags(
-            yyval,
-            [
-                MAP_IS_PARTIAL,
-                MAP_IS_DEFAULT,
-                MAP_IS_HIDDEN,
-                MAP_HAS_ALPHANUMERIC,
-                MAP_HAS_MODIFIER,
-                MAP_HAS_KEYPAD,
-                MAP_HAS_FN,
-                MAP_IS_ALTGR,
-            ][yyn as usize - 21],
-        ),
+        21..=28 => {
+            *yyval = YYValue::MapFlags(
+                [
+                    MAP_IS_PARTIAL,
+                    MAP_IS_DEFAULT,
+                    MAP_IS_HIDDEN,
+                    MAP_HAS_ALPHANUMERIC,
+                    MAP_HAS_MODIFIER,
+                    MAP_HAS_KEYPAD,
+                    MAP_HAS_FN,
+                    MAP_IS_ALTGR,
+                ][yyn as usize - 21],
+            )
+        }
         29 => {
             // DeclList: DeclList Decl
             let stmt = std::mem::replace(&mut yyvs[sp], YYValue::None);
@@ -479,19 +469,13 @@ fn execute_reduction<'a>(
             let list = yyvs[sp - 1].take_vmod_list();
             *yyval = YYValue::VModList(list);
         }
-        54 => {
-            // VModDefList: VModDefList COMMA VModDef
+        54 | 55 => {
             let vmod = yyvs[sp].take_vmod();
-            let mut list = yyvs[sp - 2].take_vmod_list();
-            if let Some(v) = vmod {
-                list.push(v);
-            }
-            *yyval = YYValue::VModList(list);
-        }
-        55 => {
-            // VModDefList: VModDef
-            let vmod = yyvs[sp].take_vmod();
-            let mut list = Vec::new();
+            let mut list = if yyn == 54 {
+                yyvs[sp - 2].take_vmod_list()
+            } else {
+                Vec::new()
+            };
             if let Some(v) = vmod {
                 list.push(v);
             }
@@ -519,20 +503,19 @@ fn execute_reduction<'a>(
                 *yyval = YYValue::None;
             }
         }
-        59 => {
-            // InterpretMatch: KeySym PLUS Expr
-            let keysym = yyvs[sp - 2].as_keysym();
-            let expr = yyvs[sp].take_expr();
+        59 | 60 => {
+            let offset = 2 * usize::from(yyn == 59);
+            let keysym = yyvs[sp - offset].as_keysym();
+            let expr = (yyn == 59).then(|| yyvs[sp].take_expr()).flatten();
             *yyval = YYValue::Interp(interp_create(keysym, expr));
         }
-        60 => {
-            // InterpretMatch: KeySym
-            let keysym = yyvs[sp].as_keysym();
-            *yyval = YYValue::Interp(interp_create(keysym, None));
-        }
-        61 | 67 => {
+        61 | 67 | 68 => {
             let var = yyvs[sp].take_var();
-            let mut list = yyvs[sp - if yyn == 61 { 1 } else { 2 }].take_var_list();
+            let mut list = match yyn {
+                61 => yyvs[sp - 1].take_var_list(),
+                67 => yyvs[sp - 2].take_var_list(),
+                _ => Vec::new(),
+            };
             if let Some(v) = var {
                 list.push(v);
             }
@@ -557,15 +540,6 @@ fn execute_reduction<'a>(
         65 => {
             // OptSymbolsBody: SymbolsBody
             let list = yyvs[sp].take_var_list();
-            *yyval = YYValue::VarList(list);
-        }
-        68 => {
-            // SymbolsBody: SymbolsVarDecl
-            let var = yyvs[sp].take_var();
-            let mut list = Vec::new();
-            if let Some(v) = var {
-                list.push(v);
-            }
             *yyval = YYValue::VarList(list);
         }
         73 => {
@@ -700,15 +674,14 @@ fn execute_reduction<'a>(
         141 => {
             *yyval = YYValue::Merge(yyvs[sp].as_merge());
         }
-        142..=147 => yy_merge(
-            yyval,
-            match yyn {
+        142..=147 => {
+            *yyval = YYValue::Merge(match yyn {
                 144 => MergeMode::Augment,
                 145 => MergeMode::Override,
                 146 => MergeMode::Replace,
                 _ => MergeMode::Default,
-            },
-        ),
+            })
+        }
         // ExprList rules 148-150
         150 => {
             // ExprList: empty
@@ -753,23 +726,16 @@ fn execute_reduction<'a>(
             *yyval = std::mem::replace(&mut yyvs[sp - 1], YYValue::None);
         }
         // MultiActionList rules 166-167
-        166 => {
-            // MultiActionList: MultiActionList COMMA ActionList
-            // ActionList at sp produces an ExprList of actions
-            // Create an ActionList expr wrapping those actions, then append to the list
-            let actions_expr_list = yyvs[sp].take_expr_list();
-            let action_list_expr = ExprKind::ActionList {
-                actions: actions_expr_list,
+        166 | 167 => {
+            let item = if yyn == 166 {
+                Some(ExprKind::ActionList {
+                    actions: yyvs[sp].take_expr_list(),
+                })
+            } else {
+                yyvs[sp].take_expr()
             };
             let mut list = yyvs[sp - 2].take_expr_list();
-            list.push(action_list_expr);
-            *yyval = YYValue::ExprList(list);
-        }
-        167 => {
-            // MultiActionList: MultiActionList COMMA KeySymList
-            let keysym_expr = yyvs[sp].take_expr();
-            let mut list = yyvs[sp - 2].take_expr_list();
-            if let Some(e) = keysym_expr {
+            if let Some(e) = item {
                 list.push(e);
             }
             *yyval = YYValue::ExprList(list);
@@ -852,36 +818,22 @@ fn execute_reduction<'a>(
             let keysym = yyvs[sp].as_keysym();
             *yyval = YYValue::Expr(expr_append_key_sym_list(expr, keysym));
         }
-        191 => {
-            // NonEmptyKeySyms: NonEmptyKeySyms COMMA STRING
-            let expr = yyvs[sp - 2].take_expr().unwrap();
-            let s = yyvs[sp].take_str();
-            match expr_key_sym_list_append_string(expr, &s) {
-                Some(e) => {
-                    *yyval = YYValue::Expr(e);
-                }
-                None => {
-                    return false;
-                }
-            }
-        }
         192 => {
             // KeySyms: KeySym
             let keysym = yyvs[sp].as_keysym();
             *yyval = YYValue::Expr(expr_create_key_sym_list(keysym));
         }
-        193 | 195 => {
-            // KeySyms: STRING (single string keysym)
+        191 | 193 | 195 => {
             let s = yyvs[sp].take_str();
-            let expr = expr_create_key_sym_list(XKB_KEY_NO_SYMBOL);
-            match expr_key_sym_list_append_string(expr, &s) {
-                Some(e) => {
-                    *yyval = YYValue::Expr(e);
-                }
-                None => {
-                    return false;
-                }
-            }
+            let expr = if yyn == 191 {
+                yyvs[sp - 2].take_expr().unwrap()
+            } else {
+                expr_create_key_sym_list(XKB_KEY_NO_SYMBOL)
+            };
+            let Some(expr) = expr_key_sym_list_append_string(expr, &s) else {
+                return false;
+            };
+            *yyval = YYValue::Expr(expr);
         }
         197 => {
             // KeySymList: empty → NoSymbol
@@ -983,37 +935,22 @@ pub(crate) fn parse<'a>(
         ctx = param.ctx;
         scanner = param.scanner;
 
-        if ret == 0 && param.more_maps {
-            if !map.is_empty() {
-                if let Some(ref rtrn) = param.rtrn {
-                    if map == rtrn.name {
-                        return param.rtrn;
-                    }
-                }
-                // Not the map we want, drop it
-            } else if let Some(ref rtrn) = param.rtrn {
-                if rtrn.flags & MAP_IS_DEFAULT != 0 {
-                    return param.rtrn;
-                } else if first.is_none() {
-                    first = param.rtrn;
-                }
-                // else drop param.rtrn
-            }
-            continue;
-        }
-
         if ret != 0 {
             return None;
         }
-
-        if param.rtrn.is_some() {
-            return param.rtrn;
+        if !param.more_maps {
+            return param.rtrn.or(first);
         }
-
-        break;
+        let file = param.rtrn?;
+        if (!map.is_empty() && map == file.name)
+            || (map.is_empty() && file.flags & MAP_IS_DEFAULT != 0)
+        {
+            return Some(file);
+        }
+        if map.is_empty() && first.is_none() {
+            first = Some(file);
+        }
     }
-
-    first
 }
 
 // ── AST builder functions (merged from ast_build.rs) ──
@@ -1039,39 +976,22 @@ pub(crate) fn expr_key_sym_list_append_string(
     mut expr: ExprKind,
     string: &str,
 ) -> Option<ExprKind> {
-    let bytes = string.as_bytes();
-    let len = bytes.len();
-    let mut idx: usize = 0;
-    loop {
-        if idx >= len {
-            return Some(expr);
-        }
-        let (cp, cp_len) = utf8_next_code_point_safe(&bytes[idx..]);
-        if cp == INVALID_UTF8_CODE_POINT {
-            return None;
-        }
-        let sym = codepoint_to_keysym(cp).unwrap_or(0);
+    for ch in string.chars() {
+        let sym = codepoint_to_keysym(ch as u32).unwrap_or(0);
         if sym == XKB_KEY_NO_SYMBOL {
             return None;
         }
         if let ExprKind::KeysymList { ref mut syms } = expr {
             syms.push(sym);
         }
-        idx += cp_len;
     }
+    Some(expr)
 }
 
 pub(crate) fn keysym_parse_string(string: &str) -> Option<u32> {
-    let bytes = string.as_bytes();
-    let len = bytes.len();
-    if len == 0 {
-        return None;
-    }
-    let (cp, cp_len) = utf8_next_code_point_safe(bytes);
-    if cp == INVALID_UTF8_CODE_POINT || cp_len != len {
-        return None;
-    }
-    Some(codepoint_to_keysym(cp).unwrap_or(0))
+    let mut chars = string.chars();
+    let sym = codepoint_to_keysym(chars.next()? as u32).unwrap_or(0);
+    chars.next().is_none().then_some(sym)
 }
 
 macro_rules! default_merge_constructors {
@@ -1152,11 +1072,7 @@ pub(crate) fn include_create(stmt_str: &str, mut merge: MergeMode) -> Option<Vec
         remaining = rest;
     }
 
-    if items.is_empty() {
-        return None;
-    }
-
-    Some(items)
+    (!items.is_empty()).then_some(items)
 }
 
 pub(crate) fn xkb_file_create(
@@ -1176,20 +1092,13 @@ pub(crate) fn xkb_file_create(
 }
 
 pub(crate) fn xkb_file_from_components(kkctgs: &XkbComponentNames) -> Option<Box<XkbFile>> {
-    let components = [
-        &kkctgs.keycodes,
-        &kkctgs.types,
-        &kkctgs.compatibility,
-        &kkctgs.symbols,
-    ];
     let mut file_stmts: Vec<Statement> = Vec::new();
-    for type_0 in [
-        FileType::Keycodes,
-        FileType::Types,
-        FileType::Compat,
-        FileType::Symbols,
+    for (type_0, component_bytes) in [
+        (FileType::Keycodes, &kkctgs.keycodes),
+        (FileType::Types, &kkctgs.types),
+        (FileType::Compat, &kkctgs.compatibility),
+        (FileType::Symbols, &kkctgs.symbols),
     ] {
-        let component_bytes = components[type_0 as usize];
         let end = component_bytes
             .iter()
             .position(|&b| b == 0)
@@ -2731,44 +2640,16 @@ static RULES_MLVO_SVALS: [&[u8]; 4] = [b"model", b"layout", b"variant", b"option
 static RULES_KCCGST_SVALS: [&[u8]; 5] = [b"keycodes", b"types", b"compat", b"symbols", b"geometry"];
 pub(crate) const OPTIONS_MATCH_ALL_GROUPS: u32 = XKB_MAX_GROUPS;
 fn strip_spaces<'a>(v: Sval<'a>) -> Sval<'a> {
-    let bytes = v.data;
-    let start_trim = bytes
-        .iter()
-        .position(|&b| !is_space(b))
-        .unwrap_or(bytes.len());
-    let end_trim = bytes
-        .iter()
-        .rposition(|&b| !is_space(b))
-        .map(|i| i + 1)
-        .unwrap_or(start_trim);
-    if start_trim >= end_trim {
-        Sval { data: &[] }
-    } else {
-        Sval {
-            data: &bytes[start_trim..end_trim],
-        }
+    Sval {
+        data: v.data.trim_ascii(),
     }
 }
 
-/// Resize a Vec<MatchedSval>, zero-filling new elements.
-fn vec_resize_zero_matched_sval(v: &mut Vec<MatchedSval<'_>>, new_len: usize) {
-    if new_len > v.len() {
-        v.resize(new_len, MatchedSval::default());
-    } else {
-        v.truncate(new_len);
-    }
-}
-
-fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<MatchedSval<'a>> {
-    let mut arr: Vec<MatchedSval<'a>> = Vec::new();
-    let Some(bytes) = s else {
-        arr.push(MatchedSval::default());
-        return arr;
-    };
+fn split_comma_separated_mlvo(mlvo: u32, bytes: &[u8]) -> Vec<MatchedSval<'_>> {
     if bytes.is_empty() {
-        arr.push(MatchedSval::default());
-        return arr;
+        return vec![MatchedSval::default()];
     }
+    let mut arr = Vec::new();
     let mut pos: usize = 0;
     loop {
         let start = pos;
@@ -2821,53 +2702,17 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
 }
 fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) -> Matcher<'a> {
     let mut m = Matcher::new(ctx);
-    let rmlvo_ref = rmlvo;
     m.rmlvo.model.sval = Sval {
-        data: rmlvo_ref.model.as_bytes(),
+        data: rmlvo.model.as_bytes(),
     };
     m.rmlvo.model.layout = OPTIONS_MATCH_ALL_GROUPS;
-    m.rmlvo.layouts = split_comma_separated_mlvo(
-        MLVO_LAYOUT,
-        if rmlvo_ref.layout.is_empty() {
-            None
-        } else {
-            Some(rmlvo_ref.layout.as_bytes())
-        },
-    );
-    m.rmlvo.variants = split_comma_separated_mlvo(
-        MLVO_VARIANT,
-        if rmlvo_ref.variant.is_empty() {
-            None
-        } else {
-            Some(rmlvo_ref.variant.as_bytes())
-        },
-    );
-    m.rmlvo.options = split_comma_separated_mlvo(
-        MLVO_OPTION,
-        if rmlvo_ref.options.is_empty() {
-            None
-        } else {
-            Some(rmlvo_ref.options.as_bytes())
-        },
-    );
-    let layouts_len = m.rmlvo.layouts.len();
-    if layouts_len > m.rmlvo.variants.len() {
-        vec_resize_zero_matched_sval(&mut m.rmlvo.variants, layouts_len);
-    } else if layouts_len < m.rmlvo.variants.len() {
-        m.rmlvo.variants.truncate(layouts_len);
-    }
+    m.rmlvo.layouts = split_comma_separated_mlvo(MLVO_LAYOUT, rmlvo.layout.as_bytes());
+    m.rmlvo.variants = split_comma_separated_mlvo(MLVO_VARIANT, rmlvo.variant.as_bytes());
+    m.rmlvo.options = split_comma_separated_mlvo(MLVO_OPTION, rmlvo.options.as_bytes());
+    m.rmlvo
+        .variants
+        .resize(m.rmlvo.layouts.len(), MatchedSval::default());
     m
-}
-fn matcher_group_start_new(m: &mut Matcher, name: &[u8]) {
-    let group: Group = Group {
-        name: name.to_vec(),
-        elements: Vec::new(),
-    };
-    m.groups.push(group);
-}
-fn matcher_group_add_element(m: &mut Matcher, element: &[u8]) {
-    let last_group = m.groups.last_mut().unwrap();
-    last_group.elements.push(element.to_vec());
 }
 fn matcher_include(m: &mut Matcher<'_>, include_depth: u32, inc: Sval) {
     if include_depth >= MAX_INCLUDE_DEPTH as u32 {
@@ -2882,28 +2727,13 @@ fn matcher_include(m: &mut Matcher<'_>, include_depth: u32, inc: Sval) {
     let expanded = stmt_file != inc_str;
 
     let mut offset: u32 = 0;
-    let mut file_and_path = find_include_file(
-        &mut *m.ctx,
-        &stmt_file,
-        FileType::Rules,
-        expanded,
-        &mut offset,
-    );
-
-    while let Some((ref file_data, ref _path)) = file_and_path {
-        let ret: bool = read_rules_file(m, include_depth.wrapping_add(1_u32), file_data);
-        let _ = file_and_path.take();
-        if ret {
+    while let Some((file_data, _)) =
+        find_include_file(m.ctx, &stmt_file, FileType::Rules, expanded, &mut offset)
+    {
+        if read_rules_file(m, include_depth + 1, &file_data) {
             return;
         }
         offset += 1;
-        file_and_path = find_include_file(
-            &mut *m.ctx,
-            &stmt_file,
-            FileType::Rules,
-            expanded,
-            &mut offset,
-        );
     }
 }
 fn matcher_mapping_start_new(m: &mut Matcher) {
@@ -3158,16 +2988,6 @@ fn matcher_rule_set_mlvo_common(m: &mut Matcher, ident: SvalIdx, match_type: u32
     m.rule.match_type_at_pos[m.rule.num_mlvo_values as usize] = match_type;
     m.rule.mlvo_value_at_pos[m.rule.num_mlvo_values as usize] = ident;
     m.rule.num_mlvo_values += 1;
-}
-fn matcher_rule_set_mlvo_wildcard(m: &mut Matcher, match_type: u32) {
-    let dummy = SvalIdx::EMPTY;
-    matcher_rule_set_mlvo_common(m, dummy, match_type);
-}
-fn matcher_rule_set_mlvo_group(m: &mut Matcher, ident: SvalIdx) {
-    matcher_rule_set_mlvo_common(m, ident, MLVO_MATCH_GROUP);
-}
-fn matcher_rule_set_mlvo(m: &mut Matcher, ident: SvalIdx) {
-    matcher_rule_set_mlvo_common(m, ident, MLVO_MATCH_NORMAL);
 }
 fn matcher_rule_set_kccgst(m: &mut Matcher, ident: SvalIdx) {
     if m.rule.num_kccgst_values as i32 >= m.mapping.num_kccgst as i32 {
@@ -3430,24 +3250,19 @@ fn expand_kccgst_value(m: &mut Matcher, value: Sval, layout_idx: u32) -> Option<
     }
 }
 fn matcher_append_pending_kccgst(m: &mut Matcher) {
-    if !matches!(m.mapping.layout, LayoutIdx::Range { .. }) {
-        return;
-    }
-    let (range_min, range_max) = if let LayoutIdx::Range {
+    let LayoutIdx::Range {
         layout_idx_min,
         layout_idx_max,
     } = m.mapping.layout
-    {
-        (layout_idx_min, layout_idx_max)
-    } else {
-        unreachable!()
+    else {
+        return;
     };
     for i in 0..m.mapping.num_kccgst as usize {
         let kccgst: u32 = m.mapping.kccgst_at_pos[i];
         if kccgst == KCCGST_GEOMETRY {
             continue;
         }
-        for layout in range_min..range_max {
+        for layout in layout_idx_min..layout_idx_max {
             for (slice_layout, value) in &m.pending_kccgst[kccgst as usize] {
                 if *slice_layout == layout {
                     concat_kccgst(&mut m.kccgst[kccgst as usize], value);
@@ -3456,13 +3271,6 @@ fn matcher_append_pending_kccgst(m: &mut Matcher) {
         }
     }
     m.mapping.layout = LayoutIdx::default();
-}
-fn matcher_rule_verify(m: &mut Matcher) {
-    if m.rule.num_mlvo_values as i32 != m.mapping.num_mlvo as i32
-        || m.rule.num_kccgst_values as i32 != m.mapping.num_kccgst as i32
-    {
-        m.rule.skip = true;
-    }
 }
 fn matcher_mlvo_matches(
     m: &mut Matcher,
@@ -3597,15 +3405,21 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
         have_bang = false;
         match gettok(m, s) {
             TOK_GROUP_NAME => {
-                matcher_group_start_new(m, m.val.string.as_sval(s.s).data);
+                m.groups.push(Group {
+                    name: m.val.string.as_sval(s.s).data.to_vec(),
+                    elements: Vec::new(),
+                });
                 if gettok(m, s) != TOK_EQUALS {
                     return false;
                 }
                 loop {
                     match gettok(m, s) {
-                        TOK_IDENTIFIER => {
-                            matcher_group_add_element(m, m.val.string.as_sval(s.s).data)
-                        }
+                        TOK_IDENTIFIER => m
+                            .groups
+                            .last_mut()
+                            .unwrap()
+                            .elements
+                            .push(m.val.string.as_sval(s.s).data.to_vec()),
                         TOK_END_OF_LINE => break,
                         _ => return false,
                     }
@@ -3669,14 +3483,23 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                         match tok {
                             TOK_IDENTIFIER if !m.rule.skip => {
                                 if m.val.string.as_sval(s.s).data == b"+" {
-                                    matcher_rule_set_mlvo_wildcard(m, MLVO_MATCH_WILDCARD_SOME);
+                                    matcher_rule_set_mlvo_common(
+                                        m,
+                                        SvalIdx::EMPTY,
+                                        MLVO_MATCH_WILDCARD_SOME,
+                                    );
                                 } else {
-                                    matcher_rule_set_mlvo(m, m.val.string);
+                                    matcher_rule_set_mlvo_common(
+                                        m,
+                                        m.val.string,
+                                        MLVO_MATCH_NORMAL,
+                                    );
                                 }
                             }
                             TOK_WILD_CARD_STAR..=TOK_WILD_CARD_ANY if !m.rule.skip => {
-                                matcher_rule_set_mlvo_wildcard(
+                                matcher_rule_set_mlvo_common(
                                     m,
+                                    SvalIdx::EMPTY,
                                     [
                                         MLVO_MATCH_WILDCARD_LEGACY,
                                         MLVO_MATCH_WILDCARD_NONE,
@@ -3687,7 +3510,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                                 );
                             }
                             TOK_GROUP_NAME if !m.rule.skip => {
-                                matcher_rule_set_mlvo_group(m, m.val.string)
+                                matcher_rule_set_mlvo_common(m, m.val.string, MLVO_MATCH_GROUP)
                             }
                             TOK_IDENTIFIER
                             | TOK_WILD_CARD_STAR..=TOK_WILD_CARD_ANY
@@ -3708,7 +3531,8 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                         }
                     }
                     if !m.rule.skip {
-                        matcher_rule_verify(m);
+                        m.rule.skip = m.rule.num_mlvo_values != m.mapping.num_mlvo
+                            || m.rule.num_kccgst_values != m.mapping.num_kccgst;
                         if !m.rule.skip {
                             matcher_rule_apply_if_matches(m, s);
                         }
@@ -4652,38 +4476,6 @@ pub(crate) fn parse_hex_u32(s: &[u8]) -> (u32, i32) {
 }
 fn parse_hex_u64(s: &[u8]) -> (u64, i32) {
     parse_uint(s, 16, u64::MAX)
-}
-
-// ── UTF-8 decoding (migrated from utf8_decoding.rs) ──
-
-/// Invalid UTF-8 code point marker
-pub(crate) const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
-
-/// Decode next UTF-8 code point from byte slice.
-pub(crate) fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
-    let Some(&first) = bytes.first() else {
-        return (INVALID_UTF8_CODE_POINT, 0);
-    };
-
-    let len = match first {
-        0x00..=0x7f => 1,
-        0xc2..=0xdf => 2,
-        0xe0..=0xef => 3,
-        0xf0..=0xf4 => 4,
-        _ => return (INVALID_UTF8_CODE_POINT, 0),
-    };
-
-    let Some(candidate) = bytes.get(..len) else {
-        return (INVALID_UTF8_CODE_POINT, 0);
-    };
-
-    match std::str::from_utf8(candidate)
-        .ok()
-        .and_then(|s| s.chars().next())
-    {
-        Some(ch) => (ch as u32, len),
-        None => (INVALID_UTF8_CODE_POINT, 0),
-    }
 }
 
 #[cfg(test)]
