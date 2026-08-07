@@ -1,9 +1,7 @@
+pub(crate) use super::keymap::xkb_mod_name_to_index;
 use super::keymap::{
     lookup_string, CTRL_MASK_NAMES, GROUP_COMPONENT_MASK_NAMES, MOD_COMPONENT_MASK_NAMES,
     SYM_INTERPRET_MATCH_MASK_NAMES, USE_MOD_MAP_VALUE_NAMES,
-};
-pub(crate) use super::keymap::{
-    xkb_levels_same_actions, xkb_levels_same_syms, xkb_mod_name_to_index,
 };
 use super::keysym::xkb_keysym_is_keypad;
 use super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
@@ -27,6 +25,12 @@ macro_rules! some_or_false {
         match $value {
             Some(value) => value,
             None => return false,
+        }
+    };
+    ($value:expr, $return:expr) => {
+        match $value {
+            Some(value) => value,
+            None => return $return,
         }
     };
 }
@@ -178,14 +182,19 @@ fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) -> bo
             continue;
         }
         if !from_level.syms.is_empty()
-            && !xkb_levels_same_syms(from_level, into_level)
+            && from_level.syms != into_level.syms
             && (clobber || into_level.syms.is_empty())
         {
             into_level.syms = std::mem::take(&mut from_level.syms);
             from_keysyms_count += 1;
         }
         if !from_level.actions.is_empty()
-            && !xkb_levels_same_actions(into_level, from_level)
+            && (into_level.actions.len() != from_level.actions.len()
+                || !into_level
+                    .actions
+                    .iter()
+                    .zip(&from_level.actions)
+                    .all(|(a, b)| action_equal(a, b)))
             && (clobber || into_level.actions.is_empty())
         {
             into_level.actions = std::mem::take(&mut from_level.actions);
@@ -1034,8 +1043,8 @@ fn handle_symbols_def(
     let dk = &info.default_key;
     let mut keyi = dk.clone();
     keyi.merge = stmt.merge;
-    keyi.name = stmt.key_name;
-    if handle_symbols_body(ki, info, &mut stmt.symbols, &mut keyi) {
+    keyi.name = stmt.name;
+    if handle_symbols_body(ki, info, &mut stmt.body, &mut keyi) {
         set_explicit_group(info, &mut keyi);
         if add_key_symbols(ki, info, &mut keyi) {
             return true;
@@ -1412,10 +1421,6 @@ pub(crate) const SI_FIELD_AUTO_REPEAT: u32 = 4;
 pub(crate) const SI_FIELD_ACTION: u32 = 2;
 pub(crate) const SI_FIELD_VIRTUAL_MOD: u32 = 1;
 // C2Rust_Unnamed_19 removed: replaced by Vec<XkbSymInterpret>
-pub(crate) struct Collect {
-    pub(crate) sym_interprets: Vec<XkbSymInterpret>,
-}
-// C2Rust_Unnamed_20 removed: replaced by Vec<XkbAction>
 #[inline]
 fn compat_info(include_depth: u32, mods: &XkbModSet) -> CompatInfo {
     let mut info = CompatInfo {
@@ -1925,46 +1930,24 @@ fn handle_compat_map_file(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo, fil
         }
     }
 }
-fn copy_interps(info: &CompatInfo, need_symbol: bool, pred: u32, collect: &mut Collect) {
-    for si in &info.interps {
-        if si.interp.match_0 == pred && (si.interp.sym != XKB_KEY_NO_SYMBOL) == need_symbol {
-            collect.sym_interprets.push(si.interp.clone());
-        }
-    }
-}
 fn copy_led_map_defs_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) {
     for idx in 0..info.num_leds {
         let ledi_led = info.leds[idx as usize].led;
-        let mut i = ki.keymap.num_leds;
-        for ii in 0..ki.keymap.num_leds {
-            if ki.keymap.leds[ii as usize].name == ledi_led.name {
-                i = ii;
-                break;
-            }
-        }
-        let mut assign_led = false;
-        if i >= ki.keymap.num_leds {
-            for ii in 0..ki.keymap.num_leds {
-                if ki.keymap.leds[ii as usize].name == XKB_ATOM_NONE {
-                    i = ii;
-                    break;
-                }
-            }
-            if i >= ki.keymap.num_leds {
-                if i < XKB_MAX_LEDS {
-                    i = ki.keymap.num_leds;
+        let leds = &ki.keymap.leds[..ki.keymap.num_leds as usize];
+        let slot = leds
+            .iter()
+            .position(|led| led.name == ledi_led.name)
+            .or_else(|| leds.iter().position(|led| led.name == XKB_ATOM_NONE))
+            .or_else(|| {
+                (ki.keymap.num_leds < XKB_MAX_LEDS).then(|| {
+                    let slot = ki.keymap.num_leds as usize;
                     ki.keymap.num_leds += 1;
-                    assign_led = true;
-                }
-            } else {
-                assign_led = true;
-            }
-        } else {
-            assign_led = true;
-        }
-        if assign_led {
-            ki.keymap.leds[i as usize] = ledi_led;
-            let led = &mut ki.keymap.leds[i as usize];
+                    slot
+                })
+            });
+        if let Some(slot) = slot {
+            ki.keymap.leds[slot] = ledi_led;
+            let led = &mut ki.keymap.leds[slot];
             if led.which_groups == 0 && (led.groups != 0 || led.pending_groups) {
                 led.which_groups = XKB_STATE_LAYOUT_EFFECTIVE;
             }
@@ -1974,32 +1957,32 @@ fn copy_led_map_defs_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo
         }
     }
 }
-fn copy_compat_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) -> bool {
-    // Collect sym_interprets first (doesn't need keymap)
-    let sym_interprets = if !info.interps.is_empty() {
-        let mut collect: Collect = Collect {
-            sym_interprets: Vec::with_capacity(info.interps.len()),
-        };
-        copy_interps(info, true, MATCH_EXACTLY, &mut collect);
-        copy_interps(info, true, MATCH_ALL, &mut collect);
-        copy_interps(info, true, MATCH_NONE, &mut collect);
-        copy_interps(info, true, MATCH_ANY, &mut collect);
-        copy_interps(info, true, MATCH_ANY_OR_NONE, &mut collect);
-        copy_interps(info, false, MATCH_EXACTLY, &mut collect);
-        copy_interps(info, false, MATCH_ALL, &mut collect);
-        copy_interps(info, false, MATCH_NONE, &mut collect);
-        copy_interps(info, false, MATCH_ANY, &mut collect);
-        copy_interps(info, false, MATCH_ANY_OR_NONE, &mut collect);
-        Some(collect.sym_interprets)
-    } else {
-        None
-    };
+fn copy_compat_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) {
+    let mut interps = Vec::with_capacity(info.interps.len());
+    for need_symbol in [true, false] {
+        for pred in [
+            MATCH_EXACTLY,
+            MATCH_ALL,
+            MATCH_NONE,
+            MATCH_ANY,
+            MATCH_ANY_OR_NONE,
+        ] {
+            interps.extend(
+                info.interps
+                    .iter()
+                    .filter(|si| {
+                        si.interp.match_0 == pred
+                            && (si.interp.sym != XKB_KEY_NO_SYMBOL) == need_symbol
+                    })
+                    .map(|si| si.interp.clone()),
+            );
+        }
+    }
     ki.keymap.mods = info.mods;
-    if let Some(interps) = sym_interprets {
+    if !interps.is_empty() {
         ki.sym_interprets = interps;
     }
     copy_led_map_defs_to_keymap(ki, info);
-    true
 }
 pub(crate) fn compile_compat_map(file: Option<&mut XkbFile>, ki: &mut XkbKeymapInfo<'_>) -> bool {
     let mods = ki.keymap.mods;
@@ -2007,7 +1990,11 @@ pub(crate) fn compile_compat_map(file: Option<&mut XkbFile>, ki: &mut XkbKeymapI
     if let Some(file) = file {
         handle_compat_map_file(ki, &mut info, file);
     }
-    info.error_count == 0 && copy_compat_to_keymap(ki, &mut info)
+    if info.error_count != 0 {
+        return false;
+    }
+    copy_compat_to_keymap(ki, &mut info);
+    true
 }
 #[derive(Default)]
 pub(crate) struct KeyTypesInfo {
@@ -2223,7 +2210,7 @@ fn add_level_name(type_0: &mut KeyTypeInfo, level: u32, name: u32) {
         return;
     }
     if level >= type_0.level_names.len() as u32 {
-        vec_resize_zero(&mut type_0.level_names, level_idx + 1);
+        type_0.level_names.resize(level_idx + 1, 0);
     }
     type_0.level_names[level_idx] = name;
 }
@@ -2519,14 +2506,6 @@ pub(crate) struct HighKeycodeEntry {
     pub(crate) keycode: u32,
     pub(crate) name: u32,
 }
-fn vec_resize_zero<T: Default>(v: &mut Vec<T>, new_len: usize) {
-    if new_len > v.len() {
-        v.resize_with(new_len, Default::default);
-    } else if new_len < v.len() {
-        v.truncate(new_len);
-    }
-}
-
 #[inline]
 fn keycode_store_update_key(store: &mut KeycodeStore, match_0: KeycodeMatch, name: u32) {
     if !match_0.found || match_0.is_alias {
@@ -2537,17 +2516,17 @@ fn keycode_store_update_key(store: &mut KeycodeStore, match_0: KeycodeMatch, nam
         store.high[match_0.index as usize].name = name;
     }
     if name >= store.names.len() as u32 {
-        vec_resize_zero(&mut store.names, (name as usize) + 1);
+        store.names.resize(name as usize + 1, Default::default());
     }
     store.names[name as usize] = match_0;
 }
 fn keycode_store_insert_key(store: &mut KeycodeStore, kc: u32, name: u32) -> bool {
     if name >= store.names.len() as u32 {
-        vec_resize_zero(&mut store.names, (name as usize) + 1);
+        store.names.resize(name as usize + 1, Default::default());
     }
     if kc <= XKB_KEYCODE_MAX_CONTIGUOUS {
         if kc >= store.low.len() as u32 {
-            vec_resize_zero(&mut store.low, (kc as usize) + 1);
+            store.low.resize(kc as usize + 1, 0);
         }
         store.low[kc as usize] = name;
         if kc < store.min {
@@ -2556,8 +2535,8 @@ fn keycode_store_insert_key(store: &mut KeycodeStore, kc: u32, name: u32) -> boo
         store.names[name as usize] = KeycodeMatch {
             found: true,
             low: true,
-            is_alias: false,
             index: kc,
+            ..Default::default()
         };
     } else {
         let idx: u32 = store.high.len() as u32;
@@ -2575,17 +2554,15 @@ fn keycode_store_insert_key(store: &mut KeycodeStore, kc: u32, name: u32) -> boo
                 .insert(lower as usize, HighKeycodeEntry { keycode: kc, name });
             store.names[name as usize] = KeycodeMatch {
                 found: true,
-                low: false,
-                is_alias: false,
                 index: lower,
+                ..Default::default()
             };
         } else {
             store.high.push(HighKeycodeEntry { keycode: kc, name });
             store.names[name as usize] = KeycodeMatch {
                 found: true,
-                low: false,
-                is_alias: false,
                 index: idx,
+                ..Default::default()
             };
         }
         if store.low.is_empty() {
@@ -2597,7 +2574,7 @@ fn keycode_store_insert_key(store: &mut KeycodeStore, kc: u32, name: u32) -> boo
 #[inline]
 fn keycode_store_insert_alias(store: &mut KeycodeStore, alias: u32, real: u32) {
     if alias >= store.names.len() as u32 {
-        vec_resize_zero(&mut store.names, (alias as usize) + 1);
+        store.names.resize(alias as usize + 1, Default::default());
     }
     store.names[alias as usize] = KeycodeMatch {
         found: true,
@@ -2662,40 +2639,24 @@ fn keycode_store_lookup_keycode(store: &KeycodeStore, kc: u32) -> KeycodeMatch {
         return KeycodeMatch {
             found: true,
             low: true,
-            is_alias: false,
             index: kc,
+            ..Default::default()
         };
     } else if kc <= XKB_KEYCODE_MAX_CONTIGUOUS {
-        return KeycodeMatch {
-            found: false,
-            low: false,
-            is_alias: false,
-            index: 0,
-        };
+        return KeycodeMatch::default();
     }
     match store.high.binary_search_by(|entry| entry.keycode.cmp(&kc)) {
         Ok(mid) => KeycodeMatch {
             found: true,
-            low: false,
-            is_alias: false,
             index: mid as u32,
+            ..Default::default()
         },
-        Err(_) => KeycodeMatch {
-            found: false,
-            low: false,
-            is_alias: false,
-            index: 0,
-        },
+        Err(_) => KeycodeMatch::default(),
     }
 }
 fn keycode_store_lookup_name(store: &KeycodeStore, name: u32) -> KeycodeMatch {
     if name >= store.names.len() as u32 {
-        KeycodeMatch {
-            found: false,
-            low: false,
-            is_alias: false,
-            index: 0,
-        }
+        KeycodeMatch::default()
     } else {
         store.names[name as usize]
     }
@@ -3051,17 +3012,12 @@ pub(crate) use super::keymap::action_equal;
 
 use super::parser::ExprKind;
 
-pub(crate) struct LookupModMaskPriv<'a> {
-    pub(crate) mods: &'a XkbModSet,
-    pub(crate) mod_type: u32,
-}
-
 /// Safe replacement for the IdentLookupFunc + *const c_void pair.
 pub(crate) enum IdentLookup<'a> {
     None,
     Simple(&'a [LookupEntry]),
     NamedPattern(&'a NamedIntegerPattern<'a>),
-    ModMask(&'a LookupModMaskPriv<'a>),
+    ModMask(&'a XkbModSet, u32),
 }
 
 pub(crate) struct NamedIntegerPattern<'a> {
@@ -3127,21 +3083,6 @@ fn named_integer_pattern_lookup(
     None
 }
 
-fn lookup_mod_mask(ctx: &XkbContext, priv_0: &LookupModMaskPriv, field: u32) -> Option<u32> {
-    let s: &str = ctx.atom_text(field);
-    if s.is_empty() {
-        return None;
-    }
-    if s.eq_ignore_ascii_case("all") {
-        return Some(MOD_REAL_MASK_ALL);
-    }
-    if s.eq_ignore_ascii_case("none") {
-        return Some(0_u32);
-    }
-    let ndx = xkb_mod_name_to_index(priv_0.mods, field, priv_0.mod_type)?;
-    Some(1_u32 << ndx)
-}
-
 /// Dispatch a lookup based on the IdentLookup variant.
 /// Returns Some(value) on success. Sets `pending` to true if applicable.
 fn ident_lookup(
@@ -3156,7 +3097,12 @@ fn ident_lookup(
         IdentLookup::NamedPattern(pattern) => {
             named_integer_pattern_lookup(ctx, pattern, field, pending)
         }
-        IdentLookup::ModMask(priv_0) => lookup_mod_mask(ctx, priv_0, field),
+        IdentLookup::ModMask(mods, mod_type) => match ctx.atom_text(field) {
+            s if s.eq_ignore_ascii_case("all") => Some(MOD_REAL_MASK_ALL),
+            s if s.eq_ignore_ascii_case("none") => Some(0),
+            "" => None,
+            _ => xkb_mod_name_to_index(mods, field, *mod_type).map(|ndx| 1 << ndx),
+        },
     }
 }
 
@@ -3297,9 +3243,10 @@ pub(crate) fn expr_resolve_group(
     };
     let lookup = IdentLookup::NamedPattern(&group_name_pattern);
     let ctx = &keymap_info.keymap.ctx;
-    let Some(result) = expr_resolve_integer_lookup(ctx, expr, Some(pending), &lookup) else {
-        return report_mismatch(keymap_info.strict);
-    };
+    let result = some_or_false!(
+        expr_resolve_integer_lookup(ctx, expr, Some(pending), &lookup),
+        report_mismatch(keymap_info.strict)
+    );
     if result > keymap_info.features.max_groups as i64
         || (absolute && result < 1)
         || (!absolute && result < -(keymap_info.features.max_groups as i64))
@@ -3414,8 +3361,7 @@ pub(crate) fn expr_resolve_mod_mask(
     mod_type: u32,
     mods: &XkbModSet,
 ) -> Option<u32> {
-    let priv_0 = LookupModMaskPriv { mods, mod_type };
-    let lookup = IdentLookup::ModMask(&priv_0);
+    let lookup = IdentLookup::ModMask(mods, mod_type);
     expr_resolve_mask_lookup(ctx, expr, None, &lookup)
 }
 
@@ -3453,10 +3399,7 @@ pub(crate) fn expr_resolve_group_mask(
     *group_rtrn = group;
     true
 }
-#[derive(Copy, Clone, Default)]
-pub(crate) struct ActionsInfo {
-    pub(crate) actions: [XkbAction; 21],
-}
+pub(crate) type ActionsInfo = [XkbAction; 21];
 
 pub(crate) const ACTION_FIELD_LATCH_ON_PRESS: u32 = 25;
 pub(crate) const ACTION_FIELD_UNLOCK_ON_PRESS: u32 = 24;
@@ -3541,7 +3484,7 @@ impl<'v> ActionValue<'v> {
 
 pub(crate) fn init_actions_info(info: &mut ActionsInfo) {
     for type_0 in ACTION_TYPE_NONE.._ACTION_TYPE_NUM_ENTRIES {
-        info.actions[type_0 as usize] = match type_0 {
+        info[type_0 as usize] = match type_0 {
             ACTION_TYPE_NONE => XkbAction::None,
             ACTION_TYPE_VOID => XkbAction::Void,
             ACTION_TYPE_MOD_SET => XkbAction::ModSet(Default::default()),
@@ -3634,9 +3577,7 @@ fn check_boolean_flag(
     if array_ndx.is_some() {
         return report_mismatch(strict);
     }
-    let Some(set) = expr_resolve_boolean(ctx, value) else {
-        return report_mismatch(strict);
-    };
+    let set = some_or_false!(expr_resolve_boolean(ctx, value), report_mismatch(strict));
     flags_inout.set(flag, set);
     ParseStatus::Success
 }
@@ -3679,9 +3620,10 @@ fn check_modifier_field(
             return ParseStatus::Success;
         }
     }
-    let Some(resolved_mods) = expr_resolve_mod_mask(ctx, value, MOD_BOTH, mods) else {
-        return report_mismatch(strict);
-    };
+    let resolved_mods = some_or_false!(
+        expr_resolve_mod_mask(ctx, value, MOD_BOTH, mods),
+        report_mismatch(strict)
+    );
     *mods_rtrn = resolved_mods;
     *flags_inout &= !ActionFlags::MODS_LOOKUP_MODMAP.bits();
     ParseStatus::Success
@@ -3706,9 +3648,10 @@ fn check_affect_field(
     if array_ndx.is_some() {
         return report_mismatch(strict);
     }
-    let Some(flags) = expr_resolve_enum(ctx, value, &LOCK_WHICH) else {
-        return report_mismatch(strict);
-    };
+    let flags = some_or_false!(
+        expr_resolve_enum(ctx, value, &LOCK_WHICH),
+        report_mismatch(strict)
+    );
     *flags_inout &= !(ActionFlags::LOCK_NO_LOCK | ActionFlags::LOCK_NO_UNLOCK);
     *flags_inout |= ActionFlags::from_bits_retain(flags);
     ParseStatus::Success
@@ -3899,9 +3842,10 @@ fn handle_set_lock_controls(
             return report_mismatch(keymap_info.strict);
         }
         let offset: u8 = keymap_info.features.controls_name_offset;
-        let Some(mask) = expr_resolve_mask(ctx, value, &CTRL_MASK_NAMES[offset as usize..]) else {
-            return report_mismatch(keymap_info.strict);
-        };
+        let mask = some_or_false!(
+            expr_resolve_mask(ctx, value, &CTRL_MASK_NAMES[offset as usize..]),
+            report_mismatch(keymap_info.strict)
+        );
         act.ctrls = ControlsFlags::from_bits_retain(mask);
         return ParseStatus::Success;
     } else if is_lock && field == ACTION_FIELD_AFFECT {
@@ -3927,33 +3871,37 @@ fn handle_private(
         if array_ndx.is_some() {
             return report_mismatch(keymap_info.strict);
         }
-        let Some(type_0) = expr_resolve_integer(ctx, value) else {
-            return report_mismatch(keymap_info.strict);
-        };
+        let type_0 = some_or_false!(
+            expr_resolve_integer(ctx, value),
+            report_mismatch(keymap_info.strict)
+        );
         if !(0_i64..=255_i64).contains(&type_0) {
             return report_mismatch(keymap_info.strict);
         }
         return ParseStatus::Success;
     } else if field == ACTION_FIELD_DATA {
         if let Some(array_ndx) = array_ndx {
-            let Some(ndx) = expr_resolve_integer(ctx, array_ndx) else {
-                return report_mismatch(keymap_info.strict);
-            };
+            let ndx = some_or_false!(
+                expr_resolve_integer(ctx, array_ndx),
+                report_mismatch(keymap_info.strict)
+            );
             if ndx < 0_i64 || ndx as usize >= std::mem::size_of::<[u8; 7]>() {
                 return report_mismatch(keymap_info.strict);
             }
-            let Some(datum) = expr_resolve_integer(ctx, value) else {
-                return report_mismatch(keymap_info.strict);
-            };
+            let datum = some_or_false!(
+                expr_resolve_integer(ctx, value),
+                report_mismatch(keymap_info.strict)
+            );
             if !(0_i64..=255_i64).contains(&datum) {
                 return report_mismatch(keymap_info.strict);
             }
             act.data[ndx as usize] = datum as u8;
             return ParseStatus::Success;
         } else {
-            let Some(val) = expr_resolve_string(value) else {
-                return report_mismatch(keymap_info.strict);
-            };
+            let val = some_or_false!(
+                expr_resolve_string(value),
+                report_mismatch(keymap_info.strict)
+            );
             let str_bytes: &str = ctx.atom_text(val);
             let len: usize = str_bytes.len();
             if len < 1_usize || len > std::mem::size_of::<[u8; 7]>() {
@@ -4014,7 +3962,7 @@ pub(crate) fn handle_action_def(
     if handler_type == ACTION_TYPE_UNKNOWN && keymap_info.strict & PARSER_NO_UNKNOWN_ACTION != 0 {
         return ParseStatus::Fatal;
     }
-    *action = info.actions[handler_type as usize];
+    *action = info[handler_type as usize];
     if handler_type == ACTION_TYPE_UNSUPPORTED_LEGACY {
         *action = XkbAction::None;
     }
@@ -4106,7 +4054,7 @@ pub(crate) fn set_default_action_field(
             ParseStatus::Recoverable
         };
     };
-    let into: &mut XkbAction = &mut info.actions[action as usize];
+    let into: &mut XkbAction = &mut info[action as usize];
     let mut from: XkbAction = *into;
     let ret = handle_action_field(
         keymap_info,

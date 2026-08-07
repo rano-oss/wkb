@@ -1,6 +1,5 @@
 use super::keymap::mod_mask_get_effective;
 use super::keymap::xkb_escape_map_name;
-use super::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use super::keymap::GROUP_LAST_INDEX_NAME;
 use super::keysym::xkb_keysym_from_name;
 use super::parser_tables::*;
@@ -10,36 +9,7 @@ pub(crate) use super::symbols::compile_keycodes;
 pub(crate) use super::symbols::compile_symbols;
 use super::symbols::{expr_resolve_group, expr_resolve_group_mask};
 use crate::xkb::keymap::xkb_mod_name_to_index;
-use crate::xkb::keymap::CONTROL_NAMES_MIN_V1_INDEX;
-use crate::xkb::keymap::CONTROL_NAMES_MIN_V2_INDEX;
 use crate::xkb::keysym::codepoint_to_keysym;
-
-fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
-    file.file_type == FileType::Keymap && compile_keymap(file, keymap)
-}
-
-pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbRuleNames) -> bool {
-    let mut kccgst: XkbComponentNames = XkbComponentNames::default();
-    if !xkb_components_from_rules_names(&mut keymap.ctx, rmlvo, &mut kccgst, &mut keymap.num_groups)
-    {
-        return false;
-    }
-    let max_groups: u32 = XKB_MAX_GROUPS;
-    if keymap.num_groups > max_groups {
-        keymap.num_groups = max_groups;
-    }
-    let Some(mut file) = xkb_file_from_components(&kccgst) else {
-        return false;
-    };
-    compile_keymap_file(keymap, &mut file)
-}
-
-pub(crate) fn text_v1_keymap_new_from_string(keymap: &mut XkbKeymap, input: &[u8]) -> bool {
-    let Some(mut xkb_file) = xkb_parse_string(&mut keymap.ctx, input, "") else {
-        return false;
-    };
-    compile_keymap_file(keymap, &mut xkb_file)
-}
 
 pub(crate) const XKB_KEY_VOID_SYMBOL: i32 = 0xffffff_i32;
 pub(crate) const XKB_KEY_0: i32 = 0x30;
@@ -507,7 +477,12 @@ fn execute_reduction<'a>(
             let offset = 2 * usize::from(yyn == 59);
             let keysym = yyvs[sp - offset].as_keysym();
             let expr = (yyn == 59).then(|| yyvs[sp].take_expr()).flatten();
-            *yyval = YYValue::Interp(interp_create(keysym, expr));
+            *yyval = YYValue::Interp(InterpDef {
+                merge: MergeMode::Default,
+                sym: keysym,
+                match_0: expr,
+                def: Vec::new(),
+            });
         }
         61 | 67 | 68 => {
             let var = yyvs[sp].take_var();
@@ -814,9 +789,14 @@ fn execute_reduction<'a>(
         }
         190 => {
             // NonEmptyKeySyms: NonEmptyKeySyms COMMA KeySym
-            let expr = yyvs[sp - 2].take_expr().unwrap();
+            let mut expr = yyvs[sp - 2].take_expr().unwrap();
             let keysym = yyvs[sp].as_keysym();
-            *yyval = YYValue::Expr(expr_append_key_sym_list(expr, keysym));
+            if keysym != XKB_KEY_NO_SYMBOL {
+                if let ExprKind::KeysymList { ref mut syms } = expr {
+                    syms.push(keysym);
+                }
+            }
+            *yyval = YYValue::Expr(expr);
         }
         192 => {
             // KeySyms: KeySym
@@ -963,15 +943,6 @@ pub(crate) fn expr_create_key_sym_list(sym: u32) -> ExprKind {
     ExprKind::KeysymList { syms }
 }
 
-pub(crate) fn expr_append_key_sym_list(mut expr: ExprKind, sym: u32) -> ExprKind {
-    if sym != XKB_KEY_NO_SYMBOL {
-        if let ExprKind::KeysymList { ref mut syms } = expr {
-            syms.push(sym);
-        }
-    }
-    expr
-}
-
 pub(crate) fn expr_key_sym_list_append_string(
     mut expr: ExprKind,
     string: &str,
@@ -1008,7 +979,7 @@ default_merge_constructors! {
     fn vmod_create(name: u32, value: Option<ExprKind>) -> VModDef;
     fn var_create(name: Option<ExprKind>, value: Option<ExprKind>) -> VarDef;
     fn key_type_create(name: u32, body: Vec<VarDef>) -> KeyTypeDef;
-    fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> SymbolsDef;
+    fn symbols_create(name: u32, body: Vec<VarDef>) -> SymbolsDef;
     fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> ModMapDef;
     fn led_map_create(name: u32, body: Vec<VarDef>) -> LedMapDef;
     fn led_name_create(ndx: i64, name: Option<ExprKind>) -> LedNameDef;
@@ -1019,15 +990,6 @@ pub(crate) fn bool_var_create(ident: u32, set: bool) -> VarDef {
         merge: MergeMode::Default,
         name: Some(ExprKind::Ident(ident)),
         value: Some(ExprKind::Boolean(set)),
-    }
-}
-
-pub(crate) fn interp_create(sym: u32, match_0: Option<ExprKind>) -> InterpDef {
-    InterpDef {
-        merge: MergeMode::Default,
-        sym,
-        match_0,
-        def: Vec::new(),
     }
 }
 
@@ -1334,13 +1296,6 @@ static KEYWORDS: &[(&[u8], i32)] = &[
     (b"partial", PARTIAL),
 ];
 
-pub(crate) fn keyword_to_token(string: &[u8]) -> i32 {
-    KEYWORDS
-        .iter()
-        .find_map(|&(keyword, token)| string.eq_ignore_ascii_case(keyword).then_some(token))
-        .unwrap_or(-1)
-}
-
 // ── YYValue: safe replacement for the YYSTYPE union ──
 
 /// Safe parser value stack type, replacing the old YYSTYPE union.
@@ -1421,12 +1376,6 @@ impl<'a> YYValue<'a> {
     }
 }
 
-/// Check if byte is whitespace (space, HT, LF, VT, FF, CR).
-/// Matches C `isspace()` for ASCII range.
-#[inline]
-fn is_space(ch: u8) -> bool {
-    matches!(ch, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
-}
 fn number(s: &mut Scanner) -> Option<(i64, i32)> {
     let hex = s.str_match(b"0x");
     let (value, count) = if hex {
@@ -1466,7 +1415,7 @@ pub(crate) fn _xkbcommon_lex<'a>(
     ctx: &mut XkbContext,
 ) -> i32 {
     loop {
-        while is_space(s.peek()) {
+        while s.peek().is_ascii_whitespace() {
             s.next_byte();
         }
         if s.str_match(b"\xE2\x80\x8E") || s.str_match(b"\xE2\x80\x8F") {
@@ -1558,7 +1507,11 @@ pub(crate) fn _xkbcommon_lex<'a>(
         while s.peek().is_ascii_alphanumeric() || s.peek() == b'_' {
             s.next_byte();
         }
-        let tok = keyword_to_token(s.input_slice(s.token_pos, s.pos));
+        let word = s.input_slice(s.token_pos, s.pos);
+        let tok = KEYWORDS
+            .iter()
+            .find_map(|&(keyword, token)| word.eq_ignore_ascii_case(keyword).then_some(token))
+            .unwrap_or(-1);
         if tok >= 0 {
             return tok;
         }
@@ -1587,11 +1540,8 @@ pub(crate) fn xkb_parse_string(
 
 // ── Include file processing (merged from include.rs) ──
 
-use super::keymap::xkb_context_getenv;
+use super::keymap::getenv_or;
 use super::keymap::{xkb_context_include_path_get, xkb_context_num_include_paths};
-use super::keymap::{
-    xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
-};
 
 pub(crate) const INCLUDE_MAX_DEPTH: i32 = 15_i32;
 fn is_merge_prefix(byte: u8) -> bool {
@@ -1616,15 +1566,15 @@ fn expand_percent(type_dir: &str, name: &str) -> Option<String> {
         if c == '%' {
             match chars.next()? {
                 '%' => result.push('%'),
-                'H' => result.push_str(&xkb_context_getenv("HOME").ok()?),
+                'H' => result.push_str(&std::env::var("HOME").ok()?),
                 'S' => {
-                    let sys = xkb_context_include_path_get_system_path();
+                    let sys = getenv_or("XKB_CONFIG_ROOT", DFLT_XKB_CONFIG_ROOT);
                     result.push_str(&sys);
                     result.push('/');
                     result.push_str(type_dir);
                 }
                 'E' => {
-                    let extra = xkb_context_include_path_get_extra_path();
+                    let extra = getenv_or("XKB_CONFIG_EXTRA_PATH", DFLT_XKB_CONFIG_EXTRA_PATH);
                     result.push_str(&extra);
                     result.push('/');
                     result.push_str(type_dir);
@@ -1803,8 +1753,11 @@ fn find_interp_for_key(
     interp_indices: &mut Vec<usize>,
     interp_index: &InterpIndex,
 ) -> bool {
-    let keycode = keymap.keys[key_idx].keycode;
-    let syms_ref = xkb_keymap_key_get_syms_by_level_ref(keymap, keycode, group, level);
+    let syms_ref = keymap.keys[key_idx]
+        .groups
+        .get(group as usize)
+        .and_then(|group| group.levels.get(level as usize))
+        .map_or(&[][..], |level| level.syms.as_slice());
 
     if syms_ref.is_empty() {
         return false;
@@ -2022,43 +1975,41 @@ fn update_pending_action_fields(info: &mut XkbKeymapInfo<'_>, act: &mut XkbActio
 fn update_derived_keymap_fields(info: &mut XkbKeymapInfo<'_>) -> bool {
     let keymap: &mut XkbKeymap = &mut *info.keymap;
     keymap.key_names = Vec::new();
-    compute_max_num_groups(keymap);
-    let pending_computations: bool = !info.pending_computations.is_empty();
-    if pending_computations {
-        update_group_lookup_entries(info);
-        if update_pending_sym_interpret_actions(info).is_err() {
-            return false;
-        }
-    }
-    apply_interps_and_check_actions(info);
-    update_mod_mappings(info);
-    compute_type_entry_masks(info);
-    if update_key_action_fields(info, pending_computations).is_err() {
-        return false;
-    }
-    compute_led_effective_masks(info);
-    if pending_computations && resolve_pending_led_groups(info).is_err() {
-        return false;
-    }
-    true
-}
-
-fn compute_max_num_groups(keymap: &mut XkbKeymap) {
     let start_idx = if keymap.num_keys_low == 0 {
-        0_u32
+        0
     } else {
         keymap.min_key_code
     };
     keymap.num_groups = keymap.keys[start_idx as usize..keymap.num_keys as usize]
         .iter()
         .fold(keymap.num_groups, |max, key| max.max(key.num_groups));
-}
-
-fn update_group_lookup_entries(info: &mut XkbKeymapInfo<'_>) {
-    let num_groups = info.keymap.num_groups.max(1);
-    info.lookup.group_index_names[1] = lookup_entry(GROUP_LAST_INDEX_NAME, num_groups);
-    info.lookup.group_mask_names[3] =
-        lookup_entry(GROUP_LAST_INDEX_NAME, 1 << num_groups.wrapping_sub(1));
+    let pending_computations: bool = !info.pending_computations.is_empty();
+    if pending_computations {
+        let num_groups = info.keymap.num_groups.max(1);
+        info.lookup.group_index_names[1] = lookup_entry(GROUP_LAST_INDEX_NAME, num_groups);
+        info.lookup.group_mask_names[3] =
+            lookup_entry(GROUP_LAST_INDEX_NAME, 1 << num_groups.wrapping_sub(1));
+        if update_pending_sym_interpret_actions(info).is_err() {
+            return false;
+        }
+    }
+    let interp_index = build_interp_index(&info.sym_interprets);
+    for ki in 0..info.keymap.num_keys as usize {
+        apply_interps_to_key(info.keymap, &info.sym_interprets, ki, &interp_index);
+        check_multiple_actions_categories(info.keymap, ki);
+    }
+    update_mod_mappings(info);
+    compute_type_entry_masks(info);
+    if update_key_action_fields(info, pending_computations).is_err() {
+        return false;
+    }
+    for led in &mut info.keymap.leds[..info.keymap.num_leds as usize] {
+        compute_effective_mask_with(&info.keymap.mods, &mut led.mods);
+    }
+    if pending_computations && resolve_pending_led_groups(info).is_err() {
+        return false;
+    }
+    true
 }
 
 fn update_pending_sym_interpret_actions(info: &mut XkbKeymapInfo<'_>) -> Result<(), ()> {
@@ -2072,15 +2023,6 @@ fn update_pending_sym_interpret_actions(info: &mut XkbKeymapInfo<'_>) -> Result<
         }
     }
     Ok(())
-}
-
-fn apply_interps_and_check_actions(info: &mut XkbKeymapInfo<'_>) {
-    let keymap = &mut *info.keymap;
-    let interp_index = build_interp_index(&info.sym_interprets);
-    for ki in 0..keymap.num_keys as usize {
-        apply_interps_to_key(keymap, &info.sym_interprets, ki, &interp_index);
-        check_multiple_actions_categories(keymap, ki);
-    }
 }
 
 fn update_mod_mappings(info: &mut XkbKeymapInfo<'_>) {
@@ -2175,12 +2117,6 @@ fn update_key_action_fields(
     Ok(())
 }
 
-fn compute_led_effective_masks(info: &mut XkbKeymapInfo<'_>) {
-    for led in &mut info.keymap.leds[..info.keymap.num_leds as usize] {
-        compute_effective_mask_with(&info.keymap.mods, &mut led.mods);
-    }
-}
-
 fn resolve_pending_led_groups(info: &mut XkbKeymapInfo<'_>) -> Result<(), ()> {
     for led_idx in 0..info.keymap.num_leds {
         if info.keymap.leds[led_idx as usize].pending_groups {
@@ -2241,9 +2177,9 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
             max_groups: XKB_MAX_GROUPS,
             max_overlays: XKB_OVERLAY_MAX,
             controls_name_offset: (if km_format == XKB_KEYMAP_FORMAT_TEXT_V1 {
-                CONTROL_NAMES_MIN_V1_INDEX as u8
+                7
             } else {
-                CONTROL_NAMES_MIN_V2_INDEX as u8
+                0
             }),
             group_lock_on_release: km_format >= XKB_KEYMAP_FORMAT_TEXT_V2,
             mods_unlock_on_press: km_format >= XKB_KEYMAP_FORMAT_TEXT_V2,
@@ -2309,7 +2245,7 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
     }
     ok_0
 }
-/// Index-based sval for scanner input. Used in Lvalue/rule to avoid
+/// Index-based sval for scanner input. Used in rules to avoid
 /// lifetime issues across include boundaries. Reconstruct sval via as_sval().
 #[derive(Copy, Clone, Default)]
 pub(crate) struct SvalIdx {
@@ -2337,7 +2273,7 @@ impl SvalIdx {
 pub(crate) struct Matcher<'a> {
     pub(crate) ctx: &'a mut XkbContext,
     pub(crate) rmlvo: RuleNames<'a>,
-    pub(crate) val: Lvalue,
+    pub(crate) val: SvalIdx,
     pub(crate) groups: Vec<Group>,
     pub(crate) mapping: Mapping,
     pub(crate) rule: Rule,
@@ -2404,10 +2340,6 @@ pub(crate) struct Group {
     pub(crate) name: Vec<u8>,
     pub(crate) elements: Vec<Vec<u8>>,
 }
-#[derive(Copy, Clone, Default)]
-pub(crate) struct Lvalue {
-    pub(crate) string: SvalIdx,
-}
 #[derive(Clone, Default)]
 pub(crate) struct RuleNames<'a> {
     pub(crate) model: MatchedSval<'a>,
@@ -2443,7 +2375,7 @@ impl<'a> Matcher<'a> {
         Matcher {
             ctx,
             rmlvo: RuleNames::default(),
-            val: Lvalue::default(),
+            val: SvalIdx::default(),
             groups: Vec::new(),
             mapping: Mapping::default(),
             rule: Rule::default(),
@@ -2459,7 +2391,7 @@ pub(crate) const MAX_INCLUDE_DEPTH: i32 = 5_i32;
 fn is_ident(ch: u8) -> bool {
     ch.is_ascii_graphic() && ch != b'\\'
 }
-fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
+fn lex(s: &mut Scanner, val: &mut SvalIdx) -> u32 {
     loop {
         while s.chr(b' ') as i32 != 0 || s.chr(b'\t') as i32 != 0 || s.chr(b'\r') as i32 != 0 {}
         if s.str_match(b"//") {
@@ -2503,15 +2435,15 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         return TOK_WILD_CARD_ANY;
     }
     if s.chr(b'$') {
-        val.string = SvalIdx {
+        *val = SvalIdx {
             start: s.pos,
             end: s.pos,
         };
         while is_ident(s.peek()) {
             s.next_byte();
-            val.string.end += 1;
+            val.end += 1;
         }
-        if val.string.len() == 0 {
+        if val.len() == 0 {
             return TOK_ERROR;
         }
         return TOK_GROUP_NAME;
@@ -2520,13 +2452,13 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         return TOK_INCLUDE;
     }
     if is_ident(s.peek()) {
-        val.string = SvalIdx {
+        *val = SvalIdx {
             start: s.pos,
             end: s.pos,
         };
         while is_ident(s.peek()) {
             s.next_byte();
-            val.string.end += 1;
+            val.end += 1;
         }
         return TOK_IDENTIFIER;
     }
@@ -3282,7 +3214,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
         match gettok(m, s) {
             TOK_GROUP_NAME => {
                 m.groups.push(Group {
-                    name: m.val.string.as_sval(s.s).data.to_vec(),
+                    name: m.val.as_sval(s.s).data.to_vec(),
                     elements: Vec::new(),
                 });
                 if gettok(m, s) != TOK_EQUALS {
@@ -3295,7 +3227,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                             .last_mut()
                             .unwrap()
                             .elements
-                            .push(m.val.string.as_sval(s.s).data.to_vec()),
+                            .push(m.val.as_sval(s.s).data.to_vec()),
                         TOK_END_OF_LINE => break,
                         _ => return false,
                     }
@@ -3305,18 +3237,18 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                 if gettok(m, s) != TOK_IDENTIFIER {
                     return false;
                 }
-                matcher_include(m, include_depth, m.val.string.as_sval(s.s));
+                matcher_include(m, include_depth, m.val.as_sval(s.s));
                 if gettok(m, s) != TOK_END_OF_LINE {
                     return false;
                 }
             }
             TOK_IDENTIFIER => {
                 matcher_mapping_start_new(m);
-                matcher_mapping_set_mlvo(m, m.val.string.as_sval(s.s));
+                matcher_mapping_set_mlvo(m, m.val.as_sval(s.s));
                 loop {
                     match gettok(m, s) {
                         TOK_IDENTIFIER if m.mapping.active_or_candidates_mask != 0 => {
-                            matcher_mapping_set_mlvo(m, m.val.string.as_sval(s.s))
+                            matcher_mapping_set_mlvo(m, m.val.as_sval(s.s))
                         }
                         TOK_IDENTIFIER => {}
                         TOK_EQUALS => break,
@@ -3326,7 +3258,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                 loop {
                     match gettok(m, s) {
                         TOK_IDENTIFIER if m.mapping.active_or_candidates_mask != 0 => {
-                            matcher_mapping_set_kccgst(m, m.val.string.as_sval(s.s))
+                            matcher_mapping_set_kccgst(m, m.val.as_sval(s.s))
                         }
                         TOK_IDENTIFIER => {}
                         TOK_END_OF_LINE => break,
@@ -3358,18 +3290,14 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                     loop {
                         match tok {
                             TOK_IDENTIFIER if !m.rule.skip => {
-                                if m.val.string.as_sval(s.s).data == b"+" {
+                                if m.val.as_sval(s.s).data == b"+" {
                                     matcher_rule_set_mlvo_common(
                                         m,
                                         SvalIdx::EMPTY,
                                         MLVO_MATCH_WILDCARD_SOME,
                                     );
                                 } else {
-                                    matcher_rule_set_mlvo_common(
-                                        m,
-                                        m.val.string,
-                                        MLVO_MATCH_NORMAL,
-                                    );
+                                    matcher_rule_set_mlvo_common(m, m.val, MLVO_MATCH_NORMAL);
                                 }
                             }
                             TOK_WILD_CARD_STAR..=TOK_WILD_CARD_ANY if !m.rule.skip => {
@@ -3386,7 +3314,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                                 );
                             }
                             TOK_GROUP_NAME if !m.rule.skip => {
-                                matcher_rule_set_mlvo_common(m, m.val.string, MLVO_MATCH_GROUP)
+                                matcher_rule_set_mlvo_common(m, m.val, MLVO_MATCH_GROUP)
                             }
                             TOK_IDENTIFIER
                             | TOK_WILD_CARD_STAR..=TOK_WILD_CARD_ANY
@@ -3398,9 +3326,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                     }
                     loop {
                         match gettok(m, s) {
-                            TOK_IDENTIFIER if !m.rule.skip => {
-                                matcher_rule_set_kccgst(m, m.val.string)
-                            }
+                            TOK_IDENTIFIER if !m.rule.skip => matcher_rule_set_kccgst(m, m.val),
                             TOK_IDENTIFIER => {}
                             TOK_END_OF_LINE => break,
                             _ => return false,
@@ -3540,46 +3466,13 @@ pub(crate) struct XkbRuleNames {
     pub(crate) options: String,
 }
 
-impl XkbRuleNames {
-    pub(crate) fn from_strs(
-        rules: &str,
-        model: &str,
-        layout: &str,
-        variant: &str,
-        options: &str,
-    ) -> Self {
-        Self {
-            rules: rules.to_string(),
-            model: model.to_string(),
-            layout: layout.to_string(),
-            variant: variant.to_string(),
-            options: options.to_string(),
-        }
-    }
-}
-
-// ── Opaque types ────────────────────────────────────────────────────
-
-/// Atom table — thin wrapper around `lasso::Rodeo` for string interning.
-/// Atoms are `u32` keys where `0` is reserved as `XKB_ATOM_NONE`.
-#[derive(Clone, Default)]
-pub(crate) struct AtomTable {
-    inner: lasso::Rodeo,
-}
-
-impl std::fmt::Debug for AtomTable {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("AtomTable").finish()
-    }
-}
-
 // ── XkbContext ─────────────────────────────────────────────────────
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub(crate) struct XkbContext {
     pub(crate) includes: Vec<String>,
     pub(crate) failed_includes: Vec<String>,
-    pub(crate) atom_table: AtomTable,
+    pub(crate) atom_table: lasso::Rodeo,
     pub(crate) use_environment_names: bool,
     pub(crate) pending_default_includes: bool,
 }
@@ -3590,20 +3483,12 @@ impl XkbContext {
             return "";
         }
         let key = lasso::Key::try_from_usize((atom - 1) as usize).expect("invalid atom key");
-        self.atom_table.inner.try_resolve(&key).unwrap_or("")
-    }
-
-    pub(crate) fn atom_lookup(&self, bytes: &[u8]) -> u32 {
-        std::str::from_utf8(bytes)
-            .ok()
-            .and_then(|text| self.atom_table.inner.get(text))
-            .map(|key| key.into_usize() as u32 + 1)
-            .unwrap_or(XKB_ATOM_NONE)
+        self.atom_table.try_resolve(&key).unwrap_or("")
     }
 
     pub(crate) fn atom_intern(&mut self, bytes: &[u8]) -> u32 {
         let text = std::str::from_utf8(bytes).expect("atom string is not valid UTF-8");
-        self.atom_table.inner.get_or_intern(text).into_usize() as u32 + 1
+        self.atom_table.get_or_intern(text).into_usize() as u32 + 1
     }
 }
 
@@ -3655,22 +3540,14 @@ pub(crate) struct XkbKeymap {
 
 impl XkbKeymap {
     pub(crate) fn mod_get_mask(&self, name: &str) -> u32 {
-        let atom = self.ctx.atom_lookup(name.as_bytes());
+        let Some(key) = self.ctx.atom_table.get(name) else {
+            return 0;
+        };
+        let atom = key.into_usize() as u32 + 1;
         xkb_mod_name_to_index(&self.mods, atom, MOD_BOTH)
-            .filter(|&idx| atom != XKB_ATOM_NONE && idx < self.mods.num_mods)
+            .filter(|&idx| idx < self.mods.num_mods)
             .map(|idx| self.mods.mods[idx as usize].mapping)
             .unwrap_or(0)
-    }
-
-    /// Get number of layouts in the keymap
-    pub(crate) fn num_layouts(&self) -> u32 {
-        self.num_groups
-    }
-
-    /// Get layout name by index
-    pub(crate) fn layout_get_name(&self, idx: u32) -> Option<String> {
-        let name = self.ctx.atom_text(*self.group_names.get(idx as usize)?);
-        (!name.is_empty()).then(|| name.to_owned())
     }
 }
 
@@ -3989,20 +3866,8 @@ impl XkbKeymap {
     }
 }
 
-#[inline]
-pub(crate) fn entry_is_active(entry: &XkbKeyTypeEntry) -> bool {
-    entry.mods.mods == 0 || entry.mods.mask != 0
-}
-
 // Error codes (from xkbcommon_errors_h)
 pub(crate) const XKB_KEY_NO_SYMBOL: u32 = 0;
-
-// ── rmlvo_h (RMLVO enum) ─────────────────────────────────────────────
-pub(crate) const RMLVO_OPTIONS: u32 = 16;
-pub(crate) const RMLVO_VARIANT: u32 = 8;
-pub(crate) const RMLVO_LAYOUT: u32 = 4;
-pub(crate) const RMLVO_MODEL: u32 = 2;
-pub(crate) const RMLVO_RULES: u32 = 1;
 
 #[derive(Copy, Clone)]
 pub(crate) struct LookupEntry {
@@ -4134,17 +3999,14 @@ pub(crate) struct KeyAliasDef {
     pub(crate) real: u32,
 }
 
-pub(crate) struct KeyTypeDef {
+pub(crate) struct NamedVarDef {
     pub(crate) merge: MergeMode,
     pub(crate) name: u32,
     pub(crate) body: Vec<VarDef>,
 }
-
-pub(crate) struct SymbolsDef {
-    pub(crate) merge: MergeMode,
-    pub(crate) key_name: u32,
-    pub(crate) symbols: Vec<VarDef>,
-}
+pub(crate) type KeyTypeDef = NamedVarDef;
+pub(crate) type SymbolsDef = NamedVarDef;
+pub(crate) type LedMapDef = NamedVarDef;
 
 pub(crate) struct ModMapDef {
     pub(crate) merge: MergeMode,
@@ -4162,12 +4024,6 @@ pub(crate) struct LedNameDef {
     pub(crate) merge: MergeMode,
     pub(crate) ndx: i64,
     pub(crate) name: Option<ExprKind>,
-}
-
-pub(crate) struct LedMapDef {
-    pub(crate) merge: MergeMode,
-    pub(crate) name: u32,
-    pub(crate) body: Vec<VarDef>,
 }
 
 pub(crate) const MAP_IS_ALTGR: u32 = 128;

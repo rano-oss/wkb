@@ -95,10 +95,9 @@ impl CompiledType {
     fn new(type_: &parser::XkbKeyType) -> Self {
         let states = std::array::from_fn(|state| {
             let level_mods = state as u32 & type_.mods.mask;
-            let entry = type_
-                .entries
-                .iter()
-                .find(|entry| parser::entry_is_active(entry) && entry.mods.mask == level_mods);
+            let entry = type_.entries.iter().find(|entry| {
+                (entry.mods.mods == 0 || entry.mods.mask != 0) && entry.mods.mask == level_mods
+            });
             CompiledTypeState {
                 level: entry.map_or(0, |entry| entry.level),
                 consumed_mods: type_.mods.mask & !entry.map_or(0, |entry| entry.preserve.mask),
@@ -409,18 +408,14 @@ fn key_affected_by_caps(group: &parser::XkbGroup, num_levels: usize) -> bool {
     let Some(&l0_sym) = group.levels.first().and_then(|level| level.syms.first()) else {
         return false;
     };
-    if group.levels.len() < num_levels
+    group.levels.len() < num_levels
         || group
             .levels
             .iter()
             .take(num_levels)
             .skip(1)
             .any(|level| level.syms.first() != Some(&l0_sym))
-    {
-        return true;
-    }
-    // All levels same sym → check caps transformation (upper/lower case)
-    keysym::xkb_keysym_to_upper(l0_sym) != l0_sym
+        || keysym::xkb_keysym_to_upper(l0_sym) != l0_sym
 }
 
 fn lock_activation(
@@ -461,49 +456,24 @@ fn layout_has_level5_activation(
     layout_idx: usize,
     level5_mask: u32,
 ) -> bool {
-    if level5_mask == 0 {
-        return false;
-    }
-    let is_modifier_key = |sym0: u32| -> bool { matches!(sym0, 0xFFE1 | 0xFFE2 | 0xFE03) };
-    for key in &keymap.keys {
-        let Some(group) = key.groups.get(layout_idx) else {
-            continue;
-        };
-        let level0_sym = group
-            .levels
-            .first()
-            .and_then(|level| level.syms.first().copied())
-            .unwrap_or(0);
-        if is_modifier_key(level0_sym)
-            && group
-                .levels
-                .iter()
-                .skip(1)
-                .any(|level| level.syms.iter().any(|&sym| matches!(sym, 0xfe11 | 0xfe12)))
-        {
-            return true;
-        }
-    }
-    false
-}
-
-/// Apply xkbcommon's state-level transformation: on layouts where the
-/// interpret system activates LevelFive + consumes Shift when both
-/// LevelThree and Shift are held (see `layout_has_level5_activation`),
-/// transform the effective modifier mask to match what the state machine
-/// actually produces.
-fn level5_transform_mods(
-    mods_mask: u32,
-    layout_has_level5: bool,
-    level2_mask: u32,
-    level3_mask: u32,
-    level5_mask: u32,
-) -> u32 {
-    if layout_has_level5 && mods_mask & level2_mask != 0 && mods_mask & level3_mask != 0 {
-        (mods_mask | level5_mask) & !level2_mask
-    } else {
-        mods_mask
-    }
+    level5_mask != 0
+        && keymap
+            .keys
+            .iter()
+            .filter_map(|key| key.groups.get(layout_idx))
+            .any(|group| {
+                let sym = group
+                    .levels
+                    .first()
+                    .and_then(|level| level.syms.first())
+                    .copied();
+                matches!(sym, Some(0xFFE1 | 0xFFE2 | 0xFE03))
+                    && group
+                        .levels
+                        .iter()
+                        .skip(1)
+                        .any(|level| level.syms.iter().any(|&sym| matches!(sym, 0xfe11 | 0xfe12)))
+            })
 }
 
 /// Build WKB instance from an XKB keymap, extracting all layouts.
@@ -517,7 +487,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
     } else {
         0
     };
-    let num_layouts = (keymap.num_layouts() as usize).max(1);
+    let num_layouts = (keymap.num_groups as usize).max(1);
 
     // Modifiers are global to the keymap (not per-layout), use layout 0.
     let modifiers = build_modifiers_from_keymap(keymap);
@@ -569,26 +539,25 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
     let num_kc = level_code(&modifiers, ModType::Num).map(|(code, _)| code + EVDEV_OFFSET);
     let caps_active = lock_activation(keymap, &compiled_types, caps_kc, 0xffe5, &level_masks);
     let num_active = lock_activation(keymap, &compiled_types, num_kc, 0xff7f, &level_masks);
-    let layout_states: Vec<(
-        [u32; MAX_LEVELS],
-        [u32; MAX_LEVELS],
-        [u32; MAX_LEVELS],
-        [u32; MAX_LEVELS],
-    )> = per_layout_level5
+    let layout_states: Vec<_> = per_layout_level5
         .iter()
         .map(|&layout_level5| {
             let transform = |mods| {
-                level5_transform_mods(mods, layout_level5, level2_mask, level3_mask, level5_mask)
+                if layout_level5 && mods & level2_mask != 0 && mods & level3_mask != 0 {
+                    (mods | level5_mask) & !level2_mask
+                } else {
+                    mods
+                }
             };
             (
-                std::array::from_fn(|level| transform(level_masks[level])),
-                std::array::from_fn(|level| {
+                std::array::from_fn::<_, MAX_LEVELS, _>(|level| transform(level_masks[level])),
+                std::array::from_fn::<_, MAX_LEVELS, _>(|level| {
                     transform(level_masks[level] | (u32::from(caps_active[level]) * caps_mask))
                 }),
-                std::array::from_fn(|level| {
+                std::array::from_fn::<_, MAX_LEVELS, _>(|level| {
                     transform(level_masks[level] | (u32::from(num_active[level]) * num_mask))
                 }),
-                std::array::from_fn(|level| {
+                std::array::from_fn::<_, MAX_LEVELS, _>(|level| {
                     transform(
                         level_masks[level]
                             | (u32::from(caps_active[level]) * caps_mask)
@@ -602,7 +571,11 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
     let layout_names: Vec<String> = (0..num_layouts)
         .map(|i| {
             keymap
-                .layout_get_name(i as u32)
+                .group_names
+                .get(i)
+                .map(|&name| keymap.ctx.atom_text(name))
+                .filter(|name| !name.is_empty())
+                .map(str::to_owned)
                 .unwrap_or_else(|| format!("Layout {}", i))
         })
         .collect();
@@ -766,7 +739,13 @@ pub(crate) fn new_from_names(
 
     let ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 
-    let rmlvo = XkbRuleNames::from_strs(rules, model, layout, variant, options.unwrap_or(""));
+    let rmlvo = XkbRuleNames {
+        rules: rules.into(),
+        model: model.into(),
+        layout: layout.into(),
+        variant: variant.into(),
+        options: options.unwrap_or("").into(),
+    };
 
     let keymap = xkb_keymap_new_from_names(ctx, &rmlvo, XKB_KEYMAP_COMPILE_NO_FLAGS)
         .ok_or(XkbError::KeymapCompilation)?;
