@@ -3,6 +3,7 @@ use super::keymap::xkb_escape_map_name;
 use super::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use super::keymap::GROUP_LAST_INDEX_NAME;
 use super::keysym::xkb_keysym_from_name;
+use super::parser_tables::*;
 pub(crate) use super::symbols::compile_compat_map;
 pub(crate) use super::symbols::compile_key_types;
 pub(crate) use super::symbols::compile_keycodes;
@@ -60,19 +61,13 @@ pub(crate) const XKB_KEY_0: i32 = 0x30;
 pub(crate) const XKB_KEY_SECTION: i32 = 0xa7_i32;
 pub(crate) const XKB_KEYSYM_MIN: i32 = 0;
 
-// ── YYSYMBOL constants ──────────────────────────────────────────────
-pub(crate) const YYSYMBOL_YYUNDEF: i32 = 2;
+// ── Parser constants ──────────────────────────────────────────────────
 pub(crate) const YYSYMBOL_YYERROR: i32 = 1;
 pub(crate) const YYSYMBOL_YYEOF: i32 = 0;
 pub(crate) const YYSYMBOL_YYEMPTY: i32 = -2;
 
-pub(crate) const YYFINAL: i32 = 16;
-pub(crate) const YYLAST: i32 = 928;
-pub(crate) const YYNTOKENS: i32 = 66;
-pub(crate) const YYMAXUTOK: i32 = 257;
 pub(crate) const YYINITDEPTH: usize = 200;
 pub(crate) const YYMAXDEPTH: usize = 10000;
-pub(crate) const YYPACT_NINF: i32 = -280;
 pub(crate) const YYENOMEM: i32 = -2;
 
 pub(crate) struct ParserParam<'a> {
@@ -82,343 +77,10 @@ pub(crate) struct ParserParam<'a> {
     pub(crate) more_maps: bool,
 }
 
-static YYTRANSLATE: [i8; 258] = [
-    0, 4, 5, 6, 7, 8, 9, 10, 11, 2, 12, 13, 14, 15, 16, 2, 2, 2, 2, 2, 17, 18, 19, 20, 21, 22, 23,
-    24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 2, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
-    47, 48, 49, 50, 51, 2, 2, 2, 2, 52, 53, 54, 55, 56, 57, 2, 2, 2, 2, 58, 59, 60, 61, 62, 63, 64,
-    65, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 1, 2,
-];
-
-fn yysymbol_name(yysymbol: i32) -> &'static str {
-    static YY_SNAME: [&str; 150] = [
-        "end of file",
-        "error",
-        "invalid token",
-        "invalid token",
-        "xkb_keymap",
-        "xkb_keycodes",
-        "xkb_types",
-        "xkb_symbols",
-        "xkb_compatibility",
-        "xkb_geometry",
-        "xkb_semantics",
-        "xkb_layout",
-        "include",
-        "override",
-        "augment",
-        "replace",
-        "alternate",
-        "virtual_modifiers",
-        "type",
-        "interpret",
-        "action",
-        "key",
-        "alias",
-        "group",
-        "modifier_map",
-        "indicator",
-        "shape",
-        "keys",
-        "row",
-        "section",
-        "overlay",
-        "text",
-        "outline",
-        "solid",
-        "logo",
-        "virtual",
-        "=",
-        "+",
-        "-",
-        "/",
-        "*",
-        "{",
-        "}",
-        "(",
-        ")",
-        "[",
-        "]",
-        ".",
-        ",",
-        ";",
-        "!",
-        "~",
-        "string literal",
-        "decimal digit",
-        "integer literal",
-        "float literal",
-        "identifier",
-        "key name",
-        "partial",
-        "default",
-        "hidden",
-        "alphanumeric_keys",
-        "modifier_keys",
-        "keypad_keys",
-        "function_keys",
-        "alternate_group",
-        "$accept",
-        "XkbFile",
-        "XkbCompositeMap",
-        "XkbCompositeType",
-        "XkbMapConfigList",
-        "XkbMapConfig",
-        "FileType",
-        "OptFlags",
-        "Flags",
-        "Flag",
-        "DeclList",
-        "Decl",
-        "VarDecl",
-        "KeyNameDecl",
-        "KeyAliasDecl",
-        "VModDecl",
-        "VModDefList",
-        "VModDef",
-        "InterpretDecl",
-        "InterpretMatch",
-        "VarDeclList",
-        "KeyTypeDecl",
-        "SymbolsDecl",
-        "OptSymbolsBody",
-        "SymbolsBody",
-        "SymbolsVarDecl",
-        "MultiKeySymOrActionList",
-        "NoSymbolOrActionList",
-        "GroupCompatDecl",
-        "ModMapDecl",
-        "KeyOrKeySymList",
-        "KeyOrKeySym",
-        "LedMapDecl",
-        "LedNameDecl",
-        "UnknownDecl",
-        "UnknownCompoundStatementDecl",
-        "ShapeDecl",
-        "SectionDecl",
-        "SectionBody",
-        "SectionBodyItem",
-        "RowBody",
-        "RowBodyItem",
-        "Keys",
-        "Key",
-        "OverlayDecl",
-        "OverlayKeyList",
-        "OverlayKey",
-        "OutlineList",
-        "OutlineInList",
-        "CoordList",
-        "Coord",
-        "DoodadDecl",
-        "DoodadType",
-        "FieldSpec",
-        "Element",
-        "OptMergeMode",
-        "MergeMode",
-        "ExprList",
-        "Expr",
-        "Term",
-        "MultiActionList",
-        "ActionList",
-        "NonEmptyActions",
-        "Actions",
-        "Action",
-        "Lhs",
-        "OptTerminal",
-        "Terminal",
-        "MultiKeySymList",
-        "KeySymList",
-        "NonEmptyKeySyms",
-        "KeySyms",
-        "KeySym",
-        "KeySymLit",
-        "SignedNumber",
-        "Number",
-        "Float",
-        "Integer",
-        "KeyCode",
-        "Ident",
-        "String",
-        "OptMapName",
-        "MapName",
-        "",
-    ];
-    YY_SNAME[yysymbol as usize]
+fn yysymbol_name(symbol: i32) -> &'static str {
+    symbol_name(symbol)
 }
 
-static YYPACT: [i16; 384] = [
-    7, -280, -280, -280, -280, -280, -280, -280, -280, -280, 32, -280, -280, 578, 847, -280, -280,
-    -280, -280, -280, -280, -280, -280, -280, -280, -12, -12, -280, -280, 22, -280, 36, -280, -280,
-    463, 10, 53, -280, 458, -280, -280, -280, -280, -280, 57, -280, 25, 34, -280, -280, 64, 59,
-    172, -280, 40, 61, 135, 64, 154, 59, -280, 59, 78, -280, -280, -280, 114, 64, 324, 120, -280,
-    -280, -280, -280, -280, -280, -280, -280, -280, -280, -280, -280, -280, -280, -280, -280, -280,
-    59, -18, -280, 134, 143, -280, -280, -30, -280, 175, -280, 179, -280, -280, -280, -280, -280,
-    182, 190, -280, 197, 213, -280, -280, 248, 222, 263, 234, 237, 261, 135, 258, -280, -280, 276,
-    293, -280, -280, -280, 142, 289, 332, 869, 332, -280, 64, -280, 332, -280, -280, 332, 597, 269,
-    332, 60, 332, -280, 35, 461, 296, -280, -280, 332, -280, -280, 287, -280, -280, -280, -280,
-    -280, -280, -280, -280, -280, -280, 332, 332, 825, 332, 332, 332, -6, 228, -280, -280, -280,
-    301, -280, -280, 294, 103, -280, 433, 639, 654, 433, 478, 64, 306, 311, -280, -280, 318, -27,
-    313, 233, -280, 13, -280, -280, 285, 696, 319, 96, 37, -280, 45, -280, 330, 59, 326, 59, -280,
-    -280, 419, -280, -280, -280, 332, 711, 372, -280, 753, -280, -280, -280, -280, 325, 48, -280,
-    418, -280, -280, 332, 332, 332, 332, 332, -280, 332, 332, -280, 322, -280, 323, 331, 520, -280,
-    337, 130, 133, -280, -280, 170, -280, -280, -280, 341, 597, 290, -280, -280, 343, 60, -280,
-    344, 56, 189, -280, -280, -280, 346, -280, 355, -25, 358, 319, 377, 773, 375, 364, -280, 386,
-    368, -280, 370, 332, -280, 869, -280, -38, 433, 253, 253, -280, -280, 433, 266, -280, -280,
-    -280, -280, 67, -280, -280, 540, -280, 845, -280, 161, -280, -280, -280, 433, -280, -280, -280,
-    -280, -280, 96, -280, -280, -280, -280, 796, 433, 381, -280, 227, -280, 384, -280, -280, -280,
-    -280, 30, -280, -280, 332, -280, -280, 208, 582, 239, 242, -280, -280, 180, -280, -280, -280,
-    400, 89, -24, 405, -280, 423, 112, -280, -280, 433, -280, -280, -280, -280, -280, -280, -280,
-    -280, 332, -280, 113, -280, -280, 403, 425, 384, 117, 427, -24, -280, -280, -280, -280, -280,
-    -280,
-];
-static YYDEFACT: [u8; 384] = [
-    18, 4, 21, 22, 23, 24, 25, 26, 27, 28, 0, 2, 3, 0, 17, 20, 1, 6, 12, 13, 15, 14, 16, 7, 8, 218,
-    218, 19, 219, 0, 217, 0, 10, 31, 18, 142, 0, 9, 0, 143, 145, 144, 146, 147, 0, 29, 0, 141, 5,
-    11, 0, 132, 131, 130, 133, 0, 134, 135, 136, 137, 138, 139, 140, 125, 126, 127, 0, 0, 214, 0,
-    215, 32, 34, 35, 30, 33, 36, 37, 39, 38, 40, 41, 45, 46, 42, 43, 44, 0, 176, 129, 0, 128, 47,
-    214, 0, 55, 56, 216, 0, 201, 199, 202, 203, 200, 0, 60, 198, 0, 0, 211, 210, 0, 0, 0, 0, 0, 0,
-    0, 0, 209, 185, 0, 180, 184, 183, 182, 0, 0, 0, 0, 0, 49, 0, 53, 0, 62, 62, 0, 66, 0, 0, 0, 0,
-    62, 0, 0, 0, 50, 62, 0, 213, 212, 0, 62, 132, 131, 133, 134, 135, 136, 137, 139, 140, 0, 0, 0,
-    0, 0, 0, 176, 0, 156, 173, 163, 161, 164, 128, 177, 0, 54, 57, 0, 0, 59, 81, 0, 0, 65, 68, 73,
-    0, 128, 0, 0, 86, 0, 85, 87, 0, 0, 0, 0, 0, 116, 0, 121, 0, 136, 138, 0, 99, 101, 0, 97, 102,
-    100, 0, 0, 0, 51, 0, 158, 161, 157, 174, 0, 0, 171, 0, 159, 160, 150, 0, 0, 0, 0, 178, 0, 0,
-    48, 0, 61, 0, 201, 0, 195, 200, 0, 0, 169, 168, 0, 189, 188, 72, 0, 0, 0, 52, 82, 0, 0, 89, 0,
-    0, 0, 207, 208, 206, 0, 205, 0, 0, 0, 0, 0, 0, 0, 0, 96, 0, 0, 91, 0, 150, 172, 0, 165, 0, 149,
-    152, 153, 151, 154, 155, 0, 63, 58, 80, 193, 0, 192, 78, 0, 76, 0, 74, 0, 64, 67, 70, 69, 83,
-    84, 88, 117, 204, 0, 93, 115, 94, 120, 0, 119, 0, 106, 0, 104, 0, 95, 90, 92, 123, 0, 170, 162,
-    0, 179, 194, 0, 0, 0, 0, 167, 166, 0, 196, 187, 186, 0, 0, 0, 0, 103, 0, 0, 113, 175, 148, 191,
-    190, 79, 77, 75, 197, 122, 118, 150, 109, 0, 108, 98, 0, 0, 0, 0, 0, 0, 114, 111, 112, 110,
-    105, 107,
-];
-static YYPGOTO: [i16; 83] = [
-    -280, -280, -280, -280, -280, 434, -280, 443, -280, 469, -280, -280, -45, -280, -280, -280,
-    -280, 356, -280, -280, 51, -280, -280, -280, -280, 244, 251, -280, -280, -280, -280, 249, 466,
-    -280, -280, -280, -280, -280, -280, 302, -280, 187, -280, 138, -280, -280, 144, -280, 257,
-    -196, 259, 470, -280, -46, -280, -280, -280, -279, 63, 5, 232, -280, -176, 231, -181, -35,
-    -280, 474, 247, -280, 240, -280, 500, -182, 236, 291, -280, -44, -280, -37, -23, 528, -280,
-];
-static YYDEFGOTO: [i16; 83] = [
-    0, 10, 11, 25, 34, 12, 26, 13, 14, 15, 35, 45, 241, 72, 73, 74, 94, 95, 75, 104, 181, 76, 77,
-    186, 187, 188, 189, 247, 78, 79, 195, 196, 211, 81, 82, 83, 84, 85, 212, 213, 326, 327, 369,
-    370, 214, 355, 356, 202, 203, 204, 205, 215, 87, 169, 89, 46, 47, 288, 289, 171, 248, 226, 172,
-    173, 227, 174, 121, 175, 251, 300, 252, 347, 197, 106, 269, 270, 123, 124, 152, 176, 125, 29,
-    30,
-];
-static YYTABLE: [i16; 929] = [
-    88, 71, 253, 250, 264, 333, 335, 1, 249, 91, 336, 90, 111, 96, 113, -71, 200, 367, 132, 133,
-    112, -71, 39, 40, 41, 42, 43, 128, 98, 129, 118, 93, 16, 368, 70, 114, 115, 231, 116, 128, 28,
-    129, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 44, 60, 61, 260, 62, 63, 64, 65, 66, 261, 301, 32,
-    127, 2, 3, 4, 5, 6, 7, 8, 9, 146, 357, 67, 200, 33, 336, 271, 201, 68, 69, 177, 70, 272, 92,
-    273, 375, 99, 285, 93, 88, 274, 70, 96, 286, 107, 315, 88, 210, 191, 48, 190, 274, 334, 49,
-    206, 91, 338, 90, 97, 100, 101, 102, 339, 103, 194, 108, 225, 93, 253, 250, 70, 344, 348, 350,
-    249, 222, 222, -124, 366, 222, 222, 265, 88, 88, 274, 225, 117, 232, 233, 234, 235, 91, 91, 90,
-    90, 254, 266, 267, 268, 239, 88, 373, 376, 126, 360, 301, 381, 374, 377, 91, 301, 90, 336, 88,
-    210, 221, 223, 130, 88, 229, 230, 88, 91, 302, 90, 303, 304, 91, 305, 90, 91, 114, 90, 277,
-    182, 109, 110, 99, 170, 131, 178, 199, 150, 151, 180, 225, 217, 183, 99, 345, 193, 220, 198,
-    97, 109, 110, 99, 88, 134, 218, 245, 101, 102, 306, 103, 307, 191, 135, 190, 364, 136, 100,
-    101, 102, 137, 103, 228, 88, 325, 299, 101, 102, 206, 103, 99, 138, 91, 225, 90, 266, 267, 268,
-    154, 155, 53, 156, 139, 157, 158, 159, 160, 324, 60, 161, 225, 162, 225, 359, 101, 102, 141,
-    103, 232, 233, 234, 235, 352, 232, 233, 234, 235, 236, 143, 225, 67, 144, 280, 88, 325, 259,
-    93, 140, 362, 70, 305, 363, 91, 307, 90, 234, 235, 225, 290, 291, 292, 293, 142, 294, 295, 145,
-    232, 233, 234, 235, 147, 154, 155, 53, 156, 337, 157, 158, 159, 160, 148, 60, 161, 311, 162,
-    232, 233, 234, 235, 192, 163, 164, 149, 153, 165, 216, 166, 262, 184, 219, 237, 323, 238, 167,
-    168, 97, 109, 110, 119, 93, 120, 255, 70, 154, 155, 53, 156, 257, 157, 158, 159, 160, 256, 60,
-    161, 258, 162, 201, -181, 275, 276, 284, 163, 164, 296, 297, 165, -139, 166, 97, 109, 110, 119,
-    -214, 120, 167, 168, 97, 109, 110, 119, 93, 120, 308, 70, 312, 314, 317, 154, 155, 53, 156,
-    358, 157, 158, 159, 160, 318, 60, 161, 320, 162, 232, 233, 234, 235, 329, 163, 164, 328, 331,
-    322, 332, 166, 282, 351, 232, 233, 234, 235, 167, 168, 97, 109, 110, 119, 93, 120, 330, 70,
-    154, 155, 53, 156, 354, 157, 158, 207, 160, 365, 208, 161, 209, 62, 63, 64, 65, 371, 232, 233,
-    234, 235, 372, 378, 278, 287, 18, 19, 20, 21, 22, 37, 67, 232, 233, 234, 235, 379, 93, 382, 38,
-    70, 154, 155, 53, 156, 27, 157, 158, 207, 160, 179, 208, 161, 209, 62, 63, 64, 65, 154, 155,
-    53, 156, 309, 157, 158, 159, 160, 36, 60, 243, 310, 162, 313, 67, 80, 353, 279, 383, 86, 93,
-    380, 244, 70, 2, 3, 4, 5, 6, 7, 8, 9, 319, 245, 101, 102, 321, 246, 341, 343, 70, 154, 155, 53,
-    156, 122, 157, 158, 159, 160, 346, 60, 243, 342, 162, 105, 349, 31, 0, 316, 0, 154, 155, 53,
-    156, 298, 157, 158, 159, 160, 0, 60, 243, 0, 162, 299, 101, 102, 0, 246, 0, 0, 70, 0, 340, 17,
-    18, 19, 20, 21, 22, 23, 24, 0, 0, 245, 101, 102, 0, 246, 0, 0, 70, 154, 155, 53, 156, 0, 157,
-    158, 159, 160, 0, 60, 243, 0, 162, 0, 154, 155, 53, 156, 0, 157, 158, 159, 160, 361, 60, 161,
-    0, 162, 0, 0, 0, 0, 0, 299, 101, 102, 0, 246, 0, 0, 70, 184, 0, 0, 0, 0, 185, 0, 0, 0, 0, 0,
-    93, 0, 0, 70, 154, 155, 53, 156, 0, 157, 158, 159, 160, 0, 60, 161, 0, 162, 0, 154, 155, 53,
-    156, 0, 157, 158, 159, 160, 240, 60, 161, 0, 162, 0, 0, 0, 67, 0, 0, 0, 0, 0, 93, 242, 0, 70,
-    0, 0, 0, 0, 0, 67, 0, 0, 0, 0, 0, 93, 0, 0, 70, 154, 155, 53, 156, 0, 157, 158, 159, 160, 0,
-    60, 161, 0, 162, 0, 154, 155, 53, 156, 0, 157, 158, 159, 160, 263, 60, 161, 0, 162, 0, 0, 0,
-    67, 0, 0, 0, 0, 0, 93, 281, 0, 70, 0, 0, 0, 0, 0, 67, 0, 0, 0, 0, 0, 93, 0, 0, 70, 154, 155,
-    53, 156, 0, 157, 158, 159, 160, 0, 60, 161, 0, 162, 0, 0, 0, 0, 0, 0, 154, 155, 53, 156, 283,
-    157, 158, 159, 160, 324, 60, 161, 67, 162, 0, 0, 0, 0, 93, 0, 0, 70, 0, 154, 155, 53, 156, 0,
-    157, 158, 159, 160, 67, 60, 161, 0, 162, 0, 93, 0, 0, 70, 0, 0, 0, 0, 0, 224, 0, 0, 201, 0,
-    154, 155, 53, 156, 0, 157, 158, 159, 160, 93, 60, 161, 70, 162, 0, 0, 0, 0, 0, 0, 154, 155, 53,
-    156, 224, 157, 158, 159, 160, 0, 60, 161, 0, 162, 0, 0, 0, 0, 93, 0, 0, 70, 0, 165, 154, 155,
-    53, 156, 0, 157, 158, 159, 160, 0, 60, 161, 0, 162, 93, 0, 0, 70, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 93, 0, 0, 70,
-];
-static YYCHECK: [i16; 929] = [
-    46, 46, 184, 184, 200, 284, 44, 0, 184, 46, 48, 46, 56, 50, 58, 42, 41, 41, 48, 49, 57, 48, 12,
-    13, 14, 15, 16, 45, 51, 47, 67, 56, 0, 57, 59, 58, 59, 43, 61, 45, 52, 47, 17, 18, 19, 20, 21,
-    22, 23, 24, 25, 26, 42, 28, 29, 42, 31, 32, 33, 34, 35, 48, 244, 41, 87, 58, 59, 60, 61, 62,
-    63, 64, 65, 117, 44, 50, 41, 41, 48, 42, 45, 56, 57, 129, 59, 48, 52, 42, 367, 29, 42, 56, 138,
-    48, 59, 132, 48, 57, 42, 145, 145, 138, 49, 138, 48, 286, 49, 144, 145, 42, 145, 52, 52, 53,
-    54, 48, 56, 57, 57, 165, 56, 303, 303, 59, 305, 307, 322, 303, 163, 164, 52, 42, 167, 168, 38,
-    181, 182, 48, 184, 25, 37, 38, 39, 40, 181, 182, 181, 182, 185, 53, 54, 55, 49, 199, 42, 42,
-    36, 339, 340, 42, 48, 48, 199, 345, 199, 48, 212, 212, 163, 164, 36, 217, 167, 168, 220, 212,
-    46, 212, 48, 46, 217, 48, 217, 220, 207, 220, 209, 136, 53, 54, 29, 128, 49, 130, 143, 53, 54,
-    134, 244, 148, 137, 29, 41, 140, 153, 142, 52, 53, 54, 29, 256, 36, 149, 52, 53, 54, 46, 56,
-    48, 256, 41, 256, 42, 41, 52, 53, 54, 37, 56, 166, 276, 276, 52, 53, 54, 272, 56, 29, 41, 276,
-    286, 276, 53, 54, 55, 18, 19, 20, 21, 36, 23, 24, 25, 26, 27, 28, 29, 303, 31, 305, 52, 53, 54,
-    41, 56, 37, 38, 39, 40, 42, 37, 38, 39, 40, 46, 41, 322, 50, 41, 216, 326, 326, 49, 56, 36, 46,
-    59, 48, 46, 326, 48, 326, 39, 40, 340, 232, 233, 234, 235, 36, 237, 238, 41, 37, 38, 39, 40,
-    49, 18, 19, 20, 21, 46, 23, 24, 25, 26, 41, 28, 29, 257, 31, 37, 38, 39, 40, 57, 37, 38, 36,
-    41, 41, 36, 43, 49, 45, 49, 36, 275, 45, 50, 51, 52, 53, 54, 55, 56, 57, 42, 59, 18, 19, 20,
-    21, 36, 23, 24, 25, 26, 48, 28, 29, 49, 31, 45, 41, 36, 41, 43, 37, 38, 49, 49, 41, 43, 43, 52,
-    53, 54, 55, 43, 57, 50, 51, 52, 53, 54, 55, 56, 57, 49, 59, 49, 49, 48, 18, 19, 20, 21, 336,
-    23, 24, 25, 26, 49, 28, 29, 49, 31, 37, 38, 39, 40, 49, 37, 38, 41, 49, 41, 49, 43, 49, 41, 37,
-    38, 39, 40, 50, 51, 52, 53, 54, 55, 56, 57, 49, 59, 18, 19, 20, 21, 57, 23, 24, 25, 26, 46, 28,
-    29, 30, 31, 32, 33, 34, 49, 37, 38, 39, 40, 36, 57, 42, 44, 5, 6, 7, 8, 9, 34, 50, 37, 38, 39,
-    40, 49, 56, 49, 34, 59, 18, 19, 20, 21, 14, 23, 24, 25, 26, 132, 28, 29, 30, 31, 32, 33, 34,
-    18, 19, 20, 21, 256, 23, 24, 25, 26, 42, 28, 29, 257, 31, 261, 50, 46, 326, 212, 377, 46, 56,
-    374, 41, 59, 58, 59, 60, 61, 62, 63, 64, 65, 272, 52, 53, 54, 274, 56, 303, 305, 59, 18, 19,
-    20, 21, 68, 23, 24, 25, 26, 307, 28, 29, 303, 31, 52, 317, 26, -1, 265, -1, 18, 19, 20, 21, 42,
-    23, 24, 25, 26, -1, 28, 29, -1, 31, 52, 53, 54, -1, 56, -1, -1, 59, -1, 41, 4, 5, 6, 7, 8, 9,
-    10, 11, -1, -1, 52, 53, 54, -1, 56, -1, -1, 59, 18, 19, 20, 21, -1, 23, 24, 25, 26, -1, 28, 29,
-    -1, 31, -1, 18, 19, 20, 21, -1, 23, 24, 25, 26, 42, 28, 29, -1, 31, -1, -1, -1, -1, -1, 52, 53,
-    54, -1, 56, -1, -1, 59, 45, -1, -1, -1, -1, 50, -1, -1, -1, -1, -1, 56, -1, -1, 59, 18, 19, 20,
-    21, -1, 23, 24, 25, 26, -1, 28, 29, -1, 31, -1, 18, 19, 20, 21, -1, 23, 24, 25, 26, 42, 28, 29,
-    -1, 31, -1, -1, -1, 50, -1, -1, -1, -1, -1, 56, 42, -1, 59, -1, -1, -1, -1, -1, 50, -1, -1, -1,
-    -1, -1, 56, -1, -1, 59, 18, 19, 20, 21, -1, 23, 24, 25, 26, -1, 28, 29, -1, 31, -1, 18, 19, 20,
-    21, -1, 23, 24, 25, 26, 42, 28, 29, -1, 31, -1, -1, -1, 50, -1, -1, -1, -1, -1, 56, 42, -1, 59,
-    -1, -1, -1, -1, -1, 50, -1, -1, -1, -1, -1, 56, -1, -1, 59, 18, 19, 20, 21, -1, 23, 24, 25, 26,
-    -1, 28, 29, -1, 31, -1, -1, -1, -1, -1, -1, 18, 19, 20, 21, 42, 23, 24, 25, 26, 27, 28, 29, 50,
-    31, -1, -1, -1, -1, 56, -1, -1, 59, -1, 18, 19, 20, 21, -1, 23, 24, 25, 26, 50, 28, 29, -1, 31,
-    -1, 56, -1, -1, 59, -1, -1, -1, -1, -1, 42, -1, -1, 45, -1, 18, 19, 20, 21, -1, 23, 24, 25, 26,
-    56, 28, 29, 59, 31, -1, -1, -1, -1, -1, -1, 18, 19, 20, 21, 42, 23, 24, 25, 26, -1, 28, 29, -1,
-    31, -1, -1, -1, -1, 56, -1, -1, 59, -1, 41, 18, 19, 20, 21, -1, 23, 24, 25, 26, -1, 28, 29, -1,
-    31, 56, -1, -1, 59, 58, 59, 60, 61, 62, 63, 64, 65, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, 56, -1, -1, 59,
-];
-static YYR1: [u8; 220] = [
-    0, 66, 67, 67, 67, 68, 69, 69, 69, 70, 70, 71, 72, 72, 72, 72, 72, 73, 73, 74, 74, 75, 75, 75,
-    75, 75, 75, 75, 75, 76, 76, 76, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77,
-    78, 78, 78, 79, 80, 81, 82, 82, 83, 83, 84, 85, 85, 86, 86, 87, 88, 89, 89, 90, 90, 91, 91, 91,
-    91, 91, 92, 92, 92, 92, 92, 93, 93, 93, 94, 95, 96, 96, 97, 97, 98, 99, 99, 100, 101, 102, 102,
-    103, 104, 104, 105, 105, 105, 105, 105, 106, 106, 107, 107, 108, 108, 109, 109, 110, 111, 111,
-    112, 113, 113, 114, 114, 114, 115, 115, 116, 117, 118, 118, 118, 118, 119, 119, 120, 120, 120,
-    120, 120, 120, 120, 120, 120, 120, 120, 121, 121, 122, 122, 122, 122, 122, 123, 123, 123, 124,
-    124, 124, 124, 124, 124, 125, 125, 125, 125, 125, 125, 125, 125, 125, 126, 126, 126, 126, 127,
-    127, 128, 129, 129, 130, 131, 131, 131, 131, 132, 132, 133, 133, 133, 133, 134, 134, 134, 134,
-    135, 135, 135, 135, 136, 136, 137, 137, 138, 138, 139, 139, 139, 139, 140, 140, 141, 141, 141,
-    142, 143, 143, 144, 144, 145, 145, 146, 147, 147, 148,
-];
-static YYR2: [i8; 220] = [
-    0, 2, 1, 1, 1, 7, 1, 1, 1, 2, 0, 7, 1, 1, 1, 1, 1, 1, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 0,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 2, 3, 4, 5, 3, 3, 1, 1, 3, 6, 3, 1, 2, 0, 6,
-    6, 1, 0, 3, 1, 3, 3, 1, 2, 1, 3, 5, 3, 5, 3, 4, 2, 0, 5, 6, 3, 1, 1, 1, 6, 5, 6, 5, 6, 6, 6, 6,
-    2, 1, 5, 1, 1, 1, 1, 2, 1, 5, 1, 3, 1, 1, 3, 6, 3, 1, 3, 3, 1, 3, 5, 3, 3, 1, 5, 6, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 0, 3, 3, 3, 3, 3, 1, 2, 2, 2,
-    2, 1, 4, 1, 1, 3, 3, 3, 1, 1, 3, 1, 3, 1, 2, 4, 1, 3, 4, 6, 1, 0, 1, 1, 1, 1, 3, 3, 1, 1, 3, 3,
-    1, 1, 3, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
-];
 // ── Helper functions ────────────────────────────────────────────────
 
 fn _xkbcommon_error(param: &mut ParserParam, _msg: &str) {
@@ -449,30 +111,22 @@ fn resolve_keysym(name: Sval) -> Option<u32> {
     xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS)
 }
 
-fn yypcontext_expected_tokens(yyssp: &[i16], ssp: usize, yyarg: &mut [i32], yyargn: usize) -> i32 {
+fn yypcontext_expected_tokens(state: &State, yyarg: &mut [i32], yyargn: usize) -> i32 {
     let mut yycount = 0;
-    let yyn = YYPACT[yyssp[ssp] as usize] as i32;
-    if yyn != YYPACT_NINF {
-        let yyxbegin = if yyn < 0 { -yyn } else { 0 };
-        let yychecklim = YYLAST - yyn + 1;
-        let yyxend = if yychecklim < YYNTOKENS {
-            yychecklim
-        } else {
-            YYNTOKENS
-        };
-        let mut yyx = yyxbegin;
-        while yyx < yyxend {
-            if YYCHECK[(yyx + yyn) as usize] as i32 == yyx && yyx != YYSYMBOL_YYERROR {
-                if yyargn == 0 {
-                    yycount += 1;
-                } else if (yycount as usize) == yyargn {
-                    return 0;
-                } else {
-                    yyarg[yycount as usize] = yyx;
-                    yycount += 1;
-                }
+    for transition in state.transitions() {
+        let yyx = transition.symbol().0 as i32;
+        if yyx >= NTOKENS as i32 {
+            break;
+        }
+        if yyx != YYSYMBOL_YYERROR {
+            if yyargn == 0 {
+                yycount += 1;
+            } else if (yycount as usize) == yyargn {
+                return 0;
+            } else {
+                yyarg[yycount as usize] = yyx;
+                yycount += 1;
             }
-            yyx += 1;
         }
     }
     if yyargn > 0 && yycount == 0 {
@@ -481,14 +135,14 @@ fn yypcontext_expected_tokens(yyssp: &[i16], ssp: usize, yyarg: &mut [i32], yyar
     yycount
 }
 
-fn yysyntax_error(yyssp: &[i16], ssp: usize, yytoken: i32) -> String {
+fn yysyntax_error(state: &State, yytoken: i32) -> String {
     let mut yyarg: [i32; 5] = [YYSYMBOL_YYEOF; 5];
     // Count expected tokens
     let mut yycount: i32 = 0;
     if yytoken != YYSYMBOL_YYEMPTY {
         yyarg[0] = yytoken;
         yycount = 1;
-        let n = yypcontext_expected_tokens(yyssp, ssp, &mut yyarg[1..], 4);
+        let n = yypcontext_expected_tokens(state, &mut yyarg[1..], 4);
         if n == YYENOMEM {
             return String::from("syntax error");
         }
@@ -513,14 +167,53 @@ fn yysyntax_error(yyssp: &[i16], ssp: usize, yytoken: i32) -> String {
 
 // ── Main parser function ────────────────────────────────────────────
 
+/// Find the state reached after reducing `rule` from `state`.
+fn goto_target(state: u16, rule: &Rule) -> u16 {
+    match STATES[state as usize].explicit_action(rule.lhs()) {
+        Some(Action::Shift(next)) => next,
+        None => rule.default_state(),
+        Some(action) => unreachable!("invalid goto action: {action:?}"),
+    }
+}
+
+/// Error recovery: try to shift the error token in the current state, otherwise
+/// pop states until we find one that can (which the current grammar never does).
+/// Returns 0 on successful recovery (error token shifted), 1 on failure.
+fn recover<'a>(
+    yyss: &[u16],
+    yyvs: &mut [YYValue<'a>],
+    ssp: &mut usize,
+    sp: &mut usize,
+    yystate: &mut u16,
+    yylval: &mut YYValue<'a>,
+) -> i32 {
+    loop {
+        let state = &STATES[*yystate as usize];
+        if let Some(Action::Shift(next)) = state.explicit_action(SYM_ERROR) {
+            *sp += 1;
+            yyvs[*sp] = std::mem::replace(yylval, YYValue::None);
+            *yystate = next;
+            *ssp += 1;
+            return 0;
+        }
+        if *ssp == 0 {
+            return 1;
+        }
+        yyvs[*sp] = YYValue::None;
+        *sp = sp.saturating_sub(1);
+        *ssp -= 1;
+        *yystate = yyss[*ssp];
+    }
+}
+
 pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
-    let mut yychar: i32;
+    let mut yychar: i32 = YYEMPTY; // lookahead symbol (internal), or YYEMPTY when none
     let mut yylval: YYValue<'a> = YYValue::None;
     let mut _xkbcommon_nerrs: i32 = 0;
-    let mut yystate: i32 = 0;
+    let mut yystate: u16 = 0;
     let mut yyerrstatus: i32 = 0;
 
-    let mut yyss: Vec<i16> = vec![0; YYINITDEPTH];
+    let mut yyss: Vec<u16> = vec![0; YYINITDEPTH];
     let mut yyvs: Vec<YYValue<'a>> = Vec::with_capacity(YYINITDEPTH);
     for _ in 0..YYINITDEPTH {
         yyvs.push(YYValue::None);
@@ -529,302 +222,124 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
     let mut ssp: usize = 0; // state stack pointer
     let mut sp: usize = 0; // value stack pointer
 
-    let mut yyn: i32;
-    let yyresult: i32;
-    let mut yytoken: i32;
-    let mut yyval: YYValue<'a>;
-    let mut yylen: i32;
-
-    yychar = YYEMPTY;
-
     'main_loop: loop {
-        yyss[ssp] = yystate as i16;
+        yyss[ssp] = yystate;
 
         // Check stack overflow
         if ssp >= YYMAXDEPTH - 1 {
             _xkbcommon_error(param, "memory exhausted");
-            yyresult = 2;
-            break 'main_loop;
+            return 2;
         }
 
-        // Accept?
-        if yystate == YYFINAL {
-            yyresult = 0;
-            break 'main_loop;
+        let state = &STATES[yystate as usize];
+        if yychar == YYEMPTY
+            && (state.has_terminal_transitions() || matches!(state.default_action(), Action::Error))
+        {
+            yychar = _xkbcommon_lex(&mut yylval, param.scanner, param.ctx);
         }
 
-        // Try to take a shift
-        yyn = YYPACT[yystate as usize] as i32;
-        if yyn == YYPACT_NINF {
-            // goto yydefault
-        } else {
-            if yychar == YYEMPTY {
-                yychar = _xkbcommon_lex(&mut yylval, param.scanner, param.ctx);
-            }
-            if yychar <= END_OF_FILE {
-                yychar = END_OF_FILE;
-                yytoken = YYSYMBOL_YYEOF;
-            } else if yychar == YYERROR {
-                yychar = YYUNDEF;
-                // goto yyerrlab1
-                yyerrstatus = 3;
-                // Error recovery: pop until we find a state that accepts error token
-                loop {
-                    yyn = YYPACT[yystate as usize] as i32;
-                    if yyn != YYPACT_NINF {
-                        yyn += YYSYMBOL_YYERROR;
-                        if (0..=YYLAST).contains(&yyn)
-                            && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
-                        {
-                            yyn = YYTABLE[yyn as usize] as i32;
-                            if yyn > 0 {
-                                break;
-                            }
-                        }
-                    }
-                    if ssp == 0 {
-                        yyresult = 1;
-                        break 'main_loop;
-                    }
-                    // Drop the value being popped
-                    yyvs[sp] = YYValue::None;
-                    sp = sp.saturating_sub(1);
-                    ssp -= 1;
-                    yystate = yyss[ssp] as i32;
+        // Look up the action for the lookahead symbol in the current state.
+        let action = (yychar >= 0)
+            .then(|| state.explicit_action(Symbol(yychar as u8)))
+            .flatten()
+            .unwrap_or_else(|| state.default_action());
+
+        match action {
+            Action::Accept => return 0,
+            Action::Shift(next) => {
+                if yyerrstatus != 0 {
+                    yyerrstatus -= 1;
                 }
+                yystate = next;
                 sp += 1;
                 yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
-                yystate = yyn;
+                yychar = YYEMPTY;
                 ssp += 1;
-                continue 'main_loop;
-            } else {
-                yytoken = if (0..=YYMAXUTOK).contains(&yychar) {
-                    YYTRANSLATE[yychar as usize] as i32
+            }
+            Action::Reduce(rule_id) => {
+                let rule = &RULES[rule_id as usize];
+                let yylen = rule.rhs_len() as usize;
+                let mut yyval = YYValue::None;
+
+                let reduce_ok = execute_reduction(rule_id as i32, &mut yyvs, sp, &mut yyval, param);
+                if !reduce_ok {
+                    _xkbcommon_nerrs += 1;
+                    sp -= yylen;
+                    ssp -= yylen;
+                    yystate = yyss[ssp];
+
+                    yyerrstatus = 3;
+                    if recover(
+                        &yyss,
+                        &mut yyvs,
+                        &mut ssp,
+                        &mut sp,
+                        &mut yystate,
+                        &mut yylval,
+                    ) == 1
+                    {
+                        return 1;
+                    }
+                    continue 'main_loop;
+                }
+
+                // Rule 3 is YYACCEPT (mid-rule accept).
+                if rule_id == 3 {
+                    return 0;
+                }
+
+                sp -= yylen;
+                ssp -= yylen;
+
+                sp += 1;
+                yyvs[sp] = yyval;
+
+                yystate = goto_target(yyss[ssp], rule);
+                ssp += 1;
+            }
+            Action::Error => {
+                // Syntax error: no matching action and no default reduction.
+                let yytoken = if yychar == YYEMPTY {
+                    YYSYMBOL_YYEMPTY
                 } else {
-                    YYSYMBOL_YYUNDEF
+                    yychar
                 };
-            }
 
-            yyn += yytoken;
-            if !(0..=YYLAST).contains(&yyn) || YYCHECK[yyn as usize] as i32 != yytoken {
-                // goto yydefault (fall through)
-            } else {
-                yyn = YYTABLE[yyn as usize] as i32;
-                if yyn <= 0 {
-                    yyn = -yyn;
-                    // goto yyreduce
-                    yylen = YYR2[yyn as usize] as i32;
-                    yyval = YYValue::None;
+                if yyerrstatus == 0 {
+                    _xkbcommon_nerrs += 1;
+                    let msg = yysyntax_error(state, yytoken);
+                    _xkbcommon_error(param, &msg);
+                }
 
-                    // Execute reduction
-                    let reduce_ok = execute_reduction(yyn, &mut yyvs, sp, &mut yyval, param);
-                    if !reduce_ok {
-                        // YYERROR or YYABORT from reduction
-                        _xkbcommon_nerrs += 1;
-                        sp -= yylen as usize;
-                        ssp -= yylen as usize;
-                        yystate = yyss[ssp] as i32;
-
-                        // Error recovery
-                        yyerrstatus = 3;
-                        loop {
-                            yyn = YYPACT[yystate as usize] as i32;
-                            if yyn != YYPACT_NINF {
-                                yyn += YYSYMBOL_YYERROR;
-                                if (0..=YYLAST).contains(&yyn)
-                                    && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
-                                {
-                                    yyn = YYTABLE[yyn as usize] as i32;
-                                    if yyn > 0 {
-                                        break;
-                                    }
-                                }
-                            }
-                            if ssp == 0 {
-                                yyresult = 1;
-                                break 'main_loop;
-                            }
-                            yyvs[sp] = YYValue::None;
-                            sp = sp.saturating_sub(1);
-                            ssp -= 1;
-                            yystate = yyss[ssp] as i32;
+                if yyerrstatus == 3 {
+                    if yychar <= END_OF_FILE {
+                        if yychar == END_OF_FILE {
+                            return 1;
                         }
-                        sp += 1;
-                        yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
-                        yystate = yyn;
-                        ssp += 1;
-                        continue 'main_loop;
-                    }
-
-                    // Check for rule 3 (YYACCEPT mid-rule)
-                    if yyn == 3 {
-                        yyresult = 0;
-                        break 'main_loop;
-                    }
-
-                    sp -= yylen as usize;
-                    ssp -= yylen as usize;
-
-                    sp += 1;
-                    yyvs[sp] = yyval;
-
-                    let yylhs: i32 = YYR1[yyn as usize] as i32 - YYNTOKENS;
-                    let yyi: i32 = YYPGOTO[yylhs as usize] as i32 + yyss[ssp] as i32;
-                    yystate = if (0..=YYLAST).contains(&yyi)
-                        && YYCHECK[yyi as usize] as i32 == yyss[ssp] as i32
-                    {
-                        YYTABLE[yyi as usize] as i32
                     } else {
-                        YYDEFGOTO[yylhs as usize] as i32
-                    };
-
-                    ssp += 1;
-                    continue 'main_loop;
-                } else {
-                    // Shift
-                    if yyerrstatus != 0 {
-                        yyerrstatus -= 1;
-                    }
-                    yystate = yyn;
-                    sp += 1;
-                    yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
-                    yychar = YYEMPTY;
-                    ssp += 1;
-                    continue 'main_loop;
-                }
-            }
-        }
-
-        // yydefault: use default action
-        yyn = YYDEFACT[yystate as usize] as i32;
-        if yyn == 0 {
-            // Syntax error
-            yytoken = if yychar == YYEMPTY {
-                YYSYMBOL_YYEMPTY
-            } else if (0..=YYMAXUTOK).contains(&yychar) {
-                YYTRANSLATE[yychar as usize] as i32
-            } else {
-                YYSYMBOL_YYUNDEF
-            };
-
-            if yyerrstatus == 0 {
-                _xkbcommon_nerrs += 1;
-                let msg = yysyntax_error(&yyss, ssp, yytoken);
-                _xkbcommon_error(param, &msg);
-            }
-
-            if yyerrstatus == 3 {
-                if yychar <= END_OF_FILE {
-                    if yychar == END_OF_FILE {
-                        yyresult = 1;
-                        break 'main_loop;
-                    }
-                } else {
-                    // Discard lookahead
-                    yylval = YYValue::None;
-                    yychar = YYEMPTY;
-                }
-            }
-
-            // yyerrlab1: error recovery
-            yyerrstatus = 3;
-            loop {
-                yyn = YYPACT[yystate as usize] as i32;
-                if yyn != YYPACT_NINF {
-                    yyn += YYSYMBOL_YYERROR;
-                    if (0..=YYLAST).contains(&yyn)
-                        && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
-                    {
-                        yyn = YYTABLE[yyn as usize] as i32;
-                        if yyn > 0 {
-                            break;
-                        }
+                        // Discard lookahead
+                        yylval = YYValue::None;
+                        yychar = YYEMPTY;
                     }
                 }
-                if ssp == 0 {
-                    yyresult = 1;
-                    break 'main_loop;
+
+                yyerrstatus = 3;
+                if recover(
+                    &yyss,
+                    &mut yyvs,
+                    &mut ssp,
+                    &mut sp,
+                    &mut yystate,
+                    &mut yylval,
+                ) == 1
+                {
+                    return 1;
                 }
-                yyvs[sp] = YYValue::None;
-                sp = sp.saturating_sub(1);
-                ssp -= 1;
-                yystate = yyss[ssp] as i32;
+                continue 'main_loop;
             }
-            sp += 1;
-            yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
-            yystate = yyn;
-            ssp += 1;
-            continue 'main_loop;
         }
-
-        // yyreduce with default action
-        yylen = YYR2[yyn as usize] as i32;
-        yyval = YYValue::None;
-
-        let reduce_ok = execute_reduction(yyn, &mut yyvs, sp, &mut yyval, param);
-        if !reduce_ok {
-            _xkbcommon_nerrs += 1;
-            sp -= yylen as usize;
-            ssp -= yylen as usize;
-            yystate = yyss[ssp] as i32;
-
-            yyerrstatus = 3;
-            loop {
-                yyn = YYPACT[yystate as usize] as i32;
-                if yyn != YYPACT_NINF {
-                    yyn += YYSYMBOL_YYERROR;
-                    if (0..=YYLAST).contains(&yyn)
-                        && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
-                    {
-                        yyn = YYTABLE[yyn as usize] as i32;
-                        if yyn > 0 {
-                            break;
-                        }
-                    }
-                }
-                if ssp == 0 {
-                    yyresult = 1;
-                    break 'main_loop;
-                }
-                yyvs[sp] = YYValue::None;
-                sp = sp.saturating_sub(1);
-                ssp -= 1;
-                yystate = yyss[ssp] as i32;
-            }
-            sp += 1;
-            yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
-            yystate = yyn;
-            ssp += 1;
-            continue 'main_loop;
-        }
-
-        // Rule 3 is YYACCEPT
-        if yyn == 3 {
-            yyresult = 0;
-            break 'main_loop;
-        }
-
-        sp -= yylen as usize;
-        ssp -= yylen as usize;
-
-        sp += 1;
-        yyvs[sp] = yyval;
-
-        let yylhs: i32 = YYR1[yyn as usize] as i32 - YYNTOKENS;
-        let yyi: i32 = YYPGOTO[yylhs as usize] as i32 + yyss[ssp] as i32;
-        yystate = if (0..=YYLAST).contains(&yyi) && YYCHECK[yyi as usize] as i32 == yyss[ssp] as i32
-        {
-            YYTABLE[yyi as usize] as i32
-        } else {
-            YYDEFGOTO[yylhs as usize] as i32
-        };
-
-        ssp += 1;
     }
-
-    yyresult
 }
-
 #[inline(always)]
 fn yy_file_type<'a>(yyval: &mut YYValue<'a>, ft: FileType) {
     *yyval = YYValue::FileType(ft);
@@ -2301,72 +1816,18 @@ impl<'a> Scanner<'a> {
     }
 }
 
-pub(crate) const ALTERNATE_GROUP: i32 = 77;
-pub(crate) const FUNCTION_KEYS: i32 = 76;
-pub(crate) const KEYPAD_KEYS: i32 = 75;
-pub(crate) const MODIFIER_KEYS: i32 = 74;
-pub(crate) const ALPHANUMERIC_KEYS: i32 = 73;
-pub(crate) const HIDDEN: i32 = 72;
-pub(crate) const DEFAULT: i32 = 71;
-pub(crate) const PARTIAL: i32 = 70;
-pub(crate) const KEYNAME: i32 = 65;
-pub(crate) const IDENT: i32 = 64;
-pub(crate) const FLOAT: i32 = 63;
-pub(crate) const INTEGER: i32 = 62;
-pub(crate) const DECIMAL_DIGIT: i32 = 61;
-pub(crate) const STRING: i32 = 60;
-pub(crate) const INVERT: i32 = 55;
-pub(crate) const EXCLAM: i32 = 54;
-pub(crate) const SEMI: i32 = 53;
-pub(crate) const COMMA: i32 = 52;
-pub(crate) const DOT: i32 = 51;
-pub(crate) const CBRACKET: i32 = 50;
-pub(crate) const OBRACKET: i32 = 49;
-pub(crate) const CPAREN: i32 = 48;
-pub(crate) const OPAREN: i32 = 47;
-pub(crate) const CBRACE: i32 = 46;
-pub(crate) const OBRACE: i32 = 45;
-pub(crate) const TIMES: i32 = 44;
-pub(crate) const DIVIDE: i32 = 43;
-pub(crate) const MINUS: i32 = 42;
-pub(crate) const PLUS: i32 = 41;
-pub(crate) const EQUALS: i32 = 40;
-pub(crate) const VIRTUAL: i32 = 38;
-pub(crate) const LOGO: i32 = 37;
-pub(crate) const SOLID: i32 = 36;
-pub(crate) const OUTLINE: i32 = 35;
-pub(crate) const TEXT: i32 = 34;
-pub(crate) const OVERLAY: i32 = 33;
-pub(crate) const SECTION: i32 = 32;
-pub(crate) const ROW: i32 = 31;
-pub(crate) const KEYS: i32 = 30;
-pub(crate) const SHAPE: i32 = 29;
-pub(crate) const INDICATOR: i32 = 28;
-pub(crate) const MODIFIER_MAP: i32 = 27;
-pub(crate) const GROUP: i32 = 26;
-pub(crate) const ALIAS: i32 = 25;
-pub(crate) const KEY: i32 = 24;
-pub(crate) const ACTION_TOK: i32 = 23;
-pub(crate) const INTERPRET: i32 = 22;
-pub(crate) const TYPE: i32 = 21;
-pub(crate) const VIRTUAL_MODS: i32 = 20;
-pub(crate) const ALTERNATE: i32 = 14;
-pub(crate) const REPLACE: i32 = 13;
-pub(crate) const AUGMENT: i32 = 12;
-pub(crate) const OVERRIDE: i32 = 11;
-pub(crate) const INCLUDE: i32 = 10;
-pub(crate) const XKB_LAYOUT: i32 = 8;
-pub(crate) const XKB_SEMANTICS: i32 = 7;
-pub(crate) const XKB_GEOMETRY: i32 = 6;
-pub(crate) const XKB_COMPATMAP: i32 = 5;
-pub(crate) const XKB_SYMBOLS: i32 = 4;
-pub(crate) const XKB_TYPES: i32 = 3;
-pub(crate) const XKB_KEYCODES: i32 = 2;
-pub(crate) const XKB_KEYMAP: i32 = 1;
-pub(crate) const ERROR_TOK: i32 = 255;
-pub(crate) const YYUNDEF: i32 = 257;
-pub(crate) const YYERROR: i32 = 256;
-pub(crate) const END_OF_FILE: i32 = 0;
+macro_rules! tokens { ($($name:ident = $value:literal),* $(,)?) => { $(pub(crate) const $name: i32 = $value;)* }; }
+#[rustfmt::skip]
+tokens! {
+    ALTERNATE_GROUP = 65, FUNCTION_KEYS = 64, KEYPAD_KEYS = 63, MODIFIER_KEYS = 62, ALPHANUMERIC_KEYS = 61, HIDDEN = 60, DEFAULT = 59, PARTIAL = 58,
+    KEYNAME = 57, IDENT = 56, FLOAT = 55, INTEGER = 54, DECIMAL_DIGIT = 53, STRING = 52, INVERT = 51, EXCLAM = 50,
+    SEMI = 49, COMMA = 48, DOT = 47, CBRACKET = 46, OBRACKET = 45, CPAREN = 44, OPAREN = 43, CBRACE = 42,
+    OBRACE = 41, TIMES = 40, DIVIDE = 39, MINUS = 38, PLUS = 37, EQUALS = 36, VIRTUAL = 35, LOGO = 34,
+    SOLID = 33, OUTLINE = 32, TEXT = 31, OVERLAY = 30, SECTION = 29, ROW = 28, KEYS = 27, SHAPE = 26,
+    INDICATOR = 25, MODIFIER_MAP = 24, GROUP = 23, ALIAS = 22, KEY = 21, ACTION_TOK = 20, INTERPRET = 19, TYPE = 18,
+    VIRTUAL_MODS = 17, ALTERNATE = 16, REPLACE = 15, AUGMENT = 14, OVERRIDE = 13, INCLUDE = 12, XKB_LAYOUT = 11, XKB_SEMANTICS = 10,
+    XKB_GEOMETRY = 9, XKB_COMPATMAP = 8, XKB_SYMBOLS = 7, XKB_TYPES = 6, XKB_KEYCODES = 5, XKB_KEYMAP = 4, ERROR_TOK = 3, END_OF_FILE = 0,
+}
 pub(crate) const YYEMPTY: i32 = -2;
 
 /// Native Rust UTF-32 to UTF-8 conversion (replaces C FFI)
@@ -6606,5 +6067,25 @@ pub(crate) fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
     {
         Some(ch) => (ch as u32, len),
         None => (INVALID_UTF8_CODE_POINT, 0),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::xkb_parse_string;
+    use crate::xkb::keymap::xkb_context_new;
+
+    #[test]
+    fn parser_preserves_the_next_map_token() {
+        let input = br#"
+            xkb_symbols "first" {};
+            xkb_symbols "second" {};
+        "#;
+        let mut ctx = xkb_context_new(0);
+
+        let file = xkb_parse_string(&mut ctx, input, "(multi-map test)", "second")
+            .expect("second map should remain parseable");
+
+        assert_eq!(file.name, "second");
     }
 }

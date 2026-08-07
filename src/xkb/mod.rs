@@ -4,6 +4,7 @@
 pub(crate) mod keymap;
 pub(crate) mod keysym;
 pub(crate) mod parser;
+pub(crate) mod parser_tables;
 pub(crate) mod symbols;
 
 use crate::composer::Token;
