@@ -1289,7 +1289,7 @@ fn handle_symbols_file(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, file:
                 Statement::ModMap(mm) => {
                     ok = handle_mod_map_def(ki, info, mm);
                 }
-                Statement::Unknown(_unk) => {
+                Statement::Unknown => {
                     ok = ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {
@@ -2245,7 +2245,7 @@ fn handle_compat_map_file(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo, fil
                 Statement::Interp(ip) => {
                     ok = handle_interp_def(info, ki, ip);
                 }
-                Statement::GroupCompat(_) => {
+                Statement::GroupCompat => {
                     ok = true;
                 }
                 Statement::LedMap(lm) => {
@@ -2257,7 +2257,7 @@ fn handle_compat_map_file(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo, fil
                 Statement::VMod(vmod) => {
                     ok = handle_vmod_def(&mut ki.keymap.ctx, &mut info.mods, vmod);
                 }
-                Statement::Unknown(_unk) => {
+                Statement::Unknown => {
                     ok = ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {
@@ -2777,7 +2777,7 @@ fn handle_key_types_file(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, fi
                 Statement::VMod(vmod) => {
                     ok = handle_vmod_def(&mut ki.keymap.ctx, &mut info.mods, vmod);
                 }
-                Statement::Unknown(_unk) => {
+                Statement::Unknown => {
                     ok = ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {
@@ -3448,7 +3448,7 @@ fn handle_keycodes_file(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut Xk
                 Statement::LedName(ln) => {
                     ok = handle_led_name_def(info, ln);
                 }
-                Statement::Unknown(_unk) => {
+                Statement::Unknown => {
                     ok = ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
                 }
                 _ => {

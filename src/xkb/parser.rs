@@ -1080,7 +1080,7 @@ fn execute_reduction<'a>(
         }
         39 => {
             if let YYValue::GroupCompat = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                *yyval = YYValue::Stmt(Statement::GroupCompat(()));
+                *yyval = YYValue::Stmt(Statement::GroupCompat);
             } else {
                 *yyval = YYValue::None;
             }
@@ -1099,16 +1099,16 @@ fn execute_reduction<'a>(
         }
         45 => {
             // Decl: OptMergeMode UnknownDecl
-            if let YYValue::Unknown(u) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                *yyval = YYValue::Stmt(Statement::Unknown(u));
+            if let YYValue::Unknown = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                *yyval = YYValue::Stmt(Statement::Unknown);
             } else {
                 *yyval = YYValue::None;
             }
         }
         46 => {
             // Decl: OptMergeMode UnknownCompoundStatementDecl
-            if let YYValue::Unknown(u) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                *yyval = YYValue::Stmt(Statement::Unknown(u));
+            if let YYValue::Unknown = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                *yyval = YYValue::Stmt(Statement::Unknown);
             } else {
                 *yyval = YYValue::None;
             }
@@ -1390,13 +1390,13 @@ fn execute_reduction<'a>(
             // Drop expr values (geometry not supported)
             let _ = yyvs[sp - 3].take_expr();
             let _ = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::Unknown(unknown_statement_create());
+            *yyval = YYValue::Unknown;
         }
         92 => {
             // UnknownCompoundStatementDecl: Ident Lhs OBRACE VarDeclList CBRACE SEMI
             let _ = yyvs[sp - 4].take_expr();
             let _ = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::Unknown(unknown_statement_create());
+            *yyval = YYValue::Unknown;
         }
         // Rules 93-123: Geometry rules → all produce None (geometry not supported)
         93 | 94 | 95 | 96 | 97 | 98 | 100 | 102 | 103 | 104 | 105 | 107 | 108 | 109 | 111 | 112
@@ -2099,9 +2099,6 @@ pub(crate) fn led_name_create(ndx: i64, name: Option<ExprKind>) -> LedNameDef {
     }
 }
 
-pub(crate) fn unknown_statement_create() -> UnknownStatement {
-    UnknownStatement {}
-}
 
 pub(crate) fn include_create(
     _ctx: &mut XkbContext,
@@ -2720,7 +2717,7 @@ pub(crate) enum YYValue<'a> {
     LedName(LedNameDef),
     Keycode(KeycodeDef),
     KeyAlias(KeyAliasDef),
-    Unknown(UnknownStatement),
+    Unknown,
     File(Box<XkbFile>),
     FileList(Vec<XkbFile>),
     Stmt(Statement),
@@ -6562,11 +6559,6 @@ pub(crate) struct LedMapDef {
     pub(crate) body: Vec<VarDef>,
 }
 
-#[derive(Clone)]
-pub(crate) struct UnknownStatement {}
-
-// ── Map flags and XkbFile ───────────────────────────────────────────
-
 pub(crate) const MAP_IS_ALTGR: u32 = 128;
 pub(crate) const MAP_HAS_FN: u32 = 64;
 pub(crate) const MAP_HAS_KEYPAD: u32 = 32;
@@ -6586,10 +6578,10 @@ pub(crate) enum Statement {
     VMod(VModDef),
     Symbols(SymbolsDef),
     ModMap(ModMapDef),
-    GroupCompat(()),
+    GroupCompat,
     LedMap(LedMapDef),
     LedName(LedNameDef),
-    Unknown(UnknownStatement),
+    Unknown,
     XkbFile(XkbFile),
 }
 
