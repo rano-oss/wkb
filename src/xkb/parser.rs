@@ -429,7 +429,7 @@ fn execute_reduction<'a>(
             // Decl: OptMergeMode LedNameDecl
             yy_merge_decl!(yyval, yyvs, sp, LedName, LedName);
         }
-        42..=44 => *yyval = YYValue::None,
+        42..=44 | 93..=123 | 181 => *yyval = YYValue::None,
         45 | 46 => {
             // Decl: OptMergeMode UnknownDecl
             if let YYValue::Unknown = std::mem::replace(&mut yyvs[sp], YYValue::None) {
@@ -448,20 +448,18 @@ fn execute_reduction<'a>(
                 *yyval = YYValue::None;
             }
         }
-        48 => {
-            // VarDecl: Lhs EQUALS Expr SEMI
-            let lhs = yyvs[sp - 3].take_expr();
-            let val = yyvs[sp - 1].take_expr();
+        48 | 69 | 70 => {
+            let trailing = usize::from(yyn == 48);
+            let lhs = yyvs[sp - 2 - trailing].take_expr();
+            let val = yyvs[sp - trailing].take_expr();
             *yyval = YYValue::Var(var_create(lhs, val));
         }
-        49 => {
-            // VarDecl: Ident SEMI
-            let atom = yyvs[sp - 1].as_atom();
+        49 | 71 => {
+            let atom = yyvs[sp - usize::from(yyn == 49)].as_atom();
             *yyval = YYValue::Var(bool_var_create(atom, true));
         }
-        50 => {
-            // VarDecl: EXCLAM Ident SEMI
-            let atom = yyvs[sp - 1].as_atom();
+        50 | 72 => {
+            let atom = yyvs[sp - usize::from(yyn == 50)].as_atom();
             *yyval = YYValue::Var(bool_var_create(atom, false));
         }
         51 => {
@@ -532,10 +530,9 @@ fn execute_reduction<'a>(
             let keysym = yyvs[sp].as_keysym();
             *yyval = YYValue::Interp(interp_create(keysym, None));
         }
-        61 => {
-            // VarDeclList: VarDeclList VarDecl
+        61 | 67 => {
             let var = yyvs[sp].take_var();
-            let mut list = yyvs[sp - 1].take_var_list();
+            let mut list = yyvs[sp - if yyn == 61 { 1 } else { 2 }].take_var_list();
             if let Some(v) = var {
                 list.push(v);
             }
@@ -562,15 +559,6 @@ fn execute_reduction<'a>(
             let list = yyvs[sp].take_var_list();
             *yyval = YYValue::VarList(list);
         }
-        67 => {
-            // SymbolsBody: SymbolsBody COMMA SymbolsVarDecl
-            let var = yyvs[sp].take_var();
-            let mut list = yyvs[sp - 2].take_var_list();
-            if let Some(v) = var {
-                list.push(v);
-            }
-            *yyval = YYValue::VarList(list);
-        }
         68 => {
             // SymbolsBody: SymbolsVarDecl
             let var = yyvs[sp].take_var();
@@ -579,22 +567,6 @@ fn execute_reduction<'a>(
                 list.push(v);
             }
             *yyval = YYValue::VarList(list);
-        }
-        69 | 70 => {
-            // SymbolsVarDecl: Lhs EQUALS Expr
-            let lhs = yyvs[sp - 2].take_expr();
-            let val = yyvs[sp].take_expr();
-            *yyval = YYValue::Var(var_create(lhs, val));
-        }
-        71 => {
-            // SymbolsVarDecl: Ident
-            let atom = yyvs[sp].as_atom();
-            *yyval = YYValue::Var(bool_var_create(atom, true));
-        }
-        72 => {
-            // SymbolsVarDecl: EXCLAM Ident
-            let atom = yyvs[sp].as_atom();
-            *yyval = YYValue::Var(bool_var_create(atom, false));
         }
         73 => {
             // SymbolsVarDecl: Expr
@@ -702,8 +674,7 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Unknown;
         }
         // Geometry is parsed for compatibility but has no semantic representation.
-        93..=123 => *yyval = YYValue::None,
-        124..=127 => *yyval = YYValue::Num(0),
+        124..=127 | 209 => *yyval = YYValue::Num(0),
         // FieldSpec / Element rules 128-140
         128 | 129 => {
             *yyval = YYValue::Atom(yyvs[sp].as_atom());
@@ -849,7 +820,6 @@ fn execute_reduction<'a>(
                 entry: entry.map(Box::new),
             });
         }
-        181 => *yyval = YYValue::None,
         // Terminal rules 182-185
         182 => {
             let atom = yyvs[sp].as_atom();
@@ -957,12 +927,7 @@ fn execute_reduction<'a>(
         204 => {
             *yyval = YYValue::Num(-yyvs[sp].as_num());
         }
-        205..=208 => {
-            *yyval = YYValue::Num(yyvs[sp].as_num());
-        }
-        209 => *yyval = YYValue::Num(0),
-        // Integer, KeyCode 210-213
-        210..=213 => {
+        205..=208 | 210..=213 => {
             *yyval = YYValue::Num(yyvs[sp].as_num());
         }
         // Ident 214
@@ -2576,10 +2541,6 @@ pub(crate) struct Matcher<'a> {
 }
 pub(crate) const _KCCGST_NUM_ENTRIES: u32 = 5;
 pub(crate) const KCCGST_GEOMETRY: u32 = 4;
-pub(crate) const KCCGST_SYMBOLS: u32 = 3;
-pub(crate) const KCCGST_COMPAT: u32 = 2;
-pub(crate) const KCCGST_TYPES: u32 = 1;
-pub(crate) const KCCGST_KEYCODES: u32 = 0;
 #[derive(Copy, Clone, Default)]
 pub(crate) struct Rule {
     pub(crate) mlvo_value_at_pos: [SvalIdx; 4],
@@ -3557,29 +3518,30 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
             }
             continue;
         }
-        let (first, end) = match m.mapping.layout {
+        let matched = match m.mapping.layout {
             LayoutIdx::Range {
                 layout_idx_min,
                 layout_idx_max,
-            } => (layout_idx_min, layout_idx_max),
-            LayoutIdx::Index { layout_idx_min } if layout_idx_min != XKB_LAYOUT_INVALID => {
-                let index = layout_idx_min;
-                (index, index + 1)
+            } => {
+                let mut matched = false;
+                for layout in layout_idx_min..layout_idx_max {
+                    let mask = 1 << layout;
+                    if candidate_layouts & mask == 0 {
+                        continue;
+                    }
+                    if matcher_mlvo_matches(m, mlvo, value, match_type, layout) {
+                        matched = true;
+                    } else {
+                        candidate_layouts &= !mask;
+                    }
+                }
+                matched
             }
-            _ => return,
+            LayoutIdx::Index { layout_idx_min } => {
+                matcher_mlvo_matches(m, mlvo, value, match_type, layout_idx_min)
+            }
+            LayoutIdx::Single { .. } => false,
         };
-        let mut matched = false;
-        for layout in first..end {
-            let mask = 1 << layout;
-            if candidate_layouts & mask == 0 {
-                continue;
-            }
-            if matcher_mlvo_matches(m, mlvo, value, match_type, layout) {
-                matched = true;
-            } else {
-                candidate_layouts &= !mask;
-            }
-        }
         if !matched {
             return;
         }
@@ -3788,83 +3750,50 @@ fn xkb_resolve_rules(
     out: &mut XkbComponentNames,
     explicit_layouts: &mut u32,
 ) -> bool {
-    let mut ret: bool;
     let mut offset: u32 = 0;
-    let rules_str = rules;
-    let found = find_file_in_xkb_path(&mut *matcher.ctx, rules_str, FileType::Rules, &mut offset);
+    let found = find_file_in_xkb_path(&mut *matcher.ctx, rules, FileType::Rules, &mut offset);
     let Some((file_data, _path)) = found else {
         return false;
     };
-    ret = xkb_resolve_partial_rules(rules_str, ".pre", matcher);
-    if ret {
-        ret = read_rules_file(matcher, 0, &file_data);
+    if !xkb_resolve_partial_rules(rules, ".pre", matcher)
+        || !read_rules_file(matcher, 0, &file_data)
+        || !xkb_resolve_partial_rules(rules, ".post", matcher)
+        || matcher.kccgst[..KCCGST_GEOMETRY as usize]
+            .iter()
+            .any(Vec::is_empty)
+    {
+        return false;
     }
-    if ret {
-        ret = xkb_resolve_partial_rules(rules_str, ".post", matcher);
-        if ret {
-            if matcher.kccgst[KCCGST_KEYCODES as usize].is_empty()
-                || matcher.kccgst[KCCGST_TYPES as usize].is_empty()
-                || matcher.kccgst[KCCGST_COMPAT as usize].is_empty()
-                || matcher.kccgst[KCCGST_SYMBOLS as usize].is_empty()
-            {
-                ret = false;
-            } else {
-                // Transfer ownership of Vec data directly.
-                {
-                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_KEYCODES as usize]);
-                    v.push(0);
-                    out.keycodes = v;
-                }
-                {
-                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_TYPES as usize]);
-                    v.push(0);
-                    out.types = v;
-                }
-                {
-                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_COMPAT as usize]);
-                    v.push(0);
-                    out.compatibility = v;
-                }
-                {
-                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_SYMBOLS as usize]);
-                    v.push(0);
-                    out.symbols = v;
-                }
-                if !out.symbols.is_empty() {
-                    *explicit_layouts = 1_u32;
-                    // Parse symbols string to find explicit layout count
-                    let sym_bytes = &out.symbols;
-                    let mut pos: usize = 0;
-                    loop {
-                        match sym_bytes[pos..].iter().position(|&b| b == b':') {
-                            None => break,
-                            Some(colon_off) => {
-                                pos += colon_off + 1;
-                                if pos >= sym_bytes.len() || sym_bytes[pos] == 0 {
-                                    break;
-                                }
-                                let (val_parsed, count) = parse_dec_u32(&sym_bytes[pos..]);
-                                let group: u32 = val_parsed;
-                                let count = count as usize;
-                                if count > 0
-                                    && pos + count <= sym_bytes.len()
-                                    && sym_bytes
-                                        .get(pos + count)
-                                        .is_some_and(|&byte| byte == 0 || is_merge_prefix(byte))
-                                    && group > 0
-                                    && group <= XKB_MAX_GROUPS
-                                {
-                                    *explicit_layouts = (*explicit_layouts).max(group);
-                                    pos += count;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+    for (source, target) in matcher.kccgst.iter_mut().zip([
+        &mut out.keycodes,
+        &mut out.types,
+        &mut out.compatibility,
+        &mut out.symbols,
+    ]) {
+        *target = std::mem::take(source);
+        target.push(0);
+    }
+    *explicit_layouts = 1;
+    let mut pos = 0;
+    while let Some(colon) = out.symbols[pos..].iter().position(|&byte| byte == b':') {
+        pos += colon + 1;
+        if out.symbols.get(pos).is_none_or(|&byte| byte == 0) {
+            break;
+        }
+        let (group, count) = parse_dec_u32(&out.symbols[pos..]);
+        let count = count as usize;
+        if count > 0
+            && out
+                .symbols
+                .get(pos + count)
+                .is_some_and(|&byte| byte == 0 || is_merge_prefix(byte))
+            && (1..=XKB_MAX_GROUPS).contains(&group)
+        {
+            *explicit_layouts = (*explicit_layouts).max(group);
+            pos += count;
         }
     }
-    ret
+    true
 }
 pub(crate) fn xkb_components_from_rules_names(
     ctx: &mut XkbContext,

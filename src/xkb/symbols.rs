@@ -30,6 +30,17 @@ macro_rules! some_or_false {
         }
     };
 }
+macro_rules! include_file {
+    ($ki:expr, $info:expr, $stmt:expr, $type:expr) => {
+        match process_include_file(&mut $ki.keymap.ctx, $stmt, $type) {
+            Some(file) => file,
+            None => {
+                $info.error_count += 10;
+                return false;
+            }
+        }
+    };
+}
 
 #[derive(Default)]
 pub(crate) struct SymbolsInfo {
@@ -393,11 +404,7 @@ fn handle_include_symbols(
     }
     let mut included = SymbolsInfo::new(ki, info.include_depth.wrapping_add(1), &info.mods);
     for stmt in includes.iter() {
-        let Some(mut file) = process_include_file(&mut ki.keymap.ctx, stmt, FileType::Symbols)
-        else {
-            info.error_count += 10;
-            return false;
-        };
+        let mut file = include_file!(ki, info, stmt, FileType::Symbols);
         let mut next = SymbolsInfo::new(ki, info.include_depth.wrapping_add(1), &included.mods);
         next.explicit_group = if !stmt.modifier.is_empty() {
             let group = (stmt.modifier.parse::<i32>().unwrap_or(0) - 1) as u32;
@@ -1610,11 +1617,7 @@ fn handle_include_compat_map(
     }
     let mut included = compat_info(info.include_depth.wrapping_add(1), &info.mods);
     for stmt in includes.iter() {
-        let Some(mut file) = process_include_file(&mut ki.keymap.ctx, stmt, FileType::Compat)
-        else {
-            info.error_count += 10;
-            return false;
-        };
+        let mut file = include_file!(ki, info, stmt, FileType::Compat);
         let mut next = compat_info(info.include_depth.wrapping_add(1), &included.mods);
         next.default_interp = info.default_interp.clone();
         next.default_led = info.default_led;
@@ -2160,10 +2163,7 @@ fn handle_include_key_types(
     }
     let mut included = key_types_info(info.include_depth.wrapping_add(1), &info.mods);
     for stmt in includes.iter() {
-        let Some(mut file) = process_include_file(&mut ki.keymap.ctx, stmt, FileType::Types) else {
-            info.error_count += 10;
-            return false;
-        };
+        let mut file = include_file!(ki, info, stmt, FileType::Types);
         let mut next = key_types_info(info.include_depth.wrapping_add(1), &included.mods);
         handle_key_types_file(ki, &mut next, &mut file);
         merge_included_key_types(&mut included, &mut next, stmt.merge);
@@ -2942,11 +2942,7 @@ fn handle_include_keycodes(
         return false;
     }
     for stmt in includes.iter() {
-        let Some(mut file) = process_include_file(&mut ki.keymap.ctx, stmt, FileType::Keycodes)
-        else {
-            info.error_count += 10;
-            return false;
-        };
+        let mut file = include_file!(ki, info, stmt, FileType::Keycodes);
         let mut next = key_names_info(info.include_depth.wrapping_add(1));
         handle_keycodes_file(&mut next, &mut file, ki);
         merge_included_keycodes(&mut included, &mut next, stmt.merge);
@@ -3738,11 +3734,7 @@ fn check_boolean_flag(
     let Some(set) = expr_resolve_boolean(ctx, value) else {
         return report_mismatch(strict);
     };
-    if set {
-        *flags_inout |= flag;
-    } else {
-        *flags_inout &= !flag;
-    }
+    flags_inout.set(flag, set);
     ParseStatus::Success
 }
 fn check_boolean_flag_feature(
