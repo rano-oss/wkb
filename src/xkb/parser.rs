@@ -2,7 +2,6 @@ use super::keymap::mod_mask_get_effective;
 use super::keymap::xkb_escape_map_name;
 use super::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use super::keymap::GROUP_LAST_INDEX_NAME;
-use super::keysym::utf32_to_keysym;
 use super::keysym::xkb_keysym_from_name;
 pub(crate) use super::symbols::compile_compat_map;
 pub(crate) use super::symbols::compile_key_types;
@@ -11,8 +10,8 @@ pub(crate) use super::symbols::compile_symbols;
 use super::symbols::{expr_resolve_group, expr_resolve_group_mask};
 use crate::xkb::keymap::CONTROL_NAMES_MIN_V1_INDEX;
 use crate::xkb::keymap::CONTROL_NAMES_MIN_V2_INDEX;
-
-// ── Compilation entry points (from xkbcomp/mod.rs) ──
+use crate::xkb::keymap::xkb_mod_name_to_index;
+use crate::xkb::keysym::codepoint_to_keysym;
 
 fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
     if file.file_type != FileType::Keymap {
@@ -1081,7 +1080,7 @@ fn execute_reduction<'a>(
         }
         39 => {
             if let YYValue::GroupCompat = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                *yyval = YYValue::Stmt(Statement::GroupCompat(()));
+                *yyval = YYValue::Stmt(Statement::GroupCompat);
             } else {
                 *yyval = YYValue::None;
             }
@@ -1100,16 +1099,16 @@ fn execute_reduction<'a>(
         }
         45 => {
             // Decl: OptMergeMode UnknownDecl
-            if let YYValue::Unknown(u) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                *yyval = YYValue::Stmt(Statement::Unknown(u));
+            if let YYValue::Unknown = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                *yyval = YYValue::Stmt(Statement::Unknown);
             } else {
                 *yyval = YYValue::None;
             }
         }
         46 => {
             // Decl: OptMergeMode UnknownCompoundStatementDecl
-            if let YYValue::Unknown(u) = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                *yyval = YYValue::Stmt(Statement::Unknown(u));
+            if let YYValue::Unknown = std::mem::replace(&mut yyvs[sp], YYValue::None) {
+                *yyval = YYValue::Stmt(Statement::Unknown);
             } else {
                 *yyval = YYValue::None;
             }
@@ -1391,13 +1390,13 @@ fn execute_reduction<'a>(
             // Drop expr values (geometry not supported)
             let _ = yyvs[sp - 3].take_expr();
             let _ = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::Unknown(unknown_statement_create());
+            *yyval = YYValue::Unknown;
         }
         92 => {
             // UnknownCompoundStatementDecl: Ident Lhs OBRACE VarDeclList CBRACE SEMI
             let _ = yyvs[sp - 4].take_expr();
             let _ = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::Unknown(unknown_statement_create());
+            *yyval = YYValue::Unknown;
         }
         // Rules 93-123: Geometry rules → all produce None (geometry not supported)
         93 | 94 | 95 | 96 | 97 | 98 | 100 | 102 | 103 | 104 | 105 | 107 | 108 | 109 | 111 | 112
@@ -1980,7 +1979,7 @@ pub(crate) fn expr_key_sym_list_append_string(
             let _loc = scanner.token_location();
             return None;
         }
-        let sym = utf32_to_keysym(cp);
+        let sym = codepoint_to_keysym(cp).unwrap_or(0);
         if sym == XKB_KEY_NO_SYMBOL {
             let _loc = scanner.token_location();
             return None;
@@ -2004,7 +2003,7 @@ pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> Option
         let _loc = scanner.token_location();
         return None;
     }
-    let sym = utf32_to_keysym(cp);
+    let sym = codepoint_to_keysym(cp).unwrap_or(0);
     if sym == XKB_KEY_NO_SYMBOL {
         let _loc = scanner.token_location();
     }
@@ -2100,9 +2099,6 @@ pub(crate) fn led_name_create(ndx: i64, name: Option<ExprKind>) -> LedNameDef {
     }
 }
 
-pub(crate) fn unknown_statement_create() -> UnknownStatement {
-    UnknownStatement {}
-}
 
 pub(crate) fn include_create(
     _ctx: &mut XkbContext,
@@ -2721,7 +2717,7 @@ pub(crate) enum YYValue<'a> {
     LedName(LedNameDef),
     Keycode(KeycodeDef),
     KeyAlias(KeyAliasDef),
-    Unknown(UnknownStatement),
+    Unknown,
     File(Box<XkbFile>),
     FileList(Vec<XkbFile>),
     Stmt(Statement),
@@ -5815,8 +5811,7 @@ pub(crate) fn xkb_components_from_rules_names(
     explicit_layouts: &mut u32,
 ) -> bool {
     let mut matcher = matcher_new_from_names(ctx, rmlvo);
-    let rules_str = rmlvo.rules.to_str().unwrap_or("");
-    xkb_resolve_rules(rules_str, &mut matcher, out, explicit_layouts)
+    xkb_resolve_rules(&rmlvo.rules, &mut matcher, out, explicit_layouts)
 }
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -5851,11 +5846,11 @@ pub(crate) const XKB_MOD_INVALID: u32 = 0xffffffff;
 
 #[derive(Clone, Debug)]
 pub(crate) struct XkbRuleNames {
-    pub(crate) rules: std::ffi::CString,
-    pub(crate) model: std::ffi::CString,
-    pub(crate) layout: std::ffi::CString,
-    pub(crate) variant: std::ffi::CString,
-    pub(crate) options: std::ffi::CString,
+    pub(crate) rules: String,
+    pub(crate) model: String,
+    pub(crate) layout: String,
+    pub(crate) variant: String,
+    pub(crate) options: String,
 }
 
 impl Default for XkbRuleNames {
@@ -5873,11 +5868,11 @@ impl XkbRuleNames {
         options: &str,
     ) -> Self {
         Self {
-            rules: std::ffi::CString::new(rules).unwrap(),
-            model: std::ffi::CString::new(model).unwrap(),
-            layout: std::ffi::CString::new(layout).unwrap(),
-            variant: std::ffi::CString::new(variant).unwrap(),
-            options: std::ffi::CString::new(options).unwrap(),
+            rules: rules.to_string(),
+            model: model.to_string(),
+            layout: layout.to_string(),
+            variant: variant.to_string(),
+            options: options.to_string(),
         }
     }
 }
@@ -5950,7 +5945,7 @@ pub(crate) fn read_file_cached(path: &str) -> Option<Arc<Vec<u8>>> {
 }
 
 // ── keymap_h types (from keymap_priv.rs) ────────────────────────────
-
+#[derive(Clone)]
 pub(crate) struct XkbKeymap {
     pub(crate) ctx: XkbContext,
     pub(crate) flags: u32,
@@ -5967,6 +5962,43 @@ pub(crate) struct XkbKeymap {
     pub(crate) mods: XkbModSet,
     pub(crate) num_groups: u32,
     pub(crate) group_names: Vec<u32>,
+}
+
+impl XkbKeymap {
+    /// Get modifier mask by name (safe via atom_lookup_ref)
+    pub(crate) fn mod_get_mask(&self, name: &str) -> u32 {
+        let atom = atom_lookup_ref(&self.ctx.atom_table, name.as_bytes());
+        let idx = if atom == XKB_ATOM_NONE {
+            None
+        } else {
+            xkb_mod_name_to_index(&self.mods, atom, MOD_BOTH)
+        };
+        match idx {
+            Some(i) if i < self.mods.num_mods => self.mods.mods[i as usize].mapping,
+            _ => 0_u32,
+        }
+    }
+
+    /// Get number of layouts in the keymap
+    pub(crate) fn num_layouts(&self) -> u32 {
+        self.num_groups
+    }
+
+    /// Get layout name by index
+    pub(crate) fn layout_get_name(&self, idx: u32) -> Option<String> {
+        if idx as usize >= self.group_names.len() {
+            return None;
+        }
+        let s = atom_text(
+            &self.ctx.atom_table,
+            self.group_names[idx as usize],
+        );
+        if s.is_empty() {
+            None
+        } else {
+            Some(s.to_string())
+        }
+    }
 }
 
 #[derive(Copy, Clone, Default)]
@@ -6370,10 +6402,7 @@ pub(crate) struct LookupEntry {
     pub(crate) value: u32,
 }
 
-// ── Shared AST type definitions (merged from shared_ast_types.rs) ──
-
 // ── File type enum ──────────────────────────────────────────────────
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[repr(u32)]
 pub(crate) enum FileType {
@@ -6387,7 +6416,6 @@ pub(crate) enum FileType {
 }
 
 // ── Merge mode enum ─────────────────────────────────────────────────
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 pub(crate) enum MergeMode {
     #[default]
@@ -6400,7 +6428,6 @@ pub(crate) enum MergeMode {
 // ── Core AST node types ─────────────────────────────────────────────
 
 #[derive(Clone)]
-
 pub(crate) struct IncludeStmt {
     pub(crate) merge: MergeMode,
     pub(crate) stmt: String,
@@ -6532,11 +6559,6 @@ pub(crate) struct LedMapDef {
     pub(crate) body: Vec<VarDef>,
 }
 
-#[derive(Clone)]
-pub(crate) struct UnknownStatement {}
-
-// ── Map flags and XkbFile ───────────────────────────────────────────
-
 pub(crate) const MAP_IS_ALTGR: u32 = 128;
 pub(crate) const MAP_HAS_FN: u32 = 64;
 pub(crate) const MAP_HAS_KEYPAD: u32 = 32;
@@ -6556,10 +6578,10 @@ pub(crate) enum Statement {
     VMod(VModDef),
     Symbols(SymbolsDef),
     ModMap(ModMapDef),
-    GroupCompat(()),
+    GroupCompat,
     LedMap(LedMapDef),
     LedName(LedNameDef),
-    Unknown(UnknownStatement),
+    Unknown,
     XkbFile(XkbFile),
 }
 
@@ -6613,14 +6635,12 @@ pub(crate) struct XkbKeymapInfo<'a> {
 }
 
 #[derive(Copy, Clone)]
-
 pub(crate) struct XkbcompLookup {
     pub(crate) group_index_names: [LookupEntry; 3],
     pub(crate) group_mask_names: [LookupEntry; 5],
 }
 
 #[derive(Copy, Clone)]
-
 pub(crate) struct XkbcompFeatures {
     pub(crate) max_groups: u32,
     pub(crate) max_overlays: u8,
@@ -6640,10 +6660,10 @@ pub(crate) fn istrcmp(a: &[u8], b: &[u8]) -> i32 {
         let al = a[i].to_ascii_lowercase();
         let bl = b[i].to_ascii_lowercase();
         if al != bl {
-            return al as i32 - bl as i32;
+            return (al - bl) as i32;
         }
     }
-    (a.len() as i32) - (b.len() as i32)
+    (a.len() - b.len()) as i32
 }
 
 macro_rules! impl_parse_dec {
@@ -6675,12 +6695,7 @@ impl_parse_dec!(parse_dec_u64, u64);
 /// Convert a hex digit byte to its numeric value (0-15), or 0xff if invalid.
 #[inline]
 fn hex_val(b: u8) -> u8 {
-    match b {
-        b'0'..=b'9' => b - b'0',
-        b'A'..=b'F' => b - b'A' + 10,
-        b'a'..=b'f' => b - b'a' + 10,
-        _ => 0xff,
-    }
+    (b as char).to_digit(16).unwrap_or(0xff) as u8
 }
 
 macro_rules! impl_parse_hex {
@@ -6716,33 +6731,27 @@ pub(crate) const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
 
 /// Decode next UTF-8 code point from byte slice.
 pub(crate) fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
-    if bytes.is_empty() {
+    let Some(&first) = bytes.first() else {
         return (INVALID_UTF8_CODE_POINT, 0);
-    }
-    let b0 = bytes[0];
-    let (len, mut cp) = match b0 {
-        0x00..=0x7F => return (b0 as u32, 1),
-        0xC2..=0xDF => (2, (b0 as u32) & 0x1F),
-        0xE0..=0xEF => (3, (b0 as u32) & 0x0F),
-        0xF0..=0xF4 => (4, (b0 as u32) & 0x07),
+    };
+
+    let len = match first {
+        0x00..=0x7f => 1,
+        0xc2..=0xdf => 2,
+        0xe0..=0xef => 3,
+        0xf0..=0xf4 => 4,
         _ => return (INVALID_UTF8_CODE_POINT, 0),
     };
-    if len > bytes.len() {
+
+    let Some(candidate) = bytes.get(..len) else {
         return (INVALID_UTF8_CODE_POINT, 0);
-    }
-    for &byte in bytes.iter().take(len).skip(1) {
-        if (byte & 0xC0) != 0x80 {
-            return (INVALID_UTF8_CODE_POINT, 0);
-        }
-        cp = (cp << 6) | ((byte as u32) & 0x3F);
-    }
-    if (len == 2 && cp < 0x80)
-        || (len == 3 && cp < 0x800)
-        || (len == 4 && cp < 0x10000)
-        || (0xD800..=0xDFFF).contains(&cp)
-        || cp > 0x10FFFF
+    };
+
+    match std::str::from_utf8(candidate)
+        .ok()
+        .and_then(|s| s.chars().next())
     {
-        return (INVALID_UTF8_CODE_POINT, 0);
+        Some(ch) => (ch as u32, len),
+        None => (INVALID_UTF8_CODE_POINT, 0),
     }
-    (cp, len)
 }

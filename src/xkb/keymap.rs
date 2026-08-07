@@ -3,11 +3,11 @@ use std::sync::LazyLock;
 
 use arrayvec::ArrayVec;
 
+use crate::xkb::keysym::keysym_to_codepoint;
+
 pub use super::parser::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
-use super::parser::{atom_lookup_ref, atom_text};
 pub(crate) use super::parser::{
-    XkbAction, XkbContext, XkbKeymap, XkbLed, XkbLevel, XkbModSet, XkbRuleNames, MOD_BOTH,
-    MOD_REAL, MOD_REAL_MASK_ALL, XKB_ATOM_NONE, XKB_KEYMAP_FORMAT_TEXT_V2,
+    XkbAction, XkbContext, XkbKeymap, XkbLed, XkbLevel, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL, XKB_KEYMAP_FORMAT_TEXT_V2,
 };
 
 pub(crate) fn xkb_keymap_new_from_names(
@@ -45,8 +45,6 @@ pub(crate) fn xkb_keymap_new_from_string(
     Some(Rc::new(*keymap))
 }
 
-// ── Compose table support (merged from compose.rs) ──
-
 use std::{
     fs,
     io::{self, BufRead},
@@ -74,7 +72,6 @@ pub fn keysym_name_to_char(name: &str) -> Option<char> {
         }
     }
 
-    use super::keysym::keysym_to_utf32;
     use super::keysym::xkb_keysym_from_name;
     use super::parser::XKB_KEYSYM_NO_FLAGS;
 
@@ -89,7 +86,7 @@ pub fn keysym_name_to_char(name: &str) -> Option<char> {
             return None;
         }
     };
-    let utf32 = keysym_to_utf32(ks);
+    let utf32 = keysym_to_codepoint(ks).unwrap_or(0);
     if utf32 == 0 {
         return None;
     }
@@ -355,8 +352,6 @@ pub(crate) fn xkb_keymap_key_get_syms_by_level_ref(
         .map(|lvl| lvl.syms.as_slice())
         .unwrap_or(&[])
 }
-
-// --- Merged from keymap_priv.rs ---
 
 pub(crate) const XKB_MOD_NAME_SHIFT: &str = "Shift";
 pub(crate) const XKB_MOD_NAME_CAPS: &str = "Lock";
@@ -714,8 +709,6 @@ pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
     ctx
 }
 
-// --- Merged from context_priv.rs ---
-
 pub(crate) fn xkb_context_getenv(name: &str) -> Result<String, VarError> {
     std::env::var(name)
 }
@@ -749,8 +742,8 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
             Err(VarError::NotPresent)
         };
         rmlvo.rules = match env {
-            Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
-            Err(_) => std::ffi::CString::new("evdev").unwrap(),
+            Ok(env) => env,
+            Err(_) => "evdev".to_string(),
         };
         modified |= RMLVO_RULES;
     }
@@ -761,8 +754,8 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
             Err(VarError::NotPresent)
         };
         rmlvo.model = match env {
-            Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
-            Err(_) => std::ffi::CString::new("pc105").unwrap(),
+            Ok(env) => env,
+            Err(_) => "pc105".to_string(),
         };
         modified |= RMLVO_MODEL;
     }
@@ -774,19 +767,19 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
                 Err(VarError::NotPresent)
             };
             rmlvo.layout = match env {
-                Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
-                Err(_) => std::ffi::CString::new("us").unwrap(),
+                Ok(env) => env,
+                Err(_) => "us".to_string(),
             };
         }
         modified |= RMLVO_LAYOUT;
-        let variant: std::ffi::CString = {
+        let variant: String = {
             let layout = xkb_context_getenv("XKB_DEFAULT_LAYOUT");
             let default_variant = xkb_context_getenv("XKB_DEFAULT_VARIANT");
             match (layout, ctx.use_environment_names, default_variant) {
                 (Ok(_), true, Ok(default_variant)) => {
-                    std::ffi::CString::new(default_variant).unwrap_or_default()
+                    default_variant
                 }
-                (_, _, _) => std::ffi::CString::new("").unwrap(),
+                (_, _, _) => "".to_string(),
             }
         };
         rmlvo.variant = variant;
@@ -796,11 +789,11 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
         if ctx.use_environment_names {
             let env = xkb_context_getenv("XKB_DEFAULT_OPTIONS");
             rmlvo.options = match env {
-                Ok(env) => std::ffi::CString::new(env).unwrap_or_default(),
-                Err(_) => std::ffi::CString::new("").unwrap(),
+                Ok(env) => env,
+                Err(_) => "".to_string(),
             };
         } else {
-            rmlvo.options = std::ffi::CString::new("").unwrap();
+            rmlvo.options = "".to_string();
         };
         modified |= RMLVO_OPTIONS;
     }
@@ -1207,9 +1200,6 @@ pub(crate) static SYM_INTERPRET_MATCH_MASK_NAMES: [LookupEntry; 6] = [
     },
     LookupEntry { name: "", value: 0 },
 ];
-
-use std::ffi::CString;
-
 // ============================================================================
 // Unicode Preprocessing
 // ============================================================================
@@ -1222,7 +1212,7 @@ use std::ffi::CString;
 ///
 /// Characters inside strings (`"..."`), comments (`//` or `/* */`), and key
 /// names (`<...>`) are left untouched.
-fn preprocess_unicode_keysyms(input: &str) -> std::borrow::Cow<'_, str> {
+pub fn preprocess_unicode_keysyms(input: &str) -> std::borrow::Cow<'_, str> {
     use std::borrow::Cow;
     use std::fmt::Write;
     // Fast path: if there are no non-ASCII bytes, return as-is.
@@ -1306,110 +1296,6 @@ fn preprocess_unicode_keysyms(input: &str) -> std::borrow::Cow<'_, str> {
     }
 
     Cow::Owned(result)
-}
-
-// ============================================================================
-// Safe RAII Wrappers for XKB FFI Types
-// ============================================================================
-
-/// Safe wrapper around XkbContext with automatic cleanup
-#[derive(Clone)]
-pub(crate) struct Context {
-    entity: XkbContext,
-}
-
-impl Context {
-    /// Create a new XKB context
-    pub(crate) fn new() -> Option<Self> {
-        use super::parser::XKB_CONTEXT_NO_FLAGS;
-        let ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-        Some(Context { entity: ctx })
-    }
-
-    /// Create a keymap from RMLVO names. Consumes the context.
-    pub(crate) fn keymap_from_names(self, rmlvo: &XkbRuleNames) -> Option<Keymap> {
-        use super::parser::XKB_KEYMAP_COMPILE_NO_FLAGS;
-
-        let keymap = xkb_keymap_new_from_names(self.entity, rmlvo, XKB_KEYMAP_COMPILE_NO_FLAGS)?;
-        Some(Keymap { inner: keymap })
-    }
-
-    /// Create a keymap from a keymap string. Consumes the context.
-    pub(crate) fn keymap_from_string(self, keymap_str: &str) -> Option<Keymap> {
-        use super::parser::{XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1};
-
-        let processed = preprocess_unicode_keysyms(keymap_str);
-        let keymap_cstr = CString::new(processed.as_ref()).ok()?;
-        let keymap = xkb_keymap_new_from_string(
-            self.entity,
-            &keymap_cstr,
-            XKB_KEYMAP_FORMAT_TEXT_V1,
-            XKB_KEYMAP_COMPILE_NO_FLAGS,
-        )?;
-        Some(Keymap { inner: keymap })
-    }
-}
-
-/// Safe wrapper around XkbKeymap with automatic cleanup
-#[derive(Clone)]
-pub(crate) struct Keymap {
-    pub(crate) inner: Rc<super::parser::XkbKeymap>,
-}
-
-impl std::fmt::Debug for Keymap {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Keymap")
-            .field("min_key", &self.inner.min_key_code)
-            .field("max_key", &self.inner.max_key_code)
-            .finish()
-    }
-}
-
-impl Keymap {
-    /// Get minimum keycode
-    pub(crate) fn min_keycode(&self) -> u32 {
-        self.inner.min_key_code
-    }
-
-    /// Get maximum keycode
-    pub(crate) fn max_keycode(&self) -> u32 {
-        self.inner.max_key_code
-    }
-
-    /// Get modifier mask by name (safe via atom_lookup_ref)
-    pub(crate) fn mod_get_mask(&self, name: &str) -> u32 {
-        let atom = atom_lookup_ref(&self.inner.ctx.atom_table, name.as_bytes());
-        let idx = if atom == XKB_ATOM_NONE {
-            None
-        } else {
-            xkb_mod_name_to_index(&self.inner.mods, atom, MOD_BOTH)
-        };
-        match idx {
-            Some(i) if i < self.inner.mods.num_mods => self.inner.mods.mods[i as usize].mapping,
-            _ => 0_u32,
-        }
-    }
-
-    /// Get number of layouts in the keymap
-    pub(crate) fn num_layouts(&self) -> u32 {
-        self.inner.num_groups
-    }
-
-    /// Get layout name by index
-    pub(crate) fn layout_get_name(&self, idx: u32) -> Option<String> {
-        if idx as usize >= self.inner.group_names.len() {
-            return None;
-        }
-        let s = atom_text(
-            &self.inner.ctx.atom_table,
-            self.inner.group_names[idx as usize],
-        );
-        if s.is_empty() {
-            None
-        } else {
-            Some(s.to_string())
-        }
-    }
 }
 
 pub(crate) fn mod_mask_get_effective(keymap: &XkbKeymap, mods: u32) -> u32 {
