@@ -3584,13 +3584,17 @@ fn gettok(m: &mut Matcher, s: &mut Scanner) -> u32 {
     lex(s, &mut m.val)
 }
 fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
+    let mut have_bang = false;
     loop {
-        match gettok(m, s) {
-            TOK_END_OF_LINE => continue,
-            TOK_END_OF_FILE => return true,
-            TOK_BANG => {}
-            _ => return false,
+        if !have_bang {
+            match gettok(m, s) {
+                TOK_END_OF_LINE => continue,
+                TOK_END_OF_FILE => return true,
+                TOK_BANG => {}
+                _ => return false,
+            }
         }
+        have_bang = false;
         match gettok(m, s) {
             TOK_GROUP_NAME => {
                 matcher_group_start_new(m, m.val.string.as_sval(s.s).data);
@@ -3650,6 +3654,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                     match tok {
                         TOK_BANG => {
                             matcher_append_pending_kccgst(m);
+                            have_bang = true;
                             break;
                         }
                         TOK_END_OF_LINE => continue,
