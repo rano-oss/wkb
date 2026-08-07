@@ -808,6 +808,7 @@ fn expr_resolve_overlay_entry(
         _ => false,
     }
 }
+#[derive(Clone, Copy)]
 enum SymbolsField {
     Type,
     Symbols,
@@ -823,28 +824,33 @@ enum SymbolsField {
 }
 
 fn parse_symbols_field(field: &str) -> Option<SymbolsField> {
-    if field.eq_ignore_ascii_case("type") {
-        Some(SymbolsField::Type)
-    } else if field.eq_ignore_ascii_case("symbols") {
-        Some(SymbolsField::Symbols)
-    } else if field.eq_ignore_ascii_case("actions") {
-        Some(SymbolsField::Actions)
-    } else if field.eq_ignore_ascii_case("vmods")
-        || field.eq_ignore_ascii_case("virtualmods")
-        || field.eq_ignore_ascii_case("virtualmodifiers")
-    {
-        Some(SymbolsField::Vmods)
-    } else if field.eq_ignore_ascii_case("locking")
-        || field.eq_ignore_ascii_case("lock")
-        || field.eq_ignore_ascii_case("locks")
-    {
-        Some(SymbolsField::Locking)
-    } else if field.eq_ignore_ascii_case("radiogroup")
-        || field.eq_ignore_ascii_case("permanentradiogroup")
-        || field.eq_ignore_ascii_case("allownone")
-    {
-        Some(SymbolsField::RadioGroup)
-    } else if field
+    const FIELDS: &[(&[&str], SymbolsField)] = &[
+        (&["type"], SymbolsField::Type),
+        (&["symbols"], SymbolsField::Symbols),
+        (&["actions"], SymbolsField::Actions),
+        (
+            &["vmods", "virtualmods", "virtualmodifiers"],
+            SymbolsField::Vmods,
+        ),
+        (&["locking", "lock", "locks"], SymbolsField::Locking),
+        (
+            &["radiogroup", "permanentradiogroup", "allownone"],
+            SymbolsField::RadioGroup,
+        ),
+        (&["repeating", "repeats", "repeat"], SymbolsField::Repeat),
+        (&["groupswrap", "wrapgroups"], SymbolsField::GroupsWrap),
+        (&["groupsclamp", "clampgroups"], SymbolsField::GroupsClamp),
+        (
+            &["groupsredirect", "redirectgroups"],
+            SymbolsField::GroupsRedirect,
+        ),
+    ];
+    for (names, sf) in FIELDS {
+        if names.iter().any(|n| field.eq_ignore_ascii_case(n)) {
+            return Some(*sf);
+        }
+    }
+    if field
         .get(..16)
         .is_some_and(|s| s.eq_ignore_ascii_case("permanentoverlay"))
     {
@@ -854,20 +860,6 @@ fn parse_symbols_field(field: &str) -> Option<SymbolsField> {
         .is_some_and(|s| s.eq_ignore_ascii_case("overlay"))
     {
         Some(SymbolsField::Overlay)
-    } else if field.eq_ignore_ascii_case("repeating")
-        || field.eq_ignore_ascii_case("repeats")
-        || field.eq_ignore_ascii_case("repeat")
-    {
-        Some(SymbolsField::Repeat)
-    } else if field.eq_ignore_ascii_case("groupswrap") || field.eq_ignore_ascii_case("wrapgroups") {
-        Some(SymbolsField::GroupsWrap)
-    } else if field.eq_ignore_ascii_case("groupsclamp") || field.eq_ignore_ascii_case("clampgroups")
-    {
-        Some(SymbolsField::GroupsClamp)
-    } else if field.eq_ignore_ascii_case("groupsredirect")
-        || field.eq_ignore_ascii_case("redirectgroups")
-    {
-        Some(SymbolsField::GroupsRedirect)
     } else {
         None
     }
@@ -1830,6 +1822,7 @@ fn handle_include_compat_map(
     }
     info.error_count == 0
 }
+#[derive(Clone, Copy)]
 enum InterpField {
     Action,
     VirtualModifier,
@@ -1839,22 +1832,20 @@ enum InterpField {
 }
 
 fn parse_interp_field(field: &str) -> Option<InterpField> {
-    if field.eq_ignore_ascii_case("action") {
-        Some(InterpField::Action)
-    } else if field.eq_ignore_ascii_case("virtualmodifier")
-        || field.eq_ignore_ascii_case("virtualmod")
-    {
-        Some(InterpField::VirtualModifier)
-    } else if field.eq_ignore_ascii_case("repeat") {
-        Some(InterpField::Repeat)
-    } else if field.eq_ignore_ascii_case("locking") {
-        Some(InterpField::Locking)
-    } else if field.eq_ignore_ascii_case("usemodmap") || field.eq_ignore_ascii_case("usemodmapmods")
-    {
-        Some(InterpField::UseModMap)
-    } else {
-        None
-    }
+    const FIELDS: &[(&[&str], InterpField)] = &[
+        (&["action"], InterpField::Action),
+        (
+            &["virtualmodifier", "virtualmod"],
+            InterpField::VirtualModifier,
+        ),
+        (&["repeat"], InterpField::Repeat),
+        (&["locking"], InterpField::Locking),
+        (&["usemodmap", "usemodmapmods"], InterpField::UseModMap),
+    ];
+    FIELDS
+        .iter()
+        .find(|(names, _)| names.iter().any(|n| field.eq_ignore_ascii_case(n)))
+        .map(|(_, f)| *f)
 }
 
 fn set_interp_field(

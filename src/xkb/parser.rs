@@ -8,9 +8,9 @@ pub(crate) use super::symbols::compile_key_types;
 pub(crate) use super::symbols::compile_keycodes;
 pub(crate) use super::symbols::compile_symbols;
 use super::symbols::{expr_resolve_group, expr_resolve_group_mask};
+use crate::xkb::keymap::xkb_mod_name_to_index;
 use crate::xkb::keymap::CONTROL_NAMES_MIN_V1_INDEX;
 use crate::xkb::keymap::CONTROL_NAMES_MIN_V2_INDEX;
-use crate::xkb::keymap::xkb_mod_name_to_index;
 use crate::xkb::keysym::codepoint_to_keysym;
 
 fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
@@ -899,17 +899,11 @@ fn execute_reduction<'a>(
     param: &mut ParserParam<'a>,
 ) -> bool {
     match yyn {
-        2 => {
+        2 | 3 => {
             // XkbFile: XkbCompositeMap
             param.rtrn = yyvs[sp].take_file();
             param.more_maps = param.rtrn.is_some();
             // yyval is dead here since we continue the loop; leave as None
-        }
-        3 => {
-            // XkbFile: XkbMapConfig (YYACCEPT after)
-            param.rtrn = yyvs[sp].take_file();
-            param.more_maps = param.rtrn.is_some();
-            // Note: caller checks yyn == 3 for YYACCEPT
         }
         4 => {
             // XkbFile: END_OF_FILE
@@ -931,13 +925,7 @@ fn execute_reduction<'a>(
                 flags,
             ));
         }
-        6 => {
-            yy_file_type(yyval, FileType::Keymap);
-        }
-        7 => {
-            yy_file_type(yyval, FileType::Keymap);
-        }
-        8 => {
+        6 | 7 | 8 => {
             yy_file_type(yyval, FileType::Keymap);
         }
         9 => {
@@ -981,7 +969,7 @@ fn execute_reduction<'a>(
         16 => {
             yy_file_type(yyval, FileType::Geometry);
         }
-        17 => {
+        17 | 20 => {
             *yyval = YYValue::MapFlags(yyvs[sp].as_map_flags());
         }
         18 => {
@@ -990,9 +978,6 @@ fn execute_reduction<'a>(
         19 => {
             let f = yyvs[sp - 1].as_map_flags() | yyvs[sp].as_map_flags();
             *yyval = YYValue::MapFlags(f);
-        }
-        20 => {
-            *yyval = YYValue::MapFlags(yyvs[sp].as_map_flags());
         }
         21 => {
             yy_flags(yyval, MAP_IS_PARTIAL);
@@ -1097,16 +1082,8 @@ fn execute_reduction<'a>(
             // ShapeDecl, SectionDecl, DoodadDecl → geometry (ignored)
             *yyval = YYValue::None;
         }
-        45 => {
+        45 | 46 => {
             // Decl: OptMergeMode UnknownDecl
-            if let YYValue::Unknown = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                *yyval = YYValue::Stmt(Statement::Unknown);
-            } else {
-                *yyval = YYValue::None;
-            }
-        }
-        46 => {
-            // Decl: OptMergeMode UnknownCompoundStatementDecl
             if let YYValue::Unknown = std::mem::replace(&mut yyvs[sp], YYValue::None) {
                 *yyval = YYValue::Stmt(Statement::Unknown);
             } else {
@@ -1216,7 +1193,7 @@ fn execute_reduction<'a>(
             }
             *yyval = YYValue::VarList(list);
         }
-        62 => {
+        62 | 66 => {
             // VarDeclList: empty
             *yyval = YYValue::VarList(Vec::new());
         }
@@ -1237,10 +1214,6 @@ fn execute_reduction<'a>(
             let list = yyvs[sp].take_var_list();
             *yyval = YYValue::VarList(list);
         }
-        66 => {
-            // OptSymbolsBody: empty
-            *yyval = YYValue::VarList(Vec::new());
-        }
         67 => {
             // SymbolsBody: SymbolsBody COMMA SymbolsVarDecl
             let var = yyvs[sp].take_var();
@@ -1259,16 +1232,9 @@ fn execute_reduction<'a>(
             }
             *yyval = YYValue::VarList(list);
         }
-        69 => {
+        69 | 70 => {
             // SymbolsVarDecl: Lhs EQUALS Expr
             let lhs = yyvs[sp - 2].take_expr();
-            let val = yyvs[sp].take_expr();
-            *yyval = YYValue::Var(var_create(lhs, val));
-        }
-        70 => {
-            // SymbolsVarDecl: Lhs EQUALS MultiKeySymOrActionList
-            let lhs = yyvs[sp - 2].take_expr();
-            // MultiKeySymOrActionList is an ExprList or Expr
             let val = yyvs[sp].take_expr();
             *yyval = YYValue::Var(var_create(lhs, val));
         }
@@ -1287,7 +1253,7 @@ fn execute_reduction<'a>(
             let val = yyvs[sp].take_expr();
             *yyval = YYValue::Var(var_create(None, val));
         }
-        74 => {
+        74 | 76 | 172 => {
             // MultiKeySymOrActionList: OBRACKET MultiKeySymList CBRACKET (yylen=3)
             let list = yyvs[sp - 1].take_expr_list();
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: list }));
@@ -1303,11 +1269,6 @@ fn execute_reduction<'a>(
             }
             prepended.append(&mut list);
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: prepended }));
-        }
-        76 => {
-            // MultiKeySymOrActionList: OBRACKET MultiActionList CBRACKET (yylen=3)
-            let list = yyvs[sp - 1].take_expr_list();
-            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: list }));
         }
         77 => {
             // MultiKeySymOrActionList: NoSymbolOrActionList OBRACKET MultiActionList CBRACKET COMMA (yylen=5)
@@ -1349,15 +1310,15 @@ fn execute_reduction<'a>(
             let list = yyvs[sp - 2].take_expr_list();
             *yyval = YYValue::ModMask(mod_map_create(atom, list));
         }
-        84 => {
+        84 | 148 | 170 | 187 => {
             // KeyOrKeySymList: KeyOrKeySymList COMMA KeyOrKeySym
             yy_list_push(yyval, yyvs, sp, 2);
         }
-        85 => {
+        85 | 149 | 169 | 171 | 189 => {
             // KeyOrKeySymList: KeyOrKeySym
             yy_list_single(yyval, yyvs, sp);
         }
-        86 => {
+        86 | 185 => {
             // KeyOrKeySym: KEYNAME
             let atom = yyvs[sp].as_atom();
             *yyval = YYValue::Expr(expr_create(ExprKind::KeyName(atom)));
@@ -1373,14 +1334,8 @@ fn execute_reduction<'a>(
             let vardefs = yyvs[sp - 2].take_var_list();
             *yyval = YYValue::LedMap(led_map_create(atom, vardefs));
         }
-        89 => {
+        89 | 90 => {
             // LedNameDecl: INDICATOR Integer EQUALS Expr SEMI
-            let num = yyvs[sp - 3].as_num();
-            let expr = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::LedName(led_name_create(num, expr));
-        }
-        90 => {
-            // LedNameDecl: VIRTUAL INDICATOR Integer EQUALS Expr SEMI
             let num = yyvs[sp - 3].as_num();
             let expr = yyvs[sp - 1].take_expr();
             *yyval = YYValue::LedName(led_name_create(num, expr));
@@ -1403,7 +1358,7 @@ fn execute_reduction<'a>(
         | 113 | 114 | 115 | 116 | 117 | 118 => {
             *yyval = YYValue::None;
         }
-        99 => {
+        99 | 106 => {
             // SectionBodyItem: VarDecl → drop it (geometry)
             let _ = yyvs[sp].take_var();
             *yyval = YYValue::None;
@@ -1411,11 +1366,6 @@ fn execute_reduction<'a>(
         101 => {
             // SectionBodyItem: LedMapDecl → drop it (geometry)
             let _ = std::mem::replace(&mut yyvs[sp], YYValue::None);
-            *yyval = YYValue::None;
-        }
-        106 => {
-            // RowBodyItem: VarDecl → drop it (geometry)
-            let _ = yyvs[sp].take_var();
             *yyval = YYValue::None;
         }
         110 => {
@@ -1443,10 +1393,7 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Num(0);
         }
         // FieldSpec / Element rules 128-140
-        128 => {
-            *yyval = YYValue::Atom(yyvs[sp].as_atom());
-        }
-        129 => {
+        128 | 129 => {
             *yyval = YYValue::Atom(yyvs[sp].as_atom());
         }
         130 => {
@@ -1486,10 +1433,7 @@ fn execute_reduction<'a>(
         141 => {
             *yyval = YYValue::Merge(yyvs[sp].as_merge());
         }
-        142 => {
-            yy_merge(yyval, MergeMode::Default);
-        }
-        143 => {
+        142 | 143 => {
             yy_merge(yyval, MergeMode::Default);
         }
         144 => {
@@ -1506,14 +1450,6 @@ fn execute_reduction<'a>(
             yy_merge(yyval, MergeMode::Default);
         }
         // ExprList rules 148-150
-        148 => {
-            // ExprList: ExprList COMMA Expr
-            yy_list_push(yyval, yyvs, sp, 2);
-        }
-        149 => {
-            // ExprList: Expr
-            yy_list_single(yyval, yyvs, sp);
-        }
         150 => {
             // ExprList: empty
             *yyval = YYValue::ExprList(Vec::new());
@@ -1534,7 +1470,7 @@ fn execute_reduction<'a>(
         155 => {
             yy_bin_expr(yyval, yyvs, sp, BinaryOp::Assign);
         }
-        156 => {
+        156 | 161 | 163 | 164 | 173 | 180 | 196 => {
             // Expr: Term
             *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
         }
@@ -1550,25 +1486,13 @@ fn execute_reduction<'a>(
         160 => {
             yy_unary_expr(yyval, yyvs, sp, UnaryOp::Invert);
         }
-        161 => {
-            // Term: Lhs (passthrough)
-            *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
-        }
-        162 => {
+        162 | 175 => {
             // Term: Action OPAREN ExprList CPAREN
             let name = yyvs[sp - 3].as_atom();
             let list = yyvs[sp - 1].take_expr_list();
             *yyval = YYValue::Expr(expr_create(ExprKind::Action { name, args: list }));
         }
-        163 => {
-            // Term: Terminal
-            *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
-        }
-        164 => {
-            // Term: OPAREN Expr CPAREN → passthrough the expr
-            *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
-        }
-        165 => {
+        165 | 194 => {
             // Term: OPAREN Expr CPAREN
             *yyval = std::mem::replace(&mut yyvs[sp - 1], YYValue::None);
         }
@@ -1602,42 +1526,12 @@ fn execute_reduction<'a>(
             });
             *yyval = YYValue::ExprList(vec![action_list_expr]);
         }
-        169 => {
-            // MultiActionList: KeySymList (initial single element)
-            yy_list_single(yyval, yyvs, sp);
-        }
-        // NonEmptyActions rules 170-171
-        170 => {
-            // NonEmptyActions: NonEmptyActions COMMA Action
-            yy_list_push(yyval, yyvs, sp, 2);
-        }
-        171 => {
-            // NonEmptyActions: Action
-            yy_list_single(yyval, yyvs, sp);
-        }
-        // Actions / ActionList rules 172-175
-        172 => {
-            // Actions: OBRACE NonEmptyActions CBRACE
-            let list = yyvs[sp - 1].take_expr_list();
-            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: list }));
-        }
-        173 => {
-            // ActionList: Action
-            *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
-        }
         174 => {
             // ActionList: empty (yylen=0 means nothing on stack)
             *yyval = YYValue::Expr(expr_create(ExprKind::ActionList {
                 actions: Vec::new(),
             }));
         }
-        175 => {
-            // Action: FieldSpec OPAREN ExprList CPAREN
-            let name = yyvs[sp - 3].as_atom();
-            let list = yyvs[sp - 1].take_expr_list();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Action { name, args: list }));
-        }
-        // Lhs rules 176-179
         176 => {
             // Lhs: Ident
             let atom = yyvs[sp].as_atom();
@@ -1671,9 +1565,6 @@ fn execute_reduction<'a>(
             }));
         }
         // OptTerminal / Terminal 180-181
-        180 => {
-            *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
-        }
         181 => {
             *yyval = YYValue::None;
         }
@@ -1689,11 +1580,6 @@ fn execute_reduction<'a>(
         184 => {
             *yyval = YYValue::Expr(expr_create(ExprKind::Float));
         }
-        185 => {
-            let atom = yyvs[sp].as_atom();
-            *yyval = YYValue::Expr(expr_create(ExprKind::KeyName(atom)));
-        }
-        // MultiKeySymList rules 186-189
         186 => {
             // MultiKeySymList: MultiKeySymList COMMA KeySymList
             let keysym = yyvs[sp].as_keysym();
@@ -1702,21 +1588,12 @@ fn execute_reduction<'a>(
             list.push(expr);
             *yyval = YYValue::ExprList(list);
         }
-        187 => {
-            // MultiKeySymList: MultiKeySymList COMMA KeySymList (expr variant)
-            yy_list_push(yyval, yyvs, sp, 2);
-        }
         188 => {
             // MultiKeySymList: KeySymList (keysym)
             let keysym = yyvs[sp].as_keysym();
             let expr = expr_create_key_sym_list(keysym);
             *yyval = YYValue::ExprList(vec![expr]);
         }
-        189 => {
-            // MultiKeySymList: KeySymList (expr)
-            yy_list_single(yyval, yyvs, sp);
-        }
-        // KeySymList rules 190-197
         190 => {
             // NonEmptyKeySyms: NonEmptyKeySyms COMMA KeySym
             let expr = yyvs[sp - 2].take_expr().unwrap();
@@ -1741,7 +1618,7 @@ fn execute_reduction<'a>(
             let keysym = yyvs[sp].as_keysym();
             *yyval = YYValue::Expr(expr_create_key_sym_list(keysym));
         }
-        193 => {
+        193 | 195 => {
             // KeySyms: STRING (single string keysym)
             let s = yyvs[sp].take_str();
             let expr = expr_create_key_sym_list(XKB_KEY_NO_SYMBOL);
@@ -1753,27 +1630,6 @@ fn execute_reduction<'a>(
                     return false;
                 }
             }
-        }
-        194 => {
-            // KeySymList: OBRACKET NonEmptyKeySyms CBRACKET
-            *yyval = std::mem::replace(&mut yyvs[sp - 1], YYValue::None);
-        }
-        195 => {
-            // KeySymList: STRING (produces keysym list from string)
-            let s = yyvs[sp].take_str();
-            let expr = expr_create_key_sym_list(XKB_KEY_NO_SYMBOL);
-            match expr_key_sym_list_append_string(param.scanner, expr, &s) {
-                Some(e) => {
-                    *yyval = YYValue::Expr(e);
-                }
-                None => {
-                    return false;
-                }
-            }
-        }
-        196 => {
-            // KeySymList: KeySyms
-            *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
         }
         197 => {
             // KeySymList: empty → NoSymbol
@@ -1862,7 +1718,7 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, s.as_bytes()));
         }
         // OptMapName / MapName 217-219
-        217 => {
+        217 | 219 => {
             // MapName: STRING
             let s = yyvs[sp].take_str();
             *yyval = YYValue::Str(s);
@@ -1871,11 +1727,7 @@ fn execute_reduction<'a>(
             // OptMapName: empty
             *yyval = YYValue::Str(String::new());
         }
-        219 => {
-            // MapName: STRING
-            let s = yyvs[sp].take_str();
-            *yyval = YYValue::Str(s);
-        }
+
         _ => {
             // Default: no action
         }
@@ -2098,7 +1950,6 @@ pub(crate) fn led_name_create(ndx: i64, name: Option<ExprKind>) -> LedNameDef {
         name,
     }
 }
-
 
 pub(crate) fn include_create(
     _ctx: &mut XkbContext,
@@ -5989,10 +5840,7 @@ impl XkbKeymap {
         if idx as usize >= self.group_names.len() {
             return None;
         }
-        let s = atom_text(
-            &self.ctx.atom_table,
-            self.group_names[idx as usize],
-        );
+        let s = atom_text(&self.ctx.atom_table, self.group_names[idx as usize]);
         if s.is_empty() {
             None
         } else {
@@ -6695,7 +6543,12 @@ impl_parse_dec!(parse_dec_u64, u64);
 /// Convert a hex digit byte to its numeric value (0-15), or 0xff if invalid.
 #[inline]
 fn hex_val(b: u8) -> u8 {
-    (b as char).to_digit(16).unwrap_or(0xff) as u8
+    match b {
+        b'0'..=b'9' => b - b'0',
+        b'A'..=b'F' => b - b'A' + 10,
+        b'a'..=b'f' => b - b'a' + 10,
+        _ => 0xff,
+    }
 }
 
 macro_rules! impl_parse_hex {

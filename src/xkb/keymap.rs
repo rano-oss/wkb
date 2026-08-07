@@ -7,7 +7,8 @@ use crate::xkb::keysym::keysym_to_codepoint;
 
 pub use super::parser::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
 pub(crate) use super::parser::{
-    XkbAction, XkbContext, XkbKeymap, XkbLed, XkbLevel, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL, XKB_KEYMAP_FORMAT_TEXT_V2,
+    XkbAction, XkbContext, XkbKeymap, XkbLed, XkbLevel, XkbModSet, XkbRuleNames, MOD_REAL,
+    MOD_REAL_MASK_ALL, XKB_KEYMAP_FORMAT_TEXT_V2,
 };
 
 pub(crate) fn xkb_keymap_new_from_names(
@@ -776,9 +777,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
             let layout = xkb_context_getenv("XKB_DEFAULT_LAYOUT");
             let default_variant = xkb_context_getenv("XKB_DEFAULT_VARIANT");
             match (layout, ctx.use_environment_names, default_variant) {
-                (Ok(_), true, Ok(default_variant)) => {
-                    default_variant
-                }
+                (Ok(_), true, Ok(default_variant)) => default_variant,
                 (_, _, _) => "".to_string(),
             }
         };

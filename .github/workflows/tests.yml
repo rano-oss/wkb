@@ -6,27 +6,6 @@ on:
   pull_request:
 
 jobs:
-  test-locks:
-    name: test (locks)
-    runs-on: ubuntu-latest
-    container:
-      image: fedora:latest
-    steps:
-      - name: Install system dependencies
-        run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common
-
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache cargo registry and target
-        uses: Swatinem/rust-cache@v2
-
-      - name: Run test target
-        run: cargo test --test locks
-
   test-unit-doc:
     name: test (lib + doc)
     runs-on: ubuntu-latest
@@ -61,13 +40,20 @@ jobs:
       matrix:
         test_target:
           - compose
-          - ctrl_keys
+          - ctrl_keys_combo
+          - ctrl_keys_function
           - ir
           - keymap
           - compile
           - type
           - led_lights
-          - levels
+          - levels_level_keys
+          - levels_keysym
+          - locks_caps_lock
+          - locks_caps_num_lock
+          - locks_level
+          - locks_num_lock
+          - locks_state
           - modifiers
           - repeat
           - unicode
