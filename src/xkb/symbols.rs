@@ -728,35 +728,14 @@ fn add_actions_to_key(
     true
 }
 static REPEAT_ENTRIES: [LookupEntry; 8] = [
-    LookupEntry {
-        name: "true",
-        value: KEY_REPEAT_YES,
-    },
-    LookupEntry {
-        name: "yes",
-        value: KEY_REPEAT_YES,
-    },
-    LookupEntry {
-        name: "on",
-        value: KEY_REPEAT_YES,
-    },
-    LookupEntry {
-        name: "false",
-        value: KEY_REPEAT_NO,
-    },
-    LookupEntry {
-        name: "no",
-        value: KEY_REPEAT_NO,
-    },
-    LookupEntry {
-        name: "off",
-        value: KEY_REPEAT_NO,
-    },
-    LookupEntry {
-        name: "default",
-        value: KEY_REPEAT_UNDEFINED,
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("true", KEY_REPEAT_YES),
+    lookup_entry("yes", KEY_REPEAT_YES),
+    lookup_entry("on", KEY_REPEAT_YES),
+    lookup_entry("false", KEY_REPEAT_NO),
+    lookup_entry("no", KEY_REPEAT_NO),
+    lookup_entry("off", KEY_REPEAT_NO),
+    lookup_entry("default", KEY_REPEAT_UNDEFINED),
+    lookup_entry("", 0),
 ];
 fn expr_resolve_overlay_entry(
     keymap_info: &XkbKeymapInfo<'_>,
@@ -1669,13 +1648,12 @@ fn resolve_state_and_predicate(
     let resolve_expr: &ExprKind;
     if let ExprKind::Action { name, args } = expr {
         let pred_txt: &str = atom_text(&ki.keymap.ctx.atom_table, *name);
-        let mut pred: u32 = 0;
-        if !lookup_string(&SYM_INTERPRET_MATCH_MASK_NAMES, pred_txt, &mut pred)
-            || args.is_empty()
-            || args.len() != 1
-        {
+        if args.len() != 1 {
             return false;
         }
+        let Some(pred) = lookup_string(&SYM_INTERPRET_MATCH_MASK_NAMES, pred_txt) else {
+            return false;
+        };
         *pred_rtrn = pred;
         resolve_expr = &args[0];
     } else if let ExprKind::Ident(ident_val) = expr {
@@ -3578,7 +3556,7 @@ pub(crate) struct NamedIntegerPattern<'a> {
     pub(crate) is_mask: bool,
 }
 
-static LEVEL_NAME_PATTERN_ENTRIES: [LookupEntry; 1] = [LookupEntry { name: "", value: 0 }];
+static LEVEL_NAME_PATTERN_ENTRIES: [LookupEntry; 1] = [lookup_entry("", 0)];
 
 fn simple_lookup(ctx: &XkbContext, entries: &[LookupEntry], field: u32) -> Option<u32> {
     if field == XKB_ATOM_NONE {
@@ -3806,13 +3784,8 @@ pub(crate) fn expr_resolve_group(
     group_rtrn: &mut u32,
     pending: &mut bool,
 ) -> ParseStatus {
-    static PENDING_GROUP_INDEX_NAMES: [LookupEntry; 2] = [
-        LookupEntry {
-            name: GROUP_LAST_INDEX_NAME,
-            value: 0,
-        },
-        LookupEntry { name: "", value: 0 },
-    ];
+    static PENDING_GROUP_INDEX_NAMES: [LookupEntry; 2] =
+        [lookup_entry(GROUP_LAST_INDEX_NAME, 0), lookup_entry("", 0)];
     let group_name_pattern = NamedIntegerPattern {
         prefix: "Group",
         min: 1_u32,
@@ -3970,13 +3943,8 @@ pub(crate) fn expr_resolve_group_mask(
     group_rtrn: &mut u32,
     pending_rtrn: &mut bool,
 ) -> bool {
-    static PENDING_GROUP_MASK_NAMES: [LookupEntry; 2] = [
-        LookupEntry {
-            name: GROUP_LAST_INDEX_NAME,
-            value: 0,
-        },
-        LookupEntry { name: "", value: 0 },
-    ];
+    static PENDING_GROUP_MASK_NAMES: [LookupEntry; 2] =
+        [lookup_entry(GROUP_LAST_INDEX_NAME, 0), lookup_entry("", 0)];
     let group_name_pattern = NamedIntegerPattern {
         prefix: "Group",
         min: 1_u32,
@@ -4100,164 +4068,44 @@ pub(crate) fn init_actions_info(info: &mut ActionsInfo) {
     }
 }
 static FIELD_STRINGS: [LookupEntry; 37] = [
-    LookupEntry {
-        name: "clearLocks",
-        value: ACTION_FIELD_CLEAR_LOCKS,
-    },
-    LookupEntry {
-        name: "latchToLock",
-        value: ACTION_FIELD_LATCH_TO_LOCK,
-    },
-    LookupEntry {
-        name: "genKeyEvent",
-        value: ACTION_FIELD_GEN_KEY_EVENT,
-    },
-    LookupEntry {
-        name: "generateKeyEvent",
-        value: ACTION_FIELD_GEN_KEY_EVENT,
-    },
-    LookupEntry {
-        name: "report",
-        value: ACTION_FIELD_REPORT,
-    },
-    LookupEntry {
-        name: "default",
-        value: ACTION_FIELD_DEFAULT,
-    },
-    LookupEntry {
-        name: "affect",
-        value: ACTION_FIELD_AFFECT,
-    },
-    LookupEntry {
-        name: "increment",
-        value: ACTION_FIELD_INCREMENT,
-    },
-    LookupEntry {
-        name: "modifiers",
-        value: ACTION_FIELD_MODIFIERS,
-    },
-    LookupEntry {
-        name: "mods",
-        value: ACTION_FIELD_MODIFIERS,
-    },
-    LookupEntry {
-        name: "group",
-        value: ACTION_FIELD_GROUP,
-    },
-    LookupEntry {
-        name: "x",
-        value: ACTION_FIELD_X,
-    },
-    LookupEntry {
-        name: "y",
-        value: ACTION_FIELD_Y,
-    },
-    LookupEntry {
-        name: "accel",
-        value: ACTION_FIELD_ACCEL,
-    },
-    LookupEntry {
-        name: "accelerate",
-        value: ACTION_FIELD_ACCEL,
-    },
-    LookupEntry {
-        name: "repeat",
-        value: ACTION_FIELD_ACCEL,
-    },
-    LookupEntry {
-        name: "button",
-        value: ACTION_FIELD_BUTTON,
-    },
-    LookupEntry {
-        name: "value",
-        value: ACTION_FIELD_VALUE,
-    },
-    LookupEntry {
-        name: "controls",
-        value: ACTION_FIELD_CONTROLS,
-    },
-    LookupEntry {
-        name: "ctrls",
-        value: ACTION_FIELD_CONTROLS,
-    },
-    LookupEntry {
-        name: "type",
-        value: ACTION_FIELD_TYPE,
-    },
-    LookupEntry {
-        name: "count",
-        value: ACTION_FIELD_COUNT,
-    },
-    LookupEntry {
-        name: "screen",
-        value: ACTION_FIELD_SCREEN,
-    },
-    LookupEntry {
-        name: "same",
-        value: ACTION_FIELD_SAME,
-    },
-    LookupEntry {
-        name: "sameServer",
-        value: ACTION_FIELD_SAME,
-    },
-    LookupEntry {
-        name: "data",
-        value: ACTION_FIELD_DATA,
-    },
-    LookupEntry {
-        name: "device",
-        value: ACTION_FIELD_DEVICE,
-    },
-    LookupEntry {
-        name: "dev",
-        value: ACTION_FIELD_DEVICE,
-    },
-    LookupEntry {
-        name: "key",
-        value: ACTION_FIELD_KEYCODE,
-    },
-    LookupEntry {
-        name: "keycode",
-        value: ACTION_FIELD_KEYCODE,
-    },
-    LookupEntry {
-        name: "kc",
-        value: ACTION_FIELD_KEYCODE,
-    },
-    LookupEntry {
-        name: "clearmods",
-        value: ACTION_FIELD_MODS_TO_CLEAR,
-    },
-    LookupEntry {
-        name: "clearmodifiers",
-        value: ACTION_FIELD_MODS_TO_CLEAR,
-    },
-    LookupEntry {
-        name: "lockOnRelease",
-        value: ACTION_FIELD_LOCK_ON_RELEASE,
-    },
-    LookupEntry {
-        name: "unlockOnPress",
-        value: ACTION_FIELD_UNLOCK_ON_PRESS,
-    },
-    LookupEntry {
-        name: "latchOnPress",
-        value: ACTION_FIELD_LATCH_ON_PRESS,
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("clearLocks", ACTION_FIELD_CLEAR_LOCKS),
+    lookup_entry("latchToLock", ACTION_FIELD_LATCH_TO_LOCK),
+    lookup_entry("genKeyEvent", ACTION_FIELD_GEN_KEY_EVENT),
+    lookup_entry("generateKeyEvent", ACTION_FIELD_GEN_KEY_EVENT),
+    lookup_entry("report", ACTION_FIELD_REPORT),
+    lookup_entry("default", ACTION_FIELD_DEFAULT),
+    lookup_entry("affect", ACTION_FIELD_AFFECT),
+    lookup_entry("increment", ACTION_FIELD_INCREMENT),
+    lookup_entry("modifiers", ACTION_FIELD_MODIFIERS),
+    lookup_entry("mods", ACTION_FIELD_MODIFIERS),
+    lookup_entry("group", ACTION_FIELD_GROUP),
+    lookup_entry("x", ACTION_FIELD_X),
+    lookup_entry("y", ACTION_FIELD_Y),
+    lookup_entry("accel", ACTION_FIELD_ACCEL),
+    lookup_entry("accelerate", ACTION_FIELD_ACCEL),
+    lookup_entry("repeat", ACTION_FIELD_ACCEL),
+    lookup_entry("button", ACTION_FIELD_BUTTON),
+    lookup_entry("value", ACTION_FIELD_VALUE),
+    lookup_entry("controls", ACTION_FIELD_CONTROLS),
+    lookup_entry("ctrls", ACTION_FIELD_CONTROLS),
+    lookup_entry("type", ACTION_FIELD_TYPE),
+    lookup_entry("count", ACTION_FIELD_COUNT),
+    lookup_entry("screen", ACTION_FIELD_SCREEN),
+    lookup_entry("same", ACTION_FIELD_SAME),
+    lookup_entry("sameServer", ACTION_FIELD_SAME),
+    lookup_entry("data", ACTION_FIELD_DATA),
+    lookup_entry("device", ACTION_FIELD_DEVICE),
+    lookup_entry("dev", ACTION_FIELD_DEVICE),
+    lookup_entry("key", ACTION_FIELD_KEYCODE),
+    lookup_entry("keycode", ACTION_FIELD_KEYCODE),
+    lookup_entry("kc", ACTION_FIELD_KEYCODE),
+    lookup_entry("clearmods", ACTION_FIELD_MODS_TO_CLEAR),
+    lookup_entry("clearmodifiers", ACTION_FIELD_MODS_TO_CLEAR),
+    lookup_entry("lockOnRelease", ACTION_FIELD_LOCK_ON_RELEASE),
+    lookup_entry("unlockOnPress", ACTION_FIELD_UNLOCK_ON_PRESS),
+    lookup_entry("latchOnPress", ACTION_FIELD_LATCH_ON_PRESS),
+    lookup_entry("", 0),
 ];
-fn string_to_action_type(str: &str, type_rtrn: &mut u32) -> bool {
-    let mut type_0: u32 = 0;
-    let ret: bool = lookup_string(&ACTION_TYPE_NAMES, str, &mut type_0);
-    *type_rtrn = type_0;
-    ret
-}
-fn string_to_field(str: &str, field_rtrn: &mut u32) -> bool {
-    let mut field: u32 = 0;
-    let ret: bool = lookup_string(&FIELD_STRINGS, str, &mut field);
-    *field_rtrn = field;
-    ret
-}
 #[inline]
 fn report_mismatch(strict: u32) -> ParseStatus {
     if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
@@ -4358,23 +4206,14 @@ fn check_modifier_field(
     ParseStatus::Success
 }
 static LOCK_WHICH: [LookupEntry; 5] = [
-    LookupEntry {
-        name: "both",
-        value: 0,
-    },
-    LookupEntry {
-        name: "lock",
-        value: ActionFlags::LOCK_NO_UNLOCK.bits(),
-    },
-    LookupEntry {
-        name: "neither",
-        value: ActionFlags::LOCK_NO_LOCK.bits() | ActionFlags::LOCK_NO_UNLOCK.bits(),
-    },
-    LookupEntry {
-        name: "unlock",
-        value: ActionFlags::LOCK_NO_LOCK.bits(),
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("both", 0),
+    lookup_entry("lock", ActionFlags::LOCK_NO_UNLOCK.bits()),
+    lookup_entry(
+        "neither",
+        ActionFlags::LOCK_NO_LOCK.bits() | ActionFlags::LOCK_NO_UNLOCK.bits(),
+    ),
+    lookup_entry("unlock", ActionFlags::LOCK_NO_LOCK.bits()),
+    lookup_entry("", 0),
 ];
 fn check_affect_field(
     ctx: &XkbContext,
@@ -4426,54 +4265,31 @@ fn handle_set_latch_lock_mods(
         act.flags = ActionFlags::from_bits_retain(raw_flags);
         return ret;
     }
-    if field == ACTION_FIELD_UNLOCK_ON_PRESS {
-        return check_boolean_flag_feature(
-            ctx,
-            keymap_info.strict,
-            ActionFlags::UNLOCK_ON_PRESS,
-            array_ndx,
-            value,
-            &mut act.flags,
-            keymap_info.features.mods_unlock_on_press,
-        );
-    }
-    if is_set_or_latch && field == ACTION_FIELD_CLEAR_LOCKS {
-        return check_boolean_flag(
-            ctx,
-            keymap_info.strict,
-            ActionFlags::LOCK_CLEAR,
-            array_ndx,
-            value,
-            &mut act.flags,
-        );
-    }
-    if is_latch {
-        if field == ACTION_FIELD_LATCH_TO_LOCK {
-            return check_boolean_flag(
-                ctx,
-                keymap_info.strict,
-                ActionFlags::LATCH_TO_LOCK,
-                array_ndx,
-                value,
-                &mut act.flags,
-            );
-        }
-        if field == ACTION_FIELD_LATCH_ON_PRESS {
-            return check_boolean_flag_feature(
-                ctx,
-                keymap_info.strict,
-                ActionFlags::LATCH_ON_PRESS,
-                array_ndx,
-                value,
-                &mut act.flags,
-                keymap_info.features.mods_latch_on_press,
-            );
-        }
-    }
     if is_lock && field == ACTION_FIELD_AFFECT {
         return check_affect_field(ctx, keymap_info.strict, array_ndx, value, &mut act.flags);
     }
-    report_illegal(keymap_info.strict)
+    let (flag, enabled) = match field {
+        ACTION_FIELD_UNLOCK_ON_PRESS => (
+            ActionFlags::UNLOCK_ON_PRESS,
+            keymap_info.features.mods_unlock_on_press,
+        ),
+        ACTION_FIELD_CLEAR_LOCKS if is_set_or_latch => (ActionFlags::LOCK_CLEAR, true),
+        ACTION_FIELD_LATCH_TO_LOCK if is_latch => (ActionFlags::LATCH_TO_LOCK, true),
+        ACTION_FIELD_LATCH_ON_PRESS if is_latch => (
+            ActionFlags::LATCH_ON_PRESS,
+            keymap_info.features.mods_latch_on_press,
+        ),
+        _ => return report_illegal(keymap_info.strict),
+    };
+    check_boolean_flag_feature(
+        ctx,
+        keymap_info.strict,
+        flag,
+        array_ndx,
+        value,
+        &mut act.flags,
+        enabled,
+    )
 }
 fn check_group_field(
     keymap_info: &mut XkbKeymapInfo<'_>,
@@ -4569,38 +4385,24 @@ fn handle_set_latch_lock_group(
         | XkbAction::GroupLock(ref mut g) => g,
         _ => return report_illegal(keymap_info.strict),
     };
-    if is_set_or_latch && field == ACTION_FIELD_CLEAR_LOCKS {
-        return check_boolean_flag(
-            ctx,
-            keymap_info.strict,
-            ActionFlags::LOCK_CLEAR,
-            array_ndx,
-            value,
-            &mut act.flags,
-        );
-    }
-    if is_latch && field == ACTION_FIELD_LATCH_TO_LOCK {
-        return check_boolean_flag(
-            ctx,
-            keymap_info.strict,
-            ActionFlags::LATCH_TO_LOCK,
-            array_ndx,
-            value,
-            &mut act.flags,
-        );
-    }
-    if is_lock && field == ACTION_FIELD_LOCK_ON_RELEASE {
-        return check_boolean_flag_feature(
-            ctx,
-            keymap_info.strict,
+    let (flag, enabled) = match field {
+        ACTION_FIELD_CLEAR_LOCKS if is_set_or_latch => (ActionFlags::LOCK_CLEAR, true),
+        ACTION_FIELD_LATCH_TO_LOCK if is_latch => (ActionFlags::LATCH_TO_LOCK, true),
+        ACTION_FIELD_LOCK_ON_RELEASE if is_lock => (
             ActionFlags::LOCK_ON_RELEASE,
-            array_ndx,
-            value,
-            &mut act.flags,
             keymap_info.features.group_lock_on_release,
-        );
-    }
-    report_illegal(keymap_info.strict)
+        ),
+        _ => return report_illegal(keymap_info.strict),
+    };
+    check_boolean_flag_feature(
+        ctx,
+        keymap_info.strict,
+        flag,
+        array_ndx,
+        value,
+        &mut act.flags,
+        enabled,
+    )
 }
 
 fn handle_set_lock_controls(
@@ -4690,6 +4492,38 @@ fn handle_private(
     report_illegal(keymap_info.strict)
 }
 
+fn handle_action_field(
+    keymap_info: &mut XkbKeymapInfo<'_>,
+    mods: &XkbModSet,
+    action: &mut XkbAction,
+    action_type: u32,
+    field: u32,
+    array_ndx: Option<&ExprKind>,
+    value: ActionValue<'_>,
+) -> ParseStatus {
+    match action_type {
+        ACTION_TYPE_MOD_SET..=ACTION_TYPE_MOD_LOCK => {
+            handle_set_latch_lock_mods(keymap_info, mods, action, field, array_ndx, value)
+        }
+        ACTION_TYPE_GROUP_SET..=ACTION_TYPE_GROUP_LOCK => {
+            handle_set_latch_lock_group(keymap_info, action, field, array_ndx, value)
+        }
+        ACTION_TYPE_VOID
+        | ACTION_TYPE_PTR_MOVE
+        | ACTION_TYPE_PTR_BUTTON
+        | ACTION_TYPE_PTR_LOCK
+        | ACTION_TYPE_PTR_DEFAULT
+        | ACTION_TYPE_TERMINATE
+        | ACTION_TYPE_SWITCH_VT
+        | ACTION_TYPE_REDIRECT_KEY => ParseStatus::Success,
+        ACTION_TYPE_CTRL_SET | ACTION_TYPE_CTRL_LOCK => {
+            handle_set_lock_controls(keymap_info, action, field, array_ndx, value)
+        }
+        ACTION_TYPE_PRIVATE => handle_private(keymap_info, action, field, array_ndx, value),
+        _ => handle_no_action(keymap_info),
+    }
+}
+
 pub(crate) fn handle_action_def(
     keymap_info: &mut XkbKeymapInfo<'_>,
     info: &mut ActionsInfo,
@@ -4707,12 +4541,9 @@ pub(crate) fn handle_action_def(
         unreachable!()
     };
     let action_name: &str = atom_text(&keymap_info.keymap.ctx.atom_table, action_name_atom);
-    let mut handler_type: u32 = ACTION_TYPE_NONE;
-    if !string_to_action_type(action_name, &mut handler_type) {
-        handler_type = ACTION_TYPE_UNKNOWN;
-        if keymap_info.strict & PARSER_NO_UNKNOWN_ACTION != 0 {
-            return ParseStatus::Fatal;
-        }
+    let handler_type = lookup_string(&ACTION_TYPE_NAMES, action_name).unwrap_or(ACTION_TYPE_UNKNOWN);
+    if handler_type == ACTION_TYPE_UNKNOWN && keymap_info.strict & PARSER_NO_UNKNOWN_ACTION != 0 {
+        return ParseStatus::Fatal;
     }
     *action = info.actions[handler_type as usize];
     if handler_type == ACTION_TYPE_UNSUPPORTED_LEGACY {
@@ -4757,43 +4588,20 @@ pub(crate) fn handle_action_def(
         if !elem_rtrn.is_empty() {
             return ParseStatus::Fatal;
         }
-        let mut field_ndx: u32 = ACTION_FIELD_CLEAR_LOCKS;
-        if !string_to_field(field_rtrn, &mut field_ndx) {
+        let Some(field_ndx) = lookup_string(&FIELD_STRINGS, field_rtrn) else {
             if keymap_info.strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
                 return ParseStatus::Fatal;
             }
-        } else {
-            let parse_status = match handler_type {
-                ACTION_TYPE_MOD_SET..=ACTION_TYPE_MOD_LOCK => {
-                    handle_set_latch_lock_mods(keymap_info, mods, action, field_ndx, lhs.index, av)
-                }
-                ACTION_TYPE_GROUP_SET..=ACTION_TYPE_GROUP_LOCK => {
-                    handle_set_latch_lock_group(keymap_info, action, field_ndx, lhs.index, av)
-                }
-                // Legacy actions ignored
-                ACTION_TYPE_VOID
-                | ACTION_TYPE_PTR_MOVE
-                | ACTION_TYPE_PTR_BUTTON
-                | ACTION_TYPE_PTR_LOCK
-                | ACTION_TYPE_PTR_DEFAULT
-                | ACTION_TYPE_TERMINATE
-                | ACTION_TYPE_SWITCH_VT
-                | ACTION_TYPE_REDIRECT_KEY => ParseStatus::Success,
-                ACTION_TYPE_CTRL_SET | ACTION_TYPE_CTRL_LOCK => {
-                    handle_set_lock_controls(keymap_info, action, field_ndx, lhs.index, av)
-                }
-                ACTION_TYPE_PRIVATE => {
-                    handle_private(keymap_info, action, field_ndx, lhs.index, av)
-                }
-                _ => handle_no_action(keymap_info),
-            };
-            match parse_status {
-                ParseStatus::Fatal => return ParseStatus::Fatal,
-                ParseStatus::Recoverable => {
-                    ret = ParseStatus::Recoverable;
-                }
-                _ => {}
+            continue;
+        };
+        let parse_status =
+            handle_action_field(keymap_info, mods, action, handler_type, field_ndx, lhs.index, av);
+        match parse_status {
+            ParseStatus::Fatal => return ParseStatus::Fatal,
+            ParseStatus::Recoverable => {
+                ret = ParseStatus::Recoverable;
             }
+            _ => {}
         }
     }
     if matches!(action, XkbAction::Unknown) {
@@ -4814,35 +4622,31 @@ pub(crate) fn set_default_action_field(
     merge: MergeMode,
 ) -> ParseStatus {
     let av = ActionValue::Owned(value_rtrn);
-    let mut action: u32 = ACTION_TYPE_NONE;
-    if !string_to_action_type(elem, &mut action) {
+    let Some(action) = lookup_string(&ACTION_TYPE_NAMES, elem) else {
         return if keymap_info.strict & PARSER_NO_UNKNOWN_ACTION != 0 {
             ParseStatus::Fatal
         } else {
             ParseStatus::Recoverable
         };
-    }
-    let mut action_field: u32 = ACTION_FIELD_CLEAR_LOCKS;
-    if !string_to_field(field, &mut action_field) {
+    };
+    let Some(action_field) = lookup_string(&FIELD_STRINGS, field) else {
         return if keymap_info.strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
             ParseStatus::Fatal
         } else {
             ParseStatus::Recoverable
         };
-    }
+    };
     let into: &mut XkbAction = &mut info.actions[action as usize];
     let mut from: XkbAction = *into;
-    let ret = match action {
-        2..=4 => {
-            handle_set_latch_lock_mods(keymap_info, mods, &mut from, action_field, array_ndx, av)
-        }
-        5..=7 => handle_set_latch_lock_group(keymap_info, &mut from, action_field, array_ndx, av),
-        // Legacy actions ignored
-        8 | 9 | 10 | 11 | 13 | 16 | 17 | 18 => ParseStatus::Success,
-        14 | 15 => handle_set_lock_controls(keymap_info, &mut from, action_field, array_ndx, av),
-        19 => handle_private(keymap_info, &mut from, action_field, array_ndx, av),
-        _ => handle_no_action(keymap_info),
-    };
+    let ret = handle_action_field(
+        keymap_info,
+        mods,
+        &mut from,
+        action,
+        action_field,
+        array_ndx,
+        av,
+    );
     if ret != ParseStatus::Success {
         return ret;
     }

@@ -812,392 +812,120 @@ pub use super::parser::{
     ACTION_TYPE_TERMINATE, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, MATCH_ALL, MATCH_ANY,
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE,
 };
-pub(crate) fn lookup_string(tab: &[LookupEntry], string: &str, value_rtrn: &mut u32) -> bool {
-    if string.is_empty() {
-        return false;
-    }
-    for entry in tab {
-        if entry.name.is_empty() {
-            break;
-        }
-        if entry.name.eq_ignore_ascii_case(string) {
-            *value_rtrn = entry.value;
-            return true;
-        }
-    }
-    false
+pub(crate) fn lookup_string(tab: &[LookupEntry], string: &str) -> Option<u32> {
+    (!string.is_empty()).then_some(())?;
+    tab.iter()
+        .take_while(|entry| !entry.name.is_empty())
+        .find(|entry| entry.name.eq_ignore_ascii_case(string))
+        .map(|entry| entry.value)
 }
 pub(crate) static CTRL_MASK_NAMES: [LookupEntry; 25] = [
-    LookupEntry {
-        name: "Overlay3",
-        value: ControlsFlags::OVERLAY3.bits(),
-    },
-    LookupEntry {
-        name: "Overlay4",
-        value: ControlsFlags::OVERLAY4.bits(),
-    },
-    LookupEntry {
-        name: "Overlay5",
-        value: ControlsFlags::OVERLAY5.bits(),
-    },
-    LookupEntry {
-        name: "Overlay6",
-        value: ControlsFlags::OVERLAY6.bits(),
-    },
-    LookupEntry {
-        name: "Overlay7",
-        value: ControlsFlags::OVERLAY7.bits(),
-    },
-    LookupEntry {
-        name: "Overlay8",
-        value: ControlsFlags::OVERLAY8.bits(),
-    },
-    LookupEntry {
-        name: "all",
-        value: ControlsFlags::ALL_BOOLEAN.bits(),
-    },
-    LookupEntry {
-        name: "RepeatKeys",
-        value: ControlsFlags::REPEAT.bits(),
-    },
-    LookupEntry {
-        name: "Repeat",
-        value: ControlsFlags::REPEAT.bits(),
-    },
-    LookupEntry {
-        name: "AutoRepeat",
-        value: ControlsFlags::REPEAT.bits(),
-    },
-    LookupEntry {
-        name: "SlowKeys",
-        value: ControlsFlags::SLOW.bits(),
-    },
-    LookupEntry {
-        name: "BounceKeys",
-        value: ControlsFlags::DEBOUNCE.bits(),
-    },
-    LookupEntry {
-        name: "StickyKeys",
-        value: ControlsFlags::STICKY_KEYS.bits(),
-    },
-    LookupEntry {
-        name: "MouseKeys",
-        value: ControlsFlags::MOUSE_KEYS.bits(),
-    },
-    LookupEntry {
-        name: "MouseKeysAccel",
-        value: ControlsFlags::MOUSE_KEYS_ACCEL.bits(),
-    },
-    LookupEntry {
-        name: "AccessXKeys",
-        value: ControlsFlags::AX.bits(),
-    },
-    LookupEntry {
-        name: "AccessXTimeout",
-        value: ControlsFlags::AX_TIMEOUT.bits(),
-    },
-    LookupEntry {
-        name: "AccessXFeedback",
-        value: ControlsFlags::AX_FEEDBACK.bits(),
-    },
-    LookupEntry {
-        name: "AudibleBell",
-        value: ControlsFlags::BELL.bits(),
-    },
-    LookupEntry {
-        name: "IgnoreGroupLock",
-        value: ControlsFlags::IGNORE_GROUP_LOCK.bits(),
-    },
-    LookupEntry {
-        name: "Overlay1",
-        value: ControlsFlags::OVERLAY1.bits(),
-    },
-    LookupEntry {
-        name: "Overlay2",
-        value: ControlsFlags::OVERLAY2.bits(),
-    },
-    LookupEntry {
-        name: "all",
-        value: ControlsFlags::ALL_BOOLEAN_V1.bits(),
-    },
-    LookupEntry {
-        name: "none",
-        value: 0,
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("Overlay3", ControlsFlags::OVERLAY3.bits()),
+    lookup_entry("Overlay4", ControlsFlags::OVERLAY4.bits()),
+    lookup_entry("Overlay5", ControlsFlags::OVERLAY5.bits()),
+    lookup_entry("Overlay6", ControlsFlags::OVERLAY6.bits()),
+    lookup_entry("Overlay7", ControlsFlags::OVERLAY7.bits()),
+    lookup_entry("Overlay8", ControlsFlags::OVERLAY8.bits()),
+    lookup_entry("all", ControlsFlags::ALL_BOOLEAN.bits()),
+    lookup_entry("RepeatKeys", ControlsFlags::REPEAT.bits()),
+    lookup_entry("Repeat", ControlsFlags::REPEAT.bits()),
+    lookup_entry("AutoRepeat", ControlsFlags::REPEAT.bits()),
+    lookup_entry("SlowKeys", ControlsFlags::SLOW.bits()),
+    lookup_entry("BounceKeys", ControlsFlags::DEBOUNCE.bits()),
+    lookup_entry("StickyKeys", ControlsFlags::STICKY_KEYS.bits()),
+    lookup_entry("MouseKeys", ControlsFlags::MOUSE_KEYS.bits()),
+    lookup_entry("MouseKeysAccel", ControlsFlags::MOUSE_KEYS_ACCEL.bits()),
+    lookup_entry("AccessXKeys", ControlsFlags::AX.bits()),
+    lookup_entry("AccessXTimeout", ControlsFlags::AX_TIMEOUT.bits()),
+    lookup_entry("AccessXFeedback", ControlsFlags::AX_FEEDBACK.bits()),
+    lookup_entry("AudibleBell", ControlsFlags::BELL.bits()),
+    lookup_entry("IgnoreGroupLock", ControlsFlags::IGNORE_GROUP_LOCK.bits()),
+    lookup_entry("Overlay1", ControlsFlags::OVERLAY1.bits()),
+    lookup_entry("Overlay2", ControlsFlags::OVERLAY2.bits()),
+    lookup_entry("all", ControlsFlags::ALL_BOOLEAN_V1.bits()),
+    lookup_entry("none", 0),
+    lookup_entry("", 0),
 ];
 pub(crate) static MOD_COMPONENT_MASK_NAMES: [LookupEntry; 8] = [
-    LookupEntry {
-        name: "base",
-        value: XKB_STATE_MODS_DEPRESSED,
-    },
-    LookupEntry {
-        name: "latched",
-        value: XKB_STATE_MODS_LATCHED,
-    },
-    LookupEntry {
-        name: "locked",
-        value: XKB_STATE_MODS_LOCKED,
-    },
-    LookupEntry {
-        name: "effective",
-        value: XKB_STATE_MODS_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "compat",
-        value: XKB_STATE_MODS_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "any",
-        value: XKB_STATE_MODS_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "none",
-        value: 0,
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("base", XKB_STATE_MODS_DEPRESSED),
+    lookup_entry("latched", XKB_STATE_MODS_LATCHED),
+    lookup_entry("locked", XKB_STATE_MODS_LOCKED),
+    lookup_entry("effective", XKB_STATE_MODS_EFFECTIVE),
+    lookup_entry("compat", XKB_STATE_MODS_EFFECTIVE),
+    lookup_entry("any", XKB_STATE_MODS_EFFECTIVE),
+    lookup_entry("none", 0),
+    lookup_entry("", 0),
 ];
 pub(crate) static GROUP_COMPONENT_MASK_NAMES: [LookupEntry; 7] = [
-    LookupEntry {
-        name: "base",
-        value: XKB_STATE_LAYOUT_DEPRESSED,
-    },
-    LookupEntry {
-        name: "latched",
-        value: XKB_STATE_LAYOUT_LATCHED,
-    },
-    LookupEntry {
-        name: "locked",
-        value: XKB_STATE_LAYOUT_LOCKED,
-    },
-    LookupEntry {
-        name: "effective",
-        value: XKB_STATE_LAYOUT_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "any",
-        value: XKB_STATE_LAYOUT_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "none",
-        value: 0,
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("base", XKB_STATE_LAYOUT_DEPRESSED),
+    lookup_entry("latched", XKB_STATE_LAYOUT_LATCHED),
+    lookup_entry("locked", XKB_STATE_LAYOUT_LOCKED),
+    lookup_entry("effective", XKB_STATE_LAYOUT_EFFECTIVE),
+    lookup_entry("any", XKB_STATE_LAYOUT_EFFECTIVE),
+    lookup_entry("none", 0),
+    lookup_entry("", 0),
 ];
 
 pub(crate) static USE_MOD_MAP_VALUE_NAMES: [LookupEntry; 5] = [
-    LookupEntry {
-        name: "LevelOne",
-        value: 1,
-    },
-    LookupEntry {
-        name: "Level1",
-        value: 1,
-    },
-    LookupEntry {
-        name: "AnyLevel",
-        value: 0,
-    },
-    LookupEntry {
-        name: "any",
-        value: 0,
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("LevelOne", 1),
+    lookup_entry("Level1", 1),
+    lookup_entry("AnyLevel", 0),
+    lookup_entry("any", 0),
+    lookup_entry("", 0),
 ];
 
 pub static ACTION_TYPE_NAMES: [LookupEntry; 43] = [
-    LookupEntry {
-        name: "NoAction",
-        value: ACTION_TYPE_NONE,
-    },
-    LookupEntry {
-        name: "VoidAction",
-        value: ACTION_TYPE_VOID,
-    },
-    LookupEntry {
-        name: "SetMods",
-        value: ACTION_TYPE_MOD_SET,
-    },
-    LookupEntry {
-        name: "LatchMods",
-        value: ACTION_TYPE_MOD_LATCH,
-    },
-    LookupEntry {
-        name: "LockMods",
-        value: ACTION_TYPE_MOD_LOCK,
-    },
-    LookupEntry {
-        name: "SetGroup",
-        value: ACTION_TYPE_GROUP_SET,
-    },
-    LookupEntry {
-        name: "LatchGroup",
-        value: ACTION_TYPE_GROUP_LATCH,
-    },
-    LookupEntry {
-        name: "LockGroup",
-        value: ACTION_TYPE_GROUP_LOCK,
-    },
-    LookupEntry {
-        name: "MovePtr",
-        value: ACTION_TYPE_PTR_MOVE,
-    },
-    LookupEntry {
-        name: "MovePointer",
-        value: ACTION_TYPE_PTR_MOVE,
-    },
-    LookupEntry {
-        name: "PtrBtn",
-        value: ACTION_TYPE_PTR_BUTTON,
-    },
-    LookupEntry {
-        name: "PointerButton",
-        value: ACTION_TYPE_PTR_BUTTON,
-    },
-    LookupEntry {
-        name: "LockPtrBtn",
-        value: ACTION_TYPE_PTR_LOCK,
-    },
-    LookupEntry {
-        name: "LockPtrButton",
-        value: ACTION_TYPE_PTR_LOCK,
-    },
-    LookupEntry {
-        name: "LockPointerButton",
-        value: ACTION_TYPE_PTR_LOCK,
-    },
-    LookupEntry {
-        name: "LockPointerBtn",
-        value: ACTION_TYPE_PTR_LOCK,
-    },
-    LookupEntry {
-        name: "SetPtrDflt",
-        value: ACTION_TYPE_PTR_DEFAULT,
-    },
-    LookupEntry {
-        name: "SetPointerDefault",
-        value: ACTION_TYPE_PTR_DEFAULT,
-    },
-    LookupEntry {
-        name: "Terminate",
-        value: ACTION_TYPE_TERMINATE,
-    },
-    LookupEntry {
-        name: "TerminateServer",
-        value: ACTION_TYPE_TERMINATE,
-    },
-    LookupEntry {
-        name: "SwitchScreen",
-        value: ACTION_TYPE_SWITCH_VT,
-    },
-    LookupEntry {
-        name: "SetControls",
-        value: ACTION_TYPE_CTRL_SET,
-    },
-    LookupEntry {
-        name: "LockControls",
-        value: ACTION_TYPE_CTRL_LOCK,
-    },
-    LookupEntry {
-        name: "RedirectKey",
-        value: ACTION_TYPE_REDIRECT_KEY,
-    },
-    LookupEntry {
-        name: "Redirect",
-        value: ACTION_TYPE_REDIRECT_KEY,
-    },
-    LookupEntry {
-        name: "Private",
-        value: ACTION_TYPE_PRIVATE,
-    },
-    LookupEntry {
-        name: "ISOLock",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "ActionMessage",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "MessageAction",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "Message",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DeviceBtn",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DevBtn",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DevButton",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DeviceButton",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "LockDeviceBtn",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "LockDevBtn",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "LockDevButton",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "LockDeviceButton",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DeviceValuator",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DevVal",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DeviceVal",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DevValuator",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("NoAction", ACTION_TYPE_NONE),
+    lookup_entry("VoidAction", ACTION_TYPE_VOID),
+    lookup_entry("SetMods", ACTION_TYPE_MOD_SET),
+    lookup_entry("LatchMods", ACTION_TYPE_MOD_LATCH),
+    lookup_entry("LockMods", ACTION_TYPE_MOD_LOCK),
+    lookup_entry("SetGroup", ACTION_TYPE_GROUP_SET),
+    lookup_entry("LatchGroup", ACTION_TYPE_GROUP_LATCH),
+    lookup_entry("LockGroup", ACTION_TYPE_GROUP_LOCK),
+    lookup_entry("MovePtr", ACTION_TYPE_PTR_MOVE),
+    lookup_entry("MovePointer", ACTION_TYPE_PTR_MOVE),
+    lookup_entry("PtrBtn", ACTION_TYPE_PTR_BUTTON),
+    lookup_entry("PointerButton", ACTION_TYPE_PTR_BUTTON),
+    lookup_entry("LockPtrBtn", ACTION_TYPE_PTR_LOCK),
+    lookup_entry("LockPtrButton", ACTION_TYPE_PTR_LOCK),
+    lookup_entry("LockPointerButton", ACTION_TYPE_PTR_LOCK),
+    lookup_entry("LockPointerBtn", ACTION_TYPE_PTR_LOCK),
+    lookup_entry("SetPtrDflt", ACTION_TYPE_PTR_DEFAULT),
+    lookup_entry("SetPointerDefault", ACTION_TYPE_PTR_DEFAULT),
+    lookup_entry("Terminate", ACTION_TYPE_TERMINATE),
+    lookup_entry("TerminateServer", ACTION_TYPE_TERMINATE),
+    lookup_entry("SwitchScreen", ACTION_TYPE_SWITCH_VT),
+    lookup_entry("SetControls", ACTION_TYPE_CTRL_SET),
+    lookup_entry("LockControls", ACTION_TYPE_CTRL_LOCK),
+    lookup_entry("RedirectKey", ACTION_TYPE_REDIRECT_KEY),
+    lookup_entry("Redirect", ACTION_TYPE_REDIRECT_KEY),
+    lookup_entry("Private", ACTION_TYPE_PRIVATE),
+    lookup_entry("ISOLock", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("ActionMessage", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("MessageAction", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("Message", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DeviceBtn", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DevBtn", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DevButton", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DeviceButton", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("LockDeviceBtn", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("LockDevBtn", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("LockDevButton", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("LockDeviceButton", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DeviceValuator", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DevVal", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DeviceVal", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DevValuator", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("", 0),
 ];
 pub(crate) static SYM_INTERPRET_MATCH_MASK_NAMES: [LookupEntry; 6] = [
-    LookupEntry {
-        name: "NoneOf",
-        value: MATCH_NONE,
-    },
-    LookupEntry {
-        name: "AnyOfOrNone",
-        value: MATCH_ANY_OR_NONE,
-    },
-    LookupEntry {
-        name: "AnyOf",
-        value: MATCH_ANY,
-    },
-    LookupEntry {
-        name: "AllOf",
-        value: MATCH_ALL,
-    },
-    LookupEntry {
-        name: "Exactly",
-        value: MATCH_EXACTLY,
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("NoneOf", MATCH_NONE),
+    lookup_entry("AnyOfOrNone", MATCH_ANY_OR_NONE),
+    lookup_entry("AnyOf", MATCH_ANY),
+    lookup_entry("AllOf", MATCH_ALL),
+    lookup_entry("Exactly", MATCH_EXACTLY),
+    lookup_entry("", 0),
 ];
 // ============================================================================
 // Unicode Preprocessing

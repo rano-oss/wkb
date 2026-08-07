@@ -5526,6 +5526,10 @@ pub(crate) struct LookupEntry {
     pub(crate) value: u32,
 }
 
+pub(crate) const fn lookup_entry(name: &'static str, value: u32) -> LookupEntry {
+    LookupEntry { name, value }
+}
+
 // ── File type enum ──────────────────────────────────────────────────
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[repr(u32)]
