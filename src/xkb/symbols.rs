@@ -109,27 +109,18 @@ impl SymbolsInfo {
     }
 }
 
-/// Check if an ActionList container actually holds action data (vs keysym data).
-/// In the old linked-list model, the head node's type distinguished these.
-/// Now both are wrapped in ActionList containers, so we check the first inner node.
 fn is_action_list_value(value: &ExprKind) -> bool {
-    if let ExprKind::ActionList { actions } = &value {
-        if let Some(first) = actions.first() {
-            // If the first inner node is an ActionList (actions for one level) or
-            // Action (single action), it's action data. KeysymList means keysym data.
+    match value {
+        ExprKind::ActionList { actions } => actions.first().is_none_or(|first| {
             matches!(first, ExprKind::ActionList { .. } | ExprKind::Action { .. })
-        } else {
-            // Empty ActionList — treat as actions
-            true
-        }
-    } else {
-        false
+        }),
+        _ => false,
     }
 }
 
 /// Extract child expressions from an ActionList container node, or return a single-element slice.
 fn collect_expr_list(container: &ExprKind) -> &[ExprKind] {
-    match &container {
+    match container {
         ExprKind::ActionList { actions } => actions.as_slice(),
         _ => std::slice::from_ref(container),
     }
@@ -161,56 +152,36 @@ fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) -> bo
         return true;
     }
     let levels_in_both = into.levels.len().min(from.levels.len());
-    let mut from_keysyms_count: u32 = 0;
-    let mut from_actions_count: u32 = 0;
-    for i in 0..levels_in_both {
-        let into_level = &mut into.levels[i];
-        let from_level = &mut from.levels[i];
-        let from_has_no_keysym: bool = from_level.syms.is_empty();
-        let from_has_no_action: bool = from_level.actions.is_empty();
-        if !(from_has_no_keysym && from_has_no_action) {
-            let into_has_no_keysym: bool = into_level.syms.is_empty();
-            let into_has_no_action: bool = into_level.actions.is_empty();
-            if into_has_no_keysym && into_has_no_action {
-                into_level.syms = std::mem::take(&mut from_level.syms);
-                into_level.actions = std::mem::take(&mut from_level.actions);
-                from_keysyms_count += 1;
-                from_actions_count += 1;
-            } else {
-                if !xkb_levels_same_syms(from_level, into_level) && !from_has_no_keysym {
-                    if clobber {
-                        if !from_level.syms.is_empty() {
-                            into_level.syms = std::mem::take(&mut from_level.syms);
-                            from_keysyms_count += 1;
-                        }
-                    } else if into_level.syms.is_empty() {
-                        if !from_level.syms.is_empty() {
-                            into_level.syms = std::mem::take(&mut from_level.syms);
-                        }
-                        from_keysyms_count += 1;
-                    }
-                }
-                if !xkb_levels_same_actions(into_level, from_level) && !from_has_no_action {
-                    if clobber {
-                        if !from_level.actions.is_empty() {
-                            into_level.actions = std::mem::take(&mut from_level.actions);
-                            from_actions_count += 1;
-                        }
-                    } else if into_level.actions.is_empty() {
-                        if !from_level.actions.is_empty() {
-                            into_level.actions = std::mem::take(&mut from_level.actions);
-                        }
-                        from_actions_count += 1;
-                    }
-                }
-            }
+    let mut from_keysyms_count = 0;
+    let mut from_actions_count = 0;
+    for (into_level, from_level) in into.levels.iter_mut().zip(&mut from.levels) {
+        if from_level.syms.is_empty() && from_level.actions.is_empty() {
+            continue;
+        }
+        if into_level.syms.is_empty() && into_level.actions.is_empty() {
+            into_level.syms = std::mem::take(&mut from_level.syms);
+            into_level.actions = std::mem::take(&mut from_level.actions);
+            from_keysyms_count += 1;
+            from_actions_count += 1;
+            continue;
+        }
+        if !from_level.syms.is_empty()
+            && !xkb_levels_same_syms(from_level, into_level)
+            && (clobber || into_level.syms.is_empty())
+        {
+            into_level.syms = std::mem::take(&mut from_level.syms);
+            from_keysyms_count += 1;
+        }
+        if !from_level.actions.is_empty()
+            && !xkb_levels_same_actions(into_level, from_level)
+            && (clobber || into_level.actions.is_empty())
+        {
+            into_level.actions = std::mem::take(&mut from_level.actions);
+            from_actions_count += 1;
         }
     }
-    for level in from.levels[levels_in_both..].iter_mut() {
-        let level_val = level.clone();
-        into.levels.push(level_val);
-        level.syms.clear();
-        level.actions.clear();
+    for level in from.levels.drain(levels_in_both..) {
+        into.levels.push(level);
         from_keysyms_count += 1;
         from_actions_count += 1;
     }
@@ -229,13 +200,7 @@ fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) -> bo
     true
 }
 fn use_new_field(field: u32, old: u32, new: u32, clobber: bool) -> bool {
-    if old & field == 0 {
-        return new & field != 0;
-    }
-    if new & field != 0 {
-        return clobber;
-    }
-    false
+    new & field != 0 && (old & field == 0 || clobber)
 }
 fn overlays_insert(keyi: &mut KeyInfo, bit: u8, key: u32) -> bool {
     if let Some(entry) = keyi.overlays.get_mut(bit as usize) {

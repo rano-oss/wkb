@@ -321,21 +321,16 @@ fn execute_reduction<'a>(
                 flags,
             ));
         }
-        12 => {
-            yy_file_type(yyval, FileType::Keycodes);
-        }
-        13 => {
-            yy_file_type(yyval, FileType::Types);
-        }
-        14 => {
-            yy_file_type(yyval, FileType::Compat);
-        }
-        15 => {
-            yy_file_type(yyval, FileType::Symbols);
-        }
-        16 => {
-            yy_file_type(yyval, FileType::Geometry);
-        }
+        12..=16 => yy_file_type(
+            yyval,
+            [
+                FileType::Keycodes,
+                FileType::Types,
+                FileType::Compat,
+                FileType::Symbols,
+                FileType::Geometry,
+            ][yyn as usize - 12],
+        ),
         17 | 20 => {
             *yyval = YYValue::MapFlags(yyvs[sp].as_map_flags());
         }
@@ -2633,16 +2628,6 @@ impl Default for LayoutIdx {
         }
     }
 }
-impl LayoutIdx {
-    fn layout_idx_min(&self) -> u32 {
-        match self {
-            LayoutIdx::Range { layout_idx_min, .. } | LayoutIdx::Index { layout_idx_min, .. } => {
-                *layout_idx_min
-            }
-            _ => panic!("expected Range or Index"),
-        }
-    }
-}
 pub(crate) const _MLVO_NUM_ENTRIES: u32 = 4;
 pub(crate) const MLVO_OPTION: u32 = 3;
 pub(crate) const MLVO_VARIANT: u32 = 2;
@@ -3577,10 +3562,11 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
                 layout_idx_min,
                 layout_idx_max,
             } => (layout_idx_min, layout_idx_max),
-            _ => {
-                let index = m.mapping.layout.layout_idx_min();
+            LayoutIdx::Index { layout_idx_min } if layout_idx_min != XKB_LAYOUT_INVALID => {
+                let index = layout_idx_min;
                 (index, index + 1)
             }
+            _ => return,
         };
         let mut matched = false;
         for layout in first..end {
@@ -3598,35 +3584,38 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
             return;
         }
     }
-    let (first, end, pending) = match m.mapping.layout {
+    match m.mapping.layout {
         LayoutIdx::Range {
             layout_idx_min,
             layout_idx_max,
-        } => (layout_idx_min, layout_idx_max, true),
-        LayoutIdx::Index { layout_idx_min } => (layout_idx_min, layout_idx_min + 1, false),
-        LayoutIdx::Single { .. } => (0, 0, false),
-    };
-    for layout in first..end {
-        if candidate_layouts & 1 << layout == 0 {
-            continue;
-        }
-        for i in 0..m.mapping.num_kccgst as usize {
-            let kccgst = m.mapping.kccgst_at_pos[i];
-            if kccgst == KCCGST_GEOMETRY {
-                continue;
-            }
-            let value = m.rule.kccgst_value_at_pos[i].as_sval(s.s);
-            if let Some(expanded) = expand_kccgst_value(m, value, layout) {
-                if pending {
-                    m.pending_kccgst[kccgst as usize].push((layout, expanded));
-                } else if !expanded.is_empty() {
-                    concat_kccgst(&mut m.kccgst[kccgst as usize], &expanded);
+        } => {
+            for layout in layout_idx_min..layout_idx_max {
+                if candidate_layouts & 1 << layout != 0 {
+                    apply_kccgst(m, s, layout, true);
                 }
             }
         }
+        LayoutIdx::Index { layout_idx_min } => apply_kccgst(m, s, layout_idx_min, false),
+        LayoutIdx::Single { .. } => {}
     }
     if !is_mlvo_mask_defined(m, MLVO_OPTION) {
         m.mapping.active_or_candidates_mask &= !candidate_layouts;
+    }
+}
+fn apply_kccgst(m: &mut Matcher, s: &Scanner, layout: u32, pending: bool) {
+    for i in 0..m.mapping.num_kccgst as usize {
+        let kccgst = m.mapping.kccgst_at_pos[i];
+        if kccgst == KCCGST_GEOMETRY {
+            continue;
+        }
+        let value = m.rule.kccgst_value_at_pos[i].as_sval(s.s);
+        if let Some(expanded) = expand_kccgst_value(m, value, layout) {
+            if pending {
+                m.pending_kccgst[kccgst as usize].push((layout, expanded));
+            } else if !expanded.is_empty() {
+                concat_kccgst(&mut m.kccgst[kccgst as usize], &expanded);
+            }
+        }
     }
 }
 fn gettok(m: &mut Matcher, s: &mut Scanner) -> u32 {
