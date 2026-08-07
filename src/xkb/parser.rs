@@ -87,55 +87,41 @@ fn resolve_keysym(name: Sval) -> Option<u32> {
 /// Error recovery: try to shift the error token in the current state, otherwise
 /// pop states until we find one that can (which the current grammar never does).
 fn recover<'a>(
-    yyss: &[u16],
-    yyvs: &mut [YYValue<'a>],
-    ssp: &mut usize,
-    sp: &mut usize,
-    yystate: &mut u16,
+    states: &mut Vec<u16>,
+    values: &mut Vec<YYValue<'a>>,
     yylval: &mut YYValue<'a>,
 ) -> bool {
     loop {
-        let state = &STATES[*yystate as usize];
+        let state = &STATES[*states.last().unwrap() as usize];
         if let Some(Action::Shift(next)) = state.explicit_action(SYM_ERROR) {
-            *sp += 1;
-            yyvs[*sp] = std::mem::replace(yylval, YYValue::None);
-            *yystate = next;
-            *ssp += 1;
+            states.push(next);
+            values.push(std::mem::replace(yylval, YYValue::None));
             return true;
         }
-        if *ssp == 0 {
+        if states.len() == 1 {
             return false;
         }
-        yyvs[*sp] = YYValue::None;
-        *sp = sp.saturating_sub(1);
-        *ssp -= 1;
-        *yystate = yyss[*ssp];
+        states.pop();
+        values.pop();
     }
 }
 
 pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
     let mut yychar: i32 = YYEMPTY; // lookahead symbol (internal), or YYEMPTY when none
     let mut yylval: YYValue<'a> = YYValue::None;
-    let mut yystate: u16 = 0;
     let mut yyerrstatus: i32 = 0;
 
-    let mut yyss: Vec<u16> = vec![0; YYINITDEPTH];
-    let mut yyvs: Vec<YYValue<'a>> = Vec::with_capacity(YYINITDEPTH);
-    for _ in 0..YYINITDEPTH {
-        yyvs.push(YYValue::None);
-    }
-
-    let mut ssp: usize = 0; // state stack pointer
-    let mut sp: usize = 0; // value stack pointer
+    let mut states = Vec::with_capacity(YYINITDEPTH);
+    let mut values = Vec::with_capacity(YYINITDEPTH);
+    states.push(0);
+    values.push(YYValue::None);
 
     'main_loop: loop {
-        yyss[ssp] = yystate;
-
-        // Check stack overflow
-        if ssp >= YYMAXDEPTH - 1 {
+        if states.len() >= YYMAXDEPTH {
             return 2;
         }
 
+        let yystate = *states.last().unwrap();
         let state = &STATES[yystate as usize];
         if yychar == YYEMPTY
             && (state.has_terminal_transitions() || matches!(state.default_action(), Action::Error))
@@ -155,32 +141,24 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                 if yyerrstatus != 0 {
                     yyerrstatus -= 1;
                 }
-                yystate = next;
-                sp += 1;
-                yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
+                states.push(next);
+                values.push(std::mem::replace(&mut yylval, YYValue::None));
                 yychar = YYEMPTY;
-                ssp += 1;
             }
             Action::Reduce(rule_id) => {
                 let rule = &RULES[rule_id as usize];
                 let yylen = rule.rhs_len() as usize;
                 let mut yyval = YYValue::None;
 
-                let reduce_ok = execute_reduction(rule_id as i32, &mut yyvs, sp, &mut yyval, param);
+                let top = values.len() - 1;
+                let reduce_ok =
+                    execute_reduction(rule_id as i32, &mut values, top, &mut yyval, param);
                 if !reduce_ok {
-                    sp -= yylen;
-                    ssp -= yylen;
-                    yystate = yyss[ssp];
+                    states.truncate(states.len() - yylen);
+                    values.truncate(values.len() - yylen);
 
                     yyerrstatus = 3;
-                    if !recover(
-                        &yyss,
-                        &mut yyvs,
-                        &mut ssp,
-                        &mut sp,
-                        &mut yystate,
-                        &mut yylval,
-                    ) {
+                    if !recover(&mut states, &mut values, &mut yylval) {
                         return 1;
                     }
                     continue 'main_loop;
@@ -191,14 +169,10 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                     return 0;
                 }
 
-                sp -= yylen;
-                ssp -= yylen;
-
-                sp += 1;
-                yyvs[sp] = yyval;
-
-                yystate = rule.next_state(yyss[ssp]);
-                ssp += 1;
+                states.truncate(states.len() - yylen);
+                values.truncate(values.len() - yylen);
+                states.push(rule.next_state(*states.last().unwrap()));
+                values.push(yyval);
             }
             Action::Error => {
                 if yyerrstatus == 3 && yychar == END_OF_FILE {
@@ -210,14 +184,7 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                 }
 
                 yyerrstatus = 3;
-                if !recover(
-                    &yyss,
-                    &mut yyvs,
-                    &mut ssp,
-                    &mut sp,
-                    &mut yystate,
-                    &mut yylval,
-                ) {
+                if !recover(&mut states, &mut values, &mut yylval) {
                     return 1;
                 }
                 continue 'main_loop;
@@ -1758,9 +1725,9 @@ use super::keymap::{
 };
 
 pub(crate) const INCLUDE_MAX_DEPTH: i32 = 15_i32;
-pub(crate) const MERGE_OVERRIDE_PREFIX: i32 = '+' as i32;
-pub(crate) const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
-pub(crate) const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
+fn is_merge_prefix(byte: u8) -> bool {
+    matches!(byte, b'+' | b'|' | b'^')
+}
 static XKB_FILE_TYPE_INCLUDE_DIRS: [&str; 7] = [
     "keycodes", "types", "compat", "symbols", "geometry", "keymap", "rules",
 ];
@@ -2915,7 +2882,7 @@ fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) 
     m.rmlvo.model.layout = OPTIONS_MATCH_ALL_GROUPS;
     m.rmlvo.layouts = split_comma_separated_mlvo(
         MLVO_LAYOUT,
-        if rmlvo_ref.layout.as_bytes().is_empty() {
+        if rmlvo_ref.layout.is_empty() {
             None
         } else {
             Some(rmlvo_ref.layout.as_bytes())
@@ -2923,7 +2890,7 @@ fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) 
     );
     m.rmlvo.variants = split_comma_separated_mlvo(
         MLVO_VARIANT,
-        if rmlvo_ref.variant.as_bytes().is_empty() {
+        if rmlvo_ref.variant.is_empty() {
             None
         } else {
             Some(rmlvo_ref.variant.as_bytes())
@@ -2931,7 +2898,7 @@ fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) 
     );
     m.rmlvo.options = split_comma_separated_mlvo(
         MLVO_OPTION,
-        if rmlvo_ref.options.as_bytes().is_empty() {
+        if rmlvo_ref.options.is_empty() {
             None
         } else {
             Some(rmlvo_ref.options.as_bytes())
@@ -3081,66 +3048,43 @@ fn is_mlvo_mask_defined(m: &mut Matcher, mlvo: u32) -> bool {
     m.mapping.defined_mlvo_mask as u32 & 1 << mlvo != 0
 }
 fn matcher_mapping_set_mlvo(m: &mut Matcher, ident: Sval) {
-    let ident_bytes = ident.data;
-    let mut mlvo: u32 = MLVO_MODEL;
-    let mut mlvo_bytes: &[u8] = b"";
-    while mlvo < _MLVO_NUM_ENTRIES {
-        mlvo_bytes = RULES_MLVO_SVALS[mlvo as usize];
-        if mlvo_bytes.len() <= ident_bytes.len() && &ident_bytes[..mlvo_bytes.len()] == mlvo_bytes {
-            break;
-        }
-        mlvo += 1;
-    }
-    if mlvo >= _MLVO_NUM_ENTRIES {
+    let Some((mlvo, name)) = RULES_MLVO_SVALS
+        .iter()
+        .enumerate()
+        .find(|(_, name)| ident.data.starts_with(name))
+    else {
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
-    }
+    };
+    let mlvo = mlvo as u32;
     if is_mlvo_mask_defined(m, mlvo) {
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
-    if mlvo_bytes.len() < ident_bytes.len() {
-        let mut idx: u32 = 0;
-        let remaining = &ident_bytes[mlvo_bytes.len()..];
-        let consumed: i32 = extract_mapping_layout_index(remaining, &mut idx);
-        if remaining.len() as i32 != consumed {
-            m.mapping.active_or_candidates_mask = 0_u32;
-            return;
-        }
-        if mlvo == MLVO_LAYOUT {
-            if let LayoutIdx::Single {
-                ref mut layout_idx, ..
-            } = m.mapping.layout
-            {
-                *layout_idx = idx;
+    let indexed = name.len() < ident.data.len();
+    if matches!(mlvo, MLVO_LAYOUT | MLVO_VARIANT) {
+        let mut idx = LAYOUT_INDEX_SINGLE;
+        if indexed {
+            let remaining = &ident.data[name.len()..];
+            if extract_mapping_layout_index(remaining, &mut idx) != remaining.len() as i32 {
+                m.mapping.active_or_candidates_mask = 0_u32;
+                return;
             }
-        } else if mlvo == MLVO_VARIANT {
-            if let LayoutIdx::Single {
-                ref mut variant_idx,
-                ..
-            } = m.mapping.layout
-            {
-                *variant_idx = idx;
-            }
-        } else {
-            m.mapping.active_or_candidates_mask = 0_u32;
-            return;
         }
-    } else if mlvo == MLVO_LAYOUT {
         if let LayoutIdx::Single {
-            ref mut layout_idx, ..
-        } = m.mapping.layout
+            layout_idx,
+            variant_idx,
+        } = &mut m.mapping.layout
         {
-            *layout_idx = LAYOUT_INDEX_SINGLE;
+            *if mlvo == MLVO_LAYOUT {
+                layout_idx
+            } else {
+                variant_idx
+            } = idx;
         }
-    } else if mlvo == MLVO_VARIANT {
-        if let LayoutIdx::Single {
-            ref mut variant_idx,
-            ..
-        } = m.mapping.layout
-        {
-            *variant_idx = LAYOUT_INDEX_SINGLE;
-        }
+    } else if indexed {
+        m.mapping.active_or_candidates_mask = 0_u32;
+        return;
     }
     if (mlvo == MLVO_LAYOUT && is_mlvo_mask_defined(m, MLVO_VARIANT)
         || mlvo == MLVO_VARIANT && is_mlvo_mask_defined(m, MLVO_LAYOUT))
@@ -3164,83 +3108,53 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, ident: Sval) {
     m.mapping.num_mlvo += 1;
 }
 fn matcher_mapping_set_layout_bounds(m: &mut Matcher) {
-    let mut idx: u32 = if let LayoutIdx::Single {
+    let idx = if let LayoutIdx::Single {
         layout_idx,
         variant_idx,
     } = m.mapping.layout
     {
-        if layout_idx < variant_idx {
-            layout_idx
-        } else {
-            variant_idx
-        }
+        layout_idx.min(variant_idx)
     } else {
-        0 // should not happen, layout is Single at this point
+        0
     };
-    let mut is_index_case: bool = false;
     match idx {
         XKB_LAYOUT_INVALID => {
             m.mapping.layout = LayoutIdx::Index {
                 layout_idx_min: XKB_LAYOUT_INVALID,
             };
-            m.mapping.active_or_candidates_mask = 0x1_u32;
+            m.mapping.active_or_candidates_mask = 1;
         }
-        4294967293 => {
-            let layout_idx_max = (if (32) < m.rmlvo.layouts.len() {
-                32
-            } else {
-                m.rmlvo.layouts.len()
-            }) as u32;
+        LAYOUT_INDEX_LATER | LAYOUT_INDEX_ANY => {
+            let layout_idx_min = u32::from(idx == LAYOUT_INDEX_LATER);
+            let layout_idx_max = m.rmlvo.layouts.len().min(XKB_MAX_GROUPS as usize) as u32;
             m.mapping.layout = LayoutIdx::Range {
-                layout_idx_min: 1_u32,
+                layout_idx_min,
                 layout_idx_max,
             };
             m.mapping.active_or_candidates_mask =
-                ((1_u64 << layout_idx_max).wrapping_sub(1_u64) as u32 as u64 & !1_u64) as u32;
+                (1_u64.wrapping_shl(layout_idx_max).wrapping_sub(1) as u32) << layout_idx_min;
         }
-        4294967294 => {
-            let layout_idx_max = (if (32) < m.rmlvo.layouts.len() {
-                32
-            } else {
-                m.rmlvo.layouts.len()
-            }) as u32;
-            m.mapping.layout = LayoutIdx::Range {
-                layout_idx_min: 0_u32,
-                layout_idx_max,
-            };
-            m.mapping.active_or_candidates_mask =
-                ((1_u64 << layout_idx_max) as u32 as u64).wrapping_sub(1_u64) as u32;
-        }
-        4294967291 | 4294967292 => {
-            idx = 0_u32;
-            is_index_case = true;
+        LAYOUT_INDEX_SINGLE | LAYOUT_INDEX_FIRST => {
+            m.mapping.layout = LayoutIdx::Index { layout_idx_min: 0 };
+            m.mapping.active_or_candidates_mask = 1;
         }
         _ => {
-            is_index_case = true;
+            m.mapping.layout = LayoutIdx::Index {
+                layout_idx_min: idx,
+            };
+            m.mapping.active_or_candidates_mask = 1 << idx;
         }
     }
-    if is_index_case {
-        m.mapping.layout = LayoutIdx::Index {
-            layout_idx_min: idx,
-        };
-        m.mapping.active_or_candidates_mask = 1 << idx;
-    };
 }
 fn matcher_mapping_set_kccgst(m: &mut Matcher, ident: Sval) {
-    let ident_bytes = ident.data;
-    let mut kccgst: u32 = KCCGST_KEYCODES;
-    let mut kccgst_bytes: &[u8];
-    while kccgst < _KCCGST_NUM_ENTRIES {
-        kccgst_bytes = RULES_KCCGST_SVALS[kccgst as usize];
-        if kccgst_bytes == ident_bytes {
-            break;
-        }
-        kccgst += 1;
-    }
-    if kccgst >= _KCCGST_NUM_ENTRIES {
+    let Some(kccgst) = RULES_KCCGST_SVALS
+        .iter()
+        .position(|name| *name == ident.data)
+        .map(|index| index as u32)
+    else {
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
-    }
+    };
     if m.mapping.defined_kccgst_mask as u32 & 1 << kccgst != 0 {
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
@@ -3251,8 +3165,8 @@ fn matcher_mapping_set_kccgst(m: &mut Matcher, ident: Sval) {
 }
 fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
     match idx {
-        4294967291 => rmlvo_len <= 1,
-        4294967292..=4294967294 => true,
+        LAYOUT_INDEX_SINGLE => rmlvo_len <= 1,
+        LAYOUT_INDEX_FIRST..=LAYOUT_INDEX_ANY => true,
         _ => rmlvo_len >= 2 && (idx as usize) < rmlvo_len,
     }
 }
@@ -3362,154 +3276,95 @@ fn expand_rmlvo_in_kccgst_value(
     i: &mut usize,
 ) -> bool {
     let bytes = value.data;
-    // Handle %i expansion
     if bytes[*i] == b'i'
         && ((*i).wrapping_add(1_usize) == value.data.len()
-            || (bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_OVERRIDE_PREFIX
-                || bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_AUGMENT_PREFIX
-                || bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_REPLACE_PREFIX))
+            || is_merge_prefix(bytes[(*i).wrapping_add(1_usize)]))
     {
         if layout_idx == XKB_LAYOUT_INVALID {
-        } else {
-            *i += 1;
-            let idx_str = format!("{}", layout_idx.wrapping_add(1_u32));
-            expanded.extend_from_slice(idx_str.as_bytes());
-            return true;
+            return false;
         }
-    } else {
-        let mut sfx = 0;
-        let mut pfx = 0;
-        let ch = bytes[*i];
-        if ch == b'('
-            || ch as i32 == MERGE_OVERRIDE_PREFIX
-            || ch as i32 == MERGE_AUGMENT_PREFIX
-            || ch as i32 == MERGE_REPLACE_PREFIX
-            || ch == b'_'
-            || ch == b'-'
-        {
-            pfx = ch;
-            if ch == b'(' {
-                sfx = b')';
-            }
-            *i += 1;
-            if *i >= value.data.len() {
-                // fall through to error
-                return false;
-            }
-        }
-
-        let mlv: u32 = match bytes[*i] {
-            b'm' => MLVO_MODEL,
-            b'l' => MLVO_LAYOUT,
-            b'v' => MLVO_VARIANT,
-            _ => {
-                return false;
-            }
-        };
         *i += 1;
-
-        let mut idx: u32 = XKB_LAYOUT_INVALID;
-        let mut expanded_index: bool = false;
-        if *i < value.data.len() && bytes[*i] == b'[' {
-            if mlv != MLVO_LAYOUT && mlv != MLVO_VARIANT {
-                return false;
-            }
-            let consumed: i32 = extract_layout_index(&bytes[*i..], &mut idx);
-            if consumed == -1_i32 {
-                return false;
-            }
-            if idx == XKB_LAYOUT_INVALID {
-                idx = layout_idx;
-                expanded_index = true;
-            }
-            *i = (*i).wrapping_add(consumed as usize);
-        }
-
-        if sfx != 0 {
-            if *i >= value.data.len() {
-                return false;
-            }
-            let ch = bytes[*i];
-            *i += 1;
-            if ch != sfx {
-                return false;
-            }
-        }
-
-        // Determine which expanded_value to use. Copy the sval (it's Copy).
-        // Then set matched afterward.
-        enum RmlvoRef {
-            Model,
-            Layout(usize),
-            Variant(usize),
-        }
-        let ev_ref: Option<RmlvoRef>;
-
-        if mlv == MLVO_LAYOUT {
-            if idx == XKB_LAYOUT_INVALID {
-                if m.rmlvo.layouts.len() == 1 {
-                    ev_ref = Some(RmlvoRef::Layout(0));
-                } else {
-                    ev_ref = None;
-                }
-            } else if idx < m.rmlvo.layouts.len() as u32
-                && (expanded_index || m.rmlvo.layouts.len() > 1)
-            {
-                ev_ref = Some(RmlvoRef::Layout(idx as usize));
-            } else {
-                ev_ref = None;
-            }
-        } else if mlv == MLVO_VARIANT {
-            if idx == XKB_LAYOUT_INVALID {
-                if m.rmlvo.variants.len() == 1 {
-                    ev_ref = Some(RmlvoRef::Variant(0));
-                } else {
-                    ev_ref = None;
-                }
-            } else if idx < m.rmlvo.variants.len() as u32
-                && (expanded_index || m.rmlvo.variants.len() > 1)
-            {
-                ev_ref = Some(RmlvoRef::Variant(idx as usize));
-            } else {
-                ev_ref = None;
-            }
-        } else if mlv == MLVO_MODEL {
-            ev_ref = Some(RmlvoRef::Model);
-        } else {
-            ev_ref = None;
-        }
-
-        // Get the sval bytes (sval is Copy)
-        let ev_sval = match &ev_ref {
-            Some(RmlvoRef::Model) => m.rmlvo.model.sval,
-            Some(RmlvoRef::Layout(idx)) => m.rmlvo.layouts[*idx].sval,
-            Some(RmlvoRef::Variant(idx)) => m.rmlvo.variants[*idx].sval,
-            None => Sval { data: &[] },
-        };
-
-        if ev_ref.is_none() || ev_sval.data.is_empty() {
-            return true;
-        }
-
-        if pfx != 0 {
-            expanded.push(pfx);
-        }
-        expanded.extend_from_slice(ev_sval.data);
-        if sfx != 0 {
-            expanded.push(sfx);
-        }
-
-        // Set matched flag
-        match ev_ref {
-            Some(RmlvoRef::Model) => m.rmlvo.model.matched = true,
-            Some(RmlvoRef::Layout(idx)) => m.rmlvo.layouts[idx].matched = true,
-            Some(RmlvoRef::Variant(idx)) => m.rmlvo.variants[idx].matched = true,
-            None => {}
-        }
+        expanded.extend_from_slice(layout_idx.wrapping_add(1).to_string().as_bytes());
         return true;
     }
 
-    false
+    let mut sfx = 0;
+    let mut pfx = 0;
+    let ch = bytes[*i];
+    if matches!(ch, b'(' | b'_' | b'-') || is_merge_prefix(ch) {
+        pfx = ch;
+        if ch == b'(' {
+            sfx = b')';
+        }
+        *i += 1;
+        if *i >= value.data.len() {
+            return false;
+        }
+    }
+
+    let mlv = match bytes[*i] {
+        b'm' => MLVO_MODEL,
+        b'l' => MLVO_LAYOUT,
+        b'v' => MLVO_VARIANT,
+        _ => return false,
+    };
+    *i += 1;
+
+    let mut idx = XKB_LAYOUT_INVALID;
+    let mut expanded_index = false;
+    if *i < value.data.len() && bytes[*i] == b'[' {
+        if mlv == MLVO_MODEL {
+            return false;
+        }
+        let consumed = extract_layout_index(&bytes[*i..], &mut idx);
+        if consumed < 0 {
+            return false;
+        }
+        if idx == XKB_LAYOUT_INVALID {
+            idx = layout_idx;
+            expanded_index = true;
+        }
+        *i += consumed as usize;
+    }
+
+    if sfx != 0 {
+        if bytes.get(*i) != Some(&sfx) {
+            return false;
+        }
+        *i += 1;
+    }
+
+    let selected_index = |len: usize| match idx {
+        XKB_LAYOUT_INVALID if len == 1 => Some(0),
+        XKB_LAYOUT_INVALID => None,
+        _ if idx < len as u32 && (expanded_index || len > 1) => Some(idx as usize),
+        _ => None,
+    };
+    let target =
+        match mlv {
+            MLVO_MODEL => Some(&mut m.rmlvo.model),
+            MLVO_LAYOUT => selected_index(m.rmlvo.layouts.len())
+                .and_then(|index| m.rmlvo.layouts.get_mut(index)),
+            MLVO_VARIANT => selected_index(m.rmlvo.variants.len())
+                .and_then(|index| m.rmlvo.variants.get_mut(index)),
+            _ => None,
+        };
+    let Some(target) = target else {
+        return true;
+    };
+    if target.sval.data.is_empty() {
+        return true;
+    }
+
+    if pfx != 0 {
+        expanded.push(pfx);
+    }
+    expanded.extend_from_slice(target.sval.data);
+    if sfx != 0 {
+        expanded.push(sfx);
+    }
+    target.matched = true;
+    true
 }
 #[allow(clippy::too_many_arguments)]
 fn expand_qualifier_in_kccgst_value(
@@ -3523,9 +3378,7 @@ fn expand_qualifier_in_kccgst_value(
     let bytes = value.data;
     if (*i).wrapping_add(3_usize) <= value.data.len()
         && ((*i).wrapping_add(3_usize) == value.data.len()
-            || bytes[(*i).wrapping_add(3_usize)] as i32 == MERGE_OVERRIDE_PREFIX
-            || bytes[(*i).wrapping_add(3_usize)] as i32 == MERGE_AUGMENT_PREFIX
-            || bytes[(*i).wrapping_add(3_usize)] as i32 == MERGE_REPLACE_PREFIX)
+            || is_merge_prefix(bytes[(*i).wrapping_add(3_usize)]))
         && bytes[*i] == b'a'
         && bytes[(*i).wrapping_add(1_usize)] == b'l'
         && bytes[(*i).wrapping_add(2_usize)] == b'l'
@@ -3564,17 +3417,11 @@ fn expand_qualifier_in_kccgst_value(
 }
 #[inline]
 fn concat_kccgst(into: &mut Vec<u8>, from: &[u8]) {
-    let from_plus = !from.is_empty()
-        && (from[0] as i32 == MERGE_OVERRIDE_PREFIX
-            || from[0] as i32 == MERGE_AUGMENT_PREFIX
-            || from[0] as i32 == MERGE_REPLACE_PREFIX);
+    let from_plus = from.first().is_some_and(|&byte| is_merge_prefix(byte));
     if from_plus || into.is_empty() {
         into.extend_from_slice(from);
     } else {
-        let ch = if into.is_empty() { 0 } else { into[0] };
-        let into_plus = ch as i32 == MERGE_OVERRIDE_PREFIX
-            || ch as i32 == MERGE_AUGMENT_PREFIX
-            || ch as i32 == MERGE_REPLACE_PREFIX;
+        let into_plus = into.first().is_some_and(|&byte| is_merge_prefix(byte));
         if into_plus {
             let old_len = into.len();
             into.resize(old_len + from.len(), 0);
@@ -3618,10 +3465,7 @@ fn expand_kccgst_value(m: &mut Matcher, value: Sval, layout_idx: u32) -> Option<
                     break;
                 }
             }
-            b if b as i32 == MERGE_OVERRIDE_PREFIX
-                || b as i32 == MERGE_AUGMENT_PREFIX
-                || b as i32 == MERGE_REPLACE_PREFIX =>
-            {
+            b if is_merge_prefix(b) => {
                 expanded.push(bytes[i]);
                 i += 1;
                 last_item_idx = (expanded.len() - 1) as u32;
@@ -3674,165 +3518,109 @@ fn matcher_rule_verify(m: &mut Matcher) {
         m.rule.skip = true;
     }
 }
+fn matcher_mlvo_matches(
+    m: &mut Matcher,
+    mlvo: u32,
+    value: Sval,
+    match_type: u32,
+    layout: u32,
+) -> bool {
+    let (groups, rmlvo) = (&m.groups, &mut m.rmlvo);
+    match mlvo {
+        MLVO_MODEL => match_value_and_mark(
+            groups,
+            value,
+            &mut rmlvo.model,
+            match_type,
+            WILDCARD_MATCH_ALL,
+        ),
+        MLVO_LAYOUT => match_value_and_mark(
+            groups,
+            value,
+            &mut rmlvo.layouts[layout as usize],
+            match_type,
+            WILDCARD_MATCH_NONEMPTY,
+        ),
+        MLVO_VARIANT => match_value_and_mark(
+            groups,
+            value,
+            &mut rmlvo.variants[layout as usize],
+            match_type,
+            WILDCARD_MATCH_NONEMPTY,
+        ),
+        MLVO_OPTION => rmlvo
+            .options
+            .iter_mut()
+            .filter(|option| {
+                matches!(option.layout, OPTIONS_MATCH_ALL_GROUPS) || option.layout == layout
+            })
+            .any(|option| {
+                match_value_and_mark(groups, value, option, match_type, WILDCARD_MATCH_ALL)
+            }),
+        _ => false,
+    }
+}
 fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
-    let mut candidate_layouts: u32 = m.mapping.active_or_candidates_mask;
+    let mut candidate_layouts = m.mapping.active_or_candidates_mask;
     for i in 0..m.mapping.num_mlvo as usize {
-        let mlvo: u32 = m.mapping.mlvo_at_pos[i];
-        let value: Sval = m.rule.mlvo_value_at_pos[i].as_sval(s.s);
-        let match_type: u32 = m.rule.match_type_at_pos[i];
-        let mut matched: bool = false;
+        let mlvo = m.mapping.mlvo_at_pos[i];
+        let value = m.rule.mlvo_value_at_pos[i].as_sval(s.s);
+        let match_type = m.rule.match_type_at_pos[i];
         if mlvo == MLVO_MODEL {
-            matched = match_value_and_mark(
-                &m.groups,
-                value,
-                &mut m.rmlvo.model,
-                match_type,
-                WILDCARD_MATCH_ALL,
-            );
-        } else if let LayoutIdx::Range {
-            layout_idx_min,
-            layout_idx_max,
-        } = m.mapping.layout
-        {
-            for idx in layout_idx_min..layout_idx_max {
-                if candidate_layouts == 0 {
-                    break;
-                }
-                let mask: u32 = 1 << idx;
-                if candidate_layouts & mask != 0 {
-                    match mlvo {
-                        1 => {
-                            if match_value_and_mark(
-                                &m.groups,
-                                value,
-                                &mut m.rmlvo.layouts[idx as usize],
-                                match_type,
-                                WILDCARD_MATCH_NONEMPTY,
-                            ) {
-                                matched = true;
-                            } else {
-                                candidate_layouts &= !mask;
-                            }
-                        }
-                        2 => {
-                            if match_value_and_mark(
-                                &m.groups,
-                                value,
-                                &mut m.rmlvo.variants[idx as usize],
-                                match_type,
-                                WILDCARD_MATCH_NONEMPTY,
-                            ) {
-                                matched = true;
-                            } else {
-                                candidate_layouts &= !mask;
-                            }
-                        }
-                        _ => {
-                            let mut found_option: bool = false;
-                            for opt_idx in 0..m.rmlvo.options.len() {
-                                let opt = &m.rmlvo.options[opt_idx];
-                                if opt.layout != OPTIONS_MATCH_ALL_GROUPS && opt.layout != idx {
-                                    continue;
-                                }
-                                if match_value_and_mark(
-                                    &m.groups,
-                                    value,
-                                    &mut m.rmlvo.options[opt_idx],
-                                    match_type,
-                                    WILDCARD_MATCH_ALL,
-                                ) {
-                                    matched = true;
-                                    found_option = true;
-                                    break;
-                                }
-                            }
-                            if !found_option {
-                                candidate_layouts &= !mask;
-                            }
-                        }
-                    }
-                }
+            if !matcher_mlvo_matches(m, mlvo, value, match_type, 0) {
+                return;
             }
-        } else {
-            let li = m.mapping.layout.layout_idx_min() as usize;
-            match mlvo {
-                1 => {
-                    matched = match_value_and_mark(
-                        &m.groups,
-                        value,
-                        &mut m.rmlvo.layouts[li],
-                        match_type,
-                        WILDCARD_MATCH_NONEMPTY,
-                    );
-                }
-                2 => {
-                    matched = match_value_and_mark(
-                        &m.groups,
-                        value,
-                        &mut m.rmlvo.variants[li],
-                        match_type,
-                        WILDCARD_MATCH_NONEMPTY,
-                    );
-                }
-                3 => {
-                    let mut found_option: bool = false;
-                    for opt_idx in 0..m.rmlvo.options.len() {
-                        let opt = &m.rmlvo.options[opt_idx];
-                        if opt.layout != OPTIONS_MATCH_ALL_GROUPS && opt.layout != li as u32 {
-                            continue;
-                        }
-                        if match_value_and_mark(
-                            &m.groups,
-                            value,
-                            &mut m.rmlvo.options[opt_idx],
-                            match_type,
-                            WILDCARD_MATCH_ALL,
-                        ) {
-                            matched = true;
-                            found_option = true;
-                            break;
-                        }
-                    }
-                    if !found_option {
-                        candidate_layouts &= !matched as u32;
-                    }
-                }
-                _ => {}
+            continue;
+        }
+        let (first, end) = match m.mapping.layout {
+            LayoutIdx::Range {
+                layout_idx_min,
+                layout_idx_max,
+            } => (layout_idx_min, layout_idx_max),
+            _ => {
+                let index = m.mapping.layout.layout_idx_min();
+                (index, index + 1)
+            }
+        };
+        let mut matched = false;
+        for layout in first..end {
+            let mask = 1 << layout;
+            if candidate_layouts & mask == 0 {
+                continue;
+            }
+            if matcher_mlvo_matches(m, mlvo, value, match_type, layout) {
+                matched = true;
+            } else {
+                candidate_layouts &= !mask;
             }
         }
         if !matched {
             return;
         }
     }
-    if let LayoutIdx::Range {
-        layout_idx_min,
-        layout_idx_max,
-    } = m.mapping.layout
-    {
-        for idx in layout_idx_min..layout_idx_max {
-            if candidate_layouts & 1 << idx != 0 {
-                for i_0 in 0..m.mapping.num_kccgst as usize {
-                    let kccgst: u32 = m.mapping.kccgst_at_pos[i_0];
-                    if kccgst == KCCGST_GEOMETRY {
-                        continue;
-                    }
-                    let value_0: Sval = m.rule.kccgst_value_at_pos[i_0].as_sval(s.s);
-                    if let Some(expanded) = expand_kccgst_value(m, value_0, idx) {
-                        m.pending_kccgst[kccgst as usize].push((idx, expanded));
-                    }
-                }
-            }
+    let (first, end, pending) = match m.mapping.layout {
+        LayoutIdx::Range {
+            layout_idx_min,
+            layout_idx_max,
+        } => (layout_idx_min, layout_idx_max, true),
+        LayoutIdx::Index { layout_idx_min } => (layout_idx_min, layout_idx_min + 1, false),
+        LayoutIdx::Single { .. } => (0, 0, false),
+    };
+    for layout in first..end {
+        if candidate_layouts & 1 << layout == 0 {
+            continue;
         }
-    } else if let LayoutIdx::Index { layout_idx_min, .. } = m.mapping.layout {
-        for i_1 in 0..m.mapping.num_kccgst as usize {
-            let kccgst_0: u32 = m.mapping.kccgst_at_pos[i_1];
-            if kccgst_0 == KCCGST_GEOMETRY {
+        for i in 0..m.mapping.num_kccgst as usize {
+            let kccgst = m.mapping.kccgst_at_pos[i];
+            if kccgst == KCCGST_GEOMETRY {
                 continue;
             }
-            let value_1: Sval = m.rule.kccgst_value_at_pos[i_1].as_sval(s.s);
-            if let Some(expanded) = expand_kccgst_value(m, value_1, layout_idx_min) {
-                if !expanded.is_empty() {
-                    concat_kccgst(&mut m.kccgst[kccgst_0 as usize], &expanded);
+            let value = m.rule.kccgst_value_at_pos[i].as_sval(s.s);
+            if let Some(expanded) = expand_kccgst_value(m, value, layout) {
+                if pending {
+                    m.pending_kccgst[kccgst as usize].push((layout, expanded));
+                } else if !expanded.is_empty() {
+                    concat_kccgst(&mut m.kccgst[kccgst as usize], &expanded);
                 }
             }
         }
@@ -3845,219 +3633,135 @@ fn gettok(m: &mut Matcher, s: &mut Scanner) -> u32 {
     lex(s, &mut m.val)
 }
 fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
-    let mut eof_ok = false;
-    let mut tok: u32;
-
-    '_initial: loop {
-        tok = gettok(m, s);
-        match tok {
-            4 => {}
-            1 => {
-                continue;
-            }
-            0 => {
-                eof_ok = true;
-                break;
-            }
-            _ => {
-                break;
-            }
+    loop {
+        match gettok(m, s) {
+            TOK_END_OF_LINE => continue,
+            TOK_END_OF_FILE => return true,
+            TOK_BANG => {}
+            _ => return false,
         }
-        loop {
-            tok = gettok(m, s);
-            match tok {
-                3 => {
-                    matcher_group_start_new(m, m.val.string.as_sval(s.s).data);
-                    tok = gettok(m, s);
+        match gettok(m, s) {
+            TOK_GROUP_NAME => {
+                matcher_group_start_new(m, m.val.string.as_sval(s.s).data);
+                if gettok(m, s) != TOK_EQUALS {
+                    return false;
+                }
+                loop {
+                    match gettok(m, s) {
+                        TOK_IDENTIFIER => {
+                            matcher_group_add_element(m, m.val.string.as_sval(s.s).data)
+                        }
+                        TOK_END_OF_LINE => break,
+                        _ => return false,
+                    }
+                }
+            }
+            TOK_INCLUDE => {
+                if gettok(m, s) != TOK_IDENTIFIER {
+                    return false;
+                }
+                matcher_include(m, include_depth, m.val.string.as_sval(s.s));
+                if gettok(m, s) != TOK_END_OF_LINE {
+                    return false;
+                }
+            }
+            TOK_IDENTIFIER => {
+                matcher_mapping_start_new(m);
+                matcher_mapping_set_mlvo(m, m.val.string.as_sval(s.s));
+                loop {
+                    match gettok(m, s) {
+                        TOK_IDENTIFIER if m.mapping.active_or_candidates_mask != 0 => {
+                            matcher_mapping_set_mlvo(m, m.val.string.as_sval(s.s))
+                        }
+                        TOK_IDENTIFIER => {}
+                        TOK_EQUALS => break,
+                        _ => return false,
+                    }
+                }
+                loop {
+                    match gettok(m, s) {
+                        TOK_IDENTIFIER if m.mapping.active_or_candidates_mask != 0 => {
+                            matcher_mapping_set_kccgst(m, m.val.string.as_sval(s.s))
+                        }
+                        TOK_IDENTIFIER => {}
+                        TOK_END_OF_LINE => break,
+                        _ => return false,
+                    }
+                }
+                if m.mapping.active_or_candidates_mask != 0 && matcher_mapping_verify(m) {
+                    matcher_mapping_set_layout_bounds(m);
+                    if matches!(m.mapping.layout, LayoutIdx::Range { .. }) {
+                        m.pending_kccgst.iter_mut().for_each(Vec::clear);
+                    }
+                }
+                loop {
+                    let mut tok = gettok(m, s);
                     match tok {
-                        5 => {
+                        TOK_BANG => {
+                            matcher_append_pending_kccgst(m);
                             break;
                         }
-                        _ => {
-                            break '_initial;
+                        TOK_END_OF_LINE => continue,
+                        TOK_END_OF_FILE => {
+                            matcher_append_pending_kccgst(m);
+                            return true;
                         }
+                        _ => {}
                     }
-                }
-                10 => {
-                    tok = gettok(m, s);
-                    match tok {
-                        2 => {}
-                        _ => {
-                            break '_initial;
-                        }
-                    }
-                    matcher_include(m, include_depth, m.val.string.as_sval(s.s));
-                    tok = gettok(m, s);
-                    match tok {
-                        1 => {
-                            continue '_initial;
-                        }
-                        _ => {
-                            break '_initial;
-                        }
-                    }
-                }
-                2 => {
-                    matcher_mapping_start_new(m);
-                    matcher_mapping_set_mlvo(m, m.val.string.as_sval(s.s));
+                    matcher_rule_start_new(m);
                     loop {
-                        tok = gettok(m, s);
                         match tok {
-                            2 => {}
-                            5 => {
-                                break;
+                            TOK_IDENTIFIER if !m.rule.skip => {
+                                if m.val.string.as_sval(s.s).data == b"+" {
+                                    matcher_rule_set_mlvo_wildcard(m, MLVO_MATCH_WILDCARD_SOME);
+                                } else {
+                                    matcher_rule_set_mlvo(m, m.val.string);
+                                }
                             }
-                            _ => {
-                                break '_initial;
+                            TOK_WILD_CARD_STAR..=TOK_WILD_CARD_ANY if !m.rule.skip => {
+                                matcher_rule_set_mlvo_wildcard(
+                                    m,
+                                    [
+                                        MLVO_MATCH_WILDCARD_LEGACY,
+                                        MLVO_MATCH_WILDCARD_NONE,
+                                        MLVO_MATCH_WILDCARD_SOME,
+                                        MLVO_MATCH_WILDCARD_ANY,
+                                    ]
+                                        [tok as usize - TOK_WILD_CARD_STAR as usize],
+                                );
                             }
+                            TOK_GROUP_NAME if !m.rule.skip => {
+                                matcher_rule_set_mlvo_group(m, m.val.string)
+                            }
+                            TOK_IDENTIFIER
+                            | TOK_WILD_CARD_STAR..=TOK_WILD_CARD_ANY
+                            | TOK_GROUP_NAME => {}
+                            TOK_EQUALS => break,
+                            _ => return false,
                         }
-                        if m.mapping.active_or_candidates_mask != 0 {
-                            matcher_mapping_set_mlvo(m, m.val.string.as_sval(s.s));
-                        }
+                        tok = gettok(m, s);
                     }
                     loop {
-                        tok = gettok(m, s);
-                        match tok {
-                            2 => {}
-                            1 => {
-                                break;
+                        match gettok(m, s) {
+                            TOK_IDENTIFIER if !m.rule.skip => {
+                                matcher_rule_set_kccgst(m, m.val.string)
                             }
-                            _ => {
-                                break '_initial;
-                            }
-                        }
-                        if m.mapping.active_or_candidates_mask != 0 {
-                            matcher_mapping_set_kccgst(m, m.val.string.as_sval(s.s));
+                            TOK_IDENTIFIER => {}
+                            TOK_END_OF_LINE => break,
+                            _ => return false,
                         }
                     }
-                    if m.mapping.active_or_candidates_mask != 0 && matcher_mapping_verify(m) {
-                        matcher_mapping_set_layout_bounds(m);
-                        if matches!(m.mapping.layout, LayoutIdx::Range { .. }) {
-                            m.pending_kccgst.iter_mut().for_each(Vec::clear);
+                    if !m.rule.skip {
+                        matcher_rule_verify(m);
+                        if !m.rule.skip {
+                            matcher_rule_apply_if_matches(m, s);
                         }
                     }
-                    loop {
-                        tok = gettok(m, s);
-                        match tok {
-                            4 => {
-                                matcher_append_pending_kccgst(m);
-                                break;
-                            }
-                            1 => {}
-                            0 => {
-                                matcher_append_pending_kccgst(m);
-                                eof_ok = true;
-                                break '_initial;
-                            }
-                            _ => {
-                                matcher_rule_start_new(m);
-                                loop {
-                                    match tok {
-                                        2 => {
-                                            if !m.rule.skip {
-                                                if m.val.string.len() == 1
-                                                    && s.s[m.val.string.start] == b'+'
-                                                {
-                                                    matcher_rule_set_mlvo_wildcard(
-                                                        m,
-                                                        MLVO_MATCH_WILDCARD_SOME,
-                                                    );
-                                                } else {
-                                                    matcher_rule_set_mlvo(m, m.val.string);
-                                                }
-                                            }
-                                        }
-                                        6 => {
-                                            if !m.rule.skip {
-                                                matcher_rule_set_mlvo_wildcard(
-                                                    m,
-                                                    MLVO_MATCH_WILDCARD_LEGACY,
-                                                );
-                                            }
-                                        }
-                                        7 => {
-                                            if !m.rule.skip {
-                                                matcher_rule_set_mlvo_wildcard(
-                                                    m,
-                                                    MLVO_MATCH_WILDCARD_NONE,
-                                                );
-                                            }
-                                        }
-                                        8 => {
-                                            if !m.rule.skip {
-                                                matcher_rule_set_mlvo_wildcard(
-                                                    m,
-                                                    MLVO_MATCH_WILDCARD_SOME,
-                                                );
-                                            }
-                                        }
-                                        9 => {
-                                            if !m.rule.skip {
-                                                matcher_rule_set_mlvo_wildcard(
-                                                    m,
-                                                    MLVO_MATCH_WILDCARD_ANY,
-                                                );
-                                            }
-                                        }
-                                        3 => {
-                                            if !m.rule.skip {
-                                                matcher_rule_set_mlvo_group(m, m.val.string);
-                                            }
-                                        }
-                                        5 => {
-                                            break;
-                                        }
-                                        _ => {
-                                            break '_initial;
-                                        }
-                                    }
-                                    tok = gettok(m, s);
-                                }
-                                loop {
-                                    tok = gettok(m, s);
-                                    match tok {
-                                        2 => {}
-                                        1 => {
-                                            break;
-                                        }
-                                        _ => {
-                                            break '_initial;
-                                        }
-                                    }
-                                    if !m.rule.skip {
-                                        matcher_rule_set_kccgst(m, m.val.string);
-                                    }
-                                }
-                                if !m.rule.skip {
-                                    matcher_rule_verify(m);
-                                }
-                                if !m.rule.skip {
-                                    matcher_rule_apply_if_matches(m, s);
-                                }
-                            }
-                        }
-                    }
-                }
-                _ => {
-                    break '_initial;
                 }
             }
-        }
-        loop {
-            tok = gettok(m, s);
-            match tok {
-                2 => {}
-                1 => {
-                    break;
-                }
-                _ => {
-                    break '_initial;
-                }
-            }
-            matcher_group_add_element(m, m.val.string.as_sval(s.s).data);
+            _ => return false,
         }
     }
-    eof_ok
 }
 fn read_rules_file(matcher: &mut Matcher<'_>, include_depth: u32, file_data: &[u8]) -> bool {
     let mut scanner = Scanner::new(file_data);
@@ -4155,13 +3859,9 @@ fn xkb_resolve_rules(
                                 let count = count as usize;
                                 if count > 0
                                     && pos + count <= sym_bytes.len()
-                                    && (sym_bytes.get(pos + count).copied() == Some(0)
-                                        || sym_bytes.get(pos + count).map(|&b| b as i32)
-                                            == Some(MERGE_OVERRIDE_PREFIX)
-                                        || sym_bytes.get(pos + count).map(|&b| b as i32)
-                                            == Some(MERGE_AUGMENT_PREFIX)
-                                        || sym_bytes.get(pos + count).map(|&b| b as i32)
-                                            == Some(MERGE_REPLACE_PREFIX))
+                                    && sym_bytes
+                                        .get(pos + count)
+                                        .is_some_and(|&byte| byte == 0 || is_merge_prefix(byte))
                                     && group > 0
                                     && group <= XKB_MAX_GROUPS
                                 {
