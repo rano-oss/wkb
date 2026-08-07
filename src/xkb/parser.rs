@@ -35,7 +35,7 @@ pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbR
 }
 
 pub(crate) fn text_v1_keymap_new_from_string(keymap: &mut XkbKeymap, input: &[u8]) -> bool {
-    let Some(mut xkb_file) = xkb_parse_string(&mut keymap.ctx, input, "(input string)") else {
+    let Some(mut xkb_file) = xkb_parse_string(&mut keymap.ctx, input, "") else {
         return false;
     };
     compile_keymap_file(keymap, &mut xkb_file)
@@ -186,8 +186,8 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                     continue 'main_loop;
                 }
 
-                // Rule 3 is YYACCEPT (mid-rule accept).
-                if rule_id == 3 {
+                // A complete top-level map returns before lexing the next one.
+                if matches!(rule_id, 2 | 3) {
                     return 0;
                 }
 
@@ -2181,7 +2181,7 @@ pub(crate) fn process_include_file(
     let mut file_and_path = find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset);
 
     while let Some((ref file_data, ref _path)) = file_and_path {
-        if let Some(parsed) = xkb_parse_string(ctx, file_data, &stmt.file) {
+        if let Some(parsed) = xkb_parse_string(ctx, file_data, &stmt.map) {
             let _ = file_and_path.take();
 
             if parsed.file_type != file_type {
@@ -5441,7 +5441,7 @@ mod tests {
         "#;
         let mut ctx = xkb_context_new(0);
 
-        let file = xkb_parse_string(&mut ctx, input, "(multi-map test)")
+        let file = xkb_parse_string(&mut ctx, input, "second")
             .expect("second map should remain parseable");
 
         assert_eq!(file.name, "second");
