@@ -25002,7 +25002,7 @@ fn get_legacy_keysym_entry(ks: u32) -> &'static CaseMappings {
 pub(crate) fn xkb_keysym_to_upper(ks: u32) -> u32 {
     if ks <= 0x13be {
         let m = get_legacy_keysym_entry(ks);
-        if m.upper {
+        if !m.upper {
             return ks - m.offset as u32;
         }
         return ks;
