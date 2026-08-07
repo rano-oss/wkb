@@ -763,7 +763,6 @@ fn expr_resolve_overlay_entry(
     field: &str,
     array_ndx: Option<&ExprKind>,
     expr: &ExprKind,
-    _keyi: &KeyInfo,
     overlay_rtrn: &mut u8,
     key_rtrn: &mut u32,
 ) -> bool {
@@ -936,7 +935,6 @@ fn set_symbols_field(
                 field,
                 array_ndx,
                 value_opt.as_ref().unwrap(),
-                keyi,
                 &mut overlay,
                 &mut key,
             ) {
