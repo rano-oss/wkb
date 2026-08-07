@@ -844,6 +844,16 @@ fn parse_symbols_field(field: &str) -> Option<SymbolsField> {
     }
 }
 
+fn add_pending_computation(info: &mut XkbKeymapInfo<'_>, expr: Option<ExprKind>) -> u32 {
+    let index = info.pending_computations.len() as u32;
+    info.pending_computations.push(PendingComputation {
+        expr,
+        computed: false,
+        value: 0,
+    });
+    index
+}
+
 fn set_symbols_field(
     ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
@@ -980,13 +990,7 @@ fn set_symbols_field(
             }
             if pending {
                 keyi.out_of_range_pending_group = true;
-                let pending_index: u32 = ki.pending_computations.len() as u32;
-                ki.pending_computations.push(PendingComputation {
-                    expr: value_opt.take(),
-                    computed: false,
-                    value: 0,
-                });
-                keyi.out_of_range_group_number = pending_index;
+                keyi.out_of_range_group_number = add_pending_computation(ki, value_opt.take());
             } else {
                 keyi.out_of_range_pending_group = false;
                 keyi.out_of_range_group_number = grp - 1;
@@ -1458,7 +1462,7 @@ fn copy_symbols_def_to_keymap(
 
     true
 }
-fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) -> bool {
+fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) {
     let type_map: HashMap<u32, u32> = keymap
         .types
         .iter()
@@ -1512,7 +1516,6 @@ fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) -> boo
             info.error_count += 1;
         }
     }
-    true
 }
 pub(crate) fn compile_symbols(
     file: Option<&mut XkbFile>,
@@ -1524,10 +1527,11 @@ pub(crate) fn compile_symbols(
     if let Some(file) = file {
         handle_symbols_file(keymap_info, &mut info, file);
     }
-    if (info.error_count == 0) && copy_symbols_to_keymap(keymap_info.keymap, &mut info) {
-        return true;
+    if info.error_count != 0 {
+        return false;
     }
-    false
+    copy_symbols_to_keymap(keymap_info.keymap, &mut info);
+    true
 }
 use super::keysym::xkb_keysym_to_upper;
 use super::parser::*;
@@ -2027,13 +2031,7 @@ fn set_led_map_field(
             if !expr_resolve_group_mask(ki, value, &mut mask, &mut pending) {
                 if pending {
                     ledi.led.pending_groups = true;
-                    let pending_index: u32 = ki.pending_computations.len() as u32;
-                    ki.pending_computations.push(PendingComputation {
-                        expr: value_opt.take(),
-                        computed: false,
-                        value: 0,
-                    });
-                    mask = pending_index;
+                    mask = add_pending_computation(ki, value_opt.take());
                 } else {
                     return false;
                 }
@@ -2760,7 +2758,7 @@ fn handle_key_types_file(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, fi
         }
     }
 }
-fn copy_key_types_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo) -> bool {
+fn copy_key_types_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo) {
     // let keymap = ki.keymap;
     let num_types: u32 = if info.types.is_empty() {
         1_u32
@@ -2792,7 +2790,6 @@ fn copy_key_types_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo)
     }
     ki.keymap.types = types_vec;
     ki.keymap.mods = info.mods;
-    true
 }
 pub(crate) fn compile_key_types(
     file: Option<&mut XkbFile>,
@@ -2804,10 +2801,11 @@ pub(crate) fn compile_key_types(
     if let Some(file) = file {
         handle_key_types_file(keymap_info, &mut info, file);
     }
-    if (info.error_count == 0) && copy_key_types_to_keymap(keymap_info, &mut info) {
-        return true;
+    if info.error_count != 0 {
+        return false;
     }
-    false
+    copy_key_types_to_keymap(keymap_info, &mut info);
+    true
 }
 
 // ── Virtual modifier functions (migrated from vmod.rs) ──
@@ -3431,7 +3429,7 @@ fn handle_keycodes_file(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut Xk
         }
     }
 }
-fn copy_key_names_to_keymap(keymap: &mut XkbKeymap, keycodes: &KeycodeStore) -> bool {
+fn copy_key_names_to_keymap(keymap: &mut XkbKeymap, keycodes: &KeycodeStore) {
     if keycodes.low.is_empty() && keycodes.high.is_empty() {
         keymap.min_key_code = 8;
         keymap.max_key_code = 255;
@@ -3463,56 +3461,34 @@ fn copy_key_names_to_keymap(keymap: &mut XkbKeymap, keycodes: &KeycodeStore) -> 
         idx += 1;
     }
     keymap.keys = keys;
-    true
 }
-fn copy_keycode_name_lut(keymap: &mut XkbKeymap, keycodes: &mut KeycodeStore) -> bool {
-    let names_len = keycodes.names.len();
-    {
-        if names_len > 0 {
-            for name in 0..names_len as u32 {
-                let entry = keycodes.names[name as usize];
-                if entry.found {
-                    if entry.is_alias {
-                        let match_real: KeycodeMatch =
-                            keycode_store_lookup_name(keycodes, entry.index);
-                        if !match_real.found || match_real.is_alias {
-                            keycodes.names[name as usize].found = false;
-                        }
-                    } else if !entry.low {
-                        keycodes.names[name as usize].index += keymap.num_keys_low;
-                    }
+fn copy_keycode_name_lut(keymap: &mut XkbKeymap, keycodes: &mut KeycodeStore) {
+    for name in 0..keycodes.names.len() {
+        let entry = keycodes.names[name];
+        if entry.found {
+            if entry.is_alias {
+                let match_real = keycode_store_lookup_name(keycodes, entry.index);
+                if !match_real.found || match_real.is_alias {
+                    keycodes.names[name].found = false;
                 }
+            } else if !entry.low {
+                keycodes.names[name].index += keymap.num_keys_low;
             }
         }
     }
-    if names_len > 0 {
-        keymap.key_names = std::mem::take(&mut keycodes.names);
-    } else {
-        keymap.key_names = Vec::new();
-    }
-    true
+    keymap.key_names = std::mem::take(&mut keycodes.names);
 }
 fn copy_led_names_to_keymap(
     keymap: &mut XkbKeymap,
     led_names: &[LedNameInfo; 32],
     num_led_names: u32,
-) -> bool {
+) {
     keymap.num_leds = num_led_names;
     for (idx, ledi) in led_names.iter().enumerate().take(num_led_names as usize) {
         if ledi.name != XKB_ATOM_NONE {
             keymap.leds[idx].name = ledi.name;
         }
     }
-    true
-}
-fn copy_key_names_info_to_keymap(info: &mut KeyNamesInfo, ki: &mut XkbKeymapInfo<'_>) -> bool {
-    if !copy_key_names_to_keymap(ki.keymap, &info.keycodes)
-        || !copy_keycode_name_lut(ki.keymap, &mut info.keycodes)
-        || !copy_led_names_to_keymap(ki.keymap, &info.led_names, info.num_led_names)
-    {
-        return false;
-    }
-    true
 }
 pub(crate) fn compile_keycodes(
     file: Option<&mut XkbFile>,
@@ -3523,10 +3499,13 @@ pub(crate) fn compile_keycodes(
     if let Some(file) = file {
         handle_keycodes_file(&mut info, file, keymap_info);
     }
-    if (info.error_count == 0) && copy_key_names_info_to_keymap(&mut info, keymap_info) {
-        return true;
+    if info.error_count != 0 {
+        return false;
     }
-    false
+    copy_key_names_to_keymap(keymap_info.keymap, &info.keycodes);
+    copy_keycode_name_lut(keymap_info.keymap, &mut info.keycodes);
+    copy_led_names_to_keymap(keymap_info.keymap, &info.led_names, info.num_led_names);
+    true
 }
 use super::keymap::{ACTION_TYPE_NAMES, GROUP_LAST_INDEX_NAME};
 
@@ -4328,13 +4307,7 @@ fn check_group_field(
     }
     if pending {
         flags |= ActionFlags::PENDING_COMPUTATION.bits();
-        let pending_index: u32 = keymap_info.pending_computations.len() as u32;
-        keymap_info.pending_computations.push(PendingComputation {
-            expr: value.take(),
-            computed: false,
-            value: 0,
-        });
-        *group_rtrn = pending_index as i32;
+        *group_rtrn = add_pending_computation(keymap_info, value.take()) as i32;
     } else {
         flags &= !ActionFlags::PENDING_COMPUTATION.bits();
         if flags & ActionFlags::ABSOLUTE_SWITCH.bits() == 0 {
@@ -4541,7 +4514,8 @@ pub(crate) fn handle_action_def(
         unreachable!()
     };
     let action_name: &str = atom_text(&keymap_info.keymap.ctx.atom_table, action_name_atom);
-    let handler_type = lookup_string(&ACTION_TYPE_NAMES, action_name).unwrap_or(ACTION_TYPE_UNKNOWN);
+    let handler_type =
+        lookup_string(&ACTION_TYPE_NAMES, action_name).unwrap_or(ACTION_TYPE_UNKNOWN);
     if handler_type == ACTION_TYPE_UNKNOWN && keymap_info.strict & PARSER_NO_UNKNOWN_ACTION != 0 {
         return ParseStatus::Fatal;
     }
@@ -4594,8 +4568,15 @@ pub(crate) fn handle_action_def(
             }
             continue;
         };
-        let parse_status =
-            handle_action_field(keymap_info, mods, action, handler_type, field_ndx, lhs.index, av);
+        let parse_status = handle_action_field(
+            keymap_info,
+            mods,
+            action,
+            handler_type,
+            field_ndx,
+            lhs.index,
+            av,
+        );
         match parse_status {
             ParseStatus::Fatal => return ParseStatus::Fatal,
             ParseStatus::Recoverable => {
