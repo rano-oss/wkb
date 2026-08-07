@@ -399,7 +399,7 @@ pub(crate) fn xkb_keymap_new(ctx: XkbContext, format: u32, flags: u32) -> Option
         XKB_MOD_NAME_MOD5,
     ];
     for (i, name) in BUILTIN_MODS.iter().enumerate() {
-        keymap.mods.mods[i].name = atom_intern(&mut keymap.ctx.atom_table, name.as_bytes());
+        keymap.mods.mods[i].name = keymap.ctx.atom_intern(name.as_bytes());
         keymap.mods.mods[i].type_0 = MOD_REAL;
         keymap.mods.mods[i].mapping = 1_u32 << i;
     }
@@ -513,8 +513,6 @@ pub(crate) fn xkb_wrap_group_into_range(
 }
 
 use std::env::VarError;
-
-use super::parser::{atom_intern, atom_table_new};
 
 use super::parser::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
@@ -675,7 +673,7 @@ pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
     let mut ctx = XkbContext {
         includes: Vec::new(),
         failed_includes: Vec::new(),
-        atom_table: atom_table_new(),
+        atom_table: Default::default(),
         use_environment_names: false,
         pending_default_includes: false,
     };

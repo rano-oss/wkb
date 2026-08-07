@@ -194,7 +194,7 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
 }
 #[inline(always)]
 fn yy_atom<'a>(yyval: &mut YYValue<'a>, ctx: &mut &mut XkbContext, bytes: &[u8]) {
-    *yyval = YYValue::Atom(atom_intern(&mut ctx.atom_table, bytes));
+    *yyval = YYValue::Atom(ctx.atom_intern(bytes));
 }
 #[inline(always)]
 fn yy_bin_expr<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize, op: BinaryOp) {
@@ -885,17 +885,17 @@ fn execute_reduction<'a>(
         // Ident 214
         214 => {
             let sval = yyvs[sp].as_sval();
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, sval.data));
+            *yyval = YYValue::Atom(param.ctx.atom_intern(sval.data));
         }
         215 => {
             // Ident: DEFAULT
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"default"));
+            *yyval = YYValue::Atom(param.ctx.atom_intern(b"default"));
         }
         // String 216
         216 => {
             // String: STRING → intern as atom
             let s = yyvs[sp].take_str();
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, s.as_bytes()));
+            *yyval = YYValue::Atom(param.ctx.atom_intern(s.as_bytes()));
         }
         // OptMapName / MapName 217-219
         217 | 219 => {
@@ -1528,7 +1528,7 @@ pub(crate) fn _xkbcommon_lex<'a>(
         }
         let len: usize = s.pos - s.token_pos - 2;
         let keyname_bytes = s.input_slice(s.token_pos + 1, s.token_pos + 1 + len);
-        *yylval = YYValue::Atom(atom_intern(&mut ctx.atom_table, keyname_bytes));
+        *yylval = YYValue::Atom(ctx.atom_intern(keyname_bytes));
         return KEYNAME;
     }
     let punctuation = match s.peek() {
@@ -1601,11 +1601,10 @@ static XKB_FILE_TYPE_INCLUDE_DIRS: [&str; 7] = [
     "keycodes", "types", "compat", "symbols", "geometry", "keymap", "rules",
 ];
 fn directory_for_include(type_0: FileType) -> &'static str {
-    if type_0 as usize >= XKB_FILE_TYPE_INCLUDE_DIRS.len() {
-        ""
-    } else {
-        XKB_FILE_TYPE_INCLUDE_DIRS[type_0 as usize]
-    }
+    XKB_FILE_TYPE_INCLUDE_DIRS
+        .get(type_0 as usize)
+        .copied()
+        .unwrap_or("")
 }
 /// Expand `%H`, `%S`, `%E`, `%%` in the given name string.
 /// Returns `Some(expanded)` on success, `None` on error.
@@ -1615,32 +1614,22 @@ fn expand_percent(type_dir: &str, name: &str) -> Option<String> {
     let mut chars = name.chars().peekable();
     while let Some(c) = chars.next() {
         if c == '%' {
-            match chars.next() {
-                Some('%') => result.push('%'),
-                Some('H') => match xkb_context_getenv("HOME") {
-                    Ok(home) => result.push_str(&home),
-                    Err(_) => {
-                        return None;
-                    }
-                },
-                Some('S') => {
+            match chars.next()? {
+                '%' => result.push('%'),
+                'H' => result.push_str(&xkb_context_getenv("HOME").ok()?),
+                'S' => {
                     let sys = xkb_context_include_path_get_system_path();
                     result.push_str(&sys);
                     result.push('/');
                     result.push_str(type_dir);
                 }
-                Some('E') => {
+                'E' => {
                     let extra = xkb_context_include_path_get_extra_path();
                     result.push_str(&extra);
                     result.push('/');
                     result.push_str(type_dir);
                 }
-                Some(_other) => {
-                    return None;
-                }
-                None => {
-                    return None;
-                }
+                _ => return None,
             }
         } else {
             result.push(c);
@@ -1656,23 +1645,11 @@ fn expand_percent(type_dir: &str, name: &str) -> Option<String> {
 /// - `Ok(Some(expanded))` if expansion succeeded
 /// - `Err(())` on error
 pub(crate) fn expand_path_str(name: &str, file_type: FileType) -> Result<Option<String>, ()> {
-    // Find first '%'
-    let k = match name.find('%') {
-        Some(pos) => pos,
-        None => return Ok(None),
+    let Some(k) = name.find('%') else {
+        return Ok(None);
     };
-    let type_dir = directory_for_include(file_type);
-    let prefix = &name[..k];
-    let rest = &name[k..];
-    match expand_percent(type_dir, rest) {
-        Some(expanded) => {
-            let mut result = String::with_capacity(prefix.len() + expanded.len());
-            result.push_str(prefix);
-            result.push_str(&expanded);
-            Ok(Some(result))
-        }
-        None => Err(()),
-    }
+    let expanded = expand_percent(directory_for_include(file_type), &name[k..]).ok_or(())?;
+    Ok(Some(format!("{}{}", &name[..k], expanded)))
 }
 pub(crate) fn find_file_in_xkb_path(
     ctx: &mut XkbContext,
@@ -1706,9 +1683,11 @@ fn find_include_file(
     offset: &mut u32,
 ) -> Option<(std::sync::Arc<Vec<u8>>, String)> {
     if name.starts_with('/') {
-        (*offset == 0)
-            .then(|| read_file_cached(name).map(|data| (data, name.to_owned())))
-            .flatten()
+        if *offset == 0 {
+            read_file_cached(name).map(|data| (data, name.to_owned()))
+        } else {
+            None
+        }
     } else if expanded {
         None
     } else {
@@ -1724,49 +1703,33 @@ pub(crate) fn process_include_file(
     stmt: &IncludeStmt,
     file_type: FileType,
 ) -> Option<Box<XkbFile>> {
-    let mut xkb_file: Option<Box<XkbFile>> = None;
-    let mut candidate: Option<Box<XkbFile>> = None;
-
-    // Expand %-sequences in the file name
-    let stmt_file: String = match expand_path_str(&stmt.file, file_type) {
+    let stmt_file = match expand_path_str(&stmt.file, file_type) {
         Err(()) => return None,
         Ok(Some(expanded)) => expanded,
         Ok(None) => stmt.file.clone(),
     };
     let expanded = stmt_file != stmt.file;
 
-    let mut offset: u32 = 0;
-    let mut file_and_path = find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset);
-
-    while let Some((ref file_data, ref _path)) = file_and_path {
-        if let Some(parsed) = xkb_parse_string(ctx, file_data, &stmt.map) {
-            let _ = file_and_path.take();
-
-            if parsed.file_type != file_type {
-                // parsed drops automatically
-            } else if !stmt.map.is_empty() || parsed.flags != 0 && MAP_IS_DEFAULT != 0 {
-                xkb_file = Some(parsed);
-                break;
-            } else if candidate.is_none() {
-                candidate = Some(parsed);
+    let mut offset = 0;
+    let mut candidate = None;
+    while let Some((file_data, _)) =
+        find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset)
+    {
+        if let Some(parsed) = xkb_parse_string(ctx, &file_data, &stmt.map) {
+            if parsed.file_type == file_type {
+                if !stmt.map.is_empty() || parsed.flags != 0 {
+                    return Some(parsed);
+                }
+                if candidate.is_none() {
+                    candidate = Some(parsed);
+                }
             }
-            // else: parsed drops automatically (was FreeXkbFile)
-        } else {
-            // Drop the file (closes it)
-            let _ = file_and_path.take();
         }
         offset += 1;
-        file_and_path = find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset);
     }
-
-    if xkb_file.is_none() {
-        xkb_file = candidate;
-    }
-    xkb_file
+    candidate
 }
 
-pub(crate) const GROUP_MASK_NAME_LAST: u32 = 3;
-pub(crate) const GROUP_INDEX_NAME_LAST: u32 = 1;
 pub(crate) type CompileFileFn = for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool;
 #[inline]
 fn compute_effective_mask(keymap: &XkbKeymap, mods: &mut XkbMods) {
@@ -1853,40 +1816,13 @@ fn find_interp_for_key(
     let syms = &syms_buf[..num_syms];
     let key_modmap = keymap.keys[key_idx].modmap;
     for &cur_sym in syms {
-        let match_exact = interp_index.by_sym.get(&cur_sym);
-        let match_wild = &interp_index.wildcards;
-        let mut exact_idx = 0usize;
-        let mut wild_idx = 0usize;
-        let mut found = false;
-        let mut use_default = false;
-        loop {
-            let i = match (
-                exact_idx < match_exact.map_or(0, |v| v.len()),
-                wild_idx < match_wild.len(),
-            ) {
-                (true, true) => {
-                    let a = match_exact.as_ref().unwrap()[exact_idx];
-                    let b = match_wild[wild_idx];
-                    if a < b {
-                        exact_idx += 1;
-                        a
-                    } else {
-                        wild_idx += 1;
-                        b
-                    }
-                }
-                (true, false) => {
-                    let a = match_exact.as_ref().unwrap()[exact_idx];
-                    exact_idx += 1;
-                    a
-                }
-                (false, true) => {
-                    let b = match_wild[wild_idx];
-                    wild_idx += 1;
-                    b
-                }
-                (false, false) => break,
-            };
+        let mut candidates = interp_index.wildcards.clone();
+        if let Some(exact) = interp_index.by_sym.get(&cur_sym) {
+            candidates.extend(exact);
+            candidates.sort_unstable();
+        }
+        let mut selected = None;
+        for i in candidates {
             let interp = &sym_interprets[i];
             let mods = if interp.level_one_only && level != 0 {
                 0
@@ -1902,30 +1838,18 @@ fn find_interp_for_key(
                 _ => false,
             };
             if matched {
-                if interp.sym == XKB_KEY_NO_SYMBOL && !interp_indices.is_empty() {
-                    let mut already_used = false;
-                    for &prev_idx in interp_indices.iter() {
-                        if prev_idx == i {
-                            already_used = true;
-                            break;
-                        }
-                    }
-                    if already_used {
-                        use_default = true;
-                        break;
-                    }
-                }
-                found = true;
-                interp_indices.push(i);
+                selected = Some(i);
                 break;
             }
         }
-        if !found {
-            use_default = true;
-        }
-        if use_default {
-            // usize::MAX signals "use default interpret"
-            interp_indices.push(usize::MAX);
+        match selected {
+            Some(i)
+                if sym_interprets[i].sym == XKB_KEY_NO_SYMBOL && interp_indices.contains(&i) =>
+            {
+                interp_indices.push(usize::MAX)
+            }
+            Some(i) => interp_indices.push(i),
+            None => interp_indices.push(usize::MAX),
         }
     }
     true
@@ -1989,19 +1913,12 @@ fn apply_interps_to_key(
         keymap.keys[key_idx].vmodmap = vmodmap;
     }
 }
-#[inline]
-fn is_mod_action(action: &XkbAction) -> bool {
-    matches!(
-        action,
-        XkbAction::ModSet(_) | XkbAction::ModLatch(_) | XkbAction::ModLock(_)
-    )
-}
-#[inline]
-fn is_group_action(action: &XkbAction) -> bool {
-    matches!(
-        action,
-        XkbAction::GroupSet(_) | XkbAction::GroupLatch(_) | XkbAction::GroupLock(_)
-    )
+fn action_category(action: &XkbAction) -> u8 {
+    match action {
+        XkbAction::ModSet(_) | XkbAction::ModLatch(_) | XkbAction::ModLock(_) => 1,
+        XkbAction::GroupSet(_) | XkbAction::GroupLatch(_) | XkbAction::GroupLock(_) => 2,
+        _ => 0,
+    }
 }
 fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
     let num_groups = keymap.keys[key_idx].num_groups;
@@ -2011,16 +1928,12 @@ fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
             let level: &mut XkbLevel = &mut keymap.keys[key_idx].groups[g].levels[l];
             if level.actions.len() > 1 {
                 for i in 0..level.actions.len() {
-                    let mod_action: bool = is_mod_action(&level.actions[i]);
-                    let group_action: bool = is_group_action(&level.actions[i]);
-                    if mod_action || group_action {
+                    let category = action_category(&level.actions[i]);
+                    if category != 0 {
                         for j in (i + 1)..level.actions.len() {
                             let same_action = std::mem::discriminant(&level.actions[i])
                                 == std::mem::discriminant(&level.actions[j]);
-                            if same_action
-                                || mod_action && is_mod_action(&level.actions[j])
-                                || group_action && is_group_action(&level.actions[j])
-                            {
+                            if same_action || category == action_category(&level.actions[j]) {
                                 level.actions[j] = XkbAction::None;
                             }
                         }
@@ -2136,25 +2049,15 @@ fn compute_max_num_groups(keymap: &mut XkbKeymap) {
     } else {
         keymap.min_key_code
     };
-    for ki in start_idx..keymap.num_keys {
-        let key_num_groups = keymap.keys[ki as usize].num_groups;
-        keymap.num_groups = if keymap.num_groups > key_num_groups {
-            keymap.num_groups
-        } else {
-            key_num_groups
-        };
-    }
+    keymap.num_groups = keymap.keys[start_idx as usize..keymap.num_keys as usize]
+        .iter()
+        .fold(keymap.num_groups, |max, key| max.max(key.num_groups));
 }
 
 fn update_group_lookup_entries(info: &mut XkbKeymapInfo<'_>) {
-    let num_groups: u32 = if info.keymap.num_groups != 0 {
-        info.keymap.num_groups
-    } else {
-        1_u32
-    };
-    info.lookup.group_index_names[GROUP_INDEX_NAME_LAST as usize] =
-        lookup_entry(GROUP_LAST_INDEX_NAME, num_groups);
-    info.lookup.group_mask_names[GROUP_MASK_NAME_LAST as usize] =
+    let num_groups = info.keymap.num_groups.max(1);
+    info.lookup.group_index_names[1] = lookup_entry(GROUP_LAST_INDEX_NAME, num_groups);
+    info.lookup.group_mask_names[3] =
         lookup_entry(GROUP_LAST_INDEX_NAME, 1 << num_groups.wrapping_sub(1));
 }
 
@@ -2208,12 +2111,8 @@ fn update_mod_mappings(info: &mut XkbKeymapInfo<'_>) {
 }
 
 fn has_unbound_vmods(keymap: &XkbKeymap, mods: &XkbMods) -> bool {
-    for k in _XKB_MOD_INDEX_NUM_ENTRIES..keymap.mods.num_mods {
-        if mods.mods & 1 << k != 0 && keymap.mods.mods[k as usize].mapping == 0 {
-            return true;
-        }
-    }
-    false
+    (_XKB_MOD_INDEX_NUM_ENTRIES..keymap.mods.num_mods)
+        .any(|k| mods.mods & 1 << k != 0 && keymap.mods.mods[k as usize].mapping == 0)
 }
 
 fn compute_type_entry_masks(info: &mut XkbKeymapInfo<'_>) {
@@ -2277,9 +2176,8 @@ fn update_key_action_fields(
 }
 
 fn compute_led_effective_masks(info: &mut XkbKeymapInfo<'_>) {
-    let keymap = &mut *info.keymap;
-    for led_idx in 0..keymap.num_leds {
-        compute_effective_mask_with(&keymap.mods, &mut keymap.leds[led_idx as usize].mods);
+    for led in &mut info.keymap.leds[..info.keymap.num_leds as usize] {
+        compute_effective_mask_with(&info.keymap.mods, &mut led.mods);
     }
 }
 
@@ -2411,8 +2309,6 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
     }
     ok_0
 }
-pub(crate) const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
-
 /// Index-based sval for scanner input. Used in Lvalue/rule to avoid
 /// lifetime issues across include boundaries. Reconstruct sval via as_sval().
 #[derive(Copy, Clone, Default)]
@@ -2649,56 +2545,36 @@ fn split_comma_separated_mlvo(mlvo: u32, bytes: &[u8]) -> Vec<MatchedSval<'_>> {
     if bytes.is_empty() {
         return vec![MatchedSval::default()];
     }
-    let mut arr = Vec::new();
-    let mut pos: usize = 0;
-    loop {
-        let start = pos;
-        let mut end = pos;
-        let mut val_0 = MatchedSval {
-            matched: false,
-            layout: OPTIONS_MATCH_ALL_GROUPS,
-            sval: Sval {
-                data: &bytes[start..start],
-            },
-        };
-        while pos < bytes.len()
-            && bytes[pos] != b','
-            && bytes[pos] as i32 != OPTIONS_GROUP_SPECIFIER_PREFIX
-        {
-            pos += 1;
-            end += 1;
-        }
-        val_0.sval = Sval {
-            data: &bytes[start..end],
-        };
-        val_0.sval = strip_spaces(val_0.sval);
-        if pos < bytes.len() && bytes[pos] as i32 == OPTIONS_GROUP_SPECIFIER_PREFIX {
-            pos += 1;
-            let (layout, count) = parse_dec_u32(&bytes[pos..]);
-            let count = count as usize;
-            if count > 0 {
-                pos += count;
-                if (1..=XKB_MAX_GROUPS).contains(&layout) && mlvo == MLVO_OPTION {
-                    val_0.layout -= 1;
+    let bytes = if bytes.last() == Some(&b',') {
+        &bytes[..bytes.len() - 1]
+    } else {
+        bytes
+    };
+    bytes
+        .split(|&byte| byte == b',')
+        .map(|part| {
+            let bang = part.iter().position(|&byte| byte == b'!');
+            let mut value = MatchedSval {
+                sval: strip_spaces(Sval {
+                    data: &part[..bang.unwrap_or(part.len())],
+                }),
+                layout: OPTIONS_MATCH_ALL_GROUPS,
+                matched: false,
+            };
+            if let Some(bang) = bang {
+                let suffix = &part[bang + 1..];
+                let (layout, count) = parse_dec_u32(suffix);
+                if count > 0
+                    && count as usize == suffix.len()
+                    && (1..=XKB_MAX_GROUPS).contains(&layout)
+                    && mlvo == MLVO_OPTION
+                {
+                    value.layout -= 1;
                 }
             }
-            let layout_index_end = pos;
-            while pos < bytes.len() && bytes[pos] != b',' {
-                pos += 1;
-            }
-            if count == 0 || layout_index_end != pos {
-                val_0.layout = OPTIONS_MATCH_ALL_GROUPS;
-            }
-        }
-        arr.push(val_0);
-        if pos >= bytes.len() {
-            break;
-        }
-        if bytes[pos] == b',' {
-            pos += 1;
-        }
-    }
-    arr
+            value
+        })
+        .collect()
 }
 fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) -> Matcher<'a> {
     let mut m = Matcher::new(ctx);
@@ -3545,27 +3421,17 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
 }
 fn read_rules_file(matcher: &mut Matcher<'_>, include_depth: u32, file_data: &[u8]) -> bool {
     let mut scanner = Scanner::new(file_data);
-    if !scanner.check_supported_char_encoding() {
-        return false;
-    }
-    matcher_match(matcher, &mut scanner, include_depth)
+    scanner.check_supported_char_encoding() && matcher_match(matcher, &mut scanner, include_depth)
 }
 fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_>) -> bool {
-    let partial_rules = format!("{}{}", rules, suffix);
+    let partial_rules = format!("{rules}{suffix}");
     if partial_rules.len() >= 60 {
         return false;
     }
-    let mut offset: u32 = 0;
-    loop {
-        let found = find_file_in_xkb_path(
-            &mut *matcher.ctx,
-            &partial_rules,
-            FileType::Rules,
-            &mut offset,
-        );
-        let Some((file_data, _path)) = found else {
-            break;
-        };
+    let mut offset = 0;
+    while let Some((file_data, _)) =
+        find_file_in_xkb_path(matcher.ctx, &partial_rules, FileType::Rules, &mut offset)
+    {
         if !read_rules_file(matcher, 0, &file_data) {
             return false;
         }
@@ -3579,9 +3445,10 @@ fn xkb_resolve_rules(
     out: &mut XkbComponentNames,
     explicit_layouts: &mut u32,
 ) -> bool {
-    let mut offset: u32 = 0;
-    let found = find_file_in_xkb_path(&mut *matcher.ctx, rules, FileType::Rules, &mut offset);
-    let Some((file_data, _path)) = found else {
+    let mut offset = 0;
+    let Some((file_data, _)) =
+        find_file_in_xkb_path(matcher.ctx, rules, FileType::Rules, &mut offset)
+    else {
         return false;
     };
     if !xkb_resolve_partial_rules(rules, ".pre", matcher)
@@ -3695,7 +3562,7 @@ impl XkbRuleNames {
 
 /// Atom table — thin wrapper around `lasso::Rodeo` for string interning.
 /// Atoms are `u32` keys where `0` is reserved as `XKB_ATOM_NONE`.
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) struct AtomTable {
     inner: lasso::Rodeo,
 }
@@ -3703,13 +3570,6 @@ pub(crate) struct AtomTable {
 impl std::fmt::Debug for AtomTable {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("AtomTable").finish()
-    }
-}
-
-/// Create new atom table
-pub(crate) fn atom_table_new() -> AtomTable {
-    AtomTable {
-        inner: lasso::Rodeo::new(),
     }
 }
 
@@ -3722,6 +3582,29 @@ pub(crate) struct XkbContext {
     pub(crate) atom_table: AtomTable,
     pub(crate) use_environment_names: bool,
     pub(crate) pending_default_includes: bool,
+}
+
+impl XkbContext {
+    pub(crate) fn atom_text(&self, atom: u32) -> &str {
+        if atom == XKB_ATOM_NONE {
+            return "";
+        }
+        let key = lasso::Key::try_from_usize((atom - 1) as usize).expect("invalid atom key");
+        self.atom_table.inner.try_resolve(&key).unwrap_or("")
+    }
+
+    pub(crate) fn atom_lookup(&self, bytes: &[u8]) -> u32 {
+        std::str::from_utf8(bytes)
+            .ok()
+            .and_then(|text| self.atom_table.inner.get(text))
+            .map(|key| key.into_usize() as u32 + 1)
+            .unwrap_or(XKB_ATOM_NONE)
+    }
+
+    pub(crate) fn atom_intern(&mut self, bytes: &[u8]) -> u32 {
+        let text = std::str::from_utf8(bytes).expect("atom string is not valid UTF-8");
+        self.atom_table.inner.get_or_intern(text).into_usize() as u32 + 1
+    }
 }
 
 thread_local! {
@@ -3771,18 +3654,12 @@ pub(crate) struct XkbKeymap {
 }
 
 impl XkbKeymap {
-    /// Get modifier mask by name (safe via atom_lookup_ref)
     pub(crate) fn mod_get_mask(&self, name: &str) -> u32 {
-        let atom = atom_lookup_ref(&self.ctx.atom_table, name.as_bytes());
-        let idx = if atom == XKB_ATOM_NONE {
-            None
-        } else {
-            xkb_mod_name_to_index(&self.mods, atom, MOD_BOTH)
-        };
-        match idx {
-            Some(i) if i < self.mods.num_mods => self.mods.mods[i as usize].mapping,
-            _ => 0_u32,
-        }
+        let atom = self.ctx.atom_lookup(name.as_bytes());
+        xkb_mod_name_to_index(&self.mods, atom, MOD_BOTH)
+            .filter(|&idx| atom != XKB_ATOM_NONE && idx < self.mods.num_mods)
+            .map(|idx| self.mods.mods[idx as usize].mapping)
+            .unwrap_or(0)
     }
 
     /// Get number of layouts in the keymap
@@ -3792,15 +3669,8 @@ impl XkbKeymap {
 
     /// Get layout name by index
     pub(crate) fn layout_get_name(&self, idx: u32) -> Option<String> {
-        if idx as usize >= self.group_names.len() {
-            return None;
-        }
-        let s = atom_text(&self.ctx.atom_table, self.group_names[idx as usize]);
-        if s.is_empty() {
-            None
-        } else {
-            Some(s.to_string())
-        }
+        let name = self.ctx.atom_text(*self.group_names.get(idx as usize)?);
+        (!name.is_empty()).then(|| name.to_owned())
     }
 }
 
@@ -4062,40 +3932,6 @@ pub(crate) struct XkbComponentNames {
 
 pub(crate) const XKB_ATOM_NONE: u32 = 0;
 
-/// Get text for an atom as a string slice.
-pub(crate) fn atom_text(table: &AtomTable, atom: u32) -> &str {
-    if atom == 0 {
-        return "";
-    }
-    // +1 offset: external atoms start at 1 (0=XKB_ATOM_NONE), lasso Spur keys start at 0
-    let key = lasso::Key::try_from_usize((atom - 1) as usize).expect("invalid atom key");
-    table.inner.try_resolve(&key).unwrap_or("")
-}
-
-/// Look up an existing atom without mutating the table.
-pub(crate) fn atom_lookup_ref(table: &AtomTable, input_bytes: &[u8]) -> u32 {
-    let s = match std::str::from_utf8(input_bytes) {
-        Ok(s) => s,
-        Err(_) => return XKB_ATOM_NONE,
-    };
-    // +1 offset: external atoms start at 1 (0=XKB_ATOM_NONE)
-    table
-        .inner
-        .get(s)
-        .map(|k| k.into_usize() as u32 + 1)
-        .unwrap_or(XKB_ATOM_NONE)
-}
-
-/// Intern a string into the atom table, returning its u32 key.
-pub(crate) fn atom_intern(table: &mut AtomTable, input_bytes: &[u8]) -> u32 {
-    let s = match std::str::from_utf8(input_bytes) {
-        Ok(s) => s,
-        Err(_) => panic!("atom string is not valid UTF-8"),
-    };
-    // +1 offset: external atoms start at 1 (0=XKB_ATOM_NONE)
-    table.inner.get_or_intern(s).into_usize() as u32 + 1
-}
-
 pub(crate) const DEFAULT_INTERPRET_KEY_REPEAT: u32 = 1;
 pub(crate) const DEFAULT_INTERPRET_VMOD: u32 = 4294967295;
 pub const XKB_MOD_NONE: u32 = 0xffffffff;
@@ -4131,38 +3967,25 @@ impl XkbKeymap {
         self.types[group.type_idx as usize].num_levels
     }
 
-    /// Safe wrapper around `XkbKeyByName`. Looks up a key by atom name using the key_names table.
-    #[inline]
-    pub(crate) fn key_by_name(&self, name: u32, use_aliases: bool) -> Option<&XkbKey> {
-        if (name as usize) < self.key_names.len() {
-            let match_0 = self.key_names[name as usize];
-            if match_0.found {
-                if !match_0.is_alias {
-                    return Some(&self.keys[match_0.index as usize]);
-                } else if use_aliases {
-                    let alias_match = self.key_names[match_0.index as usize];
-                    return Some(&self.keys[alias_match.index as usize]);
-                }
-            }
+    fn key_index_by_name(&self, name: u32, aliases: bool) -> Option<usize> {
+        let found = *self.key_names.get(name as usize)?;
+        match (found.found, found.is_alias && aliases) {
+            (true, true) => Some(self.key_names.get(found.index as usize)?.index as usize),
+            (true, false) if !found.is_alias => Some(found.index as usize),
+            _ => None,
         }
-        None
     }
 
-    /// Mutable version of `key_by_name`.
     #[inline]
-    pub(crate) fn key_by_name_mut(&mut self, name: u32, use_aliases: bool) -> Option<&mut XkbKey> {
-        if (name as usize) < self.key_names.len() {
-            let match_0 = self.key_names[name as usize];
-            if match_0.found {
-                if !match_0.is_alias {
-                    return Some(&mut self.keys[match_0.index as usize]);
-                } else if use_aliases {
-                    let alias_match = self.key_names[match_0.index as usize];
-                    return Some(&mut self.keys[alias_match.index as usize]);
-                }
-            }
-        }
-        None
+    pub(crate) fn key_by_name(&self, name: u32, aliases: bool) -> Option<&XkbKey> {
+        self.key_index_by_name(name, aliases)
+            .and_then(|idx| self.keys.get(idx))
+    }
+
+    #[inline]
+    pub(crate) fn key_by_name_mut(&mut self, name: u32, aliases: bool) -> Option<&mut XkbKey> {
+        let idx = self.key_index_by_name(name, aliases)?;
+        self.keys.get_mut(idx)
     }
 }
 

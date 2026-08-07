@@ -820,7 +820,7 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
         .map(|modifier| {
             (
                 modifier.mapping,
-                modtype_from_name(parser::atom_text(&keymap.ctx.atom_table, modifier.name)),
+                modtype_from_name(keymap.ctx.atom_text(modifier.name)),
             )
         })
         .collect();
