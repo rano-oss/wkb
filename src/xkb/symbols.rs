@@ -406,20 +406,19 @@ fn add_key_symbols(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, keyi: &mu
     init_key_info_with_atom(keyi, info.star_atom);
     true
 }
-fn add_mod_map_entry(info: &mut SymbolsInfo, new: &ModMapEntry) -> bool {
+fn add_mod_map_entry(info: &mut SymbolsInfo, new: &ModMapEntry) {
     let clobber: bool = new.merge != MergeMode::Augment;
     let key = (new.have_symbol, new.u);
     if let Some(&i) = info.modmap_index.get(&key) {
         let old = &mut info.modmaps[i];
         if new.modifier == old.modifier {
-            return true;
+            return;
         }
         old.modifier = if clobber { new.modifier } else { old.modifier };
-        return true;
+        return;
     }
     info.modmap_index.insert(key, info.modmaps.len());
     info.modmaps.push(*new);
-    true
 }
 fn merge_included_symbols(
     ki: &mut XkbKeymapInfo<'_>,
@@ -460,9 +459,7 @@ fn merge_included_symbols(
     } else {
         for mm in from.modmaps.iter_mut() {
             mm.merge = merge;
-            if !add_mod_map_entry(into, mm) {
-                into.error_count += 1;
-            }
+            add_mod_map_entry(into, mm);
         }
     };
 }
@@ -669,14 +666,9 @@ fn add_actions_to_key(
         if num_actions > 65535 {
             return false;
         }
-        let mut actions: Vec<XkbAction> = Vec::new();
-        let mut action_iter = action_vec.iter_mut();
-        let mut no_more_actions: bool = false;
-        loop {
-            let Some(act_expr) = action_iter.next() else {
-                no_more_actions = true;
-                break;
-            };
+        let leveli = &mut keyi.groups[ndx as usize].levels[level as usize];
+        leveli.actions.clear();
+        for act_expr in action_vec.iter_mut() {
             let mut to_act: XkbAction = XkbAction::None;
             let r = handle_action_def(
                 ki,
@@ -685,36 +677,15 @@ fn add_actions_to_key(
                 act_expr,
                 &mut to_act,
             );
-            if r != ParseStatus::Success {
-                if r == ParseStatus::Fatal {
-                    drop(actions);
-                    return false;
-                } else {
-                    to_act.set_none();
-                }
+            if r == ParseStatus::Fatal {
+                return false;
             }
-            if !matches!(to_act, XkbAction::None) {
-                if num_actions == 1 {
-                    keyi.groups[ndx as usize].levels[level as usize].actions = vec![to_act];
-                    break;
-                } else {
-                    actions.push(to_act);
-                }
+            if r == ParseStatus::Success && !matches!(to_act, XkbAction::None) {
+                leveli.actions.push(to_act);
             }
         }
-        if no_more_actions {
-            let leveli = &mut keyi.groups[ndx as usize].levels[level as usize];
-            if actions.is_empty() {
-                leveli.actions = Vec::new();
-            } else {
-                leveli.actions = std::mem::take(&mut actions);
-            }
-        }
-        {
-            let leveli = &keyi.groups[ndx as usize].levels[level as usize];
-            if !leveli.actions.is_empty() || !leveli.syms.is_empty() {
-                non_empty_levels = level.wrapping_add(1);
-            }
+        if !leveli.actions.is_empty() || !leveli.syms.is_empty() {
+            non_empty_levels = level.wrapping_add(1);
         }
     }
     let groupi = &mut keyi.groups[ndx as usize];
@@ -1161,9 +1132,9 @@ fn handle_symbols_body(
     }
     all_valid_entries
 }
-fn set_explicit_group(info: &SymbolsInfo, keyi: &mut KeyInfo) -> bool {
+fn set_explicit_group(info: &SymbolsInfo, keyi: &mut KeyInfo) {
     let eg = match info.explicit_group {
-        None => return true,
+        None => return,
         Some(v) => v,
     };
     if !keyi.groups.is_empty() {
@@ -1178,7 +1149,6 @@ fn set_explicit_group(info: &SymbolsInfo, keyi: &mut KeyInfo) -> bool {
     if eg > 0 {
         keyi.groups[eg as usize] = std::mem::take(&mut keyi.groups[0]);
     }
-    true
 }
 fn handle_symbols_def(
     ki: &mut XkbKeymapInfo<'_>,
@@ -1190,11 +1160,11 @@ fn handle_symbols_def(
     let mut keyi = dk.clone();
     keyi.merge = stmt.merge;
     keyi.name = stmt.key_name;
-    if handle_symbols_body(ki, info, &mut stmt.symbols, &mut keyi)
-        && set_explicit_group(info, &mut keyi)
-        && add_key_symbols(ki, info, &mut keyi)
-    {
-        return true;
+    if handle_symbols_body(ki, info, &mut stmt.symbols, &mut keyi) {
+        set_explicit_group(info, &mut keyi);
+        if add_key_symbols(ki, info, &mut keyi) {
+            return true;
+        }
     }
     info.error_count += 1;
     false
@@ -1210,7 +1180,6 @@ fn handle_mod_map_def(
         modifier: 0,
         u: 0,
     };
-    let mut ok: bool;
     let modifier_name: &str = atom_text(&ki.keymap.ctx.atom_table, def.modifier);
     let ndx = if modifier_name.eq_ignore_ascii_case("none") {
         XKB_MOD_NONE
@@ -1220,7 +1189,6 @@ fn handle_mod_map_def(
             None => return false,
         }
     };
-    ok = true;
     tmp.modifier = ndx;
     tmp.merge = def.merge;
     for key in def.keys.iter() {
@@ -1237,10 +1205,10 @@ fn handle_mod_map_def(
             }
         }
         if add_entry {
-            ok = add_mod_map_entry(info, &tmp) && ok;
+            add_mod_map_entry(info, &tmp);
         }
     }
-    ok
+    true
 }
 fn handle_symbols_file(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, file: &mut XkbFile) {
     {
@@ -1586,28 +1554,18 @@ fn init_compat_info(info: &mut CompatInfo, include_depth: u32, mods: &XkbModSet)
     info.led_index.clear();
 }
 
-fn merge_interp(old: &mut SymInterpInfo, new: &mut SymInterpInfo) -> bool {
+fn merge_interp(old: &mut SymInterpInfo, new: &mut SymInterpInfo) {
     let clobber: bool = new.merge != MergeMode::Augment;
     if new.merge == MergeMode::Replace {
         *old = new.clone();
-        return true;
+        return;
     }
     if use_new_field(SI_FIELD_VIRTUAL_MOD, old.defined, new.defined, clobber) {
         old.interp.virtual_mod = new.interp.virtual_mod;
         old.defined |= SI_FIELD_VIRTUAL_MOD;
     }
     if use_new_field(SI_FIELD_ACTION, old.defined, new.defined, clobber) {
-        if old.interp.num_actions as i32 > 1_i32 {
-            old.interp.actions.clear();
-        }
-        old.interp.num_actions = new.interp.num_actions;
-        if new.interp.num_actions as i32 > 1_i32 {
-            old.interp.actions = std::mem::take(&mut new.interp.actions);
-            new.interp.action = XkbAction::None;
-            new.interp.num_actions = 0_u16;
-        } else {
-            old.interp.action = new.interp.action;
-        }
+        old.interp.actions = std::mem::take(&mut new.interp.actions);
         old.defined |= SI_FIELD_ACTION;
     }
     if use_new_field(SI_FIELD_AUTO_REPEAT, old.defined, new.defined, clobber) {
@@ -1618,19 +1576,17 @@ fn merge_interp(old: &mut SymInterpInfo, new: &mut SymInterpInfo) -> bool {
         old.interp.level_one_only = new.interp.level_one_only;
         old.defined |= SI_FIELD_LEVEL_ONE_ONLY;
     }
-    true
 }
-fn add_interp(info: &mut CompatInfo, new: &mut SymInterpInfo) -> bool {
+fn add_interp(info: &mut CompatInfo, new: &mut SymInterpInfo) {
     let key = (new.interp.sym, new.interp.mods, new.interp.match_0);
     if let Some(&idx) = info.interp_index.get(&key) {
         let mut old = info.interps[idx].clone();
-        let result = merge_interp(&mut old, new);
+        merge_interp(&mut old, new);
         info.interps[idx] = old;
-        return result;
+        return;
     }
     info.interp_index.insert(key, info.interps.len());
     info.interps.push(new.clone());
-    true
 }
 fn resolve_state_and_predicate(
     expr: Option<&ExprKind>,
@@ -1678,7 +1634,7 @@ fn resolve_state_and_predicate(
     true
 }
 
-fn merge_led_map(old: &mut LedInfo, new: &mut LedInfo) -> bool {
+fn merge_led_map(old: &mut LedInfo, new: &mut LedInfo) {
     let clobber: bool = new.merge != MergeMode::Augment;
     if old.led.mods.mods == new.led.mods.mods
         && old.led.pending_groups == new.led.pending_groups
@@ -1688,11 +1644,11 @@ fn merge_led_map(old: &mut LedInfo, new: &mut LedInfo) -> bool {
         && old.led.which_groups as i32 == new.led.which_groups as i32
     {
         old.defined |= new.defined;
-        return true;
+        return;
     }
     if new.merge == MergeMode::Replace {
         *old = *new;
-        return true;
+        return;
     }
     if use_new_field(LED_FIELD_MODS, old.defined, new.defined, clobber) {
         old.led.which_mods = new.led.which_mods;
@@ -1709,14 +1665,13 @@ fn merge_led_map(old: &mut LedInfo, new: &mut LedInfo) -> bool {
         old.led.ctrls = new.led.ctrls;
         old.defined |= LED_FIELD_CTRLS;
     }
-    true
 }
 fn add_led_map(info: &mut CompatInfo, new: &mut LedInfo) -> bool {
     if let Some(&i) = info.led_index.get(&new.led.name) {
         let mut old = info.leds[i as usize];
-        let result = merge_led_map(&mut old, new);
+        merge_led_map(&mut old, new);
         info.leds[i as usize] = old;
-        return result;
+        return true;
     }
     if info.num_leds >= XKB_MAX_LEDS {
         return false;
@@ -1726,12 +1681,7 @@ fn add_led_map(info: &mut CompatInfo, new: &mut LedInfo) -> bool {
     info.num_leds += 1;
     true
 }
-fn merge_included_compat_maps(
-    ki: &mut XkbKeymapInfo<'_>,
-    into: &mut CompatInfo,
-    from: &mut CompatInfo,
-    merge: MergeMode,
-) {
+fn merge_included_compat_maps(into: &mut CompatInfo, from: &mut CompatInfo, merge: MergeMode) {
     if from.error_count > 0 {
         into.error_count += from.error_count;
         return;
@@ -1743,9 +1693,7 @@ fn merge_included_compat_maps(
     } else {
         for interp in from.interps.iter_mut() {
             interp.merge = merge;
-            if !add_interp(into, interp) {
-                into.error_count += 1;
-            }
+            add_interp(into, interp);
         }
     }
     if into.num_leds == 0 {
@@ -1795,11 +1743,11 @@ fn handle_include_compat_map(
         next_incl.default_interp = info.default_interp.clone();
         next_incl.default_led = info.default_led;
         handle_compat_map_file(ki, &mut next_incl, &mut file);
-        merge_included_compat_maps(ki, &mut included, &mut next_incl, stmt.merge);
+        merge_included_compat_maps(&mut included, &mut next_incl, stmt.merge);
         drop(file);
     }
     if let Some(first) = includes.first() {
-        merge_included_compat_maps(ki, info, &mut included, first.merge);
+        merge_included_compat_maps(info, &mut included, first.merge);
     }
     info.error_count == 0
 }
@@ -1847,6 +1795,7 @@ fn set_interp_field(
             if array_ndx.is_some() {
                 return false;
             }
+            si.interp.actions.clear();
             if matches!(value, ExprKind::ActionList { .. }) {
                 let ExprKind::ActionList {
                     actions: action_vec,
@@ -1858,9 +1807,6 @@ fn set_interp_field(
                 if num_actions > MAX_ACTIONS_PER_LEVEL as u32 {
                     return false;
                 }
-                si.interp.num_actions = 0_u16;
-                si.interp.action.set_none();
-                let mut actions: Vec<XkbAction> = Vec::new();
                 for act_expr in action_vec.iter_mut() {
                     let mut to_act: XkbAction = XkbAction::None;
                     match handle_action_def(
@@ -1871,51 +1817,30 @@ fn set_interp_field(
                         &mut to_act,
                     ) {
                         ParseStatus::Recoverable => {
-                            to_act.set_none();
+                            to_act = XkbAction::None;
                         }
                         ParseStatus::Fatal => {
-                            drop(actions);
                             return false;
                         }
                         _ => {}
                     }
                     if !matches!(to_act, XkbAction::None) {
-                        if num_actions == 1 {
-                            si.interp.num_actions = 1_u16;
-                            si.interp.action = to_act;
-                        } else {
-                            actions.push(to_act);
-                        }
-                    }
-                }
-                match actions.len() as u32 {
-                    0 => {}
-                    1 => {
-                        si.interp.num_actions = 1_u16;
-                        si.interp.action = actions[0];
-                    }
-                    _ => {
-                        si.interp.num_actions = actions.len() as u16;
-                        si.interp.actions = actions;
+                        si.interp.actions.push(to_act);
                     }
                 }
             } else {
+                let mut action = XkbAction::None;
                 match handle_action_def(
                     ki,
                     &mut info.default_actions,
                     &info.mods,
                     value,
-                    &mut si.interp.action,
+                    &mut action,
                 ) {
-                    ParseStatus::Recoverable => {
-                        si.interp.action.set_none();
-                        si.interp.num_actions = 0_u16;
-                    }
+                    ParseStatus::Recoverable => {}
                     ParseStatus::Fatal => return false,
-                    _ => {
-                        si.interp.num_actions =
-                            (!matches!(si.interp.action, XkbAction::None)) as u16;
-                    }
+                    _ if !matches!(action, XkbAction::None) => si.interp.actions.push(action),
+                    _ => {}
                 }
             }
             si.defined |= SI_FIELD_ACTION;
@@ -2168,10 +2093,7 @@ fn handle_interp_def(
             return false;
         }
     }
-    if !add_interp(info, &mut si) {
-        info.error_count += 1;
-        return false;
-    }
+    add_interp(info, &mut si);
     true
 }
 fn handle_led_map_def(
@@ -2372,24 +2294,18 @@ fn init_key_types_info(info: &mut KeyTypesInfo, include_depth: u32, mods: &XkbMo
     info.mods = Default::default();
     init_vmods(&mut info.mods, mods, include_depth > 0);
 }
-fn add_key_type(info: &mut KeyTypesInfo, new: &mut KeyTypeInfo) -> bool {
+fn add_key_type(info: &mut KeyTypesInfo, new: &mut KeyTypeInfo) {
     if let Some(&idx) = info.type_index.get(&new.name) {
         if new.merge != MergeMode::Augment {
             std::mem::swap(&mut info.types[idx], new);
-            return true;
+            return;
         }
-        return true;
+        return;
     }
     info.type_index.insert(new.name, info.types.len());
     info.types.push(std::mem::take(new));
-    true
 }
-fn merge_included_key_types(
-    ki: &mut XkbKeymapInfo<'_>,
-    into: &mut KeyTypesInfo,
-    from: &mut KeyTypesInfo,
-    merge: MergeMode,
-) {
+fn merge_included_key_types(into: &mut KeyTypesInfo, from: &mut KeyTypesInfo, merge: MergeMode) {
     if from.error_count > 0 {
         into.error_count += from.error_count;
         return;
@@ -2401,9 +2317,7 @@ fn merge_included_key_types(
     } else {
         for mut type_0 in from.types.drain(..) {
             type_0.merge = merge;
-            if !add_key_type(into, &mut type_0) {
-                into.error_count += 1;
-            }
+            add_key_type(into, &mut type_0);
         }
     }
 }
@@ -2437,11 +2351,11 @@ fn handle_include_key_types(
             &included.mods,
         );
         handle_key_types_file(ki, &mut next_incl, &mut file);
-        merge_included_key_types(ki, &mut included, &mut next_incl, stmt.merge);
+        merge_included_key_types(&mut included, &mut next_incl, stmt.merge);
         drop(file);
     }
     if let Some(first) = includes.first() {
-        merge_included_key_types(ki, info, &mut included, first.merge);
+        merge_included_key_types(info, &mut included, first.merge);
     }
     info.error_count == 0
 }
@@ -2464,7 +2378,7 @@ fn set_modifiers(
     type_0.mods = mods;
     true
 }
-fn add_map_entry(type_0: &mut KeyTypeInfo, new: &XkbKeyTypeEntry) -> bool {
+fn add_map_entry(type_0: &mut KeyTypeInfo, new: &XkbKeyTypeEntry) {
     // FindMatchingMapEntry inlined
     let mut old_idx: Option<usize> = None;
     for (i, entry) in type_0.entries.iter().enumerate() {
@@ -2480,13 +2394,12 @@ fn add_map_entry(type_0: &mut KeyTypeInfo, new: &XkbKeyTypeEntry) -> bool {
             }
             type_0.entries[idx].level = new.level;
         }
-        return true;
+        return;
     }
     if new.level >= type_0.num_levels {
         type_0.num_levels = new.level.wrapping_add(1_u32);
     }
     type_0.entries.push(*new);
-    true
 }
 fn set_map_entry(
     ki: &XkbKeymapInfo<'_>,
@@ -2517,22 +2430,23 @@ fn set_map_entry(
     };
     entry.level = level;
     entry.preserve.mods = 0;
-    add_map_entry(type_0, &entry)
+    add_map_entry(type_0, &entry);
+    true
 }
-fn add_preserve(type_0: &mut KeyTypeInfo, mods: u32, preserve_mods: u32) -> bool {
+fn add_preserve(type_0: &mut KeyTypeInfo, mods: u32, preserve_mods: u32) {
     // Find matching entry index first to avoid borrow conflicts
     let match_idx = type_0.entries.iter().position(|e| e.mods.mods == mods);
     if let Some(idx) = match_idx {
         let old_preserve = type_0.entries[idx].preserve.mods;
         if old_preserve == 0 {
             type_0.entries[idx].preserve.mods = preserve_mods;
-            return true;
+            return;
         }
         if old_preserve == preserve_mods {
-            return true;
+            return;
         }
         type_0.entries[idx].preserve.mods = preserve_mods;
-        return true;
+        return;
     }
     let new = XkbKeyTypeEntry {
         level: 0_u32,
@@ -2543,7 +2457,6 @@ fn add_preserve(type_0: &mut KeyTypeInfo, mods: u32, preserve_mods: u32) -> bool
         },
     };
     type_0.entries.push(new);
-    true
 }
 fn set_preserve(
     ki: &XkbKeymapInfo<'_>,
@@ -2571,19 +2484,19 @@ fn set_preserve(
     if preserve_mods & !mods != 0 {
         preserve_mods &= mods;
     }
-    add_preserve(type_0, mods, preserve_mods)
+    add_preserve(type_0, mods, preserve_mods);
+    true
 }
-fn add_level_name(type_0: &mut KeyTypeInfo, level: u32, name: u32) -> bool {
+fn add_level_name(type_0: &mut KeyTypeInfo, level: u32, name: u32) {
     let level_idx = level as usize;
     if level >= type_0.level_names.len() as u32 {
         vec_resize_zero(&mut type_0.level_names, level_idx + 1);
     } else {
         if type_0.level_names[level_idx] == name {
-            return true;
+            return;
         }
     }
     type_0.level_names[level_idx] = name;
-    true
 }
 fn set_level_name(
     ki: &XkbKeymapInfo<'_>,
@@ -2600,7 +2513,8 @@ fn set_level_name(
     let Some(level_name) = expr_resolve_string(value) else {
         return false;
     };
-    add_level_name(type_0, level, level_name)
+    add_level_name(type_0, level, level_name);
+    true
 }
 fn set_key_type_field(
     ki: &XkbKeymapInfo<'_>,
@@ -2689,12 +2603,11 @@ fn handle_key_types_file(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, fi
                         num_levels: 1_u32,
                         ..Default::default()
                     };
-                    if !handle_key_type_body(ki, info, &def.body, &mut type_0)
-                        || !add_key_type(info, &mut type_0)
-                    {
+                    if !handle_key_type_body(ki, info, &def.body, &mut type_0) {
                         info.error_count += 1;
                         ok = false;
                     } else {
+                        add_key_type(info, &mut type_0);
                         ok = true;
                     }
                 }
@@ -2978,7 +2891,7 @@ fn keycode_store_insert_key(store: &mut KeycodeStore, kc: u32, name: u32) -> boo
     true
 }
 #[inline]
-fn keycode_store_insert_alias(store: &mut KeycodeStore, alias: u32, real: u32) -> bool {
+fn keycode_store_insert_alias(store: &mut KeycodeStore, alias: u32, real: u32) {
     if alias >= store.names.len() as u32 {
         vec_resize_zero(&mut store.names, (alias as usize) + 1);
     }
@@ -2988,7 +2901,6 @@ fn keycode_store_insert_alias(store: &mut KeycodeStore, alias: u32, real: u32) -
         is_alias: real != 0,
         index: real,
     };
-    true
 }
 #[inline]
 fn keycode_store_delete_name(store: &mut KeycodeStore, name: u32) {
@@ -3084,17 +2996,17 @@ fn keycode_store_lookup_name(store: &KeycodeStore, name: u32) -> KeycodeMatch {
         store.names[name as usize]
     }
 }
-fn add_led_name(info: &mut KeyNamesInfo, new: &LedNameInfo, new_idx: u32) -> bool {
+fn add_led_name(info: &mut KeyNamesInfo, new: &LedNameInfo, new_idx: u32) {
     let replace: bool = new.merge != MergeMode::Augment;
     if let Some(&old_idx) = info.led_name_index.get(&new.name) {
         if old_idx == new_idx {
-            return true;
+            return;
         }
         if replace {
             info.led_names[old_idx as usize].name = XKB_ATOM_NONE;
             info.led_name_index.remove(&new.name);
         } else {
-            return true;
+            return;
         }
     }
     if new_idx >= info.num_led_names {
@@ -3107,11 +3019,10 @@ fn add_led_name(info: &mut KeyNamesInfo, new: &LedNameInfo, new_idx: u32) -> boo
             info.led_names[new_idx as usize] = *new;
             info.led_name_index.insert(new.name, new_idx);
         }
-        return true;
+        return;
     }
     info.led_names[new_idx as usize] = *new;
     info.led_name_index.insert(new.name, new_idx);
-    true
 }
 fn init_key_names_info(info: &mut KeyNamesInfo, include_depth: u32) {
     info.error_count = 0;
@@ -3220,9 +3131,7 @@ fn merge_keycode_stores(into: &mut KeyNamesInfo, from: &mut KeyNamesInfo, merge:
                             alias,
                             real: match_0.index,
                         };
-                        if !handle_alias_def(into, &def) {
-                            into.error_count += 1;
-                        }
+                        handle_alias_def(into, &def);
                     }
                 }
             }
@@ -3246,9 +3155,7 @@ fn merge_included_keycodes(into: &mut KeyNamesInfo, from: &mut KeyNamesInfo, mer
             if ledi.name != XKB_ATOM_NONE {
                 let mut ledi = ledi;
                 ledi.merge = merge;
-                if !add_led_name(into, &ledi, idx as u32) {
-                    into.error_count += 1;
-                }
+                add_led_name(into, &ledi, idx as u32);
             }
         }
     };
@@ -3289,7 +3196,7 @@ fn handle_keycode_def(info: &mut KeyNamesInfo, stmt: &KeycodeDef) -> bool {
     }
     add_key_name(info, stmt.value as u32, stmt.name, stmt.merge)
 }
-fn handle_alias_def(info: &mut KeyNamesInfo, def: &KeyAliasDef) -> bool {
+fn handle_alias_def(info: &mut KeyNamesInfo, def: &KeyAliasDef) {
     let match_name: KeycodeMatch =
         keycode_store_lookup_name(&info.keycodes, def.alias) as KeycodeMatch;
     if match_name.found {
@@ -3300,14 +3207,14 @@ fn handle_alias_def(info: &mut KeyNamesInfo, def: &KeyAliasDef) -> bool {
                 info.keycodes.names[def.alias as usize].index =
                     if clobber { def.real } else { match_name.index };
             }
-            return true;
+            return;
         } else if clobber {
             keycode_store_delete_key(&mut info.keycodes, match_name);
         } else {
-            return true;
+            return;
         }
     }
-    keycode_store_insert_alias(&mut info.keycodes, def.alias, def.real)
+    keycode_store_insert_alias(&mut info.keycodes, def.alias, def.real);
 }
 fn handle_key_name_var(ki: &mut XkbKeymapInfo<'_>, stmt: &VarDef) -> bool {
     let name_ref = stmt.name.as_ref().unwrap();
@@ -3348,7 +3255,8 @@ fn handle_led_name_def(info: &mut KeyNamesInfo, def: &LedNameDef) -> bool {
         merge: def.merge,
         name,
     };
-    add_led_name(info, &ledi, (def.ndx as u32).wrapping_sub(1_u32))
+    add_led_name(info, &ledi, (def.ndx as u32).wrapping_sub(1_u32));
+    true
 }
 fn handle_keycodes_file(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut XkbKeymapInfo<'_>) {
     {
@@ -3362,7 +3270,8 @@ fn handle_keycodes_file(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut Xk
                     ok = handle_keycode_def(info, kc);
                 }
                 Statement::KeyAlias(ka) => {
-                    ok = handle_alias_def(info, ka);
+                    handle_alias_def(info, ka);
+                    ok = true;
                 }
                 Statement::Var(var) => {
                     ok = handle_key_name_var(ki, var);
@@ -4462,7 +4371,7 @@ pub(crate) fn handle_action_def(
     }
     *action = info.actions[handler_type as usize];
     if handler_type == ACTION_TYPE_UNSUPPORTED_LEGACY {
-        action.set_none();
+        *action = XkbAction::None;
     }
     let mut ret: ParseStatus = ParseStatus::Success;
     let const_true = ExprKind::Boolean(true);

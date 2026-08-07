@@ -690,7 +690,6 @@ pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
         failed_includes: Vec::new(),
         atom_table: atom_table_new(),
         use_environment_names: false,
-        use_secure_getenv: false,
         pending_default_includes: false,
     };
     const XKB_CONTEXT_ALL_FLAGS: u32 = XKB_CONTEXT_NO_DEFAULT_INCLUDES
@@ -700,7 +699,6 @@ pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
         return ctx;
     }
     ctx.use_environment_names = flags & XKB_CONTEXT_NO_ENVIRONMENT_NAMES == 0;
-    ctx.use_secure_getenv = flags & XKB_CONTEXT_NO_SECURE_GETENV == 0;
     ctx.pending_default_includes = flags & XKB_CONTEXT_NO_DEFAULT_INCLUDES == 0;
     ctx
 }
