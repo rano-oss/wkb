@@ -3,8 +3,7 @@
 
 pub(crate) const NTOKENS: u8 = 66;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub(crate) struct Symbol(pub(crate) u8);
+pub(crate) type Symbol = u8;
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub(crate) enum Action {
@@ -51,7 +50,7 @@ impl State {
             .find_map(|entry| (entry.0 == symbol).then(|| decode_action(entry.1)))
     }
     pub(crate) fn has_terminal_transitions(&self) -> bool {
-        self.transitions().iter().any(|entry| entry.0 .0 < NTOKENS)
+        self.transitions().iter().any(|entry| entry.0 < NTOKENS)
     }
     pub(crate) fn default_action(&self) -> Action {
         decode_action(self.2)
@@ -59,18 +58,19 @@ impl State {
 }
 
 impl Rule {
-    pub(crate) fn lhs(&self) -> Symbol {
-        self.0
-    }
     pub(crate) fn rhs_len(&self) -> u8 {
         self.1
     }
-    pub(crate) fn default_state(&self) -> u16 {
-        self.2
+    pub(crate) fn next_state(&self, state: u16) -> u16 {
+        match STATES[state as usize].explicit_action(self.0) {
+            Some(Action::Shift(next)) => next,
+            None => self.2,
+            Some(action) => unreachable!("invalid goto action: {action:?}"),
+        }
     }
 }
 
-macro_rules! symbols { ($($name:ident = $value:literal),* $(,)?) => { $(pub(crate) const $name: Symbol = Symbol($value);)* }; }
+macro_rules! symbols { ($($name:ident = $value:literal),* $(,)?) => { $(pub(crate) const $name: Symbol = $value;)* }; }
 #[rustfmt::skip]
 symbols! {
     SYM_EOF = 0, SYM_ERROR = 1, SYM_UNDEF = 2, SYM_ERRTOK = 3, SYM_XKB_KEYMAP = 4, SYM_XKB_KEYCODES = 5, SYM_XKB_TYPES = 6, SYM_XKB_SYMBOLS = 7, SYM_XKB_COMPATMAP = 8, SYM_XKB_GEOMETRY = 9, SYM_XKB_SEMANTICS = 10, SYM_XKB_LAYOUT = 11, SYM_INCLUDE = 12, SYM_OVERRIDE = 13, SYM_AUGMENT = 14, SYM_REPLACE = 15,
@@ -86,17 +86,12 @@ symbols! {
 }
 
 #[rustfmt::skip]
-static SYMBOL_NAMES: &[&str; 150] = &[
+static SYMBOL_NAMES: &[&str; NTOKENS as usize] = &[
     "end of file", "error", "invalid token", "invalid token", "xkb_keymap", "xkb_keycodes", "xkb_types", "xkb_symbols", "xkb_compatibility", "xkb_geometry", "xkb_semantics", "xkb_layout", "include", "override", "augment", "replace",
     "alternate", "virtual_modifiers", "type", "interpret", "action", "key", "alias", "group", "modifier_map", "indicator", "shape", "keys", "row", "section", "overlay", "text",
     "outline", "solid", "logo", "virtual", "=", "+", "-", "/", "*", "{", "}", "(", ")", "[", "]", ".",
     ",", ";", "!", "~", "string literal", "decimal digit", "integer literal", "float literal", "identifier", "key name", "partial", "default", "hidden", "alphanumeric_keys", "modifier_keys", "keypad_keys",
-    "function_keys", "alternate_group", "$accept", "XkbFile", "XkbCompositeMap", "XkbCompositeType", "XkbMapConfigList", "XkbMapConfig", "FileType", "OptFlags", "Flags", "Flag", "DeclList", "Decl", "VarDecl", "KeyNameDecl",
-    "KeyAliasDecl", "VModDecl", "VModDefList", "VModDef", "InterpretDecl", "InterpretMatch", "VarDeclList", "KeyTypeDecl", "SymbolsDecl", "OptSymbolsBody", "SymbolsBody", "SymbolsVarDecl", "MultiKeySymOrActionList", "NoSymbolOrActionList", "GroupCompatDecl", "ModMapDecl",
-    "KeyOrKeySymList", "KeyOrKeySym", "LedMapDecl", "LedNameDecl", "UnknownDecl", "UnknownCompoundStatementDecl", "ShapeDecl", "SectionDecl", "SectionBody", "SectionBodyItem", "RowBody", "RowBodyItem", "Keys", "Key", "OverlayDecl", "OverlayKeyList",
-    "OverlayKey", "OutlineList", "OutlineInList", "CoordList", "Coord", "DoodadDecl", "DoodadType", "FieldSpec", "Element", "OptMergeMode", "MergeMode", "ExprList", "Expr", "Term", "MultiActionList", "ActionList",
-    "NonEmptyActions", "Actions", "Action", "Lhs", "OptTerminal", "Terminal", "MultiKeySymList", "KeySymList", "NonEmptyKeySyms", "KeySyms", "KeySym", "KeySymLit", "SignedNumber", "Number", "Float", "Integer",
-    "KeyCode", "Ident", "String", "OptMapName", "MapName", "",
+    "function_keys", "alternate_group",
 ];
 pub(crate) fn symbol_name(symbol: i32) -> &'static str {
     usize::try_from(symbol)

@@ -61,24 +61,14 @@ pub(crate) const XKB_KEY_0: i32 = 0x30;
 pub(crate) const XKB_KEY_SECTION: i32 = 0xa7_i32;
 pub(crate) const XKB_KEYSYM_MIN: i32 = 0;
 
-// ── Parser constants ──────────────────────────────────────────────────
-pub(crate) const YYSYMBOL_YYERROR: i32 = 1;
-pub(crate) const YYSYMBOL_YYEOF: i32 = 0;
-pub(crate) const YYSYMBOL_YYEMPTY: i32 = -2;
-
 pub(crate) const YYINITDEPTH: usize = 200;
 pub(crate) const YYMAXDEPTH: usize = 10000;
-pub(crate) const YYENOMEM: i32 = -2;
 
 pub(crate) struct ParserParam<'a> {
     pub(crate) ctx: &'a mut XkbContext,
     pub(crate) scanner: &'a mut Scanner<'a>,
     pub(crate) rtrn: Option<Box<XkbFile>>,
     pub(crate) more_maps: bool,
-}
-
-fn yysymbol_name(symbol: i32) -> &'static str {
-    symbol_name(symbol)
 }
 
 // ── Helper functions ────────────────────────────────────────────────
@@ -111,55 +101,25 @@ fn resolve_keysym(name: Sval) -> Option<u32> {
     xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS)
 }
 
-fn yypcontext_expected_tokens(state: &State, yyarg: &mut [i32], yyargn: usize) -> i32 {
-    let mut yycount = 0;
-    for transition in state.transitions() {
-        let yyx = transition.symbol().0 as i32;
-        if yyx >= NTOKENS as i32 {
-            break;
-        }
-        if yyx != YYSYMBOL_YYERROR {
-            if yyargn == 0 {
-                yycount += 1;
-            } else if (yycount as usize) == yyargn {
-                return 0;
-            } else {
-                yyarg[yycount as usize] = yyx;
-                yycount += 1;
-            }
-        }
-    }
-    if yyargn > 0 && yycount == 0 {
-        yyarg[0] = YYSYMBOL_YYEMPTY;
-    }
-    yycount
-}
-
 fn yysyntax_error(state: &State, yytoken: i32) -> String {
-    let mut yyarg: [i32; 5] = [YYSYMBOL_YYEOF; 5];
-    // Count expected tokens
-    let mut yycount: i32 = 0;
-    if yytoken != YYSYMBOL_YYEMPTY {
-        yyarg[0] = yytoken;
-        yycount = 1;
-        let n = yypcontext_expected_tokens(state, &mut yyarg[1..], 4);
-        if n == YYENOMEM {
-            return String::from("syntax error");
-        }
-        yycount += n;
-    }
-
     let mut msg = String::from("syntax error, unexpected ");
-    if yycount > 0 {
-        msg.push_str(yysymbol_name(yyarg[0]));
+    if yytoken == YYEMPTY {
+        return msg;
     }
-    if yycount > 1 {
+    msg.push_str(symbol_name(yytoken));
+    let mut expected = state
+        .transitions()
+        .iter()
+        .map(|transition| transition.symbol())
+        .take_while(|&symbol| symbol < NTOKENS)
+        .filter(|&symbol| symbol != SYM_ERROR)
+        .take(4);
+    if let Some(symbol) = expected.next() {
         msg.push_str(", expecting ");
-        for i in 1..yycount {
-            if i > 1 {
-                msg.push_str(" or ");
-            }
-            msg.push_str(yysymbol_name(yyarg[i as usize]));
+        msg.push_str(symbol_name(symbol as i32));
+        for symbol in expected {
+            msg.push_str(" or ");
+            msg.push_str(symbol_name(symbol as i32));
         }
     }
     msg
@@ -167,18 +127,8 @@ fn yysyntax_error(state: &State, yytoken: i32) -> String {
 
 // ── Main parser function ────────────────────────────────────────────
 
-/// Find the state reached after reducing `rule` from `state`.
-fn goto_target(state: u16, rule: &Rule) -> u16 {
-    match STATES[state as usize].explicit_action(rule.lhs()) {
-        Some(Action::Shift(next)) => next,
-        None => rule.default_state(),
-        Some(action) => unreachable!("invalid goto action: {action:?}"),
-    }
-}
-
 /// Error recovery: try to shift the error token in the current state, otherwise
 /// pop states until we find one that can (which the current grammar never does).
-/// Returns 0 on successful recovery (error token shifted), 1 on failure.
 fn recover<'a>(
     yyss: &[u16],
     yyvs: &mut [YYValue<'a>],
@@ -186,7 +136,7 @@ fn recover<'a>(
     sp: &mut usize,
     yystate: &mut u16,
     yylval: &mut YYValue<'a>,
-) -> i32 {
+) -> bool {
     loop {
         let state = &STATES[*yystate as usize];
         if let Some(Action::Shift(next)) = state.explicit_action(SYM_ERROR) {
@@ -194,10 +144,10 @@ fn recover<'a>(
             yyvs[*sp] = std::mem::replace(yylval, YYValue::None);
             *yystate = next;
             *ssp += 1;
-            return 0;
+            return true;
         }
         if *ssp == 0 {
-            return 1;
+            return false;
         }
         yyvs[*sp] = YYValue::None;
         *sp = sp.saturating_sub(1);
@@ -240,7 +190,7 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
 
         // Look up the action for the lookahead symbol in the current state.
         let action = (yychar >= 0)
-            .then(|| state.explicit_action(Symbol(yychar as u8)))
+            .then(|| state.explicit_action(yychar as Symbol))
             .flatten()
             .unwrap_or_else(|| state.default_action());
 
@@ -269,15 +219,14 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                     yystate = yyss[ssp];
 
                     yyerrstatus = 3;
-                    if recover(
+                    if !recover(
                         &yyss,
                         &mut yyvs,
                         &mut ssp,
                         &mut sp,
                         &mut yystate,
                         &mut yylval,
-                    ) == 1
-                    {
+                    ) {
                         return 1;
                     }
                     continue 'main_loop;
@@ -294,45 +243,34 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                 sp += 1;
                 yyvs[sp] = yyval;
 
-                yystate = goto_target(yyss[ssp], rule);
+                yystate = rule.next_state(yyss[ssp]);
                 ssp += 1;
             }
             Action::Error => {
                 // Syntax error: no matching action and no default reduction.
-                let yytoken = if yychar == YYEMPTY {
-                    YYSYMBOL_YYEMPTY
-                } else {
-                    yychar
-                };
-
                 if yyerrstatus == 0 {
                     _xkbcommon_nerrs += 1;
-                    let msg = yysyntax_error(state, yytoken);
+                    let msg = yysyntax_error(state, yychar);
                     _xkbcommon_error(param, &msg);
                 }
 
-                if yyerrstatus == 3 {
-                    if yychar <= END_OF_FILE {
-                        if yychar == END_OF_FILE {
-                            return 1;
-                        }
-                    } else {
-                        // Discard lookahead
-                        yylval = YYValue::None;
-                        yychar = YYEMPTY;
-                    }
+                if yyerrstatus == 3 && yychar == END_OF_FILE {
+                    return 1;
+                }
+                if yyerrstatus == 3 && yychar > END_OF_FILE {
+                    yylval = YYValue::None;
+                    yychar = YYEMPTY;
                 }
 
                 yyerrstatus = 3;
-                if recover(
+                if !recover(
                     &yyss,
                     &mut yyvs,
                     &mut ssp,
                     &mut sp,
                     &mut yystate,
                     &mut yylval,
-                ) == 1
-                {
+                ) {
                     return 1;
                 }
                 continue 'main_loop;
@@ -1377,36 +1315,24 @@ pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> Option
     Some(sym)
 }
 
-pub(crate) fn keycode_create(name: u32, value: i64) -> KeycodeDef {
-    KeycodeDef {
-        merge: MergeMode::Default,
-        name,
-        value,
-    }
+macro_rules! default_merge_constructors {
+    ($(fn $name:ident($($field:ident: $field_type:ty),*) -> $result:ident;)*) => {$(
+        pub(crate) fn $name($($field: $field_type),*) -> $result {
+            $result { merge: MergeMode::Default, $($field),* }
+        }
+    )*};
 }
 
-pub(crate) fn key_alias_create(alias: u32, real: u32) -> KeyAliasDef {
-    KeyAliasDef {
-        merge: MergeMode::Default,
-        alias,
-        real,
-    }
-}
-
-pub(crate) fn vmod_create(name: u32, value: Option<ExprKind>) -> VModDef {
-    VModDef {
-        merge: MergeMode::Default,
-        name,
-        value,
-    }
-}
-
-pub(crate) fn var_create(name: Option<ExprKind>, value: Option<ExprKind>) -> VarDef {
-    VarDef {
-        merge: MergeMode::Default,
-        name,
-        value,
-    }
+default_merge_constructors! {
+    fn keycode_create(name: u32, value: i64) -> KeycodeDef;
+    fn key_alias_create(alias: u32, real: u32) -> KeyAliasDef;
+    fn vmod_create(name: u32, value: Option<ExprKind>) -> VModDef;
+    fn var_create(name: Option<ExprKind>, value: Option<ExprKind>) -> VarDef;
+    fn key_type_create(name: u32, body: Vec<VarDef>) -> KeyTypeDef;
+    fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> SymbolsDef;
+    fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> ModMapDef;
+    fn led_map_create(name: u32, body: Vec<VarDef>) -> LedMapDef;
+    fn led_name_create(ndx: i64, name: Option<ExprKind>) -> LedNameDef;
 }
 
 pub(crate) fn bool_var_create(ident: u32, set: bool) -> VarDef {
@@ -1423,46 +1349,6 @@ pub(crate) fn interp_create(sym: u32, match_0: Option<ExprKind>) -> InterpDef {
         sym,
         match_0,
         def: Vec::new(),
-    }
-}
-
-pub(crate) fn key_type_create(name: u32, body: Vec<VarDef>) -> KeyTypeDef {
-    KeyTypeDef {
-        merge: MergeMode::Default,
-        name,
-        body,
-    }
-}
-
-pub(crate) fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> SymbolsDef {
-    SymbolsDef {
-        merge: MergeMode::Default,
-        key_name,
-        symbols,
-    }
-}
-
-pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> ModMapDef {
-    ModMapDef {
-        merge: MergeMode::Default,
-        modifier,
-        keys,
-    }
-}
-
-pub(crate) fn led_map_create(name: u32, body: Vec<VarDef>) -> LedMapDef {
-    LedMapDef {
-        merge: MergeMode::Default,
-        name,
-        body,
-    }
-}
-
-pub(crate) fn led_name_create(ndx: i64, name: Option<ExprKind>) -> LedNameDef {
-    LedNameDef {
-        merge: MergeMode::Default,
-        ndx,
-        name,
     }
 }
 
@@ -2036,115 +1922,44 @@ pub(crate) enum YYValue<'a> {
     StmtList(Vec<Statement>),
 }
 
-// Helper to take a value out and replace with None
+macro_rules! yy_take {
+    ($($name:ident: $variant:ident($value:ident) -> $result:ty = $fallback:expr => $mapped:expr;)*) => {$(
+        pub(crate) fn $name(&mut self) -> $result {
+            match std::mem::take(self) { YYValue::$variant($value) => $mapped, _ => $fallback }
+        }
+    )*};
+}
+
+macro_rules! yy_as {
+    ($($name:ident: $variant:ident($value:ident) -> $result:ty = $fallback:expr;)*) => {$(
+        pub(crate) fn $name(&self) -> $result {
+            match self { YYValue::$variant($value) => *$value, _ => $fallback }
+        }
+    )*};
+}
+
 impl<'a> YYValue<'a> {
-    pub(crate) fn take_expr(&mut self) -> Option<ExprKind> {
-        match std::mem::take(self) {
-            YYValue::Expr(e) => Some(e),
-            _ => None,
-        }
+    yy_take! {
+        take_expr: Expr(v) -> Option<ExprKind> = None => Some(v);
+        take_expr_list: ExprList(v) -> Vec<ExprKind> = Vec::new() => v;
+        take_var: Var(v) -> Option<VarDef> = None => Some(v);
+        take_var_list: VarList(v) -> Vec<VarDef> = Vec::new() => v;
+        take_vmod: VMod(v) -> Option<VModDef> = None => Some(v);
+        take_vmod_list: VModList(v) -> Vec<VModDef> = Vec::new() => v;
+        take_file: File(v) -> Option<Box<XkbFile>> = None => Some(v);
+        take_file_list: FileList(v) -> Vec<XkbFile> = Vec::new() => v;
+        take_stmt_list: StmtList(v) -> Vec<Statement> = Vec::new() => v;
+        take_str: Str(v) -> String = String::new() => v;
     }
-    pub(crate) fn take_expr_list(&mut self) -> Vec<ExprKind> {
-        match std::mem::take(self) {
-            YYValue::ExprList(v) => v,
-            _ => Vec::new(),
-        }
-    }
-    pub(crate) fn take_var(&mut self) -> Option<VarDef> {
-        match std::mem::take(self) {
-            YYValue::Var(v) => Some(v),
-            _ => None,
-        }
-    }
-    pub(crate) fn take_var_list(&mut self) -> Vec<VarDef> {
-        match std::mem::take(self) {
-            YYValue::VarList(v) => v,
-            _ => Vec::new(),
-        }
-    }
-    pub(crate) fn take_vmod(&mut self) -> Option<VModDef> {
-        match std::mem::take(self) {
-            YYValue::VMod(v) => Some(v),
-            _ => None,
-        }
-    }
-    pub(crate) fn take_vmod_list(&mut self) -> Vec<VModDef> {
-        match std::mem::take(self) {
-            YYValue::VModList(v) => v,
-            _ => Vec::new(),
-        }
-    }
-    pub(crate) fn take_file(&mut self) -> Option<Box<XkbFile>> {
-        match std::mem::take(self) {
-            YYValue::File(f) => Some(f),
-            _ => None,
-        }
-    }
-    pub(crate) fn take_file_list(&mut self) -> Vec<XkbFile> {
-        match std::mem::take(self) {
-            YYValue::FileList(v) => v,
-            _ => Vec::new(),
-        }
-    }
-    pub(crate) fn take_stmt_list(&mut self) -> Vec<Statement> {
-        match std::mem::take(self) {
-            YYValue::StmtList(v) => v,
-            _ => Vec::new(),
-        }
-    }
-    pub(crate) fn as_num(&self) -> i64 {
-        match self {
-            YYValue::Num(n) => *n,
-            _ => 0,
-        }
-    }
-    pub(crate) fn as_atom(&self) -> u32 {
-        match self {
-            YYValue::Atom(a) => *a,
-            _ => 0,
-        }
-    }
-    pub(crate) fn as_merge(&self) -> MergeMode {
-        match self {
-            YYValue::Merge(m) => *m,
-            _ => MergeMode::Default,
-        }
-    }
-    pub(crate) fn as_map_flags(&self) -> u32 {
-        match self {
-            YYValue::MapFlags(f) => *f,
-            _ => 0,
-        }
-    }
-    pub(crate) fn as_file_type(&self) -> FileType {
-        match self {
-            YYValue::FileType(f) => *f,
-            _ => FileType::Keycodes,
-        }
-    }
-    pub(crate) fn as_keysym(&self) -> u32 {
-        match self {
-            YYValue::Keysym(k) => *k,
-            _ => 0,
-        }
-    }
-    pub(crate) fn as_no_sym_or_action_list(&self) -> u32 {
-        match self {
-            YYValue::NoSymbolOrActionList(n) => *n,
-            _ => 0,
-        }
-    }
-    pub(crate) fn as_sval(&self) -> Sval<'a> {
-        match self {
-            YYValue::Sval(s) => *s,
-            _ => Sval { data: &[] },
-        }
-    }
-    pub(crate) fn take_str(&mut self) -> String {
-        match std::mem::take(self) {
-            YYValue::Str(s) => s,
-            _ => String::new(),
-        }
+    yy_as! {
+        as_num: Num(v) -> i64 = 0;
+        as_atom: Atom(v) -> u32 = 0;
+        as_merge: Merge(v) -> MergeMode = MergeMode::Default;
+        as_map_flags: MapFlags(v) -> u32 = 0;
+        as_file_type: FileType(v) -> FileType = FileType::Keycodes;
+        as_keysym: Keysym(v) -> u32 = 0;
+        as_no_sym_or_action_list: NoSymbolOrActionList(v) -> u32 = 0;
+        as_sval: Sval(v) -> Sval<'a> = Sval { data: &[] };
     }
 }
 
