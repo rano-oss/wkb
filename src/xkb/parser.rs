@@ -1,6 +1,5 @@
 use super::keymap::mod_mask_get_effective;
 use super::keymap::xkb_escape_map_name;
-use super::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use super::keymap::GROUP_LAST_INDEX_NAME;
 use super::keysym::xkb_keysym_from_name;
 use super::parser_tables::*;
@@ -10,36 +9,7 @@ pub(crate) use super::symbols::compile_keycodes;
 pub(crate) use super::symbols::compile_symbols;
 use super::symbols::{expr_resolve_group, expr_resolve_group_mask};
 use crate::xkb::keymap::xkb_mod_name_to_index;
-use crate::xkb::keymap::CONTROL_NAMES_MIN_V1_INDEX;
-use crate::xkb::keymap::CONTROL_NAMES_MIN_V2_INDEX;
 use crate::xkb::keysym::codepoint_to_keysym;
-
-fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
-    file.file_type == FileType::Keymap && compile_keymap(file, keymap)
-}
-
-pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbRuleNames) -> bool {
-    let mut kccgst: XkbComponentNames = XkbComponentNames::default();
-    if !xkb_components_from_rules_names(&mut keymap.ctx, rmlvo, &mut kccgst, &mut keymap.num_groups)
-    {
-        return false;
-    }
-    let max_groups: u32 = XKB_MAX_GROUPS;
-    if keymap.num_groups > max_groups {
-        keymap.num_groups = max_groups;
-    }
-    let Some(mut file) = xkb_file_from_components(&kccgst) else {
-        return false;
-    };
-    compile_keymap_file(keymap, &mut file)
-}
-
-pub(crate) fn text_v1_keymap_new_from_string(keymap: &mut XkbKeymap, input: &[u8]) -> bool {
-    let Some(mut xkb_file) = xkb_parse_string(&mut keymap.ctx, input, "") else {
-        return false;
-    };
-    compile_keymap_file(keymap, &mut xkb_file)
-}
 
 pub(crate) const XKB_KEY_VOID_SYMBOL: i32 = 0xffffff_i32;
 pub(crate) const XKB_KEY_0: i32 = 0x30;
@@ -193,20 +163,8 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
     }
 }
 #[inline(always)]
-fn yy_file_type<'a>(yyval: &mut YYValue<'a>, ft: FileType) {
-    *yyval = YYValue::FileType(ft);
-}
-#[inline(always)]
-fn yy_flags<'a>(yyval: &mut YYValue<'a>, f: u32) {
-    *yyval = YYValue::MapFlags(f);
-}
-#[inline(always)]
 fn yy_atom<'a>(yyval: &mut YYValue<'a>, ctx: &mut &mut XkbContext, bytes: &[u8]) {
-    *yyval = YYValue::Atom(atom_intern(&mut ctx.atom_table, bytes));
-}
-#[inline(always)]
-fn yy_merge<'a>(yyval: &mut YYValue<'a>, m: MergeMode) {
-    *yyval = YYValue::Merge(m);
+    *yyval = YYValue::Atom(ctx.atom_intern(bytes));
 }
 #[inline(always)]
 fn yy_bin_expr<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize, op: BinaryOp) {
@@ -293,7 +251,7 @@ fn execute_reduction<'a>(
             ));
         }
         6..=8 => {
-            yy_file_type(yyval, FileType::Keymap);
+            *yyval = YYValue::FileType(FileType::Keymap);
         }
         9 => {
             // XkbMapConfigList: XkbMapConfigList XkbMapConfig
@@ -321,16 +279,17 @@ fn execute_reduction<'a>(
                 flags,
             ));
         }
-        12..=16 => yy_file_type(
-            yyval,
-            [
-                FileType::Keycodes,
-                FileType::Types,
-                FileType::Compat,
-                FileType::Symbols,
-                FileType::Geometry,
-            ][yyn as usize - 12],
-        ),
+        12..=16 => {
+            *yyval = YYValue::FileType(
+                [
+                    FileType::Keycodes,
+                    FileType::Types,
+                    FileType::Compat,
+                    FileType::Symbols,
+                    FileType::Geometry,
+                ][yyn as usize - 12],
+            )
+        }
         17 | 20 => {
             *yyval = YYValue::MapFlags(yyvs[sp].as_map_flags());
         }
@@ -341,19 +300,20 @@ fn execute_reduction<'a>(
             let f = yyvs[sp - 1].as_map_flags() | yyvs[sp].as_map_flags();
             *yyval = YYValue::MapFlags(f);
         }
-        21..=28 => yy_flags(
-            yyval,
-            [
-                MAP_IS_PARTIAL,
-                MAP_IS_DEFAULT,
-                MAP_IS_HIDDEN,
-                MAP_HAS_ALPHANUMERIC,
-                MAP_HAS_MODIFIER,
-                MAP_HAS_KEYPAD,
-                MAP_HAS_FN,
-                MAP_IS_ALTGR,
-            ][yyn as usize - 21],
-        ),
+        21..=28 => {
+            *yyval = YYValue::MapFlags(
+                [
+                    MAP_IS_PARTIAL,
+                    MAP_IS_DEFAULT,
+                    MAP_IS_HIDDEN,
+                    MAP_HAS_ALPHANUMERIC,
+                    MAP_HAS_MODIFIER,
+                    MAP_HAS_KEYPAD,
+                    MAP_HAS_FN,
+                    MAP_IS_ALTGR,
+                ][yyn as usize - 21],
+            )
+        }
         29 => {
             // DeclList: DeclList Decl
             let stmt = std::mem::replace(&mut yyvs[sp], YYValue::None);
@@ -479,19 +439,13 @@ fn execute_reduction<'a>(
             let list = yyvs[sp - 1].take_vmod_list();
             *yyval = YYValue::VModList(list);
         }
-        54 => {
-            // VModDefList: VModDefList COMMA VModDef
+        54 | 55 => {
             let vmod = yyvs[sp].take_vmod();
-            let mut list = yyvs[sp - 2].take_vmod_list();
-            if let Some(v) = vmod {
-                list.push(v);
-            }
-            *yyval = YYValue::VModList(list);
-        }
-        55 => {
-            // VModDefList: VModDef
-            let vmod = yyvs[sp].take_vmod();
-            let mut list = Vec::new();
+            let mut list = if yyn == 54 {
+                yyvs[sp - 2].take_vmod_list()
+            } else {
+                Vec::new()
+            };
             if let Some(v) = vmod {
                 list.push(v);
             }
@@ -519,20 +473,24 @@ fn execute_reduction<'a>(
                 *yyval = YYValue::None;
             }
         }
-        59 => {
-            // InterpretMatch: KeySym PLUS Expr
-            let keysym = yyvs[sp - 2].as_keysym();
-            let expr = yyvs[sp].take_expr();
-            *yyval = YYValue::Interp(interp_create(keysym, expr));
+        59 | 60 => {
+            let offset = 2 * usize::from(yyn == 59);
+            let keysym = yyvs[sp - offset].as_keysym();
+            let expr = (yyn == 59).then(|| yyvs[sp].take_expr()).flatten();
+            *yyval = YYValue::Interp(InterpDef {
+                merge: MergeMode::Default,
+                sym: keysym,
+                match_0: expr,
+                def: Vec::new(),
+            });
         }
-        60 => {
-            // InterpretMatch: KeySym
-            let keysym = yyvs[sp].as_keysym();
-            *yyval = YYValue::Interp(interp_create(keysym, None));
-        }
-        61 | 67 => {
+        61 | 67 | 68 => {
             let var = yyvs[sp].take_var();
-            let mut list = yyvs[sp - if yyn == 61 { 1 } else { 2 }].take_var_list();
+            let mut list = match yyn {
+                61 => yyvs[sp - 1].take_var_list(),
+                67 => yyvs[sp - 2].take_var_list(),
+                _ => Vec::new(),
+            };
             if let Some(v) = var {
                 list.push(v);
             }
@@ -557,15 +515,6 @@ fn execute_reduction<'a>(
         65 => {
             // OptSymbolsBody: SymbolsBody
             let list = yyvs[sp].take_var_list();
-            *yyval = YYValue::VarList(list);
-        }
-        68 => {
-            // SymbolsBody: SymbolsVarDecl
-            let var = yyvs[sp].take_var();
-            let mut list = Vec::new();
-            if let Some(v) = var {
-                list.push(v);
-            }
             *yyval = YYValue::VarList(list);
         }
         73 => {
@@ -700,15 +649,14 @@ fn execute_reduction<'a>(
         141 => {
             *yyval = YYValue::Merge(yyvs[sp].as_merge());
         }
-        142..=147 => yy_merge(
-            yyval,
-            match yyn {
+        142..=147 => {
+            *yyval = YYValue::Merge(match yyn {
                 144 => MergeMode::Augment,
                 145 => MergeMode::Override,
                 146 => MergeMode::Replace,
                 _ => MergeMode::Default,
-            },
-        ),
+            })
+        }
         // ExprList rules 148-150
         150 => {
             // ExprList: empty
@@ -753,23 +701,16 @@ fn execute_reduction<'a>(
             *yyval = std::mem::replace(&mut yyvs[sp - 1], YYValue::None);
         }
         // MultiActionList rules 166-167
-        166 => {
-            // MultiActionList: MultiActionList COMMA ActionList
-            // ActionList at sp produces an ExprList of actions
-            // Create an ActionList expr wrapping those actions, then append to the list
-            let actions_expr_list = yyvs[sp].take_expr_list();
-            let action_list_expr = ExprKind::ActionList {
-                actions: actions_expr_list,
+        166 | 167 => {
+            let item = if yyn == 166 {
+                Some(ExprKind::ActionList {
+                    actions: yyvs[sp].take_expr_list(),
+                })
+            } else {
+                yyvs[sp].take_expr()
             };
             let mut list = yyvs[sp - 2].take_expr_list();
-            list.push(action_list_expr);
-            *yyval = YYValue::ExprList(list);
-        }
-        167 => {
-            // MultiActionList: MultiActionList COMMA KeySymList
-            let keysym_expr = yyvs[sp].take_expr();
-            let mut list = yyvs[sp - 2].take_expr_list();
-            if let Some(e) = keysym_expr {
+            if let Some(e) = item {
                 list.push(e);
             }
             *yyval = YYValue::ExprList(list);
@@ -848,40 +789,31 @@ fn execute_reduction<'a>(
         }
         190 => {
             // NonEmptyKeySyms: NonEmptyKeySyms COMMA KeySym
-            let expr = yyvs[sp - 2].take_expr().unwrap();
+            let mut expr = yyvs[sp - 2].take_expr().unwrap();
             let keysym = yyvs[sp].as_keysym();
-            *yyval = YYValue::Expr(expr_append_key_sym_list(expr, keysym));
-        }
-        191 => {
-            // NonEmptyKeySyms: NonEmptyKeySyms COMMA STRING
-            let expr = yyvs[sp - 2].take_expr().unwrap();
-            let s = yyvs[sp].take_str();
-            match expr_key_sym_list_append_string(expr, &s) {
-                Some(e) => {
-                    *yyval = YYValue::Expr(e);
-                }
-                None => {
-                    return false;
+            if keysym != XKB_KEY_NO_SYMBOL {
+                if let ExprKind::KeysymList { ref mut syms } = expr {
+                    syms.push(keysym);
                 }
             }
+            *yyval = YYValue::Expr(expr);
         }
         192 => {
             // KeySyms: KeySym
             let keysym = yyvs[sp].as_keysym();
             *yyval = YYValue::Expr(expr_create_key_sym_list(keysym));
         }
-        193 | 195 => {
-            // KeySyms: STRING (single string keysym)
+        191 | 193 | 195 => {
             let s = yyvs[sp].take_str();
-            let expr = expr_create_key_sym_list(XKB_KEY_NO_SYMBOL);
-            match expr_key_sym_list_append_string(expr, &s) {
-                Some(e) => {
-                    *yyval = YYValue::Expr(e);
-                }
-                None => {
-                    return false;
-                }
-            }
+            let expr = if yyn == 191 {
+                yyvs[sp - 2].take_expr().unwrap()
+            } else {
+                expr_create_key_sym_list(XKB_KEY_NO_SYMBOL)
+            };
+            let Some(expr) = expr_key_sym_list_append_string(expr, &s) else {
+                return false;
+            };
+            *yyval = YYValue::Expr(expr);
         }
         197 => {
             // KeySymList: empty → NoSymbol
@@ -933,17 +865,17 @@ fn execute_reduction<'a>(
         // Ident 214
         214 => {
             let sval = yyvs[sp].as_sval();
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, sval.data));
+            *yyval = YYValue::Atom(param.ctx.atom_intern(sval.data));
         }
         215 => {
             // Ident: DEFAULT
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, b"default"));
+            *yyval = YYValue::Atom(param.ctx.atom_intern(b"default"));
         }
         // String 216
         216 => {
             // String: STRING → intern as atom
             let s = yyvs[sp].take_str();
-            *yyval = YYValue::Atom(atom_intern(&mut param.ctx.atom_table, s.as_bytes()));
+            *yyval = YYValue::Atom(param.ctx.atom_intern(s.as_bytes()));
         }
         // OptMapName / MapName 217-219
         217 | 219 => {
@@ -983,37 +915,22 @@ pub(crate) fn parse<'a>(
         ctx = param.ctx;
         scanner = param.scanner;
 
-        if ret == 0 && param.more_maps {
-            if !map.is_empty() {
-                if let Some(ref rtrn) = param.rtrn {
-                    if map == rtrn.name {
-                        return param.rtrn;
-                    }
-                }
-                // Not the map we want, drop it
-            } else if let Some(ref rtrn) = param.rtrn {
-                if rtrn.flags & MAP_IS_DEFAULT != 0 {
-                    return param.rtrn;
-                } else if first.is_none() {
-                    first = param.rtrn;
-                }
-                // else drop param.rtrn
-            }
-            continue;
-        }
-
         if ret != 0 {
             return None;
         }
-
-        if param.rtrn.is_some() {
-            return param.rtrn;
+        if !param.more_maps {
+            return param.rtrn.or(first);
         }
-
-        break;
+        let file = param.rtrn?;
+        if (!map.is_empty() && map == file.name)
+            || (map.is_empty() && file.flags & MAP_IS_DEFAULT != 0)
+        {
+            return Some(file);
+        }
+        if map.is_empty() && first.is_none() {
+            first = Some(file);
+        }
     }
-
-    first
 }
 
 // ── AST builder functions (merged from ast_build.rs) ──
@@ -1026,52 +943,26 @@ pub(crate) fn expr_create_key_sym_list(sym: u32) -> ExprKind {
     ExprKind::KeysymList { syms }
 }
 
-pub(crate) fn expr_append_key_sym_list(mut expr: ExprKind, sym: u32) -> ExprKind {
-    if sym != XKB_KEY_NO_SYMBOL {
-        if let ExprKind::KeysymList { ref mut syms } = expr {
-            syms.push(sym);
-        }
-    }
-    expr
-}
-
 pub(crate) fn expr_key_sym_list_append_string(
     mut expr: ExprKind,
     string: &str,
 ) -> Option<ExprKind> {
-    let bytes = string.as_bytes();
-    let len = bytes.len();
-    let mut idx: usize = 0;
-    loop {
-        if idx >= len {
-            return Some(expr);
-        }
-        let (cp, cp_len) = utf8_next_code_point_safe(&bytes[idx..]);
-        if cp == INVALID_UTF8_CODE_POINT {
-            return None;
-        }
-        let sym = codepoint_to_keysym(cp).unwrap_or(0);
+    for ch in string.chars() {
+        let sym = codepoint_to_keysym(ch as u32).unwrap_or(0);
         if sym == XKB_KEY_NO_SYMBOL {
             return None;
         }
         if let ExprKind::KeysymList { ref mut syms } = expr {
             syms.push(sym);
         }
-        idx += cp_len;
     }
+    Some(expr)
 }
 
 pub(crate) fn keysym_parse_string(string: &str) -> Option<u32> {
-    let bytes = string.as_bytes();
-    let len = bytes.len();
-    if len == 0 {
-        return None;
-    }
-    let (cp, cp_len) = utf8_next_code_point_safe(bytes);
-    if cp == INVALID_UTF8_CODE_POINT || cp_len != len {
-        return None;
-    }
-    Some(codepoint_to_keysym(cp).unwrap_or(0))
+    let mut chars = string.chars();
+    let sym = codepoint_to_keysym(chars.next()? as u32).unwrap_or(0);
+    chars.next().is_none().then_some(sym)
 }
 
 macro_rules! default_merge_constructors {
@@ -1088,7 +979,7 @@ default_merge_constructors! {
     fn vmod_create(name: u32, value: Option<ExprKind>) -> VModDef;
     fn var_create(name: Option<ExprKind>, value: Option<ExprKind>) -> VarDef;
     fn key_type_create(name: u32, body: Vec<VarDef>) -> KeyTypeDef;
-    fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> SymbolsDef;
+    fn symbols_create(name: u32, body: Vec<VarDef>) -> SymbolsDef;
     fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> ModMapDef;
     fn led_map_create(name: u32, body: Vec<VarDef>) -> LedMapDef;
     fn led_name_create(ndx: i64, name: Option<ExprKind>) -> LedNameDef;
@@ -1099,15 +990,6 @@ pub(crate) fn bool_var_create(ident: u32, set: bool) -> VarDef {
         merge: MergeMode::Default,
         name: Some(ExprKind::Ident(ident)),
         value: Some(ExprKind::Boolean(set)),
-    }
-}
-
-pub(crate) fn interp_create(sym: u32, match_0: Option<ExprKind>) -> InterpDef {
-    InterpDef {
-        merge: MergeMode::Default,
-        sym,
-        match_0,
-        def: Vec::new(),
     }
 }
 
@@ -1152,11 +1034,7 @@ pub(crate) fn include_create(stmt_str: &str, mut merge: MergeMode) -> Option<Vec
         remaining = rest;
     }
 
-    if items.is_empty() {
-        return None;
-    }
-
-    Some(items)
+    (!items.is_empty()).then_some(items)
 }
 
 pub(crate) fn xkb_file_create(
@@ -1176,20 +1054,13 @@ pub(crate) fn xkb_file_create(
 }
 
 pub(crate) fn xkb_file_from_components(kkctgs: &XkbComponentNames) -> Option<Box<XkbFile>> {
-    let components = [
-        &kkctgs.keycodes,
-        &kkctgs.types,
-        &kkctgs.compatibility,
-        &kkctgs.symbols,
-    ];
     let mut file_stmts: Vec<Statement> = Vec::new();
-    for type_0 in [
-        FileType::Keycodes,
-        FileType::Types,
-        FileType::Compat,
-        FileType::Symbols,
+    for (type_0, component_bytes) in [
+        (FileType::Keycodes, &kkctgs.keycodes),
+        (FileType::Types, &kkctgs.types),
+        (FileType::Compat, &kkctgs.compatibility),
+        (FileType::Symbols, &kkctgs.symbols),
     ] {
-        let component_bytes = components[type_0 as usize];
         let end = component_bytes
             .iter()
             .position(|&b| b == 0)
@@ -1425,13 +1296,6 @@ static KEYWORDS: &[(&[u8], i32)] = &[
     (b"partial", PARTIAL),
 ];
 
-pub(crate) fn keyword_to_token(string: &[u8]) -> i32 {
-    KEYWORDS
-        .iter()
-        .find_map(|&(keyword, token)| string.eq_ignore_ascii_case(keyword).then_some(token))
-        .unwrap_or(-1)
-}
-
 // ── YYValue: safe replacement for the YYSTYPE union ──
 
 /// Safe parser value stack type, replacing the old YYSTYPE union.
@@ -1512,12 +1376,6 @@ impl<'a> YYValue<'a> {
     }
 }
 
-/// Check if byte is whitespace (space, HT, LF, VT, FF, CR).
-/// Matches C `isspace()` for ASCII range.
-#[inline]
-fn is_space(ch: u8) -> bool {
-    matches!(ch, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
-}
 fn number(s: &mut Scanner) -> Option<(i64, i32)> {
     let hex = s.str_match(b"0x");
     let (value, count) = if hex {
@@ -1557,7 +1415,7 @@ pub(crate) fn _xkbcommon_lex<'a>(
     ctx: &mut XkbContext,
 ) -> i32 {
     loop {
-        while is_space(s.peek()) {
+        while s.peek().is_ascii_whitespace() {
             s.next_byte();
         }
         if s.str_match(b"\xE2\x80\x8E") || s.str_match(b"\xE2\x80\x8F") {
@@ -1619,7 +1477,7 @@ pub(crate) fn _xkbcommon_lex<'a>(
         }
         let len: usize = s.pos - s.token_pos - 2;
         let keyname_bytes = s.input_slice(s.token_pos + 1, s.token_pos + 1 + len);
-        *yylval = YYValue::Atom(atom_intern(&mut ctx.atom_table, keyname_bytes));
+        *yylval = YYValue::Atom(ctx.atom_intern(keyname_bytes));
         return KEYNAME;
     }
     let punctuation = match s.peek() {
@@ -1649,7 +1507,11 @@ pub(crate) fn _xkbcommon_lex<'a>(
         while s.peek().is_ascii_alphanumeric() || s.peek() == b'_' {
             s.next_byte();
         }
-        let tok = keyword_to_token(s.input_slice(s.token_pos, s.pos));
+        let word = s.input_slice(s.token_pos, s.pos);
+        let tok = KEYWORDS
+            .iter()
+            .find_map(|&(keyword, token)| word.eq_ignore_ascii_case(keyword).then_some(token))
+            .unwrap_or(-1);
         if tok >= 0 {
             return tok;
         }
@@ -1678,11 +1540,8 @@ pub(crate) fn xkb_parse_string(
 
 // ── Include file processing (merged from include.rs) ──
 
-use super::keymap::xkb_context_getenv;
+use super::keymap::getenv_or;
 use super::keymap::{xkb_context_include_path_get, xkb_context_num_include_paths};
-use super::keymap::{
-    xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
-};
 
 pub(crate) const INCLUDE_MAX_DEPTH: i32 = 15_i32;
 fn is_merge_prefix(byte: u8) -> bool {
@@ -1692,11 +1551,10 @@ static XKB_FILE_TYPE_INCLUDE_DIRS: [&str; 7] = [
     "keycodes", "types", "compat", "symbols", "geometry", "keymap", "rules",
 ];
 fn directory_for_include(type_0: FileType) -> &'static str {
-    if type_0 as usize >= XKB_FILE_TYPE_INCLUDE_DIRS.len() {
-        ""
-    } else {
-        XKB_FILE_TYPE_INCLUDE_DIRS[type_0 as usize]
-    }
+    XKB_FILE_TYPE_INCLUDE_DIRS
+        .get(type_0 as usize)
+        .copied()
+        .unwrap_or("")
 }
 /// Expand `%H`, `%S`, `%E`, `%%` in the given name string.
 /// Returns `Some(expanded)` on success, `None` on error.
@@ -1706,32 +1564,22 @@ fn expand_percent(type_dir: &str, name: &str) -> Option<String> {
     let mut chars = name.chars().peekable();
     while let Some(c) = chars.next() {
         if c == '%' {
-            match chars.next() {
-                Some('%') => result.push('%'),
-                Some('H') => match xkb_context_getenv("HOME") {
-                    Ok(home) => result.push_str(&home),
-                    Err(_) => {
-                        return None;
-                    }
-                },
-                Some('S') => {
-                    let sys = xkb_context_include_path_get_system_path();
+            match chars.next()? {
+                '%' => result.push('%'),
+                'H' => result.push_str(&std::env::var("HOME").ok()?),
+                'S' => {
+                    let sys = getenv_or("XKB_CONFIG_ROOT", DFLT_XKB_CONFIG_ROOT);
                     result.push_str(&sys);
                     result.push('/');
                     result.push_str(type_dir);
                 }
-                Some('E') => {
-                    let extra = xkb_context_include_path_get_extra_path();
+                'E' => {
+                    let extra = getenv_or("XKB_CONFIG_EXTRA_PATH", DFLT_XKB_CONFIG_EXTRA_PATH);
                     result.push_str(&extra);
                     result.push('/');
                     result.push_str(type_dir);
                 }
-                Some(_other) => {
-                    return None;
-                }
-                None => {
-                    return None;
-                }
+                _ => return None,
             }
         } else {
             result.push(c);
@@ -1747,23 +1595,11 @@ fn expand_percent(type_dir: &str, name: &str) -> Option<String> {
 /// - `Ok(Some(expanded))` if expansion succeeded
 /// - `Err(())` on error
 pub(crate) fn expand_path_str(name: &str, file_type: FileType) -> Result<Option<String>, ()> {
-    // Find first '%'
-    let k = match name.find('%') {
-        Some(pos) => pos,
-        None => return Ok(None),
+    let Some(k) = name.find('%') else {
+        return Ok(None);
     };
-    let type_dir = directory_for_include(file_type);
-    let prefix = &name[..k];
-    let rest = &name[k..];
-    match expand_percent(type_dir, rest) {
-        Some(expanded) => {
-            let mut result = String::with_capacity(prefix.len() + expanded.len());
-            result.push_str(prefix);
-            result.push_str(&expanded);
-            Ok(Some(result))
-        }
-        None => Err(()),
-    }
+    let expanded = expand_percent(directory_for_include(file_type), &name[k..]).ok_or(())?;
+    Ok(Some(format!("{}{}", &name[..k], expanded)))
 }
 pub(crate) fn find_file_in_xkb_path(
     ctx: &mut XkbContext,
@@ -1797,9 +1633,11 @@ fn find_include_file(
     offset: &mut u32,
 ) -> Option<(std::sync::Arc<Vec<u8>>, String)> {
     if name.starts_with('/') {
-        (*offset == 0)
-            .then(|| read_file_cached(name).map(|data| (data, name.to_owned())))
-            .flatten()
+        if *offset == 0 {
+            read_file_cached(name).map(|data| (data, name.to_owned()))
+        } else {
+            None
+        }
     } else if expanded {
         None
     } else {
@@ -1815,49 +1653,33 @@ pub(crate) fn process_include_file(
     stmt: &IncludeStmt,
     file_type: FileType,
 ) -> Option<Box<XkbFile>> {
-    let mut xkb_file: Option<Box<XkbFile>> = None;
-    let mut candidate: Option<Box<XkbFile>> = None;
-
-    // Expand %-sequences in the file name
-    let stmt_file: String = match expand_path_str(&stmt.file, file_type) {
+    let stmt_file = match expand_path_str(&stmt.file, file_type) {
         Err(()) => return None,
         Ok(Some(expanded)) => expanded,
         Ok(None) => stmt.file.clone(),
     };
     let expanded = stmt_file != stmt.file;
 
-    let mut offset: u32 = 0;
-    let mut file_and_path = find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset);
-
-    while let Some((ref file_data, ref _path)) = file_and_path {
-        if let Some(parsed) = xkb_parse_string(ctx, file_data, &stmt.map) {
-            let _ = file_and_path.take();
-
-            if parsed.file_type != file_type {
-                // parsed drops automatically
-            } else if !stmt.map.is_empty() || parsed.flags != 0 && MAP_IS_DEFAULT != 0 {
-                xkb_file = Some(parsed);
-                break;
-            } else if candidate.is_none() {
-                candidate = Some(parsed);
+    let mut offset = 0;
+    let mut candidate = None;
+    while let Some((file_data, _)) =
+        find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset)
+    {
+        if let Some(parsed) = xkb_parse_string(ctx, &file_data, &stmt.map) {
+            if parsed.file_type == file_type {
+                if !stmt.map.is_empty() || parsed.flags != 0 {
+                    return Some(parsed);
+                }
+                if candidate.is_none() {
+                    candidate = Some(parsed);
+                }
             }
-            // else: parsed drops automatically (was FreeXkbFile)
-        } else {
-            // Drop the file (closes it)
-            let _ = file_and_path.take();
         }
         offset += 1;
-        file_and_path = find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset);
     }
-
-    if xkb_file.is_none() {
-        xkb_file = candidate;
-    }
-    xkb_file
+    candidate
 }
 
-pub(crate) const GROUP_MASK_NAME_LAST: u32 = 3;
-pub(crate) const GROUP_INDEX_NAME_LAST: u32 = 1;
 pub(crate) type CompileFileFn = for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool;
 #[inline]
 fn compute_effective_mask(keymap: &XkbKeymap, mods: &mut XkbMods) {
@@ -1931,8 +1753,11 @@ fn find_interp_for_key(
     interp_indices: &mut Vec<usize>,
     interp_index: &InterpIndex,
 ) -> bool {
-    let keycode = keymap.keys[key_idx].keycode;
-    let syms_ref = xkb_keymap_key_get_syms_by_level_ref(keymap, keycode, group, level);
+    let syms_ref = keymap.keys[key_idx]
+        .groups
+        .get(group as usize)
+        .and_then(|group| group.levels.get(level as usize))
+        .map_or(&[][..], |level| level.syms.as_slice());
 
     if syms_ref.is_empty() {
         return false;
@@ -1944,40 +1769,13 @@ fn find_interp_for_key(
     let syms = &syms_buf[..num_syms];
     let key_modmap = keymap.keys[key_idx].modmap;
     for &cur_sym in syms {
-        let match_exact = interp_index.by_sym.get(&cur_sym);
-        let match_wild = &interp_index.wildcards;
-        let mut exact_idx = 0usize;
-        let mut wild_idx = 0usize;
-        let mut found = false;
-        let mut use_default = false;
-        loop {
-            let i = match (
-                exact_idx < match_exact.map_or(0, |v| v.len()),
-                wild_idx < match_wild.len(),
-            ) {
-                (true, true) => {
-                    let a = match_exact.as_ref().unwrap()[exact_idx];
-                    let b = match_wild[wild_idx];
-                    if a < b {
-                        exact_idx += 1;
-                        a
-                    } else {
-                        wild_idx += 1;
-                        b
-                    }
-                }
-                (true, false) => {
-                    let a = match_exact.as_ref().unwrap()[exact_idx];
-                    exact_idx += 1;
-                    a
-                }
-                (false, true) => {
-                    let b = match_wild[wild_idx];
-                    wild_idx += 1;
-                    b
-                }
-                (false, false) => break,
-            };
+        let mut candidates = interp_index.wildcards.clone();
+        if let Some(exact) = interp_index.by_sym.get(&cur_sym) {
+            candidates.extend(exact);
+            candidates.sort_unstable();
+        }
+        let mut selected = None;
+        for i in candidates {
             let interp = &sym_interprets[i];
             let mods = if interp.level_one_only && level != 0 {
                 0
@@ -1993,30 +1791,18 @@ fn find_interp_for_key(
                 _ => false,
             };
             if matched {
-                if interp.sym == XKB_KEY_NO_SYMBOL && !interp_indices.is_empty() {
-                    let mut already_used = false;
-                    for &prev_idx in interp_indices.iter() {
-                        if prev_idx == i {
-                            already_used = true;
-                            break;
-                        }
-                    }
-                    if already_used {
-                        use_default = true;
-                        break;
-                    }
-                }
-                found = true;
-                interp_indices.push(i);
+                selected = Some(i);
                 break;
             }
         }
-        if !found {
-            use_default = true;
-        }
-        if use_default {
-            // usize::MAX signals "use default interpret"
-            interp_indices.push(usize::MAX);
+        match selected {
+            Some(i)
+                if sym_interprets[i].sym == XKB_KEY_NO_SYMBOL && interp_indices.contains(&i) =>
+            {
+                interp_indices.push(usize::MAX)
+            }
+            Some(i) => interp_indices.push(i),
+            None => interp_indices.push(usize::MAX),
         }
     }
     true
@@ -2080,19 +1866,12 @@ fn apply_interps_to_key(
         keymap.keys[key_idx].vmodmap = vmodmap;
     }
 }
-#[inline]
-fn is_mod_action(action: &XkbAction) -> bool {
-    matches!(
-        action,
-        XkbAction::ModSet(_) | XkbAction::ModLatch(_) | XkbAction::ModLock(_)
-    )
-}
-#[inline]
-fn is_group_action(action: &XkbAction) -> bool {
-    matches!(
-        action,
-        XkbAction::GroupSet(_) | XkbAction::GroupLatch(_) | XkbAction::GroupLock(_)
-    )
+fn action_category(action: &XkbAction) -> u8 {
+    match action {
+        XkbAction::ModSet(_) | XkbAction::ModLatch(_) | XkbAction::ModLock(_) => 1,
+        XkbAction::GroupSet(_) | XkbAction::GroupLatch(_) | XkbAction::GroupLock(_) => 2,
+        _ => 0,
+    }
 }
 fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
     let num_groups = keymap.keys[key_idx].num_groups;
@@ -2102,16 +1881,12 @@ fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
             let level: &mut XkbLevel = &mut keymap.keys[key_idx].groups[g].levels[l];
             if level.actions.len() > 1 {
                 for i in 0..level.actions.len() {
-                    let mod_action: bool = is_mod_action(&level.actions[i]);
-                    let group_action: bool = is_group_action(&level.actions[i]);
-                    if mod_action || group_action {
+                    let category = action_category(&level.actions[i]);
+                    if category != 0 {
                         for j in (i + 1)..level.actions.len() {
                             let same_action = std::mem::discriminant(&level.actions[i])
                                 == std::mem::discriminant(&level.actions[j]);
-                            if same_action
-                                || mod_action && is_mod_action(&level.actions[j])
-                                || group_action && is_group_action(&level.actions[j])
-                            {
+                            if same_action || category == action_category(&level.actions[j]) {
                                 level.actions[j] = XkbAction::None;
                             }
                         }
@@ -2200,53 +1975,41 @@ fn update_pending_action_fields(info: &mut XkbKeymapInfo<'_>, act: &mut XkbActio
 fn update_derived_keymap_fields(info: &mut XkbKeymapInfo<'_>) -> bool {
     let keymap: &mut XkbKeymap = &mut *info.keymap;
     keymap.key_names = Vec::new();
-    compute_max_num_groups(keymap);
+    let start_idx = if keymap.num_keys_low == 0 {
+        0
+    } else {
+        keymap.min_key_code
+    };
+    keymap.num_groups = keymap.keys[start_idx as usize..keymap.num_keys as usize]
+        .iter()
+        .fold(keymap.num_groups, |max, key| max.max(key.num_groups));
     let pending_computations: bool = !info.pending_computations.is_empty();
     if pending_computations {
-        update_group_lookup_entries(info);
+        let num_groups = info.keymap.num_groups.max(1);
+        info.lookup.group_index_names[1] = lookup_entry(GROUP_LAST_INDEX_NAME, num_groups);
+        info.lookup.group_mask_names[3] =
+            lookup_entry(GROUP_LAST_INDEX_NAME, 1 << num_groups.wrapping_sub(1));
         if update_pending_sym_interpret_actions(info).is_err() {
             return false;
         }
     }
-    apply_interps_and_check_actions(info);
+    let interp_index = build_interp_index(&info.sym_interprets);
+    for ki in 0..info.keymap.num_keys as usize {
+        apply_interps_to_key(info.keymap, &info.sym_interprets, ki, &interp_index);
+        check_multiple_actions_categories(info.keymap, ki);
+    }
     update_mod_mappings(info);
     compute_type_entry_masks(info);
     if update_key_action_fields(info, pending_computations).is_err() {
         return false;
     }
-    compute_led_effective_masks(info);
+    for led in &mut info.keymap.leds[..info.keymap.num_leds as usize] {
+        compute_effective_mask_with(&info.keymap.mods, &mut led.mods);
+    }
     if pending_computations && resolve_pending_led_groups(info).is_err() {
         return false;
     }
     true
-}
-
-fn compute_max_num_groups(keymap: &mut XkbKeymap) {
-    let start_idx = if keymap.num_keys_low == 0 {
-        0_u32
-    } else {
-        keymap.min_key_code
-    };
-    for ki in start_idx..keymap.num_keys {
-        let key_num_groups = keymap.keys[ki as usize].num_groups;
-        keymap.num_groups = if keymap.num_groups > key_num_groups {
-            keymap.num_groups
-        } else {
-            key_num_groups
-        };
-    }
-}
-
-fn update_group_lookup_entries(info: &mut XkbKeymapInfo<'_>) {
-    let num_groups: u32 = if info.keymap.num_groups != 0 {
-        info.keymap.num_groups
-    } else {
-        1_u32
-    };
-    info.lookup.group_index_names[GROUP_INDEX_NAME_LAST as usize] =
-        lookup_entry(GROUP_LAST_INDEX_NAME, num_groups);
-    info.lookup.group_mask_names[GROUP_MASK_NAME_LAST as usize] =
-        lookup_entry(GROUP_LAST_INDEX_NAME, 1 << num_groups.wrapping_sub(1));
 }
 
 fn update_pending_sym_interpret_actions(info: &mut XkbKeymapInfo<'_>) -> Result<(), ()> {
@@ -2260,15 +2023,6 @@ fn update_pending_sym_interpret_actions(info: &mut XkbKeymapInfo<'_>) -> Result<
         }
     }
     Ok(())
-}
-
-fn apply_interps_and_check_actions(info: &mut XkbKeymapInfo<'_>) {
-    let keymap = &mut *info.keymap;
-    let interp_index = build_interp_index(&info.sym_interprets);
-    for ki in 0..keymap.num_keys as usize {
-        apply_interps_to_key(keymap, &info.sym_interprets, ki, &interp_index);
-        check_multiple_actions_categories(keymap, ki);
-    }
 }
 
 fn update_mod_mappings(info: &mut XkbKeymapInfo<'_>) {
@@ -2299,12 +2053,8 @@ fn update_mod_mappings(info: &mut XkbKeymapInfo<'_>) {
 }
 
 fn has_unbound_vmods(keymap: &XkbKeymap, mods: &XkbMods) -> bool {
-    for k in _XKB_MOD_INDEX_NUM_ENTRIES..keymap.mods.num_mods {
-        if mods.mods & 1 << k != 0 && keymap.mods.mods[k as usize].mapping == 0 {
-            return true;
-        }
-    }
-    false
+    (_XKB_MOD_INDEX_NUM_ENTRIES..keymap.mods.num_mods)
+        .any(|k| mods.mods & 1 << k != 0 && keymap.mods.mods[k as usize].mapping == 0)
 }
 
 fn compute_type_entry_masks(info: &mut XkbKeymapInfo<'_>) {
@@ -2367,13 +2117,6 @@ fn update_key_action_fields(
     Ok(())
 }
 
-fn compute_led_effective_masks(info: &mut XkbKeymapInfo<'_>) {
-    let keymap = &mut *info.keymap;
-    for led_idx in 0..keymap.num_leds {
-        compute_effective_mask_with(&keymap.mods, &mut keymap.leds[led_idx as usize].mods);
-    }
-}
-
 fn resolve_pending_led_groups(info: &mut XkbKeymapInfo<'_>) -> Result<(), ()> {
     for led_idx in 0..info.keymap.num_leds {
         if info.keymap.leds[led_idx as usize].pending_groups {
@@ -2434,9 +2177,9 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
             max_groups: XKB_MAX_GROUPS,
             max_overlays: XKB_OVERLAY_MAX,
             controls_name_offset: (if km_format == XKB_KEYMAP_FORMAT_TEXT_V1 {
-                CONTROL_NAMES_MIN_V1_INDEX as u8
+                7
             } else {
-                CONTROL_NAMES_MIN_V2_INDEX as u8
+                0
             }),
             group_lock_on_release: km_format >= XKB_KEYMAP_FORMAT_TEXT_V2,
             mods_unlock_on_press: km_format >= XKB_KEYMAP_FORMAT_TEXT_V2,
@@ -2502,9 +2245,7 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
     }
     ok_0
 }
-pub(crate) const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
-
-/// Index-based sval for scanner input. Used in Lvalue/rule to avoid
+/// Index-based sval for scanner input. Used in rules to avoid
 /// lifetime issues across include boundaries. Reconstruct sval via as_sval().
 #[derive(Copy, Clone, Default)]
 pub(crate) struct SvalIdx {
@@ -2532,7 +2273,7 @@ impl SvalIdx {
 pub(crate) struct Matcher<'a> {
     pub(crate) ctx: &'a mut XkbContext,
     pub(crate) rmlvo: RuleNames<'a>,
-    pub(crate) val: Lvalue,
+    pub(crate) val: SvalIdx,
     pub(crate) groups: Vec<Group>,
     pub(crate) mapping: Mapping,
     pub(crate) rule: Rule,
@@ -2599,10 +2340,6 @@ pub(crate) struct Group {
     pub(crate) name: Vec<u8>,
     pub(crate) elements: Vec<Vec<u8>>,
 }
-#[derive(Copy, Clone, Default)]
-pub(crate) struct Lvalue {
-    pub(crate) string: SvalIdx,
-}
 #[derive(Clone, Default)]
 pub(crate) struct RuleNames<'a> {
     pub(crate) model: MatchedSval<'a>,
@@ -2638,7 +2375,7 @@ impl<'a> Matcher<'a> {
         Matcher {
             ctx,
             rmlvo: RuleNames::default(),
-            val: Lvalue::default(),
+            val: SvalIdx::default(),
             groups: Vec::new(),
             mapping: Mapping::default(),
             rule: Rule::default(),
@@ -2654,7 +2391,7 @@ pub(crate) const MAX_INCLUDE_DEPTH: i32 = 5_i32;
 fn is_ident(ch: u8) -> bool {
     ch.is_ascii_graphic() && ch != b'\\'
 }
-fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
+fn lex(s: &mut Scanner, val: &mut SvalIdx) -> u32 {
     loop {
         while s.chr(b' ') as i32 != 0 || s.chr(b'\t') as i32 != 0 || s.chr(b'\r') as i32 != 0 {}
         if s.str_match(b"//") {
@@ -2698,15 +2435,15 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         return TOK_WILD_CARD_ANY;
     }
     if s.chr(b'$') {
-        val.string = SvalIdx {
+        *val = SvalIdx {
             start: s.pos,
             end: s.pos,
         };
         while is_ident(s.peek()) {
             s.next_byte();
-            val.string.end += 1;
+            val.end += 1;
         }
-        if val.string.len() == 0 {
+        if val.len() == 0 {
             return TOK_ERROR;
         }
         return TOK_GROUP_NAME;
@@ -2715,13 +2452,13 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         return TOK_INCLUDE;
     }
     if is_ident(s.peek()) {
-        val.string = SvalIdx {
+        *val = SvalIdx {
             start: s.pos,
             end: s.pos,
         };
         while is_ident(s.peek()) {
             s.next_byte();
-            val.string.end += 1;
+            val.end += 1;
         }
         return TOK_IDENTIFIER;
     }
@@ -2731,143 +2468,59 @@ static RULES_MLVO_SVALS: [&[u8]; 4] = [b"model", b"layout", b"variant", b"option
 static RULES_KCCGST_SVALS: [&[u8]; 5] = [b"keycodes", b"types", b"compat", b"symbols", b"geometry"];
 pub(crate) const OPTIONS_MATCH_ALL_GROUPS: u32 = XKB_MAX_GROUPS;
 fn strip_spaces<'a>(v: Sval<'a>) -> Sval<'a> {
-    let bytes = v.data;
-    let start_trim = bytes
-        .iter()
-        .position(|&b| !is_space(b))
-        .unwrap_or(bytes.len());
-    let end_trim = bytes
-        .iter()
-        .rposition(|&b| !is_space(b))
-        .map(|i| i + 1)
-        .unwrap_or(start_trim);
-    if start_trim >= end_trim {
-        Sval { data: &[] }
-    } else {
-        Sval {
-            data: &bytes[start_trim..end_trim],
-        }
+    Sval {
+        data: v.data.trim_ascii(),
     }
 }
 
-/// Resize a Vec<MatchedSval>, zero-filling new elements.
-fn vec_resize_zero_matched_sval(v: &mut Vec<MatchedSval<'_>>, new_len: usize) {
-    if new_len > v.len() {
-        v.resize(new_len, MatchedSval::default());
-    } else {
-        v.truncate(new_len);
-    }
-}
-
-fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<MatchedSval<'a>> {
-    let mut arr: Vec<MatchedSval<'a>> = Vec::new();
-    let Some(bytes) = s else {
-        arr.push(MatchedSval::default());
-        return arr;
-    };
+fn split_comma_separated_mlvo(mlvo: u32, bytes: &[u8]) -> Vec<MatchedSval<'_>> {
     if bytes.is_empty() {
-        arr.push(MatchedSval::default());
-        return arr;
+        return vec![MatchedSval::default()];
     }
-    let mut pos: usize = 0;
-    loop {
-        let start = pos;
-        let mut end = pos;
-        let mut val_0 = MatchedSval {
-            matched: false,
-            layout: OPTIONS_MATCH_ALL_GROUPS,
-            sval: Sval {
-                data: &bytes[start..start],
-            },
-        };
-        while pos < bytes.len()
-            && bytes[pos] != b','
-            && bytes[pos] as i32 != OPTIONS_GROUP_SPECIFIER_PREFIX
-        {
-            pos += 1;
-            end += 1;
-        }
-        val_0.sval = Sval {
-            data: &bytes[start..end],
-        };
-        val_0.sval = strip_spaces(val_0.sval);
-        if pos < bytes.len() && bytes[pos] as i32 == OPTIONS_GROUP_SPECIFIER_PREFIX {
-            pos += 1;
-            let (layout, count) = parse_dec_u32(&bytes[pos..]);
-            let count = count as usize;
-            if count > 0 {
-                pos += count;
-                if (1..=XKB_MAX_GROUPS).contains(&layout) && mlvo == MLVO_OPTION {
-                    val_0.layout -= 1;
+    let bytes = if bytes.last() == Some(&b',') {
+        &bytes[..bytes.len() - 1]
+    } else {
+        bytes
+    };
+    bytes
+        .split(|&byte| byte == b',')
+        .map(|part| {
+            let bang = part.iter().position(|&byte| byte == b'!');
+            let mut value = MatchedSval {
+                sval: strip_spaces(Sval {
+                    data: &part[..bang.unwrap_or(part.len())],
+                }),
+                layout: OPTIONS_MATCH_ALL_GROUPS,
+                matched: false,
+            };
+            if let Some(bang) = bang {
+                let suffix = &part[bang + 1..];
+                let (layout, count) = parse_dec_u32(suffix);
+                if count > 0
+                    && count as usize == suffix.len()
+                    && (1..=XKB_MAX_GROUPS).contains(&layout)
+                    && mlvo == MLVO_OPTION
+                {
+                    value.layout -= 1;
                 }
             }
-            let layout_index_end = pos;
-            while pos < bytes.len() && bytes[pos] != b',' {
-                pos += 1;
-            }
-            if count == 0 || layout_index_end != pos {
-                val_0.layout = OPTIONS_MATCH_ALL_GROUPS;
-            }
-        }
-        arr.push(val_0);
-        if pos >= bytes.len() {
-            break;
-        }
-        if bytes[pos] == b',' {
-            pos += 1;
-        }
-    }
-    arr
+            value
+        })
+        .collect()
 }
 fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) -> Matcher<'a> {
     let mut m = Matcher::new(ctx);
-    let rmlvo_ref = rmlvo;
     m.rmlvo.model.sval = Sval {
-        data: rmlvo_ref.model.as_bytes(),
+        data: rmlvo.model.as_bytes(),
     };
     m.rmlvo.model.layout = OPTIONS_MATCH_ALL_GROUPS;
-    m.rmlvo.layouts = split_comma_separated_mlvo(
-        MLVO_LAYOUT,
-        if rmlvo_ref.layout.is_empty() {
-            None
-        } else {
-            Some(rmlvo_ref.layout.as_bytes())
-        },
-    );
-    m.rmlvo.variants = split_comma_separated_mlvo(
-        MLVO_VARIANT,
-        if rmlvo_ref.variant.is_empty() {
-            None
-        } else {
-            Some(rmlvo_ref.variant.as_bytes())
-        },
-    );
-    m.rmlvo.options = split_comma_separated_mlvo(
-        MLVO_OPTION,
-        if rmlvo_ref.options.is_empty() {
-            None
-        } else {
-            Some(rmlvo_ref.options.as_bytes())
-        },
-    );
-    let layouts_len = m.rmlvo.layouts.len();
-    if layouts_len > m.rmlvo.variants.len() {
-        vec_resize_zero_matched_sval(&mut m.rmlvo.variants, layouts_len);
-    } else if layouts_len < m.rmlvo.variants.len() {
-        m.rmlvo.variants.truncate(layouts_len);
-    }
+    m.rmlvo.layouts = split_comma_separated_mlvo(MLVO_LAYOUT, rmlvo.layout.as_bytes());
+    m.rmlvo.variants = split_comma_separated_mlvo(MLVO_VARIANT, rmlvo.variant.as_bytes());
+    m.rmlvo.options = split_comma_separated_mlvo(MLVO_OPTION, rmlvo.options.as_bytes());
+    m.rmlvo
+        .variants
+        .resize(m.rmlvo.layouts.len(), MatchedSval::default());
     m
-}
-fn matcher_group_start_new(m: &mut Matcher, name: &[u8]) {
-    let group: Group = Group {
-        name: name.to_vec(),
-        elements: Vec::new(),
-    };
-    m.groups.push(group);
-}
-fn matcher_group_add_element(m: &mut Matcher, element: &[u8]) {
-    let last_group = m.groups.last_mut().unwrap();
-    last_group.elements.push(element.to_vec());
 }
 fn matcher_include(m: &mut Matcher<'_>, include_depth: u32, inc: Sval) {
     if include_depth >= MAX_INCLUDE_DEPTH as u32 {
@@ -2882,28 +2535,13 @@ fn matcher_include(m: &mut Matcher<'_>, include_depth: u32, inc: Sval) {
     let expanded = stmt_file != inc_str;
 
     let mut offset: u32 = 0;
-    let mut file_and_path = find_include_file(
-        &mut *m.ctx,
-        &stmt_file,
-        FileType::Rules,
-        expanded,
-        &mut offset,
-    );
-
-    while let Some((ref file_data, ref _path)) = file_and_path {
-        let ret: bool = read_rules_file(m, include_depth.wrapping_add(1_u32), file_data);
-        let _ = file_and_path.take();
-        if ret {
+    while let Some((file_data, _)) =
+        find_include_file(m.ctx, &stmt_file, FileType::Rules, expanded, &mut offset)
+    {
+        if read_rules_file(m, include_depth + 1, &file_data) {
             return;
         }
         offset += 1;
-        file_and_path = find_include_file(
-            &mut *m.ctx,
-            &stmt_file,
-            FileType::Rules,
-            expanded,
-            &mut offset,
-        );
     }
 }
 fn matcher_mapping_start_new(m: &mut Matcher) {
@@ -3158,16 +2796,6 @@ fn matcher_rule_set_mlvo_common(m: &mut Matcher, ident: SvalIdx, match_type: u32
     m.rule.match_type_at_pos[m.rule.num_mlvo_values as usize] = match_type;
     m.rule.mlvo_value_at_pos[m.rule.num_mlvo_values as usize] = ident;
     m.rule.num_mlvo_values += 1;
-}
-fn matcher_rule_set_mlvo_wildcard(m: &mut Matcher, match_type: u32) {
-    let dummy = SvalIdx::EMPTY;
-    matcher_rule_set_mlvo_common(m, dummy, match_type);
-}
-fn matcher_rule_set_mlvo_group(m: &mut Matcher, ident: SvalIdx) {
-    matcher_rule_set_mlvo_common(m, ident, MLVO_MATCH_GROUP);
-}
-fn matcher_rule_set_mlvo(m: &mut Matcher, ident: SvalIdx) {
-    matcher_rule_set_mlvo_common(m, ident, MLVO_MATCH_NORMAL);
 }
 fn matcher_rule_set_kccgst(m: &mut Matcher, ident: SvalIdx) {
     if m.rule.num_kccgst_values as i32 >= m.mapping.num_kccgst as i32 {
@@ -3430,24 +3058,19 @@ fn expand_kccgst_value(m: &mut Matcher, value: Sval, layout_idx: u32) -> Option<
     }
 }
 fn matcher_append_pending_kccgst(m: &mut Matcher) {
-    if !matches!(m.mapping.layout, LayoutIdx::Range { .. }) {
-        return;
-    }
-    let (range_min, range_max) = if let LayoutIdx::Range {
+    let LayoutIdx::Range {
         layout_idx_min,
         layout_idx_max,
     } = m.mapping.layout
-    {
-        (layout_idx_min, layout_idx_max)
-    } else {
-        unreachable!()
+    else {
+        return;
     };
     for i in 0..m.mapping.num_kccgst as usize {
         let kccgst: u32 = m.mapping.kccgst_at_pos[i];
         if kccgst == KCCGST_GEOMETRY {
             continue;
         }
-        for layout in range_min..range_max {
+        for layout in layout_idx_min..layout_idx_max {
             for (slice_layout, value) in &m.pending_kccgst[kccgst as usize] {
                 if *slice_layout == layout {
                     concat_kccgst(&mut m.kccgst[kccgst as usize], value);
@@ -3456,13 +3079,6 @@ fn matcher_append_pending_kccgst(m: &mut Matcher) {
         }
     }
     m.mapping.layout = LayoutIdx::default();
-}
-fn matcher_rule_verify(m: &mut Matcher) {
-    if m.rule.num_mlvo_values as i32 != m.mapping.num_mlvo as i32
-        || m.rule.num_kccgst_values as i32 != m.mapping.num_kccgst as i32
-    {
-        m.rule.skip = true;
-    }
 }
 fn matcher_mlvo_matches(
     m: &mut Matcher,
@@ -3597,15 +3213,21 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
         have_bang = false;
         match gettok(m, s) {
             TOK_GROUP_NAME => {
-                matcher_group_start_new(m, m.val.string.as_sval(s.s).data);
+                m.groups.push(Group {
+                    name: m.val.as_sval(s.s).data.to_vec(),
+                    elements: Vec::new(),
+                });
                 if gettok(m, s) != TOK_EQUALS {
                     return false;
                 }
                 loop {
                     match gettok(m, s) {
-                        TOK_IDENTIFIER => {
-                            matcher_group_add_element(m, m.val.string.as_sval(s.s).data)
-                        }
+                        TOK_IDENTIFIER => m
+                            .groups
+                            .last_mut()
+                            .unwrap()
+                            .elements
+                            .push(m.val.as_sval(s.s).data.to_vec()),
                         TOK_END_OF_LINE => break,
                         _ => return false,
                     }
@@ -3615,18 +3237,18 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                 if gettok(m, s) != TOK_IDENTIFIER {
                     return false;
                 }
-                matcher_include(m, include_depth, m.val.string.as_sval(s.s));
+                matcher_include(m, include_depth, m.val.as_sval(s.s));
                 if gettok(m, s) != TOK_END_OF_LINE {
                     return false;
                 }
             }
             TOK_IDENTIFIER => {
                 matcher_mapping_start_new(m);
-                matcher_mapping_set_mlvo(m, m.val.string.as_sval(s.s));
+                matcher_mapping_set_mlvo(m, m.val.as_sval(s.s));
                 loop {
                     match gettok(m, s) {
                         TOK_IDENTIFIER if m.mapping.active_or_candidates_mask != 0 => {
-                            matcher_mapping_set_mlvo(m, m.val.string.as_sval(s.s))
+                            matcher_mapping_set_mlvo(m, m.val.as_sval(s.s))
                         }
                         TOK_IDENTIFIER => {}
                         TOK_EQUALS => break,
@@ -3636,7 +3258,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                 loop {
                     match gettok(m, s) {
                         TOK_IDENTIFIER if m.mapping.active_or_candidates_mask != 0 => {
-                            matcher_mapping_set_kccgst(m, m.val.string.as_sval(s.s))
+                            matcher_mapping_set_kccgst(m, m.val.as_sval(s.s))
                         }
                         TOK_IDENTIFIER => {}
                         TOK_END_OF_LINE => break,
@@ -3668,15 +3290,20 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                     loop {
                         match tok {
                             TOK_IDENTIFIER if !m.rule.skip => {
-                                if m.val.string.as_sval(s.s).data == b"+" {
-                                    matcher_rule_set_mlvo_wildcard(m, MLVO_MATCH_WILDCARD_SOME);
+                                if m.val.as_sval(s.s).data == b"+" {
+                                    matcher_rule_set_mlvo_common(
+                                        m,
+                                        SvalIdx::EMPTY,
+                                        MLVO_MATCH_WILDCARD_SOME,
+                                    );
                                 } else {
-                                    matcher_rule_set_mlvo(m, m.val.string);
+                                    matcher_rule_set_mlvo_common(m, m.val, MLVO_MATCH_NORMAL);
                                 }
                             }
                             TOK_WILD_CARD_STAR..=TOK_WILD_CARD_ANY if !m.rule.skip => {
-                                matcher_rule_set_mlvo_wildcard(
+                                matcher_rule_set_mlvo_common(
                                     m,
+                                    SvalIdx::EMPTY,
                                     [
                                         MLVO_MATCH_WILDCARD_LEGACY,
                                         MLVO_MATCH_WILDCARD_NONE,
@@ -3687,7 +3314,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                                 );
                             }
                             TOK_GROUP_NAME if !m.rule.skip => {
-                                matcher_rule_set_mlvo_group(m, m.val.string)
+                                matcher_rule_set_mlvo_common(m, m.val, MLVO_MATCH_GROUP)
                             }
                             TOK_IDENTIFIER
                             | TOK_WILD_CARD_STAR..=TOK_WILD_CARD_ANY
@@ -3699,16 +3326,15 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                     }
                     loop {
                         match gettok(m, s) {
-                            TOK_IDENTIFIER if !m.rule.skip => {
-                                matcher_rule_set_kccgst(m, m.val.string)
-                            }
+                            TOK_IDENTIFIER if !m.rule.skip => matcher_rule_set_kccgst(m, m.val),
                             TOK_IDENTIFIER => {}
                             TOK_END_OF_LINE => break,
                             _ => return false,
                         }
                     }
                     if !m.rule.skip {
-                        matcher_rule_verify(m);
+                        m.rule.skip = m.rule.num_mlvo_values != m.mapping.num_mlvo
+                            || m.rule.num_kccgst_values != m.mapping.num_kccgst;
                         if !m.rule.skip {
                             matcher_rule_apply_if_matches(m, s);
                         }
@@ -3721,27 +3347,17 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
 }
 fn read_rules_file(matcher: &mut Matcher<'_>, include_depth: u32, file_data: &[u8]) -> bool {
     let mut scanner = Scanner::new(file_data);
-    if !scanner.check_supported_char_encoding() {
-        return false;
-    }
-    matcher_match(matcher, &mut scanner, include_depth)
+    scanner.check_supported_char_encoding() && matcher_match(matcher, &mut scanner, include_depth)
 }
 fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_>) -> bool {
-    let partial_rules = format!("{}{}", rules, suffix);
+    let partial_rules = format!("{rules}{suffix}");
     if partial_rules.len() >= 60 {
         return false;
     }
-    let mut offset: u32 = 0;
-    loop {
-        let found = find_file_in_xkb_path(
-            &mut *matcher.ctx,
-            &partial_rules,
-            FileType::Rules,
-            &mut offset,
-        );
-        let Some((file_data, _path)) = found else {
-            break;
-        };
+    let mut offset = 0;
+    while let Some((file_data, _)) =
+        find_file_in_xkb_path(matcher.ctx, &partial_rules, FileType::Rules, &mut offset)
+    {
         if !read_rules_file(matcher, 0, &file_data) {
             return false;
         }
@@ -3755,9 +3371,10 @@ fn xkb_resolve_rules(
     out: &mut XkbComponentNames,
     explicit_layouts: &mut u32,
 ) -> bool {
-    let mut offset: u32 = 0;
-    let found = find_file_in_xkb_path(&mut *matcher.ctx, rules, FileType::Rules, &mut offset);
-    let Some((file_data, _path)) = found else {
+    let mut offset = 0;
+    let Some((file_data, _)) =
+        find_file_in_xkb_path(matcher.ctx, rules, FileType::Rules, &mut offset)
+    else {
         return false;
     };
     if !xkb_resolve_partial_rules(rules, ".pre", matcher)
@@ -3849,55 +3466,30 @@ pub(crate) struct XkbRuleNames {
     pub(crate) options: String,
 }
 
-impl XkbRuleNames {
-    pub(crate) fn from_strs(
-        rules: &str,
-        model: &str,
-        layout: &str,
-        variant: &str,
-        options: &str,
-    ) -> Self {
-        Self {
-            rules: rules.to_string(),
-            model: model.to_string(),
-            layout: layout.to_string(),
-            variant: variant.to_string(),
-            options: options.to_string(),
-        }
-    }
-}
-
-// ── Opaque types ────────────────────────────────────────────────────
-
-/// Atom table — thin wrapper around `lasso::Rodeo` for string interning.
-/// Atoms are `u32` keys where `0` is reserved as `XKB_ATOM_NONE`.
-#[derive(Clone)]
-pub(crate) struct AtomTable {
-    inner: lasso::Rodeo,
-}
-
-impl std::fmt::Debug for AtomTable {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("AtomTable").finish()
-    }
-}
-
-/// Create new atom table
-pub(crate) fn atom_table_new() -> AtomTable {
-    AtomTable {
-        inner: lasso::Rodeo::new(),
-    }
-}
-
 // ── XkbContext ─────────────────────────────────────────────────────
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub(crate) struct XkbContext {
     pub(crate) includes: Vec<String>,
     pub(crate) failed_includes: Vec<String>,
-    pub(crate) atom_table: AtomTable,
+    pub(crate) atom_table: lasso::Rodeo,
     pub(crate) use_environment_names: bool,
     pub(crate) pending_default_includes: bool,
+}
+
+impl XkbContext {
+    pub(crate) fn atom_text(&self, atom: u32) -> &str {
+        if atom == XKB_ATOM_NONE {
+            return "";
+        }
+        let key = lasso::Key::try_from_usize((atom - 1) as usize).expect("invalid atom key");
+        self.atom_table.try_resolve(&key).unwrap_or("")
+    }
+
+    pub(crate) fn atom_intern(&mut self, bytes: &[u8]) -> u32 {
+        let text = std::str::from_utf8(bytes).expect("atom string is not valid UTF-8");
+        self.atom_table.get_or_intern(text).into_usize() as u32 + 1
+    }
 }
 
 thread_local! {
@@ -3947,36 +3539,15 @@ pub(crate) struct XkbKeymap {
 }
 
 impl XkbKeymap {
-    /// Get modifier mask by name (safe via atom_lookup_ref)
     pub(crate) fn mod_get_mask(&self, name: &str) -> u32 {
-        let atom = atom_lookup_ref(&self.ctx.atom_table, name.as_bytes());
-        let idx = if atom == XKB_ATOM_NONE {
-            None
-        } else {
-            xkb_mod_name_to_index(&self.mods, atom, MOD_BOTH)
+        let Some(key) = self.ctx.atom_table.get(name) else {
+            return 0;
         };
-        match idx {
-            Some(i) if i < self.mods.num_mods => self.mods.mods[i as usize].mapping,
-            _ => 0_u32,
-        }
-    }
-
-    /// Get number of layouts in the keymap
-    pub(crate) fn num_layouts(&self) -> u32 {
-        self.num_groups
-    }
-
-    /// Get layout name by index
-    pub(crate) fn layout_get_name(&self, idx: u32) -> Option<String> {
-        if idx as usize >= self.group_names.len() {
-            return None;
-        }
-        let s = atom_text(&self.ctx.atom_table, self.group_names[idx as usize]);
-        if s.is_empty() {
-            None
-        } else {
-            Some(s.to_string())
-        }
+        let atom = key.into_usize() as u32 + 1;
+        xkb_mod_name_to_index(&self.mods, atom, MOD_BOTH)
+            .filter(|&idx| idx < self.mods.num_mods)
+            .map(|idx| self.mods.mods[idx as usize].mapping)
+            .unwrap_or(0)
     }
 }
 
@@ -4238,40 +3809,6 @@ pub(crate) struct XkbComponentNames {
 
 pub(crate) const XKB_ATOM_NONE: u32 = 0;
 
-/// Get text for an atom as a string slice.
-pub(crate) fn atom_text(table: &AtomTable, atom: u32) -> &str {
-    if atom == 0 {
-        return "";
-    }
-    // +1 offset: external atoms start at 1 (0=XKB_ATOM_NONE), lasso Spur keys start at 0
-    let key = lasso::Key::try_from_usize((atom - 1) as usize).expect("invalid atom key");
-    table.inner.try_resolve(&key).unwrap_or("")
-}
-
-/// Look up an existing atom without mutating the table.
-pub(crate) fn atom_lookup_ref(table: &AtomTable, input_bytes: &[u8]) -> u32 {
-    let s = match std::str::from_utf8(input_bytes) {
-        Ok(s) => s,
-        Err(_) => return XKB_ATOM_NONE,
-    };
-    // +1 offset: external atoms start at 1 (0=XKB_ATOM_NONE)
-    table
-        .inner
-        .get(s)
-        .map(|k| k.into_usize() as u32 + 1)
-        .unwrap_or(XKB_ATOM_NONE)
-}
-
-/// Intern a string into the atom table, returning its u32 key.
-pub(crate) fn atom_intern(table: &mut AtomTable, input_bytes: &[u8]) -> u32 {
-    let s = match std::str::from_utf8(input_bytes) {
-        Ok(s) => s,
-        Err(_) => panic!("atom string is not valid UTF-8"),
-    };
-    // +1 offset: external atoms start at 1 (0=XKB_ATOM_NONE)
-    table.inner.get_or_intern(s).into_usize() as u32 + 1
-}
-
 pub(crate) const DEFAULT_INTERPRET_KEY_REPEAT: u32 = 1;
 pub(crate) const DEFAULT_INTERPRET_VMOD: u32 = 4294967295;
 pub const XKB_MOD_NONE: u32 = 0xffffffff;
@@ -4307,55 +3844,30 @@ impl XkbKeymap {
         self.types[group.type_idx as usize].num_levels
     }
 
-    /// Safe wrapper around `XkbKeyByName`. Looks up a key by atom name using the key_names table.
-    #[inline]
-    pub(crate) fn key_by_name(&self, name: u32, use_aliases: bool) -> Option<&XkbKey> {
-        if (name as usize) < self.key_names.len() {
-            let match_0 = self.key_names[name as usize];
-            if match_0.found {
-                if !match_0.is_alias {
-                    return Some(&self.keys[match_0.index as usize]);
-                } else if use_aliases {
-                    let alias_match = self.key_names[match_0.index as usize];
-                    return Some(&self.keys[alias_match.index as usize]);
-                }
-            }
+    fn key_index_by_name(&self, name: u32, aliases: bool) -> Option<usize> {
+        let found = *self.key_names.get(name as usize)?;
+        match (found.found, found.is_alias && aliases) {
+            (true, true) => Some(self.key_names.get(found.index as usize)?.index as usize),
+            (true, false) if !found.is_alias => Some(found.index as usize),
+            _ => None,
         }
-        None
     }
 
-    /// Mutable version of `key_by_name`.
     #[inline]
-    pub(crate) fn key_by_name_mut(&mut self, name: u32, use_aliases: bool) -> Option<&mut XkbKey> {
-        if (name as usize) < self.key_names.len() {
-            let match_0 = self.key_names[name as usize];
-            if match_0.found {
-                if !match_0.is_alias {
-                    return Some(&mut self.keys[match_0.index as usize]);
-                } else if use_aliases {
-                    let alias_match = self.key_names[match_0.index as usize];
-                    return Some(&mut self.keys[alias_match.index as usize]);
-                }
-            }
-        }
-        None
+    pub(crate) fn key_by_name(&self, name: u32, aliases: bool) -> Option<&XkbKey> {
+        self.key_index_by_name(name, aliases)
+            .and_then(|idx| self.keys.get(idx))
     }
-}
 
-#[inline]
-pub(crate) fn entry_is_active(entry: &XkbKeyTypeEntry) -> bool {
-    entry.mods.mods == 0 || entry.mods.mask != 0
+    #[inline]
+    pub(crate) fn key_by_name_mut(&mut self, name: u32, aliases: bool) -> Option<&mut XkbKey> {
+        let idx = self.key_index_by_name(name, aliases)?;
+        self.keys.get_mut(idx)
+    }
 }
 
 // Error codes (from xkbcommon_errors_h)
 pub(crate) const XKB_KEY_NO_SYMBOL: u32 = 0;
-
-// ── rmlvo_h (RMLVO enum) ─────────────────────────────────────────────
-pub(crate) const RMLVO_OPTIONS: u32 = 16;
-pub(crate) const RMLVO_VARIANT: u32 = 8;
-pub(crate) const RMLVO_LAYOUT: u32 = 4;
-pub(crate) const RMLVO_MODEL: u32 = 2;
-pub(crate) const RMLVO_RULES: u32 = 1;
 
 #[derive(Copy, Clone)]
 pub(crate) struct LookupEntry {
@@ -4487,17 +3999,14 @@ pub(crate) struct KeyAliasDef {
     pub(crate) real: u32,
 }
 
-pub(crate) struct KeyTypeDef {
+pub(crate) struct NamedVarDef {
     pub(crate) merge: MergeMode,
     pub(crate) name: u32,
     pub(crate) body: Vec<VarDef>,
 }
-
-pub(crate) struct SymbolsDef {
-    pub(crate) merge: MergeMode,
-    pub(crate) key_name: u32,
-    pub(crate) symbols: Vec<VarDef>,
-}
+pub(crate) type KeyTypeDef = NamedVarDef;
+pub(crate) type SymbolsDef = NamedVarDef;
+pub(crate) type LedMapDef = NamedVarDef;
 
 pub(crate) struct ModMapDef {
     pub(crate) merge: MergeMode,
@@ -4515,12 +4024,6 @@ pub(crate) struct LedNameDef {
     pub(crate) merge: MergeMode,
     pub(crate) ndx: i64,
     pub(crate) name: Option<ExprKind>,
-}
-
-pub(crate) struct LedMapDef {
-    pub(crate) merge: MergeMode,
-    pub(crate) name: u32,
-    pub(crate) body: Vec<VarDef>,
 }
 
 pub(crate) const MAP_IS_ALTGR: u32 = 128;
@@ -4652,38 +4155,6 @@ pub(crate) fn parse_hex_u32(s: &[u8]) -> (u32, i32) {
 }
 fn parse_hex_u64(s: &[u8]) -> (u64, i32) {
     parse_uint(s, 16, u64::MAX)
-}
-
-// ── UTF-8 decoding (migrated from utf8_decoding.rs) ──
-
-/// Invalid UTF-8 code point marker
-pub(crate) const INVALID_UTF8_CODE_POINT: u32 = u32::MAX;
-
-/// Decode next UTF-8 code point from byte slice.
-pub(crate) fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
-    let Some(&first) = bytes.first() else {
-        return (INVALID_UTF8_CODE_POINT, 0);
-    };
-
-    let len = match first {
-        0x00..=0x7f => 1,
-        0xc2..=0xdf => 2,
-        0xe0..=0xef => 3,
-        0xf0..=0xf4 => 4,
-        _ => return (INVALID_UTF8_CODE_POINT, 0),
-    };
-
-    let Some(candidate) = bytes.get(..len) else {
-        return (INVALID_UTF8_CODE_POINT, 0);
-    };
-
-    match std::str::from_utf8(candidate)
-        .ok()
-        .and_then(|s| s.chars().next())
-    {
-        Some(ch) => (ch as u32, len),
-        None => (INVALID_UTF8_CODE_POINT, 0),
-    }
 }
 
 #[cfg(test)]

@@ -1,5 +1,4 @@
 use std::rc::Rc;
-use std::sync::LazyLock;
 
 use arrayvec::ArrayVec;
 
@@ -7,8 +6,8 @@ use crate::xkb::keysym::keysym_to_codepoint;
 
 pub use super::parser::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
 pub(crate) use super::parser::{
-    XkbAction, XkbContext, XkbKeymap, XkbLed, XkbLevel, XkbModSet, XkbRuleNames, MOD_REAL,
-    MOD_REAL_MASK_ALL, XKB_KEYMAP_FORMAT_TEXT_V2,
+    XkbAction, XkbContext, XkbKeymap, XkbLed, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL,
+    XKB_KEYMAP_FORMAT_TEXT_V2,
 };
 
 pub(crate) fn xkb_keymap_new_from_names(
@@ -20,9 +19,17 @@ pub(crate) fn xkb_keymap_new_from_names(
     let mut rmlvo = rmlvo.clone();
     xkb_context_sanitize_rule_names(&ctx, &mut rmlvo);
     let mut keymap = xkb_keymap_new(ctx, format, flags)?;
-    if !super::parser::text_v1_keymap_new_from_names(&mut keymap, &rmlvo) {
-        return None;
-    }
+    let mut components = XkbComponentNames::default();
+    xkb_components_from_rules_names(
+        &mut keymap.ctx,
+        &rmlvo,
+        &mut components,
+        &mut keymap.num_groups,
+    )
+    .then_some(())?;
+    keymap.num_groups = keymap.num_groups.min(XKB_MAX_GROUPS);
+    let mut file = xkb_file_from_components(&components)?;
+    (file.file_type == FileType::Keymap && compile_keymap(&mut file, &mut keymap)).then_some(())?;
     Some(Rc::new(*keymap))
 }
 pub(crate) fn xkb_keymap_new_from_string(
@@ -40,9 +47,8 @@ pub(crate) fn xkb_keymap_new_from_string(
     if length > 0 && bytes[length - 1] == 0 {
         length -= 1;
     }
-    if !super::parser::text_v1_keymap_new_from_string(&mut keymap, &bytes[..length]) {
-        return None;
-    }
+    let mut file = xkb_parse_string(&mut keymap.ctx, &bytes[..length], "")?;
+    (file.file_type == FileType::Keymap && compile_keymap(&mut file, &mut keymap)).then_some(())?;
     Some(Rc::new(*keymap))
 }
 
@@ -159,30 +165,17 @@ fn parse_rule_line(line: &str) -> Option<ComposeEntry> {
 
     let mut keys: ArrayVec<char, 8> = ArrayVec::new();
     let mut multi_key_index: Option<usize> = None;
-    let mut pos = 0;
-    let lhs_bytes = lhs.as_bytes();
-    while pos < lhs_bytes.len() {
-        if lhs_bytes[pos] == b'<' {
-            let end = lhs[pos..].find('>')? + pos;
-            let name = &lhs[pos + 1..end];
-            if name.eq_ignore_ascii_case("Multi_key") {
-                if multi_key_index.is_none() {
-                    multi_key_index = Some(keys.len());
-                }
-            } else {
-                let ch = keysym_name_to_char(name)?;
-                keys.push(ch);
+    for item in lhs.split('<').skip(1) {
+        let (name, _) = item.split_once('>')?;
+        if name.eq_ignore_ascii_case("Multi_key") {
+            if multi_key_index.is_none() {
+                multi_key_index = Some(keys.len());
             }
-            pos = end + 1;
         } else {
-            pos += 1;
+            keys.push(keysym_name_to_char(name)?);
         }
     }
-
-    if keys.is_empty() {
-        return None;
-    }
-
+    (!keys.is_empty()).then_some(())?;
     let output = parse_rhs_value(rhs)?;
 
     Some(ComposeEntry {
@@ -192,29 +185,22 @@ fn parse_rule_line(line: &str) -> Option<ComposeEntry> {
     })
 }
 
-#[allow(clippy::manual_strip)]
 /// Parse the RHS value: `"string" [keysym]` or bare `keysym_name`
 fn parse_rhs_value(rhs: &str) -> Option<char> {
     let rhs = rhs.trim();
-    if rhs.starts_with('"') {
-        let end_quote = rhs[1..].find('"')? + 1;
-        let s = &rhs[1..end_quote];
-        if !s.is_empty() && !s.starts_with('\\') {
-            if let Some(ch) = s.chars().next() {
-                if !ch.is_ascii_digit() {
-                    return Some(ch);
-                }
+    if let Some(quoted) = rhs.strip_prefix('"') {
+        let (s, after) = quoted.split_once('"')?;
+        if let Some(ch) = s.chars().next() {
+            if !s.starts_with('\\') && !ch.is_ascii_digit() {
+                return Some(ch);
             }
         }
-        let after = rhs[end_quote + 1..].trim();
-        if !after.is_empty() {
-            let name = after.split_whitespace().next()?;
+        if let Some(name) = after.split_whitespace().next() {
             return keysym_name_to_char(name);
         }
         s.chars().next()
     } else {
-        let name = rhs.split_whitespace().next()?;
-        keysym_name_to_char(name)
+        keysym_name_to_char(rhs.split_whitespace().next()?)
     }
 }
 
@@ -249,7 +235,10 @@ fn lookup_compose_dir(locale: &str) -> Option<String> {
 /// Resolve a locale name to the compose file sub-path (relative to
 /// `/usr/share/X11/locale/`) that should be used.
 pub fn resolve_compose_file(locale: &str) -> Option<String> {
-    if let Some(&mapped_locale) = XKB_COMPOSE_MAP.get(locale) {
+    if let Some(mapped_locale) = XKB_COMPOSE_MAP
+        .iter()
+        .find_map(|&(name, mapped)| (name == locale).then_some(mapped))
+    {
         if let Some(compose_file) = lookup_compose_dir(mapped_locale) {
             return Some(compose_file);
         }
@@ -286,74 +275,55 @@ pub fn resolve_compose_file(locale: &str) -> Option<String> {
     lookup_compose_dir("en_US.UTF-8")
 }
 
-use std::collections::BTreeMap;
-
-static XKB_COMPOSE_MAP: LazyLock<BTreeMap<&'static str, &'static str>> = LazyLock::new(|| {
-    [
-        ("us", "en_US.UTF-8"),
-        ("gb", "en_GB.UTF-8"),
-        ("au", "en_AU.UTF-8"),
-        ("nz", "en_NZ.UTF-8"),
-        ("za", "en_ZA.UTF-8"),
-        ("bw", "en_BW.UTF-8"),
-        ("no", "nb_NO.UTF-8"),
-        ("dk", "da_DK.UTF-8"),
-        ("se", "sv_SE.UTF-8"),
-        ("at", "de_AT.UTF-8"),
-        ("ch", "de_CH.UTF-8"),
-        ("cz", "cs_CZ.UTF-8"),
-        ("gr", "el_GR.UTF-8"),
-        ("rs", "sr_RS.UTF-8"),
-        ("me", "sr_ME.UTF-8"),
-        ("al", "sq_AL.UTF-8"),
-        ("ba", "bs_BA.UTF-8"),
-        ("by", "be_BY.UTF-8"),
-        ("ge", "ka_GE.UTF-8"),
-        ("ua", "uk_UA.UTF-8"),
-        ("jp", "ja_JP.UTF-8"),
-        ("kr", "ko_KR.UTF-8"),
-        ("cn", "zh_CN.UTF-8"),
-        ("tw", "zh_TW.UTF-8"),
-        ("kh", "km_KH.UTF-8"),
-        ("vn", "vi_VN.UTF-8"),
-        ("in", "hi_IN.UTF-8"),
-        ("bd", "bn_BD.UTF-8"),
-        ("lk", "si_LK.UTF-8"),
-        ("np", "ne_NP.UTF-8"),
-        ("pk", "ur_PK.UTF-8"),
-        ("il", "he_IL.UTF-8"),
-        ("ara", "ar_SA.UTF-8"),
-        ("iq", "ar_IQ.UTF-8"),
-        ("ir", "fa_IR.UTF-8"),
-        ("sy", "ar_SY.UTF-8"),
-        ("eg", "ar_EG.UTF-8"),
-        ("dz", "ar_DZ.UTF-8"),
-        ("ma", "ar_MA.UTF-8"),
-        ("kg", "ky_KG.UTF-8"),
-        ("kz", "kk_KZ.UTF-8"),
-        ("tj", "tg_TJ.UTF-8"),
-        ("la", "lo_LA.UTF-8"),
-        ("my", "ms_MY.UTF-8"),
-        ("ie", "ga_IE.UTF-8"),
-        ("epo", "eo_XX.UTF-8"),
-        ("latam", "es_MX.UTF-8"),
-    ]
-    .into()
-});
-pub(crate) fn xkb_keymap_key_get_syms_by_level_ref(
-    keymap: &XkbKeymap,
-    kc: u32,
-    layout: u32,
-    level: u32,
-) -> &[u32] {
-    keymap
-        .get_key(kc)
-        .and_then(|k| k.groups.get(layout as usize))
-        .and_then(|g| g.levels.get(level as usize))
-        .map(|lvl| lvl.syms.as_slice())
-        .unwrap_or(&[])
-}
-
+static XKB_COMPOSE_MAP: &[(&str, &str)] = &[
+    ("us", "en_US.UTF-8"),
+    ("gb", "en_GB.UTF-8"),
+    ("au", "en_AU.UTF-8"),
+    ("nz", "en_NZ.UTF-8"),
+    ("za", "en_ZA.UTF-8"),
+    ("bw", "en_BW.UTF-8"),
+    ("no", "nb_NO.UTF-8"),
+    ("dk", "da_DK.UTF-8"),
+    ("se", "sv_SE.UTF-8"),
+    ("at", "de_AT.UTF-8"),
+    ("ch", "de_CH.UTF-8"),
+    ("cz", "cs_CZ.UTF-8"),
+    ("gr", "el_GR.UTF-8"),
+    ("rs", "sr_RS.UTF-8"),
+    ("me", "sr_ME.UTF-8"),
+    ("al", "sq_AL.UTF-8"),
+    ("ba", "bs_BA.UTF-8"),
+    ("by", "be_BY.UTF-8"),
+    ("ge", "ka_GE.UTF-8"),
+    ("ua", "uk_UA.UTF-8"),
+    ("jp", "ja_JP.UTF-8"),
+    ("kr", "ko_KR.UTF-8"),
+    ("cn", "zh_CN.UTF-8"),
+    ("tw", "zh_TW.UTF-8"),
+    ("kh", "km_KH.UTF-8"),
+    ("vn", "vi_VN.UTF-8"),
+    ("in", "hi_IN.UTF-8"),
+    ("bd", "bn_BD.UTF-8"),
+    ("lk", "si_LK.UTF-8"),
+    ("np", "ne_NP.UTF-8"),
+    ("pk", "ur_PK.UTF-8"),
+    ("il", "he_IL.UTF-8"),
+    ("ara", "ar_SA.UTF-8"),
+    ("iq", "ar_IQ.UTF-8"),
+    ("ir", "fa_IR.UTF-8"),
+    ("sy", "ar_SY.UTF-8"),
+    ("eg", "ar_EG.UTF-8"),
+    ("dz", "ar_DZ.UTF-8"),
+    ("ma", "ar_MA.UTF-8"),
+    ("kg", "ky_KG.UTF-8"),
+    ("kz", "kk_KZ.UTF-8"),
+    ("tj", "tg_TJ.UTF-8"),
+    ("la", "lo_LA.UTF-8"),
+    ("my", "ms_MY.UTF-8"),
+    ("ie", "ga_IE.UTF-8"),
+    ("epo", "eo_XX.UTF-8"),
+    ("latam", "es_MX.UTF-8"),
+];
 pub(crate) const XKB_MOD_NAME_SHIFT: &str = "Shift";
 pub(crate) const XKB_MOD_NAME_CAPS: &str = "Lock";
 pub(crate) const XKB_MOD_NAME_CTRL: &str = "Control";
@@ -399,7 +369,7 @@ pub(crate) fn xkb_keymap_new(ctx: XkbContext, format: u32, flags: u32) -> Option
         XKB_MOD_NAME_MOD5,
     ];
     for (i, name) in BUILTIN_MODS.iter().enumerate() {
-        keymap.mods.mods[i].name = atom_intern(&mut keymap.ctx.atom_table, name.as_bytes());
+        keymap.mods.mods[i].name = keymap.ctx.atom_intern(name.as_bytes());
         keymap.mods.mods[i].type_0 = MOD_REAL;
         keymap.mods.mods[i].mapping = 1_u32 << i;
     }
@@ -437,9 +407,6 @@ pub(crate) fn xkb_mod_name_to_index(mods: &XkbModSet, name: u32, type_0: u32) ->
     }
     None
 }
-pub(crate) fn xkb_levels_same_syms(a: &XkbLevel, b: &XkbLevel) -> bool {
-    a.syms == b.syms
-}
 pub(crate) fn action_equal(a: &XkbAction, b: &XkbAction) -> bool {
     match (a, b) {
         (XkbAction::None, XkbAction::None) | (XkbAction::Void, XkbAction::Void) => true,
@@ -462,17 +429,6 @@ pub(crate) fn action_equal(a: &XkbAction, b: &XkbAction) -> bool {
         _ => false,
     }
 }
-pub(crate) fn xkb_levels_same_actions(a: &XkbLevel, b: &XkbLevel) -> bool {
-    if a.actions.len() != b.actions.len() {
-        return false;
-    }
-    for k in 0..a.actions.len() {
-        if !action_equal(&a.actions[k], &b.actions[k]) {
-            return false;
-        }
-    }
-    true
-}
 pub(crate) fn xkb_wrap_group_into_range(
     group: i32,
     num_groups: u32,
@@ -482,46 +438,30 @@ pub(crate) fn xkb_wrap_group_into_range(
     if num_groups == 0 {
         return None;
     }
-    if group >= 0_i32 && (group as u32) < num_groups {
+    if group >= 0 && group < num_groups as i32 {
         return Some(group as u32);
     }
     match out_of_range_group_policy {
-        2 => {
-            if out_of_range_group_number >= num_groups {
-                return Some(0);
-            }
-            Some(out_of_range_group_number)
-        }
-        1 => {
-            if group < 0_i32 {
-                Some(0_u32)
-            } else {
-                Some(num_groups.wrapping_sub(1))
-            }
-        }
+        2 => Some(if out_of_range_group_number < num_groups {
+            out_of_range_group_number
+        } else {
+            0
+        }),
+        1 => Some(if group < 0 { 0 } else { num_groups - 1 }),
         _ => {
-            let rem: i32 = group % num_groups as i32;
-            Some(
-                (if rem >= 0_i32 {
-                    rem
-                } else {
-                    rem + num_groups as i32
-                }) as u32,
-            )
+            let rem = group % num_groups as i32;
+            Some(if rem < 0 {
+                (rem + num_groups as i32) as u32
+            } else {
+                rem as u32
+            })
         }
     }
 }
 
-use std::env::VarError;
-
-use super::parser::{atom_intern, atom_table_new};
-
 use super::parser::{
     DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
     DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
-};
-pub(crate) use super::parser::{
-    RMLVO_LAYOUT, RMLVO_MODEL, RMLVO_OPTIONS, RMLVO_RULES, RMLVO_VARIANT,
 };
 fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> i32 {
     let is_dir = std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false);
@@ -533,10 +473,6 @@ fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> i32 {
         ctx.failed_includes.push(path.to_string());
     }
     0_i32
-}
-
-pub(crate) fn xkb_context_include_path_get_extra_path() -> String {
-    getenv_or("XKB_CONFIG_EXTRA_PATH", DFLT_XKB_CONFIG_EXTRA_PATH)
 }
 
 /// Convert a null-terminated `[i8]` constant to a Rust `String`.
@@ -601,68 +537,63 @@ fn add_direct_subdirectories(
     ret
 }
 
-pub(crate) fn xkb_context_include_path_get_system_path() -> String {
-    getenv_or("XKB_CONFIG_ROOT", DFLT_XKB_CONFIG_ROOT)
-}
-
 pub(crate) fn xkb_context_include_path_append_default(ctx: &mut XkbContext) -> i32 {
-    {
-        let mut ret: i32 = 0;
-        let home = xkb_context_getenv("HOME");
-        let xdg = xkb_context_getenv("XDG_CONFIG_HOME");
-        if let Ok(ref xdg) = xdg {
-            ret |= context_include_path_append(ctx, &format!("{}/xkb", xdg));
-        } else if let Ok(ref home) = home {
-            ret |= context_include_path_append(ctx, &format!("{}/.config/xkb", home));
-        }
-        if let Ok(ref home) = home {
-            ret |= context_include_path_append(ctx, &format!("{}/.xkb", home));
-        }
-        let extra = xkb_context_include_path_get_extra_path();
-        ret |= context_include_path_append(ctx, &extra);
-
-        let mut extensions: Vec<String> = Vec::new();
-        let versioned_path = getenv_or(
-            "XKB_CONFIG_VERSIONED_EXTENSIONS_PATH",
-            DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH,
-        );
-        let mut versioned_path_length: usize = 0;
-        if !versioned_path.is_empty() {
-            ret |= add_direct_subdirectories(ctx, &versioned_path, &mut extensions, 0, 0);
-            versioned_path_length = versioned_path.len();
-        }
-        let unversioned_path = getenv_or(
-            "XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH",
-            DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
-        );
-        if !unversioned_path.is_empty() {
-            let versioned_count = extensions.len();
-            ret |= add_direct_subdirectories(
-                ctx,
-                &unversioned_path,
-                &mut extensions,
-                versioned_count,
-                versioned_path_length,
-            );
-        }
-
-        let root = xkb_context_include_path_get_system_path();
-        let has_root: bool = context_include_path_append(ctx, &root) != 0;
-        ret |= has_root as i32;
-        if !has_root && !root.is_empty() {
-            let legacy = DFLT_XKB_LEGACY_ROOT.to_string();
-            ret |= context_include_path_append(ctx, &legacy);
-        }
-        ret
+    let mut ret: i32 = 0;
+    let home = std::env::var("HOME");
+    let xdg = std::env::var("XDG_CONFIG_HOME");
+    if let Ok(ref xdg) = xdg {
+        ret |= context_include_path_append(ctx, &format!("{}/xkb", xdg));
+    } else if let Ok(ref home) = home {
+        ret |= context_include_path_append(ctx, &format!("{}/.config/xkb", home));
     }
+    if let Ok(ref home) = home {
+        ret |= context_include_path_append(ctx, &format!("{}/.xkb", home));
+    }
+    ret |= context_include_path_append(
+        ctx,
+        &getenv_or("XKB_CONFIG_EXTRA_PATH", DFLT_XKB_CONFIG_EXTRA_PATH),
+    );
+
+    let mut extensions: Vec<String> = Vec::new();
+    let versioned_path = getenv_or(
+        "XKB_CONFIG_VERSIONED_EXTENSIONS_PATH",
+        DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH,
+    );
+    if !versioned_path.is_empty() {
+        ret |= add_direct_subdirectories(ctx, &versioned_path, &mut extensions, 0, 0);
+    }
+    let unversioned_path = getenv_or(
+        "XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH",
+        DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
+    );
+    if !unversioned_path.is_empty() {
+        let versioned_count = extensions.len();
+        ret |= add_direct_subdirectories(
+            ctx,
+            &unversioned_path,
+            &mut extensions,
+            versioned_count,
+            versioned_path.len(),
+        );
+    }
+
+    let root = getenv_or("XKB_CONFIG_ROOT", DFLT_XKB_CONFIG_ROOT);
+    let has_root = context_include_path_append(ctx, &root) != 0;
+    ret |= has_root as i32;
+    if !has_root && !root.is_empty() {
+        ret |= context_include_path_append(ctx, DFLT_XKB_LEGACY_ROOT);
+    }
+    ret
 }
 
 pub(crate) fn xkb_context_num_include_paths(ctx: &mut XkbContext) -> u32 {
-    if xkb_context_init_includes(ctx) {
-        ctx.includes.len() as u32
-    } else {
-        0_u32
+    if ctx.pending_default_includes {
+        if !ctx.failed_includes.is_empty() || xkb_context_include_path_append_default(ctx) == 0 {
+            return 0;
+        }
+        ctx.pending_default_includes = false;
     }
+    ctx.includes.len() as u32
 }
 pub(crate) fn xkb_context_include_path_get(ctx: &mut XkbContext, idx: u32) -> String {
     if idx >= xkb_context_num_include_paths(ctx) {
@@ -675,7 +606,7 @@ pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
     let mut ctx = XkbContext {
         includes: Vec::new(),
         failed_includes: Vec::new(),
-        atom_table: atom_table_new(),
+        atom_table: Default::default(),
         use_environment_names: false,
         pending_default_includes: false,
     };
@@ -690,31 +621,14 @@ pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
     ctx
 }
 
-pub(crate) fn xkb_context_getenv(name: &str) -> Result<String, VarError> {
-    std::env::var(name)
+pub(crate) fn getenv_or(name: &str, default: &str) -> String {
+    std::env::var(name).unwrap_or_else(|_| default.into())
 }
-fn getenv_or(name: &str, default: &str) -> String {
-    xkb_context_getenv(name).unwrap_or_else(|_| default.into())
-}
-pub(crate) fn xkb_context_init_includes(ctx: &mut XkbContext) -> bool {
-    if ctx.pending_default_includes {
-        if ctx.failed_includes.is_empty() {
-            if xkb_context_include_path_append_default(ctx) == 0 {
-                return false;
-            }
-            ctx.pending_default_includes = false;
-        } else {
-            return false;
-        }
-    }
-    true
-}
-pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbRuleNames) -> u32 {
-    let mut modified: u32 = 0_u32;
-    for (value, name, default, flag) in [
-        (&mut rmlvo.rules, "XKB_DEFAULT_RULES", "evdev", RMLVO_RULES),
-        (&mut rmlvo.model, "XKB_DEFAULT_MODEL", "pc105", RMLVO_MODEL),
-        (&mut rmlvo.options, "XKB_DEFAULT_OPTIONS", "", RMLVO_OPTIONS),
+pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbRuleNames) {
+    for (value, name, default) in [
+        (&mut rmlvo.rules, "XKB_DEFAULT_RULES", "evdev"),
+        (&mut rmlvo.model, "XKB_DEFAULT_MODEL", "pc105"),
+        (&mut rmlvo.options, "XKB_DEFAULT_OPTIONS", ""),
     ] {
         if value.is_empty() {
             *value = if ctx.use_environment_names {
@@ -722,27 +636,22 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
             } else {
                 default.into()
             };
-            modified |= flag;
         }
     }
     if rmlvo.layout.is_empty() {
         let layout = ctx
             .use_environment_names
-            .then(|| xkb_context_getenv("XKB_DEFAULT_LAYOUT").ok())
+            .then(|| std::env::var("XKB_DEFAULT_LAYOUT").ok())
             .flatten();
         rmlvo.variant = layout
             .as_ref()
-            .and_then(|_| xkb_context_getenv("XKB_DEFAULT_VARIANT").ok())
+            .and_then(|_| std::env::var("XKB_DEFAULT_VARIANT").ok())
             .unwrap_or_default();
         rmlvo.layout = layout.unwrap_or_else(|| "us".into());
-        modified |= RMLVO_LAYOUT | RMLVO_VARIANT;
     }
-    modified
 }
 
 use super::parser::*;
-pub(crate) const CONTROL_NAMES_MIN_V2_INDEX: u32 = 0;
-pub(crate) const CONTROL_NAMES_MIN_V1_INDEX: u32 = 7;
 pub(crate) const GROUP_LAST_INDEX_NAME: &str = "last";
 
 pub use super::parser::{
