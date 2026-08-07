@@ -507,11 +507,7 @@ fn level5_transform_mods(
 }
 
 /// Build WKB instance from an XKB keymap, extracting all layouts.
-fn build_wkb_from_keymap(
-    keymap: &keymap::XkbKeymap,
-    layout_locales: Option<&str>,
-    store_keymap: bool,
-) -> WKB {
+fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str>) -> WKB {
     const EVDEV_OFFSET: u32 = 8;
 
     let (min_keycode, max_keycode) = (keymap.min_key_code, keymap.max_key_code);
@@ -752,7 +748,6 @@ fn build_wkb_from_keymap(
         });
     }
 
-    let _ = store_keymap;
     WKB {
         current_layout_idx: 0,
         layouts,
@@ -776,7 +771,7 @@ pub(crate) fn new_from_names(
     let keymap = xkb_keymap_new_from_names(ctx, &rmlvo, XKB_KEYMAP_COMPILE_NO_FLAGS)
         .ok_or(XkbError::KeymapCompilation)?;
 
-    let result = build_wkb_from_keymap(&keymap, Some(layout), true);
+    let result = build_wkb_from_keymap(&keymap, Some(layout));
     Ok(result)
 }
 
@@ -797,7 +792,7 @@ pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
     .ok_or(XkbError::KeymapCompilation)?;
     let keymap = keymap;
 
-    Ok(build_wkb_from_keymap(&keymap, None, true))
+    Ok(build_wkb_from_keymap(&keymap, None))
 }
 
 fn modtype_from_name(name: &str) -> Option<ModType> {

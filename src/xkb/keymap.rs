@@ -19,7 +19,7 @@ pub(crate) fn xkb_keymap_new_from_names(
     let format = XKB_KEYMAP_FORMAT_TEXT_V2;
     let mut rmlvo = rmlvo.clone();
     xkb_context_sanitize_rule_names(&ctx, &mut rmlvo);
-    let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_names2", format, flags)?;
+    let mut keymap = xkb_keymap_new(ctx, format, flags)?;
     if !super::parser::text_v1_keymap_new_from_names(&mut keymap, &rmlvo) {
         return None;
     }
@@ -36,7 +36,7 @@ pub(crate) fn xkb_keymap_new_from_string(
     if bytes.is_empty() {
         return None;
     }
-    let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_buffer", format, flags)?;
+    let mut keymap = xkb_keymap_new(ctx, format, flags)?;
     if length > 0 && bytes[length - 1] == 0 {
         length -= 1;
     }
@@ -363,12 +363,7 @@ pub(crate) const XKB_MOD_NAME_MOD3: &str = "Mod3";
 pub(crate) const XKB_MOD_NAME_MOD4: &str = "Mod4";
 pub(crate) const XKB_MOD_NAME_MOD5: &str = "Mod5";
 
-pub(crate) fn xkb_keymap_new(
-    ctx: XkbContext,
-    _func: &str,
-    format: u32,
-    flags: u32,
-) -> Option<Box<XkbKeymap>> {
+pub(crate) fn xkb_keymap_new(ctx: XkbContext, format: u32, flags: u32) -> Option<Box<XkbKeymap>> {
     static XKB_KEYMAP_COMPILE_FLAGS: u32 = XKB_KEYMAP_COMPILE_FLAGS_VALUES;
     if flags & !XKB_KEYMAP_COMPILE_FLAGS != 0 {
         return None;

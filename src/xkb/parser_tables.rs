@@ -16,12 +16,6 @@ pub(crate) enum Action {
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Transition(Symbol, i16);
 
-impl Transition {
-    pub(crate) fn symbol(&self) -> Symbol {
-        self.0
-    }
-}
-
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct State(u16, u8, i16);
 
@@ -83,22 +77,6 @@ symbols! {
     SYM_OverlayKey = 112, SYM_OutlineList = 113, SYM_OutlineInList = 114, SYM_CoordList = 115, SYM_Coord = 116, SYM_DoodadDecl = 117, SYM_DoodadType = 118, SYM_FieldSpec = 119, SYM_Element = 120, SYM_OptMergeMode = 121, SYM_MergeMode = 122, SYM_ExprList = 123, SYM_Expr = 124, SYM_Term = 125, SYM_MultiActionList = 126, SYM_ActionList = 127,
     SYM_NonEmptyActions = 128, SYM_Actions = 129, SYM_Action = 130, SYM_Lhs = 131, SYM_OptTerminal = 132, SYM_Terminal = 133, SYM_MultiKeySymList = 134, SYM_KeySymList = 135, SYM_NonEmptyKeySyms = 136, SYM_KeySyms = 137, SYM_KeySym = 138, SYM_KeySymLit = 139, SYM_SignedNumber = 140, SYM_Number = 141, SYM_Float = 142, SYM_Integer = 143,
     SYM_KeyCode = 144, SYM_Ident = 145, SYM_String = 146, SYM_OptMapName = 147, SYM_MapName = 148,
-}
-
-#[rustfmt::skip]
-static SYMBOL_NAMES: &[&str; NTOKENS as usize] = &[
-    "end of file", "error", "invalid token", "invalid token", "xkb_keymap", "xkb_keycodes", "xkb_types", "xkb_symbols", "xkb_compatibility", "xkb_geometry", "xkb_semantics", "xkb_layout", "include", "override", "augment", "replace",
-    "alternate", "virtual_modifiers", "type", "interpret", "action", "key", "alias", "group", "modifier_map", "indicator", "shape", "keys", "row", "section", "overlay", "text",
-    "outline", "solid", "logo", "virtual", "=", "+", "-", "/", "*", "{", "}", "(", ")", "[", "]", ".",
-    ",", ";", "!", "~", "string literal", "decimal digit", "integer literal", "float literal", "identifier", "key name", "partial", "default", "hidden", "alphanumeric_keys", "modifier_keys", "keypad_keys",
-    "function_keys", "alternate_group",
-];
-pub(crate) fn symbol_name(symbol: i32) -> &'static str {
-    usize::try_from(symbol)
-        .ok()
-        .and_then(|i| SYMBOL_NAMES.get(i))
-        .copied()
-        .unwrap_or("invalid token")
 }
 
 macro_rules! tr {

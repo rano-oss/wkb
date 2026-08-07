@@ -28,7 +28,7 @@ pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbR
     if keymap.num_groups > max_groups {
         keymap.num_groups = max_groups;
     }
-    let Some(mut file) = xkb_file_from_components(&mut keymap.ctx, &kccgst) else {
+    let Some(mut file) = xkb_file_from_components(&kccgst) else {
         return false;
     };
     compile_keymap_file(keymap, &mut file)
@@ -58,10 +58,6 @@ pub(crate) struct ParserParam<'a> {
 
 // ── Helper functions ────────────────────────────────────────────────
 
-fn _xkbcommon_error(param: &mut ParserParam, _msg: &str) {
-    let _loc: ScannerLoc = param.scanner.token_location();
-}
-
 fn resolve_keysym(name: Sval) -> Option<u32> {
     let name_bytes = name.data;
     let name_str = std::str::from_utf8(name.data).unwrap_or("");
@@ -84,30 +80,6 @@ fn resolve_keysym(name: Sval) -> Option<u32> {
     let buf_slice = &buf[..name.data.len() + 1];
 
     xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS)
-}
-
-fn yysyntax_error(state: &State, yytoken: i32) -> String {
-    let mut msg = String::from("syntax error, unexpected ");
-    if yytoken == YYEMPTY {
-        return msg;
-    }
-    msg.push_str(symbol_name(yytoken));
-    let mut expected = state
-        .transitions()
-        .iter()
-        .map(|transition| transition.symbol())
-        .take_while(|&symbol| symbol < NTOKENS)
-        .filter(|&symbol| symbol != SYM_ERROR)
-        .take(4);
-    if let Some(symbol) = expected.next() {
-        msg.push_str(", expecting ");
-        msg.push_str(symbol_name(symbol as i32));
-        for symbol in expected {
-            msg.push_str(" or ");
-            msg.push_str(symbol_name(symbol as i32));
-        }
-    }
-    msg
 }
 
 // ── Main parser function ────────────────────────────────────────────
@@ -144,7 +116,6 @@ fn recover<'a>(
 pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
     let mut yychar: i32 = YYEMPTY; // lookahead symbol (internal), or YYEMPTY when none
     let mut yylval: YYValue<'a> = YYValue::None;
-    let mut _xkbcommon_nerrs: i32 = 0;
     let mut yystate: u16 = 0;
     let mut yyerrstatus: i32 = 0;
 
@@ -162,7 +133,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
 
         // Check stack overflow
         if ssp >= YYMAXDEPTH - 1 {
-            _xkbcommon_error(param, "memory exhausted");
             return 2;
         }
 
@@ -198,7 +168,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
 
                 let reduce_ok = execute_reduction(rule_id as i32, &mut yyvs, sp, &mut yyval, param);
                 if !reduce_ok {
-                    _xkbcommon_nerrs += 1;
                     sp -= yylen;
                     ssp -= yylen;
                     yystate = yyss[ssp];
@@ -232,13 +201,6 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                 ssp += 1;
             }
             Action::Error => {
-                // Syntax error: no matching action and no default reduction.
-                if yyerrstatus == 0 {
-                    _xkbcommon_nerrs += 1;
-                    let msg = yysyntax_error(state, yychar);
-                    _xkbcommon_error(param, &msg);
-                }
-
                 if yyerrstatus == 3 && yychar == END_OF_FILE {
                     return 1;
                 }
@@ -532,7 +494,7 @@ fn execute_reduction<'a>(
             // Decl: MergeMode STRING
             let merge = yyvs[sp - 1].as_merge();
             let s = yyvs[sp].take_str();
-            if let Some(inc) = include_create(param.ctx, &s, merge) {
+            if let Some(inc) = include_create(&s, merge) {
                 *yyval = YYValue::Stmt(Statement::Include(inc));
             } else {
                 *yyval = YYValue::None;
@@ -884,7 +846,6 @@ fn execute_reduction<'a>(
             yy_merge(yyval, MergeMode::Replace);
         }
         147 => {
-            let _loc = param.scanner.token_location();
             yy_merge(yyval, MergeMode::Default);
         }
         // ExprList rules 148-150
@@ -1094,7 +1055,6 @@ fn execute_reduction<'a>(
                     *yyval = YYValue::Keysym(sym);
                 }
                 None => {
-                    let _loc = param.scanner.token_location();
                     *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL);
                 }
             }
@@ -1112,17 +1072,14 @@ fn execute_reduction<'a>(
             // KeySym: INTEGER (numeric keysym)
             let num = yyvs[sp].as_num();
             if num < XKB_KEYSYM_MIN as i64 {
-                let _loc = param.scanner.token_location();
                 *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL);
             } else {
                 if num <= XKB_KEYSYM_MAX as i64 {
                     let keysym = num as u32;
                     *yyval = YYValue::Keysym(keysym);
                 } else {
-                    let _loc = param.scanner.token_location();
                     *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL);
                 }
-                let _loc = param.scanner.token_location();
             }
         }
         // SignedNumber / Number rules 204-208
@@ -1262,12 +1219,10 @@ pub(crate) fn expr_key_sym_list_append_string(
         }
         let (cp, cp_len) = utf8_next_code_point_safe(&bytes[idx..]);
         if cp == INVALID_UTF8_CODE_POINT {
-            let _loc = scanner.token_location();
             return None;
         }
         let sym = codepoint_to_keysym(cp).unwrap_or(0);
         if sym == XKB_KEY_NO_SYMBOL {
-            let _loc = scanner.token_location();
             return None;
         }
         if let ExprKind::KeysymList { ref mut syms } = expr {
@@ -1281,18 +1236,14 @@ pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> Option
     let bytes = string.as_bytes();
     let len = bytes.len();
     if len == 0 {
-        let _loc = scanner.token_location();
         return None;
     }
     let (cp, cp_len) = utf8_next_code_point_safe(bytes);
     if cp == INVALID_UTF8_CODE_POINT || cp_len != len {
-        let _loc = scanner.token_location();
         return None;
     }
     let sym = codepoint_to_keysym(cp).unwrap_or(0);
-    if sym == XKB_KEY_NO_SYMBOL {
-        let _loc = scanner.token_location();
-    }
+    if sym == XKB_KEY_NO_SYMBOL {}
     Some(sym)
 }
 
@@ -1333,11 +1284,7 @@ pub(crate) fn interp_create(sym: u32, match_0: Option<ExprKind>) -> InterpDef {
     }
 }
 
-pub(crate) fn include_create(
-    _ctx: &mut XkbContext,
-    stmt_str: &str,
-    mut merge: MergeMode,
-) -> Option<Vec<IncludeStmt>> {
+pub(crate) fn include_create(stmt_str: &str, mut merge: MergeMode) -> Option<Vec<IncludeStmt>> {
     let mut items: Vec<IncludeStmt> = Vec::new();
     let mut remaining: Option<&str> = Some(stmt_str);
 
@@ -1400,10 +1347,7 @@ pub(crate) fn xkb_file_create(
     })
 }
 
-pub(crate) fn xkb_file_from_components(
-    ctx: &mut XkbContext,
-    kkctgs: &XkbComponentNames,
-) -> Option<Box<XkbFile>> {
+pub(crate) fn xkb_file_from_components(kkctgs: &XkbComponentNames) -> Option<Box<XkbFile>> {
     let components = [
         &kkctgs.keycodes,
         &kkctgs.types,
@@ -1424,7 +1368,6 @@ pub(crate) fn xkb_file_from_components(
             .unwrap_or(component_bytes.len());
         let component_str = std::str::from_utf8(&component_bytes[..end]).unwrap_or("");
         let defs = vec![Statement::Include(include_create(
-            ctx,
             component_str,
             MergeMode::Default,
         )?)];
@@ -1439,20 +1382,12 @@ pub(crate) struct Sval<'a> {
     pub(crate) data: &'a [u8],
 }
 
-#[derive(Copy, Clone)]
-pub(crate) struct ScannerLoc {
-    pub(crate) line: usize,
-    pub(crate) column: usize,
-}
-
 pub(crate) struct Scanner<'a> {
     pub(crate) pos: usize,
     pub(crate) s: &'a [u8],
     pub(crate) buf: [u8; 1024],
     pub(crate) buf_pos: usize,
     pub(crate) token_pos: usize,
-    pub(crate) cached_pos: usize,
-    pub(crate) cached_loc: ScannerLoc,
     pub(crate) file_name: String,
 }
 
@@ -1464,8 +1399,6 @@ impl<'a> Scanner<'a> {
             buf: [0; 1024],
             buf_pos: 0,
             token_pos: 0,
-            cached_pos: 0,
-            cached_loc: ScannerLoc { line: 1, column: 1 },
             file_name: file_name.to_string(),
         }
     }
@@ -1647,39 +1580,6 @@ impl<'a> Scanner<'a> {
     #[inline]
     pub(crate) fn input_slice(&self, start: usize, end: usize) -> &[u8] {
         &self.s[start..end]
-    }
-
-    pub(crate) fn token_location(&mut self) -> ScannerLoc {
-        let mut line = self.cached_loc.line;
-        let mut line_pos: usize = 0;
-
-        if self.cached_pos > self.token_pos {
-            self.cached_pos = 0;
-            self.cached_loc.column = 1;
-            self.cached_loc.line = 1;
-        }
-
-        let input = self.s;
-        let start = self.cached_pos;
-        let end = self.token_pos;
-
-        let mut search_from = start;
-        while let Some(i) = input[search_from..end].iter().position(|&b| b == b'\n') {
-            line += 1;
-            search_from = search_from + i + 1;
-            line_pos = search_from;
-        }
-
-        let column = if line == self.cached_loc.line {
-            self.cached_loc.column + (self.token_pos - self.cached_pos)
-        } else {
-            self.token_pos - line_pos + 1
-        };
-
-        let loc = ScannerLoc { line, column };
-        self.cached_pos = self.token_pos;
-        self.cached_loc = loc;
-        loc
     }
 }
 
@@ -2043,12 +1943,10 @@ pub(crate) fn _xkbcommon_lex<'a>(
                     if s.unicode_code_point(&mut cp) && cp != 0 {
                         s.buf_appends_code_point(cp);
                     } else {
-                        let _loc = s.token_location();
                     }
                 } else if s.oct(&mut o) && o != 0 {
                     s.buf_append(o);
                 } else {
-                    let _loc = s.token_location();
                 }
             } else {
                 let c = s.next_byte();
@@ -2056,7 +1954,6 @@ pub(crate) fn _xkbcommon_lex<'a>(
             }
         }
         if !s.buf_append(0) || !s.chr(b'"') {
-            let _loc_2 = s.token_location();
             return ERROR_TOK;
         }
         // Convert buffer to String (exclude null terminator)
@@ -2070,7 +1967,6 @@ pub(crate) fn _xkbcommon_lex<'a>(
             s.next_byte();
         }
         if !s.chr(b'>') {
-            let _loc_3 = s.token_location();
             return ERROR_TOK;
         }
         let len: usize = s.pos - s.token_pos - 2;
@@ -2144,27 +2040,11 @@ pub(crate) fn _xkbcommon_lex<'a>(
     if number(s, &mut num_val, &mut tok) {
         *yylval = YYValue::Num(num_val);
         if tok == ERROR_TOK {
-            let _loc_4 = s.token_location();
             return ERROR_TOK;
         }
         return tok;
     }
-    let _loc_5 = s.token_location();
     ERROR_TOK
-}
-pub(crate) fn xkb_parse_string_init<'a>(
-    sc: &mut Scanner<'a>,
-    input: &'a [u8],
-    file_name: &str,
-    _map: &str,
-) -> bool {
-    *sc = Scanner::new(input, file_name);
-    if !sc.check_supported_char_encoding() {
-        let _loc = sc.token_location();
-        let _loc_0 = sc.token_location();
-        return false;
-    }
-    true
 }
 pub(crate) fn xkb_parse_string(
     ctx: &mut XkbContext,
@@ -2172,8 +2052,8 @@ pub(crate) fn xkb_parse_string(
     file_name: &str,
     map: &str,
 ) -> Option<Box<XkbFile>> {
-    let mut sc = Scanner::new(&[], "");
-    if !xkb_parse_string_init(&mut sc, input, file_name, map) {
+    let mut sc = Scanner::new(input, file_name);
+    if !sc.check_supported_char_encoding() {
         return None;
     }
     parse(ctx, &mut sc, map)
@@ -2270,7 +2150,7 @@ fn log_include_paths(ctx: &mut XkbContext) {
 }
 /// Expand `%H`, `%S`, `%E`, `%%` in the given name string.
 /// Returns `Some(expanded)` on success, `None` on error.
-fn expand_percent(_parent_file_name: &str, type_dir: &str, name: &str) -> Option<String> {
+fn expand_percent(type_dir: &str, name: &str) -> Option<String> {
     let max_len = 4096usize;
     let mut result = String::new();
     let mut chars = name.chars().peekable();
@@ -2316,11 +2196,7 @@ fn expand_percent(_parent_file_name: &str, type_dir: &str, name: &str) -> Option
 /// - `Ok(None)` if no `%` found (no expansion needed)
 /// - `Ok(Some(expanded))` if expansion succeeded
 /// - `Err(())` on error
-pub(crate) fn expand_path_str(
-    parent_file_name: &str,
-    name: &str,
-    file_type: FileType,
-) -> Result<Option<String>, ()> {
+pub(crate) fn expand_path_str(name: &str, file_type: FileType) -> Result<Option<String>, ()> {
     // Find first '%'
     let k = match name.find('%') {
         Some(pos) => pos,
@@ -2329,7 +2205,7 @@ pub(crate) fn expand_path_str(
     let type_dir = directory_for_include(file_type);
     let prefix = &name[..k];
     let rest = &name[k..];
-    match expand_percent(parent_file_name, type_dir, rest) {
+    match expand_percent(type_dir, rest) {
         Some(expanded) => {
             let mut result = String::with_capacity(prefix.len() + expanded.len());
             result.push_str(prefix);
@@ -2341,7 +2217,6 @@ pub(crate) fn expand_path_str(
 }
 pub(crate) fn find_file_in_xkb_path(
     ctx: &mut XkbContext,
-    _parent_file_name: &str,
     name: &str,
     type_0: FileType,
     offset: &mut u32,
@@ -2369,7 +2244,6 @@ pub(crate) fn find_file_in_xkb_path(
 
 fn find_include_file(
     ctx: &mut XkbContext,
-    parent: &str,
     name: &str,
     file_type: FileType,
     expanded: bool,
@@ -2382,7 +2256,7 @@ fn find_include_file(
     } else if expanded {
         None
     } else {
-        find_file_in_xkb_path(ctx, parent, name, file_type, offset, true)
+        find_file_in_xkb_path(ctx, name, file_type, offset, true)
     }
 }
 
@@ -2398,7 +2272,7 @@ pub(crate) fn process_include_file(
     let mut candidate: Option<Box<XkbFile>> = None;
 
     // Expand %-sequences in the file name
-    let stmt_file: String = match expand_path_str("(unknown)", &stmt.file, file_type) {
+    let stmt_file: String = match expand_path_str(&stmt.file, file_type) {
         Err(()) => return None,
         Ok(Some(expanded)) => expanded,
         Ok(None) => stmt.file.clone(),
@@ -2408,14 +2282,7 @@ pub(crate) fn process_include_file(
     let map_str = if stmt.map.is_empty() { "" } else { &stmt.map };
 
     let mut offset: u32 = 0;
-    let mut file_and_path = find_include_file(
-        ctx,
-        "(unknown)",
-        &stmt_file,
-        file_type,
-        expanded,
-        &mut offset,
-    );
+    let mut file_and_path = find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset);
 
     while let Some((ref file_data, ref _path)) = file_and_path {
         if let Some(parsed) = xkb_parse_string(ctx, file_data, &stmt.file, map_str) {
@@ -2435,14 +2302,7 @@ pub(crate) fn process_include_file(
             let _ = file_and_path.take();
         }
         offset += 1;
-        file_and_path = find_include_file(
-            ctx,
-            "(unknown)",
-            &stmt_file,
-            file_type,
-            expanded,
-            &mut offset,
-        );
+        file_and_path = find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset);
     }
 
     if xkb_file.is_none() {
@@ -3346,7 +3206,6 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         }
         s.chr(b'\r');
         if !s.eol() {
-            let _loc: ScannerLoc = s.token_location();
             return TOK_ERROR;
         }
         s.next_byte();
@@ -3383,7 +3242,6 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
             val.string.end += 1;
         }
         if val.string.len() == 0 {
-            let _loc_0: ScannerLoc = s.token_location();
             return TOK_ERROR;
         }
         return TOK_GROUP_NAME;
@@ -3402,7 +3260,6 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         }
         return TOK_IDENTIFIER;
     }
-    let _loc_1: ScannerLoc = s.token_location();
     TOK_ERROR
 }
 static RULES_MLVO_SVALS: [&[u8]; 4] = [b"model", b"layout", b"variant", b"option"];
@@ -3471,9 +3328,7 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
         val_0.sval = strip_spaces(val_0.sval);
         if pos < bytes.len() && bytes[pos] as i32 == OPTIONS_GROUP_SPECIFIER_PREFIX {
             pos += 1;
-            let layout_start = pos;
-            let (val_parsed, count) = parse_dec_u32(&bytes[pos..]);
-            let layout: u32 = val_parsed;
+            let (layout, count) = parse_dec_u32(&bytes[pos..]);
             let count = count as usize;
             if count > 0 {
                 pos += count;
@@ -3486,7 +3341,6 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
                 pos += 1;
             }
             if count == 0 || layout_index_end != pos {
-                let _layout_spec = std::str::from_utf8(&bytes[layout_start..pos]).unwrap_or("");
                 val_0.layout = OPTIONS_MATCH_ALL_GROUPS;
             }
         }
@@ -3546,33 +3400,25 @@ fn matcher_group_start_new(m: &mut Matcher, name: &[u8]) {
     };
     m.groups.push(group);
 }
-fn matcher_group_add_element(m: &mut Matcher, _s: &mut Scanner, element: &[u8]) {
+fn matcher_group_add_element(m: &mut Matcher, element: &[u8]) {
     let last_group = m.groups.last_mut().unwrap();
     last_group.elements.push(element.to_vec());
 }
-fn matcher_include(
-    m: &mut Matcher<'_>,
-    parent_scanner: &mut Scanner,
-    include_depth: u32,
-    inc: Sval,
-) {
+fn matcher_include(m: &mut Matcher<'_>, include_depth: u32, inc: Sval) {
     if include_depth >= MAX_INCLUDE_DEPTH as u32 {
-        let _loc: ScannerLoc = parent_scanner.token_location();
         return;
     }
     let inc_str = std::str::from_utf8(inc.data).unwrap_or("");
-    let stmt_file: String =
-        match expand_path_str(&parent_scanner.file_name, inc_str, FileType::Rules) {
-            Err(()) => return,
-            Ok(Some(expanded)) => expanded,
-            Ok(None) => inc_str.to_string(),
-        };
+    let stmt_file: String = match expand_path_str(inc_str, FileType::Rules) {
+        Err(()) => return,
+        Ok(Some(expanded)) => expanded,
+        Ok(None) => inc_str.to_string(),
+    };
     let expanded = stmt_file != inc_str;
 
     let mut offset: u32 = 0;
     let mut file_and_path = find_include_file(
         &mut *m.ctx,
-        &parent_scanner.file_name,
         &stmt_file,
         FileType::Rules,
         expanded,
@@ -3581,7 +3427,6 @@ fn matcher_include(
 
     while let Some((ref file_data, ref path)) = file_and_path {
         let ret: bool = read_rules_file(m, include_depth.wrapping_add(1_u32), file_data, path);
-        let _path_str = path.clone();
         let _ = file_and_path.take();
         if ret {
             return;
@@ -3589,7 +3434,6 @@ fn matcher_include(
         offset += 1;
         file_and_path = find_include_file(
             &mut *m.ctx,
-            &parent_scanner.file_name,
             &stmt_file,
             FileType::Rules,
             expanded,
@@ -3696,13 +3540,10 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
         mlvo += 1;
     }
     if mlvo >= _MLVO_NUM_ENTRIES {
-        let _loc: ScannerLoc = s.token_location();
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
     if is_mlvo_mask_defined(m, mlvo) {
-        let _loc_0: ScannerLoc = s.token_location();
-        let _mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
@@ -3711,8 +3552,6 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
         let remaining = &ident_bytes[mlvo_bytes.len()..];
         let consumed: i32 = extract_mapping_layout_index(remaining, &mut idx);
         if remaining.len() as i32 != consumed {
-            let _loc_1: ScannerLoc = s.token_location();
-            let _mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
             m.mapping.active_or_candidates_mask = 0_u32;
             return;
         }
@@ -3732,8 +3571,6 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
                 *variant_idx = idx;
             }
         } else {
-            let _loc_2: ScannerLoc = s.token_location();
-            let _mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
             m.mapping.active_or_candidates_mask = 0_u32;
             return;
         }
@@ -3767,7 +3604,6 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
             }
         }
     {
-        let _loc_3: ScannerLoc = s.token_location();
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
@@ -3850,13 +3686,10 @@ fn matcher_mapping_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
         kccgst += 1;
     }
     if kccgst >= _KCCGST_NUM_ENTRIES {
-        let _loc: ScannerLoc = s.token_location();
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
     if m.mapping.defined_kccgst_mask as u32 & 1 << kccgst != 0 {
-        let _loc_0: ScannerLoc = s.token_location();
-        let _kccgst_str = std::str::from_utf8(kccgst_bytes).unwrap_or("");
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
@@ -3874,7 +3707,6 @@ fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
 
 fn matcher_mapping_verify(m: &mut Matcher, s: &mut Scanner) -> bool {
     if m.mapping.num_mlvo == 0 || m.mapping.num_kccgst == 0 {
-        let _loc: ScannerLoc = s.token_location();
     } else {
         if is_mlvo_mask_defined(m, MLVO_LAYOUT) {
             let single_layout_idx = if let LayoutIdx::Single { layout_idx, .. } = m.mapping.layout {
@@ -3910,7 +3742,6 @@ fn matcher_rule_start_new(m: &mut Matcher) {
 }
 fn matcher_rule_set_mlvo_common(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx, match_type: u32) {
     if m.rule.num_mlvo_values as i32 >= m.mapping.num_mlvo as i32 {
-        let _loc: ScannerLoc = s.token_location();
         m.rule.skip = true;
         return;
     }
@@ -3930,7 +3761,6 @@ fn matcher_rule_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
 }
 fn matcher_rule_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
     if m.rule.num_kccgst_values as i32 >= m.mapping.num_kccgst as i32 {
-        let _loc: ScannerLoc = s.token_location();
         m.rule.skip = true;
         return;
     }
@@ -3991,7 +3821,6 @@ fn expand_rmlvo_in_kccgst_value(
                 || bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_REPLACE_PREFIX))
     {
         if layout_idx == XKB_LAYOUT_INVALID {
-            let _loc: ScannerLoc = s.token_location();
         } else {
             *i += 1;
             let idx_str = format!("{}", layout_idx.wrapping_add(1_u32));
@@ -4016,7 +3845,6 @@ fn expand_rmlvo_in_kccgst_value(
             *i += 1;
             if *i >= value.data.len() {
                 // fall through to error
-                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
         }
@@ -4026,7 +3854,6 @@ fn expand_rmlvo_in_kccgst_value(
             b'l' => MLVO_LAYOUT,
             b'v' => MLVO_VARIANT,
             _ => {
-                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
         };
@@ -4036,13 +3863,10 @@ fn expand_rmlvo_in_kccgst_value(
         let mut expanded_index: bool = false;
         if *i < value.data.len() && bytes[*i] == b'[' {
             if mlv != MLVO_LAYOUT && mlv != MLVO_VARIANT {
-                let _loc_0: ScannerLoc = s.token_location();
-                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
             let consumed: i32 = extract_layout_index(&bytes[*i..], &mut idx);
             if consumed == -1_i32 {
-                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
             if idx == XKB_LAYOUT_INVALID {
@@ -4054,13 +3878,11 @@ fn expand_rmlvo_in_kccgst_value(
 
         if sfx != 0 {
             if *i >= value.data.len() {
-                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
             let ch = bytes[*i];
             *i += 1;
             if ch != sfx {
-                let _loc_1: ScannerLoc = s.token_location();
                 return false;
             }
         }
@@ -4138,7 +3960,6 @@ fn expand_rmlvo_in_kccgst_value(
         return true;
     }
 
-    let _loc_1: ScannerLoc = s.token_location();
     false
 }
 #[allow(clippy::too_many_arguments)]
@@ -4162,9 +3983,7 @@ fn expand_qualifier_in_kccgst_value(
         && bytes[(*i).wrapping_add(1_usize)] == b'l'
         && bytes[(*i).wrapping_add(2_usize)] == b'l'
     {
-        if has_layout_idx_range {
-            let _loc: ScannerLoc = s.token_location();
-        }
+        if has_layout_idx_range {}
         expanded.push(b'1');
         if m.rmlvo.layouts.len() > 1 {
             let prefix_length = expanded
@@ -4321,7 +4140,6 @@ fn matcher_rule_verify(m: &mut Matcher, s: &mut Scanner) {
     if m.rule.num_mlvo_values as i32 != m.mapping.num_mlvo as i32
         || m.rule.num_kccgst_values as i32 != m.mapping.num_kccgst as i32
     {
-        let _loc: ScannerLoc = s.token_location();
         m.rule.skip = true;
     }
 }
@@ -4506,7 +4324,7 @@ fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
 fn gettok(m: &mut Matcher, s: &mut Scanner) -> u32 {
     lex(s, &mut m.val)
 }
-fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_name: &str) -> bool {
+fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
     let mut eof_ok = false;
     let mut tok: u32;
 
@@ -4548,7 +4366,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                             break '_initial;
                         }
                     }
-                    matcher_include(m, s, include_depth, m.val.string.as_sval(s.s));
+                    matcher_include(m, include_depth, m.val.string.as_sval(s.s));
                     tok = gettok(m, s);
                     match tok {
                         1 => {
@@ -4722,7 +4540,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
                     break '_initial;
                 }
             }
-            matcher_group_add_element(m, s, m.val.string.as_sval(s.s).data);
+            matcher_group_add_element(m, m.val.string.as_sval(s.s).data);
         }
     }
     if eof_ok {
@@ -4730,9 +4548,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_nam
     } else {
         match tok {
             11 => {}
-            _ => {
-                let _loc: ScannerLoc = s.token_location();
-            }
+            _ => {}
         }
         false
     }
@@ -4745,11 +4561,9 @@ fn read_rules_file(
 ) -> bool {
     let mut scanner = Scanner::new(file_data, path);
     if !scanner.check_supported_char_encoding() {
-        let _loc: ScannerLoc = scanner.token_location();
-        let _loc_0: ScannerLoc = scanner.token_location();
         return false;
     }
-    let ret: bool = matcher_match(matcher, &mut scanner, include_depth, path);
+    let ret: bool = matcher_match(matcher, &mut scanner, include_depth);
     ret
 }
 fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_>) -> bool {
@@ -4761,7 +4575,6 @@ fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_
     loop {
         let found = find_file_in_xkb_path(
             &mut *matcher.ctx,
-            "(unknown)",
             &partial_rules,
             FileType::Rules,
             &mut offset,
@@ -4790,7 +4603,6 @@ fn xkb_resolve_rules(
     let rules_str = rules;
     let found = find_file_in_xkb_path(
         &mut *matcher.ctx,
-        "(unknown)",
         rules_str,
         FileType::Rules,
         &mut offset,
@@ -5162,10 +4974,6 @@ bitflags::bitflags! {
         const LOCK_NO_UNLOCK        = 8;
         const MODS_LOOKUP_MODMAP    = 16;
         const ABSOLUTE_SWITCH       = 32;
-        const ABSOLUTE_X            = 64;
-        const ABSOLUTE_Y            = 128;
-        const ACCEL                 = 256;
-        const SAME_SCREEN           = 512;
         const LOCK_ON_RELEASE       = 1024;
         const UNLOCK_ON_PRESS       = 2048;
         const LATCH_ON_PRESS        = 4096;
@@ -5453,11 +5261,6 @@ pub(crate) const RMLVO_VARIANT: u32 = 8;
 pub(crate) const RMLVO_LAYOUT: u32 = 4;
 pub(crate) const RMLVO_MODEL: u32 = 2;
 pub(crate) const RMLVO_RULES: u32 = 1;
-
-// ── rules_h ───────────────────────────────────────────────────────────
-// ── Message codes (from messages.rs) ─────────────────────────────────────
-pub(crate) const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
-pub(crate) const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;
 
 #[derive(Copy, Clone)]
 pub(crate) struct LookupEntry {
