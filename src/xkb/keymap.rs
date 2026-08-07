@@ -536,25 +536,9 @@ fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> i32 {
 }
 
 pub(crate) fn xkb_context_include_path_get_extra_path() -> String {
-    match xkb_context_getenv("XKB_CONFIG_EXTRA_PATH") {
-        Ok(extra) => extra,
-        Err(_) => DFLT_XKB_CONFIG_EXTRA_PATH.to_string(),
-    }
+    getenv_or("XKB_CONFIG_EXTRA_PATH", DFLT_XKB_CONFIG_EXTRA_PATH)
 }
 
-pub(crate) fn xkb_context_include_path_get_unversioned_extensions_path() -> String {
-    match xkb_context_getenv("XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH") {
-        Ok(ext) => ext,
-        Err(_) => DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH.to_string(),
-    }
-}
-
-pub(crate) fn xkb_context_include_path_get_versioned_extensions_path() -> String {
-    match xkb_context_getenv("XKB_CONFIG_VERSIONED_EXTENSIONS_PATH") {
-        Ok(ext) => ext,
-        Err(_) => DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH.to_string(),
-    }
-}
 /// Convert a null-terminated `[i8]` constant to a Rust `String`.
 fn add_direct_subdirectories(
     ctx: &mut XkbContext,
@@ -618,10 +602,7 @@ fn add_direct_subdirectories(
 }
 
 pub(crate) fn xkb_context_include_path_get_system_path() -> String {
-    match xkb_context_getenv("XKB_CONFIG_ROOT") {
-        Ok(root) => root,
-        Err(_) => DFLT_XKB_CONFIG_ROOT.to_string(),
-    }
+    getenv_or("XKB_CONFIG_ROOT", DFLT_XKB_CONFIG_ROOT)
 }
 
 pub(crate) fn xkb_context_include_path_append_default(ctx: &mut XkbContext) -> i32 {
@@ -641,13 +622,19 @@ pub(crate) fn xkb_context_include_path_append_default(ctx: &mut XkbContext) -> i
         ret |= context_include_path_append(ctx, &extra);
 
         let mut extensions: Vec<String> = Vec::new();
-        let versioned_path = xkb_context_include_path_get_versioned_extensions_path();
+        let versioned_path = getenv_or(
+            "XKB_CONFIG_VERSIONED_EXTENSIONS_PATH",
+            DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH,
+        );
         let mut versioned_path_length: usize = 0;
         if !versioned_path.is_empty() {
             ret |= add_direct_subdirectories(ctx, &versioned_path, &mut extensions, 0, 0);
             versioned_path_length = versioned_path.len();
         }
-        let unversioned_path = xkb_context_include_path_get_unversioned_extensions_path();
+        let unversioned_path = getenv_or(
+            "XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH",
+            DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
+        );
         if !unversioned_path.is_empty() {
             let versioned_count = extensions.len();
             ret |= add_direct_subdirectories(
@@ -706,6 +693,9 @@ pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
 pub(crate) fn xkb_context_getenv(name: &str) -> Result<String, VarError> {
     std::env::var(name)
 }
+fn getenv_or(name: &str, default: &str) -> String {
+    xkb_context_getenv(name).unwrap_or_else(|_| default.into())
+}
 pub(crate) fn xkb_context_init_includes(ctx: &mut XkbContext) -> bool {
     if ctx.pending_default_includes {
         if ctx.failed_includes.is_empty() {
@@ -721,65 +711,31 @@ pub(crate) fn xkb_context_init_includes(ctx: &mut XkbContext) -> bool {
 }
 pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbRuleNames) -> u32 {
     let mut modified: u32 = 0_u32;
-    if rmlvo.rules.as_bytes().is_empty() {
-        let env = if ctx.use_environment_names {
-            xkb_context_getenv("XKB_DEFAULT_RULES")
-        } else {
-            Err(VarError::NotPresent)
-        };
-        rmlvo.rules = match env {
-            Ok(env) => env,
-            Err(_) => "evdev".to_string(),
-        };
-        modified |= RMLVO_RULES;
-    }
-    if rmlvo.model.as_bytes().is_empty() {
-        let env = if ctx.use_environment_names {
-            xkb_context_getenv("XKB_DEFAULT_MODEL")
-        } else {
-            Err(VarError::NotPresent)
-        };
-        rmlvo.model = match env {
-            Ok(env) => env,
-            Err(_) => "pc105".to_string(),
-        };
-        modified |= RMLVO_MODEL;
-    }
-    if rmlvo.layout.as_bytes().is_empty() {
-        {
-            let env = if ctx.use_environment_names {
-                xkb_context_getenv("XKB_DEFAULT_LAYOUT")
+    for (value, name, default, flag) in [
+        (&mut rmlvo.rules, "XKB_DEFAULT_RULES", "evdev", RMLVO_RULES),
+        (&mut rmlvo.model, "XKB_DEFAULT_MODEL", "pc105", RMLVO_MODEL),
+        (&mut rmlvo.options, "XKB_DEFAULT_OPTIONS", "", RMLVO_OPTIONS),
+    ] {
+        if value.is_empty() {
+            *value = if ctx.use_environment_names {
+                getenv_or(name, default)
             } else {
-                Err(VarError::NotPresent)
+                default.into()
             };
-            rmlvo.layout = match env {
-                Ok(env) => env,
-                Err(_) => "us".to_string(),
-            };
+            modified |= flag;
         }
-        modified |= RMLVO_LAYOUT;
-        let variant: String = {
-            let layout = xkb_context_getenv("XKB_DEFAULT_LAYOUT");
-            let default_variant = xkb_context_getenv("XKB_DEFAULT_VARIANT");
-            match (layout, ctx.use_environment_names, default_variant) {
-                (Ok(_), true, Ok(default_variant)) => default_variant,
-                (_, _, _) => "".to_string(),
-            }
-        };
-        rmlvo.variant = variant;
-        modified |= RMLVO_VARIANT;
     }
-    if rmlvo.options.as_bytes().is_empty() {
-        if ctx.use_environment_names {
-            let env = xkb_context_getenv("XKB_DEFAULT_OPTIONS");
-            rmlvo.options = match env {
-                Ok(env) => env,
-                Err(_) => "".to_string(),
-            };
-        } else {
-            rmlvo.options = "".to_string();
-        };
-        modified |= RMLVO_OPTIONS;
+    if rmlvo.layout.is_empty() {
+        let layout = ctx
+            .use_environment_names
+            .then(|| xkb_context_getenv("XKB_DEFAULT_LAYOUT").ok())
+            .flatten();
+        rmlvo.variant = layout
+            .as_ref()
+            .and_then(|_| xkb_context_getenv("XKB_DEFAULT_VARIANT").ok())
+            .unwrap_or_default();
+        rmlvo.layout = layout.unwrap_or_else(|| "us".into());
+        modified |= RMLVO_LAYOUT | RMLVO_VARIANT;
     }
     modified
 }

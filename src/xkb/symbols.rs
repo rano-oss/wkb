@@ -479,36 +479,31 @@ fn handle_include_symbols(
         info.include_depth.wrapping_add(1),
         &info.mods,
     );
-    for stmt in includes.iter_mut() {
-        let mut next_incl = SymbolsInfo::new(ki);
-
-        let file: Option<Box<XkbFile>> =
-            process_include_file(&mut ki.keymap.ctx, stmt, FileType::Symbols);
-        let Some(mut file) = file else {
+    for stmt in includes.iter() {
+        let Some(mut file) = process_include_file(&mut ki.keymap.ctx, stmt, FileType::Symbols)
+        else {
             info.error_count += 10;
             return false;
         };
+        let mut next = SymbolsInfo::new(ki);
         init_symbols_info(
-            &mut next_incl,
+            &mut next,
             ki,
             info.include_depth.wrapping_add(1),
             &included.mods,
         );
-        if !stmt.modifier.is_empty() {
-            let eg = (stmt.modifier.parse::<i32>().unwrap_or(0) - 1) as u32;
-            next_incl.explicit_group = if eg >= info.max_groups {
-                info.explicit_group
-            } else {
-                Some(eg)
-            };
-        } else if ki.keymap.num_groups != 0 && next_incl.include_depth == 1 {
-            next_incl.explicit_group = Some(0);
+        next.explicit_group = if !stmt.modifier.is_empty() {
+            let group = (stmt.modifier.parse::<i32>().unwrap_or(0) - 1) as u32;
+            (group < info.max_groups)
+                .then_some(group)
+                .or(info.explicit_group)
+        } else if ki.keymap.num_groups != 0 && next.include_depth == 1 {
+            Some(0)
         } else {
-            next_incl.explicit_group = info.explicit_group;
-        }
-        handle_symbols_file(ki, &mut next_incl, &mut file);
-        merge_included_symbols(ki, &mut included, &mut next_incl, stmt.merge);
-        drop(file);
+            info.explicit_group
+        };
+        handle_symbols_file(ki, &mut next, &mut file);
+        merge_included_symbols(ki, &mut included, &mut next, stmt.merge);
     }
     if let Some(first) = includes.first() {
         merge_included_symbols(ki, info, &mut included, first.merge);
@@ -772,6 +767,14 @@ enum SymbolsField {
     GroupsClamp,
     GroupsRedirect,
 }
+fn field_lookup<T: Copy>(field: &str, fields: &[(&[&str], T)]) -> Option<T> {
+    fields.iter().find_map(|(names, value)| {
+        names
+            .iter()
+            .any(|name| field.eq_ignore_ascii_case(name))
+            .then_some(*value)
+    })
+}
 
 fn parse_symbols_field(field: &str) -> Option<SymbolsField> {
     const FIELDS: &[(&[&str], SymbolsField)] = &[
@@ -795,24 +798,21 @@ fn parse_symbols_field(field: &str) -> Option<SymbolsField> {
             SymbolsField::GroupsRedirect,
         ),
     ];
-    for (names, sf) in FIELDS {
-        if names.iter().any(|n| field.eq_ignore_ascii_case(n)) {
-            return Some(*sf);
+    field_lookup(field, FIELDS).or_else(|| {
+        if field
+            .get(..16)
+            .is_some_and(|s| s.eq_ignore_ascii_case("permanentoverlay"))
+        {
+            Some(SymbolsField::Locking)
+        } else if field
+            .get(..7)
+            .is_some_and(|s| s.eq_ignore_ascii_case("overlay"))
+        {
+            Some(SymbolsField::Overlay)
+        } else {
+            None
         }
-    }
-    if field
-        .get(..16)
-        .is_some_and(|s| s.eq_ignore_ascii_case("permanentoverlay"))
-    {
-        Some(SymbolsField::Locking)
-    } else if field
-        .get(..7)
-        .is_some_and(|s| s.eq_ignore_ascii_case("overlay"))
-    {
-        Some(SymbolsField::Overlay)
-    } else {
-        None
-    }
+    })
 }
 
 fn add_pending_computation(info: &mut XkbKeymapInfo<'_>, expr: Option<ExprKind>) -> u32 {
@@ -892,12 +892,13 @@ fn set_symbols_field(
             ) {
                 return false;
             }
-            if overlay == XKB_OVERLAY_INVALID {
+            if overlay == XKB_OVERLAY_INVALID
+                || key != XKB_KEYCODE_INVALID
+                    && ki.keymap.get_key(key).is_some_and(|k| k.name == keyi.name)
+            {
                 return true;
-            } else if key != XKB_KEYCODE_INVALID && {
-                ki.keymap.get_key(key).is_some_and(|k| k.name == keyi.name)
-            } {
-            } else if ki.features.overlapping_overlays {
+            }
+            if ki.features.overlapping_overlays {
                 if overlays_insert(keyi, overlay, key) {
                     keyi.defined |= KEY_FIELD_OVERLAY;
                 }
@@ -1726,25 +1727,22 @@ fn handle_include_compat_map(
         info.include_depth.wrapping_add(1),
         &info.mods,
     );
-    for stmt in includes.iter_mut() {
-        let mut next_incl = CompatInfo::default();
-
-        let file: Option<Box<XkbFile>> =
-            process_include_file(&mut ki.keymap.ctx, stmt, FileType::Compat);
-        let Some(mut file) = file else {
+    for stmt in includes.iter() {
+        let Some(mut file) = process_include_file(&mut ki.keymap.ctx, stmt, FileType::Compat)
+        else {
             info.error_count += 10;
             return false;
         };
+        let mut next = CompatInfo::default();
         init_compat_info(
-            &mut next_incl,
+            &mut next,
             info.include_depth.wrapping_add(1),
             &included.mods,
         );
-        next_incl.default_interp = info.default_interp.clone();
-        next_incl.default_led = info.default_led;
-        handle_compat_map_file(ki, &mut next_incl, &mut file);
-        merge_included_compat_maps(&mut included, &mut next_incl, stmt.merge);
-        drop(file);
+        next.default_interp = info.default_interp.clone();
+        next.default_led = info.default_led;
+        handle_compat_map_file(ki, &mut next, &mut file);
+        merge_included_compat_maps(&mut included, &mut next, stmt.merge);
     }
     if let Some(first) = includes.first() {
         merge_included_compat_maps(info, &mut included, first.merge);
@@ -1771,10 +1769,7 @@ fn parse_interp_field(field: &str) -> Option<InterpField> {
         (&["locking"], InterpField::Locking),
         (&["usemodmap", "usemodmapmods"], InterpField::UseModMap),
     ];
-    FIELDS
-        .iter()
-        .find(|(names, _)| names.iter().any(|n| field.eq_ignore_ascii_case(n)))
-        .map(|(_, f)| *f)
+    field_lookup(field, FIELDS)
 }
 
 fn set_interp_field(
@@ -1880,6 +1875,7 @@ fn set_interp_field(
     }
     true
 }
+#[derive(Clone, Copy)]
 enum LedMapField {
     Modifiers,
     Groups,
@@ -1891,33 +1887,30 @@ enum LedMapField {
 }
 
 fn parse_led_map_field(field: &str) -> Option<LedMapField> {
-    if field.eq_ignore_ascii_case("modifiers") || field.eq_ignore_ascii_case("mods") {
-        Some(LedMapField::Modifiers)
-    } else if field.eq_ignore_ascii_case("groups") {
-        Some(LedMapField::Groups)
-    } else if field.eq_ignore_ascii_case("controls") || field.eq_ignore_ascii_case("ctrls") {
-        Some(LedMapField::Controls)
-    } else if field.eq_ignore_ascii_case("allowexplicit") {
-        Some(LedMapField::AllowExplicit)
-    } else if field.eq_ignore_ascii_case("whichmodstate")
-        || field.eq_ignore_ascii_case("whichmodifierstate")
-    {
-        Some(LedMapField::WhichMods)
-    } else if field.eq_ignore_ascii_case("whichgroupstate") {
-        Some(LedMapField::WhichGroups)
-    } else if field.eq_ignore_ascii_case("driveskbd")
-        || field.eq_ignore_ascii_case("driveskeyboard")
-        || field.eq_ignore_ascii_case("leddriveskbd")
-        || field.eq_ignore_ascii_case("leddriveskeyboard")
-        || field.eq_ignore_ascii_case("indicatordriveskbd")
-        || field.eq_ignore_ascii_case("indicatordriveskeyboard")
-    {
-        Some(LedMapField::AllowExplicit)
-    } else if field.eq_ignore_ascii_case("index") {
-        Some(LedMapField::Index)
-    } else {
-        None
-    }
+    const FIELDS: &[(&[&str], LedMapField)] = &[
+        (&["modifiers", "mods"], LedMapField::Modifiers),
+        (&["groups"], LedMapField::Groups),
+        (&["controls", "ctrls"], LedMapField::Controls),
+        (&["allowexplicit"], LedMapField::AllowExplicit),
+        (
+            &["whichmodstate", "whichmodifierstate"],
+            LedMapField::WhichMods,
+        ),
+        (&["whichgroupstate"], LedMapField::WhichGroups),
+        (
+            &[
+                "driveskbd",
+                "driveskeyboard",
+                "leddriveskbd",
+                "leddriveskeyboard",
+                "indicatordriveskbd",
+                "indicatordriveskeyboard",
+            ],
+            LedMapField::AllowExplicit,
+        ),
+        (&["index"], LedMapField::Index),
+    ];
+    field_lookup(field, FIELDS)
 }
 
 fn set_led_map_field(
@@ -2336,23 +2329,19 @@ fn handle_include_key_types(
         info.include_depth.wrapping_add(1),
         &info.mods,
     );
-    for stmt in includes.iter_mut() {
-        let mut next_incl = KeyTypesInfo::new();
-
-        let file: Option<Box<XkbFile>> =
-            process_include_file(&mut ki.keymap.ctx, stmt, FileType::Types);
-        let Some(mut file) = file else {
+    for stmt in includes.iter() {
+        let Some(mut file) = process_include_file(&mut ki.keymap.ctx, stmt, FileType::Types) else {
             info.error_count += 10;
             return false;
         };
+        let mut next = KeyTypesInfo::new();
         init_key_types_info(
-            &mut next_incl,
+            &mut next,
             info.include_depth.wrapping_add(1),
             &included.mods,
         );
-        handle_key_types_file(ki, &mut next_incl, &mut file);
-        merge_included_key_types(&mut included, &mut next_incl, stmt.merge);
-        drop(file);
+        handle_key_types_file(ki, &mut next, &mut file);
+        merge_included_key_types(&mut included, &mut next, stmt.merge);
     }
     if let Some(first) = includes.first() {
         merge_included_key_types(info, &mut included, first.merge);
@@ -2489,12 +2478,11 @@ fn set_preserve(
 }
 fn add_level_name(type_0: &mut KeyTypeInfo, level: u32, name: u32) {
     let level_idx = level as usize;
+    if type_0.level_names.get(level_idx) == Some(&name) {
+        return;
+    }
     if level >= type_0.level_names.len() as u32 {
         vec_resize_zero(&mut type_0.level_names, level_idx + 1);
-    } else {
-        if type_0.level_names[level_idx] == name {
-            return;
-        }
     }
     type_0.level_names[level_idx] = name;
 }
@@ -2701,21 +2689,20 @@ pub(crate) fn merge_mod_sets(into: &mut XkbModSet, from: &XkbModSet, merge: Merg
         let mod_0 = &from.mods[vmod];
         let mask: u32 = 1_u32 << vmod;
         if mod_0.type_0 != MOD_VIRT {
-        } else if into.mods[vmod].type_0 == 0 {
+            continue;
+        }
+        if into.mods[vmod].type_0 == 0 {
             into.mods[vmod] = *mod_0;
             if from.explicit_vmods & mask != 0 {
                 into.explicit_vmods |= mask;
             }
-        } else if from.explicit_vmods & mask == 0 {
-        } else if into.explicit_vmods & mask == 0 {
-            into.mods[vmod].mapping = mod_0.mapping;
-            into.explicit_vmods |= mask;
-        } else if mod_0.mapping != into.mods[vmod].mapping {
-            into.mods[vmod].mapping = if clobber {
-                mod_0.mapping
-            } else {
-                into.mods[vmod].mapping
-            };
+        } else if from.explicit_vmods & mask != 0 {
+            if into.explicit_vmods & mask == 0 {
+                into.mods[vmod].mapping = mod_0.mapping;
+                into.explicit_vmods |= mask;
+            } else if clobber {
+                into.mods[vmod].mapping = mod_0.mapping;
+            }
         }
     }
     into.num_mods = from.num_mods;
@@ -3171,19 +3158,16 @@ fn handle_include_keycodes(
         return false;
     }
     init_key_names_info(&mut included, 0_u32);
-    for stmt in includes.iter_mut() {
-        let mut next_incl = KeyNamesInfo::new();
-
-        let file: Option<Box<XkbFile>> =
-            process_include_file(&mut ki.keymap.ctx, stmt, FileType::Keycodes);
-        let Some(mut file) = file else {
+    for stmt in includes.iter() {
+        let Some(mut file) = process_include_file(&mut ki.keymap.ctx, stmt, FileType::Keycodes)
+        else {
             info.error_count += 10;
             return false;
         };
-        init_key_names_info(&mut next_incl, info.include_depth.wrapping_add(1));
-        handle_keycodes_file(&mut next_incl, &mut file, ki);
-        merge_included_keycodes(&mut included, &mut next_incl, stmt.merge);
-        drop(file);
+        let mut next = KeyNamesInfo::new();
+        init_key_names_info(&mut next, info.include_depth.wrapping_add(1));
+        handle_keycodes_file(&mut next, &mut file, ki);
+        merge_included_keycodes(&mut included, &mut next, stmt.merge);
     }
     if let Some(first) = includes.first() {
         merge_included_keycodes(info, &mut included, first.merge);
@@ -3202,10 +3186,8 @@ fn handle_alias_def(info: &mut KeyNamesInfo, def: &KeyAliasDef) {
     if match_name.found {
         let clobber: bool = def.merge != MergeMode::Augment;
         if match_name.is_alias {
-            if def.real == match_name.index {
-            } else {
-                info.keycodes.names[def.alias as usize].index =
-                    if clobber { def.real } else { match_name.index };
+            if def.real != match_name.index && clobber {
+                info.keycodes.names[def.alias as usize].index = def.real;
             }
             return;
         } else if clobber {

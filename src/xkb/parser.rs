@@ -325,7 +325,7 @@ fn execute_reduction<'a>(
                 flags,
             ));
         }
-        6 | 7 | 8 => {
+        6..=8 => {
             yy_file_type(yyval, FileType::Keymap);
         }
         9 => {
@@ -4057,15 +4057,7 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
             matcher_group_add_element(m, m.val.string.as_sval(s.s).data);
         }
     }
-    if eof_ok {
-        true
-    } else {
-        match tok {
-            11 => {}
-            _ => {}
-        }
-        false
-    }
+    eof_ok
 }
 fn read_rules_file(matcher: &mut Matcher<'_>, include_depth: u32, file_data: &[u8]) -> bool {
     let mut scanner = Scanner::new(file_data);
