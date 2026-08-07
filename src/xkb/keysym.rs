@@ -3730,36 +3730,60 @@ pub fn codepoint_to_keysym(ucs: u32) -> Option<u32> {
     Some(ucs | XKB_KEYSYM_UNICODE_OFFSET)
 }
 
-fn keysym_case(ks: u32) -> Option<(u32, u32)> {
-    let ch = keysym_to_char(ks)?;
-
-    let mut upper_chars = ch.to_uppercase();
-    let upper = upper_chars.next()?;
-    let upper = if upper_chars.next().is_none() {
-        codepoint_to_keysym(upper as u32).unwrap_or(ks)
-    } else {
-        ks
-    };
-
-    let mut lower_chars = ch.to_lowercase();
-    let lower = lower_chars.next()?;
-    let lower = if lower_chars.next().is_none() {
-        codepoint_to_keysym(lower as u32).unwrap_or(ks)
-    } else {
-        ks
-    };
-
-    Some((upper, lower))
+fn case_char(ks: u32) -> Option<char> {
+    // XKB only case-maps legacy keysyms and Unicode keysyms from U+0100
+    // through the end of its generated Unicode case table.
+    if ks > 0x13be && !(0x1000100..=0x101f189).contains(&ks) {
+        return None;
+    }
+    keysym_to_char(ks)
 }
 
 pub(crate) fn xkb_keysym_to_upper(ks: u32) -> u32 {
-    keysym_case(ks).map_or(ks, |(upper, _)| upper)
+    let Some(ch) = case_char(ks) else {
+        return ks;
+    };
+    let cp = match ch as u32 {
+        0xdf => 0x1e9e,
+        cp @ 0x1f80..=0x1f87 | cp @ 0x1f90..=0x1f97 | cp @ 0x1fa0..=0x1fa7 => cp + 8,
+        0x1fb3 => 0x1fbc,
+        0x1fc3 => 0x1fcc,
+        0x1ff3 => 0x1ffc,
+        0xa7cf | 0xa7d3 | 0xa7d5 => ch as u32 - 1,
+        cp @ 0x16ebb..=0x16ed3 => cp - 0x1b,
+        _ => {
+            let mut upper = ch.to_uppercase();
+            let Some(first) = upper.next() else {
+                return ks;
+            };
+            if upper.next().is_some() {
+                return ks;
+            }
+            first as u32
+        }
+    };
+    if cp == ch as u32 {
+        ks
+    } else if ks >= 0x1000100 && cp >= 0x100 {
+        XKB_KEYSYM_UNICODE_OFFSET + cp
+    } else {
+        codepoint_to_keysym(cp).unwrap_or(ks)
+    }
 }
 
 pub(crate) fn xkb_keysym_is_lower(ks: u32) -> bool {
-    matches!(keysym_case(ks), Some((upper, lower)) if upper != ks && lower == ks)
+    case_char(ks).is_some_and(|ch| match ch as u32 {
+        0x295 => false,
+        0xa7cf | 0xa7f1 | 0x16ebb..=0x16ed3 => true,
+        _ => ch.is_lowercase(),
+    })
 }
 
 pub(crate) fn xkb_keysym_is_upper_or_title(ks: u32) -> bool {
-    matches!(keysym_case(ks), Some((_, lower)) if lower != ks)
+    case_char(ks).is_some_and(|ch| match ch as u32 {
+        0x1c5 | 0x1c8 | 0x1cb | 0x1f2 => true,
+        0x1f88..=0x1f8f | 0x1f98..=0x1f9f | 0x1fa8..=0x1faf => true,
+        0x1fbc | 0x1fcc | 0x1ffc | 0xa7ce | 0xa7d2 | 0xa7d4 | 0x16ea0..=0x16eb8 => true,
+        _ => ch.is_uppercase(),
+    })
 }

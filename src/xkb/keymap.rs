@@ -719,14 +719,6 @@ pub(crate) fn xkb_context_init_includes(ctx: &mut XkbContext) -> bool {
     }
     true
 }
-pub(crate) fn xkb_context_num_failed_include_paths(ctx: &mut XkbContext) -> u32 {
-    if xkb_context_init_includes(ctx) {
-        ctx.failed_includes.len() as u32
-    } else {
-        0_u32
-    }
-}
-
 pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbRuleNames) -> u32 {
     let mut modified: u32 = 0_u32;
     if rmlvo.rules.as_bytes().is_empty() {

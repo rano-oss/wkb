@@ -1086,7 +1086,6 @@ pub(crate) fn parse<'a>(
         break;
     }
 
-    if let Some(_first_ref) = first.as_ref() {}
     first
 }
 
@@ -1145,9 +1144,7 @@ pub(crate) fn keysym_parse_string(string: &str) -> Option<u32> {
     if cp == INVALID_UTF8_CODE_POINT || cp_len != len {
         return None;
     }
-    let sym = codepoint_to_keysym(cp).unwrap_or(0);
-    if sym == XKB_KEY_NO_SYMBOL {}
-    Some(sym)
+    Some(codepoint_to_keysym(cp).unwrap_or(0))
 }
 
 macro_rules! default_merge_constructors {
@@ -1191,36 +1188,39 @@ pub(crate) fn include_create(stmt_str: &str, mut merge: MergeMode) -> Option<Vec
     let mut items: Vec<IncludeStmt> = Vec::new();
     let mut remaining: Option<&str> = Some(stmt_str);
 
-    loop {
-        let input = match remaining {
-            Some(s) if !s.is_empty() => s,
-            _ => break,
+    while let Some(input) = remaining.filter(|s| !s.is_empty()) {
+        let (segment, nextop, rest) = match input.find(['+', '|', '^']) {
+            Some(pos) => (
+                &input[..pos],
+                input.as_bytes()[pos],
+                Some(&input[pos + 1..]),
+            ),
+            None => (input, 0, None),
+        };
+        let (segment, modifier) = segment.split_once(':').unwrap_or((segment, ""));
+        let (file, map) = match segment.split_once('(') {
+            Some(("", _)) => return None,
+            Some((file, map)) => (file, map.strip_suffix(')')?),
+            None => (segment, ""),
         };
 
-        let (parsed, rest) = match parse_include_map(input) {
-            Some(r) => r,
-            None => {
-                return None;
-            }
-        };
-
-        if parsed.file.is_empty() {
+        if file.is_empty() {
             remaining = rest;
             continue;
         }
 
         items.push(IncludeStmt {
             merge,
-            file: parsed.file,
-            map: parsed.map,
-            modifier: parsed.extra_data,
+            file: file.into(),
+            map: map.into(),
+            modifier: modifier.into(),
         });
 
-        match parsed.nextop {
-            '|' => merge = MergeMode::Augment,
-            '^' => merge = MergeMode::Replace,
-            _ => merge = MergeMode::Override,
-        }
+        merge = match nextop {
+            b'|' => MergeMode::Augment,
+            b'^' => MergeMode::Replace,
+            _ => MergeMode::Override,
+        };
 
         remaining = rest;
     }
@@ -1309,10 +1309,7 @@ impl<'a> Scanner<'a> {
 
     #[inline]
     pub(crate) fn peek(&self) -> u8 {
-        if self.pos >= self.s.len() {
-            return 0;
-        }
-        self.s[self.pos]
+        self.s.get(self.pos).copied().unwrap_or(0)
     }
 
     #[inline]
@@ -1327,21 +1324,21 @@ impl<'a> Scanner<'a> {
 
     #[inline]
     pub(crate) fn skip_to_eol(&mut self) {
-        let rem = self.remaining_bytes();
-        match rem.iter().position(|&b| b == b'\n') {
-            Some(i) => self.pos += i,
-            None => self.pos = self.s.len(),
-        }
+        self.pos += self
+            .remaining_bytes()
+            .iter()
+            .position(|&b| b == b'\n')
+            .unwrap_or(self.s.len() - self.pos);
     }
 
     #[inline]
     pub(crate) fn next_byte(&mut self) -> u8 {
-        if self.pos >= self.s.len() {
-            return 0;
+        if let Some(&byte) = self.s.get(self.pos) {
+            self.pos += 1;
+            byte
+        } else {
+            0
         }
-        let c = self.s[self.pos];
-        self.pos += 1;
-        c
     }
 
     #[inline]
@@ -1355,15 +1352,12 @@ impl<'a> Scanner<'a> {
 
     #[inline]
     pub(crate) fn str_match(&mut self, string: &[u8]) -> bool {
-        let len = string.len();
-        if self.s.len() - self.pos < len {
-            return false;
+        if self.remaining_bytes().starts_with(string) {
+            self.pos += string.len();
+            true
+        } else {
+            false
         }
-        if &self.s[self.pos..self.pos + len] != string {
-            return false;
-        }
-        self.pos += len;
-        true
     }
 
     #[inline]
@@ -1378,23 +1372,19 @@ impl<'a> Scanner<'a> {
 
     #[inline]
     pub(crate) fn buf_appends_code_point(&mut self, c: u32) -> bool {
-        if self.buf_pos + 4 <= self.buf.len() {
-            let mut count = utf32_to_utf8_safe(c, &mut self.buf[self.buf_pos..]);
-            if count == 0 {
-                count = utf32_to_utf8_safe(0xfffd, &mut self.buf[self.buf_pos..]);
-            }
-            if count == 0 {
-                return false;
-            }
-            self.buf_pos += count;
-            true
-        } else {
-            false
-        }
+        let Some(buffer) = self.buf.get_mut(self.buf_pos..self.buf_pos + 4) else {
+            return false;
+        };
+        let count = char::from_u32(c)
+            .unwrap_or(char::REPLACEMENT_CHARACTER)
+            .encode_utf8(buffer)
+            .len();
+        self.buf_pos += count;
+        true
     }
 
     #[inline]
-    pub(crate) fn oct(&mut self, out: &mut u8) -> bool {
+    pub(crate) fn oct(&mut self) -> Option<u8> {
         let mut i: u8 = 0;
         let mut c: u8 = 0;
         while self.peek() >= b'0' && self.peek() <= b'7' && (i as i32) < 4 {
@@ -1402,47 +1392,17 @@ impl<'a> Scanner<'a> {
                 c = (c as i32 * 8 + self.next_byte() as i32 - b'0' as i32) as u8;
             } else {
                 self.next_byte();
-                *out = c;
-                return false;
+                return None;
             }
             i += 1;
         }
-        *out = c;
-        i > 0
+        (i > 0).then_some(c)
     }
 
     #[inline]
-    pub(crate) fn dec_int64(&mut self, out: &mut i64) -> i32 {
-        let remaining = self.remaining_bytes();
-        let (val, count) = parse_dec_u64(remaining);
-        if count > 0 {
-            if val > i64::MAX as u64 {
-                return -1;
-            }
-            self.pos += count as usize;
-            *out = val as i64;
-        }
-        count
-    }
-
-    #[inline]
-    pub(crate) fn hex_int64(&mut self, out: &mut i64) -> i32 {
-        let remaining = self.remaining_bytes();
-        let (val, count) = parse_hex_u64(remaining);
-        if count > 0 {
-            if val > i64::MAX as u64 {
-                return -1;
-            }
-            self.pos += count as usize;
-            *out = val as i64;
-        }
-        count
-    }
-
-    #[inline]
-    pub(crate) fn unicode_code_point(&mut self, out: &mut u32) -> bool {
+    pub(crate) fn unicode_code_point(&mut self) -> Option<u32> {
         if !self.chr(b'{') {
-            return false;
+            return None;
         }
         let remaining = self.remaining_bytes();
         let (cp, count) = parse_hex_u32(remaining);
@@ -1454,11 +1414,10 @@ impl<'a> Scanner<'a> {
             self.next_byte();
         }
         if self.chr(b'}') {
-            *out = cp;
-            return count > 0 && self.pos == last_valid + 1 && cp <= 0x10ffff;
+            return (count > 0 && self.pos == last_valid + 1 && cp <= 0x10ffff).then_some(cp);
         }
         self.pos = last_valid;
-        false
+        None
     }
 
     #[inline]
@@ -1466,14 +1425,7 @@ impl<'a> Scanner<'a> {
         if self.str_match(b"\xEF\xBB\xBF") || self.s.len() < 2 {
             return true;
         }
-        let input = self.s;
-        if input[0] == 0 || input[1] == 0 {
-            return false;
-        }
-        if !input[0].is_ascii() {
-            return false;
-        }
-        true
+        self.s[0] != 0 && self.s[1] != 0 && self.s[0].is_ascii()
     }
 
     #[inline]
@@ -1496,171 +1448,61 @@ tokens! {
 }
 pub(crate) const YYEMPTY: i32 = -2;
 
-/// Native Rust UTF-32 to UTF-8 conversion (replaces C FFI)
-///
-/// Encode a Unicode code point to UTF-8 into the given buffer.
-/// Returns the number of bytes written (NOT including null terminator), or 0 on failure.
-#[inline]
-pub(crate) fn utf32_to_utf8_safe(unichar: u32, buffer: &mut [u8]) -> usize {
-    let Some(ch) = char::from_u32(unichar) else {
-        return 0;
-    };
-    let encoded = ch.encode_utf8(&mut buffer[..]);
-    encoded.len()
-}
-// ── Keyword lookup (gperf-generated) ──
+// ── Keyword lookup ──
 
-pub(crate) const MAX_HASH_VALUE: u32 = 72;
-pub(crate) const MIN_WORD_LENGTH: u32 = 3;
-pub(crate) const MAX_WORD_LENGTH: u32 = 21;
-
-static GPERF_DOWNCASE: [u8; 256] = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-    26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
-    50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 97, 98, 99, 100, 101, 102, 103,
-    104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122,
-    91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
-    112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130,
-    131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149,
-    150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168,
-    169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187,
-    188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206,
-    207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225,
-    226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244,
-    245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255,
+static KEYWORDS: &[(&[u8], i32)] = &[
+    (b"key", KEY),
+    (b"keys", KEYS),
+    (b"augment", AUGMENT),
+    (b"text", TEXT),
+    (b"xkb_keymap", XKB_KEYMAP),
+    (b"keypad_keys", KEYPAD_KEYS),
+    (b"xkb_keycodes", XKB_KEYCODES),
+    (b"xkb_geometry", XKB_GEOMETRY),
+    (b"xkb_types", XKB_TYPES),
+    (b"xkb_compat", XKB_COMPATMAP),
+    (b"replace", REPLACE),
+    (b"xkb_compat_map", XKB_COMPATMAP),
+    (b"xkb_layout", XKB_LAYOUT),
+    (b"xkb_symbols", XKB_SYMBOLS),
+    (b"xkb_compatibility", XKB_COMPATMAP),
+    (b"xkb_semantics", XKB_SEMANTICS),
+    (b"type", TYPE),
+    (b"alias", ALIAS),
+    (b"xkb_compatibility_map", XKB_COMPATMAP),
+    (b"alphanumeric_keys", ALPHANUMERIC_KEYS),
+    (b"function_keys", FUNCTION_KEYS),
+    (b"alternate", ALTERNATE),
+    (b"shape", SHAPE),
+    (b"action", ACTION_TOK),
+    (b"section", SECTION),
+    (b"row", ROW),
+    (b"logo", LOGO),
+    (b"alternate_group", ALTERNATE_GROUP),
+    (b"hidden", HIDDEN),
+    (b"virtual", VIRTUAL),
+    (b"outline", OUTLINE),
+    (b"default", DEFAULT),
+    (b"modmap", MODIFIER_MAP),
+    (b"virtual_modifiers", VIRTUAL_MODS),
+    (b"overlay", OVERLAY),
+    (b"override", OVERRIDE),
+    (b"include", INCLUDE),
+    (b"modifier_map", MODIFIER_MAP),
+    (b"modifier_keys", MODIFIER_KEYS),
+    (b"indicator", INDICATOR),
+    (b"group", GROUP),
+    (b"mod_map", MODIFIER_MAP),
+    (b"interpret", INTERPRET),
+    (b"solid", SOLID),
+    (b"partial", PARTIAL),
 ];
 
-static ASSO_VALUES: [u8; 256] = [
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 0, 73, 5, 36, 0, 10, 1, 15,
-    15, 73, 0, 10, 20, 35, 20, 50, 73, 10, 10, 5, 0, 15, 73, 0, 15, 73, 73, 73, 73, 73, 73, 73, 0,
-    73, 5, 36, 0, 10, 1, 15, 15, 73, 0, 10, 20, 35, 20, 50, 73, 10, 10, 5, 0, 15, 73, 0, 15, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-];
-
-/// Keyword string + token pairs, indexed by gperf hash value.
-static WORDLIST: [Option<(&[u8], i32)>; 73] = [
-    None,                                            // 0
-    None,                                            // 1
-    None,                                            // 2
-    Some((b"key", KEY)),                             // 3
-    Some((b"keys", KEYS)),                           // 4
-    None,                                            // 5
-    None,                                            // 6
-    Some((b"augment", AUGMENT)),                     // 7
-    None,                                            // 8
-    Some((b"text", TEXT)),                           // 9
-    Some((b"xkb_keymap", XKB_KEYMAP)),               // 10
-    Some((b"keypad_keys", KEYPAD_KEYS)),             // 11
-    Some((b"xkb_keycodes", XKB_KEYCODES)),           // 12
-    Some((b"xkb_geometry", XKB_GEOMETRY)),           // 13
-    Some((b"xkb_types", XKB_TYPES)),                 // 14
-    Some((b"xkb_compat", XKB_COMPATMAP)),            // 15
-    None,                                            // 16
-    Some((b"replace", REPLACE)),                     // 17
-    None,                                            // 18
-    Some((b"xkb_compat_map", XKB_COMPATMAP)),        // 19
-    Some((b"xkb_layout", XKB_LAYOUT)),               // 20
-    Some((b"xkb_symbols", XKB_SYMBOLS)),             // 21
-    Some((b"xkb_compatibility", XKB_COMPATMAP)),     // 22
-    Some((b"xkb_semantics", XKB_SEMANTICS)),         // 23
-    Some((b"type", TYPE)),                           // 24
-    Some((b"alias", ALIAS)),                         // 25
-    Some((b"xkb_compatibility_map", XKB_COMPATMAP)), // 26
-    Some((b"alphanumeric_keys", ALPHANUMERIC_KEYS)), // 27
-    Some((b"function_keys", FUNCTION_KEYS)),         // 28
-    Some((b"alternate", ALTERNATE)),                 // 29
-    Some((b"shape", SHAPE)),                         // 30
-    Some((b"action", ACTION_TOK)),                   // 31
-    Some((b"section", SECTION)),                     // 32
-    Some((b"row", ROW)),                             // 33
-    Some((b"logo", LOGO)),                           // 34
-    Some((b"alternate_group", ALTERNATE_GROUP)),     // 35
-    Some((b"hidden", HIDDEN)),                       // 36
-    Some((b"virtual", VIRTUAL)),                     // 37
-    None,                                            // 38
-    None,                                            // 39
-    None,                                            // 40
-    None,                                            // 41
-    Some((b"outline", OUTLINE)),                     // 42
-    Some((b"default", DEFAULT)),                     // 43
-    None,                                            // 44
-    None,                                            // 45
-    Some((b"modmap", MODIFIER_MAP)),                 // 46
-    Some((b"virtual_modifiers", VIRTUAL_MODS)),      // 47
-    None,                                            // 48
-    None,                                            // 49
-    None,                                            // 50
-    None,                                            // 51
-    Some((b"overlay", OVERLAY)),                     // 52
-    Some((b"override", OVERRIDE)),                   // 53
-    None,                                            // 54
-    None,                                            // 55
-    None,                                            // 56
-    Some((b"include", INCLUDE)),                     // 57
-    None,                                            // 58
-    None,                                            // 59
-    None,                                            // 60
-    None,                                            // 61
-    Some((b"modifier_map", MODIFIER_MAP)),           // 62
-    Some((b"modifier_keys", MODIFIER_KEYS)),         // 63
-    Some((b"indicator", INDICATOR)),                 // 64
-    None,                                            // 65
-    Some((b"group", GROUP)),                         // 66
-    Some((b"mod_map", MODIFIER_MAP)),                // 67
-    None,                                            // 68
-    Some((b"interpret", INTERPRET)),                 // 69
-    None,                                            // 70
-    Some((b"solid", SOLID)),                         // 71
-    Some((b"partial", PARTIAL)),                     // 72
-];
-
-fn gperf_case_eq(s1: &[u8], s2: &[u8]) -> bool {
-    if s1.len() != s2.len() {
-        return false;
-    }
-    for i in 0..s1.len() {
-        if GPERF_DOWNCASE[s1[i] as usize] != GPERF_DOWNCASE[s2[i] as usize] {
-            return false;
-        }
-    }
-    true
-}
-
-fn keyword_gperf_hash(s: &[u8]) -> u32 {
-    let mut hval: u32 = s.len() as u32;
-    if s.len() >= 5 {
-        hval = hval.wrapping_add(ASSO_VALUES[s[4] as usize] as u32);
-    }
-    if s.len() >= 2 {
-        hval = hval.wrapping_add(ASSO_VALUES[s[1] as usize] as u32);
-    }
-    hval = hval.wrapping_add(ASSO_VALUES[s[0] as usize] as u32);
-    hval
-}
-
-/// Look up a keyword token from a byte slice. Returns -1 if not found.
 pub(crate) fn keyword_to_token(string: &[u8]) -> i32 {
-    let len = string.len();
-    if len > MAX_WORD_LENGTH as usize || len < MIN_WORD_LENGTH as usize {
-        return -1;
-    }
-    let key = keyword_gperf_hash(string);
-    if key > MAX_HASH_VALUE {
-        return -1;
-    }
-    if let Some((kw, tok)) = WORDLIST[key as usize] {
-        if len == kw.len() && gperf_case_eq(string, kw) {
-            return tok;
-        }
-    }
-    -1
+    KEYWORDS
+        .iter()
+        .find_map(|&(keyword, token)| string.eq_ignore_ascii_case(keyword).then_some(token))
+        .unwrap_or(-1)
 }
 
 // ── YYValue: safe replacement for the YYSTYPE union ──
@@ -1749,47 +1591,36 @@ impl<'a> YYValue<'a> {
 fn is_space(ch: u8) -> bool {
     matches!(ch, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
 }
-pub(crate) static DECIMAL_SEPARATOR: u8 = b'.';
-fn number(s: &mut Scanner, out: &mut i64, out_tok: &mut i32) -> bool {
-    if s.str_match(b"0x") {
-        match s.hex_int64(out) {
-            -1 => {
-                *out_tok = ERROR_TOK;
-                true
-            }
-            0 => false,
-            _ => {
-                *out_tok = INTEGER;
-                true
-            }
-        }
+fn number(s: &mut Scanner) -> Option<(i64, i32)> {
+    let hex = s.str_match(b"0x");
+    let (value, count) = if hex {
+        parse_hex_u64(s.remaining_bytes())
     } else {
-        let mut is_digit_0: bool = false;
-        match s.dec_int64(out) {
-            -1 => {
-                *out_tok = ERROR_TOK;
-                return true;
-            }
-            0 => return false,
-            1 => {
-                is_digit_0 = true;
-            }
-            _ => {}
-        }
-        if s.chr(DECIMAL_SEPARATOR) {
-            let mut dec: i64 = 0;
-            if s.dec_int64(&mut dec) < 0 {
-                *out_tok = ERROR_TOK;
-                return true;
-            }
-            *out_tok = FLOAT;
-        } else if is_digit_0 {
-            *out_tok = DECIMAL_DIGIT;
-        } else {
-            *out_tok = INTEGER;
-        }
-        true
+        parse_dec_u64(s.remaining_bytes())
+    };
+    if count < 0 || value > i64::MAX as u64 {
+        return Some((0, ERROR_TOK));
     }
+    if count == 0 {
+        return None;
+    }
+    s.pos += count as usize;
+    if hex {
+        return Some((value as i64, INTEGER));
+    }
+    let token = if s.chr(b'.') {
+        let (fraction, count) = parse_dec_u64(s.remaining_bytes());
+        if count < 0 || fraction > i64::MAX as u64 {
+            return Some((0, ERROR_TOK));
+        }
+        s.pos += count as usize;
+        FLOAT
+    } else if count == 1 {
+        DECIMAL_DIGIT
+    } else {
+        INTEGER
+    };
+    Some((value as i64, token))
 }
 
 /// Lex one token and write the semantic value into `yylval`.
@@ -1818,35 +1649,26 @@ pub(crate) fn _xkbcommon_lex<'a>(
     if s.chr(b'"') {
         while !s.eof() && !s.eol() && s.peek() != b'"' {
             if s.chr(b'\\') {
-                let mut o: u8 = 0;
-                if s.chr(b'\\') {
-                    s.buf_append(b'\\');
-                } else if s.chr(b'"') {
-                    s.buf_append(b'"');
-                } else if s.chr(b'n') {
-                    s.buf_append(b'\n');
-                } else if s.chr(b't') {
-                    s.buf_append(b'\t');
-                } else if s.chr(b'r') {
-                    s.buf_append(b'\r');
-                } else if s.chr(b'b') {
-                    s.buf_append(b'\x08');
-                } else if s.chr(b'f') {
-                    s.buf_append(b'\x0c');
-                } else if s.chr(b'v') {
-                    s.buf_append(b'\x0b');
-                } else if s.chr(b'e') {
-                    s.buf_append(b'\x1b');
-                } else if s.chr(b'u') {
-                    let mut cp: u32 = 0;
-                    if s.unicode_code_point(&mut cp) && cp != 0 {
-                        s.buf_appends_code_point(cp);
-                    } else {
+                match s.next_byte() {
+                    b'\\' => s.buf_append(b'\\'),
+                    b'"' => s.buf_append(b'"'),
+                    b'n' => s.buf_append(b'\n'),
+                    b't' => s.buf_append(b'\t'),
+                    b'r' => s.buf_append(b'\r'),
+                    b'b' => s.buf_append(b'\x08'),
+                    b'f' => s.buf_append(b'\x0c'),
+                    b'v' => s.buf_append(b'\x0b'),
+                    b'e' => s.buf_append(b'\x1b'),
+                    b'u' => s
+                        .unicode_code_point()
+                        .is_some_and(|cp| cp != 0 && s.buf_appends_code_point(cp)),
+                    b'0'..=b'7' => {
+                        s.pos -= 1;
+                        s.oct()
+                            .is_some_and(|octal| octal != 0 && s.buf_append(octal))
                     }
-                } else if s.oct(&mut o) && o != 0 {
-                    s.buf_append(o);
-                } else {
-                }
+                    other => other != 0 && s.buf_append(other),
+                };
             } else {
                 let c = s.next_byte();
                 s.buf_append(c);
@@ -1873,60 +1695,34 @@ pub(crate) fn _xkbcommon_lex<'a>(
         *yylval = YYValue::Atom(atom_intern(&mut ctx.atom_table, keyname_bytes));
         return KEYNAME;
     }
-    if s.chr(b';') {
-        return SEMI;
+    let punctuation = match s.peek() {
+        b';' => SEMI,
+        b'{' => OBRACE,
+        b'}' => CBRACE,
+        b'=' => EQUALS,
+        b'[' => OBRACKET,
+        b']' => CBRACKET,
+        b'(' => OPAREN,
+        b')' => CPAREN,
+        b'.' => DOT,
+        b',' => COMMA,
+        b'+' => PLUS,
+        b'-' => MINUS,
+        b'*' => TIMES,
+        b'/' => DIVIDE,
+        b'!' => EXCLAM,
+        b'~' => INVERT,
+        _ => -1,
+    };
+    if punctuation >= 0 {
+        s.next_byte();
+        return punctuation;
     }
-    if s.chr(b'{') {
-        return OBRACE;
-    }
-    if s.chr(b'}') {
-        return CBRACE;
-    }
-    if s.chr(b'=') {
-        return EQUALS;
-    }
-    if s.chr(b'[') {
-        return OBRACKET;
-    }
-    if s.chr(b']') {
-        return CBRACKET;
-    }
-    if s.chr(b'(') {
-        return OPAREN;
-    }
-    if s.chr(b')') {
-        return CPAREN;
-    }
-    if s.chr(b'.') {
-        return DOT;
-    }
-    if s.chr(b',') {
-        return COMMA;
-    }
-    if s.chr(b'+') {
-        return PLUS;
-    }
-    if s.chr(b'-') {
-        return MINUS;
-    }
-    if s.chr(b'*') {
-        return TIMES;
-    }
-    if s.chr(b'/') {
-        return DIVIDE;
-    }
-    if s.chr(b'!') {
-        return EXCLAM;
-    }
-    if s.chr(b'~') {
-        return INVERT;
-    }
-    let mut tok: i32 = ERROR_TOK;
     if s.peek().is_ascii_alphabetic() || s.peek() == b'_' {
         while s.peek().is_ascii_alphanumeric() || s.peek() == b'_' {
             s.next_byte();
         }
-        tok = keyword_to_token(s.input_slice(s.token_pos, s.pos));
+        let tok = keyword_to_token(s.input_slice(s.token_pos, s.pos));
         if tok >= 0 {
             return tok;
         }
@@ -1935,12 +1731,8 @@ pub(crate) fn _xkbcommon_lex<'a>(
         });
         return IDENT;
     }
-    let mut num_val: i64 = 0;
-    if number(s, &mut num_val, &mut tok) {
-        *yylval = YYValue::Num(num_val);
-        if tok == ERROR_TOK {
-            return ERROR_TOK;
-        }
+    if let Some((number, tok)) = number(s) {
+        *yylval = YYValue::Num(number);
         return tok;
     }
     ERROR_TOK
@@ -1959,7 +1751,7 @@ pub(crate) fn xkb_parse_string(
 
 // ── Include file processing (merged from include.rs) ──
 
-use super::keymap::{xkb_context_getenv, xkb_context_num_failed_include_paths};
+use super::keymap::xkb_context_getenv;
 use super::keymap::{xkb_context_include_path_get, xkb_context_num_include_paths};
 use super::keymap::{
     xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
@@ -1969,63 +1761,6 @@ pub(crate) const INCLUDE_MAX_DEPTH: i32 = 15_i32;
 pub(crate) const MERGE_OVERRIDE_PREFIX: i32 = '+' as i32;
 pub(crate) const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
 pub(crate) const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
-
-/// Parsed result from one segment of an include statement.
-pub(crate) struct ParsedIncludeMap {
-    pub(crate) file: String,
-    pub(crate) map: String,
-    pub(crate) extra_data: String,
-    pub(crate) nextop: char,
-}
-
-/// Parse one include map segment from `input`, returning the parsed result
-/// and the remaining input (if any). Returns None on parse error.
-pub(crate) fn parse_include_map(input: &str) -> Option<(ParsedIncludeMap, Option<&str>)> {
-    // Split at merge-mode prefix (+, |, ^)
-    let (segment, nextop, rest) = if let Some(pos) = input.find(&['+', '|', '^'][..]) {
-        let op = input.as_bytes()[pos] as char;
-        (&input[..pos], op, Some(&input[pos + 1..]))
-    } else {
-        (input, '\0', None)
-    };
-
-    // Split off extra_data after ':'
-    let (segment, extra_data) = if let Some(pos) = segment.find(':') {
-        (&segment[..pos], segment[pos + 1..].to_string())
-    } else {
-        (segment, String::new())
-    };
-
-    // Parse file(map) pattern
-    let (file, map) = if let Some(pos) = segment.find('(') {
-        if pos == 0 {
-            return None; // starts with '(' — invalid
-        }
-        let rest_paren = &segment[pos + 1..];
-        if !rest_paren.ends_with(')') || rest_paren.is_empty() {
-            return None;
-        }
-        let map_str = &rest_paren[..rest_paren.len() - 1];
-        (segment[..pos].to_string(), map_str.to_string())
-    } else {
-        (segment.to_string(), String::new())
-    };
-
-    // Validate nextop
-    if nextop != '\0' && nextop != '+' && nextop != '|' && nextop != '^' {
-        return None;
-    }
-
-    Some((
-        ParsedIncludeMap {
-            file,
-            map,
-            extra_data,
-            nextop,
-        },
-        rest,
-    ))
-}
 static XKB_FILE_TYPE_INCLUDE_DIRS: [&str; 7] = [
     "keycodes", "types", "compat", "symbols", "geometry", "keymap", "rules",
 ];
@@ -2034,16 +1769,6 @@ fn directory_for_include(type_0: FileType) -> &'static str {
         ""
     } else {
         XKB_FILE_TYPE_INCLUDE_DIRS[type_0 as usize]
-    }
-}
-fn log_include_paths(ctx: &mut XkbContext) {
-    let num = xkb_context_num_include_paths(ctx);
-    if num > 0 {
-        for _i in 0..num {}
-    }
-    let num_failed = xkb_context_num_failed_include_paths(ctx);
-    if num_failed > 0 {
-        for _i in 0..num_failed {}
     }
 }
 /// Expand `%H`, `%S`, `%E`, `%%` in the given name string.
@@ -2118,7 +1843,6 @@ pub(crate) fn find_file_in_xkb_path(
     name: &str,
     type_0: FileType,
     offset: &mut u32,
-    required: bool,
 ) -> Option<(std::sync::Arc<Vec<u8>>, String)> {
     let type_dir = directory_for_include(type_0);
     for i in *offset..xkb_context_num_include_paths(ctx) {
@@ -2128,14 +1852,12 @@ pub(crate) fn find_file_in_xkb_path(
             type_dir,
             name
         );
-        if path.len() >= 4096 {
-        } else if let Some(data) = read_file_cached(&path) {
-            *offset = i;
-            return Some((data, path));
+        if path.len() < 4096 {
+            if let Some(data) = read_file_cached(&path) {
+                *offset = i;
+                return Some((data, path));
+            }
         }
-    }
-    if required && *offset == 0 {
-        log_include_paths(ctx);
     }
     None
 }
@@ -2154,7 +1876,7 @@ fn find_include_file(
     } else if expanded {
         None
     } else {
-        find_file_in_xkb_path(ctx, name, file_type, offset, true)
+        find_file_in_xkb_path(ctx, name, file_type, offset)
     }
 }
 
@@ -2209,8 +1931,7 @@ pub(crate) fn process_include_file(
 
 pub(crate) const GROUP_MASK_NAME_LAST: u32 = 3;
 pub(crate) const GROUP_INDEX_NAME_LAST: u32 = 1;
-pub(crate) type CompileFileFn =
-    Option<for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool>;
+pub(crate) type CompileFileFn = for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool;
 #[inline]
 fn compute_effective_mask(keymap: &XkbKeymap, mods: &mut XkbMods) {
     let unknown_mods: u32 = !((1_u64 << keymap.mods.num_mods).wrapping_sub(1_u64) as u32);
@@ -2748,32 +2469,22 @@ fn resolve_pending_led_groups(info: &mut XkbKeymapInfo<'_>) -> Result<(), ()> {
     }
     Ok(())
 }
-static COMPILE_FILE_FNS: [CompileFileFn; 4] = {
-    [
-        Some(compile_keycodes as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
-        Some(compile_key_types as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
-        Some(
-            compile_compat_map as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool,
-        ),
-        Some(compile_symbols as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
-    ]
-};
-fn pending_computations_array_free(p: &mut Vec<PendingComputation>) {
-    for pc in p.iter_mut() {
-        pc.expr.take(); // Drop handles cleanup
-    }
-    p.clear();
-}
+static COMPILE_FILE_FNS: [CompileFileFn; 4] = [
+    compile_keycodes,
+    compile_key_types,
+    compile_compat_map,
+    compile_symbols,
+];
 pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool {
     let mut file_indices: [Option<usize>; 4] = [None; 4];
     for (idx, stmt) in file.defs.iter().enumerate() {
-        if let Statement::XkbFile(ref sub_file) = stmt {
-            if sub_file.file_type as u32 > FileType::Symbols as u32 {
-                if sub_file.file_type == FileType::Geometry {}
-            } else if file_indices[sub_file.file_type as usize].is_some() {
-            } else {
-                file_indices[sub_file.file_type as usize] = Some(idx);
-            }
+        let Statement::XkbFile(ref sub_file) = stmt else {
+            continue;
+        };
+        if sub_file.file_type as usize <= FileType::Symbols as usize
+            && file_indices[sub_file.file_type as usize].is_none()
+        {
+            file_indices[sub_file.file_type as usize] = Some(idx);
         }
     }
     let km_format = keymap.format;
@@ -2840,19 +2551,15 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
         pending_computations: Vec::new(),
         sym_interprets: Vec::new(),
     };
-    for type_0 in (FileType::Keycodes as u32)..=(FileType::Symbols as u32) {
-        let file_arg: Option<&mut XkbFile> = file_indices[type_0 as usize].map(|idx| {
+    for (type_0, compile) in COMPILE_FILE_FNS.into_iter().enumerate() {
+        let file_arg: Option<&mut XkbFile> = file_indices[type_0].map(|idx| {
             if let Statement::XkbFile(ref mut sub_file) = file.defs[idx] {
                 sub_file
             } else {
                 unreachable!()
             }
         });
-        let ok: bool = COMPILE_FILE_FNS[type_0 as usize].expect("non-null function pointer")(
-            file_arg, &mut info,
-        );
-        if !ok {
-            pending_computations_array_free(&mut info.pending_computations);
+        if !compile(file_arg, &mut info) {
             return false;
         }
     }
@@ -2866,7 +2573,6 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
             }
         }
     }
-    pending_computations_array_free(&mut info.pending_computations);
     ok_0
 }
 pub(crate) const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
@@ -3553,34 +3259,32 @@ fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
 
 fn matcher_mapping_verify(m: &mut Matcher) -> bool {
     if m.mapping.num_mlvo == 0 || m.mapping.num_kccgst == 0 {
-    } else {
-        if is_mlvo_mask_defined(m, MLVO_LAYOUT) {
-            let single_layout_idx = if let LayoutIdx::Single { layout_idx, .. } = m.mapping.layout {
-                layout_idx
-            } else {
-                0
-            };
-            if !fn_layout_or_variant_valid(m.rmlvo.layouts.len(), single_layout_idx) {
-                m.mapping.active_or_candidates_mask = 0_u32;
-                return false;
-            }
-        }
-        if is_mlvo_mask_defined(m, MLVO_VARIANT) {
-            let single_variant_idx = if let LayoutIdx::Single { variant_idx, .. } = m.mapping.layout
-            {
-                variant_idx
-            } else {
-                0
-            };
-            if !fn_layout_or_variant_valid(m.rmlvo.variants.len(), single_variant_idx) {
-                m.mapping.active_or_candidates_mask = 0_u32;
-                return false;
-            }
-        }
-        return true;
+        m.mapping.active_or_candidates_mask = 0_u32;
+        return false;
     }
-    m.mapping.active_or_candidates_mask = 0_u32;
-    false
+    if is_mlvo_mask_defined(m, MLVO_LAYOUT) {
+        let single_layout_idx = if let LayoutIdx::Single { layout_idx, .. } = m.mapping.layout {
+            layout_idx
+        } else {
+            0
+        };
+        if !fn_layout_or_variant_valid(m.rmlvo.layouts.len(), single_layout_idx) {
+            m.mapping.active_or_candidates_mask = 0_u32;
+            return false;
+        }
+    }
+    if is_mlvo_mask_defined(m, MLVO_VARIANT) {
+        let single_variant_idx = if let LayoutIdx::Single { variant_idx, .. } = m.mapping.layout {
+            variant_idx
+        } else {
+            0
+        };
+        if !fn_layout_or_variant_valid(m.rmlvo.variants.len(), single_variant_idx) {
+            m.mapping.active_or_candidates_mask = 0_u32;
+            return false;
+        }
+    }
+    true
 }
 fn matcher_rule_start_new(m: &mut Matcher) {
     m.rule = Rule::default();
@@ -3812,7 +3516,6 @@ fn expand_qualifier_in_kccgst_value(
     m: &mut Matcher,
     value: Sval,
     expanded: &mut Vec<u8>,
-    has_layout_idx_range: bool,
     has_separator: bool,
     prefix_idx: u32,
     i: &mut usize,
@@ -3827,7 +3530,6 @@ fn expand_qualifier_in_kccgst_value(
         && bytes[(*i).wrapping_add(1_usize)] == b'l'
         && bytes[(*i).wrapping_add(2_usize)] == b'l'
     {
-        if has_layout_idx_range {}
         expanded.push(b'1');
         if m.rmlvo.layouts.len() > 1 {
             let prefix_length = expanded
@@ -3902,7 +3604,6 @@ fn expand_kccgst_value(m: &mut Matcher, value: Sval, layout_idx: u32) -> Option<
                     m,
                     value,
                     &mut expanded,
-                    matches!(m.mapping.layout, LayoutIdx::Range { .. }),
                     has_separator,
                     last_item_idx,
                     &mut i,
@@ -4371,8 +4072,7 @@ fn read_rules_file(matcher: &mut Matcher<'_>, include_depth: u32, file_data: &[u
     if !scanner.check_supported_char_encoding() {
         return false;
     }
-    let ret: bool = matcher_match(matcher, &mut scanner, include_depth);
-    ret
+    matcher_match(matcher, &mut scanner, include_depth)
 }
 fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_>) -> bool {
     let partial_rules = format!("{}{}", rules, suffix);
@@ -4386,14 +4086,11 @@ fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_
             &partial_rules,
             FileType::Rules,
             &mut offset,
-            false,
         );
         let Some((file_data, _path)) = found else {
             break;
         };
-        let ok: bool = read_rules_file(matcher, 0, &file_data);
-        drop(file_data);
-        if !ok {
+        if !read_rules_file(matcher, 0, &file_data) {
             return false;
         }
         offset += 1;
@@ -4409,13 +4106,7 @@ fn xkb_resolve_rules(
     let mut ret: bool;
     let mut offset: u32 = 0;
     let rules_str = rules;
-    let found = find_file_in_xkb_path(
-        &mut *matcher.ctx,
-        rules_str,
-        FileType::Rules,
-        &mut offset,
-        true,
-    );
+    let found = find_file_in_xkb_path(&mut *matcher.ctx, rules_str, FileType::Rules, &mut offset);
     let Some((file_data, _path)) = found else {
         return false;
     };
@@ -4453,15 +4144,6 @@ fn xkb_resolve_rules(
                     let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_SYMBOLS as usize]);
                     v.push(0);
                     out.symbols = v;
-                }
-                for mval in matcher.rmlvo.layouts.iter() {
-                    if !mval.matched && !mval.sval.data.is_empty() {}
-                }
-                for mval in matcher.rmlvo.variants.iter() {
-                    if !mval.matched && !mval.sval.data.is_empty() {}
-                }
-                for mval in matcher.rmlvo.options.iter() {
-                    if !mval.matched && !mval.sval.data.is_empty() {}
                 }
                 if !out.symbols.is_empty() {
                     *explicit_layouts = 1_u32;
@@ -5333,35 +5015,7 @@ pub(crate) fn istrcmp(a: &[u8], b: &[u8]) -> i32 {
     (a.len() - b.len()) as i32
 }
 
-macro_rules! impl_parse_dec {
-    ($name:ident, $t:ty) => {
-        pub(crate) fn $name(s: &[u8]) -> ($t, i32) {
-            let mut result: $t = 0;
-            let mut i: usize = 0;
-            for &b in s {
-                let d = b.wrapping_sub(b'0');
-                if d >= 10 {
-                    break;
-                }
-                if result > <$t>::MAX / 10 || result * 10 > <$t>::MAX - d as $t {
-                    return (result, -1);
-                }
-                result = result * 10 + d as $t;
-                i += 1;
-            }
-            if i < s.len() && s[i].wrapping_sub(b'0') < 10 {
-                return (result, -1);
-            }
-            (result, i as i32)
-        }
-    };
-}
-impl_parse_dec!(parse_dec_u32, u32);
-impl_parse_dec!(parse_dec_u64, u64);
-
-/// Convert a hex digit byte to its numeric value (0-15), or 0xff if invalid.
-#[inline]
-fn hex_val(b: u8) -> u8 {
+fn digit(b: u8) -> u8 {
     match b {
         b'0'..=b'9' => b - b'0',
         b'A'..=b'F' => b - b'A' + 10,
@@ -5370,31 +5024,35 @@ fn hex_val(b: u8) -> u8 {
     }
 }
 
-macro_rules! impl_parse_hex {
-    ($name:ident, $t:ty) => {
-        pub(crate) fn $name(s: &[u8]) -> ($t, i32) {
-            let mut result: $t = 0;
-            let mut i: usize = 0;
-            for &b in s {
-                let d = hex_val(b);
-                if d >= 16 {
-                    break;
-                }
-                if result > <$t>::MAX >> 4 {
-                    return (result, -1);
-                }
-                result = result * 16 + d as $t;
-                i += 1;
-            }
-            if i < s.len() && hex_val(s[i]) < 16 {
-                return (result, -1);
-            }
-            (result, i as i32)
+fn parse_uint(s: &[u8], radix: u64, max: u64) -> (u64, i32) {
+    let mut value = 0;
+    for (i, &byte) in s.iter().enumerate() {
+        let digit = digit(byte) as u64;
+        if digit >= radix {
+            return (value, i as i32);
         }
-    };
+        if value > (max - digit) / radix {
+            return (value, -1);
+        }
+        value = value * radix + digit;
+    }
+    (value, s.len() as i32)
 }
-impl_parse_hex!(parse_hex_u32, u32);
-impl_parse_hex!(parse_hex_u64, u64);
+
+pub(crate) fn parse_dec_u32(s: &[u8]) -> (u32, i32) {
+    let (value, count) = parse_uint(s, 10, u32::MAX as u64);
+    (value as u32, count)
+}
+pub(crate) fn parse_dec_u64(s: &[u8]) -> (u64, i32) {
+    parse_uint(s, 10, u64::MAX)
+}
+pub(crate) fn parse_hex_u32(s: &[u8]) -> (u32, i32) {
+    let (value, count) = parse_uint(s, 16, u32::MAX as u64);
+    (value as u32, count)
+}
+fn parse_hex_u64(s: &[u8]) -> (u64, i32) {
+    parse_uint(s, 16, u64::MAX)
+}
 
 // ── UTF-8 decoding (migrated from utf8_decoding.rs) ──
 
