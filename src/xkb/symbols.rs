@@ -808,6 +808,7 @@ fn expr_resolve_overlay_entry(
         _ => false,
     }
 }
+#[derive(Clone, Copy)]
 enum SymbolsField {
     Type,
     Symbols,
@@ -1821,6 +1822,7 @@ fn handle_include_compat_map(
     }
     info.error_count == 0
 }
+#[derive(Clone, Copy)]
 enum InterpField {
     Action,
     VirtualModifier,
