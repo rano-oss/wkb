@@ -4992,21 +4992,6 @@ pub(crate) struct XkbcompFeatures {
     pub(crate) overlapping_overlays: bool,
 }
 
-/// Case-insensitive comparison of two byte slices (like C `strcasecmp`).
-/// Returns <0, 0, or >0.
-#[inline]
-pub(crate) fn istrcmp(a: &[u8], b: &[u8]) -> i32 {
-    let n = a.len().min(b.len());
-    for i in 0..n {
-        let al = a[i].to_ascii_lowercase();
-        let bl = b[i].to_ascii_lowercase();
-        if al != bl {
-            return (al - bl) as i32;
-        }
-    }
-    (a.len() - b.len()) as i32
-}
-
 fn digit(b: u8) -> u8 {
     match b {
         b'0'..=b'9' => b - b'0',
