@@ -3,6 +3,7 @@ use super::keymap::xkb_escape_map_name;
 use super::keymap::xkb_keymap_key_get_syms_by_level_ref;
 use super::keymap::GROUP_LAST_INDEX_NAME;
 use super::keysym::xkb_keysym_from_name;
+use super::parser_tables::*;
 pub(crate) use super::symbols::compile_compat_map;
 pub(crate) use super::symbols::compile_key_types;
 pub(crate) use super::symbols::compile_keycodes;
@@ -14,45 +15,30 @@ use crate::xkb::keymap::CONTROL_NAMES_MIN_V2_INDEX;
 use crate::xkb::keysym::codepoint_to_keysym;
 
 fn compile_keymap_file(keymap: &mut XkbKeymap, file: &mut XkbFile) -> bool {
-    if file.file_type != FileType::Keymap {
-        return false;
-    }
-    if !compile_keymap(file, keymap) {
-        return false;
-    }
-    true
+    file.file_type == FileType::Keymap && compile_keymap(file, keymap)
 }
 
 pub(crate) fn text_v1_keymap_new_from_names(keymap: &mut XkbKeymap, rmlvo: &XkbRuleNames) -> bool {
-    let mut ok: bool;
     let mut kccgst: XkbComponentNames = XkbComponentNames::default();
-    ok = xkb_components_from_rules_names(
-        &mut keymap.ctx,
-        rmlvo,
-        &mut kccgst,
-        &mut keymap.num_groups,
-    );
-    if !ok {
+    if !xkb_components_from_rules_names(&mut keymap.ctx, rmlvo, &mut kccgst, &mut keymap.num_groups)
+    {
         return false;
     }
     let max_groups: u32 = XKB_MAX_GROUPS;
     if keymap.num_groups > max_groups {
         keymap.num_groups = max_groups;
     }
-    let file_opt = xkb_file_from_components(&mut keymap.ctx, &kccgst);
-    let Some(mut file) = file_opt else {
+    let Some(mut file) = xkb_file_from_components(&kccgst) else {
         return false;
     };
-    ok = compile_keymap_file(keymap, &mut file);
-    ok
+    compile_keymap_file(keymap, &mut file)
 }
 
 pub(crate) fn text_v1_keymap_new_from_string(keymap: &mut XkbKeymap, input: &[u8]) -> bool {
-    let Some(mut xkb_file) = xkb_parse_string(&mut keymap.ctx, input, "(input string)", "") else {
+    let Some(mut xkb_file) = xkb_parse_string(&mut keymap.ctx, input, "") else {
         return false;
     };
-    let ok: bool = compile_keymap_file(keymap, &mut xkb_file);
-    ok
+    compile_keymap_file(keymap, &mut xkb_file)
 }
 
 pub(crate) const XKB_KEY_VOID_SYMBOL: i32 = 0xffffff_i32;
@@ -60,20 +46,8 @@ pub(crate) const XKB_KEY_0: i32 = 0x30;
 pub(crate) const XKB_KEY_SECTION: i32 = 0xa7_i32;
 pub(crate) const XKB_KEYSYM_MIN: i32 = 0;
 
-// ── YYSYMBOL constants ──────────────────────────────────────────────
-pub(crate) const YYSYMBOL_YYUNDEF: i32 = 2;
-pub(crate) const YYSYMBOL_YYERROR: i32 = 1;
-pub(crate) const YYSYMBOL_YYEOF: i32 = 0;
-pub(crate) const YYSYMBOL_YYEMPTY: i32 = -2;
-
-pub(crate) const YYFINAL: i32 = 16;
-pub(crate) const YYLAST: i32 = 928;
-pub(crate) const YYNTOKENS: i32 = 66;
-pub(crate) const YYMAXUTOK: i32 = 257;
 pub(crate) const YYINITDEPTH: usize = 200;
 pub(crate) const YYMAXDEPTH: usize = 10000;
-pub(crate) const YYPACT_NINF: i32 = -280;
-pub(crate) const YYENOMEM: i32 = -2;
 
 pub(crate) struct ParserParam<'a> {
     pub(crate) ctx: &'a mut XkbContext,
@@ -82,348 +56,7 @@ pub(crate) struct ParserParam<'a> {
     pub(crate) more_maps: bool,
 }
 
-static YYTRANSLATE: [i8; 258] = [
-    0, 4, 5, 6, 7, 8, 9, 10, 11, 2, 12, 13, 14, 15, 16, 2, 2, 2, 2, 2, 17, 18, 19, 20, 21, 22, 23,
-    24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 2, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
-    47, 48, 49, 50, 51, 2, 2, 2, 2, 52, 53, 54, 55, 56, 57, 2, 2, 2, 2, 58, 59, 60, 61, 62, 63, 64,
-    65, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 1, 2,
-];
-
-fn yysymbol_name(yysymbol: i32) -> &'static str {
-    static YY_SNAME: [&str; 150] = [
-        "end of file",
-        "error",
-        "invalid token",
-        "invalid token",
-        "xkb_keymap",
-        "xkb_keycodes",
-        "xkb_types",
-        "xkb_symbols",
-        "xkb_compatibility",
-        "xkb_geometry",
-        "xkb_semantics",
-        "xkb_layout",
-        "include",
-        "override",
-        "augment",
-        "replace",
-        "alternate",
-        "virtual_modifiers",
-        "type",
-        "interpret",
-        "action",
-        "key",
-        "alias",
-        "group",
-        "modifier_map",
-        "indicator",
-        "shape",
-        "keys",
-        "row",
-        "section",
-        "overlay",
-        "text",
-        "outline",
-        "solid",
-        "logo",
-        "virtual",
-        "=",
-        "+",
-        "-",
-        "/",
-        "*",
-        "{",
-        "}",
-        "(",
-        ")",
-        "[",
-        "]",
-        ".",
-        ",",
-        ";",
-        "!",
-        "~",
-        "string literal",
-        "decimal digit",
-        "integer literal",
-        "float literal",
-        "identifier",
-        "key name",
-        "partial",
-        "default",
-        "hidden",
-        "alphanumeric_keys",
-        "modifier_keys",
-        "keypad_keys",
-        "function_keys",
-        "alternate_group",
-        "$accept",
-        "XkbFile",
-        "XkbCompositeMap",
-        "XkbCompositeType",
-        "XkbMapConfigList",
-        "XkbMapConfig",
-        "FileType",
-        "OptFlags",
-        "Flags",
-        "Flag",
-        "DeclList",
-        "Decl",
-        "VarDecl",
-        "KeyNameDecl",
-        "KeyAliasDecl",
-        "VModDecl",
-        "VModDefList",
-        "VModDef",
-        "InterpretDecl",
-        "InterpretMatch",
-        "VarDeclList",
-        "KeyTypeDecl",
-        "SymbolsDecl",
-        "OptSymbolsBody",
-        "SymbolsBody",
-        "SymbolsVarDecl",
-        "MultiKeySymOrActionList",
-        "NoSymbolOrActionList",
-        "GroupCompatDecl",
-        "ModMapDecl",
-        "KeyOrKeySymList",
-        "KeyOrKeySym",
-        "LedMapDecl",
-        "LedNameDecl",
-        "UnknownDecl",
-        "UnknownCompoundStatementDecl",
-        "ShapeDecl",
-        "SectionDecl",
-        "SectionBody",
-        "SectionBodyItem",
-        "RowBody",
-        "RowBodyItem",
-        "Keys",
-        "Key",
-        "OverlayDecl",
-        "OverlayKeyList",
-        "OverlayKey",
-        "OutlineList",
-        "OutlineInList",
-        "CoordList",
-        "Coord",
-        "DoodadDecl",
-        "DoodadType",
-        "FieldSpec",
-        "Element",
-        "OptMergeMode",
-        "MergeMode",
-        "ExprList",
-        "Expr",
-        "Term",
-        "MultiActionList",
-        "ActionList",
-        "NonEmptyActions",
-        "Actions",
-        "Action",
-        "Lhs",
-        "OptTerminal",
-        "Terminal",
-        "MultiKeySymList",
-        "KeySymList",
-        "NonEmptyKeySyms",
-        "KeySyms",
-        "KeySym",
-        "KeySymLit",
-        "SignedNumber",
-        "Number",
-        "Float",
-        "Integer",
-        "KeyCode",
-        "Ident",
-        "String",
-        "OptMapName",
-        "MapName",
-        "",
-    ];
-    YY_SNAME[yysymbol as usize]
-}
-
-static YYPACT: [i16; 384] = [
-    7, -280, -280, -280, -280, -280, -280, -280, -280, -280, 32, -280, -280, 578, 847, -280, -280,
-    -280, -280, -280, -280, -280, -280, -280, -280, -12, -12, -280, -280, 22, -280, 36, -280, -280,
-    463, 10, 53, -280, 458, -280, -280, -280, -280, -280, 57, -280, 25, 34, -280, -280, 64, 59,
-    172, -280, 40, 61, 135, 64, 154, 59, -280, 59, 78, -280, -280, -280, 114, 64, 324, 120, -280,
-    -280, -280, -280, -280, -280, -280, -280, -280, -280, -280, -280, -280, -280, -280, -280, -280,
-    59, -18, -280, 134, 143, -280, -280, -30, -280, 175, -280, 179, -280, -280, -280, -280, -280,
-    182, 190, -280, 197, 213, -280, -280, 248, 222, 263, 234, 237, 261, 135, 258, -280, -280, 276,
-    293, -280, -280, -280, 142, 289, 332, 869, 332, -280, 64, -280, 332, -280, -280, 332, 597, 269,
-    332, 60, 332, -280, 35, 461, 296, -280, -280, 332, -280, -280, 287, -280, -280, -280, -280,
-    -280, -280, -280, -280, -280, -280, 332, 332, 825, 332, 332, 332, -6, 228, -280, -280, -280,
-    301, -280, -280, 294, 103, -280, 433, 639, 654, 433, 478, 64, 306, 311, -280, -280, 318, -27,
-    313, 233, -280, 13, -280, -280, 285, 696, 319, 96, 37, -280, 45, -280, 330, 59, 326, 59, -280,
-    -280, 419, -280, -280, -280, 332, 711, 372, -280, 753, -280, -280, -280, -280, 325, 48, -280,
-    418, -280, -280, 332, 332, 332, 332, 332, -280, 332, 332, -280, 322, -280, 323, 331, 520, -280,
-    337, 130, 133, -280, -280, 170, -280, -280, -280, 341, 597, 290, -280, -280, 343, 60, -280,
-    344, 56, 189, -280, -280, -280, 346, -280, 355, -25, 358, 319, 377, 773, 375, 364, -280, 386,
-    368, -280, 370, 332, -280, 869, -280, -38, 433, 253, 253, -280, -280, 433, 266, -280, -280,
-    -280, -280, 67, -280, -280, 540, -280, 845, -280, 161, -280, -280, -280, 433, -280, -280, -280,
-    -280, -280, 96, -280, -280, -280, -280, 796, 433, 381, -280, 227, -280, 384, -280, -280, -280,
-    -280, 30, -280, -280, 332, -280, -280, 208, 582, 239, 242, -280, -280, 180, -280, -280, -280,
-    400, 89, -24, 405, -280, 423, 112, -280, -280, 433, -280, -280, -280, -280, -280, -280, -280,
-    -280, 332, -280, 113, -280, -280, 403, 425, 384, 117, 427, -24, -280, -280, -280, -280, -280,
-    -280,
-];
-static YYDEFACT: [u8; 384] = [
-    18, 4, 21, 22, 23, 24, 25, 26, 27, 28, 0, 2, 3, 0, 17, 20, 1, 6, 12, 13, 15, 14, 16, 7, 8, 218,
-    218, 19, 219, 0, 217, 0, 10, 31, 18, 142, 0, 9, 0, 143, 145, 144, 146, 147, 0, 29, 0, 141, 5,
-    11, 0, 132, 131, 130, 133, 0, 134, 135, 136, 137, 138, 139, 140, 125, 126, 127, 0, 0, 214, 0,
-    215, 32, 34, 35, 30, 33, 36, 37, 39, 38, 40, 41, 45, 46, 42, 43, 44, 0, 176, 129, 0, 128, 47,
-    214, 0, 55, 56, 216, 0, 201, 199, 202, 203, 200, 0, 60, 198, 0, 0, 211, 210, 0, 0, 0, 0, 0, 0,
-    0, 0, 209, 185, 0, 180, 184, 183, 182, 0, 0, 0, 0, 0, 49, 0, 53, 0, 62, 62, 0, 66, 0, 0, 0, 0,
-    62, 0, 0, 0, 50, 62, 0, 213, 212, 0, 62, 132, 131, 133, 134, 135, 136, 137, 139, 140, 0, 0, 0,
-    0, 0, 0, 176, 0, 156, 173, 163, 161, 164, 128, 177, 0, 54, 57, 0, 0, 59, 81, 0, 0, 65, 68, 73,
-    0, 128, 0, 0, 86, 0, 85, 87, 0, 0, 0, 0, 0, 116, 0, 121, 0, 136, 138, 0, 99, 101, 0, 97, 102,
-    100, 0, 0, 0, 51, 0, 158, 161, 157, 174, 0, 0, 171, 0, 159, 160, 150, 0, 0, 0, 0, 178, 0, 0,
-    48, 0, 61, 0, 201, 0, 195, 200, 0, 0, 169, 168, 0, 189, 188, 72, 0, 0, 0, 52, 82, 0, 0, 89, 0,
-    0, 0, 207, 208, 206, 0, 205, 0, 0, 0, 0, 0, 0, 0, 0, 96, 0, 0, 91, 0, 150, 172, 0, 165, 0, 149,
-    152, 153, 151, 154, 155, 0, 63, 58, 80, 193, 0, 192, 78, 0, 76, 0, 74, 0, 64, 67, 70, 69, 83,
-    84, 88, 117, 204, 0, 93, 115, 94, 120, 0, 119, 0, 106, 0, 104, 0, 95, 90, 92, 123, 0, 170, 162,
-    0, 179, 194, 0, 0, 0, 0, 167, 166, 0, 196, 187, 186, 0, 0, 0, 0, 103, 0, 0, 113, 175, 148, 191,
-    190, 79, 77, 75, 197, 122, 118, 150, 109, 0, 108, 98, 0, 0, 0, 0, 0, 0, 114, 111, 112, 110,
-    105, 107,
-];
-static YYPGOTO: [i16; 83] = [
-    -280, -280, -280, -280, -280, 434, -280, 443, -280, 469, -280, -280, -45, -280, -280, -280,
-    -280, 356, -280, -280, 51, -280, -280, -280, -280, 244, 251, -280, -280, -280, -280, 249, 466,
-    -280, -280, -280, -280, -280, -280, 302, -280, 187, -280, 138, -280, -280, 144, -280, 257,
-    -196, 259, 470, -280, -46, -280, -280, -280, -279, 63, 5, 232, -280, -176, 231, -181, -35,
-    -280, 474, 247, -280, 240, -280, 500, -182, 236, 291, -280, -44, -280, -37, -23, 528, -280,
-];
-static YYDEFGOTO: [i16; 83] = [
-    0, 10, 11, 25, 34, 12, 26, 13, 14, 15, 35, 45, 241, 72, 73, 74, 94, 95, 75, 104, 181, 76, 77,
-    186, 187, 188, 189, 247, 78, 79, 195, 196, 211, 81, 82, 83, 84, 85, 212, 213, 326, 327, 369,
-    370, 214, 355, 356, 202, 203, 204, 205, 215, 87, 169, 89, 46, 47, 288, 289, 171, 248, 226, 172,
-    173, 227, 174, 121, 175, 251, 300, 252, 347, 197, 106, 269, 270, 123, 124, 152, 176, 125, 29,
-    30,
-];
-static YYTABLE: [i16; 929] = [
-    88, 71, 253, 250, 264, 333, 335, 1, 249, 91, 336, 90, 111, 96, 113, -71, 200, 367, 132, 133,
-    112, -71, 39, 40, 41, 42, 43, 128, 98, 129, 118, 93, 16, 368, 70, 114, 115, 231, 116, 128, 28,
-    129, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 44, 60, 61, 260, 62, 63, 64, 65, 66, 261, 301, 32,
-    127, 2, 3, 4, 5, 6, 7, 8, 9, 146, 357, 67, 200, 33, 336, 271, 201, 68, 69, 177, 70, 272, 92,
-    273, 375, 99, 285, 93, 88, 274, 70, 96, 286, 107, 315, 88, 210, 191, 48, 190, 274, 334, 49,
-    206, 91, 338, 90, 97, 100, 101, 102, 339, 103, 194, 108, 225, 93, 253, 250, 70, 344, 348, 350,
-    249, 222, 222, -124, 366, 222, 222, 265, 88, 88, 274, 225, 117, 232, 233, 234, 235, 91, 91, 90,
-    90, 254, 266, 267, 268, 239, 88, 373, 376, 126, 360, 301, 381, 374, 377, 91, 301, 90, 336, 88,
-    210, 221, 223, 130, 88, 229, 230, 88, 91, 302, 90, 303, 304, 91, 305, 90, 91, 114, 90, 277,
-    182, 109, 110, 99, 170, 131, 178, 199, 150, 151, 180, 225, 217, 183, 99, 345, 193, 220, 198,
-    97, 109, 110, 99, 88, 134, 218, 245, 101, 102, 306, 103, 307, 191, 135, 190, 364, 136, 100,
-    101, 102, 137, 103, 228, 88, 325, 299, 101, 102, 206, 103, 99, 138, 91, 225, 90, 266, 267, 268,
-    154, 155, 53, 156, 139, 157, 158, 159, 160, 324, 60, 161, 225, 162, 225, 359, 101, 102, 141,
-    103, 232, 233, 234, 235, 352, 232, 233, 234, 235, 236, 143, 225, 67, 144, 280, 88, 325, 259,
-    93, 140, 362, 70, 305, 363, 91, 307, 90, 234, 235, 225, 290, 291, 292, 293, 142, 294, 295, 145,
-    232, 233, 234, 235, 147, 154, 155, 53, 156, 337, 157, 158, 159, 160, 148, 60, 161, 311, 162,
-    232, 233, 234, 235, 192, 163, 164, 149, 153, 165, 216, 166, 262, 184, 219, 237, 323, 238, 167,
-    168, 97, 109, 110, 119, 93, 120, 255, 70, 154, 155, 53, 156, 257, 157, 158, 159, 160, 256, 60,
-    161, 258, 162, 201, -181, 275, 276, 284, 163, 164, 296, 297, 165, -139, 166, 97, 109, 110, 119,
-    -214, 120, 167, 168, 97, 109, 110, 119, 93, 120, 308, 70, 312, 314, 317, 154, 155, 53, 156,
-    358, 157, 158, 159, 160, 318, 60, 161, 320, 162, 232, 233, 234, 235, 329, 163, 164, 328, 331,
-    322, 332, 166, 282, 351, 232, 233, 234, 235, 167, 168, 97, 109, 110, 119, 93, 120, 330, 70,
-    154, 155, 53, 156, 354, 157, 158, 207, 160, 365, 208, 161, 209, 62, 63, 64, 65, 371, 232, 233,
-    234, 235, 372, 378, 278, 287, 18, 19, 20, 21, 22, 37, 67, 232, 233, 234, 235, 379, 93, 382, 38,
-    70, 154, 155, 53, 156, 27, 157, 158, 207, 160, 179, 208, 161, 209, 62, 63, 64, 65, 154, 155,
-    53, 156, 309, 157, 158, 159, 160, 36, 60, 243, 310, 162, 313, 67, 80, 353, 279, 383, 86, 93,
-    380, 244, 70, 2, 3, 4, 5, 6, 7, 8, 9, 319, 245, 101, 102, 321, 246, 341, 343, 70, 154, 155, 53,
-    156, 122, 157, 158, 159, 160, 346, 60, 243, 342, 162, 105, 349, 31, 0, 316, 0, 154, 155, 53,
-    156, 298, 157, 158, 159, 160, 0, 60, 243, 0, 162, 299, 101, 102, 0, 246, 0, 0, 70, 0, 340, 17,
-    18, 19, 20, 21, 22, 23, 24, 0, 0, 245, 101, 102, 0, 246, 0, 0, 70, 154, 155, 53, 156, 0, 157,
-    158, 159, 160, 0, 60, 243, 0, 162, 0, 154, 155, 53, 156, 0, 157, 158, 159, 160, 361, 60, 161,
-    0, 162, 0, 0, 0, 0, 0, 299, 101, 102, 0, 246, 0, 0, 70, 184, 0, 0, 0, 0, 185, 0, 0, 0, 0, 0,
-    93, 0, 0, 70, 154, 155, 53, 156, 0, 157, 158, 159, 160, 0, 60, 161, 0, 162, 0, 154, 155, 53,
-    156, 0, 157, 158, 159, 160, 240, 60, 161, 0, 162, 0, 0, 0, 67, 0, 0, 0, 0, 0, 93, 242, 0, 70,
-    0, 0, 0, 0, 0, 67, 0, 0, 0, 0, 0, 93, 0, 0, 70, 154, 155, 53, 156, 0, 157, 158, 159, 160, 0,
-    60, 161, 0, 162, 0, 154, 155, 53, 156, 0, 157, 158, 159, 160, 263, 60, 161, 0, 162, 0, 0, 0,
-    67, 0, 0, 0, 0, 0, 93, 281, 0, 70, 0, 0, 0, 0, 0, 67, 0, 0, 0, 0, 0, 93, 0, 0, 70, 154, 155,
-    53, 156, 0, 157, 158, 159, 160, 0, 60, 161, 0, 162, 0, 0, 0, 0, 0, 0, 154, 155, 53, 156, 283,
-    157, 158, 159, 160, 324, 60, 161, 67, 162, 0, 0, 0, 0, 93, 0, 0, 70, 0, 154, 155, 53, 156, 0,
-    157, 158, 159, 160, 67, 60, 161, 0, 162, 0, 93, 0, 0, 70, 0, 0, 0, 0, 0, 224, 0, 0, 201, 0,
-    154, 155, 53, 156, 0, 157, 158, 159, 160, 93, 60, 161, 70, 162, 0, 0, 0, 0, 0, 0, 154, 155, 53,
-    156, 224, 157, 158, 159, 160, 0, 60, 161, 0, 162, 0, 0, 0, 0, 93, 0, 0, 70, 0, 165, 154, 155,
-    53, 156, 0, 157, 158, 159, 160, 0, 60, 161, 0, 162, 93, 0, 0, 70, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 93, 0, 0, 70,
-];
-static YYCHECK: [i16; 929] = [
-    46, 46, 184, 184, 200, 284, 44, 0, 184, 46, 48, 46, 56, 50, 58, 42, 41, 41, 48, 49, 57, 48, 12,
-    13, 14, 15, 16, 45, 51, 47, 67, 56, 0, 57, 59, 58, 59, 43, 61, 45, 52, 47, 17, 18, 19, 20, 21,
-    22, 23, 24, 25, 26, 42, 28, 29, 42, 31, 32, 33, 34, 35, 48, 244, 41, 87, 58, 59, 60, 61, 62,
-    63, 64, 65, 117, 44, 50, 41, 41, 48, 42, 45, 56, 57, 129, 59, 48, 52, 42, 367, 29, 42, 56, 138,
-    48, 59, 132, 48, 57, 42, 145, 145, 138, 49, 138, 48, 286, 49, 144, 145, 42, 145, 52, 52, 53,
-    54, 48, 56, 57, 57, 165, 56, 303, 303, 59, 305, 307, 322, 303, 163, 164, 52, 42, 167, 168, 38,
-    181, 182, 48, 184, 25, 37, 38, 39, 40, 181, 182, 181, 182, 185, 53, 54, 55, 49, 199, 42, 42,
-    36, 339, 340, 42, 48, 48, 199, 345, 199, 48, 212, 212, 163, 164, 36, 217, 167, 168, 220, 212,
-    46, 212, 48, 46, 217, 48, 217, 220, 207, 220, 209, 136, 53, 54, 29, 128, 49, 130, 143, 53, 54,
-    134, 244, 148, 137, 29, 41, 140, 153, 142, 52, 53, 54, 29, 256, 36, 149, 52, 53, 54, 46, 56,
-    48, 256, 41, 256, 42, 41, 52, 53, 54, 37, 56, 166, 276, 276, 52, 53, 54, 272, 56, 29, 41, 276,
-    286, 276, 53, 54, 55, 18, 19, 20, 21, 36, 23, 24, 25, 26, 27, 28, 29, 303, 31, 305, 52, 53, 54,
-    41, 56, 37, 38, 39, 40, 42, 37, 38, 39, 40, 46, 41, 322, 50, 41, 216, 326, 326, 49, 56, 36, 46,
-    59, 48, 46, 326, 48, 326, 39, 40, 340, 232, 233, 234, 235, 36, 237, 238, 41, 37, 38, 39, 40,
-    49, 18, 19, 20, 21, 46, 23, 24, 25, 26, 41, 28, 29, 257, 31, 37, 38, 39, 40, 57, 37, 38, 36,
-    41, 41, 36, 43, 49, 45, 49, 36, 275, 45, 50, 51, 52, 53, 54, 55, 56, 57, 42, 59, 18, 19, 20,
-    21, 36, 23, 24, 25, 26, 48, 28, 29, 49, 31, 45, 41, 36, 41, 43, 37, 38, 49, 49, 41, 43, 43, 52,
-    53, 54, 55, 43, 57, 50, 51, 52, 53, 54, 55, 56, 57, 49, 59, 49, 49, 48, 18, 19, 20, 21, 336,
-    23, 24, 25, 26, 49, 28, 29, 49, 31, 37, 38, 39, 40, 49, 37, 38, 41, 49, 41, 49, 43, 49, 41, 37,
-    38, 39, 40, 50, 51, 52, 53, 54, 55, 56, 57, 49, 59, 18, 19, 20, 21, 57, 23, 24, 25, 26, 46, 28,
-    29, 30, 31, 32, 33, 34, 49, 37, 38, 39, 40, 36, 57, 42, 44, 5, 6, 7, 8, 9, 34, 50, 37, 38, 39,
-    40, 49, 56, 49, 34, 59, 18, 19, 20, 21, 14, 23, 24, 25, 26, 132, 28, 29, 30, 31, 32, 33, 34,
-    18, 19, 20, 21, 256, 23, 24, 25, 26, 42, 28, 29, 257, 31, 261, 50, 46, 326, 212, 377, 46, 56,
-    374, 41, 59, 58, 59, 60, 61, 62, 63, 64, 65, 272, 52, 53, 54, 274, 56, 303, 305, 59, 18, 19,
-    20, 21, 68, 23, 24, 25, 26, 307, 28, 29, 303, 31, 52, 317, 26, -1, 265, -1, 18, 19, 20, 21, 42,
-    23, 24, 25, 26, -1, 28, 29, -1, 31, 52, 53, 54, -1, 56, -1, -1, 59, -1, 41, 4, 5, 6, 7, 8, 9,
-    10, 11, -1, -1, 52, 53, 54, -1, 56, -1, -1, 59, 18, 19, 20, 21, -1, 23, 24, 25, 26, -1, 28, 29,
-    -1, 31, -1, 18, 19, 20, 21, -1, 23, 24, 25, 26, 42, 28, 29, -1, 31, -1, -1, -1, -1, -1, 52, 53,
-    54, -1, 56, -1, -1, 59, 45, -1, -1, -1, -1, 50, -1, -1, -1, -1, -1, 56, -1, -1, 59, 18, 19, 20,
-    21, -1, 23, 24, 25, 26, -1, 28, 29, -1, 31, -1, 18, 19, 20, 21, -1, 23, 24, 25, 26, 42, 28, 29,
-    -1, 31, -1, -1, -1, 50, -1, -1, -1, -1, -1, 56, 42, -1, 59, -1, -1, -1, -1, -1, 50, -1, -1, -1,
-    -1, -1, 56, -1, -1, 59, 18, 19, 20, 21, -1, 23, 24, 25, 26, -1, 28, 29, -1, 31, -1, 18, 19, 20,
-    21, -1, 23, 24, 25, 26, 42, 28, 29, -1, 31, -1, -1, -1, 50, -1, -1, -1, -1, -1, 56, 42, -1, 59,
-    -1, -1, -1, -1, -1, 50, -1, -1, -1, -1, -1, 56, -1, -1, 59, 18, 19, 20, 21, -1, 23, 24, 25, 26,
-    -1, 28, 29, -1, 31, -1, -1, -1, -1, -1, -1, 18, 19, 20, 21, 42, 23, 24, 25, 26, 27, 28, 29, 50,
-    31, -1, -1, -1, -1, 56, -1, -1, 59, -1, 18, 19, 20, 21, -1, 23, 24, 25, 26, 50, 28, 29, -1, 31,
-    -1, 56, -1, -1, 59, -1, -1, -1, -1, -1, 42, -1, -1, 45, -1, 18, 19, 20, 21, -1, 23, 24, 25, 26,
-    56, 28, 29, 59, 31, -1, -1, -1, -1, -1, -1, 18, 19, 20, 21, 42, 23, 24, 25, 26, -1, 28, 29, -1,
-    31, -1, -1, -1, -1, 56, -1, -1, 59, -1, 41, 18, 19, 20, 21, -1, 23, 24, 25, 26, -1, 28, 29, -1,
-    31, 56, -1, -1, 59, 58, 59, 60, 61, 62, 63, 64, 65, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, 56, -1, -1, 59,
-];
-static YYR1: [u8; 220] = [
-    0, 66, 67, 67, 67, 68, 69, 69, 69, 70, 70, 71, 72, 72, 72, 72, 72, 73, 73, 74, 74, 75, 75, 75,
-    75, 75, 75, 75, 75, 76, 76, 76, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77, 77,
-    78, 78, 78, 79, 80, 81, 82, 82, 83, 83, 84, 85, 85, 86, 86, 87, 88, 89, 89, 90, 90, 91, 91, 91,
-    91, 91, 92, 92, 92, 92, 92, 93, 93, 93, 94, 95, 96, 96, 97, 97, 98, 99, 99, 100, 101, 102, 102,
-    103, 104, 104, 105, 105, 105, 105, 105, 106, 106, 107, 107, 108, 108, 109, 109, 110, 111, 111,
-    112, 113, 113, 114, 114, 114, 115, 115, 116, 117, 118, 118, 118, 118, 119, 119, 120, 120, 120,
-    120, 120, 120, 120, 120, 120, 120, 120, 121, 121, 122, 122, 122, 122, 122, 123, 123, 123, 124,
-    124, 124, 124, 124, 124, 125, 125, 125, 125, 125, 125, 125, 125, 125, 126, 126, 126, 126, 127,
-    127, 128, 129, 129, 130, 131, 131, 131, 131, 132, 132, 133, 133, 133, 133, 134, 134, 134, 134,
-    135, 135, 135, 135, 136, 136, 137, 137, 138, 138, 139, 139, 139, 139, 140, 140, 141, 141, 141,
-    142, 143, 143, 144, 144, 145, 145, 146, 147, 147, 148,
-];
-static YYR2: [i8; 220] = [
-    0, 2, 1, 1, 1, 7, 1, 1, 1, 2, 0, 7, 1, 1, 1, 1, 1, 1, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 0,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 2, 3, 4, 5, 3, 3, 1, 1, 3, 6, 3, 1, 2, 0, 6,
-    6, 1, 0, 3, 1, 3, 3, 1, 2, 1, 3, 5, 3, 5, 3, 4, 2, 0, 5, 6, 3, 1, 1, 1, 6, 5, 6, 5, 6, 6, 6, 6,
-    2, 1, 5, 1, 1, 1, 1, 2, 1, 5, 1, 3, 1, 1, 3, 6, 3, 1, 3, 3, 1, 3, 5, 3, 3, 1, 5, 6, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 3, 1, 0, 3, 3, 3, 3, 3, 1, 2, 2, 2,
-    2, 1, 4, 1, 1, 3, 3, 3, 1, 1, 3, 1, 3, 1, 2, 4, 1, 3, 4, 6, 1, 0, 1, 1, 1, 1, 3, 3, 1, 1, 3, 3,
-    1, 1, 3, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
-];
 // ── Helper functions ────────────────────────────────────────────────
-
-fn _xkbcommon_error(param: &mut ParserParam, _msg: &str) {
-    let _loc: ScannerLoc = param.scanner.token_location();
-}
 
 fn resolve_keysym(name: Sval) -> Option<u32> {
     let name_bytes = name.data;
@@ -449,382 +82,116 @@ fn resolve_keysym(name: Sval) -> Option<u32> {
     xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS)
 }
 
-fn yypcontext_expected_tokens(yyssp: &[i16], ssp: usize, yyarg: &mut [i32], yyargn: usize) -> i32 {
-    let mut yycount = 0;
-    let yyn = YYPACT[yyssp[ssp] as usize] as i32;
-    if yyn != YYPACT_NINF {
-        let yyxbegin = if yyn < 0 { -yyn } else { 0 };
-        let yychecklim = YYLAST - yyn + 1;
-        let yyxend = if yychecklim < YYNTOKENS {
-            yychecklim
-        } else {
-            YYNTOKENS
-        };
-        let mut yyx = yyxbegin;
-        while yyx < yyxend {
-            if YYCHECK[(yyx + yyn) as usize] as i32 == yyx && yyx != YYSYMBOL_YYERROR {
-                if yyargn == 0 {
-                    yycount += 1;
-                } else if (yycount as usize) == yyargn {
-                    return 0;
-                } else {
-                    yyarg[yycount as usize] = yyx;
-                    yycount += 1;
-                }
-            }
-            yyx += 1;
-        }
-    }
-    if yyargn > 0 && yycount == 0 {
-        yyarg[0] = YYSYMBOL_YYEMPTY;
-    }
-    yycount
-}
-
-fn yysyntax_error(yyssp: &[i16], ssp: usize, yytoken: i32) -> String {
-    let mut yyarg: [i32; 5] = [YYSYMBOL_YYEOF; 5];
-    // Count expected tokens
-    let mut yycount: i32 = 0;
-    if yytoken != YYSYMBOL_YYEMPTY {
-        yyarg[0] = yytoken;
-        yycount = 1;
-        let n = yypcontext_expected_tokens(yyssp, ssp, &mut yyarg[1..], 4);
-        if n == YYENOMEM {
-            return String::from("syntax error");
-        }
-        yycount += n;
-    }
-
-    let mut msg = String::from("syntax error, unexpected ");
-    if yycount > 0 {
-        msg.push_str(yysymbol_name(yyarg[0]));
-    }
-    if yycount > 1 {
-        msg.push_str(", expecting ");
-        for i in 1..yycount {
-            if i > 1 {
-                msg.push_str(" or ");
-            }
-            msg.push_str(yysymbol_name(yyarg[i as usize]));
-        }
-    }
-    msg
-}
-
 // ── Main parser function ────────────────────────────────────────────
 
+/// Error recovery: try to shift the error token in the current state, otherwise
+/// pop states until we find one that can (which the current grammar never does).
+fn recover<'a>(
+    states: &mut Vec<u16>,
+    values: &mut Vec<YYValue<'a>>,
+    yylval: &mut YYValue<'a>,
+) -> bool {
+    loop {
+        let state = &STATES[*states.last().unwrap() as usize];
+        if let Some(Action::Shift(next)) = state.explicit_action(SYM_ERROR) {
+            states.push(next);
+            values.push(std::mem::replace(yylval, YYValue::None));
+            return true;
+        }
+        if states.len() == 1 {
+            return false;
+        }
+        states.pop();
+        values.pop();
+    }
+}
+
 pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
-    let mut yychar: i32;
+    let mut yychar: i32 = YYEMPTY; // lookahead symbol (internal), or YYEMPTY when none
     let mut yylval: YYValue<'a> = YYValue::None;
-    let mut _xkbcommon_nerrs: i32 = 0;
-    let mut yystate: i32 = 0;
     let mut yyerrstatus: i32 = 0;
 
-    let mut yyss: Vec<i16> = vec![0; YYINITDEPTH];
-    let mut yyvs: Vec<YYValue<'a>> = Vec::with_capacity(YYINITDEPTH);
-    for _ in 0..YYINITDEPTH {
-        yyvs.push(YYValue::None);
-    }
-
-    let mut ssp: usize = 0; // state stack pointer
-    let mut sp: usize = 0; // value stack pointer
-
-    let mut yyn: i32;
-    let yyresult: i32;
-    let mut yytoken: i32;
-    let mut yyval: YYValue<'a>;
-    let mut yylen: i32;
-
-    yychar = YYEMPTY;
+    let mut states = Vec::with_capacity(YYINITDEPTH);
+    let mut values = Vec::with_capacity(YYINITDEPTH);
+    states.push(0);
+    values.push(YYValue::None);
 
     'main_loop: loop {
-        yyss[ssp] = yystate as i16;
-
-        // Check stack overflow
-        if ssp >= YYMAXDEPTH - 1 {
-            _xkbcommon_error(param, "memory exhausted");
-            yyresult = 2;
-            break 'main_loop;
+        if states.len() >= YYMAXDEPTH {
+            return 2;
         }
 
-        // Accept?
-        if yystate == YYFINAL {
-            yyresult = 0;
-            break 'main_loop;
+        let yystate = *states.last().unwrap();
+        let state = &STATES[yystate as usize];
+        if yychar == YYEMPTY
+            && (state.has_terminal_transitions() || matches!(state.default_action(), Action::Error))
+        {
+            yychar = _xkbcommon_lex(&mut yylval, param.scanner, param.ctx);
         }
 
-        // Try to take a shift
-        yyn = YYPACT[yystate as usize] as i32;
-        if yyn == YYPACT_NINF {
-            // goto yydefault
-        } else {
-            if yychar == YYEMPTY {
-                yychar = _xkbcommon_lex(&mut yylval, param.scanner, param.ctx);
-            }
-            if yychar <= END_OF_FILE {
-                yychar = END_OF_FILE;
-                yytoken = YYSYMBOL_YYEOF;
-            } else if yychar == YYERROR {
-                yychar = YYUNDEF;
-                // goto yyerrlab1
-                yyerrstatus = 3;
-                // Error recovery: pop until we find a state that accepts error token
-                loop {
-                    yyn = YYPACT[yystate as usize] as i32;
-                    if yyn != YYPACT_NINF {
-                        yyn += YYSYMBOL_YYERROR;
-                        if (0..=YYLAST).contains(&yyn)
-                            && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
-                        {
-                            yyn = YYTABLE[yyn as usize] as i32;
-                            if yyn > 0 {
-                                break;
-                            }
-                        }
-                    }
-                    if ssp == 0 {
-                        yyresult = 1;
-                        break 'main_loop;
-                    }
-                    // Drop the value being popped
-                    yyvs[sp] = YYValue::None;
-                    sp = sp.saturating_sub(1);
-                    ssp -= 1;
-                    yystate = yyss[ssp] as i32;
+        // Look up the action for the lookahead symbol in the current state.
+        let action = (yychar >= 0)
+            .then(|| state.explicit_action(yychar as Symbol))
+            .flatten()
+            .unwrap_or_else(|| state.default_action());
+
+        match action {
+            Action::Accept => return 0,
+            Action::Shift(next) => {
+                if yyerrstatus != 0 {
+                    yyerrstatus -= 1;
                 }
-                sp += 1;
-                yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
-                yystate = yyn;
-                ssp += 1;
-                continue 'main_loop;
-            } else {
-                yytoken = if (0..=YYMAXUTOK).contains(&yychar) {
-                    YYTRANSLATE[yychar as usize] as i32
-                } else {
-                    YYSYMBOL_YYUNDEF
-                };
+                states.push(next);
+                values.push(std::mem::replace(&mut yylval, YYValue::None));
+                yychar = YYEMPTY;
             }
+            Action::Reduce(rule_id) => {
+                let rule = &RULES[rule_id as usize];
+                let yylen = rule.rhs_len() as usize;
+                let mut yyval = YYValue::None;
 
-            yyn += yytoken;
-            if !(0..=YYLAST).contains(&yyn) || YYCHECK[yyn as usize] as i32 != yytoken {
-                // goto yydefault (fall through)
-            } else {
-                yyn = YYTABLE[yyn as usize] as i32;
-                if yyn <= 0 {
-                    yyn = -yyn;
-                    // goto yyreduce
-                    yylen = YYR2[yyn as usize] as i32;
-                    yyval = YYValue::None;
+                let top = values.len() - 1;
+                let reduce_ok =
+                    execute_reduction(rule_id as i32, &mut values, top, &mut yyval, param);
+                if !reduce_ok {
+                    states.truncate(states.len() - yylen);
+                    values.truncate(values.len() - yylen);
 
-                    // Execute reduction
-                    let reduce_ok = execute_reduction(yyn, &mut yyvs, sp, &mut yyval, param);
-                    if !reduce_ok {
-                        // YYERROR or YYABORT from reduction
-                        _xkbcommon_nerrs += 1;
-                        sp -= yylen as usize;
-                        ssp -= yylen as usize;
-                        yystate = yyss[ssp] as i32;
-
-                        // Error recovery
-                        yyerrstatus = 3;
-                        loop {
-                            yyn = YYPACT[yystate as usize] as i32;
-                            if yyn != YYPACT_NINF {
-                                yyn += YYSYMBOL_YYERROR;
-                                if (0..=YYLAST).contains(&yyn)
-                                    && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
-                                {
-                                    yyn = YYTABLE[yyn as usize] as i32;
-                                    if yyn > 0 {
-                                        break;
-                                    }
-                                }
-                            }
-                            if ssp == 0 {
-                                yyresult = 1;
-                                break 'main_loop;
-                            }
-                            yyvs[sp] = YYValue::None;
-                            sp = sp.saturating_sub(1);
-                            ssp -= 1;
-                            yystate = yyss[ssp] as i32;
-                        }
-                        sp += 1;
-                        yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
-                        yystate = yyn;
-                        ssp += 1;
-                        continue 'main_loop;
+                    yyerrstatus = 3;
+                    if !recover(&mut states, &mut values, &mut yylval) {
+                        return 1;
                     }
-
-                    // Check for rule 3 (YYACCEPT mid-rule)
-                    if yyn == 3 {
-                        yyresult = 0;
-                        break 'main_loop;
-                    }
-
-                    sp -= yylen as usize;
-                    ssp -= yylen as usize;
-
-                    sp += 1;
-                    yyvs[sp] = yyval;
-
-                    let yylhs: i32 = YYR1[yyn as usize] as i32 - YYNTOKENS;
-                    let yyi: i32 = YYPGOTO[yylhs as usize] as i32 + yyss[ssp] as i32;
-                    yystate = if (0..=YYLAST).contains(&yyi)
-                        && YYCHECK[yyi as usize] as i32 == yyss[ssp] as i32
-                    {
-                        YYTABLE[yyi as usize] as i32
-                    } else {
-                        YYDEFGOTO[yylhs as usize] as i32
-                    };
-
-                    ssp += 1;
-                    continue 'main_loop;
-                } else {
-                    // Shift
-                    if yyerrstatus != 0 {
-                        yyerrstatus -= 1;
-                    }
-                    yystate = yyn;
-                    sp += 1;
-                    yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
-                    yychar = YYEMPTY;
-                    ssp += 1;
                     continue 'main_loop;
                 }
+
+                // A complete top-level map returns before lexing the next one.
+                if matches!(rule_id, 2 | 3) {
+                    return 0;
+                }
+
+                states.truncate(states.len() - yylen);
+                values.truncate(values.len() - yylen);
+                states.push(rule.next_state(*states.last().unwrap()));
+                values.push(yyval);
             }
-        }
-
-        // yydefault: use default action
-        yyn = YYDEFACT[yystate as usize] as i32;
-        if yyn == 0 {
-            // Syntax error
-            yytoken = if yychar == YYEMPTY {
-                YYSYMBOL_YYEMPTY
-            } else if (0..=YYMAXUTOK).contains(&yychar) {
-                YYTRANSLATE[yychar as usize] as i32
-            } else {
-                YYSYMBOL_YYUNDEF
-            };
-
-            if yyerrstatus == 0 {
-                _xkbcommon_nerrs += 1;
-                let msg = yysyntax_error(&yyss, ssp, yytoken);
-                _xkbcommon_error(param, &msg);
-            }
-
-            if yyerrstatus == 3 {
-                if yychar <= END_OF_FILE {
-                    if yychar == END_OF_FILE {
-                        yyresult = 1;
-                        break 'main_loop;
-                    }
-                } else {
-                    // Discard lookahead
+            Action::Error => {
+                if yyerrstatus == 3 && yychar == END_OF_FILE {
+                    return 1;
+                }
+                if yyerrstatus == 3 && yychar > END_OF_FILE {
                     yylval = YYValue::None;
                     yychar = YYEMPTY;
                 }
+
+                yyerrstatus = 3;
+                if !recover(&mut states, &mut values, &mut yylval) {
+                    return 1;
+                }
+                continue 'main_loop;
             }
-
-            // yyerrlab1: error recovery
-            yyerrstatus = 3;
-            loop {
-                yyn = YYPACT[yystate as usize] as i32;
-                if yyn != YYPACT_NINF {
-                    yyn += YYSYMBOL_YYERROR;
-                    if (0..=YYLAST).contains(&yyn)
-                        && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
-                    {
-                        yyn = YYTABLE[yyn as usize] as i32;
-                        if yyn > 0 {
-                            break;
-                        }
-                    }
-                }
-                if ssp == 0 {
-                    yyresult = 1;
-                    break 'main_loop;
-                }
-                yyvs[sp] = YYValue::None;
-                sp = sp.saturating_sub(1);
-                ssp -= 1;
-                yystate = yyss[ssp] as i32;
-            }
-            sp += 1;
-            yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
-            yystate = yyn;
-            ssp += 1;
-            continue 'main_loop;
         }
-
-        // yyreduce with default action
-        yylen = YYR2[yyn as usize] as i32;
-        yyval = YYValue::None;
-
-        let reduce_ok = execute_reduction(yyn, &mut yyvs, sp, &mut yyval, param);
-        if !reduce_ok {
-            _xkbcommon_nerrs += 1;
-            sp -= yylen as usize;
-            ssp -= yylen as usize;
-            yystate = yyss[ssp] as i32;
-
-            yyerrstatus = 3;
-            loop {
-                yyn = YYPACT[yystate as usize] as i32;
-                if yyn != YYPACT_NINF {
-                    yyn += YYSYMBOL_YYERROR;
-                    if (0..=YYLAST).contains(&yyn)
-                        && YYCHECK[yyn as usize] as i32 == YYSYMBOL_YYERROR
-                    {
-                        yyn = YYTABLE[yyn as usize] as i32;
-                        if yyn > 0 {
-                            break;
-                        }
-                    }
-                }
-                if ssp == 0 {
-                    yyresult = 1;
-                    break 'main_loop;
-                }
-                yyvs[sp] = YYValue::None;
-                sp = sp.saturating_sub(1);
-                ssp -= 1;
-                yystate = yyss[ssp] as i32;
-            }
-            sp += 1;
-            yyvs[sp] = std::mem::replace(&mut yylval, YYValue::None);
-            yystate = yyn;
-            ssp += 1;
-            continue 'main_loop;
-        }
-
-        // Rule 3 is YYACCEPT
-        if yyn == 3 {
-            yyresult = 0;
-            break 'main_loop;
-        }
-
-        sp -= yylen as usize;
-        ssp -= yylen as usize;
-
-        sp += 1;
-        yyvs[sp] = yyval;
-
-        let yylhs: i32 = YYR1[yyn as usize] as i32 - YYNTOKENS;
-        let yyi: i32 = YYPGOTO[yylhs as usize] as i32 + yyss[ssp] as i32;
-        yystate = if (0..=YYLAST).contains(&yyi) && YYCHECK[yyi as usize] as i32 == yyss[ssp] as i32
-        {
-            YYTABLE[yyi as usize] as i32
-        } else {
-            YYDEFGOTO[yylhs as usize] as i32
-        };
-
-        ssp += 1;
     }
-
-    yyresult
 }
-
 #[inline(always)]
 fn yy_file_type<'a>(yyval: &mut YYValue<'a>, ft: FileType) {
     *yyval = YYValue::FileType(ft);
@@ -845,19 +212,19 @@ fn yy_merge<'a>(yyval: &mut YYValue<'a>, m: MergeMode) {
 fn yy_bin_expr<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize, op: BinaryOp) {
     let left = yyvs[sp - 2].take_expr();
     let right = yyvs[sp].take_expr();
-    *yyval = YYValue::Expr(expr_create(ExprKind::Binary {
+    *yyval = YYValue::Expr(ExprKind::Binary {
         op,
         left: left.map(Box::new),
         right: right.map(Box::new),
-    }));
+    });
 }
 #[inline(always)]
 fn yy_unary_expr<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize, op: UnaryOp) {
     let child = yyvs[sp].take_expr();
-    *yyval = YYValue::Expr(expr_create(ExprKind::Unary {
+    *yyval = YYValue::Expr(ExprKind::Unary {
         op,
         child: child.map(Box::new),
-    }));
+    });
 }
 #[inline(always)]
 fn yy_list_push<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usize, sp_off: usize) {
@@ -925,7 +292,7 @@ fn execute_reduction<'a>(
                 flags,
             ));
         }
-        6 | 7 | 8 => {
+        6..=8 => {
             yy_file_type(yyval, FileType::Keymap);
         }
         9 => {
@@ -954,21 +321,16 @@ fn execute_reduction<'a>(
                 flags,
             ));
         }
-        12 => {
-            yy_file_type(yyval, FileType::Keycodes);
-        }
-        13 => {
-            yy_file_type(yyval, FileType::Types);
-        }
-        14 => {
-            yy_file_type(yyval, FileType::Compat);
-        }
-        15 => {
-            yy_file_type(yyval, FileType::Symbols);
-        }
-        16 => {
-            yy_file_type(yyval, FileType::Geometry);
-        }
+        12..=16 => yy_file_type(
+            yyval,
+            [
+                FileType::Keycodes,
+                FileType::Types,
+                FileType::Compat,
+                FileType::Symbols,
+                FileType::Geometry,
+            ][yyn as usize - 12],
+        ),
         17 | 20 => {
             *yyval = YYValue::MapFlags(yyvs[sp].as_map_flags());
         }
@@ -979,30 +341,19 @@ fn execute_reduction<'a>(
             let f = yyvs[sp - 1].as_map_flags() | yyvs[sp].as_map_flags();
             *yyval = YYValue::MapFlags(f);
         }
-        21 => {
-            yy_flags(yyval, MAP_IS_PARTIAL);
-        }
-        22 => {
-            yy_flags(yyval, MAP_IS_DEFAULT);
-        }
-        23 => {
-            yy_flags(yyval, MAP_IS_HIDDEN);
-        }
-        24 => {
-            yy_flags(yyval, MAP_HAS_ALPHANUMERIC);
-        }
-        25 => {
-            yy_flags(yyval, MAP_HAS_MODIFIER);
-        }
-        26 => {
-            yy_flags(yyval, MAP_HAS_KEYPAD);
-        }
-        27 => {
-            yy_flags(yyval, MAP_HAS_FN);
-        }
-        28 => {
-            yy_flags(yyval, MAP_IS_ALTGR);
-        }
+        21..=28 => yy_flags(
+            yyval,
+            [
+                MAP_IS_PARTIAL,
+                MAP_IS_DEFAULT,
+                MAP_IS_HIDDEN,
+                MAP_HAS_ALPHANUMERIC,
+                MAP_HAS_MODIFIER,
+                MAP_HAS_KEYPAD,
+                MAP_HAS_FN,
+                MAP_IS_ALTGR,
+            ][yyn as usize - 21],
+        ),
         29 => {
             // DeclList: DeclList Decl
             let stmt = std::mem::replace(&mut yyvs[sp], YYValue::None);
@@ -1078,10 +429,7 @@ fn execute_reduction<'a>(
             // Decl: OptMergeMode LedNameDecl
             yy_merge_decl!(yyval, yyvs, sp, LedName, LedName);
         }
-        42..=44 => {
-            // ShapeDecl, SectionDecl, DoodadDecl → geometry (ignored)
-            *yyval = YYValue::None;
-        }
+        42..=44 | 93..=123 | 181 => *yyval = YYValue::None,
         45 | 46 => {
             // Decl: OptMergeMode UnknownDecl
             if let YYValue::Unknown = std::mem::replace(&mut yyvs[sp], YYValue::None) {
@@ -1094,26 +442,24 @@ fn execute_reduction<'a>(
             // Decl: MergeMode STRING
             let merge = yyvs[sp - 1].as_merge();
             let s = yyvs[sp].take_str();
-            if let Some(inc) = include_create(param.ctx, &s, merge) {
+            if let Some(inc) = include_create(&s, merge) {
                 *yyval = YYValue::Stmt(Statement::Include(inc));
             } else {
                 *yyval = YYValue::None;
             }
         }
-        48 => {
-            // VarDecl: Lhs EQUALS Expr SEMI
-            let lhs = yyvs[sp - 3].take_expr();
-            let val = yyvs[sp - 1].take_expr();
+        48 | 69 | 70 => {
+            let trailing = usize::from(yyn == 48);
+            let lhs = yyvs[sp - 2 - trailing].take_expr();
+            let val = yyvs[sp - trailing].take_expr();
             *yyval = YYValue::Var(var_create(lhs, val));
         }
-        49 => {
-            // VarDecl: Ident SEMI
-            let atom = yyvs[sp - 1].as_atom();
+        49 | 71 => {
+            let atom = yyvs[sp - usize::from(yyn == 49)].as_atom();
             *yyval = YYValue::Var(bool_var_create(atom, true));
         }
-        50 => {
-            // VarDecl: EXCLAM Ident SEMI
-            let atom = yyvs[sp - 1].as_atom();
+        50 | 72 => {
+            let atom = yyvs[sp - usize::from(yyn == 50)].as_atom();
             *yyval = YYValue::Var(bool_var_create(atom, false));
         }
         51 => {
@@ -1184,10 +530,9 @@ fn execute_reduction<'a>(
             let keysym = yyvs[sp].as_keysym();
             *yyval = YYValue::Interp(interp_create(keysym, None));
         }
-        61 => {
-            // VarDeclList: VarDeclList VarDecl
+        61 | 67 => {
             let var = yyvs[sp].take_var();
-            let mut list = yyvs[sp - 1].take_var_list();
+            let mut list = yyvs[sp - if yyn == 61 { 1 } else { 2 }].take_var_list();
             if let Some(v) = var {
                 list.push(v);
             }
@@ -1214,15 +559,6 @@ fn execute_reduction<'a>(
             let list = yyvs[sp].take_var_list();
             *yyval = YYValue::VarList(list);
         }
-        67 => {
-            // SymbolsBody: SymbolsBody COMMA SymbolsVarDecl
-            let var = yyvs[sp].take_var();
-            let mut list = yyvs[sp - 2].take_var_list();
-            if let Some(v) = var {
-                list.push(v);
-            }
-            *yyval = YYValue::VarList(list);
-        }
         68 => {
             // SymbolsBody: SymbolsVarDecl
             let var = yyvs[sp].take_var();
@@ -1232,22 +568,6 @@ fn execute_reduction<'a>(
             }
             *yyval = YYValue::VarList(list);
         }
-        69 | 70 => {
-            // SymbolsVarDecl: Lhs EQUALS Expr
-            let lhs = yyvs[sp - 2].take_expr();
-            let val = yyvs[sp].take_expr();
-            *yyval = YYValue::Var(var_create(lhs, val));
-        }
-        71 => {
-            // SymbolsVarDecl: Ident
-            let atom = yyvs[sp].as_atom();
-            *yyval = YYValue::Var(bool_var_create(atom, true));
-        }
-        72 => {
-            // SymbolsVarDecl: EXCLAM Ident
-            let atom = yyvs[sp].as_atom();
-            *yyval = YYValue::Var(bool_var_create(atom, false));
-        }
         73 => {
             // SymbolsVarDecl: Expr
             let val = yyvs[sp].take_expr();
@@ -1256,7 +576,7 @@ fn execute_reduction<'a>(
         74 | 76 | 172 => {
             // MultiKeySymOrActionList: OBRACKET MultiKeySymList CBRACKET (yylen=3)
             let list = yyvs[sp - 1].take_expr_list();
-            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: list }));
+            *yyval = YYValue::Expr(ExprKind::ActionList { actions: list });
         }
         75 => {
             // MultiKeySymOrActionList: NoSymbolOrActionList OBRACKET MultiKeySymList CBRACKET COMMA (yylen=5)
@@ -1268,7 +588,7 @@ fn execute_reduction<'a>(
                 prepended.push(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL));
             }
             prepended.append(&mut list);
-            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: prepended }));
+            *yyval = YYValue::Expr(ExprKind::ActionList { actions: prepended });
         }
         77 => {
             // MultiKeySymOrActionList: NoSymbolOrActionList OBRACKET MultiActionList CBRACKET COMMA (yylen=5)
@@ -1276,16 +596,16 @@ fn execute_reduction<'a>(
             let count = yyvs[sp - 3].as_no_sym_or_action_list();
             let mut prepended: Vec<ExprKind> = Vec::new();
             for _ in 0..count {
-                prepended.push(expr_create(ExprKind::ActionList {
+                prepended.push(ExprKind::ActionList {
                     actions: Vec::new(),
-                }));
+                });
             }
             prepended.append(&mut list);
-            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList { actions: prepended }));
+            *yyval = YYValue::Expr(ExprKind::ActionList { actions: prepended });
         }
         78 => {
             // NoSymbolOrActionList: NoSymbol (produces EmptyList expr)
-            *yyval = YYValue::Expr(expr_create(ExprKind::EmptyList));
+            *yyval = YYValue::Expr(ExprKind::EmptyList);
         }
         79 => {
             // NoSymbolOrActionList: NoSymbolOrActionList COMMA NoSymbol COMMA (yylen=4)
@@ -1321,12 +641,12 @@ fn execute_reduction<'a>(
         86 | 185 => {
             // KeyOrKeySym: KEYNAME
             let atom = yyvs[sp].as_atom();
-            *yyval = YYValue::Expr(expr_create(ExprKind::KeyName(atom)));
+            *yyval = YYValue::Expr(ExprKind::KeyName(atom));
         }
         87 => {
             // KeyOrKeySym: KeySym
             let keysym = yyvs[sp].as_keysym();
-            *yyval = YYValue::Expr(expr_create(ExprKind::KeySym(keysym)));
+            *yyval = YYValue::Expr(ExprKind::KeySym(keysym));
         }
         88 => {
             // LedMapDecl: INDICATOR String OBRACE VarDeclList CBRACE SEMI
@@ -1353,144 +673,80 @@ fn execute_reduction<'a>(
             let _ = yyvs[sp - 2].take_var_list();
             *yyval = YYValue::Unknown;
         }
-        // Rules 93-123: Geometry rules → all produce None (geometry not supported)
-        93 | 94 | 95 | 96 | 97 | 98 | 100 | 102 | 103 | 104 | 105 | 107 | 108 | 109 | 111 | 112
-        | 113 | 114 | 115 | 116 | 117 | 118 => {
-            *yyval = YYValue::None;
-        }
-        99 | 106 => {
-            // SectionBodyItem: VarDecl → drop it (geometry)
-            let _ = yyvs[sp].take_var();
-            *yyval = YYValue::None;
-        }
-        101 => {
-            // SectionBodyItem: LedMapDecl → drop it (geometry)
-            let _ = std::mem::replace(&mut yyvs[sp], YYValue::None);
-            *yyval = YYValue::None;
-        }
-        110 => {
-            // OverlayDecl: ... → drop ExprList (geometry)
-            let _ = yyvs[sp - 1].take_expr_list();
-            *yyval = YYValue::None;
-        }
-        119 => {
-            // CoordList: ... → drop expr (geometry)
-            let _ = yyvs[sp].take_expr();
-            *yyval = YYValue::None;
-        }
-        120..=122 => {
-            // OutlineInList/OutlineList → geometry, drop expr/null
-            let _ = yyvs[sp].take_expr();
-            *yyval = YYValue::None;
-        }
-        123 => {
-            // ShapeDecl → drop VarDeclList (geometry)
-            let _ = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::None;
-        }
-        // DoodadType rules 124-127
-        124..=127 => {
-            *yyval = YYValue::Num(0);
-        }
+        // Geometry is parsed for compatibility but has no semantic representation.
+        124..=127 | 209 => *yyval = YYValue::Num(0),
         // FieldSpec / Element rules 128-140
         128 | 129 => {
             *yyval = YYValue::Atom(yyvs[sp].as_atom());
         }
-        130 => {
-            yy_atom(yyval, &mut param.ctx, b"action");
-        }
-        131 => {
-            yy_atom(yyval, &mut param.ctx, b"interpret");
-        }
-        132 => {
-            yy_atom(yyval, &mut param.ctx, b"type");
-        }
-        133 => {
-            yy_atom(yyval, &mut param.ctx, b"key");
-        }
-        134 => {
-            yy_atom(yyval, &mut param.ctx, b"group");
-        }
-        135 => {
-            yy_atom(yyval, &mut param.ctx, b"modifier_map");
-        }
-        136 => {
-            yy_atom(yyval, &mut param.ctx, b"indicator");
-        }
-        137 => {
-            yy_atom(yyval, &mut param.ctx, b"shape");
-        }
-        138 => {
-            yy_atom(yyval, &mut param.ctx, b"row");
-        }
-        139 => {
-            yy_atom(yyval, &mut param.ctx, b"section");
-        }
-        140 => {
-            yy_atom(yyval, &mut param.ctx, b"text");
-        }
+        130..=140 => yy_atom(
+            yyval,
+            &mut param.ctx,
+            [
+                &b"action"[..],
+                b"interpret",
+                b"type",
+                b"key",
+                b"group",
+                b"modifier_map",
+                b"indicator",
+                b"shape",
+                b"row",
+                b"section",
+                b"text",
+            ][yyn as usize - 130],
+        ),
         // MergeMode rules 141-147
         141 => {
             *yyval = YYValue::Merge(yyvs[sp].as_merge());
         }
-        142 | 143 => {
-            yy_merge(yyval, MergeMode::Default);
-        }
-        144 => {
-            yy_merge(yyval, MergeMode::Augment);
-        }
-        145 => {
-            yy_merge(yyval, MergeMode::Override);
-        }
-        146 => {
-            yy_merge(yyval, MergeMode::Replace);
-        }
-        147 => {
-            let _loc = param.scanner.token_location();
-            yy_merge(yyval, MergeMode::Default);
-        }
+        142..=147 => yy_merge(
+            yyval,
+            match yyn {
+                144 => MergeMode::Augment,
+                145 => MergeMode::Override,
+                146 => MergeMode::Replace,
+                _ => MergeMode::Default,
+            },
+        ),
         // ExprList rules 148-150
         150 => {
             // ExprList: empty
             *yyval = YYValue::ExprList(Vec::new());
         }
         // Expr rules 151-165
-        151 => {
-            yy_bin_expr(yyval, yyvs, sp, BinaryOp::Divide);
-        }
-        152 => {
-            yy_bin_expr(yyval, yyvs, sp, BinaryOp::Add);
-        }
-        153 => {
-            yy_bin_expr(yyval, yyvs, sp, BinaryOp::Subtract);
-        }
-        154 => {
-            yy_bin_expr(yyval, yyvs, sp, BinaryOp::Multiply);
-        }
-        155 => {
-            yy_bin_expr(yyval, yyvs, sp, BinaryOp::Assign);
-        }
+        151..=155 => yy_bin_expr(
+            yyval,
+            yyvs,
+            sp,
+            [
+                BinaryOp::Divide,
+                BinaryOp::Add,
+                BinaryOp::Subtract,
+                BinaryOp::Multiply,
+                BinaryOp::Assign,
+            ][yyn as usize - 151],
+        ),
         156 | 161 | 163 | 164 | 173 | 180 | 196 => {
             // Expr: Term
             *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
         }
-        157 => {
-            yy_unary_expr(yyval, yyvs, sp, UnaryOp::Negate);
-        }
-        158 => {
-            yy_unary_expr(yyval, yyvs, sp, UnaryOp::Plus);
-        }
-        159 => {
-            yy_unary_expr(yyval, yyvs, sp, UnaryOp::Not);
-        }
-        160 => {
-            yy_unary_expr(yyval, yyvs, sp, UnaryOp::Invert);
-        }
+        157..=160 => yy_unary_expr(
+            yyval,
+            yyvs,
+            sp,
+            [
+                UnaryOp::Negate,
+                UnaryOp::Plus,
+                UnaryOp::Not,
+                UnaryOp::Invert,
+            ][yyn as usize - 157],
+        ),
         162 | 175 => {
             // Term: Action OPAREN ExprList CPAREN
             let name = yyvs[sp - 3].as_atom();
             let list = yyvs[sp - 1].take_expr_list();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Action { name, args: list }));
+            *yyval = YYValue::Expr(ExprKind::Action { name, args: list });
         }
         165 | 194 => {
             // Term: OPAREN Expr CPAREN
@@ -1502,9 +758,9 @@ fn execute_reduction<'a>(
             // ActionList at sp produces an ExprList of actions
             // Create an ActionList expr wrapping those actions, then append to the list
             let actions_expr_list = yyvs[sp].take_expr_list();
-            let action_list_expr = expr_create(ExprKind::ActionList {
+            let action_list_expr = ExprKind::ActionList {
                 actions: actions_expr_list,
-            });
+            };
             let mut list = yyvs[sp - 2].take_expr_list();
             list.push(action_list_expr);
             *yyval = YYValue::ExprList(list);
@@ -1521,64 +777,60 @@ fn execute_reduction<'a>(
         168 => {
             // MultiActionList: ActionList (initial single element)
             let actions_expr_list = yyvs[sp].take_expr_list();
-            let action_list_expr = expr_create(ExprKind::ActionList {
+            let action_list_expr = ExprKind::ActionList {
                 actions: actions_expr_list,
-            });
+            };
             *yyval = YYValue::ExprList(vec![action_list_expr]);
         }
         174 => {
             // ActionList: empty (yylen=0 means nothing on stack)
-            *yyval = YYValue::Expr(expr_create(ExprKind::ActionList {
+            *yyval = YYValue::Expr(ExprKind::ActionList {
                 actions: Vec::new(),
-            }));
+            });
         }
         176 => {
             // Lhs: Ident
             let atom = yyvs[sp].as_atom();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Ident(atom)));
+            *yyval = YYValue::Expr(ExprKind::Ident(atom));
         }
         177 => {
             // Lhs: Ident DOT FieldSpec
             let element = yyvs[sp - 2].as_atom();
             let field = yyvs[sp].as_atom();
-            *yyval = YYValue::Expr(expr_create(ExprKind::FieldRef { element, field }));
+            *yyval = YYValue::Expr(ExprKind::FieldRef { element, field });
         }
         178 => {
             // Lhs: Ident OBRACKET Expr CBRACKET
             let field = yyvs[sp - 3].as_atom();
             let entry = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::Expr(expr_create(ExprKind::ArrayRef {
+            *yyval = YYValue::Expr(ExprKind::ArrayRef {
                 element: XKB_ATOM_NONE,
                 field,
                 entry: entry.map(Box::new),
-            }));
+            });
         }
         179 => {
             // Lhs: Ident DOT Ident OBRACKET Expr CBRACKET
             let element = yyvs[sp - 5].as_atom();
             let field = yyvs[sp - 3].as_atom();
             let entry = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::Expr(expr_create(ExprKind::ArrayRef {
+            *yyval = YYValue::Expr(ExprKind::ArrayRef {
                 element,
                 field,
                 entry: entry.map(Box::new),
-            }));
-        }
-        // OptTerminal / Terminal 180-181
-        181 => {
-            *yyval = YYValue::None;
+            });
         }
         // Terminal rules 182-185
         182 => {
             let atom = yyvs[sp].as_atom();
-            *yyval = YYValue::Expr(expr_create(ExprKind::String(atom)));
+            *yyval = YYValue::Expr(ExprKind::String(atom));
         }
         183 => {
             let num = yyvs[sp].as_num();
-            *yyval = YYValue::Expr(expr_create(ExprKind::Integer(num)));
+            *yyval = YYValue::Expr(ExprKind::Integer(num));
         }
         184 => {
-            *yyval = YYValue::Expr(expr_create(ExprKind::Float));
+            *yyval = YYValue::Expr(ExprKind::Float);
         }
         186 => {
             // MultiKeySymList: MultiKeySymList COMMA KeySymList
@@ -1604,7 +856,7 @@ fn execute_reduction<'a>(
             // NonEmptyKeySyms: NonEmptyKeySyms COMMA STRING
             let expr = yyvs[sp - 2].take_expr().unwrap();
             let s = yyvs[sp].take_str();
-            match expr_key_sym_list_append_string(param.scanner, expr, &s) {
+            match expr_key_sym_list_append_string(expr, &s) {
                 Some(e) => {
                     *yyval = YYValue::Expr(e);
                 }
@@ -1622,7 +874,7 @@ fn execute_reduction<'a>(
             // KeySyms: STRING (single string keysym)
             let s = yyvs[sp].take_str();
             let expr = expr_create_key_sym_list(XKB_KEY_NO_SYMBOL);
-            match expr_key_sym_list_append_string(param.scanner, expr, &s) {
+            match expr_key_sym_list_append_string(expr, &s) {
                 Some(e) => {
                     *yyval = YYValue::Expr(e);
                 }
@@ -1643,23 +895,14 @@ fn execute_reduction<'a>(
         199 => {
             // KeySym: STRING → parse string as keysym
             let s = yyvs[sp].take_str();
-            match keysym_parse_string(param.scanner, &s) {
+            match keysym_parse_string(&s) {
                 Some(keysym) => *yyval = YYValue::Keysym(keysym),
                 None => return false,
             }
         }
         200 => {
-            // KeySym: IDENT → resolve keysym name
-            let sval = yyvs[sp].as_sval();
-            match resolve_keysym(sval) {
-                Some(sym) => {
-                    *yyval = YYValue::Keysym(sym);
-                }
-                None => {
-                    let _loc = param.scanner.token_location();
-                    *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL);
-                }
-            }
+            *yyval =
+                YYValue::Keysym(resolve_keysym(yyvs[sp].as_sval()).unwrap_or(XKB_KEY_NO_SYMBOL))
         }
         201 => {
             // KeySym: SECTION
@@ -1671,35 +914,20 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Keysym((XKB_KEY_0 as u32).wrapping_add(num as u32));
         }
         203 => {
-            // KeySym: INTEGER (numeric keysym)
             let num = yyvs[sp].as_num();
-            if num < XKB_KEYSYM_MIN as i64 {
-                let _loc = param.scanner.token_location();
-                *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL);
-            } else {
-                if num <= XKB_KEYSYM_MAX as i64 {
-                    let keysym = num as u32;
-                    *yyval = YYValue::Keysym(keysym);
+            *yyval = YYValue::Keysym(
+                if (XKB_KEYSYM_MIN as i64..=XKB_KEYSYM_MAX as i64).contains(&num) {
+                    num as u32
                 } else {
-                    let _loc = param.scanner.token_location();
-                    *yyval = YYValue::Keysym(XKB_KEY_NO_SYMBOL);
-                }
-                let _loc = param.scanner.token_location();
-            }
+                    XKB_KEY_NO_SYMBOL
+                },
+            );
         }
         // SignedNumber / Number rules 204-208
         204 => {
             *yyval = YYValue::Num(-yyvs[sp].as_num());
         }
-        205..=208 => {
-            *yyval = YYValue::Num(yyvs[sp].as_num());
-        }
-        // Float 209
-        209 => {
-            *yyval = YYValue::Num(0);
-        }
-        // Integer, KeyCode 210-213
-        210..=213 => {
+        205..=208 | 210..=213 => {
             *yyval = YYValue::Num(yyvs[sp].as_num());
         }
         // Ident 214
@@ -1728,9 +956,7 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Str(String::new());
         }
 
-        _ => {
-            // Default: no action
-        }
+        _ => {}
     }
     true
 }
@@ -1787,22 +1013,17 @@ pub(crate) fn parse<'a>(
         break;
     }
 
-    if let Some(_first_ref) = first.as_ref() {}
     first
 }
 
 // ── AST builder functions (merged from ast_build.rs) ──
-
-pub(crate) fn expr_create(kind: ExprKind) -> ExprKind {
-    kind
-}
 
 pub(crate) fn expr_create_key_sym_list(sym: u32) -> ExprKind {
     let mut syms = Vec::new();
     if sym != XKB_KEY_NO_SYMBOL {
         syms.push(sym);
     }
-    expr_create(ExprKind::KeysymList { syms })
+    ExprKind::KeysymList { syms }
 }
 
 pub(crate) fn expr_append_key_sym_list(mut expr: ExprKind, sym: u32) -> ExprKind {
@@ -1815,7 +1036,6 @@ pub(crate) fn expr_append_key_sym_list(mut expr: ExprKind, sym: u32) -> ExprKind
 }
 
 pub(crate) fn expr_key_sym_list_append_string(
-    scanner: &mut Scanner,
     mut expr: ExprKind,
     string: &str,
 ) -> Option<ExprKind> {
@@ -1828,12 +1048,10 @@ pub(crate) fn expr_key_sym_list_append_string(
         }
         let (cp, cp_len) = utf8_next_code_point_safe(&bytes[idx..]);
         if cp == INVALID_UTF8_CODE_POINT {
-            let _loc = scanner.token_location();
             return None;
         }
         let sym = codepoint_to_keysym(cp).unwrap_or(0);
         if sym == XKB_KEY_NO_SYMBOL {
-            let _loc = scanner.token_location();
             return None;
         }
         if let ExprKind::KeysymList { ref mut syms } = expr {
@@ -1843,55 +1061,37 @@ pub(crate) fn expr_key_sym_list_append_string(
     }
 }
 
-pub(crate) fn keysym_parse_string(scanner: &mut Scanner, string: &str) -> Option<u32> {
+pub(crate) fn keysym_parse_string(string: &str) -> Option<u32> {
     let bytes = string.as_bytes();
     let len = bytes.len();
     if len == 0 {
-        let _loc = scanner.token_location();
         return None;
     }
     let (cp, cp_len) = utf8_next_code_point_safe(bytes);
     if cp == INVALID_UTF8_CODE_POINT || cp_len != len {
-        let _loc = scanner.token_location();
         return None;
     }
-    let sym = codepoint_to_keysym(cp).unwrap_or(0);
-    if sym == XKB_KEY_NO_SYMBOL {
-        let _loc = scanner.token_location();
-    }
-    Some(sym)
+    Some(codepoint_to_keysym(cp).unwrap_or(0))
 }
 
-pub(crate) fn keycode_create(name: u32, value: i64) -> KeycodeDef {
-    KeycodeDef {
-        merge: MergeMode::Default,
-        name,
-        value,
-    }
+macro_rules! default_merge_constructors {
+    ($(fn $name:ident($($field:ident: $field_type:ty),*) -> $result:ident;)*) => {$(
+        pub(crate) fn $name($($field: $field_type),*) -> $result {
+            $result { merge: MergeMode::Default, $($field),* }
+        }
+    )*};
 }
 
-pub(crate) fn key_alias_create(alias: u32, real: u32) -> KeyAliasDef {
-    KeyAliasDef {
-        merge: MergeMode::Default,
-        alias,
-        real,
-    }
-}
-
-pub(crate) fn vmod_create(name: u32, value: Option<ExprKind>) -> VModDef {
-    VModDef {
-        merge: MergeMode::Default,
-        name,
-        value,
-    }
-}
-
-pub(crate) fn var_create(name: Option<ExprKind>, value: Option<ExprKind>) -> VarDef {
-    VarDef {
-        merge: MergeMode::Default,
-        name,
-        value,
-    }
+default_merge_constructors! {
+    fn keycode_create(name: u32, value: i64) -> KeycodeDef;
+    fn key_alias_create(alias: u32, real: u32) -> KeyAliasDef;
+    fn vmod_create(name: u32, value: Option<ExprKind>) -> VModDef;
+    fn var_create(name: Option<ExprKind>, value: Option<ExprKind>) -> VarDef;
+    fn key_type_create(name: u32, body: Vec<VarDef>) -> KeyTypeDef;
+    fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> SymbolsDef;
+    fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> ModMapDef;
+    fn led_map_create(name: u32, body: Vec<VarDef>) -> LedMapDef;
+    fn led_name_create(ndx: i64, name: Option<ExprKind>) -> LedNameDef;
 }
 
 pub(crate) fn bool_var_create(ident: u32, set: bool) -> VarDef {
@@ -1911,85 +1111,43 @@ pub(crate) fn interp_create(sym: u32, match_0: Option<ExprKind>) -> InterpDef {
     }
 }
 
-pub(crate) fn key_type_create(name: u32, body: Vec<VarDef>) -> KeyTypeDef {
-    KeyTypeDef {
-        merge: MergeMode::Default,
-        name,
-        body,
-    }
-}
-
-pub(crate) fn symbols_create(key_name: u32, symbols: Vec<VarDef>) -> SymbolsDef {
-    SymbolsDef {
-        merge: MergeMode::Default,
-        key_name,
-        symbols,
-    }
-}
-
-pub(crate) fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> ModMapDef {
-    ModMapDef {
-        merge: MergeMode::Default,
-        modifier,
-        keys,
-    }
-}
-
-pub(crate) fn led_map_create(name: u32, body: Vec<VarDef>) -> LedMapDef {
-    LedMapDef {
-        merge: MergeMode::Default,
-        name,
-        body,
-    }
-}
-
-pub(crate) fn led_name_create(ndx: i64, name: Option<ExprKind>) -> LedNameDef {
-    LedNameDef {
-        merge: MergeMode::Default,
-        ndx,
-        name,
-    }
-}
-
-pub(crate) fn include_create(
-    _ctx: &mut XkbContext,
-    stmt_str: &str,
-    mut merge: MergeMode,
-) -> Option<Vec<IncludeStmt>> {
+pub(crate) fn include_create(stmt_str: &str, mut merge: MergeMode) -> Option<Vec<IncludeStmt>> {
     let mut items: Vec<IncludeStmt> = Vec::new();
     let mut remaining: Option<&str> = Some(stmt_str);
 
-    loop {
-        let input = match remaining {
-            Some(s) if !s.is_empty() => s,
-            _ => break,
+    while let Some(input) = remaining.filter(|s| !s.is_empty()) {
+        let (segment, nextop, rest) = match input.find(['+', '|', '^']) {
+            Some(pos) => (
+                &input[..pos],
+                input.as_bytes()[pos],
+                Some(&input[pos + 1..]),
+            ),
+            None => (input, 0, None),
+        };
+        let (segment, modifier) = segment.split_once(':').unwrap_or((segment, ""));
+        let (file, map) = match segment.split_once('(') {
+            Some(("", _)) => return None,
+            Some((file, map)) => (file, map.strip_suffix(')')?),
+            None => (segment, ""),
         };
 
-        let (parsed, rest) = match parse_include_map(input) {
-            Some(r) => r,
-            None => {
-                return None;
-            }
-        };
-
-        if parsed.file.is_empty() {
+        if file.is_empty() {
             remaining = rest;
             continue;
         }
 
         items.push(IncludeStmt {
             merge,
-            stmt: String::new(),
-            file: parsed.file,
-            map: parsed.map,
-            modifier: parsed.extra_data,
+            file: file.into(),
+            map: map.into(),
+            modifier: modifier.into(),
         });
 
-        match parsed.nextop {
-            '|' => merge = MergeMode::Augment,
-            '^' => merge = MergeMode::Replace,
-            _ => merge = MergeMode::Override,
-        }
+        merge = match nextop {
+            b'|' => MergeMode::Augment,
+            b'^' => MergeMode::Replace,
+            _ => MergeMode::Override,
+        };
 
         remaining = rest;
     }
@@ -1998,7 +1156,6 @@ pub(crate) fn include_create(
         return None;
     }
 
-    items[0].stmt = stmt_str.to_string();
     Some(items)
 }
 
@@ -2018,10 +1175,7 @@ pub(crate) fn xkb_file_create(
     })
 }
 
-pub(crate) fn xkb_file_from_components(
-    ctx: &mut XkbContext,
-    kkctgs: &XkbComponentNames,
-) -> Option<Box<XkbFile>> {
+pub(crate) fn xkb_file_from_components(kkctgs: &XkbComponentNames) -> Option<Box<XkbFile>> {
     let components = [
         &kkctgs.keycodes,
         &kkctgs.types,
@@ -2042,7 +1196,6 @@ pub(crate) fn xkb_file_from_components(
             .unwrap_or(component_bytes.len());
         let component_str = std::str::from_utf8(&component_bytes[..end]).unwrap_or("");
         let defs = vec![Statement::Include(include_create(
-            ctx,
             component_str,
             MergeMode::Default,
         )?)];
@@ -2057,34 +1210,22 @@ pub(crate) struct Sval<'a> {
     pub(crate) data: &'a [u8],
 }
 
-#[derive(Copy, Clone)]
-pub(crate) struct ScannerLoc {
-    pub(crate) line: usize,
-    pub(crate) column: usize,
-}
-
 pub(crate) struct Scanner<'a> {
     pub(crate) pos: usize,
     pub(crate) s: &'a [u8],
     pub(crate) buf: [u8; 1024],
     pub(crate) buf_pos: usize,
     pub(crate) token_pos: usize,
-    pub(crate) cached_pos: usize,
-    pub(crate) cached_loc: ScannerLoc,
-    pub(crate) file_name: String,
 }
 
 impl<'a> Scanner<'a> {
-    pub(crate) fn new(s: &'a [u8], file_name: &str) -> Self {
+    pub(crate) fn new(s: &'a [u8]) -> Self {
         Scanner {
             pos: 0,
             s,
             buf: [0; 1024],
             buf_pos: 0,
             token_pos: 0,
-            cached_pos: 0,
-            cached_loc: ScannerLoc { line: 1, column: 1 },
-            file_name: file_name.to_string(),
         }
     }
 
@@ -2095,10 +1236,7 @@ impl<'a> Scanner<'a> {
 
     #[inline]
     pub(crate) fn peek(&self) -> u8 {
-        if self.pos >= self.s.len() {
-            return 0;
-        }
-        self.s[self.pos]
+        self.s.get(self.pos).copied().unwrap_or(0)
     }
 
     #[inline]
@@ -2113,21 +1251,21 @@ impl<'a> Scanner<'a> {
 
     #[inline]
     pub(crate) fn skip_to_eol(&mut self) {
-        let rem = self.remaining_bytes();
-        match rem.iter().position(|&b| b == b'\n') {
-            Some(i) => self.pos += i,
-            None => self.pos = self.s.len(),
-        }
+        self.pos += self
+            .remaining_bytes()
+            .iter()
+            .position(|&b| b == b'\n')
+            .unwrap_or(self.s.len() - self.pos);
     }
 
     #[inline]
     pub(crate) fn next_byte(&mut self) -> u8 {
-        if self.pos >= self.s.len() {
-            return 0;
+        if let Some(&byte) = self.s.get(self.pos) {
+            self.pos += 1;
+            byte
+        } else {
+            0
         }
-        let c = self.s[self.pos];
-        self.pos += 1;
-        c
     }
 
     #[inline]
@@ -2141,15 +1279,12 @@ impl<'a> Scanner<'a> {
 
     #[inline]
     pub(crate) fn str_match(&mut self, string: &[u8]) -> bool {
-        let len = string.len();
-        if self.s.len() - self.pos < len {
-            return false;
+        if self.remaining_bytes().starts_with(string) {
+            self.pos += string.len();
+            true
+        } else {
+            false
         }
-        if &self.s[self.pos..self.pos + len] != string {
-            return false;
-        }
-        self.pos += len;
-        true
     }
 
     #[inline]
@@ -2164,23 +1299,19 @@ impl<'a> Scanner<'a> {
 
     #[inline]
     pub(crate) fn buf_appends_code_point(&mut self, c: u32) -> bool {
-        if self.buf_pos + 4 <= self.buf.len() {
-            let mut count = utf32_to_utf8_safe(c, &mut self.buf[self.buf_pos..]);
-            if count == 0 {
-                count = utf32_to_utf8_safe(0xfffd, &mut self.buf[self.buf_pos..]);
-            }
-            if count == 0 {
-                return false;
-            }
-            self.buf_pos += count;
-            true
-        } else {
-            false
-        }
+        let Some(buffer) = self.buf.get_mut(self.buf_pos..self.buf_pos + 4) else {
+            return false;
+        };
+        let count = char::from_u32(c)
+            .unwrap_or(char::REPLACEMENT_CHARACTER)
+            .encode_utf8(buffer)
+            .len();
+        self.buf_pos += count;
+        true
     }
 
     #[inline]
-    pub(crate) fn oct(&mut self, out: &mut u8) -> bool {
+    pub(crate) fn oct(&mut self) -> Option<u8> {
         let mut i: u8 = 0;
         let mut c: u8 = 0;
         while self.peek() >= b'0' && self.peek() <= b'7' && (i as i32) < 4 {
@@ -2188,47 +1319,17 @@ impl<'a> Scanner<'a> {
                 c = (c as i32 * 8 + self.next_byte() as i32 - b'0' as i32) as u8;
             } else {
                 self.next_byte();
-                *out = c;
-                return false;
+                return None;
             }
             i += 1;
         }
-        *out = c;
-        i > 0
+        (i > 0).then_some(c)
     }
 
     #[inline]
-    pub(crate) fn dec_int64(&mut self, out: &mut i64) -> i32 {
-        let remaining = self.remaining_bytes();
-        let (val, count) = parse_dec_u64(remaining);
-        if count > 0 {
-            if val > i64::MAX as u64 {
-                return -1;
-            }
-            self.pos += count as usize;
-            *out = val as i64;
-        }
-        count
-    }
-
-    #[inline]
-    pub(crate) fn hex_int64(&mut self, out: &mut i64) -> i32 {
-        let remaining = self.remaining_bytes();
-        let (val, count) = parse_hex_u64(remaining);
-        if count > 0 {
-            if val > i64::MAX as u64 {
-                return -1;
-            }
-            self.pos += count as usize;
-            *out = val as i64;
-        }
-        count
-    }
-
-    #[inline]
-    pub(crate) fn unicode_code_point(&mut self, out: &mut u32) -> bool {
+    pub(crate) fn unicode_code_point(&mut self) -> Option<u32> {
         if !self.chr(b'{') {
-            return false;
+            return None;
         }
         let remaining = self.remaining_bytes();
         let (cp, count) = parse_hex_u32(remaining);
@@ -2240,11 +1341,10 @@ impl<'a> Scanner<'a> {
             self.next_byte();
         }
         if self.chr(b'}') {
-            *out = cp;
-            return count > 0 && self.pos == last_valid + 1 && cp <= 0x10ffff;
+            return (count > 0 && self.pos == last_valid + 1 && cp <= 0x10ffff).then_some(cp);
         }
         self.pos = last_valid;
-        false
+        None
     }
 
     #[inline]
@@ -2252,288 +1352,84 @@ impl<'a> Scanner<'a> {
         if self.str_match(b"\xEF\xBB\xBF") || self.s.len() < 2 {
             return true;
         }
-        let input = self.s;
-        if input[0] == 0 || input[1] == 0 {
-            return false;
-        }
-        if !input[0].is_ascii() {
-            return false;
-        }
-        true
+        self.s[0] != 0 && self.s[1] != 0 && self.s[0].is_ascii()
     }
 
     #[inline]
     pub(crate) fn input_slice(&self, start: usize, end: usize) -> &[u8] {
         &self.s[start..end]
     }
-
-    pub(crate) fn token_location(&mut self) -> ScannerLoc {
-        let mut line = self.cached_loc.line;
-        let mut line_pos: usize = 0;
-
-        if self.cached_pos > self.token_pos {
-            self.cached_pos = 0;
-            self.cached_loc.column = 1;
-            self.cached_loc.line = 1;
-        }
-
-        let input = self.s;
-        let start = self.cached_pos;
-        let end = self.token_pos;
-
-        let mut search_from = start;
-        while let Some(i) = input[search_from..end].iter().position(|&b| b == b'\n') {
-            line += 1;
-            search_from = search_from + i + 1;
-            line_pos = search_from;
-        }
-
-        let column = if line == self.cached_loc.line {
-            self.cached_loc.column + (self.token_pos - self.cached_pos)
-        } else {
-            self.token_pos - line_pos + 1
-        };
-
-        let loc = ScannerLoc { line, column };
-        self.cached_pos = self.token_pos;
-        self.cached_loc = loc;
-        loc
-    }
 }
 
-pub(crate) const ALTERNATE_GROUP: i32 = 77;
-pub(crate) const FUNCTION_KEYS: i32 = 76;
-pub(crate) const KEYPAD_KEYS: i32 = 75;
-pub(crate) const MODIFIER_KEYS: i32 = 74;
-pub(crate) const ALPHANUMERIC_KEYS: i32 = 73;
-pub(crate) const HIDDEN: i32 = 72;
-pub(crate) const DEFAULT: i32 = 71;
-pub(crate) const PARTIAL: i32 = 70;
-pub(crate) const KEYNAME: i32 = 65;
-pub(crate) const IDENT: i32 = 64;
-pub(crate) const FLOAT: i32 = 63;
-pub(crate) const INTEGER: i32 = 62;
-pub(crate) const DECIMAL_DIGIT: i32 = 61;
-pub(crate) const STRING: i32 = 60;
-pub(crate) const INVERT: i32 = 55;
-pub(crate) const EXCLAM: i32 = 54;
-pub(crate) const SEMI: i32 = 53;
-pub(crate) const COMMA: i32 = 52;
-pub(crate) const DOT: i32 = 51;
-pub(crate) const CBRACKET: i32 = 50;
-pub(crate) const OBRACKET: i32 = 49;
-pub(crate) const CPAREN: i32 = 48;
-pub(crate) const OPAREN: i32 = 47;
-pub(crate) const CBRACE: i32 = 46;
-pub(crate) const OBRACE: i32 = 45;
-pub(crate) const TIMES: i32 = 44;
-pub(crate) const DIVIDE: i32 = 43;
-pub(crate) const MINUS: i32 = 42;
-pub(crate) const PLUS: i32 = 41;
-pub(crate) const EQUALS: i32 = 40;
-pub(crate) const VIRTUAL: i32 = 38;
-pub(crate) const LOGO: i32 = 37;
-pub(crate) const SOLID: i32 = 36;
-pub(crate) const OUTLINE: i32 = 35;
-pub(crate) const TEXT: i32 = 34;
-pub(crate) const OVERLAY: i32 = 33;
-pub(crate) const SECTION: i32 = 32;
-pub(crate) const ROW: i32 = 31;
-pub(crate) const KEYS: i32 = 30;
-pub(crate) const SHAPE: i32 = 29;
-pub(crate) const INDICATOR: i32 = 28;
-pub(crate) const MODIFIER_MAP: i32 = 27;
-pub(crate) const GROUP: i32 = 26;
-pub(crate) const ALIAS: i32 = 25;
-pub(crate) const KEY: i32 = 24;
-pub(crate) const ACTION_TOK: i32 = 23;
-pub(crate) const INTERPRET: i32 = 22;
-pub(crate) const TYPE: i32 = 21;
-pub(crate) const VIRTUAL_MODS: i32 = 20;
-pub(crate) const ALTERNATE: i32 = 14;
-pub(crate) const REPLACE: i32 = 13;
-pub(crate) const AUGMENT: i32 = 12;
-pub(crate) const OVERRIDE: i32 = 11;
-pub(crate) const INCLUDE: i32 = 10;
-pub(crate) const XKB_LAYOUT: i32 = 8;
-pub(crate) const XKB_SEMANTICS: i32 = 7;
-pub(crate) const XKB_GEOMETRY: i32 = 6;
-pub(crate) const XKB_COMPATMAP: i32 = 5;
-pub(crate) const XKB_SYMBOLS: i32 = 4;
-pub(crate) const XKB_TYPES: i32 = 3;
-pub(crate) const XKB_KEYCODES: i32 = 2;
-pub(crate) const XKB_KEYMAP: i32 = 1;
-pub(crate) const ERROR_TOK: i32 = 255;
-pub(crate) const YYUNDEF: i32 = 257;
-pub(crate) const YYERROR: i32 = 256;
-pub(crate) const END_OF_FILE: i32 = 0;
+macro_rules! tokens { ($($name:ident = $value:literal),* $(,)?) => { $(pub(crate) const $name: i32 = $value;)* }; }
+#[rustfmt::skip]
+tokens! {
+    ALTERNATE_GROUP = 65, FUNCTION_KEYS = 64, KEYPAD_KEYS = 63, MODIFIER_KEYS = 62, ALPHANUMERIC_KEYS = 61, HIDDEN = 60, DEFAULT = 59, PARTIAL = 58,
+    KEYNAME = 57, IDENT = 56, FLOAT = 55, INTEGER = 54, DECIMAL_DIGIT = 53, STRING = 52, INVERT = 51, EXCLAM = 50,
+    SEMI = 49, COMMA = 48, DOT = 47, CBRACKET = 46, OBRACKET = 45, CPAREN = 44, OPAREN = 43, CBRACE = 42,
+    OBRACE = 41, TIMES = 40, DIVIDE = 39, MINUS = 38, PLUS = 37, EQUALS = 36, VIRTUAL = 35, LOGO = 34,
+    SOLID = 33, OUTLINE = 32, TEXT = 31, OVERLAY = 30, SECTION = 29, ROW = 28, KEYS = 27, SHAPE = 26,
+    INDICATOR = 25, MODIFIER_MAP = 24, GROUP = 23, ALIAS = 22, KEY = 21, ACTION_TOK = 20, INTERPRET = 19, TYPE = 18,
+    VIRTUAL_MODS = 17, ALTERNATE = 16, REPLACE = 15, AUGMENT = 14, OVERRIDE = 13, INCLUDE = 12, XKB_LAYOUT = 11, XKB_SEMANTICS = 10,
+    XKB_GEOMETRY = 9, XKB_COMPATMAP = 8, XKB_SYMBOLS = 7, XKB_TYPES = 6, XKB_KEYCODES = 5, XKB_KEYMAP = 4, ERROR_TOK = 3, END_OF_FILE = 0,
+}
 pub(crate) const YYEMPTY: i32 = -2;
 
-/// Native Rust UTF-32 to UTF-8 conversion (replaces C FFI)
-///
-/// Encode a Unicode code point to UTF-8 into the given buffer.
-/// Returns the number of bytes written (NOT including null terminator), or 0 on failure.
-#[inline]
-pub(crate) fn utf32_to_utf8_safe(unichar: u32, buffer: &mut [u8]) -> usize {
-    let Some(ch) = char::from_u32(unichar) else {
-        return 0;
-    };
-    let encoded = ch.encode_utf8(&mut buffer[..]);
-    encoded.len()
-}
-// ── Keyword lookup (gperf-generated) ──
+// ── Keyword lookup ──
 
-pub(crate) const MAX_HASH_VALUE: u32 = 72;
-pub(crate) const MIN_WORD_LENGTH: u32 = 3;
-pub(crate) const MAX_WORD_LENGTH: u32 = 21;
-
-static GPERF_DOWNCASE: [u8; 256] = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-    26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
-    50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 97, 98, 99, 100, 101, 102, 103,
-    104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122,
-    91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
-    112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130,
-    131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149,
-    150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168,
-    169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187,
-    188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206,
-    207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225,
-    226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244,
-    245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255,
+static KEYWORDS: &[(&[u8], i32)] = &[
+    (b"key", KEY),
+    (b"keys", KEYS),
+    (b"augment", AUGMENT),
+    (b"text", TEXT),
+    (b"xkb_keymap", XKB_KEYMAP),
+    (b"keypad_keys", KEYPAD_KEYS),
+    (b"xkb_keycodes", XKB_KEYCODES),
+    (b"xkb_geometry", XKB_GEOMETRY),
+    (b"xkb_types", XKB_TYPES),
+    (b"xkb_compat", XKB_COMPATMAP),
+    (b"replace", REPLACE),
+    (b"xkb_compat_map", XKB_COMPATMAP),
+    (b"xkb_layout", XKB_LAYOUT),
+    (b"xkb_symbols", XKB_SYMBOLS),
+    (b"xkb_compatibility", XKB_COMPATMAP),
+    (b"xkb_semantics", XKB_SEMANTICS),
+    (b"type", TYPE),
+    (b"alias", ALIAS),
+    (b"xkb_compatibility_map", XKB_COMPATMAP),
+    (b"alphanumeric_keys", ALPHANUMERIC_KEYS),
+    (b"function_keys", FUNCTION_KEYS),
+    (b"alternate", ALTERNATE),
+    (b"shape", SHAPE),
+    (b"action", ACTION_TOK),
+    (b"section", SECTION),
+    (b"row", ROW),
+    (b"logo", LOGO),
+    (b"alternate_group", ALTERNATE_GROUP),
+    (b"hidden", HIDDEN),
+    (b"virtual", VIRTUAL),
+    (b"outline", OUTLINE),
+    (b"default", DEFAULT),
+    (b"modmap", MODIFIER_MAP),
+    (b"virtual_modifiers", VIRTUAL_MODS),
+    (b"overlay", OVERLAY),
+    (b"override", OVERRIDE),
+    (b"include", INCLUDE),
+    (b"modifier_map", MODIFIER_MAP),
+    (b"modifier_keys", MODIFIER_KEYS),
+    (b"indicator", INDICATOR),
+    (b"group", GROUP),
+    (b"mod_map", MODIFIER_MAP),
+    (b"interpret", INTERPRET),
+    (b"solid", SOLID),
+    (b"partial", PARTIAL),
 ];
 
-static ASSO_VALUES: [u8; 256] = [
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 0, 73, 5, 36, 0, 10, 1, 15,
-    15, 73, 0, 10, 20, 35, 20, 50, 73, 10, 10, 5, 0, 15, 73, 0, 15, 73, 73, 73, 73, 73, 73, 73, 0,
-    73, 5, 36, 0, 10, 1, 15, 15, 73, 0, 10, 20, 35, 20, 50, 73, 10, 10, 5, 0, 15, 73, 0, 15, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-    73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-];
-
-/// Keyword string + token pairs, indexed by gperf hash value.
-static WORDLIST: [Option<(&[u8], i32)>; 73] = [
-    None,                                            // 0
-    None,                                            // 1
-    None,                                            // 2
-    Some((b"key", KEY)),                             // 3
-    Some((b"keys", KEYS)),                           // 4
-    None,                                            // 5
-    None,                                            // 6
-    Some((b"augment", AUGMENT)),                     // 7
-    None,                                            // 8
-    Some((b"text", TEXT)),                           // 9
-    Some((b"xkb_keymap", XKB_KEYMAP)),               // 10
-    Some((b"keypad_keys", KEYPAD_KEYS)),             // 11
-    Some((b"xkb_keycodes", XKB_KEYCODES)),           // 12
-    Some((b"xkb_geometry", XKB_GEOMETRY)),           // 13
-    Some((b"xkb_types", XKB_TYPES)),                 // 14
-    Some((b"xkb_compat", XKB_COMPATMAP)),            // 15
-    None,                                            // 16
-    Some((b"replace", REPLACE)),                     // 17
-    None,                                            // 18
-    Some((b"xkb_compat_map", XKB_COMPATMAP)),        // 19
-    Some((b"xkb_layout", XKB_LAYOUT)),               // 20
-    Some((b"xkb_symbols", XKB_SYMBOLS)),             // 21
-    Some((b"xkb_compatibility", XKB_COMPATMAP)),     // 22
-    Some((b"xkb_semantics", XKB_SEMANTICS)),         // 23
-    Some((b"type", TYPE)),                           // 24
-    Some((b"alias", ALIAS)),                         // 25
-    Some((b"xkb_compatibility_map", XKB_COMPATMAP)), // 26
-    Some((b"alphanumeric_keys", ALPHANUMERIC_KEYS)), // 27
-    Some((b"function_keys", FUNCTION_KEYS)),         // 28
-    Some((b"alternate", ALTERNATE)),                 // 29
-    Some((b"shape", SHAPE)),                         // 30
-    Some((b"action", ACTION_TOK)),                   // 31
-    Some((b"section", SECTION)),                     // 32
-    Some((b"row", ROW)),                             // 33
-    Some((b"logo", LOGO)),                           // 34
-    Some((b"alternate_group", ALTERNATE_GROUP)),     // 35
-    Some((b"hidden", HIDDEN)),                       // 36
-    Some((b"virtual", VIRTUAL)),                     // 37
-    None,                                            // 38
-    None,                                            // 39
-    None,                                            // 40
-    None,                                            // 41
-    Some((b"outline", OUTLINE)),                     // 42
-    Some((b"default", DEFAULT)),                     // 43
-    None,                                            // 44
-    None,                                            // 45
-    Some((b"modmap", MODIFIER_MAP)),                 // 46
-    Some((b"virtual_modifiers", VIRTUAL_MODS)),      // 47
-    None,                                            // 48
-    None,                                            // 49
-    None,                                            // 50
-    None,                                            // 51
-    Some((b"overlay", OVERLAY)),                     // 52
-    Some((b"override", OVERRIDE)),                   // 53
-    None,                                            // 54
-    None,                                            // 55
-    None,                                            // 56
-    Some((b"include", INCLUDE)),                     // 57
-    None,                                            // 58
-    None,                                            // 59
-    None,                                            // 60
-    None,                                            // 61
-    Some((b"modifier_map", MODIFIER_MAP)),           // 62
-    Some((b"modifier_keys", MODIFIER_KEYS)),         // 63
-    Some((b"indicator", INDICATOR)),                 // 64
-    None,                                            // 65
-    Some((b"group", GROUP)),                         // 66
-    Some((b"mod_map", MODIFIER_MAP)),                // 67
-    None,                                            // 68
-    Some((b"interpret", INTERPRET)),                 // 69
-    None,                                            // 70
-    Some((b"solid", SOLID)),                         // 71
-    Some((b"partial", PARTIAL)),                     // 72
-];
-
-fn gperf_case_eq(s1: &[u8], s2: &[u8]) -> bool {
-    if s1.len() != s2.len() {
-        return false;
-    }
-    for i in 0..s1.len() {
-        if GPERF_DOWNCASE[s1[i] as usize] != GPERF_DOWNCASE[s2[i] as usize] {
-            return false;
-        }
-    }
-    true
-}
-
-fn keyword_gperf_hash(s: &[u8]) -> u32 {
-    let mut hval: u32 = s.len() as u32;
-    if s.len() >= 5 {
-        hval = hval.wrapping_add(ASSO_VALUES[s[4] as usize] as u32);
-    }
-    if s.len() >= 2 {
-        hval = hval.wrapping_add(ASSO_VALUES[s[1] as usize] as u32);
-    }
-    hval = hval.wrapping_add(ASSO_VALUES[s[0] as usize] as u32);
-    hval
-}
-
-/// Look up a keyword token from a byte slice. Returns -1 if not found.
 pub(crate) fn keyword_to_token(string: &[u8]) -> i32 {
-    let len = string.len();
-    if len > MAX_WORD_LENGTH as usize || len < MIN_WORD_LENGTH as usize {
-        return -1;
-    }
-    let key = keyword_gperf_hash(string);
-    if key > MAX_HASH_VALUE {
-        return -1;
-    }
-    if let Some((kw, tok)) = WORDLIST[key as usize] {
-        if len == kw.len() && gperf_case_eq(string, kw) {
-            return tok;
-        }
-    }
-    -1
+    KEYWORDS
+        .iter()
+        .find_map(|&(keyword, token)| string.eq_ignore_ascii_case(keyword).then_some(token))
+        .unwrap_or(-1)
 }
 
 // ── YYValue: safe replacement for the YYSTYPE union ──
@@ -2575,115 +1471,44 @@ pub(crate) enum YYValue<'a> {
     StmtList(Vec<Statement>),
 }
 
-// Helper to take a value out and replace with None
+macro_rules! yy_take {
+    ($($name:ident: $variant:ident($value:ident) -> $result:ty = $fallback:expr => $mapped:expr;)*) => {$(
+        pub(crate) fn $name(&mut self) -> $result {
+            match std::mem::take(self) { YYValue::$variant($value) => $mapped, _ => $fallback }
+        }
+    )*};
+}
+
+macro_rules! yy_as {
+    ($($name:ident: $variant:ident($value:ident) -> $result:ty = $fallback:expr;)*) => {$(
+        pub(crate) fn $name(&self) -> $result {
+            match self { YYValue::$variant($value) => *$value, _ => $fallback }
+        }
+    )*};
+}
+
 impl<'a> YYValue<'a> {
-    pub(crate) fn take_expr(&mut self) -> Option<ExprKind> {
-        match std::mem::take(self) {
-            YYValue::Expr(e) => Some(e),
-            _ => None,
-        }
+    yy_take! {
+        take_expr: Expr(v) -> Option<ExprKind> = None => Some(v);
+        take_expr_list: ExprList(v) -> Vec<ExprKind> = Vec::new() => v;
+        take_var: Var(v) -> Option<VarDef> = None => Some(v);
+        take_var_list: VarList(v) -> Vec<VarDef> = Vec::new() => v;
+        take_vmod: VMod(v) -> Option<VModDef> = None => Some(v);
+        take_vmod_list: VModList(v) -> Vec<VModDef> = Vec::new() => v;
+        take_file: File(v) -> Option<Box<XkbFile>> = None => Some(v);
+        take_file_list: FileList(v) -> Vec<XkbFile> = Vec::new() => v;
+        take_stmt_list: StmtList(v) -> Vec<Statement> = Vec::new() => v;
+        take_str: Str(v) -> String = String::new() => v;
     }
-    pub(crate) fn take_expr_list(&mut self) -> Vec<ExprKind> {
-        match std::mem::take(self) {
-            YYValue::ExprList(v) => v,
-            _ => Vec::new(),
-        }
-    }
-    pub(crate) fn take_var(&mut self) -> Option<VarDef> {
-        match std::mem::take(self) {
-            YYValue::Var(v) => Some(v),
-            _ => None,
-        }
-    }
-    pub(crate) fn take_var_list(&mut self) -> Vec<VarDef> {
-        match std::mem::take(self) {
-            YYValue::VarList(v) => v,
-            _ => Vec::new(),
-        }
-    }
-    pub(crate) fn take_vmod(&mut self) -> Option<VModDef> {
-        match std::mem::take(self) {
-            YYValue::VMod(v) => Some(v),
-            _ => None,
-        }
-    }
-    pub(crate) fn take_vmod_list(&mut self) -> Vec<VModDef> {
-        match std::mem::take(self) {
-            YYValue::VModList(v) => v,
-            _ => Vec::new(),
-        }
-    }
-    pub(crate) fn take_file(&mut self) -> Option<Box<XkbFile>> {
-        match std::mem::take(self) {
-            YYValue::File(f) => Some(f),
-            _ => None,
-        }
-    }
-    pub(crate) fn take_file_list(&mut self) -> Vec<XkbFile> {
-        match std::mem::take(self) {
-            YYValue::FileList(v) => v,
-            _ => Vec::new(),
-        }
-    }
-    pub(crate) fn take_stmt_list(&mut self) -> Vec<Statement> {
-        match std::mem::take(self) {
-            YYValue::StmtList(v) => v,
-            _ => Vec::new(),
-        }
-    }
-    pub(crate) fn as_num(&self) -> i64 {
-        match self {
-            YYValue::Num(n) => *n,
-            _ => 0,
-        }
-    }
-    pub(crate) fn as_atom(&self) -> u32 {
-        match self {
-            YYValue::Atom(a) => *a,
-            _ => 0,
-        }
-    }
-    pub(crate) fn as_merge(&self) -> MergeMode {
-        match self {
-            YYValue::Merge(m) => *m,
-            _ => MergeMode::Default,
-        }
-    }
-    pub(crate) fn as_map_flags(&self) -> u32 {
-        match self {
-            YYValue::MapFlags(f) => *f,
-            _ => 0,
-        }
-    }
-    pub(crate) fn as_file_type(&self) -> FileType {
-        match self {
-            YYValue::FileType(f) => *f,
-            _ => FileType::Keycodes,
-        }
-    }
-    pub(crate) fn as_keysym(&self) -> u32 {
-        match self {
-            YYValue::Keysym(k) => *k,
-            _ => 0,
-        }
-    }
-    pub(crate) fn as_no_sym_or_action_list(&self) -> u32 {
-        match self {
-            YYValue::NoSymbolOrActionList(n) => *n,
-            _ => 0,
-        }
-    }
-    pub(crate) fn as_sval(&self) -> Sval<'a> {
-        match self {
-            YYValue::Sval(s) => *s,
-            _ => Sval { data: &[] },
-        }
-    }
-    pub(crate) fn take_str(&mut self) -> String {
-        match std::mem::take(self) {
-            YYValue::Str(s) => s,
-            _ => String::new(),
-        }
+    yy_as! {
+        as_num: Num(v) -> i64 = 0;
+        as_atom: Atom(v) -> u32 = 0;
+        as_merge: Merge(v) -> MergeMode = MergeMode::Default;
+        as_map_flags: MapFlags(v) -> u32 = 0;
+        as_file_type: FileType(v) -> FileType = FileType::Keycodes;
+        as_keysym: Keysym(v) -> u32 = 0;
+        as_no_sym_or_action_list: NoSymbolOrActionList(v) -> u32 = 0;
+        as_sval: Sval(v) -> Sval<'a> = Sval { data: &[] };
     }
 }
 
@@ -2693,47 +1518,36 @@ impl<'a> YYValue<'a> {
 fn is_space(ch: u8) -> bool {
     matches!(ch, b' ' | b'\t' | b'\n' | 0x0b | b'\x0c' | b'\r')
 }
-pub(crate) static DECIMAL_SEPARATOR: u8 = b'.';
-fn number(s: &mut Scanner, out: &mut i64, out_tok: &mut i32) -> bool {
-    if s.str_match(b"0x") {
-        match s.hex_int64(out) {
-            -1 => {
-                *out_tok = ERROR_TOK;
-                true
-            }
-            0 => false,
-            _ => {
-                *out_tok = INTEGER;
-                true
-            }
-        }
+fn number(s: &mut Scanner) -> Option<(i64, i32)> {
+    let hex = s.str_match(b"0x");
+    let (value, count) = if hex {
+        parse_hex_u64(s.remaining_bytes())
     } else {
-        let mut is_digit_0: bool = false;
-        match s.dec_int64(out) {
-            -1 => {
-                *out_tok = ERROR_TOK;
-                return true;
-            }
-            0 => return false,
-            1 => {
-                is_digit_0 = true;
-            }
-            _ => {}
-        }
-        if s.chr(DECIMAL_SEPARATOR) {
-            let mut dec: i64 = 0;
-            if s.dec_int64(&mut dec) < 0 {
-                *out_tok = ERROR_TOK;
-                return true;
-            }
-            *out_tok = FLOAT;
-        } else if is_digit_0 {
-            *out_tok = DECIMAL_DIGIT;
-        } else {
-            *out_tok = INTEGER;
-        }
-        true
+        parse_dec_u64(s.remaining_bytes())
+    };
+    if count < 0 || value > i64::MAX as u64 {
+        return Some((0, ERROR_TOK));
     }
+    if count == 0 {
+        return None;
+    }
+    s.pos += count as usize;
+    if hex {
+        return Some((value as i64, INTEGER));
+    }
+    let token = if s.chr(b'.') {
+        let (fraction, count) = parse_dec_u64(s.remaining_bytes());
+        if count < 0 || fraction > i64::MAX as u64 {
+            return Some((0, ERROR_TOK));
+        }
+        s.pos += count as usize;
+        FLOAT
+    } else if count == 1 {
+        DECIMAL_DIGIT
+    } else {
+        INTEGER
+    };
+    Some((value as i64, token))
 }
 
 /// Lex one token and write the semantic value into `yylval`.
@@ -2762,44 +1576,32 @@ pub(crate) fn _xkbcommon_lex<'a>(
     if s.chr(b'"') {
         while !s.eof() && !s.eol() && s.peek() != b'"' {
             if s.chr(b'\\') {
-                let mut o: u8 = 0;
-                if s.chr(b'\\') {
-                    s.buf_append(b'\\');
-                } else if s.chr(b'"') {
-                    s.buf_append(b'"');
-                } else if s.chr(b'n') {
-                    s.buf_append(b'\n');
-                } else if s.chr(b't') {
-                    s.buf_append(b'\t');
-                } else if s.chr(b'r') {
-                    s.buf_append(b'\r');
-                } else if s.chr(b'b') {
-                    s.buf_append(b'\x08');
-                } else if s.chr(b'f') {
-                    s.buf_append(b'\x0c');
-                } else if s.chr(b'v') {
-                    s.buf_append(b'\x0b');
-                } else if s.chr(b'e') {
-                    s.buf_append(b'\x1b');
-                } else if s.chr(b'u') {
-                    let mut cp: u32 = 0;
-                    if s.unicode_code_point(&mut cp) && cp != 0 {
-                        s.buf_appends_code_point(cp);
-                    } else {
-                        let _loc = s.token_location();
+                match s.next_byte() {
+                    b'\\' => s.buf_append(b'\\'),
+                    b'"' => s.buf_append(b'"'),
+                    b'n' => s.buf_append(b'\n'),
+                    b't' => s.buf_append(b'\t'),
+                    b'r' => s.buf_append(b'\r'),
+                    b'b' => s.buf_append(b'\x08'),
+                    b'f' => s.buf_append(b'\x0c'),
+                    b'v' => s.buf_append(b'\x0b'),
+                    b'e' => s.buf_append(b'\x1b'),
+                    b'u' => s
+                        .unicode_code_point()
+                        .is_some_and(|cp| cp != 0 && s.buf_appends_code_point(cp)),
+                    b'0'..=b'7' => {
+                        s.pos -= 1;
+                        s.oct()
+                            .is_some_and(|octal| octal != 0 && s.buf_append(octal))
                     }
-                } else if s.oct(&mut o) && o != 0 {
-                    s.buf_append(o);
-                } else {
-                    let _loc = s.token_location();
-                }
+                    other => other != 0 && s.buf_append(other),
+                };
             } else {
                 let c = s.next_byte();
                 s.buf_append(c);
             }
         }
         if !s.buf_append(0) || !s.chr(b'"') {
-            let _loc_2 = s.token_location();
             return ERROR_TOK;
         }
         // Convert buffer to String (exclude null terminator)
@@ -2813,7 +1615,6 @@ pub(crate) fn _xkbcommon_lex<'a>(
             s.next_byte();
         }
         if !s.chr(b'>') {
-            let _loc_3 = s.token_location();
             return ERROR_TOK;
         }
         let len: usize = s.pos - s.token_pos - 2;
@@ -2821,60 +1622,34 @@ pub(crate) fn _xkbcommon_lex<'a>(
         *yylval = YYValue::Atom(atom_intern(&mut ctx.atom_table, keyname_bytes));
         return KEYNAME;
     }
-    if s.chr(b';') {
-        return SEMI;
+    let punctuation = match s.peek() {
+        b';' => SEMI,
+        b'{' => OBRACE,
+        b'}' => CBRACE,
+        b'=' => EQUALS,
+        b'[' => OBRACKET,
+        b']' => CBRACKET,
+        b'(' => OPAREN,
+        b')' => CPAREN,
+        b'.' => DOT,
+        b',' => COMMA,
+        b'+' => PLUS,
+        b'-' => MINUS,
+        b'*' => TIMES,
+        b'/' => DIVIDE,
+        b'!' => EXCLAM,
+        b'~' => INVERT,
+        _ => -1,
+    };
+    if punctuation >= 0 {
+        s.next_byte();
+        return punctuation;
     }
-    if s.chr(b'{') {
-        return OBRACE;
-    }
-    if s.chr(b'}') {
-        return CBRACE;
-    }
-    if s.chr(b'=') {
-        return EQUALS;
-    }
-    if s.chr(b'[') {
-        return OBRACKET;
-    }
-    if s.chr(b']') {
-        return CBRACKET;
-    }
-    if s.chr(b'(') {
-        return OPAREN;
-    }
-    if s.chr(b')') {
-        return CPAREN;
-    }
-    if s.chr(b'.') {
-        return DOT;
-    }
-    if s.chr(b',') {
-        return COMMA;
-    }
-    if s.chr(b'+') {
-        return PLUS;
-    }
-    if s.chr(b'-') {
-        return MINUS;
-    }
-    if s.chr(b'*') {
-        return TIMES;
-    }
-    if s.chr(b'/') {
-        return DIVIDE;
-    }
-    if s.chr(b'!') {
-        return EXCLAM;
-    }
-    if s.chr(b'~') {
-        return INVERT;
-    }
-    let mut tok: i32 = ERROR_TOK;
     if s.peek().is_ascii_alphabetic() || s.peek() == b'_' {
         while s.peek().is_ascii_alphanumeric() || s.peek() == b'_' {
             s.next_byte();
         }
-        tok = keyword_to_token(s.input_slice(s.token_pos, s.pos));
+        let tok = keyword_to_token(s.input_slice(s.token_pos, s.pos));
         if tok >= 0 {
             return tok;
         }
@@ -2883,40 +1658,19 @@ pub(crate) fn _xkbcommon_lex<'a>(
         });
         return IDENT;
     }
-    let mut num_val: i64 = 0;
-    if number(s, &mut num_val, &mut tok) {
-        *yylval = YYValue::Num(num_val);
-        if tok == ERROR_TOK {
-            let _loc_4 = s.token_location();
-            return ERROR_TOK;
-        }
+    if let Some((number, tok)) = number(s) {
+        *yylval = YYValue::Num(number);
         return tok;
     }
-    let _loc_5 = s.token_location();
     ERROR_TOK
-}
-pub(crate) fn xkb_parse_string_init<'a>(
-    sc: &mut Scanner<'a>,
-    input: &'a [u8],
-    file_name: &str,
-    _map: &str,
-) -> bool {
-    *sc = Scanner::new(input, file_name);
-    if !sc.check_supported_char_encoding() {
-        let _loc = sc.token_location();
-        let _loc_0 = sc.token_location();
-        return false;
-    }
-    true
 }
 pub(crate) fn xkb_parse_string(
     ctx: &mut XkbContext,
     input: &[u8],
-    file_name: &str,
     map: &str,
 ) -> Option<Box<XkbFile>> {
-    let mut sc = Scanner::new(&[], "");
-    if !xkb_parse_string_init(&mut sc, input, file_name, map) {
+    let mut sc = Scanner::new(input);
+    if !sc.check_supported_char_encoding() {
         return None;
     }
     parse(ctx, &mut sc, map)
@@ -2924,72 +1678,15 @@ pub(crate) fn xkb_parse_string(
 
 // ── Include file processing (merged from include.rs) ──
 
-use super::keymap::{xkb_context_getenv, xkb_context_num_failed_include_paths};
+use super::keymap::xkb_context_getenv;
 use super::keymap::{xkb_context_include_path_get, xkb_context_num_include_paths};
 use super::keymap::{
     xkb_context_include_path_get_extra_path, xkb_context_include_path_get_system_path,
 };
 
 pub(crate) const INCLUDE_MAX_DEPTH: i32 = 15_i32;
-pub(crate) const MERGE_OVERRIDE_PREFIX: i32 = '+' as i32;
-pub(crate) const MERGE_AUGMENT_PREFIX: i32 = '|' as i32;
-pub(crate) const MERGE_REPLACE_PREFIX: i32 = '^' as i32;
-
-/// Parsed result from one segment of an include statement.
-pub(crate) struct ParsedIncludeMap {
-    pub(crate) file: String,
-    pub(crate) map: String,
-    pub(crate) extra_data: String,
-    pub(crate) nextop: char,
-}
-
-/// Parse one include map segment from `input`, returning the parsed result
-/// and the remaining input (if any). Returns None on parse error.
-pub(crate) fn parse_include_map(input: &str) -> Option<(ParsedIncludeMap, Option<&str>)> {
-    // Split at merge-mode prefix (+, |, ^)
-    let (segment, nextop, rest) = if let Some(pos) = input.find(&['+', '|', '^'][..]) {
-        let op = input.as_bytes()[pos] as char;
-        (&input[..pos], op, Some(&input[pos + 1..]))
-    } else {
-        (input, '\0', None)
-    };
-
-    // Split off extra_data after ':'
-    let (segment, extra_data) = if let Some(pos) = segment.find(':') {
-        (&segment[..pos], segment[pos + 1..].to_string())
-    } else {
-        (segment, String::new())
-    };
-
-    // Parse file(map) pattern
-    let (file, map) = if let Some(pos) = segment.find('(') {
-        if pos == 0 {
-            return None; // starts with '(' — invalid
-        }
-        let rest_paren = &segment[pos + 1..];
-        if !rest_paren.ends_with(')') || rest_paren.is_empty() {
-            return None;
-        }
-        let map_str = &rest_paren[..rest_paren.len() - 1];
-        (segment[..pos].to_string(), map_str.to_string())
-    } else {
-        (segment.to_string(), String::new())
-    };
-
-    // Validate nextop
-    if nextop != '\0' && nextop != '+' && nextop != '|' && nextop != '^' {
-        return None;
-    }
-
-    Some((
-        ParsedIncludeMap {
-            file,
-            map,
-            extra_data,
-            nextop,
-        },
-        rest,
-    ))
+fn is_merge_prefix(byte: u8) -> bool {
+    matches!(byte, b'+' | b'|' | b'^')
 }
 static XKB_FILE_TYPE_INCLUDE_DIRS: [&str; 7] = [
     "keycodes", "types", "compat", "symbols", "geometry", "keymap", "rules",
@@ -3001,19 +1698,9 @@ fn directory_for_include(type_0: FileType) -> &'static str {
         XKB_FILE_TYPE_INCLUDE_DIRS[type_0 as usize]
     }
 }
-fn log_include_paths(ctx: &mut XkbContext) {
-    let num = xkb_context_num_include_paths(ctx);
-    if num > 0 {
-        for _i in 0..num {}
-    }
-    let num_failed = xkb_context_num_failed_include_paths(ctx);
-    if num_failed > 0 {
-        for _i in 0..num_failed {}
-    }
-}
 /// Expand `%H`, `%S`, `%E`, `%%` in the given name string.
 /// Returns `Some(expanded)` on success, `None` on error.
-fn expand_percent(_parent_file_name: &str, type_dir: &str, name: &str) -> Option<String> {
+fn expand_percent(type_dir: &str, name: &str) -> Option<String> {
     let max_len = 4096usize;
     let mut result = String::new();
     let mut chars = name.chars().peekable();
@@ -3059,11 +1746,7 @@ fn expand_percent(_parent_file_name: &str, type_dir: &str, name: &str) -> Option
 /// - `Ok(None)` if no `%` found (no expansion needed)
 /// - `Ok(Some(expanded))` if expansion succeeded
 /// - `Err(())` on error
-pub(crate) fn expand_path_str(
-    parent_file_name: &str,
-    name: &str,
-    file_type: FileType,
-) -> Result<Option<String>, ()> {
+pub(crate) fn expand_path_str(name: &str, file_type: FileType) -> Result<Option<String>, ()> {
     // Find first '%'
     let k = match name.find('%') {
         Some(pos) => pos,
@@ -3072,7 +1755,7 @@ pub(crate) fn expand_path_str(
     let type_dir = directory_for_include(file_type);
     let prefix = &name[..k];
     let rest = &name[k..];
-    match expand_percent(parent_file_name, type_dir, rest) {
+    match expand_percent(type_dir, rest) {
         Some(expanded) => {
             let mut result = String::with_capacity(prefix.len() + expanded.len());
             result.push_str(prefix);
@@ -3084,11 +1767,9 @@ pub(crate) fn expand_path_str(
 }
 pub(crate) fn find_file_in_xkb_path(
     ctx: &mut XkbContext,
-    _parent_file_name: &str,
     name: &str,
     type_0: FileType,
     offset: &mut u32,
-    required: bool,
 ) -> Option<(std::sync::Arc<Vec<u8>>, String)> {
     let type_dir = directory_for_include(type_0);
     for i in *offset..xkb_context_num_include_paths(ctx) {
@@ -3098,17 +1779,34 @@ pub(crate) fn find_file_in_xkb_path(
             type_dir,
             name
         );
-        if path.len() >= 4096 {
-        } else if let Some(data) = read_file_cached(&path) {
-            *offset = i;
-            return Some((data, path));
+        if path.len() < 4096 {
+            if let Some(data) = read_file_cached(&path) {
+                *offset = i;
+                return Some((data, path));
+            }
         }
-    }
-    if required && *offset == 0 {
-        log_include_paths(ctx);
     }
     None
 }
+
+fn find_include_file(
+    ctx: &mut XkbContext,
+    name: &str,
+    file_type: FileType,
+    expanded: bool,
+    offset: &mut u32,
+) -> Option<(std::sync::Arc<Vec<u8>>, String)> {
+    if name.starts_with('/') {
+        (*offset == 0)
+            .then(|| read_file_cached(name).map(|data| (data, name.to_owned())))
+            .flatten()
+    } else if expanded {
+        None
+    } else {
+        find_file_in_xkb_path(ctx, name, file_type, offset)
+    }
+}
+
 pub(crate) fn exceeds_include_max_depth(include_depth: u32) -> bool {
     include_depth >= INCLUDE_MAX_DEPTH as u32
 }
@@ -3121,28 +1819,18 @@ pub(crate) fn process_include_file(
     let mut candidate: Option<Box<XkbFile>> = None;
 
     // Expand %-sequences in the file name
-    let stmt_file: String = match expand_path_str("(unknown)", &stmt.file, file_type) {
+    let stmt_file: String = match expand_path_str(&stmt.file, file_type) {
         Err(()) => return None,
         Ok(Some(expanded)) => expanded,
         Ok(None) => stmt.file.clone(),
     };
     let expanded = stmt_file != stmt.file;
 
-    let map_str = if stmt.map.is_empty() { "" } else { &stmt.map };
-
-    let absolute_path = stmt_file.starts_with('/');
     let mut offset: u32 = 0;
-    let mut file_and_path: Option<(std::sync::Arc<Vec<u8>>, String)> = if absolute_path {
-        read_file_cached(&stmt_file).map(|data| (data, stmt_file.clone()))
-    } else if expanded {
-        // Expanded but not absolute — don't search include paths
-        None
-    } else {
-        find_file_in_xkb_path(ctx, "(unknown)", &stmt_file, file_type, &mut offset, true)
-    };
+    let mut file_and_path = find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset);
 
     while let Some((ref file_data, ref _path)) = file_and_path {
-        if let Some(parsed) = xkb_parse_string(ctx, file_data, &stmt.file, map_str) {
+        if let Some(parsed) = xkb_parse_string(ctx, file_data, &stmt.map) {
             let _ = file_and_path.take();
 
             if parsed.file_type != file_type {
@@ -3158,12 +1846,8 @@ pub(crate) fn process_include_file(
             // Drop the file (closes it)
             let _ = file_and_path.take();
         }
-        if absolute_path {
-            break;
-        }
         offset += 1;
-        file_and_path =
-            find_file_in_xkb_path(ctx, "(unknown)", &stmt_file, file_type, &mut offset, true);
+        file_and_path = find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset);
     }
 
     if xkb_file.is_none() {
@@ -3174,8 +1858,7 @@ pub(crate) fn process_include_file(
 
 pub(crate) const GROUP_MASK_NAME_LAST: u32 = 3;
 pub(crate) const GROUP_INDEX_NAME_LAST: u32 = 1;
-pub(crate) type CompileFileFn =
-    Option<for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool>;
+pub(crate) type CompileFileFn = for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool;
 #[inline]
 fn compute_effective_mask(keymap: &XkbKeymap, mods: &mut XkbMods) {
     let unknown_mods: u32 = !((1_u64 << keymap.mods.num_mods).wrapping_sub(1_u64) as u32);
@@ -3213,9 +1896,7 @@ fn default_interpret() -> XkbSymInterpret {
         virtual_mod: DEFAULT_INTERPRET_VMOD,
         level_one_only: false,
         repeat: DEFAULT_INTERPRET_KEY_REPEAT != 0,
-        num_actions: 0,
-        action: XkbAction::None,
-        actions: Vec::new(), // Note: XkbAction is Copy, so Vec::new() is zero-alloc (no heap until push)
+        actions: Vec::new(),
     }
 }
 /// Pre-computed index mapping keysym → matching interpret indices (sorted).
@@ -3345,7 +2026,7 @@ fn apply_interps_to_key(
     sym_interprets: &[XkbSymInterpret],
     key_idx: usize,
     interp_index: &InterpIndex,
-) -> bool {
+) {
     let mut vmodmap: u32 = 0;
     let mut interp_indices: Vec<usize> = Vec::with_capacity(4);
     let mut actions: Vec<XkbAction> = Vec::with_capacity(4);
@@ -3384,27 +2065,13 @@ fn apply_interps_to_key(
                         {
                             vmodmap |= 1 << interp.virtual_mod;
                         }
-                        match interp.num_actions as i32 {
-                            0 => {}
-                            1 => {
-                                actions.push(interp.action);
-                            }
-                            _ => {
-                                actions.extend_from_slice(&interp.actions);
-                            }
-                        }
+                        actions.extend_from_slice(&interp.actions);
                     }
                     if (actions.len() as u32 != 0) as i64 > MAX_ACTIONS_PER_LEVEL as i64 {
                         actions.truncate(MAX_ACTIONS_PER_LEVEL as usize);
                     }
                     keymap.keys[key_idx].groups[group as usize].levels[level as usize].actions =
                         std::mem::take(&mut actions);
-                    if !keymap.keys[key_idx].groups[group as usize].levels[level as usize]
-                        .actions
-                        .is_empty()
-                    {
-                        keymap.keys[key_idx].groups[group as usize].implicit_actions = true;
-                    }
                 }
             }
         }
@@ -3412,7 +2079,6 @@ fn apply_interps_to_key(
     if !keymap.keys[key_idx].explicit_vmodmap {
         keymap.keys[key_idx].vmodmap = vmodmap;
     }
-    true
 }
 #[inline]
 fn is_mod_action(action: &XkbAction) -> bool {
@@ -3446,7 +2112,7 @@ fn check_multiple_actions_categories(keymap: &mut XkbKeymap, key_idx: usize) {
                                 || mod_action && is_mod_action(&level.actions[j])
                                 || group_action && is_group_action(&level.actions[j])
                             {
-                                level.actions[j].set_none();
+                                level.actions[j] = XkbAction::None;
                             }
                         }
                     }
@@ -3542,9 +2208,7 @@ fn update_derived_keymap_fields(info: &mut XkbKeymapInfo<'_>) -> bool {
             return false;
         }
     }
-    if apply_interps_and_check_actions(info).is_err() {
-        return false;
-    }
+    apply_interps_and_check_actions(info);
     update_mod_mappings(info);
     compute_type_entry_masks(info);
     if update_key_action_fields(info, pending_computations).is_err() {
@@ -3579,48 +2243,32 @@ fn update_group_lookup_entries(info: &mut XkbKeymapInfo<'_>) {
     } else {
         1_u32
     };
-    info.lookup.group_index_names[GROUP_INDEX_NAME_LAST as usize] = LookupEntry {
-        name: GROUP_LAST_INDEX_NAME,
-        value: num_groups,
-    };
-    info.lookup.group_mask_names[GROUP_MASK_NAME_LAST as usize] = LookupEntry {
-        name: GROUP_LAST_INDEX_NAME,
-        value: 1 << num_groups.wrapping_sub(1),
-    };
+    info.lookup.group_index_names[GROUP_INDEX_NAME_LAST as usize] =
+        lookup_entry(GROUP_LAST_INDEX_NAME, num_groups);
+    info.lookup.group_mask_names[GROUP_MASK_NAME_LAST as usize] =
+        lookup_entry(GROUP_LAST_INDEX_NAME, 1 << num_groups.wrapping_sub(1));
 }
 
 fn update_pending_sym_interpret_actions(info: &mut XkbKeymapInfo<'_>) -> Result<(), ()> {
     for i in 0..info.sym_interprets.len() {
-        let num_actions = info.sym_interprets[i].num_actions;
-        if num_actions as i32 <= 1_i32 {
-            let mut action = info.sym_interprets[i].action;
+        for a in 0..info.sym_interprets[i].actions.len() {
+            let mut action = info.sym_interprets[i].actions[a];
             if !update_pending_action_fields(info, &mut action) {
                 return Err(());
             }
-            info.sym_interprets[i].action = action;
-        } else {
-            for a in 0..num_actions {
-                let mut action = info.sym_interprets[i].actions[a as usize];
-                if !update_pending_action_fields(info, &mut action) {
-                    return Err(());
-                }
-                info.sym_interprets[i].actions[a as usize] = action;
-            }
+            info.sym_interprets[i].actions[a] = action;
         }
     }
     Ok(())
 }
 
-fn apply_interps_and_check_actions(info: &mut XkbKeymapInfo<'_>) -> Result<(), ()> {
+fn apply_interps_and_check_actions(info: &mut XkbKeymapInfo<'_>) {
     let keymap = &mut *info.keymap;
     let interp_index = build_interp_index(&info.sym_interprets);
     for ki in 0..keymap.num_keys as usize {
-        if !apply_interps_to_key(keymap, &info.sym_interprets, ki, &interp_index) {
-            return Err(());
-        }
+        apply_interps_to_key(keymap, &info.sym_interprets, ki, &interp_index);
         check_multiple_actions_categories(keymap, ki);
     }
-    Ok(())
 }
 
 fn update_mod_mappings(info: &mut XkbKeymapInfo<'_>) {
@@ -3702,30 +2350,16 @@ fn update_key_action_fields(
                     [j_0 as usize]
                     .actions
                     .len();
-                if num_actions <= 1 {
-                    if num_actions == 1 {
-                        let mut act = info.keymap.keys[ki as usize].groups[i_1 as usize].levels
-                            [j_0 as usize]
-                            .actions[0];
-                        update_action_mods(&*info.keymap, &mut act, key_modmap);
-                        if (pending_computations) && !update_pending_action_fields(info, &mut act) {
-                            return Err(());
-                        }
-                        info.keymap.keys[ki as usize].groups[i_1 as usize].levels[j_0 as usize]
-                            .actions[0] = act;
+                for k in 0..num_actions {
+                    let mut act = info.keymap.keys[ki as usize].groups[i_1 as usize].levels
+                        [j_0 as usize]
+                        .actions[k];
+                    update_action_mods(&*info.keymap, &mut act, key_modmap);
+                    if pending_computations && !update_pending_action_fields(info, &mut act) {
+                        return Err(());
                     }
-                } else {
-                    for k in 0..num_actions {
-                        let mut act = info.keymap.keys[ki as usize].groups[i_1 as usize].levels
-                            [j_0 as usize]
-                            .actions[k];
-                        update_action_mods(&*info.keymap, &mut act, key_modmap);
-                        if (pending_computations) && !update_pending_action_fields(info, &mut act) {
-                            return Err(());
-                        }
-                        info.keymap.keys[ki as usize].groups[i_1 as usize].levels[j_0 as usize]
-                            .actions[k] = act;
-                    }
+                    info.keymap.keys[ki as usize].groups[i_1 as usize].levels[j_0 as usize]
+                        .actions[k] = act;
                 }
             }
         }
@@ -3762,32 +2396,22 @@ fn resolve_pending_led_groups(info: &mut XkbKeymapInfo<'_>) -> Result<(), ()> {
     }
     Ok(())
 }
-static COMPILE_FILE_FNS: [CompileFileFn; 4] = {
-    [
-        Some(compile_keycodes as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
-        Some(compile_key_types as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
-        Some(
-            compile_compat_map as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool,
-        ),
-        Some(compile_symbols as for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapInfo<'a>) -> bool),
-    ]
-};
-fn pending_computations_array_free(p: &mut Vec<PendingComputation>) {
-    for pc in p.iter_mut() {
-        pc.expr.take(); // Drop handles cleanup
-    }
-    p.clear();
-}
+static COMPILE_FILE_FNS: [CompileFileFn; 4] = [
+    compile_keycodes,
+    compile_key_types,
+    compile_compat_map,
+    compile_symbols,
+];
 pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool {
     let mut file_indices: [Option<usize>; 4] = [None; 4];
     for (idx, stmt) in file.defs.iter().enumerate() {
-        if let Statement::XkbFile(ref sub_file) = stmt {
-            if sub_file.file_type as u32 > FileType::Symbols as u32 {
-                if sub_file.file_type == FileType::Geometry {}
-            } else if file_indices[sub_file.file_type as usize].is_some() {
-            } else {
-                file_indices[sub_file.file_type as usize] = Some(idx);
-            }
+        let Statement::XkbFile(ref sub_file) = stmt else {
+            continue;
+        };
+        if sub_file.file_type as usize <= FileType::Symbols as usize
+            && file_indices[sub_file.file_type as usize].is_none()
+        {
+            file_indices[sub_file.file_type as usize] = Some(idx);
         }
     }
     let km_format = keymap.format;
@@ -3821,64 +2445,48 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
         },
         lookup: XkbcompLookup {
             group_index_names: [
-                LookupEntry {
-                    name: "first",
-                    value: 1,
-                },
-                LookupEntry {
-                    name: if km_num_groups != 0 {
+                lookup_entry("first", 1),
+                lookup_entry(
+                    if km_num_groups != 0 {
                         GROUP_LAST_INDEX_NAME
                     } else {
                         ""
                     },
-                    value: km_num_groups,
-                },
-                LookupEntry { name: "", value: 0 },
+                    km_num_groups,
+                ),
+                lookup_entry("", 0),
             ],
             group_mask_names: [
-                LookupEntry {
-                    name: "none",
-                    value: 0,
-                },
-                LookupEntry {
-                    name: "first",
-                    value: 0x1_u32,
-                },
-                LookupEntry {
-                    name: "all",
-                    value: XKB_ALL_GROUPS as u32,
-                },
-                LookupEntry {
-                    name: if km_num_groups != 0 {
+                lookup_entry("none", 0),
+                lookup_entry("first", 0x1_u32),
+                lookup_entry("all", XKB_ALL_GROUPS as u32),
+                lookup_entry(
+                    if km_num_groups != 0 {
                         GROUP_LAST_INDEX_NAME
                     } else {
                         ""
                     },
-                    value: if km_num_groups != 0 && km_num_groups <= XKB_MAX_GROUPS {
+                    if km_num_groups != 0 && km_num_groups <= XKB_MAX_GROUPS {
                         1 << km_num_groups.wrapping_sub(1_u32)
                     } else {
                         0_u32
                     },
-                },
-                LookupEntry { name: "", value: 0 },
+                ),
+                lookup_entry("", 0),
             ],
         },
         pending_computations: Vec::new(),
         sym_interprets: Vec::new(),
     };
-    for type_0 in (FileType::Keycodes as u32)..=(FileType::Symbols as u32) {
-        let file_arg: Option<&mut XkbFile> = file_indices[type_0 as usize].map(|idx| {
+    for (type_0, compile) in COMPILE_FILE_FNS.into_iter().enumerate() {
+        let file_arg: Option<&mut XkbFile> = file_indices[type_0].map(|idx| {
             if let Statement::XkbFile(ref mut sub_file) = file.defs[idx] {
                 sub_file
             } else {
                 unreachable!()
             }
         });
-        let ok: bool = COMPILE_FILE_FNS[type_0 as usize].expect("non-null function pointer")(
-            file_arg, &mut info,
-        );
-        if !ok {
-            pending_computations_array_free(&mut info.pending_computations);
+        if !compile(file_arg, &mut info) {
             return false;
         }
     }
@@ -3892,7 +2500,6 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
             }
         }
     }
-    pending_computations_array_free(&mut info.pending_computations);
     ok_0
 }
 pub(crate) const OPTIONS_GROUP_SPECIFIER_PREFIX: i32 = '!' as i32;
@@ -3929,27 +2536,12 @@ pub(crate) struct Matcher<'a> {
     pub(crate) groups: Vec<Group>,
     pub(crate) mapping: Mapping,
     pub(crate) rule: Rule,
-    pub(crate) pending_kccgst: KccgstBuffer,
+    pub(crate) pending_kccgst: [Vec<(u32, Vec<u8>)>; 5],
     pub(crate) kccgst: [Vec<u8>; 5],
-}
-#[derive(Clone, Default)]
-pub(crate) struct KccgstBuffer {
-    pub(crate) buffer: Vec<u8>,
-    pub(crate) slices: Vec<KccgstBufferSlice>,
-}
-#[derive(Copy, Clone)]
-pub(crate) struct KccgstBufferSlice {
-    pub(crate) length: u32,
-    pub(crate) kccgst: u32,
-    pub(crate) layout: u32,
 }
 pub(crate) const _KCCGST_NUM_ENTRIES: u32 = 5;
 pub(crate) const KCCGST_GEOMETRY: u32 = 4;
-pub(crate) const KCCGST_SYMBOLS: u32 = 3;
-pub(crate) const KCCGST_COMPAT: u32 = 2;
-pub(crate) const KCCGST_TYPES: u32 = 1;
-pub(crate) const KCCGST_KEYCODES: u32 = 0;
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub(crate) struct Rule {
     pub(crate) mlvo_value_at_pos: [SvalIdx; 4],
     pub(crate) match_type_at_pos: [u32; 4],
@@ -3997,16 +2589,6 @@ impl Default for LayoutIdx {
         }
     }
 }
-impl LayoutIdx {
-    fn layout_idx_min(&self) -> u32 {
-        match self {
-            LayoutIdx::Range { layout_idx_min, .. } | LayoutIdx::Index { layout_idx_min, .. } => {
-                *layout_idx_min
-            }
-            _ => panic!("expected Range or Index"),
-        }
-    }
-}
 pub(crate) const _MLVO_NUM_ENTRIES: u32 = 4;
 pub(crate) const MLVO_OPTION: u32 = 3;
 pub(crate) const MLVO_VARIANT: u32 = 2;
@@ -4017,7 +2599,7 @@ pub(crate) struct Group {
     pub(crate) name: Vec<u8>,
     pub(crate) elements: Vec<Vec<u8>>,
 }
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub(crate) struct Lvalue {
     pub(crate) string: SvalIdx,
 }
@@ -4051,25 +2633,6 @@ pub(crate) const LAYOUT_INDEX_SINGLE: u32 = 4294967291;
 pub(crate) const LAYOUT_INDEX_ANY: u32 = 4294967294;
 pub(crate) const LAYOUT_INDEX_LATER: u32 = 4294967293;
 
-impl Default for Rule {
-    fn default() -> Self {
-        Rule {
-            mlvo_value_at_pos: [SvalIdx::EMPTY; 4],
-            match_type_at_pos: [0; 4],
-            kccgst_value_at_pos: [SvalIdx::EMPTY; 5],
-            num_mlvo_values: 0,
-            num_kccgst_values: 0,
-            skip: false,
-        }
-    }
-}
-impl Default for Lvalue {
-    fn default() -> Self {
-        Lvalue {
-            string: SvalIdx::EMPTY,
-        }
-    }
-}
 impl<'a> Matcher<'a> {
     fn new(ctx: &'a mut XkbContext) -> Self {
         Matcher {
@@ -4079,7 +2642,7 @@ impl<'a> Matcher<'a> {
             groups: Vec::new(),
             mapping: Mapping::default(),
             rule: Rule::default(),
-            pending_kccgst: KccgstBuffer::default(),
+            pending_kccgst: std::array::from_fn(|_| Vec::new()),
             kccgst: std::array::from_fn(|_| Vec::new()),
         }
     }
@@ -4108,7 +2671,6 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         }
         s.chr(b'\r');
         if !s.eol() {
-            let _loc: ScannerLoc = s.token_location();
             return TOK_ERROR;
         }
         s.next_byte();
@@ -4145,7 +2707,6 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
             val.string.end += 1;
         }
         if val.string.len() == 0 {
-            let _loc_0: ScannerLoc = s.token_location();
             return TOK_ERROR;
         }
         return TOK_GROUP_NAME;
@@ -4164,7 +2725,6 @@ fn lex(s: &mut Scanner, val: &mut Lvalue) -> u32 {
         }
         return TOK_IDENTIFIER;
     }
-    let _loc_1: ScannerLoc = s.token_location();
     TOK_ERROR
 }
 static RULES_MLVO_SVALS: [&[u8]; 4] = [b"model", b"layout", b"variant", b"option"];
@@ -4233,9 +2793,7 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
         val_0.sval = strip_spaces(val_0.sval);
         if pos < bytes.len() && bytes[pos] as i32 == OPTIONS_GROUP_SPECIFIER_PREFIX {
             pos += 1;
-            let layout_start = pos;
-            let (val_parsed, count) = parse_dec_u32(&bytes[pos..]);
-            let layout: u32 = val_parsed;
+            let (layout, count) = parse_dec_u32(&bytes[pos..]);
             let count = count as usize;
             if count > 0 {
                 pos += count;
@@ -4248,7 +2806,6 @@ fn split_comma_separated_mlvo<'a>(mlvo: u32, s: Option<&'a [u8]>) -> Vec<Matched
                 pos += 1;
             }
             if count == 0 || layout_index_end != pos {
-                let _layout_spec = std::str::from_utf8(&bytes[layout_start..pos]).unwrap_or("");
                 val_0.layout = OPTIONS_MATCH_ALL_GROUPS;
             }
         }
@@ -4271,7 +2828,7 @@ fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) 
     m.rmlvo.model.layout = OPTIONS_MATCH_ALL_GROUPS;
     m.rmlvo.layouts = split_comma_separated_mlvo(
         MLVO_LAYOUT,
-        if rmlvo_ref.layout.as_bytes().is_empty() {
+        if rmlvo_ref.layout.is_empty() {
             None
         } else {
             Some(rmlvo_ref.layout.as_bytes())
@@ -4279,7 +2836,7 @@ fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) 
     );
     m.rmlvo.variants = split_comma_separated_mlvo(
         MLVO_VARIANT,
-        if rmlvo_ref.variant.as_bytes().is_empty() {
+        if rmlvo_ref.variant.is_empty() {
             None
         } else {
             Some(rmlvo_ref.variant.as_bytes())
@@ -4287,7 +2844,7 @@ fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) 
     );
     m.rmlvo.options = split_comma_separated_mlvo(
         MLVO_OPTION,
-        if rmlvo_ref.options.as_bytes().is_empty() {
+        if rmlvo_ref.options.is_empty() {
             None
         } else {
             Some(rmlvo_ref.options.as_bytes())
@@ -4308,64 +2865,44 @@ fn matcher_group_start_new(m: &mut Matcher, name: &[u8]) {
     };
     m.groups.push(group);
 }
-fn matcher_group_add_element(m: &mut Matcher, _s: &mut Scanner, element: &[u8]) {
+fn matcher_group_add_element(m: &mut Matcher, element: &[u8]) {
     let last_group = m.groups.last_mut().unwrap();
     last_group.elements.push(element.to_vec());
 }
-fn matcher_include(
-    m: &mut Matcher<'_>,
-    parent_scanner: &mut Scanner,
-    include_depth: u32,
-    inc: Sval,
-) {
+fn matcher_include(m: &mut Matcher<'_>, include_depth: u32, inc: Sval) {
     if include_depth >= MAX_INCLUDE_DEPTH as u32 {
-        let _loc: ScannerLoc = parent_scanner.token_location();
         return;
     }
     let inc_str = std::str::from_utf8(inc.data).unwrap_or("");
-    let stmt_file: String =
-        match expand_path_str(&parent_scanner.file_name, inc_str, FileType::Rules) {
-            Err(()) => return,
-            Ok(Some(expanded)) => expanded,
-            Ok(None) => inc_str.to_string(),
-        };
+    let stmt_file: String = match expand_path_str(inc_str, FileType::Rules) {
+        Err(()) => return,
+        Ok(Some(expanded)) => expanded,
+        Ok(None) => inc_str.to_string(),
+    };
     let expanded = stmt_file != inc_str;
 
-    let absolute_path = stmt_file.starts_with('/');
     let mut offset: u32 = 0;
-    let mut file_and_path: Option<(std::sync::Arc<Vec<u8>>, String)> = if absolute_path {
-        read_file_cached(&stmt_file).map(|data| (data, stmt_file.clone()))
-    } else if expanded {
-        None
-    } else {
-        find_file_in_xkb_path(
-            &mut *m.ctx,
-            &parent_scanner.file_name,
-            &stmt_file,
-            FileType::Rules,
-            &mut offset,
-            true,
-        )
-    };
+    let mut file_and_path = find_include_file(
+        &mut *m.ctx,
+        &stmt_file,
+        FileType::Rules,
+        expanded,
+        &mut offset,
+    );
 
-    while let Some((ref file_data, ref path)) = file_and_path {
-        let ret: bool = read_rules_file(m, include_depth.wrapping_add(1_u32), file_data, path);
-        let _path_str = path.clone();
+    while let Some((ref file_data, ref _path)) = file_and_path {
+        let ret: bool = read_rules_file(m, include_depth.wrapping_add(1_u32), file_data);
         let _ = file_and_path.take();
         if ret {
             return;
         }
-        if absolute_path {
-            break;
-        }
         offset += 1;
-        file_and_path = find_file_in_xkb_path(
+        file_and_path = find_include_file(
             &mut *m.ctx,
-            &parent_scanner.file_name,
             &stmt_file,
             FileType::Rules,
+            expanded,
             &mut offset,
-            true,
         );
     }
 }
@@ -4456,74 +2993,44 @@ fn extract_mapping_layout_index(s: &[u8], out: &mut u32) -> i32 {
 fn is_mlvo_mask_defined(m: &mut Matcher, mlvo: u32) -> bool {
     m.mapping.defined_mlvo_mask as u32 & 1 << mlvo != 0
 }
-fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
-    let ident_bytes = ident.data;
-    let mut mlvo: u32 = MLVO_MODEL;
-    let mut mlvo_bytes: &[u8] = b"";
-    while mlvo < _MLVO_NUM_ENTRIES {
-        mlvo_bytes = RULES_MLVO_SVALS[mlvo as usize];
-        if mlvo_bytes.len() <= ident_bytes.len() && &ident_bytes[..mlvo_bytes.len()] == mlvo_bytes {
-            break;
-        }
-        mlvo += 1;
-    }
-    if mlvo >= _MLVO_NUM_ENTRIES {
-        let _loc: ScannerLoc = s.token_location();
+fn matcher_mapping_set_mlvo(m: &mut Matcher, ident: Sval) {
+    let Some((mlvo, name)) = RULES_MLVO_SVALS
+        .iter()
+        .enumerate()
+        .find(|(_, name)| ident.data.starts_with(name))
+    else {
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
-    }
+    };
+    let mlvo = mlvo as u32;
     if is_mlvo_mask_defined(m, mlvo) {
-        let _loc_0: ScannerLoc = s.token_location();
-        let _mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
-    if mlvo_bytes.len() < ident_bytes.len() {
-        let mut idx: u32 = 0;
-        let remaining = &ident_bytes[mlvo_bytes.len()..];
-        let consumed: i32 = extract_mapping_layout_index(remaining, &mut idx);
-        if remaining.len() as i32 != consumed {
-            let _loc_1: ScannerLoc = s.token_location();
-            let _mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
-            m.mapping.active_or_candidates_mask = 0_u32;
-            return;
-        }
-        if mlvo == MLVO_LAYOUT {
-            if let LayoutIdx::Single {
-                ref mut layout_idx, ..
-            } = m.mapping.layout
-            {
-                *layout_idx = idx;
+    let indexed = name.len() < ident.data.len();
+    if matches!(mlvo, MLVO_LAYOUT | MLVO_VARIANT) {
+        let mut idx = LAYOUT_INDEX_SINGLE;
+        if indexed {
+            let remaining = &ident.data[name.len()..];
+            if extract_mapping_layout_index(remaining, &mut idx) != remaining.len() as i32 {
+                m.mapping.active_or_candidates_mask = 0_u32;
+                return;
             }
-        } else if mlvo == MLVO_VARIANT {
-            if let LayoutIdx::Single {
-                ref mut variant_idx,
-                ..
-            } = m.mapping.layout
-            {
-                *variant_idx = idx;
-            }
-        } else {
-            let _loc_2: ScannerLoc = s.token_location();
-            let _mlvo_str = std::str::from_utf8(mlvo_bytes).unwrap_or("");
-            m.mapping.active_or_candidates_mask = 0_u32;
-            return;
         }
-    } else if mlvo == MLVO_LAYOUT {
         if let LayoutIdx::Single {
-            ref mut layout_idx, ..
-        } = m.mapping.layout
+            layout_idx,
+            variant_idx,
+        } = &mut m.mapping.layout
         {
-            *layout_idx = LAYOUT_INDEX_SINGLE;
+            *if mlvo == MLVO_LAYOUT {
+                layout_idx
+            } else {
+                variant_idx
+            } = idx;
         }
-    } else if mlvo == MLVO_VARIANT {
-        if let LayoutIdx::Single {
-            ref mut variant_idx,
-            ..
-        } = m.mapping.layout
-        {
-            *variant_idx = LAYOUT_INDEX_SINGLE;
-        }
+    } else if indexed {
+        m.mapping.active_or_candidates_mask = 0_u32;
+        return;
     }
     if (mlvo == MLVO_LAYOUT && is_mlvo_mask_defined(m, MLVO_VARIANT)
         || mlvo == MLVO_VARIANT && is_mlvo_mask_defined(m, MLVO_LAYOUT))
@@ -4539,7 +3046,6 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
             }
         }
     {
-        let _loc_3: ScannerLoc = s.token_location();
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
@@ -4548,87 +3054,54 @@ fn matcher_mapping_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
     m.mapping.num_mlvo += 1;
 }
 fn matcher_mapping_set_layout_bounds(m: &mut Matcher) {
-    let mut idx: u32 = if let LayoutIdx::Single {
+    let idx = if let LayoutIdx::Single {
         layout_idx,
         variant_idx,
     } = m.mapping.layout
     {
-        if layout_idx < variant_idx {
-            layout_idx
-        } else {
-            variant_idx
-        }
+        layout_idx.min(variant_idx)
     } else {
-        0 // should not happen, layout is Single at this point
+        0
     };
-    let mut is_index_case: bool = false;
     match idx {
         XKB_LAYOUT_INVALID => {
             m.mapping.layout = LayoutIdx::Index {
                 layout_idx_min: XKB_LAYOUT_INVALID,
             };
-            m.mapping.active_or_candidates_mask = 0x1_u32;
+            m.mapping.active_or_candidates_mask = 1;
         }
-        4294967293 => {
-            let layout_idx_max = (if (32) < m.rmlvo.layouts.len() {
-                32
-            } else {
-                m.rmlvo.layouts.len()
-            }) as u32;
+        LAYOUT_INDEX_LATER | LAYOUT_INDEX_ANY => {
+            let layout_idx_min = u32::from(idx == LAYOUT_INDEX_LATER);
+            let layout_idx_max = m.rmlvo.layouts.len().min(XKB_MAX_GROUPS as usize) as u32;
             m.mapping.layout = LayoutIdx::Range {
-                layout_idx_min: 1_u32,
+                layout_idx_min,
                 layout_idx_max,
             };
             m.mapping.active_or_candidates_mask =
-                ((1_u64 << layout_idx_max).wrapping_sub(1_u64) as u32 as u64 & !1_u64) as u32;
+                (1_u64.wrapping_shl(layout_idx_max).wrapping_sub(1) as u32) << layout_idx_min;
         }
-        4294967294 => {
-            let layout_idx_max = (if (32) < m.rmlvo.layouts.len() {
-                32
-            } else {
-                m.rmlvo.layouts.len()
-            }) as u32;
-            m.mapping.layout = LayoutIdx::Range {
-                layout_idx_min: 0_u32,
-                layout_idx_max,
-            };
-            m.mapping.active_or_candidates_mask =
-                ((1_u64 << layout_idx_max) as u32 as u64).wrapping_sub(1_u64) as u32;
-        }
-        4294967291 | 4294967292 => {
-            idx = 0_u32;
-            is_index_case = true;
+        LAYOUT_INDEX_SINGLE | LAYOUT_INDEX_FIRST => {
+            m.mapping.layout = LayoutIdx::Index { layout_idx_min: 0 };
+            m.mapping.active_or_candidates_mask = 1;
         }
         _ => {
-            is_index_case = true;
+            m.mapping.layout = LayoutIdx::Index {
+                layout_idx_min: idx,
+            };
+            m.mapping.active_or_candidates_mask = 1 << idx;
         }
     }
-    if is_index_case {
-        m.mapping.layout = LayoutIdx::Index {
-            layout_idx_min: idx,
-        };
-        m.mapping.active_or_candidates_mask = 1 << idx;
-    };
 }
-fn matcher_mapping_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
-    let ident_bytes = ident.data;
-    let mut kccgst: u32 = KCCGST_KEYCODES;
-    let mut kccgst_bytes: &[u8] = b"";
-    while kccgst < _KCCGST_NUM_ENTRIES {
-        kccgst_bytes = RULES_KCCGST_SVALS[kccgst as usize];
-        if kccgst_bytes == ident_bytes {
-            break;
-        }
-        kccgst += 1;
-    }
-    if kccgst >= _KCCGST_NUM_ENTRIES {
-        let _loc: ScannerLoc = s.token_location();
+fn matcher_mapping_set_kccgst(m: &mut Matcher, ident: Sval) {
+    let Some(kccgst) = RULES_KCCGST_SVALS
+        .iter()
+        .position(|name| *name == ident.data)
+        .map(|index| index as u32)
+    else {
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
-    }
+    };
     if m.mapping.defined_kccgst_mask as u32 & 1 << kccgst != 0 {
-        let _loc_0: ScannerLoc = s.token_location();
-        let _kccgst_str = std::str::from_utf8(kccgst_bytes).unwrap_or("");
         m.mapping.active_or_candidates_mask = 0_u32;
         return;
     }
@@ -4638,51 +3111,47 @@ fn matcher_mapping_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: Sval) {
 }
 fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
     match idx {
-        4294967291 => rmlvo_len <= 1,
-        4294967292..=4294967294 => true,
+        LAYOUT_INDEX_SINGLE => rmlvo_len <= 1,
+        LAYOUT_INDEX_FIRST..=LAYOUT_INDEX_ANY => true,
         _ => rmlvo_len >= 2 && (idx as usize) < rmlvo_len,
     }
 }
 
-fn matcher_mapping_verify(m: &mut Matcher, s: &mut Scanner) -> bool {
+fn matcher_mapping_verify(m: &mut Matcher) -> bool {
     if m.mapping.num_mlvo == 0 || m.mapping.num_kccgst == 0 {
-        let _loc: ScannerLoc = s.token_location();
-    } else {
-        if is_mlvo_mask_defined(m, MLVO_LAYOUT) {
-            let single_layout_idx = if let LayoutIdx::Single { layout_idx, .. } = m.mapping.layout {
-                layout_idx
-            } else {
-                0
-            };
-            if !fn_layout_or_variant_valid(m.rmlvo.layouts.len(), single_layout_idx) {
-                m.mapping.active_or_candidates_mask = 0_u32;
-                return false;
-            }
-        }
-        if is_mlvo_mask_defined(m, MLVO_VARIANT) {
-            let single_variant_idx = if let LayoutIdx::Single { variant_idx, .. } = m.mapping.layout
-            {
-                variant_idx
-            } else {
-                0
-            };
-            if !fn_layout_or_variant_valid(m.rmlvo.variants.len(), single_variant_idx) {
-                m.mapping.active_or_candidates_mask = 0_u32;
-                return false;
-            }
-        }
-        return true;
+        m.mapping.active_or_candidates_mask = 0_u32;
+        return false;
     }
-    m.mapping.active_or_candidates_mask = 0_u32;
-    false
+    if is_mlvo_mask_defined(m, MLVO_LAYOUT) {
+        let single_layout_idx = if let LayoutIdx::Single { layout_idx, .. } = m.mapping.layout {
+            layout_idx
+        } else {
+            0
+        };
+        if !fn_layout_or_variant_valid(m.rmlvo.layouts.len(), single_layout_idx) {
+            m.mapping.active_or_candidates_mask = 0_u32;
+            return false;
+        }
+    }
+    if is_mlvo_mask_defined(m, MLVO_VARIANT) {
+        let single_variant_idx = if let LayoutIdx::Single { variant_idx, .. } = m.mapping.layout {
+            variant_idx
+        } else {
+            0
+        };
+        if !fn_layout_or_variant_valid(m.rmlvo.variants.len(), single_variant_idx) {
+            m.mapping.active_or_candidates_mask = 0_u32;
+            return false;
+        }
+    }
+    true
 }
 fn matcher_rule_start_new(m: &mut Matcher) {
     m.rule = Rule::default();
     m.rule.skip = m.mapping.active_or_candidates_mask == 0;
 }
-fn matcher_rule_set_mlvo_common(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx, match_type: u32) {
+fn matcher_rule_set_mlvo_common(m: &mut Matcher, ident: SvalIdx, match_type: u32) {
     if m.rule.num_mlvo_values as i32 >= m.mapping.num_mlvo as i32 {
-        let _loc: ScannerLoc = s.token_location();
         m.rule.skip = true;
         return;
     }
@@ -4690,19 +3159,18 @@ fn matcher_rule_set_mlvo_common(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx
     m.rule.mlvo_value_at_pos[m.rule.num_mlvo_values as usize] = ident;
     m.rule.num_mlvo_values += 1;
 }
-fn matcher_rule_set_mlvo_wildcard(m: &mut Matcher, s: &mut Scanner, match_type: u32) {
+fn matcher_rule_set_mlvo_wildcard(m: &mut Matcher, match_type: u32) {
     let dummy = SvalIdx::EMPTY;
-    matcher_rule_set_mlvo_common(m, s, dummy, match_type);
+    matcher_rule_set_mlvo_common(m, dummy, match_type);
 }
-fn matcher_rule_set_mlvo_group(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
-    matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_GROUP);
+fn matcher_rule_set_mlvo_group(m: &mut Matcher, ident: SvalIdx) {
+    matcher_rule_set_mlvo_common(m, ident, MLVO_MATCH_GROUP);
 }
-fn matcher_rule_set_mlvo(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
-    matcher_rule_set_mlvo_common(m, s, ident, MLVO_MATCH_NORMAL);
+fn matcher_rule_set_mlvo(m: &mut Matcher, ident: SvalIdx) {
+    matcher_rule_set_mlvo_common(m, ident, MLVO_MATCH_NORMAL);
 }
-fn matcher_rule_set_kccgst(m: &mut Matcher, s: &mut Scanner, ident: SvalIdx) {
+fn matcher_rule_set_kccgst(m: &mut Matcher, ident: SvalIdx) {
     if m.rule.num_kccgst_values as i32 >= m.mapping.num_kccgst as i32 {
-        let _loc: ScannerLoc = s.token_location();
         m.rule.skip = true;
         return;
     }
@@ -4748,178 +3216,107 @@ fn match_value_and_mark(
 }
 fn expand_rmlvo_in_kccgst_value(
     m: &mut Matcher,
-    s: &mut Scanner,
     value: Sval,
     layout_idx: u32,
     expanded: &mut Vec<u8>,
     i: &mut usize,
 ) -> bool {
     let bytes = value.data;
-    // Handle %i expansion
     if bytes[*i] == b'i'
         && ((*i).wrapping_add(1_usize) == value.data.len()
-            || (bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_OVERRIDE_PREFIX
-                || bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_AUGMENT_PREFIX
-                || bytes[(*i).wrapping_add(1_usize)] as i32 == MERGE_REPLACE_PREFIX))
+            || is_merge_prefix(bytes[(*i).wrapping_add(1_usize)]))
     {
         if layout_idx == XKB_LAYOUT_INVALID {
-            let _loc: ScannerLoc = s.token_location();
-        } else {
-            *i += 1;
-            let idx_str = format!("{}", layout_idx.wrapping_add(1_u32));
-            expanded.extend_from_slice(idx_str.as_bytes());
-            return true;
+            return false;
         }
-    } else {
-        let mut sfx = 0;
-        let mut pfx = 0;
-        let ch = bytes[*i];
-        if ch == b'('
-            || ch as i32 == MERGE_OVERRIDE_PREFIX
-            || ch as i32 == MERGE_AUGMENT_PREFIX
-            || ch as i32 == MERGE_REPLACE_PREFIX
-            || ch == b'_'
-            || ch == b'-'
-        {
-            pfx = ch;
-            if ch == b'(' {
-                sfx = b')';
-            }
-            *i += 1;
-            if *i >= value.data.len() {
-                // fall through to error
-                let _loc_1: ScannerLoc = s.token_location();
-                return false;
-            }
-        }
-
-        let mlv: u32 = match bytes[*i] {
-            b'm' => MLVO_MODEL,
-            b'l' => MLVO_LAYOUT,
-            b'v' => MLVO_VARIANT,
-            _ => {
-                let _loc_1: ScannerLoc = s.token_location();
-                return false;
-            }
-        };
         *i += 1;
-
-        let mut idx: u32 = XKB_LAYOUT_INVALID;
-        let mut expanded_index: bool = false;
-        if *i < value.data.len() && bytes[*i] == b'[' {
-            if mlv != MLVO_LAYOUT && mlv != MLVO_VARIANT {
-                let _loc_0: ScannerLoc = s.token_location();
-                let _loc_1: ScannerLoc = s.token_location();
-                return false;
-            }
-            let consumed: i32 = extract_layout_index(&bytes[*i..], &mut idx);
-            if consumed == -1_i32 {
-                let _loc_1: ScannerLoc = s.token_location();
-                return false;
-            }
-            if idx == XKB_LAYOUT_INVALID {
-                idx = layout_idx;
-                expanded_index = true;
-            }
-            *i = (*i).wrapping_add(consumed as usize);
-        }
-
-        if sfx != 0 {
-            if *i >= value.data.len() {
-                let _loc_1: ScannerLoc = s.token_location();
-                return false;
-            }
-            let ch = bytes[*i];
-            *i += 1;
-            if ch != sfx {
-                let _loc_1: ScannerLoc = s.token_location();
-                return false;
-            }
-        }
-
-        // Determine which expanded_value to use. Copy the sval (it's Copy).
-        // Then set matched afterward.
-        enum RmlvoRef {
-            Model,
-            Layout(usize),
-            Variant(usize),
-        }
-        let ev_ref: Option<RmlvoRef>;
-
-        if mlv == MLVO_LAYOUT {
-            if idx == XKB_LAYOUT_INVALID {
-                if m.rmlvo.layouts.len() == 1 {
-                    ev_ref = Some(RmlvoRef::Layout(0));
-                } else {
-                    ev_ref = None;
-                }
-            } else if idx < m.rmlvo.layouts.len() as u32
-                && (expanded_index || m.rmlvo.layouts.len() > 1)
-            {
-                ev_ref = Some(RmlvoRef::Layout(idx as usize));
-            } else {
-                ev_ref = None;
-            }
-        } else if mlv == MLVO_VARIANT {
-            if idx == XKB_LAYOUT_INVALID {
-                if m.rmlvo.variants.len() == 1 {
-                    ev_ref = Some(RmlvoRef::Variant(0));
-                } else {
-                    ev_ref = None;
-                }
-            } else if idx < m.rmlvo.variants.len() as u32
-                && (expanded_index || m.rmlvo.variants.len() > 1)
-            {
-                ev_ref = Some(RmlvoRef::Variant(idx as usize));
-            } else {
-                ev_ref = None;
-            }
-        } else if mlv == MLVO_MODEL {
-            ev_ref = Some(RmlvoRef::Model);
-        } else {
-            ev_ref = None;
-        }
-
-        // Get the sval bytes (sval is Copy)
-        let ev_sval = match &ev_ref {
-            Some(RmlvoRef::Model) => m.rmlvo.model.sval,
-            Some(RmlvoRef::Layout(idx)) => m.rmlvo.layouts[*idx].sval,
-            Some(RmlvoRef::Variant(idx)) => m.rmlvo.variants[*idx].sval,
-            None => Sval { data: &[] },
-        };
-
-        if ev_ref.is_none() || ev_sval.data.is_empty() {
-            return true;
-        }
-
-        if pfx != 0 {
-            expanded.push(pfx);
-        }
-        expanded.extend_from_slice(ev_sval.data);
-        if sfx != 0 {
-            expanded.push(sfx);
-        }
-
-        // Set matched flag
-        match ev_ref {
-            Some(RmlvoRef::Model) => m.rmlvo.model.matched = true,
-            Some(RmlvoRef::Layout(idx)) => m.rmlvo.layouts[idx].matched = true,
-            Some(RmlvoRef::Variant(idx)) => m.rmlvo.variants[idx].matched = true,
-            None => {}
-        }
+        expanded.extend_from_slice(layout_idx.wrapping_add(1).to_string().as_bytes());
         return true;
     }
 
-    let _loc_1: ScannerLoc = s.token_location();
-    false
+    let mut sfx = 0;
+    let mut pfx = 0;
+    let ch = bytes[*i];
+    if matches!(ch, b'(' | b'_' | b'-') || is_merge_prefix(ch) {
+        pfx = ch;
+        if ch == b'(' {
+            sfx = b')';
+        }
+        *i += 1;
+        if *i >= value.data.len() {
+            return false;
+        }
+    }
+
+    let mlv = match bytes[*i] {
+        b'm' => MLVO_MODEL,
+        b'l' => MLVO_LAYOUT,
+        b'v' => MLVO_VARIANT,
+        _ => return false,
+    };
+    *i += 1;
+
+    let mut idx = XKB_LAYOUT_INVALID;
+    let mut expanded_index = false;
+    if *i < value.data.len() && bytes[*i] == b'[' {
+        if mlv == MLVO_MODEL {
+            return false;
+        }
+        let consumed = extract_layout_index(&bytes[*i..], &mut idx);
+        if consumed < 0 {
+            return false;
+        }
+        if idx == XKB_LAYOUT_INVALID {
+            idx = layout_idx;
+            expanded_index = true;
+        }
+        *i += consumed as usize;
+    }
+
+    if sfx != 0 {
+        if bytes.get(*i) != Some(&sfx) {
+            return false;
+        }
+        *i += 1;
+    }
+
+    let selected_index = |len: usize| match idx {
+        XKB_LAYOUT_INVALID if len == 1 => Some(0),
+        XKB_LAYOUT_INVALID => None,
+        _ if idx < len as u32 && (expanded_index || len > 1) => Some(idx as usize),
+        _ => None,
+    };
+    let target =
+        match mlv {
+            MLVO_MODEL => Some(&mut m.rmlvo.model),
+            MLVO_LAYOUT => selected_index(m.rmlvo.layouts.len())
+                .and_then(|index| m.rmlvo.layouts.get_mut(index)),
+            MLVO_VARIANT => selected_index(m.rmlvo.variants.len())
+                .and_then(|index| m.rmlvo.variants.get_mut(index)),
+            _ => None,
+        };
+    let Some(target) = target else {
+        return true;
+    };
+    if target.sval.data.is_empty() {
+        return true;
+    }
+
+    if pfx != 0 {
+        expanded.push(pfx);
+    }
+    expanded.extend_from_slice(target.sval.data);
+    if sfx != 0 {
+        expanded.push(sfx);
+    }
+    target.matched = true;
+    true
 }
 #[allow(clippy::too_many_arguments)]
 fn expand_qualifier_in_kccgst_value(
     m: &mut Matcher,
-    s: &mut Scanner,
     value: Sval,
     expanded: &mut Vec<u8>,
-    has_layout_idx_range: bool,
     has_separator: bool,
     prefix_idx: u32,
     i: &mut usize,
@@ -4927,16 +3324,11 @@ fn expand_qualifier_in_kccgst_value(
     let bytes = value.data;
     if (*i).wrapping_add(3_usize) <= value.data.len()
         && ((*i).wrapping_add(3_usize) == value.data.len()
-            || bytes[(*i).wrapping_add(3_usize)] as i32 == MERGE_OVERRIDE_PREFIX
-            || bytes[(*i).wrapping_add(3_usize)] as i32 == MERGE_AUGMENT_PREFIX
-            || bytes[(*i).wrapping_add(3_usize)] as i32 == MERGE_REPLACE_PREFIX)
+            || is_merge_prefix(bytes[(*i).wrapping_add(3_usize)]))
         && bytes[*i] == b'a'
         && bytes[(*i).wrapping_add(1_usize)] == b'l'
         && bytes[(*i).wrapping_add(2_usize)] == b'l'
     {
-        if has_layout_idx_range {
-            let _loc: ScannerLoc = s.token_location();
-        }
         expanded.push(b'1');
         if m.rmlvo.layouts.len() > 1 {
             let prefix_length = expanded
@@ -4971,17 +3363,11 @@ fn expand_qualifier_in_kccgst_value(
 }
 #[inline]
 fn concat_kccgst(into: &mut Vec<u8>, from: &[u8]) {
-    let from_plus = !from.is_empty()
-        && (from[0] as i32 == MERGE_OVERRIDE_PREFIX
-            || from[0] as i32 == MERGE_AUGMENT_PREFIX
-            || from[0] as i32 == MERGE_REPLACE_PREFIX);
+    let from_plus = from.first().is_some_and(|&byte| is_merge_prefix(byte));
     if from_plus || into.is_empty() {
         into.extend_from_slice(from);
     } else {
-        let ch = if into.is_empty() { 0 } else { into[0] };
-        let into_plus = ch as i32 == MERGE_OVERRIDE_PREFIX
-            || ch as i32 == MERGE_AUGMENT_PREFIX
-            || ch as i32 == MERGE_REPLACE_PREFIX;
+        let into_plus = into.first().is_some_and(|&byte| is_merge_prefix(byte));
         if into_plus {
             let old_len = into.len();
             into.resize(old_len + from.len(), 0);
@@ -4992,12 +3378,7 @@ fn concat_kccgst(into: &mut Vec<u8>, from: &[u8]) {
         }
     }
 }
-fn expand_kccgst_value(
-    m: &mut Matcher,
-    s: &mut Scanner,
-    value: Sval,
-    layout_idx: u32,
-) -> Option<Vec<u8>> {
+fn expand_kccgst_value(m: &mut Matcher, value: Sval, layout_idx: u32) -> Option<Vec<u8>> {
     let bytes = value.data;
     let mut expanded = Vec::new();
     let mut last_item_idx: u32 = 0;
@@ -5014,10 +3395,8 @@ fn expand_kccgst_value(
                 i += 1;
                 expand_qualifier_in_kccgst_value(
                     m,
-                    s,
                     value,
                     &mut expanded,
-                    matches!(m.mapping.layout, LayoutIdx::Range { .. }),
                     has_separator,
                     last_item_idx,
                     &mut i,
@@ -5026,16 +3405,13 @@ fn expand_kccgst_value(
             b'%' => {
                 i += 1;
                 if i >= value.data.len()
-                    || !expand_rmlvo_in_kccgst_value(m, s, value, layout_idx, &mut expanded, &mut i)
+                    || !expand_rmlvo_in_kccgst_value(m, value, layout_idx, &mut expanded, &mut i)
                 {
                     invalid = true;
                     break;
                 }
             }
-            b if b as i32 == MERGE_OVERRIDE_PREFIX
-                || b as i32 == MERGE_AUGMENT_PREFIX
-                || b as i32 == MERGE_REPLACE_PREFIX =>
-            {
+            b if is_merge_prefix(b) => {
                 expanded.push(bytes[i]);
                 i += 1;
                 last_item_idx = (expanded.len() - 1) as u32;
@@ -5053,9 +3429,9 @@ fn expand_kccgst_value(
         Some(expanded)
     }
 }
-fn matcher_append_pending_kccgst(m: &mut Matcher) -> bool {
+fn matcher_append_pending_kccgst(m: &mut Matcher) {
     if !matches!(m.mapping.layout, LayoutIdx::Range { .. }) {
-        return true;
+        return;
     }
     let (range_min, range_max) = if let LayoutIdx::Range {
         layout_idx_min,
@@ -5072,457 +3448,283 @@ fn matcher_append_pending_kccgst(m: &mut Matcher) -> bool {
             continue;
         }
         for layout in range_min..range_max {
-            let mut offset: usize = 0_usize;
-            for k in 0..m.pending_kccgst.slices.len() {
-                let slice_len = m.pending_kccgst.slices[k].length;
-                let slice_kccgst = m.pending_kccgst.slices[k].kccgst;
-                let slice_layout = m.pending_kccgst.slices[k].layout;
-                if slice_kccgst == kccgst && slice_layout == layout && slice_len != 0 {
-                    let from: Vec<u8> =
-                        m.pending_kccgst.buffer[offset..offset + slice_len as usize].to_vec();
-                    concat_kccgst(&mut m.kccgst[kccgst as usize], &from);
+            for (slice_layout, value) in &m.pending_kccgst[kccgst as usize] {
+                if *slice_layout == layout {
+                    concat_kccgst(&mut m.kccgst[kccgst as usize], value);
                 }
-                offset = offset.wrapping_add(slice_len as usize);
             }
         }
     }
     m.mapping.layout = LayoutIdx::default();
-    true
 }
-fn matcher_rule_verify(m: &mut Matcher, s: &mut Scanner) {
+fn matcher_rule_verify(m: &mut Matcher) {
     if m.rule.num_mlvo_values as i32 != m.mapping.num_mlvo as i32
         || m.rule.num_kccgst_values as i32 != m.mapping.num_kccgst as i32
     {
-        let _loc: ScannerLoc = s.token_location();
         m.rule.skip = true;
     }
 }
+fn matcher_mlvo_matches(
+    m: &mut Matcher,
+    mlvo: u32,
+    value: Sval,
+    match_type: u32,
+    layout: u32,
+) -> bool {
+    let (groups, rmlvo) = (&m.groups, &mut m.rmlvo);
+    match mlvo {
+        MLVO_MODEL => match_value_and_mark(
+            groups,
+            value,
+            &mut rmlvo.model,
+            match_type,
+            WILDCARD_MATCH_ALL,
+        ),
+        MLVO_LAYOUT => match_value_and_mark(
+            groups,
+            value,
+            &mut rmlvo.layouts[layout as usize],
+            match_type,
+            WILDCARD_MATCH_NONEMPTY,
+        ),
+        MLVO_VARIANT => match_value_and_mark(
+            groups,
+            value,
+            &mut rmlvo.variants[layout as usize],
+            match_type,
+            WILDCARD_MATCH_NONEMPTY,
+        ),
+        MLVO_OPTION => rmlvo
+            .options
+            .iter_mut()
+            .filter(|option| {
+                matches!(option.layout, OPTIONS_MATCH_ALL_GROUPS) || option.layout == layout
+            })
+            .any(|option| {
+                match_value_and_mark(groups, value, option, match_type, WILDCARD_MATCH_ALL)
+            }),
+        _ => false,
+    }
+}
 fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
-    let mut candidate_layouts: u32 = m.mapping.active_or_candidates_mask;
+    let mut candidate_layouts = m.mapping.active_or_candidates_mask;
     for i in 0..m.mapping.num_mlvo as usize {
-        let mlvo: u32 = m.mapping.mlvo_at_pos[i];
-        let value: Sval = m.rule.mlvo_value_at_pos[i].as_sval(s.s);
-        let match_type: u32 = m.rule.match_type_at_pos[i];
-        let mut matched: bool = false;
+        let mlvo = m.mapping.mlvo_at_pos[i];
+        let value = m.rule.mlvo_value_at_pos[i].as_sval(s.s);
+        let match_type = m.rule.match_type_at_pos[i];
         if mlvo == MLVO_MODEL {
-            matched = match_value_and_mark(
-                &m.groups,
-                value,
-                &mut m.rmlvo.model,
-                match_type,
-                WILDCARD_MATCH_ALL,
-            );
-        } else if let LayoutIdx::Range {
-            layout_idx_min,
-            layout_idx_max,
-        } = m.mapping.layout
-        {
-            for idx in layout_idx_min..layout_idx_max {
-                if candidate_layouts == 0 {
-                    break;
-                }
-                let mask: u32 = 1 << idx;
-                if candidate_layouts & mask != 0 {
-                    match mlvo {
-                        1 => {
-                            if match_value_and_mark(
-                                &m.groups,
-                                value,
-                                &mut m.rmlvo.layouts[idx as usize],
-                                match_type,
-                                WILDCARD_MATCH_NONEMPTY,
-                            ) {
-                                matched = true;
-                            } else {
-                                candidate_layouts &= !mask;
-                            }
-                        }
-                        2 => {
-                            if match_value_and_mark(
-                                &m.groups,
-                                value,
-                                &mut m.rmlvo.variants[idx as usize],
-                                match_type,
-                                WILDCARD_MATCH_NONEMPTY,
-                            ) {
-                                matched = true;
-                            } else {
-                                candidate_layouts &= !mask;
-                            }
-                        }
-                        _ => {
-                            let mut found_option: bool = false;
-                            for opt_idx in 0..m.rmlvo.options.len() {
-                                let opt = &m.rmlvo.options[opt_idx];
-                                if opt.layout != OPTIONS_MATCH_ALL_GROUPS && opt.layout != idx {
-                                    continue;
-                                }
-                                if match_value_and_mark(
-                                    &m.groups,
-                                    value,
-                                    &mut m.rmlvo.options[opt_idx],
-                                    match_type,
-                                    WILDCARD_MATCH_ALL,
-                                ) {
-                                    matched = true;
-                                    found_option = true;
-                                    break;
-                                }
-                            }
-                            if !found_option {
-                                candidate_layouts &= !mask;
-                            }
-                        }
-                    }
-                }
+            if !matcher_mlvo_matches(m, mlvo, value, match_type, 0) {
+                return;
             }
-        } else {
-            let li = m.mapping.layout.layout_idx_min() as usize;
-            match mlvo {
-                1 => {
-                    matched = match_value_and_mark(
-                        &m.groups,
-                        value,
-                        &mut m.rmlvo.layouts[li],
-                        match_type,
-                        WILDCARD_MATCH_NONEMPTY,
-                    );
-                }
-                2 => {
-                    matched = match_value_and_mark(
-                        &m.groups,
-                        value,
-                        &mut m.rmlvo.variants[li],
-                        match_type,
-                        WILDCARD_MATCH_NONEMPTY,
-                    );
-                }
-                3 => {
-                    let mut found_option: bool = false;
-                    for opt_idx in 0..m.rmlvo.options.len() {
-                        let opt = &m.rmlvo.options[opt_idx];
-                        if opt.layout != OPTIONS_MATCH_ALL_GROUPS && opt.layout != li as u32 {
-                            continue;
-                        }
-                        if match_value_and_mark(
-                            &m.groups,
-                            value,
-                            &mut m.rmlvo.options[opt_idx],
-                            match_type,
-                            WILDCARD_MATCH_ALL,
-                        ) {
-                            matched = true;
-                            found_option = true;
-                            break;
-                        }
-                    }
-                    if !found_option {
-                        candidate_layouts &= !matched as u32;
-                    }
-                }
-                _ => {}
-            }
+            continue;
         }
+        let matched = match m.mapping.layout {
+            LayoutIdx::Range {
+                layout_idx_min,
+                layout_idx_max,
+            } => {
+                let mut matched = false;
+                for layout in layout_idx_min..layout_idx_max {
+                    let mask = 1 << layout;
+                    if candidate_layouts & mask == 0 {
+                        continue;
+                    }
+                    if matcher_mlvo_matches(m, mlvo, value, match_type, layout) {
+                        matched = true;
+                    } else {
+                        candidate_layouts &= !mask;
+                    }
+                }
+                matched
+            }
+            LayoutIdx::Index { layout_idx_min } => {
+                matcher_mlvo_matches(m, mlvo, value, match_type, layout_idx_min)
+            }
+            LayoutIdx::Single { .. } => false,
+        };
         if !matched {
             return;
         }
     }
-    if let LayoutIdx::Range {
-        layout_idx_min,
-        layout_idx_max,
-    } = m.mapping.layout
-    {
-        for idx in layout_idx_min..layout_idx_max {
-            if candidate_layouts & 1 << idx != 0 {
-                for i_0 in 0..m.mapping.num_kccgst as usize {
-                    let kccgst: u32 = m.mapping.kccgst_at_pos[i_0];
-                    if kccgst == KCCGST_GEOMETRY {
-                        continue;
-                    }
-                    let value_0: Sval = m.rule.kccgst_value_at_pos[i_0].as_sval(s.s);
-                    let prev_buffer_length: u32 = m.pending_kccgst.buffer.len() as u32;
-                    if let Some(expanded) = expand_kccgst_value(m, s, value_0, idx) {
-                        if !expanded.is_empty() {
-                            m.pending_kccgst.buffer.extend_from_slice(&expanded);
-                        }
-                        let length: u32 =
-                            (m.pending_kccgst.buffer.len() as u32).wrapping_sub(prev_buffer_length);
-                        let slice = KccgstBufferSlice {
-                            length,
-                            kccgst,
-                            layout: idx,
-                        };
-                        m.pending_kccgst.slices.push(slice);
-                    }
+    match m.mapping.layout {
+        LayoutIdx::Range {
+            layout_idx_min,
+            layout_idx_max,
+        } => {
+            for layout in layout_idx_min..layout_idx_max {
+                if candidate_layouts & 1 << layout != 0 {
+                    apply_kccgst(m, s, layout, true);
                 }
             }
         }
-    } else if let LayoutIdx::Index { layout_idx_min, .. } = m.mapping.layout {
-        for i_1 in 0..m.mapping.num_kccgst as usize {
-            let kccgst_0: u32 = m.mapping.kccgst_at_pos[i_1];
-            if kccgst_0 == KCCGST_GEOMETRY {
-                continue;
-            }
-            let value_1: Sval = m.rule.kccgst_value_at_pos[i_1].as_sval(s.s);
-            if let Some(expanded) = expand_kccgst_value(m, s, value_1, layout_idx_min) {
-                if !expanded.is_empty() {
-                    concat_kccgst(&mut m.kccgst[kccgst_0 as usize], &expanded);
-                }
-            }
-        }
+        LayoutIdx::Index { layout_idx_min } => apply_kccgst(m, s, layout_idx_min, false),
+        LayoutIdx::Single { .. } => {}
     }
     if !is_mlvo_mask_defined(m, MLVO_OPTION) {
         m.mapping.active_or_candidates_mask &= !candidate_layouts;
     }
 }
+fn apply_kccgst(m: &mut Matcher, s: &Scanner, layout: u32, pending: bool) {
+    for i in 0..m.mapping.num_kccgst as usize {
+        let kccgst = m.mapping.kccgst_at_pos[i];
+        if kccgst == KCCGST_GEOMETRY {
+            continue;
+        }
+        let value = m.rule.kccgst_value_at_pos[i].as_sval(s.s);
+        if let Some(expanded) = expand_kccgst_value(m, value, layout) {
+            if pending {
+                m.pending_kccgst[kccgst as usize].push((layout, expanded));
+            } else if !expanded.is_empty() {
+                concat_kccgst(&mut m.kccgst[kccgst as usize], &expanded);
+            }
+        }
+    }
+}
 fn gettok(m: &mut Matcher, s: &mut Scanner) -> u32 {
     lex(s, &mut m.val)
 }
-fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32, _file_name: &str) -> bool {
-    let mut eof_ok = false;
-    let mut tok: u32;
-
-    '_initial: loop {
-        tok = gettok(m, s);
-        match tok {
-            4 => {}
-            1 => {
-                continue;
-            }
-            0 => {
-                eof_ok = true;
-                break;
-            }
-            _ => {
-                break;
+fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
+    let mut have_bang = false;
+    loop {
+        if !have_bang {
+            match gettok(m, s) {
+                TOK_END_OF_LINE => continue,
+                TOK_END_OF_FILE => return true,
+                TOK_BANG => {}
+                _ => return false,
             }
         }
-        loop {
-            tok = gettok(m, s);
-            match tok {
-                3 => {
-                    matcher_group_start_new(m, m.val.string.as_sval(s.s).data);
-                    tok = gettok(m, s);
+        have_bang = false;
+        match gettok(m, s) {
+            TOK_GROUP_NAME => {
+                matcher_group_start_new(m, m.val.string.as_sval(s.s).data);
+                if gettok(m, s) != TOK_EQUALS {
+                    return false;
+                }
+                loop {
+                    match gettok(m, s) {
+                        TOK_IDENTIFIER => {
+                            matcher_group_add_element(m, m.val.string.as_sval(s.s).data)
+                        }
+                        TOK_END_OF_LINE => break,
+                        _ => return false,
+                    }
+                }
+            }
+            TOK_INCLUDE => {
+                if gettok(m, s) != TOK_IDENTIFIER {
+                    return false;
+                }
+                matcher_include(m, include_depth, m.val.string.as_sval(s.s));
+                if gettok(m, s) != TOK_END_OF_LINE {
+                    return false;
+                }
+            }
+            TOK_IDENTIFIER => {
+                matcher_mapping_start_new(m);
+                matcher_mapping_set_mlvo(m, m.val.string.as_sval(s.s));
+                loop {
+                    match gettok(m, s) {
+                        TOK_IDENTIFIER if m.mapping.active_or_candidates_mask != 0 => {
+                            matcher_mapping_set_mlvo(m, m.val.string.as_sval(s.s))
+                        }
+                        TOK_IDENTIFIER => {}
+                        TOK_EQUALS => break,
+                        _ => return false,
+                    }
+                }
+                loop {
+                    match gettok(m, s) {
+                        TOK_IDENTIFIER if m.mapping.active_or_candidates_mask != 0 => {
+                            matcher_mapping_set_kccgst(m, m.val.string.as_sval(s.s))
+                        }
+                        TOK_IDENTIFIER => {}
+                        TOK_END_OF_LINE => break,
+                        _ => return false,
+                    }
+                }
+                if m.mapping.active_or_candidates_mask != 0 && matcher_mapping_verify(m) {
+                    matcher_mapping_set_layout_bounds(m);
+                    if matches!(m.mapping.layout, LayoutIdx::Range { .. }) {
+                        m.pending_kccgst.iter_mut().for_each(Vec::clear);
+                    }
+                }
+                loop {
+                    let mut tok = gettok(m, s);
                     match tok {
-                        5 => {
+                        TOK_BANG => {
+                            matcher_append_pending_kccgst(m);
+                            have_bang = true;
                             break;
                         }
-                        _ => {
-                            break '_initial;
+                        TOK_END_OF_LINE => continue,
+                        TOK_END_OF_FILE => {
+                            matcher_append_pending_kccgst(m);
+                            return true;
                         }
+                        _ => {}
                     }
-                }
-                10 => {
-                    tok = gettok(m, s);
-                    match tok {
-                        2 => {}
-                        _ => {
-                            break '_initial;
-                        }
-                    }
-                    matcher_include(m, s, include_depth, m.val.string.as_sval(s.s));
-                    tok = gettok(m, s);
-                    match tok {
-                        1 => {
-                            continue '_initial;
-                        }
-                        _ => {
-                            break '_initial;
-                        }
-                    }
-                }
-                2 => {
-                    matcher_mapping_start_new(m);
-                    matcher_mapping_set_mlvo(m, s, m.val.string.as_sval(s.s));
+                    matcher_rule_start_new(m);
                     loop {
-                        tok = gettok(m, s);
                         match tok {
-                            2 => {}
-                            5 => {
-                                break;
+                            TOK_IDENTIFIER if !m.rule.skip => {
+                                if m.val.string.as_sval(s.s).data == b"+" {
+                                    matcher_rule_set_mlvo_wildcard(m, MLVO_MATCH_WILDCARD_SOME);
+                                } else {
+                                    matcher_rule_set_mlvo(m, m.val.string);
+                                }
                             }
-                            _ => {
-                                break '_initial;
+                            TOK_WILD_CARD_STAR..=TOK_WILD_CARD_ANY if !m.rule.skip => {
+                                matcher_rule_set_mlvo_wildcard(
+                                    m,
+                                    [
+                                        MLVO_MATCH_WILDCARD_LEGACY,
+                                        MLVO_MATCH_WILDCARD_NONE,
+                                        MLVO_MATCH_WILDCARD_SOME,
+                                        MLVO_MATCH_WILDCARD_ANY,
+                                    ]
+                                        [tok as usize - TOK_WILD_CARD_STAR as usize],
+                                );
                             }
+                            TOK_GROUP_NAME if !m.rule.skip => {
+                                matcher_rule_set_mlvo_group(m, m.val.string)
+                            }
+                            TOK_IDENTIFIER
+                            | TOK_WILD_CARD_STAR..=TOK_WILD_CARD_ANY
+                            | TOK_GROUP_NAME => {}
+                            TOK_EQUALS => break,
+                            _ => return false,
                         }
-                        if m.mapping.active_or_candidates_mask != 0 {
-                            matcher_mapping_set_mlvo(m, s, m.val.string.as_sval(s.s));
-                        }
+                        tok = gettok(m, s);
                     }
                     loop {
-                        tok = gettok(m, s);
-                        match tok {
-                            2 => {}
-                            1 => {
-                                break;
+                        match gettok(m, s) {
+                            TOK_IDENTIFIER if !m.rule.skip => {
+                                matcher_rule_set_kccgst(m, m.val.string)
                             }
-                            _ => {
-                                break '_initial;
-                            }
-                        }
-                        if m.mapping.active_or_candidates_mask != 0 {
-                            matcher_mapping_set_kccgst(m, s, m.val.string.as_sval(s.s));
+                            TOK_IDENTIFIER => {}
+                            TOK_END_OF_LINE => break,
+                            _ => return false,
                         }
                     }
-                    if m.mapping.active_or_candidates_mask != 0 && matcher_mapping_verify(m, s) {
-                        matcher_mapping_set_layout_bounds(m);
-                        if matches!(m.mapping.layout, LayoutIdx::Range { .. }) {
-                            m.pending_kccgst.buffer.clear();
-                            m.pending_kccgst.slices.clear();
-                        }
-                    }
-                    loop {
-                        tok = gettok(m, s);
-                        match tok {
-                            4 => {
-                                matcher_append_pending_kccgst(m);
-                                break;
-                            }
-                            1 => {}
-                            0 => {
-                                matcher_append_pending_kccgst(m);
-                                eof_ok = true;
-                                break '_initial;
-                            }
-                            _ => {
-                                matcher_rule_start_new(m);
-                                loop {
-                                    match tok {
-                                        2 => {
-                                            if !m.rule.skip {
-                                                if m.val.string.len() == 1
-                                                    && s.s[m.val.string.start] == b'+'
-                                                {
-                                                    matcher_rule_set_mlvo_wildcard(
-                                                        m,
-                                                        s,
-                                                        MLVO_MATCH_WILDCARD_SOME,
-                                                    );
-                                                } else {
-                                                    matcher_rule_set_mlvo(m, s, m.val.string);
-                                                }
-                                            }
-                                        }
-                                        6 => {
-                                            if !m.rule.skip {
-                                                matcher_rule_set_mlvo_wildcard(
-                                                    m,
-                                                    s,
-                                                    MLVO_MATCH_WILDCARD_LEGACY,
-                                                );
-                                            }
-                                        }
-                                        7 => {
-                                            if !m.rule.skip {
-                                                matcher_rule_set_mlvo_wildcard(
-                                                    m,
-                                                    s,
-                                                    MLVO_MATCH_WILDCARD_NONE,
-                                                );
-                                            }
-                                        }
-                                        8 => {
-                                            if !m.rule.skip {
-                                                matcher_rule_set_mlvo_wildcard(
-                                                    m,
-                                                    s,
-                                                    MLVO_MATCH_WILDCARD_SOME,
-                                                );
-                                            }
-                                        }
-                                        9 => {
-                                            if !m.rule.skip {
-                                                matcher_rule_set_mlvo_wildcard(
-                                                    m,
-                                                    s,
-                                                    MLVO_MATCH_WILDCARD_ANY,
-                                                );
-                                            }
-                                        }
-                                        3 => {
-                                            if !m.rule.skip {
-                                                matcher_rule_set_mlvo_group(m, s, m.val.string);
-                                            }
-                                        }
-                                        5 => {
-                                            break;
-                                        }
-                                        _ => {
-                                            break '_initial;
-                                        }
-                                    }
-                                    tok = gettok(m, s);
-                                }
-                                loop {
-                                    tok = gettok(m, s);
-                                    match tok {
-                                        2 => {}
-                                        1 => {
-                                            break;
-                                        }
-                                        _ => {
-                                            break '_initial;
-                                        }
-                                    }
-                                    if !m.rule.skip {
-                                        matcher_rule_set_kccgst(m, s, m.val.string);
-                                    }
-                                }
-                                if !m.rule.skip {
-                                    matcher_rule_verify(m, s);
-                                }
-                                if !m.rule.skip {
-                                    matcher_rule_apply_if_matches(m, s);
-                                }
-                            }
+                    if !m.rule.skip {
+                        matcher_rule_verify(m);
+                        if !m.rule.skip {
+                            matcher_rule_apply_if_matches(m, s);
                         }
                     }
                 }
-                _ => {
-                    break '_initial;
-                }
             }
+            _ => return false,
         }
-        loop {
-            tok = gettok(m, s);
-            match tok {
-                2 => {}
-                1 => {
-                    break;
-                }
-                _ => {
-                    break '_initial;
-                }
-            }
-            matcher_group_add_element(m, s, m.val.string.as_sval(s.s).data);
-        }
-    }
-    if eof_ok {
-        true
-    } else {
-        match tok {
-            11 => {}
-            _ => {
-                let _loc: ScannerLoc = s.token_location();
-            }
-        }
-        false
     }
 }
-fn read_rules_file(
-    matcher: &mut Matcher<'_>,
-    include_depth: u32,
-    file_data: &[u8],
-    path: &str,
-) -> bool {
-    let mut scanner = Scanner::new(file_data, path);
+fn read_rules_file(matcher: &mut Matcher<'_>, include_depth: u32, file_data: &[u8]) -> bool {
+    let mut scanner = Scanner::new(file_data);
     if !scanner.check_supported_char_encoding() {
-        let _loc: ScannerLoc = scanner.token_location();
-        let _loc_0: ScannerLoc = scanner.token_location();
         return false;
     }
-    let ret: bool = matcher_match(matcher, &mut scanner, include_depth, path);
-    ret
+    matcher_match(matcher, &mut scanner, include_depth)
 }
 fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_>) -> bool {
     let partial_rules = format!("{}{}", rules, suffix);
@@ -5533,18 +3735,14 @@ fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_
     loop {
         let found = find_file_in_xkb_path(
             &mut *matcher.ctx,
-            "(unknown)",
             &partial_rules,
             FileType::Rules,
             &mut offset,
-            false,
         );
-        let Some((file_data, path)) = found else {
+        let Some((file_data, _path)) = found else {
             break;
         };
-        let ok: bool = read_rules_file(matcher, 0, &file_data, &path);
-        drop(file_data);
-        if !ok {
+        if !read_rules_file(matcher, 0, &file_data) {
             return false;
         }
         offset += 1;
@@ -5557,103 +3755,50 @@ fn xkb_resolve_rules(
     out: &mut XkbComponentNames,
     explicit_layouts: &mut u32,
 ) -> bool {
-    let mut ret: bool;
     let mut offset: u32 = 0;
-    let rules_str = rules;
-    let found = find_file_in_xkb_path(
-        &mut *matcher.ctx,
-        "(unknown)",
-        rules_str,
-        FileType::Rules,
-        &mut offset,
-        true,
-    );
-    let Some((file_data, path)) = found else {
+    let found = find_file_in_xkb_path(&mut *matcher.ctx, rules, FileType::Rules, &mut offset);
+    let Some((file_data, _path)) = found else {
         return false;
     };
-    ret = xkb_resolve_partial_rules(rules_str, ".pre", matcher);
-    if ret {
-        ret = read_rules_file(matcher, 0, &file_data, &path);
+    if !xkb_resolve_partial_rules(rules, ".pre", matcher)
+        || !read_rules_file(matcher, 0, &file_data)
+        || !xkb_resolve_partial_rules(rules, ".post", matcher)
+        || matcher.kccgst[..KCCGST_GEOMETRY as usize]
+            .iter()
+            .any(Vec::is_empty)
+    {
+        return false;
     }
-    if ret {
-        ret = xkb_resolve_partial_rules(rules_str, ".post", matcher);
-        if ret {
-            if matcher.kccgst[KCCGST_KEYCODES as usize].is_empty()
-                || matcher.kccgst[KCCGST_TYPES as usize].is_empty()
-                || matcher.kccgst[KCCGST_COMPAT as usize].is_empty()
-                || matcher.kccgst[KCCGST_SYMBOLS as usize].is_empty()
-            {
-                ret = false;
-            } else {
-                // Transfer ownership of Vec data directly.
-                {
-                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_KEYCODES as usize]);
-                    v.push(0);
-                    out.keycodes = v;
-                }
-                {
-                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_TYPES as usize]);
-                    v.push(0);
-                    out.types = v;
-                }
-                {
-                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_COMPAT as usize]);
-                    v.push(0);
-                    out.compatibility = v;
-                }
-                {
-                    let mut v = std::mem::take(&mut matcher.kccgst[KCCGST_SYMBOLS as usize]);
-                    v.push(0);
-                    out.symbols = v;
-                }
-                for mval in matcher.rmlvo.layouts.iter() {
-                    if !mval.matched && !mval.sval.data.is_empty() {}
-                }
-                for mval in matcher.rmlvo.variants.iter() {
-                    if !mval.matched && !mval.sval.data.is_empty() {}
-                }
-                for mval in matcher.rmlvo.options.iter() {
-                    if !mval.matched && !mval.sval.data.is_empty() {}
-                }
-                if !out.symbols.is_empty() {
-                    *explicit_layouts = 1_u32;
-                    // Parse symbols string to find explicit layout count
-                    let sym_bytes = &out.symbols;
-                    let mut pos: usize = 0;
-                    loop {
-                        match sym_bytes[pos..].iter().position(|&b| b == b':') {
-                            None => break,
-                            Some(colon_off) => {
-                                pos += colon_off + 1;
-                                if pos >= sym_bytes.len() || sym_bytes[pos] == 0 {
-                                    break;
-                                }
-                                let (val_parsed, count) = parse_dec_u32(&sym_bytes[pos..]);
-                                let group: u32 = val_parsed;
-                                let count = count as usize;
-                                if count > 0
-                                    && pos + count <= sym_bytes.len()
-                                    && (sym_bytes.get(pos + count).copied() == Some(0)
-                                        || sym_bytes.get(pos + count).map(|&b| b as i32)
-                                            == Some(MERGE_OVERRIDE_PREFIX)
-                                        || sym_bytes.get(pos + count).map(|&b| b as i32)
-                                            == Some(MERGE_AUGMENT_PREFIX)
-                                        || sym_bytes.get(pos + count).map(|&b| b as i32)
-                                            == Some(MERGE_REPLACE_PREFIX))
-                                    && group > 0
-                                    && group <= XKB_MAX_GROUPS
-                                {
-                                    *explicit_layouts = (*explicit_layouts).max(group);
-                                    pos += count;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+    for (source, target) in matcher.kccgst.iter_mut().zip([
+        &mut out.keycodes,
+        &mut out.types,
+        &mut out.compatibility,
+        &mut out.symbols,
+    ]) {
+        *target = std::mem::take(source);
+        target.push(0);
+    }
+    *explicit_layouts = 1;
+    let mut pos = 0;
+    while let Some(colon) = out.symbols[pos..].iter().position(|&byte| byte == b':') {
+        pos += colon + 1;
+        if out.symbols.get(pos).copied().unwrap_or(0) == 0 {
+            break;
+        }
+        let (group, count) = parse_dec_u32(&out.symbols[pos..]);
+        let count = count as usize;
+        if count > 0
+            && out
+                .symbols
+                .get(pos + count)
+                .is_some_and(|&byte| byte == 0 || is_merge_prefix(byte))
+            && (1..=XKB_MAX_GROUPS).contains(&group)
+        {
+            *explicit_layouts = (*explicit_layouts).max(group);
+            pos += count;
         }
     }
-    ret
+    true
 }
 pub(crate) fn xkb_components_from_rules_names(
     ctx: &mut XkbContext,
@@ -5695,19 +3840,13 @@ pub(crate) const XKB_MOD_INVALID: u32 = 0xffffffff;
 
 // ── XkbRuleNames ──────────────────────────────────────────────────
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub(crate) struct XkbRuleNames {
     pub(crate) rules: String,
     pub(crate) model: String,
     pub(crate) layout: String,
     pub(crate) variant: String,
     pub(crate) options: String,
-}
-
-impl Default for XkbRuleNames {
-    fn default() -> Self {
-        Self::from_strs("", "", "", "", "")
-    }
 }
 
 impl XkbRuleNames {
@@ -5732,16 +3871,9 @@ impl XkbRuleNames {
 
 /// Atom table — thin wrapper around `lasso::Rodeo` for string interning.
 /// Atoms are `u32` keys where `0` is reserved as `XKB_ATOM_NONE`.
+#[derive(Clone)]
 pub(crate) struct AtomTable {
     inner: lasso::Rodeo,
-}
-
-impl Clone for AtomTable {
-    fn clone(&self) -> Self {
-        Self {
-            inner: self.inner.clone(),
-        }
-    }
 }
 
 impl std::fmt::Debug for AtomTable {
@@ -5765,7 +3897,6 @@ pub(crate) struct XkbContext {
     pub(crate) failed_includes: Vec<String>,
     pub(crate) atom_table: AtomTable,
     pub(crate) use_environment_names: bool,
-    pub(crate) use_secure_getenv: bool,
     pub(crate) pending_default_includes: bool,
 }
 
@@ -5875,8 +4006,6 @@ pub(crate) struct XkbSymInterpret {
     pub(crate) virtual_mod: u32,
     pub(crate) level_one_only: bool,
     pub(crate) repeat: bool,
-    pub(crate) num_actions: u16,
-    pub(crate) action: XkbAction,
     pub(crate) actions: Vec<XkbAction>,
 }
 
@@ -5896,12 +4025,6 @@ pub(crate) enum XkbAction {
     Unknown,
     Private(XkbPrivateAction),
     Internal(XkbInternalAction),
-}
-
-impl XkbAction {
-    pub(crate) fn set_none(&mut self) {
-        *self = XkbAction::None;
-    }
 }
 
 #[derive(Copy, Clone, Default)]
@@ -5947,10 +4070,6 @@ bitflags::bitflags! {
         const LOCK_NO_UNLOCK        = 8;
         const MODS_LOOKUP_MODMAP    = 16;
         const ABSOLUTE_SWITCH       = 32;
-        const ABSOLUTE_X            = 64;
-        const ABSOLUTE_Y            = 128;
-        const ACCEL                 = 256;
-        const SAME_SCREEN           = 512;
         const LOCK_ON_RELEASE       = 1024;
         const UNLOCK_ON_PRESS       = 2048;
         const LATCH_ON_PRESS        = 4096;
@@ -6057,7 +4176,6 @@ pub(crate) struct XkbKey {
 #[derive(Clone, Default)]
 pub(crate) struct XkbGroup {
     pub(crate) explicit_actions: bool,
-    pub(crate) implicit_actions: bool,
     pub(crate) type_idx: u32,
     pub(crate) levels: Vec<XkbLevel>,
 }
@@ -6239,15 +4357,14 @@ pub(crate) const RMLVO_LAYOUT: u32 = 4;
 pub(crate) const RMLVO_MODEL: u32 = 2;
 pub(crate) const RMLVO_RULES: u32 = 1;
 
-// ── rules_h ───────────────────────────────────────────────────────────
-// ── Message codes (from messages.rs) ─────────────────────────────────────
-pub(crate) const _XKB_LOG_MESSAGE_MIN_CODE: u32 = 34;
-pub(crate) const _XKB_LOG_MESSAGE_MAX_CODE: u32 = 971;
-
 #[derive(Copy, Clone)]
 pub(crate) struct LookupEntry {
     pub(crate) name: &'static str,
     pub(crate) value: u32,
+}
+
+pub(crate) const fn lookup_entry(name: &'static str, value: u32) -> LookupEntry {
+    LookupEntry { name, value }
 }
 
 // ── File type enum ──────────────────────────────────────────────────
@@ -6278,7 +4395,6 @@ pub(crate) enum MergeMode {
 #[derive(Clone)]
 pub(crate) struct IncludeStmt {
     pub(crate) merge: MergeMode,
-    pub(crate) stmt: String,
     pub(crate) file: String,
     pub(crate) map: String,
     pub(crate) modifier: String,
@@ -6499,50 +4615,7 @@ pub(crate) struct XkbcompFeatures {
     pub(crate) overlapping_overlays: bool,
 }
 
-/// Case-insensitive comparison of two byte slices (like C `strcasecmp`).
-/// Returns <0, 0, or >0.
-#[inline]
-pub(crate) fn istrcmp(a: &[u8], b: &[u8]) -> i32 {
-    let n = a.len().min(b.len());
-    for i in 0..n {
-        let al = a[i].to_ascii_lowercase();
-        let bl = b[i].to_ascii_lowercase();
-        if al != bl {
-            return (al - bl) as i32;
-        }
-    }
-    (a.len() - b.len()) as i32
-}
-
-macro_rules! impl_parse_dec {
-    ($name:ident, $t:ty) => {
-        pub(crate) fn $name(s: &[u8]) -> ($t, i32) {
-            let mut result: $t = 0;
-            let mut i: usize = 0;
-            for &b in s {
-                let d = b.wrapping_sub(b'0');
-                if d >= 10 {
-                    break;
-                }
-                if result > <$t>::MAX / 10 || result * 10 > <$t>::MAX - d as $t {
-                    return (result, -1);
-                }
-                result = result * 10 + d as $t;
-                i += 1;
-            }
-            if i < s.len() && s[i].wrapping_sub(b'0') < 10 {
-                return (result, -1);
-            }
-            (result, i as i32)
-        }
-    };
-}
-impl_parse_dec!(parse_dec_u32, u32);
-impl_parse_dec!(parse_dec_u64, u64);
-
-/// Convert a hex digit byte to its numeric value (0-15), or 0xff if invalid.
-#[inline]
-fn hex_val(b: u8) -> u8 {
+fn digit(b: u8) -> u8 {
     match b {
         b'0'..=b'9' => b - b'0',
         b'A'..=b'F' => b - b'A' + 10,
@@ -6551,31 +4624,35 @@ fn hex_val(b: u8) -> u8 {
     }
 }
 
-macro_rules! impl_parse_hex {
-    ($name:ident, $t:ty) => {
-        pub(crate) fn $name(s: &[u8]) -> ($t, i32) {
-            let mut result: $t = 0;
-            let mut i: usize = 0;
-            for &b in s {
-                let d = hex_val(b);
-                if d >= 16 {
-                    break;
-                }
-                if result > <$t>::MAX >> 4 {
-                    return (result, -1);
-                }
-                result = result * 16 + d as $t;
-                i += 1;
-            }
-            if i < s.len() && hex_val(s[i]) < 16 {
-                return (result, -1);
-            }
-            (result, i as i32)
+fn parse_uint(s: &[u8], radix: u64, max: u64) -> (u64, i32) {
+    let mut value = 0;
+    for (i, &byte) in s.iter().enumerate() {
+        let digit = digit(byte) as u64;
+        if digit >= radix {
+            return (value, i as i32);
         }
-    };
+        if value > (max - digit) / radix {
+            return (value, -1);
+        }
+        value = value * radix + digit;
+    }
+    (value, s.len() as i32)
 }
-impl_parse_hex!(parse_hex_u32, u32);
-impl_parse_hex!(parse_hex_u64, u64);
+
+pub(crate) fn parse_dec_u32(s: &[u8]) -> (u32, i32) {
+    let (value, count) = parse_uint(s, 10, u32::MAX as u64);
+    (value as u32, count)
+}
+pub(crate) fn parse_dec_u64(s: &[u8]) -> (u64, i32) {
+    parse_uint(s, 10, u64::MAX)
+}
+pub(crate) fn parse_hex_u32(s: &[u8]) -> (u32, i32) {
+    let (value, count) = parse_uint(s, 16, u32::MAX as u64);
+    (value as u32, count)
+}
+fn parse_hex_u64(s: &[u8]) -> (u64, i32) {
+    parse_uint(s, 16, u64::MAX)
+}
 
 // ── UTF-8 decoding (migrated from utf8_decoding.rs) ──
 
@@ -6606,5 +4683,25 @@ pub(crate) fn utf8_next_code_point_safe(bytes: &[u8]) -> (u32, usize) {
     {
         Some(ch) => (ch as u32, len),
         None => (INVALID_UTF8_CODE_POINT, 0),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::xkb_parse_string;
+    use crate::xkb::keymap::xkb_context_new;
+
+    #[test]
+    fn parser_preserves_the_next_map_token() {
+        let input = br#"
+            xkb_symbols "first" {};
+            xkb_symbols "second" {};
+        "#;
+        let mut ctx = xkb_context_new(0);
+
+        let file = xkb_parse_string(&mut ctx, input, "second")
+            .expect("second map should remain parseable");
+
+        assert_eq!(file.name, "second");
     }
 }

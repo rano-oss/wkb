@@ -4,6 +4,7 @@
 pub(crate) mod keymap;
 pub(crate) mod keysym;
 pub(crate) mod parser;
+pub(crate) mod parser_tables;
 pub(crate) mod symbols;
 
 use crate::composer::Token;
@@ -506,11 +507,7 @@ fn level5_transform_mods(
 }
 
 /// Build WKB instance from an XKB keymap, extracting all layouts.
-fn build_wkb_from_keymap(
-    keymap: &keymap::XkbKeymap,
-    layout_locales: Option<&str>,
-    store_keymap: bool,
-) -> WKB {
+fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str>) -> WKB {
     const EVDEV_OFFSET: u32 = 8;
 
     let (min_keycode, max_keycode) = (keymap.min_key_code, keymap.max_key_code);
@@ -751,7 +748,6 @@ fn build_wkb_from_keymap(
         });
     }
 
-    let _ = store_keymap;
     WKB {
         current_layout_idx: 0,
         layouts,
@@ -775,7 +771,7 @@ pub(crate) fn new_from_names(
     let keymap = xkb_keymap_new_from_names(ctx, &rmlvo, XKB_KEYMAP_COMPILE_NO_FLAGS)
         .ok_or(XkbError::KeymapCompilation)?;
 
-    let result = build_wkb_from_keymap(&keymap, Some(layout), true);
+    let result = build_wkb_from_keymap(&keymap, Some(layout));
     Ok(result)
 }
 
@@ -796,7 +792,7 @@ pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
     .ok_or(XkbError::KeymapCompilation)?;
     let keymap = keymap;
 
-    Ok(build_wkb_from_keymap(&keymap, None, true))
+    Ok(build_wkb_from_keymap(&keymap, None))
 }
 
 fn modtype_from_name(name: &str) -> Option<ModType> {
@@ -1322,10 +1318,10 @@ impl WKB {
         self.write_keycodes(&mut out, max_evdev);
 
         // ── xkb_types ──
-        write_types(&mut out);
+        out.push_str(TYPES_XKB);
 
         // ── xkb_compat ──
-        write_compat(&mut out);
+        out.push_str(COMPAT_XKB);
 
         // ── xkb_symbols ──
         self.write_symbols(&mut out, max_evdev, num_layouts);
@@ -1510,16 +1506,6 @@ impl WKB {
         out.push_str("\tmodifier_map Mod5 { <LVL3> };\n");
         out.push_str("};\n\n");
     }
-}
-
-/// Write standard key types.
-fn write_types(out: &mut String) {
-    out.push_str(TYPES_XKB);
-}
-
-/// Write a minimal but valid xkb_compat section.
-fn write_compat(out: &mut String) {
-    out.push_str(COMPAT_XKB);
 }
 
 const TYPES_XKB: &str = "xkb_types \"wkb\" {\n\tvirtual_modifiers NumLock,Alt,LevelThree,LevelFive;\n\n\ttype \"ONE_LEVEL\" {\n\t\tmodifiers= none;\n\t\tlevel_name[Level1]= \"Any\";\n\t};\n\ttype \"TWO_LEVEL\" {\n\t\tmodifiers= Shift;\n\t\tmap[Shift]= Level2;\n\t\tlevel_name[Level1]= \"Base\";\n\t\tlevel_name[Level2]= \"Shift\";\n\t};\n\ttype \"ALPHABETIC\" {\n\t\tmodifiers= Shift+Lock;\n\t\tmap[Shift]= Level2;\n\t\tmap[Lock]= Level2;\n\t\tlevel_name[Level1]= \"Base\";\n\t\tlevel_name[Level2]= \"Shift\";\n\t};\n\ttype \"FOUR_LEVEL\" {\n\t\tmodifiers= Shift+LevelThree;\n\t\tmap[Shift]= Level2;\n\t\tmap[LevelThree]= Level3;\n\t\tmap[Shift+LevelThree]= Level4;\n\t\tlevel_name[Level1]= \"Base\";\n\t\tlevel_name[Level2]= \"Shift\";\n\t\tlevel_name[Level3]= \"Alt Base\";\n\t\tlevel_name[Level4]= \"Shift Alt\";\n\t};\n\ttype \"FOUR_LEVEL_SEMIALPHABETIC\" {\n\t\tmodifiers= Shift+Lock+LevelThree;\n\t\tmap[Shift]= Level2;\n\t\tmap[Lock]= Level2;\n\t\tmap[LevelThree]= Level3;\n\t\tmap[Shift+LevelThree]= Level4;\n\t\tmap[Lock+LevelThree]= Level3;\n\t\tmap[Shift+Lock+LevelThree]= Level4;\n\t\tpreserve[Lock+LevelThree]= Lock;\n\t\tpreserve[Shift+Lock+LevelThree]= Lock;\n\t\tlevel_name[Level1]= \"Base\";\n\t\tlevel_name[Level2]= \"Shift\";\n\t\tlevel_name[Level3]= \"Alt Base\";\n\t\tlevel_name[Level4]= \"Shift Alt\";\n\t};\n\ttype \"EIGHT_LEVEL\" {\n\t\tmodifiers= Shift+LevelThree+LevelFive;\n\t\tmap[Shift]= Level2;\n\t\tmap[LevelThree]= Level3;\n\t\tmap[Shift+LevelThree]= Level4;\n\t\tmap[LevelFive]= Level5;\n\t\tmap[Shift+LevelFive]= Level6;\n\t\tmap[LevelThree+LevelFive]= Level7;\n\t\tmap[Shift+LevelThree+LevelFive]= Level8;\n\t\tlevel_name[Level1]= \"Base\";\n\t\tlevel_name[Level2]= \"Shift\";\n\t\tlevel_name[Level3]= \"Alt Base\";\n\t\tlevel_name[Level4]= \"Shift Alt\";\n\t\tlevel_name[Level5]= \"X1\";\n\t\tlevel_name[Level6]= \"X2\";\n\t\tlevel_name[Level7]= \"X3\";\n\t\tlevel_name[Level8]= \"X4\";\n\t};\n};\n";

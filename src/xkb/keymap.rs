@@ -19,7 +19,7 @@ pub(crate) fn xkb_keymap_new_from_names(
     let format = XKB_KEYMAP_FORMAT_TEXT_V2;
     let mut rmlvo = rmlvo.clone();
     xkb_context_sanitize_rule_names(&ctx, &mut rmlvo);
-    let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_names2", format, flags)?;
+    let mut keymap = xkb_keymap_new(ctx, format, flags)?;
     if !super::parser::text_v1_keymap_new_from_names(&mut keymap, &rmlvo) {
         return None;
     }
@@ -36,7 +36,7 @@ pub(crate) fn xkb_keymap_new_from_string(
     if bytes.is_empty() {
         return None;
     }
-    let mut keymap = xkb_keymap_new(ctx, "xkb_keymap_new_from_buffer", format, flags)?;
+    let mut keymap = xkb_keymap_new(ctx, format, flags)?;
     if length > 0 && bytes[length - 1] == 0 {
         length -= 1;
     }
@@ -363,12 +363,7 @@ pub(crate) const XKB_MOD_NAME_MOD3: &str = "Mod3";
 pub(crate) const XKB_MOD_NAME_MOD4: &str = "Mod4";
 pub(crate) const XKB_MOD_NAME_MOD5: &str = "Mod5";
 
-pub(crate) fn xkb_keymap_new(
-    ctx: XkbContext,
-    _func: &str,
-    format: u32,
-    flags: u32,
-) -> Option<Box<XkbKeymap>> {
+pub(crate) fn xkb_keymap_new(ctx: XkbContext, format: u32, flags: u32) -> Option<Box<XkbKeymap>> {
     static XKB_KEYMAP_COMPILE_FLAGS: u32 = XKB_KEYMAP_COMPILE_FLAGS_VALUES;
     if flags & !XKB_KEYMAP_COMPILE_FLAGS != 0 {
         return None;
@@ -541,25 +536,9 @@ fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> i32 {
 }
 
 pub(crate) fn xkb_context_include_path_get_extra_path() -> String {
-    match xkb_context_getenv("XKB_CONFIG_EXTRA_PATH") {
-        Ok(extra) => extra,
-        Err(_) => DFLT_XKB_CONFIG_EXTRA_PATH.to_string(),
-    }
+    getenv_or("XKB_CONFIG_EXTRA_PATH", DFLT_XKB_CONFIG_EXTRA_PATH)
 }
 
-pub(crate) fn xkb_context_include_path_get_unversioned_extensions_path() -> String {
-    match xkb_context_getenv("XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH") {
-        Ok(ext) => ext,
-        Err(_) => DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH.to_string(),
-    }
-}
-
-pub(crate) fn xkb_context_include_path_get_versioned_extensions_path() -> String {
-    match xkb_context_getenv("XKB_CONFIG_VERSIONED_EXTENSIONS_PATH") {
-        Ok(ext) => ext,
-        Err(_) => DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH.to_string(),
-    }
-}
 /// Convert a null-terminated `[i8]` constant to a Rust `String`.
 fn add_direct_subdirectories(
     ctx: &mut XkbContext,
@@ -623,10 +602,7 @@ fn add_direct_subdirectories(
 }
 
 pub(crate) fn xkb_context_include_path_get_system_path() -> String {
-    match xkb_context_getenv("XKB_CONFIG_ROOT") {
-        Ok(root) => root,
-        Err(_) => DFLT_XKB_CONFIG_ROOT.to_string(),
-    }
+    getenv_or("XKB_CONFIG_ROOT", DFLT_XKB_CONFIG_ROOT)
 }
 
 pub(crate) fn xkb_context_include_path_append_default(ctx: &mut XkbContext) -> i32 {
@@ -646,13 +622,19 @@ pub(crate) fn xkb_context_include_path_append_default(ctx: &mut XkbContext) -> i
         ret |= context_include_path_append(ctx, &extra);
 
         let mut extensions: Vec<String> = Vec::new();
-        let versioned_path = xkb_context_include_path_get_versioned_extensions_path();
+        let versioned_path = getenv_or(
+            "XKB_CONFIG_VERSIONED_EXTENSIONS_PATH",
+            DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH,
+        );
         let mut versioned_path_length: usize = 0;
         if !versioned_path.is_empty() {
             ret |= add_direct_subdirectories(ctx, &versioned_path, &mut extensions, 0, 0);
             versioned_path_length = versioned_path.len();
         }
-        let unversioned_path = xkb_context_include_path_get_unversioned_extensions_path();
+        let unversioned_path = getenv_or(
+            "XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH",
+            DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
+        );
         if !unversioned_path.is_empty() {
             let versioned_count = extensions.len();
             ret |= add_direct_subdirectories(
@@ -695,7 +677,6 @@ pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
         failed_includes: Vec::new(),
         atom_table: atom_table_new(),
         use_environment_names: false,
-        use_secure_getenv: false,
         pending_default_includes: false,
     };
     const XKB_CONTEXT_ALL_FLAGS: u32 = XKB_CONTEXT_NO_DEFAULT_INCLUDES
@@ -705,13 +686,15 @@ pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
         return ctx;
     }
     ctx.use_environment_names = flags & XKB_CONTEXT_NO_ENVIRONMENT_NAMES == 0;
-    ctx.use_secure_getenv = flags & XKB_CONTEXT_NO_SECURE_GETENV == 0;
     ctx.pending_default_includes = flags & XKB_CONTEXT_NO_DEFAULT_INCLUDES == 0;
     ctx
 }
 
 pub(crate) fn xkb_context_getenv(name: &str) -> Result<String, VarError> {
     std::env::var(name)
+}
+fn getenv_or(name: &str, default: &str) -> String {
+    xkb_context_getenv(name).unwrap_or_else(|_| default.into())
 }
 pub(crate) fn xkb_context_init_includes(ctx: &mut XkbContext) -> bool {
     if ctx.pending_default_includes {
@@ -726,75 +709,33 @@ pub(crate) fn xkb_context_init_includes(ctx: &mut XkbContext) -> bool {
     }
     true
 }
-pub(crate) fn xkb_context_num_failed_include_paths(ctx: &mut XkbContext) -> u32 {
-    if xkb_context_init_includes(ctx) {
-        ctx.failed_includes.len() as u32
-    } else {
-        0_u32
-    }
-}
-
 pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbRuleNames) -> u32 {
     let mut modified: u32 = 0_u32;
-    if rmlvo.rules.as_bytes().is_empty() {
-        let env = if ctx.use_environment_names {
-            xkb_context_getenv("XKB_DEFAULT_RULES")
-        } else {
-            Err(VarError::NotPresent)
-        };
-        rmlvo.rules = match env {
-            Ok(env) => env,
-            Err(_) => "evdev".to_string(),
-        };
-        modified |= RMLVO_RULES;
-    }
-    if rmlvo.model.as_bytes().is_empty() {
-        let env = if ctx.use_environment_names {
-            xkb_context_getenv("XKB_DEFAULT_MODEL")
-        } else {
-            Err(VarError::NotPresent)
-        };
-        rmlvo.model = match env {
-            Ok(env) => env,
-            Err(_) => "pc105".to_string(),
-        };
-        modified |= RMLVO_MODEL;
-    }
-    if rmlvo.layout.as_bytes().is_empty() {
-        {
-            let env = if ctx.use_environment_names {
-                xkb_context_getenv("XKB_DEFAULT_LAYOUT")
+    for (value, name, default, flag) in [
+        (&mut rmlvo.rules, "XKB_DEFAULT_RULES", "evdev", RMLVO_RULES),
+        (&mut rmlvo.model, "XKB_DEFAULT_MODEL", "pc105", RMLVO_MODEL),
+        (&mut rmlvo.options, "XKB_DEFAULT_OPTIONS", "", RMLVO_OPTIONS),
+    ] {
+        if value.is_empty() {
+            *value = if ctx.use_environment_names {
+                getenv_or(name, default)
             } else {
-                Err(VarError::NotPresent)
+                default.into()
             };
-            rmlvo.layout = match env {
-                Ok(env) => env,
-                Err(_) => "us".to_string(),
-            };
+            modified |= flag;
         }
-        modified |= RMLVO_LAYOUT;
-        let variant: String = {
-            let layout = xkb_context_getenv("XKB_DEFAULT_LAYOUT");
-            let default_variant = xkb_context_getenv("XKB_DEFAULT_VARIANT");
-            match (layout, ctx.use_environment_names, default_variant) {
-                (Ok(_), true, Ok(default_variant)) => default_variant,
-                (_, _, _) => "".to_string(),
-            }
-        };
-        rmlvo.variant = variant;
-        modified |= RMLVO_VARIANT;
     }
-    if rmlvo.options.as_bytes().is_empty() {
-        if ctx.use_environment_names {
-            let env = xkb_context_getenv("XKB_DEFAULT_OPTIONS");
-            rmlvo.options = match env {
-                Ok(env) => env,
-                Err(_) => "".to_string(),
-            };
-        } else {
-            rmlvo.options = "".to_string();
-        };
-        modified |= RMLVO_OPTIONS;
+    if rmlvo.layout.is_empty() {
+        let layout = ctx
+            .use_environment_names
+            .then(|| xkb_context_getenv("XKB_DEFAULT_LAYOUT").ok())
+            .flatten();
+        rmlvo.variant = layout
+            .as_ref()
+            .and_then(|_| xkb_context_getenv("XKB_DEFAULT_VARIANT").ok())
+            .unwrap_or_default();
+        rmlvo.layout = layout.unwrap_or_else(|| "us".into());
+        modified |= RMLVO_LAYOUT | RMLVO_VARIANT;
     }
     modified
 }
@@ -812,392 +753,120 @@ pub use super::parser::{
     ACTION_TYPE_TERMINATE, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, MATCH_ALL, MATCH_ANY,
     MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE,
 };
-pub(crate) fn lookup_string(tab: &[LookupEntry], string: &str, value_rtrn: &mut u32) -> bool {
-    if string.is_empty() {
-        return false;
-    }
-    for entry in tab {
-        if entry.name.is_empty() {
-            break;
-        }
-        if entry.name.eq_ignore_ascii_case(string) {
-            *value_rtrn = entry.value;
-            return true;
-        }
-    }
-    false
+pub(crate) fn lookup_string(tab: &[LookupEntry], string: &str) -> Option<u32> {
+    (!string.is_empty()).then_some(())?;
+    tab.iter()
+        .take_while(|entry| !entry.name.is_empty())
+        .find(|entry| entry.name.eq_ignore_ascii_case(string))
+        .map(|entry| entry.value)
 }
 pub(crate) static CTRL_MASK_NAMES: [LookupEntry; 25] = [
-    LookupEntry {
-        name: "Overlay3",
-        value: ControlsFlags::OVERLAY3.bits(),
-    },
-    LookupEntry {
-        name: "Overlay4",
-        value: ControlsFlags::OVERLAY4.bits(),
-    },
-    LookupEntry {
-        name: "Overlay5",
-        value: ControlsFlags::OVERLAY5.bits(),
-    },
-    LookupEntry {
-        name: "Overlay6",
-        value: ControlsFlags::OVERLAY6.bits(),
-    },
-    LookupEntry {
-        name: "Overlay7",
-        value: ControlsFlags::OVERLAY7.bits(),
-    },
-    LookupEntry {
-        name: "Overlay8",
-        value: ControlsFlags::OVERLAY8.bits(),
-    },
-    LookupEntry {
-        name: "all",
-        value: ControlsFlags::ALL_BOOLEAN.bits(),
-    },
-    LookupEntry {
-        name: "RepeatKeys",
-        value: ControlsFlags::REPEAT.bits(),
-    },
-    LookupEntry {
-        name: "Repeat",
-        value: ControlsFlags::REPEAT.bits(),
-    },
-    LookupEntry {
-        name: "AutoRepeat",
-        value: ControlsFlags::REPEAT.bits(),
-    },
-    LookupEntry {
-        name: "SlowKeys",
-        value: ControlsFlags::SLOW.bits(),
-    },
-    LookupEntry {
-        name: "BounceKeys",
-        value: ControlsFlags::DEBOUNCE.bits(),
-    },
-    LookupEntry {
-        name: "StickyKeys",
-        value: ControlsFlags::STICKY_KEYS.bits(),
-    },
-    LookupEntry {
-        name: "MouseKeys",
-        value: ControlsFlags::MOUSE_KEYS.bits(),
-    },
-    LookupEntry {
-        name: "MouseKeysAccel",
-        value: ControlsFlags::MOUSE_KEYS_ACCEL.bits(),
-    },
-    LookupEntry {
-        name: "AccessXKeys",
-        value: ControlsFlags::AX.bits(),
-    },
-    LookupEntry {
-        name: "AccessXTimeout",
-        value: ControlsFlags::AX_TIMEOUT.bits(),
-    },
-    LookupEntry {
-        name: "AccessXFeedback",
-        value: ControlsFlags::AX_FEEDBACK.bits(),
-    },
-    LookupEntry {
-        name: "AudibleBell",
-        value: ControlsFlags::BELL.bits(),
-    },
-    LookupEntry {
-        name: "IgnoreGroupLock",
-        value: ControlsFlags::IGNORE_GROUP_LOCK.bits(),
-    },
-    LookupEntry {
-        name: "Overlay1",
-        value: ControlsFlags::OVERLAY1.bits(),
-    },
-    LookupEntry {
-        name: "Overlay2",
-        value: ControlsFlags::OVERLAY2.bits(),
-    },
-    LookupEntry {
-        name: "all",
-        value: ControlsFlags::ALL_BOOLEAN_V1.bits(),
-    },
-    LookupEntry {
-        name: "none",
-        value: 0,
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("Overlay3", ControlsFlags::OVERLAY3.bits()),
+    lookup_entry("Overlay4", ControlsFlags::OVERLAY4.bits()),
+    lookup_entry("Overlay5", ControlsFlags::OVERLAY5.bits()),
+    lookup_entry("Overlay6", ControlsFlags::OVERLAY6.bits()),
+    lookup_entry("Overlay7", ControlsFlags::OVERLAY7.bits()),
+    lookup_entry("Overlay8", ControlsFlags::OVERLAY8.bits()),
+    lookup_entry("all", ControlsFlags::ALL_BOOLEAN.bits()),
+    lookup_entry("RepeatKeys", ControlsFlags::REPEAT.bits()),
+    lookup_entry("Repeat", ControlsFlags::REPEAT.bits()),
+    lookup_entry("AutoRepeat", ControlsFlags::REPEAT.bits()),
+    lookup_entry("SlowKeys", ControlsFlags::SLOW.bits()),
+    lookup_entry("BounceKeys", ControlsFlags::DEBOUNCE.bits()),
+    lookup_entry("StickyKeys", ControlsFlags::STICKY_KEYS.bits()),
+    lookup_entry("MouseKeys", ControlsFlags::MOUSE_KEYS.bits()),
+    lookup_entry("MouseKeysAccel", ControlsFlags::MOUSE_KEYS_ACCEL.bits()),
+    lookup_entry("AccessXKeys", ControlsFlags::AX.bits()),
+    lookup_entry("AccessXTimeout", ControlsFlags::AX_TIMEOUT.bits()),
+    lookup_entry("AccessXFeedback", ControlsFlags::AX_FEEDBACK.bits()),
+    lookup_entry("AudibleBell", ControlsFlags::BELL.bits()),
+    lookup_entry("IgnoreGroupLock", ControlsFlags::IGNORE_GROUP_LOCK.bits()),
+    lookup_entry("Overlay1", ControlsFlags::OVERLAY1.bits()),
+    lookup_entry("Overlay2", ControlsFlags::OVERLAY2.bits()),
+    lookup_entry("all", ControlsFlags::ALL_BOOLEAN_V1.bits()),
+    lookup_entry("none", 0),
+    lookup_entry("", 0),
 ];
 pub(crate) static MOD_COMPONENT_MASK_NAMES: [LookupEntry; 8] = [
-    LookupEntry {
-        name: "base",
-        value: XKB_STATE_MODS_DEPRESSED,
-    },
-    LookupEntry {
-        name: "latched",
-        value: XKB_STATE_MODS_LATCHED,
-    },
-    LookupEntry {
-        name: "locked",
-        value: XKB_STATE_MODS_LOCKED,
-    },
-    LookupEntry {
-        name: "effective",
-        value: XKB_STATE_MODS_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "compat",
-        value: XKB_STATE_MODS_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "any",
-        value: XKB_STATE_MODS_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "none",
-        value: 0,
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("base", XKB_STATE_MODS_DEPRESSED),
+    lookup_entry("latched", XKB_STATE_MODS_LATCHED),
+    lookup_entry("locked", XKB_STATE_MODS_LOCKED),
+    lookup_entry("effective", XKB_STATE_MODS_EFFECTIVE),
+    lookup_entry("compat", XKB_STATE_MODS_EFFECTIVE),
+    lookup_entry("any", XKB_STATE_MODS_EFFECTIVE),
+    lookup_entry("none", 0),
+    lookup_entry("", 0),
 ];
 pub(crate) static GROUP_COMPONENT_MASK_NAMES: [LookupEntry; 7] = [
-    LookupEntry {
-        name: "base",
-        value: XKB_STATE_LAYOUT_DEPRESSED,
-    },
-    LookupEntry {
-        name: "latched",
-        value: XKB_STATE_LAYOUT_LATCHED,
-    },
-    LookupEntry {
-        name: "locked",
-        value: XKB_STATE_LAYOUT_LOCKED,
-    },
-    LookupEntry {
-        name: "effective",
-        value: XKB_STATE_LAYOUT_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "any",
-        value: XKB_STATE_LAYOUT_EFFECTIVE,
-    },
-    LookupEntry {
-        name: "none",
-        value: 0,
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("base", XKB_STATE_LAYOUT_DEPRESSED),
+    lookup_entry("latched", XKB_STATE_LAYOUT_LATCHED),
+    lookup_entry("locked", XKB_STATE_LAYOUT_LOCKED),
+    lookup_entry("effective", XKB_STATE_LAYOUT_EFFECTIVE),
+    lookup_entry("any", XKB_STATE_LAYOUT_EFFECTIVE),
+    lookup_entry("none", 0),
+    lookup_entry("", 0),
 ];
 
 pub(crate) static USE_MOD_MAP_VALUE_NAMES: [LookupEntry; 5] = [
-    LookupEntry {
-        name: "LevelOne",
-        value: 1,
-    },
-    LookupEntry {
-        name: "Level1",
-        value: 1,
-    },
-    LookupEntry {
-        name: "AnyLevel",
-        value: 0,
-    },
-    LookupEntry {
-        name: "any",
-        value: 0,
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("LevelOne", 1),
+    lookup_entry("Level1", 1),
+    lookup_entry("AnyLevel", 0),
+    lookup_entry("any", 0),
+    lookup_entry("", 0),
 ];
 
 pub static ACTION_TYPE_NAMES: [LookupEntry; 43] = [
-    LookupEntry {
-        name: "NoAction",
-        value: ACTION_TYPE_NONE,
-    },
-    LookupEntry {
-        name: "VoidAction",
-        value: ACTION_TYPE_VOID,
-    },
-    LookupEntry {
-        name: "SetMods",
-        value: ACTION_TYPE_MOD_SET,
-    },
-    LookupEntry {
-        name: "LatchMods",
-        value: ACTION_TYPE_MOD_LATCH,
-    },
-    LookupEntry {
-        name: "LockMods",
-        value: ACTION_TYPE_MOD_LOCK,
-    },
-    LookupEntry {
-        name: "SetGroup",
-        value: ACTION_TYPE_GROUP_SET,
-    },
-    LookupEntry {
-        name: "LatchGroup",
-        value: ACTION_TYPE_GROUP_LATCH,
-    },
-    LookupEntry {
-        name: "LockGroup",
-        value: ACTION_TYPE_GROUP_LOCK,
-    },
-    LookupEntry {
-        name: "MovePtr",
-        value: ACTION_TYPE_PTR_MOVE,
-    },
-    LookupEntry {
-        name: "MovePointer",
-        value: ACTION_TYPE_PTR_MOVE,
-    },
-    LookupEntry {
-        name: "PtrBtn",
-        value: ACTION_TYPE_PTR_BUTTON,
-    },
-    LookupEntry {
-        name: "PointerButton",
-        value: ACTION_TYPE_PTR_BUTTON,
-    },
-    LookupEntry {
-        name: "LockPtrBtn",
-        value: ACTION_TYPE_PTR_LOCK,
-    },
-    LookupEntry {
-        name: "LockPtrButton",
-        value: ACTION_TYPE_PTR_LOCK,
-    },
-    LookupEntry {
-        name: "LockPointerButton",
-        value: ACTION_TYPE_PTR_LOCK,
-    },
-    LookupEntry {
-        name: "LockPointerBtn",
-        value: ACTION_TYPE_PTR_LOCK,
-    },
-    LookupEntry {
-        name: "SetPtrDflt",
-        value: ACTION_TYPE_PTR_DEFAULT,
-    },
-    LookupEntry {
-        name: "SetPointerDefault",
-        value: ACTION_TYPE_PTR_DEFAULT,
-    },
-    LookupEntry {
-        name: "Terminate",
-        value: ACTION_TYPE_TERMINATE,
-    },
-    LookupEntry {
-        name: "TerminateServer",
-        value: ACTION_TYPE_TERMINATE,
-    },
-    LookupEntry {
-        name: "SwitchScreen",
-        value: ACTION_TYPE_SWITCH_VT,
-    },
-    LookupEntry {
-        name: "SetControls",
-        value: ACTION_TYPE_CTRL_SET,
-    },
-    LookupEntry {
-        name: "LockControls",
-        value: ACTION_TYPE_CTRL_LOCK,
-    },
-    LookupEntry {
-        name: "RedirectKey",
-        value: ACTION_TYPE_REDIRECT_KEY,
-    },
-    LookupEntry {
-        name: "Redirect",
-        value: ACTION_TYPE_REDIRECT_KEY,
-    },
-    LookupEntry {
-        name: "Private",
-        value: ACTION_TYPE_PRIVATE,
-    },
-    LookupEntry {
-        name: "ISOLock",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "ActionMessage",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "MessageAction",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "Message",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DeviceBtn",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DevBtn",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DevButton",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DeviceButton",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "LockDeviceBtn",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "LockDevBtn",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "LockDevButton",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "LockDeviceButton",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DeviceValuator",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DevVal",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DeviceVal",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry {
-        name: "DevValuator",
-        value: ACTION_TYPE_UNSUPPORTED_LEGACY,
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("NoAction", ACTION_TYPE_NONE),
+    lookup_entry("VoidAction", ACTION_TYPE_VOID),
+    lookup_entry("SetMods", ACTION_TYPE_MOD_SET),
+    lookup_entry("LatchMods", ACTION_TYPE_MOD_LATCH),
+    lookup_entry("LockMods", ACTION_TYPE_MOD_LOCK),
+    lookup_entry("SetGroup", ACTION_TYPE_GROUP_SET),
+    lookup_entry("LatchGroup", ACTION_TYPE_GROUP_LATCH),
+    lookup_entry("LockGroup", ACTION_TYPE_GROUP_LOCK),
+    lookup_entry("MovePtr", ACTION_TYPE_PTR_MOVE),
+    lookup_entry("MovePointer", ACTION_TYPE_PTR_MOVE),
+    lookup_entry("PtrBtn", ACTION_TYPE_PTR_BUTTON),
+    lookup_entry("PointerButton", ACTION_TYPE_PTR_BUTTON),
+    lookup_entry("LockPtrBtn", ACTION_TYPE_PTR_LOCK),
+    lookup_entry("LockPtrButton", ACTION_TYPE_PTR_LOCK),
+    lookup_entry("LockPointerButton", ACTION_TYPE_PTR_LOCK),
+    lookup_entry("LockPointerBtn", ACTION_TYPE_PTR_LOCK),
+    lookup_entry("SetPtrDflt", ACTION_TYPE_PTR_DEFAULT),
+    lookup_entry("SetPointerDefault", ACTION_TYPE_PTR_DEFAULT),
+    lookup_entry("Terminate", ACTION_TYPE_TERMINATE),
+    lookup_entry("TerminateServer", ACTION_TYPE_TERMINATE),
+    lookup_entry("SwitchScreen", ACTION_TYPE_SWITCH_VT),
+    lookup_entry("SetControls", ACTION_TYPE_CTRL_SET),
+    lookup_entry("LockControls", ACTION_TYPE_CTRL_LOCK),
+    lookup_entry("RedirectKey", ACTION_TYPE_REDIRECT_KEY),
+    lookup_entry("Redirect", ACTION_TYPE_REDIRECT_KEY),
+    lookup_entry("Private", ACTION_TYPE_PRIVATE),
+    lookup_entry("ISOLock", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("ActionMessage", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("MessageAction", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("Message", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DeviceBtn", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DevBtn", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DevButton", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DeviceButton", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("LockDeviceBtn", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("LockDevBtn", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("LockDevButton", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("LockDeviceButton", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DeviceValuator", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DevVal", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DeviceVal", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("DevValuator", ACTION_TYPE_UNSUPPORTED_LEGACY),
+    lookup_entry("", 0),
 ];
 pub(crate) static SYM_INTERPRET_MATCH_MASK_NAMES: [LookupEntry; 6] = [
-    LookupEntry {
-        name: "NoneOf",
-        value: MATCH_NONE,
-    },
-    LookupEntry {
-        name: "AnyOfOrNone",
-        value: MATCH_ANY_OR_NONE,
-    },
-    LookupEntry {
-        name: "AnyOf",
-        value: MATCH_ANY,
-    },
-    LookupEntry {
-        name: "AllOf",
-        value: MATCH_ALL,
-    },
-    LookupEntry {
-        name: "Exactly",
-        value: MATCH_EXACTLY,
-    },
-    LookupEntry { name: "", value: 0 },
+    lookup_entry("NoneOf", MATCH_NONE),
+    lookup_entry("AnyOfOrNone", MATCH_ANY_OR_NONE),
+    lookup_entry("AnyOf", MATCH_ANY),
+    lookup_entry("AllOf", MATCH_ALL),
+    lookup_entry("Exactly", MATCH_EXACTLY),
+    lookup_entry("", 0),
 ];
 // ============================================================================
 // Unicode Preprocessing
