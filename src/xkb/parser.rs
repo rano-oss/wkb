@@ -3777,7 +3777,7 @@ fn xkb_resolve_rules(
     let mut pos = 0;
     while let Some(colon) = out.symbols[pos..].iter().position(|&byte| byte == b':') {
         pos += colon + 1;
-        if out.symbols.get(pos).is_none_or(|&byte| byte == 0) {
+        if out.symbols.get(pos).copied().unwrap_or(0) == 0 {
             break;
         }
         let (group, count) = parse_dec_u32(&out.symbols[pos..]);

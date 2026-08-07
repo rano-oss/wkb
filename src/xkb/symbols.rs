@@ -122,9 +122,10 @@ impl SymbolsInfo {
 
 fn is_action_list_value(value: &ExprKind) -> bool {
     match value {
-        ExprKind::ActionList { actions } => actions.first().is_none_or(|first| {
-            matches!(first, ExprKind::ActionList { .. } | ExprKind::Action { .. })
-        }),
+        ExprKind::ActionList { actions } => match actions.first() {
+            None => true,
+            Some(first) => matches!(first, ExprKind::ActionList { .. } | ExprKind::Action { .. }),
+        },
         _ => false,
     }
 }
