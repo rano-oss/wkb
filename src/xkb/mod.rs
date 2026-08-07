@@ -9,11 +9,16 @@ pub(crate) mod symbols;
 use crate::composer::Token;
 use crate::flat_keymap::{FlatKeymap, FlatNamedKeyMap, MAX_LEVELS};
 use crate::named_keys::NamedKey;
+use crate::xkb::keymap::{
+    preprocess_unicode_keysyms, xkb_context_new, xkb_keymap_new_from_names,
+    xkb_keymap_new_from_string,
+};
+use crate::xkb::parser::{
+    XKB_CONTEXT_NO_FLAGS, XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1,
+};
 use crate::Composer;
 use crate::KeyBitSet;
 use crate::WKB;
-use crate::xkb::keymap::{preprocess_unicode_keysyms, xkb_context_new, xkb_keymap_new_from_names, xkb_keymap_new_from_string};
-use crate::xkb::parser::{XKB_CONTEXT_NO_FLAGS, XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1};
 use crate::{modifiers::*, KBLayout};
 use std::ffi::CString;
 use std::path::{Path, PathBuf};
@@ -260,133 +265,139 @@ pub fn load_compose_from_path_uncached(path: &Path) -> Composer {
 /// KP variants collapse to their main key equivalents (KP_Enter → Enter).
 /// ISO_Left_Tab → Tab, ISO_Enter → Enter.
 /// Dead keys and character-producing keys map to `Unnamed`.
+const KEYSYM_TO_NAMED_KEY: &[(u32, NamedKey)] = &[
+    (0x0020, NamedKey::Space),
+    (0xfe20, NamedKey::Tab),
+    (0xfe34, NamedKey::Enter),
+    (0xff08, NamedKey::Backspace),
+    (0xff09, NamedKey::Tab),
+    (0xff0d, NamedKey::Enter),
+    (0xff13, NamedKey::Pause),
+    (0xff14, NamedKey::ScrollLock),
+    (0xff15, NamedKey::SysReq),
+    (0xff1b, NamedKey::Escape),
+    (0xff21, NamedKey::KanjiMode),
+    (0xff24, NamedKey::Romaji),
+    (0xff25, NamedKey::Hiragana),
+    (0xff26, NamedKey::Katakana),
+    (0xff2a, NamedKey::ZenkakuHankaku),
+    (0xff30, NamedKey::EisuToggle),
+    (0xff34, NamedKey::HangulHanja),
+    (0xff50, NamedKey::Home),
+    (0xff51, NamedKey::ArrowLeft),
+    (0xff52, NamedKey::ArrowUp),
+    (0xff53, NamedKey::ArrowRight),
+    (0xff54, NamedKey::ArrowDown),
+    (0xff55, NamedKey::PageUp),
+    (0xff56, NamedKey::PageDown),
+    (0xff57, NamedKey::End),
+    (0xff61, NamedKey::PrintScreen),
+    (0xff63, NamedKey::Insert),
+    (0xff67, NamedKey::ContextMenu),
+    (0xff7f, NamedKey::NumLock),
+    (0xff80, NamedKey::Space),
+    (0xff89, NamedKey::Tab),
+    (0xff8d, NamedKey::Enter),
+    (0xff95, NamedKey::Home),
+    (0xff96, NamedKey::ArrowLeft),
+    (0xff97, NamedKey::ArrowUp),
+    (0xff98, NamedKey::ArrowRight),
+    (0xff99, NamedKey::ArrowDown),
+    (0xff9a, NamedKey::PageUp),
+    (0xff9b, NamedKey::PageDown),
+    (0xff9c, NamedKey::End),
+    (0xff9e, NamedKey::Insert),
+    (0xff9f, NamedKey::Delete),
+    (0xffbe, NamedKey::F1),
+    (0xffbf, NamedKey::F2),
+    (0xffc0, NamedKey::F3),
+    (0xffc1, NamedKey::F4),
+    (0xffc2, NamedKey::F5),
+    (0xffc3, NamedKey::F6),
+    (0xffc4, NamedKey::F7),
+    (0xffc5, NamedKey::F8),
+    (0xffc6, NamedKey::F9),
+    (0xffc7, NamedKey::F10),
+    (0xffc8, NamedKey::F11),
+    (0xffc9, NamedKey::F12),
+    (0xffca, NamedKey::F13),
+    (0xffcb, NamedKey::F14),
+    (0xffcc, NamedKey::F15),
+    (0xffcd, NamedKey::F16),
+    (0xffce, NamedKey::F17),
+    (0xffcf, NamedKey::F18),
+    (0xffd0, NamedKey::F19),
+    (0xffd1, NamedKey::F20),
+    (0xffd2, NamedKey::F21),
+    (0xffd3, NamedKey::F22),
+    (0xffd4, NamedKey::F23),
+    (0xffd5, NamedKey::F24),
+    (0xffd6, NamedKey::F25),
+    (0xffd7, NamedKey::F26),
+    (0xffd8, NamedKey::F27),
+    (0xffd9, NamedKey::F28),
+    (0xffda, NamedKey::F29),
+    (0xffdb, NamedKey::F30),
+    (0xffdc, NamedKey::F31),
+    (0xffdd, NamedKey::F32),
+    (0xffde, NamedKey::F33),
+    (0xffdf, NamedKey::F34),
+    (0xffe0, NamedKey::F35),
+    (0xffe1, NamedKey::LeftShift),
+    (0xffe2, NamedKey::RightShift),
+    (0xffe3, NamedKey::LeftControl),
+    (0xffe4, NamedKey::RightControl),
+    (0xffe5, NamedKey::CapsLock),
+    (0xffe7, NamedKey::LeftMeta),
+    (0xffe8, NamedKey::RightMeta),
+    (0xffe9, NamedKey::LeftAlt),
+    (0xffea, NamedKey::RightAlt),
+    (0xffeb, NamedKey::LeftSuper),
+    (0xffec, NamedKey::RightSuper),
+    (0xffed, NamedKey::LeftHyper),
+    (0xffee, NamedKey::RightHyper),
+    (0xffff, NamedKey::Delete),
+    (0x1008ff02, NamedKey::BrightnessUp),
+    (0x1008ff03, NamedKey::BrightnessDown),
+    (0x1008ff05, NamedKey::KeyboardBrightnessUp),
+    (0x1008ff06, NamedKey::KeyboardBrightnessDown),
+    (0x1008ff11, NamedKey::VolumeDown),
+    (0x1008ff12, NamedKey::VolumeMute),
+    (0x1008ff13, NamedKey::VolumeUp),
+    (0x1008ff14, NamedKey::MediaPlay),
+    (0x1008ff15, NamedKey::MediaStop),
+    (0x1008ff16, NamedKey::MediaPreviousTrack),
+    (0x1008ff17, NamedKey::MediaNextTrack),
+    (0x1008ff18, NamedKey::BrowserHome),
+    (0x1008ff19, NamedKey::LaunchMail),
+    (0x1008ff1d, NamedKey::LaunchCalculator),
+    (0x1008ff21, NamedKey::Power),
+    (0x1008ff26, NamedKey::BrowserBack),
+    (0x1008ff27, NamedKey::BrowserForward),
+    (0x1008ff29, NamedKey::BrowserRefresh),
+    (0x1008ff2a, NamedKey::PowerOff),
+    (0x1008ff2b, NamedKey::WakeUp),
+    (0x1008ff2f, NamedKey::Sleep),
+    (0x1008ff31, NamedKey::MediaPause),
+    (0x1008ff80, NamedKey::LaunchTerminal),
+    (0x1008ffa7, NamedKey::Suspend),
+    (0x1008ffa8, NamedKey::Hibernate),
+];
+
+/// Map an XKB keysym value to a [`NamedKey`].
+///
+/// KP variants collapse to their main key equivalents (KP_Enter → Enter).
+/// ISO_Left_Tab → Tab, ISO_Enter → Enter.
+/// Dead keys and character-producing keys map to `Unnamed`.
 #[doc(hidden)]
 pub fn keysym_to_named_key(keysym: u32) -> NamedKey {
-    const TABLE: &[(u32, NamedKey)] = &[
-        (0x0020, NamedKey::Space),
-        (0xfe20, NamedKey::Tab),
-        (0xfe34, NamedKey::Enter),
-        (0xff08, NamedKey::Backspace),
-        (0xff09, NamedKey::Tab),
-        (0xff0d, NamedKey::Enter),
-        (0xff13, NamedKey::Pause),
-        (0xff14, NamedKey::ScrollLock),
-        (0xff15, NamedKey::SysReq),
-        (0xff1b, NamedKey::Escape),
-        (0xff21, NamedKey::KanjiMode),
-        (0xff24, NamedKey::Romaji),
-        (0xff25, NamedKey::Hiragana),
-        (0xff26, NamedKey::Katakana),
-        (0xff2a, NamedKey::ZenkakuHankaku),
-        (0xff30, NamedKey::EisuToggle),
-        (0xff34, NamedKey::HangulHanja),
-        (0xff50, NamedKey::Home),
-        (0xff51, NamedKey::ArrowLeft),
-        (0xff52, NamedKey::ArrowUp),
-        (0xff53, NamedKey::ArrowRight),
-        (0xff54, NamedKey::ArrowDown),
-        (0xff55, NamedKey::PageUp),
-        (0xff56, NamedKey::PageDown),
-        (0xff57, NamedKey::End),
-        (0xff61, NamedKey::PrintScreen),
-        (0xff63, NamedKey::Insert),
-        (0xff67, NamedKey::ContextMenu),
-        (0xff7f, NamedKey::NumLock),
-        (0xff80, NamedKey::Space),
-        (0xff89, NamedKey::Tab),
-        (0xff8d, NamedKey::Enter),
-        (0xff95, NamedKey::Home),
-        (0xff96, NamedKey::ArrowLeft),
-        (0xff97, NamedKey::ArrowUp),
-        (0xff98, NamedKey::ArrowRight),
-        (0xff99, NamedKey::ArrowDown),
-        (0xff9a, NamedKey::PageUp),
-        (0xff9b, NamedKey::PageDown),
-        (0xff9c, NamedKey::End),
-        (0xff9e, NamedKey::Insert),
-        (0xff9f, NamedKey::Delete),
-        (0xffbe, NamedKey::F1),
-        (0xffbf, NamedKey::F2),
-        (0xffc0, NamedKey::F3),
-        (0xffc1, NamedKey::F4),
-        (0xffc2, NamedKey::F5),
-        (0xffc3, NamedKey::F6),
-        (0xffc4, NamedKey::F7),
-        (0xffc5, NamedKey::F8),
-        (0xffc6, NamedKey::F9),
-        (0xffc7, NamedKey::F10),
-        (0xffc8, NamedKey::F11),
-        (0xffc9, NamedKey::F12),
-        (0xffca, NamedKey::F13),
-        (0xffcb, NamedKey::F14),
-        (0xffcc, NamedKey::F15),
-        (0xffcd, NamedKey::F16),
-        (0xffce, NamedKey::F17),
-        (0xffcf, NamedKey::F18),
-        (0xffd0, NamedKey::F19),
-        (0xffd1, NamedKey::F20),
-        (0xffd2, NamedKey::F21),
-        (0xffd3, NamedKey::F22),
-        (0xffd4, NamedKey::F23),
-        (0xffd5, NamedKey::F24),
-        (0xffd6, NamedKey::F25),
-        (0xffd7, NamedKey::F26),
-        (0xffd8, NamedKey::F27),
-        (0xffd9, NamedKey::F28),
-        (0xffda, NamedKey::F29),
-        (0xffdb, NamedKey::F30),
-        (0xffdc, NamedKey::F31),
-        (0xffdd, NamedKey::F32),
-        (0xffde, NamedKey::F33),
-        (0xffdf, NamedKey::F34),
-        (0xffe0, NamedKey::F35),
-        (0xffe1, NamedKey::LeftShift),
-        (0xffe2, NamedKey::RightShift),
-        (0xffe3, NamedKey::LeftControl),
-        (0xffe4, NamedKey::RightControl),
-        (0xffe5, NamedKey::CapsLock),
-        (0xffe7, NamedKey::LeftMeta),
-        (0xffe8, NamedKey::RightMeta),
-        (0xffe9, NamedKey::LeftAlt),
-        (0xffea, NamedKey::RightAlt),
-        (0xffeb, NamedKey::LeftSuper),
-        (0xffec, NamedKey::RightSuper),
-        (0xffed, NamedKey::LeftHyper),
-        (0xffee, NamedKey::RightHyper),
-        (0xffff, NamedKey::Delete),
-        (0x1008ff02, NamedKey::BrightnessUp),
-        (0x1008ff03, NamedKey::BrightnessDown),
-        (0x1008ff05, NamedKey::KeyboardBrightnessUp),
-        (0x1008ff06, NamedKey::KeyboardBrightnessDown),
-        (0x1008ff11, NamedKey::VolumeDown),
-        (0x1008ff12, NamedKey::VolumeMute),
-        (0x1008ff13, NamedKey::VolumeUp),
-        (0x1008ff14, NamedKey::MediaPlay),
-        (0x1008ff15, NamedKey::MediaStop),
-        (0x1008ff16, NamedKey::MediaPreviousTrack),
-        (0x1008ff17, NamedKey::MediaNextTrack),
-        (0x1008ff18, NamedKey::BrowserHome),
-        (0x1008ff19, NamedKey::LaunchMail),
-        (0x1008ff1d, NamedKey::LaunchCalculator),
-        (0x1008ff21, NamedKey::Power),
-        (0x1008ff26, NamedKey::BrowserBack),
-        (0x1008ff27, NamedKey::BrowserForward),
-        (0x1008ff29, NamedKey::BrowserRefresh),
-        (0x1008ff2a, NamedKey::PowerOff),
-        (0x1008ff2b, NamedKey::WakeUp),
-        (0x1008ff2f, NamedKey::Sleep),
-        (0x1008ff31, NamedKey::MediaPause),
-        (0x1008ff80, NamedKey::LaunchTerminal),
-        (0x1008ffa7, NamedKey::Suspend),
-        (0x1008ffa8, NamedKey::Hibernate),
-    ];
     if (0xfe50..=0xfe8d).contains(&keysym) {
         return NamedKey::Unnamed;
     }
-    TABLE
+    KEYSYM_TO_NAMED_KEY
         .binary_search_by_key(&keysym, |&(ks, _)| ks)
         .ok()
-        .map(|i| TABLE[i].1)
+        .map(|i| KEYSYM_TO_NAMED_KEY[i].1)
         .unwrap_or(NamedKey::Unnamed)
 }
 
@@ -773,13 +784,16 @@ pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
     let ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 
     let processed = preprocess_unicode_keysyms(string);
-    let keymap_cstr = CString::new(processed.as_ref()).ok().ok_or(XkbError::KeymapParsing)?;
+    let keymap_cstr = CString::new(processed.as_ref())
+        .ok()
+        .ok_or(XkbError::KeymapParsing)?;
     let keymap = xkb_keymap_new_from_string(
         ctx,
         &keymap_cstr,
         XKB_KEYMAP_FORMAT_TEXT_V1,
         XKB_KEYMAP_COMPILE_NO_FLAGS,
-    ).ok_or(XkbError::KeymapCompilation)?;
+    )
+    .ok_or(XkbError::KeymapCompilation)?;
     let keymap = keymap;
 
     Ok(build_wkb_from_keymap(&keymap, None, true))
@@ -810,10 +824,7 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
         .map(|modifier| {
             (
                 modifier.mapping,
-                modtype_from_name(parser::atom_text(
-                    &keymap.ctx.atom_table,
-                    modifier.name,
-                )),
+                modtype_from_name(parser::atom_text(&keymap.ctx.atom_table, modifier.name)),
             )
         })
         .collect();
@@ -965,118 +976,23 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
     modifiers
 }
 
-/// Map a [`NamedKey`] back to its XKB keysym value.
+/// Map a [`NamedKey`] back to its canonical XKB keysym value.
 ///
 /// Returns `0` (NoSymbol) for [`NamedKey::Unnamed`] and for character keys
 /// that don't have a canonical keysym.
 pub(crate) fn named_key_to_keysym(key: NamedKey) -> u32 {
-    const TABLE: &[(NamedKey, u32)] = &[
-        (NamedKey::Space, 0x0020),
+    const CANONICAL_OVERRIDES: &[(NamedKey, u32)] = &[
         (NamedKey::Enter, 0xff0d),
         (NamedKey::Tab, 0xff09),
-        (NamedKey::Backspace, 0xff08),
-        (NamedKey::Escape, 0xff1b),
         (NamedKey::Delete, 0xffff),
-        (NamedKey::Insert, 0xff63),
-        (NamedKey::ArrowLeft, 0xff51),
-        (NamedKey::ArrowRight, 0xff53),
-        (NamedKey::ArrowUp, 0xff52),
-        (NamedKey::ArrowDown, 0xff54),
-        (NamedKey::Home, 0xff50),
-        (NamedKey::End, 0xff57),
-        (NamedKey::PageUp, 0xff55),
-        (NamedKey::PageDown, 0xff56),
-        (NamedKey::F1, 0xffbe),
-        (NamedKey::F2, 0xffbf),
-        (NamedKey::F3, 0xffc0),
-        (NamedKey::F4, 0xffc1),
-        (NamedKey::F5, 0xffc2),
-        (NamedKey::F6, 0xffc3),
-        (NamedKey::F7, 0xffc4),
-        (NamedKey::F8, 0xffc5),
-        (NamedKey::F9, 0xffc6),
-        (NamedKey::F10, 0xffc7),
-        (NamedKey::F11, 0xffc8),
-        (NamedKey::F12, 0xffc9),
-        (NamedKey::F13, 0xffca),
-        (NamedKey::F14, 0xffcb),
-        (NamedKey::F15, 0xffcc),
-        (NamedKey::F16, 0xffcd),
-        (NamedKey::F17, 0xffce),
-        (NamedKey::F18, 0xffcf),
-        (NamedKey::F19, 0xffd0),
-        (NamedKey::F20, 0xffd1),
-        (NamedKey::F21, 0xffd2),
-        (NamedKey::F22, 0xffd3),
-        (NamedKey::F23, 0xffd4),
-        (NamedKey::F24, 0xffd5),
-        (NamedKey::F25, 0xffd6),
-        (NamedKey::F26, 0xffd7),
-        (NamedKey::F27, 0xffd8),
-        (NamedKey::F28, 0xffd9),
-        (NamedKey::F29, 0xffda),
-        (NamedKey::F30, 0xffdb),
-        (NamedKey::F31, 0xffdc),
-        (NamedKey::F32, 0xffdd),
-        (NamedKey::F33, 0xffde),
-        (NamedKey::F34, 0xffdf),
-        (NamedKey::F35, 0xffe0),
-        (NamedKey::LeftShift, 0xffe1),
-        (NamedKey::RightShift, 0xffe2),
-        (NamedKey::LeftControl, 0xffe3),
-        (NamedKey::RightControl, 0xffe4),
-        (NamedKey::LeftAlt, 0xffe9),
-        (NamedKey::RightAlt, 0xffea),
-        (NamedKey::LeftMeta, 0xffe7),
-        (NamedKey::RightMeta, 0xffe8),
-        (NamedKey::LeftSuper, 0xffeb),
-        (NamedKey::RightSuper, 0xffec),
-        (NamedKey::LeftHyper, 0xffed),
-        (NamedKey::RightHyper, 0xffee),
-        (NamedKey::CapsLock, 0xffe5),
-        (NamedKey::NumLock, 0xff7f),
-        (NamedKey::ScrollLock, 0xff14),
-        (NamedKey::PrintScreen, 0xff61),
-        (NamedKey::Pause, 0xff13),
-        (NamedKey::SysReq, 0xff15),
-        (NamedKey::ContextMenu, 0xff67),
-        (NamedKey::Power, 0x1008ff21),
-        (NamedKey::PowerOff, 0x1008ff2a),
-        (NamedKey::Sleep, 0x1008ff2f),
-        (NamedKey::WakeUp, 0x1008ff2b),
-        (NamedKey::Suspend, 0x1008ffa7),
-        (NamedKey::Hibernate, 0x1008ffa8),
-        (NamedKey::MediaPlay, 0x1008ff14),
-        (NamedKey::MediaPause, 0x1008ff31),
-        (NamedKey::MediaStop, 0x1008ff15),
-        (NamedKey::MediaNextTrack, 0x1008ff17),
-        (NamedKey::MediaPreviousTrack, 0x1008ff16),
-        (NamedKey::VolumeUp, 0x1008ff13),
-        (NamedKey::VolumeDown, 0x1008ff11),
-        (NamedKey::VolumeMute, 0x1008ff12),
-        (NamedKey::BrowserBack, 0x1008ff26),
-        (NamedKey::BrowserForward, 0x1008ff27),
-        (NamedKey::BrowserRefresh, 0x1008ff29),
-        (NamedKey::BrowserHome, 0x1008ff18),
-        (NamedKey::LaunchMail, 0x1008ff19),
-        (NamedKey::LaunchCalculator, 0x1008ff1d),
-        (NamedKey::LaunchTerminal, 0x1008ff80),
-        (NamedKey::BrightnessUp, 0x1008ff02),
-        (NamedKey::BrightnessDown, 0x1008ff03),
-        (NamedKey::KeyboardBrightnessUp, 0x1008ff05),
-        (NamedKey::KeyboardBrightnessDown, 0x1008ff06),
-        (NamedKey::KanjiMode, 0xff21),
-        (NamedKey::Hiragana, 0xff25),
-        (NamedKey::Katakana, 0xff26),
-        (NamedKey::Romaji, 0xff24),
-        (NamedKey::ZenkakuHankaku, 0xff2a),
-        (NamedKey::EisuToggle, 0xff30),
-        (NamedKey::HangulHanja, 0xff34),
     ];
-    TABLE
+    if let Some(&(_, ks)) = CANONICAL_OVERRIDES.iter().find(|(nk, _)| *nk == key) {
+        return ks;
+    }
+    KEYSYM_TO_NAMED_KEY
         .iter()
-        .find(|(nk, _)| *nk == key)
-        .map(|(_, ks)| *ks)
+        .find(|(_, nk)| *nk == key)
+        .map(|(ks, _)| *ks)
         .unwrap_or(0)
 }
 
