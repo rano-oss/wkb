@@ -80,21 +80,24 @@ pub(crate) struct KeyInfo {
     pub(crate) name: u32,
     pub(crate) vmodmap: Option<u32>,
     pub(crate) default_type: Option<u32>,
-    pub(crate) out_of_range_group_number: u32,
+    pub(crate) repeat: Option<bool>,
+    pub(crate) out_of_range: Option<OutOfRangeInfo>,
     pub(crate) groups: Vec<GroupInfo>,
-    pub(crate) out_of_range_group_policy: u32,
     pub(crate) defined: u32,
     pub(crate) merge: MergeMode,
-    pub(crate) repeat: Option<bool>,
-    pub(crate) out_of_range_pending_group: bool,
     pub(crate) overlays_clear: bool,
     pub(crate) overlays: [Option<u32>; 8],
+}
+#[derive(Clone, Copy, Default)]
+pub(crate) struct OutOfRangeInfo {
+    pub(crate) policy: u32,
+    pub(crate) number: u32,
+    pub(crate) pending: bool,
 }
 pub(crate) const KEY_REPEAT_NO: u32 = 2;
 pub(crate) const KEY_REPEAT_YES: u32 = 1;
 pub(crate) const KEY_REPEAT_UNDEFINED: u32 = 0;
 pub(crate) const KEY_FIELD_OVERLAY: u32 = 16;
-pub(crate) const KEY_FIELD_GROUPINFO: u32 = 4;
 
 impl KeyInfo {
     fn has_any_field(&self) -> bool {
@@ -102,6 +105,7 @@ impl KeyInfo {
             || self.default_type.is_some()
             || self.vmodmap.is_some()
             || self.repeat.is_some()
+            || self.out_of_range.is_some()
     }
 }
 #[derive(Clone, Default)]
@@ -123,7 +127,6 @@ impl SymbolsInfo {
             keys: Vec::with_capacity(256),
             default_key: KeyInfo {
                 name: star_atom,
-                out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
                 ..Default::default()
             },
             star_atom,
@@ -156,7 +159,6 @@ fn collect_expr_list(container: &ExprKind) -> &[ExprKind] {
 fn init_key_info_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
     *keyi = KeyInfo {
         name: star_atom,
-        out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
         ..Default::default()
     };
 }
@@ -314,11 +316,8 @@ fn merge_keys(
     if from.default_type.is_some() && (into.default_type.is_none() || clobber) {
         into.default_type = from.default_type;
     }
-    if use_new_field(KEY_FIELD_GROUPINFO, into.defined, from.defined, clobber) {
-        into.out_of_range_pending_group = from.out_of_range_pending_group;
-        into.out_of_range_group_policy = from.out_of_range_group_policy;
-        into.out_of_range_group_number = from.out_of_range_group_number;
-        into.defined |= KEY_FIELD_GROUPINFO;
+    if from.out_of_range.is_some() && (into.out_of_range.is_none() || clobber) {
+        into.out_of_range = from.out_of_range;
     }
     if !merge_overlays(ki, into, from) {
         return false;
@@ -835,12 +834,20 @@ fn set_symbols_field(
                 value_opt.as_ref().unwrap()
             ));
             let wrap = matches!(mapped_field, SymbolsField::GroupsWrap);
-            keyi.out_of_range_group_policy = if set == wrap {
+            let policy = if set == wrap {
                 XKB_LAYOUT_OUT_OF_RANGE_WRAP
             } else {
                 XKB_LAYOUT_OUT_OF_RANGE_CLAMP
             };
-            keyi.defined |= KEY_FIELD_GROUPINFO;
+            match &mut keyi.out_of_range {
+                Some(oor) => oor.policy = policy,
+                None => {
+                    keyi.out_of_range = Some(OutOfRangeInfo {
+                        policy,
+                        ..Default::default()
+                    });
+                }
+            }
         }
         SymbolsField::GroupsRedirect => {
             let mut grp: u32 = 0;
@@ -856,15 +863,16 @@ fn set_symbols_field(
             {
                 return false;
             }
-            if pending {
-                keyi.out_of_range_pending_group = true;
-                keyi.out_of_range_group_number = add_pending_computation(ki, value_opt.take());
+            let number = if pending {
+                add_pending_computation(ki, value_opt.take())
             } else {
-                keyi.out_of_range_pending_group = false;
-                keyi.out_of_range_group_number = grp - 1;
-            }
-            keyi.out_of_range_group_policy = XKB_LAYOUT_OUT_OF_RANGE_REDIRECT;
-            keyi.defined |= KEY_FIELD_GROUPINFO;
+                grp - 1
+            };
+            keyi.out_of_range = Some(OutOfRangeInfo {
+                policy: XKB_LAYOUT_OUT_OF_RANGE_REDIRECT,
+                number,
+                pending,
+            });
         }
     }
     true
@@ -923,12 +931,7 @@ fn handle_global_var(
     let elem = ki.keymap.ctx.atom_text(elem_atom).to_owned();
     let field = ki.keymap.ctx.atom_text(field_atom).to_owned();
     if !elem.is_empty() && elem.eq_ignore_ascii_case("key") {
-        let mut temp: KeyInfo = {
-            KeyInfo {
-                out_of_range_group_policy: XKB_LAYOUT_OUT_OF_RANGE_WRAP,
-                ..Default::default()
-            }
-        };
+        let mut temp: KeyInfo = KeyInfo::default();
         init_key_info_with_atom(&mut temp, ki.keymap.ctx.atom_intern(b"*"));
         temp.merge = if temp.merge == MergeMode::Replace {
             MergeMode::Override
@@ -1294,9 +1297,11 @@ fn copy_symbols_def_to_keymap(
             }
         }
 
-        keymap.keys[key_idx].out_of_range_pending_group = keyi.out_of_range_pending_group;
-        keymap.keys[key_idx].out_of_range_group_number = keyi.out_of_range_group_number;
-        keymap.keys[key_idx].out_of_range_group_policy = keyi.out_of_range_group_policy;
+        if let Some(oor) = keyi.out_of_range {
+            keymap.keys[key_idx].out_of_range_pending_group = oor.pending;
+            keymap.keys[key_idx].out_of_range_group_number = oor.number;
+            keymap.keys[key_idx].out_of_range_group_policy = oor.policy;
+        }
     }
 
     if let Some(vmodmap) = keyi.vmodmap {
