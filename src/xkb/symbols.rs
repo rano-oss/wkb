@@ -109,12 +109,29 @@ impl KeyInfo {
 #[derive(Clone, Default)]
 pub(crate) struct GroupInfo {
     pub(crate) levels: Vec<XkbLevel>,
-    pub(crate) defined: u32,
+    pub(crate) explicit_syms: bool,
+    pub(crate) explicit_acts: bool,
     pub(crate) type_0: Option<u32>,
 }
 
-pub(crate) const GROUP_FIELD_ACTS: u32 = 2;
-pub(crate) const GROUP_FIELD_SYMS: u32 = 1;
+#[derive(Clone, Copy)]
+enum GroupField {
+    Syms,
+    Acts,
+}
+
+impl GroupInfo {
+    fn field_is_set(&self, field: GroupField) -> bool {
+        match field {
+            GroupField::Syms => self.explicit_syms,
+            GroupField::Acts => self.explicit_acts,
+        }
+    }
+
+    fn has_any_field(&self) -> bool {
+        self.explicit_syms || self.explicit_acts || self.type_0.is_some()
+    }
+}
 
 impl SymbolsInfo {
     fn new(ki: &mut XkbKeymapInfo<'_>, include_depth: u32, mods: &XkbModSet) -> Self {
@@ -216,15 +233,19 @@ fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) -> bo
     }
     if from_keysyms_count != 0 {
         if from_keysyms_count == into.levels.len() as u32 {
-            into.defined &= !GROUP_FIELD_SYMS;
+            into.explicit_syms = false;
         }
-        into.defined |= from.defined & GROUP_FIELD_SYMS;
+        if from.explicit_syms {
+            into.explicit_syms = true;
+        }
     }
     if from_actions_count != 0 {
         if from_actions_count == into.levels.len() as u32 {
-            into.defined &= !GROUP_FIELD_ACTS;
+            into.explicit_acts = false;
         }
-        into.defined |= from.defined & GROUP_FIELD_ACTS;
+        if from.explicit_acts {
+            into.explicit_acts = true;
+        }
     }
     true
 }
@@ -437,12 +458,12 @@ fn get_group_index(
     info: &SymbolsInfo,
     keyi: &mut KeyInfo,
     array_ndx: Option<&ExprKind>,
-    field: u32,
+    field: GroupField,
     ndx_rtrn: &mut u32,
 ) -> bool {
     if array_ndx.is_none() {
         for (i, group) in keyi.groups.iter().enumerate() {
-            if group.defined & field == 0 {
+            if !group.field_is_set(field) {
                 *ndx_rtrn = i as u32;
                 return true;
             }
@@ -477,12 +498,12 @@ fn add_symbols_to_key(
     value: &ExprKind,
 ) -> bool {
     let mut ndx: u32 = 0;
-    if !get_group_index(ki, info, keyi, array_ndx, GROUP_FIELD_SYMS, &mut ndx) {
+    if !get_group_index(ki, info, keyi, array_ndx, GroupField::Syms, &mut ndx) {
         return false;
     }
     let groupi = &mut keyi.groups[ndx as usize];
     if matches!(value, ExprKind::EmptyList) {
-        groupi.defined |= GROUP_FIELD_SYMS;
+        groupi.explicit_syms = true;
         return true;
     }
     if !matches!(
@@ -491,7 +512,7 @@ fn add_symbols_to_key(
     ) {
         return false;
     }
-    if groupi.defined & GROUP_FIELD_SYMS != 0 {
+    if groupi.explicit_syms {
         return false;
     }
     let mut n_levels: u32 = 0;
@@ -515,7 +536,7 @@ fn add_symbols_to_key(
             .levels
             .resize_with(n_levels as usize, Default::default);
     }
-    groupi.defined |= GROUP_FIELD_SYMS;
+    groupi.explicit_syms = true;
     for (level, node) in keysym_nodes.iter().enumerate() {
         if level as u32 >= n_levels {
             break;
@@ -544,18 +565,18 @@ fn add_actions_to_key(
     value: &mut ExprKind,
 ) -> bool {
     let mut ndx: u32 = 0;
-    if !get_group_index(ki, info, keyi, array_ndx, GROUP_FIELD_ACTS, &mut ndx) {
+    if !get_group_index(ki, info, keyi, array_ndx, GroupField::Acts, &mut ndx) {
         return false;
     }
     let groupi = &mut keyi.groups[ndx as usize];
     if matches!(value, ExprKind::EmptyList) {
-        groupi.defined |= GROUP_FIELD_ACTS;
+        groupi.explicit_acts = true;
         return true;
     }
     if !matches!(value, ExprKind::ActionList { .. }) {
         return false;
     }
-    if groupi.defined & GROUP_FIELD_ACTS != 0 {
+    if groupi.explicit_acts {
         return false;
     }
     let action_nodes = if let ExprKind::ActionList { ref mut actions } = value {
@@ -570,7 +591,7 @@ fn add_actions_to_key(
             .levels
             .resize_with(n_levels as usize, Default::default);
     }
-    groupi.defined |= GROUP_FIELD_ACTS;
+    groupi.explicit_acts = true;
     let mut non_empty_levels: u32 = 0;
     for (level, action_node) in (0_u32..).zip(action_nodes.iter_mut()) {
         let ExprKind::ActionList {
@@ -1022,7 +1043,7 @@ fn set_explicit_group(info: &SymbolsInfo, keyi: &mut KeyInfo) {
     };
     if !keyi.groups.is_empty() {
         for group in keyi.groups[1..].iter_mut() {
-            if group.defined != 0 || group.type_0.is_some() {
+            if group.has_any_field() {
                 *group = GroupInfo::default();
             }
         }
@@ -1236,7 +1257,7 @@ fn copy_symbols_def_to_keymap(
         keyi.groups.resize_with(num_groups, Default::default);
 
         for i in 1..keyi.groups.len() {
-            if keyi.groups[i].defined == 0 && keyi.groups[i].type_0.is_none() {
+            if !keyi.groups[i].has_any_field() {
                 keyi.groups[i] = keyi.groups[0].clone();
             }
         }
@@ -1283,7 +1304,7 @@ fn copy_symbols_def_to_keymap(
 
             keymap.keys[key_idx].groups[i].levels = std::mem::take(&mut groupi.levels);
 
-            if groupi.defined & GROUP_FIELD_ACTS != 0 {
+            if groupi.explicit_acts {
                 keymap.keys[key_idx].groups[i].explicit_actions = true;
             }
         }
