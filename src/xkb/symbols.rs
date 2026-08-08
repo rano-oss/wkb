@@ -1406,8 +1406,6 @@ pub(crate) struct CompatInfo {
     pub(crate) num_leds: u32,
     pub(crate) default_actions: ActionsInfo,
     pub(crate) mods: XkbModSet,
-    pub(crate) interp_index: HashMap<(u32, u32, u32), usize>,
-    pub(crate) led_index: HashMap<u32, u32>,
 }
 
 #[derive(Copy, Clone, Default)]
@@ -1466,13 +1464,14 @@ fn merge_interp(old: &mut SymInterpInfo, new: &mut SymInterpInfo) {
 }
 fn add_interp(info: &mut CompatInfo, new: &mut SymInterpInfo) {
     let key = (new.interp.sym, new.interp.mods, new.interp.match_0);
-    if let Some(&idx) = info.interp_index.get(&key) {
-        let mut old = info.interps[idx].clone();
-        merge_interp(&mut old, new);
-        info.interps[idx] = old;
+    if let Some(old) = info
+        .interps
+        .iter_mut()
+        .find(|i| (i.interp.sym, i.interp.mods, i.interp.match_0) == key)
+    {
+        merge_interp(old, new);
         return;
     }
-    info.interp_index.insert(key, info.interps.len());
     info.interps.push(new.clone());
 }
 fn resolve_state_and_predicate(
@@ -1556,16 +1555,13 @@ fn merge_led_map(old: &mut LedInfo, new: &mut LedInfo) {
     }
 }
 fn add_led_map(info: &mut CompatInfo, new: &mut LedInfo) -> bool {
-    if let Some(&i) = info.led_index.get(&new.led.name) {
-        let mut old = info.leds[i as usize];
-        merge_led_map(&mut old, new);
-        info.leds[i as usize] = old;
+    if let Some(i) = (0..info.num_leds as usize).find(|&i| info.leds[i].led.name == new.led.name) {
+        merge_led_map(&mut info.leds[i], new);
         return true;
     }
     if info.num_leds >= XKB_MAX_LEDS {
         return false;
     }
-    info.led_index.insert(new.led.name, info.num_leds);
     info.leds[info.num_leds as usize] = *new;
     info.num_leds += 1;
     true
@@ -1578,7 +1574,6 @@ fn merge_included_compat_maps(into: &mut CompatInfo, from: &mut CompatInfo, merg
     merge_mod_sets(&mut into.mods, &from.mods, merge);
     if into.interps.is_empty() {
         into.interps = std::mem::take(&mut from.interps);
-        into.interp_index = std::mem::take(&mut from.interp_index);
     } else {
         for interp in from.interps.iter_mut() {
             interp.merge = merge;
@@ -1590,7 +1585,6 @@ fn merge_included_compat_maps(into: &mut CompatInfo, from: &mut CompatInfo, merg
         into.leds[..n].copy_from_slice(&from.leds[..n]);
         into.num_leds = from.num_leds;
         from.num_leds = 0;
-        into.led_index = std::mem::take(&mut from.led_index);
     } else {
         for led in from.leds[..from.num_leds as usize].iter_mut() {
             led.merge = merge;
