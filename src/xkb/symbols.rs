@@ -85,7 +85,7 @@ pub(crate) struct KeyInfo {
     pub(crate) out_of_range_group_policy: u32,
     pub(crate) defined: u32,
     pub(crate) merge: MergeMode,
-    pub(crate) repeat: u32,
+    pub(crate) repeat: Option<bool>,
     pub(crate) out_of_range_pending_group: bool,
     pub(crate) overlays_clear: bool,
     pub(crate) overlays: [Option<u32>; 8],
@@ -95,7 +95,15 @@ pub(crate) const KEY_REPEAT_YES: u32 = 1;
 pub(crate) const KEY_REPEAT_UNDEFINED: u32 = 0;
 pub(crate) const KEY_FIELD_OVERLAY: u32 = 16;
 pub(crate) const KEY_FIELD_GROUPINFO: u32 = 4;
-pub(crate) const KEY_FIELD_REPEAT: u32 = 1;
+
+impl KeyInfo {
+    fn has_any_field(&self) -> bool {
+        self.defined != 0
+            || self.default_type.is_some()
+            || self.vmodmap.is_some()
+            || self.repeat.is_some()
+    }
+}
 #[derive(Clone, Default)]
 pub(crate) struct GroupInfo {
     pub(crate) levels: Vec<XkbLevel>,
@@ -300,9 +308,8 @@ fn merge_keys(
     if from.vmodmap.is_some() && (into.vmodmap.is_none() || clobber) {
         into.vmodmap = from.vmodmap;
     }
-    if use_new_field(KEY_FIELD_REPEAT, into.defined, from.defined, clobber) {
+    if from.repeat.is_some() && (into.repeat.is_none() || clobber) {
         into.repeat = from.repeat;
-        into.defined |= KEY_FIELD_REPEAT;
     }
     if from.default_type.is_some() && (into.default_type.is_none() || clobber) {
         into.default_type = from.default_type;
@@ -816,8 +823,11 @@ fn set_symbols_field(
             else {
                 return false;
             };
-            keyi.repeat = val_0;
-            keyi.defined |= KEY_FIELD_REPEAT;
+            keyi.repeat = match val_0 {
+                KEY_REPEAT_YES => Some(true),
+                KEY_REPEAT_NO => Some(false),
+                _ => None,
+            };
         }
         SymbolsField::GroupsWrap | SymbolsField::GroupsClamp => {
             let set = some_or_false!(expr_resolve_boolean(
@@ -1224,7 +1234,7 @@ fn copy_symbols_def_to_keymap(
     }
 
     if keymap.keys[key_idx].num_groups == 0 {
-        if keyi.defined == 0 && keyi.default_type.is_none() {
+        if !keyi.has_any_field() {
             return false;
         }
     } else {
@@ -1294,8 +1304,8 @@ fn copy_symbols_def_to_keymap(
         keymap.keys[key_idx].explicit_vmodmap = true;
     }
 
-    if keyi.repeat != KEY_REPEAT_UNDEFINED {
-        keymap.keys[key_idx].repeats = keyi.repeat == KEY_REPEAT_YES;
+    if let Some(repeat) = keyi.repeat {
+        keymap.keys[key_idx].repeats = repeat;
         keymap.keys[key_idx].explicit_repeat = true;
     }
 
