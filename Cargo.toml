@@ -35,6 +35,7 @@ ron = "0.8"
 thiserror = "1"
 lasso = "0.7"
 bitflags = "2"
+xkeysym = "0.2"
 
 [dev-dependencies]
 wkb = { package = "wayland-keyboard", path = "." }
