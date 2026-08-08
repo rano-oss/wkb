@@ -31,10 +31,11 @@ compose = []
 log = "0.4.29"
 arrayvec = "0.7"
 serde = { version = "1", features = ["derive"] }
-ron = "0.8"
-thiserror = "1"
+ron = "0.12"
+thiserror = "2"
 lasso = "0.7"
 bitflags = "2"
+xkeysym = "0.2"
 
 [dev-dependencies]
 wkb = { package = "wayland-keyboard", path = "." }
@@ -42,7 +43,7 @@ test-case = "3.3.1"
 xkbcommon = "0.9.0"
 xkbcommon-dl = "0.4.2"
 criterion = { version = "0.8", features = ["html_reports"] }
-quick-xml = "0.37"
+quick-xml = "0.41"
 
 [[bench]]
 name = "bench_setup"

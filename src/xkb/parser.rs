@@ -301,18 +301,16 @@ fn execute_reduction<'a>(
             *yyval = YYValue::MapFlags(f);
         }
         21..=28 => {
-            *yyval = YYValue::MapFlags(
-                [
-                    MAP_IS_PARTIAL,
-                    MAP_IS_DEFAULT,
-                    MAP_IS_HIDDEN,
-                    MAP_HAS_ALPHANUMERIC,
-                    MAP_HAS_MODIFIER,
-                    MAP_HAS_KEYPAD,
-                    MAP_HAS_FN,
-                    MAP_IS_ALTGR,
-                ][yyn as usize - 21],
-            )
+            // Rule 22 is the `default` keyword. The other map keywords
+            // (partial, hidden, alphanumeric_keys, ...) are declaration
+            // metadata that the compiler ignores; they only need to keep
+            // the flags word nonzero so include resolution treats the map
+            // as explicitly flagged.
+            *yyval = YYValue::MapFlags(if yyn == 22 {
+                MAP_IS_DEFAULT
+            } else {
+                MAP_HAS_MAP_FLAGS
+            });
         }
         29 => {
             // DeclList: DeclList Decl
@@ -738,16 +736,20 @@ fn execute_reduction<'a>(
             // Lhs: Ident DOT FieldSpec
             let element = yyvs[sp - 2].as_atom();
             let field = yyvs[sp].as_atom();
-            *yyval = YYValue::Expr(ExprKind::FieldRef { element, field });
+            *yyval = YYValue::Expr(ExprKind::FieldRef {
+                element,
+                field,
+                index: None,
+            });
         }
         178 => {
             // Lhs: Ident OBRACKET Expr CBRACKET
             let field = yyvs[sp - 3].as_atom();
             let entry = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::Expr(ExprKind::ArrayRef {
+            *yyval = YYValue::Expr(ExprKind::FieldRef {
                 element: XKB_ATOM_NONE,
                 field,
-                entry: entry.map(Box::new),
+                index: entry.map(Box::new),
             });
         }
         179 => {
@@ -755,10 +757,10 @@ fn execute_reduction<'a>(
             let element = yyvs[sp - 5].as_atom();
             let field = yyvs[sp - 3].as_atom();
             let entry = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::Expr(ExprKind::ArrayRef {
+            *yyval = YYValue::Expr(ExprKind::FieldRef {
                 element,
                 field,
-                entry: entry.map(Box::new),
+                index: entry.map(Box::new),
             });
         }
         // Terminal rules 182-185
@@ -978,10 +980,10 @@ default_merge_constructors! {
     fn key_alias_create(alias: u32, real: u32) -> KeyAliasDef;
     fn vmod_create(name: u32, value: Option<ExprKind>) -> VModDef;
     fn var_create(name: Option<ExprKind>, value: Option<ExprKind>) -> VarDef;
-    fn key_type_create(name: u32, body: Vec<VarDef>) -> KeyTypeDef;
-    fn symbols_create(name: u32, body: Vec<VarDef>) -> SymbolsDef;
+    fn key_type_create(name: u32, body: Vec<VarDef>) -> NamedVarDef;
+    fn symbols_create(name: u32, body: Vec<VarDef>) -> NamedVarDef;
     fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> ModMapDef;
-    fn led_map_create(name: u32, body: Vec<VarDef>) -> LedMapDef;
+    fn led_map_create(name: u32, body: Vec<VarDef>) -> NamedVarDef;
     fn led_name_create(ndx: i64, name: Option<ExprKind>) -> LedNameDef;
 }
 
@@ -1320,11 +1322,11 @@ pub(crate) enum YYValue<'a> {
     VMod(VModDef),
     VModList(Vec<VModDef>),
     Interp(InterpDef),
-    KeyType(KeyTypeDef),
-    Symbols(SymbolsDef),
+    KeyType(NamedVarDef),
+    Symbols(NamedVarDef),
     ModMask(ModMapDef),
     GroupCompat,
-    LedMap(LedMapDef),
+    LedMap(NamedVarDef),
     LedName(LedNameDef),
     Keycode(KeycodeDef),
     KeyAlias(KeyAliasDef),
@@ -3943,11 +3945,7 @@ pub(crate) enum ExprKind {
     FieldRef {
         element: u32,
         field: u32,
-    },
-    ArrayRef {
-        element: u32,
-        field: u32,
-        entry: Option<Box<ExprKind>>,
+        index: Option<Box<ExprKind>>,
     },
     Action {
         name: u32,
@@ -4004,10 +4002,6 @@ pub(crate) struct NamedVarDef {
     pub(crate) name: u32,
     pub(crate) body: Vec<VarDef>,
 }
-pub(crate) type KeyTypeDef = NamedVarDef;
-pub(crate) type SymbolsDef = NamedVarDef;
-pub(crate) type LedMapDef = NamedVarDef;
-
 pub(crate) struct ModMapDef {
     pub(crate) merge: MergeMode,
     pub(crate) modifier: u32,
@@ -4026,13 +4020,7 @@ pub(crate) struct LedNameDef {
     pub(crate) name: Option<ExprKind>,
 }
 
-pub(crate) const MAP_IS_ALTGR: u32 = 128;
-pub(crate) const MAP_HAS_FN: u32 = 64;
-pub(crate) const MAP_HAS_KEYPAD: u32 = 32;
-pub(crate) const MAP_HAS_MODIFIER: u32 = 16;
-pub(crate) const MAP_HAS_ALPHANUMERIC: u32 = 8;
-pub(crate) const MAP_IS_HIDDEN: u32 = 4;
-pub(crate) const MAP_IS_PARTIAL: u32 = 2;
+pub(crate) const MAP_HAS_MAP_FLAGS: u32 = 2;
 pub(crate) const MAP_IS_DEFAULT: u32 = 1;
 
 pub(crate) enum Statement {
@@ -4040,13 +4028,13 @@ pub(crate) enum Statement {
     Keycode(KeycodeDef),
     KeyAlias(KeyAliasDef),
     Var(VarDef),
-    KeyType(KeyTypeDef),
+    KeyType(NamedVarDef),
     Interp(InterpDef),
     VMod(VModDef),
-    Symbols(SymbolsDef),
+    Symbols(NamedVarDef),
     ModMap(ModMapDef),
     GroupCompat,
-    LedMap(LedMapDef),
+    LedMap(NamedVarDef),
     LedName(LedNameDef),
     Unknown,
     XkbFile(XkbFile),

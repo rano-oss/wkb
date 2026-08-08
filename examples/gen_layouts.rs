@@ -81,7 +81,7 @@ fn read_layouts(path: &Path) -> Result<Vec<(String, String)>, quick_xml::Error> 
                 stack.pop();
             }
             Event::Text(t) => {
-                let text = t.unescape()?.into_owned();
+                let text = quick_xml::escape::unescape(&t.decode()?)?.into_owned();
                 if text.is_empty() {
                     continue;
                 }
