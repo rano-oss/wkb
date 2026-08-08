@@ -301,18 +301,16 @@ fn execute_reduction<'a>(
             *yyval = YYValue::MapFlags(f);
         }
         21..=28 => {
-            *yyval = YYValue::MapFlags(
-                [
-                    MAP_IS_PARTIAL,
-                    MAP_IS_DEFAULT,
-                    MAP_IS_HIDDEN,
-                    MAP_HAS_ALPHANUMERIC,
-                    MAP_HAS_MODIFIER,
-                    MAP_HAS_KEYPAD,
-                    MAP_HAS_FN,
-                    MAP_IS_ALTGR,
-                ][yyn as usize - 21],
-            )
+            // Rule 22 is the `default` keyword. The other map keywords
+            // (partial, hidden, alphanumeric_keys, ...) are declaration
+            // metadata that the compiler ignores; they only need to keep
+            // the flags word nonzero so include resolution treats the map
+            // as explicitly flagged.
+            *yyval = YYValue::MapFlags(if yyn == 22 {
+                MAP_IS_DEFAULT
+            } else {
+                MAP_HAS_MAP_FLAGS
+            });
         }
         29 => {
             // DeclList: DeclList Decl
@@ -4026,13 +4024,7 @@ pub(crate) struct LedNameDef {
     pub(crate) name: Option<ExprKind>,
 }
 
-pub(crate) const MAP_IS_ALTGR: u32 = 128;
-pub(crate) const MAP_HAS_FN: u32 = 64;
-pub(crate) const MAP_HAS_KEYPAD: u32 = 32;
-pub(crate) const MAP_HAS_MODIFIER: u32 = 16;
-pub(crate) const MAP_HAS_ALPHANUMERIC: u32 = 8;
-pub(crate) const MAP_IS_HIDDEN: u32 = 4;
-pub(crate) const MAP_IS_PARTIAL: u32 = 2;
+pub(crate) const MAP_HAS_MAP_FLAGS: u32 = 2;
 pub(crate) const MAP_IS_DEFAULT: u32 = 1;
 
 pub(crate) enum Statement {
