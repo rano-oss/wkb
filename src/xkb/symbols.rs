@@ -2018,7 +2018,6 @@ pub(crate) struct KeyTypesInfo {
     pub(crate) error_count: i32,
     pub(crate) include_depth: u32,
     pub(crate) types: Vec<KeyTypeInfo>,
-    pub(crate) type_index: HashMap<u32, usize>,
     pub(crate) mods: XkbModSet,
 }
 
@@ -2041,14 +2040,12 @@ fn key_types_info(include_depth: u32, mods: &XkbModSet) -> KeyTypesInfo {
     info
 }
 fn add_key_type(info: &mut KeyTypesInfo, new: &mut KeyTypeInfo) {
-    if let Some(&idx) = info.type_index.get(&new.name) {
+    if let Some(existing) = info.types.iter_mut().find(|t| t.name == new.name) {
         if new.merge != MergeMode::Augment {
-            std::mem::swap(&mut info.types[idx], new);
-            return;
+            std::mem::swap(existing, new);
         }
         return;
     }
-    info.type_index.insert(new.name, info.types.len());
     info.types.push(std::mem::take(new));
 }
 fn merge_included_key_types(into: &mut KeyTypesInfo, from: &mut KeyTypesInfo, merge: MergeMode) {
@@ -2059,7 +2056,6 @@ fn merge_included_key_types(into: &mut KeyTypesInfo, from: &mut KeyTypesInfo, me
     merge_mod_sets(&mut into.mods, &from.mods, merge);
     if into.types.is_empty() {
         into.types = std::mem::take(&mut from.types);
-        into.type_index = std::mem::take(&mut from.type_index);
     } else {
         for mut type_0 in from.types.drain(..) {
             type_0.merge = merge;
