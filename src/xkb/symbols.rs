@@ -3119,24 +3119,17 @@ fn expr_resolve_lhs(expr: &ExprKind) -> Option<Lhs<'_>> {
             field: *field,
             index: None,
         }),
-        ExprKind::FieldRef { element, field }
-            if *element != XKB_ATOM_NONE && *field != XKB_ATOM_NONE =>
-        {
+        ExprKind::FieldRef {
+            element,
+            field,
+            index,
+        } if *field != XKB_ATOM_NONE && (*element != XKB_ATOM_NONE || index.is_some()) => {
             Some(Lhs {
                 element: *element,
                 field: *field,
-                index: None,
+                index: index.as_deref(),
             })
         }
-        ExprKind::ArrayRef {
-            element,
-            field,
-            entry,
-        } if *field != XKB_ATOM_NONE => Some(Lhs {
-            element: *element,
-            field: *field,
-            index: entry.as_deref(),
-        }),
         _ => None,
     }
 }

@@ -736,16 +736,20 @@ fn execute_reduction<'a>(
             // Lhs: Ident DOT FieldSpec
             let element = yyvs[sp - 2].as_atom();
             let field = yyvs[sp].as_atom();
-            *yyval = YYValue::Expr(ExprKind::FieldRef { element, field });
+            *yyval = YYValue::Expr(ExprKind::FieldRef {
+                element,
+                field,
+                index: None,
+            });
         }
         178 => {
             // Lhs: Ident OBRACKET Expr CBRACKET
             let field = yyvs[sp - 3].as_atom();
             let entry = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::Expr(ExprKind::ArrayRef {
+            *yyval = YYValue::Expr(ExprKind::FieldRef {
                 element: XKB_ATOM_NONE,
                 field,
-                entry: entry.map(Box::new),
+                index: entry.map(Box::new),
             });
         }
         179 => {
@@ -753,10 +757,10 @@ fn execute_reduction<'a>(
             let element = yyvs[sp - 5].as_atom();
             let field = yyvs[sp - 3].as_atom();
             let entry = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::Expr(ExprKind::ArrayRef {
+            *yyval = YYValue::Expr(ExprKind::FieldRef {
                 element,
                 field,
-                entry: entry.map(Box::new),
+                index: entry.map(Box::new),
             });
         }
         // Terminal rules 182-185
@@ -3941,11 +3945,7 @@ pub(crate) enum ExprKind {
     FieldRef {
         element: u32,
         field: u32,
-    },
-    ArrayRef {
-        element: u32,
-        field: u32,
-        entry: Option<Box<ExprKind>>,
+        index: Option<Box<ExprKind>>,
     },
     Action {
         name: u32,
