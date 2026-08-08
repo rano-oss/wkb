@@ -83,7 +83,6 @@ pub(crate) struct KeyInfo {
     pub(crate) repeat: Option<bool>,
     pub(crate) out_of_range: Option<OutOfRangeInfo>,
     pub(crate) groups: Vec<GroupInfo>,
-    pub(crate) defined: u32,
     pub(crate) merge: MergeMode,
     pub(crate) overlays_clear: bool,
     pub(crate) overlays: [Option<u32>; 8],
@@ -97,15 +96,14 @@ pub(crate) struct OutOfRangeInfo {
 pub(crate) const KEY_REPEAT_NO: u32 = 2;
 pub(crate) const KEY_REPEAT_YES: u32 = 1;
 pub(crate) const KEY_REPEAT_UNDEFINED: u32 = 0;
-pub(crate) const KEY_FIELD_OVERLAY: u32 = 16;
 
 impl KeyInfo {
     fn has_any_field(&self) -> bool {
-        self.defined != 0
-            || self.default_type.is_some()
+        self.default_type.is_some()
             || self.vmodmap.is_some()
             || self.repeat.is_some()
             || self.out_of_range.is_some()
+            || self.overlays.iter().any(|o| o.is_some())
     }
 }
 #[derive(Clone, Default)]
@@ -233,22 +231,18 @@ fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) -> bo
 fn use_new_field(field: u32, old: u32, new: u32, clobber: bool) -> bool {
     new & field != 0 && (old & field == 0 || clobber)
 }
-fn overlays_insert(keyi: &mut KeyInfo, bit: u8, key: u32) -> bool {
+fn overlays_insert(keyi: &mut KeyInfo, bit: u8, key: u32) {
     if let Some(entry) = keyi.overlays.get_mut(bit as usize) {
         *entry = Some(key);
         if key == XKB_KEYCODE_INVALID {
             keyi.overlays_clear = true;
         }
-        true
-    } else {
-        false
     }
 }
 fn merge_overlays(ki: &XkbKeymapInfo<'_>, into: &mut KeyInfo, from: &mut KeyInfo) -> bool {
-    if (from.defined & KEY_FIELD_OVERLAY) != 0 {
-        if (into.defined & KEY_FIELD_OVERLAY) == 0 {
+    if from.overlays.iter().any(|o| o.is_some()) {
+        if into.overlays.iter().all(|o| o.is_none()) {
             into.overlays = from.overlays;
-            into.defined |= KEY_FIELD_OVERLAY;
         } else if into.overlays_clear && from.overlays_clear {
             // Both cleared — keep both invalid entries
         } else if ki.features.overlapping_overlays {
@@ -802,15 +796,12 @@ fn set_symbols_field(
                 return true;
             }
             if ki.features.overlapping_overlays {
-                if overlays_insert(keyi, overlay, key) {
-                    keyi.defined |= KEY_FIELD_OVERLAY;
-                }
+                overlays_insert(keyi, overlay, key);
             } else {
                 let has_none = keyi.overlays.iter().all(|o| o.is_none());
                 if has_none || keyi.overlays_clear {
                     keyi.overlays[overlay as usize] = Some(key);
                     keyi.overlays_clear = key == XKB_KEYCODE_INVALID;
-                    keyi.defined |= KEY_FIELD_OVERLAY;
                 } else if keyi.overlays[overlay as usize].is_none() && key != XKB_KEYCODE_INVALID {
                     return ki.strict & PARSER_NO_FIELD_VALUE_MISMATCH == 0;
                 }
