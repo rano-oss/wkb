@@ -7,7 +7,7 @@ use super::keysym::xkb_keysym_is_keypad;
 use super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 use super::parser::{exceeds_include_max_depth, process_include_file};
 pub(crate) use super::parser::{
-    InterpDef, KeyAliasDef, KeycodeDef, LedMapDef, LedNameDef, ModMapDef, SymbolsDef,
+    InterpDef, KeyAliasDef, KeycodeDef, LedNameDef, ModMapDef, NamedVarDef,
 };
 pub(crate) use super::parser::{
     MergeMode, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
@@ -1037,7 +1037,7 @@ fn set_explicit_group(info: &SymbolsInfo, keyi: &mut KeyInfo) {
 fn handle_symbols_def(
     ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
-    stmt: &mut SymbolsDef,
+    stmt: &mut NamedVarDef,
 ) -> bool {
     // Clone scalar fields from default_key, deep-copy groups
     let dk = &info.default_key;
@@ -1870,7 +1870,7 @@ fn handle_interp_def(
 fn handle_led_map_def(
     info: &mut CompatInfo,
     ki: &mut XkbKeymapInfo<'_>,
-    def: &mut LedMapDef,
+    def: &mut NamedVarDef,
 ) -> bool {
     let mut ledi: LedInfo = info.default_led;
     ledi.merge = def.merge;

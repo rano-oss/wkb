@@ -976,10 +976,10 @@ default_merge_constructors! {
     fn key_alias_create(alias: u32, real: u32) -> KeyAliasDef;
     fn vmod_create(name: u32, value: Option<ExprKind>) -> VModDef;
     fn var_create(name: Option<ExprKind>, value: Option<ExprKind>) -> VarDef;
-    fn key_type_create(name: u32, body: Vec<VarDef>) -> KeyTypeDef;
-    fn symbols_create(name: u32, body: Vec<VarDef>) -> SymbolsDef;
+    fn key_type_create(name: u32, body: Vec<VarDef>) -> NamedVarDef;
+    fn symbols_create(name: u32, body: Vec<VarDef>) -> NamedVarDef;
     fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> ModMapDef;
-    fn led_map_create(name: u32, body: Vec<VarDef>) -> LedMapDef;
+    fn led_map_create(name: u32, body: Vec<VarDef>) -> NamedVarDef;
     fn led_name_create(ndx: i64, name: Option<ExprKind>) -> LedNameDef;
 }
 
@@ -1318,11 +1318,11 @@ pub(crate) enum YYValue<'a> {
     VMod(VModDef),
     VModList(Vec<VModDef>),
     Interp(InterpDef),
-    KeyType(KeyTypeDef),
-    Symbols(SymbolsDef),
+    KeyType(NamedVarDef),
+    Symbols(NamedVarDef),
     ModMask(ModMapDef),
     GroupCompat,
-    LedMap(LedMapDef),
+    LedMap(NamedVarDef),
     LedName(LedNameDef),
     Keycode(KeycodeDef),
     KeyAlias(KeyAliasDef),
@@ -4002,10 +4002,6 @@ pub(crate) struct NamedVarDef {
     pub(crate) name: u32,
     pub(crate) body: Vec<VarDef>,
 }
-pub(crate) type KeyTypeDef = NamedVarDef;
-pub(crate) type SymbolsDef = NamedVarDef;
-pub(crate) type LedMapDef = NamedVarDef;
-
 pub(crate) struct ModMapDef {
     pub(crate) merge: MergeMode,
     pub(crate) modifier: u32,
@@ -4032,13 +4028,13 @@ pub(crate) enum Statement {
     Keycode(KeycodeDef),
     KeyAlias(KeyAliasDef),
     Var(VarDef),
-    KeyType(KeyTypeDef),
+    KeyType(NamedVarDef),
     Interp(InterpDef),
     VMod(VModDef),
-    Symbols(SymbolsDef),
+    Symbols(NamedVarDef),
     ModMap(ModMapDef),
     GroupCompat,
-    LedMap(LedMapDef),
+    LedMap(NamedVarDef),
     LedName(LedNameDef),
     Unknown,
     XkbFile(XkbFile),
