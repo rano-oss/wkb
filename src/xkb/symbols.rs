@@ -102,10 +102,9 @@ pub(crate) const KEY_FIELD_REPEAT: u32 = 1;
 pub(crate) struct GroupInfo {
     pub(crate) levels: Vec<XkbLevel>,
     pub(crate) defined: u32,
-    pub(crate) type_0: u32,
+    pub(crate) type_0: Option<u32>,
 }
 
-pub(crate) const GROUP_FIELD_TYPE: u32 = 4;
 pub(crate) const GROUP_FIELD_ACTS: u32 = 2;
 pub(crate) const GROUP_FIELD_SYMS: u32 = 1;
 
@@ -156,14 +155,11 @@ fn init_key_info_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
     };
 }
 fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) -> bool {
-    if into.type_0 != from.type_0 && (from.type_0 != XKB_ATOM_NONE) {
-        if into.type_0 == XKB_ATOM_NONE {
-            into.type_0 = from.type_0;
-        } else {
-            into.type_0 = if clobber { from.type_0 } else { into.type_0 };
+    if let Some(from_type) = from.type_0 {
+        if into.type_0.is_none() || clobber {
+            into.type_0 = Some(from_type);
         }
     }
-    into.defined |= from.defined & GROUP_FIELD_TYPE;
     if from.levels.is_empty() {
         *from = GroupInfo::default();
         return true;
@@ -762,8 +758,7 @@ fn set_symbols_field(
                     keyi.groups
                         .resize_with((ndx as usize) + 1, Default::default);
                 }
-                keyi.groups[ndx as usize].type_0 = val;
-                keyi.groups[ndx as usize].defined |= GROUP_FIELD_TYPE;
+                keyi.groups[ndx as usize].type_0 = Some(val);
             } else {
                 keyi.default_type = val;
                 keyi.defined |= KEY_FIELD_DEFAULT_TYPE;
@@ -1029,7 +1024,7 @@ fn set_explicit_group(info: &SymbolsInfo, keyi: &mut KeyInfo) {
     };
     if !keyi.groups.is_empty() {
         for group in keyi.groups[1..].iter_mut() {
-            if group.defined != 0 {
+            if group.defined != 0 || group.type_0.is_some() {
                 *group = GroupInfo::default();
             }
         }
@@ -1189,7 +1184,7 @@ fn find_type_for_group(
     type_map: &HashMap<u32, u32>,
 ) -> u32 {
     let groupi = &keyi.groups[group as usize];
-    let mut type_name: u32 = groupi.type_0;
+    let mut type_name: u32 = groupi.type_0.unwrap_or(XKB_ATOM_NONE);
     if type_name == XKB_ATOM_NONE {
         if keyi.default_type != XKB_ATOM_NONE {
             type_name = keyi.default_type;
@@ -1227,8 +1222,8 @@ fn copy_symbols_def_to_keymap(
     keymap.keys[key_idx].num_groups = 0;
     if !keyi.groups.is_empty() {
         for (idx, groupi) in keyi.groups.iter().enumerate() {
-            let has_explicit_type = ((keyi.defined & KEY_FIELD_DEFAULT_TYPE) != 0)
-                || (groupi.defined & GROUP_FIELD_TYPE != 0);
+            let has_explicit_type =
+                ((keyi.defined & KEY_FIELD_DEFAULT_TYPE) != 0) || groupi.type_0.is_some();
             if !groupi.levels.is_empty() || has_explicit_type {
                 keymap.keys[key_idx].num_groups = (idx as u32) + 1;
             }
@@ -1244,7 +1239,7 @@ fn copy_symbols_def_to_keymap(
         keyi.groups.resize_with(num_groups, Default::default);
 
         for i in 1..keyi.groups.len() {
-            if keyi.groups[i].defined == 0 {
+            if keyi.groups[i].defined == 0 && keyi.groups[i].type_0.is_none() {
                 keyi.groups[i] = keyi.groups[0].clone();
             }
         }
