@@ -60,7 +60,6 @@ pub(crate) struct SymbolsInfo {
     pub(crate) mods: XkbModSet,
     pub(crate) star_atom: u32,
     pub(crate) key_index: HashMap<u32, usize>,
-    pub(crate) modmap_index: HashMap<ModMapTarget, usize>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -365,15 +364,13 @@ fn add_key_symbols(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, keyi: &mu
 fn add_mod_map_entry(info: &mut SymbolsInfo, new: &ModMapEntry) {
     let clobber: bool = new.merge != MergeMode::Augment;
     let key = new.target;
-    if let Some(&i) = info.modmap_index.get(&key) {
-        let old = &mut info.modmaps[i];
+    if let Some(old) = info.modmaps.iter_mut().find(|mm| mm.target == key) {
         if new.modifier == old.modifier {
             return;
         }
         old.modifier = if clobber { new.modifier } else { old.modifier };
         return;
     }
-    info.modmap_index.insert(key, info.modmaps.len());
     info.modmaps.push(*new);
 }
 fn merge_included_symbols(
@@ -411,7 +408,6 @@ fn merge_included_symbols(
     }
     if into.modmaps.is_empty() {
         std::mem::swap(&mut into.modmaps, &mut from.modmaps);
-        std::mem::swap(&mut into.modmap_index, &mut from.modmap_index);
     } else {
         for mm in from.modmaps.iter_mut() {
             mm.merge = merge;
