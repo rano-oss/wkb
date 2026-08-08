@@ -18,7 +18,6 @@ pub(crate) use super::parser::{
     ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, MAX_ACTIONS_PER_LEVEL, MOD_REAL_MASK_ALL,
     XKB_MAX_LEDS, XKB_MOD_NONE, XKB_OVERLAY_INVALID, _ACTION_TYPE_NUM_ENTRIES,
 };
-use std::collections::HashMap;
 
 macro_rules! some_or_false {
     ($value:expr) => {
@@ -1186,12 +1185,7 @@ fn find_automatic_type(ctx: &mut XkbContext, groupi: &GroupInfo) -> u32 {
     }
     XKB_ATOM_NONE
 }
-fn find_type_for_group(
-    keymap: &mut XkbKeymap,
-    keyi: &mut KeyInfo,
-    group: u32,
-    type_map: &HashMap<u32, u32>,
-) -> u32 {
+fn find_type_for_group(keymap: &mut XkbKeymap, keyi: &mut KeyInfo, group: u32) -> u32 {
     let groupi = &keyi.groups[group as usize];
     let mut type_name: u32 = groupi.type_0.unwrap_or(XKB_ATOM_NONE);
     if type_name == XKB_ATOM_NONE {
@@ -1202,17 +1196,13 @@ fn find_type_for_group(
         }
     }
     if type_name != XKB_ATOM_NONE {
-        if let Some(&idx) = type_map.get(&type_name) {
-            return idx;
+        if let Some(idx) = keymap.types.iter().position(|t| t.name == type_name) {
+            return idx as u32;
         }
     }
     0
 }
-fn copy_symbols_def_to_keymap(
-    keymap: &mut XkbKeymap,
-    keyi: &mut KeyInfo,
-    type_map: &HashMap<u32, u32>,
-) -> bool {
+fn copy_symbols_def_to_keymap(keymap: &mut XkbKeymap, keyi: &mut KeyInfo) -> bool {
     let key_idx = if (keyi.name as usize) < keymap.key_names.len() {
         let match_0 = keymap.key_names[keyi.name as usize];
         if match_0.found && !match_0.is_alias {
@@ -1255,7 +1245,7 @@ fn copy_symbols_def_to_keymap(
         keymap.keys[key_idx].groups = (0..num_groups).map(|_| XkbGroup::default()).collect();
 
         for i in 0..keyi.groups.len() as u32 {
-            let type_idx = find_type_for_group(keymap, keyi, i, type_map);
+            let type_idx = find_type_for_group(keymap, keyi, i);
 
             if keymap.types[type_idx as usize].num_levels
                 < keyi.groups[i as usize].levels.len() as u32
@@ -1318,28 +1308,7 @@ fn copy_symbols_def_to_keymap(
 
     true
 }
-fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) {
-    let type_map: HashMap<u32, u32> = keymap
-        .types
-        .iter()
-        .enumerate()
-        .map(|(i, t)| (t.name, i as u32))
-        .collect();
-    keymap.mods = info.mods;
-    keymap.group_names = std::mem::take(&mut info.group_names);
-    let mut keys = std::mem::take(&mut info.keys);
-    for keyi in keys.iter_mut() {
-        if !copy_symbols_def_to_keymap(keymap, keyi, &type_map) {
-            info.error_count += 1;
-        }
-    }
-    info.keys = keys;
-    let start = if keymap.num_keys_low == 0 {
-        0_usize
-    } else {
-        keymap.min_key_code as usize
-    };
-    let mut sym_to_key: HashMap<u32, usize> = HashMap::new();
+fn find_key_by_symbol(keymap: &XkbKeymap, start: usize, sym: u32) -> Option<usize> {
     for ki in start..keymap.num_keys.min(keymap.keys.len() as u32) as usize {
         let key = &keymap.keys[ki];
         for gi in 0..key.num_groups.min(key.groups.len() as u32) {
@@ -1349,16 +1318,35 @@ fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) {
                 .get(g.type_idx as usize)
                 .map_or(0, |t| t.num_levels);
             for li in 0..num_levels.min(g.levels.len() as u32) {
-                for &sym in &g.levels[li as usize].syms {
-                    sym_to_key.entry(sym).or_insert(ki);
+                for &s in &g.levels[li as usize].syms {
+                    if s == sym {
+                        return Some(ki);
+                    }
                 }
             }
         }
     }
+    None
+}
+fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) {
+    keymap.mods = info.mods;
+    keymap.group_names = std::mem::take(&mut info.group_names);
+    let mut keys = std::mem::take(&mut info.keys);
+    for keyi in keys.iter_mut() {
+        if !copy_symbols_def_to_keymap(keymap, keyi) {
+            info.error_count += 1;
+        }
+    }
+    info.keys = keys;
+    let start = if keymap.num_keys_low == 0 {
+        0_usize
+    } else {
+        keymap.min_key_code as usize
+    };
     for modmap in &info.modmaps {
         match modmap.target {
             ModMapTarget::Symbol(sym) => {
-                if let Some(&ki) = sym_to_key.get(&sym) {
+                if let Some(ki) = find_key_by_symbol(keymap, start, sym) {
                     if modmap.modifier != XKB_MOD_NONE {
                         keymap.keys[ki].modmap |= 1_u32 << modmap.modifier;
                     }
