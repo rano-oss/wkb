@@ -79,7 +79,7 @@ pub(crate) struct ModMapEntry {
 pub(crate) struct KeyInfo {
     pub(crate) name: u32,
     pub(crate) vmodmap: u32,
-    pub(crate) default_type: u32,
+    pub(crate) default_type: Option<u32>,
     pub(crate) out_of_range_group_number: u32,
     pub(crate) groups: Vec<GroupInfo>,
     pub(crate) out_of_range_group_policy: u32,
@@ -96,7 +96,6 @@ pub(crate) const KEY_REPEAT_UNDEFINED: u32 = 0;
 pub(crate) const KEY_FIELD_OVERLAY: u32 = 16;
 pub(crate) const KEY_FIELD_VMODMAP: u32 = 8;
 pub(crate) const KEY_FIELD_GROUPINFO: u32 = 4;
-pub(crate) const KEY_FIELD_DEFAULT_TYPE: u32 = 2;
 pub(crate) const KEY_FIELD_REPEAT: u32 = 1;
 #[derive(Clone, Default)]
 pub(crate) struct GroupInfo {
@@ -307,9 +306,8 @@ fn merge_keys(
         into.repeat = from.repeat;
         into.defined |= KEY_FIELD_REPEAT;
     }
-    if use_new_field(KEY_FIELD_DEFAULT_TYPE, into.defined, from.defined, clobber) {
+    if from.default_type.is_some() && (into.default_type.is_none() || clobber) {
         into.default_type = from.default_type;
-        into.defined |= KEY_FIELD_DEFAULT_TYPE;
     }
     if use_new_field(KEY_FIELD_GROUPINFO, into.defined, from.defined, clobber) {
         into.out_of_range_pending_group = from.out_of_range_pending_group;
@@ -760,8 +758,7 @@ fn set_symbols_field(
                 }
                 keyi.groups[ndx as usize].type_0 = Some(val);
             } else {
-                keyi.default_type = val;
-                keyi.defined |= KEY_FIELD_DEFAULT_TYPE;
+                keyi.default_type = Some(val);
             }
         }
         SymbolsField::Symbols => {
@@ -1186,8 +1183,8 @@ fn find_type_for_group(
     let groupi = &keyi.groups[group as usize];
     let mut type_name: u32 = groupi.type_0.unwrap_or(XKB_ATOM_NONE);
     if type_name == XKB_ATOM_NONE {
-        if keyi.default_type != XKB_ATOM_NONE {
-            type_name = keyi.default_type;
+        if let Some(default_type) = keyi.default_type {
+            type_name = default_type;
         } else {
             type_name = find_automatic_type(&mut keymap.ctx, groupi);
         }
@@ -1222,8 +1219,7 @@ fn copy_symbols_def_to_keymap(
     keymap.keys[key_idx].num_groups = 0;
     if !keyi.groups.is_empty() {
         for (idx, groupi) in keyi.groups.iter().enumerate() {
-            let has_explicit_type =
-                ((keyi.defined & KEY_FIELD_DEFAULT_TYPE) != 0) || groupi.type_0.is_some();
+            let has_explicit_type = keyi.default_type.is_some() || groupi.type_0.is_some();
             if !groupi.levels.is_empty() || has_explicit_type {
                 keymap.keys[key_idx].num_groups = (idx as u32) + 1;
             }
@@ -1231,7 +1227,7 @@ fn copy_symbols_def_to_keymap(
     }
 
     if keymap.keys[key_idx].num_groups == 0 {
-        if keyi.defined == 0 {
+        if keyi.defined == 0 && keyi.default_type.is_none() {
             return false;
         }
     } else {
