@@ -59,7 +59,6 @@ pub(crate) struct SymbolsInfo {
     pub(crate) modmaps: Vec<ModMapEntry>,
     pub(crate) mods: XkbModSet,
     pub(crate) star_atom: u32,
-    pub(crate) key_index: HashMap<u32, usize>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -348,7 +347,7 @@ fn add_key_symbols(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, keyi: &mu
             }
         }
     }
-    if let Some(&i) = info.key_index.get(&keyi.name) {
+    if let Some(i) = info.keys.iter().position(|k| k.name == keyi.name) {
         let mut existing = std::mem::take(&mut info.keys[i]);
         let result = merge_keys(ki, info, &mut existing, keyi);
         info.keys[i] = existing;
@@ -356,7 +355,6 @@ fn add_key_symbols(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, keyi: &mu
     }
     // Move keyi's data into the keys vec
     let moved = std::mem::take(keyi);
-    info.key_index.insert(moved.name, info.keys.len());
     info.keys.push(moved);
     init_key_info_with_atom(keyi, info.star_atom);
     true
@@ -397,7 +395,6 @@ fn merge_included_symbols(
     }
     if into.keys.is_empty() {
         std::mem::swap(&mut into.keys, &mut from.keys);
-        std::mem::swap(&mut into.key_index, &mut from.key_index);
     } else {
         for keyi in from.keys.iter_mut() {
             keyi.merge = merge;
