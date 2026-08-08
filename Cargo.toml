@@ -24,7 +24,7 @@ name = "wkb"
 
 [features]
 default = ["xkb", "compose"]
-xkb = ["xkeysym"]
+xkb = ["dep:xkeysym"]
 compose = []
 
 [dependencies]
