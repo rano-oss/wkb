@@ -2024,18 +2024,14 @@ pub(crate) struct KeyTypesInfo {
 
 #[derive(Clone, Default)]
 pub(crate) struct KeyTypeInfo {
-    pub(crate) defined: u32,
     pub(crate) merge: MergeMode,
+    pub(crate) modifiers_set: bool,
     pub(crate) name: u32,
     pub(crate) mods: u32,
     pub(crate) num_levels: u32,
     pub(crate) entries: Vec<XkbKeyTypeEntry>,
     pub(crate) level_names: Vec<u32>,
 }
-pub(crate) const TYPE_FIELD_LEVEL_NAME: u32 = 8;
-pub(crate) const TYPE_FIELD_PRESERVE: u32 = 4;
-pub(crate) const TYPE_FIELD_MAP: u32 = 2;
-pub(crate) const TYPE_FIELD_MASK: u32 = 1;
 fn key_types_info(include_depth: u32, mods: &XkbModSet) -> KeyTypesInfo {
     let mut info = KeyTypesInfo {
         include_depth,
@@ -2108,10 +2104,11 @@ fn set_modifiers(
         MOD_BOTH,
         &info.mods
     ));
-    if type_0.defined & TYPE_FIELD_MASK != 0 {
+    if type_0.modifiers_set {
         return false;
     }
     type_0.mods = mods;
+    type_0.modifiers_set = true;
     true
 }
 fn add_map_entry(type_0: &mut KeyTypeInfo, new: &XkbKeyTypeEntry) {
@@ -2253,25 +2250,17 @@ fn set_key_type_field(
     array_ndx: Option<&ExprKind>,
     value: &ExprKind,
 ) -> bool {
-    let ok: bool;
-    let mut u32: u32 = 0;
     if field.eq_ignore_ascii_case("modifiers") {
-        u32 = TYPE_FIELD_MASK;
-        ok = set_modifiers(ki, info, type_0, array_ndx, value);
+        set_modifiers(ki, info, type_0, array_ndx, value)
     } else if field.eq_ignore_ascii_case("map") {
-        u32 = TYPE_FIELD_MAP;
-        ok = set_map_entry(ki, info, type_0, array_ndx, value);
+        set_map_entry(ki, info, type_0, array_ndx, value)
     } else if field.eq_ignore_ascii_case("preserve") {
-        u32 = TYPE_FIELD_PRESERVE;
-        ok = set_preserve(ki, info, type_0, array_ndx, value);
+        set_preserve(ki, info, type_0, array_ndx, value)
     } else if field.eq_ignore_ascii_case("levelname") || field.eq_ignore_ascii_case("level_name") {
-        u32 = TYPE_FIELD_LEVEL_NAME;
-        ok = set_level_name(ki, type_0, array_ndx, value);
+        set_level_name(ki, type_0, array_ndx, value)
     } else {
-        ok = ki.strict & PARSER_NO_UNKNOWN_TYPE_FIELDS == 0;
+        ki.strict & PARSER_NO_UNKNOWN_TYPE_FIELDS == 0
     }
-    type_0.defined |= u32;
-    ok
 }
 fn handle_key_type_body(
     ki: &XkbKeymapInfo<'_>,
