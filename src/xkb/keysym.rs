@@ -526,39 +526,6 @@ pub fn keysym_to_char(keysym: u32) -> Option<char> {
 ///
 /// Returns `None` if the keysym cannot be converted.
 pub fn keysym_to_codepoint(keysym: u32) -> Option<u32> {
-    // ASCII printable and Latin-1
-    if (0x20..=0x7E).contains(&keysym) || (0xA0..=0xFF).contains(&keysym) {
-        return Some(keysym);
-    }
-
-    // Keypad space maps to regular space
-    if keysym == key::KP_Space {
-        return Some(key::space & 0x7F);
-    }
-
-    // Special keys that map to ASCII control characters
-    if (key::BackSpace..=key::Clear).contains(&keysym)
-        || (key::KP_Multiply..=key::KP_9).contains(&keysym)
-        || keysym == key::Return
-        || keysym == key::Escape
-        || keysym == key::Delete
-        || keysym == key::KP_Tab
-        || keysym == key::KP_Enter
-        || keysym == key::KP_Equal
-    {
-        return Some(keysym & 0x7F);
-    }
-
-    // Reject surrogate pairs
-    if (XKB_KEYSYM_UNICODE_SURROGATE_MIN..=XKB_KEYSYM_UNICODE_SURROGATE_MAX).contains(&keysym) {
-        return None;
-    }
-
-    // Unicode keysyms
-    if (XKB_KEYSYM_UNICODE_OFFSET..=XKB_KEYSYM_UNICODE_MAX).contains(&keysym) {
-        return Some(keysym - XKB_KEYSYM_UNICODE_OFFSET);
-    }
-
     // XF86 numeric keys
     if (XKB_KEY_XF86_NUMERIC_0..=XKB_KEY_XF86_NUMERIC_9).contains(&keysym) {
         return Some(keysym - XKB_KEY_XF86_NUMERIC_0 + 0x30); // '0' to '9'
@@ -594,15 +561,8 @@ pub fn keysym_to_codepoint(keysym: u32) -> Option<u32> {
         return Some(DEAD_KEYSYM_TO_COMBINING[idx].1 as u32);
     }
 
-    // Look up in the static table
-    if keysym <= 0xffff {
-        KEYSYM_TABLE
-            .binary_search_by_key(&keysym, |entry| entry >> 16)
-            .ok()
-            .map(|idx| KEYSYM_TABLE[idx] & 0x7fff)
-    } else {
-        None
-    }
+    // Generic conversion (xkbcommon-compatible)
+    Keysym::new(keysym).key_char().map(u32::from)
 }
 
 /// Convert a Unicode codepoint to an XKB keysym
