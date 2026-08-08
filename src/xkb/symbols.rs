@@ -78,7 +78,7 @@ pub(crate) struct ModMapEntry {
 #[derive(Clone, Default)]
 pub(crate) struct KeyInfo {
     pub(crate) name: u32,
-    pub(crate) vmodmap: u32,
+    pub(crate) vmodmap: Option<u32>,
     pub(crate) default_type: Option<u32>,
     pub(crate) out_of_range_group_number: u32,
     pub(crate) groups: Vec<GroupInfo>,
@@ -94,7 +94,6 @@ pub(crate) const KEY_REPEAT_NO: u32 = 2;
 pub(crate) const KEY_REPEAT_YES: u32 = 1;
 pub(crate) const KEY_REPEAT_UNDEFINED: u32 = 0;
 pub(crate) const KEY_FIELD_OVERLAY: u32 = 16;
-pub(crate) const KEY_FIELD_VMODMAP: u32 = 8;
 pub(crate) const KEY_FIELD_GROUPINFO: u32 = 4;
 pub(crate) const KEY_FIELD_REPEAT: u32 = 1;
 #[derive(Clone, Default)]
@@ -298,9 +297,8 @@ fn merge_keys(
     for group in from.groups.drain(groups_in_both as usize..) {
         into.groups.push(group);
     }
-    if use_new_field(KEY_FIELD_VMODMAP, into.defined, from.defined, clobber) {
+    if from.vmodmap.is_some() && (into.vmodmap.is_none() || clobber) {
         into.vmodmap = from.vmodmap;
-        into.defined |= KEY_FIELD_VMODMAP;
     }
     if use_new_field(KEY_FIELD_REPEAT, into.defined, from.defined, clobber) {
         into.repeat = from.repeat;
@@ -775,8 +773,7 @@ fn set_symbols_field(
                 MOD_VIRT,
                 &info.mods
             ));
-            keyi.vmodmap = mask;
-            keyi.defined |= KEY_FIELD_VMODMAP;
+            keyi.vmodmap = Some(mask);
         }
         SymbolsField::Locking | SymbolsField::RadioGroup => {}
         SymbolsField::Overlay => {
@@ -1292,8 +1289,8 @@ fn copy_symbols_def_to_keymap(
         keymap.keys[key_idx].out_of_range_group_policy = keyi.out_of_range_group_policy;
     }
 
-    if (keyi.defined & KEY_FIELD_VMODMAP) != 0 {
-        keymap.keys[key_idx].vmodmap = keyi.vmodmap;
+    if let Some(vmodmap) = keyi.vmodmap {
+        keymap.keys[key_idx].vmodmap = vmodmap;
         keymap.keys[key_idx].explicit_vmodmap = true;
     }
 
