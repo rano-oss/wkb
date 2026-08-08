@@ -249,9 +249,6 @@ fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) -> bo
     }
     true
 }
-fn use_new_field(field: u32, old: u32, new: u32, clobber: bool) -> bool {
-    new & field != 0 && (old & field == 0 || clobber)
-}
 fn overlays_insert(keyi: &mut KeyInfo, bit: u8, key: u32) {
     if let Some(entry) = keyi.overlays.get_mut(bit as usize) {
         *entry = Some(key);
@@ -1422,24 +1419,22 @@ pub(crate) struct CompatInfo {
 
 #[derive(Copy, Clone, Default)]
 pub(crate) struct LedInfo {
-    pub(crate) defined: u32,
     pub(crate) merge: MergeMode,
+    pub(crate) explicit_mods: bool,
+    pub(crate) explicit_groups: bool,
+    pub(crate) explicit_ctrls: bool,
     pub(crate) led: XkbLed,
 }
-pub(crate) const LED_FIELD_CTRLS: u32 = 4;
-pub(crate) const LED_FIELD_GROUPS: u32 = 2;
-pub(crate) const LED_FIELD_MODS: u32 = 1;
 // C2Rust_Unnamed_18 removed: replaced by Vec<SymInterpInfo>
 #[derive(Clone, Default)]
 pub(crate) struct SymInterpInfo {
-    pub(crate) defined: u32,
     pub(crate) merge: MergeMode,
+    pub(crate) explicit_virtual_mod: bool,
+    pub(crate) explicit_action: bool,
+    pub(crate) explicit_repeat: bool,
+    pub(crate) explicit_level_one_only: bool,
     pub(crate) interp: XkbSymInterpret,
 }
-pub(crate) const SI_FIELD_LEVEL_ONE_ONLY: u32 = 8;
-pub(crate) const SI_FIELD_AUTO_REPEAT: u32 = 4;
-pub(crate) const SI_FIELD_ACTION: u32 = 2;
-pub(crate) const SI_FIELD_VIRTUAL_MOD: u32 = 1;
 // C2Rust_Unnamed_19 removed: replaced by Vec<XkbSymInterpret>
 #[inline]
 fn compat_info(include_depth: u32, mods: &XkbModSet) -> CompatInfo {
@@ -1459,21 +1454,21 @@ fn merge_interp(old: &mut SymInterpInfo, new: &mut SymInterpInfo) {
         *old = new.clone();
         return;
     }
-    if use_new_field(SI_FIELD_VIRTUAL_MOD, old.defined, new.defined, clobber) {
+    if new.explicit_virtual_mod && (!old.explicit_virtual_mod || clobber) {
         old.interp.virtual_mod = new.interp.virtual_mod;
-        old.defined |= SI_FIELD_VIRTUAL_MOD;
+        old.explicit_virtual_mod = true;
     }
-    if use_new_field(SI_FIELD_ACTION, old.defined, new.defined, clobber) {
+    if new.explicit_action && (!old.explicit_action || clobber) {
         old.interp.actions = std::mem::take(&mut new.interp.actions);
-        old.defined |= SI_FIELD_ACTION;
+        old.explicit_action = true;
     }
-    if use_new_field(SI_FIELD_AUTO_REPEAT, old.defined, new.defined, clobber) {
+    if new.explicit_repeat && (!old.explicit_repeat || clobber) {
         old.interp.repeat = new.interp.repeat;
-        old.defined |= SI_FIELD_AUTO_REPEAT;
+        old.explicit_repeat = true;
     }
-    if use_new_field(SI_FIELD_LEVEL_ONE_ONLY, old.defined, new.defined, clobber) {
+    if new.explicit_level_one_only && (!old.explicit_level_one_only || clobber) {
         old.interp.level_one_only = new.interp.level_one_only;
-        old.defined |= SI_FIELD_LEVEL_ONE_ONLY;
+        old.explicit_level_one_only = true;
     }
 }
 fn add_interp(info: &mut CompatInfo, new: &mut SymInterpInfo) {
@@ -1542,27 +1537,29 @@ fn merge_led_map(old: &mut LedInfo, new: &mut LedInfo) {
         && old.led.which_mods == new.led.which_mods
         && old.led.which_groups as i32 == new.led.which_groups as i32
     {
-        old.defined |= new.defined;
+        old.explicit_mods |= new.explicit_mods;
+        old.explicit_groups |= new.explicit_groups;
+        old.explicit_ctrls |= new.explicit_ctrls;
         return;
     }
     if new.merge == MergeMode::Replace {
         *old = *new;
         return;
     }
-    if use_new_field(LED_FIELD_MODS, old.defined, new.defined, clobber) {
+    if new.explicit_mods && (!old.explicit_mods || clobber) {
         old.led.which_mods = new.led.which_mods;
         old.led.mods = new.led.mods;
-        old.defined |= LED_FIELD_MODS;
+        old.explicit_mods = true;
     }
-    if use_new_field(LED_FIELD_GROUPS, old.defined, new.defined, clobber) {
+    if new.explicit_groups && (!old.explicit_groups || clobber) {
         old.led.which_groups = new.led.which_groups;
         old.led.groups = new.led.groups;
         old.led.pending_groups = new.led.pending_groups;
-        old.defined |= LED_FIELD_GROUPS;
+        old.explicit_groups = true;
     }
-    if use_new_field(LED_FIELD_CTRLS, old.defined, new.defined, clobber) {
+    if new.explicit_ctrls && (!old.explicit_ctrls || clobber) {
         old.led.ctrls = new.led.ctrls;
-        old.defined |= LED_FIELD_CTRLS;
+        old.explicit_ctrls = true;
     }
 }
 fn add_led_map(info: &mut CompatInfo, new: &mut LedInfo) -> bool {
@@ -1682,17 +1679,17 @@ fn set_interp_field(
                     si.interp.actions.push(action);
                 }
             }
-            si.defined |= SI_FIELD_ACTION;
+            si.explicit_action = true;
         }
         InterpField::VirtualModifier => {
             let ndx = some_or_false!(expr_resolve_mod(value, MOD_VIRT, &info.mods));
             si.interp.virtual_mod = ndx;
-            si.defined |= SI_FIELD_VIRTUAL_MOD;
+            si.explicit_virtual_mod = true;
         }
         InterpField::Repeat => {
             let set = some_or_false!(expr_resolve_boolean(&ki.keymap.ctx, value));
             si.interp.repeat = set;
-            si.defined |= SI_FIELD_AUTO_REPEAT;
+            si.explicit_repeat = true;
         }
         InterpField::Locking => {}
         InterpField::UseModMap => {
@@ -1702,7 +1699,7 @@ fn set_interp_field(
                 &USE_MOD_MAP_VALUE_NAMES
             ));
             si.interp.level_one_only = val != 0;
-            si.defined |= SI_FIELD_LEVEL_ONE_ONLY;
+            si.explicit_level_one_only = true;
         }
     }
     true
@@ -1746,7 +1743,7 @@ fn set_led_map_field(
                 &info.mods
             ));
             ledi.led.mods.mods = mods;
-            ledi.defined |= LED_FIELD_MODS;
+            ledi.explicit_mods = true;
         }
         LedMapField::Groups => {
             let mut mask: u32 = 0;
@@ -1762,7 +1759,7 @@ fn set_led_map_field(
                 ledi.led.pending_groups = false;
             }
             ledi.led.groups = mask;
-            ledi.defined |= LED_FIELD_GROUPS;
+            ledi.explicit_groups = true;
         }
         LedMapField::Controls => {
             let offset: u8 = ki.features.controls_name_offset;
@@ -1772,7 +1769,7 @@ fn set_led_map_field(
                 return false;
             };
             ledi.led.ctrls = ControlsFlags::from_bits_retain(mask_0);
-            ledi.defined |= LED_FIELD_CTRLS;
+            ledi.explicit_ctrls = true;
         }
         LedMapField::AllowExplicit | LedMapField::Index => {}
         LedMapField::WhichMods => {
