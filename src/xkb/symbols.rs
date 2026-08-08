@@ -1402,8 +1402,7 @@ pub(crate) struct CompatInfo {
     pub(crate) default_interp: SymInterpInfo,
     pub(crate) interps: Vec<SymInterpInfo>,
     pub(crate) default_led: LedInfo,
-    pub(crate) leds: [LedInfo; 32],
-    pub(crate) num_leds: u32,
+    pub(crate) leds: Vec<LedInfo>,
     pub(crate) default_actions: ActionsInfo,
     pub(crate) mods: XkbModSet,
 }
@@ -1555,15 +1554,14 @@ fn merge_led_map(old: &mut LedInfo, new: &mut LedInfo) {
     }
 }
 fn add_led_map(info: &mut CompatInfo, new: &mut LedInfo) -> bool {
-    if let Some(i) = (0..info.num_leds as usize).find(|&i| info.leds[i].led.name == new.led.name) {
+    if let Some(i) = info.leds.iter().position(|l| l.led.name == new.led.name) {
         merge_led_map(&mut info.leds[i], new);
         return true;
     }
-    if info.num_leds >= XKB_MAX_LEDS {
+    if info.leds.len() >= XKB_MAX_LEDS as usize {
         return false;
     }
-    info.leds[info.num_leds as usize] = *new;
-    info.num_leds += 1;
+    info.leds.push(*new);
     true
 }
 fn merge_included_compat_maps(into: &mut CompatInfo, from: &mut CompatInfo, merge: MergeMode) {
@@ -1580,13 +1578,10 @@ fn merge_included_compat_maps(into: &mut CompatInfo, from: &mut CompatInfo, merg
             add_interp(into, interp);
         }
     }
-    if into.num_leds == 0 {
-        let n = from.num_leds as usize;
-        into.leds[..n].copy_from_slice(&from.leds[..n]);
-        into.num_leds = from.num_leds;
-        from.num_leds = 0;
+    if into.leds.is_empty() {
+        into.leds = std::mem::take(&mut from.leds);
     } else {
-        for led in from.leds[..from.num_leds as usize].iter_mut() {
+        for led in from.leds.iter_mut() {
             led.merge = merge;
             if !add_led_map(into, led) {
                 into.error_count += 1;
@@ -1935,8 +1930,7 @@ fn handle_compat_map_file(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo, fil
     }
 }
 fn copy_led_map_defs_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) {
-    for idx in 0..info.num_leds {
-        let ledi_led = info.leds[idx as usize].led;
+    for ledi_led in info.leds.iter().map(|l| l.led) {
         let leds = &ki.keymap.leds[..ki.keymap.num_leds as usize];
         let slot = leds
             .iter()
@@ -2464,8 +2458,7 @@ pub(crate) struct KeyNamesInfo {
     pub(crate) error_count: i32,
     pub(crate) include_depth: u32,
     pub(crate) keycodes: KeycodeStore,
-    pub(crate) led_names: [LedNameInfo; 32],
-    pub(crate) num_led_names: u32,
+    pub(crate) led_names: Vec<LedNameInfo>,
 }
 #[derive(Copy, Clone, Default)]
 pub(crate) struct LedNameInfo {
@@ -2651,8 +2644,10 @@ fn keycode_store_lookup_name(store: &KeycodeStore, name: u32) -> KeycodeMatch {
 }
 fn add_led_name(info: &mut KeyNamesInfo, new: &LedNameInfo, new_idx: u32) {
     let replace: bool = new.merge != MergeMode::Augment;
-    if let Some(old_idx) = (0..info.num_led_names as usize)
-        .find(|&i| info.led_names[i].name != XKB_ATOM_NONE && info.led_names[i].name == new.name)
+    if let Some(old_idx) = info
+        .led_names
+        .iter()
+        .position(|l| l.name != XKB_ATOM_NONE && l.name == new.name)
     {
         if old_idx as u32 == new_idx {
             return;
@@ -2663,8 +2658,9 @@ fn add_led_name(info: &mut KeyNamesInfo, new: &LedNameInfo, new_idx: u32) {
             return;
         }
     }
-    if new_idx >= info.num_led_names {
-        info.num_led_names = new_idx.wrapping_add(1_u32);
+    if new_idx as usize >= info.led_names.len() {
+        info.led_names
+            .resize(new_idx as usize + 1, LedNameInfo::default());
     }
     if info.led_names[new_idx as usize].name != XKB_ATOM_NONE {
         if replace {
@@ -2776,16 +2772,12 @@ fn merge_included_keycodes(into: &mut KeyNamesInfo, from: &mut KeyNamesInfo, mer
         return;
     }
     merge_keycode_stores(into, from, merge);
-    if into.num_led_names == 0 {
-        into.led_names[..from.num_led_names as usize]
-            .copy_from_slice(&from.led_names[..from.num_led_names as usize]);
-        into.num_led_names = from.num_led_names;
-        from.num_led_names = 0;
+    if into.led_names.is_empty() {
+        into.led_names = std::mem::take(&mut from.led_names);
     } else {
-        for idx in 0..from.num_led_names as usize {
-            let ledi = from.led_names[idx];
+        for (idx, ledi) in from.led_names.iter().enumerate() {
             if ledi.name != XKB_ATOM_NONE {
-                let mut ledi = ledi;
+                let mut ledi = *ledi;
                 ledi.merge = merge;
                 add_led_name(into, &ledi, idx as u32);
             }
@@ -2963,13 +2955,9 @@ fn copy_keycode_name_lut(keymap: &mut XkbKeymap, keycodes: &mut KeycodeStore) {
     }
     keymap.key_names = std::mem::take(&mut keycodes.names);
 }
-fn copy_led_names_to_keymap(
-    keymap: &mut XkbKeymap,
-    led_names: &[LedNameInfo; 32],
-    num_led_names: u32,
-) {
-    keymap.num_leds = num_led_names;
-    for (idx, ledi) in led_names.iter().enumerate().take(num_led_names as usize) {
+fn copy_led_names_to_keymap(keymap: &mut XkbKeymap, led_names: &[LedNameInfo]) {
+    keymap.num_leds = led_names.len() as u32;
+    for (idx, ledi) in led_names.iter().enumerate() {
         if ledi.name != XKB_ATOM_NONE {
             keymap.leds[idx].name = ledi.name;
         }
@@ -2988,7 +2976,7 @@ pub(crate) fn compile_keycodes(
     }
     copy_key_names_to_keymap(keymap_info.keymap, &info.keycodes);
     copy_keycode_name_lut(keymap_info.keymap, &mut info.keycodes);
-    copy_led_names_to_keymap(keymap_info.keymap, &info.led_names, info.num_led_names);
+    copy_led_names_to_keymap(keymap_info.keymap, &info.led_names);
     true
 }
 use super::keymap::{ACTION_TYPE_NAMES, GROUP_LAST_INDEX_NAME};
