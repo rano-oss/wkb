@@ -2466,7 +2466,6 @@ pub(crate) struct KeyNamesInfo {
     pub(crate) keycodes: KeycodeStore,
     pub(crate) led_names: [LedNameInfo; 32],
     pub(crate) num_led_names: u32,
-    pub(crate) led_name_index: HashMap<u32, u32>,
 }
 #[derive(Copy, Clone, Default)]
 pub(crate) struct LedNameInfo {
@@ -2652,13 +2651,14 @@ fn keycode_store_lookup_name(store: &KeycodeStore, name: u32) -> KeycodeMatch {
 }
 fn add_led_name(info: &mut KeyNamesInfo, new: &LedNameInfo, new_idx: u32) {
     let replace: bool = new.merge != MergeMode::Augment;
-    if let Some(&old_idx) = info.led_name_index.get(&new.name) {
-        if old_idx == new_idx {
+    if let Some(old_idx) = (0..info.num_led_names as usize)
+        .find(|&i| info.led_names[i].name != XKB_ATOM_NONE && info.led_names[i].name == new.name)
+    {
+        if old_idx as u32 == new_idx {
             return;
         }
         if replace {
-            info.led_names[old_idx as usize].name = XKB_ATOM_NONE;
-            info.led_name_index.remove(&new.name);
+            info.led_names[old_idx].name = XKB_ATOM_NONE;
         } else {
             return;
         }
@@ -2668,15 +2668,11 @@ fn add_led_name(info: &mut KeyNamesInfo, new: &LedNameInfo, new_idx: u32) {
     }
     if info.led_names[new_idx as usize].name != XKB_ATOM_NONE {
         if replace {
-            info.led_name_index
-                .remove(&info.led_names[new_idx as usize].name);
             info.led_names[new_idx as usize] = *new;
-            info.led_name_index.insert(new.name, new_idx);
         }
         return;
     }
     info.led_names[new_idx as usize] = *new;
-    info.led_name_index.insert(new.name, new_idx);
 }
 fn key_names_info(include_depth: u32) -> KeyNamesInfo {
     KeyNamesInfo {
