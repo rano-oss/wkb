@@ -567,39 +567,23 @@ pub fn keysym_to_codepoint(keysym: u32) -> Option<u32> {
 
 /// Convert a Unicode codepoint to an XKB keysym
 pub fn codepoint_to_keysym(ucs: u32) -> Option<u32> {
-    // ASCII printable and Latin-1
-    if (0x20..=0x7E).contains(&ucs) || (0xA0..=0xFF).contains(&ucs) {
-        return Some(ucs);
-    }
-
-    // Special control characters
-    if (0x08..=0x0B).contains(&ucs) // BackSpace to Clear
-        || ucs == 0x0D // Return
-        || ucs == 0x1B
-    // Escape
-    {
-        return Some(ucs | 0xFF00);
-    }
-
-    // Delete
-    if ucs == 0x7F {
-        return Some(key::Delete);
-    }
-
-    // Invalid codepoints
-    if ucs == 0 || (0xD800..=0xDFFF).contains(&ucs) || ucs > 0x10FFFF {
+    // No keysym for U+0000
+    if ucs == 0 {
         return None;
     }
 
-    // Search the table for non-deprecated entries
-    for entry in KEYSYM_TABLE {
-        if entry & 0x7fff == ucs && entry & 0x8000 == 0 {
-            return Some(entry >> 16);
-        }
+    // Reject surrogates and codepoints outside the Unicode planes
+    let ch = char::from_u32(ucs)?;
+
+    // WKB-specific: non-character codepoints are encoded as directly-encoded
+    // Unicode keysyms, where xkbcommon maps them to NoSymbol.
+    if ucs & 0xfffe == 0xfffe || (0xfdd0..=0xfdef).contains(&ucs) {
+        return Some(ucs | XKB_KEYSYM_UNICODE_OFFSET);
     }
 
-    // Fallback: encode as Unicode keysym
-    Some(ucs | XKB_KEYSYM_UNICODE_OFFSET)
+    // Generic conversion (xkbcommon-compatible)
+    let ks = Keysym::from_char(ch).raw();
+    (ks != 0).then_some(ks)
 }
 
 fn case_char(ks: u32) -> Option<char> {
