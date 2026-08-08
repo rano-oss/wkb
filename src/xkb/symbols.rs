@@ -60,14 +60,20 @@ pub(crate) struct SymbolsInfo {
     pub(crate) mods: XkbModSet,
     pub(crate) star_atom: u32,
     pub(crate) key_index: HashMap<u32, usize>,
-    pub(crate) modmap_index: HashMap<(bool, u32), usize>,
+    pub(crate) modmap_index: HashMap<ModMapTarget, usize>,
 }
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+pub(crate) enum ModMapTarget {
+    Key(u32),
+    Symbol(u32),
+}
+
 #[derive(Copy, Clone)]
 pub(crate) struct ModMapEntry {
     pub(crate) merge: MergeMode,
-    pub(crate) have_symbol: bool,
     pub(crate) modifier: u32,
-    pub(crate) u: u32,
+    pub(crate) target: ModMapTarget,
 }
 #[derive(Clone, Default)]
 pub(crate) struct KeyInfo {
@@ -348,7 +354,7 @@ fn add_key_symbols(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, keyi: &mu
 }
 fn add_mod_map_entry(info: &mut SymbolsInfo, new: &ModMapEntry) {
     let clobber: bool = new.merge != MergeMode::Augment;
-    let key = (new.have_symbol, new.u);
+    let key = new.target;
     if let Some(&i) = info.modmap_index.get(&key) {
         let old = &mut info.modmaps[i];
         if new.modifier == old.modifier {
@@ -1058,12 +1064,6 @@ fn handle_mod_map_def(
     info: &mut SymbolsInfo,
     def: &mut ModMapDef,
 ) -> bool {
-    let mut tmp: ModMapEntry = ModMapEntry {
-        merge: MergeMode::Default,
-        have_symbol: false,
-        modifier: 0,
-        u: 0,
-    };
     let modifier_name: &str = ki.keymap.ctx.atom_text(def.modifier);
     let ndx = if modifier_name.eq_ignore_ascii_case("none") {
         XKB_MOD_NONE
@@ -1073,23 +1073,23 @@ fn handle_mod_map_def(
             None => return false,
         }
     };
-    tmp.modifier = ndx;
-    tmp.merge = def.merge;
     for key in def.keys.iter() {
-        let mut add_entry = false;
-        if let ExprKind::KeyName(kn) = key {
-            tmp.have_symbol = false;
-            tmp.u = *kn;
-            add_entry = true;
+        let target = if let ExprKind::KeyName(kn) = key {
+            Some(ModMapTarget::Key(*kn))
         } else if let ExprKind::KeySym(ks) = key {
-            if *ks != XKB_KEY_NO_SYMBOL {
-                tmp.have_symbol = true;
-                tmp.u = *ks;
-                add_entry = true;
-            }
-        }
-        if add_entry {
-            add_mod_map_entry(info, &tmp);
+            (*ks != XKB_KEY_NO_SYMBOL).then_some(ModMapTarget::Symbol(*ks))
+        } else {
+            None
+        };
+        if let Some(target) = target {
+            add_mod_map_entry(
+                info,
+                &ModMapEntry {
+                    merge: def.merge,
+                    modifier: ndx,
+                    target,
+                },
+            );
         }
     }
     true
@@ -1351,20 +1351,25 @@ fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) {
         }
     }
     for modmap in &info.modmaps {
-        if modmap.have_symbol {
-            if let Some(&ki) = sym_to_key.get(&modmap.u) {
-                if modmap.modifier != XKB_MOD_NONE {
-                    keymap.keys[ki].modmap |= 1_u32 << modmap.modifier;
+        match modmap.target {
+            ModMapTarget::Symbol(sym) => {
+                if let Some(&ki) = sym_to_key.get(&sym) {
+                    if modmap.modifier != XKB_MOD_NONE {
+                        keymap.keys[ki].modmap |= 1_u32 << modmap.modifier;
+                    }
+                } else {
+                    info.error_count += 1;
                 }
-            } else {
-                info.error_count += 1;
             }
-        } else if let Some(key) = keymap.key_by_name_mut(modmap.u, true) {
-            if modmap.modifier != XKB_MOD_NONE {
-                key.modmap |= 1_u32 << modmap.modifier;
+            ModMapTarget::Key(name) => {
+                if let Some(key) = keymap.key_by_name_mut(name, true) {
+                    if modmap.modifier != XKB_MOD_NONE {
+                        key.modmap |= 1_u32 << modmap.modifier;
+                    }
+                } else {
+                    info.error_count += 1;
+                }
             }
-        } else {
-            info.error_count += 1;
         }
     }
 }
