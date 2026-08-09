@@ -69,7 +69,7 @@ pub struct ComposeEntry {
 
 /// Resolve an XKB keysym name to its Unicode character using our existing
 /// keysym database.
-pub fn keysym_name_to_char(name: &str) -> Option<char> {
+pub(crate) fn keysym_name_to_char(name: &str) -> Option<char> {
     // Fast path: single ASCII alphanumeric maps to itself (most compose key names)
     if name.len() == 1 {
         let b = name.as_bytes()[0];
@@ -233,7 +233,7 @@ fn lookup_compose_dir(locale: &str) -> Option<String> {
 
 /// Resolve a locale name to the compose file sub-path (relative to
 /// `/usr/share/X11/locale/`) that should be used.
-pub fn resolve_compose_file(locale: &str) -> Option<String> {
+pub(crate) fn resolve_compose_file(locale: &str) -> Option<String> {
     if let Some(mapped_locale) = XKB_COMPOSE_MAP
         .iter()
         .find_map(|&(name, mapped)| (name == locale).then_some(mapped))
@@ -780,7 +780,7 @@ pub(crate) static SYM_INTERPRET_MATCH_MASK_NAMES: [LookupEntry; 6] = [
 ///
 /// Characters inside strings (`"..."`), comments (`//` or `/* */`), and key
 /// names (`<...>`) are left untouched.
-pub fn preprocess_unicode_keysyms(input: &str) -> std::borrow::Cow<'_, str> {
+pub(crate) fn preprocess_unicode_keysyms(input: &str) -> std::borrow::Cow<'_, str> {
     use std::borrow::Cow;
     use std::fmt::Write;
     // Fast path: if there are no non-ASCII bytes, return as-is.
