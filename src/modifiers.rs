@@ -78,6 +78,7 @@ pub enum ModType {
     Level3,
     Level5,
     Compose,
+    Group(u8),
     Caps,
     Num,
     Scroll,
@@ -390,6 +391,7 @@ impl Modifiers {
             ModType::Level3 => *state |= STATE_LEVEL3,
             ModType::Level5 => *state |= STATE_LEVEL5,
             ModType::Compose => *state |= STATE_COMPOSE,
+            ModType::Group(_) => {},
             ModType::Caps => *state |= STATE_CAPS_LOCKED,
             ModType::Num => *state |= STATE_NUM_LOCKED,
             ModType::Scroll => {}

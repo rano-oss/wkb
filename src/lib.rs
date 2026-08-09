@@ -36,6 +36,7 @@
 //! - **`compose`** (default) — Compose-key / dead-key sequence support.
 
 use crate::modifiers::*;
+#[cfg(feature = "compose")]
 pub use composer::{ComposeState, ComposeString};
 use composer::{Composer, Token};
 mod composer;
@@ -118,11 +119,11 @@ pub struct KBLayout {
     pub(crate) state_keymap: FlatKeymap,
     pub(crate) num_lock_keys: FlatKeymap,
     pub(crate) caps_lock_keymap: FlatKeymap,
-    /// Overrides active while BOTH Num Lock and Caps Lock are locked.
-    pub(crate) caps_num_lock_keys: FlatKeymap,
     pub(crate) named_key_map: FlatNamedKeyMap,
     #[cfg(feature = "xkb")]
     pub(crate) level_exceptions_keymap: FlatKeymap,
+    #[cfg(feature = "xkb")]
+    pub(crate) caps_num_lock_keys: FlatKeymap,
 }
 
 /// Core keyboard state machine. Tracks modifier state, key presses, and compose sequences.
