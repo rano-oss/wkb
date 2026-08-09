@@ -866,11 +866,11 @@ pub fn preprocess_unicode_keysyms(input: &str) -> std::borrow::Cow<'_, str> {
     Cow::Owned(result)
 }
 
-pub(crate) fn mod_mask_get_effective(keymap: &XkbKeymap, mods: u32) -> u32 {
+pub(crate) fn mod_mask_get_effective(mod_set: &XkbModSet, mods: u32) -> u32 {
     let mut mask: u32 = mods & MOD_REAL_MASK_ALL;
-    for i in _XKB_MOD_INDEX_NUM_ENTRIES..keymap.mods.num_mods {
+    for i in _XKB_MOD_INDEX_NUM_ENTRIES..mod_set.num_mods {
         if mods & 1 << i != 0 {
-            mask |= keymap.mods.mods[i as usize].mapping;
+            mask |= mod_set.mods[i as usize].mapping;
         }
     }
     mask

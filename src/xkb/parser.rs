@@ -1679,20 +1679,13 @@ pub(crate) type CompileFileFn = for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapI
 #[inline]
 fn compute_effective_mask(keymap: &XkbKeymap, mods: &mut XkbMods) {
     let unknown_mods: u32 = !((1_u64 << keymap.mods.num_mods).wrapping_sub(1_u64) as u32);
-    mods.mask = mod_mask_get_effective(keymap, mods.mods) | mods.mods & unknown_mods;
+    mods.mask = mod_mask_get_effective(&keymap.mods, mods.mods) | mods.mods & unknown_mods;
 }
 /// Version that takes the mod_set separately to allow calling on fields of keymap.
 #[inline]
 fn compute_effective_mask_with(mod_set: &XkbModSet, mods: &mut XkbMods) {
     let unknown_mods: u32 = !((1_u64 << mod_set.num_mods).wrapping_sub(1_u64) as u32);
-    // Inline mod_mask_get_effective logic
-    let mut mask: u32 = mods.mods & MOD_REAL_MASK_ALL;
-    for i in _XKB_MOD_INDEX_NUM_ENTRIES..mod_set.num_mods {
-        if mods.mods & (1 << i) != 0 {
-            mask |= mod_set.mods[i as usize].mapping;
-        }
-    }
-    mods.mask = mask | mods.mods & unknown_mods;
+    mods.mask = mod_mask_get_effective(mod_set, mods.mods) | mods.mods & unknown_mods;
 }
 fn update_action_mods(keymap: &XkbKeymap, act: &mut XkbAction, modmap: u32) {
     match act {
