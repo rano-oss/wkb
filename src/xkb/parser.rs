@@ -3700,7 +3700,7 @@ pub const MATCH_ANY: u32 = 2;
 pub const MATCH_ANY_OR_NONE: u32 = 1;
 pub const MATCH_NONE: u32 = 0;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) struct XkbKeyType {
     pub(crate) name: u32,
     pub(crate) mods: XkbMods,

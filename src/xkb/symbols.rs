@@ -1991,10 +1991,7 @@ pub(crate) struct KeyTypesInfo {
 pub(crate) struct KeyTypeInfo {
     pub(crate) merge: MergeMode,
     pub(crate) modifiers_set: bool,
-    pub(crate) name: u32,
-    pub(crate) mods: u32,
-    pub(crate) num_levels: u32,
-    pub(crate) entries: Vec<XkbKeyTypeEntry>,
+    pub(crate) def: XkbKeyType,
 }
 fn key_types_info(include_depth: u32, mods: &XkbModSet) -> KeyTypesInfo {
     let mut info = KeyTypesInfo {
@@ -2005,7 +2002,7 @@ fn key_types_info(include_depth: u32, mods: &XkbModSet) -> KeyTypesInfo {
     info
 }
 fn add_key_type(info: &mut KeyTypesInfo, new: &mut KeyTypeInfo) {
-    if let Some(existing) = info.types.iter_mut().find(|t| t.name == new.name) {
+    if let Some(existing) = info.types.iter_mut().find(|t| t.def.name == new.def.name) {
         if new.merge != MergeMode::Augment {
             std::mem::swap(existing, new);
         }
@@ -2068,32 +2065,32 @@ fn set_modifiers(
     if type_0.modifiers_set {
         return false;
     }
-    type_0.mods = mods;
+    type_0.def.mods.mods = mods;
     type_0.modifiers_set = true;
     true
 }
 fn add_map_entry(type_0: &mut KeyTypeInfo, new: &XkbKeyTypeEntry) {
     // FindMatchingMapEntry inlined
     let mut old_idx: Option<usize> = None;
-    for (i, entry) in type_0.entries.iter().enumerate() {
+    for (i, entry) in type_0.def.entries.iter().enumerate() {
         if entry.mods.mods == new.mods.mods {
             old_idx = Some(i);
             break;
         }
     }
     if let Some(idx) = old_idx {
-        if type_0.entries[idx].level != new.level {
-            if new.level >= type_0.num_levels {
-                type_0.num_levels = new.level.wrapping_add(1_u32);
+        if type_0.def.entries[idx].level != new.level {
+            if new.level >= type_0.def.num_levels {
+                type_0.def.num_levels = new.level.wrapping_add(1_u32);
             }
-            type_0.entries[idx].level = new.level;
+            type_0.def.entries[idx].level = new.level;
         }
         return;
     }
-    if new.level >= type_0.num_levels {
-        type_0.num_levels = new.level.wrapping_add(1_u32);
+    if new.level >= type_0.def.num_levels {
+        type_0.def.num_levels = new.level.wrapping_add(1_u32);
     }
-    type_0.entries.push(*new);
+    type_0.def.entries.push(*new);
 }
 fn set_map_entry(
     ki: &XkbKeymapInfo<'_>,
@@ -2116,8 +2113,8 @@ fn set_map_entry(
         return false;
     };
     entry.mods.mods = mods;
-    if entry.mods.mods & !type_0.mods != 0 {
-        entry.mods.mods &= type_0.mods;
+    if entry.mods.mods & !type_0.def.mods.mods != 0 {
+        entry.mods.mods &= type_0.def.mods.mods;
     }
     let level = some_or_false!(expr_resolve_level(&ki.keymap.ctx, value));
     entry.level = level;
@@ -2127,17 +2124,17 @@ fn set_map_entry(
 }
 fn add_preserve(type_0: &mut KeyTypeInfo, mods: u32, preserve_mods: u32) {
     // Find matching entry index first to avoid borrow conflicts
-    let match_idx = type_0.entries.iter().position(|e| e.mods.mods == mods);
+    let match_idx = type_0.def.entries.iter().position(|e| e.mods.mods == mods);
     if let Some(idx) = match_idx {
-        let old_preserve = type_0.entries[idx].preserve.mods;
+        let old_preserve = type_0.def.entries[idx].preserve.mods;
         if old_preserve == 0 {
-            type_0.entries[idx].preserve.mods = preserve_mods;
+            type_0.def.entries[idx].preserve.mods = preserve_mods;
             return;
         }
         if old_preserve == preserve_mods {
             return;
         }
-        type_0.entries[idx].preserve.mods = preserve_mods;
+        type_0.def.entries[idx].preserve.mods = preserve_mods;
         return;
     }
     let new = XkbKeyTypeEntry {
@@ -2148,7 +2145,7 @@ fn add_preserve(type_0: &mut KeyTypeInfo, mods: u32, preserve_mods: u32) {
             mask: 0,
         },
     };
-    type_0.entries.push(new);
+    type_0.def.entries.push(new);
 }
 fn set_preserve(
     ki: &XkbKeymapInfo<'_>,
@@ -2165,8 +2162,8 @@ fn set_preserve(
     else {
         return false;
     };
-    if mods & !type_0.mods != 0 {
-        mods &= type_0.mods;
+    if mods & !type_0.def.mods.mods != 0 {
+        mods &= type_0.def.mods.mods;
     }
     let Some(mut preserve_mods) =
         expr_resolve_mod_mask(&ki.keymap.ctx, value, MOD_BOTH, &info.mods)
@@ -2252,9 +2249,12 @@ fn handle_key_types_file(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, fi
                 Statement::KeyType(def) => {
                     let mut type_0: KeyTypeInfo = KeyTypeInfo {
                         merge: def.merge,
-                        name: def.name,
-                        num_levels: 1_u32,
-                        ..Default::default()
+                        modifiers_set: false,
+                        def: XkbKeyType {
+                            name: def.name,
+                            num_levels: 1_u32,
+                            ..Default::default()
+                        },
                     };
                     if !handle_key_type_body(ki, info, &def.body, &mut type_0) {
                         info.error_count += 1;
@@ -2304,16 +2304,7 @@ fn copy_key_types_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo)
         types_vec.push(type_0);
     } else {
         for def in info.types.iter_mut() {
-            let entries = std::mem::take(&mut def.entries);
-            types_vec.push(XkbKeyType {
-                name: def.name,
-                mods: XkbMods {
-                    mods: def.mods,
-                    mask: 0,
-                },
-                num_levels: def.num_levels,
-                entries,
-            });
+            types_vec.push(std::mem::take(&mut def.def));
         }
     }
     ki.keymap.types = types_vec;
