@@ -372,13 +372,6 @@ fn execute_reduction<'a>(
             // Decl: OptMergeMode ModMapDecl
             yy_merge_decl!(yyval, yyvs, sp, ModMask, ModMap);
         }
-        39 => {
-            if let YYValue::GroupCompat = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                *yyval = YYValue::Stmt(Statement::GroupCompat);
-            } else {
-                *yyval = YYValue::None;
-            }
-        }
         40 => {
             // Decl: OptMergeMode LedMapDecl
             yy_merge_decl!(yyval, yyvs, sp, LedMap, LedMap);
@@ -388,7 +381,7 @@ fn execute_reduction<'a>(
             yy_merge_decl!(yyval, yyvs, sp, LedName, LedName);
         }
         42..=44 | 93..=123 | 181 => *yyval = YYValue::None,
-        45 | 46 => {
+        39 | 45 | 46 => {
             // Decl: OptMergeMode UnknownDecl
             if let YYValue::Unknown = std::mem::replace(&mut yyvs[sp], YYValue::None) {
                 *yyval = YYValue::Stmt(Statement::Unknown);
@@ -569,7 +562,8 @@ fn execute_reduction<'a>(
         }
         82 => {
             // GroupCompatDecl: GROUP Integer EQUALS Expr SEMI
-            *yyval = YYValue::GroupCompat;
+            // Accepted for compatibility but ignored (no compat group remapping).
+            *yyval = YYValue::Unknown;
         }
         83 => {
             // ModMapDecl: MODIFIER_MAP Ident OBRACE KeyOrKeySymList CBRACE SEMI
@@ -1325,7 +1319,6 @@ pub(crate) enum YYValue<'a> {
     KeyType(NamedVarDef),
     Symbols(NamedVarDef),
     ModMask(ModMapDef),
-    GroupCompat,
     LedMap(NamedVarDef),
     LedName(LedNameDef),
     Keycode(KeycodeDef),
@@ -4033,7 +4026,6 @@ pub(crate) enum Statement {
     VMod(VModDef),
     Symbols(NamedVarDef),
     ModMap(ModMapDef),
-    GroupCompat,
     LedMap(NamedVarDef),
     LedName(LedNameDef),
     Unknown,

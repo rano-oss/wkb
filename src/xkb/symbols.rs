@@ -1889,9 +1889,6 @@ fn handle_compat_map_file(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo, fil
                 Statement::Interp(ip) => {
                     ok = handle_interp_def(info, ki, ip);
                 }
-                Statement::GroupCompat => {
-                    ok = true;
-                }
                 Statement::LedMap(lm) => {
                     ok = handle_led_map_def(info, ki, lm);
                 }
