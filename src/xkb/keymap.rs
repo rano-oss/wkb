@@ -4,7 +4,6 @@ use arrayvec::ArrayVec;
 
 use crate::xkb::keysym::keysym_to_codepoint;
 
-pub use super::parser::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
 pub(crate) use super::parser::{
     XkbAction, XkbContext, XkbKeymap, XkbLed, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL,
     XKB_KEYMAP_FORMAT_TEXT_V2,
@@ -654,14 +653,6 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
 use super::parser::*;
 pub(crate) const GROUP_LAST_INDEX_NAME: &str = "last";
 
-pub use super::parser::{
-    ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
-    ACTION_TYPE_GROUP_SET, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET,
-    ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT,
-    ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT,
-    ACTION_TYPE_TERMINATE, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, MATCH_ALL, MATCH_ANY,
-    MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE,
-};
 pub(crate) fn lookup_string(tab: &[LookupEntry], string: &str) -> Option<u32> {
     (!string.is_empty()).then_some(())?;
     tab.iter()
