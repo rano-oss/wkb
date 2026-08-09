@@ -4,7 +4,6 @@ use arrayvec::ArrayVec;
 
 use crate::xkb::keysym::keysym_to_codepoint;
 
-pub use super::parser::XKB_KEYMAP_COMPILE_FLAGS_VALUES;
 pub(crate) use super::parser::{
     XkbAction, XkbContext, XkbKeymap, XkbLed, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL,
     XKB_KEYMAP_FORMAT_TEXT_V2,
@@ -70,7 +69,7 @@ pub struct ComposeEntry {
 
 /// Resolve an XKB keysym name to its Unicode character using our existing
 /// keysym database.
-pub fn keysym_name_to_char(name: &str) -> Option<char> {
+pub(crate) fn keysym_name_to_char(name: &str) -> Option<char> {
     // Fast path: single ASCII alphanumeric maps to itself (most compose key names)
     if name.len() == 1 {
         let b = name.as_bytes()[0];
@@ -234,7 +233,7 @@ fn lookup_compose_dir(locale: &str) -> Option<String> {
 
 /// Resolve a locale name to the compose file sub-path (relative to
 /// `/usr/share/X11/locale/`) that should be used.
-pub fn resolve_compose_file(locale: &str) -> Option<String> {
+pub(crate) fn resolve_compose_file(locale: &str) -> Option<String> {
     if let Some(mapped_locale) = XKB_COMPOSE_MAP
         .iter()
         .find_map(|&(name, mapped)| (name == locale).then_some(mapped))
@@ -654,14 +653,6 @@ pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbR
 use super::parser::*;
 pub(crate) const GROUP_LAST_INDEX_NAME: &str = "last";
 
-pub use super::parser::{
-    ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH, ACTION_TYPE_GROUP_LOCK,
-    ACTION_TYPE_GROUP_SET, ACTION_TYPE_MOD_LATCH, ACTION_TYPE_MOD_LOCK, ACTION_TYPE_MOD_SET,
-    ACTION_TYPE_NONE, ACTION_TYPE_PRIVATE, ACTION_TYPE_PTR_BUTTON, ACTION_TYPE_PTR_DEFAULT,
-    ACTION_TYPE_PTR_LOCK, ACTION_TYPE_PTR_MOVE, ACTION_TYPE_REDIRECT_KEY, ACTION_TYPE_SWITCH_VT,
-    ACTION_TYPE_TERMINATE, ACTION_TYPE_UNSUPPORTED_LEGACY, ACTION_TYPE_VOID, MATCH_ALL, MATCH_ANY,
-    MATCH_ANY_OR_NONE, MATCH_EXACTLY, MATCH_NONE,
-};
 pub(crate) fn lookup_string(tab: &[LookupEntry], string: &str) -> Option<u32> {
     (!string.is_empty()).then_some(())?;
     tab.iter()
@@ -789,7 +780,7 @@ pub(crate) static SYM_INTERPRET_MATCH_MASK_NAMES: [LookupEntry; 6] = [
 ///
 /// Characters inside strings (`"..."`), comments (`//` or `/* */`), and key
 /// names (`<...>`) are left untouched.
-pub fn preprocess_unicode_keysyms(input: &str) -> std::borrow::Cow<'_, str> {
+pub(crate) fn preprocess_unicode_keysyms(input: &str) -> std::borrow::Cow<'_, str> {
     use std::borrow::Cow;
     use std::fmt::Write;
     // Fast path: if there are no non-ASCII bytes, return as-is.
@@ -875,11 +866,11 @@ pub fn preprocess_unicode_keysyms(input: &str) -> std::borrow::Cow<'_, str> {
     Cow::Owned(result)
 }
 
-pub(crate) fn mod_mask_get_effective(keymap: &XkbKeymap, mods: u32) -> u32 {
+pub(crate) fn mod_mask_get_effective(mod_set: &XkbModSet, mods: u32) -> u32 {
     let mut mask: u32 = mods & MOD_REAL_MASK_ALL;
-    for i in _XKB_MOD_INDEX_NUM_ENTRIES..keymap.mods.num_mods {
+    for i in _XKB_MOD_INDEX_NUM_ENTRIES..mod_set.num_mods {
         if mods & 1 << i != 0 {
-            mask |= keymap.mods.mods[i as usize].mapping;
+            mask |= mod_set.mods[i as usize].mapping;
         }
     }
     mask

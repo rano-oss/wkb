@@ -372,13 +372,6 @@ fn execute_reduction<'a>(
             // Decl: OptMergeMode ModMapDecl
             yy_merge_decl!(yyval, yyvs, sp, ModMask, ModMap);
         }
-        39 => {
-            if let YYValue::GroupCompat = std::mem::replace(&mut yyvs[sp], YYValue::None) {
-                *yyval = YYValue::Stmt(Statement::GroupCompat);
-            } else {
-                *yyval = YYValue::None;
-            }
-        }
         40 => {
             // Decl: OptMergeMode LedMapDecl
             yy_merge_decl!(yyval, yyvs, sp, LedMap, LedMap);
@@ -388,7 +381,7 @@ fn execute_reduction<'a>(
             yy_merge_decl!(yyval, yyvs, sp, LedName, LedName);
         }
         42..=44 | 93..=123 | 181 => *yyval = YYValue::None,
-        45 | 46 => {
+        39 | 45 | 46 => {
             // Decl: OptMergeMode UnknownDecl
             if let YYValue::Unknown = std::mem::replace(&mut yyvs[sp], YYValue::None) {
                 *yyval = YYValue::Stmt(Statement::Unknown);
@@ -569,7 +562,8 @@ fn execute_reduction<'a>(
         }
         82 => {
             // GroupCompatDecl: GROUP Integer EQUALS Expr SEMI
-            *yyval = YYValue::GroupCompat;
+            // Accepted for compatibility but ignored (no compat group remapping).
+            *yyval = YYValue::Unknown;
         }
         83 => {
             // ModMapDecl: MODIFIER_MAP Ident OBRACE KeyOrKeySymList CBRACE SEMI
@@ -1325,7 +1319,6 @@ pub(crate) enum YYValue<'a> {
     KeyType(NamedVarDef),
     Symbols(NamedVarDef),
     ModMask(ModMapDef),
-    GroupCompat,
     LedMap(NamedVarDef),
     LedName(LedNameDef),
     Keycode(KeycodeDef),
@@ -1686,20 +1679,13 @@ pub(crate) type CompileFileFn = for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapI
 #[inline]
 fn compute_effective_mask(keymap: &XkbKeymap, mods: &mut XkbMods) {
     let unknown_mods: u32 = !((1_u64 << keymap.mods.num_mods).wrapping_sub(1_u64) as u32);
-    mods.mask = mod_mask_get_effective(keymap, mods.mods) | mods.mods & unknown_mods;
+    mods.mask = mod_mask_get_effective(&keymap.mods, mods.mods) | mods.mods & unknown_mods;
 }
 /// Version that takes the mod_set separately to allow calling on fields of keymap.
 #[inline]
 fn compute_effective_mask_with(mod_set: &XkbModSet, mods: &mut XkbMods) {
     let unknown_mods: u32 = !((1_u64 << mod_set.num_mods).wrapping_sub(1_u64) as u32);
-    // Inline mod_mask_get_effective logic
-    let mut mask: u32 = mods.mods & MOD_REAL_MASK_ALL;
-    for i in _XKB_MOD_INDEX_NUM_ENTRIES..mod_set.num_mods {
-        if mods.mods & (1 << i) != 0 {
-            mask |= mod_set.mods[i as usize].mapping;
-        }
-    }
-    mods.mask = mask | mods.mods & unknown_mods;
+    mods.mask = mod_mask_get_effective(mod_set, mods.mods) | mods.mods & unknown_mods;
 }
 fn update_action_mods(keymap: &XkbKeymap, act: &mut XkbAction, modmap: u32) {
     match act {
@@ -3707,7 +3693,7 @@ pub const MATCH_ANY: u32 = 2;
 pub const MATCH_ANY_OR_NONE: u32 = 1;
 pub const MATCH_NONE: u32 = 0;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) struct XkbKeyType {
     pub(crate) name: u32,
     pub(crate) mods: XkbMods,
@@ -4033,7 +4019,6 @@ pub(crate) enum Statement {
     VMod(VModDef),
     Symbols(NamedVarDef),
     ModMap(ModMapDef),
-    GroupCompat,
     LedMap(NamedVarDef),
     LedName(LedNameDef),
     Unknown,
