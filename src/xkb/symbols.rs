@@ -1995,7 +1995,6 @@ pub(crate) struct KeyTypeInfo {
     pub(crate) mods: u32,
     pub(crate) num_levels: u32,
     pub(crate) entries: Vec<XkbKeyTypeEntry>,
-    pub(crate) level_names: Vec<u32>,
 }
 fn key_types_info(include_depth: u32, mods: &XkbModSet) -> KeyTypesInfo {
     let mut info = KeyTypesInfo {
@@ -2180,30 +2179,6 @@ fn set_preserve(
     add_preserve(type_0, mods, preserve_mods);
     true
 }
-fn add_level_name(type_0: &mut KeyTypeInfo, level: u32, name: u32) {
-    let level_idx = level as usize;
-    if type_0.level_names.get(level_idx) == Some(&name) {
-        return;
-    }
-    if level >= type_0.level_names.len() as u32 {
-        type_0.level_names.resize(level_idx + 1, 0);
-    }
-    type_0.level_names[level_idx] = name;
-}
-fn set_level_name(
-    ki: &XkbKeymapInfo<'_>,
-    type_0: &mut KeyTypeInfo,
-    array_ndx: Option<&ExprKind>,
-    value: &ExprKind,
-) -> bool {
-    if array_ndx.is_none() {
-        return false;
-    }
-    let level = some_or_false!(expr_resolve_level(&ki.keymap.ctx, array_ndx.unwrap()));
-    let level_name = some_or_false!(expr_resolve_string(value));
-    add_level_name(type_0, level, level_name);
-    true
-}
 fn set_key_type_field(
     ki: &XkbKeymapInfo<'_>,
     info: &mut KeyTypesInfo,
@@ -2219,7 +2194,7 @@ fn set_key_type_field(
     } else if field.eq_ignore_ascii_case("preserve") {
         set_preserve(ki, info, type_0, array_ndx, value)
     } else if field.eq_ignore_ascii_case("levelname") || field.eq_ignore_ascii_case("level_name") {
-        set_level_name(ki, type_0, array_ndx, value)
+        true
     } else {
         ki.strict & PARSER_NO_UNKNOWN_TYPE_FIELDS == 0
     }
