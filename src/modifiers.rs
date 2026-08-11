@@ -360,6 +360,18 @@ impl ModifierEffect {
         }
     }
 
+    /// Whether this effect is currently pressed (either the modifier part,
+    /// the group part, or both).
+    pub fn pressed(&self) -> bool {
+        match self {
+            ModifierEffect::Modifier(state_modifier) => state_modifier.kind.pressed(),
+            ModifierEffect::Group(group) => group.kind.pressed(),
+            ModifierEffect::Dual(state_modifier, group) => {
+                state_modifier.kind.pressed() || group.kind.pressed()
+            }
+        }
+    }
+
     pub fn update(&mut self, key_direction: KeyDirection) {
         match self {
             ModifierEffect::Modifier(state_modifier) => state_modifier.kind.update(key_direction),
@@ -433,13 +445,6 @@ impl Modifier {
 pub struct Modifiers {
     /// Flat array of (evdev_code, Modifier) pairs. Typically 10-20 entries.
     pub(crate) entries: Vec<(u32, Modifier)>,
-    /// Active modifier state: bit0=none, bit1=level2, bit2=level3, bit3=level5, bit4=compose, bit5=caps_locked, bit6=num_locked
-    state: u8,
-    /// (evdev_code, level) of keys whose `Modifier::Leveled` effect was
-    /// activated, so a key release targets the same level as its press even
-    /// when the modifier state (and thus the computed level) changed in
-    /// between.
-    pressed_levels: Vec<(u32, u8)>,
 }
 
 impl Default for Modifiers {
@@ -525,11 +530,7 @@ impl Default for Modifiers {
                 })),
             ),
         ];
-        Self {
-            entries,
-            state: 0,
-            pressed_levels: Vec::new(),
-        }
+        Self { entries }
     }
 }
 
@@ -537,8 +538,6 @@ impl Modifiers {
     pub fn new() -> Self {
         Self {
             entries: Vec::with_capacity(MAX_MOD_SLOTS),
-            state: 0,
-            pressed_levels: Vec::new(),
         }
     }
 
@@ -575,42 +574,10 @@ impl Modifiers {
         }
     }
 
-    pub fn active_mod_type(&self, mod_type: ModType) -> bool {
-        match mod_type {
-            ModType::None => self.state & STATE_NONE != 0,
-            ModType::Level2 => self.state & STATE_LEVEL2 != 0,
-            ModType::Level3 => self.state & STATE_LEVEL3 != 0,
-            ModType::Level5 => self.state & STATE_LEVEL5 != 0,
-            ModType::Compose => self.state & STATE_COMPOSE != 0,
-            _ => false,
-        }
-    }
-
-    /// Check for active None-type modifier AND compute level2/3/5 in a single scan.
-    /// Returns (has_active_none, level2, level3, level5).
+    /// Active modifier state: bit0=none, bit1=level2, bit2=level3, bit3=level5,
+    /// bit4=compose, bit5=caps_locked, bit6=num_locked.
     #[inline]
-    pub fn active_none_and_levels(&self) -> (bool, bool, bool, bool) {
-        (
-            self.state & STATE_NONE != 0,
-            self.state & STATE_LEVEL2 != 0,
-            self.state & STATE_LEVEL3 != 0,
-            self.state & STATE_LEVEL5 != 0,
-        )
-    }
-
-    /// Return true if Caps Lock is locked (O(1) from state bitfield).
-    #[inline]
-    pub fn caps_locked(&self) -> bool {
-        self.state & STATE_CAPS_LOCKED != 0
-    }
-
-    /// Return true if Num Lock is locked (O(1) from state bitfield).
-    #[inline]
-    pub fn num_locked(&self) -> bool {
-        self.state & STATE_NUM_LOCKED != 0
-    }
-
-    fn refresh_state(&mut self) {
+    fn state_bits(&self) -> u8 {
         let mut state = 0u8;
         for (_, modifier) in &self.entries {
             modifier.for_each(|mk| {
@@ -628,14 +595,50 @@ impl Modifiers {
                 }
             });
         }
-        self.state = state;
+        state
+    }
+
+    pub fn active_mod_type(&self, mod_type: ModType) -> bool {
+        let state = self.state_bits();
+        match mod_type {
+            ModType::None => state & STATE_NONE != 0,
+            ModType::Level2 => state & STATE_LEVEL2 != 0,
+            ModType::Level3 => state & STATE_LEVEL3 != 0,
+            ModType::Level5 => state & STATE_LEVEL5 != 0,
+            ModType::Compose => state & STATE_COMPOSE != 0,
+            _ => false,
+        }
+    }
+
+    /// Check for active None-type modifier AND compute level2/3/5 in a single scan.
+    /// Returns (has_active_none, level2, level3, level5).
+    #[inline]
+    pub fn active_none_and_levels(&self) -> (bool, bool, bool, bool) {
+        let state = self.state_bits();
+        (
+            state & STATE_NONE != 0,
+            state & STATE_LEVEL2 != 0,
+            state & STATE_LEVEL3 != 0,
+            state & STATE_LEVEL5 != 0,
+        )
+    }
+
+    /// Return true if Caps Lock is locked.
+    #[inline]
+    pub fn caps_locked(&self) -> bool {
+        self.state_bits() & STATE_CAPS_LOCKED != 0
+    }
+
+    /// Return true if Num Lock is locked.
+    #[inline]
+    pub fn num_locked(&self) -> bool {
+        self.state_bits() & STATE_NUM_LOCKED != 0
     }
 
     pub fn unlatch(&mut self) {
         self.entries
             .iter_mut()
             .for_each(|(_, modifier)| modifier.for_each_mut(|ke| ke.unlatch()));
-        self.refresh_state();
     }
 
     pub fn locked_with_type(&self, evdev_code: u32, mod_type: ModType) -> bool {
@@ -656,46 +659,38 @@ impl Modifiers {
             Some(p) => p,
             None => return false,
         };
-        let is_leveled = matches!(&self.entries[pos].1, Modifier::Leveled(_));
-        if is_leveled {
-            if key_direction == KeyDirection::Down {
-                // Select the level from the modifier state BEFORE this press so
-                // the same level is released on key up (modifier state may have
-                // changed by then).
-                let (_, l2, l3, l5) = self.active_none_and_levels();
-                let level = level_index(l5, l3, l2) as u8;
-                if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
-                    let target = if map.contains_key(&level) { level } else { 0 };
-                    if let Some(mod_kind) = map.get_mut(&target) {
-                        mod_kind.update(key_direction);
-                    } else {
-                        return false;
-                    }
-                    self.pressed_levels.retain(|(c, _)| *c != evdev_code);
-                    self.pressed_levels.push((evdev_code, target));
+        if key_direction == KeyDirection::Down {
+            // Select the level from the modifier state BEFORE this press so
+            // the same level is released on key up (modifier state may have
+            // changed by then).
+            let (_, l2, l3, l5) = self.active_none_and_levels();
+            let level = level_index(l5, l3, l2) as u8;
+            if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
+                let target = if map.contains_key(&level) { level } else { 0 };
+                if let Some(mod_kind) = map.get_mut(&target) {
+                    mod_kind.update(key_direction);
+                } else {
+                    return false;
                 }
-            } else {
-                let level = self
-                    .pressed_levels
-                    .iter()
-                    .find(|(c, _)| *c == evdev_code)
-                    .map(|(_, l)| *l)
-                    .unwrap_or(0);
-                if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
-                    if let Some(mod_kind) = map.get_mut(&level) {
-                        mod_kind.update(key_direction);
-                    } else if let Some(mod_kind) = map.get_mut(&0) {
-                        mod_kind.update(key_direction);
-                    } else {
-                        return false;
-                    }
+            } else if let Modifier::Single(mod_kind) = &mut self.entries[pos].1 {
+                mod_kind.update(key_direction);
+            }
+        } else if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
+            // Release the level that is actually pressed. A press activates
+            // exactly one level's effect, so scanning for the pressed effect
+            // targets the same level without extra bookkeeping.
+            let pressed_level = map
+                .iter()
+                .find(|(_, effect)| effect.pressed())
+                .map(|(level, _)| *level);
+            if let Some(level) = pressed_level {
+                if let Some(mod_kind) = map.get_mut(&level) {
+                    mod_kind.update(key_direction);
                 }
-                self.pressed_levels.retain(|(c, _)| *c != evdev_code);
             }
         } else if let Modifier::Single(mod_kind) = &mut self.entries[pos].1 {
             mod_kind.update(key_direction);
         }
-        self.refresh_state();
         true
     }
 
@@ -754,7 +749,21 @@ impl Modifiers {
                 m.for_each_mut(|mk| mk.update_from_state(is_depressed, is_locked, is_latched));
             }
         }
-        self.refresh_state();
+    }
+
+    /// Copy the currently-held state (pressed/latched/locked) for each
+    /// modifier key present in `from` into this `Modifiers`. Layouts can have
+    /// different modifier keys, so only keys present in both keep their state;
+    /// keys only in one layout are left as-is. Used to preserve still-held
+    /// modifier keys across a layout switch (matches xkbcommon, which keeps
+    /// modifier state across group changes).
+    pub(crate) fn inherit_state(&mut self, from: &Modifiers) {
+        for (code, modifier) in &mut self.entries {
+            let Some((_, other)) = from.entries.iter().find(|(c, _)| *c == *code) else {
+                continue;
+            };
+            inherit_modifier(modifier, other);
+        }
     }
 
     pub(crate) fn leds_state(&self) -> LedState {
@@ -769,4 +778,90 @@ impl Modifiers {
 #[inline(always)]
 pub fn level_index(level5: bool, level3: bool, level2: bool) -> usize {
     ((level5 as usize) << 2) | ((level3 as usize) << 1) | (level2 as usize)
+}
+
+/// Copy the held state of each level from `src` into `dst`, preserving `dst`'s
+/// own structure (levels are matched by level index; levels only present in one
+/// side are untouched). Used when layouts define a modifier key differently.
+fn inherit_modifier(dst: &mut Modifier, src: &Modifier) {
+    match (dst, src) {
+        (Modifier::Single(dst), Modifier::Single(src)) => inherit_effect(dst, src),
+        (Modifier::Leveled(dst), Modifier::Leveled(src)) => {
+            for (level, dst_effect) in dst {
+                if let Some(src_effect) = src.get(level) {
+                    inherit_effect(dst_effect, src_effect);
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Copy the held state from `src` into `dst`, preserving `dst`'s own modifier
+/// type and group identity. Only state fields (pressed/locked/latched) are
+/// carried over.
+fn inherit_effect(dst: &mut ModifierEffect, src: &ModifierEffect) {
+    match (dst, src) {
+        (ModifierEffect::Modifier(dst), ModifierEffect::Modifier(src)) => {
+            inherit_kind(&mut dst.kind, &src.kind);
+        }
+        (ModifierEffect::Group(dst), ModifierEffect::Group(src)) => {
+            inherit_kind(&mut dst.kind, &src.kind);
+        }
+        (ModifierEffect::Dual(dst_mod, dst_group), ModifierEffect::Dual(src_mod, src_group)) => {
+            inherit_kind(&mut dst_mod.kind, &src_mod.kind);
+            inherit_kind(&mut dst_group.kind, &src_group.kind);
+        }
+        _ => {}
+    }
+}
+
+/// Copy the pressed/locked/latched state of `src` into `dst` when both are the
+/// same `ModKind` variant; otherwise leave `dst` unchanged.
+fn inherit_kind(dst: &mut ModKind, src: &ModKind) {
+    match (dst, src) {
+        (ModKind::Press { pressed }, ModKind::Press { pressed: s }) => *pressed = *s,
+        (
+            ModKind::Lock { pressed, locked },
+            ModKind::Lock {
+                pressed: s,
+                locked: sl,
+            },
+        ) => {
+            *pressed = *s;
+            *locked = *sl;
+        }
+        (
+            ModKind::Latch { pressed, latched },
+            ModKind::Latch {
+                pressed: s,
+                latched: sl,
+            },
+        ) => {
+            *pressed = *s;
+            *latched = *sl;
+        }
+        (
+            ModKind::UnlockOnPress { pressed, locked },
+            ModKind::UnlockOnPress {
+                pressed: s,
+                locked: sl,
+            },
+        ) => {
+            *pressed = *s;
+            *locked = *sl;
+        }
+        (
+            ModKind::LockOnRelease { pressed, locked },
+            ModKind::LockOnRelease {
+                pressed: s,
+                locked: sl,
+            },
+        ) => {
+            *pressed = *s;
+            *locked = *sl;
+        }
+        (ModKind::None, ModKind::None) => {}
+        _ => {}
+    }
 }
