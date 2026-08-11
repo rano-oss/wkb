@@ -119,7 +119,11 @@ keysym_map: {
 `keymap`/`num_lock_keys`/`caps_lock_keymap` values are single-character RON
 char literals; `keysym_map` values are `NamedKey` names written as bare
 identifiers (e.g. `Escape`, `ArrowUp`). Levels with no populated keycodes are
-omitted.
+omitted. Trailing levels that are byte-for-byte duplicates of a lower prefix are
+also omitted: the level model is three binary modifier bits (Level5, Level3,
+Level2), so a key whose type ignores a modifier still resolves to its base
+level, duplicating the lower plane. Files therefore carry only the levels the
+layout actually distinguishes (typically 2, 4, or 8).
 
 `repeat_keys` is a single array of keycodes, wrapped at 20 per line:
 

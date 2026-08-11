@@ -26,7 +26,7 @@ name = "wkb"
 
 [features]
 default = ["xkb", "compose"]
-xkb = []
+xkb = ["dep:xkeysym"]
 compose = []
 
 [dependencies]
@@ -37,7 +37,7 @@ ron = "0.12"
 thiserror = "2"
 lasso = "0.7"
 bitflags = { version = "2", features = ["serde"] }
-xkeysym = "0.2"
+xkeysym = { version = "0.2", optional = true }
 
 [dev-dependencies]
 wkb = { package = "wayland-keyboard", path = "." }

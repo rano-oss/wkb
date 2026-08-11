@@ -377,11 +377,11 @@ fn reachable_chars(layout: &KBLayout) -> Vec<char> {
 }
 
 /// Convert a flat keymap to a per-level map, keeping only populated slots.
-fn to_levels<T: FlatMapValue, V>(
+fn to_levels<T: FlatMapValue + PartialEq, V>(
     flat: &FlatMap<T>,
     project: impl Fn(T) -> Option<V>,
 ) -> BTreeMap<u8, BTreeMap<u32, V>> {
-    (0..MAX_LEVELS)
+    (0..effective_levels(flat))
         .filter_map(|level| {
             let base = level * flat.num_keys;
             let keys: BTreeMap<_, _> = flat.data[base..base + flat.num_keys]
@@ -392,6 +392,40 @@ fn to_levels<T: FlatMapValue, V>(
             (!keys.is_empty()).then_some((level as u8, keys))
         })
         .collect()
+}
+
+/// Number of leading level planes in `flat` that carry distinct output.
+///
+/// The level model is three binary modifier bits (Level5, Level3, Level2), so a
+/// layout that never uses a given bit still gets a resolved character for every
+/// plane: a key whose type ignores that modifier falls back to its base level,
+/// making the higher planes byte-for-byte duplicates of lower ones. Trailing
+/// planes that repeat an identical prefix are redundant and are omitted from the
+/// serialized file. The plane sequence is halved while the two halves match.
+fn effective_levels<T: FlatMapValue + PartialEq>(flat: &FlatMap<T>) -> usize {
+    let mut n = MAX_LEVELS;
+    while n > 1 {
+        let half = n / 2;
+        if planes_equal(flat, 0, half, half) {
+            n = half;
+        } else {
+            break;
+        }
+    }
+    n
+}
+
+/// Whether the `count` planes starting at index `a` equal the `count` planes
+/// starting at index `b` in `flat`.
+fn planes_equal<T: FlatMapValue + PartialEq>(
+    flat: &FlatMap<T>,
+    a: usize,
+    b: usize,
+    count: usize,
+) -> bool {
+    let nk = flat.num_keys;
+    let len = count * nk;
+    flat.data[a * nk..a * nk + len] == flat.data[b * nk..b * nk + len]
 }
 
 fn char_section(flat: &FlatKeymap) -> CharSection {
