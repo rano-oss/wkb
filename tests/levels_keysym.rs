@@ -5,7 +5,7 @@ use test_case::test_matrix;
 use wkb::keysym_to_named_key;
 use xkbcommon::xkb::Keycode;
 
-include!("../test_data/layouts.rs");
+include!("common/layouts.rs");
 
 mod common;
 use common::xkb_new_keymap_from_names;

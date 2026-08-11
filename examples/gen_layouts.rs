@@ -2,8 +2,8 @@
 //!
 //! Reads the XKB registry (`rules/evdev.xml`) and writes:
 //!
-//! 1. `test_data/layouts.rs` — the static `(layout, variant)` registry used by
-//!    integration tests via `include!`.
+//! 1. `tests/common/layouts.rs` — the static `(layout, variant)` registry used
+//!    by integration tests via `include!`.
 //! 2. `ron_layouts/` — precompiled `wkb::ir` RON files for every layout,
 //!    mirroring the naming convention `<layout>.<variant>.ron` (base layout:
 //!    `<layout>.ron`).
@@ -20,7 +20,7 @@ use wkb::WKB;
 
 const EVDEV_XML: &str = "/usr/share/X11/xkb/rules/evdev.xml";
 const OUT_DIR: &str = "ron_layouts";
-const LAYOUTS_RS: &str = "test_data/layouts.rs";
+const LAYOUTS_RS: &str = "tests/common/layouts.rs";
 
 fn main() {
     let xml_path = std::env::args()
@@ -146,7 +146,7 @@ fn write_layouts_rs(layouts: &[(String, String)]) {
     text.push_str("    }\n");
     text.push_str("    layouts\n");
     text.push_str("}\n");
-    std::fs::create_dir_all("test_data").expect("failed to create test_data dir");
+    std::fs::create_dir_all("tests/common").expect("failed to create tests/common dir");
     std::fs::write(LAYOUTS_RS, text).expect("failed to write layouts.rs");
     println!("wrote {LAYOUTS_RS}");
 }

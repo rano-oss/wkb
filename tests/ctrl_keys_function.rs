@@ -4,7 +4,7 @@ use test_case::test_matrix;
 use wkb::KeyDirection;
 use xkbcommon::xkb::Keycode;
 
-include!("../test_data/layouts.rs");
+include!("common/layouts.rs");
 
 mod common;
 use common::{update_both, xkb_new_from_names};

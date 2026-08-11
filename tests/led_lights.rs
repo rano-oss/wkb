@@ -7,7 +7,7 @@
 use test_case::test_matrix;
 use wkb::{KeyDirection, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK};
 
-include!("../test_data/layouts.rs");
+include!("common/layouts.rs");
 
 mod common;
 use common::{update_both, xkb_new_from_names};

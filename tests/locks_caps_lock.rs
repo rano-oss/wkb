@@ -4,7 +4,7 @@
 use test_case::test_matrix;
 use wkb::WKB;
 
-include!("../test_data/layouts.rs");
+include!("common/layouts.rs");
 
 mod common;
 use common::{activate_locks, set_modifier_level, test_all_keys, xkb_new_from_names};

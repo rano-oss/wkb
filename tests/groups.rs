@@ -1,5 +1,9 @@
-use wkb::ir::LayoutFile;
-use wkb::{ComposeState, KeyDirection, LockFlags, ALTGR, LEFT_SHIFT, RIGHT_SHIFT, WKB};
+use std::collections::BTreeMap;
+
+use wkb::ir::{LatchVariant, LayoutFile, ModAction};
+use wkb::{
+    ComposeState, KeyDirection, LockFlags, ModType, ALTGR, CAPS_LOCK, LEFT_SHIFT, RIGHT_SHIFT, WKB,
+};
 use xkbcommon::xkb::{self, Keycode};
 
 fn states(options: &str) -> (WKB, xkb::State) {
@@ -37,6 +41,45 @@ fn assert_group(wkb: &WKB, state: &xkb::State, context: &str) {
         "layout mismatch after {context}"
     );
 }
+
+// ── Helpers for the moved unit tests ──────────────────────────────────────
+
+const ALT: u32 = 56;
+
+/// A single-group layout whose key 42 carries `action` and whose key 30 maps
+/// to `a`/`A`/`ä` at levels 0/1/2 (plain / Level2 / Level3).
+fn layout_with_action(action: ModAction) -> LayoutFile {
+    LayoutFile {
+        version: wkb::ir::FORMAT_VERSION,
+        layout: "test".to_string(),
+        repeat_keys: Vec::new(),
+        modifiers: vec![(42, vec![(0, action)])],
+        keymap: BTreeMap::from([
+            (0u8, BTreeMap::from([(30u32, 'a')])),
+            (1u8, BTreeMap::from([(30u32, 'A')])),
+            (2u8, BTreeMap::from([(30u32, 'ä')])),
+        ]),
+        num_lock_keys: BTreeMap::new(),
+        caps_lock_keymap: BTreeMap::new(),
+        caps_num_lock_keys: BTreeMap::new(),
+        keysym_map: BTreeMap::new(),
+        compose: Vec::new(),
+    }
+}
+
+/// Like [`layout_with_action`], but also maps key 30 to `A` while Caps is locked.
+fn layout_with_caps(action: ModAction) -> LayoutFile {
+    let mut file = layout_with_action(action);
+    file.caps_lock_keymap = BTreeMap::from([(0u8, BTreeMap::from([(30u32, 'A')]))]);
+    file
+}
+
+fn tap(wkb: &mut WKB, code: u32) {
+    wkb.update_key(code, KeyDirection::Down);
+    wkb.update_key(code, KeyDirection::Up);
+}
+
+// ── Group/modifier state-machine unit tests, moved out of src ────────────
 
 #[test]
 fn momentary_group_restores_on_release() {
@@ -166,5 +209,115 @@ fn shift_tap_switches_zhuyin_and_norwegian_without_changing_shift_hold() {
     wkb.press_key(30);
     wkb.release_key(30);
     wkb.release_key(LEFT_SHIFT);
+    assert_eq!(wkb.active_layout_idx(), 0);
+}
+
+#[test]
+fn latch_variants_activate_on_their_named_edge() {
+    for variant in [LatchVariant::OnPress, LatchVariant::OnRelease] {
+        let file = layout_with_action(ModAction::Latch(ModType::Level3, variant));
+        let mut wkb = WKB::new_from_layouts(vec![file]).unwrap();
+
+        assert_eq!(wkb.key_char(30), Some('a'), "idle ({variant:?})");
+        wkb.update_key(42, KeyDirection::Down);
+        assert_eq!(
+            wkb.key_char(30),
+            Some('ä'),
+            "level 3 active while held ({variant:?})"
+        );
+        wkb.update_key(42, KeyDirection::Up);
+        assert_eq!(
+            wkb.key_char(30),
+            Some('ä'),
+            "level 3 latched after release ({variant:?})"
+        );
+
+        // A second press cycle unlatches both variants.
+        wkb.update_key(42, KeyDirection::Down);
+        wkb.update_key(42, KeyDirection::Up);
+        assert_eq!(wkb.key_char(30), Some('a'), "unlatched ({variant:?})");
+    }
+}
+
+#[test]
+fn lock_flags_use_and_combine_their_named_edges() {
+    // UNLOCK_ON_PRESS: the first tap locks level 2, the next press clears it.
+    let file = layout_with_action(ModAction::Lock(ModType::Level2, LockFlags::UNLOCK_ON_PRESS));
+    let mut wkb = WKB::new_from_layouts(vec![file]).unwrap();
+    tap(&mut wkb, 42);
+    assert_eq!(wkb.key_char(30), Some('A'), "first tap locks");
+    wkb.update_key(42, KeyDirection::Down);
+    assert_eq!(
+        wkb.key_char(30),
+        Some('a'),
+        "second press unlocks immediately"
+    );
+    wkb.update_key(42, KeyDirection::Up);
+    assert_eq!(wkb.key_char(30), Some('a'), "stays unlocked after release");
+
+    // LOCK_ON_RELEASE: the lock engages only on release, and holds while the
+    // key is held again.
+    let file = layout_with_action(ModAction::Lock(ModType::Level2, LockFlags::LOCK_ON_RELEASE));
+    let mut wkb = WKB::new_from_layouts(vec![file]).unwrap();
+    assert_eq!(wkb.key_char(30), Some('a'), "idle");
+    wkb.update_key(42, KeyDirection::Down);
+    assert_eq!(wkb.key_char(30), Some('A'), "active while held");
+    wkb.update_key(42, KeyDirection::Up);
+    assert_eq!(wkb.key_char(30), Some('A'), "locks on release");
+    wkb.update_key(42, KeyDirection::Down);
+    assert_eq!(wkb.key_char(30), Some('A'), "lock holds while re-pressed");
+    wkb.update_key(42, KeyDirection::Up);
+    assert_eq!(wkb.key_char(30), Some('a'), "release clears the lock");
+}
+
+#[test]
+fn caps_lock_unlocks_on_press() {
+    let file = layout_with_caps(ModAction::Lock(ModType::Caps, LockFlags::UNLOCK_ON_PRESS));
+    let mut wkb = WKB::new_from_layouts(vec![file]).unwrap();
+    tap(&mut wkb, 42);
+    assert_eq!(wkb.key_char(30), Some('A'), "first tap locks caps");
+    tap(&mut wkb, 42);
+    assert_eq!(wkb.key_char(30), Some('a'), "second press unlocks caps");
+}
+
+#[test]
+fn alt_shift_toggle_groups_alt_and_shift() {
+    let (mut wkb, mut state) = states("grp:alt_shift_toggle");
+
+    // Alt alone (level 0) is `NoSymbol`: the group does not change.
+    update_both(&mut wkb, &mut state, ALT, KeyDirection::Down);
+    update_both(&mut wkb, &mut state, ALT, KeyDirection::Up);
+    assert_group(&wkb, &state, "tapping alt alone");
+    assert_eq!(wkb.active_layout_idx(), 0);
+
+    // Alt+Shift (level 1) carries the group action: it toggles to the next group.
+    update_both(&mut wkb, &mut state, ALT, KeyDirection::Down);
+    update_both(&mut wkb, &mut state, LEFT_SHIFT, KeyDirection::Down);
+    assert_group(&wkb, &state, "holding alt+shift");
+    update_both(&mut wkb, &mut state, LEFT_SHIFT, KeyDirection::Up);
+    update_both(&mut wkb, &mut state, ALT, KeyDirection::Up);
+    assert_group(&wkb, &state, "releasing alt+shift");
+    assert_eq!(wkb.active_layout_idx(), 1);
+}
+
+#[test]
+fn caps_toggle_switches_group_at_level_zero() {
+    let (mut wkb, mut state) = states("grp:caps_toggle");
+    for expected in [1, 0] {
+        update_both(&mut wkb, &mut state, CAPS_LOCK, KeyDirection::Down);
+        update_both(&mut wkb, &mut state, CAPS_LOCK, KeyDirection::Up);
+        assert_group(&wkb, &state, "tapping caps");
+        assert_eq!(wkb.active_layout_idx(), expected);
+    }
+}
+
+#[test]
+fn no_group_option_leaves_altgr_a_plain_level_key() {
+    let (mut wkb, mut state) = states("");
+    update_both(&mut wkb, &mut state, ALTGR, KeyDirection::Down);
+    assert_group(&wkb, &state, "holding altgr");
+    assert_eq!(wkb.active_layout_idx(), 0);
+    update_both(&mut wkb, &mut state, ALTGR, KeyDirection::Up);
+    assert_group(&wkb, &state, "releasing altgr");
     assert_eq!(wkb.active_layout_idx(), 0);
 }

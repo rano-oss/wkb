@@ -274,11 +274,6 @@ impl Group {
         })
     }
 
-    #[cfg(test)]
-    pub(crate) fn kind(&self) -> ModKind {
-        self.kind
-    }
-
     /// Whether this group switch is a relative delta from the active layout
     /// rather than an absolute target index.
     pub(crate) fn is_relative(&self) -> bool {
@@ -872,99 +867,5 @@ fn inherit_effect(dst: &mut KeyEffect, src: &KeyEffect) {
         if dst.kind == src.kind {
             dst.state = src.state;
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn latch_variants_activate_on_their_named_edge() {
-        let mut on_press =
-            StateModifier::new(ModType::Level3, ModKind::Latch(LatchVariant::OnPress));
-        on_press.update(KeyDirection::Down);
-        assert_eq!(on_press.state(), (true, false, true));
-
-        let mut on_release =
-            StateModifier::new(ModType::Level3, ModKind::Latch(LatchVariant::OnRelease));
-        on_release.update(KeyDirection::Down);
-        assert_eq!(on_release.state(), (true, false, false));
-        on_release.update(KeyDirection::Up);
-        assert_eq!(on_release.state(), (false, false, true));
-    }
-
-    #[test]
-    fn lock_flags_use_and_combine_their_named_edges() {
-        let mut unlock =
-            StateModifier::new(ModType::Level2, ModKind::Lock(LockFlags::UNLOCK_ON_PRESS));
-        unlock.update(KeyDirection::Down);
-        unlock.update(KeyDirection::Up);
-        assert!(unlock.locked());
-        unlock.update(KeyDirection::Down);
-        assert!(!unlock.locked());
-
-        let mut release =
-            StateModifier::new(ModType::Level2, ModKind::Lock(LockFlags::LOCK_ON_RELEASE));
-        release.update(KeyDirection::Down);
-        assert!(!release.locked());
-        assert!(release.active());
-        release.update(KeyDirection::Up);
-        assert!(release.locked());
-
-        let mut combined = StateModifier::new(
-            ModType::Level2,
-            ModKind::Lock(LockFlags::LOCK_ON_RELEASE | LockFlags::UNLOCK_ON_PRESS),
-        );
-        combined.update(KeyDirection::Down);
-        assert!(!combined.locked());
-        combined.update(KeyDirection::Up);
-        assert!(combined.locked());
-        combined.update(KeyDirection::Down);
-        assert!(!combined.locked());
-        combined.update(KeyDirection::Up);
-        assert!(!combined.locked());
-    }
-
-    #[test]
-    fn tap_lock_is_momentary_when_used() {
-        let mut tap = StateModifier::new(ModType::Level2, ModKind::Lock(LockFlags::TAP));
-        tap.update(KeyDirection::Down);
-        assert!(!tap.active());
-        assert!(!tap.locked());
-        tap.use_tap();
-        tap.update(KeyDirection::Up);
-        assert!(!tap.active());
-
-        tap.update(KeyDirection::Down);
-        tap.update(KeyDirection::Up);
-        assert!(tap.locked());
-    }
-
-    #[test]
-    fn tap_group_locks_only_when_unused() {
-        let tap = Group::new(
-            GROUP_RELATIVE_MARKER | 1,
-            ModKind::Lock(LockFlags::TAP),
-            false,
-            false,
-        );
-        let mut state = GroupState::default();
-
-        assert_eq!(
-            state.update_key(42, KeyDirection::Down, Some(tap), true, 0, 2),
-            0
-        );
-        assert_eq!(
-            state.update_key(30, KeyDirection::Down, None, false, 1, 2),
-            0
-        );
-        assert_eq!(state.update_key(42, KeyDirection::Up, None, true, 1, 2), 0);
-
-        assert_eq!(
-            state.update_key(42, KeyDirection::Down, Some(tap), true, 0, 2),
-            0
-        );
-        assert_eq!(state.update_key(42, KeyDirection::Up, None, true, 1, 2), 1);
     }
 }

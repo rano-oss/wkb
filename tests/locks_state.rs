@@ -5,7 +5,7 @@ use test_case::test_matrix;
 use wkb::{KeyDirection, CAPS_LOCK, NUM_LOCK, WKB};
 use xkbcommon::xkb::{self, Keycode};
 
-include!("../test_data/layouts.rs");
+include!("common/layouts.rs");
 
 mod common;
 use common::xkb_new_from_names;

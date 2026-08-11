@@ -42,6 +42,7 @@ jobs:
           - compose
           - ctrl_keys_combo
           - ctrl_keys_function
+          - groups
           - ir
           - keymap
           - compile

@@ -1,7 +1,7 @@
 //! If a key is added to `NamedKey` that changes the collapse set, the
 //! comparison helpers in this file must be updated.
 
-include!("../test_data/layouts.rs");
+include!("common/layouts.rs");
 use test_case::test_matrix;
 use wkb::{keysym_to_named_key, KeyDirection, ModType, WKB};
 use xkbcommon::xkb;

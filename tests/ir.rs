@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use wkb::ir::{self, IrError, LatchVariant, LayoutFile, LockFlags, ModAction};
 use wkb::{ModType, NamedKey, WKB};
 
-include!("../test_data/layouts.rs");
+include!("common/layouts.rs");
 
 const COMPOSE: char = ir::COMPOSE_KEY_CHAR;
 
