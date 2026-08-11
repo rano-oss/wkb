@@ -365,6 +365,14 @@ impl WKB {
         };
         if let Some(target) = group_target {
             if target != self.current_layout_idx {
+                let prev = self.current_layout_idx;
+                // Modifiers are cloned per layout from the same keymap, so all
+                // layouts share identical structure; only state differs. Clone
+                // the previous layout's whole state (pressed/latched/locked and
+                // pressed_levels) so a group switch doesn't drop still-held
+                // keys (matches xkbcommon, which keeps modifier state across
+                // group changes).
+                self.layouts[target].modifiers = self.layouts[prev].modifiers.clone();
                 let _ = self.set_layout(target);
             }
         }

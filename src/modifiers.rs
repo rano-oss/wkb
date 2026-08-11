@@ -435,6 +435,11 @@ pub struct Modifiers {
     pub(crate) entries: Vec<(u32, Modifier)>,
     /// Active modifier state: bit0=none, bit1=level2, bit2=level3, bit3=level5, bit4=compose, bit5=caps_locked, bit6=num_locked
     state: u8,
+    /// (evdev_code, level) of keys whose `Modifier::Leveled` effect was
+    /// activated, so a key release targets the same level as its press even
+    /// when the modifier state (and thus the computed level) changed in
+    /// between.
+    pressed_levels: Vec<(u32, u8)>,
 }
 
 impl Default for Modifiers {
@@ -520,7 +525,11 @@ impl Default for Modifiers {
                 })),
             ),
         ];
-        Self { entries, state: 0 }
+        Self {
+            entries,
+            state: 0,
+            pressed_levels: Vec::new(),
+        }
     }
 }
 
@@ -529,6 +538,7 @@ impl Modifiers {
         Self {
             entries: Vec::with_capacity(MAX_MOD_SLOTS),
             state: 0,
+            pressed_levels: Vec::new(),
         }
     }
 
@@ -648,16 +658,39 @@ impl Modifiers {
         };
         let is_leveled = matches!(&self.entries[pos].1, Modifier::Leveled(_));
         if is_leveled {
-            let (_, l2, l3, l5) = self.active_none_and_levels();
-            let level = level_index(l5, l3, l2) as u8;
-            if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
-                if let Some(mod_kind) = map.get_mut(&level) {
-                    mod_kind.update(key_direction);
-                } else if let Some(mod_kind) = map.get_mut(&0) {
-                    mod_kind.update(key_direction);
-                } else {
-                    return false;
+            if key_direction == KeyDirection::Down {
+                // Select the level from the modifier state BEFORE this press so
+                // the same level is released on key up (modifier state may have
+                // changed by then).
+                let (_, l2, l3, l5) = self.active_none_and_levels();
+                let level = level_index(l5, l3, l2) as u8;
+                if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
+                    let target = if map.contains_key(&level) { level } else { 0 };
+                    if let Some(mod_kind) = map.get_mut(&target) {
+                        mod_kind.update(key_direction);
+                    } else {
+                        return false;
+                    }
+                    self.pressed_levels.retain(|(c, _)| *c != evdev_code);
+                    self.pressed_levels.push((evdev_code, target));
                 }
+            } else {
+                let level = self
+                    .pressed_levels
+                    .iter()
+                    .find(|(c, _)| *c == evdev_code)
+                    .map(|(_, l)| *l)
+                    .unwrap_or(0);
+                if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
+                    if let Some(mod_kind) = map.get_mut(&level) {
+                        mod_kind.update(key_direction);
+                    } else if let Some(mod_kind) = map.get_mut(&0) {
+                        mod_kind.update(key_direction);
+                    } else {
+                        return false;
+                    }
+                }
+                self.pressed_levels.retain(|(c, _)| *c != evdev_code);
             }
         } else if let Modifier::Single(mod_kind) = &mut self.entries[pos].1 {
             mod_kind.update(key_direction);
