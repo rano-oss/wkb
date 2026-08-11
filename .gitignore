@@ -4,6 +4,6 @@
 **/Cargo.lock
 /.opencode
 TODO.md
-ron_layouts/
+ron_layouts/*
 /scripts
 .zed/

@@ -99,6 +99,36 @@ fn modifiers_state_matches_xkbcommon() {
 }
 
 #[test]
+fn default_xkb_latch_activates_on_release() {
+    let mut wkb = wkb::WKB::new_from_names("", "", "mm", "zawgyi", None).unwrap();
+    let context = xkbcmn::Context::new(xkbcmn::CONTEXT_NO_FLAGS);
+    let keymap = xkbcmn::Keymap::new_from_names(
+        &context,
+        "evdev",
+        "pc105",
+        "mm",
+        "zawgyi",
+        None,
+        xkbcmn::KEYMAP_COMPILE_NO_FLAGS,
+    )
+    .unwrap();
+    let mut xkb = xkbcmn::State::new(&keymap);
+    let latch_key = 41;
+
+    update_both(&mut wkb, &mut xkb, latch_key, KeyDirection::Down);
+    assert!(wkb.active_mod_type(ModType::Level3));
+    assert!(xkb.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE));
+    assert_ne!(xkb.serialize_mods(xkbcmn::STATE_MODS_DEPRESSED), 0);
+    assert_eq!(xkb.serialize_mods(xkbcmn::STATE_MODS_LATCHED), 0);
+
+    update_both(&mut wkb, &mut xkb, latch_key, KeyDirection::Up);
+    assert!(wkb.active_mod_type(ModType::Level3));
+    assert!(xkb.mod_name_is_active("Mod5", xkbcmn::STATE_MODS_EFFECTIVE));
+    assert_eq!(xkb.serialize_mods(xkbcmn::STATE_MODS_DEPRESSED), 0);
+    assert_ne!(xkb.serialize_mods(xkbcmn::STATE_MODS_LATCHED), 0);
+}
+
+#[test]
 fn test_mm_zawgyi_latch_sequence() {
     let mut wkb = wkb::WKB::new_from_names("", "", "mm", "zawgyi", None).unwrap();
 

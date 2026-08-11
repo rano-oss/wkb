@@ -54,10 +54,10 @@ fn modkind_keysym(effect: &KeyEffect) -> Option<u32> {
     match &state.kind {
         ModKind::Press if state.mod_type == ModType::Level3 => Some(0xfe03),
         ModKind::Press if state.mod_type == ModType::Level5 => Some(0xfe11),
-        ModKind::Latch if state.mod_type == ModType::Level3 => Some(0xfe04),
-        ModKind::Latch if state.mod_type == ModType::Level5 => Some(0xfe12),
-        ModKind::Lock if state.mod_type == ModType::Level3 => Some(0xfe0d),
-        ModKind::Lock if state.mod_type == ModType::Level5 => Some(0xfe13),
+        ModKind::Latch(_) if state.mod_type == ModType::Level3 => Some(0xfe04),
+        ModKind::Latch(_) if state.mod_type == ModType::Level5 => Some(0xfe12),
+        ModKind::Lock(_) if state.mod_type == ModType::Level3 => Some(0xfe0d),
+        ModKind::Lock(_) if state.mod_type == ModType::Level5 => Some(0xfe13),
         _ => None,
     }
 }

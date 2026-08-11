@@ -1,5 +1,6 @@
 [workspace]
 members = ["."]
+exclude = ["integration-examples/winit", "integration-examples/smithay"]
 
 [package]
 name = "wayland-keyboard"
@@ -14,6 +15,7 @@ keywords = ["keyboard", "wayland", "xkb", "input", "linux"]
 categories = ["os::linux-apis"]
 include = [
     "src/**/*",
+    "ron_layouts/tw.zhuyin.ron",
     "Cargo.toml",
     "LICENSE",
     "README.md",
@@ -34,7 +36,7 @@ serde = { version = "1", features = ["derive"] }
 ron = "0.12"
 thiserror = "2"
 lasso = "0.7"
-bitflags = "2"
+bitflags = { version = "2", features = ["serde"] }
 xkeysym = "0.2"
 
 [dev-dependencies]

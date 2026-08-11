@@ -17,9 +17,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::composer::{Composer, Token};
 use crate::flat_keymap::{FlatMap, FlatMapValue, MAX_LEVELS};
-use crate::modifiers::{KeyEffect, ModKind, ModType, Modifier, Modifiers, StateModifier};
+use crate::modifiers::{KeyEffect, ModKind, ModType, Modifier, Modifiers};
 use crate::named_keys::NamedKey;
 use crate::{FlatKeymap, FlatNamedKeyMap, KBLayout, KeyBitSet};
+
+pub use crate::modifiers::{LatchVariant, LockFlags};
 
 /// Current version of the layout file schema. Files with a different version
 /// are rejected by [`LayoutFile::validate`].
@@ -77,8 +79,14 @@ pub enum IrError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ModAction {
     Press(ModType),
-    Lock(ModType),
-    Latch(ModType),
+    Lock(
+        ModType,
+        #[serde(default, skip_serializing_if = "LockFlags::is_empty")] LockFlags,
+    ),
+    Latch(
+        ModType,
+        #[serde(default, skip_serializing_if = "LatchVariant::is_on_release")] LatchVariant,
+    ),
     None,
 }
 
@@ -211,7 +219,7 @@ fn serialize_to_ron(file: &LayoutFile) -> String {
         write_integer_list(&mut out, "repeat_keys", &file.repeat_keys);
     }
     if !file.modifiers.is_empty() {
-        write_entries(&mut out, "modifiers", &file.modifiers);
+        write_modifier_entries(&mut out, &file.modifiers);
     }
     write_char_section(&mut out, "keymap", &file.keymap);
     write_char_section(&mut out, "num_lock_keys", &file.num_lock_keys);
@@ -254,6 +262,15 @@ fn write_entries<T: Serialize>(out: &mut String, name: &str, entries: &[T]) {
     let _ = writeln!(out, "    {name}: [");
     for entry in entries {
         let _ = writeln!(out, "        {},", ron_value(entry));
+    }
+    let _ = writeln!(out, "    ],");
+}
+
+fn write_modifier_entries(out: &mut String, entries: &ModifierList) {
+    let _ = writeln!(out, "    modifiers: [");
+    for entry in entries {
+        let value = ron_value(entry).replace("r#None", "None");
+        let _ = writeln!(out, "        {value},");
     }
     let _ = writeln!(out, "    ],");
 }
@@ -415,8 +432,8 @@ fn modaction_from_effect(effect: &KeyEffect) -> ModAction {
 fn modaction_from_modkind(mod_type: ModType, kind: &ModKind) -> ModAction {
     match kind {
         ModKind::Press => ModAction::Press(mod_type),
-        ModKind::Lock => ModAction::Lock(mod_type),
-        ModKind::Latch => ModAction::Latch(mod_type),
+        ModKind::Lock(variant) => ModAction::Lock(mod_type, *variant),
+        ModKind::Latch(variant) => ModAction::Latch(mod_type, *variant),
         ModKind::None => ModAction::None,
     }
 }
@@ -524,11 +541,11 @@ fn from_levels<T: FlatMapValue, V: Copy>(
 fn modkind_from_modaction(action: ModAction) -> KeyEffect {
     let (mod_type, kind) = match action {
         ModAction::Press(t) => (t, ModKind::Press),
-        ModAction::Lock(t) => (t, ModKind::Lock),
-        ModAction::Latch(t) => (t, ModKind::Latch),
+        ModAction::Lock(t, variant) => (t, ModKind::Lock(variant)),
+        ModAction::Latch(t, variant) => (t, ModKind::Latch(variant)),
         ModAction::None => (ModType::None, ModKind::None),
     };
-    KeyEffect::from_modifier(StateModifier::new(mod_type, kind))
+    KeyEffect::modifier(mod_type, kind)
 }
 
 fn composer_from_compose(sequences: &[(Vec<char>, char)]) -> Composer {

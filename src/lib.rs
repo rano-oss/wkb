@@ -44,7 +44,10 @@ mod flat_keymap;
 mod modifiers;
 
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
-pub use modifiers::{level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK};
+pub use modifiers::{
+    level_index, KeyDirection, LockFlags, ModType, ALTGR, CAPS_LOCK, LEFT_SHIFT, NUM_LOCK,
+    RIGHT_SHIFT, SCROLL_LOCK,
+};
 /// Intermediate representation for persisted layout data files.
 pub mod ir;
 mod named_keys;
@@ -355,25 +358,23 @@ impl WKB {
             kb_layout.modifiers.update_key(evdev_code, key_direction)
         };
 
-        let mut group_target = match key_direction {
-            KeyDirection::Down => group_action.map(|action| {
-                self.group_state
-                    .press(evdev_code, action, current_layout_idx, num_layouts)
-            }),
-            KeyDirection::Up => Some(self.group_state.release(evdev_code)),
-        };
+        let group_target = self.group_state.update_key(
+            evdev_code,
+            key_direction,
+            group_action,
+            is_modifier,
+            current_layout_idx,
+            num_layouts,
+        );
 
         if !is_modifier && key_direction == KeyDirection::Down {
             {
                 let kb_layout = &mut self.layouts[current_layout_idx];
                 kb_layout.modifiers.unlatch();
             }
-            group_target = Some(self.group_state.unlatch());
         }
 
-        if let Some(target) = group_target {
-            self.switch_group_layout(target);
-        }
+        self.switch_group_layout(group_target);
         is_modifier
     }
 
@@ -407,24 +408,9 @@ impl WKB {
     /// Return the keycode (and optional level) for the given modifier type.
     #[doc(hidden)]
     pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
-        let modifiers = &self.layouts[self.current_layout_idx].modifiers;
-        for (code, modifier) in modifiers.iter() {
-            match modifier {
-                Modifier::Single(modifier_effekt) => {
-                    if modifier_effekt.mod_kind_from_mod_type(mod_type).is_some() {
-                        return Some((*code, None));
-                    }
-                }
-                Modifier::Leveled(map) => {
-                    for (level, modifier_effekt) in map {
-                        if modifier_effekt.mod_kind_from_mod_type(mod_type).is_some() {
-                            return Some((*code, Some(*level)));
-                        }
-                    }
-                }
-            }
-        }
-        None
+        self.layouts[self.current_layout_idx]
+            .modifiers
+            .level_code(mod_type)
     }
 
     /// Designate an evdev keycode as the Compose (Multi_key) key.
@@ -440,17 +426,29 @@ impl WKB {
         let modifier = if let Some(level) = level {
             Modifier::Leveled(BTreeMap::from([(
                 level,
-                KeyEffect::from_modifier(StateModifier::new(ModType::Compose, ModKind::Press)),
+                KeyEffect::modifier(ModType::Compose, ModKind::Press),
             )]))
         } else {
-            Modifier::Single(KeyEffect::from_modifier(StateModifier::new(
-                ModType::Compose,
-                ModKind::Press,
-            )))
+            Modifier::Single(KeyEffect::modifier(ModType::Compose, ModKind::Press))
         };
         for layout in &mut self.layouts {
             layout.modifiers.set_modifier(evdev_code, modifier.clone());
         }
+    }
+
+    /// Add a relative group-lock action to a key in every layout.
+    ///
+    /// `delta = 1` cycles forward through layouts. Combining this with
+    /// [`LockFlags::TAP`] changes layout only when the key is released without
+    /// another key being pressed while it was held.
+    pub fn set_group_key(&mut self, evdev_code: u32, delta: i8, flags: LockFlags) -> bool {
+        let Some(group) = Group::relative(delta, ModKind::Lock(flags)) else {
+            return false;
+        };
+        for layout in &mut self.layouts {
+            layout.modifiers.set_group(evdev_code, group);
+        }
+        true
     }
 
     /// Process a key press. Updates modifier state and advances compose sequences.

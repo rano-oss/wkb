@@ -1,4 +1,5 @@
-use wkb::{ComposeState, KeyDirection, ALTGR, WKB};
+use wkb::ir::LayoutFile;
+use wkb::{ComposeState, KeyDirection, LockFlags, ALTGR, LEFT_SHIFT, RIGHT_SHIFT, WKB};
 use xkbcommon::xkb::{self, Keycode};
 
 fn states(options: &str) -> (WKB, xkb::State) {
@@ -124,5 +125,46 @@ fn latched_group_is_consumed_after_one_key() {
 
     state.update_key(Keycode::new(38), xkb::KeyDirection::Down);
     assert_group(&wkb, &state, "consuming the latched group");
+    assert_eq!(wkb.active_layout_idx(), 0);
+}
+
+#[test]
+fn shift_tap_switches_zhuyin_and_norwegian_without_changing_shift_hold() {
+    let zhuyin = LayoutFile::from_ron_str(include_str!("../ron_layouts/tw.zhuyin.ron")).unwrap();
+    let norwegian = WKB::new_from_names("", "", "no", "", None)
+        .unwrap()
+        .export_layout(0)
+        .unwrap();
+    let mut wkb = WKB::new_from_layouts(vec![zhuyin, norwegian]).unwrap();
+    assert!(wkb.set_group_key(LEFT_SHIFT, 1, LockFlags::TAP));
+    assert!(wkb.set_group_key(RIGHT_SHIFT, 1, LockFlags::TAP));
+
+    // An unused Shift release changes group; pressing Shift itself does not.
+    wkb.press_key(LEFT_SHIFT);
+    assert_eq!(wkb.active_layout_idx(), 0);
+    wkb.release_key(LEFT_SHIFT);
+    assert_eq!(wkb.active_layout_idx(), 1);
+
+    // Held Shift remains an ordinary Norwegian Shift. Using another key
+    // cancels TAP, so releasing Shift does not switch layout.
+    wkb.press_key(LEFT_SHIFT);
+    assert_eq!(wkb.active_layout_idx(), 1);
+    assert_eq!(wkb.key_char(30), Some('A'));
+    wkb.press_key(30);
+    wkb.release_key(30);
+    wkb.release_key(LEFT_SHIFT);
+    assert_eq!(wkb.active_layout_idx(), 1);
+
+    wkb.press_key(RIGHT_SHIFT);
+    wkb.release_key(RIGHT_SHIFT);
+    assert_eq!(wkb.active_layout_idx(), 0);
+
+    // Zhuyin deliberately has one level. Held Shift therefore produces no
+    // character, and using a key still cancels the pending group TAP.
+    wkb.press_key(LEFT_SHIFT);
+    assert_eq!(wkb.key_char(30), None);
+    wkb.press_key(30);
+    wkb.release_key(30);
+    wkb.release_key(LEFT_SHIFT);
     assert_eq!(wkb.active_layout_idx(), 0);
 }

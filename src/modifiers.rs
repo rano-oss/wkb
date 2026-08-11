@@ -74,9 +74,31 @@ pub enum KeyDirection {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ModKind {
     Press,
-    Lock,
-    Latch,
+    Lock(LockFlags),
+    Latch(LatchVariant),
     None,
+}
+
+bitflags::bitflags! {
+    #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+    pub struct LockFlags: u8 {
+        const LOCK_ON_RELEASE = 1 << 0;
+        const UNLOCK_ON_PRESS = 1 << 1;
+        const TAP = 1 << 2;
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum LatchVariant {
+    OnPress,
+    #[default]
+    OnRelease,
+}
+
+impl LatchVariant {
+    pub(crate) fn is_on_release(&self) -> bool {
+        *self == Self::OnRelease
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -94,8 +116,10 @@ pub enum ModType {
 #[derive(Debug, Clone, Copy, Default)]
 struct ModState {
     pressed: bool,
-    locked: u8,
+    locked: bool,
+    lock_changed: bool,
     latched: bool,
+    tap_used: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -115,47 +139,82 @@ impl StateModifier {
     }
 
     fn update(&mut self, key_direction: KeyDirection) {
-        match (self.kind, key_direction) {
-            (ModKind::Press, KeyDirection::Down) => self.state.pressed = true,
-            (ModKind::Press, KeyDirection::Up) => self.state.pressed = false,
-            (ModKind::Lock, KeyDirection::Down) => {
-                self.state.pressed = true;
-                if self.state.locked == 0 {
-                    self.state.locked = 2;
+        let down = key_direction == KeyDirection::Down;
+        match self.kind {
+            ModKind::Press => self.state.pressed = down,
+            ModKind::Lock(flags) if flags.contains(LockFlags::TAP) => {
+                self.state.pressed = down;
+                if down {
+                    self.state.tap_used = false;
+                } else if !self.state.tap_used {
+                    self.state.locked = !self.state.locked;
                 }
             }
-            (ModKind::Lock, KeyDirection::Up) => {
+            ModKind::Lock(flags) if down => {
+                self.state.pressed = true;
+                self.state.lock_changed = false;
+                if self.state.locked && flags.contains(LockFlags::UNLOCK_ON_PRESS) {
+                    self.state.locked = false;
+                    self.state.lock_changed = true;
+                } else if !self.state.locked && !flags.contains(LockFlags::LOCK_ON_RELEASE) {
+                    self.state.locked = true;
+                    self.state.lock_changed = true;
+                }
+            }
+            ModKind::Lock(flags) => {
                 self.state.pressed = false;
-                if self.state.locked != 0 {
-                    self.state.locked -= 1;
+                if !self.state.lock_changed {
+                    if self.state.locked && !flags.contains(LockFlags::UNLOCK_ON_PRESS) {
+                        self.state.locked = false;
+                    } else if !self.state.locked && flags.contains(LockFlags::LOCK_ON_RELEASE) {
+                        self.state.locked = true;
+                    }
                 }
             }
-            (ModKind::Latch, KeyDirection::Down) => {
-                self.state.pressed = true;
-                self.state.latched = !self.state.latched;
+            ModKind::Latch(LatchVariant::OnPress) => {
+                self.state.pressed = down;
+                if down {
+                    self.state.latched = !self.state.latched;
+                }
             }
-            (ModKind::Latch, KeyDirection::Up) => self.state.pressed = false,
-            (ModKind::None, _) => {}
+            ModKind::Latch(LatchVariant::OnRelease) if down => {
+                self.state.pressed = !std::mem::take(&mut self.state.latched);
+            }
+            ModKind::Latch(LatchVariant::OnRelease) => {
+                if std::mem::take(&mut self.state.pressed) {
+                    self.state.latched = true;
+                }
+            }
+            ModKind::None => {}
         }
     }
 
     fn update_from_state(&mut self, pressed: bool, locked: bool, latched: bool) {
         self.state.pressed = pressed;
-        self.state.locked = locked as u8;
+        self.state.locked = locked;
+        self.state.lock_changed = false;
         self.state.latched = latched;
     }
 
     fn unlatch(&mut self) {
-        if self.kind == ModKind::Latch {
+        if matches!(self.kind, ModKind::Latch(_)) {
             self.state.latched = false;
+        }
+    }
+
+    fn use_tap(&mut self) {
+        if matches!(self.kind, ModKind::Lock(flags) if flags.contains(LockFlags::TAP))
+            && self.state.pressed
+        {
+            self.state.tap_used = true;
         }
     }
 
     fn state(&self) -> (bool, bool, bool) {
         (
             self.state.pressed,
-            self.kind == ModKind::Lock && self.state.locked > 0,
-            self.kind == ModKind::Latch && self.state.latched,
+            matches!(self.kind, ModKind::Lock(_)) && self.state.locked,
+            matches!(self.kind, ModKind::Latch(_)) && self.state.latched,
         )
     }
 
@@ -164,30 +223,27 @@ impl StateModifier {
     }
 
     fn locked(&self) -> bool {
-        self.kind == ModKind::Lock && self.state.locked > 0
+        matches!(self.kind, ModKind::Lock(_)) && self.state.locked
     }
 
     fn active(&self) -> bool {
         match self.kind {
             ModKind::Press => self.state.pressed,
-            ModKind::Lock => self.state.locked > 0,
-            ModKind::Latch => self.state.latched,
+            ModKind::Lock(flags) if flags.contains(LockFlags::LOCK_ON_RELEASE) => {
+                self.state.pressed || self.state.locked
+            }
+            ModKind::Lock(_) => self.state.locked,
+            ModKind::Latch(LatchVariant::OnPress) => self.state.latched,
+            ModKind::Latch(LatchVariant::OnRelease) => self.state.pressed || self.state.latched,
             ModKind::None => false,
         }
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum GroupKind {
-    Set,
-    Latch,
-    Lock { on_release: bool },
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Group {
     id: u8,
-    kind: GroupKind,
+    kind: ModKind,
     clear_locks: bool,
     latch_to_lock: bool,
 }
@@ -198,7 +254,7 @@ pub(crate) struct Group {
 pub(crate) const GROUP_RELATIVE_MARKER: u8 = 0x80;
 
 impl Group {
-    pub(crate) fn new(id: u8, kind: GroupKind, clear_locks: bool, latch_to_lock: bool) -> Self {
+    pub(crate) fn new(id: u8, kind: ModKind, clear_locks: bool, latch_to_lock: bool) -> Self {
         Self {
             id,
             kind,
@@ -207,8 +263,19 @@ impl Group {
         }
     }
 
+    pub(crate) fn relative(delta: i8, kind: ModKind) -> Option<Self> {
+        (-64..=63).contains(&delta).then(|| {
+            Self::new(
+                GROUP_RELATIVE_MARKER | ((delta as u8) & 0x7f),
+                kind,
+                false,
+                false,
+            )
+        })
+    }
+
     #[cfg(test)]
-    pub(crate) fn kind(&self) -> GroupKind {
+    pub(crate) fn kind(&self) -> ModKind {
         self.kind
     }
 
@@ -243,6 +310,7 @@ struct PressedGroup {
     keycode: u32,
     action: Group,
     target: usize,
+    tap_used: bool,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -255,7 +323,11 @@ pub(crate) struct GroupState {
 impl GroupState {
     pub(crate) fn effective(&self) -> usize {
         self.pressed
-            .last()
+            .iter()
+            .rev()
+            .find(|pressed| {
+                !matches!(pressed.action.kind, ModKind::Lock(flags) if flags.contains(LockFlags::TAP))
+            })
             .map(|pressed| pressed.target)
             .or(self.latched)
             .unwrap_or(self.locked)
@@ -267,13 +339,33 @@ impl GroupState {
         self.pressed.clear();
     }
 
-    pub(crate) fn press(
+    pub(crate) fn update_key(
         &mut self,
         keycode: u32,
-        action: Group,
+        direction: KeyDirection,
+        action: Option<Group>,
+        is_modifier: bool,
         current: usize,
         num_layouts: usize,
     ) -> usize {
+        if direction == KeyDirection::Up {
+            return self.release(keycode);
+        }
+
+        for pressed in &mut self.pressed {
+            if pressed.keycode != keycode
+                && matches!(pressed.action.kind, ModKind::Lock(flags) if flags.contains(LockFlags::TAP))
+            {
+                pressed.tap_used = true;
+            }
+        }
+        if !is_modifier {
+            self.latched = None;
+        }
+
+        let Some(action) = action else {
+            return self.effective();
+        };
         let Some(target) = action.resolve(current, num_layouts) else {
             return self.effective();
         };
@@ -283,21 +375,19 @@ impl GroupState {
         }
 
         match action.kind {
-            GroupKind::Set | GroupKind::Latch => {
-                self.pressed.retain(|pressed| pressed.keycode != keycode);
-                self.pressed.push(PressedGroup {
-                    keycode,
-                    action,
-                    target,
-                });
+            ModKind::Lock(flags)
+                if !flags.intersects(LockFlags::LOCK_ON_RELEASE | LockFlags::TAP) =>
+            {
+                self.locked = target;
             }
-            GroupKind::Lock { on_release: false } => self.locked = target,
-            GroupKind::Lock { on_release: true } => {
+            ModKind::None => {}
+            _ => {
                 self.pressed.retain(|pressed| pressed.keycode != keycode);
                 self.pressed.push(PressedGroup {
                     keycode,
                     action,
                     target,
+                    tap_used: false,
                 });
             }
         }
@@ -314,8 +404,8 @@ impl GroupState {
         };
         let pressed = self.pressed.remove(index);
         match pressed.action.kind {
-            GroupKind::Set => {}
-            GroupKind::Latch => {
+            ModKind::Press | ModKind::None => {}
+            ModKind::Latch(_) => {
                 if pressed.action.latch_to_lock && self.latched == Some(pressed.target) {
                     self.locked = pressed.target;
                     self.latched = None;
@@ -323,14 +413,17 @@ impl GroupState {
                     self.latched = Some(pressed.target);
                 }
             }
-            GroupKind::Lock { on_release: true } => self.locked = pressed.target,
-            GroupKind::Lock { on_release: false } => {}
+            ModKind::Lock(flags) if flags.contains(LockFlags::TAP) && !pressed.tap_used => {
+                self.locked = pressed.target;
+            }
+            ModKind::Lock(flags)
+                if flags.contains(LockFlags::LOCK_ON_RELEASE)
+                    && !flags.contains(LockFlags::TAP) =>
+            {
+                self.locked = pressed.target;
+            }
+            ModKind::Lock(_) => {}
         }
-        self.effective()
-    }
-
-    pub(crate) fn unlatch(&mut self) -> usize {
-        self.latched = None;
         self.effective()
     }
 }
@@ -342,9 +435,9 @@ pub struct KeyEffect {
 }
 
 impl KeyEffect {
-    pub fn from_modifier(modifier: StateModifier) -> Self {
+    pub(crate) fn modifier(mod_type: ModType, kind: ModKind) -> Self {
         Self {
-            modifier: Some(modifier),
+            modifier: Some(StateModifier::new(mod_type, kind)),
             group: None,
         }
     }
@@ -400,6 +493,12 @@ impl KeyEffect {
             modifier.unlatch();
         }
     }
+
+    fn use_tap(&mut self) {
+        if let Some(modifier) = &mut self.modifier {
+            modifier.use_tap();
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -409,6 +508,23 @@ pub enum Modifier {
 }
 
 impl Modifier {
+    fn effect(&self, level: u8) -> Option<&KeyEffect> {
+        match self {
+            Modifier::Single(effect) => Some(effect),
+            Modifier::Leveled(map) => map.get(&level).or_else(|| map.get(&0)),
+        }
+    }
+
+    fn effect_mut(&mut self, level: u8) -> Option<&mut KeyEffect> {
+        match self {
+            Modifier::Single(effect) => Some(effect),
+            Modifier::Leveled(map) => {
+                let level = if map.contains_key(&level) { level } else { 0 };
+                map.get_mut(&level)
+            }
+        }
+    }
+
     fn for_each(&self, mut f: impl FnMut(&KeyEffect)) {
         match self {
             Modifier::Single(mk) => f(mk),
@@ -422,6 +538,21 @@ impl Modifier {
             Modifier::Leveled(map) => map.values_mut().for_each(f),
         }
     }
+
+    fn level_for(&self, mod_type: ModType) -> Option<Option<u8>> {
+        match self {
+            Modifier::Single(effect) => effect
+                .mod_kind_from_mod_type(mod_type)
+                .is_some()
+                .then_some(None),
+            Modifier::Leveled(map) => map.iter().find_map(|(level, effect)| {
+                effect
+                    .mod_kind_from_mod_type(mod_type)
+                    .is_some()
+                    .then_some(Some(*level))
+            }),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -432,9 +563,8 @@ pub struct Modifiers {
 
 impl Default for Modifiers {
     fn default() -> Self {
-        let single = |mod_type, kind| {
-            Modifier::Single(KeyEffect::from_modifier(StateModifier::new(mod_type, kind)))
-        };
+        let single = |mod_type, kind| Modifier::Single(KeyEffect::modifier(mod_type, kind));
+        let lock = ModKind::Lock(LockFlags::empty());
         let entries = vec![
             (LEFT_CTRL, single(ModType::None, ModKind::Press)),
             (RIGHT_CTRL, single(ModType::None, ModKind::Press)),
@@ -443,9 +573,9 @@ impl Default for Modifiers {
             (ALT, single(ModType::None, ModKind::Press)),
             (ALTGR, single(ModType::None, ModKind::Press)),
             (LOGO, single(ModType::None, ModKind::Press)),
-            (CAPS_LOCK, single(ModType::Caps, ModKind::Lock)),
-            (NUM_LOCK, single(ModType::Num, ModKind::Lock)),
-            (SCROLL_LOCK, single(ModType::Scroll, ModKind::Lock)),
+            (CAPS_LOCK, single(ModType::Caps, lock)),
+            (NUM_LOCK, single(ModType::Num, lock)),
+            (SCROLL_LOCK, single(ModType::Scroll, lock)),
         ];
         Self { entries }
     }
@@ -482,12 +612,31 @@ impl Modifiers {
         self.entries.iter().map(|(c, m)| (c, m))
     }
 
+    pub(crate) fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
+        self.iter()
+            .find_map(|(code, modifier)| modifier.level_for(mod_type).map(|level| (*code, level)))
+    }
+
     /// Insert or replace a modifier for the given evdev code.
     pub fn set_modifier(&mut self, evdev_code: u32, modifier: Modifier) {
         if let Some((_, existing)) = self.entries.iter_mut().find(|(c, _)| *c == evdev_code) {
             *existing = modifier;
         } else {
             self.entries.push((evdev_code, modifier));
+        }
+    }
+
+    pub(crate) fn set_group(&mut self, evdev_code: u32, group: Group) {
+        if let Some(modifier) = self.get_mut(evdev_code) {
+            modifier.for_each_mut(|effect| effect.group = Some(group));
+        } else {
+            self.set_modifier(
+                evdev_code,
+                Modifier::Single(KeyEffect {
+                    group: Some(group),
+                    ..KeyEffect::default()
+                }),
+            );
         }
     }
 
@@ -540,6 +689,11 @@ impl Modifiers {
         )
     }
 
+    fn active_level(&self) -> u8 {
+        let (_, level2, level3, level5) = self.active_none_and_levels();
+        level_index(level5, level3, level2) as u8
+    }
+
     /// Return true if Caps Lock is locked.
     #[inline]
     pub fn caps_locked(&self) -> bool {
@@ -577,39 +731,34 @@ impl Modifiers {
         evdev_code: u32,
         key_direction: KeyDirection,
     ) -> (bool, Option<Group>) {
+        if key_direction == KeyDirection::Down {
+            self.entries
+                .iter_mut()
+                .filter(|(code, _)| *code != evdev_code)
+                .for_each(|(_, modifier)| modifier.for_each_mut(KeyEffect::use_tap));
+        }
+
         let pos = match self.entries.iter().position(|(c, _)| *c == evdev_code) {
             Some(p) => p,
             None => return (false, None),
         };
-        let mut group = None;
         if key_direction == KeyDirection::Down {
             // The modifier component is selected from the state before the
             // press. XKB group actions, however, use the level after the key's
             // own modifier contribution has been applied (for example the
             // second key in a Ctrl+Shift group toggle).
-            let (_, l2, l3, l5) = self.active_none_and_levels();
-            let level = level_index(l5, l3, l2) as u8;
-            if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
-                let target = if map.contains_key(&level) { level } else { 0 };
-                if let Some(effect) = map.get_mut(&target) {
-                    effect.update(key_direction);
-                } else {
-                    return (false, None);
-                }
-            } else if let Modifier::Single(effect) = &mut self.entries[pos].1 {
-                effect.update(key_direction);
-            }
-
-            let (_, l2, l3, l5) = self.active_none_and_levels();
-            let level = level_index(l5, l3, l2) as u8;
-            group = match &self.entries[pos].1 {
-                Modifier::Single(effect) => effect.group(),
-                Modifier::Leveled(map) => map
-                    .get(&level)
-                    .or_else(|| map.get(&0))
-                    .and_then(KeyEffect::group),
+            let level = self.active_level();
+            let Some(effect) = self.entries[pos].1.effect_mut(level) else {
+                return (false, None);
             };
-        } else if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
+            effect.update(key_direction);
+
+            let level = self.active_level();
+            let group = self.entries[pos].1.effect(level).and_then(KeyEffect::group);
+            return (true, group);
+        }
+
+        if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
             // Release the level that is actually pressed. A press activates
             // exactly one level's effect, so scanning for the pressed effect
             // targets the same level without extra bookkeeping.
@@ -625,7 +774,7 @@ impl Modifiers {
         } else if let Modifier::Single(effect) = &mut self.entries[pos].1 {
             effect.update(key_direction);
         }
-        (true, group)
+        (true, None)
     }
 
     pub fn state(&self, layout_index: usize) -> RawModifiers {
@@ -723,5 +872,99 @@ fn inherit_effect(dst: &mut KeyEffect, src: &KeyEffect) {
         if dst.kind == src.kind {
             dst.state = src.state;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn latch_variants_activate_on_their_named_edge() {
+        let mut on_press =
+            StateModifier::new(ModType::Level3, ModKind::Latch(LatchVariant::OnPress));
+        on_press.update(KeyDirection::Down);
+        assert_eq!(on_press.state(), (true, false, true));
+
+        let mut on_release =
+            StateModifier::new(ModType::Level3, ModKind::Latch(LatchVariant::OnRelease));
+        on_release.update(KeyDirection::Down);
+        assert_eq!(on_release.state(), (true, false, false));
+        on_release.update(KeyDirection::Up);
+        assert_eq!(on_release.state(), (false, false, true));
+    }
+
+    #[test]
+    fn lock_flags_use_and_combine_their_named_edges() {
+        let mut unlock =
+            StateModifier::new(ModType::Level2, ModKind::Lock(LockFlags::UNLOCK_ON_PRESS));
+        unlock.update(KeyDirection::Down);
+        unlock.update(KeyDirection::Up);
+        assert!(unlock.locked());
+        unlock.update(KeyDirection::Down);
+        assert!(!unlock.locked());
+
+        let mut release =
+            StateModifier::new(ModType::Level2, ModKind::Lock(LockFlags::LOCK_ON_RELEASE));
+        release.update(KeyDirection::Down);
+        assert!(!release.locked());
+        assert!(release.active());
+        release.update(KeyDirection::Up);
+        assert!(release.locked());
+
+        let mut combined = StateModifier::new(
+            ModType::Level2,
+            ModKind::Lock(LockFlags::LOCK_ON_RELEASE | LockFlags::UNLOCK_ON_PRESS),
+        );
+        combined.update(KeyDirection::Down);
+        assert!(!combined.locked());
+        combined.update(KeyDirection::Up);
+        assert!(combined.locked());
+        combined.update(KeyDirection::Down);
+        assert!(!combined.locked());
+        combined.update(KeyDirection::Up);
+        assert!(!combined.locked());
+    }
+
+    #[test]
+    fn tap_lock_is_momentary_when_used() {
+        let mut tap = StateModifier::new(ModType::Level2, ModKind::Lock(LockFlags::TAP));
+        tap.update(KeyDirection::Down);
+        assert!(!tap.active());
+        assert!(!tap.locked());
+        tap.use_tap();
+        tap.update(KeyDirection::Up);
+        assert!(!tap.active());
+
+        tap.update(KeyDirection::Down);
+        tap.update(KeyDirection::Up);
+        assert!(tap.locked());
+    }
+
+    #[test]
+    fn tap_group_locks_only_when_unused() {
+        let tap = Group::new(
+            GROUP_RELATIVE_MARKER | 1,
+            ModKind::Lock(LockFlags::TAP),
+            false,
+            false,
+        );
+        let mut state = GroupState::default();
+
+        assert_eq!(
+            state.update_key(42, KeyDirection::Down, Some(tap), true, 0, 2),
+            0
+        );
+        assert_eq!(
+            state.update_key(30, KeyDirection::Down, None, false, 1, 2),
+            0
+        );
+        assert_eq!(state.update_key(42, KeyDirection::Up, None, true, 1, 2), 0);
+
+        assert_eq!(
+            state.update_key(42, KeyDirection::Down, Some(tap), true, 0, 2),
+            0
+        );
+        assert_eq!(state.update_key(42, KeyDirection::Up, None, true, 1, 2), 1);
     }
 }
