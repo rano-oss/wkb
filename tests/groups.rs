@@ -173,7 +173,7 @@ fn latched_group_is_consumed_after_one_key() {
 
 #[test]
 fn shift_tap_switches_zhuyin_and_norwegian_without_changing_shift_hold() {
-    let zhuyin = LayoutFile::from_ron_str(include_str!("../ron_layouts/tw.zhuyin.ron")).unwrap();
+    let zhuyin = LayoutFile::from_ron_str(include_str!("common/tw.zhuyin.ron")).unwrap();
     let norwegian = WKB::new_from_names("", "", "no", "", None)
         .unwrap()
         .export_layout(0)

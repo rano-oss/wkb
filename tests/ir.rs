@@ -250,7 +250,7 @@ fn ron_fixtures_roundtrip() {
 
 #[test]
 fn taiwanese_zhuyin_fixture_is_one_level_bopomofo() {
-    let file = LayoutFile::from_ron_str(include_str!("../ron_layouts/tw.zhuyin.ron")).unwrap();
+    let file = LayoutFile::from_ron_str(include_str!("common/tw.zhuyin.ron")).unwrap();
     assert_eq!(file.keymap.keys().copied().collect::<Vec<_>>(), vec![0]);
     assert_eq!(
         file.modifiers,
