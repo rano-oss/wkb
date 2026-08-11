@@ -71,164 +71,12 @@ pub enum KeyDirection {
     Down,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ModKind {
-    Press { pressed: bool },
-    Lock { pressed: bool, locked: u8 },
-    Latch { pressed: bool, latched: bool },
-    UnlockOnPress { pressed: bool, locked: bool },
-    LockOnRelease { pressed: bool, locked: u8 },
+    Press,
+    Lock,
+    Latch,
     None,
-}
-
-impl ModKind {
-    pub fn update(&mut self, key_direction: KeyDirection) {
-        match self {
-            ModKind::Press { ref mut pressed } => match key_direction {
-                KeyDirection::Down => *pressed = true,
-                KeyDirection::Up => *pressed = false,
-            },
-            ModKind::Lock {
-                ref mut pressed,
-                ref mut locked,
-            } => match key_direction {
-                KeyDirection::Down => {
-                    *pressed = true;
-                    if *locked == 0 {
-                        *locked = 2;
-                    }
-                }
-                KeyDirection::Up => {
-                    *pressed = false;
-                    if *locked != 0 {
-                        *locked -= 1;
-                    }
-                }
-            },
-            ModKind::Latch {
-                ref mut pressed,
-                ref mut latched,
-            } => match key_direction {
-                KeyDirection::Down => {
-                    *pressed = true;
-                    *latched = !*latched;
-                }
-                KeyDirection::Up => {
-                    *pressed = false;
-                }
-            },
-            ModKind::UnlockOnPress {
-                ref mut pressed,
-                ref mut locked,
-            } => match key_direction {
-                KeyDirection::Down => {
-                    *pressed = true;
-                    *locked = !*locked;
-                }
-                KeyDirection::Up => {
-                    *pressed = false;
-                }
-            },
-            ModKind::LockOnRelease {
-                ref mut pressed,
-                ref mut locked,
-            } => match key_direction {
-                KeyDirection::Down => {
-                    *pressed = true;
-                    if *locked != 0 {
-                        *locked -= 1;
-                    }
-                }
-                KeyDirection::Up => {
-                    *pressed = false;
-                    if *locked == 0 {
-                        *locked = 2;
-                    } else {
-                        *locked -= 1;
-                    }
-                }
-            },
-            ModKind::None => {}
-        }
-    }
-
-    fn update_from_state(&mut self, pressed: bool, locked: bool, latched: bool) {
-        match self {
-            ModKind::Press { pressed: p } => *p = pressed,
-            ModKind::Lock {
-                pressed: p,
-                locked: l,
-            } => {
-                *p = pressed;
-                *l = locked as u8;
-            }
-            ModKind::Latch {
-                pressed: p,
-                latched: lt,
-            } => {
-                *p = pressed;
-                *lt = latched;
-            }
-            ModKind::UnlockOnPress {
-                pressed: p,
-                locked: l,
-            } => {
-                *p = pressed;
-                *l = locked;
-            }
-            ModKind::LockOnRelease {
-                pressed: p,
-                locked: l,
-            } => {
-                *p = pressed;
-                *l = locked as u8;
-            }
-            ModKind::None => {}
-        }
-    }
-
-    fn unlatch(&mut self) {
-        if let ModKind::Latch {
-            pressed: _,
-            latched,
-        } = self
-        {
-            *latched = false
-        }
-    }
-
-    pub fn locked(&self) -> bool {
-        match self {
-            ModKind::UnlockOnPress { locked, .. } => *locked,
-            ModKind::Lock { locked, .. } | ModKind::LockOnRelease { locked, .. } => *locked > 0,
-            _ => false,
-        }
-    }
-
-    pub fn latched(&self) -> bool {
-        matches!(self, ModKind::Latch { latched, .. } if *latched)
-    }
-
-    pub fn pressed(&self) -> bool {
-        match self {
-            ModKind::Press { pressed }
-            | ModKind::Lock { pressed, .. }
-            | ModKind::Latch { pressed, .. }
-            | ModKind::UnlockOnPress { pressed, .. }
-            | ModKind::LockOnRelease { pressed, .. } => *pressed,
-            ModKind::None => false,
-        }
-    }
-
-    pub fn active(&self) -> bool {
-        match self {
-            ModKind::UnlockOnPress { locked, .. } => *locked,
-            ModKind::Lock { locked, .. } | ModKind::LockOnRelease { locked, .. } => *locked > 0,
-            ModKind::Press { pressed } => *pressed,
-            ModKind::Latch { latched, .. } => *latched,
-            ModKind::None => false,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -243,16 +91,105 @@ pub enum ModType {
     Scroll,
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+struct ModState {
+    pressed: bool,
+    locked: u8,
+    latched: bool,
+}
+
 #[derive(Debug, Clone)]
 pub struct StateModifier {
     pub(crate) mod_type: ModType,
     pub(crate) kind: ModKind,
+    state: ModState,
 }
 
-#[derive(Debug, Clone)]
+impl StateModifier {
+    pub(crate) fn new(mod_type: ModType, kind: ModKind) -> Self {
+        Self {
+            mod_type,
+            kind,
+            state: ModState::default(),
+        }
+    }
+
+    fn update(&mut self, key_direction: KeyDirection) {
+        match (self.kind, key_direction) {
+            (ModKind::Press, KeyDirection::Down) => self.state.pressed = true,
+            (ModKind::Press, KeyDirection::Up) => self.state.pressed = false,
+            (ModKind::Lock, KeyDirection::Down) => {
+                self.state.pressed = true;
+                if self.state.locked == 0 {
+                    self.state.locked = 2;
+                }
+            }
+            (ModKind::Lock, KeyDirection::Up) => {
+                self.state.pressed = false;
+                if self.state.locked != 0 {
+                    self.state.locked -= 1;
+                }
+            }
+            (ModKind::Latch, KeyDirection::Down) => {
+                self.state.pressed = true;
+                self.state.latched = !self.state.latched;
+            }
+            (ModKind::Latch, KeyDirection::Up) => self.state.pressed = false,
+            (ModKind::None, _) => {}
+        }
+    }
+
+    fn update_from_state(&mut self, pressed: bool, locked: bool, latched: bool) {
+        self.state.pressed = pressed;
+        self.state.locked = locked as u8;
+        self.state.latched = latched;
+    }
+
+    fn unlatch(&mut self) {
+        if self.kind == ModKind::Latch {
+            self.state.latched = false;
+        }
+    }
+
+    fn state(&self) -> (bool, bool, bool) {
+        (
+            self.state.pressed,
+            self.kind == ModKind::Lock && self.state.locked > 0,
+            self.kind == ModKind::Latch && self.state.latched,
+        )
+    }
+
+    fn pressed(&self) -> bool {
+        self.kind != ModKind::None && self.state.pressed
+    }
+
+    fn locked(&self) -> bool {
+        self.kind == ModKind::Lock && self.state.locked > 0
+    }
+
+    fn active(&self) -> bool {
+        match self.kind {
+            ModKind::Press => self.state.pressed,
+            ModKind::Lock => self.state.locked > 0,
+            ModKind::Latch => self.state.latched,
+            ModKind::None => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum GroupKind {
+    Set,
+    Latch,
+    Lock { on_release: bool },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Group {
     id: u8,
-    kind: ModKind,
+    kind: GroupKind,
+    clear_locks: bool,
+    latch_to_lock: bool,
 }
 
 /// High bit set in `Group.id` means the value is a relative group delta
@@ -261,13 +198,18 @@ pub(crate) struct Group {
 pub(crate) const GROUP_RELATIVE_MARKER: u8 = 0x80;
 
 impl Group {
-    pub(crate) fn new(id: u8, kind: ModKind) -> Self {
-        Self { id, kind }
+    pub(crate) fn new(id: u8, kind: GroupKind, clear_locks: bool, latch_to_lock: bool) -> Self {
+        Self {
+            id,
+            kind,
+            clear_locks,
+            latch_to_lock,
+        }
     }
 
     #[cfg(test)]
-    pub(crate) fn kind(&self) -> &ModKind {
-        &self.kind
+    pub(crate) fn kind(&self) -> GroupKind {
+        self.kind
     }
 
     /// Whether this group switch is a relative delta from the active layout
@@ -297,143 +239,184 @@ impl Group {
 }
 
 #[derive(Debug, Clone)]
-pub enum ModifierEffect {
-    Modifier(StateModifier),
-    Group(Group),
-    Dual(StateModifier, Group),
+struct PressedGroup {
+    keycode: u32,
+    action: Group,
+    target: usize,
 }
 
-impl ModifierEffect {
+#[derive(Debug, Clone, Default)]
+pub(crate) struct GroupState {
+    locked: usize,
+    latched: Option<usize>,
+    pressed: Vec<PressedGroup>,
+}
+
+impl GroupState {
+    pub(crate) fn effective(&self) -> usize {
+        self.pressed
+            .last()
+            .map(|pressed| pressed.target)
+            .or(self.latched)
+            .unwrap_or(self.locked)
+    }
+
+    pub(crate) fn set_layout(&mut self, layout: usize) {
+        self.locked = layout;
+        self.latched = None;
+        self.pressed.clear();
+    }
+
+    pub(crate) fn press(
+        &mut self,
+        keycode: u32,
+        action: Group,
+        current: usize,
+        num_layouts: usize,
+    ) -> usize {
+        let Some(target) = action.resolve(current, num_layouts) else {
+            return self.effective();
+        };
+
+        if action.clear_locks {
+            self.locked = 0;
+        }
+
+        match action.kind {
+            GroupKind::Set | GroupKind::Latch => {
+                self.pressed.retain(|pressed| pressed.keycode != keycode);
+                self.pressed.push(PressedGroup {
+                    keycode,
+                    action,
+                    target,
+                });
+            }
+            GroupKind::Lock { on_release: false } => self.locked = target,
+            GroupKind::Lock { on_release: true } => {
+                self.pressed.retain(|pressed| pressed.keycode != keycode);
+                self.pressed.push(PressedGroup {
+                    keycode,
+                    action,
+                    target,
+                });
+            }
+        }
+        self.effective()
+    }
+
+    pub(crate) fn release(&mut self, keycode: u32) -> usize {
+        let Some(index) = self
+            .pressed
+            .iter()
+            .rposition(|pressed| pressed.keycode == keycode)
+        else {
+            return self.effective();
+        };
+        let pressed = self.pressed.remove(index);
+        match pressed.action.kind {
+            GroupKind::Set => {}
+            GroupKind::Latch => {
+                if pressed.action.latch_to_lock && self.latched == Some(pressed.target) {
+                    self.locked = pressed.target;
+                    self.latched = None;
+                } else {
+                    self.latched = Some(pressed.target);
+                }
+            }
+            GroupKind::Lock { on_release: true } => self.locked = pressed.target,
+            GroupKind::Lock { on_release: false } => {}
+        }
+        self.effective()
+    }
+
+    pub(crate) fn unlatch(&mut self) -> usize {
+        self.latched = None;
+        self.effective()
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct KeyEffect {
+    pub modifier: Option<StateModifier>,
+    pub(crate) group: Option<Group>,
+}
+
+impl KeyEffect {
+    pub fn from_modifier(modifier: StateModifier) -> Self {
+        Self {
+            modifier: Some(modifier),
+            group: None,
+        }
+    }
+
     pub fn mod_kind_from_mod_type(&self, mod_type: ModType) -> Option<&ModKind> {
-        match self {
-            ModifierEffect::Modifier(state_modifier) => {
-                if state_modifier.mod_type == mod_type {
-                    Some(&state_modifier.kind)
-                } else {
-                    None
-                }
-            }
-            ModifierEffect::Group(_group) => None,
-            ModifierEffect::Dual(state_modifier, _group) => {
-                if state_modifier.mod_type == mod_type {
-                    Some(&state_modifier.kind)
-                } else {
-                    None
-                }
-            }
+        let state_modifier = self.modifier.as_ref()?;
+        if state_modifier.mod_type == mod_type {
+            Some(&state_modifier.kind)
+        } else {
+            None
         }
     }
 
     pub fn active_mod_kind(&self) -> Option<&ModType> {
-        match self {
-            ModifierEffect::Modifier(state_modifier) => {
-                if state_modifier.kind.active() {
-                    Some(&state_modifier.mod_type)
-                } else {
-                    None
-                }
-            }
-            ModifierEffect::Group(_group) => None,
-            ModifierEffect::Dual(state_modifier, _group) => {
-                if state_modifier.kind.active() {
-                    Some(&state_modifier.mod_type)
-                } else {
-                    None
-                }
-            }
+        let state_modifier = self.modifier.as_ref()?;
+        if state_modifier.active() {
+            Some(&state_modifier.mod_type)
+        } else {
+            None
         }
     }
 
     pub fn state(&self) -> (bool, bool, bool) {
-        match self {
-            ModifierEffect::Modifier(state_modifier) => (
-                state_modifier.kind.pressed(),
-                state_modifier.kind.locked(),
-                state_modifier.kind.latched(),
-            ),
-            ModifierEffect::Group(_group) => (false, false, false),
-            ModifierEffect::Dual(state_modifier, _group) => (
-                state_modifier.kind.pressed(),
-                state_modifier.kind.locked(),
-                state_modifier.kind.latched(),
-            ),
-        }
+        self.modifier
+            .as_ref()
+            .map(StateModifier::state)
+            .unwrap_or_default()
     }
 
-    /// Whether this effect is currently pressed (either the modifier part,
-    /// the group part, or both).
+    /// Whether this effect's modifier component is currently pressed.
     pub fn pressed(&self) -> bool {
-        match self {
-            ModifierEffect::Modifier(state_modifier) => state_modifier.kind.pressed(),
-            ModifierEffect::Group(group) => group.kind.pressed(),
-            ModifierEffect::Dual(state_modifier, group) => {
-                state_modifier.kind.pressed() || group.kind.pressed()
-            }
-        }
+        self.modifier.as_ref().is_some_and(StateModifier::pressed)
     }
 
     pub fn update(&mut self, key_direction: KeyDirection) {
-        match self {
-            ModifierEffect::Modifier(state_modifier) => state_modifier.kind.update(key_direction),
-            ModifierEffect::Group(group) => group.kind.update(key_direction),
-            ModifierEffect::Dual(state_modifier, group) => {
-                state_modifier.kind.update(key_direction);
-                group.kind.update(key_direction);
-            }
+        if let Some(modifier) = &mut self.modifier {
+            modifier.update(key_direction);
         }
     }
 
     pub fn update_from_state(&mut self, pressed: bool, locked: bool, latched: bool) {
-        match self {
-            ModifierEffect::Modifier(state_modifier) => state_modifier
-                .kind
-                .update_from_state(pressed, locked, latched),
-            ModifierEffect::Group(_group) => {}
-            ModifierEffect::Dual(state_modifier, _group) => {
-                state_modifier
-                    .kind
-                    .update_from_state(pressed, locked, latched);
-            }
+        if let Some(modifier) = &mut self.modifier {
+            modifier.update_from_state(pressed, locked, latched);
         }
     }
 
-    /// The group switch carried by this effect, if its group action is
-    /// currently active (pressed, latched or locked).
-    pub(crate) fn active_group(&self) -> Option<&Group> {
-        match self {
-            ModifierEffect::Modifier(_) => None,
-            ModifierEffect::Group(group) => group.kind.active().then_some(group),
-            ModifierEffect::Dual(_, group) => group.kind.active().then_some(group),
-        }
+    pub(crate) fn group(&self) -> Option<Group> {
+        self.group
     }
 
     pub fn unlatch(&mut self) {
-        match self {
-            ModifierEffect::Modifier(state_modifier) => state_modifier.kind.unlatch(),
-            ModifierEffect::Group(group) => group.kind.unlatch(),
-            ModifierEffect::Dual(state_modifier, group) => {
-                state_modifier.kind.unlatch();
-                group.kind.unlatch();
-            }
+        if let Some(modifier) = &mut self.modifier {
+            modifier.unlatch();
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub enum Modifier {
-    Single(ModifierEffect),
-    Leveled(BTreeMap<u8, ModifierEffect>),
+    Single(KeyEffect),
+    Leveled(BTreeMap<u8, KeyEffect>),
 }
 
 impl Modifier {
-    fn for_each(&self, mut f: impl FnMut(&ModifierEffect)) {
+    fn for_each(&self, mut f: impl FnMut(&KeyEffect)) {
         match self {
             Modifier::Single(mk) => f(mk),
             Modifier::Leveled(map) => map.values().for_each(f),
         }
     }
 
-    fn for_each_mut(&mut self, mut f: impl FnMut(&mut ModifierEffect)) {
+    fn for_each_mut(&mut self, mut f: impl FnMut(&mut KeyEffect)) {
         match self {
             Modifier::Single(mk) => f(mk),
             Modifier::Leveled(map) => map.values_mut().for_each(f),
@@ -449,86 +432,20 @@ pub struct Modifiers {
 
 impl Default for Modifiers {
     fn default() -> Self {
+        let single = |mod_type, kind| {
+            Modifier::Single(KeyEffect::from_modifier(StateModifier::new(mod_type, kind)))
+        };
         let entries = vec![
-            (
-                LEFT_CTRL,
-                Modifier::Single(ModifierEffect::Modifier(StateModifier {
-                    kind: ModKind::Press { pressed: false },
-                    mod_type: ModType::None,
-                })),
-            ),
-            (
-                RIGHT_CTRL,
-                Modifier::Single(ModifierEffect::Modifier(StateModifier {
-                    kind: ModKind::Press { pressed: false },
-                    mod_type: ModType::None,
-                })),
-            ),
-            (
-                LEFT_SHIFT,
-                Modifier::Single(ModifierEffect::Modifier(StateModifier {
-                    kind: ModKind::Press { pressed: false },
-                    mod_type: ModType::Level2,
-                })),
-            ),
-            (
-                RIGHT_SHIFT,
-                Modifier::Single(ModifierEffect::Modifier(StateModifier {
-                    kind: ModKind::Press { pressed: false },
-                    mod_type: ModType::Level2,
-                })),
-            ),
-            (
-                ALT,
-                Modifier::Single(ModifierEffect::Modifier(StateModifier {
-                    kind: ModKind::Press { pressed: false },
-                    mod_type: ModType::None,
-                })),
-            ),
-            (
-                ALTGR,
-                Modifier::Single(ModifierEffect::Modifier(StateModifier {
-                    kind: ModKind::Press { pressed: false },
-                    mod_type: ModType::None,
-                })),
-            ),
-            (
-                LOGO,
-                Modifier::Single(ModifierEffect::Modifier(StateModifier {
-                    kind: ModKind::Press { pressed: false },
-                    mod_type: ModType::None,
-                })),
-            ),
-            (
-                CAPS_LOCK,
-                Modifier::Single(ModifierEffect::Modifier(StateModifier {
-                    kind: ModKind::Lock {
-                        pressed: false,
-                        locked: 0,
-                    },
-                    mod_type: ModType::Caps,
-                })),
-            ),
-            (
-                NUM_LOCK,
-                Modifier::Single(ModifierEffect::Modifier(StateModifier {
-                    kind: ModKind::Lock {
-                        pressed: false,
-                        locked: 0,
-                    },
-                    mod_type: ModType::Num,
-                })),
-            ),
-            (
-                SCROLL_LOCK,
-                Modifier::Single(ModifierEffect::Modifier(StateModifier {
-                    kind: ModKind::Lock {
-                        pressed: false,
-                        locked: 0,
-                    },
-                    mod_type: ModType::Scroll,
-                })),
-            ),
+            (LEFT_CTRL, single(ModType::None, ModKind::Press)),
+            (RIGHT_CTRL, single(ModType::None, ModKind::Press)),
+            (LEFT_SHIFT, single(ModType::Level2, ModKind::Press)),
+            (RIGHT_SHIFT, single(ModType::Level2, ModKind::Press)),
+            (ALT, single(ModType::None, ModKind::Press)),
+            (ALTGR, single(ModType::None, ModKind::Press)),
+            (LOGO, single(ModType::None, ModKind::Press)),
+            (CAPS_LOCK, single(ModType::Caps, ModKind::Lock)),
+            (NUM_LOCK, single(ModType::Num, ModKind::Lock)),
+            (SCROLL_LOCK, single(ModType::Scroll, ModKind::Lock)),
         ];
         Self { entries }
     }
@@ -646,35 +563,52 @@ impl Modifiers {
             let mut found = false;
             modifier.for_each(|me| {
                 found |= me
-                    .mod_kind_from_mod_type(mod_type)
-                    .is_some_and(|mk| mk.locked())
+                    .modifier
+                    .as_ref()
+                    .is_some_and(|modifier| modifier.mod_type == mod_type && modifier.locked())
             });
             found
         })
     }
 
     #[inline]
-    pub fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
+    pub(crate) fn update_key(
+        &mut self,
+        evdev_code: u32,
+        key_direction: KeyDirection,
+    ) -> (bool, Option<Group>) {
         let pos = match self.entries.iter().position(|(c, _)| *c == evdev_code) {
             Some(p) => p,
-            None => return false,
+            None => return (false, None),
         };
+        let mut group = None;
         if key_direction == KeyDirection::Down {
-            // Select the level from the modifier state BEFORE this press so
-            // the same level is released on key up (modifier state may have
-            // changed by then).
+            // The modifier component is selected from the state before the
+            // press. XKB group actions, however, use the level after the key's
+            // own modifier contribution has been applied (for example the
+            // second key in a Ctrl+Shift group toggle).
             let (_, l2, l3, l5) = self.active_none_and_levels();
             let level = level_index(l5, l3, l2) as u8;
             if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
                 let target = if map.contains_key(&level) { level } else { 0 };
-                if let Some(mod_kind) = map.get_mut(&target) {
-                    mod_kind.update(key_direction);
+                if let Some(effect) = map.get_mut(&target) {
+                    effect.update(key_direction);
                 } else {
-                    return false;
+                    return (false, None);
                 }
-            } else if let Modifier::Single(mod_kind) = &mut self.entries[pos].1 {
-                mod_kind.update(key_direction);
+            } else if let Modifier::Single(effect) = &mut self.entries[pos].1 {
+                effect.update(key_direction);
             }
+
+            let (_, l2, l3, l5) = self.active_none_and_levels();
+            let level = level_index(l5, l3, l2) as u8;
+            group = match &self.entries[pos].1 {
+                Modifier::Single(effect) => effect.group(),
+                Modifier::Leveled(map) => map
+                    .get(&level)
+                    .or_else(|| map.get(&0))
+                    .and_then(KeyEffect::group),
+            };
         } else if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
             // Release the level that is actually pressed. A press activates
             // exactly one level's effect, so scanning for the pressed effect
@@ -684,30 +618,14 @@ impl Modifiers {
                 .find(|(_, effect)| effect.pressed())
                 .map(|(level, _)| *level);
             if let Some(level) = pressed_level {
-                if let Some(mod_kind) = map.get_mut(&level) {
-                    mod_kind.update(key_direction);
+                if let Some(effect) = map.get_mut(&level) {
+                    effect.update(key_direction);
                 }
             }
-        } else if let Modifier::Single(mod_kind) = &mut self.entries[pos].1 {
-            mod_kind.update(key_direction);
+        } else if let Modifier::Single(effect) = &mut self.entries[pos].1 {
+            effect.update(key_direction);
         }
-        true
-    }
-
-    /// If the given key is a group switch and its group action is currently
-    /// active (at the level relevant for the active modifiers), return it.
-    pub(crate) fn active_group(&self, evdev_code: u32) -> Option<&Group> {
-        let modifier = self.get(evdev_code)?;
-        match modifier {
-            Modifier::Single(effect) => effect.active_group(),
-            Modifier::Leveled(map) => {
-                let (_, l2, l3, l5) = self.active_none_and_levels();
-                let level = level_index(l5, l3, l2) as u8;
-                map.get(&level)
-                    .or_else(|| map.get(&0))
-                    .and_then(|effect| effect.active_group())
-            }
-        }
+        (true, group)
     }
 
     pub fn state(&self, layout_index: usize) -> RawModifiers {
@@ -800,68 +718,10 @@ fn inherit_modifier(dst: &mut Modifier, src: &Modifier) {
 /// Copy the held state from `src` into `dst`, preserving `dst`'s own modifier
 /// type and group identity. Only state fields (pressed/locked/latched) are
 /// carried over.
-fn inherit_effect(dst: &mut ModifierEffect, src: &ModifierEffect) {
-    match (dst, src) {
-        (ModifierEffect::Modifier(dst), ModifierEffect::Modifier(src)) => {
-            inherit_kind(&mut dst.kind, &src.kind);
+fn inherit_effect(dst: &mut KeyEffect, src: &KeyEffect) {
+    if let (Some(dst), Some(src)) = (&mut dst.modifier, &src.modifier) {
+        if dst.kind == src.kind {
+            dst.state = src.state;
         }
-        (ModifierEffect::Group(dst), ModifierEffect::Group(src)) => {
-            inherit_kind(&mut dst.kind, &src.kind);
-        }
-        (ModifierEffect::Dual(dst_mod, dst_group), ModifierEffect::Dual(src_mod, src_group)) => {
-            inherit_kind(&mut dst_mod.kind, &src_mod.kind);
-            inherit_kind(&mut dst_group.kind, &src_group.kind);
-        }
-        _ => {}
-    }
-}
-
-/// Copy the pressed/locked/latched state of `src` into `dst` when both are the
-/// same `ModKind` variant; otherwise leave `dst` unchanged.
-fn inherit_kind(dst: &mut ModKind, src: &ModKind) {
-    match (dst, src) {
-        (ModKind::Press { pressed }, ModKind::Press { pressed: s }) => *pressed = *s,
-        (
-            ModKind::Lock { pressed, locked },
-            ModKind::Lock {
-                pressed: s,
-                locked: sl,
-            },
-        ) => {
-            *pressed = *s;
-            *locked = *sl;
-        }
-        (
-            ModKind::Latch { pressed, latched },
-            ModKind::Latch {
-                pressed: s,
-                latched: sl,
-            },
-        ) => {
-            *pressed = *s;
-            *latched = *sl;
-        }
-        (
-            ModKind::UnlockOnPress { pressed, locked },
-            ModKind::UnlockOnPress {
-                pressed: s,
-                locked: sl,
-            },
-        ) => {
-            *pressed = *s;
-            *locked = *sl;
-        }
-        (
-            ModKind::LockOnRelease { pressed, locked },
-            ModKind::LockOnRelease {
-                pressed: s,
-                locked: sl,
-            },
-        ) => {
-            *pressed = *s;
-            *locked = *sl;
-        }
-        (ModKind::None, ModKind::None) => {}
-        _ => {}
     }
 }

@@ -132,6 +132,7 @@ pub struct KBLayout {
 pub struct WKB {
     pub(crate) layouts: Vec<KBLayout>,
     pub(crate) current_layout_idx: usize,
+    pub(crate) group_state: GroupState,
 }
 
 // WKB is Send + Sync: all fields are owned, no Rc/RefCell.
@@ -218,7 +219,8 @@ impl WKB {
     pub fn update_modifiers(&mut self, depressed: u32, latched: u32, locked: u32, group: u32) {
         // Switch layout based on group index from compositor.
         if (group as usize) < self.num_layouts() {
-            let _ = self.set_layout(group as usize);
+            self.group_state.set_layout(group as usize);
+            self.current_layout_idx = group as usize;
         }
         self.layouts[self.current_layout_idx]
             .modifiers
@@ -252,6 +254,7 @@ impl WKB {
         if layout_idx >= self.layouts.len() {
             return Err(WkbError::InvalidLayout(layout_idx));
         }
+        self.group_state.set_layout(layout_idx);
         self.current_layout_idx = layout_idx;
         Ok(())
     }
@@ -347,41 +350,50 @@ impl WKB {
     pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let num_layouts = self.num_layouts();
         let current_layout_idx = self.current_layout_idx;
-        let (is_modifier, group_target) = {
+        let (is_modifier, group_action) = {
             let kb_layout = &mut self.layouts[current_layout_idx];
-            let is_modifier = kb_layout.modifiers.set_state(evdev_code, key_direction);
-            if !is_modifier && key_direction == KeyDirection::Down {
+            kb_layout.modifiers.update_key(evdev_code, key_direction)
+        };
+
+        let mut group_target = match key_direction {
+            KeyDirection::Down => group_action.map(|action| {
+                self.group_state
+                    .press(evdev_code, action, current_layout_idx, num_layouts)
+            }),
+            KeyDirection::Up => Some(self.group_state.release(evdev_code)),
+        };
+
+        if !is_modifier && key_direction == KeyDirection::Down {
+            {
+                let kb_layout = &mut self.layouts[current_layout_idx];
                 kb_layout.modifiers.unlatch();
             }
-            let group_target = if key_direction == KeyDirection::Down {
-                kb_layout
-                    .modifiers
-                    .active_group(evdev_code)
-                    .and_then(|group| group.resolve(current_layout_idx, num_layouts))
-            } else {
-                None
-            };
-            (is_modifier, group_target)
-        };
+            group_target = Some(self.group_state.unlatch());
+        }
+
         if let Some(target) = group_target {
-            if target != self.current_layout_idx {
-                let prev = self.current_layout_idx;
-                // Layouts can define different modifier keys, so don't clone
-                // the whole modifiers table. Carry over the held state only
-                // for keys that are modifiers in both layouts (matches
-                // xkbcommon, which keeps modifier state across group changes).
-                let (source, dest) = if prev < target {
-                    let (head, tail) = self.layouts.split_at_mut(target);
-                    (&head[prev].modifiers, &mut tail[0].modifiers)
-                } else {
-                    let (head, tail) = self.layouts.split_at_mut(prev);
-                    (&tail[0].modifiers, &mut head[target].modifiers)
-                };
-                dest.inherit_state(source);
-                let _ = self.set_layout(target);
-            }
+            self.switch_group_layout(target);
         }
         is_modifier
+    }
+
+    fn switch_group_layout(&mut self, target: usize) {
+        if target == self.current_layout_idx || target >= self.layouts.len() {
+            return;
+        }
+        let prev = self.current_layout_idx;
+        // Layouts can define different modifier keys, so don't clone the
+        // whole modifiers table. Carry over the held state only for keys that
+        // are modifiers in both layouts.
+        let (source, dest) = if prev < target {
+            let (head, tail) = self.layouts.split_at_mut(target);
+            (&head[prev].modifiers, &mut tail[0].modifiers)
+        } else {
+            let (head, tail) = self.layouts.split_at_mut(prev);
+            (&tail[0].modifiers, &mut head[target].modifiers)
+        };
+        dest.inherit_state(source);
+        self.current_layout_idx = target;
     }
 
     /// Return whether the given modifier type is currently active.
@@ -428,16 +440,13 @@ impl WKB {
         let modifier = if let Some(level) = level {
             Modifier::Leveled(BTreeMap::from([(
                 level,
-                ModifierEffect::Modifier(StateModifier {
-                    kind: ModKind::Press { pressed: false },
-                    mod_type: ModType::Compose,
-                }),
+                KeyEffect::from_modifier(StateModifier::new(ModType::Compose, ModKind::Press)),
             )]))
         } else {
-            Modifier::Single(ModifierEffect::Modifier(StateModifier {
-                kind: ModKind::Press { pressed: false },
-                mod_type: ModType::Compose,
-            }))
+            Modifier::Single(KeyEffect::from_modifier(StateModifier::new(
+                ModType::Compose,
+                ModKind::Press,
+            )))
         };
         for layout in &mut self.layouts {
             layout.modifiers.set_modifier(evdev_code, modifier.clone());
@@ -453,14 +462,22 @@ impl WKB {
     /// - `Composing(_)` — mid-sequence, no final character yet
     /// - `Cancelled` — broken compose sequence
     pub fn press_key(&mut self, evdev_code: u32) -> KeyResult {
-        let is_modifier = self.update_key(evdev_code, KeyDirection::Down);
         let key = self.state_named_key(evdev_code);
-        let kb_layout = &mut self.layouts[self.current_layout_idx];
+        let direct_char = self.key_char(evdev_code);
+        let is_modifier = self.update_key(evdev_code, KeyDirection::Down);
         #[cfg(feature = "compose")]
-        let compose = if is_modifier && kb_layout.modifiers.active_mod_type(ModType::Compose) {
-            Some(kb_layout.composer.feed(Token::Compose))
+        let compose = if is_modifier
+            && self.layouts[self.current_layout_idx]
+                .modifiers
+                .active_mod_type(ModType::Compose)
+        {
+            Some(
+                self.layouts[self.current_layout_idx]
+                    .composer
+                    .feed(Token::Compose),
+            )
         } else if !is_modifier {
-            self.key_char(evdev_code).map(|c| {
+            direct_char.map(|c| {
                 self.layouts[self.current_layout_idx]
                     .composer
                     .feed(Token::Char(c))
@@ -470,7 +487,7 @@ impl WKB {
         };
         #[cfg(not(feature = "compose"))]
         let compose = if !is_modifier {
-            self.key_char(evdev_code).map(ComposeState::Idle)
+            direct_char.map(ComposeState::Idle)
         } else {
             None
         };
@@ -487,8 +504,8 @@ impl WKB {
     /// Compose is not advanced on release. The returned `NamedKey` reflects
     /// the named key under the (now updated) modifier state.
     pub fn release_key(&mut self, evdev_code: u32) -> KeyResult {
-        let is_modifier = self.update_key(evdev_code, KeyDirection::Up);
         let key = self.state_named_key(evdev_code);
+        let is_modifier = self.update_key(evdev_code, KeyDirection::Up);
         KeyResult {
             key,
             compose: None,
@@ -538,6 +555,7 @@ impl WKB {
         }
         Ok(WKB {
             current_layout_idx: 0,
+            group_state: GroupState::default(),
             layouts,
         })
     }
