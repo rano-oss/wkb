@@ -34,7 +34,7 @@ fn main() {
     // Compose workload through the same press_key pipeline.
     unsafe { std::env::set_var("LC_ALL", COMPOSE_LOCALE) };
     let mut wb = WKB::new_from_names("", "", "us", "", None).unwrap();
-    wb.set_compose_key(COMPOSE_KEY);
+    wb.set_compose_key(COMPOSE_KEY, None);
     for case in COMPOSE_CASES {
         for &(code, down) in case.keys {
             if down {

@@ -342,7 +342,7 @@ fn compose_set_compose_key() {
     let saved_lc_all = std::env::var("LC_ALL").ok();
     unsafe { std::env::set_var("LC_ALL", COMPOSE_LOCALE) };
     let mut wkb = WKB::new_from_names("", "", "us", "", None).unwrap();
-    wkb.set_compose_key(COMPOSE_KEY);
+    wkb.set_compose_key(COMPOSE_KEY, None);
     restore_env(&saved_lc_all);
 
     // xkbcommon needs the same keymap; there is no Multi_key key, so the

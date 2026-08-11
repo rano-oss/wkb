@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::composer::{Composer, Token};
 use crate::flat_keymap::{FlatMap, FlatMapValue, MAX_LEVELS};
-use crate::modifiers::{ModKind, ModType, Modifier, Modifiers};
+use crate::modifiers::{ModKind, ModType, Modifier, ModifierEffect, Modifiers, StateModifier};
 use crate::named_keys::NamedKey;
 use crate::{FlatKeymap, FlatNamedKeyMap, KBLayout, KeyBitSet};
 
@@ -396,20 +396,30 @@ fn modifiers_from_layout(modifiers: &Modifiers) -> ModifierList {
 
 fn actions_from_modifier(modifier: &Modifier) -> Vec<(u8, ModAction)> {
     match modifier {
-        Modifier::Single(kind) => vec![(0, modaction_from_modkind(kind))],
+        Modifier::Single(effect) => vec![(0, modaction_from_effect(effect))],
         Modifier::Leveled(map) => map
             .iter()
-            .map(|(level, kind)| (*level, modaction_from_modkind(kind)))
+            .map(|(level, effect)| (*level, modaction_from_effect(effect)))
             .collect(),
     }
 }
 
-fn modaction_from_modkind(kind: &ModKind) -> ModAction {
+fn modaction_from_effect(effect: &ModifierEffect) -> ModAction {
+    match effect {
+        ModifierEffect::Modifier(state) => modaction_from_modkind(state.mod_type, &state.kind),
+        ModifierEffect::Group(_) => ModAction::None,
+        ModifierEffect::Dual(state, _) => modaction_from_modkind(state.mod_type, &state.kind),
+    }
+}
+
+fn modaction_from_modkind(mod_type: ModType, kind: &ModKind) -> ModAction {
     match kind {
-        ModKind::Press { mod_type, .. } => ModAction::Press(*mod_type),
-        ModKind::Lock { mod_type, .. } => ModAction::Lock(*mod_type),
-        ModKind::Latch { mod_type, .. } => ModAction::Latch(*mod_type),
+        ModKind::Press { .. } => ModAction::Press(mod_type),
+        ModKind::Lock { .. } => ModAction::Lock(mod_type),
+        ModKind::Latch { .. } => ModAction::Latch(mod_type),
         ModKind::None => ModAction::None,
+        ModKind::UnlockOnPress { .. } => todo!(),
+        ModKind::LockOnRelease { .. } => todo!(),
     }
 }
 
@@ -492,7 +502,7 @@ impl TryFrom<LayoutFile> for KBLayout {
             named_key_map,
             #[cfg(feature = "xkb")]
             level_exceptions_keymap: FlatKeymap::new(num_keys),
-            caps_num_lock_keys
+            caps_num_lock_keys,
         })
     }
 }
@@ -513,14 +523,26 @@ fn from_levels<T: FlatMapValue, V: Copy>(
     flat
 }
 
-#[rustfmt::skip]
-fn modkind_from_modaction(action: ModAction) -> ModKind {
-    match action {
-        ModAction::Press(t) => ModKind::Press { pressed: false, mod_type: t },
-        ModAction::Lock(t) => ModKind::Lock { pressed: false, locked: 0, mod_type: t },
-        ModAction::Latch(t) => ModKind::Latch { pressed: false, latched: false, mod_type: t },
-        ModAction::None => ModKind::None,
-    }
+fn modkind_from_modaction(action: ModAction) -> ModifierEffect {
+    let (mod_type, kind) = match action {
+        ModAction::Press(t) => (t, ModKind::Press { pressed: false }),
+        ModAction::Lock(t) => (
+            t,
+            ModKind::Lock {
+                pressed: false,
+                locked: 0,
+            },
+        ),
+        ModAction::Latch(t) => (
+            t,
+            ModKind::Latch {
+                pressed: false,
+                latched: false,
+            },
+        ),
+        ModAction::None => (ModType::None, ModKind::None),
+    };
+    ModifierEffect::Modifier(StateModifier { mod_type, kind })
 }
 
 fn composer_from_compose(sequences: &[(Vec<char>, char)]) -> Composer {

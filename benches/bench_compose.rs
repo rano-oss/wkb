@@ -30,7 +30,7 @@ fn bench_compose_feed(c: &mut Criterion) {
                     Some(v) => unsafe { std::env::set_var("LC_ALL", v) },
                     None => unsafe { std::env::remove_var("LC_ALL") },
                 };
-                wb.set_compose_key(COMPOSE_KEY);
+                wb.set_compose_key(COMPOSE_KEY, None);
                 wb
             };
             group.bench_function(BenchmarkId::new("wkb", case.name), |b| {
@@ -43,7 +43,7 @@ fn bench_compose_feed(c: &mut Criterion) {
         // wkb-noxkb: rebuilt from the precompiled RON layout (no XKB compile).
         {
             let mut wb = WKB::new_from_layouts(vec![load_layout_file("us", None)]).unwrap();
-            wb.set_compose_key(COMPOSE_KEY);
+            wb.set_compose_key(COMPOSE_KEY, None);
             group.bench_function(BenchmarkId::new("wkb-noxkb", case.name), |b| {
                 b.iter(|| {
                     black_box(wkb_feed_compose(&mut wb, case.keys));

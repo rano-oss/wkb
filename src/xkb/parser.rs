@@ -2226,7 +2226,17 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
         for key in &mut info.keymap.keys {
             for group in &mut key.groups {
                 for level in &mut group.levels {
-                    level.actions = Vec::new();
+                    level.actions = std::mem::take(&mut level.actions)
+                        .into_iter()
+                        .filter(|action| {
+                            matches!(
+                                action,
+                                XkbAction::GroupSet(_)
+                                    | XkbAction::GroupLatch(_)
+                                    | XkbAction::GroupLock(_)
+                            )
+                        })
+                        .collect();
                 }
             }
         }

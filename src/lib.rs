@@ -49,6 +49,7 @@ pub use modifiers::{level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, NUM_LO
 pub mod ir;
 mod named_keys;
 pub use named_keys::NamedKey;
+use std::collections::BTreeMap;
 #[cfg(feature = "xkb")]
 mod xkb;
 #[cfg(feature = "xkb")]
@@ -344,10 +345,28 @@ impl WKB {
     /// Update internal modifier state for a key event. Returns `true` if the key is a modifier.
     #[doc(hidden)]
     pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
-        let kb_layout = &mut self.layouts[self.current_layout_idx];
-        let is_modifier = kb_layout.modifiers.set_state(evdev_code, key_direction);
-        if !is_modifier && key_direction == KeyDirection::Down {
-            kb_layout.modifiers.unlatch();
+        let num_layouts = self.num_layouts();
+        let current_layout_idx = self.current_layout_idx;
+        let (is_modifier, group_target) = {
+            let kb_layout = &mut self.layouts[current_layout_idx];
+            let is_modifier = kb_layout.modifiers.set_state(evdev_code, key_direction);
+            if !is_modifier && key_direction == KeyDirection::Down {
+                kb_layout.modifiers.unlatch();
+            }
+            let group_target = if key_direction == KeyDirection::Down {
+                kb_layout
+                    .modifiers
+                    .active_group(evdev_code)
+                    .and_then(|group| group.resolve(current_layout_idx, num_layouts))
+            } else {
+                None
+            };
+            (is_modifier, group_target)
+        };
+        if let Some(target) = group_target {
+            if target != self.current_layout_idx {
+                let _ = self.set_layout(target);
+            }
         }
         is_modifier
     }
@@ -364,39 +383,23 @@ impl WKB {
     #[doc(hidden)]
     pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
         let modifiers = &self.layouts[self.current_layout_idx].modifiers;
-        let mut other_mod = None;
-
         for (code, modifier) in modifiers.iter() {
             match modifier {
-                Modifier::Single(mod_kind) => {
-                    if mod_kind.has_mod_type(mod_type) {
-                        match mod_kind {
-                            ModKind::Press { .. } => return Some((*code, None)),
-                            _ => {
-                                if other_mod.is_none() {
-                                    other_mod = Some((*code, None));
-                                }
-                            }
-                        }
+                Modifier::Single(modifier_effekt) => {
+                    if modifier_effekt.mod_kind_from_mod_type(mod_type).is_some() {
+                        return Some((*code, None));
                     }
                 }
                 Modifier::Leveled(map) => {
-                    for (level, mod_kind) in map {
-                        if mod_kind.has_mod_type(mod_type) {
-                            match mod_kind {
-                                ModKind::Press { .. } => return Some((*code, Some(*level))),
-                                _ => {
-                                    if other_mod.is_none() {
-                                        other_mod = Some((*code, Some(*level)));
-                                    }
-                                }
-                            }
+                    for (level, modifier_effekt) in map {
+                        if modifier_effekt.mod_kind_from_mod_type(mod_type).is_some() {
+                            return Some((*code, Some(*level)));
                         }
                     }
                 }
             }
         }
-        other_mod
+        None
     }
 
     /// Designate an evdev keycode as the Compose (Multi_key) key.
@@ -408,15 +411,23 @@ impl WKB {
     /// behavior. Applies to all layouts; any existing modifier on the key is
     /// replaced.
     #[cfg(feature = "compose")]
-    pub fn set_compose_key(&mut self, evdev_code: u32) {
-        for layout in &mut self.layouts {
-            layout.modifiers.set_modifier(
-                evdev_code,
-                Modifier::Single(ModKind::Press {
-                    pressed: false,
+    pub fn set_compose_key(&mut self, evdev_code: u32, level: Option<u8>) {
+        let modifier = if let Some(level) = level {
+            Modifier::Leveled(BTreeMap::from([(
+                level,
+                ModifierEffect::Modifier(StateModifier {
+                    kind: ModKind::Press { pressed: false },
                     mod_type: ModType::Compose,
                 }),
-            );
+            )]))
+        } else {
+            Modifier::Single(ModifierEffect::Modifier(StateModifier {
+                kind: ModKind::Press { pressed: false },
+                mod_type: ModType::Compose,
+            }))
+        };
+        for layout in &mut self.layouts {
+            layout.modifiers.set_modifier(evdev_code, modifier.clone());
         }
     }
 

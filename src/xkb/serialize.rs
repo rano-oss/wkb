@@ -49,32 +49,19 @@ fn modifier_keysym(modifiers: &Modifiers, evdev: u32) -> Option<u32> {
     }
 }
 
-fn modkind_keysym(mk: &ModKind) -> Option<u32> {
-    match mk {
-        ModKind::Press {
-            mod_type: ModType::Level3,
-            ..
-        } => Some(0xfe03),
-        ModKind::Press {
-            mod_type: ModType::Level5,
-            ..
-        } => Some(0xfe11),
-        ModKind::Latch {
-            mod_type: ModType::Level3,
-            ..
-        } => Some(0xfe04),
-        ModKind::Latch {
-            mod_type: ModType::Level5,
-            ..
-        } => Some(0xfe12),
-        ModKind::Lock {
-            mod_type: ModType::Level3,
-            ..
-        } => Some(0xfe0d),
-        ModKind::Lock {
-            mod_type: ModType::Level5,
-            ..
-        } => Some(0xfe13),
+fn modkind_keysym(effect: &ModifierEffect) -> Option<u32> {
+    let state = match effect {
+        ModifierEffect::Modifier(state) => state,
+        ModifierEffect::Dual(state, _) => state,
+        ModifierEffect::Group(_) => return None,
+    };
+    match &state.kind {
+        ModKind::Press { .. } if state.mod_type == ModType::Level3 => Some(0xfe03),
+        ModKind::Press { .. } if state.mod_type == ModType::Level5 => Some(0xfe11),
+        ModKind::Latch { .. } if state.mod_type == ModType::Level3 => Some(0xfe04),
+        ModKind::Latch { .. } if state.mod_type == ModType::Level5 => Some(0xfe12),
+        ModKind::Lock { .. } if state.mod_type == ModType::Level3 => Some(0xfe0d),
+        ModKind::Lock { .. } if state.mod_type == ModType::Level5 => Some(0xfe13),
         _ => None,
     }
 }
