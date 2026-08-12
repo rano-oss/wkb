@@ -568,7 +568,7 @@ fn combine_effect(mut effect: KeyEffect, group: Option<&Group>) -> KeyEffect {
         if effect
             .modifier
             .as_ref()
-            .is_some_and(|state| matches!(state.kind, ModKind::None))
+            .is_some_and(|state| matches!(state.kind, ModKind::Press))
         {
             effect.modifier = None;
         }
@@ -714,7 +714,7 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
                             (
                                 l,
                                 if l < min_caps as u8 {
-                                    KeyEffect::modifier(ModType::Caps, ModKind::None)
+                                    KeyEffect::modifier(ModType::Caps, ModKind::Press)
                                 } else {
                                     KeyEffect::modifier(
                                         ModType::Caps,

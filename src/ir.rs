@@ -87,7 +87,6 @@ pub enum ModAction {
         ModType,
         #[serde(default, skip_serializing_if = "LatchVariant::is_on_release")] LatchVariant,
     ),
-    None,
 }
 
 /// A persisted keyboard layout, mirroring the serialized RON document.
@@ -350,9 +349,9 @@ impl TryFrom<&KBLayout> for LayoutFile {
                 .collect(),
             modifiers: modifiers_from_layout(&layout.modifiers),
             keymap: char_section(&layout.state_keymap),
-            num_lock_keys: char_section(&layout.num_lock_keys),
-            caps_lock_keymap: char_section(&layout.caps_lock_keymap),
-            caps_num_lock_keys: char_section(&layout.caps_num_lock_keys),
+            num_lock_keys: plain_char_section(&layout.num_lock_keys),
+            caps_lock_keymap: plain_char_section(&layout.caps_lock_keymap),
+            caps_num_lock_keys: plain_char_section(&layout.caps_num_lock_keys),
             keysym_map: named_section(&layout.named_key_map),
             compose: compose_from_composer(&layout.composer, &reachable_chars(layout)),
         };
@@ -376,32 +375,26 @@ fn reachable_chars(layout: &KBLayout) -> Vec<char> {
     reachable
 }
 
-/// Convert a flat keymap to a per-level map, keeping only populated slots.
-fn to_levels<T: FlatMapValue + PartialEq, V>(
-    flat: &FlatMap<T>,
-    project: impl Fn(T) -> Option<V>,
-) -> BTreeMap<u8, BTreeMap<u32, V>> {
-    (0..effective_levels(flat))
-        .filter_map(|level| {
-            let base = level * flat.num_keys;
-            let keys: BTreeMap<_, _> = flat.data[base..base + flat.num_keys]
-                .iter()
-                .enumerate()
-                .filter_map(|(keycode, &value)| project(value).map(|v| (keycode as u32, v)))
-                .collect();
-            (!keys.is_empty()).then_some((level as u8, keys))
-        })
-        .collect()
+/// Level with its most significant set bit cleared (1 → 0, 2 → 0, 3 → 1,
+/// 4 → 0, 5 → 1, 6 → 2, 7 → 3). A key's level index is accumulated from three
+/// independent modifier bits (Level5, Level3, Level2), so `drop_top(level)` is
+/// the parent plane the key resolves to when the extra bit is unconsumed:
+/// AltGr+Shift (level 3) falls back to Shift (level 1), Level5 (level 4) to
+/// the base plane, and so on.
+fn drop_top(level: u8) -> u8 {
+    debug_assert!(level < MAX_LEVELS as u8);
+    if level == 0 {
+        return 0;
+    }
+    let bit = 1u8 << (7 - level.leading_zeros());
+    level & !bit
 }
 
 /// Number of leading level planes in `flat` that carry distinct output.
 ///
-/// The level model is three binary modifier bits (Level5, Level3, Level2), so a
-/// layout that never uses a given bit still gets a resolved character for every
-/// plane: a key whose type ignores that modifier falls back to its base level,
-/// making the higher planes byte-for-byte duplicates of lower ones. Trailing
-/// planes that repeat an identical prefix are redundant and are omitted from the
-/// serialized file. The plane sequence is halved while the two halves match.
+/// The three modifier bits make higher planes resolve to the same characters
+/// as lower ones when a key ignores that bit, so trailing planes that repeat a
+/// prefix of the sequence are redundant and omitted from the serialized file.
 fn effective_levels<T: FlatMapValue + PartialEq>(flat: &FlatMap<T>) -> usize {
     let mut n = MAX_LEVELS;
     while n > 1 {
@@ -415,8 +408,6 @@ fn effective_levels<T: FlatMapValue + PartialEq>(flat: &FlatMap<T>) -> usize {
     n
 }
 
-/// Whether the `count` planes starting at index `a` equal the `count` planes
-/// starting at index `b` in `flat`.
 fn planes_equal<T: FlatMapValue + PartialEq>(
     flat: &FlatMap<T>,
     a: usize,
@@ -428,12 +419,228 @@ fn planes_equal<T: FlatMapValue + PartialEq>(
     flat.data[a * nk..a * nk + len] == flat.data[b * nk..b * nk + len]
 }
 
-fn char_section(flat: &FlatKeymap) -> CharSection {
-    to_levels(flat, |value| value)
+/// Invariant named keys by (level, evdev keycode). The serializer omits any
+/// `keysym_map` entry equal to this default and the loader re-seeds it before
+/// applying the file's entries, so an explicitly `Unnamed` entry clears one.
+/// Only genuinely layout-varying slots (Caps Lock, Num Lock, Right Control,
+/// ...) end up stored in files.
+const LEVEL0_DEFAULTS: &[(u32, NamedKey)] = &[
+    (1, NamedKey::Escape),
+    (14, NamedKey::Backspace),
+    (15, NamedKey::Tab),
+    (28, NamedKey::Enter),
+    (29, NamedKey::LeftControl),
+    (42, NamedKey::LeftShift),
+    (54, NamedKey::RightShift),
+    (56, NamedKey::LeftAlt),
+    (57, NamedKey::Space),
+    (59, NamedKey::F1),
+    (60, NamedKey::F2),
+    (61, NamedKey::F3),
+    (62, NamedKey::F4),
+    (63, NamedKey::F5),
+    (64, NamedKey::F6),
+    (65, NamedKey::F7),
+    (66, NamedKey::F8),
+    (67, NamedKey::F9),
+    (68, NamedKey::F10),
+    (70, NamedKey::ScrollLock),
+    (71, NamedKey::Home),
+    (72, NamedKey::ArrowUp),
+    (73, NamedKey::PageUp),
+    (75, NamedKey::ArrowLeft),
+    (77, NamedKey::ArrowRight),
+    (79, NamedKey::End),
+    (80, NamedKey::ArrowDown),
+    (81, NamedKey::PageDown),
+    (82, NamedKey::Insert),
+    (83, NamedKey::Delete),
+    (87, NamedKey::F11),
+    (88, NamedKey::F12),
+    (90, NamedKey::Katakana),
+    (91, NamedKey::Hiragana),
+    (96, NamedKey::Enter),
+    (99, NamedKey::PrintScreen),
+    (102, NamedKey::Home),
+    (103, NamedKey::ArrowUp),
+    (104, NamedKey::PageUp),
+    (105, NamedKey::ArrowLeft),
+    (106, NamedKey::ArrowRight),
+    (107, NamedKey::End),
+    (108, NamedKey::ArrowDown),
+    (109, NamedKey::PageDown),
+    (110, NamedKey::Insert),
+    (111, NamedKey::Delete),
+    (113, NamedKey::VolumeMute),
+    (114, NamedKey::VolumeDown),
+    (115, NamedKey::VolumeUp),
+    (116, NamedKey::PowerOff),
+    (119, NamedKey::Pause),
+    (123, NamedKey::HangulHanja),
+    (125, NamedKey::LeftSuper),
+    (126, NamedKey::RightSuper),
+    (127, NamedKey::ContextMenu),
+    (140, NamedKey::LaunchCalculator),
+    (142, NamedKey::Sleep),
+    (143, NamedKey::WakeUp),
+    (155, NamedKey::LaunchMail),
+    (158, NamedKey::BrowserBack),
+    (159, NamedKey::BrowserForward),
+    (163, NamedKey::MediaNextTrack),
+    (164, NamedKey::MediaPlay),
+    (165, NamedKey::MediaPreviousTrack),
+    (166, NamedKey::MediaStop),
+    (172, NamedKey::BrowserHome),
+    (200, NamedKey::MediaPlay),
+    (201, NamedKey::MediaPause),
+    (205, NamedKey::Suspend),
+    (207, NamedKey::MediaPlay),
+    (210, NamedKey::PrintScreen),
+    (215, NamedKey::LaunchMail),
+    (224, NamedKey::BrightnessDown),
+    (225, NamedKey::BrightnessUp),
+    (229, NamedKey::KeyboardBrightnessDown),
+    (230, NamedKey::KeyboardBrightnessUp),
+];
+
+/// Invariant level-1 named keys (Shift plane): navigation/function keys and
+/// the system modifier aliases XKB emits on the second level.
+const LEVEL1_DEFAULTS: &[(u32, NamedKey)] = &[
+    (14, NamedKey::Backspace),
+    (15, NamedKey::Tab),
+    (59, NamedKey::F1),
+    (60, NamedKey::F2),
+    (61, NamedKey::F3),
+    (62, NamedKey::F4),
+    (63, NamedKey::F5),
+    (64, NamedKey::F6),
+    (65, NamedKey::F7),
+    (66, NamedKey::F8),
+    (67, NamedKey::F9),
+    (68, NamedKey::F10),
+    (87, NamedKey::F11),
+    (88, NamedKey::F12),
+    (99, NamedKey::SysReq),
+    (164, NamedKey::MediaPause),
+    (196, NamedKey::LeftAlt),
+    (197, NamedKey::LeftMeta),
+    (198, NamedKey::LeftSuper),
+    (199, NamedKey::LeftHyper),
+];
+
+/// Invariant F1-F12 row, repeated on the AltGr (level 2) and AltGr+Shift
+/// (level 3) planes in every layout.
+const FN_KEYS_DEFAULTS: &[(u32, NamedKey)] = &[
+    (59, NamedKey::F1),
+    (60, NamedKey::F2),
+    (61, NamedKey::F3),
+    (62, NamedKey::F4),
+    (63, NamedKey::F5),
+    (64, NamedKey::F6),
+    (65, NamedKey::F7),
+    (66, NamedKey::F8),
+    (67, NamedKey::F9),
+    (68, NamedKey::F10),
+    (87, NamedKey::F11),
+    (88, NamedKey::F12),
+];
+
+fn default_named_key(level: u8, keycode: u32) -> NamedKey {
+    let table = match level {
+        0 => LEVEL0_DEFAULTS,
+        1 => LEVEL1_DEFAULTS,
+        2 | 3 => FN_KEYS_DEFAULTS,
+        _ => return NamedKey::Unnamed,
+    };
+    table
+        .iter()
+        .find(|(code, _)| *code == keycode)
+        .map_or(NamedKey::Unnamed, |(_, key)| *key)
 }
 
+/// Seed the per-level named-key defaults into `flat`. The loader runs this
+/// before applying the file's own entries, so an explicit `Unnamed` entry
+/// stored in a file clears a default.
+fn seed_named_defaults(flat: &mut FlatNamedKeyMap) {
+    const LEVELS: &[(u8, &[(u32, NamedKey)])] = &[
+        (0, LEVEL0_DEFAULTS),
+        (1, LEVEL1_DEFAULTS),
+        (2, FN_KEYS_DEFAULTS),
+        (3, FN_KEYS_DEFAULTS),
+    ];
+    for &(level, table) in LEVELS {
+        let start = level as usize * flat.num_keys;
+        for (keycode, key) in table {
+            flat.data[start + *keycode as usize] = *key;
+        }
+    }
+}
+
+/// Convert `num_levels` leading level planes of a flat map to a per-level
+/// delta map. Level 0 keeps every populated slot; higher planes only keep
+/// entries whose resolved output differs from their parent plane (see
+/// [`drop_top`]). The loader re-derives the omitted entries, so the round-trip
+/// stays exact while redundant AltGr/Level5 planes (identical to a lower plane
+/// for most keys) disappear from the serialized file.
+fn to_levels<T: FlatMapValue + PartialEq, V>(
+    flat: &FlatMap<T>,
+    project: impl Fn(T) -> Option<V>,
+    base: impl Fn(u8, u32) -> T,
+    num_levels: usize,
+) -> BTreeMap<u8, BTreeMap<u32, V>> {
+    (0..num_levels)
+        .filter_map(|level| {
+            let level = level as u8;
+            let keys: BTreeMap<_, _> = (0..flat.num_keys)
+                .filter_map(|keycode| {
+                    let value = flat.data[level as usize * flat.num_keys + keycode];
+                    (value != base(level, keycode as u32))
+                        .then(|| project(value))
+                        .flatten()
+                        .map(|v| (keycode as u32, v))
+                })
+                .collect();
+            (!keys.is_empty()).then_some((level, keys))
+        })
+        .collect()
+}
+
+/// Base character keymap: level 0 in full, higher planes delta-compressed
+/// against the resolved parent plane.
+fn char_section(flat: &FlatKeymap) -> CharSection {
+    to_levels(
+        flat,
+        |value| value,
+        |level, keycode| {
+            if level > 0 {
+                flat.get(drop_top(level) as usize, keycode)
+            } else {
+                None
+            }
+        },
+        effective_levels(flat),
+    )
+}
+
+/// Plain character section without delta compression: every populated slot at
+/// every level is stored. Used for the Num Lock / Caps Lock override maps,
+/// where an entry means "this level overrides the base keymap" and there is no
+/// inheritance between planes.
+fn plain_char_section(flat: &FlatKeymap) -> CharSection {
+    to_levels(flat, |value| value, |_, _| None, effective_levels(flat))
+}
+
+/// Named-key section. Entries equal to the per-level [`default_named_key`]
+/// value are omitted and re-seeded on load, so an explicit `Unnamed` entry
+/// stored in a file clears a default. All levels are walked so a plane whose
+/// resolved names differ from the defaults still round-trips exactly.
 fn named_section(flat: &FlatNamedKeyMap) -> NamedSection {
-    to_levels(flat, |key| (key != NamedKey::Unnamed).then_some(key))
+    to_levels(
+        flat,
+        |key| Some(key),
+        |level, keycode| default_named_key(level, keycode),
+        MAX_LEVELS,
+    )
 }
 
 fn modifiers_from_layout(modifiers: &Modifiers) -> ModifierList {
@@ -460,7 +667,7 @@ fn modaction_from_effect(effect: &KeyEffect) -> ModAction {
         .modifier
         .as_ref()
         .map(|state| modaction_from_modkind(state.mod_type, &state.kind))
-        .unwrap_or(ModAction::None)
+        .unwrap_or(ModAction::Press(ModType::None))
 }
 
 fn modaction_from_modkind(mod_type: ModType, kind: &ModKind) -> ModAction {
@@ -468,7 +675,6 @@ fn modaction_from_modkind(mod_type: ModType, kind: &ModKind) -> ModAction {
         ModKind::Press => ModAction::Press(mod_type),
         ModKind::Lock(variant) => ModAction::Lock(mod_type, *variant),
         ModKind::Latch(variant) => ModAction::Latch(mod_type, *variant),
-        ModKind::None => ModAction::None,
     }
 }
 
@@ -534,11 +740,21 @@ impl TryFrom<LayoutFile> for KBLayout {
 
         let composer = composer_from_compose(&file.compose);
 
-        let state_keymap = from_levels(&file.keymap, num_keys, Some);
-        let num_lock_keys = from_levels(&file.num_lock_keys, num_keys, Some);
-        let caps_lock_keymap = from_levels(&file.caps_lock_keymap, num_keys, Some);
-        let named_key_map = from_levels(&file.keysym_map, num_keys, |key| key);
-        let caps_num_lock_keys = from_levels(&file.caps_num_lock_keys, num_keys, Some);
+        // The `keymap` plane count drives how deeply the delta-compressed maps
+        // are materialized; planes beyond it stay empty, matching the level
+        // range the file was serialized with.
+        let top = file
+            .keymap
+            .keys()
+            .map(|&level| level as usize + 1)
+            .max()
+            .unwrap_or(1);
+
+        let state_keymap = from_levels_resolved(&file.keymap, top, num_keys, Some);
+        let named_key_map = from_named_levels(&file.keysym_map, num_keys);
+        let num_lock_keys = from_sparse_levels(&file.num_lock_keys, num_keys, Some);
+        let caps_lock_keymap = from_sparse_levels(&file.caps_lock_keymap, num_keys, Some);
+        let caps_num_lock_keys = from_sparse_levels(&file.caps_num_lock_keys, num_keys, Some);
 
         Ok(KBLayout {
             name: file.layout,
@@ -556,17 +772,63 @@ impl TryFrom<LayoutFile> for KBLayout {
     }
 }
 
-/// Un-flatten a per-level map back into a single `FlatMap`.
-fn from_levels<T: FlatMapValue, V: Copy>(
+/// Un-flatten the delta-compressed base keymap. Each plane inherits its parent
+/// plane ([`drop_top`]) before the file's own overrides are applied, so an
+/// omitted `(level, key)` resolves exactly as it did before serialization.
+fn from_levels_resolved<T: FlatMapValue + PartialEq, V: Copy>(
+    levels: &BTreeMap<u8, BTreeMap<u32, V>>,
+    top: usize,
+    num_keys: usize,
+    reconstruct: impl Fn(V) -> T,
+) -> FlatMap<T> {
+    let mut flat = FlatMap::new(num_keys);
+    for level in 0..top.min(MAX_LEVELS) {
+        if level > 0 {
+            let parent = drop_top(level as u8) as usize * num_keys;
+            let start = level * num_keys;
+            let parent_plane = flat.data[parent..parent + num_keys].to_vec();
+            flat.data[start..start + num_keys].copy_from_slice(&parent_plane);
+        }
+        if let Some(keys) = levels.get(&(level as u8)) {
+            let start = level * num_keys;
+            for (keycode, value) in keys {
+                flat.data[start + *keycode as usize] = reconstruct(*value);
+            }
+        }
+    }
+    flat
+}
+
+/// Un-flatten the `keysym_map`. Every level starts from the invariant per-level
+/// defaults ([`default_named_key`]), seeded by [`seed_named_defaults`], and the
+/// file's own entries (including explicit `Unnamed` clears) are applied on top.
+fn from_named_levels(levels: &NamedSection, num_keys: usize) -> FlatNamedKeyMap {
+    let mut flat = FlatMap::new(num_keys);
+    if !levels.is_empty() {
+        seed_named_defaults(&mut flat);
+    }
+    for (level, keys) in levels {
+        let start = (*level as usize) * num_keys;
+        for (keycode, key) in keys {
+            flat.data[start + *keycode as usize] = *key;
+        }
+    }
+    flat
+}
+
+/// Un-flatten a Num Lock / Caps Lock override section sparsely: only the
+/// declared levels and keys are written and every other plane stays empty, so
+/// these maps keep meaning "override with exactly what is listed".
+fn from_sparse_levels<T: FlatMapValue, V: Copy>(
     levels: &BTreeMap<u8, BTreeMap<u32, V>>,
     num_keys: usize,
     reconstruct: impl Fn(V) -> T,
 ) -> FlatMap<T> {
     let mut flat = FlatMap::new(num_keys);
     for (level, keys) in levels {
-        let base = (*level as usize) * num_keys;
+        let start = (*level as usize) * num_keys;
         for (keycode, value) in keys {
-            flat.data[base + *keycode as usize] = reconstruct(*value);
+            flat.data[start + *keycode as usize] = reconstruct(*value);
         }
     }
     flat
@@ -577,7 +839,6 @@ fn modkind_from_modaction(action: ModAction) -> KeyEffect {
         ModAction::Press(t) => (t, ModKind::Press),
         ModAction::Lock(t, variant) => (t, ModKind::Lock(variant)),
         ModAction::Latch(t, variant) => (t, ModKind::Latch(variant)),
-        ModAction::None => (ModType::None, ModKind::None),
     };
     KeyEffect::modifier(mod_type, kind)
 }

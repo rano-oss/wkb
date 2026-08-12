@@ -76,7 +76,6 @@ pub enum ModKind {
     Press,
     Lock(LockFlags),
     Latch(LatchVariant),
-    None,
 }
 
 bitflags::bitflags! {
@@ -84,7 +83,8 @@ bitflags::bitflags! {
     pub struct LockFlags: u8 {
         const LOCK_ON_RELEASE = 1 << 0;
         const UNLOCK_ON_PRESS = 1 << 1;
-        const TAP = 1 << 2;
+        const LATCH_ON_PRESS = 1 << 2;
+        const TAP = 1 << 3;
     }
 }
 
@@ -119,7 +119,7 @@ struct ModState {
     locked: bool,
     lock_changed: bool,
     latched: bool,
-    tap_used: bool,
+    tapped: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -145,8 +145,8 @@ impl StateModifier {
             ModKind::Lock(flags) if flags.contains(LockFlags::TAP) => {
                 self.state.pressed = down;
                 if down {
-                    self.state.tap_used = false;
-                } else if !self.state.tap_used {
+                    self.state.tapped = false;
+                } else if !self.state.tapped {
                     self.state.locked = !self.state.locked;
                 }
             }
@@ -185,7 +185,6 @@ impl StateModifier {
                     self.state.latched = true;
                 }
             }
-            ModKind::None => {}
         }
     }
 
@@ -202,14 +201,6 @@ impl StateModifier {
         }
     }
 
-    fn use_tap(&mut self) {
-        if matches!(self.kind, ModKind::Lock(flags) if flags.contains(LockFlags::TAP))
-            && self.state.pressed
-        {
-            self.state.tap_used = true;
-        }
-    }
-
     fn state(&self) -> (bool, bool, bool) {
         (
             self.state.pressed,
@@ -219,7 +210,7 @@ impl StateModifier {
     }
 
     fn pressed(&self) -> bool {
-        self.kind != ModKind::None && self.state.pressed
+        self.state.pressed
     }
 
     fn locked(&self) -> bool {
@@ -235,7 +226,6 @@ impl StateModifier {
             ModKind::Lock(_) => self.state.locked,
             ModKind::Latch(LatchVariant::OnPress) => self.state.latched,
             ModKind::Latch(LatchVariant::OnRelease) => self.state.pressed || self.state.latched,
-            ModKind::None => false,
         }
     }
 }
@@ -375,7 +365,6 @@ impl GroupState {
             {
                 self.locked = target;
             }
-            ModKind::None => {}
             _ => {
                 self.pressed.retain(|pressed| pressed.keycode != keycode);
                 self.pressed.push(PressedGroup {
@@ -399,7 +388,7 @@ impl GroupState {
         };
         let pressed = self.pressed.remove(index);
         match pressed.action.kind {
-            ModKind::Press | ModKind::None => {}
+            ModKind::Press => {}
             ModKind::Latch(_) => {
                 if pressed.action.latch_to_lock && self.latched == Some(pressed.target) {
                     self.locked = pressed.target;
@@ -491,7 +480,11 @@ impl KeyEffect {
 
     fn use_tap(&mut self) {
         if let Some(modifier) = &mut self.modifier {
-            modifier.use_tap();
+            if matches!(modifier.kind, ModKind::Lock(flags) if flags.contains(LockFlags::TAP))
+                && modifier.state.pressed
+            {
+                modifier.state.tapped = true;
+            }
         }
     }
 }

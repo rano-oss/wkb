@@ -202,7 +202,7 @@ fn rejects_keycode_out_of_range() {
 #[test]
 fn rejects_level_out_of_range() {
     let mut file = sample_file();
-    file.modifiers[0].1.push((8, ModAction::None)); // MAX_LEVELS = 8
+    file.modifiers[0].1.push((8, ModAction::Press(ModType::None))); // MAX_LEVELS = 8
     assert!(matches!(file.validate(), Err(IrError::LevelOutOfRange(8))));
 }
 
