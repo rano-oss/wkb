@@ -350,21 +350,30 @@ impl WKB {
     }
 
     /// Update internal modifier state for a key event. Returns `true` if the key is a modifier.
-    pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
+    pub fn update_key(
+        &mut self,
+        evdev_code: u32,
+        key_direction: KeyDirection,
+    ) -> bool {
         let num_layouts = self.num_layouts();
-        let kb_layout = &mut self.layouts[self.current_layout_idx];
-        let is_modifier = 
-            kb_layout.modifiers.update_key(evdev_code, key_direction);
+        let layout = &mut self.layouts[self.current_layout_idx];
+        let is_modifier = layout
+            .modifiers
+            .update_key(evdev_code, key_direction);
+        let (_, level2, level3, level5) =
+            layout.modifiers.active_none_and_levels();
+        let level = level_index(level5, level3, level2);
         self.current_layout_idx = self.groups.update(
             evdev_code,
             key_direction,
-            self.current_layout_idx,
-            is_modifier,
+            level,
+            !is_modifier,
             num_layouts,
         );
         if !is_modifier && key_direction == KeyDirection::Down {
-            let kb_layout = &mut self.layouts[self.current_layout_idx];
-            kb_layout.modifiers.unlatch();
+            self.layouts[self.current_layout_idx]
+                .modifiers
+                .unlatch();
         }
         is_modifier
     }
