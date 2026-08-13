@@ -41,7 +41,8 @@ use composer::{Composer, Token};
 mod composer;
 mod flat_keymap;
 mod modifiers;
-
+mod groups;
+pub use groups::Groups;
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
 pub use modifiers::{level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK};
 /// Intermediate representation for persisted layout data files.
@@ -130,6 +131,7 @@ pub struct KBLayout {
 pub struct WKB {
     pub(crate) layouts: Vec<KBLayout>,
     pub(crate) current_layout_idx: usize,
+    pub(crate) groups: Groups,
 }
 
 // WKB is Send + Sync: all fields are owned, no Rc/RefCell.
@@ -513,6 +515,7 @@ impl WKB {
         Ok(WKB {
             current_layout_idx: 0,
             layouts,
+            groups: Groups::default(),
         })
     }
 }

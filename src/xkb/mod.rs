@@ -20,12 +20,13 @@ use crate::xkb::parser::{
 };
 #[cfg(not(feature = "compose"))]
 use crate::Composer;
-use crate::KeyBitSet;
+use crate::{Groups, KeyBitSet};
 use crate::WKB;
 use crate::{modifiers::*, KBLayout};
 use compose::{layout_composer, load_compose_entries};
 pub use compose::{load_compose_from_path, load_compose_from_path_uncached};
 pub use keynames::keysym_to_named_key;
+use std::collections::BTreeMap;
 use std::ffi::CString;
 
 // ── Error type ──
@@ -460,6 +461,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
     WKB {
         current_layout_idx: 0,
         layouts,
+        groups: Groups::default(),
     }
 }
 
@@ -621,28 +623,25 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
                 }
                 if caps_levels.len() < num_levels as usize {
                     let min_caps = *caps_levels.iter().min().unwrap();
-                    let level_map: std::collections::BTreeMap<u8, StateModifier> = (0..8)
-                        .map(|l| {
+                    let level_map: BTreeMap<u8, StateModifier> = (min_caps as u8..8)
+                        .map(|level| {
                             (
-                                l,
-                                if l < min_caps as u8 {
-                                    StateModifier {
-                                        kind: ModKind::Press { pressed: false },
-                                        mod_type: ModType::None,
-                                    }
-                                } else {
-                                    StateModifier {
-                                        kind: ModKind::Lock {
-                                            pressed: false,
-                                            locked: 0,
-                                        },
-                                        mod_type: ModType::Caps,
-                                    }
+                                level,
+                                StateModifier {
+                                    kind: ModKind::Lock {
+                                        pressed: false,
+                                        locked: 0,
+                                    },
+                                    mod_type: ModType::Caps,
                                 },
                             )
                         })
                         .collect();
-                    modifiers.set_modifier(evdev_code, Modifier::Leveled(level_map));
+                
+                    modifiers.set_modifier(
+                        evdev_code,
+                        Modifier::Leveled(level_map),
+                    );
                     continue;
                 }
             }
