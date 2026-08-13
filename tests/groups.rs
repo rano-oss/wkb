@@ -214,36 +214,59 @@ fn shift_tap_switches_zhuyin_and_norwegian_without_changing_shift_hold() {
 }
 
 #[test]
-fn latch_variants_activate_on_their_named_edge() {
-    for variant in [LatchVariant::OnPress, LatchVariant::OnRelease] {
-        let file = layout_with_action(ModAction::Latch(ModType::Level3, variant));
-        let mut wkb = WKB::new_from_layouts(vec![file]).unwrap();
+fn latch_on_press_activate_on_named_edge() {
+    let file = layout_with_action(ModAction::LatchOnPress(ModType::Level3));
+    let mut wkb = WKB::new_from_layouts(vec![file]).unwrap();
 
-        assert_eq!(wkb.key_char(30), Some('a'), "idle ({variant:?})");
-        wkb.update_key(42, KeyDirection::Down);
-        assert_eq!(
-            wkb.key_char(30),
-            Some('ä'),
-            "level 3 active while held ({variant:?})"
-        );
-        wkb.update_key(42, KeyDirection::Up);
-        assert_eq!(
-            wkb.key_char(30),
-            Some('ä'),
-            "level 3 latched after release ({variant:?})"
-        );
+    assert_eq!(wkb.key_char(30), Some('a'), "idle");
+    wkb.update_key(42, KeyDirection::Down);
+    assert_eq!(
+        wkb.key_char(30),
+        Some('ä'),
+        "level 3 active while held"
+    );
+    wkb.update_key(42, KeyDirection::Up);
+    assert_eq!(
+        wkb.key_char(30),
+        Some('ä'),
+        "level 3 latched after release"
+    );
 
-        // A second press cycle unlatches both variants.
-        wkb.update_key(42, KeyDirection::Down);
-        wkb.update_key(42, KeyDirection::Up);
-        assert_eq!(wkb.key_char(30), Some('a'), "unlatched ({variant:?})");
-    }
+    // A second press cycle unlatches both variants.
+    wkb.update_key(42, KeyDirection::Down);
+    wkb.update_key(42, KeyDirection::Up);
+    assert_eq!(wkb.key_char(30), Some('a'), "unlatched");
+}
+
+#[test]
+fn latch_on_release_activate_on_named_edge() {
+    let file = layout_with_action(ModAction::Latch(ModType::Level3));
+    let mut wkb = WKB::new_from_layouts(vec![file]).unwrap();
+
+    assert_eq!(wkb.key_char(30), Some('a'), "idle");
+    wkb.update_key(42, KeyDirection::Down);
+    assert_eq!(
+        wkb.key_char(30),
+        Some('ä'),
+        "level 3 active while held"
+    );
+    wkb.update_key(42, KeyDirection::Up);
+    assert_eq!(
+        wkb.key_char(30),
+        Some('ä'),
+        "level 3 latched after release"
+    );
+
+    // A second press cycle unlatches both variants.
+    wkb.update_key(42, KeyDirection::Down);
+    wkb.update_key(42, KeyDirection::Up);
+    assert_eq!(wkb.key_char(30), Some('a'), "unlatched");
 }
 
 #[test]
 fn lock_flags_use_and_combine_their_named_edges() {
     // UNLOCK_ON_PRESS: the first tap locks level 2, the next press clears it.
-    let file = layout_with_action(ModAction::Lock(ModType::Level2, LockFlags::UNLOCK_ON_PRESS));
+    let file = layout_with_action(ModAction::UnlockOnPress(ModType::Level2));
     let mut wkb = WKB::new_from_layouts(vec![file]).unwrap();
     tap(&mut wkb, 42);
     assert_eq!(wkb.key_char(30), Some('A'), "first tap locks");
@@ -258,7 +281,7 @@ fn lock_flags_use_and_combine_their_named_edges() {
 
     // LOCK_ON_RELEASE: the lock engages only on release, and holds while the
     // key is held again.
-    let file = layout_with_action(ModAction::Lock(ModType::Level2, LockFlags::LOCK_ON_RELEASE));
+    let file = layout_with_action(ModAction::LockOnRelease(ModType::Level2));
     let mut wkb = WKB::new_from_layouts(vec![file]).unwrap();
     assert_eq!(wkb.key_char(30), Some('a'), "idle");
     wkb.update_key(42, KeyDirection::Down);
@@ -273,7 +296,7 @@ fn lock_flags_use_and_combine_their_named_edges() {
 
 #[test]
 fn caps_lock_unlocks_on_press() {
-    let file = layout_with_caps(ModAction::Lock(ModType::Caps, LockFlags::UNLOCK_ON_PRESS));
+    let file = layout_with_caps(ModAction::UnlockOnPress(ModType::Caps));
     let mut wkb = WKB::new_from_layouts(vec![file]).unwrap();
     tap(&mut wkb, 42);
     assert_eq!(wkb.key_char(30), Some('A'), "first tap locks caps");

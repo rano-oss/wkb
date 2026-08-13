@@ -370,7 +370,7 @@ impl WKB {
     }
 
     /// Return whether the given modifier type is currently active.
-    #[cfg(test)]
+    // #[cfg(test)]
     pub fn active_mod_type(&self, mod_type: ModType) -> bool {
         self.layouts[self.current_layout_idx]
             .modifiers
@@ -378,7 +378,7 @@ impl WKB {
     }
 
     /// Return the keycode (and optional level) for the given modifier type.
-    #[cfg(test)]
+    // #[cfg(test)]
     pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
         self.layouts[self.current_layout_idx]
             .modifiers

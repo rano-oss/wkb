@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 
-use wkb::ir::{self, IrError, LatchVariant, LayoutFile, LockFlags, ModAction};
+use wkb::ir::{self, IrError, LayoutFile, ModAction};
 use wkb::{ModType, NamedKey, WKB};
 
 include!("common/layouts.rs");
@@ -46,9 +46,9 @@ fn latch_variant_keeps_release_as_the_ron_default() {
         vec![
             (
                 0,
-                ModAction::Latch(ModType::Level3, LatchVariant::OnRelease),
+                ModAction::Latch(ModType::Level3),
             ),
-            (1, ModAction::Latch(ModType::Level3, LatchVariant::OnPress)),
+            (1, ModAction::LatchOnPress(ModType::Level3)),
         ],
     )];
     let text = file.to_ron_string().unwrap();
@@ -63,15 +63,14 @@ fn tap_lock_is_momentary_in_a_chord_and_locks_when_tapped() {
     file.modifiers = vec![
         (
             42,
-            vec![(0, ModAction::Lock(ModType::Level2, LockFlags::TAP))],
+            vec![(0, ModAction::TapLock(ModType::Level2))],
         ),
         (
             54,
             vec![(
                 0,
-                ModAction::Lock(
+                ModAction::LockOnReleaseUnlockOnPress(
                     ModType::Level2,
-                    LockFlags::LOCK_ON_RELEASE | LockFlags::UNLOCK_ON_PRESS,
                 ),
             )],
         ),
