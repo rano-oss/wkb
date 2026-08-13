@@ -396,8 +396,19 @@ impl Modifier {
     fn update(&mut self, key_direction: KeyDirection, level: u8) {
         match self {
             Modifier::Single(state_modifier) => state_modifier.kind.update(key_direction),
-            Modifier::Leveled(map) => if let Some(state_modifier) = map.get_mut(&level) {
-                state_modifier.kind.update(key_direction);
+            Modifier::Leveled(levels) => match key_direction {
+                KeyDirection::Down => {
+                    if let Some(modifier) = levels.get_mut(&level) {
+                        modifier.kind.update(KeyDirection::Down);
+                    }
+                }
+                KeyDirection::Up => {
+                    for modifier in levels.values_mut() {
+                        if modifier.kind.pressed() {
+                            modifier.kind.update(KeyDirection::Up);
+                        }
+                    }
+                }
             },
         }
     }
@@ -572,16 +583,15 @@ impl Modifiers {
         self.state_bits() & STATE_NUM_LOCKED != 0
     }
 
-    pub(crate) fn unlatch(&mut self) {
-        self.entries
-            .iter_mut()
-            .for_each(|(_, modifier)| modifier.for_each_mut(|sm| sm.kind.unlatch()));
-    }
-
-    pub(crate) fn untap(&mut self) {
-        self.entries
-            .iter_mut()
-            .for_each(|(_, modifier)| modifier.for_each_mut(|sm| sm.kind.untap()));
+    pub(crate) fn unlatch_except(&mut self, evdev_code: u32) {
+        for (code, modifier) in &mut self.entries {
+            if *code != evdev_code {
+                modifier.for_each_mut(|modifier| {
+                    modifier.kind.unlatch();
+                    modifier.kind.untap();
+                });
+            }
+        }
     }
 
     pub(crate) fn locked_with_type(&self, evdev_code: u32, mod_type: ModType) -> bool {

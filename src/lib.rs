@@ -368,9 +368,8 @@ impl WKB {
             is_modifier,
             self.layouts.len(),
         );
-        if !is_modifier && key_direction == KeyDirection::Down {
-            self.layouts[self.current_layout_idx].modifiers.unlatch();
-            self.layouts[self.current_layout_idx].modifiers.untap();
+        if key_direction == KeyDirection::Down {
+            self.layouts[self.current_layout_idx].modifiers.unlatch_except(evdev_code);
         }
         is_modifier
     }

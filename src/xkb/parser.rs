@@ -3429,7 +3429,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use lasso::Key as _;
-
 // ── xkbcommon public types ───────────────────────────────────────────
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: u32 = 2;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: u32 = 1;
@@ -3578,7 +3577,7 @@ pub(crate) struct XkbSymInterpret {
     pub(crate) actions: Vec<XkbAction>,
 }
 
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Debug)]
 pub(crate) enum XkbAction {
     #[default]
     None,
@@ -3596,7 +3595,7 @@ pub(crate) enum XkbAction {
     Internal(XkbInternalAction),
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub struct XkbInternalAction {
     pub flags: u32,
     pub clear_latched_mods: u32,
@@ -3625,13 +3624,13 @@ pub const ACTION_TYPE_MOD_SET: u32 = 2;
 pub const ACTION_TYPE_VOID: u32 = 1;
 pub const ACTION_TYPE_NONE: u32 = 0;
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub struct XkbPrivateAction {
     pub data: [u8; 7],
 }
 
 bitflags::bitflags! {
-    #[derive(Copy, Clone, Default, PartialEq, Eq)]
+    #[derive(Copy, Clone, Default, PartialEq, Eq, Debug)]
     pub struct ActionFlags: u32 {
         const LOCK_CLEAR            = 1;
         const LATCH_TO_LOCK         = 2;
@@ -3647,7 +3646,7 @@ bitflags::bitflags! {
 }
 
 bitflags::bitflags! {
-    #[derive(Copy, Clone, Default, PartialEq, Eq)]
+    #[derive(Copy, Clone, Default, PartialEq, Eq, Debug)]
     pub(crate) struct ControlsFlags: u32 {
         const STICKY_KEYS      = 1;
         const OVERLAY1         = 2;
@@ -3673,25 +3672,25 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub struct XkbControlsAction {
     pub flags: ActionFlags,
     pub ctrls: ControlsFlags,
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub struct XkbGroupAction {
     pub flags: ActionFlags,
     pub group: i32,
 }
 
-#[derive(Clone, Default, Copy)]
+#[derive(Clone, Default, Copy, Debug)]
 pub(crate) struct XkbModAction {
     pub(crate) flags: ActionFlags,
     pub(crate) mods: XkbMods,
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Copy, Clone, Default, Debug)]
 pub(crate) struct XkbMods {
     pub(crate) mods: u32,
     pub(crate) mask: u32,
@@ -3749,7 +3748,7 @@ pub(crate) struct XkbGroup {
     pub(crate) levels: Vec<XkbLevel>,
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub(crate) struct XkbLevel {
     pub(crate) syms: Vec<u32>,
     pub(crate) actions: Vec<XkbAction>,

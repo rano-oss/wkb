@@ -17,7 +17,7 @@ use crate::xkb::keymap::{
     xkb_keymap_new_from_string,
 };
 use crate::xkb::parser::{
-    ActionFlags, XKB_CONTEXT_NO_FLAGS, XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1, XkbAction
+    ActionFlags, XKB_CONTEXT_NO_FLAGS, XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1, XkbAction, XkbGroup
 };
 #[cfg(not(feature = "compose"))]
 use crate::Composer;
@@ -544,23 +544,101 @@ fn group_kind_from_action(action: &XkbAction) -> Option<groups::GroupKind> {
     }
 }
 
-
-
-fn modkind_from_keysym(keysym: u32, actions: &[XkbAction]) -> ModKind {
+fn modkind_from_keysym(
+    keysym: u32,
+    actions: &[XkbAction],
+) -> ModKind {
     match keysym {
-        0xffe6 | 0xfe05 | 0xfe0d | 0xfe13 => ModKind::Lock{pressed: false, locked: 0},
-        0xfe04 | 0xfe12 => if actions.iter().any(|action| {
-            matches!(action, XkbAction::ModLatch(action) if action.flags.contains(ActionFlags::LATCH_ON_PRESS))
-        }) {
-            ModKind::LatchOnPress { pressed: false, latched: false }
-        } else {
-            ModKind::Latch { pressed: false, latched: false }
+        // Caps_Lock, Shift_Lock, ISO level locks
+        0xffe5 | 0xffe6 | 0xfe05 | 0xfe0d | 0xfe13 => {
+            ModKind::Lock {
+                pressed: false,
+                locked: 0,
+            }
+        }
+
+        0xfe04 | 0xfe12 => {
+            if actions.iter().any(|action| {
+                matches!(
+                    action,
+                    XkbAction::ModLatch(action)
+                        if action
+                            .flags
+                            .contains(ActionFlags::LATCH_ON_PRESS)
+                )
+            }) {
+                ModKind::LatchOnPress {
+                    pressed: false,
+                    latched: false,
+                }
+            } else {
+                ModKind::Latch {
+                    pressed: false,
+                    latched: false,
+                }
+            }
+        }
+
+        _ => ModKind::Press {
+            pressed: false,
         },
-        _ => ModKind::Press{pressed: false},
     }
 }
 
-/// Build Modifiers struct from XKB keymap
+/// Expand key-local modifier levels into WKB's global 0..=7 levels.
+///
+/// `used_bits`:
+/// - bit 0: Level2
+/// - bit 1: Level3
+/// - bit 2: Level5
+fn expand_modifier_levels(
+    levels: &BTreeMap<u8, StateModifier>,
+    used_bits: u8,
+) -> BTreeMap<u8, StateModifier> {
+    (0u8..8)
+        .filter_map(|global_level| {
+            let local_level = global_level & used_bits;
+
+            levels
+                .get(&local_level)
+                .cloned()
+                .map(|modifier| (global_level, modifier))
+        })
+        .collect()
+}
+
+fn modifier_level_bits(
+    mod_type: ModType,
+    group0: &XkbGroup,
+) -> u8 {
+    /*
+     * Temporary WKB-oriented inference.
+     *
+     * Two-level Caps keys such as Japanese Eisu/Caps are selected
+     * only by Shift, so Level3 and Level5 must be ignored.
+     */
+    if mod_type == ModType::Caps && group0.levels.len() == 2 {
+        return 0b001;
+    }
+
+    /*
+     * Standard WKB level ordering:
+     *
+     * 0: none
+     * 1: Level2
+     * 2: Level3
+     * 3: Level2 + Level3
+     * 4: Level5
+     * ...
+     */
+    match group0.levels.len() {
+        0 | 1 => 0,
+        2 => 0b001,
+        3 | 4 => 0b011,
+        _ => 0b111,
+    }
+}
+
 /// Build modifier and group actions from an XKB keymap.
 fn build_modifiers_from_keymap(
     keymap: &keymap::XkbKeymap,
@@ -578,54 +656,163 @@ fn build_modifiers_from_keymap(
         .map(|modifier| {
             (
                 modifier.mapping,
-                modtype_from_name(keymap.ctx.atom_text(modifier.name)),
+                modtype_from_name(
+                    keymap.ctx.atom_text(modifier.name),
+                ),
             )
         })
         .collect();
 
-    let keysym_to_modtype = |keysym: u32| match keysym {
-        0xfe03 | 0xfe04 | 0xfe05 | 0xfe0d => Some(ModType::Level3),
-        0xfe11..=0xfe13 => Some(ModType::Level5),
-        0xff20 => Some(ModType::Compose),
-        _ => None,
+    let keysym_to_modtype = |keysym: u32| -> Option<ModType> {
+        match keysym {
+            // Shift
+            0xffe1 | 0xffe2 => Some(ModType::Level2),
+
+            // Control
+            0xffe3 | 0xffe4 => Some(ModType::None),
+
+            // Caps
+            0xffe5 | 0xffe6 => Some(ModType::Caps),
+
+            // Meta, Alt and Super
+            0xffe7..=0xffec => Some(ModType::None),
+
+            // NumLock and ScrollLock
+            0xff7f => Some(ModType::Num),
+            0xff14 => Some(ModType::Scroll),
+
+            // Level3
+            0xfe03 | 0xfe04 | 0xfe05 | 0xfe0d => {
+                Some(ModType::Level3)
+            }
+
+            // Level5
+            0xfe11..=0xfe13 => Some(ModType::Level5),
+
+            // Compose
+            0xff20 => Some(ModType::Compose),
+
+            _ => None,
+        }
     };
 
-    let state_modifier =
-        |keysym, mod_type, actions| StateModifier {
-            mod_type,
-            kind: modkind_from_keysym(keysym, actions),
+    let modkind_from_action =
+        |action: &XkbAction| -> Option<ModKind> {
+            match action {
+                XkbAction::ModSet(_) => {
+                    Some(ModKind::Press {
+                        pressed: false,
+                    })
+                }
+
+                XkbAction::ModLatch(action) => {
+                    Some(match (
+                        action
+                            .flags
+                            .contains(ActionFlags::LATCH_TO_LOCK),
+                        action
+                            .flags
+                            .contains(ActionFlags::LATCH_ON_PRESS),
+                    ) {
+                        (false, false) => ModKind::Latch {
+                            pressed: false,
+                            latched: false,
+                        },
+
+                        (false, true) => {
+                            ModKind::LatchOnPress {
+                                pressed: false,
+                                latched: false,
+                            }
+                        }
+
+                        (true, false) => {
+                            ModKind::LatchToLockOnRelease {
+                                pressed: false,
+                                latched: false,
+                                locked: false,
+                            }
+                        }
+
+                        (true, true) => {
+                            ModKind::LatchToLockOnPress {
+                                pressed: false,
+                                latched: false,
+                                locked: false,
+                            }
+                        }
+                    })
+                }
+
+                XkbAction::ModLock(action) => {
+                    let lock_on_release = action
+                        .flags
+                        .contains(ActionFlags::LOCK_ON_RELEASE);
+
+                    let unlock_on_press = action
+                        .flags
+                        .contains(ActionFlags::UNLOCK_ON_PRESS);
+
+                    Some(match (
+                        lock_on_release,
+                        unlock_on_press,
+                    ) {
+                        (false, false) => ModKind::Lock {
+                            pressed: false,
+                            locked: 0,
+                        },
+
+                        (true, false) => {
+                            ModKind::LockOnRelease {
+                                pressed: false,
+                                locked: false,
+                            }
+                        }
+
+                        (false, true) => {
+                            ModKind::UnlockOnPress {
+                                pressed: false,
+                                locked: false,
+                            }
+                        }
+
+                        (true, true) => {
+                            ModKind::LockOnReleaseUnlockOnPress {
+                                pressed: false,
+                                locked: false,
+                                lock: false,
+                            }
+                        }
+                    })
+                }
+
+                _ => None,
+            }
         };
 
     for key in &keymap.keys {
-        if key.keycode < EVDEV_OFFSET || key.keycode > keymap.max_key_code {
+        if key.keycode < EVDEV_OFFSET
+            || key.keycode > keymap.max_key_code
+        {
             continue;
         }
 
         let evdev_code = key.keycode - EVDEV_OFFSET;
+
         let Some(group0) = key.groups.first() else {
             continue;
         };
 
-        let first_level = group0.levels.first();
-        let syms = first_level
-            .map(|level| level.syms.as_slice())
-            .unwrap_or_default();
-        let actions = first_level
-            .map(|level| level.actions.as_slice())
-            .unwrap_or_default();
-
         /*
-         * Group actions are independent from modifier actions.
-         *
-         * A one-level key receives Group::Single. A multi-level key
-         * receives Group::Leveled, containing only levels with actions.
+         * Build group actions independently from modifier actions.
          */
-        let level_groups: BTreeMap<u8, groups::GroupKind> = group0
+        let group_levels: BTreeMap<u8, groups::GroupKind> = group0
             .levels
             .iter()
             .enumerate()
             .filter_map(|(level, data)| {
                 let level = u8::try_from(level).ok()?;
+
                 let action = data
                     .actions
                     .iter()
@@ -635,147 +822,239 @@ fn build_modifiers_from_keymap(
             })
             .collect();
 
-        if !level_groups.is_empty() {
+        if !group_levels.is_empty() {
             let group = if group0.levels.len() == 1 {
-                groups::Group::Single(*level_groups.get(&0).unwrap())
+                groups::Group::Single(
+                    *group_levels.get(&0).unwrap(),
+                )
             } else {
-                groups::Group::Leveled(level_groups)
+                groups::Group::Leveled(group_levels)
             };
 
             group_entries.push((evdev_code, group));
         }
 
         /*
-         * The remainder handles modifiers only. Group-only keys no
-         * longer need dummy ModType::None modifier entries.
+         * Keys without a modifier map can still contain explicit
+         * modifier symbols such as ISO_Level3_Latch.
          */
-        if group0.levels.len() == 1 && syms.len() == 1 {
-            if let Some(mod_type) = keysym_to_modtype(syms[0]) {
-                modifiers.set_modifier(
-                    evdev_code,
-                    Modifier::Single(state_modifier(
-                        syms[0],
-                        mod_type,
-                        actions,
-                    )),
-                );
-                continue;
-            }
-        }
-
         if key.modmap == 0 && key.vmodmap == 0 {
+            let levels: BTreeMap<u8, StateModifier> = group0
+                .levels
+                .iter()
+                .enumerate()
+                .filter_map(|(level, data)| {
+                    let level = u8::try_from(level).ok()?;
+
+                    let keysym = data
+                        .syms
+                        .iter()
+                        .copied()
+                        .find(|keysym| {
+                            keysym_to_modtype(*keysym).is_some()
+                        })?;
+
+                    let mod_type =
+                        keysym_to_modtype(keysym)?;
+
+                    Some((
+                        level,
+                        StateModifier {
+                            mod_type,
+                            kind: modkind_from_keysym(
+                                keysym,
+                                data.actions.as_slice(),
+                            ),
+                        },
+                    ))
+                })
+                .collect();
+            
+            if !levels.is_empty() {
+                let modifier = if group0.levels.len() == 1 {
+                    Modifier::Single(
+                        levels.into_values().next().unwrap(),
+                    )
+                } else {
+                    Modifier::Leveled(levels)
+                };
+
+                modifiers.set_modifier(evdev_code, modifier);
+            }
+
             continue;
         }
 
+        /*
+         * A key can belong to more than one real or virtual modifier.
+         */
         for &(mod_mask, named_type) in &mod_defs {
             if (key.modmap & mod_mask) == 0
                 && (key.vmodmap & mod_mask) == 0
             {
                 continue;
             }
+            if evdev_code == 41 {
+                eprintln!(
+                    "MATCH key=41 mod_mask={mod_mask:#010x} \
+                     named_type={named_type:?} \
+                     modmap={:#010x} vmodmap={:#010x}",
+                    key.modmap,
+                    key.vmodmap,
+                );
+            }
 
-            let mod_type = if syms.len() == 1 {
-                keysym_to_modtype(syms[0]).or(named_type)
-            } else {
-                named_type
-            };
+            /*
+             * Prefer the modifier type expressed by a symbol. Fall
+             * back to the modifier-map name for remapped keys.
+             */
+            let symbol_type = group0
+                .levels
+                .iter()
+                .flat_map(|level| level.syms.iter().copied())
+                .find_map(keysym_to_modtype);
 
-            let Some(mod_type) = mod_type else {
+            let Some(mod_type) = symbol_type.or(named_type) else {
                 continue;
             };
 
-            if mod_type == ModType::Caps {
-                let caps_levels: Vec<u8> = group0
-                    .levels
-                    .iter()
-                    .enumerate()
-                    .filter_map(|(level, data)| {
-                        (data.syms.first() == Some(&0xffe5))
-                            .then(|| u8::try_from(level).ok())
-                            .flatten()
-                    })
-                    .collect();
+            /*
+             * Construct every modifier level independently.
+             *
+             * A level participates when:
+             *
+             * 1. It contains a recognized symbol for this modifier; or
+             * 2. It contains a modifier action affecting this map.
+             */
+            let levels: BTreeMap<u8, StateModifier> = group0
+                .levels
+                .iter()
+                .enumerate()
+                .filter_map(|(level, data)| {
+                    let level = u8::try_from(level).ok()?;
 
-                if caps_levels.is_empty() {
-                    continue;
-                }
+                    let symbol = data
+                        .syms
+                        .iter()
+                        .copied()
+                        .find(|keysym| {
+                            keysym_to_modtype(*keysym)
+                                == Some(mod_type)
+                        });
 
-                if caps_levels.len() < group0.levels.len() {
-                    let first_caps = *caps_levels.iter().min().unwrap();
+                    let action = data.actions.iter().find(|action| {
+                        match action {
+                            XkbAction::ModSet(action)
+                            | XkbAction::ModLatch(action)
+                            | XkbAction::ModLock(action) => {
+                                action.mods.mask & mod_mask != 0
+                            }
 
-                    let levels = (0..group0.levels.len())
-                        .filter_map(|level| {
-                            let level = u8::try_from(level).ok()?;
+                            _ => false,
+                        }
+                    });
 
-                            Some((
-                                level,
-                                StateModifier {
-                                    mod_type: ModType::Caps,
-                                    kind: if level < first_caps {
-                                        ModKind::Press {
-                                            pressed: false,
-                                        }
-                                    } else {
-                                        ModKind::Lock {
-                                            pressed: false,
-                                            locked: 0,
-                                        }
-                                    },
-                                },
-                            ))
-                        })
-                        .collect();
+                    let kind = if let Some(keysym) = symbol {
+                        modkind_from_keysym(
+                            keysym,
+                            data.actions.as_slice(),
+                        )
+                    } else {
+                        modkind_from_action(action?)?
+                    };
 
-                    modifiers.set_modifier(
-                        evdev_code,
-                        Modifier::Leveled(levels),
-                    );
-                    continue;
-                }
+                    Some((
+                        level,
+                        StateModifier {
+                            mod_type,
+                            kind,
+                        },
+                    ))
+                })
+                .collect();
+
+            let used_bits = modifier_level_bits(
+                mod_type,
+                group0,
+            );
+            
+            let levels = expand_modifier_levels(
+                &levels,
+                used_bits,
+            );
+
+            if !levels.is_empty() {
+                let modifier = if group0.levels.len() == 1 {
+                    Modifier::Single(
+                        levels.into_values().next().unwrap(),
+                    )
+                } else {
+                    Modifier::Leveled(levels)
+                };
+
+                modifiers.set_modifier(evdev_code, modifier);
+                continue;
             }
 
-            let modifier = if syms.len() == 1
-                && matches!(
-                    mod_type,
-                    ModType::Level2
-                        | ModType::Level3
-                        | ModType::Level5
-                )
-            {
-                state_modifier(syms[0], mod_type, actions)
-            } else {
-                StateModifier {
-                    mod_type,
-                    kind: match mod_type {
-                        ModType::Caps
-                        | ModType::Num
-                        | ModType::Scroll => ModKind::Lock {
-                            pressed: false,
-                            locked: 0,
-                        },
-                        _ => ModKind::Press {
-                            pressed: false,
-                        },
-                    },
-                }
+            /*
+             * No level exposed a recognizable modifier symbol or
+             * action. Preserve modifier-map behavior for remapped
+             * physical modifier keys.
+             *
+             * Only use Single here when no level-specific behavior
+             * could be recovered.
+             */
+            let kind = match mod_type {
+                ModType::Caps
+                | ModType::Num
+                | ModType::Scroll => ModKind::Lock {
+                    pressed: false,
+                    locked: 0,
+                },
+
+                _ => ModKind::Press {
+                    pressed: false,
+                },
             };
+            eprintln!(
+                "FINAL key=41: {:#?}",
+                modifiers.get(41),
+            );
 
             modifiers.set_modifier(
                 evdev_code,
-                Modifier::Single(modifier),
+                Modifier::Single(StateModifier {
+                    mod_type,
+                    kind,
+                }),
             );
         }
     }
 
-     for code in [LEFT_CTRL, RIGHT_CTRL] {
-         modifiers.set_modifier(
-             code,
-             Modifier::Single(StateModifier {
-                 mod_type: ModType::None,
-                 kind: ModKind::Press { pressed: false },
-             }),
-         );
-     }
+    /*
+     * Preserve Control behavior for layouts that remap the standard
+     * Control key symbols.
+     */
+    for code in [LEFT_CTRL, RIGHT_CTRL] {
+        let already_present = modifiers
+            .iter()
+            .any(|(entry_code, _)| *entry_code == code);
 
-    (modifiers, groups::Groups::new(group_entries))
+        if !already_present {
+            modifiers.set_modifier(
+                code,
+                Modifier::Single(StateModifier {
+                    mod_type: ModType::None,
+                    kind: ModKind::Press {
+                        pressed: false,
+                    },
+                }),
+            );
+        }
+    }
+
+    (
+        modifiers,
+        groups::Groups::new(group_entries),
+    )
 }
