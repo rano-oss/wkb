@@ -481,21 +481,35 @@ impl Modifiers {
     /// Active modifier state: bit0=none, bit1=level2, bit2=level3, bit3=level5,
     /// bit4=compose, bit5=caps_locked, bit6=num_locked.
     fn state_bits(&self) -> u8 {
-        let mut state = 0u8;
+        let mut state = 0;
         for (_, modifier) in &self.entries {
             modifier.for_each(|sm| {
-                match sm.mod_type {
-                    ModType::None => state |= STATE_NONE,
-                    ModType::Level2 => state |= STATE_LEVEL2,
-                    ModType::Level3 => state |= STATE_LEVEL3,
-                    ModType::Level5 => state |= STATE_LEVEL5,
-                    ModType::Compose => state |= STATE_COMPOSE,
-                    ModType::Caps => state |= STATE_CAPS_LOCKED,
-                    ModType::Num => state |= STATE_NUM_LOCKED,
-                    ModType::Scroll => {}
+                let active = match sm.mod_type {
+                    ModType::Caps | ModType::Num | ModType::Scroll => {
+                        sm.kind.locked()
+                    }
+                    _ => {
+                        sm.kind.pressed()
+                            || sm.kind.latched()
+                            || sm.kind.locked()
+                    }
+                };
+                if !active {
+                    return;
                 }
+                state |= match sm.mod_type {
+                    ModType::None => STATE_NONE,
+                    ModType::Level2 => STATE_LEVEL2,
+                    ModType::Level3 => STATE_LEVEL3,
+                    ModType::Level5 => STATE_LEVEL5,
+                    ModType::Compose => STATE_COMPOSE,
+                    ModType::Caps => STATE_CAPS_LOCKED,
+                    ModType::Num => STATE_NUM_LOCKED,
+                    ModType::Scroll => 0,
+                };
             });
         }
+    
         state
     }
 
