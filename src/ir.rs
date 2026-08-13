@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::composer::{Composer, Token};
 use crate::flat_keymap::{FlatMap, FlatMapValue, MAX_LEVELS};
-use crate::modifiers::{ModKind, ModType, Modifier, Modifiers};
+use crate::modifiers::{ModKind, ModType, Modifier, Modifiers, StateModifier};
 use crate::named_keys::NamedKey;
 use crate::{FlatKeymap, FlatNamedKeyMap, KBLayout, KeyBitSet};
 /// Current version of the layout file schema. Files with a different version
@@ -80,6 +80,27 @@ pub enum ModAction {
         ModType,
     ),
     Latch(
+        ModType,
+    ),
+    LockOnRelease(
+        ModType,
+    ),
+    UnlockOnPress(
+        ModType,
+    ),
+    LockOnReleaseUnlockOnPress(
+        ModType,
+    ),
+    TapLock(
+        ModType,
+    ),
+    LatchOnPress(
+        ModType,
+    ),
+    LatchToLockOnPress(
+        ModType,
+    ),
+    LatchToLockOnRelease(
         ModType,
     ),
 }
@@ -649,27 +670,26 @@ fn modifiers_from_layout(modifiers: &Modifiers) -> ModifierList {
 
 fn actions_from_modifier(modifier: &Modifier) -> Vec<(u8, ModAction)> {
     match modifier {
-        Modifier::Single(effect) => vec![(0, modaction_from_effect(effect))],
+        Modifier::Single(state_modifier) => vec![(0, modaction_from_modkind(state_modifier.mod_type, &state_modifier.kind))],
         Modifier::Leveled(map) => map
             .iter()
-            .map(|(level, effect)| (*level, modaction_from_effect(effect)))
+            .map(|(level, state_modifier)| (*level, modaction_from_modkind(state_modifier.mod_type, &state_modifier.kind)))
             .collect(),
     }
 }
 
-fn modaction_from_effect(effect: &KeyEffect) -> ModAction {
-    effect
-        .modifier
-        .as_ref()
-        .map(|state| modaction_from_modkind(state.mod_type, &state.kind))
-        .unwrap_or(ModAction::Press(ModType::None))
-}
-
 fn modaction_from_modkind(mod_type: ModType, kind: &ModKind) -> ModAction {
     match kind {
-        ModKind::Press => ModAction::Press(mod_type),
-        ModKind::Lock(variant) => ModAction::Lock(mod_type, *variant),
-        ModKind::Latch(variant) => ModAction::Latch(mod_type, *variant),
+        ModKind::Press{ .. } => ModAction::Press(mod_type),
+        ModKind::Lock{ .. } => ModAction::Lock(mod_type),
+        ModKind::Latch{ .. } => ModAction::Latch(mod_type),
+        ModKind::LockOnRelease { .. } => ModAction::LockOnRelease(mod_type),
+        ModKind::UnlockOnPress { .. } => ModAction::UnlockOnPress(mod_type),
+        ModKind::LockOnReleaseUnlockOnPress { .. } => ModAction::LockOnReleaseUnlockOnPress(mod_type),
+        ModKind::TapLock { .. } => ModAction::TapLock(mod_type),
+        ModKind::LatchOnPress { .. } => ModAction::LatchOnPress(mod_type),
+        ModKind::LatchToLockOnPress { .. } => ModAction::LatchToLockOnPress(mod_type),
+        ModKind::LatchToLockOnRelease { .. } => ModAction::LatchToLockOnRelease(mod_type),
     }
 }
 
@@ -829,13 +849,20 @@ fn from_sparse_levels<T: FlatMapValue, V: Copy>(
     flat
 }
 
-fn modkind_from_modaction(action: ModAction) -> KeyEffect {
+fn modkind_from_modaction(action: ModAction) -> StateModifier {
     let (mod_type, kind) = match action {
-        ModAction::Press(t) => (t, ModKind::Press),
-        ModAction::Lock(t, variant) => (t, ModKind::Lock(variant)),
-        ModAction::Latch(t, variant) => (t, ModKind::Latch(variant)),
+        ModAction::Press(t) => (t, ModKind::Press { pressed: false }),
+        ModAction::Lock(t) => (t, ModKind::Lock { pressed: false, locked: 0 }),
+        ModAction::Latch(t) => (t, ModKind::Latch { pressed: false, latched: false }),
+        ModAction::LockOnRelease(t) => (t, ModKind::LockOnRelease { pressed: false, locked: false }),
+        ModAction::UnlockOnPress(t) => (t, ModKind::UnlockOnPress { pressed: false, locked: false }),
+        ModAction::LockOnReleaseUnlockOnPress(t) => (t, ModKind::LockOnReleaseUnlockOnPress { pressed: false, locked: false, lock: false }),
+        ModAction::TapLock(t) => (t, ModKind::TapLock { pressed: false, locked: false, tapped: false }),
+        ModAction::LatchOnPress(t) => (t, ModKind::LatchOnPress { pressed: false, latched: false }),
+        ModAction::LatchToLockOnPress(t) => (t, ModKind::LatchToLockOnPress { pressed: false, latched: false, locked: false }),
+        ModAction::LatchToLockOnRelease(t) => (t, ModKind::LatchToLockOnRelease { pressed: false, latched: false, locked: false }),
     };
-    KeyEffect::modifier(mod_type, kind)
+    StateModifier { mod_type, kind }
 }
 
 fn composer_from_compose(sequences: &[(Vec<char>, char)]) -> Composer {

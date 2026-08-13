@@ -45,6 +45,7 @@ pub fn update_both(
 }
 
 /// Compare every key's character output between wkb and xkbcommon.
+#[cfg(test)]
 pub fn test_all_keys(wkb: WKB, xkb: xkb::State, layout: String, locale: &str) {
     for i in 0..701 {
         let k1 = wkb.key_char(i);
@@ -67,6 +68,7 @@ pub fn test_all_keys(wkb: WKB, xkb: xkb::State, layout: String, locale: &str) {
 }
 
 /// Press the modifier keys that reach a given level state on both backends.
+#[cfg(test)]
 pub fn set_level(wkb: &mut WKB, xkb: &mut xkb::State, code: u32, level: Option<u8>) {
     if let Some(level) = level {
         let mut modifiers = Vec::new();

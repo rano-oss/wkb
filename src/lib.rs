@@ -35,7 +35,7 @@
 //! - **`xkb`** (default) — XKB keymap compilation via the `xkb-core` crate.
 //! - **`compose`** (default) — Compose-key / dead-key sequence support.
 
-use crate::{groups::{Group, GroupChange, GroupKind, Groups}, modifiers::*};
+use crate::modifiers::*;
 #[cfg(feature = "compose")]
 pub use composer::{ComposeState, ComposeString};
 use composer::{Composer, Token};
@@ -49,7 +49,7 @@ pub use modifiers::{
     level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, LEFT_SHIFT, NUM_LOCK,
     RIGHT_SHIFT, SCROLL_LOCK,
 };
-/// Intermediate representation for persisted layout data files.
+pub use groups::{Group, GroupKind, Groups, GroupChange};
 pub mod ir;
 mod named_keys;
 pub use named_keys::NamedKey;
@@ -371,7 +371,6 @@ impl WKB {
 
     /// Return whether the given modifier type is currently active.
     #[cfg(test)]
-    #[doc(hidden)]
     pub fn active_mod_type(&self, mod_type: ModType) -> bool {
         self.layouts[self.current_layout_idx]
             .modifiers
@@ -380,7 +379,6 @@ impl WKB {
 
     /// Return the keycode (and optional level) for the given modifier type.
     #[cfg(test)]
-    #[doc(hidden)]
     pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
         self.layouts[self.current_layout_idx]
             .modifiers
@@ -421,8 +419,8 @@ impl WKB {
     /// `delta = 1` cycles forward through layouts. Combining this with
     /// [`LockFlags::TAP`] changes layout only when the key is released without
     /// another key being pressed while it was held.
-    pub fn set_group_key(&mut self, evdev_code: u32, delta: i8) -> bool {
-        let group = Group::Single(GroupKind::Tap(GroupChange::Relative(delta)));
+    pub fn set_group_key(&mut self, evdev_code: u32, kind: GroupKind) -> bool {
+        let group = Group::Single(kind);
         self.groups.entries.push((evdev_code, group));
         true
     }

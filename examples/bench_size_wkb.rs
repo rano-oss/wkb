@@ -9,7 +9,7 @@ use std::hint::black_box;
 #[path = "../benches/common.rs"]
 mod common;
 use common::*;
-use wkb::ir::{LayoutFile, LockFlags, ModAction};
+use wkb::ir::{LayoutFile, ModAction};
 use wkb::{ModType, WKB};
 
 fn levels(entries: &[(u8, u32, char)]) -> BTreeMap<u8, BTreeMap<u32, char>> {
@@ -21,7 +21,6 @@ fn levels(entries: &[(u8, u32, char)]) -> BTreeMap<u8, BTreeMap<u32, char>> {
 }
 
 fn synthetic_layout() -> LayoutFile {
-    let lock = LockFlags::empty();
     let keymap = levels(&[
         (0, 2, '1'),
         (0, 15, '\t'),
@@ -49,9 +48,9 @@ fn synthetic_layout() -> LayoutFile {
         modifiers: vec![
             (42, vec![(0, ModAction::Press(ModType::Level2))]),
             (54, vec![(0, ModAction::Press(ModType::Level2))]),
-            (58, vec![(0, ModAction::Lock(ModType::Caps, lock))]),
+            (58, vec![(0, ModAction::Lock(ModType::Caps))]),
             (100, vec![(0, ModAction::Press(ModType::Level3))]),
-            (69, vec![(0, ModAction::Lock(ModType::Num, lock))]),
+            (69, vec![(0, ModAction::Lock(ModType::Num))]),
             (29, vec![(0, ModAction::Press(ModType::None))]),
             (56, vec![(0, ModAction::Press(ModType::None))]),
         ],
