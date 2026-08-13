@@ -767,28 +767,15 @@ fn build_modifiers_from_keymap(
         }
     }
 
-    /*
-     * Preserve your Control-output suppression workaround.
-     *
-     * Group-only keys no longer receive ModType::None; this remains
-     * solely for the specific Control behavior.
-     */
-    for code in [LEFT_CTRL, RIGHT_CTRL] {
-        let already_present =
-            modifiers.iter().any(|(entry_code, _)| *entry_code == code);
-
-        if !already_present {
-            modifiers.set_modifier(
-                code,
-                Modifier::Single(StateModifier {
-                    mod_type: ModType::None,
-                    kind: ModKind::Press {
-                        pressed: false,
-                    },
-                }),
-            );
-        }
-    }
+     for code in [LEFT_CTRL, RIGHT_CTRL] {
+         modifiers.set_modifier(
+             code,
+             Modifier::Single(StateModifier {
+                 mod_type: ModType::None,
+                 kind: ModKind::Press { pressed: false },
+             }),
+         );
+     }
 
     (modifiers, groups::Groups::new(group_entries))
 }

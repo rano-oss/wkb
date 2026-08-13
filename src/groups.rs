@@ -122,15 +122,11 @@ impl Groups {
 
             _ => {}
         }
-
-        let effective = self.effective(layouts);
-
         if direction == KeyDirection::Down && consumes_latch {
             self.latched = 0;
             self.latched_action = None;
         }
-
-        effective
+        self.effective(layouts)
     }
 
     fn down(&mut self, action: GroupKind) {

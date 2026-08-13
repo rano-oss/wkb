@@ -41,6 +41,7 @@ fn ron_roundtrip() {
 #[test]
 fn latch_variant_keeps_release_as_the_ron_default() {
     let mut file = sample_file();
+
     file.modifiers = vec![(
         41,
         vec![
@@ -48,13 +49,21 @@ fn latch_variant_keeps_release_as_the_ron_default() {
                 0,
                 ModAction::Latch(ModType::Level3),
             ),
-            (1, ModAction::LatchOnPress(ModType::Level3)),
+            (
+                1,
+                ModAction::LatchOnPress(ModType::Level3),
+            ),
         ],
     )];
+
     let text = file.to_ron_string().unwrap();
+
     assert!(text.contains("Latch(Level3)"));
-    assert!(text.contains("Latch(Level3, OnPress)"));
-    assert_eq!(LayoutFile::from_ron_str(&text).unwrap(), file);
+    assert!(text.contains("LatchOnPress(Level3)"));
+    assert_eq!(
+        LayoutFile::from_ron_str(&text).unwrap(),
+        file
+    );
 }
 
 #[test]
@@ -79,12 +88,18 @@ fn tap_lock_is_momentary_in_a_chord_and_locks_when_tapped() {
     file.keymap.entry(1).or_default().insert(30, 'A');
 
     let text = file.to_ron_string().unwrap();
-    assert!(text.contains("Lock(Level2, (\"TAP\"))"), "{text}");
     assert!(
-        text.contains("Lock(Level2, (\"LOCK_ON_RELEASE | UNLOCK_ON_PRESS\"))"),
+        text.contains("TapLock(Level2)"),
         "{text}"
     );
-    let mut wkb = WKB::new_from_layouts(vec![LayoutFile::from_ron_str(&text).unwrap()]).unwrap();
+    assert!(
+        text.contains("LockOnReleaseUnlockOnPress(Level2)"),
+        "{text}"
+    );
+    let mut wkb = WKB::new_from_layouts(vec![
+        LayoutFile::from_ron_str(&text).unwrap(),
+    ])
+    .unwrap();
 
     wkb.update_key(42, wkb::KeyDirection::Down);
     assert_eq!(wkb.key_char(30), Some('a'));

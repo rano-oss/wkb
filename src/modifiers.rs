@@ -306,6 +306,25 @@ impl ModKind {
             ModKind::LatchToLockOnRelease { pressed, .. } => *pressed,
         }
     }
+
+    pub(crate) fn depressed(&self) -> bool {
+        match self {
+            Self::UnlockOnPress {
+                pressed,
+                locked,
+            } => *pressed && *locked,
+    
+            Self::LockOnReleaseUnlockOnPress {
+                pressed,
+                lock,
+                ..
+            } => *pressed && *lock,
+    
+            Self::TapLock { .. } => false,
+    
+            _ => self.pressed(),
+        }
+    }
     
     pub(crate) fn locked(&self) -> bool {
         match self {
@@ -489,7 +508,7 @@ impl Modifiers {
                         sm.kind.locked()
                     }
                     _ => {
-                        sm.kind.pressed()
+                        sm.kind.depressed()
                             || sm.kind.latched()
                             || sm.kind.locked()
                     }
@@ -587,7 +606,7 @@ impl Modifiers {
         for (code, bit) in MODIFIER_MAPPING {
             if let Some(modifier) = self.get(code) {
                 modifier.for_each(|mk| {
-                    if mk.kind.pressed() {
+                    if mk.kind.depressed() {
                         depressed |= bit;
                     }
                     if mk.kind.locked() {
