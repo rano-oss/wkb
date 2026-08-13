@@ -357,10 +357,8 @@ impl Modifiers {
             let (_, l2, l3, l5) = self.active_none_and_levels();
             let level = level_index(l5, l3, l2) as u8;
             if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
-                if let Some(mod_kind) = map.get_mut(&level) {
-                    mod_kind.update(key_direction);
-                } else if let Some(mod_kind) = map.get_mut(&0) {
-                    mod_kind.update(key_direction);
+                if let Some(modifier) = map.get_mut(&level) {
+                    modifier.update(key_direction);
                 } else {
                     return false;
                 }
