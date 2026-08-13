@@ -355,25 +355,22 @@ impl WKB {
         evdev_code: u32,
         key_direction: KeyDirection,
     ) -> bool {
-        let num_layouts = self.num_layouts();
         let layout = &mut self.layouts[self.current_layout_idx];
+        let (_, level2, level3, level5) = layout.modifiers.active_none_and_levels();
+        let action_level = level_index(level2, level3, level5);
         let is_modifier = layout
             .modifiers
             .update_key(evdev_code, key_direction);
-        let (_, level2, level3, level5) =
-            layout.modifiers.active_none_and_levels();
-        let level = level_index(level5, level3, level2);
         self.current_layout_idx = self.groups.update(
             evdev_code,
             key_direction,
-            level,
-            !is_modifier,
-            num_layouts,
+            action_level,
+            is_modifier,
+            self.layouts.len(),
         );
         if !is_modifier && key_direction == KeyDirection::Down {
-            self.layouts[self.current_layout_idx]
-                .modifiers
-                .unlatch();
+            self.layouts[self.current_layout_idx].modifiers.unlatch();
+            self.layouts[self.current_layout_idx].modifiers.untap();
         }
         is_modifier
     }

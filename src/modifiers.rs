@@ -352,6 +352,12 @@ impl ModKind {
     pub(crate) fn unlatch(&mut self) {
         match self {
             Self::Latch { latched, .. } => *latched = false,
+            _ => {}
+        }
+    }
+
+    pub(crate) fn untap(&mut self) {
+        match self {
             Self::TapLock { tapped, .. } => {
                 if *tapped {
                     *tapped = false;
@@ -570,6 +576,12 @@ impl Modifiers {
         self.entries
             .iter_mut()
             .for_each(|(_, modifier)| modifier.for_each_mut(|sm| sm.kind.unlatch()));
+    }
+
+    pub(crate) fn untap(&mut self) {
+        self.entries
+            .iter_mut()
+            .for_each(|(_, modifier)| modifier.for_each_mut(|sm| sm.kind.untap()));
     }
 
     pub(crate) fn locked_with_type(&self, evdev_code: u32, mod_type: ModType) -> bool {
