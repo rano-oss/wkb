@@ -894,15 +894,6 @@ fn build_modifiers_from_keymap(
             {
                 continue;
             }
-            if evdev_code == 41 {
-                eprintln!(
-                    "MATCH key=41 mod_mask={mod_mask:#010x} \
-                     named_type={named_type:?} \
-                     modmap={:#010x} vmodmap={:#010x}",
-                    key.modmap,
-                    key.vmodmap,
-                );
-            }
 
             /*
              * Prefer the modifier type expressed by a symbol. Fall
@@ -1016,10 +1007,6 @@ fn build_modifiers_from_keymap(
                     pressed: false,
                 },
             };
-            eprintln!(
-                "FINAL key=41: {:#?}",
-                modifiers.get(41),
-            );
 
             modifiers.set_modifier(
                 evdev_code,
@@ -1035,24 +1022,17 @@ fn build_modifiers_from_keymap(
      * Preserve Control behavior for layouts that remap the standard
      * Control key symbols.
      */
-    for code in [LEFT_CTRL, RIGHT_CTRL] {
-        let already_present = modifiers
-            .iter()
-            .any(|(entry_code, _)| *entry_code == code);
-
-        if !already_present {
-            modifiers.set_modifier(
-                code,
-                Modifier::Single(StateModifier {
-                    mod_type: ModType::None,
-                    kind: ModKind::Press {
-                        pressed: false,
-                    },
-                }),
-            );
-        }
-    }
-
+     for code in [LEFT_CTRL, RIGHT_CTRL] {
+         modifiers.set_modifier(
+             code,
+             Modifier::Single(StateModifier {
+                 mod_type: ModType::None,
+                 kind: ModKind::Press {
+                     pressed: false,
+                 },
+             }),
+         );
+     }
     (
         modifiers,
         groups::Groups::new(group_entries),

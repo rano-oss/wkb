@@ -96,36 +96,49 @@ impl Groups {
     ) -> usize {
         match direction {
             KeyDirection::Down if !self.active.contains_key(&code) => {
-                self.active.values_mut().for_each(|(action, interrupted)| {
-                    *interrupted |= matches!(
-                        action,
-                        GroupKind::Tap(_) | GroupKind::LockOnRelease(_)
-                    );
-                });
-
-                if let Some(action) = self
+                let action = self
                     .entries
                     .iter()
                     .find(|(key, _)| *key == code)
-                    .and_then(|(_, group)| group.get(level))
-                {
+                    .and_then(|(_, group)| group.get(level));
+                let is_latch_action = matches!(
+                    action,
+                    Some(
+                        GroupKind::LatchOnPress(_)
+                            | GroupKind::LatchOnRelease(_)
+                            | GroupKind::LatchToLockOnPress(_)
+                            | GroupKind::LatchToLockOnRelease(_)
+                    )
+                );
+                if consumes_latch && !is_latch_action {
+                    self.latched = 0;
+                    self.latched_action = None;
+                }
+                self.active
+                    .values_mut()
+                    .for_each(|(action, interrupted)| {
+                        *interrupted |= matches!(
+                            action,
+                            GroupKind::Tap(_)
+                                | GroupKind::LockOnRelease(_)
+                        );
+                    });
+                if let Some(action) = action {
                     self.down(action);
                     self.active.insert(code, (action, false));
                 }
             }
-
             KeyDirection::Up => {
-                if let Some((action, interrupted)) = self.active.remove(&code) {
+                if let Some((action, interrupted)) =
+                    self.active.remove(&code)
+                {
                     self.up(action, interrupted);
                 }
             }
-
+    
             _ => {}
         }
-        if direction == KeyDirection::Down && consumes_latch {
-            self.latched = 0;
-            self.latched_action = None;
-        }
+    
         self.effective(layouts)
     }
 
