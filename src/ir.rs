@@ -17,12 +17,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::composer::{Composer, Token};
 use crate::flat_keymap::{FlatMap, FlatMapValue, MAX_LEVELS};
-use crate::modifiers::{KeyEffect, ModKind, ModType, Modifier, Modifiers};
+use crate::modifiers::{ModKind, ModType, Modifier, Modifiers};
 use crate::named_keys::NamedKey;
 use crate::{FlatKeymap, FlatNamedKeyMap, KBLayout, KeyBitSet};
-
-pub use crate::modifiers::{LatchVariant, LockFlags};
-
 /// Current version of the layout file schema. Files with a different version
 /// are rejected by [`LayoutFile::validate`].
 pub const FORMAT_VERSION: u32 = 1;
@@ -81,11 +78,9 @@ pub enum ModAction {
     Press(ModType),
     Lock(
         ModType,
-        #[serde(default, skip_serializing_if = "LockFlags::is_empty")] LockFlags,
     ),
     Latch(
         ModType,
-        #[serde(default, skip_serializing_if = "LatchVariant::is_on_release")] LatchVariant,
     ),
 }
 

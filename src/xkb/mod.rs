@@ -429,7 +429,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
 
     WKB {
         current_layout_idx: 0,
-        group_state: GroupState::default(),
+        groups: GroupState::default(),
         layouts,
     }
 }

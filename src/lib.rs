@@ -35,17 +35,18 @@
 //! - **`xkb`** (default) — XKB keymap compilation via the `xkb-core` crate.
 //! - **`compose`** (default) — Compose-key / dead-key sequence support.
 
-use crate::modifiers::*;
+use crate::{groups::{Group, GroupChange, GroupKind, Groups}, modifiers::*};
 #[cfg(feature = "compose")]
 pub use composer::{ComposeState, ComposeString};
 use composer::{Composer, Token};
 mod composer;
 mod flat_keymap;
 mod modifiers;
+mod groups;
 
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
 pub use modifiers::{
-    level_index, KeyDirection, LockFlags, ModType, ALTGR, CAPS_LOCK, LEFT_SHIFT, NUM_LOCK,
+    level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, LEFT_SHIFT, NUM_LOCK,
     RIGHT_SHIFT, SCROLL_LOCK,
 };
 /// Intermediate representation for persisted layout data files.
@@ -135,7 +136,7 @@ pub struct KBLayout {
 pub struct WKB {
     pub(crate) layouts: Vec<KBLayout>,
     pub(crate) current_layout_idx: usize,
-    pub(crate) group_state: GroupState,
+    pub(crate) groups: Groups,
 }
 
 // WKB is Send + Sync: all fields are owned, no Rc/RefCell.
@@ -222,7 +223,7 @@ impl WKB {
     pub fn update_modifiers(&mut self, depressed: u32, latched: u32, locked: u32, group: u32) {
         // Switch layout based on group index from compositor.
         if (group as usize) < self.num_layouts() {
-            self.group_state.set_layout(group as usize);
+            self.groups.set_layout(group as usize, self.num_layouts());
             self.current_layout_idx = group as usize;
         }
         self.layouts[self.current_layout_idx]
@@ -257,7 +258,7 @@ impl WKB {
         if layout_idx >= self.layouts.len() {
             return Err(WkbError::InvalidLayout(layout_idx));
         }
-        self.group_state.set_layout(layout_idx);
+        self.groups.set_layout(layout_idx, self.num_layouts());
         self.current_layout_idx = layout_idx;
         Ok(())
     }
@@ -349,55 +350,27 @@ impl WKB {
     }
 
     /// Update internal modifier state for a key event. Returns `true` if the key is a modifier.
-    #[doc(hidden)]
     pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let num_layouts = self.num_layouts();
-        let current_layout_idx = self.current_layout_idx;
-        let (is_modifier, group_action) = {
-            let kb_layout = &mut self.layouts[current_layout_idx];
-            kb_layout.modifiers.update_key(evdev_code, key_direction)
-        };
-
-        let group_target = self.group_state.update_key(
+        let kb_layout = &mut self.layouts[self.current_layout_idx];
+        let is_modifier = 
+            kb_layout.modifiers.update_key(evdev_code, key_direction);
+        self.current_layout_idx = self.groups.update(
             evdev_code,
             key_direction,
-            group_action,
+            self.current_layout_idx,
             is_modifier,
-            current_layout_idx,
             num_layouts,
         );
-
         if !is_modifier && key_direction == KeyDirection::Down {
-            {
-                let kb_layout = &mut self.layouts[current_layout_idx];
-                kb_layout.modifiers.unlatch();
-            }
+            let kb_layout = &mut self.layouts[self.current_layout_idx];
+            kb_layout.modifiers.unlatch();
         }
-
-        self.switch_group_layout(group_target);
         is_modifier
     }
 
-    fn switch_group_layout(&mut self, target: usize) {
-        if target == self.current_layout_idx || target >= self.layouts.len() {
-            return;
-        }
-        let prev = self.current_layout_idx;
-        // Layouts can define different modifier keys, so don't clone the
-        // whole modifiers table. Carry over the held state only for keys that
-        // are modifiers in both layouts.
-        let (source, dest) = if prev < target {
-            let (head, tail) = self.layouts.split_at_mut(target);
-            (&head[prev].modifiers, &mut tail[0].modifiers)
-        } else {
-            let (head, tail) = self.layouts.split_at_mut(prev);
-            (&tail[0].modifiers, &mut head[target].modifiers)
-        };
-        dest.inherit_state(source);
-        self.current_layout_idx = target;
-    }
-
     /// Return whether the given modifier type is currently active.
+    #[cfg(test)]
     #[doc(hidden)]
     pub fn active_mod_type(&self, mod_type: ModType) -> bool {
         self.layouts[self.current_layout_idx]
@@ -406,6 +379,7 @@ impl WKB {
     }
 
     /// Return the keycode (and optional level) for the given modifier type.
+    #[cfg(test)]
     #[doc(hidden)]
     pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
         self.layouts[self.current_layout_idx]
@@ -426,28 +400,30 @@ impl WKB {
         let modifier = if let Some(level) = level {
             Modifier::Leveled(BTreeMap::from([(
                 level,
-                KeyEffect::modifier(ModType::Compose, ModKind::Press),
+                StateModifier {
+                    mod_type: ModType::Compose,
+                    kind: ModKind::Press { pressed: false },
+                },
             )]))
         } else {
-            Modifier::Single(KeyEffect::modifier(ModType::Compose, ModKind::Press))
+            Modifier::Single(StateModifier {
+                mod_type: ModType::Compose,
+                kind: ModKind::Press { pressed: false },
+            })
         };
         for layout in &mut self.layouts {
             layout.modifiers.set_modifier(evdev_code, modifier.clone());
         }
     }
 
-    /// Add a relative group-lock action to a key in every layout.
+    /// Add a relative group-lock action.
     ///
     /// `delta = 1` cycles forward through layouts. Combining this with
     /// [`LockFlags::TAP`] changes layout only when the key is released without
     /// another key being pressed while it was held.
-    pub fn set_group_key(&mut self, evdev_code: u32, delta: i8, flags: LockFlags) -> bool {
-        let Some(group) = Group::relative(delta, ModKind::Lock(flags)) else {
-            return false;
-        };
-        for layout in &mut self.layouts {
-            layout.modifiers.set_group(evdev_code, group);
-        }
+    pub fn set_group_key(&mut self, evdev_code: u32, delta: i8) -> bool {
+        let group = Group::Single(GroupKind::Tap(GroupChange::Relative(delta)));
+        self.groups.entries.push((evdev_code, group));
         true
     }
 
@@ -553,7 +529,7 @@ impl WKB {
         }
         Ok(WKB {
             current_layout_idx: 0,
-            group_state: GroupState::default(),
+            groups: Groups::default(),
             layouts,
         })
     }
