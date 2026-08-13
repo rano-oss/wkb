@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::composer::{Composer, Token};
 use crate::flat_keymap::{FlatMap, FlatMapValue, MAX_LEVELS};
-use crate::modifiers::{ModKind, ModType, Modifier, Modifiers};
+use crate::modifiers::{ModKind, ModType, Modifier, Modifiers, StateModifier};
 use crate::named_keys::NamedKey;
 use crate::{FlatKeymap, FlatNamedKeyMap, KBLayout, KeyBitSet};
 
@@ -79,7 +79,6 @@ pub enum ModAction {
     Press(ModType),
     Lock(ModType),
     Latch(ModType),
-    None,
 }
 
 /// A persisted keyboard layout, mirroring the serialized RON document.
@@ -430,20 +429,19 @@ fn modifiers_from_layout(modifiers: &Modifiers) -> ModifierList {
 
 fn actions_from_modifier(modifier: &Modifier) -> Vec<(u8, ModAction)> {
     match modifier {
-        Modifier::Single(kind) => vec![(0, modaction_from_modkind(kind))],
+        Modifier::Single(kind) => vec![(0, modaction_from_state_modifier(kind))],
         Modifier::Leveled(map) => map
             .iter()
-            .map(|(level, kind)| (*level, modaction_from_modkind(kind)))
+            .map(|(level, kind)| (*level, modaction_from_state_modifier(kind)))
             .collect(),
     }
 }
 
-fn modaction_from_modkind(kind: &ModKind) -> ModAction {
+fn modaction_from_state_modifier(kind: &StateModifier) -> ModAction {
     match kind {
-        ModKind::Press { mod_type, .. } => ModAction::Press(*mod_type),
-        ModKind::Lock { mod_type, .. } => ModAction::Lock(*mod_type),
-        ModKind::Latch { mod_type, .. } => ModAction::Latch(*mod_type),
-        ModKind::None => ModAction::None,
+        StateModifier { kind: ModKind::Press { .. }, .. } => ModAction::Press(kind.mod_type),
+        StateModifier { kind: ModKind::Lock { .. }, .. } => ModAction::Lock(kind.mod_type),
+        StateModifier { kind: ModKind::Latch { .. }, .. } => ModAction::Latch(kind.mod_type),
     }
 }
 
@@ -548,12 +546,11 @@ fn from_levels<T: FlatMapValue, V: Copy>(
 }
 
 #[rustfmt::skip]
-fn modkind_from_modaction(action: ModAction) -> ModKind {
+fn modkind_from_modaction(action: ModAction) -> StateModifier {
     match action {
-        ModAction::Press(t) => ModKind::Press { pressed: false, mod_type: t },
-        ModAction::Lock(t) => ModKind::Lock { pressed: false, locked: 0, mod_type: t },
-        ModAction::Latch(t) => ModKind::Latch { pressed: false, latched: false, mod_type: t },
-        ModAction::None => ModKind::None,
+        ModAction::Press(t) => StateModifier { kind: ModKind::Press { pressed: false }, mod_type: t },
+        ModAction::Lock(t) => StateModifier { kind: ModKind::Lock { pressed: false, locked: 0 }, mod_type: t },
+        ModAction::Latch(t) => StateModifier { kind: ModKind::Latch { pressed: false, latched: false }, mod_type: t },
     }
 }
 

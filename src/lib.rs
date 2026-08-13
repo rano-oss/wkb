@@ -367,9 +367,9 @@ impl WKB {
 
         for (code, modifier) in modifiers.iter() {
             match modifier {
-                Modifier::Single(mod_kind) => {
-                    if mod_kind.has_mod_type(mod_type) {
-                        match mod_kind {
+                Modifier::Single(state_modifier) => {
+                    if state_modifier.has_mod_type(mod_type) {
+                        match state_modifier.kind {
                             ModKind::Press { .. } => return Some((*code, None)),
                             _ => {
                                 if other_mod.is_none() {
@@ -380,9 +380,9 @@ impl WKB {
                     }
                 }
                 Modifier::Leveled(map) => {
-                    for (level, mod_kind) in map {
-                        if mod_kind.has_mod_type(mod_type) {
-                            match mod_kind {
+                    for (level, state_modifier) in map {
+                        if state_modifier.has_mod_type(mod_type) {
+                            match state_modifier.kind {
                                 ModKind::Press { .. } => return Some((*code, Some(*level))),
                                 _ => {
                                     if other_mod.is_none() {
@@ -411,10 +411,9 @@ impl WKB {
         for layout in &mut self.layouts {
             layout.modifiers.set_modifier(
                 evdev_code,
-                Modifier::Single(ModKind::Press {
+                Modifier::Single(StateModifier { kind: ModKind::Press {
                     pressed: false,
-                    mod_type: ModType::Compose,
-                }),
+                }, mod_type: ModType::Compose }),
             );
         }
     }
