@@ -49,32 +49,14 @@ fn modifier_keysym(modifiers: &Modifiers, evdev: u32) -> Option<u32> {
     }
 }
 
-fn modkind_keysym(mk: &ModKind) -> Option<u32> {
-    match mk {
-        ModKind::Press {
-            mod_type: ModType::Level3,
-            ..
-        } => Some(0xfe03),
-        ModKind::Press {
-            mod_type: ModType::Level5,
-            ..
-        } => Some(0xfe11),
-        ModKind::Latch {
-            mod_type: ModType::Level3,
-            ..
-        } => Some(0xfe04),
-        ModKind::Latch {
-            mod_type: ModType::Level5,
-            ..
-        } => Some(0xfe12),
-        ModKind::Lock {
-            mod_type: ModType::Level3,
-            ..
-        } => Some(0xfe0d),
-        ModKind::Lock {
-            mod_type: ModType::Level5,
-            ..
-        } => Some(0xfe13),
+fn modkind_keysym(mk: &StateModifier) -> Option<u32> {
+    match (&mk.kind, &mk.mod_type) {
+        (ModKind::Press { .. }, ModType::Level3) => Some(0xfe03),
+        (ModKind::Press { .. }, ModType::Level5) => Some(0xfe11),
+        (ModKind::Latch { .. }, ModType::Level3) => Some(0xfe04),
+        (ModKind::Latch { .. }, ModType::Level5) => Some(0xfe12),
+        (ModKind::Lock { .. }, ModType::Level3) => Some(0xfe0d),
+        (ModKind::Lock { .. }, ModType::Level5) => Some(0xfe13),
         _ => None,
     }
 }

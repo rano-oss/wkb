@@ -20,12 +20,13 @@ use crate::xkb::parser::{
 };
 #[cfg(not(feature = "compose"))]
 use crate::Composer;
-use crate::KeyBitSet;
+use crate::{Groups, KeyBitSet};
 use crate::WKB;
 use crate::{modifiers::*, KBLayout};
 use compose::{layout_composer, load_compose_entries};
 pub use compose::{load_compose_from_path, load_compose_from_path_uncached};
 pub use keynames::keysym_to_named_key;
+use std::collections::BTreeMap;
 use std::ffi::CString;
 
 // ── Error type ──
@@ -50,9 +51,9 @@ pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u3
 
     for (code, modifier) in modifiers.iter() {
         match modifier {
-            Modifier::Single(mod_kind) => {
-                if mod_kind.has_mod_type(mod_type) {
-                    match mod_kind {
+            Modifier::Single(state_modifier) => {
+                if state_modifier.has_mod_type(mod_type) {
+                    match state_modifier.kind {
                         ModKind::Press { .. } => return Some((*code, None)),
                         _ => {
                             if other_mod.is_none() {
@@ -63,9 +64,9 @@ pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u3
                 }
             }
             Modifier::Leveled(map) => {
-                for (level, mod_kind) in map {
-                    if mod_kind.has_mod_type(mod_type) {
-                        match mod_kind {
+                for (level, state_modifier) in map {
+                    if state_modifier.has_mod_type(mod_type) {
+                        match state_modifier.kind {
                             ModKind::Press { .. } => return Some((*code, Some(*level))),
                             _ => {
                                 if other_mod.is_none() {
@@ -460,6 +461,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
     WKB {
         current_layout_idx: 0,
         layouts,
+        groups: Groups::default(),
     }
 }
 
@@ -549,20 +551,26 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
         }
     };
 
-    let keysym_to_modkind = |ks: u32, mt: ModType| -> ModKind {
+    let keysym_to_state_modifier = |ks: u32, mt: ModType| -> StateModifier {
         match ks {
-            0xffe6 | 0xfe05 | 0xfe0d | 0xfe13 => ModKind::Lock {
-                pressed: false,
-                locked: 0,
+            0xffe6 | 0xfe05 | 0xfe0d | 0xfe13 => StateModifier {
+                kind: ModKind::Lock {
+                    pressed: false,
+                    locked: 0,
+                },
                 mod_type: mt,
             },
-            0xfe04 | 0xfe12 => ModKind::Latch {
-                pressed: false,
-                latched: false,
+            0xfe04 | 0xfe12 => StateModifier {
+                kind: ModKind::Latch {
+                    pressed: false,
+                    latched: false,
+                },
                 mod_type: mt,
             },
-            _ => ModKind::Press {
-                pressed: false,
+            _ => StateModifier {
+                kind: ModKind::Press {
+                    pressed: false,
+                },
                 mod_type: mt,
             },
         }
@@ -583,7 +591,7 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
         if num_levels == 1 && syms.len() == 1 {
             if let Some(mt) = keysym_to_modtype(syms[0]) {
                 modifiers
-                    .set_modifier(evdev_code, Modifier::Single(keysym_to_modkind(syms[0], mt)));
+                    .set_modifier(evdev_code, Modifier::Single(keysym_to_state_modifier(syms[0], mt)));
                 continue;
             }
         }
@@ -615,47 +623,52 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
                 }
                 if caps_levels.len() < num_levels as usize {
                     let min_caps = *caps_levels.iter().min().unwrap();
-                    let level_map: std::collections::BTreeMap<u8, ModKind> = (0..8)
-                        .map(|l| {
+                    let level_map: BTreeMap<u8, StateModifier> = (min_caps as u8..8)
+                        .map(|level| {
                             (
-                                l,
-                                if l < min_caps as u8 {
-                                    ModKind::None
-                                } else {
-                                    ModKind::Lock {
+                                level,
+                                StateModifier {
+                                    kind: ModKind::Lock {
                                         pressed: false,
                                         locked: 0,
-                                        mod_type: ModType::Caps,
-                                    }
+                                    },
+                                    mod_type: ModType::Caps,
                                 },
                             )
                         })
                         .collect();
-                    modifiers.set_modifier(evdev_code, Modifier::Leveled(level_map));
+                
+                    modifiers.set_modifier(
+                        evdev_code,
+                        Modifier::Leveled(level_map),
+                    );
                     continue;
                 }
             }
 
-            let mod_kind = if syms.len() == 1
+            let state_modifier = if syms.len() == 1
                 && matches!(
                     mod_type,
                     ModType::Level2 | ModType::Level3 | ModType::Level5
                 ) {
-                keysym_to_modkind(syms[0], mod_type)
+                keysym_to_state_modifier(syms[0], mod_type)
             } else {
                 match mod_type {
-                    ModType::Caps | ModType::Num | ModType::Scroll => ModKind::Lock {
-                        pressed: false,
-                        locked: 0,
+                    ModType::Caps | ModType::Num | ModType::Scroll => StateModifier {
+                        kind: ModKind::Lock {
+                            pressed: false,
+                            locked: 0,
+                        },
                         mod_type,
                     },
-                    _ => ModKind::Press {
+                    _ => StateModifier { kind: ModKind::Press {
                         pressed: false,
+                    },
                         mod_type,
                     },
                 }
             };
-            modifiers.set_modifier(evdev_code, Modifier::Single(mod_kind));
+            modifiers.set_modifier(evdev_code, Modifier::Single(state_modifier));
         }
     }
 
@@ -668,19 +681,13 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
             *c == code
                 && matches!(
                     m,
-                    Modifier::Single(ModKind::Press {
-                        mod_type: ModType::None,
-                        ..
-                    }) | Modifier::Leveled(_)
+                    Modifier::Single(StateModifier { kind: ModKind::Press { .. }, mod_type: ModType::None }) | Modifier::Leveled(_)
                 )
         });
         if !already_control {
             modifiers.set_modifier(
                 code,
-                Modifier::Single(ModKind::Press {
-                    pressed: false,
-                    mod_type: ModType::None,
-                }),
+                Modifier::Single(StateModifier { kind: ModKind::Press { pressed: false }, mod_type: ModType::None }),
             );
         }
     }

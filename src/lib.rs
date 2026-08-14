@@ -41,9 +41,10 @@ use composer::{Composer, Token};
 mod composer;
 mod flat_keymap;
 mod modifiers;
-
+mod groups;
+pub use groups::{Group, GroupKind, Groups, GroupChange};
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
-pub use modifiers::{level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK};
+pub use modifiers::{level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK, LEFT_SHIFT, RIGHT_SHIFT};
 /// Intermediate representation for persisted layout data files.
 pub mod ir;
 mod named_keys;
@@ -130,6 +131,7 @@ pub struct KBLayout {
 pub struct WKB {
     pub(crate) layouts: Vec<KBLayout>,
     pub(crate) current_layout_idx: usize,
+    pub(crate) groups: Groups,
 }
 
 // WKB is Send + Sync: all fields are owned, no Rc/RefCell.
@@ -216,7 +218,8 @@ impl WKB {
     pub fn update_modifiers(&mut self, depressed: u32, latched: u32, locked: u32, group: u32) {
         // Switch layout based on group index from compositor.
         if (group as usize) < self.num_layouts() {
-            let _ = self.set_layout(group as usize);
+            self.groups.set_layout(group as usize, self.num_layouts());
+            self.current_layout_idx = group as usize;
         }
         self.layouts[self.current_layout_idx]
             .modifiers
@@ -250,6 +253,7 @@ impl WKB {
         if layout_idx >= self.layouts.len() {
             return Err(WkbError::InvalidLayout(layout_idx));
         }
+        self.groups.set_layout(layout_idx, self.num_layouts());
         self.current_layout_idx = layout_idx;
         Ok(())
     }
@@ -343,8 +347,18 @@ impl WKB {
     /// Update internal modifier state for a key event. Returns `true` if the key is a modifier.
     #[doc(hidden)]
     pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
+        let layouts = self.layouts.len();
         let kb_layout = &mut self.layouts[self.current_layout_idx];
         let is_modifier = kb_layout.modifiers.set_state(evdev_code, key_direction);
+        let (_, level2, level3, level5) = kb_layout.modifiers.active_none_and_levels();
+        let level = level_index(level5, level3, level2) as usize;
+        self.current_layout_idx = self.groups.update(
+            evdev_code,
+            key_direction,
+            level,
+            !is_modifier,
+            layouts,
+        );
         if !is_modifier && key_direction == KeyDirection::Down {
             kb_layout.modifiers.unlatch();
         }
@@ -367,9 +381,9 @@ impl WKB {
 
         for (code, modifier) in modifiers.iter() {
             match modifier {
-                Modifier::Single(mod_kind) => {
-                    if mod_kind.has_mod_type(mod_type) {
-                        match mod_kind {
+                Modifier::Single(state_modifier) => {
+                    if state_modifier.has_mod_type(mod_type) {
+                        match state_modifier.kind {
                             ModKind::Press { .. } => return Some((*code, None)),
                             _ => {
                                 if other_mod.is_none() {
@@ -380,9 +394,9 @@ impl WKB {
                     }
                 }
                 Modifier::Leveled(map) => {
-                    for (level, mod_kind) in map {
-                        if mod_kind.has_mod_type(mod_type) {
-                            match mod_kind {
+                    for (level, state_modifier) in map {
+                        if state_modifier.has_mod_type(mod_type) {
+                            match state_modifier.kind {
                                 ModKind::Press { .. } => return Some((*code, Some(*level))),
                                 _ => {
                                     if other_mod.is_none() {
@@ -411,12 +425,23 @@ impl WKB {
         for layout in &mut self.layouts {
             layout.modifiers.set_modifier(
                 evdev_code,
-                Modifier::Single(ModKind::Press {
+                Modifier::Single(StateModifier { kind: ModKind::Press {
                     pressed: false,
-                    mod_type: ModType::Compose,
-                }),
+                }, mod_type: ModType::Compose }),
             );
         }
+    }
+
+    
+    /// Add a relative group-lock action.
+    ///
+    /// `delta = 1` cycles forward through layouts. Combining this with
+    /// [`LockFlags::TAP`] changes layout only when the key is released without
+    /// another key being pressed while it was held.
+    pub fn set_group_key(&mut self, evdev_code: u32, kind: GroupKind) -> bool {
+        let group = Group::Single(kind);
+        self.groups.entries.push((evdev_code, group));
+        true
     }
 
     /// Process a key press. Updates modifier state and advances compose sequences.
@@ -514,6 +539,7 @@ impl WKB {
         Ok(WKB {
             current_layout_idx: 0,
             layouts,
+            groups: Groups::default(),
         })
     }
 }

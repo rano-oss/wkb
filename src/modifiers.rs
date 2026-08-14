@@ -1,7 +1,5 @@
 use std::collections::BTreeMap;
-
 const MAX_MOD_SLOTS: usize = 32;
-
 pub(crate) const MOD_SHIFT: u32 = 1;
 pub(crate) const MOD_CAPS_LOCK: u32 = 2;
 pub(crate) const MOD_CTRL: u32 = 4;
@@ -87,19 +85,15 @@ pub enum ModType {
 pub enum ModKind {
     Press {
         pressed: bool,
-        mod_type: ModType,
     },
     Lock {
         pressed: bool,
         locked: u8,
-        mod_type: ModType,
     },
     Latch {
         pressed: bool,
         latched: bool,
-        mod_type: ModType,
     },
-    None,
 }
 
 impl ModKind {
@@ -107,7 +101,6 @@ impl ModKind {
         match self {
             ModKind::Press {
                 ref mut pressed,
-                mod_type: _,
             } => match key_direction {
                 KeyDirection::Down => *pressed = true,
                 KeyDirection::Up => *pressed = false,
@@ -115,7 +108,6 @@ impl ModKind {
             ModKind::Lock {
                 ref mut pressed,
                 ref mut locked,
-                mod_type: _,
             } => match key_direction {
                 KeyDirection::Down => {
                     *pressed = true;
@@ -133,7 +125,6 @@ impl ModKind {
             ModKind::Latch {
                 ref mut pressed,
                 ref mut latched,
-                mod_type: _,
             } => match key_direction {
                 KeyDirection::Down => {
                     *pressed = true;
@@ -143,7 +134,6 @@ impl ModKind {
                     *pressed = false;
                 }
             },
-            ModKind::None => {}
         }
     }
 
@@ -151,7 +141,6 @@ impl ModKind {
         if let ModKind::Latch {
             pressed: _,
             latched,
-            mod_type: _,
         } = self
         {
             *latched = false
@@ -161,32 +150,47 @@ impl ModKind {
     pub fn locked(&self) -> bool {
         matches!(self, ModKind::Lock { locked, .. } if *locked > 0)
     }
+}
 
+#[derive(Debug, Clone)]
+pub(crate) struct StateModifier {
+    pub(crate) mod_type: ModType,
+    pub(crate) kind: ModKind,
+}
+
+impl StateModifier {
     pub(crate) fn has_mod_type(&self, mod_type: ModType) -> bool {
-        match self {
-            ModKind::Press { mod_type: m, .. }
-            | ModKind::Lock { mod_type: m, .. }
-            | ModKind::Latch { mod_type: m, .. } => *m == mod_type,
-            ModKind::None => false,
-        }
+        self.mod_type == mod_type
+    }
+
+    pub fn unlatch(&mut self) {
+        self.kind.unlatch();
+    }
+
+    pub fn locked(&self) -> bool {
+        self.kind.locked()
+    }
+
+    pub fn update(&mut self, key_direction: KeyDirection) {
+        self.kind.update(key_direction);
     }
 }
 
 #[derive(Debug, Clone)]
 pub enum Modifier {
-    Single(ModKind),
-    Leveled(BTreeMap<u8, ModKind>),
+    Single(StateModifier),
+    Leveled(BTreeMap<u8, StateModifier>),
 }
 
 impl Modifier {
-    fn for_each(&self, mut f: impl FnMut(&ModKind)) {
+    fn for_each(&self, mut f: impl FnMut(&StateModifier)) {
         match self {
-            Modifier::Single(mk) => f(mk),
+            Modifier::Single(sm) => f(&sm),
             Modifier::Leveled(map) => map.values().for_each(f),
         }
     }
 
-    fn for_each_mut(&mut self, mut f: impl FnMut(&mut ModKind)) {
+    fn for_each_mut(&mut self, mut f: impl FnMut(&mut StateModifier)) {
         match self {
             Modifier::Single(mk) => f(mk),
             Modifier::Leveled(map) => map.values_mut().for_each(f),
@@ -204,80 +208,20 @@ pub struct Modifiers {
 
 impl Default for Modifiers {
     fn default() -> Self {
+        let single = |mod_type, kind| Modifier::Single(StateModifier { mod_type, kind });
+        let press = |mod_type| single(mod_type, ModKind::Press { pressed: false });
+        let lock = |mod_type| single(mod_type, ModKind::Lock { pressed: false, locked: 0 });        
         let entries = vec![
-            (
-                LEFT_CTRL,
-                Modifier::Single(ModKind::Press {
-                    pressed: false,
-                    mod_type: ModType::None,
-                }),
-            ),
-            (
-                RIGHT_CTRL,
-                Modifier::Single(ModKind::Press {
-                    pressed: false,
-                    mod_type: ModType::None,
-                }),
-            ),
-            (
-                LEFT_SHIFT,
-                Modifier::Single(ModKind::Press {
-                    pressed: false,
-                    mod_type: ModType::Level2,
-                }),
-            ),
-            (
-                RIGHT_SHIFT,
-                Modifier::Single(ModKind::Press {
-                    pressed: false,
-                    mod_type: ModType::Level2,
-                }),
-            ),
-            (
-                ALT,
-                Modifier::Single(ModKind::Press {
-                    pressed: false,
-                    mod_type: ModType::None,
-                }),
-            ),
-            (
-                ALTGR,
-                Modifier::Single(ModKind::Press {
-                    pressed: false,
-                    mod_type: ModType::None,
-                }),
-            ),
-            (
-                LOGO,
-                Modifier::Single(ModKind::Press {
-                    pressed: false,
-                    mod_type: ModType::None,
-                }),
-            ),
-            (
-                CAPS_LOCK,
-                Modifier::Single(ModKind::Lock {
-                    pressed: false,
-                    locked: 0,
-                    mod_type: ModType::Caps,
-                }),
-            ),
-            (
-                NUM_LOCK,
-                Modifier::Single(ModKind::Lock {
-                    pressed: false,
-                    locked: 0,
-                    mod_type: ModType::Num,
-                }),
-            ),
-            (
-                SCROLL_LOCK,
-                Modifier::Single(ModKind::Lock {
-                    pressed: false,
-                    locked: 0,
-                    mod_type: ModType::Scroll,
-                }),
-            ),
+            (LEFT_CTRL, press(ModType::None)),
+            (RIGHT_CTRL, press(ModType::None)),
+            (LEFT_SHIFT, press(ModType::Level2)),
+            (RIGHT_SHIFT, press(ModType::Level2)),
+            (ALT, press(ModType::None)),
+            (ALTGR, press(ModType::None)),
+            (LOGO, press(ModType::None)),
+            (CAPS_LOCK, lock(ModType::Caps)),
+            (NUM_LOCK, lock(ModType::Num)),
+            (SCROLL_LOCK, lock(ModType::Scroll)),
         ];
         Self { entries, state: 0 }
     }
@@ -368,20 +312,11 @@ impl Modifiers {
     }
 
     #[inline(always)]
-    fn accumulate_state(mk: &ModKind, state: &mut u8) {
-        let mod_type = match mk {
-            ModKind::Press {
-                pressed: true,
-                mod_type,
-            } => mod_type,
-            ModKind::Lock {
-                locked, mod_type, ..
-            } if *locked > 0 => mod_type,
-            ModKind::Latch {
-                latched: true,
-                mod_type,
-                ..
-            } => mod_type,
+    fn accumulate_state(mk: &StateModifier, state: &mut u8) {
+        let mod_type = match mk.kind {
+            ModKind::Press {pressed: true, ..} => mk.mod_type,
+            ModKind::Lock {locked, ..} if locked > 0 => mk.mod_type,
+            ModKind::Latch {latched: true, ..} => mk.mod_type,
             _ => return,
         };
         match mod_type {
@@ -422,10 +357,8 @@ impl Modifiers {
             let (_, l2, l3, l5) = self.active_none_and_levels();
             let level = level_index(l5, l3, l2) as u8;
             if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
-                if let Some(mod_kind) = map.get_mut(&level) {
-                    mod_kind.update(key_direction);
-                } else if let Some(mod_kind) = map.get_mut(&0) {
-                    mod_kind.update(key_direction);
+                if let Some(modifier) = map.get_mut(&level) {
+                    modifier.update(key_direction);
                 } else {
                     return false;
                 }
@@ -444,17 +377,16 @@ impl Modifiers {
         let layout = layout_index as u32;
         for (code, bit) in MODIFIER_MAPPING {
             if let Some(modifier) = self.get(code) {
-                modifier.for_each(|mk| match mk {
-                    ModKind::Press { pressed: true, .. } => depressed |= bit,
+                modifier.for_each(|mk| match mk.kind {
+                    ModKind::Press { pressed: true } => depressed |= bit,
                     ModKind::Lock {
                         pressed: p,
                         locked: l,
-                        ..
                     } => {
-                        if *p {
+                        if p {
                             depressed |= bit;
                         }
-                        if *l > 0 {
+                        if l > 0 {
                             locked |= bit;
                         }
                     }
@@ -463,10 +395,10 @@ impl Modifiers {
                         latched: lt,
                         ..
                     } => {
-                        if *p {
+                        if p {
                             depressed |= bit;
                         }
-                        if *lt {
+                        if lt {
                             latched |= bit;
                         }
                     }
@@ -489,21 +421,22 @@ impl Modifiers {
             let is_latched = (latched & bit) != 0;
 
             if let Some(m) = self.get_mut(code) {
-                m.for_each_mut(|mk| match mk {
-                    ModKind::Press { pressed, .. } => *pressed = is_depressed,
+                m.for_each_mut(|mk| match mk.kind {
+                    ModKind::Press { ref mut pressed } => *pressed = is_depressed,
                     ModKind::Lock {
-                        pressed, locked, ..
+                        ref mut pressed,
+                        ref mut locked,
                     } => {
                         *pressed = is_depressed;
                         *locked = if is_locked { 1 } else { 0 };
                     }
                     ModKind::Latch {
-                        pressed, latched, ..
+                        ref mut pressed,
+                        ref mut latched,
                     } => {
                         *pressed = is_depressed;
                         *latched = is_latched;
                     }
-                    ModKind::None => {}
                 });
             }
         }
