@@ -1,6 +1,6 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 
-use crate::KeyDirection;
+use crate::{KeyDirection, binding::Binding};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GroupChange {
@@ -29,22 +29,7 @@ pub enum GroupKind {
     LatchToLockOnRelease(GroupChange),
 }
 
-#[derive(Debug, Clone)]
-pub enum Group {
-    Single(GroupKind),
-    Leveled(BTreeMap<u8, GroupKind>),
-}
-
-impl Group {
-    fn get(&self, level: usize) -> Option<GroupKind> {
-        match self {
-            Self::Single(action) => Some(*action),
-            Self::Leveled(actions) => {
-                actions.get(&u8::try_from(level).ok()?).copied()
-            }
-        }
-    }
-}
+pub type Group = Binding<GroupKind>;
 
 #[derive(Debug, Clone, Default)]
 pub struct Groups {
@@ -135,7 +120,6 @@ impl Groups {
                     self.up(action, interrupted);
                 }
             }
-    
             _ => {}
         }
     

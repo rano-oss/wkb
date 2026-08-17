@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use crate::binding::Binding;
 const MAX_MOD_SLOTS: usize = 32;
 pub(crate) const MOD_SHIFT: u32 = 1;
 pub(crate) const MOD_CAPS_LOCK: u32 = 2;
@@ -176,27 +176,7 @@ impl StateModifier {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum Modifier {
-    Single(StateModifier),
-    Leveled(BTreeMap<u8, StateModifier>),
-}
-
-impl Modifier {
-    fn for_each(&self, mut f: impl FnMut(&StateModifier)) {
-        match self {
-            Modifier::Single(sm) => f(&sm),
-            Modifier::Leveled(map) => map.values().for_each(f),
-        }
-    }
-
-    fn for_each_mut(&mut self, mut f: impl FnMut(&mut StateModifier)) {
-        match self {
-            Modifier::Single(mk) => f(mk),
-            Modifier::Leveled(map) => map.values_mut().for_each(f),
-        }
-    }
-}
+pub type Modifier = Binding<StateModifier>;
 
 #[derive(Debug, Clone)]
 pub struct Modifiers {
@@ -347,15 +327,13 @@ impl Modifiers {
     }
 
     #[inline]
-    pub fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
+    pub fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection, level : u8) -> bool {
         let pos = match self.entries.iter().position(|(c, _)| *c == evdev_code) {
             Some(p) => p,
             None => return false,
         };
         let is_leveled = matches!(&self.entries[pos].1, Modifier::Leveled(_));
         if is_leveled {
-            let (_, l2, l3, l5) = self.active_none_and_levels();
-            let level = level_index(l5, l3, l2) as u8;
             if let Modifier::Leveled(map) = &mut self.entries[pos].1 {
                 if let Some(modifier) = map.get_mut(&level) {
                     modifier.update(key_direction);

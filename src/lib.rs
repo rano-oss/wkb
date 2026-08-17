@@ -42,6 +42,7 @@ mod composer;
 mod flat_keymap;
 mod modifiers;
 mod groups;
+mod binding;
 pub use groups::{Group, GroupKind, Groups, GroupChange};
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
 pub use modifiers::{level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK, LEFT_SHIFT, RIGHT_SHIFT};
@@ -349,9 +350,9 @@ impl WKB {
     pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let layouts = self.layouts.len();
         let kb_layout = &mut self.layouts[self.current_layout_idx];
-        let is_modifier = kb_layout.modifiers.set_state(evdev_code, key_direction);
         let (_, level2, level3, level5) = kb_layout.modifiers.active_none_and_levels();
         let level = level_index(level5, level3, level2) as usize;
+        let is_modifier = kb_layout.modifiers.set_state(evdev_code, key_direction, level as u8);
         self.current_layout_idx = self.groups.update(
             evdev_code,
             key_direction,
