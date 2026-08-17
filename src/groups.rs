@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{KeyDirection, binding::Binding};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -34,7 +32,7 @@ pub type Group = Binding<GroupKind>;
 #[derive(Debug, Clone, Default)]
 pub struct Groups {
     pub(crate) entries: Vec<(u32, Group)>,
-    active: HashMap<u32, (GroupKind, bool)>,
+    active: Vec<(u32, (GroupKind, bool))>,
     latched_action: Option<GroupChange>,
     base: i32,
     latched: i32,
@@ -80,7 +78,7 @@ impl Groups {
         layouts: usize,
     ) -> usize {
         match direction {
-            KeyDirection::Down if !self.active.contains_key(&code) => {
+            KeyDirection::Down if !self.active.iter().any(|(key, _)| *key == code) => {
                 let action = self
                     .entries
                     .iter()
@@ -100,8 +98,8 @@ impl Groups {
                     self.latched_action = None;
                 }
                 self.active
-                    .values_mut()
-                    .for_each(|(action, interrupted)| {
+                    .iter_mut()
+                    .for_each(|(_, (action, interrupted))| {
                         *interrupted |= matches!(
                             action,
                             GroupKind::Tap(_)
@@ -110,19 +108,17 @@ impl Groups {
                     });
                 if let Some(action) = action {
                     self.down(action);
-                    self.active.insert(code, (action, false));
+                    self.active.push((code, (action, false)));
                 }
             }
             KeyDirection::Up => {
-                if let Some((action, interrupted)) =
-                    self.active.remove(&code)
-                {
+                let active = self.active.pop_if(|(key, _)| *key == code);
+                if let Some((_, (action, interrupted))) = active {
                     self.up(action, interrupted);
                 }
             }
             _ => {}
         }
-    
         self.effective(layouts)
     }
 
