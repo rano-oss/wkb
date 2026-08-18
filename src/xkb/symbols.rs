@@ -1403,7 +1403,6 @@ pub(crate) struct LedInfo {
     pub(crate) explicit_ctrls: bool,
     pub(crate) led: XkbLed,
 }
-// C2Rust_Unnamed_18 removed: replaced by Vec<SymInterpInfo>
 #[derive(Clone, Default)]
 pub(crate) struct SymInterpInfo {
     pub(crate) merge: MergeMode,
@@ -1413,7 +1412,6 @@ pub(crate) struct SymInterpInfo {
     pub(crate) explicit_level_one_only: bool,
     pub(crate) interp: XkbSymInterpret,
 }
-// C2Rust_Unnamed_19 removed: replaced by Vec<XkbSymInterpret>
 #[inline]
 fn compat_info(include_depth: u32, mods: &XkbModSet) -> CompatInfo {
     let mut info = CompatInfo {
