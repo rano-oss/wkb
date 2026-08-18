@@ -453,13 +453,7 @@ fn group_index(
         Some(expr) => {
             let mut group = 0;
             let mut pending = false;
-            if expr_resolve_group(
-                ki,
-                expr,
-                false,
-                &mut group,
-                &mut pending,
-            ) != ParseStatus::Success
+            if expr_resolve_group(ki, expr, false, &mut group, &mut pending) != ParseStatus::Success
             {
                 return None;
             }
@@ -475,8 +469,7 @@ fn group_index(
         return None;
     }
     if index >= key.groups.len() {
-        key.groups
-            .resize_with(index + 1, GroupInfo::default);
+        key.groups.resize_with(index + 1, GroupInfo::default);
     }
     Some(index)
 }
@@ -487,13 +480,7 @@ fn add_symbols_to_key(
     array_index: Option<&ExprKind>,
     value: &ExprKind,
 ) -> bool {
-    let Some(group_index) = group_index(
-        ki,
-        info,
-        key,
-        array_index,
-        GroupField::Syms,
-    ) else {
+    let Some(group_index) = group_index(ki, info, key, array_index, GroupField::Syms) else {
         return false;
     };
     let group = &mut key.groups[group_index];
@@ -504,8 +491,7 @@ fn add_symbols_to_key(
     }
     if !matches!(
         value,
-        ExprKind::KeysymList { .. }
-            | ExprKind::ActionList { .. }
+        ExprKind::KeysymList { .. } | ExprKind::ActionList { .. }
     ) || group.explicit_syms
     {
         return false;
@@ -521,9 +507,7 @@ fn add_symbols_to_key(
             )
         })
         .map_or(0, |index| index + 1);
-    group
-        .levels
-        .resize_with(level_count, XkbLevel::default);
+    group.levels.resize_with(level_count, XkbLevel::default);
     group.explicit_syms = true;
     for (level, node) in nodes.iter().take(level_count).enumerate() {
         let ExprKind::KeysymList { syms } = node else {
@@ -543,13 +527,7 @@ fn add_actions_to_key(
     array_index: Option<&ExprKind>,
     value: &mut ExprKind,
 ) -> bool {
-    let Some(group_index) = group_index(
-        ki,
-        info,
-        key,
-        array_index,
-        GroupField::Acts,
-    ) else {
+    let Some(group_index) = group_index(ki, info, key, array_index, GroupField::Acts) else {
         return false;
     };
 
@@ -560,9 +538,7 @@ fn add_actions_to_key(
         return true;
     }
 
-    if !matches!(value, ExprKind::ActionList { .. })
-        || group.explicit_acts
-    {
+    if !matches!(value, ExprKind::ActionList { .. }) || group.explicit_acts {
         return false;
     }
 
@@ -570,9 +546,7 @@ fn add_actions_to_key(
         unreachable!();
     };
 
-    group
-        .levels
-        .resize_with(nodes.len(), XkbLevel::default);
+    group.levels.resize_with(nodes.len(), XkbLevel::default);
 
     group.explicit_acts = true;
 
@@ -601,9 +575,7 @@ fn add_actions_to_key(
                 &mut action,
             ) {
                 ParseStatus::Fatal => return false,
-                ParseStatus::Success
-                    if !matches!(action, XkbAction::None) =>
-                {
+                ParseStatus::Success if !matches!(action, XkbAction::None) => {
                     level.actions.push(action);
                 }
                 _ => {}
@@ -1135,23 +1107,16 @@ fn first_symbol(group: &GroupInfo, level: usize) -> u32 {
         .copied()
         .unwrap_or(XKB_KEY_NO_SYMBOL)
 }
-fn find_automatic_type(
-    ctx: &mut XkbContext,
-    group: &GroupInfo,
-) -> u32 {
+fn find_automatic_type(ctx: &mut XkbContext, group: &GroupInfo) -> u32 {
     let width = group.levels.len();
     match width {
         0 | 1 => ctx.atom_intern(b"ONE_LEVEL"),
         2 => {
             let first = first_symbol(group, 0);
             let second = first_symbol(group, 1);
-            if xkb_keysym_is_lower(first)
-                && xkb_keysym_is_upper_or_title(second)
-            {
+            if xkb_keysym_is_lower(first) && xkb_keysym_is_upper_or_title(second) {
                 ctx.atom_intern(b"ALPHABETIC")
-            } else if xkb_keysym_is_keypad(first)
-                || xkb_keysym_is_keypad(second)
-            {
+            } else if xkb_keysym_is_keypad(first) || xkb_keysym_is_keypad(second) {
                 ctx.atom_intern(b"KEYPAD")
             } else {
                 ctx.atom_intern(b"TWO_LEVEL")
@@ -1160,21 +1125,15 @@ fn find_automatic_type(
         3 | 4 => {
             let first = first_symbol(group, 0);
             let second = first_symbol(group, 1);
-            if xkb_keysym_is_lower(first)
-                && xkb_keysym_is_upper_or_title(second)
-            {
+            if xkb_keysym_is_lower(first) && xkb_keysym_is_upper_or_title(second) {
                 let third = first_symbol(group, 2);
                 let fourth = first_symbol(group, 3);
-                if xkb_keysym_is_lower(third)
-                    && xkb_keysym_is_upper_or_title(fourth)
-                {
+                if xkb_keysym_is_lower(third) && xkb_keysym_is_upper_or_title(fourth) {
                     ctx.atom_intern(b"FOUR_LEVEL_ALPHABETIC")
                 } else {
                     ctx.atom_intern(b"FOUR_LEVEL_SEMIALPHABETIC")
                 }
-            } else if xkb_keysym_is_keypad(first)
-                || xkb_keysym_is_keypad(second)
-            {
+            } else if xkb_keysym_is_keypad(first) || xkb_keysym_is_keypad(second) {
                 ctx.atom_intern(b"FOUR_LEVEL_KEYPAD")
             } else {
                 ctx.atom_intern(b"FOUR_LEVEL")
@@ -1183,18 +1142,12 @@ fn find_automatic_type(
         _ => XKB_ATOM_NONE,
     }
 }
-fn find_type_for_group(
-    keymap: &mut XkbKeymap,
-    key: &KeyInfo,
-    group: usize,
-) -> usize {
+fn find_type_for_group(keymap: &mut XkbKeymap, key: &KeyInfo, group: usize) -> usize {
     let group = &key.groups[group];
     let name = group
         .type_0
         .or(key.default_type)
-        .unwrap_or_else(|| {
-            find_automatic_type(&mut keymap.ctx, group)
-        });
+        .unwrap_or_else(|| find_automatic_type(&mut keymap.ctx, group));
     keymap
         .types
         .iter()
@@ -1244,11 +1197,7 @@ fn copy_symbols_def_to_keymap(keymap: &mut XkbKeymap, keyi: &mut KeyInfo) -> boo
         keymap.keys[key_idx].groups = (0..num_groups).map(|_| XkbGroup::default()).collect();
 
         for i in 0..keyi.groups.len() as u32 {
-            let type_idx = find_type_for_group(
-                keymap,
-                keyi,
-                i as usize,
-            ) as u32;
+            let type_idx = find_type_for_group(keymap, keyi, i as usize) as u32;
 
             if keymap.types[type_idx as usize].num_levels
                 < keyi.groups[i as usize].levels.len() as u32

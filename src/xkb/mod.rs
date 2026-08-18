@@ -16,16 +16,14 @@ use crate::xkb::keymap::{
     xkb_keymap_new_from_string,
 };
 use crate::xkb::parser::{
-    ActionFlags, XkbAction, XkbGroupAction, XKB_CONTEXT_NO_FLAGS,
-    XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1,
+    ActionFlags, XkbAction, XkbGroupAction, XKB_CONTEXT_NO_FLAGS, XKB_KEYMAP_COMPILE_NO_FLAGS,
+    XKB_KEYMAP_FORMAT_TEXT_V1,
 };
 #[cfg(not(feature = "compose"))]
 use crate::Composer;
-use crate::{
-    Group, GroupChange, GroupKind, Groups, KeyBitSet,
-};
 use crate::WKB;
 use crate::{modifiers::*, KBLayout};
+use crate::{Group, GroupChange, GroupKind, Groups, KeyBitSet};
 use compose::{layout_composer, load_compose_entries};
 pub use compose::{load_compose_from_path, load_compose_from_path_uncached};
 pub use keynames::keysym_to_named_key;
@@ -112,35 +110,27 @@ impl CompiledType {
             let level_mods = state as u32 & type_.mods.mask;
 
             let entry = type_.entries.iter().find(|entry| {
-                (entry.mods.mods == 0 || entry.mods.mask != 0)
-                    && entry.mods.mask == level_mods
+                (entry.mods.mods == 0 || entry.mods.mask != 0) && entry.mods.mask == level_mods
             });
 
             CompiledTypeState {
                 level: entry.map_or(0, |entry| entry.level),
-                consumed_mods: type_.mods.mask
-                    & !entry.map_or(0, |entry| entry.preserve.mask),
+                consumed_mods: type_.mods.mask & !entry.map_or(0, |entry| entry.preserve.mask),
             }
         });
 
         let mut selectors = type_
             .entries
             .iter()
-            .filter(|entry| {
-                entry.mods.mods == 0 || entry.mods.mask != 0
-            })
+            .filter(|entry| entry.mods.mods == 0 || entry.mods.mask != 0)
             .map(|entry| CompiledTypeSelector {
                 modifier_mask: entry.mods.mask,
                 level: entry.level as u8,
             })
             .collect::<Vec<_>>();
 
-        selectors.sort_by_key(|selector| {
-            (selector.modifier_mask, selector.level)
-        });
-        selectors.dedup_by_key(|selector| {
-            (selector.modifier_mask, selector.level)
-        });
+        selectors.sort_by_key(|selector| (selector.modifier_mask, selector.level));
+        selectors.dedup_by_key(|selector| (selector.modifier_mask, selector.level));
 
         Self {
             states,
@@ -161,9 +151,7 @@ impl CompiledType {
 
 fn group_change(action: XkbGroupAction) -> Option<GroupChange> {
     if action.flags.contains(ActionFlags::ABSOLUTE_SWITCH) {
-        u8::try_from(action.group)
-            .ok()
-            .map(GroupChange::Absolute)
+        u8::try_from(action.group).ok().map(GroupChange::Absolute)
     } else {
         i8::try_from(action.group)
             .ok()
@@ -278,10 +266,7 @@ fn group_kind(action: XkbAction) -> Option<GroupKind> {
     }
 }
 
-fn build_groups_from_keymap(
-    keymap: &keymap::XkbKeymap,
-    compiled_types: &[CompiledType],
-) -> Groups {
+fn build_groups_from_keymap(keymap: &keymap::XkbKeymap, compiled_types: &[CompiledType]) -> Groups {
     const EVDEV_OFFSET: u32 = 8;
 
     let mut entries = Vec::new();
@@ -290,68 +275,51 @@ fn build_groups_from_keymap(
         if key.keycode < EVDEV_OFFSET {
             continue;
         }
-    
+
         let evdev_code = key.keycode - EVDEV_OFFSET;
-    
+
         for key_group in &key.groups {
-            let Some(key_type) =
-                compiled_types.get(key_group.type_idx as usize)
-            else {
+            let Some(key_type) = compiled_types.get(key_group.type_idx as usize) else {
                 continue;
             };
-    
+
             // Explicit XKB type entries.
             for selector in &key_type.selectors {
-                let Some(level) =
-                    key_group.levels.get(selector.level as usize)
-                else {
+                let Some(level) = key_group.levels.get(selector.level as usize) else {
                     continue;
                 };
-    
-                let Some(action) =
-                    level.actions.iter().copied().find_map(group_kind)
-                else {
+
+                let Some(action) = level.actions.iter().copied().find_map(group_kind) else {
                     continue;
                 };
-    
-                for required in group_key_combinations(
-                    keymap,
-                    key.keycode,
-                    selector.modifier_mask,
-                ) {
-                    entries.push(Group::with_keys(
-                        evdev_code,
-                        required,
-                        action,
-                    ));
+
+                for required in group_key_combinations(keymap, key.keycode, selector.modifier_mask)
+                {
+                    entries.push(Group::with_keys(evdev_code, required, action));
                 }
             }
-    
+
             // The type's default level is selected when no entry matches.
-            let Some(level) =
-                key_group.levels.get(key_type.default_level as usize)
-            else {
+            let Some(level) = key_group.levels.get(key_type.default_level as usize) else {
                 continue;
             };
-    
-            let Some(action) =
-                level.actions.iter().copied().find_map(group_kind)
-            else {
+
+            let Some(action) = level.actions.iter().copied().find_map(group_kind) else {
                 continue;
             };
-    
+
             entries.push(Group::new(evdev_code, action));
         }
     }
-    
+
     entries.sort_by(|left, right| {
         left.key
             .cmp(&right.key)
             .then_with(|| left.with.cmp(&right.with))
     });
-    
+
     entries.dedup();
-    
+
     Groups::new(entries)
 }
 
@@ -500,8 +468,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
         level2_mask | level3_mask | level5_mask,
     ];
 
-    let groups =
-        build_groups_from_keymap(keymap, &compiled_types);
+    let groups = build_groups_from_keymap(keymap, &compiled_types);
 
     // Compute per-layout LevelFive activation before the merged flat-keymap pass.
     let per_layout_level5: Vec<bool> = (0..num_layouts)
@@ -804,9 +771,7 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
                 mod_type: mt,
             },
             _ => StateModifier {
-                kind: ModKind::Press {
-                    pressed: false,
-                },
+                kind: ModKind::Press { pressed: false },
                 mod_type: mt,
             },
         }
@@ -826,8 +791,10 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
 
         if num_levels == 1 && syms.len() == 1 {
             if let Some(mt) = keysym_to_modtype(syms[0]) {
-                modifiers
-                    .set_modifier(evdev_code, Modifier::Single(keysym_to_state_modifier(syms[0], mt)));
+                modifiers.set_modifier(
+                    evdev_code,
+                    Modifier::Single(keysym_to_state_modifier(syms[0], mt)),
+                );
                 continue;
             }
         }
@@ -873,11 +840,8 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
                             )
                         })
                         .collect();
-                
-                    modifiers.set_modifier(
-                        evdev_code,
-                        Modifier::Leveled(level_map),
-                    );
+
+                    modifiers.set_modifier(evdev_code, Modifier::Leveled(level_map));
                     continue;
                 }
             }
@@ -897,9 +861,8 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
                         },
                         mod_type,
                     },
-                    _ => StateModifier { kind: ModKind::Press {
-                        pressed: false,
-                    },
+                    _ => StateModifier {
+                        kind: ModKind::Press { pressed: false },
                         mod_type,
                     },
                 }
@@ -917,13 +880,19 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
             *c == code
                 && matches!(
                     m,
-                    Modifier::Single(StateModifier { kind: ModKind::Press { .. }, mod_type: ModType::None }) | Modifier::Leveled(_)
+                    Modifier::Single(StateModifier {
+                        kind: ModKind::Press { .. },
+                        mod_type: ModType::None
+                    }) | Modifier::Leveled(_)
                 )
         });
         if !already_control {
             modifiers.set_modifier(
                 code,
-                Modifier::Single(StateModifier { kind: ModKind::Press { pressed: false }, mod_type: ModType::None }),
+                Modifier::Single(StateModifier {
+                    kind: ModKind::Press { pressed: false },
+                    mod_type: ModType::None,
+                }),
             );
         }
     }

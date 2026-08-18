@@ -59,7 +59,7 @@ fn synthetic_layout() -> LayoutFile {
         caps_lock_keymap,
         keysym_map: BTreeMap::new(),
         compose: Vec::new(),
-        caps_num_lock_keys
+        caps_num_lock_keys,
     }
 }
 

@@ -49,11 +49,7 @@ impl Group {
         }
     }
 
-    pub fn with_keys(
-        key: u32,
-        with: impl IntoIterator<Item = u32>,
-        action: GroupKind,
-    ) -> Self {
+    pub fn with_keys(key: u32, with: impl IntoIterator<Item = u32>, action: GroupKind) -> Self {
         let mut with = with.into_iter().collect::<Vec<_>>();
         with.sort_unstable();
         with.dedup();
@@ -62,8 +58,7 @@ impl Group {
     }
 
     fn matches(&self, code: u32, pressed: &BTreeSet<u32>) -> bool {
-        self.key == code
-            && self.with.iter().all(|key| pressed.contains(key))
+        self.key == code && self.with.iter().all(|key| pressed.contains(key))
     }
 
     fn contains(&self, code: u32) -> bool {
@@ -104,9 +99,8 @@ impl Groups {
     }
 
     pub fn set(&mut self, group: Group) {
-        self.entries.retain(|entry| {
-            entry.key != group.key || entry.with != group.with
-        });
+        self.entries
+            .retain(|entry| entry.key != group.key || entry.with != group.with);
         self.entries.push(group);
     }
 
@@ -121,8 +115,7 @@ impl Groups {
             return 0;
         }
 
-        (self.base + self.latched + self.locked)
-            .rem_euclid(layouts as i32) as usize
+        (self.base + self.latched + self.locked).rem_euclid(layouts as i32) as usize
     }
 
     pub fn set_layout(&mut self, layout: usize, layouts: usize) -> bool {
@@ -190,8 +183,7 @@ impl Groups {
             if !group.contains(code) {
                 active.interrupted |= matches!(
                     group.action,
-                    GroupKind::Tap(_)
-                        | GroupKind::LockOnRelease(_)
+                    GroupKind::Tap(_) | GroupKind::LockOnRelease(_)
                 );
             }
         }
@@ -219,10 +211,7 @@ impl Groups {
 
             if self.entries[active.rule].key == code {
                 self.active.remove(index);
-                self.up(
-                    self.entries[active.rule].action,
-                    active.interrupted,
-                );
+                self.up(self.entries[active.rule].action, active.interrupted);
             } else {
                 index += 1;
             }

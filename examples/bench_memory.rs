@@ -316,7 +316,11 @@ fn run_workload_xkbcommon_dl() -> u64 {
                     if is_modifier_keysym(sym) {
                         continue;
                     }
-                    let feed = if kc == compose_kc { XKB_KEY_MULTI_KEY } else { sym };
+                    let feed = if kc == compose_kc {
+                        XKB_KEY_MULTI_KEY
+                    } else {
+                        sym
+                    };
                     unsafe { (xkb_compose.xkb_compose_state_feed)(state, feed) };
                     let status = unsafe { (xkb_compose.xkb_compose_state_get_status)(state) };
                     if status == xkbcommon_dl::xkb_compose_status::XKB_COMPOSE_COMPOSED {
