@@ -60,7 +60,7 @@ pub(crate) struct SymbolsInfo {
     pub(crate) star_atom: u32,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum ModMapTarget {
     Key(u32),
     Symbol(u32),
@@ -362,16 +362,20 @@ fn add_key_symbols(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, key: &mut
     }
 }
 fn add_mod_map_entry(info: &mut SymbolsInfo, new: &ModMapEntry) {
-    let clobber: bool = new.merge != MergeMode::Augment;
-    let key = new.target;
-    if let Some(old) = info.modmaps.iter_mut().find(|mm| mm.target == key) {
-        if new.modifier == old.modifier {
-            return;
+    match info
+        .modmaps
+        .binary_search_by_key(&new.target, |entry| entry.target)
+    {
+        Ok(index) => {
+            let old = &mut info.modmaps[index];
+            if old.modifier != new.modifier && new.merge != MergeMode::Augment {
+                old.modifier = new.modifier;
+            }
         }
-        old.modifier = if clobber { new.modifier } else { old.modifier };
-        return;
+        Err(index) => {
+            info.modmaps.insert(index, *new);
+        }
     }
-    info.modmaps.push(*new);
 }
 fn merge_included_symbols(
     ki: &mut XkbKeymapInfo<'_>,
@@ -405,14 +409,10 @@ fn merge_included_symbols(
             }
         }
     }
-    if into.modmaps.is_empty() {
-        std::mem::swap(&mut into.modmaps, &mut from.modmaps);
-    } else {
-        for mm in from.modmaps.iter_mut() {
-            mm.merge = merge;
-            add_mod_map_entry(into, mm);
-        }
-    };
+    for mut entry in std::mem::take(&mut from.modmaps) {
+        entry.merge = merge;
+        add_mod_map_entry(into, &entry);
+    }
 }
 fn handle_include_symbols(
     ki: &mut XkbKeymapInfo<'_>,
