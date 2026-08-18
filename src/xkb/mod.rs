@@ -93,8 +93,16 @@ struct CompiledTypeState {
     consumed_mods: u32,
 }
 
+#[derive(Debug, Clone, Copy)]
+struct CompiledTypeSelector {
+    modifier_mask: u32,
+    level: u8,
+}
+
 struct CompiledType {
     states: [CompiledTypeState; REAL_MOD_STATES],
+    selectors: Vec<CompiledTypeSelector>,
+    default_level: u8,
     num_lock_affected: bool,
 }
 
@@ -102,16 +110,42 @@ impl CompiledType {
     fn new(type_: &parser::XkbKeyType) -> Self {
         let states = std::array::from_fn(|state| {
             let level_mods = state as u32 & type_.mods.mask;
+
             let entry = type_.entries.iter().find(|entry| {
-                (entry.mods.mods == 0 || entry.mods.mask != 0) && entry.mods.mask == level_mods
+                (entry.mods.mods == 0 || entry.mods.mask != 0)
+                    && entry.mods.mask == level_mods
             });
+
             CompiledTypeState {
                 level: entry.map_or(0, |entry| entry.level),
-                consumed_mods: type_.mods.mask & !entry.map_or(0, |entry| entry.preserve.mask),
+                consumed_mods: type_.mods.mask
+                    & !entry.map_or(0, |entry| entry.preserve.mask),
             }
         });
+
+        let mut selectors = type_
+            .entries
+            .iter()
+            .filter(|entry| {
+                entry.mods.mods == 0 || entry.mods.mask != 0
+            })
+            .map(|entry| CompiledTypeSelector {
+                modifier_mask: entry.mods.mask,
+                level: entry.level as u8,
+            })
+            .collect::<Vec<_>>();
+
+        selectors.sort_by_key(|selector| {
+            (selector.modifier_mask, selector.level)
+        });
+        selectors.dedup_by_key(|selector| {
+            (selector.modifier_mask, selector.level)
+        });
+
         Self {
             states,
+            selectors,
+            default_level: 0,
             num_lock_affected: type_
                 .entries
                 .iter()
@@ -136,6 +170,74 @@ fn group_change(action: XkbGroupAction) -> Option<GroupChange> {
             .filter(|delta| *delta != 0)
             .map(GroupChange::Relative)
     }
+}
+
+fn group_key_combinations(
+    keymap: &keymap::XkbKeymap,
+    owner_keycode: u32,
+    modifier_mask: u32,
+) -> Vec<Vec<u32>> {
+    const EVDEV_OFFSET: u32 = 8;
+
+    if modifier_mask == 0 {
+        return vec![Vec::new()];
+    }
+
+    let mut candidates_per_modifier = Vec::<Vec<u32>>::new();
+
+    for bit_index in 0..u32::BITS {
+        let bit = 1u32 << bit_index;
+
+        if modifier_mask & bit == 0 {
+            continue;
+        }
+
+        let mut candidates = keymap
+            .keys
+            .iter()
+            .filter(|key| {
+                key.keycode >= EVDEV_OFFSET
+                    && key.keycode != owner_keycode
+                    && ((key.modmap | key.vmodmap) & bit) != 0
+            })
+            .map(|key| key.keycode - EVDEV_OFFSET)
+            .collect::<Vec<_>>();
+
+        candidates.sort_unstable();
+        candidates.dedup();
+
+        if candidates.is_empty() {
+            return Vec::new();
+        }
+
+        candidates_per_modifier.push(candidates);
+    }
+
+    let mut combinations = vec![Vec::<u32>::new()];
+
+    for candidates in candidates_per_modifier {
+        let mut expanded = Vec::new();
+
+        for combination in &combinations {
+            for &candidate in &candidates {
+                let mut next = combination.clone();
+
+                // One physical key may satisfy more than one modifier bit.
+                if !next.contains(&candidate) {
+                    next.push(candidate);
+                    next.sort_unstable();
+                }
+
+                expanded.push(next);
+            }
+        }
+
+        expanded.sort();
+        expanded.dedup();
+        combinations = expanded;
+    }
+
+    combinations
 }
 
 fn group_kind(action: XkbAction) -> Option<GroupKind> {
@@ -179,7 +281,6 @@ fn group_kind(action: XkbAction) -> Option<GroupKind> {
 fn build_groups_from_keymap(
     keymap: &keymap::XkbKeymap,
     compiled_types: &[CompiledType],
-    level_masks: &[u32; MAX_LEVELS],
 ) -> Groups {
     const EVDEV_OFFSET: u32 = 8;
 
@@ -189,74 +290,68 @@ fn build_groups_from_keymap(
         if key.keycode < EVDEV_OFFSET {
             continue;
         }
-
+    
         let evdev_code = key.keycode - EVDEV_OFFSET;
-        let mut actions = BTreeMap::<u8, GroupKind>::new();
-
-        for state_level in 0..MAX_LEVELS {
-            let mut selected = None;
-
-            for group in &key.groups {
-                let Some(key_type) =
-                    compiled_types.get(group.type_idx as usize)
+    
+        for key_group in &key.groups {
+            let Some(key_type) =
+                compiled_types.get(key_group.type_idx as usize)
+            else {
+                continue;
+            };
+    
+            // Explicit XKB type entries.
+            for selector in &key_type.selectors {
+                let Some(level) =
+                    key_group.levels.get(selector.level as usize)
                 else {
                     continue;
                 };
-
-                let resolved_level =
-                    key_type.state(level_masks[state_level]).level as usize;
-
-                let Some(level) = group.levels.get(resolved_level) else {
+    
+                let Some(action) =
+                    level.actions.iter().copied().find_map(group_kind)
+                else {
                     continue;
                 };
-
-                let action = level
-                    .actions
-                    .iter()
-                    .copied()
-                    .find_map(group_kind);
-
-                let Some(action) = action else {
-                    continue;
-                };
-
-                if let Some(previous) = selected {
-                    if previous != action {
-                        log::warn!(
-                            "keycode {} has different group actions \
-                             between layouts at state level {}",
-                            key.keycode,
-                            state_level,
-                        );
-                    }
-                } else {
-                    selected = Some(action);
+    
+                for required in group_key_combinations(
+                    keymap,
+                    key.keycode,
+                    selector.modifier_mask,
+                ) {
+                    entries.push(Group::with_keys(
+                        evdev_code,
+                        required,
+                        action,
+                    ));
                 }
             }
-
-            if let Some(action) = selected {
-                actions.insert(state_level as u8, action);
-            }
+    
+            // The type's default level is selected when no entry matches.
+            let Some(level) =
+                key_group.levels.get(key_type.default_level as usize)
+            else {
+                continue;
+            };
+    
+            let Some(action) =
+                level.actions.iter().copied().find_map(group_kind)
+            else {
+                continue;
+            };
+    
+            entries.push(Group::new(evdev_code, action));
         }
-
-        if actions.is_empty() {
-            continue;
-        }
-
-        let first = *actions.values().next().unwrap();
-        let identical_at_every_state =
-            actions.len() == MAX_LEVELS
-                && actions.values().all(|action| *action == first);
-
-        let group = if identical_at_every_state {
-            Group::Single(first)
-        } else {
-            Group::Leveled(actions)
-        };
-
-        entries.push((evdev_code, group));
     }
-
+    
+    entries.sort_by(|left, right| {
+        left.key
+            .cmp(&right.key)
+            .then_with(|| left.with.cmp(&right.with))
+    });
+    
+    entries.dedup();
+    
     Groups::new(entries)
 }
 
@@ -406,7 +501,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
     ];
 
     let groups =
-        build_groups_from_keymap(keymap, &compiled_types, &level_masks);
+        build_groups_from_keymap(keymap, &compiled_types);
 
     // Compute per-layout LevelFive activation before the merged flat-keymap pass.
     let per_layout_level5: Vec<bool> = (0..num_layouts)

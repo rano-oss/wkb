@@ -42,7 +42,6 @@ mod composer;
 mod flat_keymap;
 mod modifiers;
 mod groups;
-mod binding;
 pub use groups::{Group, GroupKind, Groups, GroupChange};
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
 pub use modifiers::{level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK, LEFT_SHIFT, RIGHT_SHIFT};
@@ -356,7 +355,6 @@ impl WKB {
         self.current_layout_idx = self.groups.update(
             evdev_code,
             key_direction,
-            level,
             !is_modifier,
             layouts,
         );
@@ -440,8 +438,8 @@ impl WKB {
     /// [`LockFlags::TAP`] changes layout only when the key is released without
     /// another key being pressed while it was held.
     pub fn set_group_key(&mut self, evdev_code: u32, kind: GroupKind) -> bool {
-        let group = Group::Single(kind);
-        self.groups.entries.push((evdev_code, group));
+        let group = Group::new(evdev_code, kind);
+        self.groups.entries.push(group);
         true
     }
 

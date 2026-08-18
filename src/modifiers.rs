@@ -1,4 +1,5 @@
-use crate::binding::Binding;
+use std::collections::BTreeMap;
+
 const MAX_MOD_SLOTS: usize = 32;
 pub(crate) const MOD_SHIFT: u32 = 1;
 pub(crate) const MOD_CAPS_LOCK: u32 = 2;
@@ -191,7 +192,27 @@ impl StateModifier {
     }
 }
 
-pub type Modifier = Binding<StateModifier>;
+#[derive(Debug, Clone)]
+pub enum Modifier {
+    Single(StateModifier),
+    Leveled(BTreeMap<u8, StateModifier>),
+}
+
+impl Modifier {
+    pub(crate) fn for_each(&self, mut f: impl FnMut(&StateModifier)) {
+        match self {
+            Self::Single(sm) => f(&sm),
+            Self::Leveled(map) => map.values().for_each(f),
+        }
+    }
+
+    pub(crate) fn for_each_mut(&mut self, mut f: impl FnMut(&mut StateModifier)) {
+        match self {
+            Self::Single(mk) => f(mk),
+            Self::Leveled(map) => map.values_mut().for_each(f),
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Modifiers {
