@@ -196,7 +196,7 @@ pub enum Modifier {
 impl Modifier {
     pub(crate) fn for_each(&self, mut f: impl FnMut(&StateModifier)) {
         match self {
-            Self::Single(sm) => f(&sm),
+            Self::Single(sm) => f(sm),
             Self::Leveled(map) => map.values().for_each(f),
         }
     }
