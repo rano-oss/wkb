@@ -306,12 +306,9 @@ impl Modifiers {
     }
 
     #[inline(always)]
-    pub fn active_none_and_levels(
-        &self,
-    ) -> (bool, bool, bool, bool) {
-        let effective =
-            self.raw.depressed | self.raw.latched | self.raw.locked;
-    
+    pub fn active_none_and_levels(&self) -> (bool, bool, bool, bool) {
+        let effective = self.raw.depressed | self.raw.latched | self.raw.locked;
+
         (
             effective & (MOD_CTRL | MOD_ALT | MOD_LOGO) != 0,
             effective & MOD_SHIFT != 0,

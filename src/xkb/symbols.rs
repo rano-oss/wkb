@@ -334,29 +334,32 @@ fn merge_keys(
     init_key_info_with_atom(from, info.star_atom);
     true
 }
-fn add_key_symbols(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, keyi: &mut KeyInfo) -> bool {
-    // XkbResolveKeyAlias inlined
+fn add_key_symbols(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, key: &mut KeyInfo) -> bool {
+    if let Some(alias) = ki
+        .keymap
+        .key_names
+        .get(key.name as usize)
+        .copied()
+        .filter(|entry| entry.found && entry.is_alias)
     {
-        let keymap = &*ki.keymap;
-        let name = keyi.name;
-        if (name as usize) < keymap.key_names.len() {
-            let match_0: KeycodeMatch = keymap.key_names[name as usize];
-            if match_0.found && match_0.is_alias {
-                keyi.name = match_0.index;
-            }
+        key.name = alias.index;
+    }
+    match info
+        .keys
+        .binary_search_by_key(&key.name, |entry| entry.name)
+    {
+        Ok(index) => {
+            let mut existing = std::mem::take(&mut info.keys[index]);
+            let result = merge_keys(ki, info, &mut existing, key);
+            info.keys[index] = existing;
+            result
+        }
+        Err(index) => {
+            info.keys.insert(index, std::mem::take(key));
+            init_key_info_with_atom(key, info.star_atom);
+            true
         }
     }
-    if let Some(i) = info.keys.iter().position(|k| k.name == keyi.name) {
-        let mut existing = std::mem::take(&mut info.keys[i]);
-        let result = merge_keys(ki, info, &mut existing, keyi);
-        info.keys[i] = existing;
-        return result;
-    }
-    // Move keyi's data into the keys vec
-    let moved = std::mem::take(keyi);
-    info.keys.push(moved);
-    init_key_info_with_atom(keyi, info.star_atom);
-    true
 }
 fn add_mod_map_entry(info: &mut SymbolsInfo, new: &ModMapEntry) {
     let clobber: bool = new.merge != MergeMode::Augment;
