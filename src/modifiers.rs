@@ -170,7 +170,7 @@ impl ModKind {
         match self {
             ModKind::Press { pressed } => *pressed,
             ModKind::Lock { pressed, .. } => *pressed,
-            ModKind::Latch { pressed, .. } => *pressed,
+            ModKind::Latch { pressed, latched } => *pressed && *latched,
             ModKind::UnlockOnPress {
                 pressed,
                 locked,
