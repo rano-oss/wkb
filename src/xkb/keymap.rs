@@ -19,13 +19,8 @@ pub(crate) fn xkb_keymap_new_from_names(
     xkb_context_sanitize_rule_names(&ctx, &mut rmlvo);
     let mut keymap = xkb_keymap_new(ctx, format, flags)?;
     let mut components = XkbComponentNames::default();
-    xkb_components_from_rules_names(
-        &mut keymap.ctx,
-        &rmlvo,
-        &mut components,
-        &mut keymap.num_groups,
-    )
-    .then_some(())?;
+    let mut matcher = matcher_new_from_names(&mut keymap.ctx, &rmlvo);
+    xkb_resolve_rules(&rmlvo.rules, &mut matcher, &mut components, &mut keymap.num_groups).then_some(())?;
     keymap.num_groups = keymap.num_groups.min(XKB_MAX_GROUPS);
     let mut file = xkb_file_from_components(&components)?;
     (file.file_type == FileType::Keymap && compile_keymap(&mut file, &mut keymap)).then_some(())?;

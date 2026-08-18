@@ -78,6 +78,7 @@ pub enum IrError {
 pub enum ModAction {
     Press(ModType),
     Lock(ModType),
+    UnlockOnPress(ModType),
     Latch(ModType),
 }
 
@@ -441,6 +442,7 @@ fn modaction_from_state_modifier(kind: &StateModifier) -> ModAction {
     match kind {
         StateModifier { kind: ModKind::Press { .. }, .. } => ModAction::Press(kind.mod_type),
         StateModifier { kind: ModKind::Lock { .. }, .. } => ModAction::Lock(kind.mod_type),
+        StateModifier { kind: ModKind::UnlockOnPress { .. }, .. } => ModAction::UnlockOnPress(kind.mod_type),
         StateModifier { kind: ModKind::Latch { .. }, .. } => ModAction::Latch(kind.mod_type),
     }
 }
@@ -550,6 +552,13 @@ fn modkind_from_modaction(action: ModAction) -> StateModifier {
     match action {
         ModAction::Press(t) => StateModifier { kind: ModKind::Press { pressed: false }, mod_type: t },
         ModAction::Lock(t) => StateModifier { kind: ModKind::Lock { pressed: false, locked: 0 }, mod_type: t },
+        ModAction::UnlockOnPress(t) => StateModifier {
+            kind: ModKind::UnlockOnPress {
+                pressed: false,
+                locked: false,
+            },
+            mod_type: t,
+        },
         ModAction::Latch(t) => StateModifier { kind: ModKind::Latch { pressed: false, latched: false }, mod_type: t },
     }
 }

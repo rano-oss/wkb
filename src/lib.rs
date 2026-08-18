@@ -56,7 +56,6 @@ pub use xkb::XkbError;
 #[cfg(feature = "xkb")]
 #[doc(hidden)]
 pub use xkb::{keysym_to_named_key, load_compose_from_path, load_compose_from_path_uncached};
-
 pub(crate) const BITSET_WORDS: usize = 12;
 
 pub(crate) struct KeyBitSet {
@@ -253,7 +252,19 @@ impl WKB {
         if layout_idx >= self.layouts.len() {
             return Err(WkbError::InvalidLayout(layout_idx));
         }
-        self.groups.set_layout(layout_idx, self.num_layouts());
+        let old_layout = self.current_layout_idx;
+        if layout_idx != old_layout {
+            let raw = self.layouts[old_layout]
+                .modifiers
+                .state(layout_idx);
+            self.layouts[layout_idx].modifiers.update(
+                raw.depressed,
+                raw.latched,
+                raw.locked,
+            );
+        }
+        self.groups
+            .set_layout(layout_idx, self.num_layouts());
         self.current_layout_idx = layout_idx;
         Ok(())
     }
@@ -348,19 +359,28 @@ impl WKB {
     #[doc(hidden)]
     pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let layouts = self.layouts.len();
+        let old_layout = self.current_layout_idx;
         let kb_layout = &mut self.layouts[self.current_layout_idx];
         let is_modifier = kb_layout.modifiers.set_state(evdev_code, key_direction);
-        let (_, level2, level3, level5) = kb_layout.modifiers.active_none_and_levels();
-        let level = level_index(level5, level3, level2) as usize;
-        self.current_layout_idx = self.groups.update(
+        let new_layout = self.groups.update(
             evdev_code,
             key_direction,
-            level,
             !is_modifier,
             layouts,
         );
+        if new_layout != old_layout {
+            let raw = kb_layout.modifiers.state(new_layout);
+            self.layouts[new_layout].modifiers.update(
+                raw.depressed,
+                raw.latched,
+                raw.locked,
+            );
+            self.current_layout_idx = new_layout;
+        }
         if !is_modifier && key_direction == KeyDirection::Down {
-            kb_layout.modifiers.unlatch();
+            self.layouts[self.current_layout_idx]
+                .modifiers
+                .unlatch();
         }
         is_modifier
     }
@@ -439,8 +459,8 @@ impl WKB {
     /// [`LockFlags::TAP`] changes layout only when the key is released without
     /// another key being pressed while it was held.
     pub fn set_group_key(&mut self, evdev_code: u32, kind: GroupKind) -> bool {
-        let group = Group::Single(kind);
-        self.groups.entries.push((evdev_code, group));
+        let group = Group::new(evdev_code, kind);
+        self.groups.entries.push(group);
         true
     }
 

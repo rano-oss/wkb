@@ -26,8 +26,6 @@ pub(crate) struct ParserParam<'a> {
     pub(crate) more_maps: bool,
 }
 
-// ── Helper functions ────────────────────────────────────────────────
-
 fn resolve_keysym(name: Sval) -> Option<u32> {
     let name_bytes = name.data;
     let name_str = std::str::from_utf8(name.data).unwrap_or("");
@@ -52,112 +50,78 @@ fn resolve_keysym(name: Sval) -> Option<u32> {
     xkb_keysym_from_name(buf_slice, XKB_KEYSYM_NO_FLAGS)
 }
 
-// ── Main parser function ────────────────────────────────────────────
-
-/// Error recovery: try to shift the error token in the current state, otherwise
-/// pop states until we find one that can (which the current grammar never does).
-fn recover<'a>(
-    states: &mut Vec<u16>,
-    values: &mut Vec<YYValue<'a>>,
-    yylval: &mut YYValue<'a>,
-) -> bool {
-    loop {
-        let state = &STATES[*states.last().unwrap() as usize];
-        if let Some(Action::Shift(next)) = state.explicit_action(SYM_ERROR) {
-            states.push(next);
-            values.push(std::mem::replace(yylval, YYValue::None));
-            return true;
-        }
-        if states.len() == 1 {
-            return false;
-        }
-        states.pop();
-        values.pop();
-    }
-}
-
 pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
-    let mut yychar: i32 = YYEMPTY; // lookahead symbol (internal), or YYEMPTY when none
-    let mut yylval: YYValue<'a> = YYValue::None;
-    let mut yyerrstatus: i32 = 0;
+    let mut lookahead = YYEMPTY;
+    let mut lookahead_value = YYValue::None;
 
     let mut states = Vec::with_capacity(YYINITDEPTH);
     let mut values = Vec::with_capacity(YYINITDEPTH);
+
     states.push(0);
     values.push(YYValue::None);
 
-    'main_loop: loop {
+    loop {
         if states.len() >= YYMAXDEPTH {
             return 2;
         }
 
-        let yystate = *states.last().unwrap();
-        let state = &STATES[yystate as usize];
-        if yychar == YYEMPTY
-            && (state.has_terminal_transitions() || matches!(state.default_action(), Action::Error))
+        let state = &STATES[*states.last().unwrap() as usize];
+
+        if lookahead == YYEMPTY
+            && (state.has_terminal_transitions()
+                || matches!(state.default_action(), Action::Error))
         {
-            yychar = _xkbcommon_lex(&mut yylval, param.scanner, param.ctx);
+            lookahead =
+                _xkbcommon_lex(&mut lookahead_value, param.scanner, param.ctx);
         }
 
-        // Look up the action for the lookahead symbol in the current state.
-        let action = (yychar >= 0)
-            .then(|| state.explicit_action(yychar as Symbol))
+        let action = (lookahead >= 0)
+            .then(|| state.explicit_action(lookahead as Symbol))
             .flatten()
             .unwrap_or_else(|| state.default_action());
 
         match action {
             Action::Accept => return 0,
+
+            Action::Error => return 1,
+
             Action::Shift(next) => {
-                if yyerrstatus != 0 {
-                    yyerrstatus -= 1;
-                }
                 states.push(next);
-                values.push(std::mem::replace(&mut yylval, YYValue::None));
-                yychar = YYEMPTY;
+                values.push(std::mem::replace(
+                    &mut lookahead_value,
+                    YYValue::None,
+                ));
+                lookahead = YYEMPTY;
             }
+
             Action::Reduce(rule_id) => {
                 let rule = &RULES[rule_id as usize];
-                let yylen = rule.rhs_len() as usize;
-                let mut yyval = YYValue::None;
-
+                let rhs_len = rule.rhs_len() as usize;
                 let top = values.len() - 1;
-                let reduce_ok =
-                    execute_reduction(rule_id as i32, &mut values, top, &mut yyval, param);
-                if !reduce_ok {
-                    states.truncate(states.len() - yylen);
-                    values.truncate(values.len() - yylen);
+                let mut result = YYValue::None;
 
-                    yyerrstatus = 3;
-                    if !recover(&mut states, &mut values, &mut yylval) {
-                        return 1;
-                    }
-                    continue 'main_loop;
+                if !execute_reduction(
+                    rule_id as i32,
+                    &mut values,
+                    top,
+                    &mut result,
+                    param,
+                ) {
+                    return 1;
                 }
 
-                // A complete top-level map returns before lexing the next one.
+                // A complete top-level map is returned before parsing
+                // another map from the same component file.
                 if matches!(rule_id, 2 | 3) {
                     return 0;
                 }
 
-                states.truncate(states.len() - yylen);
-                values.truncate(values.len() - yylen);
-                states.push(rule.next_state(*states.last().unwrap()));
-                values.push(yyval);
-            }
-            Action::Error => {
-                if yyerrstatus == 3 && yychar == END_OF_FILE {
-                    return 1;
-                }
-                if yyerrstatus == 3 && yychar > END_OF_FILE {
-                    yylval = YYValue::None;
-                    yychar = YYEMPTY;
-                }
+                states.truncate(states.len() - rhs_len);
+                values.truncate(values.len() - rhs_len);
 
-                yyerrstatus = 3;
-                if !recover(&mut states, &mut values, &mut yylval) {
-                    return 1;
-                }
-                continue 'main_loop;
+                let previous = *states.last().unwrap();
+                states.push(rule.next_state(previous));
+                values.push(result);
             }
         }
     }
@@ -2221,17 +2185,7 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
             return false;
         }
     }
-    let ok_0: bool = update_derived_keymap_fields(&mut info);
-    if ok_0 {
-        for key in &mut info.keymap.keys {
-            for group in &mut key.groups {
-                for level in &mut group.levels {
-                    level.actions = Vec::new();
-                }
-            }
-        }
-    }
-    ok_0
+    update_derived_keymap_fields(&mut info)
 }
 /// Index-based sval for scanner input. Used in rules to avoid
 /// lifetime issues across include boundaries. Reconstruct sval via as_sval().
@@ -2496,7 +2450,7 @@ fn split_comma_separated_mlvo(mlvo: u32, bytes: &[u8]) -> Vec<MatchedSval<'_>> {
         })
         .collect()
 }
-fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) -> Matcher<'a> {
+pub fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) -> Matcher<'a> {
     let mut m = Matcher::new(ctx);
     m.rmlvo.model.sval = Sval {
         data: rmlvo.model.as_bytes(),
@@ -3353,7 +3307,7 @@ fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_
     }
     true
 }
-fn xkb_resolve_rules(
+pub fn xkb_resolve_rules(
     rules: &str,
     matcher: &mut Matcher<'_>,
     out: &mut XkbComponentNames,
@@ -3405,22 +3359,12 @@ fn xkb_resolve_rules(
     }
     true
 }
-pub(crate) fn xkb_components_from_rules_names(
-    ctx: &mut XkbContext,
-    rmlvo: &XkbRuleNames,
-    out: &mut XkbComponentNames,
-    explicit_layouts: &mut u32,
-) -> bool {
-    let mut matcher = matcher_new_from_names(ctx, rmlvo);
-    xkb_resolve_rules(&rmlvo.rules, &mut matcher, out, explicit_layouts)
-}
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use lasso::Key as _;
 
-// ── xkbcommon public types ───────────────────────────────────────────
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: u32 = 2;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: u32 = 1;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_WRAP: u32 = 0;
@@ -3443,8 +3387,6 @@ pub(crate) const XKB_KEYMAP_COMPILE_NO_FLAGS: u32 = 0;
 pub(crate) const XKB_LAYOUT_INVALID: u32 = 0xffffffff;
 pub(crate) const XKB_MOD_INVALID: u32 = 0xffffffff;
 
-// ── XkbRuleNames ──────────────────────────────────────────────────
-
 #[derive(Clone, Debug, Default)]
 pub(crate) struct XkbRuleNames {
     pub(crate) rules: String,
@@ -3453,8 +3395,6 @@ pub(crate) struct XkbRuleNames {
     pub(crate) variant: String,
     pub(crate) options: String,
 }
-
-// ── XkbContext ─────────────────────────────────────────────────────
 
 #[derive(Clone)]
 pub(crate) struct XkbContext {
@@ -3506,7 +3446,6 @@ pub(crate) fn read_file_cached(path: &str) -> Option<Arc<Vec<u8>>> {
         })
 }
 
-// ── keymap_h types (from keymap_priv.rs) ────────────────────────────
 #[derive(Clone)]
 pub(crate) struct XkbKeymap {
     pub(crate) ctx: XkbContext,
@@ -3758,8 +3697,6 @@ pub(crate) struct XkbLed {
 
 pub(crate) const XKB_MAX_GROUPS: u32 = 32;
 pub(crate) const MOD_REAL_MASK_ALL: u32 = 0xff_i32 as u32;
-
-// ── Additional xkbcommon types ──────────────────────────────────────
 pub(crate) const XKB_MAX_LEDS: u32 = 32;
 pub(crate) const MAX_ACTIONS_PER_LEVEL: i32 = 65535;
 
@@ -3770,8 +3707,6 @@ pub(crate) const DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH: &str =
 pub(crate) const DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH: &str =
     "/usr/share/xkeyboard-config-2.d";
 pub(crate) const DFLT_XKB_LEGACY_ROOT: &str = "/usr/share/X11/xkb";
-
-// ── xkbcommon_h types (moved from duplicated pub(crate) mod xkbcommon_h blocks) ─
 
 pub(crate) const XKB_CONTEXT_NO_FLAGS: u32 = 0;
 pub(crate) const XKB_CONTEXT_NO_DEFAULT_INCLUDES: u32 = 1;
@@ -3891,7 +3826,6 @@ pub(crate) enum MergeMode {
 }
 
 // ── Core AST node types ─────────────────────────────────────────────
-
 #[derive(Clone)]
 pub(crate) struct IncludeStmt {
     pub(crate) merge: MergeMode,
@@ -3901,7 +3835,6 @@ pub(crate) struct IncludeStmt {
 }
 
 // ── Expression types ────────────────────────────────────────────────
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub(crate) enum BinaryOp {
     Assign,
@@ -3956,7 +3889,6 @@ pub(crate) enum ExprKind {
 }
 
 // ── Statement definition types ──────────────────────────────────────
-
 pub(crate) struct VarDef {
     pub(crate) merge: MergeMode,
     pub(crate) name: Option<ExprKind>,
@@ -4033,7 +3965,6 @@ pub(crate) struct XkbFile {
 }
 
 // ── xkbcomp_priv types (parser/keymap info) ─────────────────────────
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub(crate) enum ParseStatus {
     Success = 0,

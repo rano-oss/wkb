@@ -16,11 +16,14 @@ use crate::xkb::keymap::{
     xkb_keymap_new_from_string,
 };
 use crate::xkb::parser::{
-    XKB_CONTEXT_NO_FLAGS, XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1,
+    ActionFlags, XkbAction, XkbGroupAction, XKB_CONTEXT_NO_FLAGS,
+    XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1,
 };
 #[cfg(not(feature = "compose"))]
 use crate::Composer;
-use crate::{Groups, KeyBitSet};
+use crate::{
+    Group, GroupChange, GroupKind, Groups, KeyBitSet,
+};
 use crate::WKB;
 use crate::{modifiers::*, KBLayout};
 use compose::{layout_composer, load_compose_entries};
@@ -90,8 +93,16 @@ struct CompiledTypeState {
     consumed_mods: u32,
 }
 
+#[derive(Debug, Clone, Copy)]
+struct CompiledTypeSelector {
+    modifier_mask: u32,
+    level: u8,
+}
+
 struct CompiledType {
     states: [CompiledTypeState; REAL_MOD_STATES],
+    selectors: Vec<CompiledTypeSelector>,
+    default_level: u8,
     num_lock_affected: bool,
 }
 
@@ -99,16 +110,42 @@ impl CompiledType {
     fn new(type_: &parser::XkbKeyType) -> Self {
         let states = std::array::from_fn(|state| {
             let level_mods = state as u32 & type_.mods.mask;
+
             let entry = type_.entries.iter().find(|entry| {
-                (entry.mods.mods == 0 || entry.mods.mask != 0) && entry.mods.mask == level_mods
+                (entry.mods.mods == 0 || entry.mods.mask != 0)
+                    && entry.mods.mask == level_mods
             });
+
             CompiledTypeState {
                 level: entry.map_or(0, |entry| entry.level),
-                consumed_mods: type_.mods.mask & !entry.map_or(0, |entry| entry.preserve.mask),
+                consumed_mods: type_.mods.mask
+                    & !entry.map_or(0, |entry| entry.preserve.mask),
             }
         });
+
+        let mut selectors = type_
+            .entries
+            .iter()
+            .filter(|entry| {
+                entry.mods.mods == 0 || entry.mods.mask != 0
+            })
+            .map(|entry| CompiledTypeSelector {
+                modifier_mask: entry.mods.mask,
+                level: entry.level as u8,
+            })
+            .collect::<Vec<_>>();
+
+        selectors.sort_by_key(|selector| {
+            (selector.modifier_mask, selector.level)
+        });
+        selectors.dedup_by_key(|selector| {
+            (selector.modifier_mask, selector.level)
+        });
+
         Self {
             states,
+            selectors,
+            default_level: 0,
             num_lock_affected: type_
                 .entries
                 .iter()
@@ -120,6 +157,202 @@ impl CompiledType {
     fn state(&self, mods: u32) -> CompiledTypeState {
         self.states[(mods & parser::MOD_REAL_MASK_ALL) as usize]
     }
+}
+
+fn group_change(action: XkbGroupAction) -> Option<GroupChange> {
+    if action.flags.contains(ActionFlags::ABSOLUTE_SWITCH) {
+        u8::try_from(action.group)
+            .ok()
+            .map(GroupChange::Absolute)
+    } else {
+        i8::try_from(action.group)
+            .ok()
+            .filter(|delta| *delta != 0)
+            .map(GroupChange::Relative)
+    }
+}
+
+fn group_key_combinations(
+    keymap: &keymap::XkbKeymap,
+    owner_keycode: u32,
+    modifier_mask: u32,
+) -> Vec<Vec<u32>> {
+    const EVDEV_OFFSET: u32 = 8;
+
+    if modifier_mask == 0 {
+        return vec![Vec::new()];
+    }
+
+    let mut candidates_per_modifier = Vec::<Vec<u32>>::new();
+
+    for bit_index in 0..u32::BITS {
+        let bit = 1u32 << bit_index;
+
+        if modifier_mask & bit == 0 {
+            continue;
+        }
+
+        let mut candidates = keymap
+            .keys
+            .iter()
+            .filter(|key| {
+                key.keycode >= EVDEV_OFFSET
+                    && key.keycode != owner_keycode
+                    && ((key.modmap | key.vmodmap) & bit) != 0
+            })
+            .map(|key| key.keycode - EVDEV_OFFSET)
+            .collect::<Vec<_>>();
+
+        candidates.sort_unstable();
+        candidates.dedup();
+
+        if candidates.is_empty() {
+            return Vec::new();
+        }
+
+        candidates_per_modifier.push(candidates);
+    }
+
+    let mut combinations = vec![Vec::<u32>::new()];
+
+    for candidates in candidates_per_modifier {
+        let mut expanded = Vec::new();
+
+        for combination in &combinations {
+            for &candidate in &candidates {
+                let mut next = combination.clone();
+
+                // One physical key may satisfy more than one modifier bit.
+                if !next.contains(&candidate) {
+                    next.push(candidate);
+                    next.sort_unstable();
+                }
+
+                expanded.push(next);
+            }
+        }
+
+        expanded.sort();
+        expanded.dedup();
+        combinations = expanded;
+    }
+
+    combinations
+}
+
+fn group_kind(action: XkbAction) -> Option<GroupKind> {
+    match action {
+        XkbAction::GroupSet(action) => {
+            // The existing Press representation is reversible by subtracting
+            // the relative delta on key release. It cannot yet represent an
+            // absolute SetGroup without storing the previous base group.
+            if action.flags.contains(ActionFlags::ABSOLUTE_SWITCH) {
+                return None;
+            }
+
+            let GroupChange::Relative(delta) = group_change(action)? else {
+                return None;
+            };
+
+            Some(GroupKind::Press(delta))
+        }
+
+        XkbAction::GroupLatch(action) => {
+            let change = group_change(action)?;
+
+            if action.flags.contains(ActionFlags::LATCH_TO_LOCK) {
+                Some(GroupKind::LatchToLockOnRelease(change))
+            } else {
+                Some(GroupKind::LatchOnRelease(change))
+            }
+        }
+
+        XkbAction::GroupLock(action) => {
+            let change = group_change(action)?;
+
+            // lockOnRelease is XKB v2. XKB v1 locks on press.
+            Some(GroupKind::LockOnPress(change))
+        }
+
+        _ => None,
+    }
+}
+
+fn build_groups_from_keymap(
+    keymap: &keymap::XkbKeymap,
+    compiled_types: &[CompiledType],
+) -> Groups {
+    const EVDEV_OFFSET: u32 = 8;
+
+    let mut entries = Vec::new();
+
+    for key in &keymap.keys {
+        if key.keycode < EVDEV_OFFSET {
+            continue;
+        }
+    
+        let evdev_code = key.keycode - EVDEV_OFFSET;
+    
+        for key_group in &key.groups {
+            let Some(key_type) =
+                compiled_types.get(key_group.type_idx as usize)
+            else {
+                continue;
+            };
+    
+            // Explicit XKB type entries.
+            for selector in &key_type.selectors {
+                let Some(level) =
+                    key_group.levels.get(selector.level as usize)
+                else {
+                    continue;
+                };
+    
+                let Some(action) =
+                    level.actions.iter().copied().find_map(group_kind)
+                else {
+                    continue;
+                };
+    
+                for required in group_key_combinations(
+                    keymap,
+                    key.keycode,
+                    selector.modifier_mask,
+                ) {
+                    entries.push(Group::with_keys(
+                        evdev_code,
+                        required,
+                        action,
+                    ));
+                }
+            }
+    
+            // The type's default level is selected when no entry matches.
+            let Some(level) =
+                key_group.levels.get(key_type.default_level as usize)
+            else {
+                continue;
+            };
+    
+            let Some(action) =
+                level.actions.iter().copied().find_map(group_kind)
+            else {
+                continue;
+            };
+    
+            entries.push(Group::new(evdev_code, action));
+        }
+    }
+    
+    entries.sort_by(|left, right| {
+        left.key
+            .cmp(&right.key)
+            .then_with(|| left.with.cmp(&right.with))
+    });
+    
+    entries.dedup();
+    
+    Groups::new(entries)
 }
 
 fn resolve_char(
@@ -266,6 +499,9 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
         level3_mask | level5_mask,
         level2_mask | level3_mask | level5_mask,
     ];
+
+    let groups =
+        build_groups_from_keymap(keymap, &compiled_types);
 
     // Compute per-layout LevelFive activation before the merged flat-keymap pass.
     let per_layout_level5: Vec<bool> = (0..num_layouts)
@@ -461,7 +697,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
     WKB {
         current_layout_idx: 0,
         layouts,
-        groups: Groups::default(),
+        groups,
     }
 }
 
