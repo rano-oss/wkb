@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 pub(crate) use super::keymap::xkb_mod_name_to_index;
 use super::keymap::{
     lookup_string, CTRL_MASK_NAMES, GROUP_COMPONENT_MASK_NAMES, MOD_COMPONENT_MASK_NAMES,
@@ -51,7 +53,7 @@ pub(crate) struct SymbolsInfo {
     pub(crate) include_depth: u32,
     pub(crate) explicit_group: Option<u32>,
     pub(crate) max_groups: u32,
-    pub(crate) keys: Vec<KeyInfo>,
+    pub(crate) keys: BTreeMap<u32, KeyInfo>,
     pub(crate) default_key: KeyInfo,
     pub(crate) default_actions: ActionsInfo,
     pub(crate) group_names: Vec<u32>,
@@ -136,7 +138,7 @@ impl SymbolsInfo {
         let mut info = Self {
             include_depth,
             max_groups: ki.features.max_groups,
-            keys: Vec::with_capacity(256),
+            keys: Default::default(),
             default_key: KeyInfo {
                 name: star_atom,
                 ..Default::default()
@@ -299,14 +301,14 @@ fn merge_overlays(ki: &XkbKeymapInfo<'_>, into: &mut KeyInfo, from: &mut KeyInfo
 }
 fn merge_keys(
     ki: &XkbKeymapInfo<'_>,
-    info: &SymbolsInfo,
+    star_atom: u32,
     into: &mut KeyInfo,
     from: &mut KeyInfo,
 ) -> bool {
     let clobber: bool = from.merge != MergeMode::Augment;
     if from.merge == MergeMode::Replace {
         std::mem::swap(into, from);
-        init_key_info_with_atom(from, info.star_atom);
+        init_key_info_with_atom(from, star_atom);
         return true;
     }
     let groups_in_both = into.groups.len().min(from.groups.len()) as u32;
@@ -331,10 +333,11 @@ fn merge_keys(
     if !merge_overlays(ki, into, from) {
         return false;
     }
-    init_key_info_with_atom(from, info.star_atom);
+    init_key_info_with_atom(from, star_atom);
     true
 }
 fn add_key_symbols(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, key: &mut KeyInfo) -> bool {
+    // Resolve aliases before using the key name as the map key.
     if let Some(alias) = ki
         .keymap
         .key_names
@@ -344,18 +347,16 @@ fn add_key_symbols(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, key: &mut
     {
         key.name = alias.index;
     }
-    match info
-        .keys
-        .binary_search_by_key(&key.name, |entry| entry.name)
-    {
-        Ok(index) => {
-            let mut existing = std::mem::take(&mut info.keys[index]);
-            let result = merge_keys(ki, info, &mut existing, key);
-            info.keys[index] = existing;
-            result
+
+    let name = key.name;
+
+    match info.keys.entry(name) {
+        std::collections::btree_map::Entry::Occupied(mut entry) => {
+            merge_keys(ki, info.star_atom, entry.get_mut(), key)
         }
-        Err(index) => {
-            info.keys.insert(index, std::mem::take(key));
+
+        std::collections::btree_map::Entry::Vacant(entry) => {
+            entry.insert(std::mem::take(key));
             init_key_info_with_atom(key, info.star_atom);
             true
         }
@@ -402,9 +403,9 @@ fn merge_included_symbols(
     if into.keys.is_empty() {
         std::mem::swap(&mut into.keys, &mut from.keys);
     } else {
-        for keyi in from.keys.iter_mut() {
-            keyi.merge = merge;
-            if !add_key_symbols(ki, into, keyi) {
+        for (_, mut key) in std::mem::take(&mut from.keys) {
+            key.merge = merge;
+            if !add_key_symbols(ki, into, &mut key) {
                 into.error_count += 1;
             }
         }
@@ -909,7 +910,7 @@ fn handle_global_var(
         };
         ret = set_symbols_field(ki, info, &mut temp, &field, array_ndx_opt, &mut stmt.value);
         let mut dk = std::mem::take(&mut info.default_key);
-        merge_keys(ki, info, &mut dk, &mut temp);
+        merge_keys(ki, info.star_atom, &mut dk, &mut temp);
         info.default_key = dk;
     } else if elem.is_empty()
         && (field.eq_ignore_ascii_case("name") || field.eq_ignore_ascii_case("groupname"))
@@ -1236,9 +1237,7 @@ fn copy_symbols_def_to_keymap(keymap: &mut XkbKeymap, keyi: &mut KeyInfo) -> boo
                     }
                 }
             }
-
             keymap.keys[key_idx].groups[i].levels = std::mem::take(&mut groupi.levels);
-
             if groupi.explicit_acts {
                 keymap.keys[key_idx].groups[i].explicit_actions = true;
             }
@@ -1286,13 +1285,11 @@ fn find_key_by_symbol(keymap: &XkbKeymap, start: usize, sym: u32) -> Option<usiz
 fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) {
     keymap.mods = info.mods;
     keymap.group_names = std::mem::take(&mut info.group_names);
-    let mut keys = std::mem::take(&mut info.keys);
-    for keyi in keys.iter_mut() {
-        if !copy_symbols_def_to_keymap(keymap, keyi) {
+    for key in info.keys.values_mut() {
+        if !copy_symbols_def_to_keymap(keymap, key) {
             info.error_count += 1;
         }
     }
-    info.keys = keys;
     let start = if keymap.num_keys_low == 0 {
         0_usize
     } else {
