@@ -305,13 +305,18 @@ impl Modifiers {
         }
     }
 
-    #[inline]
-    pub fn active_none_and_levels(&self) -> (bool, bool, bool, bool) {
+    #[inline(always)]
+    pub fn active_none_and_levels(
+        &self,
+    ) -> (bool, bool, bool, bool) {
+        let effective =
+            self.raw.depressed | self.raw.latched | self.raw.locked;
+    
         (
-            self.active_mod_type(ModType::None),
-            self.active_mod_type(ModType::Level2),
-            self.active_mod_type(ModType::Level3),
-            self.active_mod_type(ModType::Level5),
+            effective & (MOD_CTRL | MOD_ALT | MOD_LOGO) != 0,
+            effective & MOD_SHIFT != 0,
+            effective & MOD_ALTGR != 0,
+            effective & MOD_SCROLL_LOCK != 0,
         )
     }
 
