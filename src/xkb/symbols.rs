@@ -1323,7 +1323,7 @@ pub(crate) fn compile_symbols(
         return false;
     }
     builder.finish(keymap_info.keymap);
-    builder.error_count == 0
+    true
 }
 use super::keysym::xkb_keysym_to_upper;
 use super::parser::*;
