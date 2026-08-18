@@ -761,14 +761,7 @@ pub static ACTION_TYPE_NAMES: [LookupEntry; 43] = [
     lookup_entry("DevValuator", ACTION_TYPE_UNSUPPORTED_LEGACY),
     lookup_entry("", 0),
 ];
-pub(crate) static SYM_INTERPRET_MATCH_MASK_NAMES: [LookupEntry; 6] = [
-    lookup_entry("NoneOf", MATCH_NONE),
-    lookup_entry("AnyOfOrNone", MATCH_ANY_OR_NONE),
-    lookup_entry("AnyOf", MATCH_ANY),
-    lookup_entry("AllOf", MATCH_ALL),
-    lookup_entry("Exactly", MATCH_EXACTLY),
-    lookup_entry("", 0),
-];
+
 // ============================================================================
 // Unicode Preprocessing
 // ============================================================================
