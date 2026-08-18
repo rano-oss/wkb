@@ -166,6 +166,18 @@ impl ModKind {
         }
     }
 
+    fn depressed(&self) -> bool {
+        match self {
+            ModKind::Press { pressed } => *pressed,
+            ModKind::Lock { pressed, .. } => *pressed,
+            ModKind::Latch { pressed, .. } => *pressed,
+            ModKind::UnlockOnPress {
+                pressed,
+                locked,
+            } => *pressed && *locked,
+        }
+    }
+
     pub fn locked(&self) -> bool {
         match self {
             ModKind::Lock { locked, .. } => *locked > 0,
@@ -415,7 +427,7 @@ impl Modifiers {
                     return;
                 }
 
-                if state_modifier.kind.pressed() {
+                if state_modifier.kind.depressed() {
                     raw.depressed |= mask;
                 }
 
