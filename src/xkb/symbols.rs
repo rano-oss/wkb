@@ -3,13 +3,14 @@ use std::collections::BTreeMap;
 
 pub(crate) use super::keymap::xkb_mod_name_to_index;
 use super::keymap::{
-    lookup_string, CTRL_MASK_NAMES, GROUP_COMPONENT_MASK_NAMES, MOD_COMPONENT_MASK_NAMES, USE_MOD_MAP_VALUE_NAMES,
+    lookup_string, CTRL_MASK_NAMES, GROUP_COMPONENT_MASK_NAMES, MOD_COMPONENT_MASK_NAMES,
+    SYM_INTERPRET_MATCH_MASK_NAMES, USE_MOD_MAP_VALUE_NAMES,
 };
 use super::keysym::xkb_keysym_is_keypad;
 use super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 use super::parser::{exceeds_include_max_depth, process_include_file};
 pub(crate) use super::parser::{
-   KeyAliasDef, KeycodeDef, LedNameDef, ModMapDef, NamedVarDef,
+    InterpDef, KeyAliasDef, KeycodeDef, LedNameDef, ModMapDef, NamedVarDef,
 };
 pub(crate) use super::parser::{
     MergeMode, ACTION_TYPE_CTRL_LOCK, ACTION_TYPE_CTRL_SET, ACTION_TYPE_GROUP_LATCH,
@@ -1382,7 +1383,51 @@ fn add_interp(info: &mut CompatInfo, new: &mut SymInterpInfo) {
     }
     info.interps.push(new.clone());
 }
-
+fn resolve_state_and_predicate(
+    expr: Option<&ExprKind>,
+    pred_rtrn: &mut u32,
+    mods_rtrn: &mut u32,
+    info: &mut CompatInfo,
+    ki: &XkbKeymapInfo<'_>,
+) -> bool {
+    let expr = match expr {
+        None => {
+            *pred_rtrn = MATCH_ANY_OR_NONE;
+            *mods_rtrn = MOD_REAL_MASK_ALL;
+            return true;
+        }
+        Some(e) => e,
+    };
+    *pred_rtrn = MATCH_EXACTLY;
+    let resolve_expr: &ExprKind;
+    if let ExprKind::Action { name, args } = expr {
+        let pred_txt: &str = ki.keymap.ctx.atom_text(*name);
+        if args.len() != 1 {
+            return false;
+        }
+        let pred = some_or_false!(lookup_string(&SYM_INTERPRET_MATCH_MASK_NAMES, pred_txt));
+        *pred_rtrn = pred;
+        resolve_expr = &args[0];
+    } else if let ExprKind::Ident(ident_val) = expr {
+        let pred_txt_0: &str = ki.keymap.ctx.atom_text(*ident_val);
+        if !pred_txt_0.is_empty() && pred_txt_0.eq_ignore_ascii_case("any") {
+            *pred_rtrn = MATCH_ANY;
+            *mods_rtrn = MOD_REAL_MASK_ALL;
+            return true;
+        }
+        resolve_expr = expr;
+    } else {
+        resolve_expr = expr;
+    }
+    let mods = some_or_false!(expr_resolve_mod_mask(
+        &ki.keymap.ctx,
+        resolve_expr,
+        MOD_REAL,
+        &info.mods
+    ));
+    *mods_rtrn = mods;
+    true
+}
 
 fn merge_led_map(old: &mut LedInfo, new: &mut LedInfo) {
     let clobber: bool = new.merge != MergeMode::Augment;
@@ -1696,7 +1741,41 @@ fn handle_compat_global_var(
     }
     ret
 }
-
+fn handle_interp_def(
+    info: &mut CompatInfo,
+    ki: &mut XkbKeymapInfo<'_>,
+    def: &mut InterpDef,
+) -> bool {
+    let mut pred: u32 = MATCH_NONE;
+    let mut mods: u32 = 0;
+    if !resolve_state_and_predicate(def.match_0.as_ref(), &mut pred, &mut mods, info, ki) {
+        return false;
+    }
+    let mut si: SymInterpInfo = info.default_interp.clone();
+    si.merge = def.merge;
+    si.interp.sym = def.sym;
+    si.interp.match_0 = pred;
+    si.interp.mods = mods;
+    for body_def in &mut def.def {
+        let Some(lhs) = expr_resolve_lhs(body_def.name.as_ref().unwrap()) else {
+            info.error_count += 1;
+            return false;
+        };
+        let elem = ki.keymap.ctx.atom_text(lhs.element).to_owned();
+        let field = ki.keymap.ctx.atom_text(lhs.field).to_owned();
+        if !elem.is_empty() {
+            info.error_count += 1;
+            return false;
+        }
+        let value_ref = body_def.value.as_mut().unwrap();
+        if !set_interp_field(info, ki, &mut si, &field, lhs.index, value_ref) {
+            info.error_count += 1;
+            return false;
+        }
+    }
+    add_interp(info, &mut si);
+    true
+}
 fn handle_led_map_def(
     info: &mut CompatInfo,
     ki: &mut XkbKeymapInfo<'_>,
@@ -1728,6 +1807,9 @@ fn handle_compat_map_file(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo, fil
             match stmt {
                 Statement::Include(incl) => {
                     ok = handle_include_compat_map(ki, info, incl);
+                }
+                Statement::Interp(ip) => {
+                    ok = handle_interp_def(info, ki, ip);
                 }
                 Statement::LedMap(lm) => {
                     ok = handle_led_map_def(info, ki, lm);

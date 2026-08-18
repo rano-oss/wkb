@@ -156,13 +156,12 @@ fn yy_list_single<'a>(yyval: &mut YYValue<'a>, yyvs: &mut [YYValue<'a>], sp: usi
     *yyval = YYValue::ExprList(list);
 }
 
-macro_rules! yy_merge_stmt {
-    ($yyval:expr, $yyvs:expr, $sp:expr) => {
-        let merge = $yyvs[$sp - 1].as_merge();
-
-        if let YYValue::Stmt(mut statement) = std::mem::replace(&mut $yyvs[$sp], YYValue::None) {
-            statement.set_merge(merge);
-            *$yyval = YYValue::Stmt(statement);
+macro_rules! yy_merge_decl {
+    ($yyval:expr, $yyvs:expr, $sp:expr, $variant:ident, $stmt_variant:ident) => {
+        let merge_mode = $yyvs[$sp - 1].as_merge();
+        if let YYValue::$variant(mut item) = std::mem::replace(&mut $yyvs[$sp], YYValue::None) {
+            item.merge = merge_mode;
+            *$yyval = YYValue::Stmt(Statement::$stmt_variant(item));
         } else {
             *$yyval = YYValue::None;
         }
@@ -304,35 +303,35 @@ fn execute_reduction<'a>(
         }
         33 => {
             // Decl: OptMergeMode InterpretDecl
-            yy_merge_stmt!(yyval, yyvs, sp);
+            yy_merge_decl!(yyval, yyvs, sp, Interp, Interp);
         }
         34 => {
             // Decl: OptMergeMode KeyNameDecl
-            yy_merge_stmt!(yyval, yyvs, sp);
+            yy_merge_decl!(yyval, yyvs, sp, Keycode, Keycode);
         }
         35 => {
             // Decl: OptMergeMode KeyAliasDecl
-            yy_merge_stmt!(yyval, yyvs, sp);
+            yy_merge_decl!(yyval, yyvs, sp, KeyAlias, KeyAlias);
         }
         36 => {
             // Decl: OptMergeMode KeyTypeDecl
-            yy_merge_stmt!(yyval, yyvs, sp);
+            yy_merge_decl!(yyval, yyvs, sp, KeyType, KeyType);
         }
         37 => {
             // Decl: OptMergeMode SymbolsDecl
-            yy_merge_stmt!(yyval, yyvs, sp);
+            yy_merge_decl!(yyval, yyvs, sp, Symbols, Symbols);
         }
         38 => {
             // Decl: OptMergeMode ModMapDecl
-            yy_merge_stmt!(yyval, yyvs, sp);
+            yy_merge_decl!(yyval, yyvs, sp, ModMask, ModMap);
         }
         40 => {
             // Decl: OptMergeMode LedMapDecl
-            yy_merge_stmt!(yyval, yyvs, sp);
+            yy_merge_decl!(yyval, yyvs, sp, LedMap, LedMap);
         }
         41 => {
             // Decl: OptMergeMode LedNameDecl
-            yy_merge_stmt!(yyval, yyvs, sp);
+            yy_merge_decl!(yyval, yyvs, sp, LedName, LedName);
         }
         42..=44 | 93..=123 | 181 => *yyval = YYValue::None,
         39 | 45 | 46 => {
@@ -371,13 +370,13 @@ fn execute_reduction<'a>(
             // KeyNameDecl: KEYNAME EQUALS KeyCode SEMI
             let atom = yyvs[sp - 3].as_atom();
             let num = yyvs[sp - 1].as_num();
-            *yyval = YYValue::Stmt(Statement::Keycode(keycode_create(atom, num)));
+            *yyval = YYValue::Keycode(keycode_create(atom, num));
         }
         52 => {
             // KeyAliasDecl: ALIAS KEYNAME EQUALS KEYNAME SEMI
             let alias = yyvs[sp - 3].as_atom();
             let real = yyvs[sp - 1].as_atom();
-            *yyval = YYValue::Stmt(Statement::KeyAlias(key_alias_create(alias, real)));
+            *yyval = YYValue::KeyAlias(key_alias_create(alias, real));
         }
         53 => {
             // VModDecl: VIRTUAL_MODS VModDefList SEMI
@@ -419,7 +418,13 @@ fn execute_reduction<'a>(
             }
         }
         59 | 60 => {
+            let offset = 2 * usize::from(yyn == 59);
+            let keysym = yyvs[sp - offset].as_keysym();
+            let expr = (yyn == 59).then(|| yyvs[sp].take_expr()).flatten();
             *yyval = YYValue::Interp(InterpDef {
+                merge: MergeMode::Default,
+                sym: keysym,
+                match_0: expr,
                 def: Vec::new(),
             });
         }
@@ -443,13 +448,13 @@ fn execute_reduction<'a>(
             // KeyTypeDecl: TYPE String OBRACE VarDeclList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let vardefs = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::Stmt(Statement::KeyType(key_type_create(atom, vardefs)));
+            *yyval = YYValue::KeyType(key_type_create(atom, vardefs));
         }
         64 => {
             // SymbolsDecl: KEY KEYNAME OBRACE OptSymbolsBody CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let vardefs = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::Stmt(Statement::Symbols(symbols_create(atom, vardefs)));
+            *yyval = YYValue::Symbols(symbols_create(atom, vardefs));
         }
         65 => {
             // OptSymbolsBody: SymbolsBody
@@ -517,7 +522,7 @@ fn execute_reduction<'a>(
             // ModMapDecl: MODIFIER_MAP Ident OBRACE KeyOrKeySymList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let list = yyvs[sp - 2].take_expr_list();
-            *yyval = YYValue::Stmt(Statement::ModMap(mod_map_create(atom, list)));
+            *yyval = YYValue::ModMask(mod_map_create(atom, list));
         }
         84 | 148 | 170 | 187 => {
             // KeyOrKeySymList: KeyOrKeySymList COMMA KeyOrKeySym
@@ -541,13 +546,13 @@ fn execute_reduction<'a>(
             // LedMapDecl: INDICATOR String OBRACE VarDeclList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let vardefs = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::Stmt(Statement::LedMap(led_map_create(atom, vardefs)));
+            *yyval = YYValue::LedMap(led_map_create(atom, vardefs));
         }
         89 | 90 => {
             // LedNameDecl: INDICATOR Integer EQUALS Expr SEMI
             let num = yyvs[sp - 3].as_num();
             let expr = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::Stmt(Statement::LedName(led_name_create(num, expr)));
+            *yyval = YYValue::LedName(led_name_create(num, expr));
         }
         91 => {
             // UnknownDecl: Ident Lhs EQUALS Expr SEMI
@@ -1264,6 +1269,13 @@ pub(crate) enum YYValue<'a> {
     VMod(VModDef),
     VModList(Vec<VModDef>),
     Interp(InterpDef),
+    KeyType(NamedVarDef),
+    Symbols(NamedVarDef),
+    ModMask(ModMapDef),
+    LedMap(NamedVarDef),
+    LedName(LedNameDef),
+    Keycode(KeycodeDef),
+    KeyAlias(KeyAliasDef),
     Unknown,
     File(Box<XkbFile>),
     FileList(Vec<XkbFile>),
@@ -3903,6 +3915,9 @@ pub(crate) struct ModMapDef {
     pub(crate) keys: Vec<ExprKind>,
 }
 pub(crate) struct InterpDef {
+    pub(crate) merge: MergeMode,
+    pub(crate) sym: u32,
+    pub(crate) match_0: Option<ExprKind>,
     pub(crate) def: Vec<VarDef>,
 }
 
@@ -3921,6 +3936,7 @@ pub(crate) enum Statement {
     KeyAlias(KeyAliasDef),
     Var(VarDef),
     KeyType(NamedVarDef),
+    Interp(InterpDef),
     VMod(VModDef),
     Symbols(NamedVarDef),
     ModMap(ModMapDef),
@@ -3928,42 +3944,6 @@ pub(crate) enum Statement {
     LedName(LedNameDef),
     Unknown,
     XkbFile(XkbFile),
-}
-
-impl Statement {
-    fn set_merge(&mut self, merge: MergeMode) {
-        match self {
-            Self::Keycode(definition) => {
-                definition.merge = merge;
-            }
-            Self::KeyAlias(definition) => {
-                definition.merge = merge;
-            }
-            Self::Var(definition) => {
-                definition.merge = merge;
-            }
-            Self::KeyType(definition) => {
-                definition.merge = merge;
-            }
-            Self::VMod(definition) => {
-                definition.merge = merge;
-            }
-            Self::Symbols(definition) => {
-                definition.merge = merge;
-            }
-            Self::ModMap(definition) => {
-                definition.merge = merge;
-            }
-            Self::LedMap(definition) => {
-                definition.merge = merge;
-            }
-            Self::LedName(definition) => {
-                definition.merge = merge;
-            }
-
-            Self::Include(_) | Self::Unknown | Self::XkbFile(_) => {}
-        }
-    }
 }
 
 pub(crate) struct XkbFile {
