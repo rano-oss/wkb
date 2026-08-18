@@ -216,6 +216,101 @@ impl SymbolsBuilder {
         }
         self.error_count += errors;
     }
+
+    fn merge_from(&mut self, ki: &mut XkbKeymapInfo<'_>, from: &mut Self, merge: MergeMode) {
+        if from.error_count > 0 {
+            self.error_count += from.error_count;
+            return;
+        }
+
+        merge_mod_sets(&mut self.mods, &from.mods, merge);
+
+        for (index, &name) in from.group_names.iter().enumerate() {
+            if index >= self.group_names.len() {
+                self.group_names.push(name);
+            } else if name != 0 && !(merge == MergeMode::Augment && self.group_names[index] != 0) {
+                self.group_names[index] = name;
+            }
+        }
+
+        if self.keys.is_empty() {
+            std::mem::swap(&mut self.keys, &mut from.keys);
+        } else {
+            for (_, mut key) in std::mem::take(&mut from.keys) {
+                key.merge = merge;
+
+                if !self.add_key(ki, &mut key) {
+                    self.error_count += 1;
+                }
+            }
+        }
+
+        if self.modmaps.is_empty() {
+            std::mem::swap(&mut self.modmaps, &mut from.modmaps);
+        } else {
+            for (target, mut entry) in std::mem::take(&mut from.modmaps) {
+                entry.merge = merge;
+                self.add_modmap(target, entry);
+            }
+        }
+    }
+
+    fn include(&mut self, ki: &mut XkbKeymapInfo<'_>, includes: &mut [IncludeStmt]) -> bool {
+        if exceeds_include_max_depth(self.include_depth) {
+            self.error_count += 10;
+            return false;
+        }
+        let mut included = Self::new(ki, self.include_depth + 1, &self.mods);
+        let include_statements = &mut *includes;
+        for statement in include_statements {
+            let Some(mut file) =
+                process_include_file(&mut ki.keymap.ctx, statement, FileType::Symbols)
+            else {
+                self.error_count += 10;
+                return false;
+            };
+            let mut next = Self::new(ki, self.include_depth + 1, &included.mods);
+            next.explicit_group = if !statement.modifier.is_empty() {
+                statement
+                    .modifier
+                    .parse::<i32>()
+                    .ok()
+                    .and_then(|group| group.checked_sub(1))
+                    .and_then(|group| ((group as u32) < self.max_groups).then_some(group as u32))
+                    .or(self.explicit_group)
+            } else if ki.keymap.num_groups != 0 && next.include_depth == 1 {
+                Some(0)
+            } else {
+                self.explicit_group
+            };
+            next.compile_file(ki, &mut file);
+            included.merge_from(ki, &mut next, statement.merge);
+        }
+        if let Some(first) = includes.first() {
+            self.merge_from(ki, &mut included, first.merge);
+        }
+        self.error_count == 0
+    }
+
+    fn compile_file(&mut self, ki: &mut XkbKeymapInfo<'_>, file: &mut XkbFile) {
+        for statement in &mut file.defs {
+            let valid = match statement {
+                Statement::Include(includes) => self.include(ki, includes),
+                Statement::Symbols(definition) => handle_symbols_def(ki, self, definition),
+                Statement::Var(variable) => handle_global_var(ki, self, variable),
+                Statement::VMod(vmod) => handle_vmod_def(&mut ki.keymap.ctx, &mut self.mods, vmod),
+                Statement::ModMap(definition) => handle_mod_map_def(ki, self, definition),
+                Statement::Unknown => ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0,
+                _ => false,
+            };
+            if !valid {
+                self.error_count += 1;
+            }
+            if self.error_count > 10 {
+                break;
+            }
+        }
+    }
 }
 
 fn is_action_list_value(value: &ExprKind) -> bool {
@@ -401,78 +496,6 @@ fn merge_keys(
     }
     init_key_info_with_atom(from, star_atom);
     true
-}
-fn merge_included_symbols(
-    ki: &mut XkbKeymapInfo<'_>,
-    into: &mut SymbolsBuilder,
-    from: &mut SymbolsBuilder,
-    merge: MergeMode,
-) {
-    if from.error_count > 0 {
-        into.error_count += from.error_count;
-        return;
-    }
-    merge_mod_sets(&mut into.mods, &from.mods, merge);
-    let group_names_in_both = into.group_names.len().min(from.group_names.len());
-    for i in 0..group_names_in_both {
-        if from.group_names[i] != 0 && !(merge == MergeMode::Augment && into.group_names[i] != 0) {
-            into.group_names[i] = from.group_names[i];
-        }
-    }
-    if group_names_in_both < from.group_names.len() {
-        for &gn in &from.group_names[group_names_in_both..] {
-            into.group_names.push(gn);
-        }
-    }
-    if into.keys.is_empty() {
-        std::mem::swap(&mut into.keys, &mut from.keys);
-    } else {
-        for (_, mut key) in std::mem::take(&mut from.keys) {
-            key.merge = merge;
-            if !into.add_key(ki, &mut key) {
-                into.error_count += 1;
-            }
-        }
-    }
-    if into.modmaps.is_empty() {
-        std::mem::swap(&mut into.modmaps, &mut from.modmaps);
-    } else {
-        for (target, mut entry) in std::mem::take(&mut from.modmaps) {
-            entry.merge = merge;
-            into.add_modmap(target, entry);
-        }
-    }
-}
-fn handle_include_symbols(
-    ki: &mut XkbKeymapInfo<'_>,
-    info: &mut SymbolsBuilder,
-    includes: &mut [IncludeStmt],
-) -> bool {
-    if exceeds_include_max_depth(info.include_depth) {
-        info.error_count += 10;
-        return false;
-    }
-    let mut included = SymbolsBuilder::new(ki, info.include_depth.wrapping_add(1), &info.mods);
-    for stmt in includes.iter() {
-        let mut file = include_file!(ki, info, stmt, FileType::Symbols);
-        let mut next = SymbolsBuilder::new(ki, info.include_depth.wrapping_add(1), &included.mods);
-        next.explicit_group = if !stmt.modifier.is_empty() {
-            let group = (stmt.modifier.parse::<i32>().unwrap_or(0) - 1) as u32;
-            (group < info.max_groups)
-                .then_some(group)
-                .or(info.explicit_group)
-        } else if ki.keymap.num_groups != 0 && next.include_depth == 1 {
-            Some(0)
-        } else {
-            info.explicit_group
-        };
-        handle_symbols_file(ki, &mut next, &mut file);
-        merge_included_symbols(ki, &mut included, &mut next, stmt.merge);
-    }
-    if let Some(first) = includes.first() {
-        merge_included_symbols(ki, info, &mut included, first.merge);
-    }
-    info.error_count == 0
 }
 fn group_index(
     ki: &mut XkbKeymapInfo<'_>,
@@ -1093,42 +1116,6 @@ fn handle_mod_map_def(
     }
     true
 }
-fn handle_symbols_file(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsBuilder, file: &mut XkbFile) {
-    {
-        let mut ok: bool;
-        for stmt in file.defs.iter_mut() {
-            match stmt {
-                Statement::Include(incl) => {
-                    ok = handle_include_symbols(ki, info, incl);
-                }
-                Statement::Symbols(sym) => {
-                    ok = handle_symbols_def(ki, info, sym);
-                }
-                Statement::Var(var) => {
-                    ok = handle_global_var(ki, info, var);
-                }
-                Statement::VMod(vmod) => {
-                    ok = handle_vmod_def(&mut ki.keymap.ctx, &mut info.mods, vmod);
-                }
-                Statement::ModMap(mm) => {
-                    ok = handle_mod_map_def(ki, info, mm);
-                }
-                Statement::Unknown => {
-                    ok = ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0;
-                }
-                _ => {
-                    ok = false;
-                }
-            }
-            if !ok {
-                info.error_count += 1;
-            }
-            if info.error_count > 10 {
-                break;
-            }
-        }
-    }
-}
 #[inline]
 fn first_symbol(group: &GroupInfo, level: usize) -> u32 {
     group
@@ -1317,7 +1304,7 @@ pub(crate) fn compile_symbols(
     let mods = keymap_info.keymap.mods;
     let mut builder = SymbolsBuilder::new(keymap_info, 0, &mods);
     if let Some(file) = file {
-        handle_symbols_file(keymap_info, &mut builder, file);
+        builder.compile_file(keymap_info, file);
     }
     if builder.error_count != 0 {
         return false;
