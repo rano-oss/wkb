@@ -2185,17 +2185,7 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
             return false;
         }
     }
-    let ok_0: bool = update_derived_keymap_fields(&mut info);
-    if ok_0 {
-        for key in &mut info.keymap.keys {
-            for group in &mut key.groups {
-                for level in &mut group.levels {
-                    level.actions = Vec::new();
-                }
-            }
-        }
-    }
-    ok_0
+    update_derived_keymap_fields(&mut info)
 }
 /// Index-based sval for scanner input. Used in rules to avoid
 /// lifetime issues across include boundaries. Reconstruct sval via as_sval().

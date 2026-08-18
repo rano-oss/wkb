@@ -16,11 +16,14 @@ use crate::xkb::keymap::{
     xkb_keymap_new_from_string,
 };
 use crate::xkb::parser::{
-    XKB_CONTEXT_NO_FLAGS, XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1,
+    ActionFlags, XkbAction, XkbGroupAction, XKB_CONTEXT_NO_FLAGS,
+    XKB_KEYMAP_COMPILE_NO_FLAGS, XKB_KEYMAP_FORMAT_TEXT_V1,
 };
 #[cfg(not(feature = "compose"))]
 use crate::Composer;
-use crate::{Groups, KeyBitSet};
+use crate::{
+    Group, GroupChange, GroupKind, Groups, KeyBitSet,
+};
 use crate::WKB;
 use crate::{modifiers::*, KBLayout};
 use compose::{layout_composer, load_compose_entries};
@@ -120,6 +123,141 @@ impl CompiledType {
     fn state(&self, mods: u32) -> CompiledTypeState {
         self.states[(mods & parser::MOD_REAL_MASK_ALL) as usize]
     }
+}
+
+fn group_change(action: XkbGroupAction) -> Option<GroupChange> {
+    if action.flags.contains(ActionFlags::ABSOLUTE_SWITCH) {
+        u8::try_from(action.group)
+            .ok()
+            .map(GroupChange::Absolute)
+    } else {
+        i8::try_from(action.group)
+            .ok()
+            .filter(|delta| *delta != 0)
+            .map(GroupChange::Relative)
+    }
+}
+
+fn group_kind(action: XkbAction) -> Option<GroupKind> {
+    match action {
+        XkbAction::GroupSet(action) => {
+            // The existing Press representation is reversible by subtracting
+            // the relative delta on key release. It cannot yet represent an
+            // absolute SetGroup without storing the previous base group.
+            if action.flags.contains(ActionFlags::ABSOLUTE_SWITCH) {
+                return None;
+            }
+
+            let GroupChange::Relative(delta) = group_change(action)? else {
+                return None;
+            };
+
+            Some(GroupKind::Press(delta))
+        }
+
+        XkbAction::GroupLatch(action) => {
+            let change = group_change(action)?;
+
+            if action.flags.contains(ActionFlags::LATCH_TO_LOCK) {
+                Some(GroupKind::LatchToLockOnRelease(change))
+            } else {
+                Some(GroupKind::LatchOnRelease(change))
+            }
+        }
+
+        XkbAction::GroupLock(action) => {
+            let change = group_change(action)?;
+
+            // lockOnRelease is XKB v2. XKB v1 locks on press.
+            Some(GroupKind::LockOnPress(change))
+        }
+
+        _ => None,
+    }
+}
+
+fn build_groups_from_keymap(
+    keymap: &keymap::XkbKeymap,
+    compiled_types: &[CompiledType],
+    level_masks: &[u32; MAX_LEVELS],
+) -> Groups {
+    const EVDEV_OFFSET: u32 = 8;
+
+    let mut entries = Vec::new();
+
+    for key in &keymap.keys {
+        if key.keycode < EVDEV_OFFSET {
+            continue;
+        }
+
+        let evdev_code = key.keycode - EVDEV_OFFSET;
+        let mut actions = BTreeMap::<u8, GroupKind>::new();
+
+        for state_level in 0..MAX_LEVELS {
+            let mut selected = None;
+
+            for group in &key.groups {
+                let Some(key_type) =
+                    compiled_types.get(group.type_idx as usize)
+                else {
+                    continue;
+                };
+
+                let resolved_level =
+                    key_type.state(level_masks[state_level]).level as usize;
+
+                let Some(level) = group.levels.get(resolved_level) else {
+                    continue;
+                };
+
+                let action = level
+                    .actions
+                    .iter()
+                    .copied()
+                    .find_map(group_kind);
+
+                let Some(action) = action else {
+                    continue;
+                };
+
+                if let Some(previous) = selected {
+                    if previous != action {
+                        log::warn!(
+                            "keycode {} has different group actions \
+                             between layouts at state level {}",
+                            key.keycode,
+                            state_level,
+                        );
+                    }
+                } else {
+                    selected = Some(action);
+                }
+            }
+
+            if let Some(action) = selected {
+                actions.insert(state_level as u8, action);
+            }
+        }
+
+        if actions.is_empty() {
+            continue;
+        }
+
+        let first = *actions.values().next().unwrap();
+        let identical_at_every_state =
+            actions.len() == MAX_LEVELS
+                && actions.values().all(|action| *action == first);
+
+        let group = if identical_at_every_state {
+            Group::Single(first)
+        } else {
+            Group::Leveled(actions)
+        };
+
+        entries.push((evdev_code, group));
+    }
+
+    Groups::new(entries)
 }
 
 fn resolve_char(
@@ -266,6 +404,9 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
         level3_mask | level5_mask,
         level2_mask | level3_mask | level5_mask,
     ];
+
+    let groups =
+        build_groups_from_keymap(keymap, &compiled_types, &level_masks);
 
     // Compute per-layout LevelFive activation before the merged flat-keymap pass.
     let per_layout_level5: Vec<bool> = (0..num_layouts)
@@ -461,7 +602,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
     WKB {
         current_layout_idx: 0,
         layouts,
-        groups: Groups::default(),
+        groups,
     }
 }
 

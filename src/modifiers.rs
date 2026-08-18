@@ -90,6 +90,10 @@ pub enum ModKind {
         pressed: bool,
         locked: u8,
     },
+    UnlockOnPress {
+        pressed: bool,
+        locked: bool,
+    },
     Latch {
         pressed: bool,
         latched: bool,
@@ -122,6 +126,13 @@ impl ModKind {
                     }
                 }
             },
+            ModKind::UnlockOnPress { pressed, locked } => match key_direction {
+                KeyDirection::Down => {
+                    *pressed = true;
+                    *locked = !*locked;
+                }
+                KeyDirection::Up => *pressed = false,
+            },
             ModKind::Latch {
                 ref mut pressed,
                 ref mut latched,
@@ -148,7 +159,11 @@ impl ModKind {
     }
 
     pub fn locked(&self) -> bool {
-        matches!(self, ModKind::Lock { locked, .. } if *locked > 0)
+        match self {
+            ModKind::Lock { locked, .. } => *locked > 0,
+            ModKind::UnlockOnPress { locked, .. } => *locked,
+            _ => false,
+        }
     }
 }
 
@@ -296,6 +311,7 @@ impl Modifiers {
         let mod_type = match mk.kind {
             ModKind::Press {pressed: true, ..} => mk.mod_type,
             ModKind::Lock {locked, ..} if locked > 0 => mk.mod_type,
+            ModKind::UnlockOnPress { locked: true, .. } => mk.mod_type,
             ModKind::Latch {latched: true, ..} => mk.mod_type,
             _ => return,
         };
@@ -368,6 +384,14 @@ impl Modifiers {
                             locked |= bit;
                         }
                     }
+                    ModKind::UnlockOnPress { pressed:p, locked:l } => {
+                        if p {
+                            depressed |= bit;
+                        }
+                        if l {
+                            locked |= bit;
+                        }
+                    }
                     ModKind::Latch {
                         pressed: p,
                         latched: lt,
@@ -407,6 +431,10 @@ impl Modifiers {
                     } => {
                         *pressed = is_depressed;
                         *locked = if is_locked { 1 } else { 0 };
+                    }
+                    ModKind::UnlockOnPress { ref mut pressed, ref mut locked } => {
+                        *pressed = is_depressed;
+                        *locked = is_locked;
                     }
                     ModKind::Latch {
                         ref mut pressed,
