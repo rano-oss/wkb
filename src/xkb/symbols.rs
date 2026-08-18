@@ -1126,74 +1126,80 @@ fn handle_symbols_file(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, file:
         }
     }
 }
-fn find_automatic_type(ctx: &mut XkbContext, groupi: &GroupInfo) -> u32 {
-    let width: u32 = groupi.levels.len() as u32;
-    if width == 1 || width == 0 {
-        return ctx.atom_intern(b"ONE_LEVEL");
-    }
-    let sym0: u32 = if groupi.levels[0].syms.is_empty() {
-        XKB_KEY_NO_SYMBOL
-    } else {
-        groupi.levels[0].syms[0]
-    };
-    let sym1: u32 = if groupi.levels[1].syms.is_empty() {
-        XKB_KEY_NO_SYMBOL
-    } else {
-        groupi.levels[1].syms[0]
-    };
-    if width == 2_u32 {
-        if xkb_keysym_is_lower(sym0) && xkb_keysym_is_upper_or_title(sym1) {
-            return ctx.atom_intern(b"ALPHABETIC");
-        }
-        if xkb_keysym_is_keypad(sym0) || xkb_keysym_is_keypad(sym1) {
-            return ctx.atom_intern(b"KEYPAD");
-        }
-        return ctx.atom_intern(b"TWO_LEVEL");
-    }
-    if width <= 4_u32 {
-        if xkb_keysym_is_lower(sym0) && xkb_keysym_is_upper_or_title(sym1) {
-            let sym2: u32 = if groupi.levels[2].syms.is_empty() {
-                XKB_KEY_NO_SYMBOL
-            } else {
-                groupi.levels[2].syms[0]
-            };
-            let sym3: u32 = if width == 4_u32 {
-                if groupi.levels[3].syms.is_empty() {
-                    XKB_KEY_NO_SYMBOL
-                } else {
-                    groupi.levels[3].syms[0]
-                }
-            } else {
-                XKB_KEY_NO_SYMBOL
-            };
-            if xkb_keysym_is_lower(sym2) && xkb_keysym_is_upper_or_title(sym3) {
-                return ctx.atom_intern(b"FOUR_LEVEL_ALPHABETIC");
-            }
-            return ctx.atom_intern(b"FOUR_LEVEL_SEMIALPHABETIC");
-        }
-        if xkb_keysym_is_keypad(sym0) || xkb_keysym_is_keypad(sym1) {
-            return ctx.atom_intern(b"FOUR_LEVEL_KEYPAD");
-        }
-        return ctx.atom_intern(b"FOUR_LEVEL");
-    }
-    XKB_ATOM_NONE
+#[inline]
+fn first_symbol(group: &GroupInfo, level: usize) -> u32 {
+    group
+        .levels
+        .get(level)
+        .and_then(|level| level.syms.first())
+        .copied()
+        .unwrap_or(XKB_KEY_NO_SYMBOL)
 }
-fn find_type_for_group(keymap: &mut XkbKeymap, keyi: &mut KeyInfo, group: u32) -> u32 {
-    let groupi = &keyi.groups[group as usize];
-    let mut type_name: u32 = groupi.type_0.unwrap_or(XKB_ATOM_NONE);
-    if type_name == XKB_ATOM_NONE {
-        if let Some(default_type) = keyi.default_type {
-            type_name = default_type;
-        } else {
-            type_name = find_automatic_type(&mut keymap.ctx, groupi);
+fn find_automatic_type(
+    ctx: &mut XkbContext,
+    group: &GroupInfo,
+) -> u32 {
+    let width = group.levels.len();
+    match width {
+        0 | 1 => ctx.atom_intern(b"ONE_LEVEL"),
+        2 => {
+            let first = first_symbol(group, 0);
+            let second = first_symbol(group, 1);
+            if xkb_keysym_is_lower(first)
+                && xkb_keysym_is_upper_or_title(second)
+            {
+                ctx.atom_intern(b"ALPHABETIC")
+            } else if xkb_keysym_is_keypad(first)
+                || xkb_keysym_is_keypad(second)
+            {
+                ctx.atom_intern(b"KEYPAD")
+            } else {
+                ctx.atom_intern(b"TWO_LEVEL")
+            }
         }
-    }
-    if type_name != XKB_ATOM_NONE {
-        if let Some(idx) = keymap.types.iter().position(|t| t.name == type_name) {
-            return idx as u32;
+        3 | 4 => {
+            let first = first_symbol(group, 0);
+            let second = first_symbol(group, 1);
+            if xkb_keysym_is_lower(first)
+                && xkb_keysym_is_upper_or_title(second)
+            {
+                let third = first_symbol(group, 2);
+                let fourth = first_symbol(group, 3);
+                if xkb_keysym_is_lower(third)
+                    && xkb_keysym_is_upper_or_title(fourth)
+                {
+                    ctx.atom_intern(b"FOUR_LEVEL_ALPHABETIC")
+                } else {
+                    ctx.atom_intern(b"FOUR_LEVEL_SEMIALPHABETIC")
+                }
+            } else if xkb_keysym_is_keypad(first)
+                || xkb_keysym_is_keypad(second)
+            {
+                ctx.atom_intern(b"FOUR_LEVEL_KEYPAD")
+            } else {
+                ctx.atom_intern(b"FOUR_LEVEL")
+            }
         }
+        _ => XKB_ATOM_NONE,
     }
-    0
+}
+fn find_type_for_group(
+    keymap: &mut XkbKeymap,
+    key: &KeyInfo,
+    group: usize,
+) -> usize {
+    let group = &key.groups[group];
+    let name = group
+        .type_0
+        .or(key.default_type)
+        .unwrap_or_else(|| {
+            find_automatic_type(&mut keymap.ctx, group)
+        });
+    keymap
+        .types
+        .iter()
+        .position(|key_type| key_type.name == name)
+        .unwrap_or(0)
 }
 fn copy_symbols_def_to_keymap(keymap: &mut XkbKeymap, keyi: &mut KeyInfo) -> bool {
     let key_idx = if (keyi.name as usize) < keymap.key_names.len() {
@@ -1238,7 +1244,11 @@ fn copy_symbols_def_to_keymap(keymap: &mut XkbKeymap, keyi: &mut KeyInfo) -> boo
         keymap.keys[key_idx].groups = (0..num_groups).map(|_| XkbGroup::default()).collect();
 
         for i in 0..keyi.groups.len() as u32 {
-            let type_idx = find_type_for_group(keymap, keyi, i);
+            let type_idx = find_type_for_group(
+                keymap,
+                keyi,
+                i as usize,
+            ) as u32;
 
             if keymap.types[type_idx as usize].num_levels
                 < keyi.groups[i as usize].levels.len() as u32
