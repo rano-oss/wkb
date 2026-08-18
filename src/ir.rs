@@ -440,10 +440,22 @@ fn actions_from_modifier(modifier: &Modifier) -> Vec<(u8, ModAction)> {
 
 fn modaction_from_state_modifier(kind: &StateModifier) -> ModAction {
     match kind {
-        StateModifier { kind: ModKind::Press { .. }, .. } => ModAction::Press(kind.mod_type),
-        StateModifier { kind: ModKind::Lock { .. }, .. } => ModAction::Lock(kind.mod_type),
-        StateModifier { kind: ModKind::UnlockOnPress { .. }, .. } => ModAction::UnlockOnPress(kind.mod_type),
-        StateModifier { kind: ModKind::Latch { .. }, .. } => ModAction::Latch(kind.mod_type),
+        StateModifier {
+            kind: ModKind::Press { .. },
+            ..
+        } => ModAction::Press(kind.mod_type),
+        StateModifier {
+            kind: ModKind::Lock { .. },
+            ..
+        } => ModAction::Lock(kind.mod_type),
+        StateModifier {
+            kind: ModKind::UnlockOnPress { .. },
+            ..
+        } => ModAction::UnlockOnPress(kind.mod_type),
+        StateModifier {
+            kind: ModKind::Latch { .. },
+            ..
+        } => ModAction::Latch(kind.mod_type),
     }
 }
 

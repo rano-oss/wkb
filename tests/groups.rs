@@ -2,7 +2,8 @@ use std::collections::BTreeMap;
 
 use wkb::ir::{LayoutFile, ModAction};
 use wkb::{
-    ALTGR, CAPS_LOCK, ComposeState, GroupChange, GroupKind, KeyDirection, LEFT_SHIFT, ModType, RIGHT_SHIFT, WKB
+    ComposeState, GroupChange, GroupKind, KeyDirection, ModType, ALTGR, CAPS_LOCK, LEFT_SHIFT,
+    RIGHT_SHIFT, WKB,
 };
 use xkbcommon::xkb::{self, Keycode};
 
@@ -179,7 +180,7 @@ fn shift_tap_switches_zhuyin_and_norwegian_without_changing_shift_hold() {
         .export_layout(0)
         .unwrap();
     let mut wkb = WKB::new_from_layouts(vec![zhuyin, norwegian]).unwrap();
-    
+
     assert!(wkb.set_group_key(LEFT_SHIFT, GroupKind::Tap(GroupChange::Relative(1))));
     assert!(wkb.set_group_key(RIGHT_SHIFT, GroupKind::Tap(GroupChange::Relative(1))));
 
@@ -220,17 +221,9 @@ fn latch_on_press_activate_on_named_edge() {
 
     assert_eq!(wkb.key_char(30), Some('a'), "idle");
     wkb.update_key(42, KeyDirection::Down);
-    assert_eq!(
-        wkb.key_char(30),
-        Some('ä'),
-        "level 3 active while held"
-    );
+    assert_eq!(wkb.key_char(30), Some('ä'), "level 3 active while held");
     wkb.update_key(42, KeyDirection::Up);
-    assert_eq!(
-        wkb.key_char(30),
-        Some('ä'),
-        "level 3 latched after release"
-    );
+    assert_eq!(wkb.key_char(30), Some('ä'), "level 3 latched after release");
 
     // A second press cycle unlatches both variants.
     wkb.update_key(42, KeyDirection::Down);
@@ -245,17 +238,9 @@ fn latch_on_release_activate_on_named_edge() {
 
     assert_eq!(wkb.key_char(30), Some('a'), "idle");
     wkb.update_key(42, KeyDirection::Down);
-    assert_eq!(
-        wkb.key_char(30),
-        Some('ä'),
-        "level 3 active while held"
-    );
+    assert_eq!(wkb.key_char(30), Some('ä'), "level 3 active while held");
     wkb.update_key(42, KeyDirection::Up);
-    assert_eq!(
-        wkb.key_char(30),
-        Some('ä'),
-        "level 3 latched after release"
-    );
+    assert_eq!(wkb.key_char(30), Some('ä'), "level 3 latched after release");
 
     // A second press cycle unlatches both variants.
     wkb.update_key(42, KeyDirection::Down);

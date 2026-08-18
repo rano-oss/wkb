@@ -40,11 +40,14 @@ pub use composer::{ComposeState, ComposeString};
 use composer::{Composer, Token};
 mod composer;
 mod flat_keymap;
-mod modifiers;
 mod groups;
-pub use groups::{Group, GroupKind, Groups, GroupChange};
+mod modifiers;
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
-pub use modifiers::{level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, NUM_LOCK, SCROLL_LOCK, LEFT_SHIFT, RIGHT_SHIFT};
+pub use groups::{Group, GroupChange, GroupKind, Groups};
+pub use modifiers::{
+    level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, LEFT_SHIFT, NUM_LOCK, RIGHT_SHIFT,
+    SCROLL_LOCK,
+};
 /// Intermediate representation for persisted layout data files.
 pub mod ir;
 mod named_keys;
@@ -254,17 +257,12 @@ impl WKB {
         }
         let old_layout = self.current_layout_idx;
         if layout_idx != old_layout {
-            let raw = self.layouts[old_layout]
+            let raw = self.layouts[old_layout].modifiers.state(layout_idx);
+            self.layouts[layout_idx]
                 .modifiers
-                .state(layout_idx);
-            self.layouts[layout_idx].modifiers.update(
-                raw.depressed,
-                raw.latched,
-                raw.locked,
-            );
+                .update(raw.depressed, raw.latched, raw.locked);
         }
-        self.groups
-            .set_layout(layout_idx, self.num_layouts());
+        self.groups.set_layout(layout_idx, self.num_layouts());
         self.current_layout_idx = layout_idx;
         Ok(())
     }
@@ -362,25 +360,18 @@ impl WKB {
         let old_layout = self.current_layout_idx;
         let kb_layout = &mut self.layouts[self.current_layout_idx];
         let is_modifier = kb_layout.modifiers.set_state(evdev_code, key_direction);
-        let new_layout = self.groups.update(
-            evdev_code,
-            key_direction,
-            !is_modifier,
-            layouts,
-        );
+        let new_layout = self
+            .groups
+            .update(evdev_code, key_direction, !is_modifier, layouts);
         if new_layout != old_layout {
             let raw = kb_layout.modifiers.state(new_layout);
-            self.layouts[new_layout].modifiers.update(
-                raw.depressed,
-                raw.latched,
-                raw.locked,
-            );
+            self.layouts[new_layout]
+                .modifiers
+                .update(raw.depressed, raw.latched, raw.locked);
             self.current_layout_idx = new_layout;
         }
         if !is_modifier && key_direction == KeyDirection::Down {
-            self.layouts[self.current_layout_idx]
-                .modifiers
-                .unlatch();
+            self.layouts[self.current_layout_idx].modifiers.unlatch();
         }
         is_modifier
     }
@@ -445,14 +436,14 @@ impl WKB {
         for layout in &mut self.layouts {
             layout.modifiers.set_modifier(
                 evdev_code,
-                Modifier::Single(StateModifier { kind: ModKind::Press {
-                    pressed: false,
-                }, mod_type: ModType::Compose }),
+                Modifier::Single(StateModifier {
+                    kind: ModKind::Press { pressed: false },
+                    mod_type: ModType::Compose,
+                }),
             );
         }
     }
 
-    
     /// Add a relative group-lock action.
     ///
     /// `delta = 1` cycles forward through layouts. Combining this with

@@ -76,7 +76,12 @@ fn bench_compose_feed(c: &mut Criterion) {
             let compose_kc = xkb::Keycode::new(COMPOSE_KEY + EVDEV_OFFSET);
             group.bench_function(BenchmarkId::new("xkbcommon", case.name), |b| {
                 b.iter(|| {
-                    black_box(xkb_feed_compose(&mut state, &mut compose, case.keys, compose_kc));
+                    black_box(xkb_feed_compose(
+                        &mut state,
+                        &mut compose,
+                        case.keys,
+                        compose_kc,
+                    ));
                 });
             });
         }
@@ -217,9 +222,8 @@ fn bench_compose_load(c: &mut Criterion) {
     {
         let xkb = xkbcommon_dl::xkbcommon_handle();
         let xkb_compose = xkbcommon_dl::xkbcommon_compose_handle();
-        let ctx = unsafe {
-            (xkb.xkb_context_new)(xkbcommon_dl::xkb_context_flags::XKB_CONTEXT_NO_FLAGS)
-        };
+        let ctx =
+            unsafe { (xkb.xkb_context_new)(xkbcommon_dl::xkb_context_flags::XKB_CONTEXT_NO_FLAGS) };
         let c_locale = CString::new(COMPOSE_LOCALE).unwrap();
         group.bench_function("xkbcommon-dl", |b| {
             b.iter(|| {

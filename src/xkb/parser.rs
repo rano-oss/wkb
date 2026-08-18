@@ -68,11 +68,9 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
         let state = &STATES[*states.last().unwrap() as usize];
 
         if lookahead == YYEMPTY
-            && (state.has_terminal_transitions()
-                || matches!(state.default_action(), Action::Error))
+            && (state.has_terminal_transitions() || matches!(state.default_action(), Action::Error))
         {
-            lookahead =
-                _xkbcommon_lex(&mut lookahead_value, param.scanner, param.ctx);
+            lookahead = _xkbcommon_lex(&mut lookahead_value, param.scanner, param.ctx);
         }
 
         let action = (lookahead >= 0)
@@ -87,10 +85,7 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
 
             Action::Shift(next) => {
                 states.push(next);
-                values.push(std::mem::replace(
-                    &mut lookahead_value,
-                    YYValue::None,
-                ));
+                values.push(std::mem::replace(&mut lookahead_value, YYValue::None));
                 lookahead = YYEMPTY;
             }
 
@@ -100,13 +95,7 @@ pub(crate) fn _xkbcommon_parse<'a>(param: &mut ParserParam<'a>) -> i32 {
                 let top = values.len() - 1;
                 let mut result = YYValue::None;
 
-                if !execute_reduction(
-                    rule_id as i32,
-                    &mut values,
-                    top,
-                    &mut result,
-                    param,
-                ) {
+                if !execute_reduction(rule_id as i32, &mut values, top, &mut result, param) {
                     return 1;
                 }
 
