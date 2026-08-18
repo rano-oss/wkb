@@ -81,7 +81,7 @@ pub enum ModType {
     Scroll,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum ModKind {
     Press {
         pressed: bool,
@@ -152,7 +152,7 @@ impl ModKind {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) struct StateModifier {
     pub(crate) mod_type: ModType,
     pub(crate) kind: ModKind,

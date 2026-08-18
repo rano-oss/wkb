@@ -6,12 +6,12 @@ pub enum Binding<T> {
     Leveled(BTreeMap<u8, T>),
 }
 
-impl<T: Clone> Binding<T> {
+impl<T: Copy> Binding<T> {
     pub(crate) fn get(&self, level: usize) -> Option<T> {
         match self {
-            Self::Single(value) => Some(value.clone()),
+            Self::Single(value) => Some(*value),
             Self::Leveled(levels) => {
-                levels.get(&u8::try_from(level).ok()?).cloned()
+                levels.get(&u8::try_from(level).ok()?).copied()
             }
         }
     }
