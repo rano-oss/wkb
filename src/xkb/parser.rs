@@ -2496,7 +2496,7 @@ fn split_comma_separated_mlvo(mlvo: u32, bytes: &[u8]) -> Vec<MatchedSval<'_>> {
         })
         .collect()
 }
-fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) -> Matcher<'a> {
+pub fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) -> Matcher<'a> {
     let mut m = Matcher::new(ctx);
     m.rmlvo.model.sval = Sval {
         data: rmlvo.model.as_bytes(),
@@ -3353,7 +3353,7 @@ fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_
     }
     true
 }
-fn xkb_resolve_rules(
+pub fn xkb_resolve_rules(
     rules: &str,
     matcher: &mut Matcher<'_>,
     out: &mut XkbComponentNames,
@@ -3405,22 +3405,12 @@ fn xkb_resolve_rules(
     }
     true
 }
-pub(crate) fn xkb_components_from_rules_names(
-    ctx: &mut XkbContext,
-    rmlvo: &XkbRuleNames,
-    out: &mut XkbComponentNames,
-    explicit_layouts: &mut u32,
-) -> bool {
-    let mut matcher = matcher_new_from_names(ctx, rmlvo);
-    xkb_resolve_rules(&rmlvo.rules, &mut matcher, out, explicit_layouts)
-}
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use lasso::Key as _;
 
-// ── xkbcommon public types ───────────────────────────────────────────
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: u32 = 2;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: u32 = 1;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_WRAP: u32 = 0;
@@ -3443,8 +3433,6 @@ pub(crate) const XKB_KEYMAP_COMPILE_NO_FLAGS: u32 = 0;
 pub(crate) const XKB_LAYOUT_INVALID: u32 = 0xffffffff;
 pub(crate) const XKB_MOD_INVALID: u32 = 0xffffffff;
 
-// ── XkbRuleNames ──────────────────────────────────────────────────
-
 #[derive(Clone, Debug, Default)]
 pub(crate) struct XkbRuleNames {
     pub(crate) rules: String,
@@ -3453,8 +3441,6 @@ pub(crate) struct XkbRuleNames {
     pub(crate) variant: String,
     pub(crate) options: String,
 }
-
-// ── XkbContext ─────────────────────────────────────────────────────
 
 #[derive(Clone)]
 pub(crate) struct XkbContext {
@@ -3506,7 +3492,6 @@ pub(crate) fn read_file_cached(path: &str) -> Option<Arc<Vec<u8>>> {
         })
 }
 
-// ── keymap_h types (from keymap_priv.rs) ────────────────────────────
 #[derive(Clone)]
 pub(crate) struct XkbKeymap {
     pub(crate) ctx: XkbContext,
@@ -3758,8 +3743,6 @@ pub(crate) struct XkbLed {
 
 pub(crate) const XKB_MAX_GROUPS: u32 = 32;
 pub(crate) const MOD_REAL_MASK_ALL: u32 = 0xff_i32 as u32;
-
-// ── Additional xkbcommon types ──────────────────────────────────────
 pub(crate) const XKB_MAX_LEDS: u32 = 32;
 pub(crate) const MAX_ACTIONS_PER_LEVEL: i32 = 65535;
 
@@ -3770,8 +3753,6 @@ pub(crate) const DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH: &str =
 pub(crate) const DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH: &str =
     "/usr/share/xkeyboard-config-2.d";
 pub(crate) const DFLT_XKB_LEGACY_ROOT: &str = "/usr/share/X11/xkb";
-
-// ── xkbcommon_h types (moved from duplicated pub(crate) mod xkbcommon_h blocks) ─
 
 pub(crate) const XKB_CONTEXT_NO_FLAGS: u32 = 0;
 pub(crate) const XKB_CONTEXT_NO_DEFAULT_INCLUDES: u32 = 1;
@@ -3891,7 +3872,6 @@ pub(crate) enum MergeMode {
 }
 
 // ── Core AST node types ─────────────────────────────────────────────
-
 #[derive(Clone)]
 pub(crate) struct IncludeStmt {
     pub(crate) merge: MergeMode,
@@ -3901,7 +3881,6 @@ pub(crate) struct IncludeStmt {
 }
 
 // ── Expression types ────────────────────────────────────────────────
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub(crate) enum BinaryOp {
     Assign,
@@ -3956,7 +3935,6 @@ pub(crate) enum ExprKind {
 }
 
 // ── Statement definition types ──────────────────────────────────────
-
 pub(crate) struct VarDef {
     pub(crate) merge: MergeMode,
     pub(crate) name: Option<ExprKind>,
@@ -4033,7 +4011,6 @@ pub(crate) struct XkbFile {
 }
 
 // ── xkbcomp_priv types (parser/keymap info) ─────────────────────────
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub(crate) enum ParseStatus {
     Success = 0,
