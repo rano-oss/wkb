@@ -442,187 +442,180 @@ fn handle_include_symbols(
     }
     info.error_count == 0
 }
-fn get_group_index(
+fn group_index(
     ki: &mut XkbKeymapInfo<'_>,
     info: &SymbolsInfo,
-    keyi: &mut KeyInfo,
-    array_ndx: Option<&ExprKind>,
+    key: &mut KeyInfo,
+    index: Option<&ExprKind>,
     field: GroupField,
-    ndx_rtrn: &mut u32,
-) -> bool {
-    if array_ndx.is_none() {
-        for (i, group) in keyi.groups.iter().enumerate() {
-            if !group.field_is_set(field) {
-                *ndx_rtrn = i as u32;
-                return true;
+) -> Option<usize> {
+    let index = match index {
+        Some(expr) => {
+            let mut group = 0;
+            let mut pending = false;
+            if expr_resolve_group(
+                ki,
+                expr,
+                false,
+                &mut group,
+                &mut pending,
+            ) != ParseStatus::Success
+            {
+                return None;
             }
+            group.checked_sub(1)? as usize
         }
-        let i = keyi.groups.len() as u32;
-        if i >= info.max_groups {
-            return false;
-        }
-        let new_len = keyi.groups.len() + 1;
-        keyi.groups.resize_with(new_len, Default::default);
-        *ndx_rtrn = (keyi.groups.len() - 1) as u32;
-        return true;
+        None => key
+            .groups
+            .iter()
+            .position(|group| !group.field_is_set(field))
+            .unwrap_or(key.groups.len()),
+    };
+    if index >= info.max_groups as usize {
+        return None;
     }
-    let mut _pending = false;
-    if expr_resolve_group(ki, array_ndx.unwrap(), false, ndx_rtrn, &mut _pending)
-        != ParseStatus::Success
-    {
-        return false;
+    if index >= key.groups.len() {
+        key.groups
+            .resize_with(index + 1, GroupInfo::default);
     }
-    *ndx_rtrn -= 1;
-    if *ndx_rtrn >= keyi.groups.len() as u32 {
-        keyi.groups
-            .resize_with((*ndx_rtrn + 1) as usize, Default::default);
-    }
-    true
+    Some(index)
 }
 fn add_symbols_to_key(
     ki: &mut XkbKeymapInfo<'_>,
     info: &SymbolsInfo,
-    keyi: &mut KeyInfo,
-    array_ndx: Option<&ExprKind>,
+    key: &mut KeyInfo,
+    array_index: Option<&ExprKind>,
     value: &ExprKind,
 ) -> bool {
-    let mut ndx: u32 = 0;
-    if !get_group_index(ki, info, keyi, array_ndx, GroupField::Syms, &mut ndx) {
+    let Some(group_index) = group_index(
+        ki,
+        info,
+        key,
+        array_index,
+        GroupField::Syms,
+    ) else {
         return false;
-    }
-    let groupi = &mut keyi.groups[ndx as usize];
+    };
+    let group = &mut key.groups[group_index];
+
     if matches!(value, ExprKind::EmptyList) {
-        groupi.explicit_syms = true;
+        group.explicit_syms = true;
         return true;
     }
     if !matches!(
         value,
-        ExprKind::KeysymList { .. } | ExprKind::ActionList { .. }
-    ) {
+        ExprKind::KeysymList { .. }
+            | ExprKind::ActionList { .. }
+    ) || group.explicit_syms
+    {
         return false;
     }
-    if groupi.explicit_syms {
-        return false;
-    }
-    let mut n_levels: u32 = 0;
-    let mut non_empty_levels: u32 = 0;
-    let keysym_nodes = collect_expr_list(value);
-    for node in keysym_nodes {
-        n_levels += 1;
-        let ExprKind::KeysymList { ref syms } = node else {
-            unreachable!()
+    let nodes = collect_expr_list(value);
+    let level_count = nodes
+        .iter()
+        .rposition(|node| {
+            matches!(
+                node,
+                ExprKind::KeysymList { syms }
+                    if !syms.is_empty()
+            )
+        })
+        .map_or(0, |index| index + 1);
+    group
+        .levels
+        .resize_with(level_count, XkbLevel::default);
+    group.explicit_syms = true;
+    for (level, node) in nodes.iter().take(level_count).enumerate() {
+        let ExprKind::KeysymList { syms } = node else {
+            return false;
         };
-        if syms.len() as u32 > 0 {
-            non_empty_levels = n_levels;
-        }
-    }
-    if non_empty_levels < n_levels {
-        n_levels = non_empty_levels;
-    }
-    let groupi = &mut keyi.groups[ndx as usize];
-    if (groupi.levels.len() as u32) < n_levels {
-        groupi
-            .levels
-            .resize_with(n_levels as usize, Default::default);
-    }
-    groupi.explicit_syms = true;
-    for (level, node) in keysym_nodes.iter().enumerate() {
-        if level as u32 >= n_levels {
-            break;
-        }
-        let leveli = &mut keyi.groups[ndx as usize].levels[level];
-        let ExprKind::KeysymList { ref syms } = node else {
-            unreachable!()
-        };
-        let syms_len = syms.len() as u32;
-        if syms_len > 65535 {
+        if syms.len() > u16::MAX as usize {
             return false;
         }
-        leveli.syms = if syms_len == 0 {
-            Vec::new()
-        } else {
-            syms[..syms_len as usize].to_vec()
-        };
+        group.levels[level].syms.clone_from(syms);
     }
     true
 }
 fn add_actions_to_key(
     ki: &mut XkbKeymapInfo<'_>,
     info: &mut SymbolsInfo,
-    keyi: &mut KeyInfo,
-    array_ndx: Option<&ExprKind>,
+    key: &mut KeyInfo,
+    array_index: Option<&ExprKind>,
     value: &mut ExprKind,
 ) -> bool {
-    let mut ndx: u32 = 0;
-    if !get_group_index(ki, info, keyi, array_ndx, GroupField::Acts, &mut ndx) {
+    let Some(group_index) = group_index(
+        ki,
+        info,
+        key,
+        array_index,
+        GroupField::Acts,
+    ) else {
         return false;
-    }
-    let groupi = &mut keyi.groups[ndx as usize];
+    };
+
+    let group = &mut key.groups[group_index];
+
     if matches!(value, ExprKind::EmptyList) {
-        groupi.explicit_acts = true;
+        group.explicit_acts = true;
         return true;
     }
-    if !matches!(value, ExprKind::ActionList { .. }) {
+
+    if !matches!(value, ExprKind::ActionList { .. })
+        || group.explicit_acts
+    {
         return false;
     }
-    if groupi.explicit_acts {
-        return false;
-    }
-    let action_nodes = if let ExprKind::ActionList { ref mut actions } = value {
-        actions.as_mut_slice()
-    } else {
-        std::slice::from_mut(value)
+
+    let ExprKind::ActionList { actions: nodes } = value else {
+        unreachable!();
     };
-    let n_levels: u32 = action_nodes.len() as u32;
-    let groupi = &mut keyi.groups[ndx as usize];
-    if (groupi.levels.len() as u32) < n_levels {
-        groupi
-            .levels
-            .resize_with(n_levels as usize, Default::default);
-    }
-    groupi.explicit_acts = true;
-    let mut non_empty_levels: u32 = 0;
-    for (level, action_node) in (0_u32..).zip(action_nodes.iter_mut()) {
-        let ExprKind::ActionList {
-            actions: action_vec,
-        } = action_node
-        else {
-            unreachable!()
+
+    group
+        .levels
+        .resize_with(nodes.len(), XkbLevel::default);
+
+    group.explicit_acts = true;
+
+    let mut used_levels = 0;
+
+    for (level_index, node) in nodes.iter_mut().enumerate() {
+        let ExprKind::ActionList { actions } = node else {
+            return false;
         };
-        let num_actions: u32 = action_vec.len() as u32;
-        if num_actions > 65535 {
+
+        if actions.len() > u16::MAX as usize {
             return false;
         }
-        let leveli = &mut keyi.groups[ndx as usize].levels[level as usize];
-        leveli.actions.clear();
-        for act_expr in action_vec.iter_mut() {
-            let mut to_act: XkbAction = XkbAction::None;
-            let r = handle_action_def(
+
+        let level = &mut group.levels[level_index];
+        level.actions.clear();
+
+        for expression in actions {
+            let mut action = XkbAction::None;
+
+            match handle_action_def(
                 ki,
                 &mut info.default_actions,
                 &info.mods,
-                act_expr,
-                &mut to_act,
-            );
-            if r == ParseStatus::Fatal {
-                return false;
-            }
-            if r == ParseStatus::Success && !matches!(to_act, XkbAction::None) {
-                leveli.actions.push(to_act);
+                expression,
+                &mut action,
+            ) {
+                ParseStatus::Fatal => return false,
+                ParseStatus::Success
+                    if !matches!(action, XkbAction::None) =>
+                {
+                    level.actions.push(action);
+                }
+                _ => {}
             }
         }
-        if !leveli.actions.is_empty() || !leveli.syms.is_empty() {
-            non_empty_levels = level.wrapping_add(1);
+
+        if !level.actions.is_empty() || !level.syms.is_empty() {
+            used_levels = level_index + 1;
         }
     }
-    let groupi = &mut keyi.groups[ndx as usize];
-    if non_empty_levels < n_levels {
-        if non_empty_levels > 0 {
-            groupi.levels.truncate(non_empty_levels as usize);
-        } else {
-            groupi.levels.clear();
-        }
-    }
+
+    group.levels.truncate(used_levels);
     true
 }
 static REPEAT_ENTRIES: [LookupEntry; 8] = [
