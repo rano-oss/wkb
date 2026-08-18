@@ -57,7 +57,7 @@ pub(crate) struct SymbolsInfo {
     pub(crate) default_key: KeyInfo,
     pub(crate) default_actions: ActionsInfo,
     pub(crate) group_names: Vec<u32>,
-    pub(crate) modmaps: Vec<ModMapEntry>,
+    pub(crate) modmaps: BTreeMap<ModMapTarget, ModMapEntry>,
     pub(crate) mods: XkbModSet,
     pub(crate) star_atom: u32,
 }
@@ -362,19 +362,17 @@ fn add_key_symbols(ki: &mut XkbKeymapInfo<'_>, info: &mut SymbolsInfo, key: &mut
         }
     }
 }
-fn add_mod_map_entry(info: &mut SymbolsInfo, new: &ModMapEntry) {
-    match info
-        .modmaps
-        .binary_search_by_key(&new.target, |entry| entry.target)
-    {
-        Ok(index) => {
-            let old = &mut info.modmaps[index];
+fn add_mod_map_entry(info: &mut SymbolsInfo, new: ModMapEntry) {
+    use std::collections::btree_map::Entry;
+    match info.modmaps.entry(new.target) {
+        Entry::Vacant(entry) => {
+            entry.insert(new);
+        }
+        Entry::Occupied(mut entry) => {
+            let old = entry.get_mut();
             if old.modifier != new.modifier && new.merge != MergeMode::Augment {
                 old.modifier = new.modifier;
             }
-        }
-        Err(index) => {
-            info.modmaps.insert(index, *new);
         }
     }
 }
@@ -410,9 +408,13 @@ fn merge_included_symbols(
             }
         }
     }
-    for mut entry in std::mem::take(&mut from.modmaps) {
-        entry.merge = merge;
-        add_mod_map_entry(into, &entry);
+    if into.modmaps.is_empty() {
+        std::mem::swap(&mut into.modmaps, &mut from.modmaps);
+    } else {
+        for (_, mut entry) in std::mem::take(&mut from.modmaps) {
+            entry.merge = merge;
+            add_mod_map_entry(into, entry);
+        }
     }
 }
 fn handle_include_symbols(
@@ -1056,7 +1058,7 @@ fn handle_mod_map_def(
         if let Some(target) = target {
             add_mod_map_entry(
                 info,
-                &ModMapEntry {
+                ModMapEntry {
                     merge: def.merge,
                     modifier: ndx,
                     target,
@@ -1295,12 +1297,12 @@ fn copy_symbols_to_keymap(keymap: &mut XkbKeymap, info: &mut SymbolsInfo) {
     } else {
         keymap.min_key_code as usize
     };
-    for modmap in &info.modmaps {
-        match modmap.target {
+    for (&target, modmap) in &info.modmaps {
+        match target {
             ModMapTarget::Symbol(sym) => {
-                if let Some(ki) = find_key_by_symbol(keymap, start, sym) {
+                if let Some(key_index) = find_key_by_symbol(keymap, start, sym) {
                     if modmap.modifier != XKB_MOD_NONE {
-                        keymap.keys[ki].modmap |= 1_u32 << modmap.modifier;
+                        keymap.keys[key_index].modmap |= 1_u32 << modmap.modifier;
                     }
                 } else {
                     info.error_count += 1;
