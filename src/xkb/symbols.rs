@@ -296,10 +296,10 @@ impl SymbolsBuilder {
         for statement in &mut file.defs {
             let valid = match statement {
                 Statement::Include(includes) => self.include(ki, includes),
-                Statement::Symbols(definition) => handle_symbols_def(ki, self, definition),
-                Statement::Var(variable) => handle_global_var(ki, self, variable),
+                Statement::Symbols(definition) => self.compile_key(ki, definition),
+                Statement::Var(variable) => self.compile_global(ki, variable),
                 Statement::VMod(vmod) => handle_vmod_def(&mut ki.keymap.ctx, &mut self.mods, vmod),
-                Statement::ModMap(definition) => handle_mod_map_def(ki, self, definition),
+                Statement::ModMap(definition) => self.compile_modmap(ki, definition),
                 Statement::Unknown => ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0,
                 _ => false,
             };
@@ -310,6 +310,157 @@ impl SymbolsBuilder {
                 break;
             }
         }
+    }
+
+    fn compile_key(&mut self, ki: &mut XkbKeymapInfo<'_>, stmt: &mut NamedVarDef) -> bool {
+        // Clone scalar fields from default_key, deep-copy groups
+        let dk = &self.default_key;
+        let mut keyi = dk.clone();
+        keyi.merge = stmt.merge;
+        keyi.name = stmt.name;
+        if self.compile_key_body(ki, &mut stmt.body, &mut keyi) {
+            set_explicit_group(self, &mut keyi);
+            if self.add_key(ki, &mut keyi) {
+                return true;
+            }
+        }
+        self.error_count += 1;
+        false
+    }
+
+    fn compile_modmap(&mut self, ki: &mut XkbKeymapInfo<'_>, def: &mut ModMapDef) -> bool {
+        let modifier_name: &str = ki.keymap.ctx.atom_text(def.modifier);
+        let ndx = if modifier_name.eq_ignore_ascii_case("none") {
+            XKB_MOD_NONE
+        } else {
+            match xkb_mod_name_to_index(&self.mods, def.modifier, MOD_REAL) {
+                Some(n) => n,
+                None => return false,
+            }
+        };
+        for key in def.keys.iter() {
+            let target = if let ExprKind::KeyName(kn) = key {
+                Some(ModMapTarget::Key(*kn))
+            } else if let ExprKind::KeySym(ks) = key {
+                (*ks != XKB_KEY_NO_SYMBOL).then_some(ModMapTarget::Symbol(*ks))
+            } else {
+                None
+            };
+            if let Some(target) = target {
+                self.add_modmap(
+                    target,
+                    ModMapEntry {
+                        merge: def.merge,
+                        modifier: ndx,
+                    },
+                );
+            }
+        }
+        true
+    }
+
+    fn compile_global(&mut self, ki: &mut XkbKeymapInfo<'_>, stmt: &mut VarDef) -> bool {
+        let ret: bool;
+        let lhs = some_or_false!(expr_resolve_lhs(stmt.name.as_ref().unwrap()));
+        let elem_atom = lhs.element;
+        let field_atom = lhs.field;
+        let array_ndx_opt = lhs.index;
+        let elem = ki.keymap.ctx.atom_text(elem_atom).to_owned();
+        let field = ki.keymap.ctx.atom_text(field_atom).to_owned();
+        if !elem.is_empty() && elem.eq_ignore_ascii_case("key") {
+            let mut temp: KeyInfo = KeyInfo::default();
+            init_key_info_with_atom(&mut temp, ki.keymap.ctx.atom_intern(b"*"));
+            temp.merge = if temp.merge == MergeMode::Replace {
+                MergeMode::Override
+            } else {
+                stmt.merge
+            };
+            ret = set_symbols_field(ki, self, &mut temp, &field, array_ndx_opt, &mut stmt.value);
+            let mut dk = std::mem::take(&mut self.default_key);
+            merge_keys(ki, self.star_atom, &mut dk, &mut temp);
+            self.default_key = dk;
+        } else if elem.is_empty()
+            && (field.eq_ignore_ascii_case("name") || field.eq_ignore_ascii_case("groupname"))
+        {
+            ret = set_group_name(
+                ki,
+                self,
+                array_ndx_opt,
+                stmt.value.as_ref().unwrap(),
+                stmt.merge,
+            );
+        } else if elem.is_empty()
+            && [
+                "groupswrap",
+                "wrapgroups",
+                "groupsclamp",
+                "clampgroups",
+                "groupsredirect",
+                "redirectgroups",
+                "allownone",
+            ]
+            .iter()
+            .any(|name| field.eq_ignore_ascii_case(name))
+        {
+            ret = true;
+        } else if !elem.is_empty() {
+            ret = {
+                set_default_action_field(
+                    ki,
+                    &mut self.default_actions,
+                    &mut self.mods,
+                    &elem,
+                    &field,
+                    array_ndx_opt,
+                    &mut stmt.value,
+                    stmt.merge,
+                ) != ParseStatus::Fatal
+            };
+        } else {
+            return ki.strict & PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS == 0;
+        }
+        ret
+    }
+
+    fn compile_key_body(
+        &mut self,
+        ki: &mut XkbKeymapInfo<'_>,
+        defs: &mut [VarDef],
+        keyi: &mut KeyInfo,
+    ) -> bool {
+        let mut all_valid_entries: bool = true;
+        for def in defs.iter_mut() {
+            let field_owned: String;
+            let field: &str;
+            let mut array_ndx_opt: Option<&ExprKind> = None;
+            let mut ok: bool = true;
+            if let Some(name) = def.name.as_ref() {
+                if let Some(lhs) = expr_resolve_lhs(name) {
+                    array_ndx_opt = lhs.index;
+                    let elem = ki.keymap.ctx.atom_text(lhs.element);
+                    field_owned = ki.keymap.ctx.atom_text(lhs.field).to_owned();
+                    field = &field_owned;
+                    if !elem.is_empty() {
+                        ok = false;
+                    }
+                } else {
+                    field_owned = String::new();
+                    field = &field_owned;
+                    ok = false;
+                }
+            } else if def.value.is_none() || !is_action_list_value(def.value.as_ref().unwrap()) {
+                field = "symbols";
+            } else {
+                field = "actions";
+            }
+            if def.value.is_none() {
+                ok = false;
+            }
+            if !ok || !set_symbols_field(ki, self, keyi, field, array_ndx_opt, &mut def.value) {
+                all_valid_entries = false;
+            }
+        }
+        all_valid_entries
     }
 }
 
@@ -939,112 +1090,7 @@ fn set_group_name(
     info.group_names[group_to_use as usize] = name;
     true
 }
-fn handle_global_var(
-    ki: &mut XkbKeymapInfo<'_>,
-    info: &mut SymbolsBuilder,
-    stmt: &mut VarDef,
-) -> bool {
-    let ret: bool;
-    let lhs = some_or_false!(expr_resolve_lhs(stmt.name.as_ref().unwrap()));
-    let elem_atom = lhs.element;
-    let field_atom = lhs.field;
-    let array_ndx_opt = lhs.index;
-    let elem = ki.keymap.ctx.atom_text(elem_atom).to_owned();
-    let field = ki.keymap.ctx.atom_text(field_atom).to_owned();
-    if !elem.is_empty() && elem.eq_ignore_ascii_case("key") {
-        let mut temp: KeyInfo = KeyInfo::default();
-        init_key_info_with_atom(&mut temp, ki.keymap.ctx.atom_intern(b"*"));
-        temp.merge = if temp.merge == MergeMode::Replace {
-            MergeMode::Override
-        } else {
-            stmt.merge
-        };
-        ret = set_symbols_field(ki, info, &mut temp, &field, array_ndx_opt, &mut stmt.value);
-        let mut dk = std::mem::take(&mut info.default_key);
-        merge_keys(ki, info.star_atom, &mut dk, &mut temp);
-        info.default_key = dk;
-    } else if elem.is_empty()
-        && (field.eq_ignore_ascii_case("name") || field.eq_ignore_ascii_case("groupname"))
-    {
-        ret = set_group_name(
-            ki,
-            info,
-            array_ndx_opt,
-            stmt.value.as_ref().unwrap(),
-            stmt.merge,
-        );
-    } else if elem.is_empty()
-        && [
-            "groupswrap",
-            "wrapgroups",
-            "groupsclamp",
-            "clampgroups",
-            "groupsredirect",
-            "redirectgroups",
-            "allownone",
-        ]
-        .iter()
-        .any(|name| field.eq_ignore_ascii_case(name))
-    {
-        ret = true;
-    } else if !elem.is_empty() {
-        ret = {
-            set_default_action_field(
-                ki,
-                &mut info.default_actions,
-                &mut info.mods,
-                &elem,
-                &field,
-                array_ndx_opt,
-                &mut stmt.value,
-                stmt.merge,
-            ) != ParseStatus::Fatal
-        };
-    } else {
-        return ki.strict & PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS == 0;
-    }
-    ret
-}
-fn handle_symbols_body(
-    ki: &mut XkbKeymapInfo<'_>,
-    info: &mut SymbolsBuilder,
-    defs: &mut [VarDef],
-    keyi: &mut KeyInfo,
-) -> bool {
-    let mut all_valid_entries: bool = true;
-    for def in defs.iter_mut() {
-        let field_owned: String;
-        let field: &str;
-        let mut array_ndx_opt: Option<&ExprKind> = None;
-        let mut ok: bool = true;
-        if let Some(name) = def.name.as_ref() {
-            if let Some(lhs) = expr_resolve_lhs(name) {
-                array_ndx_opt = lhs.index;
-                let elem = ki.keymap.ctx.atom_text(lhs.element);
-                field_owned = ki.keymap.ctx.atom_text(lhs.field).to_owned();
-                field = &field_owned;
-                if !elem.is_empty() {
-                    ok = false;
-                }
-            } else {
-                field_owned = String::new();
-                field = &field_owned;
-                ok = false;
-            }
-        } else if def.value.is_none() || !is_action_list_value(def.value.as_ref().unwrap()) {
-            field = "symbols";
-        } else {
-            field = "actions";
-        }
-        if def.value.is_none() {
-            ok = false;
-        }
-        if !ok || !set_symbols_field(ki, info, keyi, field, array_ndx_opt, &mut def.value) {
-            all_valid_entries = false;
-        }
-    }
-    all_valid_entries
-}
+
 fn set_explicit_group(info: &SymbolsBuilder, keyi: &mut KeyInfo) {
     let eg = match info.explicit_group {
         None => return,
@@ -1062,59 +1108,6 @@ fn set_explicit_group(info: &SymbolsBuilder, keyi: &mut KeyInfo) {
     if eg > 0 {
         keyi.groups[eg as usize] = std::mem::take(&mut keyi.groups[0]);
     }
-}
-fn handle_symbols_def(
-    ki: &mut XkbKeymapInfo<'_>,
-    info: &mut SymbolsBuilder,
-    stmt: &mut NamedVarDef,
-) -> bool {
-    // Clone scalar fields from default_key, deep-copy groups
-    let dk = &info.default_key;
-    let mut keyi = dk.clone();
-    keyi.merge = stmt.merge;
-    keyi.name = stmt.name;
-    if handle_symbols_body(ki, info, &mut stmt.body, &mut keyi) {
-        set_explicit_group(info, &mut keyi);
-        if info.add_key(ki, &mut keyi) {
-            return true;
-        }
-    }
-    info.error_count += 1;
-    false
-}
-fn handle_mod_map_def(
-    ki: &mut XkbKeymapInfo<'_>,
-    info: &mut SymbolsBuilder,
-    def: &mut ModMapDef,
-) -> bool {
-    let modifier_name: &str = ki.keymap.ctx.atom_text(def.modifier);
-    let ndx = if modifier_name.eq_ignore_ascii_case("none") {
-        XKB_MOD_NONE
-    } else {
-        match xkb_mod_name_to_index(&info.mods, def.modifier, MOD_REAL) {
-            Some(n) => n,
-            None => return false,
-        }
-    };
-    for key in def.keys.iter() {
-        let target = if let ExprKind::KeyName(kn) = key {
-            Some(ModMapTarget::Key(*kn))
-        } else if let ExprKind::KeySym(ks) = key {
-            (*ks != XKB_KEY_NO_SYMBOL).then_some(ModMapTarget::Symbol(*ks))
-        } else {
-            None
-        };
-        if let Some(target) = target {
-            info.add_modmap(
-                target,
-                ModMapEntry {
-                    merge: def.merge,
-                    modifier: ndx,
-                },
-            );
-        }
-    }
-    true
 }
 #[inline]
 fn first_symbol(group: &GroupInfo, level: usize) -> u32 {
