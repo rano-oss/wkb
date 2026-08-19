@@ -94,17 +94,17 @@ let xkb_string = wkb.as_xkb_string().unwrap();
 
 | Benchmark | wkb | wkb-noxkb | xkbcommon | xkbcommon-dl | vs xkbcommon |
 |-----------|-----|-----------|-----------|--------------|-------------|
-| Setup (no compose) | 15.28 ms | 994.8 µs | 2.20 ms | 2.20 ms | 6.9x slower |
-| Setup (with compose) | 15.30 ms | 996.4 µs | 4.07 ms | 4.04 ms | 3.8x slower |
+| Setup (no compose) | 15.13 ms | 1.02 ms | 2.21 ms | 2.22 ms | 6.8x slower |
+| Setup (with compose) | 15.18 ms | 1.02 ms | 4.04 ms | 4.07 ms | 3.8x slower |
 
 ### Memory
 
 | Library | Peak RSS |
 |---------|----------|
-| wkb | 6.7 MB |
-| wkb-noxkb | 5.4 MB |
-| xkbcommon | 6.8 MB |
-| xkbcommon-dl | 6.8 MB |
+| wkb | 6.6 MB |
+| wkb-noxkb | 5.3 MB |
+| xkbcommon | 6.7 MB |
+| xkbcommon-dl | 6.7 MB |
 
 ### Binary Size
 
