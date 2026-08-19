@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::rc::Rc;
 
 use arrayvec::ArrayVec;
 
@@ -7,18 +6,17 @@ use crate::xkb::keysym::keysym_to_codepoint;
 
 pub(crate) use super::parser::{
     XkbContext, XkbKeymap, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL,
-    XKB_KEYMAP_FORMAT_TEXT_V2,
+    XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
 };
 
 pub(crate) fn xkb_keymap_new_from_names(
     ctx: XkbContext,
     rmlvo: &XkbRuleNames,
-    flags: u32,
-) -> Option<Rc<XkbKeymap>> {
+) -> Option<XkbKeymap> {
     let format = XKB_KEYMAP_FORMAT_TEXT_V2;
     let mut rmlvo = rmlvo.clone();
-    xkb_context_sanitize_rule_names(&ctx, &mut rmlvo);
-    let mut keymap = xkb_keymap_new(ctx, format, flags)?;
+    xkb_context_sanitize_rule_names(&mut rmlvo);
+    let mut keymap = xkb_keymap_new(ctx, format);
     let mut components = XkbComponentNames::default();
     let mut matcher = matcher_new_from_names(&mut keymap.ctx, &rmlvo);
     xkb_resolve_rules(
@@ -31,29 +29,19 @@ pub(crate) fn xkb_keymap_new_from_names(
     keymap.num_groups = keymap.num_groups.min(XKB_MAX_GROUPS);
     let mut file = xkb_file_from_components(&components)?;
     (file.file_type == FileType::Keymap && compile_keymap(&mut file, &mut keymap)).then_some(())?;
-    Some(Rc::new(*keymap))
+    Some(*keymap)
 }
-pub(crate) fn xkb_keymap_new_from_string(
-    ctx: XkbContext,
-    string: &std::ffi::CStr,
-    format: u32,
-    flags: u32,
-) -> Option<Rc<XkbKeymap>> {
-    let original = string.to_bytes();
+pub(crate) fn xkb_keymap_new_from_string(ctx: XkbContext, original: &[u8]) -> Option<XkbKeymap> {
     let source = strip_compat_map(original);
     let bytes = source.as_ref();
-    let mut length = bytes.len();
     if bytes.is_empty() {
         return None;
     }
-    let mut keymap = xkb_keymap_new(ctx, format, flags)?;
-    if length > 0 && bytes[length - 1] == 0 {
-        length -= 1;
-    }
-    let mut file = xkb_parse_string(&mut keymap.ctx, &bytes[..length], "")?;
+    let mut keymap = xkb_keymap_new(ctx, XKB_KEYMAP_FORMAT_TEXT_V1);
+    let mut file = xkb_parse_string(&mut keymap.ctx, bytes, "")?;
     (file.file_type == FileType::Keymap && compile_keymap(&mut file, &mut keymap)).then_some(())?;
     apply_group_action_overrides(&mut keymap, original);
-    Some(Rc::new(*keymap))
+    Some(*keymap)
 }
 
 fn find_ascii_case_insensitive(haystack: &[u8], needle: &[u8]) -> Option<usize> {
@@ -104,7 +92,11 @@ fn group_action_from_interpret(input: &[u8], name: &[u8]) -> Option<XkbAction> {
         return None;
     }
     let group = if relative {
-        if negative { -number } else { number }
+        if negative {
+            -number
+        } else {
+            number
+        }
     } else {
         number - 1
     };
@@ -127,13 +119,12 @@ fn apply_group_action_overrides(keymap: &mut XkbKeymap, input: &[u8]) {
     // xkbcommon versions differ in whether the generated symbols section also
     // contains the interpreted action. An explicit relative NextGroup latch in
     // the source must win over either representation.
-    let forced_next_latch = find_ascii_case_insensitive(input, b"LatchGroup(group=+1)")
-        .map(|_| {
-            XkbAction::GroupLatch(XkbGroupAction {
-                flags: ActionFlags::empty(),
-                group: 1,
-            })
-        });
+    let forced_next_latch = find_ascii_case_insensitive(input, b"LatchGroup(group=+1)").map(|_| {
+        XkbAction::GroupLatch(XkbGroupAction {
+            flags: ActionFlags::empty(),
+            group: 1,
+        })
+    });
     let overrides: Vec<(u32, XkbAction)> = [
         (0xff7e, b"Mode_switch".as_slice()),
         (0xff2d, b"Kana_Lock".as_slice()),
@@ -158,9 +149,8 @@ fn apply_group_action_overrides(keymap: &mut XkbKeymap, input: &[u8]) {
                         continue;
                     }
                 }
-                if let Some((_, action)) = overrides
-                    .iter()
-                    .find(|(sym, _)| level.syms.contains(sym))
+                if let Some((_, action)) =
+                    overrides.iter().find(|(sym, _)| level.syms.contains(sym))
                 {
                     let synthesized = level.syms.iter().copied().find_map(wkb_group_action);
                     if level.action == synthesized {
@@ -192,7 +182,10 @@ fn strip_compat_map(input: &[u8]) -> Cow<'_, [u8]> {
     }) else {
         return Cow::Borrowed(input);
     };
-    let Some(open) = input[start..].iter().position(|&byte| byte == b'{').map(|i| start + i)
+    let Some(open) = input[start..]
+        .iter()
+        .position(|&byte| byte == b'{')
+        .map(|i| start + i)
     else {
         return Cow::Borrowed(input);
     };
@@ -428,15 +421,6 @@ fn lookup_compose_dir(locale: &str) -> Option<String> {
 /// Resolve a locale name to the compose file sub-path (relative to
 /// `/usr/share/X11/locale/`) that should be used.
 pub(crate) fn resolve_compose_file(locale: &str) -> Option<String> {
-    if let Some(mapped_locale) = XKB_COMPOSE_MAP
-        .iter()
-        .find_map(|&(name, mapped)| (name == locale).then_some(mapped))
-    {
-        if let Some(compose_file) = lookup_compose_dir(mapped_locale) {
-            return Some(compose_file);
-        }
-    }
-
     if let Some(compose_file) = lookup_compose_dir(locale) {
         return Some(compose_file);
     }
@@ -457,9 +441,51 @@ pub(crate) fn resolve_compose_file(locale: &str) -> Option<String> {
         }
     }
 
-    if locale.len() >= 2 && locale.len() <= 3 && locale.chars().all(|c| c.is_ascii_lowercase()) {
-        let upper = locale.to_ascii_uppercase();
-        let candidate = format!("{}_{}.UTF-8", locale, upper);
+    if locale.len() >= 2 && locale.len() <= 5 && locale.chars().all(|c| c.is_ascii_lowercase()) {
+        let language = match locale {
+            "us" | "gb" | "au" | "nz" | "za" | "bw" => "en",
+            "no" => "nb",
+            "dk" => "da",
+            "se" => "sv",
+            "at" | "ch" => "de",
+            "cz" => "cs",
+            "gr" => "el",
+            "rs" | "me" => "sr",
+            "al" => "sq",
+            "ba" => "bs",
+            "by" => "be",
+            "ge" => "ka",
+            "ua" => "uk",
+            "jp" => "ja",
+            "kr" => "ko",
+            "cn" | "tw" => "zh",
+            "kh" => "km",
+            "vn" => "vi",
+            "in" => "hi",
+            "bd" => "bn",
+            "lk" => "si",
+            "np" => "ne",
+            "pk" => "ur",
+            "il" => "he",
+            "ara" | "iq" | "sy" | "eg" | "dz" | "ma" => "ar",
+            "ir" => "fa",
+            "kg" => "ky",
+            "kz" => "kk",
+            "tj" => "tg",
+            "la" => "lo",
+            "my" => "ms",
+            "ie" => "ga",
+            "epo" => "eo",
+            "latam" => "es",
+            _ => locale,
+        };
+        let country = match locale {
+            "ara" => "SA".into(),
+            "epo" => "XX".into(),
+            "latam" => "MX".into(),
+            _ => locale.to_ascii_uppercase(),
+        };
+        let candidate = format!("{language}_{country}.UTF-8");
         if let Some(compose_file) = lookup_compose_dir(&candidate) {
             return Some(compose_file);
         }
@@ -467,56 +493,6 @@ pub(crate) fn resolve_compose_file(locale: &str) -> Option<String> {
 
     lookup_compose_dir("en_US.UTF-8")
 }
-
-static XKB_COMPOSE_MAP: &[(&str, &str)] = &[
-    ("us", "en_US.UTF-8"),
-    ("gb", "en_GB.UTF-8"),
-    ("au", "en_AU.UTF-8"),
-    ("nz", "en_NZ.UTF-8"),
-    ("za", "en_ZA.UTF-8"),
-    ("bw", "en_BW.UTF-8"),
-    ("no", "nb_NO.UTF-8"),
-    ("dk", "da_DK.UTF-8"),
-    ("se", "sv_SE.UTF-8"),
-    ("at", "de_AT.UTF-8"),
-    ("ch", "de_CH.UTF-8"),
-    ("cz", "cs_CZ.UTF-8"),
-    ("gr", "el_GR.UTF-8"),
-    ("rs", "sr_RS.UTF-8"),
-    ("me", "sr_ME.UTF-8"),
-    ("al", "sq_AL.UTF-8"),
-    ("ba", "bs_BA.UTF-8"),
-    ("by", "be_BY.UTF-8"),
-    ("ge", "ka_GE.UTF-8"),
-    ("ua", "uk_UA.UTF-8"),
-    ("jp", "ja_JP.UTF-8"),
-    ("kr", "ko_KR.UTF-8"),
-    ("cn", "zh_CN.UTF-8"),
-    ("tw", "zh_TW.UTF-8"),
-    ("kh", "km_KH.UTF-8"),
-    ("vn", "vi_VN.UTF-8"),
-    ("in", "hi_IN.UTF-8"),
-    ("bd", "bn_BD.UTF-8"),
-    ("lk", "si_LK.UTF-8"),
-    ("np", "ne_NP.UTF-8"),
-    ("pk", "ur_PK.UTF-8"),
-    ("il", "he_IL.UTF-8"),
-    ("ara", "ar_SA.UTF-8"),
-    ("iq", "ar_IQ.UTF-8"),
-    ("ir", "fa_IR.UTF-8"),
-    ("sy", "ar_SY.UTF-8"),
-    ("eg", "ar_EG.UTF-8"),
-    ("dz", "ar_DZ.UTF-8"),
-    ("ma", "ar_MA.UTF-8"),
-    ("kg", "ky_KG.UTF-8"),
-    ("kz", "kk_KZ.UTF-8"),
-    ("tj", "tg_TJ.UTF-8"),
-    ("la", "lo_LA.UTF-8"),
-    ("my", "ms_MY.UTF-8"),
-    ("ie", "ga_IE.UTF-8"),
-    ("epo", "eo_XX.UTF-8"),
-    ("latam", "es_MX.UTF-8"),
-];
 pub(crate) const XKB_MOD_NAME_SHIFT: &str = "Shift";
 pub(crate) const XKB_MOD_NAME_CAPS: &str = "Lock";
 pub(crate) const XKB_MOD_NAME_CTRL: &str = "Control";
@@ -526,15 +502,10 @@ pub(crate) const XKB_MOD_NAME_MOD3: &str = "Mod3";
 pub(crate) const XKB_MOD_NAME_MOD4: &str = "Mod4";
 pub(crate) const XKB_MOD_NAME_MOD5: &str = "Mod5";
 
-pub(crate) fn xkb_keymap_new(ctx: XkbContext, format: u32, flags: u32) -> Option<Box<XkbKeymap>> {
-    static XKB_KEYMAP_COMPILE_FLAGS: u32 = XKB_KEYMAP_COMPILE_FLAGS_VALUES;
-    if flags & !XKB_KEYMAP_COMPILE_FLAGS != 0 {
-        return None;
-    }
+pub(crate) fn xkb_keymap_new(ctx: XkbContext, format: u32) -> Box<XkbKeymap> {
     let mut keymap = Box::new(XkbKeymap {
         ctx,
-        flags: 0,
-        format: 0,
+        format,
         min_key_code: 0,
         max_key_code: 0,
         num_keys: 0,
@@ -546,9 +517,6 @@ pub(crate) fn xkb_keymap_new(ctx: XkbContext, format: u32, flags: u32) -> Option
         num_groups: 0,
         group_names: Vec::new(),
     });
-    keymap.flags = flags;
-    keymap.format = format;
-
     static BUILTIN_MODS: [&str; 8] = [
         XKB_MOD_NAME_SHIFT,
         XKB_MOD_NAME_CAPS,
@@ -565,7 +533,7 @@ pub(crate) fn xkb_keymap_new(ctx: XkbContext, format: u32, flags: u32) -> Option
         keymap.mods.mods[i].mapping = 1_u32 << i;
     }
     keymap.mods.num_mods = BUILTIN_MODS.len() as u32;
-    Some(keymap)
+    keymap
 }
 
 pub(crate) fn xkb_escape_map_name(name: &mut String) {
@@ -764,47 +732,30 @@ pub(crate) fn xkb_context_num_include_paths(ctx: &mut XkbContext) -> u32 {
     }
     ctx.includes.len() as u32
 }
-pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
-    let mut ctx = XkbContext {
+pub(crate) fn xkb_context_new() -> XkbContext {
+    XkbContext {
         includes: Vec::new(),
         failed_includes: Vec::new(),
         atom_table: Default::default(),
-        use_environment_names: false,
-        pending_default_includes: false,
-    };
-    const XKB_CONTEXT_ALL_FLAGS: u32 = XKB_CONTEXT_NO_DEFAULT_INCLUDES
-        | XKB_CONTEXT_NO_ENVIRONMENT_NAMES
-        | XKB_CONTEXT_NO_SECURE_GETENV;
-    if flags & !XKB_CONTEXT_ALL_FLAGS != 0 {
-        return ctx;
+        pending_default_includes: true,
     }
-    ctx.use_environment_names = flags & XKB_CONTEXT_NO_ENVIRONMENT_NAMES == 0;
-    ctx.pending_default_includes = flags & XKB_CONTEXT_NO_DEFAULT_INCLUDES == 0;
-    ctx
 }
 
 pub(crate) fn getenv_or(name: &str, default: &str) -> String {
     std::env::var(name).unwrap_or_else(|_| default.into())
 }
-pub(crate) fn xkb_context_sanitize_rule_names(ctx: &XkbContext, rmlvo: &mut XkbRuleNames) {
+pub(crate) fn xkb_context_sanitize_rule_names(rmlvo: &mut XkbRuleNames) {
     for (value, name, default) in [
         (&mut rmlvo.rules, "XKB_DEFAULT_RULES", "evdev"),
         (&mut rmlvo.model, "XKB_DEFAULT_MODEL", "pc105"),
         (&mut rmlvo.options, "XKB_DEFAULT_OPTIONS", ""),
     ] {
         if value.is_empty() {
-            *value = if ctx.use_environment_names {
-                getenv_or(name, default)
-            } else {
-                default.into()
-            };
+            *value = getenv_or(name, default);
         }
     }
     if rmlvo.layout.is_empty() {
-        let layout = ctx
-            .use_environment_names
-            .then(|| std::env::var("XKB_DEFAULT_LAYOUT").ok())
-            .flatten();
+        let layout = std::env::var("XKB_DEFAULT_LAYOUT").ok();
         rmlvo.variant = layout
             .as_ref()
             .and_then(|_| std::env::var("XKB_DEFAULT_VARIANT").ok())

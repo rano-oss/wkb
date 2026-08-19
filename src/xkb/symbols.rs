@@ -1,8 +1,5 @@
-use std::collections::btree_map::Entry;
-use std::collections::{BTreeMap, HashMap};
-
-pub(crate) use super::keymap::xkb_mod_name_to_index;
 use super::keymap::lookup_string;
+pub(crate) use super::keymap::xkb_mod_name_to_index;
 use super::keysym::xkb_keysym_is_keypad;
 use super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 use super::parser::{exceeds_include_max_depth, process_include_file};
@@ -40,16 +37,16 @@ pub(crate) struct SymbolsBuilder {
     pub(crate) include_depth: u32,
     pub(crate) explicit_group: Option<u32>,
     pub(crate) max_groups: u32,
-    pub(crate) keys: BTreeMap<u32, KeyInfo>,
+    pub(crate) keys: Vec<Option<KeyInfo>>,
     pub(crate) default_key: KeyInfo,
     pub(crate) default_actions: ActionsInfo,
     pub(crate) group_names: Vec<u32>,
-    pub(crate) modmaps: BTreeMap<ModMapTarget, ModMapEntry>,
+    pub(crate) modmaps: Vec<(ModMapTarget, ModMapEntry)>,
     pub(crate) mods: XkbModSet,
     pub(crate) star_atom: u32,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) enum ModMapTarget {
     Key(u32),
     Symbol(u32),
@@ -146,29 +143,32 @@ impl SymbolsBuilder {
         {
             key.name = alias.index;
         }
-        let name = key.name;
-        match self.keys.entry(name) {
-            Entry::Occupied(mut entry) => merge_keys(ki, self.star_atom, entry.get_mut(), key),
-            Entry::Vacant(entry) => {
-                entry.insert(std::mem::take(key));
+        let slot = match ki.keymap.key_names.get(key.name as usize) {
+            Some(entry) if entry.found && !entry.is_alias => entry.index as usize,
+            _ => {
                 init_key_info_with_atom(key, self.star_atom);
-                true
+                return true;
             }
+        };
+        if slot >= self.keys.len() {
+            self.keys.resize_with(slot + 1, || None);
+        }
+        if let Some(existing) = &mut self.keys[slot] {
+            merge_keys(ki, self.star_atom, existing, key)
+        } else {
+            self.keys[slot] = Some(std::mem::take(key));
+            init_key_info_with_atom(key, self.star_atom);
+            true
         }
     }
 
     fn add_modmap(&mut self, target: ModMapTarget, new: ModMapEntry) {
-        match self.modmaps.entry(target) {
-            Entry::Vacant(entry) => {
-                entry.insert(new);
+        if let Some((_, old)) = self.modmaps.iter_mut().find(|(key, _)| *key == target) {
+            if old.modifier != new.modifier && new.merge != MergeMode::Augment {
+                old.modifier = new.modifier;
             }
-
-            Entry::Occupied(mut entry) => {
-                let old = entry.get_mut();
-                if old.modifier != new.modifier && new.merge != MergeMode::Augment {
-                    old.modifier = new.modifier;
-                }
-            }
+        } else {
+            self.modmaps.push((target, new));
         }
     }
 
@@ -176,8 +176,11 @@ impl SymbolsBuilder {
         keymap.mods = self.mods;
         keymap.group_names = std::mem::take(&mut self.group_names);
         let mut errors = 0;
-        for key in self.keys.values_mut() {
-            if !copy_symbols_def_to_keymap(keymap, key) {
+        for (key_idx, key) in self.keys.iter_mut().enumerate() {
+            if key
+                .as_mut()
+                .is_some_and(|key| !copy_symbols_def_to_keymap(keymap, key_idx, key))
+            {
                 errors += 1;
             }
         }
@@ -186,7 +189,7 @@ impl SymbolsBuilder {
         } else {
             keymap.min_key_code as usize
         };
-        for (&target, modmap) in &self.modmaps {
+        for &(target, modmap) in &self.modmaps {
             let key = match target {
                 ModMapTarget::Symbol(symbol) => find_key_by_symbol(keymap, start, symbol)
                     .and_then(|index| keymap.keys.get_mut(index)),
@@ -222,7 +225,7 @@ impl SymbolsBuilder {
         if self.keys.is_empty() {
             std::mem::swap(&mut self.keys, &mut from.keys);
         } else {
-            for (_, mut key) in std::mem::take(&mut from.keys) {
+            for mut key in std::mem::take(&mut from.keys).into_iter().flatten() {
                 key.merge = merge;
 
                 if !self.add_key(ki, &mut key) {
@@ -749,12 +752,7 @@ fn add_actions_to_key(
         for expression in actions {
             let mut action = XkbAction::None;
 
-            match handle_action_def(
-                ki,
-                &mut info.default_actions,
-                expression,
-                &mut action,
-            ) {
+            match handle_action_def(ki, &mut info.default_actions, expression, &mut action) {
                 ParseStatus::Fatal => return false,
                 ParseStatus::Success if !matches!(action, XkbAction::None) => {
                     level.action = Some(action);
@@ -1141,22 +1139,7 @@ fn find_type_for_group(keymap: &mut XkbKeymap, key: &KeyInfo, group: usize) -> u
         .position(|key_type| key_type.name == name)
         .unwrap_or(0)
 }
-fn copy_symbols_def_to_keymap(keymap: &mut XkbKeymap, keyi: &mut KeyInfo) -> bool {
-    let key_idx = if (keyi.name as usize) < keymap.key_names.len() {
-        let match_0 = keymap.key_names[keyi.name as usize];
-        if match_0.found && !match_0.is_alias {
-            Some(match_0.index as usize)
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-    let key_idx = match key_idx {
-        Some(idx) => idx,
-        None => return false,
-    };
-
+fn copy_symbols_def_to_keymap(keymap: &mut XkbKeymap, key_idx: usize, keyi: &mut KeyInfo) -> bool {
     keymap.keys[key_idx].num_groups = 0;
     if !keyi.groups.is_empty() {
         for (idx, groupi) in keyi.groups.iter().enumerate() {
@@ -1288,7 +1271,7 @@ pub(crate) struct KeyTypesInfo {
     pub(crate) error_count: i32,
     pub(crate) include_depth: u32,
     pub(crate) types: Vec<KeyTypeInfo>,
-    type_index: HashMap<u32, usize>,
+    type_index: Vec<Option<usize>>,
     pub(crate) mods: XkbModSet,
 }
 
@@ -1307,14 +1290,18 @@ fn key_types_info(include_depth: u32, mods: &XkbModSet) -> KeyTypesInfo {
     info
 }
 fn add_key_type(info: &mut KeyTypesInfo, new: &mut KeyTypeInfo) {
-    if let Some(&index) = info.type_index.get(&new.def.name) {
+    let name = new.def.name as usize;
+    if name >= info.type_index.len() {
+        info.type_index.resize(name + 1, None);
+    }
+    if let Some(index) = info.type_index[name] {
         let existing = &mut info.types[index];
         if new.merge != MergeMode::Augment {
             std::mem::swap(existing, new);
         }
         return;
     }
-    info.type_index.insert(new.def.name, info.types.len());
+    info.type_index[name] = Some(info.types.len());
     info.types.push(std::mem::take(new));
 }
 fn merge_included_key_types(into: &mut KeyTypesInfo, from: &mut KeyTypesInfo, merge: MergeMode) {
