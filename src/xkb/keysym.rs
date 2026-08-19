@@ -106,8 +106,8 @@ pub fn keysym_to_char(keysym: u32) -> Option<char> {
 }
 pub fn keysym_to_codepoint(keysym: u32) -> Option<u32> {
     if (XKB_KEY_XF86_NUMERIC_0..=XKB_KEY_XF86_NUMERIC_9).contains(&keysym) {
-        return Some(keysym - XKB_KEY_XF86_NUMERIC_0 + 0x30); // '0' to '9'
-    }
+        return Some(keysym - XKB_KEY_XF86_NUMERIC_0 + 0x30);
+    } // '0' to '9'
     match keysym {
         XKB_KEY_XF86_NUMERIC_STAR => return Some(0x2A), // '*'
         XKB_KEY_XF86_NUMERIC_POUND => return Some(0x23), // '#'

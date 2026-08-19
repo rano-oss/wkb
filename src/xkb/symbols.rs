@@ -28,28 +28,16 @@ pub(crate) enum ModMapTarget {
 #[derive(Copy, Clone)]
 #[rustfmt::skip]
 pub(crate) struct ModMapEntry { pub(crate) merge: MergeMode, pub(crate) modifier: u32 }
-#[derive(Clone, Default)]
-#[rustfmt::skip]
-pub(crate) struct KeyInfo { pub(crate) name: u32, pub(crate) vmodmap: Option<u32>, pub(crate) default_type: Option<u32>, pub(crate) repeat: Option<bool>, pub(crate) out_of_range: Option<OutOfRangeInfo>, pub(crate) groups: Vec<GroupInfo> }
-impl KeyInfo {
-    fn has_any_field(&self) -> bool {
-        self.default_type.is_some()
-            || self.vmodmap.is_some()
-            || self.repeat.is_some()
-            || self.out_of_range.is_some()
-    }
-}
-#[derive(Clone, Default)]
-#[rustfmt::skip]
-pub(crate) struct GroupInfo { pub(crate) levels: Vec<XkbLevel>, pub(crate) explicit_syms: bool, pub(crate) explicit_acts: bool, pub(crate) type_0: Option<u32> }
+type KeyInfo = XkbKey;
+type GroupInfo = XkbGroup;
 impl GroupInfo {
     fn has_any_field(&self) -> bool {
-        self.explicit_syms || self.explicit_acts || self.type_0.is_some()
+        self.explicit_syms || self.explicit_acts || self.type_idx != 0
     }
 }
 impl SymbolsBuilder {
-    fn new(ki: &mut XkbKeymapInfo<'_>, include_depth: u32, mods: &XkbModSet) -> Self {
-        let star_atom = ki.keymap.ctx.atom_intern(b"*");
+    fn new(ki: &mut XkbKeymap, include_depth: u32, mods: &XkbModSet) -> Self {
+        let star_atom = ki.ctx.atom_intern(b"*");
         let mut builder = Self {
             include_depth,
             default_key: KeyInfo {
@@ -62,8 +50,8 @@ impl SymbolsBuilder {
         init_vmods(&mut builder.mods, mods, include_depth > 0);
         builder
     }
-    fn add_key(&mut self, ki: &mut XkbKeymapInfo<'_>, key: &mut KeyInfo, merge: MergeMode) {
-        let Some(slot) = ki.keymap.key_index_by_name(key.name, true) else {
+    fn add_key(&mut self, ki: &mut XkbKeymap, key: &mut KeyInfo, merge: MergeMode) {
+        let Some(slot) = ki.key_index_by_name(key.name, true) else {
             init_key_info_with_atom(key, self.star_atom);
             return;
         };
@@ -91,7 +79,8 @@ impl SymbolsBuilder {
         keymap.group_names = std::mem::take(&mut self.group_names);
         for (key_idx, key) in self.keys.iter_mut().enumerate() {
             if let Some(key) = key {
-                copy_symbols_def_to_keymap(keymap, key_idx, key);
+                finalize_key(keymap, key);
+                keymap.keys[key_idx] = std::mem::take(key);
             }
         }
         let start = keymap.min_key_code as usize;
@@ -109,7 +98,7 @@ impl SymbolsBuilder {
             }
         }
     }
-    fn merge_from(&mut self, ki: &mut XkbKeymapInfo<'_>, from: &mut Self, merge: MergeMode) {
+    fn merge_from(&mut self, ki: &mut XkbKeymap, from: &mut Self, merge: MergeMode) {
         merge_mod_sets(&mut self.mods, &from.mods, merge);
         for (index, &name) in from.group_names.iter().enumerate() {
             if index >= self.group_names.len() {
@@ -134,15 +123,14 @@ impl SymbolsBuilder {
             }
         }
     }
-    fn include(&mut self, ki: &mut XkbKeymapInfo<'_>, includes: &mut [IncludeStmt]) -> bool {
+    fn include(&mut self, ki: &mut XkbKeymap, includes: &mut [IncludeStmt]) -> bool {
         if exceeds_include_max_depth(self.include_depth) {
             return false;
         }
         let mut included = Self::new(ki, self.include_depth + 1, &self.mods);
         let include_statements = &mut *includes;
         for statement in include_statements {
-            let Some(mut file) =
-                process_include_file(&mut ki.keymap.ctx, statement, FileType::Symbols)
+            let Some(mut file) = process_include_file(&mut ki.ctx, statement, FileType::Symbols)
             else {
                 return false;
             };
@@ -155,7 +143,7 @@ impl SymbolsBuilder {
                     .and_then(|group| group.checked_sub(1))
                     .and_then(|group| ((group as u32) < XKB_MAX_GROUPS).then_some(group as u32))
                     .or(self.explicit_group)
-            } else if ki.keymap.num_groups != 0 && next.include_depth == 1 {
+            } else if ki.num_groups != 0 && next.include_depth == 1 {
                 Some(0)
             } else {
                 self.explicit_group
@@ -170,7 +158,7 @@ impl SymbolsBuilder {
         }
         true
     }
-    fn compile_file(&mut self, ki: &mut XkbKeymapInfo<'_>, file: &mut XkbFile) -> bool {
+    fn compile_file(&mut self, ki: &mut XkbKeymap, file: &mut XkbFile) -> bool {
         for statement in &mut file.defs {
             let valid = match statement {
                 Statement::Include(includes) => self.include(ki, includes),
@@ -178,9 +166,9 @@ impl SymbolsBuilder {
                 Statement::Var(variable) => self.compile_global(ki, variable),
                 Statement::VMods(vmods) => vmods
                     .iter()
-                    .all(|vmod| handle_vmod_def(&mut ki.keymap.ctx, &mut self.mods, vmod)),
+                    .all(|vmod| handle_vmod_def(&mut ki.ctx, &mut self.mods, vmod)),
                 Statement::ModMap(definition) => self.compile_modmap(ki, definition),
-                Statement::Unknown => !ki.keymap.strict,
+                Statement::Unknown => !ki.strict,
                 _ => false,
             };
             if !valid {
@@ -189,7 +177,7 @@ impl SymbolsBuilder {
         }
         true
     }
-    fn compile_key(&mut self, ki: &mut XkbKeymapInfo<'_>, stmt: &mut NamedVarDef) -> bool {
+    fn compile_key(&mut self, ki: &mut XkbKeymap, stmt: &mut NamedVarDef) -> bool {
         let dk = &self.default_key;
         let mut keyi = dk.clone();
         keyi.name = stmt.name;
@@ -200,8 +188,8 @@ impl SymbolsBuilder {
         }
         false
     }
-    fn compile_modmap(&mut self, ki: &mut XkbKeymapInfo<'_>, def: &mut ModMapDef) -> bool {
-        let modifier_name: &str = ki.keymap.ctx.atom_text(def.modifier);
+    fn compile_modmap(&mut self, ki: &mut XkbKeymap, def: &mut ModMapDef) -> bool {
+        let modifier_name: &str = ki.ctx.atom_text(def.modifier);
         let ndx = if modifier_name.eq_ignore_ascii_case("none") {
             XKB_MOD_NONE
         } else {
@@ -230,12 +218,12 @@ impl SymbolsBuilder {
         }
         true
     }
-    fn compile_global(&mut self, ki: &mut XkbKeymapInfo<'_>, stmt: &mut VarDef) -> bool {
+    fn compile_global(&mut self, ki: &mut XkbKeymap, stmt: &mut VarDef) -> bool {
         let lhs = some_or_false!(expr_resolve_lhs(stmt.name.as_ref().unwrap()));
-        let elem = ki.keymap.ctx.atom_text(lhs.element);
+        let elem = ki.ctx.atom_text(lhs.element);
         let is_key = elem.eq_ignore_ascii_case("key");
         let empty = elem.is_empty();
-        let field = ki.keymap.ctx.atom_text(lhs.field);
+        let field = ki.ctx.atom_text(lhs.field);
         let symbols_field = parse_symbols_field(field);
         let group_name =
             field.eq_ignore_ascii_case("name") || field.eq_ignore_ascii_case("groupname");
@@ -252,7 +240,7 @@ impl SymbolsBuilder {
         .any(|name| field.eq_ignore_ascii_case(name));
         if is_key {
             let Some(field) = symbols_field else {
-                return !ki.keymap.strict;
+                return !ki.strict;
             };
             let mut temp = KeyInfo {
                 name: self.star_atom,
@@ -274,12 +262,12 @@ impl SymbolsBuilder {
         } else if ignored || !empty {
             true
         } else {
-            !ki.keymap.strict
+            !ki.strict
         }
     }
     fn compile_key_body(
         &mut self,
-        ki: &mut XkbKeymapInfo<'_>,
+        ki: &mut XkbKeymap,
         defs: &mut [VarDef],
         keyi: &mut KeyInfo,
     ) -> bool {
@@ -290,14 +278,11 @@ impl SymbolsBuilder {
                     all_valid_entries = false;
                     continue;
                 };
-                if !ki.keymap.ctx.atom_text(lhs.element).is_empty() {
+                if !ki.ctx.atom_text(lhs.element).is_empty() {
                     all_valid_entries = false;
                     continue;
                 }
-                (
-                    parse_symbols_field(ki.keymap.ctx.atom_text(lhs.field)),
-                    lhs.index,
-                )
+                (parse_symbols_field(ki.ctx.atom_text(lhs.field)), lhs.index)
             } else if def.value.as_ref().is_some_and(is_action_list_value) {
                 (Some(SymbolsField::Actions), None)
             } else {
@@ -307,7 +292,7 @@ impl SymbolsBuilder {
                 (Some(field), true) => {
                     set_symbols_field(ki, self, keyi, field, index, &mut def.value)
                 }
-                (None, true) => !ki.keymap.strict,
+                (None, true) => !ki.strict,
                 _ => false,
             };
             if !valid {
@@ -335,9 +320,9 @@ fn init_key_info_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
     };
 }
 fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) {
-    if let Some(from_type) = from.type_0 {
-        if into.type_0.is_none() || clobber {
-            into.type_0 = Some(from_type);
+    if from.type_idx != 0 {
+        if into.type_idx == 0 || clobber {
+            into.type_idx = from.type_idx;
         }
     }
     if from.levels.is_empty() {
@@ -345,7 +330,7 @@ fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) {
         return;
     }
     if into.levels.is_empty() {
-        from.type_0 = into.type_0;
+        from.type_idx = into.type_idx;
         *into = std::mem::take(from);
         return;
     }
@@ -415,7 +400,7 @@ fn merge_keys(star_atom: u32, into: &mut KeyInfo, from: &mut KeyInfo, merge: Mer
     if from.repeat.is_some() && (into.repeat.is_none() || clobber) {
         into.repeat = from.repeat;
     }
-    if from.default_type.is_some() && (into.default_type.is_none() || clobber) {
+    if from.default_type != 0 && (into.default_type == 0 || clobber) {
         into.default_type = from.default_type;
     }
     if from.out_of_range.is_some() && (into.out_of_range.is_none() || clobber) {
@@ -424,7 +409,7 @@ fn merge_keys(star_atom: u32, into: &mut KeyInfo, from: &mut KeyInfo, merge: Mer
     init_key_info_with_atom(from, star_atom);
 }
 fn group_index(
-    ki: &mut XkbKeymapInfo<'_>,
+    ki: &mut XkbKeymap,
     key: &mut KeyInfo,
     index: Option<&ExprKind>,
     actions: bool,
@@ -455,7 +440,7 @@ fn group_index(
     Some(index)
 }
 fn add_symbols_to_key(
-    ki: &mut XkbKeymapInfo<'_>,
+    ki: &mut XkbKeymap,
     key: &mut KeyInfo,
     array_index: Option<&ExprKind>,
     value: &ExprKind,
@@ -507,11 +492,11 @@ fn action_group(action: &mut XkbAction) -> &mut XkbGroupAction {
         XkbAction::None => unreachable!(),
     }
 }
-fn group_action(ki: &mut XkbKeymapInfo<'_>, expr: &ExprKind) -> Option<XkbAction> {
+fn group_action(ki: &mut XkbKeymap, expr: &ExprKind) -> Option<XkbAction> {
     let ExprKind::Action { name, args } = expr else {
         return None;
     };
-    let mut action = match ki.keymap.ctx.atom_text(*name) {
+    let mut action = match ki.ctx.atom_text(*name) {
         name if name.eq_ignore_ascii_case("SetGroup") => XkbAction::GroupSet(Default::default()),
         name if name.eq_ignore_ascii_case("LatchGroup") => {
             XkbAction::GroupLatch(Default::default())
@@ -531,7 +516,7 @@ fn group_action(ki: &mut XkbKeymapInfo<'_>, expr: &ExprKind) -> Option<XkbAction
         let ExprKind::Ident(field) = field else {
             continue;
         };
-        let field = ki.keymap.ctx.atom_text(*field);
+        let field = ki.ctx.atom_text(*field);
         if field.eq_ignore_ascii_case("group") {
             let (absolute, negative, value) = match value {
                 ExprKind::Unary {
@@ -570,7 +555,7 @@ fn group_action(ki: &mut XkbKeymapInfo<'_>, expr: &ExprKind) -> Option<XkbAction
     Some(action)
 }
 fn add_actions_to_key(
-    ki: &mut XkbKeymapInfo<'_>,
+    ki: &mut XkbKeymap,
     key: &mut KeyInfo,
     index: Option<&ExprKind>,
     value: &ExprKind,
@@ -600,10 +585,8 @@ macro_rules! field_parser {
             $(if [$($name),+].iter().any(|name| field.eq_ignore_ascii_case(name)) {
                 return Some($type::$variant);
             })+
-            None
-        }
-    };
-}
+            None }
+    }; }
 field_parser!(SymbolsField, parse_symbols_field_exact {
     Type => ["type"], Symbols => ["symbols"], Actions => ["actions"],
     Vmods => ["vmods", "virtualmods", "virtualmodifiers"],
@@ -629,7 +612,7 @@ fn parse_symbols_field(field: &str) -> Option<SymbolsField> {
     })
 }
 fn set_symbols_field(
-    ki: &mut XkbKeymapInfo<'_>,
+    ki: &mut XkbKeymap,
     info: &mut SymbolsBuilder,
     keyi: &mut KeyInfo,
     mapped_field: SymbolsField,
@@ -645,9 +628,9 @@ fn set_symbols_field(
                     keyi.groups
                         .resize_with((ndx as usize) + 1, Default::default);
                 }
-                keyi.groups[ndx as usize].type_0 = Some(val);
+                keyi.groups[ndx as usize].type_idx = val;
             } else {
-                keyi.default_type = Some(val);
+                keyi.default_type = val;
             }
         }
         SymbolsField::Symbols => {
@@ -658,26 +641,15 @@ fn set_symbols_field(
         }
         SymbolsField::Vmods => {
             let val = value_opt.as_ref().unwrap();
-            let mask = some_or_false!(expr_resolve_mod_mask(
-                &ki.keymap.ctx,
-                val,
-                MOD_VIRT,
-                &info.mods
-            ));
+            let mask = some_or_false!(expr_resolve_mod_mask(&ki.ctx, val, MOD_VIRT, &info.mods));
             keyi.vmodmap = Some(mask);
         }
         SymbolsField::Ignored => {}
         SymbolsField::Repeat => {
-            keyi.repeat = some_or_false!(expr_resolve_repeat(
-                &ki.keymap.ctx,
-                value_opt.as_ref().unwrap()
-            ));
+            keyi.repeat = some_or_false!(expr_resolve_repeat(&ki.ctx, value_opt.as_ref().unwrap()));
         }
         SymbolsField::GroupsWrap | SymbolsField::GroupsClamp => {
-            let set = some_or_false!(expr_resolve_boolean(
-                &ki.keymap.ctx,
-                value_opt.as_ref().unwrap()
-            ));
+            let set = some_or_false!(expr_resolve_boolean(&ki.ctx, value_opt.as_ref().unwrap()));
             let wrap = matches!(mapped_field, SymbolsField::GroupsWrap);
             let policy = if set == wrap {
                 XKB_LAYOUT_OUT_OF_RANGE_WRAP
@@ -708,7 +680,7 @@ fn set_symbols_field(
     true
 }
 fn set_group_name(
-    ki: &mut XkbKeymapInfo<'_>,
+    ki: &mut XkbKeymap,
     info: &mut SymbolsBuilder,
     array_ndx: Option<&ExprKind>,
     value: &ExprKind,
@@ -793,73 +765,57 @@ fn find_automatic_type(ctx: &mut XkbContext, group: &GroupInfo) -> u32 {
         _ => XKB_ATOM_NONE,
     }
 }
-fn find_type_for_group(keymap: &mut XkbKeymap, key: &KeyInfo, group: usize) -> usize {
-    let group = &key.groups[group];
-    let name = group
-        .type_0
-        .or(key.default_type)
-        .unwrap_or_else(|| find_automatic_type(&mut keymap.ctx, group));
+fn find_type_for_group(keymap: &mut XkbKeymap, default_type: u32, group: &GroupInfo) -> usize {
+    let name = match if group.type_idx != 0 {
+        group.type_idx
+    } else {
+        default_type
+    } {
+        0 => find_automatic_type(&mut keymap.ctx, group),
+        name => name,
+    };
     keymap
         .types
         .iter()
         .position(|key_type| key_type.name == name)
         .unwrap_or(0)
 }
-fn copy_symbols_def_to_keymap(keymap: &mut XkbKeymap, key_idx: usize, keyi: &mut KeyInfo) {
-    let num_groups = keyi
+fn finalize_key(keymap: &mut XkbKeymap, key: &mut KeyInfo) {
+    let num_groups = key
         .groups
         .iter()
-        .rposition(|group| {
-            !group.levels.is_empty() || keyi.default_type.is_some() || group.type_0.is_some()
-        })
+        .rposition(|group| !group.levels.is_empty() || key.default_type != 0 || group.type_idx != 0)
         .map_or(0, |index| index + 1);
-    keymap.keys[key_idx].num_groups = num_groups as u32;
-    if num_groups == 0 && !keyi.has_any_field() {
+    if num_groups == 0 {
         return;
     }
-    if num_groups != 0 {
-        keyi.groups.resize_with(num_groups, Default::default);
-        for i in 1..keyi.groups.len() {
-            if !keyi.groups[i].has_any_field() {
-                keyi.groups[i] = keyi.groups[0].clone();
-            }
+    key.groups.resize_with(num_groups, Default::default);
+    for i in 1..key.groups.len() {
+        if !key.groups[i].has_any_field() {
+            key.groups[i] = key.groups[0].clone();
         }
-        keymap.keys[key_idx].groups = vec![XkbGroup::default(); num_groups];
-        for i in 0..keyi.groups.len() as u32 {
-            let type_idx = find_type_for_group(keymap, keyi, i as usize) as u32;
-            let need_levels = keymap.types[type_idx as usize].num_levels as usize;
-            keyi.groups[i as usize]
-                .levels
-                .resize_with(need_levels, Default::default);
-            keymap.keys[key_idx].groups[i as usize].type_idx = type_idx;
-        }
-        for i in 0..keyi.groups.len() {
-            let groupi = &mut keyi.groups[i];
-            for li in 0..groupi.levels.len() {
-                let leveli = &mut groupi.levels[li];
-                if leveli.syms.len() > 1 {
-                    let has_upper = leveli.syms.iter().any(|&s| xkb_keysym_to_upper(s) != s);
-                    if has_upper {
-                        let original = leveli.syms.len();
-                        leveli.syms.extend_from_within(..);
-                        leveli.syms[original..]
-                            .iter_mut()
-                            .for_each(|sym| *sym = xkb_keysym_to_upper(*sym));
-                    }
+    }
+    let default_type = key.default_type;
+    for group in &mut key.groups {
+        group.type_idx = find_type_for_group(keymap, default_type, group) as u32;
+        group.levels.resize_with(
+            keymap.types[group.type_idx as usize].num_levels as usize,
+            Default::default,
+        );
+        for level in &mut group.levels {
+            if level.syms.len() > 1
+                && level
+                    .syms
+                    .iter()
+                    .any(|&sym| xkb_keysym_to_upper(sym) != sym)
+            {
+                let original = level.syms.len();
+                level.syms.extend_from_within(..);
+                for sym in &mut level.syms[original..] {
+                    *sym = xkb_keysym_to_upper(*sym);
                 }
             }
-            keymap.keys[key_idx].groups[i].levels = std::mem::take(&mut groupi.levels);
-            keymap.keys[key_idx].groups[i].explicit_actions = groupi.explicit_acts;
         }
-        if let Some(oor) = keyi.out_of_range {
-            keymap.keys[key_idx].out_of_range = Some(oor);
-        }
-    }
-    if let Some(vmodmap) = keyi.vmodmap {
-        keymap.keys[key_idx].vmodmap = Some(vmodmap);
-    }
-    if let Some(repeat) = keyi.repeat {
-        keymap.keys[key_idx].repeats = Some(repeat);
     }
 }
 fn find_key_by_symbol(keymap: &XkbKeymap, start: usize, sym: u32) -> Option<usize> {
@@ -867,21 +823,17 @@ fn find_key_by_symbol(keymap: &XkbKeymap, start: usize, sym: u32) -> Option<usiz
         let key = &keymap.keys[index];
         key.groups
             .iter()
-            .take(key.num_groups as usize)
             .flat_map(|group| &group.levels)
             .any(|level| level.syms.contains(&sym))
     })
 }
-pub(crate) fn compile_symbols(
-    file: Option<&mut XkbFile>,
-    keymap_info: &mut XkbKeymapInfo<'_>,
-) -> bool {
-    let mods = keymap_info.keymap.mods;
+pub(crate) fn compile_symbols(file: Option<&mut XkbFile>, keymap_info: &mut XkbKeymap) -> bool {
+    let mods = keymap_info.mods;
     let mut builder = SymbolsBuilder::new(keymap_info, 0, &mods);
     if file.is_some_and(|file| !builder.compile_file(keymap_info, file)) {
         return false;
     }
-    builder.finish(keymap_info.keymap);
+    builder.finish(keymap_info);
     true
 }
 use super::keysym::xkb_keysym_to_upper;
@@ -924,7 +876,7 @@ fn merge_included_key_types(into: &mut KeyTypesInfo, from: &mut KeyTypesInfo, me
     }
 }
 fn handle_include_key_types(
-    ki: &mut XkbKeymapInfo<'_>,
+    ki: &mut XkbKeymap,
     info: &mut KeyTypesInfo,
     includes: &mut [IncludeStmt],
 ) -> bool {
@@ -933,7 +885,7 @@ fn handle_include_key_types(
     }
     let mut included = key_types_info(info.include_depth.wrapping_add(1), &info.mods);
     for stmt in includes.iter() {
-        let Some(mut file) = process_include_file(&mut ki.keymap.ctx, stmt, FileType::Types) else {
+        let Some(mut file) = process_include_file(&mut ki.ctx, stmt, FileType::Types) else {
             return false;
         };
         let mut next = key_types_info(info.include_depth.wrapping_add(1), &included.mods);
@@ -960,7 +912,7 @@ fn add_map_entry(type_0: &mut XkbKeyType, new: &XkbKeyTypeEntry) {
     }
 }
 fn set_key_type_field(
-    ki: &XkbKeymapInfo<'_>,
+    ki: &XkbKeymap,
     info: &mut KeyTypesInfo,
     type_0: &mut XkbKeyType,
     field: &str,
@@ -971,12 +923,8 @@ fn set_key_type_field(
         if array_ndx.is_some() || type_0.modifiers_set {
             return false;
         }
-        type_0.mods.mods = some_or_false!(expr_resolve_mod_mask(
-            &ki.keymap.ctx,
-            value,
-            MOD_BOTH,
-            &info.mods
-        ));
+        type_0.mods.mods =
+            some_or_false!(expr_resolve_mod_mask(&ki.ctx, value, MOD_BOTH, &info.mods));
         type_0.modifiers_set = true;
         return true;
     }
@@ -984,33 +932,26 @@ fn set_key_type_field(
         return true;
     }
     if !(field.eq_ignore_ascii_case("map") || field.eq_ignore_ascii_case("preserve")) {
-        return !ki.keymap.strict;
+        return !ki.strict;
     }
     let Some(array_ndx) = array_ndx else {
         return false;
     };
     let mods = some_or_false!(expr_resolve_mod_mask(
-        &ki.keymap.ctx,
-        array_ndx,
-        MOD_BOTH,
-        &info.mods
+        &ki.ctx, array_ndx, MOD_BOTH, &info.mods
     )) & type_0.mods.mods;
     if field.eq_ignore_ascii_case("map") {
         add_map_entry(
             type_0,
             &XkbKeyTypeEntry {
-                level: some_or_false!(expr_resolve_level(&ki.keymap.ctx, value)),
+                level: some_or_false!(expr_resolve_level(&ki.ctx, value)),
                 mods: XkbMods { mods, mask: 0 },
                 preserve: XkbMods::default(),
             },
         );
     } else {
-        let preserve = some_or_false!(expr_resolve_mod_mask(
-            &ki.keymap.ctx,
-            value,
-            MOD_BOTH,
-            &info.mods
-        )) & mods;
+        let preserve =
+            some_or_false!(expr_resolve_mod_mask(&ki.ctx, value, MOD_BOTH, &info.mods)) & mods;
         if let Some(entry) = type_0
             .entries
             .iter_mut()
@@ -1031,7 +972,7 @@ fn set_key_type_field(
     true
 }
 fn handle_key_type_body(
-    ki: &XkbKeymapInfo<'_>,
+    ki: &XkbKeymap,
     info: &mut KeyTypesInfo,
     defs: &[VarDef],
     type_0: &mut XkbKeyType,
@@ -1040,7 +981,7 @@ fn handle_key_type_body(
         let Some(lhs) = def.name.as_ref().and_then(expr_resolve_lhs) else {
             return false;
         };
-        let elem = ki.keymap.ctx.atom_text(lhs.element);
+        let elem = ki.ctx.atom_text(lhs.element);
         elem.eq_ignore_ascii_case("type")
             || elem.is_empty()
                 && def.value.as_ref().is_some_and(|value| {
@@ -1048,30 +989,26 @@ fn handle_key_type_body(
                         ki,
                         info,
                         type_0,
-                        ki.keymap.ctx.atom_text(lhs.field),
+                        ki.ctx.atom_text(lhs.field),
                         lhs.index,
                         value,
                     )
                 })
     })
 }
-fn handle_type_global_var(ki: &XkbKeymapInfo<'_>, stmt: &VarDef) -> bool {
+fn handle_type_global_var(ki: &XkbKeymap, stmt: &VarDef) -> bool {
     let lhs = some_or_false!(stmt.name.as_ref().and_then(expr_resolve_lhs));
-    let elem = ki.keymap.ctx.atom_text(lhs.element);
-    let field = ki.keymap.ctx.atom_text(lhs.field);
+    let elem = ki.ctx.atom_text(lhs.element);
+    let field = ki.ctx.atom_text(lhs.field);
     if elem.eq_ignore_ascii_case("type") {
         true
     } else if !elem.is_empty() {
-        !ki.keymap.strict
+        !ki.strict
     } else {
-        !field.is_empty() && !ki.keymap.strict
+        !field.is_empty() && !ki.strict
     }
 }
-fn handle_key_types_file(
-    ki: &mut XkbKeymapInfo<'_>,
-    info: &mut KeyTypesInfo,
-    file: &mut XkbFile,
-) -> bool {
+fn handle_key_types_file(ki: &mut XkbKeymap, info: &mut KeyTypesInfo, file: &mut XkbFile) -> bool {
     for stmt in &mut file.defs {
         let ok = match stmt {
             Statement::Include(incl) => handle_include_key_types(ki, info, incl),
@@ -1091,8 +1028,8 @@ fn handle_key_types_file(
             Statement::Var(var) => handle_type_global_var(ki, var),
             Statement::VMods(vmods) => vmods
                 .iter()
-                .all(|vmod| handle_vmod_def(&mut ki.keymap.ctx, &mut info.mods, vmod)),
-            Statement::Unknown => !ki.keymap.strict,
+                .all(|vmod| handle_vmod_def(&mut ki.ctx, &mut info.mods, vmod)),
+            Statement::Unknown => !ki.strict,
             _ => false,
         };
         if !ok {
@@ -1101,25 +1038,22 @@ fn handle_key_types_file(
     }
     true
 }
-pub(crate) fn compile_key_types(
-    file: Option<&mut XkbFile>,
-    keymap_info: &mut XkbKeymapInfo<'_>,
-) -> bool {
-    let mods = keymap_info.keymap.mods;
+pub(crate) fn compile_key_types(file: Option<&mut XkbFile>, keymap_info: &mut XkbKeymap) -> bool {
+    let mods = keymap_info.mods;
     let mut info = key_types_info(0, &mods);
     if file.is_some_and(|file| !handle_key_types_file(keymap_info, &mut info, file)) {
         return false;
     }
-    keymap_info.keymap.types = if info.types.is_empty() {
+    keymap_info.types = if info.types.is_empty() {
         vec![XkbKeyType {
-            name: keymap_info.keymap.ctx.atom_intern(b"ONE_LEVEL"),
+            name: keymap_info.ctx.atom_intern(b"ONE_LEVEL"),
             num_levels: 1,
             ..Default::default()
         }]
     } else {
         info.types
     };
-    keymap_info.keymap.mods = info.mods;
+    keymap_info.mods = info.mods;
     true
 }
 pub(crate) fn init_vmods(info: &mut XkbModSet, mods: &XkbModSet, reset: bool) {
@@ -1271,7 +1205,7 @@ fn merge_keycodes(into: &mut KeyNamesInfo, from: &KeyNamesInfo, merge: MergeMode
 fn handle_include_keycodes(
     info: &mut KeyNamesInfo,
     includes: &mut [IncludeStmt],
-    ki: &mut XkbKeymapInfo<'_>,
+    ki: &mut XkbKeymap,
 ) -> bool {
     if exceeds_include_max_depth(info.include_depth) {
         return false;
@@ -1281,8 +1215,7 @@ fn handle_include_keycodes(
         ..Default::default()
     };
     for stmt in includes.iter() {
-        let Some(mut file) = process_include_file(&mut ki.keymap.ctx, stmt, FileType::Keycodes)
-        else {
+        let Some(mut file) = process_include_file(&mut ki.ctx, stmt, FileType::Keycodes) else {
             return false;
         };
         let mut next = KeyNamesInfo {
@@ -1300,27 +1233,23 @@ fn handle_include_keycodes(
     }
     true
 }
-fn handle_key_name_var(ki: &XkbKeymapInfo<'_>, stmt: &VarDef) -> bool {
+fn handle_key_name_var(ki: &XkbKeymap, stmt: &VarDef) -> bool {
     let Some(lhs) = stmt.name.as_ref().and_then(expr_resolve_lhs) else {
         return false;
     };
-    let field = ki.keymap.ctx.atom_text(lhs.field);
+    let field = ki.ctx.atom_text(lhs.field);
     if lhs.element != 0 || lhs.index.is_some() {
-        return !ki.keymap.strict;
+        return !ki.strict;
     }
     matches!(field.to_ascii_lowercase().as_str(), "minimum" | "maximum")
         && stmt
             .value
             .as_ref()
-            .and_then(|value| expr_resolve_integer(&ki.keymap.ctx, value))
+            .and_then(|value| expr_resolve_integer(&ki.ctx, value))
             .is_some_and(|value| (0..=XKB_KEYCODE_MAX_CONTIGUOUS as i64).contains(&value))
-        || !ki.keymap.strict
+        || !ki.strict
 }
-fn handle_keycodes_file(
-    info: &mut KeyNamesInfo,
-    file: &mut XkbFile,
-    ki: &mut XkbKeymapInfo<'_>,
-) -> bool {
+fn handle_keycodes_file(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut XkbKeymap) -> bool {
     for statement in &mut file.defs {
         let valid = match statement {
             Statement::Include(includes) => handle_include_keycodes(info, includes, ki),
@@ -1333,7 +1262,7 @@ fn handle_keycodes_file(
                 true
             }
             Statement::Var(def) => handle_key_name_var(ki, def),
-            Statement::Unknown => !ki.keymap.strict,
+            Statement::Unknown => !ki.strict,
             _ => false,
         };
         if !valid {
@@ -1375,15 +1304,12 @@ fn finish_keycodes(keymap: &mut XkbKeymap, info: &mut KeyNamesInfo) {
     }
     keymap.key_names = std::mem::take(&mut info.names);
 }
-pub(crate) fn compile_keycodes(
-    file: Option<&mut XkbFile>,
-    keymap_info: &mut XkbKeymapInfo<'_>,
-) -> bool {
+pub(crate) fn compile_keycodes(file: Option<&mut XkbFile>, keymap_info: &mut XkbKeymap) -> bool {
     let mut info = KeyNamesInfo::default();
     if file.is_some_and(|file| !handle_keycodes_file(&mut info, file, keymap_info)) {
         return false;
     }
-    finish_keycodes(keymap_info.keymap, &mut info);
+    finish_keycodes(keymap_info, &mut info);
     true
 }
 #[rustfmt::skip]
@@ -1409,7 +1335,8 @@ fn expr_resolve_lhs(expr: &ExprKind) -> Option<Lhs<'_>> {
 }
 pub(crate) fn expr_resolve_boolean(ctx: &XkbContext, expr: &ExprKind) -> Option<bool> {
     match expr {
-        ExprKind::Boolean(value) => Some(*value),
+        ExprKind::Integer(0) => Some(false),
+        ExprKind::Integer(1) => Some(true),
         ExprKind::Ident(atom) => named_bool(ctx.atom_text(*atom)),
         ExprKind::Unary {
             child,
@@ -1473,24 +1400,23 @@ fn named_number(name: &str, prefix: &str, max: u32) -> Option<i64> {
     (1..=max).contains(&value).then_some(value as i64)
 }
 fn expr_resolve_group(
-    keymap_info: &XkbKeymapInfo<'_>,
+    keymap_info: &XkbKeymap,
     expr: &ExprKind,
     absolute: bool,
 ) -> Option<(u32, bool)> {
     if let ExprKind::Ident(atom) = expr {
         if keymap_info
-            .keymap
             .ctx
             .atom_text(*atom)
             .eq_ignore_ascii_case("last")
-            && keymap_info.keymap.num_groups == 0
+            && keymap_info.num_groups == 0
         {
             return Some((0, true));
         }
     }
     let max = XKB_MAX_GROUPS;
-    let num_groups = keymap_info.keymap.num_groups;
-    let ctx = &keymap_info.keymap.ctx;
+    let num_groups = keymap_info.num_groups;
+    let ctx = &keymap_info.ctx;
     let value = eval_integer(expr, &|atom| {
         let name = ctx.atom_text(atom);
         named_number(name, "Group", max).or_else(|| {
