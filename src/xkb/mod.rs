@@ -5,8 +5,8 @@ pub(crate) mod compose;
 pub(crate) mod keymap;
 pub(crate) mod keynames;
 pub(crate) mod keysym;
+mod parse_xkb;
 pub(crate) mod parser;
-pub(crate) mod parser_tables;
 pub(crate) mod serialize;
 pub(crate) mod symbols;
 
