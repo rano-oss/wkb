@@ -1,6 +1,6 @@
 use crate::{KeyBitSet, KeyDirection};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum GroupChange {
     Absolute(u8),
     Relative(i8),
@@ -16,7 +16,7 @@ impl GroupChange {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum GroupKind {
     Press(i8),
     Tap(GroupChange),
@@ -28,7 +28,7 @@ pub enum GroupKind {
     LatchToLockOnRelease(GroupChange),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Group {
     pub keys: Vec<u32>,
     pub action: GroupKind,
@@ -61,11 +61,9 @@ pub struct Groups {
 impl Groups {
     pub fn new(entries: Vec<Group>) -> Self {
         let mut group_keys = KeyBitSet::default();
-
         for &key in entries.iter().flat_map(|group| &group.keys) {
             group_keys.insert(key);
         }
-
         Self {
             entries,
             group_keys,
@@ -94,6 +92,23 @@ impl Groups {
         self.active.clear();
         self.pressed = KeyBitSet::default();
         true
+    }
+
+    pub(crate) fn set_key(&mut self, key: u32, action: GroupKind) {
+        self.group_keys.insert(key);
+
+        if let Some(group) = self
+            .entries
+            .iter_mut()
+            .find(|group| group.keys.as_slice() == [key])
+        {
+            group.action = action;
+        } else {
+            self.entries.push(Group {
+                keys: vec![key],
+                action,
+            });
+        }
     }
 
     pub fn update(

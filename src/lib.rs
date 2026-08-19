@@ -450,11 +450,7 @@ impl WKB {
     /// [`LockFlags::TAP`] changes layout only when the key is released without
     /// another key being pressed while it was held.
     pub fn set_group_key(&mut self, evdev_code: u32, kind: GroupKind) -> bool {
-        let group = Group {
-            keys: vec![evdev_code],
-            action: kind,
-        };
-        self.groups.entries.push(group);
+        self.groups.set_key(evdev_code, kind);
         true
     }
 

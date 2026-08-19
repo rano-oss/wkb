@@ -167,11 +167,17 @@ fn group_key_combinations(
 ) -> Vec<Vec<u32>> {
     const EVDEV_OFFSET: u32 = 8;
 
+    let owner_mods = keymap
+        .get_key(owner_keycode)
+        .map_or(0, |key| key.modmap | key.vmodmap);
+
+    let modifier_mask = modifier_mask & !owner_mods;
+
     if modifier_mask == 0 {
         return vec![Vec::new()];
     }
 
-    let mut candidates_per_modifier = Vec::<Vec<u32>>::new();
+    let mut combinations = vec![Vec::new()];
 
     for bit_index in 0..u32::BITS {
         let bit = 1u32 << bit_index;
@@ -180,51 +186,45 @@ fn group_key_combinations(
             continue;
         }
 
-        let mut candidates = keymap
+        let candidates = keymap
             .keys
             .iter()
             .filter(|key| {
                 key.keycode >= EVDEV_OFFSET
                     && key.keycode != owner_keycode
-                    && ((key.modmap | key.vmodmap) & bit) != 0
+                    && (key.modmap | key.vmodmap) & bit != 0
             })
             .map(|key| key.keycode - EVDEV_OFFSET)
             .collect::<Vec<_>>();
-
-        candidates.sort_unstable();
-        candidates.dedup();
 
         if candidates.is_empty() {
             return Vec::new();
         }
 
-        candidates_per_modifier.push(candidates);
-    }
-
-    let mut combinations = vec![Vec::<u32>::new()];
-
-    for candidates in candidates_per_modifier {
-        let mut expanded = Vec::new();
+        let mut expanded = Vec::with_capacity(combinations.len() * candidates.len());
 
         for combination in &combinations {
             for &candidate in &candidates {
                 let mut next = combination.clone();
 
-                // One physical key may satisfy more than one modifier bit.
                 if !next.contains(&candidate) {
                     next.push(candidate);
-                    next.sort_unstable();
                 }
 
                 expanded.push(next);
             }
         }
 
-        expanded.sort();
-        expanded.dedup();
         combinations = expanded;
     }
 
+    for combination in &mut combinations {
+        combination.sort_unstable();
+        combination.dedup();
+    }
+
+    combinations.sort_unstable();
+    combinations.dedup();
     combinations
 }
 
@@ -283,7 +283,6 @@ fn build_groups_from_keymap(keymap: &keymap::XkbKeymap, compiled_types: &[Compil
                 continue;
             };
 
-            // Explicit XKB type entries.
             for selector in &key_type.selectors {
                 let Some(level) = key_group.levels.get(selector.level as usize) else {
                     continue;
@@ -293,18 +292,20 @@ fn build_groups_from_keymap(keymap: &keymap::XkbKeymap, compiled_types: &[Compil
                     continue;
                 };
 
-                for mut required in
-                    group_key_combinations(keymap, key.keycode, selector.modifier_mask)
+                for mut keys in group_key_combinations(keymap, key.keycode, selector.modifier_mask)
                 {
-                    required.push(evdev_code);
-                    entries.push(Group {
-                        keys: required,
-                        action,
-                    });
+                    keys.push(evdev_code);
+                    keys.sort_unstable();
+                    keys.dedup();
+
+                    let group = Group { keys, action };
+
+                    if !entries.contains(&group) {
+                        entries.push(group);
+                    }
                 }
             }
 
-            // The type's default level is selected when no entry matches.
             let Some(level) = key_group.levels.get(key_type.default_level as usize) else {
                 continue;
             };
@@ -313,13 +314,17 @@ fn build_groups_from_keymap(keymap: &keymap::XkbKeymap, compiled_types: &[Compil
                 continue;
             };
 
-            entries.push(Group {
+            let group = Group {
                 keys: vec![evdev_code],
                 action,
-            });
+            };
+
+            if !entries.contains(&group) {
+                entries.push(group);
+            }
         }
     }
-    entries.dedup();
+
     Groups::new(entries)
 }
 
