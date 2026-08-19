@@ -1,5 +1,5 @@
 use std::collections::btree_map::Entry;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 pub(crate) use super::keymap::xkb_mod_name_to_index;
 use super::keymap::{
@@ -1313,6 +1313,7 @@ pub(crate) struct CompatInfo {
     pub(crate) include_depth: u32,
     pub(crate) default_interp: SymInterpInfo,
     pub(crate) interps: Vec<SymInterpInfo>,
+    interp_index: HashMap<(u32, u32, u32), usize>,
     pub(crate) default_led: LedInfo,
     pub(crate) leds: Vec<LedInfo>,
     pub(crate) default_actions: ActionsInfo,
@@ -1351,7 +1352,7 @@ fn compat_info(include_depth: u32, mods: &XkbModSet) -> CompatInfo {
 fn merge_interp(old: &mut SymInterpInfo, new: &mut SymInterpInfo) {
     let clobber: bool = new.merge != MergeMode::Augment;
     if new.merge == MergeMode::Replace {
-        *old = new.clone();
+        *old = std::mem::take(new);
         return;
     }
     if new.explicit_virtual_mod && (!old.explicit_virtual_mod || clobber) {
@@ -1373,15 +1374,12 @@ fn merge_interp(old: &mut SymInterpInfo, new: &mut SymInterpInfo) {
 }
 fn add_interp(info: &mut CompatInfo, new: &mut SymInterpInfo) {
     let key = (new.interp.sym, new.interp.mods, new.interp.match_0);
-    if let Some(old) = info
-        .interps
-        .iter_mut()
-        .find(|i| (i.interp.sym, i.interp.mods, i.interp.match_0) == key)
-    {
-        merge_interp(old, new);
+    if let Some(&index) = info.interp_index.get(&key) {
+        merge_interp(&mut info.interps[index], new);
         return;
     }
-    info.interps.push(new.clone());
+    info.interp_index.insert(key, info.interps.len());
+    info.interps.push(std::mem::take(new));
 }
 fn resolve_state_and_predicate(
     expr: Option<&ExprKind>,
@@ -1482,11 +1480,13 @@ fn merge_included_compat_maps(into: &mut CompatInfo, from: &mut CompatInfo, merg
     merge_mod_sets(&mut into.mods, &from.mods, merge);
     if into.interps.is_empty() {
         into.interps = std::mem::take(&mut from.interps);
+        into.interp_index = std::mem::take(&mut from.interp_index);
     } else {
-        for interp in from.interps.iter_mut() {
+        for mut interp in from.interps.drain(..) {
             interp.merge = merge;
-            add_interp(into, interp);
+            add_interp(into, &mut interp);
         }
+        from.interp_index.clear();
     }
     if into.leds.is_empty() {
         into.leds = std::mem::take(&mut from.leds);
@@ -1863,26 +1863,23 @@ fn copy_led_map_defs_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo
     }
 }
 fn copy_compat_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) {
-    let mut interps = Vec::with_capacity(info.interps.len());
-    for need_symbol in [true, false] {
-        for pred in [
-            MATCH_EXACTLY,
-            MATCH_ALL,
-            MATCH_NONE,
-            MATCH_ANY,
-            MATCH_ANY_OR_NONE,
-        ] {
-            interps.extend(
-                info.interps
-                    .iter()
-                    .filter(|si| {
-                        si.interp.match_0 == pred
-                            && (si.interp.sym != XKB_KEY_NO_SYMBOL) == need_symbol
-                    })
-                    .map(|si| si.interp.clone()),
-            );
-        }
-    }
+    let predicate_rank = |predicate| match predicate {
+        MATCH_EXACTLY => 0,
+        MATCH_ALL => 1,
+        MATCH_NONE => 2,
+        MATCH_ANY => 3,
+        MATCH_ANY_OR_NONE => 4,
+        _ => 5,
+    };
+    info.interps
+        .retain(|si| predicate_rank(si.interp.match_0) < 5);
+    info.interps.sort_by_key(|si| {
+        (
+            u8::from(si.interp.sym == XKB_KEY_NO_SYMBOL),
+            predicate_rank(si.interp.match_0),
+        )
+    });
+    let interps = info.interps.drain(..).map(|si| si.interp).collect();
     ki.keymap.mods = info.mods;
     if !interps.is_empty() {
         ki.sym_interprets = interps;
@@ -1906,6 +1903,7 @@ pub(crate) struct KeyTypesInfo {
     pub(crate) error_count: i32,
     pub(crate) include_depth: u32,
     pub(crate) types: Vec<KeyTypeInfo>,
+    type_index: HashMap<u32, usize>,
     pub(crate) mods: XkbModSet,
 }
 
@@ -1924,12 +1922,14 @@ fn key_types_info(include_depth: u32, mods: &XkbModSet) -> KeyTypesInfo {
     info
 }
 fn add_key_type(info: &mut KeyTypesInfo, new: &mut KeyTypeInfo) {
-    if let Some(existing) = info.types.iter_mut().find(|t| t.def.name == new.def.name) {
+    if let Some(&index) = info.type_index.get(&new.def.name) {
+        let existing = &mut info.types[index];
         if new.merge != MergeMode::Augment {
             std::mem::swap(existing, new);
         }
         return;
     }
+    info.type_index.insert(new.def.name, info.types.len());
     info.types.push(std::mem::take(new));
 }
 fn merge_included_key_types(into: &mut KeyTypesInfo, from: &mut KeyTypesInfo, merge: MergeMode) {
@@ -1940,11 +1940,13 @@ fn merge_included_key_types(into: &mut KeyTypesInfo, from: &mut KeyTypesInfo, me
     merge_mod_sets(&mut into.mods, &from.mods, merge);
     if into.types.is_empty() {
         into.types = std::mem::take(&mut from.types);
+        into.type_index = std::mem::take(&mut from.type_index);
     } else {
         for mut type_0 in from.types.drain(..) {
             type_0.merge = merge;
             add_key_type(into, &mut type_0);
         }
+        from.type_index.clear();
     }
 }
 fn handle_include_key_types(
