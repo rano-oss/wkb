@@ -308,15 +308,13 @@ impl WKB {
         }
 
         // modifier_map entries
-        out.push_str("\tmodifier_map Shift { <LFSH> };\n");
-        out.push_str("\tmodifier_map Shift { <RTSH> };\n");
-        out.push_str("\tmodifier_map Lock { <CAPS> };\n");
-        out.push_str("\tmodifier_map Control { <LCTL> };\n");
-        out.push_str("\tmodifier_map Control { <RCTL> };\n");
-        out.push_str("\tmodifier_map Mod1 { <LALT> };\n");
-        out.push_str("\tmodifier_map Mod2 { <NMLK> };\n");
-        out.push_str("\tmodifier_map Mod4 { <LWIN> };\n");
-        out.push_str("\tmodifier_map Mod5 { <LVL3> };\n");
+        out.push_str("\tmodifier_map Shift { <I050>, <I062> };\n");
+        out.push_str("\tmodifier_map Lock { <I066> };\n");
+        out.push_str("\tmodifier_map Control { <I037>, <I105> };\n");
+        out.push_str("\tmodifier_map Mod1 { <I064> };\n");
+        out.push_str("\tmodifier_map Mod2 { <I077> };\n");
+        out.push_str("\tmodifier_map Mod4 { <I133> };\n");
+        out.push_str("\tmodifier_map Mod5 { <I092> };\n");
         out.push_str("};\n\n");
     }
 }

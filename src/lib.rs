@@ -136,11 +136,6 @@ pub struct WKB {
     pub(crate) groups: Groups,
 }
 
-// WKB is Send + Sync: all fields are owned, no Rc/RefCell.
-// The Rc<XkbKeymap> from xkb-core is only used during construction and not stored.
-unsafe impl Send for WKB {}
-unsafe impl Sync for WKB {}
-
 #[cfg(feature = "xkb")]
 impl WKB {
     /// Create WKB instance from RMLVO names, matching xkbcommon's `xkb_keymap_new_from_names`.

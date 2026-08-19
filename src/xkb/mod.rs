@@ -15,10 +15,7 @@ use crate::xkb::keymap::{
     preprocess_unicode_keysyms, xkb_context_new, xkb_keymap_new_from_names,
     xkb_keymap_new_from_string,
 };
-use crate::xkb::parser::{
-    ActionFlags, XkbAction, XkbGroupAction, XKB_CONTEXT_NO_FLAGS, XKB_KEYMAP_COMPILE_NO_FLAGS,
-    XKB_KEYMAP_FORMAT_TEXT_V1,
-};
+use crate::xkb::parser::{ActionFlags, XkbAction, XkbGroupAction};
 #[cfg(not(feature = "compose"))]
 use crate::Composer;
 use crate::WKB;
@@ -28,7 +25,6 @@ use compose::{layout_composer, load_compose_entries};
 pub use compose::{load_compose_from_path, load_compose_from_path_uncached};
 pub use keynames::keysym_to_named_key;
 use std::collections::BTreeMap;
-use std::ffi::CString;
 
 // ── Error type ──
 
@@ -689,7 +685,7 @@ pub(crate) fn new_from_names(
 ) -> Result<WKB, XkbError> {
     use parser::XkbRuleNames;
 
-    let ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+    let ctx = xkb_context_new();
 
     let rmlvo = XkbRuleNames {
         rules: rules.into(),
@@ -699,8 +695,7 @@ pub(crate) fn new_from_names(
         options: options.unwrap_or("").into(),
     };
 
-    let keymap = xkb_keymap_new_from_names(ctx, &rmlvo, XKB_KEYMAP_COMPILE_NO_FLAGS)
-        .ok_or(XkbError::KeymapCompilation)?;
+    let keymap = xkb_keymap_new_from_names(ctx, &rmlvo).ok_or(XkbError::KeymapCompilation)?;
 
     let result = build_wkb_from_keymap(&keymap, Some(layout));
     Ok(result)
@@ -708,20 +703,14 @@ pub(crate) fn new_from_names(
 
 /// Create a new WKB instance from a keymap string.
 pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
-    let ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+    let ctx = xkb_context_new();
 
     let processed = preprocess_unicode_keysyms(string);
-    let keymap_cstr = CString::new(processed.as_ref())
-        .ok()
-        .ok_or(XkbError::KeymapParsing)?;
-    let keymap = xkb_keymap_new_from_string(
-        ctx,
-        &keymap_cstr,
-        XKB_KEYMAP_FORMAT_TEXT_V1,
-        XKB_KEYMAP_COMPILE_NO_FLAGS,
-    )
-    .ok_or(XkbError::KeymapCompilation)?;
-    let keymap = keymap;
+    if processed.as_bytes().contains(&0) {
+        return Err(XkbError::KeymapParsing);
+    }
+    let keymap =
+        xkb_keymap_new_from_string(ctx, processed.as_bytes()).ok_or(XkbError::KeymapCompilation)?;
 
     Ok(build_wkb_from_keymap(&keymap, None))
 }

@@ -167,7 +167,6 @@ macro_rules! yy_merge_decl {
     };
 }
 
-/// Execute a reduction rule. Returns true on success, false on error (YYERROR).
 fn execute_reduction<'a>(
     yyn: i32,
     yyvs: &mut [YYValue<'a>],
@@ -177,19 +176,15 @@ fn execute_reduction<'a>(
 ) -> bool {
     match yyn {
         2 | 3 => {
-            // XkbFile: XkbCompositeMap
             param.rtrn = yyvs[sp].take_file();
             param.more_maps = param.rtrn.is_some();
-            // yyval is dead here since we continue the loop; leave as None
         }
         4 => {
-            // XkbFile: END_OF_FILE
             param.rtrn = None;
             *yyval = YYValue::None;
             param.more_maps = false;
         }
         5 => {
-            // XkbCompositeMap: OptFlags XkbCompositeType OptMapName OBRACE XkbMapConfigList CBRACE SEMI
             let file_type = yyvs[sp - 5].as_file_type();
             let name = yyvs[sp - 4].take_str();
             let files = yyvs[sp - 2].take_file_list();
@@ -206,7 +201,6 @@ fn execute_reduction<'a>(
             *yyval = YYValue::FileType(FileType::Keymap);
         }
         9 => {
-            // XkbMapConfigList: XkbMapConfigList XkbMapConfig
             let file = yyvs[sp].take_file();
             let mut list = yyvs[sp - 1].take_file_list();
             if let Some(f) = file {
@@ -215,11 +209,9 @@ fn execute_reduction<'a>(
             *yyval = YYValue::FileList(list);
         }
         10 => {
-            // XkbMapConfigList: empty
             *yyval = YYValue::FileList(Vec::new());
         }
         11 => {
-            // XkbMapConfig: OptFlags FileType OptMapName OBRACE DeclList CBRACE SEMI
             let file_type = yyvs[sp - 5].as_file_type();
             let name = yyvs[sp - 4].take_str();
             let stmts = yyvs[sp - 2].take_stmt_list();
@@ -253,11 +245,6 @@ fn execute_reduction<'a>(
             *yyval = YYValue::MapFlags(f);
         }
         21..=28 => {
-            // Rule 22 is the `default` keyword. The other map keywords
-            // (partial, hidden, alphanumeric_keys, ...) are declaration
-            // metadata that the compiler ignores; they only need to keep
-            // the flags word nonzero so include resolution treats the map
-            // as explicitly flagged.
             *yyval = YYValue::MapFlags(if yyn == 22 {
                 MAP_IS_DEFAULT
             } else {
@@ -265,7 +252,6 @@ fn execute_reduction<'a>(
             });
         }
         29 => {
-            // DeclList: DeclList Decl
             let stmt = std::mem::replace(&mut yyvs[sp], YYValue::None);
             let mut list = yyvs[sp - 1].take_stmt_list();
             if let YYValue::Stmt(s) = stmt {
@@ -274,7 +260,6 @@ fn execute_reduction<'a>(
             *yyval = YYValue::StmtList(list);
         }
         30 => {
-            // DeclList: DeclList OptMergeMode VModDecl
             let merge = yyvs[sp - 1].as_merge();
             let mut vmods = yyvs[sp].take_vmod_list();
             for v in &mut vmods {
@@ -287,11 +272,9 @@ fn execute_reduction<'a>(
             *yyval = YYValue::StmtList(list);
         }
         31 => {
-            // DeclList: empty
             *yyval = YYValue::StmtList(Vec::new());
         }
         32 => {
-            // Decl: OptMergeMode VarDecl
             let merge = yyvs[sp - 1].as_merge();
             if let Some(mut var) = yyvs[sp].take_var() {
                 var.merge = merge;
@@ -302,28 +285,22 @@ fn execute_reduction<'a>(
         }
         33 => *yyval = YYValue::None,
         34 => {
-            // Decl: OptMergeMode KeyNameDecl
             yy_merge_decl!(yyval, yyvs, sp, Keycode, Keycode);
         }
         35 => {
-            // Decl: OptMergeMode KeyAliasDecl
             yy_merge_decl!(yyval, yyvs, sp, KeyAlias, KeyAlias);
         }
         36 => {
-            // Decl: OptMergeMode KeyTypeDecl
             yy_merge_decl!(yyval, yyvs, sp, KeyType, KeyType);
         }
         37 => {
-            // Decl: OptMergeMode SymbolsDecl
             yy_merge_decl!(yyval, yyvs, sp, Symbols, Symbols);
         }
         38 => {
-            // Decl: OptMergeMode ModMapDecl
             yy_merge_decl!(yyval, yyvs, sp, ModMask, ModMap);
         }
         40..=44 | 93..=123 | 181 => *yyval = YYValue::None,
         39 | 45 | 46 => {
-            // Decl: OptMergeMode UnknownDecl
             if let YYValue::Unknown = std::mem::replace(&mut yyvs[sp], YYValue::None) {
                 *yyval = YYValue::Stmt(Statement::Unknown);
             } else {
@@ -331,7 +308,6 @@ fn execute_reduction<'a>(
             }
         }
         47 => {
-            // Decl: MergeMode STRING
             let merge = yyvs[sp - 1].as_merge();
             let s = yyvs[sp].take_str();
             if let Some(inc) = include_create(&s, merge) {
@@ -355,19 +331,16 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Var(bool_var_create(atom, false));
         }
         51 => {
-            // KeyNameDecl: KEYNAME EQUALS KeyCode SEMI
             let atom = yyvs[sp - 3].as_atom();
             let num = yyvs[sp - 1].as_num();
             *yyval = YYValue::Keycode(keycode_create(atom, num));
         }
         52 => {
-            // KeyAliasDecl: ALIAS KEYNAME EQUALS KEYNAME SEMI
             let alias = yyvs[sp - 3].as_atom();
             let real = yyvs[sp - 1].as_atom();
             *yyval = YYValue::KeyAlias(key_alias_create(alias, real));
         }
         53 => {
-            // VModDecl: VIRTUAL_MODS VModDefList SEMI
             let list = yyvs[sp - 1].take_vmod_list();
             *yyval = YYValue::VModList(list);
         }
@@ -384,18 +357,15 @@ fn execute_reduction<'a>(
             *yyval = YYValue::VModList(list);
         }
         56 => {
-            // VModDef: Ident
             let atom = yyvs[sp].as_atom();
             *yyval = YYValue::VMod(vmod_create(atom, None));
         }
         57 => {
-            // VModDef: Ident EQUALS Expr
             let atom = yyvs[sp - 2].as_atom();
             let expr = yyvs[sp].take_expr();
             *yyval = YYValue::VMod(vmod_create(atom, expr));
         }
         58 => {
-            // InterpretDecl: INTERPRET InterpretMatch OBRACE VarDeclList CBRACE SEMI
             if let YYValue::Interp(mut interp) = std::mem::replace(&mut yyvs[sp - 4], YYValue::None)
             {
                 let vardefs = yyvs[sp - 2].take_var_list();
@@ -406,9 +376,7 @@ fn execute_reduction<'a>(
             }
         }
         59 | 60 => {
-            *yyval = YYValue::Interp(InterpDef {
-                def: Vec::new(),
-            });
+            *yyval = YYValue::Interp(InterpDef { def: Vec::new() });
         }
         61 | 67 | 68 => {
             let var = yyvs[sp].take_var();
@@ -423,41 +391,33 @@ fn execute_reduction<'a>(
             *yyval = YYValue::VarList(list);
         }
         62 | 66 => {
-            // VarDeclList: empty
             *yyval = YYValue::VarList(Vec::new());
         }
         63 => {
-            // KeyTypeDecl: TYPE String OBRACE VarDeclList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let vardefs = yyvs[sp - 2].take_var_list();
             *yyval = YYValue::KeyType(key_type_create(atom, vardefs));
         }
         64 => {
-            // SymbolsDecl: KEY KEYNAME OBRACE OptSymbolsBody CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let vardefs = yyvs[sp - 2].take_var_list();
             *yyval = YYValue::Symbols(symbols_create(atom, vardefs));
         }
         65 => {
-            // OptSymbolsBody: SymbolsBody
             let list = yyvs[sp].take_var_list();
             *yyval = YYValue::VarList(list);
         }
         73 => {
-            // SymbolsVarDecl: Expr
             let val = yyvs[sp].take_expr();
             *yyval = YYValue::Var(var_create(None, val));
         }
         74 | 76 | 172 => {
-            // MultiKeySymOrActionList: OBRACKET MultiKeySymList CBRACKET (yylen=3)
             let list = yyvs[sp - 1].take_expr_list();
             *yyval = YYValue::Expr(ExprKind::ActionList { actions: list });
         }
         75 => {
-            // MultiKeySymOrActionList: NoSymbolOrActionList OBRACKET MultiKeySymList CBRACKET COMMA (yylen=5)
             let mut list = yyvs[sp - 1].take_expr_list(); // sp-1 = MultiKeySymList = offset(-1)
             let count = yyvs[sp - 3].as_no_sym_or_action_list(); // sp-3 = NoSymbolOrActionList = offset(-3)
-                                                                 // Prepend 'count' NoSymbol keysym lists
             let mut prepended: Vec<ExprKind> = Vec::new();
             for _ in 0..count {
                 prepended.push(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL));
@@ -466,7 +426,6 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Expr(ExprKind::ActionList { actions: prepended });
         }
         77 => {
-            // MultiKeySymOrActionList: NoSymbolOrActionList OBRACKET MultiActionList CBRACKET COMMA (yylen=5)
             let mut list = yyvs[sp - 1].take_expr_list();
             let count = yyvs[sp - 3].as_no_sym_or_action_list();
             let mut prepended: Vec<ExprKind> = Vec::new();
@@ -479,48 +438,37 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Expr(ExprKind::ActionList { actions: prepended });
         }
         78 => {
-            // NoSymbolOrActionList: NoSymbol (produces EmptyList expr)
             *yyval = YYValue::Expr(ExprKind::EmptyList);
         }
         79 => {
-            // NoSymbolOrActionList: NoSymbolOrActionList COMMA NoSymbol COMMA (yylen=4)
             let prev = yyvs[sp - 3].as_no_sym_or_action_list();
             *yyval = YYValue::NoSymbolOrActionList(prev + 1);
         }
         80 => {
-            // NoSymbolOrActionList: ... (yylen=2)
             *yyval = YYValue::NoSymbolOrActionList(1);
         }
         81 => {
-            // NoSymbolOrActionList: empty
             *yyval = YYValue::NoSymbolOrActionList(0);
         }
         82 => {
-            // GroupCompatDecl: GROUP Integer EQUALS Expr SEMI
-            // Accepted for compatibility but ignored (no compat group remapping).
             *yyval = YYValue::Unknown;
         }
         83 => {
-            // ModMapDecl: MODIFIER_MAP Ident OBRACE KeyOrKeySymList CBRACE SEMI
             let atom = yyvs[sp - 4].as_atom();
             let list = yyvs[sp - 2].take_expr_list();
             *yyval = YYValue::ModMask(mod_map_create(atom, list));
         }
         84 | 148 | 170 | 187 => {
-            // KeyOrKeySymList: KeyOrKeySymList COMMA KeyOrKeySym
             yy_list_push(yyval, yyvs, sp, 2);
         }
         85 | 149 | 169 | 171 | 189 => {
-            // KeyOrKeySymList: KeyOrKeySym
             yy_list_single(yyval, yyvs, sp);
         }
         86 | 185 => {
-            // KeyOrKeySym: KEYNAME
             let atom = yyvs[sp].as_atom();
             *yyval = YYValue::Expr(ExprKind::KeyName(atom));
         }
         87 => {
-            // KeyOrKeySym: KeySym
             let keysym = yyvs[sp].as_keysym();
             *yyval = YYValue::Expr(ExprKind::KeySym(keysym));
         }
@@ -528,25 +476,19 @@ fn execute_reduction<'a>(
             *yyval = YYValue::LedMap(());
         }
         89 | 90 => {
-            // LedNameDecl: INDICATOR Integer EQUALS Expr SEMI
             *yyval = YYValue::LedName(());
         }
         91 => {
-            // UnknownDecl: Ident Lhs EQUALS Expr SEMI
-            // Drop expr values (geometry not supported)
             let _ = yyvs[sp - 3].take_expr();
             let _ = yyvs[sp - 1].take_expr();
             *yyval = YYValue::Unknown;
         }
         92 => {
-            // UnknownCompoundStatementDecl: Ident Lhs OBRACE VarDeclList CBRACE SEMI
             let _ = yyvs[sp - 4].take_expr();
             let _ = yyvs[sp - 2].take_var_list();
             *yyval = YYValue::Unknown;
         }
-        // Geometry is parsed for compatibility but has no semantic representation.
         124..=127 | 209 => *yyval = YYValue::Num(0),
-        // FieldSpec / Element rules 128-140
         128 | 129 => {
             *yyval = YYValue::Atom(yyvs[sp].as_atom());
         }
@@ -567,7 +509,6 @@ fn execute_reduction<'a>(
                 b"text",
             ][yyn as usize - 130],
         ),
-        // MergeMode rules 141-147
         141 => {
             *yyval = YYValue::Merge(yyvs[sp].as_merge());
         }
@@ -579,12 +520,9 @@ fn execute_reduction<'a>(
                 _ => MergeMode::Default,
             })
         }
-        // ExprList rules 148-150
         150 => {
-            // ExprList: empty
             *yyval = YYValue::ExprList(Vec::new());
         }
-        // Expr rules 151-165
         151..=155 => yy_bin_expr(
             yyval,
             yyvs,
@@ -598,7 +536,6 @@ fn execute_reduction<'a>(
             ][yyn as usize - 151],
         ),
         156 | 161 | 163 | 164 | 173 | 180 | 196 => {
-            // Expr: Term
             *yyval = std::mem::replace(&mut yyvs[sp], YYValue::None);
         }
         157..=160 => yy_unary_expr(
@@ -613,16 +550,13 @@ fn execute_reduction<'a>(
             ][yyn as usize - 157],
         ),
         162 | 175 => {
-            // Term: Action OPAREN ExprList CPAREN
             let name = yyvs[sp - 3].as_atom();
             let list = yyvs[sp - 1].take_expr_list();
             *yyval = YYValue::Expr(ExprKind::Action { name, args: list });
         }
         165 | 194 => {
-            // Term: OPAREN Expr CPAREN
             *yyval = std::mem::replace(&mut yyvs[sp - 1], YYValue::None);
         }
-        // MultiActionList rules 166-167
         166 | 167 => {
             let item = if yyn == 166 {
                 Some(ExprKind::ActionList {
@@ -638,7 +572,6 @@ fn execute_reduction<'a>(
             *yyval = YYValue::ExprList(list);
         }
         168 => {
-            // MultiActionList: ActionList (initial single element)
             let actions_expr_list = yyvs[sp].take_expr_list();
             let action_list_expr = ExprKind::ActionList {
                 actions: actions_expr_list,
@@ -646,18 +579,15 @@ fn execute_reduction<'a>(
             *yyval = YYValue::ExprList(vec![action_list_expr]);
         }
         174 => {
-            // ActionList: empty (yylen=0 means nothing on stack)
             *yyval = YYValue::Expr(ExprKind::ActionList {
                 actions: Vec::new(),
             });
         }
         176 => {
-            // Lhs: Ident
             let atom = yyvs[sp].as_atom();
             *yyval = YYValue::Expr(ExprKind::Ident(atom));
         }
         177 => {
-            // Lhs: Ident DOT FieldSpec
             let element = yyvs[sp - 2].as_atom();
             let field = yyvs[sp].as_atom();
             *yyval = YYValue::Expr(ExprKind::FieldRef {
@@ -667,7 +597,6 @@ fn execute_reduction<'a>(
             });
         }
         178 => {
-            // Lhs: Ident OBRACKET Expr CBRACKET
             let field = yyvs[sp - 3].as_atom();
             let entry = yyvs[sp - 1].take_expr();
             *yyval = YYValue::Expr(ExprKind::FieldRef {
@@ -677,7 +606,6 @@ fn execute_reduction<'a>(
             });
         }
         179 => {
-            // Lhs: Ident DOT Ident OBRACKET Expr CBRACKET
             let element = yyvs[sp - 5].as_atom();
             let field = yyvs[sp - 3].as_atom();
             let entry = yyvs[sp - 1].take_expr();
@@ -687,7 +615,6 @@ fn execute_reduction<'a>(
                 index: entry.map(Box::new),
             });
         }
-        // Terminal rules 182-185
         182 => {
             let atom = yyvs[sp].as_atom();
             *yyval = YYValue::Expr(ExprKind::String(atom));
@@ -700,7 +627,6 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Expr(ExprKind::Float);
         }
         186 => {
-            // MultiKeySymList: MultiKeySymList COMMA KeySymList
             let keysym = yyvs[sp].as_keysym();
             let expr = expr_create_key_sym_list(keysym);
             let mut list = yyvs[sp - 2].take_expr_list();
@@ -708,13 +634,11 @@ fn execute_reduction<'a>(
             *yyval = YYValue::ExprList(list);
         }
         188 => {
-            // MultiKeySymList: KeySymList (keysym)
             let keysym = yyvs[sp].as_keysym();
             let expr = expr_create_key_sym_list(keysym);
             *yyval = YYValue::ExprList(vec![expr]);
         }
         190 => {
-            // NonEmptyKeySyms: NonEmptyKeySyms COMMA KeySym
             let mut expr = yyvs[sp - 2].take_expr().unwrap();
             let keysym = yyvs[sp].as_keysym();
             if keysym != XKB_KEY_NO_SYMBOL {
@@ -725,7 +649,6 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Expr(expr);
         }
         192 => {
-            // KeySyms: KeySym
             let keysym = yyvs[sp].as_keysym();
             *yyval = YYValue::Expr(expr_create_key_sym_list(keysym));
         }
@@ -742,16 +665,12 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Expr(expr);
         }
         197 => {
-            // KeySymList: empty → NoSymbol
             *yyval = YYValue::Expr(expr_create_key_sym_list(XKB_KEY_NO_SYMBOL));
         }
-        // KeySym rules 198-203
         198 => {
-            // KeySymLit: KeySym (passthrough)
             *yyval = YYValue::Keysym(yyvs[sp].as_keysym());
         }
         199 => {
-            // KeySym: STRING → parse string as keysym
             let s = yyvs[sp].take_str();
             match keysym_parse_string(&s) {
                 Some(keysym) => *yyval = YYValue::Keysym(keysym),
@@ -763,11 +682,9 @@ fn execute_reduction<'a>(
                 YYValue::Keysym(resolve_keysym(yyvs[sp].as_sval()).unwrap_or(XKB_KEY_NO_SYMBOL))
         }
         201 => {
-            // KeySym: SECTION
             *yyval = YYValue::Keysym(XKB_KEY_SECTION as u32);
         }
         202 => {
-            // KeySym: DECIMAL_DIGIT
             let num = yyvs[sp].as_num();
             *yyval = YYValue::Keysym((XKB_KEY_0 as u32).wrapping_add(num as u32));
         }
@@ -781,36 +698,28 @@ fn execute_reduction<'a>(
                 },
             );
         }
-        // SignedNumber / Number rules 204-208
         204 => {
             *yyval = YYValue::Num(-yyvs[sp].as_num());
         }
         205..=208 | 210..=213 => {
             *yyval = YYValue::Num(yyvs[sp].as_num());
         }
-        // Ident 214
         214 => {
             let sval = yyvs[sp].as_sval();
             *yyval = YYValue::Atom(param.ctx.atom_intern(sval.data));
         }
         215 => {
-            // Ident: DEFAULT
             *yyval = YYValue::Atom(param.ctx.atom_intern(b"default"));
         }
-        // String 216
         216 => {
-            // String: STRING → intern as atom
             let s = yyvs[sp].take_str();
             *yyval = YYValue::Atom(param.ctx.atom_intern(s.as_bytes()));
         }
-        // OptMapName / MapName 217-219
         217 | 219 => {
-            // MapName: STRING
             let s = yyvs[sp].take_str();
             *yyval = YYValue::Str(s);
         }
         218 => {
-            // OptMapName: empty
             *yyval = YYValue::Str(String::new());
         }
 
@@ -818,8 +727,6 @@ fn execute_reduction<'a>(
     }
     true
 }
-
-// ── Public API ──────────────────────────────────────────────────────
 
 pub(crate) fn parse<'a>(
     mut ctx: &'a mut XkbContext,
@@ -982,7 +889,6 @@ pub(crate) fn xkb_file_from_components(kkctgs: &XkbComponentNames) -> Option<Box
     for (type_0, component_bytes) in [
         (FileType::Keycodes, &kkctgs.keycodes),
         (FileType::Types, &kkctgs.types),
-        (FileType::Compat, &kkctgs.compatibility),
         (FileType::Symbols, &kkctgs.symbols),
     ] {
         let end = component_bytes
@@ -1051,22 +957,6 @@ impl<'a> Scanner<'a> {
             .iter()
             .position(|&b| b == b'\n')
             .unwrap_or(self.s.len() - self.pos);
-    }
-
-    /// Skip an inactive rules section without lexing every value on every
-    /// line. Returns with the next mapping's leading `!` consumed.
-    fn skip_to_next_rules_mapping(&mut self) -> bool {
-        while !self.eof() {
-            while matches!(self.peek(), b' ' | b'\t' | b'\r') {
-                self.pos += 1;
-            }
-            if self.chr(b'!') {
-                return true;
-            }
-            self.skip_to_eol();
-            self.chr(b'\n');
-        }
-        false
     }
 
     #[inline]
@@ -1541,7 +1431,10 @@ pub(crate) fn expand_path_str(name: &str, file_type: FileType) -> Result<Option<
     Ok(Some(format!("{}{}", &name[..k], expanded)))
 }
 
-fn include_path<'a>(name: &'a str, file_type: FileType) -> Option<(std::borrow::Cow<'a, str>, bool)> {
+fn include_path<'a>(
+    name: &'a str,
+    file_type: FileType,
+) -> Option<(std::borrow::Cow<'a, str>, bool)> {
     match expand_path_str(name, file_type) {
         Ok(Some(path)) => Some((std::borrow::Cow::Owned(path), true)),
         Ok(None) => Some((std::borrow::Cow::Borrowed(name), false)),
@@ -1600,8 +1493,7 @@ pub(crate) fn process_include_file(
 
     let mut offset = 0;
     let mut candidate = None;
-    while let Some(file_data) =
-        find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset)
+    while let Some(file_data) = find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset)
     {
         if let Some(parsed) = xkb_parse_string(ctx, &file_data, &stmt.map) {
             if parsed.file_type == file_type {
@@ -1704,7 +1596,12 @@ fn update_pending_action_fields(info: &mut XkbKeymapInfo<'_>, act: &mut XkbActio
 fn mod_index_by_name(keymap: &XkbKeymap, name: &str) -> Option<u32> {
     keymap.mods.mods[..keymap.mods.num_mods as usize]
         .iter()
-        .position(|modifier| keymap.ctx.atom_text(modifier.name).eq_ignore_ascii_case(name))
+        .position(|modifier| {
+            keymap
+                .ctx
+                .atom_text(modifier.name)
+                .eq_ignore_ascii_case(name)
+        })
         .map(|index| index as u32)
 }
 
@@ -1718,12 +1615,12 @@ pub(crate) fn wkb_group_action(sym: u32) -> Option<XkbAction> {
         group,
     };
     match sym {
-        0xff7e => Some(XkbAction::GroupSet(relative(1))),       // Mode_switch
-        0xfe06 => Some(XkbAction::GroupLatch(absolute(1))),    // ISO_Group_Latch
-        0xfe08 => Some(XkbAction::GroupLock(relative(1))),     // ISO_Next_Group
-        0xfe0a => Some(XkbAction::GroupLock(relative(-1))),    // ISO_Prev_Group
-        0xfe0c => Some(XkbAction::GroupLock(absolute(0))),     // ISO_First_Group
-        0xfe0e => Some(XkbAction::GroupLock(absolute(1))),     // ISO_Last_Group
+        0xff7e => Some(XkbAction::GroupSet(relative(1))), // Mode_switch
+        0xfe06 => Some(XkbAction::GroupLatch(absolute(1))), // ISO_Group_Latch
+        0xfe08 => Some(XkbAction::GroupLock(relative(1))), // ISO_Next_Group
+        0xfe0a => Some(XkbAction::GroupLock(relative(-1))), // ISO_Prev_Group
+        0xfe0c => Some(XkbAction::GroupLock(absolute(0))), // ISO_First_Group
+        0xfe0e => Some(XkbAction::GroupLock(absolute(1))), // ISO_Last_Group
         _ => None,
     }
 }
@@ -1891,9 +1788,8 @@ fn update_key_action_fields(
                 info.keymap.types[key.groups[i_1 as usize].type_idx as usize].num_levels
             };
             for j_0 in 0..num_levels {
-                let action = info.keymap.keys[ki as usize].groups[i_1 as usize].levels
-                    [j_0 as usize]
-                    .action;
+                let action =
+                    info.keymap.keys[ki as usize].groups[i_1 as usize].levels[j_0 as usize].action;
                 if let Some(mut act) = action {
                     if !update_pending_action_fields(info, &mut act) {
                         return Err(());
@@ -1925,21 +1821,14 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
         }
     }
     let km_format = keymap.format;
-    let km_flags = keymap.flags;
     let km_num_groups = keymap.num_groups;
     let mut info = XkbKeymapInfo {
         keymap,
-        strict: (if km_format == XKB_KEYMAP_FORMAT_TEXT_V1 {
-            if km_flags & XKB_KEYMAP_COMPILE_STRICT_MODE != 0 {
-                PARSER_V1_STRICT_FLAGS as i32
-            } else {
-                PARSER_V1_LAX_FLAGS as i32
-            }
-        } else if km_flags & XKB_KEYMAP_COMPILE_STRICT_MODE != 0 {
-            PARSER_V2_STRICT_FLAGS as i32
+        strict: if km_format == XKB_KEYMAP_FORMAT_TEXT_V1 {
+            PARSER_V1_LAX_FLAGS
         } else {
-            PARSER_V2_LAX_FLAGS as i32
-        }) as u32,
+            PARSER_V2_LAX_FLAGS
+        },
         features: XkbcompFeatures {
             max_groups: XKB_MAX_GROUPS,
             max_overlays: XKB_OVERLAY_MAX,
@@ -1976,1131 +1865,491 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
     }
     update_derived_keymap_fields(&mut info)
 }
-/// Index-based sval for scanner input. Used in rules to avoid
-/// lifetime issues across include boundaries. Reconstruct sval via as_sval().
-#[derive(Copy, Clone, Default)]
-pub(crate) struct SvalIdx {
-    start: usize,
-    end: usize,
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RuleScope {
+    Single,
+    First,
+    Later,
+    Any,
+    Index(usize),
 }
-impl SvalIdx {
-    const EMPTY: SvalIdx = SvalIdx { start: 0, end: 0 };
-    #[inline]
-    fn as_sval<'a>(&self, input: &'a [u8]) -> Sval<'a> {
-        if self.start >= self.end || self.start >= input.len() {
-            Sval { data: &[] }
-        } else {
-            Sval {
-                data: &input[self.start..self.end.min(input.len())],
-            }
-        }
-    }
-    #[inline]
-    fn len(&self) -> usize {
-        self.end - self.start
-    }
+
+#[derive(Clone, Copy)]
+enum RuleInput {
+    Model,
+    Layout,
+    Variant,
+    Option,
+}
+
+const MAX_INCLUDE_DEPTH: u32 = 5;
+
+struct RuleMapping {
+    inputs: Vec<RuleInput>,
+    outputs: Vec<usize>,
+    targets: Vec<Option<usize>>,
+    active: Vec<bool>,
+    deferred: bool,
+    has_option: bool,
+    pending: Vec<(usize, usize, Vec<u8>)>,
+}
+
+struct RuleOption<'a> {
+    value: &'a str,
+    layout: Option<usize>,
 }
 
 pub(crate) struct Matcher<'a> {
     pub(crate) ctx: &'a mut XkbContext,
-    pub(crate) rmlvo: RuleNames<'a>,
-    pub(crate) val: SvalIdx,
-    pub(crate) groups: Vec<Group>,
-    pub(crate) mapping: Mapping,
-    pub(crate) rule: Rule,
-    pub(crate) pending_kccgst: [Vec<(u32, Vec<u8>)>; 5],
-    pub(crate) kccgst: [Vec<u8>; 5],
+    model: &'a str,
+    layouts: Vec<&'a str>,
+    variants: Vec<&'a str>,
+    options: Vec<RuleOption<'a>>,
+    groups: HashMap<String, Vec<String>>,
+    kccgst: [Vec<u8>; 5],
 }
-pub(crate) const _KCCGST_NUM_ENTRIES: u32 = 5;
-pub(crate) const KCCGST_GEOMETRY: u32 = 4;
-#[derive(Copy, Clone, Default)]
-pub(crate) struct Rule {
-    pub(crate) mlvo_value_at_pos: [SvalIdx; 4],
-    pub(crate) match_type_at_pos: [u32; 4],
-    pub(crate) kccgst_value_at_pos: [SvalIdx; 5],
-    pub(crate) num_mlvo_values: u8,
-    pub(crate) num_kccgst_values: u8,
-    pub(crate) skip: bool,
-}
-pub(crate) const MLVO_MATCH_GROUP: u32 = 5;
-pub(crate) const MLVO_MATCH_WILDCARD_ANY: u32 = 4;
-pub(crate) const MLVO_MATCH_WILDCARD_SOME: u32 = 3;
-pub(crate) const MLVO_MATCH_WILDCARD_NONE: u32 = 2;
-pub(crate) const MLVO_MATCH_WILDCARD_LEGACY: u32 = 1;
-pub(crate) const MLVO_MATCH_NORMAL: u32 = 0;
-#[derive(Copy, Clone, Default)]
-pub(crate) struct Mapping {
-    pub(crate) mlvo_at_pos: [u32; 4],
-    pub(crate) num_mlvo: u8,
-    pub(crate) defined_mlvo_mask: u8,
-    pub(crate) layout: LayoutIdx,
-    pub(crate) active_or_candidates_mask: u32,
-    pub(crate) kccgst_at_pos: [u32; 5],
-    pub(crate) num_kccgst: u8,
-    pub(crate) defined_kccgst_mask: u8,
-}
-#[derive(Copy, Clone)]
-pub(crate) enum LayoutIdx {
-    Single {
-        layout_idx: u32,
-        variant_idx: u32,
-    },
-    Range {
-        layout_idx_min: u32,
-        layout_idx_max: u32,
-    },
-    Index {
-        layout_idx_min: u32,
-    },
-}
-impl Default for LayoutIdx {
-    fn default() -> Self {
-        LayoutIdx::Single {
-            layout_idx: 0,
-            variant_idx: 0,
-        }
-    }
-}
-pub(crate) const _MLVO_NUM_ENTRIES: u32 = 4;
-pub(crate) const MLVO_OPTION: u32 = 3;
-pub(crate) const MLVO_VARIANT: u32 = 2;
-pub(crate) const MLVO_LAYOUT: u32 = 1;
-pub(crate) const MLVO_MODEL: u32 = 0;
-#[derive(Clone)]
-pub(crate) struct Group {
-    pub(crate) name: Vec<u8>,
-    pub(crate) elements: Vec<Vec<u8>>,
-}
-#[derive(Clone, Default)]
-pub(crate) struct RuleNames<'a> {
-    pub(crate) model: MatchedSval<'a>,
-    pub(crate) layouts: Vec<MatchedSval<'a>>,
-    pub(crate) variants: Vec<MatchedSval<'a>>,
-    pub(crate) options: Vec<MatchedSval<'a>>,
-}
-#[derive(Copy, Clone, Default)]
-pub(crate) struct MatchedSval<'a> {
-    pub(crate) sval: Sval<'a>,
-    pub(crate) matched: bool,
-    pub(crate) layout: u32,
-}
-pub(crate) const TOK_ERROR: u32 = 11;
-pub(crate) const TOK_INCLUDE: u32 = 10;
-pub(crate) const TOK_WILD_CARD_ANY: u32 = 9;
-pub(crate) const TOK_WILD_CARD_SOME: u32 = 8;
-pub(crate) const TOK_WILD_CARD_NONE: u32 = 7;
-pub(crate) const TOK_WILD_CARD_STAR: u32 = 6;
-pub(crate) const TOK_EQUALS: u32 = 5;
-pub(crate) const TOK_BANG: u32 = 4;
-pub(crate) const TOK_GROUP_NAME: u32 = 3;
-pub(crate) const TOK_IDENTIFIER: u32 = 2;
-pub(crate) const TOK_END_OF_LINE: u32 = 1;
-pub(crate) const TOK_END_OF_FILE: u32 = 0;
-pub(crate) const LAYOUT_INDEX_FIRST: u32 = 4294967292;
-pub(crate) const LAYOUT_INDEX_SINGLE: u32 = 4294967291;
-pub(crate) const LAYOUT_INDEX_ANY: u32 = 4294967294;
-pub(crate) const LAYOUT_INDEX_LATER: u32 = 4294967293;
 
-impl<'a> Matcher<'a> {
-    fn new(ctx: &'a mut XkbContext) -> Self {
-        Matcher {
-            ctx,
-            rmlvo: RuleNames::default(),
-            val: SvalIdx::default(),
-            groups: Vec::new(),
-            mapping: Mapping::default(),
-            rule: Rule::default(),
-            pending_kccgst: std::array::from_fn(|_| Vec::new()),
-            kccgst: std::array::from_fn(|_| Vec::new()),
+fn rule_tokens(line: &str) -> Vec<&str> {
+    let bytes = line.as_bytes();
+    let mut tokens = Vec::new();
+    let mut pos = 0;
+    while pos < bytes.len() {
+        while bytes.get(pos).is_some_and(u8::is_ascii_whitespace) {
+            pos += 1;
         }
-    }
-}
-pub(crate) const WILDCARD_MATCH_ALL: u32 = 1;
-pub(crate) const WILDCARD_MATCH_NONEMPTY: u32 = 0;
-pub(crate) const MAX_INCLUDE_DEPTH: i32 = 5_i32;
-#[inline]
-fn is_ident(ch: u8) -> bool {
-    ch.is_ascii_graphic() && ch != b'\\'
-}
-fn lex(s: &mut Scanner, val: &mut SvalIdx) -> u32 {
-    loop {
-        while s.chr(b' ') as i32 != 0 || s.chr(b'\t') as i32 != 0 || s.chr(b'\r') as i32 != 0 {}
-        if s.str_match(b"//") {
-            s.skip_to_eol();
-        }
-        if s.eol() {
-            while s.eol() {
-                s.next_byte();
-            }
-            return TOK_END_OF_LINE;
-        }
-        if !s.chr(b'\\') {
+        if pos == bytes.len() || bytes[pos..].starts_with(b"//") {
             break;
         }
-        s.chr(b'\r');
-        if !s.eol() {
-            return TOK_ERROR;
+        if bytes[pos] == b'=' {
+            tokens.push("=");
+            pos += 1;
+            continue;
         }
-        s.next_byte();
-    }
-    if s.eof() {
-        return TOK_END_OF_FILE;
-    }
-    s.token_pos = s.pos;
-    if s.chr(b'!') {
-        return TOK_BANG;
-    }
-    if s.chr(b'=') {
-        return TOK_EQUALS;
-    }
-    if s.chr(b'*') {
-        return TOK_WILD_CARD_STAR;
-    }
-    if s.str_match(b"<none>") {
-        return TOK_WILD_CARD_NONE;
-    }
-    if s.str_match(b"<some>") {
-        return TOK_WILD_CARD_SOME;
-    }
-    if s.str_match(b"<any>") {
-        return TOK_WILD_CARD_ANY;
-    }
-    if s.chr(b'$') {
-        *val = SvalIdx {
-            start: s.pos,
-            end: s.pos,
-        };
-        while is_ident(s.peek()) {
-            s.next_byte();
-            val.end += 1;
+        let start = pos;
+        while pos < bytes.len() && !bytes[pos].is_ascii_whitespace() && bytes[pos] != b'=' {
+            pos += 1;
         }
-        if val.len() == 0 {
-            return TOK_ERROR;
-        }
-        return TOK_GROUP_NAME;
+        tokens.push(&line[start..pos]);
     }
-    if s.str_match(b"include") {
-        return TOK_INCLUDE;
-    }
-    if is_ident(s.peek()) {
-        *val = SvalIdx {
-            start: s.pos,
-            end: s.pos,
-        };
-        while is_ident(s.peek()) {
-            s.next_byte();
-            val.end += 1;
-        }
-        return TOK_IDENTIFIER;
-    }
-    TOK_ERROR
+    tokens
 }
-static RULES_MLVO_SVALS: [&[u8]; 4] = [b"model", b"layout", b"variant", b"option"];
-static RULES_KCCGST_SVALS: [&[u8]; 5] = [b"keycodes", b"types", b"compat", b"symbols", b"geometry"];
-pub(crate) const OPTIONS_MATCH_ALL_GROUPS: u32 = XKB_MAX_GROUPS;
-fn strip_spaces<'a>(v: Sval<'a>) -> Sval<'a> {
-    Sval {
-        data: v.data.trim_ascii(),
+
+fn rule_scope(field: &str, name: &str) -> Option<RuleScope> {
+    let suffix = field.strip_prefix(name)?;
+    match suffix {
+        "" | "[single]" => Some(RuleScope::Single),
+        "[first]" => Some(RuleScope::First),
+        "[later]" => Some(RuleScope::Later),
+        "[any]" => Some(RuleScope::Any),
+        _ => suffix
+            .strip_prefix('[')?
+            .strip_suffix(']')?
+            .parse::<usize>()
+            .ok()
+            .and_then(|index| index.checked_sub(1))
+            .map(RuleScope::Index),
     }
 }
 
-fn split_comma_separated_mlvo(mlvo: u32, bytes: &[u8]) -> Vec<MatchedSval<'_>> {
-    if bytes.is_empty() {
-        return vec![MatchedSval::default()];
-    }
-    let bytes = if bytes.last() == Some(&b',') {
-        &bytes[..bytes.len() - 1]
-    } else {
-        bytes
-    };
-    bytes
-        .split(|&byte| byte == b',')
-        .map(|part| {
-            let bang = part.iter().position(|&byte| byte == b'!');
-            let mut value = MatchedSval {
-                sval: strip_spaces(Sval {
-                    data: &part[..bang.unwrap_or(part.len())],
-                }),
-                layout: OPTIONS_MATCH_ALL_GROUPS,
-                matched: false,
+fn output_index(name: &str) -> Option<usize> {
+    ["keycodes", "types", "compat", "symbols", "geometry"]
+        .iter()
+        .position(|candidate| *candidate == name)
+}
+
+impl RuleMapping {
+    fn parse(tokens: &[&str], layouts: usize, variants: usize) -> Option<Self> {
+        let equals = tokens.iter().position(|token| *token == "=")?;
+        let mut inputs = Vec::new();
+        let mut outputs = Vec::new();
+        let mut layout_scope = None;
+        let mut variant_scope = None;
+        for &field in &tokens[..equals] {
+            let input = if field == "model" {
+                RuleInput::Model
+            } else if field == "option" {
+                RuleInput::Option
+            } else if field.starts_with("layout") {
+                let scope = rule_scope(field, "layout")?;
+                layout_scope = Some(scope);
+                RuleInput::Layout
+            } else if field.starts_with("variant") {
+                let scope = rule_scope(field, "variant")?;
+                variant_scope = Some(scope);
+                RuleInput::Variant
+            } else {
+                return None;
             };
-            if let Some(bang) = bang {
-                let suffix = &part[bang + 1..];
-                let (layout, count) = parse_dec_u32(suffix);
-                if count > 0
-                    && count as usize == suffix.len()
-                    && (1..=XKB_MAX_GROUPS).contains(&layout)
-                    && mlvo == MLVO_OPTION
-                {
-                    value.layout -= 1;
+            if inputs
+                .iter()
+                .any(|old| std::mem::discriminant(old) == std::mem::discriminant(&input))
+            {
+                return None;
+            }
+            inputs.push(input);
+        }
+        for &field in &tokens[equals + 1..] {
+            let output = output_index(field)?;
+            if outputs.contains(&output) {
+                return None;
+            }
+            outputs.push(output);
+        }
+        if inputs.is_empty()
+            || outputs.is_empty()
+            || layout_scope.zip(variant_scope).is_some_and(|(a, b)| a != b)
+        {
+            return None;
+        }
+        let scope = layout_scope.or(variant_scope);
+        let valid = |scope, len| match scope {
+            RuleScope::Single => len <= 1,
+            RuleScope::Index(index) => len >= 2 && index < len,
+            _ => len > 0,
+        };
+        if layout_scope.is_some_and(|scope| !valid(scope, layouts))
+            || variant_scope.is_some_and(|scope| !valid(scope, variants))
+        {
+            return None;
+        }
+        let targets = match scope {
+            None => vec![None],
+            Some(RuleScope::Single | RuleScope::First) => vec![Some(0)],
+            Some(RuleScope::Later) => (1..layouts).map(Some).collect(),
+            Some(RuleScope::Any) => (0..layouts).map(Some).collect(),
+            Some(RuleScope::Index(index)) => vec![Some(index)],
+        };
+        let deferred = matches!(scope, Some(RuleScope::Later | RuleScope::Any));
+        let has_option = inputs
+            .iter()
+            .any(|input| matches!(input, RuleInput::Option));
+        Some(Self {
+            inputs,
+            outputs,
+            active: vec![true; targets.len()],
+            targets,
+            deferred,
+            has_option,
+            pending: Vec::new(),
+        })
+    }
+
+    fn flush(&mut self, matcher: &mut Matcher<'_>) {
+        if self.deferred {
+            self.pending.sort_by_key(|entry| entry.0);
+        }
+        for (_, output, value) in self.pending.drain(..) {
+            concat_kccgst(&mut matcher.kccgst[output], &value);
+        }
+    }
+}
+
+impl Matcher<'_> {
+    fn pattern_matches(&self, pattern: &str, value: &str, empty_wildcard: bool) -> bool {
+        match pattern {
+            "*" => empty_wildcard || !value.is_empty(),
+            "+" | "<some>" => !value.is_empty(),
+            "<none>" => value.is_empty(),
+            "<any>" => true,
+            _ if pattern.starts_with('$') => self
+                .groups
+                .get(&pattern[1..])
+                .is_some_and(|group| group.iter().any(|element| element == value)),
+            _ => pattern == value,
+        }
+    }
+
+    fn input_matches(&self, input: RuleInput, pattern: &str, target: Option<usize>) -> bool {
+        match input {
+            RuleInput::Model => self.pattern_matches(pattern, self.model, true),
+            RuleInput::Layout => target
+                .and_then(|index| self.layouts.get(index))
+                .is_some_and(|value| self.pattern_matches(pattern, value, false)),
+            RuleInput::Variant => target
+                .and_then(|index| self.variants.get(index))
+                .is_some_and(|value| self.pattern_matches(pattern, value, false)),
+            RuleInput::Option => self.options.iter().any(|option| {
+                (option.layout.is_none() || option.layout == target)
+                    && self.pattern_matches(pattern, option.value, true)
+            }),
+        }
+    }
+
+    fn apply_rule(&mut self, mapping: &mut RuleMapping, tokens: &[&str]) {
+        let Some(equals) = tokens.iter().position(|token| *token == "=") else {
+            return;
+        };
+        let (patterns, values) = (&tokens[..equals], &tokens[equals + 1..]);
+        if patterns.len() != mapping.inputs.len() || values.len() != mapping.outputs.len() {
+            return;
+        }
+        for target_pos in 0..mapping.targets.len() {
+            if !mapping.active[target_pos] {
+                continue;
+            }
+            let target = mapping.targets[target_pos];
+            if !mapping
+                .inputs
+                .iter()
+                .zip(patterns)
+                .all(|(&input, &pattern)| self.input_matches(input, pattern, target))
+            {
+                continue;
+            }
+            for (&output, &value) in mapping.outputs.iter().zip(values) {
+                if !matches!(output, 0 | 1 | 3) {
+                    continue;
+                }
+                if let Some(expanded) = self.expand(value, target) {
+                    if mapping.deferred {
+                        mapping
+                            .pending
+                            .push((target.unwrap_or(0), output, expanded));
+                    } else {
+                        concat_kccgst(&mut self.kccgst[output], &expanded);
+                    }
                 }
             }
-            value
-        })
-        .collect()
+            if !mapping.has_option {
+                mapping.active[target_pos] = false;
+            }
+        }
+    }
+
+    fn expand(&self, value: &str, target: Option<usize>) -> Option<Vec<u8>> {
+        let bytes = value.as_bytes();
+        let mut out = Vec::with_capacity(bytes.len());
+        let mut pos = 0;
+        while pos < bytes.len() {
+            if bytes[pos] != b'%' {
+                out.push(bytes[pos]);
+                pos += 1;
+                continue;
+            }
+            pos += 1;
+            if bytes.get(pos) == Some(&b'i') {
+                out.extend_from_slice((target? + 1).to_string().as_bytes());
+                pos += 1;
+                continue;
+            }
+            let (prefix, suffix) = match bytes.get(pos).copied() {
+                Some(b'(') => {
+                    pos += 1;
+                    (Some(b'('), Some(b')'))
+                }
+                Some(prefix @ (b'_' | b'-' | b'+' | b'|' | b'^')) => {
+                    pos += 1;
+                    (Some(prefix), None)
+                }
+                _ => (None, None),
+            };
+            let values = match bytes.get(pos).copied()? {
+                b'm' => None,
+                b'l' => Some(&self.layouts),
+                b'v' => Some(&self.variants),
+                _ => return None,
+            };
+            let model = (values.is_none()).then_some(self.model);
+            pos += 1;
+            let mut selected = None;
+            if bytes.get(pos) == Some(&b'[') {
+                let end = bytes[pos..].iter().position(|byte| *byte == b']')? + pos;
+                let index = &value[pos + 1..end];
+                selected = if index == "%i" {
+                    target
+                } else {
+                    index.parse::<usize>().ok()?.checked_sub(1)
+                };
+                pos = end + 1;
+            }
+            if let Some(suffix) = suffix {
+                if bytes.get(pos) != Some(&suffix) {
+                    return None;
+                }
+                pos += 1;
+            }
+            let replacement = if let Some(model) = model {
+                model
+            } else {
+                let values = values.unwrap();
+                let index = selected.or_else(|| (values.len() == 1).then_some(0));
+                index
+                    .and_then(|index| values.get(index).copied())
+                    .unwrap_or("")
+            };
+            if !replacement.is_empty() {
+                if let Some(prefix) = prefix {
+                    out.push(prefix);
+                }
+                out.extend_from_slice(replacement.as_bytes());
+                if let Some(suffix) = suffix {
+                    out.push(suffix);
+                }
+            }
+        }
+        Some(expand_all_groups(&out, self.layouts.len().max(1)))
+    }
 }
-pub fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) -> Matcher<'a> {
-    let mut m = Matcher::new(ctx);
-    m.rmlvo.model.sval = Sval {
-        data: rmlvo.model.as_bytes(),
+
+fn expand_all_groups(value: &[u8], groups: usize) -> Vec<u8> {
+    let mut out = Vec::with_capacity(value.len());
+    let mut start = 0;
+    while start < value.len() {
+        let next = value[start + 1..]
+            .iter()
+            .position(|byte| is_merge_prefix(*byte))
+            .map_or(value.len(), |offset| start + offset + 1);
+        let item = &value[start..next];
+        if let Some(base) = item.strip_suffix(b":all") {
+            out.extend_from_slice(base);
+            out.push(b':');
+            out.extend_from_slice(b"1");
+            let body = base
+                .first()
+                .filter(|byte| is_merge_prefix(**byte))
+                .map_or(base, |_| &base[1..]);
+            for group in 2..=groups {
+                out.push(b'+');
+                out.extend_from_slice(body);
+                out.push(b':');
+                out.extend_from_slice(group.to_string().as_bytes());
+            }
+        } else {
+            out.extend_from_slice(item);
+        }
+        start = next;
+    }
+    out
+}
+
+#[inline]
+fn concat_kccgst(into: &mut Vec<u8>, from: &[u8]) {
+    if from.first().is_some_and(|byte| is_merge_prefix(*byte)) || into.is_empty() {
+        into.extend_from_slice(from);
+    } else if into.first().is_some_and(|byte| is_merge_prefix(*byte)) {
+        into.splice(..0, from.iter().copied());
+    }
+}
+
+fn parse_rules_file(matcher: &mut Matcher<'_>, data: &[u8], depth: u32) -> bool {
+    let Ok(text) = std::str::from_utf8(data) else {
+        return false;
     };
-    m.rmlvo.model.layout = OPTIONS_MATCH_ALL_GROUPS;
-    m.rmlvo.layouts = split_comma_separated_mlvo(MLVO_LAYOUT, rmlvo.layout.as_bytes());
-    m.rmlvo.variants = split_comma_separated_mlvo(MLVO_VARIANT, rmlvo.variant.as_bytes());
-    m.rmlvo.options = split_comma_separated_mlvo(MLVO_OPTION, rmlvo.options.as_bytes());
-    m.rmlvo
-        .variants
-        .resize(m.rmlvo.layouts.len(), MatchedSval::default());
-    m
+    let mut logical = String::new();
+    let mut mapping: Option<RuleMapping> = None;
+    for raw in text.lines().chain(std::iter::once("")) {
+        let raw = raw.trim_end_matches('\r');
+        if let Some(part) = raw.trim_end().strip_suffix('\\') {
+            logical.push_str(part);
+            logical.push(' ');
+            continue;
+        }
+        logical.push_str(raw);
+        let tokens = rule_tokens(&logical);
+        if tokens.first() == Some(&"!") {
+            if let Some(mut old) = mapping.take() {
+                old.flush(matcher);
+            }
+            if tokens.get(1).is_some_and(|token| token.starts_with('$')) {
+                if tokens.get(2) == Some(&"=") {
+                    matcher.groups.insert(
+                        tokens[1][1..].to_owned(),
+                        tokens[3..].iter().map(|s| (*s).to_owned()).collect(),
+                    );
+                }
+            } else if tokens.get(1) == Some(&"include") {
+                if let Some(name) = tokens.get(2) {
+                    include_rules(matcher, name, depth);
+                }
+            } else {
+                mapping =
+                    RuleMapping::parse(&tokens[1..], matcher.layouts.len(), matcher.variants.len());
+            }
+        } else if let Some(mapping) = &mut mapping {
+            matcher.apply_rule(mapping, &tokens);
+        }
+        logical.clear();
+    }
+    if let Some(mut mapping) = mapping {
+        mapping.flush(matcher);
+    }
+    true
 }
-fn matcher_include(m: &mut Matcher<'_>, include_depth: u32, inc: Sval) {
-    if include_depth >= MAX_INCLUDE_DEPTH as u32 {
+
+fn include_rules(matcher: &mut Matcher<'_>, name: &str, depth: u32) {
+    if depth >= MAX_INCLUDE_DEPTH {
         return;
     }
-    let inc_str = std::str::from_utf8(inc.data).unwrap_or("");
-    let Some((stmt_file, expanded)) = include_path(inc_str, FileType::Rules) else {
+    let Some((name, expanded)) = include_path(name, FileType::Rules) else {
         return;
     };
-
-    let mut offset: u32 = 0;
-    while let Some(file_data) =
-        find_include_file(m.ctx, &stmt_file, FileType::Rules, expanded, &mut offset)
+    let mut offset = 0;
+    while let Some(data) =
+        find_include_file(matcher.ctx, &name, FileType::Rules, expanded, &mut offset)
     {
-        if read_rules_file(m, include_depth + 1, &file_data) {
+        if parse_rules_file(matcher, &data, depth + 1) {
             return;
         }
         offset += 1;
     }
 }
-fn matcher_mapping_start_new(m: &mut Matcher) {
-    for i in 0.._MLVO_NUM_ENTRIES as usize {
-        m.mapping.mlvo_at_pos[i] = _MLVO_NUM_ENTRIES;
-    }
-    for i_0 in 0.._KCCGST_NUM_ENTRIES as usize {
-        m.mapping.kccgst_at_pos[i_0] = _KCCGST_NUM_ENTRIES;
-    }
-    m.mapping.layout = LayoutIdx::Single {
-        layout_idx: XKB_LAYOUT_INVALID,
-        variant_idx: XKB_LAYOUT_INVALID,
-    };
-    m.mapping.num_kccgst = 0_u8;
-    m.mapping.num_mlvo = m.mapping.num_kccgst;
-    m.mapping.defined_mlvo_mask = 0_u8;
-    m.mapping.defined_kccgst_mask = 0_u8;
-    m.mapping.active_or_candidates_mask = 1_u32;
-}
-fn parse_layout_int_index(s: &[u8], out: &mut u32) -> i32 {
-    // s starts with '[', parse integer between brackets
-    if s.len() < 3 {
-        return -1_i32;
-    }
-    let inner = &s[1..]; // skip '['
-    let (val, count) = parse_dec_u32(inner);
-    let count: i32 = count;
-    if count <= 0_i32
-        || (1 + count as usize) >= s.len()
-        || s[1 + count as usize] != b']'
-        || val == 0_u32
-        || val > XKB_MAX_GROUPS
-    {
-        return -1_i32;
-    }
-    *out = val.wrapping_sub(1_u32);
-    count + 2_i32
-}
-fn extract_layout_index(s: &[u8], out: &mut u32) -> i32 {
-    *out = XKB_LAYOUT_INVALID;
-    if s.len() < 3 || s[0] != b'[' {
-        return -1_i32;
-    }
-    if s.len() > 3 && s[1] == b'%' && s[2] == b'i' && s[3] == b']' {
-        return 4_i32;
-    }
-    parse_layout_int_index(s, out)
-}
-fn extract_mapping_layout_index(s: &[u8], out: &mut u32) -> i32 {
-    struct LayoutIndexEntry {
-        name: &'static [u8],
-        range: u32,
-    }
-    static NAMES: [LayoutIndexEntry; 4] = [
-        LayoutIndexEntry {
-            name: b"single]",
-            range: LAYOUT_INDEX_SINGLE,
-        },
-        LayoutIndexEntry {
-            name: b"first]",
-            range: LAYOUT_INDEX_FIRST,
-        },
-        LayoutIndexEntry {
-            name: b"later]",
-            range: LAYOUT_INDEX_LATER,
-        },
-        LayoutIndexEntry {
-            name: b"any]",
-            range: LAYOUT_INDEX_ANY,
-        },
-    ];
-    if s.len() < 3 || s[0] != b'[' {
-        *out = XKB_LAYOUT_INVALID;
-        return -1_i32;
-    }
-    let after_bracket = &s[1..];
-    for entry in &NAMES {
-        if after_bracket.starts_with(entry.name) {
-            *out = entry.range;
-            return (entry.name.len() + 1) as i32;
-        }
-    }
-    *out = XKB_LAYOUT_INVALID;
-    parse_layout_int_index(s, out)
-}
-#[inline]
-fn is_mlvo_mask_defined(m: &mut Matcher, mlvo: u32) -> bool {
-    m.mapping.defined_mlvo_mask as u32 & 1 << mlvo != 0
-}
-fn matcher_mapping_set_mlvo(m: &mut Matcher, ident: Sval) {
-    let Some((mlvo, name)) = RULES_MLVO_SVALS
-        .iter()
-        .enumerate()
-        .find(|(_, name)| ident.data.starts_with(name))
-    else {
-        m.mapping.active_or_candidates_mask = 0_u32;
-        return;
-    };
-    let mlvo = mlvo as u32;
-    if is_mlvo_mask_defined(m, mlvo) {
-        m.mapping.active_or_candidates_mask = 0_u32;
-        return;
-    }
-    let indexed = name.len() < ident.data.len();
-    if matches!(mlvo, MLVO_LAYOUT | MLVO_VARIANT) {
-        let mut idx = LAYOUT_INDEX_SINGLE;
-        if indexed {
-            let remaining = &ident.data[name.len()..];
-            if extract_mapping_layout_index(remaining, &mut idx) != remaining.len() as i32 {
-                m.mapping.active_or_candidates_mask = 0_u32;
-                return;
-            }
-        }
-        if let LayoutIdx::Single {
-            layout_idx,
-            variant_idx,
-        } = &mut m.mapping.layout
-        {
-            *if mlvo == MLVO_LAYOUT {
-                layout_idx
-            } else {
-                variant_idx
-            } = idx;
-        }
-    } else if indexed {
-        m.mapping.active_or_candidates_mask = 0_u32;
-        return;
-    }
-    if (mlvo == MLVO_LAYOUT && is_mlvo_mask_defined(m, MLVO_VARIANT)
-        || mlvo == MLVO_VARIANT && is_mlvo_mask_defined(m, MLVO_LAYOUT))
-        && {
-            if let LayoutIdx::Single {
-                layout_idx,
-                variant_idx,
-            } = m.mapping.layout
-            {
-                layout_idx != variant_idx
-            } else {
-                false
-            }
-        }
-    {
-        m.mapping.active_or_candidates_mask = 0_u32;
-        return;
-    }
-    m.mapping.mlvo_at_pos[m.mapping.num_mlvo as usize] = mlvo;
-    m.mapping.defined_mlvo_mask = (m.mapping.defined_mlvo_mask as i32 | (1i32 << mlvo)) as u8;
-    m.mapping.num_mlvo += 1;
-}
-fn matcher_mapping_set_layout_bounds(m: &mut Matcher) {
-    let idx = if let LayoutIdx::Single {
-        layout_idx,
-        variant_idx,
-    } = m.mapping.layout
-    {
-        layout_idx.min(variant_idx)
-    } else {
-        0
-    };
-    match idx {
-        XKB_LAYOUT_INVALID => {
-            m.mapping.layout = LayoutIdx::Index {
-                layout_idx_min: XKB_LAYOUT_INVALID,
-            };
-            m.mapping.active_or_candidates_mask = 1;
-        }
-        LAYOUT_INDEX_LATER | LAYOUT_INDEX_ANY => {
-            let layout_idx_min = u32::from(idx == LAYOUT_INDEX_LATER);
-            let layout_idx_max = m.rmlvo.layouts.len().min(XKB_MAX_GROUPS as usize) as u32;
-            m.mapping.layout = LayoutIdx::Range {
-                layout_idx_min,
-                layout_idx_max,
-            };
-            m.mapping.active_or_candidates_mask =
-                (1_u64.wrapping_shl(layout_idx_max).wrapping_sub(1) as u32) << layout_idx_min;
-        }
-        LAYOUT_INDEX_SINGLE | LAYOUT_INDEX_FIRST => {
-            m.mapping.layout = LayoutIdx::Index { layout_idx_min: 0 };
-            m.mapping.active_or_candidates_mask = 1;
-        }
-        _ => {
-            m.mapping.layout = LayoutIdx::Index {
-                layout_idx_min: idx,
-            };
-            m.mapping.active_or_candidates_mask = 1 << idx;
-        }
-    }
-}
-fn matcher_mapping_set_kccgst(m: &mut Matcher, ident: Sval) {
-    let Some(kccgst) = RULES_KCCGST_SVALS
-        .iter()
-        .position(|name| *name == ident.data)
-        .map(|index| index as u32)
-    else {
-        m.mapping.active_or_candidates_mask = 0_u32;
-        return;
-    };
-    if m.mapping.defined_kccgst_mask as u32 & 1 << kccgst != 0 {
-        m.mapping.active_or_candidates_mask = 0_u32;
-        return;
-    }
-    m.mapping.kccgst_at_pos[m.mapping.num_kccgst as usize] = kccgst;
-    m.mapping.defined_kccgst_mask = (m.mapping.defined_kccgst_mask as i32 | (1i32 << kccgst)) as u8;
-    m.mapping.num_kccgst += 1;
-}
-fn fn_layout_or_variant_valid(rmlvo_len: usize, idx: u32) -> bool {
-    match idx {
-        LAYOUT_INDEX_SINGLE => rmlvo_len <= 1,
-        LAYOUT_INDEX_FIRST..=LAYOUT_INDEX_ANY => true,
-        _ => rmlvo_len >= 2 && (idx as usize) < rmlvo_len,
-    }
-}
 
-fn matcher_mapping_verify(m: &mut Matcher) -> bool {
-    if m.mapping.num_mlvo == 0 || m.mapping.num_kccgst == 0 {
-        m.mapping.active_or_candidates_mask = 0_u32;
-        return false;
-    }
-    if is_mlvo_mask_defined(m, MLVO_LAYOUT) {
-        let single_layout_idx = if let LayoutIdx::Single { layout_idx, .. } = m.mapping.layout {
-            layout_idx
+pub fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) -> Matcher<'a> {
+    let split = |value: &'a str| {
+        let value = value.strip_suffix(',').unwrap_or(value);
+        if value.is_empty() {
+            vec![""]
         } else {
-            0
-        };
-        if !fn_layout_or_variant_valid(m.rmlvo.layouts.len(), single_layout_idx) {
-            m.mapping.active_or_candidates_mask = 0_u32;
-            return false;
+            value.split(',').map(str::trim).collect()
         }
-    }
-    if is_mlvo_mask_defined(m, MLVO_VARIANT) {
-        let single_variant_idx = if let LayoutIdx::Single { variant_idx, .. } = m.mapping.layout {
-            variant_idx
-        } else {
-            0
-        };
-        if !fn_layout_or_variant_valid(m.rmlvo.variants.len(), single_variant_idx) {
-            m.mapping.active_or_candidates_mask = 0_u32;
-            return false;
-        }
-    }
-    true
-}
-fn matcher_rule_start_new(m: &mut Matcher) {
-    m.rule = Rule::default();
-    m.rule.skip = m.mapping.active_or_candidates_mask == 0;
-}
-fn matcher_rule_set_mlvo_common(m: &mut Matcher, ident: SvalIdx, match_type: u32) {
-    if m.rule.num_mlvo_values as i32 >= m.mapping.num_mlvo as i32 {
-        m.rule.skip = true;
-        return;
-    }
-    m.rule.match_type_at_pos[m.rule.num_mlvo_values as usize] = match_type;
-    m.rule.mlvo_value_at_pos[m.rule.num_mlvo_values as usize] = ident;
-    m.rule.num_mlvo_values += 1;
-}
-fn matcher_rule_set_kccgst(m: &mut Matcher, ident: SvalIdx) {
-    if m.rule.num_kccgst_values as i32 >= m.mapping.num_kccgst as i32 {
-        m.rule.skip = true;
-        return;
-    }
-    m.rule.kccgst_value_at_pos[m.rule.num_kccgst_values as usize] = ident;
-    m.rule.num_kccgst_values += 1;
-}
-fn match_group(groups: &[Group], group_name: Sval, to: Sval) -> bool {
-    let found_group = groups.iter().find(|g| g.name.as_slice() == group_name.data);
-    match found_group {
-        None => false,
-        Some(group) => {
-            for elem in group.elements.iter() {
-                if elem.as_slice() == to.data {
-                    return true;
-                }
-            }
-            false
-        }
-    }
-}
-fn match_value(groups: &[Group], val: Sval, to: Sval, match_type: u32, wildcard_type: u32) -> bool {
-    match match_type {
-        1 => wildcard_type == WILDCARD_MATCH_ALL || !to.data.is_empty(),
-        2 => to.data.is_empty(),
-        3 => !to.data.is_empty(),
-        4 => true,
-        5 => match_group(groups, val, to),
-        _ => val.data == to.data,
-    }
-}
-fn match_value_and_mark(
-    groups: &[Group],
-    val: Sval,
-    to: &mut MatchedSval,
-    match_type: u32,
-    wildcard_type: u32,
-) -> bool {
-    let matched: bool = match_value(groups, val, to.sval, match_type, wildcard_type);
-    if matched {
-        to.matched = true;
-    }
-    matched
-}
-fn expand_rmlvo_in_kccgst_value(
-    m: &mut Matcher,
-    value: Sval,
-    layout_idx: u32,
-    expanded: &mut Vec<u8>,
-    i: &mut usize,
-) -> bool {
-    let bytes = value.data;
-    if bytes[*i] == b'i'
-        && ((*i).wrapping_add(1_usize) == value.data.len()
-            || is_merge_prefix(bytes[(*i).wrapping_add(1_usize)]))
-    {
-        if layout_idx == XKB_LAYOUT_INVALID {
-            return false;
-        }
-        *i += 1;
-        expanded.extend_from_slice(layout_idx.wrapping_add(1).to_string().as_bytes());
-        return true;
-    }
-
-    let mut sfx = 0;
-    let mut pfx = 0;
-    let ch = bytes[*i];
-    if matches!(ch, b'(' | b'_' | b'-') || is_merge_prefix(ch) {
-        pfx = ch;
-        if ch == b'(' {
-            sfx = b')';
-        }
-        *i += 1;
-        if *i >= value.data.len() {
-            return false;
-        }
-    }
-
-    let mlv = match bytes[*i] {
-        b'm' => MLVO_MODEL,
-        b'l' => MLVO_LAYOUT,
-        b'v' => MLVO_VARIANT,
-        _ => return false,
     };
-    *i += 1;
+    let layouts = split(&rmlvo.layout);
+    let mut variants = split(&rmlvo.variant);
+    variants.resize(layouts.len(), "");
+    let options = split(&rmlvo.options)
+        .into_iter()
+        .map(|option| {
+            let (value, layout) =
+                option
+                    .rsplit_once('!')
+                    .map_or((option, None), |(value, layout)| {
+                        (
+                            value,
+                            layout
+                                .parse::<usize>()
+                                .ok()
+                                .and_then(|index| index.checked_sub(1)),
+                        )
+                    });
+            RuleOption { value, layout }
+        })
+        .collect();
+    Matcher {
+        ctx,
+        model: &rmlvo.model,
+        layouts,
+        variants,
+        options,
+        groups: HashMap::new(),
+        kccgst: std::array::from_fn(|_| Vec::new()),
+    }
+}
 
-    let mut idx = XKB_LAYOUT_INVALID;
-    let mut expanded_index = false;
-    if *i < value.data.len() && bytes[*i] == b'[' {
-        if mlv == MLVO_MODEL {
-            return false;
-        }
-        let consumed = extract_layout_index(&bytes[*i..], &mut idx);
-        if consumed < 0 {
-            return false;
-        }
-        if idx == XKB_LAYOUT_INVALID {
-            idx = layout_idx;
-            expanded_index = true;
-        }
-        *i += consumed as usize;
-    }
-
-    if sfx != 0 {
-        if bytes.get(*i) != Some(&sfx) {
-            return false;
-        }
-        *i += 1;
-    }
-
-    let selected_index = |len: usize| match idx {
-        XKB_LAYOUT_INVALID if len == 1 => Some(0),
-        XKB_LAYOUT_INVALID => None,
-        _ if idx < len as u32 && (expanded_index || len > 1) => Some(idx as usize),
-        _ => None,
-    };
-    let target =
-        match mlv {
-            MLVO_MODEL => Some(&mut m.rmlvo.model),
-            MLVO_LAYOUT => selected_index(m.rmlvo.layouts.len())
-                .and_then(|index| m.rmlvo.layouts.get_mut(index)),
-            MLVO_VARIANT => selected_index(m.rmlvo.variants.len())
-                .and_then(|index| m.rmlvo.variants.get_mut(index)),
-            _ => None,
-        };
-    let Some(target) = target else {
-        return true;
-    };
-    if target.sval.data.is_empty() {
-        return true;
-    }
-
-    if pfx != 0 {
-        expanded.push(pfx);
-    }
-    expanded.extend_from_slice(target.sval.data);
-    if sfx != 0 {
-        expanded.push(sfx);
-    }
-    target.matched = true;
-    true
-}
-#[allow(clippy::too_many_arguments)]
-fn expand_qualifier_in_kccgst_value(
-    m: &mut Matcher,
-    value: Sval,
-    expanded: &mut Vec<u8>,
-    has_separator: bool,
-    prefix_idx: u32,
-    i: &mut usize,
-) {
-    let bytes = value.data;
-    if (*i).wrapping_add(3_usize) <= value.data.len()
-        && ((*i).wrapping_add(3_usize) == value.data.len()
-            || is_merge_prefix(bytes[(*i).wrapping_add(3_usize)]))
-        && bytes[*i] == b'a'
-        && bytes[(*i).wrapping_add(1_usize)] == b'l'
-        && bytes[(*i).wrapping_add(2_usize)] == b'l'
-    {
-        expanded.push(b'1');
-        if m.rmlvo.layouts.len() > 1 {
-            let prefix_length = expanded
-                .len()
-                .wrapping_sub(prefix_idx as usize)
-                .wrapping_sub(1);
-            let max_l = if 32 < m.rmlvo.layouts.len() {
-                32_u32
-            } else {
-                m.rmlvo.layouts.len() as u32
-            };
-            for l in 1..max_l {
-                if !has_separator {
-                    expanded.push(b'+');
-                }
-                {
-                    let old_size = expanded.len();
-                    let new_size = old_size.wrapping_add(prefix_length) + 1;
-                    expanded.resize(new_size, 0);
-                    expanded.copy_within(
-                        prefix_idx as usize..prefix_idx as usize + prefix_length,
-                        old_size,
-                    );
-                    expanded.truncate(new_size - 1);
-                }
-                let idx_str = format!("{}", l.wrapping_add(1_u32));
-                expanded.extend_from_slice(idx_str.as_bytes());
-            }
-        }
-        *i = (*i).wrapping_add(3_usize);
-    }
-}
-#[inline]
-fn concat_kccgst(into: &mut Vec<u8>, from: &[u8]) {
-    let from_plus = from.first().is_some_and(|&byte| is_merge_prefix(byte));
-    if from_plus || into.is_empty() {
-        into.extend_from_slice(from);
-    } else {
-        let into_plus = into.first().is_some_and(|&byte| is_merge_prefix(byte));
-        if into_plus {
-            let old_len = into.len();
-            into.resize(old_len + from.len(), 0);
-            into.copy_within(..old_len, from.len());
-            for (i, &b) in from.iter().enumerate() {
-                into[i] = b;
-            }
-        }
-    }
-}
-fn expand_kccgst_value(m: &mut Matcher, value: Sval, layout_idx: u32) -> Option<Vec<u8>> {
-    let bytes = value.data;
-    let mut expanded = Vec::new();
-    let mut last_item_idx: u32 = 0;
-    let mut has_separator: bool = false;
-    let mut invalid = false;
-    let mut i: usize = 0_usize;
-    loop {
-        if i >= value.data.len() {
-            break;
-        }
-        match bytes[i] {
-            b':' => {
-                expanded.push(bytes[i]);
-                i += 1;
-                expand_qualifier_in_kccgst_value(
-                    m,
-                    value,
-                    &mut expanded,
-                    has_separator,
-                    last_item_idx,
-                    &mut i,
-                );
-            }
-            b'%' => {
-                i += 1;
-                if i >= value.data.len()
-                    || !expand_rmlvo_in_kccgst_value(m, value, layout_idx, &mut expanded, &mut i)
-                {
-                    invalid = true;
-                    break;
-                }
-            }
-            b if is_merge_prefix(b) => {
-                expanded.push(bytes[i]);
-                i += 1;
-                last_item_idx = (expanded.len() - 1) as u32;
-                has_separator = true;
-            }
-            _ => {
-                expanded.push(bytes[i]);
-                i += 1;
-            }
-        }
-    }
-    if invalid {
-        None
-    } else {
-        Some(expanded)
-    }
-}
-fn matcher_append_pending_kccgst(m: &mut Matcher) {
-    let LayoutIdx::Range {
-        layout_idx_min,
-        layout_idx_max,
-    } = m.mapping.layout
-    else {
-        return;
-    };
-    for i in 0..m.mapping.num_kccgst as usize {
-        let kccgst: u32 = m.mapping.kccgst_at_pos[i];
-        if kccgst == KCCGST_GEOMETRY {
-            continue;
-        }
-        for layout in layout_idx_min..layout_idx_max {
-            for (slice_layout, value) in &m.pending_kccgst[kccgst as usize] {
-                if *slice_layout == layout {
-                    concat_kccgst(&mut m.kccgst[kccgst as usize], value);
-                }
-            }
-        }
-    }
-    m.mapping.layout = LayoutIdx::default();
-}
-fn matcher_mlvo_matches(
-    m: &mut Matcher,
-    mlvo: u32,
-    value: Sval,
-    match_type: u32,
-    layout: u32,
-) -> bool {
-    let (groups, rmlvo) = (&m.groups, &mut m.rmlvo);
-    match mlvo {
-        MLVO_MODEL => match_value_and_mark(
-            groups,
-            value,
-            &mut rmlvo.model,
-            match_type,
-            WILDCARD_MATCH_ALL,
-        ),
-        MLVO_LAYOUT => match_value_and_mark(
-            groups,
-            value,
-            &mut rmlvo.layouts[layout as usize],
-            match_type,
-            WILDCARD_MATCH_NONEMPTY,
-        ),
-        MLVO_VARIANT => match_value_and_mark(
-            groups,
-            value,
-            &mut rmlvo.variants[layout as usize],
-            match_type,
-            WILDCARD_MATCH_NONEMPTY,
-        ),
-        MLVO_OPTION => rmlvo
-            .options
-            .iter_mut()
-            .filter(|option| {
-                matches!(option.layout, OPTIONS_MATCH_ALL_GROUPS) || option.layout == layout
-            })
-            .any(|option| {
-                match_value_and_mark(groups, value, option, match_type, WILDCARD_MATCH_ALL)
-            }),
-        _ => false,
-    }
-}
-fn matcher_rule_apply_if_matches(m: &mut Matcher, s: &mut Scanner) {
-    let mut candidate_layouts = m.mapping.active_or_candidates_mask;
-    for i in 0..m.mapping.num_mlvo as usize {
-        let mlvo = m.mapping.mlvo_at_pos[i];
-        let value = m.rule.mlvo_value_at_pos[i].as_sval(s.s);
-        let match_type = m.rule.match_type_at_pos[i];
-        if mlvo == MLVO_MODEL {
-            if !matcher_mlvo_matches(m, mlvo, value, match_type, 0) {
-                return;
-            }
-            continue;
-        }
-        let matched = match m.mapping.layout {
-            LayoutIdx::Range {
-                layout_idx_min,
-                layout_idx_max,
-            } => {
-                let mut matched = false;
-                for layout in layout_idx_min..layout_idx_max {
-                    let mask = 1 << layout;
-                    if candidate_layouts & mask == 0 {
-                        continue;
-                    }
-                    if matcher_mlvo_matches(m, mlvo, value, match_type, layout) {
-                        matched = true;
-                    } else {
-                        candidate_layouts &= !mask;
-                    }
-                }
-                matched
-            }
-            LayoutIdx::Index { layout_idx_min } => {
-                matcher_mlvo_matches(m, mlvo, value, match_type, layout_idx_min)
-            }
-            LayoutIdx::Single { .. } => false,
-        };
-        if !matched {
-            return;
-        }
-    }
-    match m.mapping.layout {
-        LayoutIdx::Range {
-            layout_idx_min,
-            layout_idx_max,
-        } => {
-            for layout in layout_idx_min..layout_idx_max {
-                if candidate_layouts & 1 << layout != 0 {
-                    apply_kccgst(m, s, layout, true);
-                }
-            }
-        }
-        LayoutIdx::Index { layout_idx_min } => apply_kccgst(m, s, layout_idx_min, false),
-        LayoutIdx::Single { .. } => {}
-    }
-    if !is_mlvo_mask_defined(m, MLVO_OPTION) {
-        m.mapping.active_or_candidates_mask &= !candidate_layouts;
-    }
-}
-fn apply_kccgst(m: &mut Matcher, s: &Scanner, layout: u32, pending: bool) {
-    for i in 0..m.mapping.num_kccgst as usize {
-        let kccgst = m.mapping.kccgst_at_pos[i];
-        if kccgst == KCCGST_GEOMETRY {
-            continue;
-        }
-        let value = m.rule.kccgst_value_at_pos[i].as_sval(s.s);
-        if let Some(expanded) = expand_kccgst_value(m, value, layout) {
-            if pending {
-                m.pending_kccgst[kccgst as usize].push((layout, expanded));
-            } else if !expanded.is_empty() {
-                concat_kccgst(&mut m.kccgst[kccgst as usize], &expanded);
-            }
-        }
-    }
-}
-fn gettok(m: &mut Matcher, s: &mut Scanner) -> u32 {
-    lex(s, &mut m.val)
-}
-fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
-    let mut have_bang = false;
-    'file: loop {
-        if !have_bang {
-            match gettok(m, s) {
-                TOK_END_OF_LINE => continue,
-                TOK_END_OF_FILE => return true,
-                TOK_BANG => {}
-                _ => return false,
-            }
-        }
-        have_bang = false;
-        match gettok(m, s) {
-            TOK_GROUP_NAME => {
-                m.groups.push(Group {
-                    name: m.val.as_sval(s.s).data.to_vec(),
-                    elements: Vec::new(),
-                });
-                if gettok(m, s) != TOK_EQUALS {
-                    return false;
-                }
-                loop {
-                    match gettok(m, s) {
-                        TOK_IDENTIFIER => m
-                            .groups
-                            .last_mut()
-                            .unwrap()
-                            .elements
-                            .push(m.val.as_sval(s.s).data.to_vec()),
-                        TOK_END_OF_LINE => break,
-                        _ => return false,
-                    }
-                }
-            }
-            TOK_INCLUDE => {
-                if gettok(m, s) != TOK_IDENTIFIER {
-                    return false;
-                }
-                matcher_include(m, include_depth, m.val.as_sval(s.s));
-                if gettok(m, s) != TOK_END_OF_LINE {
-                    return false;
-                }
-            }
-            TOK_IDENTIFIER => {
-                matcher_mapping_start_new(m);
-                matcher_mapping_set_mlvo(m, m.val.as_sval(s.s));
-                loop {
-                    match gettok(m, s) {
-                        TOK_IDENTIFIER if m.mapping.active_or_candidates_mask != 0 => {
-                            matcher_mapping_set_mlvo(m, m.val.as_sval(s.s))
-                        }
-                        TOK_IDENTIFIER => {}
-                        TOK_EQUALS => break,
-                        _ => return false,
-                    }
-                }
-                loop {
-                    match gettok(m, s) {
-                        TOK_IDENTIFIER if m.mapping.active_or_candidates_mask != 0 => {
-                            matcher_mapping_set_kccgst(m, m.val.as_sval(s.s))
-                        }
-                        TOK_IDENTIFIER => {}
-                        TOK_END_OF_LINE => break,
-                        _ => return false,
-                    }
-                }
-                if m.mapping.active_or_candidates_mask != 0 && matcher_mapping_verify(m) {
-                    matcher_mapping_set_layout_bounds(m);
-                    if matches!(m.mapping.layout, LayoutIdx::Range { .. }) {
-                        m.pending_kccgst.iter_mut().for_each(Vec::clear);
-                    }
-                }
-                loop {
-                    if m.mapping.active_or_candidates_mask == 0 {
-                        matcher_append_pending_kccgst(m);
-                        if s.skip_to_next_rules_mapping() {
-                            have_bang = true;
-                            continue 'file;
-                        }
-                        return true;
-                    }
-                    let mut tok = gettok(m, s);
-                    match tok {
-                        TOK_BANG => {
-                            matcher_append_pending_kccgst(m);
-                            have_bang = true;
-                            break;
-                        }
-                        TOK_END_OF_LINE => continue,
-                        TOK_END_OF_FILE => {
-                            matcher_append_pending_kccgst(m);
-                            return true;
-                        }
-                        _ => {}
-                    }
-                    matcher_rule_start_new(m);
-                    loop {
-                        match tok {
-                            TOK_IDENTIFIER if !m.rule.skip => {
-                                if m.val.as_sval(s.s).data == b"+" {
-                                    matcher_rule_set_mlvo_common(
-                                        m,
-                                        SvalIdx::EMPTY,
-                                        MLVO_MATCH_WILDCARD_SOME,
-                                    );
-                                } else {
-                                    matcher_rule_set_mlvo_common(m, m.val, MLVO_MATCH_NORMAL);
-                                }
-                            }
-                            TOK_WILD_CARD_STAR..=TOK_WILD_CARD_ANY if !m.rule.skip => {
-                                matcher_rule_set_mlvo_common(
-                                    m,
-                                    SvalIdx::EMPTY,
-                                    [
-                                        MLVO_MATCH_WILDCARD_LEGACY,
-                                        MLVO_MATCH_WILDCARD_NONE,
-                                        MLVO_MATCH_WILDCARD_SOME,
-                                        MLVO_MATCH_WILDCARD_ANY,
-                                    ]
-                                        [tok as usize - TOK_WILD_CARD_STAR as usize],
-                                );
-                            }
-                            TOK_GROUP_NAME if !m.rule.skip => {
-                                matcher_rule_set_mlvo_common(m, m.val, MLVO_MATCH_GROUP)
-                            }
-                            TOK_IDENTIFIER
-                            | TOK_WILD_CARD_STAR..=TOK_WILD_CARD_ANY
-                            | TOK_GROUP_NAME => {}
-                            TOK_EQUALS => break,
-                            _ => return false,
-                        }
-                        tok = gettok(m, s);
-                    }
-                    loop {
-                        match gettok(m, s) {
-                            TOK_IDENTIFIER if !m.rule.skip => matcher_rule_set_kccgst(m, m.val),
-                            TOK_IDENTIFIER => {}
-                            TOK_END_OF_LINE => break,
-                            _ => return false,
-                        }
-                    }
-                    if !m.rule.skip {
-                        m.rule.skip = m.rule.num_mlvo_values != m.mapping.num_mlvo
-                            || m.rule.num_kccgst_values != m.mapping.num_kccgst;
-                        if !m.rule.skip {
-                            matcher_rule_apply_if_matches(m, s);
-                        }
-                    }
-                }
-            }
-            _ => return false,
-        }
-    }
-}
-fn read_rules_file(matcher: &mut Matcher<'_>, include_depth: u32, file_data: &[u8]) -> bool {
-    let mut scanner = Scanner::new(file_data);
-    scanner.check_supported_char_encoding() && matcher_match(matcher, &mut scanner, include_depth)
-}
-fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_>) -> bool {
-    let partial_rules = format!("{rules}{suffix}");
-    if partial_rules.len() >= 60 {
+fn partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_>) -> bool {
+    let name = format!("{rules}{suffix}");
+    if name.len() >= 60 {
         return false;
     }
     let mut offset = 0;
-    while let Some(file_data) =
-        find_file_in_xkb_path(matcher.ctx, &partial_rules, FileType::Rules, &mut offset)
-    {
-        if !read_rules_file(matcher, 0, &file_data) {
+    while let Some(data) = find_file_in_xkb_path(matcher.ctx, &name, FileType::Rules, &mut offset) {
+        if !parse_rules_file(matcher, &data, 0) {
             return false;
         }
         offset += 1;
     }
     true
 }
+
 pub fn xkb_resolve_rules(
     rules: &str,
     matcher: &mut Matcher<'_>,
@@ -3108,47 +2357,41 @@ pub fn xkb_resolve_rules(
     explicit_layouts: &mut u32,
 ) -> bool {
     let mut offset = 0;
-    let Some(file_data) =
-        find_file_in_xkb_path(matcher.ctx, rules, FileType::Rules, &mut offset)
-    else {
+    let Some(data) = find_file_in_xkb_path(matcher.ctx, rules, FileType::Rules, &mut offset) else {
         return false;
     };
-    if !xkb_resolve_partial_rules(rules, ".pre", matcher)
-        || !read_rules_file(matcher, 0, &file_data)
-        || !xkb_resolve_partial_rules(rules, ".post", matcher)
-        || matcher.kccgst[..KCCGST_GEOMETRY as usize]
-            .iter()
-            .any(Vec::is_empty)
+    if !partial_rules(rules, ".pre", matcher)
+        || !parse_rules_file(matcher, &data, 0)
+        || !partial_rules(rules, ".post", matcher)
+        || [0, 1, 3]
+            .into_iter()
+            .any(|index| matcher.kccgst[index].is_empty())
     {
         return false;
     }
-    for (source, target) in matcher.kccgst.iter_mut().zip([
-        &mut out.keycodes,
-        &mut out.types,
-        &mut out.compatibility,
-        &mut out.symbols,
-    ]) {
+    for (index, target) in [
+        (0, &mut out.keycodes),
+        (1, &mut out.types),
+        (3, &mut out.symbols),
+    ] {
+        let source = &mut matcher.kccgst[index];
         *target = std::mem::take(source);
         target.push(0);
     }
     *explicit_layouts = 1;
     let mut pos = 0;
-    while let Some(colon) = out.symbols[pos..].iter().position(|&byte| byte == b':') {
+    while let Some(colon) = out.symbols[pos..].iter().position(|byte| *byte == b':') {
         pos += colon + 1;
-        if out.symbols.get(pos).copied().unwrap_or(0) == 0 {
-            break;
-        }
         let (group, count) = parse_dec_u32(&out.symbols[pos..]);
-        let count = count as usize;
         if count > 0
             && out
                 .symbols
-                .get(pos + count)
-                .is_some_and(|&byte| byte == 0 || is_merge_prefix(byte))
+                .get(pos + count as usize)
+                .is_some_and(|byte| *byte == 0 || is_merge_prefix(*byte))
             && (1..=XKB_MAX_GROUPS).contains(&group)
         {
             *explicit_layouts = (*explicit_layouts).max(group);
-            pos += count;
+            pos += count as usize;
         }
     }
     true
@@ -3166,11 +2409,6 @@ pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_WRAP: u32 = 0;
 pub(crate) const XKB_KEYMAP_FORMAT_TEXT_V2: u32 = 2;
 pub(crate) const XKB_KEYMAP_FORMAT_TEXT_V1: u32 = 1;
 
-pub(crate) const XKB_KEYMAP_COMPILE_STRICT_MODE: u32 = 1;
-pub(crate) const XKB_KEYMAP_COMPILE_NO_FLAGS: u32 = 0;
-
-pub(crate) const XKB_LAYOUT_INVALID: u32 = 0xffffffff;
-
 #[derive(Clone, Debug, Default)]
 pub(crate) struct XkbRuleNames {
     pub(crate) rules: String,
@@ -3185,7 +2423,6 @@ pub(crate) struct XkbContext {
     pub(crate) includes: Vec<String>,
     pub(crate) failed_includes: Vec<String>,
     pub(crate) atom_table: lasso::Rodeo,
-    pub(crate) use_environment_names: bool,
     pub(crate) pending_default_includes: bool,
 }
 
@@ -3229,7 +2466,6 @@ pub(crate) fn read_file_cached(path: &str) -> Option<Arc<Vec<u8>>> {
 #[derive(Clone)]
 pub(crate) struct XkbKeymap {
     pub(crate) ctx: XkbContext,
-    pub(crate) flags: u32,
     pub(crate) format: u32,
     pub(crate) min_key_code: u32,
     pub(crate) max_key_code: u32,
@@ -3372,15 +2608,8 @@ pub(crate) const DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH: &str =
     "/usr/share/xkeyboard-config-2.d";
 pub(crate) const DFLT_XKB_LEGACY_ROOT: &str = "/usr/share/X11/xkb";
 
-pub(crate) const XKB_CONTEXT_NO_FLAGS: u32 = 0;
-pub(crate) const XKB_CONTEXT_NO_DEFAULT_INCLUDES: u32 = 1;
-pub(crate) const XKB_CONTEXT_NO_ENVIRONMENT_NAMES: u32 = 2;
-pub(crate) const XKB_CONTEXT_NO_SECURE_GETENV: u32 = 4;
-
 pub(crate) const XKB_KEYSYM_NO_FLAGS: u32 = 0;
 pub(crate) const XKB_KEYSYM_CASE_INSENSITIVE: u32 = 1;
-
-pub const XKB_KEYMAP_COMPILE_FLAGS_VALUES: u32 = 1;
 
 pub(crate) const XKB_KEYCODE_INVALID: u32 = 0xffffffff;
 pub(crate) const XKB_KEYCODE_MAX: u32 = 0xffffffff_u32.wrapping_sub(1);
@@ -3389,7 +2618,6 @@ pub(crate) const XKB_KEYSYM_MAX: u32 = 0x1fffffff;
 #[derive(Clone, Default)]
 pub(crate) struct XkbComponentNames {
     pub(crate) keycodes: Vec<u8>,
-    pub(crate) compatibility: Vec<u8>,
     pub(crate) symbols: Vec<u8>,
     pub(crate) types: Vec<u8>,
 }
@@ -3615,9 +2843,7 @@ pub(crate) enum ParseStatus {
 }
 
 pub(crate) const PARSER_V2_LAX_FLAGS: u32 = 0;
-pub(crate) const PARSER_V2_STRICT_FLAGS: u32 = 16383;
 pub(crate) const PARSER_V1_LAX_FLAGS: u32 = 16379;
-pub(crate) const PARSER_V1_STRICT_FLAGS: u32 = 16383;
 pub(crate) const PARSER_NO_ILLEGAL_ACTION_FIELDS: u32 = 8192;
 pub(crate) const PARSER_NO_UNKNOWN_ACTION_FIELDS: u32 = 4096;
 pub(crate) const PARSER_NO_UNKNOWN_KEY_FIELDS: u32 = 1024;
@@ -3705,7 +2931,7 @@ mod tests {
             xkb_symbols "first" {};
             xkb_symbols "second" {};
         "#;
-        let mut ctx = xkb_context_new(0);
+        let mut ctx = xkb_context_new();
 
         let file = xkb_parse_string(&mut ctx, input, "second")
             .expect("second map should remain parseable");
