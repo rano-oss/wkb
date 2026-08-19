@@ -1,19 +1,12 @@
 use super::keymap::mod_mask_get_effective;
 use super::keymap::xkb_escape_map_name;
-use super::keymap::GROUP_LAST_INDEX_NAME;
 use super::keysym::xkb_keysym_from_name;
 use super::parser_tables::*;
 pub(crate) use super::symbols::compile_key_types;
 pub(crate) use super::symbols::compile_keycodes;
 pub(crate) use super::symbols::compile_symbols;
-use super::symbols::expr_resolve_group;
 use crate::xkb::keymap::xkb_mod_name_to_index;
 use crate::xkb::keysym::codepoint_to_keysym;
-
-pub(crate) const XKB_KEY_VOID_SYMBOL: i32 = 0xffffff_i32;
-pub(crate) const XKB_KEY_0: i32 = 0x30;
-pub(crate) const XKB_KEY_SECTION: i32 = 0xa7_i32;
-pub(crate) const XKB_KEYSYM_MIN: i32 = 0;
 
 pub(crate) const YYINITDEPTH: usize = 200;
 pub(crate) const YYMAXDEPTH: usize = 10000;
@@ -33,7 +26,7 @@ fn resolve_keysym(name: Sval) -> Option<u32> {
         return Some(XKB_KEY_NO_SYMBOL);
     }
     if name_str.eq_ignore_ascii_case("none") || name_str.eq_ignore_ascii_case("voidsymbol") {
-        return Some(XKB_KEY_VOID_SYMBOL as u32);
+        return Some(0xffffff);
     }
 
     if name.data.len() >= 30 {
@@ -365,19 +358,7 @@ fn execute_reduction<'a>(
             let expr = yyvs[sp].take_expr();
             *yyval = YYValue::VMod(vmod_create(atom, expr));
         }
-        58 => {
-            if let YYValue::Interp(mut interp) = std::mem::replace(&mut yyvs[sp - 4], YYValue::None)
-            {
-                let vardefs = yyvs[sp - 2].take_var_list();
-                interp.def = vardefs;
-                *yyval = YYValue::Interp(interp);
-            } else {
-                *yyval = YYValue::None;
-            }
-        }
-        59 | 60 => {
-            *yyval = YYValue::Interp(InterpDef { def: Vec::new() });
-        }
+        58..=60 => *yyval = YYValue::Unknown,
         61 | 67 | 68 => {
             let var = yyvs[sp].take_var();
             let mut list = match yyn {
@@ -472,12 +453,7 @@ fn execute_reduction<'a>(
             let keysym = yyvs[sp].as_keysym();
             *yyval = YYValue::Expr(ExprKind::KeySym(keysym));
         }
-        88 => {
-            *yyval = YYValue::LedMap(());
-        }
-        89 | 90 => {
-            *yyval = YYValue::LedName(());
-        }
+        88..=90 => *yyval = YYValue::None,
         91 => {
             let _ = yyvs[sp - 3].take_expr();
             let _ = yyvs[sp - 1].take_expr();
@@ -682,21 +658,19 @@ fn execute_reduction<'a>(
                 YYValue::Keysym(resolve_keysym(yyvs[sp].as_sval()).unwrap_or(XKB_KEY_NO_SYMBOL))
         }
         201 => {
-            *yyval = YYValue::Keysym(XKB_KEY_SECTION as u32);
+            *yyval = YYValue::Keysym(0xa7);
         }
         202 => {
             let num = yyvs[sp].as_num();
-            *yyval = YYValue::Keysym((XKB_KEY_0 as u32).wrapping_add(num as u32));
+            *yyval = YYValue::Keysym(0x30u32.wrapping_add(num as u32));
         }
         203 => {
             let num = yyvs[sp].as_num();
-            *yyval = YYValue::Keysym(
-                if (XKB_KEYSYM_MIN as i64..=XKB_KEYSYM_MAX as i64).contains(&num) {
-                    num as u32
-                } else {
-                    XKB_KEY_NO_SYMBOL
-                },
-            );
+            *yyval = YYValue::Keysym(if (0..=XKB_KEYSYM_MAX as i64).contains(&num) {
+                num as u32
+            } else {
+                XKB_KEY_NO_SYMBOL
+            });
         }
         204 => {
             *yyval = YYValue::Num(-yyvs[sp].as_num());
@@ -1149,12 +1123,9 @@ pub(crate) enum YYValue<'a> {
     VarList(Vec<VarDef>),
     VMod(VModDef),
     VModList(Vec<VModDef>),
-    Interp(InterpDef),
     KeyType(NamedVarDef),
     Symbols(NamedVarDef),
     ModMask(ModMapDef),
-    LedMap(()),
-    LedName(()),
     Keycode(KeycodeDef),
     KeyAlias(KeyAliasDef),
     Unknown,
@@ -1370,7 +1341,6 @@ pub(crate) fn xkb_parse_string(
 // ── Include file processing (merged from include.rs) ──
 
 use super::keymap::getenv_or;
-use super::keymap::xkb_context_num_include_paths;
 
 pub(crate) const INCLUDE_MAX_DEPTH: i32 = 15_i32;
 fn is_merge_prefix(byte: u8) -> bool {
@@ -1419,27 +1389,18 @@ fn expand_percent(type_dir: &str, name: &str) -> Option<String> {
     }
     Some(result)
 }
-/// Expand `%`-sequences in `name`. Returns:
-/// - `Ok(None)` if no `%` found (no expansion needed)
-/// - `Ok(Some(expanded))` if expansion succeeded
-/// - `Err(())` on error
-pub(crate) fn expand_path_str(name: &str, file_type: FileType) -> Result<Option<String>, ()> {
-    let Some(k) = name.find('%') else {
-        return Ok(None);
-    };
-    let expanded = expand_percent(directory_for_include(file_type), &name[k..]).ok_or(())?;
-    Ok(Some(format!("{}{}", &name[..k], expanded)))
-}
-
 fn include_path<'a>(
     name: &'a str,
     file_type: FileType,
 ) -> Option<(std::borrow::Cow<'a, str>, bool)> {
-    match expand_path_str(name, file_type) {
-        Ok(Some(path)) => Some((std::borrow::Cow::Owned(path), true)),
-        Ok(None) => Some((std::borrow::Cow::Borrowed(name), false)),
-        Err(()) => None,
-    }
+    let Some(k) = name.find('%') else {
+        return Some((std::borrow::Cow::Borrowed(name), false));
+    };
+    let suffix = expand_percent(directory_for_include(file_type), &name[k..])?;
+    Some((
+        std::borrow::Cow::Owned(format!("{}{}", &name[..k], suffix)),
+        true,
+    ))
 }
 pub(crate) fn find_file_in_xkb_path(
     ctx: &mut XkbContext,
@@ -1448,14 +1409,12 @@ pub(crate) fn find_file_in_xkb_path(
     offset: &mut u32,
 ) -> Option<std::sync::Arc<Vec<u8>>> {
     let type_dir = directory_for_include(type_0);
-    let path_count = xkb_context_num_include_paths(ctx);
+    let path_count = ctx.includes.len() as u32;
     for i in *offset..path_count {
         let path = format!("{}/{}/{}", ctx.includes[i as usize], type_dir, name);
-        if path.len() < 4096 {
-            if let Some(data) = read_file_cached(&path) {
-                *offset = i;
-                return Some(data);
-            }
+        if let Some(data) = read_file_cached(&path) {
+            *offset = i;
+            return Some(data);
         }
     }
     None
@@ -1516,82 +1475,6 @@ pub(crate) type CompileFileFn = for<'a> fn(Option<&mut XkbFile>, &mut XkbKeymapI
 fn compute_effective_mask_with(mod_set: &XkbModSet, mods: &mut XkbMods) {
     let unknown_mods: u32 = !((1_u64 << mod_set.num_mods).wrapping_sub(1_u64) as u32);
     mods.mask = mod_mask_get_effective(mod_set, mods.mods) | mods.mods & unknown_mods;
-}
-fn update_pending_key_fields(info: &mut XkbKeymapInfo<'_>, key_idx: usize) -> bool {
-    if info.keymap.keys[key_idx].out_of_range_pending_group {
-        let idx = info.keymap.keys[key_idx].out_of_range_group_number as usize;
-        if !info.pending_computations[idx].computed {
-            // Temporarily take the expr out to avoid borrow conflict with info
-            let expr_box = info.pending_computations[idx].expr.take().unwrap();
-            let mut group: u32 = 0;
-            let mut _pending = false;
-            let resolve_ret = expr_resolve_group(info, &expr_box, true, &mut group, &mut _pending);
-            info.pending_computations[idx].expr = Some(expr_box);
-            match resolve_ret {
-                ParseStatus::Success => {
-                    info.pending_computations[idx].computed = true;
-                    info.pending_computations[idx].value = group.wrapping_sub(1);
-                }
-                ParseStatus::Fatal => {
-                    return info.strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0;
-                }
-                _ => {}
-            }
-        }
-        info.keymap.keys[key_idx].out_of_range_pending_group = false;
-        info.keymap.keys[key_idx].out_of_range_group_number = info.pending_computations[idx].value;
-    }
-    true
-}
-fn update_pending_action_fields(info: &mut XkbKeymapInfo<'_>, act: &mut XkbAction) -> bool {
-    match act {
-        XkbAction::GroupSet(g) | XkbAction::GroupLatch(g) | XkbAction::GroupLock(g) => {
-            if g.flags.contains(ActionFlags::PENDING_COMPUTATION) {
-                let pc_idx = g.group as usize;
-                if !info.pending_computations[pc_idx].computed {
-                    let mut group: u32 = 0;
-                    let absolute: bool = g.flags.contains(ActionFlags::ABSOLUTE_SWITCH);
-                    let mut _pending = false;
-                    let expr_box = info.pending_computations[pc_idx].expr.take().unwrap();
-                    let resolve_ret =
-                        expr_resolve_group(info, &expr_box, absolute, &mut group, &mut _pending);
-                    info.pending_computations[pc_idx].expr = Some(expr_box);
-                    match resolve_ret {
-                        ParseStatus::Fatal => {
-                            return false;
-                        }
-                        ParseStatus::Recoverable => {}
-                        _ => {
-                            info.pending_computations[pc_idx].computed = true;
-                            if absolute {
-                                info.pending_computations[pc_idx].value = group.wrapping_sub(1);
-                            } else {
-                                info.pending_computations[pc_idx].value = group;
-                                if info.pending_computations[pc_idx].expr.as_ref().is_some_and(
-                                    |expr| {
-                                        matches!(
-                                            expr,
-                                            ExprKind::Unary {
-                                                op: UnaryOp::Negate,
-                                                ..
-                                            }
-                                        )
-                                    },
-                                ) {
-                                    info.pending_computations[pc_idx].value =
-                                        -(info.pending_computations[pc_idx].value as i32) as u32;
-                                }
-                            }
-                        }
-                    }
-                }
-                g.group = info.pending_computations[pc_idx].value as i32;
-                g.flags &= !ActionFlags::PENDING_COMPUTATION;
-            }
-            true
-        }
-        _ => true,
-    }
 }
 fn mod_index_by_name(keymap: &XkbKeymap, name: &str) -> Option<u32> {
     keymap.mods.mods[..keymap.mods.num_mods as usize]
@@ -1701,17 +1584,10 @@ fn update_derived_keymap_fields(info: &mut XkbKeymapInfo<'_>) -> bool {
     keymap.num_groups = keymap.keys[start_idx as usize..keymap.num_keys as usize]
         .iter()
         .fold(keymap.num_groups, |max, key| max.max(key.num_groups));
-    let pending_computations: bool = !info.pending_computations.is_empty();
-    if pending_computations {
-        let num_groups = info.keymap.num_groups.max(1);
-        info.lookup.group_index_names[1] = lookup_entry(GROUP_LAST_INDEX_NAME, num_groups);
-    }
     apply_wkb_compat(info.keymap);
     update_mod_mappings(info);
     compute_type_entry_masks(info);
-    if update_key_action_fields(info, pending_computations).is_err() {
-        return false;
-    }
+    update_key_action_fields(info);
     true
 }
 
@@ -1765,42 +1641,40 @@ fn compute_type_entry_masks(info: &mut XkbKeymapInfo<'_>) {
     }
 }
 
-fn update_key_action_fields(
-    info: &mut XkbKeymapInfo<'_>,
-    pending_computations: bool,
-) -> Result<(), ()> {
+fn update_key_action_fields(info: &mut XkbKeymapInfo<'_>) {
+    let last = info.keymap.num_groups.saturating_sub(1);
     let start_idx = if info.keymap.num_keys_low == 0 {
         0_u32
     } else {
         info.keymap.min_key_code
     };
     for ki in start_idx..info.keymap.num_keys {
-        if !update_pending_key_fields(info, ki as usize) {
-            return Err(());
+        let key = &mut info.keymap.keys[ki as usize];
+        if key.out_of_range_pending_group {
+            key.out_of_range_pending_group = false;
+            key.out_of_range_group_number = last;
         }
-        if !pending_computations {
-            continue;
-        }
-        let key_num_groups = info.keymap.keys[ki as usize].num_groups;
-        for i_1 in 0..key_num_groups {
-            let num_levels = {
-                let key = &info.keymap.keys[ki as usize];
-                info.keymap.types[key.groups[i_1 as usize].type_idx as usize].num_levels
-            };
-            for j_0 in 0..num_levels {
-                let action =
-                    info.keymap.keys[ki as usize].groups[i_1 as usize].levels[j_0 as usize].action;
-                if let Some(mut act) = action {
-                    if !update_pending_action_fields(info, &mut act) {
-                        return Err(());
-                    }
-                    info.keymap.keys[ki as usize].groups[i_1 as usize].levels[j_0 as usize]
-                        .action = Some(act);
+        for group in &mut key.groups {
+            for level in &mut group.levels {
+                let Some(
+                    XkbAction::GroupSet(action)
+                    | XkbAction::GroupLatch(action)
+                    | XkbAction::GroupLock(action),
+                ) = &mut level.action
+                else {
+                    continue;
+                };
+                if action.flags.contains(ActionFlags::PENDING_COMPUTATION) {
+                    action.group = if action.flags.contains(ActionFlags::ABSOLUTE_SWITCH) {
+                        last as i32
+                    } else {
+                        action.group.signum() * info.keymap.num_groups as i32
+                    };
+                    action.flags.remove(ActionFlags::PENDING_COMPUTATION);
                 }
             }
         }
     }
-    Ok(())
 }
 
 static COMPILE_FILE_FNS: [(FileType, CompileFileFn); 3] = [
@@ -1821,7 +1695,6 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
         }
     }
     let km_format = keymap.format;
-    let km_num_groups = keymap.num_groups;
     let mut info = XkbKeymapInfo {
         keymap,
         strict: if km_format == XKB_KEYMAP_FORMAT_TEXT_V1 {
@@ -1829,27 +1702,6 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
         } else {
             PARSER_V2_LAX_FLAGS
         },
-        features: XkbcompFeatures {
-            max_groups: XKB_MAX_GROUPS,
-            max_overlays: XKB_OVERLAY_MAX,
-            group_lock_on_release: km_format >= XKB_KEYMAP_FORMAT_TEXT_V2,
-            overlapping_overlays: km_format >= XKB_KEYMAP_FORMAT_TEXT_V2,
-        },
-        lookup: XkbcompLookup {
-            group_index_names: [
-                lookup_entry("first", 1),
-                lookup_entry(
-                    if km_num_groups != 0 {
-                        GROUP_LAST_INDEX_NAME
-                    } else {
-                        ""
-                    },
-                    km_num_groups,
-                ),
-                lookup_entry("", 0),
-            ],
-        },
-        pending_computations: Vec::new(),
     };
     for (file_type, compile) in COMPILE_FILE_FNS {
         let file_arg: Option<&mut XkbFile> = file_indices[file_type as usize].map(|idx| {
@@ -2396,7 +2248,6 @@ pub fn xkb_resolve_rules(
     }
     true
 }
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -2421,9 +2272,7 @@ pub(crate) struct XkbRuleNames {
 #[derive(Clone)]
 pub(crate) struct XkbContext {
     pub(crate) includes: Vec<String>,
-    pub(crate) failed_includes: Vec<String>,
     pub(crate) atom_table: lasso::Rodeo,
-    pub(crate) pending_default_includes: bool,
 }
 
 impl XkbContext {
@@ -2441,26 +2290,8 @@ impl XkbContext {
     }
 }
 
-thread_local! {
-    /// Thread-local file cache shared across all XkbContext instances.
-    /// Survives context clones and keymap compilations within the same thread.
-    static FILE_CACHE: RefCell<HashMap<String, Arc<Vec<u8>>>> = RefCell::new(HashMap::new());
-}
-
-/// Read a file from the thread-local cache, or read from disk and cache it.
 pub(crate) fn read_file_cached(path: &str) -> Option<Arc<Vec<u8>>> {
-    FILE_CACHE
-        .with(|cache| {
-            let cache = cache.borrow();
-            cache.get(path).cloned()
-        })
-        .or_else(|| {
-            let arc = Arc::new(std::fs::read(path).ok()?);
-            FILE_CACHE.with(|cache| {
-                cache.borrow_mut().insert(path.to_string(), arc.clone());
-            });
-            Some(arc)
-        })
+    std::fs::read(path).ok().map(Arc::new)
 }
 
 #[derive(Clone)]
@@ -2519,10 +2350,6 @@ pub(crate) enum XkbAction {
     GroupLock(XkbGroupAction),
 }
 
-pub const ACTION_TYPE_GROUP_LOCK: u32 = 7;
-pub const ACTION_TYPE_GROUP_LATCH: u32 = 6;
-pub const ACTION_TYPE_GROUP_SET: u32 = 5;
-
 bitflags::bitflags! {
     #[derive(Copy, Clone, Default, PartialEq, Eq)]
     pub struct ActionFlags: u32 {
@@ -2564,7 +2391,6 @@ pub(crate) struct XkbKeyTypeEntry {
 #[derive(Copy, Clone, Default)]
 pub(crate) struct KeycodeMatch {
     pub(crate) found: bool,
-    pub(crate) low: bool,
     pub(crate) is_alias: bool,
     pub(crate) index: u32,
 }
@@ -2572,7 +2398,6 @@ pub(crate) struct KeycodeMatch {
 #[derive(Clone, Default)]
 pub(crate) struct XkbKey {
     pub(crate) keycode: u32,
-    pub(crate) name: u32,
     pub(crate) explicit_repeat: bool,
     pub(crate) explicit_vmodmap: bool,
     pub(crate) modmap: u32,
@@ -2602,16 +2427,11 @@ pub(crate) const XKB_MAX_GROUPS: u32 = 32;
 pub(crate) const MOD_REAL_MASK_ALL: u32 = 0xff_i32 as u32;
 pub(crate) const DFLT_XKB_CONFIG_EXTRA_PATH: &str = "/usr/local/etc/xkb";
 pub(crate) const DFLT_XKB_CONFIG_ROOT: &str = "/usr/share/xkeyboard-config-2";
-pub(crate) const DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH: &str =
-    "/usr/share/xkeyboard-config.d";
-pub(crate) const DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH: &str =
-    "/usr/share/xkeyboard-config-2.d";
 pub(crate) const DFLT_XKB_LEGACY_ROOT: &str = "/usr/share/X11/xkb";
 
 pub(crate) const XKB_KEYSYM_NO_FLAGS: u32 = 0;
 pub(crate) const XKB_KEYSYM_CASE_INSENSITIVE: u32 = 1;
 
-pub(crate) const XKB_KEYCODE_INVALID: u32 = 0xffffffff;
 pub(crate) const XKB_KEYCODE_MAX: u32 = 0xffffffff_u32.wrapping_sub(1);
 pub(crate) const XKB_KEYSYM_MAX: u32 = 0x1fffffff;
 
@@ -2626,8 +2446,6 @@ pub(crate) const XKB_ATOM_NONE: u32 = 0;
 
 pub const XKB_MOD_NONE: u32 = 0xffffffff;
 pub(crate) const _XKB_MOD_INDEX_NUM_ENTRIES: u32 = 8;
-pub(crate) const XKB_OVERLAY_MAX: u8 = 8;
-pub(crate) const XKB_OVERLAY_INVALID: u8 = 255;
 pub(crate) const XKB_KEYCODE_MAX_CONTIGUOUS: u32 = 0xfff;
 pub(crate) const XKB_LEVEL_MAX_IMPL: u32 = 2048;
 pub(crate) const XKB_MAX_MODS: u32 = 32;
@@ -2659,12 +2477,6 @@ impl XkbKeymap {
     }
 
     #[inline]
-    pub(crate) fn key_by_name(&self, name: u32, aliases: bool) -> Option<&XkbKey> {
-        self.key_index_by_name(name, aliases)
-            .and_then(|idx| self.keys.get(idx))
-    }
-
-    #[inline]
     pub(crate) fn key_by_name_mut(&mut self, name: u32, aliases: bool) -> Option<&mut XkbKey> {
         let idx = self.key_index_by_name(name, aliases)?;
         self.keys.get_mut(idx)
@@ -2673,16 +2485,6 @@ impl XkbKeymap {
 
 // Error codes (from xkbcommon_errors_h)
 pub(crate) const XKB_KEY_NO_SYMBOL: u32 = 0;
-
-#[derive(Copy, Clone)]
-pub(crate) struct LookupEntry {
-    pub(crate) name: &'static str,
-    pub(crate) value: u32,
-}
-
-pub(crate) const fn lookup_entry(name: &'static str, value: u32) -> LookupEntry {
-    LookupEntry { name, value }
-}
 
 // ── File type enum ──────────────────────────────────────────────────
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -2807,10 +2609,6 @@ pub(crate) struct ModMapDef {
     pub(crate) modifier: u32,
     pub(crate) keys: Vec<ExprKind>,
 }
-pub(crate) struct InterpDef {
-    pub(crate) def: Vec<VarDef>,
-}
-
 pub(crate) const MAP_HAS_MAP_FLAGS: u32 = 2;
 pub(crate) const MAP_IS_DEFAULT: u32 = 1;
 
@@ -2851,34 +2649,11 @@ pub(crate) const PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS: u32 = 512;
 pub(crate) const PARSER_NO_UNKNOWN_TYPE_FIELDS: u32 = 32;
 pub(crate) const PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS: u32 = 16;
 pub(crate) const PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS: u32 = 8;
-pub(crate) const PARSER_NO_FIELD_VALUE_MISMATCH: u32 = 4;
 pub(crate) const PARSER_NO_FIELD_TYPE_MISMATCH: u32 = 2;
 pub(crate) const PARSER_NO_UNKNOWN_STATEMENTS: u32 = 1;
-pub(crate) struct PendingComputation {
-    pub(crate) expr: Option<ExprKind>,
-    pub(crate) computed: bool,
-    pub(crate) value: u32,
-}
-
 pub(crate) struct XkbKeymapInfo<'a> {
     pub(crate) keymap: &'a mut XkbKeymap,
     pub(crate) strict: u32,
-    pub(crate) features: XkbcompFeatures,
-    pub(crate) lookup: XkbcompLookup,
-    pub(crate) pending_computations: Vec<PendingComputation>,
-}
-
-#[derive(Copy, Clone)]
-pub(crate) struct XkbcompLookup {
-    pub(crate) group_index_names: [LookupEntry; 3],
-}
-
-#[derive(Copy, Clone)]
-pub(crate) struct XkbcompFeatures {
-    pub(crate) max_groups: u32,
-    pub(crate) max_overlays: u8,
-    pub(crate) group_lock_on_release: bool,
-    pub(crate) overlapping_overlays: bool,
 }
 
 fn digit(b: u8) -> u8 {
