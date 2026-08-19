@@ -293,9 +293,14 @@ fn build_groups_from_keymap(keymap: &keymap::XkbKeymap, compiled_types: &[Compil
                     continue;
                 };
 
-                for required in group_key_combinations(keymap, key.keycode, selector.modifier_mask)
+                for mut required in
+                    group_key_combinations(keymap, key.keycode, selector.modifier_mask)
                 {
-                    entries.push(Group::with_keys(evdev_code, required, action));
+                    required.push(evdev_code);
+                    entries.push(Group {
+                        keys: required,
+                        action,
+                    });
                 }
             }
 
@@ -308,18 +313,13 @@ fn build_groups_from_keymap(keymap: &keymap::XkbKeymap, compiled_types: &[Compil
                 continue;
             };
 
-            entries.push(Group::new(evdev_code, action));
+            entries.push(Group {
+                keys: vec![evdev_code],
+                action,
+            });
         }
     }
-
-    entries.sort_by(|left, right| {
-        left.key
-            .cmp(&right.key)
-            .then_with(|| left.with.cmp(&right.with))
-    });
-
     entries.dedup();
-
     Groups::new(entries)
 }
 
@@ -538,7 +538,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
         let mut caps_lock_keymap = FlatKeymap::new(num_keys);
         let mut caps_num_lock_keys = FlatKeymap::new(num_keys);
         let mut num_lock_keys = FlatKeymap::new(num_keys);
-        let mut repeat_keys = KeyBitSet::new();
+        let mut repeat_keys = KeyBitSet::default();
 
         for key in &keymap.keys {
             let kc = key.keycode;

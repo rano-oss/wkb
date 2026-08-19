@@ -1,6 +1,4 @@
-use std::collections::BTreeSet;
-
-use crate::KeyDirection;
+use crate::{KeyBitSet, KeyDirection};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GroupChange {
@@ -9,6 +7,7 @@ pub enum GroupChange {
 }
 
 impl GroupChange {
+    #[inline]
     fn apply(self, value: &mut i32) {
         match self {
             Self::Absolute(group) => *value = group.into(),
@@ -29,54 +28,30 @@ pub enum GroupKind {
     LatchToLockOnRelease(GroupChange),
 }
 
-/// One complete group activation rule.
-///
-/// `key` owns the action. `with` contains the additional keys which must
-/// already be held when `key` is pressed.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Group {
-    pub key: u32,
-    pub with: Vec<u32>,
+    pub keys: Vec<u32>,
     pub action: GroupKind,
 }
 
 impl Group {
-    pub fn new(key: u32, action: GroupKind) -> Self {
-        Self {
-            key,
-            with: Vec::new(),
-            action,
-        }
-    }
-
-    pub fn with_keys(key: u32, with: impl IntoIterator<Item = u32>, action: GroupKind) -> Self {
-        let mut with = with.into_iter().collect::<Vec<_>>();
-        with.sort_unstable();
-        with.dedup();
-
-        Self { key, with, action }
-    }
-
-    fn matches(&self, code: u32, pressed: &BTreeSet<u32>) -> bool {
-        self.key == code && self.with.iter().all(|key| pressed.contains(key))
-    }
-
+    #[inline]
     fn contains(&self, code: u32) -> bool {
-        self.key == code || self.with.contains(&code)
+        self.keys.contains(&code)
     }
-}
 
-#[derive(Debug, Clone, Copy)]
-struct ActiveGroup {
-    rule: usize,
-    interrupted: bool,
+    #[inline]
+    fn active(&self, pressed: &KeyBitSet) -> bool {
+        self.keys.iter().all(|key| pressed.contains(*key))
+    }
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct Groups {
     pub(crate) entries: Vec<Group>,
-    pressed: BTreeSet<u32>,
-    active: Vec<ActiveGroup>,
+    active: Vec<(usize, bool)>,
+    pressed: KeyBitSet,
+    group_keys: KeyBitSet,
     latched_action: Option<GroupChange>,
     base: i32,
     latched: i32,
@@ -84,32 +59,21 @@ pub struct Groups {
 }
 
 impl Groups {
-    pub fn new(mut entries: Vec<Group>) -> Self {
-        for entry in &mut entries {
-            entry.with.sort_unstable();
-            entry.with.dedup();
-        }
+    pub fn new(entries: Vec<Group>) -> Self {
+        let mut group_keys = KeyBitSet::default();
 
-        entries.dedup();
+        for &key in entries.iter().flat_map(|group| &group.keys) {
+            group_keys.insert(key);
+        }
 
         Self {
             entries,
+            group_keys,
             ..Self::default()
         }
     }
 
-    pub fn set(&mut self, group: Group) {
-        self.entries
-            .retain(|entry| entry.key != group.key || entry.with != group.with);
-        self.entries.push(group);
-    }
-
-    pub fn remove_key(&mut self, code: u32) -> bool {
-        let before = self.entries.len();
-        self.entries.retain(|entry| entry.key != code);
-        before != self.entries.len()
-    }
-
+    #[inline]
     pub fn effective(&self, layouts: usize) -> usize {
         if layouts == 0 {
             return 0;
@@ -128,6 +92,7 @@ impl Groups {
         self.locked = layout as i32;
         self.latched_action = None;
         self.active.clear();
+        self.pressed = KeyBitSet::default();
         true
     }
 
@@ -138,97 +103,95 @@ impl Groups {
         consumes_latch: bool,
         layouts: usize,
     ) -> usize {
+        let changed = match direction {
+            KeyDirection::Down => self.pressed.insert(code),
+            KeyDirection::Up => self.pressed.remove(code),
+        };
+
+        if !changed {
+            return self.effective(layouts);
+        }
+
+        if !self.group_keys.contains(code) {
+            if direction == KeyDirection::Down {
+                if consumes_latch {
+                    self.clear_latch();
+                }
+
+                for (idx, interrupted) in &mut self.active {
+                    *interrupted |= release_action(self.entries[*idx].action);
+                }
+            }
+
+            return self.effective(layouts);
+        }
+
         match direction {
-            KeyDirection::Down => self.key_down(code, consumes_latch),
-            KeyDirection::Up => self.key_up(code),
+            KeyDirection::Down => {
+                let latches = self.entries.iter().enumerate().any(|(idx, group)| {
+                    group.contains(code)
+                        && group.active(&self.pressed)
+                        && !self.active.iter().any(|(active, _)| *active == idx)
+                        && latch_action(group.action)
+                });
+
+                if consumes_latch && !latches {
+                    self.clear_latch();
+                }
+
+                for (idx, interrupted) in &mut self.active {
+                    let group = &self.entries[*idx];
+
+                    *interrupted |= !group.contains(code) && release_action(group.action);
+                }
+
+                for idx in 0..self.entries.len() {
+                    let group = &self.entries[idx];
+
+                    if !group.contains(code)
+                        || !group.active(&self.pressed)
+                        || self.active.iter().any(|(active, _)| *active == idx)
+                    {
+                        continue;
+                    }
+
+                    let action = group.action;
+                    self.down(action);
+                    self.active.push((idx, false));
+                }
+            }
+
+            KeyDirection::Up => {
+                let mut idx = 0;
+
+                while idx < self.active.len() {
+                    let entry = self.active[idx].0;
+
+                    if self.entries[entry].active(&self.pressed) {
+                        idx += 1;
+                        continue;
+                    }
+
+                    let (entry, interrupted) = self.active.swap_remove(idx);
+                    self.up(self.entries[entry].action, interrupted);
+                }
+            }
         }
 
         self.effective(layouts)
     }
 
-    fn key_down(&mut self, code: u32, consumes_latch: bool) {
-        // Ignore key-repeat presses for group state.
-        if !self.pressed.insert(code) {
-            return;
-        }
-
-        let selected = self
-            .entries
-            .iter()
-            .enumerate()
-            .filter(|(_, group)| group.matches(code, &self.pressed))
-            // Prefer the most specific matching combination.
-            .max_by_key(|(_, group)| group.with.len())
-            .map(|(index, group)| (index, group.action));
-
-        let selected_is_latch = selected.is_some_and(|(_, action)| {
-            matches!(
-                action,
-                GroupKind::LatchOnPress(_)
-                    | GroupKind::LatchOnRelease(_)
-                    | GroupKind::LatchToLockOnPress(_)
-                    | GroupKind::LatchToLockOnRelease(_)
-            )
-        });
-
-        if consumes_latch && !selected_is_latch {
-            self.latched = 0;
-            self.latched_action = None;
-        }
-
-        // A different key interrupts pending tap/release actions.
-        for active in &mut self.active {
-            let group = &self.entries[active.rule];
-
-            if !group.contains(code) {
-                active.interrupted |= matches!(
-                    group.action,
-                    GroupKind::Tap(_) | GroupKind::LockOnRelease(_)
-                );
-            }
-        }
-
-        if let Some((rule, action)) = selected {
-            self.down(action);
-            self.active.push(ActiveGroup {
-                rule,
-                interrupted: false,
-            });
-        }
-    }
-
-    fn key_up(&mut self, code: u32) {
-        if !self.pressed.remove(&code) {
-            return;
-        }
-
-        // Release actions belong to the rule's owning key, not its required
-        // combination keys.
-        let mut index = 0;
-
-        while index < self.active.len() {
-            let active = self.active[index];
-
-            if self.entries[active.rule].key == code {
-                self.active.remove(index);
-                self.up(self.entries[active.rule].action, active.interrupted);
-            } else {
-                index += 1;
-            }
-        }
+    #[inline]
+    fn clear_latch(&mut self) {
+        self.latched = 0;
+        self.latched_action = None;
     }
 
     fn down(&mut self, action: GroupKind) {
         match action {
-            GroupKind::Press(delta) => {
-                self.base += i32::from(delta);
-            }
-            GroupKind::LockOnPress(change) => {
-                change.apply(&mut self.locked);
-            }
-            GroupKind::LatchOnPress(change) => {
-                self.latch(change);
-            }
+            GroupKind::Press(delta) => self.base += i32::from(delta),
+            GroupKind::LockOnPress(change) => change.apply(&mut self.locked),
+            GroupKind::LatchOnPress(change) => self.latch(change),
             GroupKind::LatchToLockOnPress(change) => {
                 self.latch_or_lock(change);
             }
@@ -238,21 +201,18 @@ impl Groups {
 
     fn up(&mut self, action: GroupKind, interrupted: bool) {
         match action {
-            GroupKind::Press(delta) => {
-                self.base -= i32::from(delta);
-            }
-            GroupKind::Tap(change) if !interrupted => {
+            GroupKind::Press(delta) => self.base -= i32::from(delta),
+
+            GroupKind::Tap(change) | GroupKind::LockOnRelease(change) if !interrupted => {
                 change.apply(&mut self.locked);
             }
-            GroupKind::LockOnRelease(change) if !interrupted => {
-                change.apply(&mut self.locked);
-            }
-            GroupKind::LatchOnRelease(change) => {
-                self.latch(change);
-            }
+
+            GroupKind::LatchOnRelease(change) => self.latch(change),
+
             GroupKind::LatchToLockOnRelease(change) => {
                 self.latch_or_lock(change);
             }
+
             _ => {}
         }
     }
@@ -265,11 +225,26 @@ impl Groups {
 
     fn latch_or_lock(&mut self, change: GroupChange) {
         if self.latched_action == Some(change) {
-            self.latched = 0;
-            self.latched_action = None;
+            self.clear_latch();
             change.apply(&mut self.locked);
         } else {
             self.latch(change);
         }
     }
+}
+
+#[inline]
+fn release_action(action: GroupKind) -> bool {
+    matches!(action, GroupKind::Tap(_) | GroupKind::LockOnRelease(_))
+}
+
+#[inline]
+fn latch_action(action: GroupKind) -> bool {
+    matches!(
+        action,
+        GroupKind::LatchOnPress(_)
+            | GroupKind::LatchOnRelease(_)
+            | GroupKind::LatchToLockOnPress(_)
+            | GroupKind::LatchToLockOnRelease(_)
+    )
 }

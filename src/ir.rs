@@ -502,8 +502,10 @@ impl TryFrom<LayoutFile> for KBLayout {
         file.validate()?;
         let num_keys = NUM_KEYS as usize;
 
-        let mut repeat_keys = KeyBitSet::new();
-        file.repeat_keys.iter().for_each(|k| repeat_keys.insert(*k));
+        let mut repeat_keys = KeyBitSet::default();
+        file.repeat_keys.iter().for_each(|k| {
+            repeat_keys.insert(*k);
+        });
 
         let mut modifiers = Modifiers::new();
         for (keycode, actions) in &file.modifiers {
