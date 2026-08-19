@@ -162,7 +162,7 @@ fn apply_group_action_overrides(keymap: &mut XkbKeymap, input: &[u8]) {
     .into_iter()
     .filter_map(|(sym, name)| group_action_from_interpret(input, name).map(|action| (sym, action)))
     .collect();
-    if overrides.is_empty() {
+    if overrides.is_empty() && forced_next_latch.is_none() {
         return;
     }
     for key in &mut keymap.keys {
