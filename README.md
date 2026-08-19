@@ -94,8 +94,8 @@ let xkb_string = wkb.as_xkb_string().unwrap();
 
 | Benchmark | wkb | wkb-noxkb | xkbcommon | xkbcommon-dl | vs xkbcommon |
 |-----------|-----|-----------|-----------|--------------|-------------|
-| Setup (no compose) | 13.39 ms | 1.07 ms | 2.20 ms | 2.20 ms | 6.1x slower |
-| Setup (with compose) | 13.46 ms | 1.07 ms | 3.98 ms | 3.98 ms | 3.4x slower |
+| Setup (no compose) | 15.28 ms | 994.8 µs | 2.20 ms | 2.20 ms | 6.9x slower |
+| Setup (with compose) | 15.30 ms | 996.4 µs | 4.07 ms | 4.04 ms | 3.8x slower |
 
 ### Memory
 
@@ -113,7 +113,7 @@ Sizes for xkbcommon and xkbcommon-dl include the dynamically-linked `libxkbcommo
 | Binary | Size (stripped) |
 |--------|----------------|
 | wkb (no XKB) | 717 KB |
-| wkb (with XKB) | 791 KB |
+| wkb (with XKB) | 790 KB |
 | xkbcommon | 723 KB |
 | xkbcommon-dl | 756 KB |
 
