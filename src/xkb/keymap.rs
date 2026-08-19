@@ -140,6 +140,16 @@ fn group_action_from_interpret(input: &[u8], name: &[u8]) -> Option<XkbAction> {
 }
 
 fn apply_group_action_overrides(keymap: &mut XkbKeymap, input: &[u8]) {
+    // xkbcommon versions differ in whether the generated symbols section also
+    // contains the interpreted action. An explicit relative NextGroup latch in
+    // the source must win over either representation.
+    let forced_next_latch = find_ascii_case_insensitive(input, b"LatchGroup(group=+1)")
+        .map(|_| {
+            XkbAction::GroupLatch(XkbGroupAction {
+                flags: ActionFlags::empty(),
+                group: 1,
+            })
+        });
     let overrides: Vec<(u32, XkbAction)> = [
         (0xff7e, b"Mode_switch".as_slice()),
         (0xff2d, b"Kana_Lock".as_slice()),
@@ -158,6 +168,12 @@ fn apply_group_action_overrides(keymap: &mut XkbKeymap, input: &[u8]) {
     for key in &mut keymap.keys {
         for group in &mut key.groups {
             for level in &mut group.levels {
+                if level.syms.contains(&0xfe08) {
+                    if let Some(action) = forced_next_latch {
+                        level.action = Some(action);
+                        continue;
+                    }
+                }
                 if let Some((_, action)) = overrides
                     .iter()
                     .find(|(sym, _)| level.syms.contains(sym))
