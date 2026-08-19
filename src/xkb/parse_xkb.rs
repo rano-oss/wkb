@@ -448,7 +448,7 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
             return Some(Statement::Var(VarDef {
                 merge,
                 name: Some(ExprKind::Ident(atom)),
-                value: Some(ExprKind::Boolean(false)),
+                value: Some(ExprKind::Integer(0)),
             }));
         } else {
             self.parse_expr(2)?
@@ -457,7 +457,7 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
     }
     fn parse_variable(&mut self, merge: MergeMode, name: ExprKind) -> Option<Statement> {
         let value = if self.punct(b';') {
-            Some(ExprKind::Boolean(true))
+            Some(ExprKind::Integer(1))
         } else {
             self.punct(b'=').then_some(())?;
             let value = self.parse_expr(0);
@@ -500,7 +500,7 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
                 body.push(VarDef {
                     merge,
                     name: Some(ExprKind::Ident(atom)),
-                    value: Some(ExprKind::Boolean(false)),
+                    value: Some(ExprKind::Integer(0)),
                 });
             } else {
                 let name = self.parse_expr(2)?;
@@ -514,7 +514,7 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
                     body.push(VarDef {
                         merge,
                         name: Some(name),
-                        value: Some(ExprKind::Boolean(true)),
+                        value: Some(ExprKind::Integer(1)),
                     });
                 }
             }
@@ -570,7 +570,7 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
             }
             Token::String(value) => Some(ExprKind::String(self.ctx.atom_intern(value.as_bytes()))),
             Token::Integer(value) => Some(ExprKind::Integer(value)),
-            Token::Float => Some(ExprKind::Float),
+            Token::Float => None,
             Token::Key(value) => Some(ExprKind::KeyName(self.atom(value))),
             Token::Punct(b'[') => self.parse_list_after_open(),
             Token::Punct(b'(') => {

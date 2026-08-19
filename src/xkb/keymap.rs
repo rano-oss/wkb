@@ -193,8 +193,7 @@ pub(crate) fn parse_compose_file_impl<F>(path: &Path, f: &mut F) -> bool
 where
     F: FnMut(ComposeEntry),
 {
-    use super::parser::read_file_cached;
-    let Some(data) = path.to_str().and_then(read_file_cached) else {
+    let Some(data) = std::fs::read(path).ok() else {
         return false;
     };
     let Ok(content) = std::str::from_utf8(&data) else {
@@ -401,6 +400,7 @@ pub(crate) fn xkb_context_new() -> XkbContext {
     let mut ctx = XkbContext {
         includes: Vec::new(),
         atom_table: Default::default(),
+        files: Default::default(),
     };
     xkb_context_include_path_append_default(&mut ctx);
     ctx

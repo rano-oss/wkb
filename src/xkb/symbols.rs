@@ -28,23 +28,11 @@ pub(crate) enum ModMapTarget {
 #[derive(Copy, Clone)]
 #[rustfmt::skip]
 pub(crate) struct ModMapEntry { pub(crate) merge: MergeMode, pub(crate) modifier: u32 }
-#[derive(Clone, Default)]
-#[rustfmt::skip]
-pub(crate) struct KeyInfo { pub(crate) name: u32, pub(crate) vmodmap: Option<u32>, pub(crate) default_type: Option<u32>, pub(crate) repeat: Option<bool>, pub(crate) out_of_range: Option<OutOfRangeInfo>, pub(crate) groups: Vec<GroupInfo> }
-impl KeyInfo {
-    fn has_any_field(&self) -> bool {
-        self.default_type.is_some()
-            || self.vmodmap.is_some()
-            || self.repeat.is_some()
-            || self.out_of_range.is_some()
-    }
-}
-#[derive(Clone, Default)]
-#[rustfmt::skip]
-pub(crate) struct GroupInfo { pub(crate) levels: Vec<XkbLevel>, pub(crate) explicit_syms: bool, pub(crate) explicit_acts: bool, pub(crate) type_0: Option<u32> }
+type KeyInfo = XkbKey;
+type GroupInfo = XkbGroup;
 impl GroupInfo {
     fn has_any_field(&self) -> bool {
-        self.explicit_syms || self.explicit_acts || self.type_0.is_some()
+        self.explicit_syms || self.explicit_acts || self.type_idx != 0
     }
 }
 impl SymbolsBuilder {
@@ -91,7 +79,8 @@ impl SymbolsBuilder {
         keymap.group_names = std::mem::take(&mut self.group_names);
         for (key_idx, key) in self.keys.iter_mut().enumerate() {
             if let Some(key) = key {
-                copy_symbols_def_to_keymap(keymap, key_idx, key);
+                finalize_key(keymap, key);
+                keymap.keys[key_idx] = std::mem::take(key);
             }
         }
         let start = keymap.min_key_code as usize;
@@ -331,9 +320,9 @@ fn init_key_info_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
     };
 }
 fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) {
-    if let Some(from_type) = from.type_0 {
-        if into.type_0.is_none() || clobber {
-            into.type_0 = Some(from_type);
+    if from.type_idx != 0 {
+        if into.type_idx == 0 || clobber {
+            into.type_idx = from.type_idx;
         }
     }
     if from.levels.is_empty() {
@@ -341,7 +330,7 @@ fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) {
         return;
     }
     if into.levels.is_empty() {
-        from.type_0 = into.type_0;
+        from.type_idx = into.type_idx;
         *into = std::mem::take(from);
         return;
     }
@@ -411,7 +400,7 @@ fn merge_keys(star_atom: u32, into: &mut KeyInfo, from: &mut KeyInfo, merge: Mer
     if from.repeat.is_some() && (into.repeat.is_none() || clobber) {
         into.repeat = from.repeat;
     }
-    if from.default_type.is_some() && (into.default_type.is_none() || clobber) {
+    if from.default_type != 0 && (into.default_type == 0 || clobber) {
         into.default_type = from.default_type;
     }
     if from.out_of_range.is_some() && (into.out_of_range.is_none() || clobber) {
@@ -639,9 +628,9 @@ fn set_symbols_field(
                     keyi.groups
                         .resize_with((ndx as usize) + 1, Default::default);
                 }
-                keyi.groups[ndx as usize].type_0 = Some(val);
+                keyi.groups[ndx as usize].type_idx = val;
             } else {
-                keyi.default_type = Some(val);
+                keyi.default_type = val;
             }
         }
         SymbolsField::Symbols => {
@@ -776,73 +765,57 @@ fn find_automatic_type(ctx: &mut XkbContext, group: &GroupInfo) -> u32 {
         _ => XKB_ATOM_NONE,
     }
 }
-fn find_type_for_group(keymap: &mut XkbKeymap, key: &KeyInfo, group: usize) -> usize {
-    let group = &key.groups[group];
-    let name = group
-        .type_0
-        .or(key.default_type)
-        .unwrap_or_else(|| find_automatic_type(&mut keymap.ctx, group));
+fn find_type_for_group(keymap: &mut XkbKeymap, default_type: u32, group: &GroupInfo) -> usize {
+    let name = match if group.type_idx != 0 {
+        group.type_idx
+    } else {
+        default_type
+    } {
+        0 => find_automatic_type(&mut keymap.ctx, group),
+        name => name,
+    };
     keymap
         .types
         .iter()
         .position(|key_type| key_type.name == name)
         .unwrap_or(0)
 }
-fn copy_symbols_def_to_keymap(keymap: &mut XkbKeymap, key_idx: usize, keyi: &mut KeyInfo) {
-    let num_groups = keyi
+fn finalize_key(keymap: &mut XkbKeymap, key: &mut KeyInfo) {
+    let num_groups = key
         .groups
         .iter()
-        .rposition(|group| {
-            !group.levels.is_empty() || keyi.default_type.is_some() || group.type_0.is_some()
-        })
+        .rposition(|group| !group.levels.is_empty() || key.default_type != 0 || group.type_idx != 0)
         .map_or(0, |index| index + 1);
-    keymap.keys[key_idx].num_groups = num_groups as u32;
-    if num_groups == 0 && !keyi.has_any_field() {
+    if num_groups == 0 {
         return;
     }
-    if num_groups != 0 {
-        keyi.groups.resize_with(num_groups, Default::default);
-        for i in 1..keyi.groups.len() {
-            if !keyi.groups[i].has_any_field() {
-                keyi.groups[i] = keyi.groups[0].clone();
-            }
+    key.groups.resize_with(num_groups, Default::default);
+    for i in 1..key.groups.len() {
+        if !key.groups[i].has_any_field() {
+            key.groups[i] = key.groups[0].clone();
         }
-        keymap.keys[key_idx].groups = vec![XkbGroup::default(); num_groups];
-        for i in 0..keyi.groups.len() as u32 {
-            let type_idx = find_type_for_group(keymap, keyi, i as usize) as u32;
-            let need_levels = keymap.types[type_idx as usize].num_levels as usize;
-            keyi.groups[i as usize]
-                .levels
-                .resize_with(need_levels, Default::default);
-            keymap.keys[key_idx].groups[i as usize].type_idx = type_idx;
-        }
-        for i in 0..keyi.groups.len() {
-            let groupi = &mut keyi.groups[i];
-            for li in 0..groupi.levels.len() {
-                let leveli = &mut groupi.levels[li];
-                if leveli.syms.len() > 1 {
-                    let has_upper = leveli.syms.iter().any(|&s| xkb_keysym_to_upper(s) != s);
-                    if has_upper {
-                        let original = leveli.syms.len();
-                        leveli.syms.extend_from_within(..);
-                        leveli.syms[original..]
-                            .iter_mut()
-                            .for_each(|sym| *sym = xkb_keysym_to_upper(*sym));
-                    }
+    }
+    let default_type = key.default_type;
+    for group in &mut key.groups {
+        group.type_idx = find_type_for_group(keymap, default_type, group) as u32;
+        group.levels.resize_with(
+            keymap.types[group.type_idx as usize].num_levels as usize,
+            Default::default,
+        );
+        for level in &mut group.levels {
+            if level.syms.len() > 1
+                && level
+                    .syms
+                    .iter()
+                    .any(|&sym| xkb_keysym_to_upper(sym) != sym)
+            {
+                let original = level.syms.len();
+                level.syms.extend_from_within(..);
+                for sym in &mut level.syms[original..] {
+                    *sym = xkb_keysym_to_upper(*sym);
                 }
             }
-            keymap.keys[key_idx].groups[i].levels = std::mem::take(&mut groupi.levels);
-            keymap.keys[key_idx].groups[i].explicit_actions = groupi.explicit_acts;
         }
-        if let Some(oor) = keyi.out_of_range {
-            keymap.keys[key_idx].out_of_range = Some(oor);
-        }
-    }
-    if let Some(vmodmap) = keyi.vmodmap {
-        keymap.keys[key_idx].vmodmap = Some(vmodmap);
-    }
-    if let Some(repeat) = keyi.repeat {
-        keymap.keys[key_idx].repeats = Some(repeat);
     }
 }
 fn find_key_by_symbol(keymap: &XkbKeymap, start: usize, sym: u32) -> Option<usize> {
@@ -850,7 +823,6 @@ fn find_key_by_symbol(keymap: &XkbKeymap, start: usize, sym: u32) -> Option<usiz
         let key = &keymap.keys[index];
         key.groups
             .iter()
-            .take(key.num_groups as usize)
             .flat_map(|group| &group.levels)
             .any(|level| level.syms.contains(&sym))
     })
@@ -1363,7 +1335,8 @@ fn expr_resolve_lhs(expr: &ExprKind) -> Option<Lhs<'_>> {
 }
 pub(crate) fn expr_resolve_boolean(ctx: &XkbContext, expr: &ExprKind) -> Option<bool> {
     match expr {
-        ExprKind::Boolean(value) => Some(*value),
+        ExprKind::Integer(0) => Some(false),
+        ExprKind::Integer(1) => Some(true),
         ExprKind::Ident(atom) => named_bool(ctx.atom_text(*atom)),
         ExprKind::Unary {
             child,

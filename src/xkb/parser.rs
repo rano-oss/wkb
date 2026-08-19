@@ -2,6 +2,7 @@ use super::keymap::mod_mask_get_effective;
 pub(crate) use super::parse_xkb::{xkb_file_from_components, xkb_parse_string};
 pub(crate) use super::symbols::{compile_key_types, compile_keycodes, compile_symbols};
 use crate::xkb::keymap::xkb_mod_name_to_index;
+use std::sync::Arc;
 pub(crate) const INCLUDE_MAX_DEPTH: i32 = 15_i32;
 fn is_merge_prefix(byte: u8) -> bool {
     matches!(byte, b'+' | b'|' | b'^')
@@ -20,12 +21,12 @@ pub(crate) fn find_file_in_xkb_path(
     name: &str,
     type_0: FileType,
     offset: &mut u32,
-) -> Option<Vec<u8>> {
+) -> Option<Arc<[u8]>> {
     let type_dir = directory_for_include(type_0);
     let path_count = ctx.includes.len() as u32;
     for i in *offset..path_count {
         let path = format!("{}/{}/{}", ctx.includes[i as usize], type_dir, name);
-        if let Some(data) = read_file_cached(&path) {
+        if let Some(data) = ctx.read_file(&path) {
             *offset = i;
             return Some(data);
         }
@@ -44,9 +45,7 @@ pub(crate) fn process_include_file(
     let mut candidate = None;
     loop {
         let file_data = if stmt.file.starts_with('/') {
-            (offset == 0)
-                .then(|| read_file_cached(&stmt.file))
-                .flatten()
+            (offset == 0).then(|| ctx.read_file(&stmt.file)).flatten()
         } else {
             find_file_in_xkb_path(ctx, &stmt.file, file_type, &mut offset)
         };
@@ -123,7 +122,7 @@ fn apply_wkb_compat(keymap: &mut XkbKeymap) {
             .and_then(|level| level.syms.first())
             .copied()
             .unwrap_or(XKB_KEY_NO_SYMBOL);
-        key.repeats.get_or_insert_with(|| {
+        key.repeat.get_or_insert_with(|| {
             first_sym != XKB_KEY_NO_SYMBOL && !is_modifier_keysym(first_sym)
         });
         if key.vmodmap.is_none() {
@@ -144,7 +143,7 @@ fn apply_wkb_compat(keymap: &mut XkbKeymap) {
         }
         for group in &mut key.groups {
             for level in &mut group.levels {
-                if !group.explicit_actions && level.action.is_none() {
+                if !group.explicit_acts && level.action.is_none() {
                     level.action = level.syms.iter().copied().find_map(wkb_group_action);
                 }
             }
@@ -156,7 +155,9 @@ fn update_derived_keymap_fields(info: &mut XkbKeymap) -> bool {
     keymap.key_names = Vec::new();
     keymap.num_groups = keymap.keys[keymap.min_key_code as usize..]
         .iter()
-        .fold(keymap.num_groups, |max, key| max.max(key.num_groups));
+        .fold(keymap.num_groups, |max, key| {
+            max.max(key.groups.len() as u32)
+        });
     apply_wkb_compat(info);
     update_mod_mappings(info);
     compute_type_entry_masks(info);
@@ -669,7 +670,7 @@ pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: u32 = 2;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: u32 = 1;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_WRAP: u32 = 0;
 #[derive(Clone, Debug, Default)] #[rustfmt::skip] pub(crate) struct XkbRuleNames { pub(crate) rules: String, pub(crate) model: String, pub(crate) layout: String, pub(crate) variant: String, pub(crate) options: String }
-#[derive(Clone)] #[rustfmt::skip] pub(crate) struct XkbContext { pub(crate) includes: Vec<String>, pub(crate) atom_table: lasso::Rodeo }
+#[derive(Clone)] #[rustfmt::skip] pub(crate) struct XkbContext { pub(crate) includes: Vec<String>, pub(crate) atom_table: lasso::Rodeo, pub(crate) files: HashMap<String, Arc<[u8]>> }
 impl XkbContext {
     pub(crate) fn atom_text(&self, atom: u32) -> &str {
         if atom == XKB_ATOM_NONE {
@@ -682,9 +683,14 @@ impl XkbContext {
         let text = std::str::from_utf8(bytes).expect("atom string is not valid UTF-8");
         self.atom_table.get_or_intern(text).into_usize() as u32 + 1
     }
-}
-pub(crate) fn read_file_cached(path: &str) -> Option<Vec<u8>> {
-    std::fs::read(path).ok()
+    pub(crate) fn read_file(&mut self, path: &str) -> Option<Arc<[u8]>> {
+        if let Some(data) = self.files.get(path) {
+            return Some(data.clone());
+        }
+        let data: Arc<[u8]> = std::fs::read(path).ok()?.into();
+        self.files.insert(path.to_owned(), data.clone());
+        Some(data)
+    }
 }
 #[derive(Clone)] #[rustfmt::skip] pub(crate) struct XkbKeymap { pub(crate) ctx: XkbContext, pub(crate) strict: bool, pub(crate) min_key_code: u32, pub(crate) keys: Vec<XkbKey>, pub(crate) key_names: Vec<u32>, pub(crate) types: Vec<XkbKeyType>, pub(crate) mods: XkbModSet, pub(crate) num_groups: u32, pub(crate) group_names: Vec<u32> }
 impl XkbKeymap {
@@ -724,9 +730,9 @@ pub struct ActionFlags: u32 {
 #[derive(Copy, Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbMods { pub(crate) mods: u32, pub(crate) mask: u32 }
 #[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbKeyType { pub(crate) name: u32, pub(crate) modifiers_set: bool, pub(crate) mods: XkbMods, pub(crate) num_levels: u32, pub(crate) entries: Vec<XkbKeyTypeEntry> }
 #[derive(Copy, Clone)] #[rustfmt::skip] pub(crate) struct XkbKeyTypeEntry { pub(crate) level: u32, pub(crate) mods: XkbMods, pub(crate) preserve: XkbMods }
-#[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbKey { pub(crate) modmap: u32, pub(crate) vmodmap: Option<u32>, pub(crate) repeats: Option<bool>, pub(crate) out_of_range: Option<OutOfRangeInfo>, pub(crate) num_groups: u32, pub(crate) groups: Vec<XkbGroup> }
+#[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbKey { pub(crate) name: u32, pub(crate) default_type: u32, pub(crate) modmap: u32, pub(crate) vmodmap: Option<u32>, pub(crate) repeat: Option<bool>, pub(crate) out_of_range: Option<OutOfRangeInfo>, pub(crate) groups: Vec<XkbGroup> }
 #[derive(Clone, Copy, Default)] #[rustfmt::skip] pub(crate) struct OutOfRangeInfo { pub(crate) policy: u32, pub(crate) number: u32, pub(crate) pending: bool }
-#[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbGroup { pub(crate) explicit_actions: bool, pub(crate) type_idx: u32, pub(crate) levels: Vec<XkbLevel> }
+#[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbGroup { pub(crate) explicit_syms: bool, pub(crate) explicit_acts: bool, pub(crate) type_idx: u32, pub(crate) levels: Vec<XkbLevel> }
 #[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbLevel { pub(crate) syms: Vec<u32>, pub(crate) action: Option<XkbAction> }
 pub(crate) const XKB_MAX_GROUPS: u32 = 32;
 pub(crate) const MOD_REAL_MASK_ALL: u32 = 0xff_i32 as u32;
@@ -807,8 +813,6 @@ pub(crate) enum UnaryOp {
 pub(crate) enum ExprKind {
     String(u32),
     Integer(i64),
-    Float,
-    Boolean(bool),
     KeyName(u32),
     KeySym(u32),
     Ident(u32),

@@ -16,7 +16,7 @@ use crate::Composer;
 use crate::WKB;
 use crate::{modifiers::*, KBLayout};
 use crate::{Group, GroupChange, GroupKind, Groups, KeyBitSet};
-use compose::{layout_composer, load_compose_entries};
+use compose::layout_composer;
 pub use compose::{load_compose_from_path, load_compose_from_path_uncached};
 pub use keynames::keysym_to_named_key;
 use std::collections::BTreeMap;
@@ -383,27 +383,18 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
                 mods
             }
         };
-        let base_states: [u32; MAX_LEVELS] =
-            std::array::from_fn(|level| transform(level_masks[level]));
-        let caps_states: [u32; MAX_LEVELS] = std::array::from_fn(|level| {
-            transform(level_masks[level] | (u32::from(caps_active[level]) * caps_mask))
-        });
-        let num_states: [u32; MAX_LEVELS] = std::array::from_fn(|level| {
-            transform(level_masks[level] | (u32::from(num_active[level]) * num_mask))
-        });
-        let combined_states: [u32; MAX_LEVELS] = std::array::from_fn(|level| {
-            transform(
-                level_masks[level]
-                    | (u32::from(caps_active[level]) * caps_mask)
-                    | (u32::from(num_active[level]) * num_mask),
-            )
+        let states: [[u32; MAX_LEVELS]; 4] = std::array::from_fn(|kind| {
+            std::array::from_fn(|level| {
+                transform(
+                    level_masks[level]
+                        | (u32::from(kind & 1 != 0 && caps_active[level]) * caps_mask)
+                        | (u32::from(kind & 2 != 0 && num_active[level]) * num_mask),
+                )
+            })
         });
         let mut level_exceptions_keymap = FlatKeymap::new(num_keys);
         let mut named_key_map = FlatNamedKeyMap::new(num_keys);
-        let mut state_keymap = FlatKeymap::new(num_keys);
-        let mut caps_lock_keymap = FlatKeymap::new(num_keys);
-        let mut caps_num_lock_keys = FlatKeymap::new(num_keys);
-        let mut num_lock_keys = FlatKeymap::new(num_keys);
+        let mut maps: [FlatKeymap; 4] = std::array::from_fn(|_| FlatKeymap::new(num_keys));
         let mut repeat_keys = KeyBitSet::default();
         for (kc, key) in keymap.keys.iter().enumerate() {
             let kc = kc as u32;
@@ -411,12 +402,12 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
                 continue;
             }
             let evdev = (kc - EVDEV_OFFSET) as usize;
-            if key.repeats == Some(true) {
+            if key.repeat == Some(true) {
                 repeat_keys.insert(evdev as u32);
             }
             let raw_group = keymap::xkb_wrap_group_into_range(
                 layout_idx as i32,
-                key.num_groups,
+                key.groups.len() as u32,
                 key.out_of_range.map_or(0, |range| range.policy),
                 key.out_of_range.map_or(0, |range| range.number),
             )
@@ -450,36 +441,34 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
                 let (Some(group), Some(type_)) = (state_group, state_type) else {
                     continue;
                 };
-                let base = resolve_char(group, type_, base_states[level], 0);
-                state_keymap.data[idx] = base;
-                if caps_affected {
-                    if let Some(ch) = resolve_char(group, type_, caps_states[level], caps_mask) {
-                        if Some(ch) != base {
-                            caps_lock_keymap.data[idx] = Some(ch);
-                        }
+                let base = resolve_char(group, type_, states[0][level], 0);
+                maps[0].data[idx] = base;
+                for (kind, affected) in [
+                    true,
+                    caps_affected,
+                    num_affected,
+                    caps_affected || num_affected,
+                ]
+                .into_iter()
+                .enumerate()
+                .skip(1)
+                {
+                    if !affected {
+                        continue;
                     }
-                }
-                if num_affected {
-                    if let Some(ch) = resolve_char(group, type_, num_states[level], 0) {
-                        if Some(ch) != base {
-                            num_lock_keys.data[idx] = Some(ch);
-                        }
-                    }
-                }
-                if caps_affected || num_affected {
-                    if let Some(ch) = resolve_char(
+                    let value = resolve_char(
                         group,
                         type_,
-                        combined_states[level],
-                        u32::from(caps_affected) * caps_mask,
-                    ) {
-                        if Some(ch) != base {
-                            caps_num_lock_keys.data[idx] = Some(ch);
-                        }
+                        states[kind][level],
+                        u32::from(kind & 1 != 0 && caps_affected) * caps_mask,
+                    );
+                    if value != base {
+                        maps[kind].data[idx] = value;
                     }
                 }
             }
         }
+        let [state_keymap, caps_lock_keymap, num_lock_keys, caps_num_lock_keys] = maps;
         #[cfg(feature = "compose")]
         let composer = {
             let mut reachable: Vec<char> = state_keymap
@@ -501,8 +490,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
                 .and_then(keymap::resolve_compose_file)
                 .map(|subpath| {
                     let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
-                    let table = load_compose_entries(&path);
-                    layout_composer(&table, &reachable)
+                    layout_composer(&path, &reachable)
                 })
                 .unwrap_or_default()
         };
