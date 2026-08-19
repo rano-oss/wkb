@@ -31,9 +31,9 @@ jobs:
       - name: Cache cargo registry and target
         uses: Swatinem/rust-cache@v2
 
-      # - name: Run criterion benchmarks
-      #   run: |
-      #     cargo bench --bench bench_setup
+      - name: Run criterion benchmarks
+        run: |
+          cargo bench --bench bench_setup
       #     cargo bench --bench bench_key
       #     cargo bench --bench bench_compose
 
