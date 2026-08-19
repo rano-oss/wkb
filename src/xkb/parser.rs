@@ -5,8 +5,6 @@ use crate::xkb::keymap::xkb_mod_name_to_index;
 
 // ── Include file processing (merged from include.rs) ──
 
-use super::keymap::getenv_or;
-
 pub(crate) const INCLUDE_MAX_DEPTH: i32 = 15_i32;
 fn is_merge_prefix(byte: u8) -> bool {
     matches!(byte, b'+' | b'|' | b'^')
@@ -19,53 +17,6 @@ fn directory_for_include(type_0: FileType) -> &'static str {
         .get(type_0 as usize)
         .copied()
         .unwrap_or("")
-}
-/// Expand `%H`, `%S`, `%E`, `%%` in the given name string.
-/// Returns `Some(expanded)` on success, `None` on error.
-fn expand_percent(type_dir: &str, name: &str) -> Option<String> {
-    let max_len = 4096usize;
-    let mut result = String::new();
-    let mut chars = name.chars().peekable();
-    while let Some(c) = chars.next() {
-        if c == '%' {
-            match chars.next()? {
-                '%' => result.push('%'),
-                'H' => result.push_str(&std::env::var("HOME").ok()?),
-                'S' => {
-                    let sys = getenv_or("XKB_CONFIG_ROOT", DFLT_XKB_CONFIG_ROOT);
-                    result.push_str(&sys);
-                    result.push('/');
-                    result.push_str(type_dir);
-                }
-                'E' => {
-                    let extra = getenv_or("XKB_CONFIG_EXTRA_PATH", DFLT_XKB_CONFIG_EXTRA_PATH);
-                    result.push_str(&extra);
-                    result.push('/');
-                    result.push_str(type_dir);
-                }
-                _ => return None,
-            }
-        } else {
-            result.push(c);
-        }
-        if result.len() > max_len {
-            return None;
-        }
-    }
-    Some(result)
-}
-fn include_path<'a>(
-    name: &'a str,
-    file_type: FileType,
-) -> Option<(std::borrow::Cow<'a, str>, bool)> {
-    let Some(k) = name.find('%') else {
-        return Some((std::borrow::Cow::Borrowed(name), false));
-    };
-    let suffix = expand_percent(directory_for_include(file_type), &name[k..])?;
-    Some((
-        std::borrow::Cow::Owned(format!("{}{}", &name[..k], suffix)),
-        true,
-    ))
 }
 pub(crate) fn find_file_in_xkb_path(
     ctx: &mut XkbContext,
@@ -89,7 +40,6 @@ fn find_include_file(
     ctx: &mut XkbContext,
     name: &str,
     file_type: FileType,
-    expanded: bool,
     offset: &mut u32,
 ) -> Option<std::sync::Arc<Vec<u8>>> {
     if name.starts_with('/') {
@@ -98,8 +48,6 @@ fn find_include_file(
         } else {
             None
         }
-    } else if expanded {
-        None
     } else {
         find_file_in_xkb_path(ctx, name, file_type, offset)
     }
@@ -113,12 +61,9 @@ pub(crate) fn process_include_file(
     stmt: &IncludeStmt,
     file_type: FileType,
 ) -> Option<Box<XkbFile>> {
-    let (stmt_file, expanded) = include_path(&stmt.file, file_type)?;
-
     let mut offset = 0;
     let mut candidate = None;
-    while let Some(file_data) = find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset)
-    {
+    while let Some(file_data) = find_include_file(ctx, &stmt.file, file_type, &mut offset) {
         if let Some(parsed) = xkb_parse_string(ctx, &file_data, &stmt.map) {
             if parsed.file_type == file_type {
                 if !stmt.map.is_empty() || parsed.flags != 0 {
@@ -272,7 +217,7 @@ fn update_mod_mappings(info: &mut XkbKeymapInfo<'_>) {
             }
         }
     }
-    if keymap.format >= XKB_KEYMAP_FORMAT_TEXT_V2 {
+    if !keymap.strict {
         for idx in _XKB_MOD_INDEX_NUM_ENTRIES as usize..keymap.mods.num_mods as usize {
             let mask: u32 = 1 << idx as u32;
             if keymap.mods.mods[idx].mapping == 0 && keymap.mods.explicit_vmods & mask == 0 {
@@ -359,11 +304,8 @@ pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool
             file_indices[sub_file.file_type as usize] = Some(idx);
         }
     }
-    let km_format = keymap.format;
-    let mut info = XkbKeymapInfo {
-        keymap,
-        strict: km_format == XKB_KEYMAP_FORMAT_TEXT_V1,
-    };
+    let strict = keymap.strict;
+    let mut info = XkbKeymapInfo { keymap, strict };
     for (file_type, compile) in COMPILE_FILE_FNS {
         let file_arg: Option<&mut XkbFile> = file_indices[file_type as usize].map(|idx| {
             if let Statement::XkbFile(ref mut sub_file) = file.defs[idx] {
@@ -395,8 +337,6 @@ enum RuleInput {
     Option,
 }
 
-const MAX_INCLUDE_DEPTH: u32 = 5;
-
 struct RuleMapping {
     inputs: Vec<RuleInput>,
     outputs: Vec<usize>,
@@ -423,28 +363,10 @@ pub(crate) struct Matcher<'a> {
 }
 
 fn rule_tokens(line: &str) -> Vec<&str> {
-    let bytes = line.as_bytes();
-    let mut tokens = Vec::new();
-    let mut pos = 0;
-    while pos < bytes.len() {
-        while bytes.get(pos).is_some_and(u8::is_ascii_whitespace) {
-            pos += 1;
-        }
-        if pos == bytes.len() || bytes[pos..].starts_with(b"//") {
-            break;
-        }
-        if bytes[pos] == b'=' {
-            tokens.push("=");
-            pos += 1;
-            continue;
-        }
-        let start = pos;
-        while pos < bytes.len() && !bytes[pos].is_ascii_whitespace() && bytes[pos] != b'=' {
-            pos += 1;
-        }
-        tokens.push(&line[start..pos]);
-    }
-    tokens
+    line.split_once("//")
+        .map_or(line, |(line, _)| line)
+        .split_whitespace()
+        .collect()
 }
 
 fn rule_scope(field: &str, name: &str) -> Option<RuleScope> {
@@ -650,7 +572,7 @@ impl Matcher<'_> {
                     pos += 1;
                     (Some(b'('), Some(b')'))
                 }
-                Some(prefix @ (b'_' | b'-' | b'+' | b'|' | b'^')) => {
+                Some(prefix @ (b'_' | b'-')) => {
                     pos += 1;
                     (Some(prefix), None)
                 }
@@ -700,39 +622,8 @@ impl Matcher<'_> {
                 }
             }
         }
-        Some(expand_all_groups(&out, self.layouts.len().max(1)))
+        Some(out)
     }
-}
-
-fn expand_all_groups(value: &[u8], groups: usize) -> Vec<u8> {
-    let mut out = Vec::with_capacity(value.len());
-    let mut start = 0;
-    while start < value.len() {
-        let next = value[start + 1..]
-            .iter()
-            .position(|byte| is_merge_prefix(*byte))
-            .map_or(value.len(), |offset| start + offset + 1);
-        let item = &value[start..next];
-        if let Some(base) = item.strip_suffix(b":all") {
-            out.extend_from_slice(base);
-            out.push(b':');
-            out.extend_from_slice(b"1");
-            let body = base
-                .first()
-                .filter(|byte| is_merge_prefix(**byte))
-                .map_or(base, |_| &base[1..]);
-            for group in 2..=groups {
-                out.push(b'+');
-                out.extend_from_slice(body);
-                out.push(b':');
-                out.extend_from_slice(group.to_string().as_bytes());
-            }
-        } else {
-            out.extend_from_slice(item);
-        }
-        start = next;
-    }
-    out
 }
 
 #[inline]
@@ -744,7 +635,7 @@ fn concat_kccgst(into: &mut Vec<u8>, from: &[u8]) {
     }
 }
 
-fn parse_rules_file(matcher: &mut Matcher<'_>, data: &[u8], depth: u32) -> bool {
+fn parse_rules_file(matcher: &mut Matcher<'_>, data: &[u8]) -> bool {
     let Ok(text) = std::str::from_utf8(data) else {
         return false;
     };
@@ -770,10 +661,6 @@ fn parse_rules_file(matcher: &mut Matcher<'_>, data: &[u8], depth: u32) -> bool 
                         tokens[3..].iter().map(|s| (*s).to_owned()).collect(),
                     );
                 }
-            } else if tokens.get(1) == Some(&"include") {
-                if let Some(name) = tokens.get(2) {
-                    include_rules(matcher, name, depth);
-                }
             } else {
                 mapping =
                     RuleMapping::parse(&tokens[1..], matcher.layouts.len(), matcher.variants.len());
@@ -787,24 +674,6 @@ fn parse_rules_file(matcher: &mut Matcher<'_>, data: &[u8], depth: u32) -> bool 
         mapping.flush(matcher);
     }
     true
-}
-
-fn include_rules(matcher: &mut Matcher<'_>, name: &str, depth: u32) {
-    if depth >= MAX_INCLUDE_DEPTH {
-        return;
-    }
-    let Some((name, expanded)) = include_path(name, FileType::Rules) else {
-        return;
-    };
-    let mut offset = 0;
-    while let Some(data) =
-        find_include_file(matcher.ctx, &name, FileType::Rules, expanded, &mut offset)
-    {
-        if parse_rules_file(matcher, &data, depth + 1) {
-            return;
-        }
-        offset += 1;
-    }
 }
 
 pub fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNames) -> Matcher<'a> {
@@ -848,21 +717,6 @@ pub fn matcher_new_from_names<'a>(ctx: &'a mut XkbContext, rmlvo: &'a XkbRuleNam
     }
 }
 
-fn partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_>) -> bool {
-    let name = format!("{rules}{suffix}");
-    if name.len() >= 60 {
-        return false;
-    }
-    let mut offset = 0;
-    while let Some(data) = find_file_in_xkb_path(matcher.ctx, &name, FileType::Rules, &mut offset) {
-        if !parse_rules_file(matcher, &data, 0) {
-            return false;
-        }
-        offset += 1;
-    }
-    true
-}
-
 pub fn xkb_resolve_rules(
     rules: &str,
     matcher: &mut Matcher<'_>,
@@ -873,9 +727,7 @@ pub fn xkb_resolve_rules(
     let Some(data) = find_file_in_xkb_path(matcher.ctx, rules, FileType::Rules, &mut offset) else {
         return false;
     };
-    if !partial_rules(rules, ".pre", matcher)
-        || !parse_rules_file(matcher, &data, 0)
-        || !partial_rules(rules, ".post", matcher)
+    if !parse_rules_file(matcher, &data)
         || [0, 1, 3]
             .into_iter()
             .any(|index| matcher.kccgst[index].is_empty())
@@ -918,9 +770,6 @@ pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: u32 = 2;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: u32 = 1;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_WRAP: u32 = 0;
 
-pub(crate) const XKB_KEYMAP_FORMAT_TEXT_V2: u32 = 2;
-pub(crate) const XKB_KEYMAP_FORMAT_TEXT_V1: u32 = 1;
-
 #[derive(Clone, Debug, Default)]
 pub(crate) struct XkbRuleNames {
     pub(crate) rules: String,
@@ -958,7 +807,7 @@ pub(crate) fn read_file_cached(path: &str) -> Option<Arc<Vec<u8>>> {
 #[derive(Clone)]
 pub(crate) struct XkbKeymap {
     pub(crate) ctx: XkbContext,
-    pub(crate) format: u32,
+    pub(crate) strict: bool,
     pub(crate) min_key_code: u32,
     pub(crate) max_key_code: u32,
     pub(crate) num_keys: u32,
@@ -1093,7 +942,6 @@ pub(crate) const DFLT_XKB_LEGACY_ROOT: &str = "/usr/share/X11/xkb";
 pub(crate) const XKB_KEYSYM_NO_FLAGS: u32 = 0;
 pub(crate) const XKB_KEYSYM_CASE_INSENSITIVE: u32 = 1;
 
-pub(crate) const XKB_KEYCODE_MAX: u32 = 0xffffffff_u32.wrapping_sub(1);
 pub(crate) const XKB_KEYSYM_MAX: u32 = 0x1fffffff;
 
 #[derive(Clone, Default)]

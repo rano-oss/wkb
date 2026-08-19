@@ -6,17 +6,15 @@ use crate::xkb::keysym::keysym_to_codepoint;
 
 pub(crate) use super::parser::{
     XkbContext, XkbKeymap, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL,
-    XKB_KEYMAP_FORMAT_TEXT_V1, XKB_KEYMAP_FORMAT_TEXT_V2,
 };
 
 pub(crate) fn xkb_keymap_new_from_names(
     ctx: XkbContext,
     rmlvo: &XkbRuleNames,
 ) -> Option<XkbKeymap> {
-    let format = XKB_KEYMAP_FORMAT_TEXT_V2;
     let mut rmlvo = rmlvo.clone();
     xkb_context_sanitize_rule_names(&mut rmlvo);
-    let mut keymap = xkb_keymap_new(ctx, format);
+    let mut keymap = xkb_keymap_new(ctx, false);
     let mut components = XkbComponentNames::default();
     let mut matcher = matcher_new_from_names(&mut keymap.ctx, &rmlvo);
     xkb_resolve_rules(
@@ -37,7 +35,7 @@ pub(crate) fn xkb_keymap_new_from_string(ctx: XkbContext, original: &[u8]) -> Op
     if bytes.is_empty() {
         return None;
     }
-    let mut keymap = xkb_keymap_new(ctx, XKB_KEYMAP_FORMAT_TEXT_V1);
+    let mut keymap = xkb_keymap_new(ctx, true);
     let mut file = xkb_parse_string(&mut keymap.ctx, bytes, "")?;
     (file.file_type == FileType::Keymap && compile_keymap(&mut file, &mut keymap)).then_some(())?;
     apply_group_action_overrides(&mut keymap, original);
@@ -51,52 +49,35 @@ fn find_ascii_case_insensitive(haystack: &[u8], needle: &[u8]) -> Option<usize> 
 }
 
 fn group_action_from_interpret(input: &[u8], name: &[u8]) -> Option<XkbAction> {
-    let name_pos = find_ascii_case_insensitive(input, name)?;
-    let body = &input[name_pos + name.len()..];
-    let open = body.iter().position(|&byte| byte == b'{')?;
-    let close = body[open + 1..].iter().position(|&byte| byte == b'}')? + open + 1;
-    let body = &body[open + 1..close];
-    let (kind, action_pos) = [
-        (0, b"SetGroup".as_slice()),
-        (1, b"LatchGroup".as_slice()),
-        (2, b"LockGroup".as_slice()),
+    let tail = &input[find_ascii_case_insensitive(input, name)? + name.len()..];
+    let open = tail.iter().position(|&b| b == b'{')?;
+    let body = &tail[open + 1..];
+    let body = &body[..body.iter().position(|&b| b == b'}')?];
+    let (constructor, tail): (fn(XkbGroupAction) -> XkbAction, &[u8]) = [
+        (XkbAction::GroupSet as _, b"SetGroup".as_slice()),
+        (XkbAction::GroupLatch as _, b"LatchGroup".as_slice()),
+        (XkbAction::GroupLock as _, b"LockGroup".as_slice()),
     ]
     .into_iter()
-    .find_map(|(kind, action)| {
-        find_ascii_case_insensitive(body, action).map(|position| (kind, position + action.len()))
+    .find_map(|(make, action)| {
+        find_ascii_case_insensitive(body, action).map(|pos| (make, &body[pos + action.len()..]))
     })?;
-    let args = &body[action_pos..];
-    let group_pos = find_ascii_case_insensitive(args, b"group")?;
-    let mut value = &args[group_pos + 5..];
-    let equals = value.iter().position(|&byte| byte == b'=')?;
-    value = &value[equals + 1..];
-    let first = value.iter().position(|byte| !byte.is_ascii_whitespace())?;
-    value = &value[first..];
-    let (relative, negative, digits) = if let Some(digits) = value.strip_prefix(b"+") {
-        (true, false, digits)
-    } else if let Some(digits) = value.strip_prefix(b"-") {
-        (true, true, digits)
-    } else {
-        (false, false, value)
-    };
-    let mut number = 0i32;
-    let mut count = 0;
-    for &digit in digits {
-        if !digit.is_ascii_digit() {
-            break;
-        }
-        number = number.checked_mul(10)?.checked_add((digit - b'0') as i32)?;
-        count += 1;
-    }
-    if count == 0 {
-        return None;
-    }
+    let tail = &tail[find_ascii_case_insensitive(tail, b"group")? + 5..];
+    let mut value = &tail[tail.iter().position(|&b| b == b'=')? + 1..];
+    value = &value[value.iter().position(|b| !b.is_ascii_whitespace())?..];
+    let relative = matches!(value.first(), Some(b'+' | b'-'));
+    let negative = value.first() == Some(&b'-');
+    let digits = if relative { &value[1..] } else { value };
+    let end = digits
+        .iter()
+        .position(|b| !b.is_ascii_digit())
+        .unwrap_or(digits.len());
+    let number = std::str::from_utf8(&digits[..end])
+        .ok()?
+        .parse::<i32>()
+        .ok()?;
     let group = if relative {
-        if negative {
-            -number
-        } else {
-            number
-        }
+        number * if negative { -1 } else { 1 }
     } else {
         number - 1
     };
@@ -108,11 +89,7 @@ fn group_action_from_interpret(input: &[u8], name: &[u8]) -> Option<XkbAction> {
         },
         group,
     };
-    Some(match kind {
-        0 => XkbAction::GroupSet(action),
-        1 => XkbAction::GroupLatch(action),
-        _ => XkbAction::GroupLock(action),
-    })
+    Some(constructor(action))
 }
 
 fn apply_group_action_overrides(keymap: &mut XkbKeymap, input: &[u8]) {
@@ -190,59 +167,22 @@ fn strip_compat_map(input: &[u8]) -> Cow<'_, [u8]> {
         return Cow::Borrowed(input);
     };
 
-    let mut depth = 1u32;
-    let mut pos = open + 1;
-    let mut quoted = false;
-    let mut escaped = false;
-    let mut line_comment = false;
-    let mut block_comment = false;
-    while pos < input.len() {
-        let byte = input[pos];
-        let next = input.get(pos + 1).copied();
-        if line_comment {
-            line_comment = byte != b'\n';
-        } else if block_comment {
-            if byte == b'*' && next == Some(b'/') {
-                block_comment = false;
-                pos += 1;
-            }
-        } else if quoted {
-            if escaped {
-                escaped = false;
-            } else if byte == b'\\' {
-                escaped = true;
-            } else if byte == b'"' {
-                quoted = false;
-            }
-        } else if byte == b'"' {
-            quoted = true;
-        } else if byte == b'/' && next == Some(b'/') || byte == b'#' {
-            line_comment = true;
-        } else if byte == b'/' && next == Some(b'*') {
-            block_comment = true;
-            pos += 1;
-        } else if byte == b'{' {
-            depth += 1;
-        } else if byte == b'}' {
-            depth -= 1;
-            if depth == 0 {
-                let mut stripped = Vec::with_capacity(input.len() - (pos - open));
-                stripped.extend_from_slice(&input[..=open]);
-                stripped.push(b'\n');
-                stripped.extend_from_slice(&input[pos..]);
-                return Cow::Owned(stripped);
-            }
+    let mut depth = 1;
+    for pos in open + 1..input.len() {
+        depth += usize::from(input[pos] == b'{');
+        depth -= usize::from(input[pos] == b'}');
+        if depth == 0 {
+            let mut stripped = Vec::with_capacity(input.len() - (pos - open));
+            stripped.extend_from_slice(&input[..=open]);
+            stripped.push(b'\n');
+            stripped.extend_from_slice(&input[pos..]);
+            return Cow::Owned(stripped);
         }
-        pos += 1;
     }
     Cow::Borrowed(input)
 }
 
-use std::{
-    fs,
-    io::{self, BufRead},
-    path::Path,
-};
+use std::{fs, path::Path};
 
 const LOCALE_DIR: &str = "/usr/share/X11/locale";
 
@@ -396,22 +336,15 @@ fn lookup_locale_file(
     return_index: usize,
     locale: &str,
 ) -> Option<String> {
-    let path = Path::new(LOCALE_DIR).join(filename);
-    let file = fs::File::open(path).ok()?;
-    let reader = io::BufReader::new(file);
-
-    for line in reader.lines() {
-        let line = line.ok()?;
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-        let parts: Vec<&str> = trimmed.split_whitespace().collect();
-        if parts.len() > match_index && parts.len() > return_index && parts[match_index] == locale {
-            return Some(parts[return_index].to_string());
-        }
-    }
-    None
+    fs::read_to_string(Path::new(LOCALE_DIR).join(filename))
+        .ok()?
+        .lines()
+        .filter(|line| !line.trim_start().starts_with('#'))
+        .find_map(|line| {
+            (line.split_whitespace().nth(match_index) == Some(locale))
+                .then(|| line.split_whitespace().nth(return_index).map(str::to_owned))
+                .flatten()
+        })
 }
 
 fn lookup_compose_dir(locale: &str) -> Option<String> {
@@ -442,49 +375,16 @@ pub(crate) fn resolve_compose_file(locale: &str) -> Option<String> {
     }
 
     if locale.len() >= 2 && locale.len() <= 5 && locale.chars().all(|c| c.is_ascii_lowercase()) {
-        let language = match locale {
-            "us" | "gb" | "au" | "nz" | "za" | "bw" => "en",
-            "no" => "nb",
-            "dk" => "da",
-            "se" => "sv",
-            "at" | "ch" => "de",
-            "cz" => "cs",
-            "gr" => "el",
-            "rs" | "me" => "sr",
-            "al" => "sq",
-            "ba" => "bs",
-            "by" => "be",
-            "ge" => "ka",
-            "ua" => "uk",
-            "jp" => "ja",
-            "kr" => "ko",
-            "cn" | "tw" => "zh",
-            "kh" => "km",
-            "vn" => "vi",
-            "in" => "hi",
-            "bd" => "bn",
-            "lk" => "si",
-            "np" => "ne",
-            "pk" => "ur",
-            "il" => "he",
-            "ara" | "iq" | "sy" | "eg" | "dz" | "ma" => "ar",
-            "ir" => "fa",
-            "kg" => "ky",
-            "kz" => "kk",
-            "tj" => "tg",
-            "la" => "lo",
-            "my" => "ms",
-            "ie" => "ga",
-            "epo" => "eo",
-            "latam" => "es",
-            _ => locale,
-        };
-        let country = match locale {
-            "ara" => "SA".into(),
-            "epo" => "XX".into(),
-            "latam" => "MX".into(),
-            _ => locale.to_ascii_uppercase(),
-        };
+        #[rustfmt::skip]
+        const LANGUAGES: &[(&str, &str)] = &[("us","en"),("gb","en"),("au","en"),("nz","en"),("za","en"),("bw","en"),("no","nb"),("dk","da"),("se","sv"),("at","de"),("ch","de"),("cz","cs"),("gr","el"),("rs","sr"),("me","sr"),("al","sq"),("ba","bs"),("by","be"),("ge","ka"),("ua","uk"),("jp","ja"),("kr","ko"),("cn","zh"),("tw","zh"),("kh","km"),("vn","vi"),("in","hi"),("bd","bn"),("lk","si"),("np","ne"),("pk","ur"),("il","he"),("ara","ar"),("iq","ar"),("sy","ar"),("eg","ar"),("dz","ar"),("ma","ar"),("ir","fa"),("kg","ky"),("kz","kk"),("tj","tg"),("la","lo"),("my","ms"),("ie","ga"),("epo","eo"),("latam","es")];
+        let language = LANGUAGES
+            .iter()
+            .find_map(|&(name, language)| (name == locale).then_some(language))
+            .unwrap_or(locale);
+        let country = [("ara", "SA"), ("epo", "XX"), ("latam", "MX")]
+            .into_iter()
+            .find_map(|(name, country)| (name == locale).then_some(country.to_owned()))
+            .unwrap_or_else(|| locale.to_ascii_uppercase());
         let candidate = format!("{language}_{country}.UTF-8");
         if let Some(compose_file) = lookup_compose_dir(&candidate) {
             return Some(compose_file);
@@ -493,19 +393,10 @@ pub(crate) fn resolve_compose_file(locale: &str) -> Option<String> {
 
     lookup_compose_dir("en_US.UTF-8")
 }
-pub(crate) const XKB_MOD_NAME_SHIFT: &str = "Shift";
-pub(crate) const XKB_MOD_NAME_CAPS: &str = "Lock";
-pub(crate) const XKB_MOD_NAME_CTRL: &str = "Control";
-pub(crate) const XKB_MOD_NAME_MOD1: &str = "Mod1";
-pub(crate) const XKB_MOD_NAME_MOD2: &str = "Mod2";
-pub(crate) const XKB_MOD_NAME_MOD3: &str = "Mod3";
-pub(crate) const XKB_MOD_NAME_MOD4: &str = "Mod4";
-pub(crate) const XKB_MOD_NAME_MOD5: &str = "Mod5";
-
-pub(crate) fn xkb_keymap_new(ctx: XkbContext, format: u32) -> Box<XkbKeymap> {
+pub(crate) fn xkb_keymap_new(ctx: XkbContext, strict: bool) -> Box<XkbKeymap> {
     let mut keymap = Box::new(XkbKeymap {
         ctx,
-        format,
+        strict,
         min_key_code: 0,
         max_key_code: 0,
         num_keys: 0,
@@ -517,16 +408,8 @@ pub(crate) fn xkb_keymap_new(ctx: XkbContext, format: u32) -> Box<XkbKeymap> {
         num_groups: 0,
         group_names: Vec::new(),
     });
-    static BUILTIN_MODS: [&str; 8] = [
-        XKB_MOD_NAME_SHIFT,
-        XKB_MOD_NAME_CAPS,
-        XKB_MOD_NAME_CTRL,
-        XKB_MOD_NAME_MOD1,
-        XKB_MOD_NAME_MOD2,
-        XKB_MOD_NAME_MOD3,
-        XKB_MOD_NAME_MOD4,
-        XKB_MOD_NAME_MOD5,
-    ];
+    #[rustfmt::skip]
+    static BUILTIN_MODS: [&str; 8] = ["Shift", "Lock", "Control", "Mod1", "Mod2", "Mod3", "Mod4", "Mod5"];
     for (i, name) in BUILTIN_MODS.iter().enumerate() {
         keymap.mods.mods[i].name = keymap.ctx.atom_intern(name.as_bytes());
         keymap.mods.mods[i].type_0 = MOD_REAL;
@@ -534,28 +417,6 @@ pub(crate) fn xkb_keymap_new(ctx: XkbContext, format: u32) -> Box<XkbKeymap> {
     }
     keymap.mods.num_mods = BUILTIN_MODS.len() as u32;
     keymap
-}
-
-pub(crate) fn xkb_escape_map_name(name: &mut String) {
-    static LEGAL: [u8; 32] = [
-        0, 0, 0, 0, 0, 0xa7, 0xff, 0x83, 0xfe, 0xff, 0xff, 0x87, 0xfe, 0xff, 0xff, 0x7, 0, 0, 0, 0,
-        0, 0, 0, 0, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0x7f, 0xff,
-    ];
-    // Replace illegal bytes with '_'. Only ASCII bytes can be illegal,
-    // so replacing with '_' preserves UTF-8 validity.
-    *name = name
-        .bytes()
-        .map(|b| {
-            if LEGAL[(b as usize) / 8] & (1u8 << (b % 8)) == 0 {
-                b'_'
-            } else {
-                b
-            }
-        })
-        .collect::<Vec<u8>>()
-        .into_iter()
-        .map(|b| b as char)
-        .collect();
 }
 
 pub(crate) fn xkb_mod_name_to_index(mods: &XkbModSet, name: u32, type_0: u32) -> Option<u32> {
@@ -663,104 +524,6 @@ pub(crate) fn xkb_context_sanitize_rule_names(rmlvo: &mut XkbRuleNames) {
 
 use super::parser::*;
 pub(crate) const GROUP_LAST_INDEX_NAME: &str = "last";
-
-// ============================================================================
-// Unicode Preprocessing
-// ============================================================================
-
-/// Convert non-ASCII characters in XKB keymap strings to UXXXX keysym notation.
-///
-/// The XKB scanner only accepts ASCII identifiers. When a keymap contains raw
-/// Unicode characters as keysym names (e.g., `ㄙ` instead of `U3119`), this
-/// function converts them so the parser can handle them.
-///
-/// Characters inside strings (`"..."`), comments (`//` or `/* */`), and key
-/// names (`<...>`) are left untouched.
-pub(crate) fn preprocess_unicode_keysyms(input: &str) -> std::borrow::Cow<'_, str> {
-    use std::borrow::Cow;
-    use std::fmt::Write;
-    // Fast path: if there are no non-ASCII bytes, return as-is.
-    if input.is_ascii() {
-        return Cow::Borrowed(input);
-    }
-
-    let mut result = String::with_capacity(input.len() + 64);
-    let mut chars = input.chars().peekable();
-    let mut in_string = false;
-    let mut in_line_comment = false;
-    let mut in_block_comment = false;
-    let mut in_keyname = false;
-    let mut prev_char = '\0';
-
-    while let Some(ch) = chars.next() {
-        if in_line_comment {
-            result.push(ch);
-            if ch == '\n' {
-                in_line_comment = false;
-            }
-            prev_char = ch;
-            continue;
-        }
-
-        if in_block_comment {
-            result.push(ch);
-            if prev_char == '*' && ch == '/' {
-                in_block_comment = false;
-            }
-            prev_char = ch;
-            continue;
-        }
-
-        if in_string {
-            result.push(ch);
-            if ch == '"' && prev_char != '\\' {
-                in_string = false;
-            }
-            prev_char = ch;
-            continue;
-        }
-
-        if in_keyname {
-            result.push(ch);
-            if ch == '>' {
-                in_keyname = false;
-            }
-            prev_char = ch;
-            continue;
-        }
-
-        match ch {
-            '"' => {
-                in_string = true;
-                result.push(ch);
-            }
-            '/' if chars.peek() == Some(&'/') => {
-                in_line_comment = true;
-                result.push(ch);
-            }
-            '/' if chars.peek() == Some(&'*') => {
-                in_block_comment = true;
-                result.push(ch);
-            }
-            '<' => {
-                in_keyname = true;
-                result.push(ch);
-            }
-            c if !c.is_ascii() => {
-                let cp = c as u32;
-                if cp <= 0xFFFF {
-                    write!(result, "U{:04X}", cp).unwrap();
-                } else {
-                    write!(result, "U{:05X}", cp).unwrap();
-                }
-            }
-            _ => result.push(ch),
-        }
-        prev_char = ch;
-    }
-
-    Cow::Owned(result)
-}
 
 pub(crate) fn mod_mask_get_effective(mod_set: &XkbModSet, mods: u32) -> u32 {
     let mut mask: u32 = mods & MOD_REAL_MASK_ALL;
