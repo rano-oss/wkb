@@ -94,21 +94,17 @@ let xkb_string = wkb.as_xkb_string().unwrap();
 
 | Benchmark | wkb | wkb-noxkb | xkbcommon | xkbcommon-dl | vs xkbcommon |
 |-----------|-----|-----------|-----------|--------------|-------------|
-| Setup (no compose) | 17.85 ms | 984.9 µs | 2.20 ms | 2.19 ms | 8.1x slower |
-| Setup (with compose) | 17.84 ms | 989.4 µs | 4.05 ms | 4.01 ms | 4.4x slower |
-| Key update | 151 ns | 154 ns | 176 ns | 179 ns | **1.2x faster** |
-| Get char | 157 ns | 161 ns | 302 ns | 280 ns | **1.9x faster** |
-| Get keysym | 156 ns | 151 ns | 216 ns | 214 ns | **1.4x faster** |
-| Compose feed | 395 ns | 399 ns | 529 ns | 511 ns | **1.3x faster** |
+| Setup (no compose) | 18.76 ms | 996.6 µs | 2.18 ms | 2.18 ms | 8.6x slower |
+| Setup (with compose) | 18.77 ms | 991.2 µs | 4.00 ms | 4.04 ms | 4.7x slower |
 
 ### Memory
 
 | Library | Peak RSS |
 |---------|----------|
-| wkb | 6.8 MB |
-| wkb-noxkb | 3.3 MB |
-| xkbcommon | 7.0 MB |
-| xkbcommon-dl | 7.0 MB |
+| wkb | 6.6 MB |
+| wkb-noxkb | 5.3 MB |
+| xkbcommon | 6.7 MB |
+| xkbcommon-dl | 6.7 MB |
 
 ### Binary Size
 
