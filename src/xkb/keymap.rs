@@ -596,149 +596,46 @@ pub(crate) fn xkb_wrap_group_into_range(
     }
 }
 
-use super::parser::{
-    DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
-    DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH, DFLT_XKB_LEGACY_ROOT,
-};
-fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> i32 {
-    let is_dir = std::fs::metadata(path).map(|m| m.is_dir()).unwrap_or(false);
-    if is_dir {
+use super::parser::{DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_LEGACY_ROOT};
+fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> bool {
+    if std::fs::metadata(path).is_ok_and(|metadata| metadata.is_dir()) {
         ctx.includes.push(path.to_string());
-        return 1;
-    }
-    if !path.is_empty() {
-        ctx.failed_includes.push(path.to_string());
-    }
-    0_i32
-}
-
-/// Convert a null-terminated `[i8]` constant to a Rust `String`.
-fn add_direct_subdirectories(
-    ctx: &mut XkbContext,
-    path: &str,
-    extensions: &mut Vec<String>,
-    versioned_count: usize,
-    versioned_path_length: usize,
-) -> i32 {
-    let dir = match std::fs::read_dir(path) {
-        Ok(d) => d,
-        Err(_e) => {
-            return 0;
-        }
-    };
-
-    // The +1 accounts for the '/' separator between the base path and entry name
-    let name_offset = if versioned_path_length > 0 {
-        versioned_path_length + 1
+        true
     } else {
-        0
-    };
-
-    for entry in dir.flatten() {
-        let name = entry.file_name();
-        let name_str = name.to_string_lossy();
-        if name_str == "." || name_str == ".." {
-            continue;
-        }
-        let full_path = format!("{}/{}", path, name_str);
-        // Check if it's a directory
-        if !std::fs::metadata(&full_path)
-            .map(|m| m.is_dir())
-            .unwrap_or(false)
-        {
-            continue;
-        }
-        // Check if already in versioned list
-        let mut duplicate = false;
-        for ext in extensions.iter().take(versioned_count) {
-            if name_offset <= ext.len() && *name_str == ext[name_offset..] {
-                duplicate = true;
-                break;
-            }
-        }
-        if duplicate {
-            continue;
-        }
-        extensions.push(full_path);
+        false
     }
-
-    let mut ret = 0;
-    // Sort the newly added entries and append as include paths
-    if extensions.len() > versioned_count {
-        extensions[versioned_count..].sort();
-        for ext in extensions.iter().skip(versioned_count) {
-            ret |= context_include_path_append(ctx, ext);
-        }
-    }
-
-    ret
 }
 
-pub(crate) fn xkb_context_include_path_append_default(ctx: &mut XkbContext) -> i32 {
-    let mut ret: i32 = 0;
+fn xkb_context_include_path_append_default(ctx: &mut XkbContext) -> bool {
     let home = std::env::var("HOME");
     let xdg = std::env::var("XDG_CONFIG_HOME");
     if let Ok(ref xdg) = xdg {
-        ret |= context_include_path_append(ctx, &format!("{}/xkb", xdg));
+        context_include_path_append(ctx, &format!("{}/xkb", xdg));
     } else if let Ok(ref home) = home {
-        ret |= context_include_path_append(ctx, &format!("{}/.config/xkb", home));
+        context_include_path_append(ctx, &format!("{}/.config/xkb", home));
     }
     if let Ok(ref home) = home {
-        ret |= context_include_path_append(ctx, &format!("{}/.xkb", home));
+        context_include_path_append(ctx, &format!("{}/.xkb", home));
     }
-    ret |= context_include_path_append(
+    context_include_path_append(
         ctx,
         &getenv_or("XKB_CONFIG_EXTRA_PATH", DFLT_XKB_CONFIG_EXTRA_PATH),
     );
 
-    let mut extensions: Vec<String> = Vec::new();
-    let versioned_path = getenv_or(
-        "XKB_CONFIG_VERSIONED_EXTENSIONS_PATH",
-        DFLT_XKB_CONFIG_VERSIONED_EXTENSIONS_PATH,
-    );
-    if !versioned_path.is_empty() {
-        ret |= add_direct_subdirectories(ctx, &versioned_path, &mut extensions, 0, 0);
-    }
-    let unversioned_path = getenv_or(
-        "XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH",
-        DFLT_XKB_CONFIG_UNVERSIONED_EXTENSIONS_PATH,
-    );
-    if !unversioned_path.is_empty() {
-        let versioned_count = extensions.len();
-        ret |= add_direct_subdirectories(
-            ctx,
-            &unversioned_path,
-            &mut extensions,
-            versioned_count,
-            versioned_path.len(),
-        );
-    }
-
     let root = getenv_or("XKB_CONFIG_ROOT", DFLT_XKB_CONFIG_ROOT);
-    let has_root = context_include_path_append(ctx, &root) != 0;
-    ret |= has_root as i32;
-    if !has_root && !root.is_empty() {
-        ret |= context_include_path_append(ctx, DFLT_XKB_LEGACY_ROOT);
+    if !context_include_path_append(ctx, &root) && !root.is_empty() {
+        context_include_path_append(ctx, DFLT_XKB_LEGACY_ROOT);
     }
-    ret
+    !ctx.includes.is_empty()
 }
 
-pub(crate) fn xkb_context_num_include_paths(ctx: &mut XkbContext) -> u32 {
-    if ctx.pending_default_includes {
-        if !ctx.failed_includes.is_empty() || xkb_context_include_path_append_default(ctx) == 0 {
-            return 0;
-        }
-        ctx.pending_default_includes = false;
-    }
-    ctx.includes.len() as u32
-}
 pub(crate) fn xkb_context_new() -> XkbContext {
-    XkbContext {
+    let mut ctx = XkbContext {
         includes: Vec::new(),
-        failed_includes: Vec::new(),
         atom_table: Default::default(),
-        pending_default_includes: true,
-    }
+    };
+    xkb_context_include_path_append_default(&mut ctx);
+    ctx
 }
 
 pub(crate) fn getenv_or(name: &str, default: &str) -> String {
@@ -767,13 +664,6 @@ pub(crate) fn xkb_context_sanitize_rule_names(rmlvo: &mut XkbRuleNames) {
 use super::parser::*;
 pub(crate) const GROUP_LAST_INDEX_NAME: &str = "last";
 
-pub(crate) fn lookup_string(tab: &[LookupEntry], string: &str) -> Option<u32> {
-    (!string.is_empty()).then_some(())?;
-    tab.iter()
-        .take_while(|entry| !entry.name.is_empty())
-        .find(|entry| entry.name.eq_ignore_ascii_case(string))
-        .map(|entry| entry.value)
-}
 // ============================================================================
 // Unicode Preprocessing
 // ============================================================================
