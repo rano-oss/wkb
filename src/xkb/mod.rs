@@ -294,7 +294,7 @@ fn build_groups_from_keymap(keymap: &keymap::XkbKeymap, compiled_types: &[Compil
                     continue;
                 };
 
-                let Some(action) = level.actions.iter().copied().find_map(group_kind) else {
+                let Some(action) = level.action.and_then(group_kind) else {
                     continue;
                 };
 
@@ -316,7 +316,7 @@ fn build_groups_from_keymap(keymap: &keymap::XkbKeymap, compiled_types: &[Compil
                 continue;
             };
 
-            let Some(action) = level.actions.iter().copied().find_map(group_kind) else {
+            let Some(action) = level.action.and_then(group_kind) else {
                 continue;
             };
 
