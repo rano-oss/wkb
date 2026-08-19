@@ -1,7 +1,7 @@
 pub(crate) use super::keymap::xkb_mod_name_to_index;
 use super::keysym::xkb_keysym_is_keypad;
 use super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
-use super::parse_xkb::StatementStream;
+use super::parse_xkb::{BodyStream, StatementStream};
 use super::parser::{exceeds_include_max_depth, process_include_stream};
 pub(crate) use super::parser::{KeyAliasDef, ModMapDef, NamedVarDef};
 macro_rules! some_or_false {
@@ -35,7 +35,7 @@ fn compile_stream<T>(
     keymap: &mut XkbKeymap,
     state: &mut T,
     stream: &mut StatementStream<'_>,
-    mut compile: impl FnMut(&mut XkbKeymap, &mut T, &mut Statement) -> bool,
+    mut compile: impl FnMut(&mut XkbKeymap, &mut T, &mut Statement<'_>) -> bool,
 ) -> bool {
     while let Ok(Some(mut statement)) = stream.next(&mut keymap.ctx) {
         if !compile(keymap, state, &mut statement) {
@@ -177,7 +177,7 @@ impl SymbolsBuilder {
             this.compile_statement(ki, statement)
         })
     }
-    fn compile_statement(&mut self, ki: &mut XkbKeymap, statement: &mut Statement) -> bool {
+    fn compile_statement(&mut self, ki: &mut XkbKeymap, statement: &mut Statement<'_>) -> bool {
         match statement {
             Statement::Include(includes) => self.include(ki, includes),
             Statement::Symbols(definition) => self.compile_key(ki, definition),
@@ -190,11 +190,11 @@ impl SymbolsBuilder {
             _ => false,
         }
     }
-    fn compile_key(&mut self, ki: &mut XkbKeymap, stmt: &mut NamedVarDef) -> bool {
+    fn compile_key(&mut self, ki: &mut XkbKeymap, stmt: &mut NamedVarDef<'_>) -> bool {
         let dk = &self.default_key;
         let mut keyi = dk.clone();
         keyi.name = stmt.name;
-        if self.compile_key_body(ki, &mut stmt.body, &mut keyi) {
+        if self.compile_key_body(ki, &mut stmt.body.vars(), &mut keyi) {
             set_explicit_group(self, &mut keyi);
             self.add_key(ki, &mut keyi, stmt.merge);
             return true;
@@ -281,11 +281,16 @@ impl SymbolsBuilder {
     fn compile_key_body(
         &mut self,
         ki: &mut XkbKeymap,
-        defs: &mut [VarDef],
+        body: &mut BodyStream<'_>,
         keyi: &mut KeyInfo,
     ) -> bool {
         let mut all_valid_entries: bool = true;
-        for def in defs.iter_mut() {
+        loop {
+            let mut def = match body.next(&mut ki.ctx) {
+                Ok(Some(def)) => def,
+                Ok(None) => return all_valid_entries,
+                Err(()) => return false,
+            };
             let (field, index) = if let Some(name) = &def.name {
                 let Some(lhs) = expr_resolve_lhs(name) else {
                     all_valid_entries = false;
@@ -312,7 +317,6 @@ impl SymbolsBuilder {
                 all_valid_entries = false;
             }
         }
-        all_valid_entries
     }
 }
 fn is_action_list_value(value: &ExprKind) -> bool {
@@ -1000,17 +1004,23 @@ fn set_key_type_field(
     true
 }
 fn handle_key_type_body(
-    ki: &XkbKeymap,
+    ki: &mut XkbKeymap,
     info: &mut KeyTypesInfo,
-    defs: &[VarDef],
+    body: Body<'_>,
     type_0: &mut XkbKeyType,
 ) -> bool {
-    defs.iter().all(|def| {
+    let mut vars = body.vars();
+    loop {
+        let def = match vars.next(&mut ki.ctx) {
+            Ok(Some(def)) => def,
+            Ok(None) => return true,
+            Err(()) => return false,
+        };
         let Some(lhs) = def.name.as_ref().and_then(expr_resolve_lhs) else {
             return false;
         };
         let elem = ki.ctx.atom_text(lhs.element);
-        elem.eq_ignore_ascii_case("type")
+        if !(elem.eq_ignore_ascii_case("type")
             || elem.is_empty()
                 && def.value.as_ref().is_some_and(|value| {
                     set_key_type_field(
@@ -1021,8 +1031,11 @@ fn handle_key_type_body(
                         lhs.index,
                         value,
                     )
-                })
-    })
+                }))
+        {
+            return false;
+        }
+    }
 }
 fn handle_type_global_var(ki: &XkbKeymap, stmt: &VarDef) -> bool {
     let lhs = some_or_false!(stmt.name.as_ref().and_then(expr_resolve_lhs));
@@ -1046,7 +1059,7 @@ fn handle_key_types_stream(
 fn handle_key_type_statement(
     ki: &mut XkbKeymap,
     info: &mut KeyTypesInfo,
-    stmt: &mut Statement,
+    stmt: &mut Statement<'_>,
 ) -> bool {
     match stmt {
         Statement::Include(incl) => handle_include_key_types(ki, info, incl),
@@ -1056,7 +1069,7 @@ fn handle_key_type_statement(
                 num_levels: 1,
                 ..Default::default()
             };
-            if !handle_key_type_body(ki, info, &def.body, &mut type_0) {
+            if !handle_key_type_body(ki, info, def.body, &mut type_0) {
                 false
             } else {
                 add_key_type(info, type_0, def.merge);
@@ -1309,7 +1322,7 @@ fn handle_keycodes_stream(
 }
 fn handle_keycode_statement(
     info: &mut KeyNamesInfo,
-    statement: &mut Statement,
+    statement: &mut Statement<'_>,
     ki: &mut XkbKeymap,
 ) -> bool {
     match statement {

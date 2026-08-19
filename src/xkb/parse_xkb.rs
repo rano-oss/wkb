@@ -245,6 +245,9 @@ pub(crate) struct OwnedMap {
 pub(crate) struct StatementStream<'a> {
     parser: Parser<'a>,
 }
+pub(crate) struct BodyStream<'a> {
+    parser: Parser<'a>,
+}
 pub(crate) struct MapStream<'a> {
     input: &'a [u8],
     parser: Parser<'a>,
@@ -269,8 +272,15 @@ impl OwnedMap {
         }
     }
 }
+impl Body<'_> {
+    pub(crate) fn vars(&self) -> BodyStream<'_> {
+        BodyStream {
+            parser: Parser::new(self.data),
+        }
+    }
+}
 impl StatementStream<'_> {
-    pub(crate) fn next(&mut self, ctx: &mut XkbContext) -> Result<Option<Statement>, ()> {
+    pub(crate) fn next(&mut self, ctx: &mut XkbContext) -> Result<Option<Statement<'_>>, ()> {
         loop {
             if matches!(self.parser.token, Token::End) {
                 return Ok(None);
@@ -286,6 +296,17 @@ impl StatementStream<'_> {
                 return Err(());
             }
         }
+    }
+}
+impl BodyStream<'_> {
+    pub(crate) fn next(&mut self, ctx: &mut XkbContext) -> Result<Option<VarDef>, ()> {
+        if matches!(self.parser.token, Token::End) {
+            return Ok(None);
+        }
+        if matches!(self.parser.token, Token::Error) {
+            return Err(());
+        }
+        self.parser.parse_body_var(ctx).map(Some).ok_or(())
     }
 }
 impl<'a> MapStream<'a> {
@@ -423,7 +444,7 @@ impl<'a> Parser<'a> {
         self.bump();
         merge
     }
-    fn parse_statement(&mut self, ctx: &mut XkbContext) -> Option<Statement> {
+    fn parse_statement(&mut self, ctx: &mut XkbContext) -> Option<Statement<'a>> {
         let merge = self.merge();
         if self.word(b"include") {
             self.bump();
@@ -455,7 +476,7 @@ impl<'a> Parser<'a> {
                     unreachable!()
                 };
                 let name = ctx.atom_intern(name.as_bytes());
-                let body = self.parse_body(ctx)?;
+                let body = self.take_body()?;
                 return Some(Statement::KeyType(NamedVarDef { merge, name, body }));
             }
             let atom = ctx.atom_intern(b"type");
@@ -469,7 +490,7 @@ impl<'a> Parser<'a> {
                     unreachable!()
                 };
                 let name = Self::atom(ctx, name);
-                let body = self.parse_body(ctx)?;
+                let body = self.take_body()?;
                 return Some(Statement::Symbols(NamedVarDef { merge, name, body }));
             }
             let atom = ctx.atom_intern(b"key");
@@ -544,7 +565,7 @@ impl<'a> Parser<'a> {
         ctx: &mut XkbContext,
         merge: MergeMode,
         name: ExprKind,
-    ) -> Option<Statement> {
+    ) -> Option<Statement<'a>> {
         let value = if self.punct(b';') {
             Some(ExprKind::Integer(1))
         } else {
@@ -559,7 +580,7 @@ impl<'a> Parser<'a> {
             value,
         }))
     }
-    fn skip_statement(&mut self) -> Option<Statement> {
+    fn skip_statement(&mut self) -> Option<Statement<'a>> {
         let mut depth = 0;
         loop {
             match self.bump() {
@@ -571,48 +592,48 @@ impl<'a> Parser<'a> {
             }
         }
     }
-    fn parse_body(&mut self, ctx: &mut XkbContext) -> Option<Vec<VarDef>> {
-        self.punct(b'{').then_some(())?;
-        let mut body = Vec::new();
-        while !self.punct(b'}') {
-            let merge = self.merge();
-            if matches!(self.token, Token::Punct(b'[')) {
-                let value = self.parse_list(ctx)?;
-                body.push(VarDef {
-                    merge,
-                    name: None,
-                    value: Some(value),
-                });
-            } else if self.punct(b'!') || self.punct(b'~') {
-                let word = self.take_word()?;
-                let atom = Self::atom(ctx, word);
-                body.push(VarDef {
-                    merge,
-                    name: Some(ExprKind::Ident(atom)),
-                    value: Some(ExprKind::Integer(0)),
-                });
-            } else {
-                let name = self.parse_expr(ctx, 2)?;
-                if self.punct(b'=') {
-                    body.push(VarDef {
-                        merge,
-                        name: Some(name),
-                        value: self.parse_expr(ctx, 0),
-                    });
-                } else {
-                    body.push(VarDef {
-                        merge,
-                        name: Some(name),
-                        value: Some(ExprKind::Integer(1)),
-                    });
-                }
-            }
-            if !self.punct(b',') {
-                self.punct(b';');
-            }
-        }
+    fn take_body(&mut self) -> Option<Body<'a>> {
+        matches!(self.token, Token::Punct(b'{')).then_some(())?;
+        let start = self.lexer.pos;
+        let end = braced_end(self.lexer.input, start)?;
+        self.lexer.pos = end + 1;
+        self.token = self.lexer.next();
+        self.start = self.lexer.start;
         self.punct(b';');
-        Some(body)
+        Some(Body {
+            data: &self.lexer.input[start..end],
+        })
+    }
+    fn parse_body_var(&mut self, ctx: &mut XkbContext) -> Option<VarDef> {
+        let merge = self.merge();
+        let var = if matches!(self.token, Token::Punct(b'[')) {
+            VarDef {
+                merge,
+                name: None,
+                value: Some(self.parse_list(ctx)?),
+            }
+        } else if self.punct(b'!') || self.punct(b'~') {
+            VarDef {
+                merge,
+                name: Some(ExprKind::Ident(Self::atom(ctx, self.take_word()?))),
+                value: Some(ExprKind::Integer(0)),
+            }
+        } else {
+            let name = self.parse_expr(ctx, 2)?;
+            VarDef {
+                merge,
+                name: Some(name),
+                value: if self.punct(b'=') {
+                    self.parse_expr(ctx, 0)
+                } else {
+                    Some(ExprKind::Integer(1))
+                },
+            }
+        };
+        if !self.punct(b',') {
+            self.punct(b';');
+        }
+        Some(var)
     }
     fn parse_expr(&mut self, ctx: &mut XkbContext, min_precedence: u8) -> Option<ExprKind> {
         let mut left = if let Token::Punct(op @ (b'-' | b'+' | b'!' | b'~')) = self.token {

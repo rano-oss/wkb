@@ -892,18 +892,19 @@ pub(crate) enum ExprKind {
 #[rustfmt::skip] pub(crate) struct VModDef { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) value: Option<ExprKind> }
 #[derive(Copy, Clone)] #[rustfmt::skip] pub(crate) struct KeycodeDef { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) value: i64 }
 #[derive(Copy, Clone)] #[rustfmt::skip] pub(crate) struct KeyAliasDef { pub(crate) merge: MergeMode, pub(crate) alias: u32, pub(crate) real: u32 }
-#[rustfmt::skip] pub(crate) struct NamedVarDef { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) body: Vec<VarDef> }
+#[derive(Clone, Copy)] #[rustfmt::skip] pub(crate) struct Body<'a> { pub(crate) data: &'a [u8] }
+#[rustfmt::skip] pub(crate) struct NamedVarDef<'a> { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) body: Body<'a> }
 #[rustfmt::skip] pub(crate) struct ModMapDef { pub(crate) merge: MergeMode, pub(crate) modifier: u32, pub(crate) keys: Vec<ExprKind> }
 pub(crate) const MAP_HAS_MAP_FLAGS: u32 = 2;
 pub(crate) const MAP_IS_DEFAULT: u32 = 1;
-pub(crate) enum Statement {
+pub(crate) enum Statement<'a> {
     Include(Vec<IncludeStmt>),
     Keycode(KeycodeDef),
     KeyAlias(KeyAliasDef),
     Var(VarDef),
-    KeyType(NamedVarDef),
+    KeyType(NamedVarDef<'a>),
     VMods(Vec<VModDef>),
-    Symbols(NamedVarDef),
+    Symbols(NamedVarDef<'a>),
     ModMap(ModMapDef),
     Unknown,
 }
