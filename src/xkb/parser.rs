@@ -406,13 +406,7 @@ fn execute_reduction<'a>(
             }
         }
         59 | 60 => {
-            let offset = 2 * usize::from(yyn == 59);
-            let keysym = yyvs[sp - offset].as_keysym();
-            let expr = (yyn == 59).then(|| yyvs[sp].take_expr()).flatten();
             *yyval = YYValue::Interp(InterpDef {
-                merge: MergeMode::Default,
-                sym: keysym,
-                match_0: expr,
                 def: Vec::new(),
             });
         }
@@ -531,16 +525,11 @@ fn execute_reduction<'a>(
             *yyval = YYValue::Expr(ExprKind::KeySym(keysym));
         }
         88 => {
-            // LedMapDecl: INDICATOR String OBRACE VarDeclList CBRACE SEMI
-            let atom = yyvs[sp - 4].as_atom();
-            let vardefs = yyvs[sp - 2].take_var_list();
-            *yyval = YYValue::LedMap(led_map_create(atom, vardefs));
+            *yyval = YYValue::LedMap(());
         }
         89 | 90 => {
             // LedNameDecl: INDICATOR Integer EQUALS Expr SEMI
-            let num = yyvs[sp - 3].as_num();
-            let expr = yyvs[sp - 1].take_expr();
-            *yyval = YYValue::LedName(led_name_create(num, expr));
+            *yyval = YYValue::LedName(());
         }
         91 => {
             // UnknownDecl: Ident Lhs EQUALS Expr SEMI
@@ -918,8 +907,6 @@ default_merge_constructors! {
     fn key_type_create(name: u32, body: Vec<VarDef>) -> NamedVarDef;
     fn symbols_create(name: u32, body: Vec<VarDef>) -> NamedVarDef;
     fn mod_map_create(modifier: u32, keys: Vec<ExprKind>) -> ModMapDef;
-    fn led_map_create(name: u32, body: Vec<VarDef>) -> NamedVarDef;
-    fn led_name_create(ndx: i64, name: Option<ExprKind>) -> LedNameDef;
 }
 
 pub(crate) fn bool_var_create(ident: u32, set: bool) -> VarDef {
@@ -1276,8 +1263,8 @@ pub(crate) enum YYValue<'a> {
     KeyType(NamedVarDef),
     Symbols(NamedVarDef),
     ModMask(ModMapDef),
-    LedMap(NamedVarDef),
-    LedName(LedNameDef),
+    LedMap(()),
+    LedName(()),
     Keycode(KeycodeDef),
     KeyAlias(KeyAliasDef),
     Unknown,
@@ -3176,15 +3163,6 @@ pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_REDIRECT: u32 = 2;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_CLAMP: u32 = 1;
 pub(crate) const XKB_LAYOUT_OUT_OF_RANGE_WRAP: u32 = 0;
 
-pub(crate) const XKB_STATE_LAYOUT_EFFECTIVE: u32 = 128;
-pub(crate) const XKB_STATE_LAYOUT_LOCKED: u32 = 64;
-pub(crate) const XKB_STATE_LAYOUT_LATCHED: u32 = 32;
-pub(crate) const XKB_STATE_LAYOUT_DEPRESSED: u32 = 16;
-pub(crate) const XKB_STATE_MODS_EFFECTIVE: u32 = 8;
-pub(crate) const XKB_STATE_MODS_LOCKED: u32 = 4;
-pub(crate) const XKB_STATE_MODS_LATCHED: u32 = 2;
-pub(crate) const XKB_STATE_MODS_DEPRESSED: u32 = 1;
-
 pub(crate) const XKB_KEYMAP_FORMAT_TEXT_V2: u32 = 2;
 pub(crate) const XKB_KEYMAP_FORMAT_TEXT_V1: u32 = 1;
 
@@ -3192,7 +3170,6 @@ pub(crate) const XKB_KEYMAP_COMPILE_STRICT_MODE: u32 = 1;
 pub(crate) const XKB_KEYMAP_COMPILE_NO_FLAGS: u32 = 0;
 
 pub(crate) const XKB_LAYOUT_INVALID: u32 = 0xffffffff;
-pub(crate) const XKB_MOD_INVALID: u32 = 0xffffffff;
 
 #[derive(Clone, Debug, Default)]
 pub(crate) struct XkbRuleNames {
@@ -3421,7 +3398,6 @@ pub(crate) const XKB_ATOM_NONE: u32 = 0;
 
 pub const XKB_MOD_NONE: u32 = 0xffffffff;
 pub(crate) const _XKB_MOD_INDEX_NUM_ENTRIES: u32 = 8;
-pub(crate) const XKB_ALL_GROUPS: u64 = 4294967295;
 pub(crate) const XKB_OVERLAY_MAX: u8 = 8;
 pub(crate) const XKB_OVERLAY_INVALID: u8 = 255;
 pub(crate) const XKB_KEYCODE_MAX_CONTIGUOUS: u32 = 0xfff;
@@ -3443,13 +3419,6 @@ impl XkbKeymap {
                 .ok()
                 .map(|i| &self.keys[self.num_keys_low as usize + i])
         }
-    }
-
-    /// Safe wrapper around `XkbKeyNumLevels`.
-    #[inline]
-    pub(crate) fn key_num_levels(&self, key: &XkbKey, layout: u32) -> u32 {
-        let group = &key.groups[layout as usize];
-        self.types[group.type_idx as usize].num_levels
     }
 
     fn key_index_by_name(&self, name: u32, aliases: bool) -> Option<usize> {
@@ -3611,16 +3580,7 @@ pub(crate) struct ModMapDef {
     pub(crate) keys: Vec<ExprKind>,
 }
 pub(crate) struct InterpDef {
-    pub(crate) merge: MergeMode,
-    pub(crate) sym: u32,
-    pub(crate) match_0: Option<ExprKind>,
     pub(crate) def: Vec<VarDef>,
-}
-
-pub(crate) struct LedNameDef {
-    pub(crate) merge: MergeMode,
-    pub(crate) ndx: i64,
-    pub(crate) name: Option<ExprKind>,
 }
 
 pub(crate) const MAP_HAS_MAP_FLAGS: u32 = 2;
@@ -3662,8 +3622,6 @@ pub(crate) const PARSER_NO_ILLEGAL_ACTION_FIELDS: u32 = 8192;
 pub(crate) const PARSER_NO_UNKNOWN_ACTION_FIELDS: u32 = 4096;
 pub(crate) const PARSER_NO_UNKNOWN_KEY_FIELDS: u32 = 1024;
 pub(crate) const PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS: u32 = 512;
-pub(crate) const PARSER_NO_UNKNOWN_INTERPRET_FIELDS: u32 = 128;
-pub(crate) const PARSER_NO_UNKNOWN_COMPAT_GLOBAL_FIELDS: u32 = 64;
 pub(crate) const PARSER_NO_UNKNOWN_TYPE_FIELDS: u32 = 32;
 pub(crate) const PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS: u32 = 16;
 pub(crate) const PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS: u32 = 8;

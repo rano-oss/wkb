@@ -2172,7 +2172,6 @@ use super::parser::ExprKind;
 /// Safe replacement for the IdentLookupFunc + *const c_void pair.
 pub(crate) enum IdentLookup<'a> {
     None,
-    Simple(&'a [LookupEntry]),
     NamedPattern(&'a NamedIntegerPattern<'a>),
     ModMask(&'a XkbModSet, u32),
 }
@@ -2250,7 +2249,6 @@ fn ident_lookup(
 ) -> Option<u32> {
     match lookup {
         IdentLookup::None => None,
-        IdentLookup::Simple(entries) => simple_lookup(ctx, entries, field),
         IdentLookup::NamedPattern(pattern) => {
             named_integer_pattern_lookup(ctx, pattern, field, pending)
         }
@@ -2496,15 +2494,6 @@ fn expr_resolve_mask_lookup(
     }
 }
 
-pub(crate) fn expr_resolve_mask(
-    ctx: &XkbContext,
-    expr: &ExprKind,
-    values: &[LookupEntry],
-) -> Option<u32> {
-    let lookup = IdentLookup::Simple(values);
-    expr_resolve_mask_lookup(ctx, expr, None, &lookup)
-}
-
 pub(crate) fn expr_resolve_mod_mask(
     ctx: &XkbContext,
     expr: &ExprKind,
@@ -2513,13 +2502,6 @@ pub(crate) fn expr_resolve_mod_mask(
 ) -> Option<u32> {
     let lookup = IdentLookup::ModMask(mods, mod_type);
     expr_resolve_mask_lookup(ctx, expr, None, &lookup)
-}
-
-pub(crate) fn expr_resolve_mod(def: &ExprKind, mod_type: u32, mods: &XkbModSet) -> Option<u32> {
-    let ExprKind::Ident(ident_atom) = def else {
-        return None;
-    };
-    xkb_mod_name_to_index(mods, *ident_atom, mod_type)
 }
 
 pub(crate) type ActionsInfo = [XkbAction; 3];
