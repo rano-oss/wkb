@@ -1,7 +1,8 @@
 pub(crate) use super::keymap::xkb_mod_name_to_index;
 use super::keysym::xkb_keysym_is_keypad;
 use super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
-use super::parser::{exceeds_include_max_depth, process_include_file};
+use super::parse_xkb::StatementStream;
+use super::parser::{exceeds_include_max_depth, process_include_stream};
 pub(crate) use super::parser::{KeyAliasDef, ModMapDef, NamedVarDef};
 macro_rules! some_or_false {
     ($value:expr) => {
@@ -30,6 +31,19 @@ pub(crate) enum ModMapTarget {
 pub(crate) struct ModMapEntry { pub(crate) merge: MergeMode, pub(crate) modifier: u32 }
 type KeyInfo = XkbKey;
 type GroupInfo = XkbGroup;
+fn compile_stream<T>(
+    keymap: &mut XkbKeymap,
+    state: &mut T,
+    stream: &mut StatementStream<'_>,
+    mut compile: impl FnMut(&mut XkbKeymap, &mut T, &mut Statement) -> bool,
+) -> bool {
+    while let Ok(Some(mut statement)) = stream.next(&mut keymap.ctx) {
+        if !compile(keymap, state, &mut statement) {
+            return false;
+        }
+    }
+    matches!(stream.next(&mut keymap.ctx), Ok(None))
+}
 impl GroupInfo {
     fn has_any_field(&self) -> bool {
         self.explicit_syms || self.explicit_acts || self.type_idx != 0
@@ -130,7 +144,7 @@ impl SymbolsBuilder {
         let mut included = Self::new(ki, self.include_depth + 1, &self.mods);
         let include_statements = &mut *includes;
         for statement in include_statements {
-            let Some(mut file) = process_include_file(&mut ki.ctx, statement, FileType::Symbols)
+            let Some(file) = process_include_stream(&mut ki.ctx, statement, FileType::Symbols)
             else {
                 return false;
             };
@@ -148,7 +162,7 @@ impl SymbolsBuilder {
             } else {
                 self.explicit_group
             };
-            if !next.compile_file(ki, &mut file) {
+            if !next.compile_stream(ki, &mut file.statements()) {
                 return false;
             }
             included.merge_from(ki, &mut next, statement.merge);
@@ -158,24 +172,23 @@ impl SymbolsBuilder {
         }
         true
     }
-    fn compile_file(&mut self, ki: &mut XkbKeymap, file: &mut XkbFile) -> bool {
-        for statement in &mut file.defs {
-            let valid = match statement {
-                Statement::Include(includes) => self.include(ki, includes),
-                Statement::Symbols(definition) => self.compile_key(ki, definition),
-                Statement::Var(variable) => self.compile_global(ki, variable),
-                Statement::VMods(vmods) => vmods
-                    .iter()
-                    .all(|vmod| handle_vmod_def(&mut ki.ctx, &mut self.mods, vmod)),
-                Statement::ModMap(definition) => self.compile_modmap(ki, definition),
-                Statement::Unknown => !ki.strict,
-                _ => false,
-            };
-            if !valid {
-                return false;
-            }
+    fn compile_stream(&mut self, ki: &mut XkbKeymap, stream: &mut StatementStream<'_>) -> bool {
+        compile_stream(ki, self, stream, |ki, this, statement| {
+            this.compile_statement(ki, statement)
+        })
+    }
+    fn compile_statement(&mut self, ki: &mut XkbKeymap, statement: &mut Statement) -> bool {
+        match statement {
+            Statement::Include(includes) => self.include(ki, includes),
+            Statement::Symbols(definition) => self.compile_key(ki, definition),
+            Statement::Var(variable) => self.compile_global(ki, variable),
+            Statement::VMods(vmods) => vmods
+                .iter()
+                .all(|vmod| handle_vmod_def(&mut ki.ctx, &mut self.mods, vmod)),
+            Statement::ModMap(definition) => self.compile_modmap(ki, definition),
+            Statement::Unknown => !ki.strict,
+            _ => false,
         }
-        true
     }
     fn compile_key(&mut self, ki: &mut XkbKeymap, stmt: &mut NamedVarDef) -> bool {
         let dk = &self.default_key;
@@ -827,13 +840,28 @@ fn find_key_by_symbol(keymap: &XkbKeymap, start: usize, sym: u32) -> Option<usiz
             .any(|level| level.syms.contains(&sym))
     })
 }
-pub(crate) fn compile_symbols(file: Option<&mut XkbFile>, keymap_info: &mut XkbKeymap) -> bool {
-    let mods = keymap_info.mods;
-    let mut builder = SymbolsBuilder::new(keymap_info, 0, &mods);
-    if file.is_some_and(|file| !builder.compile_file(keymap_info, file)) {
+pub(crate) fn compile_symbols_stream(
+    stream: &mut StatementStream<'_>,
+    keymap: &mut XkbKeymap,
+) -> bool {
+    let mods = keymap.mods;
+    let mut builder = SymbolsBuilder::new(keymap, 0, &mods);
+    if !builder.compile_stream(keymap, stream) {
         return false;
     }
-    builder.finish(keymap_info);
+    builder.finish(keymap);
+    true
+}
+pub(crate) fn compile_symbols_includes(
+    includes: &mut [IncludeStmt],
+    keymap: &mut XkbKeymap,
+) -> bool {
+    let mods = keymap.mods;
+    let mut builder = SymbolsBuilder::new(keymap, 0, &mods);
+    if !builder.include(keymap, includes) {
+        return false;
+    }
+    builder.finish(keymap);
     true
 }
 use super::keysym::xkb_keysym_to_upper;
@@ -885,11 +913,11 @@ fn handle_include_key_types(
     }
     let mut included = key_types_info(info.include_depth.wrapping_add(1), &info.mods);
     for stmt in includes.iter() {
-        let Some(mut file) = process_include_file(&mut ki.ctx, stmt, FileType::Types) else {
+        let Some(file) = process_include_stream(&mut ki.ctx, stmt, FileType::Types) else {
             return false;
         };
         let mut next = key_types_info(info.include_depth.wrapping_add(1), &included.mods);
-        if !handle_key_types_file(ki, &mut next, &mut file) {
+        if !handle_key_types_stream(ki, &mut next, &mut file.statements()) {
             return false;
         }
         merge_included_key_types(&mut included, &mut next, stmt.merge);
@@ -1008,52 +1036,73 @@ fn handle_type_global_var(ki: &XkbKeymap, stmt: &VarDef) -> bool {
         !field.is_empty() && !ki.strict
     }
 }
-fn handle_key_types_file(ki: &mut XkbKeymap, info: &mut KeyTypesInfo, file: &mut XkbFile) -> bool {
-    for stmt in &mut file.defs {
-        let ok = match stmt {
-            Statement::Include(incl) => handle_include_key_types(ki, info, incl),
-            Statement::KeyType(def) => {
-                let mut type_0 = XkbKeyType {
-                    name: def.name,
-                    num_levels: 1,
-                    ..Default::default()
-                };
-                if !handle_key_type_body(ki, info, &def.body, &mut type_0) {
-                    false
-                } else {
-                    add_key_type(info, type_0, def.merge);
-                    true
-                }
-            }
-            Statement::Var(var) => handle_type_global_var(ki, var),
-            Statement::VMods(vmods) => vmods
-                .iter()
-                .all(|vmod| handle_vmod_def(&mut ki.ctx, &mut info.mods, vmod)),
-            Statement::Unknown => !ki.strict,
-            _ => false,
-        };
-        if !ok {
-            return false;
-        }
-    }
-    true
+fn handle_key_types_stream(
+    ki: &mut XkbKeymap,
+    info: &mut KeyTypesInfo,
+    stream: &mut StatementStream<'_>,
+) -> bool {
+    compile_stream(ki, info, stream, handle_key_type_statement)
 }
-pub(crate) fn compile_key_types(file: Option<&mut XkbFile>, keymap_info: &mut XkbKeymap) -> bool {
-    let mods = keymap_info.mods;
-    let mut info = key_types_info(0, &mods);
-    if file.is_some_and(|file| !handle_key_types_file(keymap_info, &mut info, file)) {
-        return false;
+fn handle_key_type_statement(
+    ki: &mut XkbKeymap,
+    info: &mut KeyTypesInfo,
+    stmt: &mut Statement,
+) -> bool {
+    match stmt {
+        Statement::Include(incl) => handle_include_key_types(ki, info, incl),
+        Statement::KeyType(def) => {
+            let mut type_0 = XkbKeyType {
+                name: def.name,
+                num_levels: 1,
+                ..Default::default()
+            };
+            if !handle_key_type_body(ki, info, &def.body, &mut type_0) {
+                false
+            } else {
+                add_key_type(info, type_0, def.merge);
+                true
+            }
+        }
+        Statement::Var(var) => handle_type_global_var(ki, var),
+        Statement::VMods(vmods) => vmods
+            .iter()
+            .all(|vmod| handle_vmod_def(&mut ki.ctx, &mut info.mods, vmod)),
+        Statement::Unknown => !ki.strict,
+        _ => false,
     }
-    keymap_info.types = if info.types.is_empty() {
+}
+fn finish_key_types(keymap: &mut XkbKeymap, info: KeyTypesInfo) {
+    keymap.types = if info.types.is_empty() {
         vec![XkbKeyType {
-            name: keymap_info.ctx.atom_intern(b"ONE_LEVEL"),
+            name: keymap.ctx.atom_intern(b"ONE_LEVEL"),
             num_levels: 1,
             ..Default::default()
         }]
     } else {
         info.types
     };
-    keymap_info.mods = info.mods;
+    keymap.mods = info.mods;
+}
+pub(crate) fn compile_key_types_stream(
+    stream: &mut StatementStream<'_>,
+    keymap: &mut XkbKeymap,
+) -> bool {
+    let mut info = key_types_info(0, &keymap.mods);
+    if !handle_key_types_stream(keymap, &mut info, stream) {
+        return false;
+    }
+    finish_key_types(keymap, info);
+    true
+}
+pub(crate) fn compile_key_types_includes(
+    includes: &mut [IncludeStmt],
+    keymap: &mut XkbKeymap,
+) -> bool {
+    let mut info = key_types_info(0, &keymap.mods);
+    if !handle_include_key_types(keymap, &mut info, includes) {
+        return false;
+    }
+    finish_key_types(keymap, info);
     true
 }
 pub(crate) fn init_vmods(info: &mut XkbModSet, mods: &XkbModSet, reset: bool) {
@@ -1215,14 +1264,14 @@ fn handle_include_keycodes(
         ..Default::default()
     };
     for stmt in includes.iter() {
-        let Some(mut file) = process_include_file(&mut ki.ctx, stmt, FileType::Keycodes) else {
+        let Some(file) = process_include_stream(&mut ki.ctx, stmt, FileType::Keycodes) else {
             return false;
         };
         let mut next = KeyNamesInfo {
             include_depth: included.include_depth,
             ..Default::default()
         };
-        if !handle_keycodes_file(&mut next, &mut file, ki)
+        if !handle_keycodes_stream(&mut next, &mut file.statements(), ki)
             || !merge_keycodes(&mut included, &next, stmt.merge)
         {
             return false;
@@ -1249,27 +1298,34 @@ fn handle_key_name_var(ki: &XkbKeymap, stmt: &VarDef) -> bool {
             .is_some_and(|value| (0..=XKB_KEYCODE_MAX_CONTIGUOUS as i64).contains(&value))
         || !ki.strict
 }
-fn handle_keycodes_file(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut XkbKeymap) -> bool {
-    for statement in &mut file.defs {
-        let valid = match statement {
-            Statement::Include(includes) => handle_include_keycodes(info, includes, ki),
-            Statement::Keycode(def) => {
-                (0..=XKB_KEYCODE_MAX_CONTIGUOUS as i64).contains(&def.value)
-                    && add_key_name(info, def.value as u32, def.name, def.merge)
-            }
-            Statement::KeyAlias(def) => {
-                handle_alias_def(info, def);
-                true
-            }
-            Statement::Var(def) => handle_key_name_var(ki, def),
-            Statement::Unknown => !ki.strict,
-            _ => false,
-        };
-        if !valid {
-            return false;
+fn handle_keycodes_stream(
+    info: &mut KeyNamesInfo,
+    stream: &mut StatementStream<'_>,
+    ki: &mut XkbKeymap,
+) -> bool {
+    compile_stream(ki, info, stream, |ki, info, statement| {
+        handle_keycode_statement(info, statement, ki)
+    })
+}
+fn handle_keycode_statement(
+    info: &mut KeyNamesInfo,
+    statement: &mut Statement,
+    ki: &mut XkbKeymap,
+) -> bool {
+    match statement {
+        Statement::Include(includes) => handle_include_keycodes(info, includes, ki),
+        Statement::Keycode(def) => {
+            (0..=XKB_KEYCODE_MAX_CONTIGUOUS as i64).contains(&def.value)
+                && add_key_name(info, def.value as u32, def.name, def.merge)
         }
+        Statement::KeyAlias(def) => {
+            handle_alias_def(info, def);
+            true
+        }
+        Statement::Var(def) => handle_key_name_var(ki, def),
+        Statement::Unknown => !ki.strict,
+        _ => false,
     }
-    true
 }
 fn finish_keycodes(keymap: &mut XkbKeymap, info: &mut KeyNamesInfo) {
     if info.codes.is_empty() {
@@ -1304,12 +1360,26 @@ fn finish_keycodes(keymap: &mut XkbKeymap, info: &mut KeyNamesInfo) {
     }
     keymap.key_names = std::mem::take(&mut info.names);
 }
-pub(crate) fn compile_keycodes(file: Option<&mut XkbFile>, keymap_info: &mut XkbKeymap) -> bool {
+pub(crate) fn compile_keycodes_stream(
+    stream: &mut StatementStream<'_>,
+    keymap: &mut XkbKeymap,
+) -> bool {
     let mut info = KeyNamesInfo::default();
-    if file.is_some_and(|file| !handle_keycodes_file(&mut info, file, keymap_info)) {
+    if !handle_keycodes_stream(&mut info, stream, keymap) {
         return false;
     }
-    finish_keycodes(keymap_info, &mut info);
+    finish_keycodes(keymap, &mut info);
+    true
+}
+pub(crate) fn compile_keycodes_includes(
+    includes: &mut [IncludeStmt],
+    keymap: &mut XkbKeymap,
+) -> bool {
+    let mut info = KeyNamesInfo::default();
+    if !handle_include_keycodes(&mut info, includes, keymap) {
+        return false;
+    }
+    finish_keycodes(keymap, &mut info);
     true
 }
 #[rustfmt::skip]

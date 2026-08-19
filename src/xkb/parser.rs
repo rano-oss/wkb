@@ -1,6 +1,11 @@
 use super::keymap::mod_mask_get_effective;
-pub(crate) use super::parse_xkb::{xkb_file_from_components, xkb_parse_string};
-pub(crate) use super::symbols::{compile_key_types, compile_keycodes, compile_symbols};
+pub(crate) use super::parse_xkb::{
+    include_create, xkb_select_map, xkb_select_owned, OwnedMap, SelectedMap,
+};
+use super::symbols::{
+    compile_key_types_includes, compile_key_types_stream, compile_keycodes_includes,
+    compile_keycodes_stream, compile_symbols_includes, compile_symbols_stream,
+};
 use crate::xkb::keymap::xkb_mod_name_to_index;
 use std::sync::Arc;
 pub(crate) const INCLUDE_MAX_DEPTH: i32 = 15_i32;
@@ -36,28 +41,26 @@ pub(crate) fn find_file_in_xkb_path(
 pub(crate) fn exceeds_include_max_depth(include_depth: u32) -> bool {
     include_depth >= INCLUDE_MAX_DEPTH as u32
 }
-pub(crate) fn process_include_file(
+pub(crate) fn process_include_stream(
     ctx: &mut XkbContext,
     stmt: &IncludeStmt,
     file_type: FileType,
-) -> Option<XkbFile> {
+) -> Option<OwnedMap> {
     let mut offset = 0;
     let mut candidate = None;
     loop {
-        let file_data = if stmt.file.starts_with('/') {
+        let data = if stmt.file.starts_with('/') {
             (offset == 0).then(|| ctx.read_file(&stmt.file)).flatten()
         } else {
             find_file_in_xkb_path(ctx, &stmt.file, file_type, &mut offset)
         };
-        let Some(file_data) = file_data else { break };
-        if let Some(parsed) = xkb_parse_string(ctx, &file_data, &stmt.map) {
+        let Some(data) = data else { break };
+        if let Some(parsed) = xkb_select_owned(data, &stmt.map) {
             if parsed.file_type == file_type {
                 if !stmt.map.is_empty() || parsed.flags != 0 {
                     return Some(parsed);
                 }
-                if candidate.is_none() {
-                    candidate = Some(parsed);
-                }
+                candidate.get_or_insert(parsed);
             }
         }
         offset += 1;
@@ -233,21 +236,64 @@ fn update_key_action_fields(info: &mut XkbKeymap) {
         }
     }
 }
-pub(crate) fn compile_keymap(file: &mut XkbFile, keymap: &mut XkbKeymap) -> bool {
-    let mut parts: [Option<XkbFile>; 3] = std::array::from_fn(|_| None);
-    for stmt in &mut file.defs {
-        let Statement::XkbFile(sub_file) = stmt else {
-            continue;
+pub(crate) fn compile_components(parts: &XkbComponentNames, keymap: &mut XkbKeymap) -> bool {
+    let parse = |bytes: &[u8]| {
+        std::str::from_utf8(bytes)
+            .ok()
+            .and_then(|input| include_create(input, MergeMode::Default))
+    };
+    let (Some(mut keycodes), Some(mut types), Some(mut symbols)) = (
+        parse(&parts.keycodes),
+        parse(&parts.types),
+        parse(&parts.symbols),
+    ) else {
+        return false;
+    };
+    compile_keycodes_includes(&mut keycodes, keymap)
+        && compile_key_types_includes(&mut types, keymap)
+        && compile_symbols_includes(&mut symbols, keymap)
+        && update_derived_keymap_fields(keymap)
+}
+pub(crate) fn compile_keymap_stream(file: SelectedMap<'_>, keymap: &mut XkbKeymap) -> bool {
+    if file.file_type != FileType::Keymap {
+        return false;
+    }
+    let mut parts: [Option<SelectedMap<'_>>; 3] = [None, None, None];
+    let mut maps = file.maps();
+    loop {
+        let map = match maps.next() {
+            Ok(Some(map)) => map,
+            Ok(None) => break,
+            Err(()) => return false,
         };
-        let index = sub_file.file_type as usize;
+        let index = map.file_type as usize;
         if index < parts.len() && parts[index].is_none() {
-            parts[index] = Some(std::mem::take(sub_file));
+            parts[index] = Some(map);
         }
     }
-    compile_keycodes(parts[0].as_mut(), keymap)
-        && compile_key_types(parts[1].as_mut(), keymap)
-        && compile_symbols(parts[2].as_mut(), keymap)
-        && update_derived_keymap_fields(keymap)
+    let mut keycodes = parts[0].as_ref().map(SelectedMap::statements);
+    let mut types = parts[1].as_ref().map(SelectedMap::statements);
+    let mut symbols = parts[2].as_ref().map(SelectedMap::statements);
+    let mut empty = [];
+    if !match &mut keycodes {
+        Some(stream) => compile_keycodes_stream(stream, keymap),
+        None => compile_keycodes_includes(&mut empty, keymap),
+    } {
+        return false;
+    }
+    if !match &mut types {
+        Some(stream) => compile_key_types_stream(stream, keymap),
+        None => compile_key_types_includes(&mut empty, keymap),
+    } {
+        return false;
+    }
+    if !match &mut symbols {
+        Some(stream) => compile_symbols_stream(stream, keymap),
+        None => compile_symbols_includes(&mut empty, keymap),
+    } {
+        return false;
+    }
+    update_derived_keymap_fields(keymap)
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum RuleScope {
@@ -860,14 +906,6 @@ pub(crate) enum Statement {
     Symbols(NamedVarDef),
     ModMap(ModMapDef),
     Unknown,
-    XkbFile(XkbFile),
-}
-#[derive(Default)]
-pub(crate) struct XkbFile {
-    pub(crate) name: String,
-    pub(crate) defs: Vec<Statement>,
-    pub(crate) file_type: FileType,
-    pub(crate) flags: u32,
 }
 fn parse_u32(s: &[u8], radix: u32) -> (u32, i32) {
     let valid = |byte: &u8| {
@@ -891,17 +929,14 @@ pub(crate) fn parse_hex_u32(s: &[u8]) -> (u32, i32) {
 }
 #[cfg(test)]
 mod tests {
-    use super::xkb_parse_string;
-    use crate::xkb::keymap::xkb_context_new;
+    use super::{xkb_select_map, FileType};
     #[test]
     fn parser_preserves_the_next_map_token() {
         let input = br#"
             xkb_symbols "first" {};
             xkb_symbols "second" {};
         "#;
-        let mut ctx = xkb_context_new();
-        let file = xkb_parse_string(&mut ctx, input, "second")
-            .expect("second map should remain parseable");
-        assert_eq!(file.name, "second");
+        let file = xkb_select_map(input, "second").expect("second map should remain parseable");
+        assert_eq!(file.file_type, FileType::Symbols);
     }
 }

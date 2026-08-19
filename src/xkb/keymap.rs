@@ -2,6 +2,7 @@ pub(crate) use super::parser::{
     XkbContext, XkbKeymap, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL,
 };
 use crate::xkb::keysym::keysym_to_codepoint;
+use crate::xkb::parse_xkb::braced_end;
 use arrayvec::ArrayVec;
 use std::borrow::Cow;
 pub(crate) fn xkb_keymap_new_from_names(
@@ -21,8 +22,7 @@ pub(crate) fn xkb_keymap_new_from_names(
     )
     .then_some(())?;
     keymap.num_groups = keymap.num_groups.min(XKB_MAX_GROUPS);
-    let mut file = xkb_file_from_components(&components)?;
-    (file.file_type == FileType::Keymap && compile_keymap(&mut file, &mut keymap)).then_some(())?;
+    compile_components(&components, &mut keymap).then_some(())?;
     Some(keymap)
 }
 pub(crate) fn xkb_keymap_new_from_string(ctx: XkbContext, original: &[u8]) -> Option<XkbKeymap> {
@@ -32,8 +32,8 @@ pub(crate) fn xkb_keymap_new_from_string(ctx: XkbContext, original: &[u8]) -> Op
         return None;
     }
     let mut keymap = xkb_keymap_new(ctx, true);
-    let mut file = xkb_parse_string(&mut keymap.ctx, bytes, "")?;
-    (file.file_type == FileType::Keymap && compile_keymap(&mut file, &mut keymap)).then_some(())?;
+    let file = xkb_select_map(bytes, "")?;
+    compile_keymap_stream(file, &mut keymap).then_some(())?;
     apply_group_action_overrides(&mut keymap, original);
     Some(keymap)
 }
@@ -150,19 +150,14 @@ fn strip_compat_map(input: &[u8]) -> Cow<'_, [u8]> {
     else {
         return Cow::Borrowed(input);
     };
-    let mut depth = 1;
-    for pos in open + 1..input.len() {
-        depth += usize::from(input[pos] == b'{');
-        depth -= usize::from(input[pos] == b'}');
-        if depth == 0 {
-            let mut stripped = Vec::with_capacity(input.len() - (pos - open));
-            stripped.extend_from_slice(&input[..=open]);
-            stripped.push(b'\n');
-            stripped.extend_from_slice(&input[pos..]);
-            return Cow::Owned(stripped);
-        }
-    }
-    Cow::Borrowed(input)
+    let Some(end) = braced_end(input, open + 1) else {
+        return Cow::Borrowed(input);
+    };
+    let mut stripped = Vec::with_capacity(input.len() - (end - open));
+    stripped.extend_from_slice(&input[..=open]);
+    stripped.push(b'\n');
+    stripped.extend_from_slice(&input[end..]);
+    Cow::Owned(stripped)
 }
 use std::{fs, path::Path};
 const LOCALE_DIR: &str = "/usr/share/X11/locale";
