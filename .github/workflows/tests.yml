@@ -48,6 +48,35 @@ jobs:
           - groups
           - type
           - led_lights
+          - modifiers
+          - repeat
+          - unicode
+    steps:
+      - name: Install system dependencies
+        run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common
+
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and target
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run test target
+        run: cargo test --test ${{ matrix.test_target }}
+
+  test-levels-locks:
+    name: test (${{ matrix.test_target }})
+    needs: [test-unit-doc, test-independent]
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test_target:
           - levels_level_keys
           - levels_keysym
           - locks_caps_lock
@@ -55,9 +84,6 @@ jobs:
           - locks_level
           - locks_num_lock
           - locks_state
-          - modifiers
-          - repeat
-          - unicode
     steps:
       - name: Install system dependencies
         run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common

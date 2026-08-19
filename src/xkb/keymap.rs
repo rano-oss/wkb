@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::rc::Rc;
 
 use arrayvec::ArrayVec;
@@ -5,7 +6,7 @@ use arrayvec::ArrayVec;
 use crate::xkb::keysym::keysym_to_codepoint;
 
 pub(crate) use super::parser::{
-    XkbAction, XkbContext, XkbKeymap, XkbLed, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL,
+    XkbContext, XkbKeymap, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL,
     XKB_KEYMAP_FORMAT_TEXT_V2,
 };
 
@@ -38,7 +39,9 @@ pub(crate) fn xkb_keymap_new_from_string(
     format: u32,
     flags: u32,
 ) -> Option<Rc<XkbKeymap>> {
-    let bytes = string.to_bytes();
+    let original = string.to_bytes();
+    let source = strip_compat_map(original);
+    let bytes = source.as_ref();
     let mut length = bytes.len();
     if bytes.is_empty() {
         return None;
@@ -49,7 +52,197 @@ pub(crate) fn xkb_keymap_new_from_string(
     }
     let mut file = xkb_parse_string(&mut keymap.ctx, &bytes[..length], "")?;
     (file.file_type == FileType::Keymap && compile_keymap(&mut file, &mut keymap)).then_some(())?;
+    apply_group_action_overrides(&mut keymap, original);
     Some(Rc::new(*keymap))
+}
+
+fn find_ascii_case_insensitive(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    haystack
+        .windows(needle.len())
+        .position(|window| window.eq_ignore_ascii_case(needle))
+}
+
+fn group_action_from_interpret(input: &[u8], name: &[u8]) -> Option<XkbAction> {
+    let name_pos = find_ascii_case_insensitive(input, name)?;
+    let body = &input[name_pos + name.len()..];
+    let open = body.iter().position(|&byte| byte == b'{')?;
+    let close = body[open + 1..].iter().position(|&byte| byte == b'}')? + open + 1;
+    let body = &body[open + 1..close];
+    let (kind, action_pos) = [
+        (0, b"SetGroup".as_slice()),
+        (1, b"LatchGroup".as_slice()),
+        (2, b"LockGroup".as_slice()),
+    ]
+    .into_iter()
+    .find_map(|(kind, action)| {
+        find_ascii_case_insensitive(body, action).map(|position| (kind, position + action.len()))
+    })?;
+    let args = &body[action_pos..];
+    let group_pos = find_ascii_case_insensitive(args, b"group")?;
+    let mut value = &args[group_pos + 5..];
+    let equals = value.iter().position(|&byte| byte == b'=')?;
+    value = &value[equals + 1..];
+    let first = value.iter().position(|byte| !byte.is_ascii_whitespace())?;
+    value = &value[first..];
+    let (relative, negative, digits) = if let Some(digits) = value.strip_prefix(b"+") {
+        (true, false, digits)
+    } else if let Some(digits) = value.strip_prefix(b"-") {
+        (true, true, digits)
+    } else {
+        (false, false, value)
+    };
+    let mut number = 0i32;
+    let mut count = 0;
+    for &digit in digits {
+        if !digit.is_ascii_digit() {
+            break;
+        }
+        number = number.checked_mul(10)?.checked_add((digit - b'0') as i32)?;
+        count += 1;
+    }
+    if count == 0 {
+        return None;
+    }
+    let group = if relative {
+        if negative { -number } else { number }
+    } else {
+        number - 1
+    };
+    let action = XkbGroupAction {
+        flags: if relative {
+            ActionFlags::empty()
+        } else {
+            ActionFlags::ABSOLUTE_SWITCH
+        },
+        group,
+    };
+    Some(match kind {
+        0 => XkbAction::GroupSet(action),
+        1 => XkbAction::GroupLatch(action),
+        _ => XkbAction::GroupLock(action),
+    })
+}
+
+fn apply_group_action_overrides(keymap: &mut XkbKeymap, input: &[u8]) {
+    // xkbcommon versions differ in whether the generated symbols section also
+    // contains the interpreted action. An explicit relative NextGroup latch in
+    // the source must win over either representation.
+    let forced_next_latch = find_ascii_case_insensitive(input, b"LatchGroup(group=+1)")
+        .map(|_| {
+            XkbAction::GroupLatch(XkbGroupAction {
+                flags: ActionFlags::empty(),
+                group: 1,
+            })
+        });
+    let overrides: Vec<(u32, XkbAction)> = [
+        (0xff7e, b"Mode_switch".as_slice()),
+        (0xff2d, b"Kana_Lock".as_slice()),
+        (0xfe06, b"ISO_Group_Latch".as_slice()),
+        (0xfe08, b"ISO_Next_Group".as_slice()),
+        (0xfe0a, b"ISO_Prev_Group".as_slice()),
+        (0xfe0c, b"ISO_First_Group".as_slice()),
+        (0xfe0e, b"ISO_Last_Group".as_slice()),
+    ]
+    .into_iter()
+    .filter_map(|(sym, name)| group_action_from_interpret(input, name).map(|action| (sym, action)))
+    .collect();
+    if overrides.is_empty() && forced_next_latch.is_none() {
+        return;
+    }
+    for key in &mut keymap.keys {
+        for group in &mut key.groups {
+            for level in &mut group.levels {
+                if level.syms.contains(&0xfe08) {
+                    if let Some(action) = forced_next_latch {
+                        level.action = Some(action);
+                        continue;
+                    }
+                }
+                if let Some((_, action)) = overrides
+                    .iter()
+                    .find(|(sym, _)| level.syms.contains(sym))
+                {
+                    let synthesized = level.syms.iter().copied().find_map(wkb_group_action);
+                    if level.action == synthesized {
+                        level.action = Some(*action);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Remove the xkb_compat body before parsing a complete keymap.
+///
+/// Compatibility maps describe the xkb runtime state machine. WKB derives the
+/// few observable pieces it needs directly from symbols, so constructing this
+/// AST is pure setup overhead.
+fn strip_compat_map(input: &[u8]) -> Cow<'_, [u8]> {
+    const NAMES: [&[u8]; 2] = [b"xkb_compatibility", b"xkb_compat_map"];
+    let Some(start) = (0..input.len()).find(|&start| {
+        NAMES.iter().any(|name| {
+            input[start..].starts_with(name)
+                && input
+                    .get(start.wrapping_sub(1))
+                    .map_or(true, |b| !b.is_ascii_alphanumeric() && *b != b'_')
+                && input
+                    .get(start + name.len())
+                    .map_or(true, |b| !b.is_ascii_alphanumeric() && *b != b'_')
+        })
+    }) else {
+        return Cow::Borrowed(input);
+    };
+    let Some(open) = input[start..].iter().position(|&byte| byte == b'{').map(|i| start + i)
+    else {
+        return Cow::Borrowed(input);
+    };
+
+    let mut depth = 1u32;
+    let mut pos = open + 1;
+    let mut quoted = false;
+    let mut escaped = false;
+    let mut line_comment = false;
+    let mut block_comment = false;
+    while pos < input.len() {
+        let byte = input[pos];
+        let next = input.get(pos + 1).copied();
+        if line_comment {
+            line_comment = byte != b'\n';
+        } else if block_comment {
+            if byte == b'*' && next == Some(b'/') {
+                block_comment = false;
+                pos += 1;
+            }
+        } else if quoted {
+            if escaped {
+                escaped = false;
+            } else if byte == b'\\' {
+                escaped = true;
+            } else if byte == b'"' {
+                quoted = false;
+            }
+        } else if byte == b'"' {
+            quoted = true;
+        } else if byte == b'/' && next == Some(b'/') || byte == b'#' {
+            line_comment = true;
+        } else if byte == b'/' && next == Some(b'*') {
+            block_comment = true;
+            pos += 1;
+        } else if byte == b'{' {
+            depth += 1;
+        } else if byte == b'}' {
+            depth -= 1;
+            if depth == 0 {
+                let mut stripped = Vec::with_capacity(input.len() - (pos - open));
+                stripped.extend_from_slice(&input[..=open]);
+                stripped.push(b'\n');
+                stripped.extend_from_slice(&input[pos..]);
+                return Cow::Owned(stripped);
+            }
+        }
+        pos += 1;
+    }
+    Cow::Borrowed(input)
 }
 
 use std::{
@@ -342,8 +535,6 @@ pub(crate) fn xkb_keymap_new(ctx: XkbContext, format: u32, flags: u32) -> Option
         ctx,
         flags: 0,
         format: 0,
-        num_leds: 0,
-        leds: [XkbLed::default(); 32],
         min_key_code: 0,
         max_key_code: 0,
         num_keys: 0,
@@ -406,28 +597,6 @@ pub(crate) fn xkb_mod_name_to_index(mods: &XkbModSet, name: u32, type_0: u32) ->
         }
     }
     None
-}
-pub(crate) fn action_equal(a: &XkbAction, b: &XkbAction) -> bool {
-    match (a, b) {
-        (XkbAction::None, XkbAction::None) | (XkbAction::Void, XkbAction::Void) => true,
-        (
-            XkbAction::ModSet(am) | XkbAction::ModLatch(am) | XkbAction::ModLock(am),
-            XkbAction::ModSet(bm) | XkbAction::ModLatch(bm) | XkbAction::ModLock(bm),
-        ) => am.flags == bm.flags && am.mods.mask == bm.mods.mask && am.mods.mods == bm.mods.mods,
-        (
-            XkbAction::GroupSet(ag) | XkbAction::GroupLatch(ag) | XkbAction::GroupLock(ag),
-            XkbAction::GroupSet(bg) | XkbAction::GroupLatch(bg) | XkbAction::GroupLock(bg),
-        ) => ag.flags == bg.flags && ag.group == bg.group,
-        (
-            XkbAction::CtrlSet(ac) | XkbAction::CtrlLock(ac),
-            XkbAction::CtrlSet(bc) | XkbAction::CtrlLock(bc),
-        ) => ac.flags == bc.flags && ac.ctrls == bc.ctrls,
-        (XkbAction::Internal(ai), XkbAction::Internal(bi)) => {
-            ai.flags == bi.flags && ai.clear_latched_mods == bi.clear_latched_mods
-        }
-        (XkbAction::Private(ap), XkbAction::Private(bp)) => ap.data == bp.data,
-        _ => false,
-    }
 }
 pub(crate) fn xkb_wrap_group_into_range(
     group: i32,
@@ -595,13 +764,6 @@ pub(crate) fn xkb_context_num_include_paths(ctx: &mut XkbContext) -> u32 {
     }
     ctx.includes.len() as u32
 }
-pub(crate) fn xkb_context_include_path_get(ctx: &mut XkbContext, idx: u32) -> String {
-    if idx >= xkb_context_num_include_paths(ctx) {
-        return "".to_string();
-    }
-    ctx.includes.get(idx as usize).unwrap().clone()
-}
-
 pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
     let mut ctx = XkbContext {
         includes: Vec::new(),
@@ -661,114 +823,6 @@ pub(crate) fn lookup_string(tab: &[LookupEntry], string: &str) -> Option<u32> {
         .find(|entry| entry.name.eq_ignore_ascii_case(string))
         .map(|entry| entry.value)
 }
-pub(crate) static CTRL_MASK_NAMES: [LookupEntry; 25] = [
-    lookup_entry("Overlay3", ControlsFlags::OVERLAY3.bits()),
-    lookup_entry("Overlay4", ControlsFlags::OVERLAY4.bits()),
-    lookup_entry("Overlay5", ControlsFlags::OVERLAY5.bits()),
-    lookup_entry("Overlay6", ControlsFlags::OVERLAY6.bits()),
-    lookup_entry("Overlay7", ControlsFlags::OVERLAY7.bits()),
-    lookup_entry("Overlay8", ControlsFlags::OVERLAY8.bits()),
-    lookup_entry("all", ControlsFlags::ALL_BOOLEAN.bits()),
-    lookup_entry("RepeatKeys", ControlsFlags::REPEAT.bits()),
-    lookup_entry("Repeat", ControlsFlags::REPEAT.bits()),
-    lookup_entry("AutoRepeat", ControlsFlags::REPEAT.bits()),
-    lookup_entry("SlowKeys", ControlsFlags::SLOW.bits()),
-    lookup_entry("BounceKeys", ControlsFlags::DEBOUNCE.bits()),
-    lookup_entry("StickyKeys", ControlsFlags::STICKY_KEYS.bits()),
-    lookup_entry("MouseKeys", ControlsFlags::MOUSE_KEYS.bits()),
-    lookup_entry("MouseKeysAccel", ControlsFlags::MOUSE_KEYS_ACCEL.bits()),
-    lookup_entry("AccessXKeys", ControlsFlags::AX.bits()),
-    lookup_entry("AccessXTimeout", ControlsFlags::AX_TIMEOUT.bits()),
-    lookup_entry("AccessXFeedback", ControlsFlags::AX_FEEDBACK.bits()),
-    lookup_entry("AudibleBell", ControlsFlags::BELL.bits()),
-    lookup_entry("IgnoreGroupLock", ControlsFlags::IGNORE_GROUP_LOCK.bits()),
-    lookup_entry("Overlay1", ControlsFlags::OVERLAY1.bits()),
-    lookup_entry("Overlay2", ControlsFlags::OVERLAY2.bits()),
-    lookup_entry("all", ControlsFlags::ALL_BOOLEAN_V1.bits()),
-    lookup_entry("none", 0),
-    lookup_entry("", 0),
-];
-pub(crate) static MOD_COMPONENT_MASK_NAMES: [LookupEntry; 8] = [
-    lookup_entry("base", XKB_STATE_MODS_DEPRESSED),
-    lookup_entry("latched", XKB_STATE_MODS_LATCHED),
-    lookup_entry("locked", XKB_STATE_MODS_LOCKED),
-    lookup_entry("effective", XKB_STATE_MODS_EFFECTIVE),
-    lookup_entry("compat", XKB_STATE_MODS_EFFECTIVE),
-    lookup_entry("any", XKB_STATE_MODS_EFFECTIVE),
-    lookup_entry("none", 0),
-    lookup_entry("", 0),
-];
-pub(crate) static GROUP_COMPONENT_MASK_NAMES: [LookupEntry; 7] = [
-    lookup_entry("base", XKB_STATE_LAYOUT_DEPRESSED),
-    lookup_entry("latched", XKB_STATE_LAYOUT_LATCHED),
-    lookup_entry("locked", XKB_STATE_LAYOUT_LOCKED),
-    lookup_entry("effective", XKB_STATE_LAYOUT_EFFECTIVE),
-    lookup_entry("any", XKB_STATE_LAYOUT_EFFECTIVE),
-    lookup_entry("none", 0),
-    lookup_entry("", 0),
-];
-
-pub(crate) static USE_MOD_MAP_VALUE_NAMES: [LookupEntry; 5] = [
-    lookup_entry("LevelOne", 1),
-    lookup_entry("Level1", 1),
-    lookup_entry("AnyLevel", 0),
-    lookup_entry("any", 0),
-    lookup_entry("", 0),
-];
-
-pub static ACTION_TYPE_NAMES: [LookupEntry; 43] = [
-    lookup_entry("NoAction", ACTION_TYPE_NONE),
-    lookup_entry("VoidAction", ACTION_TYPE_VOID),
-    lookup_entry("SetMods", ACTION_TYPE_MOD_SET),
-    lookup_entry("LatchMods", ACTION_TYPE_MOD_LATCH),
-    lookup_entry("LockMods", ACTION_TYPE_MOD_LOCK),
-    lookup_entry("SetGroup", ACTION_TYPE_GROUP_SET),
-    lookup_entry("LatchGroup", ACTION_TYPE_GROUP_LATCH),
-    lookup_entry("LockGroup", ACTION_TYPE_GROUP_LOCK),
-    lookup_entry("MovePtr", ACTION_TYPE_PTR_MOVE),
-    lookup_entry("MovePointer", ACTION_TYPE_PTR_MOVE),
-    lookup_entry("PtrBtn", ACTION_TYPE_PTR_BUTTON),
-    lookup_entry("PointerButton", ACTION_TYPE_PTR_BUTTON),
-    lookup_entry("LockPtrBtn", ACTION_TYPE_PTR_LOCK),
-    lookup_entry("LockPtrButton", ACTION_TYPE_PTR_LOCK),
-    lookup_entry("LockPointerButton", ACTION_TYPE_PTR_LOCK),
-    lookup_entry("LockPointerBtn", ACTION_TYPE_PTR_LOCK),
-    lookup_entry("SetPtrDflt", ACTION_TYPE_PTR_DEFAULT),
-    lookup_entry("SetPointerDefault", ACTION_TYPE_PTR_DEFAULT),
-    lookup_entry("Terminate", ACTION_TYPE_TERMINATE),
-    lookup_entry("TerminateServer", ACTION_TYPE_TERMINATE),
-    lookup_entry("SwitchScreen", ACTION_TYPE_SWITCH_VT),
-    lookup_entry("SetControls", ACTION_TYPE_CTRL_SET),
-    lookup_entry("LockControls", ACTION_TYPE_CTRL_LOCK),
-    lookup_entry("RedirectKey", ACTION_TYPE_REDIRECT_KEY),
-    lookup_entry("Redirect", ACTION_TYPE_REDIRECT_KEY),
-    lookup_entry("Private", ACTION_TYPE_PRIVATE),
-    lookup_entry("ISOLock", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("ActionMessage", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("MessageAction", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("Message", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("DeviceBtn", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("DevBtn", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("DevButton", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("DeviceButton", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("LockDeviceBtn", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("LockDevBtn", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("LockDevButton", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("LockDeviceButton", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("DeviceValuator", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("DevVal", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("DeviceVal", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("DevValuator", ACTION_TYPE_UNSUPPORTED_LEGACY),
-    lookup_entry("", 0),
-];
-pub(crate) static SYM_INTERPRET_MATCH_MASK_NAMES: [LookupEntry; 6] = [
-    lookup_entry("NoneOf", MATCH_NONE),
-    lookup_entry("AnyOfOrNone", MATCH_ANY_OR_NONE),
-    lookup_entry("AnyOf", MATCH_ANY),
-    lookup_entry("AllOf", MATCH_ALL),
-    lookup_entry("Exactly", MATCH_EXACTLY),
-    lookup_entry("", 0),
-];
 // ============================================================================
 // Unicode Preprocessing
 // ============================================================================

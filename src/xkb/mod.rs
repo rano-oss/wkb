@@ -106,18 +106,24 @@ struct CompiledType {
 
 impl CompiledType {
     fn new(type_: &parser::XkbKeyType) -> Self {
-        let states = std::array::from_fn(|state| {
-            let level_mods = state as u32 & type_.mods.mask;
-
-            let entry = type_.entries.iter().find(|entry| {
-                (entry.mods.mods == 0 || entry.mods.mask != 0) && entry.mods.mask == level_mods
-            });
-
-            CompiledTypeState {
-                level: entry.map_or(0, |entry| entry.level),
-                consumed_mods: type_.mods.mask & !entry.map_or(0, |entry| entry.preserve.mask),
+        let default_state = CompiledTypeState {
+            level: 0,
+            consumed_mods: type_.mods.mask,
+        };
+        let mut by_mask = [default_state; REAL_MOD_STATES];
+        // Reverse iteration preserves the old "first matching entry wins"
+        // behaviour when malformed input contains duplicate masks.
+        for entry in type_.entries.iter().rev() {
+            if (entry.mods.mods == 0 || entry.mods.mask != 0)
+                && (entry.mods.mask as usize) < REAL_MOD_STATES
+            {
+                by_mask[entry.mods.mask as usize] = CompiledTypeState {
+                    level: entry.level,
+                    consumed_mods: type_.mods.mask & !entry.preserve.mask,
+                };
             }
-        });
+        }
+        let states = std::array::from_fn(|state| by_mask[state & type_.mods.mask as usize]);
 
         let mut selectors = type_
             .entries
@@ -288,7 +294,7 @@ fn build_groups_from_keymap(keymap: &keymap::XkbKeymap, compiled_types: &[Compil
                     continue;
                 };
 
-                let Some(action) = level.actions.iter().copied().find_map(group_kind) else {
+                let Some(action) = level.action.and_then(group_kind) else {
                     continue;
                 };
 
@@ -310,7 +316,7 @@ fn build_groups_from_keymap(keymap: &keymap::XkbKeymap, compiled_types: &[Compil
                 continue;
             };
 
-            let Some(action) = level.actions.iter().copied().find_map(group_kind) else {
+            let Some(action) = level.action.and_then(group_kind) else {
                 continue;
             };
 
