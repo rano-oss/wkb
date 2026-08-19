@@ -3,7 +3,7 @@ name: Benchmarks
 on:
   push:
     branches: [main]
-  pull_request:
+  # pull_request:
   workflow_dispatch:
 
 permissions:
@@ -34,8 +34,8 @@ jobs:
       - name: Run criterion benchmarks
         run: |
           cargo bench --bench bench_setup
-      #     cargo bench --bench bench_key
-      #     cargo bench --bench bench_compose
+          cargo bench --bench bench_key
+          cargo bench --bench bench_compose
 
       - name: Run memory benchmark
         run: |
