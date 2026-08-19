@@ -1,9 +1,9 @@
-use std::borrow::Cow;
-use arrayvec::ArrayVec;
-use crate::xkb::keysym::keysym_to_codepoint;
 pub(crate) use super::parser::{
     XkbContext, XkbKeymap, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL,
 };
+use crate::xkb::keysym::keysym_to_codepoint;
+use arrayvec::ArrayVec;
+use std::borrow::Cow;
 pub(crate) fn xkb_keymap_new_from_names(
     ctx: XkbContext,
     rmlvo: &XkbRuleNames,
@@ -23,7 +23,7 @@ pub(crate) fn xkb_keymap_new_from_names(
     keymap.num_groups = keymap.num_groups.min(XKB_MAX_GROUPS);
     let mut file = xkb_file_from_components(&components)?;
     (file.file_type == FileType::Keymap && compile_keymap(&mut file, &mut keymap)).then_some(())?;
-    Some(*keymap)
+    Some(keymap)
 }
 pub(crate) fn xkb_keymap_new_from_string(ctx: XkbContext, original: &[u8]) -> Option<XkbKeymap> {
     let source = strip_compat_map(original);
@@ -35,7 +35,7 @@ pub(crate) fn xkb_keymap_new_from_string(ctx: XkbContext, original: &[u8]) -> Op
     let mut file = xkb_parse_string(&mut keymap.ctx, bytes, "")?;
     (file.file_type == FileType::Keymap && compile_keymap(&mut file, &mut keymap)).then_some(())?;
     apply_group_action_overrides(&mut keymap, original);
-    Some(*keymap)
+    Some(keymap)
 }
 fn find_ascii_case_insensitive(haystack: &[u8], needle: &[u8]) -> Option<usize> {
     haystack
@@ -322,8 +322,8 @@ pub(crate) fn resolve_compose_file(locale: &str) -> Option<String> {
     }
     lookup_compose_dir("en_US.UTF-8")
 }
-pub(crate) fn xkb_keymap_new(ctx: XkbContext, strict: bool) -> Box<XkbKeymap> {
-    let mut keymap = Box::new(XkbKeymap {
+pub(crate) fn xkb_keymap_new(ctx: XkbContext, strict: bool) -> XkbKeymap {
+    let mut keymap = XkbKeymap {
         ctx,
         strict,
         min_key_code: 0,
@@ -333,7 +333,7 @@ pub(crate) fn xkb_keymap_new(ctx: XkbContext, strict: bool) -> Box<XkbKeymap> {
         mods: XkbModSet::default(),
         num_groups: 0,
         group_names: Vec::new(),
-    });
+    };
     #[rustfmt::skip]
     static BUILTIN_MODS: [&str; 8] = ["Shift", "Lock", "Control", "Mod1", "Mod2", "Mod3", "Mod4", "Mod5"];
     for (i, name) in BUILTIN_MODS.iter().enumerate() {

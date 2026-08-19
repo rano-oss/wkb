@@ -218,10 +218,14 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
     fn atom(&mut self, word: &[u8]) -> u32 {
         self.ctx.atom_intern(word)
     }
-    fn parse_input(&mut self, wanted: &str) -> Option<Box<XkbFile>> {
+    fn parse_input(&mut self, wanted: &str) -> Option<XkbFile> {
         let mut first = None;
         while !matches!(self.token, Token::End | Token::Error) {
-            let file = self.parse_file()?;
+            let file =
+                self.parse_file((!wanted.is_empty() && first.is_some()).then_some(wanted))?;
+            if file.file_type == FileType::Ignored {
+                continue;
+            }
             if (!wanted.is_empty() && file.name == wanted)
                 || (wanted.is_empty() && file.flags & MAP_IS_DEFAULT != 0)
             {
@@ -233,7 +237,7 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
         }
         first
     }
-    fn parse_file(&mut self) -> Option<Box<XkbFile>> {
+    fn parse_file(&mut self, wanted: Option<&str>) -> Option<XkbFile> {
         let mut flags = 0;
         while matches!(self.token, Token::Word(_)) {
             if self.word(b"default") {
@@ -284,10 +288,15 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
             _ => String::new(),
         };
         self.punct(b'{').then_some(())?;
+        if wanted.is_some_and(|wanted| name != wanted) {
+            self.skip_block()?;
+            self.punct(b';');
+            return Some(xkb_file_create(FileType::Ignored, name, Vec::new(), flags));
+        }
         let mut defs = Vec::new();
         if kind == FileType::Keymap {
             while !self.punct(b'}') {
-                defs.push(Statement::XkbFile(*self.parse_file()?));
+                defs.push(Statement::XkbFile(self.parse_file(None)?));
                 self.punct(b';');
             }
         } else if kind == FileType::Ignored {
@@ -762,26 +771,22 @@ fn include_create(input: &str, mut merge: MergeMode) -> Option<Vec<IncludeStmt>>
     }
     (!items.is_empty()).then_some(items)
 }
-fn xkb_file_create(kind: FileType, name: String, defs: Vec<Statement>, flags: u32) -> Box<XkbFile> {
-    Box::new(XkbFile {
+fn xkb_file_create(kind: FileType, name: String, defs: Vec<Statement>, flags: u32) -> XkbFile {
+    XkbFile {
         file_type: kind,
         name,
         defs,
         flags,
-    })
+    }
 }
-pub(crate) fn xkb_parse_string(
-    ctx: &mut XkbContext,
-    input: &[u8],
-    map: &str,
-) -> Option<Box<XkbFile>> {
+pub(crate) fn xkb_parse_string(ctx: &mut XkbContext, input: &[u8], map: &str) -> Option<XkbFile> {
     let input = input.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(input);
     if input.len() >= 2 && (!input[0].is_ascii() || input[0] == 0 || input[1] == 0) {
         return None;
     }
     Parser::new(ctx, input).parse_input(map)
 }
-pub(crate) fn xkb_file_from_components(parts: &XkbComponentNames) -> Option<Box<XkbFile>> {
+pub(crate) fn xkb_file_from_components(parts: &XkbComponentNames) -> Option<XkbFile> {
     let mut defs = Vec::new();
     for (kind, bytes) in [
         (FileType::Keycodes, &parts.keycodes),
@@ -790,7 +795,7 @@ pub(crate) fn xkb_file_from_components(parts: &XkbComponentNames) -> Option<Box<
     ] {
         let input = std::str::from_utf8(bytes).ok()?;
         let include = include_create(input, MergeMode::Default)?;
-        defs.push(Statement::XkbFile(*xkb_file_create(
+        defs.push(Statement::XkbFile(xkb_file_create(
             kind,
             String::new(),
             vec![Statement::Include(include)],

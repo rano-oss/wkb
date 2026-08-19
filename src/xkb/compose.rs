@@ -1,9 +1,9 @@
 //! Compose-file loading and caching for layouts.
+use super::keymap;
 use crate::composer::Token;
 use crate::Composer;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
-use super::keymap;
 pub(crate) struct ComposeTableData {
     entries: Vec<keymap::ComposeEntry>,
     filtered: Mutex<Vec<(Vec<char>, Arc<Composer>)>>,
