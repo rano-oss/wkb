@@ -61,31 +61,12 @@ pub use xkb::XkbError;
 pub use xkb::{keysym_to_named_key, load_compose_from_path, load_compose_from_path_uncached};
 pub(crate) const BITSET_WORDS: usize = 12;
 
+#[derive(Debug, Clone, PartialEq, Eq, Copy, Default)]
 pub(crate) struct KeyBitSet {
     bits: [u64; BITSET_WORDS],
 }
 
-impl Clone for KeyBitSet {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-impl Copy for KeyBitSet {}
-
-impl std::fmt::Debug for KeyBitSet {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("KeyBitSet").finish()
-    }
-}
-
 impl KeyBitSet {
-    pub(crate) const fn new() -> Self {
-        Self {
-            bits: [0; BITSET_WORDS],
-        }
-    }
-
     pub(crate) fn contains(&self, key: u32) -> bool {
         let k = key as usize;
         if k < BITSET_WORDS * 64 {
@@ -95,11 +76,30 @@ impl KeyBitSet {
         }
     }
 
-    pub(crate) fn insert(&mut self, key: u32) {
+    #[inline]
+    pub(crate) fn insert(&mut self, key: u32) -> bool {
         let k = key as usize;
-        if k < BITSET_WORDS * 64 {
-            self.bits[k >> 6] |= 1u64 << (k & 63);
+        if k >= BITSET_WORDS * 64 {
+            return false;
         }
+        let mask = 1u64 << (k & 63);
+        let word = &mut self.bits[k >> 6];
+        let present = *word & mask != 0;
+        *word |= mask;
+        !present
+    }
+
+    #[inline]
+    pub(crate) fn remove(&mut self, key: u32) -> bool {
+        let k = key as usize;
+        if k >= BITSET_WORDS * 64 {
+            return false;
+        }
+        let mask = 1u64 << (k & 63);
+        let word = &mut self.bits[k >> 6];
+        let present = *word & mask != 0;
+        *word &= !mask;
+        present
     }
 }
 
@@ -450,8 +450,7 @@ impl WKB {
     /// [`LockFlags::TAP`] changes layout only when the key is released without
     /// another key being pressed while it was held.
     pub fn set_group_key(&mut self, evdev_code: u32, kind: GroupKind) -> bool {
-        let group = Group::new(evdev_code, kind);
-        self.groups.entries.push(group);
+        self.groups.set_key(evdev_code, kind);
         true
     }
 
