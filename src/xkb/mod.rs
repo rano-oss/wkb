@@ -11,10 +11,7 @@ pub(crate) mod serialize;
 pub(crate) mod symbols;
 
 use crate::flat_keymap::{FlatKeymap, FlatNamedKeyMap, MAX_LEVELS};
-use crate::xkb::keymap::{
-    preprocess_unicode_keysyms, xkb_context_new, xkb_keymap_new_from_names,
-    xkb_keymap_new_from_string,
-};
+use crate::xkb::keymap::{xkb_context_new, xkb_keymap_new_from_names, xkb_keymap_new_from_string};
 use crate::xkb::parser::{ActionFlags, XkbAction, XkbGroupAction};
 #[cfg(not(feature = "compose"))]
 use crate::Composer;
@@ -167,59 +164,42 @@ fn group_key_combinations(
     owner_keycode: u32,
     modifier_mask: u32,
 ) -> Vec<Vec<u32>> {
-    const EVDEV_OFFSET: u32 = 8;
-
     let owner_mods = keymap
         .get_key(owner_keycode)
         .map_or(0, |key| key.modmap | key.vmodmap);
 
     let modifier_mask = modifier_mask & !owner_mods;
-
-    if modifier_mask == 0 {
-        return vec![Vec::new()];
-    }
-
     let mut combinations = vec![Vec::new()];
-
-    for bit_index in 0..u32::BITS {
-        let bit = 1u32 << bit_index;
-
+    for bit in (0..u32::BITS).map(|index| 1 << index) {
         if modifier_mask & bit == 0 {
             continue;
         }
-
         let candidates = keymap
             .keys
             .iter()
             .filter(|key| {
-                key.keycode >= EVDEV_OFFSET
+                key.keycode >= 8
                     && key.keycode != owner_keycode
                     && (key.modmap | key.vmodmap) & bit != 0
             })
-            .map(|key| key.keycode - EVDEV_OFFSET)
+            .map(|key| key.keycode - 8)
             .collect::<Vec<_>>();
-
         if candidates.is_empty() {
             return Vec::new();
         }
-
-        let mut expanded = Vec::with_capacity(combinations.len() * candidates.len());
-
-        for combination in &combinations {
-            for &candidate in &candidates {
-                let mut next = combination.clone();
-
-                if !next.contains(&candidate) {
-                    next.push(candidate);
-                }
-
-                expanded.push(next);
-            }
-        }
-
-        combinations = expanded;
+        combinations = combinations
+            .into_iter()
+            .flat_map(|combination| {
+                candidates.iter().map(move |&candidate| {
+                    let mut next = combination.clone();
+                    if !next.contains(&candidate) {
+                        next.push(candidate);
+                    }
+                    next
+                })
+            })
+            .collect();
     }
-
     for combination in &mut combinations {
         combination.sort_unstable();
         combination.dedup();
@@ -705,12 +685,11 @@ pub(crate) fn new_from_names(
 pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
     let ctx = xkb_context_new();
 
-    let processed = preprocess_unicode_keysyms(string);
-    if processed.as_bytes().contains(&0) {
+    if string.as_bytes().contains(&0) {
         return Err(XkbError::KeymapParsing);
     }
     let keymap =
-        xkb_keymap_new_from_string(ctx, processed.as_bytes()).ok_or(XkbError::KeymapCompilation)?;
+        xkb_keymap_new_from_string(ctx, string.as_bytes()).ok_or(XkbError::KeymapCompilation)?;
 
     Ok(build_wkb_from_keymap(&keymap, None))
 }

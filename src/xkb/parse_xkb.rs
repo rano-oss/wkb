@@ -1,4 +1,3 @@
-use super::keymap::xkb_escape_map_name;
 use super::keysym::xkb_keysym_from_name;
 use super::parser::*;
 use crate::xkb::keysym::codepoint_to_keysym;
@@ -157,6 +156,19 @@ impl<'a> Lexer<'a> {
             {
                 self.pos += 1;
             }
+            return Token::Word(&self.input[start..self.pos]);
+        }
+        if !byte.is_ascii() {
+            let text = std::str::from_utf8(&self.input[self.pos..]).ok();
+            let len = text
+                .and_then(|text| text.chars().next())
+                .map(char::len_utf8);
+            let len = match len {
+                Some(len) => len,
+                None => return Token::Error,
+            };
+            let start = self.pos;
+            self.pos += len;
             return Token::Word(&self.input[start..self.pos]);
         }
         if byte.is_ascii_digit() {
@@ -744,6 +756,11 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
 }
 
 fn resolve_keysym(name: &[u8]) -> Option<u32> {
+    if !name.is_ascii() {
+        let mut chars = std::str::from_utf8(name).ok()?.chars();
+        let sym = codepoint_to_keysym(chars.next()? as u32)?;
+        return chars.next().is_none().then_some(sym);
+    }
     if name.eq_ignore_ascii_case(b"any") || name.eq_ignore_ascii_case(b"nosymbol") {
         return Some(XKB_KEY_NO_SYMBOL);
     }
@@ -794,13 +811,7 @@ fn include_create(input: &str, mut merge: MergeMode) -> Option<Vec<IncludeStmt>>
     (!items.is_empty()).then_some(items)
 }
 
-fn xkb_file_create(
-    kind: FileType,
-    mut name: String,
-    defs: Vec<Statement>,
-    flags: u32,
-) -> Box<XkbFile> {
-    xkb_escape_map_name(&mut name);
+fn xkb_file_create(kind: FileType, name: String, defs: Vec<Statement>, flags: u32) -> Box<XkbFile> {
     Box::new(XkbFile {
         file_type: kind,
         name,
