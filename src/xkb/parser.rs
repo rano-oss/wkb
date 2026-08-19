@@ -1721,7 +1721,7 @@ fn mod_index_by_name(keymap: &XkbKeymap, name: &str) -> Option<u32> {
         .map(|index| index as u32)
 }
 
-fn wkb_group_action(sym: u32) -> Option<XkbAction> {
+pub(crate) fn wkb_group_action(sym: u32) -> Option<XkbAction> {
     let relative = |group| XkbGroupAction {
         group,
         ..Default::default()
@@ -1779,17 +1779,22 @@ fn apply_wkb_compat(keymap: &mut XkbKeymap) {
         }
 
         let mut vmodmap = 0;
-        for group in &mut key.groups {
-            for level in &mut group.levels {
-                if !key.explicit_vmodmap {
-                    for &sym in &level.syms {
-                        for &(index, candidates) in &vmods {
-                            if candidates.contains(&sym) {
-                                vmodmap |= 1 << index;
-                            }
-                        }
+        if !key.explicit_vmodmap {
+            let level_one_syms = key
+                .groups
+                .first()
+                .and_then(|group| group.levels.first())
+                .map_or(&[][..], |level| level.syms.as_slice());
+            for &sym in level_one_syms {
+                for &(index, candidates) in &vmods {
+                    if candidates.contains(&sym) {
+                        vmodmap |= 1 << index;
                     }
                 }
+            }
+        }
+        for group in &mut key.groups {
+            for level in &mut group.levels {
                 if !group.explicit_actions && level.action.is_none() {
                     level.action = level.syms.iter().copied().find_map(wkb_group_action);
                 }
