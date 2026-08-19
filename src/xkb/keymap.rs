@@ -39,7 +39,8 @@ pub(crate) fn xkb_keymap_new_from_string(
     format: u32,
     flags: u32,
 ) -> Option<Rc<XkbKeymap>> {
-    let source = strip_compat_map(string.to_bytes());
+    let original = string.to_bytes();
+    let source = strip_compat_map(original);
     let bytes = source.as_ref();
     let mut length = bytes.len();
     if bytes.is_empty() {
@@ -51,7 +52,108 @@ pub(crate) fn xkb_keymap_new_from_string(
     }
     let mut file = xkb_parse_string(&mut keymap.ctx, &bytes[..length], "")?;
     (file.file_type == FileType::Keymap && compile_keymap(&mut file, &mut keymap)).then_some(())?;
+    apply_group_action_overrides(&mut keymap, original);
     Some(Rc::new(*keymap))
+}
+
+fn find_ascii_case_insensitive(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    haystack
+        .windows(needle.len())
+        .position(|window| window.eq_ignore_ascii_case(needle))
+}
+
+fn group_action_from_interpret(input: &[u8], name: &[u8]) -> Option<XkbAction> {
+    let name_pos = find_ascii_case_insensitive(input, name)?;
+    let body = &input[name_pos + name.len()..];
+    let open = body.iter().position(|&byte| byte == b'{')?;
+    let close = body[open + 1..].iter().position(|&byte| byte == b'}')? + open + 1;
+    let body = &body[open + 1..close];
+    let (kind, action_pos) = [
+        (0, b"SetGroup".as_slice()),
+        (1, b"LatchGroup".as_slice()),
+        (2, b"LockGroup".as_slice()),
+    ]
+    .into_iter()
+    .find_map(|(kind, action)| {
+        find_ascii_case_insensitive(body, action).map(|position| (kind, position + action.len()))
+    })?;
+    let args = &body[action_pos..];
+    let group_pos = find_ascii_case_insensitive(args, b"group")?;
+    let mut value = &args[group_pos + 5..];
+    let equals = value.iter().position(|&byte| byte == b'=')?;
+    value = &value[equals + 1..];
+    let first = value.iter().position(|byte| !byte.is_ascii_whitespace())?;
+    value = &value[first..];
+    let (relative, negative, digits) = if let Some(digits) = value.strip_prefix(b"+") {
+        (true, false, digits)
+    } else if let Some(digits) = value.strip_prefix(b"-") {
+        (true, true, digits)
+    } else {
+        (false, false, value)
+    };
+    let mut number = 0i32;
+    let mut count = 0;
+    for &digit in digits {
+        if !digit.is_ascii_digit() {
+            break;
+        }
+        number = number.checked_mul(10)?.checked_add((digit - b'0') as i32)?;
+        count += 1;
+    }
+    if count == 0 {
+        return None;
+    }
+    let group = if relative {
+        if negative { -number } else { number }
+    } else {
+        number - 1
+    };
+    let action = XkbGroupAction {
+        flags: if relative {
+            ActionFlags::empty()
+        } else {
+            ActionFlags::ABSOLUTE_SWITCH
+        },
+        group,
+    };
+    Some(match kind {
+        0 => XkbAction::GroupSet(action),
+        1 => XkbAction::GroupLatch(action),
+        _ => XkbAction::GroupLock(action),
+    })
+}
+
+fn apply_group_action_overrides(keymap: &mut XkbKeymap, input: &[u8]) {
+    let overrides: Vec<(u32, XkbAction)> = [
+        (0xff7e, b"Mode_switch".as_slice()),
+        (0xff2d, b"Kana_Lock".as_slice()),
+        (0xfe06, b"ISO_Group_Latch".as_slice()),
+        (0xfe08, b"ISO_Next_Group".as_slice()),
+        (0xfe0a, b"ISO_Prev_Group".as_slice()),
+        (0xfe0c, b"ISO_First_Group".as_slice()),
+        (0xfe0e, b"ISO_Last_Group".as_slice()),
+    ]
+    .into_iter()
+    .filter_map(|(sym, name)| group_action_from_interpret(input, name).map(|action| (sym, action)))
+    .collect();
+    if overrides.is_empty() {
+        return;
+    }
+    for key in &mut keymap.keys {
+        for group in &mut key.groups {
+            if group.explicit_actions {
+                continue;
+            }
+            for level in &mut group.levels {
+                if let Some((_, action)) = overrides
+                    .iter()
+                    .find(|(sym, _)| level.syms.contains(sym))
+                {
+                    level.action = Some(*action);
+                }
+            }
+        }
+    }
 }
 
 /// Remove the xkb_compat body before parsing a complete keymap.

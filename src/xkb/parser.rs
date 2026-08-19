@@ -1742,7 +1742,7 @@ fn wkb_group_action(sym: u32) -> Option<XkbAction> {
 }
 
 fn is_modifier_keysym(sym: u32) -> bool {
-    matches!(sym, 0xff20 | 0xff7e | 0xff7f | 0xffe1..=0xffee | 0xfe01..=0xfe13)
+    matches!(sym, 0xff2d..=0xff30 | 0xff7e | 0xff7f | 0xffe1..=0xffee | 0xfe01..=0xfe13)
 }
 
 /// Apply the tiny subset of xkb_compat semantics consumed by WKB.
