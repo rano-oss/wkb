@@ -1,11 +1,8 @@
 use super::keymap::mod_mask_get_effective;
 pub(crate) use super::parse_xkb::{
-    include_create, xkb_select_map, xkb_select_owned, OwnedMap, SelectedMap,
+    include_create, xkb_select_map, xkb_select_owned, OwnedMap, SelectedMap, Stream,
 };
-use super::symbols::{
-    compile_key_types_includes, compile_key_types_stream, compile_keycodes_includes,
-    compile_keycodes_stream, compile_symbols_includes, compile_symbols_stream,
-};
+use super::symbols::{compile_key_types, compile_keycodes, compile_symbols, CompileInput};
 use crate::xkb::keymap::xkb_mod_name_to_index;
 use std::sync::Arc;
 pub(crate) const INCLUDE_MAX_DEPTH: i32 = 15_i32;
@@ -249,9 +246,9 @@ pub(crate) fn compile_components(parts: &XkbComponentNames, keymap: &mut XkbKeym
     ) else {
         return false;
     };
-    compile_keycodes_includes(&mut keycodes, keymap)
-        && compile_key_types_includes(&mut types, keymap)
-        && compile_symbols_includes(&mut symbols, keymap)
+    compile_keycodes(CompileInput::Includes(&mut keycodes), keymap)
+        && compile_key_types(CompileInput::Includes(&mut types), keymap)
+        && compile_symbols(CompileInput::Includes(&mut symbols), keymap)
         && update_derived_keymap_fields(keymap)
 }
 pub(crate) fn compile_keymap_stream(file: SelectedMap<'_>, keymap: &mut XkbKeymap) -> bool {
@@ -259,9 +256,9 @@ pub(crate) fn compile_keymap_stream(file: SelectedMap<'_>, keymap: &mut XkbKeyma
         return false;
     }
     let mut parts: [Option<SelectedMap<'_>>; 3] = [None, None, None];
-    let mut maps = file.maps();
+    let mut maps = Stream::new(file.body);
     loop {
-        let map = match maps.next() {
+        let map = match maps.next_map() {
             Ok(Some(map)) => map,
             Ok(None) => break,
             Err(()) => return false,
@@ -271,29 +268,13 @@ pub(crate) fn compile_keymap_stream(file: SelectedMap<'_>, keymap: &mut XkbKeyma
             parts[index] = Some(map);
         }
     }
-    let mut keycodes = parts[0].as_ref().map(SelectedMap::statements);
-    let mut types = parts[1].as_ref().map(SelectedMap::statements);
-    let mut symbols = parts[2].as_ref().map(SelectedMap::statements);
-    let mut empty = [];
-    if !match &mut keycodes {
-        Some(stream) => compile_keycodes_stream(stream, keymap),
-        None => compile_keycodes_includes(&mut empty, keymap),
-    } {
-        return false;
-    }
-    if !match &mut types {
-        Some(stream) => compile_key_types_stream(stream, keymap),
-        None => compile_key_types_includes(&mut empty, keymap),
-    } {
-        return false;
-    }
-    if !match &mut symbols {
-        Some(stream) => compile_symbols_stream(stream, keymap),
-        None => compile_symbols_includes(&mut empty, keymap),
-    } {
-        return false;
-    }
-    update_derived_keymap_fields(keymap)
+    let mut keycodes = parts[0].as_ref().map(|map| Stream::new(map.body));
+    let mut types = parts[1].as_ref().map(|map| Stream::new(map.body));
+    let mut symbols = parts[2].as_ref().map(|map| Stream::new(map.body));
+    compile_keycodes(CompileInput::Stream(keycodes.as_mut()), keymap)
+        && compile_key_types(CompileInput::Stream(types.as_mut()), keymap)
+        && compile_symbols(CompileInput::Stream(symbols.as_mut()), keymap)
+        && update_derived_keymap_fields(keymap)
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum RuleScope {
@@ -892,8 +873,7 @@ pub(crate) enum ExprKind {
 #[rustfmt::skip] pub(crate) struct VModDef { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) value: Option<ExprKind> }
 #[derive(Copy, Clone)] #[rustfmt::skip] pub(crate) struct KeycodeDef { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) value: i64 }
 #[derive(Copy, Clone)] #[rustfmt::skip] pub(crate) struct KeyAliasDef { pub(crate) merge: MergeMode, pub(crate) alias: u32, pub(crate) real: u32 }
-#[derive(Clone, Copy)] #[rustfmt::skip] pub(crate) struct Body<'a> { pub(crate) data: &'a [u8] }
-#[rustfmt::skip] pub(crate) struct NamedVarDef<'a> { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) body: Body<'a> }
+#[rustfmt::skip] pub(crate) struct NamedVarDef<'a> { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) body: &'a [u8] }
 #[rustfmt::skip] pub(crate) struct ModMapDef { pub(crate) merge: MergeMode, pub(crate) modifier: u32, pub(crate) keys: Vec<ExprKind> }
 pub(crate) const MAP_HAS_MAP_FLAGS: u32 = 2;
 pub(crate) const MAP_IS_DEFAULT: u32 = 1;

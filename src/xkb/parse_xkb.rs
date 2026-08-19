@@ -48,15 +48,10 @@ enum Token<'a> {
 struct Lexer<'a> {
     input: &'a [u8],
     pos: usize,
-    start: usize,
 }
 impl<'a> Lexer<'a> {
     fn new(input: &'a [u8]) -> Self {
-        Self {
-            input,
-            pos: 0,
-            start: 0,
-        }
+        Self { input, pos: 0 }
     }
     fn take_while(&mut self, predicate: impl Fn(u8) -> bool) -> &'a [u8] {
         let start = self.pos;
@@ -84,7 +79,6 @@ impl<'a> Lexer<'a> {
             }
             break;
         }
-        self.start = self.pos;
         let Some(&byte) = self.input.get(self.pos) else {
             return Token::End;
         };
@@ -224,7 +218,6 @@ impl<'a> Lexer<'a> {
 struct Parser<'a> {
     lexer: Lexer<'a>,
     token: Token<'a>,
-    start: usize,
 }
 struct MapSpan {
     name: String,
@@ -234,7 +227,7 @@ struct MapSpan {
 }
 pub(crate) struct SelectedMap<'a> {
     pub(crate) file_type: FileType,
-    body: &'a [u8],
+    pub(crate) body: &'a [u8],
 }
 pub(crate) struct OwnedMap {
     data: Arc<[u8]>,
@@ -242,45 +235,24 @@ pub(crate) struct OwnedMap {
     pub(crate) file_type: FileType,
     pub(crate) flags: u32,
 }
-pub(crate) struct StatementStream<'a> {
+pub(crate) struct Stream<'a> {
     parser: Parser<'a>,
-}
-pub(crate) struct BodyStream<'a> {
-    parser: Parser<'a>,
-}
-pub(crate) struct MapStream<'a> {
-    input: &'a [u8],
-    parser: Parser<'a>,
-}
-impl<'a> SelectedMap<'a> {
-    pub(crate) fn statements(&self) -> StatementStream<'a> {
-        StatementStream {
-            parser: Parser::new(self.body),
-        }
-    }
-    pub(crate) fn maps(&self) -> MapStream<'a> {
-        MapStream {
-            input: self.body,
-            parser: Parser::new(self.body),
-        }
-    }
 }
 impl OwnedMap {
-    pub(crate) fn statements(&self) -> StatementStream<'_> {
-        StatementStream {
-            parser: Parser::new(&self.data[self.body.clone()]),
-        }
+    pub(crate) fn stream(&self) -> Stream<'_> {
+        Stream::new(&self.data[self.body.clone()])
     }
 }
-impl Body<'_> {
-    pub(crate) fn vars(&self) -> BodyStream<'_> {
-        BodyStream {
-            parser: Parser::new(self.data),
+impl<'a> Stream<'a> {
+    pub(crate) fn new(input: &'a [u8]) -> Self {
+        Self {
+            parser: Parser::new(input),
         }
     }
-}
-impl StatementStream<'_> {
-    pub(crate) fn next(&mut self, ctx: &mut XkbContext) -> Result<Option<Statement<'_>>, ()> {
+    pub(crate) fn next_statement(
+        &mut self,
+        ctx: &mut XkbContext,
+    ) -> Result<Option<Statement<'a>>, ()> {
         loop {
             if matches!(self.parser.token, Token::End) {
                 return Ok(None);
@@ -288,18 +260,16 @@ impl StatementStream<'_> {
             if matches!(self.parser.token, Token::Error) {
                 return Err(());
             }
-            let start = self.parser.start;
+            let pos = self.parser.lexer.pos;
             if let Some(statement) = self.parser.parse_statement(ctx) {
                 return Ok(Some(statement));
             }
-            if self.parser.start == start {
+            if self.parser.lexer.pos == pos {
                 return Err(());
             }
         }
     }
-}
-impl BodyStream<'_> {
-    pub(crate) fn next(&mut self, ctx: &mut XkbContext) -> Result<Option<VarDef>, ()> {
+    pub(crate) fn next_var(&mut self, ctx: &mut XkbContext) -> Result<Option<VarDef>, ()> {
         if matches!(self.parser.token, Token::End) {
             return Ok(None);
         }
@@ -308,9 +278,7 @@ impl BodyStream<'_> {
         }
         self.parser.parse_body_var(ctx).map(Some).ok_or(())
     }
-}
-impl<'a> MapStream<'a> {
-    pub(crate) fn next(&mut self) -> Result<Option<SelectedMap<'a>>, ()> {
+    pub(crate) fn next_map(&mut self) -> Result<Option<SelectedMap<'a>>, ()> {
         if matches!(self.parser.token, Token::End) {
             return Ok(None);
         }
@@ -320,7 +288,7 @@ impl<'a> MapStream<'a> {
         let span = self.parser.scan_file().ok_or(())?;
         Ok(Some(SelectedMap {
             file_type: span.file_type,
-            body: &self.input[span.body],
+            body: &self.parser.lexer.input[span.body],
         }))
     }
 }
@@ -328,16 +296,10 @@ impl<'a> Parser<'a> {
     fn new(input: &'a [u8]) -> Self {
         let mut lexer = Lexer::new(input);
         let token = lexer.next();
-        let start = lexer.start;
-        Self {
-            lexer,
-            token,
-            start,
-        }
+        Self { lexer, token }
     }
     fn bump(&mut self) -> Token<'a> {
         let next = self.lexer.next();
-        self.start = self.lexer.start;
         std::mem::replace(&mut self.token, next)
     }
     fn punct(&mut self, byte: u8) -> bool {
@@ -422,7 +384,6 @@ impl<'a> Parser<'a> {
         let body_end = braced_end(self.lexer.input, body_start)?;
         self.lexer.pos = body_end + 1;
         self.token = self.lexer.next();
-        self.start = self.lexer.start;
         self.punct(b';');
         Some(MapSpan {
             name,
@@ -592,17 +553,14 @@ impl<'a> Parser<'a> {
             }
         }
     }
-    fn take_body(&mut self) -> Option<Body<'a>> {
+    fn take_body(&mut self) -> Option<&'a [u8]> {
         matches!(self.token, Token::Punct(b'{')).then_some(())?;
         let start = self.lexer.pos;
         let end = braced_end(self.lexer.input, start)?;
         self.lexer.pos = end + 1;
         self.token = self.lexer.next();
-        self.start = self.lexer.start;
         self.punct(b';');
-        Some(Body {
-            data: &self.lexer.input[start..end],
-        })
+        Some(&self.lexer.input[start..end])
     }
     fn parse_body_var(&mut self, ctx: &mut XkbContext) -> Option<VarDef> {
         let merge = self.merge();
