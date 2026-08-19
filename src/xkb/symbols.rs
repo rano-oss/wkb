@@ -283,9 +283,11 @@ impl SymbolsBuilder {
                 Statement::Include(includes) => self.include(ki, includes),
                 Statement::Symbols(definition) => self.compile_key(ki, definition),
                 Statement::Var(variable) => self.compile_global(ki, variable),
-                Statement::VMod(vmod) => handle_vmod_def(&mut ki.keymap.ctx, &mut self.mods, vmod),
+                Statement::VMods(vmods) => vmods
+                    .iter()
+                    .all(|vmod| handle_vmod_def(&mut ki.keymap.ctx, &mut self.mods, vmod)),
                 Statement::ModMap(definition) => self.compile_modmap(ki, definition),
-                Statement::Unknown => ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0,
+                Statement::Unknown => !ki.strict,
                 _ => false,
             };
             if !valid {
@@ -401,7 +403,7 @@ impl SymbolsBuilder {
                 ) != ParseStatus::Fatal
             };
         } else {
-            return ki.strict & PARSER_NO_UNKNOWN_SYMBOLS_GLOBAL_FIELDS == 0;
+            return !ki.strict;
         }
         ret
     }
@@ -760,7 +762,7 @@ fn set_symbols_field(
 ) -> bool {
     let mapped_field = match parse_symbols_field(field) {
         Some(f) => f,
-        None => return ki.strict & PARSER_NO_UNKNOWN_KEY_FIELDS == 0,
+        None => return !ki.strict,
     };
 
     match mapped_field {
@@ -997,7 +999,6 @@ fn copy_symbols_def_to_keymap(keymap: &mut XkbKeymap, key_idx: usize, keyi: &mut
 
         for i in 0..keyi.groups.len() as u32 {
             let type_idx = find_type_for_group(keymap, keyi, i as usize) as u32;
-
             if keymap.types[type_idx as usize].num_levels
                 < keyi.groups[i as usize].levels.len() as u32
             {
@@ -1209,7 +1210,7 @@ fn set_key_type_field(
         return true;
     }
     if !(field.eq_ignore_ascii_case("map") || field.eq_ignore_ascii_case("preserve")) {
-        return ki.strict & PARSER_NO_UNKNOWN_TYPE_FIELDS == 0;
+        return !ki.strict;
     }
     let Some(array_ndx) = array_ndx else {
         return false;
@@ -1288,9 +1289,9 @@ fn handle_type_global_var(ki: &XkbKeymapInfo<'_>, stmt: &VarDef) -> bool {
     if elem.eq_ignore_ascii_case("type") {
         true
     } else if !elem.is_empty() {
-        ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0
+        !ki.strict
     } else {
-        !field.is_empty() && ki.strict & PARSER_NO_UNKNOWN_TYPES_GLOBAL_FIELDS == 0
+        !field.is_empty() && !ki.strict
     }
 }
 fn handle_key_types_file(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, file: &mut XkbFile) {
@@ -1315,8 +1316,10 @@ fn handle_key_types_file(ki: &mut XkbKeymapInfo<'_>, info: &mut KeyTypesInfo, fi
                 }
             }
             Statement::Var(var) => handle_type_global_var(ki, var),
-            Statement::VMod(vmod) => handle_vmod_def(&mut ki.keymap.ctx, &mut info.mods, vmod),
-            Statement::Unknown => ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0,
+            Statement::VMods(vmods) => vmods
+                .iter()
+                .all(|vmod| handle_vmod_def(&mut ki.keymap.ctx, &mut info.mods, vmod)),
+            Statement::Unknown => !ki.strict,
             _ => false,
         };
         info.error_count += i32::from(!ok);
@@ -1631,17 +1634,17 @@ fn handle_key_name_var(ki: &mut XkbKeymapInfo<'_>, stmt: &VarDef) -> bool {
     let element = ki.keymap.ctx.atom_text(lhs.element);
     let field = ki.keymap.ctx.atom_text(lhs.field);
     if !element.is_empty() {
-        return ki.strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
+        return !ki.strict;
     }
     if !field.eq_ignore_ascii_case("minimum") && !field.eq_ignore_ascii_case("maximum") {
-        return ki.strict & PARSER_NO_UNKNOWN_KEYCODES_GLOBAL_FIELDS == 0;
+        return !ki.strict;
     }
     if lhs.index.is_some() {
-        return ki.strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0;
+        return !ki.strict;
     }
     expr_resolve_integer(&ki.keymap.ctx, stmt.value.as_ref().unwrap())
         .is_some_and(|value| (0..=u32::MAX as i64).contains(&value))
-        || ki.strict & PARSER_NO_FIELD_TYPE_MISMATCH == 0
+        || !ki.strict
 }
 
 fn handle_keycodes_file(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut XkbKeymapInfo<'_>) {
@@ -1654,7 +1657,7 @@ fn handle_keycodes_file(info: &mut KeyNamesInfo, file: &mut XkbFile, ki: &mut Xk
                 true
             }
             Statement::Var(variable) => handle_key_name_var(ki, variable),
-            Statement::Unknown => ki.strict & PARSER_NO_UNKNOWN_STATEMENTS == 0,
+            Statement::Unknown => !ki.strict,
             _ => false,
         };
         if !valid {
@@ -1805,7 +1808,7 @@ pub(crate) fn expr_resolve_boolean(ctx: &XkbContext, expr: &ExprKind) -> Option<
         ExprKind::Unary {
             child,
             op: UnaryOp::Not | UnaryOp::Invert,
-        } => expr_resolve_boolean(ctx, child.as_deref()?).map(|value| !value),
+        } => expr_resolve_boolean(ctx, child).map(|value| !value),
         _ => None,
     }
 }
@@ -1819,8 +1822,8 @@ fn eval_integer(expr: &ExprKind, lookup: &dyn Fn(u32) -> Option<i64>) -> Option<
             right,
             op: op @ (BinaryOp::Add | BinaryOp::Subtract | BinaryOp::Multiply | BinaryOp::Divide),
         } => {
-            let left = eval_integer(left.as_deref()?, lookup)?;
-            let right = eval_integer(right.as_deref()?, lookup)?;
+            let left = eval_integer(left, lookup)?;
+            let right = eval_integer(right, lookup)?;
             match op {
                 BinaryOp::Add => left.checked_add(right),
                 BinaryOp::Subtract => left.checked_sub(right),
@@ -1830,7 +1833,7 @@ fn eval_integer(expr: &ExprKind, lookup: &dyn Fn(u32) -> Option<i64>) -> Option<
             }
         }
         ExprKind::Unary { child, op } => {
-            let value = eval_integer(child.as_deref()?, lookup)?;
+            let value = eval_integer(child, lookup)?;
             match op {
                 UnaryOp::Invert => Some(!value),
                 UnaryOp::Negate => value.checked_neg(),
@@ -1953,8 +1956,8 @@ fn expr_resolve_mod_mask(
             _ => xkb_mod_name_to_index(mods, *atom, mod_type).map(|index| 1 << index),
         },
         ExprKind::Binary { left, right, op } => {
-            let left = expr_resolve_mod_mask(ctx, left.as_deref()?, mod_type, mods)?;
-            let right = expr_resolve_mod_mask(ctx, right.as_deref()?, mod_type, mods)?;
+            let left = expr_resolve_mod_mask(ctx, left, mod_type, mods)?;
+            let right = expr_resolve_mod_mask(ctx, right, mod_type, mods)?;
             match op {
                 BinaryOp::Add => Some(left | right),
                 BinaryOp::Subtract => Some(left & !right),
@@ -1964,7 +1967,7 @@ fn expr_resolve_mod_mask(
         ExprKind::Unary {
             op: UnaryOp::Invert,
             child,
-        } => expr_resolve_mod_mask(ctx, child.as_deref()?, mod_type, mods).map(|value| !value),
+        } => expr_resolve_mod_mask(ctx, child, mod_type, mods).map(|value| !value),
         _ => None,
     }
 }
@@ -1980,8 +1983,8 @@ pub(crate) fn init_actions_info(info: &mut ActionsInfo) {
 }
 
 #[inline]
-fn report_mismatch(strict: u32) -> ParseStatus {
-    if strict & PARSER_NO_FIELD_TYPE_MISMATCH != 0 {
+fn report_mismatch(strict: bool) -> ParseStatus {
+    if strict {
         ParseStatus::Fatal
     } else {
         ParseStatus::Recoverable
@@ -2012,11 +2015,11 @@ fn set_action_group(
         ExprKind::Unary {
             op: UnaryOp::Negate,
             child,
-        } => (false, true, child.as_deref_mut().unwrap()),
+        } => (false, true, child.as_mut()),
         ExprKind::Unary {
             op: UnaryOp::Plus,
             child,
-        } => (false, false, child.as_deref_mut().unwrap()),
+        } => (false, false, child.as_mut()),
         _ => (true, false, &mut *value),
     };
     let mut group = 0;
@@ -2078,7 +2081,7 @@ fn set_action_field(
         }
         ActionFlags::LOCK_ON_RELEASE
     } else {
-        return if keymap_info.strict & PARSER_NO_ILLEGAL_ACTION_FIELDS != 0 {
+        return if keymap_info.strict {
             ParseStatus::Fatal
         } else {
             ParseStatus::Success
@@ -2102,13 +2105,13 @@ fn action_arg(
             op: BinaryOp::Assign,
             left,
             right,
-        } => (left.as_deref().unwrap(), right.as_deref_mut().unwrap()),
+        } => (&**left, &mut **right),
         ExprKind::Unary {
             op: UnaryOp::Not | UnaryOp::Invert,
             child,
         } => {
             truth = ExprKind::Boolean(false);
-            (child.as_deref().unwrap(), &mut truth)
+            (&**child, &mut truth)
         }
         field => {
             truth = ExprKind::Boolean(true);
@@ -2127,7 +2130,7 @@ fn action_arg(
         || field.eq_ignore_ascii_case("latchToLock")
         || field.eq_ignore_ascii_case("lockOnRelease"))
     {
-        return if keymap_info.strict & PARSER_NO_UNKNOWN_ACTION_FIELDS != 0 {
+        return if keymap_info.strict {
             ParseStatus::Fatal
         } else {
             ParseStatus::Recoverable
