@@ -1,13 +1,9 @@
 use std::borrow::Cow;
-
 use arrayvec::ArrayVec;
-
 use crate::xkb::keysym::keysym_to_codepoint;
-
 pub(crate) use super::parser::{
     XkbContext, XkbKeymap, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL,
 };
-
 pub(crate) fn xkb_keymap_new_from_names(
     ctx: XkbContext,
     rmlvo: &XkbRuleNames,
@@ -41,13 +37,11 @@ pub(crate) fn xkb_keymap_new_from_string(ctx: XkbContext, original: &[u8]) -> Op
     apply_group_action_overrides(&mut keymap, original);
     Some(*keymap)
 }
-
 fn find_ascii_case_insensitive(haystack: &[u8], needle: &[u8]) -> Option<usize> {
     haystack
         .windows(needle.len())
         .position(|window| window.eq_ignore_ascii_case(needle))
 }
-
 fn group_action_from_interpret(input: &[u8], name: &[u8]) -> Option<XkbAction> {
     let tail = &input[find_ascii_case_insensitive(input, name)? + name.len()..];
     let open = tail.iter().position(|&b| b == b'{')?;
@@ -91,18 +85,14 @@ fn group_action_from_interpret(input: &[u8], name: &[u8]) -> Option<XkbAction> {
     };
     Some(constructor(action))
 }
-
 fn apply_group_action_overrides(keymap: &mut XkbKeymap, input: &[u8]) {
-    // xkbcommon versions differ in whether the generated symbols section also
-    // contains the interpreted action. An explicit relative NextGroup latch in
-    // the source must win over either representation.
     let forced_next_latch = find_ascii_case_insensitive(input, b"LatchGroup(group=+1)").map(|_| {
         XkbAction::GroupLatch(XkbGroupAction {
             flags: ActionFlags::empty(),
             group: 1,
         })
     });
-    let overrides: Vec<(u32, XkbAction)> = [
+    let overrides: ArrayVec<(u32, XkbAction), 7> = [
         (0xff7e, b"Mode_switch".as_slice()),
         (0xff2d, b"Kana_Lock".as_slice()),
         (0xfe06, b"ISO_Group_Latch".as_slice()),
@@ -138,12 +128,6 @@ fn apply_group_action_overrides(keymap: &mut XkbKeymap, input: &[u8]) {
         }
     }
 }
-
-/// Remove the xkb_compat body before parsing a complete keymap.
-///
-/// Compatibility maps describe the xkb runtime state machine. WKB derives the
-/// few observable pieces it needs directly from symbols, so constructing this
-/// AST is pure setup overhead.
 fn strip_compat_map(input: &[u8]) -> Cow<'_, [u8]> {
     const NAMES: [&[u8]; 2] = [b"xkb_compatibility", b"xkb_compat_map"];
     let Some(start) = (0..input.len()).find(|&start| {
@@ -166,7 +150,6 @@ fn strip_compat_map(input: &[u8]) -> Cow<'_, [u8]> {
     else {
         return Cow::Borrowed(input);
     };
-
     let mut depth = 1;
     for pos in open + 1..input.len() {
         depth += usize::from(input[pos] == b'{');
@@ -181,76 +164,48 @@ fn strip_compat_map(input: &[u8]) -> Cow<'_, [u8]> {
     }
     Cow::Borrowed(input)
 }
-
 use std::{fs, path::Path};
-
 const LOCALE_DIR: &str = "/usr/share/X11/locale";
-
-/// A parsed Compose file entry.
 #[derive(Clone)]
 pub struct ComposeEntry {
     pub keys: ArrayVec<char, 8>,
     pub multi_key_index: Option<usize>,
     pub output: char,
 }
-
-/// Resolve an XKB keysym name to its Unicode character using our existing
-/// keysym database.
 pub(crate) fn keysym_name_to_char(name: &str) -> Option<char> {
-    // Fast path: single ASCII alphanumeric maps to itself (most compose key names)
     if name.len() == 1 {
         let b = name.as_bytes()[0];
         if b.is_ascii_alphanumeric() {
             return Some(b as char);
         }
     }
-
     use super::keysym::xkb_keysym_from_name;
     use super::parser::XKB_KEYSYM_NO_FLAGS;
-
-    let ks = match xkb_keysym_from_name(name.as_bytes(), XKB_KEYSYM_NO_FLAGS) {
-        Some(ks) => ks,
-        None => {
-            if let Some(hex) = name.strip_prefix('U') {
-                if !hex.is_empty() && hex.len() <= 6 && hex.chars().all(|c| c.is_ascii_hexdigit()) {
-                    return u32::from_str_radix(hex, 16).ok().and_then(char::from_u32);
-                }
-            }
-            return None;
-        }
-    };
-    let utf32 = keysym_to_codepoint(ks).unwrap_or(0);
-    if utf32 == 0 {
-        return None;
+    if let Some(ks) = xkb_keysym_from_name(name.as_bytes(), XKB_KEYSYM_NO_FLAGS) {
+        return keysym_to_codepoint(ks).and_then(char::from_u32);
     }
-    char::from_u32(utf32)
+    let hex = name.strip_prefix('U')?;
+    (!hex.is_empty() && hex.len() <= 6 && hex.chars().all(|c| c.is_ascii_hexdigit()))
+        .then(|| u32::from_str_radix(hex, 16).ok().and_then(char::from_u32))
+        .flatten()
 }
-
 pub(crate) fn parse_compose_file_impl<F>(path: &Path, f: &mut F) -> bool
 where
     F: FnMut(ComposeEntry),
 {
     use super::parser::read_file_cached;
-
-    let path_str = match path.to_str() {
-        Some(s) => s,
-        None => return false,
-    };
-    let Some(data) = read_file_cached(path_str) else {
+    let Some(data) = path.to_str().and_then(read_file_cached) else {
         return false;
     };
-    let content = match std::str::from_utf8(&data[..]) {
-        Ok(s) => s,
-        Err(_) => return false,
+    let Ok(content) = std::str::from_utf8(&data) else {
+        return false;
     };
-
     let mut complete = true;
     for line in content.lines() {
         let trimmed = line.trim();
         if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
-
         if let Some(rest) = trimmed.strip_prefix("include") {
             let rest = rest.trim();
             if let Some(include_str) = rest.strip_prefix('"').and_then(|s| s.strip_suffix('"')) {
@@ -260,37 +215,24 @@ where
                 let include_path = Path::new(include_str);
                 let resolved = if include_path.is_absolute() {
                     include_path.to_path_buf()
-                } else if let Some(parent) = path.parent() {
-                    parent.join(include_path)
                 } else {
-                    include_path.to_path_buf()
+                    path.parent().unwrap_or(Path::new("")).join(include_path)
                 };
                 complete &= parse_compose_file_impl(&resolved, f);
             }
             continue;
         }
-
         if let Some(entry) = parse_rule_line(trimmed) {
             f(entry);
         }
     }
     complete
 }
-
-/// Parse a single rule line like `<Multi_key> <a> <e> : "æ" ae`
 fn parse_rule_line(line: &str) -> Option<ComposeEntry> {
-    let colon_pos = line.find(':')?;
-    let lhs = &line[..colon_pos];
-    let rhs = line[colon_pos + 1..].trim();
-
-    let rhs = if let Some(hash) = rhs.find('#') {
-        rhs[..hash].trim()
-    } else {
-        rhs
-    };
-
-    let mut keys: ArrayVec<char, 8> = ArrayVec::new();
-    let mut multi_key_index: Option<usize> = None;
+    let (lhs, rhs) = line.split_once(':')?;
+    let rhs = rhs.split('#').next()?.trim();
+    let mut keys = ArrayVec::new();
+    let mut multi_key_index = None;
     for item in lhs.split('<').skip(1) {
         let (name, _) = item.split_once('>')?;
         if name.eq_ignore_ascii_case("Multi_key") {
@@ -302,16 +244,12 @@ fn parse_rule_line(line: &str) -> Option<ComposeEntry> {
         }
     }
     (!keys.is_empty()).then_some(())?;
-    let output = parse_rhs_value(rhs)?;
-
     Some(ComposeEntry {
         keys,
         multi_key_index,
-        output,
+        output: parse_rhs_value(rhs)?,
     })
 }
-
-/// Parse the RHS value: `"string" [keysym]` or bare `keysym_name`
 fn parse_rhs_value(rhs: &str) -> Option<char> {
     let rhs = rhs.trim();
     if let Some(quoted) = rhs.strip_prefix('"') {
@@ -329,7 +267,6 @@ fn parse_rhs_value(rhs: &str) -> Option<char> {
         keysym_name_to_char(rhs.split_whitespace().next()?)
     }
 }
-
 fn lookup_locale_file(
     filename: &str,
     match_index: usize,
@@ -346,18 +283,13 @@ fn lookup_locale_file(
                 .flatten()
         })
 }
-
 fn lookup_compose_dir(locale: &str) -> Option<String> {
     lookup_locale_file("compose.dir", 1, 0, locale)
 }
-
-/// Resolve a locale name to the compose file sub-path (relative to
-/// `/usr/share/X11/locale/`) that should be used.
 pub(crate) fn resolve_compose_file(locale: &str) -> Option<String> {
     if let Some(compose_file) = lookup_compose_dir(locale) {
         return Some(compose_file);
     }
-
     if let Some(resolved) = lookup_locale_file("locale.alias", 0, 1, locale) {
         if let Some(dot_pos) = resolved.find('.') {
             let base = &resolved[..dot_pos];
@@ -368,12 +300,10 @@ pub(crate) fn resolve_compose_file(locale: &str) -> Option<String> {
                 }
             }
         }
-
         if let Some(compose_file) = lookup_compose_dir(&resolved) {
             return Some(compose_file);
         }
     }
-
     if locale.len() >= 2 && locale.len() <= 5 && locale.chars().all(|c| c.is_ascii_lowercase()) {
         #[rustfmt::skip]
         const LANGUAGES: &[(&str, &str)] = &[("us","en"),("gb","en"),("au","en"),("nz","en"),("za","en"),("bw","en"),("no","nb"),("dk","da"),("se","sv"),("at","de"),("ch","de"),("cz","cs"),("gr","el"),("rs","sr"),("me","sr"),("al","sq"),("ba","bs"),("by","be"),("ge","ka"),("ua","uk"),("jp","ja"),("kr","ko"),("cn","zh"),("tw","zh"),("kh","km"),("vn","vi"),("in","hi"),("bd","bn"),("lk","si"),("np","ne"),("pk","ur"),("il","he"),("ara","ar"),("iq","ar"),("sy","ar"),("eg","ar"),("dz","ar"),("ma","ar"),("ir","fa"),("kg","ky"),("kz","kk"),("tj","tg"),("la","lo"),("my","ms"),("ie","ga"),("epo","eo"),("latam","es")];
@@ -390,7 +320,6 @@ pub(crate) fn resolve_compose_file(locale: &str) -> Option<String> {
             return Some(compose_file);
         }
     }
-
     lookup_compose_dir("en_US.UTF-8")
 }
 pub(crate) fn xkb_keymap_new(ctx: XkbContext, strict: bool) -> Box<XkbKeymap> {
@@ -398,9 +327,6 @@ pub(crate) fn xkb_keymap_new(ctx: XkbContext, strict: bool) -> Box<XkbKeymap> {
         ctx,
         strict,
         min_key_code: 0,
-        max_key_code: 0,
-        num_keys: 0,
-        num_keys_low: 0,
         keys: Vec::new(),
         key_names: Vec::new(),
         types: Vec::new(),
@@ -418,7 +344,6 @@ pub(crate) fn xkb_keymap_new(ctx: XkbContext, strict: bool) -> Box<XkbKeymap> {
     keymap.mods.num_mods = BUILTIN_MODS.len() as u32;
     keymap
 }
-
 pub(crate) fn xkb_mod_name_to_index(mods: &XkbModSet, name: u32, type_0: u32) -> Option<u32> {
     for (i, mod_0) in mods.mods[..mods.num_mods as usize].iter().enumerate() {
         if mod_0.type_0 & type_0 != 0 && name == mod_0.name {
@@ -433,30 +358,15 @@ pub(crate) fn xkb_wrap_group_into_range(
     out_of_range_group_policy: u32,
     out_of_range_group_number: u32,
 ) -> Option<u32> {
-    if num_groups == 0 {
-        return None;
-    }
-    if group >= 0 && group < num_groups as i32 {
-        return Some(group as u32);
-    }
-    match out_of_range_group_policy {
-        2 => Some(if out_of_range_group_number < num_groups {
-            out_of_range_group_number
-        } else {
-            0
-        }),
-        1 => Some(if group < 0 { 0 } else { num_groups - 1 }),
-        _ => {
-            let rem = group % num_groups as i32;
-            Some(if rem < 0 {
-                (rem + num_groups as i32) as u32
-            } else {
-                rem as u32
-            })
-        }
-    }
+    let last = num_groups.checked_sub(1)?;
+    Some(match out_of_range_group_policy {
+        2 => (out_of_range_group_number < num_groups)
+            .then_some(out_of_range_group_number)
+            .unwrap_or(0),
+        1 => group.clamp(0, last as i32) as u32,
+        _ => group.rem_euclid(num_groups as i32) as u32,
+    })
 }
-
 use super::parser::{DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_LEGACY_ROOT};
 fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> bool {
     if std::fs::metadata(path).is_ok_and(|metadata| metadata.is_dir()) {
@@ -466,7 +376,6 @@ fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> bool {
         false
     }
 }
-
 fn xkb_context_include_path_append_default(ctx: &mut XkbContext) -> bool {
     let home = std::env::var("HOME");
     let xdg = std::env::var("XDG_CONFIG_HOME");
@@ -482,14 +391,12 @@ fn xkb_context_include_path_append_default(ctx: &mut XkbContext) -> bool {
         ctx,
         &getenv_or("XKB_CONFIG_EXTRA_PATH", DFLT_XKB_CONFIG_EXTRA_PATH),
     );
-
     let root = getenv_or("XKB_CONFIG_ROOT", DFLT_XKB_CONFIG_ROOT);
     if !context_include_path_append(ctx, &root) && !root.is_empty() {
         context_include_path_append(ctx, DFLT_XKB_LEGACY_ROOT);
     }
     !ctx.includes.is_empty()
 }
-
 pub(crate) fn xkb_context_new() -> XkbContext {
     let mut ctx = XkbContext {
         includes: Vec::new(),
@@ -498,7 +405,6 @@ pub(crate) fn xkb_context_new() -> XkbContext {
     xkb_context_include_path_append_default(&mut ctx);
     ctx
 }
-
 pub(crate) fn getenv_or(name: &str, default: &str) -> String {
     std::env::var(name).unwrap_or_else(|_| default.into())
 }
@@ -521,10 +427,7 @@ pub(crate) fn xkb_context_sanitize_rule_names(rmlvo: &mut XkbRuleNames) {
         rmlvo.layout = layout.unwrap_or_else(|| "us".into());
     }
 }
-
 use super::parser::*;
-pub(crate) const GROUP_LAST_INDEX_NAME: &str = "last";
-
 pub(crate) fn mod_mask_get_effective(mod_set: &XkbModSet, mods: u32) -> u32 {
     let mut mask: u32 = mods & MOD_REAL_MASK_ALL;
     for i in _XKB_MOD_INDEX_NUM_ENTRIES..mod_set.num_mods {

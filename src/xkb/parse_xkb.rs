@@ -1,7 +1,6 @@
 use super::keysym::xkb_keysym_from_name;
 use super::parser::*;
 use crate::xkb::keysym::codepoint_to_keysym;
-
 #[derive(Default)]
 enum Token<'a> {
     Word(&'a [u8]),
@@ -14,26 +13,24 @@ enum Token<'a> {
     End,
     Error,
 }
-
 struct Lexer<'a> {
     input: &'a [u8],
     pos: usize,
 }
-
 impl<'a> Lexer<'a> {
     fn new(input: &'a [u8]) -> Self {
         Self { input, pos: 0 }
     }
-
+    fn take_while(&mut self, predicate: impl Fn(u8) -> bool) -> &'a [u8] {
+        let start = self.pos;
+        while self.input.get(self.pos).copied().is_some_and(&predicate) {
+            self.pos += 1;
+        }
+        &self.input[start..self.pos]
+    }
     fn next(&mut self) -> Token<'a> {
         loop {
-            while self
-                .input
-                .get(self.pos)
-                .is_some_and(u8::is_ascii_whitespace)
-            {
-                self.pos += 1;
-            }
+            self.take_while(|byte| byte.is_ascii_whitespace());
             if self.input[self.pos..].starts_with(&[0xe2, 0x80, 0x8e])
                 || self.input[self.pos..].starts_with(&[0xe2, 0x80, 0x8f])
             {
@@ -126,19 +123,11 @@ impl<'a> Lexer<'a> {
             return Token::Error;
         }
         if byte == b'<' {
-            let start = self.pos + 1;
-            self.pos = start;
-            while self
-                .input
-                .get(self.pos)
-                .is_some_and(|byte| byte.is_ascii_graphic() && *byte != b'>')
-            {
-                self.pos += 1;
-            }
+            self.pos += 1;
+            let value = self.take_while(|byte| byte.is_ascii_graphic() && byte != b'>');
             if self.input.get(self.pos) != Some(&b'>') {
                 return Token::Error;
             }
-            let value = &self.input[start..self.pos];
             self.pos += 1;
             return Token::Key(value);
         }
@@ -147,16 +136,7 @@ impl<'a> Lexer<'a> {
             return Token::Punct(byte);
         }
         if byte.is_ascii_alphabetic() || byte == b'_' {
-            let start = self.pos;
-            self.pos += 1;
-            while self
-                .input
-                .get(self.pos)
-                .is_some_and(|b| b.is_ascii_alphanumeric() || *b == b'_')
-            {
-                self.pos += 1;
-            }
-            return Token::Word(&self.input[start..self.pos]);
+            return Token::Word(self.take_while(|b| b.is_ascii_alphanumeric() || b == b'_'));
         }
         if !byte.is_ascii() {
             let text = std::str::from_utf8(&self.input[self.pos..]).ok();
@@ -175,21 +155,17 @@ impl<'a> Lexer<'a> {
             let start = self.pos;
             let hex =
                 self.input[start..].starts_with(b"0x") || self.input[start..].starts_with(b"0X");
-            self.pos += if hex { 2 } else { 1 };
-            while self.input.get(self.pos).is_some_and(|byte| {
+            self.pos += usize::from(hex) * 2;
+            self.take_while(|byte| {
                 if hex {
                     byte.is_ascii_hexdigit()
                 } else {
                     byte.is_ascii_digit()
                 }
-            }) {
-                self.pos += 1;
-            }
+            });
             if !hex && self.input.get(self.pos) == Some(&b'.') {
                 self.pos += 1;
-                while self.input.get(self.pos).is_some_and(u8::is_ascii_digit) {
-                    self.pos += 1;
-                }
+                self.take_while(|byte| byte.is_ascii_digit());
                 return Token::Float;
             }
             let digits = if hex {
@@ -207,25 +183,21 @@ impl<'a> Lexer<'a> {
         Token::Error
     }
 }
-
 struct Parser<'a, 'ctx> {
     ctx: &'ctx mut XkbContext,
     lexer: Lexer<'a>,
     token: Token<'a>,
 }
-
 impl<'a, 'ctx> Parser<'a, 'ctx> {
     fn new(ctx: &'ctx mut XkbContext, input: &'a [u8]) -> Self {
         let mut lexer = Lexer::new(input);
         let token = lexer.next();
         Self { ctx, lexer, token }
     }
-
     fn bump(&mut self) -> Token<'a> {
         let next = self.lexer.next();
         std::mem::replace(&mut self.token, next)
     }
-
     fn punct(&mut self, byte: u8) -> bool {
         if matches!(self.token, Token::Punct(found) if found == byte) {
             self.bump();
@@ -234,22 +206,18 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
             false
         }
     }
-
     fn word(&self, expected: &[u8]) -> bool {
         matches!(self.token, Token::Word(word) if word.eq_ignore_ascii_case(expected))
     }
-
     fn take_word(&mut self) -> Option<&'a [u8]> {
         match self.bump() {
             Token::Word(word) => Some(word),
             _ => None,
         }
     }
-
     fn atom(&mut self, word: &[u8]) -> u32 {
         self.ctx.atom_intern(word)
     }
-
     fn parse_input(&mut self, wanted: &str) -> Option<Box<XkbFile>> {
         let mut first = None;
         while !matches!(self.token, Token::End | Token::Error) {
@@ -265,7 +233,6 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
         }
         first
     }
-
     fn parse_file(&mut self) -> Option<Box<XkbFile>> {
         let mut flags = 0;
         while matches!(self.token, Token::Word(_)) {
@@ -304,9 +271,9 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
                 || word.eq_ignore_ascii_case(b"xkb_compatibility")
                 || word.eq_ignore_ascii_case(b"xkb_compatibility_map") =>
             {
-                FileType::Compat
+                FileType::Ignored
             }
-            word if word.eq_ignore_ascii_case(b"xkb_geometry") => FileType::Geometry,
+            word if word.eq_ignore_ascii_case(b"xkb_geometry") => FileType::Ignored,
             _ => return None,
         };
         let name = match self.token {
@@ -323,7 +290,7 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
                 defs.push(Statement::XkbFile(*self.parse_file()?));
                 self.punct(b';');
             }
-        } else if matches!(kind, FileType::Compat | FileType::Geometry) {
+        } else if kind == FileType::Ignored {
             self.skip_block()?;
         } else {
             while !self.punct(b'}') {
@@ -338,7 +305,6 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
         self.punct(b';');
         Some(xkb_file_create(kind, name, defs, flags))
     }
-
     fn skip_block(&mut self) -> Option<()> {
         let mut depth = 1;
         while depth != 0 {
@@ -351,7 +317,6 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
         }
         Some(())
     }
-
     fn merge(&mut self) -> MergeMode {
         let merge = if self.word(b"augment") {
             MergeMode::Augment
@@ -365,7 +330,6 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
         self.bump();
         merge
     }
-
     fn parse_statement(&mut self) -> Option<Statement> {
         let merge = self.merge();
         if self.word(b"include") {
@@ -482,7 +446,6 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
         };
         self.parse_variable(merge, name)
     }
-
     fn parse_variable(&mut self, merge: MergeMode, name: ExprKind) -> Option<Statement> {
         let value = if self.punct(b';') {
             Some(ExprKind::Boolean(true))
@@ -498,7 +461,6 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
             value,
         }))
     }
-
     fn skip_statement(&mut self) -> Option<Statement> {
         let mut depth = 0;
         loop {
@@ -511,7 +473,6 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
             }
         }
     }
-
     fn parse_body(&mut self) -> Option<Vec<VarDef>> {
         self.punct(b'{').then_some(())?;
         let mut body = Vec::new();
@@ -555,7 +516,6 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
         self.punct(b';');
         Some(body)
     }
-
     fn parse_expr(&mut self, min_precedence: u8) -> Option<ExprKind> {
         let mut left = if let Token::Punct(op @ (b'-' | b'+' | b'!' | b'~')) = self.token {
             self.bump();
@@ -593,7 +553,6 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
         }
         Some(left)
     }
-
     fn parse_primary(&mut self) -> Option<ExprKind> {
         match self.bump() {
             Token::Word(word) => {
@@ -612,7 +571,6 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
             _ => None,
         }
     }
-
     fn parse_word_tail(&mut self, first: u32) -> Option<ExprKind> {
         if self.punct(b'(') {
             let mut args = Vec::new();
@@ -651,12 +609,10 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
             Some(ExprKind::Ident(first))
         }
     }
-
     fn parse_list(&mut self) -> Option<ExprKind> {
         self.punct(b'[').then_some(())?;
         self.parse_list_after_open()
     }
-
     fn parse_list_after_open(&mut self) -> Option<ExprKind> {
         if self.punct(b']') {
             return Some(ExprKind::EmptyList);
@@ -712,7 +668,6 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
         }
         Some(ExprKind::ActionList { actions: items })
     }
-
     fn parse_keysym_expr(&mut self) -> Option<ExprKind> {
         match self.token {
             Token::Key(_) => self.parse_primary(),
@@ -726,7 +681,6 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
             }
         }
     }
-
     fn append_keysym(&mut self, syms: &mut Vec<u32>) -> Option<()> {
         match self.bump() {
             Token::Word(word) => {
@@ -754,7 +708,6 @@ impl<'a, 'ctx> Parser<'a, 'ctx> {
         Some(())
     }
 }
-
 fn resolve_keysym(name: &[u8]) -> Option<u32> {
     if !name.is_ascii() {
         let mut chars = std::str::from_utf8(name).ok()?.chars();
@@ -774,7 +727,6 @@ fn resolve_keysym(name: &[u8]) -> Option<u32> {
     buf[..name.len()].copy_from_slice(name);
     xkb_keysym_from_name(&buf[..name.len() + 1], XKB_KEYSYM_NO_FLAGS)
 }
-
 fn include_create(input: &str, mut merge: MergeMode) -> Option<Vec<IncludeStmt>> {
     let mut items = Vec::new();
     for segment in input.split_inclusive(['+', '|', '^']) {
@@ -810,7 +762,6 @@ fn include_create(input: &str, mut merge: MergeMode) -> Option<Vec<IncludeStmt>>
     }
     (!items.is_empty()).then_some(items)
 }
-
 fn xkb_file_create(kind: FileType, name: String, defs: Vec<Statement>, flags: u32) -> Box<XkbFile> {
     Box::new(XkbFile {
         file_type: kind,
@@ -819,7 +770,6 @@ fn xkb_file_create(kind: FileType, name: String, defs: Vec<Statement>, flags: u3
         flags,
     })
 }
-
 pub(crate) fn xkb_parse_string(
     ctx: &mut XkbContext,
     input: &[u8],
@@ -831,7 +781,6 @@ pub(crate) fn xkb_parse_string(
     }
     Parser::new(ctx, input).parse_input(map)
 }
-
 pub(crate) fn xkb_file_from_components(parts: &XkbComponentNames) -> Option<Box<XkbFile>> {
     let mut defs = Vec::new();
     for (kind, bytes) in [
@@ -839,11 +788,7 @@ pub(crate) fn xkb_file_from_components(parts: &XkbComponentNames) -> Option<Box<
         (FileType::Types, &parts.types),
         (FileType::Symbols, &parts.symbols),
     ] {
-        let end = bytes
-            .iter()
-            .position(|&byte| byte == 0)
-            .unwrap_or(bytes.len());
-        let input = std::str::from_utf8(&bytes[..end]).ok()?;
+        let input = std::str::from_utf8(bytes).ok()?;
         let include = include_create(input, MergeMode::Default)?;
         defs.push(Statement::XkbFile(*xkb_file_create(
             kind,
