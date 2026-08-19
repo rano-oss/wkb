@@ -1879,7 +1879,7 @@ fn copy_compat_to_keymap(ki: &mut XkbKeymapInfo<'_>, info: &mut CompatInfo) {
             predicate_rank(si.interp.match_0),
         )
     });
-    let interps = info.interps.drain(..).map(|si| si.interp).collect();
+    let interps: Vec<XkbSymInterpret> = info.interps.drain(..).map(|si| si.interp).collect();
     ki.keymap.mods = info.mods;
     if !interps.is_empty() {
         ki.sym_interprets = interps;
