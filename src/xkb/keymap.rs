@@ -62,12 +62,7 @@ fn find_ascii_case_insensitive(haystack: &[u8], needle: &[u8]) -> Option<usize> 
         .position(|window| window.eq_ignore_ascii_case(needle))
 }
 
-fn group_action_from_interpret(input: &[u8], name: &[u8]) -> Option<XkbAction> {
-    let name_pos = find_ascii_case_insensitive(input, name)?;
-    let body = &input[name_pos + name.len()..];
-    let open = body.iter().position(|&byte| byte == b'{')?;
-    let close = body[open + 1..].iter().position(|&byte| byte == b'}')? + open + 1;
-    let body = &body[open + 1..close];
+fn group_action_from_body(body: &[u8]) -> Option<XkbAction> {
     let (kind, action_pos) = [
         (0, b"SetGroup".as_slice()),
         (1, b"LatchGroup".as_slice()),
@@ -121,6 +116,27 @@ fn group_action_from_interpret(input: &[u8], name: &[u8]) -> Option<XkbAction> {
         1 => XkbAction::GroupLatch(action),
         _ => XkbAction::GroupLock(action),
     })
+}
+
+fn group_action_from_interpret(input: &[u8], name: &[u8]) -> Option<XkbAction> {
+    let mut offset = 0;
+    while let Some(relative) = find_ascii_case_insensitive(&input[offset..], name) {
+        let name_pos = offset + relative;
+        offset = name_pos + name.len();
+
+        let tail = &input[offset..];
+        let Some(open) = tail.iter().position(|&byte| byte == b'{') else {
+            continue;
+        };
+        let Some(close) = tail[open + 1..].iter().position(|&byte| byte == b'}') else {
+            continue;
+        };
+        let body = &tail[open + 1..open + 1 + close];
+        if let Some(action) = group_action_from_body(body) {
+            return Some(action);
+        }
+    }
+    None
 }
 
 fn apply_group_action_overrides(keymap: &mut XkbKeymap, input: &[u8]) {
