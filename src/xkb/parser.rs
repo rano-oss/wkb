@@ -1078,6 +1078,22 @@ impl<'a> Scanner<'a> {
             .unwrap_or(self.s.len() - self.pos);
     }
 
+    /// Skip an inactive rules section without lexing every value on every
+    /// line. Returns with the next mapping's leading `!` consumed.
+    fn skip_to_next_rules_mapping(&mut self) -> bool {
+        while !self.eof() {
+            while matches!(self.peek(), b' ' | b'\t' | b'\r') {
+                self.pos += 1;
+            }
+            if self.chr(b'!') {
+                return true;
+            }
+            self.skip_to_eol();
+            self.chr(b'\n');
+        }
+        false
+    }
+
     #[inline]
     pub(crate) fn next_byte(&mut self) -> u8 {
         if let Some(&byte) = self.s.get(self.pos) {
@@ -1489,7 +1505,7 @@ pub(crate) fn xkb_parse_string(
 // ── Include file processing (merged from include.rs) ──
 
 use super::keymap::getenv_or;
-use super::keymap::{xkb_context_include_path_get, xkb_context_num_include_paths};
+use super::keymap::xkb_context_num_include_paths;
 
 pub(crate) const INCLUDE_MAX_DEPTH: i32 = 15_i32;
 fn is_merge_prefix(byte: u8) -> bool {
@@ -1549,24 +1565,31 @@ pub(crate) fn expand_path_str(name: &str, file_type: FileType) -> Result<Option<
     let expanded = expand_percent(directory_for_include(file_type), &name[k..]).ok_or(())?;
     Ok(Some(format!("{}{}", &name[..k], expanded)))
 }
+
+fn include_path<'a>(
+    name: &'a str,
+    file_type: FileType,
+) -> Option<(std::borrow::Cow<'a, str>, bool)> {
+    match expand_path_str(name, file_type) {
+        Ok(Some(path)) => Some((std::borrow::Cow::Owned(path), true)),
+        Ok(None) => Some((std::borrow::Cow::Borrowed(name), false)),
+        Err(()) => None,
+    }
+}
 pub(crate) fn find_file_in_xkb_path(
     ctx: &mut XkbContext,
     name: &str,
     type_0: FileType,
     offset: &mut u32,
-) -> Option<(std::sync::Arc<Vec<u8>>, String)> {
+) -> Option<std::sync::Arc<Vec<u8>>> {
     let type_dir = directory_for_include(type_0);
-    for i in *offset..xkb_context_num_include_paths(ctx) {
-        let path = format!(
-            "{}/{}/{}",
-            xkb_context_include_path_get(ctx, i),
-            type_dir,
-            name
-        );
+    let path_count = xkb_context_num_include_paths(ctx);
+    for i in *offset..path_count {
+        let path = format!("{}/{}/{}", ctx.includes[i as usize], type_dir, name);
         if path.len() < 4096 {
             if let Some(data) = read_file_cached(&path) {
                 *offset = i;
-                return Some((data, path));
+                return Some(data);
             }
         }
     }
@@ -1579,10 +1602,10 @@ fn find_include_file(
     file_type: FileType,
     expanded: bool,
     offset: &mut u32,
-) -> Option<(std::sync::Arc<Vec<u8>>, String)> {
+) -> Option<std::sync::Arc<Vec<u8>>> {
     if name.starts_with('/') {
         if *offset == 0 {
-            read_file_cached(name).map(|data| (data, name.to_owned()))
+            read_file_cached(name)
         } else {
             None
         }
@@ -1601,17 +1624,11 @@ pub(crate) fn process_include_file(
     stmt: &IncludeStmt,
     file_type: FileType,
 ) -> Option<Box<XkbFile>> {
-    let stmt_file = match expand_path_str(&stmt.file, file_type) {
-        Err(()) => return None,
-        Ok(Some(expanded)) => expanded,
-        Ok(None) => stmt.file.clone(),
-    };
-    let expanded = stmt_file != stmt.file;
+    let (stmt_file, expanded) = include_path(&stmt.file, file_type)?;
 
     let mut offset = 0;
     let mut candidate = None;
-    while let Some((file_data, _)) =
-        find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset)
+    while let Some(file_data) = find_include_file(ctx, &stmt_file, file_type, expanded, &mut offset)
     {
         if let Some(parsed) = xkb_parse_string(ctx, &file_data, &stmt.map) {
             if parsed.file_type == file_type {
@@ -2458,15 +2475,12 @@ fn matcher_include(m: &mut Matcher<'_>, include_depth: u32, inc: Sval) {
         return;
     }
     let inc_str = std::str::from_utf8(inc.data).unwrap_or("");
-    let stmt_file: String = match expand_path_str(inc_str, FileType::Rules) {
-        Err(()) => return,
-        Ok(Some(expanded)) => expanded,
-        Ok(None) => inc_str.to_string(),
+    let Some((stmt_file, expanded)) = include_path(inc_str, FileType::Rules) else {
+        return;
     };
-    let expanded = stmt_file != inc_str;
 
     let mut offset: u32 = 0;
-    while let Some((file_data, _)) =
+    while let Some(file_data) =
         find_include_file(m.ctx, &stmt_file, FileType::Rules, expanded, &mut offset)
     {
         if read_rules_file(m, include_depth + 1, &file_data) {
@@ -3132,7 +3146,7 @@ fn gettok(m: &mut Matcher, s: &mut Scanner) -> u32 {
 }
 fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
     let mut have_bang = false;
-    loop {
+    'file: loop {
         if !have_bang {
             match gettok(m, s) {
                 TOK_END_OF_LINE => continue,
@@ -3203,6 +3217,14 @@ fn matcher_match(m: &mut Matcher, s: &mut Scanner, include_depth: u32) -> bool {
                     }
                 }
                 loop {
+                    if m.mapping.active_or_candidates_mask == 0 {
+                        matcher_append_pending_kccgst(m);
+                        if s.skip_to_next_rules_mapping() {
+                            have_bang = true;
+                            continue 'file;
+                        }
+                        return true;
+                    }
                     let mut tok = gettok(m, s);
                     match tok {
                         TOK_BANG => {
@@ -3286,7 +3308,7 @@ fn xkb_resolve_partial_rules(rules: &str, suffix: &str, matcher: &mut Matcher<'_
         return false;
     }
     let mut offset = 0;
-    while let Some((file_data, _)) =
+    while let Some(file_data) =
         find_file_in_xkb_path(matcher.ctx, &partial_rules, FileType::Rules, &mut offset)
     {
         if !read_rules_file(matcher, 0, &file_data) {
@@ -3303,8 +3325,7 @@ pub fn xkb_resolve_rules(
     explicit_layouts: &mut u32,
 ) -> bool {
     let mut offset = 0;
-    let Some((file_data, _)) =
-        find_file_in_xkb_path(matcher.ctx, rules, FileType::Rules, &mut offset)
+    let Some(file_data) = find_file_in_xkb_path(matcher.ctx, rules, FileType::Rules, &mut offset)
     else {
         return false;
     };
@@ -3423,11 +3444,7 @@ pub(crate) fn read_file_cached(path: &str) -> Option<Arc<Vec<u8>>> {
             cache.get(path).cloned()
         })
         .or_else(|| {
-            use std::io::Read;
-            let mut file = std::fs::File::open(path).ok()?;
-            let mut data = Vec::new();
-            file.read_to_end(&mut data).ok()?;
-            let arc = Arc::new(data);
+            let arc = Arc::new(std::fs::read(path).ok()?);
             FILE_CACHE.with(|cache| {
                 cache.borrow_mut().insert(path.to_string(), arc.clone());
             });

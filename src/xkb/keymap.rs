@@ -595,13 +595,6 @@ pub(crate) fn xkb_context_num_include_paths(ctx: &mut XkbContext) -> u32 {
     }
     ctx.includes.len() as u32
 }
-pub(crate) fn xkb_context_include_path_get(ctx: &mut XkbContext, idx: u32) -> String {
-    if idx >= xkb_context_num_include_paths(ctx) {
-        return "".to_string();
-    }
-    ctx.includes.get(idx as usize).unwrap().clone()
-}
-
 pub(crate) fn xkb_context_new(flags: u32) -> XkbContext {
     let mut ctx = XkbContext {
         includes: Vec::new(),
