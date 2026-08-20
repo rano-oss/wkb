@@ -39,7 +39,6 @@ enum Token<'a> {
     String(String),
     Key(&'a [u8]),
     Integer(i64),
-    Float,
     Punct(u8),
     #[default]
     End,
@@ -90,54 +89,12 @@ impl<'a> Lexer<'a> {
                 match byte {
                     b'"' => return Token::String(value),
                     b'\n' => return Token::Error,
-                    b'\\' => {
-                        let escaped = match self.input.get(self.pos).copied() {
-                            Some(byte) => byte,
-                            None => return Token::Error,
-                        };
-                        self.pos += 1;
-                        match escaped {
-                            b'n' => value.push('\n'),
-                            b't' => value.push('\t'),
-                            b'r' => value.push('\r'),
-                            b'b' => value.push('\x08'),
-                            b'f' => value.push('\x0c'),
-                            b'v' => value.push('\x0b'),
-                            b'e' => value.push('\x1b'),
-                            b'u' if self.input.get(self.pos) == Some(&b'{') => {
-                                self.pos += 1;
-                                let start = self.pos;
-                                while self.input.get(self.pos).is_some_and(u8::is_ascii_hexdigit) {
-                                    self.pos += 1;
-                                }
-                                let code = std::str::from_utf8(&self.input[start..self.pos])
-                                    .ok()
-                                    .and_then(|s| u32::from_str_radix(s, 16).ok())
-                                    .and_then(char::from_u32);
-                                if self.input.get(self.pos) != Some(&b'}') || code.is_none() {
-                                    return Token::Error;
-                                }
-                                self.pos += 1;
-                                value.push(code.unwrap());
-                            }
-                            b'0'..=b'7' => {
-                                let mut number = (escaped - b'0') as u32;
-                                for _ in 1..4 {
-                                    let Some(next @ b'0'..=b'7') =
-                                        self.input.get(self.pos).copied()
-                                    else {
-                                        break;
-                                    };
-                                    self.pos += 1;
-                                    number = number * 8 + (next - b'0') as u32;
-                                }
-                                if let Some(ch) = char::from_u32(number) {
-                                    value.push(ch);
-                                }
-                            }
-                            byte => value.push(byte as char),
-                        }
-                    }
+                    b'\\' => match self.input.get(self.pos).copied() {
+                        Some(b'n') => { self.pos += 1; value.push('\n'); }
+                        Some(b't') => { self.pos += 1; value.push('\t'); }
+                        Some(byte) => { self.pos += 1; value.push(byte as char); }
+                        None => return Token::Error,
+                    },
                     byte if byte.is_ascii() => value.push(byte as char),
                     _ => {
                         let start = self.pos - 1;
@@ -195,11 +152,6 @@ impl<'a> Lexer<'a> {
                     byte.is_ascii_digit()
                 }
             });
-            if !hex && self.input.get(self.pos) == Some(&b'.') {
-                self.pos += 1;
-                self.take_while(|byte| byte.is_ascii_digit());
-                return Token::Float;
-            }
             let digits = if hex {
                 &self.input[start + 2..self.pos]
             } else {
@@ -430,20 +382,6 @@ impl<'a> Parser<'a> {
             self.punct(b';').then_some(())?;
             return Some(Statement::VMods(values));
         }
-        if self.word(b"type") {
-            self.bump();
-            if matches!(self.token, Token::String(_)) {
-                let Token::String(name) = self.bump() else {
-                    unreachable!()
-                };
-                let name = ctx.atom_intern(name.as_bytes());
-                let body = self.take_body()?;
-                return Some(Statement::KeyType(NamedVarDef { merge, name, body }));
-            }
-            let atom = ctx.atom_intern(b"type");
-            let name = self.parse_word_tail(ctx, atom)?;
-            return self.parse_variable(ctx, merge, name);
-        }
         if self.word(b"key") {
             self.bump();
             if matches!(self.token, Token::Key(_)) {
@@ -613,8 +551,6 @@ impl<'a> Parser<'a> {
                 Token::Punct(b'=') => (1, BinaryOp::Assign),
                 Token::Punct(b'+') => (2, BinaryOp::Add),
                 Token::Punct(b'-') => (2, BinaryOp::Subtract),
-                Token::Punct(b'*') => (3, BinaryOp::Multiply),
-                Token::Punct(b'/') => (3, BinaryOp::Divide),
                 _ => break,
             };
             if precedence < min_precedence {
@@ -638,7 +574,6 @@ impl<'a> Parser<'a> {
             }
             Token::String(value) => Some(ExprKind::String(ctx.atom_intern(value.as_bytes()))),
             Token::Integer(value) => Some(ExprKind::Integer(value)),
-            Token::Float => None,
             Token::Key(value) => Some(ExprKind::KeyName(Self::atom(ctx, value))),
             Token::Punct(b'[') => self.parse_list_after_open(ctx),
             Token::Punct(b'(') => {
@@ -658,7 +593,7 @@ impl<'a> Parser<'a> {
                     break;
                 }
             }
-            Some(ExprKind::Action { name: first, args })
+            Some(ExprKind::EmptyList)
         } else if self.punct(b'.') {
             let field_word = self.take_word()?;
             let field = Self::atom(ctx, field_word);
@@ -722,9 +657,8 @@ impl<'a> Parser<'a> {
                             break;
                         }
                     }
-                    ExprKind::ActionList {
-                        actions: vec![ExprKind::Action { name, args }],
-                    }
+                    let _ = (name, args);
+                    ExprKind::ActionList { actions: vec![ExprKind::EmptyList] }
                 } else {
                     self.lexer.pos = saved;
                     self.token = Token::Word(word);

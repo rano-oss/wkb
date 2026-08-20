@@ -19,28 +19,15 @@ pub(crate) fn keysym_get_name(ks: u32) -> Option<Cow<'static, str>> {
         None => Cow::Owned(name.replacen("XK_", "", 1)),
     })
 }
-fn lookup_name(name: &[u8], insensitive: bool) -> Option<u32> {
+fn lookup_name(name: &[u8]) -> Option<u32> {
     let matches = |&(offset, _): &(u32, u32)| {
-        let stored = get_name_bytes(offset);
-        if insensitive {
-            stored.eq_ignore_ascii_case(name)
-        } else {
-            stored == name
-        }
+        get_name_bytes(offset) == name
     };
-    if insensitive {
-        NAME_INDEX
-            .iter()
-            .filter(|entry| matches(entry))
-            .max_by_key(|entry| entry.0)
-            .map(|entry| entry.1)
-    } else {
-        let end = NAME_INDEX.partition_point(|entry| get_name_bytes(entry.0) <= name);
-        end.checked_sub(1)
-            .map(|index| NAME_INDEX[index])
-            .filter(matches)
-            .map(|entry| entry.1)
-    }
+    let end = NAME_INDEX.partition_point(|entry| get_name_bytes(entry.0) <= name);
+    end.checked_sub(1)
+        .map(|index| NAME_INDEX[index])
+        .filter(matches)
+        .map(|entry| entry.1)
 }
 fn parse_keysym_hex(s: &[u8], out: &mut u32) -> bool {
     let slice = if s.len() > 8 { &s[..8] } else { s };
@@ -49,17 +36,16 @@ fn parse_keysym_hex(s: &[u8], out: &mut u32) -> bool {
     count > 0 && s.get(count as usize).copied() == Some(0)
 }
 pub(crate) fn xkb_keysym_from_name(name: &[u8], flags: u32) -> Option<u32> {
-    if flags & !XKB_KEYSYM_CASE_INSENSITIVE != 0 {
+    if flags != XKB_KEYSYM_NO_FLAGS {
         return None;
     }
     let mut val = 0;
-    let icase = flags & XKB_KEYSYM_CASE_INSENSITIVE != 0;
     let name_bytes = name.split(|&byte| byte == 0).next()?;
-    let named = lookup_name(name_bytes, icase);
+    let named = lookup_name(name_bytes);
     if named.is_some() {
         return named;
     }
-    if name_bytes.first() == Some(&b'U') || (icase && name_bytes.first() == Some(&b'u')) {
+    if name_bytes.first() == Some(&b'U') {
         let rest_start = 1;
         let rest = &name[rest_start..];
         if !parse_keysym_hex(rest, &mut val) {
@@ -71,7 +57,7 @@ pub(crate) fn xkb_keysym_from_name(name: &[u8], flags: u32) -> Option<u32> {
             codepoint_to_keysym(val).unwrap_or(0)
         });
     } else if name_bytes.first() == Some(&b'0')
-        && (name_bytes.get(1) == Some(&b'x') || (icase && name_bytes.get(1) == Some(&b'X')))
+        && name_bytes.get(1) == Some(&b'x')
     {
         let rest = &name[2..];
         if !parse_keysym_hex(rest, &mut val) || val > XKB_KEYSYM_MAX {
@@ -79,12 +65,7 @@ pub(crate) fn xkb_keysym_from_name(name: &[u8], flags: u32) -> Option<u32> {
         }
         return Some(val);
     }
-    if name_bytes.starts_with(b"XF86_")
-        || (icase
-            && name_bytes
-                .get(..5)
-                .is_some_and(|s| s.eq_ignore_ascii_case(b"XF86_")))
-    {
+    if name_bytes.starts_with(b"XF86_") {
         let mut tmp_buf: Vec<u8> = Vec::with_capacity(name.len());
         tmp_buf.extend_from_slice(&name_bytes[..4]); // "XF86"
         tmp_buf.extend_from_slice(&name_bytes[5..]); // skip underscore
