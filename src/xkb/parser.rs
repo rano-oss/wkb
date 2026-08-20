@@ -208,11 +208,9 @@ pub(crate) fn compile_components(
             .ok()
             .and_then(|input| include_create(input, MergeMode::Default))
     };
-    let (Some(mut keycodes), Some(mut types), Some(mut symbols)) = (
-        parse(keycodes),
-        parse(types),
-        parse(symbols),
-    ) else {
+    let (Some(mut keycodes), Some(mut types), Some(mut symbols)) =
+        (parse(keycodes), parse(types), parse(symbols))
+    else {
         return false;
     };
     compile_keycodes(CompileInput::Includes(&mut keycodes), keymap)
@@ -247,8 +245,18 @@ pub(crate) fn compile_keymap_stream(file: SelectedMap<'_>, keymap: &mut XkbKeyma
 }
 use lasso::Key as _;
 use std::collections::HashMap;
-#[derive(Clone, Debug, Default)] #[rustfmt::skip] pub(crate) struct XkbRuleNames { pub(crate) layout: String, pub(crate) variant: String, pub(crate) options: String }
-#[derive(Clone)] #[rustfmt::skip] pub(crate) struct XkbContext { pub(crate) includes: Vec<String>, pub(crate) atom_table: lasso::Rodeo, pub(crate) files: HashMap<String, Arc<[u8]>> }
+#[derive(Clone, Debug, Default)]
+pub(crate) struct XkbRuleNames {
+    pub(crate) layout: String,
+    pub(crate) variant: String,
+    pub(crate) options: String,
+}
+#[derive(Clone)]
+pub(crate) struct XkbContext {
+    pub(crate) includes: Vec<String>,
+    pub(crate) atom_table: lasso::Rodeo,
+    pub(crate) files: HashMap<String, Arc<[u8]>>,
+}
 impl XkbContext {
     pub(crate) fn atom_text(&self, atom: u32) -> &str {
         if atom == XKB_ATOM_NONE {
@@ -270,7 +278,18 @@ impl XkbContext {
         Some(data)
     }
 }
-#[derive(Clone)] #[rustfmt::skip] pub(crate) struct XkbKeymap { pub(crate) ctx: XkbContext, pub(crate) strict: bool, pub(crate) min_key_code: u32, pub(crate) keys: Vec<XkbKey>, pub(crate) key_names: Vec<u32>, pub(crate) types: Vec<XkbKeyType>, pub(crate) mods: XkbModSet, pub(crate) num_groups: u32, pub(crate) group_names: Vec<u32> }
+#[derive(Clone)]
+pub(crate) struct XkbKeymap {
+    pub(crate) ctx: XkbContext,
+    pub(crate) strict: bool,
+    pub(crate) min_key_code: u32,
+    pub(crate) keys: Vec<XkbKey>,
+    pub(crate) key_names: Vec<u32>,
+    pub(crate) types: Vec<XkbKeyType>,
+    pub(crate) mods: XkbModSet,
+    pub(crate) num_groups: u32,
+    pub(crate) group_names: Vec<u32>,
+}
 impl XkbKeymap {
     pub(crate) fn mod_get_mask(&self, name: &str) -> u32 {
         let Some(key) = self.ctx.atom_table.get(name) else {
@@ -283,8 +302,18 @@ impl XkbKeymap {
             .unwrap_or(0)
     }
 }
-#[derive(Copy, Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbModSet { pub(crate) mods: [XkbMod; 32], pub(crate) num_mods: u32, pub(crate) explicit_vmods: u32 }
-#[derive(Copy, Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbMod { pub(crate) name: u32, pub(crate) type_0: u32, pub(crate) mapping: u32 }
+#[derive(Copy, Clone, Default)]
+pub(crate) struct XkbModSet {
+    pub(crate) mods: [XkbMod; 32],
+    pub(crate) num_mods: u32,
+    pub(crate) explicit_vmods: u32,
+}
+#[derive(Copy, Clone, Default)]
+pub(crate) struct XkbMod {
+    pub(crate) name: u32,
+    pub(crate) type_0: u32,
+    pub(crate) mapping: u32,
+}
 pub(crate) const MOD_BOTH: u32 = 3;
 pub(crate) const MOD_VIRT: u32 = 2;
 pub(crate) const MOD_REAL: u32 = 1;
@@ -302,13 +331,50 @@ pub struct ActionFlags: u32 {
     const LOCK_CLEAR            = 1;
     const LATCH_TO_LOCK         = 2;
     const ABSOLUTE_SWITCH       = 32; } }
-#[derive(Copy, Clone, Default, PartialEq, Eq)] #[rustfmt::skip] pub struct XkbGroupAction { pub flags: ActionFlags, pub group: i32 }
-#[derive(Copy, Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbMods { pub(crate) mods: u32, pub(crate) mask: u32 }
-#[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbKeyType { pub(crate) name: u32, pub(crate) modifiers_set: bool, pub(crate) mods: XkbMods, pub(crate) num_levels: u32, pub(crate) entries: Vec<XkbKeyTypeEntry> }
-#[derive(Copy, Clone)] #[rustfmt::skip] pub(crate) struct XkbKeyTypeEntry { pub(crate) level: u32, pub(crate) mods: XkbMods, pub(crate) preserve: XkbMods }
-#[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbKey { pub(crate) name: u32, pub(crate) default_type: u32, pub(crate) modmap: u32, pub(crate) vmodmap: Option<u32>, pub(crate) repeat: Option<bool>, pub(crate) groups: Vec<XkbGroup> }
-#[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbGroup { pub(crate) explicit_syms: bool, pub(crate) type_idx: u32, pub(crate) levels: Vec<XkbLevel> }
-#[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbLevel { pub(crate) syms: Vec<u32>, pub(crate) action: Option<XkbAction> }
+#[derive(Copy, Clone, Default, PartialEq, Eq)]
+pub struct XkbGroupAction {
+    pub flags: ActionFlags,
+    pub group: i32,
+}
+#[derive(Copy, Clone, Default)]
+pub(crate) struct XkbMods {
+    pub(crate) mods: u32,
+    pub(crate) mask: u32,
+}
+#[derive(Clone, Default)]
+pub(crate) struct XkbKeyType {
+    pub(crate) name: u32,
+    pub(crate) modifiers_set: bool,
+    pub(crate) mods: XkbMods,
+    pub(crate) num_levels: u32,
+    pub(crate) entries: Vec<XkbKeyTypeEntry>,
+}
+#[derive(Copy, Clone)]
+pub(crate) struct XkbKeyTypeEntry {
+    pub(crate) level: u32,
+    pub(crate) mods: XkbMods,
+    pub(crate) preserve: XkbMods,
+}
+#[derive(Clone, Default)]
+pub(crate) struct XkbKey {
+    pub(crate) name: u32,
+    pub(crate) default_type: u32,
+    pub(crate) modmap: u32,
+    pub(crate) vmodmap: Option<u32>,
+    pub(crate) repeat: Option<bool>,
+    pub(crate) groups: Vec<XkbGroup>,
+}
+#[derive(Clone, Default)]
+pub(crate) struct XkbGroup {
+    pub(crate) explicit_syms: bool,
+    pub(crate) type_idx: u32,
+    pub(crate) levels: Vec<XkbLevel>,
+}
+#[derive(Clone, Default)]
+pub(crate) struct XkbLevel {
+    pub(crate) syms: Vec<u32>,
+    pub(crate) action: Option<XkbAction>,
+}
 pub(crate) const XKB_MAX_GROUPS: u32 = 32;
 pub(crate) const MOD_REAL_MASK_ALL: u32 = 0xff_i32 as u32;
 pub(crate) const DFLT_XKB_LEGACY_ROOT: &str = "/usr/share/X11/xkb";
@@ -364,7 +430,13 @@ pub(crate) enum MergeMode {
     Override = 2,
     Replace = 3,
 }
-#[derive(Clone)] #[rustfmt::skip] pub(crate) struct IncludeStmt { pub(crate) merge: MergeMode, pub(crate) file: String, pub(crate) map: String, pub(crate) modifier: String }
+#[derive(Clone)]
+pub(crate) struct IncludeStmt {
+    pub(crate) merge: MergeMode,
+    pub(crate) file: String,
+    pub(crate) map: String,
+    pub(crate) modifier: String,
+}
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub(crate) enum BinaryOp {
     Assign,
@@ -406,12 +478,37 @@ pub(crate) enum ExprKind {
         child: Box<ExprKind>,
     },
 }
-#[rustfmt::skip] pub(crate) struct VarDef { pub(crate) merge: MergeMode, pub(crate) name: Option<ExprKind>, pub(crate) value: Option<ExprKind> }
-#[rustfmt::skip] pub(crate) struct VModDef { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) value: Option<ExprKind> }
-#[derive(Copy, Clone)] #[rustfmt::skip] pub(crate) struct KeycodeDef { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) value: i64 }
-#[derive(Copy, Clone)] #[rustfmt::skip] pub(crate) struct KeyAliasDef { pub(crate) merge: MergeMode, pub(crate) alias: u32, pub(crate) real: u32 }
-#[rustfmt::skip] pub(crate) struct NamedVarDef<'a> { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) body: &'a [u8] }
-#[rustfmt::skip] pub(crate) struct ModMapDef { pub(crate) merge: MergeMode, pub(crate) modifier: u32, pub(crate) keys: Vec<ExprKind> }
+pub(crate) struct VarDef {
+    pub(crate) merge: MergeMode,
+    pub(crate) name: Option<ExprKind>,
+    pub(crate) value: Option<ExprKind>,
+}
+pub(crate) struct VModDef {
+    pub(crate) merge: MergeMode,
+    pub(crate) name: u32,
+    pub(crate) value: Option<ExprKind>,
+}
+#[derive(Copy, Clone)]
+pub(crate) struct KeycodeDef {
+    pub(crate) merge: MergeMode,
+    pub(crate) name: u32,
+    pub(crate) value: i64,
+}
+#[derive(Copy, Clone)]
+pub(crate) struct KeyAliasDef {
+    pub(crate) alias: u32,
+    pub(crate) real: u32,
+}
+pub(crate) struct NamedVarDef<'a> {
+    pub(crate) merge: MergeMode,
+    pub(crate) name: u32,
+    pub(crate) body: &'a [u8],
+}
+pub(crate) struct ModMapDef {
+    pub(crate) merge: MergeMode,
+    pub(crate) modifier: u32,
+    pub(crate) keys: Vec<ExprKind>,
+}
 pub(crate) const MAP_IS_DEFAULT: u32 = 1;
 pub(crate) enum Statement<'a> {
     Include(Vec<IncludeStmt>),

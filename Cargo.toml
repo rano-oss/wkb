@@ -1,6 +1,3 @@
-[workspace]
-members = ["."]
-
 [package]
 name = "wayland-keyboard"
 version = "0.2.0"
@@ -24,50 +21,59 @@ name = "wkb"
 
 [features]
 default = ["xkb", "compose"]
-xkb = ["dep:xkeysym"]
+xkb = [
+    "dep:bitflags",
+    "dep:lasso",
+    "dep:xkeysym",
+]
 compose = []
 
 [dependencies]
-log = "0.4.29"
 arrayvec = "0.7"
-serde = { version = "1", features = ["derive"] }
+bitflags = { version = "2", optional = true }
+lasso = { version = "0.7", optional = true }
 ron = "0.12"
+serde = { version = "1", features = ["derive"] }
 thiserror = "2"
-lasso = "0.7"
-bitflags = "2"
 xkeysym = { version = "0.2", optional = true }
 
 [dev-dependencies]
-wkb = { package = "wayland-keyboard", path = "." }
+criterion = { version = "0.8", features = ["html_reports"] }
+quick-xml = "0.41"
 test-case = "3.3.1"
 xkbcommon = "0.9.0"
 xkbcommon-dl = "0.4.2"
-criterion = { version = "0.8", features = ["html_reports"] }
-quick-xml = "0.41"
 
 [[bench]]
 name = "bench_setup"
 harness = false
+required-features = ["xkb", "compose"]
 
 [[bench]]
 name = "bench_key"
 harness = false
+required-features = ["xkb"]
 
 [[bench]]
 name = "bench_compose"
 harness = false
+required-features = ["xkb", "compose"]
 
 [[example]]
 name = "bench_memory"
+required-features = ["xkb", "compose"]
 
 [[example]]
 name = "bench_size_wkb"
 
 [[example]]
 name = "bench_size_wkb_xkb"
-
-[[example]]
-name = "bench_size_xkbcommon_dl"
+required-features = ["xkb", "compose"]
 
 [[example]]
 name = "bench_size_xkbcommon"
+required-features = ["xkb", "compose"]
+
+[[example]]
+name = "bench_size_xkbcommon_dl"
+required-features = ["xkb", "compose"]

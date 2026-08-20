@@ -90,9 +90,18 @@ impl<'a> Lexer<'a> {
                     b'"' => return Token::String(value),
                     b'\n' => return Token::Error,
                     b'\\' => match self.input.get(self.pos).copied() {
-                        Some(b'n') => { self.pos += 1; value.push('\n'); }
-                        Some(b't') => { self.pos += 1; value.push('\t'); }
-                        Some(byte) => { self.pos += 1; value.push(byte as char); }
+                        Some(b'n') => {
+                            self.pos += 1;
+                            value.push('\n');
+                        }
+                        Some(b't') => {
+                            self.pos += 1;
+                            value.push('\t');
+                        }
+                        Some(byte) => {
+                            self.pos += 1;
+                            value.push(byte as char);
+                        }
                         None => return Token::Error,
                     },
                     byte if byte.is_ascii() => value.push(byte as char),
@@ -441,7 +450,7 @@ impl<'a> Parser<'a> {
             };
             let (alias, real) = (Self::atom(ctx, alias), Self::atom(ctx, real));
             self.punct(b';').then_some(())?;
-            return Some(Statement::KeyAlias(KeyAliasDef { merge, alias, real }));
+            return Some(Statement::KeyAlias(KeyAliasDef { alias, real }));
         }
         if let Token::Key(_) = self.token {
             let Token::Key(name) = self.bump() else {
@@ -672,7 +681,9 @@ impl<'a> Parser<'a> {
                         }
                     }
                     let _ = (name, args);
-                    ExprKind::ActionList { actions: vec![ExprKind::EmptyList] }
+                    ExprKind::ActionList {
+                        actions: vec![ExprKind::EmptyList],
+                    }
                 } else {
                     self.lexer.pos = saved;
                     self.token = Token::Word(word);

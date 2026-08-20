@@ -3,7 +3,7 @@ use super::keysym::xkb_keysym_is_keypad;
 use super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 use super::parse_xkb::Stream;
 use super::parser::{exceeds_include_max_depth, process_include_stream};
-pub(crate) use super::parser::{KeyAliasDef, ModMapDef, NamedVarDef};
+pub(crate) use super::parser::{ModMapDef, NamedVarDef};
 macro_rules! some_or_false {
     ($value:expr) => {
         match $value {
@@ -417,11 +417,7 @@ fn merge_keys(star_atom: u32, into: &mut KeyInfo, from: &mut KeyInfo, merge: Mer
     }
     init_key_info_with_atom(from, star_atom);
 }
-fn group_index(
-    ki: &mut XkbKeymap,
-    key: &mut KeyInfo,
-    index: Option<&ExprKind>,
-) -> Option<usize> {
+fn group_index(ki: &mut XkbKeymap, key: &mut KeyInfo, index: Option<&ExprKind>) -> Option<usize> {
     let index = match index {
         Some(expr) => {
             let (group, _) = expr_resolve_group(ki, expr, false)?;
@@ -1023,12 +1019,24 @@ fn add_key_name(info: &mut KeyNamesInfo, code: u32, name: u32, clobber: bool) ->
     if code > XKB_KEYCODE_MAX_CONTIGUOUS {
         return false;
     }
-    if !clobber && info.names.get(name as usize).is_some_and(|value| *value != 0) {
+    if !clobber
+        && info
+            .names
+            .get(name as usize)
+            .is_some_and(|value| *value != 0)
+    {
         return true;
     }
-    info.codes.resize(info.codes.len().max(code as usize + 1), 0);
-    info.names.resize(info.names.len().max(name as usize + 1), 0);
-    if let Some(old) = info.codes.get(code as usize).copied().filter(|old| *old != 0) {
+    info.codes
+        .resize(info.codes.len().max(code as usize + 1), 0);
+    info.names
+        .resize(info.names.len().max(name as usize + 1), 0);
+    if let Some(old) = info
+        .codes
+        .get(code as usize)
+        .copied()
+        .filter(|old| *old != 0)
+    {
         info.names[old as usize] = 0;
     }
     info.codes[code as usize] = name;
@@ -1075,9 +1083,11 @@ pub(crate) fn compile_keycodes(input: CompileInput<'_, '_>, keymap: &mut XkbKeym
         CompileInput::Stream(stream) => stream.is_none_or(|stream| {
             compile_stream(keymap, &mut info, stream, compile_keycode_statement)
         }),
-        CompileInput::Includes(includes) => {
-            compile_keycode_statement(keymap, &mut info, &mut Statement::Include(includes.to_vec()))
-        }
+        CompileInput::Includes(includes) => compile_keycode_statement(
+            keymap,
+            &mut info,
+            &mut Statement::Include(includes.to_vec()),
+        ),
     };
     if !valid {
         return false;
@@ -1086,8 +1096,13 @@ pub(crate) fn compile_keycodes(input: CompileInput<'_, '_>, keymap: &mut XkbKeym
     keymap.min_key_code = info.codes.iter().position(|name| *name != 0).unwrap_or(8) as u32;
     keymap.keys.resize_with(info.codes.len(), XkbKey::default);
     for (alias, real) in info.aliases {
-        info.names.resize(info.names.len().max(alias as usize + 1), 0);
-        if info.names.get(real as usize).is_some_and(|value| *value != 0) {
+        info.names
+            .resize(info.names.len().max(alias as usize + 1), 0);
+        if info
+            .names
+            .get(real as usize)
+            .is_some_and(|value| *value != 0)
+        {
             info.names[alias as usize] = KEY_ALIAS | real;
         }
     }
@@ -1115,18 +1130,7 @@ fn expr_resolve_lhs(expr: &ExprKind) -> Option<Lhs<'_>> {
         _ => None,
     }
 }
-pub(crate) fn expr_resolve_boolean(ctx: &XkbContext, expr: &ExprKind) -> Option<bool> {
-    match expr {
-        ExprKind::Integer(0) => Some(false),
-        ExprKind::Integer(1) => Some(true),
-        ExprKind::Ident(atom) => named_bool(ctx.atom_text(*atom)),
-        ExprKind::Unary {
-            child,
-            op: UnaryOp::Not | UnaryOp::Invert,
-        } => expr_resolve_boolean(ctx, child).map(|value| !value),
-        _ => None,
-    }
-}
+
 fn named_bool(value: &str) -> Option<bool> {
     ["true", "yes", "on"]
         .iter()

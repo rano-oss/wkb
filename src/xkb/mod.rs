@@ -405,8 +405,8 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
             if key.repeat == Some(true) {
                 repeat_keys.insert(evdev as u32);
             }
-            let raw_group = (!key.groups.is_empty())
-                .then(|| &key.groups[layout_idx % key.groups.len()]);
+            let raw_group =
+                (!key.groups.is_empty()).then(|| &key.groups[layout_idx % key.groups.len()]);
             let state_group = key.groups.get(layout_idx);
             let state_type =
                 state_group.and_then(|group| compiled_types.get(group.type_idx as usize));
