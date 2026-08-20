@@ -28,6 +28,7 @@ pub fn load_layout_file(locale: &str, variant: Option<&str>) -> wkb::ir::LayoutF
 /// `ron_layouts/` is a gitignored generated-artifact directory, so a fresh
 /// checkout has no files. Generation is a one-time cost outside any timed
 /// measurement (call it before registering/starting the benchmarks).
+#[cfg(feature = "xkb")]
 pub fn ensure_layout_file(locale: &str, variant: Option<&str>) {
     let path = ron_layout_path(locale, variant);
     if std::path::Path::new(&path).exists() {

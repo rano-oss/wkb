@@ -36,7 +36,7 @@ pub(crate) fn braced_end(input: &[u8], mut pos: usize) -> Option<usize> {
 #[derive(Default)]
 enum Token<'a> {
     Word(&'a [u8]),
-    String(String),
+    String(&'a [u8]),
     Key(&'a [u8]),
     Integer(i64),
     Punct(u8),
@@ -83,40 +83,17 @@ impl<'a> Lexer<'a> {
         };
         if byte == b'"' {
             self.pos += 1;
-            let mut value = String::new();
-            while let Some(&byte) = self.input.get(self.pos) {
-                self.pos += 1;
-                match byte {
-                    b'"' => return Token::String(value),
-                    b'\n' => return Token::Error,
-                    b'\\' => match self.input.get(self.pos).copied() {
-                        Some(b'n') => {
-                            self.pos += 1;
-                            value.push('\n');
-                        }
-                        Some(b't') => {
-                            self.pos += 1;
-                            value.push('\t');
-                        }
-                        Some(byte) => {
-                            self.pos += 1;
-                            value.push(byte as char);
-                        }
-                        None => return Token::Error,
-                    },
-                    byte if byte.is_ascii() => value.push(byte as char),
-                    _ => {
-                        let start = self.pos - 1;
-                        let Ok(text) = std::str::from_utf8(&self.input[start..]) else {
-                            return Token::Error;
-                        };
-                        let Some(ch) = text.chars().next() else {
-                            return Token::Error;
-                        };
-                        self.pos = start + ch.len_utf8();
-                        value.push(ch);
-                    }
+            let start = self.pos;
+            while let Some(&next) = self.input.get(self.pos) {
+                if next == b'"' {
+                    let value = &self.input[start..self.pos];
+                    self.pos += 1;
+                    return Token::String(value);
                 }
+                if next == b'\n' {
+                    return Token::Error;
+                }
+                self.pos += 1 + usize::from(next == b'\\');
             }
             return Token::Error;
         }
@@ -335,7 +312,7 @@ impl<'a> Parser<'a> {
         let file_type = self.file_type()?;
         let name = match self.token {
             Token::String(_) => match self.bump() {
-                Token::String(name) => name,
+                Token::String(name) => String::from_utf8_lossy(name).into_owned(),
                 _ => unreachable!(),
             },
             _ => String::new(),
@@ -374,7 +351,10 @@ impl<'a> Parser<'a> {
                 return None;
             };
             self.punct(b';');
-            return include_create(&value, merge).map(Statement::Include);
+            return std::str::from_utf8(value)
+                .ok()
+                .and_then(|value| include_create(value, merge))
+                .map(Statement::Include);
         }
         if self.word(b"virtual_modifiers") {
             self.bump();
@@ -397,12 +377,11 @@ impl<'a> Parser<'a> {
                 let Token::String(name) = self.bump() else {
                     unreachable!()
                 };
-                let name = ctx.atom_intern(name.as_bytes());
+                let name = ctx.atom_intern(name);
                 let body = self.take_body()?;
                 return Some(Statement::KeyType(NamedVarDef { merge, name, body }));
             }
-            let atom = ctx.atom_intern(b"type");
-            let name = self.parse_word_tail(ctx, atom)?;
+            let name = self.parse_lhs_with(ctx, b"type")?;
             return self.parse_variable(ctx, merge, name);
         }
         if self.word(b"key") {
@@ -415,8 +394,7 @@ impl<'a> Parser<'a> {
                 let body = self.take_body()?;
                 return Some(Statement::Symbols(NamedVarDef { merge, name, body }));
             }
-            let atom = ctx.atom_intern(b"key");
-            let name = self.parse_word_tail(ctx, atom)?;
+            let name = self.parse_lhs_with(ctx, b"key")?;
             return self.parse_variable(ctx, merge, name);
         }
         if self.word(b"modifier_map") || self.word(b"modmap") || self.word(b"mod_map") {
@@ -474,11 +452,15 @@ impl<'a> Parser<'a> {
             self.punct(b';').then_some(())?;
             return Some(Statement::Var(VarDef {
                 merge,
-                name: Some(ExprKind::Ident(atom)),
-                value: Some(ExprKind::Integer(0)),
+                name: Some(Lhs {
+                    element: Element::None,
+                    field: Self::field(ctx.atom_text(atom).as_bytes()),
+                    index: None,
+                }),
+                value: Some(scalar(Scalar::Integer(0))),
             }));
         } else {
-            self.parse_expr(ctx, 2)?
+            self.parse_lhs(ctx)?
         };
         self.parse_variable(ctx, merge, name)
     }
@@ -486,10 +468,10 @@ impl<'a> Parser<'a> {
         &mut self,
         ctx: &mut XkbContext,
         merge: MergeMode,
-        name: ExprKind,
+        name: Lhs,
     ) -> Option<Statement<'a>> {
         let value = if self.punct(b';') {
-            Some(ExprKind::Integer(1))
+            Some(scalar(Scalar::Integer(1)))
         } else {
             self.punct(b'=').then_some(())?;
             let value = self.parse_expr(ctx, 0);
@@ -534,18 +516,22 @@ impl<'a> Parser<'a> {
         } else if self.punct(b'!') || self.punct(b'~') {
             VarDef {
                 merge,
-                name: Some(ExprKind::Ident(Self::atom(ctx, self.take_word()?))),
-                value: Some(ExprKind::Integer(0)),
+                name: Some(Lhs {
+                    element: Element::None,
+                    field: Self::field(self.take_word()?),
+                    index: None,
+                }),
+                value: Some(scalar(Scalar::Integer(0))),
             }
         } else {
-            let name = self.parse_expr(ctx, 2)?;
+            let name = self.parse_lhs(ctx)?;
             VarDef {
                 merge,
                 name: Some(name),
                 value: if self.punct(b'=') {
                     self.parse_expr(ctx, 0)
                 } else {
-                    Some(ExprKind::Integer(1))
+                    Some(scalar(Scalar::Integer(1)))
                 },
             }
         };
@@ -554,38 +540,127 @@ impl<'a> Parser<'a> {
         }
         Some(var)
     }
-    fn parse_expr(&mut self, ctx: &mut XkbContext, min_precedence: u8) -> Option<ExprKind> {
-        let mut left = if let Token::Punct(op @ (b'-' | b'+' | b'!' | b'~')) = self.token {
-            self.bump();
-            ExprKind::Unary {
-                op: match op {
-                    b'-' => UnaryOp::Negate,
-                    b'+' => UnaryOp::Plus,
-                    b'!' => UnaryOp::Not,
-                    _ => UnaryOp::Invert,
-                },
-                child: Box::new(self.parse_expr(ctx, 4)?),
-            }
+    fn parse_lhs(&mut self, ctx: &mut XkbContext) -> Option<Lhs> {
+        let first = self.take_word()?;
+        self.parse_lhs_with(ctx, first)
+    }
+    fn parse_lhs_with(&mut self, ctx: &mut XkbContext, first: &[u8]) -> Option<Lhs> {
+        let element = Self::element(first);
+        let field = Self::field(first);
+        let (element, field) = if self.punct(b'.') {
+            (element, Self::field(self.take_word()?))
         } else {
-            self.parse_primary(ctx)?
+            (Element::None, field)
         };
+        let index = if self.punct(b'[') {
+            let value = self.parse_expr(ctx, 0)?;
+            self.punct(b']').then_some(())?;
+            Some(value)
+        } else {
+            None
+        };
+        Some(Lhs {
+            element,
+            field,
+            index,
+        })
+    }
+    fn element(word: &[u8]) -> Element {
+        if word.eq_ignore_ascii_case(b"key") {
+            Element::Key
+        } else if word.eq_ignore_ascii_case(b"type") {
+            Element::Type
+        } else {
+            Element::Other
+        }
+    }
+    fn field(word: &[u8]) -> Field {
+        use Field::*;
+        const FIELDS: &[(Field, &[&[u8]])] = &[
+            (Type, &[b"type"]),
+            (Symbols, &[b"symbols"]),
+            (Actions, &[b"actions"]),
+            (Vmods, &[b"vmods", b"virtualmods", b"virtualmodifiers"]),
+            (Repeat, &[b"repeat", b"repeats", b"repeating"]),
+            (Name, &[b"name", b"groupname"]),
+            (Modifiers, &[b"modifiers"]),
+            (LevelName, &[b"levelname", b"level_name"]),
+            (Map, &[b"map"]),
+            (Preserve, &[b"preserve"]),
+            (
+                Ignored,
+                &[
+                    b"locking",
+                    b"lock",
+                    b"locks",
+                    b"radiogroup",
+                    b"permanentradiogroup",
+                    b"allownone",
+                    b"overlay",
+                    b"groupswrap",
+                    b"wrapgroups",
+                    b"groupsclamp",
+                    b"clampgroups",
+                    b"groupsredirect",
+                    b"redirectgroups",
+                ],
+            ),
+        ];
+        for &(field, names) in FIELDS {
+            if matches_ci(word, names) {
+                return field;
+            }
+        }
+        if word
+            .get(..7)
+            .is_some_and(|p| p.eq_ignore_ascii_case(b"overlay"))
+            || word
+                .get(..16)
+                .is_some_and(|p| p.eq_ignore_ascii_case(b"permanentoverlay"))
+        {
+            Ignored
+        } else {
+            Other
+        }
+    }
+    fn parse_expr(&mut self, ctx: &mut XkbContext, min_precedence: u8) -> Option<ExprKind> {
+        let (invert, negative) = if let Token::Punct(op @ (b'-' | b'+' | b'~')) = self.token {
+            self.bump();
+            (op == b'~', op == b'-')
+        } else {
+            (false, false)
+        };
+        let mut left = self.parse_primary(ctx)?;
+        if invert || negative {
+            let ExprKind::Scalar(expr) = &mut left else {
+                return None;
+            };
+            expr.invert ^= invert;
+            if negative {
+                for (add, _) in &mut expr.terms {
+                    *add = !*add;
+                }
+            }
+        }
         loop {
-            let (precedence, op) = match self.token {
-                Token::Punct(b'=') => (1, BinaryOp::Assign),
-                Token::Punct(b'+') => (2, BinaryOp::Add),
-                Token::Punct(b'-') => (2, BinaryOp::Subtract),
+            let (precedence, add) = match self.token {
+                Token::Punct(b'+') => (2, true),
+                Token::Punct(b'-') => (2, false),
                 _ => break,
             };
             if precedence < min_precedence {
                 break;
             }
             self.bump();
-            let right = self.parse_expr(ctx, precedence + u8::from(op != BinaryOp::Assign))?;
-            left = ExprKind::Binary {
-                op,
-                left: Box::new(left),
-                right: Box::new(right),
+            let ExprKind::Scalar(mut right) = self.parse_expr(ctx, precedence + 1)? else {
+                return None;
             };
+            let ExprKind::Scalar(left) = &mut left else {
+                return None;
+            };
+            for (right_add, term) in right.terms.drain(..) {
+                left.terms.try_push((add == right_add, term)).ok()?;
+            }
         }
         Some(left)
     }
@@ -593,10 +668,15 @@ impl<'a> Parser<'a> {
         match self.bump() {
             Token::Word(word) => {
                 let first = Self::atom(ctx, word);
-                self.parse_word_tail(ctx, first)
+                if self.punct(b'(') {
+                    self.skip_call()?;
+                    Some(ExprKind::Actions)
+                } else {
+                    Some(scalar(Scalar::Ident(first)))
+                }
             }
-            Token::String(value) => Some(ExprKind::String(ctx.atom_intern(value.as_bytes()))),
-            Token::Integer(value) => Some(ExprKind::Integer(value)),
+            Token::String(value) => Some(ExprKind::String(ctx.atom_intern(value))),
+            Token::Integer(value) => Some(scalar(Scalar::Integer(value))),
             Token::Key(value) => Some(ExprKind::KeyName(Self::atom(ctx, value))),
             Token::Punct(b'[') => self.parse_list_after_open(ctx),
             Token::Punct(b'(') => {
@@ -606,64 +686,30 @@ impl<'a> Parser<'a> {
             _ => None,
         }
     }
-    fn parse_word_tail(&mut self, ctx: &mut XkbContext, first: u32) -> Option<ExprKind> {
-        if self.punct(b'(') {
-            let mut args = Vec::new();
-            while !self.punct(b')') {
-                args.push(self.parse_expr(ctx, 0)?);
-                if !self.punct(b',') {
-                    self.punct(b')').then_some(())?;
-                    break;
-                }
-            }
-            Some(ExprKind::EmptyList)
-        } else if self.punct(b'.') {
-            let field_word = self.take_word()?;
-            let field = Self::atom(ctx, field_word);
-            let index = if self.punct(b'[') {
-                let index = self.parse_expr(ctx, 0)?;
-                self.punct(b']').then_some(())?;
-                Some(Box::new(index))
-            } else {
-                None
-            };
-            Some(ExprKind::FieldRef {
-                element: first,
-                field,
-                index,
-            })
-        } else if self.punct(b'[') {
-            let index = self.parse_expr(ctx, 0)?;
-            self.punct(b']').then_some(())?;
-            Some(ExprKind::FieldRef {
-                element: 0,
-                field: first,
-                index: Some(Box::new(index)),
-            })
-        } else {
-            Some(ExprKind::Ident(first))
-        }
-    }
     fn parse_list(&mut self, ctx: &mut XkbContext) -> Option<ExprKind> {
         self.punct(b'[').then_some(())?;
         self.parse_list_after_open(ctx)
     }
-    fn parse_list_after_open(&mut self, ctx: &mut XkbContext) -> Option<ExprKind> {
+    fn parse_list_after_open(&mut self, _ctx: &mut XkbContext) -> Option<ExprKind> {
         if self.punct(b']') {
-            return Some(ExprKind::EmptyList);
+            return Some(ExprKind::Symbols(Vec::new()));
         }
         let mut items = Vec::new();
+        let mut actions = false;
         loop {
             let item = if self.punct(b'{') {
-                let mut syms = Vec::new();
+                let mut sym = 0;
                 while !self.punct(b'}') {
-                    self.append_keysym(&mut syms)?;
+                    let next = self.parse_keysym()?;
+                    if sym == 0 {
+                        sym = next;
+                    }
                     if !self.punct(b',') {
                         self.punct(b'}').then_some(())?;
                         break;
                     }
                 }
-                ExprKind::KeysymList { syms }
+                sym
             } else if matches!(self.token, Token::Word(_)) {
                 let saved = self.lexer.pos;
                 let word = match self.bump() {
@@ -671,30 +717,16 @@ impl<'a> Parser<'a> {
                     _ => unreachable!(),
                 };
                 if self.punct(b'(') {
-                    let name = Self::atom(ctx, word);
-                    let mut args = Vec::new();
-                    while !self.punct(b')') {
-                        args.push(self.parse_expr(ctx, 0)?);
-                        if !self.punct(b',') {
-                            self.punct(b')').then_some(())?;
-                            break;
-                        }
-                    }
-                    let _ = (name, args);
-                    ExprKind::ActionList {
-                        actions: vec![ExprKind::EmptyList],
-                    }
+                    actions = true;
+                    self.skip_call()?;
+                    0
                 } else {
                     self.lexer.pos = saved;
                     self.token = Token::Word(word);
-                    let mut syms = Vec::new();
-                    self.append_keysym(&mut syms)?;
-                    ExprKind::KeysymList { syms }
+                    self.parse_keysym()?
                 }
             } else {
-                let mut syms = Vec::new();
-                self.append_keysym(&mut syms)?;
-                ExprKind::KeysymList { syms }
+                self.parse_keysym()?
             };
             items.push(item);
             if !self.punct(b',') {
@@ -702,47 +734,53 @@ impl<'a> Parser<'a> {
                 break;
             }
         }
-        Some(ExprKind::ActionList { actions: items })
+        Some(if actions {
+            ExprKind::Actions
+        } else {
+            ExprKind::Symbols(items)
+        })
     }
     fn parse_keysym_expr(&mut self, ctx: &mut XkbContext) -> Option<ExprKind> {
         match self.token {
             Token::Key(_) => self.parse_primary(ctx),
-            _ => {
-                let mut syms = Vec::new();
-                self.append_keysym(&mut syms)?;
-                syms.first()
-                    .copied()
-                    .map(ExprKind::KeySym)
-                    .or(Some(ExprKind::KeySym(0)))
-            }
+            _ => Some(ExprKind::KeySym(self.parse_keysym()?)),
         }
     }
-    fn append_keysym(&mut self, syms: &mut Vec<u32>) -> Option<()> {
-        match self.bump() {
-            Token::Word(word) => {
-                let sym = resolve_keysym(word).unwrap_or(XKB_KEY_NO_SYMBOL);
-                if sym != XKB_KEY_NO_SYMBOL {
-                    syms.push(sym);
-                }
-            }
-            Token::String(value) => {
-                for ch in value.chars() {
-                    let sym = codepoint_to_keysym(ch as u32)?;
-                    if sym != XKB_KEY_NO_SYMBOL {
-                        syms.push(sym);
-                    }
-                }
-            }
-            Token::Integer(value) if (0..=9).contains(&value) => {
-                syms.push(b'0' as u32 + value as u32)
-            }
-            Token::Integer(value) if (0..=XKB_KEYSYM_MAX as i64).contains(&value) => {
-                syms.push(value as u32)
-            }
+    fn parse_keysym(&mut self) -> Option<u32> {
+        Some(match self.bump() {
+            Token::Word(word) => resolve_keysym(word).unwrap_or(XKB_KEY_NO_SYMBOL),
+            Token::String(value) => std::str::from_utf8(value)
+                .ok()?
+                .chars()
+                .next()
+                .and_then(|ch| codepoint_to_keysym(ch as u32))
+                .unwrap_or(0),
+            Token::Integer(value) if (0..=9).contains(&value) => b'0' as u32 + value as u32,
+            Token::Integer(value) if (0..=XKB_KEYSYM_MAX as i64).contains(&value) => value as u32,
             _ => return None,
+        })
+    }
+    fn skip_call(&mut self) -> Option<()> {
+        let mut depth = 1;
+        while depth != 0 {
+            match self.bump() {
+                Token::Punct(b'(') => depth += 1,
+                Token::Punct(b')') => depth -= 1,
+                Token::End | Token::Error => return None,
+                _ => {}
+            }
         }
         Some(())
     }
+}
+fn matches_ci(word: &[u8], names: &[&[u8]]) -> bool {
+    names.iter().any(|name| word.eq_ignore_ascii_case(name))
+}
+fn scalar(value: Scalar) -> ExprKind {
+    ExprKind::Scalar(ScalarExpr {
+        terms: [(true, value)].into_iter().collect(),
+        invert: false,
+    })
 }
 fn resolve_keysym(name: &[u8]) -> Option<u32> {
     if !name.is_ascii() {

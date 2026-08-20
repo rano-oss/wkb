@@ -236,48 +236,43 @@ impl SymbolsBuilder {
         true
     }
     fn compile_global(&mut self, ki: &mut XkbKeymap, stmt: &mut VarDef) -> bool {
-        let lhs = some_or_false!(expr_resolve_lhs(stmt.name.as_ref().unwrap()));
-        let elem = ki.ctx.atom_text(lhs.element);
-        let is_key = elem.eq_ignore_ascii_case("key");
-        let empty = elem.is_empty();
-        let field = ki.ctx.atom_text(lhs.field);
-        let symbols_field = parse_symbols_field(field);
-        let group_name =
-            field.eq_ignore_ascii_case("name") || field.eq_ignore_ascii_case("groupname");
-        let ignored = [
-            "groupswrap",
-            "wrapgroups",
-            "groupsclamp",
-            "clampgroups",
-            "groupsredirect",
-            "redirectgroups",
-            "allownone",
-        ]
-        .iter()
-        .any(|name| field.eq_ignore_ascii_case(name));
-        if is_key {
-            let Some(field) = symbols_field else {
+        let lhs = stmt.name.as_ref().unwrap();
+        if lhs.element == Element::Key {
+            if matches!(
+                lhs.field,
+                Field::Name
+                    | Field::Modifiers
+                    | Field::LevelName
+                    | Field::Map
+                    | Field::Preserve
+                    | Field::Other
+            ) {
                 return true;
-            };
+            }
             let mut temp = KeyInfo {
                 name: self.star_atom,
                 ..Default::default()
             };
-            let valid = set_symbols_field(ki, self, &mut temp, field, lhs.index, &mut stmt.value);
+            let valid = set_symbols_field(
+                ki,
+                self,
+                &mut temp,
+                lhs.field,
+                lhs.index.as_ref(),
+                &mut stmt.value,
+            );
             let mut dk = std::mem::take(&mut self.default_key);
             merge_keys(self.star_atom, &mut dk, &mut temp, stmt.merge);
             self.default_key = dk;
             valid
-        } else if empty && group_name {
+        } else if lhs.element == Element::None && lhs.field == Field::Name {
             set_group_name(
                 ki,
                 self,
-                lhs.index,
+                lhs.index.as_ref(),
                 stmt.value.as_ref().unwrap(),
                 stmt.merge,
             )
-        } else if ignored || !empty {
-            true
         } else {
             true
         }
@@ -295,23 +290,16 @@ impl SymbolsBuilder {
                 Ok(None) => return all_valid_entries,
                 Err(()) => return false,
             };
-            let (field, index) = if let Some(name) = &def.name {
-                let Some(lhs) = expr_resolve_lhs(name) else {
-                    all_valid_entries = false;
-                    continue;
-                };
-                if !ki.ctx.atom_text(lhs.element).is_empty() {
+            let (field, index) = if let Some(lhs) = &def.name {
+                if lhs.element != Element::None {
                     all_valid_entries = false;
                     continue;
                 }
-                (parse_symbols_field(ki.ctx.atom_text(lhs.field)), lhs.index)
-            } else if matches!(&def.value, Some(ExprKind::ActionList { actions })
-                if actions.first().is_none_or(|first|
-                    matches!(first, ExprKind::ActionList { .. } | ExprKind::EmptyList)))
-            {
-                (Some(SymbolsField::Actions), None)
+                (Some(lhs.field), lhs.index.as_ref())
+            } else if matches!(&def.value, Some(ExprKind::Actions)) {
+                (Some(Field::Actions), None)
             } else {
-                (Some(SymbolsField::Symbols), None)
+                (Some(Field::Symbols), None)
             };
             let valid = match (field, def.value.is_some()) {
                 (Some(field), true) => {
@@ -326,12 +314,6 @@ impl SymbolsBuilder {
         }
     }
 }
-fn collect_expr_list(container: &ExprKind) -> &[ExprKind] {
-    match container {
-        ExprKind::ActionList { actions } => actions.as_slice(),
-        _ => std::slice::from_ref(container),
-    }
-}
 fn init_key_info_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
     *keyi = KeyInfo {
         name: star_atom,
@@ -339,57 +321,26 @@ fn init_key_info_with_atom(keyi: &mut KeyInfo, star_atom: u32) {
     };
 }
 fn merge_groups(into: &mut GroupInfo, from: &mut GroupInfo, clobber: bool) {
-    if from.type_idx != 0 {
-        if into.type_idx == 0 || clobber {
-            into.type_idx = from.type_idx;
+    if from.type_idx != 0 && (into.type_idx == 0 || clobber) {
+        into.type_idx = from.type_idx;
+    }
+    let source = std::mem::take(&mut from.levels);
+    into.levels
+        .resize_with(into.levels.len().max(source.len()), Default::default);
+    let mut changed = 0;
+    for (dst, mut src) in into.levels.iter_mut().zip(source) {
+        if src.sym != 0 && (dst.sym == 0 || clobber) {
+            dst.sym = src.sym;
+            changed += 1;
+        }
+        if src.action.is_some() && (dst.action.is_none() || clobber) {
+            dst.action = src.action.take();
         }
     }
-    if from.levels.is_empty() {
-        *from = GroupInfo::default();
-        return;
-    }
-    if into.levels.is_empty() {
-        from.type_idx = into.type_idx;
-        *into = std::mem::take(from);
-        return;
-    }
-    let levels_in_both = into.levels.len().min(from.levels.len());
-    let mut from_keysyms_count = 0;
-    for (into_level, from_level) in into.levels.iter_mut().zip(&mut from.levels) {
-        if from_level.syms.is_empty() && from_level.action.is_none() {
-            continue;
-        }
-        if into_level.syms.is_empty() && into_level.action.is_none() {
-            into_level.syms = std::mem::take(&mut from_level.syms);
-            into_level.action = from_level.action.take();
-            from_keysyms_count += 1;
-            continue;
-        }
-        if !from_level.syms.is_empty()
-            && from_level.syms != into_level.syms
-            && (clobber || into_level.syms.is_empty())
-        {
-            into_level.syms = std::mem::take(&mut from_level.syms);
-            from_keysyms_count += 1;
-        }
-        if from_level.action.is_some()
-            && from_level.action != into_level.action
-            && (clobber || into_level.action.is_none())
-        {
-            into_level.action = from_level.action.take();
-        }
-    }
-    for level in from.levels.drain(levels_in_both..) {
-        into.levels.push(level);
-        from_keysyms_count += 1;
-    }
-    if from_keysyms_count != 0 {
-        if from_keysyms_count == into.levels.len() as u32 {
-            into.explicit_syms = false;
-        }
-        if from.explicit_syms {
-            into.explicit_syms = true;
-        }
+    if changed == into.levels.len() {
+        into.explicit_syms = from.explicit_syms;
+    } else if from.explicit_syms {
+        into.explicit_syms = true;
     }
 }
 fn merge_keys(star_atom: u32, into: &mut KeyInfo, from: &mut KeyInfo, merge: MergeMode) {
@@ -399,12 +350,11 @@ fn merge_keys(star_atom: u32, into: &mut KeyInfo, from: &mut KeyInfo, merge: Mer
         init_key_info_with_atom(from, star_atom);
         return;
     }
-    let groups_in_both = into.groups.len().min(from.groups.len()) as u32;
-    for i in 0..groups_in_both as usize {
-        merge_groups(&mut into.groups[i], &mut from.groups[i], clobber);
-    }
-    for group in from.groups.drain(groups_in_both as usize..) {
-        into.groups.push(group);
+    let source = std::mem::take(&mut from.groups);
+    into.groups
+        .resize_with(into.groups.len().max(source.len()), Default::default);
+    for (dst, mut src) in into.groups.iter_mut().zip(source) {
+        merge_groups(dst, &mut src, clobber);
     }
     if from.vmodmap.is_some() && (into.vmodmap.is_none() || clobber) {
         into.vmodmap = from.vmodmap;
@@ -447,84 +397,33 @@ fn add_symbols_to_key(
         return false;
     };
     let group = &mut key.groups[group_index];
-    if matches!(value, ExprKind::EmptyList) {
-        group.explicit_syms = true;
-        return true;
-    }
-    if !matches!(
-        value,
-        ExprKind::KeysymList { .. } | ExprKind::ActionList { .. }
-    ) || group.explicit_syms
-    {
+    let ExprKind::Symbols(syms) = value else {
+        return false;
+    };
+    if group.explicit_syms {
         return false;
     }
-    let nodes = collect_expr_list(value);
-    let level_count = nodes
+    let level_count = syms
         .iter()
-        .rposition(|node| {
-            matches!(
-                node,
-                ExprKind::KeysymList { syms }
-                    if !syms.is_empty()
-            )
-        })
+        .rposition(|&sym| sym != 0)
         .map_or(0, |index| index + 1);
     group.levels.resize_with(level_count, XkbLevel::default);
     group.explicit_syms = true;
-    for (level, node) in nodes.iter().take(level_count).enumerate() {
-        let ExprKind::KeysymList { syms } = node else {
-            return false;
-        };
-        if syms.len() > u16::MAX as usize {
-            return false;
-        }
-        group.levels[level].syms.clone_from(syms);
+    for (level, &sym) in syms.iter().take(level_count).enumerate() {
+        group.levels[level].sym = sym;
     }
     true
-}
-macro_rules! field_parser {
-    ($type:ident, $parse:ident { $($variant:ident => [$($name:literal),+]),+ $(,)? }) => {
-        #[derive(Clone, Copy)]
-        enum $type { $($variant),+ }
-        fn $parse(field: &str) -> Option<$type> {
-            $(if [$($name),+].iter().any(|name| field.eq_ignore_ascii_case(name)) {
-                return Some($type::$variant);
-            })+
-            None }
-    }; }
-field_parser!(SymbolsField, parse_symbols_field_exact {
-    Type => ["type"], Symbols => ["symbols"], Actions => ["actions"],
-    Vmods => ["vmods", "virtualmods", "virtualmodifiers"],
-    Ignored => ["locking", "lock", "locks", "radiogroup", "permanentradiogroup", "allownone", "overlay", "groupswrap", "wrapgroups", "groupsclamp", "clampgroups", "groupsredirect", "redirectgroups"],
-    Repeat => ["repeating", "repeats", "repeat"]
-});
-fn parse_symbols_field(field: &str) -> Option<SymbolsField> {
-    parse_symbols_field_exact(field).or_else(|| {
-        if field
-            .get(..16)
-            .is_some_and(|s| s.eq_ignore_ascii_case("permanentoverlay"))
-        {
-            Some(SymbolsField::Ignored)
-        } else if field
-            .get(..7)
-            .is_some_and(|s| s.eq_ignore_ascii_case("overlay"))
-        {
-            Some(SymbolsField::Ignored)
-        } else {
-            None
-        }
-    })
 }
 fn set_symbols_field(
     ki: &mut XkbKeymap,
     info: &mut SymbolsBuilder,
     keyi: &mut KeyInfo,
-    mapped_field: SymbolsField,
+    mapped_field: Field,
     array_ndx: Option<&ExprKind>,
     value_opt: &mut Option<ExprKind>,
 ) -> bool {
     match mapped_field {
-        SymbolsField::Type => {
+        Field::Type => {
             let val = some_or_false!(expr_resolve_string(value_opt.as_ref().unwrap()));
             if let Some(array_ndx) = array_ndx {
                 let ndx = some_or_false!(expr_resolve_group(ki, array_ndx, false)).0 - 1;
@@ -537,21 +436,22 @@ fn set_symbols_field(
                 keyi.default_type = val;
             }
         }
-        SymbolsField::Symbols => {
+        Field::Symbols => {
             return add_symbols_to_key(ki, keyi, array_ndx, value_opt.as_ref().unwrap());
         }
-        SymbolsField::Actions => {
+        Field::Actions => {
             return true;
         }
-        SymbolsField::Vmods => {
+        Field::Vmods => {
             let val = value_opt.as_ref().unwrap();
             let mask = some_or_false!(expr_resolve_mod_mask(&ki.ctx, val, MOD_VIRT, &info.mods));
             keyi.vmodmap = Some(mask);
         }
-        SymbolsField::Ignored => {}
-        SymbolsField::Repeat => {
+        Field::Ignored => {}
+        Field::Repeat => {
             keyi.repeat = some_or_false!(expr_resolve_repeat(&ki.ctx, value_opt.as_ref().unwrap()));
         }
+        _ => return true,
     }
     true
 }
@@ -603,8 +503,7 @@ fn find_automatic_type(ctx: &mut XkbContext, group: &GroupInfo) -> u32 {
         group
             .levels
             .get(level)
-            .and_then(|level| level.syms.first())
-            .copied()
+            .map(|level| level.sym)
             .unwrap_or(XKB_KEY_NO_SYMBOL)
     };
     let width = group.levels.len();
@@ -678,20 +577,6 @@ fn finalize_key(keymap: &mut XkbKeymap, key: &mut KeyInfo) {
             keymap.types[group.type_idx as usize].num_levels as usize,
             Default::default,
         );
-        for level in &mut group.levels {
-            if level.syms.len() > 1
-                && level
-                    .syms
-                    .iter()
-                    .any(|&sym| xkb_keysym_to_upper(sym) != sym)
-            {
-                let original = level.syms.len();
-                level.syms.extend_from_within(..);
-                for sym in &mut level.syms[original..] {
-                    *sym = xkb_keysym_to_upper(*sym);
-                }
-            }
-        }
     }
 }
 fn find_key_by_symbol(keymap: &XkbKeymap, start: usize, sym: u32) -> Option<usize> {
@@ -700,7 +585,7 @@ fn find_key_by_symbol(keymap: &XkbKeymap, start: usize, sym: u32) -> Option<usiz
         key.groups
             .iter()
             .flat_map(|group| &group.levels)
-            .any(|level| level.syms.contains(&sym))
+            .any(|level| level.sym == sym)
     })
 }
 pub(crate) fn compile_symbols(input: CompileInput<'_, '_>, keymap: &mut XkbKeymap) -> bool {
@@ -718,7 +603,6 @@ pub(crate) fn compile_symbols(input: CompileInput<'_, '_>, keymap: &mut XkbKeyma
     builder.finish(keymap);
     true
 }
-use super::keysym::xkb_keysym_to_upper;
 use super::parser::*;
 #[derive(Default)]
 pub(crate) struct KeyTypesInfo {
@@ -797,11 +681,11 @@ fn set_key_type_field(
     ki: &XkbKeymap,
     info: &mut KeyTypesInfo,
     type_0: &mut XkbKeyType,
-    field: &str,
+    field: Field,
     array_ndx: Option<&ExprKind>,
     value: &ExprKind,
 ) -> bool {
-    if field.eq_ignore_ascii_case("modifiers") {
+    if field == Field::Modifiers {
         if array_ndx.is_some() || type_0.modifiers_set {
             return false;
         }
@@ -810,10 +694,10 @@ fn set_key_type_field(
         type_0.modifiers_set = true;
         return true;
     }
-    if field.eq_ignore_ascii_case("levelname") || field.eq_ignore_ascii_case("level_name") {
+    if field == Field::LevelName {
         return true;
     }
-    if !(field.eq_ignore_ascii_case("map") || field.eq_ignore_ascii_case("preserve")) {
+    if !matches!(field, Field::Map | Field::Preserve) {
         return !ki.strict;
     }
     let Some(array_ndx) = array_ndx else {
@@ -822,7 +706,7 @@ fn set_key_type_field(
     let mods = some_or_false!(expr_resolve_mod_mask(
         &ki.ctx, array_ndx, MOD_BOTH, &info.mods
     )) & type_0.mods.mods;
-    if field.eq_ignore_ascii_case("map") {
+    if field == Field::Map {
         add_map_entry(
             type_0,
             &XkbKeyTypeEntry {
@@ -866,21 +750,13 @@ fn handle_key_type_body(
             Ok(None) => return true,
             Err(()) => return false,
         };
-        let Some(lhs) = def.name.as_ref().and_then(expr_resolve_lhs) else {
+        let Some(lhs) = def.name.as_ref() else {
             return false;
         };
-        let elem = ki.ctx.atom_text(lhs.element);
-        if !(elem.eq_ignore_ascii_case("type")
-            || elem.is_empty()
+        if !(lhs.element == Element::Type
+            || lhs.element == Element::None
                 && def.value.as_ref().is_some_and(|value| {
-                    set_key_type_field(
-                        ki,
-                        info,
-                        type_0,
-                        ki.ctx.atom_text(lhs.field),
-                        lhs.index,
-                        value,
-                    )
+                    set_key_type_field(ki, info, type_0, lhs.field, lhs.index.as_ref(), value)
                 }))
         {
             return false;
@@ -888,10 +764,8 @@ fn handle_key_type_body(
     }
 }
 fn handle_type_global_var(ki: &XkbKeymap, stmt: &VarDef) -> bool {
-    let lhs = some_or_false!(stmt.name.as_ref().and_then(expr_resolve_lhs));
-    let elem = ki.ctx.atom_text(lhs.element);
-    let field = ki.ctx.atom_text(lhs.field);
-    elem.eq_ignore_ascii_case("type") || !ki.strict && (!elem.is_empty() || !field.is_empty())
+    let lhs = some_or_false!(stmt.name.as_ref());
+    lhs.element == Element::Type || !ki.strict
 }
 fn handle_key_type_statement(
     ki: &mut XkbKeymap,
@@ -1109,28 +983,6 @@ pub(crate) fn compile_keycodes(input: CompileInput<'_, '_>, keymap: &mut XkbKeym
     keymap.key_names = info.names;
     true
 }
-#[rustfmt::skip]
-struct Lhs<'a> { element: u32, field: u32, index: Option<&'a ExprKind> }
-fn expr_resolve_lhs(expr: &ExprKind) -> Option<Lhs<'_>> {
-    match expr {
-        ExprKind::Ident(field) if *field != 0 => Some(Lhs {
-            element: 0,
-            field: *field,
-            index: None,
-        }),
-        ExprKind::FieldRef {
-            element,
-            field,
-            index,
-        } if *field != 0 && (*element != 0 || index.is_some()) => Some(Lhs {
-            element: *element,
-            field: *field,
-            index: index.as_deref(),
-        }),
-        _ => None,
-    }
-}
-
 fn named_bool(value: &str) -> Option<bool> {
     ["true", "yes", "on"]
         .iter()
@@ -1144,33 +996,22 @@ fn named_bool(value: &str) -> Option<bool> {
         })
 }
 fn eval_integer(expr: &ExprKind, lookup: &dyn Fn(u32) -> Option<i64>) -> Option<i64> {
-    match expr {
-        ExprKind::Integer(value) => Some(*value),
-        ExprKind::Ident(atom) => lookup(*atom),
-        ExprKind::Binary {
-            left,
-            right,
-            op: op @ (BinaryOp::Add | BinaryOp::Subtract),
-        } => {
-            let left = eval_integer(left, lookup)?;
-            let right = eval_integer(right, lookup)?;
-            match op {
-                BinaryOp::Add => left.checked_add(right),
-                BinaryOp::Subtract => left.checked_sub(right),
-                BinaryOp::Assign => unreachable!(),
-            }
-        }
-        ExprKind::Unary { child, op } => {
-            let value = eval_integer(child, lookup)?;
-            match op {
-                UnaryOp::Invert => Some(!value),
-                UnaryOp::Negate => value.checked_neg(),
-                UnaryOp::Plus => Some(value),
-                UnaryOp::Not => None,
-            }
-        }
-        _ => None,
+    let ExprKind::Scalar(expr) = expr else {
+        return None;
+    };
+    let mut value = 0i64;
+    for &(add, term) in &expr.terms {
+        let term = match term {
+            Scalar::Integer(value) => value,
+            Scalar::Ident(atom) => lookup(atom)?,
+        };
+        value = if add {
+            value.checked_add(term)?
+        } else {
+            value.checked_sub(term)?
+        };
     }
+    Some(if expr.invert { !value } else { value })
 }
 fn named_number(name: &str, prefix: &str, max: u32) -> Option<i64> {
     let suffix = name.get(prefix.len()..)?;
@@ -1193,16 +1034,24 @@ fn expr_resolve_group(
     expr: &ExprKind,
     absolute: bool,
 ) -> Option<(u32, bool)> {
-    if let ExprKind::Ident(atom) = expr {
-        if keymap_info
-            .ctx
-            .atom_text(*atom)
-            .eq_ignore_ascii_case("last")
+    if let ExprKind::Scalar(ScalarExpr {
+        terms,
+        invert: false,
+    }) = expr
+    {
+        let Some((true, Scalar::Ident(atom))) = terms.first().copied().filter(|_| terms.len() == 1)
+        else {
+            return eval_group(keymap_info, expr, absolute);
+        };
+        if keymap_info.ctx.atom_text(atom).eq_ignore_ascii_case("last")
             && keymap_info.num_groups == 0
         {
             return Some((0, true));
         }
     }
+    eval_group(keymap_info, expr, absolute)
+}
+fn eval_group(keymap_info: &XkbKeymap, expr: &ExprKind, absolute: bool) -> Option<(u32, bool)> {
     let max = XKB_MAX_GROUPS;
     let num_groups = keymap_info.num_groups;
     let ctx = &keymap_info.ctx;
@@ -1231,10 +1080,17 @@ pub(crate) fn expr_resolve_string(expr: &ExprKind) -> Option<u32> {
     }
 }
 fn expr_resolve_repeat(ctx: &XkbContext, expr: &ExprKind) -> Option<Option<bool>> {
-    let ExprKind::Ident(atom) = expr else {
+    let ExprKind::Scalar(ScalarExpr {
+        terms,
+        invert: false,
+    }) = expr
+    else {
         return None;
     };
-    let value = ctx.atom_text(*atom);
+    let (true, Scalar::Ident(atom)) = terms.first().copied().filter(|_| terms.len() == 1)? else {
+        return None;
+    };
+    let value = ctx.atom_text(atom);
     if value.eq_ignore_ascii_case("default") {
         Some(None)
     } else {
@@ -1247,26 +1103,24 @@ fn expr_resolve_mod_mask(
     mod_type: u32,
     mods: &XkbModSet,
 ) -> Option<u32> {
-    match expr {
-        ExprKind::Integer(value) => u32::try_from(*value).ok(),
-        ExprKind::Ident(atom) => match ctx.atom_text(*atom) {
-            value if value.eq_ignore_ascii_case("all") => Some(MOD_REAL_MASK_ALL),
-            value if value.eq_ignore_ascii_case("none") => Some(0),
-            _ => xkb_mod_name_to_index(mods, *atom, mod_type).map(|index| 1 << index),
-        },
-        ExprKind::Binary { left, right, op } => {
-            let left = expr_resolve_mod_mask(ctx, left, mod_type, mods)?;
-            let right = expr_resolve_mod_mask(ctx, right, mod_type, mods)?;
-            match op {
-                BinaryOp::Add => Some(left | right),
-                BinaryOp::Subtract => Some(left & !right),
-                _ => None,
-            }
+    let ExprKind::Scalar(expr) = expr else {
+        return None;
+    };
+    let mut mask = 0;
+    for &(add, term) in &expr.terms {
+        let value = match term {
+            Scalar::Integer(value) => u32::try_from(value).ok()?,
+            Scalar::Ident(atom) => match ctx.atom_text(atom) {
+                value if value.eq_ignore_ascii_case("all") => MOD_REAL_MASK_ALL,
+                value if value.eq_ignore_ascii_case("none") => 0,
+                _ => 1 << xkb_mod_name_to_index(mods, atom, mod_type)?,
+            },
+        };
+        if add {
+            mask |= value
+        } else {
+            mask &= !value
         }
-        ExprKind::Unary {
-            op: UnaryOp::Invert,
-            child,
-        } => expr_resolve_mod_mask(ctx, child, mod_type, mods).map(|value| !value),
-        _ => None,
     }
+    Some(if expr.invert { !mask } else { mask })
 }
