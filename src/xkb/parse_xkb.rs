@@ -361,7 +361,7 @@ impl<'a> Parser<'a> {
             .iter()
             .any(|flag| self.word(flag))
             {
-                flags |= MAP_HAS_MAP_FLAGS;
+                flags |= 2;
             } else {
                 break;
             }

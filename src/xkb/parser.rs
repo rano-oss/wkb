@@ -295,9 +295,7 @@ struct RuleMapping {
     inputs: Vec<RuleInput>,
     outputs: Vec<usize>,
     targets: Vec<Option<usize>>,
-    active: Vec<bool>,
-    deferred: bool,
-    has_option: bool,
+    active: u32,
     pending: Vec<(usize, usize, Vec<u8>)>,
 }
 pub(crate) struct Matcher<'a> {
@@ -308,12 +306,6 @@ pub(crate) struct Matcher<'a> {
     options: Vec<(&'a str, Option<usize>)>,
     groups: HashMap<String, Vec<String>>,
     kccgst: [Vec<u8>; 5],
-}
-fn rule_tokens(line: &str) -> Vec<&str> {
-    line.split_once("//")
-        .map_or(line, |(line, _)| line)
-        .split_whitespace()
-        .collect()
 }
 fn rule_scope(field: &str, name: &str) -> Option<RuleScope> {
     let suffix = field.strip_prefix(name)?;
@@ -330,11 +322,6 @@ fn rule_scope(field: &str, name: &str) -> Option<RuleScope> {
             .and_then(|index| index.checked_sub(1))
             .map(RuleScope::Index),
     }
-}
-fn output_index(name: &str) -> Option<usize> {
-    ["keycodes", "types", "compat", "symbols", "geometry"]
-        .iter()
-        .position(|candidate| *candidate == name)
 }
 impl RuleMapping {
     fn parse(tokens: &[&str], layouts: usize, variants: usize) -> Option<Self> {
@@ -365,7 +352,9 @@ impl RuleMapping {
             inputs.push(input);
         }
         for &field in &tokens[equals + 1..] {
-            let output = output_index(field)?;
+            let output = ["keycodes", "types", "compat", "symbols", "geometry"]
+                .iter()
+                .position(|candidate| *candidate == field)?;
             if outputs.contains(&output) {
                 return None;
             }
@@ -395,22 +384,16 @@ impl RuleMapping {
             Some(RuleScope::Any) => (0..layouts).map(Some).collect(),
             Some(RuleScope::Index(index)) => vec![Some(index)],
         };
-        let deferred = matches!(scope, Some(RuleScope::Later | RuleScope::Any));
-        let has_option = inputs
-            .iter()
-            .any(|input| matches!(input, RuleInput::Option));
         Some(Self {
             inputs,
             outputs,
-            active: vec![true; targets.len()],
+            active: ((1_u64 << targets.len()) - 1) as u32,
             targets,
-            deferred,
-            has_option,
             pending: Vec::new(),
         })
     }
     fn flush(&mut self, matcher: &mut Matcher<'_>) {
-        if self.deferred {
+        if self.targets.len() > 1 {
             self.pending.sort_by_key(|entry| entry.0);
         }
         for (_, output, value) in self.pending.drain(..) {
@@ -455,7 +438,7 @@ impl Matcher<'_> {
             return;
         }
         for target_pos in 0..mapping.targets.len() {
-            if !mapping.active[target_pos] {
+            if mapping.active & 1 << target_pos == 0 {
                 continue;
             }
             let target = mapping.targets[target_pos];
@@ -472,7 +455,7 @@ impl Matcher<'_> {
                     continue;
                 }
                 if let Some(expanded) = self.expand(value, target) {
-                    if mapping.deferred {
+                    if mapping.targets.len() > 1 {
                         mapping
                             .pending
                             .push((target.unwrap_or(0), output, expanded));
@@ -481,8 +464,8 @@ impl Matcher<'_> {
                     }
                 }
             }
-            if !mapping.has_option {
-                mapping.active[target_pos] = false;
+            if !mapping.inputs.contains(&RuleInput::Option) {
+                mapping.active &= !(1 << target_pos);
             }
         }
     }
@@ -582,7 +565,11 @@ fn parse_rules_file(matcher: &mut Matcher<'_>, data: &[u8]) -> bool {
             continue;
         }
         logical.push_str(raw);
-        let tokens = rule_tokens(&logical);
+        let tokens: Vec<_> = logical
+            .split_once("//")
+            .map_or(logical.as_str(), |(line, _)| line)
+            .split_whitespace()
+            .collect();
         if tokens.first() == Some(&"!") {
             if let Some(mut old) = mapping.take() {
                 old.flush(matcher);
@@ -875,7 +862,6 @@ pub(crate) enum ExprKind {
 #[derive(Copy, Clone)] #[rustfmt::skip] pub(crate) struct KeyAliasDef { pub(crate) merge: MergeMode, pub(crate) alias: u32, pub(crate) real: u32 }
 #[rustfmt::skip] pub(crate) struct NamedVarDef<'a> { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) body: &'a [u8] }
 #[rustfmt::skip] pub(crate) struct ModMapDef { pub(crate) merge: MergeMode, pub(crate) modifier: u32, pub(crate) keys: Vec<ExprKind> }
-pub(crate) const MAP_HAS_MAP_FLAGS: u32 = 2;
 pub(crate) const MAP_IS_DEFAULT: u32 = 1;
 pub(crate) enum Statement<'a> {
     Include(Vec<IncludeStmt>),

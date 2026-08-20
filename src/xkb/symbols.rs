@@ -305,7 +305,10 @@ impl SymbolsBuilder {
                     continue;
                 }
                 (parse_symbols_field(ki.ctx.atom_text(lhs.field)), lhs.index)
-            } else if def.value.as_ref().is_some_and(is_action_list_value) {
+            } else if matches!(&def.value, Some(ExprKind::ActionList { actions })
+                if actions.first().is_none_or(|first|
+                    matches!(first, ExprKind::ActionList { .. } | ExprKind::Action { .. })))
+            {
                 (Some(SymbolsField::Actions), None)
             } else {
                 (Some(SymbolsField::Symbols), None)
@@ -322,11 +325,6 @@ impl SymbolsBuilder {
             }
         }
     }
-}
-fn is_action_list_value(value: &ExprKind) -> bool {
-    matches!(value, ExprKind::ActionList { actions }
-        if actions.first().is_none_or(|first|
-            matches!(first, ExprKind::ActionList { .. } | ExprKind::Action { .. })))
 }
 fn collect_expr_list(container: &ExprKind) -> &[ExprKind] {
     match container {
@@ -1036,13 +1034,7 @@ fn handle_type_global_var(ki: &XkbKeymap, stmt: &VarDef) -> bool {
     let lhs = some_or_false!(stmt.name.as_ref().and_then(expr_resolve_lhs));
     let elem = ki.ctx.atom_text(lhs.element);
     let field = ki.ctx.atom_text(lhs.field);
-    if elem.eq_ignore_ascii_case("type") {
-        true
-    } else if !elem.is_empty() {
-        !ki.strict
-    } else {
-        !field.is_empty() && !ki.strict
-    }
+    elem.eq_ignore_ascii_case("type") || !ki.strict && (!elem.is_empty() || !field.is_empty())
 }
 fn handle_key_type_statement(
     ki: &mut XkbKeymap,
@@ -1072,18 +1064,6 @@ fn handle_key_type_statement(
         _ => false,
     }
 }
-fn finish_key_types(keymap: &mut XkbKeymap, info: KeyTypesInfo) {
-    keymap.types = if info.types.is_empty() {
-        vec![XkbKeyType {
-            name: keymap.ctx.atom_intern(b"ONE_LEVEL"),
-            num_levels: 1,
-            ..Default::default()
-        }]
-    } else {
-        info.types
-    };
-    keymap.mods = info.mods;
-}
 pub(crate) fn compile_key_types(input: CompileInput<'_, '_>, keymap: &mut XkbKeymap) -> bool {
     let mut info = key_types_info(0, &keymap.mods);
     let valid = match input {
@@ -1095,7 +1075,15 @@ pub(crate) fn compile_key_types(input: CompileInput<'_, '_>, keymap: &mut XkbKey
     if !valid {
         return false;
     }
-    finish_key_types(keymap, info);
+    if info.types.is_empty() {
+        info.types.push(XkbKeyType {
+            name: keymap.ctx.atom_intern(b"ONE_LEVEL"),
+            num_levels: 1,
+            ..Default::default()
+        });
+    }
+    keymap.types = info.types;
+    keymap.mods = info.mods;
     true
 }
 pub(crate) fn init_vmods(info: &mut XkbModSet, mods: &XkbModSet, reset: bool) {
@@ -1283,13 +1271,13 @@ fn handle_key_name_var(ki: &XkbKeymap, stmt: &VarDef) -> bool {
     if lhs.element != 0 || lhs.index.is_some() {
         return !ki.strict;
     }
-    matches!(field.to_ascii_lowercase().as_str(), "minimum" | "maximum")
-        && stmt
-            .value
-            .as_ref()
-            .and_then(|value| expr_resolve_integer(&ki.ctx, value))
-            .is_some_and(|value| (0..=XKB_KEYCODE_MAX_CONTIGUOUS as i64).contains(&value))
-        || !ki.strict
+    !ki.strict
+        || (field.eq_ignore_ascii_case("minimum") || field.eq_ignore_ascii_case("maximum"))
+            && stmt
+                .value
+                .as_ref()
+                .and_then(|value| expr_resolve_integer(&ki.ctx, value))
+                .is_some_and(|value| (0..=XKB_KEYCODE_MAX_CONTIGUOUS as i64).contains(&value))
 }
 fn handle_keycode_statement(
     ki: &mut XkbKeymap,
