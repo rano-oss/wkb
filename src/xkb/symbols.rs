@@ -19,16 +19,26 @@ macro_rules! some_or_false {
     };
 }
 #[derive(Default)]
-#[rustfmt::skip]
-pub(crate) struct SymbolsBuilder { pub(crate) include_depth: u32, pub(crate) explicit_group: Option<u32>, pub(crate) keys: Vec<Option<KeyInfo>>, pub(crate) default_key: KeyInfo, pub(crate) group_names: Vec<u32>, pub(crate) modmaps: Vec<(ModMapTarget, ModMapEntry)>, pub(crate) mods: XkbModSet, pub(crate) star_atom: u32 }
+pub(crate) struct SymbolsBuilder {
+    pub(crate) include_depth: u32,
+    pub(crate) explicit_group: Option<u32>,
+    pub(crate) keys: Vec<Option<KeyInfo>>,
+    pub(crate) default_key: KeyInfo,
+    pub(crate) group_names: Vec<u32>,
+    pub(crate) modmaps: Vec<(ModMapTarget, ModMapEntry)>,
+    pub(crate) mods: XkbModSet,
+    pub(crate) star_atom: u32,
+}
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) enum ModMapTarget {
     Key(u32),
     Symbol(u32),
 }
 #[derive(Copy, Clone)]
-#[rustfmt::skip]
-pub(crate) struct ModMapEntry { pub(crate) merge: MergeMode, pub(crate) modifier: u32 }
+pub(crate) struct ModMapEntry {
+    pub(crate) merge: MergeMode,
+    pub(crate) modifier: u32,
+}
 type KeyInfo = XkbKey;
 type GroupInfo = XkbGroup;
 pub(crate) enum CompileInput<'a, 'src> {

@@ -184,10 +184,10 @@ fn strip_compat_map(input: &[u8]) -> Cow<'_, [u8]> {
             input[start..].starts_with(name)
                 && input
                     .get(start.wrapping_sub(1))
-                    .map_or(true, |b| !b.is_ascii_alphanumeric() && *b != b'_')
+                    .is_none_or(|b| !b.is_ascii_alphanumeric() && *b != b'_')
                 && input
                     .get(start + name.len())
-                    .map_or(true, |b| !b.is_ascii_alphanumeric() && *b != b'_')
+                    .is_none_or(|b| !b.is_ascii_alphanumeric() && *b != b'_')
         })
     }) else {
         return Cow::Borrowed(input);
