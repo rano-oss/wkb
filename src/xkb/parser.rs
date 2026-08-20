@@ -19,7 +19,7 @@ pub(crate) fn find_file_in_xkb_path(
     name: &str,
     type_0: FileType,
     offset: &mut u32,
-) -> Option<Arc<[u8]>> {
+) -> Option<Arc<Vec<u8>>> {
     let type_dir = directory_for_include(type_0);
     let path_count = ctx.includes.len() as u32;
     for i in *offset..path_count {
@@ -29,6 +29,7 @@ pub(crate) fn find_file_in_xkb_path(
             return Some(data);
         }
     }
+
     None
 }
 pub(crate) fn exceeds_include_max_depth(include_depth: u32) -> bool {
@@ -254,7 +255,7 @@ pub(crate) struct XkbRuleNames {
 pub(crate) struct XkbContext {
     pub(crate) includes: Vec<String>,
     pub(crate) atom_table: lasso::Rodeo,
-    pub(crate) files: HashMap<String, Arc<[u8]>>,
+    pub(crate) files: HashMap<String, Arc<Vec<u8>>>,
 }
 impl XkbContext {
     pub(crate) fn atom_text(&self, atom: u32) -> &str {
@@ -268,11 +269,11 @@ impl XkbContext {
         let text = std::str::from_utf8(bytes).expect("atom string is not valid UTF-8");
         self.atom_table.get_or_intern(text).into_usize() as u32 + 1
     }
-    pub(crate) fn read_file(&mut self, path: &str) -> Option<Arc<[u8]>> {
+    pub(crate) fn read_file(&mut self, path: &str) -> Option<Arc<Vec<u8>>> {
         if let Some(data) = self.files.get(path) {
             return Some(data.clone());
         }
-        let data: Arc<[u8]> = std::fs::read(path).ok()?.into();
+        let data = Arc::new(std::fs::read(path).ok()?);
         self.files.insert(path.to_owned(), data.clone());
         Some(data)
     }
@@ -475,8 +476,16 @@ pub(crate) enum Field {
     Ignored,
     Other,
 }
-pub(crate) struct Lhs { pub(crate) element: Element, pub(crate) field: Field, pub(crate) index: Option<ExprKind> }
-pub(crate) struct VarDef { pub(crate) merge: MergeMode, pub(crate) name: Option<Lhs>, pub(crate) value: Option<ExprKind> }
+pub(crate) struct Lhs {
+    pub(crate) element: Element,
+    pub(crate) field: Field,
+    pub(crate) index: Option<ExprKind>,
+}
+pub(crate) struct VarDef {
+    pub(crate) merge: MergeMode,
+    pub(crate) name: Option<Lhs>,
+    pub(crate) value: Option<ExprKind>,
+}
 pub(crate) struct VModDef {
     pub(crate) merge: MergeMode,
     pub(crate) name: u32,

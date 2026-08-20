@@ -168,18 +168,19 @@ pub(crate) struct SelectedMap<'a> {
     pub(crate) body: &'a [u8],
 }
 pub(crate) struct OwnedMap {
-    data: Arc<[u8]>,
+    data: Arc<Vec<u8>>,
     body: std::ops::Range<usize>,
     pub(crate) file_type: FileType,
     pub(crate) flags: u32,
 }
-pub(crate) struct Stream<'a> {
-    parser: Parser<'a>,
-}
+
 impl OwnedMap {
     pub(crate) fn stream(&self) -> Stream<'_> {
         Stream::new(&self.data[self.body.clone()])
     }
+}
+pub(crate) struct Stream<'a> {
+    parser: Parser<'a>,
 }
 impl<'a> Stream<'a> {
     pub(crate) fn new(input: &'a [u8]) -> Self {
@@ -868,8 +869,11 @@ pub(crate) fn xkb_select_map<'a>(input: &'a [u8], wanted: &str) -> Option<Select
         body: &input[span.body],
     })
 }
-pub(crate) fn xkb_select_owned(data: Arc<[u8]>, wanted: &str) -> Option<OwnedMap> {
-    let span = select_span(&data, wanted)?;
+pub(crate) fn xkb_select_owned(
+    data: Arc<Vec<u8>>,
+    wanted: &str,
+) -> Option<OwnedMap> {
+    let span = select_span(data.as_slice(), wanted)?;
     Some(OwnedMap {
         data,
         body: span.body,
