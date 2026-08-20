@@ -405,13 +405,8 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
             if key.repeat == Some(true) {
                 repeat_keys.insert(evdev as u32);
             }
-            let raw_group = keymap::xkb_wrap_group_into_range(
-                layout_idx as i32,
-                key.groups.len() as u32,
-                key.out_of_range.map_or(0, |range| range.policy),
-                key.out_of_range.map_or(0, |range| range.number),
-            )
-            .and_then(|group| key.groups.get(group as usize));
+            let raw_group = (!key.groups.is_empty())
+                .then(|| &key.groups[layout_idx % key.groups.len()]);
             let state_group = key.groups.get(layout_idx);
             let state_type =
                 state_group.and_then(|group| compiled_types.get(group.type_idx as usize));
@@ -522,8 +517,8 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
     }
 }
 pub(crate) fn new_from_names(
-    rules: &str,
-    model: &str,
+    _rules: &str,
+    _model: &str,
     layout: &str,
     variant: &str,
     options: Option<&str>,
@@ -531,8 +526,6 @@ pub(crate) fn new_from_names(
     use parser::XkbRuleNames;
     let ctx = xkb_context_new();
     let rmlvo = XkbRuleNames {
-        rules: rules.into(),
-        model: model.into(),
         layout: layout.into(),
         variant: variant.into(),
         options: options.unwrap_or("").into(),

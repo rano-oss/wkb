@@ -2,6 +2,7 @@ pub(crate) use super::parser::{
     XkbContext, XkbKeymap, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL,
 };
 use crate::xkb::keysym::keysym_to_codepoint;
+use crate::xkb::parse_xkb::braced_end;
 use arrayvec::ArrayVec;
 use std::borrow::Cow;
 pub(crate) fn xkb_keymap_new_from_names(
@@ -11,18 +12,61 @@ pub(crate) fn xkb_keymap_new_from_names(
     let mut rmlvo = rmlvo.clone();
     xkb_context_sanitize_rule_names(&mut rmlvo);
     let mut keymap = xkb_keymap_new(ctx, false);
-    let mut components = XkbComponentNames::default();
-    let mut matcher = matcher_new_from_names(&mut keymap.ctx, &rmlvo);
-    xkb_resolve_rules(
-        &rmlvo.rules,
-        &mut matcher,
-        &mut components,
-        &mut keymap.num_groups,
+    let layouts: Vec<_> = rmlvo.layout.trim_end_matches(',').split(',').collect();
+    let mut variants = rmlvo.variant.trim_end_matches(',').split(',');
+    let alias = if layouts
+        .first()
+        .is_some_and(|layout| matches!(*layout, "be" | "fr"))
+    {
+        "azerty"
+    } else if layouts
+        .first()
+        .is_some_and(|layout| matches!(*layout, "al" | "ch" | "cz" | "de" | "hr" | "hu" | "ro" | "si" | "sk"))
+    {
+        "qwertz"
+    } else {
+        "qwerty"
+    };
+    let mut symbols = String::from("pc");
+    for (index, layout) in layouts.iter().take(XKB_MAX_GROUPS as usize).enumerate() {
+        symbols.push('+');
+        symbols.push_str(layout);
+        let variant = variants.next().unwrap_or("").trim();
+        if !variant.is_empty() {
+            symbols.push('(');
+            symbols.push_str(variant);
+            symbols.push(')');
+        }
+        if index != 0 {
+            symbols.push(':');
+            symbols.push_str(&(index + 1).to_string());
+        }
+    }
+    symbols.push_str("+inet(evdev)");
+    for option in rmlvo.options.split(',').map(str::trim).filter(|s| !s.is_empty()) {
+        let (family, value) = option.split_once(':')?;
+        let file = match family {
+            "grp" => "group",
+            "caps" => "capslock",
+            "lv2" => "level2",
+            "lv3" => "level3",
+            "lv5" => "level5",
+            _ => family,
+        };
+        symbols.push('+');
+        symbols.push_str(file);
+        symbols.push('(');
+        symbols.push_str(value);
+        symbols.push(')');
+    }
+    keymap.num_groups = layouts.len().min(XKB_MAX_GROUPS as usize) as u32;
+    compile_components(
+        format!("evdev+aliases({alias})").as_bytes(),
+        b"complete",
+        symbols.as_bytes(),
+        &mut keymap,
     )
     .then_some(())?;
-    keymap.num_groups = keymap.num_groups.min(XKB_MAX_GROUPS);
-    let mut file = xkb_file_from_components(&components)?;
-    (file.file_type == FileType::Keymap && compile_keymap(&mut file, &mut keymap)).then_some(())?;
     Some(keymap)
 }
 pub(crate) fn xkb_keymap_new_from_string(ctx: XkbContext, original: &[u8]) -> Option<XkbKeymap> {
@@ -32,8 +76,8 @@ pub(crate) fn xkb_keymap_new_from_string(ctx: XkbContext, original: &[u8]) -> Op
         return None;
     }
     let mut keymap = xkb_keymap_new(ctx, true);
-    let mut file = xkb_parse_string(&mut keymap.ctx, bytes, "")?;
-    (file.file_type == FileType::Keymap && compile_keymap(&mut file, &mut keymap)).then_some(())?;
+    let file = xkb_select_map(bytes, "")?;
+    compile_keymap_stream(file, &mut keymap).then_some(())?;
     apply_group_action_overrides(&mut keymap, original);
     Some(keymap)
 }
@@ -150,21 +194,16 @@ fn strip_compat_map(input: &[u8]) -> Cow<'_, [u8]> {
     else {
         return Cow::Borrowed(input);
     };
-    let mut depth = 1;
-    for pos in open + 1..input.len() {
-        depth += usize::from(input[pos] == b'{');
-        depth -= usize::from(input[pos] == b'}');
-        if depth == 0 {
-            let mut stripped = Vec::with_capacity(input.len() - (pos - open));
-            stripped.extend_from_slice(&input[..=open]);
-            stripped.push(b'\n');
-            stripped.extend_from_slice(&input[pos..]);
-            return Cow::Owned(stripped);
-        }
-    }
-    Cow::Borrowed(input)
+    let Some(end) = braced_end(input, open + 1) else {
+        return Cow::Borrowed(input);
+    };
+    let mut stripped = Vec::with_capacity(input.len() - (end - open));
+    stripped.extend_from_slice(&input[..=open]);
+    stripped.push(b'\n');
+    stripped.extend_from_slice(&input[end..]);
+    Cow::Owned(stripped)
 }
-use std::{fs, path::Path};
+use std::path::Path;
 const LOCALE_DIR: &str = "/usr/share/X11/locale";
 #[derive(Clone)]
 pub struct ComposeEntry {
@@ -199,33 +238,16 @@ where
     let Ok(content) = std::str::from_utf8(&data) else {
         return false;
     };
-    let mut complete = true;
     for line in content.lines() {
         let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-        if let Some(rest) = trimmed.strip_prefix("include") {
-            let rest = rest.trim();
-            if let Some(include_str) = rest.strip_prefix('"').and_then(|s| s.strip_suffix('"')) {
-                if include_str.is_empty() {
-                    continue;
-                }
-                let include_path = Path::new(include_str);
-                let resolved = if include_path.is_absolute() {
-                    include_path.to_path_buf()
-                } else {
-                    path.parent().unwrap_or(Path::new("")).join(include_path)
-                };
-                complete &= parse_compose_file_impl(&resolved, f);
-            }
+        if trimmed.is_empty() || trimmed.starts_with('#') || trimmed.starts_with("include") {
             continue;
         }
         if let Some(entry) = parse_rule_line(trimmed) {
             f(entry);
         }
     }
-    complete
+    true
 }
 fn parse_rule_line(line: &str) -> Option<ComposeEntry> {
     let (lhs, rhs) = line.split_once(':')?;
@@ -266,60 +288,8 @@ fn parse_rhs_value(rhs: &str) -> Option<char> {
         keysym_name_to_char(rhs.split_whitespace().next()?)
     }
 }
-fn lookup_locale_file(
-    filename: &str,
-    match_index: usize,
-    return_index: usize,
-    locale: &str,
-) -> Option<String> {
-    fs::read_to_string(Path::new(LOCALE_DIR).join(filename))
-        .ok()?
-        .lines()
-        .filter(|line| !line.trim_start().starts_with('#'))
-        .find_map(|line| {
-            (line.split_whitespace().nth(match_index) == Some(locale))
-                .then(|| line.split_whitespace().nth(return_index).map(str::to_owned))
-                .flatten()
-        })
-}
-fn lookup_compose_dir(locale: &str) -> Option<String> {
-    lookup_locale_file("compose.dir", 1, 0, locale)
-}
-pub(crate) fn resolve_compose_file(locale: &str) -> Option<String> {
-    if let Some(compose_file) = lookup_compose_dir(locale) {
-        return Some(compose_file);
-    }
-    if let Some(resolved) = lookup_locale_file("locale.alias", 0, 1, locale) {
-        if let Some(dot_pos) = resolved.find('.') {
-            let base = &resolved[..dot_pos];
-            if !resolved[dot_pos..].eq_ignore_ascii_case(".UTF-8") {
-                let utf8_locale = format!("{}.UTF-8", base);
-                if let Some(compose_file) = lookup_compose_dir(&utf8_locale) {
-                    return Some(compose_file);
-                }
-            }
-        }
-        if let Some(compose_file) = lookup_compose_dir(&resolved) {
-            return Some(compose_file);
-        }
-    }
-    if locale.len() >= 2 && locale.len() <= 5 && locale.chars().all(|c| c.is_ascii_lowercase()) {
-        #[rustfmt::skip]
-        const LANGUAGES: &[(&str, &str)] = &[("us","en"),("gb","en"),("au","en"),("nz","en"),("za","en"),("bw","en"),("no","nb"),("dk","da"),("se","sv"),("at","de"),("ch","de"),("cz","cs"),("gr","el"),("rs","sr"),("me","sr"),("al","sq"),("ba","bs"),("by","be"),("ge","ka"),("ua","uk"),("jp","ja"),("kr","ko"),("cn","zh"),("tw","zh"),("kh","km"),("vn","vi"),("in","hi"),("bd","bn"),("lk","si"),("np","ne"),("pk","ur"),("il","he"),("ara","ar"),("iq","ar"),("sy","ar"),("eg","ar"),("dz","ar"),("ma","ar"),("ir","fa"),("kg","ky"),("kz","kk"),("tj","tg"),("la","lo"),("my","ms"),("ie","ga"),("epo","eo"),("latam","es")];
-        let language = LANGUAGES
-            .iter()
-            .find_map(|&(name, language)| (name == locale).then_some(language))
-            .unwrap_or(locale);
-        let country = [("ara", "SA"), ("epo", "XX"), ("latam", "MX")]
-            .into_iter()
-            .find_map(|(name, country)| (name == locale).then_some(country.to_owned()))
-            .unwrap_or_else(|| locale.to_ascii_uppercase());
-        let candidate = format!("{language}_{country}.UTF-8");
-        if let Some(compose_file) = lookup_compose_dir(&candidate) {
-            return Some(compose_file);
-        }
-    }
-    lookup_compose_dir("en_US.UTF-8")
+pub(crate) fn resolve_compose_file(_locale: &str) -> Option<String> {
+    Some("en_US.UTF-8/Compose".into())
 }
 pub(crate) fn xkb_keymap_new(ctx: XkbContext, strict: bool) -> XkbKeymap {
     let mut keymap = XkbKeymap {
@@ -351,72 +321,20 @@ pub(crate) fn xkb_mod_name_to_index(mods: &XkbModSet, name: u32, type_0: u32) ->
     }
     None
 }
-pub(crate) fn xkb_wrap_group_into_range(
-    group: i32,
-    num_groups: u32,
-    out_of_range_group_policy: u32,
-    out_of_range_group_number: u32,
-) -> Option<u32> {
-    let last = num_groups.checked_sub(1)?;
-    Some(match out_of_range_group_policy {
-        2 => (out_of_range_group_number < num_groups)
-            .then_some(out_of_range_group_number)
-            .unwrap_or(0),
-        1 => group.clamp(0, last as i32) as u32,
-        _ => group.rem_euclid(num_groups as i32) as u32,
-    })
-}
-use super::parser::{DFLT_XKB_CONFIG_EXTRA_PATH, DFLT_XKB_CONFIG_ROOT, DFLT_XKB_LEGACY_ROOT};
-fn context_include_path_append(ctx: &mut XkbContext, path: &str) -> bool {
-    if std::fs::metadata(path).is_ok_and(|metadata| metadata.is_dir()) {
-        ctx.includes.push(path.to_string());
-        true
-    } else {
-        false
-    }
-}
-fn xkb_context_include_path_append_default(ctx: &mut XkbContext) -> bool {
-    let home = std::env::var("HOME");
-    let xdg = std::env::var("XDG_CONFIG_HOME");
-    if let Ok(ref xdg) = xdg {
-        context_include_path_append(ctx, &format!("{}/xkb", xdg));
-    } else if let Ok(ref home) = home {
-        context_include_path_append(ctx, &format!("{}/.config/xkb", home));
-    }
-    if let Ok(ref home) = home {
-        context_include_path_append(ctx, &format!("{}/.xkb", home));
-    }
-    context_include_path_append(
-        ctx,
-        &getenv_or("XKB_CONFIG_EXTRA_PATH", DFLT_XKB_CONFIG_EXTRA_PATH),
-    );
-    let root = getenv_or("XKB_CONFIG_ROOT", DFLT_XKB_CONFIG_ROOT);
-    if !context_include_path_append(ctx, &root) && !root.is_empty() {
-        context_include_path_append(ctx, DFLT_XKB_LEGACY_ROOT);
-    }
-    !ctx.includes.is_empty()
-}
+use super::parser::DFLT_XKB_LEGACY_ROOT;
 pub(crate) fn xkb_context_new() -> XkbContext {
-    let mut ctx = XkbContext {
-        includes: Vec::new(),
+    XkbContext {
+        includes: vec![getenv_or("XKB_CONFIG_ROOT", DFLT_XKB_LEGACY_ROOT)],
         atom_table: Default::default(),
         files: Default::default(),
-    };
-    xkb_context_include_path_append_default(&mut ctx);
-    ctx
+    }
 }
 pub(crate) fn getenv_or(name: &str, default: &str) -> String {
     std::env::var(name).unwrap_or_else(|_| default.into())
 }
 pub(crate) fn xkb_context_sanitize_rule_names(rmlvo: &mut XkbRuleNames) {
-    for (value, name, default) in [
-        (&mut rmlvo.rules, "XKB_DEFAULT_RULES", "evdev"),
-        (&mut rmlvo.model, "XKB_DEFAULT_MODEL", "pc105"),
-        (&mut rmlvo.options, "XKB_DEFAULT_OPTIONS", ""),
-    ] {
-        if value.is_empty() {
-            *value = getenv_or(name, default);
-        }
+    if rmlvo.options.is_empty() {
+        rmlvo.options = getenv_or("XKB_DEFAULT_OPTIONS", "");
     }
     if rmlvo.layout.is_empty() {
         let layout = std::env::var("XKB_DEFAULT_LAYOUT").ok();
