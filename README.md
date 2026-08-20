@@ -29,7 +29,7 @@ dependencies.
 
 ```toml
 [dependencies]
-wayland-keyboard = "0.1"
+wayland-keyboard = "0.2"
 ```
 
 ```rust,no_run

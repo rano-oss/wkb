@@ -2,7 +2,7 @@
 **/test_files
 !/test_files
 **/Cargo.lock
-/.opencode
+.opencode
 TODO.md
 ron_layouts/
 integration-examples/
