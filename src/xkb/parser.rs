@@ -371,7 +371,7 @@ pub(crate) struct XkbGroup {
 }
 #[derive(Clone, Default)]
 pub(crate) struct XkbLevel {
-    pub(crate) syms: Vec<u32>,
+    pub(crate) sym: u32,
     pub(crate) action: Option<XkbAction>,
 }
 pub(crate) const XKB_MAX_GROUPS: u32 = 32;
@@ -440,7 +440,7 @@ pub(crate) struct IncludeStmt {
     pub(crate) file: String,
     pub(crate) map: String,
     pub(crate) modifier: String,
-
+}
 pub(crate) struct ScalarExpr {
     pub(crate) terms: arrayvec::ArrayVec<(bool, Scalar), 8>,
     pub(crate) invert: bool,
@@ -475,11 +475,8 @@ pub(crate) enum Field {
     Ignored,
     Other,
 }
-pub(crate) struct VarDef {
-    pub(crate) merge: MergeMode,
-    pub(crate) name: Option<ExprKind>,
-    pub(crate) value: Option<ExprKind>,
-}
+pub(crate) struct Lhs { pub(crate) element: Element, pub(crate) field: Field, pub(crate) index: Option<ExprKind> }
+pub(crate) struct VarDef { pub(crate) merge: MergeMode, pub(crate) name: Option<Lhs>, pub(crate) value: Option<ExprKind> }
 pub(crate) struct VModDef {
     pub(crate) merge: MergeMode,
     pub(crate) name: u32,
