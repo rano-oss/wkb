@@ -869,10 +869,7 @@ pub(crate) fn xkb_select_map<'a>(input: &'a [u8], wanted: &str) -> Option<Select
         body: &input[span.body],
     })
 }
-pub(crate) fn xkb_select_owned(
-    data: Arc<Vec<u8>>,
-    wanted: &str,
-) -> Option<OwnedMap> {
+pub(crate) fn xkb_select_owned(data: Arc<Vec<u8>>, wanted: &str) -> Option<OwnedMap> {
     let span = select_span(data.as_slice(), wanted)?;
     Some(OwnedMap {
         data,

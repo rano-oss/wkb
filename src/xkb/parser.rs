@@ -524,20 +524,11 @@ pub(crate) enum Statement<'a> {
     ModMap(ModMapDef),
     Unknown,
 }
-fn parse_u32(s: &[u8], radix: u32) -> (u32, i32) {
-    let valid = |byte: &u8| {
-        if radix == 10 {
-            byte.is_ascii_digit()
-        } else {
-            byte.is_ascii_hexdigit()
-        }
-    };
+pub(crate) fn parse_hex_u32(s: &[u8]) -> (u32, i32) {
+    let valid = |byte: &u8| byte.is_ascii_hexdigit();
     let count = s.iter().take_while(|byte| valid(byte)).count();
     let value = std::str::from_utf8(&s[..count])
         .ok()
-        .and_then(|digits| u32::from_str_radix(digits, radix).ok());
+        .and_then(|digits| u32::from_str_radix(digits, 16).ok());
     value.map_or((0, -1), |value| (value, count as i32))
-}
-pub(crate) fn parse_hex_u32(s: &[u8]) -> (u32, i32) {
-    parse_u32(s, 16)
 }

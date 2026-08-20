@@ -289,7 +289,7 @@ fn write_section<T>(
         for (keycode, value) in keys {
             if let Some(p) = prev {
                 out.push(',');
-                let newline = keys_per_line.map_or(true, |n| {
+                let newline = keys_per_line.is_none_or(|n| {
                     keycode.saturating_sub(1) as usize / n != p.saturating_sub(1) as usize / n
                 });
                 out.push_str(if newline { "\n            " } else { " " });

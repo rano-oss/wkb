@@ -654,26 +654,21 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
                     continue;
                 }
             }
-            let state_modifier = if sym.is_some()
-                && matches!(
+            let state_modifier = match (sym, mod_type) {
+                (Some(sym), ModType::Level2 | ModType::Level3 | ModType::Level5) => {
+                    keysym_to_state_modifier(sym, mod_type)
+                },
+                (_,ModType::Caps | ModType::Num | ModType::Scroll) => StateModifier {
+                    kind: ModKind::Lock {
+                        pressed: false,
+                        locked: 0,
+                    },
                     mod_type,
-                    ModType::Level2 | ModType::Level3 | ModType::Level5
-                ) {
-                keysym_to_state_modifier(sym.unwrap(), mod_type)
-            } else {
-                match mod_type {
-                    ModType::Caps | ModType::Num | ModType::Scroll => StateModifier {
-                        kind: ModKind::Lock {
-                            pressed: false,
-                            locked: 0,
-                        },
-                        mod_type,
-                    },
-                    _ => StateModifier {
-                        kind: ModKind::Press { pressed: false },
-                        mod_type,
-                    },
-                }
+                },
+                (_,_) => StateModifier {
+                    kind: ModKind::Press { pressed: false },
+                    mod_type,
+                },
             };
             modifiers.set_modifier(evdev_code, Modifier::Single(state_modifier));
         }
