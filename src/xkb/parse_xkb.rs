@@ -382,6 +382,20 @@ impl<'a> Parser<'a> {
             self.punct(b';').then_some(())?;
             return Some(Statement::VMods(values));
         }
+        if self.word(b"type") {
+            self.bump();
+            if matches!(self.token, Token::String(_)) {
+                let Token::String(name) = self.bump() else {
+                    unreachable!()
+                };
+                let name = ctx.atom_intern(name.as_bytes());
+                let body = self.take_body()?;
+                return Some(Statement::KeyType(NamedVarDef { merge, name, body }));
+            }
+            let atom = ctx.atom_intern(b"type");
+            let name = self.parse_word_tail(ctx, atom)?;
+            return self.parse_variable(ctx, merge, name);
+        }
         if self.word(b"key") {
             self.bump();
             if matches!(self.token, Token::Key(_)) {

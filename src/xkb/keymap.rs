@@ -11,7 +11,7 @@ pub(crate) fn xkb_keymap_new_from_names(
 ) -> Option<XkbKeymap> {
     let mut rmlvo = rmlvo.clone();
     xkb_context_sanitize_rule_names(&mut rmlvo);
-    let mut keymap = xkb_keymap_new(ctx);
+    let mut keymap = xkb_keymap_new(ctx, false);
     let layouts: Vec<_> = rmlvo.layout.trim_end_matches(',').split(',').collect();
     let mut variants = rmlvo.variant.trim_end_matches(',').split(',');
     let alias = if layouts
@@ -75,7 +75,7 @@ pub(crate) fn xkb_keymap_new_from_string(ctx: XkbContext, original: &[u8]) -> Op
     if bytes.is_empty() {
         return None;
     }
-    let mut keymap = xkb_keymap_new(ctx);
+    let mut keymap = xkb_keymap_new(ctx, true);
     let file = xkb_select_map(bytes, "")?;
     compile_keymap_stream(file, &mut keymap).then_some(())?;
     apply_group_action_overrides(&mut keymap, original);
@@ -291,9 +291,10 @@ fn parse_rhs_value(rhs: &str) -> Option<char> {
 pub(crate) fn resolve_compose_file(_locale: &str) -> Option<String> {
     Some("en_US.UTF-8/Compose".into())
 }
-pub(crate) fn xkb_keymap_new(ctx: XkbContext) -> XkbKeymap {
+pub(crate) fn xkb_keymap_new(ctx: XkbContext, strict: bool) -> XkbKeymap {
     let mut keymap = XkbKeymap {
         ctx,
+        strict,
         min_key_code: 0,
         keys: Vec::new(),
         key_names: Vec::new(),

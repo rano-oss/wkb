@@ -2,7 +2,7 @@ use super::keymap::mod_mask_get_effective;
 pub(crate) use super::parse_xkb::{
     include_create, xkb_select_map, xkb_select_owned, OwnedMap, SelectedMap, Stream,
 };
-use super::symbols::{compile_keycodes, compile_symbols, CompileInput};
+use super::symbols::{compile_key_types, compile_keycodes, compile_symbols, CompileInput};
 use crate::xkb::keymap::xkb_mod_name_to_index;
 use std::sync::Arc;
 pub(crate) const INCLUDE_MAX_DEPTH: i32 = 15_i32;
@@ -168,11 +168,13 @@ fn update_mod_mappings(info: &mut XkbKeymap) {
             }
         }
     }
-    for idx in _XKB_MOD_INDEX_NUM_ENTRIES as usize..keymap.mods.num_mods as usize {
-        let mask: u32 = 1 << idx as u32;
-        if keymap.mods.mods[idx].mapping == 0 && keymap.mods.explicit_vmods & mask == 0 {
-            keymap.mods.mods[idx].mapping = mask;
-            keymap.mods.explicit_vmods |= mask;
+    if !keymap.strict {
+        for idx in _XKB_MOD_INDEX_NUM_ENTRIES as usize..keymap.mods.num_mods as usize {
+            let mask: u32 = 1 << idx as u32;
+            if keymap.mods.mods[idx].mapping == 0 && keymap.mods.explicit_vmods & mask == 0 {
+                keymap.mods.mods[idx].mapping = mask;
+                keymap.mods.explicit_vmods |= mask;
+            }
         }
     }
 }
@@ -197,7 +199,7 @@ fn compute_type_entry_masks(info: &mut XkbKeymap) {
 }
 pub(crate) fn compile_components(
     keycodes: &[u8],
-    _types: &[u8],
+    types: &[u8],
     symbols: &[u8],
     keymap: &mut XkbKeymap,
 ) -> bool {
@@ -206,13 +208,15 @@ pub(crate) fn compile_components(
             .ok()
             .and_then(|input| include_create(input, MergeMode::Default))
     };
-    let (Some(mut keycodes), Some(mut symbols)) = (
+    let (Some(mut keycodes), Some(mut types), Some(mut symbols)) = (
         parse(keycodes),
+        parse(types),
         parse(symbols),
     ) else {
         return false;
     };
     compile_keycodes(CompileInput::Includes(&mut keycodes), keymap)
+        && compile_key_types(CompileInput::Includes(&mut types), keymap)
         && compile_symbols(CompileInput::Includes(&mut symbols), keymap)
         && update_derived_keymap_fields(keymap)
 }
@@ -234,8 +238,10 @@ pub(crate) fn compile_keymap_stream(file: SelectedMap<'_>, keymap: &mut XkbKeyma
         }
     }
     let mut keycodes = parts[0].as_ref().map(|map| Stream::new(map.body));
+    let mut types = parts[1].as_ref().map(|map| Stream::new(map.body));
     let mut symbols = parts[2].as_ref().map(|map| Stream::new(map.body));
     compile_keycodes(CompileInput::Stream(keycodes.as_mut()), keymap)
+        && compile_key_types(CompileInput::Stream(types.as_mut()), keymap)
         && compile_symbols(CompileInput::Stream(symbols.as_mut()), keymap)
         && update_derived_keymap_fields(keymap)
 }
@@ -264,7 +270,7 @@ impl XkbContext {
         Some(data)
     }
 }
-#[derive(Clone)] #[rustfmt::skip] pub(crate) struct XkbKeymap { pub(crate) ctx: XkbContext, pub(crate) min_key_code: u32, pub(crate) keys: Vec<XkbKey>, pub(crate) key_names: Vec<u32>, pub(crate) types: Vec<XkbKeyType>, pub(crate) mods: XkbModSet, pub(crate) num_groups: u32, pub(crate) group_names: Vec<u32> }
+#[derive(Clone)] #[rustfmt::skip] pub(crate) struct XkbKeymap { pub(crate) ctx: XkbContext, pub(crate) strict: bool, pub(crate) min_key_code: u32, pub(crate) keys: Vec<XkbKey>, pub(crate) key_names: Vec<u32>, pub(crate) types: Vec<XkbKeyType>, pub(crate) mods: XkbModSet, pub(crate) num_groups: u32, pub(crate) group_names: Vec<u32> }
 impl XkbKeymap {
     pub(crate) fn mod_get_mask(&self, name: &str) -> u32 {
         let Some(key) = self.ctx.atom_table.get(name) else {
@@ -298,7 +304,7 @@ pub struct ActionFlags: u32 {
     const ABSOLUTE_SWITCH       = 32; } }
 #[derive(Copy, Clone, Default, PartialEq, Eq)] #[rustfmt::skip] pub struct XkbGroupAction { pub flags: ActionFlags, pub group: i32 }
 #[derive(Copy, Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbMods { pub(crate) mods: u32, pub(crate) mask: u32 }
-#[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbKeyType { pub(crate) name: u32, pub(crate) mods: XkbMods, pub(crate) num_levels: u32, pub(crate) entries: Vec<XkbKeyTypeEntry> }
+#[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbKeyType { pub(crate) name: u32, pub(crate) modifiers_set: bool, pub(crate) mods: XkbMods, pub(crate) num_levels: u32, pub(crate) entries: Vec<XkbKeyTypeEntry> }
 #[derive(Copy, Clone)] #[rustfmt::skip] pub(crate) struct XkbKeyTypeEntry { pub(crate) level: u32, pub(crate) mods: XkbMods, pub(crate) preserve: XkbMods }
 #[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbKey { pub(crate) name: u32, pub(crate) default_type: u32, pub(crate) modmap: u32, pub(crate) vmodmap: Option<u32>, pub(crate) repeat: Option<bool>, pub(crate) groups: Vec<XkbGroup> }
 #[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbGroup { pub(crate) explicit_syms: bool, pub(crate) type_idx: u32, pub(crate) levels: Vec<XkbLevel> }
@@ -312,6 +318,7 @@ pub(crate) const XKB_ATOM_NONE: u32 = 0;
 pub const XKB_MOD_NONE: u32 = 0xffffffff;
 pub(crate) const _XKB_MOD_INDEX_NUM_ENTRIES: u32 = 8;
 pub(crate) const XKB_KEYCODE_MAX_CONTIGUOUS: u32 = 0xfff;
+pub(crate) const XKB_LEVEL_MAX_IMPL: u32 = 2048;
 pub(crate) const XKB_MAX_MODS: u32 = 32;
 impl XkbKeymap {
     #[inline]
@@ -412,6 +419,7 @@ pub(crate) enum Statement<'a> {
     KeyAlias(KeyAliasDef),
     Var(VarDef),
     VMods(Vec<VModDef>),
+    KeyType(NamedVarDef<'a>),
     Symbols(NamedVarDef<'a>),
     ModMap(ModMapDef),
     Unknown,

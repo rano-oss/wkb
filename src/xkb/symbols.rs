@@ -654,83 +654,11 @@ fn find_type_for_group(keymap: &mut XkbKeymap, default_type: u32, group: &GroupI
         0 => find_automatic_type(&mut keymap.ctx, group),
         name => name,
     };
-    if let Some(index) = keymap.types.iter().position(|key_type| key_type.name == name) {
-        return index;
-    }
-    let label = keymap.ctx.atom_text(name).to_ascii_uppercase();
-    let mut bit = |name: &[u8]| {
-        let atom = keymap.ctx.atom_intern(name);
-        xkb_mod_name_to_index(&keymap.mods, atom, MOD_BOTH).map(|index| 1 << index)
-    };
-    let shift = bit(b"Shift").unwrap_or(0);
-    let lock = bit(b"Lock").unwrap_or(0);
-    let level3 = bit(b"LevelThree").or_else(|| bit(b"Mod5")).unwrap_or(0);
-    let level5 = bit(b"LevelFive").unwrap_or(0);
-    let num = bit(b"NumLock").or_else(|| bit(b"Mod2")).unwrap_or(0);
-    let control = bit(b"Control").unwrap_or(0);
-    let alt = bit(b"Mod1").unwrap_or(0);
-    let super_ = bit(b"Mod4").unwrap_or(0);
-    let alphabetic = label.contains("ALPHABETIC") || label.contains("PLUS_LOCK");
-    let (levels, mut selectors) = if label.contains("EIGHT") {
-        (8, vec![shift, level3, level5])
-    } else if label.contains("FOUR") {
-        (4, vec![shift, level3])
-    } else if label == "KEYPAD" {
-        (2, vec![shift, num])
-    } else if label == "CTRL+ALT" {
-        (2, vec![control, alt])
-    } else if label.contains("CONTROL") {
-        (2, vec![control])
-    } else if label.contains("SUPER") {
-        (2, vec![super_])
-    } else if label.contains("ALT") {
-        (2, vec![alt])
-    } else if label == "ONE_LEVEL" {
-        (1, Vec::new())
-    } else {
-        (2, vec![shift])
-    };
-    if alphabetic {
-        selectors.push(lock);
-    }
-    selectors.retain(|bit| *bit != 0);
-    selectors.sort_unstable();
-    selectors.dedup();
-    let modifiers = selectors.iter().fold(0, |mask, bit| mask | *bit);
-    let mut entries = Vec::new();
-    for state in 1..1 << selectors.len() {
-        let mask = selectors
-            .iter()
-            .enumerate()
-            .filter(|(index, _)| state & 1 << index != 0)
-            .fold(0, |mask, (_, bit)| mask | *bit);
-        let on = |bit| bit != 0 && mask & bit != 0;
-        let shifted = on(shift) ^ (alphabetic && on(lock));
-        let level = if label == "CTRL+ALT" {
-            u32::from(on(control) && on(alt))
-        } else if label == "KEYPAD" {
-            u32::from(on(shift) ^ on(num))
-        } else {
-            u32::from(shifted)
-                + 2 * u32::from(levels >= 4 && on(level3))
-                + 4 * u32::from(levels >= 8 && on(level5))
-        };
-        entries.push(XkbKeyTypeEntry {
-            level,
-            mods: XkbMods { mods: mask, mask: 0 },
-            preserve: XkbMods::default(),
-        });
-    }
-    keymap.types.push(XkbKeyType {
-        name,
-        mods: XkbMods {
-            mods: modifiers,
-            mask: 0,
-        },
-        num_levels: levels,
-        entries,
-    });
-    keymap.types.len() - 1
+    keymap
+        .types
+        .iter()
+        .position(|key_type| key_type.name == name)
+        .unwrap_or(0)
 }
 fn finalize_key(keymap: &mut XkbKeymap, key: &mut KeyInfo) {
     let num_groups = key
@@ -796,6 +724,229 @@ pub(crate) fn compile_symbols(input: CompileInput<'_, '_>, keymap: &mut XkbKeyma
 }
 use super::keysym::xkb_keysym_to_upper;
 use super::parser::*;
+#[derive(Default)]
+pub(crate) struct KeyTypesInfo {
+    pub(crate) include_depth: u32,
+    pub(crate) types: Vec<XkbKeyType>,
+    pub(crate) mods: XkbModSet,
+}
+fn key_types_info(include_depth: u32, mods: &XkbModSet) -> KeyTypesInfo {
+    let mut info = KeyTypesInfo {
+        include_depth,
+        ..Default::default()
+    };
+    init_vmods(&mut info.mods, mods, include_depth > 0);
+    info
+}
+fn add_key_type(info: &mut KeyTypesInfo, new: XkbKeyType, merge: MergeMode) {
+    if let Some(index) = info
+        .types
+        .iter()
+        .position(|existing| existing.name == new.name)
+    {
+        if merge != MergeMode::Augment {
+            info.types[index] = new;
+        }
+        return;
+    }
+    info.types.push(new);
+}
+fn merge_included_key_types(into: &mut KeyTypesInfo, from: &mut KeyTypesInfo, merge: MergeMode) {
+    merge_mod_sets(&mut into.mods, &from.mods, merge);
+    if into.types.is_empty() {
+        into.types = std::mem::take(&mut from.types);
+    } else {
+        for type_0 in from.types.drain(..) {
+            add_key_type(into, type_0, merge);
+        }
+    }
+}
+fn handle_include_key_types(
+    ki: &mut XkbKeymap,
+    info: &mut KeyTypesInfo,
+    includes: &mut [IncludeStmt],
+) -> bool {
+    if exceeds_include_max_depth(info.include_depth) {
+        return false;
+    }
+    let mut included = key_types_info(info.include_depth.wrapping_add(1), &info.mods);
+    for stmt in includes.iter() {
+        let Some(file) = process_include_stream(&mut ki.ctx, stmt, FileType::Types) else {
+            return false;
+        };
+        let mut next = key_types_info(info.include_depth.wrapping_add(1), &included.mods);
+        if !compile_stream(ki, &mut next, &mut file.stream(), handle_key_type_statement) {
+            return false;
+        }
+        merge_included_key_types(&mut included, &mut next, stmt.merge);
+    }
+    if let Some(first) = includes.first() {
+        merge_included_key_types(info, &mut included, first.merge);
+    }
+    true
+}
+fn add_map_entry(type_0: &mut XkbKeyType, new: &XkbKeyTypeEntry) {
+    type_0.num_levels = type_0.num_levels.max(new.level + 1);
+    if let Some(old) = type_0
+        .entries
+        .iter_mut()
+        .find(|entry| entry.mods.mods == new.mods.mods)
+    {
+        old.level = new.level;
+    } else {
+        type_0.entries.push(*new);
+    }
+}
+fn set_key_type_field(
+    ki: &XkbKeymap,
+    info: &mut KeyTypesInfo,
+    type_0: &mut XkbKeyType,
+    field: &str,
+    array_ndx: Option<&ExprKind>,
+    value: &ExprKind,
+) -> bool {
+    if field.eq_ignore_ascii_case("modifiers") {
+        if array_ndx.is_some() || type_0.modifiers_set {
+            return false;
+        }
+        type_0.mods.mods =
+            some_or_false!(expr_resolve_mod_mask(&ki.ctx, value, MOD_BOTH, &info.mods));
+        type_0.modifiers_set = true;
+        return true;
+    }
+    if field.eq_ignore_ascii_case("levelname") || field.eq_ignore_ascii_case("level_name") {
+        return true;
+    }
+    if !(field.eq_ignore_ascii_case("map") || field.eq_ignore_ascii_case("preserve")) {
+        return !ki.strict;
+    }
+    let Some(array_ndx) = array_ndx else {
+        return false;
+    };
+    let mods = some_or_false!(expr_resolve_mod_mask(
+        &ki.ctx, array_ndx, MOD_BOTH, &info.mods
+    )) & type_0.mods.mods;
+    if field.eq_ignore_ascii_case("map") {
+        add_map_entry(
+            type_0,
+            &XkbKeyTypeEntry {
+                level: some_or_false!(expr_resolve_level(&ki.ctx, value)),
+                mods: XkbMods { mods, mask: 0 },
+                preserve: XkbMods::default(),
+            },
+        );
+    } else {
+        let preserve =
+            some_or_false!(expr_resolve_mod_mask(&ki.ctx, value, MOD_BOTH, &info.mods)) & mods;
+        if let Some(entry) = type_0
+            .entries
+            .iter_mut()
+            .find(|entry| entry.mods.mods == mods)
+        {
+            entry.preserve.mods = preserve;
+        } else {
+            type_0.entries.push(XkbKeyTypeEntry {
+                level: 0,
+                mods: XkbMods { mods, mask: 0 },
+                preserve: XkbMods {
+                    mods: preserve,
+                    mask: 0,
+                },
+            });
+        }
+    }
+    true
+}
+fn handle_key_type_body(
+    ki: &mut XkbKeymap,
+    info: &mut KeyTypesInfo,
+    body: &[u8],
+    type_0: &mut XkbKeyType,
+) -> bool {
+    let mut vars = Stream::new(body);
+    loop {
+        let def = match vars.next_var(&mut ki.ctx) {
+            Ok(Some(def)) => def,
+            Ok(None) => return true,
+            Err(()) => return false,
+        };
+        let Some(lhs) = def.name.as_ref().and_then(expr_resolve_lhs) else {
+            return false;
+        };
+        let elem = ki.ctx.atom_text(lhs.element);
+        if !(elem.eq_ignore_ascii_case("type")
+            || elem.is_empty()
+                && def.value.as_ref().is_some_and(|value| {
+                    set_key_type_field(
+                        ki,
+                        info,
+                        type_0,
+                        ki.ctx.atom_text(lhs.field),
+                        lhs.index,
+                        value,
+                    )
+                }))
+        {
+            return false;
+        }
+    }
+}
+fn handle_type_global_var(ki: &XkbKeymap, stmt: &VarDef) -> bool {
+    let lhs = some_or_false!(stmt.name.as_ref().and_then(expr_resolve_lhs));
+    let elem = ki.ctx.atom_text(lhs.element);
+    let field = ki.ctx.atom_text(lhs.field);
+    elem.eq_ignore_ascii_case("type") || !ki.strict && (!elem.is_empty() || !field.is_empty())
+}
+fn handle_key_type_statement(
+    ki: &mut XkbKeymap,
+    info: &mut KeyTypesInfo,
+    stmt: &mut Statement<'_>,
+) -> bool {
+    match stmt {
+        Statement::Include(incl) => handle_include_key_types(ki, info, incl),
+        Statement::KeyType(def) => {
+            let mut type_0 = XkbKeyType {
+                name: def.name,
+                num_levels: 1,
+                ..Default::default()
+            };
+            if !handle_key_type_body(ki, info, def.body, &mut type_0) {
+                false
+            } else {
+                add_key_type(info, type_0, def.merge);
+                true
+            }
+        }
+        Statement::Var(var) => handle_type_global_var(ki, var),
+        Statement::VMods(vmods) => vmods
+            .iter()
+            .all(|vmod| handle_vmod_def(&mut ki.ctx, &mut info.mods, vmod)),
+        Statement::Unknown => !ki.strict,
+        _ => false,
+    }
+}
+pub(crate) fn compile_key_types(input: CompileInput<'_, '_>, keymap: &mut XkbKeymap) -> bool {
+    let mut info = key_types_info(0, &keymap.mods);
+    let valid = match input {
+        CompileInput::Stream(stream) => stream.is_none_or(|stream| {
+            compile_stream(keymap, &mut info, stream, handle_key_type_statement)
+        }),
+        CompileInput::Includes(includes) => handle_include_key_types(keymap, &mut info, includes),
+    };
+    if !valid {
+        return false;
+    }
+    if info.types.is_empty() {
+        info.types.push(XkbKeyType {
+            name: keymap.ctx.atom_intern(b"ONE_LEVEL"),
+            num_levels: 1,
+            ..Default::default()
+        });
+    }
+    keymap.types = info.types;
+    keymap.mods = info.mods;
+    true
+}
 pub(crate) fn init_vmods(info: &mut XkbModSet, mods: &XkbModSet, reset: bool) {
     *info = *mods;
     if !reset {
@@ -1024,6 +1175,14 @@ fn named_number(name: &str, prefix: &str, max: u32) -> Option<i64> {
         .then_some(())?;
     let value = suffix.parse::<u32>().ok()?;
     (1..=max).contains(&value).then_some(value as i64)
+}
+pub(crate) fn expr_resolve_level(ctx: &XkbContext, expr: &ExprKind) -> Option<u32> {
+    let value = eval_integer(expr, &|atom| {
+        named_number(ctx.atom_text(atom), "Level", XKB_LEVEL_MAX_IMPL)
+    })?;
+    (1..=XKB_LEVEL_MAX_IMPL as i64)
+        .contains(&value)
+        .then_some(value as u32 - 1)
 }
 fn expr_resolve_group(
     keymap_info: &XkbKeymap,
