@@ -248,7 +248,7 @@ fn resolve_char(
     caps_mask: u32,
 ) -> Option<char> {
     let state = type_.state(mods);
-    let raw_sym = *group.levels.get(state.level as usize)?.syms.first()?;
+    let raw_sym = group.levels.get(state.level as usize)?.sym;
     let sym = if mods & caps_mask != 0 && state.consumed_mods & caps_mask == 0 {
         keysym::xkb_keysym_to_upper(raw_sym)
     } else {
@@ -257,7 +257,12 @@ fn resolve_char(
     keysym::keysym_to_char(sym)
 }
 fn key_affected_by_caps(group: &parser::XkbGroup, num_levels: usize) -> bool {
-    let Some(&l0_sym) = group.levels.first().and_then(|level| level.syms.first()) else {
+    let Some(l0_sym) = group
+        .levels
+        .first()
+        .map(|level| level.sym)
+        .filter(|&sym| sym != 0)
+    else {
         return false;
     };
     group.levels.len() < num_levels
@@ -266,7 +271,7 @@ fn key_affected_by_caps(group: &parser::XkbGroup, num_levels: usize) -> bool {
             .iter()
             .take(num_levels)
             .skip(1)
-            .any(|level| level.syms.first() != Some(&l0_sym))
+            .any(|level| level.sym != l0_sym)
         || keysym::xkb_keysym_to_upper(l0_sym) != l0_sym
 }
 fn lock_activation(
@@ -289,8 +294,7 @@ fn lock_activation(
             group
                 .levels
                 .get(type_.state(level_masks[level]).level as usize)
-                .and_then(|data| data.syms.first())
-                == Some(&lock_keysym)
+                .is_some_and(|data| data.sym == lock_keysym)
         })
     })
 }
@@ -305,17 +309,13 @@ fn layout_has_level5_activation(
             .iter()
             .filter_map(|key| key.groups.get(layout_idx))
             .any(|group| {
-                let sym = group
-                    .levels
-                    .first()
-                    .and_then(|level| level.syms.first())
-                    .copied();
+                let sym = group.levels.first().map(|level| level.sym);
                 matches!(sym, Some(0xFFE1 | 0xFFE2 | 0xFE03))
                     && group
                         .levels
                         .iter()
                         .skip(1)
-                        .any(|level| level.syms.iter().any(|&sym| matches!(sym, 0xfe11 | 0xfe12)))
+                        .any(|level| matches!(level.sym, 0xfe11 | 0xfe12))
             })
 }
 fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str>) -> WKB {
@@ -405,8 +405,8 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
             if key.repeat == Some(true) {
                 repeat_keys.insert(evdev as u32);
             }
-            let raw_group = (!key.groups.is_empty())
-                .then(|| &key.groups[layout_idx % key.groups.len()]);
+            let raw_group =
+                (!key.groups.is_empty()).then(|| &key.groups[layout_idx % key.groups.len()]);
             let state_group = key.groups.get(layout_idx);
             let state_type =
                 state_group.and_then(|group| compiled_types.get(group.type_idx as usize));
@@ -422,9 +422,10 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
                 .unwrap_or_default();
             for level in 0..MAX_LEVELS {
                 let idx = level * num_keys + evdev;
-                if let Some(&sym) = raw_group
+                if let Some(sym) = raw_group
                     .and_then(|group| group.levels.get(level))
-                    .and_then(|data| data.syms.first())
+                    .map(|data| data.sym)
+                    .filter(|&sym| sym != 0)
                 {
                     if sym != 0 {
                         named_key_map.data[idx] = keysym_to_named_key(sym);
@@ -597,13 +598,18 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
         let Some(g0) = key.groups.first() else {
             continue;
         };
-        let syms = g0.levels.first().map(|l| l.syms.as_slice()).unwrap_or(&[]);
+        let sym = g0
+            .levels
+            .first()
+            .map(|level| level.sym)
+            .filter(|&sym| sym != 0);
         let num_levels = g0.levels.len() as u32;
-        if num_levels == 1 && syms.len() == 1 {
-            if let Some(mt) = keysym_to_modtype(syms[0]) {
+        if num_levels == 1 {
+            if let Some((sym, mt)) = sym.and_then(|sym| keysym_to_modtype(sym).map(|mt| (sym, mt)))
+            {
                 modifiers.set_modifier(
                     evdev_code,
-                    Modifier::Single(keysym_to_state_modifier(syms[0], mt)),
+                    Modifier::Single(keysym_to_state_modifier(sym, mt)),
                 );
                 continue;
             }
@@ -618,18 +624,13 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
             if (key.modmap & mod_mask) == 0 && (vmodmap & mod_mask) == 0 {
                 continue;
             }
-            let mod_type = if syms.len() == 1 {
-                keysym_to_modtype(syms[0]).or(named_type)
-            } else {
-                named_type
-            };
+            let mod_type = sym.and_then(keysym_to_modtype).or(named_type);
             let Some(mod_type) = mod_type else { continue };
             if mod_type == ModType::Caps {
                 let caps_levels = (0..num_levels).filter(|&level| {
                     g0.levels
                         .get(level as usize)
-                        .and_then(|level| level.syms.first())
-                        == Some(&0xffe5)
+                        .is_some_and(|level| level.sym == 0xffe5)
                 });
                 let Some(min_caps) = caps_levels.clone().min() else {
                     continue;
@@ -653,12 +654,12 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
                     continue;
                 }
             }
-            let state_modifier = if syms.len() == 1
+            let state_modifier = if sym.is_some()
                 && matches!(
                     mod_type,
                     ModType::Level2 | ModType::Level3 | ModType::Level5
                 ) {
-                keysym_to_state_modifier(syms[0], mod_type)
+                keysym_to_state_modifier(sym.unwrap(), mod_type)
             } else {
                 match mod_type {
                     ModType::Caps | ModType::Num | ModType::Scroll => StateModifier {

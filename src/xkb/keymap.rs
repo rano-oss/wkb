@@ -19,10 +19,12 @@ pub(crate) fn xkb_keymap_new_from_names(
         .is_some_and(|layout| matches!(*layout, "be" | "fr"))
     {
         "azerty"
-    } else if layouts
-        .first()
-        .is_some_and(|layout| matches!(*layout, "al" | "ch" | "cz" | "de" | "hr" | "hu" | "ro" | "si" | "sk"))
-    {
+    } else if layouts.first().is_some_and(|layout| {
+        matches!(
+            *layout,
+            "al" | "ch" | "cz" | "de" | "hr" | "hu" | "ro" | "si" | "sk"
+        )
+    }) {
         "qwertz"
     } else {
         "qwerty"
@@ -43,7 +45,12 @@ pub(crate) fn xkb_keymap_new_from_names(
         }
     }
     symbols.push_str("+inet(evdev)");
-    for option in rmlvo.options.split(',').map(str::trim).filter(|s| !s.is_empty()) {
+    for option in rmlvo
+        .options
+        .split(',')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
         let (family, value) = option.split_once(':')?;
         let file = match family {
             "grp" => "group",
@@ -154,16 +161,14 @@ fn apply_group_action_overrides(keymap: &mut XkbKeymap, input: &[u8]) {
     for key in &mut keymap.keys {
         for group in &mut key.groups {
             for level in &mut group.levels {
-                if level.syms.contains(&0xfe08) {
+                if level.sym == 0xfe08 {
                     if let Some(action) = forced_next_latch {
                         level.action = Some(action);
                         continue;
                     }
                 }
-                if let Some((_, action)) =
-                    overrides.iter().find(|(sym, _)| level.syms.contains(sym))
-                {
-                    let synthesized = level.syms.iter().copied().find_map(wkb_group_action);
+                if let Some((_, action)) = overrides.iter().find(|(sym, _)| level.sym == *sym) {
+                    let synthesized = wkb_group_action(level.sym);
                     if level.action == synthesized {
                         level.action = Some(*action);
                     }
@@ -204,7 +209,6 @@ fn strip_compat_map(input: &[u8]) -> Cow<'_, [u8]> {
     Cow::Owned(stripped)
 }
 use std::path::Path;
-const LOCALE_DIR: &str = "/usr/share/X11/locale";
 #[derive(Clone)]
 pub struct ComposeEntry {
     pub keys: ArrayVec<char, 8>,

@@ -20,9 +20,7 @@ pub(crate) fn keysym_get_name(ks: u32) -> Option<Cow<'static, str>> {
     })
 }
 fn lookup_name(name: &[u8]) -> Option<u32> {
-    let matches = |&(offset, _): &(u32, u32)| {
-        get_name_bytes(offset) == name
-    };
+    let matches = |&(offset, _): &(u32, u32)| get_name_bytes(offset) == name;
     let end = NAME_INDEX.partition_point(|entry| get_name_bytes(entry.0) <= name);
     end.checked_sub(1)
         .map(|index| NAME_INDEX[index])
@@ -56,9 +54,7 @@ pub(crate) fn xkb_keysym_from_name(name: &[u8], flags: u32) -> Option<u32> {
         } else {
             codepoint_to_keysym(val).unwrap_or(0)
         });
-    } else if name_bytes.first() == Some(&b'0')
-        && name_bytes.get(1) == Some(&b'x')
-    {
+    } else if name_bytes.first() == Some(&b'0') && name_bytes.get(1) == Some(&b'x') {
         let rest = &name[2..];
         if !parse_keysym_hex(rest, &mut val) || val > XKB_KEYSYM_MAX {
             return None;

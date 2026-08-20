@@ -115,20 +115,19 @@ fn apply_wkb_compat(keymap: &mut XkbKeymap) {
             .groups
             .first()
             .and_then(|group| group.levels.first())
-            .and_then(|level| level.syms.first())
-            .copied()
+            .map(|level| level.sym)
             .unwrap_or(XKB_KEY_NO_SYMBOL);
         key.repeat.get_or_insert_with(|| {
             first_sym != XKB_KEY_NO_SYMBOL && !is_modifier_keysym(first_sym)
         });
         if key.vmodmap.is_none() {
             let mut vmodmap = 0;
-            let level_one_syms = key
+            let level_one_sym = key
                 .groups
                 .first()
                 .and_then(|group| group.levels.first())
-                .map_or(&[][..], |level| level.syms.as_slice());
-            for &sym in level_one_syms {
+                .map(|level| level.sym);
+            if let Some(sym) = level_one_sym {
                 for &(index, candidates) in &vmods {
                     if let Some(index) = index.filter(|_| candidates.contains(&sym)) {
                         vmodmap |= 1 << index;
@@ -140,7 +139,7 @@ fn apply_wkb_compat(keymap: &mut XkbKeymap) {
         for group in &mut key.groups {
             for level in &mut group.levels {
                 if level.action.is_none() {
-                    level.action = level.syms.iter().copied().find_map(wkb_group_action);
+                    level.action = wkb_group_action(level.sym);
                 }
             }
         }
@@ -208,11 +207,9 @@ pub(crate) fn compile_components(
             .ok()
             .and_then(|input| include_create(input, MergeMode::Default))
     };
-    let (Some(mut keycodes), Some(mut types), Some(mut symbols)) = (
-        parse(keycodes),
-        parse(types),
-        parse(symbols),
-    ) else {
+    let (Some(mut keycodes), Some(mut types), Some(mut symbols)) =
+        (parse(keycodes), parse(types), parse(symbols))
+    else {
         return false;
     };
     compile_keycodes(CompileInput::Includes(&mut keycodes), keymap)
@@ -308,7 +305,7 @@ pub struct ActionFlags: u32 {
 #[derive(Copy, Clone)] #[rustfmt::skip] pub(crate) struct XkbKeyTypeEntry { pub(crate) level: u32, pub(crate) mods: XkbMods, pub(crate) preserve: XkbMods }
 #[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbKey { pub(crate) name: u32, pub(crate) default_type: u32, pub(crate) modmap: u32, pub(crate) vmodmap: Option<u32>, pub(crate) repeat: Option<bool>, pub(crate) groups: Vec<XkbGroup> }
 #[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbGroup { pub(crate) explicit_syms: bool, pub(crate) type_idx: u32, pub(crate) levels: Vec<XkbLevel> }
-#[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbLevel { pub(crate) syms: Vec<u32>, pub(crate) action: Option<XkbAction> }
+#[derive(Clone, Default)] #[rustfmt::skip] pub(crate) struct XkbLevel { pub(crate) sym: u32, pub(crate) action: Option<XkbAction> }
 pub(crate) const XKB_MAX_GROUPS: u32 = 32;
 pub(crate) const MOD_REAL_MASK_ALL: u32 = 0xff_i32 as u32;
 pub(crate) const DFLT_XKB_LEGACY_ROOT: &str = "/usr/share/X11/xkb";
@@ -365,51 +362,50 @@ pub(crate) enum MergeMode {
     Replace = 3,
 }
 #[derive(Clone)] #[rustfmt::skip] pub(crate) struct IncludeStmt { pub(crate) merge: MergeMode, pub(crate) file: String, pub(crate) map: String, pub(crate) modifier: String }
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub(crate) enum BinaryOp {
-    Assign,
-    Add,
-    Subtract,
+#[derive(Copy, Clone)]
+pub(crate) enum Scalar {
+    Integer(i64),
+    Ident(u32),
 }
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub(crate) enum UnaryOp {
-    Not,
-    Invert,
-    Negate,
-    Plus,
+pub(crate) struct ScalarExpr {
+    pub(crate) terms: arrayvec::ArrayVec<(bool, Scalar), 8>,
+    pub(crate) invert: bool,
 }
 pub(crate) enum ExprKind {
     String(u32),
-    Integer(i64),
     KeyName(u32),
     KeySym(u32),
-    Ident(u32),
-    FieldRef {
-        element: u32,
-        field: u32,
-        index: Option<Box<ExprKind>>,
-    },
-    ActionList {
-        actions: Vec<ExprKind>,
-    },
-    KeysymList {
-        syms: Vec<u32>,
-    },
-    EmptyList,
-    Binary {
-        op: BinaryOp,
-        left: Box<ExprKind>,
-        right: Box<ExprKind>,
-    },
-    Unary {
-        op: UnaryOp,
-        child: Box<ExprKind>,
-    },
+    Scalar(ScalarExpr),
+    Symbols(Vec<u32>),
+    Actions,
 }
-#[rustfmt::skip] pub(crate) struct VarDef { pub(crate) merge: MergeMode, pub(crate) name: Option<ExprKind>, pub(crate) value: Option<ExprKind> }
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Element {
+    None,
+    Key,
+    Type,
+    Other,
+}
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Field {
+    Type,
+    Symbols,
+    Actions,
+    Vmods,
+    Repeat,
+    Name,
+    Modifiers,
+    LevelName,
+    Map,
+    Preserve,
+    Ignored,
+    Other,
+}
+#[rustfmt::skip] pub(crate) struct Lhs { pub(crate) element: Element, pub(crate) field: Field, pub(crate) index: Option<ExprKind> }
+#[rustfmt::skip] pub(crate) struct VarDef { pub(crate) merge: MergeMode, pub(crate) name: Option<Lhs>, pub(crate) value: Option<ExprKind> }
 #[rustfmt::skip] pub(crate) struct VModDef { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) value: Option<ExprKind> }
 #[derive(Copy, Clone)] #[rustfmt::skip] pub(crate) struct KeycodeDef { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) value: i64 }
-#[derive(Copy, Clone)] #[rustfmt::skip] pub(crate) struct KeyAliasDef { pub(crate) merge: MergeMode, pub(crate) alias: u32, pub(crate) real: u32 }
+#[derive(Copy, Clone)] #[rustfmt::skip] pub(crate) struct KeyAliasDef { pub(crate) alias: u32, pub(crate) real: u32 }
 #[rustfmt::skip] pub(crate) struct NamedVarDef<'a> { pub(crate) merge: MergeMode, pub(crate) name: u32, pub(crate) body: &'a [u8] }
 #[rustfmt::skip] pub(crate) struct ModMapDef { pub(crate) merge: MergeMode, pub(crate) modifier: u32, pub(crate) keys: Vec<ExprKind> }
 pub(crate) const MAP_IS_DEFAULT: u32 = 1;
