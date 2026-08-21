@@ -44,7 +44,7 @@ jobs:
 
       - name: Measure binary sizes
         run: |
-          cargo build --example bench_size_wkb --release --no-default-features
+          cargo build --example bench_size_wkb --release --features compose
           cargo build --example bench_size_wkb_xkb --release
           cargo build --example bench_size_xkbcommon --release
           cargo build --example bench_size_xkbcommon_dl --release
