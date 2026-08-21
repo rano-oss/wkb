@@ -209,12 +209,12 @@ impl WKB {
         (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_NUM_LOCK != 0
     }
 
-    pub fn level3(&self) -> bool {
+    pub fn mod3(&self) -> bool {
         let raw = self.raw_modifiers();
         (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_SCROLL_LOCK != 0
     }
 
-    pub fn level5(&self) -> bool {
+    pub fn mod5(&self) -> bool {
         let raw = self.raw_modifiers();
         (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_ALTGR != 0
     }
