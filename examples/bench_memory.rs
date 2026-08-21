@@ -113,8 +113,9 @@ fn run_workload_wkb_xkb() -> u64 {
         for _ in 0..HOT_PATH_ITERATIONS {
             for &(code, down) in case.keys {
                 if down {
-                    let result = wb.press_key(code);
-                    if let Some(wkb::ComposeState::Finished(c)) = &result.compose {
+                    wb.press_key(code);
+                    let result = wb.compose(code);
+                    if let Some(wkb::ComposeState::Finished(c)) = &result {
                         checksum = checksum.wrapping_add(*c as u64);
                     }
                     black_box(result);

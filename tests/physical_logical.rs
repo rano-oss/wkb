@@ -1,6 +1,6 @@
 //! Physical vs logical keys, state-change reporting, and multi-symbol parse errors.
 
-use wkb::{LogicalKey, NamedKey, PhysicalKey, StateChanges, CAPS_LOCK, LEFT_SHIFT, NUM_LOCK, WKB};
+use wkb::{NamedKey, PhysicalKey, StateChanges, CAPS_LOCK, LEFT_SHIFT, NUM_LOCK, WKB};
 
 const KEY_Q: u32 = 16;
 const KEY_ESC: u32 = 1;
@@ -89,9 +89,9 @@ fn physical_key_stable_across_layouts() {
 #[test]
 fn same_physical_key_different_logical_chars() {
     let mut wkb = us_fr();
-    assert_eq!(wkb.logical_key(KEY_Q), LogicalKey::Character('q'));
+    assert_eq!(wkb.key_char(KEY_Q), Some('q'));
     wkb.set_layout(1).unwrap();
-    assert_eq!(wkb.logical_key(KEY_Q), LogicalKey::Character('a'));
+    assert_eq!(wkb.key_char(KEY_Q), Some('a'));
     assert_eq!(wkb.physical_key(KEY_Q), PhysicalKey::KeyQ);
 }
 
@@ -100,8 +100,8 @@ fn caps_remapped_to_escape_keeps_physical_caps() {
     let wkb = WKB::new_from_string(&keymap_caps_escape()).unwrap();
     assert_eq!(wkb.physical_key(CAPS_LOCK), PhysicalKey::CapsLock);
     assert_eq!(
-        wkb.logical_key(CAPS_LOCK),
-        LogicalKey::Named(NamedKey::Escape)
+        wkb.named_key(CAPS_LOCK),
+        NamedKey::Escape
     );
 }
 
@@ -109,10 +109,10 @@ fn caps_remapped_to_escape_keeps_physical_caps() {
 fn shift_changes_logical_char_not_physical() {
     let mut wkb = us();
     assert_eq!(wkb.physical_key(KEY_Q), PhysicalKey::KeyQ);
-    assert_eq!(wkb.logical_key(KEY_Q), LogicalKey::Character('q'));
+    assert_eq!(wkb.key_char(KEY_Q), Some('q'));
     wkb.press_key(LEFT_SHIFT);
     assert_eq!(wkb.physical_key(KEY_Q), PhysicalKey::KeyQ);
-    assert_eq!(wkb.logical_key(KEY_Q), LogicalKey::Character('Q'));
+    assert_eq!(wkb.key_char(KEY_Q), Some('Q'));
 }
 
 #[test]
@@ -120,12 +120,12 @@ fn named_keys_stay_named_under_modifiers() {
     let mut wkb = us();
     let named = [(KEY_ESC, NamedKey::Escape), (KEY_LEFT, NamedKey::ArrowLeft)];
     for (code, expected) in named {
-        assert_eq!(wkb.logical_key(code), LogicalKey::Named(expected));
+        assert_eq!(wkb.named_key(code), expected);
         for modifier in [KEY_LEFTCTRL, KEY_LEFTALT, KEY_LEFTMETA] {
             wkb.press_key(modifier);
             assert_eq!(
-                wkb.logical_key(code),
-                LogicalKey::Named(expected),
+                wkb.named_key(code),
+                expected,
                 "modifier {modifier} turned {expected:?} unidentified"
             );
             wkb.release_key(modifier);
@@ -137,11 +137,8 @@ fn named_keys_stay_named_under_modifiers() {
 fn pressing_modifier_reports_modifiers_updated() {
     let mut wkb = us();
     let result = wkb.press_key(LEFT_SHIFT);
-    assert!(result.is_modifier);
     assert!(result.modifiers_updated);
     assert!(!result.leds_updated);
-    assert_eq!(result.physical_key, PhysicalKey::ShiftLeft);
-    assert_eq!(result.logical_key, LogicalKey::Named(NamedKey::LeftShift));
 }
 
 #[test]
@@ -149,12 +146,11 @@ fn consuming_latched_modifier_reports_modifiers_updated() {
     let mut wkb = WKB::new_from_string(&keymap_level3_latch()).unwrap();
     let ralt = 100;
     let latch = wkb.press_key(ralt);
-    assert!(latch.is_modifier);
+    assert!(latch.modifiers_updated);
     wkb.release_key(ralt);
     assert_ne!(wkb.raw_modifiers().latched, 0);
 
     let result = wkb.press_key(KEY_Q);
-    assert!(!result.is_modifier);
     assert!(result.modifiers_updated);
     assert_eq!(wkb.raw_modifiers().latched, 0);
 }
@@ -186,6 +182,7 @@ fn update_modifiers_reports_actual_changes() {
     assert_eq!(
         shift_only,
         StateChanges {
+            is_modifier: false,
             modifiers_updated: true,
             leds_updated: false,
         }
@@ -198,6 +195,7 @@ fn update_modifiers_reports_actual_changes() {
     assert_eq!(
         caps,
         StateChanges {
+            is_modifier: true,
             modifiers_updated: true,
             leds_updated: true,
         }
@@ -233,46 +231,31 @@ fn release_reports_state_change_during_release() {
 }
 
 #[test]
-fn repeat_does_not_report_modifier_or_led_changes() {
-    let mut wkb = us();
-    wkb.press_key(KEY_Q);
-    let repeat = wkb.repeat_key(KEY_Q);
-    assert!(!repeat.modifiers_updated);
-    assert!(!repeat.leds_updated);
-    assert!(!repeat.is_modifier);
-
-    wkb.press_key(CAPS_LOCK);
-    let repeat_lock = wkb.repeat_key(CAPS_LOCK);
-    assert!(!repeat_lock.modifiers_updated);
-    assert!(!repeat_lock.leds_updated);
-}
-
-#[test]
 fn unknown_evdev_is_unidentified() {
     let wkb = us();
     for code in [0, 9999] {
         assert_eq!(wkb.physical_key(code), PhysicalKey::Unidentified);
-        assert_eq!(wkb.logical_key(code), LogicalKey::Unidentified);
         let mut kb = us();
-        let result = kb.press_key(code);
-        assert_eq!(result.physical_key, PhysicalKey::Unidentified);
-        assert_eq!(result.logical_key, LogicalKey::Unidentified);
+        kb.press_key(code);
+        let result = kb.physical_key(code);
+        assert_eq!(result, PhysicalKey::Unidentified);
     }
 }
 
 #[test]
 fn multi_symbol_level_uses_first_symbol() {
-    let wkb = WKB::new_from_string(&keymap_multi_symbol(false)).unwrap();
-
-    assert_eq!(wkb.logical_key(KEY_Q), LogicalKey::Character('q'),);
-
-    let mut wkb = WKB::new_from_string(&keymap_multi_symbol(true)).unwrap();
-
-    assert_eq!(wkb.logical_key(KEY_Q), LogicalKey::Character('q'),);
-
-    wkb.press_key(LEFT_SHIFT);
-
-    assert_eq!(wkb.logical_key(KEY_Q), LogicalKey::Character('Q'),);
+    for multi_on_level_2 in [false, true] {
+        let wkb =
+            WKB::new_from_string(&keymap_multi_symbol(multi_on_level_2)).unwrap();
+        assert_eq!(
+            wkb.level_char(KEY_Q, 0, 0),
+            Some('q'),
+        );
+        assert_eq!(
+            wkb.level_char(KEY_Q, 0, 1),
+            Some('Q'),
+        );
+    }
 }
 
 #[test]

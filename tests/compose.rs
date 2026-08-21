@@ -142,12 +142,13 @@ const COMPOSE_CASES: &[ComposeCase] = &[
 fn wkb_compose_char(wkb: &mut WKB, keys: &[(u32, bool)]) -> Option<char> {
     let mut final_char = None;
     for &(evdev, down) in keys {
-        let result = if down {
+        if down {
             wkb.press_key(evdev)
         } else {
             wkb.release_key(evdev)
         };
-        if let Some(wkb::ComposeState::Finished(c)) = &result.compose {
+        let result = wkb.compose(evdev);
+        if let Some(wkb::ComposeState::Finished(c)) = &result {
             final_char = Some(*c);
         }
     }

@@ -346,12 +346,13 @@ pub fn is_modifier_keysym(keysym: u32) -> bool {
 pub fn wkb_feed_compose(wkb: &mut wkb::WKB, keys: &[(u32, bool)]) -> Option<char> {
     let mut out = None;
     for &(code, down) in keys {
-        let result = if down {
+        if down {
             wkb.press_key(code)
         } else {
             wkb.release_key(code)
         };
-        if let Some(wkb::ComposeState::Finished(c)) = &result.compose {
+        let result = wkb.compose(code);
+        if let Some(wkb::ComposeState::Finished(c)) = &result {
             out = Some(*c);
         }
     }

@@ -118,20 +118,20 @@ fn test_mm_zawgyi_latch_sequence() {
     let latch_key = 41; // TLDE key
 
     // Step 1: Press latch
-    wkb.update_key(latch_key, KeyDirection::Down);
+    wkb.press_key(latch_key);
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Down);
 
     // Step 2: Release latch
-    wkb.update_key(latch_key, KeyDirection::Up);
+    wkb.release_key(latch_key);
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Up);
 
     // Step 3: Press Shift
     let shift_key = 42;
-    wkb.update_key(shift_key, KeyDirection::Down);
+    wkb.press_key(shift_key);
     xkb_state.update_key(Keycode::new(shift_key + 8), xkbcmn::KeyDirection::Down);
 
     // Step 4: Press latch again (second press)
-    wkb.update_key(latch_key, KeyDirection::Down);
+    wkb.press_key(latch_key);
     xkb_state.update_key(Keycode::new(latch_key + 8), xkbcmn::KeyDirection::Down);
 
     // Check key 2 with both active

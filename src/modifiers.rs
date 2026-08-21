@@ -334,14 +334,13 @@ impl Modifiers {
         self.raw.latched = 0;
     }
 
-    #[inline]
-    pub fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
+    pub(crate) fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let position = match self.entries.iter().position(|(c, _)| *c == evdev_code) {
             Some(p) => p,
             None => return false,
         };
         let is_leveled = matches!(&self.entries[position].1, Modifier::Leveled(_));
-        if is_leveled {
+        let is_modifier = if is_leveled {
             let (_, level2, level3, level5) = self.active_none_and_levels();
 
             let level = level_index(level5, level3, level2) as u8;
@@ -355,16 +354,18 @@ impl Modifiers {
             };
 
             modifier.update(key_direction);
+            !modifier.has_mod_type(ModType::Compose)
         } else {
             let Modifier::Single(modifier) = &mut self.entries[position].1 else {
                 unreachable!();
             };
 
             modifier.update(key_direction);
-        }
+            !modifier.has_mod_type(ModType::Compose)
+        };
 
         self.rebuild_raw();
-        true
+        is_modifier
     }
 
     pub fn state(&self, layout_index: usize) -> RawModifiers {

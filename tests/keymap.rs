@@ -3,7 +3,7 @@
 
 include!("../test_data/layouts.rs");
 use test_case::test_matrix;
-use wkb::{keysym_to_named_key, KeyDirection, ModType, WKB};
+use wkb::{keysym_to_named_key, ModType, WKB};
 use xkbcommon::xkb;
 
 // ── Helpers ─────────────────────────────────────────────────────────────
@@ -313,8 +313,8 @@ fn string_us() {
     }
 
     if let Some((shift_code, _)) = wkb_from_string.level_code(ModType::Level2) {
-        wkb_from_string.update_key(shift_code, KeyDirection::Down);
-        wkb_from_names.update_key(shift_code, KeyDirection::Down);
+        wkb_from_string.press_key(shift_code);
+        wkb_from_names.press_key(shift_code);
 
         for keycode in [38, 44, 2] {
             assert_eq!(
@@ -378,8 +378,8 @@ fn string_caps_lock() {
 
     assert_eq!(wkb.key_char(38), Some('l'));
 
-    wkb.update_key(58, KeyDirection::Down);
-    wkb.update_key(58, KeyDirection::Up);
+    wkb.press_key(58);
+    wkb.release_key(58);
 
     assert_eq!(
         wkb.key_char(38),

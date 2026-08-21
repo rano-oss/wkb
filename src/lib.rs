@@ -13,28 +13,35 @@
 //! let keymap_string = std::fs::read_to_string("/path/to/keymap").unwrap();
 //! let mut wkb = WKB::new_from_string(&keymap_string).unwrap();
 //!
-//! // Process a key press (evdev code 30 = physical KeyA on a PC105 board)
-//! let result = wkb.press_key(30);
+//! // Update keyboard state for a key press.
+//! let changes = wkb.press_key(30);
+//!
+//! // Resolve identity/text independently.
+//! let physical = wkb.physical_key(30);
+//! let named = wkb.named_key(30);
+//! let character = wkb.key_char(30);
+//! let compose = wkb.compose(30);
+//!
 //! println!(
-//!     "physical={:?} logical={:?} compose={:?}",
-//!     result.physical_key, result.logical_key, result.compose
+//!     "physical={physical:?} named={named:?} char={character:?} compose={compose:?}"
 //! );
+//! assert!(!changes.leds_updated);
 //! ```
 //!
 //! ## Key Event API
 //!
 //! | Method | Mutates state | Use case |
 //! |--------|--------------|----------|
-//! | [`WKB::press_key`] | yes | Key down — updates modifiers, advances compose |
-//! | [`WKB::release_key`] | yes | Key up — updates modifiers |
-//! | [`WKB::repeat_key`] | yes | Key repeat — advances compose, no modifier changes |
-//! | [`WKB::key_char`] | no | Raw character under current modifiers (no compose) |
+//! | [`WKB::press_key`] | yes | Key down — updates modifier/group state |
+//! | [`WKB::release_key`] | yes | Key up — updates modifier/group state |
+//! | [`WKB::compose`] | yes | Feed a key into compose processing |
+//! | [`WKB::repeat_key`] | yes | Feed a repeated key into compose processing |
+//! | [`WKB::key_char`] | no | Character under current modifiers (before compose) |
+//! | [`WKB::named_key`] | no | Named non-character identity under current state |
 //! | [`WKB::physical_key`] | no | Physical position from the evdev code alone |
-//! | [`WKB::logical_key`] | no | Logical identity under layout + modifiers |
 //!
-//! All three event methods return a [`KeyResult`] with physical and logical
-//! identity, compose state, modifier/LED change flags, and whether the key is
-//! a modifier. Public keycodes are always raw Linux/evdev codes.
+//! Key state mutation, key identity, character lookup, and compose processing
+//! are intentionally separate. Public keycodes are always raw Linux/evdev codes.
 //!
 //! ## Feature Flags
 //!
@@ -47,12 +54,10 @@ use composer::{Composer, Token};
 mod composer;
 mod flat_keymap;
 mod groups;
-mod logical_keys;
 mod modifiers;
 mod physical_keys;
 pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
 pub use groups::{Group, GroupChange, GroupKind, Groups};
-pub use logical_keys::LogicalKey;
 pub use modifiers::{
     level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, LEFT_SHIFT, NUM_LOCK, RIGHT_SHIFT,
     SCROLL_LOCK,
@@ -248,10 +253,9 @@ impl WKB {
             self.groups.set_layout(group as usize, self.num_layouts());
             self.current_layout_idx = group as usize;
         }
-        self.layouts[self.current_layout_idx]
-            .modifiers
-            .update(depressed, latched, locked);
+        self.layouts[self.current_layout_idx].modifiers.update(depressed, latched, locked);
         StateChanges {
+            is_modifier: false,
             modifiers_updated: self.raw_modifiers() != before_mods,
             leds_updated: self.leds_state() != before_leds,
         }
@@ -263,22 +267,6 @@ impl WKB {
     #[inline]
     pub fn physical_key(&self, evdev_code: u32) -> PhysicalKey {
         PhysicalKey::from_evdev(evdev_code)
-    }
-
-    /// Logical key identity under the current layout and modifier state.
-    ///
-    /// Named keys (Escape, arrows, …) remain named even when Ctrl, Alt, or Logo
-    /// are held — modifiers only change the result when the key's compiled XKB
-    /// type selects a different level. Compose output is not included.
-    pub fn logical_key(&self, evdev_code: u32) -> LogicalKey {
-        let named = self.state_named_key(evdev_code);
-        if named != NamedKey::Unnamed {
-            return LogicalKey::Named(named);
-        }
-        match self.key_char_logical(evdev_code) {
-            Some(c) => LogicalKey::Character(c),
-            None => LogicalKey::Unidentified,
-        }
     }
 
     /// Return the LED indicator state.
@@ -334,13 +322,14 @@ impl WKB {
         Some(self.generate_xkb_string())
     }
 
-    /// Get the named key for an evdev keycode under the current modifier state.
-    /// Returns [`NamedKey::Unnamed`] if no named key is mapped.
+    /// Get the named, non-character identity for an evdev keycode under the
+    /// current modifier state.
     ///
-    /// Ctrl/Alt/Logo do not blank named keys. If the selected level has no named
-    /// mapping, lower levels are tried so ONE_LEVEL keys such as Shift and Escape
-    /// keep their identity while other modifiers are held.
-    pub fn state_named_key(&self, evdev_code: u32) -> NamedKey {
+    /// Returns [`NamedKey::Unnamed`] when the selected key is a character or
+    /// has no named mapping. Ctrl/Alt/Logo do not blank named keys. If the
+    /// selected level has no named mapping, lower levels are tried so ONE_LEVEL
+    /// keys such as Shift and Escape keep their identity.
+    pub fn named_key(&self, evdev_code: u32) -> NamedKey {
         let kb_layout = &self.layouts[self.current_layout_idx];
         let (_none_active, level2, level3, level5) = kb_layout.modifiers.active_none_and_levels();
         let nk = kb_layout.named_key_map.num_keys;
@@ -367,7 +356,7 @@ impl WKB {
     /// Get the character at a specific layout and level for an evdev keycode.
     /// Bypasses current modifier state.
     /// Does not consider caps lock or num lock overrides.
-    pub fn level_key_char(&self, evdev_code: u32, layout: usize, level: usize) -> Option<char> {
+    pub fn level_char(&self, evdev_code: u32, layout: usize, level: usize) -> Option<char> {
         #[cfg(feature = "xkb")]
         if let Some(exception_char) = self.layouts[layout]
             .level_exceptions_keymap
@@ -385,22 +374,13 @@ impl WKB {
     /// - Re-resolving characters when modifiers change during key repeat
     ///
     /// Returns `None` while Ctrl, Alt, or Logo are active so callers do not treat
-    /// shortcut chords as typed text. Prefer [`Self::logical_key`] for logical identity.
-    #[inline]
+    /// shortcut chords as typed text.
     pub fn key_char(&self, evdev_code: u32) -> Option<char> {
         let kb_layout = &self.layouts[self.current_layout_idx];
-        let (none_active, _, _, _) = kb_layout.modifiers.active_none_and_levels();
+        let (none_active, level2, level3, level5) = kb_layout.modifiers.active_none_and_levels();
         if none_active {
             return None;
         }
-        self.key_char_logical(evdev_code)
-    }
-
-    /// Character lookup that follows XKB level selection only (no Ctrl/Alt/Logo blanking).
-    #[inline]
-    fn key_char_logical(&self, evdev_code: u32) -> Option<char> {
-        let kb_layout = &self.layouts[self.current_layout_idx];
-        let (_none_active, level2, level3, level5) = kb_layout.modifiers.active_none_and_levels();
         let nk = kb_layout.state_keymap.num_keys;
         let level5 = level5 && kb_layout.state_keymap.data.len() > 4 * nk;
         let level3 = level3 && kb_layout.state_keymap.data.len() > 2 * nk;
@@ -422,29 +402,6 @@ impl WKB {
             }
         }
         kb_layout.state_keymap.get(base_level, evdev_code)
-    }
-
-    /// Update internal modifier state for a key event. Returns `true` if the key is a modifier.
-    #[doc(hidden)]
-    pub fn update_key(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
-        let layouts = self.layouts.len();
-        let old_layout = self.current_layout_idx;
-        let kb_layout = &mut self.layouts[self.current_layout_idx];
-        let is_modifier = kb_layout.modifiers.set_state(evdev_code, key_direction);
-        let new_layout = self
-            .groups
-            .update(evdev_code, key_direction, !is_modifier, layouts);
-        if new_layout != old_layout {
-            let raw = kb_layout.modifiers.state(new_layout);
-            self.layouts[new_layout]
-                .modifiers
-                .update(raw.depressed, raw.latched, raw.locked);
-            self.current_layout_idx = new_layout;
-        }
-        if !is_modifier && key_direction == KeyDirection::Down {
-            self.layouts[self.current_layout_idx].modifiers.unlatch();
-        }
-        is_modifier
     }
 
     /// Return whether the given modifier type is currently active.
@@ -525,90 +482,85 @@ impl WKB {
         true
     }
 
-    /// Process a key press. Updates modifier state and advances compose sequences.
+    /// Process a key press and update modifier/group state.
     ///
-    /// Returns a [`KeyResult`] with physical/logical identity, compose state,
-    /// whether the key is a modifier, and whether modifiers or LEDs changed.
-    pub fn press_key(&mut self, evdev_code: u32) -> KeyResult {
-        let before_mods = self.raw_modifiers();
+    /// Key identity, character resolution, and compose processing are separate;
+    /// use [`Self::physical_key`], [`Self::named_key`], [`Self::key_char`],
+    /// and [`Self::compose`] as needed.
+    pub fn press_key(&mut self, evdev_code: u32) -> StateChanges {
+        self.change_key_state(evdev_code, KeyDirection::Down)
+    }
+
+    /// Process a key release and update modifier/group state.
+    pub fn release_key(&mut self, evdev_code: u32) -> StateChanges {
+        self.change_key_state(evdev_code, KeyDirection::Up)
+    }
+
+    #[inline]
+    fn change_key_state(
+        &mut self,
+        evdev_code: u32,
+        key_direction: KeyDirection,
+    ) -> StateChanges {
+        let before_modifiers = self.raw_modifiers();
         let before_leds = self.leds_state();
-        let is_modifier = self.update_key(evdev_code, KeyDirection::Down);
-        let physical_key = self.physical_key(evdev_code);
-        let logical_key = self.logical_key(evdev_code);
+        let layouts = self.layouts.len();
+        let old_layout = self.current_layout_idx;
         let kb_layout = &mut self.layouts[self.current_layout_idx];
-        #[cfg(feature = "compose")]
-        let compose = if is_modifier && kb_layout.modifiers.active_mod_type(ModType::Compose) {
-            Some(kb_layout.composer.feed(Token::Compose))
-        } else if !is_modifier {
-            self.key_char(evdev_code).map(|c| {
-                self.layouts[self.current_layout_idx]
-                    .composer
-                    .feed(Token::Char(c))
-            })
-        } else {
-            None
-        };
-        #[cfg(not(feature = "compose"))]
-        let compose = if !is_modifier {
-            self.key_char(evdev_code).map(ComposeState::Idle)
-        } else {
-            None
-        };
-
-        KeyResult {
-            physical_key,
-            logical_key,
-            compose,
+        let is_modifier = kb_layout.modifiers.set_state(evdev_code, key_direction);
+        let new_layout = self
+            .groups
+            .update(evdev_code, key_direction, !is_modifier, layouts);
+        if new_layout != old_layout {
+            let raw = kb_layout.modifiers.state(new_layout);
+            self.layouts[new_layout]
+                .modifiers
+                .update(raw.depressed, raw.latched, raw.locked);
+            self.current_layout_idx = new_layout;
+        }
+        if !is_modifier && key_direction == KeyDirection::Down {
+            self.layouts[self.current_layout_idx].modifiers.unlatch();
+        }
+        StateChanges {
             is_modifier,
-            modifiers_updated: self.raw_modifiers() != before_mods,
+            modifiers_updated: self.raw_modifiers() != before_modifiers,
             leds_updated: self.leds_state() != before_leds,
         }
     }
 
-    /// Process a key release. Updates modifier state.
+    /// Feed a key into compose processing without changing modifier state.
     ///
-    /// Compose is not advanced on release. Reports modifier/LED changes that
-    /// occur during release (for example unlocking Caps Lock on the second
-    /// release of a lock key).
-    pub fn release_key(&mut self, evdev_code: u32) -> KeyResult {
-        let before_mods = self.raw_modifiers();
-        let before_leds = self.leds_state();
-        let is_modifier = self.update_key(evdev_code, KeyDirection::Up);
-        KeyResult {
-            physical_key: self.physical_key(evdev_code),
-            logical_key: self.logical_key(evdev_code),
-            compose: None,
-            is_modifier,
-            modifiers_updated: self.raw_modifiers() != before_mods,
-            leds_updated: self.leds_state() != before_leds,
-        }
-    }
+    /// Call this after [`Self::press_key`] for an initial key press, or directly
+    /// for a repeated key. Character lookup uses the current state established
+    /// by the preceding key press.
+    #[cfg(feature = "compose")]
+    pub fn compose(&mut self, evdev_code: u32) -> Option<ComposeState> {
+        let is_compose_key = self.layouts[self.current_layout_idx]
+            .modifiers
+            .iter()
+            .any(|(code, modifier)| {
+                *code == evdev_code
+                    && match modifier {
+                        Modifier::Single(modifier) => {
+                            modifier.has_mod_type(ModType::Compose)
+                        }
+                        Modifier::Leveled(levels) => levels
+                            .iter()
+                            .any(|(_, modifier)| modifier.has_mod_type(ModType::Compose)),
+                    }
+            });
 
-    /// Process a key repeat. Advances compose sequences but does NOT update modifier state.
-    ///
-    /// Modifier and LED change flags are normally false; they are still computed
-    /// by comparing state before and after in case future processing mutates them.
-    pub fn repeat_key(&mut self, evdev_code: u32) -> KeyResult {
-        let before_mods = self.raw_modifiers();
-        let before_leds = self.leds_state();
-        let physical_key = self.physical_key(evdev_code);
-        let logical_key = self.logical_key(evdev_code);
-        #[cfg(feature = "compose")]
-        let compose = self.key_char(evdev_code).map(|c| {
+        let token = if is_compose_key {
+            Token::Compose
+        } else {
+            Token::Char(self.key_char(evdev_code)?)
+        };
+
+        Some(
             self.layouts[self.current_layout_idx]
                 .composer
-                .feed(Token::Char(c))
-        });
-        #[cfg(not(feature = "compose"))]
-        let compose = self.key_char(evdev_code).map(ComposeState::Idle);
-        KeyResult {
-            physical_key,
-            logical_key,
-            compose,
-            is_modifier: false,
-            modifiers_updated: self.raw_modifiers() != before_mods,
-            leds_updated: self.leds_state() != before_leds,
-        }
+                .feed(token),
+        )
     }
 
     /// Export a layout as an [`ir::LayoutFile`] for persistence. This is the
@@ -645,27 +597,5 @@ pub struct StateChanges {
     pub modifiers_updated: bool,
     /// [`WKB::leds_state`] changed.
     pub leds_updated: bool,
-}
-
-/// Result of a key event processed by [`WKB::press_key`], [`WKB::release_key`], or [`WKB::repeat_key`].
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct KeyResult {
-    /// Physical key position from the evdev code alone.
-    pub physical_key: PhysicalKey,
-    /// Logical identity under the layout and modifiers active after this event.
-    pub logical_key: LogicalKey,
-    /// The compose state after processing this key.
-    ///
-    /// - `None` — no character produced (modifier key, release event, or unmapped key)
-    /// - `Some(Idle(char))` — no compose active, `char` is the direct character
-    /// - `Some(Composing(seq))` — mid-compose sequence, `seq` is the sequence so far
-    /// - `Some(Finished(char))` — compose completed, `char` is the composed character
-    /// - `Some(Cancelled)` — compose sequence was broken
-    pub compose: Option<ComposeState>,
-    /// Whether the key is a modifier (Shift, Ctrl, Alt, etc.).
     pub is_modifier: bool,
-    /// Whether depressed/latched/locked modifiers or the active group changed.
-    pub modifiers_updated: bool,
-    /// Whether [`WKB::leds_state`] changed.
-    pub leds_updated: bool,
 }

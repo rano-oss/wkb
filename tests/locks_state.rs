@@ -2,7 +2,7 @@
 //! on a single key, and keypad keys under lock states.
 
 use test_case::test_matrix;
-use wkb::{KeyDirection, CAPS_LOCK, NUM_LOCK, WKB};
+use wkb::{CAPS_LOCK, NUM_LOCK, WKB};
 use xkbcommon::xkb::{self, Keycode};
 
 include!("../test_data/layouts.rs");
@@ -29,8 +29,8 @@ fn caps_then_num_lock_sequence(locale: &str) {
         let test_key = 38u32;
 
         // 1. Caps lock only
-        wkb.update_key(CAPS_LOCK, KeyDirection::Down);
-        wkb.update_key(CAPS_LOCK, KeyDirection::Up);
+        wkb.press_key(CAPS_LOCK);
+        wkb.release_key(CAPS_LOCK);
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
 
@@ -44,8 +44,8 @@ fn caps_then_num_lock_sequence(locale: &str) {
         );
 
         // 2. Add num lock (both active)
-        wkb.update_key(NUM_LOCK, KeyDirection::Down);
-        wkb.update_key(NUM_LOCK, KeyDirection::Up);
+        wkb.press_key(NUM_LOCK);
+        wkb.release_key(NUM_LOCK);
         xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Down);
         xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Up);
 
@@ -59,8 +59,8 @@ fn caps_then_num_lock_sequence(locale: &str) {
         );
 
         // 3. Remove caps lock (num only)
-        wkb.update_key(CAPS_LOCK, KeyDirection::Down);
-        wkb.update_key(CAPS_LOCK, KeyDirection::Up);
+        wkb.press_key(CAPS_LOCK);
+        wkb.release_key(CAPS_LOCK);
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
 
@@ -94,8 +94,8 @@ fn keypad_with_locks(locale: &str) {
         let keypad_keys = vec![79, 80, 81, 75, 76, 77, 71, 72, 73, 82, 83, 86, 63, 106];
 
         // Test keypad keys with num lock only
-        wkb.update_key(NUM_LOCK, KeyDirection::Down);
-        wkb.update_key(NUM_LOCK, KeyDirection::Up);
+        wkb.press_key(NUM_LOCK);
+        wkb.release_key(NUM_LOCK);
         xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Down);
         xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Up);
 
@@ -117,8 +117,8 @@ fn keypad_with_locks(locale: &str) {
         }
 
         // Add caps lock
-        wkb.update_key(CAPS_LOCK, KeyDirection::Down);
-        wkb.update_key(CAPS_LOCK, KeyDirection::Up);
+        wkb.press_key(CAPS_LOCK);
+        wkb.release_key(CAPS_LOCK);
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Up);
 
