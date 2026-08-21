@@ -7,7 +7,7 @@ pub(crate) const MOD_CAPS_LOCK: u32 = 1 << 1;
 pub(crate) const MOD_CTRL: u32 = 1 << 2;
 pub(crate) const MOD_ALT: u32 = 1 << 3; // Mod1
 pub(crate) const MOD_NUM_LOCK: u32 = 1 << 4; // Mod2
-pub(crate) const MOD_SCROLL_LOCK: u32 = 1 << 5;
+pub(crate) const MOD_SCROLL_LOCK: u32 = 1 << 5; // Mod3
 pub(crate) const MOD_LOGO: u32 = 1 << 6; // Mod4
 pub(crate) const MOD_ALTGR: u32 = 1 << 7; // Mod5
 
@@ -334,14 +334,13 @@ impl Modifiers {
         self.raw.latched = 0;
     }
 
-    #[inline]
-    pub fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
+    pub(crate) fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let position = match self.entries.iter().position(|(c, _)| *c == evdev_code) {
             Some(p) => p,
             None => return false,
         };
         let is_leveled = matches!(&self.entries[position].1, Modifier::Leveled(_));
-        if is_leveled {
+        let is_modifier = if is_leveled {
             let (_, level2, level3, level5) = self.active_none_and_levels();
 
             let level = level_index(level5, level3, level2) as u8;
@@ -355,16 +354,18 @@ impl Modifiers {
             };
 
             modifier.update(key_direction);
+            !modifier.has_mod_type(ModType::Compose)
         } else {
             let Modifier::Single(modifier) = &mut self.entries[position].1 else {
                 unreachable!();
             };
 
             modifier.update(key_direction);
-        }
+            !modifier.has_mod_type(ModType::Compose)
+        };
 
         self.rebuild_raw();
-        true
+        is_modifier
     }
 
     pub fn state(&self, layout_index: usize) -> RawModifiers {

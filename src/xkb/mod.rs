@@ -74,28 +74,28 @@ struct CompiledType {
     num_lock_affected: bool,
 }
 impl CompiledType {
-    fn new(type_: &parser::XkbKeyType) -> Self {
+    fn new(xkb_key_type: &parser::XkbKeyType) -> Self {
         let default_state = CompiledTypeState {
             level: 0,
-            consumed_mods: type_.mods.mask,
+            consumed_mods: xkb_key_type.mods.mask,
         };
         let mut by_mask = [default_state; REAL_MOD_STATES];
         // Reverse iteration preserves the old "first matching entry wins"
         // behaviour when malformed input contains duplicate masks.
-        for entry in type_.entries.iter().rev() {
+        for entry in xkb_key_type.entries.iter().rev() {
             if (entry.mods.mods == 0 || entry.mods.mask != 0)
                 && (entry.mods.mask as usize) < REAL_MOD_STATES
             {
                 by_mask[entry.mods.mask as usize] = CompiledTypeState {
                     level: entry.level,
-                    consumed_mods: type_.mods.mask & !entry.preserve.mask,
+                    consumed_mods: xkb_key_type.mods.mask & !entry.preserve.mask,
                 };
             }
         }
-        let states = std::array::from_fn(|state| by_mask[state & type_.mods.mask as usize]);
+        let states = std::array::from_fn(|state| by_mask[state & xkb_key_type.mods.mask as usize]);
         Self {
             states,
-            num_lock_affected: type_
+            num_lock_affected: xkb_key_type
                 .entries
                 .iter()
                 .any(|entry| entry.mods.mask & (1 << 4) != 0),
@@ -531,7 +531,7 @@ pub(crate) fn new_from_names(
         variant: variant.into(),
         options: options.unwrap_or("").into(),
     };
-    let keymap = xkb_keymap_new_from_names(ctx, &rmlvo).ok_or(XkbError::KeymapCompilation)?;
+    let keymap = xkb_keymap_new_from_names(ctx, &rmlvo)?;
     Ok(build_wkb_from_keymap(&keymap, Some(layout)))
 }
 pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
@@ -539,8 +539,7 @@ pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
     if string.as_bytes().contains(&0) {
         return Err(XkbError::KeymapParsing);
     }
-    let keymap =
-        xkb_keymap_new_from_string(ctx, string.as_bytes()).ok_or(XkbError::KeymapCompilation)?;
+    let keymap = xkb_keymap_new_from_string(ctx, string.as_bytes())?;
     Ok(build_wkb_from_keymap(&keymap, None))
 }
 fn modtype_from_name(name: &str) -> Option<ModType> {
@@ -657,15 +656,15 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
             let state_modifier = match (sym, mod_type) {
                 (Some(sym), ModType::Level2 | ModType::Level3 | ModType::Level5) => {
                     keysym_to_state_modifier(sym, mod_type)
-                },
-                (_,ModType::Caps | ModType::Num | ModType::Scroll) => StateModifier {
+                }
+                (_, ModType::Caps | ModType::Num | ModType::Scroll) => StateModifier {
                     kind: ModKind::Lock {
                         pressed: false,
                         locked: 0,
                     },
                     mod_type,
                 },
-                (_,_) => StateModifier {
+                (_, _) => StateModifier {
                     kind: ModKind::Press { pressed: false },
                     mod_type,
                 },

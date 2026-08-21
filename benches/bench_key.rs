@@ -210,7 +210,10 @@ fn bench_key_update(c: &mut Criterion) {
                 wkb_setup(locale, variant),
                 case,
                 |wb: &mut wkb::WKB, code: u32, _down: bool, dir: KeyDirection| {
-                    black_box(wb.update_key(black_box(code), dir));
+                    match dir {
+                        KeyDirection::Up => black_box(wb.release_key(black_box(code))),
+                        KeyDirection::Down => black_box(wb.press_key(black_box(code))),
+                    }
                 }
             );
 
@@ -220,7 +223,10 @@ fn bench_key_update(c: &mut Criterion) {
                 wkb_noxkb_setup(locale, variant),
                 case,
                 |wb: &mut wkb::WKB, code: u32, _down: bool, dir: KeyDirection| {
-                    black_box(wb.update_key(black_box(code), dir));
+                    match dir {
+                        KeyDirection::Up => black_box(wb.release_key(black_box(code))),
+                        KeyDirection::Down => black_box(wb.press_key(black_box(code))),
+                    }
                 }
             );
 
@@ -273,7 +279,10 @@ fn bench_key_get_char(c: &mut Criterion) {
                 wkb_setup(locale, variant),
                 case,
                 |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
-                    wb.update_key(code, dir);
+                    let _ = match dir {
+                        KeyDirection::Up => black_box(wb.release_key(black_box(code))),
+                        KeyDirection::Down => black_box(wb.press_key(black_box(code))),
+                    };
                     if down {
                         black_box(wb.key_char(black_box(code)));
                     }
@@ -286,7 +295,10 @@ fn bench_key_get_char(c: &mut Criterion) {
                 wkb_noxkb_setup(locale, variant),
                 case,
                 |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
-                    wb.update_key(code, dir);
+                    let _ = match dir {
+                        KeyDirection::Down => black_box(wb.press_key(black_box(code))),
+                        KeyDirection::Up => black_box(wb.release_key(black_box(code))),
+                    };
                     if down {
                         black_box(wb.key_char(black_box(code)));
                     }
@@ -364,9 +376,12 @@ fn bench_key_get_sym(c: &mut Criterion) {
                 wkb_setup(locale, variant),
                 case,
                 |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
-                    wb.update_key(code, dir);
+                    let _ = match dir {
+                        KeyDirection::Down => black_box(wb.press_key(black_box(code))),
+                        KeyDirection::Up => black_box(wb.release_key(black_box(code))),
+                    };
                     if down {
-                        black_box(wb.state_named_key(black_box(code)));
+                        black_box(wb.named_key(black_box(code)));
                     }
                 }
             );
@@ -377,9 +392,12 @@ fn bench_key_get_sym(c: &mut Criterion) {
                 wkb_noxkb_setup(locale, variant),
                 case,
                 |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
-                    wb.update_key(code, dir);
+                    let _ = match dir {
+                        KeyDirection::Down => black_box(wb.press_key(black_box(code))),
+                        KeyDirection::Up => black_box(wb.release_key(black_box(code))),
+                    };
                     if down {
-                        black_box(wb.state_named_key(black_box(code)));
+                        black_box(wb.named_key(black_box(code)));
                     }
                 }
             );

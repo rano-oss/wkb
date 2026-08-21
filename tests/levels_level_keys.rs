@@ -23,7 +23,7 @@ fn level_keys(locale: &str, level: usize) {
         let xkb = xkb_new_keymap_from_names(locale, &layout);
         let wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         for i in 0..701 {
-            let k1 = wkb.level_key_char(i as u32, 0, level);
+            let k1 = wkb.level_char(i as u32, 0, level);
             let mut k2 = xkb
                 .key_get_syms_by_level(Keycode::new(i as u32 + 8), 0, level as u32)
                 .first()

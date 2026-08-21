@@ -25,7 +25,14 @@ fn states(options: &str) -> (WKB, xkb::State) {
 }
 
 fn update_both(wkb: &mut WKB, state: &mut xkb::State, code: u32, direction: KeyDirection) {
-    wkb.update_key(code, direction);
+    match direction {
+        KeyDirection::Down => {
+            wkb.press_key(code);
+        }
+        KeyDirection::Up => {
+            wkb.release_key(code);
+        }
+    }
     state.update_key(
         Keycode::new(code + 8),
         match direction {
@@ -76,8 +83,8 @@ fn layout_with_caps(action: ModAction) -> LayoutFile {
 }
 
 fn tap(wkb: &mut WKB, code: u32) {
-    wkb.update_key(code, KeyDirection::Down);
-    wkb.update_key(code, KeyDirection::Up);
+    wkb.press_key(code);
+    wkb.release_key(code);
 }
 
 // ── Group/modifier state-machine unit tests, moved out of src ────────────
@@ -160,8 +167,9 @@ fn latched_group_is_consumed_after_one_key() {
     assert_eq!(wkb.active_layout_idx(), 1);
 
     let xkb_char = state.key_get_utf8(Keycode::new(38)).chars().last();
-    let result = wkb.press_key(30);
-    let wkb_char = match result.compose {
+    wkb.press_key(30);
+    let result = wkb.compose(30);
+    let wkb_char = match result {
         Some(ComposeState::Idle(ch)) => Some(ch),
         other => panic!("expected a direct character, got {other:?}"),
     };
@@ -220,14 +228,14 @@ fn latch_on_press_activate_on_named_edge() {
     let mut wkb = WKB::new_from_layouts(vec![file]).unwrap();
 
     assert_eq!(wkb.key_char(30), Some('a'), "idle");
-    wkb.update_key(42, KeyDirection::Down);
+    wkb.press_key(42);
     assert_eq!(wkb.key_char(30), Some('ä'), "level 3 active while held");
-    wkb.update_key(42, KeyDirection::Up);
+    wkb.release_key(42);
     assert_eq!(wkb.key_char(30), Some('ä'), "level 3 latched after release");
 
     // A second press cycle unlatches both variants.
-    wkb.update_key(42, KeyDirection::Down);
-    wkb.update_key(42, KeyDirection::Up);
+    wkb.press_key(42);
+    wkb.release_key(42);
     assert_eq!(wkb.key_char(30), Some('a'), "unlatched");
 }
 
@@ -237,14 +245,14 @@ fn latch_on_release_activate_on_named_edge() {
     let mut wkb = WKB::new_from_layouts(vec![file]).unwrap();
 
     assert_eq!(wkb.key_char(30), Some('a'), "idle");
-    wkb.update_key(42, KeyDirection::Down);
+    wkb.press_key(42);
     assert_eq!(wkb.key_char(30), Some('ä'), "level 3 active while held");
-    wkb.update_key(42, KeyDirection::Up);
+    wkb.release_key(42);
     assert_eq!(wkb.key_char(30), Some('ä'), "level 3 latched after release");
 
     // A second press cycle unlatches both variants.
-    wkb.update_key(42, KeyDirection::Down);
-    wkb.update_key(42, KeyDirection::Up);
+    wkb.press_key(42);
+    wkb.release_key(42);
     assert_eq!(wkb.key_char(30), Some('a'), "unlatched");
 }
 
@@ -255,13 +263,13 @@ fn lock_flags_use_and_combine_their_named_edges() {
     let mut wkb = WKB::new_from_layouts(vec![file]).unwrap();
     tap(&mut wkb, 42);
     assert_eq!(wkb.key_char(30), Some('A'), "first tap locks");
-    wkb.update_key(42, KeyDirection::Down);
+    wkb.press_key(42);
     assert_eq!(
         wkb.key_char(30),
         Some('a'),
         "second press unlocks immediately"
     );
-    wkb.update_key(42, KeyDirection::Up);
+    wkb.release_key(42);
     assert_eq!(wkb.key_char(30), Some('a'), "stays unlocked after release");
 
     // LOCK_ON_RELEASE: the lock engages only on release, and holds while the
@@ -269,13 +277,13 @@ fn lock_flags_use_and_combine_their_named_edges() {
     let file = layout_with_action(ModAction::Lock(ModType::Level2)); //LockOnRelease
     let mut wkb = WKB::new_from_layouts(vec![file]).unwrap();
     assert_eq!(wkb.key_char(30), Some('a'), "idle");
-    wkb.update_key(42, KeyDirection::Down);
+    wkb.press_key(42);
     assert_eq!(wkb.key_char(30), Some('A'), "active while held");
-    wkb.update_key(42, KeyDirection::Up);
+    wkb.release_key(42);
     assert_eq!(wkb.key_char(30), Some('A'), "locks on release");
-    wkb.update_key(42, KeyDirection::Down);
+    wkb.press_key(42);
     assert_eq!(wkb.key_char(30), Some('A'), "lock holds while re-pressed");
-    wkb.update_key(42, KeyDirection::Up);
+    wkb.release_key(42);
     assert_eq!(wkb.key_char(30), Some('a'), "release clears the lock");
 }
 

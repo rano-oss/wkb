@@ -1,7 +1,7 @@
 //! Shared helpers for integration tests
 #![allow(dead_code)]
 
-use wkb::{level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, NUM_LOCK, WKB};
+use wkb::{level_index, ModType, ALTGR, CAPS_LOCK, NUM_LOCK, WKB};
 use xkbcommon::xkb::{self, Keycode};
 
 /// Build an xkbcommon `State` for the given locale and layout variant.
@@ -34,14 +34,16 @@ pub fn update_both(
     evdev_code: u32,
     direction: wkb::KeyDirection,
 ) {
-    wkb.update_key(evdev_code, direction);
-    xkb.update_key(
-        Keycode::new(evdev_code + 8),
-        match direction {
-            wkb::KeyDirection::Down => xkb::KeyDirection::Down,
-            wkb::KeyDirection::Up => xkb::KeyDirection::Up,
-        },
-    );
+    match direction {
+        wkb::KeyDirection::Down => {
+            wkb.press_key(evdev_code);
+            xkb.update_key(Keycode::new(evdev_code + 8), xkb::KeyDirection::Down);
+        }
+        wkb::KeyDirection::Up => {
+            wkb.release_key(evdev_code);
+            xkb.update_key(Keycode::new(evdev_code + 8), xkb::KeyDirection::Up);
+        }
+    }
 }
 
 /// Compare every key's character output between wkb and xkbcommon.
@@ -100,24 +102,24 @@ pub fn set_level(wkb: &mut WKB, xkb: &mut xkb::State, code: u32, level: Option<u
             _ => {}
         }
         for &mod_code in &modifiers {
-            wkb.update_key(mod_code, KeyDirection::Down);
+            wkb.press_key(mod_code);
             xkb.update_key(Keycode::new(mod_code + 8), xkb::KeyDirection::Down);
         }
-        wkb.update_key(code, KeyDirection::Down);
+        wkb.press_key(code);
         xkb.update_key(Keycode::new(code + 8), xkb::KeyDirection::Down);
         for &mod_code in &modifiers {
-            wkb.update_key(mod_code, KeyDirection::Up);
+            wkb.release_key(mod_code);
             xkb.update_key(Keycode::new(mod_code + 8), xkb::KeyDirection::Up);
         }
         for &mod_code in &modifiers {
-            wkb.update_key(mod_code, KeyDirection::Down);
+            wkb.press_key(mod_code);
             xkb.update_key(Keycode::new(mod_code + 8), xkb::KeyDirection::Down);
-            wkb.update_key(mod_code, KeyDirection::Up);
+            wkb.release_key(mod_code);
             xkb.update_key(Keycode::new(mod_code + 8), xkb::KeyDirection::Up);
         }
     } else {
         xkb.update_key(Keycode::new(code + 8), xkb::KeyDirection::Down);
-        wkb.update_key(code, KeyDirection::Down);
+        wkb.press_key(code);
     }
 }
 
@@ -206,11 +208,11 @@ pub fn set_modifier_level(wkb: &mut WKB, xkb: &mut xkb::State, level: usize) -> 
 /// Hold down lock modifiers (`1` = num lock, `2` = caps lock) on both backends.
 pub fn activate_locks(wkb: &mut WKB, xkb: &mut xkb::State, locks: u8) {
     if locks & 1 != 0 {
-        wkb.update_key(NUM_LOCK, KeyDirection::Down);
+        wkb.press_key(NUM_LOCK);
         xkb.update_key(Keycode::new(NUM_LOCK + 8), xkb::KeyDirection::Down);
     }
     if locks & 2 != 0 {
-        wkb.update_key(CAPS_LOCK, KeyDirection::Down);
+        wkb.press_key(CAPS_LOCK);
         xkb.update_key(Keycode::new(CAPS_LOCK + 8), xkb::KeyDirection::Down);
     }
 }
