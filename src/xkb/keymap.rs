@@ -1,5 +1,5 @@
 pub(crate) use super::parser::{
-    XkbContext, XkbKeymap, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL,
+    XkbContext, XkbKeymap, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL, XKB_MAX_GROUPS,
 };
 use crate::xkb::keysym::keysym_to_codepoint;
 use crate::xkb::parse_xkb::braced_end;
@@ -8,7 +8,7 @@ use std::borrow::Cow;
 pub(crate) fn xkb_keymap_new_from_names(
     ctx: XkbContext,
     rmlvo: &XkbRuleNames,
-) -> Option<XkbKeymap> {
+) -> Result<XkbKeymap, crate::XkbError> {
     let mut rmlvo = rmlvo.clone();
     xkb_context_sanitize_rule_names(&mut rmlvo);
     let mut keymap = xkb_keymap_new(ctx, false);
@@ -51,7 +51,9 @@ pub(crate) fn xkb_keymap_new_from_names(
         .map(str::trim)
         .filter(|s| !s.is_empty())
     {
-        let (family, value) = option.split_once(':')?;
+        let (family, value) = option
+            .split_once(':')
+            .ok_or(crate::XkbError::KeymapCompilation)?;
         let file = match family {
             "grp" => "group",
             "caps" => "capslock",
@@ -67,26 +69,43 @@ pub(crate) fn xkb_keymap_new_from_names(
         symbols.push(')');
     }
     keymap.num_groups = layouts.len().min(XKB_MAX_GROUPS as usize) as u32;
-    compile_components(
+    if !compile_components(
         format!("evdev+aliases({alias})").as_bytes(),
         b"complete",
         symbols.as_bytes(),
         &mut keymap,
-    )
-    .then_some(())?;
-    Some(keymap)
+    ) {
+        return Err(compile_error(&keymap));
+    }
+    Ok(keymap)
 }
-pub(crate) fn xkb_keymap_new_from_string(ctx: XkbContext, original: &[u8]) -> Option<XkbKeymap> {
+pub(crate) fn xkb_keymap_new_from_string(
+    ctx: XkbContext,
+    original: &[u8],
+) -> Result<XkbKeymap, crate::XkbError> {
     let source = strip_compat_map(original);
     let bytes = source.as_ref();
     if bytes.is_empty() {
-        return None;
+        return Err(crate::XkbError::KeymapParsing);
     }
     let mut keymap = xkb_keymap_new(ctx, true);
-    let file = xkb_select_map(bytes, "")?;
-    compile_keymap_stream(file, &mut keymap).then_some(())?;
+    let file = xkb_select_map(bytes, "").ok_or(crate::XkbError::KeymapParsing)?;
+    if !compile_keymap_stream(file, &mut keymap) {
+        return Err(compile_error(&keymap));
+    }
     apply_group_action_overrides(&mut keymap, original);
-    Some(keymap)
+    Ok(keymap)
+}
+
+fn compile_error(keymap: &XkbKeymap) -> crate::XkbError {
+    if let Some((key, level)) = &keymap.multi_symbol_error {
+        crate::XkbError::MultipleSymbolsPerLevel {
+            key: key.clone(),
+            level: *level,
+        }
+    } else {
+        crate::XkbError::KeymapCompilation
+    }
 }
 fn find_ascii_case_insensitive(haystack: &[u8], needle: &[u8]) -> Option<usize> {
     haystack
@@ -306,6 +325,7 @@ pub(crate) fn xkb_keymap_new(ctx: XkbContext, strict: bool) -> XkbKeymap {
         mods: XkbModSet::default(),
         num_groups: 0,
         group_names: Vec::new(),
+        multi_symbol_error: None,
     };
     #[rustfmt::skip]
     static BUILTIN_MODS: [&str; 8] = ["Shift", "Lock", "Control", "Mod1", "Mod2", "Mod3", "Mod4", "Mod5"];

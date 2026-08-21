@@ -289,6 +289,8 @@ pub(crate) struct XkbKeymap {
     pub(crate) mods: XkbModSet,
     pub(crate) num_groups: u32,
     pub(crate) group_names: Vec<u32>,
+    /// Set when a level lists more than one keysym (unsupported).
+    pub(crate) multi_symbol_error: Option<(String, usize)>,
 }
 impl XkbKeymap {
     pub(crate) fn mod_get_mask(&self, name: &str) -> u32 {
@@ -386,6 +388,8 @@ pub(crate) const _XKB_MOD_INDEX_NUM_ENTRIES: u32 = 8;
 pub(crate) const XKB_KEYCODE_MAX_CONTIGUOUS: u32 = 0xfff;
 pub(crate) const XKB_LEVEL_MAX_IMPL: u32 = 2048;
 pub(crate) const XKB_MAX_MODS: u32 = 32;
+/// Sentinel stored in a symbols list when a level had multiple keysyms.
+pub(crate) const XKB_MULTI_SYMBOL_LEVEL: u32 = u32::MAX;
 impl XkbKeymap {
     #[inline]
     pub(crate) fn get_key(&self, kc: u32) -> Option<&XkbKey> {

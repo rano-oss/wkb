@@ -28,6 +28,9 @@ pub enum XkbError {
     KeymapCompilation,
     #[error("Failed to parse keymap string")]
     KeymapParsing,
+    /// A key level listed more than one keysym. WKB models one logical value per event.
+    #[error("unsupported feature: multiple keysyms in one level for key {key} level {level}")]
+    MultipleSymbolsPerLevel { key: String, level: usize },
 }
 pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Option<u8>)> {
     let mut other_mod = None;
@@ -531,7 +534,7 @@ pub(crate) fn new_from_names(
         variant: variant.into(),
         options: options.unwrap_or("").into(),
     };
-    let keymap = xkb_keymap_new_from_names(ctx, &rmlvo).ok_or(XkbError::KeymapCompilation)?;
+    let keymap = xkb_keymap_new_from_names(ctx, &rmlvo)?;
     Ok(build_wkb_from_keymap(&keymap, Some(layout)))
 }
 pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
@@ -539,8 +542,7 @@ pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
     if string.as_bytes().contains(&0) {
         return Err(XkbError::KeymapParsing);
     }
-    let keymap =
-        xkb_keymap_new_from_string(ctx, string.as_bytes()).ok_or(XkbError::KeymapCompilation)?;
+    let keymap = xkb_keymap_new_from_string(ctx, string.as_bytes())?;
     Ok(build_wkb_from_keymap(&keymap, None))
 }
 fn modtype_from_name(name: &str) -> Option<ModType> {
@@ -657,15 +659,15 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
             let state_modifier = match (sym, mod_type) {
                 (Some(sym), ModType::Level2 | ModType::Level3 | ModType::Level5) => {
                     keysym_to_state_modifier(sym, mod_type)
-                },
-                (_,ModType::Caps | ModType::Num | ModType::Scroll) => StateModifier {
+                }
+                (_, ModType::Caps | ModType::Num | ModType::Scroll) => StateModifier {
                     kind: ModKind::Lock {
                         pressed: false,
                         locked: 0,
                     },
                     mod_type,
                 },
-                (_,_) => StateModifier {
+                (_, _) => StateModifier {
                     kind: ModKind::Press { pressed: false },
                     mod_type,
                 },

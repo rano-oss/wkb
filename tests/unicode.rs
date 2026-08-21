@@ -66,7 +66,7 @@ fn keymap_with_u3119() -> String {
 #[test]
 fn wkb_handles_u3119() {
     let mut wkb = wkb::WKB::new_from_string(&keymap_with_u3119()).unwrap();
-    let evdev_code = 16; // AD01: keycode 24 - 8
+    let evdev_code = 16; // physical KeyQ / XKB <AD01>
     let result = wkb.press_key(evdev_code);
     let ch = match result.compose {
         Some(wkb::ComposeState::Idle(c)) => Some(c),
@@ -79,7 +79,7 @@ fn wkb_handles_u3119() {
 #[test]
 fn wkb_handles_raw_unicode() {
     let mut wkb = wkb::WKB::new_from_string(&keymap_with_raw_unicode()).unwrap();
-    let evdev_code = 16; // AD01: keycode 24 - 8
+    let evdev_code = 16; // physical KeyQ / XKB <AD01>
     let result = wkb.press_key(evdev_code);
     let ch = match result.compose {
         Some(wkb::ComposeState::Idle(c)) => Some(c),

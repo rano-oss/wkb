@@ -5,6 +5,45 @@ All notable changes to `wayland-keyboard` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-21
+
+Version 0.3.0 is a breaking compositor-facing API change. Physical and
+logical key identity are now separate, public keycodes are raw evdev
+codes, and key processing reports whether modifiers or LEDs actually
+changed.
+
+### Added
+
+- Added [`PhysicalKey`](https://docs.rs/wayland-keyboard/latest/wkb/enum.PhysicalKey.html)
+  for layout-independent physical positions (`KeyA`…`KeyZ`, digits,
+  punctuation, navigation, modifiers, numpad, function, and media keys).
+- Added [`LogicalKey`](https://docs.rs/wayland-keyboard/latest/wkb/enum.LogicalKey.html)
+  (`Character`, `Named`, `Unidentified`) resolved from the current layout
+  and modifier state.
+- Added `WKB::physical_key()` and `WKB::logical_key()`.
+- Added [`StateChanges`](https://docs.rs/wayland-keyboard/latest/wkb/struct.StateChanges.html)
+  with `modifiers_updated` and `leds_updated` flags.
+- Added `XkbError::MultipleSymbolsPerLevel` when a keymap lists more than
+  one keysym in a single level.
+
+### Changed
+
+- `KeyResult` now carries `physical_key`, `logical_key`, compose state,
+  `is_modifier`, `modifiers_updated`, and `leds_updated`. The old `key:
+  NamedKey` field is removed.
+- `press_key`, `release_key`, and `repeat_key` report actual modifier and
+  LED changes by comparing state before and after the operation.
+- `update_modifiers` now returns `StateChanges`.
+- Named keys such as Escape and arrows stay named while Ctrl, Alt, or Logo
+  are held. Modifiers only change a key when its compiled XKB type selects
+  a different level.
+- Public keycode parameters remain raw evdev codes. The X11 `+8` offset is
+  used only at the internal XKB file-format boundary.
+
+### Removed
+
+- Removed `KeyResult.key`.
+
 ## [0.2.0] - 2026-08-20
 
 Version 0.2.0 is a breaking release. It replaces much of the 0.1 API and

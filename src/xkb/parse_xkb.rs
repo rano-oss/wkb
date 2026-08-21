@@ -700,10 +700,15 @@ impl<'a> Parser<'a> {
         loop {
             let item = if self.punct(b'{') {
                 let mut sym = 0;
+                let mut count = 0u32;
                 while !self.punct(b'}') {
                     let next = self.parse_keysym()?;
-                    if sym == 0 {
+                    count += 1;
+                    if count == 1 {
                         sym = next;
+                    } else {
+                        // Multiple keysyms in one level are unsupported.
+                        sym = crate::xkb::parser::XKB_MULTI_SYMBOL_LEVEL;
                     }
                     if !self.punct(b',') {
                         self.punct(b'}').then_some(())?;

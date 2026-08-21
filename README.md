@@ -29,7 +29,7 @@ dependencies.
 
 ```toml
 [dependencies]
-wayland-keyboard = "0.2"
+wayland-keyboard = "0.3"
 ```
 
 ```rust,no_run
@@ -39,16 +39,19 @@ use wkb::WKB;
 let keymap_string = std::fs::read_to_string("/path/to/keymap").unwrap();
 let mut wkb = WKB::new_from_string(&keymap_string).unwrap();
 
-// Process a key press (evdev code 38 = 'a' on US layout)
-let result = wkb.press_key(38);
-println!("keysym: {:#x}, compose: {:?}", result.keysym, result.compose);
+// Process a key press (evdev code 30 = physical KeyA)
+let result = wkb.press_key(30);
+println!(
+    "physical={:?} logical={:?} compose={:?}",
+    result.physical_key, result.logical_key, result.compose
+);
 
 // Release the key
-let result = wkb.release_key(38);
+let result = wkb.release_key(30);
 
 // Query current modifier state
-let mods = wkb.modifiers_state();
-println!("ctrl={} alt={} shift={}", mods.ctrl, mods.alt, mods.shift);
+let mods = wkb.raw_modifiers();
+println!("ctrl depressed={}", mods.depressed);
 ```
 
 ### Key Event API
@@ -59,9 +62,13 @@ println!("ctrl={} alt={} shift={}", mods.ctrl, mods.alt, mods.shift);
 | `release_key(evdev)` | yes | Key up — updates modifiers |
 | `repeat_key(evdev)` | yes | Key repeat — advances compose |
 | `key_char(evdev)` | no | Raw character under current modifiers (no compose) |
+| `physical_key(evdev)` | no | Physical position from the evdev code alone |
+| `logical_key(evdev)` | no | Logical identity under layout + modifiers |
 
 All three event methods return a [`KeyResult`](https://docs.rs/wayland-keyboard/latest/wkb/struct.KeyResult.html)
-containing the keysym, compose state, and whether the key is a modifier.
+with physical and logical identity, compose state, whether the key is a
+modifier, and whether modifiers or LEDs changed. Keycodes are always raw
+Linux/evdev codes.
 
 ### Compositor Usage
 
@@ -82,7 +89,7 @@ let xkb_string = wkb.as_xkb_string().unwrap();
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `xkb` | yes | XKB keymap compilation via the `xkb-core` crate |
+| `xkb` | yes | XKB keymap compilation |
 | `compose` | yes | Compose-key / dead-key sequence support |
 
 ## Benchmarks
