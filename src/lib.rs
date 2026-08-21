@@ -209,6 +209,16 @@ impl WKB {
         (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_NUM_LOCK != 0
     }
 
+    pub fn level3(&self) -> bool {
+        let raw = self.raw_modifiers();
+        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_SCROLL_LOCK != 0
+    }
+
+    pub fn level5(&self) -> bool {
+        let raw = self.raw_modifiers();
+        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_ALTGR != 0
+    }
+
     /// Apply modifier state received from `wl_keyboard.modifiers`.
     ///
     /// The `group` parameter selects the active layout index.

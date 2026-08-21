@@ -7,7 +7,7 @@ pub(crate) const MOD_CAPS_LOCK: u32 = 1 << 1;
 pub(crate) const MOD_CTRL: u32 = 1 << 2;
 pub(crate) const MOD_ALT: u32 = 1 << 3; // Mod1
 pub(crate) const MOD_NUM_LOCK: u32 = 1 << 4; // Mod2
-pub(crate) const MOD_SCROLL_LOCK: u32 = 1 << 5;
+pub(crate) const MOD_SCROLL_LOCK: u32 = 1 << 5; // Mod3
 pub(crate) const MOD_LOGO: u32 = 1 << 6; // Mod4
 pub(crate) const MOD_ALTGR: u32 = 1 << 7; // Mod5
 
