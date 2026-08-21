@@ -279,7 +279,7 @@ fn bench_key_get_char(c: &mut Criterion) {
                 wkb_setup(locale, variant),
                 case,
                 |wb: &mut wkb::WKB, code: u32, down: bool, dir: KeyDirection| {
-                    let _ =match dir {
+                    let _ = match dir {
                         KeyDirection::Up => black_box(wb.release_key(black_box(code))),
                         KeyDirection::Down => black_box(wb.press_key(black_box(code))),
                     };

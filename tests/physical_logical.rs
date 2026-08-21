@@ -99,10 +99,7 @@ fn same_physical_key_different_logical_chars() {
 fn caps_remapped_to_escape_keeps_physical_caps() {
     let wkb = WKB::new_from_string(&keymap_caps_escape()).unwrap();
     assert_eq!(wkb.physical_key(CAPS_LOCK), PhysicalKey::CapsLock);
-    assert_eq!(
-        wkb.named_key(CAPS_LOCK),
-        NamedKey::Escape
-    );
+    assert_eq!(wkb.named_key(CAPS_LOCK), NamedKey::Escape);
 }
 
 #[test]
@@ -245,16 +242,9 @@ fn unknown_evdev_is_unidentified() {
 #[test]
 fn multi_symbol_level_uses_first_symbol() {
     for multi_on_level_2 in [false, true] {
-        let wkb =
-            WKB::new_from_string(&keymap_multi_symbol(multi_on_level_2)).unwrap();
-        assert_eq!(
-            wkb.level_char(KEY_Q, 0, 0),
-            Some('q'),
-        );
-        assert_eq!(
-            wkb.level_char(KEY_Q, 0, 1),
-            Some('q'),
-        );
+        let wkb = WKB::new_from_string(&keymap_multi_symbol(multi_on_level_2)).unwrap();
+        assert_eq!(wkb.level_char(KEY_Q, 0, 0), Some('q'),);
+        assert_eq!(wkb.level_char(KEY_Q, 0, 1), Some('q'),);
     }
 }
 

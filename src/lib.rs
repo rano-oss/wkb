@@ -253,7 +253,9 @@ impl WKB {
             self.groups.set_layout(group as usize, self.num_layouts());
             self.current_layout_idx = group as usize;
         }
-        self.layouts[self.current_layout_idx].modifiers.update(depressed, latched, locked);
+        self.layouts[self.current_layout_idx]
+            .modifiers
+            .update(depressed, latched, locked);
         StateChanges {
             is_modifier: false,
             modifiers_updated: self.raw_modifiers() != before_mods,
@@ -497,11 +499,7 @@ impl WKB {
     }
 
     #[inline]
-    fn change_key_state(
-        &mut self,
-        evdev_code: u32,
-        key_direction: KeyDirection,
-    ) -> StateChanges {
+    fn change_key_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> StateChanges {
         let before_modifiers = self.raw_modifiers();
         let before_leds = self.leds_state();
         let layouts = self.layouts.len();
@@ -535,30 +533,25 @@ impl WKB {
     /// by the preceding key press.
     #[cfg(feature = "compose")]
     pub fn compose(&mut self, evdev_code: u32) -> Option<ComposeState> {
-        let is_compose_key = self.layouts[self.current_layout_idx]
-            .modifiers
-            .iter()
-            .any(|(code, modifier)| {
-                *code == evdev_code
-                    && match modifier {
-                        Modifier::Single(modifier) => {
-                            modifier.has_mod_type(ModType::Compose)
+        let is_compose_key =
+            self.layouts[self.current_layout_idx]
+                .modifiers
+                .iter()
+                .any(|(code, modifier)| {
+                    *code == evdev_code
+                        && match modifier {
+                            Modifier::Single(modifier) => modifier.has_mod_type(ModType::Compose),
+                            Modifier::Leveled(levels) => levels
+                                .iter()
+                                .any(|(_, modifier)| modifier.has_mod_type(ModType::Compose)),
                         }
-                        Modifier::Leveled(levels) => levels
-                            .iter()
-                            .any(|(_, modifier)| modifier.has_mod_type(ModType::Compose)),
-                    }
-            });
+                });
         let token = if is_compose_key {
             Token::Compose
         } else {
             Token::Char(self.key_char(evdev_code)?)
         };
-        Some(
-            self.layouts[self.current_layout_idx]
-                .composer
-                .feed(token),
-        )
+        Some(self.layouts[self.current_layout_idx].composer.feed(token))
     }
 
     /// Export a layout as an [`ir::LayoutFile`] for persistence. This is the

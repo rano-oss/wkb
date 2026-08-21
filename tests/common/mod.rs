@@ -37,17 +37,11 @@ pub fn update_both(
     match direction {
         wkb::KeyDirection::Down => {
             wkb.press_key(evdev_code);
-            xkb.update_key(
-                Keycode::new(evdev_code + 8),
-                xkb::KeyDirection::Down,
-            );
+            xkb.update_key(Keycode::new(evdev_code + 8), xkb::KeyDirection::Down);
         }
         wkb::KeyDirection::Up => {
             wkb.release_key(evdev_code);
-            xkb.update_key(
-                Keycode::new(evdev_code + 8),
-                xkb::KeyDirection::Up,
-            );
+            xkb.update_key(Keycode::new(evdev_code + 8), xkb::KeyDirection::Up);
         }
     }
 }
