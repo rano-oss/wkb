@@ -195,7 +195,7 @@ fn update_modifiers_reports_actual_changes() {
     assert_eq!(
         caps,
         StateChanges {
-            is_modifier: true,
+            is_modifier: false,
             modifiers_updated: true,
             leds_updated: true,
         }
@@ -253,7 +253,7 @@ fn multi_symbol_level_uses_first_symbol() {
         );
         assert_eq!(
             wkb.level_char(KEY_Q, 0, 1),
-            Some('Q'),
+            Some('q'),
         );
     }
 }

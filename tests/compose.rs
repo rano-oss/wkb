@@ -143,14 +143,14 @@ fn wkb_compose_char(wkb: &mut WKB, keys: &[(u32, bool)]) -> Option<char> {
     let mut final_char = None;
     for &(evdev, down) in keys {
         if down {
-            wkb.press_key(evdev)
+            wkb.press_key(evdev);
+            let result = wkb.compose(evdev);
+            if let Some(wkb::ComposeState::Finished(c)) = &result {
+                final_char = Some(*c);
+            }
         } else {
-            wkb.release_key(evdev)
+            wkb.release_key(evdev);
         };
-        let result = wkb.compose(evdev);
-        if let Some(wkb::ComposeState::Finished(c)) = &result {
-            final_char = Some(*c);
-        }
     }
     final_char
 }

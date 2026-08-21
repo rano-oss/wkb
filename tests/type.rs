@@ -187,7 +187,7 @@ fn run_type_test(case_dir: &Path, key_names: &HashMap<String, u32>) -> Result<()
 
                 if do_up {
                     xkb_state.update_key(xkb_kc, xkb::KeyDirection::Up);
-                    wkb.press_key(evdev_code);
+                    wkb.release_key(evdev_code);
 
                     let xkb_mods = (
                         xkb_state.serialize_mods(xkb::STATE_MODS_DEPRESSED),

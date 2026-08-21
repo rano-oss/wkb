@@ -549,13 +549,11 @@ impl WKB {
                             .any(|(_, modifier)| modifier.has_mod_type(ModType::Compose)),
                     }
             });
-
         let token = if is_compose_key {
             Token::Compose
         } else {
             Token::Char(self.key_char(evdev_code)?)
         };
-
         Some(
             self.layouts[self.current_layout_idx]
                 .composer
