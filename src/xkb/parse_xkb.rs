@@ -699,23 +699,18 @@ impl<'a> Parser<'a> {
         let mut actions = false;
         loop {
             let item = if self.punct(b'{') {
-                let mut sym = 0;
-                let mut count = 0u32;
+                let mut first_sym = None;
                 while !self.punct(b'}') {
                     let next = self.parse_keysym()?;
-                    count += 1;
-                    if count == 1 {
-                        sym = next;
-                    } else {
-                        // Multiple keysyms in one level are unsupported.
-                        sym = crate::xkb::parser::XKB_MULTI_SYMBOL_LEVEL;
+                    if first_sym.is_none() {
+                        first_sym = Some(next);
                     }
                     if !self.punct(b',') {
                         self.punct(b'}').then_some(())?;
                         break;
                     }
                 }
-                sym
+                first_sym.unwrap_or(0)
             } else if matches!(self.token, Token::Word(_)) {
                 let saved = self.lexer.pos;
                 let word = match self.bump() {

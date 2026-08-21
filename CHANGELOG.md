@@ -23,8 +23,6 @@ changed.
 - Added `WKB::physical_key()` and `WKB::logical_key()`.
 - Added [`StateChanges`](https://docs.rs/wayland-keyboard/latest/wkb/struct.StateChanges.html)
   with `modifiers_updated` and `leds_updated` flags.
-- Added `XkbError::MultipleSymbolsPerLevel` when a keymap lists more than
-  one keysym in a single level.
 
 ### Changed
 
@@ -37,8 +35,6 @@ changed.
 - Named keys such as Escape and arrows stay named while Ctrl, Alt, or Logo
   are held. Modifiers only change a key when its compiled XKB type selects
   a different level.
-- Public keycode parameters remain raw evdev codes. The X11 `+8` offset is
-  used only at the internal XKB file-format boundary.
 
 ### Removed
 

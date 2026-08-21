@@ -2,7 +2,7 @@ pub(crate) use super::keymap::xkb_mod_name_to_index;
 use super::keysym::xkb_keysym_is_keypad;
 use super::keysym::{xkb_keysym_is_lower, xkb_keysym_is_upper_or_title};
 use super::parse_xkb::Stream;
-use super::parser::{exceeds_include_max_depth, process_include_stream, XKB_MULTI_SYMBOL_LEVEL};
+use super::parser::{exceeds_include_max_depth, process_include_stream};
 pub(crate) use super::parser::{ModMapDef, NamedVarDef};
 macro_rules! some_or_false {
     ($value:expr) => {
@@ -416,27 +416,10 @@ fn add_symbols_to_key(
     let level_count = syms
         .iter()
         .rposition(|&sym| sym != 0)
-        .map_or(0, |index| index + 1)
-        .max(
-            syms.iter()
-                .rposition(|&sym| sym == XKB_MULTI_SYMBOL_LEVEL)
-                .map_or(0, |index| index + 1),
-        );
+        .map_or(0, |index| index + 1);
     group.levels.resize_with(level_count, XkbLevel::default);
     group.explicit_syms = true;
     for (level, &sym) in syms.iter().take(level_count).enumerate() {
-        if sym == XKB_MULTI_SYMBOL_LEVEL {
-            let key_name = {
-                let name = ki.ctx.atom_text(key.name);
-                if name.is_empty() {
-                    format!("keycode {}", key.name)
-                } else {
-                    name.to_owned()
-                }
-            };
-            ki.multi_symbol_error = Some((key_name, level + 1));
-            return false;
-        }
         group.levels[level].sym = sym;
     }
     true

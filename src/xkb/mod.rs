@@ -28,9 +28,6 @@ pub enum XkbError {
     KeymapCompilation,
     #[error("Failed to parse keymap string")]
     KeymapParsing,
-    /// A key level listed more than one keysym. WKB models one logical value per event.
-    #[error("unsupported feature: multiple keysyms in one level for key {key} level {level}")]
-    MultipleSymbolsPerLevel { key: String, level: usize },
 }
 pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Option<u8>)> {
     let mut other_mod = None;
@@ -77,28 +74,28 @@ struct CompiledType {
     num_lock_affected: bool,
 }
 impl CompiledType {
-    fn new(type_: &parser::XkbKeyType) -> Self {
+    fn new(xkb_key_type: &parser::XkbKeyType) -> Self {
         let default_state = CompiledTypeState {
             level: 0,
-            consumed_mods: type_.mods.mask,
+            consumed_mods: xkb_key_type.mods.mask,
         };
         let mut by_mask = [default_state; REAL_MOD_STATES];
         // Reverse iteration preserves the old "first matching entry wins"
         // behaviour when malformed input contains duplicate masks.
-        for entry in type_.entries.iter().rev() {
+        for entry in xkb_key_type.entries.iter().rev() {
             if (entry.mods.mods == 0 || entry.mods.mask != 0)
                 && (entry.mods.mask as usize) < REAL_MOD_STATES
             {
                 by_mask[entry.mods.mask as usize] = CompiledTypeState {
                     level: entry.level,
-                    consumed_mods: type_.mods.mask & !entry.preserve.mask,
+                    consumed_mods: xkb_key_type.mods.mask & !entry.preserve.mask,
                 };
             }
         }
-        let states = std::array::from_fn(|state| by_mask[state & type_.mods.mask as usize]);
+        let states = std::array::from_fn(|state| by_mask[state & xkb_key_type.mods.mask as usize]);
         Self {
             states,
-            num_lock_affected: type_
+            num_lock_affected: xkb_key_type
                 .entries
                 .iter()
                 .any(|entry| entry.mods.mask & (1 << 4) != 0),

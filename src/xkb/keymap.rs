@@ -75,7 +75,7 @@ pub(crate) fn xkb_keymap_new_from_names(
         symbols.as_bytes(),
         &mut keymap,
     ) {
-        return Err(compile_error(&keymap));
+        return Err(crate::XkbError::KeymapCompilation);
     }
     Ok(keymap)
 }
@@ -91,22 +91,12 @@ pub(crate) fn xkb_keymap_new_from_string(
     let mut keymap = xkb_keymap_new(ctx, true);
     let file = xkb_select_map(bytes, "").ok_or(crate::XkbError::KeymapParsing)?;
     if !compile_keymap_stream(file, &mut keymap) {
-        return Err(compile_error(&keymap));
+        return Err(crate::XkbError::KeymapCompilation);
     }
     apply_group_action_overrides(&mut keymap, original);
     Ok(keymap)
 }
 
-fn compile_error(keymap: &XkbKeymap) -> crate::XkbError {
-    if let Some((key, level)) = &keymap.multi_symbol_error {
-        crate::XkbError::MultipleSymbolsPerLevel {
-            key: key.clone(),
-            level: *level,
-        }
-    } else {
-        crate::XkbError::KeymapCompilation
-    }
-}
 fn find_ascii_case_insensitive(haystack: &[u8], needle: &[u8]) -> Option<usize> {
     haystack
         .windows(needle.len())
@@ -325,7 +315,6 @@ pub(crate) fn xkb_keymap_new(ctx: XkbContext, strict: bool) -> XkbKeymap {
         mods: XkbModSet::default(),
         num_groups: 0,
         group_names: Vec::new(),
-        multi_symbol_error: None,
     };
     #[rustfmt::skip]
     static BUILTIN_MODS: [&str; 8] = ["Shift", "Lock", "Control", "Mod1", "Mod2", "Mod3", "Mod4", "Mod5"];

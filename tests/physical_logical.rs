@@ -261,24 +261,18 @@ fn unknown_evdev_is_unidentified() {
 }
 
 #[test]
-fn multi_symbol_level_is_unsupported() {
-    let err = WKB::new_from_string(&keymap_multi_symbol(false)).unwrap_err();
-    match err {
-        wkb::XkbError::MultipleSymbolsPerLevel { key, level } => {
-            assert!(key.contains("AD01"), "key={key}");
-            assert_eq!(level, 1);
-        }
-        other => panic!("expected MultipleSymbolsPerLevel, got {other:?}"),
-    }
+fn multi_symbol_level_uses_first_symbol() {
+    let wkb = WKB::new_from_string(&keymap_multi_symbol(false)).unwrap();
 
-    let err = WKB::new_from_string(&keymap_multi_symbol(true)).unwrap_err();
-    match err {
-        wkb::XkbError::MultipleSymbolsPerLevel { key, level } => {
-            assert!(key.contains("AD01"), "key={key}");
-            assert_eq!(level, 2);
-        }
-        other => panic!("expected MultipleSymbolsPerLevel, got {other:?}"),
-    }
+    assert_eq!(wkb.logical_key(KEY_Q), LogicalKey::Character('q'),);
+
+    let mut wkb = WKB::new_from_string(&keymap_multi_symbol(true)).unwrap();
+
+    assert_eq!(wkb.logical_key(KEY_Q), LogicalKey::Character('q'),);
+
+    wkb.press_key(LEFT_SHIFT);
+
+    assert_eq!(wkb.logical_key(KEY_Q), LogicalKey::Character('Q'),);
 }
 
 #[test]

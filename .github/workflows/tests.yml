@@ -45,6 +45,7 @@ jobs:
           - ir
           - keymap
           - compile
+          - physical_logical
           - groups
           - type
           - led_lights
