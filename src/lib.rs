@@ -60,7 +60,7 @@ pub(crate) use flat_keymap::{FlatKeymap, FlatNamedKeyMap};
 pub use groups::{Group, GroupChange, GroupKind, Groups};
 pub use modifiers::{
     level_index, KeyDirection, ModType, ALTGR, CAPS_LOCK, LEFT_SHIFT, NUM_LOCK, RIGHT_SHIFT,
-    SCROLL_LOCK,
+    SCROLL_LOCK, LedState
 };
 pub use physical_keys::PhysicalKey;
 /// Intermediate representation for persisted layout data files.
@@ -224,14 +224,14 @@ impl WKB {
         (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_NUM_LOCK != 0
     }
 
-    pub fn mod3(&self) -> bool {
-        let raw = self.raw_modifiers();
-        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_SCROLL_LOCK != 0
-    }
-
-    pub fn mod5(&self) -> bool {
+    pub fn level3(&self) -> bool {
         let raw = self.raw_modifiers();
         (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_ALTGR != 0
+    }
+
+    pub fn level5(&self) -> bool {
+        let raw = self.raw_modifiers();
+        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_SCROLL_LOCK != 0
     }
 
     /// Apply modifier state received from `wl_keyboard.modifiers`.
